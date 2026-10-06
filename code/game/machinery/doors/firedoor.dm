@@ -255,7 +255,7 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 /// A xeno's claws are on the hand.
 /obj/machinery/door/firedoor/proc/claws_force(datum/act/op/A)
 	var/mob/living/carbon/human/X = A.actor
-	return !A.held && istype(X) && istype(X.species, /datum/species/xenos) // ALLOW(reads): a body's species is fixed for the touch's life; the click re-evaluates it
+	return !A.held && istype(X) && istype(X.species, /datum/species/xenos)
 
 /// Claws dig into a welded one for five seconds, force a shut one open for two and push an open one shut at once.
 /obj/machinery/door/firedoor/proc/claws_wait(datum/act/A)

@@ -73,7 +73,7 @@ TYPE_TABLE_DECLARE(/obj/item, equip_spec, null)
 		var/override = I.constraint_overrides[kind]
 		if(!isnull(override))
 			return override || null
-	return CACHED_KEY(item_constraint, "[kind]|[I.type]", I, kind) || null // ALLOW(reads): runtime item type is immutable and keys the permanent type constraint cache
+	return CACHED_KEY(item_constraint, "[kind]|[I.type]", I, kind) || null
 
 DECLARE_SHARED_CACHE(item_constraint, GLOBAL_PROC_REF(build_item_constraint), SC_NEVER)
 

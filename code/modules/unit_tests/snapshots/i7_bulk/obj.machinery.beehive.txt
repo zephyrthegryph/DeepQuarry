@@ -1,9 +1,5 @@
-/obj/machinery/beehive|human|none => gen_hand_ungated_interaction_beehive_harvest|gen_insert_interaction_beehive_smoke:needs a bee smoker,gen_insert_interaction_beehive_load_frame:needs a beehive frame,gen_insert_interaction_beehive_bee_pack:needs a bee pack,gen_insert_interaction_beehive_scan:needs a plant analyzer
-/obj/machinery/beehive|robot|none => gen_hand_ungated_interaction_beehive_harvest|gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_beehive_smoke:needs a bee smoker,gen_insert_interaction_beehive_load_frame:needs a beehive frame,gen_insert_interaction_beehive_bee_pack:needs a bee pack,gen_insert_interaction_beehive_scan:needs a plant analyzer
+/obj/machinery/beehive|human|none => |
+/obj/machinery/beehive|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/beehive|ai|none => |
 /obj/machinery/beehive|ghost|none => |
-/obj/machinery/beehive|human|/obj/item/bee_smoker => gen_insert_interaction_beehive_smoke,gen_hand_ungated_interaction_beehive_harvest|gen_insert_interaction_beehive_load_frame:needs a beehive frame,gen_insert_interaction_beehive_bee_pack:needs a bee pack,gen_insert_interaction_beehive_scan:needs a plant analyzer
-/obj/machinery/beehive|human|/obj/item/honey_frame => gen_insert_interaction_beehive_load_frame,gen_hand_ungated_interaction_beehive_harvest|gen_insert_interaction_beehive_smoke:needs a bee smoker,gen_insert_interaction_beehive_bee_pack:needs a bee pack,gen_insert_interaction_beehive_scan:needs a plant analyzer
-/obj/machinery/beehive|human|/obj/item/bee_pack => gen_insert_interaction_beehive_bee_pack,gen_hand_ungated_interaction_beehive_harvest|gen_insert_interaction_beehive_smoke:needs a bee smoker,gen_insert_interaction_beehive_load_frame:needs a beehive frame,gen_insert_interaction_beehive_scan:needs a plant analyzer
-/obj/machinery/beehive|human|/obj/item/analyzer/plant_analyzer => gen_insert_interaction_beehive_scan,gen_hand_ungated_interaction_beehive_harvest|gen_insert_interaction_beehive_smoke:needs a bee smoker,gen_insert_interaction_beehive_load_frame:needs a beehive frame,gen_insert_interaction_beehive_bee_pack:needs a bee pack
 

@@ -26,6 +26,8 @@ human|/obj/item/stack/material/steel menu: Toggle
 human|/obj/item/stack/material/steel click: Click: Toggle
 human|/obj/item/card/id menu: Toggle
 human|/obj/item/card/id click: Click: Toggle
+human|/obj/item/stack/material menu: Toggle
+human|/obj/item/stack/material click: Click: Toggle
 human|/obj/item/pipe_painter menu: Painter
 human|/obj/item/pipe_painter menu: Toggle
 human|/obj/item/pipe_painter click: Click: Painter

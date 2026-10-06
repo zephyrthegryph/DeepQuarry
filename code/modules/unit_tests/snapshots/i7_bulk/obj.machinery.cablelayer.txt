@@ -1,7 +1,5 @@
-/obj/machinery/cablelayer|human|none => |cablelayer_load:needs a cable coil,cablelayer_swallow:needs an item,cablelayer_toggle:doesn't have any cable loaded
-/obj/machinery/cablelayer|robot|none => |gen_robot_interaction_swallow:not possible right now,cablelayer_load:needs a cable coil,cablelayer_swallow:needs an item,cablelayer_toggle:doesn't have any cable loaded
+/obj/machinery/cablelayer|human|none => |
+/obj/machinery/cablelayer|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/cablelayer|ai|none => |
 /obj/machinery/cablelayer|ghost|none => |
-/obj/machinery/cablelayer|human|/obj/item/stack/cable_coil => cablelayer_load,cablelayer_swallow|cablelayer_toggle:doesn't have any cable loaded
-/obj/machinery/cablelayer|human|/obj/item => cablelayer_swallow|cablelayer_load:needs a cable coil,cablelayer_toggle:doesn't have any cable loaded
 

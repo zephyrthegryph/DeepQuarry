@@ -26,6 +26,8 @@ human|/obj/item/stack/material/steel menu: Climb
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Climb
 human|/obj/item/card/id click: nothing
+human|/obj/item/stack/material menu: Climb
+human|/obj/item/stack/material click: nothing
 human|/obj/item/pipe_painter menu: Climb
 human|/obj/item/pipe_painter menu: Painter
 human|/obj/item/pipe_painter click: Click: Painter

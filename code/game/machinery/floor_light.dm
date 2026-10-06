@@ -74,38 +74,29 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 	update_brightness()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/floor_light/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/floor_light_harm,
-		/datum/interaction/machine_hand/ungated/floor_light_smash,
-		/datum/interaction/machine_hand/ungated/floor_light_use,
-	)
-	..()
+MSG_DEF_SELF(floor_light/unanchored, "it must be screwed down first")
 
-/// The old attackby: if a harmful item is used in combat mode, run the attack_hand
-/// smash behavior, but always fall through to the base attack chain (it never stopped it).
-/datum/interaction/machine_item/floor_light_harm
-	id = "floor_light_harm"
-	name = "Hit"
-	stance = I_HURT
-	consumes_input = FALSE
-	effect = /obj/machinery/floor_light/proc/interaction_harm
+/// Requirement (was REQ_* can_switch): the legacy check answers TRUE to pass.
+/obj/machinery/floor_light/proc/can_switch_holds(datum/act/op/A)
+	var/answer = can_switch(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
-/obj/machinery/floor_light/proc/interaction_harm(mob/user, obj/item/held, datum/interaction/interaction)
+/// Why can_switch_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/floor_light/proc/can_switch_refusal(datum/act/op/A)
+	var/answer = can_switch(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/machinery/floor_light/proc/interaction_harm(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	if(held?.force)
 		attack_hand(user)
-	return FALSE
+	return OP_DECLINE
 
-/// Combat mode: smash the light (small mobs can't, and just use it).
-/datum/interaction/machine_hand/ungated/floor_light_smash
-	id = "floor_light_smash"
-	name = "Smash"
-	stance = I_HURT
-	effect = /obj/machinery/floor_light/proc/interaction_smash
-
-/obj/machinery/floor_light/proc/interaction_smash(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/floor_light/proc/interaction_smash(datum/act/op/A)
+	var/mob/user = A.actor
 	if(issmall(user))
-		return FALSE
+		return OP_DECLINE
 	if(!isnull(damaged) && !has_stat(BROKEN))
 		act_message(user, src, others = span_danger("%U% smashes %T%!"))
 		play_sfx(src, SFX_SHATTER)
@@ -115,16 +106,7 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 		play_sfx(src, SFX_EFFECTS_GLASSHIT)
 		if(isnull(damaged)) damaged = 0
 	update_brightness()
-	return TRUE
-
-/datum/interaction/machine_hand/ungated/floor_light_use
-	id = "floor_light_use"
-	name = "Use"
-	also_requires = list(
-		REQ_BECAUSE(REQ_ANCHORED, "it must be screwed down first"),
-		REQ_TARGET_STATE(/obj/machinery/floor_light/proc/can_switch),
-	)
-	effect = /obj/machinery/floor_light/proc/interaction_use
+	return OP_OK
 
 /// Requirement: TRUE, or why the light can't be switched.
 /obj/machinery/floor_light/proc/can_switch(mob/user, atom/target, obj/item/held)
@@ -134,12 +116,12 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 		return "it's unpowered"
 	return TRUE
 
-/obj/machinery/floor_light/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/floor_light/proc/interaction_use(datum/act/op/A)
 	set_on(!on)
 	if(on) set_use_power(USE_POWER_ACTIVE)
 	// visible_message(span_notice("\The [user] turns \the [src] [on ? "on" : "off"].")) // No thankouuuu. Too spammy.
 	update_brightness()
-	return TRUE
+	return OP_OK
 
 /obj/machinery/floor_light/proc/work_step(datum/act/timer/A)
 	var/need_update
@@ -185,6 +167,9 @@ CAPABILITIES(/obj/machinery/floor_light)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(floor_light_blast))))
 	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("floor_light_harm", item(/obj/item), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), passes(), then(PROC_REF(interaction_harm)))
+	op("floor_light_smash", hand(), ungated(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Smash"), then(PROC_REF(interaction_smash)))
+	op("floor_light_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), needs(req_is(nameof(anchored), TRUE, because = MSG(floor_light/unanchored)), req(PROC_REF(can_switch_holds), because = PROC_REF(can_switch_refusal))), then(PROC_REF(interaction_use)))
 
 /// A lighter blast marks the light as (lightly) damaged.
 /obj/machinery/floor_light/proc/floor_light_blast(datum/act/hit/explosion/A)

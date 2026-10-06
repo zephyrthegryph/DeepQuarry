@@ -71,7 +71,7 @@ human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
 human|/obj/item/stack/arcadeticket menu: Climb
 human|/obj/item/stack/arcadeticket menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/stack/arcadeticket menu: Redeem tickets (refused: you need 2 tickets to claim a prize)
+human|/obj/item/stack/arcadeticket menu: Redeem tickets (refused: You don't have enough for that.)
 human|/obj/item/stack/arcadeticket menu: Ui open
 human|/obj/item/stack/arcadeticket menu: Use item
 human|/obj/item/stack/arcadeticket click: Click: Use item

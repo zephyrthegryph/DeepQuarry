@@ -2220,3 +2220,20 @@ input takes the next tier down, so the legacy declaration order still decides.
   the robotics console's cyborg use declines when the cyborg has access (the window answers), as before.
 - **Conversion pins probe each item an op binds** (`item(T)`), not only the items legacy interactions named, so a converted type keeps the
   rows its legacy interactions had; pins of types converted earlier gained those rows.
+- **Second pass (30 more machines).** Legacy requirement forms translate: `REQ_FIELD`/`REQ_FIELD_NOT` are `req_is(nameof(v), ...)` with the
+  legacy text, `REQ_ANCHORED` and `REQ_PANEL` read `anchored`/`panel_open`, `REQ_TYPE(PRED_ACTOR, T)` is `req(T, of = ON_ACTOR)`.
+  `REQ_ON(PRED_ACTOR, /machine/proc/x)` asked a machine proc of the actor, which never has it, so it always refused (the specops shuttle
+  console's access check, the paper shredder's "empty bin"): it is asked of the machine, as meant.
+- **The reads analysis knows legacy `ownership()` declarations**: a var listed with `owns(nameof(v))` is written only through the ownership
+  accessors, whose `own_field_changed()` publishes the var's name, so a requirement may read it (the grinder's held items, the cable
+  layer's reel). A `var/const` is a constant. Sixteen `ALLOW(reads)` annotations that this made unnecessary are gone; the windoor's claw
+  check is the library's `req_can_shred(15)`.
+- **Requirements on tracked state**: the beehive's `closed`, the honey extractor's `processing` and `honey`, the material furnace's
+  `firing`, the paper shredder's `paperamount`, a honey frame's `honey` and a bee pack's `full` are `TRACKED`; the beehive's frames
+  (`ref_many`) and the furnace's output (`ref_one`) are declared relations. The shredder's "empty bin" needs `req_capable()` and paper in
+  the bin; its separate posture check (lying, restrained) is gone.
+- **Arcade tickets are a `stack()` binding** that takes the two tickets itself; a short stack is refused with the binding's "You don't have
+  enough for that." (was "you need 2 tickets to claim a prize").
+- **The waste processor's drops** check their silent guard in the effect and decline, like the centrifuge; **the resleever's drag** is
+  offered to humans and cyborgs only (a `when()` on the actor) and needs the machine panel shut (`maintenance_panel_shut()`); **a
+  cyborg's item click on a conveyor** is its own op that takes the click and does nothing (the module never drops), ahead of the drop.

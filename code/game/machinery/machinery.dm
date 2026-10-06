@@ -822,3 +822,8 @@ OM_FIELD(/obj/machinery, panel_open, FALSE, CHANGE_MACHINE_PANEL)
 	return slot_item(slot_id)
 
 READS_AS(/obj/machinery/proc/slot_occupant, OCCUPANT_KEY)
+
+/// The machine's maintenance panel is shut (a legacy machine panel, maintenance_flags; not a capability door): the requirement of an op
+/// that must not reach into an open machine.
+/obj/machinery/proc/maintenance_panel_shut(datum/act/op/A)
+	return !panel_open

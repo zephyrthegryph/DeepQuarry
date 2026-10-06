@@ -68,7 +68,7 @@ MSG_DEF(machine/slash, "You slash at %T%!", "%U% slashes at %T%!")
 /proc/held_release_reason(datum/act/op/A)
 	READS_FROM(A)
 	if(!A.held)
-		return /datum/msg/req_wrong_item
+		return null
 	return A.held.loc?.release_refusal(A.held, A.actor)
 
 /// The machine is broken (the BROKEN bit atom_break() sets): what breakable() draws and says.
@@ -154,9 +154,9 @@ CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE, key = NONE, board = null, repair 
 /datum/capability/def/wall_machine/entries()
 	return list(machine_basics(board, repair, frame, powered), wall_mount(offset, offset_ns))
 
-/// The actor has claws that tear machines open (a species that can_shred()).
-/proc/req_can_shred()
-	return part_make(/datum/entry/part/req/can_shred)
+/// The actor has claws that tear machines open (a species that can_shred() at `force`: a windoor asks 15).
+/proc/req_can_shred(force = 14)
+	return part_make(/datum/entry/part/req/can_shred, list("force" = force))
 
 /datum/entry/part/req/can_shred
 	part_name = "req_can_shred"
@@ -164,7 +164,7 @@ CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE, key = NONE, board = null, repair 
 
 /datum/entry/part/req/can_shred/holds(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.actor
-	return istype(H) && H.species?.can_shred(H, FALSE, 14)
+	return istype(H) && H.species?.can_shred(H, FALSE, src.args?["force"] || 14)
 
 /// The slash is offered to a bare hand with claws, on a holder something hears the slash of (anything else the touch means is left alone).
 /atom/proc/claw_slash_offered(datum/act/op/A)

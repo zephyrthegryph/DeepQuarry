@@ -61,6 +61,11 @@ human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item menu: Ui open
+human|/obj/item menu: Unsecure (refused: needs a wrench)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Ui open
 wires: Electrification, ID Scan, Item Throw
-keys: gen_drag_interaction_drag_buckle, gen_hand_ungated_smartfridge_interaction_hand, gen_item_smartfridge_interaction_item, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, release, ui_open, use_crowbar, use_screwdriver, use_wrench
+keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, release, smartfridge_interaction_hand, smartfridge_interaction_item, ui_open, use_crowbar, use_screwdriver, use_wrench
 

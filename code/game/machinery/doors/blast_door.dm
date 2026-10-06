@@ -107,7 +107,7 @@ CAPABILITIES(/obj/machinery/door/blast)
 /// A xeno's claws are on the hand.
 /obj/machinery/door/blast/proc/claws_force(datum/act/op/A)
 	var/mob/living/carbon/human/X = A.actor
-	return !A.held && istype(X) && istype(X.species, /datum/species/xenos) // ALLOW(reads): a body's species is fixed for the touch's life; the click re-evaluates it
+	return !A.held && istype(X) && istype(X.species, /datum/species/xenos)
 
 /// Claws force a shut door open slowly (15 seconds) and an open one shut quicker (5).
 /obj/machinery/door/blast/proc/claws_wait(datum/act/A)

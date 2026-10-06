@@ -43,50 +43,49 @@
 
 	var/heat = 0
 
+MSG_DEF_SELF(radiocarbon_spectrometer/scanning, "you can't do that while it's scanning")
 
-EXTEND_INTERACTIONS(/obj/machinery/radiocarbon_spectrometer, \
-	INTERACT_INSERT(/obj/item, PROC_REF(interaction_use_item), "Use", REQ_FIELD_NOT("scanning", "you can't do that while it's scanning")), \
-	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_use)), \
-)
-
-/obj/machinery/radiocarbon_spectrometer/proc/interaction_use_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/radiocarbon_spectrometer/proc/interaction_use_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/reagent_containers/glass))
 		var/obj/item/reagent_containers/glass/G = I
 		if(!G.is_open_container())
-			return TRUE
+			return OP_OK
 		var/choice = rerun_ask(user, "k74", PROC_REF(interaction_use_item), args, /datum/om/prompt/choice/alert, message = "What do you want to do with the container?", title = "Radiometric Scanner", choices = list("Add water","Empty water","Scan container"))
 		if(isnull(choice))
-			return
+			return OP_DECLINE
 		if(!choice)
-			return TRUE
+			return OP_OK
 		if(choice == "Add water")
 			if(!G.reagents.has_reagent(REAGENT_ID_WATER))
 				to_chat(user, span_danger("No water found in beaker."))
-				return TRUE
+				return OP_OK
 			var/trans = G.reagents.trans_id_to(src, REAGENT_ID_WATER, reagent_transfer_amount(G))
 			to_chat(user, span_info("You transfer [trans ? trans : 0]u of water into [src]."))
-			return TRUE
+			return OP_OK
 		else if(choice == "Empty water")
 			var/amount_transferred = min(G.reagents.maximum_volume - G.reagents.total_volume, reagents.total_volume)
 			var/trans = reagents.trans_to(G, amount_transferred)
 			to_chat(user, span_info("You remove [trans ? trans : 0]u of water from [src]."))
-			return TRUE
+			return OP_OK
 		// fall through
 
 	if(scanned_item())
 		to_chat(user, span_warning("[src] already has \a [scanned_item()] inside!"))
-		return TRUE
+		return OP_OK
 
 	if(!user.unEquip(I, target = src))
-		return TRUE
+		return OP_OK
 
 	rel_set(src, nameof(scanned_item), I)
 	to_chat(user, span_notice("You put [I] into [src]."))
-	return TRUE
+	return OP_OK
 
-/obj/machinery/radiocarbon_spectrometer/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/radiocarbon_spectrometer/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 	reagents(100) // COOLANT_MAX (a file-local define the generated table cannot see)
@@ -96,6 +95,8 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 	op("ejectItem", ui_act("ejectItem"), then(PROC_REF(ui_act_ejectitem)))
 	op("set_scanner_rpm_delta", ui_act("set_scanner_rpm_delta", arg("delta", num())), then(PROC_REF(ui_act_set_scanner_rpm_delta)))
 	op("inject_radiation", ui_act("inject_radiation"), then(PROC_REF(ui_act_inject_radiation)))
+	op("use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(scanning), FALSE, because = MSG(radiocarbon_spectrometer/scanning))), then(PROC_REF(interaction_use_item)))
+	op("use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 
 /obj/machinery/radiocarbon_spectrometer/ui_data(datum/act/eval/A)
 	var/list/data = list()

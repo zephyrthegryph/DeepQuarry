@@ -27,6 +27,9 @@ human|/obj/item/stack/material/steel menu: Fit engineered material
 human|/obj/item/stack/material/steel click: Click: Fit engineered material
 human|/obj/item/card/id menu: Buckle
 human|/obj/item/card/id click: nothing
+human|/obj/item/stack/material menu: Buckle
+human|/obj/item/stack/material menu: Fit engineered material
+human|/obj/item/stack/material click: Click: Fit engineered material
 human|/obj/item/pipe_painter menu: Buckle
 human|/obj/item/pipe_painter menu: Paint pipe (refused: You can't do that right now.)
 human|/obj/item/pipe_painter menu: Painter

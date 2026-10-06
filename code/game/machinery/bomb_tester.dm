@@ -95,7 +95,7 @@ DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = li
 	simulation_delay = 25 SECONDS - scan_rating SECONDS
 
 /obj/machinery/bomb_tester/proc/has_free_tank_slot(mob/actor, atom/target, obj/item/held)
-	return !tank1 || !tank2 // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
+	return !tank1 || !tank2
 
 /// Requirement (was REQ_* has_free_tank_slot): the legacy check answers TRUE to pass.
 /obj/machinery/bomb_tester/proc/has_free_tank_slot_holds(datum/act/op/A)

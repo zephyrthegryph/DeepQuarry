@@ -1,5 +1,5 @@
-/obj/machinery/reagent_refinery/mixer|human|none => gen_hand_ungated_interaction_set_rotation,gen_verb_interaction_set_rotation|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
-/obj/machinery/reagent_refinery/mixer|robot|none => gen_hand_ungated_interaction_set_rotation,gen_verb_interaction_set_rotation|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/reagent_refinery/mixer|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/reagent_refinery/mixer|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/reagent_refinery/mixer|ai|none => |
 /obj/machinery/reagent_refinery/mixer|ghost|none => |
 

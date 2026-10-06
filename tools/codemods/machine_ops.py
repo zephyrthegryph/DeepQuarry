@@ -513,7 +513,7 @@ def main(argv):
                 continue
             needs, whens = [], []
             for c in it["reqs"]:
-                got = ID.translate_req(c, t, it["kind"])
+                got = translate(c, t, it["kind"])
                 if got is None:
                     why = "requires"
                     detail[t] = c
@@ -571,6 +571,9 @@ def main(argv):
                 if kind == "DRAG":
                     ht = (h.get("types") or [None, None])[1] if not h.get("shared") else None
                     binding = ("item(%s)" % held_t) if held_t else ("item(/%s)" % ht if ht else "item(/atom/movable)")
+                    lm = re.match(r"^list\((.*)\)$", (held_t or "").strip(), re.S)
+                    if lm:
+                        binding = "inputs(%s)" % ", ".join("item(%s)" % x.strip() for x in split_args(lm.group(1)) if x.strip())
                 elif kind in ("ITEM",):
                     binding = "item(/obj/item)"
                 elif kind == "INSERT":
@@ -693,6 +696,58 @@ def main(argv):
         for t in sorted(ts):
             print("        " + t + (("    [" + detail[t][:150] + "]") if t in detail else ""))
     return 0
+
+
+def msg_for(t, key, text):
+    """A MSG_DEF_SELF for a refusal text, named after the type's last path segment: (MSG(...) text, the def line)."""
+    path = "%s/%s" % (t.split("/")[-1], key)
+    return "MSG(%s)" % path, 'MSG_DEF_SELF(%s, "%s")' % (path, text.replace('"', '\\"'))
+
+
+def translate(clause, t, kind, reason=None):
+    """One legacy requirement clause -> (needs() part, [helpers]) like interact_declare.translate_req(), plus the field, anchored, panel,
+    actor-type and actor-side forms; `reason` is a REQ_BECAUSE's text."""
+    c = clause.strip()
+    m = re.match(r'^REQ_BECAUSE\((.*),\s*("(?:[^"\\]|\\.)*")\)$', c, re.S)
+    if m:
+        return translate(m.group(1), t, kind, m.group(2)[1:-1])
+    m = re.match(r'^REQ_FIELD(_NOT)?\("(\w+)"(?:,\s*("(?:[^"\\]|\\.)*"))?\)$', c)
+    if m:
+        text = reason or (m.group(3)[1:-1] if m.group(3) else None)
+        value = "FALSE" if m.group(1) else "TRUE"
+        if not text:
+            return ("req_is(nameof(%s), %s, because = /datum/msg/req_failed)" % (m.group(2), value), [])
+        mref, mdef = msg_for(t, m.group(2) if m.group(1) else "no_" + m.group(2), text)
+        return ("req_is(nameof(%s), %s, because = %s)" % (m.group(2), value, mref), [mdef])
+    if c == "REQ_ANCHORED":
+        if not reason:
+            return ("req_is(nameof(anchored), TRUE, because = /datum/msg/req_failed)", [])
+        mref, mdef = msg_for(t, "unanchored", reason)
+        return ("req_is(nameof(anchored), TRUE, because = %s)" % mref, [mdef])
+    m = re.match(r"^REQ_PANEL\((TRUE|FALSE)\)$", c)
+    if m:
+        if not reason:
+            return ("req_is(nameof(panel_open), %s, because = /datum/msg/req_failed)" % m.group(1), [])
+        mref, mdef = msg_for(t, "panel", reason)
+        return ("req_is(nameof(panel_open), %s, because = %s)" % (m.group(1), mref), [mdef])
+    m = re.match(r"^REQ_TYPE\(PRED_ACTOR,\s*(list\([^)]*\)|/[\w/]+)\)$", c)
+    if m:
+        types = m.group(1)
+        lm = re.match(r"^list\((/[\w/]+)\)$", types)
+        if lm:
+            types = lm.group(1)
+        if not reason:
+            return ("req(%s, of = ON_ACTOR)" % types, [])
+        mref, mdef = msg_for(t, "actor_type", reason)
+        return ("req(%s, of = ON_ACTOR, because = %s)" % (types, mref), [mdef])
+    m = re.match(r"^REQ_ON\(PRED_ACTOR,\s*(/[\w/]+?)/proc/(\w+),\s*(\"[^\"\\]*\"|null)\)$", c)
+    if m and (m.group(1) == t or t.startswith(m.group(1) + "/")):
+        # a proc of the machine asked of the actor: hascall() never found it on a mob, so it always refused; asked of the machine, as meant
+        c = "REQ_ON(PRED_TARGET, %s/proc/%s, %s)" % (m.group(1), m.group(2), m.group(3))
+    m = re.match(r"^REQ_TARGET_STATE\((/[\w/]+?)/proc/(\w+)\)$", c)
+    if m and reason:
+        c = 'REQ_ON(PRED_TARGET, %s/proc/%s, "%s")' % (m.group(1), m.group(2), reason)
+    return ID.translate_req(c, t, kind)
 
 
 def type_has_interface(t, caps_blocks, files):

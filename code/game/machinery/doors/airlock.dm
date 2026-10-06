@@ -566,7 +566,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 /// A xeno's claws are on the hand.
 /obj/machinery/door/airlock/proc/claws_tear(datum/act/op/A)
 	var/mob/living/carbon/human/X = A.actor
-	return !A.held && istype(X) && istype(X.species, /datum/species/xenos) // ALLOW(reads): a body's species is fixed for the touch's life; the click re-evaluates it
+	return !A.held && istype(X) && istype(X.species, /datum/species/xenos)
 
 /// How long the tear takes: internals behind bolts or a weld, forcing a shut door, nothing for an open one (it is pushed shut).
 /obj/machinery/door/airlock/proc/tear_wait(datum/act/A)

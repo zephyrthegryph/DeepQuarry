@@ -1,6 +1,5 @@
-/obj/machinery/floorlayer|human|none => floorlayer_toggle|floorlayer_load_tile:needs a tile
-/obj/machinery/floorlayer|robot|none => floorlayer_toggle|gen_robot_interaction_swallow:not possible right now,floorlayer_load_tile:needs a tile
+/obj/machinery/floorlayer|human|none => |
+/obj/machinery/floorlayer|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/floorlayer|ai|none => |
 /obj/machinery/floorlayer|ghost|none => |
-/obj/machinery/floorlayer|human|/obj/item/stack/tile => floorlayer_toggle,floorlayer_load_tile|
 

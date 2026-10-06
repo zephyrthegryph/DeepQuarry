@@ -367,18 +367,24 @@ APPEARANCE_TEMPLATE(/obj/machinery/transhuman/synthprinter, "pod_{appearance_mod
 	var/manip_rating = get_part_rating(/obj/item/stock_parts/manipulator)
 	blur_amount = (48 - manip_rating * 8)
 
-EXTEND_INTERACTIONS(/obj/machinery/transhuman/resleever, \
-	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_open_ui)), \
-	INTERACT_ITEM(null, PROC_REF(resleever_interaction_item)), \
-	INTERACT_DRAG("Put inside", PROC_REF(resleever_interaction_drag), REQ_PANEL(FALSE), REQ_TARGET_STATE(/obj/machinery/transhuman/resleever/proc/can_take_dragged)), \
-	INTERACT_VERB("EJECT Occupant", PROC_REF(resleever_verb_eject)), \
-	INTERACT_VERB("Move INSIDE", PROC_REF(resleever_verb_move_inside)), \
-)
+/// Requirement (was REQ_* can_take_dragged): the legacy check answers TRUE to pass.
+/obj/machinery/transhuman/resleever/proc/can_take_dragged_holds(datum/act/op/A)
+	var/answer = can_take_dragged(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_take_dragged_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/transhuman/resleever/proc/can_take_dragged_refusal(datum/act/op/A)
+	var/answer = can_take_dragged(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
 
 CAPABILITIES(/obj/machinery/transhuman/resleever)
 	interface("ResleevingPod", title = "Resleever")
 	without("ui_open")
 	ui_shape(occupied = bool(), name = schema_text(), health = num(), stat = num(), mindStatus = bool(), mindName = schema_text())
+	op("resleever_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(resleever_interaction_item)))
+	op("resleever_interaction_drag", item(/mob/living/carbon), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put inside"), when(req(list(/mob/living/carbon/human, /mob/living/silicon/robot), of = ON_ACTOR)), needs(req(PROC_REF(maintenance_panel_shut), because = /datum/msg/req_failed), req(PROC_REF(can_take_dragged_holds), because = PROC_REF(can_take_dragged_refusal))), then(PROC_REF(resleever_interaction_drag)))
+	op("resleever_verb_eject", menu(), label("EJECT Occupant"), needs(req_adjacent(), req_capable()), then(PROC_REF(resleever_verb_eject)))
+	op("resleever_verb_move_inside", menu(), label("Move INSIDE"), needs(req_adjacent(), req_capable()), then(PROC_REF(resleever_verb_move_inside)))
 
 /obj/machinery/transhuman/resleever/ui_prepare(mob/user, datum/tgui/ui)
 	if(!operable())
@@ -401,18 +407,20 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 	return data
 
 /// Old attackby.
-/obj/machinery/transhuman/resleever/proc/resleever_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/transhuman/resleever/proc/resleever_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	src.add_fingerprint(user)
 	if(default_part_replacement(user, W))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(W, /obj/item/grab))
 		var/obj/item/grab/G = W
 		if(!ismob(G?.grab_target()))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/mob/M = G?.grab_target()
 		if(put_mob(M, user))
 			consume(G, user)
-			return INTERACTION_HANDLED_PASS //Don't call up else we'll get attack messsages
+			return OP_PASS //Don't call up else we'll get attack messsages
 	if(istype(W, /obj/item/paicard/sleevecard))
 		var/obj/item/paicard/sleevecard/C = W
 		user.unEquip(C)
@@ -420,9 +428,9 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 		consume(C, user)
 		sleevecards++
 		to_chat(user, span_notice("You store \the [C] in \the [src]."))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
 /// Requirement: a mob carrying others can't be put inside. Anything that isn't a mob is turned away silently by the effect.
 /obj/machinery/transhuman/resleever/proc/can_take_dragged(mob/user, atom/target, atom/movable/held)
@@ -433,20 +441,19 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 	return TRUE
 
 /// Old MouseDrop_T.
-/obj/machinery/transhuman/resleever/proc/resleever_interaction_drag(mob/user, mob/living/carbon/O, datum/interaction/interaction)
+/obj/machinery/transhuman/resleever/proc/resleever_interaction_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/carbon/O = A.held
 	if(!istype(O))
-		return 0 //not a mob
+		return OP_DECLINE //not a mob
 	if(user.incapacitated())
-		return 0 //user shouldn't be doing things
+		return OP_DECLINE //user shouldn't be doing things
 	if(O.anchored)
-		return 0 //mob is anchored???
+		return OP_DECLINE //mob is anchored???
 	if(get_dist(user, src) > 1 || get_dist(user, O) > 1)
-		return 0 //doesn't use adjacent() to allow for non-GLOB.cardinal (fuck my life)
-	if(!ishuman(user) && !isrobot(user))
-		return 0 //not a borg or human
-
+		return OP_DECLINE //doesn't use adjacent() to allow for non-GLOB.cardinal (fuck my life)
 	if(O?.buckled_to())
-		return 0
+		return OP_DECLINE
 
 	if(put_mob(O, user))
 		if(O == user)
@@ -455,7 +462,7 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 			act_message(user, O, others = "%U% puts %T% into \the [src].")
 
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/transhuman/resleever/proc/putmind(datum/transhuman/mind_record/MR, mode = 1, mob/living/carbon/human/override = null, db_key)
 	var/mob/living/carbon/human/occupant = get_occupant()
@@ -563,7 +570,8 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 	return 1
 
 /// Old EJECT Occupant verb.
-/obj/machinery/transhuman/resleever/proc/resleever_verb_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/transhuman/resleever/proc/resleever_verb_eject(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat != 0)
 		return
 	go_out()
@@ -571,7 +579,8 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 	return
 
 /// Old Move INSIDE verb.
-/obj/machinery/transhuman/resleever/proc/resleever_verb_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/transhuman/resleever/proc/resleever_verb_move_inside(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat != 0 || !operable())
 		return
 	put_mob(user, user)

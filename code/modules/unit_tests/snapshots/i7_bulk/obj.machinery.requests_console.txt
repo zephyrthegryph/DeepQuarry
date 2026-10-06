@@ -1,7 +1,5 @@
-/obj/machinery/requests_console|human|none => machine_open_ui|requests_console_id:needs an identification card,requests_console_stamp:needs a rubber stamp
-/obj/machinery/requests_console|robot|none => machine_open_ui|gen_robot_interaction_swallow:not possible right now,requests_console_id:needs an identification card,requests_console_stamp:needs a rubber stamp
+/obj/machinery/requests_console|human|none => |
+/obj/machinery/requests_console|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/requests_console|ai|none => |
 /obj/machinery/requests_console|ghost|none => |
-/obj/machinery/requests_console|human|/obj/item/card/id => requests_console_id,machine_open_ui|requests_console_stamp:needs a rubber stamp
-/obj/machinery/requests_console|human|/obj/item/stamp => requests_console_stamp,machine_open_ui|requests_console_id:needs an identification card
 

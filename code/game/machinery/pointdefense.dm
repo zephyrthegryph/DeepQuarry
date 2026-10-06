@@ -41,13 +41,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 	interface("PointDefenseControl")
 	op("toggle_active", ui_act("toggle_active", arg("target")), then(PROC_REF(ui_act_toggle_active)))
 	ref_many(nameof(targets))
-
-/obj/machinery/pointdefense_control/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-		/datum/interaction/machine_item/part_replacement,
-	)
-	..()
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 
 /obj/machinery/pointdefense_control/proc/ui_act_toggle_active(datum/act/op/A, target)
 	var/mob/user = A.actor
@@ -171,12 +165,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
-/obj/machinery/pointdefense/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/part_replacement,
-	)
-	..()
-
 //Guns cannot shoot through hull or generally dense turfs.
 /obj/machinery/pointdefense/proc/space_los(meteor)
 	for(var/turf/T in getline(src,meteor))
@@ -220,6 +208,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/pointdefense)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), gate = PROC_REF(operable), wakes_on = list(nameof(active), nameof(stat)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 
 /obj/machinery/pointdefense/proc/work_step(datum/act/timer/A)
 	var/desiredir = ATAN2(transform.b, transform.a) > 0 ? NORTH : SOUTH

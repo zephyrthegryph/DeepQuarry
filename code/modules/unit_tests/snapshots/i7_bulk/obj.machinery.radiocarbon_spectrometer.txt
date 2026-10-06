@@ -1,6 +1,5 @@
-/obj/machinery/radiocarbon_spectrometer|human|none => gen_hand_ungated_interaction_use|gen_insert_interaction_use_item:needs an item
-/obj/machinery/radiocarbon_spectrometer|robot|none => gen_hand_ungated_interaction_use|gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_use_item:needs an item
+/obj/machinery/radiocarbon_spectrometer|human|none => |
+/obj/machinery/radiocarbon_spectrometer|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/radiocarbon_spectrometer|ai|none => |
 /obj/machinery/radiocarbon_spectrometer|ghost|none => |
-/obj/machinery/radiocarbon_spectrometer|human|/obj/item => gen_insert_interaction_use_item,gen_hand_ungated_interaction_use|
 

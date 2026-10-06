@@ -111,27 +111,30 @@ DECLARE_APPEARANCE(/obj/machinery/protean_reconstitutor, "appearance_tank_full",
 			. += span_warning("The positronic brain appears to be inactive!")
 	. += "The readout shows that it has [nanomass_reserve] units of nanites ready for use. It requires [nanomass_required] per \'revive\' process, and has a maximum capacity of [nanotank_max] units."
 
-EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
-	INTERACT_ITEM(null, PROC_REF(reconstitutor_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(reconstitutor_interaction_hand), REQ_BECAUSE(REQ_FIELD_NOT("processing_revive"), "reconstitution cycle currently in progress, please wait")), \
-)
+CAPABILITIES(/obj/machinery/protean_reconstitutor)
+	op("reconstitutor_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(reconstitutor_interaction_item)))
+	op("reconstitutor_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(processing_revive), FALSE, because = MSG(protean_reconstitutor/processing_revive))), then(PROC_REF(reconstitutor_interaction_hand)))
+
+MSG_DEF_SELF(protean_reconstitutor/processing_revive, "reconstitution cycle currently in progress, please wait")
 
 /// Old attackby; a slotted part still went on to ..(), so it falls through.
-/obj/machinery/protean_reconstitutor/proc/reconstitutor_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/protean_reconstitutor/proc/reconstitutor_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	src.add_fingerprint(user)
 	if(processing_revive)
 		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
 		playsound(src, buzzsound, 100, 1, -1)
-		return TRUE
+		return OP_OK
 
 	if(default_part_replacement(user, W))
-		return TRUE
+		return OP_OK
 
 	if(istype(W,/obj/item/mmi/digital/posibrain/nano))
 		var/obj/item/mmi/digital/posibrain/nano/NB = W
 		if(!NB.get_occupant()?.client)
 			to_chat(user,span_warning("You cannot use an inactive positronic brain for this process."))
-			return TRUE
+			return OP_OK
 		to_chat(user,span_notice("You slot \the [NB] into \the [src]."))
 		move_into(src, nameof(src.protean_brain), NB, user)
 
@@ -147,17 +150,17 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 		var/obj/item/stack/nanopaste/NP = W
 		if(nanomass_reserve >= nanotank_max)
 			to_chat(user,span_notice("The tank is full!"))
-			return TRUE
+			return OP_OK
 		var/paste_gain = NP.amount * max(1,NP.mech_repair / paste_inefficiency)
 		var/paste_label = "\the [NP]"
 		if(!consume(NP, user))
-			return TRUE
+			return OP_OK
 		nanomass_reserve += paste_gain
 		if(nanomass_reserve > nanotank_max)
 			nanomass_reserve = nanotank_max
 		to_chat(user,span_notice("You fill \the [src] with paste from [paste_label]. The display now reads [nanomass_reserve]/[nanotank_max] units."))
 	update_icon()
-	return FALSE
+	return OP_DECLINE
 
 /obj/machinery/protean_reconstitutor/wrench_act(mob/user, obj/item/tool)
 	if(processing_revive)
@@ -212,16 +215,17 @@ CAPABILITIES(/datum/prompt/choice/protean_component)
 /obj/machinery/protean_reconstitutor/var/tmp/list/materials_cache
 
 /// Old attack_hand (it never reached the machinery gate).
-/obj/machinery/protean_reconstitutor/proc/reconstitutor_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/protean_reconstitutor/proc/reconstitutor_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!protean_brain || !protean_orchestrator || !protean_refactory || (nanomass_reserve < nanomass_required))
 		//no brain, no orchestrator, and/or not enough goo
 		to_chat(user,span_warning("Essential components missing, or insufficient materials available!"))
 		playsound(src, buzzsound, 100, 1, -1)
 		update_icon()
-		return TRUE
+		return OP_OK
 	if(!protean_brain.get_occupant()?.client)
 		src.visible_message(span_warning("\The [src] chirps, \"Warning, no positronic neural network activity detected! Recommend removing inactive core.\""))
-		return TRUE
+		return OP_OK
 	else if(!processing_revive && protean_brain && protean_orchestrator && protean_refactory && (nanomass_reserve >= nanomass_required))
 		//we're good, let's get recombobulating!
 		act_message(user, src, others = span_notice("%U% initializes %T%. It chirps, \"Please stand by, synchronizing components... estimated time to completion: five minutes.\""))
@@ -235,7 +239,7 @@ CAPABILITIES(/datum/prompt/choice/protean_component)
 		log_game("PROTEAN: [key_name(user)] started a reconstitution cycle at [AREACOORD(src)]")
 		after(src, base_cook_time, PROC_REF(reconstitute_begin))
 	update_icon()
-	return TRUE
+	return OP_OK
 
 /// Reconstitution step 1: the body is grown after the base cook time.
 /obj/machinery/protean_reconstitutor/proc/reconstitute_begin()

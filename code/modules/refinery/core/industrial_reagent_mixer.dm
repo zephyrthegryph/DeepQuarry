@@ -76,20 +76,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/at
 	var/image/arm = image(icon, icon_state = "mixer_arm", dir = angle2dir(mixer_angle))
 	. += arm
 
-EXTEND_INTERACTIONS(/obj/machinery/reagent_refinery/mixer, \
-	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_set_rotation)), \
-	INTERACT_VERB("Set Mixer Rotation", PROC_REF(interaction_set_rotation), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now")), \
-)
-
-/obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation(datum/act/op/A)
+	var/mob/user = A.actor
 	if(mixer_rotation_rate > 0)
 		mixer_rotation_rate = -45
 		to_chat(user,span_notice("You set \the [src] to rotate counter clockwise."))
 	else
 		mixer_rotation_rate = 45
 		to_chat(user,span_notice("You set \the [src] to rotate clockwise."))
-	return TRUE
-
+	return OP_OK
 
 /obj/machinery/reagent_refinery/mixer/examine(mob/user, infix, suffix)
 	. = ..()
@@ -114,7 +109,6 @@ EXTEND_INTERACTIONS(/obj/machinery/reagent_refinery/mixer, \
 		got_input = TRUE
 		update_icon()
 
-
 /// Busy while it turns between inputs; it waits (asleep) facing an input until reagents arrive.
 /obj/machinery/reagent_refinery/mixer/refinery_busy()
 	if(mixer_angle == dir2angle(dir))
@@ -127,3 +121,5 @@ EXTEND_INTERACTIONS(/obj/machinery/reagent_refinery/mixer, \
 
 CAPABILITIES(/obj/machinery/reagent_refinery/mixer)
 	without("reagent_refinery_set_transfer_amount")
+	op("set_rotation", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_set_rotation)))
+	op("set_rotation_2", menu(), label("Set Mixer Rotation"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_set_rotation)))

@@ -54,6 +54,8 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("smartfridge_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(is_powered_for_stocking_holds), because = PROC_REF(is_powered_for_stocking_refusal))), then(PROC_REF(smartfridge_interaction_item)))
+	op("smartfridge_interaction_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(smartfridge_interaction_hand)))
 
 /obj/machinery/smartfridge/proc/wire_lights()
 	return list(
@@ -91,7 +93,6 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	if(!inserted && slot_id == CONTAINER_SLOT_STOCK)
 		for(var/datum/stored_item/I as anything in item_records)
 			I.forget(thing)
-
 
 // a persistent fridge is forgotten by persistence.
 /obj/machinery/smartfridge/lifecycle_dematerialize()
@@ -179,17 +180,24 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge, TYPE_PROC_REF(/atom, appeara
 			if(6 to INFINITY)
 				. += "[icon_base]-[icon_contents]3"
 
-EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
-	INTERACT_ITEM(null, PROC_REF(smartfridge_interaction_item), REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/smartfridge/proc/is_powered_for_stocking), "it is unpowered and useless")), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(smartfridge_interaction_hand)), \
-)
+/// Requirement (was REQ_* is_powered_for_stocking): the legacy check answers TRUE to pass.
+/obj/machinery/smartfridge/proc/is_powered_for_stocking_holds(datum/act/op/A)
+	var/answer = is_powered_for_stocking(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why is_powered_for_stocking_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/smartfridge/proc/is_powered_for_stocking_refusal(datum/act/op/A)
+	var/answer = is_powered_for_stocking(A.actor, src, A.held)
+	return istext(answer) ? answer : "it is unpowered and useless"
 
 /// Requirement: the fridge has power.
 /obj/machinery/smartfridge/proc/is_powered_for_stocking(mob/user, atom/target, obj/item/held)
 	return !has_stat(NOPOWER)
 
 /// Old attackby.
-/obj/machinery/smartfridge/proc/smartfridge_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/smartfridge/proc/smartfridge_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(accept_check(O))
 		user.remove_from_mob(O)
 		stock(O)
@@ -215,19 +223,19 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 		var/obj/item/wrapped = B.get_wrapped_item()
 		if(!wrapped)
 			to_chat(user, span_filter_notice("\The [B] is not holding anything."))
-			return TRUE
+			return OP_OK
 		else if(accept_check(wrapped))
 			stock(wrapped)
 			to_chat(user, span_filter_notice("You use \the [B] to put \the [wrapped] into \the [src]."))
 			sortTim(item_records, GLOBAL_PROC_REF(cmp_stored_item_name))
 		else
 			to_chat(user, span_filter_notice("\The [src] refuses \the [wrapped]."))
-		return TRUE
+		return OP_OK
 
 	else
 		to_chat(user, span_notice("\The [src] smartly refuses [O]."))
-		return TRUE
-	return INTERACTION_HANDLED_PASS
+		return OP_OK
+	return OP_PASS
 
 /obj/machinery/smartfridge/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -296,12 +304,13 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 	update_icon()
 
 /// Old attack_hand.
-/obj/machinery/smartfridge/proc/smartfridge_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/smartfridge/proc/smartfridge_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
-		return TRUE
+		return OP_OK
 	wires_open(src, user)
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /// The window's data.
 /obj/machinery/smartfridge/ui_data(datum/act/eval/A)

@@ -99,7 +99,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 
 /// Requirement (was REQ_* drag_meant): the legacy check answers TRUE to pass.
 /obj/machinery/vr_sleeper/proc/drag_meant_holds(datum/act/op/A)
-	var/answer = drag_meant(A.actor, src, A.held)
+	var/mob/typed_held = A.held
+	var/answer = drag_meant(A.actor, src, typed_held)
 	return !istext(answer) && !!answer
 
 /obj/machinery/vr_sleeper/proc/interaction_scan(datum/act/op/A)

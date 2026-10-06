@@ -38,6 +38,10 @@ CAPABILITIES(/obj/machinery/conveyor)
 	param(nameof(dir), pos = 1)
 	param(nameof(starts_on), pos = 2)
 	adjacency(ADJ_KIND_CONVEYOR, dirs = ADJ_ALL_AROUND)
+	// a cyborg's module never drops onto the belt: its item click is taken and nothing happens
+	op("conveyor_robot_swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("conveyor_drop_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Drop on belt"), then(PROC_REF(interaction_drop_item)))
+	op("conveyor_push_pulled", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Push pulled object"), then(PROC_REF(interaction_push_pulled)))
 
 /// A conveyor that starts running (its constructor param).
 /obj/machinery/conveyor/var/starts_on = FALSE
@@ -141,26 +145,15 @@ CAPABILITIES(/obj/machinery/conveyor)
 	affecting = movable_contents
 	after(src, 0.1 SECONDS, PROC_REF(move_affecting)) // slight delay to prevent infinite propagation due to map order
 
-/obj/machinery/conveyor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/conveyor_drop_item,
-		/datum/interaction/machine_hand/ungated/conveyor_push_pulled,
-	)
-	..()
-
 // attack with item, place item on conveyor. Old attackby never called ..(), so the whole thing stays in the effect.
-/datum/interaction/machine_item/conveyor_drop_item
-	id = "conveyor_drop_item"
-	name = "Drop on belt"
-	held_type = /obj/item
-	effect = /obj/machinery/conveyor/proc/interaction_drop_item
 
-/obj/machinery/conveyor/proc/interaction_drop_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(isrobot(user))	return TRUE //Carn: fix for borgs dropping their modules on conveyor belts
-	if(I.loc != user)	return TRUE // This should stop mounted modules ending up outside the module.
+/obj/machinery/conveyor/proc/interaction_drop_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	if(I.loc != user)	return OP_OK // This should stop mounted modules ending up outside the module.
 
 	user.drop_item(get_turf(src))
-	return TRUE
+	return OP_OK
 
 /obj/machinery/conveyor/multitool_act(mob/user, obj/item/I)
 	if(!panel_open)
@@ -169,19 +162,16 @@ CAPABILITIES(/obj/machinery/conveyor)
 	return ITEM_INTERACT_BLOCKING
 
 // attack with hand, move pulled object onto conveyor. Old attack_hand never called ..(), so ungated.
-/datum/interaction/machine_hand/ungated/conveyor_push_pulled
-	id = "conveyor_push_pulled"
-	name = "Push pulled object"
-	effect = /obj/machinery/conveyor/proc/interaction_push_pulled
 
-/obj/machinery/conveyor/proc/interaction_push_pulled(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/conveyor/proc/interaction_push_pulled(datum/act/op/A)
+	var/mob/user = A.actor
 	var/atom/movable/pulling = user?.pulling_target()
 	if ((!( user.canmove ) || user.restrained() || !pulling))
-		return TRUE
+		return OP_OK
 	if (pulling.anchored)
-		return TRUE
+		return OP_OK
 	if ((pulling.loc != user.loc && get_dist(user, pulling) > 1))
-		return TRUE
+		return OP_OK
 	if (ismob(pulling))
 		var/mob/M = pulling
 		M.stop_pulling()
@@ -190,7 +180,7 @@ CAPABILITIES(/obj/machinery/conveyor)
 	else
 		step(pulling, get_dir(pulling.loc, src))
 		user.stop_pulling()
-	return TRUE
+	return OP_OK
 
 // make the conveyor broken
 // also propagate inoperability to any connected conveyor with the same ID
@@ -258,6 +248,7 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operated), wakes_on = list(nameof(operated)))
 	ref_many(nameof(conveyors), /obj/machinery/conveyor, by = nameof(id))
 	ref_many(nameof(linked_switches), /obj/machinery/conveyor_switch, by = nameof(id))
+	op("conveyor_switch_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(lets_in_holds), because = PROC_REF(lets_in_refusal))), then(PROC_REF(interaction_toggle)))
 
 /obj/machinery/conveyor_switch/Initialize(mapload)
 	. = ..()
@@ -292,23 +283,22 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 		C.set_operating(position)
 	return PROCESS_KILL
 
-/obj/machinery/conveyor_switch/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/conveyor_switch_toggle,
-	)
-	..()
+/// Requirement (was REQ_* lets_in): the legacy check answers TRUE to pass.
+/obj/machinery/conveyor_switch/proc/lets_in_holds(datum/act/op/A)
+	var/answer = lets_in(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why lets_in_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/conveyor_switch/proc/lets_in_refusal(datum/act/op/A)
+	var/answer = lets_in(A.actor, src, A.held)
+	return istext(answer) ? answer : "access denied"
 
 // attack with hand, switch position. Old attack_hand never called ..(), so ungated.
-/datum/interaction/machine_hand/ungated/conveyor_switch_toggle
-	id = "conveyor_switch_toggle"
-	name = "Toggle"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/conveyor_switch/proc/lets_in, "access denied"))
-	effect = /obj/machinery/conveyor_switch/proc/interaction_toggle
 
 /obj/machinery/conveyor_switch/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
 
-/obj/machinery/conveyor_switch/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/conveyor_switch/proc/interaction_toggle(datum/act/op/A)
 	if(position == 0)
 		if(last_pos < 0 || oneway == 1)
 			position = 1
@@ -327,7 +317,7 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 	for(var/obj/machinery/conveyor_switch/S as anything in linked_switches)
 		S.position = position
 		S.update()
-	return TRUE
+	return OP_OK
 
 /obj/machinery/conveyor_switch/welder_act(mob/user, obj/item/I)
 	if(!panel_open)
@@ -384,7 +374,6 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 				items_moved++
 		if(items_moved >= 10)
 			break
-
 
 /datum/prompt/text/conveyor_id
 	timeout = 0
