@@ -626,7 +626,6 @@ CAPABILITIES(/obj/item/weldingtool/electric)
 		return OP_DECLINE
 	else
 		return OP_DECLINE
-	return OP_DECLINE
 
 /// Old attackby: a device cell goes in (the click goes on).
 /obj/item/weldingtool/electric/proc/electric_interaction_item(datum/act/op/A)
@@ -645,7 +644,6 @@ CAPABILITIES(/obj/item/weldingtool/electric)
 			to_chat(user, span_notice("\The [src] cannot use that type of cell."))
 	else
 		return OP_DECLINE
-	return OP_PASS
 
 /obj/item/weldingtool/electric/proc/get_external_power_supply()
 	if(isrobotmultibelt(src.loc)) //We are in a multibelt

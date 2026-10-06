@@ -170,7 +170,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/baton, TYPE_PROC_REF(/atom, appearance_o
 		return OP_DECLINE
 	else
 		return OP_DECLINE
-	return OP_DECLINE
 
 /obj/item/melee/baton/proc/baton_power_toggled(datum/act/op/A)
 	var/mob/user = A.actor
