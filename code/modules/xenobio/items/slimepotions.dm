@@ -543,7 +543,7 @@ EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mi
 		return ..()
 
 	to_chat(user, span_notice("You feed \the [xenobio_slime] the agent. It may now eventually develop proper sapience."))
-	xenobio_slime.ghostjoin = 1
+	xenobio_slime.set_ghostjoin(1)
 	registry_join(REGISTRY_GHOST_PODS, xenobio_slime)
 	if(!xenobio_slime.vore_active)
 		grant(xenobio_slime, granted_verb(/mob/living/simple_mob/proc/animal_nom), xenobio_slime)

@@ -2191,6 +2191,12 @@ cadences still follow it through `relevance_changed()` until the framework goes.
   `TRACKED`). **The crematorium button** needs crematorium access through `req_access()`.
 - **`req_mutation(M, of = ON_ACTOR)`**: an engine requirement on the actor's mutations (reads `MOB_KEY_CONDITIONS`); the girder's hulk
   smash is `when(req_mutation(HULK))`.
+- **Devices**: the emergency beacon's pick-up refusal and wrench appear only once it is active (an inactive beacon is picked up as any
+  item); the flashlight takes only a cell (`item(/obj/item/cell)`, only while it uses power); the transfer valve takes only a tank or an
+  assembly; the intercom no longer has a catch-all item op that only fingerprinted it; the plant analyzer drops the gas scan it never ran.
+  The uplink multitool opens its uplink through its own in-hand op. The pAI's radio inherits the ordinary item ops it once replaced (it
+  lives inside the card, out of reach).
+- **A ghost joining a simple mob** is the observer op `ghost_join` with a yes/no step (re-checked on the answer); `ghostjoin` is `TRACKED`.
 
 ## Leftovers: the machinery sweep (rewrite/leftovers)
 

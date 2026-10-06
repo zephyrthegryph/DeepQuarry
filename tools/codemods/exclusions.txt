@@ -14,11 +14,7 @@ interact /obj/item/picnic_blankets_carried unknown_read
 interact /obj/structure/picnic_blanket_deployed unknown_read
 # Lowering would move a silicon spec or a guarded legacy handler under a lint it is baselined against; the
 # interaction codemod cannot convert them yet (INTERACT_SILICON, INTERACT_OBSERVER, a related replacer).
-lower /obj/item/radio/borg inline_refusal
 # Second pass (after the test-caller and key fixes reached more types).
-interact /obj/item/emergency_beacon request_in_effect
-interact /obj/item/holowarrant request_in_effect
-interact /obj/item/sleevemate request_in_effect
 interact /obj/item/perfect_tele_beacon request_in_effect
 interact /obj/item/poi/broken_drone_circuit unknown_read
 # A question opened from the emag handler: asks() on the op, by hand.

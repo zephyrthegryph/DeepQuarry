@@ -632,7 +632,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 		visible_message(span_danger("\The [s] tumbles out of \the [src]!"))
 		//legacy ai_holder.hostile/retaliate replaced with brain API.
 		s.ai_brain?.set_hostile(FALSE)
-		s.ghostjoin = TRUE
+		s.set_ghostjoin(TRUE)
 		s.ghostjoin_icon()
 
 	var/obj/effect/overmap/visitable/ship/simplemob/stardog/s = get_overmap_sector(z)

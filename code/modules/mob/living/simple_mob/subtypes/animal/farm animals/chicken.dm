@@ -139,7 +139,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/chick)
 		src.amount_grown += rand(1,2)
 		if(src.amount_grown >= 100)
 			var/mob/living/simple_mob/animal/passive/chicken/C = new (src.loc)
-			C.ghostjoin = 1
+			C.set_ghostjoin(1)
 			C.ghostjoin_icon()
 			registry_join(REGISTRY_GHOST_PODS, C)
 			spent(src)
