@@ -12,8 +12,11 @@
 // This is the final form of the machine pipeline's step stage (machine_step() with MACHINE_WAKE()/PROCESS_KILL): the old wake and sleep
 // calls on a machine that declares started work reach work_start()/work_stop() (machine_wake(), machinery.dm).
 
+MSG_DEF_SELF(started_work/stopped, "It isn't running.")
+MSG_DEF_SELF(started_work/running, "It is running.")
+
 CAPABILITY_TYPE(started_work, CAP_STARTED_WORK, /datum/capability/lib/started_work, key = NONE, step = null, interval = MACHINE_SERVICE_INTERVAL, starts = FALSE, when = null)
-cap_keys(CAP_STARTED_WORK, ACTIVE = null, WAITING_POWER = null)
+cap_keys(CAP_STARTED_WORK, ACTIVE = MSG(started_work/stopped), WAITING_POWER = MSG(started_work/running))
 
 /datum/capability/lib/started_work
 	holder_hooks = HOLDER_HOOK_INIT
