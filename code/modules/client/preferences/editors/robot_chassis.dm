@@ -61,8 +61,7 @@
 		"chassis_thumbs" = chassis_thumbs,
 	)
 
-UI_ACT(/datum/preference_editor/robot_chassis, "set_module", ui_act_set_module, UI_ARG_VALUE("value"))
-UI_ACT_PREF_PROC(/datum/preference_editor/robot_chassis, ui_act_set_module)
+/datum/preference_editor/robot_chassis/proc/ui_act_set_module(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/value = params["value"]
 	if(value && !(value in GLOB.robot_modules))
 		return PREF_UPDATE_REJECTED
@@ -72,7 +71,24 @@ UI_ACT_PREF_PROC(/datum/preference_editor/robot_chassis, ui_act_set_module)
 	preferences.update_preference_by_type(/datum/preference/text/human/robot_chassis, "")
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/robot_chassis, "set_chassis", ui_act_set_chassis, UI_ARG_VALUE("value"))
-UI_ACT_PREF_PROC(/datum/preference_editor/robot_chassis, ui_act_set_chassis)
+/datum/preference_editor/robot_chassis/proc/ui_act_set_chassis(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	preferences.update_preference_by_type(/datum/preference/text/human/robot_chassis, params["value"] || "")
 	return PREF_UPDATE_ACCEPTED
+
+/// /datum/preference_editor/robot_chassis's actions (the character setup window's "dq_editor_action" messages): each one's arguments go through their schemas first.
+/datum/preference_editor/robot_chassis/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+	var/list/typed
+	switch(action)
+		if("set_module")
+			typed = payload_args(src, params, list("value" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_module(user, typed, preferences, null, action)
+		if("set_chassis")
+			typed = payload_args(src, params, list("value" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_chassis(user, typed, preferences, null, action)
+	return ..()

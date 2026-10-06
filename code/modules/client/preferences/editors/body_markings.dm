@@ -43,8 +43,7 @@
 		)
 	return list("available_styles" = styles)
 
-UI_ACT(/datum/preference_editor/body_markings, "add", ui_act_add, UI_ARG_VALUE("marking"))
-UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_add)
+/datum/preference_editor/body_markings/proc/ui_act_add(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
 	if(!islist(markings))
 		markings = list()
@@ -55,8 +54,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_add)
 	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/body_markings, "remove", ui_act_remove, UI_ARG_VALUE("marking"))
-UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_remove)
+/datum/preference_editor/body_markings/proc/ui_act_remove(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
 	if(!islist(markings))
 		markings = list()
@@ -64,8 +62,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_remove)
 	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/body_markings, "move_up", ui_act_move_up, UI_ARG_VALUE("marking"))
-UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_move_up)
+/datum/preference_editor/body_markings/proc/ui_act_move_up(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
 	if(!islist(markings))
 		markings = list()
@@ -79,8 +76,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_move_up)
 	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/body_markings, "move_down", ui_act_move_down, UI_ARG_VALUE("marking"))
-UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_move_down)
+/datum/preference_editor/body_markings/proc/ui_act_move_down(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
 	if(!islist(markings))
 		markings = list()
@@ -94,8 +90,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_move_down)
 	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/body_markings, "set_color", ui_act_set_color, UI_ARG_VALUE("marking"))
-UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_set_color)
+/datum/preference_editor/body_markings/proc/ui_act_set_color(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
 	if(!islist(markings))
 		markings = list()
@@ -114,8 +109,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_set_color)
 	open_request(src, /datum/prompt/color/prefs/marking, PROC_REF(marking_color_picked), answerer = user, title = "Color picker", question = "Marking color", default = seed, preferences = preferences, marking = M)
 	return PREF_UPDATE_UNCHANGED
 
-UI_ACT(/datum/preference_editor/body_markings, "set_zone_color", ui_act_set_zone_color, UI_ARG_VALUE("marking"), UI_ARG_TEXT("zone"))
-UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_set_zone_color)
+/datum/preference_editor/body_markings/proc/ui_act_set_zone_color(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
 	if(!islist(markings))
 		markings = list()
@@ -127,8 +121,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_set_zone_color)
 	open_request(src, /datum/prompt/color/prefs/marking, PROC_REF(zone_color_picked), answerer = user, title = "Color picker", question = "Zone color: [zone]", default = seed, preferences = preferences, marking = M, zone = zone)
 	return PREF_UPDATE_UNCHANGED
 
-UI_ACT(/datum/preference_editor/body_markings, "toggle_zone", ui_act_toggle_zone, UI_ARG_TEXT("marking"), UI_ARG_TEXT("zone"))
-UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_toggle_zone)
+/datum/preference_editor/body_markings/proc/ui_act_toggle_zone(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
 	if(!islist(markings))
 		markings = list()
@@ -140,8 +133,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_toggle_zone)
 	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/body_markings, "toggle_all", ui_act_toggle_all, UI_ARG_VALUE("marking"), UI_ARG_NUM("on"))
-UI_ACT_PREF_PROC(/datum/preference_editor/body_markings, ui_act_toggle_all)
+/datum/preference_editor/body_markings/proc/ui_act_toggle_all(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
 	if(!islist(markings))
 		markings = list()
@@ -205,3 +197,57 @@ CAPABILITIES(/datum/prompt/color/prefs)
 	markings[ask.marking][ask.zone]["color"] = sanitize_hexcolor(ask.value)
 	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
 	SStgui.update_uis(preferences)
+
+/// /datum/preference_editor/body_markings's actions (the character setup window's "dq_editor_action" messages): each one's arguments go through their schemas first.
+/datum/preference_editor/body_markings/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+	var/list/typed
+	switch(action)
+		if("add")
+			typed = payload_args(src, params, list("marking" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_add(user, typed, preferences, null, action)
+		if("remove")
+			typed = payload_args(src, params, list("marking" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_remove(user, typed, preferences, null, action)
+		if("move_up")
+			typed = payload_args(src, params, list("marking" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_move_up(user, typed, preferences, null, action)
+		if("move_down")
+			typed = payload_args(src, params, list("marking" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_move_down(user, typed, preferences, null, action)
+		if("set_color")
+			typed = payload_args(src, params, list("marking" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_color(user, typed, preferences, null, action)
+		if("set_zone_color")
+			typed = payload_args(src, params, list("marking" = null, "zone" = schema_text(4096)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_zone_color(user, typed, preferences, null, action)
+		if("toggle_zone")
+			typed = payload_args(src, params, list("marking" = schema_text(4096), "zone" = schema_text(4096)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_toggle_zone(user, typed, preferences, null, action)
+		if("toggle_all")
+			typed = payload_args(src, params, list("marking" = null, "on" = num()))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_toggle_all(user, typed, preferences, null, action)
+	return ..()

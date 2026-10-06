@@ -88,8 +88,7 @@
 		"perks" = perks,
 	)
 
-UI_ACT(/datum/preference_editor/mind_body, "add_perk", ui_act_add_perk, UI_ARG_PATH("perk_path", /datum))
-UI_ACT_PREF_PROC(/datum/preference_editor/mind_body, ui_act_add_perk)
+/datum/preference_editor/mind_body/proc/ui_act_add_perk(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/perk_path = params["perk_path"]
 	if(!perk_path)
 		return PREF_UPDATE_REJECTED
@@ -106,8 +105,7 @@ UI_ACT_PREF_PROC(/datum/preference_editor/mind_body, ui_act_add_perk)
 	preferences.update_preference_by_type(list_type, current)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/mind_body, "remove_perk", ui_act_remove_perk, UI_ARG_PATH("perk_path", /datum))
-UI_ACT_PREF_PROC(/datum/preference_editor/mind_body, ui_act_remove_perk)
+/datum/preference_editor/mind_body/proc/ui_act_remove_perk(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/perk_path = params["perk_path"]
 	if(!perk_path)
 		return PREF_UPDATE_REJECTED
@@ -136,3 +134,21 @@ UI_ACT_PREF_PROC(/datum/preference_editor/mind_body, ui_act_remove_perk)
 	for(var/p in paths)
 		out += "[p]"
 	return out
+
+/// /datum/preference_editor/mind_body's actions (the character setup window's "dq_editor_action" messages): each one's arguments go through their schemas first.
+/datum/preference_editor/mind_body/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+	var/list/typed
+	switch(action)
+		if("add_perk")
+			typed = payload_args(src, params, list("perk_path" = schema_path(/datum)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_add_perk(user, typed, preferences, null, action)
+		if("remove_perk")
+			typed = payload_args(src, params, list("perk_path" = schema_path(/datum)))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_remove_perk(user, typed, preferences, null, action)
+	return ..()

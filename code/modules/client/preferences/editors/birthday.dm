@@ -35,8 +35,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/birthday, get_months, list( \
 		"months" = TYPE_TABLE_GET(src, get_months),
 	)
 
-UI_ACT(/datum/preference_editor/birthday, "set_month", ui_act_set_month, UI_ARG_NUM("value"))
-UI_ACT_PREF_PROC(/datum/preference_editor/birthday, ui_act_set_month)
+/datum/preference_editor/birthday/proc/ui_act_set_month(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/value = params["value"]
 	if(isnull(value) || value < 0 || value > 12)
 		return PREF_UPDATE_REJECTED
@@ -47,10 +46,27 @@ UI_ACT_PREF_PROC(/datum/preference_editor/birthday, ui_act_set_month)
 		preferences.update_preference_by_type(/datum/preference/numeric/human/bday_day, days_in_month(value))
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/birthday, "set_day", ui_act_set_day, UI_ARG_NUM("value"))
-UI_ACT_PREF_PROC(/datum/preference_editor/birthday, ui_act_set_day)
+/datum/preference_editor/birthday/proc/ui_act_set_day(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/value = params["value"]
 	if(isnull(value) || value < 0 || value > 31)
 		return PREF_UPDATE_REJECTED
 	preferences.update_preference_by_type(/datum/preference/numeric/human/bday_day, value)
 	return PREF_UPDATE_ACCEPTED
+
+/// /datum/preference_editor/birthday's actions (the character setup window's "dq_editor_action" messages): each one's arguments go through their schemas first.
+/datum/preference_editor/birthday/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+	var/list/typed
+	switch(action)
+		if("set_month")
+			typed = payload_args(src, params, list("value" = num()))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_month(user, typed, preferences, null, action)
+		if("set_day")
+			typed = payload_args(src, params, list("value" = num()))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_day(user, typed, preferences, null, action)
+	return ..()
