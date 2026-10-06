@@ -154,7 +154,6 @@ legacy_entry	code/modules/power/breaker_box.dm	INTERACT_SILICON("Toggle", PROC_R
 legacy_entry	code/modules/power/port_gen.dm	silicon_use = SILICON_USE_UI
 legacy_entry	code/modules/power/port_gen.dm	INTERACT_SILICON("Toggle power", PROC_REF(large_altevian_silicon_toggle)),
 legacy_entry	code/modules/power/privacy_switch.dm	silicon_use = SILICON_USE_HAND
-legacy_entry	code/modules/power/supermatter/supermatter.dm	silicon_use = SILICON_USE_UI
 legacy_entry	code/modules/random_map/drop/droppod_doors.dm	INTERACT_SILICON("Open", PROC_REF(droppod_door_silicon_use)), \
 legacy_entry	code/modules/reagents/machinery/pump.dm	silicon_use = ROBOT_USE_HAND | SILICON_USE_HAND
 legacy_entry	code/modules/reagents/machinery/pump.dm	INTERACT_SILICON("Toggle", PROC_REF(pump_silicon_toggle)),
