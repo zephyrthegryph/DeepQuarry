@@ -30,6 +30,7 @@ OM_FIELD(/obj/machinery/rnd/destructive_analyzer, busy, FALSE, CHANGE_MACHINE_SE
 CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 	owns_one(nameof(rmat), /datum/remote_materials)
 	interface("DestructiveAnalyzer")
+	extend("ui_open", needs(req_is(STAT_DISABLED, FALSE, because = MSG(rnd/disabled))))
 	extend("part_replacement.replace", needs(req(PROC_REF(idle), because = MSG(analyzer/busy))))
 	op("eject_item", ui_act("eject_item"), then(PROC_REF(ui_act_eject_item)))
 	op("deconstruct", ui_act("deconstruct", arg("deconstruct_id", schema_text(4096))), then(PROC_REF(ui_act_deconstruct)))

@@ -34,6 +34,8 @@
 CAPABILITIES(/obj/machinery/power/generator)
 	after_init(0, then(PROC_REF(connect_circulators)))
 	owns_one(nameof(soundloop), /datum/looping_sound/generator)
+	interface("TEGenerator")
+	ui_shape(totalOutput = num(), maxTotalOutput = num(), thermalOutput = num(), primary = list_of(), secondary = list_of())
 
 REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 
@@ -230,9 +232,16 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/generator, TYPE_PROC_REF(/atom, app
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/power/generator, "TEGenerator")
-
-UI_DATA_REPLACE(/obj/machinery/power/generator, "totalOutput=effective_gen:num", "maxTotalOutput=max_power:num", "thermalOutput=last_thermal_gen:num", "merge:ui_data_obj_machinery_power_generator{primary:list,secondary:list}")
+/obj/machinery/power/generator/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["totalOutput"] = effective_gen
+	data["maxTotalOutput"] = max_power
+	data["thermalOutput"] = last_thermal_gen
+	var/list/merged_1 = ui_data_obj_machinery_power_generator(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/power/generator's window data (declared on its UI_DATA row).
 /obj/machinery/power/generator/proc/ui_data_obj_machinery_power_generator(mob/user, datum/tgui/ui, datum/tgui_state/state)

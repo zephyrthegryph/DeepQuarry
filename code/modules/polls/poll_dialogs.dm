@@ -30,23 +30,22 @@
 
 // The new player owns this dialog (privacy_poll_dialog); owner is a plain relation back.
 
-DECLARE_UI_STATE(/datum/privacy_poll_dialog, GLOB.tgui_always_state)
-
-UI_DATA_REPLACE(/datum/privacy_poll_dialog, "merge:ui_data_datum_privacy_poll_dialog{answered:num}")
-
 /// The computed part of /datum/privacy_poll_dialog's window data (declared on its UI_DATA row).
-/datum/privacy_poll_dialog/proc/ui_data_datum_privacy_poll_dialog(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/privacy_poll_dialog/ui_data(datum/act/eval/A)
 	return list("answered" = answered)
 
-DECLARE_UI(/datum/privacy_poll_dialog, "PrivacyPoll", UI_TITLE("Player Poll — Privacy"))
+CAPABILITIES(/datum/privacy_poll_dialog)
+	interface("PrivacyPoll", title = "Player Poll — Privacy", state = nameof(GLOB.tgui_always_state))
+	op("vote", ui_act("vote", arg("choice")), then(PROC_REF(ui_act_vote)))
 
 /datum/privacy_poll_dialog/tgui_close(mob/user)
 	SStgui.close_uis(src)
 	qdel(src)
 
-UI_ACT(/datum/privacy_poll_dialog, "vote", ui_act_vote, UI_ARG_CHOICE("choice", list(PRIVACY_OPTION_LATER, PRIVACY_OPTION_SIGNED, PRIVACY_OPTION_ANONYMOUS, PRIVACY_OPTION_NOSTATS, PRIVACY_OPTION_ABSTAIN)))
-UI_ACT_PROC(/datum/privacy_poll_dialog, ui_act_vote)
-	var/choice = params["choice"]
+/datum/privacy_poll_dialog/proc/ui_act_vote(datum/act/op/A, choice_arg)
+	if(!isnull(choice_arg) && !(choice_arg in list(PRIVACY_OPTION_LATER, PRIVACY_OPTION_SIGNED, PRIVACY_OPTION_ANONYMOUS, PRIVACY_OPTION_NOSTATS, PRIVACY_OPTION_ABSTAIN)))
+		return FALSE
+	var/choice = choice_arg
 	if(!owner || !choice)
 		return
 	if(!SSdbcore.IsConnected())
@@ -109,9 +108,16 @@ UI_ACT_PROC(/datum/privacy_poll_dialog, ui_act_vote)
 
 // The new player owns this dialog (poll_browser_dialog); owner is a plain relation back.
 
-DECLARE_UI_STATE(/datum/poll_browser_dialog, GLOB.tgui_always_state)
-
-DECLARE_UI(/datum/poll_browser_dialog, "PollBrowser", UI_TITLE("Player Polls"))
+CAPABILITIES(/datum/poll_browser_dialog)
+	interface("PollBrowser", title = "Player Polls", state = nameof(GLOB.tgui_always_state))
+	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
+	op("select", ui_act("select", arg("id", num())), then(PROC_REF(ui_act_select)))
+	op("back", ui_act("back"), then(PROC_REF(ui_act_back)))
+	op("vote_option", ui_act("vote_option", arg("optionid", num()), arg("pollid", num())), then(PROC_REF(ui_act_vote_option)))
+	op("vote_text", ui_act("vote_text", arg("pollid", num()), arg("replytext", schema_text(4096))), then(PROC_REF(ui_act_vote_text)))
+	op("vote_text_abstain", ui_act("vote_text_abstain", arg("pollid", num())), then(PROC_REF(ui_act_vote_text_abstain)))
+	op("vote_numval", ui_act("vote_numval", arg("pollid", num()), arg("ratings")), then(PROC_REF(ui_act_vote_numval)))
+	op("vote_multi", ui_act("vote_multi", arg("optionids"), arg("pollid", num())), then(PROC_REF(ui_act_vote_multi)))
 
 /datum/poll_browser_dialog/tgui_close(mob/user)
 	SStgui.close_uis(src)
@@ -140,10 +146,8 @@ DECLARE_UI(/datum/poll_browser_dialog, "PollBrowser", UI_TITLE("Player Polls"))
 		poll_ids += id_str
 		poll_meta[id_str] = list("id" = text2num(id_str), "question" = question)
 
-UI_DATA_REPLACE(/datum/poll_browser_dialog, "merge:ui_data_datum_poll_browser_dialog{polls:list,selected:list}")
-
 /// The computed part of /datum/poll_browser_dialog's window data (declared on its UI_DATA row).
-/datum/poll_browser_dialog/proc/ui_data_datum_poll_browser_dialog(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/poll_browser_dialog/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["polls"] = list()
 	for(var/id_str in poll_ids)
@@ -297,23 +301,23 @@ UI_DATA_REPLACE(/datum/poll_browser_dialog, "merge:ui_data_datum_poll_browser_di
 		))
 	return out
 
-/datum/poll_browser_dialog/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/poll_browser_dialog/proc/ui_gate(datum/act/op/A)
 	if(!owner)
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/poll_browser_dialog, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_refresh)
+/datum/poll_browser_dialog/proc/ui_act_refresh(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	refresh_poll_list()
 	if(selected_pollid)
 		load_poll_detail(selected_pollid)
 	return TRUE
 
-UI_ACT(/datum/poll_browser_dialog, "select", ui_act_select, UI_ARG_NUM("id"))
-UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_select)
-	var/id = params["id"]
+/datum/poll_browser_dialog/proc/ui_act_select(datum/act/op/A, id_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/id = id_arg
 	if(!isnum(id))
 		return
 	selected_pollid = id
@@ -321,41 +325,48 @@ UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_select)
 	load_poll_detail(id)
 	return TRUE
 
-UI_ACT(/datum/poll_browser_dialog, "back", ui_act_back)
-UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_back)
+/datum/poll_browser_dialog/proc/ui_act_back(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	selected_pollid = null
 	selected_detail = null
 	return TRUE
 
-UI_ACT(/datum/poll_browser_dialog, "vote_option", ui_act_vote_option, UI_ARG_NUM("optionid"), UI_ARG_NUM("pollid"))
-UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_vote_option)
-	var/pollid = params["pollid"]
-	var/optionid = params["optionid"]
+/datum/poll_browser_dialog/proc/ui_act_vote_option(datum/act/op/A, optionid_arg, pollid_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/pollid = pollid_arg
+	var/optionid = optionid_arg
 	if(isnum(pollid) && isnum(optionid))
 		owner.vote_on_poll(pollid, optionid)
 	return TRUE
 
-UI_ACT(/datum/poll_browser_dialog, "vote_text", ui_act_vote_text, UI_ARG_NUM("pollid"), UI_ARG_TEXT("replytext"))
-UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_vote_text)
-	var/pollid = params["pollid"]
-	var/replytext = "[params["replytext"]]"
+/datum/poll_browser_dialog/proc/ui_act_vote_text(datum/act/op/A, pollid_arg, replytext_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/pollid = pollid_arg
+	var/replytext = "[replytext_arg]"
 	if(isnum(pollid) && length(replytext))
 		owner.log_text_poll_reply(pollid, replytext)
 	return TRUE
 
-UI_ACT(/datum/poll_browser_dialog, "vote_text_abstain", ui_act_vote_text_abstain, UI_ARG_NUM("pollid"))
-UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_vote_text_abstain)
-	var/pollid = params["pollid"]
+/datum/poll_browser_dialog/proc/ui_act_vote_text_abstain(datum/act/op/A, pollid_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/pollid = pollid_arg
 	if(isnum(pollid))
 		owner.log_text_poll_reply(pollid, "ABSTAIN")
 	return TRUE
 
-UI_ACT(/datum/poll_browser_dialog, "vote_numval", ui_act_vote_numval, UI_ARG_NUM("pollid"), UI_ARG_LIST("ratings"))
-UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_vote_numval)
-	var/pollid = params["pollid"]
+/datum/poll_browser_dialog/proc/ui_act_vote_numval(datum/act/op/A, pollid_arg, ratings_arg)
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ratings_arg) && !islist(ratings_arg))
+		return FALSE
+	var/pollid = pollid_arg
 	if(!isnum(pollid))
 		return
-	var/list/ratings = params["ratings"]
+	var/list/ratings = ratings_arg
 	if(!islist(ratings))
 		return
 	for(var/optionid_str in ratings)
@@ -373,12 +384,15 @@ UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_vote_numval)
 		owner.vote_on_numval_poll(pollid, optionid, rating)
 	return TRUE
 
-UI_ACT(/datum/poll_browser_dialog, "vote_multi", ui_act_vote_multi, UI_ARG_LIST("optionids"), UI_ARG_NUM("pollid"))
-UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_vote_multi)
-	var/pollid = params["pollid"]
+/datum/poll_browser_dialog/proc/ui_act_vote_multi(datum/act/op/A, optionids, pollid_arg)
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(optionids) && !islist(optionids))
+		return FALSE
+	var/pollid = pollid_arg
 	if(!isnum(pollid))
 		return
-	var/list/choices = params["optionids"]
+	var/list/choices = optionids
 	if(!islist(choices))
 		return
 	for(var/choice in choices)

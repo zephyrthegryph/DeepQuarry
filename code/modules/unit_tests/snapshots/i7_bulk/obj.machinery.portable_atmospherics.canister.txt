@@ -1,0 +1,4 @@
+/obj/machinery/portable_atmospherics/canister|human|none => |
+/obj/machinery/portable_atmospherics/canister|robot|none => |gen_robot_interaction_swallow:not possible right now
+/obj/machinery/portable_atmospherics/canister|ai|none => |
+/obj/machinery/portable_atmospherics/canister|ghost|none => |

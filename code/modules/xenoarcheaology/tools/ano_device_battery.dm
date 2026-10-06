@@ -72,6 +72,12 @@ TRACKED(/obj/item/anodevice, activated)
 CAPABILITIES(/obj/item/anodevice)
 	/// Runs its battery effect while activated.
 	every(2 SECONDS, then(PROC_REF(anodevice_step)), when = nameof(activated))
+	interface("XenoarchHandheldPowerUtilizer", state = nameof(GLOB.tgui_inventory_state), input = in_hand())
+	op("changeduration", ui_act("changeduration", arg("duration", num(0, 300))), then(PROC_REF(ui_act_changeduration)))
+	op("changeinterval", ui_act("changeinterval", arg("interval", num(0, 100))), then(PROC_REF(ui_act_changeinterval)))
+	op("startup", ui_act("startup"), then(PROC_REF(ui_act_startup)))
+	op("shutdown", ui_act("shutdown"), then(PROC_REF(ui_act_shutdown)))
+	op("ejectbattery", ui_act("ejectbattery"), then(PROC_REF(ui_act_ejectbattery)))
 
 DECLARE_INTERACTIONS(/obj/item/anodevice, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
@@ -97,14 +103,8 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI_STATE(/obj/item/anodevice, GLOB.tgui_inventory_state)
-
-DECLARE_UI(/obj/item/anodevice, "XenoarchHandheldPowerUtilizer")
-
-UI_DATA(/obj/item/anodevice, "merge:ui_data_obj_item_anodevice{inserted_battery:unknown,anomaly:text,charge:num,capacity:num,timeleft:num,activated:num,duration:num,interval:num}")
-
 /// The computed part of /obj/item/anodevice's window data (declared on its UI_DATA row).
-/obj/item/anodevice/proc/ui_data_obj_item_anodevice(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/anodevice/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["inserted_battery"] = inserted_battery()
@@ -126,20 +126,18 @@ UI_DATA(/obj/item/anodevice, "merge:ui_data_obj_item_anodevice{inserted_battery:
 
 	return data
 
-UI_ACT(/obj/item/anodevice, "changeduration", ui_act_changeduration, UI_ARG_NUM("duration", 0, 300))
-UI_ACT_PROC(/obj/item/anodevice, ui_act_changeduration)
-	duration = params["duration"]
+/obj/item/anodevice/proc/ui_act_changeduration(datum/act/op/A, duration_arg)
+	duration = duration_arg
 	if(activated)
 		arm_emission_timer()
 	return TRUE
 
-UI_ACT(/obj/item/anodevice, "changeinterval", ui_act_changeinterval, UI_ARG_NUM("interval", 0, 100))
-UI_ACT_PROC(/obj/item/anodevice, ui_act_changeinterval)
-	interval = params["interval"]
+/obj/item/anodevice/proc/ui_act_changeinterval(datum/act/op/A, interval_arg)
+	interval = interval_arg
 	return TRUE
 
-UI_ACT(/obj/item/anodevice, "startup", ui_act_startup)
-UI_ACT_PROC(/obj/item/anodevice, ui_act_startup)
+/obj/item/anodevice/proc/ui_act_startup(datum/act/op/A)
+	var/mob/user = A.actor
 	if(inserted_battery() && inserted_battery().battery_effect && (inserted_battery().stored_charge > 0))
 		set_activated(TRUE)
 		visible_message(span_blue("[icon2html(src,viewers(src))] [src] whirrs."), span_blue("[icon2html(src,viewers(src))]You hear something whirr."))
@@ -148,16 +146,14 @@ UI_ACT_PROC(/obj/item/anodevice, ui_act_startup)
 		arm_emission_timer()
 		EXPIRY_STAMP(src, last_process, CLOCK_WORLD)
 	else
-		to_chat(ui.user, span_warning("[src] is unable to start due to no anomolous power source inserted/remaining."))
+		to_chat(user, span_warning("[src] is unable to start due to no anomolous power source inserted/remaining."))
 	return TRUE
 
-UI_ACT(/obj/item/anodevice, "shutdown", ui_act_shutdown)
-UI_ACT_PROC(/obj/item/anodevice, ui_act_shutdown)
+/obj/item/anodevice/proc/ui_act_shutdown(datum/act/op/A)
 	set_activated(FALSE)
 	return TRUE
 
-UI_ACT(/obj/item/anodevice, "ejectbattery", ui_act_ejectbattery)
-UI_ACT_PROC(/obj/item/anodevice, ui_act_ejectbattery)
+/obj/item/anodevice/proc/ui_act_ejectbattery(datum/act/op/A)
 	if(inserted_battery())
 		inserted_battery().forceMove(get_turf(src))
 		rel_clear(src, nameof(/obj/item/anodevice::inserted_battery))

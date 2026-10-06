@@ -48,6 +48,14 @@ Nothing else in the console has ID requirements.
 CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 	owns_one(nameof(t_disk), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(d_disk), on_destroy = ON_DESTROY_SPILL)
+	interface("Techweb")
+	op("toggleLock", ui_act("toggleLock"), then(PROC_REF(ui_act_togglelock)))
+	op("researchNode", ui_act("researchNode", arg("node_id", schema_text(4096))), then(PROC_REF(ui_act_researchnode)))
+	op("enqueueNode", ui_act("enqueueNode", arg("node_id", schema_text(4096))), then(PROC_REF(ui_act_enqueuenode)))
+	op("dequeueNode", ui_act("dequeueNode", arg("node_id", schema_text(4096))), then(PROC_REF(ui_act_dequeuenode)))
+	op("ejectDisk", ui_act("ejectDisk", arg("type", schema_text(4096))), then(PROC_REF(ui_act_ejectdisk)))
+	op("uploadDisk", ui_act("uploadDisk", arg("type", schema_text(4096))), then(PROC_REF(ui_act_uploaddisk)))
+	op("loadTech", ui_act("loadTech"), then(PROC_REF(ui_act_loadtech)))
 
 /obj/machinery/computer/rdconsole_tg/declare_interactions(list/into)
 	into += list(
@@ -163,17 +171,14 @@ CAPABILITIES(/obj/machinery/computer/rdconsole_tg)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/machinery/computer/rdconsole_tg, "Techweb")
-
 /obj/machinery/computer/rdconsole_tg/ui_assets(mob/user)
 	return list(
 		get_asset_datum(/datum/asset/spritesheet_batched/research_designs),
 	)
 
-UI_DATA_REPLACE(/obj/machinery/computer/rdconsole_tg, "merge:ui_data_obj_machinery_computer_rdconsole_tg{stored_research:bool,locked:num,t_disk:unknown,d_disk:listmap,nodes:list}")
-
 /// The computed part of /obj/machinery/computer/rdconsole_tg's window data (declared on its UI_DATA row).
-/obj/machinery/computer/rdconsole_tg/proc/ui_data_obj_machinery_computer_rdconsole_tg(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/rdconsole_tg/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 	data["stored_research"] = !!stored_research
 	data["locked"] = locked
@@ -315,47 +320,56 @@ UI_DATA_REPLACE(/obj/machinery/computer/rdconsole_tg, "merge:ui_data_obj_machine
 		"id_cache" = flat_id_cache,
 	)
 
-/obj/machinery/computer/rdconsole_tg/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/machinery/computer/rdconsole_tg/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	var/action = A.window_action()
 	add_fingerprint(user)
-	// Check if the console is locked to block any actions occuring
 	if (locked && action != "toggleLock")
 		atom_say("Console is locked, cannot perform further actions.")
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/rdconsole_tg, "toggleLock", ui_act_togglelock)
-UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_togglelock)
+/obj/machinery/computer/rdconsole_tg/proc/ui_act_togglelock(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	if(allowed(user))
 		set_locked(!locked)
 	else
 		to_chat(user, span_boldwarning("Unauthorized Access."))
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/rdconsole_tg, "researchNode", ui_act_researchnode, UI_ARG_TEXT("node_id"))
-UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_researchnode)
-	research_node(params["node_id"], user)
+/obj/machinery/computer/rdconsole_tg/proc/ui_act_researchnode(datum/act/op/A, node_id)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	research_node(node_id, user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/rdconsole_tg, "enqueueNode", ui_act_enqueuenode, UI_ARG_TEXT("node_id"))
-UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_enqueuenode)
-	enqueue_node(params["node_id"], user)
+/obj/machinery/computer/rdconsole_tg/proc/ui_act_enqueuenode(datum/act/op/A, node_id)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	enqueue_node(node_id, user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/rdconsole_tg, "dequeueNode", ui_act_dequeuenode, UI_ARG_TEXT("node_id"))
-UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_dequeuenode)
-	dequeue_node(params["node_id"], user)
+/obj/machinery/computer/rdconsole_tg/proc/ui_act_dequeuenode(datum/act/op/A, node_id)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	dequeue_node(node_id, user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/rdconsole_tg, "ejectDisk", ui_act_ejectdisk, UI_ARG_TEXT("type"))
-UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_ejectdisk)
-	eject_disk(params["type"])
+/obj/machinery/computer/rdconsole_tg/proc/ui_act_ejectdisk(datum/act/op/A, type)
+	if(!ui_gate(A))
+		return FALSE
+	eject_disk(type)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/rdconsole_tg, "uploadDisk", ui_act_uploaddisk, UI_ARG_TEXT("type"))
-UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_uploaddisk)
-	if(params["type"] == RND_DESIGN_DISK)
+/obj/machinery/computer/rdconsole_tg/proc/ui_act_uploaddisk(datum/act/op/A, type)
+	if(!ui_gate(A))
+		return FALSE
+	if(type == RND_DESIGN_DISK)
 		if(QDELETED(d_disk))
 			atom_say("No design disk inserted!")
 			return TRUE
@@ -365,7 +379,7 @@ UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_uploaddisk)
 		atom_say("Uploading blueprints from disk.")
 		d_disk.on_upload(stored_research, src)
 		return TRUE
-	if(params["type"] == RND_TECH_DISK)
+	if(type == RND_TECH_DISK)
 		if(!COOLDOWN_FINISHED(src, cooldowncopy)) // prevents MC hang
 			atom_say("Servers busy!")
 			return
@@ -379,8 +393,9 @@ UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_uploaddisk)
 
 //Tech disk-only action.
 
-UI_ACT(/obj/machinery/computer/rdconsole_tg, "loadTech", ui_act_loadtech)
-UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_loadtech)
+/obj/machinery/computer/rdconsole_tg/proc/ui_act_loadtech(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!COOLDOWN_FINISHED(src, cooldowncopy)) // prevents MC hang
 		atom_say("Servers busy!")
 		return

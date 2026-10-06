@@ -7,14 +7,12 @@
 	/// world.time the profiler counters were last cleared (0: since boot).
 	EXPIRY_DECLARE(profile_reset_time)
 
-DECLARE_UI_STATE(/datum/system/behaviours, ADMIN_STATE(R_DEBUG))
-
-DECLARE_UI(/datum/system/behaviours, "OmProfiler", UI_TITLE("Object Model Profiler"))
-
-UI_DATA_REPLACE(/datum/system/behaviours, "merge:ui_data_datum_controller_subsystem_behaviours{elapsed_s:num,last_run_ms:num,error_count:num,behind:bool,behaviours:list,shared_bucket:bool,lanes:list,stages:list,services:list,caches:unknown,world_step:list}")
+CAPABILITIES(/datum/system/behaviours)
+	interface("OmProfiler", title = "Object Model Profiler", rights = R_DEBUG)
+	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
 
 /// The computed part of /datum/system/behaviours's window data (declared on its UI_DATA row).
-/datum/system/behaviours/proc/ui_data_datum_controller_subsystem_behaviours(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/system/behaviours/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	var/datum/om/registry/reg = om_registry()
@@ -113,15 +111,16 @@ UI_DATA_REPLACE(/datum/system/behaviours, "merge:ui_data_datum_controller_subsys
 		)
 	return data
 
-/datum/system/behaviours/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/system/behaviours/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user || !check_rights_for(user.client, R_DEBUG))
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/system/behaviours, "reset", ui_act_reset)
-UI_ACT_PROC(/datum/system/behaviours, ui_act_reset)
+/datum/system/behaviours/proc/ui_act_reset(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	if(sched)
 		sched.stats = list()

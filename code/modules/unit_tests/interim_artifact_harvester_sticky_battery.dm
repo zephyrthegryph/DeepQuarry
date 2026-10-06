@@ -30,7 +30,7 @@
 	TEST_ASSERT_EQUAL(battery.loc, harvester, "occupied-bay refusal preserves actual original containment")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), other, "occupied-bay refusal preserves the exact replacement hand")
 	TEST_ASSERT_EQUAL(other.loc, user, "occupied-bay refusal preserves the replacement's actual inventory containment")
-	harvester.ui_act_ejectbattery(user, null, null, null, "ejectbattery")
+	op_ui_act(user, harvester, "ejectbattery")
 	TEST_ASSERT_NULL(harvester.inserted_battery(), "actual UI ejection clears the original battery relation")
 	TEST_ASSERT_EQUAL(battery.loc, T, "actual UI ejection returns the original charged battery to the floor")
 	TEST_ASSERT_EQUAL(battery.stored_charge, original_charge, "insertion replacement refusal and ejection spend no original charge")

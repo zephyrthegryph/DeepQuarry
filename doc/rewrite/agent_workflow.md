@@ -69,3 +69,41 @@ two branches that each add an `#include` at the same spot both keep theirs inste
 Union cannot tell an edit from an addition, so after a merge that touched either file, build: an
 include of a file the other side deleted fails the compile ("cannot find"), and a duplicate `#include`
 is harmless. Keep the lists sorted.
+
+## 4. Boot must be clean
+
+Every unit-test run fails when the world logged a runtime or a `WARNING()` (or a refused `move_into()`)
+before its first test, and the build prints `BOOT GATE:` with the first lines. It is the boot's fault, so
+fix it where it is logged (`doc/rewrite/boot_gate.md`). `bash tools/dq_focused_test.sh --boot` checks boot alone.
+
+## 5. Pushing to master: only through `tools/dq_push_master.sh`
+
+```sh
+bash tools/dq_push_master.sh
+```
+
+This is the only way to push to master. It fails closed: it refuses a dirty tree, merges `origin/master`
+(through `dq_merge_master.sh`), runs `build.sh dm` (DreamChecker must run and report 0 diagnostics, DreamMaker
+0 errors), `check_ratchets.sh` and `build.sh analyze` on that exact merged HEAD, checks nothing moved, and only
+then pushes (never forced; if master moved it merges and rechecks). Logs go to `data/push-check/`. A hand-made
+merge-and-push chain once pushed past DreamChecker errors and broke master; don't write your own.
+
+`tools/hooks/pre-push` refuses any push to master that did not come from the script
+(`bash tools/hooks/install_pre_push.sh` installs it for every worktree).
+
+## 6. Interaction snapshots are per-type files
+
+`doc/rewrite/snapshot_pins.md`. The i7 snapshots keep their rows in
+`code/modules/unit_tests/snapshots/<name>/<type>.txt`, one file per type, read at run time: parallel
+conversions touch different files and a snapshot-only change needs no recompile. Re-record with
+`bash tools/dq_focused_test.sh --bless 'dq_interaction_domain_snapshot/*'`. A branch that edited the old inline
+`expected = list(...)` in `dq_i7_*_capture.dm` conflicts once: take master's file, then re-bless.
+Before converting a type, `bash tools/dq_pin.sh /type/path` records a generated pin of its menu, refusals,
+clicks and wires; after, `bash tools/dq_focused_test.sh dq_conversion_pin` shows what changed.
+
+## 7. Order-dependent failures
+
+A test that fails in a long focused run but passes alone leaks or inherits shared state. Every run now logs
+`STATE LEAK` lines in `tests.log` (and prints them when the run fails) for each global flag a test left changed;
+the culprit is the leak before the failing test. Fix it with `set_global()`/`set_var()` in the leaking test.
+

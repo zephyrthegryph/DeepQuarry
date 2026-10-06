@@ -16,6 +16,9 @@ OM_FIELD_VIEW(/obj/machinery/suspension_gen, obj/effect/suspension_field, suspen
 
 CAPABILITIES(/obj/machinery/suspension_gen)
 	owns_one(nameof(suspension_field), /obj/effect/suspension_field)
+	interface("XenoarchSuspension")
+	op("toggle_field", ui_act("toggle_field"), then(PROC_REF(ui_act_toggle_field)))
+	op("lock", ui_act("lock"), then(PROC_REF(ui_act_lock)))
 /// Holds its field (draining its cell) while it has one.
 DECLARE_PERIODIC_WHILE(/obj/machinery/suspension_gen, MACHINE_PIPELINE, "suspension_field")
 
@@ -70,9 +73,15 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suspension_gen, MACHINE_PIPELINE, "suspens
 		to_chat(user, span_info("You remove the power cell"))
 	return TRUE
 
-DECLARE_UI(/obj/machinery/suspension_gen, "XenoarchSuspension")
-
-UI_DATA(/obj/machinery/suspension_gen, "cell:num", "suspension_field", "merge:ui_data_obj_machinery_suspension_gen{cellCharge:num,cellMaxCharge:num,locked:num}")
+/obj/machinery/suspension_gen/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["cell"] = cell
+	data["suspension_field"] = suspension_field
+	var/list/merged_1 = ui_data_obj_machinery_suspension_gen(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/machinery/suspension_gen's window data (declared on its UI_DATA row).
 /obj/machinery/suspension_gen/proc/ui_data_obj_machinery_suspension_gen(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -85,8 +94,8 @@ UI_DATA(/obj/machinery/suspension_gen, "cell:num", "suspension_field", "merge:ui
 
 	return data
 
-UI_ACT(/obj/machinery/suspension_gen, "toggle_field", ui_act_toggle_field)
-UI_ACT_PROC(/obj/machinery/suspension_gen, ui_act_toggle_field)
+/obj/machinery/suspension_gen/proc/ui_act_toggle_field(datum/act/op/A)
+	var/mob/user = A.actor
 	if(locked)
 		return
 	if(!suspension_field)
@@ -94,14 +103,14 @@ UI_ACT_PROC(/obj/machinery/suspension_gen, ui_act_toggle_field)
 			if(anchored)
 				activate()
 			else
-				to_chat(ui.user, span_warning("You are unable to activate [src] until it is properly secured on the ground."))
+				to_chat(user, span_warning("You are unable to activate [src] until it is properly secured on the ground."))
 	else
 		deactivate()
 	return TRUE
 
-UI_ACT(/obj/machinery/suspension_gen, "lock", ui_act_lock)
-UI_ACT_PROC(/obj/machinery/suspension_gen, ui_act_lock)
-	if(allowed(ui.user))
+/obj/machinery/suspension_gen/proc/ui_act_lock(datum/act/op/A)
+	var/mob/user = A.actor
+	if(allowed(user))
 		set_locked(!locked)
 		return TRUE
 

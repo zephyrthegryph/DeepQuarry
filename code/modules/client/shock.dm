@@ -32,6 +32,16 @@
 
 CAPABILITIES(/datum/tgui_shock)
 	owns_one(nameof(window), /datum/tgui_window)
+	interface("ShockConfigurator", title = "Shock Configurator", state = nameof(GLOB.tgui_always_state))
+	op("connect", ui_act("connect"), then(PROC_REF(ui_act_connect)))
+	op("request_devices", ui_act("request_devices"), then(PROC_REF(ui_act_request_devices)))
+	op("estop", ui_act("estop"), then(PROC_REF(ui_act_estop)))
+	op("setSelectedDevice", ui_act("setSelectedDevice", arg("device", num())), then(PROC_REF(ui_act_setselecteddevice)))
+	op("test", ui_act("test"), then(PROC_REF(ui_act_test)))
+	op("set_flag", ui_act("set_flag", arg("flag", num())), then(PROC_REF(ui_act_set_flag)))
+	op("port", ui_act("port", arg("port", num())), then(PROC_REF(ui_act_port)))
+	op("intensity", ui_act("intensity", arg("intensity", num())), then(PROC_REF(ui_act_intensity)))
+	op("duration", ui_act("duration", arg("duration", num())), then(PROC_REF(ui_act_duration)))
 
 //////////////////////////////////////////
 // SHOCK.JS UI                          //
@@ -93,14 +103,19 @@ CAPABILITIES(/datum/tgui_shock)
 //////////////////////////////////////////
 // TGUI                                 //
 //////////////////////////////////////////
-DECLARE_UI_STATE(/datum/tgui_shock, GLOB.tgui_always_state)
 
-DECLARE_UI(/datum/tgui_shock, "ShockConfigurator", UI_TITLE("Shock Configurator"))
+/datum/tgui_shock/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["port"] = port
+	data["connected"] = connected
+	data["intensity"] = intensity
+	data["duration"] = duration
+	data["selectedDevice"] = selected_device
+	data["availableDevices"] = available_devices
+	data["enabledFlags"] = enabled_flags
+	return data
 
-UI_DATA(/datum/tgui_shock, "port:num", "connected:num", "intensity:num", "duration:num", "selectedDevice=selected_device:num", "availableDevices=available_devices:list", "enabledFlags=enabled_flags:num")
-
-UI_ACT(/datum/tgui_shock, "connect", ui_act_connect)
-UI_ACT_PROC(/datum/tgui_shock, ui_act_connect)
+/datum/tgui_shock/proc/ui_act_connect(datum/act/op/A)
 	if(connected)
 		estop()
 	else
@@ -108,44 +123,36 @@ UI_ACT_PROC(/datum/tgui_shock, ui_act_connect)
 		connect()
 	. = TRUE
 
-UI_ACT(/datum/tgui_shock, "request_devices", ui_act_request_devices)
-UI_ACT_PROC(/datum/tgui_shock, ui_act_request_devices)
+/datum/tgui_shock/proc/ui_act_request_devices(datum/act/op/A)
 	request_devices()
 	. = TRUE
 
-UI_ACT(/datum/tgui_shock, "estop", ui_act_estop)
-UI_ACT_PROC(/datum/tgui_shock, ui_act_estop)
+/datum/tgui_shock/proc/ui_act_estop(datum/act/op/A)
 	estop()
 	. = TRUE
 
-UI_ACT(/datum/tgui_shock, "setSelectedDevice", ui_act_setselecteddevice, UI_ARG_NUM("device"))
-UI_ACT_PROC(/datum/tgui_shock, ui_act_setselecteddevice)
-	selected_device = params["device"]
+/datum/tgui_shock/proc/ui_act_setselecteddevice(datum/act/op/A, device)
+	selected_device = device
 	. = TRUE
 
-UI_ACT(/datum/tgui_shock, "test", ui_act_test)
-UI_ACT_PROC(/datum/tgui_shock, ui_act_test)
+/datum/tgui_shock/proc/ui_act_test(datum/act/op/A)
 	shock(SHOCKFLAG_TEST)
 	. = TRUE
 
-UI_ACT(/datum/tgui_shock, "set_flag", ui_act_set_flag, UI_ARG_NUM("flag"))
-UI_ACT_PROC(/datum/tgui_shock, ui_act_set_flag)
-	enabled_flags ^= params["flag"]
+/datum/tgui_shock/proc/ui_act_set_flag(datum/act/op/A, flag)
+	enabled_flags ^= flag
 	. = TRUE
 
-UI_ACT(/datum/tgui_shock, "port", ui_act_port, UI_ARG_NUM("port"))
-UI_ACT_PROC(/datum/tgui_shock, ui_act_port)
-	port = params["port"]
+/datum/tgui_shock/proc/ui_act_port(datum/act/op/A, port_arg)
+	port = port_arg
 	. = TRUE
 
-UI_ACT(/datum/tgui_shock, "intensity", ui_act_intensity, UI_ARG_NUM("intensity"))
-UI_ACT_PROC(/datum/tgui_shock, ui_act_intensity)
-	intensity = params["intensity"]
+/datum/tgui_shock/proc/ui_act_intensity(datum/act/op/A, intensity_arg)
+	intensity = intensity_arg
 	. = TRUE
 
-UI_ACT(/datum/tgui_shock, "duration", ui_act_duration, UI_ARG_NUM("duration"))
-UI_ACT_PROC(/datum/tgui_shock, ui_act_duration)
-	duration = params["duration"]
+/datum/tgui_shock/proc/ui_act_duration(datum/act/op/A, duration_arg)
+	duration = duration_arg
 	. = TRUE
 
 

@@ -20,19 +20,17 @@ CAPABILITIES(/mob/observer/dead)
 	if(host()?.dq_exonet_log_panel_cache == src)
 		host().dq_exonet_log_panel_cache = null
 
-DECLARE_UI_STATE(/datum/exonet_log_panel, GLOB.tgui_always_state)
-
-DECLARE_UI(/datum/exonet_log_panel, "ExonetLog", UI_TITLE("Exonet Message Log"))
+CAPABILITIES(/datum/exonet_log_panel)
+	interface("ExonetLog", title = "Exonet Message Log", state = nameof(GLOB.tgui_always_state))
+	ui_shape(lines = any)
 
 /datum/exonet_log_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!host() || user != host())
 		return FALSE
 	return TRUE
 
-UI_DATA_REPLACE(/datum/exonet_log_panel, "merge:ui_data_datum_exonet_log_panel{lines:unknown}")
-
 /// The computed part of /datum/exonet_log_panel's window data (declared on its UI_DATA row).
-/datum/exonet_log_panel/proc/ui_data_datum_exonet_log_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/exonet_log_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["lines"] = host() ? (host().exonet_messages ? host().exonet_messages.Copy() : list()) : list()
 	return data

@@ -1,0 +1,4 @@
+/obj/machinery/door|human|none => |
+/obj/machinery/door|robot|none => |gen_robot_interaction_swallow:not possible right now
+/obj/machinery/door|ai|none => |
+/obj/machinery/door|ghost|none => |

@@ -1,0 +1,4 @@
+/obj/structure/bed/pillowpilefront|human|none => pillowpilefront_hand|
+/obj/structure/bed/pillowpilefront|robot|none => pillowpilefront_hand|
+/obj/structure/bed/pillowpilefront|ai|none => |
+/obj/structure/bed/pillowpilefront|ghost|none => |

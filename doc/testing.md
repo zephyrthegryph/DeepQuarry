@@ -77,7 +77,16 @@ bash tools/dq_focused_test.sh --repeat=5 belly_damage                  # N runs,
 bash tools/dq_focused_test.sh --list 'dq_e0_proof/*'                    # print what the names/globs expand to (about 1 s, runs nothing)
 bash tools/dq_focused_test.sh --dm-version=516.1682 belly_damage        # any other --flag is forwarded to dm-test
 DQ_WIP_TREE=1 bash tools/dq_focused_test.sh /datum/unit_test/<name>   # tree with someone else's unfinished includes
+bash tools/dq_focused_test.sh --boot                                   # boot only (the boot gate below)
 ```
+
+**The boot gate.** Every run, focused or full, fails when the world logged a runtime or a `WARNING()` (or a refused
+`move_into()`) before its first test: `tests.log` says `Boot gate`, the build prints `BOOT GATE:` with the first
+warnings, and `data/logs/runN/boot_report.json` holds the counts. It is the boot's fault, not your test's, unless
+your change runs at boot. `doc/rewrite/boot_gate.md`.
+
+A long list of names (a broad glob) reaches `dm-test` as `--focus=@file`, since a Windows command line stops at
+8191 characters.
 
 A glob (a name with `*`, `?` or `[`) is matched against the `/datum/unit_test/...`
 type definitions under `code/` and fails if nothing matches. `--repeat=N` reruns the
@@ -101,6 +110,12 @@ nothing they read has changed. Boot before `world/New` (about 19 s, DreamDaemon
 loading the `.rsc` and the compiled-in test map) is outside our control.
 
 ### Isolation: restoring shared state
+
+**The state guard.** After every test the harness compares the scalar `GLOB` vars with their values before it
+(`unit_test_globals_guard()`). A flag a test left changed is logged as `STATE LEAK: <test> left GLOB.x = ...`
+in `tests.log` (text and paths as `STATE LEAK?`), and a run that fails prints them. A test that fails in a long
+focused run but passes alone is almost always one of these: find the leak before it and make that test use
+`set_global()`. The guard only flags; it never restores (a lazy-init flag put back would rebuild what it guards).
 
 Every test shares one world, and a failing `TEST_ASSERT` returns from `Run()`
 at once, so a restore line after it never runs. Anything a test changes outside

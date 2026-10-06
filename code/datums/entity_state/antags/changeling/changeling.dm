@@ -450,15 +450,13 @@ CAPABILITIES(/obj/item/changeling_debug)
 /datum/changeling_panel
 	var/datum/changeling/comp
 
-DECLARE_UI_STATE(/datum/changeling_panel, GLOB.tgui_always_state)
-
 /datum/changeling_panel/tgui_status(mob/user)
 	if(!isliving(user)) //We ghosted or something.
 		return STATUS_CLOSE
 	return ..()
 
 CAPABILITIES(/datum/changeling_panel)
-	interface("ChangelingPanel", title = "Changeling Evolution Panel")
+	interface("ChangelingPanel", title = "Changeling Evolution Panel", state = nameof(GLOB.tgui_always_state))
 	op("evolve_power", ui_act("evolve_power", arg("val", schema_text(4096))), then(PROC_REF(ui_act_evolve_power)))
 
 /// The computed part of /datum/changeling_panel's window data (declared on its UI_DATA row).

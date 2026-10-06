@@ -25,6 +25,7 @@
 CAPABILITIES(/obj/item/radio/headset)
 	owns_one(nameof(keyslot2), /obj/item/encryptionkey, starts = nameof(ks2type))
 	owns_one(nameof(keyslot1), /obj/item/encryptionkey, starts = nameof(ks1type))
+	interface("Radio", input = in_hand(), state = nameof(GLOB.tgui_inventory_state))
 
 /obj/item/radio/headset/Initialize(mapload)
 	. = ..()
@@ -80,8 +81,6 @@ CAPABILITIES(/obj/item/radio/headset)
 				append = "_r"
 
 	return "[..()][append]"
-
-DECLARE_UI_STATE(/obj/item/radio/headset, GLOB.tgui_inventory_state)
 
 // Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
 EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptionkey, PROC_REF(interaction_item), "Insert key", REQ_TARGET_STATE(/obj/item/radio/headset/proc/can_insert_key)))

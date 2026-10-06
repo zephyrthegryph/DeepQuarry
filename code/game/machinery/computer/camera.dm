@@ -31,8 +31,6 @@ CAPABILITIES(/obj/machinery/computer/security)
 /obj/machinery/computer/security/ui_redirect(mob/user)
 	return camera
 
-DECLARE_UI_STATE(/obj/machinery/computer/security, GLOB.tgui_camera_view)
-
 /obj/machinery/computer/security/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/ungated/security_open_ui,

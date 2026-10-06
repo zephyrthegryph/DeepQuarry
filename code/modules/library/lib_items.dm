@@ -232,15 +232,19 @@ Book Cart End
 /obj/item/book/proc/display_content(mob/living/user)
 	tgui_interact(user)
 
-DECLARE_UI(/obj/item/book, "Book")
+CAPABILITIES(/obj/item/book)
+	interface("Book", input = in_hand())
+	ui_shape(title = bool(), author = bool(), content = bool())
+
+/// The guard every window button of the family asks first (a subtype overrides it).
+/obj/item/book/proc/ui_gate(datum/act/op/A)
+	return TRUE
 
 /obj/item/book/ui_title(mob/user)
 	return title || name
 
-UI_DATA_REPLACE(/obj/item/book, "merge:ui_data_obj_item_book{title:bool,author:bool,content:bool}")
-
 /// The computed part of /obj/item/book's window data (declared on its UI_DATA row).
-/obj/item/book/proc/ui_data_obj_item_book(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/book/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["title"] = title || name
 	data["author"] = author || ""
@@ -387,6 +391,9 @@ DECLARE_INTERACTIONS(/obj/item/book, \
 
 CAPABILITIES(/obj/item/book/bundle)
 	op("read_bundle", in_hand(), label("Read"), then(PROC_REF(interaction_read_bundle)))
+	interface("BookBundle", input = in_hand())
+	op("next_page", ui_act("next_page"), then(PROC_REF(ui_act_next_page)))
+	op("prev_page", ui_act("prev_page"), then(PROC_REF(ui_act_prev_page)))
 
 /// Old attack_self.
 /obj/item/book/bundle/proc/interaction_read_bundle(datum/act/op/A)
@@ -395,9 +402,14 @@ CAPABILITIES(/obj/item/book/bundle)
 	update_icon()
 	tgui_interact(user)
 
-DECLARE_UI(/obj/item/book/bundle, "BookBundle")
-
-UI_DATA_REPLACE(/obj/item/book/bundle, "page:num", "merge:ui_data_obj_item_book_bundle{total_pages:num,scribble:unknown,page_name:text,page_kind:text,page_info:unknown}")
+/obj/item/book/bundle/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["page"] = page
+	var/list/merged_1 = ui_data_obj_item_book_bundle(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/book/bundle's window data (declared on its UI_DATA row).
 /obj/item/book/bundle/proc/ui_data_obj_item_book_bundle(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -433,7 +445,8 @@ UI_DATA_REPLACE(/obj/item/book/bundle, "page:num", "merge:ui_data_obj_item_book_
 		data["page_info"] = ""
 	return data
 
-/obj/item/book/bundle/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/book/bundle/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!..())
 		return FALSE
 	if(!((is_in_holder(src, user)) || (istype(src.loc, /obj/item/folder) && (is_in_holder(src.loc, user)))))
@@ -442,15 +455,17 @@ UI_DATA_REPLACE(/obj/item/book/bundle, "page:num", "merge:ui_data_obj_item_book_
 	user.set_machine(src)
 	return TRUE
 
-UI_ACT(/obj/item/book/bundle, "next_page", ui_act_next_page)
-UI_ACT_PROC(/obj/item/book/bundle, ui_act_next_page)
+/obj/item/book/bundle/proc/ui_act_next_page(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(page != pages.len)
 		page++
 		play_sfx(src, SFX_PAGETURN)
 	return TRUE
 
-UI_ACT(/obj/item/book/bundle, "prev_page", ui_act_prev_page)
-UI_ACT_PROC(/obj/item/book/bundle, ui_act_prev_page)
+/obj/item/book/bundle/proc/ui_act_prev_page(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(page > 1)
 		page--
 		play_sfx(src, SFX_PAGETURN)

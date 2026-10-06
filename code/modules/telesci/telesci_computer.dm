@@ -33,6 +33,16 @@
 CAPABILITIES(/obj/machinery/computer/telescience)
 	owns_one(nameof(inserted_gps), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(last_tele_data), /datum/projectile_data)
+	interface("TelesciConsole")
+	op("setrotation", ui_act("setrotation", arg("val", num())), then(PROC_REF(ui_act_setrotation)))
+	op("setdistance", ui_act("setdistance", arg("val", num())), then(PROC_REF(ui_act_setdistance)))
+	op("setz", ui_act("setz", arg("setz", num())), then(PROC_REF(ui_act_setz)))
+	op("ejectGPS", ui_act("ejectGPS"), then(PROC_REF(ui_act_ejectgps)))
+	op("setMemory", ui_act("setMemory"), then(PROC_REF(ui_act_setmemory)))
+	op("send", ui_act("send"), then(PROC_REF(ui_act_send)))
+	op("receive", ui_act("receive"), then(PROC_REF(ui_act_receive)))
+	op("recal", ui_act("recal"), then(PROC_REF(ui_act_recal)))
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 
 /obj/machinery/computer/telescience/ownership()
 	. = ..()
@@ -110,12 +120,8 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 /obj/machinery/computer/telescience/proc/get_max_allowed_distance()
 	return FLOOR((length(crystals) * telepad().efficiency * powerCoefficient), 1)
 
-DECLARE_UI(/obj/machinery/computer/telescience, "TelesciConsole")
-
-UI_DATA_REPLACE(/obj/machinery/computer/telescience, "merge:ui_data_obj_machinery_computer_telescience{noTelepad:num,insertedGps:unknown,rotation:num,currentZ:num,cooldown:num,crystalCount:num,maxCrystals:num,maxPossibleDistance:num,maxAllowedDistance:unknown,distance:num,tempMsg:text,sectorOptions:unknown,lastTeleData:list}")
-
 /// The computed part of /obj/machinery/computer/telescience's window data (declared on its UI_DATA row).
-/obj/machinery/computer/telescience/proc/ui_data_obj_machinery_computer_telescience(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/computer/telescience/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!telepad())
 		in_use = 0     //Yeah so if you deconstruct teleporter while its in the process of shooting it wont disable the console
@@ -149,41 +155,44 @@ UI_DATA_REPLACE(/obj/machinery/computer/telescience, "merge:ui_data_obj_machiner
 
 	return data
 
-/obj/machinery/computer/telescience/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/machinery/computer/telescience/proc/ui_gate(datum/act/op/A)
 	if(!telepad() || telepad().panel_open)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "setrotation", ui_act_setrotation, UI_ARG_NUM("val"))
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_setrotation)
-	rotation = CLAMP(params["val"], -900, 900)
+/obj/machinery/computer/telescience/proc/ui_act_setrotation(datum/act/op/A, val)
+	if(!ui_gate(A))
+		return FALSE
+	rotation = CLAMP(val, -900, 900)
 	rotation = round(rotation, 0.01)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "setdistance", ui_act_setdistance, UI_ARG_NUM("val"))
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_setdistance)
-	distance = CLAMP(params["val"], 1, get_max_allowed_distance())
+/obj/machinery/computer/telescience/proc/ui_act_setdistance(datum/act/op/A, val)
+	if(!ui_gate(A))
+		return FALSE
+	distance = CLAMP(val, 1, get_max_allowed_distance())
 	distance = FLOOR(distance, 1)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "setz", ui_act_setz, UI_ARG_NUM("setz"))
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_setz)
-	var/new_z = params["setz"]
+/obj/machinery/computer/telescience/proc/ui_act_setz(datum/act/op/A, setz)
+	if(!ui_gate(A))
+		return FALSE
+	var/new_z = setz
 	if(new_z in using_map.player_levels)
 		z_co = new_z
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "ejectGPS", ui_act_ejectgps)
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_ejectgps)
+/obj/machinery/computer/telescience/proc/ui_act_ejectgps(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(inserted_gps)
 		inserted_gps.forceMove(loc)
 		own_take(src, nameof(/obj/machinery/computer/telescience::inserted_gps))
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "setMemory", ui_act_setmemory)
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_setmemory)
+/obj/machinery/computer/telescience/proc/ui_act_setmemory(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(last_target() && inserted_gps)
 		// TODO - What was this even supposed to do??
 		//inserted_gps.locked_location = last_target
@@ -192,27 +201,33 @@ UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_setmemory)
 		temp_msg = "Function Deprecated. No action taken."
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "send", ui_act_send)
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_send)
+/obj/machinery/computer/telescience/proc/ui_act_send(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	sending = 1
-	teleport(ui.user)
+	teleport(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "receive", ui_act_receive)
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_receive)
+/obj/machinery/computer/telescience/proc/ui_act_receive(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	sending = 0
-	teleport(ui.user)
+	teleport(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "recal", ui_act_recal)
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_recal)
+/obj/machinery/computer/telescience/proc/ui_act_recal(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	recalibrate()
 	sparks()
 	temp_msg = "NOTICE: Calibration successful."
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telescience, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_eject)
+/obj/machinery/computer/telescience/proc/ui_act_eject(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	eject()
 	temp_msg = "NOTICE: Bluespace crystals ejected."
 	return TRUE

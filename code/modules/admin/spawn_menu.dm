@@ -10,44 +10,54 @@
 	/// Initial search value from the latest command
 	var/init_value = null
 
-DECLARE_UI(/datum/spawn_menu, "SpawnSearch")
+CAPABILITIES(/datum/spawn_menu)
+	interface("SpawnSearch", rights = R_SPAWN)
+	op("setRegexSearch", ui_act("setRegexSearch", arg("regexSearch", bool())), then(PROC_REF(ui_act_setregexsearch)))
+	op("setNameSearch", ui_act("setNameSearch", arg("searchNames", bool())), then(PROC_REF(ui_act_setnamesearch)))
+	op("setFancyTypes", ui_act("setFancyTypes", arg("fancyTypes", bool())), then(PROC_REF(ui_act_setfancytypes)))
+	op("setIncludeAbstracts", ui_act("setIncludeAbstracts", arg("includeAbstracts", bool())), then(PROC_REF(ui_act_setincludeabstracts)))
+	op("spawn", ui_act("spawn", arg("amount", num()), arg("type", schema_path(/datum))), then(PROC_REF(ui_act_spawn)))
+	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 
-DECLARE_UI_STATE(/datum/spawn_menu, ADMIN_STATE(R_SPAWN))
-
-/datum/spawn_menu/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
+/datum/spawn_menu/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!check_rights_for(user.client, R_SPAWN))
 		return FALSE
-	if(!check_rights_for(ui.user.client, R_SPAWN))
+	return TRUE
+
+/datum/spawn_menu/proc/ui_act_setregexsearch(datum/act/op/A, regexSearch)
+	if(!ui_gate(A))
 		return FALSE
+	regex_search = regexSearch
 	return TRUE
 
-UI_ACT(/datum/spawn_menu, "setRegexSearch", ui_act_setregexsearch, UI_ARG_BOOL("regexSearch"))
-UI_ACT_PROC(/datum/spawn_menu, ui_act_setregexsearch)
-	regex_search = params["regexSearch"]
+/datum/spawn_menu/proc/ui_act_setnamesearch(datum/act/op/A, searchNames)
+	if(!ui_gate(A))
+		return FALSE
+	name_search = searchNames
 	return TRUE
 
-UI_ACT(/datum/spawn_menu, "setNameSearch", ui_act_setnamesearch, UI_ARG_BOOL("searchNames"))
-UI_ACT_PROC(/datum/spawn_menu, ui_act_setnamesearch)
-	name_search = params["searchNames"]
+/datum/spawn_menu/proc/ui_act_setfancytypes(datum/act/op/A, fancyTypes)
+	if(!ui_gate(A))
+		return FALSE
+	fancy_types = fancyTypes
 	return TRUE
 
-UI_ACT(/datum/spawn_menu, "setFancyTypes", ui_act_setfancytypes, UI_ARG_BOOL("fancyTypes"))
-UI_ACT_PROC(/datum/spawn_menu, ui_act_setfancytypes)
-	fancy_types = params["fancyTypes"]
+/datum/spawn_menu/proc/ui_act_setincludeabstracts(datum/act/op/A, includeAbstracts)
+	if(!ui_gate(A))
+		return FALSE
+	include_abstracts = includeAbstracts
 	return TRUE
 
-UI_ACT(/datum/spawn_menu, "setIncludeAbstracts", ui_act_setincludeabstracts, UI_ARG_BOOL("includeAbstracts"))
-UI_ACT_PROC(/datum/spawn_menu, ui_act_setincludeabstracts)
-	include_abstracts = params["includeAbstracts"]
-	return TRUE
-
-UI_ACT(/datum/spawn_menu, "spawn", ui_act_spawn, UI_ARG_NUM("amount"), UI_ARG_PATH("type", /datum))
-UI_ACT_PROC(/datum/spawn_menu, ui_act_spawn)
-	var/path = params["type"]
+/datum/spawn_menu/proc/ui_act_spawn(datum/act/op/A, amount_arg, type)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/path = type
 	if (!path)
 		return TRUE
-	var/amount = clamp(params["amount"] || 1, 1, ADMIN_SPAWN_CAP)
-	var/turf/target_turf = get_turf(ui.user)
+	var/amount = clamp(amount_arg || 1, 1, ADMIN_SPAWN_CAP)
+	var/turf/target_turf = get_turf(user)
 	if(ispath(path, /turf))
 		target_turf.ChangeTurf(path)
 	else
@@ -55,16 +65,24 @@ UI_ACT_PROC(/datum/spawn_menu, ui_act_spawn)
 			var/atom/spawned = new path(target_turf)
 			spawned.flags |= ADMIN_SPAWNED
 
-	log_admin("[key_name(ui.user)] spawned [amount] x [path] at [AREACOORD(ui.user)]")
+	log_admin("[key_name(user)] spawned [amount] x [path] at [AREACOORD(user)]")
 	SStgui.close_uis(src)
 	return TRUE
 
-UI_ACT(/datum/spawn_menu, "cancel", ui_act_cancel)
-UI_ACT_PROC(/datum/spawn_menu, ui_act_cancel)
+/datum/spawn_menu/proc/ui_act_cancel(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	SStgui.close_uis(src)
 	return TRUE
 
-UI_DATA_REPLACE(/datum/spawn_menu, "initValue=init_value", "searchNames=name_search:num", "regexSearch=regex_search:num", "fancyTypes=fancy_types:num", "includeAbstracts=include_abstracts:num")
+/datum/spawn_menu/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["initValue"] = init_value
+	data["searchNames"] = name_search
+	data["regexSearch"] = regex_search
+	data["fancyTypes"] = fancy_types
+	data["includeAbstracts"] = include_abstracts
+	return data
 
 /datum/spawn_menu/ui_assets(mob/user)
 	return list(

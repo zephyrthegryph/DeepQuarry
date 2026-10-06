@@ -115,6 +115,9 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 CAPABILITIES(/obj/item/depth_scanner)
 	owns_many(nameof(positive_locations))
 	op("view_depth_scans", in_hand(), opens_ui())
+	interface("XenoarchDepthScanner", state = nameof(GLOB.tgui_deep_inventory_state), input = in_hand())
+	op("select", ui_act("select", arg("select", num())), then(PROC_REF(ui_act_select)))
+	op("clear", ui_act("clear", arg("clear", num())), then(PROC_REF(ui_act_clear)))
 
 /datum/depth_scan
 	var/time = ""
@@ -163,20 +166,14 @@ CAPABILITIES(/obj/item/depth_scanner)
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings [pick("madly","wildly","excitedly","crazily")]!"))
 
-DECLARE_UI_STATE(/obj/item/depth_scanner, GLOB.tgui_deep_inventory_state)
-
-DECLARE_UI(/obj/item/depth_scanner, "XenoarchDepthScanner")
-
 /obj/item/depth_scanner/tgui_static_data(mob/user)
 	. = ..()
 	if(isrobot(loc))
 		var/mob/living/silicon/robot/robot_owner = loc
 		.["theme"] = robot_owner.get_ui_theme()
 
-UI_DATA(/obj/item/depth_scanner, "merge:ui_data_obj_item_depth_scanner{current:list,positive_locations:list}")
-
 /// The computed part of /obj/item/depth_scanner's window data (declared on its UI_DATA row).
-/obj/item/depth_scanner/proc/ui_data_obj_item_depth_scanner(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/depth_scanner/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["current"] = list()
@@ -204,23 +201,21 @@ UI_DATA(/obj/item/depth_scanner, "merge:ui_data_obj_item_depth_scanner{current:l
 
 	return data
 
-UI_ACT(/obj/item/depth_scanner, "select", ui_act_select, UI_ARG_NUM("select"))
-UI_ACT_PROC(/obj/item/depth_scanner, ui_act_select)
-	var/index = params["select"]
+/obj/item/depth_scanner/proc/ui_act_select(datum/act/op/A, select)
+	var/index = select
 	if(index && index <= LAZYLEN(positive_locations))
-		rel_set(src, nameof(/datum/forms::current), LAZYACCESS(positive_locations, index))
+		rel_set(src, nameof(current), LAZYACCESS(positive_locations, index))
 	return TRUE
 
-UI_ACT(/obj/item/depth_scanner, "clear", ui_act_clear, UI_ARG_NUM("clear"))
-UI_ACT_PROC(/obj/item/depth_scanner, ui_act_clear)
-	var/index = params["clear"]
+/obj/item/depth_scanner/proc/ui_act_clear(datum/act/op/A, clear)
+	var/index = clear
 	if(index)
 		if(index <= LAZYLEN(positive_locations))
 			var/datum/depth_scan/D = LAZYACCESS(positive_locations, index)
-			rel_clear(src, nameof(/datum/forms::current))
+			rel_clear(src, nameof(current))
 			own_remove(src, nameof(/obj/item/depth_scanner::positive_locations), D) // deletes the scan
 	else
-		rel_clear(src, nameof(/datum/forms::current))
+		rel_clear(src, nameof(current))
 		own_clear(src, nameof(/obj/item/depth_scanner::positive_locations), OWN_DELETE)
 	return TRUE
 
@@ -282,7 +277,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/beacon_locator, PERIODIC_SLOW, "locating")
 
 CAPABILITIES(/obj/item/beacon_locator)
 	op("interaction_open", in_hand(), label("Open"), then(PROC_REF(interaction_open)))
-	interface("BeaconLocator")
+	interface("BeaconLocator", state = nameof(GLOB.tgui_inventory_state))
 	op("reset_tracking", ui_act("reset_tracking"), then(PROC_REF(ui_act_reset_tracking)))
 	op("setFrequency", ui_act("setFrequency", arg("freq", num())), then(PROC_REF(ui_act_setfrequency)))
 
@@ -291,8 +286,6 @@ CAPABILITIES(/obj/item/beacon_locator)
 	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
-
-DECLARE_UI_STATE(/obj/item/beacon_locator, GLOB.tgui_inventory_state)
 
 /obj/item/beacon_locator/ui_data(datum/act/eval/A)
 	var/list/data = list()

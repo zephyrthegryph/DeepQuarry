@@ -1,0 +1,4 @@
+/obj/machinery/transportpod|human|none => |
+/obj/machinery/transportpod|robot|none => |gen_robot_interaction_swallow:not possible right now
+/obj/machinery/transportpod|ai|none => |
+/obj/machinery/transportpod|ghost|none => |

@@ -19,7 +19,7 @@
 	TEST_ASSERT_EQUAL(contents_count(cabinet), 1, "allowed filing contains exactly one original file")
 	TEST_ASSERT_NULL(user.get_active_hand(), "allowed filing clears actual source hand")
 	TEST_ASSERT_NULL(owner_of(paper), "filing preserves its existing unowned containment policy")
-	cabinet.ui_act_remove_object(user, list("ref" = paper), null, null, "remove_object")
+	op_ui_act(user, cabinet, "remove_object", list("ref" = paper))
 	TEST_ASSERT_EQUAL(user.get_active_hand(), paper, "public retrieval returns exact original file")
 	TEST_ASSERT_EQUAL(paper.loc, user, "public retrieval restores original inventory containment")
 	TEST_ASSERT_EQUAL(contents_count(cabinet), 0, "public retrieval removes original file from cabinet contents")

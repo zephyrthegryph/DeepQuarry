@@ -13,10 +13,12 @@
 
 // Subtype for glasses_state
 /datum/tgui_module/alarm_monitor/all/glasses
-DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/all/glasses, GLOB.tgui_glasses_state)
+CAPABILITIES(/datum/tgui_module/alarm_monitor/all/glasses)
+	interface("StationAlertConsole", state = nameof(GLOB.tgui_glasses_state))
 
 /datum/tgui_module/alarm_monitor/all/robot
-DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/all/robot, GLOB.tgui_self_state)
+CAPABILITIES(/datum/tgui_module/alarm_monitor/all/robot)
+	interface("StationAlertConsole", state = nameof(GLOB.tgui_self_state))
 
 /datum/tgui_module/alarm_monitor/engineering
 /datum/tgui_module/alarm_monitor/engineering/alarm_handlers()
@@ -24,11 +26,13 @@ DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/all/robot, GLOB.tgui_self_stat
 
 // Subtype for glasses_state
 /datum/tgui_module/alarm_monitor/engineering/glasses
-DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/engineering/glasses, GLOB.tgui_glasses_state)
+CAPABILITIES(/datum/tgui_module/alarm_monitor/engineering/glasses)
+	interface("StationAlertConsole", state = nameof(GLOB.tgui_glasses_state))
 
 // Subtype for nif_state
 /datum/tgui_module/alarm_monitor/engineering/nif
-DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/engineering/nif, GLOB.tgui_nif_state)
+CAPABILITIES(/datum/tgui_module/alarm_monitor/engineering/nif)
+	interface("StationAlertConsole", state = nameof(GLOB.tgui_nif_state))
 
 // Subtype for NTOS
 /datum/tgui_module/alarm_monitor/engineering/ntos
@@ -40,7 +44,8 @@ DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/engineering/nif, GLOB.tgui_nif
 
 // Subtype for glasses_state
 /datum/tgui_module/alarm_monitor/security/glasses
-DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/security/glasses, GLOB.tgui_glasses_state)
+CAPABILITIES(/datum/tgui_module/alarm_monitor/security/glasses)
+	interface("StationAlertConsole", state = nameof(GLOB.tgui_glasses_state))
 
 // Subtype for NTOS
 /datum/tgui_module/alarm_monitor/security/ntos

@@ -192,10 +192,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/mineral/equipment_vendor, TYPE_PROC_REF(/
 	)
 	..()
 
-UI_DATA(/obj/machinery/mineral/equipment_vendor, "merge:ui_data_obj_machinery_mineral_equipment_vendor{has_id:bool,id:list}")
-
 /// The computed part of /obj/machinery/mineral/equipment_vendor's window data (declared on its UI_DATA row).
-/obj/machinery/mineral/equipment_vendor/proc/ui_data_obj_machinery_mineral_equipment_vendor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/mineral/equipment_vendor/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	// ID
@@ -239,7 +237,10 @@ UI_DATA(/obj/machinery/mineral/equipment_vendor, "merge:ui_data_obj_machinery_mi
 		dirty_items = TRUE
 	return ..()
 
-DECLARE_UI(/obj/machinery/mineral/equipment_vendor, "MiningVendor")
+CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
+	interface("MiningVendor")
+	op("logoff", ui_act("logoff"), then(PROC_REF(ui_act_logoff)))
+	op("purchase", ui_act("purchase", arg("cat", schema_text(4096)), arg("name", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
 
 /obj/machinery/mineral/equipment_vendor/ui_prepare(mob/user, datum/tgui/ui)
 	// Update static data if need be
@@ -248,34 +249,34 @@ DECLARE_UI(/obj/machinery/mineral/equipment_vendor, "MiningVendor")
 		dirty_items = FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/mineral/equipment_vendor, "logoff", ui_act_logoff)
-UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_logoff)
+/obj/machinery/mineral/equipment_vendor/proc/ui_act_logoff(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
 	if(!inserted_id)
 		return
-	ui.user.put_in_hands(inserted_id)
+	user.put_in_hands(inserted_id)
 	own_take(src, nameof(/obj/machinery/mineral/equipment_vendor::inserted_id))
 	add_fingerprint()
 
-UI_ACT(/obj/machinery/mineral/equipment_vendor, "purchase", ui_act_purchase, UI_ARG_TEXT("cat"), UI_ARG_TEXT("name"))
-UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
+/obj/machinery/mineral/equipment_vendor/proc/ui_act_purchase(datum/act/op/A, cat, name_arg)
+	var/mob/user = A.actor
 	. = TRUE
 	if(!inserted_id)
 		flick(icon_deny, src)
 		return
-	var/category = params["cat"] // meow
-	var/name = params["name"]
+	var/category = cat // meow
+	var/name = name_arg
 	if(!(category in prize_list) || !(name in prize_list[category])) // Not trying something that's not in the list, are you?
 		flick(icon_deny, src)
 		return
 	var/datum/data/mining_equipment/prize = prize_list[category][name]
 	if(prize.cost > get_points(inserted_id)) // shouldn't be able to access this since the button is greyed out, but..
-		to_chat(ui.user, span_danger("You have insufficient Thalers."))
+		to_chat(user, span_danger("You have insufficient Thalers."))
 		flick(icon_deny, src)
 		return
 
 	if(!remove_points(inserted_id, prize.cost))
-		to_chat(ui.user, span_danger("The account transaction was declined."))
+		to_chat(user, span_danger("The account transaction was declined."))
 		flick(icon_deny, src)
 		return
 	var/obj/item/I = new prize.equipment_path(loc)

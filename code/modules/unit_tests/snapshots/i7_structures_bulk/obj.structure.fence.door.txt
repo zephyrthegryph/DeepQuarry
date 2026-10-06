@@ -1,0 +1,4 @@
+/obj/structure/fence/door|human|none => fence_door_hand,fence_door_item|
+/obj/structure/fence/door|robot|none => fence_door_hand,fence_door_item|
+/obj/structure/fence/door|ai|none => |
+/obj/structure/fence/door|ghost|none => |

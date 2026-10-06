@@ -1,0 +1,5 @@
+/obj/machinery/hologram/holopad|human|none => holopad_request_hand|holopad_request_item:needs an item
+/obj/machinery/hologram/holopad|robot|none => holopad_request_hand,gen_silicon_holopad_silicon_use|gen_robot_interaction_swallow:not possible right now,holopad_request_item:needs an item
+/obj/machinery/hologram/holopad|ai|none => gen_silicon_holopad_silicon_use|
+/obj/machinery/hologram/holopad|ghost|none => |
+/obj/machinery/hologram/holopad|human|/obj/item => holopad_request_item,holopad_request_hand|

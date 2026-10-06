@@ -88,12 +88,17 @@ DECLARE_INTERACTIONS(/obj/item/clipboard, \
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/item/clipboard, "Clipboard", UI_TITLE("Clipboard"))
-
-UI_DATA_REPLACE(/obj/item/clipboard, "merge:ui_data_obj_item_clipboard{has_pen:bool,items:list}")
+CAPABILITIES(/obj/item/clipboard)
+	interface("Clipboard", title = "Clipboard", input = in_hand())
+	op("remove_pen", ui_act("remove_pen"), then(PROC_REF(ui_act_remove_pen)))
+	op("add_pen", ui_act("add_pen"), then(PROC_REF(ui_act_add_pen)))
+	op("write", ui_act("write", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_write)))
+	op("remove", ui_act("remove", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove)))
+	op("rename", ui_act("rename", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_rename)))
+	op("open", ui_act("open", arg("kind", schema_text(4096)), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_open)))
 
 /// The computed part of /obj/item/clipboard's window data (declared on its UI_DATA row).
-/obj/item/clipboard/proc/ui_data_obj_item_clipboard(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/clipboard/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["has_pen"] = !!haspen()
 	var/list/items = list()
@@ -124,15 +129,16 @@ UI_DATA_REPLACE(/obj/item/clipboard, "merge:ui_data_obj_item_clipboard{has_pen:b
 	data["items"] = items
 	return data
 
-/obj/item/clipboard/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/item/clipboard/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat || user.restrained() || loc != user)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/item/clipboard, "remove_pen", ui_act_remove_pen)
-UI_ACT_PROC(/obj/item/clipboard, ui_act_remove_pen)
+/obj/item/clipboard/proc/ui_act_remove_pen(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	if(haspen() && haspen().loc == src)
 		haspen().forceMove(user.loc)
 		user.put_in_hands(haspen())
@@ -140,8 +146,10 @@ UI_ACT_PROC(/obj/item/clipboard, ui_act_remove_pen)
 		update_icon()
 	return TRUE
 
-UI_ACT(/obj/item/clipboard, "add_pen", ui_act_add_pen)
-UI_ACT_PROC(/obj/item/clipboard, ui_act_add_pen)
+/obj/item/clipboard/proc/ui_act_add_pen(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	if(!haspen())
 		var/obj/item/pen/W = user.get_active_hand()
 		if(istype(W, /obj/item/pen))
@@ -152,9 +160,11 @@ UI_ACT_PROC(/obj/item/clipboard, ui_act_add_pen)
 			update_icon()
 	return TRUE
 
-UI_ACT(/obj/item/clipboard, "write", ui_act_write, UI_ARG_REF("ref", null, /obj/item))
-UI_ACT_PROC(/obj/item/clipboard, ui_act_write)
-	var/obj/item/O = params["ref"]
+/obj/item/clipboard/proc/ui_act_write(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/obj/item/O = ref
 	if(!O || O.loc != src)
 		return TRUE
 	if(O == toppaper() && istype(O, /obj/item/paper))
@@ -163,9 +173,11 @@ UI_ACT_PROC(/obj/item/clipboard, ui_act_write)
 			O.attackby(I, user)
 	return TRUE
 
-UI_ACT(/obj/item/clipboard, "remove", ui_act_remove, UI_ARG_REF("ref", null, /obj/item))
-UI_ACT_PROC(/obj/item/clipboard, ui_act_remove)
-	var/obj/item/O = params["ref"]
+/obj/item/clipboard/proc/ui_act_remove(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/obj/item/O = ref
 	if(!O || O.loc != src)
 		return TRUE
 	if(istype(O, /obj/item/paper) || istype(O, /obj/item/photo))
@@ -176,9 +188,11 @@ UI_ACT_PROC(/obj/item/clipboard, ui_act_remove)
 		update_icon()
 	return TRUE
 
-UI_ACT(/obj/item/clipboard, "rename", ui_act_rename, UI_ARG_REF("ref", null, /obj/item))
-UI_ACT_PROC(/obj/item/clipboard, ui_act_rename)
-	var/obj/item/O = params["ref"]
+/obj/item/clipboard/proc/ui_act_rename(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/obj/item/O = ref
 	if(!O || O.loc != src)
 		return TRUE
 	if(istype(O, /obj/item/paper))
@@ -189,12 +203,14 @@ UI_ACT_PROC(/obj/item/clipboard, ui_act_rename)
 		ph.photo_verb_rename(user)
 	return TRUE
 
-UI_ACT(/obj/item/clipboard, "open", ui_act_open, UI_ARG_TEXT("kind"), UI_ARG_REF("ref", null, /obj/item))
-UI_ACT_PROC(/obj/item/clipboard, ui_act_open)
-	var/obj/item/O = params["ref"]
+/obj/item/clipboard/proc/ui_act_open(datum/act/op/A, kind, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/obj/item/O = ref
 	if(!O || O.loc != src)
 		return TRUE
-	switch(params["kind"])
+	switch(kind)
 		if("paper")
 			var/obj/item/paper/p = O
 			p.show_content(user)

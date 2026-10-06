@@ -1,0 +1,4 @@
+/obj/structure/window|human|none => window_hand,window_item|window_repair:needs a welder,window:a>u:screwdriver:needs a screwdriver,window_bang:combat mode is off
+/obj/structure/window|robot|none => window_hand,window_item|window_repair:needs a welder,window:a>u:screwdriver:needs a screwdriver,window_bang:combat mode is off
+/obj/structure/window|ai|none => |
+/obj/structure/window|ghost|none => |

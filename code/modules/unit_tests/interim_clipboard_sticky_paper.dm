@@ -3,6 +3,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/clipboard/board = allocate(/obj/item/clipboard, T)
+	user.put_in_inactive_hand(board) // the window works in the hand that holds it
 	var/obj/item/paper/paper = allocate(/obj/item/paper, T)
 	paper.info = "Original checked clipboard contents"
 	TEST_ASSERT_NULL(board.toppaper(), "the actual clipboard initializes without a top paper")
@@ -20,7 +21,7 @@
 	TEST_ASSERT_EQUAL(paper.loc, board, "allowed clipping physically contains the original paper")
 	TEST_ASSERT_NULL(user.get_active_hand(), "allowed clipping clears the actual source hand")
 	TEST_ASSERT_NULL(owner_of(paper), "clipping preserves the original relation-only policy")
-	board.ui_act_remove(user, list("ref" = paper), null, null, "remove")
+	op_ui_act(user, board, "remove", list("ref" = paper))
 	TEST_ASSERT_EQUAL(user.get_active_hand(), paper, "public UI removal returns the exact original paper")
 	TEST_ASSERT_EQUAL(paper.loc, user, "public UI removal restores inventory containment")
 	TEST_ASSERT_NULL(board.toppaper(), "public UI removal clears the top-paper relation")

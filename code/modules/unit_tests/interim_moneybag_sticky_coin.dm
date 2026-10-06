@@ -25,7 +25,7 @@
 	TEST_ASSERT_EQUAL(counts[MAT_GOLD], 1, "allowed insertion counts exactly one original gold coin")
 	TEST_ASSERT_NULL(owner_of(coin), "the bag preserves its existing unowned contents policy")
 	TEST_ASSERT(user.stat == CONSCIOUS && !user.restrained() && user.Adjacent(bag), "the actual actor satisfies the public coin-removal gate")
-	bag.ui_act_remove(user, list("coin" = MAT_GOLD), null, null, "remove")
+	op_ui_act(user, bag, "remove", list("coin" = MAT_GOLD))
 	TEST_ASSERT_EQUAL(coin.loc, T, "actual removal returns the exact original coin to the bag's floor")
 	TEST_ASSERT_EQUAL(contents_count(bag), 0, "actual removal empties the physical bag contents")
 	counts = bag.count_coins()

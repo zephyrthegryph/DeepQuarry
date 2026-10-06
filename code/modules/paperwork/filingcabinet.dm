@@ -30,6 +30,8 @@ CAPABILITIES(/obj/structure/filingcabinet)
 	op("interaction_hand", hand(), ungated(), needs(req(PROC_REF(has_files), because = MSG(filingcabinet/empty))), then(PROC_REF(interaction_hand)))
 	op("interaction_item", item(/obj/item), then(PROC_REF(interaction_item)))
 	op("interaction_tk", tk(), then(PROC_REF(interaction_tk)))
+	interface("FileCabinet", state = nameof(GLOB.tgui_physical_state))
+	op("remove_object", ui_act("remove_object", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove_object)))
 
 /obj/structure/filingcabinet/Initialize(mapload)
 	for(var/obj/item/I in contents_of(loc))
@@ -99,14 +101,8 @@ MSG_DEF_SELF(filingcabinet/empty, "It's empty.")
 			return
 	to_chat(user, span_notice("You find nothing in [src]."))
 
-DECLARE_UI_STATE(/obj/structure/filingcabinet, GLOB.tgui_physical_state)
-
-DECLARE_UI(/obj/structure/filingcabinet, "FileCabinet")
-
-UI_DATA_REPLACE(/obj/structure/filingcabinet, "merge:ui_data_obj_structure_filingcabinet{cabinet_name:text,contents:list,contents_ref:list}")
-
 /// The computed part of /obj/structure/filingcabinet's window data (declared on its UI_DATA row).
-/obj/structure/filingcabinet/proc/ui_data_obj_structure_filingcabinet(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/structure/filingcabinet/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["cabinet_name"] = "[name]"
@@ -118,9 +114,11 @@ UI_DATA_REPLACE(/obj/structure/filingcabinet, "merge:ui_data_obj_structure_filin
 
 	return data
 
-UI_ACT(/obj/structure/filingcabinet, "remove_object", ui_act_remove_object, UI_ARG_REF("ref", "contents", /obj/item))
-UI_ACT_PROC(/obj/structure/filingcabinet, ui_act_remove_object)
-	var/obj/item/content = params["ref"]
+/obj/structure/filingcabinet/proc/ui_act_remove_object(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!isnull(ref) && !(ref in contents_of(src)))
+		return FALSE
+	var/obj/item/content = ref
 	if(istype(content) && (content.loc == src) && user.Adjacent(src))
 		user.put_in_hands(content)
 		open_animation()

@@ -35,9 +35,22 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/signaler, TYPE_PROC_REF(/atom, appear
 	if(holder())
 		holder().update_icon()
 
-DECLARE_UI(/obj/item/assembly/signaler, "Signaler")
+CAPABILITIES(/obj/item/assembly/signaler)
+	interface("Signaler", state = nameof(GLOB.tgui_deep_inventory_state), input = in_hand())
+	op("signal", ui_act("signal"), then(PROC_REF(ui_act_signal)))
+	op("freq", ui_act("freq", arg("freq", num())), then(PROC_REF(ui_act_freq)))
+	op("code", ui_act("code", arg("code", num())), then(PROC_REF(ui_act_code)))
+	op("reset", ui_act("reset", arg("reset", schema_text(4096))), then(PROC_REF(ui_act_reset)))
 
-UI_DATA_REPLACE(/obj/item/assembly/signaler, "frequency:num", "code", "merge:ui_data_obj_item_assembly_signaler{minFrequency:num,maxFrequency:num}")
+/obj/item/assembly/signaler/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["frequency"] = frequency
+	data["code"] = code
+	var/list/merged_1 = ui_data_obj_item_assembly_signaler(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/assembly/signaler's window data (declared on its UI_DATA row).
 /obj/item/assembly/signaler/proc/ui_data_obj_item_assembly_signaler(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -46,30 +59,26 @@ UI_DATA_REPLACE(/obj/item/assembly/signaler, "frequency:num", "code", "merge:ui_
 	data["maxFrequency"] = RADIO_HIGH_FREQ
 	return data
 
-UI_ACT(/obj/item/assembly/signaler, "signal", ui_act_signal)
-UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_signal)
+/obj/item/assembly/signaler/proc/ui_act_signal(datum/act/op/A)
 	signal()
 	. = TRUE
 	update_icon()
 
-UI_ACT(/obj/item/assembly/signaler, "freq", ui_act_freq, UI_ARG_NUM("freq"))
-UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_freq)
-	frequency = unformat_frequency(params["freq"])
+/obj/item/assembly/signaler/proc/ui_act_freq(datum/act/op/A, freq)
+	frequency = unformat_frequency(freq)
 	frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 	set_frequency(frequency)
 	. = TRUE
 	update_icon()
 
-UI_ACT(/obj/item/assembly/signaler, "code", ui_act_code, UI_ARG_NUM("code"))
-UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_code)
-	code = params["code"]
+/obj/item/assembly/signaler/proc/ui_act_code(datum/act/op/A, code_arg)
+	code = code_arg
 	code = clamp(round(code), 1, 100)
 	. = TRUE
 	update_icon()
 
-UI_ACT(/obj/item/assembly/signaler, "reset", ui_act_reset, UI_ARG_TEXT("reset"))
-UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_reset)
-	if(params["reset"] == "freq")
+/obj/item/assembly/signaler/proc/ui_act_reset(datum/act/op/A, reset)
+	if(reset == "freq")
 		set_frequency(initial(frequency))
 	else
 		code = initial(code)

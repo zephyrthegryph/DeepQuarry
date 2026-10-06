@@ -135,7 +135,9 @@
 /proc/move_into_failed(datum/holder, slot_id, datum/item, mob/actor, reason, outcome = ACT_REFUSED)
 	GLOB.act_last_reason = reason
 	GLOB.act_last_outcome = outcome
-	log_world("MOVE_INTO: [item] into [holder] ([slot_id || "default"]) refused: [reason]")
+	var/refusal = "MOVE_INTO: [item] into [holder] ([slot_id || "default"]) refused: [reason]"
+	boot_noise_note(refusal)
+	log_world(refusal)
 	if(ispath(reason, /datum/msg))
 		act_message_t(actor, holder, reason, isitem(item) ? item : null)
 	else if(istext(reason))

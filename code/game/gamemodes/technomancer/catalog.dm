@@ -43,6 +43,12 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 	owns_many(nameof(consumable_instances))
 	owns_many(nameof(equipment_instances))
 	owns_many(nameof(spell_instances))
+	interface("TechnomancerCatalog", title = "Catalog", input = in_hand())
+	op("tab_choice", ui_act("tab_choice", arg("tab", num())), then(PROC_REF(ui_act_tab_choice)))
+	op("spell_category", ui_act("spell_category", arg("category", schema_text(4096))), then(PROC_REF(ui_act_spell_category)))
+	op("spell_choice", ui_act("spell_choice", arg("name", schema_text(4096))), then(PROC_REF(ui_act_spell_choice)))
+	op("item_choice", ui_act("item_choice", arg("name", schema_text(4096))), then(PROC_REF(ui_act_item_choice)))
+	op("refund_functions", ui_act("refund_functions"), then(PROC_REF(ui_act_refund_functions)))
 
 /obj/item/technomancer_catalog/apprentice
 	name = "apprentice's catalog"
@@ -130,9 +136,17 @@ DECLARE_INTERACTIONS(/obj/item/technomancer_catalog, \
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/item/technomancer_catalog, "TechnomancerCatalog", UI_TITLE("Catalog"))
-
-UI_DATA_REPLACE(/obj/item/technomancer_catalog, "tab:num", "spell_tab", "budget:num", "max_budget:num", "merge:ui_data_obj_item_technomancer_catalog{spell_categories:list,spells:list,equipment:list,consumables:list,assistance:list}")
+/obj/item/technomancer_catalog/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["tab"] = tab
+	data["spell_tab"] = spell_tab
+	data["budget"] = budget
+	data["max_budget"] = max_budget
+	var/list/merged_1 = ui_data_obj_item_technomancer_catalog(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/technomancer_catalog's window data (declared on its UI_DATA row).
 /obj/item/technomancer_catalog/proc/ui_data_obj_item_technomancer_catalog(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -164,10 +178,9 @@ UI_DATA_REPLACE(/obj/item/technomancer_catalog, "tab:num", "spell_tab", "budget:
 	data["assistance"] = assistance
 	return data
 
-/obj/item/technomancer_catalog/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	var/mob/living/carbon/human/H = ui.user
+/obj/item/technomancer_catalog/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	var/mob/living/carbon/human/H = user
 	H.set_machine(src)
 	if(H.stat || H.restrained())
 		return FALSE
@@ -180,23 +193,27 @@ UI_DATA_REPLACE(/obj/item/technomancer_catalog, "tab:num", "spell_tab", "budget:
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/item/technomancer_catalog, "tab_choice", ui_act_tab_choice, UI_ARG_NUM("tab"))
-UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_tab_choice)
-	tab = params["tab"]
+/obj/item/technomancer_catalog/proc/ui_act_tab_choice(datum/act/op/A, tab_arg)
+	if(!ui_gate(A))
+		return FALSE
+	tab = tab_arg
 	return TRUE
 
-UI_ACT(/obj/item/technomancer_catalog, "spell_category", ui_act_spell_category, UI_ARG_TEXT("category"))
-UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_spell_category)
-	spell_tab = params["category"]
+/obj/item/technomancer_catalog/proc/ui_act_spell_category(datum/act/op/A, category)
+	if(!ui_gate(A))
+		return FALSE
+	spell_tab = category
 	return TRUE
 
-UI_ACT(/obj/item/technomancer_catalog, "spell_choice", ui_act_spell_choice, UI_ARG_TEXT("name"))
-UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_spell_choice)
-	var/mob/living/carbon/human/H = ui.user
+/obj/item/technomancer_catalog/proc/ui_act_spell_choice(datum/act/op/A, name)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/mob/living/carbon/human/H = user
 	H.set_machine(src)
 	var/datum/technomancer/new_spell = null
 	for(var/datum/technomancer/spell/s in spell_instances)
-		if(s.name == params["name"])
+		if(s.name == name)
 			new_spell = s
 			break
 	var/obj/item/technomancer_core/core = null
@@ -214,13 +231,15 @@ UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_spell_choice)
 			to_chat(H, span_danger("You can't afford that!"))
 	return TRUE
 
-UI_ACT(/obj/item/technomancer_catalog, "item_choice", ui_act_item_choice, UI_ARG_TEXT("name"))
-UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_item_choice)
-	var/mob/living/carbon/human/H = ui.user
+/obj/item/technomancer_catalog/proc/ui_act_item_choice(datum/act/op/A, name)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/mob/living/carbon/human/H = user
 	H.set_machine(src)
 	var/datum/technomancer/desired = null
 	for(var/datum/technomancer/o in equipment_instances + consumable_instances + assistance_instances)
-		if(o.name == params["name"])
+		if(o.name == name)
 			desired = o
 			break
 	if(desired)
@@ -233,9 +252,11 @@ UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_item_choice)
 			to_chat(H, span_danger("You can't afford that!"))
 	return TRUE
 
-UI_ACT(/obj/item/technomancer_catalog, "refund_functions", ui_act_refund_functions)
-UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_refund_functions)
-	var/mob/living/carbon/human/H = ui.user
+/obj/item/technomancer_catalog/proc/ui_act_refund_functions(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/mob/living/carbon/human/H = user
 	H.set_machine(src)
 	var/turf/T = get_turf(H)
 	if(T && (T.z in using_map.player_levels))

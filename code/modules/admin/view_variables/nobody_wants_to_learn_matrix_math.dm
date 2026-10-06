@@ -16,13 +16,11 @@
 	testing_matrix = matrix(target.transform)
 
 
-DECLARE_UI_STATE(/datum/nobody_wants_to_learn_matrix_math, ADMIN_STATE(R_VAREDIT))
-
 /datum/nobody_wants_to_learn_matrix_math/tgui_close(mob/user)
 	qdel(src)
 
 CAPABILITIES(/datum/nobody_wants_to_learn_matrix_math)
-	interface("MatrixMathTester")
+	interface("MatrixMathTester", rights = R_VAREDIT)
 	op("change_var", ui_act("change_var", arg("var_name", schema_text(4096)), arg("var_value", num())), then(PROC_REF(ui_act_change_var)))
 	op("scale", ui_act("scale", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_scale)))
 	op("translate", ui_act("translate", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_translate)))

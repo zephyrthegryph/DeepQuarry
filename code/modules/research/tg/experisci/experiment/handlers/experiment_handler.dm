@@ -9,6 +9,10 @@
 CAPABILITIES(/datum/experiment_handler)
 	op("clear_server", ui_act(), then(PROC_REF(ui_act_clear_server)))
 	op("clear_experiment", ui_act(), then(PROC_REF(ui_act_clear_experiment)))
+	interface("ExperimentConfigure")
+	op("select_server", ui_act("select_server", arg("ref", schema_ref(/datum/techweb))), then(PROC_REF(ui_act_select_server)))
+	op("select_experiment", ui_act("select_experiment", arg("ref", schema_ref(/datum/experiment))), then(PROC_REF(ui_act_select_experiment)))
+	op("start_experiment_callback", ui_act("start_experiment_callback"), then(PROC_REF(ui_act_start_experiment_callback)))
 
 /datum/experiment_handler
 	/// The movable this handler belongs to.
@@ -356,8 +360,6 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 	// Finally, check against the allowed experiment types
 	return is_type_in_list(experiment, allowed_experiments)
 
-DECLARE_UI(/datum/experiment_handler, "ExperimentConfigure")
-
 /datum/experiment_handler/ui_title(mob/user)
 	var/atom/parent_atom = owner
 	return "[parent_atom ? "[parent_atom.name] | " : ""]Experiment Configuration"
@@ -369,10 +371,8 @@ DECLARE_UI(/datum/experiment_handler, "ExperimentConfigure")
 		var/mob/living/silicon/robot/owner_robot = parent_atom.loc
 		.["theme"] = owner_robot.get_ui_theme()
 
-UI_DATA_REPLACE(/datum/experiment_handler, "merge:ui_data_datum_experiment_handler{always_active:num,has_start_callback:bool,techwebs:list,experiments:list}")
-
 /// The computed part of /datum/experiment_handler's window data (declared on its UI_DATA row).
-/datum/experiment_handler/proc/ui_data_datum_experiment_handler(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/experiment_handler/ui_data(datum/act/eval/A)
 	. = list(
 		"always_active" = (config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE),
 		"has_start_callback" = !isnull(start_experiment_spec),
@@ -409,10 +409,11 @@ UI_DATA_REPLACE(/datum/experiment_handler, "merge:ui_data_datum_experiment_handl
 			)
 			.["experiments"] += list(data)
 
-UI_ACT(/datum/experiment_handler, "select_server", ui_act_select_server, UI_ARG_REF("ref", null, /datum/techweb))
-UI_ACT_PROC(/datum/experiment_handler, ui_act_select_server)
+/datum/experiment_handler/proc/ui_act_select_server(datum/act/op/A, ref)
+	if(isnull(ref))
+		return FALSE
 	. = TRUE
-	var/datum/techweb/new_techweb = params["ref"]
+	var/datum/techweb/new_techweb = ref
 	if (new_techweb)
 		link_techweb(new_techweb)
 		return
@@ -421,13 +422,14 @@ UI_ACT_PROC(/datum/experiment_handler, ui_act_select_server)
 	unlink_techweb()
 	return OP_OK
 
-UI_ACT(/datum/experiment_handler, "select_experiment", ui_act_select_experiment, UI_ARG_REF("ref", null, /datum/experiment))
-UI_ACT_PROC(/datum/experiment_handler, ui_act_select_experiment)
+/datum/experiment_handler/proc/ui_act_select_experiment(datum/act/op/A, ref)
+	if(isnull(ref))
+		return FALSE
 	. = TRUE
 	// Don't allow selection for always actives (no concept of active)
 	if (config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE)
 		return
-	var/datum/experiment/experiment = params["ref"]
+	var/datum/experiment/experiment = ref
 	if (experiment)
 		link_experiment(experiment)
 
@@ -435,8 +437,7 @@ UI_ACT_PROC(/datum/experiment_handler, ui_act_select_experiment)
 	unlink_experiment()
 	return OP_OK
 
-UI_ACT(/datum/experiment_handler, "start_experiment_callback", ui_act_start_experiment_callback)
-UI_ACT_PROC(/datum/experiment_handler, ui_act_start_experiment_callback)
+/datum/experiment_handler/proc/ui_act_start_experiment_callback(datum/act/op/A)
 	om_run(start_experiment_spec, selected_experiment())
 
 

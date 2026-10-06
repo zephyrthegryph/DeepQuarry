@@ -1216,7 +1216,8 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	name = "Appearance Editor (Vore)"
 	flags = APPEARANCE_ALL
 
-DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious_state)
+CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
+	interface("AppearanceChanger", state = nameof(GLOB.tgui_conscious_state))
 
 /datum/tgui_module/appearance_changer/vore/tgui_status(mob/user, datum/tgui_state/state)
 	if(!isbelly(owner().loc))

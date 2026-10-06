@@ -119,6 +119,11 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 	owns_one(nameof(hatch), /obj/effect/overlay/recycler)
 	owns_one(nameof(item_overlay), /obj/effect/overlay/recycler)
 	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler)
+	interface("RecyclerInterface")
+	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("recycle", ui_act("recycle"), then(PROC_REF(ui_act_recycle)))
+	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
+	op("open", ui_act("open"), then(PROC_REF(ui_act_open)))
 
 /obj/machinery/maint_recycler/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
@@ -407,12 +412,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/maint_recycler, TYPE_PROC_REF(/atom, appe
 /*
 TGUI PROCS
 */
-DECLARE_UI(/obj/machinery/maint_recycler, "RecyclerInterface")
-
-UI_DATA_REPLACE(/obj/machinery/maint_recycler, "merge:ui_data_obj_machinery_maint_recycler{heldItemName:text,heldItemValue:unknown,userName:text,userBalance:unknown,itemIcon:text}")
 
 /// The computed part of /obj/machinery/maint_recycler's window data (declared on its UI_DATA row).
-/obj/machinery/maint_recycler/proc/ui_data_obj_machinery_maint_recycler(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/maint_recycler/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 	data["heldItemName"] = inserted_item?.name
 	data["heldItemValue"] = try_get_obj_value(inserted_item)
@@ -433,34 +436,32 @@ UI_DATA_REPLACE(/obj/machinery/maint_recycler, "merge:ui_data_obj_machinery_main
 		get_asset_datum(/datum/asset/simple/maint_recycler)
 	)
 
-/obj/machinery/maint_recycler/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
-
-UI_ACT(/obj/machinery/maint_recycler, "eject", ui_act_eject)
-UI_ACT_PROC(/obj/machinery/maint_recycler, ui_act_eject)
-	eject_item(ui.user)
+/obj/machinery/maint_recycler/proc/ui_act_eject(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	eject_item(user)
 	. = TRUE
 
-UI_ACT(/obj/machinery/maint_recycler, "recycle", ui_act_recycle)
-UI_ACT_PROC(/obj/machinery/maint_recycler, ui_act_recycle)
-	if(canRecycle(ui.user, try_get_obj_value(inserted_item)))
-		start_recycling(ui.user)
+/obj/machinery/maint_recycler/proc/ui_act_recycle(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	if(canRecycle(user, try_get_obj_value(inserted_item)))
+		start_recycling(user)
 	else
-		deny_act(inserted_item,ui.user)
-		to_chat(ui.user,span_warning("You have reached your daily RecyclePoints(tm) Allowance!"))
+		deny_act(inserted_item,user)
+		to_chat(user,span_warning("You have reached your daily RecyclePoints(tm) Allowance!"))
 	. = TRUE
 
-UI_ACT(/obj/machinery/maint_recycler, "close", ui_act_close)
-UI_ACT_PROC(/obj/machinery/maint_recycler, ui_act_close)
-	close_door(ui.user)
+/obj/machinery/maint_recycler/proc/ui_act_close(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	close_door(user)
 	. = TRUE
 
-UI_ACT(/obj/machinery/maint_recycler, "open", ui_act_open)
-UI_ACT_PROC(/obj/machinery/maint_recycler, ui_act_open)
-	open_door(ui.user)
+/obj/machinery/maint_recycler/proc/ui_act_open(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(A.actor)
+	open_door(user)
 	. = TRUE
 
 /obj/machinery/maint_recycler/tgui_close(mob/user)

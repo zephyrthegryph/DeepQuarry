@@ -175,15 +175,15 @@
 /datum/material_service/tgui_host(mob/user)
 	return owner()
 
-DECLARE_UI(/datum/material_service, "EngineeringAssembly")
+CAPABILITIES(/datum/material_service)
+	interface("EngineeringAssembly")
+	op("emitter_setting", ui_act("emitter_setting", arg("setting"), arg("value", num(0.25, 3))), then(PROC_REF(ui_act_emitter_setting)))
 
 /datum/material_service/ui_title(mob/user)
 	return "[owner().name] — diagnostics"
 
-UI_DATA_REPLACE(/datum/material_service, "merge:ui_data_datum_material_service{status:unknown,temperature:num,buffer:num,input:num,output:num,lossEnergy:num,parts:list,limiting:unknown,configuration:num,liner:num,shell:num,fatigue:num,monitoring:bool,reading:unknown,emitter:map}")
-
 /// The computed part of /datum/material_service's window data (declared on its UI_DATA row).
-/datum/material_service/proc/ui_data_datum_material_service(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/material_service/ui_data(datum/act/eval/A)
 	var/list/parts = list()
 	for(var/role in owner().material_roles())
 		var/datum/material/material = owner().material_for_role(role)
@@ -215,26 +215,29 @@ UI_DATA_REPLACE(/datum/material_service, "merge:ui_data_datum_material_service{s
 			return "Controls motion: [round(material.elasticity)] elasticity, [round(material.hardness)] hardness."
 	return "Functional behavior follows this material's measured physical properties."
 
-/datum/material_service/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/material_service/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(QDELETED(owner()) || !user.Adjacent(owner()) || user.incapacitated())
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/material_service, "emitter_setting", ui_act_emitter_setting, UI_ARG_CHOICE("setting", list("output", "cadence")), UI_ARG_NUM("value", 0.25, 3))
-UI_ACT_PROC(/datum/material_service, ui_act_emitter_setting)
+/datum/material_service/proc/ui_act_emitter_setting(datum/act/op/A, setting, value_arg)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(setting) && !(setting in list("output", "cadence")))
+		return FALSE
 	var/obj/machinery/power/emitter/emitter = owner()
 	if(!istype(emitter))
 		return FALSE
 	if(!emitter.allowed(user) || emitter.locked)
 		return TRUE
-	var/value = params["value"]
+	var/value = value_arg
 	if(!isnum(value))
 		return TRUE
-	if(params["setting"] == "output")
+	if(setting == "output")
 		emitter.material_output_setting = value
-	else if(params["setting"] == "cadence")
+	else if(setting == "cadence")
 		emitter.material_cadence_setting = value
 	emitter.material_service_changed()
 	return TRUE

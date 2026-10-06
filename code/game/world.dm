@@ -308,7 +308,7 @@ GLOBAL_VAR(restart_counter)
 	var/after_start
 #ifdef UNIT_TESTS
 	dq_test_shard_init()
-	after_start = GLOBAL_PROC_REF(RunUnitTests)
+	after_start = GLOBAL_PROC_REF(start_unit_tests)
 #else
 	after_start = GLOBAL_PROC_REF(force_end_round)
 #endif
@@ -680,6 +680,8 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 #ifdef UNIT_TESTS
 		if(GLOB.failed_any_test)
 			LAZYADD(fail_reasons, "Unit Tests failed!")
+		if(GLOB.boot_unclean)
+			LAZYADD(fail_reasons, GLOB.boot_unclean)
 #endif
 		if(!GLOB.log_directory)
 			LAZYADD(fail_reasons, "Missing GLOB.log_directory!")

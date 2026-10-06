@@ -1,0 +1,4 @@
+/obj/machinery/shieldwall|human|none => shieldwall_touch_block|
+/obj/machinery/shieldwall|robot|none => shieldwall_touch_block|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/shieldwall|ai|none => |
+/obj/machinery/shieldwall|ghost|none => |

@@ -1411,6 +1411,25 @@ Pinned by `dq_atmos_m/pipes/trinary_*` and `dq_atmos_m/pipes/omni_*`.
   reads `operable()` for "off" where it read the area's `powered()`), and its gauge is an `examine_line()`.
 - The heat exchanger's wrench is `pipe_device_unwrench()` with its floor check as a requirement (4 s, as before).
 
+## UI sweep: legacy windows to interface() and ops (rewrite/ui-sweep)
+
+Converted by `tools/dx/codemods/ui_declare.py` (families of types together, parents first); hand fixes listed below. Pinned by the
+focused tests of the touched windows (the tests that called a handler with its old signature press the button through `op_ui_act()`).
+
+* **A button's guard runs in its handler.** A `ui_act_allowed()` override became `ui_gate(A)`, asked first by every handler of the type's
+  family (`if(!ui_gate(A)) return FALSE`); a family with a guard on one subtype has a root `ui_gate()` that answers TRUE. A press the guard
+  refuses is an op that did nothing, as before (no message unless the guard spoke).
+* **Typed args through the schemas.** `UI_ARG_BOOL` is `bool()` (text "true"/"false" is refused, JSON booleans pass), `UI_ARG_PATH` is
+  `schema_path()`, `UI_ARG_REF` is `schema_ref()` plus a check at the head of the handler that the ref is in its source (`contents` reads
+  `contents_of()`); a ref the handler never null-checks is required (a button without it does nothing; before, the handler ran with null).
+  `UI_ARG_CHOICE`/`UI_ARG_LIST` pass the raw value, checked in the handler (a choice no longer converts between number and text).
+* **The open op's input.** An item's window opens from the hand holding it (`input = in_hand()`): a `hand()` open op would win over picking
+  it up. A mob's from its menu. A machine or structure keeps its own hand interaction, which outranks the interface's open op.
+* **State rows.** A subtype's `DECLARE_UI_STATE` declares the inherited window again with `state =`; a parent's state goes to every window
+  below it; `tgui_state()` falls back to the interface's state. The security console's state row was never read (its window is its camera
+  module's, through `ui_redirect()`) and is gone.
+* **Messages.** The ice cream vat's flavour and cone messages are `act_message()` (the actor reads "You ...").
+* **The holodeck's AI override** is asked by how the press came (`A.authority & AUTH_REMOTE_ACCESS`), not `issilicon()`.
 ## Pipes and the atmospherics base (rewrite/pipenet-full)
 
 - A pipe's wrench and welder are ops: `unwrench` (1 s; refused under intact floor and while its gas pushes back; the "gush of air" warning as it

@@ -14,9 +14,13 @@
 
 // The admin holder owns this panel (tgui_player_panel); owner_admin is a plain relation back.
 
-DECLARE_UI_STATE(/datum/player_panel, ADMIN_STATE(R_HOLDER))
-
-DECLARE_UI(/datum/player_panel, "PlayerPanel", UI_TITLE("Player Panel"))
+CAPABILITIES(/datum/player_panel)
+	interface("PlayerPanel", title = "Player Panel", rights = R_HOLDER)
+	op("admin_opts", ui_act("admin_opts", arg("ref", schema_ref(/mob))), then(PROC_REF(ui_act_admin_opts)))
+	op("private_message", ui_act("private_message", arg("ref", schema_ref(/mob))), then(PROC_REF(ui_act_private_message)))
+	op("traitor", ui_act("traitor", arg("ref", schema_ref(/mob))), then(PROC_REF(ui_act_traitor)))
+	op("check_antagonists", ui_act("check_antagonists", arg("ref", schema_ref(/mob))), then(PROC_REF(ui_act_check_antagonists)))
+	op("refresh", ui_act("refresh", arg("ref", schema_ref(/mob))), then(PROC_REF(ui_act_refresh)))
 
 /datum/player_panel/ui_opening(mob/user, datum/tgui/ui)
 	snapshot_players()
@@ -75,61 +79,76 @@ DECLARE_UI(/datum/player_panel, "PlayerPanel", UI_TITLE("Player Panel"))
 		))
 	shown_players = players
 
-UI_DATA_REPLACE(/datum/player_panel, "merge:ui_data_datum_player_panel{players:bool}")
-
 /// The computed part of /datum/player_panel's window data (declared on its UI_DATA row).
-/datum/player_panel/proc/ui_data_datum_player_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/player_panel/ui_data(datum/act/eval/A)
 	return list("players" = shown_players || list())
 
-/datum/player_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/player_panel/proc/ui_gate(datum/act/op/A)
 	if(!owner_admin)
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/player_panel, "admin_opts", ui_act_admin_opts, UI_ARG_REF("ref", null, /mob))
-UI_ACT_PROC(/datum/player_panel, ui_act_admin_opts)
-	var/mob/target = params["ref"]
+/datum/player_panel/proc/ui_act_admin_opts(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(isnull(ref))
+		return FALSE
+	var/mob/target = ref
 	if(!ismob(target))
 		return FALSE
-	if(ui.user?.client)
-		SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/show_player_panel, target)
+	if(user?.client)
+		SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_player_panel, target)
 	return TRUE
 
-UI_ACT(/datum/player_panel, "private_message", ui_act_private_message, UI_ARG_REF("ref", null, /mob))
-UI_ACT_PROC(/datum/player_panel, ui_act_private_message)
-	var/mob/target = params["ref"]
+/datum/player_panel/proc/ui_act_private_message(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(isnull(ref))
+		return FALSE
+	var/mob/target = ref
 	if(!ismob(target))
 		return FALSE
-	if(ui.user?.client)
-		ui.user.client.cmd_admin_pm(target)
+	if(user?.client)
+		user.client.cmd_admin_pm(target)
 	return TRUE
 
-UI_ACT(/datum/player_panel, "traitor", ui_act_traitor, UI_ARG_REF("ref", null, /mob))
-UI_ACT_PROC(/datum/player_panel, ui_act_traitor)
-	var/mob/target = params["ref"]
+/datum/player_panel/proc/ui_act_traitor(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(isnull(ref))
+		return FALSE
+	var/mob/target = ref
 	if(!ismob(target))
 		return FALSE
 	if(!SSticker || !SSticker.mode)
-		tgui_alert_async(ui.user, "The game hasn't started yet!")
+		tgui_alert_async(user, "The game hasn't started yet!")
 		return TRUE
-	if(ui.user?.client)
-		SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/show_traitor_panel, target)
+	if(user?.client)
+		SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_traitor_panel, target)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/player_panel, "check_antagonists", ui_act_check_antagonists, UI_ARG_REF("ref", null, /mob))
-UI_ACT_PROC(/datum/player_panel, ui_act_check_antagonists)
-	var/mob/target = params["ref"]
+/datum/player_panel/proc/ui_act_check_antagonists(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(isnull(ref))
+		return FALSE
+	var/mob/target = ref
 	if(!ismob(target))
 		return FALSE
-	owner_admin.open_round_status_panel(ui.user)
+	owner_admin.open_round_status_panel(user)
 	return TRUE
 
-UI_ACT(/datum/player_panel, "refresh", ui_act_refresh, UI_ARG_REF("ref", null, /mob))
-UI_ACT_PROC(/datum/player_panel, ui_act_refresh)
-	var/mob/target = params["ref"]
+/datum/player_panel/proc/ui_act_refresh(datum/act/op/A, ref)
+	if(!ui_gate(A))
+		return FALSE
+	if(isnull(ref))
+		return FALSE
+	var/mob/target = ref
 	if(!ismob(target))
 		return FALSE
 	snapshot_players()

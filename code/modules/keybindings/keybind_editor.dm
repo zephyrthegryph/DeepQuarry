@@ -23,9 +23,14 @@
 		keybind_editor = new /datum/keybind_editor(src) // ALLOW(ownership): /client is not a datum and is the one owner of this by design
 	keybind_editor.tgui_interact(mob)
 
-DECLARE_UI_STATE(/datum/keybind_editor, GLOB.tgui_always_state)
-
-DECLARE_UI(/datum/keybind_editor, "KeybindingEditor")
+CAPABILITIES(/datum/keybind_editor)
+	interface("KeybindingEditor", state = nameof(GLOB.tgui_always_state))
+	op("set_profile", ui_act("set_profile", arg("profile", schema_text(4096))), then(PROC_REF(ui_act_set_profile)))
+	op("set_right_click", ui_act("set_right_click", arg("binding", schema_text(4096))), then(PROC_REF(ui_act_set_right_click)))
+	op("bind", ui_act("bind", arg("id", schema_text(4096)), arg("key", schema_text(4096))), then(PROC_REF(ui_act_bind)))
+	op("unbind", ui_act("unbind", arg("id", schema_text(4096)), arg("key", schema_text(4096))), then(PROC_REF(ui_act_unbind)))
+	op("reset", ui_act("reset", arg("id", schema_text(4096))), then(PROC_REF(ui_act_reset)))
+	op("reset_all", ui_act("reset_all"), then(PROC_REF(ui_act_reset_all)))
 
 /datum/keybind_editor/tgui_static_data(mob/user)
 	var/list/bindings = list()
@@ -53,10 +58,8 @@ DECLARE_UI(/datum/keybind_editor, "KeybindingEditor")
 		"max_keys" = KEYBIND_MAX_KEYS,
 	)
 
-UI_DATA_REPLACE(/datum/keybind_editor, "merge:ui_data_datum_keybind_editor{}")
-
 /// The computed part of /datum/keybind_editor's window data (declared on its UI_DATA row).
-/datum/keybind_editor/proc/ui_data_datum_keybind_editor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/keybind_editor/ui_data(datum/act/eval/A)
 	var/list/overrides = owner()?.prefs?.key_bindings
 	var/list/keys = list()
 	var/list/customised = list()
@@ -72,35 +75,36 @@ UI_DATA_REPLACE(/datum/keybind_editor, "merge:ui_data_datum_keybind_editor{}")
 		"right_click" = owner()?.right_click_binding(),
 	)
 
-/datum/keybind_editor/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/keybind_editor/proc/ui_gate(datum/act/op/A)
 	var/datum/preferences/prefs = owner()?.prefs
 	if(!prefs)
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/keybind_editor, "set_profile", ui_act_set_profile, UI_ARG_TEXT("profile"))
-UI_ACT_PROC(/datum/keybind_editor, ui_act_set_profile)
-	if(params["profile"] in KEYBIND_PROFILES)
-		profile = params["profile"]
+/datum/keybind_editor/proc/ui_act_set_profile(datum/act/op/A, profile_arg)
+	if(!ui_gate(A))
+		return FALSE
+	if(profile_arg in KEYBIND_PROFILES)
+		profile = profile_arg
 	return TRUE
 
-UI_ACT(/datum/keybind_editor, "set_right_click", ui_act_set_right_click, UI_ARG_TEXT("binding"))
-UI_ACT_PROC(/datum/keybind_editor, ui_act_set_right_click)
+/datum/keybind_editor/proc/ui_act_set_right_click(datum/act/op/A, binding_arg)
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/preferences/prefs = owner()?.prefs
-	var/binding = params["binding"]
+	var/binding = binding_arg
 	if(!(binding in RIGHT_CLICK_BINDINGS))
 		return
 	prefs.right_click_binding = binding
 	save_and_apply()
 	return TRUE
 
-UI_ACT(/datum/keybind_editor, "bind", ui_act_bind, UI_ARG_TEXT("id"), UI_ARG_TEXT("key"))
-UI_ACT_PROC(/datum/keybind_editor, ui_act_bind)
+/datum/keybind_editor/proc/ui_act_bind(datum/act/op/A, id, key_arg)
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/preferences/prefs = owner()?.prefs
-	var/datum/keybinding/binding = GLOB.keybindings[params["id"]]
-	var/key = sanitize_keybind_key(params["key"])
+	var/datum/keybinding/binding = GLOB.keybindings[id]
+	var/key = sanitize_keybind_key(key_arg)
 	if(!binding || !key)
 		return
 	var/list/keys = keybinding_keys(binding, profile, prefs.key_bindings)
@@ -124,22 +128,24 @@ UI_ACT_PROC(/datum/keybind_editor, ui_act_bind)
 	save_and_apply()
 	return TRUE
 
-UI_ACT(/datum/keybind_editor, "unbind", ui_act_unbind, UI_ARG_TEXT("id"), UI_ARG_TEXT("key"))
-UI_ACT_PROC(/datum/keybind_editor, ui_act_unbind)
+/datum/keybind_editor/proc/ui_act_unbind(datum/act/op/A, id, key)
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/preferences/prefs = owner()?.prefs
-	var/datum/keybinding/binding = GLOB.keybindings[params["id"]]
+	var/datum/keybinding/binding = GLOB.keybindings[id]
 	if(!binding)
 		return
 	var/list/keys = keybinding_keys(binding, profile, prefs.key_bindings)
-	keys -= params["key"]
+	keys -= key
 	set_keys(prefs, binding, keys)
 	save_and_apply()
 	return TRUE
 
-UI_ACT(/datum/keybind_editor, "reset", ui_act_reset, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/datum/keybind_editor, ui_act_reset)
+/datum/keybind_editor/proc/ui_act_reset(datum/act/op/A, id)
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/preferences/prefs = owner()?.prefs
-	var/datum/keybinding/binding = GLOB.keybindings[params["id"]]
+	var/datum/keybinding/binding = GLOB.keybindings[id]
 	if(!binding)
 		return
 	var/list/profile_overrides = LAZYACCESS(prefs.key_bindings, profile)
@@ -152,8 +158,9 @@ UI_ACT_PROC(/datum/keybind_editor, ui_act_reset)
 	save_and_apply()
 	return TRUE
 
-UI_ACT(/datum/keybind_editor, "reset_all", ui_act_reset_all)
-UI_ACT_PROC(/datum/keybind_editor, ui_act_reset_all)
+/datum/keybind_editor/proc/ui_act_reset_all(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/preferences/prefs = owner()?.prefs
 	if(prefs.key_bindings)
 		prefs.key_bindings -= profile

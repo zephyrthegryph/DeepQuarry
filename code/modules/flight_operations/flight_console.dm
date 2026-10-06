@@ -15,7 +15,15 @@
 		return ADMIN_STATE(R_ADMIN | R_EVENT | R_DEBUG)
 	return GLOB.tgui_default_state
 
-DECLARE_UI(/datum/flight_operations_ui, "FlightOperations", UI_TITLE("Flight Operations"))
+CAPABILITIES(/datum/flight_operations_ui)
+	interface("FlightOperations", title = "Flight Operations")
+	op("jump", ui_act("jump", arg("destination_id", schema_text(4096))), then(PROC_REF(ui_act_jump)))
+	op("select_destination", ui_act("select_destination", arg("destination_id")), then(PROC_REF(ui_act_select_destination)))
+	op("engage", ui_act("engage"), then(PROC_REF(ui_act_engage)))
+	op("abort", ui_act("abort"), then(PROC_REF(ui_act_abort)))
+	op("abandon_expedition", ui_act("abandon_expedition"), then(PROC_REF(ui_act_abandon_expedition)))
+	op("toggle_engines", ui_act("toggle_engines"), then(PROC_REF(ui_act_toggle_engines)))
+	op("thrust_limit", ui_act("thrust_limit", arg("value", num())), then(PROC_REF(ui_act_thrust_limit)))
 
 /datum/flight_operations_ui/ui_prepare(mob/user, datum/tgui/ui)
 	if(!resolve_vessel())
@@ -79,10 +87,8 @@ DECLARE_UI(/datum/flight_operations_ui, "FlightOperations", UI_TITLE("Flight Ope
 		destination_data += list(render_data)
 	return destination_data
 
-UI_DATA_REPLACE(/datum/flight_operations_ui, "merge:ui_data_datum_flight_operations_ui{vessel:unknown,vessel_id:num,vessel_destination_id:num,orbit_parent_id:unknown,docked_port_id:unknown,capabilities:unknown,engines_online:unknown,thrust_limit:unknown,total_thrust:unknown,can_burn:unknown,destinations:unknown,contacts:list,plan:list,expedition:list,server_time:unknown}")
-
 /// The computed part of /datum/flight_operations_ui's window data (declared on its UI_DATA row).
-/datum/flight_operations_ui/proc/ui_data_datum_flight_operations_ui(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/flight_operations_ui/ui_data(datum/act/eval/A)
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	var/obj/effect/overmap/visitable/ship/ship = vessel?.ship()
 	var/list/data = list(
@@ -142,63 +148,71 @@ UI_DATA_REPLACE(/datum/flight_operations_ui, "merge:ui_data_datum_flight_operati
 		)
 	return data
 
-/datum/flight_operations_ui/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/flight_operations_ui/proc/ui_gate(datum/act/op/A)
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	if(!vessel)
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/flight_operations_ui, "jump", ui_act_jump, UI_ARG_TEXT("destination_id"))
-UI_ACT_PROC(/datum/flight_operations_ui, ui_act_jump)
+/datum/flight_operations_ui/proc/ui_act_jump(datum/act/op/A, destination_id)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	if(vessel.active_plan)
 		if(vessel.active_plan.state != FLIGHT_PLAN_DRAFT)
 			return FALSE
 		SSflight.plans -= vessel.active_plan.id
 		own_clear(vessel, nameof(/datum/flight_vessel::active_plan), OWN_DELETE)
-	var/datum/flight_plan/jump_plan = SSflight.create_plan(vessel, params["destination_id"])
+	var/datum/flight_plan/jump_plan = SSflight.create_plan(vessel, destination_id)
 	if(!jump_plan || !jump_plan.start())
-		to_chat(ui.user, span_warning("The jump could not be initiated."))
+		to_chat(user, span_warning("The jump could not be initiated."))
 		return TRUE
-	to_chat(ui.user, span_notice("Jump sequence engaged for [jump_plan.destination().name]."))
+	to_chat(user, span_notice("Jump sequence engaged for [jump_plan.destination().name]."))
 	return TRUE
 
-UI_ACT(/datum/flight_operations_ui, "select_destination", ui_act_select_destination, UI_ARG_VALUE("destination_id"))
-UI_ACT_PROC(/datum/flight_operations_ui, ui_act_select_destination)
+/datum/flight_operations_ui/proc/ui_act_select_destination(datum/act/op/A, destination_id)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	if(vessel.active_plan)
 		if(vessel.active_plan.state != FLIGHT_PLAN_DRAFT)
 			return FALSE
 		SSflight.plans -= vessel.active_plan.id
 		own_clear(vessel, nameof(/datum/flight_vessel::active_plan), OWN_DELETE)
-	var/datum/flight_plan/plan = SSflight.create_plan(vessel, params["destination_id"])
+	var/datum/flight_plan/plan = SSflight.create_plan(vessel, destination_id)
 	if(!plan)
-		to_chat(ui.user, span_warning("The selected destination cannot be added to this vessel's flight plan."))
+		to_chat(user, span_warning("The selected destination cannot be added to this vessel's flight plan."))
 	return TRUE
 
-UI_ACT(/datum/flight_operations_ui, "engage", ui_act_engage)
-UI_ACT_PROC(/datum/flight_operations_ui, ui_act_engage)
+/datum/flight_operations_ui/proc/ui_act_engage(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	if(!vessel.active_plan?.start())
-		to_chat(ui.user, span_warning("The flight plan could not be engaged."))
+		to_chat(user, span_warning("The flight plan could not be engaged."))
 	return TRUE
 
-UI_ACT(/datum/flight_operations_ui, "abort", ui_act_abort)
-UI_ACT_PROC(/datum/flight_operations_ui, ui_act_abort)
+/datum/flight_operations_ui/proc/ui_act_abort(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	vessel.active_plan?.request_abort()
 	return TRUE
 
-UI_ACT(/datum/flight_operations_ui, "abandon_expedition", ui_act_abandon_expedition)
-UI_ACT_PROC(/datum/flight_operations_ui, ui_act_abandon_expedition)
+/datum/flight_operations_ui/proc/ui_act_abandon_expedition(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/flight_vessel/vessel = resolve_vessel()
-	SSexpedition.abandon_assignment(ui.user, vessel)
+	SSexpedition.abandon_assignment(user, vessel)
 	return TRUE
 
-UI_ACT(/datum/flight_operations_ui, "toggle_engines", ui_act_toggle_engines)
-UI_ACT_PROC(/datum/flight_operations_ui, ui_act_toggle_engines)
+/datum/flight_operations_ui/proc/ui_act_toggle_engines(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	if(!vessel.ship())
 		return FALSE
@@ -208,12 +222,13 @@ UI_ACT_PROC(/datum/flight_operations_ui, ui_act_toggle_engines)
 			engine.toggle()
 	return TRUE
 
-UI_ACT(/datum/flight_operations_ui, "thrust_limit", ui_act_thrust_limit, UI_ARG_NUM("value"))
-UI_ACT_PROC(/datum/flight_operations_ui, ui_act_thrust_limit)
+/datum/flight_operations_ui/proc/ui_act_thrust_limit(datum/act/op/A, value)
+	if(!ui_gate(A))
+		return FALSE
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	if(!vessel.ship())
 		return FALSE
-	vessel.ship().thrust_limit = clamp(params["value"] / 100, 0, 1)
+	vessel.ship().thrust_limit = clamp(value / 100, 0, 1)
 	for(var/datum/ship_engine/engine in vessel.ship().engines)
 		engine.set_thrust_limit(vessel.ship().thrust_limit)
 	return TRUE

@@ -132,6 +132,18 @@ CAPABILITIES(/obj/item/radio)
 	on_wire(WIRE_RADIO_SIGNAL, cut = PROC_REF(signal_wire_cut), pulse = PROC_REF(signal_wire_pulsed))
 	on_wire(WIRE_RADIO_RECEIVER, cut = PROC_REF(receiver_wire_cut), pulse = PROC_REF(receiver_wire_pulsed))
 	on_wire(WIRE_RADIO_TRANSMIT, cut = PROC_REF(transmit_wire_cut), pulse = PROC_REF(transmit_wire_pulsed))
+	interface("Radio", input = in_hand())
+	op("setFrequency", ui_act("setFrequency", arg("freq", num())), then(PROC_REF(ui_act_setfrequency)))
+	op("broadcast", ui_act("broadcast"), then(PROC_REF(ui_act_broadcast)))
+	op("listen", ui_act("listen"), then(PROC_REF(ui_act_listen)))
+	op("channel", ui_act("channel", arg("channel", num())), then(PROC_REF(ui_act_channel)))
+	op("specFreq", ui_act("specFreq", arg("channel", num())), then(PROC_REF(ui_act_specfreq)))
+	op("subspace", ui_act("subspace"), then(PROC_REF(ui_act_subspace)))
+	op("toggleLoudspeaker", ui_act("toggleLoudspeaker"), then(PROC_REF(ui_act_toggleloudspeaker)))
+
+/// The guard every window button of the family asks first (a subtype overrides it).
+/obj/item/radio/proc/ui_gate(datum/act/op/A)
+	return TRUE
 
 
 /// The signal wire cut kills the speaker and the mic; mended, each comes back unless its own wire is cut.
@@ -177,15 +189,25 @@ CAPABILITIES(/obj/item/radio)
 
 	return tgui_interact(user)
 
-DECLARE_UI(/obj/item/radio, "Radio")
-
 /obj/item/radio/tgui_static_data(mob/user)
 	. = ..()
 	if(isrobot(loc))
 		var/mob/living/silicon/robot/robot_owner = loc
 		.["theme"] = robot_owner.get_ui_theme()
 
-UI_DATA_REPLACE(/obj/item/radio, "rawfreq=frequency:num", "listening:num", "broadcasting:num", "subspace=subspace_transmission:num", "subspaceSwitchable=subspace_switchable:num", "loudspeaker", "merge:ui_data_obj_item_radio{mic_cut:bool,spk_cut:bool,chan_list:list,useSyndMode:bool,minFrequency:num,maxFrequency:num}")
+/obj/item/radio/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["rawfreq"] = frequency
+	data["listening"] = listening
+	data["broadcasting"] = broadcasting
+	data["subspace"] = subspace_transmission
+	data["subspaceSwitchable"] = subspace_switchable
+	data["loudspeaker"] = loudspeaker
+	var/list/merged_1 = ui_data_obj_item_radio(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/radio's window data (declared on its UI_DATA row).
 /obj/item/radio/proc/ui_data_obj_item_radio(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -267,80 +289,94 @@ UI_DATA_REPLACE(/obj/item/radio, "rawfreq=frequency:num", "listening:num", "broa
 		return STATUS_CLOSE
 	return ..()
 
-UI_ACT(/obj/item/radio, "setFrequency", ui_act_setfrequency, UI_ARG_NUM("freq"))
-UI_ACT_PROC(/obj/item/radio, ui_act_setfrequency)
-	var/new_frequency = (params["freq"])
+/obj/item/radio/proc/ui_act_setfrequency(datum/act/op/A, freq)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/new_frequency = (freq)
 	if((new_frequency < PUBLIC_LOW_FREQ || new_frequency > PUBLIC_HIGH_FREQ))
 		new_frequency = sanitize_frequency(new_frequency)
 	set_frequency(new_frequency)
 	if(item_hidden_uplink(src))
-		if(item_hidden_uplink(src).check_trigger(ui.user, frequency, traitor_frequency))
+		if(item_hidden_uplink(src).check_trigger(user, frequency, traitor_frequency))
 			// close the TGUI Radio when the uplink trips (was browse(null)).
 			SStgui.close_uis(src)
 	. = TRUE
-	if(. && iscarbon(ui.user))
+	if(. && iscarbon(user))
 		play_sfx(src, SFX_BUTTON)
 
-UI_ACT(/obj/item/radio, "broadcast", ui_act_broadcast)
-UI_ACT_PROC(/obj/item/radio, ui_act_broadcast)
+/obj/item/radio/proc/ui_act_broadcast(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	ToggleBroadcast()
 	. = TRUE
-	if(. && iscarbon(ui.user))
+	if(. && iscarbon(user))
 		play_sfx(src, SFX_BUTTON)
 
-UI_ACT(/obj/item/radio, "listen", ui_act_listen)
-UI_ACT_PROC(/obj/item/radio, ui_act_listen)
+/obj/item/radio/proc/ui_act_listen(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	ToggleReception()
 	. = TRUE
-	if(. && iscarbon(ui.user))
+	if(. && iscarbon(user))
 		play_sfx(src, SFX_BUTTON)
 
-UI_ACT(/obj/item/radio, "channel", ui_act_channel, UI_ARG_NUM("channel"))
-UI_ACT_PROC(/obj/item/radio, ui_act_channel)
-	var/chan_name = params["channel"]
+/obj/item/radio/proc/ui_act_channel(datum/act/op/A, channel)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/chan_name = channel
 	if(channels[chan_name] & FREQ_LISTENING)
 		channels[chan_name] &= ~FREQ_LISTENING
 	else
 		channels[chan_name] |= FREQ_LISTENING
 	. = TRUE
-	if(. && iscarbon(ui.user))
+	if(. && iscarbon(user))
 		play_sfx(src, SFX_BUTTON)
 
-UI_ACT(/obj/item/radio, "specFreq", ui_act_specfreq, UI_ARG_NUM("channel"))
-UI_ACT_PROC(/obj/item/radio, ui_act_specfreq)
-	var/freq = params["channel"]
-	if(has_channel_access(ui.user, freq))
+/obj/item/radio/proc/ui_act_specfreq(datum/act/op/A, channel)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/freq = channel
+	if(has_channel_access(user, freq))
 		set_frequency(freq)
 	. = TRUE
-	if(. && iscarbon(ui.user))
+	if(. && iscarbon(user))
 		play_sfx(src, SFX_BUTTON)
 
-UI_ACT(/obj/item/radio, "subspace", ui_act_subspace)
-UI_ACT_PROC(/obj/item/radio, ui_act_subspace)
+/obj/item/radio/proc/ui_act_subspace(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	if(subspace_switchable)
 		subspace_transmission = !subspace_transmission
 		if(!subspace_transmission)
 			channels = list()
-			to_chat(ui.user, span_notice("Subspace Transmission is disabled"))
+			to_chat(user, span_notice("Subspace Transmission is disabled"))
 		else
 			recalculateChannels()
-			to_chat(ui.user, span_notice("Subspace Transmission is enabled"))
+			to_chat(user, span_notice("Subspace Transmission is enabled"))
 		. = TRUE
-	if(. && iscarbon(ui.user))
+	if(. && iscarbon(user))
 		play_sfx(src, SFX_BUTTON)
 
-UI_ACT(/obj/item/radio, "toggleLoudspeaker", ui_act_toggleloudspeaker)
-UI_ACT_PROC(/obj/item/radio, ui_act_toggleloudspeaker)
+/obj/item/radio/proc/ui_act_toggleloudspeaker(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	if(!subspace_switchable)
 		return
 	loudspeaker = !loudspeaker
 
 	if(loudspeaker)
-		to_chat(ui.user, span_notice("Loadspeaker enabled."))
+		to_chat(user, span_notice("Loadspeaker enabled."))
 	else
-		to_chat(ui.user, span_notice("Loadspeaker disabled."))
+		to_chat(user, span_notice("Loadspeaker disabled."))
 	. = TRUE
-	if(. && iscarbon(ui.user))
+	if(. && iscarbon(user))
 		play_sfx(src, SFX_BUTTON)
 
 GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)

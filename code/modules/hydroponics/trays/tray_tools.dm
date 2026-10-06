@@ -25,6 +25,8 @@ CAPABILITIES(/obj/item/analyzer/plant_analyzer)
 	op("print", ui_act(), then(PROC_REF(ui_act_print)))
 	op("close", ui_act(), then(PROC_REF(ui_act_close)))
 	owns_one(nameof(last_seed), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	interface("PlantAnalyzer", state = nameof(GLOB.tgui_inventory_state), input = in_hand())
+	ui_shape(reagents = list_of(), no_seed = bool(), seed = any)
 
 /obj/item/analyzer/plant_analyzer
 	name = "plant analyzer"
@@ -42,11 +44,14 @@ CAPABILITIES(/obj/item/analyzer/plant_analyzer)
 // ALLOW(interactions): its Use opens the plant UI instead of the gas scan
 DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_PROC_REF(/atom, interaction_open_ui)))
 
-DECLARE_UI(/obj/item/analyzer/plant_analyzer, "PlantAnalyzer")
-
-DECLARE_UI_STATE(/obj/item/analyzer/plant_analyzer, GLOB.tgui_inventory_state)
-
-UI_DATA(/obj/item/analyzer/plant_analyzer, "reagents=last_reagents:list", "merge:ui_data_obj_item_analyzer_plant_analyzer{no_seed:bool,seed:unknown}")
+/obj/item/analyzer/plant_analyzer/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["reagents"] = last_reagents
+	var/list/merged_1 = ui_data_obj_item_analyzer_plant_analyzer(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/analyzer/plant_analyzer's window data (declared on its UI_DATA row).
 /obj/item/analyzer/plant_analyzer/proc/ui_data_obj_item_analyzer_plant_analyzer(mob/user, datum/tgui/ui, datum/tgui_state/state)

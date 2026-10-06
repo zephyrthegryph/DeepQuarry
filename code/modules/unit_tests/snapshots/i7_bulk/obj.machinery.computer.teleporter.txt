@@ -1,0 +1,5 @@
+/obj/machinery/computer/teleporter|human|none => teleporter_computer_use,teleporter_computer_set_id|teleporter_computer_insert_card:needs a data card
+/obj/machinery/computer/teleporter|robot|none => teleporter_computer_use,teleporter_computer_set_id,gen_silicon_teleporter_computer_silicon_use|gen_robot_interaction_swallow:not possible right now,teleporter_computer_insert_card:needs a data card
+/obj/machinery/computer/teleporter|ai|none => gen_silicon_teleporter_computer_silicon_use|
+/obj/machinery/computer/teleporter|ghost|none => |
+/obj/machinery/computer/teleporter|human|/obj/item/card/data => teleporter_computer_insert_card,teleporter_computer_use,teleporter_computer_set_id|

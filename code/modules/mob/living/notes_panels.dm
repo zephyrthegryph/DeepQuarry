@@ -18,9 +18,10 @@ GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
 	if(host)
 		GLOB.dq_private_notes_panels -= "[REF(host)]"
 
-DECLARE_UI_STATE(/datum/private_notes_panel, GLOB.tgui_default_state)
-
-DECLARE_UI(/datum/private_notes_panel, "PrivateNotes")
+CAPABILITIES(/datum/private_notes_panel)
+	interface("PrivateNotes", state = nameof(GLOB.tgui_default_state))
+	op("edit", ui_act("edit"), then(PROC_REF(ui_act_edit)))
+	op("save", ui_act("save"), then(PROC_REF(ui_act_save)))
 
 /datum/private_notes_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!host || user != host)
@@ -30,30 +31,29 @@ DECLARE_UI(/datum/private_notes_panel, "PrivateNotes")
 /datum/private_notes_panel/ui_title(mob/user)
 	return "Private Notes: [host.name]"
 
-UI_DATA_REPLACE(/datum/private_notes_panel, "merge:ui_data_datum_private_notes_panel{owner:text,notes:unknown}")
-
 /// The computed part of /datum/private_notes_panel's window data (declared on its UI_DATA row).
-/datum/private_notes_panel/proc/ui_data_datum_private_notes_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/private_notes_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["owner"] = host ? host.name : "(unknown)"
 	data["notes"] = host ? html_decode(host.private_notes || "") : ""
 	return data
 
-/datum/private_notes_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!host || ui.user != host)
+/datum/private_notes_panel/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!host || user != host)
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/private_notes_panel, "edit", ui_act_edit)
-UI_ACT_PROC(/datum/private_notes_panel, ui_act_edit)
+/datum/private_notes_panel/proc/ui_act_edit(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	host.set_metainfo_private_notes(host)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/private_notes_panel, "save", ui_act_save)
-UI_ACT_PROC(/datum/private_notes_panel, ui_act_save)
+/datum/private_notes_panel/proc/ui_act_save(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	host.save_private_notes(host)
 	return TRUE
 
@@ -84,9 +84,16 @@ UI_ACT_PROC(/datum/private_notes_panel, ui_act_save)
 	if(host)
 		GLOB.dq_ooc_notes_panels -= "[REF(host)]"
 
-DECLARE_UI_STATE(/datum/ooc_notes_panel, GLOB.tgui_default_state)
-
-DECLARE_UI(/datum/ooc_notes_panel, "OocNotes")
+CAPABILITIES(/datum/ooc_notes_panel)
+	interface("OocNotes", state = nameof(GLOB.tgui_default_state))
+	op("print", ui_act("print"), then(PROC_REF(ui_act_print)))
+	op("save", ui_act("save"), then(PROC_REF(ui_act_save)))
+	op("toggle_style", ui_act("toggle_style"), then(PROC_REF(ui_act_toggle_style)))
+	op("edit_notes", ui_act("edit_notes"), then(PROC_REF(ui_act_edit_notes)))
+	op("edit_favs", ui_act("edit_favs"), then(PROC_REF(ui_act_edit_favs)))
+	op("edit_likes", ui_act("edit_likes"), then(PROC_REF(ui_act_edit_likes)))
+	op("edit_maybes", ui_act("edit_maybes"), then(PROC_REF(ui_act_edit_maybes)))
+	op("edit_dislikes", ui_act("edit_dislikes"), then(PROC_REF(ui_act_edit_dislikes)))
 
 /datum/ooc_notes_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!host)
@@ -96,10 +103,9 @@ DECLARE_UI(/datum/ooc_notes_panel, "OocNotes")
 /datum/ooc_notes_panel/ui_title(mob/user)
 	return "OOC Notes: [host.name]"
 
-UI_DATA_REPLACE(/datum/ooc_notes_panel, "merge:ui_data_datum_ooc_notes_panel{owner:text,is_owner:bool,ooc_notes:bool,ooc_likes:bool,ooc_dislikes:bool,ooc_favs:bool,ooc_maybes:bool,ooc_style:bool}")
-
 /// The computed part of /datum/ooc_notes_panel's window data (declared on its UI_DATA row).
-/datum/ooc_notes_panel/proc/ui_data_datum_ooc_notes_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/ooc_notes_panel/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 	if(!host)
 		return data
@@ -113,62 +119,76 @@ UI_DATA_REPLACE(/datum/ooc_notes_panel, "merge:ui_data_datum_ooc_notes_panel{own
 	data["ooc_style"] = !!host.identity().ooc_notes_style
 	return data
 
-/datum/ooc_notes_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/ooc_notes_panel/proc/ui_gate(datum/act/op/A)
 	if(!host)
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/ooc_notes_panel, "print", ui_act_print)
-UI_ACT_PROC(/datum/ooc_notes_panel, ui_act_print)
-	host.print_ooc_notes_chat(ui.user)
+/datum/ooc_notes_panel/proc/ui_act_print(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	host.print_ooc_notes_chat(user)
 	return TRUE
 
-UI_ACT(/datum/ooc_notes_panel, "save", ui_act_save)
-UI_ACT_PROC(/datum/ooc_notes_panel, ui_act_save)
-	if(ui.user == host)
+/datum/ooc_notes_panel/proc/ui_act_save(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(user == host)
 		host.save_ooc_panel(host)
 	return TRUE
 
-UI_ACT(/datum/ooc_notes_panel, "toggle_style", ui_act_toggle_style)
-UI_ACT_PROC(/datum/ooc_notes_panel, ui_act_toggle_style)
-	if(ui.user == host)
+/datum/ooc_notes_panel/proc/ui_act_toggle_style(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(user == host)
 		host.set_metainfo_ooc_style(host)
 		SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/ooc_notes_panel, "edit_notes", ui_act_edit_notes)
-UI_ACT_PROC(/datum/ooc_notes_panel, ui_act_edit_notes)
-	if(ui.user == host)
+/datum/ooc_notes_panel/proc/ui_act_edit_notes(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(user == host)
 		host.set_metainfo_panel(host)
 		SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/ooc_notes_panel, "edit_favs", ui_act_edit_favs)
-UI_ACT_PROC(/datum/ooc_notes_panel, ui_act_edit_favs)
-	if(ui.user == host)
+/datum/ooc_notes_panel/proc/ui_act_edit_favs(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(user == host)
 		host.set_metainfo_favs(host)
 		SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/ooc_notes_panel, "edit_likes", ui_act_edit_likes)
-UI_ACT_PROC(/datum/ooc_notes_panel, ui_act_edit_likes)
-	if(ui.user == host)
+/datum/ooc_notes_panel/proc/ui_act_edit_likes(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(user == host)
 		host.set_metainfo_likes(host)
 		SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/ooc_notes_panel, "edit_maybes", ui_act_edit_maybes)
-UI_ACT_PROC(/datum/ooc_notes_panel, ui_act_edit_maybes)
-	if(ui.user == host)
+/datum/ooc_notes_panel/proc/ui_act_edit_maybes(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(user == host)
 		host.set_metainfo_maybes(host)
 		SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/ooc_notes_panel, "edit_dislikes", ui_act_edit_dislikes)
-UI_ACT_PROC(/datum/ooc_notes_panel, ui_act_edit_dislikes)
-	if(ui.user == host)
+/datum/ooc_notes_panel/proc/ui_act_edit_dislikes(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(user == host)
 		host.set_metainfo_dislikes(host)
 		SStgui.update_uis(src)
 	return TRUE

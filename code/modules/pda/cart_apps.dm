@@ -78,35 +78,37 @@ UI_ACT_PROC(/datum/data/pda/app/status_display, ui_act_status)
 		return pda().cartridge.radio
 	return null
 
-UI_ACT(/datum/data/pda/app/signaller, "signal", ui_act_signal)
-UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_signal)
+CAPABILITIES(/datum/data/pda/app/signaller)
+	op("signal", ui_act("signal"), then(PROC_REF(ui_act_signal)))
+	op("freq", ui_act("freq", arg("freq", num())), then(PROC_REF(ui_act_freq)))
+	op("code", ui_act("code", arg("code", int(1, 100))), then(PROC_REF(ui_act_code)))
+	op("reset", ui_act("reset", arg("reset", schema_text(16))), then(PROC_REF(ui_act_reset)))
+/datum/data/pda/app/signaller/proc/ui_act_signal(datum/act/op/A)
+	var/mob/user = A.actor
 	var/obj/item/radio/integrated/signal/R = signal_radio()
 	R?.send_signal("ACTIVATE", user)
 
-UI_ACT(/datum/data/pda/app/signaller, "freq", ui_act_freq, UI_ARG_NUM("freq"))
-UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_freq)
+/datum/data/pda/app/signaller/proc/ui_act_freq(datum/act/op/A, freq)
 	var/obj/item/radio/integrated/signal/R = signal_radio()
 	if(!R)
 		return
-	var/frequency = unformat_frequency(params["freq"])
+	var/frequency = unformat_frequency(freq)
 	frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 	R.set_frequency(frequency)
 	return TRUE
 
-UI_ACT(/datum/data/pda/app/signaller, "code", ui_act_code, UI_ARG_INT("code", 1, 100))
-UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_code)
+/datum/data/pda/app/signaller/proc/ui_act_code(datum/act/op/A, code)
 	var/obj/item/radio/integrated/signal/R = signal_radio()
-	if(!R || isnull(params["code"]))
+	if(!R || isnull(code))
 		return
-	R.code = params["code"]
+	R.code = code
 	return TRUE
 
-UI_ACT(/datum/data/pda/app/signaller, "reset", ui_act_reset, UI_ARG_TEXT("reset", 16))
-UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_reset)
+/datum/data/pda/app/signaller/proc/ui_act_reset(datum/act/op/A, reset)
 	var/obj/item/radio/integrated/signal/R = signal_radio()
 	if(!R)
 		return
-	if(params["reset"] == "freq")
+	if(reset == "freq")
 		R.set_frequency(initial(R.frequency))
 	else
 		R.code = initial(R.code)
@@ -161,10 +163,12 @@ UI_ACT_FORWARD(/datum/data/pda/app/power, ui_forward_to_monitor)
 
 CAPABILITIES(/datum/data/pda/app/crew_records)
 	op("Back", ui_act(), then(PROC_REF(ui_act_back)))
+	op("Records", ui_act("Records", arg("target", schema_ref(/datum/data/record))), then(PROC_REF(ui_act_records)))
 
-UI_ACT(/datum/data/pda/app/crew_records, "Records", ui_act_records, UI_ARG_REF("target", null, /datum/data/record))
-UI_ACT_PROC(/datum/data/pda/app/crew_records, ui_act_records)
-	var/datum/data/record/R = params["target"]
+/datum/data/pda/app/crew_records/proc/ui_act_records(datum/act/op/A, target)
+	if(isnull(target))
+		return FALSE
+	var/datum/data/record/R = target
 	if(R && (R in GLOB.data_core.general))
 		load_records(R)
 	return TRUE

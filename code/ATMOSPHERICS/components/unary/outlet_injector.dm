@@ -152,6 +152,9 @@ MSG_DEF_SELF(outlet_injector/toggled, "You toggle the injector.")
 MSG_DEF_SELF(outlet_injector/rate_reset, "You set the injector back to its default rate.")
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/outlet_injector)
+	// The unary base's ctrl-click power_toggle is never offered on an injector (ctrl_power_offered()); its ctrl-click is
+	// reset_rate. The static clash check cannot see the when(), and reported the two at boot.
+	without("power_toggle")
 	op("toggle", hand(), label("Toggle"), wait(0), says(MSG(outlet_injector/toggled)), then(PROC_REF(toggled)))
 	op("reset_rate", hand(), gesture(GESTURE_CTRL), label("Reset the rate"), wait(0), when(PROC_REF(rate_resettable)), says(MSG(outlet_injector/rate_reset)),
 		then(PROC_REF(rate_reset)))
