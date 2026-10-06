@@ -57,7 +57,7 @@ CAPABILITIES(/obj/machinery/power/tesla_coil)
 	wires(name = "Tesla coil", count = 1, tools = FALSE)
 	on_wire(WIRE_TESLACOIL_ZAP, pulse = PROC_REF(zap_wire_pulsed))
 	part_replacement()
-	op("buckle", hand(), label("Buckle"), when(PROC_REF(grabbing)), wait(0), then(PROC_REF(buckle_pulled)))
+	op("buckle", hand(), label("Buckle"), when(req_empty_hand()), when(PROC_REF(grabbing)), wait(0), then(PROC_REF(buckle_pulled)))
 	op("modify", tool(TOOL_MULTITOOL), label("Modify"), wait(0), at(SPACE_PANEL),
 		asks(/datum/prompt/choice, fields = list("title" = "Tesla Selection", "question" = "Which tesla do you wish to change it into?", "choices" = list("Normal", "Relay", "Splitter", "Amplifier", "Recaster", "Collector"))),
 		then(PROC_REF(modified)))
@@ -327,7 +327,7 @@ CAPABILITIES(/obj/machinery/power/tesla_coil)
 CAPABILITIES(/obj/machinery/power/grounding_rod)
 	climb()
 	part_replacement()
-	op("buckle", hand(), label("Buckle"), when(PROC_REF(grabbing)), wait(0), then(PROC_REF(buckle_pulled)))
+	op("buckle", hand(), label("Buckle"), when(req_empty_hand()), when(PROC_REF(grabbing)), wait(0), then(PROC_REF(buckle_pulled)))
 
 /obj/machinery/power/grounding_rod/proc/grabbing(datum/act/op/A)
 	return tesla_buckle_grabbing(A)

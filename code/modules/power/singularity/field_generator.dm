@@ -59,7 +59,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 	ref_many(nameof(fields), /obj/machinery/containment_field)
 	links(/obj/machinery/field_generator::connected_gens, /obj/machinery/field_generator::connected_gens, a_many = TRUE, b_many = TRUE)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(field_step)), when = PROC_REF(fields_running))
-	op("activate", hand(), label("Activate"), ungated(), wait(0),
+	op("activate", hand(), when(req_empty_hand()), label("Activate"), ungated(), wait(0),
 		needs(req(PROC_REF(is_secured), because = MSG(fieldgen/unsecured)), req(PROC_REF(is_off), because = MSG(fieldgen/online))),
 		says(MSG(fieldgen/activated)), then(PROC_REF(activated)))
 

@@ -1634,3 +1634,18 @@ store cap, 64 kJ per emitter shot in bursts of four, collector output moles x st
 - The coil's multitool conversion and the coil board's reconfiguration are ops with `asks()`; part replacement is `part_replacement()`;
   the looks are `draw()`. An empty hand on a coil or rod buckles whoever the actor is pulling (the legacy interaction asked for the grab
   stance, which no longer exists as a mob state). Any held item no longer "touches" a coil for a fingerprint (that swallowed every tool click).
+
+## Power plants: fusion (rewrite/power-plants)
+
+Pinned by `dq_pp/fusion_*` (field size by strength, 1..1000 clamp at 5 W a unit, 100 energy per K, the 1% heat loss a step, instability
+tick * size / 10000, the reaction table, 30 fuel a step, the trap above 10000 K); unchanged.
+
+- **No machine pipeline.** The core steps its field on `every(MACHINE_SERVICE_INTERVAL, when = owned_field)` (`core_step()`, then the field's
+  `field_react()` a decisecond later), the injector on `every(..., when = injecting)` (`injecting` is a tracked var), the hydromagnetic trap on
+  `every()` while bolted (it used to sleep until a new field woke it; it now finds a field raised anywhere in its 7 tiles on its next step).
+- The trap no longer keeps its 7-tile scan in a var (the scan held the trap itself: a deleted trap leaked).
+- The core's unused `str` topic action is gone (nothing sent it; the console sets the strength through `set_strength()`).
+- Ops for every interaction: the cradle, part replacement and ident tag only with the field down; the injector's rod, its blitz confirmation
+  (`confirms()`), its ident tag; the three consoles' window and tag; the compressor's sheets, containers, dragged supermatter and its
+  "Eject Supermatter Sheet" menu entry. Hand ops answer an empty hand only, as the legacy hand interactions did.
+- Calm steps never bled a field's instability: `rand(0.01, 0.03)` rounds to 0 (pinned as it is; a balance change for later).

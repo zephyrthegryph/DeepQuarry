@@ -46,7 +46,7 @@
 CAPABILITIES(/obj/singularity)
 	membership(joins = REGISTRY_SINGULARITIES)
 	every(SINGULARITY_STEP_INTERVAL, then(PROC_REF(singularity_frame)))
-	op("singularity_touch", hand(), then(PROC_REF(touched)))
+	op("singularity_touch", hand(), when(req_empty_hand()), then(PROC_REF(touched)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(singularity_blast))))
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(projectile_passes))))

@@ -26,7 +26,7 @@
 CAPABILITIES(/obj/machinery/containment_field)
 	ref_one(nameof(FG1), /obj/machinery/field_generator)
 	ref_one(nameof(FG2), /obj/machinery/field_generator)
-	op("touch", hand(), label("Touch"), ungated(), wait(0), then(PROC_REF(touched)))
+	op("touch", hand(), when(req_empty_hand()), label("Touch"), ungated(), wait(0), then(PROC_REF(touched)))
 
 /obj/machinery/containment_field/Initialize(mapload)
 	. = ..()
