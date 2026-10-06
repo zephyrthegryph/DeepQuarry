@@ -39,10 +39,9 @@
 		deactivate()
 	return TRUE
 
-/obj/machinery/holoplant/wrench_act(mob/user, obj/item/tool)
-	. = ..()
-	if(. == ITEM_INTERACT_SUCCESS)
-		deactivate()
+/// Anchored or loosened (the machine's wrench), the projection goes out.
+/obj/machinery/holoplant/proc/anchoring_changed(datum/act/A)
+	deactivate()
 
 /obj/machinery/holoplant/proc/activate()
 	if(!anchored || !operable())
@@ -90,6 +89,7 @@
 	return getHologramIcon(plant_icon, 0)
 
 CAPABILITIES(/obj/machinery/holoplant)
+	on_change(nameof(anchored), ANY, then(PROC_REF(anchoring_changed)))
 	emag(then(PROC_REF(on_emag)))
 
 /// The sequencer swaps the plant for the corrupted one.
