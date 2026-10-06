@@ -155,7 +155,7 @@ DAMAGE_REACTION(/obj/machinery/computer/looking_glass, DAMAGE_EXPLOSION, PROC_RE
 
 /obj/machinery/computer/looking_glass/power_change()
 	. = ..()
-	if (. && (has_stat(NOPOWER)))
+	if (. && (power_lost()))
 		unload_program()
 
 /// Accessor for the my_area var.

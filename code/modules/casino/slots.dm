@@ -56,7 +56,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, TYPE_PROC_REF(/atom, appear
 	if(isbroken) //Broken shit can't be powered.
 		return
 	. = ..()
-	if(!has_stat(NOPOWER))
+	if(!power_lost())
 		ispowered = 1
 	else
 		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))
@@ -207,7 +207,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom
 	if(isbroken) //Broken shit can't be powered.
 		return
 	. = ..()
-	if(!has_stat(NOPOWER))
+	if(!power_lost())
 		ispowered = 1
 	else
 		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))

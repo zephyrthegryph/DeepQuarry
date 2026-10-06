@@ -11,88 +11,115 @@ OM_FIELD(/obj/machinery, mode, 0, CHANGE_MACHINE_SETTINGS)
 OM_FIELD(/obj/machinery, locked, FALSE, CHANGE_MACHINE_MODE)
 OM_FIELD(/obj/machinery, emagged, FALSE, CHANGE_MACHINE_SETTINGS)
 
-/// Machine condition bits (BROKEN, NOPOWER, POWEROFF, MAINT, EMPED; code/__defines/machinery.dm).
-/// BROKEN, MAINT and EMPED raise CHANGE_MACHINE_BROKEN, NOPOWER and POWEROFF CHANGE_MACHINE_POWER.
+/// Machine conditions are stats held by sources (code/contracts/ids/stats.dm):
+///   has_power      false while the area's channel is dark (area_gives_power(): the grid's reading) or SRC_GRID holds it (set_grid_power(), a shim)
+///   intact         false while SRC_DAMAGE holds it (atom_break() until atom_fix())
+///   in_maintenance true while SRC_MAINTENANCE holds it (an open service hatch: set_maintenance())
+///   switched_on    false while SRC_SWITCH holds it (the machine's own switch: set_switched_on())
+/// and a pulse is a timed SRC_EMP hold on STAT_OPERABLE (emp_disable()). STAT_OPERABLE is the machine working. The named readers below say each in
+/// one word; `stat` is a derived mirror of the first four, kept only so on_change(nameof(stat)) watchers hear a change.
 /datum/om/field_def/obj/machinery/stat
 	of = /obj/machinery
 	field = "stat"
 	channel = CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER
 
-/obj/machinery/var/stat = 0 // ALLOW(base_vars): the machine condition bits POWEROFF, MAINT and EMPED are still stored here until each becomes a stat
+/obj/machinery/var/stat = 0 // ALLOW(base_vars): a derived mirror of the condition stats, written only by the condition setters; watchers listen to it
 
-/obj/machinery/proc/stat_bit_channels()
-	var/static/list/table = list( // ALLOW(sys_static_getter): a constant bit-to-channel table, built once, read by stat_changed()
-		"[BROKEN]" = CHANGE_MACHINE_BROKEN, "[NOPOWER]" = CHANGE_MACHINE_POWER, "[POWEROFF]" = CHANGE_MACHINE_POWER, "[MAINT]" = CHANGE_MACHINE_BROKEN, "[EMPED]" = CHANGE_MACHINE_BROKEN)
-	return table
+READS_AS(/obj/machinery/proc/power_lost, MACHINE_KEY_STAT)
+/obj/machinery/proc/power_lost()
+	return !stat_value(src, STAT_HAS_POWER)
 
+READS_AS(/obj/machinery/proc/broken_now, MACHINE_KEY_STAT)
+/obj/machinery/proc/broken_now()
+	return !stat_value(src, STAT_INTACT)
 
-/// The bits among `bits` that are set now.
+READS_AS(/obj/machinery/proc/under_maintenance, MACHINE_KEY_STAT)
+/obj/machinery/proc/under_maintenance()
+	return !!stat_value(src, STAT_IN_MAINTENANCE)
+
+READS_AS(/obj/machinery/proc/switched_off, MACHINE_KEY_STAT)
+/obj/machinery/proc/switched_off()
+	return !stat_value(src, STAT_SWITCHED_ON)
+
+/// A pulse is holding it down now.
+READS_AS(/obj/machinery/proc/emp_held, MACHINE_KEY_STAT)
+/obj/machinery/proc/emp_held()
+	return emp_disabled(src)
+
+/// Anything wrong at all: no power, broken, in maintenance, switched off or pulsed.
+READS_AS(/obj/machinery/proc/has_condition, MACHINE_KEY_STAT)
+/obj/machinery/proc/has_condition()
+	return power_lost() || broken_now() || under_maintenance() || switched_off() || emp_held()
+
+/// The condition bits through the readers (for the supplies and turrets whose own stat_bits_allow() still names bits).
 READS_AS(/obj/machinery/proc/stat_bits_now, MACHINE_KEY_STAT)
 /obj/machinery/proc/stat_bits_now(bits)
-	READS_FROM(src)
-	. = stat & bits
-	if((bits & NOPOWER) && !stat_value(src, STAT_HAS_POWER))
+	. = 0
+	if((bits & NOPOWER) && power_lost())
 		. |= NOPOWER
-	if((bits & BROKEN) && !stat_value(src, STAT_INTACT))
+	if((bits & BROKEN) && broken_now())
 		. |= BROKEN
+	if((bits & MAINT) && under_maintenance())
+		. |= MAINT
+	if((bits & POWEROFF) && switched_off())
+		. |= POWEROFF
+	if((bits & EMPED) && emp_held())
+		. |= EMPED
 
-READS_AS(/obj/machinery/proc/has_stat, MACHINE_KEY_STAT)
-/obj/machinery/proc/has_stat(bits)
-	return stat_bits_now(bits) ? TRUE : FALSE
-
-/// Sets the bits in `bits` (all other bits stay). TRUE when any changed.
-/obj/machinery/proc/stat_add(bits)
-	var/flipped = bits & ~stat_bits_now(MACHINE_STAT_ANY)
-	if(!flipped)
+/// Places or releases `source`'s hold on `condition` (a condition stat) and tells the watchers. `held` is the condition being in force. TRUE when it changed.
+/obj/machinery/proc/condition_hold(condition, source, held, bit, channel)
+	var/was = stat_bits_now(bit)
+	if(held)
+		hold(src, condition, (condition == STAT_IN_MAINTENANCE) ? TRUE : FALSE, source)
+	else
+		release(src, condition, source)
+	var/now = stat_bits_now(bit)
+	if(was == now)
 		return FALSE
-	if(flipped & NOPOWER)
-		set_power_forced(FALSE) // a forced-on override gives way to the forced-off hold
-		release(src, STAT_HAS_POWER, SRC_GRID)
-		hold(src, STAT_HAS_POWER, FALSE, SRC_GRID)
-	if(flipped & BROKEN)
-		hold(src, STAT_INTACT, FALSE, SRC_DAMAGE)
-	var/bits_left = flipped & ~MACHINE_STAT_HELD
-	if(bits_left)
-		stat |= bits_left
-	stat_changed(flipped)
+	condition_mirror(bit, now)
+	condition_announce(channel)
 	return TRUE
 
-/// Clears the bits in `bits`. TRUE when any changed.
-/obj/machinery/proc/stat_remove(bits)
-	var/flipped = stat_bits_now(MACHINE_STAT_ANY) & bits
-	if(!flipped)
-		return FALSE
-	if(flipped & NOPOWER)
-		release(src, STAT_HAS_POWER, SRC_GRID)
-		// The grid's reading (area_gives_power()) still says dark: a caller that clears NOPOWER by hand forces the machine on (a manual override of the
-		// reading, released by the next stat_add(NOPOWER); it is the shim's, not the grid's).
-		if(!stat_value(src, STAT_HAS_POWER))
-			set_power_forced(TRUE)
-	if(flipped & BROKEN)
-		release(src, STAT_INTACT, SRC_DAMAGE)
-	var/bits_left = flipped & ~MACHINE_STAT_HELD
-	if(bits_left)
-		stat &= ~bits_left
-	stat_changed(flipped)
-	return TRUE
+/// Keeps the derived mirror of the condition bits.
+/obj/machinery/proc/condition_mirror(bit, now)
+	stat = now ? (stat | bit) : (stat & ~bit)
 
-/// Writes the whole set of condition bits.
-/obj/machinery/proc/set_stat(value)
-	var/now = stat_bits_now(MACHINE_STAT_ANY)
-	. = FALSE
-	if(stat_remove(now & ~value))
-		. = TRUE
-	if(stat_add(value & ~now))
-		. = TRUE
-
-/// What a change of bits raises: their channels, the `stat` publish, and the stat layer's recompute of what reads them.
-/obj/machinery/proc/stat_changed(flipped)
-	changed(src, om_flag_channels(stat_bit_channels(), flipped, CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER))
+/// Tells the watchers a condition changed: its channel, the publish, and the stat layer's recompute of what reads it.
+/obj/machinery/proc/condition_announce(channel)
+	changed(src, channel)
 	PUBLISH_CHANGE(src, MACHINE_KEY_STAT)
 	om_field_written(src, "stat")
 
-/// Powered and working: none of NOPOWER, BROKEN, MAINT, EMPED (plus `additional_flags`), and no pulse holding it down (emp_disable()'s timed
-/// hold on STAT_OPERABLE, which this legacy reader shares with the converted machines' stat).
+/// COMPATIBILITY SHIM (tests, the benchmark's old path): forces a machine's power by hand. The grid does not write has_power: it is the area's channel
+/// read (area_gives_power(), machinery_power.dm). Forcing it dark is a SRC_GRID hold; forcing it on a machine whose area is dark sets `power_forced`.
+/// TRUE when the machine's power changed.
+/obj/machinery/proc/set_grid_power(powered)
+	var/was = power_lost()
+	if(powered)
+		condition_hold(STAT_HAS_POWER, SRC_GRID, FALSE, NOPOWER, CHANGE_MACHINE_POWER)
+		if(power_lost())
+			set_power_forced(TRUE)
+	else
+		set_power_forced(FALSE)
+		condition_hold(STAT_HAS_POWER, SRC_GRID, TRUE, NOPOWER, CHANGE_MACHINE_POWER)
+	var/flipped = was != power_lost()
+	if(flipped)
+		condition_announce(CHANGE_MACHINE_POWER)
+	return flipped
+
+/// The machine is broken (atom_break()) or mended (atom_fix()). TRUE when it changed.
+/obj/machinery/proc/set_broken_condition(broken)
+	return condition_hold(STAT_INTACT, SRC_DAMAGE, broken, BROKEN, CHANGE_MACHINE_BROKEN)
+
+/// The service hatch is open (the machine is under maintenance) or shut. TRUE when it changed.
+/obj/machinery/proc/set_maintenance(maintaining)
+	return condition_hold(STAT_IN_MAINTENANCE, SRC_MAINTENANCE, maintaining, MAINT, CHANGE_MACHINE_BROKEN)
+
+/// The machine's own switch: on or off. TRUE when it changed.
+/obj/machinery/proc/set_switched_on(on_now)
+	return condition_hold(STAT_SWITCHED_ON, SRC_SWITCH, !on_now, POWEROFF, CHANGE_MACHINE_POWER)
+
+/// Powered and working: powered, whole, not in maintenance, and no pulse holding it down.
 /// interact_offline is deliberately not folded in: it is a UI-reach rule (tgui_status,
 /// CanUseTopic), not "the machine works".
 OM_DERIVE_FIELD(/obj/machinery, operable, list("stat"))
@@ -111,8 +138,9 @@ OM_FIELD_SETTER(/obj/machinery, density, CHANGE_MACHINE_SETTINGS)
 /// Vehicles keep their own condition bits (BROKEN, ...), same API as machines.
 OM_FLAG_FIELD(/obj/vehicle, stat, 0, CHANGE_EXPLICIT)
 
-/// Power mode (USE_POWER_OFF/IDLE/ACTIVE): set_use_power() (machinery_power.dm) is the setter; the machine's contribution to its
-/// area's demand reads it with the idle and active usage, so the draw always follows the field.
+/// Power mode (USE_POWER_OFF/IDLE/ACTIVE): set_use_power() (machinery_power.dm) is the setter and
+/// moves the area's tally between the type's idle_power_usage and active_power_usage rows, so the
+/// draw always follows the field.
 OM_FIELD_SETTER(/obj/machinery, use_power, CHANGE_MACHINE_SETTINGS)
 
 /// Appearance (doc/rewrite/systems.md section 1): a machine's look follows its core fields, so a

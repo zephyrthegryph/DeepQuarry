@@ -175,7 +175,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	op("authdown", ui_act(), toggles(nameof(check_down), when = nameof(targetting_is_configurable)))
 
 /obj/machinery/porta_turret/can_catalogue(mob/user) // Dead turrets can't be scanned.
-	if(has_stat(BROKEN))
+	if(broken_now())
 		to_chat(user, span_warning("\The [src] was destroyed, so it cannot be scanned."))
 		return FALSE
 	return ..()
@@ -258,7 +258,7 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 // ---- wrench, crowbar, a blow ----
 
 /obj/machinery/porta_turret/proc/intact(datum/act/op/A)
-	return !has_stat(BROKEN)
+	return !broken_now()
 
 /// The wrench moves only a switched-off turret with its cover down.
 /obj/machinery/porta_turret/proc/idle_for_the_wrench(datum/act/op/A)
@@ -365,10 +365,10 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 
 /// The icon_state prefix before turret_type.
 /obj/machinery/porta_turret/proc/appearance_prefix()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return "destroyed_target_prism_"
 	if(popup_cover_raised(src) || popup_cover_moving(src))
-		if(!has_stat(NOPOWER) && enabled)
+		if(!power_lost() && enabled)
 			return "[lethal ? lethal_icon_color : icon_color]_target_prism_"
 		return "grey_target_prism_"
 	return "turret_cover_"
@@ -476,7 +476,7 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 	check_down = TRUE
 
 /obj/machinery/porta_turret/can_catalogue(mob/user) // Dead turrets can't be scanned.
-	if(has_stat(BROKEN))
+	if(broken_now())
 		to_chat(user, span_warning("\The [src] was destroyed, so it cannot be scanned."))
 		return FALSE
 	return ..()
@@ -529,11 +529,13 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 CAPABILITIES(/obj/machinery/porta_turret/alien)
 	configure(emp_disable(lasts = list(1 MINUTE, 2 MINUTES), resist = 75))
 
+/obj/machinery/porta_turret/alien/destroyed/starts_broken()
+	return TRUE
+
 /obj/machinery/porta_turret/alien/destroyed // Turrets that are already dead, to act as a warning of what the rest of the submap contains.
 	name = "broken interior anti-boarding turret"
 	desc = "A very tough looking turret made by alien hands. This one looks destroyed, thankfully."
 	icon_state = "destroyed_target_prism_alien"
-	stat = BROKEN
 	can_salvage = FALSE // So you need to actually kill a turret to get the alien gun.
 
 /obj/machinery/porta_turret/industrial
@@ -1044,20 +1046,17 @@ CAPABILITIES(/obj/machinery/porta_turret_construct)
 /// Runs on its own supply: only BROKEN and EMPED stop it, never its area's power (neither the grid's reading nor the capacitors' delay applies).
 CAPABILITIES(/obj/machinery/porta_turret/rcd)
 	without("turret_power") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
-	configure(machine_basics(repair = NONE, powered = FALSE))
+	configure(machine_basics(repair = NONE, powered = FALSE, area_power = FALSE))
 
 /obj/machinery/porta_turret/rcd/power_change()
 	return
-
-/obj/machinery/porta_turret/rcd/stat_bits_allow(datum/act/A)
-	return !has_stat(BROKEN | EMPED)
 
 /// It sees through walls.
 /obj/machinery/porta_turret/rcd/scan_candidates()
 	return mobs_in_xray_view(world.view, src)
 
 /obj/machinery/porta_turret/rcd/appearance_prefix()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return "destroyed_target_prism_"
 	if(popup_cover_raised(src) || popup_cover_moving(src))
 		if(enabled)

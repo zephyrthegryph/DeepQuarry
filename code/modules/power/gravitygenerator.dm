@@ -50,7 +50,7 @@ CAPABILITIES(/obj/machinery/gravity_generator)
 /// The repair ladder's rung the generator is on, or null while it is whole.
 /obj/machinery/gravity_generator/proc/repair_rung()
 	var/obj/machinery/gravity_generator/main/M = grav_main()
-	if(!M || !M.has_stat(BROKEN))
+	if(!M || !M.broken_now())
 		return null
 	return M.broken_state
 
@@ -69,7 +69,7 @@ CAPABILITIES(/obj/machinery/gravity_generator)
 /// A rung of the repair done.
 /obj/machinery/gravity_generator/proc/repair_stepped(datum/act/op/A)
 	var/obj/machinery/gravity_generator/main/M = grav_main()
-	M.set_broken_state(M.broken_state + 1)
+	M.set_broken_condition(M.broken_state + 1)
 	play_sfx(src, SFX_MACHINES_CLICK, 1.5)
 	return OP_OK
 
@@ -146,7 +146,7 @@ CAPABILITIES(/obj/machinery/gravity_generator/part)
 
 /obj/machinery/gravity_generator/part/atom_break(damage_flag)
 	. = ..()
-	if(main_part && !main_part.has_stat(BROKEN))
+	if(main_part && !main_part.broken_now())
 		main_part.atom_break(damage_flag)
 
 //
@@ -214,7 +214,7 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 
 /// Spinning up or down, and whole (a broken generator doesn't spin; operable() would also stop the spin-down on power loss).
 /obj/machinery/gravity_generator/main/proc/spinning(datum/act/A)
-	return charging_state != GRAVGEN_IDLE && !has_stat(BROKEN)
+	return charging_state != GRAVGEN_IDLE && !broken_now()
 
 /// The charge overlay on the middle part.
 /obj/machinery/gravity_generator/main/proc/set_charge_overlay(overlay_state)
@@ -267,7 +267,7 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 	if(!.)
 		return
 	for(var/obj/machinery/gravity_generator/M in parts)
-		if(!M.has_stat(BROKEN))
+		if(!M.broken_now())
 			M.atom_break(damage_flag)
 	set_charge_overlay(null)
 	charge_count = 0
@@ -279,9 +279,9 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 /obj/machinery/gravity_generator/main/atom_fix()
 	. = ..()
 	for(var/obj/machinery/gravity_generator/M in parts)
-		if(M.has_stat(BROKEN))
+		if(M.broken_now())
 			M.atom_fix()
-	set_broken_state(FALSE)
+	set_broken_condition(FALSE)
 	set_power()
 	update_list()
 	update_areas()
@@ -295,7 +295,7 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 	data["charge_count"] = charge_count
 	data["charging_state"] = charging_state
 	data["on"] = on
-	data["operational"] = (has_stat(BROKEN)) ? FALSE : TRUE
+	data["operational"] = (broken_now()) ? FALSE : TRUE
 	return data
 
 /obj/machinery/gravity_generator/main/proc/ui_act_gentoggle(datum/act/op/A)
@@ -309,11 +309,11 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 
 /obj/machinery/gravity_generator/main/power_change()
 	. = ..()
-	investigate_log("has [has_stat(NOPOWER) ? "lost" : "regained"] power.", "gravity")
+	investigate_log("has [power_lost() ? "lost" : "regained"] power.", "gravity")
 	set_power()
 
 /obj/machinery/gravity_generator/main/get_status()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return "fix[min(broken_state, 3)]"
 	return on || charging_state != GRAVGEN_IDLE ? "on" : "off"
 

@@ -47,7 +47,7 @@ CAPABILITIES(/obj/machinery/rnd/server)
 
 /// "off" without power; otherwise "on" while working ("halt" covers EMP-ed, disabled or broken).
 /obj/machinery/rnd/server/proc/appearance_suffix()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return "off"
 	return working ? "on" : "halt"
 
@@ -57,7 +57,7 @@ CAPABILITIES(/obj/machinery/rnd/server)
 
 /// Checks if we should be working or not, and updates accordingly.
 /obj/machinery/rnd/server/proc/refresh_working()
-	if(has_stat(NOPOWER) || emp_disabled(src) || research_disabled)
+	if(power_lost() || emp_disabled(src) || research_disabled)
 		working = FALSE
 	else
 		working = TRUE
@@ -86,7 +86,7 @@ CAPABILITIES(/obj/machinery/rnd/server)
 /obj/machinery/rnd/server/proc/get_status_text()
 	if(emp_disabled(src))
 		return "O&F@I*$ - R3*&O$T R@U!R%D"
-	else if(has_stat(NOPOWER))
+	else if(power_lost())
 		return "Offline - Server Unpowered"
 	else if(research_disabled)
 		return "Offline - Server Control Disabled"

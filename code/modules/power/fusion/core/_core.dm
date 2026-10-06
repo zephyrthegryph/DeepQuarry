@@ -66,7 +66,7 @@ CAPABILITIES(/obj/machinery/power/fusion_core)
 	default_apply_parts()
 
 /obj/machinery/power/fusion_core/proc/check_core_status()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return
 	if(idle_power_usage > avail())
 		return
@@ -74,7 +74,7 @@ CAPABILITIES(/obj/machinery/power/fusion_core)
 
 /// Runs its field while it has one (its every(), gated on owned_field): broken or cut off it shuts the field down.
 /obj/machinery/power/fusion_core/proc/core_step(datum/act/timer/A)
-	if((has_stat(BROKEN)) || !power_region)
+	if((broken_now()) || !power_region)
 		Shutdown() // clears owned_field through own_clear(): the declaration stops the work
 		return
 

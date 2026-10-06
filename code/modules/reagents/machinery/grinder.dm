@@ -141,7 +141,7 @@ CAPABILITIES(/obj/machinery/reagentgrinder)
 /obj/machinery/reagentgrinder/proc/menu_available(datum/act/op/A)
 	if(grinding)
 		return FALSE
-	return !((A.authority & AUTH_REMOTE_ACCESS) && has_stat(NOPOWER))
+	return !((A.authority & AUTH_REMOTE_ACCESS) && power_lost())
 
 /// The radial's buttons: eject what it holds, grind it, and an examine for a remote hand.
 /obj/machinery/reagentgrinder/proc/radial_choices(datum/act/op/A)

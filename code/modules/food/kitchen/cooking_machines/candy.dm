@@ -31,7 +31,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/candy, TYPE_PROC_REF(/ato
 	. = list()
 	. += ..()
 
-	if(!has_stat(MACHINE_STAT_ANY))
+	if(!has_condition())
 		icon_state = on_icon
 		if(candymaker_loop)
 			candymaker_loop.start(src)

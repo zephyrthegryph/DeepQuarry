@@ -24,7 +24,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/pipe)
 	if(!anchored)
 		return
 
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return
 
 	refinery_transfer()

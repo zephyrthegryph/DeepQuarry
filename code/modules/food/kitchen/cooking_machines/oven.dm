@@ -23,7 +23,7 @@
 	max_contents = 5
 	container_type = /obj/item/reagent_containers/cooking_container/oven
 
-	stat = POWEROFF	//Starts turned off
+	starts_off = TRUE
 
 
 	tgui_id = "CookingOven"
@@ -64,7 +64,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven, TYPE_PROC_REF(/ato
 /obj/machinery/appliance/cooker/oven/appearance_overlays()
 	. = list()
 	if(!open)
-		if(!has_stat(MACHINE_STAT_ANY))
+		if(!has_condition())
 			icon_state = "ovenclosed_on"
 			if(cooking == TRUE)
 				icon_state = "ovenclosed_cooking"

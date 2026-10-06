@@ -48,9 +48,9 @@
 	refresh_flush()
 	// Put the machine in the opposite of its real power state, so power_change() flips it.
 	if(M.powered(M.power_channel))
-		M.stat_add(NOPOWER)
+		M.set_grid_power(FALSE)
 	else
-		M.stat_remove(NOPOWER)
+		M.set_grid_power(TRUE)
 	changed(M)
 	refresh_flush()
 	var/was_dark = cap_test_has_layer(M, "dark")

@@ -426,7 +426,7 @@ CAPABILITIES(/obj/machinery/computer/ship/navigation)
 DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/computer/ship/navigation/telescreen/appearance_overlays()
 	. = list()
-	if(has_stat(NOPOWER) || has_stat(BROKEN))
+	if(power_lost() || broken_now())
 		icon_state = "tele_off"
 		set_light(0)
 	else

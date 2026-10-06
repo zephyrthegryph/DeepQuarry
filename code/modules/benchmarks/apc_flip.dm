@@ -14,7 +14,7 @@
 	if(!set_powered(on))
 		return FALSE
 	changed(src)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		PUBLISH_LEGACY(src, /datum/notice/machinery_power_lost)
 	else
 		PUBLISH_LEGACY(src, /datum/notice/machinery_power_restored)

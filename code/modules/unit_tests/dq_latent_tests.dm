@@ -433,7 +433,7 @@
 	L.status = LIGHT_OK
 	TEST_ASSERT(L.has_emergency_power(0.2), "a charged latent cell gives emergency power")
 	TEST_ASSERT(isnull(L.cell), "checking doesn't materialize")
-	L.stat_add(NOPOWER)
+	L.set_grid_power(FALSE)
 	if(L.turned_off())
 		return
 	L.use_emergency_power(1)

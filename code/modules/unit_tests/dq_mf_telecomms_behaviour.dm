@@ -47,10 +47,11 @@
 /datum/unit_test/dq_hc_struct/mftc/a_node_follows_its_power/run_gate()
 	var/obj/machinery/telecomms/relay/R = node()
 	mftc_sync(R)
-	R.set_stat(NOPOWER)
+	dq_machine_clear(R)
+	R.set_grid_power(FALSE)
 	mftc_sync(R)
 	TEST_ASSERT(!mftc_running(R), "an unpowered node stops")
-	R.stat_remove(NOPOWER)
+	R.set_grid_power(TRUE)
 	mftc_sync(R)
 	TEST_ASSERT(mftc_running(R), "and runs again with power")
 

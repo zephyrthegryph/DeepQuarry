@@ -32,7 +32,7 @@
 
 /obj/machinery/holosign/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		lit = 0
 		set_use_power(USE_POWER_OFF)
 

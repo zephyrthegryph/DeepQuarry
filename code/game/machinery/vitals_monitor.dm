@@ -26,7 +26,7 @@ OM_FIELD_VIEW(/obj/machinery/vitals_monitor, mob/living/carbon/human, victim, CH
 /obj/machinery/vitals_monitor/examine(mob/user)
 	. = ..()
 	if(victim())
-		if(has_stat(NOPOWER))
+		if(power_lost())
 			. += span_notice("It's unpowered.")
 			return
 		. += span_notice("Vitals of [victim()]:")
@@ -90,7 +90,7 @@ OM_FIELD_VIEW(/obj/machinery/vitals_monitor, mob/living/carbon/human, victim, CH
 
 /obj/machinery/vitals_monitor/draw(datum/look/look)
 	..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
 	look.overlay("screen")
 

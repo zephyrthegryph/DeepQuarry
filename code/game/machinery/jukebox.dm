@@ -158,7 +158,7 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 /obj/machinery/media/jukebox/proc/appearance_suffix()
 	if(appearance_live())
 		return ""
-	return has_stat(BROKEN) ? "-broken" : "-nopower"
+	return broken_now() ? "-broken" : "-nopower"
 
 /obj/machinery/media/jukebox/proc/appearance_running()
 	if(!appearance_live() || !playing)
@@ -511,7 +511,7 @@ VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "remove_track", PROC_REF(vv_
 /// The lights hint at the state each wire drives.
 /obj/machinery/media/jukebox/proc/wire_lights()
 	return list(
-		"The power light is [has_stat(BROKEN|NOPOWER) ? "off." : "on."]",
+		"The power light is [(broken_now() || power_lost()) ? "off." : "on."]",
 		"The parental guidance light is [hacked ? "off." : "on."]",
 		"The data light is [wire_is_cut(src, WIRE_REVERSE) ? "hauntingly dark." : "glowing softly."]")
 

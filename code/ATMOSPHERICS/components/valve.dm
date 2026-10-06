@@ -188,7 +188,7 @@ CAPABILITIES(/obj/machinery/atmospherics/valve/digital)
 	extend("unwrench", needs(req(PROC_REF(actor_allowed), because = MSG(lock/denied))))
 
 /obj/machinery/atmospherics/valve/digital/proc/has_power(datum/act/A)
-	return !has_stat(NOPOWER)
+	return !power_lost()
 
 /obj/machinery/atmospherics/valve/digital/open
 	open = 1
@@ -196,7 +196,7 @@ CAPABILITIES(/obj/machinery/atmospherics/valve/digital)
 
 /obj/machinery/atmospherics/valve/digital/draw(datum/look/look)
 	..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		look.state("valve[open]nopower")
 
 /obj/machinery/atmospherics/valve/digital/proc/set_frequency(new_frequency)

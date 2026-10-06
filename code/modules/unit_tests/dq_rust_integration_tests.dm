@@ -87,7 +87,7 @@
 /datum/unit_test/dq_rust_smes_charge_reads_through/Run()
 	var/obj/machinery/power/smes/S
 	for(var/obj/machinery/power/smes/candidate as anything in REGISTRY_MEMBERS(REGISTRY_SMES))
-		if(candidate.vg_entity && !candidate.has_stat(BROKEN))
+		if(candidate.vg_entity && !candidate.broken_now())
 			S = candidate
 			break
 	if(!S)

@@ -79,7 +79,7 @@
 /obj/machinery/protean_reconstitutor/proc/appearance_suffix()
 	if(appearance_live())
 		return ""
-	return has_stat(BROKEN) ? "-broken" : "-nopower"
+	return broken_now() ? "-broken" : "-nopower"
 
 /obj/machinery/protean_reconstitutor/proc/appearance_brain()
 	return (appearance_live() && protean_brain) ? 1 : 0

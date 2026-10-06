@@ -14,12 +14,9 @@ MSG_DEF(breakable/repaired, "You repair %T%.", "%U% repairs %T%.")
 MSG_DEF_SELF(breakable/examine, "It is broken.")
 MSG_DEF(machine/slash, "You slash at %T%!", "%U% slashes at %T%!")
 
-// ---- the legacy stat bits, as one contribution ----
-
-/// STAT_OPERABLE's reading of the machine core's condition bits: none of BROKEN, NOPOWER, POWEROFF, MAINT, EMPED is set. Written once, here, and
-/// deleted with the bits (phase 4).
-/obj/machinery/proc/stat_bits_allow(datum/act/A)
-	return !has_stat(MACHINE_INOPERABLE_FLAGS)
+// ---- STAT_OPERABLE's conditions ----
+// A machine works while it is whole and not under maintenance (and has power: machinery.dm). They are contributions of the base machine with keys, so a
+// type that says its own (the APC, the SMES, the self-powered turret) drops them with without().
 
 /// The machine works (STAT_OPERABLE), else "It isn't working." The requirement of every control a dead machine refuses.
 /proc/req_operable()
@@ -73,7 +70,7 @@ MSG_DEF(machine/slash, "You slash at %T%!", "%U% slashes at %T%!")
 
 /// The machine is broken (the BROKEN bit atom_break() sets): what breakable() draws and says.
 /obj/machinery/proc/stat_is_broken(datum/act/A)
-	return has_stat(BROKEN)
+	return broken_now()
 
 // ---- breakable ----
 
@@ -91,7 +88,7 @@ CAPABILITY_TYPE(breakable, CAP_BREAKABLE, /datum/capability/lib/breakable, key =
 
 /datum/capability/lib/breakable/proc/is_broken(datum/act/A)
 	var/obj/machinery/M = A.holder
-	return istype(M) && M.has_stat(BROKEN)
+	return istype(M) && M.broken_now()
 
 // ---- the wall mount ----
 
@@ -145,7 +142,8 @@ CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS, key = NONE, board = null, rep
 		entries += powered()
 	if(!area_power)
 		entries += without("area_power") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
-		entries += without("power_operable") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op // a machine that says its own power (the APC, the SMES, a self-powered turret) is not darkened by its area's channel
+		entries += without("power_operable") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
+		entries += without("maint_operable") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op // a machine that says its own power (the APC, the SMES, a self-powered turret) is not darkened by its area's channel
 	if(frame && frame != NONE)
 		entries += frame
 	return entries

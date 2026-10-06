@@ -10,7 +10,7 @@ OM_DERIVE_FIELD(/obj/machinery/appliance/cooker, cooker_needs_step, list("cookin
 	return cooker_needs_step()
 
 /obj/machinery/appliance/cooker/proc/cooker_needs_step()
-	return cooking || !has_stat(MACHINE_STAT_ANY) || !isnull(heat_body)
+	return cooking || !has_condition() || !isnull(heat_body)
 
 /obj/machinery/appliance/cooker
 	var/min_temp = 80 + T0C	//Minimum temperature to do any cooking
@@ -59,7 +59,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 	. = ..()
 	if(.)	//no need to duplicate adjacency check
 		var/temperature = get_temperature()
-		if(!has_stat(MACHINE_STAT_ANY))
+		if(!has_condition())
 			if (temperature < min_temp)
 				. += span_warning("\The [src] is still heating up and is too cold to cook anything yet.")
 			else
@@ -99,9 +99,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, ap
 /obj/machinery/appliance/cooker/appearance_overlays()
 	. = list()
 	var/image/light
-	if(use_power == 1 && !has_stat(MACHINE_STAT_ANY))
+	if(use_power == 1 && !has_condition())
 		light = image(icon, "light_idle")
-	else if(use_power == 2 && !has_stat(MACHINE_STAT_ANY))
+	else if(use_power == 2 && !has_condition())
 		light = image(icon, "light_preheating")
 	else
 		light = image(icon, "light_off")
@@ -110,7 +110,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, ap
 	. += light
 
 /obj/machinery/appliance/cooker/work_step(datum/act/timer/A)
-	if (!has_stat(MACHINE_STAT_ANY))
+	if (!has_condition())
 		heat_up()
 	else
 		set_heating(FALSE)
@@ -118,7 +118,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, ap
 	..()
 	if(cooking)
 		return
-	if(!has_stat(MACHINE_STAT_ANY))
+	if(!has_condition())
 		// Idle at temperature: hibernate until it cools below the thermostat band.
 		if(get_temperature() >= optimal_temp && arm_thermostat())
 			return PROCESS_KILL
@@ -184,8 +184,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, ap
 		warm_contents()
 	else if(!isnull(heat_body))
 		vg_heat_body_power(heat_body, 0)
-		vg_heat_body_keep(heat_body, !has_stat(MACHINE_STAT_ANY))
-		if(has_stat(MACHINE_STAT_ANY))
+		vg_heat_body_keep(heat_body, !has_condition())
+		if(has_condition())
 			release_contents_heat()
 
 /// Wakes the cooker when its body cools below the thermostat band.

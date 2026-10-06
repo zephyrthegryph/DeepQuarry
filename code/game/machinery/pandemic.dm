@@ -27,10 +27,10 @@
 
 /obj/machinery/computer/pandemic/draw(datum/look/look)
 	..()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		look.state((beaker ? "pandemic1_b" : "pandemic0_b"))
 		return
-	look.state("pandemic[(beaker)?"1":"0"][!(has_stat(NOPOWER)) ? "" : "_nopower"]")
+	look.state("pandemic[(beaker)?"1":"0"][!(power_lost()) ? "" : "_nopower"]")
 
 
 /obj/machinery/computer/pandemic/proc/ui_act_create_culture_bottle(datum/act/op/A, index)

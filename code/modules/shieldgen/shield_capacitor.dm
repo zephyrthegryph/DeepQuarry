@@ -77,13 +77,13 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null
 
 /obj/machinery/shield_capacitor/proc/interaction_use(datum/act/op/A)
 	var/mob/user = A.actor
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
 
 /obj/machinery/shield_capacitor/tgui_status(mob/user)
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return STATUS_CLOSE
 	return ..()
 
@@ -148,7 +148,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null
 	. = TRUE
 
 /obj/machinery/shield_capacitor/power_change()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		icon_state = "broke"
 	else
 		..()

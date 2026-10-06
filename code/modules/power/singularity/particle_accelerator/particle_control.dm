@@ -91,10 +91,10 @@ TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 
 /obj/machinery/particle_accelerator/control_box/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		set_active(0)
 		set_use_power(USE_POWER_OFF)
-	else if(!has_stat(MACHINE_STAT_ANY) && pa_stage() == 3)
+	else if(!has_condition() && pa_stage() == 3)
 		set_use_power(USE_POWER_IDLE)
 
 /// Emits every machine service interval while it runs (its every()); off, it does nothing.

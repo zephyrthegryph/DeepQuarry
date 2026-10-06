@@ -104,7 +104,7 @@ CAPABILITIES(/obj/machinery/button/remote)
 	return
 
 /obj/machinery/button/remote/proc/appearance_powered()
-	return has_stat(NOPOWER) ? 0 : 1
+	return power_lost() ? 0 : 1
 
 /// The look (the draw sweep: from its template).
 /obj/machinery/button/remote/draw(datum/look/look)
@@ -285,7 +285,7 @@ CAPABILITIES(/obj/machinery/button/remote/driver)
 	return OP_OK
 
 /obj/machinery/button/remote/driver/proc/appearance_active()
-	return (active && !has_stat(NOPOWER)) ? 1 : 0
+	return (active && !power_lost()) ? 1 : 0
 
 /// The look (the draw sweep: from its template).
 /obj/machinery/button/remote/driver/draw(datum/look/look)

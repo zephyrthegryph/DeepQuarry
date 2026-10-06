@@ -126,7 +126,7 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 
 /// Requirement: checking for power here so crowbar and screwdriver and stuff still work.
 /obj/machinery/computer/guestpass/proc/can_insert_id(mob/user, atom/target, obj/item/held)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return "the terminal refuses your ID as it is unpowered"
 	return TRUE
 

@@ -6,7 +6,7 @@
 
 /// The unit does not work now (broken, or set aside for any other reason a player can see: dark and idle).
 /proc/p2_smes_unworking(obj/machinery/power/smes/S)
-	return !!(S.has_stat(BROKEN) || S.unwired)
+	return !!(S.broken_now() || S.unwired)
 
 /// The safety circuit is on.
 /proc/p2_smes_safeties(obj/machinery/power/smes/buildable/S)

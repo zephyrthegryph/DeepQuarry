@@ -37,7 +37,7 @@
 	power_seen = now
 	stat_changed(NOPOWER) // the `stat` publish and the power channel: gates that wake on `stat` hear the flip, as they did from the bit's writer
 	changed(src) // a power change is a dispatched call: the powered capability's layer follows
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		PUBLISH_LEGACY(src, /datum/notice/machinery_power_lost)
 	else
 		PUBLISH_LEGACY(src, /datum/notice/machinery_power_restored)
@@ -56,11 +56,11 @@
  * and power_change() only acts on its flips. set_powered() remains as a manual override (a hold on STAT_HAS_POWER, source SRC_GRID, the NOPOWER
  * bit's own writer) for the benchmark's old path and for callers that force a machine dark; it goes with them.
  * The power capability's "powered" state (G8): NOPOWER. A change raises CHANGE_MACHINE_POWER (the
- * stat bit's bridge channel) and publishes MACHINE_KEY_POWERED to its readers. has_stat(NOPOWER) and operable() read
+ * stat bit's bridge channel) and publishes MACHINE_KEY_POWERED to its readers. power_lost() and operable() read
  * it. Returns TRUE when the state changed.
  */
 /obj/machinery/proc/set_powered(powered)
-	if(!(powered ? stat_remove(NOPOWER) : stat_add(NOPOWER)))
+	if(!set_grid_power(powered))
 		return FALSE
 	PUBLISH_CHANGE(src, MACHINE_KEY_POWERED)
 	return TRUE

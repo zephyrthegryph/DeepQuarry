@@ -5,7 +5,8 @@
 /// A console linked to a message server with a known key.
 /datum/unit_test/dq_hc_computers/proc/hc_monitor()
 	var/obj/machinery/message_server/S = allocate(/obj/machinery/message_server, get_step(hc_spot(), NORTH))
-	S.stat_remove(NOPOWER | BROKEN)
+	S.set_grid_power(TRUE)
+	S.set_broken_condition(FALSE)
 	S.decryptkey = "sesame"
 	var/obj/machinery/computer/message_monitor/C = hc_console(/obj/machinery/computer/message_monitor)
 	rel_set(C, nameof(/obj/machinery/computer/message_monitor::linkedServer), S)

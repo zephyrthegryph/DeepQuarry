@@ -265,7 +265,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 /// Why the latch holds the cover shut, or null: broken, or the cover lock over a charged cell.
 /obj/machinery/power/apc/proc/cover_latch_reason(datum/act/A)
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return /datum/msg/apc/cover_broken
 	if(coverlocked && built(src, STAGE_APC_SECURED) && cell_charge_percent(src) > CELL_BAY_LOW_PERCENT)
 		return /datum/msg/apc/cover_locked
@@ -280,7 +280,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 /// A ruined frame (broken, emagged, its cover gone) comes apart into scrap, not a reusable frame.
 /obj/machinery/power/apc/proc/frame_ruined(datum/act/A)
-	return emag_emagged(src) || has_stat(BROKEN) || cover_removed(src)
+	return emag_emagged(src) || broken_now() || cover_removed(src)
 
 /// needs: the floor plating in front of the frame is off.
 /obj/machinery/power/apc/proc/floor_exposed(datum/act/A)
@@ -318,8 +318,6 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 /// STAT_OPERABLE's reading of the machine core's bits, for the APC: only BROKEN. The APC is its area's supply, so the area going dark (NOPOWER)
 /// does not stop it; its unfinished frame is the build graph's (electronics_fastened()), its outages are holds (emp_disable(), energy_fail()).
-/obj/machinery/power/apc/stat_bits_allow(datum/act/A)
-	return !has_stat(BROKEN)
 
 // ---- the controls ----
 
@@ -386,7 +384,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	var/obj/item/held = N.item
 	if(!istype(held) || !user || issilicon(user))
 		return
-	if(has_stat(BROKEN) && !cover_open(src) && held.force >= 5 && held.w_class >= ITEMSIZE_SMALL)
+	if(broken_now() && !cover_open(src) && held.force >= 5 && held.w_class >= ITEMSIZE_SMALL)
 		act_message(user, src, self = span_danger("You hit %T% with %I%!"), others = span_danger("%T% has been hit with %I% by %U%!"), blind = "You hear a bang!", item = held)
 		if(prob(20))
 			key_set(src, COVER_OPEN, TRUE)
@@ -638,7 +636,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /// Not supplying for its own build: broken, or its electronics not fastened (the maintenance lights behind an open cover). Read through
 /// `supplying`, which the build stage settles, so the look is marked when it changes.
 /obj/machinery/power/apc/proc/out_of_order()
-	return has_stat(BROKEN) || (!supplying && !power_failing())
+	return broken_now() || (!supplying && !power_failing())
 
 /// STAT_SUPPLYING or the breaker changed (a failure began or ended, it broke, its build was finished or undone, the breaker went over): the area
 /// follows.
@@ -670,7 +668,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /// lock, broken, cell; the build graph how far the frame is built): unresponsive when hacked or locked while emagged, else an error while emagged.
 /obj/machinery/power/apc/proc/fault_lights_text(datum/act/eval/A)
 	var/mob/viewer = A.actor
-	if(!viewer || !Adjacent(viewer) || has_stat(BROKEN) || cover_open(src) || panel_open(src))
+	if(!viewer || !Adjacent(viewer) || broken_now() || cover_open(src) || panel_open(src))
 		return null
 	if((lock_locked(src) && emag_emagged(src)) || hacker)
 		return reason_text(/datum/msg/apc/unresponsive)

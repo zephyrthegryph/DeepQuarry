@@ -121,10 +121,10 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 /// The earliest pending deadline (world.time), or 0 for none.
 /obj/machinery/camera/proc/next_camera_deadline()
 	. = 0
-	if((has_stat(EMPED)) && affected_by_emp_until > 0)
+	if(affected_by_emp_until > 0)
 		. = affected_by_emp_until
 	// The motion alarm waits for power (power_change() reschedules).
-	if(detectTime > 0 && !has_stat(NOPOWER | EMPED))
+	if(detectTime > 0 && !(power_lost() || emp_held()))
 		var/alarm_at = detectTime + alarm_delay + 1
 		if(!. || alarm_at < .)
 			. = alarm_at
@@ -142,8 +142,9 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 
 /obj/machinery/camera/proc/camera_timer_fired()
 	camera_timer_at = 0
-	if(has_stat(EMPED) && EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
-		stat_remove(EMPED)
+	if(affected_by_emp_until && EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
+		affected_by_emp_until = 0
+		release(src, STAT_OPERABLE, SRC_EMP)
 		cancelCameraAlarm()
 		changed(src)
 		update_coverage()
@@ -174,7 +175,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		return
 	if(!affected_by_emp_until || EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
 		affected_by_emp_until = max(affected_by_emp_until, world.time + (90 SECONDS / severity))
-		stat_add(EMPED)
+		hold(src, STAT_OPERABLE, FALSE, SRC_EMP, max(affected_by_emp_until - world.time, 1))
 		set_light(0)
 		triggerCameraAlarm()
 		changed(src)
@@ -182,7 +183,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		schedule_camera_timer()
 
 /obj/machinery/camera/blob_act(obj/structure/blob/B)
-	if((has_stat(BROKEN)) || (resistance_flags & BOMB_PROOF))
+	if((broken_now()) || (resistance_flags & BOMB_PROOF))
 		return
 	deal_damage(DAMAGE_BLUNT, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = B)
 
@@ -311,7 +312,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
 	update_coverage()
-	if(!wires_all_cut(src) && !has_stat(BROKEN))
+	if(!wires_all_cut(src) && !broken_now())
 		return OP_DECLINE
 	if(!weld(tool, user, PROC_REF(welded_off), list(user, tool)))
 		return OP_OK
@@ -325,7 +326,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		assembly.camera_network = english_list(network, NETWORK_DEFAULT, ",", ",")
 		assembly.update_icon()
 		assembly.set_dir(dir)
-		if(has_stat(BROKEN))
+		if(broken_now())
 			assembly.state = 2
 			to_chat(user, span_notice("You repaired \the [src] frame."))
 		else
@@ -453,9 +454,9 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 
 /// "1" when off or broken, "emp" while EMP-ed, else nothing.
 /obj/machinery/camera/proc/appearance_suffix()
-	if(!status || has_stat(BROKEN))
+	if(!status || broken_now())
 		return "1"
-	if(has_stat(EMPED))
+	if(emp_held())
 		return "emp"
 	return ""
 
@@ -474,7 +475,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 /obj/machinery/camera/proc/can_use()
 	if(!status)
 		return 0
-	if(has_stat(EMPED | BROKEN))
+	if((emp_held() || broken_now()))
 		return 0
 	return 1
 
@@ -539,7 +540,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	if(!panel_open || isAI(user))
 		return
 
-	if(has_stat(BROKEN))
+	if(broken_now())
 		to_chat(user, span_warning("\The [src] is broken."))
 		return
 

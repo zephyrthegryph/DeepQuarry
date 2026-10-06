@@ -524,7 +524,7 @@ UTILITY PROCS
 
 /obj/machinery/maint_recycler/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		set_on_state(FALSE)
 
 /obj/machinery/maint_recycler/proc/set_screen_state(state, duration = 10)

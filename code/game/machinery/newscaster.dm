@@ -202,9 +202,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/newscaster/appearance_overlays()
 	. = list()
-	if(!ispowered || (has_stat(BROKEN)))
+	if(!ispowered || (broken_now()))
 		icon_state = "newscaster_off"
-		if(has_stat(BROKEN)) //If the thing is smashed, add crack overlay on top of the unpowered sprite.
+		if(broken_now()) //If the thing is smashed, add crack overlay on top of the unpowered sprite.
 			. += "crack3"
 		set_light(0)
 		set_light_on(FALSE)
@@ -232,22 +232,22 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 	return .
 
 /obj/machinery/newscaster/power_change()
-	if(has_stat(BROKEN)) //Broken shit can't be powered.
+	if(broken_now()) //Broken shit can't be powered.
 		return
 	. = ..()
-	if(!has_stat(NOPOWER))
+	if(!power_lost())
 		ispowered = 1
 	else
 		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))
 
 /obj/machinery/newscaster/tgui_status(mob/user)
-	if(!ispowered || (has_stat(BROKEN)))
+	if(!ispowered || (broken_now()))
 		return STATUS_CLOSE
 	. = ..()
 
 /obj/machinery/newscaster/proc/interaction_open(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ispowered || (has_stat(BROKEN)))
+	if(!ispowered || (broken_now()))
 		return OP_OK
 
 	if(!node())

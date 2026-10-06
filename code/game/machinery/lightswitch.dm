@@ -47,7 +47,7 @@ CAPABILITIES(/obj/machinery/light_switch)
 /// What the switch shows: dark without power, else its state, lit in the colour of the state.
 /obj/machinery/light_switch/draw(datum/look/look)
 	..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		look.state("light-p")
 		return
 	look.state("light[on]")

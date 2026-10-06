@@ -385,7 +385,7 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 	var/mob/user = A.actor
 	playsound(src, A.held.usesound, 50, TRUE)
 	act_message(user, src, MSG_SELF("You have removed the electronics from %T%."), MSG_OTHERS(span_danger("%U% has removed the electronics from %T%.")))
-	if(has_stat(BROKEN))
+	if(broken_now())
 		new /obj/item/circuitboard/broken(loc)
 	else
 		new /obj/item/circuitboard/airalarm(loc)

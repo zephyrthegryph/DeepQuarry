@@ -147,10 +147,10 @@ MSG_DEF_SELF(food_replicator/container, "There is already a reagent container in
 	return
 
 /obj/machinery/food_replicator/proc/appearance_broken()
-	return has_stat(BROKEN) ? 1 : 0
+	return broken_now() ? 1 : 0
 
 /obj/machinery/food_replicator/proc/appearance_nopower()
-	return has_stat(NOPOWER | EMPED) ? 1 : 0
+	return (power_lost() || emp_held()) ? 1 : 0
 
 /// The look (the draw sweep: from its template and its layers).
 /obj/machinery/food_replicator/draw(datum/look/look)

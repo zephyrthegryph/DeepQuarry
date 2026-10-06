@@ -94,7 +94,7 @@
 
 /obj/machinery/keycard_auth/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		icon_state = "auth_off"
 
 // TGUI migration. attack_hand opens KeycardAuth.tsx;

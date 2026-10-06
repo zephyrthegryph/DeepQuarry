@@ -240,7 +240,8 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 
 	// A door timer counts down only while timing, and wakes when started.
 	work_stop(brig)
-	brig.stat_remove(NOPOWER|BROKEN)
+	brig.set_grid_power(TRUE)
+	brig.set_broken_condition(FALSE)
 	brig.set_timer(1 MINUTE)
 	brig.timer_start()
 	TEST_ASSERT(brig.timing && after_pending(brig, "end"), "starting a brig timer did not arm its end")
@@ -263,7 +264,7 @@ CAPABILITIES(/obj/machinery/dq_step_probe)
 	test_time(MACHINE_SERVICE_INTERVAL * 2)
 	TEST_ASSERT(M.steps > 0, "power returning un-parked it")
 	var/ran = M.steps
-	M.stat_add(BROKEN)
+	M.set_broken_condition(TRUE)
 	test_time(MACHINE_SERVICE_INTERVAL * 3)
 	TEST_ASSERT_EQUAL(M.steps, ran, "a broken machine's work parked")
 	work_stop(M)

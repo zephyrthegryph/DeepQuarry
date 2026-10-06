@@ -33,11 +33,8 @@
 #define EMPED    0x10 // Temporary broken by EMP pulse.
 /// What operable() (machinery_fields.dm) rejects.
 #define MACHINE_INOPERABLE_FLAGS (NOPOWER | BROKEN | MAINT | EMPED)
-/// Every machine condition bit: has_stat(MACHINE_STAT_ANY) is "anything wrong at all".
+/// Every machine condition bit: has_condition() is "anything wrong at all".
 #define MACHINE_STAT_ANY (BROKEN | NOPOWER | POWEROFF | MAINT | EMPED)
-/// The condition bits that live in the stat layer, not in `stat`: NOPOWER is the has_power stat held by SRC_GRID, BROKEN the intact stat held by
-/// SRC_DAMAGE. The others (POWEROFF, MAINT, EMPED) are still bits of `stat`.
-#define MACHINE_STAT_HELD (NOPOWER | BROKEN)
 
 // Remote control states
 #define RCON_NO		1

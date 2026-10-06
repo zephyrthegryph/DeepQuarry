@@ -80,7 +80,7 @@ CAPABILITIES(/obj/machinery/v_garbosystem)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), nameof(stat)))
 
 /obj/machinery/v_garbosystem/proc/work_step(datum/act/timer/A)
-	if(!crusher() || crusher().has_stat(NOPOWER|BROKEN))
+	if(!crusher() || (crusher().power_lost() || crusher().broken_now()))
 		icon_state = "cronchy_off"
 		return PROCESS_KILL
 	icon_state = "cronchy_active"

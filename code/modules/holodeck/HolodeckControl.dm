@@ -207,7 +207,7 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 
 /obj/machinery/computer/HolodeckControl/power_change()
 	. = ..()
-	if (. && active && (has_stat(NOPOWER)))
+	if (. && active && (power_lost()))
 		emergencyShutdown()
 
 /// Watches its holograms (and draws power for them) while a program runs or holograms exist;

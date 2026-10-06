@@ -575,7 +575,7 @@ MSG_DEF_SELF(communications/backup_restored, "Backup routing data restored!")
 
 /proc/is_relay_online()
 	for(var/obj/machinery/telecomms/relay/M in world)
-		if(!M.has_stat(MACHINE_STAT_ANY))
+		if(!M.has_condition())
 			return 1
 	return 0
 

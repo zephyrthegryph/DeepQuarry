@@ -44,7 +44,7 @@ log transactions
 /// Has mains power (NOPOWER clear); the timers and cash dispensing only run while it does.
 OM_DERIVE_FIELD(/obj/machinery/atm, has_mains_power, list("stat"))
 /obj/machinery/atm/proc/has_mains_power()
-	return !has_stat(NOPOWER)
+	return !power_lost()
 
 /obj/machinery/atm/proc/work_step(datum/act/timer/A)
 	if(ticks_left_timeout > 0)

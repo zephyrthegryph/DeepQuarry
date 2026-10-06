@@ -71,7 +71,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 
 /obj/machinery/suit_storage_unit/power_change()
 	. = ..()
-	if(!has_stat(NOPOWER))
+	if(!power_lost())
 		ispowered = 1
 	else
 		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(lose_power))
@@ -85,7 +85,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 
 /obj/machinery/suit_storage_unit/proc/interaction_use(datum/act/op/A)
 	var/mob/user = A.actor
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return TRUE
 	if(!user.IsAdvancedToolUser())
 		return TRUE

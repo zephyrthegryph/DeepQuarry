@@ -113,14 +113,14 @@ CAPABILITIES(/obj/machinery/conveyor)
 		backwards = turn(dir, 180)
 
 /obj/machinery/conveyor/proc/update()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		icon_state = "conveyor-broken"
 		set_operating(OFF)
 		set_use_power(USE_POWER_OFF)
 		return
 	if(!operable)
 		set_operating(OFF)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		// Keep the commanded direction across a power blip: process() already
 		// kills itself on NOPOWER, and power_change() re-enters here to restart
 		// the belt. Clearing `operating` left belts (and their cargo) stalled

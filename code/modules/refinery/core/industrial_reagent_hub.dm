@@ -21,7 +21,7 @@
 	if(!anchored)
 		return
 
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return
 
 	if (amount_per_transfer_from_this <= 0)

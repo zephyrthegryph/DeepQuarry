@@ -44,10 +44,10 @@ CAPABILITIES(/obj/item/aiModule)
 
 	if (istype(AM, /obj/machinery/computer/aiupload))
 		var/obj/machinery/computer/aiupload/comp = AM
-		if(comp.has_stat(NOPOWER))
+		if(comp.power_lost())
 			to_chat(user, "The upload computer has no power!")
 			return
-		if(comp.has_stat(BROKEN))
+		if(comp.broken_now())
 			to_chat(user, "The upload computer is broken!")
 			return
 		if (!comp.current())
@@ -71,10 +71,10 @@ CAPABILITIES(/obj/item/aiModule)
 
 	else if (istype(AM, /obj/machinery/computer/borgupload))
 		var/obj/machinery/computer/borgupload/comp = AM
-		if(comp.has_stat(NOPOWER))
+		if(comp.power_lost())
 			to_chat(user, "The upload computer has no power!")
 			return
-		if(comp.has_stat(BROKEN))
+		if(comp.broken_now())
 			to_chat(user, "The upload computer is broken!")
 			return
 		if (!comp.current())

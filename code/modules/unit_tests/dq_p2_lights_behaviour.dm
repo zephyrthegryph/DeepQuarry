@@ -95,7 +95,7 @@
 
 /// The light switch has no power (the NOPOWER state its own power change keeps).
 /proc/p2l_switch_unpowered(obj/machinery/light_switch/S)
-	return !!S.has_stat(NOPOWER)
+	return !!S.power_lost()
 
 /// The area the switch works (its own area, or the one it is pointed at).
 /proc/p2l_switch_area(obj/machinery/light_switch/S)
@@ -341,7 +341,7 @@
 	TEST_ASSERT(!p2l_emergency(L), "a light that is switched off does not use its cell")
 	TEST_ASSERT_EQUAL(L.light_range, 0, "it gives no light")
 	set_area_switch(1)
-	TEST_ASSERT(L.on, "switched on again (status [L.status], last [L.last_area_power], has_power [L.has_power()], switch [p2l_area.lightswitch], light [p2l_area.power_light], req [p2l_area.requires_power], sc [L.switchcount], subs [length(p2l_area.power_machines)] [L in p2l_area.power_machines], NOPOWER [L.has_stat(NOPOWER)], flick [L.flickering])")
+	TEST_ASSERT(L.on, "switched on again (status [L.status], last [L.last_area_power], has_power [L.has_power()], switch [p2l_area.lightswitch], light [p2l_area.power_light], req [p2l_area.requires_power], sc [L.switchcount], subs [length(p2l_area.power_machines)] [L in p2l_area.power_machines], NOPOWER [L.power_lost()], flick [L.flickering])")
 	TEST_ASSERT_EQUAL(L.light_range, 6, "its light is back")
 
 /// Losing the light channel puts a fixture with a cell on its emergency power: dim, red, an eighth of the range.

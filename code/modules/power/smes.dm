@@ -189,8 +189,6 @@ CAPABILITIES(/obj/machinery/power/smes)
 	return TRUE
 
 /// STAT_OPERABLE's reading of the machine core's bits, for a SMES: only BROKEN. The unit feeds its network, so the area going dark must not stop it.
-/obj/machinery/power/smes/stat_bits_allow(datum/act/A)
-	return !has_stat(BROKEN)
 
 /// A mapped SMES's late pass: the coils laid on its tile and its preset settings.
 /obj/machinery/power/smes/proc/mapped_after_init(datum/act/timer/A)
@@ -315,7 +313,7 @@ CAPABILITIES(/obj/machinery/power/smes)
 
 /// TRUE when the status overlays are hidden: broken, or unwired.
 /obj/machinery/power/smes/proc/status_dark()
-	return has_stat(BROKEN) || unwired
+	return broken_now() || unwired
 
 /// The unit's look: its output, input and charge overlays, none while it is dark.
 /obj/machinery/power/smes/draw(datum/look/look)

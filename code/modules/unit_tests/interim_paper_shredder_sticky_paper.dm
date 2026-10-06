@@ -4,7 +4,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/papershredder/machine = allocate(/obj/machinery/papershredder, T)
 	var/obj/item/paper/paper = allocate(/obj/item/paper, T)
-	machine.set_stat(0)
+	dq_machine_clear(machine)
 	TEST_ASSERT(machine.operable(), "actual initialized shredder is genuinely operable")
 	TEST_ASSERT_EQUAL(machine.paperamount, 0, "actual shredder starts without recoverable shredded paper")
 	TEST_ASSERT(user.put_in_active_hand(paper), "the actor holds exact original document")

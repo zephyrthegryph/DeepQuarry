@@ -210,7 +210,8 @@
 	// the recorded snapshot reflects the interaction wiring, not power timing.
 	if(ismachinery(target))
 		var/obj/machinery/M = target
-		M.stat_remove(NOPOWER|BROKEN)
+		M.set_grid_power(TRUE)
+		M.set_broken_condition(FALSE)
 	var/list/held_types = list()
 	for(var/datum/interaction/interaction as anything in interaction_candidates(target))
 		if(interaction.held_type)

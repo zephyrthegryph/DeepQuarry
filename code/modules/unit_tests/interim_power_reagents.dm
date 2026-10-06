@@ -111,7 +111,10 @@
 	var/obj/machinery/atmospherics/unary/cryo_cell/cell = allocate(/obj/machinery/atmospherics/unary/cryo_cell, T)
 	var/obj/machinery/atmospherics/pipe/simple/pipe = allocate(/obj/machinery/atmospherics/pipe/simple, get_step(T, NORTH))
 	rel_set(cell, nameof(cell.node), pipe)
-	cell.stat_remove(MACHINE_INOPERABLE_FLAGS)
+	cell.set_grid_power(TRUE)
+	cell.set_broken_condition(FALSE)
+	cell.set_maintenance(FALSE)
+	release(cell, STAT_OPERABLE, SRC_EMP)
 	TEST_ASSERT(cell.operable(), "the connected cryo cell is operable")
 	TEST_ASSERT(!patient.abiotic(), "the patient has no items preventing insertion")
 	var/pixel_y_before = patient.pixel_y

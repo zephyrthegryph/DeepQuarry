@@ -1099,7 +1099,7 @@
 	for(var/obj/item/page as anything in list(consent, narrative, baseline, followup))
 		rel_add(packet, nameof(packet.pages), page)
 	var/obj/machinery/photocopier/faxmachine/fax = new(test_turf)
-	fax.set_stat(0)
+	dq_machine_clear(fax)
 	packet.forceMove(fax) // CONTAINED: in its contents before rel_set
 	rel_set(fax, nameof(fax.copyitem), packet)
 	own_take(management, nameof(management.scan))

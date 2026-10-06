@@ -28,7 +28,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/cereal, TYPE_PROC_REF(/at
 	. = list()
 	. += ..()
 
-	if(!has_stat(MACHINE_STAT_ANY))
+	if(!has_condition())
 		icon_state = on_icon
 		if(cerealmaker_loop)
 			cerealmaker_loop.start(src)

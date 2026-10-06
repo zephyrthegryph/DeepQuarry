@@ -115,7 +115,7 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), wakes_on = list(nameof(stat)), unpowered = TRUE)
 
 /obj/machinery/magnetic_module/proc/work_step(datum/act/timer/A)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		set_on(0)
 
 	// Sanity checks:
