@@ -38,7 +38,7 @@ MSG_DEF(collector/tank_in, "You load %I% into %T%.", "%U% loads %I% into %T%.")
 
 CAPABILITIES(/obj/machinery/power/rad_collector)
 	climb()
-	membership(joins = REGISTRY_RAD_COLLECTORS)
+	registry(REGISTRY_RAD_COLLECTORS)
 	owns_one(nameof(P), /obj/item/tank/phoron, on_destroy = ON_DESTROY_SPILL)
 	anchor(empty = nameof(P))
 	lock(powered = FALSE, alt = FALSE)

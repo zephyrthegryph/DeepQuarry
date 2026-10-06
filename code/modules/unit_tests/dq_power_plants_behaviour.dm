@@ -1220,3 +1220,23 @@
 
 #undef PP_COMP_STEP
 #undef PP_TURB_STEP
+
+// ============================================================================================ registries
+
+/// A singularity is filed in the singularity registry, an energy ball's miniball is not; fusion parts are filed under their ident tag.
+/datum/unit_test/dq_pp/plant_registries
+
+/datum/unit_test/dq_pp/plant_registries/run_pp()
+	var/list/run = pp_run(3)
+	var/obj/singularity/S = pp_singularity(run[1], 100)
+	TEST_ASSERT(S in REGISTRY_MEMBERS(REGISTRY_SINGULARITIES), "a singularity is in the singularity registry")
+	var/obj/singularity/energy_ball/mini = allocate(/obj/singularity/energy_ball, run[2], 0, TRUE)
+	TEST_ASSERT(!(mini in REGISTRY_MEMBERS(REGISTRY_SINGULARITIES)), "a miniball is not")
+	var/obj/machinery/fusion_fuel_injector/I = allocate(/obj/machinery/fusion_fuel_injector, run[3])
+	I.set_id_tag("pp_test_injectors")
+	kernel_drain_now()
+	TEST_ASSERT(I in registry_all(REGISTRY_FUEL_INJECTORS, "pp_test_injectors"), "an injector is filed under its ident tag")
+	I.set_id_tag("pp_test_other")
+	kernel_drain_now()
+	TEST_ASSERT(!(I in registry_all(REGISTRY_FUEL_INJECTORS, "pp_test_injectors")), "and re-filed when the tag changes")
+	qdel(mini)

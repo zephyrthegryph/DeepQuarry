@@ -48,7 +48,7 @@ CAPABILITIES(/datum/tgui_module/gyrotron_control)
 	var/list/data = list()
 	var/list/gyros = list()
 
-	for(var/obj/machinery/power/emitter/gyrotron/G in REGISTRY_MEMBERS(REGISTRY_GYROTRONS))
+	for(var/obj/machinery/power/emitter/gyrotron/G in registry_all(REGISTRY_GYROTRONS, gyro_tag))
 		if(G.id_tag == gyro_tag)// && (get_dist(get_turf(G), get_turf(src)) <= scan_range))
 			gyros.Add(list(list(
 				"name" = G.name,

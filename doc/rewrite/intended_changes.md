@@ -1958,3 +1958,7 @@ before the change (`code/modules/unit_tests/snapshots/pins/`) and are unchanged:
 - `..()` calls into the base `machine_step()` (which only answered PROCESS_KILL) are gone; the nuclear bomb's step answers PROCESS_KILL itself.
 - The legacy tests that read the pipeline (`machine_stepping()`, `sys_periodic_allows()`) read the work (`test_work_allowed()`,
   `test_machine_idle()`, `test_step_machine()` in `dq_sys_periodic_tests.dm`); `dq_started_work_waits_for_power` tests the library.
+- **Registries are `registry()`** (the lifecycle form): radiation collectors and singularities (an energy ball's miniballs stay out through
+  the registry's `when`, where `skips_registry()` kept them out before), and the fusion cores, fuel injectors and gyrotrons filed under their
+  ident tag (`key = nameof(id_tag)`, now tracked): their consoles read `registry_all(REGISTRY_X, tag)` instead of scanning every member.
+  Pinned by `dq_pp/plant_registries`.

@@ -21,8 +21,10 @@
 	anchored = TRUE
 	state = FLOOR_WELD_WELDED
 
+TRACKED(/obj/machinery/power/emitter/gyrotron, id_tag)
+
 CAPABILITIES(/obj/machinery/power/emitter/gyrotron)
-	membership(joins = REGISTRY_GYROTRONS)
+	registry(REGISTRY_GYROTRONS, key = nameof(id_tag))
 	part_replacement()
 	op("set_ident", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0), when(cond_not(nameof(anomalous))),
 		asks(/datum/prompt/text, fields = list("title" = "Gyrotron", "question" = "Enter a new ident tag.", "default" = nameof(id_tag), "max_len" = MAX_NAME_LEN)),
@@ -37,7 +39,7 @@ CAPABILITIES(/obj/machinery/power/emitter/gyrotron)
 	var/new_ident = answer?.value
 	if(!new_ident || !A.actor?.Adjacent(src))
 		return OP_REFUSED
-	id_tag = new_ident
+	set_id_tag(new_ident)
 	return OP_OK
 
 /obj/machinery/power/emitter/gyrotron/proc/set_beam_power(new_power)
