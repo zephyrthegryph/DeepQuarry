@@ -1,5 +1,5 @@
-/obj/structure/easel|human|none => |easel_item:needs a canvas
-/obj/structure/easel|robot|none => |easel_item:needs a canvas
+/obj/structure/easel|human|none => |
+/obj/structure/easel|robot|none => |
 /obj/structure/easel|ai|none => |
 /obj/structure/easel|ghost|none => |
-/obj/structure/easel|human|/obj/item/canvas => easel_item|
+

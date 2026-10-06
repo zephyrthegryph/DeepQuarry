@@ -1710,3 +1710,8 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
   on a converted `INTERACT_VERB` that is not `carried()`); a ghost now sees them greyed out instead of not at all.
 - **`interaction_pass` specs are ops with `passes()`** (the flesh and transit turfs, solid rock, the skipjack wall): the click is
   handled and goes on, as before.
+- **Silicon uses are `remote()` ops** (`INTERACT_SILICON`; `INTERACT_ROBOT` adds `when(req(/mob/living/silicon/robot, of = ON_ACTOR))`).
+  The curtain, the simple doors and the mirror: a cyborg beside it uses it (`needs(req_adjacent())`); the AI is not offered what it could
+  not do. The fire axe cabinet asks the actor's kind in its ops' `when()`, not in its handlers. The resin door replaces the base door's
+  hand and item with `without()`; its tear (combat mode) and its pull have disjoint stances.
+- The i7 interaction snapshots of the converted types are re-blessed (their legacy ids are ops now).
