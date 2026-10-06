@@ -142,17 +142,24 @@ CAPABILITIES(/obj/item/locator)
 	MATERIAL_BULK(MAT_STEEL, 10000)
 	preserve_item = 1
 
-DECLARE_INTERACTIONS(/obj/item/hand_tele, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/hand_tele/proc/can_open_portal)))
+CAPABILITIES(/obj/item/hand_tele)
+	// the old attack_self: pick a locked-on teleporter (or a random spot nearby) and open a portal to it
+	op("lock_in", in_hand(), needs(req(PROC_REF(can_open_portal), because = MSG(hand_tele/malfunctioning))),
+		asks(/datum/prompt/choice, fields = list("title" = "Hand Teleporter", "question" = "Please select a teleporter to lock in on.", "choices" = computed(PROC_REF(teleporter_choices)), "timeout" = 0)),
+		then(PROC_REF(teleporter_chosen)))
 
 /// Requirement: it won't work off-station or on a teleport-blocked turf.
-/obj/item/hand_tele/proc/can_open_portal(mob/user, atom/target, obj/item/held)
-	var/turf/current_location = get_turf(user)//What turf is the user on?
-	if(!current_location || (current_location.z in using_map.admin_levels) || current_location.block_tele)
-		return "it's malfunctioning"
-	return TRUE
+/obj/item/hand_tele/proc/can_open_portal(datum/act/op/A)
+	return hand_tele_works_at(get_turf(A.actor))
 
-/// Old attack_self.
-/obj/item/hand_tele/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/proc/hand_tele_works_at(turf/current_location)
+	READS_FROM() // where the actor stands is asked when the button is pressed
+	return current_location && !(current_location.z in using_map.admin_levels) && !current_location.block_tele
+
+MSG_DEF_SELF(hand_tele/malfunctioning, "It's malfunctioning.")
+
+/// The teleporters this one can lock in on, by name (and a random spot nearby, which is dangerous).
+/obj/item/hand_tele/proc/teleporter_choices(datum/act/A)
 	var/list/L = list(  )
 	for(var/obj/machinery/teleport/hub/R in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		var/obj/machinery/computer/teleporter/com
@@ -178,22 +185,22 @@ DECLARE_INTERACTIONS(/obj/item/hand_tele, INTERACT_USE(null, PROC_REF(interactio
 		turfs += T
 	if(turfs.len)
 		L["None (Dangerous)"] = pick(turfs)
-	open_request(src, /datum/prompt/choice, PROC_REF(teleporter_chosen), answerer = user, title = "Hand Teleporter", question = "Please select a teleporter to lock in on.", choices = L, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
-	return TRUE
+	return L
 
-/obj/item/hand_tele/proc/teleporter_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
+/// Old attack_self: a portal opens to the chosen destination (three at most at once).
+/obj/item/hand_tele/proc/teleporter_chosen(datum/act/op/A)
 	var/datum/prompt/choice/prompt = A.answer
+	if(!prompt)
+		return OP_OK
+	var/mob/user = A.actor
 	var/list/L = prompt.choices
-	var/t1 = A.answer.value
+	var/t1 = prompt.value
 	var/count = 0	//num of portals from this teleport in world
 	for(var/obj/effect/portal/PO in REGISTRY_MEMBERS(REGISTRY_PORTALS))
 		if(PO.creator == src)	count++
 	if(count >= 3)
 		user.show_message(span_notice("\The [src] is recharging!"))
-		return
+		return OP_OK
 	var/T = L[t1]
 	for(var/mob/O in hearers(user, null))
 		O.show_message(span_notice("Locked In."), 2)
@@ -202,4 +209,5 @@ DECLARE_INTERACTIONS(/obj/item/hand_tele, INTERACT_USE(null, PROC_REF(interactio
 	NEWP.creator = src
 	NEWP.failchance = 0 // funny 5% chance to be spaced and die makes the hand tele kinda useless.
 	src.add_fingerprint(user)
-	return
+	return OP_OK
+

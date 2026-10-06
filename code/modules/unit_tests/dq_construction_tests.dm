@@ -466,13 +466,20 @@
 	TEST_ASSERT(sheet, "into reinforced glass")
 	TEST_ASSERT_EQUAL(sheet?.get_amount(), 1, "one sheet for a border window")
 
+	// weld repair is the window's op: 4 s for 1 fuel, in the help stance
+	test_driver_begin()
 	var/obj/structure/window/basic/plain = allocate(/obj/structure/window/basic, T)
 	plain.take_damage(5)
 	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
-	plain.tool_interaction(H, welder)
-	TEST_ASSERT_EQUAL(plain.get_integrity(), plain.max_integrity, "the welder repairs a window")
-	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 4 SECONDS, "in 4 s")
-	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["amount"], 1, "for 1 fuel")
+	H.put_in_active_hand(welder)
+	var/fuel_before = welder.get_fuel()
+	test_click(H, plain, welder)
+	test_time(3 SECONDS)
+	TEST_ASSERT(plain.get_integrity() < plain.max_integrity, "not yet after 3 s")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(plain.get_integrity(), plain.max_integrity, "the welder repairs a window in 4 s")
+	TEST_ASSERT_EQUAL(fuel_before - welder.get_fuel(), 1, "for 1 fuel")
+	test_driver_end()
 
 // ---- Machine frames ----
 

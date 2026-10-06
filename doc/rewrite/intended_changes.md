@@ -2242,3 +2242,20 @@ code), then converted by the codemods: `tools/codemods/tool_act.py` (tool procs 
 - `CLOCK_MACHINE` and `CLOCK_CHEM` had no effect held on them anywhere, so they always ran at world speed. They are
   deleted: a machine's timers run on its own clock (suspension still pauses them), and the reflector lane measures its
   dt on world time. The final API's clocks are CLOCK_WORLD, CLOCK_OWN and CLOCK_BIO. No behaviour change intended.
+- **More structures and toys are ops**: the catwalk (welder slice by stance, plating), window (bang/knock/item/tk, the weld repair op
+  with its 4 s wait and 1 fuel, the polarized window's multitool id as an op step), micro tunnel (one hand op asks enter-or-reach,
+  one from inside asks the action, then where to or whom; a simple mob's click runs the same op), bonfire (rods ask stake or grill),
+  tank dispenser, weightlifter (a person on the machine; the refusals are the old texts), gargoyle statue (a cyborg's module only hits it),
+  underwear dresser (the window's open needs a species that wears underwear), canvas and palette (fills and colours are op steps),
+  toy and energy swords (alt-click recolour as two op steps), plushies (the squeezes by stance; naming is the menu op with a question;
+  the dragon's own squeeze replaces them), balloons, the acorn staff.
+- **A weld repair waits before it mends**: the window's repair is a 4 s wait, then the repair (the legacy tool step did both at once in
+  the test's fast tool path).
+- **The energy sword's cell insert answers the click** once the cell is in (the legacy handler let the hit follow).
+- **A menu entry with no name of its own is named after its op** ("Take cell", "Baton item") where the legacy entry derived "Use".
+- **Items with their own uses are ops**: the sharpening kit, snowball (compact or smash by stance), armour plates and inserts, the
+  butterfly knife grip (an ingredient that cannot be let go says why, from the handler), smoke bomb (a multitool asks the colour), chem
+  grenade (its self-use replaces the grenade's prime), stun baton (the cattleprod keeps its own item use), police tape (lift or break by
+  stance), teleportation scroll (uses, then the area, as op steps; `uses` is tracked), hand teleporter, ore satchel (`current_capacity` and
+  `max_storage_space` tracked), service fabricator (a radial step), barbed wire, the electric welder's cell. The material subtypes' own
+  item uses come before the material's repair, as their EXTEND did.

@@ -1,23 +1,17 @@
 human|none menu: Collect (refused: needs a storage)
 human|none menu: Customise (refused: needs an item)
 human|none menu: Move To Top
-human|none menu: Paint
 human|none menu: Pick up
 human|none menu: Toggle Digestable (refused: you need to be carrying it)
 human|none menu: Ui open
-human|none menu: Use
-human|none menu: Use (refused: not in your hand)
 human|none click: Click: Ui open
 robot|none menu: Collect (refused: needs a storage)
 robot|none menu: Customise (refused: needs an item)
 robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
-robot|none menu: Paint
 robot|none menu: Pick up
 robot|none menu: Toggle Digestable (refused: you need to be carrying it)
 robot|none menu: Ui open
-robot|none menu: Use
-robot|none menu: Use (refused: not in your hand)
 robot|none click: Click: Ui open
 ai|none menu: Equip (refused: not possible right now)
 ai|none menu: Ui open
@@ -30,9 +24,7 @@ human|/obj/item/tool/screwdriver menu: Paint
 human|/obj/item/tool/screwdriver menu: Pick up
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/tool/screwdriver menu: Ui open
-human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver menu: Use (refused: not in your hand)
-human|/obj/item/tool/screwdriver click: Click: Ui open
+human|/obj/item/tool/screwdriver click: Click: Paint
 human|/obj/item/tool/crowbar menu: Collect (refused: needs a storage)
 human|/obj/item/tool/crowbar menu: Customise (refused: needs an item)
 human|/obj/item/tool/crowbar menu: Move To Top
@@ -40,9 +32,7 @@ human|/obj/item/tool/crowbar menu: Paint
 human|/obj/item/tool/crowbar menu: Pick up
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/tool/crowbar menu: Ui open
-human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar menu: Use (refused: not in your hand)
-human|/obj/item/tool/crowbar click: Click: Ui open
+human|/obj/item/tool/crowbar click: Click: Paint
 human|/obj/item/tool/wrench menu: Collect (refused: needs a storage)
 human|/obj/item/tool/wrench menu: Customise (refused: needs an item)
 human|/obj/item/tool/wrench menu: Move To Top
@@ -50,9 +40,7 @@ human|/obj/item/tool/wrench menu: Paint
 human|/obj/item/tool/wrench menu: Pick up
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/tool/wrench menu: Ui open
-human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench menu: Use (refused: not in your hand)
-human|/obj/item/tool/wrench click: Click: Ui open
+human|/obj/item/tool/wrench click: Click: Paint
 human|/obj/item/tool/wirecutters menu: Collect (refused: needs a storage)
 human|/obj/item/tool/wirecutters menu: Customise (refused: needs an item)
 human|/obj/item/tool/wirecutters menu: Move To Top
@@ -60,9 +48,7 @@ human|/obj/item/tool/wirecutters menu: Paint
 human|/obj/item/tool/wirecutters menu: Pick up
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/tool/wirecutters menu: Ui open
-human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters menu: Use (refused: not in your hand)
-human|/obj/item/tool/wirecutters click: Click: Ui open
+human|/obj/item/tool/wirecutters click: Click: Paint
 human|/obj/item/multitool menu: Collect (refused: needs a storage)
 human|/obj/item/multitool menu: Customise (refused: needs an item)
 human|/obj/item/multitool menu: Move To Top
@@ -70,9 +56,7 @@ human|/obj/item/multitool menu: Paint
 human|/obj/item/multitool menu: Pick up
 human|/obj/item/multitool menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/multitool menu: Ui open
-human|/obj/item/multitool menu: Use
-human|/obj/item/multitool menu: Use (refused: not in your hand)
-human|/obj/item/multitool click: Click: Ui open
+human|/obj/item/multitool click: Click: Paint
 human|/obj/item/weldingtool menu: Collect (refused: needs a storage)
 human|/obj/item/weldingtool menu: Customise (refused: needs an item)
 human|/obj/item/weldingtool menu: Move To Top
@@ -80,9 +64,7 @@ human|/obj/item/weldingtool menu: Paint
 human|/obj/item/weldingtool menu: Pick up
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/weldingtool menu: Ui open
-human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool menu: Use (refused: not in your hand)
-human|/obj/item/weldingtool click: Click: Ui open
+human|/obj/item/weldingtool click: Click: Paint
 human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
 human|/obj/item/stack/cable_coil menu: Customise (refused: needs an item)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
@@ -91,9 +73,7 @@ human|/obj/item/stack/cable_coil menu: Paint
 human|/obj/item/stack/cable_coil menu: Pick up
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/stack/cable_coil menu: Ui open
-human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil menu: Use (refused: not in your hand)
-human|/obj/item/stack/cable_coil click: Click: Ui open
+human|/obj/item/stack/cable_coil click: Click: Paint
 human|/obj/item/stack/material/steel menu: Collect (refused: needs a storage)
 human|/obj/item/stack/material/steel menu: Customise (refused: needs an item)
 human|/obj/item/stack/material/steel menu: Move To Top
@@ -101,9 +81,7 @@ human|/obj/item/stack/material/steel menu: Paint
 human|/obj/item/stack/material/steel menu: Pick up
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/stack/material/steel menu: Ui open
-human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel menu: Use (refused: not in your hand)
-human|/obj/item/stack/material/steel click: Click: Ui open
+human|/obj/item/stack/material/steel click: Click: Paint
 human|/obj/item/card/id menu: Collect (refused: needs a storage)
 human|/obj/item/card/id menu: Customise (refused: needs an item)
 human|/obj/item/card/id menu: Move To Top
@@ -111,9 +89,7 @@ human|/obj/item/card/id menu: Paint
 human|/obj/item/card/id menu: Pick up
 human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/card/id menu: Ui open
-human|/obj/item/card/id menu: Use
-human|/obj/item/card/id menu: Use (refused: not in your hand)
-human|/obj/item/card/id click: Click: Ui open
+human|/obj/item/card/id click: Click: Paint
 human|/obj/item/kit menu: Collect (refused: needs a storage)
 human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Move To Top
@@ -121,9 +97,7 @@ human|/obj/item/kit menu: Paint
 human|/obj/item/kit menu: Pick up
 human|/obj/item/kit menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/kit menu: Ui open
-human|/obj/item/kit menu: Use
-human|/obj/item/kit menu: Use (refused: not in your hand)
-human|/obj/item/kit click: Click: Ui open
+human|/obj/item/kit click: Click: Paint
 human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Customise (refused: needs an item)
 human|/obj/item/storage menu: Move To Top
@@ -131,8 +105,6 @@ human|/obj/item/storage menu: Paint
 human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage menu: Ui open
-human|/obj/item/storage menu: Use
-human|/obj/item/storage menu: Use (refused: not in your hand)
-human|/obj/item/storage click: Click: Ui open
-keys: drag_buckle, finalize, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_interaction_item, gen_item_interaction_paint, gen_silicon_item_silicon_equip_module, gen_use_interaction_self, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, paint, ui_open
+human|/obj/item/storage click: Click: Paint
+keys: base_color, drag_buckle, finalize, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, paint, paint_open, ui_open, view
 

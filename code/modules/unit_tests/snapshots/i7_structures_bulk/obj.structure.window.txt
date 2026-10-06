@@ -1,5 +1,5 @@
-/obj/structure/window|human|none => gen_hand_interaction_hand,gen_item_interaction_item|window_repair:needs a welder,window:a>u:screwdriver:needs a screwdriver,gen_hand_interaction_bang:combat mode is off
-/obj/structure/window|robot|none => gen_hand_interaction_hand,gen_item_interaction_item|window_repair:needs a welder,window:a>u:screwdriver:needs a screwdriver,gen_hand_interaction_bang:combat mode is off
+/obj/structure/window|human|none => |window:a>u:screwdriver:needs a screwdriver
+/obj/structure/window|robot|none => |window:a>u:screwdriver:needs a screwdriver
 /obj/structure/window|ai|none => |
 /obj/structure/window|ghost|none => |
 

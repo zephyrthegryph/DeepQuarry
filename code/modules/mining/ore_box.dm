@@ -55,7 +55,7 @@ DECLARE_INTERACTIONS(/obj/structure/ore_box, INTERACT_ITEM(null, PROC_REF(intera
 				var/ore_amount = S.stored_ore[ore_id]	// How many ores does the satchel have?
 				stored_ore[ore_id] += ore_amount 		// Add the ore to the machine.
 				S.stored_ore[ore_id] = 0 				// Set the value of the ore in the satchel to 0.
-				S.current_capacity = 0				// Set the amount of ore in the satchel  to 0.
+				S.set_current_capacity(0)				// Set the amount of ore in the satchel  to 0.
 		to_chat(user, span_notice("You empty the satchel into the box."))
 		return INTERACTION_HANDLED_PASS
 
