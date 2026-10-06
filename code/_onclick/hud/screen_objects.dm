@@ -885,6 +885,7 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 	mouse_opacity = 0
 	var/atom/movable/screen/movable/mapper_holder/parent
 
+// ALLOW(init/INSTANCE_STATE): its parent is the atom it is created inside
 /atom/movable/screen/mapper/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(parent), loc)

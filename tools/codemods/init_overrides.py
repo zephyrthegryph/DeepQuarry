@@ -14,6 +14,9 @@ Each column-0 `/T/Initialize(` header without an `ALLOW(init/...)` is classified
                    randpixel_xy...), possibly under an `if(prob())`: `// ALLOW(init/INSTANCE_STATE)` naming the vars.
     instance_place every statement writes a var of src from where it is placed (loc, get_turf, get_area, x/y/z, mapload) or
                    is gated on mapload: `// ALLOW(init/INSTANCE_STATE)` naming the vars.
+    light_defaults the body is `..()` plus one `set_light(range, power[, color])` of constants: the type's light_range,
+                   light_power, light_color and light_on = TRUE (a static light is lit from them at on_materialize(), a movable
+                   light at init), the override deleted.
     timer          the body is `..()` plus exactly one `after(src, D, PROC_REF(x))` (or `then(PROC_REF(x))`): an
                    `after_init(D, then(PROC_REF(x)))` entry in the type's CAPABILITIES block (made when it has none), the
                    override deleted, and `x()` taking `(datum/act/timer/A)` when it took nothing.
@@ -49,6 +52,8 @@ PLACE_SRC = re.compile(r"(?<![\w.])(loc|get_turf|get_area|mapload|x|y|z)(?!\w)")
 RAND_CALLS = re.compile(r"^(randpixel_xy|random_offset|pixel_randomize)\(\s*\)$")
 COND = re.compile(r"^(if|else if)\s*\((.*)\)\s*$")
 TIMER = re.compile(r"^after\(\s*src\s*,\s*(.+?)\s*,\s*(?:then\(\s*)?PROC_REF\((\w+)\)\s*\)?\s*\)$")
+LIGHT = re.compile(r"^set_light\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*(?:,\s*(?:l_color\s*=\s*)?(\"#[0-9A-Fa-f]{6}\"|COLOR_\w+))?\s*\)$")
+MIN_LIGHT_RANGE = 1.4  # MINIMUM_USEFUL_LIGHT_RANGE: set_light() raises a smaller positive range to it
 SKIP_VARS = {"loc", "contents", "vars", "type", "parent_type", "tag", "verbs", "x", "y", "z"}
 
 
@@ -98,6 +103,14 @@ def classify_body(proc, stmts):
         return "review", "returns"
     if not rest:
         return "redundant", None
+    # A constant light: the type's light vars (on_materialize() lights a static light from them, a movable light reads them at init).
+    if len(rest) == 1 and rest[0].indent == 1:
+        m = LIGHT.match(re.sub(r"\s*//.*$", "", " ".join(x.strip() for x in rest[0].raw)))
+        if m and float(m.group(1)) > 0 and proc.type.startswith(("/obj", "/mob", "/atom/movable")):
+            if light_vars_declared(proc.type):
+                return "review", "light_vars_declared"
+            rng = m.group(1) if float(m.group(1)) >= MIN_LIGHT_RANGE else str(MIN_LIGHT_RANGE)
+            return "light_defaults", (rng, m.group(2), m.group(3))
     # After-init timer
     if len(rest) == 1 and rest[0].indent == 1:
         m = TIMER.match(rest[0].code)
@@ -153,6 +166,33 @@ def classify_body(proc, stmts):
     if "rand" in kinds:
         return "instance_rand", names
     return "instance_place", names
+
+
+_TYPE_BLOCK_LIGHT = None
+
+
+def light_vars_declared(t):
+    """Does a type block of exactly `t` already set a light var (anywhere in code/)?"""
+    global _TYPE_BLOCK_LIGHT
+    if _TYPE_BLOCK_LIGHT is None:
+        _TYPE_BLOCK_LIGHT = set()
+        head = re.compile(r"^(/[\w/]+)\s*(//.*)?$")
+        for root, _, fs in os.walk(os.path.join(ROOT, "code")):
+            for fn in fs:
+                if not fn.endswith(".dm"):
+                    continue
+                cur = None
+                with open(os.path.join(root, fn), encoding="utf-8", errors="surrogateescape") as fh:
+                    for line in fh:
+                        m = head.match(line.rstrip("\r\n"))
+                        if m:
+                            cur = m.group(1)
+                            continue
+                        if line[:1] not in ("\t", " ") and line.strip():
+                            cur = None
+                        elif cur and re.match(r"^\s+(var/)?light_(range|power|color|on)\s*=", line):
+                            _TYPE_BLOCK_LIGHT.add(cur)
+    return t in _TYPE_BLOCK_LIGHT
 
 
 def split_cond(code):
@@ -220,7 +260,7 @@ def handler_defs(name):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true")
-    ap.add_argument("--class", dest="classes", nargs="*", default=["redundant", "ctor_args", "instance_rand", "instance_place", "timer"])
+    ap.add_argument("--class", dest="classes", nargs="*", default=["redundant", "ctor_args", "instance_rand", "instance_place", "timer", "light_defaults"])
     ap.add_argument("--sites", action="store_true")
     ap.add_argument("--others", action="store_true", help="include other agents' folders")
     ap.add_argument("--paths", nargs="*", default=["code/"])
@@ -281,6 +321,17 @@ def main():
             elif cls in ("ctor_args", "instance_rand", "instance_place"):
                 f.lines.insert(proc.start, reason(cls, detail))
                 f.dirty = True
+            elif cls == "light_defaults":
+                rng, power, color = detail
+                at, blank = delete_proc(f, proc)
+                block = [proc.type, "\tlight_range = %s" % rng, "\tlight_power = %s" % power]
+                if color:
+                    block.append("\tlight_color = %s" % color)
+                block.append("\tlight_on = TRUE")
+                if blank:
+                    f.lines[at + 1 : at + 1] = block + [""]
+                else:
+                    f.lines[at:at] = block + ([""] if at < len(f.lines) else [])
             elif cls == "timer":
                 delay, handler = detail
                 if cap_idx is None:

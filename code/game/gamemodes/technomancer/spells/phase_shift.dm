@@ -15,9 +15,11 @@
 	cast_methods = CAST_USE
 	aspect = ASPECT_TELE
 
-/obj/item/spell/phase_shift/Initialize(mapload)
-	. = ..()
-	set_light(3, 2, l_color = "#FA58F4")
+/obj/item/spell/phase_shift
+	light_range = 3
+	light_power = 2
+	light_color = "#FA58F4"
+	light_on = TRUE
 
 /obj/effect/phase_shift
 	resistance_flags = BOMB_PROOF
@@ -28,9 +30,11 @@
 
 DECLARE_PERIODIC(/obj/effect/phase_shift, PERIODIC_SLOW)
 
-/obj/effect/phase_shift/Initialize(mapload)
-	. = ..()
-	set_light(3, 5, l_color = "#FA58F4")
+/obj/effect/phase_shift
+	light_range = 3
+	light_power = 5
+	light_color = "#FA58F4"
+	light_on = TRUE
 
 // whatever phased inside comes back out on the turf.
 CAPABILITIES(/obj/effect/phase_shift)

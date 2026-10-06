@@ -13,6 +13,7 @@
 CAPABILITIES(/obj/structure/AIcore)
 	owns_one(nameof(laws), /datum/ai_laws)
 
+// ALLOW(init/INSTANCE_STATE): a map-placed core starts with the map's default law set
 /obj/structure/AIcore/Initialize(mapload)
 	. = ..()
 	if(mapload)

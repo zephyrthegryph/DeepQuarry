@@ -436,6 +436,7 @@
 	cast_sound = null			// Sound file played when this is used.
 	COOLDOWN_DECLARE(castcheck_cooldown) // The last time this spell was cast.
 
+// ALLOW(init/INSTANCE_STATE): a construct spell made without an owner mob is refused at creation
 /obj/item/spell/construct/Initialize(mapload)
 	. = ..(mapload, TRUE)
 	if(!owner_ref())

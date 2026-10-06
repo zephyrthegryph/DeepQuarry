@@ -22,6 +22,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	owns_one(nameof(button_x), /atom/movable/screen/component_button)
 	owns_one(nameof(popup_screen), /atom/movable/screen/map_view_tg)
 
+// ALLOW(init/INSTANCE_STATE): its map view is made per window and named after this instance
 /atom/movable/screen/movable/pic_in_pic/Initialize(mapload)
 	. = ..()
 	make_backgrounds()

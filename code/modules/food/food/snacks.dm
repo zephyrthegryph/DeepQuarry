@@ -3468,9 +3468,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/turkey, null
 	bitesize = 12
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/reagent_containers/food/snacks/sliceable/suppermatter/Initialize(mapload)
-	. = ..()
-	set_light(1.4,2,"#FFFF00")
+/obj/item/reagent_containers/food/snacks/sliceable/suppermatter
+	light_range = 1.4
+	light_power = 2
+	light_color = "#FFFF00"
+	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/suppermattershard
 	name = "suppermatter shard"
@@ -3480,9 +3482,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/turkey, null
 	bitesize = 3
 	trash = null
 
-/obj/item/reagent_containers/food/snacks/suppermattershard/Initialize(mapload)
-	. = ..()
-	set_light(1.4,1.4,"#FFFF00")
+/obj/item/reagent_containers/food/snacks/suppermattershard
+	light_range = 1.4
+	light_power = 1.4
+	light_color = "#FFFF00"
+	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter
 	name = "exciting suppermatter"
@@ -3496,9 +3500,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/turkey, null
 	bitesize = 12
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter/Initialize(mapload)
-	. = ..()
-	set_light(1.4,2,"#FF0000")
+/obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter
+	light_range = 1.4
+	light_power = 2
+	light_color = "#FF0000"
+	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/excitingsuppermattershard
 	name = "exciting suppermatter shard"
@@ -3508,9 +3514,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/turkey, null
 	bitesize = 4
 	trash = null
 
-/obj/item/reagent_containers/food/snacks/excitingsuppermattershard/Initialize(mapload)
-	. = ..()
-	set_light(1.4,1.4,"#FF0000")
+/obj/item/reagent_containers/food/snacks/excitingsuppermattershard
+	light_range = 1.4
+	light_power = 1.4
+	light_color = "#FF0000"
+	light_on = TRUE
 
 /////////////////////////////////////////////////PIZZA/////////////////////////////////////////////////
 
@@ -4123,9 +4131,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hotdog, null, list(REA
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/frostbelle, null, list(REAGENT_ID_OXYCODONE = 1, REAGENT_ID_SIFSAP = 5, REAGENT_ID_BLISS = 5))
 
-/obj/item/reagent_containers/food/snacks/frostbelle/Initialize(mapload)
-	. = ..()
-	set_light(1, 1, "#5dadcf")
+/obj/item/reagent_containers/food/snacks/frostbelle
+	light_range = 1.4
+	light_power = 1
+	light_color = "#5dadcf"
+	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/bellefritter
 	name = "frostbelle fritters"
