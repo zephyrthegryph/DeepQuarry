@@ -24,7 +24,7 @@
 		TEST_ASSERT(flag.ripped, "actual ripping marks the original panel torn")
 		TEST_ASSERT(other.ripped, "actual ripping propagates to the paired panel")
 	if(burn)
-		TEST_ASSERT_EQUAL(flag.attackby_timed_done(user), TRUE, "actual burning completion reports success")
+		TEST_ASSERT_EQUAL(test_op_handler(flag, "burnt_down", user), OP_OK, "actual burning completion reports success")
 	else
 		flag.unfasten(user)
 	own_turf_contents(T)

@@ -1,5 +1,5 @@
-/obj/structure/toilet|human|none => toilet_hand,toilet_item|toilet_alt:you need to open the lid before flushing it,toilet_alt_harm:combat mode is off
-/obj/structure/toilet|robot|none => gen_silicon_toilet_silicon_use,toilet_hand,toilet_item|toilet_alt:you need to open the lid before flushing it,toilet_alt_harm:combat mode is off
+/obj/structure/toilet|human|none => toilet_hand,toilet_item,toilet_alt|toilet_alt_harm:combat mode is off
+/obj/structure/toilet|robot|none => gen_silicon_toilet_silicon_use,toilet_hand,toilet_item,toilet_alt|toilet_alt_harm:combat mode is off
 /obj/structure/toilet|ai|none => gen_silicon_toilet_silicon_use|
 /obj/structure/toilet|ghost|none => |
 

@@ -1991,3 +1991,9 @@ before the change (`code/modules/unit_tests/snapshots/pins/`) and are unchanged:
   the registry's `when`, where `skips_registry()` kept them out before), and the fusion cores, fuel injectors and gyrotrons filed under their
   ident tag (`key = nameof(id_tag)`, now tracked): their consoles read `registry_all(REGISTRY_X, tag)` instead of scanning every member.
   Pinned by `dq_pp/plant_registries`.
+- **Questions are op steps** (`asks()`): the flag's rip asks yes/no, the food cart asks which food, the bar sign asks its face. The
+  answer is re-checked by the op's requirements. The food cart offers "Grab food" only while it holds food; the bar sign takes an ID or
+  PDA granting its `req_access` (ACCESS_BAR) in hand, or the actor's own access, as every credential requirement does. The flag burns
+  with a lighter or any welder (lit or not, as before) after 2 s.
+- **The girder's hulk smash**: its offered_when asked a girder proc of the actor, which never answered, so it was never offered; the
+  girder stays legacy (it reads mob mutations) and keeps that.

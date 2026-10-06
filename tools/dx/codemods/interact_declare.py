@@ -85,7 +85,7 @@ def translate_req(clause, t, kind):
     if fm:
         value = "FALSE" if fm.group(1) else "TRUE"
         if not fm.group(3):
-            return ("req_is(nameof(%s), %s)" % (fm.group(2), value), [])
+            return ("req_is(nameof(%s), %s, because = /datum/msg/req_failed)" % (fm.group(2), value), [])  # a req_is needs a reason
         # a reason is a message type, never text (a text `because` is read as a proc name)
         text = fm.group(3).strip('"')
         msg = "%s/%s" % (t.split("/")[-1], fm.group(2))
