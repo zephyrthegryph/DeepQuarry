@@ -1776,6 +1776,12 @@ is `pain_step()` on an `every(LIFE_CYCLE)` gated by `STAT_PAIN_FELT` (held while
 * **The clocks integrate at most one step**: a body clock that was parked and starts again does not integrate the time it slept (fixes a
   first-step overshoot found while pinning).
 * `life_om/derive_and_present` and `life_om/npc_vision_follows_inputs` fail on master before this branch's first body change; not touched here.
+- **Silicon uses are `remote()` ops** (`INTERACT_SILICON`; `INTERACT_ROBOT` adds `when(req(/mob/living/silicon/robot, of = ON_ACTOR))`).
+  The curtain, the simple doors and the mirror: a cyborg beside it uses it (`needs(req_adjacent())`); the AI is not offered what it could
+  not do. The fire axe cabinet asks the actor's kind in its ops' `when()`, not in its handlers. The resin door replaces the base door's
+  hand and item with `without()`; its tear (combat mode) and its pull have disjoint stances.
+- The i7 interaction snapshots of the converted types are re-blessed (their legacy ids are ops now).
+
 ## Mob Life on the kernel's Life sequence (rewrite/om-life, L1)
 
 Pinned by `code/modules/unit_tests/dq_life_om_tests.dm` (ported from the pipeline to the sequence in the same commit) and the medical, body,

@@ -1,4 +1,5 @@
-/obj/structure/fireaxecabinet|human|none => fireaxecabinet_item,gen_verb_toggle_openness_effect,gen_verb_remove_fire_axe_effect|fireaxecabinet_hand:the cabinet won't budge
-/obj/structure/fireaxecabinet|robot|none => fireaxecabinet_item,gen_silicon_fireaxecabinet_silicon_lock,gen_verb_toggle_openness_effect,gen_verb_remove_fire_axe_effect|fireaxecabinet_hand:the cabinet won't budge
-/obj/structure/fireaxecabinet|ai|none => gen_silicon_fireaxecabinet_silicon_lock|
+/obj/structure/fireaxecabinet|human|none => |
+/obj/structure/fireaxecabinet|robot|none => |
+/obj/structure/fireaxecabinet|ai|none => |
 /obj/structure/fireaxecabinet|ghost|none => |
+

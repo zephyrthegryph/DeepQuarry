@@ -2,3 +2,4 @@
 /obj/structure/inflatable/door|robot|none => gen_silicon_inflatable_door_silicon_use|
 /obj/structure/inflatable/door|ai|none => gen_silicon_inflatable_door_silicon_use|
 /obj/structure/inflatable/door|ghost|none => |
+

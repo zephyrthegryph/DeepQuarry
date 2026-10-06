@@ -1,4 +1,5 @@
-/obj/structure/curtain|human|none => curtain_toggle,curtain_toggle_item|
-/obj/structure/curtain|robot|none => curtain_toggle,curtain_toggle_item,gen_silicon_curtain_silicon_toggle|
-/obj/structure/curtain|ai|none => gen_silicon_curtain_silicon_toggle|
+/obj/structure/curtain|human|none => |
+/obj/structure/curtain|robot|none => |
+/obj/structure/curtain|ai|none => |
 /obj/structure/curtain|ghost|none => |
+

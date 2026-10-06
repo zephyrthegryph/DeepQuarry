@@ -2,3 +2,4 @@
 /obj/structure/bed/nest|robot|none => nest_item,nest_hand|nest_hand_harm:combat mode is off
 /obj/structure/bed/nest|ai|none => |
 /obj/structure/bed/nest|ghost|none => |
+
