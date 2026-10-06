@@ -2141,12 +2141,6 @@ cadences still follow it through `relevance_changed()` until the framework goes.
   `hold(E, STAT_SUSPENDED, TRUE, source)`/`release()`. Life's admit guard, the OM timers and cadences read the stat;
   `suspended_changed()` resumes them. No behaviour change intended. `life_sweep` after both: h512 149.8 ms/s for 3413
   frames, mix 33.4 ms/s.
-- **Grave markers ask, then carve at once**: the screwdriver asks the name and then the epitaph as op steps and carves both together
-  (the legacy carving took the material's hardness per line, after the questions; a tool op's wait always comes before its questions,
-  so the wait is gone rather than put in front of them). The item marker no longer also strikes after asking (its proc returned NONE).
-- **The personal shield generator's screwdriver** asks before destroying a built-in cell (an op step, re-checked) and takes any other cell
-  out; its multitool asks the shield colour as an op step. **The Tyr keypad's multitool** asks its code as an op step, above the puzzle
-  door's catch-all for held items.
 - **The bio clock is the `clock_rate_bio` stat.** `EFFECT_CLOCK_BIO_INHIBIT`/`_MULT` are gone: stasis holds
   `STAT_CLOCK_RATE_BIO` at `1 - depth` (MIN, so the deepest stasis wins, as before), and CLOCK_BIO time runs at that rate
   (`clock_now(E, CLOCK_BIO)`, which replaces `om_clock_now`). A biological clock can no longer run faster than world time;
@@ -2155,6 +2149,12 @@ cadences still follow it through `relevance_changed()` until the framework goes.
   `unpushable` (ANY) on `/mob/living`, held under `SRC_ALPHA_*` / `SRC_PUSH_*` source ids (or a datum). The unused OM
   effect rows (slowed, armour, insulation, move speed, power draw, vitals HUD) and the vitals HUD behaviour are deleted.
   No behaviour change intended.
+- **Grave markers ask, then carve at once**: the screwdriver asks the name and then the epitaph as op steps and carves both together
+  (the legacy carving took the material's hardness per line, after the questions; a tool op's wait always comes before its questions,
+  so the wait is gone rather than put in front of them). The item marker no longer also strikes after asking (its proc returned NONE).
+- **The personal shield generator's screwdriver** asks before destroying a built-in cell (an op step, re-checked) and takes any other cell
+  out; its multitool asks the shield colour as an op step. **The Tyr keypad's multitool** asks its code as an op step, above the puzzle
+  door's catch-all for held items.
 - **DECLARE_EMAG is gone from code/game/objects and code/game/turfs** (ceiling 0). The sleevemate's sequencer asks what to make of it as
   an op step and spends a card use only when a hack is picked (the legacy one spent it when it asked). Pinned by `dq_items_emag_ops`.
 - **The extinguisher cabinet** is ops: a cyborg's module and gripper are not offered its uses (they did nothing); the wrench opens or
