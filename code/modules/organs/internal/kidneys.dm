@@ -39,7 +39,7 @@
 		return 0
 	return load * 0.02
 
-/obj/item/organ/internal/kidneys/handle_germ_effects()
+/obj/item/organ/internal/kidneys/handle_germ_effects(cycles)
 	. = ..() //Up should return an infection level as an integer
 	if(!.) return
 

@@ -41,7 +41,7 @@
 	return FALSE
 
 
-/obj/item/organ/external/chest/handle_germ_effects()
+/obj/item/organ/external/chest/handle_germ_effects(cycles)
 	. = ..() //Should return an infection level
 	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
 
@@ -71,7 +71,7 @@
 	cannot_amputate = 1
 	organ_rel_size = 30
 
-/obj/item/organ/external/groin/handle_germ_effects()
+/obj/item/organ/external/groin/handle_germ_effects(cycles)
 	. = ..() //Should return an infection level
 	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
 
@@ -98,7 +98,7 @@
 	force = 7
 	throwforce = 10
 
-/obj/item/organ/external/arm/handle_germ_effects()
+/obj/item/organ/external/arm/handle_germ_effects(cycles)
 	. = ..() //Should return an infection level
 	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
 
@@ -138,7 +138,7 @@
 	force = 10
 	throwforce = 12
 
-/obj/item/organ/external/leg/handle_germ_effects()
+/obj/item/organ/external/leg/handle_germ_effects(cycles)
 	. = ..() //Should return an infection level
 	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
 
@@ -189,7 +189,7 @@
 /obj/item/organ/external/foot/drop_worn(mob/living/carbon/human/victim)
 	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_SHOES))
 
-/obj/item/organ/external/foot/handle_germ_effects()
+/obj/item/organ/external/foot/handle_germ_effects(cycles)
 	. = ..() //Should return an infection level
 	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
 
@@ -237,7 +237,7 @@
 /obj/item/organ/external/hand/drop_worn(mob/living/carbon/human/victim)
 	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_GLOVES))
 
-/obj/item/organ/external/hand/handle_germ_effects()
+/obj/item/organ/external/hand/handle_germ_effects(cycles)
 	. = ..() //Should return an infection level
 	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
 
@@ -327,7 +327,7 @@
 		if (get_burn() > 40)
 			disfigure("burn")
 
-/obj/item/organ/external/head/handle_germ_effects()
+/obj/item/organ/external/head/handle_germ_effects(cycles)
 	. = ..() //Should return an infection level
 	if(!. || (status & ORGAN_DEAD)) return //If it's already above 2, it's become necrotic and we can just not worry about it.
 

@@ -42,7 +42,7 @@
 			apply_lesion_damage(owner.factor(BF_WITHDRAWAL) * 0.05 * ORGAN_LEGACY_BURST, /datum/affliction/lesion/toxic_injury, prob(1)) // Chance to warn them
 			owner.injure(INJURY_TOXIN, owner.factor(BF_WITHDRAWAL) * 0.2 * ORGAN_LEGACY_BURST, flags = INJURE_SILENT)
 
-/obj/item/organ/internal/spleen/handle_germ_effects()
+/obj/item/organ/internal/spleen/handle_germ_effects(cycles)
 	. = ..() //Up should return an infection level as an integer
 	if(!.) return
 

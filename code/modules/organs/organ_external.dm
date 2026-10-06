@@ -821,15 +821,14 @@ This function completely restores a damaged organ to perfect condition.
 /obj/item/organ/external/organ_tick(cycles)
 	if(owner)
 
-		//Chem traces slowly vanish
-		if(owner.life_tick % 10 == 0)
-			for(var/chemID in trace_chemicals)
-				trace_chemicals[chemID] = trace_chemicals[chemID] - 1
-				if(trace_chemicals[chemID] <= 0)
-					LAZYREMOVE(trace_chemicals, chemID)
+		//Chem traces slowly vanish: one point every ten cycles.
+		for(var/chemID in trace_chemicals)
+			trace_chemicals[chemID] = trace_chemicals[chemID] - 0.1 * cycles
+			if(trace_chemicals[chemID] <= 0)
+				LAZYREMOVE(trace_chemicals, chemID)
 
 		//Infections
-		update_germs()
+		update_germs(cycles)
 	else
 		..()
 
@@ -852,7 +851,7 @@ INFECTION_LEVEL_THREE	above this germ level the player will take additional toxi
 
 Note that amputating the affected organ does in fact remove the infection from the player's body.
 */
-/obj/item/organ/external/proc/update_germs()
+/obj/item/organ/external/proc/update_germs(cycles)
 
 	if(is_robotic() || (owner.species && (owner.species.flags & IS_PLANT || (owner.species.flags & NO_INFECT)))) //Robotic limbs shouldn't be infected, nor should nonexistant limbs.
 		germ_level = 0
@@ -860,15 +859,15 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 	if(owner.body_temperature() >= 170)	//cryo stops germs from moving and doing their bad stuffs
 		//** Syncing germ levels with external wounds
-		handle_germ_sync()
+		handle_germ_sync(cycles)
 
 		//** Handle antibiotics and curing infections
-		handle_antibiotics()
+		handle_antibiotics(cycles)
 
 		//** Handle the effects of infections
-		handle_germ_effects()
+		handle_germ_effects(cycles)
 
-/obj/item/organ/external/proc/handle_germ_sync()
+/obj/item/organ/external/proc/handle_germ_sync(cycles)
 	if(owner && isbelly(owner.loc)) //If we're in a belly, just skip infection spreading. This leads to extended vore scenes killing via infection.
 		return
 	var/antibiotics = owner.factor(BF_ANTIMICROBIAL)
@@ -876,16 +875,16 @@ Note that amputating the affected organ does in fact remove the infection from t
 	for(var/datum/affliction/wound/W as anything in current_wounds)
 		//Open wounds can become infected
 		if(owner.germ_level > W.germ_level && W.infection_check())
-			W.germ_level++
+			W.germ_level += cycles
 
 	if(!antibiotics)
 		for(var/datum/affliction/wound/W as anything in current_wounds)
 			//Infected wounds raise the organ's germ level
 			if (W.germ_level > germ_level)
-				germ_level++
+				adjust_germ_level(cycles)
 				break	//limit increase to a maximum of one per second
 
-/obj/item/organ/external/handle_germ_effects()
+/obj/item/organ/external/handle_germ_effects(cycles)
 	. = ..() //May be null or an infection level, if null then no specific processing needed here
 	if(!.) return
 
@@ -909,19 +908,19 @@ Note that amputating the affected organ does in fact remove the infection from t
 				target_organ = pick(candidate_organs)
 
 		if (target_organ)
-			target_organ.germ_level++
+			target_organ.adjust_germ_level(cycles)
 
 		//spread the infection to child and parent organs
 		if (children)
 			for (var/obj/item/organ/external/child in children)
 				if (child.germ_level < germ_level && (!child.is_robotic()))
 					if (child.germ_level < INFECTION_LEVEL_ONE*2 || prob(30))
-						child.germ_level++
+						child.adjust_germ_level(cycles)
 
 		if (parent)
 			if (parent.germ_level < germ_level && (!parent.is_robotic()))
 				if (parent.germ_level < INFECTION_LEVEL_ONE*2 || prob(30))
-					parent.germ_level++
+					parent.adjust_germ_level(cycles)
 
 	if(. >= 3 && antibiotics < ANTIBIO_OD)	//INFECTION_LEVEL_THREE
 		if (!(status & ORGAN_DEAD))

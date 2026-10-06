@@ -206,15 +206,15 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 			var/obj/item/organ/internal/rotting = src
 			if(istype(rotting))
 				rotting.apply_lesion_damage(rand(1,3), /datum/affliction/lesion/necrosis, TRUE)
-		adjust_germ_level(1) //If something knocked a limb off, usually it'll have 100ish germs. This means you have ~30 minutes to get it back on before it becomes necrotic.
+		adjust_germ_level(cycles) //If something knocked a limb off, usually it'll have 100ish germs. This means you have ~30 minutes to get it back on before it becomes necrotic.
 		if(germ_level >= INFECTION_LEVEL_THREE)
 			die()
 
 	else if(owner && owner?.body_temperature() >= 170)	//cryo stops germs from moving and doing their bad stuffs
 		//** Handle antibiotics and curing infections
-		handle_antibiotics()
-		handle_rejection()
-		handle_germ_effects()
+		handle_antibiotics(cycles)
+		handle_rejection(cycles)
+		handle_germ_effects(cycles)
 		// bridge germ_level into the wound_infection condition.
 		// Once germs cross INFECTION_LEVEL_ONE we spawn the condition,
 		// which then handles symptoms / progression / chem cure on its
@@ -263,7 +263,7 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 	return .
 
 //A little wonky: internal organs stop calling this (they return early in process) when dead, but external ones cause further damage when dead
-/obj/item/organ/proc/handle_germ_effects()
+/obj/item/organ/proc/handle_germ_effects(cycles)
 	//** Handle the effects of infections
 	if(is_robotic()) //Just in case!
 		germ_level = 0
@@ -278,27 +278,28 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 	// damage-doing side is now a condition that presents with symptoms,
 	// can cascade, and reacts to specific reagents.
 
-	if (germ_level > 0 && germ_level < INFECTION_LEVEL_ONE/2 && prob(30))
+	if (germ_level > 0 && germ_level < INFECTION_LEVEL_ONE/2 && prob(min(100, 30 * cycles)))
 		adjust_germ_level(-antibiotics)
 
 	/// Germ Accumulation
 
 	//Dead organs accumulate germs indefinitely
 	if(status & ORGAN_DEAD)
-		adjust_germ_level(1)
+		adjust_germ_level(cycles)
 
 	//Half of level 1 is growing but harmless
 	if (germ_level >= INFECTION_LEVEL_ONE/2)
-		//aiming for germ level to go from ambient to INFECTION_LEVEL_TWO in an average of 15 minutes
-		if(!antibiotics && prob(round(germ_level/6)))
-			adjust_germ_level(1)
+		// Growth is a rate proportional to the germs (exponential): germ_level / 600 a cycle, the mean of the old
+		// prob(germ_level / 6) roll of one. Ambient to INFECTION_LEVEL_TWO in about 15 minutes.
+		if(!antibiotics)
+			adjust_germ_level(germ_level / 600 * cycles)
 
 	//Level 1 qualifies for specific organ processing effects
 	if(germ_level >= INFECTION_LEVEL_ONE)
 		. = 1 //Organ qualifies for effect-specific processing
 		var/fever_temperature = owner?.species.heat_discomfort_level * 1.10 //Heat discomfort level plus 10%
 		if(owner?.body_temperature() < fever_temperature)
-			owner?.adjust_bodytemperature(min(0.2,(fever_temperature - owner?.body_temperature()) / 10)) //Will usually climb by 0.2, else 10% of the difference if less
+			owner?.adjust_bodytemperature(min(0.2,(fever_temperature - owner?.body_temperature()) / 10) * cycles) //Will usually climb by 0.2 a cycle, else 10% of the difference if less
 
 	//Level two qualifies for further processing effects
 	if (germ_level >= INFECTION_LEVEL_TWO)
@@ -308,9 +309,9 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 	//Level three qualifies for significant growth and further effects
 	if (germ_level >= INFECTION_LEVEL_THREE && antibiotics < ANTIBIO_OD)
 		. = 3 //Organ qualifies for effect-specific processing
-		adjust_germ_level(rand(5,10)) //Germ_level increases without overdose of antibiotics
+		adjust_germ_level(7.5 * cycles) //Germ_level increases without overdose of antibiotics (the mean of rand(5, 10) a cycle)
 
-/obj/item/organ/proc/handle_rejection()
+/obj/item/organ/proc/handle_rejection(cycles)
 	// Process unsuitable transplants. TODO: consider some kind of
 	// immunosuppressant that changes transplant data to make it match.
 	if(data && can_reject)
@@ -318,18 +319,18 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 			if(blood_incompatible(data.b_type, owner.dna.b_type, data.get_species_name(), owner.species.name)) // Process species by name.
 				rejecting = 1
 		else
-			rejecting++ //Rejection severity increases over time.
-			if(rejecting % 10 == 0) //Only fire every ten rejection ticks.
-				switch(rejecting)
-					if(1 to 50)
-						adjust_germ_level(1)
-					if(51 to 200)
-						adjust_germ_level(rand(1,2))
-					if(201 to 500)
-						adjust_germ_level(rand(2,3))
-					if(501 to INFINITY)
-						adjust_germ_level(rand(3,5))
-						owner.reagents.add_reagent(REAGENT_ID_TOXIN, rand(1,2))
+			rejecting += cycles // Rejection severity grows with the time it has gone on, in cycles.
+			// What the old code did every tenth cycle, spread over each cycle (the means of its rolls).
+			switch(rejecting)
+				if(0 to 50)
+					adjust_germ_level(0.1 * cycles)
+				if(50 to 200)
+					adjust_germ_level(0.15 * cycles)
+				if(200 to 500)
+					adjust_germ_level(0.25 * cycles)
+				if(500 to INFINITY)
+					adjust_germ_level(0.4 * cycles)
+					owner.reagents.add_reagent(REAGENT_ID_TOXIN, 0.15 * cycles)
 
 /obj/item/organ/proc/receive_chem(chemical as obj)
 	return 0
@@ -367,7 +368,7 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 	return (damage >= min_broken_damage || (status & ORGAN_CUT_AWAY) || is_fractured())
 
 //Germs
-/obj/item/organ/proc/handle_antibiotics()
+/obj/item/organ/proc/handle_antibiotics(cycles)
 	if(istype(owner))
 		var/antibiotics = owner.factor(BF_ANTIMICROBIAL)
 
@@ -377,11 +378,11 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 		if (germ_level < INFECTION_LEVEL_ONE)
 			germ_level = 0	//cure instantly
 		else if (germ_level < INFECTION_LEVEL_TWO)
-			adjust_germ_level(-antibiotics*4)	//at germ_level < 500, this should cure the infection in a minute
+			adjust_germ_level(-antibiotics * 4 * cycles)	//at germ_level < 500, this should cure the infection in a minute
 		else if (germ_level < INFECTION_LEVEL_THREE)
-			adjust_germ_level(-antibiotics*2) //at germ_level < 1000, this will cure the infection in 5 minutes
+			adjust_germ_level(-antibiotics * 2 * cycles) //at germ_level < 1000, this will cure the infection in 5 minutes
 		else
-			adjust_germ_level(-antibiotics)	// You waited this long to get treated, you don't really deserve this organ
+			adjust_germ_level(-antibiotics * cycles)	// You waited this long to get treated, you don't really deserve this organ
 
 //Adds autopsy data for used_weapon.
 /obj/item/organ/proc/add_autopsy_data(used_weapon, damage)

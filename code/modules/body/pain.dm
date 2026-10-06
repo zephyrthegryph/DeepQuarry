@@ -50,19 +50,28 @@
 		if(prob(power / 10) && !isbelly(loc)) // No pain noises inside bellies.
 			emote("pain")
 
-/datum/om/stage/life/pain
-	order = LIFE_PHASE_TAIL + 190
-	name = "pain"
-	wake_on = CHANGE_MOB_HEALTH
-	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
-	of = /mob/living/carbon/human
+// Pain messages (doc/rewrite/body_migration.md, slice 4). How much a body hurts is derived in its vitals; what the
+// person is told about it is periodic, so it is an every(LIFE_CYCLE) per human gated by STAT_PAIN_FELT, which the body
+// holds while it carries afflictions and is alive.
 
-/// Pain messages need a hurt limb, which is an affliction; add_affliction() invalidates the body.
-/datum/om/stage/life/pain/idle(mob/living/carbon/human/self)
-	return self.stat || !LAZYLEN(self.body?.afflictions)
+/// TRUE while the body has afflictions to hurt from: the body holds it.
+STAT(/mob/living/carbon/human, pain_felt, ANY)
+
+/// The pain messages' entries, for the human's CAPABILITIES block: `active` is STAT_PAIN_FELT.
+/proc/pain_clock(active)
+	return every(LIFE_CYCLE, then(TYPE_PROC_REF(/mob/living/carbon/human, pain_tick)), when = active)
+
+/mob/living/carbon/human/proc/pain_tick(datum/act/timer/A)
+	pain_step()
+
+/mob/living/carbon/human/proc/pain_refresh()
+	if(QDELETED(src))
+		return
+	body_hold_flag(STAT_PAIN_FELT, is_alive() && LAZYLEN(body?.afflictions))
 
 /// Pain messages from limbs and organs.
-/datum/om/stage/life/pain/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
+/mob/living/carbon/human/proc/pain_step()
+	var/mob/living/carbon/human/self = src
 	if(self.stat)
 		return
 

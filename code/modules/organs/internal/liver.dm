@@ -45,7 +45,7 @@
 			owner.injure(INJURY_TOXIN, owner.factor(BF_WITHDRAWAL) * 0.1 * cycles, flags = INJURE_SILENT)
 
 
-/obj/item/organ/internal/liver/handle_germ_effects()
+/obj/item/organ/internal/liver/handle_germ_effects(cycles)
 	. = ..() //Up should return an infection level as an integer
 	if(!.) return
 

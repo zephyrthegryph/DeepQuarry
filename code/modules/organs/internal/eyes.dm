@@ -113,7 +113,7 @@ CAPABILITIES(/obj/item/organ/internal/eyes/grey/colormatch)
 	if(is_broken())
 		owner.status_at_least(EFFECT_BLINDED, 20)
 
-/obj/item/organ/internal/eyes/handle_germ_effects()
+/obj/item/organ/internal/eyes/handle_germ_effects(cycles)
 	. = ..() //Up should return an infection level as an integer
 	if(!.) return
 

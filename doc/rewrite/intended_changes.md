@@ -1572,3 +1572,17 @@ organ has work); the Life `organs` stage, `process_organs()` and `PROCESS_ACCURA
 * **Kidney clearance is a rate:** load x 0.02 a cycle under a tenth of endurance (was prob(load) of 1-3, the same mean). Pin: 8 toxin load
   falls to below 8 within thirty cycles (old run 8 -> 6.6).
 * "Force an update so we start processing the internal bleeding" calls are gone: adding a wound raises the body clock itself.
+
+## Body migration, slice 4: germs as rates; pain messages on the body (rewrite/body-full)
+
+Pinned by `dq_body_rate_pins.dm` (`antibiotics_clear_germs`, `necrosis_kills_limb`, `hurt_limb_pain`; green on the old code first).
+Germ procs take `cycles` (`handle_germ_effects`, `handle_antibiotics`, `handle_rejection`, `update_germs`, `handle_germ_sync`); the Life `pain` stage
+is `pain_step()` on an `every(LIFE_CYCLE)` gated by `STAT_PAIN_FELT` (held while the body carries afflictions).
+
+* **Germ growth is exponential by rate**: germ_level / 600 a cycle above half of level one without antibiotics (was prob(germ_level / 6) of +1,
+  the same mean); level-three growth 7.5 a cycle (was rand(5, 10)); antibiotic clearance and every spread step scale by the elapsed cycles.
+* **Transplant rejection** grows `rejecting` by elapsed cycles and spreads its every-tenth-cycle germ and toxin bursts over each cycle at the same mean.
+* **Chemical traces** on limbs fade 0.1 a cycle (was 1 every tenth Life tick).
+* **The clocks integrate at most one step**: a body clock that was parked and starts again does not integrate the time it slept (fixes a
+  first-step overshoot found while pinning).
+* `life_om/derive_and_present` and `life_om/npc_vision_follows_inputs` fail on master before this branch's first body change; not touched here.

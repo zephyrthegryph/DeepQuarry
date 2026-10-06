@@ -41,7 +41,12 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 	return every(BODY_CLOCK_STEP, then(TYPE_PROC_REF(/mob/living/carbon/human, body_clock_step)), when = active)
 
 /mob/living/carbon/human/proc/body_clock_step(datum/act/timer/A)
-	body_clock_advance(A.dt)
+	body_clock_advance(body_clock_span(A.dt))
+
+/// The span a clock step integrates: the time since its last run, but never more than one step. A clock that was parked
+/// (nothing healing or bleeding) and starts again must not integrate the idle time it slept through.
+/proc/body_clock_span(dt)
+	return clamp(dt, 0, BODY_CLOCK_STEP)
 
 /// Advances the wounds and the blood by `dt` deciseconds of body time.
 /mob/living/carbon/human/proc/body_clock_advance(dt)
@@ -286,7 +291,7 @@ STAT(/mob/living/carbon/human, organs_active, ANY)
 	return every(LIFE_CYCLE, then(TYPE_PROC_REF(/mob/living/carbon/human, organs_step)), when = active)
 
 /mob/living/carbon/human/proc/organs_step(datum/act/timer/A)
-	organs_advance(A.dt / LIFE_CYCLE)
+	organs_advance(body_clock_span(A.dt) / LIFE_CYCLE)
 
 /// Runs every organ's work for `cycles` Life cycles of body time (also a CPR cycle's extra circulation).
 /mob/living/carbon/human/proc/organs_advance(cycles)

@@ -301,7 +301,6 @@
 		/datum/om/stage/life/thermoregulation,
 		/datum/om/stage/life/weight,
 		/datum/om/stage/life/shock,
-		/datum/om/stage/life/pain,
 		/datum/om/stage/life/medical,
 		/datum/om/stage/life/heartbeat,
 		/datum/om/stage/life/nif,
@@ -1191,7 +1190,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	om_run_frame_now(H, /datum/om/pipeline/life)
-	for(var/stage_type in list(/datum/om/stage/life/germs, /datum/om/stage/life/fall, /datum/om/stage/life/pulse, /datum/om/stage/life/pain, /datum/om/stage/life/stasis_sleep))
+	for(var/stage_type in list(/datum/om/stage/life/germs, /datum/om/stage/life/fall, /datum/om/stage/life/pulse, /datum/om/stage/life/stasis_sleep))
 		var/datum/om/stage/T = om_stage_for(H, stage_type)
 		TEST_ASSERT_NOTNULL(T, "a human's plan has [stage_type]")
 		TEST_ASSERT(T?.idle(H), "[T?.type] should idle on a healthy human")

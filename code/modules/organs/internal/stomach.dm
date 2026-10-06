@@ -21,7 +21,7 @@ DECLARE_REAGENTS(/obj/item/organ/internal/stomach, 30, null)
 			owner.custom_pain("There's a twisting pain in your abdomen!",1)
 			owner.vomit(FALSE, TRUE)
 
-/obj/item/organ/internal/stomach/handle_germ_effects()
+/obj/item/organ/internal/stomach/handle_germ_effects(cycles)
 	. = ..() //Up should return an infection level as an integer
 	if(!.) return
 
