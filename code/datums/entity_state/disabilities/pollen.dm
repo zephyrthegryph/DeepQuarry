@@ -1,9 +1,10 @@
-/// Was /datum/component/pollen_disability: a perk-granted disability ticking on the disabilities life stage.
-/datum/om/behaviour/disability/pollen
+/// Was /datum/component/pollen_disability: a trait-granted disability ticking once a Life cycle.
+CAPABILITY_TYPE(pollen_disability, CAP_DISABILITY_POLLEN, /datum/capability/disability/pollen, key = NONE)
+/datum/capability/disability/pollen
 	required_type = /mob/living/carbon/human
 	var/allergy_chance = 20
 
-/datum/om/behaviour/disability/pollen/disability_tick(mob/living/carbon/human/owner)
+/datum/capability/disability/pollen/disability_tick(mob/living/carbon/human/owner)
 
 	if(QDELETED(owner))
 		return
@@ -62,6 +63,6 @@
 				trigger_allergy(owner)
 				return
 
-/datum/om/behaviour/disability/pollen/proc/trigger_allergy(mob/living/carbon/human/owner)
+/datum/capability/disability/pollen/proc/trigger_allergy(mob/living/carbon/human/owner)
 	to_chat(owner, span_danger("[pick("The air feels itchy!","Your face feels uncomfortable!","Your body tingles!")]"))
 	owner.apply_body_effect(/datum/body_effect/allergic_flare, 3 SECONDS)

@@ -130,8 +130,6 @@
 		"machines" = list(/datum/om/pipeline/machine),
 		// code/modules/combat_ai/: strategic and tactical brains, and the sleeper that wakes them.
 		"ai_brain" = list(/datum/om/behaviour/ai_brain, /datum/om/behaviour/sleeper/ai_brain),
-		// code/datums/entity_state/disabilities/.
-		"disabilities" = list(/datum/om/behaviour/disability),
 		// Periodic cadences and hotspots are kernel work items now (code/datums/om/periodic.dm): the kernel meters them.
 		// code/modules/vore/.
 		"vore" = list(/datum/om/behaviour/belly_cycle),

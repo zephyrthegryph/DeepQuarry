@@ -1,8 +1,9 @@
-/// Was /datum/component/coughing_disability: a perk-granted disability ticking on the disabilities life stage.
-/datum/om/behaviour/disability/coughing
+/// Was /datum/component/coughing_disability: a trait-granted disability ticking once a Life cycle.
+CAPABILITY_TYPE(coughing_disability, CAP_DISABILITY_COUGHING, /datum/capability/disability/coughing, key = NONE)
+/datum/capability/disability/coughing
 	var/cough_chance = 5
 
-/datum/om/behaviour/disability/coughing/disability_tick(mob/living/owner)
+/datum/capability/disability/coughing/disability_tick(mob/living/owner)
 
 	if(QDELETED(owner))
 		return

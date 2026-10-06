@@ -1,8 +1,9 @@
-/// Was /datum/component/nervousness_disability: a perk-granted disability ticking on the disabilities life stage.
-/datum/om/behaviour/disability/nervousness
+/// Was /datum/component/nervousness_disability: a trait-granted disability ticking once a Life cycle.
+CAPABILITY_TYPE(nervousness_disability, CAP_DISABILITY_NERVOUSNESS, /datum/capability/disability/nervousness, key = NONE)
+/datum/capability/disability/nervousness
 	required_type = /mob/living/carbon/human
 
-/datum/om/behaviour/disability/nervousness/disability_tick(mob/living/carbon/human/owner)
+/datum/capability/disability/nervousness/disability_tick(mob/living/carbon/human/owner)
 
 	if(QDELETED(owner))
 		return
