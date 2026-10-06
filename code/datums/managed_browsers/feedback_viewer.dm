@@ -132,7 +132,13 @@ TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF
 	return TRUE
 
 /datum/managed_browser/feedback_viewer/proc/topic_filter_id(mob/user, list/args)
-	var/id_to_search = topic_ask(my_client(), args, "k130", /datum/om/prompt/number, message = "Write feedback ID here.", title = "Filter by ID")
+	var/question = "Write feedback ID here."
+	var/datum/request/replayed = feedback_filter_request(user, args, "k130")
+	if(!replayed)
+		var/list/original_href = args[TOPIC_HREF]
+		open_request(src, /datum/prompt/number/feedback_filter, PROC_REF(feedback_filter_answered), answerer = my_client()?.mob, question = question, title = "Filter by ID", captured = list("href" = feedback_scalar_href(original_href), "feedback_key" = "k130"))
+		return
+	var/id_to_search = replayed.value
 	if(isnull(id_to_search))
 		return
 	if(id_to_search)
@@ -141,7 +147,13 @@ TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF
 	return TRUE
 
 /datum/managed_browser/feedback_viewer/proc/topic_filter_author(mob/user, list/args)
-	var/author_to_search = topic_ask(my_client(), args, "k135", /datum/om/prompt/text, message = "Write desired key or hash here. Partial keys/hashes are allowed.", title = "Filter by Author")
+	var/question = "Write desired key or hash here. Partial keys/hashes are allowed."
+	var/datum/request/replayed = feedback_filter_request(user, args, "k135")
+	if(!replayed)
+		var/list/original_href = args[TOPIC_HREF]
+		open_request(src, /datum/prompt/text/feedback_filter, PROC_REF(feedback_filter_answered), answerer = my_client()?.mob, question = question, title = "Filter by Author", captured = list("href" = feedback_scalar_href(original_href), "feedback_key" = "k135"))
+		return
+	var/author_to_search = replayed.value
 	if(isnull(author_to_search))
 		return
 	if(author_to_search)
@@ -150,7 +162,13 @@ TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF
 	return TRUE
 
 /datum/managed_browser/feedback_viewer/proc/topic_filter_topic(mob/user, list/args)
-	var/topic_to_search = topic_ask(my_client(), args, "k140", /datum/om/prompt/text, message = "Write desired topic here. Partial topics are allowed. \nThe current topics in the config are [english_list(CONFIG_GET(str_list/sqlite_feedback_topics))].", title = "Filter by Topic")
+	var/question = "Write desired topic here. Partial topics are allowed. \nThe current topics in the config are [english_list(CONFIG_GET(str_list/sqlite_feedback_topics))]."
+	var/datum/request/replayed = feedback_filter_request(user, args, "k140")
+	if(!replayed)
+		var/list/original_href = args[TOPIC_HREF]
+		open_request(src, /datum/prompt/text/feedback_filter, PROC_REF(feedback_filter_answered), answerer = my_client()?.mob, question = question, title = "Filter by Topic", captured = list("href" = feedback_scalar_href(original_href), "feedback_key" = "k140"))
+		return
+	var/topic_to_search = replayed.value
 	if(isnull(topic_to_search))
 		return
 	if(topic_to_search)
@@ -159,7 +177,13 @@ TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF
 	return TRUE
 
 /datum/managed_browser/feedback_viewer/proc/topic_filter_content(mob/user, list/args)
-	var/content_to_search = topic_ask(my_client(), args, "k145", /datum/om/prompt/text, message = "Write desired content to find here. Partial matches are allowed.", title = "Filter by Content", multiline = TRUE, max_length = MAX_TGUI_INPUT)
+	var/question = "Write desired content to find here. Partial matches are allowed."
+	var/datum/request/replayed = feedback_filter_request(user, args, "k145")
+	if(!replayed)
+		var/list/original_href = args[TOPIC_HREF]
+		open_request(src, /datum/prompt/text/feedback_filter, PROC_REF(feedback_filter_answered), answerer = my_client()?.mob, question = question, title = "Filter by Content", multiline = TRUE, max_len = MAX_TGUI_INPUT, captured = list("href" = feedback_scalar_href(original_href), "feedback_key" = "k145"))
+		return
+	var/content_to_search = replayed.value
 	if(isnull(content_to_search))
 		return
 	if(content_to_search)
@@ -168,7 +192,13 @@ TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF
 	return TRUE
 
 /datum/managed_browser/feedback_viewer/proc/topic_filter_datetime(mob/user, list/args)
-	var/datetime_to_search = topic_ask(my_client(), args, "k150", /datum/om/prompt/text, message = "Write desired datetime. Partial matches are allowed.\nFormat is 'YYYY-MM-DD HH:MM:SS'.", title = "Filter by Datetime")
+	var/question = "Write desired datetime. Partial matches are allowed.\nFormat is 'YYYY-MM-DD HH:MM:SS'."
+	var/datum/request/replayed = feedback_filter_request(user, args, "k150")
+	if(!replayed)
+		var/list/original_href = args[TOPIC_HREF]
+		open_request(src, /datum/prompt/text/feedback_filter, PROC_REF(feedback_filter_answered), answerer = my_client()?.mob, question = question, title = "Filter by Datetime", captured = list("href" = feedback_scalar_href(original_href), "feedback_key" = "k150"))
+		return
+	var/datetime_to_search = replayed.value
 	if(isnull(datetime_to_search))
 		return
 	if(datetime_to_search)
@@ -177,3 +207,55 @@ TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF
 	return TRUE
 
 
+
+
+/// A new question keeps the original URL scalars, never a preceding ended request.
+/datum/managed_browser/feedback_viewer/proc/feedback_scalar_href(list/original_href)
+	var/list/scalars = original_href.Copy()
+	scalars -= "feedback_request"
+	return scalars
+
+/// Only an actual ended native filter request supplies server-side answers.
+/datum/managed_browser/feedback_viewer/proc/feedback_filter_request(mob/user, list/args, key)
+	var/list/original_href = args[TOPIC_HREF]
+	var/datum/request/resumed
+	if(original_href)
+		resumed = original_href["feedback_request"]
+	if((istype(resumed, /datum/prompt/text/feedback_filter) || istype(resumed, /datum/prompt/number/feedback_filter)) && resumed.owner == src && resumed.answerer == user && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(feedback_filter_answered) && resumed.captured?["feedback_key"] == key)
+		return resumed
+	return null
+
+/datum/managed_browser/feedback_viewer/proc/feedback_filter_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/list/captured_href = A.answer.captured["href"]
+	var/list/replayed_href = captured_href.Copy()
+	replayed_href["feedback_request"] = A.answer
+	world.push_usr(A.request.answerer, new /datum/callback(GLOBAL_PROC, GLOBAL_PROC_REF(topic_dispatch)), src, A.request.answerer, replayed_href)
+
+/datum/prompt/text/feedback_filter
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/feedback_filter/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/prompt/text/feedback_filter/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/number/feedback_filter
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/feedback_filter/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/prompt/number/feedback_filter/normalize(given)
+	return isnum(given) ? given : null
+
+/datum/prompt/number/feedback_filter/refusal(given)
+	return null
