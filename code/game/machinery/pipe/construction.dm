@@ -50,6 +50,7 @@ Buildable meters
 		apply_blueprint_effects()
 
 	update()
+	warm_init_dirs()
 	pixel_x += rand(-5, 5)
 	pixel_y += rand(-5, 5)
 	make_rotatable()
@@ -103,13 +104,6 @@ Buildable meters
 	name = "[initial(fakeA.name)] fitting"
 	icon_state = initial(fakeA.pipe_state)
 
-/// Old verb "Flip Pipe".
-/obj/item/pipe/proc/pipe_flip(mob/user, obj/item/held, datum/interaction/interaction)
-	if ( user.stat || user.restrained() || !user.canmove )
-		return
-
-	do_a_flip()
-
 /obj/item/pipe/proc/do_a_flip()
 	set_dir(turn(dir, -180))
 	fixdir()
@@ -148,17 +142,96 @@ Buildable meters
 	if(dir in GLOB.cornerdirs)
 		set_dir(turn(dir, 45))
 
-DECLARE_INTERACTIONS(/obj/item/pipe, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_VERB("Flip Pipe", PROC_REF(pipe_flip)), \
-)
+MSG_DEF_SELF(pipe_item/lined, "It already has a material liner and shell.")
+MSG_DEF_SELF(pipe_item/not_on_floor, "Put it down first.")
+MSG_DEF_SELF(pipe_item/hogged, "Something is hogging the tile!")
+MSG_DEF_SELF(pipe_item/occupied, "There is already a pipe at that location!")
+MSG_DEF_SELF(pipe_item/cannot_flip, "You can't do that now.")
+MSG_DEF(pipe_item/fastened, "You fasten %T%.", "%U% fastens %T%.")
 
-/// Old attack_self.
-/obj/item/pipe/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/pipe)
+	op("rotate", in_hand(), label("Rotate"), wait(0), then(PROC_REF(rotated)))
+	op("flip", menu(), label("Flip Pipe"), wait(0), needs(req(PROC_REF(actor_able), because = MSG(pipe_item/cannot_flip))), then(PROC_REF(flipped)))
+	op("line", stack(/obj/item/stack/material, 1), label("Form material"), wait(0), needs(req(PROC_REF(unlined), because = MSG(pipe_item/lined))), then(PROC_REF(lined)))
+	op("fasten", tool(TOOL_WRENCH), label("Fasten"), wait(0),
+		needs(req(PROC_REF(on_floor), because = MSG(pipe_item/not_on_floor)), req(PROC_REF(tile_free), because = PROC_REF(tile_refusal))),
+		says(MSG(pipe_item/fastened)), then(PROC_REF(fastened)))
+
+/obj/item/pipe/proc/rotated(datum/act/op/A)
 	set_dir(turn(dir,-90))
 	fixdir()
-	return TRUE
+	return OP_OK
+
+/obj/item/pipe/proc/actor_able(datum/act/op/A)
+	var/mob/user = A.actor
+	return !user.stat && !user.restrained() && user.canmove // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+
+/obj/item/pipe/proc/flipped(datum/act/op/A)
+	do_a_flip()
+	return OP_OK
+
+/obj/item/pipe/proc/unlined(datum/act/A)
+	return !material_engineered_id(src)
+
+/// The sheet (the op's cost) becomes the fitting's liner and shell.
+/obj/item/pipe/proc/lined(datum/act/op/A)
+	var/obj/item/stack/material/stock = A.held
+	var/datum/material/material = stock?.material
+	if(!material)
+		return OP_FAILED
+	material_engineered_id_set(src, material.name)
+	apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), /datum/material_template/pressure, SHEET_MATERIAL_AMOUNT)
+	color = material.icon_colour
+	to_chat(A.actor, span_notice("You form [material.display_name] around [src]. Its installed geometry will determine pressure strength, heat transfer, and chemical exposure."))
+	return OP_OK
+
+/obj/item/pipe/proc/on_floor(datum/act/A)
+	return isturf(loc) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+
+/// What stands in the way of building it here (null: nothing): a dense device's tile, or a pipe already on its layer and directions.
+/obj/item/pipe/proc/tile_blocker()
+	var/obj/machinery/atmospherics/fakeA = pipe_type // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+	var/flags = initial(fakeA.pipe_flags)
+	for(var/obj/machinery/atmospherics/M in contents_of(loc)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+		if((M.pipe_flags & flags & PIPING_ONE_PER_TURF))	//Only one dense/requires density object per tile, eg connectors/cryo/heater/coolers.
+			return /datum/msg/pipe_item/hogged
+		if((M.piping_layer != piping_layer) && !((M.pipe_flags | flags) & PIPING_ALL_LAYER)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+			continue
+		if(M.get_init_dirs() & SSmachines.get_init_dirs(pipe_type, dir)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+			return /datum/msg/pipe_item/occupied
+	return null
+
+/// Fills the shared cache of its device's directions for every way it can face, so the wrench's check only reads it (the cache builds an entry
+/// by making a probe device, which a requirement may not do).
+/obj/item/pipe/proc/warm_init_dirs()
+	if(!pipe_type)
+		return
+	for(var/d in GLOB.alldirs)
+		SSmachines.get_init_dirs(pipe_type, d)
+
+/obj/item/pipe/proc/tile_free(datum/act/A)
+	return isnull(tile_blocker())
+
+/obj/item/pipe/proc/tile_refusal(datum/act/A)
+	return tile_blocker()
+
+/obj/item/pipe/proc/fastened(datum/act/op/A)
+	fasten(A.actor)
+	return OP_OK
+
+/// Builds the fitting into its device where it lies (a pipe layer calls this too). Returns the device, or null when nothing held it in place.
+/obj/item/pipe/proc/fasten(mob/user)
+	fixdir()
+	var/obj/machinery/atmospherics/M = new pipe_type(loc)
+	build_pipe(M)
+	// With how the pipe code works, at least one end needs to be connected to something, otherwise the game deletes the segment.
+	if(QDELETED(M))
+		if(user)
+			to_chat(user, span_warning("There's nothing to connect this pipe section to!"))
+		return null
+	transfer_fingerprints_to(M)
+	qdel(src)
+	return M
 
 //called when a turf is attacked with a pipe item
 /obj/item/pipe/afterattack(turf/simulated/floor/target, mob/user, proximity)
@@ -167,59 +240,6 @@ DECLARE_INTERACTIONS(/obj/item/pipe, \
 		user.drop_from_inventory(src, target)
 	else
 		return ..()
-
-/// Old attackby.
-/obj/item/pipe/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/stack/material))
-		var/obj/item/stack/material/stock = W
-		if(material_engineered_id(src))
-			to_chat(user, span_warning("[src] already has a material liner and shell."))
-			return INTERACTION_HANDLED_PASS
-		if(stock.get_amount() < 1 || !stock.material)
-			return INTERACTION_HANDLED_PASS
-		var/datum/material/material = stock.material
-		material_engineered_id_set(src, material.name)
-		apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), /datum/material_template/pressure, SHEET_MATERIAL_AMOUNT)
-		stock.use(1)
-		color = material.icon_colour
-		to_chat(user, span_notice("You form [material.display_name] around [src]. Its installed geometry will determine pressure strength, heat transfer, and chemical exposure."))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
-
-/obj/item/pipe/wrench_act(mob/user, obj/item/W)
-	if(!isturf(loc))
-		return TRUE
-
-	add_fingerprint(user)
-	fixdir()
-
-	var/obj/machinery/atmospherics/fakeA = pipe_type
-	var/flags = initial(fakeA.pipe_flags)
-	for(var/obj/machinery/atmospherics/M in contents_of(loc))
-		if((M.pipe_flags & flags & PIPING_ONE_PER_TURF))	//Only one dense/requires density object per tile, eg connectors/cryo/heater/coolers.
-			to_chat(user, span_warning("Something is hogging the tile!"))
-			return TRUE
-		if((M.piping_layer != piping_layer) && !((M.pipe_flags | flags) & PIPING_ALL_LAYER)) // Pipes on different layers can't block each other unless they are ALL_LAYER
-			continue
-		if(M.get_init_dirs() & SSmachines.get_init_dirs(pipe_type, dir))	// matches at least one direction on either type of pipe
-			to_chat(user, span_warning("There is already a pipe at that location!"))
-			return TRUE
-	// no conflicts found
-
-	var/obj/machinery/atmospherics/A = new pipe_type(loc)
-	build_pipe(A)
-	// TODO - Evaluate and remove the "need at least one thing to connect to" thing ~Leshana
-	// With how the pipe code works, at least one end needs to be connected to something, otherwise the game deletes the segment.
-	if (QDELETED(A))
-		to_chat(user, span_warning("There's nothing to connect this pipe section to!"))
-		return TRUE
-	transfer_fingerprints_to(A)
-
-	playsound(src, W.usesound, 50, 1)
-	act_message(user, src, MSG_SELF(span_notice("You fasten %T%.")), MSG_OTHERS("%U% fastens %T%."), MSG_BLIND(span_warningplain("You hear ratcheting.")))
-
-	qdel(src)
-	return ITEM_INTERACT_SUCCESS
 
 /obj/item/pipe/proc/build_pipe(obj/machinery/atmospherics/A)
 	A.engineered_material_id = material_engineered_id(src)
@@ -266,19 +286,21 @@ DECLARE_SHARED_CACHE(pipe_init_dirs, GLOBAL_PROC_REF(build_pipe_init_dirs), SC_N
 	w_class = ITEMSIZE_LARGE
 	var/piping_layer = PIPING_LAYER_DEFAULT
 
-/obj/item/pipe_meter/wrench_act(mob/user, obj/item/W)
-	var/obj/machinery/atmospherics/pipe/pipe
-	for(var/obj/machinery/atmospherics/pipe/P in contents_of(loc))
-		if(P.piping_layer == piping_layer)
-			pipe = P
-			break
-	if(!pipe)
-		to_chat(user, span_warning("You need to fasten it to a pipe!"))
-		return TRUE
-	playsound(src, W.usesound, 50, 1)
-	to_chat(user, span_notice("You fasten the meter to the pipe."))
+MSG_DEF_SELF(pipe_meter/no_pipe, "You need to fasten it to a pipe!")
+MSG_DEF_SELF(pipe_meter/fastened, "You fasten the meter to the pipe.")
+
+CAPABILITIES(/obj/item/pipe_meter)
+	op("fasten", tool(TOOL_WRENCH), label("Fasten"), wait(0), needs(req(PROC_REF(pipe_here), because = MSG(pipe_meter/no_pipe))), says(MSG(pipe_meter/fastened)), then(PROC_REF(fastened)))
+
+/obj/item/pipe_meter/proc/pipe_here(datum/act/A)
+	for(var/obj/machinery/atmospherics/pipe/P in contents_of(loc)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+		if(P.piping_layer == piping_layer) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+			return TRUE
+	return FALSE
+
+/obj/item/pipe_meter/proc/fastened(datum/act/op/A)
 	replace_with(src, /obj/machinery/meter, piping_layer)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/pipe_meter/dropped(mob/user, equipping, slot)
 	. = ..()
@@ -299,11 +321,14 @@ DECLARE_SHARED_CACHE(pipe_init_dirs, GLOBAL_PROC_REF(build_pipe_init_dirs), SC_N
 	var/id_tag
 	var/output = 3
 
-/obj/item/pipe_gsensor/wrench_act(mob/user, obj/item/W)
+MSG_DEF_SELF(pipe_gsensor/fastened, "You fasten the sensor down.")
+
+CAPABILITIES(/obj/item/pipe_gsensor)
+	op("fasten", tool(TOOL_WRENCH), label("Fasten"), wait(0), says(MSG(pipe_gsensor/fastened)), then(PROC_REF(fastened)))
+
+/obj/item/pipe_gsensor/proc/fastened(datum/act/op/A)
 	var/obj/machinery/air_sensor/air_sensor = new /obj/machinery/air_sensor(loc)
 	air_sensor.id_tag = id_tag
 	air_sensor.output = output
-	playsound(src, W.usesound, 50, 1)
-	to_chat(user, span_notice("You fasten the meter to the pipe."))
 	replace_with(src, air_sensor)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK

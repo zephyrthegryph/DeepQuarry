@@ -1,92 +1,33 @@
-human|none menu: Load metal (refused: needs an item)
 human|none menu: Open maintenance panel (refused: needs a screwdriver)
-human|none menu: Recycle pipe (refused: needs a pipe)
-human|none menu: Replace parts (refused: needs a rapid part exchange device)
-human|none menu: Toggle (refused: it doesn't work without metal)
-human|none click: nothing
+human|none menu: Toggle (refused: It doesn't work without metal.)
+human|none click: Click: Toggle
 robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Load metal (refused: needs an item)
 robot|none menu: Open maintenance panel (refused: needs a screwdriver)
-robot|none menu: Recycle pipe (refused: needs a pipe)
-robot|none menu: Replace parts (refused: needs a rapid part exchange device)
-robot|none menu: Toggle (refused: it doesn't work without metal)
-robot|none click: nothing
+robot|none menu: Toggle (refused: It doesn't work without metal.)
+robot|none click: Click: Toggle
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Load metal (refused: needs an item)
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
-human|/obj/item/tool/screwdriver menu: Recycle pipe (refused: needs a pipe)
-human|/obj/item/tool/screwdriver menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/tool/screwdriver menu: Toggle (refused: it doesn't work without metal)
 human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Load metal (refused: needs an item)
 human|/obj/item/tool/crowbar menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/tool/crowbar menu: Recycle pipe (refused: needs a pipe)
-human|/obj/item/tool/crowbar menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/tool/crowbar menu: Toggle (refused: it doesn't work without metal)
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Load metal (refused: needs an item)
+human|/obj/item/tool/crowbar menu: Toggle auto-dismantling
+human|/obj/item/tool/crowbar click: Click: Toggle auto-dismantling
+human|/obj/item/tool/wrench menu: Choose pipe type
 human|/obj/item/tool/wrench menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/tool/wrench menu: Recycle pipe (refused: needs a pipe)
-human|/obj/item/tool/wrench menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/tool/wrench menu: Toggle (refused: it doesn't work without metal)
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Load metal (refused: needs an item)
+human|/obj/item/tool/wrench click: Click: Choose pipe type
 human|/obj/item/tool/wirecutters menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/tool/wirecutters menu: Recycle pipe (refused: needs a pipe)
-human|/obj/item/tool/wirecutters menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/tool/wirecutters menu: Toggle (refused: it doesn't work without metal)
 human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Load metal (refused: needs an item)
 human|/obj/item/multitool menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/multitool menu: Recycle pipe (refused: needs a pipe)
-human|/obj/item/multitool menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/multitool menu: Toggle (refused: it doesn't work without metal)
 human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Load metal (refused: needs an item)
 human|/obj/item/weldingtool menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/weldingtool menu: Recycle pipe (refused: needs a pipe)
-human|/obj/item/weldingtool menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/weldingtool menu: Toggle (refused: it doesn't work without metal)
 human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Load metal (refused: needs an item)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/stack/cable_coil menu: Recycle pipe (refused: needs a pipe)
-human|/obj/item/stack/cable_coil menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/stack/cable_coil menu: Toggle (refused: it doesn't work without metal)
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Load metal
 human|/obj/item/stack/material/steel menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/stack/material/steel menu: Recycle pipe (refused: needs a pipe)
-human|/obj/item/stack/material/steel menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/stack/material/steel menu: Toggle (refused: it doesn't work without metal)
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Load metal (refused: needs an item)
+human|/obj/item/stack/material/steel click: Click: Load metal
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/card/id menu: Recycle pipe (refused: needs a pipe)
-human|/obj/item/card/id menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/card/id menu: Toggle (refused: it doesn't work without metal)
 human|/obj/item/card/id click: nothing
-human|/obj/item/storage/part_replacer menu: Empty contents
-human|/obj/item/storage/part_replacer menu: Load metal (refused: needs an item)
-human|/obj/item/storage/part_replacer menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/storage/part_replacer menu: Recycle pipe (refused: needs a pipe)
-human|/obj/item/storage/part_replacer menu: Replace parts
-human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
-human|/obj/item/storage/part_replacer menu: Toggle (refused: it doesn't work without metal)
-human|/obj/item/storage/part_replacer click: nothing
-human|/obj/item/pipe menu: Load metal (refused: needs an item)
-human|/obj/item/pipe menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/pipe menu: Recycle pipe
-human|/obj/item/pipe menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/pipe menu: Toggle (refused: it doesn't work without metal)
-human|/obj/item/pipe click: nothing
-human|/obj/item/stack/material menu: Load metal
-human|/obj/item/stack/material menu: Open maintenance panel (refused: needs a screwdriver)
-human|/obj/item/stack/material menu: Recycle pipe (refused: needs a pipe)
-human|/obj/item/stack/material menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/stack/material menu: Toggle (refused: it doesn't work without metal)
-human|/obj/item/stack/material click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_part_replacement, machine_repair, pipelayer_load_metal, pipelayer_recycle_pipe, pipelayer_toggle
+keys: auto_dismantle, dismantle, eject, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, load, machine_anchor, machine_deconstruct, machine_panel, machine_repair, part_replacement.replace, pipe_type, recycle, toggle
 
