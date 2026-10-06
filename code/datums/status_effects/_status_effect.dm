@@ -39,6 +39,9 @@
 	/// A particle effect, for things like embers - Should be set on update_particles()
 	VAR_FINAL/obj/effect/abstract/particle_holder/particle_effect
 
+CAPABILITIES(/datum/status_effect)
+	ref_one(nameof(linked_alert))
+
 /datum/status_effect/New(list/arguments)
 	on_creation(arglist(arguments))
 
@@ -89,7 +92,6 @@
 // the effect leaves its mob: alert cleared, on_remove() run.
 /datum/status_effect/on_destroy(force)
 	if(owner)
-		rel_clear(src, nameof(linked_alert))
 		owner.clear_alert(id)
 		on_remove()
 	..()

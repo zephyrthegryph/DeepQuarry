@@ -37,8 +37,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(src?.pulling_target())
 		stop_pulling() //TG does this on atom/movable but our stop_pulling proc is here so whatever
 
-	// our bellies go with us (the mob owns them)
-	own_clear(src, nameof(vore_organs), OWN_DELETE)
+	// Our bellies go with us through the declared ownership policy.
 	for(var/mob/observer/dead/M in src?.follower_list())
 		M.stop_following()
 	motiontracker_unsubscribe(TRUE) // Force unsubscribe
