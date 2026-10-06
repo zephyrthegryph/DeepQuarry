@@ -29,17 +29,13 @@
 
 TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 
-// ALLOW(init/CTOR_ARGS): material_key is a constructor argument from whoever builds it
-/obj/item/material/Initialize(mapload, material_key)
+// ALLOW(init/INSTANCE_STATE): a material weapon is made of its material (or the type's forced one), scaled by its force divisor
+/obj/item/material/Initialize(mapload)
 	var/forced_material = TYPE_TABLE_GET(src, weapon_forced_material)
 	if(forced_material)
-		. = ..(mapload, forced_material)
-		material_key = forced_material
-	else
-		. = ..()
-	if(!material_key)
-		material_key = default_material
-	set_material(material_key)
+		default_material = forced_material
+	. = ..()
+	set_material(default_material)
 	if(!material)
 		return INITIALIZE_HINT_QDEL
 
@@ -101,6 +97,7 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 // EXTEND, not DECLARE: many subtypes DECLARE interactions of their own, which this must not replace.
 CAPABILITIES(/obj/item/material)
 	op("material_interaction_item", item(/obj/item), label("Repair"), then(PROC_REF(material_interaction_item)))
+	param(nameof(default_material), pos = 1)
 
 /// Old attackby: repairs with a whetstone or sharpening kit, then falls through as its ..() did.
 /obj/item/material/proc/material_interaction_item(datum/act/op/A)

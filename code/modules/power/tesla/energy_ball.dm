@@ -23,10 +23,12 @@
 	var/energy_to_lower = -20
 	resistance_flags = BOMB_PROOF
 
-// ALLOW(init/CTOR_ARGS): starting_energy and is_miniball are constructor arguments from whoever builds it
-/obj/singularity/energy_ball/Initialize(mapload, starting_energy = 50, is_miniball = FALSE)
+CAPABILITIES(/obj/singularity/energy_ball)
+	param(nameof(miniball), pos = 2)
+
+// ALLOW(init/INSTANCE_STATE): a full energy ball glows
+/obj/singularity/energy_ball/Initialize(mapload)
 	. = ..()
-	miniball = is_miniball
 	if(!miniball)
 		set_light(10, 7, "#EEEEFF")
 

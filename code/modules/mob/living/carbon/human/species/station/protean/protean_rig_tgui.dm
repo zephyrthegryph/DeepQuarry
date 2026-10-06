@@ -22,7 +22,7 @@ So here it sits, snowflake code for a single item.
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/rig/protean's window data (declared on its UI_DATA row).
+/// /obj/item/rig/protean's window data.
 /obj/item/rig/protean/proc/ui_data_obj_item_rig_protean(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

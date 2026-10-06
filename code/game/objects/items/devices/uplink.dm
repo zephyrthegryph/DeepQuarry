@@ -110,7 +110,7 @@ DECLARE_REPEAT(/obj/item/uplink, "offer_time", next_offer, null)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/uplink/hidden's window data (declared on its UI_DATA row).
+/// /obj/item/uplink/hidden's window data.
 /obj/item/uplink/hidden/proc/ui_data_obj_item_uplink_hidden(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	if(!user.mind)
 		return

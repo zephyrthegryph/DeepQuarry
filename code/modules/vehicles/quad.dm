@@ -31,10 +31,16 @@
 	. = ..()
 	. += owns(nameof(key), policy = OWN_CONTAINED, starts = nameof(key_type))
 
-// ALLOW(init/CTOR_ARGS): assembly is a constructor argument from whoever builds it
-/obj/vehicle/train/engine/quadbike/Initialize(mapload, assembly)
+CAPABILITIES(/obj/vehicle/train/engine/quadbike)
+	param(nameof(built_from_assembly), pos = 1)
+
+/// Whether the bike was built from an assembly (its constructor param): it then brings no cell of its own.
+/obj/vehicle/train/engine/quadbike/var/built_from_assembly = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a quad bike not built from an assembly comes with a cell and an engine sound, and starts switched off
+/obj/vehicle/train/engine/quadbike/Initialize(mapload)
 	. = ..()
-	if(!assembly)
+	if(!built_from_assembly)
 		rel_set(src, nameof(cell), new /obj/item/cell/high(src))
 		rel_set(src, nameof(soundloop), new /datum/looping_sound/idle_carengine(list(src), FALSE))
 	turn_off()

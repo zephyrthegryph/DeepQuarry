@@ -19,16 +19,15 @@
 
 CAPABILITIES(/mob/living/dominated_brain)
 	verb_entry(/mob/living/dominated_brain/proc/resist_control)
+	param(nameof(pred_body), pos = 1)
+	param(nameof(prey_name), pos = 2)
+	param(nameof(prey_body), pos = 3, apply = PROC_REF(take_seat))
 
-// ALLOW(init/CTOR_ARGS): pred, preyname and prey are constructor arguments from whoever builds it
-/mob/living/dominated_brain/Initialize(mapload, mob/living/pred, preyname, mob/living/prey)
-	prey_name = preyname
-	if(prey)
-		rel_set(src, nameof(prey_body), prey)
-	rel_set(src, nameof(pred_body), pred)
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A dominated brain exists only inside a living body.
+/mob/living/dominated_brain/proc/take_seat(prey)
 	if(!isliving(loc))
-		return INITIALIZE_HINT_QDEL
-	. = ..()
+		spent(src)
+		return
 	lets_register_our_signals()
 
 /mob/living/dominated_brain/life_type_post_due()

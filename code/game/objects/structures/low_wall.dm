@@ -32,20 +32,16 @@ CAPABILITIES(/obj/structure/low_wall)
 	after_init(0, then(PROC_REF(connect_after_init)))
 	climb()
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	param(nameof(default_material), pos = 1, apply = PROC_REF(build_of))
 
-// ALLOW(init/CTOR_ARGS): materialtype is a constructor argument from whoever builds it
-/obj/structure/low_wall/Initialize(mapload, materialtype)
-	. = ..()
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A low wall stands only on open floor.
+/obj/structure/low_wall/proc/build_of(materialtype)
 	var/turf/T = loc
 	if(!isturf(T) || T.density || T.opacity)
 		WARNING("[src] on invalid turf [T] at [x],[y],[z]")
-		return INITIALIZE_HINT_QDEL
-
-	if(!materialtype)
-		materialtype = default_material
-
+		spent(src)
+		return
 	material = get_material_by_name(materialtype)
-
 	max_integrity = material.integrity
 	update_integrity(max_integrity)
 

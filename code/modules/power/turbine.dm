@@ -299,7 +299,7 @@ CAPABILITIES(/obj/machinery/power/turbine)
 	extend("ui_open", when(req_empty_hand()), needs(req_operable()))
 	op("start_stop", ui_act("start_stop"), then(PROC_REF(ui_act_start_stop)))
 
-/// The computed part of /obj/machinery/power/turbine's window data (declared on its UI_DATA row).
+/// /obj/machinery/power/turbine's window data.
 /obj/machinery/power/turbine/ui_data(datum/act/eval/A)
 	return list(
 		"display_power" = lastgen,
@@ -356,7 +356,7 @@ CAPABILITIES(/obj/machinery/computer/turbine_computer)
 	op("reconnect", ui_act("reconnect"), then(PROC_REF(ui_act_reconnect)))
 	op("doors", ui_act("doors"), then(PROC_REF(ui_act_doors)))
 
-/// The computed part of /obj/machinery/computer/turbine_computer's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/turbine_computer's window data.
 /obj/machinery/computer/turbine_computer/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["connected"] = (compressor() && compressor().turbine()) ? TRUE : FALSE

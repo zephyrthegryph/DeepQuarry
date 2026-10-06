@@ -74,7 +74,7 @@ CAPABILITIES(/datum/player_log_viwer)
 		"view_client" = client_view
 	)
 
-/// The computed part of /datum/player_log_viwer's window data (declared on its UI_DATA row).
+/// /datum/player_log_viwer's window data.
 /datum/player_log_viwer/ui_data(datum/act/eval/A)
 	return list(
 		"on_cooldown" = refresh_cooldown(),

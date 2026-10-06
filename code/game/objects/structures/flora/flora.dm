@@ -170,12 +170,18 @@ CAPABILITIES(/obj/structure/flora/bush)
 
 TYPE_TABLE_DECLARE(/obj/structure/flora/ausbushes, ausbush_icon_choice, null)
 
-// ALLOW(init/CTOR_ARGS): bush_icon is a constructor argument from whoever builds it
-/obj/structure/flora/ausbushes/Initialize(mapload, bush_icon)
+CAPABILITIES(/obj/structure/flora/ausbushes)
+	param(nameof(bush_icon), pos = 1)
+
+/// The look it is planted with (its constructor param).
+/obj/structure/flora/ausbushes/var/bush_icon
+
+// ALLOW(init/INSTANCE_STATE): flora picks one of its type's looks, or the one it was planted with
+/obj/structure/flora/ausbushes/Initialize(mapload)
 	var/list/icon_choice = TYPE_TABLE_GET(src, ausbush_icon_choice)
 	if(icon_choice)
 		bush_icon = "[icon_choice[1]]_[rand(1, icon_choice[2])]"
-		. = ..(mapload, bush_icon)
+		. = ..()
 	else
 		. = ..()
 	if(bush_icon)

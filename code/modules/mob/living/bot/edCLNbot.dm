@@ -80,7 +80,7 @@
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /mob/living/bot/cleanbot/edCLN's window data (declared on its UI_DATA row).
+/// /mob/living/bot/cleanbot/edCLN's window data.
 /mob/living/bot/cleanbot/edCLN/proc/ui_data_mob_living_bot_cleanbot_edCLN(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["version"] = "v3.0"

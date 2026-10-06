@@ -385,7 +385,7 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 
 	return TRUE
 
-/// The computed part of /obj/machinery/transhuman/resleever's window data (declared on its UI_DATA row).
+/// /obj/machinery/transhuman/resleever's window data.
 /obj/machinery/transhuman/resleever/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

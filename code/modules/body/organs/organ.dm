@@ -154,6 +154,7 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 	if(owner && vital)
 		owner.can_defib = FALSE
 		owner.death()
+	loose_refresh()
 
 /// Bring the organ's integrity to max_damage (death). Internal organs do it
 /// with a necrosis lesion (see organ_integrity.dm).
@@ -166,12 +167,8 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 		var/mob/living/carbon/human/H = owner
 		after(H, 0, TYPE_PROC_REF(/mob/living/carbon/human, organs_refresh), key = "organs_refresh")
 
-/// A loose organ's own tick (decay, loose afflictions): one cycle per periodic step.
-/obj/item/organ/periodic_step()
-	organ_tick(1)
-
 /// The organ's work over `cycles` Life cycles of body time: the body's organ clock calls it for organs in a body
-/// (body_clock.dm), the loose-organ periodic for the rest. Effects scale by `cycles`; nothing counts ticks.
+/// (body_clock.dm), the loose-organ clock for the rest (attach.dm). Effects scale by `cycles`; nothing counts ticks.
 /obj/item/organ/proc/organ_tick(cycles)
 
 	//dead already, no need for more processing

@@ -75,17 +75,23 @@
 	icon = 'icons/obj/seeds.dmi'
 	icon_state = "blank"
 
-// ALLOW(init/CTOR_ARGS): newseed is a constructor argument from whoever builds it
-/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/Initialize(mapload,datum/seed/newseed)
+CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
+	param(nameof(seed_at_make), pos = 1)
+	rolls(nameof(pixel_y), range_of(-5, 5))
+
+/// The seed the soil grows (its constructor param).
+/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/var/datum/seed/seed_at_make
+
+// ALLOW(init/INSTANCE_STATE): a vine's invisible soil starts its plant alive and healthy
+/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/Initialize(mapload)
 	. = ..()
 	if(isopenturf(loc))
 		return INITIALIZE_HINT_QDEL
-	proto_set(src, nameof(seed), seed_shareable(newseed))
+	proto_set(src, nameof(seed), seed_shareable(seed_at_make))
 	dead = 0
 	age = 1
 	health = seed.get_trait(TRAIT_ENDURANCE)
 	EXPIRY_STAMP(src, lastcycle, CLOCK_WORLD)
-	pixel_y = rand(-5,5)
 	check_health()
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/remove_dead()

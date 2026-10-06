@@ -33,7 +33,7 @@
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /mob/new_player's window data (declared on its UI_DATA row).
+/// /mob/new_player's window data.
 /mob/new_player/proc/ui_data_mob_new_player(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

@@ -41,19 +41,18 @@ Buildable meters
  * @param loc Location
  * @pipe_type
  */
-// ALLOW(init/CTOR_ARGS): _pipe_type, _dir and make_from are constructor arguments from whoever builds it
-/obj/item/pipe/Initialize(mapload, _pipe_type, _dir, obj/machinery/atmospherics/make_from)
+/// The device a pipe part is taken from (its constructor param, dropped after init).
+/obj/item/pipe/var/tmp/obj/machinery/atmospherics/make_from
+
+// ALLOW(init/INSTANCE_STATE): a pipe part takes the shape of the device it was taken from, or its blueprint's effects, and turns
+/obj/item/pipe/Initialize(mapload)
 	if(make_from)
 		make_from_existing(make_from)
 	else
-		pipe_type = _pipe_type
-		set_dir(_dir)
 		apply_blueprint_effects()
 
 	update()
 	warm_init_dirs()
-	pixel_x += rand(-5, 5)
-	pixel_y += rand(-5, 5)
 	make_rotatable()
 	. = ..()
 
@@ -157,6 +156,10 @@ CAPABILITIES(/obj/item/pipe)
 	op("fasten", tool(TOOL_WRENCH), label("Fasten"), wait(0),
 		needs(req(PROC_REF(on_floor), because = MSG(pipe_item/not_on_floor)), req(PROC_REF(tile_free), because = PROC_REF(tile_refusal))),
 		says(MSG(pipe_item/fastened)), then(PROC_REF(fastened)))
+	param(nameof(pipe_type), pos = 1)
+	param(nameof(dir), pos = 2)
+	param(nameof(make_from), pos = 3, keep = FALSE)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
 
 /obj/item/pipe/proc/rotated(datum/act/op/A)
 	set_dir(turn(dir,-90))

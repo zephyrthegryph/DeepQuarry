@@ -112,21 +112,9 @@
 		return 0
 	return ..(tool)
 
-/datum/surgical_step/place_item/confirm(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
+/datum/surgical_step/place_item/confirm_text(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
 	var/obj/item/placed = placed_item(user, tool)
-	if(!placed)
-		return FALSE
-	var/zone = part.organ_tag
-	if(surgery_ask(tool, user, "implant", /datum/om/prompt/choice/alert, message = "Implant \the [placed] into [target]'s [surgical_cavity_name(part)] cavity?", title = "Confirm Cavity Implant", choices = list("Implant", "Cancel")) != "Implant")
-		return FALSE
-	// The alert may have waited a long time: check everything again.
-	if(QDELETED(user) || QDELETED(target) || QDELETED(part) || QDELETED(tool) || QDELETED(placed))
-		return FALSE
-	if(user.get_active_hand() != tool || placed_item(user, tool) != placed || !user.Adjacent(target))
-		return FALSE
-	if(target.get_organ(zone) != part || can_use(user, target, zone, tool) != TRUE)
-		return FALSE
-	return TRUE
+	return placed ? "Implant 	he [placed] into [target]'s [surgical_cavity_name(part)] cavity?" : null
 
 /datum/surgical_step/place_item/is_needed(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
 	var/obj/item/placed = placed_item(user, tool)

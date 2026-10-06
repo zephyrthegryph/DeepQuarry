@@ -30,7 +30,7 @@ CAPABILITIES(/obj/item/aicard)
 	op("radio", ui_act("radio"), then(PROC_REF(ui_act_radio)))
 	op("wireless", ui_act("wireless"), then(PROC_REF(ui_act_wireless)))
 
-/// The computed part of /obj/item/aicard's window data (declared on its UI_DATA row).
+/// /obj/item/aicard's window data.
 /obj/item/aicard/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

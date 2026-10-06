@@ -32,14 +32,15 @@
 
 	bag_material = MAT_SYNCLOTH
 
-// ALLOW(init/CTOR_ARGS): amt and bag_mat are constructor arguments from whoever builds it
-/obj/item/stack/sandbags/Initialize(mapload, amt, bag_mat)
-	. = ..(mapload, amt)
+CAPABILITIES(/obj/item/stack/sandbags)
+	param(nameof(bag_material), pos = 2)
+
+// ALLOW(init/INSTANCE_STATE): sandbags take their recipes, slowdown and their bags' colour
+/obj/item/stack/sandbags/Initialize(mapload)
+	. = ..()
 	recipes = GLOB.sandbag_recipes
 	update_slowdown()
 	update_icon()
-	if(bag_mat)
-		bag_material = bag_mat
 	var/datum/material/M = get_material_by_name("[bag_material]")
 	if(!M)
 		return INITIALIZE_HINT_QDEL
@@ -139,11 +140,9 @@
 
 	var/bag_material = MAT_CLOTH
 
-// ALLOW(init/CTOR_ARGS): amt and bag_mat are constructor arguments from whoever builds it
-/obj/item/stack/emptysandbag/Initialize(mapload, amt, bag_mat)
-	. = ..(mapload, amt)
-	if(bag_mat)
-		bag_material = bag_mat
+// ALLOW(init/INSTANCE_STATE): empty bags take their material's colour
+/obj/item/stack/emptysandbag/Initialize(mapload)
+	. = ..()
 	var/datum/material/M = get_material_by_name("[bag_material]")
 	if(!M)
 		return INITIALIZE_HINT_QDEL
@@ -152,6 +151,7 @@
 CAPABILITIES(/obj/item/stack/emptysandbag)
 	without("ui_open")
 	op("emptysandbag_self", in_hand(), label("Fill"), then(PROC_REF(emptysandbag_self)))
+	param(nameof(bag_material), pos = 2)
 
 /// Old attack_self.
 /obj/item/stack/emptysandbag/proc/emptysandbag_self(datum/act/op/A)

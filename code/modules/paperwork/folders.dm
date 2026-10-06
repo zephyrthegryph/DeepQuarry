@@ -135,7 +135,7 @@ CAPABILITIES(/obj/item/folder)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/folder's window data (declared on its UI_DATA row).
+/// /obj/item/folder's window data.
 /obj/item/folder/proc/ui_data_obj_item_folder(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/items = list()

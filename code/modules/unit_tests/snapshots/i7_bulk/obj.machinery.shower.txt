@@ -4,3 +4,4 @@
 /obj/machinery/shower|ghost|none => |
 /obj/machinery/shower|human|/obj/item/analyzer => shower_toggle,shower_analyze,shower_swallow,shower_set_temperature|
 /obj/machinery/shower|human|/obj/item => shower_toggle,shower_swallow,shower_set_temperature|shower_analyze:needs a gas analyzer
+

@@ -73,17 +73,28 @@
 	light_on = TRUE
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 
-// ALLOW(init/CTOR_ARGS): _range, _power, _color and _duration are constructor arguments from whoever builds it
-/obj/effect/dummy/lighting_obj/Initialize(mapload, _range, _power, _color, _duration)
-	. = ..()
-	if(!isnull(_range))
-		set_light_range(_range)
-	if(!isnull(_power))
-		set_light_power(_power)
-	if(!isnull(_color))
-		set_light_color(_color)
-	if(_duration)
-		expire(_duration)
+CAPABILITIES(/obj/effect/dummy/lighting_obj)
+	param(nameof(glow_range), pos = 1)
+	param(nameof(glow_power), pos = 2)
+	param(nameof(glow_color), pos = 3)
+	param(nameof(glow_duration), pos = 4, apply = PROC_REF(glow))
+
+/// The light and how long it lasts (its constructor params).
+/obj/effect/dummy/lighting_obj/var/glow_range
+/obj/effect/dummy/lighting_obj/var/glow_power
+/obj/effect/dummy/lighting_obj/var/glow_color
+/obj/effect/dummy/lighting_obj/var/glow_duration
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/dummy/lighting_obj/proc/glow(duration)
+	if(!isnull(glow_range))
+		set_light_range(glow_range)
+	if(!isnull(glow_power))
+		set_light_power(glow_power)
+	if(!isnull(glow_color))
+		set_light_color(glow_color)
+	if(duration)
+		expire(duration)
 
 /obj/effect/dummy/lighting_obj/moblight
 	name = "mob lighting fx"

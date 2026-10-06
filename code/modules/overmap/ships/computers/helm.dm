@@ -131,7 +131,7 @@ OM_FIELD(/obj/machinery/computer/ship/helm, autopilot_disabled, TRUE, CHANGE_MAC
 		data[key] = computed[key]
 	return data
 
-/// The computed part of /obj/machinery/computer/ship/helm's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/ship/helm's window data.
 /obj/machinery/computer/ship/helm/proc/ui_data_obj_machinery_computer_ship_helm(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

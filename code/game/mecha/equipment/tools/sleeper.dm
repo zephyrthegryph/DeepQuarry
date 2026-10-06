@@ -127,7 +127,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("inject", ui_act("inject", arg("ref", schema_ref(/datum/reagent)), arg("source", schema_ref(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun))), then(PROC_REF(ui_act_inject)))
 
-/// The computed part of /obj/item/mecha_parts/mecha_equipment/tool/sleeper's window data (declared on its UI_DATA row).
+/// /obj/item/mecha_parts/mecha_equipment/tool/sleeper's window data.
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/ui_data(datum/act/eval/A)
 	var/mob/living/carbon/human/occupant = slot_item_real(OCCUPANT_SLOT_MECHA_SLEEPER)
 	var/list/data = list()

@@ -33,17 +33,21 @@ OM_FIELD_SETTER(/obj/machinery/conveyor, operating, CHANGE_MACHINE_SETTINGS)
 	id = "round_end_belt"
 
 	// create a conveyor
-// ALLOW(init/CTOR_ARGS): newdir and on are constructor arguments from whoever builds it
-/obj/machinery/conveyor/Initialize(mapload, newdir, on = 0)
+CAPABILITIES(/obj/machinery/conveyor)
+	param(nameof(dir), pos = 1)
+	param(nameof(starts_on), pos = 2)
+
+/// A conveyor that starts running (its constructor param).
+/obj/machinery/conveyor/var/starts_on = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a conveyor watches what enters its turf, sets its belt direction and parts, and may start running
+/obj/machinery/conveyor/Initialize(mapload)
 	. = ..()
 	if(loc)
 		observe(loc, /datum/notice/atom_entered, src, then(PROC_REF(on_turf_entered)))
-	if(newdir)
-		set_dir(newdir)
-
 	update_dir()
 
-	if(on)
+	if(starts_on)
 		set_operating(FORWARDS)
 
 	default_apply_parts()

@@ -25,7 +25,7 @@ CAPABILITIES(/datum/game_panel)
 	SStgui.close_uis(src)
 	spent(src, user)
 
-/// The computed part of /datum/game_panel's window data (declared on its UI_DATA row).
+/// /datum/game_panel's window data.
 /datum/game_panel/ui_data(datum/act/eval/A)
 	return list(
 		"master_mode" = GLOB.master_mode,

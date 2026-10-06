@@ -30,7 +30,7 @@ CAPABILITIES(/datum/mind_memory_panel)
 		return FALSE
 	return TRUE
 
-/// The computed part of /datum/mind_memory_panel's window data (declared on its UI_DATA row).
+/// /datum/mind_memory_panel's window data.
 /datum/mind_memory_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!source())
@@ -71,7 +71,7 @@ CAPABILITIES(/datum/tag_menu_panel)
 	op("pp", ui_act("pp", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_pp)))
 	op("follow", ui_act("follow", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_follow)))
 
-/// The computed part of /datum/tag_menu_panel's window data (declared on its UI_DATA row).
+/// /datum/tag_menu_panel's window data.
 /datum/tag_menu_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!holder())
@@ -168,7 +168,7 @@ CAPABILITIES(/datum/dq_torban_panel)
 	interface("TorbanList", title = "Torban", rights = R_ADMIN|R_SERVER)
 	ui_shape(addresses = bool())
 
-/// The computed part of /datum/dq_torban_panel's window data (declared on its UI_DATA row).
+/// /datum/dq_torban_panel's window data.
 /datum/dq_torban_panel/ui_data(datum/act/eval/A)
 	return list("addresses" = addresses || list())
 
@@ -190,7 +190,7 @@ CAPABILITIES(/datum/dq_investigate_panel)
 /datum/dq_investigate_panel/ui_title(mob/user)
 	return "Investigate: [subject]"
 
-/// The computed part of /datum/dq_investigate_panel's window data (declared on its UI_DATA row).
+/// /datum/dq_investigate_panel's window data.
 /datum/dq_investigate_panel/ui_data(datum/act/eval/A)
 	return list(
 		"subject" = subject,
@@ -260,7 +260,7 @@ CAPABILITIES(/datum/unban_panel)
 		))
 	GLOB.banlist.cd = prior_cd
 
-/// The computed part of /datum/unban_panel's window data (declared on its UI_DATA row).
+/// /datum/unban_panel's window data.
 /datum/unban_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!holder())
@@ -402,7 +402,7 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 		"jobs" = jobs,
 	)
 
-/// The computed part of /datum/jobban_panel's window data (declared on its UI_DATA row).
+/// /datum/jobban_panel's window data.
 /datum/jobban_panel/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!target())
@@ -528,7 +528,7 @@ CAPABILITIES(/datum/dq_vending_log_panel)
 /datum/dq_vending_log_panel/ui_title(mob/user)
 	return "[machine_name] Vending Log"
 
-/// The computed part of /datum/dq_vending_log_panel's window data (declared on its UI_DATA row).
+/// /datum/dq_vending_log_panel's window data.
 /datum/dq_vending_log_panel/ui_data(datum/act/eval/A)
 	return list(
 		"machine_name" = machine_name,
@@ -560,7 +560,7 @@ CAPABILITIES(/datum/dq_delete_book_panel)
 	op("order_by_id", ui_act("order_by_id"), then(PROC_REF(ui_act_order_by_id)))
 	op("delete", ui_act("delete", arg("id", schema_text(4096))), then(PROC_REF(ui_act_delete)))
 
-/// The computed part of /datum/dq_delete_book_panel's window data (declared on its UI_DATA row).
+/// /datum/dq_delete_book_panel's window data.
 /datum/dq_delete_book_panel/ui_data(datum/act/eval/A)
 	return list(
 		"books" = books,
@@ -618,7 +618,7 @@ CAPABILITIES(/obj/machinery/syndicate_beacon/virgo)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/syndicate_beacon/virgo's window data (declared on its UI_DATA row).
+/// /obj/machinery/syndicate_beacon/virgo's window data.
 /obj/machinery/syndicate_beacon/virgo/proc/ui_data_obj_machinery_syndicate_beacon_virgo(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["temp"] = temptext || ""

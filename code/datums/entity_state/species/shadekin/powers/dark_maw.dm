@@ -70,9 +70,16 @@
 TRACKED(/obj/effect/abstract/dark_maw, armed)
 CAPABILITIES(/obj/effect/abstract/dark_maw)
 	every(2 SECONDS, then(PROC_REF(dark_maw_step)), when = nameof(armed))
+	param(nameof(maw_user), pos = 1, keep = FALSE)
+	param(nameof(trigger_now), pos = 2)
 
-// ALLOW(init/CTOR_ARGS): user and trigger_now are constructor arguments from whoever builds it
-/obj/effect/abstract/dark_maw/Initialize(mapload, mob/user, trigger_now = FALSE)
+/// The shadekin who set the maw, and whether it springs at once (its constructor params).
+/obj/effect/abstract/dark_maw/var/tmp/mob/maw_user
+/obj/effect/abstract/dark_maw/var/trigger_now = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a maw binds to its shadekin, fizzles in light, snaps shut on whoever stands on it, or arms itself
+/obj/effect/abstract/dark_maw/Initialize(mapload)
+	var/mob/user = maw_user
 	. = ..()
 	if(!isturf(loc))
 		return INITIALIZE_HINT_QDEL

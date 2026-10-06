@@ -14,7 +14,7 @@ CAPABILITIES(/datum/board_game/rpg_dice)
 	table_icon = "gamble_dice"
 	var/list/last_rolls
 
-/// The computed part of /datum/board_game/rpg_dice's window data (declared on its UI_DATA row).
+/// /datum/board_game/rpg_dice's window data.
 /datum/board_game/rpg_dice/ui_data(datum/act/eval/A)
 	return list(
 		"last_rolls" = (last_rolls || list()),

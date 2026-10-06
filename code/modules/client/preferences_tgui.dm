@@ -29,7 +29,7 @@
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/preferences's window data (declared on its UI_DATA row).
+/// /datum/preferences's window data.
 /datum/preferences/proc/ui_data_datum_preferences(mob/user, datum/tgui/_ui, datum/tgui_state/_state)
 	var/list/data = list()
 

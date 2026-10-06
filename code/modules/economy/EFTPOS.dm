@@ -110,7 +110,7 @@ CAPABILITIES(/obj/item/eftpos)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/eftpos's window data (declared on its UI_DATA row).
+/// /obj/item/eftpos's window data.
 /obj/item/eftpos/proc/ui_data_obj_item_eftpos(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["transaction_locked"] = !!transaction_locked
@@ -462,16 +462,6 @@ CAPABILITIES(/datum/prompt/number/eftpos_pin)
 /// Match the original typed UI replay gates; stages have no UI arguments to parse.
 /obj/item/eftpos/proc/eftpos_settings_resume(datum/tgui/ui, action, list/eftpos_answers, stage)
 	if(QDELETED(src) || !ui || ui.status != STATUS_INTERACTIVE)
-		return FALSE
-	var/datum/ui_decl/decl = ui_decl_of(src)
-	var/list/row = decl?.acts[action] || decl?.acts[UI_ACT_ANY]
-	if(!row)
-		return FALSE
-	if(row[3])
-		stack_trace("[type] re-ran UI_ACT_NESTED action '[action]' through act_ask(); use rerun_ask() in UI_SUBACT handlers")
-		return FALSE
-	var/datum/tgui_state/state = ui.state()
-	if(!ui_act_allowed(ui.user, action, ui, state))
 		return FALSE
 	var/replayed = call(src, stage)(ui.user, ui, eftpos_answers)
 	if(replayed)

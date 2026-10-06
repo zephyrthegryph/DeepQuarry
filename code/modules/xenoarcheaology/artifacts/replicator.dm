@@ -159,7 +159,7 @@ CAPABILITIES(/obj/machinery/replicator)
 	without("ui_open")
 	op("construct", ui_act("construct", arg("key", schema_text(4096))), then(PROC_REF(ui_act_construct)))
 
-/// The computed part of /obj/machinery/replicator's window data (declared on its UI_DATA row).
+/// /obj/machinery/replicator's window data.
 /obj/machinery/replicator/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["tgui_construction"] = (tgui_construction || list())
@@ -455,7 +455,7 @@ CAPABILITIES(/obj/machinery/replicator)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/replicator/vore's window data (declared on its UI_DATA row).
+/// /obj/machinery/replicator/vore's window data.
 /obj/machinery/replicator/vore/proc/ui_data_obj_machinery_replicator_vore(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["tgui_construction"] = (tgui_vore_selection || list())
@@ -744,7 +744,7 @@ CAPABILITIES(/obj/machinery/replicator/clothing)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/replicator/clothing's window data (declared on its UI_DATA row).
+/// /obj/machinery/replicator/clothing's window data.
 /obj/machinery/replicator/clothing/proc/ui_data_obj_machinery_replicator_clothing(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["tgui_construction"] = (tgui_vore_selection || list())

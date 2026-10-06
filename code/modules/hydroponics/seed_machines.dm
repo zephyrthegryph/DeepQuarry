@@ -214,7 +214,7 @@ CAPABILITIES(/obj/machinery/botany)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/botany/extractor's window data (declared on its UI_DATA row).
+/// /obj/machinery/botany/extractor's window data.
 /obj/machinery/botany/extractor/proc/ui_data_obj_machinery_botany_extractor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -343,7 +343,7 @@ CAPABILITIES(/obj/machinery/botany/editor)
 	without("ui_open")
 	op("apply_gene", ui_act("apply_gene"), then(PROC_REF(ui_act_apply_gene)))
 
-/// The computed part of /obj/machinery/botany/editor's window data (declared on its UI_DATA row).
+/// /obj/machinery/botany/editor's window data.
 /obj/machinery/botany/editor/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

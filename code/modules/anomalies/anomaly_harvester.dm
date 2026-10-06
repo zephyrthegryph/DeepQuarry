@@ -167,7 +167,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/anomaly_harvester, TYPE_PROC_REF(/atom, a
 			else
 				. += "harvester_grow"
 
-/// The computed part of /obj/machinery/anomaly_harvester's window data (declared on its UI_DATA row).
+/// /obj/machinery/anomaly_harvester's window data.
 /obj/machinery/anomaly_harvester/ui_data(datum/act/eval/A)
 	var/list/sample_data = list()
 	FOR_REAL_CONTENTS(var/obj/item/research_sample/sample, src)

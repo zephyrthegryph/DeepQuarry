@@ -86,9 +86,8 @@
 	log_attack("PROTEAN RIG: [src] caught a severity [band] explosion; [key_name(myprotean)] took [taken].")
 	return taken
 
-// ALLOW(init/CTOR_ARGS): P is a constructor argument from whoever builds it
-/obj/item/rig/protean/Initialize(mapload, mob/living/carbon/human/P)
-	. = ..()
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The rig becomes that protean's control cluster.
+/obj/item/rig/protean/proc/bind_protean(mob/living/carbon/human/P)
 	if(!istype(P))
 		return
 	var/datum/forms/protean/F = P.get_protean_forms()
@@ -100,9 +99,8 @@
 	if(F.rig && F.rig != src)
 		rel_clear(F.rig, nameof(/obj/item/rig/protean::myprotean))
 	rel_set(F, nameof(F.rig), src)
-	rel_set(src, nameof(myprotean), P)
 	if(P.get_equipped_item(SLOT_ID_BACK))
-		after(src, 0.3 SECONDS, PROC_REF(AssimilateBag), with = list(P, 1, P.get_equipped_item(SLOT_ID_BACK))) // ALLOW(decl): conditional, extra args
+		after(src, 0.3 SECONDS, PROC_REF(AssimilateBag), with = list(P, 1, P.get_equipped_item(SLOT_ID_BACK)))
 	else
 		to_chat(P, span_notice("You should have spawned with a backpack to assimilate into your RIG. Try clicking it with a backpack."))
 
@@ -153,6 +151,7 @@ CAPABILITIES(/obj/item/rig/protean)
 	without("ui_open")
 	ui_shape(cooling = num(), sealing = any, emagged = num(), coverlock = num(), interfacelock = num(), aicontrol = num(), aioverride = num(), securitycheck = num(), malf = num(), primarysystem = schema_text(), ai = bool(), sealed = bool(), helmet = schema_text(), gauntlets = schema_text(), boots = schema_text(), chest = schema_text(), helmetDeployed = bool(), gauntletsDeployed = bool(), bootsDeployed = bool(), chestDeployed = bool(), charge = num(), maxcharge = num(), chargestatus = num(), modules = list_of())
 	drag_onto(PROC_REF(mousedrop_input))
+	param(nameof(myprotean), pos = 1, apply = PROC_REF(bind_protean))
 
 /// Old attack_hand: open the bag when worn; otherwise close it for onlookers, then the usual touch
 /// (the old ..(), which used to run before the closing).

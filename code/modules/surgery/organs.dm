@@ -40,12 +40,8 @@
 		if(I.owner == target)
 			.[I.name] = I
 
-/datum/surgical_step/organ/extract/choose_target(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
-	var/list/choices = removable_organs(target, part)
-	if(!length(choices))
-		return null
-	var/choice = surgery_ask(tool, user, "target", /datum/om/prompt/choice, message = "Which organ do you want to remove?", title = name, choices = choices)
-	return choice ? choices[choice] : null
+/datum/surgical_step/organ/extract/target_choices(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
+	return removable_organs(target, part)
 
 /datum/surgical_step/organ/extract/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	var/obj/item/organ/internal/I = work_target
@@ -125,17 +121,11 @@
 			return TRUE
 	return FALSE
 
-/datum/surgical_step/organ/reconnect/choose_target(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
-	var/list/choices = list()
+/datum/surgical_step/organ/reconnect/target_choices(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
+	. = list()
 	for(var/obj/item/organ/internal/I as anything in part.held_organs())
 		if(I.status & ORGAN_CUT_AWAY)
-			choices[I.name] = I
-	if(!length(choices))
-		return null
-	if(length(choices) == 1)
-		return choices[choices[1]]
-	var/choice = surgery_ask(tool, user, "target", /datum/om/prompt/choice, message = "Which organ do you want to reattach?", title = name, choices = choices)
-	return choice ? choices[choice] : null
+			.[I.name] = I
 
 /datum/surgical_step/organ/reconnect/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	var/obj/item/organ/internal/I = work_target

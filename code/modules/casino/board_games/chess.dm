@@ -59,7 +59,7 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 /datum/board_game/chess/tgui_static_data(mob/user)
 	return GLOB.chess_static_data
 
-/// The computed part of /datum/board_game/chess's window data (declared on its UI_DATA row).
+/// /datum/board_game/chess's window data.
 /datum/board_game/chess/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/mob/player_one_mob = player_one

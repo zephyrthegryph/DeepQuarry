@@ -11,10 +11,10 @@ next merge. Read this once; the rest of the loop is in `AGENTS.md` section 4 and
 |---|---|
 | `code/engine/_generated/*.dm` (declare, ids, reads, stats, actions, event_twins, system_accessors) | `analyze gen` |
 | `code/_generated/reads.dm` | `analyze gen derived_reads` |
-| `tgui/packages/tgui/interfaces/generated/*.d.ts` | `analyze gen ui_types` (and `build.sh ui-types`) |
+| `tgui/packages/tgui/interfaces/generated/*.d.ts` | `analyze gen ui_types` |
 
 They are in `.gitignore` and untracked. Every build target that compiles or lints DM runs `GenTarget`
-first (`build.sh dm`, `dm-test` and so `tools/dq_focused_test.sh`, `ui-types`, `lint`, `analyze`,
+first (`build.sh dm`, `dm-test` and so `tools/dq_focused_test.sh`, `lint`, `analyze`,
 DreamChecker; the production build and TGS go through `build.sh dm` too). `bash tools/ci/check_ratchets.sh`
 writes them as well. Regenerate by hand with `tools/build/build.sh gen` (about 3 s warm, 18 s cold).
 

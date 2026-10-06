@@ -293,11 +293,6 @@ GLOBAL_VAR(restart_counter)
 	setup_autowiki()
 	#endif
 
-	#ifdef UI_TYPES_DUMP
-	// tools/build/lib/ui_types.ts: dump the declared UI tables, then stop.
-	ui_types_dump()
-	spent(world)
-	#endif
 
 /world/proc/HandleTestRun()
 	//trigger things to run the whole process

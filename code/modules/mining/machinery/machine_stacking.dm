@@ -40,7 +40,7 @@ CAPABILITIES(/obj/machinery/mineral/stacking_unit_console)
 	op("change_stack", ui_act("change_stack", arg("amt", num(1, 50))), then(PROC_REF(ui_act_change_stack)))
 	op("release_stack", ui_act("release_stack", arg("stack", schema_text(4096))), then(PROC_REF(ui_act_release_stack)))
 
-/// The computed part of /obj/machinery/mineral/stacking_unit_console's window data (declared on its UI_DATA row).
+/// /obj/machinery/mineral/stacking_unit_console's window data.
 /obj/machinery/mineral/stacking_unit_console/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

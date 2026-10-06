@@ -51,6 +51,8 @@
 	var/list/param_pos
 	/// The params declared with apply =, in order: their setters run at init.
 	var/list/param_applies
+	/// The params declared keep = FALSE: dropped once the setters ran.
+	var/list/param_drops
 	/// TRUE when anything must run at preinit / init / destroy.
 	var/pre = FALSE
 	var/init = FALSE
@@ -121,7 +123,9 @@
 				declare_report("[C.origin]: param(\"[E.args["var"]]\", apply = [E.args["apply"]]) on [D.type]: no such proc")
 			else
 				LAZYADD(P.param_applies, C) // ALLOW(ownership): a per-type plan indexes compiled entries of its own table, never freed
-	P.init = !!(P.contains || P.knows || P.param_applies || P.starts_as || P.derives || P.registries || P.radios || P.adjacencies || P.lives_while)
+		if(E.args["keep"] == FALSE)
+			LAZYADD(P.param_drops, C) // ALLOW(ownership): a per-type plan indexes compiled entries of its own table, never freed
+	P.init = !!(P.contains || P.knows || P.param_applies || P.param_drops || P.starts_as || P.derives || P.registries || P.radios || P.adjacencies || P.lives_while)
 	for(var/kind_list in list(P.registries, P.radios, P.derives, P.lives_while, P.adjacencies))
 		for(var/datum/centry/C as anything in kind_list)
 			var/datum/entry/E = C.item
@@ -190,7 +194,7 @@
 		GLOB.roll_rollers -= holder // its own rolls are done
 	if(P.knows)
 		knows_init(holder, P)
-	if(P.param_applies)
+	if(P.param_applies || P.param_drops)
 		params_apply(holder, P)
 		if(QDELETED(holder))
 			return
@@ -276,4 +280,6 @@ GLOBAL_REAL_VAR(list/lifeform_watch_keys)
 	var/datum/type_table/T = table_of(D)
 	if(T.hook_flags & ENGINE_HOOK_LIFEFORMS)
 		lifeform_init(D, FALSE)
+		if(param_drop_pending?[D])
+			params_drop(D)
 		hooks_change_baseline(D)

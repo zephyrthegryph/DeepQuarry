@@ -54,7 +54,7 @@ GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 /datum/board_game/checkers/tgui_static_data(mob/user)
 	return GLOB.checkers_static_data
 
-/// The computed part of /datum/board_game/checkers's window data (declared on its UI_DATA row).
+/// /datum/board_game/checkers's window data.
 /datum/board_game/checkers/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/mob/player_one_mob = player_one

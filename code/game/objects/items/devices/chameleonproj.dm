@@ -112,12 +112,7 @@ CAPABILITIES(/obj/item/chameleon)
 	rel_set(src, nameof(master), C)
 	rel_set(master, nameof(master.active_dummy), src)
 
-EXTEND_INTERACTIONS(/obj/effect/dummy/chameleon, \
-	INTERACT_ITEM("Disrupt", PROC_REF(interaction_disrupt)), \
-	INTERACT_HAND("Disrupt", PROC_REF(interaction_disrupt)), \
-)
-
-/obj/effect/dummy/chameleon/proc/interaction_disrupt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/dummy/chameleon/proc/interaction_disrupt(datum/act/op/A)
 	for(var/mob/M in contents_of(src))
 		to_chat(M, span_warning("Your chameleon-projector deactivates."))
 	master.disrupt()
@@ -126,6 +121,7 @@ EXTEND_INTERACTIONS(/obj/effect/dummy/chameleon, \
 CAPABILITIES(/obj/effect/dummy/chameleon)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(chameleon_disrupted))))
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(chameleon_disrupted))))
+	op("disrupt", inputs(item(/obj/item), hand()), label("Disrupt"), then(PROC_REF(interaction_disrupt)))
 
 /// A blast or a round drops the disguise, and the hit stops there.
 /obj/effect/dummy/chameleon/proc/chameleon_disrupted(datum/act/A)

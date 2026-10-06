@@ -112,7 +112,7 @@ CAPABILITIES(/obj/machinery/power/sensor)
 			data[key] = computed[key]
 	return data
 
-/// The computed part of /obj/machinery/power/sensor's window data (declared on its UI_DATA row).
+/// /obj/machinery/power/sensor's window data.
 /obj/machinery/power/sensor/proc/ui_data_obj_machinery_power_sensor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

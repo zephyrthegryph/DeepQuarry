@@ -62,7 +62,7 @@ CAPABILITIES(/obj/item/soulstone)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/soulstone's window data (declared on its UI_DATA row).
+/// /obj/item/soulstone's window data.
 /obj/item/soulstone/proc/ui_data_obj_item_soulstone(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/mob/living/simple_mob/construct/shade/A = locate_within(src, /mob/living/simple_mob/construct/shade)

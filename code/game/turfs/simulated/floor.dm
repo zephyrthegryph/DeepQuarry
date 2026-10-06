@@ -29,11 +29,13 @@
 /turf/simulated/floor/is_plating()
 	return (!flooring || flooring.is_plating)
 
-// ALLOW(init/CTOR_ARGS): floortype is a constructor argument from whoever builds it
-/turf/simulated/floor/Initialize(mapload, floortype)
+/// The flooring a floor is made with (its constructor param), or its initial one.
+/turf/simulated/floor/var/floortype_at_make // ALLOW(base_vars): param() carries the constructor's flooring into init through a var of the type it declares
+
+// ALLOW(init/INSTANCE_STATE): a floor lays its flooring and may start dirty
+/turf/simulated/floor/Initialize(mapload)
 	. = ..()
-	if(!floortype && initial_flooring)
-		floortype = initial_flooring
+	var/floortype = floortype_at_make || initial_flooring
 	if(floortype)
 		set_flooring(get_flooring_data(floortype), TRUE) // its icons update after init (sim_after_init())
 	if(can_dirty && can_start_dirty)

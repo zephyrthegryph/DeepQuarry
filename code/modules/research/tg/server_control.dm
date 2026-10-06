@@ -52,7 +52,7 @@ CAPABILITIES(/obj/machinery/computer/rdservercontrol)
 	op("lockdown_server", ui_act("lockdown_server", arg("selected_server", schema_ref(/obj/machinery/rnd/server))), then(PROC_REF(ui_act_lockdown_server)))
 	op("lock_console", ui_act("lock_console", arg("selected_console", schema_ref(/obj/machinery/computer/rdconsole_tg))), then(PROC_REF(ui_act_lock_console)))
 
-/// The computed part of /obj/machinery/computer/rdservercontrol's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/rdservercontrol's window data.
 /obj/machinery/computer/rdservercontrol/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

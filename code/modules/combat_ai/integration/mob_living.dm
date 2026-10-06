@@ -43,6 +43,7 @@ CAPABILITIES(/mob/living)
 	// What holds the biological clock rate down (a sleeper, a stasis bed) is the body's stasis (code/modules/medical/stabilisation/stasis.dm).
 	on_change(STAT_CLOCK_RATE_BIO, ANY, then(PROC_REF(clock_rate_bio_changed)))
 	drag_onto(PROC_REF(mousedrop_input))
+	drag_onto(PROC_REF(drop_input))
 
 /mob/living/simple_mob
 	/// If TRUE, the brain treats non-faction-mate mobs (including players) as

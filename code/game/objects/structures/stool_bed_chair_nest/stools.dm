@@ -18,17 +18,19 @@
 /obj/item/stool/padded
 	icon_state = "stool_padded_preview" //set for the map
 
-// ALLOW(init/CTOR_ARGS): new_material and new_padding_material are constructor arguments from whoever builds it
-/obj/item/stool/Initialize(mapload, new_material, new_padding_material)
-	. = ..()
-	if(!new_material)
-		new_material = MAT_STEEL
-	material = get_material_by_name(new_material)
+/// The stool's material and padding (its constructor params).
+/obj/item/stool/var/material_key = MAT_STEEL
+/obj/item/stool/var/padding_key
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/stool/proc/make_of(padding)
+	material = get_material_by_name(material_key || MAT_STEEL)
 	if(!istype(material))
-		stack_trace("Material of type: [new_material] does not exist.")
-		return INITIALIZE_HINT_QDEL
-	if(new_padding_material)
-		padding_material = get_material_by_name(new_padding_material)
+		stack_trace("Material of type: [material_key] does not exist.")
+		spent(src)
+		return
+	if(padding)
+		padding_material = get_material_by_name(padding)
 	force = round(material.blunt_damage()*0.4)
 	update_icon()
 
@@ -107,6 +109,8 @@ CAPABILITIES(/obj/item/stool)
 	op("unpad", tool(TOOL_WIRECUTTER), wait(0), label("Remove padding"),
 		needs(req(PROC_REF(has_padding), because = MSG(bed/no_padding))), then(PROC_REF(unpadded)), says(MSG(bed/unpadded)))
 	op("dismantle", tool(TOOL_WRENCH), wait(0), label("Dismantle"), then(PROC_REF(taken_apart)))
+	param(nameof(material_key), pos = 1)
+	param(nameof(padding_key), pos = 2, apply = PROC_REF(make_of))
 
 /obj/item/stool/proc/can_be_padded(datum/act/op/A)
 	return !padding_material && !isnull(padding_type_of(A.held)) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again

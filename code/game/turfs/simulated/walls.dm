@@ -35,31 +35,29 @@
 
 TYPE_TABLE_DECLARE(/turf/simulated/wall, wall_forced_materials, null)
 
-// ALLOW(init/CTOR_ARGS): materialtype, rmaterialtype and girdertype are constructor arguments from whoever builds it
-/turf/simulated/wall/Initialize(mapload, materialtype, rmaterialtype, girdertype)
+CAPABILITIES(/turf/simulated/wall)
+	param(nameof(wall_material_key), pos = 1)
+	param(nameof(reinf_material_key), pos = 2)
+	param(nameof(girder_material_key), pos = 3)
+
+/// The wall's material, reinforcement and girder (its constructor params; the type's forced ones win).
+/turf/simulated/wall/var/wall_material_key
+/turf/simulated/wall/var/reinf_material_key
+/turf/simulated/wall/var/girder_material_key
+
+// ALLOW(init/INSTANCE_STATE): a wall takes its materials (the type's forced ones first), girder and radioactivity
+/turf/simulated/wall/Initialize(mapload)
 	var/list/forced_materials = TYPE_TABLE_GET(src, wall_forced_materials)
 	if(forced_materials)
-		materialtype = forced_materials[1]
-		rmaterialtype = length(forced_materials) >= 2 ? forced_materials[2] : null
-		girdertype = length(forced_materials) >= 3 ? forced_materials[3] : null
-		switch(length(forced_materials))
-			if(1)
-				. = ..(mapload, materialtype)
-			if(2)
-				. = ..(mapload, materialtype, rmaterialtype)
-			if(3)
-				. = ..(mapload, materialtype, rmaterialtype, girdertype)
-	else
-		. = ..()
+		wall_material_key = forced_materials[1]
+		reinf_material_key = length(forced_materials) >= 2 ? forced_materials[2] : null
+		girder_material_key = length(forced_materials) >= 3 ? forced_materials[3] : null
+	. = ..()
 	icon_state = "blank"
-	if(!materialtype)
-		materialtype = DEFAULT_WALL_MATERIAL
-	material = get_material_by_name(materialtype)
-	if(!girdertype)
-		girdertype = DEFAULT_WALL_MATERIAL
-	girder_material = get_material_by_name(girdertype)
-	if(!isnull(rmaterialtype))
-		reinf_material = get_material_by_name(rmaterialtype)
+	material = get_material_by_name(wall_material_key || DEFAULT_WALL_MATERIAL)
+	girder_material = get_material_by_name(girder_material_key || DEFAULT_WALL_MATERIAL)
+	if(!isnull(reinf_material_key))
+		reinf_material = get_material_by_name(reinf_material_key)
 	update_material()
 	check_radioactive()
 

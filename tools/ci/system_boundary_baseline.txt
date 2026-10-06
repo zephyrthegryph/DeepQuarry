@@ -236,7 +236,7 @@ B1:code/modules/mob/new_player/lobby_browser.dm:SSticker 10
 B1:code/modules/mob/new_player/new_player.dm:SSjob 2
 B1:code/modules/mob/new_player/new_player.dm:SSticker 9
 B1:code/modules/modular_computers/NTNet/NTNet.dm:SSatoms 1
-B1:code/modules/organs/subtypes/diona.dm:SSplants 1
+B1:code/modules/body/organs/subtypes/diona.dm:SSplants 1
 B1:code/modules/overmap/champagne.dm:SSshuttles 3
 B1:code/modules/overmap/sectors.dm:SSshuttles 2
 B1:code/modules/overmap/ships/computers/shuttle.dm:SSshuttles 3

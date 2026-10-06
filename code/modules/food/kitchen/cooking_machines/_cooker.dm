@@ -43,7 +43,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/appliance/cooker's window data (declared on its UI_DATA row).
+/// /obj/machinery/appliance/cooker's window data.
 /obj/machinery/appliance/cooker/proc/ui_data_obj_machinery_appliance_cooker(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

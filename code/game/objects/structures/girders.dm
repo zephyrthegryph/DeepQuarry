@@ -21,14 +21,12 @@
 OM_FIELD(/obj/structure/girder, material_processing, FALSE, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/structure/girder, PERIODIC_SLOW, "material_processing")
 
-// ALLOW(init/CTOR_ARGS): material_key is a constructor argument from whoever builds it
-/obj/structure/girder/Initialize(mapload, material_key)
-	. = ..()
-	if(!material_key)
-		material_key = default_material
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/structure/girder/proc/build_of(material_key)
 	var/our_material = get_material_by_name(material_key)
 	if(!our_material)
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 	set_material(our_material)
 	update_icon()
 
@@ -139,6 +137,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/girder, PERIODIC_SLOW, "material_processin
 
 CAPABILITIES(/obj/structure/girder)
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(girder_blob))))
+	param(nameof(default_material), pos = 1, apply = PROC_REF(build_of))
 
 /// A blob pulls the girder apart.
 /obj/structure/girder/proc/girder_blob(datum/act/hit/blob/A)

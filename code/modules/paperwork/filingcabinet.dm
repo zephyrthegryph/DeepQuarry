@@ -103,7 +103,7 @@ MSG_DEF_SELF(filingcabinet/empty, "It's empty.")
 			return
 	to_chat(user, span_notice("You find nothing in [src]."))
 
-/// The computed part of /obj/structure/filingcabinet's window data (declared on its UI_DATA row).
+/// /obj/structure/filingcabinet's window data.
 /obj/structure/filingcabinet/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

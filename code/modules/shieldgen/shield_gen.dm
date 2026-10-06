@@ -132,7 +132,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 		return STATUS_CLOSE
 	return ..()
 
-/// The computed part of /obj/machinery/shield_gen's window data (declared on its UI_DATA row).
+/// /obj/machinery/shield_gen's window data.
 /obj/machinery/shield_gen/ui_data(datum/act/eval/A)
 	var/list/lockedData = list()
 

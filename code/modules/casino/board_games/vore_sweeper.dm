@@ -31,7 +31,7 @@ CAPABILITIES(/datum/board_game/vore_sweeper)
 	op("game_action", ui_act("game_action", arg("action", schema_text(64)), arg("data")), then(PROC_REF(ui_act_game_action)))
 	op("setup_action", ui_act("setup_action", arg("action", schema_text(64)), arg("data")), then(PROC_REF(ui_act_setup_action)))
 
-/// The computed part of /datum/board_game/vore_sweeper's window data (declared on its UI_DATA row).
+/// /datum/board_game/vore_sweeper's window data.
 /datum/board_game/vore_sweeper/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/mob/dealer_mob = dealer

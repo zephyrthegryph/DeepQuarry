@@ -188,7 +188,7 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/walkpod's window data (declared on its UI_DATA row).
+/// /obj/item/walkpod's window data.
 /obj/item/walkpod/proc/ui_data_obj_item_walkpod(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

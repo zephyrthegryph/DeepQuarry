@@ -415,10 +415,17 @@ APPEARANCE_NONE(/obj/item/rcd/electric)
 	anchored = TRUE
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
-// ALLOW(init/CTOR_ARGS): rcd_delay and rcd_status are constructor arguments from whoever builds it
-/obj/effect/constructing_effect/Initialize(mapload, rcd_delay, rcd_status)
-	. = ..()
-	start_animation(rcd_delay, rcd_status)
+CAPABILITIES(/obj/effect/constructing_effect)
+	param(nameof(rcd_delay), pos = 1)
+	param(nameof(rcd_status), pos = 2, apply = PROC_REF(animate_build))
+
+/// The build's delay and status (its constructor params).
+/obj/effect/constructing_effect/var/rcd_delay
+/obj/effect/constructing_effect/var/rcd_status
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/constructing_effect/proc/animate_build(status)
+	start_animation(rcd_delay, status)
 
 /// Plays the construction animation for `delay` (shorter states for faster work), then the end animation.
 /obj/effect/constructing_effect/proc/start_animation(delay, status)

@@ -45,9 +45,10 @@ CAPABILITIES(/obj/machinery/power/solar)
 	ref_one(nameof(control), /obj/machinery/power/solar_control)
 	op("remove_glass", tool(TOOL_CROWBAR), label("Take the glass off"), wait(2 SECONDS), says(MSG(solar/glass_off)), then(PROC_REF(glass_removed)))
 	op("strike", item(/obj/item), label("Strike"), hostile(), wait(0), then(PROC_REF(struck)))
+	param(nameof(glass_type), pos = 1)
 
-// ALLOW(init/CTOR_ARGS): glass_type is a constructor argument from whoever builds it
-/obj/machinery/power/solar/Initialize(mapload, glass_type)
+// ALLOW(init/INSTANCE_STATE): a panel in reinforced glass is twice as tough
+/obj/machinery/power/solar/Initialize(mapload)
 	. = ..()
 	if(glass_type == /obj/item/stack/material/glass/reinforced) //if the panel is in reinforced glass
 		max_integrity *= 2
