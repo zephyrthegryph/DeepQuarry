@@ -72,13 +72,11 @@ SOURCE_DEF(mutation_hulk)
 	var/on_end
 	var/on_increase
 
-/// Status id -> /datum/status_policy.
-/proc/status_policies()
-	var/static/list/policies
-	if(policies)
-		return policies
-	policies = list()
-	var/list/rows = list(
+/// Status id -> /datum/status_policy, built once at global init from status_policy_rows().
+GLOBAL_LIST_INIT(status_policies, status_policies_build())
+
+/// The policy table's source rows: list(STAT_X, field = value, ...).
+GLOBAL_LIST_INIT(status_policy_rows, list(
 		list(STAT_STUNNED, "scaled" = TRUE, "veto" = /datum/om/event/living_status_stun, "alert" = "stunned", "alert_type" = /atom/movable/screen/alert/stunned, "indicator" = "stunned",
 			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_incapacitation_changed, "on_end" = /mob/proc/status_incapacitation_changed),
 		list(STAT_WEAKENED, "scaled" = TRUE, "veto" = /datum/om/event/living_status_weaken, "alert" = "weakened", "alert_type" = /atom/movable/screen/alert/weakened, "indicator" = "weakened",
@@ -101,15 +99,21 @@ SOURCE_DEF(mutation_hulk)
 		// Dizziness and jitters are 0-1000 points: 3 wear off per cycle, 15 while resting.
 		list(STAT_DIZZY, "wear" = 3, "wear_resting" = 15, "max_units" = 1000, "on_start" = /mob/proc/status_dizzy_started, "on_end" = /mob/proc/status_dizzy_ended),
 		list(STAT_JITTERY, "wear" = 3, "wear_resting" = 15, "max_units" = 1000, "on_start" = /mob/proc/status_jittery_started, "on_end" = /mob/proc/status_jittery_ended),
-	)
-	for(var/list/row as anything in rows)
+))
+
+/proc/status_policies_build()
+	. = list()
+	for(var/list/row as anything in GLOB.status_policy_rows)
 		var/datum/status_policy/P = new
 		P.id = row[1]
 		for(var/key in row)
 			if(istext(key))
 				P.vars[key] = row[key] // ALLOW(api): a policy row's named fields copied onto its policy datum, once at build
-		policies["[P.id]"] = P
-	return policies
+		.["[P.id]"] = P
+
+/// Status id -> /datum/status_policy.
+/proc/status_policies()
+	return GLOB.status_policies
 
 /// The policy of status `id`.
 /proc/status_policy(id)
@@ -277,6 +281,7 @@ READS_AS(/datum/proc/has_status, MOB_KEY_STATUS)
 			call(src, hook)()
 		if(P.alert || P.indicator)
 			status_shown(P, active)
+	// ALLOW(sys_manual_push): the legacy status channel the OM consumers and Life step reads still wake on, raised once per start or end as the OM status rows did
 	changed(src, CHANGE_MOB_STATUS)
 	PUBLISH_CHANGE(src, MOB_KEY_STATUS)
 
@@ -312,17 +317,15 @@ READS_AS(/datum/proc/has_status, MOB_KEY_STATUS)
 	release(M, STAT_IMMUNE(STAT_WEAKENED), source)
 	release(M, STAT_IMMUNE(STAT_PARALYZED), source)
 
-/// Mutation -> the source its immunities are held under and the status immunities it grants while the mob has it.
-/proc/mutation_immunities(mut)
-	switch(mut)
-		if(HULK)
-			return list(SRC_MUTATION_HULK, STAT_STUNNED, STAT_WEAKENED, STAT_PARALYZED)
-	return null
+/// Mutation -> list(the source its immunities are held under, the statuses it makes the mob immune to while it has it).
+GLOBAL_LIST_INIT(mutation_immunities, list(
+	"[HULK]" = list(SRC_MUTATION_HULK, STAT_STUNNED, STAT_WEAKENED, STAT_PARALYZED),
+))
 
 /// Holds (or releases) the status immunities mutation `mut` grants. Called by add_mutation() and remove_mutation(); each mutation has its
 /// own source, so two sources never release each other.
 /mob/proc/update_mutation_immunities(mut)
-	var/list/row = mutation_immunities(mut)
+	var/list/row = GLOB.mutation_immunities["[mut]"]
 	if(!row)
 		return
 	var/source = row[1]

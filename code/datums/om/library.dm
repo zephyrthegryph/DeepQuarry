@@ -3,6 +3,7 @@
 // statuses are stats (code/library/mob/statuses.dm).
 
 /proc/om_library_effects()
+	// ALLOW(sys_const_list_alloc): read once, while the OM registry builds inside the global controller's New(), before any GLOBAL_LIST_INIT exists
 	return list(
 		EFFECT_BUCKLED = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS),
 		EFFECT_SLOWED = list("combine" = COMBINE_SUM, "channel" = CHANGE_MOB_MOVEMENT),
