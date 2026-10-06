@@ -10,7 +10,7 @@
 			var/list/previous = resumed.captured["answers"]
 			smite_answers = previous.Copy()
 			smite_answers[resumed.step_name] = resumed.value
-	if(!check_rights(R_FUN))
+	if(!admin_require(src, R_FUN, "smite", TRUE))
 		return
 
 	if(!istype(target))

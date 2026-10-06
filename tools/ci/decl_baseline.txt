@@ -121,7 +121,6 @@ init_scheduling	code/game/objects/effects/chem/foam.dm	after(src, 15 SECONDS, PR
 init_scheduling	code/game/objects/effects/decals/Cleanable/humans.dm	after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
 init_scheduling	code/game/objects/effects/decals/Cleanable/vore.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/objects/effects/prop/columnblast.dm	after(src, time_to_die - 0.2 SECONDS, PROC_REF(on_eruption), with = list(get_turf(src)))
-init_scheduling	code/game/objects/effects/spiders.dm	after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch))
 init_scheduling	code/game/objects/structures/crates_lockers/closets/statue.dm	after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
 init_scheduling	code/modules/asset_cache/transports/asset_transport.dm	after(src, 1 SECONDS, PROC_REF(send_assets_slow), with = list(C, preload))
 init_scheduling	code/modules/integrated_electronics/subtypes/input.dm	after(src, 40, PROC_REF(set_frequency), with = list(frequency))
@@ -140,8 +139,6 @@ init_visuals	code/game/machinery/gear_dispenser.dm	add_overlay(special_frame)
 init_visuals	code/game/machinery/teleporter.dm	add_overlay("controller-wires")
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = DEFAULTPICK(random_icon_states, null)
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = "writing1"
-init_visuals	code/game/objects/effects/decals/cleanable.dm	src.icon_state = DEFAULTPICK(src.random_icon_states, null)
-init_visuals	code/game/objects/effects/decals/posters/posters.dm	icon_state = poster_decl.icon_state
 init_visuals	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	add_overlay(IM)
 init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "human_female"
 init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "monkey"

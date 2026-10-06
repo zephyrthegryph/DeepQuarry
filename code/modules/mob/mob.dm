@@ -1257,10 +1257,11 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 		return FALSE
 	return TRUE
 
-/mob/MouseEntered(location, control, params)
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): BYOND supplies the hovering player only through usr at this native mouse entry.
-	show_mob_hover_tip(user, params)
-	. = ..()
+/// The native mouse-over's actor (hover(), code/engine/lifeforms/input.dm): a hovered mob shows its nametag tooltip.
+/mob/proc/hover_input(datum/act/input/A)
+	if(A.entered)
+		show_mob_hover_tip(A.actor, A.params)
+	return INPUT_FALLTHROUGH
 
 /mob/proc/show_mob_hover_tip(mob/user, params)
 	if(user != src && will_show_tooltip())

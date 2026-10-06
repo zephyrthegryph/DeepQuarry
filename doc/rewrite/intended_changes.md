@@ -1751,6 +1751,10 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
   runs before the parent's MouseDrop instead of after it. A handler that falls through (INPUT_FALLTHROUGH) no longer runs a second time
   when the fall reaches a parent type's generated override (`input_falling`, `input_fell()`).
 - A null positional constructor argument no longer overwrites a param's var (the old overrides' `arg || default`).
+- More native input reads its actor from the input: the vitals monitor, the backpack-style packs (defib, shield generator, bluespace
+  radio, proton pack, medigun), the cup on a cooler, a mob dragged onto its dragger (`drag_onto()`), the mob nametag tooltip (`hover()`),
+  the debug and ticket stat buttons and the rig stat buttons (`click_on()`). Admin rights checks with an actor in scope read its client
+  (`admin_require(client, rights, entry)`) instead of the deprecated usr-reading `check_rights()` (28 sites).
 - Constructor arguments are params (`param(pos =)`); the work an argument drove runs through the param's setter (`apply =`) at the root of
   init, where the old override ran it after `..()`: before its parents' code after `..()` rather than after it. A value only built from is
   `keep = FALSE` (a mob a holder takes in, the victim of a grab, the construct a bin is built from, a mob's predecessor). A construction the
