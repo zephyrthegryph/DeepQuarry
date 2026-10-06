@@ -20,7 +20,7 @@ from ui_declare import File, body_range, related, split_args, strip_code, words_
 SKIP = ("code/__defines/", "code/modules/unit_tests/", "code/tests/", "tools/", "code/modules/tgs/", "code/datums/sys/")
 CADENCES = {"PERIODIC_SLOW": "2 SECONDS", "PERIODIC_SECOND": "1 SECOND", "PERIODIC_FAST": "0.2 SECONDS"}
 ATOM_ROOTS = ("/obj", "/turf", "/mob", "/area", "/atom")
-HEAD = re.compile(r"^(DECLARE_PERIODIC_WHILE_ALL|DECLARE_PERIODIC_WHILE|DECLARE_REPEAT)\((.*)\)\s*(//.*)?$")
+HEAD = re.compile(r"^(DECLARE_PERIODIC_WHILE_ALL|DECLARE_PERIODIC_WHILE|DECLARE_PERIODIC|DECLARE_REPEAT)\((.*)\)\s*(//.*)?$")
 OMF = re.compile(r"^OM_FIELD\((/[\w/]+),\s*(\w+),\s*(.*),\s*(CHANGE_\w+)\)\s*(//.*)?$")
 OMF_TYPED = re.compile(r"^OM_FIELD_TYPED\((.*)\)\s*(//.*)?$")
 TRACKED = re.compile(r"^TRACKED(?:_BRIDGED|_SCHEMA)?\((/[\w/]+),\s*(\w+)")
@@ -107,6 +107,8 @@ def main():
     if "--only" in sys.argv:
         only = sys.argv[sys.argv.index("--only") + 1]
         args = [a for a in args if a != only]
+    if "--dirs" in sys.argv:
+        args = []
     if "--files" in sys.argv:
         names = args
     else:
@@ -281,7 +283,12 @@ def main():
 
     def check_while(t, d):
         kind, _t, rel, i, parts = d
-        if kind == "DECLARE_PERIODIC_WHILE":
+        if kind == "DECLARE_PERIODIC":
+            # an ungated periodic: every() with no when, the work runs from init for the holder's life
+            if len(parts) != 2:
+                return "decl_form"
+            cad, fields = parts[1], []
+        elif kind == "DECLARE_PERIODIC_WHILE":
             if len(parts) != 3:
                 return "decl_form"
             cad, fields = parts[1], [parts[2]]
@@ -299,7 +306,7 @@ def main():
             if not m:
                 return "decl_form"
             specs.append((m.group(2), m.group(1) == "!"))
-        if not specs:
+        if not specs and kind != "DECLARE_PERIODIC":
             return "decl_form"
         # handler
         hdefs = [x for x in defs_by_name.get("periodic_step", []) if x[0] == t]
@@ -319,7 +326,7 @@ def main():
         for (ty, r, idx, params) in tree_defs:
             fb, lb = body_range(files[r].lines, idx)
             body = "\n".join(strip_code(x) for x in files[r].lines[fb : lb + 1] if x is not None)
-            if "PROCESS_KILL" in body:
+            if "PROCESS_KILL" in body or "sleep_until_" in body:  # a helper that leaves the old lane (sleep_until_mob_near) is a kill too
                 return "handler_kill"
             if words_in(body, "A"):
                 return "body_uses"
@@ -340,7 +347,7 @@ def main():
         new_name = "%s_step" % base
         if new_name in all_proc_names or new_name in used_names:
             return "name_clash"
-        when = plan_fields[0] if len(plan_fields) == 1 else "cond_all(%s)" % ", ".join(plan_fields)
+        when = None if not plan_fields else plan_fields[0] if len(plan_fields) == 1 else "cond_all(%s)" % ", ".join(plan_fields)
         return {"kind": "while", "decl": (rel, i), "type": t, "interval": CADENCES[cad], "proc": new_name, "when": when, "rewrites": rewrites, "deletes": deletes, "tree_defs": tree_defs}
 
     def check_repeat(t, d):
@@ -425,6 +432,10 @@ def main():
                 used_names.add(r["proc"])
             plans.append(r)
 
+    # --dirs a b ...: the whole tree is read, only declarations in these directories convert
+    if "--dirs" in sys.argv:
+        want = [x.rstrip("/") + "/" for x in sys.argv[sys.argv.index("--dirs") + 1 :] if not x.startswith("--")]
+        plans = [pl for pl in plans if any(pl["decl"][0].replace(chr(92), "/").startswith(w) for w in want)]
     # Two plans that rewrite the same OM_FIELD (several declarations naming one field) rewrite it once.
     converted = len(plans)
     if not check:

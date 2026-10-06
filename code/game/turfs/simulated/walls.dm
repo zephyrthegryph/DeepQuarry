@@ -400,14 +400,13 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 /obj/item/rcd/advanced
 	can_remove_rwalls = 1
 
-DECLARE_EMAG(/obj/item/rcd, PROC_REF(on_emag), null, null)
 
-/obj/item/rcd/mark_emagged()
-	emagged = TRUE
-/obj/item/rcd/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+
+/obj/item/rcd/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	emagged = 1
 	to_chat(user, span_warning("You short out the safeties on \the [src]'s construction limiter"))
-	return TRUE
+	return OP_OK
 
 /// Old attackby: load matter cartridges or sheets, then fall through as its ..() did.
 /obj/item/rcd/proc/rcd_item(datum/act/op/A)

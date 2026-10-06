@@ -34,7 +34,12 @@
 			load_vehicle(I)
 	update_icon()
 
+MSG_DEF(vehiclecage/unbolting, "You begin loosening %T%'s bolts.", "%U% begins loosening %T%'s bolts.")
+MSG_DEF(vehiclecage/cutting, "You begin cutting %T%'s bolts.", "%U% begins cutting %T%'s bolts.")
+
 CAPABILITIES(/obj/structure/vehiclecage)
+	op("unbolt", tool(TOOL_WRENCH), label("Take apart"), wait(6 SECONDS), begins(MSG(vehiclecage/unbolting)), then(PROC_REF(taken_apart)))
+	op("cut_bolts", tool(TOOL_WIRECUTTER), label("Cut apart"), wait(7 SECONDS), begins(MSG(vehiclecage/cutting)), then(PROC_REF(taken_apart)))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Load vehicle"), then(PROC_REF(interaction_drag)))
 
@@ -43,24 +48,10 @@ CAPABILITIES(/obj/structure/vehiclecage)
 	to_chat(user, span_notice("You need a wrench to take this apart!"))
 	return TRUE
 
-/obj/structure/vehiclecage/proc/tool_disassemble(mob/user, obj/item/W, delay, quality)
-	var/turf/T = get_turf(src)
-	if(!T)
-		to_chat(user, span_notice("You can't open this here!"))
-		return TRUE
-	use_tool(user, W, src, delay = delay, quality = quality, volume = 50, receiver = src, on_done = PROC_REF(tool_disassemble_tool_done), done_args = list(user, W))
-	return TRUE
-
-/obj/structure/vehiclecage/proc/tool_disassemble_tool_done(mob/user, obj/item/W)
-	disassemble(W, user)
-
-/obj/structure/vehiclecage/wrench_act(mob/user, obj/item/W)
-	act_message(user, src, others = span_notice("%U% begins loosening %T%'s bolts."))
-	return tool_disassemble(user, W, 6 SECONDS, TOOL_WRENCH)
-
-/obj/structure/vehiclecage/wirecutter_act(mob/user, obj/item/W)
-	act_message(user, src, others = span_notice("%U% begins cutting %T%'s bolts."))
-	return tool_disassemble(user, W, 7 SECONDS, TOOL_WIRECUTTER)
+/// The wrench or the cutters, after their wait: the cage comes apart.
+/obj/structure/vehiclecage/proc/taken_apart(datum/act/op/A)
+	disassemble(A.held, A.actor)
+	return OP_OK
 
 DECLARE_APPEARANCE_PROC(/obj/structure/vehiclecage, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/vehiclecage/appearance_overlays()

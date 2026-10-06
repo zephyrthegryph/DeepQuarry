@@ -11,7 +11,6 @@
 	use_power = USE_POWER_OFF
 	idle_power_usage = 500
 	active_power_usage = 70000 //70 kW per unit of strength
-	construction_state = 0
 	active = 0
 	dir = 1
 	var/strength_upper_limit = 2
@@ -21,7 +20,7 @@
 	var/assembled = 0
 	var/parts = null
 
-DECLARE_PERIODIC_WHILE(/obj/machinery/particle_accelerator/control_box, MACHINE_PIPELINE, "active")
+TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 
 /obj/machinery/particle_accelerator/control_box/Initialize(mapload)
 	. = ..()
@@ -33,27 +32,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/particle_accelerator/control_box, MACHINE_
 		toggle_power()
 	..()
 
-/obj/machinery/particle_accelerator/control_box/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/particle_control_use,
-	)
-	..()
-
-/// Old attack_hand: never called ..().
-/datum/interaction/machine_hand/ungated/particle_control_use
-	id = "particle_control_use"
-	name = "Use"
-	effect = /obj/machinery/particle_accelerator/control_box/proc/interaction_use
-
-/obj/machinery/particle_accelerator/control_box/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(construction_state >= 3)
-		tgui_interact(user)
-	else if(construction_state == 2) // Wires exposed
-		wires_open(src, user)
-	return TRUE
-
 /obj/machinery/particle_accelerator/control_box/update_state()
-	if(construction_state < 3)
+	if(pa_stage() < 3)
 		set_use_power(USE_POWER_OFF)
 		assembled = 0
 		set_active(0)
@@ -68,20 +48,21 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/particle_accelerator/control_box, MACHINE_
 		set_active(0)
 		rel_clear(src, nameof(connected_parts))
 
-APPEARANCE_TEMPLATE(/obj/machinery/particle_accelerator/control_box, "{appearance_state}")
-
-/// The icon_state for the control box: running strength, powered (assembled or not), or construction stage.
-/obj/machinery/particle_accelerator/control_box/proc/appearance_state()
+/// The control box's sprite: running strength, powered (assembled or not), or construction stage.
+/obj/machinery/particle_accelerator/control_box/draw(datum/look/look)
+	..()
 	if(active)
-		return "[reference]p[strength]"
-	if(use_power)
-		return assembled ? "[reference]p" : "u[reference]p"
-	switch(construction_state)
-		if(0, 1)
-			return "[reference]"
-		if(2)
-			return "[reference]w"
-	return "[reference]c"
+		look.state("[reference]p[strength]")
+	else if(use_power)
+		look.state(assembled ? "[reference]p" : "u[reference]p")
+	else
+		switch(pa_stage())
+			if(0, 1)
+				look.state("[reference]")
+			if(2)
+				look.state("[reference]w")
+			else
+				look.state("[reference]c")
 
 /obj/machinery/particle_accelerator/control_box/proc/strength_change()
 	for(var/obj/structure/particle_accelerator/part in connected_parts)
@@ -115,11 +96,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/particle_accelerator/control_box, "{appearanc
 	if(has_stat(NOPOWER))
 		set_active(0)
 		set_use_power(USE_POWER_OFF)
-	else if(!has_stat(MACHINE_STAT_ANY) && construction_state == 3)
+	else if(!has_stat(MACHINE_STAT_ANY) && pa_stage() == 3)
 		set_use_power(USE_POWER_IDLE)
 
-/// Emits every machine frame while active; off, it sleeps until toggle_power() turns it on.
-/obj/machinery/particle_accelerator/control_box/machine_step()
+/// Emits every machine service interval while it runs (its every()); off, it does nothing.
+/obj/machinery/particle_accelerator/control_box/proc/emit_step(datum/act/timer/A)
 	//a part is missing!
 	if( length(connected_parts) < 6 )
 		log_game("PACCEL([x],[y],[z]) Failed due to missing parts.")
@@ -202,32 +183,17 @@ APPEARANCE_TEMPLATE(/obj/machinery/particle_accelerator/control_box, "{appearanc
 			part.update_icon()
 	return 1
 
-/obj/machinery/particle_accelerator/control_box/proc/is_interactive(mob/user)
-	if(!interface_control)
-		to_chat(user, span_warning("ERROR: Request timed out. Check wire contacts."))
-		return FALSE
-	if(construction_state != 3)
-		return FALSE
-	return TRUE
+/// Its window answers only when it is built and its interface wire is whole.
+/obj/machinery/particle_accelerator/control_box/proc/interface_works(datum/act/A)
+	return interface_control && pa_stage() == 3
 
-/obj/machinery/particle_accelerator/control_box/tgui_status(mob/user)
-	if(is_interactive(user))
-		return ..()
-	return STATUS_CLOSE
+/obj/machinery/particle_accelerator/control_box/proc/is_built(datum/act/A)
+	return pa_stage() == 3
 
 /obj/machinery/particle_accelerator/control_box/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["assembled"] = assembled
 	data["strength"] = strength
-	var/list/merged_1 = ui_data_obj_machinery_particle_accelerator_control_box(A.actor, null, null)
-	if(islist(merged_1))
-		for(var/merged_key_1 in merged_1)
-			data[merged_key_1] = merged_1[merged_key_1]
-	return data
-
-/// The computed part of /obj/machinery/particle_accelerator/control_box's window data (declared on its UI_DATA row).
-/obj/machinery/particle_accelerator/control_box/proc/ui_data_obj_machinery_particle_accelerator_control_box(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = list()
 	data["power"] = active
 	return data
 
@@ -261,36 +227,38 @@ APPEARANCE_TEMPLATE(/obj/machinery/particle_accelerator/control_box, "{appearanc
 	update_icon()
 
 /obj/machinery/particle_accelerator/control_box/pre_mapped
-	construction_state = 3
 	assembled = TRUE
 
-/obj/machinery/particle_accelerator/control_box/pre_mapped/Initialize(mapload)
-	. = ..()
-	update_icon()
-
-/obj/machinery/particle_accelerator/control_box/relations()
-	. = ..()
-	. += rel_many(nameof(connected_parts))
+CAPABILITIES(/obj/machinery/particle_accelerator/control_box/pre_mapped)
+	configure(construction_graph(start = STAGE_PA_CLOSED, via = list(STAGE_PA_BOLTED, STAGE_PA_WIRED)))
 
 // ---- the wires ----
 
+MSG_DEF_SELF(pa_control/timed_out, "ERROR: Request timed out. Check wire contacts.")
+
+// The control box (doc/rewrite/final_api.html section 16): built on the accelerator's ladder, its wires are bare at the wired stage (an empty
+// hand opens them) and its window works once it is closed and its interface wire is whole. While it runs it makes every emitter of the
+// assembled accelerator emit (emit_step(), every machine service interval) at its strength.
 CAPABILITIES(/obj/machinery/particle_accelerator/control_box)
-	wires(name = "Particle accelerator control", count = 5, tools = FALSE, at = null, reach = PROC_REF(wires_exposed_now))
+	ref_many(nameof(connected_parts), /obj/structure/particle_accelerator)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(emit_step)), when = nameof(active))
+	wires(name = "Particle accelerator control", count = 5, tools = FALSE, at = null, by_hand = TRUE, reach = PROC_REF(wires_exposed_now))
+	extend("wires.open", when(PROC_REF(wires_exposed_now)))
 	on_wire(WIRE_PARTICLE_POWER, cut = PROC_REF(power_wire_cut), pulse = PROC_REF(power_wire_pulsed))
 	on_wire(WIRE_PARTICLE_STRENGTH, cut = PROC_REF(strength_wire_cut), pulse = PROC_REF(strength_wire_pulsed))
 	on_wire(WIRE_PARTICLE_INTERFACE, cut = PROC_REF(interface_wire_cut), pulse = PROC_REF(interface_wire_pulsed))
 	on_wire(WIRE_PARTICLE_POWER_LIMIT, cut = PROC_REF(limit_wire_cut), pulse = PROC_REF(limit_wire_pulsed))
 	interface("ParticleAccelerator")
-	without("ui_open")
+	extend("ui_open", when(PROC_REF(is_built)), needs(req(PROC_REF(interface_works), because = MSG(pa_control/timed_out))))
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("add_strength", ui_act("add_strength"), then(PROC_REF(ui_act_add_strength)))
 	op("remove_strength", ui_act("remove_strength"), then(PROC_REF(ui_act_remove_strength)))
 
 
-/// The wires are bare at the second construction step.
+/// The wires are bare at the wired construction stage.
 /obj/machinery/particle_accelerator/control_box/proc/wires_exposed_now(datum/act/A)
-	return construction_state == 2
+	return pa_stage() == 2
 
 /// The power wire cut switches a running accelerator off; mended, a stopped one on.
 /obj/machinery/particle_accelerator/control_box/proc/power_wire_cut(datum/act/A)
@@ -314,10 +282,10 @@ CAPABILITIES(/obj/machinery/particle_accelerator/control_box)
 
 /obj/machinery/particle_accelerator/control_box/proc/interface_wire_cut(datum/act/A)
 	var/datum/notice/wire_cut/N = A
-	interface_control = N.mended
+	set_interface_control(N.mended)
 
 /obj/machinery/particle_accelerator/control_box/proc/interface_wire_pulsed(datum/act/A)
-	interface_control = !interface_control
+	set_interface_control(!interface_control)
 
 /// The limit wire cut lets the strength go to three; mended, back to two (a stronger beam steps down).
 /obj/machinery/particle_accelerator/control_box/proc/limit_wire_cut(datum/act/A)

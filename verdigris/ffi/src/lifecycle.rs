@@ -65,6 +65,7 @@ fn verdigris_init(dm_abi: ByondValue) -> Result<ByondValue> {
     // A soft reboot ran `world/Del()` (vg_world_shutdown) but kept the DLL.
     crate::world::revive()?;
     crate::entity::reset_all()?;
+    crate::adjacency::reset();
     Ok(ByondValue::new_str(crate::abi::ABI)?)
 }
 
@@ -75,5 +76,6 @@ fn verdigris_init(dm_abi: ByondValue) -> Result<ByondValue> {
 #[auxmacros::bind("/proc/verdigris_cleanup")]
 fn verdigris_cleanup() -> Result<ByondValue> {
     crate::entity::reset_all()?;
+    crate::adjacency::reset();
     Ok(ByondValue::null())
 }

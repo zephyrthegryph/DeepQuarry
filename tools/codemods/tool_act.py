@@ -195,11 +195,20 @@ def main(argv):
             if cur and re.match(r"^\s+parent_type\s*=", l):
                 parent_typed.add(cur)
 
-    # existing op keys anywhere (by text)
-    key_sites = defaultdict(set)
+    # existing op keys, by the type whose CAPABILITIES block declares them: a key must be unique in a type tree
+    key_sites = defaultdict(set)  # key -> owner types
     for p, t in files_text.items():
-        for m in re.finditer(r'op\("(use_\w+)"', t):
-            key_sites[m.group(1)].add(p)
+        owner = None
+        for l in t.splitlines():
+            cm = re.match(r"^CAPABILITIES\((/[\w/]+)\)", l)
+            if cm:
+                owner = cm.group(1)
+                continue
+            if l and l[0] not in "\t ":
+                owner = None
+            if owner:
+                for m in re.finditer(r'op\("(use_\w+)"', l):
+                    key_sites[m.group(1)].add(owner)
 
     # a receiver not declared near its call: a member var declared once in the tree
     var_types = defaultdict(set)
@@ -257,13 +266,15 @@ def main(argv):
                 problems.append("sleeps")
             if re.search(r"\bA\b", joined) or any(n == "A" for n, _ in parse_params(m.params)):
                 problems.append("local_A")
-            if "..()" in joined and m is root:
+            # the root's `return ..()` reached the base proc, which only runs the legacy tool interactions: a decline reaches the same
+            # path (the click goes on to the legacy handling); any other use of ..() at the root is residue
+            if m is root and re.search(r"\.\.\(\)", re.sub(r"^\s*return \.\.\(\)\s*$", "", joined, flags=re.M)):
                 problems.append("root_super")
             for l in code:
                 rm = RET_RE.match(l)
                 if rm:
                     val = rm.group(2)
-                    if val in OK_VALUES or val in DECLINE_VALUES or (val == "..()" and m is not root):
+                    if val in OK_VALUES or val in DECLINE_VALUES or val == "..()":
                         continue
                     problems.append("return_expr")
                 elif "..()" in l and m is not root and not re.match(r"^\s*\.\.\(\)\s*$", l):
@@ -282,7 +293,7 @@ def main(argv):
         if f"{root.type}/{q}" in EXCLUDED:
             problems.append("excluded")
         key = f"use_{q}"
-        if key_sites.get(key):
+        if any(u == root.type or is_ancestor(u, root.type) or is_ancestor(root.type, u) for u in key_sites.get(key, ())):
             problems.append("key_taken")
         results.append((q, root, members, sorted(set(problems))))
 
@@ -333,7 +344,7 @@ def handler_lines(m, root, lines, nl):
             comment = (" " + orig.group(3)) if orig.group(3) else ""
             if val in OK_VALUES:
                 l = f"{orig.group(1)}return OP_OK{comment}"
-            elif val in DECLINE_VALUES:
+            elif val in DECLINE_VALUES or (val == "..()" and m is root):
                 l = f"{orig.group(1)}return OP_DECLINE{comment}"
         out.append(l)
     # falling off the end answered NONE: the click went on to attackby

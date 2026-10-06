@@ -5005,7 +5005,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	SM.power = 200
 	var/initial_damage = SM.damage
 
-	SM.machine_step()
+	SM.sm_step(null)
 
 	var/post_damage = SM.damage
 
@@ -5278,7 +5278,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// station Z, detonates immediately (exploded / grav_pulling). Assert the
 	// observable delamination consequence, not the damage value we just set.
 	SM.damage = SM.explosion_point + 100
-	SM.machine_step()
+	SM.sm_step(null)
 	TEST_ASSERT(SM.causalitywarn, \
 		"supermatter past explosion_point did not flag causalitywarn — delamination path never fired")
 	TEST_ASSERT(SM.final_countdown || SM.exploded || SM.grav_pulling, \

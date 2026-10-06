@@ -22,6 +22,8 @@
 	if(T.hook_flags & ENGINE_HOOK_COND_SCOPED)
 		activations_cond_init(holder, T)
 	type_every_arm(holder, T)
+	if(T.hook_flags & ENGINE_HOOK_LIFEFORMS)
+		lifeform_init(holder, mapload) // contents, languages, starting state, derived values, registries, radio, adjacency, scopes
 	if(T.hook_flags & ENGINE_HOOK_AFTER_INIT)
 		after_init_note(holder, mapload)
 	if(isatom(holder))
@@ -30,6 +32,8 @@
 /// Before the base body of Initialize runs: for work the parent's init reads (a part made in nullspace).
 /proc/engine_holder_preinit(datum/holder, mapload)
 	var/datum/type_table/T = table_of(holder)
+	if(T.hook_flags & ENGINE_HOOK_LIFEFORMS)
+		lifeform_preinit(holder, mapload) // params, per_type tables, rolls: before the parent's init code reads them
 	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_CAPABILITY))
 		var/datum/capability/def = C.item
 		if(def.holder_hooks & HOLDER_HOOK_PREINIT)
@@ -44,6 +48,8 @@
 		var/datum/capability/def = C.item
 		if(def.holder_hooks & HOLDER_HOOK_DESTROY)
 			def.run_holder_hook(holder, FALSE, HOLDER_HOOK_DESTROY)
+	if(T.hook_flags & ENGINE_HOOK_LIFEFORMS)
+		lifeform_destroy(holder)
 
 
 /// Runs the capability's lifecycle hook for holder with a reused evaluation context (A.holder and A.cap set, A.mapload while the
