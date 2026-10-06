@@ -73,7 +73,7 @@ CAPABILITIES(/obj/item/deck)
 		var/obj/item/hand/H = O
 		if(H.parentdeck == src)
 			for(var/datum/playingcard/P in H.cards?.Copy())
-				own_transfer(H, nameof(H.cards), src, nameof(cards), P)
+				rel_move(H, nameof(H.cards), src, nameof(cards), P)
 			consume(H, user)
 			to_chat(user,span_notice("You place your cards on the bottom of \the [src]."))
 			return INTERACTION_HANDLED_PASS
@@ -160,7 +160,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	if(!H || !user) return
 
 	var/datum/playingcard/P = cards[1]
-	own_transfer(src, nameof(cards), H, nameof(H.cards), P)
+	rel_move(src, nameof(cards), H, nameof(H.cards), P)
 	H.parentdeck = src
 	H.update_icon()
 	act_message(user, null, others = span_infoplain(span_bold("%U%") + " draws a card."))
@@ -290,7 +290,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 			var/TDN = copytext(to_draw, 1, length(to_draw) - 3)
 			var/datum/playingcard/P = cards[i]
 			if(TDN == P.name)
-				own_transfer(src, nameof(cards), H, nameof(H.cards), P)
+				rel_move(src, nameof(cards), H, nameof(H.cards), P)
 				H.parentdeck = src
 				break
 	H.update_icon()
@@ -313,7 +313,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	for(i = 0, i < dcard, i++)
 		if(!length(cards))
 			break
-		own_transfer(src, nameof(cards), H, nameof(H.cards), cards[1])
+		rel_move(src, nameof(cards), H, nameof(H.cards), cards[1])
 		H.parentdeck = src
 		H.concealed = 1
 		H.update_icon()
@@ -350,7 +350,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 		var/obj/item/hand/H = O
 		if(H.parentdeck == src.parentdeck) // Prevent cardmixing
 			for(var/datum/playingcard/P in cards?.Copy())
-				own_transfer(src, nameof(cards), H, nameof(H.cards), P)
+				rel_move(src, nameof(cards), H, nameof(H.cards), P)
 			H.concealed = src.concealed
 			consume(src, user)
 			H.update_icon()
@@ -442,7 +442,7 @@ CAPABILITIES(/obj/item/pack)
 	var/obj/item/hand/H = new()
 
 	for(var/datum/playingcard/P as anything in cards?.Copy())
-		own_transfer(src, nameof(cards), H, nameof(H.cards), P)
+		rel_move(src, nameof(cards), H, nameof(H.cards), P)
 	H.parentdeck = src.parentdeck
 	user.drop_item()
 	consume(src, user)
@@ -497,7 +497,7 @@ CAPABILITIES(/obj/item/pack)
 		var/discarding = card.name
 
 		var/obj/item/hand/H = new(src.loc)
-		own_transfer(src, nameof(cards), H, nameof(H.cards), card)
+		rel_move(src, nameof(cards), H, nameof(H.cards), card)
 		H.concealed = 0
 		H.parentdeck = src.parentdeck
 		H.update_icon()
@@ -565,7 +565,7 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 
 	var/obj/item/hand/H = new(get_turf(src))
 	user.put_in_hands(H)
-	own_transfer(src, nameof(cards), H, nameof(H.cards), card)
+	rel_move(src, nameof(cards), H, nameof(H.cards), card)
 	H.parentdeck = src.parentdeck
 	H.concealed = src.concealed
 	H.update_icon()

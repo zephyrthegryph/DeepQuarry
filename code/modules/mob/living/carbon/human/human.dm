@@ -1504,7 +1504,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 		rel_set(src, nameof(body), new body_type(src))
 	else if(!keep_organs && body.type != body_type)
 		log_game("BODY: [key_name(src)] body plan [body.type] -> [body_type] on species change to [species.name].")
-		own_clear(src, nameof(body), OWN_DELETE)
+		rel_clear(src, nameof(body))
 		rel_set(src, nameof(body), new body_type(src))
 		// The slot set is keyed by body plan.
 		rebuild_slot_ledger()
@@ -1555,7 +1555,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 	fixblood()
 	// Traits (only ever on the mob's private copy) may change unarmed_types; a registered species
 	// built its attacks in New() and is never written here.
-	if(proto_is_private(src, nameof(species)))
+	if(rel_is_private(src, nameof(species)))
 		species.update_attack_types()
 	species.update_vore_belly_def_variant()
 

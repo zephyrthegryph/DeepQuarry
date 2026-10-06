@@ -592,7 +592,7 @@ CAPABILITIES(/datum/hud)
 		return
 	rel_clear(ammo_hud, nameof(ammo_hud.our_gun))
 	ammo_hud.remove_hud(user, G)
-	own_remove(src, nameof(ammo_hud_list), ammo_hud)
+	rel_remove(src, nameof(ammo_hud_list), ammo_hud)
 	var/i = 1
 	for(var/atom/movable/screen/ammo/other as anything in ammo_hud_list)
 		ammo_hud = other

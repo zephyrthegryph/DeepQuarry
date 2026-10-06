@@ -25,7 +25,7 @@
 /// Removes the character's forms datum if it is of `forms_type` (or a subtype).
 /mob/living/carbon/human/proc/remove_forms(forms_type = /datum/forms)
 	if(istype(character_forms, forms_type))
-		own_clear(src, nameof(character_forms), OWN_DELETE)
+		rel_clear(src, nameof(character_forms))
 
 /// The form the character is currently wearing, or null for ordinary humans.
 /mob/living/carbon/human/proc/current_form()

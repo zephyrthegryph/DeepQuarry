@@ -300,7 +300,7 @@ OM_FIELD(/obj/machinery/computer/cloning, autoprocess, 0, CHANGE_MACHINE_SETTING
 	if(check_access(C))
 		var/datum/transhuman/body_record/doomed = active_BR()
 		if(doomed in records)
-			own_remove(src, nameof(records), doomed) // Already deletes dna in destroy()
+			rel_remove(src, nameof(records), doomed) // Already deletes dna in destroy()
 		else
 			spent(doomed)
 		set_temp("Record deleted.", "success")
@@ -336,7 +336,7 @@ OM_FIELD(/obj/machinery/computer/cloning, autoprocess, 0, CHANGE_MACHINE_SETTING
 		if("eject")
 			if(!isnull(diskette))
 				diskette.forceMove(get_turf(src))
-				own_take(src, nameof(/obj/machinery/computer/cloning::diskette))
+				rel_take(src, nameof(/obj/machinery/computer/cloning::diskette))
 	add_fingerprint(A.actor)
 
 /obj/machinery/computer/cloning/proc/ui_act_refresh(datum/act/op/A)

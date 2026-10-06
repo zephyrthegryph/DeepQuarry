@@ -571,7 +571,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 		var/mob/living/silicon/pai/AI = paicard.pai
 		transfer_mind(mind, AI, "pAI ejected from [src]")
 		paicard.forceMove(src.loc)
-		own_take(src, nameof(paicard))
+		rel_take(src, nameof(paicard))
 		name = initial(name)
 		botcard.access = botcard_access.Copy()
 		to_chat(AI, span_notice("You feel a tad claustrophobic as your mind closes back into your card, ejecting from \the [initial(src.name)]."))

@@ -125,7 +125,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 	if(ball)
 		user.put_in_hands(ball)
 		to_chat(user, span_notice("You remove \the [ball] from [src]."))
-		own_take(src, nameof(ball))
+		rel_take(src, nameof(ball))
 		return
 	else
 		to_chat(user, span_notice("There is no ball in [src]!"))
@@ -279,12 +279,12 @@ DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
 		if(trapped.held_mob)
 			to_chat(user, span_notice("You take \the [trapped] out of the glass roulette ball."))
 			to_chat(trapped.held_mob, span_notice("\The [user] takes you out of a glass roulette ball."))
-		own_take(src, nameof(trapped))
+		rel_take(src, nameof(trapped))
 		update_icon()
 	return TRUE
 
 /obj/item/roulette_ball/hollow/on_holder_escape()
-	own_take(src, nameof(trapped))
+	rel_take(src, nameof(trapped))
 	update_icon()
 
 /obj/item/roulette_ball/hollow/on_spin()

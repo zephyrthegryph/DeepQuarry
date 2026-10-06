@@ -50,7 +50,7 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 			play_sfx(COM, SFX_MACHINES_DENIEDBEEP)
 		return "Update already in progress! Please wait a moment..."
 	GLOB.client_record_update_lock = TRUE
-	after(null, 60 SECONDS, /proc/client_record_update_unlock) // the global owner: a global lock
+	after(null, 60 SECONDS, GLOBAL_PROC_REF(client_record_update_unlock)) // the global owner: a global lock
 
 	if(!active || !console_path)
 		if(COM && !QDELETED(COM))

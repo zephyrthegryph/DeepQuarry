@@ -97,7 +97,7 @@ CAPABILITIES(/obj/item/camera_assembly)
 	if(upgrade)
 		to_chat(user, span_notice("You unattach an upgrade from the assembly."))
 		playsound(src, tool.usesound, 50, TRUE)
-		own_take_member(src, nameof(upgrades), upgrade)
+		rel_take(src, nameof(upgrades), upgrade)
 		upgrade.forceMove(get_turf(src))
 	return TRUE
 

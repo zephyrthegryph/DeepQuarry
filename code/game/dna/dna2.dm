@@ -442,7 +442,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 
 	// Update species blood with our blood color from dna! produceCopy() left H's species a private
 	// copy; proto_private() returns it (and never lets these writes reach a registered species).
-	var/datum/species/own_species = proto_private(H, nameof(H.species))
+	var/datum/species/own_species = rel_private(H, nameof(H.species))
 	own_species.blood_reagents = blood_reagents
 	own_species.blood_color = blood_color
 	own_species.species_sounds = species_sounds

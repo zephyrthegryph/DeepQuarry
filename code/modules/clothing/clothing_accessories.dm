@@ -183,7 +183,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 
 	if(!LAZYLEN(accessories))
 		revoke(src, granted_verb(/obj/item/clothing/proc/removetie_verb), src)
-		own_take_all(src, nameof(accessories))
+		rel_take(src, nameof(accessories))
 
 /obj/item/clothing/proc/accessory_remove_answered(datum/act/request/context)
 	if(!context.answer)

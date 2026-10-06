@@ -36,7 +36,7 @@ CAPABILITIES(/obj/item/implantpad)
 	user.put_in_active_hand(case)
 
 	src.case.add_fingerprint(user)
-	own_take(src, nameof(case))
+	rel_take(src, nameof(case))
 
 	src.add_fingerprint(user)
 	update()

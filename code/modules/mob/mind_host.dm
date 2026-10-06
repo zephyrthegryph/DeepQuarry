@@ -48,7 +48,7 @@ CAPABILITIES(/datum/mind_host)
 /// Makes `holder` a mind host (was AddComponent(/datum/mind_host, tissue)).
 /obj/item/proc/make_mind_host(obj/item/organ/internal/brain/tissue) as /datum/mind_host
 	if(mind_host)
-		own_clear(src, nameof(mind_host), OWN_DELETE)
+		rel_clear(src, nameof(mind_host))
 	rel_set(src, nameof(mind_host), new /datum/mind_host(src, tissue))
 	return mind_host
 
@@ -62,7 +62,7 @@ CAPABILITIES(/datum/mind_host)
 /datum/mind_host/lifecycle_unbind()
 	if(view)
 		var/mob/living/carbon/brain/old_view = view
-		own_take(src, nameof(view))
+		rel_take(src, nameof(view))
 		rel_clear(old_view, nameof(old_view.host))
 		rel_clear(old_view, nameof(old_view.container))
 		if(!QDELETED(old_view))
@@ -129,7 +129,7 @@ CAPABILITIES(/datum/mind_host)
 	if(!view)
 		return
 	var/mob/living/carbon/brain/old_view = view
-	own_take(src, nameof(view))
+	rel_take(src, nameof(view))
 	rel_clear(old_view, nameof(old_view.host))
 	rel_clear(old_view, nameof(old_view.container))
 	spent(old_view)
@@ -140,7 +140,7 @@ CAPABILITIES(/datum/mind_host)
 	if(!other?.view || view)
 		return FALSE
 	var/mob/living/carbon/brain/moved_view = other.view
-	own_take(other, nameof(other.view))
+	rel_take(other, nameof(other.view))
 	log_game("MIND: [moved_view.mind ? "[moved_view.mind.key] ([moved_view.mind.name])" : "empty view [moved_view]"] moved from host [other.owner] to [owner]: [reason]")
 	attach_view(moved_view)
 	return TRUE

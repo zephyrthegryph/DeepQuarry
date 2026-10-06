@@ -397,9 +397,9 @@
 	if(new_machine.component_parts)
 		for(var/CP in new_machine.component_parts)
 			spent(CP, user)
-		own_take_all(new_machine, nameof(new_machine.component_parts))
+		rel_take(new_machine, nameof(new_machine.component_parts))
 	else
-		own_take_all(new_machine, nameof(new_machine.component_parts))
+		rel_take(new_machine, nameof(new_machine.component_parts))
 
 	circuit.construct(new_machine, user)
 
@@ -413,7 +413,7 @@
 	// The frame's installed parts are real physical items the player put in;
 	// move_into() keeps the new machine's ledger (roadmap C6) current, so
 	// RefreshParts() and get_part_rating() see them straight away.
-	for(var/obj/O in own_take_all(src, nameof(components)))
+	for(var/obj/O in rel_take(src, nameof(components)))
 		if(circuit.contain_parts)
 			move_into(new_machine, CONTAINER_SLOT_INTERNALS, O)
 		else
@@ -422,7 +422,7 @@
 
 	circuit.moveToNullspace()
 	move_into(new_machine, CONTAINER_SLOT_INTERNALS, circuit)
-	own_transfer(src, nameof(circuit), new_machine, nameof(new_machine.circuit))
+	rel_move(src, nameof(circuit), new_machine, nameof(new_machine.circuit))
 
 	new_machine.RefreshParts()
 	new_machine.finalize_material_assembly()
@@ -439,7 +439,7 @@
 	B.set_dir(dir)
 	circuit.construct(B, user)
 	circuit.moveToNullspace()
-	own_transfer(src, nameof(circuit), B, nameof(B.circuit))
+	rel_move(src, nameof(circuit), B, nameof(B.circuit))
 	if(!alarm)
 		B.update_icon()
 	replace_with(src, B)
@@ -452,7 +452,7 @@
 	B.set_dir(dir)
 	circuit.construct(B, user)
 	circuit.moveToNullspace()
-	own_transfer(src, nameof(circuit), B, nameof(B.circuit))
+	rel_move(src, nameof(circuit), B, nameof(B.circuit))
 	var/obj/machinery/computer/LC = locate_within(get_step(B, turn(B.dir, 90)), /obj/machinery/computer)
 	var/obj/machinery/computer/RC = locate_within(get_step(B, turn(B.dir, -90)), /obj/machinery/computer)
 	if(LC)

@@ -59,7 +59,7 @@ CAPABILITIES(/datum/expedition_mission)
 
 /datum/expedition_mission/proc/populate(datum/expedition_site/S)
 	rel_set(src, nameof(site), S)
-	own_clear(src, nameof(objectives), OWN_DELETE)
+	rel_clear(src, nameof(objectives))
 	for(var/datum/expedition_objective/built as anything in build_objectives())
 		rel_add(src, nameof(objectives), built)
 	for(var/datum/expedition_objective/O in objectives)

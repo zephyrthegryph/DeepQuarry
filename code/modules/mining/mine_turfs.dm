@@ -289,7 +289,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, TYPE_PROC_REF(/atom, appearance
 		if(finds && finds.len)
 			var/datum/find/F = finds[1]
 			if(newDepth > F.excavation_required) // Digging too deep with something as clumsy or random as a blaster will destroy artefacts
-				own_remove(src, nameof(finds), finds[1])
+				rel_remove(src, nameof(finds), finds[1])
 				if(prob(50))
 					artifact_debris()
 
@@ -539,7 +539,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 						//Technically you CAN KEEP RUNNING INTO THE TILE but like, you're wasting so much time at that point. Just buy a pick set from the mining vendor.
 			excavate_find(prob(1), finds[1]) //1 in 100 chance of digging it out
 	else //destructive methods will always destroy finds, no bowls menacing with spikes for you
-		own_remove(src, nameof(finds), finds[1])
+		rel_remove(src, nameof(finds), finds[1])
 		artifact_debris()
 
 /turf/simulated/mineral/proc/update_archeo_overlays(excavation_amount = 0)
@@ -604,7 +604,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		//boulder with an artifact inside
 		B = new(src)
 		// The boulder takes the find over from this turf (the turf is drilled away next).
-		own_transfer(src, nameof(artifact_find), B, nameof(B.artifact_find_static))
+		rel_move(src, nameof(artifact_find), B, nameof(B.artifact_find_static))
 
 	if(B)
 		GetDrilled(0)
@@ -685,7 +685,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 				visible_message(span_danger("\The [pick("[display_name] crumbles away into dust","[display_name] breaks apart")]."))
 				consume(X)
 
-	own_remove(src, nameof(finds), F)
+	rel_remove(src, nameof(finds), F)
 
 /turf/simulated/mineral/proc/artifact_debris(severity = 0)
 	//cael's patented random limited drop componentized loot system!

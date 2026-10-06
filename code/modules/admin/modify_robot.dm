@@ -112,7 +112,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 /datum/eventkit/modify_robot/tgui_close()
 	rel_clear(src, nameof(target))
 	if(source)
-		own_clear(src, nameof(source), OWN_DELETE)
+		rel_clear(src, nameof(source))
 
 /datum/eventkit/modify_robot/ui_assets(mob/user)
 	if(!target())
@@ -265,7 +265,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 
 /datum/eventkit/modify_robot/proc/ui_act_select_source(datum/act/op/A, new_source)
 	if(source)
-		own_clear(src, nameof(source), OWN_DELETE)
+		rel_clear(src, nameof(source))
 	var/module_type = GLOB.robot_modules[new_source]
 	if(ispath(module_type, /obj/item/robot_module/robot/syndicate))
 		rel_set(src, nameof(source), new /mob/living/silicon/robot/syndicate(null))
@@ -279,7 +279,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	source.update_icon()
 	source.emag_items = TRUE
 	if(!istype(robot_type, /obj/item/robot_module/robot))
-		own_clear(src, nameof(/datum/eventkit/modify_robot::source), OWN_DELETE)
+		rel_clear(src, nameof(/datum/eventkit/modify_robot::source))
 		return TRUE
 	return TRUE
 
@@ -292,7 +292,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(!selected_item)
 		return TRUE
 	if(istype(selected_item, /obj/item/card/id))
-		own_take(source, nameof(/mob/living/silicon::idcard))
+		rel_take(source, nameof(/mob/living/silicon::idcard))
 	source.module.emag -= selected_item
 	source.module.modules -= selected_item
 	target().module.add_item(selected_item, target())

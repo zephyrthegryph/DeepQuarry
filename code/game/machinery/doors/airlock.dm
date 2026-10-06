@@ -947,7 +947,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 		if (!electronics) create_electronics()
 
 		electronics.forceMove(get_turf(src))
-		own_take(src, nameof(electronics))
+		rel_take(src, nameof(electronics))
 	replace_with(src, da)
 
 /obj/machinery/door/airlock/proc/can_remove_electronics(datum/act/A)

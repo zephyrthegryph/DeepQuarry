@@ -139,7 +139,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 	add_fingerprint(A.actor)
 	if(inserted_battery())
 		inserted_battery().forceMove(loc)
-		rel_clear(src, nameof(/obj/item/anodevice::inserted_battery))
+		rel_clear(src, nameof(src.inserted_battery))
 	return TRUE
 
 /// The drain question is asked only of a battery with an effect and charge in it.

@@ -1467,7 +1467,7 @@ CAPABILITIES(/datum/vore_look)
 		body_backup.ajourn = 0
 		transfer_mind(T.mind, body_backup, "reformed in [host()]", force = TRUE)
 		rel_clear(body_backup, nameof(body_backup.teleop))
-		own_take(T, nameof(T.body_backup))
+		rel_take(T, nameof(T.body_backup))
 		host().vore_selected.release_specific_contents(T, TRUE)
 		if(istype(body_backup, /mob/living/simple_mob))
 			var/mob/living/simple_mob/sm = body_backup
@@ -1512,7 +1512,7 @@ CAPABILITIES(/datum/vore_look)
 			//You've hopefully already named yourself, so... not implementing that bit.
 			var/mob/living/carbon/human/H = body_backup
 			H.reform_restore("reformed around [MMI] in [host()]", host())
-		own_take(MMI, nameof(MMI.body_backup))
+		rel_take(MMI, nameof(MMI.body_backup))
 
 /// "Health": Report the prey's vitality.
 /datum/vore_look/proc/pick_health(mob/user, atom/movable/target, params)

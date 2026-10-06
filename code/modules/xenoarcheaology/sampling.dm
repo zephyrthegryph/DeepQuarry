@@ -194,7 +194,7 @@ DECLARE_INTERACTIONS(/obj/item/core_sampler, \
 			success = M.put_in_inactive_hand(filled_bag)
 		if(!success)
 			filled_bag.forceMove(get_turf(src))
-		own_take(src, nameof(filled_bag))
+		rel_take(src, nameof(filled_bag))
 		icon_state = "sampler0"
 	else
 		to_chat(user, span_warning("The core sampler is empty."))

@@ -121,7 +121,7 @@
 			var/obj/item/gun/projectile/NN = N
 			var/obj/item/gun/projectile/OO = O
 			NN.magazine_type = OO.magazine_type
-			own_transfer(OO, nameof(OO.ammo_magazine), NN, nameof(NN.ammo_magazine))
+			rel_move(OO, nameof(OO.ammo_magazine), NN, nameof(NN.ammo_magazine))
 		if(istype(N,/obj/item/gun/energy/))
 			var/obj/item/gun/energy/NE = N
 			var/obj/item/gun/energy/OE = O
@@ -940,7 +940,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTE
 			if(!consume(src, user))
 				return ITEM_INTERACT_FAILURE
 			var/mob/living/carbon/human/H = user
-			var/datum/species/own_species = proto_private(H, nameof(H.species))
+			var/datum/species/own_species = rel_private(H, nameof(H.species))
 			own_species.give_numbing_bite() //This was annoying, but this is the easiest way of performing it.
 			return ITEM_INTERACT_SUCCESS
 	else //If not, do nothing.
@@ -1532,7 +1532,7 @@ CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte)
 		return
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
 	stored_item.forceMove(get_turf(src))
-	own_take(src, nameof(stored_item))
+	rel_take(src, nameof(stored_item))
 
 // special_handling: the inherited plushie "Squeeze" steps aside, and this runs ahead of it.
 EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(I_HELP, "Hug", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_DISARM, "Poke", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_GRAB, "Strangle", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_HURT, "Punch", PROC_REF(mofuorb_squeeze_self)))

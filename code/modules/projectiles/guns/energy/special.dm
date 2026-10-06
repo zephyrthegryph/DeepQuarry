@@ -69,7 +69,7 @@
 		to_chat(user, span_notice("You remove the [emitter.name] from the [src]."))
 		emitter.forceMove(get_turf(src.loc))
 		playsound(src, tool.usesound, 50, 1)
-		own_take(src, nameof(emitter))
+		rel_take(src, nameof(emitter))
 	else
 		to_chat(user, span_notice("There is no micro laser in this [src]."))
 	return ITEM_INTERACT_SUCCESS

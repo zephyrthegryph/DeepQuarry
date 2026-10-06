@@ -16,7 +16,7 @@
 		while(length(L.stored_ammo) && length(stored_ammo) < max_ammo)
 			var/obj/item/ammo_casing/AC = L.stored_ammo[1] //select the next casing.
 			AC.forceMove(src)
-			own_transfer(L, nameof(L.stored_ammo), src, nameof(stored_ammo), AC) //move this casing from the clip's loaded list to ours
+			rel_move(L, nameof(L.stored_ammo), src, nameof(stored_ammo), AC) //move this casing from the clip's loaded list to ours
 			moveElement(stored_ammo, length(stored_ammo), 1) //to the head of our magazine's list
 		L.update_icon()
 	return TRUE

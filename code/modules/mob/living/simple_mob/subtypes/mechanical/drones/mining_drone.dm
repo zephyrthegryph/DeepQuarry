@@ -86,7 +86,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mining_drone)
 	death_message = "suddenly breaks apart."
 
 /mob/living/simple_mob/mechanical/mining_drone/on_death(gibbed)
-	var/obj/item/ore_bag/dropped = own_take(src, nameof(my_storage))
+	var/obj/item/ore_bag/dropped = rel_take(src, nameof(my_storage))
 	dropped?.forceMove(get_turf(src))
 	..()
 

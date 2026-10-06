@@ -112,7 +112,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 	if(!A.answer)
 		return
 	var/mode = A.answer.value
-	proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
+	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.bloodsucker_controlmode = mode
 	if(mode == "stance") //We are printing to chat for better readability
 		to_chat(src, span_notice("You've chosen to use your stance for blood draining.\n Combat mode off - Loud, No Bleeding\n Disarm held - Subtle, Causes bleeding\n Grab held - Subtle, No Bleeding\n Combat mode on - Loud, Causes Bleeding"))
@@ -836,7 +836,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	set name = "Toggle Eye Glowing"
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
+	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.has_glowing_eyes = !species.has_glowing_eyes
 	update_eyes()
 	to_chat(src, "Your eyes [species.has_glowing_eyes ? "are now" : "are no longer"] glowing.")

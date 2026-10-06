@@ -547,7 +547,7 @@ CAPABILITIES(/datum/xenochimera)
 
 /// Removes the xenochimera state datum, if any.
 /mob/living/carbon/human/proc/remove_xenochimera()
-	own_clear(src, nameof(xenochimera), OWN_DELETE)
+	rel_clear(src, nameof(xenochimera))
 
 /// A current-state replay answer; closing the source question keeps the old Current Form default.
 /datum/prompt/choice/xenochimera_review

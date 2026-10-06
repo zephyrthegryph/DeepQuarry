@@ -377,7 +377,7 @@
 		if(isliving(src))
 			var/mob/living/L = src
 			L.release_vore_contents(silent = TRUE)
-		own_clear(src, nameof(vore_organs), OWN_DELETE)
+		rel_clear(src, nameof(vore_organs))
 		for(var/entry in P.belly_prefs)
 			var/list/errors = list()
 			if(!state_materialize(entry, src, NONE, errors))

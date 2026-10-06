@@ -129,7 +129,7 @@
 	// Hand-off: the materializer owns its result only while building it, so it lets go here
 	// (deleting the materializer afterwards must not delete the station it built). The expedition
 	// site adopts it (rel_set) when it is published.
-	var/datum/generated_station_materialization/done = own_take(materializer(), nameof(/datum/crafting_recipe::result))
+	var/datum/generated_station_materialization/done = rel_take(materializer(), nameof(/datum/generated_station_materializer::result))
 	rel_set(src, nameof(materialization), done)
 	checkpoint("Station materialization complete", 62)
 	return done

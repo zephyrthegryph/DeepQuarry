@@ -207,7 +207,7 @@
 
 /datum/gear/eyes/arglasses_visor/New()
 	..()
-	own_clear(src, nameof(gear_tweaks), OWN_DELETE)
+	rel_clear(src, nameof(gear_tweaks))
 	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /datum/gear/eyes/arglasses_sec

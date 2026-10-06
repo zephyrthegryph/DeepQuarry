@@ -317,7 +317,7 @@ CAPABILITIES(/mob/living/bot/medbot)
 		return TRUE
 	if(reagent_glass)
 		reagent_glass.forceMove(get_turf(src))
-		own_take(src, nameof(/mob/living/bot/medbot::reagent_glass))
+		rel_take(src, nameof(/mob/living/bot/medbot::reagent_glass))
 	. = TRUE
 
 /mob/living/bot/medbot/proc/ui_act_togglevoice(datum/act/op/A)
@@ -362,7 +362,7 @@ CAPABILITIES(/mob/living/bot/medbot)
 
 	if(reagent_glass)
 		reagent_glass.forceMove(Tsec)
-		own_take(src, nameof(reagent_glass))
+		rel_take(src, nameof(reagent_glass))
 
 	if(emagged && prob(25))
 		play_sfx(src, SFX_VOICE_MEDBOT_MINSULT)

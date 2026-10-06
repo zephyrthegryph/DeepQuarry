@@ -97,7 +97,7 @@
 /datum/reagent/glamour_twinkling/affect_blood(mob/living/carbon/human/target, removed)
 	if(target.species.darksight < 10)
 		to_chat(target, span_warning("You can suddenly see much better than before."))
-		proto_private(target, nameof(target.species)) // per-mob change: never mutate the shared species
+		rel_private(target, nameof(target.species)) // per-mob change: never mutate the shared species
 		target.species.darksight = 10
 	if(target.disabilities & NEARSIGHTED)
 		target.disabilities &= ~NEARSIGHTED
@@ -321,7 +321,7 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 /obj/structure/glamour_ring/proc/attack_hand_glamour_ring_done(datum/task/timed/glamour_ring_attack_hand_glamour_ring/task)
 	if(!task.lleill_mob)
 		return
-	var/datum/species/lleill/LL = proto_private(task.lleill_mob, nameof(/datum/dna::species)) // per-mob change: never mutate the shared species
+	var/datum/species/lleill/LL = rel_private(task.lleill_mob, nameof(/datum/dna::species)) // per-mob change: never mutate the shared species
 	if(!istype(LL))
 		return
 	COOLDOWN_START(LL, ring_cooldown, 10 MINUTES)

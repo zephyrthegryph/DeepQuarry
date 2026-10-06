@@ -81,7 +81,7 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 		unobserve(has_extinguisher, /datum/notice/qdeleting, src)
 		user.put_in_hands(has_extinguisher)
 		to_chat(user, span_notice("You take [has_extinguisher] from [src]."))
-		own_take(src, nameof(has_extinguisher))
+		rel_take(src, nameof(has_extinguisher))
 		opened = 1
 	else
 		opened = !opened
@@ -94,7 +94,7 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 		unobserve(has_extinguisher, /datum/notice/qdeleting, src)
 		has_extinguisher.forceMove(loc)
 		to_chat(user, span_notice("You telekinetically remove [has_extinguisher] from [src]."))
-		own_take(src, nameof(has_extinguisher))
+		rel_take(src, nameof(has_extinguisher))
 		opened = 1
 	else
 		opened = !opened
@@ -105,7 +105,7 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 	var/datum/source = A.target
 	if(source != has_extinguisher)
 		return
-	own_take(src, nameof(has_extinguisher))
+	rel_take(src, nameof(has_extinguisher))
 	opened = TRUE
 
 /obj/structure/extinguisher_cabinet/proc/appearance_suffix()

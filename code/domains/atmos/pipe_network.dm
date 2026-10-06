@@ -54,7 +54,7 @@ CAPABILITIES(/datum/pipe_network)
 	external_air_volumes = null
 	for(var/obj/machinery/atmospherics/normal_member in old_normal_members)
 		normal_member.reassign_network(src, null)
-	own_clear(src, nameof(air), OWN_DELETE)
+	rel_clear(src, nameof(air))
 
 /// The network's total volume in litres: read from the Rust mixture, which is the only copy.
 /datum/pipe_network/proc/volume()
@@ -196,7 +196,7 @@ CAPABILITIES(/datum/pipe_network)
 	// A previous authoritative mixture is among old_gases (merged above): detach it so
 	// rel_set() doesn't dispose of it while members still name it; it goes below.
 	if(air)
-		own_take(src, nameof(air))
+		rel_take(src, nameof(air))
 	rel_set(src, nameof(air), network_air)
 	// Binding deletes each port's private mixture (atmos_air_set()); what is left over
 	// (the previous network mixture) is unowned now and released here.

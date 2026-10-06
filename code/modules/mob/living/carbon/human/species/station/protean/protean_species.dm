@@ -244,9 +244,9 @@
 /obj/item/clothing/accessory/permit/nanotech/set_name(new_name)
 	set_owner(TRUE)
 	if(new_name)
-		name += " ([new_name])"
-		validstring += "[time2text(world.timeofday, "Month") +" "+ num2text(text2num(time2text(world.timeofday, "YYYY"))+544)]"
-		registring += "[new_name]"
+		name = "[initial(name)] ([new_name])"
+		validstring = "[initial(validstring)][time2text(world.timeofday, "Month") +" "+ num2text(text2num(time2text(world.timeofday, "YYYY"))+544)]"
+		registring = "[initial(registring)][new_name]"
 
 /obj/item/clothing/accessory/permit/nanotech/examine(mob/user)
 	. = ..()

@@ -158,7 +158,7 @@ OM_FIELD(/obj/machinery/transhuman/synthprinter, busy, 0, CHANGE_MACHINE_SETTING
 
 /obj/machinery/transhuman/synthprinter/Initialize(mapload)
 	. = ..()
-	own_clear(src, nameof(component_parts), OWN_DELETE) // this machine runs without stock parts
+	rel_clear(src, nameof(component_parts)) // this machine runs without stock parts
 	RefreshParts()
 
 /obj/machinery/transhuman/synthprinter/RefreshParts()
@@ -336,7 +336,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
 
 /obj/machinery/transhuman/resleever/Initialize(mapload)
 	. = ..()
-	own_clear(src, nameof(component_parts), OWN_DELETE) // this machine runs without stock parts
+	rel_clear(src, nameof(component_parts)) // this machine runs without stock parts
 	RefreshParts()
 
 /// Sealed occupant slot (C8a, containment.md §10): the sleever's own field is
@@ -496,7 +496,7 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 	//Re-supply a NIF if one was backed up with them.
 	if(MR.nif_path)
 		var/obj/item/nif/nif = new MR.nif_path(occupant,null,MR.nif_savedata)
-		after(nif, 0, /proc/install_nif_software, with = list(nif, MR.nif_software)) //Delay to not install software before NIF is fully installed
+		after(nif, 0, GLOBAL_PROC_REF(install_nif_software), with = list(nif, MR.nif_software)) //Delay to not install software before NIF is fully installed
 		nif.durability = MR.nif_durability //Restore backed up durability after restoring the softs.
 
 	// If it was a custom sleeve (not owned by anyone), update namification sequences

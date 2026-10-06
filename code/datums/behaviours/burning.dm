@@ -111,7 +111,7 @@ CAPABILITIES(/obj)
 	return max(T0C + 50, ignition - BURN_EXTINGUISH_MARGIN)
 
 /obj/proc/burning_stop_heat()
-	own_clear(src, nameof(burn_cool_watch), OWN_DELETE)
+	rel_clear(src, nameof(burn_cool_watch))
 	if(QDELETED(src) || isnull(heat_body))
 		return
 	vg_heat_body_power(heat_body, 0)

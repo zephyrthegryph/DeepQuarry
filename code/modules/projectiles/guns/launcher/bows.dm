@@ -58,7 +58,7 @@ TRACKED(/obj/item/gun/launcher/crossbow/bow, drawn)
 
 /obj/item/gun/launcher/crossbow/bow/proc/unload(mob/user)
 	var/obj/item/arrow/A = bolt
-	own_take(src, nameof(bolt))
+	rel_take(src, nameof(bolt))
 	set_drawn(FALSE)
 	A.forceMove(get_turf(user))
 	user.put_in_hands(A)
@@ -70,7 +70,7 @@ TRACKED(/obj/item/gun/launcher/crossbow/bow, drawn)
 	return bolt
 
 /obj/item/gun/launcher/crossbow/bow/handle_post_fire(mob/user, atom/target)
-	own_take(src, nameof(bolt))
+	rel_take(src, nameof(bolt))
 	set_drawn(FALSE)
 	..()
 

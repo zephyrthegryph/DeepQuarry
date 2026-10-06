@@ -1141,6 +1141,17 @@
 #include "interim_permit_reregistration.dm"
 #include "round2_temperature_projectile_bounded_delta.dm"
 
+#include "interim_holobadge_credentials.dm"
+#include "interim_nanotech_permit_reregistration.dm"
+
+#include "interim_teleport_incantation.dm"
+
+#include "round2_circuit_jointext_empty_delimiter.dm"
+
+#include "round2_circuit_arithmetic_first_input_pull.dm"
+
+#include "round2_telescience_crystal_ejection.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

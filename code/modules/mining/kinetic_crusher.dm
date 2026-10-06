@@ -278,7 +278,7 @@ TRACKED(/obj/item/kinetic_crusher/machete/gauntlets, gauntlets_worn)
 	name = "[initial(name)] (unreadied)"
 	wielded = FALSE
 	if(offhand)
-		own_clear(src, nameof(offhand), OWN_DELETE)
+		rel_clear(src, nameof(offhand))
 
 /obj/item/offhand
 	icon = 'icons/obj/weapons.dmi'

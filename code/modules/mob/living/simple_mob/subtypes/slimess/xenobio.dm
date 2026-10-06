@@ -431,7 +431,7 @@
 	log_and_message_admins("Green extract reaction (radiation pulse) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
-	after(holder.my_atom, 5 SECONDS, /proc/slime_green_pulse, with = list(holder.my_atom))
+	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_green_pulse), with = list(holder.my_atom))
 	..()
 
 

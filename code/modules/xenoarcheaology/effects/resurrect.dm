@@ -90,7 +90,7 @@
 		H.mend(TREAT_TISSUE_REPAIR, 40)
 		H.mend(TREAT_BURN_CARE, 40)
 		holder.visible_message(span_alien("\The [H]'s body begins to shift and stir, loud, wet cracks emitting from within!"))
-		after(H, 10 SECONDS, /proc/artifact_revive_wakes, with = list(H, holder))
+		after(H, 10 SECONDS, GLOBAL_PROC_REF(artifact_revive_wakes), with = list(H, holder))
 
 /// Ten seconds after an artifact restarts a body: it wakes if its owner came back to it.
 /proc/artifact_revive_wakes(mob/living/carbon/human/H, atom/holder)

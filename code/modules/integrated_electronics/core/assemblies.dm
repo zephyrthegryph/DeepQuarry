@@ -210,7 +210,7 @@ CAPABILITIES(/datum/ic_export_view)
 		to_chat(user, span_warning("There's no power cell to remove from \the [src]."))
 		return FALSE
 	var/turf/T = get_turf(src)
-	var/obj/item/cell/device/removed = own_take(src, nameof(/obj/item/electronic_assembly::battery))
+	var/obj/item/cell/device/removed = rel_take(src, nameof(/obj/item/electronic_assembly::battery))
 	removed.forceMove(T)
 	play_sfx(T, SFX_ITEMS_CROWBAR)
 	to_chat(user, span_notice("You pull 	he [removed] out of 	he [src]'s power supplier."))

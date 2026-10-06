@@ -147,7 +147,7 @@
 
 	var/target_ref = LAZYACCESS(track?.humans, target_name) || LAZYACCESS(track?.others, target_name)
 	var/mob/target = target_ref ? locate_in_list(track.tracked, target_ref) : null
-	own_clear(src, nameof(track), OWN_DELETE)
+	rel_clear(src, nameof(track))
 	ai_actual_track(target)
 
 /mob/living/silicon/ai/proc/ai_cancel_tracking(forced = 0)

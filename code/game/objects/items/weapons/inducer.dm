@@ -205,7 +205,7 @@ CAPABILITIES(/obj/item/inducer)
 		act_message(user, src, MSG_SELF(span_notice("You remove [cell].")), MSG_OTHERS(span_notice("%U% removes [cell] from %T%!")))
 		cell.update_icon()
 		user.put_in_hands(cell)
-		own_take(src, nameof(cell))
+		rel_take(src, nameof(cell))
 	return TRUE
 
 /obj/item/inducer/examine(mob/living/M)

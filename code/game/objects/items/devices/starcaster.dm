@@ -68,7 +68,7 @@ CAPABILITIES(/obj/item/starcaster_news)
 
 /obj/item/starcaster_news/proc/ui_act_prg_reset(datum/act/op/A)
 	. = TRUE
-	own_clear(src, nameof(/obj/item/starcaster_news::loaded_article_owned), OWN_DELETE) // our private clone
+	rel_clear(src, nameof(/obj/item/starcaster_news::loaded_article_owned)) // our private clone
 
 /obj/item/starcaster_news/proc/ui_act_prg_toggle_archived(datum/act/op/A)
 	. = TRUE

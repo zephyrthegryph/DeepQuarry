@@ -168,7 +168,7 @@ CAPABILITIES(/obj/machinery/shieldgen)
 				use_power(S.shield_generate_power)
 
 /obj/machinery/shieldgen/proc/collapse_shields()
-	own_clear(src, nameof(deployed_shields), OWN_DELETE)
+	rel_clear(src, nameof(deployed_shields))
 
 /obj/machinery/shieldgen/proc/work_step(datum/act/timer/A)
 	if(cell && cell.charge)

@@ -323,7 +323,7 @@ MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
 			eject_item_act(user)
 
 /obj/machinery/maint_recycler/proc/eject_item_act(mob/user)
-	var/atom/movable/ejected = own_take(src, nameof(inserted_item))
+	var/atom/movable/ejected = rel_take(src, nameof(inserted_item))
 	if(!ejected)
 		return
 	ejected.forceMove(get_turf(src))
@@ -351,7 +351,7 @@ MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
 /obj/machinery/maint_recycler/proc/post_recycle(mob/user)
 	var/value = try_get_obj_value(inserted_item)
 	credit_user(user,value)
-	var/recycled = own_take(src, nameof(inserted_item))
+	var/recycled = rel_take(src, nameof(inserted_item))
 	if(istype(recycled,/mob))
 		var/mob/m = recycled
 		m.gib() //do we want logs here, or in the mob consent?

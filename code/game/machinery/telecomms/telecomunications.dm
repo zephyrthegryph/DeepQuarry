@@ -654,7 +654,7 @@ CAPABILITIES(/obj/machinery/telecomms/server)
 		return
 	for(var/datum/comm_log_entry/L as anything in log_entries)
 		if(L.garbage_collector)
-			own_remove(src, nameof(log_entries), L)
+			rel_remove(src, nameof(log_entries), L)
 			return
 
 /obj/machinery/telecomms/server/proc/add_entry(content, input)

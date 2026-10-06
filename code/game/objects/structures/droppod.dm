@@ -114,7 +114,7 @@ CAPABILITIES(/obj/structure/drop_pod)
 	for(var/atom/movable/AM in contents_of(src))
 		AM.forceMove(loc)
 		AM.set_dir(SOUTH) // cus
-	own_clear(src, nameof(air), OWN_DELETE)
+	rel_clear(src, nameof(air))
 	finished = TRUE
 
 /obj/structure/drop_pod/proc/interaction_open(datum/act/op/A)

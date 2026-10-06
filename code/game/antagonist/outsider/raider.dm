@@ -124,7 +124,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 
 	var/i = 1
 	var/max_objectives = pick(2,2,2,2,3,3,3,4)
-	own_clear(src, nameof(global_objectives), OWN_DELETE)
+	rel_clear(src, nameof(global_objectives))
 	while(i<= max_objectives)
 		var/list/goals = list("kidnap","loot","salvage")
 		var/goal = pick(goals)

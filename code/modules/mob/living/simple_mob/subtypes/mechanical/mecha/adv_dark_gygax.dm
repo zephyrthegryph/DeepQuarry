@@ -184,7 +184,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced)
 
 	// Get rid of our energy ball.
 	energy_ball.stop_orbit()
-	own_clear(src, nameof(energy_ball), OWN_DELETE)
+	rel_clear(src, nameof(energy_ball))
 
 	after(src, 1 SECOND, PROC_REF(energy_ball_done), with = list(old_shock_resist))
 

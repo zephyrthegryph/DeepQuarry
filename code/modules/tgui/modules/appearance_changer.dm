@@ -582,7 +582,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	var/new_species = P?.value
 	if(new_species)
 		// species is PROTO: mutate the mob's private copy, never the shared prototype
-		var/datum/species/own_species = proto_private(owner(), nameof(/datum/dna::species))
+		var/datum/species/own_species = rel_private(owner(), nameof(/datum/dna::species))
 		own_species.base_species = new_species
 		own_species.icobase = own_species.get_icobase()
 		own_species.deform = own_species.get_icobase(get_deform = TRUE)
@@ -696,7 +696,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		return
 	var/choice = A.answer.value
 	if(choice && can_change(owner(), APPEARANCE_MISC))
-		var/datum/species/own_species = proto_private(owner(), nameof(/datum/dna::species)) // PROTO: private copy
+		var/datum/species/own_species = rel_private(owner(), nameof(/datum/dna::species)) // PROTO: private copy
 		own_species.species_sounds = choice
 		return TRUE
 	return FALSE
@@ -764,9 +764,9 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	var/datum/species/S = GLOB.all_species[view_stock_brec]
 	if(S && (S.spawn_flags & (SPECIES_IS_WHITELISTED|SPECIES_CAN_JOIN)) == SPECIES_CAN_JOIN)
 		// Generate body record from species!
-		own_clear(src, nameof(/datum/tgui_module/appearance_changer::mannequin), OWN_DELETE)
+		rel_clear(src, nameof(/datum/tgui_module/appearance_changer::mannequin))
 		rel_set(src, nameof(/datum/tgui_module/appearance_changer::mannequin), new /mob/living/carbon/human(null, S.name))
-		rel_set(src, nameof(/datum/action_group::owner), mannequin)
+		rel_set(src, nameof(src.owner), mannequin)
 		owner().real_name = "Stock [S.name] Body"
 		owner().name = owner().real_name
 		owner().dna.real_name = owner().real_name
@@ -1339,7 +1339,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 	// checks for monkey to tell if on the menu
 	if(owner())
 		unobserve(owner(), /datum/notice/movable_attempted_move, src)
-		own_clear(src, nameof(mannequin), OWN_DELETE)
+		rel_clear(src, nameof(mannequin))
 		rel_clear(src, nameof(owner))
 	rel_set(src, nameof(mannequin), new /mob/living/carbon/human(src))
 	rel_set(src, nameof(owner), mannequin)
@@ -1353,7 +1353,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 /datum/tgui_module/appearance_changer/body_designer/proc/load_record_to_body(datum/transhuman/body_record/current_project)
 	if(owner())
 		unobserve(owner(), /datum/notice/movable_attempted_move, src)
-		own_clear(src, nameof(mannequin), OWN_DELETE)
+		rel_clear(src, nameof(mannequin))
 		rel_clear(src, nameof(owner))
 	rel_set(src, nameof(mannequin), current_project.produce_human_mob(src,FALSE,FALSE,"Designer [rand(999)]"))
 	rel_set(src, nameof(owner), mannequin)

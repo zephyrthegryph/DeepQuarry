@@ -336,7 +336,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 	to_chat(user, span_notice("You remove \the [attached_lock] from \the [src]."))
 	user.put_in_hands(attached_lock)
 	dna_lock = FALSE
-	own_take(src, nameof(attached_lock))
+	rel_take(src, nameof(attached_lock))
 	return ITEM_INTERACT_SUCCESS
 
 DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)

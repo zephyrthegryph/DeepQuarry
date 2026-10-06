@@ -153,7 +153,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 /obj/item/reagent_containers/food/drinks/bottle/proc/remove_rag(mob/user)
 	if(!rag) return
 	user.put_in_hands(rag)
-	own_take(src, nameof(rag))
+	rel_take(src, nameof(rag))
 	cap_key_set(src, REAGENT_CONTAINER_LID_OPEN, open_at_start)
 	update_icon()
 

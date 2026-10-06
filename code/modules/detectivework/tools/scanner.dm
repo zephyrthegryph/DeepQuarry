@@ -41,7 +41,7 @@ CAPABILITIES(/obj/item/detective_scanner)
 
 	if(reveal_blood && target.forensic_data?.has_blooddna())
 		to_chat(user, span_notice("Blood found on [target]. Analysing..."))
-		after(user, 1.5 SECONDS, /proc/detective_scanner_blood_report, with = list(user, target))
+		after(user, 1.5 SECONDS, GLOBAL_PROC_REF(detective_scanner_blood_report), with = list(user, target))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/detective_scanner/afterattack(atom/A as obj|turf, mob/user, proximity)
@@ -244,7 +244,7 @@ CAPABILITIES(/obj/item/detective_scanner)
 	var/_answer_k217 = A.step_value("k217")
 
 	if (_answer_k217 == "Yes")
-		own_clear(src, nameof(stored), OWN_DELETE)
+		rel_clear(src, nameof(stored))
 		to_chat(user, span_notice("Forensic data erase complete."))
 
 /obj/item/detective_scanner/advanced

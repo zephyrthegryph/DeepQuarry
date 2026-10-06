@@ -206,7 +206,7 @@ CAPABILITIES(/obj/effect/protean_power_button)
 		return
 	if(!species)
 		return
-	proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
+	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.base_species = A.answer.value
 	regenerate_icons()
 

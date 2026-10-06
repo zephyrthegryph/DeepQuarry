@@ -158,7 +158,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 		else
 			id.forceMove(get_turf(src))
 		cut_overlay("pda-id")
-		own_take(src, nameof(id))
+		rel_take(src, nameof(id))
 
 // Proc: id_check(mob/user as mob, choice as num)
 // Parameters: mob/user - the user who is attempting to check for an ID
@@ -182,7 +182,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 	else
 		var/obj/item/card/I = user.get_active_hand()
 		if (istype(I, /obj/item/card/id) && I:registered_name)
-			var/obj/old_id = own_take(src, nameof(src.id))
+			var/obj/old_id = rel_take(src, nameof(src.id))
 			if(!move_into(src, nameof(src.id), I, user))
 				rel_set(src, nameof(src.id), old_id)
 				return 0

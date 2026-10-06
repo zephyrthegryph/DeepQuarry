@@ -163,7 +163,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 				var/obj/structure/AIcore/deactivated/D = new(loc)
 				open_request(D, /datum/prompt/yes_no, TYPE_PROC_REF(/obj/structure/AIcore/deactivated, latejoin_answered), answerer = user, title = "Latejoin", question = "Would you like this core to be open for latejoining AIs?", timeout = 0)
 			else
-				var/datum/ai_laws/handed_laws = own_take(src, nameof(laws)) // the new AI adopts them
+				var/datum/ai_laws/handed_laws = rel_take(src, nameof(laws)) // the new AI adopts them
 				var/mob/living/silicon/ai/A = new /mob/living/silicon/ai(loc, FALSE, handed_laws, brain)
 				if(A) //if there's no brain, the mob is deleted and a structure/AIcore is created
 					A.rename_self("ai", 1)
@@ -188,14 +188,14 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 				state = 1
 				icon_state = "0"
 				circuit.forceMove(loc)
-				own_take(src, nameof(circuit))
+				rel_take(src, nameof(circuit))
 				return ITEM_INTERACT_SUCCESS
 		if(3)
 			if(brain)
 				playsound(src, tool.usesound, 50, 1)
 				to_chat(user, span_notice("You remove the brain."))
 				brain.forceMove(loc)
-				own_take(src, nameof(brain))
+				rel_take(src, nameof(brain))
 				icon_state = "3"
 				return ITEM_INTERACT_SUCCESS
 		if(4)

@@ -48,8 +48,8 @@ CAPABILITIES(/obj/machinery/lapvend)
 /obj/machinery/lapvend/proc/reset_order()
 	set_state(0)
 	devtype = 0
-	own_clear(src, nameof(fabricated_laptop), OWN_DELETE)
-	own_clear(src, nameof(fabricated_tablet), OWN_DELETE)
+	rel_clear(src, nameof(fabricated_laptop))
+	rel_clear(src, nameof(fabricated_tablet))
 	dev_cpu = 1
 	dev_battery = 1
 	dev_disk = 1
@@ -283,12 +283,12 @@ CAPABILITIES(/obj/machinery/lapvend)
 				fabricated_laptop.screen_on = 0
 				fabricated_laptop.set_anchored(FALSE)
 				fabricated_laptop.update_icon()
-				own_take(src, nameof(fabricated_laptop))
+				rel_take(src, nameof(fabricated_laptop))
 			else if((devtype == 2) && fabricated_tablet)
 				if(fabricated_tablet.battery_module)
 					fabricated_tablet.battery_module.charge_to_full()
 				fabricated_tablet.forceMove(src.loc)
-				own_take(src, nameof(fabricated_tablet))
+				rel_take(src, nameof(fabricated_tablet))
 			ping("Enjoy your new product!")
 			set_state(3)
 			return TRUE

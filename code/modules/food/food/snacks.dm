@@ -250,7 +250,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 			var/obj/item/reagent_containers/food/snacks/S = slice
 			for(var/mob/living/F in food_inserted_micros)
 				F.forceMove(S)
-				own_transfer(src, nameof(food_inserted_micros), S, nameof(S.food_inserted_micros), F)
+				rel_move(src, nameof(food_inserted_micros), S, nameof(S.food_inserted_micros), F)
 	on_slice_extra()
 	consume(src, user)
 	return OP_OK
@@ -334,7 +334,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 	if(reagents)
 		reagents.trans_to_mob(user, bitesize, CHEM_INGEST)
 	// On_Consume() deletes the food once it is empty: the emote fires for a finished meal.
-	after(user, 5, /proc/food_finished_emote, with = list(user, !reagents?.total_volume))
+	after(user, 0.5 SECONDS, GLOBAL_PROC_REF(food_finished_emote), with = list(user, !reagents?.total_volume))
 	On_Consume(user)
 
 //////////////////////////////////////////////////
@@ -3947,7 +3947,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	var/mob/user = A.actor
 	user.put_in_hands( pizza )
 	to_chat(user, span_warning("You take \the [src.pizza] out of \the [src]."))
-	own_take(src, nameof(pizza))
+	rel_take(src, nameof(pizza))
 	update_icon()
 	return OP_OK
 

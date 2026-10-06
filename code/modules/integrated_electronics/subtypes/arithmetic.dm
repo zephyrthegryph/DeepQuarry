@@ -51,6 +51,7 @@
 
 /obj/item/integrated_circuit/arithmetic/subtraction/do_work()
 	var/datum/integrated_io/A = inputs[1]
+	A.pull_data()
 	if(!isnum(A.data))
 		return
 	var/result = A.data
@@ -80,6 +81,7 @@
 
 /obj/item/integrated_circuit/arithmetic/multiplication/do_work()
 	var/datum/integrated_io/A = inputs[1]
+	A.pull_data()
 	if(!isnum(A.data))
 		return
 	var/result = A.data
@@ -107,6 +109,7 @@
 
 /obj/item/integrated_circuit/arithmetic/division/do_work()
 	var/datum/integrated_io/A = inputs[1]
+	A.pull_data()
 	if(!isnum(A.data))
 		return
 	var/result = A.data

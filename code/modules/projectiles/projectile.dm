@@ -202,7 +202,7 @@ CAPABILITIES(/obj/item/projectile)
 
 /obj/item/projectile/proc/record_hitscan_start(datum/point/pcache)
 	if(pcache)
-		own_clear(src, nameof(beam_segments), OWN_DELETE)
+		rel_clear(src, nameof(beam_segments))
 		rel_add(src, nameof(beam_segments), pcache) //record start.
 		rel_set(src, nameof(beam_index), pcache)
 
@@ -498,7 +498,7 @@ CAPABILITIES(/obj/item/projectile)
 // its casing forgets it.
 
 /obj/item/projectile/proc/cleanup_beam_segments()
-	own_clear(src, nameof(beam_segments), OWN_DELETE) // beam_index names one of these: its view clears
+	rel_clear(src, nameof(beam_segments)) // beam_index names one of these: its view clears
 
 /obj/item/projectile/proc/vol_by_damage()
 	if(damage || agony)

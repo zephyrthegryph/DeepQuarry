@@ -339,7 +339,7 @@ CAPABILITIES(/obj/machinery/partslathe)
 	if(copy_board)
 		visible_message(span_notice("[copy_board] is ejected from [src]'s circuit reader."))
 		copy_board.forceMove(src.loc)
-		own_take(src, nameof(/obj/machinery/partslathe::copy_board))
+		rel_take(src, nameof(/obj/machinery/partslathe::copy_board))
 	return TRUE
 
 /obj/machinery/partslathe/proc/ui_act_remove_mat(datum/act/op/A, raw_amount, id)

@@ -180,7 +180,7 @@ BLOOD_VOLUME_SURVIVE = 40
 		return
 	if(!our)
 		log_runtime("[src] has no blood reagent, proceeding with fallback reinitialization.")
-		own_clear(src, nameof(vessel), OWN_DELETE)
+		rel_clear(src, nameof(vessel))
 		make_blood(amount)
 		if(!vessel)
 			log_runtime("Failed to re-initialize blood datums on [src]!")

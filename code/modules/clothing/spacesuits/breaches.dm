@@ -64,7 +64,7 @@ CAPABILITIES(/obj/item/clothing/suit/space)
 
 		if(B.class <= amount_left)
 			amount_left -= B.class
-			own_remove(src, nameof(breaches), B)
+			rel_remove(src, nameof(breaches), B)
 		else
 			B.class	-= amount_left
 			amount_left = 0
@@ -140,7 +140,7 @@ CAPABILITIES(/obj/item/clothing/suit/space)
 
 	for(var/datum/breach/B in breaches?.Copy())
 		if(!B.class)
-			own_remove(src, nameof(breaches), B)
+			rel_remove(src, nameof(breaches), B)
 		else
 			damage += B.class
 			if(B.breach_type == BRUTE)

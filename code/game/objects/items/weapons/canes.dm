@@ -38,7 +38,7 @@ CAPABILITIES(/obj/item/cane/concealed)
 		user.put_in_hands(src)
 		user.update_inv_l_hand(0)
 		user.update_inv_r_hand()
-		own_take(src, nameof(concealed_blade))
+		rel_take(src, nameof(concealed_blade))
 	return OP_OK
 
 /obj/item/cane/concealed/proc/blade_sheathed(datum/act/op/A)

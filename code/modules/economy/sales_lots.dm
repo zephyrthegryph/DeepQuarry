@@ -14,7 +14,7 @@
 
 /obj/structure/closet/crate/proc/void_shipping_ledger(reason)
 	shipping_ledger?.void_shipping_ledger(reason)
-	own_take(src, nameof(shipping_ledger))
+	rel_take(src, nameof(shipping_ledger))
 	shipping_ledger_snapshot = null
 
 /obj/structure/closet/crate/proc/freight_snapshot()

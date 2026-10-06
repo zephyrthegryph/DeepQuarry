@@ -177,7 +177,7 @@
 		return FALSE
 	rel_set(src, nameof(station_simulation), new /datum/generated_station_simulation(station_spec))
 	rel_set(src, nameof(station_director), new /datum/generated_station_director(station_simulation))
-	own_take_all(src, nameof(station_controls))
+	rel_take(src, nameof(station_controls))
 	var/list/controlled_departments = list()
 	for(var/obj/effect/landmark/generated_station_department_core/core in station_materialization?.control_landmarks)
 		var/datum/generated_station_layout_node/node
@@ -252,7 +252,7 @@
 	repairer.min_x = station_materialization.origin_x
 	repairer.min_y = station_materialization.origin_y
 	var/succeeded = repairer.finalize_furnishing_access()
-	own_take(repairer, nameof(repairer.result))
+	rel_take(repairer, nameof(repairer.result))
 	spent(repairer)
 	return succeeded
 

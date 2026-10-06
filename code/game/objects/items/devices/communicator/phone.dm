@@ -140,7 +140,7 @@
 			continue
 		to_chat(voice, span_danger("[icon2html(src,voice.client)] [reason]."))
 		visible_message(span_danger("[icon2html(src,viewers(src))] [reason]."))
-		own_remove(src, nameof(voice_mobs), voice)
+		rel_remove(src, nameof(voice_mobs), voice)
 		changed(src)
 
 	for(var/obj/item/communicator/comm in communicating) //Now we handle real communicators.

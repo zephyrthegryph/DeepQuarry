@@ -107,7 +107,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_ove
 	bcell.update_icon()
 	bcell.forceMove(get_turf(loc))
 	user.put_in_any_hand_if_possible(bcell)
-	own_take(src, nameof(bcell))
+	rel_take(src, nameof(bcell))
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
 	update_icon()
 	return OP_OK

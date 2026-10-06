@@ -105,7 +105,7 @@ MSG_DEF_SELF(cablelayer/no_cable, "There's no more cable on the reel.")
 		return
 	cable.use(amount)
 	if(QDELETED(cable))
-		own_take(src, nameof(cable))
+		rel_take(src, nameof(cable))
 	return 1
 
 /obj/machinery/cablelayer/proc/reset()

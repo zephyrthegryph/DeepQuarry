@@ -373,7 +373,7 @@ CAPABILITIES(/obj/item/organ/external)
 	for(var/datum/affliction/tissue_necrosis/N in afflictions_here())
 		if(N.body)
 			N.body.remove_affliction(N)
-		if(!own_remove(src, nameof(detached_afflictions), N))
+		if(!rel_remove(src, nameof(detached_afflictions), N))
 			spent(N)
 	integrity_dirty = TRUE
 
@@ -1119,7 +1119,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			stump.update_damages()
 		victim?.body?.on_status_changed()
 
-	after(victim, 0.1 SECONDS, /proc/droplimb_refresh_icons, with = list(victim))
+	after(victim, 0.1 SECONDS, GLOBAL_PROC_REF(droplimb_refresh_icons), with = list(victim))
 	dir = 2
 
 	var/atom/droploc = victim.drop_location()

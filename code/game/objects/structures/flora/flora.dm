@@ -343,7 +343,7 @@ MSG_DEF_SELF(pottedplant/full, "It won't fit in, there already appears to be som
 /obj/structure/flora/pottedplant/proc/attack_hand_timed_done(mob/user)
 	to_chat(user, span_filter_notice("You find [icon2html(stored_item, user.client)] [stored_item] in [src]!"))
 	stored_item.forceMove(get_turf(src))
-	own_take(src, nameof(stored_item))
+	rel_take(src, nameof(stored_item))
 
 /obj/structure/flora/pottedplant/large
 	name = "large potted plant"

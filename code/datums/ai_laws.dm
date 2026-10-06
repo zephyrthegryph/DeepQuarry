@@ -122,7 +122,7 @@ CAPABILITIES(/datum/ai_laws)
 	if(law_borg) //Making it possible for slaved borgs to see a different law 0 than their AI. --NEO
 		rel_set(src, nameof(zeroth_law_borg), new /datum/ai_law/zero(law_borg))
 	else
-		own_clear(src, nameof(zeroth_law_borg), OWN_DELETE)
+		rel_clear(src, nameof(zeroth_law_borg))
 	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/add_ion_law(law)
@@ -219,19 +219,19 @@ CAPABILITIES(/datum/ai_laws)
 *	Clear Laws	*
 ****************/
 /datum/ai_laws/proc/clear_zeroth_laws()
-	own_clear(src, nameof(zeroth_law), OWN_DELETE)
-	own_clear(src, nameof(zeroth_law_borg), OWN_DELETE)
+	rel_clear(src, nameof(zeroth_law))
+	rel_clear(src, nameof(zeroth_law_borg))
 
 /datum/ai_laws/proc/clear_ion_laws()
-	own_clear(src, nameof(ion_laws), OWN_DELETE)
+	rel_clear(src, nameof(ion_laws))
 	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/clear_inherent_laws()
-	own_clear(src, nameof(inherent_laws), OWN_DELETE)
+	rel_clear(src, nameof(inherent_laws))
 	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/clear_supplied_laws()
-	own_clear(src, nameof(supplied_laws), OWN_DELETE)
+	rel_clear(src, nameof(supplied_laws))
 	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/get_formatted_laws()

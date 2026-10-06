@@ -30,7 +30,7 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 			to_chat(user, span_filter_notice("You wipe the disk data."))
 			name = initial(name)
 			desc = initial(name)
-			own_clear(src, nameof(genes), OWN_DELETE)
+			rel_clear(src, nameof(genes))
 			genesource = "unknown"
 	return TRUE
 
@@ -106,7 +106,7 @@ CAPABILITIES(/obj/machinery/botany)
 		if(loaded_disk)
 			loaded_disk.forceMove(get_turf(src))
 			visible_message(span_filter_notice("[icon2html(src,viewers(src))] [src] beeps and spits out [loaded_disk]."))
-			own_take(src, nameof(loaded_disk))
+			rel_take(src, nameof(loaded_disk))
 
 EXTEND_INTERACTIONS(/obj/machinery/botany, \
 	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_open_ui_impl)), \
@@ -234,7 +234,7 @@ EXTEND_INTERACTIONS(/obj/machinery/botany, \
 	seed.update_seed()
 	visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [seed].")
 
-	own_take(src, nameof(seed))
+	rel_take(src, nameof(seed))
 	return TRUE
 
 /obj/machinery/botany/proc/ui_act_eject_disk(datum/act/op/A)
@@ -244,7 +244,7 @@ EXTEND_INTERACTIONS(/obj/machinery/botany, \
 		return
 	loaded_disk.forceMove(get_turf(src))
 	visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [loaded_disk].")
-	own_take(src, nameof(/obj/machinery/botany::loaded_disk))
+	rel_take(src, nameof(/obj/machinery/botany::loaded_disk))
 	return TRUE
 
 /obj/machinery/botany/extractor/proc/ui_act_scan_genome(datum/act/op/A)
@@ -261,7 +261,7 @@ EXTEND_INTERACTIONS(/obj/machinery/botany, \
 		degradation = 0
 
 	consume(seed)
-	own_take(src, nameof(seed))
+	rel_take(src, nameof(seed))
 	return TRUE
 
 /obj/machinery/botany/extractor/proc/ui_act_get_gene(datum/act/op/A, get_gene)

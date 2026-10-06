@@ -92,7 +92,7 @@ CAPABILITIES(/obj/machinery/computer/card)
 	var/obj/item/card/id/I = scan
 	if(!I)
 		return
-	own_take(src, nameof(scan))
+	rel_take(src, nameof(scan))
 	hand_over(user, I)
 
 /// The subject's card comes out, into a person's empty hand, else onto the floor.
@@ -100,7 +100,7 @@ CAPABILITIES(/obj/machinery/computer/card)
 	var/obj/item/card/id/I = modify
 	if(!I)
 		return
-	own_take(src, nameof(modify))
+	rel_take(src, nameof(modify))
 	hand_over(user, I)
 
 /obj/machinery/computer/card/proc/hand_over(mob/user, obj/item/card/id/I)

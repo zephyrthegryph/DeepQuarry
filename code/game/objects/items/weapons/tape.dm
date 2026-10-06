@@ -139,7 +139,7 @@
 	user.drop_from_inventory(src)
 	stuck.forceMove(get_turf(src))
 	user.put_in_hands(stuck)
-	own_take(src, nameof(stuck))
+	rel_take(src, nameof(stuck))
 	overlays = null
 	consume(src, user)
 	return TRUE

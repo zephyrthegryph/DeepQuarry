@@ -121,8 +121,8 @@ CAPABILITIES(/datum/ntnet)
 
 // Builds lists that contain downloadable software.
 /datum/ntnet/proc/build_software_lists()
-	own_take_all(src, nameof(available_station_software))
-	own_take_all(src, nameof(available_antag_software))
+	rel_take(src, nameof(available_station_software))
+	rel_take(src, nameof(available_antag_software))
 	for(var/F in typesof(/datum/computer_file/program))
 		var/datum/computer_file/program/prog = new F
 		// Invalid type (shouldn't be possible but just in case), invalid filetype (not executable program) or invalid filename (unset program)
@@ -136,7 +136,7 @@ CAPABILITIES(/datum/ntnet)
 
 // Builds lists that contain downloadable software.
 /datum/ntnet/proc/build_news_list()
-	own_take_all(src, nameof(available_news))
+	rel_take(src, nameof(available_news))
 	for(var/F in typesof(/datum/computer_file/data/news_article/))
 		var/datum/computer_file/data/news_article/news = new F(1)
 		if(news.stored_data)

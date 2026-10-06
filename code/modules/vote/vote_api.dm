@@ -16,4 +16,4 @@
 /// `V` is going away: stop tracking it when it is the running vote.
 /datum/system/vote/proc/forget_vote(datum/vote/V)
 	if(active_vote == V)
-		own_clear(src, nameof(active_vote))
+		rel_clear(src, nameof(active_vote))

@@ -232,7 +232,7 @@ CAPABILITIES(/datum/transcore_db)
 // Remove a mind_record from the backup-checking list.  Keeps track of it in has_left // Why do we do that? ~Leshana
 /datum/transcore_db/proc/stop_backup(datum/transhuman/mind_record/MR)
 	ASSERT(MR)
-	own_transfer(src, nameof(backed_up), src, nameof(has_left), "[MR.mindname]", "[MR.mindname]")
+	rel_move(src, nameof(backed_up), src, nameof(has_left), "[MR.mindname]", "[MR.mindname]")
 	EXPIRY_STAMP(MR, cryo_at, CLOCK_WORLD)
 
 // Called from body_record to add itself to the transcore.
@@ -253,7 +253,7 @@ CAPABILITIES(/datum/transcore_db)
 	GLOB.global_announcer.autosay("An emergency core dump has been initiated!", "TransCore Oversight", "Medical")
 
 	for(var/name in backed_up.Copy())
-		own_transfer(src, nameof(backed_up), disk, nameof(disk.stored), name, name) // the disk owns the dumped records
+		rel_move(src, nameof(backed_up), disk, nameof(disk.stored), name, name) // the disk owns the dumped records
 	core_dumped = TRUE
 	return length(disk.stored)
 

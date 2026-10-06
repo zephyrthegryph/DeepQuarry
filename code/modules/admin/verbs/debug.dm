@@ -658,7 +658,8 @@ ADMIN_VERB(view_runtimes, R_DEBUG, "View Runtimes", "Opens the runtime viewer.",
 		if(GLOB.total_runtimes >= 100000)
 			warning = "There are a TON of runtimes, clicking any button (especially \"linear\") WILL LIKELY crash the server"
 		// Not using TGUI alert, because it's view runtimes, stuff is probably broken
-		tgui_alert_async(user, "[warning]. Proceed with caution. If you really need to see the runtimes, download the runtime log and view it in a text editor.", "HEED THIS WARNING CAREFULLY MORTAL")
+		if(user.mob?.client)
+			open_request(user.mob, /datum/prompt/choice, null, answerer = user.mob, question = "[warning]. Proceed with caution. If you really need to see the runtimes, download the runtime log and view it in a text editor.", title = "HEED THIS WARNING CAREFULLY MORTAL", choices = list("Ok"), buttons = TRUE, timeout = 0)
 
 ADMIN_VERB(change_weather, R_DEBUG|R_EVENT, "Change Weather", "Changes the current weather.", ADMIN_CATEGORY_DEBUG_EVENTS)
 	var/datum/planet/planet = verb_ask(user, "a8", args, /datum/prompt/choice, question = "Which planet do you want to modify the weather on?", title = "Change Weather", choices = SSplanets.planets)

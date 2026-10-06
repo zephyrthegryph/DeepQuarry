@@ -199,11 +199,11 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 	choice.forceMove(get_turf(src))
 	playsound(src, tool.usesound, 50, TRUE)
 	if(choice == protean_brain)
-		own_take(src, nameof(protean_brain))
+		rel_take(src, nameof(protean_brain))
 	else if(choice == protean_refactory)
-		own_take(src, nameof(protean_refactory))
+		rel_take(src, nameof(protean_refactory))
 	else if(choice == protean_orchestrator)
-		own_take(src, nameof(protean_orchestrator))
+		rel_take(src, nameof(protean_orchestrator))
 	return OP_OK
 
 /// Refactory materials cached across the revive (it wipes them), or null.
@@ -332,9 +332,9 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 	reconstitute_organs_done(P)
 
 /obj/machinery/protean_reconstitutor/proc/reconstitute_organs_done(mob/living/carbon/human/protean/P)
-	own_take(src, nameof(protean_refactory))
-	own_take(src, nameof(protean_brain))
-	own_take(src, nameof(protean_orchestrator))
+	rel_take(src, nameof(protean_refactory))
+	rel_take(src, nameof(protean_brain))
+	rel_take(src, nameof(protean_orchestrator))
 	after(src, finalize_time, PROC_REF(reconstitute_finish), with = list(P))
 
 /// Reconstitution step 3: revive and release the finished protean.

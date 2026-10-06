@@ -176,7 +176,7 @@
 		if(body_effect_origins && (path in body_effect_origins))
 			rel_add(src, nameof(body_effect_origins), null, path)
 			if(!length(body_effect_origins))
-				own_clear(src, nameof(body_effect_origins), OWN_DELETE)
+				rel_clear(src, nameof(body_effect_origins))
 		return
 	var/datum/body_effect_origin/O = new
 	rel_set(O, nameof(O.origin), origin)

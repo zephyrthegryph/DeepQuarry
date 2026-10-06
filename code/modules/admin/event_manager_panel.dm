@@ -381,7 +381,7 @@ CAPABILITIES(/datum/event_manager_panel)
 		return
 	NE.severity = EC.severity
 	// The container adopts the drafted meta; the service starts a fresh draft below.
-	own_transfer(service, nameof(/datum/system/events::new_event), EC, nameof(/datum/event_container::event_pool))
+	rel_move(service, nameof(/datum/system/events::new_event), EC, nameof(/datum/event_container::event_pool))
 	rel_add(EC, nameof(/datum/event_container::available_events), NE)
 	log_and_message_admins("has added \a [GLOB.severity_to_string[NE.severity]] event '[NE.name]' of type [NE.event_type] with weight [NE.weight].", user)
 	rel_set(service, nameof(/datum/system/events::new_event), new /datum/event_meta)

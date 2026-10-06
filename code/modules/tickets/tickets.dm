@@ -449,7 +449,7 @@ CAPABILITIES(/datum/ticket)
 	if(state != AHELP_ACTIVE)
 		return
 	EXPIRY_STAMP(src, closed_at, CLOCK_WORLD)
-	own_clear(src, nameof(statclick), OWN_DELETE)
+	rel_clear(src, nameof(statclick))
 	own_take_member(GLOB.tickets, nameof(/datum/tickets::active_tickets), src) // Close()/Resolve() re-adopt it via ListInsert()
 	if(initiator() && initiator().current_ticket() == src)
 		initiator().current_ticket_id = null

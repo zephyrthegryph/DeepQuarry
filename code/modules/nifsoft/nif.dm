@@ -190,7 +190,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	vis_update()
 	if(H)
 		revoke(H, granted_verb(/mob/living/carbon/human/proc/set_nif_examine), src)
-	own_clear(src, nameof(menu_ref), OWN_DELETE)
+	rel_clear(src, nameof(menu_ref))
 	unregister_human()
 	install_done = null
 	changed(src)

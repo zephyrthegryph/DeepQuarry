@@ -396,11 +396,11 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 				target_urgency = urgency
 
 		if(MyBeam && !valid_target(MyBeam.target()))
-			own_clear(src, nameof(MyBeam), OWN_DELETE)
+			rel_clear(src, nameof(MyBeam))
 
 		if(Target)
 			if(MyBeam && MyBeam.target() != Target)
-				own_clear(src, nameof(MyBeam), OWN_DELETE)
+				rel_clear(src, nameof(MyBeam))
 
 			if(valid_target(Target))
 				if(!MyBeam)
@@ -446,7 +446,7 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 	if(!isnull(Target))
 		rel_clear(src, nameof(Target))
 	if(MyBeam)
-		own_clear(src, nameof(MyBeam), OWN_DELETE)
+		rel_clear(src, nameof(MyBeam))
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/unique_patient_checks(mob/living/L)	// Anything special for subtypes. Does it only work on Robots? Fleshies? A species?
 	. = TRUE

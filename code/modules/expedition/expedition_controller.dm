@@ -70,7 +70,7 @@ CAPABILITIES(/datum/expedition_teardown_job)
 		controller().free_z |= z_level
 	controller().teardown_z -= "[z_level]"
 	log_world("Expedition: released [site_name], z[z_level] recycled after [yield_count] budget yields (reason: [reason]).")
-	own_clear(src, nameof(site), OWN_DELETE)
+	rel_clear(src, nameof(site))
 	spent(src)
 
 // The expedition system (was SSexpedition). On demand: the lifecycle poll is parked

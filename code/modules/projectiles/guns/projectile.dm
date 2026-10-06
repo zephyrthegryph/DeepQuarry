@@ -60,7 +60,7 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 				for(var/i in 1 to rand(0, max_shells))
 					if(!length(loaded))
 						break
-					own_remove(src, nameof(loaded), loaded[1])
+					rel_remove(src, nameof(loaded), loaded[1])
 		if(ispath(magazine_type) && (load_method & MAGAZINE))
 			rel_set(src, nameof(ammo_magazine), new magazine_type(src))
 			allowed_magazines += /obj/item/ammo_magazine/smart
@@ -145,7 +145,7 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 		act_message(user, src, MSG_SELF(span_notice("You remove [ammo_magazine] from %T%.")), MSG_OTHERS("%U% removes [ammo_magazine] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 		ammo_magazine.update_icon()
-		own_take(src, nameof(ammo_magazine))
+		rel_take(src, nameof(ammo_magazine))
 		user.hud_used?.update_ammo_hud(user, src)
 	else if(length(loaded))
 		//presumably, if it can be speed-loaded, it can be speed-unloaded.
@@ -156,7 +156,7 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 				for(var/obj/item/ammo_casing/C in loaded)
 					C.forceMove(T)
 					count++
-				own_take_all(src, nameof(loaded))
+				rel_take(src, nameof(loaded))
 			if(count)
 				act_message(user, src, MSG_SELF(span_notice("You unload [count] round\s from %T%.")), MSG_OTHERS("%U% unloads %T%."))
 		else if(load_method & SINGLE_CASING)
@@ -207,7 +207,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		if(auto_eject_sound)
 			playsound(src, auto_eject_sound, 40, 1)
 		ammo_magazine.update_icon()
-		own_take(src, nameof(ammo_magazine))
+		rel_take(src, nameof(ammo_magazine))
 		update_icon() //make sure to do this after unsetting ammo_magazine
 		user.hud_used?.update_ammo_hud(user, src)
 
@@ -552,7 +552,7 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 		return STEP_DONE
 	var/obj/item/ammo_casing/rd = H.stored_ammo[length(H.stored_ammo)]
 	rd.forceMove(src)
-	own_transfer(H, nameof(H.stored_ammo), src, nameof(loaded), rd)
+	rel_move(H, nameof(H.stored_ammo), src, nameof(loaded), rd)
 	moveElement(loaded, length(loaded), 1) //to the head of the list
 	play_sfx(src, SFX_WEAPONS_EMPTY)
 	H.update_icon()
@@ -618,7 +618,7 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 						break
 					if(C.caliber == caliber)
 						C.forceMove(src)
-						own_transfer(AM, nameof(AM.stored_ammo), src, nameof(loaded), C) //should probably go inside an ammo_magazine proc, but I guess less proc calls this way...
+						rel_move(AM, nameof(AM.stored_ammo), src, nameof(loaded), C) //should probably go inside an ammo_magazine proc, but I guess less proc calls this way...
 						count++
 				if(count)
 					act_message(user, src, MSG_SELF(span_notice("You load [count] round\s into %T%.")), MSG_OTHERS("%U% reloads %T%."))

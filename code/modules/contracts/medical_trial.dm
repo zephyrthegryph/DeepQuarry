@@ -70,7 +70,7 @@ CAPABILITIES(/datum/contract/medical_trial)
 
 /datum/contract/medical_trial/proc/initialize_trial(cohort, target_metric)
 	rel_set(src, nameof(profile), new /datum/medical_trial_profile(cohort, target_metric))
-	own_take_all(src, nameof(participants))
+	rel_take(src, nameof(participants))
 	deadline_duration = 90 MINUTES
 	title = "Experimental Medication Study: [profile.code_name]"
 	description = "VeyMed requests a [profile.cohort] study of [profile.code_name], provisionally indicated for [profile.target_metric] conditions. [profile.protocol_instructions()] For each of three subjects, fax one packet containing the signed consent form, a pre-exposure body-scanner printout, and a body-scanner printout taken at least one minute after exposure."

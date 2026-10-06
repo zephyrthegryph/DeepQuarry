@@ -925,7 +925,7 @@ CAPABILITIES(/obj/item/paiparts)
 		paicard.forceMove(get_turf(src))
 		var/mob/living/silicon/pai/AI = paicard.pai
 		AI.reset_perspective() // return to the card
-		own_take(src, nameof(paicard))
+		rel_take(src, nameof(paicard))
 		name = initial(src.name)
 		to_chat(AI, span_notice("You feel a tad claustrophobic as your mind closes back into your card, ejecting from \the [initial(src.name)]."))
 		if(user)
