@@ -1,0 +1,5 @@
+/obj/structure/snowman|human|none => |
+/obj/structure/snowman|robot|none => |
+/obj/structure/snowman|ai|none => |
+/obj/structure/snowman|ghost|none => |
+
