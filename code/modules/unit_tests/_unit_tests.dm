@@ -1145,6 +1145,8 @@
 #include "interim_holobadge_credentials.dm"
 #include "interim_nanotech_permit_reregistration.dm"
 
+#include "interim_teleport_incantation.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

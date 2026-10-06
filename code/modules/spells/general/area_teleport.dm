@@ -83,6 +83,7 @@
 /datum/spell/area_teleport/invocation(mob/user, area/chosenarea)
 	if(!istype(chosenarea))
 		return //can't have that, can we
+	invocation = initial(invocation)
 	if(!invocation_area || !chosenarea)
 		..()
 	else
