@@ -1674,3 +1674,6 @@ The nine forms of `code/engine/lifeforms/` (final_api.html section 6 "Lifecycle 
 * **Input handlers take their actor from the input.** A converted `Click()`/`MouseDrop()`/`MouseEntered()` override read `usr`; the generated native
   override reads it once and hands the handler `A.actor`. An admin or callback path that set `usr` by hand runs under `with_actor()`, which restores
   the previous `usr` even when the callback throws (the hand-written swaps left it set).
+- Laptop vendor: the legacy handlers' tgui `state` parameter shadowed the vendor's order state, so "pick device" always refused and the hardware buttons were open in every state. The handlers now read the vendor's own order state.
+- Ticket windows: the data helpers no longer shadow the ticket's `state` (the panel shows open/resolved/closed again). "New ticket" asks its questions (ckey, text, level, and duplicate only when the player already has a ticket) as `asks()` steps before the handler runs, so an offline ckey is reported after all the answers instead of after the first. "List tickets" is an `asks()` step.
+- Circuit export window: its data reads the assembly's data through `tgui_data(user)`.
