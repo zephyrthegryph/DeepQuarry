@@ -742,14 +742,18 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/bell)
 
 CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
 	op("controls", in_hand(), label("Open shock collar controls"), then(PROC_REF(shock_collar_controls_opened)))
+	interface("ShockCollar")
+	without("ui_open")
+	op("freq", ui_act("freq", arg("freq", schema_text(4096))), then(PROC_REF(ui_act_freq)))
+	op("code", ui_act("code", arg("code", num())), then(PROC_REF(ui_act_code)))
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("tag", ui_act("tag"), asks(/datum/prompt/text/shock_collar_ui_tag, step = "tag"), then(PROC_REF(ui_act_tag)))
 
 /obj/item/clothing/accessory/collar/shock/proc/shock_collar_controls_opened(datum/act/op/A)
 	if(!ishuman(A.actor))
 		return OP_OK
 	tgui_interact(A.actor)
 	return OP_OK
-
-DECLARE_UI(/obj/item/clothing/accessory/collar/shock, "ShockCollar")
 
 /obj/item/clothing/accessory/collar/shock/tgui_static_data(mob/user)
 	var/list/data = ..()
@@ -762,31 +766,30 @@ DECLARE_UI(/obj/item/clothing/accessory/collar/shock, "ShockCollar")
 
 	return data
 
-UI_DATA(/obj/item/clothing/accessory/collar/shock, "on:num", "frequency:num", "code")
+/obj/item/clothing/accessory/collar/shock/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["on"] = on
+	data["frequency"] = frequency
+	data["code"] = code
+	return data
 
-UI_ACT(/obj/item/clothing/accessory/collar/shock, "freq", ui_act_freq, UI_ARG_TEXT("freq"))
-UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock, ui_act_freq)
-	var/new_freq = sanitize_frequency(params["freq"])
+/obj/item/clothing/accessory/collar/shock/proc/ui_act_freq(datum/act/op/A, freq)
+	var/new_freq = sanitize_frequency(freq)
 	set_frequency(new_freq)
 	. = TRUE
 
-UI_ACT(/obj/item/clothing/accessory/collar/shock, "code", ui_act_code, UI_ARG_NUM("code"))
-UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock, ui_act_code)
-	code = CLAMP(params["code"], 1, 100)
+/obj/item/clothing/accessory/collar/shock/proc/ui_act_code(datum/act/op/A, code_arg)
+	code = CLAMP(code_arg, 1, 100)
 	. = TRUE
 
-UI_ACT(/obj/item/clothing/accessory/collar/shock, "power", ui_act_power)
-UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock, ui_act_power)
+/obj/item/clothing/accessory/collar/shock/proc/ui_act_power(datum/act/op/A)
 	on = !on
 	if(!istype(src, /obj/item/clothing/accessory/collar/shock/bluespace))
 		icon_state = "collar_shk[on]"
 	. = TRUE
 
-UI_ACT(/obj/item/clothing/accessory/collar/shock, "tag", ui_act_tag)
-UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock, ui_act_tag)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/text/shock_collar_ui_tag, TYPE_PROC_REF(/datum/tgui, shock_collar_tag_answered), subject = src, answerer = ui.user)
+/obj/item/clothing/accessory/collar/shock/proc/ui_act_tag(datum/act/op/A)
+	return apply_ui_tag(A.actor, A.step_value("tag"))
 
 /obj/item/clothing/accessory/collar/shock/proc/apply_ui_tag(mob/user, sanitized)
 	if(!length(sanitized))
@@ -799,35 +802,15 @@ UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock, ui_act_tag)
 		desc = initial(desc) + " The tag says \"[sanitized]\"."
 	. = TRUE
 
-// This content-only handler belongs to the exact original UI that opened the question.
-/datum/tgui/proc/shock_collar_tag_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/obj/item/clothing/accessory/collar/shock/collar = context.request.subject
-	if(collar.apply_ui_tag(user, context.answer.value))
-		SStgui.update_uis(collar)
-
 /datum/prompt/text/shock_collar_ui_tag
 	title = "Set Tag"
 	question = "Tag text?"
 	max_len = MAX_NAME_LEN
 	name_text = TRUE
 	timeout = 0
-	recheck_on_open = TRUE
 
 /datum/prompt/text/shock_collar_ui_tag/normalize(given)
 	return istext(given) ? strip_name_tokens(given) : given
-
-/datum/prompt/text/shock_collar_ui_tag/recheck_extra()
-	var/datum/tgui/original_ui = owner
-	var/obj/item/clothing/accessory/collar/shock/collar = subject
-	if(!istype(original_ui) || QDELETED(original_ui) || !istype(collar) || QDELETED(collar) || QDELETED(answerer))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!collar.ui_act_allowed(original_ui.user, "tag", original_ui, original_ui.state()))
-		return "the tag action is unavailable"
-	return null
 
 /obj/item/clothing/accessory/collar/shock/receive_signal(datum/signal/signal)
 	if(!signal || signal.encryption != code)
@@ -1093,14 +1076,17 @@ CAPABILITIES(/datum/prompt/text/collar_tag)
 	data["target_size_max"] = RESIZE_MAXIMUM_DORMS
 	return data
 
-UI_DATA(/obj/item/clothing/accessory/collar/shock/bluespace, "target_size:num")
+/obj/item/clothing/accessory/collar/shock/bluespace/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	data["target_size"] = target_size
+	return data
 
-UI_ACT(/obj/item/clothing/accessory/collar/shock/bluespace, "size", ui_act_size, UI_ARG_NUM("size"))
-UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock/bluespace, ui_act_size)
-	target_size = clamp((params["size"]/100), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS)
-	to_chat(ui.user, span_notice("You set the size to [target_size * 100]%"))
+/obj/item/clothing/accessory/collar/shock/bluespace/proc/ui_act_size(datum/act/op/A, size)
+	var/mob/user = A.actor
+	target_size = clamp((size/100), RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS)
+	to_chat(user, span_notice("You set the size to [target_size * 100]%"))
 	if(target_size < RESIZE_MINIMUM || target_size > RESIZE_MAXIMUM)
-		to_chat(ui.user, span_notice("Note: Resizing limited to 25-200% automatically while outside dormatory areas.")) //hint that we clamp it in resize
+		to_chat(user, span_notice("Note: Resizing limited to 25-200% automatically while outside dormatory areas.")) //hint that we clamp it in resize
 	. = TRUE
 
 /obj/item/clothing/accessory/collar/shock/bluespace/receive_signal(datum/signal/signal)
@@ -1147,6 +1133,7 @@ UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock/bluespace, ui_act_size)
 
 CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace)
 	op("bluespace_collar_wire_signaler", item(/obj/item/assembly/signaler), label("Wire signaler"), then(PROC_REF(bluespace_collar_wire_signaler)))
+	op("size", ui_act("size", arg("size", num())), then(PROC_REF(ui_act_size)))
 
 /// Old attackby: wire a signaler in, making a modified collar.
 /obj/item/clothing/accessory/collar/shock/bluespace/proc/bluespace_collar_wire_signaler(datum/act/op/A)
@@ -1193,7 +1180,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/modified
 	new /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning(product_turf)
 	return ITEM_INTERACT_SUCCESS
 
-UI_DATA(/obj/item/clothing/accessory/collar/shock/bluespace/modified, "merge:ui_data_obj_item_clothing_accessory_collar_shock_bluespace_modified{target_size:text}")
+/obj/item/clothing/accessory/collar/shock/bluespace/modified/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	var/list/merged_1 = ui_data_obj_item_clothing_accessory_collar_shock_bluespace_modified(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/clothing/accessory/collar/shock/bluespace/modified's window data (declared on its UI_DATA row).
 /obj/item/clothing/accessory/collar/shock/bluespace/modified/proc/ui_data_obj_item_clothing_accessory_collar_shock_bluespace_modified(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -1201,7 +1194,7 @@ UI_DATA(/obj/item/clothing/accessory/collar/shock/bluespace/modified, "merge:ui_
 	data["target_size"] = "code"
 	return data
 
-UI_ACT_OVERRIDE(/obj/item/clothing/accessory/collar/shock/bluespace/modified, ui_act_size)
+/obj/item/clothing/accessory/collar/shock/bluespace/modified/ui_act_size(datum/act/op/A, size)
 	return // no modifying size
 
 /obj/item/clothing/accessory/collar/shock/bluespace/modified/receive_signal(datum/signal/signal)
@@ -1266,7 +1259,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 	to_chat(user, span_notice("The signaler doesn't respond to the connection attempt [src]."))
 	return INTERACTION_HANDLED_PASS
 
-UI_DATA(/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning, "merge:ui_data_obj_item_clothing_accessory_collar_shock_bluespace_malfunctioning{target_size:text}")
+/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	var/list/merged_1 = ui_data_obj_item_clothing_accessory_collar_shock_bluespace_malfunctioning(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning's window data (declared on its UI_DATA row).
 /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning/proc/ui_data_obj_item_clothing_accessory_collar_shock_bluespace_malfunctioning(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -1274,7 +1273,7 @@ UI_DATA(/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning, "mer
 	data["target_size"] = "locked"
 	return data
 
-UI_ACT_OVERRIDE(/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning, ui_act_size)
+/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning/ui_act_size(datum/act/op/A, size)
 	return // no modifying size
 
 /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning/receive_signal(datum/signal/signal)

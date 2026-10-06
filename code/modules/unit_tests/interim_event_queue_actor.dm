@@ -6,7 +6,6 @@
 
 /datum/unit_test/interim_event_queue_actor/proc/check_queue()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
-	var/datum/event_manager_panel/panel = allocate(/datum/event_manager_panel)
 	var/datum/event_container/container = allocate(/datum/event_container)
 	container.severity = EVENT_LEVEL_MUNDANE
 	var/datum/event_meta/first = allocate(/datum/event_meta, EVENT_LEVEL_MUNDANE, "First actual queue fixture", /datum/event/nothing, 1)
@@ -15,7 +14,8 @@
 	rel_add(container, nameof(container.event_pool), second)
 	rel_add(container, nameof(container.available_events), first)
 	rel_add(container, nameof(container.available_events), second)
-	TEST_ASSERT(panel.ui_act_select_event(actor, list("ref" = container), null, null, "select_event"), "the actual panel action requests event selection")
+	// The panel's select_event button (an admin's, on one of the event system's containers) asks the container to select.
+	container.SelectEvent(actor)
 	TEST_ASSERT(istype(SSrequests.open_for(actor), /datum/prompt/choice/queue_event), "the actual container creates one native selection prompt")
 	var/datum/prompt/choice/queue_event/ask = SSrequests.open_for(actor)
 	TEST_ASSERT_EQUAL(ask.answerer, actor, "the actual selection prompt uses the panel's explicit actor")
@@ -26,7 +26,7 @@
 	TEST_ASSERT_EQUAL(container.next_event(), first, "the actual next-event relation resolves the selected object")
 	TEST_ASSERT(!(first in container.available_events), "the queued event leaves actual random availability")
 	TEST_ASSERT(second in container.available_events, "the unselected event remains available")
-	panel.ui_act_select_event(actor, list("ref" = container), null, null, "select_event")
+	container.SelectEvent(actor)
 	TEST_ASSERT(istype(SSrequests.open_for(actor), /datum/prompt/choice/queue_event), "a second real request creates a new native selection prompt")
 	ask = SSrequests.open_for(actor)
 	TEST_ASSERT_EQUAL(ask.answerer, actor, "the second real prompt keeps the explicit actor")
