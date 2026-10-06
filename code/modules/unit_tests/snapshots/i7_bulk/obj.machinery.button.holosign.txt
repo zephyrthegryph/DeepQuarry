@@ -1,5 +1,5 @@
-/obj/machinery/button/holosign|human|none => holosign_toggle,button_press|button_press_item:needs an item
-/obj/machinery/button/holosign|robot|none => holosign_toggle,button_press|gen_robot_interaction_swallow:not possible right now,button_press_item:needs an item
+/obj/machinery/button/holosign|human|none => button_press|button_press_item:needs an item
+/obj/machinery/button/holosign|robot|none => button_press|gen_robot_interaction_swallow:not possible right now,button_press_item:needs an item
 /obj/machinery/button/holosign|ai|none => |
 /obj/machinery/button/holosign|ghost|none => |
-/obj/machinery/button/holosign|human|/obj/item => holosign_toggle,button_press,button_press_item|
+/obj/machinery/button/holosign|human|/obj/item => button_press,button_press_item|

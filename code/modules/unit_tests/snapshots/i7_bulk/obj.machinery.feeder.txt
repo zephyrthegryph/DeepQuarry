@@ -1,6 +1,4 @@
-/obj/machinery/feeder|human|none => feeder_take_beaker|feeder_insert_beaker:needs a Container,feeder_reject:needs an item
-/obj/machinery/feeder|robot|none => feeder_take_beaker|gen_robot_interaction_swallow:not possible right now,feeder_insert_beaker:needs a Container,feeder_reject:needs an item
+/obj/machinery/feeder|human|none => |
+/obj/machinery/feeder|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/feeder|ai|none => |
 /obj/machinery/feeder|ghost|none => |
-/obj/machinery/feeder|human|/obj/item/reagent_containers => feeder_insert_beaker,feeder_reject,feeder_take_beaker|
-/obj/machinery/feeder|human|/obj/item => feeder_reject,feeder_take_beaker|feeder_insert_beaker:needs a Container

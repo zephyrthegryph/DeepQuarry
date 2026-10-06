@@ -1,6 +1,5 @@
-/obj/machinery/computer/arcade/orion_trail|human|none => orion_trail_use|emag_gated:needs a cryptographic sequencer,arcade_ticket_redeem:needs an arcade tickets
-/obj/machinery/computer/arcade/orion_trail|robot|none => orion_trail_use|emag_gated:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now,arcade_ticket_redeem:needs an arcade tickets
+/obj/machinery/computer/arcade/orion_trail|human|none => |emag_gated:needs a cryptographic sequencer
+/obj/machinery/computer/arcade/orion_trail|robot|none => |emag_gated:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/arcade/orion_trail|ai|none => |
 /obj/machinery/computer/arcade/orion_trail|ghost|none => |
-/obj/machinery/computer/arcade/orion_trail|human|/obj/item/stack/arcadeticket => orion_trail_use|emag_gated:needs a cryptographic sequencer,arcade_ticket_redeem:you need 2 tickets to claim a prize
-/obj/machinery/computer/arcade/orion_trail|human|/obj/item/card/emag => emag_gated,orion_trail_use|arcade_ticket_redeem:needs an arcade tickets
+/obj/machinery/computer/arcade/orion_trail|human|/obj/item/card/emag => emag_gated|

@@ -1,6 +1,6 @@
-/obj/machinery/suit_cycler|human|none => suit_cycler_use,suit_cycler_leave|suit_cycler_insert_grab:needs a grab,suit_cycler_insert_helmet:needs a void helmet,suit_cycler_insert_suit:needs a voidsuit
-/obj/machinery/suit_cycler|robot|none => suit_cycler_use,suit_cycler_leave|gen_robot_interaction_swallow:not possible right now,suit_cycler_insert_grab:needs a grab,suit_cycler_insert_helmet:needs a void helmet,suit_cycler_insert_suit:needs a voidsuit
+/obj/machinery/suit_cycler|human|none => gen_hand_interaction_use,gen_verb_interaction_leave|gen_insert_interaction_insert_grab:needs a grab,gen_insert_interaction_insert_helmet:needs a void helmet,gen_insert_interaction_insert_suit:needs a voidsuit
+/obj/machinery/suit_cycler|robot|none => gen_hand_interaction_use,gen_verb_interaction_leave|gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_insert_grab:needs a grab,gen_insert_interaction_insert_helmet:needs a void helmet,gen_insert_interaction_insert_suit:needs a voidsuit
 /obj/machinery/suit_cycler|ai|none => |
 /obj/machinery/suit_cycler|ghost|none => |
-/obj/machinery/suit_cycler|human|/obj/item/clothing/head/helmet/space/void => suit_cycler_use,suit_cycler_leave|suit_cycler_insert_grab:needs a grab,suit_cycler_insert_helmet:the suit cycler is locked,suit_cycler_insert_suit:needs a voidsuit
-/obj/machinery/suit_cycler|human|/obj/item/clothing/suit/space/void => suit_cycler_use,suit_cycler_leave|suit_cycler_insert_grab:needs a grab,suit_cycler_insert_helmet:needs a void helmet,suit_cycler_insert_suit:the suit cycler is locked
+/obj/machinery/suit_cycler|human|/obj/item/clothing/head/helmet/space/void => gen_hand_interaction_use,gen_verb_interaction_leave|gen_insert_interaction_insert_grab:needs a grab,gen_insert_interaction_insert_helmet:the suit cycler is locked,gen_insert_interaction_insert_suit:needs a voidsuit
+/obj/machinery/suit_cycler|human|/obj/item/clothing/suit/space/void => gen_hand_interaction_use,gen_verb_interaction_leave|gen_insert_interaction_insert_grab:needs a grab,gen_insert_interaction_insert_helmet:needs a void helmet,gen_insert_interaction_insert_suit:the suit cycler is locked

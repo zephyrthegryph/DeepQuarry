@@ -1,5 +1,4 @@
-/obj/machinery/power/fusion_core|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,power_cable_place:needs a cable coil
-/obj/machinery/power/fusion_core|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now,power_cable_place:needs a cable coil
+/obj/machinery/power/fusion_core|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench
+/obj/machinery/power/fusion_core|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/fusion_core|ai|none => |
 /obj/machinery/power/fusion_core|ghost|none => |
-/obj/machinery/power/fusion_core|human|/obj/item/stack/cable_coil => power_cable_place|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench

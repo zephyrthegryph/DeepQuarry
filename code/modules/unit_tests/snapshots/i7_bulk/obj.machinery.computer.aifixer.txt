@@ -1,5 +1,4 @@
-/obj/machinery/computer/aifixer|human|none => aifixer_use|aifixer_card:needs an intelliCore
-/obj/machinery/computer/aifixer|robot|none => aifixer_use|gen_robot_interaction_swallow:not possible right now,aifixer_card:needs an intelliCore
+/obj/machinery/computer/aifixer|human|none => |
+/obj/machinery/computer/aifixer|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/aifixer|ai|none => |
 /obj/machinery/computer/aifixer|ghost|none => |
-/obj/machinery/computer/aifixer|human|/obj/item/aicard => aifixer_card,aifixer_use|

@@ -1,5 +1,4 @@
-/obj/machinery/suit_storage_unit|human|none => suit_storage_get_out,suit_storage_use|suit_storage_move_inside:the unit's doors are shut,suit_storage_use_item:needs an item
-/obj/machinery/suit_storage_unit|robot|none => suit_storage_get_out,suit_storage_use|gen_robot_interaction_swallow:not possible right now,suit_storage_move_inside:the unit's doors are shut,suit_storage_use_item:needs an item
+/obj/machinery/suit_storage_unit|human|none => |
+/obj/machinery/suit_storage_unit|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/suit_storage_unit|ai|none => |
 /obj/machinery/suit_storage_unit|ghost|none => |
-/obj/machinery/suit_storage_unit|human|/obj/item => suit_storage_get_out,suit_storage_use_item,suit_storage_use|suit_storage_move_inside:the unit's doors are shut

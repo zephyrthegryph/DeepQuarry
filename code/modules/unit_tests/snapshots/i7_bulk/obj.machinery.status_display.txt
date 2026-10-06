@@ -1,5 +1,4 @@
-/obj/machinery/status_display|human|none => |status_display_use:needs an item
-/obj/machinery/status_display|robot|none => |gen_robot_interaction_swallow:not possible right now,status_display_use:needs an item
+/obj/machinery/status_display|human|none => |
+/obj/machinery/status_display|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/status_display|ai|none => |
 /obj/machinery/status_display|ghost|none => |
-/obj/machinery/status_display|human|/obj/item => status_display_use|

@@ -1,5 +1,5 @@
-/obj/machinery/computer/prison_shuttle|human|none => |emag:needs a cryptographic sequencer,prison_shuttle_open_ui:access denied
-/obj/machinery/computer/prison_shuttle|robot|none => prison_shuttle_open_ui|emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/computer/prison_shuttle|human|none => |emag:needs a cryptographic sequencer
+/obj/machinery/computer/prison_shuttle|robot|none => |emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/prison_shuttle|ai|none => |
 /obj/machinery/computer/prison_shuttle|ghost|none => |
-/obj/machinery/computer/prison_shuttle|human|/obj/item/card/emag => emag|prison_shuttle_open_ui:access denied
+/obj/machinery/computer/prison_shuttle|human|/obj/item/card/emag => emag|

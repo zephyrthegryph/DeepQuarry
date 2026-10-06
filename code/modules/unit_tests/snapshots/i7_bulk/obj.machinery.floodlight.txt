@@ -1,5 +1,4 @@
-/obj/machinery/floodlight|human|none => floodlight_use|floodlight_item:needs an item
-/obj/machinery/floodlight|robot|none => floodlight_use,gen_silicon_floodlight_silicon_use|gen_robot_interaction_swallow:not possible right now,floodlight_item:needs an item
-/obj/machinery/floodlight|ai|none => gen_silicon_floodlight_silicon_use|
+/obj/machinery/floodlight|human|none => |
+/obj/machinery/floodlight|robot|none => |gen_robot_interaction_swallow:not possible right now
+/obj/machinery/floodlight|ai|none => |
 /obj/machinery/floodlight|ghost|none => |
-/obj/machinery/floodlight|human|/obj/item => floodlight_item,floodlight_use|

@@ -1,4 +1,4 @@
-/obj/machinery/computer/cryopod|human|none => cryopod_console_open_ui|
-/obj/machinery/computer/cryopod|robot|none => cryopod_console_open_ui|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/computer/cryopod|human|none => |
+/obj/machinery/computer/cryopod|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/cryopod|ai|none => |
 /obj/machinery/computer/cryopod|ghost|none => |

@@ -1,5 +1,4 @@
-/obj/machinery/power/rad_collector|human|none => |power_cable_place:needs a cable coil
-/obj/machinery/power/rad_collector|robot|none => |gen_robot_interaction_swallow:not possible right now,power_cable_place:needs a cable coil
+/obj/machinery/power/rad_collector|human|none => |
+/obj/machinery/power/rad_collector|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/rad_collector|ai|none => |
 /obj/machinery/power/rad_collector|ghost|none => |
-/obj/machinery/power/rad_collector|human|/obj/item/stack/cable_coil => power_cable_place|

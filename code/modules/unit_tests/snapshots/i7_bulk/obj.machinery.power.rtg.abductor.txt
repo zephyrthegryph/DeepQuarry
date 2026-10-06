@@ -1,5 +1,4 @@
-/obj/machinery/power/rtg/abductor|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,power_cable_place:needs a cable coil
-/obj/machinery/power/rtg/abductor|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,power_cable_place:needs a cable coil
+/obj/machinery/power/rtg/abductor|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/power/rtg/abductor|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/rtg/abductor|ai|none => |
 /obj/machinery/power/rtg/abductor|ghost|none => |
-/obj/machinery/power/rtg/abductor|human|/obj/item/stack/cable_coil => power_cable_place|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar

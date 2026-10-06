@@ -1,4 +1,4 @@
-/obj/machinery/processor|human|none => processor_start,processor_eject,processor_insert|
-/obj/machinery/processor|robot|none => processor_start,processor_eject,processor_insert|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/processor|human|none => gen_hand_ungated_interaction_start,gen_verb_interaction_eject,gen_drag_interaction_insert|
+/obj/machinery/processor|robot|none => gen_hand_ungated_interaction_start,gen_verb_interaction_eject,gen_drag_interaction_insert|gen_robot_interaction_swallow:not possible right now
 /obj/machinery/processor|ai|none => |
 /obj/machinery/processor|ghost|none => |
