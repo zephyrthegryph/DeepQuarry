@@ -43,7 +43,8 @@
 /turf/simulated/floor/projectile_damage(obj/item/projectile/P, def_zone)
 	return 0
 
-DAMAGE_REACTION(/turf/simulated/floor, DAMAGE_BLOB, TYPE_PROC_REF(/atom, damage_reaction_block))
+CAPABILITIES(/turf/simulated/floor)
+	extend(/datum/act/hit/blob, instead())
 
 /// The tile breaks as its condition crosses the failure fraction.
 /turf/simulated/floor/on_update_integrity(old_value, new_value)

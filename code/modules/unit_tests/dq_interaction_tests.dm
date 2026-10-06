@@ -179,10 +179,7 @@
 	TEST_ASSERT(!QDELETED(lattice), "a lattice over space should stay")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/stack/rods/rods = allocate(/obj/item/stack/rods, T, 5)
-	var/datum/interaction_resolution/resolution = interactions_for(H, lattice, rods)
-	var/list/sides = splittext(dq_resolution_text(resolution), "|")
-	TEST_ASSERT("lattice_item" in splittext(sides[1], ","), "rods should be offered to a lattice: [dq_resolution_text(resolution)]")
-	lattice.interaction_item(H, rods, INTERACTION_BY_ID("lattice_item"))
+	test_op_handler(lattice, "interaction_item", H, rods) // the lattice's rods op (CAPABILITIES): its effect, as the engine runs it
 	var/obj/structure/catwalk/catwalk = locate_within(gap, /obj/structure/catwalk)
 	TEST_ASSERT_NOTNULL(own(catwalk), "rods should turn the lattice into a catwalk")
 	TEST_ASSERT_EQUAL(rods.get_amount(), 4, "the upgrade should use one rod")

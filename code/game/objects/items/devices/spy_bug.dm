@@ -21,6 +21,7 @@
 CAPABILITIES(/obj/item/camerabug)
 	owns_one(nameof(camera), /obj/machinery/camera/bug, starts = nameof(camtype))
 	op("crush", in_hand(), stance(I_HURT), label("Crush camera pod"), then(PROC_REF(camerabug_crushed)))
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(camerabug_shot))))
 
 
 /obj/item/camerabug/proc/camerabug_crushed(datum/act/op/A)
@@ -133,15 +134,14 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 /obj/item/camerabug/proc/lies_on_turf(mob/actor, atom/target, obj/item/held)
 	return isturf(loc)
 
-DAMAGE_REACTION(/obj/item/camerabug, DAMAGE_PROJECTILE, PROC_REF(camerabug_shot))
 /// A round shatters the bug.
-/obj/item/camerabug/proc/camerabug_shot(datum/damage_packet/packet)
+/obj/item/camerabug/proc/camerabug_shot(datum/act/hit/projectile/A)
 	visible_message("The [src] lens shatters!")
 	if(linkedmonitor())
 		linkedmonitor().unpair(src)
 	rel_clear(src, nameof(linkedmonitor))
 	replace_with(src, brokentype)
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 // its monitor unpairs it.
 /obj/item/camerabug/on_destroy(force)

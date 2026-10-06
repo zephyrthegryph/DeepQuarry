@@ -1513,3 +1513,19 @@ The codemods are `tools/codemods/init_overrides.py`, `qdel_src.py` and `review.p
 * **Bare `spawn` is counted by the scheduler lint.** The shuttle turf's breaklight refresh is `after(src, 0)` (a turf changed meanwhile drops
   the timer, which replaces the type check), a suffocating carbon gasps at once (the other gasp branch never spawned), and a toxin-loaded
   human vomits on `after(self, 0)`.
+## Items, structures and effects: tool procs, interactions and hits to ops (rewrite/items-structures)
+
+Codemods `tools/codemods/` (tool_act, interaction_datums, damage_reaction; `run_items_wave.sh`) and `tools/dx/codemods/interact_declare.py`
+(now translating `REQ_*` clauses to `needs()`), over code/game/objects and code/game/turfs. Pins: `snapshots/pins/obj.*` recorded first.
+- **Tool procs are ops** (`op("use_<q>", tool(TOOL_Q), wait(0), then(PROC_REF(<q>_used)))`): instant as before, the welder spends no profile fuel.
+  They now appear in the menu and screentip as "Use screwdriver" etc. (the legacy procs were invisible there). A legacy
+  `ITEM_INTERACT_BLOCKING` (used up, nothing done) is a committed op with no effect (`OP_OK`): the actor sees the same thing, the op is logged
+  and published as done. `SKIP_TO_ATTACK` and falling off the end decline, so the click still goes on to the attack.
+- **A tool or held item now reaches the type before its window**: where a window's open op (`ui_open`) used to answer every held thing first
+  (the janitorial cart, the tank dispenser), the converted item/tool op answers, as the old attackby did; its decline falls back to the window.
+- **Menus follow the op engine**: an item op is listed only while its item is held (no greyed "needs a ..." rows), a self-use only while the
+  thing is in hand, a drag only on a drag; screentips name the op instead of "nothing". Labels keep the legacy wording ("Use", "Alternate use",
+  "Insert a ...").
+- **EMP reactions that never blocked run after the hit** (`on_notice(/datum/notice/hit/emp)`), as the consoles' did; blocking ones are
+  `extend(/datum/act/hit/<x>, instead(then()))`.
+- Types left for a hand conversion, and why, are listed in `tools/codemods/exclusions.txt`.

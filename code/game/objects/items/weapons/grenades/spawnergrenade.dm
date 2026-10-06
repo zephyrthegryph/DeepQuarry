@@ -88,10 +88,13 @@
 			return 0
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/item/grenade/spawnergrenade/manhacks/station/locked, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/grenade/spawnergrenade/manhacks/station/locked)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/grenade/spawnergrenade/manhacks/station/locked/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/grenade/spawnergrenade/manhacks/station/locked/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/obj/item/card/id/id = I.GetID()
 	if(istype(id))
 		if(check_access(id))
@@ -101,8 +104,8 @@ DECLARE_INTERACTIONS(/obj/item/grenade/spawnergrenade/manhacks/station/locked, I
 			to_chat(user, span_warning("Access denied."))
 		act_message(user, src, others = span_notice("%U% swipes \the [I] against %T%."))
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 DECLARE_EMAG_REPEATABLE(/obj/item/grenade/spawnergrenade/manhacks/station/locked, PROC_REF(on_emag), null)
 /obj/item/grenade/spawnergrenade/manhacks/station/locked/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)

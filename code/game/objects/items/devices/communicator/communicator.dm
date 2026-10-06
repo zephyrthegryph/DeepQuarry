@@ -244,9 +244,8 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 // Proc: emp_act(severity, recursive)
 // Parameters: None
 // Description: Drops all calls when EMPed, so the holder can then get murdered by the antagonist.
-DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 /// An EMP drops the call.
-/obj/item/communicator/proc/communicator_emp(datum/damage_packet/packet)
+/obj/item/communicator/proc/communicator_emp(datum/act/A)
 	close_connection(reason = "Hardware error de%#_^@%-BZZZZZZZT")
 
 // Proc: add_to_EPv2()
