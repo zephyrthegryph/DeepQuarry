@@ -440,20 +440,24 @@ CAPABILITIES(/datum/prompt/choice/sleevemate_mindsteal)
 	act_message(user, null, MSG_SELF(span_notice("You begin downloading [target]'s mind!")), MSG_OTHERS(span_warning("%U% begins downloading [target]'s mind!")))
 	om_task_timed(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done3), done_args = list(target, user))
 
-DECLARE_EMAG_REPEATABLE(/obj/item/sleevemate, PROC_REF(on_emag), null)
-/obj/item/sleevemate/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	var/list/choices = list("Body Snatcher","Mind Binder")
-	open_request(src, /datum/prompt/choice, PROC_REF(hack_chosen), answerer = user, question = "How would you like to modify the [src]?", choices = choices, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
-	return 1
+CAPABILITIES(/obj/item/sleevemate)
+	emag(list(asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(hack_question)), "choices" = list("Body Snatcher", "Mind Binder"), "timeout" = 0)), then(PROC_REF(hack_chosen))), repeatable = TRUE, powered = FALSE)
 
-/obj/item/sleevemate/proc/hack_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/choice = A.answer.value
+/obj/item/sleevemate/proc/hack_question(datum/act/A)
+	return "How would you like to modify the [src]?"
+
+/// The sequencer's choice: the sleevemate becomes a body snatcher or a mind binder (a card use is spent only when one is picked).
+/obj/item/sleevemate/proc/hack_chosen(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/choice = R?.value
 	if(!(choice in list("Body Snatcher","Mind Binder")))
-		return
-	to_chat(user,span_danger("You hack [src]!"))
+		return OP_DECLINE
+	to_chat(A.actor, span_danger("You hack [src]!"))
+	// the device is replaced once the emag op has finished with it (the library marks and pays on the holder after this effect)
+	after(src, 0, PROC_REF(hacked_into), with = list(choice))
+	return OP_OK
+
+/obj/item/sleevemate/proc/hacked_into(choice)
 	fx_sparks(src.loc, 5, FALSE)
 	play_sfx(src, SFX_SPARKS)
 	if(isliving(src.loc))
@@ -464,7 +468,6 @@ DECLARE_EMAG_REPEATABLE(/obj/item/sleevemate, PROC_REF(on_emag), null)
 		replace_with(src, /obj/item/bodysnatcher)
 	if(choice == "Mind Binder")
 		replace_with(src, /obj/item/mindbinder)
-	return 1
 
 /// The transcore database this uses, looked up by db_key (the databases are a registry).
 /obj/item/sleevemate/proc/our_db() as /datum/transcore_db

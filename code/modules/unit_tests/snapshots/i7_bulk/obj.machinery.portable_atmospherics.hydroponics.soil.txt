@@ -1,8 +1,5 @@
-/obj/machinery/portable_atmospherics/hydroponics/soil|human|none => hydroponics_interact,hydroponics_remove_label,hydroponics_set_light,hydroponics_toggle_lid|soil_tank_block:needs a tank,soil_shovel:needs a shovel,hydroponics_attackby:needs an item,hydroponics_close_lid:not possible right now,soil_fill:combat mode is off
-/obj/machinery/portable_atmospherics/hydroponics/soil|robot|none => hydroponics_interact,hydroponics_remove_label,hydroponics_set_light,hydroponics_toggle_lid|gen_robot_interaction_swallow:not possible right now,soil_tank_block:needs a tank,soil_shovel:needs a shovel,hydroponics_attackby:needs an item,hydroponics_close_lid:not possible right now,soil_fill:combat mode is off
+/obj/machinery/portable_atmospherics/hydroponics/soil|human|none => |
+/obj/machinery/portable_atmospherics/hydroponics/soil|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/portable_atmospherics/hydroponics/soil|ai|none => |
 /obj/machinery/portable_atmospherics/hydroponics/soil|ghost|none => gen_observer_hydroponics_ghost_harvest|
-/obj/machinery/portable_atmospherics/hydroponics/soil|human|/obj/item/tank => soil_tank_block,hydroponics_attackby,hydroponics_interact,hydroponics_remove_label,hydroponics_set_light,hydroponics_toggle_lid|soil_shovel:needs a shovel,hydroponics_close_lid:not possible right now,soil_fill:combat mode is off
-/obj/machinery/portable_atmospherics/hydroponics/soil|human|/obj/item/shovel => soil_shovel,hydroponics_attackby,hydroponics_interact,hydroponics_remove_label,hydroponics_set_light,hydroponics_toggle_lid|soil_tank_block:needs a tank,hydroponics_close_lid:not possible right now,soil_fill:combat mode is off
-/obj/machinery/portable_atmospherics/hydroponics/soil|human|/obj/item => hydroponics_attackby,hydroponics_interact,hydroponics_remove_label,hydroponics_set_light,hydroponics_toggle_lid|soil_tank_block:needs a tank,soil_shovel:needs a shovel,hydroponics_close_lid:not possible right now,soil_fill:combat mode is off
 

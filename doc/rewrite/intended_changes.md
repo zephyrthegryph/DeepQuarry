@@ -2109,6 +2109,29 @@ conversion pins (`snapshots/pins/`, re-blessed after review).
 - **The girder's hulk smash**: its offered_when asked a girder proc of the actor, which never answered, so it was never offered; the
   girder stays legacy (it reads mob mutations) and keeps that.
 
+
+## Leftovers: hydroponics trays, destructive analyzer, particle smasher, power cells (rewrite/leftovers)
+
+Pinned by `dq_leftovers/*` (tray growth and freezing, cell self-charge and gradual charge) and the conversion pins of the tray, the soil plot, the
+analyzer, the smasher and the cell.
+
+- **A tray's growth is started work** (`started_work(step = work_step, starts = has_seed, gate = not_frozen, wakes_on = frozen)`, was
+  `DECLARE_PERIODIC_WHILE` on the machine pipeline over an `OM_DERIVE_FIELD`); `frozen` is `TRACKED` (was an `OM_FIELD`). The growth timer is a
+  keyed `after()` read with `after_pending()` / `cancel_after()` (was `om_timer_slot_*`). **An empty tray no longer runs a frame when it is placed
+  and no longer re-arms a growth timer while nothing grows**: planting, a reagent or the freezer starts it.
+- **The tray's interactions are ops**: the item use (one effect, as before: only an injecting syringe over a plant goes on to what else the click
+  means), the hand's harvest, telekinetic harvest, the alt-click lid, the three verbs (offered to the living only; the light level is the op's
+  question), the wirecutters' sample, the wrench's bolting of a tray with no port under it, the multitool's freezer (its refusals are requirements).
+  **A ghost's harvest stays a legacy observer interaction** (`INTERACT_OBSERVER` in a one-line `declare_interactions()`): ops have no observer binding.
+- **The soil plot**: a tank does nothing (the tank bay is `without()`), a shovel in combat mode fills it in (a three-second `wait()`, was
+  `om_task_timed`), otherwise digs it up after "Do you want to destroy the growplot?" (a confirming question, then a five-second `wait()`; it ends
+  `dissolved()`, was `om_qdel_self`). Digging is refused with "There is something growing here." while a plant grows.
+- **The destructive analyzer's load and recycle are ops**: loading through the closed hatch while idle (not a cyborg's module item: a
+  `when()` on the actor, was an `isrobot()` in the effect), recycling by dragging a part replacer onto it.
+- **The particle smasher's item uses are ops** (analyzer swallowed, fill target, attach beaker, swipe ID, store, the eject verb, the wrench).
+- **A power cell's self-charge is an `every(2 SECONDS)`** while `self_recharge` and `recharging` hold (both `TRACKED`; `recharging` drops when a
+  step finds the cell full and rises on a discharge, was `DECLARE_PERIODIC_WHILE` plus `om_task_periodic()`), and its gradual charge an
+  `every(1 SECOND)` while steps are left (was `DECLARE_REPEAT`). The spike cell's arcing is its own `every(2 SECONDS)`.
 ## Relevance is a stat (rewrite/om-life)
 
 `EFFECT_RELEVANCE` on the OM contribution store is `STAT_RELEVANCE` (MAX, on `/datum`): `om_observe`/`om_unobserve`/`om_relevance`
@@ -2132,3 +2155,8 @@ cadences still follow it through `relevance_changed()` until the framework goes.
   `unpushable` (ANY) on `/mob/living`, held under `SRC_ALPHA_*` / `SRC_PUSH_*` source ids (or a datum). The unused OM
   effect rows (slowed, armour, insulation, move speed, power draw, vitals HUD) and the vitals HUD behaviour are deleted.
   No behaviour change intended.
+- **DECLARE_EMAG is gone from code/game/objects and code/game/turfs** (ceiling 0). The sleevemate's sequencer asks what to make of it as
+  an op step and spends a card use only when a hack is picked (the legacy one spent it when it asked). Pinned by `dq_items_emag_ops`.
+- **The extinguisher cabinet** is ops: a cyborg's module and gripper are not offered its uses (they did nothing); the wrench opens or
+  shuts a full cabinet and unwrenches an empty one after 1.5 s. **The holoplant** goes out when its anchoring changes (`on_change`),
+  where its wrench proc switched it off after the machine's anchor.

@@ -4801,10 +4801,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/portable_atmospherics/hydroponics/tray = new(T)
 	tray.lastcycle = world.time
 	TEST_ASSERT(test_machine_idle(tray), "stable hydroponics tray polled between growth cycles")
-	TEST_ASSERT(om_timer_slot_pending(tray, "growth_timer"), "sleeping hydroponics tray did not schedule its next growth cycle")
-	var/tray_wakes = tray.machine_wake_count
+	TEST_ASSERT(!work_started(tray), "an empty hydroponics tray starts no work")
 	tray.reagents.add_reagent(REAGENT_ID_WATER, 1)
-	TEST_ASSERT(tray.machine_wake_count > tray_wakes, "reagent mutation did not wake hydroponics tray")
+	TEST_ASSERT(work_started(tray), "reagent mutation did not start the hydroponics tray's work")
 	var/obj/machinery/seed_storage/garden/seed_storage = new(T)
 	TEST_ASSERT(test_machine_idle(seed_storage), "stable seed storage remained scheduled")
 	var/obj/machinery/beehive/beehive = new(T)

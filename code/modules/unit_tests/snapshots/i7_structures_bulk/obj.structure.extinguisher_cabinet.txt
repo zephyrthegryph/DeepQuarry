@@ -1,5 +1,5 @@
-/obj/structure/extinguisher_cabinet|human|none => extinguisher_cabinet_item,extinguisher_cabinet_hand|
-/obj/structure/extinguisher_cabinet|robot|none => extinguisher_cabinet_item,extinguisher_cabinet_hand|
+/obj/structure/extinguisher_cabinet|human|none => |
+/obj/structure/extinguisher_cabinet|robot|none => |
 /obj/structure/extinguisher_cabinet|ai|none => |
 /obj/structure/extinguisher_cabinet|ghost|none => |
 
