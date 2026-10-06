@@ -1827,6 +1827,7 @@ form, robot and vore tests that run Life frames.
   step) and `MOB_PARK_SUMMARY`; the per-type `MOB_PROFILE` lines are gone (the sequence samples per step).
 * Stasis still slows biology, not the frame: the sequence runs on world time and `begin()` advances the body's stasis counter, as the pipeline did.
   Moving Life onto `CLOCK_BIO` (AFK, ambience and grabs slowing in stasis too) is left for the Life state slice.
+- Vore panel: the belly settings are sub-actions routed by `vore_nested()` (refused without a selected belly; the belly reschedules after), replacing UI_ACT_NESTED/UI_SUBACT. Each attribute's value goes through its schema, and a sub-action that asks in the window gets the window as `extra`. "Pick from inside/outside" keep their `rerun_ask()` questions in plain procs called by the ops. "Reload/load preferences" confirm with `asks()` steps. Pinned by interim_vore_panel_attributes.
 
 
 
