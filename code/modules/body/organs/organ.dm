@@ -695,8 +695,8 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 		om_revoke_each(owner, GRANT_VERB, organ_verbs, src)
 	return
 
-/// MED-6: TRUE when periodic_step() has nothing to do for this organ right now, so the organs
-/// life stage may sleep: no germs, no rejection under way, not at its damage limit. Organs with
+/// TRUE when organ_tick() has nothing to do for this organ right now, so the body's organ clock
+/// may park: no germs, no rejection under way, not at its damage limit. Organs with
 /// their own handle_organ_proc_special() work say FALSE unless they know better.
 /obj/item/organ/proc/life_step_idle()
 	if((status & ORGAN_DEAD) || preserved || istype(loc, /obj/item/mmi))
