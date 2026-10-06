@@ -104,9 +104,7 @@ CAPABILITIES(/obj/structure/particle_accelerator)
 
 // its control box rescans its parts.
 /obj/structure/particle_accelerator/on_destroy(force)
-	var/obj/machinery/particle_accelerator/control_box/box = master
-	rel_clear(src, nameof(master))
-	box?.part_scan()
+	master?.part_scan()
 	..()
 
 /obj/structure/particle_accelerator/proc/bolted(datum/act/op/A)
@@ -164,7 +162,7 @@ CAPABILITIES(/obj/structure/particle_accelerator)
 	return 0
 
 /obj/structure/particle_accelerator/proc/report_ready(obj/O)
-	return O && O == master && pa_stage() >= 3
+	return O && O == master && !QDELETED(src) && pa_stage() >= 3
 
 /obj/structure/particle_accelerator/proc/report_master()
 	return master || 0

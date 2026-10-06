@@ -125,7 +125,8 @@ CAPABILITIES(/obj/machinery/field_generator)
 
 /obj/machinery/field_generator/proc/turn_off()
 	set_active(0)
-	cancel_after(src, "warm_up")
+	cancel_after(src, "warm_up_1")
+	cancel_after(src, "warm_up_2")
 	set_warming_up(0)
 	after(src, 0.1 SECONDS, PROC_REF(finish_turn_off))
 	update_icon()
@@ -137,10 +138,11 @@ CAPABILITIES(/obj/machinery/field_generator)
 /obj/machinery/field_generator/proc/turn_on()
 	set_active(1)
 	set_warming_up(1)
-	after(src, FIELD_GEN_WARMUP_STAGE, PROC_REF(warm_up_step), key = "warm_up")
+	after(src, FIELD_GEN_WARMUP_STAGE, PROC_REF(warm_up_step), key = "warm_up_1")
+	after(src, FIELD_GEN_WARMUP_STAGE * 2, PROC_REF(warm_up_step), key = "warm_up_2")
 	update_icon()
 
-/// One warm-up stage (FIELD_GEN_WARMUP_STAGE after the last): the fields go up at the third.
+/// One warm-up stage (turn_on() arms both, FIELD_GEN_WARMUP_STAGE apart): the fields go up at the third.
 /obj/machinery/field_generator/proc/warm_up_step()
 	if(active != 1)
 		return
@@ -149,8 +151,6 @@ CAPABILITIES(/obj/machinery/field_generator)
 	if(warming_up >= 3)
 		start_fields()
 		set_light(light_range_on, light_power_on)
-		return
-	after(src, FIELD_GEN_WARMUP_STAGE, PROC_REF(warm_up_step), key = "warm_up")
 
 /obj/machinery/field_generator/proc/calc_power()
 	if(Varpower)

@@ -28,7 +28,7 @@ CAPABILITIES(/obj/machinery/the_singularitygen)
 	on_change(nameof(energy), ANY, then(PROC_REF(collapse_check)))
 	examine_line(PROC_REF(examine_secured))
 	examine_line(MSG(singularitygen/adaptable), when = PANEL_OPEN)
-	op("install", item(/obj/item/smes_coil/super_io), label("Install"), when(PANEL_OPEN), wait(30 SECONDS),
+	op("install", item(/obj/item/smes_coil/super_io), label("Install"), at(SPACE_PANEL), wait(30 SECONDS),
 		says(MSG(singularitygen/modifying)), then(PROC_REF(install_done)))
 
 /// Bolted down and ready, or not secured.

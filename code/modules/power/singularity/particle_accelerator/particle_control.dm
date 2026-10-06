@@ -20,6 +20,8 @@
 	var/assembled = 0
 	var/parts = null
 
+TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
+
 /obj/machinery/particle_accelerator/control_box/Initialize(mapload)
 	. = ..()
 	update_active_power_usage(initial(active_power_usage) * (strength + 1))
@@ -280,10 +282,10 @@ CAPABILITIES(/obj/machinery/particle_accelerator/control_box)
 
 /obj/machinery/particle_accelerator/control_box/proc/interface_wire_cut(datum/act/A)
 	var/datum/notice/wire_cut/N = A
-	interface_control = N.mended
+	set_interface_control(N.mended)
 
 /obj/machinery/particle_accelerator/control_box/proc/interface_wire_pulsed(datum/act/A)
-	interface_control = !interface_control
+	set_interface_control(!interface_control)
 
 /// The limit wire cut lets the strength go to three; mended, back to two (a stronger beam steps down).
 /obj/machinery/particle_accelerator/control_box/proc/limit_wire_cut(datum/act/A)

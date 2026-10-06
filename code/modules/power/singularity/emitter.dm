@@ -8,7 +8,6 @@
 // SAFETY: the shot energy and the burst pattern are pinned in code/modules/unit_tests/dq_power_plants_behaviour.dm (emitter_*).
 
 MSG_DEF_SELF(emitter/unwelded, "It needs to be firmly secured to the floor first.")
-MSG_DEF_SELF(emitter/unwired, "It isn't connected to a wire.")
 MSG_DEF_SELF(emitter/controls_locked, "The controls are locked!")
 MSG_DEF_SELF(emitter/whole, "It's already fully repaired.")
 MSG_DEF_SELF(emitter/too_few_sheets, "You don't have enough sheets to repair it.")
@@ -62,11 +61,10 @@ CAPABILITIES(/obj/machinery/power/emitter)
 	lock(powered = FALSE, alt = FALSE)
 	emag(then(PROC_REF(on_emag)), say = MSG(emitter/shorted), powered = FALSE)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(emitter_step)), when = PROC_REF(firing))
-	examine_line(PROC_REF(examine_integrity))
 	op("toggle", hand(), label("Use"), ungated(), wait(0), global.tag(TAG_CONTROL),
-		needs(req(PROC_REF(is_welded), because = MSG(emitter/unwelded)), req(PROC_REF(is_wired), because = MSG(emitter/unwired))),
+		needs(req(PROC_REF(is_welded), because = MSG(emitter/unwelded))),
 		then(PROC_REF(toggled)))
-	op("repair", item(/obj/item/stack/material), label("Repair with steel"), when(req(PROC_REF(held_is_steel))),
+	op("repair", item(/obj/item/stack/material/steel), label("Repair with steel"),
 		needs(req(PROC_REF(damaged), because = MSG(emitter/whole)), req(PROC_REF(enough_sheets), because = MSG(emitter/too_few_sheets))),
 		says(MSG(emitter/repairing)), wait(3 SECONDS), then(PROC_REF(repaired)))
 	op("anomalous", item(/obj/item/anomaly_scanner), label("Toggle anomalous mode"), wait(0), then(PROC_REF(anomalous_toggled)))
@@ -96,23 +94,25 @@ CAPABILITIES(/obj/machinery/power/emitter)
 /obj/machinery/power/emitter/proc/is_welded(datum/act/A)
 	return state == FLOOR_WELD_WELDED
 
-/obj/machinery/power/emitter/proc/is_wired(datum/act/A)
-	return !!power_region
-
-/obj/machinery/power/emitter/proc/held_is_steel(datum/act/op/A)
-	var/obj/item/stack/material/stack = A.held
-	return istype(stack) && stack.get_material_name() == MAT_STEEL
-
 /// The sheets a repair takes: one per 10 integrity missing.
 /obj/machinery/power/emitter/proc/repair_sheets()
-	return CEILING((max_integrity - get_integrity()) / 10, 1)
+	return emitter_repair_sheets(src)
+
+/// The sheets repairing `E` takes (integrity is the damage system's, read whole).
+/proc/emitter_repair_sheets(obj/machinery/power/emitter/E)
+	READS_FROM(E)
+	return CEILING((E.max_integrity - E.get_integrity()) / 10, 1) // ALLOW(reads): an emitter's max_integrity is its type's constant
+
+/// The stack in hand holds `n` (a stack's count is its own business, read whole).
+/proc/emitter_stack_holds(obj/item/stack/S, n)
+	READS_FROM(S)
+	return istype(S) && S.get_amount() >= n
 
 /obj/machinery/power/emitter/proc/damaged(datum/act/A)
-	return repair_sheets() > 0
+	return emitter_repair_sheets(src) > 0
 
 /obj/machinery/power/emitter/proc/enough_sheets(datum/act/op/A)
-	var/obj/item/stack/material/stack = A.held
-	return istype(stack) && stack.get_amount() >= repair_sheets()
+	return emitter_stack_holds(A.held, emitter_repair_sheets(src))
 
 // ---- effects ----
 
@@ -166,7 +166,6 @@ CAPABILITIES(/obj/machinery/power/emitter)
 /obj/machinery/power/emitter/proc/emitter_step(datum/act/timer/A)
 	if(state != FLOOR_WELD_WELDED || (!power_region && active_power_usage))
 		set_active(0)
-		update_icon()
 		return
 	charge_emitter()
 	if(!COOLDOWN_FINISHED(src, shot_cooldown) || active != 1)
@@ -219,8 +218,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 /obj/machinery/power/emitter/proc/repaired(datum/act/op/A)
 	var/obj/item/stack/material/sheets = A.held
 	var/amount = repair_sheets()
-	if(!sheets?.use(amount))
-		return OP_REFUSED
+	sheets.use(amount)
 	to_chat(A.actor, span_notice("You have repaired \the [src]."))
 	repair_damage(max_integrity)
 	return OP_OK
@@ -253,17 +251,16 @@ CAPABILITIES(/obj/machinery/power/emitter)
 		visible_message(span_danger("\The [src] crumples apart!"), span_warning("You hear metal collapsing."))
 	return ..()
 
-/// How damaged it looks.
-/obj/machinery/power/emitter/proc/examine_integrity(datum/act/A)
+/obj/machinery/power/emitter/examine(mob/user)
+	. = ..()
 	var/integrity_percentage = round((get_integrity() / max_integrity) * 100)
 	switch(integrity_percentage)
 		if(0 to 30)
-			return span_danger("It is close to falling apart!")
+			. += span_danger("It is close to falling apart!")
 		if(31 to 70)
-			return span_danger("It is damaged.")
+			. += span_danger("It is damaged.")
 		if(77 to 99)
-			return span_warning("It is slightly damaged.")
-	return null
+			. += span_warning("It is slightly damaged.")
 
 //R-UST port
 /obj/machinery/power/emitter/proc/get_initial_fire_delay()
