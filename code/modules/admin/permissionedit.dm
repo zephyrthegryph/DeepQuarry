@@ -545,10 +545,10 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		selected_flags = native_state["admin_flags"]
 		if(isnull(selected_flags))
 			native_state["pending"] = TRUE
-			open_request(src, /datum/prompt/bitfield/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = native_state.Copy(), step_name = "admin_flags", title = "Admin rights of [admin_ckey] (this round only)", bitfield = "admin_flags", default = admin_holder.rank_flags(), editable = user.client.holder.can_edit_rights_flags())
+			open_request(src, /datum/prompt/bitfield/permission_rank_replay, PROC_REF(permission_rank_prompt_ended), answerer = user, captured = native_state.Copy(), step_name = "admin_flags", title = "Admin rights of [admin_ckey] (this round only)", bitfield = "admin_flags", default = admin_holder.rank_flags(), editable = can_edit_rights_flags())
 			return
 	else
-		var/new_flags = flow_ask(user, "admin_flags", /datum/om/prompt/bitfield, title = "Admin rights of [admin_ckey] (this round only)", bitfield = "admin_flags", default = admin_holder.rank_flags(), editable = user.client.holder.can_edit_rights_flags())
+		var/new_flags = flow_ask(user, "admin_flags", /datum/om/prompt/bitfield, title = "Admin rights of [admin_ckey] (this round only)", bitfield = "admin_flags", default = admin_holder.rank_flags(), editable = can_edit_rights_flags())
 		selected_flags = new_flags
 	if(isnull(selected_flags))
 		return
