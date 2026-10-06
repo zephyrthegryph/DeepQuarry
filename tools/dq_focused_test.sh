@@ -58,14 +58,14 @@ test_types() {
 	# pass keeps the compiled files' types, strips the prefix and dedupes.
 	{
 		included_files | sed 's/^/INCLUDED /'
-		git grep -H -o -E --untracked '^/datum/unit_test/[A-Za-z0-9_/]+[[:space:]]*$' -- 'code/*.dm' 2>/dev/null \
-			|| grep -rHoE '^/datum/unit_test/[A-Za-z0-9_/]+[[:space:]]*$' code --include='*.dm'
+		git grep -H -o -E --untracked '^/datum/unit_test/[A-Za-z0-9_/]+(/Run\(\))?[[:space:]]*$' -- 'code/*.dm' 2>/dev/null \
+			|| grep -rHoE '^/datum/unit_test/[A-Za-z0-9_/]+(/Run\(\))?[[:space:]]*$' code --include='*.dm'
 	} | awk '
 		/^INCLUDED / { inc[substr($0, 10)] = 1; next }
 		{
 			i = index($0, ":"); file = substr($0, 1, i - 1); name = substr($0, i + 1)
 			if (!(file in inc)) next
-			sub(/^\/datum\/unit_test\//, "", name); sub(/[[:space:]]+$/, "", name)
+			sub(/^\/datum\/unit_test\//, "", name); sub(/[[:space:]]+$/, "", name); sub(/\/Run\(\)$/, "", name) # a type may be declared only by its Run()
 			if (!seen[name]++) print name
 		}'
 }
