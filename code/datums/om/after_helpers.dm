@@ -4,6 +4,14 @@
 // so its channel is raised, and a "temporary X that undoes itself" is a timed status or
 // contribution (om_apply(), status_at_least()), never a var written back by name.
 
+/// Legacy name for timer_schedule() (code/engine/time/timers.dm); legacy callers keep it.
+/proc/om_after(datum/E, delay, proc_ref, ...)
+	return timer_schedule(arglist(args))
+
+/// Legacy name for timer_schedule_realtime().
+/proc/om_after_realtime(delay, proc_ref, ...)
+	return timer_schedule_realtime(arglist(args))
+
 /// om_after() target: deletes the owner.
 /datum/proc/om_qdel_self()
 	spent(src)

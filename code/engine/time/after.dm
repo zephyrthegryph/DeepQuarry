@@ -1,5 +1,5 @@
 // after(): the one timer (the time engine: doc/rewrite/framework_gaps.md C1). rx_after() is its implementation (callers use after());
-// om_after() and after_slot() (timers.dm) are legacy wrappers over it, and the timer store itself is timers.dm.
+// timer_schedule() and after_slot() (timers.dm) are legacy wrappers over it, and the timer store itself is timers.dm.
 //
 // A timer with a `key` is a TIMER relation on its owner: scheduling the same key again replaces the
 // pending one, cancel_after() cancels it, after_pending() / after_left() read it. `clock` is CLOCK_OWN
@@ -16,7 +16,7 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
  */
 /proc/rx_after(datum/owner, delay, handler, key, clock = CLOCK_OWN, list/handler_args, nulls_for_gone = TRUE)
 	if(isnull(key) && clock == CLOCK_OWN)
-		return om_after_list(owner, delay, handler, handler_args, nulls_for_gone)
+		return timer_schedule_list(owner, delay, handler, handler_args, nulls_for_gone)
 	var/datum/holder = owner || om_global_owner()
 	if(!isnull(key))
 		cancel_after(holder, key)
@@ -26,10 +26,10 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 		var/holder_handle = om_handle(holder)
 		if(isnull(holder_handle))
 			return 0 // the owner is already gone
-		id = om_after_list(null, delay, GLOBAL_PROC_REF(rx_timer_fire_ref), list(holder_handle, handler, key, token, handler_args), FALSE)
+		id = timer_schedule_list(null, delay, GLOBAL_PROC_REF(rx_timer_fire_ref), list(holder_handle, handler, key, token, handler_args), FALSE)
 	else
 		// The holder is the timer's owner: passed first when it fires (OM_TIMER_OWNER_FIRST), not captured as an argument.
-		id = om_after_list(holder, delay, GLOBAL_PROC_REF(rx_timer_fire), list(handler, key, token, handler_args), nulls_for_gone, owner_first = TRUE)
+		id = timer_schedule_list(holder, delay, GLOBAL_PROC_REF(rx_timer_fire), list(handler, key, token, handler_args), nulls_for_gone, owner_first = TRUE)
 	if(id && !isnull(key))
 		rx_ledger_add(holder, RELK_TIMER, key, token)
 		var/list/ids = rx_of(holder).timer_ids
@@ -102,7 +102,7 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 /// after() for a pure effect that makes no sense once any datum argument is gone: the call is dropped
 /// (counted and logged by the scheduler).
 /proc/after_if_alive(datum/owner, delay, handler, list/with = null)
-	return om_after_list(owner, delay, handler, with, nulls_for_gone = FALSE)
+	return timer_schedule_list(owner, delay, handler, with, nulls_for_gone = FALSE)
 
 /// Deciseconds left on the pending timer of `key` on `owner` (on the clock it was armed on), or 0 when none is.
 /proc/after_left(datum/owner, key)
