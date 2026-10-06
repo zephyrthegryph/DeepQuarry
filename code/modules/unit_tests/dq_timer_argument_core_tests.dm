@@ -2,6 +2,7 @@
 /datum/unit_test/retire_thrower_deleted_target_timer
 
 /datum/unit_test/retire_thrower_deleted_target_timer/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("dview_mob", GLOB.dview_mob)
 	exercise_thrower()
@@ -24,6 +25,7 @@
 	var/delete_syringe = FALSE
 
 /datum/unit_test/retire_implantcase_syringe_timer/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("dview_mob", GLOB.dview_mob)
 	exercise_filling()
@@ -60,6 +62,8 @@
 	var/delete_setting = FALSE
 
 /datum/unit_test/retire_fancy_gear_setting_timer/Run()
+	set_global("status_policies", GLOB.status_policies)
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("dview_mob", GLOB.dview_mob)
 	var/catalog_key = "[/obj/machinery/gear_dispenser/suit_fancy]"

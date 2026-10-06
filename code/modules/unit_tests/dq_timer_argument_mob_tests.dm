@@ -2,6 +2,7 @@
 /datum/unit_test/retire_after_lunge_deleted_warmup_target
 
 /datum/unit_test/retire_after_lunge_deleted_warmup_target/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("dview_mob", GLOB.dview_mob)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
@@ -21,6 +22,7 @@
 /datum/unit_test/retire_after_lunge_deleted_landing_target
 
 /datum/unit_test/retire_after_lunge_deleted_landing_target/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("dview_mob", GLOB.dview_mob)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
@@ -42,6 +44,7 @@
 /datum/unit_test/retire_after_mule_deleted_load
 
 /datum/unit_test/retire_after_mule_deleted_load/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("dview_mob", GLOB.dview_mob)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))

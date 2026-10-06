@@ -205,3 +205,9 @@ The CSV contains every excluded entry and its reason. Concrete outstanding bugs/
 | Five old-order timer callers listed above | Correct owner/delay/handler argument order | Assignment permits handler changes, not these scheduling callers |
 
 Existing projectile missing-target diagnostics and their disposal paths remain intact. Dynamic rocket continuation was traced through all seven current producers: only the phase-5 imperion supplies a continuation, whose current projectile path handles missing targets through the existing diagnostics. No universal claim is made for arbitrary external proc values.
+
+## Master merge verification (October 6)
+
+Merged `origin/master` (`0add9783a0`) into this branch in `3368317e03`. The DX weak-delivery implementation matches master exactly. All 99 callback guards survived unchanged; `code/engine/time/` matches master, with no guards placed in the timer store.
+
+Reran the 74 exact focused test paths used for the four assignments. All 74 passed. The first combined run exposed fixture restoration gaps in the weak-handle diagnostic counter and lazy status-policy table; the fixtures now restore those globals. The final combined focused run passed 74/74 with a clean boot and no state/object leaks (`20261006T221224_3368317e03.json`). Compile: 0 errors, 28 existing unused-variable warnings. `tools/build/build.sh lint` passed, including 0 DreamChecker diagnostics; `tools/ci/check_ratchets.sh` passed. No full suite was run.

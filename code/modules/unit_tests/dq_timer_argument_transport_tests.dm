@@ -2,6 +2,7 @@
 /datum/unit_test/c4_scanner_deleted_target
 
 /datum/unit_test/c4_scanner_deleted_target/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	set_global("dview_mob", GLOB.dview_mob)
@@ -20,6 +21,7 @@
 /datum/unit_test/c4_shelter_deleted_preview_user
 
 /datum/unit_test/c4_shelter_deleted_preview_user/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	set_global("dview_mob", GLOB.dview_mob)
@@ -38,6 +40,7 @@
 /datum/unit_test/c4_fulton_deleted_payload
 
 /datum/unit_test/c4_fulton_deleted_payload/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	set_global("dview_mob", GLOB.dview_mob)
@@ -58,6 +61,7 @@
 	var/delete_flame = FALSE
 
 /datum/unit_test/c4_paper_burn_deleted_argument_timer_boundary/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	set_global("dview_mob", GLOB.dview_mob)
@@ -111,6 +115,7 @@
 /datum/unit_test/retire_after_independent_handler_argument/dust
 
 /datum/unit_test/retire_after_independent_handler_argument/dust/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	set_global("dview_mob", GLOB.dview_mob)
@@ -122,6 +127,7 @@
 /datum/unit_test/retire_after_independent_handler_argument/garbo
 
 /datum/unit_test/retire_after_independent_handler_argument/garbo/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	set_global("dview_mob", GLOB.dview_mob)
@@ -135,6 +141,7 @@
 /datum/unit_test/retire_after_independent_handler_argument/batterer
 
 /datum/unit_test/retire_after_independent_handler_argument/batterer/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	set_global("dview_mob", GLOB.dview_mob)
@@ -147,6 +154,7 @@
 /datum/unit_test/retire_after_independent_handler_argument/autopsy
 
 /datum/unit_test/retire_after_independent_handler_argument/autopsy/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	set_global("dview_mob", GLOB.dview_mob)
@@ -173,6 +181,7 @@
 	var/delete_before_exchange = FALSE
 
 /datum/unit_test/c4_brawl_deleted_attacker/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	set_global("dview_mob", GLOB.dview_mob)
@@ -204,6 +213,7 @@
 /datum/unit_test/c4_gun_storage_deleted_loader_timer_boundary
 
 /datum/unit_test/c4_gun_storage_deleted_loader_timer_boundary/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	set_global("dview_mob", GLOB.dview_mob)
@@ -229,6 +239,7 @@
 /datum/unit_test/retire_artifact_deleted_message_holder
 
 /datum/unit_test/retire_artifact_deleted_message_holder/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	set_global("dview_mob", GLOB.dview_mob)
@@ -250,6 +261,7 @@
 /datum/unit_test/retire_resleeve_deleted_backup_record
 
 /datum/unit_test/retire_resleeve_deleted_backup_record/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	set_global("dview_mob", GLOB.dview_mob)
@@ -273,6 +285,7 @@
 /datum/unit_test/retire_after_independent_handler_argument/bookbinder
 
 /datum/unit_test/retire_after_independent_handler_argument/bookbinder/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	set_global("dview_mob", GLOB.dview_mob)
@@ -290,6 +303,7 @@
 /datum/unit_test/retire_after_independent_handler_argument/hyperpad
 
 /datum/unit_test/retire_after_independent_handler_argument/hyperpad/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	set_global("dview_mob", GLOB.dview_mob)
@@ -311,6 +325,7 @@
 /datum/unit_test/retire_resleeve_deleted_injector_completion
 
 /datum/unit_test/retire_resleeve_deleted_injector_completion/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	set_global("dview_mob", GLOB.dview_mob)
@@ -332,6 +347,7 @@
 	var/arrival = TRUE
 
 /datum/unit_test/c4_transit_deleted_pod/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	set_global("dview_mob", GLOB.dview_mob)
@@ -364,6 +380,7 @@
 	var/weld_end = FALSE
 
 /datum/unit_test/c4_solargrub_missing_vents/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	set_global("dview_mob", GLOB.dview_mob)
@@ -401,6 +418,7 @@
 /datum/unit_test/retire_gigadrill_replaced_mineral_timer
 
 /datum/unit_test/retire_gigadrill_replaced_mineral_timer/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	set_global("dview_mob", GLOB.dview_mob)
@@ -449,6 +467,7 @@
 	var/arrival_handler = TYPE_PROC_REF(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt, do_special_attack_1)
 
 /datum/unit_test/c4_jaunt_missing_saved_turf/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
@@ -476,6 +495,7 @@
 /datum/unit_test/c4_tunneler_missing_saved_turf
 
 /datum/unit_test/c4_tunneler_missing_saved_turf/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
@@ -499,6 +519,7 @@
 	var/drone = FALSE
 
 /datum/unit_test/c4_antag_finish_deleted_mob_timer_boundary/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
@@ -529,6 +550,7 @@
 /datum/unit_test/c4_apportation_deleted_user_timer_boundary
 
 /datum/unit_test/c4_apportation_deleted_user_timer_boundary/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
@@ -549,6 +571,7 @@
 /datum/unit_test/c4_passwall_deleted_user_timer_boundary
 
 /datum/unit_test/c4_passwall_deleted_user_timer_boundary/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
@@ -570,6 +593,7 @@
 	var/consuming = FALSE
 
 /datum/unit_test/c4_vac_deleted_target_timer_boundary/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
@@ -597,6 +621,7 @@
 /datum/unit_test/c4_transportpod_missing_destination_timer_boundary
 
 /datum/unit_test/c4_transportpod_missing_destination_timer_boundary/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
@@ -616,6 +641,7 @@
 /datum/unit_test/c4_toilet_deleted_flush_target_timer_boundary
 
 /datum/unit_test/c4_toilet_deleted_flush_target_timer_boundary/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("act_taken", GLOB.act_taken)
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
@@ -639,6 +665,7 @@
 /datum/unit_test/c4_delayed_spell_deleted_core_timer_boundary
 
 /datum/unit_test/c4_delayed_spell_deleted_core_timer_boundary/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
@@ -663,6 +690,7 @@
 /datum/unit_test/c4_mecha_burst_missing_chassis_timer_boundary
 
 /datum/unit_test/c4_mecha_burst_missing_chassis_timer_boundary/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
@@ -684,6 +712,7 @@
 /datum/unit_test/c4_capsule_deleted_owner_timer_boundary
 
 /datum/unit_test/c4_capsule_deleted_owner_timer_boundary/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
@@ -714,6 +743,7 @@
 	var/missing = "target"
 
 /datum/unit_test/c4_jaunt_missing_participant/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	set_global("dview_mob", GLOB.dview_mob)
@@ -754,6 +784,7 @@
 /datum/unit_test/c4_cliff_deleted_victim_timer_boundary
 
 /datum/unit_test/c4_cliff_deleted_victim_timer_boundary/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
@@ -775,6 +806,7 @@
 /datum/unit_test/c4_cult_raise_deleted_corpse_timer_boundary
 
 /datum/unit_test/c4_cult_raise_deleted_corpse_timer_boundary/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
@@ -803,6 +835,7 @@
 /datum/unit_test/c4_resurrect_deleted_body_timer_boundary
 
 /datum/unit_test/c4_resurrect_deleted_body_timer_boundary/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
@@ -830,6 +863,7 @@
 /datum/unit_test/c4_recycler_deleted_shoot_target_timer_boundary
 
 /datum/unit_test/c4_recycler_deleted_shoot_target_timer_boundary/Run()
+	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	set_global("dview_mob", GLOB.dview_mob)
