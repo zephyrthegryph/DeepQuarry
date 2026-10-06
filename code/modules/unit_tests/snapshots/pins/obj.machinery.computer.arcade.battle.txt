@@ -1,0 +1,98 @@
+human|none menu: Climb
+human|none menu: Emag (refused: needs a cryptographic sequencer)
+human|none menu: Redeem tickets (refused: needs an arcade tickets)
+human|none menu: Ui open
+human|none menu: Use
+human|none click: Click: Ui open
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Climb
+robot|none menu: Emag (refused: needs a cryptographic sequencer)
+robot|none menu: Redeem tickets (refused: needs an arcade tickets)
+robot|none menu: Ui open
+robot|none menu: Use
+robot|none click: Click: Ui open
+ai|none menu: Ui open
+ai|none click: Click: Ui open
+ghost|none menu: Climb (refused: You can't climb right now.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Disconnect
+human|/obj/item/tool/screwdriver menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/screwdriver menu: Redeem tickets (refused: needs an arcade tickets)
+human|/obj/item/tool/screwdriver menu: Ui open
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver menu: Use item
+human|/obj/item/tool/screwdriver click: Click: Disconnect
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/crowbar menu: Redeem tickets (refused: needs an arcade tickets)
+human|/obj/item/tool/crowbar menu: Ui open
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar menu: Use item
+human|/obj/item/tool/crowbar click: Click: Use item
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/wrench menu: Redeem tickets (refused: needs an arcade tickets)
+human|/obj/item/tool/wrench menu: Ui open
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench menu: Use item
+human|/obj/item/tool/wrench click: Click: Use item
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/wirecutters menu: Redeem tickets (refused: needs an arcade tickets)
+human|/obj/item/tool/wirecutters menu: Ui open
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters menu: Use item
+human|/obj/item/tool/wirecutters click: Click: Use item
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/multitool menu: Redeem tickets (refused: needs an arcade tickets)
+human|/obj/item/multitool menu: Ui open
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool menu: Use item
+human|/obj/item/multitool click: Click: Use item
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/weldingtool menu: Redeem tickets (refused: needs an arcade tickets)
+human|/obj/item/weldingtool menu: Ui open
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool menu: Use item
+human|/obj/item/weldingtool click: Click: Use item
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Redeem tickets (refused: needs an arcade tickets)
+human|/obj/item/stack/cable_coil menu: Ui open
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil menu: Use item
+human|/obj/item/stack/cable_coil click: Click: Use item
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/stack/material/steel menu: Redeem tickets (refused: needs an arcade tickets)
+human|/obj/item/stack/material/steel menu: Ui open
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel menu: Use item
+human|/obj/item/stack/material/steel click: Click: Use item
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/card/id menu: Redeem tickets (refused: needs an arcade tickets)
+human|/obj/item/card/id menu: Ui open
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id menu: Use item
+human|/obj/item/card/id click: Click: Use item
+human|/obj/item/stack/arcadeticket menu: Climb
+human|/obj/item/stack/arcadeticket menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/stack/arcadeticket menu: Redeem tickets (refused: you need 2 tickets to claim a prize)
+human|/obj/item/stack/arcadeticket menu: Ui open
+human|/obj/item/stack/arcadeticket menu: Use
+human|/obj/item/stack/arcadeticket menu: Use item
+human|/obj/item/stack/arcadeticket click: Click: Use item
+human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Emag
+human|/obj/item/card/emag menu: Redeem tickets (refused: needs an arcade tickets)
+human|/obj/item/card/emag menu: Ui open
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use item
+human|/obj/item/card/emag click: Click: Use item
+keys: arcade_ticket_redeem, attack, charge, climb.climb, climb.climb_menu, disconnect, emag_gated, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, heal, machine_anchor, machine_deconstruct, machine_open_ui, machine_panel, machine_repair, newgame, ui_open, use_gripper, use_item
+

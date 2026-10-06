@@ -1,0 +1,28 @@
+human|none menu: Weigh
+human|none click: nothing
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Weigh
+robot|none click: nothing
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Weigh
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Weigh
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Weigh
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Weigh
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Weigh
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Weigh
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Weigh
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Weigh
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Weigh
+human|/obj/item/card/id click: nothing
+keys: gen_drag_interaction_drag_buckle, gen_hand_ungated_scale_weigh_hand, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+

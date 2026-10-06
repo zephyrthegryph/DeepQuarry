@@ -1,0 +1,30 @@
+human|none menu: Activate
+human|none click: nothing
+robot|none menu: Activate
+robot|none menu: Blocked (refused: not possible right now)
+robot|none click: nothing
+ai|none click: nothing
+ghost|none menu: Travel
+ghost|none menu: View
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Activate
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Activate
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Activate
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Activate
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Activate
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Activate
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Activate
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Activate
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Activate
+human|/obj/item/card/id click: nothing
+keys: gen_drag_interaction_drag_buckle, gen_observer_hyperpad_centre_ghost_travel, gen_observer_hyperpad_ghost_use, gen_robot_interaction_swallow, hyperpad_centre_teleport, hyperpad_delegate, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+
