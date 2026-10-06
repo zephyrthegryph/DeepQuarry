@@ -68,25 +68,24 @@
 	w_class = ITEMSIZE_SMALL
 	attack_verb = list("mushed", "splatted", "splooshed", "splushed") // Words that totally exist.
 
-DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, \
-	INTERACT_USE_AS(I_HELP, "Compact", PROC_REF(interaction_self)), \
-	INTERACT_USE_AS(I_DISARM, "Compact", PROC_REF(interaction_self)), \
-	INTERACT_USE_AS(I_GRAB, "Compact", PROC_REF(interaction_self)), \
-	INTERACT_USE_AS(I_HURT, "Smash", PROC_REF(interaction_smash)), \
-)
+CAPABILITIES(/obj/item/material/snow/snowball)
+	op("compact", in_hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Compact"), then(PROC_REF(interaction_self)))
+	op("smash", in_hand(), stance(I_HURT), label("Smash"), then(PROC_REF(interaction_smash)))
 
 /// Old attack_self: compacting it into a harder snowball.
-/obj/item/material/snow/snowball/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/material/snow/snowball/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You start compacting the snowball."))
 	om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
-	return TRUE
+	return OP_OK
 
 /// Old attack_self's harm branch: smashing it back into snow.
-/obj/item/material/snow/snowball/proc/interaction_smash(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/material/snow/snowball/proc/interaction_smash(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You smash the snowball in your hand."))
 	var/atom/S = replace_with(src, /obj/item/stack/material/snow)
 	user.put_in_hands(S)
-	return TRUE
+	return OP_OK
 
 /obj/item/material/snow/snowball/proc/attack_self_timed_done(mob/user)
 	var/atom/S = replace_with(src, /obj/item/material/snow/snowball/reinforced)

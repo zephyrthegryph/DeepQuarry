@@ -30,6 +30,8 @@ CAPABILITIES(/obj/item/melee/baton)
 	owns_one(nameof(bcell), /obj/item/cell)
 	op("power", in_hand(), when(cond_not(nameof(special_handling))), label("Toggle baton"), then(PROC_REF(baton_power_toggled)))
 	drag_onto(PROC_REF(mousedrop_input))
+	op("take_cell", hand(), then(PROC_REF(interaction_hand)))
+	op("baton_item", item(/obj/item), then(PROC_REF(interaction_item)))
 
 /obj/item/melee/baton/Initialize(mapload)
 	. = ..()
@@ -125,13 +127,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/baton, TYPE_PROC_REF(/atom, appearance_o
 		if(!bcell)
 			. += span_warning("The baton does not have a power source installed.")
 
-/// Old attackby.
-/obj/item/melee/baton/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: fit a cell, tape down the grip safety, or scrape the tape off.
+/obj/item/melee/baton/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/cell))
 		if(istype(W, /obj/item/cell/device))
 			if(!bcell)
 				if(!move_into(src, nameof(src.bcell), W, user))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 				to_chat(user, span_notice("You install a cell in [src]."))
 				update_icon()
 			else
@@ -149,15 +153,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/baton, TYPE_PROC_REF(/atom, appearance_o
 		if(taped_safety)
 			to_chat(user, span_notice("You painstakingly scrape away the tape over the grip safety."))
 			taped_safety = FALSE
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-DECLARE_INTERACTIONS(/obj/item/melee/baton, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
-/// Old attack_hand.
-/obj/item/melee/baton/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: the hand on a baton held in the other hand takes its cell out (anything else is the pick up).
+/obj/item/melee/baton/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(bcell)
 			bcell.update_icon()
@@ -166,10 +166,11 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			status = 0
 			update_icon()
-			return TRUE
-		return FALSE
+			return OP_OK
+		return OP_DECLINE
 	else
-		return FALSE
+		return OP_DECLINE
+	return OP_DECLINE
 
 /obj/item/melee/baton/proc/baton_power_toggled(datum/act/op/A)
 	var/mob/user = A.actor
@@ -251,6 +252,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 
 CAPABILITIES(/obj/item/melee/baton/cattleprod)
 	op("cattleprod_interaction_item", item(/obj/item), then(PROC_REF(cattleprod_interaction_item)))
+	without("baton_item")   // its own item use replaces the baton's
 
 /// Old attackby.
 /obj/item/melee/baton/cattleprod/proc/cattleprod_interaction_item(datum/act/op/A)

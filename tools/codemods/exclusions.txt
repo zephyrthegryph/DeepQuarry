@@ -9,8 +9,6 @@ interact /obj/item/robot_parts/robot_suit request_in_effect
 # The legacy requirement reads state the generated reads cannot follow (loc, untracked vars): the requirement is
 # rewritten on tracked state by hand.
 interact /obj/item/TVAssembly unknown_read
-interact /obj/item/material/butterflyhandle unknown_read
-interact /obj/item/ore_bag unknown_read
 interact /obj/item/paper unknown_read
 interact /obj/item/picnic_blankets_carried unknown_read
 interact /obj/structure/picnic_blanket_deployed unknown_read
@@ -22,9 +20,6 @@ interact /obj/item/emergency_beacon request_in_effect
 interact /obj/item/holowarrant request_in_effect
 interact /obj/item/sleevemate request_in_effect
 interact /obj/item/perfect_tele_beacon request_in_effect
-interact /obj/item/rsf request_in_effect
-interact /obj/item/teleportation_scroll request_in_effect
-interact /obj/item/hand_tele request_in_effect
 interact /obj/item/poi/broken_drone_circuit unknown_read
 # A question opened from the emag handler: asks() on the op, by hand.
 interact /obj/item/vac_attachment request_in_effect

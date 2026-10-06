@@ -59,23 +59,29 @@
 	max_storage_space = 500
 	item_flags = INDESTRUCTIBLE | ABSTRACT
 
-DECLARE_INTERACTIONS(/obj/item/ore_bag, INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/item/ore_bag/proc/can_take_more)))
+TRACKED(/obj/item/ore_bag, current_capacity)
+TRACKED(/obj/item/ore_bag, max_storage_space)
+
+CAPABILITIES(/obj/item/ore_bag)
+	op("bag_item", item(/obj/item), needs(req(PROC_REF(can_take_more), because = MSG(ore_bag/full))), then(PROC_REF(interaction_item)))
 
 /// Requirement: a full bag takes nothing more.
-/obj/item/ore_bag/proc/can_take_more(mob/user, atom/target, obj/item/held)
-	if(current_capacity >= max_storage_space)
-		return "it's too full to possibly fit anything else inside of it"
-	return TRUE
+/obj/item/ore_bag/proc/can_take_more(datum/act/op/A)
+	return current_capacity < max_storage_space
 
-/// Old attackby.
-/obj/item/ore_bag/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+MSG_DEF_SELF(ore_bag/full, "It's too full to possibly fit anything else inside of it.")
+
+/// Old attackby: an ore goes in (the click goes on).
+/obj/item/ore_bag/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if (istype(W, /obj/item/ore) && !istype(W, /obj/item/ore/slag) && !istype(W, /obj/item/ore/archeology_debris))
 		var/obj/item/ore/ore = W
 		stored_ore[ore.material]++
-		current_capacity++
+		set_current_capacity(current_capacity + 1)
 		user.remove_from_mob(W)
 		consume(ore, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/ore_bag/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
 	//If we attack a turf, we try to scoop up all the ore from the turf first.
@@ -124,7 +130,7 @@ DECLARE_INTERACTIONS(/obj/item/ore_bag, INTERACT_ITEM(null, PROC_REF(interaction
 			continue
 		var/obj/item/ore/ore = O
 		stored_ore[ore.material]++
-		current_capacity++
+		set_current_capacity(current_capacity + 1)
 		current_pickup++
 		consume(ore)
 		success = 1
@@ -144,7 +150,7 @@ DECLARE_INTERACTIONS(/obj/item/ore_bag, INTERACT_ITEM(null, PROC_REF(interaction
 				var/ore_amount = stored_ore[ore_material]	// How many ores does the satchel have?
 				OB.stored_ore[ore_material] += ore_amount	// Add the ore to the box
 				stored_ore[ore_material] = 0 				// Set the value of the ore in the satchel to 0.
-				current_capacity = 0				// Set the amount of ore in the satchel to 0.
+				set_current_capacity(0)				// Set the amount of ore in the satchel to 0.
 	current_pickup = 0
 	return success
 
