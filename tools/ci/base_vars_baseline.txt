@@ -505,7 +505,6 @@ base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/antag_faction
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/antag_vis = ""
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/voice = "" //Instead of new say code calling GetVoice() over and over and over, we're just going to ask this variable, which gets updated in Life()
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/special_voice = "" // For changing our voice. Used by a symptom.
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/last_dam = -1 //Used for determining if we need to process all organs or just some or even none.
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/xylophone = 0 //For the spoooooooky xylophone cooldown: world.time it can play again
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/hand_blood_color
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/list/flavor_texts // Lazy.
@@ -656,7 +655,6 @@ base_var	code/modules/mob/living/melee_swing.dm	/mob/living/var/melee_swing_reso
 base_var	code/modules/mob/living/melee_swing.dm	/mob/living/var/melee_swing_serial = 0
 base_var	code/modules/mob/living/organs.dm	var/list/organs
 base_var	code/modules/mob/living/organs.dm	var/list/organs_by_name // map organ names to organs
-base_var	code/modules/mob/living/organs.dm	var/list/bad_external_organs // organs we check until they are good.
 base_var	code/modules/mob/living/silicon/robot/component.dm	/obj/item/var/datum/carried_afflictions/carried_afflictions
 base_var	code/modules/mob/living/status_indicators.dm	var/list/status_indicators = null // Will become a list as needed.
 base_var	code/modules/mob/mob.dm	var/tmp/user_vars_to_edit //fun times :3 - pretty much just grabbed from tg immabehonest - list(variable_name = variable_value) eg list("name" = "Wizardly Wizard", "real_name" = "Wizardly Wizard")
