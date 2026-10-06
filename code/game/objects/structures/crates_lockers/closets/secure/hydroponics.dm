@@ -23,25 +23,31 @@
 		/obj/item/storage/belt/hydro,
 		/obj/item/material/fishing_net/butterfly_net)
 
-// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-/obj/structure/closet/secure_closet/hydroponics/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/clothing/suit/storage/apron
+CAPABILITIES(/obj/structure/closet/secure_closet/hydroponics)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/hydroponics/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/clothing/suit/storage/apron
 	else
-		starts_with += /obj/item/clothing/suit/storage/apron/overalls
-	return ..()
+		. += /obj/item/clothing/suit/storage/apron/overalls
 
 /obj/structure/closet/secure_closet/hydroponics/sci
 	name = "xenoflorist's locker"
 	req_access = list(ACCESS_XENOBIOLOGY)
 	closet_appearance = /datum/decl/closet_appearance/secure_closet/hydroponics/xenoflora
 
-/obj/structure/closet/secure_closet/hydroponics/sci/Initialize(mapload)
-	starts_with += /obj/item/clothing/head/bio_hood/scientist
-	starts_with += /obj/item/clothing/suit/bio_suit/scientist
-	starts_with += /obj/item/clothing/mask/gas/clear // Gasmasks we use are different
+CAPABILITIES(/obj/structure/closet/secure_closet/hydroponics/sci)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
 
-	if(prob(1))
-		starts_with += /obj/item/chainsaw
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/hydroponics/sci/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	. += /obj/item/clothing/head/bio_hood/scientist
+	. += /obj/item/clothing/suit/bio_suit/scientist
+	. += /obj/item/clothing/mask/gas/clear
+	if(R.chance(1))
+		. += /obj/item/chainsaw
 
-	return ..()

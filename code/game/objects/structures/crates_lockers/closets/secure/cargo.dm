@@ -18,15 +18,18 @@
 		/obj/item/clothing/gloves/fingerless,
 		/obj/item/clothing/head/soft)
 
-// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-/obj/structure/closet/secure_closet/cargotech/Initialize(mapload)
-	if(prob(75))
-		starts_with += /obj/item/storage/backpack
+CAPABILITIES(/obj/structure/closet/secure_closet/cargotech)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/cargotech/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(75))
+		. += /obj/item/storage/backpack
 	else
-		starts_with += /obj/item/storage/backpack/satchel/norm
-	if(prob(25))
-		starts_with += /obj/item/storage/backpack/dufflebag
-	return ..()
+		. += /obj/item/storage/backpack/satchel/norm
+	if(R.chance(25))
+		. += /obj/item/storage/backpack/dufflebag
 
 /obj/structure/closet/secure_closet/quartermaster
 	name = "quartermaster's locker"
@@ -61,15 +64,18 @@
 		/obj/item/clothing/head/beret/qm,
 		/obj/item/clothing/shoes/boots/winter/supply)
 
-// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-/obj/structure/closet/secure_closet/quartermaster/Initialize(mapload)
-	if(prob(75))
-		starts_with += /obj/item/storage/backpack
+CAPABILITIES(/obj/structure/closet/secure_closet/quartermaster)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/quartermaster/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(75))
+		. += /obj/item/storage/backpack
 	else
-		starts_with += /obj/item/storage/backpack/satchel/norm
-	if(prob(25))
-		starts_with += /obj/item/storage/backpack/dufflebag
-	return ..()
+		. += /obj/item/storage/backpack/satchel/norm
+	if(R.chance(25))
+		. += /obj/item/storage/backpack/dufflebag
 
 /obj/structure/closet/secure_closet/miner
 	name = "miner's equipment"
@@ -95,15 +101,17 @@
 		/obj/item/stack/marker_beacon/thirty,
 		/obj/item/storage/sample_container)
 
-/obj/structure/closet/secure_closet/miner/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/industrial
+CAPABILITIES(/obj/structure/closet/secure_closet/miner)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/miner/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/industrial
 	else
-		starts_with += /obj/item/storage/backpack/satchel/eng
-	starts_with += /obj/item/gps/mining
-	return ..()
-
-
+		. += /obj/item/storage/backpack/satchel/eng
+	. += /obj/item/gps/mining
 
 /obj/structure/closet/lumber
 	name = "Lumberjack's equipment"
@@ -125,11 +133,14 @@
 		/obj/item/clothing/shoes/boots/winter/mining,
 		/obj/item/stack/marker_beacon/thirty)
 
-// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-/obj/structure/closet/lumber/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/industrial
+CAPABILITIES(/obj/structure/closet/lumber)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/lumber/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack/industrial
 	else
-		starts_with += /obj/item/storage/backpack/satchel/eng
-	return ..()
+		. += /obj/item/storage/backpack/satchel/eng
 

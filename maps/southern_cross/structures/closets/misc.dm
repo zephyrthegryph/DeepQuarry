@@ -15,12 +15,13 @@
 		/obj/item/ammo_magazine/clip/c762/hunter = 9,
 		/obj/item/gun/projectile/shotgun/pump/rifle = 2)
 
-/obj/structure/closet/secure_closet/guncabinet/rifle/Initialize(mapload)
-	if(prob(85))
-		starts_with += /obj/item/gun/projectile/shotgun/pump/rifle
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/guncabinet/rifle/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(85))
+		. += /obj/item/gun/projectile/shotgun/pump/rifle
 	else
-		starts_with += /obj/item/gun/projectile/shotgun/pump/rifle/lever
-	return ..()
+		. += /obj/item/gun/projectile/shotgun/pump/rifle/lever
 
 /obj/structure/closet/secure_closet/guncabinet/phase
 	name = "explorer weapon cabinet"
@@ -57,12 +58,13 @@
 		/obj/item/cataloguer
 		)
 
-/obj/structure/closet/secure_closet/explorer/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/explorer/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack
 	else
-		starts_with += /obj/item/storage/backpack/satchel/norm
-	return ..()
+		. += /obj/item/storage/backpack/satchel/norm
 
 //SAR Lockers
 
@@ -122,12 +124,13 @@
 		/obj/item/cell/device,
 		/obj/item/radio)
 
-/obj/structure/closet/secure_closet/pilot/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/obj/structure/closet/secure_closet/pilot/proc/roll_starts_with(datum/roller/R)
+	. = islist(starts_with) ? list() + starts_with : starts_with
+	if(R.chance(50))
+		. += /obj/item/storage/backpack
 	else
-		starts_with += /obj/item/storage/backpack/satchel/norm
-	return ..()
+		. += /obj/item/storage/backpack/satchel/norm
 
 //Exotic Seeds Crate
 
