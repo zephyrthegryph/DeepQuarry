@@ -70,7 +70,18 @@
 	while (!entry && !closed && !QDELETED(src))
 		stoplag(1) // ALLOW(scheduler): tgui_input is the blocking prompt API itself: it waits on the player by design
 
-DECLARE_UI(/datum/tgui_input_colormatrix, "ColorMate")
+CAPABILITIES(/datum/tgui_input_colormatrix)
+	interface("ColorMate")
+	op("switch_modes", ui_act("switch_modes", arg("mode", num())), then(PROC_REF(ui_act_switch_modes)))
+	op("choose_color", ui_act("choose_color"), asks(/datum/prompt/color/matrix_active_colour, fields = list("title" = computed(PROC_REF(choose_color_title)), "question" = "Choose a color: ", "default" = computed(PROC_REF(active_color_default))), step = "color"), then(PROC_REF(ui_act_choose_color)))
+	op("paint", ui_act("paint"), then(PROC_REF(ui_act_paint)))
+	op("drop", ui_act("drop"), then(PROC_REF(ui_act_drop)))
+	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
+	op("set_matrix_color", ui_act("set_matrix_color", arg("color", num()), arg("value", num())), then(PROC_REF(ui_act_set_matrix_color)))
+	op("set_matrix_string", ui_act("set_matrix_string", arg("value", schema_text(4096))), then(PROC_REF(ui_act_set_matrix_string)))
+	op("set_hue", ui_act("set_hue", arg("buildhue", num(0, 360))), then(PROC_REF(ui_act_set_hue)))
+	op("set_sat", ui_act("set_sat", arg("buildsat", num(-10, 10))), then(PROC_REF(ui_act_set_sat)))
+	op("set_val", ui_act("set_val", arg("buildval", num(-10, 10))), then(PROC_REF(ui_act_set_val)))
 
 /datum/tgui_input_colormatrix/tgui_close(mob/user)
 	. = ..()
@@ -88,7 +99,17 @@ DECLARE_UI(/datum/tgui_input_colormatrix, "ColorMate")
 	data["matrix_only"] = matrix_only
 	return data
 
-UI_DATA_REPLACE(/datum/tgui_input_colormatrix, "activemode=active_mode", "buildhue=build_hue:num", "buildsat=build_sat:num", "buildval=build_val:num", "merge:ui_data_datum_tgui_input_colormatrix{matrixcolors:list,item_preview:text,temp:text,timeout:num}")
+/datum/tgui_input_colormatrix/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["activemode"] = active_mode
+	data["buildhue"] = build_hue
+	data["buildsat"] = build_sat
+	data["buildval"] = build_val
+	var/list/merged_1 = ui_data_datum_tgui_input_colormatrix(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /datum/tgui_input_colormatrix's window data (declared on its UI_DATA row).
 /datum/tgui_input_colormatrix/proc/ui_data_datum_tgui_input_colormatrix(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -114,21 +135,25 @@ UI_DATA_REPLACE(/datum/tgui_input_colormatrix, "activemode=active_mode", "buildh
 		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 	return data
 
-UI_ACT(/datum/tgui_input_colormatrix, "switch_modes", ui_act_switch_modes, UI_ARG_NUM("mode"))
-UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_switch_modes)
+/datum/tgui_input_colormatrix/proc/ui_act_switch_modes(datum/act/op/A, mode)
 	if(matrix_only && active_mode < 3)
 		return FALSE
-	active_mode = params["mode"]
+	active_mode = mode
 	return TRUE
 
-UI_ACT(/datum/tgui_input_colormatrix, "choose_color", ui_act_choose_color)
-UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_choose_color)
-	open_request(src, /datum/prompt/color/matrix_active_colour, PROC_REF(color_chosen), answerer = ui.user, title = "[title] colour picking", question = "Choose a color: ", default = activecolor)
+/datum/tgui_input_colormatrix/proc/choose_color_title(datum/act/op/A)
+	return "[title] colour picking"
+
+/datum/tgui_input_colormatrix/proc/active_color_default(datum/act/op/A)
+	return activecolor
+
+/datum/tgui_input_colormatrix/proc/ui_act_choose_color(datum/act/op/A)
+	activecolor = A.step_value("color")
 	return TRUE
 
-UI_ACT(/datum/tgui_input_colormatrix, "paint", ui_act_paint)
-UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_paint)
-	if(!do_paint(ui.user, !was_path))
+/datum/tgui_input_colormatrix/proc/ui_act_paint(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!do_paint(user, !was_path))
 		return TRUE
 	set_entry(color_matrix_last)
 	temp = "Painted Successfully!"
@@ -136,31 +161,29 @@ UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_paint)
 	SStgui.close_uis(src)
 	return TRUE
 
-UI_ACT(/datum/tgui_input_colormatrix, "drop", ui_act_drop)
-UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_drop)
+/datum/tgui_input_colormatrix/proc/ui_act_drop(datum/act/op/A)
 	temp = ""
 	closed = TRUE
 	SStgui.close_uis(src)
 	return TRUE
 
-UI_ACT(/datum/tgui_input_colormatrix, "clear", ui_act_clear)
-UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_clear)
+/datum/tgui_input_colormatrix/proc/ui_act_clear(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
 	target().remove_atom_colour(FIXED_COLOUR_PRIORITY)
 	play_sfx(src, SFX_EFFECTS_SPRAY3)
 	temp = "Cleared Successfully!"
 	color_matrix_last = DEFAULT_COLORMATRIX
-	update_tgui_static_data(ui.user, ui)
+	update_tgui_static_data(user, ui)
 	return TRUE
 
-UI_ACT(/datum/tgui_input_colormatrix, "set_matrix_color", ui_act_set_matrix_color, UI_ARG_NUM("color"), UI_ARG_NUM("value"))
-UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_set_matrix_color)
-	color_matrix_last[params["color"]] = params["value"]
+/datum/tgui_input_colormatrix/proc/ui_act_set_matrix_color(datum/act/op/A, color, value)
+	color_matrix_last[color] = value
 	return TRUE
 
-UI_ACT(/datum/tgui_input_colormatrix, "set_matrix_string", ui_act_set_matrix_string, UI_ARG_TEXT("value"))
-UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_set_matrix_string)
-	if(params["value"])
-		var/list/colours = splittext(params["value"], ",")
+/datum/tgui_input_colormatrix/proc/ui_act_set_matrix_string(datum/act/op/A, value)
+	if(value)
+		var/list/colours = splittext(value, ",")
 		if(length(colours) > 12)
 			colours.Cut(13)
 		for(var/i = 1, i <= length(colours), i++)
@@ -169,30 +192,20 @@ UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_set_matrix_string)
 				color_matrix_last[i] = clamp(number, -10, 10)
 	return TRUE
 
-UI_ACT(/datum/tgui_input_colormatrix, "set_hue", ui_act_set_hue, UI_ARG_NUM("buildhue", 0, 360))
-UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_set_hue)
-	build_hue = params["buildhue"]
+/datum/tgui_input_colormatrix/proc/ui_act_set_hue(datum/act/op/A, buildhue)
+	build_hue = buildhue
 	return TRUE
 
-UI_ACT(/datum/tgui_input_colormatrix, "set_sat", ui_act_set_sat, UI_ARG_NUM("buildsat", -10, 10))
-UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_set_sat)
-	build_sat = params["buildsat"]
+/datum/tgui_input_colormatrix/proc/ui_act_set_sat(datum/act/op/A, buildsat)
+	build_sat = buildsat
 	return TRUE
 
-UI_ACT(/datum/tgui_input_colormatrix, "set_val", ui_act_set_val, UI_ARG_NUM("buildval", -10, 10))
-UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_set_val)
-	build_val = params["buildval"]
+/datum/tgui_input_colormatrix/proc/ui_act_set_val(datum/act/op/A, buildval)
+	build_val = buildval
 	return TRUE
-
-/datum/tgui_input_colormatrix/proc/color_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	activecolor = A.answer.value
-	SStgui.update_uis(src)
 
 /datum/prompt/color/matrix_active_colour
 	timeout = 0
-	recheck_on_open = TRUE
 
 /datum/prompt/color/matrix_active_colour/normalize(given)
 	return given
@@ -205,11 +218,6 @@ UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_set_val)
 	rel_set(picker, nameof(picker.prompt), src)
 	picker.tgui_interact(user)
 	return picker
-
-/datum/prompt/color/matrix_active_colour/recheck_extra()
-	if(QDELETED(owner) || QDELETED(answerer))
-		return "gone"
-	return null
 
 /datum/tgui_input_colormatrix/proc/set_entry(entry)
 	src.entry = entry

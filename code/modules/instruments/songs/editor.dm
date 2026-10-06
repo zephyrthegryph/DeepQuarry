@@ -1,12 +1,24 @@
-DECLARE_UI(/datum/song, "InstrumentEditor")
-
 /datum/song/ui_title(mob/user)
 	return parent().name
 
 /datum/song/tgui_host(mob/user)
 	return parent()
 
-UI_DATA(/datum/song, "id", "note_shift:num", "sustain_mode", "volume:num", "volume_dropoff_threshold=sustain_dropoff_volume:num", "sustain_indefinitely=full_sustain_held_note:num", "playing:num", "repeat:num", "merge:ui_data_datum_song{using_instrument:unknown,octaves:num,sustain_mode_button:text,sustain_mode_duration:num,sustain_mode_min:num,sustain_mode_max:unknown,instrument_ready:unknown,bpm:num,lines:list}")
+/datum/song/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["id"] = id
+	data["note_shift"] = note_shift
+	data["sustain_mode"] = sustain_mode
+	data["volume"] = volume
+	data["volume_dropoff_threshold"] = sustain_dropoff_volume
+	data["sustain_indefinitely"] = full_sustain_held_note
+	data["playing"] = playing
+	data["repeat"] = repeat
+	var/list/merged_1 = ui_data_datum_song(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /datum/song's window data (declared on its UI_DATA row).
 /datum/song/proc/ui_data_datum_song(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -52,31 +64,34 @@ UI_DATA(/datum/song, "id", "note_shift:num", "sustain_mode", "volume:num", "volu
 	data["max_lines"] = MUSIC_MAXLINES
 	return data
 
-/datum/song/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/song/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!istype(user))
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/song, "play_music", ui_act_play_music)
-UI_ACT_PROC(/datum/song, ui_act_play_music)
+/datum/song/proc/ui_act_play_music(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	if(!playing)
 		start_playing(user)
 	else
 		stop_playing()
 	return TRUE
 
-UI_ACT(/datum/song, "set_instrument_id", ui_act_set_instrument_id, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/datum/song, ui_act_set_instrument_id)
-	var/new_id = reject_bad_name(LOWER_TEXT(params["id"]), max_length = 20, allow_numbers = TRUE, cap_after_symbols = FALSE)
+/datum/song/proc/ui_act_set_instrument_id(datum/act/op/A, id_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/new_id = reject_bad_name(LOWER_TEXT(id_arg), max_length = 20, allow_numbers = TRUE, cap_after_symbols = FALSE)
 	if(new_id)
 		id = new_id
 	return TRUE
 
-UI_ACT(/datum/song, "change_instrument", ui_act_change_instrument, UI_ARG_TEXT("new_instrument"))
-UI_ACT_PROC(/datum/song, ui_act_change_instrument)
-	var/new_instrument = params["new_instrument"]
+/datum/song/proc/ui_act_change_instrument(datum/act/op/A, new_instrument_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/new_instrument = new_instrument_arg
 	//only one instrument, so no need to bother changing it.
 	if(!length(allowed_instrument_ids))
 		return FALSE
@@ -85,9 +100,10 @@ UI_ACT_PROC(/datum/song, ui_act_change_instrument)
 	set_instrument(new_instrument)
 	return TRUE
 
-UI_ACT(/datum/song, "tempo", ui_act_tempo, UI_ARG_TEXT("tempo_change"))
-UI_ACT_PROC(/datum/song, ui_act_tempo)
-	var/move_direction = params["tempo_change"]
+/datum/song/proc/ui_act_tempo(datum/act/op/A, tempo_change)
+	if(!ui_gate(A))
+		return FALSE
+	var/move_direction = tempo_change
 	var/tempo_diff
 	if(move_direction == "increase_speed")
 		tempo_diff = world.tick_lag
@@ -98,45 +114,35 @@ UI_ACT_PROC(/datum/song, ui_act_tempo)
 
 //SONG MAKING
 
-UI_ACT(/datum/song, "import_song", ui_act_import_song)
-UI_ACT_PROC(/datum/song, ui_act_import_song)
-	open_request(ui, /datum/prompt/text/song_import, TYPE_PROC_REF(/datum/tgui, song_import_entered), answerer = user, title = name)
+/datum/song/proc/song_title(datum/act/op/A)
+	return name
 
-/datum/tgui/proc/song_import_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/song/song = src_object()
-	var/song_text = A.answer.value
-	if(length_char(song_text) >= MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
-		open_request(src, /datum/prompt/choice/song_import_continue, PROC_REF(song_import_confirmed), answerer = A.request.answerer, song_text = song_text)
-		return
-	song.ParseSong(user, song_text)
-	SStgui.update_uis(song)
+/datum/song/proc/instrument_title(datum/act/op/A)
+	return parent()?.name
 
-/datum/tgui/proc/song_import_confirmed(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/song/song = src_object()
-	var/datum/prompt/choice/song_import_continue/ask = A.answer
-	if(ask.value == "Yes" && length_char(ask.song_text) > MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
-		// A cached oversized answer used to loop forever instead of reopening the editor.
-		open_request(src, /datum/prompt/text/song_import, PROC_REF(song_import_entered), answerer = A.request.answerer, title = song.name)
-		return
-	song.ParseSong(user, ask.song_text)
-	SStgui.update_uis(song)
+/// An import as long as the editor holds asks whether to keep editing it (a "Yes" to one over the limit ends the import: press it again to paste anew).
+/datum/song/proc/import_too_long(datum/act/op/A)
+	return length_char(A.step_value("song")) >= MUSIC_MAXLINES * MUSIC_MAXLINECHARS
+
+/datum/song/proc/ui_act_import_song(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	var/song_text = A.step_value("song")
+	if(A.step_value("too_long") == "Yes" && length_char(song_text) > MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
+		return TRUE // keep editing: the import ends unparsed
+	if(!in_range(parent(), A.actor))
+		return FALSE
+	ParseSong(A.actor, song_text)
+	return TRUE
 
 /datum/prompt/text/song_import
 	question = "Please paste the entire song, formatted:"
 	max_len = MUSIC_MAXLINES * MUSIC_MAXLINECHARS
 	multiline = TRUE
 	timeout = 0
-	recheck_on_open = TRUE
 
 /datum/prompt/text/song_import/normalize(given)
 	return istext(given) ? given : null
-
-/datum/prompt/text/song_import/recheck_extra()
-	return song_import_refusal(owner, answerer, !isnull(value))
 
 /datum/prompt/choice/song_import_continue
 	question = "Your message is too long! Would you like to continue editing it?"
@@ -144,25 +150,6 @@ UI_ACT_PROC(/datum/song, ui_act_import_song)
 	choices = list("Yes", "No")
 	buttons = TRUE
 	timeout = 0
-	recheck_on_open = TRUE
-	var/song_text
-
-/datum/prompt/choice/song_import_continue/recheck_extra()
-	return song_import_refusal(owner, answerer, !isnull(value))
-
-/proc/song_import_refusal(datum/tgui/original_ui, mob/answerer, check_range)
-	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
-		return "gone"
-	var/datum/song/song = original_ui.src_object()
-	if(!istype(song) || QDELETED(song))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!song.ui_act_allowed(original_ui.user, "import_song", original_ui, original_ui.state()))
-		return "the editor action is unavailable"
-	if(check_range && !in_range(song.parent(), original_ui.user))
-		return "the instrument is out of range"
-	return null
 
 /datum/song/proc/ui_act_start_new_song(datum/act/op/A)
 	name = ""
@@ -170,58 +157,73 @@ UI_ACT_PROC(/datum/song, ui_act_import_song)
 	tempo = sanitize_tempo(5) // default 120 BPM
 	return OP_OK
 
-UI_ACT(/datum/song, "add_new_line", ui_act_add_new_line)
-UI_ACT_PROC(/datum/song, ui_act_add_new_line)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/text/song_line/add, TYPE_PROC_REF(/datum/tgui, song_line_answered), answerer = ui.user, title = parent().name)
+/datum/song/proc/ui_act_add_new_line(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	var/value = A.step_value("line")
+	if(!value || lines.len > MUSIC_MAXLINES || !in_range(parent(), A.actor))
+		return FALSE
+	append_answered_line(value)
+	return TRUE
 
-UI_ACT(/datum/song, "delete_line", ui_act_delete_line, UI_ARG_NUM("line_deleted"))
-UI_ACT_PROC(/datum/song, ui_act_delete_line)
-	var/line_to_delete = params["line_deleted"]
+/datum/song/proc/ui_act_delete_line(datum/act/op/A, line_deleted)
+	if(!ui_gate(A))
+		return FALSE
+	var/line_to_delete = line_deleted
 	if(line_to_delete > lines.len || line_to_delete < 1)
 		return FALSE
 	lines.Cut(line_to_delete, line_to_delete + 1)
 	return TRUE
 
-UI_ACT(/datum/song, "modify_line", ui_act_modify_line, UI_ARG_NUM("line_editing"))
-UI_ACT_PROC(/datum/song, ui_act_modify_line)
-	var/line_to_edit = params["line_editing"]
-	if(line_to_edit > lines.len || line_to_edit < 1)
+/// The line a modify button names is one of the song's.
+/datum/song/proc/line_exists(datum/act/op/A)
+	var/line = A.args["line_editing"]
+	return isnum(line) && line >= 1 && line <= length(lines) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+
+/datum/song/proc/edited_line(datum/act/op/A)
+	return lines[A.args["line_editing"]]
+
+/datum/song/proc/ui_act_modify_line(datum/act/op/A, line_editing)
+	if(!ui_gate(A))
 		return FALSE
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/text/song_line/modify, TYPE_PROC_REF(/datum/tgui, song_line_answered), answerer = ui.user, title = parent().name, default = lines[line_to_edit], line_to_edit = line_to_edit)
+	if(line_editing > lines.len || line_editing < 1 || !in_range(parent(), A.actor))
+		return FALSE
+	lines[line_editing] = A.step_value("line")
+	return TRUE
 
 //MODE STUFF
 
-UI_ACT(/datum/song, "set_sustain_mode", ui_act_set_sustain_mode, UI_ARG_VALUE("new_mode"))
-UI_ACT_PROC(/datum/song, ui_act_set_sustain_mode)
-	var/new_mode = params["new_mode"]
+/datum/song/proc/ui_act_set_sustain_mode(datum/act/op/A, new_mode_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/new_mode = new_mode_arg
 	if(isnull(new_mode) || !(new_mode in SSinstruments.ready().note_sustain_modes))
 		return FALSE
 	sustain_mode = new_mode
 	return TRUE
 
-UI_ACT(/datum/song, "set_note_shift", ui_act_set_note_shift, UI_ARG_NUM("amount"))
-UI_ACT_PROC(/datum/song, ui_act_set_note_shift)
-	var/amount = params["amount"]
+/datum/song/proc/ui_act_set_note_shift(datum/act/op/A, amount_arg)
+	if(!ui_gate(A))
+		return FALSE
+	var/amount = amount_arg
 	if(!isnum(amount))
 		return FALSE
 	note_shift = clamp(amount, note_shift_min, note_shift_max)
 	return TRUE
 
-UI_ACT(/datum/song, "set_volume", ui_act_set_volume, UI_ARG_NUM("amount"))
-UI_ACT_PROC(/datum/song, ui_act_set_volume)
-	var/new_volume = params["amount"]
+/datum/song/proc/ui_act_set_volume(datum/act/op/A, amount)
+	if(!ui_gate(A))
+		return FALSE
+	var/new_volume = amount
 	if(!isnum(new_volume))
 		return FALSE
 	set_volume(new_volume)
 	return TRUE
 
-UI_ACT(/datum/song, "set_dropoff_volume", ui_act_set_dropoff_volume, UI_ARG_NUM("amount"))
-UI_ACT_PROC(/datum/song, ui_act_set_dropoff_volume)
-	var/dropoff_threshold = params["amount"]
+/datum/song/proc/ui_act_set_dropoff_volume(datum/act/op/A, amount)
+	if(!ui_gate(A))
+		return FALSE
+	var/dropoff_threshold = amount
 	if(!isnum(dropoff_threshold))
 		return FALSE
 	set_dropoff_volume(dropoff_threshold)
@@ -231,19 +233,21 @@ UI_ACT_PROC(/datum/song, ui_act_set_dropoff_volume)
 	full_sustain_held_note = !full_sustain_held_note
 	return OP_OK
 
-UI_ACT(/datum/song, "set_repeat_amount", ui_act_set_repeat_amount, UI_ARG_NUM("amount"))
-UI_ACT_PROC(/datum/song, ui_act_set_repeat_amount)
+/datum/song/proc/ui_act_set_repeat_amount(datum/act/op/A, amount)
+	if(!ui_gate(A))
+		return FALSE
 	if(playing)
 		return
-	var/repeat_amount = params["amount"]
+	var/repeat_amount = amount
 	if(!isnum(repeat_amount))
 		return FALSE
 	set_repeats(repeat_amount)
 	return TRUE
 
-UI_ACT(/datum/song, "edit_sustain_mode", ui_act_edit_sustain_mode, UI_ARG_NUM("amount"))
-UI_ACT_PROC(/datum/song, ui_act_edit_sustain_mode)
-	var/sustain_amount = params["amount"]
+/datum/song/proc/ui_act_edit_sustain_mode(datum/act/op/A, amount)
+	if(!ui_gate(A))
+		return FALSE
+	var/sustain_amount = amount
 	if(isnull(sustain_amount) || !isnum(sustain_amount))
 		return
 	switch(sustain_mode)
@@ -279,18 +283,6 @@ UI_ACT_PROC(/datum/song, ui_act_edit_sustain_mode)
 			else
 				linenum++
 
-// The original editor window owns line continuations; the song is its existing source.
-/datum/tgui/proc/song_line_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/datum/song/song = src_object()
-	var/datum/prompt/text/song_line/ask = context.answer
-	if(ask.line_action == "add_new_line")
-		song.append_answered_line(ask.value)
-	else
-		song.lines[ask.line_to_edit] = ask.value
-		SStgui.update_uis(song)
-
 /datum/song/proc/append_answered_line(value)
 	if(length(value) > MUSIC_MAXLINECHARS)
 		value = copytext(value, 1, MUSIC_MAXLINECHARS)
@@ -299,39 +291,12 @@ UI_ACT_PROC(/datum/song, ui_act_edit_sustain_mode)
 /datum/prompt/text/song_line
 	max_len = MUSIC_MAXLINECHARS
 	timeout = 0
-	recheck_on_open = TRUE
-	var/line_action
-	var/line_to_edit
 
 /datum/prompt/text/song_line/normalize(given)
 	return istext(given) ? given : null
 
-/datum/prompt/text/song_line/recheck_extra()
-	var/datum/tgui/original_ui = owner
-	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(answerer))
-		return "gone"
-	var/datum/song/song = original_ui.src_object()
-	if(!istype(song) || QDELETED(song))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!song.ui_act_allowed(original_ui.user, line_action, original_ui, original_ui.state()))
-		return "the editor action is unavailable"
-	// Existing row guards are answer-time checks; opening has no supplied answer.
-	if(!isnull(value))
-		if(!in_range(song.parent(), original_ui.user))
-			return "the instrument is out of range"
-		if(line_action == "add_new_line")
-			if(!value || song.lines.len > MUSIC_MAXLINES)
-				return "no line can be added"
-		else if(line_to_edit > song.lines.len || line_to_edit < 1)
-			return "the selected line is gone"
-	return null
-
 /datum/prompt/text/song_line/add
 	question = "Enter your line"
-	line_action = "add_new_line"
 
 /datum/prompt/text/song_line/modify
 	question = "Enter your line "
-	line_action = "modify_line"

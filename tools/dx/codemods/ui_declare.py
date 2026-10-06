@@ -634,8 +634,14 @@ def main():
             forward = {"var": fm.group(1), "def": fdef, "first": ffirst, "last": flast, "row": (rel, idx)}
         if bad:
             return None, bad
-        if len({a["action"] for a in acts}) != len(acts) or len({a["proc"] for a in acts}) != len(acts):
+        if len({a["action"] for a in acts}) != len(acts):
             return None, "proc_shared"
+        # one handler for several buttons with the same args: one op each, the handler reads which with A.window_action()
+        by_proc = {}
+        for a in acts:
+            other = by_proc.setdefault(a["proc"], a)
+            if other is not a and other["specs"] != a["specs"]:
+                return None, "proc_shared"
         # UI_ACT_OVERRIDE(T, proc): this type's handler of a button an ancestor declares
         overrides = []
         for k, rel, idx, text in rs:
@@ -754,7 +760,7 @@ def main():
             keep = [a for a in inherited["args"] if not re.match(r"^(state|rights)\s*=", a) and not (forward and re.match(r"^forwards\s*=", a))]
             plan["redeclared"] = keep + ([plan["state"][0]] if plan["state"] else []) + (["forwards = nameof(%s)" % forward["var"]] if forward else [])
         # ---- handlers
-        handler_jobs = [{"act": a, "owner": t, "row": None} for a in acts] + overrides
+        handler_jobs = [{"act": a, "owner": t, "row": None} for a in acts if by_proc[a["proc"]] is a] + overrides
         bad = None
         for job in handler_jobs:
             a = job["act"]
@@ -778,16 +784,18 @@ def main():
             asks = []
             if asks_on and any(LA.ASK_CALL.search(strip_code(l)) for l in body_lines):
                 asks, why_ask = LA.parse_leading(f.lines, first, last, a["proc"], "user", ("act_ask",))
-                if asks is None:
-                    bad = why_ask
-                    break
-                if not asks:
-                    bad = "ask_not_first"
-                    break
-                body_lines = LA.edited_lines(f.lines, first, last, asks)
-                if any(LA.ASK_CALL.search(strip_code(l)) for l in body_lines):
-                    bad = "ask_later"
-                    break
+                if asks is None or not asks:
+                    # --force ask: the questions stay in the body as they are, for the hand pass
+                    bad = forced("ask:" + (why_ask if asks is None else "ask_not_first"))
+                    if bad:
+                        break
+                    asks = []
+                else:
+                    body_lines = LA.edited_lines(f.lines, first, last, asks)
+                    if any(LA.ASK_CALL.search(strip_code(l)) for l in body_lines):
+                        bad = forced("ask:ask_later")
+                        if bad:
+                            break
             body = "\n".join(strip_code(l) for l in body_lines)
             # references elsewhere: the row, the definition and nothing else
             occ = mentions(a["proc"], t)
@@ -1033,7 +1041,7 @@ def main():
                 parts.append(arg_schema_text(kind, name, bounds))
             ui = 'ui_act(%s%s)' % (a.get("expr") or '"%s"' % a["action"], "".join(", " + p for p in parts[1:]))
             need = ""
-            hh = next(h for h in plan["handlers"] if h["act"] is a)
+            hh = sorted((h for h in plan["handlers"] if h["act"]["proc"] == a["proc"]), key=lambda h: h["override"])[0]
             asks_text = "".join(", " + x for x in hh["ask_parts"])
             entries.append('op(%s, %s%s%s, then(PROC_REF(%s)))' % ('"%s"' % a["key"] if a.get("key") else (a.get("expr") or '"%s"' % a["action"]), ui, need, asks_text, a["proc"]))
         # handlers

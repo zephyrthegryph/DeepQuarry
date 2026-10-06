@@ -15,9 +15,15 @@
 /datum/eventkit/mob_spawner/New()
 	. = ..()
 
-DECLARE_UI(/datum/eventkit/mob_spawner, "MobSpawner", UI_TITLE("EventKit - Mob Spawner"))
-
-DECLARE_UI_STATE(/datum/eventkit/mob_spawner, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
+CAPABILITIES(/datum/eventkit/mob_spawner)
+	interface("MobSpawner", title = "EventKit - Mob Spawner", rights = R_ADMIN|R_EVENT|R_DEBUG)
+	op("select_path", ui_act("select_path"), asks(/datum/prompt/choice/mob_spawner_setting/path, fields = list("choices" = computed(PROC_REF(mob_paths))), step = "value"), then(PROC_REF(ui_act_select_path)))
+	op("toggle_custom_ai", ui_act("toggle_custom_ai"), then(PROC_REF(ui_act_toggle_custom_ai)))
+	op("set_faction", ui_act("set_faction"), asks(/datum/prompt/text/mob_spawner_faction, fields = list("default" = computed(PROC_REF(faction_default))), step = "value"), then(PROC_REF(ui_act_set_faction)))
+	op("set_intent", ui_act("set_intent"), asks(/datum/prompt/choice/mob_spawner_setting/intent, fields = list("default" = computed(PROC_REF(intent_default))), step = "value"), then(PROC_REF(ui_act_set_intent)))
+	op("set_ai_path", ui_act("set_ai_path"), then(PROC_REF(ui_act_set_ai_path)))
+	op("loc_lock", ui_act("loc_lock"), then(PROC_REF(ui_act_loc_lock)))
+	op("start_spawn", ui_act("start_spawn", arg("amount", num()), arg("desc", schema_text(4096)), arg("flavor_text", schema_text(4096)), arg("health", num()), arg("max_health", num()), arg("melee_damage_lower", num()), arg("melee_damage_upper", num()), arg("name", schema_text(4096)), arg("size_multiplier", num()), arg("x", schema_text(4096)), arg("y", schema_text(4096)), arg("z", schema_text(4096))), asks(/datum/prompt/choice/mob_spawner_spawn, step = "confirm"), then(PROC_REF(ui_act_start_spawn)))
 
 /datum/eventkit/mob_spawner/tgui_static_data(mob/user)
 	var/list/data = list()
@@ -28,7 +34,18 @@ DECLARE_UI_STATE(/datum/eventkit/mob_spawner, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBU
 
 	return data
 
-UI_DATA_REPLACE(/datum/eventkit/mob_spawner, "loc_lock:num", "use_custom_ai:num", "ai_type:text", "faction:text", "intent:text", "merge:ui_data_datum_eventkit_mob_spawner{loc_x:num,loc_y:num,loc_z:num,path:unknown,path_name:text,desc:text,flavor_text:text,max_health:unknown,health:unknown,melee_damage_lower:num,melee_damage_upper:num}")
+/datum/eventkit/mob_spawner/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["loc_lock"] = loc_lock
+	data["use_custom_ai"] = use_custom_ai
+	data["ai_type"] = ai_type
+	data["faction"] = faction
+	data["intent"] = intent
+	var/list/merged_1 = ui_data_datum_eventkit_mob_spawner(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /datum/eventkit/mob_spawner's window data (declared on its UI_DATA row).
 /datum/eventkit/mob_spawner/proc/ui_data_datum_eventkit_mob_spawner(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -71,55 +88,60 @@ UI_DATA_REPLACE(/datum/eventkit/mob_spawner, "loc_lock:num", "use_custom_ai:num"
 
 	return data
 
-/datum/eventkit/mob_spawner/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!check_rights_for(ui.user.client, R_SPAWN))
+/datum/eventkit/mob_spawner/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!check_rights_for(user.client, R_SPAWN))
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/eventkit/mob_spawner, "select_path", ui_act_select_path)
-UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_select_path)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/choice/mob_spawner_setting/path, TYPE_PROC_REF(/datum/tgui, mob_spawner_setting_answered), answerer = ui.user, choices = typesof(/mob))
+/datum/eventkit/mob_spawner/proc/ui_act_select_path(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	apply_spawner_setting("select_path", A.step_value("value"))
+	return TRUE
 
-UI_ACT(/datum/eventkit/mob_spawner, "toggle_custom_ai", ui_act_toggle_custom_ai)
-UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_toggle_custom_ai)
+/datum/eventkit/mob_spawner/proc/ui_act_toggle_custom_ai(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	use_custom_ai = !use_custom_ai
 	return TRUE
 
-UI_ACT(/datum/eventkit/mob_spawner, "set_faction", ui_act_set_faction)
-UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_set_faction)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/text/mob_spawner_faction, TYPE_PROC_REF(/datum/tgui, mob_spawner_setting_answered), answerer = ui.user, default = (faction ? faction : "neutral"))
-
-UI_ACT(/datum/eventkit/mob_spawner, "set_intent", ui_act_set_intent)
-UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_set_intent)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/choice/mob_spawner_setting/intent, TYPE_PROC_REF(/datum/tgui, mob_spawner_setting_answered), answerer = ui.user, default = (intent ? intent : I_HELP))
-
-UI_ACT(/datum/eventkit/mob_spawner, "set_ai_path", ui_act_set_ai_path)
-UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_set_ai_path)
-	//modern brain has no equivalent of "swap AI subtype at runtime";
-	// behaviors are declared per mob subtype via the get_ai_behaviors type table.
-	to_chat(ui.user, span_warning("AI path selection no longer available; mob behaviors are per-subtype."))
+/datum/eventkit/mob_spawner/proc/ui_act_set_faction(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	apply_spawner_setting("set_faction", A.step_value("value"))
 	return TRUE
 
-UI_ACT(/datum/eventkit/mob_spawner, "loc_lock", ui_act_loc_lock)
-UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_loc_lock)
+/datum/eventkit/mob_spawner/proc/ui_act_set_intent(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
+	apply_spawner_setting("set_intent", A.step_value("value"))
+	return TRUE
+
+/datum/eventkit/mob_spawner/proc/ui_act_set_ai_path(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	//modern brain has no equivalent of "swap AI subtype at runtime";
+	// behaviors are declared per mob subtype via the get_ai_behaviors type table.
+	to_chat(user, span_warning("AI path selection no longer available; mob behaviors are per-subtype."))
+	return TRUE
+
+/datum/eventkit/mob_spawner/proc/ui_act_loc_lock(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	loc_lock = !loc_lock
 	return TRUE
 
-UI_ACT(/datum/eventkit/mob_spawner, "start_spawn", ui_act_start_spawn, UI_ARG_NUM("amount"), UI_ARG_TEXT("desc"), UI_ARG_TEXT("flavor_text"), UI_ARG_NUM("health"), UI_ARG_NUM("max_health"), UI_ARG_NUM("melee_damage_lower"), UI_ARG_NUM("melee_damage_upper"), UI_ARG_TEXT("name"), UI_ARG_NUM("size_multiplier"), UI_ARG_TEXT("x"), UI_ARG_TEXT("y"), UI_ARG_TEXT("z"))
-UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_start_spawn)
-	if(!istype(ui) || QDELETED(ui) || !ismob(ui.user) || QDELETED(ui.user))
-		return
-	open_request(ui, /datum/prompt/choice/mob_spawner_spawn, TYPE_PROC_REF(/datum/tgui, mob_spawner_spawn_answered), answerer = ui.user, spawn_amount = params["amount"], spawn_desc = params["desc"], spawn_flavor_text = params["flavor_text"], spawn_health = params["health"], spawn_max_health = params["max_health"], spawn_melee_damage_lower = params["melee_damage_lower"], spawn_melee_damage_upper = params["melee_damage_upper"], spawn_name = params["name"], spawn_size_multiplier = params["size_multiplier"], spawn_x = params["x"], spawn_y = params["y"], spawn_z = params["z"])
+/datum/eventkit/mob_spawner/proc/ui_act_start_spawn(datum/act/op/A, amount, desc, flavor_text, health, max_health, melee_damage_lower, melee_damage_upper, name, size_multiplier, x, y, z)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(A.step_value("confirm") != "Yes")
+		return TRUE
+	return apply_spawn_choice(user, amount, desc, flavor_text, health, max_health, melee_damage_lower, melee_damage_upper, name, size_multiplier, x, y, z)
 
-/datum/eventkit/mob_spawner/proc/apply_spawn_choice(datum/tgui/ui, mob/original_actor, spawn_amount, spawn_desc, spawn_flavor_text, spawn_health, spawn_max_health, spawn_melee_damage_lower, spawn_melee_damage_upper, spawn_name, spawn_size_multiplier, spawn_x, spawn_y, spawn_z)
+/datum/eventkit/mob_spawner/proc/apply_spawn_choice(mob/original_actor, spawn_amount, spawn_desc, spawn_flavor_text, spawn_health, spawn_max_health, spawn_melee_damage_lower, spawn_melee_damage_upper, spawn_name, spawn_size_multiplier, spawn_x, spawn_y, spawn_z)
 	var/amount = spawn_amount
 	var/name = spawn_name
 	var/x = spawn_x
@@ -127,12 +149,12 @@ UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_start_spawn)
 	var/z = spawn_z
 
 	if(!name)
-		to_chat(ui.user, span_warning("Name cannot be empty."))
+		to_chat(original_actor, span_warning("Name cannot be empty."))
 		return FALSE
 
 	var/turf/T = locate(x, y, z)
 	if(!T)
-		to_chat(ui.user, span_warning("Those coordinates are outside the boundaries of the map."))
+		to_chat(original_actor, span_warning("Those coordinates are outside the boundaries of the map."))
 		return FALSE
 
 	for(var/i = 0, i < amount, i++)
@@ -140,7 +162,7 @@ UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_start_spawn)
 			var/turf/TU = get_turf(locate(x, y, z))
 			TU.ChangeTurf(path)
 		else
-			var/mob/M = new path(ui.user.loc)
+			var/mob/M = new path(original_actor.loc)
 
 			M.name = sanitize(name)
 			M.desc = sanitize(spawn_desc)
@@ -165,7 +187,7 @@ UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_start_spawn)
 					L.initialize_ai_brain()
 					L.status_adjust(EFFECT_SLEEPING, -100)
 				else
-					to_chat(ui.user, span_notice("You can only set AI for subtypes of mob/living!"))
+					to_chat(original_actor, span_notice("You can only set AI for subtypes of mob/living!"))
 
 			var/size_mul = spawn_size_multiplier
 			if(isnum(size_mul))
@@ -176,7 +198,7 @@ UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_start_spawn)
 					M.size_multiplier = size_mul
 				M.update_icon()
 			else
-				to_chat(ui.user, span_warning("Size Multiplier not applied: ([size_mul]) is not a valid input."))
+				to_chat(original_actor, span_warning("Size Multiplier not applied: ([size_mul]) is not a valid input."))
 
 			M.forceMove(T)
 
@@ -194,18 +216,14 @@ ADMIN_VERB(eventkit_open_mob_spawner, R_SPAWN, "Open Mob Spawner", "Opens an adv
 	var/datum/eventkit/mob_spawner/spawner = new()
 	spawner.tgui_interact(user.mob)
 
-/datum/tgui/proc/mob_spawner_setting_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/datum/eventkit/mob_spawner/spawner = src_object()
-	var/setting_action
-	if(istype(context.answer, /datum/prompt/choice/mob_spawner_setting))
-		var/datum/prompt/choice/mob_spawner_setting/ask = context.answer
-		setting_action = ask.setting_action
-	else
-		setting_action = "set_faction"
-	spawner.apply_spawner_setting(setting_action, context.answer.value)
-	SStgui.update_uis(spawner)
+/datum/eventkit/mob_spawner/proc/mob_paths(datum/act/op/A)
+	return typesof(/mob)
+
+/datum/eventkit/mob_spawner/proc/faction_default(datum/act/op/A)
+	return faction ? faction : "neutral"
+
+/datum/eventkit/mob_spawner/proc/intent_default(datum/act/op/A)
+	return intent ? intent : I_HELP
 
 /datum/eventkit/mob_spawner/proc/apply_spawner_setting(setting_action, value)
 	switch(setting_action)
@@ -219,55 +237,22 @@ ADMIN_VERB(eventkit_open_mob_spawner, R_SPAWN, "Open Mob Spawner", "Opens an adv
 
 /datum/prompt/choice/mob_spawner_setting
 	timeout = 0
-	recheck_on_open = TRUE
-	var/setting_action
-
-/datum/prompt/choice/mob_spawner_setting/recheck_extra()
-	return mob_spawner_setting_ui_reason(owner, answerer, setting_action)
 
 /datum/prompt/choice/mob_spawner_setting/path
 	question = "Please select the new path of the mob you want to spawn."
-	setting_action = "select_path"
 
 /datum/prompt/choice/mob_spawner_setting/intent
 	question = "Please select preferred intent"
 	title = "Select Intent"
 	choices = list(I_HELP, I_HURT)
-	setting_action = "set_intent"
 
 /datum/prompt/text/mob_spawner_faction
 	question = "Please input your mobs' faction"
 	title = "Faction"
 	timeout = 0
-	recheck_on_open = TRUE
 
 /datum/prompt/text/mob_spawner_faction/normalize(given)
 	return istext(given) ? given : null
-
-/datum/prompt/text/mob_spawner_faction/recheck_extra()
-	return mob_spawner_setting_ui_reason(owner, answerer, "set_faction")
-
-/proc/mob_spawner_setting_ui_reason(datum/tgui/original_ui, mob/original_actor, setting_action)
-	if(!istype(original_ui) || QDELETED(original_ui) || QDELETED(original_actor))
-		return "gone"
-	var/datum/eventkit/mob_spawner/spawner = original_ui.src_object()
-	if(!istype(spawner) || QDELETED(spawner))
-		return "gone"
-	if(original_ui.status != STATUS_INTERACTIVE)
-		return "the original window is not interactive"
-	if(!spawner.ui_act_allowed(original_ui.user, setting_action, original_ui, original_ui.state()))
-		return "the mob spawner setting is unavailable"
-	return null
-
-/datum/tgui/proc/mob_spawner_spawn_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/datum/prompt/choice/mob_spawner_spawn/ask = context.answer
-	if(ask.value != "Yes")
-		return
-	var/datum/eventkit/mob_spawner/spawner = src_object()
-	if(spawner.apply_spawn_choice(src, context.request.answerer, ask.spawn_amount, ask.spawn_desc, ask.spawn_flavor_text, ask.spawn_health, ask.spawn_max_health, ask.spawn_melee_damage_lower, ask.spawn_melee_damage_upper, ask.spawn_name, ask.spawn_size_multiplier, ask.spawn_x, ask.spawn_y, ask.spawn_z))
-		SStgui.update_uis(spawner)
 
 /datum/prompt/choice/mob_spawner_spawn
 	question = "Are you sure that you want to start spawning your custom mobs?"
@@ -275,19 +260,4 @@ ADMIN_VERB(eventkit_open_mob_spawner, R_SPAWN, "Open Mob Spawner", "Opens an adv
 	choices = list("Yes", "Cancel")
 	buttons = TRUE
 	timeout = 0
-	recheck_on_open = TRUE
-	var/spawn_amount
-	var/spawn_desc
-	var/spawn_flavor_text
-	var/spawn_health
-	var/spawn_max_health
-	var/spawn_melee_damage_lower
-	var/spawn_melee_damage_upper
-	var/spawn_name
-	var/spawn_size_multiplier
-	var/spawn_x
-	var/spawn_y
-	var/spawn_z
 
-/datum/prompt/choice/mob_spawner_spawn/recheck_extra()
-	return mob_spawner_setting_ui_reason(owner, answerer, "start_spawn")
