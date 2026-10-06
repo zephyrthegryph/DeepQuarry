@@ -73,61 +73,63 @@ APPEARANCE_TEMPLATE(/obj/machinery/air_sensor, "gsensor{on}")
 /obj/machinery/air_sensor/proc/current_reading_signature()
 	return list2params(sensor_readings(return_air()))
 
-/obj/machinery/air_sensor/machine_step()
-	if(on && radio_connection())
-		var/datum/signal/signal = new
-		signal.transmission_method = TRANSMISSION_RADIO //radio signal
-		signal.data["tag"] = id_tag
-		signal.data["timestamp"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
-		var/list/readings = sensor_readings(return_air())
-		for(var/key in readings)
-			signal.data[key] = readings[key]
-		signal.data["sigtype"]="status"
-		radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
-	register_gas_dependencies()
-	return PROCESS_KILL
+// The sensor broadcasts what it reads when it is placed and again whenever the rounded readings it sends change: a gas watch on the air it
+// stands in hears every change, and the broadcast goes out only when the readings differ from the last one sent.
+CAPABILITIES(/obj/machinery/air_sensor)
+	gas_watch(changed = PROC_REF(air_changed))
+	after_init(0, then(PROC_REF(broadcast_after_init)))
+	op("unfasten", tool(TOOL_WRENCH), wait(0), label("Unfasten"), then(PROC_REF(unfastened)))
+	op("configure", tool(TOOL_MULTITOOL), wait(0), label("Configure"),
+		asks(/datum/prompt/choice, fields = list("title" = "Options!", "question" = computed(PROC_REF(options_question)), "choices" = computed(PROC_REF(option_names)), "timeout" = 0), step = "option"),
+		asks(/datum/prompt/text, fields = list("title" = "Set ID Tag", "question" = computed(PROC_REF(tag_question)), "default" = computed(PROC_REF(tag_default)), "max_len" = MAX_NAME_LEN, "timeout" = 0), step = "tag", when = PROC_REF(saving_to_buffer)),
+		then(PROC_REF(option_chosen)))
 
-/obj/machinery/air_sensor/proc/dependency_mask()
-	var/mask = 0
-	if(output & SENSOR_PRESSURE)
-		mask |= GAS_DEPENDENCY_PRESSURE
-	if(output & SENSOR_TEMPERATURE)
-		mask |= GAS_DEPENDENCY_TEMPERATURE
-	if(output & (SENSOR_O2|SENSOR_PHORON|SENSOR_N2|SENSOR_CO2|SENSOR_N2O|SENSOR_CH4))
-		mask |= GAS_DEPENDENCY_COMPOSITION
-	return mask
+/obj/machinery/air_sensor
+	/// The readings of the last broadcast (list2params), so an unchanged reading is not sent again.
+	var/tmp/last_broadcast
 
-/obj/machinery/air_sensor/proc/register_gas_dependencies()
-	var/datum/gas_mixture/environment = return_air()
-	// Wakes only when the rounded readings it broadcasts would change, not on every revision.
-	om_watch_arm_value(src, "gas", environment?.arena_id(), dependency_mask(), om_callable(src, PROC_REF(current_reading_signature)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
+/// Broadcasts the readings now, whether or not they changed.
+/obj/machinery/air_sensor/proc/broadcast_readings()
+	last_broadcast = current_reading_signature()
+	if(!on || !radio_connection())
+		return
+	var/datum/signal/signal = new
+	signal.transmission_method = TRANSMISSION_RADIO //radio signal
+	signal.data["tag"] = id_tag
+	signal.data["timestamp"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
+	var/list/readings = sensor_readings(return_air())
+	for(var/key in readings)
+		signal.data[key] = readings[key]
+	signal.data["sigtype"]="status"
+	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 
-/obj/machinery/air_sensor/proc/unregister_gas_dependencies()
-	om_watch_disarm(src, "gas")
+/obj/machinery/air_sensor/proc/broadcast_after_init(datum/act/timer/A)
+	broadcast_readings()
 
-/obj/machinery/air_sensor/proc/wake_from_gas()
-	unregister_gas_dependencies()
-	MACHINE_WAKE(src)
-
-/obj/machinery/air_sensor/proc/invalidate_gas_dependencies()
-	om_watch_invalidate(src)
+/// The air changed: a broadcast when what the sensor reports changed.
+/obj/machinery/air_sensor/proc/air_changed(list/observation, index)
+	if(current_reading_signature() != last_broadcast)
+		broadcast_readings()
 
 /obj/machinery/air_sensor/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	invalidate_gas_dependencies()
+	gas_watch_arm(src)
+	broadcast_readings()
 
 /obj/machinery/air_sensor/proc/set_frequency(new_frequency)
-	invalidate_gas_dependencies()
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_ATMOSIA))
+	last_broadcast = null
 
 /obj/machinery/air_sensor/Initialize(mapload)
 	. = ..()
 	if(frequency)
 		set_frequency(frequency)
 
-/obj/machinery/air_sensor/wrench_act(mob/user, obj/item/W)
+/obj/machinery/air_sensor/proc/unfastened(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	playsound(src, W.usesound, 50, 1)
 	act_message(user, src, MSG_SELF(span_notice("You have unfastened %T%.")), MSG_OTHERS("%U% unfastens %T%."), MSG_BLIND("You hear ratcheting."))
 	var/obj/item/pipe_gsensor/gsensor = new /obj/item/pipe_gsensor(loc)
@@ -135,11 +137,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/air_sensor, "gsensor{on}")
 	gsensor.output = output
 	replace_with(src, gsensor)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	return ITEM_INTERACT_SUCCESS
 
 #define ONOFF_TOGGLE(flag) "\[[(output & flag) ? "YES" : "NO"]]"
-/obj/machinery/air_sensor/multitool_act(mob/user, obj/item/tool)
-	var/list/options = list(
+/// The multitool menu: each reading with whether it is sent, and saving the sensor to the multitool's buffer.
+/obj/machinery/air_sensor/proc/sensor_options()
+	return list(
 		"Pressure: [ONOFF_TOGGLE(SENSOR_PRESSURE)]" 		= SENSOR_PRESSURE,
 		"Temperature: [ONOFF_TOGGLE(SENSOR_TEMPERATURE)]" 	= SENSOR_TEMPERATURE,
 		"[GASNAME_O2]: [ONOFF_TOGGLE(SENSOR_O2)]" 			= SENSOR_O2,
@@ -150,68 +152,44 @@ APPEARANCE_TEMPLATE(/obj/machinery/air_sensor, "gsensor{on}")
 		"[GASNAME_CH4]: [ONOFF_TOGGLE(SENSOR_CH4)]" 		= SENSOR_CH4,
 		"-SAVE TO BUFFER-" = "multitool"
 	)
-
-	open_request(src, /datum/prompt/choice/air_sensor_options, PROC_REF(sensor_option_chosen), valid = PROC_REF(sensor_in_view), answerer = user, title = "Options!", question = "[src] has an ID of \"[id_tag]\" and a frequency of [frequency]. What would you like to change?", choices = options, tool = tool, timeout = 0)
-	return TRUE
-
-/// The sensor's multitool menu: the multitool is kept on the question.
-/datum/prompt/choice/air_sensor_options
-	var/obj/item/tool
-
-CAPABILITIES(/datum/prompt/choice/air_sensor_options)
-	ref_one(nameof(tool), /obj/item)
-
-/// Setting the sensor's ID tag, then saving it to the multitool buffer.
-/datum/prompt/text/air_sensor_tag
-	var/obj/item/multitool/tool
-
-CAPABILITIES(/datum/prompt/text/air_sensor_tag)
-	ref_one(nameof(tool), /obj/item/multitool)
-
-/// Re-checked on the answer: the sensor is still in view.
-/obj/machinery/air_sensor/proc/sensor_in_view(datum/request/R)
-	var/mob/M = R.answerer
-	return istype(M) && !QDELETED(src) && can_see(M, src, 5)
-
-/obj/machinery/air_sensor/proc/sensor_option_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/air_sensor_options/R = A.request
-	var/mob/user = R.answerer
-	invalidate_gas_dependencies()
-	switch(R.choices[A.answer.value])
-		if(SENSOR_PRESSURE)
-			output ^= SENSOR_PRESSURE
-		if(SENSOR_TEMPERATURE)
-			output ^= SENSOR_TEMPERATURE
-		if(SENSOR_O2)
-			output ^= SENSOR_O2
-		if(SENSOR_PHORON)
-			output ^= SENSOR_PHORON
-		if(SENSOR_N2)
-			output ^= SENSOR_N2
-		if(SENSOR_CO2)
-			output ^= SENSOR_CO2
-		if(SENSOR_N2O)
-			output ^= SENSOR_N2O
-		if(SENSOR_CH4)
-			output ^= SENSOR_CH4
-		if("frequency")
-			ask_frequency(user, frequency)
-		if("multitool")
-			open_request(src, /datum/prompt/text/air_sensor_tag, PROC_REF(sensor_tag_entered), answerer = user, title = "Set ID Tag", question = "Please insert an ID tag for [src], example 'burn_chamber'.", default = id_tag, max_len = MAX_NAME_LEN, tool = R.tool, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-
-/obj/machinery/air_sensor/proc/sensor_tag_entered(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/datum/prompt/text/air_sensor_tag/R = A.request
-	var/mob/user = R.answerer
-	id_tag = A.answer.value
-	var/obj/item/multitool/M = R.tool
-	if(istype(M) && M.loc == user)
-		rel_set(M, nameof(M.connectable), src)
-		to_chat(user, span_notice("You save [src] into [M]'s buffer."))
 #undef ONOFF_TOGGLE
+
+/obj/machinery/air_sensor/proc/option_names(datum/act/op/A)
+	. = list()
+	for(var/name in sensor_options())
+		. += name
+
+/obj/machinery/air_sensor/proc/options_question(datum/act/op/A)
+	return "[src] has an ID of \"[id_tag]\" and a frequency of [frequency]. What would you like to change?"
+
+/obj/machinery/air_sensor/proc/tag_question(datum/act/op/A)
+	return "Please insert an ID tag for [src], example 'burn_chamber'."
+
+/obj/machinery/air_sensor/proc/tag_default(datum/act/op/A)
+	return id_tag
+
+/// The second question (the tag) is asked only when the first answer saves the sensor to the buffer.
+/obj/machinery/air_sensor/proc/saving_to_buffer(datum/act/op/A)
+	return sensor_options()[A.step_value("option")] == "multitool"
+
+/obj/machinery/air_sensor/proc/option_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/choice = sensor_options()[A.step_value("option")]
+	if(isnull(choice))
+		return
+	if(choice == "multitool")
+		var/new_tag = A.step_value("tag")
+		if(!new_tag)
+			return
+		id_tag = new_tag
+		var/obj/item/multitool/M = A.held
+		if(istype(M) && M.loc == user)
+			rel_set(M, nameof(M.connectable), src)
+			to_chat(user, span_notice("You save [src] into [M]'s buffer."))
+		return
+	output ^= choice
+	broadcast_readings()
+
 
 /obj/machinery/computer/general_air_control
 
@@ -224,12 +202,6 @@ CAPABILITIES(/datum/prompt/text/air_sensor_tag)
 	var/list/sensor_information
 	var/datum/radio_frequency/radio_connection
 	circuit = /obj/item/circuitboard/air_management
-
-/obj/machinery/computer/general_air_control/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
 
 /obj/machinery/computer/general_air_control/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -244,6 +216,9 @@ CAPABILITIES(/datum/prompt/text/air_sensor_tag)
 
 CAPABILITIES(/obj/machinery/computer/general_air_control)
 	interface("GeneralAtmoControl")
+	op("configure", tool(TOOL_MULTITOOL), wait(0), label("Configure"),
+		asks(/datum/prompt/choice, fields = list("title" = "Configuration", "question" = computed(PROC_REF(control_question)), "choices" = computed(PROC_REF(control_options)), "timeout" = 0), step = "option"),
+		then(PROC_REF(control_option_op)))
 	ui_shape(sensors = list_of(row()))
 
 /obj/machinery/computer/general_air_control/ui_data(datum/act/eval/A)
@@ -266,24 +241,19 @@ CAPABILITIES(/obj/machinery/computer/general_air_control)
 	frequency = new_frequency
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_ATMOSIA))
 
-/obj/machinery/computer/general_air_control/multitool_act(mob/user, obj/item/W)
-	var/static/list/options = list("Sensors", "Frequency", "Cancel")
-	ask_control_menu(user, W, options)
-	return TRUE
+/// The multitool menu of a console (a console with ports adds Inlet and Outlet).
+/obj/machinery/computer/general_air_control/proc/control_options(datum/act/op/A)
+	return list("Sensors", "Frequency", "Cancel")
 
-/// The multitool menu of a console: the multitool is kept on the question.
-/obj/machinery/computer/general_air_control/proc/ask_control_menu(mob/user, obj/item/W, list/options)
-	open_request(src, /datum/prompt/choice/air_control_menu, PROC_REF(control_option_chosen), answerer = user, title = "Configuration", question = "[src] has a frequency of [frequency]. What would you like to change?", choices = options, tool = W, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
+/obj/machinery/computer/general_air_control/proc/control_question(datum/act/op/A)
+	return "[src] has a frequency of [frequency]. What would you like to change?"
+
+/obj/machinery/computer/general_air_control/proc/control_option_op(datum/act/op/A)
+	control_option_apply(A.actor, A.held, A.step_value("option"))
 
 /// Asks whether to set or clear the console's inlet or outlet.
 /obj/machinery/computer/general_air_control/proc/ask_control_port(mob/user, obj/item/tool, port_name, handler)
 	open_request(src, /datum/prompt/choice/air_control_port, handler, answerer = user, title = "Configuration", question = "Would you like to set an [port_name] or clear it?", choices = list("Set", "Clear", "Cancel"), buttons = TRUE, tool = tool, port_name = port_name, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-
-/datum/prompt/choice/air_control_menu
-	var/obj/item/multitool/tool
-
-CAPABILITIES(/datum/prompt/choice/air_control_menu)
-	ref_one(nameof(tool), /obj/item/multitool)
 
 /// Set or clear one of the console's ports from the multitool buffer.
 /datum/prompt/choice/air_control_port
@@ -313,14 +283,9 @@ CAPABILITIES(/datum/prompt/text/air_control_sensor_name)
 	var/list/sensor_names
 	var/to_remove
 
-/// The multitool menu: Inlet, Outlet, Sensors or Frequency.
-/obj/machinery/computer/general_air_control/proc/control_option_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/air_control_menu/R = A.request
-	var/mob/user = R.answerer
-	var/obj/item/multitool/tool = R.tool
-	switch(A.answer.value)
+/// The multitool menu's answer: Inlet, Outlet, Sensors or Frequency.
+/obj/machinery/computer/general_air_control/proc/control_option_apply(mob/user, obj/item/multitool/tool, choice)
+	switch(choice)
 		if("Inlet")
 			configure_inlet(user, tool)
 		if("Outlet")
@@ -497,11 +462,8 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/large_tank_control)
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 	return TRUE
 
-/obj/machinery/computer/general_air_control/large_tank_control/multitool_act(mob/user, obj/item/W)
-	. = ITEM_INTERACT_SUCCESS
-	var/static/list/options =  list("Inlet", "Outlet", "Sensors", "Frequency", "Cancel")
-	ask_control_menu(user, W, options)
-	return TRUE
+/obj/machinery/computer/general_air_control/large_tank_control/control_options(datum/act/op/A)
+	return list("Inlet", "Outlet", "Sensors", "Frequency", "Cancel")
 
 /obj/machinery/computer/general_air_control/large_tank_control/configure_outlet(mob/living/user, obj/item/multitool/tool)
 	ask_control_port(user, tool, "outlet", PROC_REF(outlet_choice_made))
@@ -655,11 +617,8 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/supermatter_core)
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 	return TRUE
 
-/obj/machinery/computer/general_air_control/supermatter_core/multitool_act(mob/user, obj/item/W)
-	. = ITEM_INTERACT_SUCCESS
-	var/static/list/options =  list("Inlet", "Outlet", "Sensors", "Frequency")
-	ask_control_menu(user, W, options)
-	return TRUE
+/obj/machinery/computer/general_air_control/supermatter_core/control_options(datum/act/op/A)
+	return list("Inlet", "Outlet", "Sensors", "Frequency")
 
 /obj/machinery/computer/general_air_control/supermatter_core/configure_outlet(mob/living/user, obj/item/multitool/tool)
 	ask_control_port(user, tool, "outlet", PROC_REF(outlet_choice_made))
@@ -723,13 +682,12 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/supermatter_core)
 	var/on_temperature = 1200
 	circuit = /obj/item/circuitboard/air_management/injector_control
 
-OM_FIELD(/obj/machinery/computer/general_air_control/fuel_injection, automation, 0, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injection, MACHINE_PIPELINE, "automation")
+/// Automation: each step re-reads the latest sensor broadcasts and commands the injectors.
+/obj/machinery/computer/general_air_control/fuel_injection/var/automation = 0
+TRACKED(/obj/machinery/computer/general_air_control/fuel_injection, automation)
 
-/// Machine pipeline (machine_pipeline.dm, step/fuel_injection): a timed stage while automation is
-/// on -- each frame re-reads the latest sensor broadcasts and commands the injectors -- and parked
-/// otherwise; toggling automation wakes it.
-/obj/machinery/computer/general_air_control/fuel_injection/machine_step()
+/// While its automation is on, every machine service interval; without a radio the work stops until automation is switched again.
+/obj/machinery/computer/general_air_control/fuel_injection/proc/work_step(datum/act/timer/A)
 	if(!radio_connection())
 		return PROCESS_KILL
 	if(automation)
@@ -757,6 +715,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injectio
 		radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 
 CAPABILITIES(/obj/machinery/computer/general_air_control/fuel_injection)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(automation), wakes_on = list(nameof(automation)))
 	op("refresh_status", ui_act("refresh_status"), then(PROC_REF(ui_act_refresh_status)))
 	op("toggle_automation", ui_act("toggle_automation"), then(PROC_REF(ui_act_toggle_automation)))
 	op("toggle_injector", ui_act("toggle_injector"), then(PROC_REF(ui_act_toggle_injector)))
@@ -846,14 +805,7 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/fuel_injection)
 #undef SENSOR_N2O
 #undef SENSOR_CH4
 
-/obj/machinery/computer/general_air_control/fuel_injection/step_has_work()
-	return automation && radio_connection()
-
 /// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/air_sensor/arm_wakes()
-	..()
-	register_gas_dependencies()
-
 /// radio connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/air_sensor/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection

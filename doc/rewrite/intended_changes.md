@@ -2009,3 +2009,22 @@ Pinned by `dq_leftovers/*` (organ butchery, peridaxon revival, robotic limb patc
   (`lives_while()` on its owner, once joined) instead of deleting itself in `removed()`; an MMI holder taken out is `replaced_by()` its MMI; a
   diona limb that splits into a nymph, a brain swapped for another, and organs dropped by a robotize are `replaced_by()`; a slime limb that
   splatters and limbs melted to regrow are `dissolved()`.
+
+
+## Leftovers: space heater, portable pumps and scrubbers, atmospherics sensors and consoles (rewrite/leftovers)
+
+- **The space heater's work is started work** (`started_work(step = work_step, starts = TRUE, when = nameof(state))`, was `DECLARE_PERIODIC_WHILE`
+  on the machine pipeline and `machine_step()`); switching it on starts it, a cell running dry stops it, power returning restarts it. Its cell
+  insert, part replacement, hand use and screwdriver hatch are ops (were datum interactions and `screwdriver_act`); its cell is the `owns_one`'s
+  `starts = nameof(cell_type)` (was the legacy `ownership()`). The screwdriver opens and closes the hatch instantly, as before (`wait(0)`).
+- **Portable pumps and scrubbers start with their cell through `starts =`** (a `starting_cell()` the pump and scrubber answer; made without one
+  when `skip_cell`), not in `Initialize()`.
+- **The gas sensor listens to its air through a `gas_watch()`** instead of the machine pipeline and an `om_watch_arm_value()` sleep: it broadcasts
+  once after it is placed and then whenever the rounded readings it sends differ from the last broadcast (the same rule as before), and again when
+  it moves or its outputs are toggled. Its wrench and multitool are ops; the multitool's two questions (which output, then the ID tag when
+  saving to the buffer) are the op's `asks()`, so the second is asked only after "-SAVE TO BUFFER-".
+- **The atmospherics control consoles' multitool menu is an op** whose first question is `asks()` (a console with ports adds Inlet and Outlet to
+  the choices); the later questions (ports, sensors, frequency) are unchanged requests. Their redundant legacy "open UI" hand interaction is gone:
+  `interface()` brings it.
+- **The fuel injection console's automation is started work** while `automation` (now `TRACKED`, was an `OM_FIELD`) holds; switching it on
+  restarts work a missing radio stopped. Both left the machine pipeline roster and their pipeline stages.

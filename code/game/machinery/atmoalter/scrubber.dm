@@ -32,11 +32,9 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 /// Made without its cell (its constructor param).
 /obj/machinery/portable_atmospherics/powered/scrubber/var/skip_cell = FALSE
 
-// ALLOW(init/INSTANCE_STATE): a portable machine comes with its cell unless made without one
-/obj/machinery/portable_atmospherics/powered/scrubber/Initialize(mapload)
-	. = ..()
-	if(!skip_cell)
-		rel_set(src, nameof(cell), new/obj/item/cell/apc(src))
+/// A portable machine comes with its cell unless made without one.
+/obj/machinery/portable_atmospherics/powered/scrubber/starting_cell(datum/act/A)
+	return skip_cell ? null : /obj/item/cell/apc
 
 /// An EMP may toggle a working scrubber (before the hit lands; the hit goes on).
 /obj/machinery/portable_atmospherics/powered/scrubber/proc/scrubber_emp(datum/act/hit/emp/A)
