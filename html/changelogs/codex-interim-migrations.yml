@@ -84,3 +84,4 @@ changes:
   - code_imp: "Migrated fax staffing, ticket creation, and server FPS prompts to native requests while preserving actor checks and logging."
   - code_imp: "Migrated additional admin confirmations and resleeving consent prompts to native requests while retaining checks and tracing."
   - code_imp: "Migrated antagonist spawning, narration, and SDQL confirmations to native requests while preserving admin checks and tracing."
+  - code_imp: "Migrated admin sound, travel, and firework weather selections to native requests while preserving checks and tracing."
