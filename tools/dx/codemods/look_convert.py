@@ -328,6 +328,9 @@ def layer_lines(ix, t, var_arg, rows_text):
     fallback = [f for k, f in rows if k == "APPEARANCE_ANY"]
     if not keyed and not fallback:
         return []
+    if len(keyed) == 1 and not fallback and re.match(r'^"\d+"$', keyed[0][0]):
+        k, f = keyed[0]
+        return ["\tif(%s == %s)" % (expr, k.strip('"'))] + (row_lines(f, "\t\t") or ["\t\t// the row draws nothing"])
     out = ["\tswitch(\"[%s]\")" % expr]
     for k, f in keyed:
         body = row_lines(f, "\t\t\t")
@@ -428,8 +431,8 @@ def provider_lines(ix, t, rel, start, end, has_parent_provider):
         out.append(ind + translate_stmt(ix, t, stmt, locals_, state_reads) + comment)
     if has_parent_provider and not saw_super:
         raise Residue("replaces_parent")
-    # trailing blank lines go
-    while out and not out[-1].strip():
+    # trailing blank lines, and a bare return that ends the body, go
+    while out and (not out[-1].strip() or (strip_code(out[-1]).strip() == "return" and re.match(r"^\t\S", out[-1]))):
         out.pop()
     if state_reads:
         ind = next((re.match(r"^[ \t]*", x).group(0) for x in out if x.strip()), "\t")
@@ -763,6 +766,17 @@ def flush_edits(ix, edits):
                 L[first:first] = new
             else:
                 L[first : last + 1] = new
+        # a generated draw is followed by a blank line
+        k = 0
+        while k < len(L) - 1:
+            if re.match(r"^/[\w/]+/draw\(datum/look/look\)$", L[k]):
+                e = k + 1
+                while e < len(L) and (L[e][:1] in ("\t", " ") or (not L[e].strip() and e + 1 < len(L) and L[e + 1][:1] in ("\t", " "))):
+                    e += 1
+                if e < len(L) and L[e].strip():
+                    L.insert(e, "")
+                k = e
+            k += 1
         f.dirty = True
         f.save()
 

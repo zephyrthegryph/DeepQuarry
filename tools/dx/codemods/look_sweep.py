@@ -128,12 +128,10 @@ def typed_names(header, body_codes):
     return names
 
 
-def run_dead(args):
-    files = {rel: File(rel) for rel in code_files()}
-    chains = Chains(files)
-    removed = collections.Counter()
-    residue = collections.Counter()
-    sites = []
+def walk_calls(args, files, decide, removed, residue, sites):
+    """Visits every update_icon() statement of the editable files. decide(rel, ptype, pname, recv, t) returns "delete",
+    ("replace", text for the call), ("after", statement to add after it) or None. Deleting a call deletes a block it leaves
+    empty when the block's opener is side-effect free."""
     for rel, f in files.items():
         if rel.startswith(NO_EDIT) or not any(rel.startswith(p) for p in (args.paths or ["code/"])):
             continue
@@ -145,7 +143,7 @@ def run_dead(args):
             if not m or "=" in strip_code(lines[i]).split("(")[0]:
                 i += 1
                 continue
-            ptype = m.group(1)
+            ptype, pname = m.group(1), m.group(2)
             j = i + 1
             while j < n and (lines[j].strip() == "" or lines[j][0] in " \t"):
                 j += 1
@@ -153,6 +151,7 @@ def run_dead(args):
             codes = {k: strip_code(lines[k]).strip() for k in body}
             names = typed_names(strip_code(lines[i]), codes.values())
             drop = set()
+            inserts = {}
             for k in body:
                 code = codes[k]
                 if "update_icon" not in code:
@@ -160,6 +159,8 @@ def run_dead(args):
                 ma = CALL_ALONE.match(code)
                 mi = None if ma else IF_CALL.match(code)
                 if not ma and not mi:
+                    if re.search(r"(?<![\w.])update_icon\(\s*\)", code) or re.search(r"\.\s*update_icon\(\s*\)", code):
+                        residue["other_form"] += 1
                     continue
                 recv = (ma or mi).group(2 if mi else 1)
                 if recv is None:
@@ -168,7 +169,27 @@ def run_dead(args):
                     t = names.get(recv)
                 if not t or not t.startswith(ATOM_ROOTS):
                     continue
-                if chains.live(t):
+                action = decide(rel, ptype, pname, recv, t)
+                if action is None:
+                    continue
+                folder = "/".join(rel.split("/")[:3])
+                if isinstance(action, tuple) and action[0] == "replace":
+                    raw = lines[k]
+                    lines[k] = re.sub(r"(?:(?:src|[A-Za-z_]\w*)\s*\??\.\s*)?update_icon\(\s*\)", action[1], raw, count=1)
+                    f.dirty = True
+                    removed[folder] += 1
+                    sites.append("%s:%d %s -> %s" % (rel, k + 1, code, action[1]))
+                    continue
+                if isinstance(action, tuple) and action[0] == "after":
+                    if not ma:
+                        residue["after_needs_block"] += 1
+                        continue
+                    nxt = next((x for x in range(k + 1, j) if codes[x]), None)
+                    if nxt is not None and codes[nxt] == action[1]:
+                        continue
+                    inserts[k] = re.match(r"^[ \t]*", lines[k]).group(0) + action[1]
+                    removed[folder] += 1
+                    sites.append("%s:%d %s + %s" % (rel, k + 1, code, action[1]))
                     continue
                 if mi:
                     if not pure(mi.group(1)):
@@ -213,36 +234,94 @@ def run_dead(args):
                 if not ok:
                     residue["empty_block"] += 1
                     continue
-                if len(plan) > 1 and k in plan and any(indent_of(lines[x]) == 0 for x in plan):
-                    residue["empty_block"] += 1
-                    continue
                 drop |= plan
-                folder = "/".join(rel.split("/")[:3])
                 removed[folder] += 1
                 sites.append("%s:%d %s" % (rel, k + 1, code))
-            if drop:
-                for k in sorted(drop, reverse=True):
-                    # a comment-only line right above a dropped line, with nothing else under it, stays (it may describe more)
-                    del lines[k]
+            if drop or inserts:
+                for k in sorted(set(drop) | set(inserts), reverse=True):
+                    if k in drop:
+                        del lines[k]
+                    else:
+                        lines.insert(k + 1, inserts[k])
                 f.dirty = True
                 n = len(lines)
-                j -= len(drop)
+                j += len(inserts) - len(drop)
             i = j
         if f.dirty and args.apply:
             f.save()
+
+
+def report(label, args, removed, residue, sites):
     total = sum(removed.values())
-    print("look_sweep dead: %d no-op update_icon() calls %s; residue %s" % (total, "removed" if args.apply else "found", dict(residue)))
+    print("look_sweep %s: %d update_icon() calls %s; residue %s" % (label, total, "rewritten" if args.apply else "found", dict(residue)))
     for folder, c in removed.most_common():
         print("    %4d %s" % (c, folder))
     if args.sites:
         for s in sites:
             print("    " + s)
+
+
+def run_dead(args):
+    files = {rel: File(rel) for rel in code_files()}
+    chains = Chains(files)
+    removed, residue, sites = collections.Counter(), collections.Counter(), []
+    walk_calls(args, files, lambda rel, ptype, pname, recv, t: None if chains.live(t) else "delete", removed, residue, sites)
+    report("dead", args, removed, residue, sites)
+    return 0
+
+
+def run_calls(args):
+    """After `convert --apply --report R`: the update_icon() calls on the converted components' types (see look_convert)."""
+    import json
+    rep = json.load(open(args.report))
+    files = {rel: File(rel) for rel in code_files()}
+    chains = Chains(files)
+    member_of = {}
+    for c in rep["converted"]:
+        for t in c["types"]:
+            member_of[t] = c
+    po = chains.parent_override
+    removed, residue, sites = collections.Counter(), collections.Counter(), []
+
+    def comp_of(t):
+        for a in ancestors(t, po):
+            if a in member_of:
+                return member_of[a]
+        return None
+
+    def below(t):
+        """The converted components with a member under t."""
+        out = []
+        for m, c in member_of.items():
+            if m != t and t in ancestors(m, po) and c not in out:
+                out.append(c)
+        return out
+
+    def decide(rel, ptype, pname, recv, t):
+        call = "changed(src)" if recv in (None, "src") else "changed(%s)" % recv
+        c = comp_of(t)
+        if c is not None:
+            if chains.live(t):
+                return None  # another legacy declaration still draws through it
+            if pname == "Initialize" and recv in (None, "src"):
+                return "delete"  # the first refresh draws every atom after its init
+            if c["covered"]:
+                return "delete"
+            return ("replace", call)
+        if args.with_ancestors and t.count("/") > 2:
+            if any(not c["covered"] for c in below(t)):
+                return ("after", call)
+        return None
+
+    walk_calls(args, files, decide, removed, residue, sites)
+    report("calls", args, removed, residue, sites)
     return 0
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["dead", "convert"])
+    ap.add_argument("mode", choices=["dead", "convert", "calls"])
+    ap.add_argument("--with-ancestors", action="store_true", help="calls: also add changed() beside the calls of ancestor procs that reach an uncovered component")
     ap.add_argument("--types", nargs="*", help="convert: only the components holding these types (or their subtypes)")
     ap.add_argument("--report", help="convert: write the components (converted, covered, untracked reads, residue) as JSON")
     ap.add_argument("--apply", action="store_true")
@@ -252,6 +331,8 @@ def main():
     os.chdir(ROOT)
     if args.mode == "dead":
         return run_dead(args)
+    if args.mode == "calls":
+        return run_calls(args)
     if args.mode == "convert":
         import look_convert
         look_convert.run(args, ROOT, code_files(), None)

@@ -31,6 +31,7 @@
 	var/turf/T = test_floor()
 	var/list/actual_by_type = list()
 	for(var/type in expected_by_type)
+		rand_seed(dq_test_seed_for("[type]"))
 		var/atom/target = dq_snapshot_allocate(type, T)
 		if(QDELETED(target))
 			actual_by_type[type] = list("deleted itself on creation")
@@ -41,6 +42,53 @@
 		own_turf_contents(T)
 	var/report = dq_snapshot_compare(DQ_LOOK_PIN_DIR, "looks", actual_by_type, expected_by_type, bad)
 	TEST_ASSERT(isnull(report), report)
+
+/**
+ * Look tree pins: the look pin of every creatable subtype under a root, in one file per root
+ * (code/modules/unit_tests/snapshots/look_trees/<root>.txt), each row prefixed with its type. A conversion that rewrites
+ * a whole chain (the draw sweep converts a component of related types at once) pins its roots this way:
+ *
+ *   bash tools/dq_pin.sh --look-tree /obj/item/gun [...]
+ *
+ * Abstract types and the unit tests' uncreatables are left out; turfs and areas are not made (only objs and mobs). Each
+ * type is made with the RNG reseeded from its path, so a pin does not depend on the types made before it. A whole-type
+ * sweep, so it runs in the exhaustive tier (and by name).
+ */
+#define DQ_LOOK_TREE_DIR "code/modules/unit_tests/snapshots/look_trees/"
+
+/datum/unit_test/dq_look_tree_pin
+	tier = TEST_TIER_EXHAUSTIVE
+	timeout = 900
+
+/datum/unit_test/dq_look_tree_pin/Run()
+	var/list/bad = list()
+	var/list/expected_by_type = dq_snapshot_read_dir(DQ_LOOK_TREE_DIR, bad)
+	if(!length(expected_by_type) && !length(bad))
+		return
+	var/turf/T = test_floor()
+	var/list/actual_by_type = list()
+	for(var/root in expected_by_type)
+		var/list/rows = list()
+		for(var/type in typesof(root))
+			if(!ispath(type, /obj) && !ispath(type, /mob))
+				continue
+			if(is_abstract(type) || (type in uncreatables))
+				continue
+			rand_seed(dq_test_seed_for("[type]"))
+			var/atom/target = dq_snapshot_allocate(type, T)
+			if(QDELETED(target))
+				rows += "[type] deleted itself on creation"
+				continue
+			appearance_flush()
+			for(var/line in dq_look_pin_lines(target))
+				rows += "[type] [line]"
+			qdel(target)
+			own_turf_contents(T)
+		actual_by_type[root] = rows
+	var/report = dq_snapshot_compare(DQ_LOOK_TREE_DIR, "look_trees", actual_by_type, expected_by_type, bad)
+	TEST_ASSERT(isnull(report), report)
+
+#undef DQ_LOOK_TREE_DIR
 
 /// The look rows of one atom (see the file comment), sorted so the file diffs cleanly.
 /proc/dq_look_pin_lines(atom/target)

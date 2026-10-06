@@ -8,6 +8,8 @@
 #   bash tools/dq_pin.sh --rm /obj/machinery/foo                       # drop a pin (the type is gone or hand-pinned)
 #   bash tools/dq_pin.sh --look /obj/machinery/foo [...]                # a look pin instead: icon, icon_state, overlays
 #                                                                       # (snapshots/looks/, test dq_look_pin)
+#   bash tools/dq_pin.sh --look-tree /obj/item/gun [...]                # the look pin of every subtype, one file per root
+#                                                                       # (snapshots/look_trees/, test dq_look_tree_pin)
 #
 # A pin is one file, code/modules/unit_tests/snapshots/pins/<type with / as .>.txt; an empty file is recorded on
 # the next run of dq_conversion_pin instead of failing it. Commit the recorded files with the conversion.
@@ -22,7 +24,8 @@ for arg in "$@"; do
 	case "$arg" in
 		--rm) remove=1 ;;
 		--look) dir="code/modules/unit_tests/snapshots/looks"; test="dq_look_pin" ;;
-		-h|--help) sed -n '2,13p' "$0"; exit 0 ;;
+		--look-tree) dir="code/modules/unit_tests/snapshots/look_trees"; test="dq_look_tree_pin" ;;
+		-h|--help) sed -n '2,15p' "$0"; exit 0 ;;
 		/*) types+=("$arg") ;;
 		*) echo "not a type path (it starts with /): $arg" >&2; exit 2 ;;
 	esac
