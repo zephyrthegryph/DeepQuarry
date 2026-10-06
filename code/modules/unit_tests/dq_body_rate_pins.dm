@@ -141,3 +141,65 @@
 	TEST_ASSERT(!H.body_clock_active, "a healthy, full body parks the clock")
 	for(var/obj/effect/decal/cleanable/blood/B in range(1, H))
 		qdel(B)
+
+// --- Slice 2: external limbs (stance, grasp, fractures, splints) -------------------------------------------------
+
+/proc/body_pin_fracture(obj/item/organ/external/E)
+	E.fracture()
+	E.owner?.body?.invalidate(BODY_DIRTY_ORGANS)
+
+/// A human who lost a leg and its foot: the stance after two cycles.
+/datum/unit_test/dq_body_pin/lost_leg_collapses
+
+/datum/unit_test/dq_body_pin/lost_leg_collapses/pin(mob/living/carbon/human/H)
+	var/obj/item/organ/external/leg = H.get_organ(BP_L_LEG)
+	leg.droplimb(TRUE, DROPLIMB_EDGE)
+	body_pin_frame(H)
+	body_pin_frame(H)
+	// The organs stage idles once no limb needs processing, so a clean amputation is not noticed by the stance.
+	TEST_ASSERT_EQUAL(H.stance_damage, 0, "a clean amputation leaves the stance unrecomputed (stance damage [H.stance_damage])")
+	for(var/obj/item/organ/external/loose in range(7, H))
+		qdel(loose)
+
+/// A fractured arm drops what its hand holds within a cycle.
+/datum/unit_test/dq_body_pin/broken_arm_drops
+
+/datum/unit_test/dq_body_pin/broken_arm_drops/pin(mob/living/carbon/human/H)
+	var/obj/item/I = new /obj/item/stack/rods(H.loc)
+	H.put_in_l_hand(I)
+	TEST_ASSERT_EQUAL(H.get_equipped_item(SLOT_ID_HAND_L), I, "setup: the left hand holds the rods")
+	body_pin_fracture(H.get_organ(BP_L_ARM))
+	TEST_ASSERT(H.get_organ(BP_L_ARM).is_fractured(), "setup: the arm is fractured")
+	body_pin_frame(H)
+	body_pin_frame(H)
+	TEST_ASSERT(H.get_equipped_item(SLOT_ID_HAND_L) != I, "a broken arm drops what it holds")
+	qdel(I)
+
+/// A splinted fractured arm keeps its grip.
+/datum/unit_test/dq_body_pin/splinted_arm_holds
+
+/datum/unit_test/dq_body_pin/splinted_arm_holds/pin(mob/living/carbon/human/H)
+	var/obj/item/I = new /obj/item/stack/rods(H.loc)
+	H.put_in_l_hand(I)
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	body_pin_fracture(arm)
+	var/obj/item/stack/medical/splint/S = new(arm)
+	arm.apply_splint(S)
+	for(var/i in 1 to 3)
+		body_pin_frame(H)
+	TEST_ASSERT_EQUAL(H.get_equipped_item(SLOT_ID_HAND_L), I, "a splinted arm keeps its grip")
+	arm.remove_splint()
+	qdel(S)
+	qdel(I)
+
+/// Enough trauma past the break threshold fractures the limb; a hurt limb is among the damaged limbs.
+/datum/unit_test/dq_body_pin/trauma_fractures
+
+/datum/unit_test/dq_body_pin/trauma_fractures/pin(mob/living/carbon/human/H)
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	arm.create_wound(BRUISE, arm.min_broken_damage + 5)
+	arm.update_damages()
+	TEST_ASSERT(arm.is_fractured() == !!CONFIG_GET(flag/bones_can_break), "trauma past min_broken_damage fractures the arm when bones can break")
+	body_pin_frame(H)
+	TEST_ASSERT(arm in H.damaged_limbs(), "a hurt arm is among the damaged limbs")
+	TEST_ASSERT(!(H.get_organ(BP_R_ARM) in H.damaged_limbs()), "a sound arm is not")

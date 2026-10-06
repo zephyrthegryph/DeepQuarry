@@ -257,3 +257,8 @@
 /mob/living/carbon/human/proc/process_organs(force = FALSE)
 	var/datum/om/stage/life/organs/S = om_stage_for(src, /datum/om/stage/life/organs)
 	S?.process_organs(src, force)
+
+/// The limbs that are hurt or need care (damage, a fracture, a dead, bleeding or mutated part, germs, wounds).
+/mob/living/carbon/human/proc/damaged_limbs()
+	RETURN_TYPE(/list)
+	return bad_external_organs?.Copy() || list()
