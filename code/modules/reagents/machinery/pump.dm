@@ -21,6 +21,11 @@
 
 /// Pumps every machine frame while on (set_pump_on()).
 CAPABILITIES(/obj/machinery/pump)
+	op("insert_cell", item(/obj/item/cell), label("Insert power cell"),
+		needs(req(PROC_REF(battery_panel_open), because = PROC_REF(battery_panel_shut_reason)), req(PROC_REF(no_cell), because = MSG(pump/has_cell))),
+		then(PROC_REF(cell_inserted)))
+	op("use", hand(), ungated(), label("Use"), then(PROC_REF(touched)))
+	op("silicon_toggle", remote(), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle"), then(PROC_REF(pump_silicon_toggle)))
 	reagents(200)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
 	climb()
@@ -51,26 +56,23 @@ CAPABILITIES(/obj/machinery/pump)
 
 	rel_set(src, nameof(cell), locate_in_list(component_parts, /obj/item/cell)) // component_parts owns the cell; this is a view onto it
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/pump/appearance_overlays()
-	. = list()
-	. += ..()
-	. += "[icon_state]-tank"
+/// The pump, its tank and glass, the fluid's colour, the battery panel and cell, low power, running.
+/obj/machinery/pump/draw(datum/look/look)
+	..()
+	var/base = initial(icon_state)
+	look.state("[base][on ? "-running" : ""]")
+	look.overlay("[base]-tank")
 	if(!(cell?.check_charge(active_power_usage)))
-		. += "[icon_state]-lowpower"
-
+		look.overlay("[base]-lowpower")
 	if(reagents.total_volume >= 1)
-		var/image/I = image(icon, "[icon_state]-volume")
+		var/image/I = image(icon, "[base]-volume")
 		I.color = reagents.get_color()
-		. += I
-	. += "[icon_state]-glass"
-
+		look.overlay(I)
+	look.overlay("[base]-glass")
 	if(open)
-		. += "[icon_state]-open"
+		look.overlay("[base]-open")
 		if(istype(cell))
-			. += "[icon_state]-cell"
-
-	icon_state = "[initial(icon_state)][on ? "-running" : ""]"
+			look.overlay("[base]-cell")
 
 /// Pumps every machine frame; runs while on (declared).
 /obj/machinery/pump/proc/work_step(datum/act/timer/A)
@@ -84,7 +86,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_ove
 	T.pump_reagents(reagents, reagents_per_cycle)
 	update_icon()
 
-	OM_EMIT(src, /datum/om/event/hose_forcepump)
+	if(notice_wanted(src, /datum/notice/hose_forcepump))
+		notice_publish(src, notice_take(/datum/notice/hose_forcepump))
 
 // Sets the power state, if possible.
 // Returns TRUE/FALSE on power state changing
@@ -111,46 +114,35 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_ove
 
 /// Old attack_ai: the AI toggles the pump. Cyborgs never reached it (ROBOT_USE_HAND sends
 /// their Use to attack_hand), so they fall through to that default.
-/obj/machinery/pump/proc/pump_silicon_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	if(isrobot(user))
-		return FALSE
+/obj/machinery/pump/proc/pump_silicon_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!set_pump_on(!on))
 		to_chat(user, span_notice("You try to toggle \the [src] but it does not respond."))
 	return TRUE
 
-/obj/machinery/pump/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_SILICON("Toggle", PROC_REF(pump_silicon_toggle)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/pump_insert_cell,
-		/datum/interaction/machine_hand/ungated/pump_use,
-	)
-	..()
+MSG_DEF_SELF(pump/panel_screwed, "The battery panel is screwed shut.")
+MSG_DEF_SELF(pump/panel_watertight, "The battery panel is watertight and cannot be opened without a crowbar.")
+MSG_DEF_SELF(pump/has_cell, "There is a power cell already installed.")
 
-/// Old attackby: insert a power cell into the open battery panel.
-/datum/interaction/machine_item/pump_insert_cell
-	id = "pump_insert_cell"
-	name = "Insert power cell"
-	held_type = /obj/item/cell
-	effect = /obj/machinery/pump/proc/interaction_insert_cell
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/pump/proc/can_take_cell))
+/// The battery panel is open.
+/obj/machinery/pump/proc/battery_panel_open(datum/act/op/A)
+	return open
 
-/// Requirement: TRUE, or why a cell can't go in now.
-/obj/machinery/pump/proc/can_take_cell(mob/user, atom/target, obj/item/held)
-	if(!open)
-		return unlocked ? "the battery panel is screwed shut" : "the battery panel is watertight and cannot be opened without a crowbar"
-	if(istype(cell))
-		return "there is a power cell already installed"
-	return TRUE
+/// Why the battery panel is shut: screwed, or watertight until a crowbar opens it.
+/obj/machinery/pump/proc/battery_panel_shut_reason(datum/act/op/A)
+	return unlocked ? MSG(pump/panel_screwed) : MSG(pump/panel_watertight)
+
+/// No cell is installed.
+/obj/machinery/pump/proc/no_cell(datum/act/op/A)
+	return !istype(cell)
 
 /**
  * The old attackby returned early (skipping the trailing RefreshParts()/update_icon()) when the
  * panel was closed or already held a cell; those calls only ran after a successful insert.
  */
-/obj/machinery/pump/proc/interaction_insert_cell(mob/user, obj/item/cell/W, datum/interaction/interaction)
+/obj/machinery/pump/proc/cell_inserted(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/cell/W = A.held
 	materialize_parts()
 	if(!move_into(src, nameof(component_parts), W, user, ledger_slot = CONTAINER_SLOT_INTERNALS))
 		return TRUE
@@ -159,16 +151,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_ove
 	update_icon()
 	return TRUE
 
-/// Old attack_hand, which never called ..(): no gate.
-/datum/interaction/machine_hand/ungated/pump_use
-	id = "pump_use"
-	name = "Use"
-	effect = /obj/machinery/pump/proc/interaction_use
-
-/obj/machinery/pump/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/// The old attack_hand (it never called ..(): no gate): the open panel gives up its cell, else the pump is switched.
+/obj/machinery/pump/proc/touched(datum/act/op/A)
+	var/mob/user = A.actor
 	if(open && istype(cell))
 		var/obj/item/cell/removed = cell
-		own_take_member(src, nameof(component_parts), removed)
+		rel_take(src, nameof(component_parts), member = removed)
 		rel_clear(src, nameof(cell))
 		user.put_in_hands(removed)
 		removed.add_fingerprint(user)

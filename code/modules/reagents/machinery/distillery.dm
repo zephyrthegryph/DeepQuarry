@@ -58,6 +58,10 @@
 	var/efficiency = 1
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
+	op("distillery_toggle_power", menu(), when(req(/mob/living, of = ON_ACTOR)), needs(req_capable()), label("Toggle Distillery Heating"), then(PROC_REF(interaction_distillery_toggle_power)))
+	op("distillery_toggle_mixing", menu(), when(req(/mob/living, of = ON_ACTOR)), needs(req_capable()), label("Start Distillery Mixing"), then(PROC_REF(interaction_distillery_toggle_mixing)))
+	op("distillery_install_beaker", item(/obj/item/reagent_containers/glass), label("Install beaker"), when(PROC_REF(has_free_beaker_slot)), then(PROC_REF(interaction_distillery_install_beaker)))
+	op("distillery_radial", hand(), ungated(), label("Use"), then(PROC_REF(interaction_distillery_radial)))
 	reagents(600, holder = /datum/reagents/distilling)
 	owns_one(nameof(InputBeaker), /obj/item/reagent_containers/glass)
 	owns_one(nameof(OutputBeaker), /obj/item/reagent_containers/glass)
@@ -135,39 +139,18 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 	else
 		after(user, 1 SECOND, TYPE_PROC_REF(/datum, om_chat), with = list(span_notice("Nothing happens..")))
 
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_verb/distillery_toggle_power,
-		/datum/interaction/machine_verb/distillery_toggle_mixing,
-		/datum/interaction/machine_item/distillery_install_beaker,
-		/datum/interaction/machine_hand/ungated/distillery_radial,
-	)
-	..()
-
-/datum/interaction/machine_verb/distillery_toggle_power
-	id = "distillery_toggle_power"
-	name = "Toggle Distillery Heating"
-	effect = /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_toggle_power
-
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_toggle_power(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_toggle_power(datum/act/op/A)
+	var/mob/user = A.actor
 	toggle_power(user)
 	return TRUE
 
-/datum/interaction/machine_verb/distillery_toggle_mixing
-	id = "distillery_toggle_mixing"
-	name = "Start Distillery Mixing"
-	effect = /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_toggle_mixing
-
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_toggle_mixing(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_toggle_mixing(datum/act/op/A)
+	var/mob/user = A.actor
 	toggle_mixing(user)
 	return TRUE
 
-/datum/interaction/machine_hand/ungated/distillery_radial
-	id = "distillery_radial"
-	name = "Use"
-	effect = /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_radial
-
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_radial(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_radial(datum/act/op/A)
+	var/mob/user = A.actor
 	var/list/options = list()
 	options["examine"] = radial_examine
 	options["use"] = radial_use
@@ -214,12 +197,12 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 		if("eject input")
 			if(InputBeaker)
 				InputBeaker.forceMove(get_turf(src))
-				own_take(src, nameof(InputBeaker))
+				rel_take(src, nameof(InputBeaker))
 
 		if("eject output")
 			if(OutputBeaker)
 				OutputBeaker.forceMove(get_turf(src))
-				own_take(src, nameof(OutputBeaker))
+				rel_take(src, nameof(OutputBeaker))
 
 		if("adjust temp")
 			open_request(src, /datum/prompt/number, PROC_REF(target_temp_entered), answerer = user, max_value = max_temp, min_value = min_temp, title = "Temperature.", question = "Choose a target temperature.", default = T20C, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
@@ -234,17 +217,12 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 		target_temp = clamp(A.answer.value, min_temp, max_temp)
 		update_icon()
 
-/datum/interaction/machine_item/distillery_install_beaker
-	id = "distillery_install_beaker"
-	name = "Install beaker"
-	held_type = /obj/item/reagent_containers/glass
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/has_free_beaker_slot, null))
-	effect = /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_install_beaker
-
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/has_free_beaker_slot(mob/actor, atom/target, obj/item/held)
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/has_free_beaker_slot(datum/act/op/A)
 	return !InputBeaker || !OutputBeaker
 
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_install_beaker(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/interaction_distillery_install_beaker(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/list/options = list()
 	if(!InputBeaker)
 		options["install input"] = radial_install_input
@@ -253,7 +231,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 
 	if(!options || !options.len)
 		update_icon()
-		return FALSE
+		return OP_DECLINE
 
 	open_request(src, /datum/prompt/choice, PROC_REF(install_beaker_chosen), answerer = user, choices = options, radial = TRUE, anchor = src, require_near = TRUE, autopick_single_option = TRUE, subject = W, timeout = 0) // No telekinetics.
 	return TRUE
@@ -362,32 +340,31 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 		if(isnull(heat_body))
 			return PROCESS_KILL
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/reagent_distillery, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/appearance_overlays()
-	. = list()
-	. += ..()
+/// The beakers, the working state and the port connection.
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/draw(datum/look/look)
+	..()
 
 	if(InputBeaker)
-		. += overlay_input_beaker
+		look.overlay(overlay_input_beaker)
 
 	if(OutputBeaker)
-		. += overlay_output_beaker
+		look.overlay(overlay_output_beaker)
 
 	if(on)
 		if(OutputBeaker && OutputBeaker.reagents.total_volume < OutputBeaker.reagents.maximum_volume)
-			. += overlay_dumping
+			look.overlay(overlay_dumping)
 		else if(abs(get_temperature() - target_temp) <= 0.5)
-			. += overlay_ready
+			look.overlay(overlay_ready)
 		else if(get_temperature() < target_temp)
-			. += overlay_heating
+			look.overlay(overlay_heating)
 		else
-			. += overlay_cooling
+			look.overlay(overlay_cooling)
 
 	else
-		. += overlay_off
+		look.overlay(overlay_off)
 
 	if(connected_port())
-		. += overlay_connected
+		look.overlay(overlay_connected)
 
 /*
  * Subtypes

@@ -26,85 +26,48 @@
 	flags = OPENCONTAINER
 	clicksound = SFX_BUTTON
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/chem_master/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	var/datum/reagents/R = new/datum/reagents(900)	//Just a huge random number so the buffer should (probably) never dump your reagents.
-	rel_set(src, nameof(reagents), R)	//There should be a nano ui thingy to warn of this.
-	rel_set(R, nameof(R.my_atom), src)
 
-APPEARANCE_TEMPLATE(/obj/machinery/chem_master, "mixer{beaker?1:0}")
-
-/obj/machinery/chem_master/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/chem_master_load_beaker,
-		/datum/interaction/machine_item/chem_master_load_pill_bottle,
-		/datum/interaction/machine_hand/ungated/chem_master_open_ui,
-	)
+/obj/machinery/chem_master/draw(datum/look/look)
 	..()
+	look.state(beaker ? "mixer1" : "mixer0")
 
-/// Old attackby: load a reagent container.
-/datum/interaction/machine_item/chem_master_load_beaker
-	id = "chem_master_load_beaker"
-	name = "Load beaker"
-	held_type = list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food)
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/chem_master/proc/chem_master_no_beaker, "a beaker is already loaded into the machine"))
-	effect = /obj/machinery/chem_master/proc/interaction_load_beaker
-
-/obj/machinery/chem_master/proc/chem_master_no_beaker(mob/actor, atom/target, obj/item/held)
+/// A beaker slot is free.
+/obj/machinery/chem_master/proc/chem_master_no_beaker(datum/act/op/A)
 	return !beaker
 
-/obj/machinery/chem_master/proc/interaction_load_beaker(mob/user, obj/item/B, datum/interaction/interaction)
+/// The old attackby: a glass or a food container goes in.
+/obj/machinery/chem_master/proc/beaker_loaded(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/B = A.held
 	if(!move_into(src, nameof(src.beaker), B, user))
-		return TRUE
-	to_chat(user, "You add 	he [B] to the machine.")
+		return OP_OK
+	to_chat(user, "You add \the [B] to the machine.")
 	update_icon()
-	return TRUE
+	return OP_OK
 
-/// Old attackby: load a pill bottle.
-/datum/interaction/machine_item/chem_master_load_pill_bottle
-	id = "chem_master_load_pill_bottle"
-	name = "Load pill bottle"
-	held_type = /obj/item/storage/pill_bottle
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/chem_master/proc/chem_master_no_pill_bottle, "a pill bottle is already loaded into the machine"))
-	effect = /obj/machinery/chem_master/proc/interaction_load_pill_bottle
-
-/obj/machinery/chem_master/proc/chem_master_no_pill_bottle(mob/actor, atom/target, obj/item/held)
+/// The pill bottle slot is free.
+/obj/machinery/chem_master/proc/chem_master_no_pill_bottle(datum/act/op/A)
 	return !loaded_pill_bottle
 
-/obj/machinery/chem_master/proc/interaction_load_pill_bottle(mob/user, obj/item/B, datum/interaction/interaction)
-	var/obj/item/storage/pill_bottle/PB = B
+/// The old attackby: a pill bottle goes in the dispenser slot.
+/obj/machinery/chem_master/proc/pill_bottle_loaded(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/storage/pill_bottle/PB = A.held
 	// The machine reads .contents directly below (C5); a bottle loaded
 	// straight off a turf or out of a latent holder still holds its
 	// pills as a declared generator until now.
 	PB.make_contents_real()
 	if(!move_into(src, nameof(src.loaded_pill_bottle), PB, user))
-		return TRUE
+		return OP_OK
 	to_chat(user, "You add \the [loaded_pill_bottle] into the dispenser slot.")
-	return TRUE
+	return OP_OK
 
-/obj/machinery/chem_master/wrench_act(mob/user, obj/item/tool)
-	return ..()
-
-/obj/machinery/chem_master/screwdriver_act(mob/user, obj/item/tool)
-	return ..()
-
-/obj/machinery/chem_master/crowbar_act(mob/user, obj/item/tool)
-	return ..()
-
-/// Old attack_hand (never called ..()): open the interface unless broken.
-/datum/interaction/machine_hand/ungated/chem_master_open_ui
-	id = "chem_master_open_ui"
-	name = "Use"
-	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/machinery/chem_master/proc/chem_master_not_broken, null))
-	effect = /obj/machinery/chem_master/proc/interaction_open_ui_impl
-
-/obj/machinery/chem_master/proc/chem_master_not_broken(mob/actor, atom/target, obj/item/held)
-	return !has_stat(BROKEN)
-
-/obj/machinery/chem_master/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
+MSG_DEF_SELF(chem_master/beaker_loaded, "A beaker is already loaded into the machine.")
+MSG_DEF_SELF(chem_master/pill_bottle_loaded, "A pill bottle is already loaded into the machine.")
 
 /obj/machinery/chem_master/ui_assets(mob/user)
 	return list(
@@ -114,6 +77,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/chem_master, "mixer{beaker?1:0}")
 // The window: its buttons are ops, and every modal of the old ui_modal_opened()/ui_modal_answered() pair is an op bound to "modal:<id>" whose question
 // is asked inline (a modal of the window); a modal that chained to another (a count, then the name) is one op with two steps.
 CAPABILITIES(/obj/machinery/chem_master)
+	reagents(900) // the buffer: a huge number so it should (probably) never dump your reagents
+	owns_one(nameof(beaker), /obj/item/reagent_containers)
+	owns_one(nameof(loaded_pill_bottle), /obj/item/storage/pill_bottle)
+	op("load_beaker", item(/obj/item/reagent_containers), when(req(list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food))), label("Load beaker"),
+		needs(req(PROC_REF(chem_master_no_beaker), because = MSG(chem_master/beaker_loaded))), then(PROC_REF(beaker_loaded)))
+	op("load_pill_bottle", item(/obj/item/storage/pill_bottle), label("Load pill bottle"),
+		needs(req(PROC_REF(chem_master_no_pill_bottle), because = MSG(chem_master/pill_bottle_loaded))), then(PROC_REF(pill_bottle_loaded)))
 	interface("ChemMaster")
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("ejectp", ui_act("ejectp"), then(PROC_REF(ui_act_ejectp)))
@@ -489,7 +459,7 @@ CAPABILITIES(/obj/machinery/chem_master)
 		loaded_pill_bottle.forceMove(get_turf(src))
 		if(Adjacent(user) && !(A.authority & AUTH_REMOTE_ACCESS))
 			user.put_in_hands(loaded_pill_bottle)
-		own_take(src, nameof(/obj/machinery/chem_master::loaded_pill_bottle))
+		rel_take(src, nameof(loaded_pill_bottle))
 
 /obj/machinery/chem_master/proc/ui_act_print(datum/act/op/A, from_beaker, idx)
 	add_fingerprint(A.actor)
@@ -550,7 +520,7 @@ CAPABILITIES(/obj/machinery/chem_master)
 	beaker.forceMove(get_turf(src))
 	if(Adjacent(user) && !(A.authority & AUTH_REMOTE_ACCESS))
 		user.put_in_hands(beaker)
-	own_take(src, nameof(/obj/machinery/biogenerator::beaker))
+	rel_take(src, nameof(beaker))
 	reagents.clear_reagents()
 	update_icon()
 
@@ -581,7 +551,3 @@ CAPABILITIES(/obj/machinery/chem_master)
 /obj/machinery/chem_master/proc/printing_done()
 	printing = FALSE
 
-/obj/machinery/chem_master/ownership()
-	. = ..()
-	. += owns(nameof(beaker), policy = OWN_CONTAINED)
-	. += owns(nameof(loaded_pill_bottle), policy = OWN_CONTAINED)

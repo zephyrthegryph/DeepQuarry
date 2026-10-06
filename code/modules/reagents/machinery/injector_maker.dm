@@ -40,46 +40,48 @@
 	. = ..()
 	default_apply_parts()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/injector_maker/appearance_overlays()
-	. = list()
-	if(!beaker && !count_plastic && !count_small_injector && !count_large_injector) //Empty
-		icon_state = "injector"
-	else if(beaker != null && !count_plastic && !count_small_injector  && !count_large_injector ) //Has just beaker
-		icon_state = "injector_b"
-	else if(!beaker && !count_plastic && (count_large_injector > 0 || count_small_injector > 0)) //Has just injectors
-		icon_state = "injector_i"
-	else if(!beaker && count_plastic > 0 && !count_large_injector && !count_small_injector) //Has just plastic
-		icon_state = "injector_p"
-	else if(beaker != null && !count_plastic && (count_large_injector > 0 || count_small_injector > 0)) //beaker + injectors
-		icon_state = "injector_ib"
-	else if(beaker != null && count_plastic > 0 && !count_large_injector && !count_small_injector) //beaker + plastic
-		icon_state = "injector_pb"
-	else if(beaker != null && count_plastic > 0 && (count_large_injector > 0 || count_small_injector > 0)) //Has everything
-		icon_state = "injector_ipb"
-	return .
+MSG_DEF_SELF(injector_maker/rack_full, "Storage is full.")
+MSG_DEF_SELF(injector_maker/filled, "You cannot put a filled injector into the machine.")
 
+CAPABILITIES(/obj/machinery/injector_maker)
+	owns_one(nameof(beaker), /obj/item/reagent_containers)
+	op("add_beaker", item(/obj/item/reagent_containers), when(req(list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food/drinks/glass2, /obj/item/reagent_containers/food/drinks/shaker))),
+		label("Add container"), then(PROC_REF(beaker_added)))
+	op("add_small_injector", item(/obj/item/reagent_containers/hypospray/autoinjector/empty), label("Add injector"),
+		needs(req(PROC_REF(small_rack_free), because = MSG(injector_maker/rack_full)), req(PROC_REF(injector_empty), because = MSG(injector_maker/filled))),
+		then(PROC_REF(small_injector_added)))
+	op("add_large_injector", item(/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty), label("Add injector"),
+		needs(req(PROC_REF(large_rack_free), because = MSG(injector_maker/rack_full)), req(PROC_REF(injector_empty), because = MSG(injector_maker/filled))),
+		then(PROC_REF(large_injector_added)))
+	op("add_plastic", item(/obj/item/stack/material), when(PROC_REF(is_plastic_stack)), label("Add plastic"), then(PROC_REF(plastic_added)))
+	op("swallow", item(/obj/item), label("Use")) // the old attackby never called ..(): anything else (or a non-plastic stack) is swallowed silently
+	op("drag_plastic", item(/obj/item/stack/material/plastic), gesture(GESTURE_DRAG), label("Add plastic"), then(PROC_REF(plastic_dragged)))
+	op("eject_beaker", hand(), ungated(), gesture(GESTURE_ALT), when(PROC_REF(has_beaker)), label("Eject beaker"), then(PROC_REF(beaker_ejected)))
+	op("use", hand(), ungated(), label("Use"), then(PROC_REF(touched)))
 
-/obj/machinery/injector_maker/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/injector_maker_add_beaker,
-		/datum/interaction/machine_item/injector_maker_add_small_injector,
-		/datum/interaction/machine_item/injector_maker_add_large_injector,
-		/datum/interaction/machine_item/injector_maker_add_plastic,
-		/datum/interaction/machine_item/injector_maker_swallow,
-		/datum/interaction/machine_drag/injector_maker_add_plastic,
-		/datum/interaction/machine_alt/injector_maker_eject_beaker,
-		/datum/interaction/machine_hand/ungated/injector_maker_use,
-	)
+/// What it holds: a beaker, injectors, plastic, in every combination.
+/obj/machinery/injector_maker/draw(datum/look/look)
 	..()
+	if(!beaker && !count_plastic && !count_small_injector && !count_large_injector) //Empty
+		look.state("injector")
+	else if(beaker != null && !count_plastic && !count_small_injector  && !count_large_injector ) //Has just beaker
+		look.state("injector_b")
+	else if(!beaker && !count_plastic && (count_large_injector > 0 || count_small_injector > 0)) //Has just injectors
+		look.state("injector_i")
+	else if(!beaker && count_plastic > 0 && !count_large_injector && !count_small_injector) //Has just plastic
+		look.state("injector_p")
+	else if(beaker != null && !count_plastic && (count_large_injector > 0 || count_small_injector > 0)) //beaker + injectors
+		look.state("injector_ib")
+	else if(beaker != null && count_plastic > 0 && !count_large_injector && !count_small_injector) //beaker + plastic
+		look.state("injector_pb")
+	else if(beaker != null && count_plastic > 0 && (count_large_injector > 0 || count_small_injector > 0)) //Has everything
+		look.state("injector_ipb")
 
-/datum/interaction/machine_item/injector_maker_add_beaker
-	id = "injector_maker_add_beaker"
-	name = "Add container"
-	held_type = list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food/drinks/glass2, /obj/item/reagent_containers/food/drinks/shaker)
-	effect = /obj/machinery/injector_maker/proc/interaction_add_beaker
 
-/obj/machinery/injector_maker/proc/interaction_add_beaker(mob/user, obj/item/O, datum/interaction/interaction)
+/// The old attackby: a beaker, a drinking glass or a shaker goes in.
+/obj/machinery/injector_maker/proc/beaker_added(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if (beaker)
 		return TRUE
 	if(!move_into(src, nameof(src.beaker), O, user))
@@ -87,64 +89,48 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 	update_icon()
 	return TRUE
 
-/datum/interaction/machine_item/injector_maker_add_small_injector
-	id = "injector_maker_add_small_injector"
-	name = "Add injector"
-	held_type = /obj/item/reagent_containers/hypospray/autoinjector/empty
-	effect = /obj/machinery/injector_maker/proc/interaction_add_small_injector
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/injector_maker/proc/can_take_small_injector))
+/// The small injector rack has room.
+/obj/machinery/injector_maker/proc/small_rack_free(datum/act/op/A)
+	return count_small_injector < capacity_small_injector
 
-/// Requirement: TRUE, or why this small injector can't be stored.
-/obj/machinery/injector_maker/proc/can_take_small_injector(mob/user, atom/target, obj/item/held)
-	if(count_small_injector >= capacity_small_injector)
-		return "storage is full; it can only hold [capacity_small_injector]"
-	if(held?.reagents?.total_volume > 0)
-		return "you cannot put a filled injector into the machine"
-	return TRUE
+/// The large injector rack has room.
+/obj/machinery/injector_maker/proc/large_rack_free(datum/act/op/A)
+	return count_large_injector < capacity_large_injector
 
-/// Requirement: TRUE, or why this large injector can't be stored.
-/obj/machinery/injector_maker/proc/can_take_large_injector(mob/user, atom/target, obj/item/held)
-	if(count_large_injector >= capacity_large_injector)
-		return "storage is full; it can only hold [capacity_large_injector]"
-	if(held?.reagents?.total_volume > 0)
-		return "you cannot put a filled injector into the machine"
-	return TRUE
+/// The held injector is empty.
+/obj/machinery/injector_maker/proc/injector_empty(datum/act/op/A)
+	return !(A.held?.reagents?.total_volume > 0)
 
-/obj/machinery/injector_maker/proc/interaction_add_small_injector(mob/user, obj/item/reagent_containers/hypospray/autoinjector/empty/E, datum/interaction/interaction)
+/// An empty small injector goes on its rack.
+/obj/machinery/injector_maker/proc/small_injector_added(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/E = A.held
 	count_small_injector = count_small_injector + 1
 	consume(E, user)
 	update_icon()
 	return TRUE
 
-/datum/interaction/machine_item/injector_maker_add_large_injector
-	id = "injector_maker_add_large_injector"
-	name = "Add injector"
-	held_type = /obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty
-	effect = /obj/machinery/injector_maker/proc/interaction_add_large_injector
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/injector_maker/proc/can_take_large_injector))
-
-/obj/machinery/injector_maker/proc/interaction_add_large_injector(mob/user, obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty/E, datum/interaction/interaction)
+/// An empty large injector goes on its rack.
+/obj/machinery/injector_maker/proc/large_injector_added(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/E = A.held
 	count_large_injector = count_large_injector + 1
 	consume(E, user)
 	update_icon()
 	return TRUE
 
-/datum/interaction/machine_item/injector_maker_add_plastic
-	id = "injector_maker_add_plastic"
-	name = "Add plastic"
-	held_type = /obj/item/stack/material
-	offered_when = list(REQ_ON(PRED_HELD, /obj/machinery/injector_maker/proc/is_plastic_stack, null))
-	effect = /obj/machinery/injector_maker/proc/interaction_add_plastic
-
-/obj/machinery/injector_maker/proc/is_plastic_stack(mob/actor, atom/target, obj/item/held)
+/// The held stack is plastic.
+/obj/machinery/injector_maker/proc/is_plastic_stack(datum/act/op/A)
+	var/obj/item/held = A.held
 	return held.get_material_name() == MAT_PLASTIC
 
-/obj/machinery/injector_maker/proc/interaction_add_plastic(mob/user, obj/item/stack/S, datum/interaction/interaction)
-	return maker_plastic_stage(user, S, interaction, list())
+/// Plastic sheets in hand: asks how many go in.
+/obj/machinery/injector_maker/proc/plastic_added(datum/act/op/A)
+	return maker_plastic_stage(A.actor, A.held, list())
 
-/obj/machinery/injector_maker/proc/maker_plastic_stage(mob/user, obj/item/stack/S, datum/interaction/interaction, list/maker_answers)
+/obj/machinery/injector_maker/proc/maker_plastic_stage(mob/user, obj/item/stack/S, list/maker_answers)
 	if(!("a1" in maker_answers))
-		open_request(src, /datum/prompt/number/injector_maker_review, PROC_REF(maker_request_answered), answerer = user, maker_operator = user, maker_answers = maker_answers, maker_key = "a1", maker_route = MAKER_REQUEST_PLASTIC, maker_stack = S, maker_interaction = interaction, question = "How many sheets would you like to add?", title = "Add plastic", default = 0, maker_max = S.get_amount())
+		open_request(src, /datum/prompt/number/injector_maker_review, PROC_REF(maker_request_answered), answerer = user, maker_operator = user, maker_answers = maker_answers, maker_key = "a1", maker_route = MAKER_REQUEST_PLASTIC, maker_stack = S, question = "How many sheets would you like to add?", title = "Add plastic", default = 0, maker_max = S.get_amount())
 		return TRUE
 	var/input_amount = maker_answers["a1"]
 	if(isnull(input_amount))
@@ -161,28 +147,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 		update_icon()
 	return TRUE
 
-/// Old attackby never called ..(), so any other item (or a non-plastic stack) is swallowed silently.
-/datum/interaction/machine_item/injector_maker_swallow
-	id = "injector_maker_swallow"
-	name = "Use"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_swallow
-
-/datum/interaction/machine_drag/injector_maker_add_plastic
-	id = "injector_maker_drag_add_plastic"
-	name = "Add plastic"
-	held_type = /obj/item/stack/material/plastic
-	effect = /obj/machinery/injector_maker/proc/interaction_drag_add_plastic
-
 /// The old adjacency/consciousness checks were silent (no message), so they stay in the effect.
-/obj/machinery/injector_maker/proc/interaction_drag_add_plastic(mob/user, obj/item/stack/material/plastic/plastic_stack, datum/interaction/interaction)
-	return maker_drag_stage(user, plastic_stack, interaction, list())
+/obj/machinery/injector_maker/proc/plastic_dragged(datum/act/op/A)
+	return maker_drag_stage(A.actor, A.held, list())
 
-/obj/machinery/injector_maker/proc/maker_drag_stage(mob/user, obj/item/stack/material/plastic/plastic_stack, datum/interaction/interaction, list/maker_answers)
+/obj/machinery/injector_maker/proc/maker_drag_stage(mob/user, obj/item/stack/material/plastic/plastic_stack, list/maker_answers)
 	if(!isliving(user) || user.stat || !Adjacent(user) || !Adjacent(plastic_stack))
 		return TRUE
 	if(!("a2" in maker_answers))
-		open_request(src, /datum/prompt/number/injector_maker_review, PROC_REF(maker_request_answered), answerer = user, maker_operator = user, maker_answers = maker_answers, maker_key = "a2", maker_route = MAKER_REQUEST_DRAG, maker_stack = plastic_stack, maker_interaction = interaction, question = "How many sheets would you like to add?", title = "Add plastic", default = 0, maker_max = plastic_stack.get_amount())
+		open_request(src, /datum/prompt/number/injector_maker_review, PROC_REF(maker_request_answered), answerer = user, maker_operator = user, maker_answers = maker_answers, maker_key = "a2", maker_route = MAKER_REQUEST_DRAG, maker_stack = plastic_stack, question = "How many sheets would you like to add?", title = "Add plastic", default = 0, maker_max = plastic_stack.get_amount())
 		return TRUE
 	var/input_amount = maker_answers["a2"]
 	if(isnull(input_amount))
@@ -201,26 +174,20 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 		update_icon()
 	return TRUE
 
-/// Old click_alt always ran the base first (`. = ..()`), then conditionally ejected the
-/// beaker without changing the return. The effect declines (FALSE) so the base alt-click
-/// still runs; it only does anything extra when a beaker is present.
-/datum/interaction/machine_alt/injector_maker_eject_beaker
-	id = "injector_maker_eject_beaker"
-	name = "Eject beaker"
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/injector_maker/proc/has_beaker, null))
-	effect = /obj/machinery/injector_maker/proc/interaction_eject_beaker
-
-/obj/machinery/injector_maker/proc/has_beaker(mob/actor, atom/target, obj/item/held)
+/// A beaker is in.
+/obj/machinery/injector_maker/proc/has_beaker(datum/act/op/A)
 	return !!beaker
 
-/obj/machinery/injector_maker/proc/interaction_eject_beaker(mob/user, obj/item/held, datum/interaction/interaction)
+/// The old click_alt ran the base first, then ejected the beaker: the alt-click goes on after this (OP_PASS).
+/obj/machinery/injector_maker/proc/beaker_ejected(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.incapacitated() && Adjacent(user))
 		user.put_in_hands(beaker)
 	else
 		beaker.forceMove(drop_location())
-	own_take(src, nameof(beaker))
+	rel_take(src, nameof(beaker))
 	update_icon()
-	return FALSE
+	return OP_PASS
 
 /obj/machinery/injector_maker/examine(mob/user)
 	. = ..()
@@ -243,15 +210,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 			for(var/datum/reagent/R in beaker.reagents.reagent_list)
 				. += span_notice("- [R.volume] units of [R.name].")
 
-/// Old attack_hand had no gate at all.
-/datum/interaction/machine_hand/ungated/injector_maker_use
-	id = "injector_maker_use"
-	name = "Use"
-	effect = /obj/machinery/injector_maker/proc/interaction_use
-
-/obj/machinery/injector_maker/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	interact(user)
-	return TRUE
+/// The old attack_hand (it had no gate at all): the menu.
+/obj/machinery/injector_maker/proc/touched(datum/act/op/A)
+	interact(A.actor)
+	return OP_OK
 
 /obj/machinery/injector_maker/interact(mob/user)
 	return maker_menu_stage(user, list())
@@ -275,7 +237,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 				user.put_in_hands(beaker)
 			else
 				beaker.forceMove(drop_location())
-			own_take(src, nameof(beaker))
+			rel_take(src, nameof(beaker))
 			update_icon()
 
 
@@ -433,10 +395,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 				if(new_name)
 					P.name = new_name
 
-/obj/machinery/injector_maker/ownership()
-	. = ..()
-	. += owns(nameof(beaker), policy = OWN_CONTAINED)
-
 /obj/machinery/injector_maker/proc/maker_request_answered(datum/act/request/context)
 	if(!context.answer)
 		return
@@ -449,7 +407,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 	var/maker_route
 	var/mob/maker_operator
 	var/obj/item/stack/maker_stack
-	var/datum/interaction/maker_interaction
 	var/maker_size
 	var/maker_amount
 	var/maker_name
@@ -461,7 +418,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 		maker_route = ask_text.maker_route
 		maker_operator = ask_text.maker_operator
 		maker_stack = ask_text.maker_stack
-		maker_interaction = ask_text.maker_interaction
 		maker_size = ask_text.maker_size
 		maker_amount = ask_text.maker_amount
 		maker_name = ask_text.maker_name
@@ -473,7 +429,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 		maker_route = ask_choice.maker_route
 		maker_operator = ask_choice.maker_operator
 		maker_stack = ask_choice.maker_stack
-		maker_interaction = ask_choice.maker_interaction
 		maker_size = ask_choice.maker_size
 		maker_amount = ask_choice.maker_amount
 		maker_name = ask_choice.maker_name
@@ -485,7 +440,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 		maker_route = ask_number.maker_route
 		maker_operator = ask_number.maker_operator
 		maker_stack = ask_number.maker_stack
-		maker_interaction = ask_number.maker_interaction
 		maker_size = ask_number.maker_size
 		maker_amount = ask_number.maker_amount
 		maker_name = ask_number.maker_name
@@ -494,9 +448,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 	maker_answers[maker_key] = context.answer.value
 	switch(maker_route)
 		if(MAKER_REQUEST_PLASTIC)
-			return maker_plastic_stage(maker_operator, maker_stack, maker_interaction, maker_answers)
+			return maker_plastic_stage(maker_operator, maker_stack, maker_answers)
 		if(MAKER_REQUEST_DRAG)
-			return maker_drag_stage(maker_operator, maker_stack, maker_interaction, maker_answers)
+			return maker_drag_stage(maker_operator, maker_stack, maker_answers)
 		if(MAKER_REQUEST_MENU)
 			return maker_menu_stage(maker_operator, maker_answers)
 		if(MAKER_REQUEST_CREATE)
@@ -511,8 +465,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 	var/maker_operator_expected = FALSE
 	var/obj/item/stack/maker_stack
 	var/maker_stack_expected = FALSE
-	var/datum/interaction/maker_interaction
-	var/maker_interaction_expected = FALSE
 	var/maker_size
 	var/maker_amount
 	var/maker_name
@@ -521,7 +473,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 CAPABILITIES(/datum/prompt/text/injector_maker_review)
 	ref_one(nameof(maker_operator), /mob)
 	ref_one(nameof(maker_stack), /obj/item/stack)
-	ref_one(nameof(maker_interaction), /datum/interaction)
 
 /datum/prompt/text/injector_maker_review/prepare(datum/act/context)
 	. = ..()
@@ -535,14 +486,9 @@ CAPABILITIES(/datum/prompt/text/injector_maker_review)
 	rel_clear(src, nameof(maker_stack))
 	if(captured_stack && !QDELETED(captured_stack))
 		rel_set(src, nameof(maker_stack), captured_stack)
-	var/datum/interaction/captured_interaction = maker_interaction
-	maker_interaction_expected = !isnull(captured_interaction)
-	rel_clear(src, nameof(maker_interaction))
-	if(captured_interaction && !QDELETED(captured_interaction))
-		rel_set(src, nameof(maker_interaction), captured_interaction)
 
 /datum/prompt/text/injector_maker_review/recheck_extra()
-	if((maker_operator_expected && QDELETED(maker_operator)) || (maker_stack_expected && QDELETED(maker_stack)) || (maker_interaction_expected && QDELETED(maker_interaction)))
+	if((maker_operator_expected && QDELETED(maker_operator)) || (maker_stack_expected && QDELETED(maker_stack)))
 		return "gone"
 
 /datum/prompt/choice/injector_maker_review
@@ -554,8 +500,6 @@ CAPABILITIES(/datum/prompt/text/injector_maker_review)
 	var/maker_operator_expected = FALSE
 	var/obj/item/stack/maker_stack
 	var/maker_stack_expected = FALSE
-	var/datum/interaction/maker_interaction
-	var/maker_interaction_expected = FALSE
 	var/maker_size
 	var/maker_amount
 	var/maker_name
@@ -564,7 +508,6 @@ CAPABILITIES(/datum/prompt/text/injector_maker_review)
 CAPABILITIES(/datum/prompt/choice/injector_maker_review)
 	ref_one(nameof(maker_operator), /mob)
 	ref_one(nameof(maker_stack), /obj/item/stack)
-	ref_one(nameof(maker_interaction), /datum/interaction)
 
 /datum/prompt/choice/injector_maker_review/prepare(datum/act/context)
 	. = ..()
@@ -578,14 +521,9 @@ CAPABILITIES(/datum/prompt/choice/injector_maker_review)
 	rel_clear(src, nameof(maker_stack))
 	if(captured_stack && !QDELETED(captured_stack))
 		rel_set(src, nameof(maker_stack), captured_stack)
-	var/datum/interaction/captured_interaction = maker_interaction
-	maker_interaction_expected = !isnull(captured_interaction)
-	rel_clear(src, nameof(maker_interaction))
-	if(captured_interaction && !QDELETED(captured_interaction))
-		rel_set(src, nameof(maker_interaction), captured_interaction)
 
 /datum/prompt/choice/injector_maker_review/recheck_extra()
-	if((maker_operator_expected && QDELETED(maker_operator)) || (maker_stack_expected && QDELETED(maker_stack)) || (maker_interaction_expected && QDELETED(maker_interaction)))
+	if((maker_operator_expected && QDELETED(maker_operator)) || (maker_stack_expected && QDELETED(maker_stack)))
 		return "gone"
 
 /datum/prompt/number/injector_maker_review
@@ -597,8 +535,6 @@ CAPABILITIES(/datum/prompt/choice/injector_maker_review)
 	var/maker_operator_expected = FALSE
 	var/obj/item/stack/maker_stack
 	var/maker_stack_expected = FALSE
-	var/datum/interaction/maker_interaction
-	var/maker_interaction_expected = FALSE
 	var/maker_size
 	var/maker_amount
 	var/maker_name
@@ -609,7 +545,6 @@ CAPABILITIES(/datum/prompt/choice/injector_maker_review)
 CAPABILITIES(/datum/prompt/number/injector_maker_review)
 	ref_one(nameof(maker_operator), /mob)
 	ref_one(nameof(maker_stack), /obj/item/stack)
-	ref_one(nameof(maker_interaction), /datum/interaction)
 
 /datum/prompt/number/injector_maker_review/prepare(datum/act/context)
 	. = ..()
@@ -623,14 +558,9 @@ CAPABILITIES(/datum/prompt/number/injector_maker_review)
 	rel_clear(src, nameof(maker_stack))
 	if(captured_stack && !QDELETED(captured_stack))
 		rel_set(src, nameof(maker_stack), captured_stack)
-	var/datum/interaction/captured_interaction = maker_interaction
-	maker_interaction_expected = !isnull(captured_interaction)
-	rel_clear(src, nameof(maker_interaction))
-	if(captured_interaction && !QDELETED(captured_interaction))
-		rel_set(src, nameof(maker_interaction), captured_interaction)
 
 /datum/prompt/number/injector_maker_review/recheck_extra()
-	if((maker_operator_expected && QDELETED(maker_operator)) || (maker_stack_expected && QDELETED(maker_stack)) || (maker_interaction_expected && QDELETED(maker_interaction)))
+	if((maker_operator_expected && QDELETED(maker_operator)) || (maker_stack_expected && QDELETED(maker_stack)))
 		return "gone"
 
 /datum/prompt/number/injector_maker_review/present(mob/user)
