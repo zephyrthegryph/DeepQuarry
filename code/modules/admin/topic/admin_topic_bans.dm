@@ -22,7 +22,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 	if(answer != "Yes")
 		return
 	if(!RemoveBan(banfolder, user))
-		tgui_alert_async(user, "This ban has already been lifted / does not exist.", "Error")
+		open_request(user, /datum/prompt/choice/unban_error_notification, null, answerer = user, question = "This ban has already been lifted / does not exist.", title = "Error", choices = list("Ok"))
 	unbanpanel()
 
 /datum/admins/proc/topic_warn(mob/user, list/args)
@@ -452,3 +452,11 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 
 /datum/prompt/text/admin_ban_topic/refusal(given)
 	return null
+
+/datum/prompt/choice/unban_error_notification
+	timeout = 0
+	buttons = TRUE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/unban_error_notification/recheck_extra()
+	return answerer?.client ? null : "gone"

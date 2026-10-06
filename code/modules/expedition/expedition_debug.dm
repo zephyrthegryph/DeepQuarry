@@ -77,7 +77,16 @@
 	return site
 
 ADMIN_VERB(generate_procedural_station, R_DEBUG, "Generate Procedural Station", "Generate a station on an expedition z-level and move to its docking entry.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/seed_text = verb_ask(user, "seed", args, /datum/om/prompt/text, message = "Enter a numeric seed, or leave blank for a random seed.", title = "Generated Station", max_length = 20)
+	var/list/replay_answers = list()
+	if(length(args) >= 2)
+		var/datum/request/resumed = args[2]
+		if(istype(resumed, /datum/prompt/text/expedition_debug_seed) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(expedition_seed_answered))
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
+	if(!("seed" in replay_answers))
+		open_request(src, /datum/prompt/text/expedition_debug_seed, PROC_REF(expedition_seed_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "seed", question = "Enter a numeric seed, or leave blank for a random seed.", title = "Generated Station", max_len = 20, name_text = TRUE)
+		return
+	var/seed_text = replay_answers["seed"]
 	if(isnull(seed_text))
 		return
 	var/seed = length(seed_text) ? text2num(seed_text) : rand(1, 2147483646)
@@ -107,12 +116,23 @@ ADMIN_VERB(generate_expedition_site, R_DEBUG, "Generate Expedition Site", "Gener
 // Roll a chosen mission, generate its site, and drop the admin on the landing
 // pad to play it through.
 ADMIN_VERB(generate_expedition_mission, R_DEBUG, "Generate Expedition Mission", "Roll a chosen expedition mission, generate its site and move to the landing point.", ADMIN_CATEGORY_DEBUG_GAME)
+	var/list/replay_answers = list()
+	if(length(args) >= 2)
+		var/datum/request/resumed = args[2]
+		if(istype(resumed, /datum/prompt/choice/expedition_debug_mission) && resumed.owner == src && resumed.answerer == user.mob && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(expedition_mission_answered))
+			replay_answers = resumed.captured.Copy()
+			replay_answers[resumed.step_name] = resumed.value
 	var/list/mission_types = GLOB.expedition_mission_types
-	// Answers re-run this verb.
-	var/mission_type = verb_ask(user, "mission", args, /datum/om/prompt/choice, message = "Mission type?", title = "Expedition Mission", choices = mission_types)
+	if(!("mission" in replay_answers))
+		open_request(src, /datum/prompt/choice/expedition_debug_mission, PROC_REF(expedition_mission_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "mission", question = "Mission type?", title = "Expedition Mission", choices = mission_types)
+		return
+	var/mission_type = replay_answers["mission"]
 	if(!mission_type)
 		return
-	var/diff = verb_ask(user, "difficulty", args, /datum/om/prompt/choice, message = "Difficulty?", title = "Expedition Mission", choices = list(EXP_DIFF_LOW, EXP_DIFF_MED, EXP_DIFF_HIGH))
+	if(!("difficulty" in replay_answers))
+		open_request(src, /datum/prompt/choice/expedition_debug_mission, PROC_REF(expedition_mission_answered), answerer = user.mob, captured = replay_answers.Copy(), step_name = "difficulty", question = "Difficulty?", title = "Expedition Mission", choices = list(EXP_DIFF_LOW, EXP_DIFF_MED, EXP_DIFF_HIGH))
+		return
+	var/diff = replay_answers["difficulty"]
 	if(isnull(diff))
 		return
 
@@ -125,3 +145,53 @@ ADMIN_VERB(generate_expedition_mission, R_DEBUG, "Generate Expedition Mission", 
 	if(user.mob)
 		user.mob.forceMove(site.landing())
 	to_chat(user, span_notice("Generated mission '[mission.name]' on [site.name] (z[site.z_level]). Objective: [mission.objective_text()]"))
+
+/datum/prompt/text/expedition_debug_seed
+	timeout = 0
+	rights = R_DEBUG
+	recheck_on_open = TRUE
+
+/datum/prompt/text/expedition_debug_seed/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/text/expedition_debug_seed/normalize(given)
+	return istext(given) ? strip_name_tokens(given) : given
+
+/datum/prompt/text/expedition_debug_seed/refusal(given)
+	return null
+
+/datum/admin_verb/generate_procedural_station/proc/expedition_seed_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)
+
+/datum/prompt/choice/expedition_debug_mission
+	timeout = 0
+	rights = R_DEBUG
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/expedition_debug_mission/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return admin_can(answerer.client, 0) ? null : "no admin rights"
+
+/datum/prompt/choice/expedition_debug_mission/normalize(given)
+	return given
+
+/datum/prompt/choice/expedition_debug_mission/refusal(given)
+	return null
+
+/datum/admin_verb/generate_expedition_mission/proc/expedition_mission_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/actor = A.request.answerer
+	var/client/user = actor?.client
+	if(!user)
+		return
+	world.push_usr(actor, new /datum/callback(SSadmin_verbs, TYPE_PROC_REF(/datum/system/admin_verbs, dynamic_invoke_verb)), user, src.type, A.answer)

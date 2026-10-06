@@ -269,7 +269,16 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 /proc/web_sound_play(mob/user, web_sound_url, list/music_extra_data, duration)
 	var/stop_web_sounds = !web_sound_url
 	if(web_sound_url && !findtext(web_sound_url, GLOB.is_http_protocol))
-		tgui_alert_async(user, "The media provider returned a content URL that isn't using the HTTP or HTTPS protocol. This is a security risk and the sound will not be played.", "Security Risk", list("OK"))
+		var/mob/notification_actor
+		if(istext(user))
+			stack_trace("tgui_alert() received text for user instead of list")
+		else if(istype(user, /mob))
+			notification_actor = user
+		else if(istype(user, /client))
+			var/client/notification_client = user
+			notification_actor = notification_client.mob
+		if(notification_actor)
+			open_request(notification_actor, /datum/prompt/choice/web_sound_security_notification, null, answerer = notification_actor, question = "The media provider returned a content URL that isn't using the HTTP or HTTPS protocol. This is a security risk and the sound will not be played.", title = "Security Risk", choices = list("OK"))
 		to_chat(user, span_boldwarning("BLOCKED: Content URL not using HTTP(S) Protocol!"), confidential = TRUE)
 		return
 	for(var/m in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
@@ -446,3 +455,11 @@ ADMIN_VERB(stop_sounds, R_SOUNDS, "Stop All Playing Sounds", "Stops all playing 
 
 /datum/prompt/number/admin_global_sound_replay/refusal(given)
 	return null
+
+/datum/prompt/choice/web_sound_security_notification
+	timeout = 0
+	buttons = TRUE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/web_sound_security_notification/recheck_extra()
+	return answerer?.client ? null : "gone"
