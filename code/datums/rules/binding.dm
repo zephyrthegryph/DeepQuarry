@@ -390,7 +390,7 @@ CAPABILITIES(/datum)
 						inside.forceMove(T)
 				var/path = op[2]
 				new path(T)
-				consumed(thing, src)
+				consumed(thing)
 			if(RULE_OP_REMOVE)
-				consumed(thing, src)
+				consumed(thing)
 

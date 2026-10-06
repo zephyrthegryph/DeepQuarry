@@ -39,7 +39,7 @@
 		return null
 	var/amount = old_stock.get_amount()
 	var/obj/item/stack/material/processed_alloy/replacement = processed_spawn_stack(get_turf(location || old_stock), new_batch, amount)
-	consumed(old_stock, src)
+	consumed(old_stock)
 	return replacement
 
 /obj/machinery/material_furnace
