@@ -101,6 +101,9 @@ GLOBAL_LIST_EMPTY(param_given)
 /// /atom/New(loc, ...) with more than a location: a make() record, or positional arguments a param(pos =) takes. Writes the values before init.
 /// Returns TRUE when it consumed a make() record (the caller drops it from the arguments Initialize() gets).
 /proc/lifeform_new_args(atom/A, list/new_args)
+	// An atom made while the globals are still being built (a GLOBAL_DATUM_INIT statclick) meets these lists before they exist.
+	if(!GLOB.param_given || length(new_args) < 2)
+		return FALSE
 	var/datum/make_args/M = new_args[2]
 	if(istype(M))
 		make_apply(A, M)
@@ -154,6 +157,9 @@ GLOBAL_LIST_EMPTY(param_given)
 
 /// At preinit: each param checked against its schema, defaulted when nothing gave it, and a missing required one reported.
 /proc/params_preinit(datum/holder, datum/lifeform_plan/P, mapload)
+	// An atom made while the globals are still being built (a GLOBAL_DATUM_INIT statclick) meets these lists before they exist.
+	if(!GLOB.param_given)
+		return
 	var/list/given = GLOB.param_given[holder]
 	GLOB.param_given -= holder
 	for(var/datum/centry/C as anything in P.params)
