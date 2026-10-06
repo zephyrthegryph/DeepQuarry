@@ -190,8 +190,8 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		to_chat(src, span_warning("Sorry, that link doesn't appear to be valid. Please try again."))
 		return TRUE
 
-	// om_io: the player hears back when the database answers.
-	om_io(null, /datum/om/io/sql, "UPDATE erro_player SET discord_id = :discord_id WHERE ckey = :ckey", list("discord_id" = their_id, "ckey" = ckey), GLOBAL_PROC_REF(discord_registration_done), ckey, their_id)
+	// io_job: the player hears back when the database answers.
+	io_job(null, /datum/io_backend/sql, "UPDATE erro_player SET discord_id = :discord_id WHERE ckey = :ckey", list("discord_id" = their_id, "ckey" = ckey), GLOBAL_PROC_REF(discord_registration_done), ckey, their_id)
 	return TRUE
 
 /client/proc/topic_reload_statbrowser(mob/user, list/args)
@@ -684,7 +684,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 //checks if a client is afk
 //3000 frames = 5 minutes
-/// om_io() callback for the Discord registration link.
+/// io_job() callback for the Discord registration link.
 /proc/discord_registration_done(list/result, error, ckey, their_id)
 	var/client/C = GLOB.directory[ckey]
 	if(error)
@@ -700,7 +700,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	var/port = CONFIG_GET(number/register_server_port)
 	if(port)
 		// Designed to be used with `tools/registration`
-		om_http_get("http://127.0.0.1:[port]?member=[url_encode(json_encode(their_id))]")
+		http_get_async("http://127.0.0.1:[port]?member=[url_encode(json_encode(their_id))]")
 
 /// dx_winexists() callback: a client on a custom skin is told why assets may misbehave.
 /client/proc/asset_browser_checked(control_type)

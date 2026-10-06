@@ -1095,7 +1095,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	.["runs"] = sched.runs
 	.["errors"] = sched.errors.Copy()
 	.["registry_errors"] = reg.errors.Copy()
-	.["io"] = om_io_diagnostics(sched)
+	.["io"] = io_diagnostics()
 	.["pools"] = pool_diagnostics()
 	.["kernel"] = km_diagnostics(sched)
 

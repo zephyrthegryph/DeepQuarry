@@ -29,7 +29,7 @@ SYSTEM_DEF(mobs)
 	return STEP_DONE
 
 /// The database insert sleeps, so the lane hands it off (the lane itself must not sleep).
-/// Queues the batch as one om_io insert: returns at once, nothing here waits on SQL.
+/// Queues the batch as one io_job insert: returns at once, nothing here waits on SQL.
 /datum/system/mobs/proc/insert_deaths(list/batch)
 	if(!CONFIG_GET(flag/sql_enabled))
 		return

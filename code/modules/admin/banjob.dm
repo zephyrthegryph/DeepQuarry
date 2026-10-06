@@ -63,11 +63,11 @@ GLOBAL_LIST_EMPTY(jobban_keylist)		//to store the keys & ranks
 			jobban_loadbanfile()
 			return
 
-		// Job permabans and tempbans (om_io: added to the keylist when the rows arrive).
-		om_io(null, /datum/om/io/sql, "SELECT ckey, job FROM erro_ban WHERE bantype = 'JOB_PERMABAN' AND isnull(unbanned)", null, /proc/jobban_rows_arrived)
-		om_io(null, /datum/om/io/sql, "SELECT ckey, job FROM erro_ban WHERE bantype = 'JOB_TEMPBAN' AND isnull(unbanned) AND expiration_time > Now()", null, /proc/jobban_rows_arrived)
+		// Job permabans and tempbans (io_job: added to the keylist when the rows arrive).
+		io_job(null, /datum/io_backend/sql, "SELECT ckey, job FROM erro_ban WHERE bantype = 'JOB_PERMABAN' AND isnull(unbanned)", null, /proc/jobban_rows_arrived)
+		io_job(null, /datum/io_backend/sql, "SELECT ckey, job FROM erro_ban WHERE bantype = 'JOB_TEMPBAN' AND isnull(unbanned) AND expiration_time > Now()", null, /proc/jobban_rows_arrived)
 
-/// om_io() callback: adds loaded job bans to the keylist.
+/// io_job() callback: adds loaded job bans to the keylist.
 /proc/jobban_rows_arrived(list/result, error)
 	if(error)
 		log_sql("Loading job bans failed: [error]")

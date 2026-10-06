@@ -387,9 +387,9 @@ CAPABILITIES(/obj/machinery/blackbox_recorder)
 	var/list/rows = list()
 	for(var/datum/feedback_variable/FV in feedback)
 		rows += list(list(FV.get_variable(), FV.get_value(), FV.get_details()))
-	om_io(null, /datum/om/io/sql, "SELECT MAX(round_id) AS round_id FROM erro_feedback", null, /proc/blackbox_write_feedback_rows, rows)
+	io_job(null, /datum/io_backend/sql, "SELECT MAX(round_id) AS round_id FROM erro_feedback", null, /proc/blackbox_write_feedback_rows, rows)
 
-/// om_io() callback: writes the blackbox's captured feedback rows under the next round id.
+/// io_job() callback: writes the blackbox's captured feedback rows under the next round id.
 /proc/blackbox_write_feedback_rows(list/result, error, list/rows)
 	if(error)
 		log_sql("Blackbox feedback: round id lookup failed: [error]")

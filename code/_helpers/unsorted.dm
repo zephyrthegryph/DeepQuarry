@@ -1711,7 +1711,7 @@ GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list
 	query_string += "&color=[url_encode(color)]"
 	if(sender)
 		query_string += "&from=[url_encode(sender)]"
-	om_http_get("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
+	http_get_async("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
 
 /proc/admin_action_message(admin = "INVALID", user = "INVALID", action = "INVALID", reason = "INVALID", time = "INVALID")
 	if (!CONFIG_GET(string/chat_webhook_url) || !action)
@@ -1723,4 +1723,4 @@ GLOBAL_TABLE(get_fancy_list_of_datum_types, GLOBAL_PROC_REF(build_get_fancy_list
 	query_string += "&action=[url_encode(action)]"
 	query_string += "&reason=[url_encode(reason)]"
 	query_string += "&time=[url_encode(time)]"
-	om_http_get("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
+	http_get_async("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")

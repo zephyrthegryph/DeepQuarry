@@ -62,7 +62,7 @@ SYSTEM_DEF(db)
 	if(!SSdb.connected())
 		return 0
 	SSdb.writes++
-	return om_io(null, /datum/om/io/sql, query, params, GLOBAL_PROC_REF(om_io_log_sql_error), query)
+	return io_job(null, /datum/io_backend/sql, query, params, GLOBAL_PROC_REF(io_log_sql_error), query)
 
 /// Runs `query` and waits for it: a blocking call, for the places BYOND itself waits (world/IsBanned, the boot schema check and the
 /// boot-only loads), and for the shutdown flush once the I/O lane has stopped. The lint allows it nowhere else and accepts no ALLOW.
@@ -79,7 +79,7 @@ SYSTEM_DEF(db)
 	if(!SSdbcore?.IsConnected())
 		return null
 	var/raw = SSdbcore.query_blocking(query, params)
-	var/list/decoded = om_io_kind(/datum/om/io/sql).decode(raw)
+	var/list/decoded = io_backend(/datum/io_backend/sql).decode(raw)
 	var/list/result = decoded[1]
 	if(!result)
 		log_sql("[decoded[2]] | Query used: [query]")
@@ -159,7 +159,7 @@ SYSTEM_DEF(db)
 
 /// Hands the query to the I/O lane. A test kind overrides this to answer without a database.
 /datum/io/sql/proc/run_backend()
-	om_io(src, /datum/om/io/sql, query, arguments(), TYPE_PROC_REF(/datum/io/sql, sql_done))
+	io_job(src, /datum/io_backend/sql, query, arguments(), TYPE_PROC_REF(/datum/io/sql, sql_done))
 
 /// The I/O lane's answer: `result` is list("rows", "affected", "last_insert_id"), or null with `error`.
 /datum/io/sql/proc/sql_done(list/result, error)
@@ -205,7 +205,7 @@ SYSTEM_DEF(db)
 /datum/io/http/begin()
 	if(!length(url))
 		CRASH("[type] has no url")
-	om_io(src, /datum/om/io/http, method, url, body, headers, TYPE_PROC_REF(/datum/io/http, http_done))
+	io_job(src, /datum/io_backend/http, method, url, body, headers, TYPE_PROC_REF(/datum/io/http, http_done))
 
 /datum/io/http/proc/http_done(datum/http_response/response, error)
 	if(!is_open())

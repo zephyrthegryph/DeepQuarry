@@ -44,13 +44,13 @@
 	TEST_ASSERT(!waiter_cancel(C), "cancelling twice is a no-op")
 
 	// The rustg_job kind decodes a job's raw text and refuses a missing id, without calling rust-g.
-	var/datum/om/io/rustg_job/K = om_io_kind(/datum/om/io/rustg_job)
+	var/datum/io_backend/rustg_job/K = io_backend(/datum/io_backend/rustg_job)
 	TEST_ASSERT_NOTNULL(K, "rustg_job is an I/O kind")
 	TEST_ASSERT_EQUAL(K.arg_count, 1, "it takes the job id")
-	var/datum/om/io_job/J = new
+	var/datum/io_job/J = new
 	J.request = list("42")
 	TEST_ASSERT_EQUAL(K.start(J), "42", "start hands back the caller's job id")
-	var/datum/om/io_job/bad = new
+	var/datum/io_job/bad = new
 	bad.request = list(null)
 	TEST_ASSERT_NULL(K.start(bad), "no job id is a start failure")
 	TEST_ASSERT_NOTNULL(bad.preset_error, "with an error text")

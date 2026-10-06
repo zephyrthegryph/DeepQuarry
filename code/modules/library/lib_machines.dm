@@ -91,7 +91,7 @@ CAPABILITIES(/obj/machinery/librarypubliccomp)
 	if(SSdbcore.IsConnected())
 		// category == "Any" means no category filter; both branches use
 		// LIKE parameters so user-supplied title/author cannot inject SQL.
-		// om_io: the results fill in when they arrive.
+		// io_job: the results fill in when they arrive.
 		if(category == "Any")
 			om_sql_view(src, "search",
 				"SELECT author, title, category, id FROM library WHERE author LIKE :author_pat AND title LIKE :title_pat",
@@ -274,7 +274,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 		return GLOB.tgui_always_state
 	return ..()
 
-/// Fetches the External Archive listing (om_io); tgui_data shows it when it arrives.
+/// Fetches the External Archive listing (io_job); tgui_data shows it when it arrives.
 /obj/machinery/librarycomp/proc/refresh_external()
 	if(!SSdbcore.IsConnected())
 		return
@@ -457,8 +457,8 @@ CAPABILITIES(/obj/machinery/librarycomp)
 	if(!SSdbcore.IsConnected())
 		tgui_alert_async(user, "Connection to Archive has been severed. Aborting.")
 		return TRUE
-	// om_io: the uploader hears back when the archive answers.
-	om_io(src, /datum/om/io/sql,
+	// io_job: the uploader hears back when the archive answers.
+	io_job(src, /datum/io_backend/sql,
 		"INSERT INTO library (author, title, content, category) VALUES (:author, :title, :content, :category)",
 		list("author" = scanner().cache().author, "title" = scanner().cache().name, "content" = scanner().cache().dat, "category" = upload_category),
 		PROC_REF(upload_done), user.ckey, "[user.name]/[user.key] has uploaded the book titled [scanner().cache().name], [length(scanner().cache().dat)] signs")
@@ -480,7 +480,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 			V.show_message(span_infoplain(span_bold("[src]") + "'s monitor flashes, \"Printer unavailable. Please allow a short time before attempting to print.\""))
 		return TRUE
 	COOLDOWN_START(src, print_cooldown, 0.6 SECONDS)
-	om_io(src, /datum/om/io/sql,
+	io_job(src, /datum/io_backend/sql,
 		"SELECT id, author, title, content FROM library WHERE id = :id",
 		list("id" = numeric_id),
 		PROC_REF(print_book_arrived))
@@ -524,7 +524,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 	NewBook.name = "Book: [NewBook.name]"
 	return TRUE
 
-/// om_io() callback: tells the uploader how the upload went.
+/// io_job() callback: tells the uploader how the upload went.
 /obj/machinery/librarycomp/proc/upload_done(list/result, error, uploader_ckey, log_line)
 	var/client/C = GLOB.directory[uploader_ckey]
 	if(error)
@@ -535,7 +535,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 	if(C)
 		tgui_alert_async(C.mob, "Upload Complete.")
 
-/// om_io() callback: prints the ordered book, if the archive had it.
+/// io_job() callback: prints the ordered book, if the archive had it.
 /obj/machinery/librarycomp/proc/print_book_arrived(list/result, error)
 	var/list/rows = result?["rows"]
 	if(!length(rows))

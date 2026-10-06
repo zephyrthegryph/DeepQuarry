@@ -2,7 +2,7 @@
 //
 // A prompt flow (prompt_helpers.dm) is an entry proc that re-runs from the top each time an
 // answer arrives. The same works for database answers: inside a running flow,
-// `flow_select(sql, params)` starts the query as an om_io job and unwinds the flow; when the
+// `flow_select(sql, params)` starts the query as an io_job job and unwinds the flow; when the
 // rows arrive the entry runs again with the same arguments and the same flow_select() call -
 // the flow's Nth query - returns at once with the stored rows. Nothing waits.
 //
@@ -43,7 +43,7 @@
 	return GLOB.om_rerun_answers["[REF(asker)]:[flow["proc"]]"]
 
 /// The running flow's next I/O answer: the stored outcome once it has arrived, else starts the
-/// job (om_io, kind `kind_type` with `request` as its request args) and unwinds the flow
+/// job (io_job, kind `kind_type` with `request` as its request args) and unwinds the flow
 /// (throws OM_FLOW_PENDING). Outcomes: list("error" = text) on failure; SQL list("rows",
 /// "affected", "last_insert_id"); HTTP list("status", "body"); any other kind list("value").
 /proc/flow_io_answer(kind_type, list/request)
@@ -68,13 +68,13 @@
 		wrapped += list(om_prompt_wrap(value))
 	var/user_ckey = usr?.ckey
 	var/list/call_args = list(null, kind_type) + request + list(/proc/om_flow_io_done, asker_ref, flow["proc"], wrapped, answers ? answers.Copy() : list(), key, user_ckey, flow["rights"])
-	om_io(arglist(call_args))
+	io_job(arglist(call_args))
 	throw OM_FLOW_PENDING
 
 /// The running flow's next query's rows (a list of positional row lists, empty for none), once its answer is stored; else starts
 /// it and unwinds the flow (throws OM_FLOW_PENDING). Null when the query failed (logged; `warn` also tells usr).
 /proc/flow_select(sql, list/arguments, warn = FALSE)
-	var/list/stored = flow_io_answer(/datum/om/io/sql, list(sql, arguments))
+	var/list/stored = flow_io_answer(/datum/io_backend/sql, list(sql, arguments))
 	if(stored["error"])
 		GLOB.prompt_flow["sql_error"] = "[stored["error"]]"
 		log_sql("[stored["error"]] | Query used: [sql] | Arguments: [json_encode(arguments)]")
@@ -89,9 +89,9 @@
 
 /// The running flow's next HTTP GET: list("status", "body"), or list("error") on failure.
 /proc/flow_http_get(url)
-	return flow_io_answer(/datum/om/io/http, list(RUSTG_HTTP_METHOD_GET, url, "", null))
+	return flow_io_answer(/datum/io_backend/http, list(RUSTG_HTTP_METHOD_GET, url, "", null))
 
-/// om_io() callback: stores a flow job's outcome and runs the flow again.
+/// io_job() callback: stores a flow job's outcome and runs the flow again.
 /proc/om_flow_io_done(result, error, asker_ref, proc_name, list/wrapped, list/answers, key, user_ckey, rights)
 	var/asker
 	if(om_is_handle(asker_ref))
@@ -156,13 +156,13 @@
 // om_sql_view(src, key, sql, arguments, PROC_REF(sql_rows_arrived)) when it opens or its
 // filters change, keeps what its callback gets, and tgui_data reads that (showing "loading"
 // until it arrives). The callback is a proc on the panel, called (result, error, key) like any
-// om_io() callback; om_sql_view_rows() turns that into the rows. The job is owned by the
+// io_job() callback; om_sql_view_rows() turns that into the rows. The job is owned by the
 // panel: a closed (deleted) panel drops the answer. The callback re-checks whatever the panel
 // requires (the viewer's rights) before keeping the rows.
 
 /// Starts a read for a panel; on_rows(result, error, key) runs on `owner` with the answer.
 /proc/om_sql_view(owner, key, sql, list/arguments, on_rows)
-	return om_io(owner, /datum/om/io/sql, sql, arguments, on_rows, key)
+	return io_job(owner, /datum/io_backend/sql, sql, arguments, on_rows, key)
 
 /// The rows of an om_sql_view() answer (positional lists), or null (logged) on an error.
 /proc/om_sql_view_rows(list/result, error, key, owner)

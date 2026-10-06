@@ -1,4 +1,4 @@
-/// Records the population in the stats database: a write on the I/O lane (om_io), so
+/// Records the population in the stats database: a write on the I/O lane (io_job), so
 /// nothing waits on the database.
 /proc/sql_poll_population()
 	if(!CONFIG_GET(flag/enable_stat_tracking))
@@ -12,7 +12,7 @@
 		log_game("SQL ERROR during population polling. Failed to connect.")
 		return
 	var/sqltime = time2text(world.realtime, "YYYY-MM-DD hh:mm:ss")
-	om_io(null, /datum/om/io/sql,
+	io_job(null, /datum/io_backend/sql,
 		"INSERT INTO population (`playercount`, `admincount`, `time`) VALUES (:playercount, :admincount, :sqltime)",
 		list("playercount" = playercount, "admincount" = admincount, "sqltime" = sqltime),
 		/proc/sql_poll_population_done)
@@ -58,9 +58,9 @@
 	var/list/rows = list()
 	for(var/datum/feedback_variable/item in content)
 		rows += list(list(item.get_variable(), item.get_value()))
-	om_io(null, /datum/om/io/sql, "SELECT MAX(roundid) AS max_round_id FROM erro_feedback", null, /proc/sql_commit_feedback_rows, rows)
+	io_job(null, /datum/io_backend/sql, "SELECT MAX(roundid) AS max_round_id FROM erro_feedback", null, /proc/sql_commit_feedback_rows, rows)
 
-/// om_io() callback: the next feedback round id is known; writes the captured rows.
+/// io_job() callback: the next feedback round id is known; writes the captured rows.
 /proc/sql_commit_feedback_rows(list/result, error, list/rows)
 	if(error)
 		log_game("SQL ERROR during feedback reporting. Error : \[[error]\]")
@@ -75,7 +75,7 @@
 	else
 		newroundid = 1
 	for(var/list/row in rows)
-		om_io(null, /datum/om/io/sql,
+		io_job(null, /datum/io_backend/sql,
 			"INSERT INTO erro_feedback (id, roundid, time, variable, value) VALUES (null, :newroundid, Now(), :variable, :value)",
 			list("newroundid" = newroundid, "variable" = row[1], "value" = row[2]),
 			/proc/sql_commit_feedback_done)

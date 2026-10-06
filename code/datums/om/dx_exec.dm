@@ -3,7 +3,7 @@
 //
 // winget() and client.MeasureText() are round trips to a player's client, and shell() waits on
 // an OS process. Each suspends whatever proc calls it. Gameplay never waits, so callers don't
-// call them: they ask this executor and get the answer in a callback, like an om_io job.
+// call them: they ask this executor and get the answer in a callback, like an io_job job.
 //
 //	dx_winget(E, client, control_id, params, on_done, context...)
 //	dx_winexists(E, client, control_id, on_done, context...)

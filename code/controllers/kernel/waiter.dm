@@ -1,5 +1,5 @@
 /// The one wait outside the kernel (doc/rewrite/kernel.md sec 1.7). A waiter is resolved by the thing the
-/// caller waits for: a tgui modal's submit, an om_io on_done, or a timeout. await() is valid only inside a
+/// caller waits for: a tgui modal's submit, an io_job on_done, or a timeout. await() is valid only inside a
 /// dispatched (already detached) handler.
 /datum/waiter
 	var/done = FALSE

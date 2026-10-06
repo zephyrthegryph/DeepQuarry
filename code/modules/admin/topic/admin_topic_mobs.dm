@@ -298,7 +298,7 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 		query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
 		query_string += "&admin=[url_encode(key_name(user.client))]"
 		query_string += "&user=[url_encode(key_name(M))]"
-		om_http_get("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
+		http_get_async("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
 
 /datum/admins/proc/topic_adminplayerobservecoodjump(mob/user, list/args)
 	if(!isobserver(user))

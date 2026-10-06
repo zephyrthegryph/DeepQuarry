@@ -121,7 +121,7 @@ SYSTEM_DEF(dbcore)
 	)
 	GLOB.round_id = "[initialized?["last_insert_id"]]"
 
-/// Stamps the round's start time: a write on the I/O lane (om_io), so the ticker never waits.
+/// Stamps the round's start time: a write on the I/O lane (io_job), so the ticker never waits.
 /datum/system/dbcore/proc/SetRoundStart()
 	if(!Connect())
 		return
@@ -130,7 +130,7 @@ SYSTEM_DEF(dbcore)
 		list("round_id" = GLOB.round_id)
 	)
 
-/// Stamps the round's end: a write on the I/O lane (om_io), so declare_completion never waits.
+/// Stamps the round's end: a write on the I/O lane (io_job), so declare_completion never waits.
 /datum/system/dbcore/proc/SetRoundEnd()
 	if(!Connect())
 		return
@@ -247,17 +247,17 @@ mass_insert_io() runs it on the I/O lane; on_done gets the outcome.
 	return list(query_parts.Join(), arguments)
 
 /// A mass insert (mass_insert_sql()) on the I/O lane: returns at once. `on_done` (optional) runs on E as
-/// on_done(result, error, context...) like any om_io() callback; without it a failure is logged.
+/// on_done(result, error, context...) like any io_job() callback; without it a failure is logged.
 /datum/system/dbcore/proc/mass_insert_io(datum/E, table, list/rows, duplicate_key = FALSE, ignore_errors = FALSE, special_columns = null, on_done = null, ...)
 	var/list/statement = mass_insert_sql(table, rows, duplicate_key, ignore_errors, special_columns)
 	if(!statement)
 		return 0
 	if(!on_done)
-		return om_io(E, /datum/om/io/sql, statement[1], statement[2], /proc/om_io_log_sql_error, statement[1])
-	var/list/call_args = list(E, /datum/om/io/sql, statement[1], statement[2], on_done)
+		return io_job(E, /datum/io_backend/sql, statement[1], statement[2], /proc/io_log_sql_error, statement[1])
+	var/list/call_args = list(E, /datum/io_backend/sql, statement[1], statement[2], on_done)
 	if(length(args) > 7)
 		call_args += args.Copy(8)
-	return om_io(arglist(call_args))
+	return io_job(arglist(call_args))
 
 /// Runs `query` on the connection and waits for the answer: the blocking call db_query_now() wraps. Returns rust_g's raw JSON.
 /datum/system/dbcore/proc/query_blocking(query, list/params)

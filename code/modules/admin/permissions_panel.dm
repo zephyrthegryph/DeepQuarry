@@ -59,7 +59,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 	/// The database rows the pages show, by query key (om_sql_view); a missing key is loading.
 	var/list/db_rows
 
-/// Fetches the current page's database rows (om_io: nothing waits); tgui_data shows what has
+/// Fetches the current page's database rows (io_job: nothing waits); tgui_data shows what has
 /// arrived and the rest as loading.
 /datum/permissions_panel/proc/refresh_db()
 	if(!holder() || !SSdbcore.IsConnected())

@@ -34,7 +34,7 @@ GLOBAL_PROTECT(href_token)
 
 	/// Link from the database pointing to the admin's feedback forum
 	var/fetched_feedback_link
-	/// The om_io job fetching fetched_feedback_link, while one is in flight.
+	/// The io_job job fetching fetched_feedback_link, while one is in flight.
 	var/feedback_link_pending = 0
 
 	var/deadmined
@@ -171,12 +171,12 @@ CAPABILITIES(/datum/admins)
 	if (!SSdbcore.IsConnected())
 		return FALSE
 
-	// Not known yet: ask (om_io, nothing waits). The answer fills the cache for the next call.
+	// Not known yet: ask (io_job, nothing waits). The answer fills the cache for the next call.
 	if(!feedback_link_pending)
-		feedback_link_pending = om_io(src, /datum/om/io/sql, "SELECT feedback FROM [format_table_name("admin")] WHERE ckey = :ckey", list("ckey" = owner()?.ckey), PROC_REF(feedback_link_arrived))
+		feedback_link_pending = io_job(src, /datum/io_backend/sql, "SELECT feedback FROM [format_table_name("admin")] WHERE ckey = :ckey", list("ckey" = owner()?.ckey), PROC_REF(feedback_link_arrived))
 	return null
 
-/// om_io() callback: caches the admin's feedback link (or that there is none).
+/// io_job() callback: caches the admin's feedback link (or that there is none).
 /datum/admins/proc/feedback_link_arrived(list/result, error)
 	feedback_link_pending = 0
 	if(error)

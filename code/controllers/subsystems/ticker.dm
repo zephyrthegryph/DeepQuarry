@@ -168,7 +168,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 					current_state = GAME_STATE_FINISHED
 					om_task_periodic_stop(mode)
 					Kernel.SetRunLevel(RUNLEVEL_POSTGAME)
-					declare_completion() // its SQL and TGS chat run off-thread (om_io, send2chat)
+					declare_completion() // its SQL and TGS chat run off-thread (io_job, send2chat)
 				else if (mode_finished && (end_game_state < END_GAME_MODE_FINISHED))
 					end_game_state = END_GAME_MODE_FINISHED // Only do this cleanup once!
 					mode.cleanup()
@@ -229,7 +229,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 		SC.auto_start()
 
 	log_world("Game start took [(world.timeofday - init_start)/10]s")
-	SSdbcore.SetRoundStart() // an om_io write; returns at once
+	SSdbcore.SetRoundStart() // an io_job write; returns at once
 
 	to_chat(world, span_notice(span_bold("Welcome to [station_name()], enjoy your stay!")))
 	play_simple_announcement(world, ANNOUNCER_MSG_ROUND_START)

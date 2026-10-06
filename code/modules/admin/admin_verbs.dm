@@ -962,15 +962,15 @@ ADMIN_VERB(delbook, R_ADMIN, "Delete Book", "Permamently deletes a book from the
 		to_chat(user, span_warning("Unable to locate a library computer to use for book deleting."))
 		return
 
-	// Delete Book panel now opens a structured TGUI panel, once the book list arrives (om_io).
+	// Delete Book panel now opens a structured TGUI panel, once the book list arrives (io_job).
 	if(!SSdbcore.IsConnected())
 		var/datum/dq_delete_book_panel/offline_panel = new(our_comp, list(), "Unable to contact External Archive. Please contact your system administrator for assistance.")
 		offline_panel.tgui_interact(user.mob)
 		return
 	// Map sortby to a fixed column literal so ORDER BY can never be injected.
-	om_io(our_comp, /datum/om/io/sql, "SELECT id, author, title, category FROM library ORDER BY [our_comp.safe_sortby_column()]", null, TYPE_PROC_REF(/obj/machinery/librarycomp, delbook_rows_arrived), user.ckey)
+	io_job(our_comp, /datum/io_backend/sql, "SELECT id, author, title, category FROM library ORDER BY [our_comp.safe_sortby_column()]", null, TYPE_PROC_REF(/obj/machinery/librarycomp, delbook_rows_arrived), user.ckey)
 
-/// om_io() callback for Delete Book: opens the panel for the admin, if they still are one.
+/// io_job() callback for Delete Book: opens the panel for the admin, if they still are one.
 /obj/machinery/librarycomp/proc/delbook_rows_arrived(list/result, error, admin_ckey)
 	var/client/C = GLOB.directory[admin_ckey]
 	if(!C || !check_rights_for(C, R_ADMIN))

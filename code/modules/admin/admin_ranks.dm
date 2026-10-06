@@ -166,7 +166,7 @@ GLOBAL_PROTECT(protected_ranks)
 			if(prefetched)
 				rank_rows = prefetched["ranks"]
 			else
-				rank_rows = db_query_now("SELECT `rank`, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]") // boot only: the ranks load before the kernel ticks, so nothing can wait on an om_io query yet
+				rank_rows = db_query_now("SELECT `rank`, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]") // boot only: the ranks load before the kernel ticks, so nothing can wait on an io_job query yet
 			if(isnull(rank_rows))
 				message_admins("Error loading admin ranks from database. Loading from backup.")
 				log_sql("Error loading admin ranks from database. Loading from backup.")
@@ -288,7 +288,7 @@ GLOBAL_PROTECT(protected_ranks)
 		if(prefetched)
 			admin_rows = prefetched["admins"]
 		else
-			admin_rows = db_query_now("SELECT ckey, `rank`, feedback FROM [format_table_name("admin")] ORDER BY `rank`") // boot only: the admins load before the kernel ticks, so nothing can wait on an om_io query yet
+			admin_rows = db_query_now("SELECT ckey, `rank`, feedback FROM [format_table_name("admin")] ORDER BY `rank`") // boot only: the admins load before the kernel ticks, so nothing can wait on an io_job query yet
 		if(isnull(admin_rows))
 			message_admins("Error loading admins from database. Loading from backup.")
 			log_sql("Error loading admins from database. Loading from backup.")
@@ -343,7 +343,7 @@ GLOBAL_PROTECT(protected_ranks)
 	return dbfail
 
 /// Reloads the admins at runtime without waiting: reads the rank and admin tables on the I/O
-/// lane (om_io), then runs load_admins() with the rows. A failed read loads from the backup.
+/// lane (io_job), then runs load_admins() with the rows. A failed read loads from the backup.
 /proc/reload_admins_async(no_update, mob/user)
 	if(IsAdminAdvancedProcCall())
 		to_chat(user, span_adminprefix("Admin Reload blocked: Advanced ProcCall detected."), confidential = TRUE)
@@ -366,12 +366,12 @@ GLOBAL_PROTECT(protected_ranks)
 	return QDELETED(asker) ? null : asker
 
 /datum/request/admin_reload/proc/read_ranks()
-	om_io(src, /datum/om/io/sql, "SELECT `rank`, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]", null, PROC_REF(ranks_arrived))
+	io_job(src, /datum/io_backend/sql, "SELECT `rank`, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]", null, PROC_REF(ranks_arrived))
 
 /// The first query is in; preserve the original query ordering and backup-on-error convention.
 /datum/request/admin_reload/proc/ranks_arrived(list/result, error)
 	rank_rows = error ? null : (result["rows"] || list())
-	om_io(src, /datum/om/io/sql, "SELECT ckey, `rank`, feedback FROM [format_table_name("admin")] ORDER BY `rank`", null, PROC_REF(admins_arrived))
+	io_job(src, /datum/io_backend/sql, "SELECT ckey, `rank`, feedback FROM [format_table_name("admin")] ORDER BY `rank`", null, PROC_REF(admins_arrived))
 
 /// Both tables are in: completion calls the owner's handler before disposing this context.
 /datum/request/admin_reload/proc/admins_arrived(list/result, error)
@@ -385,7 +385,7 @@ GLOBAL_PROTECT(protected_ranks)
 	var/mob/user = request.initiator()
 	load_admins(request.no_update, FALSE, request.value, user)
 
-/// Writes the protected ranks to the database on the I/O lane (om_io); returns at once.
+/// Writes the protected ranks to the database on the I/O lane (io_job); returns at once.
 /proc/sync_ranks_with_db(mob/user)
 	if(IsAdminAdvancedProcCall())
 		to_chat(user, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."), confidential = TRUE)
@@ -397,7 +397,7 @@ GLOBAL_PROTECT(protected_ranks)
 	if(!SSdbcore.mass_insert_io(null, format_table_name("admin_ranks"), sql_ranks, TRUE, FALSE, null, /proc/sync_ranks_with_db_done))
 		update_everything_flag_in_db()
 
-/// om_io() callback: the rank rows are written; now fix up R_EVERYTHING flags.
+/// io_job() callback: the rank rows are written; now fix up R_EVERYTHING flags.
 /proc/sync_ranks_with_db_done(list/result, error)
 	if(error)
 		log_sql("Admin rank DB sync failed: [error]")
@@ -418,12 +418,12 @@ GLOBAL_PROTECT(protected_ranks)
 			continue
 		var/flags_to_check = flags.Join(" != [R_EVERYTHING] AND ") + " != [R_EVERYTHING]"
 		var/flags_to_update = flags.Join(" = [R_EVERYTHING], ") + " = [R_EVERYTHING]"
-		om_io(null, /datum/om/io/sql,
+		io_job(null, /datum/io_backend/sql,
 			"SELECT flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")] WHERE rank = :rank AND ([flags_to_check])",
 			list("rank" = R.name),
 			/proc/update_everything_flag_checked, R.name, flags_to_update)
 
-/// om_io() callback: a row back means the rank's stored flags are stale; rewrite them.
+/// io_job() callback: a row back means the rank's stored flags are stale; rewrite them.
 /proc/update_everything_flag_checked(list/result, error, rank_name, flags_to_update)
 	if(error)
 		log_sql("Admin rank R_EVERYTHING check failed for [rank_name]: [error]")
@@ -451,7 +451,7 @@ GLOBAL_PROTECT(protected_ranks)
 	if(!SSdbcore.mass_insert_io(null, format_table_name("admin"), sql_admins, TRUE, FALSE, null, /proc/sync_admins_with_db_done))
 		sync_admins_with_db_done()
 
-/// om_io() callback: the admin rows are written; copy each admin's rank onto their player row.
+/// io_job() callback: the admin rows are written; copy each admin's rank onto their player row.
 /proc/sync_admins_with_db_done(list/result, error)
 	if(error)
 		log_sql("Admin DB sync failed: [error]")

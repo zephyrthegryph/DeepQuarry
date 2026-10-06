@@ -1,5 +1,5 @@
 // I/O inside prompt flows (flow_io.dm), DX-exec (dx_exec.dm) and the prompts moved onto
-// om_prompt in the e-io2 sweep. The fake I/O kind /datum/om/io/test (dq_om_io_tests.dm)
+// om_prompt in the e-io2 sweep. The fake I/O kind /datum/io_backend/test (dq_om_io_tests.dm)
 // stands in for rust-g, so no database, network or client is needed.
 
 /// A flow entry that makes two I/O reads and logs each run and the final answers.
@@ -7,8 +7,8 @@
 	if(!GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(flow_two_reads), args)
 	LAZYADD(log, "run:[tag]")
-	var/list/first = flow_io_answer(/datum/om/io/test, list("first"))
-	var/list/second = flow_io_answer(/datum/om/io/test, list(tag == "fail" ? "fail" : "second"))
+	var/list/first = flow_io_answer(/datum/io_backend/test, list("first"))
+	var/list/second = flow_io_answer(/datum/io_backend/test, list(tag == "fail" ? "fail" : "second"))
 	if(second["error"])
 		LAZYADD(log, "error:[second["error"]]")
 		return
@@ -21,12 +21,12 @@
 	TEST_ASSERT_NULL(E.flow_two_reads("a"), "the flow unwinds at its first read")
 	TEST_ASSERT_NULL(GLOB.prompt_flow, "and leaves no flow running")
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "run:a", "it ran once, up to the read")
-	TEST_ASSERT_EQUAL(om_io_count(/datum/om/io/test), 1, "one job is in flight")
+	TEST_ASSERT_EQUAL(io_job_count(/datum/io_backend/test), 1, "one job is in flight")
 	scheduler_advance(0.1) // one I/O pass: each pass answers the jobs started before it
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "run:a,run:a", "the first answer re-ran it, up to the second read")
 	scheduler_advance(0.1)
 	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "run:a,run:a,run:a,done:first:second", "the second answer finished it with both stored answers")
-	TEST_ASSERT(!om_io_count(), "no jobs left")
+	TEST_ASSERT(!io_job_count(), "no jobs left")
 	TEST_ASSERT(!length(GLOB.om_rerun_answers), "the re-run's answers are cleared")
 
 /datum/unit_test/om/flow_io_error_is_an_answer

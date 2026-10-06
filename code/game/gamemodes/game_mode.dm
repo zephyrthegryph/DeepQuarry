@@ -248,7 +248,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 		SSemergency_shuttle.auto_recall = TRUE
 
 	feedback_set_details("round_start","[time2text(world.realtime)]")
-	SSdbcore.SetRoundStart() // an om_io write; returns at once
+	SSdbcore.SetRoundStart() // an io_job write; returns at once
 	if(SSticker && SSticker.mode)
 		feedback_set_details("game_mode","[SSticker.mode]")
 	feedback_set_details("server_ip","[world.internet_address]:[world.port]")

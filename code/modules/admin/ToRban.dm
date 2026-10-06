@@ -25,13 +25,13 @@
 	if(CONFIG_GET(flag/ToRban))
 		ToRban_autoupdate()
 
-/// Downloads the ToR exit list on the I/O lane (om_io); returns at once. `requester` (optional)
+/// Downloads the ToR exit list on the I/O lane (io_job); returns at once. `requester` (optional)
 /// is told when the update lands.
 /proc/ToRban_update(client/requester)
 	log_world("Downloading updated ToR data...")
-	om_io(null, /datum/om/io/http, RUSTG_HTTP_METHOD_GET, "https://check.torproject.org/exit-addresses", "", null, /proc/ToRban_update_done, requester?.ckey)
+	io_job(null, /datum/io_backend/http, RUSTG_HTTP_METHOD_GET, "https://check.torproject.org/exit-addresses", "", null, /proc/ToRban_update_done, requester?.ckey)
 
-/// om_io() callback: stores the downloaded exit addresses.
+/// io_job() callback: stores the downloaded exit addresses.
 /proc/ToRban_update_done(response_arg, error, requester_ckey)
 	var/datum/http_response/response = response_arg
 	if(error || !response?.body)

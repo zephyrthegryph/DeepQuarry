@@ -1000,12 +1000,12 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	var/sqlrank = "Player"
 	if (target_holder)
 		sqlrank = target_holder.rank_names()
-	om_io(null, /datum/om/io/sql,
+	io_job(null, /datum/io_backend/sql,
 		"UPDATE [format_table_name("erro_player")] SET lastadminrank = :rank WHERE ckey = :ckey",
 		list("rank" = sqlrank, "ckey" = admin_ckey),
 		/proc/sync_lastadminrank_done, user?.ckey, admin_key)
 
-/// om_io() callback: tells the admin who asked how the sync went.
+/// io_job() callback: tells the admin who asked how the sync went.
 /proc/sync_lastadminrank_done(list/result, error, asker_ckey, admin_key)
 	var/client/C = GLOB.directory[asker_ckey]
 	if(error)

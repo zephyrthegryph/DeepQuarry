@@ -1,6 +1,6 @@
 // Server metrics: samples every /datum/metrics_source on a world lane, buffers the
 // samples and events, and writes them in batches to the metric_* tables
-// (SQL/metrics_schema.sql) through om_io, so nothing waits on the database.
+// (SQL/metrics_schema.sql) through io_job, so nothing waits on the database.
 // tools/admin-viewer reads them, rolls rounds up into metric_round and prunes old samples.
 //
 // Hooks never talk to the database: they call METRICS_EVENT() (or note_runtime() /
@@ -171,7 +171,7 @@ CAPABILITIES(/datum/system/server_metrics)
 #define METRICS_ROWS_PER_STATEMENT 100
 
 /// Writes everything buffered: new metric keys, then samples (resolved to key ids in SQL),
-/// then events. Fire-and-forget through om_io (failures go to the SQL log), or, with `blocking`
+/// then events. Fire-and-forget through io_job (failures go to the SQL log), or, with `blocking`
 /// (server shutdown only), right away in order. All at once; the lane spreads it instead
 /// (begin_flush(), continue_flush(), send_flush()).
 /datum/system/server_metrics/proc/flush(blocking = FALSE)
@@ -245,7 +245,7 @@ CAPABILITIES(/datum/system/server_metrics)
 		return
 	if(key_statement)
 		// Samples join against metric_key, so the keys go first; the samples follow in the callback.
-		om_io(null, /datum/om/io/sql, key_statement[1], key_statement[2], /proc/metrics_keys_written, sample_statements)
+		io_job(null, /datum/io_backend/sql, key_statement[1], key_statement[2], /proc/metrics_keys_written, sample_statements)
 	else
 		metrics_write_statements(sample_statements)
 	if(event_statement)
@@ -314,7 +314,7 @@ CAPABILITIES(/datum/system/server_metrics)
 
 #undef METRICS_ROWS_PER_STATEMENT
 
-/// om_io callback: the new metric keys exist, so the samples that use them can go.
+/// io_job callback: the new metric keys exist, so the samples that use them can go.
 /proc/metrics_keys_written(list/result, error, list/sample_statements)
 	if(error)
 		log_sql("metrics: writing metric keys failed: [error]")

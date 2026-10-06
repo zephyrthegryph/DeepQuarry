@@ -106,7 +106,7 @@ SYSTEM_DEF(persist)
 			return FALSE
 
 	if(length(query_stack))
-		SSdbcore.mass_insert_io(null, format_table_name("vr_player_hours"), query_stack.Copy(), "ON DUPLICATE KEY UPDATE hours = VALUES(hours), total_hours = VALUES(total_hours)") // om_io: returns at once
+		SSdbcore.mass_insert_io(null, format_table_name("vr_player_hours"), query_stack.Copy(), "ON DUPLICATE KEY UPDATE hours = VALUES(hours), total_hours = VALUES(total_hours)") // io_job: returns at once
 		query_stack.Cut()
 	return TRUE
 

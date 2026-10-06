@@ -98,8 +98,8 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 			if(!(role in GLOB.whitelisted_module_types))
 				to_chat(user, span_warning("Error, robot module \"[role]\" is not a whitelist robot module."))
 				return FALSE
-	// om_io: the result is reported to the admin when it arrives.
-	om_io(null, /datum/om/io/sql,
+	// io_job: the result is reported to the admin when it arrives.
+	io_job(null, /datum/io_backend/sql,
 		"INSERT INTO [format_table_name("whitelist")] (ckey, kind, entry) VALUES (:ckey, :kind, :entry)",
 		list("ckey" = ckey, "kind" = kind, "entry" = role),
 		/proc/whitelist_edit_done, user.ckey, "add [ckey] to the [role] [kind] whitelist", "added [ckey]'s [role] entry to [kind] whitelsit.")
@@ -119,7 +119,7 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 		to_chat(user, span_warning("Error, invalid type entered."))
 		return FALSE
 	var/role = role_arg
-	om_io(null, /datum/om/io/sql,
+	io_job(null, /datum/io_backend/sql,
 		"DELETE FROM [format_table_name("whitelist")] WHERE ckey = :ckey AND kind = :kind AND entry = :entry",
 		list("ckey" = ckey, "kind" = kind, "entry" = role),
 		/proc/whitelist_edit_done, user.ckey, "remove [ckey] from the [role] [kind] whitelist", "removed [ckey]'s [role] entry from [kind] whitelsit.")
@@ -133,7 +133,7 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 	reload_jobwhitelist()
 	return OP_OK
 
-/// om_io() callback for the whitelist editor's writes: reports and logs the outcome.
+/// io_job() callback for the whitelist editor's writes: reports and logs the outcome.
 /proc/whitelist_edit_done(list/result, error, admin_ckey, what, done_message)
 	var/client/C = GLOB.directory[admin_ckey]
 	if(error)
@@ -155,11 +155,11 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 		return 0
 	return ("[M.ckey]" in GLOB.whitelist)
 
-/// Loads the alien whitelists: from the database (om_io; the lists are replaced when the rows
+/// Loads the alien whitelists: from the database (io_job; the lists are replaced when the rows
 /// arrive) or from the config file.
 /proc/load_alienwhitelist(dbfail = FALSE)
 	if (CONFIG_GET(flag/sql_enabled) && !dbfail)
-		om_io(null, /datum/om/io/sql, "SELECT ckey, entry, kind FROM [format_table_name("whitelist")] WHERE kind IN ('species', 'language', 'robot')", null, /proc/alienwhitelist_rows_arrived)
+		io_job(null, /datum/io_backend/sql, "SELECT ckey, entry, kind FROM [format_table_name("whitelist")] WHERE kind IN ('species', 'language', 'robot')", null, /proc/alienwhitelist_rows_arrived)
 		return
 	else
 		GLOB.alien_whitelist.Cut()
@@ -203,7 +203,7 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 /proc/reload_alienwhitelist()
 	load_alienwhitelist()
 
-/// om_io() callback: replaces the alien whitelists with the database's rows.
+/// io_job() callback: replaces the alien whitelists with the database's rows.
 /proc/alienwhitelist_rows_arrived(list/result, error)
 	if(error)
 		message_admins("Error loading alienwhitelist from database. Loading from [global.config.directory]/alienwhitelist.txt.")
@@ -247,10 +247,10 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 	// Go apply!
 	return FALSE
 
-/// Loads the job whitelist: from the database (om_io; replaced when the rows arrive) or the file.
+/// Loads the job whitelist: from the database (io_job; replaced when the rows arrive) or the file.
 /proc/load_jobwhitelist(dbfail = FALSE)
 	if (CONFIG_GET(flag/sql_enabled) && !dbfail)
-		om_io(null, /datum/om/io/sql, "SELECT ckey, entry FROM [format_table_name("whitelist")] WHERE kind = 'job'", null, /proc/jobwhitelist_rows_arrived)
+		io_job(null, /datum/io_backend/sql, "SELECT ckey, entry FROM [format_table_name("whitelist")] WHERE kind = 'job'", null, /proc/jobwhitelist_rows_arrived)
 		return
 	else
 		GLOB.job_whitelist.Cut()
@@ -281,7 +281,7 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 /proc/reload_jobwhitelist()
 	load_jobwhitelist()
 
-/// om_io() callback: replaces the job whitelist with the database's rows.
+/// io_job() callback: replaces the job whitelist with the database's rows.
 /proc/jobwhitelist_rows_arrived(list/result, error)
 	if(error)
 		message_admins("Error loading jobwhitelist from database. Loading from [global.config.directory]/jobwhitelist.txt.")

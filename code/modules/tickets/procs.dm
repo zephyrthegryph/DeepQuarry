@@ -250,7 +250,7 @@ CAPABILITIES(/datum/admin_ticket_panel_review)
 	query_string += "&msg=[url_encode(html_decode(name))]"
 	query_string += "&admin_number=[allmins.len]"
 	query_string += "&admin_number_afk=[afkmins.len]"
-	om_http_get("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
+	http_get_async("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
 
 /client/verb/adminspice()
 	set category = VERB_CAT_ADMIN
