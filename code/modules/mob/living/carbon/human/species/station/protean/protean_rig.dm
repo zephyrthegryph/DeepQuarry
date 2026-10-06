@@ -149,6 +149,9 @@ CAPABILITIES(/obj/item/rig/protean)
 	op("protean_rig_item", item(/obj/item), then(PROC_REF(protean_rig_item)))
 	op("protean_removebag_verb", menu(), label("Remove Stored Bag"), needs(carried()), then(PROC_REF(protean_removebag_verb)))
 	op("protean_removerig_verb", menu(), label("Remove Assimilated Rig"), needs(carried()), then(PROC_REF(protean_removerig_verb)))
+	interface(null, window_var = nameof(interface_path), state = nameof(GLOB.tgui_always_state))
+	without("ui_open")
+	ui_shape(cooling = num(), sealing = any, emagged = num(), coverlock = num(), interfacelock = num(), aicontrol = num(), aioverride = num(), securitycheck = num(), malf = num(), primarysystem = schema_text(), ai = bool(), sealed = bool(), helmet = schema_text(), gauntlets = schema_text(), boots = schema_text(), chest = schema_text(), helmetDeployed = bool(), gauntletsDeployed = bool(), bootsDeployed = bool(), chestDeployed = bool(), charge = num(), maxcharge = num(), chargestatus = num(), modules = list_of())
 
 /// Old attack_hand: open the bag when worn; otherwise close it for onlookers, then the usual touch
 /// (the old ..(), which used to run before the closing).

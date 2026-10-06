@@ -42,6 +42,7 @@
 
 CAPABILITIES(/obj/machinery/appliance/cooker/oven)
 	owns_one(nameof(oven_loop), /datum/looping_sound/oven)
+	op("toggle_door", ui_act("toggle_door"), then(PROC_REF(ui_act_toggle_door)))
 
 /obj/machinery/appliance/cooker/oven/Initialize(mapload)
 	. = ..()
@@ -49,11 +50,14 @@ CAPABILITIES(/obj/machinery/appliance/cooker/oven)
 	rel_set(src, nameof(oven_loop), new /datum/looping_sound/oven(list(src), FALSE))
 
 
-UI_DATA(/obj/machinery/appliance/cooker/oven, "is_open=open:num")
+/obj/machinery/appliance/cooker/oven/ui_data(datum/act/eval/A)
+	var/list/data = ..()
+	data["is_open"] = open
+	return data
 
-UI_ACT(/obj/machinery/appliance/cooker/oven, "toggle_door", ui_act_toggle_door)
-UI_ACT_PROC(/obj/machinery/appliance/cooker/oven, ui_act_toggle_door)
-	try_toggle_door(ui.user)
+/obj/machinery/appliance/cooker/oven/proc/ui_act_toggle_door(datum/act/op/A)
+	var/mob/user = A.actor
+	try_toggle_door(user)
 	return TRUE
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven, TYPE_PROC_REF(/atom, appearance_overlays), list())

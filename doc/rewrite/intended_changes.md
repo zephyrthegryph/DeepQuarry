@@ -1451,6 +1451,9 @@ focused tests of the touched windows (the tests that called a handler with its o
   op (the event manager's from the old `act_ask()` calls). The library upload confirmation is asked even with nothing scanned (the
   handler then does nothing); a feedback submission that is empty or too long is not confirmed (the handler says why). A guard in a
   handler that stood above its question now runs after the answer.
+* **interface() takes the legacy window options**: `window_var = nameof(x)` (a window named by a var each subtype sets: the appliances,
+  the inventory panel, a rig, the entity narrator), `autoupdate`, `pinned` (the lobby, the tooltip, the media player) and
+  `preinitialized`. `ui_types` leaves a var-named window untyped.
 ## Pipes and the atmospherics base (rewrite/pipenet-full)
 
 - A pipe's wrench and welder are ops: `unwrench` (1 s; refused under intact floor and while its gas pushes back; the "gush of air" warning as it

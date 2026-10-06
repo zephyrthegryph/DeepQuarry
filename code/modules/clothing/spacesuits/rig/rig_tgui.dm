@@ -11,7 +11,6 @@ GLOBAL_DATUM_INIT(rigsuit_ui_icon, /icon, 'icons/hud/rig/rig_ui_slots.dmi')
  * tgui_interact() is the proc that opens the UI. It doesn't really do anything else, unlike NanoV1.
  * We add an extra argument, custom_state, for the things that want a custom state for their UI.
  */
-DECLARE_UI(/obj/item/rig, UI_FROM_VAR("interface_path"))
 
 /// The AI (worn-suit control from outside) gets its own interface.
 /obj/item/rig/ui_interface(mob/user)
@@ -23,7 +22,6 @@ DECLARE_UI(/obj/item/rig, UI_FROM_VAR("interface_path"))
 /*
  * tgui_state() gives the UI the state to use by default.
  */
-DECLARE_UI_STATE(/obj/item/rig, GLOB.tgui_inventory_state)
 
 /*
  * tgui_status() is middlewere for objects to add little exceptions or special cases to the state they use.
@@ -41,7 +39,22 @@ DECLARE_UI_STATE(/obj/item/rig, GLOB.tgui_inventory_state)
 /*
  * tgui_data() is the heavy lifter, it gives the UI it's relevant datastructure every SStgui tick.
  */
-UI_DATA_REPLACE(/obj/item/rig, "cooling=cooling_on:num", "sealing", "emagged=subverted:num", "coverlock=locked:num", "interfacelock=interface_locked:num", "aicontrol=control_overridden:num", "aioverride=ai_override_enabled:num", "securitycheck=security_check_enabled:num", "malf=malfunction_delay:num", "merge:ui_data_obj_item_rig{primarysystem:text,ai:bool,sealed:bool,helmet:text,gauntlets:text,boots:text,chest:text,helmetDeployed:bool,gauntletsDeployed:bool,bootsDeployed:bool,chestDeployed:bool,charge:num,maxcharge:num,chargestatus:num,modules:list}")
+/obj/item/rig/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["cooling"] = cooling_on
+	data["sealing"] = sealing
+	data["emagged"] = subverted
+	data["coverlock"] = locked
+	data["interfacelock"] = interface_locked
+	data["aicontrol"] = control_overridden
+	data["aioverride"] = ai_override_enabled
+	data["securitycheck"] = security_check_enabled
+	data["malf"] = malfunction_delay
+	var/list/merged_1 = ui_data_obj_item_rig(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/rig's window data (declared on its UI_DATA row).
 /obj/item/rig/proc/ui_data_obj_item_rig(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -137,64 +150,75 @@ UI_DATA_REPLACE(/obj/item/rig, "cooling=cooling_on:num", "sealing", "emagged=sub
 /*
  * tgui_act() is the TGUI equivelent of Topic(). It's responsible for all of the "actions" you can take in the UI.
  */
-/obj/item/rig/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
+/obj/item/rig/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(user)
 	return TRUE
 
-UI_ACT(/obj/item/rig, "toggle_seals", ui_act_toggle_seals)
-UI_ACT_PROC(/obj/item/rig, ui_act_toggle_seals)
-	toggle_seals(ui.user)
+/obj/item/rig/proc/ui_act_toggle_seals(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	toggle_seals(user)
 	. = TRUE
 
-UI_ACT(/obj/item/rig, "toggle_cooling", ui_act_toggle_cooling)
-UI_ACT_PROC(/obj/item/rig, ui_act_toggle_cooling)
-	toggle_cooling(ui.user) // cooling toggles have its own to_chats, tbf
+/obj/item/rig/proc/ui_act_toggle_cooling(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	toggle_cooling(user) // cooling toggles have its own to_chats, tbf
 	. = TRUE
 
-UI_ACT(/obj/item/rig, "toggle_ai_control", ui_act_toggle_ai_control)
-UI_ACT_PROC(/obj/item/rig, ui_act_toggle_ai_control)
+/obj/item/rig/proc/ui_act_toggle_ai_control(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	ai_override_enabled = !ai_override_enabled
 	notify_ai("Synthetic suit control has been [ai_override_enabled ? "enabled" : "disabled"].")
 	. = TRUE
 
-UI_ACT(/obj/item/rig, "toggle_suit_lock", ui_act_toggle_suit_lock)
-UI_ACT_PROC(/obj/item/rig, ui_act_toggle_suit_lock)
+/obj/item/rig/proc/ui_act_toggle_suit_lock(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	locked = !locked
 	. = TRUE
 
-UI_ACT(/obj/item/rig, "toggle_piece", ui_act_toggle_piece, UI_ARG_TEXT("piece"))
-UI_ACT_PROC(/obj/item/rig, ui_act_toggle_piece)
-	if(ishuman(ui.user) && (ui.user.stat || ui.user.has_status(EFFECT_STUNNED) || ui.user.lying))
+/obj/item/rig/proc/ui_act_toggle_piece(datum/act/op/A, piece)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
 		return FALSE
-	toggle_piece(params["piece"], ui.user)
+	if(ishuman(user) && (user.stat || user.has_status(EFFECT_STUNNED) || user.lying))
+		return FALSE
+	toggle_piece(piece, user)
 	. = TRUE
 
-UI_ACT(/obj/item/rig, "interact_module", ui_act_interact_module, UI_ARG_TEXT("charge_type"), UI_ARG_NUM("module"), UI_ARG_TEXT("module_mode"))
-UI_ACT_PROC(/obj/item/rig, ui_act_interact_module)
-	var/module_index = params["module"]
+/obj/item/rig/proc/ui_act_interact_module(datum/act/op/A, charge_type, module_arg, module_mode)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	var/module_index = module_arg
 
 	if(module_index > 0 && module_index <= length(installed_modules))
 		var/obj/item/rig_module/module = LAZYACCESS(installed_modules, module_index)
-		switch(params["module_mode"])
+		switch(module_mode)
 			if("select")
-				rel_set(src, nameof(/datum/tgui_module/robot_ui_module::selected_module), module)
+				rel_set(src, nameof(selected_module), module)
 				. = TRUE
 			if("engage")
-				module.engage(null, FALSE, ui.user)
+				module.engage(null, FALSE, user)
 				. = TRUE
 			if("toggle")
 				if(module.active)
-					module.deactivate(FALSE, ui.user)
+					module.deactivate(FALSE, user)
 				else
-					module.activate(FALSE, ui.user)
+					module.activate(FALSE, user)
 				. = TRUE
 			if("select_charge_type")
-				module.charge_selected = params["charge_type"]
+				module.charge_selected = charge_type
 				. = TRUE
 
-UI_ACT(/obj/item/rig, "tank_settings", ui_act_tank_settings)
-UI_ACT_PROC(/obj/item/rig, ui_act_tank_settings)
-	air_supply?.attack_self(ui.user)
+/obj/item/rig/proc/ui_act_tank_settings(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	air_supply?.attack_self(user)
 	. = TRUE
