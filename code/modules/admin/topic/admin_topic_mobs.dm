@@ -100,7 +100,18 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 
 /datum/admins/proc/topic_forcespeech(mob/user, list/args)
 	var/mob/M = args["forcespeech"]
-	var/speech = topic_ask(user, args, "a23", /datum/om/prompt/text, message = "What will [key_name(M)] say?.", title = "Force speech")
+	var/list/original_href = args[TOPIC_HREF]
+	var/datum/request/resumed
+	if(original_href)
+		resumed = original_href["forcespeech_request"]
+	var/speech
+	if(istype(resumed, /datum/prompt/text/admin_force_speech) && resumed.owner == src && resumed.answerer == user && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(force_speech_answered))
+		speech = resumed.value
+	else
+		var/list/scalar_href = original_href.Copy()
+		scalar_href -= "forcespeech_request"
+		open_request(src, /datum/prompt/text/admin_force_speech, PROC_REF(force_speech_answered), answerer = user, question = "What will [key_name(M)] say?.", title = "Force speech", captured = list("href" = scalar_href))
+		return
 	// Don't need to sanitize, since it does that in say(), we also trust our admins.
 	if(!speech || QDELETED(M))
 		return
@@ -458,3 +469,27 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 
 /datum/admins/proc/topic_cryoplayer(mob/user, list/args)
 	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/despawn_player, args["cryoplayer"])
+
+/// Only this caller's actual ended question supplies the speech text on public topic replay.
+/datum/prompt/text/admin_force_speech
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/admin_force_speech/normalize(given)
+	return given
+
+/datum/prompt/text/admin_force_speech/refusal(given)
+	return null
+
+/datum/prompt/text/admin_force_speech/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/admins/proc/force_speech_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/list/captured_href = A.answer.captured["href"]
+	var/list/replayed_href = captured_href.Copy()
+	replayed_href["forcespeech_request"] = A.answer
+	world.push_usr(A.request.answerer, new /datum/callback(GLOBAL_PROC, GLOBAL_PROC_REF(topic_dispatch)), src, A.request.answerer, replayed_href)

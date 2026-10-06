@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "d0b2c17ab797176e"
+#define VERDIGRIS_ABI "08d23410af0f6540"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -631,6 +631,42 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:add_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, num_val)
+
+/// Members placed, over every kind (diagnostics, tests).
+// /proc/vg_adjacency_count (verdigris/ffi/src/adjacency.rs)
+/proc/vg_adjacency_count()
+	var/static/__f = load_ext(VERDIGRIS, "byond:adjacency_count_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// Places (or moves) `handle` of `kind` on `(x, y, z)`, looking on `dirs`. Returns the handles whose neighbour
+/// sets changed: the member itself first (empty when nothing moved).
+// /proc/vg_adjacency_place (verdigris/ffi/src/adjacency.rs)
+/proc/vg_adjacency_place(kind_id, handle, x, y, z, dirs)
+	var/static/__f = load_ext(VERDIGRIS, "byond:adjacency_place_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind_id, handle, x, y, z, dirs)
+
+/// Removes `handle` from `kind`. Returns the neighbours whose sets changed.
+// /proc/vg_adjacency_remove (verdigris/ffi/src/adjacency.rs)
+/proc/vg_adjacency_remove(kind_id, handle)
+	var/static/__f = load_ext(VERDIGRIS, "byond:adjacency_remove_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind_id, handle)
+
+/// Drops every member (DM's round start).
+// /proc/vg_adjacency_reset (verdigris/ffi/src/adjacency.rs)
+/proc/vg_adjacency_reset()
+	var/static/__f = load_ext(VERDIGRIS, "byond:adjacency_reset_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
+
+/// The neighbours `handle` sees in `kind`: `[handle, junction bit, ...]`.
+// /proc/vg_adjacency_seen (verdigris/ffi/src/adjacency.rs)
+/proc/vg_adjacency_seen(kind_id, handle)
+	var/static/__f = load_ext(VERDIGRIS, "byond:adjacency_seen_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(kind_id, handle)
 
 /// Args: (heat). Adds a given amount of heat to the mixture, i.e. in joules taking into account capacity.
 // /datum/gas_mixture/proc/adjust_heat (verdigris/ffi/src/gas/binds.rs)

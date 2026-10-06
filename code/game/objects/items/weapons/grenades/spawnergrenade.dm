@@ -90,6 +90,7 @@
 
 CAPABILITIES(/obj/item/grenade/spawnergrenade/manhacks/station/locked)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /// Old attackby.
 /obj/item/grenade/spawnergrenade/manhacks/station/locked/proc/interaction_item(datum/act/op/A)
@@ -107,10 +108,11 @@ CAPABILITIES(/obj/item/grenade/spawnergrenade/manhacks/station/locked)
 		return OP_DECLINE
 	return OP_PASS
 
-DECLARE_EMAG_REPEATABLE(/obj/item/grenade/spawnergrenade/manhacks/station/locked, PROC_REF(on_emag), null)
-/obj/item/grenade/spawnergrenade/manhacks/station/locked/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/grenade/spawnergrenade/manhacks/station/locked/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	locked = !locked
 	to_chat(user, span_warning("You [locked ? "enable" : "disable"] the safety lock on \the [src]!"))
+	return OP_OK
 
 // Generic creature spawner grenades for loadout.
 /obj/item/grenade/spawnergrenade/loadout

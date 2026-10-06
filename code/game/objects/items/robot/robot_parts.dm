@@ -275,14 +275,18 @@ CAPABILITIES(/obj/item/robot_parts/chest)
 		to_chat(user, span_notice("You insert the flash into the eye socket!"))
 
 
-DECLARE_EMAG_REPEATABLE(/obj/item/robot_parts, PROC_REF(on_emag), null)
-/obj/item/robot_parts/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+CAPABILITIES(/obj/item/robot_parts)
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+
+/obj/item/robot_parts/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(sabotaged)
 		to_chat(user, span_warning("[src] is already sabotaged!"))
 	else
 		to_chat(user, span_warning("You short out the safeties."))
 		sabotaged = 1
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /obj/item/robot_parts/chest/ownership()
 	. = ..()
