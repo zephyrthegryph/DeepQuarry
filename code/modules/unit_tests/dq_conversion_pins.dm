@@ -53,6 +53,8 @@
 	)
 	var/list/actual_by_type = list()
 	for(var/type in expected_by_type)
+		// One seed per type, so a random initial state (the toilet's lid) is the same at every recording, whatever ran before it.
+		rand_seed(1)
 		var/atom/target = dq_snapshot_allocate(type, T)
 		if(QDELETED(target))
 			actual_by_type[type] = list("deleted itself on creation")
