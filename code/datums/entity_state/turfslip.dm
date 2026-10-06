@@ -76,7 +76,7 @@
 		after(src, 0.1 SECONDS, PROC_REF(next_slip))
 
 /datum/turfslip/proc/move_react(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 
 	// Can the mob slip?
 	if(QDELETED(owner) || !isturf(owner.loc))

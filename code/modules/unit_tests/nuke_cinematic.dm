@@ -65,7 +65,7 @@
 
 /// Used to track whenever a cinematic starts playing, so we can check if it's the right one.
 /datum/unit_test/nuke_cinematic/proc/check_cinematic(datum/act/play_cinematic/play)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/cinematic/playing = play.cinematic
 
 	cinematic_playing_type = playing.type

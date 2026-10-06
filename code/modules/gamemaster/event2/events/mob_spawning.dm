@@ -96,7 +96,7 @@ CAPABILITIES(/datum/event2/event/mob_spawning)
 
 // If simple_mob is bomphed, remove it from the list.
 /datum/event2/event/mob_spawning/proc/on_mob_destruction(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	var/mob/M = source
 	rel_remove(src, nameof(spawned_mobs), M)

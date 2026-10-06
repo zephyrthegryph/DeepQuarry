@@ -52,7 +52,7 @@
 	B.invisibility = INVISIBILITY_NONE
 
 /datum/trait_state/drippy/proc/create_color(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(ishuman(owner))
 		var/mob/living/carbon/human/temp_human = owner
 		blood_color = rgb(temp_human.r_skin,temp_human.g_skin,temp_human.b_skin)

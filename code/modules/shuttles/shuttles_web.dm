@@ -466,7 +466,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 
 // This is called whenever a shuttle is initialized.  If its our shuttle, do our thing!
 /obj/shuttle_connector/proc/setup_routes(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/observer_shuttle_added/event = A
 	var/new_shuttle = event.shuttle
 	var/datum/shuttle/autodock/web_shuttle/ES = SSshuttles.shuttles[shuttle_name]

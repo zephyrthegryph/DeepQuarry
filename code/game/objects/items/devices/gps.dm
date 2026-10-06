@@ -124,7 +124,7 @@ CAPABILITIES(/obj/item/gps)
 
 /// Hooked on the holder's movement.
 /obj/item/gps/proc/on_holder_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/movable/source = A.target
 	update_compass(source)
 

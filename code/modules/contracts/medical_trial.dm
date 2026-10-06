@@ -162,7 +162,7 @@ CAPABILITIES(/datum/contract/medical_trial)
 	return TRUE
 
 /datum/contract/medical_trial/proc/on_participant_death(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/subject = A.target
 	var/datum/notice/mob_death/event = A
 	var/gibbed = event.gibbed
@@ -470,7 +470,7 @@ GLOBAL_LIST_INIT(medical_trial_target_choices, list("trauma", "infection", "resp
 /// affliction_severity_changed event: republish trial eligibility and emit
 /// the measured treatment outcome when a condition improves.
 /datum/system/contracts/proc/on_affliction_severity_changed(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/patient = N.target
 	var/datum/notice/affliction_severity_changed/event = N
 	var/datum/affliction/A = event.affliction
@@ -502,7 +502,7 @@ GLOBAL_LIST_INIT(medical_trial_target_choices, list("trauma", "infection", "resp
 /// without a severity change (an organ carrying afflictions is reattached, an
 /// affliction is cured or cleared outright). Keep eligibility in step.
 /datum/system/contracts/proc/on_body_afflictions_changed(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/patient = N.target
 	var/datum/notice/body_afflictions_changed/event = N
 	var/datum/affliction/A = event.affliction

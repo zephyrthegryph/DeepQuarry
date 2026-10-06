@@ -288,12 +288,12 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	movement_sources = null
 
 /datum/material_service/proc/moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	watches_dirty = TRUE
 	environment_changed()
 
 /datum/material_service/proc/changing_turf(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	var/datum/notice/turf_change/event = A
 	var/list/post_change_callbacks = event.post_change_callbacks

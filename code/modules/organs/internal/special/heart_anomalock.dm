@@ -62,7 +62,7 @@ CAPABILITIES(/obj/item/organ/internal/heart/machine/anomalock)
 
 /// Event wrapper: the owner gained a trait; only critical condition triggers survival mode.
 /obj/item/organ/internal/heart/machine/anomalock/proc/on_owner_trait_gained(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/source = A.target
 	var/datum/notice/trait_gained/event = A
 	if(event.trait != TRAIT_CRITICAL_CONDITION)
@@ -84,7 +84,7 @@ CAPABILITIES(/obj/item/organ/internal/heart/machine/anomalock)
 	play_sfx(owner, SFX_MACHINES_DEFIB_ZAP, 0.8, vary = FALSE, extrarange = 0)
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/on_emp_act(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	add_lightning_overlay(10 SECONDS)
 
 /// Old attackby.

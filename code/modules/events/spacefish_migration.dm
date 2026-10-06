@@ -101,7 +101,7 @@ CAPABILITIES(/datum/event/spacefish_migration)
 
 // If fish is bomphed, remove it from the list.
 /datum/event/spacefish_migration/proc/on_fish_destruction(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/M = A.target
 	own_take_member(src, nameof(spawned_fish), M)
 	unobserve(M, /datum/notice/qdeleting, src)

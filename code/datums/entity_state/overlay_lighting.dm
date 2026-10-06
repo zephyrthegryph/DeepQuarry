@@ -292,7 +292,7 @@ CAPABILITIES(/datum/overlay_lighting)
 
 ///Called when the current_holder is qdeleted, to remove the light effect.
 /datum/overlay_lighting/proc/on_holder_qdel(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	unobserve(current_holder(), /datum/notice/qdeleting, src)
 	unobserve(current_holder(), /datum/notice/moved, src)
 	if(directional)
@@ -301,14 +301,14 @@ CAPABILITIES(/datum/overlay_lighting)
 
 ///Called when current_holder changes loc.
 /datum/overlay_lighting/proc/on_holder_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(!(overlay_lighting_flags & LIGHTING_ON))
 		return
 	make_luminosity_update()
 
 ///Called when parent changes loc.
 /datum/overlay_lighting/proc/on_parent_moved_event(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/movable/source = A.target
 	var/datum/notice/moved/event = A
 	on_parent_moved(source, event.old_loc, event.direction, event.forced)
@@ -325,7 +325,7 @@ CAPABILITIES(/datum/overlay_lighting)
 
 ///Called when the current_holder is qdeleted, to remove the light effect.
 /datum/overlay_lighting/proc/on_parent_attached_to_qdel(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	unobserve(parent_attached_to(), /datum/notice/qdeleting, src)
 	unobserve(parent_attached_to(), /datum/notice/moved, src)
 	if(directional)
@@ -336,7 +336,7 @@ CAPABILITIES(/datum/overlay_lighting)
 
 ///Called when parent_attached_to changes loc.
 /datum/overlay_lighting/proc/on_parent_attached_to_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	check_holder()
 	if(!(overlay_lighting_flags & LIGHTING_ON) || !current_holder())
 		return
@@ -344,7 +344,7 @@ CAPABILITIES(/datum/overlay_lighting)
 
 ///Changes the range which the light reaches. 0 means no light, 6 is the maximum value.
 /datum/overlay_lighting/proc/on_range_event(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/source = A.target
 	var/datum/notice/atom_update_light_range/event = A
 	set_range(source, event.old_range)
@@ -373,7 +373,7 @@ CAPABILITIES(/datum/overlay_lighting)
 
 ///Changes the intensity/brightness of the light by altering the visual object's alpha.
 /datum/overlay_lighting/proc/on_power_event(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/source = A.target
 	var/datum/notice/atom_update_light_power/event = A
 	set_power(source, event.old_power)
@@ -388,7 +388,7 @@ CAPABILITIES(/datum/overlay_lighting)
 
 ///Changes the light's color, pretty straightforward.
 /datum/overlay_lighting/proc/on_color_event(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/source = A.target
 	var/datum/notice/atom_update_light_color/event = A
 	set_color(source, event.old_color)
@@ -401,7 +401,7 @@ CAPABILITIES(/datum/overlay_lighting)
 
 ///Toggles the light on and off.
 /datum/overlay_lighting/proc/on_toggle(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/source = A.target
 	var/new_value = source.light_on
 	if(new_value) //Truthy value input, turn on.
@@ -411,7 +411,7 @@ CAPABILITIES(/datum/overlay_lighting)
 
 ///Triggered right after the parent light flags change.
 /datum/overlay_lighting/proc/on_light_flags_change(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/source = A.target
 	var/datum/notice/atom_update_light_flags/event = A
 	var/old_flags = event.old_flags
@@ -507,13 +507,13 @@ CAPABILITIES(/datum/overlay_lighting)
 
 ///Called when current_holder changes loc.
 /datum/overlay_lighting/proc/on_holder_dir_change(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/atom_dir_change/event = A
 	set_direction(event.new_dir)
 
 ///Called when parent changes loc.
 /datum/overlay_lighting/proc/on_parent_dir_change(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/atom_dir_change/event = A
 	set_direction(event.new_dir)
 
@@ -567,7 +567,7 @@ CAPABILITIES(/datum/overlay_lighting)
 		make_luminosity_update()
 
 /datum/overlay_lighting/proc/on_parent_crafted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/atom_used_in_craft/event = A
 	var/atom/movable/new_craft = event.result_
 	if(!istype(new_craft))

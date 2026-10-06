@@ -17,7 +17,7 @@
 	observe(owner, /datum/notice/moved, src, then(PROC_REF(handle_comp)))
 
 /datum/trait_state/waddle_trait/proc/handle_comp(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if (QDELETED(our_atom()))
 		return
 	//Living owner only. No waddling while downed.

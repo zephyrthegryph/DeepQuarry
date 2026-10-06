@@ -33,7 +33,7 @@ CAPABILITIES(/datum/dq_state_probe)
 
 
 /datum/dq_state_holder/proc/on_signal(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	return
 
 /// Returns the canonical text of a full serialization, or null with the errors in `errors`.

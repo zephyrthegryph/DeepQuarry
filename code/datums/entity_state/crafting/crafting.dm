@@ -6,7 +6,7 @@
 		observe(owner, /datum/notice/mob_client_login, src, then(PROC_REF(on_owner_login)))
 
 /datum/personal_crafting/proc/on_owner_login(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/user = A.target
 	var/datum/notice/mob_client_login/event = A
 	create_mob_button(user, event.client)
@@ -439,7 +439,7 @@
 	return parts
 
 /datum/personal_crafting/proc/on_button_click(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/click/event = A
 	var/user = event.user
 	if(user == owner)

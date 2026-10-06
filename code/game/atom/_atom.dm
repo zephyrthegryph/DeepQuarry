@@ -147,7 +147,7 @@
 
 /// Hooked on the turfs sense_proximity() watches: something entered one of them.
 /atom/proc/on_proximity_turf_entered(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/turf/source = A.target
 	var/datum/notice/observer_turf_entered/event = A
 	HasProximity(source, event.arrived, event.old_loc)

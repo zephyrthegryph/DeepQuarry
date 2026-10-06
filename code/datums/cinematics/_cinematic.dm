@@ -100,7 +100,7 @@ CAPABILITIES(/datum/cinematic)
 
 /// Whenever another cinematic starts to play over us, we have the chacne to block it.
 /datum/cinematic/proc/handle_replacement_cinematics(datum/act/play_cinematic/play)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/cinematic/other = play.cinematic
 
 	// Stop our's and allow others to play if we're local and it's global
@@ -112,7 +112,7 @@ CAPABILITIES(/datum/cinematic)
 
 /// Hooked to mob_client_login on each watching mob.
 /datum/cinematic/proc/on_watcher_client_login(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/watching_mob = A.target
 	var/datum/notice/mob_client_login/event = A
 	show_to(watching_mob, event.client)

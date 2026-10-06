@@ -44,7 +44,7 @@ TYPE_TABLE_DECLARE(/obj/item/radio/intercom, intercom_channel_setup, null)
 			internal_channels[num2text(RAID_FREQ)] = list(ACCESS_SYNDICATE)
 
 /obj/item/radio/intercom/proc/on_observer_apc(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	update_icon()
 
 CAPABILITIES(/obj/item/radio/intercom)

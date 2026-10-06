@@ -310,14 +310,14 @@ UI_ACT_PROC(/datum/shadekin, ui_act_toggle_voice)
 
 /// The voice answer of GetVoice(): phase-shifted shadekin who hide their voice are "Something". The handler's value is the voice (the act's reply).
 /datum/shadekin/proc/on_get_voice(datum/act/name_voice/voice)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(in_phase && hide_voice_in_phase)
 		return "Something"
 	return HOOK_DECLINE
 
 /// The alt name answer of GetAltName(): no alt name while hidden in phase, and none for shadekin with voice changers or no identification.
 /datum/shadekin/proc/on_get_alt_name(datum/act/name_alt/alt)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/source = alt.target
 	if(in_phase && hide_voice_in_phase)
 		return ""
@@ -329,7 +329,7 @@ UI_ACT_PROC(/datum/shadekin, ui_act_toggle_voice)
 
 /// The visible name answer of get_visible_name().
 /datum/shadekin/proc/on_get_visible_name(datum/act/name_visible/shown)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(in_phase && hide_voice_in_phase)
 		return "Something"
 	return HOOK_DECLINE

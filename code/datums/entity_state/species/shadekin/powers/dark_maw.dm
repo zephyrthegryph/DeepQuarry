@@ -112,7 +112,7 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 
 ///Called when we get a signal that our owner is being qdel'd
 /obj/effect/abstract/dark_maw/proc/drop_everything_and_delete(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	qdel(src)
 
 /obj/effect/abstract/dark_maw/Crossed(O)

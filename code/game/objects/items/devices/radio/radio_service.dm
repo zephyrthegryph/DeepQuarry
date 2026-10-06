@@ -132,7 +132,7 @@ CAPABILITIES(/datum/system/radio)
 	observe(device, /datum/notice/qdeleting, src, then(PROC_REF(on_listener_deleted)))
 
 /datum/radio_frequency/proc/on_listener_deleted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/obj/device = A.target
 	SSradio.remove_object(device, frequency)
 

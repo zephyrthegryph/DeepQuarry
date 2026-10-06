@@ -1495,7 +1495,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	return vore_panel_button
 
 /datum/vore_panel_button/proc/on_client_login(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	create_mob_button(source)
 
@@ -1519,7 +1519,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	user.client?.screen += screen_icon
 
 /datum/vore_panel_button/proc/vore_panel_click(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/click/event = A
 	var/mob/living/clicker = event.user
 	if(istype(clicker) && clicker.vorePanel)

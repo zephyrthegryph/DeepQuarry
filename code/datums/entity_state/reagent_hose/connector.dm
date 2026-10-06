@@ -111,7 +111,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 	connected_to.trans_to_holder(reagents, rand(1,reagents.maximum_volume))
 
 /datum/hose_connector/proc/on_force_pump(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	force_pump()
 
 /datum/hose_connector/proc/force_pump()
@@ -197,7 +197,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 		reagents.clear_reagents() // Wipe it to avoid exploits
 
 /datum/hose_connector/proc/on_examine(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/examine/event = N
 	var/list/examine_texts = event.texts
 	var/datum/hose_connector/hose_pair = my_hose?.get_pairing(src)
@@ -210,7 +210,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 	examine_texts += span_notice("[name] #[connector_number] is [my_hose ? "connected to [hose_pair]" : "disconnected"].")
 
 /datum/hose_connector/proc/move_react(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	update_hose_beam()
 
 /datum/hose_connector/proc/update_hose_beam()

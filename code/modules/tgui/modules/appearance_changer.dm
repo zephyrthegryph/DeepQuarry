@@ -1089,7 +1089,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	return data
 
 /datum/tgui_module/appearance_changer/proc/update_active_camera_screen(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	cam_screen.vis_contents = list(owner()) // Copied from the vore version.
 	cam_background.icon_state = "clear"
 	cam_background.fill_rect(1, 1, 1, 1)

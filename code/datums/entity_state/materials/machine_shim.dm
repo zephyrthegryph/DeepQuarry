@@ -43,7 +43,7 @@
 		owner.reset_perspective()
 
 /datum/using_machine_shim/proc/on_mob_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	on_mob_action()
@@ -58,13 +58,13 @@
 	on_mob_action()
 
 /datum/using_machine_shim/proc/on_machine_qdelete(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	qdel(src)
 
 /datum/using_machine_shim/proc/on_mob_logout(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	qdel(src)

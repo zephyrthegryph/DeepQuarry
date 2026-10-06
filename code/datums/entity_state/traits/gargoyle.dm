@@ -56,7 +56,7 @@
 	return
 
 /datum/trait_state/gargoyle/proc/on_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	unpause()
 
 //verbs or action buttons...?

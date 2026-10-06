@@ -279,7 +279,7 @@
 	return !F?.in_rig()
 
 /datum/affliction/core_dormancy/proc/on_body_screwdriver(datum/act/tool_act/use)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(use.tool_quality != TOOL_SCREWDRIVER || use.secondary)
 		return HOOK_DECLINE
 	var/mob/living/user = use.user
@@ -290,7 +290,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /datum/affliction/core_dormancy/proc/on_body_attackby(datum/act/attackby/use)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/obj/item/W = use.item
 	var/mob/living/user = use.user
 	if(!repaired_on_body() || !is_repair_item(W))

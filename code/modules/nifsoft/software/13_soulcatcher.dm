@@ -497,7 +497,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	return 1
 
 /mob/observer/eye/ar_soul/proc/human_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(!can_see(parent_human(),src))
 		forceMove(get_turf(parent_human()))
 

@@ -244,7 +244,7 @@
 /// Hook for /datum/om/event/mob_granted_action - If we're viewing another mob's action buttons,
 /// we need to update with any newly added buttons granted to the mob.
 /mob/proc/on_observing_action_granted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/mob_granted_action/event = A
 	var/datum/action/action = event.action
 
@@ -255,7 +255,7 @@
 /// Hook for /datum/om/event/mob_removed_action - If we're viewing another mob's action buttons,
 /// we need to update with any removed buttons from the mob.
 /mob/proc/on_observing_action_removed(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/mob_removed_action/event = A
 	var/datum/action/action = event.action
 
@@ -351,7 +351,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	set_expanded(!expanded)
 
 /atom/movable/screen/button_palette/proc/clicked_while_open(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	var/datum/notice/client_click/event = A
 	var/atom/target = event.target_

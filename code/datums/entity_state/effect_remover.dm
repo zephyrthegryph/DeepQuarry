@@ -30,7 +30,7 @@
 	observe(owner, /datum/notice/pre_attacked, src, then(PROC_REF(try_remove_effect)))
 
 /datum/effect_remover/proc/try_remove_effect(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/pre_attacked/event = N
 	var/atom/target = event.target_
 	var/mob/living/user = event.user

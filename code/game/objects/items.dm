@@ -196,7 +196,7 @@
 
 /// Called when an action associated with our item is deleted
 /obj/item/proc/on_action_deleted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 
 	if(!(source in actions))

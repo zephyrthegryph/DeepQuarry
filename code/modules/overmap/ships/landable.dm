@@ -139,7 +139,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 	observe(shuttle, /datum/notice/observer_shuttle_moved, src, then(PROC_REF(shuttle_left)))
 
 /obj/effect/shuttle_landmark/visiting_shuttle/proc/shuttle_left(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/shuttle/shuttle = A.target
 	var/datum/notice/observer_shuttle_moved/event = A
 	if(event.old_location == src)
@@ -152,7 +152,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 //
 
 /obj/effect/overmap/visitable/ship/landable/proc/pre_shuttle_jump(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/shuttle/given_shuttle = A.target
 	var/datum/notice/observer_shuttle_pre_move/event = A
 	var/obj/effect/shuttle_landmark/into = event.destination
@@ -163,7 +163,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 		unobserve(SSshuttles.shuttles[shuttle], /datum/notice/observer_shuttle_pre_move, src)
 
 /obj/effect/overmap/visitable/ship/landable/proc/on_shuttle_jump(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/shuttle/given_shuttle = A.target
 	var/datum/notice/observer_shuttle_moved/event = A
 	var/obj/effect/shuttle_landmark/from = event.old_location

@@ -166,7 +166,7 @@
 				create_toony_glow()
 
 /datum/trait_state/radiation_effects/proc/on_handle_radiation(datum/act/live_radiation/tick)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	return process_component() ? TRUE : HOOK_DECLINE
 
 ///Handles the radiation removal, immunity, and healing effects.
@@ -238,7 +238,7 @@
 		return COMPONENT_BLOCK_LIVING_RADIATION
 
 /datum/trait_state/radiation_effects/proc/on_irradiate_effect(datum/act/irradiate/dose)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	return handle_irradiate_effect(dose.target, dose.effect, IRRADIATE, dose.blocked, dose.check_protection, dose.rad_protection) ? TRUE : HOOK_DECLINE
 
 /datum/trait_state/radiation_effects/proc/handle_irradiate_effect(mob/living/living_guy, effect, effecttype, blocked, check_protection, rad_protection)
@@ -335,7 +335,7 @@ CAPABILITIES(/datum/trait_state/radiation_effects)
 	animate(alpha = 40, time = 2.5 SECONDS)
 
 /datum/trait_state/radiation_effects/proc/on_geiger_counter_scan(datum/act/geiger_scan/scan)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/living_source = scan.target
 	var/mob/user = scan.user
 	var/obj/item/geiger/geiger_counter = scan.counter

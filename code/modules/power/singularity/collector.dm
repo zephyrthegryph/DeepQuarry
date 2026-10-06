@@ -28,7 +28,7 @@ CAPABILITIES(/obj/machinery/power/rad_collector)
 	observe(src, /datum/notice/in_range_of_irradiation, src, then(PROC_REF(process_rads)))
 
 /obj/machinery/power/rad_collector/proc/process_rads(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/in_range_of_irradiation/event = N
 	var/datum/radiation_pulse_information/pulse_information = event.pulse_information
 	//so that we don't zero out the meter if the SM is processed first.

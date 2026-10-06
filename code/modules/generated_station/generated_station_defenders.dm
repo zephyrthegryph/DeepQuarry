@@ -30,7 +30,7 @@
 	return defender() && !QDELETED(defender()) && defender().stat < DEAD
 
 /datum/generated_station_defender_agent/proc/on_damage(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/dqai_damage_taken/event = A
 	var/atom/attacker = event.attacker
 	if(attacker)
@@ -40,7 +40,7 @@
 		runtime()?.retreat_agent(src)
 
 /datum/generated_station_defender_agent/proc/on_death(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	runtime()?.on_casualty(src)
 
 /datum/generated_station_defender_agent/proc/apply_order(datum/generated_station_order/order, datum/generated_station_knowledge_report/report)
