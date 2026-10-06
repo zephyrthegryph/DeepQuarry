@@ -65,6 +65,18 @@ def translate_req(clause, t, kind):
     the op's requirement is a pure `x(datum/act/op/A)` answering TRUE/FALSE with a reason proc beside it, so each proc gets two thin wrappers that call it
     as the old evaluator did (the target is the holder: src)."""
     clause = clause.strip()
+    # a datum interaction's offered_when (tools/codemods/interaction_datums.py): the op is not offered unless it holds -> when(), no refusal
+    om = re.match(r"^OFFERED_WHEN\((.*)\)$", clause, re.S)
+    if om:
+        inner = om.group(1).strip()
+        am = re.match(r"^REQ_ON\(PRED_ACTOR,\s*(/[\w/]+?)/proc/(\w+),\s*(\"[^\"\\]*\"|null)\)$", inner)
+        if am:  # a proc of the type, asked of the actor
+            inner = "REQ_ON(PRED_TARGET, %s/proc/%s, %s)" % (am.group(1), am.group(2), am.group(3))
+        got = translate_req(inner, t, kind)
+        if got is None or not got[0].startswith("req(PROC_REF("):
+            return None
+        holds = re.match(r"^req\(PROC_REF\((\w+)\)", got[0]).group(1)
+        return ("@when req(PROC_REF(%s))" % holds, got[1][:1])  # only the holds wrapper: nothing refuses
     if clause in ("REQ_INTERACTION_REACH", "REQ_SELF_USE_REACH"):
         return ("", [])  # the binding's own reach (hand() / in_hand())
     if clause == "REQ_REACH_ADJACENT":
@@ -790,7 +802,10 @@ def main():
                     derived = legacy_name(s, type_names)
                     if derived:
                         parts.append('label("%s")' % derived)
-                needs_parts = (["carried()"] if s.get("carried") else []) + s.get("req_parts", [])
+                needs_parts = (["carried()"] if s.get("carried") else []) + [x for x in s.get("req_parts", []) if not x.startswith("@when ")]
+                for x in s.get("req_parts", []):
+                    if x.startswith("@when "):
+                        parts.append("when(%s)" % x[len("@when ") :])
                 if s["kind"] == "VERB" and not s.get("carried"):
                     # the legacy verb entry's base requirements (code/datums/interactions/entries.dm entry_verb): reach and an actor who can act;
                     # a menu() binding brings neither, so a ghost or an actor across the room would get the verb

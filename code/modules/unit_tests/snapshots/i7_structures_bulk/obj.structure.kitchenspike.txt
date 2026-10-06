@@ -1,5 +1,5 @@
-/obj/structure/kitchenspike|human|none => |kitchenspike_item:needs a grab,kitchenspike_hand:not possible right now
-/obj/structure/kitchenspike|robot|none => |kitchenspike_item:needs a grab,kitchenspike_hand:not possible right now
+/obj/structure/kitchenspike|human|none => |
+/obj/structure/kitchenspike|robot|none => |
 /obj/structure/kitchenspike|ai|none => |
 /obj/structure/kitchenspike|ghost|none => |
 

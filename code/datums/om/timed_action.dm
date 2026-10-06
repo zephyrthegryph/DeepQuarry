@@ -314,50 +314,6 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 
 // ---------------------------------------------------------------- staggered work
 
-/**
- * Runs `proc_ref` over `items` a few at a time (was a loop with sleep() between items):
- * `per_step` items now, then the next batch every `delay` deciseconds on E's clock. A type
- * proc is called on E as (item, extra...); a /proc/ path as (E, item, extra...). Deleted items
- * are skipped, and the rest is dropped if E is deleted. `on_end` (called like proc_ref, with no
- * item) runs after the last batch.
- */
-/// Steps `A` `steps` times in `direction`, one step every `delay` deciseconds
-/// (the old `for(...) sleep(delay); step(A, dir)` drift). Stops if A is deleted.
-/proc/om_after_drift(atom/movable/A, direction, steps, delay)
-	if(steps <= 0 || QDELETED(A))
-		return
-	om_after(A, delay, /proc/_om_drift_step, A, direction, steps, delay)
-
-/proc/_om_drift_step(atom/movable/A, direction, steps, delay)
-	step(A, direction)
-	if(steps > 1)
-		om_after(A, delay, /proc/_om_drift_step, A, direction, steps - 1, delay)
-
-/proc/om_after_stagger(datum/E, list/items, delay, proc_ref, per_step = 1, list/extra, on_end)
-	_om_stagger_step(E, items ? items.Copy() : list(), 1, delay, proc_ref, per_step, extra, on_end)
-
-/proc/_om_stagger_step(datum/E, list/items, index, delay, proc_ref, per_step, list/extra, on_end)
-	var/last = min(index + max(per_step, 1) - 1, length(items))
-	var/global_proc = copytext("[proc_ref]", 1, 7) == "/proc/"
-	for(var/i in index to last)
-		var/datum/D = items[i]
-		if(isdatum(D) && QDELETED(D))
-			continue
-		try
-			if(global_proc)
-				call(proc_ref)(arglist(list(E, D) + (extra || list())))
-			else
-				call(E, proc_ref)(arglist(list(D) + (extra || list())))
-		catch(var/exception/e)
-			dq_report_caught(e, "om_after_stagger [proc_ref] on [E]")
-	if(last < length(items))
-		om_after(E, delay, /proc/_om_stagger_step, E, items, last + 1, delay, proc_ref, per_step, extra, on_end)
-	else if(on_end)
-		if(copytext("[on_end]", 1, 7) == "/proc/")
-			call(on_end)(arglist(list(E) + (extra || list())))
-		else
-			call(E, on_end)(arglist(extra || list()))
-
 // ---------------------------------------------------------------- lane work
 
 /**

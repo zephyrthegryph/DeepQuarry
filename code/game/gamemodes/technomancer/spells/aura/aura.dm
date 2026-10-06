@@ -6,7 +6,8 @@
 	aspect = null
 	var/glow_color = "#FFFFFF"
 
-DECLARE_PERIODIC(/obj/item/spell/aura, PERIODIC_SLOW)
+CAPABILITIES(/obj/item/spell/aura)
+	every(2 SECONDS, then(PROC_REF(aura_step)))
 
 /obj/item/spell/aura/Initialize(mapload)
 	. = ..()
@@ -18,5 +19,5 @@ DECLARE_PERIODIC(/obj/item/spell/aura, PERIODIC_SLOW)
 	log_and_message_admins("has stopped maintaining [src].")
 	..()
 
-/obj/item/spell/aura/periodic_step()
+/obj/item/spell/aura/proc/aura_step(datum/act/timer/A)
 	return

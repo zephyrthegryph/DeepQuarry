@@ -877,7 +877,7 @@
 	// Dizziness: 3 points per cycle, 15 while resting, capped at 1000.
 	H.status_adjust(STAT_DIZZY, 5000)
 	TEST_ASSERT_EQUAL(H.status_units(STAT_DIZZY), 1000, "dizziness is capped at 1000 points")
-	TEST_ASSERT(om_attached(H, /datum/om/behaviour/dizzy_shake), "the shake follows the status (its on_start hook)")
+	TEST_ASSERT(H.dizzy_shaking, "the shake follows the status (its on_start hook)")
 	H.status_set(STAT_DIZZY, 30)
 	life_test_advance(LIFE_CYCLE_SECONDS + 0.1)
 	TEST_ASSERT_EQUAL(H.status_units(STAT_DIZZY), 27, "dizziness: 3 points per cycle")
@@ -888,7 +888,7 @@
 	TEST_ASSERT_EQUAL(H.status_units(STAT_DIZZY), 12, "dizziness: 15 points per cycle while resting")
 	H.set_resting(FALSE)
 	H.status_end(STAT_DIZZY)
-	TEST_ASSERT(!om_attached(H, /datum/om/behaviour/dizzy_shake), "the shake ends with the status (its on_end hook)")
+	TEST_ASSERT(!H.dizzy_shaking, "the shake ends with the status (its on_end hook)")
 
 	// Alerts follow the status, with no step maintaining them.
 	H.status_at_least(STAT_CONFUSED, 1)

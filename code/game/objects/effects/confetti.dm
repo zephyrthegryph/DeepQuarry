@@ -31,7 +31,7 @@
 	else
 		direction = pick(GLOB.alldirs)
 	var/steps = pick(1,2,3)
-	om_after_drift(confetti, direction, steps, 5)
+	confetti.drift(direction, steps, 5)
 	after(src, 2 SECONDS + steps * 0.5 SECONDS, PROC_REF(dec_confetti_sparks))
 
 /datum/effect/effect/system/confetti_spread/proc/dec_confetti_sparks()

@@ -3,7 +3,8 @@
 	var/list/dispense_reagents
 	var/process_tick = 0
 
-OM_FIELD(/obj/machinery/chemical_dispenser, _recharge_reagents, TRUE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/chemical_dispenser/var/_recharge_reagents = TRUE
+TRACKED_BRIDGED(/obj/machinery/chemical_dispenser, _recharge_reagents, CHANGE_MACHINE_SETTINGS)
 /// Recharges its cartridges while it recharges at all and is operable; with nothing short it sleeps.
 /obj/machinery/chemical_dispenser/proc/work_step(datum/act/timer/A)
 	if(--process_tick <= 0)

@@ -64,7 +64,15 @@
 	)
 
 /datum/decl/emote/visible/floorspin/proc/spin_dir(mob/user)
-	om_after_stagger(user, spin_dirs, 0.1 SECONDS, TYPE_PROC_REF(/atom, set_dir))
+	emote_floorspin_step(user, spin_dirs, 1)
+
+/// Faces dirs[index], then the next direction 0.1 seconds later on the user's clock.
+/proc/emote_floorspin_step(mob/user, list/dirs, index)
+	if(QDELETED(user) || index > length(dirs))
+		return
+	user.set_dir(dirs[index])
+	if(index < length(dirs))
+		after(user, 0.1 SECONDS, GLOBAL_PROC_REF(emote_floorspin_step), with = list(user, dirs, index + 1))
 
 /datum/decl/emote/visible/floorspin/proc/spin_anim(mob/user)
 	after(user, 0.1 SECONDS, TYPE_PROC_REF(/atom, SpinAnimation), with = list(10, 1))

@@ -314,11 +314,20 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 
 /// One antagonist summary a second, then the completion declaration.
 /datum/game_mode/proc/declare_antag_goals()
-	om_after_stagger(src, antag_templates, 1 SECOND, PROC_REF(declare_antag_goal), 1, null, PROC_REF(finish_antag_goals))
+	declare_antag_goal(antag_templates ? antag_templates.Copy() : list(), 1)
 
-/datum/game_mode/proc/declare_antag_goal(datum/antagonist/antag)
-	antag.check_victory()
-	antag.print_player_summary()
+/datum/game_mode/proc/declare_antag_goal(list/templates, index)
+	if(index > length(templates))
+		finish_antag_goals()
+		return
+	var/datum/antagonist/antag = templates[index]
+	if(!QDELETED(antag))
+		antag.check_victory()
+		antag.print_player_summary()
+	if(index < length(templates))
+		after(src, 1 SECOND, PROC_REF(declare_antag_goal), with = list(templates, index + 1))
+	else
+		finish_antag_goals()
 
 /datum/game_mode/proc/finish_antag_goals()
 	after(src, 1 SECOND, PROC_REF(finish_completion_declatration))

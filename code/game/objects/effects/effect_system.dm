@@ -76,7 +76,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	else
 		direction = pick(GLOB.alldirs)
 	var/steps = pick(1,2,3)
-	om_after_drift(steam, direction, steps, 5)
+	steam.drift(direction, steps, 5)
 	steam.expire(20 + steps * 5)
 
 /datum/effect/effect/system/steam_spread/start()
@@ -106,7 +106,7 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 		if(GLOB.fx_live_sparks >= FX_SPARKS_MAX_LIVE)
 			return
 		var/obj/effect/effect/sparks/spark = new(origin)
-		om_after_drift(spark, pick(cardinals ? GLOB.cardinal : GLOB.alldirs), pick(1, 2, 3), 5)
+		spark.drift(pick(cardinals ? GLOB.cardinal : GLOB.alldirs), pick(1, 2, 3), 5)
 
 /obj/effect/effect/sparks
 	name = "sparks"
@@ -374,7 +374,7 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental)
 		else
 			direction = pick(GLOB.alldirs)
 	var/steps = pick(0,1,1,1,2,2,2,3)
-	om_after_drift(smoke, direction, steps, 1 SECOND)
+	smoke.drift(direction, steps, 1 SECOND)
 	after(src, steps * 1 SECOND + smoke.time_to_live*0.75+rand(1 SECOND, 3 SECONDS), PROC_REF(expire_smoke), with = list(smoke))
 
 /datum/effect/effect/system/smoke_spread/proc/expire_smoke(obj/effect/effect/smoke/smoke)
@@ -650,7 +650,7 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental)
 		else
 			direction = pick(GLOB.alldirs)
 	var/steps = pick(0,1,1,1,2,2,2,3)
-	om_after_drift(confetti, direction, steps, 1 SECOND)
+	confetti.drift(direction, steps, 1 SECOND)
 	after(src, steps * 1 SECOND + confetti.time_to_live*0.75+rand(1 SECOND, 3 SECONDS), PROC_REF(expire_confetti), with = list(confetti))
 
 /datum/effect/effect/system/confetti_spread/proc/expire_confetti(obj/effect/effect/confetti/confetti)

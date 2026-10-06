@@ -17,7 +17,7 @@
 	aspect = ASPECT_FIRE
 	glow_color = "#FF6A00"
 
-/obj/item/spell/aura/fire/periodic_step()
+/obj/item/spell/aura/fire/aura_step(datum/act/timer/A)
 	if(!pay_energy(100))
 		spent(src)
 		return

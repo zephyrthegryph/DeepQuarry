@@ -74,6 +74,7 @@ MSG_DEF(table/uncarpeted, "You remove the carpet from %T%.", "%U% removes the ca
 MSG_DEF(table/repaired, "You repair some damage to %T%.", "%U% repairs some damage to %T%.")
 
 CAPABILITIES(/obj/structure/table)
+	smoothing()
 	table_frame()
 	climb(landing = PROC_REF(flipped_landing))
 	extend("construction.dismantle", when(req_graph_at(list(STAGE_TABLE_FRAME))), needs(req(PROC_REF(dismantle_allowed), because = MSG(table/no_dismantle))))
@@ -284,17 +285,11 @@ CAPABILITIES(/obj/structure/table)
 	// reset color/alpha, since they're set for nice map previews
 	color = "#ffffff"
 	alpha = 255
-	update_connections(SSticker && SSticker.current_state == GAME_STATE_PLAYING)
+	update_connections()
 	update_icon()
 	update_desc()
 	update_material()
 
-// neighbouring tables re-smooth without it.
-/obj/structure/table/on_destroy(force)
-	update_connections(1) // Update tables around us to ignore us (material=null forces no connections)
-	for(var/obj/structure/table/T in oview(src, 1))
-		T.update_icon()
-	..()
 
 /obj/structure/table/attack_alien(mob/user as mob)
 	act_message(user, src, others = span_danger("%U% tears apart %T%!"))
