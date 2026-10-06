@@ -173,6 +173,7 @@
 	range = 6
 	hud_state = "plasma_rifle_blast"
 
+// ALLOW(init/CTOR_ARGS): range_mod is a constructor argument from whoever builds it
 /obj/item/projectile/bullet/magnetic/bore/Initialize(mapload, range_mod) // i'm gonna be real honest i dunno how this works but it does
 	. = ..()
 	range += range_mod

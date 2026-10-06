@@ -9,6 +9,7 @@
 	var/image/turf_image
 	var/list/decals
 
+// ALLOW(init/INSTANCE_STATE): remembers the turf it was placed on and waits in nullspace
 /obj/landed_holder/Initialize(mapload)
 	. = ..()
 	if(loc)
@@ -145,9 +146,7 @@ CAPABILITIES(/turf/simulated/shuttle)
 			us.underlays = list(landed_on)
 			appearance = us
 
-		spawn
-			if(istype(src, /turf/simulated/shuttle))
-				update_breaklights() // Update only if this coordinate is still a shuttle turf.
+		after(src, 0, PROC_REF(update_breaklights)) // A turf changed meanwhile took the timer with it.
 		return
 
 	if(!under)
@@ -190,9 +189,7 @@ CAPABILITIES(/turf/simulated/shuttle)
 
 	appearance = us
 
-	spawn
-		if(istype(src, /turf/simulated/shuttle))
-			update_breaklights() // Update only if this coordinate is still a shuttle turf.
+	after(src, 0, PROC_REF(update_breaklights)) // A turf changed meanwhile took the timer with it.
 
 	return under
 
@@ -227,6 +224,7 @@ CAPABILITIES(/turf/simulated/shuttle)
 	light_on = TRUE
 	block_tele = TRUE
 
+// ALLOW(init/INSTANCE_STATE): rolls its alien pod tile and lights it
 /turf/simulated/shuttle/floor/alien/Initialize(mapload)
 	. = ..()
 	icon_state = "alienpod[rand(1, 9)]"

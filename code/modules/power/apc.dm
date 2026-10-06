@@ -465,6 +465,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 // Lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ALLOW(init/CTOR_ARGS): ndir and building are constructor arguments from whoever builds it
 /obj/machinery/power/apc/Initialize(mapload, ndir, building)
 	if(building)
 		cell_type = null // a frame built by hand starts without the cell its relation would make (starts =)

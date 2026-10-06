@@ -766,6 +766,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	return TRUE
 
 //Handles both growing up from a baby and also passing parent details to new babies.
+// ALLOW(init/CTOR_ARGS): teppi1 and teppi2 are constructor arguments from whoever builds it
 /mob/living/simple_mob/vore/alienanimals/teppi/Initialize(mapload, teppi1, teppi2)
 	GLOB.teppi_count ++
 	if(teppi1 && !teppi2)

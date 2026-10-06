@@ -21,6 +21,7 @@
 OM_FIELD(/obj/structure/girder, material_processing, FALSE, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/structure/girder, PERIODIC_SLOW, "material_processing")
 
+// ALLOW(init/CTOR_ARGS): material_key is a constructor argument from whoever builds it
 /obj/structure/girder/Initialize(mapload, material_key)
 	. = ..()
 	if(!material_key)
@@ -259,6 +260,7 @@ CAPABILITIES(/obj/structure/girder)
 	if(wall_fake)
 		T.can_open = 1
 	T.add_hiddenprint(user)
+	// ALLOW(lifecycle): the girder becomes the wall raised over it
 	qdel(src)
 	return TRUE
 

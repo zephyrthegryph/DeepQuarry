@@ -15,6 +15,7 @@
 		stack_trace("lighting_object created before SSlighting up!")
 		return
 	if(!isturf(source))
+		// ALLOW(lifecycle): a lighting object on a non-turf is a caller error and is dropped
 		qdel(src, force=TRUE)
 		stack_trace("a lighting object was assigned to [source], a non turf! ")
 		return

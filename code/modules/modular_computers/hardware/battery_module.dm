@@ -63,6 +63,7 @@ CAPABILITIES(/obj/item/computer_hardware/battery_module)
 	..()
 	to_chat(user, "Internal battery charge: [battery.charge]/[battery.maxcharge] CU")
 
+// ALLOW(init/CTOR_ARGS): cell_type is a constructor argument from whoever builds it
 /obj/item/computer_hardware/battery_module/Initialize(mapload, cell_type)
 	if(ispath(cell_type))
 		rel_set(src, nameof(battery), new cell_type(src))

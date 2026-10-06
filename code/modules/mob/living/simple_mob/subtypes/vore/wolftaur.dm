@@ -37,6 +37,7 @@
 	pixel_y = 0
 	faction = FACTION_WOLFTAUR
 
+// ALLOW(init/INSTANCE_STATE): rolls its skin when its type says to, and its size
 /mob/living/simple_mob/vore/wolftaur/Initialize(mapload)
 	. = ..()
 	if(random_skin)

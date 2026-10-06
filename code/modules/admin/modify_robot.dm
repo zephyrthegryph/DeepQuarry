@@ -2,7 +2,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	if(!target)
 		return
 	var/datum/eventkit/modify_robot/modify_robot = new()
-	rel_set(modify_robot, nameof(/datum/accessory_stat_modifier::target), target)
+	rel_set(modify_robot, nameof(/datum/eventkit/modify_robot::target), target)
 	modify_robot.selected_ai = target.is_slaved()
 	modify_robot.tgui_interact(user.mob)
 
@@ -239,7 +239,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 /datum/eventkit/modify_robot/proc/ui_act_select_target(datum/act/op/A, new_target_arg)
 	var/new_target = new_target_arg
 	if(new_target != target())
-		rel_set(src, nameof(/datum/accessory_stat_modifier::target), new_target_arg)
+		rel_set(src, nameof(/datum/eventkit/modify_robot::target), new_target_arg)
 		log_and_message_admins("changed robot modifictation target to [target()]")
 	return TRUE
 
@@ -279,7 +279,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	source.update_icon()
 	source.emag_items = TRUE
 	if(!istype(robot_type, /obj/item/robot_module/robot))
-		own_clear(src, nameof(/datum/admin_rank::source), OWN_DELETE)
+		own_clear(src, nameof(/datum/eventkit/modify_robot::source), OWN_DELETE)
 		return TRUE
 	return TRUE
 

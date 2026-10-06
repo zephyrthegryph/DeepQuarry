@@ -33,6 +33,7 @@
 		/obj/item/stack/cable_coil = 5,
 	)
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/food_replicator/Initialize(mapload)
 	. = ..()
 

@@ -88,6 +88,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 	/// Relation view: the landable ship that made (and owns) this landmark.
 	var/tmp/obj/effect/overmap/visitable/ship/landable/ship
 
+// ALLOW(init/CTOR_ARGS): shuttle_name is a constructor argument from whoever builds it
 /obj/effect/shuttle_landmark/ship/Initialize(mapload, shuttle_name)
 	landmark_tag += "_[shuttle_name]"
 	src.shuttle_name = shuttle_name
@@ -114,6 +115,7 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 	flags = SLANDMARK_FLAG_AUTOSET | SLANDMARK_FLAG_ZERO_G
 	var/obj/effect/shuttle_landmark/ship/core_landmark
 
+// ALLOW(init/CTOR_ARGS): master and _name are constructor arguments from whoever builds it
 /obj/effect/shuttle_landmark/visiting_shuttle/Initialize(mapload, obj/effect/shuttle_landmark/ship/master, _name)
 	rel_set(src, nameof(core_landmark), master)
 	name = _name

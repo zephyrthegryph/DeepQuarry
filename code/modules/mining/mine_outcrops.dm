@@ -13,6 +13,7 @@
 CAPABILITIES(/obj/structure/outcrop)
 	climb()
 
+// ALLOW(init/INSTANCE_STATE): rolls whether this outcrop shows an egg
 /obj/structure/outcrop/Initialize(mapload)
 	. = ..()
 	if(prob(1))

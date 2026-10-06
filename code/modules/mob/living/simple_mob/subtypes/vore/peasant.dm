@@ -29,6 +29,7 @@
 
 	faction = FACTION_PEASANT
 
+// ALLOW(init/INSTANCE_STATE): rolls its skin when its type says to
 /mob/living/simple_mob/vore/peasant/Initialize(mapload)
 	. = ..()
 	if(random_skin)

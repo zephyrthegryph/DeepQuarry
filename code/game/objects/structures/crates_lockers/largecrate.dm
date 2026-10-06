@@ -228,6 +228,7 @@
 	name = "Dangerous Predator carrier"
 	starts_with = list(/mob/living/simple_mob/animal/space/alien)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/largecrate/animal/dangerous/Initialize(mapload)
 	starts_with = list(pick(/mob/living/simple_mob/animal/space/carp/large,
 						/mob/living/simple_mob/vore/aggressive/deathclaw,
@@ -249,6 +250,7 @@
 	icon_state = "sotiecrate"
 	starts_with = list(/mob/living/simple_mob/vore/otie/security)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/largecrate/animal/guardbeast/Initialize(mapload)
 	starts_with = list(pick(/mob/living/simple_mob/vore/otie/security,
 						/mob/living/simple_mob/vore/otie/security/chubby))
@@ -261,6 +263,7 @@
 	icon_state = "sotiecrate"
 	starts_with = list(/mob/living/simple_mob/vore/otie/security/phoron)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/largecrate/animal/guardmutant/Initialize(mapload)
 	starts_with = list(pick(/mob/living/simple_mob/vore/otie/security/phoron;2,
 						/mob/living/simple_mob/vore/otie/security/phoron/red;0.5,
@@ -275,6 +278,7 @@
 	starts_with = list(/mob/living/simple_mob/vore/otie/cotie)
 	var/taped = 1
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/largecrate/animal/otie/Initialize(mapload)
 	starts_with = list(pick(/mob/living/simple_mob/vore/otie/cotie,
 						/mob/living/simple_mob/vore/otie/cotie/chubby))
@@ -285,6 +289,7 @@
 	desc = "VARMAcorp experimental hostile environment adaptive breeding development kit. WARNING, DO NOT RELEASE IN WILD!"
 	starts_with = list(/mob/living/simple_mob/vore/otie/cotie/phoron)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/largecrate/animal/otie/phoron/Initialize(mapload)
 	starts_with = list(pick(/mob/living/simple_mob/vore/otie/cotie/phoron;2,
 						/mob/living/simple_mob/vore/otie/red/friendly;0.5,
@@ -314,6 +319,7 @@
 	desc = "Bounces around a lot. Looks messily packaged, were they in a hurry?"
 	starts_with = list(/mob/living/simple_mob/vore/fennec)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/largecrate/animal/fennec/Initialize(mapload)
 	starts_with = list(pick(/mob/living/simple_mob/vore/fennec,
 						/mob/living/simple_mob/vore/fennix;0.5))

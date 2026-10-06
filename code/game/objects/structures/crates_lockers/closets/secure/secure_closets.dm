@@ -137,6 +137,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 /obj/structure/closet/secure_closet/mind/proc/owner_present(datum/act/op/A)
 	return allowed(A.actor)
 
+// ALLOW(init/CTOR_ARGS): mind_target and del_self are constructor arguments from whoever builds it
 /obj/structure/closet/secure_closet/mind/Initialize(mapload, datum/mind/mind_target, del_self = 1)
 	. = ..()
 	self_del = del_self
@@ -158,6 +159,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/mind)
 /obj/structure/closet/secure_closet/mind/open()
 	.=..()
 	if(self_del)
+		// ALLOW(lifecycle): a self-deleting closet goes once it is opened
 		qdel(src)
 
 /// A mind's locker takes nothing in: it only resolves its look.

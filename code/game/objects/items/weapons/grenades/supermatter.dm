@@ -31,4 +31,5 @@ DECLARE_APPEARANCE_PROC(/obj/item/grenade/supermatter, TYPE_PROC_REF(/atom, appe
 /// om_after() callback from detonate(): the pull ends in the implosion.
 /obj/item/grenade/supermatter/proc/implode()
 	explosion(loc, 1, 3, 5, 4)
+	// ALLOW(lifecycle): the grenade is spent once it implodes
 	qdel(src)

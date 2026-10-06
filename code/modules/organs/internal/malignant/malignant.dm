@@ -9,6 +9,7 @@
 	var/cooldownmin = 0
 	var/cooldownmax = 0
 
+// ALLOW(init/CTOR_ARGS): internal, force_location and forcetag are constructor arguments from whoever builds it
 /obj/item/organ/internal/malignant/Initialize(mapload, internal, force_location = null, forcetag = null)
 	organ_tag = "[initial(organ_tag)]_[rand(1,9999)]"
 	if(forcetag)
@@ -615,6 +616,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
 	var/chem_target = null
 	supply_conversion_value = 0
 
+// ALLOW(init/CTOR_ARGS): internal, force_location and forcetag are constructor arguments from whoever builds it
 /obj/item/organ/internal/malignant/engineered/lattice/Initialize(mapload, internal, force_location = null, forcetag = null)
 	growth_trigger = rand(150,200)
 	return ..(mapload, internal, force_location, forcetag)
@@ -639,6 +641,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
 					var/ourowner = owner
 					var/ourloc = parent_organ
 					var/ourtag = organ_tag
+					// ALLOW(lifecycle): the lattice makes way for the organ it mutates into
 					qdel(src)
 					new newpath(ourowner, TRUE, ourloc, ourtag)
 			cooldown = rand(2,5)

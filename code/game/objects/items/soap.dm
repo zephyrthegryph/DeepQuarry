@@ -18,6 +18,7 @@
 
 DECLARE_REAGENTS(/obj/item/soap, 5, null)
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/item/soap/Initialize(mapload)
 	if(randomize && prob(square_chance))
 		icon_state = "[icon_state]-alt" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form

@@ -485,6 +485,7 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 	else
 		WARNING("[log_info_line()]'s shuttle [global.log_info_line(ES)] initialized but destinations:[destinations]")
 
+	// ALLOW(lifecycle): the connector is a map helper that is done once routes are set
 	qdel(src)
 
 //A sensor for detecting air outside shuttles! Handy, that.

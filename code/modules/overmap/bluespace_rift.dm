@@ -9,6 +9,7 @@
 	var/obj/effect/overmap/bluespace_rift/partner
 	var/paused
 
+// ALLOW(init/CTOR_ARGS): new_partner is a constructor argument from whoever builds it
 /obj/effect/overmap/bluespace_rift/Initialize(mapload, new_partner)
 	. = ..()
 	if(new_partner)

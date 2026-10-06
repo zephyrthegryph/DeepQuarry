@@ -23,6 +23,7 @@ CAPABILITIES(/datum/game_panel)
 
 /datum/game_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)
+	// ALLOW(lifecycle): the game panel lives only while its window is open
 	qdel(src)
 
 /// The computed part of /datum/game_panel's window data (declared on its UI_DATA row).

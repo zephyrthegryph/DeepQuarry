@@ -57,6 +57,7 @@ CAPABILITIES(/obj/item/robot_module)
 /obj/item/robot_module/proc/hide_on_manifest()
 	. = hide_on_manifest
 
+// ALLOW(init/INSTANCE_STATE): binds to the robot it is made inside and fits that robot out
 /obj/item/robot_module/Initialize(mapload)
 	. = ..()
 

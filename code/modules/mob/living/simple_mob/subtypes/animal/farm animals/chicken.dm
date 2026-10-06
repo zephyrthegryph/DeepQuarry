@@ -124,6 +124,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/chicken, INTERACT_ITEM
 
 	var/amount_grown = 0
 
+// ALLOW(init/INSTANCE_STATE): pixel_x and pixel_y rolled at random for each instance
 /mob/living/simple_mob/animal/passive/chick/Initialize(mapload)
 	. = ..()
 	pixel_x = rand(-6, 6)

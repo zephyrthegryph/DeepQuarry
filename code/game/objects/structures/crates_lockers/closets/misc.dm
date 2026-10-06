@@ -30,6 +30,7 @@
 		/obj/item/ammo_magazine/clip/c762/hunter = 9,
 		/obj/item/gun/projectile/shotgun/pump/rifle = 2)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/guncabinet/rifle/Initialize(mapload)
 	if(prob(85))
 		starts_with += /obj/item/gun/projectile/shotgun/pump/rifle
@@ -79,6 +80,7 @@
 		/obj/item/reagent_containers/food/snacks/liquidprotein,
 		/obj/item/cataloguer)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/explorer/Initialize(mapload)
 	if(prob(50))
 		starts_with += /obj/item/storage/backpack/explorer
@@ -126,6 +128,7 @@
 		/obj/item/mapping_unit,
 		/obj/item/personal_shield_generator/belt/melee/loaded)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/pathfinder/Initialize(mapload)
 	if(prob(50))
 		starts_with += /obj/item/storage/backpack/explorer
@@ -179,6 +182,7 @@
 		/obj/item/cataloguer/compact,
 		/obj/item/personal_shield_generator/belt/medical/loaded)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/sar/Initialize(mapload)
 	if(prob(50))
 		starts_with += /obj/item/storage/backpack/medic
@@ -225,6 +229,7 @@
 		/obj/item/emergency_beacon
 		)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/pilot/Initialize(mapload)
 	if(prob(50))
 		starts_with += /obj/item/storage/backpack

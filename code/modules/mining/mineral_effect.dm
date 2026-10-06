@@ -9,6 +9,7 @@
 	var/image/scanner_image
 	var/ore_reagent	// Reagent from pumping water near this ore.
 
+// ALLOW(init/INSTANCE_STATE): takes its name and sprite from the ore of the rock it sits in
 /obj/effect/mineral/Initialize(mapload)
 	. = ..()
 	var/turf/simulated/mineral/min_turf = loc

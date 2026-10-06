@@ -168,6 +168,7 @@ TYPE_TABLE(/obj/machinery/camera/all, camera_initial_motion, TRUE)
 	/// Area name -> how many autonamed cameras have been numbered there (numbers only, no camera refs).
 	var/static/list/by_area
 
+// ALLOW(init/INSTANCE_STATE): its camera tag numbers it within the area it is placed in
 /obj/machinery/camera/autoname/Initialize(mapload)
 	. = ..()
 	var/area/A = get_area(src)

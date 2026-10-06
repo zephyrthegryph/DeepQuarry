@@ -207,6 +207,7 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 	var/current_state
 
 INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
+// ALLOW(init/CTOR_ARGS): name and state are constructor arguments from whoever builds it
 /obj/effect/statclick/ticket_list/Initialize(mapload, name, state)
 	current_state = state
 	. = ..()
@@ -259,6 +260,7 @@ CAPABILITIES(/datum/ticket)
 	//clean the input msg
 	var/msg = sanitize(copytext(raw_msg,1,MAX_MESSAGE_LEN))
 	if(!msg || !C || !C.mob)
+		// ALLOW(lifecycle): a ticket with no message or no client is never opened
 		qdel(src)
 		return
 
@@ -656,6 +658,7 @@ CAPABILITIES(/datum/ticket)
 	var/tmp/datum/ticket/ticket_datum
 
 INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
+// ALLOW(init/CTOR_ARGS): T is a constructor argument from whoever builds it
 /obj/effect/statclick/ticket/Initialize(mapload, datum/ticket/T)
 	rel_set(src, nameof(ticket_datum), T)
 	. = ..()

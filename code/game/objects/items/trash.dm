@@ -11,6 +11,7 @@
 	MATERIAL_BULK(MAT_STEEL, 30)
 	var/age = 0
 
+// ALLOW(init/CTOR_ARGS): _age is a constructor argument from whoever builds it
 /obj/item/trash/Initialize(mapload, _age)
 	. = ..()
 	if(!isnull(_age))

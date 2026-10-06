@@ -22,6 +22,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/mech_recharger, MACHINE_PIPELINE, list
 /obj/machinery/mech_recharger/alien
 	icon = 'icons/turf/shuttle_alien_blue.dmi'
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/mech_recharger/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

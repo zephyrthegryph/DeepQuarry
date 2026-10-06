@@ -15,6 +15,7 @@
 	drop_sound = SFX_ITEMS_DROP_RING
 	pickup_sound = SFX_ITEMS_PICKUP_RING
 
+// ALLOW(init/INSTANCE_STATE): its pixel offset rolled at random for each instance
 /obj/item/coin/Initialize(mapload)
 	. = ..()
 	randpixel_xy()
@@ -213,6 +214,7 @@ CAPABILITIES(/obj/item/coin)
 	drop_sound = SFX_ITEMS_DROP_RING
 	pickup_sound = SFX_ITEMS_PICKUP_RING
 
+// ALLOW(init/INSTANCE_STATE): its pixel offset rolled at random for each instance
 /obj/item/aliencoin/Initialize(mapload)
 	. = ..()
 	randpixel_xy()

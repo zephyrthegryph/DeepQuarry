@@ -32,6 +32,7 @@
 /obj/structure/prop/desert_rock/rock/proc/attack_hand_timed_done(movedir)
 	step(src, movedir)
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/prop/desert_rock/rock/Initialize(mapload)
 	. = ..()
 	icon_state = "desert_rock[rand(0,6)]"
@@ -49,6 +50,7 @@
 			M.status_at_least(EFFECT_WEAKENED, 2)
 			to_chat(M, "You trip over the [src]!")
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/prop/desert_rock/pebble/Initialize(mapload)
 	. = ..()
 	icon_state = "desert_pebble[rand(0,6)]"
@@ -59,6 +61,7 @@
 	icon = 'icons/obj/desert_planet/desert_plants.dmi'
 	icon_state = "anthill0"
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/prop/desert_rock/anthill/Initialize(mapload)
 	. = ..()
 	icon_state = "anthill[rand(0,2)]"
@@ -166,6 +169,7 @@
 	desc = "Colloquially known as a pot plant."
 	icon_state = "potplant0"
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/flora/desert_planet/potted_plant/Initialize(mapload)
 	. = ..()
 	icon_state = "potplant[rand(0,2)]"
@@ -175,6 +179,7 @@
 	desc = "Weedy growths."
 	icon_state = "thicket0"
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/flora/desert_planet/thicket/Initialize(mapload)
 	. = ..()
 	icon_state = "thicket[rand(0,6)]"
@@ -184,6 +189,7 @@
 	desc = "Dense and weedy."
 	icon_state = "shrub0"
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/flora/desert_planet/shrub/Initialize(mapload)
 	. = ..()
 	icon_state = "shrub[rand(0,5)]"
@@ -193,6 +199,7 @@
 	desc = "Denser and weedier."
 	icon_state = "bush0"
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/flora/desert_planet/bush/Initialize(mapload)
 	. = ..()
 	icon_state = "bush[rand(0,5)]"
@@ -202,6 +209,7 @@
 	desc = "Small, adorable, and begging for a hug."
 	icon_state = "barrelcacti0"
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/flora/desert_planet/barrelcacti/Initialize(mapload)
 	. = ..()
 	icon_state = "barrelcacti[rand(0,3)]"
@@ -211,6 +219,7 @@
 	desc = "Probably not actually a yucca."
 	icon_state = "palmy0"
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/flora/desert_planet/palmy/Initialize(mapload)
 	. = ..()
 	icon_state = "palmy[rand(0,2)]"
@@ -220,6 +229,7 @@
 	desc = "Makes for great fur accessories."
 	icon_state = "shrubber0"
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/flora/desert_planet/shrubber/Initialize(mapload)
 	. = ..()
 	icon_state = "shrubber[rand(0,2)]"
@@ -229,6 +239,7 @@
 	desc = "Absolutely begging for pets."
 	icon_state = "lbarrelcacti0"
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/flora/desert_planet/lbarrelcacti/Initialize(mapload)
 	. = ..()
 	icon_state = "lbarrelcacti[rand(0,2)]"

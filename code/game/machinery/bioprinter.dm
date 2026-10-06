@@ -97,6 +97,7 @@ DECLARE_APPEARANCE(/obj/machinery/organ_printer, "printing", list("1" = list(APP
 CAPABILITIES(/obj/machinery/organ_printer)
 	climb()
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/organ_printer/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

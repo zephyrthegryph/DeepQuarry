@@ -18,6 +18,7 @@ CAPABILITIES(/obj/item/organ/external)
 	drop_sound = SFX_ITEMS_DROP_GLASS
 	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
+// ALLOW(init/INSTANCE_STATE): its description and sprite show the colour it was given
 /obj/item/nailpolish/Initialize(mapload)
 	. = ..()
 	desc = "<font color='[colour]'>Nail polish,</font> " + initial(desc)

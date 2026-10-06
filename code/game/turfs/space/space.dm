@@ -20,6 +20,7 @@
 	var/forced_dirs = 0 //Force this one to pretend it's an overedge turf
 	init_from_table = TRUE
 
+// ALLOW(init/FRAMEWORK): the space turf base sets its appearance before the turf base init
 /turf/space/Initialize(mapload)
 	space_appearance()
 	return ..()

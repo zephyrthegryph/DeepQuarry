@@ -31,6 +31,7 @@ a creative player the means to solve many problems.  Circuits are held inside an
 /obj/item/integrated_circuit/proc/any_examine(mob/user)
 	return
 
+// ALLOW(init/FRAMEWORK): the circuit base builds its pins from the defaults its type declares
 /obj/item/integrated_circuit/Initialize(mapload)
 	. = ..()
 	displayed_name = name

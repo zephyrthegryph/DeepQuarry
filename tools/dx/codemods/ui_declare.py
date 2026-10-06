@@ -797,7 +797,8 @@ def main():
             body_no_user = re.sub(r"(?<![\w.])ui\.user\b", "user", body)  # ui.user is the viewer: the handler's `user`
             if re.search(r"(?<![\w.])open_request\(", body):
                 bad = forced("body_uses:open_request")  # a question asked from an effect is an asks() step (dx_review request_in_effect): by hand
-                break
+                if bad:
+                    break
             # the window a handler touched (ui.close(), ui.send_asset(), its state) is the actor's open window of the holder: looked up
             uses_ui = bool(words_in(body_no_user, "ui")) or bool(words_in(body_no_user, "state"))
             declared = [s[1] for s in a["specs"]]

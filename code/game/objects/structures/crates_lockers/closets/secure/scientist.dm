@@ -13,6 +13,7 @@
 		/obj/item/clothing/suit/storage/hooded/wintercoat/science,
 		/obj/item/clothing/shoes/boots/winter/science)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/scientist/Initialize(mapload)
 	if(prob(50))
 		starts_with += /obj/item/storage/backpack/dufflebag/sci

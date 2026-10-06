@@ -25,6 +25,7 @@
 	drop_sound = SFX_ITEMS_DROP_RUBBER
 	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 
+// ALLOW(init/INSTANCE_STATE): rolls how well these gloves insulate
 /obj/item/clothing/gloves/fyellow/Initialize(mapload)
 	. = ..()
 	// Picks a value between 0 and 1.25, in 5% increments //

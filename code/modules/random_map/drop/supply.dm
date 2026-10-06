@@ -121,6 +121,7 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 	ask(/datum/prompt/choice/supply_drop/confirm, "Do you wish to supply a custom loot list?", PROC_REF(custom_answered), PROC_REF(abandon))
 
 /datum/supply_drop_order/proc/abandon()
+	// ALLOW(lifecycle): an abandoned supply drop order is discarded
 	qdel(src)
 
 /datum/supply_drop_order/proc/custom_answered(datum/act/request/A)
@@ -175,4 +176,5 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 	if((A.answer.value == "Yes") && isturf(user.loc))
 		log_admin("[key_name(user)] dropped supplies at ([user.x],[user.y],[user.z])")
 		new /datum/random_map/droppod/supply(null, user.x-2, user.y-2, user.z, supplied_drops = chosen_loot_types, supplied_drop = chosen_loot_type)
+	// ALLOW(lifecycle): the supply drop order is done once answered
 	qdel(src)

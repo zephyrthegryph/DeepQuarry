@@ -792,6 +792,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	/// Relation view: the stored item this catcher stands for.
 	var/obj/item/held_item
 
+// ALLOW(init/CTOR_ARGS): held_item is a constructor argument from whoever builds it
 /atom/movable/storage_slot/Initialize(mapload, obj/item/held_item)
 	. = ..()
 	ASSERT(held_item)

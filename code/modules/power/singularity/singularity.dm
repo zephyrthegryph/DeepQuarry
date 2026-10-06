@@ -29,6 +29,7 @@
 
 	var/chained = 0//Adminbus chain-grab
 
+// ALLOW(init/CTOR_ARGS): starting_energy is a constructor argument from whoever builds it
 /obj/singularity/Initialize(mapload, starting_energy = 50)
 	//CARN: admin-alert for chuckle-fuckery.
 	admin_investigate_setup()
@@ -69,6 +70,7 @@ CAPABILITIES(/obj/singularity)
 		if(1.0)
 			if(prob(25))
 				investigate_log("has been destroyed by an explosion.", I_SINGULO)
+				// ALLOW(lifecycle): a severe blast destroys the singularity
 				qdel(src)
 			else
 				energy += 50
@@ -249,6 +251,7 @@ CAPABILITIES(/obj/singularity)
 /obj/singularity/proc/check_energy()
 	if (energy <= 0)
 		investigate_log("collapsed.", I_SINGULO)
+		// ALLOW(lifecycle): a singularity out of energy collapses
 		qdel(src)
 		return 0
 

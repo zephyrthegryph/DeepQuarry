@@ -4,6 +4,7 @@
 
 DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
 
+// ALLOW(init/INSTANCE_STATE): rolls which reagent it replenishes
 /obj/item/reagent_containers/glass/replenishing/Initialize(mapload)
 	. = ..()
 	for(var/x=1;x<=10;x++) //You got 10 chances to hit a reagent that is NOT banned.
@@ -151,6 +152,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 
 DECLARE_PERIODIC(/obj/effect/decal/cleanable/blood/splatter/animated, PERIODIC_SLOW)
 
+// ALLOW(init/INSTANCE_STATE): remembers where it starts so it can leave a trail
 /obj/effect/decal/cleanable/blood/splatter/animated/Initialize(mapload, _age)
 	. = ..()
 	loc_last_process = src.loc

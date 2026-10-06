@@ -13,6 +13,7 @@
 	buckle_lying = TRUE
 	default_max_vol = REAGENT_VAT_VOLUME
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/reagent_refinery/vat/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

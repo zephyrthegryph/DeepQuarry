@@ -72,6 +72,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 		CRASH("Invalid target given for chatmessage")
 	if(!istype(owner) || QDELETED(owner) || !owner.client)
 		stack_trace("/datum/chatmessage created with [isnull(owner) ? "null" : "invalid"] mob owner")
+		// ALLOW(lifecycle): a chat bubble without a live client owner is never shown
 		qdel(src)
 		return
 	generate_image(text, target, owner, extra_classes, lifespan)
@@ -101,6 +102,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 /datum/chatmessage/proc/generate_image(text, atom/target, mob/owner, list/extra_classes, lifespan)
 
 	if(!target || !owner)
+		// ALLOW(lifecycle): a chat bubble without a target or owner is never shown
 		qdel(src)
 		return
 
@@ -136,6 +138,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	// Reject whitespace
 	var/static/regex/whitespace = new(@"^\s*$")
 	if(whitespace.Find(text))
+		// ALLOW(lifecycle): a chat bubble holding only whitespace is never shown
 		qdel(src)
 		return
 
@@ -207,6 +210,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	// Translate any existing messages upwards, apply exponential decay factors to timers
 	rel_set(src, nameof(message_loc), target.runechat_holder(src))
 	if(!owned_by())
+		// ALLOW(lifecycle): a chat bubble whose owner has no client is never shown
 		qdel(src)
 		return
 	observe(message_loc(), /datum/notice/qdeleting, src, then(TYPE_PROC_REF(/datum, qdel_self)))
@@ -278,6 +282,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	animate_lifespan = lifespan
 
 	if(!owner)
+		// ALLOW(lifecycle): a chat bubble whose owner left before it rendered is never shown
 		qdel(src)
 		return
 	if(owner.contains(target)) // Special case, holding an atom speaking (pAI, recorder...)

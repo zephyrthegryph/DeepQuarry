@@ -170,6 +170,7 @@ CAPABILITIES(/turf/simulated/mineral)
 	//Cache hit
 	return GLOB.mining_overlay_cache["[cache_id]_[direction]"]
 
+// ALLOW(init/INSTANCE_STATE): rolls its ore and its rock detail per tile
 /turf/simulated/mineral/Initialize(mapload)
 	. = ..()
 	if(pregen_substrate)

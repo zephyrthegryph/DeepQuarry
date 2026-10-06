@@ -8,6 +8,7 @@
 /obj/item/paper/target
 	name = "target notice"
 
-/obj/item/paper/target/Initialize(mapload, text, title)
+// ALLOW(init/INSTANCE_STATE): info rolled at random for each instance
+/obj/item/paper/target/Initialize(mapload)
 	. = ..()
 	info = "Your target is " + span_bold("[random_name(pick(MALE,FEMALE))]") + ". Make sure they don't get out of there alive."

@@ -46,10 +46,6 @@ CAPABILITIES(/obj/structure/casino_table)
 CAPABILITIES(/obj/structure/casino_table/roulette_table)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
 
-/obj/structure/casino_table/roulette_table/Initialize(mapload)
-	.=..()
-	return
-
 /obj/structure/casino_table/roulette_table/examine(mob/user)
 	.=..()
 	if(ball)

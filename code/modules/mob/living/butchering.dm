@@ -78,6 +78,7 @@
 			act_message(user, src, others = span_danger("%U% chops up %T%!"))
 			new /obj/effect/decal/cleanable/blood/splatter(get_turf(src))
 			if(gib_on_butchery)
+				// ALLOW(lifecycle): the butchered small animal is gone
 				qdel(src)
 		else
 			act_message(user, src, others = span_danger("%U% butchers %T% messily!"))

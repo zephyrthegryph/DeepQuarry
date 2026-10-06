@@ -22,6 +22,7 @@
 		explosion(target, 0, 1, 2, 4)
 	else
 		explosion(target, 0, 0, 2, 4)
+	// ALLOW(lifecycle): the rocket is spent on impact
 	qdel(src)
 
 /obj/item/projectile/bullet/srmrocket/weak	//Used in the jury rigged one.
@@ -34,5 +35,6 @@
 
 /obj/item/projectile/bullet/srmrocket/weak/throw_impact(atom/target)
 	explosion(target, 0, 0, 2, 4)//No need to have a question.
+	// ALLOW(lifecycle): the rocket is spent on impact
 	qdel(src)
 

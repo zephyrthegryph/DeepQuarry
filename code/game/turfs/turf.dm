@@ -103,6 +103,7 @@
 	barefootstep = FOOTSTEP_LAVA
 	clawfootstep = FOOTSTEP_LAVA
 
+// ALLOW(init/FRAMEWORK): the turf base of the init chain runs its per-instance setup
 /turf/Initialize(mapload)
 	. = ..()
 	turf_instance_setup()

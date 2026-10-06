@@ -40,6 +40,7 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 		return FALSE
 	return ..()
 
+// ALLOW(init/FRAMEWORK): the global vars controller runs every global's init proc here
 /datum/controller/global_vars/Initialize()
 	gvars_datum_init_order = list()
 	gvars_datum_protected_varlist = list(NAMEOF(src, gvars_datum_protected_varlist) = TRUE)

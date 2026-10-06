@@ -32,6 +32,7 @@ CAPABILITIES(/obj/structure/low_wall)
 	after_init(0, then(PROC_REF(connect_after_init)))
 	climb()
 
+// ALLOW(init/CTOR_ARGS): materialtype is a constructor argument from whoever builds it
 /obj/structure/low_wall/Initialize(mapload, materialtype)
 	. = ..()
 	var/turf/T = loc

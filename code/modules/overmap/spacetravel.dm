@@ -42,6 +42,7 @@
 
 /obj/effect/overmap/visitable/sector/temporary/cleanup()
 	if(is_empty())
+		// ALLOW(lifecycle): an empty temporary sector is cleaned up
 		qdel(src)
 
 /proc/get_deepspace(x,y)

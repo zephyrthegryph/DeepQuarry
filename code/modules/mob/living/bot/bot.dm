@@ -448,6 +448,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 	if(paicard)
 		ejectpai()
 	release_vore_contents()
+	// ALLOW(lifecycle): the bot is destroyed
 	qdel(src)
 
 /mob/living/bot/is_sentient()

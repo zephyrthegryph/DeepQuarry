@@ -281,6 +281,7 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 	// Allow the explosion to finish. The global owner: the crystal is deleted below and the
 	// explosion may replace the turf.
 	after(null, 5, /proc/leave_broken_supermatter, with = list(TS))
+	// ALLOW(lifecycle): the crystal delaminates
 	qdel(src)
 
 /proc/leave_broken_supermatter(turf/TS)

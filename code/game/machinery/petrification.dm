@@ -32,6 +32,7 @@ CAPABILITIES(/obj/machinery/petrification)
 	add_fingerprint(A.actor)
 	return OP_OK
 
+// ALLOW(init/INSTANCE_STATE): offsets onto the wall it faces unless the map placed it
 /obj/machinery/petrification/Initialize(mapload)
 	. = ..()
 	if(!pixel_x && !pixel_y)

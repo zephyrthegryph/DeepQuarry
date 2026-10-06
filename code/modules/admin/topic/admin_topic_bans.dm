@@ -18,7 +18,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 	var/banfolder = args["unbanf"]
 	GLOB.banlist.cd = "/base/[banfolder]"
 	var/key = GLOB.banlist["key"]
-	var/answer = topic_ask(user, args, "a4", /datum/om/prompt/choice/alert, message = "Are you sure you want to unban [key]?", title = "Confirmation", choices = list("Yes", "No"))
+	var/answer = ban_topic_ask(user, args, "a4", /datum/prompt/choice/admin_ban_topic, question = "Are you sure you want to unban [key]?", title = "Confirmation", choices = list("Yes", "No"))
 	if(answer != "Yes")
 		return
 	if(!RemoveBan(banfolder, user))
@@ -44,26 +44,26 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 
 	var/duration
 
-	var/answer = topic_ask(user, args, "a5", /datum/om/prompt/choice/alert, message = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No"))
+	var/answer = ban_topic_ask(user, args, "a5", /datum/prompt/choice/admin_ban_topic, question = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No"))
 	switch(answer)
 		if("Yes")
 			temp = 1
 			var/mins = 0
 			if(minutes > GLOB.c_minutes)
 				mins = minutes - GLOB.c_minutes
-			mins = topic_ask(user, args, "a6", /datum/om/prompt/number, message = "How long (in minutes)? (Default: 1440)", title = "Ban time", default = mins ? mins : 1440)
+			mins = ban_topic_ask(user, args, "a6", /datum/prompt/number/admin_ban_topic, question = "How long (in minutes)? (Default: 1440)", title = "Ban time", default = mins ? mins : 1440)
 			if(!mins)
 				return
 			mins = min(525599, mins)
 			minutes = GLOB.c_minutes + mins
 			duration = GetExp(minutes)
-			reason = topic_ask(user, args, "a7", /datum/om/prompt/text, message = "Reason?", title = "reason", default = reason2)
+			reason = ban_topic_ask(user, args, "a7", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "reason", default = reason2)
 			if(!reason)
 				return
 		if("No")
 			temp = 0
 			duration = "Perma"
-			reason = topic_ask(user, args, "a8", /datum/om/prompt/text, message = "Reason?", title = "reason", default = reason2)
+			reason = ban_topic_ask(user, args, "a8", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "reason", default = reason2)
 			if(!reason)
 				return
 		else
@@ -165,7 +165,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 
 	//Banning comes first
 	if(notbannedlist.len) //at least 1 unbanned job exists in joblist so we have stuff to ban.
-		var/answer = topic_ask(user, args, "a9", /datum/om/prompt/choice/alert, message = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No","Cancel"))
+		var/answer = ban_topic_ask(user, args, "a9", /datum/prompt/choice/admin_ban_topic, question = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No","Cancel"))
 		switch(answer)
 			if("Yes")
 				if(!check_rights_for(user.client, R_MOD) && !check_rights_for(user.client, R_BAN))
@@ -174,13 +174,13 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 				if(CONFIG_GET(flag/ban_legacy_system))
 					to_chat(user, span_filter_adminlog(span_warning("Your server is using the legacy banning system, which does not support temporary job bans. Consider upgrading. Aborting ban.")))
 					return
-				var/mins = topic_ask(user, args, "a10", /datum/om/prompt/number, message = "How long (in minutes)?", title = "Ban time", default = 1440)
+				var/mins = ban_topic_ask(user, args, "a10", /datum/prompt/number/admin_ban_topic, question = "How long (in minutes)?", title = "Ban time", default = 1440)
 				if(!mins)
 					return
 				if(check_rights_for(user.client, R_MOD) && !check_rights_for(user.client, R_BAN) && mins > CONFIG_GET(number/mod_job_tempban_max))
 					to_chat(user, span_filter_adminlog(span_warning("Moderators can only job tempban up to [CONFIG_GET(number/mod_job_tempban_max)] minutes!")))
 					return
-				var/reason = topic_ask(user, args, "a11", /datum/om/prompt/text, message = "Reason?", title = "Please State Reason")
+				var/reason = ban_topic_ask(user, args, "a11", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "Please State Reason")
 				if(!reason)
 					return
 
@@ -205,7 +205,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 			if("No")
 				if(!check_rights(R_BAN))
 					return
-				var/reason = topic_ask(user, args, "a12", /datum/om/prompt/text, message = "Reason?", title = "Please State Reason")
+				var/reason = ban_topic_ask(user, args, "a12", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "Please State Reason")
 				if(reason)
 					var/msg
 					for(var/job in notbannedlist)
@@ -241,7 +241,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 			var/reason = jobban_isbanned(M, job)
 			if(!reason)
 				continue //skip if it isn't jobbanned anyway
-			var/answer = topic_ask(user, args, "unjob_[job]", /datum/om/prompt/choice/alert, message = "Job: '[job]' Reason: '[reason]' Un-jobban?", title = "Please Confirm", choices = list("Yes","No"))
+			var/answer = ban_topic_ask(user, args, "unjob_[job]", /datum/prompt/choice/admin_ban_topic, question = "Job: '[job]' Reason: '[reason]' Un-jobban?", title = "Please Confirm", choices = list("Yes","No"))
 			if(isnull(answer))
 				return
 			if(answer != "Yes")
@@ -266,7 +266,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 	var/mob/M = args["boot2"]
 	if(!check_if_greater_rights_than(M.client))
 		return
-	var/reason = topic_ask(user, args, "a14", /datum/om/prompt/text, message = "Please enter reason.", multiline = TRUE)
+	var/reason = ban_topic_ask(user, args, "a14", /datum/prompt/text/admin_ban_topic, question = "Please enter reason.", multiline = TRUE)
 	if(!reason)
 		return
 
@@ -280,7 +280,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 	var/t = args["removejobban"]
 	if(!t)
 		return
-	var/answer = topic_ask(user, args, "a15", /datum/om/prompt/choice/alert, message = "Do you want to unjobban [t]?", title = "Unjobban confirmation", choices = list("Yes", "No"))
+	var/answer = ban_topic_ask(user, args, "a15", /datum/prompt/choice/admin_ban_topic, question = "Do you want to unjobban [t]?", title = "Unjobban confirmation", choices = list("Yes", "No"))
 	if(answer != "Yes") //No more misclicks! Unless you do it twice.
 		return
 	log_admin("[key_name(user)] removed [t]")
@@ -305,10 +305,10 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 	if(M.client && check_rights_for(M.client, R_HOLDER))
 		return	//admins cannot be banned. Even if they could, the ban doesn't affect them anyway
 
-	var/answer = topic_ask(user, args, "a16", /datum/om/prompt/choice/alert, message = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No","Cancel"))
+	var/answer = ban_topic_ask(user, args, "a16", /datum/prompt/choice/admin_ban_topic, question = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No","Cancel"))
 	switch(answer)
 		if("Yes")
-			var/mins = topic_ask(user, args, "a17", /datum/om/prompt/number, message = "How long (in minutes)?", title = "Ban time", default = 1440)
+			var/mins = ban_topic_ask(user, args, "a17", /datum/prompt/number/admin_ban_topic, question = "How long (in minutes)?", title = "Ban time", default = 1440)
 			if(!mins)
 				return
 			if(check_rights_for(user.client, R_MOD) && !check_rights_for(user.client, R_BAN) && mins > CONFIG_GET(number/mod_tempban_max))
@@ -316,7 +316,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 				return
 			if(mins >= 525600)
 				mins = 525599
-			var/reason = topic_ask(user, args, "a18", /datum/om/prompt/text, message = "Reason?", title = "reason", default = "Griefer")
+			var/reason = ban_topic_ask(user, args, "a18", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "reason", default = "Griefer")
 			if(!reason)
 				return
 			AddBan(M.ckey, M.computer_id, reason, user.ckey, 1, mins, user = user)
@@ -340,10 +340,10 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 		if("No")
 			if(!check_rights(R_BAN))
 				return
-			var/reason = topic_ask(user, args, "a19", /datum/om/prompt/text, message = "Reason?", title = "reason", default = "Griefer")
+			var/reason = ban_topic_ask(user, args, "a19", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "reason", default = "Griefer")
 			if(!reason)
 				return
-			var/ip_answer = topic_ask(user, args, "a20", /datum/om/prompt/choice/alert, message = "IP ban?", title = "IP Ban", choices = list("Yes","No","Cancel"))
+			var/ip_answer = ban_topic_ask(user, args, "a20", /datum/prompt/choice/admin_ban_topic, question = "IP ban?", title = "IP Ban", choices = list("Yes","No","Cancel"))
 			switch(ip_answer)
 				if("Yes")
 					AddBan(M.ckey, M.computer_id, reason, user.ckey, 0, 0, M.lastKnownIP, user)
@@ -376,3 +376,79 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 	if(!isnum(mute_type))
 		return
 	cmd_admin_mute(M, mute_type, FALSE, user)
+
+/// Native answers replay the original raw href through the full public admin gate.
+/datum/admins/proc/ban_topic_ask(mob/user, list/args, key, kind, question, title, default, list/choices, multiline = FALSE)
+	var/list/href = args[TOPIC_HREF]
+	var/list/answers = list()
+	var/datum/request/replayed = href["ban_topic_request"]
+	if((istype(replayed, /datum/prompt/choice/admin_ban_topic) || istype(replayed, /datum/prompt/number/admin_ban_topic) || istype(replayed, /datum/prompt/text/admin_ban_topic)) && replayed.owner == src && replayed.answerer == user && replayed.outcome == REQ_ANSWERED && !replayed.is_open() && !QDELETED(replayed) && replayed.handler == PROC_REF(ban_topic_answered))
+		var/list/previous = replayed.captured["answers"]
+		answers = previous.Copy()
+		answers[replayed.step_name] = replayed.value
+	if(key in answers)
+		return answers[key]
+	var/list/saved_href = href.Copy()
+	saved_href -= "ban_topic_request"
+	var/list/captured = list("href" = saved_href, "answers" = answers)
+	if(kind == /datum/prompt/choice/admin_ban_topic)
+		open_request(src, /datum/prompt/choice/admin_ban_topic, PROC_REF(ban_topic_answered), answerer = user, captured = captured, step_name = key, question = question, title = title, choices = choices)
+	else if(kind == /datum/prompt/number/admin_ban_topic)
+		open_request(src, /datum/prompt/number/admin_ban_topic, PROC_REF(ban_topic_answered), answerer = user, captured = captured, step_name = key, question = question, title = title, default = default)
+	else
+		open_request(src, /datum/prompt/text/admin_ban_topic, PROC_REF(ban_topic_answered), answerer = user, captured = captured, step_name = key, question = question, title = title, default = default, multiline = multiline)
+	return null
+
+/datum/admins/proc/ban_topic_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/list/original_href = A.answer.captured["href"]
+	var/list/replayed_href = original_href.Copy()
+	replayed_href["ban_topic_request"] = A.answer
+	world.push_usr(A.request.answerer, new /datum/callback(GLOBAL_PROC, GLOBAL_PROC_REF(topic_dispatch)), src, A.request.answerer, replayed_href)
+
+/datum/prompt/choice/admin_ban_topic
+	timeout = 0
+	recheck_on_open = TRUE
+	buttons = TRUE
+
+/datum/prompt/choice/admin_ban_topic/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/prompt/choice/admin_ban_topic/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/choice/admin_ban_topic/refusal(given)
+	return null
+
+/datum/prompt/number/admin_ban_topic
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/number/admin_ban_topic/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/prompt/number/admin_ban_topic/normalize(given)
+	return isnum(given) ? given : null
+
+/datum/prompt/number/admin_ban_topic/refusal(given)
+	return null
+
+/datum/prompt/text/admin_ban_topic
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/text/admin_ban_topic/recheck_extra()
+	if(!owner || QDELETED(owner) || !answerer || QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/prompt/text/admin_ban_topic/normalize(given)
+	return istext(given) ? given : null
+
+/datum/prompt/text/admin_ban_topic/refusal(given)
+	return null

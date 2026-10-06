@@ -41,9 +41,7 @@ CAPABILITIES(/obj/machinery/the_singularitygen)
 /obj/machinery/the_singularitygen/proc/collapse_check(datum/act/A)
 	if(energy < SINGULARITY_GENERATOR_THRESHOLD || QDELETED(src))
 		return
-	var/turf/T = get_turf(src)
-	new creation_type(T, 50)
-	qdel(src)
+	replace_with(src, creation_type, 50)
 
 /// The coil is in: the generator becomes a particle smasher.
 /obj/machinery/the_singularitygen/proc/install_done(datum/act/op/A)
@@ -52,9 +50,7 @@ CAPABILITIES(/obj/machinery/the_singularitygen)
 	act_message(user, src, MSG_SELF("You install %I% onto %T%."), MSG_OTHERS("%U% installs %I% onto %T%."), item = W)
 	if(!global.consume(W, user))
 		return OP_REFUSED
-	var/turf/T = get_turf(src)
-	new /obj/machinery/particle_smasher(T)
-	qdel(src)
+	replace_with(src, /obj/machinery/particle_smasher)
 	return OP_OK
 
 #undef SINGULARITY_GENERATOR_THRESHOLD

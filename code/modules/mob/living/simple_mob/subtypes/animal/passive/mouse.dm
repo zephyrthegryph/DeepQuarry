@@ -57,6 +57,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 
 TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/passive/mouse, preserve_mouse_identity, FALSE)
 
+// ALLOW(init/CTOR_ARGS): keep_parent_data is a constructor argument from whoever builds it
 /mob/living/simple_mob/animal/passive/mouse/Initialize(mapload, keep_parent_data)
 	if(TYPE_TABLE_GET(src, preserve_mouse_identity))
 		keep_parent_data = TRUE

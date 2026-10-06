@@ -93,6 +93,7 @@ EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 	ram = 35
 	var/emagged = FALSE
 
+// ALLOW(init/CTOR_ARGS): our_name and db_key are constructor arguments from whoever builds it
 /mob/living/silicon/pai/infomorph/Initialize(mapload, our_name = "Unknown", db_key)
 	. = ..()
 

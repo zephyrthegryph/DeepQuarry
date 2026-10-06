@@ -135,6 +135,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/sif/sakimm, TYPE_PROC_REF(
 		I.appearance_flags = RESET_COLOR
 		. += I
 
+// ALLOW(init/INSTANCE_STATE): rolls its size when its type says to
 /mob/living/simple_mob/animal/sif/sakimm/Initialize(mapload)
 	. = ..()
 

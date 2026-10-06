@@ -231,6 +231,7 @@ DECLARE_INTERACTIONS(/obj/item/fulton_core, INTERACT_USE(null, PROC_REF(interact
 
 REGISTRY_MEMBERSHIP(/obj/structure/extraction_point, REGISTRY_EXTRACTION_BEACONS)
 
+// ALLOW(init/INSTANCE_STATE): name rolled at random for each instance
 /obj/structure/extraction_point/Initialize(mapload)
 	. = ..()
 	name += " ([rand(100,999)]) ([get_area_name(src, TRUE)])"

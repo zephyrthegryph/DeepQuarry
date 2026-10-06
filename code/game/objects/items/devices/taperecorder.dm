@@ -445,6 +445,7 @@ CAPABILITIES(/obj/item/rectape)
 	fix()
 
 //Random colour tapes
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/item/rectape/random/Initialize(mapload)
 	. = ..()
 	icon_state = "tape_[pick("white", "blue", "red", "yellow", "purple")]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form

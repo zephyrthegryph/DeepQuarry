@@ -329,6 +329,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 			to_chat(user, span_notice("You cut \the [src] free from the wall."))
 			new /obj/item/stack/cable_coil(loc, 2)
 		own_take(src, nameof(assembly))
+	// ALLOW(lifecycle): the camera leaves its assembly behind and the camera itself is gone
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 

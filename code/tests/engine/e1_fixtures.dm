@@ -173,6 +173,7 @@ CAPABILITIES(/obj/e1_slot_starts)
 /obj/item/e1_part/labelled
 	var/label
 
+// ALLOW(init/CTOR_ARGS): label_arg is a constructor argument from whoever builds it
 /obj/item/e1_part/labelled/Initialize(mapload, label_arg)
 	. = ..()
 	label = label_arg

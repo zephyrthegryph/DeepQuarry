@@ -159,6 +159,7 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 	circuit = /obj/item/circuitboard/teleporter_hub
 	var/obj/machinery/computer/teleporter/com
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and draws its wiring
 /obj/machinery/teleport/hub/Initialize(mapload)
 	. = ..()
 	underlays += image('icons/obj/stationobjs.dmi', icon_state = "tele-wires")
@@ -226,6 +227,7 @@ CAPABILITIES(/obj/machinery/teleport/hub)
 	circuit = /obj/item/circuitboard/teleporter_station
 	var/obj/machinery/teleport/hub/com
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and draws its wiring
 /obj/machinery/teleport/station/Initialize(mapload)
 	. = ..()
 	add_overlay("controller-wires")

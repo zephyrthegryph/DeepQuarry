@@ -42,6 +42,7 @@
 		/obj/item/stock_parts/matter_bin = 20
 	)
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/salvageable/machine/Initialize(mapload)
 	. = ..()
 	icon_state = "machine[rand(0,6)]"
@@ -61,6 +62,7 @@
 		/obj/item/stock_parts/capacitor = 30,
 		/obj/item/computer_hardware/network_card/advanced = 20
 	)
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/salvageable/computer/Initialize(mapload)
 	. = ..()
 	icon_state = "computer[rand(0,7)]"
@@ -107,6 +109,7 @@
 		/obj/item/stack/material/silver{amount = 10} = 30
 	)
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/salvageable/implant_container/Initialize(mapload)
 	. = ..()
 	icon_state = "implant_container[rand(0,1)]"
@@ -127,6 +130,7 @@
 		/obj/item/computer_hardware/network_card/advanced = 20
 	)
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/salvageable/data/Initialize(mapload)
 	. = ..()
 	icon_state = "data[rand(0,1)]"
@@ -150,6 +154,7 @@
 		/obj/item/computer_hardware/network_card/advanced = 20
 	)
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/salvageable/server/Initialize(mapload)
 	. = ..()
 	icon_state = "server[rand(0,1)]"
@@ -190,6 +195,7 @@
 		/obj/item/computer_hardware/hard_drive/cluster = 50
 	)
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/salvageable/bliss/Initialize(mapload)
 	. = ..()
 	icon_state = "bliss[rand(0,1)]"
@@ -215,6 +221,7 @@
 		/obj/item/stock_parts/scanning_module = 40
 	)
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/structure/salvageable/console/Initialize(mapload)
 	. = ..()
 	icon_state = "console[rand(0,2)]"

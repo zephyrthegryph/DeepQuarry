@@ -17,6 +17,7 @@
 	var/dries = 1
 	var/slips = 0
 
+// ALLOW(init/CTOR_ARGS): ismetal is a constructor argument from whoever builds it
 /obj/effect/effect/foam/Initialize(mapload, ismetal = 0)
 	. = ..()
 	// icon_state = "[ismetal? "m" : ""]foam" // Removal

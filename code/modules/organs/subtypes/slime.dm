@@ -77,6 +77,7 @@
 
 		B.basecolor = src.color
 		B.update_icon()
+		// ALLOW(lifecycle): the slime organ splatters
 		qdel(src)
 
 /obj/item/organ/internal/regennetwork
@@ -124,6 +125,7 @@
 
 		B.basecolor = src.color
 		B.update_icon()
+		// ALLOW(lifecycle): the slime organ splatters
 		qdel(src)
 
 	if(src && !is_bruised())

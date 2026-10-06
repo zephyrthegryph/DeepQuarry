@@ -50,6 +50,7 @@
 
 /datum/round_status_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)
+	// ALLOW(lifecycle): the round status panel lives only while its window is open
 	qdel(src)
 
 // ALLOW(sys_tgui_data_override): the foundation UI form: a tgui_data override on purpose, like the APC and the vendor

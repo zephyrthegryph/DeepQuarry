@@ -74,6 +74,7 @@
 		drop_from_inventory(I)
 
 	ghostize(src)
+	// ALLOW(lifecycle): the VR avatar is discarded once its occupant leaves
 	qdel(src)
 
 /mob/observer/dead/proc/fake_enter_vr(landmark)

@@ -896,6 +896,7 @@ VV_TOPIC_ACTION(/obj/machinery/gear_dispenser, "admin_add", PROC_REF(vv_topic_ad
 		)
 	var/chance_to_delete = 0
 
+// ALLOW(init/INSTANCE_STATE): a random roll removes some adventure boxes at creation
 /obj/machinery/gear_dispenser/adventure_box/Initialize(mapload)
 	. = ..()
 	if(prob(chance_to_delete))

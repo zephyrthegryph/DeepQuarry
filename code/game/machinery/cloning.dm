@@ -60,6 +60,7 @@
 	var/speed_coeff
 	var/efficiency
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
 /obj/machinery/clonepod/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

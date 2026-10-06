@@ -264,6 +264,7 @@
 		/obj/item/storage/backpack/toxins,
 		/obj/item/storage/backpack/satchel/tox)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/wardrobe/science_white/Initialize(mapload)
 	if(prob(50))
 		starts_with += /obj/item/storage/backpack/dufflebag/sci
@@ -290,6 +291,7 @@
 		/obj/item/storage/backpack/toxins,
 		/obj/item/storage/backpack/satchel/tox)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/wardrobe/robotics_black/Initialize(mapload)
 	if(prob(50))
 		starts_with += /obj/item/storage/backpack/dufflebag/sci
@@ -441,6 +443,7 @@
 		/obj/item/clothing/gloves/black,
 		/obj/item/clothing/under/pants/camo)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/wardrobe/tactical/Initialize(mapload)
 	if(prob(25))
 		starts_with += /obj/item/storage/belt/security/tactical/bandolier

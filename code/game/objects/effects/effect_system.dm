@@ -200,6 +200,7 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "sparks"
 
+// ALLOW(init/CTOR_ARGS): lifetime, range, power and color are constructor arguments from whoever builds it
 /obj/effect/effect/smoke/illumination/Initialize(mapload, lifetime=10, range=null, power=null, color=null)
 	time_to_live=lifetime
 	. = ..()

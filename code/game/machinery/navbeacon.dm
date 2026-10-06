@@ -16,6 +16,7 @@
 
 REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 
+// ALLOW(init/INSTANCE_STATE): hides under the floor tile it is placed on
 /obj/machinery/navbeacon/Initialize(mapload)
 	. = ..()
 	var/turf/T = loc
@@ -222,6 +223,7 @@ CAPABILITIES(/obj/machinery/navbeacon)
 /obj/machinery/navbeacon/patrol
 	var/next_patrol
 
+// ALLOW(init/INSTANCE_STATE): its patrol codes come from the next stop the map gave it
 /obj/machinery/navbeacon/patrol/Initialize(mapload)
 	codes = list("patrol" = 1, "next_patrol" = next_patrol)
 	. = ..()

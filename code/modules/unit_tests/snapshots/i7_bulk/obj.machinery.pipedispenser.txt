@@ -1,5 +1,5 @@
-/obj/machinery/pipedispenser|human|none => machine_open_ui|pipedispenser_return:needs an item
-/obj/machinery/pipedispenser|robot|none => machine_open_ui|gen_robot_interaction_swallow:not possible right now,pipedispenser_return:needs an item
+/obj/machinery/pipedispenser|human|none => |
+/obj/machinery/pipedispenser|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/pipedispenser|ai|none => |
 /obj/machinery/pipedispenser|ghost|none => |
-/obj/machinery/pipedispenser|human|/obj/item => pipedispenser_return,machine_open_ui|
+

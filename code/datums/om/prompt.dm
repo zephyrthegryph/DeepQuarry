@@ -179,6 +179,7 @@
 	if(om_prompt)
 		om_prompt_closed(om_prompt)
 		om_prompt = null
+	// ALLOW(lifecycle): the prompt window lives only while it is open
 	qdel(src)
 
 /datum/tgui_list_input/om
@@ -200,6 +201,7 @@
 	if(om_prompt)
 		om_prompt_closed(om_prompt)
 		om_prompt = null
+	// ALLOW(lifecycle): the prompt window lives only while it is open
 	qdel(src)
 
 /datum/tgui_input_text/om
@@ -221,6 +223,7 @@
 	if(om_prompt)
 		om_prompt_closed(om_prompt)
 		om_prompt = null
+	// ALLOW(lifecycle): the prompt window lives only while it is open
 	qdel(src)
 
 /datum/tgui_input_number/om
@@ -242,6 +245,7 @@
 	if(om_prompt)
 		om_prompt_closed(om_prompt)
 		om_prompt = null
+	// ALLOW(lifecycle): the prompt window lives only while it is open
 	qdel(src)
 
 /datum/tgui_color_picker/om
@@ -263,6 +267,7 @@
 	if(om_prompt)
 		om_prompt_closed(om_prompt)
 		om_prompt = null
+	// ALLOW(lifecycle): the prompt window lives only while it is open
 	qdel(src)
 
 /datum/tgui_checkbox_input/om
@@ -284,6 +289,7 @@
 	if(om_prompt)
 		om_prompt_closed(om_prompt)
 		om_prompt = null
+	// ALLOW(lifecycle): the prompt window lives only while it is open
 	qdel(src)
 
 /// kind "colormatrix": the ColorMate window. "preview" is the atom (painted in place) or the
@@ -307,6 +313,7 @@
 	if(om_prompt)
 		om_prompt_closed(om_prompt)
 		om_prompt = null
+	// ALLOW(lifecycle): the prompt window lives only while it is open
 	qdel(src)
 
 /datum/tgui_input_colormatrix/om/on_destroy(force)
@@ -337,4 +344,5 @@
 	if(om_prompt)
 		om_prompt_closed(om_prompt)
 		om_prompt = null
+	// ALLOW(lifecycle): the prompt window lives only while it is open
 	qdel(src)

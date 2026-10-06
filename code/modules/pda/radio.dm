@@ -17,6 +17,7 @@
 	on = 0 //Are we currently active??
 	var/menu_message = ""
 
+// ALLOW(init/INSTANCE_STATE): binds to the PDA it is made inside
 /obj/item/radio/integrated/Initialize(mapload)
 	. = ..()
 	if(istype(loc?.loc, /obj/item/pda))
@@ -65,6 +66,7 @@
 	frequency = RSD_FREQ
 	var/code = 30.0
 
+// ALLOW(init/INSTANCE_STATE): clamps the frequency the map gave it into the public band
 /obj/item/radio/integrated/signal/Initialize(mapload)
 	. = ..()
 	// Just the data; on_materialize() (C5) registers it with SSradio.

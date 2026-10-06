@@ -14,6 +14,7 @@ GLOBAL_LIST_INIT(dq_variants_under_turtlebaggy, list(
 	"black_fem" = list("name" = "feminine black baggy turtleneck", "icon_state" = "bb_turtleblk_fem"),
 ))
 
+// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
 /obj/item/clothing/under/turtlebaggy/Initialize(mapload)
 	apply_variant()
 	. = ..()

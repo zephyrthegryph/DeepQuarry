@@ -45,6 +45,7 @@
 /obj/item/tk_grab/equipped(mob/user, slot)
 	..()
 	if( (slot == SLOT_ID_HAND_L) || (slot== SLOT_ID_HAND_R) )	return
+	// ALLOW(lifecycle): a telekinetic grab exists only while held in a hand
 	qdel(src)
 	return
 
@@ -105,6 +106,7 @@ CAPABILITIES(/obj/item/tk_grab)
 				var/obj/item/clothing/gloves/telekinetic/TKG = H_user.get_equipped_item(SLOT_ID_GLOVES)
 				TKG.use_grip_power(user,TRUE)
 				if(!TKG.has_grip_power())
+					// ALLOW(lifecycle): the telekinetic grab ends when the gloves run out of grip power
 					qdel(src) // Drop TK
 	return
 

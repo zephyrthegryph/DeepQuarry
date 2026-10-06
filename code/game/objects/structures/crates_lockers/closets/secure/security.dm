@@ -123,6 +123,7 @@
 		/obj/item/clothing/accessory/bodycam)
 
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/hos/Initialize(mapload)
 	if(prob(50))
 		starts_with += /obj/item/storage/backpack/security
@@ -187,6 +188,7 @@
 
 		)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/warden/Initialize(mapload)
 	if(prob(50))
 		starts_with += /obj/item/storage/backpack/security
@@ -228,6 +230,7 @@
 		/obj/item/clothing/mask/gas/sechailer,
 		/obj/item/flashlight/maglight)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/security/Initialize(mapload)
 	if(prob(50))
 		starts_with += /obj/item/storage/backpack/security
@@ -462,6 +465,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/closet/secure_closet/brig, REGISTRY_BRIG_CLOS
 		/obj/item/clothing/shoes/boots/jackboots,
 		/obj/item/clothing/shoes/boots/jackboots/toeless)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/nanotrasen_security/Initialize(mapload)
 	if(prob(25))
 		starts_with += /obj/item/storage/backpack/security
@@ -512,6 +516,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/closet/secure_closet/brig, REGISTRY_BRIG_CLOS
 		/obj/item/clothing/shoes/boots/jackboots/toeless,
 		/obj/item/clothing/under/nanotrasen/security/commander)
 
+// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
 /obj/structure/closet/secure_closet/nanotrasen_commander/Initialize(mapload)
 	if(prob(25))
 		starts_with += /obj/item/storage/backpack/security

@@ -70,6 +70,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	if(GLOB.areas_by_type[type] == src)
 		GLOB.areas_by_type -= type
 
+// ALLOW(init/FRAMEWORK): the area base of the init chain sets its ceiling and lighting
 /area/Initialize(mapload)
 	apply_ceiling()
 	. = ..()

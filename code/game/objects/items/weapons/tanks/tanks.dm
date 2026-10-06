@@ -495,6 +495,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 				qdel(TTV)
 
 			if(src)
+				// ALLOW(lifecycle): the overpressured tank explodes
 				qdel(src)
 
 		else
@@ -527,6 +528,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 				var/obj/item/transfer_valve/TTV = loc
 				TTV.remove_tank(src)
 
+			// ALLOW(lifecycle): the tank ruptures into fragments
 			qdel(src)
 
 		else
@@ -624,6 +626,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 
 TYPE_TABLE_DECLARE(/obj/item/tank/phoron/onetankbomb, phoron_bomb_forced_fill, null)
 
+// ALLOW(init/CTOR_ARGS): amount is a constructor argument from whoever builds it
 /obj/item/tank/phoron/onetankbomb/Initialize(mapload, amount = 1)
 	var/forced_fill = TYPE_TABLE_GET(src, phoron_bomb_forced_fill)
 	if(!isnull(forced_fill))
@@ -635,6 +638,7 @@ TYPE_TABLE_DECLARE(/obj/item/tank/phoron/onetankbomb, phoron_bomb_forced_fill, n
 
 TYPE_TABLE_DECLARE(/obj/item/tank/oxygen/onetankbomb, oxygen_bomb_forced_fill, null)
 
+// ALLOW(init/CTOR_ARGS): amount is a constructor argument from whoever builds it
 /obj/item/tank/oxygen/onetankbomb/Initialize(mapload, amount = 1)
 	var/forced_fill = TYPE_TABLE_GET(src, oxygen_bomb_forced_fill)
 	if(!isnull(forced_fill))

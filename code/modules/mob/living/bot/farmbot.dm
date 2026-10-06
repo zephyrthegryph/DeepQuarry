@@ -22,6 +22,7 @@
 	var/obj/structure/reagent_dispensers/watertank/tank
 
 
+// ALLOW(init/CTOR_ARGS): newTank is a constructor argument from whoever builds it
 /mob/living/bot/farmbot/Initialize(mapload, newTank)
 	. = ..()
 	if(!newTank)
@@ -355,6 +356,7 @@ CAPABILITIES(/mob/living/bot/farmbot)
 	w_class = ITEMSIZE_NORMAL
 
 
+// ALLOW(init/CTOR_ARGS): theTank is a constructor argument from whoever builds it
 /obj/item/farmbot_arm_assembly/Initialize(mapload, theTank)
 	. = ..()
 	if(!theTank) // If an admin spawned it, it won't have a watertank it, so lets make one for em!

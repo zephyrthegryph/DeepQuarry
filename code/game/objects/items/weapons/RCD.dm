@@ -414,6 +414,7 @@ APPEARANCE_NONE(/obj/item/rcd/electric)
 	anchored = TRUE
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
+// ALLOW(init/CTOR_ARGS): rcd_delay and rcd_status are constructor arguments from whoever builds it
 /obj/effect/constructing_effect/Initialize(mapload, rcd_delay, rcd_status)
 	. = ..()
 	start_animation(rcd_delay, rcd_status)

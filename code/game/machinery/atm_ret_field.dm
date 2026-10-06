@@ -73,6 +73,7 @@
 
 /obj/machinery/atmospheric_field_generator/proc/welder_act_tool_done(mob/user)
 	to_chat(user, span_notice("You fully disassemble \the [src]. There were no salvageable parts."))
+	// ALLOW(lifecycle): the generator is taken apart with nothing salvaged
 	qdel(src)
 
 /obj/machinery/atmospheric_field_generator/perma/Initialize(mapload)

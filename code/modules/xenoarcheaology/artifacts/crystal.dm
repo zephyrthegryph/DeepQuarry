@@ -4,6 +4,7 @@
 	icon_state = "crystal"
 	density = TRUE
 
+// ALLOW(init/INSTANCE_STATE): icon_state and desc rolled at random for each instance
 /obj/structure/crystal/Initialize(mapload)
 	. = ..()
 
