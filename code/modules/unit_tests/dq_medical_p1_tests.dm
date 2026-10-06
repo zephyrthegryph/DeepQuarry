@@ -409,9 +409,9 @@
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 	var/datum/affliction/surgical_incision/I = H.body.afflict(/datum/affliction/surgical_incision, torso)
 	I.open_to(SURGERY_DEPTH_CLOSED + 1)
-	TEST_ASSERT(H.caculate_bloodloss_and_bleed(FALSE, torso) > 0, "an open, unclamped site bleeds")
+	TEST_ASSERT(H.blood_loss_rate(torso) > 0, "an open, unclamped site bleeds")
 	I.clamped = TRUE
-	TEST_ASSERT_EQUAL(H.caculate_bloodloss_and_bleed(FALSE, torso), 0, "a clamped site does not")
+	TEST_ASSERT_EQUAL(H.blood_loss_rate(torso), 0, "a clamped site does not")
 	I.close_site()
 
 /// D21: the nymph takes the body through set_species(), keeping its organs.

@@ -115,6 +115,7 @@
 /obj/item/organ/external/proc/refresh_fracture_support()
 	if(!owner?.body)
 		return
+	owner.body.invalidate(BODY_DIRTY_ORGANS) // the stance and grip follow the splint
 	for(var/datum/affliction/untreated_fracture/F in owner.body.afflictions_at(src))
 		F.recompute_stage_from_severity()
 	log_game("FIELD_STAB: [key_name(owner)]'s [name] is [splinted ? "now splinted" : "no longer splinted"].")

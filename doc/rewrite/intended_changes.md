@@ -1529,6 +1529,36 @@ Codemods `tools/codemods/` (tool_act, interaction_datums, damage_reaction; `run_
 - **EMP reactions that never blocked run after the hit** (`on_notice(/datum/notice/hit/emp)`), as the consoles' did; blocking ones are
   `extend(/datum/act/hit/<x>, instead(then()))`.
 - Types left for a hand conversion, and why, are listed in `tools/codemods/exclusions.txt`.
+## Body migration, slice 1: wounds, bleeding and blood on the body clock (rewrite/body-full)
+
+Pinned by `code/modules/unit_tests/dq_body_rate_pins.dm` (green on the old code first; numbers below are old -> new over the pin's span).
+Wound healing, bleeding, arterial tears and blood refill are rates integrated over the time that passed (`code/modules/body/body_clock.dm`),
+run by one `every(LIFE_CYCLE)` per human gated by `body_clock_active`; the Life stage `blood` and the limb's `update_wounds()` are gone.
+
+* **No per-tick rounding.** Autoheal was rounded to a tenth per update ("prettier on scanners") and the whole-body external bleed to a tenth per
+  cycle: a lone dressed wound now heals 0.25 a cycle (was 0.3 rounded; the old pipeline ran it a little more often still: a dressed 8-point cut was
+  4.0 after ten cycles, now 4.75); a 20-point arm cut bleeds 20/35.01 = 0.571 a cycle (was 0.6). Pins: external bleed over five cycles 2.106 -> 1.991,
+  arterial tear 2.100 -> 1.725 (tear 20.5 -> 20.4), refill over ten cycles 1.0 -> 0.9.
+* **The first step comes one cycle after the clock starts** (the every() arms one interval after it is raised), so the first cycle of a fresh wound or
+  draw is integrated at the second step; totals over a span are one cycle behind, never ahead. A 5-point cut bleeds one cycle longer in the pin.
+* **A healed wound fades ten minutes after it was made**, by a timer. Before, a wound healed to 0 on a limb with nothing else to process was never
+  removed (the limb stopped being processed); the pin records it gone after 11 minutes.
+* A salved wound's per-cycle 2% disinfection chance is 2% per cycle of elapsed time (same rate).
+
+## Body migration, slice 2: stance, grip and damaged limbs (rewrite/body-full)
+
+Pinned by `dq_body_rate_pins.dm` (`lost_leg_collapses`, `broken_arm_drops`, `splinted_arm_holds`, `trauma_fractures`; green on the old code first).
+`bad_external_organs`, `recheck_bad_external_organs()`, `need_process()` and both `last_dam` vars are gone; `H.damaged_limbs()` is a query.
+The stance is derived when a limb changes (`code/modules/body/limb_state.dm`); the periodic limb checks run in one `every(LIFE_CYCLE)` gated by
+`limb_trouble`.
+
+* **The stance follows an amputation at once.** Before, the organs stage idled once no limb needed processing, so a clean amputation left
+  `stance_damage` 0 (no slowdown, no collapse) until something else woke the stage; the pin now reads >= 4 straight away.
+* **A splinted fracture is not broken** for grip and stance. `is_broken()` rolled `prob(30)` on every read of a splinted fracture (so a splinted leg
+  still counted as broken about a third of the time, and a splinted arm could still drop what it held); now a splint in place holds.
+* The broken-bone jolt while moving stops at the first limb that jolts in a cycle (was: every broken limb rolled its 10%).
+* Open wounds getting dirtier while you move ran per organs cycle for processed limbs; it is now part of the body clock (same 1 germ per cycle).
+
 
 ## Power plants: the supermatter (rewrite/power-plants)
 
