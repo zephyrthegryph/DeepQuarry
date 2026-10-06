@@ -994,7 +994,7 @@
 				H.mend(TREAT_BURN_CARE, rand(1, 3), O.organ_tag)
 				H.mend(TREAT_WIRING_REPAIR, rand(1, 3), O.organ_tag)
 
-			for(var/obj/item/organ/E in H.bad_external_organs)
+			for(var/obj/item/organ/E in H.damaged_limbs())
 				var/obj/item/organ/external/affected = E
 				if(affected.is_fractured())
 					affected.mend_fracture()

@@ -28,6 +28,8 @@
 #define BLOOD_REGEN_PER_CYCLE 0.1
 /// How much further an untreated arterial tear rips per Life cycle.
 #define ARTERIAL_TEAR_PER_CYCLE 0.1
+/// A move this recent counts as moving about (open wounds get dirty, broken bones jolt).
+#define BODY_MOVING_WINDOW (1.5 SECONDS)
 /// Below this body temperature (cryo) blood neither moves nor refills.
 #define BODY_CLOCK_CRYO_TEMPERATURE 170
 
@@ -79,6 +81,7 @@ TRACKED(/mob/living/carbon/human, body_clock_active)
 
 /mob/living/carbon/human/proc/wounds_advance(cycles)
 	var/can_bleed = should_have_organ(O_HEART) && !(species.flags & NO_BLOOD)
+	var/moving = !lying && !buckled_to() && ELAPSED_SINCE(src, l_move_time, CLOCK_WORLD) < BODY_MOVING_WINDOW
 	for(var/obj/item/organ/external/E as anything in organs)
 		var/list/wounds = E.get_wounds()
 		if(!length(wounds))
@@ -88,6 +91,9 @@ TRACKED(/mob/living/carbon/human, body_clock_active)
 			for(var/datum/affliction/wound/W as anything in wounds.Copy())
 				if(W.damage > 0 && W.can_autoheal() && W.wound_damage() < WOUND_AUTOHEAL_MAX_DAMAGE)
 					W.heal_damage(share)
+				// Moving about gets an open wound dirty faster.
+				if(moving && W.infection_check())
+					W.germ_level += 1
 				// A salved wound fights infection.
 				if(W.germ_level > 0 && W.salved && prob(min(100, 2 * cycles)))
 					W.disinfected = TRUE

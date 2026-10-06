@@ -1466,3 +1466,17 @@ run by one `every(LIFE_CYCLE)` per human gated by `body_clock_active`; the Life 
 * **A healed wound fades ten minutes after it was made**, by a timer. Before, a wound healed to 0 on a limb with nothing else to process was never
   removed (the limb stopped being processed); the pin records it gone after 11 minutes.
 * A salved wound's per-cycle 2% disinfection chance is 2% per cycle of elapsed time (same rate).
+
+## Body migration, slice 2: stance, grip and damaged limbs (rewrite/body-full)
+
+Pinned by `dq_body_rate_pins.dm` (`lost_leg_collapses`, `broken_arm_drops`, `splinted_arm_holds`, `trauma_fractures`; green on the old code first).
+`bad_external_organs`, `recheck_bad_external_organs()`, `need_process()` and both `last_dam` vars are gone; `H.damaged_limbs()` is a query.
+The stance is derived when a limb changes (`code/modules/body/limb_state.dm`); the periodic limb checks run in one `every(LIFE_CYCLE)` gated by
+`limb_trouble`.
+
+* **The stance follows an amputation at once.** Before, the organs stage idled once no limb needed processing, so a clean amputation left
+  `stance_damage` 0 (no slowdown, no collapse) until something else woke the stage; the pin now reads >= 4 straight away.
+* **A splinted fracture is not broken** for grip and stance. `is_broken()` rolled `prob(30)` on every read of a splinted fracture (so a splinted leg
+  still counted as broken about a third of the time, and a splinted arm could still drop what it held); now a splint in place holds.
+* The broken-bone jolt while moving stops at the first limb that jolts in a cycle (was: every broken limb rolled its 10%).
+* Open wounds getting dirtier while you move ran per organs cycle for processed limbs; it is now part of the body clock (same 1 germ per cycle).

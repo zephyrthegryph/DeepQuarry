@@ -40,7 +40,6 @@
 	// Damage vars.
 	var/brute_mod = 1                  // Multiplier for incoming brute damage.
 	var/burn_mod = 1                   // As above for burn.
-	var/last_dam = -1                  // used in healing/processing calculations.
 	var/spread_dam = 0
 	// Appearance vars.
 	var/nonsolid                       // Snowflake warning, reee. Used for slime limbs.
@@ -370,6 +369,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 	dislocated = 1
 	if(istype(owner))
 		grant(owner, granted_verb(/mob/living/carbon/human/proc/relocate), src)
+		owner.body?.invalidate(BODY_DIRTY_ORGANS)
 
 /obj/item/organ/external/proc/relocate()
 	if(dislocated == -1)
@@ -382,6 +382,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 
 		// Each dislocated limb grants the verb; it stays while another limb is still out.
 		revoke(owner, granted_verb(/mob/living/carbon/human/proc/relocate), src)
+		owner.body?.invalidate(BODY_DIRTY_ORGANS)
 
 /obj/item/organ/external/update_health()
 	recalc_integrity()
@@ -814,28 +815,8 @@ This function completely restores a damaged organ to perfect condition.
 //external organs handle brokenness a bit differently when it comes to damage. Instead get_trauma() is checked in update_damages()
 //this also ensures that an external organ cannot be "broken" without broken_description being set.
 /obj/item/organ/external/is_broken()
-	return ((status & ORGAN_CUT_AWAY) || is_fractured() && (!splinted || (splinted && (splinted?.loc == src) && prob(30))))
-
-//Determines if we even need to process this organ.
-/obj/item/organ/external/proc/need_process()
-	if((status & (ORGAN_CUT_AWAY|ORGAN_BLEEDING|ORGAN_DESTROYED|ORGAN_DEAD|ORGAN_MUTATED)) || is_fractured())
-		return 1
-	var/current_dam = get_trauma() + get_burn()
-	if(current_dam) // But they do for medichines! ---&& (!is_robotic())) //Robot limbs don't autoheal and thus don't need to process when damaged
-		return 1
-	if(last_dam != current_dam) // Process when we are fully healed up.
-		last_dam = current_dam
-		return 1
-	else
-		last_dam = current_dam
-	if(germ_level)
-		return 1
-	// Afflictions riding a detached limb keep ticking offline.
-	if(LAZYLEN(detached_afflictions))
-		return 1
-	if(number_wounds)
-		return 1
-	return 0
+	// A splint in place holds the bone: a splinted fracture is not broken for grip and stance.
+	return ((status & ORGAN_CUT_AWAY) || (is_fractured() && !(splinted && splinted.loc == src)))
 
 /obj/item/organ/external/periodic_step()
 	if(owner)

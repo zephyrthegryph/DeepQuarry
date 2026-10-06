@@ -5,32 +5,19 @@
 		update_icons_body() //Body handles eyes
 		update_eyes() //For floating eyes only
 
-/mob/living/carbon/human/proc/recheck_bad_external_organs()
-	var/damage_this_tick = injury_load(INJURY_CATEGORY_TOXIC)
-	for(var/obj/item/organ/external/O in organs)
-		damage_this_tick += O.get_burn() + O.get_trauma()
-		if(O.germ_level)
-			damage_this_tick += 1 //Just tap it if we have germs so we can process those
-
-	if(damage_this_tick > last_dam)
-		. = TRUE
-	last_dam = damage_this_tick
-
 /datum/om/stage/life/organs
 	order = LIFE_PHASE_TAIL + 150
 	name = "organs"
 	wake_on = CHANGE_MOB_HEALTH
 	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
 	of = /mob/living/carbon/human
-	woken_by = "injure/mend and body invalidate (limb damage, lesions); its rewake for raw germ writes"
+	woken_by = "injure/mend and body invalidate (lesions); its rewake for raw germ writes"
 
-/// MED-6: no limb needs processing, the stance is sound and every internal organ is idle
-/// (life_step_idle()).
+/// MED-6: no limb carries germs or chemical traces and every internal organ is idle (life_step_idle()). Wounds, bleeding,
+/// the stance and the grip are the body's (body_clock.dm, limb_state.dm), not this stage's.
 /datum/om/stage/life/organs/idle(mob/living/carbon/human/self)
-	if(length(self.bad_external_organs) || self.stance_damage)
-		return FALSE
 	for(var/obj/item/organ/external/E as anything in self.organs)
-		if(E.germ_level || E.need_process())
+		if(E.germ_level || LAZYLEN(E.trace_chemicals))
 			return FALSE
 	for(var/obj/item/organ/I as anything in self.internal_organ_list())
 		if(!I.life_step_idle())
@@ -44,107 +31,13 @@
 /datum/om/stage/life/organs/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	process_organs(self)
 
-/// Takes care of organ related updates, such as broken and missing limbs. `force` rebuilds the
-/// list of external organs that need processing.
-/datum/om/stage/life/organs/proc/process_organs(mob/living/carbon/human/self, force = FALSE)
-
-	var/force_process = self.recheck_bad_external_organs()
-
-	if(force_process || force)
-		// Populate directly from organs that need processing instead of adding all
-		// then pruning the ones that don't (the old "Silly and slow" approach).
-		rel_clear(self, nameof(self.bad_external_organs))
-		for(var/obj/item/organ/external/Ex in self.organs)
-			if(Ex.need_process())
-				rel_add(self, nameof(self.bad_external_organs), Ex)
-
-	//processing internal organs is pretty cheap, do that first.
+/// Internal organs, then the limbs that carry germs or chemical traces.
+/datum/om/stage/life/organs/proc/process_organs(mob/living/carbon/human/self)
 	for(var/obj/item/organ/I in self.internal_organ_list())
 		I.periodic_step()
-
-	self.handle_stance()
-	self.handle_grasp()
-
-	if(!force_process && !length(self.bad_external_organs))
-		return
-
-	for(var/obj/item/organ/external/E in self.bad_external_organs)
-		if(!E)
-			continue
-		if(!E.need_process())
-			rel_remove(self, nameof(self.bad_external_organs), E)
-			continue
-		else
+	for(var/obj/item/organ/external/E as anything in self.organs)
+		if(E.germ_level || LAZYLEN(E.trace_chemicals))
 			E.periodic_step()
-			var/list/limb_wounds = E.get_wounds() // one walk per limb per cycle (audit D24)
-
-			if (!self.lying && !self?.buckled_to() && ELAPSED_SINCE(src, self.l_move_time, CLOCK_WORLD) < 15)
-			//Moving around with fractured ribs won't do you any good
-				if (prob(10) && !self.stat && self.can_feel_pain() && self.factor(BF_ANALGESIA) < 50 && E.is_broken() && length(E.held_organs()))
-					self.custom_pain("Pain jolts through your broken [E.encased ? E.encased : E.name], staggering you!", 50)
-					self.emote("scream")
-					self.drop_item(self.loc)
-					self.status_at_least(EFFECT_STUNNED, 2)
-
-				//Moving makes open wounds get infected much faster
-				for(var/datum/affliction/wound/W as anything in limb_wounds)
-					if (QDELETED(W))
-						continue
-					if (W.infection_check())
-						W.germ_level += 1
-
-/mob/living/carbon/human/proc/handle_stance()
-	// Don't need to process any of this if they aren't standing anyways
-	// unless their stance is damaged, and we want to check if they should stay down
-	if (!stance_damage && (lying || resting) && (life_tick % 4) != 0)
-		return
-
-	stance_damage = 0
-
-	// Buckled to a bed/chair. Stance damage is forced to 0 since they're sitting on something solid
-	if (istype(src?.buckled_to(), /obj/structure/bed))
-		return
-
-	var/limb_pain = FALSE
-	for(var/limb_tag in list(BP_L_LEG,BP_R_LEG,BP_L_FOOT,BP_R_FOOT))
-		var/obj/item/organ/external/E = organs_by_name[limb_tag]
-		if(!E || !E.is_usable())
-			stance_damage += 2 // let it fail even if just foot&leg
-		else if (E.is_malfunctioning() && !(lying || resting))
-			//malfunctioning only happens intermittently so treat it as a missing limb when it procs
-			stance_damage += 2
-			if(isturf(loc) && prob(10))
-				act_message(src, null, others = "%U%'s [E.name] [pick("twitches", "shudders")] and sparks!")
-				fx_sparks(src, 5, FALSE)
-		else if (E.is_broken())
-			stance_damage += 1
-		else if (E.is_dislocated())
-			stance_damage += 0.5
-
-		if(E && (!E.is_usable() || E.is_broken() || E.is_dislocated()))
-			limb_pain = E.organ_can_feel_pain()
-
-	// Canes and crutches help you stand (if the latter is ever added)
-	// One cane mitigates a broken leg+foot, or a missing foot.
-	// Two canes are needed for a lost leg. If you are missing both legs, canes aren't gonna help you.
-	if (get_equipped_item(SLOT_ID_HAND_L) && istype(get_equipped_item(SLOT_ID_HAND_L), /obj/item/cane))
-		stance_damage -= 2
-	if (get_equipped_item(SLOT_ID_HAND_R) && istype(get_equipped_item(SLOT_ID_HAND_R), /obj/item/cane))
-		stance_damage -= 2
-
-	// Jetpacks in zeroG count for holding you up
-	var/obj/item/tank/jetpack/thrust = get_jetpack()
-	if (lastarea?.get_gravity() == FALSE && thrust?.stabilization_on)
-		stance_damage -= 4
-
-	// standing is poor
-	if(stance_damage >= 4 || (stance_damage >= 2 && prob(5)))
-		if(!(lying || resting) && !isbelly(loc))
-			if(limb_pain)
-				emote("scream")
-			automatic_custom_emote(VISIBLE_MESSAGE, "collapses!", check_stat = TRUE)
-		if(!(lying || resting)) // stops permastun with SPINE sdisability
-			status_at_least(EFFECT_WEAKENED, 5)
 
 /mob/living/carbon/human/proc/handle_grasp()
 	if(!get_equipped_item(SLOT_ID_HAND_L) && !get_equipped_item(SLOT_ID_HAND_R))
@@ -253,12 +146,16 @@
 		dna.SetUIState(DNA_UI_GENDER, gender == FEMALE)
 		sync_organ_dna(dna)
 
-/// Runs the organs system now. `force` rebuilds the list of external organs needing processing.
+/// Runs the organs system now (internal organs, germs). `force` is kept for callers that want it at once.
 /mob/living/carbon/human/proc/process_organs(force = FALSE)
 	var/datum/om/stage/life/organs/S = om_stage_for(src, /datum/om/stage/life/organs)
-	S?.process_organs(src, force)
+	S?.process_organs(src)
 
-/// The limbs that are hurt or need care (damage, a fracture, a dead, bleeding or mutated part, germs, wounds).
+/// The limbs that are hurt or need care: damage, wounds, a fracture, germs, or a cut-away, bleeding, destroyed, dead or
+/// mutated part. A query over the limbs.
 /mob/living/carbon/human/proc/damaged_limbs()
 	RETURN_TYPE(/list)
-	return bad_external_organs?.Copy() || list()
+	. = list()
+	for(var/obj/item/organ/external/E as anything in organs)
+		if((E.status & (ORGAN_CUT_AWAY|ORGAN_BLEEDING|ORGAN_DESTROYED|ORGAN_DEAD|ORGAN_MUTATED)) || E.is_fractured() || E.germ_level || length(E.get_wounds()))
+			. += E

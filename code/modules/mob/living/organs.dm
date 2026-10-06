@@ -3,7 +3,6 @@
 /mob/living
 	var/list/organs
 	var/list/organs_by_name // map organ names to organs
-	var/list/bad_external_organs // organs we check until they are good.
 
 /mob/living/proc/get_bodypart_name(zone)
 	var/obj/item/organ/external/E = get_organ(zone)
