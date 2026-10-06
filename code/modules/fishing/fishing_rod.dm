@@ -98,7 +98,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF
 
 /obj/item/material/fishing_rod/proc/consume_bait()
 	if(Bait)
-		own_clear(src, nameof(Bait), OWN_DELETE)
+		rel_clear(src, nameof(Bait), OWN_DELETE)
 		return TRUE
 	return FALSE
 

@@ -159,7 +159,7 @@ CAPABILITIES(/obj/item/rig_module/ai_container)
 				spent(integrated_ai(), user)
 				rel_clear(src, nameof(integrated_ai))
 			if(ai_card)
-				own_clear(src, nameof(ai_card), OWN_DELETE)
+				rel_clear(src, nameof(ai_card), OWN_DELETE)
 		else if(user)
 			user.put_in_hands(ai_card)
 		else

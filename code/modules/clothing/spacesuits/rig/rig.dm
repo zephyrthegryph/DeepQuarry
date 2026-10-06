@@ -1054,9 +1054,9 @@ DAMAGE_REACTION(/obj/item/rig, DAMAGE_EMP, PROC_REF(rig_emp_malfunction))
 
 /obj/item/rig/ownership()
 	. = ..()
-	. += owns(nameof(air_supply), policy = OWN_CONTAINED)
-	. += owns(nameof(cell), policy = OWN_CONTAINED)
-	. += owns(nameof(installed_modules), policy = OWN_CONTAINED, is_list = TRUE)
+	. += owns(nameof(air_supply), policy = OWN_DELETE)
+	. += owns(nameof(cell), policy = OWN_DELETE)
+	. += owns(nameof(installed_modules), policy = OWN_DELETE, is_list = TRUE)
 	. += owns(nameof(rig_storage), policy = OWN_CONTAINED)
 
 /// The person currently wearing the rig. (a relation view: null once it is deleted).

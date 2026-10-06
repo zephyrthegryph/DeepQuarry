@@ -261,7 +261,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 	if(!successful_craft || !recipe)
 		return
 
-	own_clear(src, nameof(target), OWN_DELETE)
+	rel_clear(src, nameof(target), OWN_DELETE)
 
 	if(reagent_container())
 		reagent_container().reagents.clear_reagents()
