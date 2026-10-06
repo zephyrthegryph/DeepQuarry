@@ -1730,3 +1730,17 @@ tick * size / 10000, the reaction table, 30 fuel a step, the trap above 10000 K)
   (`confirms()`), its ident tag; the three consoles' window and tag; the compressor's sheets, containers, dragged supermatter and its
   "Eject Supermatter Sheet" menu entry. Hand ops answer an empty hand only, as the legacy hand interactions did.
 - Calm steps never bled a field's instability: `rand(0.01, 0.03)` rounds to 0 (pinned as it is; a balance change for later).
+
+## Power plants: portable generators and RTGs (rewrite/power-plants)
+
+Pinned by `dq_pp/pacman_*` and `rtg_output` (fuel per step, the supply, running dry, the heat band and overheating, cooling, the emag limit,
+RTG output per rating); unchanged.
+
+- **No machine pipeline.** A generator steps on `every(MACHINE_SERVICE_INTERVAL, when = has_work)`: while on, or while it still has heat to
+  lose (it used to sleep after cooling until a toggle woke it; the same condition now parks it). RTGs step while bolted down.
+- PACMAN ops: fuel sheets, the window (a hand on a bolted generator; a broken one refuses it), the wrench (`anchor()`, not while running,
+  joining and leaving its network), part replacement (not while running) and a repeatable `emag()` that lifts the output limit to 2.5x
+  (`is_emagged()`). The base generator's empty "Use" interaction (it did nothing) is gone.
+- The altevian reactor's fuel, toggle (a silicon's remote touch through `binds(remote())`) and fuel gauge (`draw()`); the void core's cell
+  (`owns_one(..., starts = starting_cell)` replaces the built subtypes' ownership tables); hits are `extend(/datum/act/hit/...)`.
+- Every look is `draw()`; the reactor's glow is `look.light()`.

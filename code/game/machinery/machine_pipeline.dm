@@ -88,8 +88,6 @@
 		/obj/machinery/pointdefense,
 		/obj/machinery/power/debug_items/infinite_cable_powersink,
 		/obj/machinery/power/debug_items/infinite_generator,
-		/obj/machinery/power/port_gen,
-		/obj/machinery/power/rtg,
 		/obj/machinery/power/sensor,
 		/obj/machinery/power/shield_generator,
 		/obj/machinery/power/singularity_beacon,
