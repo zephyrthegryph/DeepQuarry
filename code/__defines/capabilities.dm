@@ -131,6 +131,8 @@
 /// The power capability's tracked "powered" state (G8): a machine's NOPOWER, written only by set_powered()
 /// (power_change()); published to its readers on a change. The draw mode is the tracked var nameof(use_power).
 #define MACHINE_KEY_POWERED "machine_powered"
+/// The machine condition bits (has_stat()): published with PUBLISH_CHANGE(E, "stat") when any change.
+#define MACHINE_KEY_STAT "stat"
 /// The integrity state (G8): published by atom_break() / atom_fix(), the only writers of a machine's BROKEN.
 #define INTEGRITY_KEY_BROKEN "integrity_broken"
 /// cell_bay(): at or below this charge (percent) cap_cell_charged() refuses.

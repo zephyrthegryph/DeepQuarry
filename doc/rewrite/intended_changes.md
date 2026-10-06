@@ -2420,3 +2420,10 @@ underlays of every creatable subtype of each converted chain, recorded from the 
   their work resumes by itself when they work again. Before, each step ran and refused (or ended its work and waited for power). The 13 machines
   whose step reads power itself (the distillery, exonet node, magnet, ATM, recharge station, cooking appliances and others) declare `unpowered = TRUE`
   and run as before. `STAT_OPERABLE` is now contributed by every machine (the stat bits, `stat_bits_allow()`), not only machine_basics machines.
+
+## Machines: NOPOWER and BROKEN are stats (rewrite/machine-stats)
+
+* `NOPOWER` is the `has_power` stat held false by `SRC_GRID` (set_powered() is the one writer); `BROKEN` is the `intact` stat held false by `SRC_DAMAGE`.
+  `has_stat()`, `stat_add()`, `stat_remove()`, `set_stat()` and `stat_bits_now()` are shims over them (and over the `stat` bits POWEROFF, MAINT and EMPED, which
+  are still bits), so every existing caller keeps its behaviour. A type's default `stat = BROKEN` or `NOPOWER` moves into the stat layer at Initialize.
+* The self-powered turret (`/obj/machinery/porta_turret/rcd`) declares that area power never stops it; it does today (not changed here). Left to the grid work.

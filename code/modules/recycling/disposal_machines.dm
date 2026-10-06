@@ -364,7 +364,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	var/obj/machinery/disposal/new_bin = new new_disposal_path(loc)
 	if(nametag) // mailer only
 		new_bin.name = "[initial(new_bin.name)]([nametag])"
-	new_bin.set_stat(stat_bits_now(MACHINE_STAT_ANY)) // ALLOW(sys_stat_bits): copies the whole condition onto the replacement bin
+	new_bin.set_stat(stat_bits_now(MACHINE_STAT_ANY))
 	new_bin.set_mode(mode)
 	new_bin.dir = new_dir
 	new_bin.update_icon() // the new dir: sets up wall outlets

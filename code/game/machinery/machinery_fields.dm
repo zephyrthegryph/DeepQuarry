@@ -18,14 +18,16 @@ OM_FIELD(/obj/machinery, emagged, FALSE, CHANGE_MACHINE_SETTINGS)
 	field = "stat"
 	channel = CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER
 
-/obj/machinery/var/stat = 0
+/obj/machinery/var/stat = 0 // ALLOW(base_vars): the machine condition bits POWEROFF, MAINT and EMPED are still stored here until each becomes a stat
 
 /obj/machinery/proc/stat_bit_channels()
-	var/static/list/table = list("[BROKEN]" = CHANGE_MACHINE_BROKEN, "[NOPOWER]" = CHANGE_MACHINE_POWER, "[POWEROFF]" = CHANGE_MACHINE_POWER, "[MAINT]" = CHANGE_MACHINE_BROKEN, "[EMPED]" = CHANGE_MACHINE_BROKEN)
+	var/static/list/table = list( // ALLOW(sys_static_getter): a constant bit-to-channel table, built once, read by stat_changed()
+		"[BROKEN]" = CHANGE_MACHINE_BROKEN, "[NOPOWER]" = CHANGE_MACHINE_POWER, "[POWEROFF]" = CHANGE_MACHINE_POWER, "[MAINT]" = CHANGE_MACHINE_BROKEN, "[EMPED]" = CHANGE_MACHINE_BROKEN)
 	return table
 
 
 /// The bits among `bits` that are set now.
+READS_AS(/obj/machinery/proc/stat_bits_now, MACHINE_KEY_STAT)
 /obj/machinery/proc/stat_bits_now(bits)
 	READS_FROM(src)
 	. = stat & bits
@@ -34,6 +36,7 @@ OM_FIELD(/obj/machinery, emagged, FALSE, CHANGE_MACHINE_SETTINGS)
 	if((bits & BROKEN) && !stat_value(src, STAT_INTACT))
 		. |= BROKEN
 
+READS_AS(/obj/machinery/proc/has_stat, MACHINE_KEY_STAT)
 /obj/machinery/proc/has_stat(bits)
 	return stat_bits_now(bits) ? TRUE : FALSE
 
@@ -79,7 +82,7 @@ OM_FIELD(/obj/machinery, emagged, FALSE, CHANGE_MACHINE_SETTINGS)
 /// What a change of bits raises: their channels, the `stat` publish, and the stat layer's recompute of what reads them.
 /obj/machinery/proc/stat_changed(flipped)
 	changed(src, om_flag_channels(stat_bit_channels(), flipped, CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER))
-	PUBLISH_CHANGE(src, "stat")
+	PUBLISH_CHANGE(src, MACHINE_KEY_STAT)
 	om_field_written(src, "stat")
 
 /// Powered and working: none of NOPOWER, BROKEN, MAINT, EMPED (plus `additional_flags`), and no pulse holding it down (emp_disable()'s timed
