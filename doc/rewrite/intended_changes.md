@@ -2196,3 +2196,19 @@ code), then converted by the codemods: `tools/codemods/tool_act.py` (tool procs 
 - `CLOCK_MACHINE` and `CLOCK_CHEM` had no effect held on them anywhere, so they always ran at world speed. They are
   deleted: a machine's timers run on its own clock (suspension still pauses them), and the reflector lane measures its
   dt on world time. The final API's clocks are CLOCK_WORLD, CLOCK_OWN and CLOCK_BIO. No behaviour change intended.
+
+## The OM framework retired (rewrite/om-retire-2)
+
+Pinned by `code/modules/unit_tests/dq_retired_behaviour_pins.dm` and the existing AI, tether, burning, vore and property tests.
+
+- **The AI brain loops run on the mob's own clock** (CLOCK_OWN), as final_api.html section 14 specifies: suspension pauses them,
+  stasis (CLOCK_BIO) no longer does. Out of relevance (RELEVANCE_NONE) or outside RUNLEVEL_GAME/POSTGAME a loop's timer still fires and
+  skips its run; the OM ring parked it instead. A calm brain still hibernates on its chunk watches.
+- **The material service and a belly's digestion cycle are keyed `after()` timers** on their own clock, not OM deadlines on the
+  background lane. The cadence and the per-entity cancel are unchanged.
+- **The turf_prepare_step_sound veto is gone**: nothing handled it, so a footstep on a turf without a footstep sound stays silent as before.
+- **The dqai_target_changed / dqai_target_lost events are gone**: nothing listened to them.
+- **The before/catch_throw and before/dice_roll events are direct calls** (`omen_blocks_catch()`, `omen_roll_override()`): the omen was
+  their only handler.
+- **attack_self is an action** (`ACTION(attack_self, ...)`): the tether host takes it over with an `instead()`; everything else that used
+  the OM veto event is gone with it.
