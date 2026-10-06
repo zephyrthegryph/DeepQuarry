@@ -282,7 +282,6 @@
 		/datum/om/stage/life/breathing/carbon/human,
 		/datum/om/stage/life/mutations/carbon/human,
 		/datum/om/stage/life/radiation/carbon/human,
-		/datum/om/stage/life/blood/carbon/human,
 		/datum/om/stage/life/random_events/carbon/human,
 		/datum/om/stage/life/afk,
 		/datum/om/stage/life/chemicals/carbon/human,

@@ -221,19 +221,6 @@
 /datum/om/stage/life/radiation/idle(mob/living/self)
 	return type == /datum/om/stage/life/radiation && !act_wanted(self, /datum/act/live_radiation)
 
-/// Blood volume and bleeding.
-/datum/om/stage/life/blood
-	order = LIFE_PHASE_BODY + 10
-	name = "blood"
-	wake_on = 0
-	run_if = LIFE_RUN_IF_PLACED_ALIVE
-
-/datum/om/stage/life/blood/perform(mob/living/self, datum/om/frame/life/ctx)
-	return
-
-/datum/om/stage/life/blood/idle(mob/living/self)
-	return type == /datum/om/stage/life/blood
-
 /// Random episodes (vomiting, ...).
 /datum/om/stage/life/random_events
 	order = LIFE_PHASE_BODY + 20

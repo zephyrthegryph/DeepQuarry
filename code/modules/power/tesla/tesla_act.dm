@@ -86,7 +86,7 @@
 
 /obj/machinery/the_singularitygen/tesla/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
 	if(explosive)
-		energy += power
+		set_energy(energy + power)
 
 /obj/machinery/power/tesla_coil/tesla_act(power, explosive = FALSE, current_jumps = current_jumps)
 	if(anchored && !panel_open)

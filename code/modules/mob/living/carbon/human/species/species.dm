@@ -528,7 +528,6 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		qdel(stray)
 	for(var/obj/item/organ/stray as anything in H.internal_organ_list())
 		qdel(stray)
-	rel_clear(H, nameof(H.bad_external_organs))
 
 	// Parent first, whatever order the table lists them in.
 	var/list/pending = has_limbs.Copy()

@@ -169,8 +169,40 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/craftable, INTERACT_SELF
 /obj/item/clothing/accessory/collar/craftable/proc/craftable_collar_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(collar_tag_self(user, held, interaction))
 		return TRUE
-	var/_answer_k169 = rerun_ask(user, "k169", PROC_REF(craftable_collar_self), args, /datum/om/prompt/text, message = "What would you like to label the collar?", title = "Collar Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
-	if(isnull(_answer_k169))
+	var/datum/request/resumed = length(args) > 3 ? args[4] : null
+	var/label
+	if(istype(resumed, /datum/prompt/text/collar_tag/craftable_label) && resumed.owner == src && resumed.answerer == user && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(craftable_collar_label_entered))
+		var/datum/prompt/text/collar_tag/craftable_label/request = resumed
+		if(request.captured_item != held || request.captured_interaction != interaction)
+			return TRUE
+		label = resumed.value
+	else
+		open_request(src, /datum/prompt/text/collar_tag/craftable_label, PROC_REF(craftable_collar_label_entered), answerer = user, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction))
 		return TRUE
-	given_name = sanitizeSafe(_answer_k169, MAX_NAME_LEN)
+	if(isnull(label))
+		return TRUE
+	given_name = sanitizeSafe(label, MAX_NAME_LEN)
 	return TRUE
+
+/obj/item/clothing/accessory/collar/craftable/proc/craftable_collar_label_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/collar_tag/craftable_label/request = A.answer
+	SStgui.update_uis(src)
+	return world.push_usr(request.answerer, new /datum/callback(src, PROC_REF(craftable_collar_self)), request.answerer, request.captured_item, request.captured_interaction, request)
+
+/// The existing collar prompt's relation views keep the exact original self-action arguments.
+/datum/prompt/text/collar_tag/craftable_label
+	question = "What would you like to label the collar?"
+	title = "Collar Labelling"
+	encode = FALSE
+	recheck_on_open = TRUE
+
+/datum/prompt/text/collar_tag/craftable_label/normalize(given)
+	return istext(given) ? strip_name_tokens(given) : null
+
+/datum/prompt/text/collar_tag/craftable_label/refusal(value)
+	return null
+
+/datum/prompt/text/collar_tag/craftable_label/recheck_extra()
+	return !owner || QDELETED(owner) || captures_gone() ? "gone" : null

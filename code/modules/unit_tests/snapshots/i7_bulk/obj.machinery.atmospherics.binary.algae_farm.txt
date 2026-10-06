@@ -1,8 +1,5 @@
-/obj/machinery/atmospherics/binary/algae_farm|human|none => machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,algae_farm_part_replacement:needs a rapid part exchange device,algae_farm_load_materials:needs an item,algae_farm_reject:needs an item
-/obj/machinery/atmospherics/binary/algae_farm|robot|none => machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,algae_farm_part_replacement:needs a rapid part exchange device,algae_farm_load_materials:needs an item,algae_farm_reject:needs an item
+/obj/machinery/atmospherics/binary/algae_farm|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/atmospherics/binary/algae_farm|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/atmospherics/binary/algae_farm|ai|none => |
 /obj/machinery/atmospherics/binary/algae_farm|ghost|none => |
-/obj/machinery/atmospherics/binary/algae_farm|human|/obj/item/storage/part_replacer => algae_farm_part_replacement,algae_farm_reject,machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,algae_farm_load_materials:needs an item
-/obj/machinery/atmospherics/binary/algae_farm|human|/obj/item/stack/material => algae_farm_load_materials,algae_farm_reject,machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,algae_farm_part_replacement:needs a rapid part exchange device
-/obj/machinery/atmospherics/binary/algae_farm|human|/obj/item => algae_farm_reject,machine_open_ui|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,algae_farm_part_replacement:needs a rapid part exchange device,algae_farm_load_materials:needs an item
 

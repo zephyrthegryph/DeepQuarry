@@ -230,7 +230,7 @@
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = 5
 		// Organ repair is adminordrazine's TREAT_RESTORATION tag (body/treatment.dm).
-		for(var/obj/item/organ/external/O in H.bad_external_organs)
+		for(var/obj/item/organ/external/O in H.damaged_limbs())
 			dq_reagent_knit_fracture(O)
 			dq_reagent_close_wounds(O, wound_heal)
 

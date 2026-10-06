@@ -1529,6 +1529,103 @@ Codemods `tools/codemods/` (tool_act, interaction_datums, damage_reaction; `run_
 - **EMP reactions that never blocked run after the hit** (`on_notice(/datum/notice/hit/emp)`), as the consoles' did; blocking ones are
   `extend(/datum/act/hit/<x>, instead(then()))`.
 - Types left for a hand conversion, and why, are listed in `tools/codemods/exclusions.txt`.
+## Body migration, slice 1: wounds, bleeding and blood on the body clock (rewrite/body-full)
+
+Pinned by `code/modules/unit_tests/dq_body_rate_pins.dm` (green on the old code first; numbers below are old -> new over the pin's span).
+Wound healing, bleeding, arterial tears and blood refill are rates integrated over the time that passed (`code/modules/body/body_clock.dm`),
+run by one `every(LIFE_CYCLE)` per human gated by `body_clock_active`; the Life stage `blood` and the limb's `update_wounds()` are gone.
+
+* **No per-tick rounding.** Autoheal was rounded to a tenth per update ("prettier on scanners") and the whole-body external bleed to a tenth per
+  cycle: a lone dressed wound now heals 0.25 a cycle (was 0.3 rounded; the old pipeline ran it a little more often still: a dressed 8-point cut was
+  4.0 after ten cycles, now 4.75); a 20-point arm cut bleeds 20/35.01 = 0.571 a cycle (was 0.6). Pins: external bleed over five cycles 2.106 -> 1.991,
+  arterial tear 2.100 -> 1.725 (tear 20.5 -> 20.4), refill over ten cycles 1.0 -> 0.9.
+* **The first step comes one cycle after the clock starts** (the every() arms one interval after it is raised), so the first cycle of a fresh wound or
+  draw is integrated at the second step; totals over a span are one cycle behind, never ahead. A 5-point cut bleeds one cycle longer in the pin.
+* **A healed wound fades ten minutes after it was made**, by a timer. Before, a wound healed to 0 on a limb with nothing else to process was never
+  removed (the limb stopped being processed); the pin records it gone after 11 minutes.
+* A salved wound's per-cycle 2% disinfection chance is 2% per cycle of elapsed time (same rate).
+
+## Body migration, slice 2: stance, grip and damaged limbs (rewrite/body-full)
+
+Pinned by `dq_body_rate_pins.dm` (`lost_leg_collapses`, `broken_arm_drops`, `splinted_arm_holds`, `trauma_fractures`; green on the old code first).
+`bad_external_organs`, `recheck_bad_external_organs()`, `need_process()` and both `last_dam` vars are gone; `H.damaged_limbs()` is a query.
+The stance is derived when a limb changes (`code/modules/body/limb_state.dm`); the periodic limb checks run in one `every(LIFE_CYCLE)` gated by
+`limb_trouble`.
+
+* **The stance follows an amputation at once.** Before, the organs stage idled once no limb needed processing, so a clean amputation left
+  `stance_damage` 0 (no slowdown, no collapse) until something else woke the stage; the pin now reads >= 4 straight away.
+* **A splinted fracture is not broken** for grip and stance. `is_broken()` rolled `prob(30)` on every read of a splinted fracture (so a splinted leg
+  still counted as broken about a third of the time, and a splinted arm could still drop what it held); now a splint in place holds.
+* The broken-bone jolt while moving stops at the first limb that jolts in a cycle (was: every broken limb rolled its 10%).
+* Open wounds getting dirtier while you move ran per organs cycle for processed limbs; it is now part of the body clock (same 1 germ per cycle).
+## The algae farm (rewrite/pipenet-full)
+
+Pinned by `dq_atmos_m/pipes/algae_farm_converts` and the generated pin.
+
+- It works on `every(when = working)`; `working` (tracked) is reconsidered when its switch, its power, its stores (loading, ejecting) or its
+  input's gas change (a gas watch on `air1`, composition). The OM derived field, the periodic declaration, the OM watch and MACHINE_WAKE are gone.
+- Its RPED is `part_replacement()`, loading materials an op. The "you cannot insert this item" catch-all is gone: an op answering any held item
+  would take the screwdriver and the crowbar from the machine core's panel and deconstruction (ops answer before the legacy interactions), so
+  another item is now what the machine core does with it.
+
+## Thermoelectric generator and circulators (rewrite/pipenet-full)
+
+- **The TEG works on `every(when = generating)`.** `generating` (tracked) is reconsidered when its bolts, its circulators, its power or its loops
+  change; asleep, it holds native gas watches on its circulators' four mixtures (pressure) and wakes when either loop has a head worth turning.
+  The periodic declaration, the OM watch, MACHINE_WAKE and `SSmachines.hibernate_generator()` are gone; it left the machine pipeline roster.
+- Its window is `interface()` with a requirement (bolted down and working), so a hand on a loose or dead TEG is refused with a reason instead of
+  doing nothing; it no longer reconnects its circulators when the window opens (the wrenches and the map load do). Its look is `draw(look)` from
+  a tracked `lastgenlev`; the circulators' hot/cold overlays are set when the level changes, not from inside the TEG's appearance proc.
+- The circulator's and the TEG's wrenches are ops; the circulator's "running" display times out on a keyed `after()` (was `om_after_replace`),
+  and its look is `draw(look)` from a tracked `run_state` and `temperature_overlay`. The TEG joins `REGISTRY_TURBINES` with `membership()`.
+
+
+
+## Power plants: the supermatter (rewrite/power-plants)
+
+Pinned by `code/modules/unit_tests/dq_power_plants_behaviour.dm` (`dq_pp/sm_*`), green on the legacy code first.
+
+- **No machine step.** The crystal's reaction is `every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(sm_step)))` (2 s, as the pipeline frame was);
+  it left the machine pipeline's roster. Off a turf it skips the step (it used to stop stepping for good on a null loc; a crystal with a null
+  loc never comes back, so nothing changes in play). Cadence pin: 5 steps in 10 s, before and after.
+- **The exhaust is a gas reaction in Rust** (`GAS_REACTION_SUPERMATTER`, `SUPERMATTER_THERMAL_RELEASE` = 10000 J per unit of device energy,
+  `verdigris/domains/gas/src/reaction_energy.rs`). Before, DM added the phoron and oxygen with `adjust_gas()` (the new moles arrived at the
+  mixture's temperature, so they brought their own heat) and then `heat_add()`ed the release. Now the reaction keeps the mixture's energy over
+  its new heat capacity and adds the release, so the exhaust carries no free heat: at power 500 in 500 K oxygen the step adds 5.50 MJ, where
+  it added 5.54 MJ (the 0.37 mol of phoron and 0.05 mol of oxygen at 500 K were the 37 kJ, 0.7%). Power, damage and the gas amounts are
+  unchanged (pins: `sm_energy_curve_*`, `sm_damage_*`, `sm_gas_release`). The 10000 K cap stays a `heat_set()`.
+- **Touch, item touch and bump are ops and a notice** (`touch`, `touch_item`, `on_notice(/datum/notice/bumped)`); the legacy interaction table,
+  the cyborg "Use" interaction and the `Bumped()` override are gone. What a player sees: a plain click with an empty hand or anything held
+  touches the crystal (the pin's "click: nothing" became "Click: Touch"; that is what the legacy click did in play, the pin harness did not
+  run the legacy click); a cyborg beside it touches it with its empty hand (as the legacy "Use" did when adjacent); a silicon at range and the
+  AI open the monitor window through `interface(..., input = remote())` (was the robot interaction's `tgui_interact()` and `silicon_use`).
+
+## Power plants: the singularity, its containment, emitters, collectors and the particle accelerator (rewrite/power-plants)
+
+Pinned by `dq_pp/sing_*`, `fg_*`, `containment_field_*`, `emitter_*`, `collector_*`, `particle_*`, `pa_*`; green on the legacy code first, every
+number unchanged (size thresholds, dissipation 1 per 11 steps at stage one, field draw 2750 W alone and 8500 W linked with 3 fields, the 250 kJ
+store cap, 64 kJ per emitter shot in bursts of four, collector output moles x strength x 20 W).
+
+- **No machine pipeline, no PERIODIC lanes.** The singularity (and Nar-Sie, the cascade rift and the energy ball) steps on its `every(2 s)`
+  (`singularity_frame()`), field generators and emitters on `every(MACHINE_SERVICE_INTERVAL, when = ...)`, the control box emits on
+  `every(..., when = active)`, particles fly on `every(0.1 s)`. The singularity generator collapses at the drain after a particle brings it to
+  200 (`on_change(nameof(energy))`), not on the next 2 s frame.
+- **Containment-failure alert fixed.** `cleanup()` looked for singularities in `REGISTRY_MACHINES`, where none ever were, so the admin
+  "SINGUL/TESLOOSE!" alert never fired; it now reads `REGISTRY_SINGULARITIES`. A field generator next to the map edge no longer runtimes
+  raising its fields (it stops at the edge).
+- **Field generator warm-up** is a keyed `after()` chain (two 5 s stages, the fields at 10 s, as before); switching off cancels it and the
+  warm-up overlay goes with it (it used to stay on the dead generator).
+- **The bolt-and-weld ladder is a library capability** (`floor_weld()`, `code/library/machine/floor_weld.dm`) for emitters and field
+  generators: wrench instant, welder 2 s, refused while running; same messages.
+- **Locks are `lock()`** (emitter, collector; no alt-click): the ID swipe toggles `LOCK_LOCKED`, an emag shorts it open for good (`emag()`),
+  the collector locks only while active. `activate()` and the remote emitter button read `lock_locked()`.
+- **The particle accelerator parts and control box are on a construction graph** (loose, bolted, wired, closed; `pa_stage()` is the old
+  number). Opening a closed control box's panel now also powers it off (it stayed idle before). Parts and boxes rotate through the
+  `rotatable()` menu instead of granted verbs.
+- **The singularity generator** anchors with `anchor()`, opens with `panel()`; the screwdriver's two flavour waits (3 s then 8 s) became an
+  examine line while the panel is open; installing the super I/O coil is a 30 s op.
+- Pins: clicks the legacy harness showed as "nothing" (field touch, collector toggle) now name their op; the emitter, collector and parts lost
+  the "Repair/Load/Wire (refused: needs ...)" rows for items not held (the menu offers an item op only when that item is held).
 - **Emags on items are the emag library** (`emag(then(PROC_REF(on_emag)), repeatable =, powered = FALSE)`): a sequencer that
   works now also says the library's "You subvert X with Y" line, and pays one use (the legacy handlers' counts were 0 or 1).
   A handler that did nothing declines: the card goes on to its other uses. The defib kit works its paddles' emag by key.
