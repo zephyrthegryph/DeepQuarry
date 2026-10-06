@@ -154,7 +154,7 @@
 	var/datum/tgui_module/rustfuel_control/M = hct_track(new /datum/tgui_module/rustfuel_control(hct_host()))
 	var/mob/living/carbon/human/H = hct_actor()
 	var/obj/machinery/fusion_fuel_injector/FI = allocate(/obj/machinery/fusion_fuel_injector, hct_spot())
-	FI.id_tag = "fuel_a"
+	FI.set_id_tag("fuel_a") // the setter refiles it in its registry under the tag
 	press(H, M, "set_tag", null)
 	TEST_ASSERT(p2cl_has_question(H), "the tag is asked for")
 	p2cl_answer(H, "fuel_a")
@@ -170,7 +170,7 @@
 	var/datum/tgui_module/rustcore_monitor/M = hct_track(new /datum/tgui_module/rustcore_monitor(hct_host()))
 	var/mob/living/carbon/human/H = hct_actor()
 	var/obj/machinery/power/fusion_core/C = allocate(/obj/machinery/power/fusion_core, hct_spot())
-	C.id_tag = "core_a"
+	C.set_id_tag("core_a") // the setter refiles it in its registry under the tag
 	press(H, M, "set_tag", null)
 	TEST_ASSERT(p2cl_has_question(H), "the tag is asked for")
 	p2cl_answer(H, "core_a")
@@ -189,7 +189,7 @@
 	var/datum/tgui_module/gyrotron_control/M = hct_track(new /datum/tgui_module/gyrotron_control(hct_host()))
 	var/mob/living/carbon/human/H = hct_actor()
 	var/obj/machinery/power/emitter/gyrotron/G = allocate(/obj/machinery/power/emitter/gyrotron, hct_spot())
-	G.id_tag = "gyro_a"
+	G.set_id_tag("gyro_a") // the setter refiles it in its registry under the tag
 	press(H, M, "set_tag", null)
 	TEST_ASSERT(p2cl_has_question(H), "the tag is asked for")
 	p2cl_answer(H, "gyro_a")
