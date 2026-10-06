@@ -960,7 +960,7 @@
 	p2_table_click(grabber, T, G)
 	settle()
 	TEST_ASSERT_EQUAL(victim.loc, at, "the victim is on the table")
-	TEST_ASSERT(victim.status_units(EFFECT_WEAKENED) > 0, "and knocked down")
+	TEST_ASSERT(victim.status_units(STAT_WEAKENED) > 0, "and knocked down")
 
 /// A loose grab does not put anyone on a table: it needs a better grip.
 /datum/unit_test/dq_p2_table/a_loose_grab_does_not_put_a_person_on_the_table
@@ -1020,7 +1020,7 @@
 	p2_table_climb(climber, T)
 	test_time(1 SECOND)
 	TEST_ASSERT(p2_table_menu(flipper, T, "Flip table"), "someone flipped it")
-	TEST_ASSERT(climber.status_units(EFFECT_WEAKENED) > 0, "the climber was knocked down")
+	TEST_ASSERT(climber.status_units(STAT_WEAKENED) > 0, "the climber was knocked down")
 	test_time(10 SECONDS)
 	TEST_ASSERT_EQUAL(climber.loc, floor_at(0, 1), "and never made it up")
 

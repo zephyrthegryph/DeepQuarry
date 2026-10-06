@@ -127,7 +127,7 @@
 // exhaust is a gas reaction (GAS_REACTION_SUPERMATTER, verdigris/domains/gas/src/reaction_energy.rs): DM decides how much phoron and oxygen it
 // exhales and its device energy, Rust settles the heat.
 CAPABILITIES(/obj/machinery/power/supermatter)
-	owns_one(nameof(soundloop), /datum/looping_sound/supermatter)
+	owns_one(nameof(soundloop), /datum/looping_sound/supermatter, starts = PROC_REF(make_soundloop))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(sm_step)))
 	interface("AiSupermatter", input = remote())
 	ui_shape(detonating = num(), integrity_percentage = num(), ambient_temp = num(), ambient_pressure = num())
@@ -137,11 +137,14 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 
 /obj/machinery/power/supermatter/Initialize(mapload)
 	uid = gl_uid++
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/supermatter(list(src), TRUE))
 	if(src.z in using_map.station_levels) // Looping Alarms
 		stationcrystal = TRUE // Looping Alarms
 	return ..()
 
+
+/// Its hum: the calm loop, playing from the start.
+/obj/machinery/power/supermatter/proc/make_soundloop(datum/act/A)
+	return new /datum/looping_sound/supermatter(list(src), TRUE)
 
 // an undelaminated deletion is reported; contract telemetry ends.
 /obj/machinery/power/supermatter/on_destroy(force)
@@ -244,7 +247,7 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 		if(!(TM.z in affected_z))
 			continue
 
-		mob.status_at_least(EFFECT_WEAKENED, DETONATION_MOB_CONCUSSION)
+		mob.status_at_least(STAT_WEAKENED, DETONATION_MOB_CONCUSSION)
 		to_chat(mob, span_danger("An invisible force slams you against the ground!"))
 
 	// Effect 2: Z-level wide electrical pulse
@@ -478,7 +481,7 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 
 	for(var/mob/living/carbon/human/l in view(src, min(7, round(sqrt(power/6))))) // If they can see it without mesons on.  Bad on them.
 		if(!istype(l.get_equipped_item(SLOT_ID_EYES), /obj/item/clothing/glasses/meson) || l.is_incorporeal()) //Only mesons can protect you! OR if they're not in the same plane of existence
-			l.status_set(EFFECT_HALLUCINATING, max(0, min(200, l.status_units(EFFECT_HALLUCINATING) + power * config_hallucination_power * sqrt( 1 / max(1,get_dist(l, src)) ) ) ))
+			l.status_set(STAT_HALLUCINATING, max(0, min(200, l.status_units(STAT_HALLUCINATING) + power * config_hallucination_power * sqrt( 1 / max(1,get_dist(l, src)) ) ) ))
 
 	// At a power mult of 0.025 for range, this means a 1000power SM (about normal) will reach 25 tiles and be putting off rad pulses of 500. With 0 protection, you have a 10% chance of getting hit.
 	radiation_pulse(

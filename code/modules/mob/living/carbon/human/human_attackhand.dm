@@ -622,7 +622,7 @@
 		var/obj/item/organ/internal/lungs/lungs = organ_in(O_LUNGS)
 		if(lungs)
 			emote("gasp")
-		status_at_least(EFFECT_WEAKENED, rand(10,25))
+		status_at_least(STAT_WEAKENED, rand(10,25))
 		//SShaunting.influence(HAUNTING_RESLEEVE) // Used for the Haunting module downstream. Not implemented upstream.
 
 		// Same defib-window brain damage as a defibrillator (brain.revival_brain_damage()).

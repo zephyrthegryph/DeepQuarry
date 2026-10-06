@@ -8,7 +8,7 @@
 	regenerate_icons()
 	set_transforming(1)
 	canmove = 0
-	status_set(EFFECT_STUNNED, 1)
+	status_set(STAT_STUNNED, 1)
 	icon = null
 	invisibility = INVISIBILITY_ABSTRACT
 	for(var/t in organs)
@@ -24,7 +24,7 @@
 /mob/living/carbon/human/proc/monkeyize_1(atom/movable/overlay/animation)
 
 	set_transforming(0)
-	status_set(EFFECT_STUNNED, 0)
+	status_set(STAT_STUNNED, 0)
 	update_canmove()
 	invisibility = initial(invisibility)
 

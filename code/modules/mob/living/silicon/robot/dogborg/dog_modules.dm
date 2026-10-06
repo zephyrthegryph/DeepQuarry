@@ -213,8 +213,8 @@ CAPABILITIES(/obj/item/robot_tongue)
 			if(!R.draw_power(ROBOT_CELL_JOULES(666), src, ROBOT_CELL_JOULES(100)))
 				to_chat(user, span_warning("Warning, low power detected. Aborting action."))
 				return
-			L.status_at_least(EFFECT_STUNNED, 1)
-			L.status_at_least(EFFECT_WEAKENED, 1)
+			L.status_at_least(STAT_STUNNED, 1)
+			L.status_at_least(STAT_WEAKENED, 1)
 			L.apply_effect(STUTTER, 1)
 			act_message(L, user, MSG_SELF(span_userdanger("%T% has shocked you with its tongue! You can feel the betrayal.")), \
 				MSG_OTHERS(span_danger("%T% has shocked %U% with its tongue!")))
@@ -226,7 +226,7 @@ CAPABILITIES(/obj/item/robot_tongue)
 			water.use_charge(5)
 			var/mob/living/carbon/human/H = target
 			if(H.species.lightweight == 1)
-				H.status_at_least(EFFECT_WEAKENED, 3)
+				H.status_at_least(STAT_WEAKENED, 3)
 	else
 		act_message(user, null, MSG_SELF(span_notice("You begin to lick \the [target.name] clean...")), \
 			MSG_OTHERS(span_filter_notice("%U% begins to lick \the [target.name] clean...")))
@@ -456,7 +456,7 @@ CAPABILITIES(/obj/item/dogborg/pounce)
 	if(ishuman(T))
 		var/mob/living/carbon/human/H = T
 		if(H.species.lightweight == 1)
-			H.status_at_least(EFFECT_STUNNED, 3) // Crawling made this useless. Changing to stun instead.
+			H.status_at_least(STAT_STUNNED, 3) // Crawling made this useless. Changing to stun instead.
 			H.drop_both_hands() //Stuns no longer drop items, so were forcing it >:3
 			return
 

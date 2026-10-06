@@ -308,14 +308,14 @@
 	//Eyes: blindness from disability or unconsciousness doesn't get better on its own. It is an
 	// untimed hold while the cause lasts, not a one-cycle top-up: re-topping a timed status every
 	// frame raised a status change on the mob's own frame and kept it from ever parking.
-	life_disability_hold(src, EFFECT_BLINDED, "disability_blind", (src.sdisabilities & BLIND) || src.stat)
-	if(src.has_status(EFFECT_BLINDED))
+	life_disability_hold(src, STAT_BLINDED, SRC_DISABILITY_BLIND, (src.sdisabilities & BLIND) || src.stat)
+	if(src.has_status(STAT_BLINDED))
 		src.throw_alert("blind", /atom/movable/screen/alert/blind)
 	else
 		src.clear_alert("blind")
 
 	//Ears
-	life_disability_hold(src, EFFECT_DEAFENED, "disability_deaf", src.sdisabilities & DEAF) //disabled-deaf, doesn't get better on its own
+	life_disability_hold(src, STAT_DEAFENED, SRC_DISABILITY_DEAF, src.sdisabilities & DEAF) //disabled-deaf, doesn't get better on its own
 	if(!(src.sdisabilities & DEAF) && src.ear_damage > 0 && src.ear_damage < 100)
 		// ear damage heals slowly over time, unless it is over 100
 		src.adjustEarDamage(-0.05, 0)
@@ -325,31 +325,26 @@
 /mob/living/proc/life_disabilities_due()
 	if(om_wants(src, /datum/om/event/handle_disabilities))
 		return TRUE
-	if(!life_disability_hold_matches(src, EFFECT_BLINDED, "disability_blind", (src.sdisabilities & BLIND) || src.stat))
+	if(!life_disability_hold_matches(src, STAT_BLINDED, SRC_DISABILITY_BLIND, (src.sdisabilities & BLIND) || src.stat))
 		return TRUE
-	if(!life_disability_hold_matches(src, EFFECT_DEAFENED, "disability_deaf", src.sdisabilities & DEAF))
+	if(!life_disability_hold_matches(src, STAT_DEAFENED, SRC_DISABILITY_DEAF, src.sdisabilities & DEAF))
 		return TRUE
 	if(src.ear_damage > 0 && src.ear_damage < 100)
 		return TRUE
-	return !src.alerts?["blind"] == src.has_status(EFFECT_BLINDED)
+	return !src.alerts?["blind"] == src.has_status(STAT_BLINDED)
 
-/// Holds `effect_id` on `self` (keyed `key`, self-sourced) while `wanted`, releases it otherwise.
+/// Holds status `status_id` on `self` under `source` (a disability) while `wanted`, releases it otherwise.
 /// Holding what is already held and releasing what isn't are no-ops, so no change is raised.
-/proc/life_disability_hold(mob/living/self, effect_id, key, wanted)
-	if(life_disability_hold_matches(self, effect_id, key, wanted))
+/proc/life_disability_hold(mob/living/self, status_id, source, wanted)
+	if(life_disability_hold_matches(self, status_id, source, wanted))
 		return
 	if(wanted)
-		om_hold(self, effect_id, self, TRUE, key)
+		hold(self, status_id, 1, source)
 	else
-		om_release(self, effect_id, self, key)
+		release(self, status_id, source)
 
-/proc/life_disability_hold_matches(mob/living/self, effect_id, key, wanted)
-	var/datum/om/rec/rec = self.om_rec
-	var/held = FALSE
-	if(rec)
-		var/datum/om/effect/eff = om_registry().effect(effect_id)
-		held = !isnull(om_contrib_value(rec, eff.idx, self, key))
-	return held == !!wanted
+/proc/life_disability_hold_matches(mob/living/self, status_id, source, wanted)
+	return held_by_source(self, status_id, source) == !!wanted
 
 // --- Output -----------------------------------------------------------------------------------
 

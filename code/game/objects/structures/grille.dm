@@ -219,7 +219,7 @@ CAPABILITIES(/obj/structure/grille)
 		if(electrocute_mob(user, C, src))
 			power_warn(C.get_power_region())
 			fx_sparks(src, 3)
-			if(user.has_status(EFFECT_STUNNED))
+			if(user.has_status(STAT_STUNNED))
 				return 1
 		else
 			return 0

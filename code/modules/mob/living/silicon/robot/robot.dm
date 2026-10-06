@@ -501,7 +501,7 @@
 		camera.set_status(camera_on ? 1 : 0)
 	if(radio)
 		radio.on = is_component_functioning(ROBOT_SLOT_RADIO) ? 1 : 0
-	var/sees = stat != DEAD && !has_status(EFFECT_PARALYZED) && !has_status(EFFECT_BLINDED) && !(sdisabilities & BLIND) && is_component_functioning(ROBOT_SLOT_CAMERA)
+	var/sees = stat != DEAD && !has_status(STAT_PARALYZED) && !has_status(STAT_BLINDED) && !(sdisabilities & BLIND) && is_component_functioning(ROBOT_SLOT_CAMERA)
 	set_blinded(!sees)
 	if(stat == DEAD)
 		return

@@ -403,7 +403,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 			new_form.set_virtual_reality_mob(TRUE)
 
 	grant(avatar(), granted_verb(/mob/living/carbon/human/proc/perform_exit_vr), avatar()) //ahealing removes the prommie verbs and the VR verbs, giving it back
-	avatar().status_at_least(EFFECT_SLEEPING, 1)
+	avatar().status_at_least(STAT_SLEEPING, 1)
 
 	// Prompt for username after they've enterred the body.
 	open_request(src, /datum/prompt/text, PROC_REF(vr_avatar_named), valid = PROC_REF(asked_is_avatar), answerer = avatar(), title = "Name change", question = "You are entering virtual reality. Your username is currently [src.name]. Would you like to change it to something else?", max_len = MAX_NAME_LEN, timeout = 0)

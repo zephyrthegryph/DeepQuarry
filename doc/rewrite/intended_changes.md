@@ -1751,6 +1751,13 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
   runs before the parent's MouseDrop instead of after it. A handler that falls through (INPUT_FALLTHROUGH) no longer runs a second time
   when the fall reaches a parent type's generated override (`input_falling`, `input_fell()`).
 - A null positional constructor argument no longer overwrites a param's var (the old overrides' `arg || default`).
+- Smoothing is adjacency(): walls, low walls, tables, catwalks, windows, bay grilles, sandbag barricades and retention fields share
+  ADJ_KIND_SMOOTH, each joining what its connects proc accepts (walls take walls of a blending material and the low walls they join;
+  structures the anchored structures they connect to). The index tells every member whose neighbours changed, so a removed table,
+  catwalk or wall now redraws its neighbours (before, they kept joining the gone piece, pinned by dq_smoothing_pins), placing and anchoring
+  reach them too, and the hand propagation (update_connections(1) in Initialize/on_destroy, the low walls' and bay grilles' after-init
+  connect, windows refreshing nearby tables) is gone. A map load recomputes each member once when the batch closes
+  (BATCH_WORK_ADJACENCY replaces the wall smoothing batch). The look of a placed layout is unchanged (the pin's placed rows).
 - More native input reads its actor from the input: the vitals monitor, the backpack-style packs (defib, shield generator, bluespace
   radio, proton pack, medigun), the cup on a cooler, a mob dragged onto its dragger (`drag_onto()`), the mob nametag tooltip (`hover()`),
   the debug and ticket stat buttons and the rig stat buttons (`click_on()`). Admin rights checks with an actor in scope read its client
@@ -1914,6 +1921,24 @@ target a step less rpm^2 / (500000 * efficiency)); unchanged.
 - Shuttle consoles: the button guard is `console_gate(mob/user)`, asked by the ops (`ui_gate()`) and by the answers to the codes/destination questions (which used to call `ui_act_allowed()`). The resleeving and vore-save prompts recheck only that the window is still open and interactive.
 - tgui modals: the dead `ui_modal_opened()`/`ui_modal_answered()` hooks (no host overrode them; modals are ops bound to "modal:<id>") are deleted and hard-banned.
 
+## Statuses, immunities and godmode on the stat layer (rewrite/om-life, L3)
+
+Pinned by `dq_life_om_tests.dm` (statuses, immunity, godmode, voluntary sleep) and every focused test that applies a status.
+
+* **Statuses run on the mob's biology clock.** A status is a status stat (`code/library/mob/statuses.dm`) whose dose is a hold on
+  `HOLD_CLOCK_BIO`: stasis and suspension pause it (the OM statuses ran on the mob's timer clock). A stun taken into a stasis bed lasts until
+  the mob's biology has lived it out.
+* **An immunity zeroes a status instead of ending it.** Gaining the immunity (godmode, a mutation, a type's `immune_to()`) makes `has_status()`
+  FALSE at once, as before; if the immunity ends while the dose still has time left, the status is back for the rest of it (the OM ended the
+  dose when the immunity arrived).
+* **Type immunities are declarations.** The OM decls (`self_effects`) became `immune_to()` / `immune_to_incapacitation()` in each type's
+  CAPABILITIES block; godmode's implied immunities are `immune_to(..., when = STAT_GODMODE)` on /mob.
+* **`holds_status()` holds under the activation's source.** The OM keyed each activation's hold; the stat layer keeps one hold per source and
+  stat, so two activations with the same source share one hold (none exist today).
+* `EFFECT_CAN_MOVE` and `EFFECT_CAN_ACT`, OM composites nothing outside tests read, are gone. Feeding `STAT_CAN_ACT` from the statuses ("one stun
+  path") is a separate step: it changes what ops refuse.
+* Life frames run under the kernel test clock again (`test_time()` drives the Life sweep, as the OM test scheduler ran the pipeline).
+/^>>>>>>> origin/master$/d
 ## Body migration, slice 5: surgery steps are ops (rewrite/body-full)
 
 Pinned by `dq_body_pin_surgery_incision` (a scalpel click on a lying patient on an operating table runs the incision to an outcome; green on the old
@@ -1961,3 +1986,8 @@ before the change (`code/modules/unit_tests/snapshots/pins/`) and are unchanged:
 - **Carried-only verbs refuse with the engine's wording**: `carried()` says "You can't do that." where the legacy clause said "you need
   to be carrying it". A verb effect the type also calls itself (the shield generator's toggles, the jetpack's) stays a plain proc; its op
   runs it through a thin `<verb>_op(A)` effect.
+
+- **Registries are `registry()`** (the lifecycle form): radiation collectors and singularities (an energy ball's miniballs stay out through
+  the registry's `when`, where `skips_registry()` kept them out before), and the fusion cores, fuel injectors and gyrotrons filed under their
+  ident tag (`key = nameof(id_tag)`, now tracked): their consoles read `registry_all(REGISTRY_X, tag)` instead of scanning every member.
+  Pinned by `dq_pp/plant_registries`.

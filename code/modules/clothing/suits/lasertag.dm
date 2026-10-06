@@ -190,8 +190,8 @@ TRACKED(/obj/item/clothing/suit/lasertag, tag_worn)
 
 			act_message(src, wearer, others = span_boldwarning("%U% beeps as its health is fully depleted! %T% is down!"))
 			to_chat(wearer, span_large(span_danger("You're out!"))) //People KEEP MISSING THAT THEY'RE OUT, SO NOW THEY WON'T.
-			wearer.status_at_least(EFFECT_STUNNED, 5)
-			wearer.status_at_least(EFFECT_WEAKENED, 5)
+			wearer.status_at_least(STAT_STUNNED, 5)
+			wearer.status_at_least(STAT_WEAKENED, 5)
 			// The thing just to drop the ball if hit
 			if(emagged)
 				to_chat(wearer, span_bolddanger(span_massive("OH GOD! YOUR HEART!"))) //this is the last thing you see before you (presumably) die.

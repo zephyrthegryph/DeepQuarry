@@ -66,10 +66,10 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/reagent/claridyl/R = SSchemistry.chemical_reagents[REAGENT_ID_CLARIDYL]
 	R.claridyl_side_effect(H, 4) // dizziness only
-	TEST_ASSERT(H.has_status(EFFECT_DIZZY), "side effect 4 is dizziness")
-	TEST_ASSERT(!H.has_status(EFFECT_WEAKENED), "one roll must not also weaken")
-	TEST_ASSERT(!H.has_status(EFFECT_STUNNED), "one roll must not also stun")
-	TEST_ASSERT(!H.has_status(EFFECT_PARALYZED), "one roll must not also paralyse")
+	TEST_ASSERT(H.has_status(STAT_DIZZY), "side effect 4 is dizziness")
+	TEST_ASSERT(!H.has_status(STAT_WEAKENED), "one roll must not also weaken")
+	TEST_ASSERT(!H.has_status(STAT_STUNNED), "one roll must not also stun")
+	TEST_ASSERT(!H.has_status(STAT_PARALYZED), "one roll must not also paralyse")
 
 /// B7: Hannoa's sedation bands are reachable, and it treats by mechanism.
 /datum/unit_test/dq_p1_b7_hannoa_bands
@@ -78,10 +78,10 @@
 	var/datum/reagent/hannoa/R = SSchemistry.chemical_reagents[REAGENT_ID_HANNOA]
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	R.hannoa_sedation(H, 3)
-	TEST_ASSERT(H.has_status(EFFECT_BLURRY), "a dose of 3 blurs vision")
+	TEST_ASSERT(H.has_status(STAT_BLURRY), "a dose of 3 blurs vision")
 	var/mob/living/carbon/human/H2 = allocate(/mob/living/carbon/human)
 	R.hannoa_sedation(H2, 10)
-	TEST_ASSERT(H2.has_status(EFFECT_DROWSY), "a dose of 10 makes the patient drowsy")
+	TEST_ASSERT(H2.has_status(STAT_DROWSY), "a dose of 10 makes the patient drowsy")
 	TEST_ASSERT(R.treatment_tags?[TREAT_HEMOSTATIC] && R.treatment_tags?[TREAT_TISSUE_REPAIR], "Hannoa declares its clotting and tissue repair tags")
 
 /// B8: Eden leaves the body.

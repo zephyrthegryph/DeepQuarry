@@ -169,7 +169,7 @@ EXTEND_INTERACTIONS(/obj/structure/m_tray, \
 		return INTERACTION_HANDLED_PASS
 	if (!ismob(O) && !istype(O, /obj/structure/closet/body_bag))
 		return INTERACTION_HANDLED_PASS
-	if (!ismob(user) || user.stat || user.lying || user.has_status(EFFECT_STUNNED))
+	if (!ismob(user) || user.stat || user.lying || user.has_status(STAT_STUNNED))
 		return INTERACTION_HANDLED_PASS
 	O.forceMove(src.loc)
 	if (user != O)

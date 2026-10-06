@@ -210,7 +210,7 @@
 			if(pre_shot_delay)
 				var/image/target_image = image(icon = 'icons/obj/spells.dmi', loc = get_turf(hit_atom), icon_state = "target")
 				user << target_image
-				user.status_at_least(EFFECT_STUNNED, pre_shot_delay / 10)
+				user.status_at_least(STAT_STUNNED, pre_shot_delay / 10)
 				after(src, pre_shot_delay, PROC_REF(delayed_shot), with = list(hit_atom, user, target_image))
 				return FALSE
 			return TRUE // No delay, no need to check.

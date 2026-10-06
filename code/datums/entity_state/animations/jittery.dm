@@ -1,7 +1,7 @@
 /*
 jittery shake - wiggles the mob's pixel offset while the mob is jittery.
 
-Jitters are the EFFECT_JITTERY status (0-1000 points, below 100 is not jittery), which wears off
+Jitters are the STAT_JITTERY status (0-1000 points, below 100 is not jittery), which wears off
 on its own: 3 points per LIFE_CYCLE, 15 while resting. The mob attaches this behaviour when the
 status starts and detaches it when it ends (the status row's on_start/on_end hooks).
 (Was /datum/component/jittery_shake; its state lives on the mob.)
@@ -34,7 +34,7 @@ DECLARE_REPEAT(/mob, 1, jittery_shake_tick, "jittery_shaking") // Needs to be a 
 
 /datum/om/behaviour/jittery_shake/on_event(mob/M, datum/om/event/event)
 	if(istype(event, /datum/om/event/mob_death) && ismob(M))
-		M.status_end(EFFECT_JITTERY)
+		M.status_end(STAT_JITTERY)
 
 /mob/proc/jittery_shake_tick()
 	if(QDELETED(src) || !om_attached(src, /datum/om/behaviour/jittery_shake))
@@ -43,10 +43,10 @@ DECLARE_REPEAT(/mob, 1, jittery_shake_tick, "jittery_shaking") // Needs to be a 
 	// Resting wears jitters off faster.
 	if(resting != jittery_was_resting)
 		jittery_was_resting = resting
-		status_rate_check(EFFECT_JITTERY)
+		status_rate_check(STAT_JITTERY)
 
 	// Shakey shakey
-	var/jitteriness = status_units(EFFECT_JITTERY)
+	var/jitteriness = status_units(STAT_JITTERY)
 	if(jitteriness > 100)
 		var/amplitude = min(4, jitteriness / 100)
 		pixel_x = old_x + rand(-amplitude, amplitude)

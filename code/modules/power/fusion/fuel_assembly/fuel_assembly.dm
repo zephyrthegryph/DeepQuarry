@@ -69,17 +69,17 @@ CAPABILITIES(/obj/item/fuel_assembly)
 	rod_quantities[fuel_type] = initial_amount
 
 // Mapper shorthand.
-/obj/item/fuel_assembly/deuterium/Initialize(mapload)
-	. = ..(mapload, MAT_DEUTERIUM)
+/obj/item/fuel_assembly/deuterium
+	fuel_type = MAT_DEUTERIUM
 
-/obj/item/fuel_assembly/tritium/Initialize(mapload)
-	. = ..(mapload, MAT_TRITIUM)
+/obj/item/fuel_assembly/tritium
+	fuel_type = MAT_TRITIUM
 
-/obj/item/fuel_assembly/phoron/Initialize(mapload)
-	. = ..(mapload, MAT_PHORON)
+/obj/item/fuel_assembly/phoron
+	fuel_type = MAT_PHORON
 
-/obj/item/fuel_assembly/supermatter/Initialize(mapload)
-	. = ..(mapload, MAT_SUPERMATTER)
+/obj/item/fuel_assembly/supermatter
+	fuel_type = MAT_SUPERMATTER
 
 // === merged from fuel_assembly_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/fuel_assembly/blitz
@@ -88,8 +88,8 @@ CAPABILITIES(/obj/item/fuel_assembly)
 	fuel_colour = "#FCE300"
 	fuel_type = "blitz"
 
-/obj/item/fuel_assembly/blitz/Initialize(mapload)
-	. = ..(mapload, "blitz")
+/obj/item/fuel_assembly/blitz
+	fuel_type = "     "
 
 /obj/item/fuel_assembly/blitz/unshielded/Initialize(mapload)
 	. = ..()

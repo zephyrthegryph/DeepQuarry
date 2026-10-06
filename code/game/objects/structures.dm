@@ -48,7 +48,7 @@
 	if (user.restrained() || user?.buckled_to())
 		to_chat(user, span_notice("You need your hands and legs free for this."))
 		return 0
-	if (user.stat || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_SLEEPING) || user.lying || user.has_status(EFFECT_WEAKENED))
+	if (user.stat || user.has_status(STAT_PARALYZED) || user.has_status(STAT_SLEEPING) || user.lying || user.has_status(STAT_WEAKENED))
 		return 0
 	if (isAI(user))
 		to_chat(user, span_notice("You need hands for this."))
@@ -69,17 +69,29 @@
 /obj/structure/proc/can_visually_connect_to(obj/structure/S)
 	return istype(S, src)
 
-/obj/structure/proc/update_connections(propagate = 0)
-	var/list/dirs = list()
-	var/list/other_dirs = list()
+/// The neighbours a smoothing structure joins (its adjacency() mask, code/engine/lifeforms/adjacency.dm): faces and corners.
+/obj/structure/var/smooth_mask = 0 // ALLOW(base_vars): the smoothing structures' join mask, written by the adjacency index through smooth_changed()
 
-	for(var/obj/structure/S in orange(src, 1))
-		if(can_visually_connect_to(S))
-			if(S.can_visually_connect())
-				if(propagate)
-					S.update_connections()
-					S.update_icon()
-				dirs += get_dir(src, S)
+/// The smoothing entry every structure that joins its neighbours' look declares: one shared kind with walls, each deciding what it joins.
+/proc/smoothing()
+	return adjacency(ADJ_KIND_SMOOTH, dirs = ADJ_ALL_AROUND, connects = TYPE_PROC_REF(/obj/structure, smooth_joins), when = "anchored", changed = TYPE_PROC_REF(/obj/structure, smooth_changed))
+
+/// adjacency() connects: a structure joins the anchored structures it can visually connect to.
+/obj/structure/proc/smooth_joins(atom/other, bit)
+	var/obj/structure/S = other
+	return istype(S) && can_visually_connect_to(S) && S.can_visually_connect()
+
+/// adjacency() changed: the neighbours around it changed; it redraws against them.
+/obj/structure/proc/smooth_changed(mask)
+	smooth_mask = mask
+	update_connections()
+	update_icon()
+
+/obj/structure/proc/update_connections(propagate = 0)
+	if(propagate)
+		adjacency_refresh(src, TRUE) // a change the index cannot see (a flip, a material): this structure and its neighbours look again
+	var/list/dirs = adjacency_mask_dirs(smooth_mask)
+	var/list/other_dirs = list()
 
 	if(!can_visually_connect())
 		connections = string_list(list("0", "0", "0", "0"))
@@ -92,12 +104,7 @@
 		for(var/b_type in blend_objects)
 			if(istype(T, b_type))
 				success = 1
-				if(propagate)
-					var/turf/simulated/wall/W = T
-					if(istype(W))
-						W.update_connections(1)
-				if(success)
-					break // breaks inner loop
+				break // breaks inner loop
 		if(!success)
 			blend_obj_loop:
 				for(var/obj/O in turf_contents_of_type(T, /obj))

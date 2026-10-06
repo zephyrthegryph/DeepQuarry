@@ -37,23 +37,23 @@
 		H.injure(INJURY_PAIN, disable_severity)
 
 	if(species.allergen_reaction & AG_WEAKEN)
-		H.status_at_least(EFFECT_WEAKENED, disable_severity)
+		H.status_at_least(STAT_WEAKENED, disable_severity)
 
 	if(species.allergen_reaction & AG_BLURRY)
-		H.status_at_least(EFFECT_BLURRY, disable_severity)
+		H.status_at_least(STAT_BLURRY, disable_severity)
 
 	if(species.allergen_reaction & AG_SLEEPY)
-		H.status_at_least(EFFECT_DROWSY, disable_severity)
+		H.status_at_least(STAT_DROWSY, disable_severity)
 
 	if(species.allergen_reaction & AG_CONFUSE)
-		H.status_at_least(EFFECT_CONFUSED, disable_severity/4)
+		H.status_at_least(STAT_CONFUSED, disable_severity/4)
 
 	if(species.allergen_reaction & AG_GIBBING)
 		if(prob(disable_severity / 6))
 			after(H, rand(0.3 SECONDS,0.6 SECONDS), TYPE_PROC_REF(/mob/living/carbon/human, allergy_gib))
 		else if(prob(disable_severity))
 			H.emote(pick(list("whimper","belch","belch","belch","choke","shiver")))
-			H.status_at_least(EFFECT_WEAKENED, disable_severity / 3)
+			H.status_at_least(STAT_WEAKENED, disable_severity / 3)
 
 	if(species.allergen_reaction & AG_SNEEZE)
 		if(prob(disable_severity/3))

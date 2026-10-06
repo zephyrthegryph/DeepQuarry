@@ -1,6 +1,6 @@
 //TODO: Convert this over for languages.
 /mob/living/carbon/brain/say(message, datum/language/speaking = null, whispering = 0)
-	if(has_status(EFFECT_MUTED))
+	if(has_status(STAT_MUTED))
 		return
 
 

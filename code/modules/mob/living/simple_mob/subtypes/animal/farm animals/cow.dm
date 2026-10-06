@@ -66,7 +66,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cow, \
 	. = TRUE
 	if(!stat && interaction.stance == I_DISARM && icon_state != icon_dead)
 		act_message(M, src, MSG_SELF(span_notice("You tip over %T%.")), MSG_OTHERS(span_warning("%U% tips over %T%.")))
-		status_at_least(EFFECT_WEAKENED, 30)
+		status_at_least(STAT_WEAKENED, 30)
 		icon_state = icon_dead
 		after(src, rand(2 SECONDS, 5 SECONDS), PROC_REF(get_up_after_tipping), with = list(M))
 	else

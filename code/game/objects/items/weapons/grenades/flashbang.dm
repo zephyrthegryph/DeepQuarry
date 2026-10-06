@@ -49,35 +49,35 @@
 		bang_effectiveness = H.species.sound_mod
 	if(eye_safety < 1 && get_dist(M, T) <= round(max_range * 0.7 * flash_effectiveness))
 		M.flash_eyes()
-		M.status_at_least(EFFECT_CONFUSED, 2 * flash_effectiveness)
-		M.status_at_least(EFFECT_WEAKENED, 5 * flash_effectiveness)
+		M.status_at_least(STAT_CONFUSED, 2 * flash_effectiveness)
+		M.status_at_least(STAT_WEAKENED, 5 * flash_effectiveness)
 
 	//Now applying sound
 	if((get_dist(M, T) <= round(max_range * 0.3 * bang_effectiveness) || src.loc == M.loc || src.loc == M))
 		if(ear_safety > 0)
-			M.status_at_least(EFFECT_CONFUSED, 2)
-			M.status_at_least(EFFECT_WEAKENED, 1)
+			M.status_at_least(STAT_CONFUSED, 2)
+			M.status_at_least(STAT_WEAKENED, 1)
 		else
-			M.status_at_least(EFFECT_CONFUSED, 10)
-			M.status_at_least(EFFECT_WEAKENED, 3)
+			M.status_at_least(STAT_CONFUSED, 10)
+			M.status_at_least(STAT_WEAKENED, 3)
 			if ((prob(14) || (M == src.loc && prob(70))))
 				M.set_ear_damage(M.ear_damage + (rand(1, 10)))
 			else
 				M.set_ear_damage(M.ear_damage + (rand(0, 5)))
-				M.status_at_least(EFFECT_DEAFENED, 15)
+				M.status_at_least(STAT_DEAFENED, 15)
 				M.deaf_loop.start() // Ear Ringing/Deafness
 
 	else if(get_dist(M, T) <= round(max_range * 0.5 * bang_effectiveness))
 		if(!ear_safety)
-			M.status_at_least(EFFECT_CONFUSED, 8)
+			M.status_at_least(STAT_CONFUSED, 8)
 			M.set_ear_damage(M.ear_damage + (rand(0, 3)))
-			M.status_at_least(EFFECT_DEAFENED, 10)
+			M.status_at_least(STAT_DEAFENED, 10)
 			M.deaf_loop.start() // Ear Ringing/Deafness
 
 	else if(!ear_safety && get_dist(M, T) <= (max_range * 0.7 * bang_effectiveness))
-		M.status_at_least(EFFECT_CONFUSED, 4)
+		M.status_at_least(STAT_CONFUSED, 4)
 		M.set_ear_damage(M.ear_damage + (rand(0, 1)))
-		M.status_at_least(EFFECT_DEAFENED, 5)
+		M.status_at_least(STAT_DEAFENED, 5)
 		M.deaf_loop.start() // Ear Ringing/Deafness
 
 	//This really should be in mob not every check

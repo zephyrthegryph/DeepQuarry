@@ -1226,7 +1226,7 @@
 	if(!silent)
 		to_chat(H, span_notice("You catch the air in your wings and greatly slow your fall."))
 		landing.visible_message(span_infoplain(span_bold("\The [H]") + " glides down from above, landing safely."))
-		H.status_at_least(EFFECT_STUNNED, 1)
+		H.status_at_least(STAT_STUNNED, 1)
 		play_sfx(H, SFX_RUSTLE, extrarange = 0)
 	return TRUE
 */
@@ -1535,13 +1535,13 @@
 		var/coldshock = 0
 		if(H.body_temperature() <= 260 && H.body_temperature() >= 200) //Chilly.
 			coldshock = 4 //This will begin to knock them out until they run out of oxygen and suffocate or until someone finds them.
-			H.status_set(EFFECT_BLURRY, 5) //Blurry vision in the cold.
+			H.status_set(STAT_BLURRY, 5) //Blurry vision in the cold.
 		if(H.body_temperature() <= 199 && H.body_temperature() >= 100) //Extremely cold. Even in somewhere like the server room it takes a while for bodytemp to drop this low.
 			coldshock = 8
-			H.status_set(EFFECT_BLURRY, 5)
+			H.status_set(STAT_BLURRY, 5)
 		if(H.body_temperature() <= 99) //Insanely cold.
 			coldshock = 16
-			H.status_set(EFFECT_BLURRY, 5)
+			H.status_set(STAT_BLURRY, 5)
 		H.adjust_shock(coldshock, "spider cold") //cold hurts and gives them pain messages, eventually weakening and paralysing, but doesn't damage.
 	..()
 
@@ -1704,7 +1704,7 @@
 	var/temp_diff = body_temperature - H.body_temperature()
 	if(temp_diff >= 50)
 		H.adjust_shock(temp_diff/20, "xenochimera cold") // Divided by 20 is the same as previous numbers, but a full scale
-		H.status_at_least(EFFECT_BLURRY, 5)
+		H.status_at_least(STAT_BLURRY, 5)
 	..()
 
 /datum/species/xenochimera/get_race_key()

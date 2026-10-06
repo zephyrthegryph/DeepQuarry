@@ -204,7 +204,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 						flash_strength *= H.species.flash_mod
 						if(flash_strength > 0)
 							to_chat(H, span_alien("You are disoriented by \the [src]!"))
-							H.status_at_least(EFFECT_BLURRY, flash_strength + 5)
+							H.status_at_least(STAT_BLURRY, flash_strength + 5)
 							H.flash_eyes()
 							H.injure(INJURY_BURN, flash_strength * H.species.flash_burn/5, BP_HEAD, src)
 
@@ -220,11 +220,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 							flashfail = TRUE
 				if(!flashfail)
 					to_chat(R, span_alien("Your optics are scrambled by \the [src]!"))
-					R.status_at_least(EFFECT_CONFUSED, 10)
+					R.status_at_least(STAT_CONFUSED, 10)
 					R.flash_eyes()
 
 		else
-			L.status_at_least(EFFECT_CONFUSED, 10)
+			L.status_at_least(STAT_CONFUSED, 10)
 			L.flash_eyes()
 
 	else

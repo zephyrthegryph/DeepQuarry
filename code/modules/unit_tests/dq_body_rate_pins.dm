@@ -294,10 +294,10 @@
 	surgeon.next_click = 0
 	// A clientless test human counts as SSD and is put to sleep; a teleoperated one is awake, as a surgeon must be.
 	surgeon.teleop = surgeon
-	surgeon.status_end(EFFECT_SLEEPING)
+	surgeon.status_end(STAT_SLEEPING)
 	surgeon.set_stat(CONSCIOUS)
 	var/obj/machinery/optable/table = new(patient.loc)
-	patient.status_set(EFFECT_WEAKENED, 30)
+	patient.status_set(STAT_WEAKENED, 30)
 	patient.update_canmove()
 	TEST_ASSERT(patient.lying, "setup: the patient is lying down")
 	var/obj/item/surgical/scalpel/S = new(surgeon.loc)

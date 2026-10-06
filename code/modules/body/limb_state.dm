@@ -97,7 +97,7 @@ STAT(/mob/living/carbon/human, limb_trouble, ANY)
 				emote("scream")
 			automatic_custom_emote(VISIBLE_MESSAGE, "collapses!", check_stat = TRUE)
 		if(!(lying || resting)) // stops permastun with SPINE sdisability
-			status_at_least(EFFECT_WEAKENED, 5)
+			status_at_least(STAT_WEAKENED, 5)
 
 /// Moving around on a broken bone that holds organs (ribs, pelvis, skull) hurts enough to stagger you.
 /mob/living/carbon/human/proc/broken_bone_jolt()
@@ -111,5 +111,5 @@ STAT(/mob/living/carbon/human, limb_trouble, ANY)
 		custom_pain("Pain jolts through your broken [E.encased ? E.encased : E.name], staggering you!", 50)
 		emote("scream")
 		drop_item(loc)
-		status_at_least(EFFECT_STUNNED, 2)
+		status_at_least(STAT_STUNNED, 2)
 		return

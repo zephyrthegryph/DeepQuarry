@@ -94,7 +94,7 @@ DECLARE_INTERACTIONS(/obj/item/paperplane, \
 		if((H.get_equipped_item(SLOT_ID_HEAD) && H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & EYES) || (H.get_equipped_item(SLOT_ID_MASK) && H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & EYES) || (H.get_equipped_item(SLOT_ID_EYES) && H.get_equipped_item(SLOT_ID_EYES).body_parts_covered & EYES))
 			return
 		visible_message(span_danger("\The [src] hits [H] in the eye!"))
-		H.status_adjust(EFFECT_BLURRY, 10)
+		H.status_adjust(STAT_BLURRY, 10)
 		var/obj/item/organ/internal/eyes/E = H.organ_in(O_EYES)
 		if(E)
 			H.injure(INJURY_BLUNT, 2.5, E, src, flags = INJURE_SILENT)

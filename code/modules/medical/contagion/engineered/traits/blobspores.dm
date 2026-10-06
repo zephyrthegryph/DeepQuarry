@@ -65,9 +65,9 @@ BONUS
 		if(1)
 			to_chat(M, span_notice("You feel bloated."))
 
-			if(!M.has_status(EFFECT_JITTERY))
+			if(!M.has_status(STAT_JITTERY))
 				to_chat(M, span_notice("You feel a bit jittery."))
-				M.status_adjust(EFFECT_JITTERY, 100 + rand(12,16))
+				M.status_adjust(STAT_JITTERY, 100 + rand(12,16))
 
 		if(2)
 			if(ishuman(M))

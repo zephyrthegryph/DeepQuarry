@@ -228,7 +228,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/cliff, TYPE_PROC_REF(/atom, appearance_ov
 				harm /= 2
 
 			play_sfx(L, SFX_EFFECTS_BREAK_STONE, volume = 70)
-			L.status_at_least(EFFECT_WEAKENED, 5 * harm)
+			L.status_at_least(STAT_WEAKENED, 5 * harm)
 
 		var/fall_time = 3
 		if(displaced) // Make the fall look more natural when falling sideways.

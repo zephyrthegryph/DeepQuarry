@@ -72,8 +72,8 @@
 
 /mob/living/simple_mob/vore/alienanimals/space_ghost/apply_melee_effects(atom/A)
 	var/mob/living/L = A
-	if(L.status_units(EFFECT_HALLUCINATING) <= 100)
-		L.status_adjust(EFFECT_HALLUCINATING, rand(1,10))
+	if(L.status_units(STAT_HALLUCINATING) <= 100)
+		L.status_adjust(STAT_HALLUCINATING, rand(1,10))
 
 /mob/living/simple_mob/vore/alienanimals/space_ghost/shoot(atom/A) //We're shooting ghosts at people and need them to have the same faction as their parent, okay?
 	if(!projectiletype)
@@ -164,8 +164,8 @@
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost/apply_melee_effects(atom/A)
 	var/mob/living/L = A
 	if(L && istype(L))
-		if(L.status_units(EFFECT_HALLUCINATING) <= 100)
-			L.status_adjust(EFFECT_HALLUCINATING, rand(1,10))
+		if(L.status_units(STAT_HALLUCINATING) <= 100)
+			L.status_adjust(STAT_HALLUCINATING, rand(1,10))
 
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost/life_type_post_due()
 	return TRUE

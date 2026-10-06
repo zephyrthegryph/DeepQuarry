@@ -62,7 +62,7 @@ TYPE_TABLE(/obj/item/implant/reagent_generator/egg, reagent_implant_self_emotes,
 	if(src.Adjacent(usr_mob))
 		var/egg = rimplant.eggtype
 		new egg(get_turf(src))
-		src.status_set(EFFECT_STUNNED, 3)
+		src.status_set(STAT_STUNNED, 3)
 		play_sfx(src, SFX_VORE_INSERT)
 		var/index = rand(1,3)
 
@@ -89,7 +89,7 @@ TYPE_TABLE(/obj/item/implant/reagent_generator/egg, reagent_implant_self_emotes,
 		om_task_timed(src, 30, target = src, receiver = src, on_done = PROC_REF(use_reagent_implant_egg_timed_done), done_args = list(rimplant, egg))
 
 /mob/living/carbon/human/proc/use_reagent_implant_egg_timed_done(obj/item/implant/reagent_generator/egg/rimplant, egg)
-	src.status_set(EFFECT_STUNNED, 3)
+	src.status_set(STAT_STUNNED, 3)
 	play_sfx(src, SFX_VORE_INSERT)
 	src.apply_effect(10,STUTTER,0)
 	new egg(get_turf(src))

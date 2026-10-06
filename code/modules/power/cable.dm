@@ -368,7 +368,7 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 		return 0
 	if (electrocute_mob(user, src, src, siemens_coeff))
 		fx_sparks(src, 5)
-		if(user.has_status(EFFECT_STUNNED))
+		if(user.has_status(STAT_STUNNED))
 			return 1
 	return 0
 
@@ -585,7 +585,7 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 	var/mob/user = A.actor
 	var/mob/M = user
 
-	if(ishuman(M) && !M.restrained() && !M.stat && !M.has_status(EFFECT_PARALYZED) && ! M.has_status(EFFECT_STUNNED))
+	if(ishuman(M) && !M.restrained() && !M.stat && !M.has_status(STAT_PARALYZED) && ! M.has_status(STAT_STUNNED))
 		if(!istype(M.loc,/turf)) return
 		if(src.amount <= 14)
 			to_chat(M, span_warning("You need at least 15 lengths to make restraints!"))

@@ -47,7 +47,7 @@ TYPE_TABLE(/obj/mecha/combat, mecha_starting_components, list( \
 			var/hit_zone = ishuman(M) ? pick(BP_TORSO, BP_TORSO, BP_TORSO, BP_HEAD) : null
 			switch(melee_injury_kind)
 				if(INJURY_BLUNT)
-					M.status_at_least(EFFECT_PARALYZED, 1)
+					M.status_at_least(STAT_PARALYZED, 1)
 					M.injure(INJURY_BLUNT, rand(force/2, force), hit_zone, src)
 				if(INJURY_BURN)
 					M.injure(INJURY_BURN, rand(force/2, force), hit_zone, src)

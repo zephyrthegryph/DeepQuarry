@@ -1575,13 +1575,13 @@ CAPABILITIES(/datum/vore_look)
 	if(H.blinded)
 		condition += "blinded"
 		condition_consequences += "hear emotes"
-	if(H.has_status(EFFECT_PARALYZED))
+	if(H.has_status(STAT_PARALYZED))
 		if(condition)
 			condition += " and "
 			condition_consequences += " or "
 		condition += "paralysed"
 		condition_consequences += "make emotes"
-	if(H.has_status(EFFECT_SLEEPING))
+	if(H.has_status(STAT_SLEEPING))
 		if(condition)
 			condition += " and "
 			condition_consequences += " or "

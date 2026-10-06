@@ -192,8 +192,8 @@ CAPABILITIES(/obj/machinery/clonepod)
 	// the pod grows it out. Seeded directly (not injure()) so the fresh body
 	// doesn't roll cellular-damage limb mutations.
 	H.body.afflict(/datum/affliction/genetic_damage, null, AFFLICTION_SEVERITY_TERMINAL)
-	H.status_at_least(EFFECT_PARALYZED, 4)
-	H.status_at_least(EFFECT_SLEEPING, 4)
+	H.status_at_least(STAT_PARALYZED, 4)
+	H.status_at_least(STAT_SLEEPING, 4)
 	H.set_cloned_appearance()
 
 	// Move mind to body along with key
@@ -242,8 +242,8 @@ CAPABILITIES(/obj/machinery/clonepod)
 			return
 
 		else if(clone_growth_load(occupant) > clone_release_load())
-			occupant.status_at_least(EFFECT_PARALYZED, 4)
-			occupant.status_at_least(EFFECT_SLEEPING, 4)
+			occupant.status_at_least(STAT_PARALYZED, 4)
+			occupant.status_at_least(STAT_SLEEPING, 4)
 
 			//Slowly get that clone healed and finished.
 			occupant.mend(TREAT_GENETIC_REPAIR, (2 * heal_rate) / DQ_CLONE_GROWTH_SCALE)
@@ -254,7 +254,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 			//So clones don't die of oxyloss in a running pod.
 			if(occupant.reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE) < 30)
 				occupant.reagents.add_reagent(REAGENT_ID_INAPROVALINE, 60)
-			occupant.status_at_least(EFFECT_SLEEPING, 30)
+			occupant.status_at_least(STAT_SLEEPING, 30)
 			//Also oxygenate ourselves because inaprovaline is so bad at preventing hypoxia!!
 			occupant.mend(TREAT_OXYGENATION, 4)
 

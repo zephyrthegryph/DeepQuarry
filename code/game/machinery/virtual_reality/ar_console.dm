@@ -151,7 +151,7 @@
 		// If the user has a non-default (Human) bodyshape, make it match theirs.
 		if(occupant.species.name != "Promethean" && occupant.species.name != "Human" && mirror_first_occupant)
 			avatar().shapeshifter_change_shape(occupant.species.name)
-		avatar().status_at_least(EFFECT_SLEEPING, 6)
+		avatar().status_at_least(STAT_SLEEPING, 6)
 
 		occupant.enter_vr(avatar())
 		if(spawn_with_clothing)

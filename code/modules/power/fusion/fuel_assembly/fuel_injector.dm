@@ -29,8 +29,10 @@ MSG_DEF(fuel_injector/rod_in, "You insert %I% into %T%.", "%U% inserts %I% into 
 // The fuel injector (doc/rewrite/final_api.html section 16): a fuel rod in, switched on by its console, it fires one particle per fuel in
 // the rod every machine service interval (inject_step()) and burns fuel_usage of each. Its rod is its own; the rod and its parts are worked
 // only while it is off. A blitz rod asks first, and shakes it apart.
+TRACKED(/obj/machinery/fusion_fuel_injector, id_tag)
+
 CAPABILITIES(/obj/machinery/fusion_fuel_injector)
-	membership(joins = REGISTRY_FUEL_INJECTORS)
+	registry(REGISTRY_FUEL_INJECTORS, key = nameof(id_tag))
 	rotatable()
 	owns_one(nameof(cur_assembly), /obj/item/fuel_assembly, on_destroy = ON_DESTROY_SPILL)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(inject_step)), when = nameof(injecting))
@@ -66,7 +68,7 @@ CAPABILITIES(/obj/machinery/fusion_fuel_injector)
 /obj/machinery/fusion_fuel_injector/proc/ident_entered(datum/act/op/A)
 	var/datum/prompt/text/answer = A.answer
 	if(answer?.value && A.actor?.Adjacent(src))
-		id_tag = answer.value
+		set_id_tag(answer.value)
 	return OP_OK
 
 /obj/machinery/fusion_fuel_injector/proc/rod_inserted(datum/act/op/A)

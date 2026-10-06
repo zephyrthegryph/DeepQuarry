@@ -217,7 +217,7 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 	for(var/mob/living/carbon/human/hallucinator in viewers(5, get_turf(src)))
 		if(hallucinator == owner)
 			continue
-		hallucinator.status_adjust(EFFECT_HALLUCINATING, 50)
+		hallucinator.status_adjust(STAT_HALLUCINATING, 50)
 		if(prob(10))
 			to_chat(hallucinator, span_danger("Your nose bleeds!"))
 			hallucinator.drip(1)
@@ -226,7 +226,7 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 
 /obj/item/clothing/suit/armor/reactive/hallucinating/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
 	act_message(src, owner, others = span_danger("%U% blocks [attack_text], but pulls a massive charge of mental energy into %T% from the surrounding environment!"))
-	owner.status_adjust(EFFECT_HALLUCINATING, 75)
+	owner.status_adjust(STAT_HALLUCINATING, 75)
 	to_chat(owner, span_danger("Your nose bleeds!"))
 	owner.drip(1)
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)

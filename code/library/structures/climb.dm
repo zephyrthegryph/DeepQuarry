@@ -77,7 +77,7 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 		return /datum/msg/climb/no_hands
 	if(climber.restrained() || climber.buckled_to())
 		return /datum/msg/climb/hands_needed
-	if(climber.stat || climber.lying || climber.has_status(EFFECT_PARALYZED) || climber.has_status(EFFECT_SLEEPING) || climber.has_status(EFFECT_WEAKENED))
+	if(climber.stat || climber.lying || climber.has_status(STAT_PARALYZED) || climber.has_status(STAT_SLEEPING) || climber.has_status(STAT_WEAKENED))
 		return /datum/msg/climb/cant_now
 	if(!climber.Adjacent(holder))
 		return /datum/msg/climb/blocked
@@ -194,7 +194,7 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 		return FALSE
 	if(M.pulling_target() == holder) // pulling stuff up stairs can get weird
 		return FALSE
-	M.status_at_least(EFFECT_WEAKENED, 3)
+	M.status_at_least(STAT_WEAKENED, 3)
 	to_chat(M, span_danger("You topple as you are shaken off \the [holder]!"))
 	if(prob(25))
 		climb_tumble(M)

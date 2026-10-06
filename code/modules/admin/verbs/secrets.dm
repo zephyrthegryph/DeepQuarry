@@ -208,8 +208,8 @@ CAPABILITIES(/datum/secrets_menu)
 		if((T in using_map.admin_levels) || registry_has(REGISTRY_PRISONWARPED, H))
 		//don't warp them if they aren't ready or are already there
 			continue
-		H.status_at_least(EFFECT_PARALYZED, 5)
-		H.status_at_least(EFFECT_SLEEPING, 5)
+		H.status_at_least(STAT_PARALYZED, 5)
+		H.status_at_least(STAT_SLEEPING, 5)
 		if(H.get_equipped_item(SLOT_ID_ID))
 			var/obj/item/card/id/id = H.get_idcard()
 			for(var/A2 in id.GetAccess())

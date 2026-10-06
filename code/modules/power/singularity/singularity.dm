@@ -43,13 +43,17 @@
 // two wander, pulse the collectors and maybe an event), the registry it joins, its touch and its bump (whatever meets it is consumed), and what
 // hits do to it: a blast feeds it (or rarely disperses it), a projectile passes through.
 CAPABILITIES(/obj/singularity)
-	membership(joins = REGISTRY_SINGULARITIES)
+	registry(REGISTRY_SINGULARITIES, when = PROC_REF(counts_as_singularity))
 	every(SINGULARITY_STEP_INTERVAL, then(PROC_REF(singularity_frame)))
 	op("singularity_touch", hand(), when(req_empty_hand()), then(PROC_REF(touched)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(singularity_blast))))
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(projectile_passes))))
 	param(nameof(energy), pos = 1, default = 50)
+
+/// Whether it is a singularity of its own (an energy ball's orbiting miniballs are not).
+/obj/singularity/proc/counts_as_singularity(datum/act/A)
+	return TRUE
 
 /// Touching it is fatal.
 /obj/singularity/proc/touched(datum/act/op/A)
@@ -417,7 +421,7 @@ CAPABILITIES(/obj/singularity)
 	for(var/mob/living/carbon/M in oviewers(8, src))
 		if(istype(M, /mob/living/carbon/brain)) //Ignore brains
 			continue
-		if(om_has(M, EFFECT_GODMODE))
+		if(in_godmode(M))
 			return 0	// Cancelled by a component
 		if(M.stat == CONSCIOUS)
 			if (ishuman(M))

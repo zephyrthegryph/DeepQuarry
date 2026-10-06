@@ -109,9 +109,9 @@ CAPABILITIES(/obj/item/organ/internal/eyes/grey/colormatch)
 	if(!owner) return
 
 	if(is_bruised())
-		owner.status_set(EFFECT_BLURRY, 20)
+		owner.status_set(STAT_BLURRY, 20)
 	if(is_broken())
-		owner.status_at_least(EFFECT_BLINDED, 20)
+		owner.status_at_least(STAT_BLINDED, 20)
 
 /obj/item/organ/internal/eyes/handle_germ_effects(cycles)
 	. = ..() //Up should return an infection level as an integer
@@ -124,7 +124,7 @@ CAPABILITIES(/obj/item/organ/internal/eyes/grey/colormatch)
 	if (. >= 2)
 		if(prob(1))
 			owner.custom_pain("Your eyes are watering, making it harder to see clearly for a moment.",1)
-			owner.status_adjust(EFFECT_BLURRY, 10)
+			owner.status_adjust(STAT_BLURRY, 10)
 
 /obj/item/organ/internal/eyes/proc/get_total_protection(flash_protection = FLASH_PROTECTION_NONE)
 	return (flash_protection + innate_flash_protection)
@@ -137,7 +137,7 @@ CAPABILITIES(/obj/item/organ/internal/eyes/grey/colormatch)
 	..()
 	if(!robotic || !owner)
 		return
-	owner.status_adjust(EFFECT_BLURRY, (4/packet.severity))
+	owner.status_adjust(STAT_BLURRY, (4/packet.severity))
 
 // When this organ's organ_tick() has nothing to do: the organ clock may park (/obj/item/organ/proc/life_step_idle()).
 /obj/item/organ/internal/eyes/life_step_idle()

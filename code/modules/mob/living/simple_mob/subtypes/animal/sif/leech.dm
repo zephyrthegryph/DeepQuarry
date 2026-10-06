@@ -99,6 +99,7 @@
 	emote_hear = list("chitters", "clicks", "gurgles")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
+	immune_to_incapacitation()
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 
@@ -398,7 +399,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 		return
 
 	H.lingering_poison(0.75, 15 SECONDS, src, TRUE)
-	H.status_at_least(EFFECT_PARALYZED, 4)
+	H.status_at_least(STAT_PARALYZED, 4)
 
 /mob/living/simple_mob/animal/sif/leech/verb/medicate_host()
 	set category = VERB_CAT_ABILITIES_LEECH

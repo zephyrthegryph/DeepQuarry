@@ -37,6 +37,7 @@ CAPABILITIES(/obj/machinery/conveyor)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), nameof(stat)))
 	param(nameof(dir), pos = 1)
 	param(nameof(starts_on), pos = 2)
+	adjacency(ADJ_KIND_CONVEYOR, dirs = ADJ_ALL_AROUND)
 
 /// A conveyor that starts running (its constructor param).
 /obj/machinery/conveyor/var/starts_on = FALSE
@@ -197,11 +198,11 @@ CAPABILITIES(/obj/machinery/conveyor)
 	atom_break()
 	update()
 
-	var/obj/machinery/conveyor/C = locate_within(get_step(src, dir), /obj/machinery/conveyor)
+	var/obj/machinery/conveyor/C = adjacency_member_at(src, ADJ_KIND_CONVEYOR, dir)
 	if(C)
 		C.set_operable(dir, id, 0)
 
-	C = locate_within(get_step(src, turn(dir,180)), /obj/machinery/conveyor)
+	C = adjacency_member_at(src, ADJ_KIND_CONVEYOR, turn(dir,180))
 	if(C)
 		C.set_operable(turn(dir,180), id, 0)
 
@@ -214,7 +215,7 @@ CAPABILITIES(/obj/machinery/conveyor)
 	operable = op
 
 	update()
-	var/obj/machinery/conveyor/C = locate_within(get_step(src, stepdir), /obj/machinery/conveyor)
+	var/obj/machinery/conveyor/C = adjacency_member_at(src, ADJ_KIND_CONVEYOR, stepdir)
 	if(C)
 		C.set_operable(stepdir, id, op)
 

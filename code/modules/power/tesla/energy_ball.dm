@@ -115,8 +115,8 @@ CAPABILITIES(/obj/singularity/energy_ball)
 		dissipate() //sing code has a much better system.
 
 /// Miniballs only orbit a real ball; they don't count as singularities.
-/obj/singularity/energy_ball/skips_registry(registry_id)
-	return miniball && registry_id == REGISTRY_SINGULARITIES
+/obj/singularity/energy_ball/counts_as_singularity(datum/act/A)
+	return !miniball
 
 /obj/singularity/energy_ball/proc/new_mini_ball()
 	if(!loc)
@@ -240,7 +240,7 @@ CAPABILITIES(/obj/singularity/energy_ball)
 		else if(isliving(A))
 			var/dist = get_dist(source, A)
 			var/mob/living/L = A
-			if(om_has(L, EFFECT_GODMODE))
+			if(in_godmode(L))
 				continue
 			if(dist <= zap_range && (dist < closest_dist || !closest_mob) && L.stat != DEAD && !has_trait(L, TRAIT_TESLA_SHOCKIMMUNE))
 				closest_mob = L

@@ -46,7 +46,7 @@ CAPABILITIES(/datum/tgui_module/rustcore_monitor)
 	var/list/data = list()
 	var/list/cores = list()
 
-	for(var/obj/machinery/power/fusion_core/C in REGISTRY_MEMBERS(REGISTRY_FUSION_CORES))
+	for(var/obj/machinery/power/fusion_core/C in registry_all(REGISTRY_FUSION_CORES, core_tag))
 		if(C.id_tag == core_tag)
 
 			var/list/reactants = list()

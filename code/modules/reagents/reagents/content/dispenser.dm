@@ -28,7 +28,7 @@
 		for(var/obj/item/organ/external/O in H.damaged_limbs())
 			if(dq_reagent_knit_fracture(O))
 				H.custom_pain("You feel the agonizing power of calcium mending your bones!",60)
-				H.status_adjust(EFFECT_WEAKENED, 1)
+				H.status_adjust(STAT_WEAKENED, 1)
 				break // Only mend one bone, whichever comes first in the list
 
 /datum/reagent/carbon
@@ -161,26 +161,26 @@
 		var/effective_dose = dose * strength_mod * (1 + volume/60) //drinking a LOT will make you go down faster
 
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol)) // Early warning
-			M.status_adjust(EFFECT_DIZZY, 18) // It is decreased at the speed of 3 per tick
+			M.status_adjust(STAT_DIZZY, 18) // It is decreased at the speed of 3 per tick
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 2) // Slurring
-			M.status_at_least(EFFECT_SLURRING, 90)
+			M.status_at_least(STAT_SLURRING, 90)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 3) // Confusion - walking in random directions
-			M.status_at_least(EFFECT_CONFUSED, 60)
+			M.status_at_least(STAT_CONFUSED, 60)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 4) // Blurry vision
-			M.status_at_least(EFFECT_BLURRY, 30)
+			M.status_at_least(STAT_BLURRY, 30)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 5) // Drowsyness - periodically falling asleep
-			M.status_at_least(EFFECT_DROWSY, 60)
+			M.status_at_least(STAT_DROWSY, 60)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 7) // Pass out
-			M.status_at_least(EFFECT_PARALYZED, 60)
-			M.status_at_least(EFFECT_SLEEPING, 90)
+			M.status_at_least(STAT_PARALYZED, 60)
+			M.status_at_least(STAT_SLEEPING, 90)
 
 		if(druggy != 0)
-			M.status_at_least(EFFECT_DRUGGED, druggy*3)
+			M.status_at_least(STAT_DRUGGED, druggy*3)
 
 		M.adjust_bodytemperature(drink_temperature_step(M.body_temperature(), targ_temp, adj_temp) - M.body_temperature()) // B12
 
 		if(halluci)
-			M.status_at_least(EFFECT_HALLUCINATING, halluci*3)
+			M.status_at_least(STAT_HALLUCINATING, halluci*3)
 
 /datum/reagent/ethanol/affect_ingest(mob/living/carbon/M, alien, removed)
 	var/ep_base_power = 60	//base nutrition gain for ethanol-processing synthetics, reduced by alcohol strength
@@ -201,24 +201,24 @@
 	if(M.species.robo_ethanol_drunk || !(HAS_SYNTHETIC_BIOLOGY(M)))
 
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol)) // Early warning
-			M.status_adjust(EFFECT_DIZZY, 6) // It is decreased at the speed of 3 per tick
+			M.status_adjust(STAT_DIZZY, 6) // It is decreased at the speed of 3 per tick
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 2) // Slurring
-			M.status_at_least(EFFECT_SLURRING, 30)
+			M.status_at_least(STAT_SLURRING, 30)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 3) // Confusion - walking in random directions
-			M.status_at_least(EFFECT_CONFUSED, 20)
+			M.status_at_least(STAT_CONFUSED, 20)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 4) // Blurry vision
-			M.status_at_least(EFFECT_BLURRY, 10)
+			M.status_at_least(STAT_BLURRY, 10)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 5) // Drowsyness - periodically falling asleep
-			M.status_at_least(EFFECT_DROWSY, 20)
+			M.status_at_least(STAT_DROWSY, 20)
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol) * 7) // Pass out
-			M.status_at_least(EFFECT_PARALYZED, 20)
-			M.status_at_least(EFFECT_SLEEPING, 30)
+			M.status_at_least(STAT_PARALYZED, 20)
+			M.status_at_least(STAT_SLEEPING, 30)
 
 		if(druggy != 0)
-			M.status_at_least(EFFECT_DRUGGED, druggy)
+			M.status_at_least(STAT_DRUGGED, druggy)
 
 		if(halluci)
-			M.status_at_least(EFFECT_HALLUCINATING, halluci)
+			M.status_at_least(STAT_HALLUCINATING, halluci)
 
 		M.adjust_bodytemperature(drink_temperature_step(M.body_temperature(), targ_temp, adj_temp) - M.body_temperature()) // B12
 
@@ -255,7 +255,7 @@
 			if(current_addiction < 90 && prob(10))
 				to_chat(M, span_warning("[pick("You feel miserable.","You feel nauseous.","You get a raging headache.")]"))
 				M.injure(INJURY_PAIN, 7, source = src)
-				M.status_adjust(EFFECT_JITTERY, 25) //Restlessness.
+				M.status_adjust(STAT_JITTERY, 25) //Restlessness.
 			else if(current_addiction <= 20)
 				to_chat(M, span_danger("You feel absolutely awful. You need some some liquor. Now."))
 				if(realistic_addiction && prob(20)) //1 in 5 on a 1 in 50, so 1 in 250 chance. DTs
@@ -264,14 +264,14 @@
 						if(O == M)
 							continue
 						O.show_message(span_danger("[M] starts having a seizure!"), 1)
-					M.status_at_least(EFFECT_PARALYZED, 10)
-					M.status_at_least(EFFECT_SLEEPING, 10)
-					M.status_adjust(EFFECT_JITTERY, 1000)
+					M.status_at_least(STAT_PARALYZED, 10)
+					M.status_at_least(STAT_SLEEPING, 10)
+					M.status_adjust(STAT_JITTERY, 1000)
 			else if(current_addiction <= 50)
 				to_chat(M, span_warning("You're really craving some alcohol. You feel nauseated."))
 				if(realistic_addiction)
 					M.emote("vomit")
-					M.status_adjust(EFFECT_CONFUSED, 10) // Disorientation.
+					M.status_adjust(STAT_CONFUSED, 10) // Disorientation.
 			else if(current_addiction <= 100)
 				to_chat(M, span_notice("You're feeling the need for some booze."))
 			// effects
@@ -287,16 +287,16 @@
 			if(current_addiction < 90 && prob(10))
 				to_chat(M, span_warning("[pick("You feel a light throbbing in your head.","Your stomach feels upset.","Your .")]"))
 				M.injure(INJURY_PAIN, 3, source = src)
-				M.status_adjust(EFFECT_JITTERY, 10) //Restlessness.
+				M.status_adjust(STAT_JITTERY, 10) //Restlessness.
 			else if(current_addiction <= 20)
 				to_chat(M, span_warning("You feel nauseated."))
 				if(realistic_addiction)
 					M.emote("vomit")
-					M.status_adjust(EFFECT_CONFUSED, 10) // Disorientation.
+					M.status_adjust(STAT_CONFUSED, 10) // Disorientation.
 			else if(current_addiction <= 50)
 				to_chat(M, span_warning("Your head throbs and the room spins."))
 				if(realistic_addiction)
-					M.status_adjust(EFFECT_CONFUSED, 3) // Disorientation.
+					M.status_adjust(STAT_CONFUSED, 3) // Disorientation.
 			else if(current_addiction <= 100)
 				to_chat(M, span_notice("A drink would be nice."))
 			// effects

@@ -259,7 +259,7 @@ DECLARE_INTERACTIONS(/turf, \
 		return FALSE
 	if(istype(O, /atom/movable/screen))
 		return FALSE
-	if(user.restrained() || user.stat || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_PARALYZED) || (!user.lying && !isrobot(user)) || LAZYLEN(user?.grabbed_by_list()) || user.is_paralyzed())
+	if(user.restrained() || user.stat || user.has_status(STAT_STUNNED) || user.has_status(STAT_PARALYZED) || (!user.lying && !isrobot(user)) || LAZYLEN(user?.grabbed_by_list()) || user.is_paralyzed())
 		return FALSE
 	if((!(istype(O, /atom/movable)) || O.anchored || !Adjacent(user) || !Adjacent(O) || !user.Adjacent(O)))
 		return FALSE
@@ -267,7 +267,7 @@ DECLARE_INTERACTIONS(/turf, \
 		return FALSE
 	if(isanimal(user) && O != user)
 		return FALSE
-	om_task_timed(user, 25 + (5 * user.status_units(EFFECT_WEAKENED)), O, src, PROC_REF(crawl_drag_done), list(O, user))
+	om_task_timed(user, 25 + (5 * user.status_units(STAT_WEAKENED)), O, src, PROC_REF(crawl_drag_done), list(O, user))
 	return TRUE
 
 /turf/proc/crawl_drag_done(atom/movable/O, mob/user)

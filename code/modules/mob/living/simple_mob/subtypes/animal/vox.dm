@@ -228,3 +228,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vox/armalis, INTERACT_ITEM(null, PROC
 /mob/living/simple_mob/vox/armalis/proc/regrow_quill()
 	to_chat(src, span_warning("You feel a fresh quill slide into place."))
 	quills++
+
+/// Immune to incapacitation by nature (stun, weakness, paralysis).
+CAPABILITIES(/mob/living/simple_mob/vox/armalis)
+	immune_to_incapacitation()

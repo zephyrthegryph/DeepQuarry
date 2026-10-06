@@ -79,7 +79,7 @@ BONUS
 					M.drop_item(get_turf(M))
 			if(power >= 2 && prob(10))
 				to_chat(M, span_userdanger(pick("You have a coughing fit!", "You can't stop coughing!")))
-				M.status_at_least(EFFECT_STUNNED, 5)
+				M.status_at_least(STAT_STUNNED, 5)
 				M.emote("cough")
 				after(M, 1 SECONDS, TYPE_PROC_REF(/mob, emote), with = list("cough"))
 				after(M, 3 SECONDS, TYPE_PROC_REF(/mob, emote), with = list("cough"))

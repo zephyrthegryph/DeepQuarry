@@ -1,56 +1,12 @@
 // Object-model core: the standard library of table rows
-// (doc/rewrite/object_model_core.md, "Library"). Mob Life uses the clocks,
-// the incapacitation statuses and suspension (doc/rewrite/life_on_om.md).
-
-/// A mob status row (status.dm): timed, unit LIFE_CYCLE, raising CHANGE_MOB_STATUS on start and end,
-/// plus `fields`.
-/proc/om_mob_status_row(list/fields)
-	. = list("kind" = OM_EFFECT_STATUS, "combine" = COMBINE_ANY, "stacking" = STACKING_MAX, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS, "unit" = LIFE_CYCLE, "entity_type" = /mob)
-	for(var/key in fields)
-		.[key] = fields[key]
+// (doc/rewrite/object_model_core.md, "Library"). Mob Life uses the clocks and suspension;
+// statuses are stats (code/library/mob/statuses.dm).
 
 /proc/om_library_effects()
+	// ALLOW(sys_const_list_alloc): read once, while the OM registry builds inside the global controller's New(), before any GLOBAL_LIST_INIT exists
 	return list(
-		// Mob statuses (status.dm; doc/rewrite/life_on_om.md §7): timed, in units of LIFE_CYCLE.
-		// Every field is declared here: immunity, veto signal, presentation and hooks.
-		EFFECT_STUNNED = om_mob_status_row(list("immunity" = EFFECT_IMMUNE_STUN, "scaled" = TRUE, "signal" = /datum/om/event/living_status_stun, "alert" = "stunned", "alert_type" = /atom/movable/screen/alert/stunned, "indicator" = "stunned",
-			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_incapacitation_changed, "on_end" = /mob/proc/status_incapacitation_changed)),
-		EFFECT_WEAKENED = om_mob_status_row(list("immunity" = EFFECT_IMMUNE_WEAKEN, "scaled" = TRUE, "signal" = /datum/om/event/living_status_weaken, "alert" = "weakened", "alert_type" = /atom/movable/screen/alert/weakened, "indicator" = "weakened",
-			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_knocked_down, "on_end" = /mob/proc/status_incapacitation_changed)),
-		EFFECT_PARALYZED = om_mob_status_row(list("immunity" = EFFECT_IMMUNE_PARALYZE, "scaled" = TRUE, "signal" = /datum/om/event/living_status_paralyze, "alert" = "paralyzed", "alert_type" = /atom/movable/screen/alert/paralyzed, "indicator" = "paralysis",
-			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_passed_out, "on_end" = /mob/proc/status_incapacitation_changed)),
-		EFFECT_SLEEPING = om_mob_status_row(list("scaled" = TRUE, "signal" = /datum/om/event/before/living_status_sleep, "alert" = "asleep", "alert_type" = /atom/movable/screen/alert/asleep, "indicator" = "sleeping",
-			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_incapacitation_changed, "on_end" = /mob/proc/status_incapacitation_changed)),
-		EFFECT_CONFUSED = om_mob_status_row(list("scaled" = TRUE, "alert" = "confused", "alert_type" = /atom/movable/screen/alert/confused, "indicator" = "confused")),
-		EFFECT_BLINDED = om_mob_status_row(list("scaled" = TRUE, "signal" = /datum/om/event/living_status_blind, "indicator" = "blinded", "on_end" = /mob/proc/status_sight_returned)),
-		EFFECT_BLURRY = om_mob_status_row(list("rate" = 1)),
-		EFFECT_NEARSIGHTED = om_mob_status_row(list("rate" = 1)),
-		EFFECT_DEAFENED = om_mob_status_row(list("on_start" = /mob/proc/status_deafness_started, "on_end" = /mob/proc/status_deafness_ended)),
-		EFFECT_STUTTERING = om_mob_status_row(list("rate" = 1)),
-		EFFECT_MUTED = om_mob_status_row(list("rate" = 1)),
-		EFFECT_DRUGGED = om_mob_status_row(list("alert" = "high", "alert_type" = /atom/movable/screen/alert/high)),
-		EFFECT_SLURRING = om_mob_status_row(list("rate" = 1)),
-		EFFECT_DROWSY = om_mob_status_row(list("rate" = 1)),
-		EFFECT_HALLUCINATING = om_mob_status_row(list("rate" = 2)),
-		// Dizziness and jitters are 0-1000 points: 3 wear off per cycle, 15 while resting.
-		EFFECT_DIZZY = om_mob_status_row(list("rate" = 3, "rate_resting" = 15, "max_units" = 1000, "immunity" = EFFECT_IMMUNE_DIZZY,
-			"on_start" = /mob/proc/status_dizzy_started, "on_end" = /mob/proc/status_dizzy_ended)),
-		EFFECT_JITTERY = om_mob_status_row(list("rate" = 3, "rate_resting" = 15, "max_units" = 1000, "immunity" = EFFECT_IMMUNE_JITTER,
-			"on_start" = /mob/proc/status_jittery_started, "on_end" = /mob/proc/status_jittery_ended)),
-		// Status immunities: gaining one ends the statuses that name it. Held by mob type decls,
-		// mutations and godmode.
-		EFFECT_IMMUNE_STUN = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS),
-		EFFECT_IMMUNE_WEAKEN = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS),
-		EFFECT_IMMUNE_PARALYZE = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS),
-		EFFECT_IMMUNE_DIZZY = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS),
-		EFFECT_IMMUNE_JITTER = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS),
-		// Godmode: no harm reaches the entity; it holds the incapacitation immunities while on.
-		EFFECT_GODMODE = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS, "implies" = list(EFFECT_IMMUNE_STUN, EFFECT_IMMUNE_WEAKEN, EFFECT_IMMUNE_PARALYZE)),
 		EFFECT_BUCKLED = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS),
 		EFFECT_SLOWED = list("combine" = COMBINE_SUM, "channel" = CHANGE_MOB_MOVEMENT),
-		// Composites: defined from other effects, no contributions of their own.
-		EFFECT_CAN_MOVE = list("expr" = NOT_OF(ANY_OF(EFFECT_STUNNED, EFFECT_WEAKENED, EFFECT_PARALYZED, EFFECT_BUCKLED)), "channel" = CHANGE_MOB_CAN_MOVE),
-		EFFECT_CAN_ACT = list("expr" = NOT_OF(ANY_OF(EFFECT_STUNNED, EFFECT_WEAKENED, EFFECT_PARALYZED))),
 		// Stat sums and factors.
 		EFFECT_ARMOR_MELEE = list("combine" = COMBINE_SUM),
 		EFFECT_ARMOR_BULLET = list("combine" = COMBINE_SUM),

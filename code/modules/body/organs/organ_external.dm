@@ -450,7 +450,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 /// multiplier in body.injury_multiplier(). Code outside code/modules/body and
 /// code/modules/body calls injure(), never this.
 /obj/item/organ/external/proc/apply_wound_damage(brute, burn, sharp, edge, used_weapon = null, list/forbidden_limbs = null, permutation = FALSE, projectile)
-	if(om_has(owner, EFFECT_GODMODE))
+	if(in_godmode(owner))
 		return 0
 	owner?.body?.invalidate(BODY_DIRTY_ORGANS)
 	brute = round(brute, 0.1)
@@ -1403,7 +1403,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 /obj/item/organ/external/proc/embed(obj/item/W, silent = 0)
 	if(!owner)
 		return
-	if(om_has(owner, EFFECT_GODMODE)) //Normally we'd let this proc continue on, but it's much less time consumptive to just do a godmode check here.
+	if(in_godmode(owner)) //Normally we'd let this proc continue on, but it's much less time consumptive to just do a godmode check here.
 		return 0
 	if(!silent)
 		owner.visible_message(span_danger("\The [W] sticks in the wound!"))
