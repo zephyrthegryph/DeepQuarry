@@ -20,6 +20,7 @@
 CAPABILITIES(/mob/living/dominated_brain)
 	verb_entry(/mob/living/dominated_brain/proc/resist_control)
 
+// ALLOW(init/CTOR_ARGS): pred, preyname and prey are constructor arguments from whoever builds it
 /mob/living/dominated_brain/Initialize(mapload, mob/living/pred, preyname, mob/living/prey)
 	prey_name = preyname
 	if(prey)

@@ -128,6 +128,7 @@ CAPABILITIES(/mob/living/silicon/ai)
 	om_revoke_each(src, GRANT_VERB, GLOB.ai_verbs_default, src)
 	om_revoke_each(src, GRANT_VERB, silicon_subsystems, src)
 
+// ALLOW(init/CTOR_ARGS): is_decoy, L, B and safety are constructor arguments from whoever builds it
 /mob/living/silicon/ai/Initialize(mapload, is_decoy, datum/ai_laws/L, obj/item/mmi/B, safety = FALSE)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 

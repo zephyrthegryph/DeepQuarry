@@ -24,6 +24,7 @@ TYPE_TABLE(/obj/vehicle/boat/sifwood, boat_forced_material, MAT_SIFWOOD)
 	max_buckled_mobs = 5
 	riding_datum_type = /datum/riding/boat/big
 
+// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 /obj/vehicle/boat/dragon/Initialize(mapload, material_name)
 	. = ..(mapload, material_name)
 	var/image/I = image(icon, src, "dragon_boat_underlay", BELOW_MOB_LAYER)
@@ -45,6 +46,7 @@ TYPE_TABLE(/obj/item/oar/sifwood, oar_forced_material, MAT_SIFWOOD)
 
 TYPE_TABLE_DECLARE(/obj/item/oar, oar_forced_material, null)
 
+// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 /obj/item/oar/Initialize(mapload, material_name)
 	var/forced_material = TYPE_TABLE_GET(src, oar_forced_material)
 	if(forced_material)
@@ -64,6 +66,7 @@ CAPABILITIES(/obj/vehicle/boat)
 
 TYPE_TABLE_DECLARE(/obj/vehicle/boat, boat_forced_material, null)
 
+// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
 /obj/vehicle/boat/Initialize(mapload, material_name)
 	var/forced_material = TYPE_TABLE_GET(src, boat_forced_material)
 	if(forced_material)

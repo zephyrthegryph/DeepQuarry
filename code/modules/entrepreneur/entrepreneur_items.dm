@@ -357,6 +357,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_RE
 		if(80 to 1000)
 			. += span_info(span_red("The EMF reader is reading extremely high interference, reading [emf]mG."))
 
+// ALLOW(init/INSTANCE_STATE): emf rolled at random for each instance
 /obj/item/entrepreneur/emf/Initialize(mapload)
 	. = ..()
 	emf = rand(1,100)

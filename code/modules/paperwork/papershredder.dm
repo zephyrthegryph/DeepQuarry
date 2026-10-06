@@ -159,6 +159,7 @@ DECLARE_APPEARANCE(/obj/machinery/papershredder, "panel_open", list("1" = list(A
 	throw_range = 3
 	throw_speed = 1
 
+// ALLOW(init/INSTANCE_STATE): pixel_x, pixel_y and color rolled at random for each instance
 /obj/item/shreddedp/Initialize(mapload)
 	. = ..()
 	pixel_x = rand(-5,5)

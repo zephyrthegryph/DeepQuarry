@@ -17,6 +17,7 @@
 	var/dpdir = 0	// directions as disposalpipe
 	var/base_state = "pipe-s"
 
+// ALLOW(init/CTOR_ARGS): newtype, newdir, flipped and newsubtype are constructor arguments from whoever builds it
 /obj/structure/disposalconstruct/Initialize(mapload, newtype, newdir, flipped, newsubtype)
 	. = ..()
 	ptype = newtype

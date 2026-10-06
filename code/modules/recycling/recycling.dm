@@ -249,6 +249,7 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 	icon_state = "debris"
 	w_class = ITEMSIZE_NORMAL
 
+// ALLOW(init/CTOR_ARGS): matter_init is a constructor argument from whoever builds it
 /obj/item/debris_pack/Initialize(mapload, list/matter_init)
 	set_material_mix(matter_init.Copy())
 	. = ..()
@@ -261,6 +262,7 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 	w_class = ITEMSIZE_SMALL
 	var/material_name
 
+// ALLOW(init/CTOR_ARGS): mat is a constructor argument from whoever builds it
 /obj/item/material_dust/Initialize(mapload, mat)
 	material_name = mat
 	name = "[material_name] [initial(name)]"

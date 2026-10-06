@@ -161,6 +161,7 @@ CAPABILITIES(/obj/item/shovel)
 	var/tmp/datum/material/material_static
 	resistance_flags = FLAMMABLE
 
+// ALLOW(init/CTOR_ARGS): _mat is a constructor argument from whoever builds it
 /obj/item/shovel/wood/Initialize(mapload, _mat)
 	. = ..()
 	// A shovel spawned bare (the survival recipe, a map, a test) is plain wood, not material-less.

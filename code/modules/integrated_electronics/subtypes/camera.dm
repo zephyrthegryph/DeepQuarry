@@ -114,6 +114,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 
 	var/see_dark = FALSE
 
+// ALLOW(init/CTOR_ARGS): network_id and darkvis are constructor arguments from whoever builds it
 /obj/machinery/camera/intcircuit/Initialize(mapload, network_id, darkvis)
 	if(network_id)
 		network = list(network_id)

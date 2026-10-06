@@ -144,6 +144,7 @@ CAPABILITIES(/datum/prompt/text/skeleton_plaque)
 	desc = "It's fossilised plant remains."
 	animal = 0
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/item/fossil/plant/Initialize(mapload)
 	. = ..()
 	icon_state = "plant[rand(1,4)]"

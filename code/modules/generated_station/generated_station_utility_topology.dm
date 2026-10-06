@@ -2,6 +2,7 @@
 /obj/structure/cable/generated_station
 	icon_state = "0-1"
 
+// ALLOW(init/CTOR_ARGS): generated_icon_state is a constructor argument from whoever builds it
 /obj/structure/cable/generated_station/Initialize(mapload, generated_icon_state)
 	if(generated_icon_state)
 		icon_state = generated_icon_state
@@ -31,6 +32,7 @@
 	connect_types = CONNECT_TYPE_SUPPLY
 	piping_layer = PIPING_LAYER_SUPPLY
 
+// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
 /obj/machinery/atmospherics/pipe/tank/air/full/generated_station/Initialize(mapload, generated_dir)
 	if(generated_dir)
 		dir = generated_dir
@@ -41,36 +43,43 @@
 	connect_types = CONNECT_TYPE_SCRUBBER
 	piping_layer = PIPING_LAYER_SCRUBBER
 
+// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
 /obj/machinery/atmospherics/pipe/tank/generated_station_scrub/Initialize(mapload, generated_dir)
 	if(generated_dir)
 		dir = generated_dir
 	return ..()
 
+// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
 /obj/machinery/atmospherics/pipe/simple/hidden/supply/generated_station/Initialize(mapload, generated_dir)
 	if(generated_dir)
 		dir = generated_dir
 	return ..()
 
+// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers/generated_station/Initialize(mapload, generated_dir)
 	if(generated_dir)
 		dir = generated_dir
 	return ..()
 
+// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
 /obj/machinery/atmospherics/pipe/manifold/hidden/supply/generated_station/Initialize(mapload, generated_dir)
 	if(generated_dir)
 		dir = generated_dir
 	return ..()
 
+// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
 /obj/machinery/atmospherics/pipe/manifold/hidden/scrubbers/generated_station/Initialize(mapload, generated_dir)
 	if(generated_dir)
 		dir = generated_dir
 	return ..()
 
+// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
 /obj/machinery/atmospherics/pipe/cap/hidden/supply/generated_station/Initialize(mapload, generated_dir)
 	if(generated_dir)
 		dir = generated_dir
 	return ..()
 
+// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
 /obj/machinery/atmospherics/pipe/cap/hidden/scrubbers/generated_station/Initialize(mapload, generated_dir)
 	if(generated_dir)
 		dir = generated_dir
@@ -80,6 +89,7 @@
 	dir = WEST
 	piping_layer = PIPING_LAYER_SUPPLY
 
+// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
 /obj/machinery/atmospherics/unary/vent_pump/on/generated_station/Initialize(mapload, generated_dir)
 	if(generated_dir)
 		dir = generated_dir
@@ -89,6 +99,7 @@
 	dir = EAST
 	piping_layer = PIPING_LAYER_SCRUBBER
 
+// ALLOW(init/CTOR_ARGS): generated_dir is a constructor argument from whoever builds it
 /obj/machinery/atmospherics/unary/vent_scrubber/on/generated_station/Initialize(mapload, generated_dir)
 	if(generated_dir)
 		dir = generated_dir

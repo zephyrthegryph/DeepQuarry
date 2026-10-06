@@ -29,6 +29,7 @@
 <b>Integrity:</b> Generally very survivable. Susceptible to being destroyed by acid."}
 	return dat
 
+// ALLOW(init/CTOR_ARGS): db_key is a constructor argument from whoever builds it
 /obj/item/implant/backup/Initialize(mapload, db_key)
 	. = ..()
 	if(!isnull(db_key))

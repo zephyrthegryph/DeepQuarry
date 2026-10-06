@@ -134,6 +134,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 	icon_dead = "eclectus-dead"
 	tt_desc = "E Eclectus roratus"
 
+// ALLOW(init/INSTANCE_STATE): gender, icon_state, icon_rest and icon_dead rolled at random for each instance
 /mob/living/simple_mob/animal/passive/bird/parrot/eclectus/Initialize(mapload)
 	gender = pick(MALE, FEMALE)
 	if(gender == FEMALE)

@@ -207,6 +207,7 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 	var/current_state
 
 INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
+// ALLOW(init/CTOR_ARGS): name and state are constructor arguments from whoever builds it
 /obj/effect/statclick/ticket_list/Initialize(mapload, name, state)
 	current_state = state
 	. = ..()
@@ -656,6 +657,7 @@ CAPABILITIES(/datum/ticket)
 	var/tmp/datum/ticket/ticket_datum
 
 INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
+// ALLOW(init/CTOR_ARGS): T is a constructor argument from whoever builds it
 /obj/effect/statclick/ticket/Initialize(mapload, datum/ticket/T)
 	rel_set(src, nameof(ticket_datum), T)
 	. = ..()

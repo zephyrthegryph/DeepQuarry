@@ -1387,6 +1387,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 	update_clothing_icon()
 	worn_protection_changed()
 
+// ALLOW(init/INSTANCE_STATE): sensor_mode rolled at random for each instance
 /obj/item/clothing/under/rank/Initialize(mapload)
 	sensor_mode = pick(0,1,2,3)
 	. = ..()

@@ -151,6 +151,7 @@
 
 DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 
+// ALLOW(init/CTOR_ARGS): targeting_mob and clone_appearance_from are constructor arguments from whoever builds it
 /obj/effect/fake_attacker/human/Initialize(mapload,mob/targeting_mob,atom/clone_appearance_from)
 	. = ..()
 	set_target(targeting_mob)

@@ -24,6 +24,7 @@
 	var/matrix/original_transform
 	var/original_vis_flags = NONE
 
+// ALLOW(init/CTOR_ARGS): held is a constructor argument from whoever builds it
 /obj/item/holder/Initialize(mapload, mob/held)
 	. = ..()
 	if(!ismob(held))
@@ -182,6 +183,7 @@
 
 /obj/item/holder/pai
 
+// ALLOW(init/CTOR_ARGS): held is a constructor argument from whoever builds it
 /obj/item/holder/pai/Initialize(mapload, mob/held)
 	. = ..()
 	item_state = held.icon_state

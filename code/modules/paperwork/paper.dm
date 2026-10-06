@@ -126,6 +126,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper/alien, TYPE_PROC_REF(/atom, appearance_o
 	plane_foldable = FALSE // No airplanes for me.
 
 
+// ALLOW(init/CTOR_ARGS): text and title are constructor arguments from whoever builds it
 /obj/item/paper/Initialize(mapload, text, title)
 	. = ..()
 

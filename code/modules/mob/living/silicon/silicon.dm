@@ -46,6 +46,7 @@ CAPABILITIES(/mob/living/silicon)
 	owns_one(nameof(rcon), /datum/tgui_module/rcon/robot)
 	owns_many(nameof(queued_alarms))
 
+// ALLOW(init/CTOR_ARGS): is_decoy is a constructor argument from whoever builds it
 /mob/living/silicon/Initialize(mapload, is_decoy = FALSE)
 	if(silicon_subsystems)
 		silicon_subsystems = shared_type_list(type, "silicon_subsystems", silicon_subsystems)

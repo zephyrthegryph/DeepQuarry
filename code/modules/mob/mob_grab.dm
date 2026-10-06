@@ -35,6 +35,7 @@
 	item_state = "nothing"
 	w_class = ITEMSIZE_HUGE
 
+// ALLOW(init/CTOR_ARGS): victim is a constructor argument from whoever builds it
 /obj/item/grab/Initialize(mapload, mob/victim)
 	. = ..()
 	var/mob/living/carbon/human/assailant = loc

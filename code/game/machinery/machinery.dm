@@ -163,6 +163,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 			gen[comp_path] = (gen[comp_path] || 0) + comp_amt
 	return gen
 
+// ALLOW(init/CTOR_ARGS): d is a constructor argument from whoever builds it
 /obj/machinery/Initialize(mapload, d=0)
 	. = ..()
 	if(isnum(d))

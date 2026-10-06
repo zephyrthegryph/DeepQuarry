@@ -1523,6 +1523,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cubancarp, null, list(
 	nutriment_desc = list("popcorn" = 3)
 	bitesize = 0.1 //This snack is supposed to be eaten for a long time.
 
+// ALLOW(init/INSTANCE_STATE): unpopped rolled at random for each instance
 /obj/item/reagent_containers/food/snacks/popcorn/Initialize(mapload)
 	. = ..()
 	unpopped = rand(1,10)
@@ -2515,6 +2516,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mushroomsoup, null, li
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/beetsoup, null, list(REAGENT_ID_BEETSOUP = 10))
 
+// ALLOW(init/INSTANCE_STATE): name rolled at random for each instance
 /obj/item/reagent_containers/food/snacks/beetsoup/Initialize(mapload)
 	. = ..()
 	name = pick(list("borsch","bortsch","borstch","borsh","borshch","borscht"))
@@ -8092,6 +8094,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/pasty, null, 
 	nutriment_desc = list(REAGENT_ID_SUGAR = 5)
 	var/static/list/color_options = list("saucer_pink","saucer_blue","saucer_orange","saucer_green","saucer_yellow")
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/item/reagent_containers/food/snacks/saucer/Initialize(mapload)
 	. = ..()
 	icon_state = pick(color_options)
@@ -8248,6 +8251,7 @@ CAPABILITIES(/obj/item/storage/box/shrimpsandbananas)
 	nutriment_desc = list(REAGENT_ID_SUGAR = 5, PLANT_ROSE = 2, "custard" = 2)
 	var/static/list/color_options = list("rhubarbcustard_1","rhubarbcustard_2")
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/item/reagent_containers/food/snacks/rhubarbcustard/Initialize(mapload)
 	. = ..()
 	icon_state = pick(color_options)

@@ -15,6 +15,7 @@
 	active_power_usage = 2000
 	idle_power_usage = 1000
 
+// ALLOW(init/INSTANCE_STATE): time_per_spawn and spawn_type rolled at random for each instance
 /obj/machinery/auto_cloner/Initialize(mapload)
 	. = ..()
 

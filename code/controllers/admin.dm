@@ -6,6 +6,7 @@
 
 INITIALIZE_IMMEDIATE(/obj/effect/statclick)
 
+// ALLOW(init/CTOR_ARGS): text and target are constructor arguments from whoever builds it
 /obj/effect/statclick/Initialize(mapload, text, target)
 	. = ..()
 	name = text

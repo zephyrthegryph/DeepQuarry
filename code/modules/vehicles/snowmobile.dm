@@ -25,6 +25,7 @@
 	icon_state = "sno_keys"
 	w_class = ITEMSIZE_TINY
 
+// ALLOW(init/INSTANCE_STATE): paint_color rolled at random for each instance
 /obj/vehicle/train/engine/quadbike/snowmobile/random/Initialize(mapload)
 	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
 	. = ..()

@@ -740,6 +740,7 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/inventory/hand, TYPE_PROC_REF(/atom
 /atom/movable/screen/component_button
 	var/atom/movable/screen/parent
 
+// ALLOW(init/CTOR_ARGS): new_parent is a constructor argument from whoever builds it
 /atom/movable/screen/component_button/Initialize(mapload, atom/movable/screen/new_parent)
 	. = ..()
 	rel_set(src, nameof(parent), new_parent)
@@ -815,6 +816,7 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 	owns_one(nameof(powbutton), starts = /atom/movable/screen/mapper/powbutton)
 	owns_one(nameof(mapbutton), starts = /atom/movable/screen/mapper/mapbutton)
 
+// ALLOW(init/CTOR_ARGS): newowner is a constructor argument from whoever builds it
 /atom/movable/screen/movable/mapper_holder/Initialize(mapload, newowner)
 	. = ..()
 	rel_set(src, nameof(owner), newowner)

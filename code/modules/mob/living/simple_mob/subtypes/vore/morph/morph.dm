@@ -377,6 +377,7 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 	var/datum/mind/prey_mind
 	vore_active = FALSE
 
+// ALLOW(init/CTOR_ARGS): pmind, parent and prey are constructor arguments from whoever builds it
 /mob/living/simple_mob/vore/morph/dominated_prey/Initialize(mapload, datum/mind/pmind, parent, prey)
 	. = ..()
 	if(!pmind)

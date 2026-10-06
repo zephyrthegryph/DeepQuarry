@@ -27,6 +27,7 @@ CAPABILITIES(/obj/item/blobcore_chunk)
 
 DECLARE_REAGENTS(/obj/item/blobcore_chunk, 120, null)
 
+// ALLOW(init/CTOR_ARGS): parentblob is a constructor argument from whoever builds it
 /obj/item/blobcore_chunk/Initialize(mapload, datum/blob_type/parentblob = null)
 	. = ..()
 	setup_blobtype(parentblob)

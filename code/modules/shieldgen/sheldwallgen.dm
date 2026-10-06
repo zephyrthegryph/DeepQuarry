@@ -265,6 +265,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		var/power_usage = 2500	//how much power it takes to sustain the shield
 		var/generate_power_usage = 7500	//how much power it takes to start up the shield
 
+// ALLOW(init/CTOR_ARGS): A and B are constructor arguments from whoever builds it
 /obj/machinery/shieldwall/Initialize(mapload, obj/machinery/shieldwallgen/A, obj/machinery/shieldwallgen/B)
 	. = ..()
 	update_nearby_tiles()

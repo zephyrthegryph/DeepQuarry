@@ -29,6 +29,7 @@
 /turf/simulated/floor/is_plating()
 	return (!flooring || flooring.is_plating)
 
+// ALLOW(init/CTOR_ARGS): floortype is a constructor argument from whoever builds it
 /turf/simulated/floor/Initialize(mapload, floortype)
 	. = ..()
 	if(!floortype && initial_flooring)

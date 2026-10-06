@@ -17,6 +17,7 @@
 	slot_flags = SLOT_EARS
 	volume = 60
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/item/reagent_containers/pill/Initialize(mapload)
 	. = ..()
 	if(!icon_state)

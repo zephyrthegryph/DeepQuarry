@@ -55,6 +55,7 @@ CAPABILITIES(/obj/item/pda/ai)
 	ttone = "assist"
 	var/our_owner = null // Ref to a pAI
 
+// ALLOW(init/INSTANCE_STATE): our_owner taken from where this instance is placed
 /obj/item/pda/ai/pai/Initialize(mapload)
 	. = ..()
 	if(ispAI(loc))

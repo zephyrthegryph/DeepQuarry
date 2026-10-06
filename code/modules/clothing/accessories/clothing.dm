@@ -104,6 +104,7 @@
 /obj/item/clothing/accessory/hawaiian/random_flower
 	name = "flower-pattern shirt"
 
+// ALLOW(init/INSTANCE_STATE): icon_state and color rolled at random for each instance
 /obj/item/clothing/accessory/hawaiian/random_flower/Initialize(mapload)
 	if(prob(50))
 		icon_state = "hawaiian_red"

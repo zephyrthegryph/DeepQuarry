@@ -35,6 +35,7 @@
 
 TYPE_TABLE_DECLARE(/turf/simulated/wall, wall_forced_materials, null)
 
+// ALLOW(init/CTOR_ARGS): materialtype, rmaterialtype and girdertype are constructor arguments from whoever builds it
 /turf/simulated/wall/Initialize(mapload, materialtype, rmaterialtype, girdertype)
 	var/list/forced_materials = TYPE_TABLE_GET(src, wall_forced_materials)
 	if(forced_materials)

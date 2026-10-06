@@ -13,6 +13,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 	var/tmp/datum/seed/seed_static
 	var/modified = 0
 
+// ALLOW(init/CTOR_ARGS): _seed_type is a constructor argument from whoever builds it
 /obj/item/seeds/Initialize(mapload, _seed_type)
 	if(_seed_type in SSplants.seeds)
 		seed_type = _seed_type

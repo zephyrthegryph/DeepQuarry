@@ -62,6 +62,7 @@ CAPABILITIES(/obj/machinery/disposal)
 // find the attached trunk (if present) and init gas resvr.
 DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C, null)
 
+// ALLOW(init/CTOR_ARGS): make_from is a constructor argument from whoever builds it
 /obj/machinery/disposal/Initialize(mapload, obj/structure/disposalconstruct/make_from)
 	. = ..()
 

@@ -4,6 +4,7 @@
 	w_class = ITEMSIZE_TINY
 	var/list/evidence
 
+// ALLOW(init/CTOR_ARGS): supplied is a constructor argument from whoever builds it
 /obj/item/sample/Initialize(mapload, atom/supplied)
 	. = ..()
 	if(supplied && supplied.forensic_data)

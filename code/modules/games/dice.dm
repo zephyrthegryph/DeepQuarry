@@ -11,6 +11,7 @@
 	var/tamper_proof = FALSE //Set to TRUE if the die needs to be unable to be weighted, such as for events
 	attack_verb = list("diced")
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/item/dice/Initialize(mapload)
 	. = ..()
 	icon_state = "[name][rand(1,sides)]"

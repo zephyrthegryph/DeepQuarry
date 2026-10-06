@@ -15,6 +15,7 @@
 	var/potency = -1
 	special_handling = TRUE
 
+// ALLOW(init/CTOR_ARGS): planttype is a constructor argument from whoever builds it
 /obj/item/reagent_containers/food/snacks/grown/Initialize(mapload, planttype)
 	. = ..()
 
@@ -389,6 +390,7 @@ DECLARE_SHARED_CACHE_EX(fruit_icon, GLOBAL_PROC_REF(build_fruit_icon), SC_NEVER,
 	I.color = fruit_colour
 	return I
 
+// ALLOW(init/CTOR_ARGS): S is a constructor argument from whoever builds it
 /obj/item/reagent_containers/food/snacks/fruit_slice/Initialize(mapload, datum/seed/S)
 	. = ..()
 	// Need to go through and make a general image caching controller. Todo.
