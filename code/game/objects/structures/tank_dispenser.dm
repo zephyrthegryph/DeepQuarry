@@ -103,7 +103,6 @@ CAPABILITIES(/obj/structure/dispenser)
 	if(!user.unEquip(I, target = src))
 		return OP_OK
 	to_chat(user, span_notice("You put [I] in [src]."))
-	update_icon()
 	return OP_OK
 
 /obj/structure/dispenser/proc/wrench_used(datum/act/op/A)

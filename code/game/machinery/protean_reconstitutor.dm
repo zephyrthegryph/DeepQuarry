@@ -166,7 +166,6 @@ MSG_DEF_SELF(protean_reconstitutor/processing_revive, "reconstitution cycle curr
 		if(nanomass_reserve > nanotank_max)
 			nanomass_reserve = nanotank_max
 		to_chat(user,span_notice("You fill \the [src] with paste from [paste_label]. The display now reads [nanomass_reserve]/[nanotank_max] units."))
-	update_icon()
 	return OP_DECLINE
 
 /obj/machinery/protean_reconstitutor/wrench_act(mob/user, obj/item/tool)
@@ -228,7 +227,6 @@ CAPABILITIES(/datum/prompt/choice/protean_component)
 		//no brain, no orchestrator, and/or not enough goo
 		to_chat(user,span_warning("Essential components missing, or insufficient materials available!"))
 		playsound(src, buzzsound, 100, 1, -1)
-		update_icon()
 		return OP_OK
 	if(!protean_brain.get_occupant()?.client)
 		src.visible_message(span_warning("\The [src] chirps, \"Warning, no positronic neural network activity detected! Recommend removing inactive core.\""))
@@ -245,7 +243,6 @@ CAPABILITIES(/datum/prompt/choice/protean_component)
 		nanomass_reserve -= nanomass_required
 		log_game("PROTEAN: [key_name(user)] started a reconstitution cycle at [AREACOORD(src)]")
 		after(src, base_cook_time, PROC_REF(reconstitute_begin))
-	update_icon()
 	return OP_OK
 
 /// Reconstitution step 1: the body is grown after the base cook time.

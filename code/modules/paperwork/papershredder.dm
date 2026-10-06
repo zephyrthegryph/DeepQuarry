@@ -73,7 +73,6 @@ MSG_DEF_SELF(papershredder/empty, "it is empty")
 				SP.forceMove(get_turf(src))
 				SP.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),1,5)
 			set_paperamount(max_paper)
-		update_icon()
 		return OP_OK
 	return OP_DECLINE
 

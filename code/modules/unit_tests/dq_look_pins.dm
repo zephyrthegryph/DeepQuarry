@@ -87,7 +87,8 @@
 			. = dq_look_pin_lines(target)
 			qdel(target)
 	catch(var/exception/e)
-		. = list("runtime: [e.name]")
+		var/static/regex/where = regex(@"^\S+\.dm:\d+:")
+		. = list("runtime: [where.Replace(e.name, "")]") // without the file and line, which move with unrelated edits
 	own_turf_contents(T)
 
 /// The look rows of one atom (see the file comment), sorted so the file diffs cleanly.

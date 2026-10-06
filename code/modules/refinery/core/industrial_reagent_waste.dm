@@ -61,7 +61,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/waste_processor)
 	// Drain it!
 	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
 	act_message(user, C, others = "%U% drains %T% into \the [src].")
-	update_icon()
 	return OP_OK
 
 /obj/machinery/reagent_refinery/waste_processor/proc/interaction_drain_container(datum/act/op/A)
@@ -73,7 +72,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/waste_processor)
 	// Drain it!
 	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
 	act_message(user, C, others = "%U% dumps %T% into \the [src].")
-	update_icon()
 	return OP_OK
 
 /// Busy while it holds waste: it burns it off at random.

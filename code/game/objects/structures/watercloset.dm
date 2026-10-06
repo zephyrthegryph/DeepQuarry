@@ -65,7 +65,6 @@ CAPABILITIES(/obj/structure/toilet)
 
 /obj/structure/toilet/Initialize(mapload)
 	. = ..()
-	update_icon()
 	add_hose_connector(/datum/hose_connector/endless_drain) // Cannot suck from toilet... for obvious reasons.
 
 	if(teleplumb_crystal)
@@ -178,7 +177,6 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 		return OP_OK
 
 	set_open(!open)
-	update_icon()
 	return OP_OK
 
 /// Old attackby: give a grabbed mob a swirlie, insert a crystal/bin, or fill the cistern.
@@ -248,7 +246,7 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 	var/mob/living/GM = task.target
 	if(!open) //Someone closed it while we were trying to swirlie. Rude.
 		set_open(TRUE) //Open it.
-		update_icon()
+		changed(src)
 	if(!refilling)
 		act_message(user, GM, MSG_SELF(span_notice("You give %T% a swirlie!")), \
 			MSG_OTHERS(span_danger("%U% gives %T% a swirlie!")), \
@@ -564,7 +562,7 @@ CAPABILITIES(/obj/machinery/shower)
 		MSG_OTHERS(span_notice("%U% [cistern ? "replaces the lid on the cistern" : "lifts the lid off the cistern"]!")), \
 		MSG_BLIND("You hear grinding porcelain."))
 	set_cistern(!cistern)
-	update_icon()
+	changed(src)
 
 /obj/structure/toilet/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor

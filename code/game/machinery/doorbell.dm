@@ -100,7 +100,6 @@ CAPABILITIES(/obj/machinery/button/doorbell)
 	if (!id)
 		assign_uid()
 		set_id(num2text(uid))
-	update_icon()
 
 /// The look (the draw sweep: from its template).
 /obj/machinery/button/doorbell/draw(datum/look/look)

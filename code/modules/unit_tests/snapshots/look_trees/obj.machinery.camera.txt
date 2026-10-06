@@ -214,7 +214,7 @@
 /obj/machinery/camera/communicator state: camera
 /obj/machinery/camera/communicator dir: 2
 /obj/machinery/camera/communicator overlay: icons/obj/monitors_vr.dmi:camera:8:#000000
-/obj/machinery/camera/intcircuit runtime: code/game/machinery/camera/camera.dm:75:Assertion failed: src.network.len > 0
+/obj/machinery/camera/intcircuit runtime: Assertion failed: src.network.len > 0
 /obj/machinery/camera/interim_wire_actor_probe icon: icons/obj/monitors_vr.dmi
 /obj/machinery/camera/interim_wire_actor_probe state: camera
 /obj/machinery/camera/interim_wire_actor_probe dir: 2

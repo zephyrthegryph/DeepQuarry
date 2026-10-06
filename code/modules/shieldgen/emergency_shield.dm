@@ -273,7 +273,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shieldgen, PROC_REF(on_emag), null)
 /obj/machinery/shieldgen/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!malfunction)
 		set_malfunction(TRUE)
-		update_icon()
+		changed(src)
 		return 1
 
 /obj/machinery/shieldgen/proc/needs_repair(mob/actor, atom/target, obj/item/held)

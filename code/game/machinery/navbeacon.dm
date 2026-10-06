@@ -60,7 +60,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 	playsound(src, tool.usesound, 50, TRUE)
 	act_message(user, null, MSG_SELF(span_infoplain("You [open ? "open" : "close"] the beacon's cover.")), \
 		MSG_OTHERS(span_notice("%U% [open ? "opens" : "closes"] the beacon's cover.")))
-	update_icon()
 	return OP_OK
 
 /obj/machinery/navbeacon

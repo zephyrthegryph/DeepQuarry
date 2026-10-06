@@ -246,7 +246,6 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	act_message(user, src, MSG_SELF(span_notice("You [panel_open ? "open" : "close"] the maintenance panel of %T%.")), \
 		MSG_OTHERS(span_filter_notice("%U% [panel_open ? "opens" : "closes"] the maintenance panel of %T%.")))
 	playsound(src, tool.usesound, 50, TRUE)
-	update_icon()
 	return OP_OK
 
 /obj/machinery/smartfridge/proc/wrench_used(datum/act/op/A)

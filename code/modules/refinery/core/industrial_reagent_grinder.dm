@@ -80,7 +80,6 @@
 
 	if(!move_into(src, nameof(src.holdingitems), O, user))
 		return OP_OK
-	update_icon()
 	return OP_OK
 
 /obj/machinery/reagent_refinery/grinder/refinery_step()

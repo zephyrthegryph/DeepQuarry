@@ -58,7 +58,6 @@ TRACKED(/obj/machinery/atmospheric_field_generator, wires_intact)
 		return OP_OK
 	to_chat(user, span_notice("You toggle \the [src]'s activation behavior to [alwaysactive ? "emergency" : "always-on"]."))
 	alwaysactive = !alwaysactive
-	update_icon()
 	return OP_OK
 
 /obj/machinery/atmospheric_field_generator/proc/wirecutter_used(datum/act/op/A)
@@ -66,8 +65,7 @@ TRACKED(/obj/machinery/atmospheric_field_generator, wires_intact)
 	if(!hatch_open)
 		return OP_OK
 	to_chat(user, span_warning("You [wires_intact ? "cut" : "mend"] \the [src]'s wires!"))
-	wires_intact = !wires_intact
-	update_icon()
+	set_wires_intact(!wires_intact)
 	return OP_OK
 
 /obj/machinery/atmospheric_field_generator/proc/welder_used(datum/act/op/A)

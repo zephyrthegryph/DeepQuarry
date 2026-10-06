@@ -88,7 +88,6 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You smoke the bees in %T%.")), MSG_OTHERS(span_notice("%U% smokes the bees in %T%.")))
 	set_smoked(30)
-	update_icon()
 	return OP_OK
 
 /// Requirement: TRUE, or why this frame can't go in.
@@ -138,7 +137,6 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 			item = held)
 		set_bee_count(bee_count / 2)
 		held.fill()
-	update_icon()
 	return OP_OK
 
 /obj/machinery/beehive/proc/interaction_beehive_scan(datum/act/op/A)
@@ -159,7 +157,6 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 	var/mob/user = A.actor
 	set_closed(!closed)
 	act_message(user, src, MSG_SELF(span_notice("You [closed ? "close" : "open"] %T%.")), MSG_OTHERS(span_notice("%U% [closed ? "closes" : "opens"] %T%.")))
-	update_icon()
 	return OP_OK
 
 /obj/machinery/beehive/proc/wrench_used(datum/act/op/A)
@@ -204,7 +201,6 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 	var/obj/item/honey_frame/H = pop(frames)
 	H.set_honey(20)
 	set_honeycombs(honeycombs - (100))
-	H.update_icon()
 	H.forceMove(get_turf(src))
 	changed(src)
 	harvest_next(user)
@@ -333,10 +329,8 @@ MSG_DEF_SELF(honey_extractor/honey, "there is no honey in it")
 		MSG_OTHERS(span_notice("%U% loads %I%'s comb into %T% and turns it on.")), \
 		item = held)
 	set_processing(held.honey)
-	update_icon()
 	use_power_oneoff(active_power_usage * 5) //uses 5 second of active power at once, because I could not figure out how active powerdraw works and if or how the work is timed.
 	held.set_honey(0)
-	held.update_icon() //updates the honeyframe
 	after(src, 5 SECONDS, PROC_REF(finish_extracting))
 	return OP_OK
 
@@ -368,10 +362,6 @@ MSG_DEF_SELF(honey_extractor/honey, "there is no honey in it")
 	var/honey = 0
 
 TRACKED(/obj/item/honey_frame, honey)
-
-/obj/item/honey_frame/Initialize(mapload)
-	. = ..()
-	update_icon()
 
 /obj/item/honey_frame/proc/appearance_has_honey()
 	return honey > 0
@@ -441,7 +431,14 @@ CAPABILITIES(/obj/item/beehive_assembly)
 TRACKED(/obj/item/bee_pack, full)
 
 
-DECLARE_APPEARANCE(/obj/item/bee_pack, "full", list("0" = list(APPEARANCE_OVERLAYS = list("beepack-empty")), "1" = list(APPEARANCE_OVERLAYS = list("beepack-full"))))
+/// The look (the draw sweep: from its layers).
+/obj/item/bee_pack/draw(datum/look/look)
+	..()
+	switch("[full]")
+		if("0")
+			look.overlay("beepack-empty")
+		if("1")
+			look.overlay("beepack-full")
 
 /obj/item/bee_pack/proc/empty()
 	set_full(0)
@@ -486,4 +483,4 @@ CAPABILITIES(/obj/machinery/honey_extractor)
 	new /obj/item/stack/material/wax(loc)
 	set_honey(honey + processing)
 	set_processing(0)
-	update_icon()
+	changed(src)

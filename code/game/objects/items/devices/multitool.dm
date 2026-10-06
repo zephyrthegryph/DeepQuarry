@@ -60,11 +60,9 @@ CAPABILITIES(/obj/item/multitool)
 	if(selected_io())
 		rel_clear(src, nameof(selected_io))
 		to_chat(user, span_notice("You clear the wired connection from the multitool."))
-		update_icon()
 		return OP_OK
 	var/datum/prompt/R = A.answer
 	if(!R)
-		update_icon()
 		return OP_OK
 	switch(R.value)
 		if("Clear Buffers")
@@ -82,7 +80,6 @@ CAPABILITIES(/obj/item/multitool)
 			to_chat(user,span_notice("You lower \the [src]."))
 			return OP_OK
 
-	update_icon()
 	return OP_OK
 
 /obj/item/multitool/proc/mode_switch(mob/living/user)

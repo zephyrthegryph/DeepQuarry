@@ -103,7 +103,6 @@ CAPABILITIES(/obj/machinery/power/quantumpad)
 		return OP_OK
 	rel_set(src, nameof(linked_pad), multitool.connectable())
 	to_chat(user, span_notice("You link [src] to the one in [tool]'s buffer."))
-	update_icon()
 	return OP_OK
 
 /obj/machinery/power/quantumpad/draw(datum/look/look)

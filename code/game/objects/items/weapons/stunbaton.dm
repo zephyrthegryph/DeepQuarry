@@ -165,7 +165,6 @@ CAPABILITIES(/obj/item/melee/baton/loaded)
 			own_take(src, nameof(bcell))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			status = 0
-			update_icon()
 			return OP_OK
 		return OP_DECLINE
 	else

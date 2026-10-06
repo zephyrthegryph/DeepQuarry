@@ -143,7 +143,6 @@ CAPABILITIES(/obj/machinery/floodlight)
 		return OP_OK
 	unlocked = !unlocked
 	to_chat(user, "You [unlocked ? "unscrew" : "screw"] the battery panel [unlocked ? "" : "in place"].")
-	update_icon()
 	return OP_OK
 
 /obj/machinery/floodlight/proc/crowbar_used(datum/act/op/A)
@@ -154,7 +153,6 @@ CAPABILITIES(/obj/machinery/floodlight)
 	if(!open)
 		overlays = null
 	to_chat(user, "You [open ? "remove" : "crowbar"] the battery panel[open ? "" : " in place"].")
-	update_icon()
 	return OP_OK
 
 /obj/machinery/floodlight/starts_on

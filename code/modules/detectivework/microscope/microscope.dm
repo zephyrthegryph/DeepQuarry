@@ -32,7 +32,6 @@ MSG_DEF_SELF(microscope/no_sample, "the microscope has no sample to examine")
 		return OP_DECLINE
 	rel_set(src, nameof(sample), held)
 	to_chat(user, span_notice("You insert \the [held] into the microscope."))
-	update_icon()
 	return OP_OK
 
 /obj/machinery/microscope/proc/interaction_remove_sample(datum/act/op/A)
