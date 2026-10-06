@@ -203,6 +203,7 @@
 #include "dq_lifeform_lifetimes_tests.dm"
 #include "dq_lifeform_params_tests.dm"
 #include "dq_lifeform_per_type_tests.dm"
+#include "dq_lifeform_variants_tests.dm"
 #include "dq_lifeform_registry_tests.dm"
 #include "dq_lifeform_rolls_tests.dm"
 #include "dq_rust_integration_tests.dm"

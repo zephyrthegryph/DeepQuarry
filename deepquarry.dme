@@ -5771,6 +5771,7 @@
 #include "code\engine\lifeforms\registry.dm"
 #include "code\engine\lifeforms\adjacency.dm"
 #include "code\engine\lifeforms\per_type.dm"
+#include "code\engine\lifeforms\variants.dm"
 #include "code\engine\lifeforms\contents.dm"
 #include "code\engine\lifeforms\derives.dm"
 #include "code\engine\lifeforms\lifetimes.dm"
