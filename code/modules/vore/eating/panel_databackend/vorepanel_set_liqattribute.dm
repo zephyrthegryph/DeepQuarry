@@ -1,6 +1,5 @@
 // liquid belly procs
-UI_SUBACT(/datum/vore_look, "liq", "b_show_liq", liq_b_show_liq)
-UI_SUBACT_PROC(/datum/vore_look, liq_b_show_liq)
+/datum/vore_look/proc/liq_b_show_liq(mob/user, list/params, extra)
 	if(!host().vore_selected.show_liquids)
 		host().vore_selected.show_liquids = 1
 		to_chat(user,span_warning("Your [lowertext(host().vore_selected.name)] now has liquid options."))
@@ -11,8 +10,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_show_liq)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_gen_cost_limit", liq_b_liq_reagent_gen_cost_limit, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_gen_cost_limit)
+/datum/vore_look/proc/liq_b_liq_reagent_gen_cost_limit(mob/user, list/params, extra)
 	var/new_limit = params["val"]
 	if(!isnum(new_limit))
 		return FALSE
@@ -21,8 +19,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_gen_cost_limit)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_gen", liq_b_liq_reagent_gen)
-UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_gen)
+/datum/vore_look/proc/liq_b_liq_reagent_gen(mob/user, list/params, extra)
 	if(!host().vore_selected.reagentbellymode) //liquid container adjustments and interactions.
 		host().vore_selected.reagentbellymode = 1
 		to_chat(user,span_warning("Your [lowertext(host().vore_selected.name)] now has interactions which can produce liquids."))
@@ -33,8 +30,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_gen)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_type", liq_b_liq_reagent_type, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_type)
+/datum/vore_look/proc/liq_b_liq_reagent_type(mob/user, list/params, extra)
 	var/new_reagent = params["val"]
 	if(!(new_reagent in host().vore_selected.reagent_choices))
 		return FALSE
@@ -45,8 +41,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_type)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_name", liq_b_liq_reagent_name, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_name)
+/datum/vore_look/proc/liq_b_liq_reagent_name(mob/user, list/params, extra)
 	var/new_name = params["val"]
 
 	if(length(new_name) > BELLIES_NAME_MAX || length(new_name) < BELLIES_NAME_MIN)
@@ -58,8 +53,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_name)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_transfer_verb", liq_b_liq_reagent_transfer_verb, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_transfer_verb)
+/datum/vore_look/proc/liq_b_liq_reagent_transfer_verb(mob/user, list/params, extra)
 	var/new_verb = params["val"]
 
 	if(length(new_verb) > BELLIES_NAME_MAX || length(new_verb) < BELLIES_NAME_MIN)
@@ -71,8 +65,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_transfer_verb)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_nutri_rate", liq_b_liq_reagent_nutri_rate, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_nutri_rate)
+/datum/vore_look/proc/liq_b_liq_reagent_nutri_rate(mob/user, list/params, extra)
 	host().vore_selected.gen_time_display = params["val"]
 	switch(host().vore_selected.gen_time_display)
 		if("10 minutes")
@@ -93,8 +86,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_nutri_rate)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_capacity", liq_b_liq_reagent_capacity, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_capacity)
+/datum/vore_look/proc/liq_b_liq_reagent_capacity(mob/user, list/params, extra)
 	var/new_custom_vol = params["val"]
 	if(!isnum(new_custom_vol))
 		return FALSE
@@ -103,8 +95,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_capacity)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_liq_sloshing", liq_b_liq_sloshing)
-UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_sloshing)
+/datum/vore_look/proc/liq_b_liq_sloshing(mob/user, list/params, extra)
 	if(!host().vore_selected.vorefootsteps_sounds)
 		host().vore_selected.vorefootsteps_sounds = 1
 		to_chat(user,span_warning("Your [lowertext(host().vore_selected.name)] can now make sounds when you walk around depending on how full you are."))
@@ -115,8 +106,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_sloshing)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_addons", liq_b_liq_reagent_addons, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_addons)
+/datum/vore_look/proc/liq_b_liq_reagent_addons(mob/user, list/params, extra)
 	var/reagent_toggle_addon = params["val"]
 	if(!reagent_toggle_addon)
 		return FALSE
@@ -125,8 +115,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_addons)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_liquid_overlay", liq_b_liquid_overlay)
-UI_SUBACT_PROC(/datum/vore_look, liq_b_liquid_overlay)
+/datum/vore_look/proc/liq_b_liquid_overlay(mob/user, list/params, extra)
 	if(!host().vore_selected.liquid_overlay)
 		host().vore_selected.liquid_overlay = 1
 		to_chat(user,span_warning("Your [lowertext(host().vore_selected.name)] now has liquid overlay enabled."))
@@ -137,8 +126,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_liquid_overlay)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_max_liquid_level", liq_b_max_liquid_level, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_max_liquid_level)
+/datum/vore_look/proc/liq_b_max_liquid_level(mob/user, list/params, extra)
 	var/new_max_liquid_level = params["val"]
 	if(!isnum(new_max_liquid_level))
 		return FALSE
@@ -148,8 +136,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_max_liquid_level)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_custom_reagentcolor", liq_b_custom_reagentcolor, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_custom_reagentcolor)
+/datum/vore_look/proc/liq_b_custom_reagentcolor(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor)
 		host().vore_selected.custom_reagentcolor = newcolor
@@ -160,8 +147,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_custom_reagentcolor)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_custom_reagentalpha", liq_b_custom_reagentalpha, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_custom_reagentalpha)
+/datum/vore_look/proc/liq_b_custom_reagentalpha(mob/user, list/params, extra)
 	var/newalpha = params["val"]
 	if(!isnum(newalpha))
 		return FALSE
@@ -174,8 +160,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_custom_reagentalpha)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_reagent_touches", liq_b_reagent_touches)
-UI_SUBACT_PROC(/datum/vore_look, liq_b_reagent_touches)
+/datum/vore_look/proc/liq_b_reagent_touches(mob/user, list/params, extra)
 	if(!host().vore_selected.reagent_touches)
 		host().vore_selected.reagent_touches = 1
 		to_chat(user,span_warning("Your [lowertext(host().vore_selected.name)] will now apply reagents to creatures when digesting."))
@@ -186,8 +171,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_reagent_touches)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_mush_overlay", liq_b_mush_overlay)
-UI_SUBACT_PROC(/datum/vore_look, liq_b_mush_overlay)
+/datum/vore_look/proc/liq_b_mush_overlay(mob/user, list/params, extra)
 	if(!host().vore_selected.mush_overlay)
 		host().vore_selected.mush_overlay = 1
 		to_chat(user,span_warning("Your [lowertext(host().vore_selected.name)] now has fullness overlay enabled."))
@@ -199,8 +183,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_mush_overlay)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_mush_color", liq_b_mush_color, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_mush_color)
+/datum/vore_look/proc/liq_b_mush_color(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor)
 		host().vore_selected.mush_color = newcolor
@@ -209,8 +192,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_mush_color)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_mush_alpha", liq_b_mush_alpha, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_mush_alpha)
+/datum/vore_look/proc/liq_b_mush_alpha(mob/user, list/params, extra)
 	var/newalpha = params["val"]
 	if(!isnum(newalpha))
 		return FALSE
@@ -220,8 +202,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_mush_alpha)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_max_mush", liq_b_max_mush, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_max_mush)
+/datum/vore_look/proc/liq_b_max_mush(mob/user, list/params, extra)
 	var/new_max_mush = params["val"]
 	if(!isnum(new_max_mush))
 		return FALSE
@@ -231,8 +212,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_max_mush)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_min_mush", liq_b_min_mush, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_min_mush)
+/datum/vore_look/proc/liq_b_min_mush(mob/user, list/params, extra)
 	var/new_min_mush = params["val"]
 	if(!isnum(new_min_mush))
 		return FALSE
@@ -242,8 +222,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_min_mush)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_item_mush_val", liq_b_item_mush_val, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_item_mush_val)
+/datum/vore_look/proc/liq_b_item_mush_val(mob/user, list/params, extra)
 	var/new_item_mush_val = params["val"]
 	if(!isnum(new_item_mush_val))
 		return FALSE
@@ -253,8 +232,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_item_mush_val)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_metabolism_overlay", liq_b_metabolism_overlay)
-UI_SUBACT_PROC(/datum/vore_look, liq_b_metabolism_overlay)
+/datum/vore_look/proc/liq_b_metabolism_overlay(mob/user, list/params, extra)
 	if(!host().vore_selected.metabolism_overlay)
 		host().vore_selected.metabolism_overlay = 1
 		to_chat(user,span_warning("Your [lowertext(host().vore_selected.name)] now has ingested metabolism overlay enabled."))
@@ -266,8 +244,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_metabolism_overlay)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_metabolism_mush_ratio", liq_b_metabolism_mush_ratio, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_metabolism_mush_ratio)
+/datum/vore_look/proc/liq_b_metabolism_mush_ratio(mob/user, list/params, extra)
 	var/new_metabolism_mush_ratio = params["val"]
 	if(!isnum(new_metabolism_mush_ratio))
 		return FALSE
@@ -277,8 +254,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_metabolism_mush_ratio)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_max_ingested", liq_b_max_ingested, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_max_ingested)
+/datum/vore_look/proc/liq_b_max_ingested(mob/user, list/params, extra)
 	var/new_max_ingested = params["val"]
 	if(!isnum(new_max_ingested))
 		return FALSE
@@ -288,8 +264,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_max_ingested)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_custom_ingested_color", liq_b_custom_ingested_color, UI_ARG_TEXT("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_custom_ingested_color)
+/datum/vore_look/proc/liq_b_custom_ingested_color(mob/user, list/params, extra)
 	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
 	if(newcolor)
 		host().vore_selected.custom_ingested_color = newcolor
@@ -300,8 +275,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_custom_ingested_color)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_custom_ingested_alpha", liq_b_custom_ingested_alpha, UI_ARG_NUM("val"))
-UI_SUBACT_PROC(/datum/vore_look, liq_b_custom_ingested_alpha)
+/datum/vore_look/proc/liq_b_custom_ingested_alpha(mob/user, list/params, extra)
 	var/newalpha = params["val"]
 	if(!isnum(newalpha))
 		return FALSE
@@ -311,9 +285,86 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_custom_ingested_alpha)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_liq_purge", liq_b_liq_purge)
-UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_purge)
+/datum/vore_look/proc/liq_b_liq_purge(mob/user, list/params, extra)
 	host().vore_selected.reagents.clear_reagents()
 	. = TRUE
 	if(.)
 		unsaved_changes = TRUE
+
+/// /datum/vore_look's "liq" sub-actions (a nested message its window op routes): each one's arguments go through their schemas first.
+/datum/vore_look/proc/liq_subaction(action, list/data, mob/user, extra)
+	switch(action)
+		if("b_show_liq")
+			return liq_b_show_liq(user, list(), extra)
+		if("b_liq_reagent_gen_cost_limit")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? liq_b_liq_reagent_gen_cost_limit(user, typed, extra) : FALSE
+		if("b_liq_reagent_gen")
+			return liq_b_liq_reagent_gen(user, list(), extra)
+		if("b_liq_reagent_type")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? liq_b_liq_reagent_type(user, typed, extra) : FALSE
+		if("b_liq_reagent_name")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? liq_b_liq_reagent_name(user, typed, extra) : FALSE
+		if("b_liq_reagent_transfer_verb")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? liq_b_liq_reagent_transfer_verb(user, typed, extra) : FALSE
+		if("b_liq_reagent_nutri_rate")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? liq_b_liq_reagent_nutri_rate(user, typed, extra) : FALSE
+		if("b_liq_reagent_capacity")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? liq_b_liq_reagent_capacity(user, typed, extra) : FALSE
+		if("b_liq_sloshing")
+			return liq_b_liq_sloshing(user, list(), extra)
+		if("b_liq_reagent_addons")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? liq_b_liq_reagent_addons(user, typed, extra) : FALSE
+		if("b_liquid_overlay")
+			return liq_b_liquid_overlay(user, list(), extra)
+		if("b_max_liquid_level")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? liq_b_max_liquid_level(user, typed, extra) : FALSE
+		if("b_custom_reagentcolor")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? liq_b_custom_reagentcolor(user, typed, extra) : FALSE
+		if("b_custom_reagentalpha")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? liq_b_custom_reagentalpha(user, typed, extra) : FALSE
+		if("b_reagent_touches")
+			return liq_b_reagent_touches(user, list(), extra)
+		if("b_mush_overlay")
+			return liq_b_mush_overlay(user, list(), extra)
+		if("b_mush_color")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? liq_b_mush_color(user, typed, extra) : FALSE
+		if("b_mush_alpha")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? liq_b_mush_alpha(user, typed, extra) : FALSE
+		if("b_max_mush")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? liq_b_max_mush(user, typed, extra) : FALSE
+		if("b_min_mush")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? liq_b_min_mush(user, typed, extra) : FALSE
+		if("b_item_mush_val")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? liq_b_item_mush_val(user, typed, extra) : FALSE
+		if("b_metabolism_overlay")
+			return liq_b_metabolism_overlay(user, list(), extra)
+		if("b_metabolism_mush_ratio")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? liq_b_metabolism_mush_ratio(user, typed, extra) : FALSE
+		if("b_max_ingested")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? liq_b_max_ingested(user, typed, extra) : FALSE
+		if("b_custom_ingested_color")
+			var/list/typed = payload_args(src, data, list("val" = schema_text(4096)))
+			return typed ? liq_b_custom_ingested_color(user, typed, extra) : FALSE
+		if("b_custom_ingested_alpha")
+			var/list/typed = payload_args(src, data, list("val" = num()))
+			return typed ? liq_b_custom_ingested_alpha(user, typed, extra) : FALSE
+		if("b_liq_purge")
+			return liq_b_liq_purge(user, list(), extra)
+	return null

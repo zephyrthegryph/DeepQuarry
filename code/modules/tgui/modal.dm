@@ -7,18 +7,15 @@
 GLOBAL_LIST(tgui_modals)
 
 /**
- * Modal actions: act_<action> procs (doc/rewrite/dx_conventions.md §5). Every host has them; a host
- * that shows modals implements
- *	ui_modal_opened(user, id, arguments, ui, state)          (switch on id: build the modal)
- *	ui_modal_answered(user, id, answer, arguments, ui, state) (switch on id: use the answer)
- * `id` is the modal's text id, `arguments` the list passed to and from JS, `answer` the
- * modal's answer text after the current modal's preprocess_answer().
+ * Modal actions: act_<action> procs (doc/rewrite/dx_conventions.md §5). Every host has them; a host's modal opens through its op
+ * bound to "modal:<id>" (an asks() question shown inline), and the answer goes to the current modal's delegate.
+ * `id` is the modal's text id, `answer` the modal's answer text after the current modal's preprocess_answer().
  */
 /datum/proc/act_modal_open(mob/user, id, arguments)
 	id = ui_text(id, 64)
 	if(isnull(id))
 		return refuse(user, null)
-	return ui_modal_opened(user, id, islist(arguments) ? arguments : list(), GLOB.dispatch_context_now?.ui, null)
+	return FALSE // a modal opens through the host's op bound to "modal:<id>" (asks()); nothing else opens one
 
 /datum/proc/act_modal_answer(mob/user, id, answer, arguments)
 	id = ui_text(id, 64)
@@ -33,19 +30,11 @@ GLOBAL_LIST(tgui_modals)
 	tgui_modal_clear(src)
 	if(delegated)
 		return TRUE
-	return ui_modal_answered(user, id, answer, islist(arguments) ? arguments : list(), GLOB.dispatch_context_now?.ui, null)
+	return FALSE
 
 /datum/proc/act_modal_close(mob/user, id)
 	tgui_modal_clear(src)
 	return TRUE
-
-/// A modal was requested: open it (tgui_modal_message/input/choice/...) by `id`. TRUE updates.
-/datum/proc/ui_modal_opened(mob/user, id, list/arguments, datum/tgui/ui, datum/tgui_state/state)
-	return FALSE
-
-/// A modal was answered (and no delegate took it): act on `answer` by `id`. TRUE updates.
-/datum/proc/ui_modal_answered(mob/user, id, answer, list/arguments, datum/tgui/ui, datum/tgui_state/state)
-	return FALSE
 
 /**
  * Call this from tgui_data() to return modal information if needed

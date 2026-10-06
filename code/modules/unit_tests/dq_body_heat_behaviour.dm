@@ -96,9 +96,8 @@ GLOBAL_LIST_EMPTY(body_heat_room_solids)
 	for(var/i in 1 to frames)
 		for(var/mob/living/carbon/human/H as anything in people)
 			var/turf/T = H.loc
-			life_test_environment(H, T.return_air())
-			var/datum/om/stage/life/thermoregulation/thermo = om_stage_for(H, /datum/om/stage/life/thermoregulation)
-			thermo.perform(H, null)
+			H.life_environment_exchange(T.return_air())
+			H.life_thermoregulation()
 		heat_test_world_seconds(LIFE_CYCLE_SECONDS) // the native world: the gas field, the floor and wall solids, the body's couplings and links
 		if(i in list(1, 5, 10, 20, 50, 100))
 			var/mob/living/carbon/human/first = people[1]
@@ -202,9 +201,8 @@ GLOBAL_LIST_EMPTY(body_heat_room_solids)
 		var/list/at_ease = list()
 		for(var/mob/living/carbon/human/H as anything in people)
 			var/datum/gas_mixture/air = H.loc.return_air()
-			var/datum/om/stage/life/environment/carbon/human/stage = om_stage_for(H, /datum/om/stage/life/environment)
 			var/pressure = H.calculate_affecting_pressure(air.return_pressure())
-			if(abs(stage.plume_temperature(H.loc, air) - H.body_temperature()) < 19 && pressure > H.species.warning_low_pressure && pressure < H.species.warning_high_pressure)
+			if(abs(H.life_environment_plume_temperature(H.loc, air) - H.body_temperature()) < 19 && pressure > H.species.warning_low_pressure && pressure < H.species.warning_high_pressure)
 				at_ease += H
 		body_heat_frames(people, 1)
 		for(var/mob/living/carbon/human/H as anything in at_ease)

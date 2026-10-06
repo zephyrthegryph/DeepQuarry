@@ -13,12 +13,11 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 	var/tmp/datum/seed/seed_static
 	var/modified = 0
 
-// ALLOW(init/CTOR_ARGS): _seed_type is a constructor argument from whoever builds it
-/obj/item/seeds/Initialize(mapload, _seed_type)
-	if(_seed_type in SSplants.seeds)
-		seed_type = _seed_type
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A packet of an unknown seed keeps its own.
+/obj/item/seeds/proc/seed_made(given_type)
+	if(!(seed_type in SSplants.seeds))
+		seed_type = initial(seed_type)
 	update_seed()
-	. = ..()
 
 //Grabs the appropriate seed datum from the global list.
 /obj/item/seeds/proc/update_seed()
@@ -388,3 +387,4 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 
 CAPABILITIES(/obj/item/seeds)
 	owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
+	param(nameof(seed_type), pos = 1, apply = PROC_REF(seed_made))

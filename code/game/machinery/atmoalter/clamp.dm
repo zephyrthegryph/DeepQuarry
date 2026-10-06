@@ -13,12 +13,10 @@
 	var/datum/pipe_network/network_node1
 	var/datum/pipe_network/network_node2
 
-// ALLOW(init/CTOR_ARGS): to_attach is a constructor argument from whoever builds it
-/obj/machinery/clamp/Initialize(mapload, obj/machinery/atmospherics/pipe/simple/to_attach = null)
+// ALLOW(init/INSTANCE_STATE): a clamp grips the pipe it was put on, or the one under it, and splits its network
+/obj/machinery/clamp/Initialize(mapload)
 	. = ..()
-	if(istype(to_attach))
-		rel_set(src, nameof(target), to_attach)
-	else
+	if(!istype(target_ref(), /obj/machinery/atmospherics/pipe/simple))
 		rel_set(src, nameof(target), locate_within(loc, /obj/machinery/atmospherics/pipe/simple))
 	if(target_ref())
 		update_networks()
@@ -38,6 +36,7 @@ CAPABILITIES(/obj/machinery/clamp)
 	// the clamp is dragged onto the one who takes it off
 	op("remove", at_target(/mob/living), gesture(GESTURE_DRAG), label("Remove"), wait(3 SECONDS),
 		needs(req(PROC_REF(dragged_by_self), because = MSG(op/not_available)), req(PROC_REF(released), because = MSG(clamp/active))), says(MSG(clamp/removed)), then(PROC_REF(removed)))
+	param(nameof(target), pos = 1)
 
 /obj/machinery/clamp/proc/attached(datum/act/op/A)
 	return !!target_ref()

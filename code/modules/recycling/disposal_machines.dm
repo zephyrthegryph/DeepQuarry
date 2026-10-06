@@ -46,6 +46,7 @@ CAPABILITIES(/obj/machinery/disposal)
 	op("engageHandle", ui_act("engageHandle"), then(PROC_REF(ui_act_engagehandle)))
 	op("disengageHandle", ui_act("disengageHandle"), then(PROC_REF(ui_act_disengagehandle)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	param(nameof(built_from_construct), pos = 1, apply = PROC_REF(take_construct), keep = FALSE)
 
 // C11: one slot, accepting anything (any movable dropped, thrown or grabbed
 // into the bin before a flush). Drop policy is left to this type's own
@@ -62,18 +63,20 @@ CAPABILITIES(/obj/machinery/disposal)
 // find the attached trunk (if present) and init gas resvr.
 DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C, null)
 
-// ALLOW(init/CTOR_ARGS): make_from is a constructor argument from whoever builds it
-/obj/machinery/disposal/Initialize(mapload, obj/structure/disposalconstruct/make_from)
-	. = ..()
+/// The construct a bin is built from (its constructor param, used up at init).
+/obj/machinery/disposal/var/tmp/obj/structure/disposalconstruct/built_from_construct
 
-	if(make_from)
-		set_dir(make_from.dir)
-		/* //I dont wanna set this up yet.
-		make_from.moveToNullspace()
-		stored = make_from
-		*/
-		spent(make_from)
-		set_mode(DISPOSALMODE_OFF)
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A bin built from a construct faces its way, uses it up and starts off.
+/obj/machinery/disposal/proc/take_construct(obj/structure/disposalconstruct/make_from)
+	if(!make_from)
+		return
+	set_dir(make_from.dir)
+	consumed(make_from, src)
+	set_mode(DISPOSALMODE_OFF)
+
+// ALLOW(init/INSTANCE_STATE): a bin joins its trunk and the disposal network, and a mapped one primes its reservoir from the room
+/obj/machinery/disposal/Initialize(mapload)
+	. = ..()
 
 	var/obj/structure/disposalpipe/trunk/trunk = locate_on(loc, /obj/structure/disposalpipe/trunk)
 
@@ -491,7 +494,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/disposal's window data (declared on its UI_DATA row).
+/// /obj/machinery/disposal's window data.
 /obj/machinery/disposal/proc/ui_data_obj_machinery_disposal(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -726,7 +729,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 
 /// Hooked on our own disposal_receive event.
 /obj/machinery/disposal/proc/on_disposal_receive(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	var/datum/notice/disposal_receive/event = A
 	packet_expel(source, event.items, event.gas)
@@ -789,7 +792,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 		AM.forceMove(T)
 	//..() //*cough
 	OM_EMIT(src, /datum/om/event/disposal_unlink) //unlinks in destroy, too.
-	destroyed(src) //Parent above should do this, but that's not a thing as of writing this.
+	destroyed(src, null, "deconstructed") //Parent above should do this, but that's not a thing as of writing this.
 
 /obj/machinery/disposal/proc/clean_items()
 	// Clean items before sending them

@@ -2,3 +2,4 @@
 /obj/structure/prop/prismcontrol|robot|none => prismcontrol_rotate|
 /obj/structure/prop/prismcontrol|ai|none => |
 /obj/structure/prop/prismcontrol|ghost|none => |
+

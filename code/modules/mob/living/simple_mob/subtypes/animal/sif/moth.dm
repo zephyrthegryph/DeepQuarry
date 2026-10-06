@@ -115,14 +115,14 @@
 			return FALSE
 
 
-/datum/om/stage/life/special/animal/sif/tymisian
-	of = /mob/living/simple_mob/animal/sif/tymisian
+/mob/living/simple_mob/animal/sif/tymisian/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/animal/sif/tymisian/perform(mob/living/simple_mob/animal/sif/tymisian/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/sif/tymisian/life_special(datum/seq_frame/life/F)
 	..()
 
-	if(self.energy < self.max_energy)
-		self.energy++
+	if(src.energy < src.max_energy)
+		src.energy++
 
 /mob/living/simple_mob/animal/sif/tymisian/get_status_tab_items()
 	. = ..()

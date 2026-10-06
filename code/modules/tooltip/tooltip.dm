@@ -63,7 +63,7 @@ CAPABILITIES(/datum/tooltip)
 		window.close()
 	return ..()
 
-/// The computed part of /datum/tooltip's window data (declared on its UI_DATA row).
+/// /datum/tooltip's window data.
 /datum/tooltip/ui_data(datum/act/eval/A)
 	return list(
 		"visible" = _visible,
@@ -152,7 +152,7 @@ CAPABILITIES(/datum/tooltip)
 	return TRUE
 
 /datum/tooltip/proc/on_target_qdel(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	hide()
 	rel_clear(src, nameof(last_target))
 

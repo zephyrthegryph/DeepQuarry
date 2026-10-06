@@ -101,7 +101,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
  * Event handler for when the shuttle emits /datum/om/event/world_supply_shuttle_depart
  */
 /datum/event/supply_demand/proc/handle_supply_demand_sell_shuttle(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/world_supply_shuttle_depart/event = A
 	var/list/area/supply_shuttle_areas = event.supply_shuttle_areas
 	for(var/datum/event/supply_demand/E in REGISTRY_MEMBERS(REGISTRY_DEMAND_EVENTS))
@@ -210,7 +210,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 			qty_need -= amount_to_take
 		else
 			qty_need -= 1
-			spent(I)
+			consumed(I)
 		return 1
 
 //

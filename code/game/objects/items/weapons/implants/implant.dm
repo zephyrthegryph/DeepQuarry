@@ -944,7 +944,7 @@ CAPABILITIES(/obj/item/implanter/compliance)
 		to_chat(target, span_notice("((OOC NOTE: Commands that go against server rules should be disregarded and ahelped.))"))
 		to_chat(target, span_notice("((OOC NOTE: If you did not agree to this, you are not compelled to follow the laws.))"))
 
-/// om_after() target: one step of a temporary malfunction wears off.
+/// after() target: one step of a temporary malfunction wears off.
 /obj/item/implant/proc/malfunction_recover()
 	malfunction--
 

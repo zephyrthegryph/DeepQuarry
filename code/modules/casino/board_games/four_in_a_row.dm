@@ -25,17 +25,29 @@
 	var/winner
 	var/static/list/possible_colors = list("red", "yellow", "green", "orange", "blue", "cyan")
 
-DECLARE_UI(/datum/board_game/four_row, "FourInARow")
+CAPABILITIES(/datum/board_game/four_row)
+	interface("FourInARow", state = nameof(GLOB.tgui_board_game_state))
+	op("be_player_one", ui_act("be_player_one"), then(PROC_REF(ui_act_be_player_one)))
+	op("be_player_two", ui_act("be_player_two"), then(PROC_REF(ui_act_be_player_two)))
+	op("swap_players", ui_act("swap_players"), then(PROC_REF(ui_act_swap_players)))
+	op("set_color_one", ui_act("set_color_one", arg("color")), then(PROC_REF(ui_act_set_color_one)))
+	op("set_color_two", ui_act("set_color_two", arg("color")), then(PROC_REF(ui_act_set_color_two)))
+	op("change_size", ui_act("change_size", arg("size", num())), then(PROC_REF(ui_act_change_size)))
+	op("change_win", ui_act("change_win", arg("count", num())), then(PROC_REF(ui_act_change_win)))
+	op("clear_game", ui_act("clear_game"), then(PROC_REF(ui_act_clear_game)))
+	op("start_game", ui_act("start_game"), then(PROC_REF(ui_act_start_game)))
+	op("play_again", ui_act("play_again"), then(PROC_REF(ui_act_play_again)))
+	op("play_again_swapped", ui_act("play_again_swapped"), then(PROC_REF(ui_act_play_again_swapped)))
+	op("game_action", ui_act("game_action", arg("action", schema_text(64)), arg("data")), then(PROC_REF(ui_act_game_action)))
 
 /datum/board_game/four_row/tgui_static_data(mob/user)
 	return list(
 		"colors" = possible_colors
 	)
 
-UI_DATA_REPLACE(/datum/board_game/four_row, "merge:ui_data_datum_board_game_four_row{player_one:unknown,player_two:unknown,placed_chips_pone:bool,placed_chips_ptwo:bool,game_state:unknown,grid_x_size:num,grid_y_size:num,player_one_color:text,player_two_color:text,win_count:num,winner:unknown,has_won:bool,winning_tiles:bool}")
-
-/// The computed part of /datum/board_game/four_row's window data (declared on its UI_DATA row).
-/datum/board_game/four_row/proc/ui_data_datum_board_game_four_row(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /datum/board_game/four_row's window data.
+/datum/board_game/four_row/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/mob/player_one_mob = player_one
 	var/mob/player_two_mob = player_two
 
@@ -51,47 +63,46 @@ UI_DATA_REPLACE(/datum/board_game/four_row, "merge:ui_data_datum_board_game_four
 		"player_two_color" = player_two_color,
 		"win_count" = win_count,
 		"winner" = winner,
-		"has_won" = winner == ui.user.name,
+		"has_won" = winner == user.name,
 		"winning_tiles" = (winning_tiles || list()),
 	)
 
-UI_ACT(/datum/board_game/four_row, "be_player_one", ui_act_be_player_one)
-UI_ACT_PROC(/datum/board_game/four_row, ui_act_be_player_one)
+/datum/board_game/four_row/proc/ui_act_be_player_one(datum/act/op/A)
+	var/mob/user = A.actor
 	if(game_state != GAME_SETUP)
 		return FALSE
-	if(player_one == ui.user)
-		rel_clear(src, nameof(/datum/board_game/checkers::player_one))
+	if(player_one == user)
+		rel_clear(src, nameof(player_one))
 		return TRUE
-	rel_set(src, nameof(/datum/board_game/checkers::player_one), ui.user)
+	rel_set(src, nameof(player_one), user)
 	return TRUE
 
-UI_ACT(/datum/board_game/four_row, "be_player_two", ui_act_be_player_two)
-UI_ACT_PROC(/datum/board_game/four_row, ui_act_be_player_two)
+/datum/board_game/four_row/proc/ui_act_be_player_two(datum/act/op/A)
+	var/mob/user = A.actor
 	if(game_state != GAME_SETUP)
 		return FALSE
-	if(player_two == ui.user)
-		rel_clear(src, nameof(/datum/board_game/checkers::player_two))
+	if(player_two == user)
+		rel_clear(src, nameof(player_two))
 		return TRUE
-	rel_set(src, nameof(/datum/board_game/checkers::player_two), ui.user)
+	rel_set(src, nameof(player_two), user)
 	return TRUE
 
-UI_ACT(/datum/board_game/four_row, "swap_players", ui_act_swap_players)
-UI_ACT_PROC(/datum/board_game/four_row, ui_act_swap_players)
+/datum/board_game/four_row/proc/ui_act_swap_players(datum/act/op/A)
 	if(game_state != GAME_SETUP)
 		return FALSE
 	if(!player_one || !player_two)
 		return FALSE
 	var/mob/temp_player = player_one
-	rel_set(src, nameof(/datum/board_game/checkers::player_one), player_two)
-	rel_set(src, nameof(/datum/board_game/checkers::player_two), temp_player)
+	rel_set(src, nameof(player_one), player_two)
+	rel_set(src, nameof(player_two), temp_player)
 
-UI_ACT(/datum/board_game/four_row, "set_color_one", ui_act_set_color_one, UI_ARG_VALUE("color"))
-UI_ACT_PROC(/datum/board_game/four_row, ui_act_set_color_one)
+/datum/board_game/four_row/proc/ui_act_set_color_one(datum/act/op/A, color)
+	var/mob/user = A.actor
 	if(game_state != GAME_SETUP)
 		return FALSE
-	if(player_one != ui.user)
+	if(player_one != user)
 		return FALSE
-	var/new_color = params["color"]
+	var/new_color = color
 	if(new_color == player_two_color)
 		return FALSE
 	if(!(new_color in possible_colors))
@@ -99,13 +110,13 @@ UI_ACT_PROC(/datum/board_game/four_row, ui_act_set_color_one)
 	player_one_color = new_color
 	return TRUE
 
-UI_ACT(/datum/board_game/four_row, "set_color_two", ui_act_set_color_two, UI_ARG_VALUE("color"))
-UI_ACT_PROC(/datum/board_game/four_row, ui_act_set_color_two)
+/datum/board_game/four_row/proc/ui_act_set_color_two(datum/act/op/A, color)
+	var/mob/user = A.actor
 	if(game_state != GAME_SETUP)
 		return FALSE
-	if(player_two != ui.user)
+	if(player_two != user)
 		return FALSE
-	var/new_color = params["color"]
+	var/new_color = color
 	if(new_color == player_one_color)
 		return FALSE
 	if(!(new_color in possible_colors))
@@ -113,28 +124,24 @@ UI_ACT_PROC(/datum/board_game/four_row, ui_act_set_color_two)
 	player_two_color = new_color
 	return TRUE
 
-UI_ACT(/datum/board_game/four_row, "change_size", ui_act_change_size, UI_ARG_NUM("size"))
-UI_ACT_PROC(/datum/board_game/four_row, ui_act_change_size)
+/datum/board_game/four_row/proc/ui_act_change_size(datum/act/op/A, size)
 	if(game_state != GAME_SETUP)
 		return FALSE
-	var/new_size = params["size"]
+	var/new_size = size
 	return set_new_size(new_size)
 
-UI_ACT(/datum/board_game/four_row, "change_win", ui_act_change_win, UI_ARG_NUM("count"))
-UI_ACT_PROC(/datum/board_game/four_row, ui_act_change_win)
+/datum/board_game/four_row/proc/ui_act_change_win(datum/act/op/A, count)
 	if(game_state != GAME_SETUP)
 		return FALSE
-	return change_win_count(params["count"])
+	return change_win_count(count)
 
-UI_ACT(/datum/board_game/four_row, "clear_game", ui_act_clear_game)
-UI_ACT_PROC(/datum/board_game/four_row, ui_act_clear_game)
+/datum/board_game/four_row/proc/ui_act_clear_game(datum/act/op/A)
 	if(game_state == GAME_SETUP)
 		return FALSE
 	reset(TRUE)
 	return TRUE
 
-UI_ACT(/datum/board_game/four_row, "start_game", ui_act_start_game)
-UI_ACT_PROC(/datum/board_game/four_row, ui_act_start_game)
+/datum/board_game/four_row/proc/ui_act_start_game(datum/act/op/A)
 	if(game_state != GAME_SETUP)
 		return FALSE
 	if(!player_one || !player_two)
@@ -142,8 +149,7 @@ UI_ACT_PROC(/datum/board_game/four_row, ui_act_start_game)
 	game_state = GAME_PLAYER_ONE
 	return TRUE
 
-UI_ACT(/datum/board_game/four_row, "play_again", ui_act_play_again)
-UI_ACT_PROC(/datum/board_game/four_row, ui_act_play_again)
+/datum/board_game/four_row/proc/ui_act_play_again(datum/act/op/A)
 	if(game_state < GAME_OVER)
 		return FALSE
 	if(!player_one || !player_two)
@@ -151,27 +157,28 @@ UI_ACT_PROC(/datum/board_game/four_row, ui_act_play_again)
 	reset()
 	return TRUE
 
-UI_ACT(/datum/board_game/four_row, "play_again_swapped", ui_act_play_again_swapped)
-UI_ACT_PROC(/datum/board_game/four_row, ui_act_play_again_swapped)
+/datum/board_game/four_row/proc/ui_act_play_again_swapped(datum/act/op/A)
 	if(game_state < GAME_OVER)
 		return FALSE
 	if(!player_one || !player_two)
 		return FALSE
 	reset()
 	var/mob/temp_player = player_one
-	rel_set(src, nameof(/datum/board_game/checkers::player_one), player_two)
-	rel_set(src, nameof(/datum/board_game/checkers::player_two), temp_player)
+	rel_set(src, nameof(player_one), player_two)
+	rel_set(src, nameof(player_two), temp_player)
 	return TRUE
 
-UI_ACT(/datum/board_game/four_row, "game_action", ui_act_game_action, UI_ARG_TEXT("action", 64), UI_ARG_LIST("data"))
-UI_ACT_PROC(/datum/board_game/four_row, ui_act_game_action)
-	if(ui.user == player_one && game_state == GAME_PLAYER_ONE)
-		if(ui_subdispatch(src, "game", params["action"], params["data"], ui.user, ui, state))
+/datum/board_game/four_row/proc/ui_act_game_action(datum/act/op/A, action_arg, data)
+	var/mob/user = A.actor
+	if(!isnull(data) && !islist(data))
+		return FALSE
+	if(user == player_one && game_state == GAME_PLAYER_ONE)
+		if(game_subaction(action_arg, data, user))
 			if(game_state < GAME_OVER)
 				game_state = GAME_PLAYER_TWO
 			return TRUE
-	if(ui.user == player_two && game_state == GAME_PLAYER_TWO)
-		if(ui_subdispatch(src, "game", params["action"], params["data"], ui.user, ui, state))
+	if(user == player_two && game_state == GAME_PLAYER_TWO)
+		if(game_subaction(action_arg, data, user))
 			if(game_state < GAME_OVER)
 				game_state = GAME_PLAYER_ONE
 			return TRUE
@@ -197,8 +204,7 @@ UI_ACT_PROC(/datum/board_game/four_row, ui_act_game_action)
 	else
 		game_state = GAME_PLAYER_ONE
 
-UI_SUBACT(/datum/board_game/four_row, "game", "place_chip", game_place_chip, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"))
-UI_SUBACT_PROC(/datum/board_game/four_row, game_place_chip)
+/datum/board_game/four_row/proc/game_place_chip(mob/user, list/params, extra)
 	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
 	if(!validated_data)
 		return FALSE
@@ -334,3 +340,11 @@ UI_SUBACT_PROC(/datum/board_game/four_row, game_place_chip)
 #undef GAME_PLAYER_TWO
 #undef GAME_OVER
 #undef GAME_OVER_DRAW
+
+/// /datum/board_game/four_row's "game" sub-actions (a nested message its window op routes): each one's arguments go through their schemas first.
+/datum/board_game/four_row/game_subaction(action, list/data, mob/user, extra)
+	switch(action)
+		if("place_chip")
+			var/list/typed = payload_args(src, data, list("loc_x" = num(), "loc_y" = num()))
+			return typed ? game_place_chip(user, typed, extra) : FALSE
+	return ..()

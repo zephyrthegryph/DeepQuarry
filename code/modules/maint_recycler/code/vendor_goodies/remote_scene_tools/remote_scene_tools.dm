@@ -60,14 +60,14 @@ why aren't these accessories?
 
 //called when the mob wearing this item logs out
 /obj/item/remote_scene_tool/proc/worn_mob_logged_out(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(!linked())
 		return
 	transmit_emote(src, span_warning("\The [src]'s wearer has gone SSD!"))
 	linked()?.linked_updated()
 
 /obj/item/remote_scene_tool/proc/worn_mob_logged_in(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	//called when the mob wearing this item logs in
 	if(!linked())
 		return
@@ -107,7 +107,7 @@ why aren't these accessories?
 	observe(src, /datum/notice/atom_entering, src, then(PROC_REF(check_loc)))
 
 /obj/item/remote_scene_tool/proc/check_loc(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	after(src, 0.1 SECONDS, PROC_REF(delayed_loc_check))
 
 /obj/item/remote_scene_tool/proc/delayed_loc_check()

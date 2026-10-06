@@ -93,8 +93,16 @@
 	///the group of hotspots we are a part of
 	var/datum/hot_group/our_hot_group
 
-// ALLOW(init/CTOR_ARGS): starting_volume and starting_temperature are constructor arguments from whoever builds it
-/obj/effect/hotspot/Initialize(mapload, starting_volume, starting_temperature)
+CAPABILITIES(/obj/effect/hotspot)
+	param(nameof(starting_volume), pos = 1)
+	param(nameof(starting_temperature), pos = 2)
+
+/// The fire's starting volume and temperature (its constructor params).
+/obj/effect/hotspot/var/starting_volume
+/obj/effect/hotspot/var/starting_temperature
+
+// ALLOW(init/INSTANCE_STATE): a hotspot joins the air system's hotspots and a hot group, exposes its turf, and faces a random way
+/obj/effect/hotspot/Initialize(mapload)
 	. = ..()
 	SSair.hotspots += src
 	if(!isnull(starting_volume))

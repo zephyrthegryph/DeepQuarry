@@ -753,3 +753,470 @@
 #undef PP_FG_STEP
 #undef PP_EMITTER_STEP
 #undef PP_GEN_STEP
+
+// ============================================================================================ the tesla coils
+
+/// Coil curves with the default (rating 1) capacitor: a plain coil keeps half (power_loss 2) at x1; a relay passes 0.9; a prism splits into 2
+/// bolts; an amplifier gains 7.5%; a recaster reaches 6 tiles; a collector takes it all at x2 and does not arc; every coil zaps every 1 s.
+/datum/unit_test/dq_pp/tesla_coil_curves
+
+/datum/unit_test/dq_pp/tesla_coil_curves/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/machinery/power/tesla_coil/C = allocate(/obj/machinery/power/tesla_coil, run[1])
+	TEST_ASSERT_EQUAL(C.power_loss, 2, "a coil keeps half")
+	TEST_ASSERT_EQUAL(C.input_power_multiplier, 1, "at x1 with a basic capacitor")
+	TEST_ASSERT_EQUAL(C.zap_cooldown, 10, "and zaps every second")
+	TEST_ASSERT_EQUAL(C.zap_range, 5, "5 tiles out")
+	var/obj/machinery/power/tesla_coil/relay/R = allocate(/obj/machinery/power/tesla_coil/relay, run[1])
+	TEST_ASSERT(pp_close(R.relay_efficiency, 0.9, 0.0001), "a relay passes 90%: [R.relay_efficiency]")
+	TEST_ASSERT_EQUAL(R.power_loss, 1, "and loses nothing itself")
+	var/obj/machinery/power/tesla_coil/splitter/S = allocate(/obj/machinery/power/tesla_coil/splitter, run[1])
+	TEST_ASSERT_EQUAL(S.split_count, 1, "a prism adds one bolt")
+	var/obj/machinery/power/tesla_coil/amplifier/A = allocate(/obj/machinery/power/tesla_coil/amplifier, run[1])
+	TEST_ASSERT(pp_close(A.amp_eff, 1.075, 0.0001), "an amplifier gains 7.5%: [A.amp_eff]")
+	var/obj/machinery/power/tesla_coil/recaster/RC = allocate(/obj/machinery/power/tesla_coil/recaster, run[1])
+	TEST_ASSERT_EQUAL(RC.zap_range, 6, "a recaster reaches 6 tiles")
+	var/obj/machinery/power/tesla_coil/collector/CO = allocate(/obj/machinery/power/tesla_coil/collector, run[1])
+	TEST_ASSERT_EQUAL(CO.input_power_multiplier, 2, "a collector takes it all at x2")
+	TEST_ASSERT_EQUAL(CO.zap_range, 0, "and does not arc")
+	TEST_ASSERT_EQUAL(CO.power_loss, 1, "and loses nothing")
+
+// ============================================================================================ fusion
+
+#define PP_FIELD_STEP "field_react"
+#define PP_INJECTOR_STEP "inject_step"
+#define PP_TRAP_STEP "trap_step"
+
+/// A core with its field up at `strength`, on a clear floor.
+/datum/unit_test/dq_pp/proc/pp_fusion_field(turf/T, strength = 1)
+	var/obj/machinery/power/fusion_core/core = allocate(/obj/machinery/power/fusion_core, T)
+	core.field_strength = strength
+	core.Startup()
+	TEST_ASSERT_NOTNULL(core.owned_field, "the core raised its field")
+	return core.owned_field
+
+/// The field's size follows the core's strength: up to 50 is 1, 200 is 3, 500 is 5, above is 7; the strength is clamped to 1..1000 and the
+/// core draws 5 W per unit of it.
+/datum/unit_test/dq_pp/fusion_field_strength
+
+/datum/unit_test/dq_pp/fusion_field_strength/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/effect/fusion_em_field/F = pp_fusion_field(run[1])
+	var/obj/machinery/power/fusion_core/core = F.owned_core
+	var/list/expected = list("1" = 1, "50" = 1, "51" = 3, "200" = 3, "201" = 5, "500" = 5, "501" = 7, "1000" = 7)
+	for(var/strength in expected)
+		F.ChangeFieldStrength(text2num(strength))
+		TEST_ASSERT_EQUAL(F.size, expected[strength], "strength [strength] makes a field of size [expected[strength]]")
+	core.set_strength(5000)
+	TEST_ASSERT_EQUAL(core.field_strength, 1000, "the strength is capped at 1000")
+	TEST_ASSERT_EQUAL(core.active_power_usage, 5000, "and draws 5 W a unit")
+	core.set_strength(0)
+	TEST_ASSERT_EQUAL(core.field_strength, 1, "and floored at 1")
+	core.Shutdown()
+
+/// Heating: 100 energy is 1 K of plasma; energy also steadies an unstable field (energy / 10000 off its instability).
+/datum/unit_test/dq_pp/fusion_add_energy
+
+/datum/unit_test/dq_pp/fusion_add_energy/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/effect/fusion_em_field/F = pp_fusion_field(run[1])
+	F.percent_unstable = 0.5
+	F.AddEnergy(250, 3)
+	TEST_ASSERT_EQUAL(F.plasma_temperature, 5, "3 K plus 250 energy's 2 K")
+	TEST_ASSERT_EQUAL(F.energy, 50, "50 energy left over")
+	TEST_ASSERT(pp_close(F.percent_unstable, 0.5 - 0.025, 0.0001), "250 energy steadies it by 0.025: [F.percent_unstable]")
+	F.owned_core.Shutdown()
+
+/// A field step with nothing to react: 1% of the plasma's heat is lost to radiation.
+/datum/unit_test/dq_pp/fusion_field_decay
+
+/datum/unit_test/dq_pp/fusion_field_decay/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/effect/fusion_em_field/F = pp_fusion_field(run[1])
+	F.plasma_temperature = 500
+	F.radiation = 0
+	pp_step(F, PP_FIELD_STEP)
+	TEST_ASSERT(pp_close(F.plasma_temperature, 495, 0.0001), "500 K loses 1%: [F.plasma_temperature]")
+	TEST_ASSERT(pp_close(F.radiation, 5, 0.0001), "to radiation: [F.radiation]")
+	F.owned_core.Shutdown()
+
+/// Instability: a step's tick instability adds tick * size / 10000 to the field's instability (a calm step's bleed rounds to nothing).
+/datum/unit_test/dq_pp/fusion_instability
+
+/datum/unit_test/dq_pp/fusion_instability/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/effect/fusion_em_field/F = pp_fusion_field(run[1])
+	F.tick_instability = 100
+	F.check_instability()
+	TEST_ASSERT(pp_close(F.percent_unstable, 0.01, 0.0001), "100 instability on a size-1 field is 1%: [F.percent_unstable]")
+	TEST_ASSERT_EQUAL(F.tick_instability, 0, "and the tick's count is spent")
+	F.check_instability()
+	TEST_ASSERT(pp_close(F.percent_unstable, 0.01, 0.0001), "a calm step's bleed is rand(0.01, 0.03), which rounds to 0: it stays: [F.percent_unstable]")
+	F.owned_core.Shutdown()
+
+/// The reaction table (rates per unit reacted): D+D 1 in, 2 out; D+He3 1 in, 5 out; D+T 1 in, 1 out, He3 product, 0.5 instability; D+Li 2 in,
+/// 0 out, 3 radiation, T product, 1 instability; O+O 10 in.
+/datum/unit_test/dq_pp/fusion_reaction_rates
+
+/datum/unit_test/dq_pp/fusion_reaction_rates/run_pp()
+	var/datum/decl/fusion_reaction/R = get_fusion_reaction(REAGENT_ID_DEUTERIUM, REAGENT_ID_DEUTERIUM)
+	TEST_ASSERT(R && R.energy_consumption == 1 && R.energy_production == 2, "D+D")
+	R = get_fusion_reaction(REAGENT_ID_HELIUM3, REAGENT_ID_DEUTERIUM)
+	TEST_ASSERT(R && R.energy_consumption == 1 && R.energy_production == 5, "D+He3 either way round")
+	R = get_fusion_reaction(REAGENT_ID_DEUTERIUM, REAGENT_ID_SLIMEJELLY)
+	TEST_ASSERT(R && R.energy_production == 1 && R.instability == 0.5 && R.products[REAGENT_ID_HELIUM3] == 1, "D+T")
+	R = get_fusion_reaction(REAGENT_ID_DEUTERIUM, REAGENT_ID_LITHIUM)
+	TEST_ASSERT(R && R.energy_consumption == 2 && R.radiation == 3 && R.instability == 1, "D+Li")
+	R = get_fusion_reaction(REAGENT_ID_OXYGEN, REAGENT_ID_OXYGEN)
+	TEST_ASSERT(R && R.energy_consumption == 10, "O+O")
+	TEST_ASSERT_EQUAL(R.minimum_reaction_temperature, 100, "reactions need 100 K")
+
+/// The fuel injector fires one particle per fuel in its rod a step, and burns fuel_usage (30) of each; it stops when it cannot work.
+/datum/unit_test/dq_pp/fusion_injector_fuel_use
+
+/datum/unit_test/dq_pp/fusion_injector_fuel_use/run_pp()
+	var/list/run = pp_run(2)
+	var/obj/machinery/fusion_fuel_injector/I = allocate(/obj/machinery/fusion_fuel_injector, run[1])
+	var/area/room = get_area(run[1])
+	var/area_required = room.requires_power
+	room.requires_power = FALSE
+	I.power_change()
+	var/obj/item/fuel_assembly/rod = allocate(/obj/item/fuel_assembly, run[1])
+	rod.rod_quantities = list(REAGENT_ID_DEUTERIUM = 3000000)
+	TEST_ASSERT(move_into(I, nameof(I.cur_assembly), rod), "the rod went in")
+	I.BeginInjecting()
+	TEST_ASSERT(I.injecting, "it injects")
+	pp_step(I, PP_INJECTOR_STEP)
+	TEST_ASSERT_EQUAL(rod.rod_quantities[REAGENT_ID_DEUTERIUM], 3000000 - 30, "a step burns 30")
+	TEST_ASSERT(pp_close(rod.percent_depleted, (3000000 - 30) / 3000000, 0.000001), "and the rod reports it")
+	for(var/obj/effect/accelerated_particle/P in range(12, I))
+		qdel(P)
+	I.StopInjecting()
+	room.requires_power = area_required
+
+/// The hydromagnetic trap takes 20 W per K from a field within 7 tiles once its plasma is above 10000 K.
+/datum/unit_test/dq_pp/fusion_trap_threshold
+
+/datum/unit_test/dq_pp/fusion_trap_threshold/run_pp()
+	var/list/run = pp_run(3)
+	var/obj/effect/fusion_em_field/F = pp_fusion_field(run[1])
+	var/obj/machinery/power/hydromagnetic_trap/T = allocate(/obj/machinery/power/hydromagnetic_trap, run[3])
+	var/net = power_test_grid(0)
+	power_test_join(net, T)
+	F.plasma_temperature = 9999
+	pp_step(T, PP_TRAP_STEP)
+	TEST_ASSERT_EQUAL(T.icon_state, "mag_trap0", "below 10000 K it takes nothing")
+	TEST_ASSERT(T.active, "but it found the field")
+	F.plasma_temperature = 10001
+	pp_step(T, PP_TRAP_STEP)
+	TEST_ASSERT_EQUAL(T.icon_state, "mag_trap1", "above 10000 K it takes power")
+	if("things_in_range" in T.vars)
+		T.vars["things_in_range"] = null // the legacy trap kept its scan (itself included) in a var
+	power_test_drop_grid(net)
+	F.owned_core.Shutdown()
+
+#undef PP_FIELD_STEP
+#undef PP_INJECTOR_STEP
+#undef PP_TRAP_STEP
+
+// ============================================================================================ portable generators and RTGs
+
+#define PP_GEN_STEP_PROC "gen_step"
+#define PP_RTG_STEP "rtg_step"
+
+/// A PACMAN of `type` bolted to test grid `net` with `sheets` of fuel.
+/datum/unit_test/dq_pp/proc/pp_pacman(turf/T, net, sheets = 10, type = /obj/machinery/power/port_gen/pacman)
+	var/obj/machinery/power/port_gen/pacman/P = allocate(type, T)
+	P.set_anchored(TRUE)
+	power_test_join(net, P)
+	P.sheets = sheets
+	return P
+
+/// PACMAN fuel use: a step burns power_output / time_per_sheet sheets (output 4 of a basic PACMAN: 4/96 a step, so a sheet lasts 24 steps),
+/// and supplies power_gen * power_output W (a persistent supply) while it runs.
+/datum/unit_test/dq_pp/pacman_fuel_use
+
+/datum/unit_test/dq_pp/pacman_fuel_use/run_pp()
+	var/list/run = pp_run(1)
+	var/net = power_test_grid(0)
+	var/obj/machinery/power/port_gen/pacman/P = pp_pacman(run[1], net, 10)
+	P.power_output = 4
+	P.TogglePower()
+	TEST_ASSERT(P.active, "a fuelled, bolted, wired PACMAN starts")
+	pp_step(P, PP_GEN_STEP_PROC)
+	TEST_ASSERT_EQUAL(P.sheets, 9, "the first step opens a sheet")
+	TEST_ASSERT(pp_close(P.sheet_left, 1 - 4 / 96, 0.000001), "and burns 4/96 of it: [P.sheet_left]")
+	TEST_ASSERT_EQUAL(P.power_supply_rate, P.power_gen * 4, "it supplies power_gen * 4 W: [P.power_supply_rate]")
+	for(var/i in 1 to 23)
+		pp_step(P, PP_GEN_STEP_PROC)
+	TEST_ASSERT(pp_close(P.sheets + P.sheet_left, 9, 0.0001), "24 steps burn one sheet's worth: [P.sheets] + [P.sheet_left]")
+	P.TogglePower()
+	pp_step(P, PP_GEN_STEP_PROC)
+	TEST_ASSERT_EQUAL(P.power_supply_rate, 0, "off, it supplies nothing")
+	TEST_ASSERT(pp_close(P.sheets + P.sheet_left, 9, 0.0001), "and burns nothing")
+	power_test_drop_grid(net)
+
+/// Out of fuel it stops; the super PACMAN's uranium lasts 6 times longer (576 steps per sheet at output 1), the MRS makes 25 kW a level.
+/datum/unit_test/dq_pp/pacman_fuel_out
+
+/datum/unit_test/dq_pp/pacman_fuel_out/run_pp()
+	var/list/run = pp_run(3)
+	var/net = power_test_grid(0)
+	var/obj/machinery/power/port_gen/pacman/P = pp_pacman(run[1], net, 0)
+	P.sheet_left = 0.01
+	P.power_output = 4
+	P.set_active(TRUE)
+	pp_step(P, PP_GEN_STEP_PROC)
+	TEST_ASSERT(!P.active, "a PACMAN without the fuel for a step stops")
+	TEST_ASSERT_EQUAL(P.power_supply_rate, 0, "and supplies nothing")
+	var/obj/machinery/power/port_gen/pacman/super/S = pp_pacman(run[2], net, 1, /obj/machinery/power/port_gen/pacman/super)
+	TEST_ASSERT_EQUAL(S.time_per_sheet, 576, "a super PACMAN's sheet lasts 576 steps at output 1")
+	var/obj/machinery/power/port_gen/pacman/mrs/M = pp_pacman(run[3], net, 1, /obj/machinery/power/port_gen/pacman/mrs)
+	TEST_ASSERT_EQUAL(initial(M.power_gen), 25000, "an MRS makes 25 kW a level")
+	TEST_ASSERT_EQUAL(M.max_safe_output, 8, "safely up to level 8")
+	power_test_drop_grid(net)
+
+/// Heat: running at output 4 the core heats toward 56..76 + 4 * 50 K (+ the room's offset from 20 C); above max_temperature (300) it
+/// overheats a count a step; switched off it cools by (T - room) / 40 (2..20) a step.
+/datum/unit_test/dq_pp/pacman_heat
+
+/datum/unit_test/dq_pp/pacman_heat/run_pp()
+	var/list/room = pp_room(T20C, o2 = MOLES_O2STANDARD, n2 = MOLES_N2STANDARD)
+	var/net = power_test_grid(0)
+	var/obj/machinery/power/port_gen/pacman/P = pp_pacman(room[1], net, 50)
+	P.power_output = 4
+	P.TogglePower()
+	for(var/i in 1 to 60)
+		pp_step(P, PP_GEN_STEP_PROC)
+	log_test("PACMAN at output 4 after 60 steps: [P.temperature] K")
+	TEST_ASSERT(P.temperature >= 200 && P.temperature <= 280, "it settles in its band (256..276 K at 1 atm 20 C): [P.temperature]")
+	TEST_ASSERT_EQUAL(P.overheating, 0, "below 300 it does not overheat")
+	P.temperature = P.max_temperature + 10
+	P.power_output = 5
+	pp_step(P, PP_GEN_STEP_PROC)
+	TEST_ASSERT(P.overheating >= 1, "above 300 it overheats: [P.overheating]")
+	P.TogglePower()
+	P.temperature = 200
+	P.overheating = 0
+	pp_step(P, PP_GEN_STEP_PROC)
+	TEST_ASSERT(pp_close(P.temperature, 200 - round((200 - 20) / 40, 1), 0.01), "off, it cools by (T - 20) / 40: [P.temperature]")
+	power_test_drop_grid(net)
+
+/// An emag lets the output go to 2.5 times the safe maximum.
+/datum/unit_test/dq_pp/pacman_emag_limit
+
+/datum/unit_test/dq_pp/pacman_emag_limit/run_pp()
+	var/list/run = pp_run(1)
+	var/net = power_test_grid(0)
+	var/obj/machinery/power/port_gen/pacman/P = pp_pacman(run[1], net, 10)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run[1])
+	P.power_output = P.max_power_output
+	TEST_ASSERT(!pp_pacman_raise(P, H), "the output stops at max_power_output")
+	pp_pacman_emag(P)
+	var/raised = 0
+	while(pp_pacman_raise(P, H) && raised < 50)
+		raised++
+	TEST_ASSERT_EQUAL(P.power_output, round(P.max_power_output * 2.5), "emagged it goes to 2.5 times: [P.power_output]")
+	power_test_drop_grid(net)
+
+/// One press of the window's higher-power button: TRUE when the output went up.
+/proc/pp_pacman_raise(obj/machinery/power/port_gen/pacman/P, mob/user)
+	var/before = P.power_output
+	var/datum/act/op/A = new
+	A.actor = user
+	call(P, "ui_act_higher_power")(A)
+	return P.power_output > before
+
+/// Subverts a PACMAN: its emag capability, or the legacy emagged var.
+/proc/pp_pacman_emag(obj/machinery/power/port_gen/pacman/P)
+	if(istype(cap_of(P, CAP_EMAG, null), /datum/capability/lib/emag))
+		key_set(P, EMAG_EMAGGED, TRUE)
+	else
+		P.set_emagged(1)
+
+/// RTGs supply power_gen every step: 1000 W per part rating (a basic RTG: 2000 W with its two basic parts), the advanced one 1250 per rating.
+/datum/unit_test/dq_pp/rtg_output
+
+/datum/unit_test/dq_pp/rtg_output/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/machinery/power/rtg/R = allocate(/obj/machinery/power/rtg, run[1])
+	var/rating = R.total_component_rating_of_type(/obj/item/stock_parts)
+	TEST_ASSERT_EQUAL(R.power_gen, 1000 * rating, "a basic RTG makes 1000 W a rating: [R.power_gen] at rating [rating]")
+	var/obj/machinery/power/rtg/advanced/A = allocate(/obj/machinery/power/rtg/advanced, run[1])
+	rating = A.total_component_rating_of_type(/obj/item/stock_parts)
+	TEST_ASSERT_EQUAL(A.power_gen, 1250 * rating, "an advanced one 1250 W a rating: [A.power_gen] at rating [rating]")
+
+#undef PP_GEN_STEP_PROC
+#undef PP_RTG_STEP
+
+// ============================================================================================ the gravity generator
+
+#define PP_GRAV_STEP "spin_step"
+
+/// A gravity generator (no parts) on a clear floor in a powered area.
+/datum/unit_test/dq_pp/proc/pp_gravgen(turf/T)
+	var/area/room = get_area(T)
+	room.requires_power = FALSE
+	var/obj/machinery/gravity_generator/main/G = allocate(/obj/machinery/gravity_generator/main, T)
+	G.power_change()
+	return G
+
+/datum/unit_test/dq_pp/proc/pp_gravgen_done(obj/machinery/gravity_generator/main/G, turf/T)
+	var/area/room = get_area(T)
+	room.requires_power = initial(room.requires_power)
+
+/// Spin-up: from 0 the charge rises 2 a step; at 100 gravity comes on (the generator draws its active power) and it settles.
+/datum/unit_test/dq_pp/gravgen_spin_up
+
+/datum/unit_test/dq_pp/gravgen_spin_up/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/machinery/gravity_generator/main/G = pp_gravgen(run[1])
+	G.charge_count = 0
+	G.set_use_power(USE_POWER_IDLE)
+	G.set_charging_state(GRAVGEN_UP)
+	pp_step(G, PP_GRAV_STEP)
+	TEST_ASSERT_EQUAL(G.charge_count, 2, "a step adds 2")
+	for(var/i in 1 to 49)
+		pp_step(G, PP_GRAV_STEP)
+	TEST_ASSERT_EQUAL(G.charge_count, 100, "50 steps reach 100")
+	TEST_ASSERT_EQUAL(G.charging_state, GRAVGEN_UP, "still spinning")
+	pp_step(G, PP_GRAV_STEP)
+	TEST_ASSERT_EQUAL(G.charging_state, GRAVGEN_IDLE, "at 100 it settles")
+	TEST_ASSERT_EQUAL(G.use_power, USE_POWER_ACTIVE, "and gravity is on")
+	pp_gravgen_done(G, run[1])
+
+/// Spin-down: the charge falls 2 a step; at 0 gravity goes off.
+/datum/unit_test/dq_pp/gravgen_spin_down
+
+/datum/unit_test/dq_pp/gravgen_spin_down/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/machinery/gravity_generator/main/G = pp_gravgen(run[1])
+	G.charge_count = 4
+	G.set_use_power(USE_POWER_ACTIVE)
+	G.set_charging_state(GRAVGEN_DOWN)
+	pp_step(G, PP_GRAV_STEP)
+	TEST_ASSERT_EQUAL(G.charge_count, 2, "a step takes 2")
+	pp_step(G, PP_GRAV_STEP)
+	pp_step(G, PP_GRAV_STEP)
+	TEST_ASSERT_EQUAL(G.charging_state, GRAVGEN_IDLE, "at 0 it settles")
+	TEST_ASSERT_EQUAL(G.use_power, USE_POWER_IDLE, "and gravity is off")
+	pp_gravgen_done(G, run[1])
+
+/// The breaker: off while running starts the spin-down; on again while spinning down starts the spin-up.
+/datum/unit_test/dq_pp/gravgen_breaker
+
+/datum/unit_test/dq_pp/gravgen_breaker/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/machinery/gravity_generator/main/G = pp_gravgen(run[1])
+	G.set_charging_state(GRAVGEN_IDLE)
+	G.set_use_power(USE_POWER_ACTIVE)
+	G.breaker = FALSE
+	G.set_power()
+	TEST_ASSERT_EQUAL(G.charging_state, GRAVGEN_DOWN, "the breaker off spins it down")
+	G.breaker = TRUE
+	G.set_power()
+	TEST_ASSERT_EQUAL(G.charging_state, GRAVGEN_UP, "back on, it spins up again")
+	pp_gravgen_done(G, run[1])
+
+#undef PP_GRAV_STEP
+
+// ============================================================================================ solars
+
+/// A panel supplies solar_gen_rate * sunfrac while it is whole, linked to a controller on its own network and unobscured; sunfrac is
+/// cos^2 of its angle off the sun, 0 past 90 degrees. The controller supplies the sum of its panels.
+/datum/unit_test/dq_pp/solar_output
+
+/datum/unit_test/dq_pp/solar_output/run_pp()
+	var/list/run = pp_run(3)
+	var/net = power_test_grid(0)
+	var/obj/machinery/power/solar_control/C = allocate(/obj/machinery/power/solar_control, run[1])
+	var/obj/machinery/power/solar/P = allocate(/obj/machinery/power/solar, run[2])
+	power_test_join(net, C)
+	power_test_join(net, P)
+	TEST_ASSERT(P.set_control(C), "the panel links to its controller")
+	C.add_panel(P)
+	var/sun = SSsolars.get_solar_angle(get_turf(P))
+	P.adir = (sun + 60) % 360
+	P.obscured = 0
+	P.update_solar_exposure()
+	TEST_ASSERT(pp_close(P.sunfrac, 0.25, 0.001), "60 degrees off the sun is cos^2 60 = 0.25: [P.sunfrac]")
+	TEST_ASSERT(pp_close(P.get_power_supplied(), GLOB.solar_gen_rate * 0.25, 0.001), "and supplies a quarter of [GLOB.solar_gen_rate] W")
+	P.adir = (sun + 120) % 360
+	P.update_solar_exposure()
+	TEST_ASSERT_EQUAL(P.sunfrac, 0, "past 90 degrees it gets nothing")
+	P.sunfrac = 1
+	P.obscured = 1
+	TEST_ASSERT_EQUAL(P.get_power_supplied(), 0, "obscured it supplies nothing")
+	P.obscured = 0
+	var/net2 = power_test_grid(0)
+	power_test_join(net2, P)
+	TEST_ASSERT_EQUAL(P.get_power_supplied(), 0, "off its controller's network it supplies nothing")
+	power_test_join(net, P)
+	TEST_ASSERT_EQUAL(P.get_power_supplied(), GLOB.solar_gen_rate, "facing the sun it supplies the full rate")
+	C.remove_panel(P)
+	P.unset_control()
+	power_test_drop_grid(net)
+	power_test_drop_grid(net2)
+
+// ============================================================================================ the gas turbine
+
+#define PP_COMP_STEP "compressor_step"
+#define PP_TURB_STEP "turbine_step"
+
+/// A compressor and its turbine along a run of 4 floors: the inlet, the compressor, the turbine, the outlet. list(compressor, turbine).
+/datum/unit_test/dq_pp/proc/pp_turbine_pair()
+	var/list/run = pp_run(4)
+	var/d = pp_run_dir(run)
+	var/obj/machinery/compressor/C = allocate(/obj/machinery/compressor, run[2])
+	var/obj/machinery/power/turbine/T = allocate(/obj/machinery/power/turbine, run[3])
+	C.set_dir(turn(d, 180))
+	T.set_dir(d)
+	rel_clear(C, nameof(C.turbine))
+	rel_clear(T, nameof(T.compressor))
+	rel_set(C, nameof(C.inturf), run[1])
+	rel_set(T, nameof(T.outturf), run[4])
+	C.locate_machinery()
+	T.locate_machinery()
+	TEST_ASSERT_EQUAL(C.turbine, T, "the compressor found its turbine")
+	TEST_ASSERT_EQUAL(T.compressor, C, "and the turbine its compressor")
+	C.atom_fix()
+	T.atom_fix()
+	return list(C, T)
+
+/// The turbine's curve: ((rpm / 100000) ^ 0.8) * 100000 * productivity W a step.
+/datum/unit_test/dq_pp/turbine_output_curve
+
+/datum/unit_test/dq_pp/turbine_output_curve/run_pp()
+	var/list/pair = pp_turbine_pair()
+	var/obj/machinery/compressor/C = pair[1]
+	var/obj/machinery/power/turbine/T = pair[2]
+	C.set_starter(TRUE)
+	C.rpm = 50000
+	pp_step(T, PP_TURB_STEP)
+	var/expected = ((50000 / 100000) ** 0.8) * 100000 * T.productivity
+	TEST_ASSERT(pp_close(T.lastgen, expected, 0.0001), "50000 rpm makes [expected] W: [T.lastgen]")
+	C.set_starter(FALSE)
+
+/// The compressor's spin-up: started, it aims for 1000 rpm; rpm moves a tenth of the way a step and loses rpm^2 / (500000 * efficiency).
+/datum/unit_test/dq_pp/compressor_spin_up
+
+/datum/unit_test/dq_pp/compressor_spin_up/run_pp()
+	var/list/pair = pp_turbine_pair()
+	var/obj/machinery/compressor/C = pair[1]
+	var/area/room = get_area(C)
+	var/required = room.requires_power
+	room.requires_power = FALSE
+	C.power_change()
+	C.set_starter(TRUE)
+	C.rpm = 0
+	C.rpmtarget = 0
+	pp_step(C, PP_COMP_STEP)
+	TEST_ASSERT_EQUAL(C.rpmtarget, 1000, "started, it aims for 1000 rpm")
+	pp_step(C, PP_COMP_STEP)
+	var/expected = 100 - (100 * 100) / (500000 * C.efficiency)
+	TEST_ASSERT(pp_close(C.rpm, expected, 0.0001), "a step moves it a tenth of the way, less friction: [C.rpm], expected [expected]")
+	C.set_starter(FALSE)
+	room.requires_power = required
+
+#undef PP_COMP_STEP
+#undef PP_TURB_STEP

@@ -53,10 +53,10 @@
 	// (code/modules/body/parts/attach.dm). Copies: they shrink as we go.
 	for(var/OR in organs?.Copy())
 		if(isdatum(OR))
-			destroyed(OR)
+			ended_with(OR, src)
 	for(var/OR in internal_organ_list())
 		if(isdatum(OR))
-			destroyed(OR)
+			ended_with(OR, src)
 
 	GLOB.cultnet.updateVisibility(src, 0)
 	..()
@@ -487,7 +487,7 @@
 		after(src, 15 SECONDS, TYPE_PROC_REF(/datum, om_chat), with = list(span_warning("You feel like you're about to throw up!")))
 		after(src, 25 SECONDS, PROC_REF(do_vomit), with = list(lost_nutrition, blood, stun, distance, message, toxic, purge))
 
-/// om_after() target: able to vomit again.
+/// after() target: able to vomit again.
 /mob/living/proc/puke_recovered()
 	lastpuke = FALSE
 
@@ -1488,7 +1488,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 		to_chat(src, span_filter_notice("Private notes updated. Don't forget to save!"))
 		private_notes_window(user)
 
-/// om_after() target: the mob's AI picks up where it paused.
+/// after() target: the mob's AI picks up where it paused.
 /mob/living/proc/ai_brain_resume()
 	ai_busy_end()
 

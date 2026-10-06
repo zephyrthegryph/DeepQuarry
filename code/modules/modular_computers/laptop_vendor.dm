@@ -255,7 +255,7 @@ CAPABILITIES(/obj/machinery/lapvend)
 
 	return TRUE
 
-/// The computed part of /obj/machinery/lapvend's window data (declared on its UI_DATA row).
+/// /obj/machinery/lapvend's window data.
 /obj/machinery/lapvend/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

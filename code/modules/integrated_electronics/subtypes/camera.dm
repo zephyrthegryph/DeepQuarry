@@ -115,12 +115,17 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 
 	var/see_dark = FALSE
 
-// ALLOW(init/CTOR_ARGS): network_id and darkvis are constructor arguments from whoever builds it
-/obj/machinery/camera/intcircuit/Initialize(mapload, network_id, darkvis)
+CAPABILITIES(/obj/machinery/camera/intcircuit)
+	param(nameof(network_id), pos = 1)
+	param(nameof(see_dark), pos = 2)
+
+/// The network a circuit camera is made on (its constructor param).
+/obj/machinery/camera/intcircuit/var/network_id
+
+// ALLOW(init/INSTANCE_STATE): a circuit camera is numbered and joins the camera net
+/obj/machinery/camera/intcircuit/Initialize(mapload)
 	if(network_id)
 		network = list(network_id)
-	if(darkvis)
-		see_dark = TRUE
 	// Skip the parent Initialize's assembly creation and network checks
 	c_tag = "IC Camera #[rand(1000, 9999)]"
 	name = c_tag
@@ -242,8 +247,8 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/input/video_camera_input, INTE
 	return
 
 /// Switching cameras forgets the last turf first, then the module switches as usual.
-UI_ACT_OVERRIDE(/datum/tgui_module/camera/intcircuit, ui_act_switch_camera)
-	rel_clear(src, nameof(/datum/tgui_module/appearance_changer::last_camera_turf))
+/datum/tgui_module/camera/intcircuit/ui_act_switch_camera(datum/act/op/A, name)
+	rel_clear(src, nameof(last_camera_turf))
 	return ..()
 
 /// The owner_circuit this refers to (a relation view: null once that is deleted).

@@ -107,11 +107,17 @@
 		return core
 	return null
 
+CAPABILITIES(/obj/item/spell)
+	param(nameof(coreless), pos = 1)
+
+/// A spell that needs no core (its constructor param).
+/obj/item/spell/var/coreless = FALSE
+
 // Proc: New()
 // Parameters: 0
 // Description: Sets owner to equal its loc, links to the owner's core, then applies overlays if needed.
-// ALLOW(init/CTOR_ARGS): coreless is a constructor argument from whoever builds it
-/obj/item/spell/Initialize(mapload, coreless)
+// ALLOW(init/INSTANCE_STATE): a spell belongs to the caster it is made on, and needs their core unless coreless
+/obj/item/spell/Initialize(mapload)
 	. = ..()
 	if(isliving(loc))
 		rel_set(src, nameof(owner), loc)

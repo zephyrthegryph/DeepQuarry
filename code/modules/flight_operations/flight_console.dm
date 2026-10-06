@@ -87,7 +87,7 @@ CAPABILITIES(/datum/flight_operations_ui)
 		destination_data += list(render_data)
 	return destination_data
 
-/// The computed part of /datum/flight_operations_ui's window data (declared on its UI_DATA row).
+/// /datum/flight_operations_ui's window data.
 /datum/flight_operations_ui/ui_data(datum/act/eval/A)
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	var/obj/effect/overmap/visitable/ship/ship = vessel?.ship()

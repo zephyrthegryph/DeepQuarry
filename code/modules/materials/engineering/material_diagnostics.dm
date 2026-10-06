@@ -33,7 +33,7 @@
 
 /// Secondary multitool / screwdriver use on the owner.
 /datum/material_service/proc/on_tool_act(datum/act/tool_act/use)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(!use.secondary)
 		return HOOK_DECLINE
 	var/result = NONE
@@ -61,7 +61,7 @@
 	last_reading = null
 
 /datum/material_service/proc/examine_service(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/examine/event = A
 	var/list/text = event.texts
 	text += span_notice("[summary()] Right-click with a multitool to measure operation; right-click with a screwdriver to open the service cover.")
@@ -107,7 +107,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /datum/material_service/proc/replace_with_stock(datum/act/attackby/use)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/obj/item/item = use.item
 	var/mob/user = use.user
 	if(!maintenance_open || !istype(item, /obj/item/stack/material))
@@ -182,7 +182,7 @@ CAPABILITIES(/datum/material_service)
 /datum/material_service/ui_title(mob/user)
 	return "[owner().name] — diagnostics"
 
-/// The computed part of /datum/material_service's window data (declared on its UI_DATA row).
+/// /datum/material_service's window data.
 /datum/material_service/ui_data(datum/act/eval/A)
 	var/list/parts = list()
 	for(var/role in owner().material_roles())

@@ -32,8 +32,7 @@
 			"can_plot_expedition" = shuttle.moving_status == SHUTTLE_IDLE && can_plot_expedition()
 		)
 
-/obj/machinery/computer/shuttle_control/explore/ui_gate(datum/act/op/A)
-	var/mob/user = A.actor
+/obj/machinery/computer/shuttle_control/explore/console_gate(mob/user)
 	if(!..())
 		return FALSE
 	var/datum/shuttle/autodock/overmap/shuttle = SSshuttles.shuttles[shuttle_tag]
@@ -86,7 +85,7 @@
 	if(!A.answer || isnull(A.answer.value))
 		return
 	var/obj/machinery/computer/shuttle_control/explore/console = src_object()
-	var/allowed = console.ui_act_allowed(user, "pick", src, state())
+	var/allowed = console.console_gate(user)
 	A.request.captured["late_refusal"] = allowed ? null : "the console action is unavailable"
 	if(request_recheck(A.request))
 		return

@@ -2,3 +2,4 @@
 /obj/structure/bonfire|robot|none => bonfire_item,bonfire_hand|
 /obj/structure/bonfire|ai|none => |
 /obj/structure/bonfire|ghost|none => |
+

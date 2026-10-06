@@ -17,16 +17,14 @@
 		I.forceMove(src)
 	update_icon()
 
-EXTEND_INTERACTIONS(/obj/structure/largecrate, \
-	INTERACT_HAND("Use", PROC_REF(interaction_hand)), \
-)
-
-/obj/structure/largecrate/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/largecrate/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You need a crowbar to pry this open!"))
 	return TRUE
 
 CAPABILITIES(/obj/structure/largecrate)
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /obj/structure/largecrate/proc/crowbar_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -225,20 +223,12 @@ CAPABILITIES(/obj/structure/largecrate)
 	name = "Dangerous Predator carrier"
 	starts_with = list(/mob/living/simple_mob/animal/space/alien)
 
-// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-/obj/structure/largecrate/animal/dangerous/Initialize(mapload)
-	starts_with = list(pick(/mob/living/simple_mob/animal/space/carp/large,
-						/mob/living/simple_mob/vore/aggressive/deathclaw,
-						/mob/living/simple_mob/vore/aggressive/dino,
-						/mob/living/simple_mob/animal/space/alien,
-						/mob/living/simple_mob/animal/space/alien/drone,
-						/mob/living/simple_mob/animal/space/alien/sentinel,
-						/mob/living/simple_mob/animal/space/alien/queen,
-						/mob/living/simple_mob/vore/otie/feral, // uncomment
-						/mob/living/simple_mob/vore/otie/feral/chubby, // add
-						/mob/living/simple_mob/vore/otie/red, // uncomment
-						/mob/living/simple_mob/vore/aggressive/corrupthound))
-	return ..()
+CAPABILITIES(/obj/structure/largecrate/animal/dangerous)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls()): which animal is in the crate.
+/obj/structure/largecrate/animal/dangerous/proc/roll_starts_with(datum/roller/R)
+	return list(R.choose(list(/mob/living/simple_mob/animal/space/carp/large, /mob/living/simple_mob/vore/aggressive/deathclaw, /mob/living/simple_mob/vore/aggressive/dino, /mob/living/simple_mob/animal/space/alien, /mob/living/simple_mob/animal/space/alien/drone, /mob/living/simple_mob/animal/space/alien/sentinel, /mob/living/simple_mob/animal/space/alien/queen, /mob/living/simple_mob/vore/otie/feral, /mob/living/simple_mob/vore/otie/feral/chubby, /mob/living/simple_mob/vore/otie/red, /mob/living/simple_mob/vore/aggressive/corrupthound)))
 
 /obj/structure/largecrate/animal/guardbeast
 	name = "VARMAcorp autoNOMous security solution"
@@ -247,11 +237,12 @@ CAPABILITIES(/obj/structure/largecrate)
 	icon_state = "sotiecrate"
 	starts_with = list(/mob/living/simple_mob/vore/otie/security)
 
-// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-/obj/structure/largecrate/animal/guardbeast/Initialize(mapload)
-	starts_with = list(pick(/mob/living/simple_mob/vore/otie/security,
-						/mob/living/simple_mob/vore/otie/security/chubby))
-	return ..()
+CAPABILITIES(/obj/structure/largecrate/animal/guardbeast)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls()): which animal is in the crate.
+/obj/structure/largecrate/animal/guardbeast/proc/roll_starts_with(datum/roller/R)
+	return list(R.choose(list(/mob/living/simple_mob/vore/otie/security, /mob/living/simple_mob/vore/otie/security/chubby)))
 
 /obj/structure/largecrate/animal/guardmutant
 	name = "VARMAcorp autoNOMous security solution for hostile environments."
@@ -260,12 +251,12 @@ CAPABILITIES(/obj/structure/largecrate)
 	icon_state = "sotiecrate"
 	starts_with = list(/mob/living/simple_mob/vore/otie/security/phoron)
 
-// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-/obj/structure/largecrate/animal/guardmutant/Initialize(mapload)
-	starts_with = list(pick(/mob/living/simple_mob/vore/otie/security/phoron;2,
-						/mob/living/simple_mob/vore/otie/security/phoron/red;0.5,
-						/mob/living/simple_mob/vore/otie/security/phoron/red/chubby;0.5))
-	return ..()
+CAPABILITIES(/obj/structure/largecrate/animal/guardmutant)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls()): which animal is in the crate.
+/obj/structure/largecrate/animal/guardmutant/proc/roll_starts_with(datum/roller/R)
+	return list(R.weighted(list(/mob/living/simple_mob/vore/otie/security/phoron = 2, /mob/living/simple_mob/vore/otie/security/phoron/red = 0.5, /mob/living/simple_mob/vore/otie/security/phoron/red/chubby = 0.5)))
 
 /obj/structure/largecrate/animal/otie
 	name = "VARMAcorp adoptable reject (Dangerous!)"
@@ -275,26 +266,27 @@ CAPABILITIES(/obj/structure/largecrate)
 	starts_with = list(/mob/living/simple_mob/vore/otie/cotie)
 	var/taped = 1
 
-// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-/obj/structure/largecrate/animal/otie/Initialize(mapload)
-	starts_with = list(pick(/mob/living/simple_mob/vore/otie/cotie,
-						/mob/living/simple_mob/vore/otie/cotie/chubby))
-	return ..()
+CAPABILITIES(/obj/structure/largecrate/animal/otie)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls()): which animal is in the crate.
+/obj/structure/largecrate/animal/otie/proc/roll_starts_with(datum/roller/R)
+	return list(R.choose(list(/mob/living/simple_mob/vore/otie/cotie, /mob/living/simple_mob/vore/otie/cotie/chubby)))
 
 /obj/structure/largecrate/animal/otie/phoron
 	name = "VARMAcorp adaptive beta subject (Experimental)"
 	desc = "VARMAcorp experimental hostile environment adaptive breeding development kit. WARNING, DO NOT RELEASE IN WILD!"
 	starts_with = list(/mob/living/simple_mob/vore/otie/cotie/phoron)
 
-// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-/obj/structure/largecrate/animal/otie/phoron/Initialize(mapload)
-	starts_with = list(pick(/mob/living/simple_mob/vore/otie/cotie/phoron;2,
-						/mob/living/simple_mob/vore/otie/red/friendly;0.5,
-						/mob/living/simple_mob/vore/otie/red/chubby;0.5)) // add
-	return ..()
+CAPABILITIES(/obj/structure/largecrate/animal/otie/phoron)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls()): which animal is in the crate.
+/obj/structure/largecrate/animal/otie/phoron/roll_starts_with(datum/roller/R)
+	return list(R.weighted(list(/mob/living/simple_mob/vore/otie/cotie/phoron = 2, /mob/living/simple_mob/vore/otie/red/friendly = 0.5, /mob/living/simple_mob/vore/otie/red/chubby = 0.5)))
 
 /// Overrides largecrate's interaction_hand(): untape the crate first.
-/obj/structure/largecrate/animal/otie/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)//I just couldn't decide between the icons lmao
+/obj/structure/largecrate/animal/otie/interaction_hand(datum/act/op/A)
 	if(taped == 1)
 		play_sfx(src, SFX_ITEMS_POSTER_RIPPED, 0.5)
 		icon_state = "otiecrate"
@@ -316,11 +308,12 @@ CAPABILITIES(/obj/structure/largecrate)
 	desc = "Bounces around a lot. Looks messily packaged, were they in a hurry?"
 	starts_with = list(/mob/living/simple_mob/vore/fennec)
 
-// ALLOW(init/INSTANCE_STATE): starts_with rolled at random for each instance
-/obj/structure/largecrate/animal/fennec/Initialize(mapload)
-	starts_with = list(pick(/mob/living/simple_mob/vore/fennec,
-						/mob/living/simple_mob/vore/fennix;0.5))
-	return ..()
+CAPABILITIES(/obj/structure/largecrate/animal/fennec)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+
+/// Rolled before init (rolls()): which animal is in the crate.
+/obj/structure/largecrate/animal/fennec/proc/roll_starts_with(datum/roller/R)
+	return list(R.weighted(list(/mob/living/simple_mob/vore/fennec = 1, /mob/living/simple_mob/vore/fennix = 0.5)))
 
 /obj/structure/largecrate/animal/jerboa
 	name = "Jerboa Crate"

@@ -3,3 +3,4 @@
 /obj/machinery/button/crematorium|ai|none => |
 /obj/machinery/button/crematorium|ghost|none => |
 /obj/machinery/button/crematorium|human|/obj/item => button_press,button_press_item|crematorium_button_trigger:access denied
+

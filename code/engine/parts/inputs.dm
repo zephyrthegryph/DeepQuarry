@@ -206,6 +206,11 @@
 /// A window button: the op with that ui_act() binding runs with origin ORIGIN_UI, its arguments validated by their schemas first.
 /proc/op_ui_act(mob/actor, datum/holder, action, list/payload, forward_depth = 0, datum/forwarded_by = null, datum/tgui/pressed_in = null)
 	RETURN_TYPE(/datum/op_result)
+	if(!forward_depth)
+		var/datum/entry/window_decl = present_interface(holder)
+		var/pressed = window_decl?.args["pressed"]
+		if(pressed)
+			call(holder, pressed)(actor, action) // interface(pressed =): the holder's reaction to any press in its window
 	var/list/found = list()
 	var/datum/op_plan/P = op_plan_by_ui_action(holder, action, found, payload)
 	if(!P)
@@ -248,6 +253,23 @@
 		if(answered)
 			return answered
 	return null
+
+/// A sub-action's arguments: the nested message an op's handler routes itself (a board game's "game_action" carries a move and its data). `schemas`
+/// is name -> schema (null passes the value as it came). Returns name -> value, or null when one is refused (logged like a refused arg()).
+/proc/payload_args(datum/holder, list/data, list/schemas)
+	var/list/typed = list()
+	for(var/name in schemas)
+		var/datum/schema/S = schemas[name]
+		var/value = islist(data) ? data[name] : null
+		if(!S || isnull(value))
+			typed[name] = value
+			continue
+		var/list/checked = schema_input(S, value, holder)
+		if(checked[1] == SCHEMA_REJECT)
+			schema_log(holder, name, "[name] [checked[2]]: sub-action refused")
+			return null
+		typed[name] = checked[1]
+	return typed
 
 /// Runs a payload through the declared arg() schemas: fills `values` (name -> value) and returns a reason when one is refused. A number outside
 /// its range is clamped and logged; any other failure refuses the press.

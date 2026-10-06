@@ -2,3 +2,4 @@
 /obj/structure/prop|robot|none => |prop_hand:not possible right now
 /obj/structure/prop|ai|none => |
 /obj/structure/prop|ghost|none => |
+

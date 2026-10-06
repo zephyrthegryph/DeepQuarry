@@ -12,26 +12,40 @@
 		"message1" = message1 ? message1 : "(none)",
 		"message2" = message2 ? message2 : "(none)")
 
-UI_ACT(/datum/data/pda/app/status_display, "Status", ui_act_status, UI_ARG_VALUE("alert"), UI_ARG_TEXT("statdisp"))
-UI_ACT_PROC(/datum/data/pda/app/status_display, ui_act_status)
-	switch(params["statdisp"])
+CAPABILITIES(/datum/data/pda/app/status_display)
+	op("Status", ui_act("Status", arg("alert"), arg("statdisp", schema_text(4096))), asks(/datum/prompt/text, fields = list("question" = "Line 1", "title" = "Enter Message Text", "default" = computed(PROC_REF(status_line1_default)), "timeout" = 0), step = "k26", when = PROC_REF(status_sets_line1)), asks(/datum/prompt/text, fields = list("question" = "Line 2", "title" = "Enter Message Text", "default" = computed(PROC_REF(status_line2_default)), "timeout" = 0), step = "k28", when = PROC_REF(status_sets_line2)), then(PROC_REF(ui_act_status)))
+
+/datum/data/pda/app/status_display/proc/ui_act_status(datum/act/op/A, alert, statdisp)
+	switch(statdisp)
 		if("message")
 			post_status("message", message1, message2)
 		if("alert")
-			post_status("alert", params["alert"])
+			post_status("alert", alert)
 		if("setmsg1")
-			var/_answer_k26 = act_ask(ui.user, action, params, ui, "k26", /datum/om/prompt/text, message = "Line 1", title = "Enter Message Text", default = message1)
+			var/_answer_k26 = A.step_value("k26")
 			if(isnull(_answer_k26))
 				return
 			message1 = _answer_k26
 		if("setmsg2")
-			var/_answer_k28 = act_ask(ui.user, action, params, ui, "k28", /datum/om/prompt/text, message = "Line 2", title = "Enter Message Text", default = message2)
+			var/_answer_k28 = A.step_value("k28")
 			if(isnull(_answer_k28))
 				return
 			message2 = _answer_k28
 		else
-			post_status(params["statdisp"])
+			post_status(statdisp)
 	return TRUE
+
+/datum/data/pda/app/status_display/proc/status_sets_line1(datum/act/op/A)
+	return A.args["statdisp"] == "setmsg1"
+
+/datum/data/pda/app/status_display/proc/status_sets_line2(datum/act/op/A)
+	return A.args["statdisp"] == "setmsg2"
+
+/datum/data/pda/app/status_display/proc/status_line1_default(datum/act/op/A)
+	return message1
+
+/datum/data/pda/app/status_display/proc/status_line2_default(datum/act/op/A)
+	return message2
 
 /datum/data/pda/app/status_display/proc/post_status(command, data1, data2)
 	var/datum/radio_frequency/frequency = SSradio.return_frequency(1435)
@@ -123,6 +137,8 @@ CAPABILITIES(/datum/data/pda/app/signaller)
 	var/datum/tgui_module/power_monitor/power_monitor
 
 CAPABILITIES(/datum/data/pda/app/power)
+	interface(null, forwards = nameof(power_monitor)) // every other action is the embedded power monitor's
+	without("ui_open")
 	op("Back", ui_act(), then(PROC_REF(ui_act_back)))
 	owns_one(nameof(power_monitor), /datum/tgui_module/power_monitor)
 
@@ -137,11 +153,6 @@ CAPABILITIES(/datum/data/pda/app/power)
 /datum/data/pda/app/power/proc/ui_act_back(datum/act/op/A)
 	power_monitor.active_sensor = null
 	return OP_OK
-
-/// Every other action is the embedded power monitor's.
-UI_ACT_FORWARD(/datum/data/pda/app/power, ui_forward_to_monitor)
-/datum/data/pda/app/power/proc/ui_forward_to_monitor(mob/user, action)
-	return power_monitor
 
 /datum/data/pda/app/crew_records
 	var/tmp/datum/data/record/general_records

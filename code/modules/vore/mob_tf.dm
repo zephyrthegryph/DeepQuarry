@@ -102,7 +102,7 @@
 		rel_clear(src, nameof(vore_selected))
 		ourmob.mob_belly_transfer(src)
 
-	om_run_frame_now(ourmob, /datum/om/pipeline/life)
+	seq_run_frame_now(ourmob, /datum/sequence/life)
 
 	if(ishuman(src))
 		for(var/obj/item/W in contents_of(src))
@@ -117,28 +117,22 @@
 		rel_set(ourmob, nameof(ourmob.tf_form), src)
 		src.forceMove(ourmob)
 	else
-		spent(src)
-
-/datum/om/stage/life/tf_holder
-	reads = list("tf_mob_holder")
-	order = LIFE_PHASE_OUTPUT + 40
-	name = "tf holder"
-	run_if = LIFE_RUN_IF_PLACED
+		replaced_by(src)
 
 /// Continuous only for a transformed mob holding its original body.
-/datum/om/stage/life/tf_holder/idle(mob/living/self)
-	return !self.tf_mob_holder
+/mob/living/proc/life_tf_holder_due()
+	return src.tf_mob_holder
 
 /// Links life and death between a transformed mob and the body it holds.
-/datum/om/stage/life/tf_holder/perform(mob/living/self, datum/om/frame/life/ctx)
-	if(!self.tf_mob_holder)
+/mob/living/proc/life_tf_holder(datum/seq_frame/life/F)
+	if(!src.tf_mob_holder)
 		return
-	if(self.tf_mob_holder.loc != self) return // Prevent bodyswapped creatures having their life linked
-	if(self.stat != self.tf_mob_holder.stat)
-		if(self.stat == DEAD)
-			self.tf_mob_holder.death(FALSE, null)
-		if(self.tf_mob_holder.stat == DEAD)
-			self.death()
+	if(src.tf_mob_holder.loc != src) return // Prevent bodyswapped creatures having their life linked
+	if(src.stat != src.tf_mob_holder.stat)
+		if(src.stat == DEAD)
+			src.tf_mob_holder.death(FALSE, null)
+		if(src.tf_mob_holder.stat == DEAD)
+			src.death()
 
 /mob/living/proc/copy_vore_prefs_to_mob(mob/living/new_mob)
 	//For primarily copying vore preference settings from a carbon mob to a simplemob

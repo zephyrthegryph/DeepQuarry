@@ -585,7 +585,7 @@ CAPABILITIES(/datum/ai_brain)
 // ---------------------------------------------------------------------------
 
 /datum/ai_brain/proc/on_stat_change(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/mob_statchange/event = A
 	var/old_stat = event.old_stat
 	var/new_stat = event.new_stat

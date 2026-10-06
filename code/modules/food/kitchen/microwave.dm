@@ -335,7 +335,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/microwave's window data (declared on its UI_DATA row).
+/// /obj/machinery/microwave's window data.
 /obj/machinery/microwave/proc/ui_data_obj_machinery_microwave(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -637,7 +637,7 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 	for(var/obj/item/holder/H in contents_of(container))
 		if(H.held_mob)
 			to_chat(H.held_mob, span_danger("You hear an earsplitting humming and your head aches!"))
-			spent(H.held_mob)
+			destroyed(H.held_mob, src, BURN)
 			rel_clear(H, nameof(H.held_mob))
 			spent(H)
 

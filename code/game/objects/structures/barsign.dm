@@ -27,10 +27,12 @@
 		else
 			. += "It says '[icon_state]'"
 
-// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
-/obj/structure/sign/double/barsign/Initialize(mapload)
-	. = ..()
-	icon_state = pick(get_valid_states())
+CAPABILITIES(/obj/structure/sign/double/barsign)
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+
+/// Rolled before init (rolls()): the sign starts on any of its valid faces.
+/obj/structure/sign/double/barsign/proc/roll_icon_state(datum/roller/R)
+	return R.choose(get_valid_states())
 
 /obj/structure/sign/double/barsign/declare_interactions(list/into)
 	into += list(

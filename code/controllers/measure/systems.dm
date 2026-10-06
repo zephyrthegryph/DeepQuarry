@@ -124,8 +124,8 @@
 	// Not a static: this runs while the OM registry builds inside the global variable controller's New(), before
 	// proc statics holding type paths are set up (a static here read as null and the table came out empty).
 	var/list/rows = list(
-		// code/modules/mob/living/life/, code/modules/medical: the mob life pipelines and the observer upkeep.
-		"life" = list(/datum/om/pipeline/life, /datum/om/behaviour/observer_upkeep, /datum/om/behaviour/hud_on_vitals),
+		// code/modules/mob/living/life/, code/modules/medical: the observer upkeep (Life itself is the kernel's life sequence).
+		"life" = list(/datum/om/behaviour/observer_upkeep, /datum/om/behaviour/hud_on_vitals),
 		// code/game/machinery/: the machine pipeline (the machine system is a kernel work item).
 		"machines" = list(/datum/om/pipeline/machine),
 		// code/modules/combat_ai/: strategic and tactical brains, and the sleeper that wakes them.
@@ -157,7 +157,7 @@
 	)
 	return rows
 
-/// The prefix -> key list km_system_rows() flattens to: "/datum/om/pipeline/life" = "life", ... in row order.
+/// The prefix -> key list km_system_rows() flattens to: "/datum/om/behaviour/observer_upkeep" = "life", ... in row order.
 /proc/km_system_prefixes()
 	var/datum/km_holder/holder = km_holder()
 	if(!length(holder.prefixes))
@@ -170,7 +170,7 @@
 	return holder.prefixes
 
 /// The system key of a behaviour type path (rules 2 and 3 above). Matching is by path prefix at a "/" boundary,
-/// so `/datum/om/pipeline/life` owns `/datum/om/pipeline/life_derive` too (life*) but not `/datum/om/pipeline/lifeboat/x`.
+/// so a `life` row owns `life_derive` too (life*) but not `/datum/om/pipeline/lifeboat/x`.
 /proc/km_system_key_for_path(path)
 	var/text = "[path]"
 	var/list/prefixes = km_system_prefixes()

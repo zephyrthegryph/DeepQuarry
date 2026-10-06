@@ -98,7 +98,7 @@
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/computer/HolodeckControl's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/HolodeckControl's window data.
 /obj/machinery/computer/HolodeckControl/proc/ui_data_obj_machinery_computer_HolodeckControl(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/program_list = list()
@@ -321,10 +321,10 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 		C.derez()
 
 	for(var/obj/effect/decal/cleanable/blood/B in linkedholodeck())
-		consumed(B, src)
+		spent(B, src)
 
 	for(var/obj/effect/landmark/L in linkedholodeck())
-		consumed(L, src)
+		spent(L, src)
 
 	// The program's objects are cloned into the room (entity_clone, via copy_contents_to()); the
 	// holodeck tracks them in a relation roster and derezzes them itself (derez()) on the next
@@ -362,7 +362,7 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 		if(L.name=="Holocarp Spawn Random")
 			if(prob(4)) //With 4 spawn points, carp should only appear 15% of the time.
 				rel_add(src, nameof(holographic_mobs), new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
-		consumed(L, src)
+		spent(L, src)
 
 		update_projections()
 

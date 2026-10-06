@@ -52,14 +52,14 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cow, \
 	else
 		return FALSE
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/cow
-	of = /mob/living/simple_mob/animal/passive/cow
+/mob/living/simple_mob/animal/passive/cow/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/passive/cow/perform(mob/living/simple_mob/animal/passive/cow/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/passive/cow/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.stat == CONSCIOUS)
-		if(self.udder && prob(5))
-			self.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
+	if(src.stat == CONSCIOUS)
+		if(src.udder && prob(5))
+			src.udder.add_reagent(REAGENT_ID_MILK, rand(5, 10))
 
 /// Old attack_hand: cow tipping.
 /mob/living/simple_mob/animal/passive/cow/proc/cow_interaction_hand(mob/living/carbon/M, obj/item/held, datum/interaction/interaction)

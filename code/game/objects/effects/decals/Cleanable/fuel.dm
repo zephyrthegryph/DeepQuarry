@@ -9,14 +9,20 @@
 	generic_filth = TRUE
 	persistent = FALSE
 
-// ALLOW(init/CTOR_ARGS): amt and nologs are constructor arguments from whoever builds it
-/obj/effect/decal/cleanable/liquid_fuel/Initialize(mapload, amt=1, nologs=1)
+CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
+	param(nameof(amount), pos = 1)
+	param(nameof(quiet_spill), pos = 2)
+
+/// A spill that tells no admins (its constructor param).
+/obj/effect/decal/cleanable/liquid_fuel/var/quiet_spill = TRUE
+
+// ALLOW(init/INSTANCE_STATE): spilled fuel joins the fuel already on its tile, or spreads
+/obj/effect/decal/cleanable/liquid_fuel/Initialize(mapload)
 	if(!isturf(loc))
 		return INITIALIZE_HINT_QDEL
-	if(!nologs)
+	if(!quiet_spill)
 		message_admins("Liquid fuel has spilled in [loc.loc.name] ([loc.x],[loc.y],[loc.z]) (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
 		log_game("Liquid fuel has spilled in [loc.loc.name] ([loc.x],[loc.y],[loc.z])")
-	src.amount = amt
 
 	var/has_spread = 0
 	//Be absorbed by any other liquid fuel in the tile.
@@ -54,9 +60,11 @@
 	icon_state = "mustard"
 	anchored = FALSE
 
-// ALLOW(init/CTOR_ARGS): amt and d are constructor arguments from whoever builds it
-/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel/Initialize(mapload, amt = 1, d = 0)
-	set_dir(d) //Setting this direction means you won't get torched by your own flamethrower.
+CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel)
+	param(nameof(dir), pos = 2)
+
+// ALLOW(init/INSTANCE_STATE): flamethrower fuel ignites its tile
+/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel/Initialize(mapload)
 	if(istype(loc, /turf/simulated))
 		var/turf/simulated/T = loc
 		T.hotspot_expose((T20C*2) + 380,500) //Ignite the fuel.

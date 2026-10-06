@@ -1,62 +1,60 @@
 human|none menu: Open/Close
 human|none menu: Remove Fire Axe
-human|none menu: Use
-human|none menu: Use (refused: the cabinet won't budge)
-human|none click: nothing
-robot|none menu: Open/Close
-robot|none menu: Remove Fire Axe
+human|none menu: Use (refused: The cabinet won't budge.)
+human|none click: Click: Use
 robot|none menu: Toggle lock
-robot|none menu: Use
-robot|none menu: Use (refused: the cabinet won't budge)
-robot|none click: nothing
+robot|none menu: Use (refused: The cabinet won't budge.)
+robot|none click: Click: Use
 ai|none menu: Toggle lock
-ai|none click: nothing
+ai|none click: Click: Toggle lock
+ghost|none menu: Open/Close (refused: You can't reach that.)
+ghost|none menu: Remove Fire Axe (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Open/Close
 human|/obj/item/tool/screwdriver menu: Remove Fire Axe
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver menu: Use (refused: the cabinet won't budge)
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver menu: Use (refused: The cabinet won't budge.)
+human|/obj/item/tool/screwdriver click: Click: Use
 human|/obj/item/tool/crowbar menu: Open/Close
 human|/obj/item/tool/crowbar menu: Remove Fire Axe
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar menu: Use (refused: the cabinet won't budge)
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar menu: Use (refused: The cabinet won't budge.)
+human|/obj/item/tool/crowbar click: Click: Use
 human|/obj/item/tool/wrench menu: Open/Close
 human|/obj/item/tool/wrench menu: Remove Fire Axe
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench menu: Use (refused: the cabinet won't budge)
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench menu: Use (refused: The cabinet won't budge.)
+human|/obj/item/tool/wrench click: Click: Use
 human|/obj/item/tool/wirecutters menu: Open/Close
 human|/obj/item/tool/wirecutters menu: Remove Fire Axe
 human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters menu: Use (refused: the cabinet won't budge)
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters menu: Use (refused: The cabinet won't budge.)
+human|/obj/item/tool/wirecutters click: Click: Use
 human|/obj/item/multitool menu: Open/Close
 human|/obj/item/multitool menu: Remove Fire Axe
 human|/obj/item/multitool menu: Use
-human|/obj/item/multitool menu: Use (refused: the cabinet won't budge)
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool menu: Use (refused: The cabinet won't budge.)
+human|/obj/item/multitool click: Click: Use
 human|/obj/item/weldingtool menu: Open/Close
 human|/obj/item/weldingtool menu: Remove Fire Axe
 human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool menu: Use (refused: the cabinet won't budge)
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool menu: Use (refused: The cabinet won't budge.)
+human|/obj/item/weldingtool click: Click: Use
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Open/Close
 human|/obj/item/stack/cable_coil menu: Remove Fire Axe
 human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil menu: Use (refused: the cabinet won't budge)
-human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/cable_coil menu: Use (refused: The cabinet won't budge.)
+human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Open/Close
 human|/obj/item/stack/material/steel menu: Remove Fire Axe
 human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel menu: Use (refused: the cabinet won't budge)
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/material/steel menu: Use (refused: The cabinet won't budge.)
+human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Open/Close
 human|/obj/item/card/id menu: Remove Fire Axe
 human|/obj/item/card/id menu: Use
-human|/obj/item/card/id menu: Use (refused: the cabinet won't budge)
-human|/obj/item/card/id click: nothing
-keys: fireaxecabinet_hand, fireaxecabinet_item, gen_drag_interaction_drag_buckle, gen_silicon_fireaxecabinet_silicon_lock, gen_tk_interaction_tk, gen_verb_remove_fire_axe_effect, gen_verb_toggle_openness_effect
+human|/obj/item/card/id menu: Use (refused: The cabinet won't budge.)
+human|/obj/item/card/id click: Click: Use
+keys: fireaxecabinet_silicon_lock, gen_drag_interaction_drag_buckle, hand, item, remove_fire_axe_effect, robot_item, tk, toggle_openness_effect
 

@@ -84,12 +84,12 @@
 
 
 // Cloaks the spider automatically, if possible.
-/datum/om/stage/life/special/animal/giant_spider/lurker
-	of = /mob/living/simple_mob/animal/giant_spider/lurker
+/mob/living/simple_mob/animal/giant_spider/lurker/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/animal/giant_spider/lurker/perform(mob/living/simple_mob/animal/giant_spider/lurker/self, datum/om/frame/life/ctx)
-	if(!dq_get_cloaked(self) && self.can_cloak())
-		self.cloak()
+/mob/living/simple_mob/animal/giant_spider/lurker/life_special(datum/seq_frame/life/F)
+	if(!dq_get_cloaked(src) && src.can_cloak())
+		src.cloak()
 
 
 // Applies bonus base damage if dq_get_cloaked(src).

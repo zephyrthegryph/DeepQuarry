@@ -35,17 +35,21 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 	id = "round_end_belt"
 
 	// create a conveyor
-// ALLOW(init/CTOR_ARGS): newdir and on are constructor arguments from whoever builds it
-/obj/machinery/conveyor/Initialize(mapload, newdir, on = 0)
+CAPABILITIES(/obj/machinery/conveyor)
+	param(nameof(dir), pos = 1)
+	param(nameof(starts_on), pos = 2)
+
+/// A conveyor that starts running (its constructor param).
+/obj/machinery/conveyor/var/starts_on = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a conveyor watches what enters its turf, sets its belt direction and parts, and may start running
+/obj/machinery/conveyor/Initialize(mapload)
 	. = ..()
 	if(loc)
 		observe(loc, /datum/notice/atom_entered, src, then(PROC_REF(on_turf_entered)))
-	if(newdir)
-		set_dir(newdir)
-
 	update_dir()
 
-	if(on)
+	if(starts_on)
 		set_operating(FORWARDS)
 
 	default_apply_parts()
@@ -58,7 +62,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 		observe(loc, /datum/notice/atom_entered, src, then(PROC_REF(on_turf_entered)))
 
 /obj/machinery/conveyor/proc/on_turf_entered(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/atom_entered/event = A
 	var/atom/movable/arrived = event.arrived
 	if(operating && arrived && !arrived.anchored && !istype(arrived, /obj/effect/abstract) && !arrived.is_incorporeal())

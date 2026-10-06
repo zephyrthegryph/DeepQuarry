@@ -29,6 +29,8 @@ CAPABILITIES(/obj/item/nif)
 	op("toggle_module", ui_act("toggle_module", arg("module", schema_ref(/datum/nifsoft))), then(PROC_REF(ui_act_toggle_module)))
 	op("uninstall", ui_act("uninstall", arg("module", schema_ref(/datum/nifsoft))), then(PROC_REF(ui_act_uninstall)))
 	op("dismissNotification", ui_act("dismissNotification"), then(PROC_REF(ui_act_dismissnotification)))
+	param(nameof(wear_at_make), pos = 1)
+	param(nameof(load_data_at_make), pos = 2)
 
 /**
  * Small helper datum to manage the HUD icon.
@@ -61,11 +63,11 @@ CAPABILITIES(/obj/item/nif)
 	..()
 
 /datum/nif_menu/proc/on_owner_qdeleting(datum/act/notice/A)
-	EVENT_HANDLER
-	spent(src)
+	SHOULD_NOT_SLEEP(TRUE)
+	ended_with(src)
 
 /datum/nif_menu/proc/on_client_login(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	create_mob_button(source)
 
@@ -86,7 +88,7 @@ CAPABILITIES(/obj/item/nif)
 	grant(user, granted_verb(/mob/living/carbon/human/proc/nif_menu), src)
 
 /datum/nif_menu/proc/nif_menu_click(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/click/event = A
 	var/mob/living/carbon/human/H = event.user
 	if(istype(H) && H.nif)
@@ -141,7 +143,7 @@ CAPABILITIES(/obj/item/nif)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/nif's window data (declared on its UI_DATA row).
+/// /obj/item/nif's window data.
 /obj/item/nif/proc/ui_data_obj_item_nif(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

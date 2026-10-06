@@ -147,7 +147,7 @@
 
 /// Hooked on the turfs sense_proximity() watches: something entered one of them.
 /atom/proc/on_proximity_turf_entered(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/turf/source = A.target
 	var/datum/notice/observer_turf_entered/event = A
 	HasProximity(source, event.arrived, event.old_loc)
@@ -721,7 +721,7 @@ GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 	germ_level = 0
 	dq_set_fluorescent(src, 0)
 
-/// Its icon state (om_after() target for a state that reverts, like a flash of a sprite).
+/// Its icon state (after() target for a state that reverts, like a flash of a sprite).
 /atom/proc/set_icon_state(new_state)
 	icon_state = new_state
 

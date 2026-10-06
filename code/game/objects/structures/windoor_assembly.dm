@@ -29,8 +29,12 @@
 	secure = "secure_"
 	icon_state = "l_secure_windoor_assembly01"
 
-// ALLOW(init/CTOR_ARGS): start_dir and constructed are constructor arguments from whoever builds it
-/obj/structure/windoor_assembly/Initialize(mapload, start_dir=NORTH, constructed=0)
+/// The facing and whether a player built it (its constructor params).
+/obj/structure/windoor_assembly/var/start_dir = NORTH
+/obj/structure/windoor_assembly/var/constructed = FALSE
+
+// ALLOW(init/INSTANCE_STATE): an assembly faces a cardinal way, starts loose when built, and updates its tiles
+/obj/structure/windoor_assembly/Initialize(mapload)
 	. = ..()
 	if(constructed)
 		set_anchored(FALSE)
@@ -94,6 +98,8 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 	op("rename_robot", hand(), label("Rename"), when(req(PROC_REF(robot_may_rename))), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the windoor.")), then(PROC_REF(renamed)))
 	op("flip", menu(), label("Flip Windoor Assembly"), wait(0), then(PROC_REF(flipped)))
 	extend("construction.dismantle", needs(req_not(req_built(STAGE_WINDOOR_ASSEMBLY_SECURED, because = MSG(windoor_assembly/bolted_down)), because = MSG(windoor_assembly/bolted_down))))
+	param(nameof(start_dir), pos = 1)
+	param(nameof(constructed), pos = 2)
 
 /obj/structure/windoor_assembly/proc/renamed(datum/act/op/A)
 	var/datum/prompt/R = A.answer

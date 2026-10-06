@@ -1,15 +1,14 @@
 CAPABILITIES(/obj/item/spellbook)
 	op("clear_temp", ui_act(), then(PROC_REF(ui_act_clear_temp)))
+	interface("Spellbook", title = "The Book of Spells", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
+	op("choose", ui_act("choose", arg("id", schema_text(4096))), then(PROC_REF(ui_act_choose)))
 
 // Wizard spellbook — structured TGUI panel that replaces the legacy attack_self HTML.
 
 /obj/item/spellbook/proc/dq_open_spellbook(mob/user)
 	user.set_machine(src)
 	tgui_interact(user)
-
-DECLARE_UI_STATE(/obj/item/spellbook, GLOB.tgui_default_state)
-
-DECLARE_UI(/obj/item/spellbook, "Spellbook", UI_TITLE("The Book of Spells"))
 
 /obj/item/spellbook/ui_prepare(mob/user, datum/tgui/ui)
 	if(special_handling)
@@ -49,10 +48,8 @@ DECLARE_UI(/obj/item/spellbook, "Spellbook", UI_TITLE("The Book of Spells"))
 
 GLOBAL_TABLE(spellbook_catalog, GLOBAL_PROC_REF(build_spellbook_catalog))
 
-UI_DATA_REPLACE(/obj/item/spellbook, "merge:ui_data_obj_item_spellbook{}")
-
-/// The computed part of /obj/item/spellbook's window data (declared on its UI_DATA row).
-/obj/item/spellbook/proc/ui_data_obj_item_spellbook(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// /obj/item/spellbook's window data.
+/obj/item/spellbook/ui_data(datum/act/eval/A)
 	var/list/catalog = GLOBAL_TABLE_GET(spellbook_catalog)
 	var/list/data = list()
 	data["temp"] = temp || ""
@@ -69,12 +66,10 @@ UI_DATA_REPLACE(/obj/item/spellbook, "merge:ui_data_obj_item_spellbook{}")
 	SStgui.update_uis(src)
 	return OP_OK
 
-UI_ACT(/obj/item/spellbook, "choose", ui_act_choose, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/obj/item/spellbook, ui_act_choose)
-	var/spell_id = params["id"]
-	if(!spell_id)
+/obj/item/spellbook/proc/ui_act_choose(datum/act/op/A, id)
+	if(!id)
 		return TRUE
-	choose_spell(ui.user, "[spell_id]", params, ui)
+	choose_spell(A.actor, "[id]")
 	SStgui.update_uis(src)
 	return TRUE
 

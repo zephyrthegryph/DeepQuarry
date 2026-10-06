@@ -284,8 +284,6 @@
 /// The entity world-wide events go to (was SEND_GLOBAL_SIGNAL's target).
 #define OM_WORLD (GLOB.om_world)
 #define OM_EMIT_WORLD(path, args...) OM_EMIT(GLOB.om_world, path, ##args)
-/// First line of every observe() handler and behaviour event hook: it must not sleep.
-#define EVENT_HANDLER SHOULD_NOT_SLEEP(TRUE)
 
 // ---- Tasks (section I). ----
 #define OM_TASK_RUNNING 0
@@ -583,8 +581,6 @@
 // the named arguments set its vars, as in om_ask().
 /// In a Topic() handler.
 #define topic_ask(user, href_list, key, prompt, fields...) om_topic_ask(user, href_list, key, prompt, list(fields))
-/// In a tgui_act() action.
-#define act_ask(user, action, act_params, ui, key, prompt, fields...) om_act_ask(user, action, act_params, ui, key, prompt, list(fields))
 /// In an ADMIN_VERB body (`verb_args`: the verb's args).
 #define verb_ask(user, key, verb_args, prompt, fields...) om_verb_ask(user, key, verb_args, prompt, list(fields))
 /// In a /client proc: re-runs proc_name with proc_args; `rights` (R_*) are re-checked.

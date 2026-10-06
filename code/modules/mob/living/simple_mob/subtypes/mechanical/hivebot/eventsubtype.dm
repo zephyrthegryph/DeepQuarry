@@ -215,29 +215,29 @@
 		if(I_DISARM) // Phase 3
 			if(attackcycle == 1)
 				say("PROTOCOL: MAELSTORM.")
-				om_after(src, 0.5 SECONDS, PROC_REF(random_firing), A, 3, 2, 0.5 SECONDS)
+				after(src, 0.5 SECONDS, PROC_REF(random_firing), with = list(A, 3, 2, 0.5 SECONDS))
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: TELEPORT.")
-				om_after(src, 0.5 SECONDS, PROC_REF(teleport_attack), A, 1)
+				after(src, 0.5 SECONDS, PROC_REF(teleport_attack), with = list(A, 1))
 				attackcycle = 0
 		if(I_HURT) // Phase 1. Teaching the player the three funny attacks
 			if(attackcycle == 1)
 				say("PROTOCOL: MAELSTORM.")
-				om_after(src, 0.5 SECONDS, PROC_REF(random_firing), A, 12, 2, 0.5 SECONDS)
+				after(src, 0.5 SECONDS, PROC_REF(random_firing), with = list(A, 12, 2, 0.5 SECONDS))
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: TELEPORT.")
-				om_after(src, 2 SECONDS, PROC_REF(teleport_attack), A, 1)
+				after(src, 2 SECONDS, PROC_REF(teleport_attack), with = list(A, 1))
 				attackcycle = 0
 		if(I_GRAB) // Phase 2
 			if(attackcycle == 1)
 				say("PROTOCOL: MAELSTORM.")
-				om_after(src, 0.5 SECONDS, PROC_REF(random_firing), A, 6, 2, 0.5 SECONDS)
+				after(src, 0.5 SECONDS, PROC_REF(random_firing), with = list(A, 6, 2, 0.5 SECONDS))
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: TELEPORT.")
-				om_after(src, 1 SECOND, PROC_REF(teleport_attack), A, 1)
+				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1))
 				attackcycle = 0
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/green
@@ -258,11 +258,11 @@
 			if(attackcycle == 1)
 				say("PROTOCOL: LASERBLADE.")
 				specialattackprojectile = /obj/item/projectile/beam/midlaser/shortrange
-				om_after(src, 2 SECONDS, PROC_REF(burst), A, 2)
+				after(src, 2 SECONDS, PROC_REF(burst), with = list(A, 2))
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: TELEPORT.")
-				om_after(src, 1 SECOND, PROC_REF(teleport_attack), A, 1)
+				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1))
 				attackcycle = 0
 			else if(attackcycle > 2)
 				attackcycle = 1
@@ -271,46 +271,46 @@
 			if(attackcycle == 1)
 				say("PROTOCOL: SWEEP. FIGURATION: A.")
 				specialattackprojectile = /obj/item/projectile/energy/burninglaser/boss
-				om_after(src, 3 SECONDS, PROC_REF(dualsweep_one), A, 2)
+				after(src, 3 SECONDS, PROC_REF(dualsweep_one), with = list(A, 2))
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: SWEEP. FIGURATION: B.")
 				specialattackprojectile = /obj/item/projectile/energy/burninglaser/boss
-				om_after(src, 3 SECONDS, PROC_REF(dualsweep_one_r), A, 3)
+				after(src, 3 SECONDS, PROC_REF(dualsweep_one_r), with = list(A, 3))
 				attackcycle = 0
 			else if(attackcycle == 3)
 				say("PROTOCOL: LASERBLADE.")
 				specialattackprojectile = /obj/item/projectile/beam/midlaser/shortrange
-				om_after(src, 3 SECONDS, PROC_REF(burst), A, 1)
+				after(src, 3 SECONDS, PROC_REF(burst), with = list(A, 1))
 				attackcycle = 0
 
 		if(I_GRAB) // Phase 2
 			if(attackcycle == 1)
 				say("PROTOCOL: SWEEP. FIGURATION: A.")
 				specialattackprojectile = /obj/item/projectile/energy/burninglaser/boss
-				om_after(src, 3 SECOND, PROC_REF(dualsweep_one), A, 2)
+				after(src, 3 SECOND, PROC_REF(dualsweep_one), with = list(A, 2))
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: TELEPORT.")
-				om_after(src, 1 SECOND, PROC_REF(teleport_attack), A, 3)
+				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 3))
 				attackcycle = 0
 			else if(attackcycle == 3)
 				say("PROTOCOL: SWEEP. FIGURATION: B.")
 				specialattackprojectile = /obj/item/projectile/energy/burninglaser/boss
-				om_after(src, 3 SECOND, PROC_REF(dualsweep_one), A, 4)
+				after(src, 3 SECOND, PROC_REF(dualsweep_one), with = list(A, 4))
 				attackcycle = 0
 			else if(attackcycle == 4)
 				say("PROTOCOL: TELEPORT.")
-				om_after(src, 1 SECOND, PROC_REF(teleport_attack), A, 5)
+				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 5))
 				attackcycle = 0
 			else if(attackcycle == 5)
 				say("PROTOCOL: LASERBLADE.")
 				specialattackprojectile = /obj/item/projectile/beam/midlaser/shortrange
-				om_after(src, 3 SECONDS, PROC_REF(burst), A, 6)
+				after(src, 3 SECONDS, PROC_REF(burst), with = list(A, 6))
 				attackcycle = 0
 			else if(attackcycle == 6)
 				say("PROTOCOL: TELEPORT.")
-				om_after(src, 1 SECOND, PROC_REF(teleport_attack), A, 1)
+				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1))
 				attackcycle = 0
 */
 
@@ -406,19 +406,19 @@
 			if(attackcycle == 1)
 				say("PROTOCOL: LASERBLADE.")
 				specialattackprojectile = /obj/item/projectile/beam/midlaser/shortrange
-				om_after(src, 2 SECONDS, PROC_REF(burst), A, 2)
+				after(src, 2 SECONDS, PROC_REF(burst), with = list(A, 2))
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: TELEPORT.")
-				om_after(src, 1 SECOND, PROC_REF(teleport_attack), A, 1)
+				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1))
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: TELEPORT.")
-				om_after(src, 1 SECOND, PROC_REF(teleport_attack), A, 1)
+				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1))
 				attackcycle = 0
 			else if(attackcycle == 2)
 				say("PROTOCOL: TELEPORT.")
-				om_after(src, 1 SECOND, PROC_REF(teleport_attack), A, 1)
+				after(src, 1 SECOND, PROC_REF(teleport_attack), with = list(A, 1))
 				attackcycle = 0
 
 		if(I_HURT) //phase 1 3 safe zones

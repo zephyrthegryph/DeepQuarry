@@ -1,11 +1,18 @@
 // Self contained file for all things TGUI
-DECLARE_UI_STATE(/obj/item/pda, GLOB.tgui_inventory_state)
 
-DECLARE_UI(/obj/item/pda, "Pda", UI_TITLE("Personal Data Assistant"))
+/obj/item/pda/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["owner"] = owner
+	data["ownjob"] = ownjob
+	data["useRetro"] = retro_mode
+	data["touch_silent"] = touch_silent
+	var/list/merged_1 = ui_data_obj_item_pda(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-UI_DATA(/obj/item/pda, "owner:text", "ownjob", "useRetro=retro_mode:num", "touch_silent:num", "merge:ui_data_obj_item_pda{idInserted:num,idLink:unknown,cartridge_name:text,stationTime:text,app:list}")
-
-/// The computed part of /obj/item/pda's window data (declared on its UI_DATA row).
+/// /obj/item/pda's window data.
 /obj/item/pda/proc/ui_data_obj_item_pda(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
@@ -53,39 +60,29 @@ UI_DATA(/obj/item/pda, "owner:text", "ownjob", "useRetro=retro_mode:num", "touch
 
 	return data
 
-/// Actions the PDA itself has no row for are the running app's.
-UI_ACT_FORWARD(/obj/item/pda, ui_forward_to_app)
-/obj/item/pda/proc/ui_forward_to_app(mob/user, action)
-	return current_app()
-
-/obj/item/pda/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
+/// Every button pressed in the PDA's window, its own and its apps': the touch leaves a print and clicks (interface(pressed =)).
+/obj/item/pda/proc/pda_pressed(mob/actor, action)
+	add_fingerprint(actor)
 	if(!touch_silent)
 		play_sfx(src, SFX_MACHINES_PDA_CLICK)
 	if((honkamt > 0) && (prob(60)))//For clown virus.
 		honkamt--
 		play_sfx(loc, SFX_ITEMS_BIKEHORN, 0.6)
-	return TRUE
 
-UI_ACT(/obj/item/pda, "Home", ui_act_home)
-UI_ACT_PROC(/obj/item/pda, ui_act_home)
+/obj/item/pda/proc/ui_act_home(datum/act/op/A)
 	. = TRUE
-	var/datum/data/pda/app/main_menu/A = find_program(/datum/data/pda/app/main_menu)
-	if(A)
-		start_program(A)
+	var/datum/data/pda/app/main_menu/A2 = find_program(/datum/data/pda/app/main_menu)
+	if(A2)
+		start_program(A2)
 
-UI_ACT(/obj/item/pda, "StartProgram", ui_act_startprogram, UI_ARG_REF("program", null, /datum/data/pda/app))
-UI_ACT_PROC(/obj/item/pda, ui_act_startprogram)
+/obj/item/pda/proc/ui_act_startprogram(datum/act/op/A, program)
 	. = TRUE
-	if(params["program"])
-		var/datum/data/pda/app/A = params["program"]
-		if(A)
-			start_program(A)
+	if(program)
+		var/datum/data/pda/app/A2 = program
+		if(A2)
+			start_program(A2)
 
-UI_ACT(/obj/item/pda, "Eject", ui_act_eject)
-UI_ACT_PROC(/obj/item/pda, ui_act_eject)
+/obj/item/pda/proc/ui_act_eject(datum/act/op/A)
 	. = TRUE
 	if(!isnull(cartridge))
 		var/turf/T = loc
@@ -105,22 +102,20 @@ UI_ACT_PROC(/obj/item/pda, ui_act_eject)
 		own_take(src, nameof(/obj/item/pda::cartridge))
 		update_shortcuts()
 
-UI_ACT(/obj/item/pda, "Authenticate", ui_act_authenticate)
-UI_ACT_PROC(/obj/item/pda, ui_act_authenticate)
+/obj/item/pda/proc/ui_act_authenticate(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
-	id_check(ui.user, 1)
+	id_check(user, 1)
 
-UI_ACT(/obj/item/pda, "Retro", ui_act_retro)
-UI_ACT_PROC(/obj/item/pda, ui_act_retro)
+/obj/item/pda/proc/ui_act_retro(datum/act/op/A)
 	. = TRUE
 	retro_mode = !retro_mode
 
-UI_ACT(/obj/item/pda, "TouchSounds", ui_act_touchsounds)
-UI_ACT_PROC(/obj/item/pda, ui_act_touchsounds)
+/obj/item/pda/proc/ui_act_touchsounds(datum/act/op/A)
 	. = TRUE
 	touch_silent = !touch_silent
 
-UI_ACT(/obj/item/pda, "Ringtone", ui_act_ringtone)
-UI_ACT_PROC(/obj/item/pda, ui_act_ringtone)
+/obj/item/pda/proc/ui_act_ringtone(datum/act/op/A)
+	var/mob/user = A.actor
 	. = TRUE
-	return set_ringtone(ui.user)
+	return set_ringtone(user)

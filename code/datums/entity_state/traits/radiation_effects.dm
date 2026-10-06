@@ -3,7 +3,6 @@
  * Allows for glowing, healing, contamination, and immunity.
  */
 /datum/trait_state/radiation_effects
-	life_stage = /datum/om/stage/life/trait/radiation_glow
 	unique_type = /datum/trait_state/radiation_effects
 
 	///If we show the user the radiation panel.
@@ -167,7 +166,7 @@
 				create_toony_glow()
 
 /datum/trait_state/radiation_effects/proc/on_handle_radiation(datum/act/live_radiation/tick)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	return process_component() ? TRUE : HOOK_DECLINE
 
 ///Handles the radiation removal, immunity, and healing effects.
@@ -239,7 +238,7 @@
 		return COMPONENT_BLOCK_LIVING_RADIATION
 
 /datum/trait_state/radiation_effects/proc/on_irradiate_effect(datum/act/irradiate/dose)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	return handle_irradiate_effect(dose.target, dose.effect, IRRADIATE, dose.blocked, dose.check_protection, dose.rad_protection) ? TRUE : HOOK_DECLINE
 
 /datum/trait_state/radiation_effects/proc/handle_irradiate_effect(mob/living/living_guy, effect, effecttype, blocked, check_protection, rad_protection)
@@ -281,7 +280,7 @@ CAPABILITIES(/datum/trait_state/radiation_effects)
 
 	rad.tgui_interact(src)
 
-/// The computed part of /datum/trait_state/radiation_effects's window data (declared on its UI_DATA row).
+/// /datum/trait_state/radiation_effects's window data.
 /datum/trait_state/radiation_effects/ui_data(datum/act/eval/A)
 	var/mob/living/living_guy = owner
 	var/data = list(
@@ -336,7 +335,7 @@ CAPABILITIES(/datum/trait_state/radiation_effects)
 	animate(alpha = 40, time = 2.5 SECONDS)
 
 /datum/trait_state/radiation_effects/proc/on_geiger_counter_scan(datum/act/geiger_scan/scan)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/living_source = scan.target
 	var/mob/user = scan.user
 	var/obj/item/geiger/geiger_counter = scan.counter
@@ -393,6 +392,6 @@ CAPABILITIES(/datum/trait_state/radiation_effects)
 	radiation_immunity = TRUE
 
 /// Trait system: radiation glow.
-/datum/om/stage/life/trait/radiation_glow
-	name = "radiation glow"
-	state_type = /datum/trait_state/radiation_effects
+/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/datum/trait_state/radiation_effects/life_steps()
+	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_radiation_glow"))

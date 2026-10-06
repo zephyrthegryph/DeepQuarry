@@ -25,16 +25,22 @@
 							)
 	var/list/special_prizes // Holds instanced objects, intended for admins to shove surprises inside or something.
 
-// ALLOW(init/INSTANCE_STATE): a generic arcade cabinet becomes a randomly picked arcade machine
-/obj/machinery/computer/arcade/Initialize(mapload)
-	. = ..()
-	// If it's a generic arcade machine, pick a random arcade
-	// circuit board for it and make the new machine
-	if(!circuit)
-		var/choice = pick(subtypesof(/obj/item/circuitboard/arcade) - /obj/item/circuitboard/arcade/clawmachine)
-		var/obj/item/circuitboard/CB = new choice()
-		new CB.build_path(loc, CB)
-		return INITIALIZE_HINT_QDEL
+CAPABILITIES(/obj/machinery/computer/arcade)
+	rolls(nameof(rolled_board), PROC_REF(roll_board), when = cond_not(nameof(circuit)))
+	after_init(0, then(PROC_REF(become_rolled_board)))
+
+/// A generic cabinet (no circuit) rolls which arcade it is, then becomes that machine once its init is over.
+/obj/machinery/computer/arcade/var/rolled_board
+
+/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): any arcade board but the claw machine's.
+/obj/machinery/computer/arcade/proc/roll_board(datum/roller/R)
+	return R.choose(subtypesof(/obj/item/circuitboard/arcade) - /obj/item/circuitboard/arcade/clawmachine)
+
+/obj/machinery/computer/arcade/proc/become_rolled_board(datum/act/A)
+	if(!rolled_board || circuit)
+		return
+	var/obj/item/circuitboard/CB = new rolled_board()
+	replace_with(src, CB.build_path, CB)
 
 /obj/machinery/computer/arcade/proc/prizevend(mob/user)
 	OM_EMIT(src, /datum/om/event/arcade_prizevend, user)
@@ -1076,7 +1082,7 @@ CAPABILITIES(/obj/item/orion_ship)
 		if(3)
 			src.visible_message(span_danger("[src] explodes!"))
 			explosion(src.loc, 1,2,4)
-			spent(src)
+			destroyed(src, null, "explosion")
 
 #undef ORION_TRAIL_WINTURN
 #undef ORION_TRAIL_RAIDERS

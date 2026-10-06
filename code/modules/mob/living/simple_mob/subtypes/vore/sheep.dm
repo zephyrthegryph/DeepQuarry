@@ -102,10 +102,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/sheep)
 	update_icon()
 
 
-/datum/om/stage/life/type_post/simple_mob/vore/sheep
-	of = /mob/living/simple_mob/vore/sheep
+/mob/living/simple_mob/vore/sheep/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/sheep/perform(mob/living/simple_mob/vore/sheep/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/sheep/life_type_post(datum/seq_frame/life/F)
 	..()
 	if(!harvestable_wool)
 		wool_growth ++

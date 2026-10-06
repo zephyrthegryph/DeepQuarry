@@ -22,12 +22,13 @@
 	var/obj/structure/reagent_dispensers/watertank/tank
 
 
-// ALLOW(init/CTOR_ARGS): newTank is a constructor argument from whoever builds it
-/mob/living/bot/farmbot/Initialize(mapload, newTank)
-	. = ..()
-	if(!newTank)
-		newTank = new /obj/structure/reagent_dispensers/watertank(src)
-	var/obj/structure/reagent_dispensers/watertank/W = newTank
+/// The water tank handed over by the arm assembly that built it (its constructor param), or null for a new one.
+/mob/living/bot/farmbot/var/tmp/obj/structure/reagent_dispensers/watertank/tank_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/mob/living/bot/farmbot/proc/take_tank(obj/structure/reagent_dispensers/watertank/W)
+	if(!W)
+		W = new /obj/structure/reagent_dispensers/watertank(src)
 	W.forceMove(src)
 	own_move(W, src, nameof(tank)) // handed over from the arm assembly, when built from one
 
@@ -40,6 +41,7 @@ CAPABILITIES(/mob/living/bot/farmbot)
 	op("refill", ui_act("refill"), then(PROC_REF(ui_act_refill)))
 	op("weed", ui_act("weed"), then(PROC_REF(ui_act_weed)))
 	op("replacenutri", ui_act("replacenutri"), then(PROC_REF(ui_act_replacenutri)))
+	param(nameof(tank_at_make), pos = 1, apply = PROC_REF(take_tank), keep = FALSE)
 
 /// The window's data: the bot's state, its tank, and the settings while the panel is unlocked.
 /mob/living/bot/farmbot/ui_data(datum/act/eval/A)
@@ -356,15 +358,19 @@ CAPABILITIES(/mob/living/bot/farmbot)
 	w_class = ITEMSIZE_NORMAL
 
 
-// ALLOW(init/CTOR_ARGS): theTank is a constructor argument from whoever builds it
-/obj/item/farmbot_arm_assembly/Initialize(mapload, theTank)
-	. = ..()
-	if(!theTank) // If an admin spawned it, it won't have a watertank it, so lets make one for em!
+CAPABILITIES(/obj/item/farmbot_arm_assembly)
+	param(nameof(tank_at_make), pos = 1, apply = PROC_REF(take_tank), keep = FALSE)
+
+/// The water tank the assembly is built around (its constructor param), or null for a new one (an admin spawn).
+/obj/item/farmbot_arm_assembly/var/tmp/obj/tank_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/farmbot_arm_assembly/proc/take_tank(obj/O)
+	if(!O)
 		rel_set(src, nameof(tank), new /obj/structure/reagent_dispensers/watertank(src))
-	else
-		var/obj/O = theTank
-		O.forceMove(src)
-		own_move(O, src, nameof(tank))
+		return
+	O.forceMove(src)
+	own_move(O, src, nameof(tank))
 
 /// Old attackby.
 /obj/structure/reagent_dispensers/watertank/proc/watertank_interaction_item(datum/act/op/A)

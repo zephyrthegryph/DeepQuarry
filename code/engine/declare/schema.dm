@@ -236,7 +236,9 @@ GLOBAL_VAR_INIT(schemas_built, FALSE)
 				return list(value ? TRUE : FALSE, null)
 			return list(SCHEMA_REJECT, "[value] is not a boolean")
 		if(SCHEMA_INT, SCHEMA_NUM)
-			if(!isnum(value))
+			if(boundary && istext(value))
+				value = text2num(value) // a client sends "3" as often as 3 (the old UI_ARG_NUM read both)
+			if(!isnum(value) || value != value) // NaN
 				return list(SCHEMA_REJECT, "[value] is not a number")
 			var/note = null
 			var/v = value

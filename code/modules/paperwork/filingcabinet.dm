@@ -71,7 +71,7 @@ CAPABILITIES(/obj/structure/filingcabinet)
 	new /obj/item/stack/material/steel(loc, 4)
 	for(var/obj/item/I in contents)
 		I.forceMove(loc)
-	destroyed(src, user)
+	destroyed(src, user, "deconstructed")
 	return ITEM_INTERACT_SUCCESS
 
 MSG_DEF_SELF(filingcabinet/empty, "It's empty.")
@@ -103,7 +103,7 @@ MSG_DEF_SELF(filingcabinet/empty, "It's empty.")
 			return
 	to_chat(user, span_notice("You find nothing in [src]."))
 
-/// The computed part of /obj/structure/filingcabinet's window data (declared on its UI_DATA row).
+/// /obj/structure/filingcabinet's window data.
 /obj/structure/filingcabinet/ui_data(datum/act/eval/A)
 	var/list/data = list()
 

@@ -150,6 +150,18 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 	synthesizer()
 	extend("synthesizer.inject", then(PROC_REF(injected)))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	interface("BorgHypo")
+	without("ui_open")
+	op("select_reagent", ui_act("select_reagent", arg("selectedReagentId", schema_text(4096))), then(PROC_REF(ui_act_select_reagent)))
+	op("set_amount", ui_act("set_amount", arg("amount", num())), then(PROC_REF(ui_act_set_amount)))
+	op("import_config", ui_act("import_config", arg("config")), then(PROC_REF(ui_act_import_config)))
+	op("record_recipe", ui_act("record_recipe"), then(PROC_REF(ui_act_record_recipe)))
+	op("cancel_recording", ui_act("cancel_recording"), then(PROC_REF(ui_act_cancel_recording)))
+	op("clear_recipes", ui_act("clear_recipes"), then(PROC_REF(ui_act_clear_recipes)))
+	op("save_recording", ui_act("save_recording"), asks(/datum/prompt/text, fields = list("question" = "What do you want to name this recipe?", "title" = "Recipe Name?", "default" = "Recipe Name", "max_len" = MAX_NAME_LEN, "timeout" = 0), step = "a1"), asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(recipe_overwrite_question)), "choices" = list("No", "Yes"), "buttons" = TRUE, "timeout" = 0), step = "a2", when = PROC_REF(recipe_name_taken)), then(PROC_REF(ui_act_save_recording)))
+	op("remove_recipe", ui_act("remove_recipe", arg("recipe", schema_text(4096))), then(PROC_REF(ui_act_remove_recipe)))
+	op("select_recipe", ui_act("select_recipe", arg("recipe", schema_text(4096))), then(PROC_REF(ui_act_select_recipe)))
+	op("set_chemical_search", ui_act("set_chemical_search", arg("uiChemicalSearch", schema_text(4096))), then(PROC_REF(ui_act_set_chemical_search)))
 
 /// The click on a person (the old attack handler).
 /obj/item/reagent_containers/borghypo/proc/injected(datum/act/op/A)
@@ -214,8 +226,6 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/item/reagent_containers/borghypo, "BorgHypo")
-
 /obj/item/reagent_containers/borghypo/ui_opening(mob/user, datum/tgui/ui)
 	// Assuming the user is opening the UI, empty the chem search preemptively.
 	ui_chemical_search = null
@@ -230,9 +240,20 @@ DECLARE_UI(/obj/item/reagent_containers/borghypo, "BorgHypo")
 	static_data["maxTransferAmount"] = max_transfer_amount
 	return static_data
 
-UI_DATA_REPLACE(/obj/item/reagent_containers/borghypo, "amount=amount_per_transfer_from_this:num", "uiChemicalSearch=ui_chemical_search", "recordingRecipe=recording_recipe:list", "isDispensingRecipe=is_dispensing_recipe:num", "selectedRecipeId=selected_recipe_id", "merge:ui_data_obj_item_reagent_containers_borghypo{theme:unknown,transferAmounts:unknown,chemicals:list,selectedReagentId:unknown,recipes:bool}")
+/obj/item/reagent_containers/borghypo/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["amount"] = amount_per_transfer_from_this
+	data["uiChemicalSearch"] = ui_chemical_search
+	data["recordingRecipe"] = recording_recipe
+	data["isDispensingRecipe"] = is_dispensing_recipe
+	data["selectedRecipeId"] = selected_recipe_id
+	var/list/merged_1 = ui_data_obj_item_reagent_containers_borghypo(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
-/// The computed part of /obj/item/reagent_containers/borghypo's window data (declared on its UI_DATA row).
+/// /obj/item/reagent_containers/borghypo's window data.
 /obj/item/reagent_containers/borghypo/proc/ui_data_obj_item_reagent_containers_borghypo(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!isrobot(user))
@@ -253,10 +274,10 @@ UI_DATA_REPLACE(/obj/item/reagent_containers/borghypo, "amount=amount_per_transf
 
 	return data
 
-UI_ACT(/obj/item/reagent_containers/borghypo, "select_reagent", ui_act_select_reagent, UI_ARG_TEXT("selectedReagentId"))
-UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_select_reagent)
+/obj/item/reagent_containers/borghypo/proc/ui_act_select_reagent(datum/act/op/A, selectedReagentId)
+	var/mob/user = A.actor
 	var/list/ids = TYPE_TABLE_GET(src, borghypo_reagent_ids)
-	var/new_mode = ids.Find(params["selectedReagentId"])
+	var/new_mode = ids.Find(selectedReagentId)
 	if(new_mode)
 		var/datum/reagent/selected_reagent = SSchemistry.ready().chemical_reagents[TYPE_TABLE_GET(src, borghypo_reagent_ids)[new_mode]]
 		play_sfx(src, SFX_EFFECTS_POP)
@@ -264,18 +285,18 @@ UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_select_reagent)
 			UNTYPED_LIST_ADD(recording_recipe, list("id" = selected_reagent.id, "amount" = amount_per_transfer_from_this))
 		else
 			mode = new_mode
-			balloon_alert(ui.user, "synthesizer is now producing '[selected_reagent.name]'")
+			balloon_alert(user, "synthesizer is now producing '[selected_reagent.name]'")
 			is_dispensing_recipe = FALSE
 	. = TRUE
 
-UI_ACT(/obj/item/reagent_containers/borghypo, "set_amount", ui_act_set_amount, UI_ARG_NUM("amount"))
-UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_set_amount)
-	amount_per_transfer_from_this = clamp(round(params["amount"], 1), min_transfer_amount, max_transfer_amount) // Round to nearest 1, clamp between min and max transfer amount
+/obj/item/reagent_containers/borghypo/proc/ui_act_set_amount(datum/act/op/A, amount)
+	amount_per_transfer_from_this = clamp(round(amount, 1), min_transfer_amount, max_transfer_amount) // Round to nearest 1, clamp between min and max transfer amount
 	. = TRUE
 
-UI_ACT(/obj/item/reagent_containers/borghypo, "import_config", ui_act_import_config, UI_ARG_LIST("config"))
-UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_import_config)
-	var/list/our_data = params["config"]
+/obj/item/reagent_containers/borghypo/proc/ui_act_import_config(datum/act/op/A, config)
+	if(!isnull(config) && !islist(config))
+		return FALSE
+	var/list/our_data = config
 	if(!islist(our_data))
 		return FALSE
 	var/list/new_recipes = list()
@@ -288,44 +309,45 @@ UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_import_config)
 		saved_recipes = new_recipes
 	. = TRUE
 
-UI_ACT(/obj/item/reagent_containers/borghypo, "record_recipe", ui_act_record_recipe)
-UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_record_recipe)
+/obj/item/reagent_containers/borghypo/proc/ui_act_record_recipe(datum/act/op/A)
 	recording_recipe = list()
 	. = TRUE
 
-UI_ACT(/obj/item/reagent_containers/borghypo, "cancel_recording", ui_act_cancel_recording)
-UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_cancel_recording)
+/obj/item/reagent_containers/borghypo/proc/ui_act_cancel_recording(datum/act/op/A)
 	recording_recipe = null
 	. = TRUE
 
-UI_ACT(/obj/item/reagent_containers/borghypo, "clear_recipes", ui_act_clear_recipes)
-UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_clear_recipes)
+/obj/item/reagent_containers/borghypo/proc/ui_act_clear_recipes(datum/act/op/A)
 	saved_recipes = list()
 	. = TRUE
 
-UI_ACT(/obj/item/reagent_containers/borghypo, "save_recording", ui_act_save_recording)
-UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_save_recording)
-	var/name = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "What do you want to name this recipe?", title = "Recipe Name?", default = "Recipe Name", max_length = MAX_NAME_LEN)
+/obj/item/reagent_containers/borghypo/proc/ui_act_save_recording(datum/act/op/A)
+	var/mob/user = A.actor
+	var/name = A.step_value("a1")
 	if(isnull(name))
 		return
-	if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
-		return
-	if(LAZYACCESS(saved_recipes, name) && act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/choice/alert, message = "\"[name]\" already exists, do you want to overwrite it?", choices = list("No", "Yes")) != "Yes")
+	if(LAZYACCESS(saved_recipes, name) && A.step_value("a2") != "Yes")
 		return
 	if(name && recording_recipe)
 		for(var/list/L in recording_recipe)
 			var/label = L["id"]
 			// Verify this hypo can dispense every chemical
 			if(!(label in TYPE_TABLE_GET(src, borghypo_reagent_ids)))
-				to_chat(ui.user, span_warning("\The [src] cannot find ") + span_boldwarning(label) + span_warning("!"))
+				to_chat(user, span_warning("\The [src] cannot find ") + span_boldwarning(label) + span_warning("!"))
 				return
 		LAZYSET(saved_recipes, name, recording_recipe)
 		recording_recipe = null
 		. = TRUE
 
-UI_ACT(/obj/item/reagent_containers/borghypo, "remove_recipe", ui_act_remove_recipe, UI_ARG_TEXT("recipe"))
-UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_remove_recipe)
-	var/recipe_name = params["recipe"]
+/// The overwrite question opens only for a name already saved.
+/obj/item/reagent_containers/borghypo/proc/recipe_name_taken(datum/act/op/A)
+	return !isnull(LAZYACCESS(saved_recipes, A.step_value("a1"))) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+
+/obj/item/reagent_containers/borghypo/proc/recipe_overwrite_question(datum/act/op/A)
+	return "\"[A.step_value("a1")]\" already exists, do you want to overwrite it?"
+
+/obj/item/reagent_containers/borghypo/proc/ui_act_remove_recipe(datum/act/op/A, recipe)
+	var/recipe_name = recipe
 	// If we've selected the recipe we're deleting, un-select it!
 	if(selected_recipe_id == recipe_name)
 		selected_recipe_id = null
@@ -333,23 +355,22 @@ UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_remove_recipe)
 	LAZYREMOVE(saved_recipes, recipe_name)
 	. = TRUE
 
-UI_ACT(/obj/item/reagent_containers/borghypo, "select_recipe", ui_act_select_recipe, UI_ARG_TEXT("recipe"))
-UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_select_recipe)
+/obj/item/reagent_containers/borghypo/proc/ui_act_select_recipe(datum/act/op/A, recipe)
+	var/mob/user = A.actor
 	// Make sure we actually have a recipe saved with the given name before setting it!
-	var/recipe_name = params["recipe"]
+	var/recipe_name = recipe
 	var/selectedRecipe = LAZYACCESS(saved_recipes, recipe_name)
 	if(!selectedRecipe)
-		to_chat(ui.user, span_warning("\The [src] cannot find the recipe ") + span_boldwarning(recipe_name) + span_warning("!"))
+		to_chat(user, span_warning("\The [src] cannot find the recipe ") + span_boldwarning(recipe_name) + span_warning("!"))
 		return
-	play_sfx(ui.user, SFX_EFFECTS_POP)
-	balloon_alert(ui.user, "synthesizer is using macro: '[recipe_name]'")
+	play_sfx(user, SFX_EFFECTS_POP)
+	balloon_alert(user, "synthesizer is using macro: '[recipe_name]'")
 	is_dispensing_recipe = TRUE
 	selected_recipe_id = recipe_name
 	. = TRUE
 
-UI_ACT(/obj/item/reagent_containers/borghypo, "set_chemical_search", ui_act_set_chemical_search, UI_ARG_TEXT("uiChemicalSearch"))
-UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_set_chemical_search)
-	ui_chemical_search = params["uiChemicalSearch"]
+/obj/item/reagent_containers/borghypo/proc/ui_act_set_chemical_search(datum/act/op/A, uiChemicalSearch)
+	ui_chemical_search = uiChemicalSearch
 	. = TRUE
 
 /obj/item/reagent_containers/borghypo/examine(mob/user)

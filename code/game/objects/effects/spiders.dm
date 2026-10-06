@@ -96,13 +96,24 @@ CAPABILITIES(/obj/effect/spider/stickyweb)
 	var/spider_type = /obj/effect/spider/spiderling
 	var/faction = FACTION_SPIDERS
 
-// ALLOW(init/CTOR_ARGS): parent is a constructor argument from whoever builds it
-/obj/effect/spider/eggcluster/Initialize(mapload, atom/parent)
-	pixel_x = rand(3,-3)
-	pixel_y = rand(3,-3)
-	after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch))
-	. = ..()
+CAPABILITIES(/obj/effect/spider/eggcluster)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(3))
+	after_init(PROC_REF(hatch_delay), then(PROC_REF(hatch_due)))
+	param(nameof(laid_by), pos = 1, apply = PROC_REF(take_parent_look), keep = FALSE)
+
+/// What laid the eggs (its constructor param): they take its light and colour.
+/obj/effect/spider/eggcluster/var/tmp/atom/laid_by
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/spider/eggcluster/proc/take_parent_look(atom/parent)
 	get_light_and_color(parent)
+
+/// after_init(): the hatch delay, from the cluster's steps.
+/obj/effect/spider/eggcluster/proc/hatch_delay(datum/act/A)
+	return egg_hatch_steps() * 2 SECONDS
+
+/obj/effect/spider/eggcluster/proc/hatch_due(datum/act/timer/A)
+	hatch()
 
 // leaves the implant list of the limb it was laid in.
 
@@ -165,18 +176,24 @@ TYPE_TABLE(/obj/effect/spider/spiderling/varied, spiderling_grow_as, list(/mob/l
 			/mob/living/simple_mob/animal/giant_spider/webslinger, /mob/living/simple_mob/animal/giant_spider/phorogenic, /mob/living/simple_mob/animal/giant_spider/carrier, \
 			/mob/living/simple_mob/animal/giant_spider/ion))
 
-// ALLOW(init/CTOR_ARGS): parent is a constructor argument from whoever builds it
-/obj/effect/spider/spiderling/Initialize(mapload, atom/parent)
-	. = ..()
-	pixel_x = rand(6,-6)
-	pixel_y = rand(6,-6)
-	//50% chance to grow up
-	if(amount_grown != -1 && prob(50))
-		amount_grown = 1
+/// What laid the spiderling (its constructor param): it takes its light and colour.
+/obj/effect/spider/spiderling/var/tmp/atom/laid_by
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/effect/spider/spiderling/proc/take_parent_look(atom/parent)
 	get_light_and_color(parent)
+
+/// Rolled before init (rolls()): half the spiderlings will grow up.
+/obj/effect/spider/spiderling/proc/roll_grown(datum/roller/R)
+	if(amount_grown != -1 && R.chance(50))
+		return 1
+	return amount_grown
 
 CAPABILITIES(/obj/effect/spider/spiderling)
 	every(2 SECONDS, then(PROC_REF(spiderling_step)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(6))
+	rolls(nameof(amount_grown), PROC_REF(roll_grown))
+	param(nameof(laid_by), pos = 1, apply = PROC_REF(take_parent_look), keep = FALSE)
 
 /obj/effect/spider/spiderling/Bump(atom/user)
 	if(istype(user, /obj/structure/table))

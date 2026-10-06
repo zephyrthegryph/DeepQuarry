@@ -82,8 +82,8 @@
 	update_hooks(tracked())
 
 /datum/connect_range/proc/handle_tracked_qdel(datum/act/notice/A)
-	EVENT_HANDLER
-	spent(src)
+	SHOULD_NOT_SLEEP(TRUE)
+	ended_with(src)
 
 /datum/connect_range/proc/update_hooks(atom/target, atom/old_loc)
 	var/turf/current_turf = get_turf(target)
@@ -166,7 +166,7 @@
 	call(listener, handler)(location, thing, other)
 
 /datum/connect_range/proc/on_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/movable/moved_thing = A.target
 	var/datum/notice/moved/event = A
 	update_hooks(moved_thing, event.old_loc)

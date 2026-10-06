@@ -167,7 +167,8 @@ CAPABILITIES(/obj/machinery/sparker)
 		M.set_on(!(M.on))
 		M.icon_state = text("igniter[]", M.on)
 
-	om_after_unique(src, 5 SECONDS, PROC_REF(finish_trigger))
+	if(!after_pending(src, "finish_trigger"))
+		after(src, 5 SECONDS, PROC_REF(finish_trigger), key = "finish_trigger")
 	return TRUE
 
 /obj/machinery/button/ignition/proc/finish_trigger()

@@ -73,15 +73,15 @@
 	B.absorbchance = 0
 	B.escapechance = 25
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/dustjumper
-	of = /mob/living/simple_mob/vore/alienanimals/dustjumper
+/mob/living/simple_mob/vore/alienanimals/dustjumper/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/alienanimals/dustjumper/perform(mob/living/simple_mob/vore/alienanimals/dustjumper/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/alienanimals/dustjumper/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(!ctx.fact("alive"))
+	if(!F.alive())
 		return
-	if(self.vore_fullness == 0 && self.movement_cooldown == 10)
-		self.movement_cooldown = initial(self.movement_cooldown)
+	if(src.vore_fullness == 0 && src.movement_cooldown == 10)
+		src.movement_cooldown = initial(src.movement_cooldown)
 
 /mob/living/simple_mob/vore/alienanimals/dustjumper/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay_time)
 	. = ..()

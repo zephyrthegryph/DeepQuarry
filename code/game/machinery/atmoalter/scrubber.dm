@@ -27,9 +27,13 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("volume_adj", ui_act("volume_adj", arg("vol", num())), then(PROC_REF(ui_act_volume_adj)))
+	param(nameof(skip_cell), pos = 1)
 
-// ALLOW(init/CTOR_ARGS): skip_cell is a constructor argument from whoever builds it
-/obj/machinery/portable_atmospherics/powered/scrubber/Initialize(mapload, skip_cell)
+/// Made without its cell (its constructor param).
+/obj/machinery/portable_atmospherics/powered/scrubber/var/skip_cell = FALSE
+
+// ALLOW(init/INSTANCE_STATE): a portable machine comes with its cell unless made without one
+/obj/machinery/portable_atmospherics/powered/scrubber/Initialize(mapload)
 	. = ..()
 	if(!skip_cell)
 		rel_set(src, nameof(cell), new/obj/item/cell/apc(src))

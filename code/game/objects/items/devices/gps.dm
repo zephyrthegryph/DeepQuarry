@@ -125,7 +125,7 @@ CAPABILITIES(/obj/item/gps)
 
 /// Hooked on the holder's movement.
 /obj/item/gps/proc/on_holder_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/atom/movable/source = A.target
 	update_compass(source)
 
@@ -211,7 +211,7 @@ DECLARE_APPEARANCE(/obj/item/gps, "appearance_gps_state", list( \
 // Compiles all the data not available directly from the GPS
 // Like the positions and directions to all other GPS units
 
-/// The computed part of /obj/item/gps's window data (declared on its UI_DATA row).
+/// /obj/item/gps's window data.
 /obj/item/gps/ui_data(datum/act/eval/A)
 
 	var/turf/curr = get_turf(src)

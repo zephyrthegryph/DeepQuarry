@@ -51,7 +51,7 @@ DECLARE_REPEAT(/datum/beam, "sleep_time", beam_tick, "beam_running")
 /// Every `sleep_time`: redraw if an end moved; ends the beam when it runs out or breaks.
 /datum/beam/proc/beam_tick()
 	if(finished || !origin() || !target() || EXPIRY_EXPIRED(src, endtime, CLOCK_WORLD) || get_dist(origin(),target()) >= max_distance || origin().z != target().z)
-		spent(src)
+		lapsed(src)
 		return REPEAT_STOP
 	var/origin_turf = get_turf(origin())
 	var/target_turf = get_turf(target())
@@ -73,7 +73,7 @@ DECLARE_REPEAT(/datum/beam, "sleep_time", beam_tick, "beam_running")
 
 /datum/beam/proc/Draw()
 	if(QDELETED(target()) || QDELETED(origin()))
-		spent(src)
+		ended_with(src)
 		return
 
 	var/Angle = round(Get_Angle(origin(),target()))

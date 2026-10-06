@@ -15,18 +15,16 @@
 	var/potency = -1
 	special_handling = TRUE
 
-// ALLOW(init/CTOR_ARGS): planttype is a constructor argument from whoever builds it
-/obj/item/reagent_containers/food/snacks/grown/Initialize(mapload, planttype)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
+	param(nameof(plantname), pos = 1)
+	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
+
+// ALLOW(init/INSTANCE_STATE): produce takes its seed's name, trash, look and chemicals
+/obj/item/reagent_containers/food/snacks/grown/Initialize(mapload)
 	. = ..()
 
 	if(!dried_type)
 		dried_type = type
-
-	pixel_x = rand(-5.0, 5)
-	pixel_y = rand(-5.0, 5)
-
-	if(planttype)
-		plantname = planttype
 
 	if(!plantname)
 		log_runtime("Plantname not provided and [src] requires it at [x],[y],[z]")
@@ -164,7 +162,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/grown, TYPE_PRO
 			M.status_at_least(EFFECT_STUNNED, 8)
 			M.status_at_least(EFFECT_WEAKENED, 5)
 			seed().thrown_at(src,M)
-			destroyed(src, M)
+			destroyed(src, M, BRUTE)
 			return
 
 /obj/item/reagent_containers/food/snacks/grown/throw_impact(atom/hit_atom)
@@ -390,10 +388,17 @@ DECLARE_SHARED_CACHE_EX(fruit_icon, GLOBAL_PROC_REF(build_fruit_icon), SC_NEVER,
 	I.color = fruit_colour
 	return I
 
-// ALLOW(init/CTOR_ARGS): S is a constructor argument from whoever builds it
-/obj/item/reagent_containers/food/snacks/fruit_slice/Initialize(mapload, datum/seed/S)
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/fruit_slice)
+	param(nameof(slice_seed), pos = 1)
+
+/// The seed of the fruit the slice was cut from (its constructor param).
+/obj/item/reagent_containers/food/snacks/fruit_slice/var/datum/seed/slice_seed
+
+// ALLOW(init/INSTANCE_STATE): a slice takes its fruit's name and colours
+/obj/item/reagent_containers/food/snacks/fruit_slice/Initialize(mapload)
 	. = ..()
 	// Need to go through and make a general image caching controller. Todo.
+	var/datum/seed/S = slice_seed
 	if(!istype(S))
 		return INITIALIZE_HINT_QDEL
 

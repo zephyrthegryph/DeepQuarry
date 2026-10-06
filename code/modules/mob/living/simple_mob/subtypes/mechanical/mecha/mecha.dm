@@ -66,13 +66,13 @@
 		new wreckage(loc) // Leave some wreckage.
 
 
-/datum/om/stage/life/special/mechanical/mecha
-	of = /mob/living/simple_mob/mechanical/mecha
+/mob/living/simple_mob/mechanical/mecha/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/mechanical/mecha/perform(mob/living/simple_mob/mechanical/mecha/self, datum/om/frame/life/ctx)
-	if(self.has_repair_droid)
-		self.mend(TREAT_PLATING_REPAIR, 2)
-		self.mend(TREAT_WIRING_REPAIR, 2)
+/mob/living/simple_mob/mechanical/mecha/life_special(datum/seq_frame/life/F)
+	if(src.has_repair_droid)
+		src.mend(TREAT_PLATING_REPAIR, 2)
+		src.mend(TREAT_WIRING_REPAIR, 2)
 	..()
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/mechanical/mecha, TYPE_PROC_REF(/atom, appearance_overlays), list())

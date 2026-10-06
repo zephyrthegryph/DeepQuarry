@@ -40,10 +40,9 @@
 
 /datum/unit_test/dq_km_system_key_rule/Run()
 	// Rule 2: a code folder's row.
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/pipeline/life), "life", "the life pipeline")
+	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/observer_upkeep), "life", "the observer upkeep")
 	var/list/known = km_system_prefixes()
 	TEST_ASSERT(length(known) > 20, "the prefix table is built (it has [length(known)] rows)")
-	TEST_ASSERT_EQUAL(km_system_key_for_path("/datum/om/pipeline/life_derive"), "life", "a sibling pipeline named life_* (as text: no such pipeline exists any more)")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/pipeline/machine), "machines", "the machine pipeline")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/ai_brain/tactical), "ai_brain", "a subtype of a folder's type")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/footstep), "object_behaviours", "datums/behaviours")

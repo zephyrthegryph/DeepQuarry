@@ -61,7 +61,7 @@ CAPABILITIES(/datum/tgui_input_keycombo)
 	data["title"] = title
 	return data
 
-/// The computed part of /datum/tgui_input_keycombo's window data (declared on its UI_DATA row).
+/// /datum/tgui_input_keycombo's window data.
 /datum/tgui_input_keycombo/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(timeout)

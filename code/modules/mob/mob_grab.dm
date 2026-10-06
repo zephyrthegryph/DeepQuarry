@@ -35,23 +35,27 @@
 	item_state = "nothing"
 	w_class = ITEMSIZE_HUGE
 
-// ALLOW(init/CTOR_ARGS): victim is a constructor argument from whoever builds it
-/obj/item/grab/Initialize(mapload, mob/victim)
-	. = ..()
+/// The mob a grab is made on (its constructor param, dropped once linked).
+/obj/item/grab/var/tmp/mob/victim_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The grab links its holder to the victim, or is spent.
+/obj/item/grab/proc/grab_made(mob/victim)
 	var/mob/living/carbon/human/assailant = loc
 
 	if(!istype(assailant) || !istype(victim) || victim.anchored || !assailant.Adjacent(victim))
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 
 	// The grabbing relation (code/datums/om/library.dm) is the sole writer of
 	// `affecting`/the victim's `grabbed_by`, and does the reveal messages,
 	// the dancing check and stopping any pull on the victim as its on_link()
 	// side effects.
 	if(!istype(om_link(src, victim, /datum/om/relation/grabbing), /datum/om/edge))
-		return INITIALIZE_HINT_QDEL
+		spent(src)
+		return
 
 	hud.icon_state = "reinforce"
-	icon_state = "grabbed" // ALLOW(decl): only set once the grab link succeeds
+	icon_state = "grabbed"
 	hud.name = "reinforce grab"
 	rel_set(hud, nameof(hud.master_ref), src)
 
@@ -89,7 +93,7 @@
 	confirm()
 	var/mob/living/affecting = src?.grab_target()
 	if(!assailant)
-		spent(src) // Same here, except we're trying to delete ourselves.
+		ended_with(src) // Same here, except we're trying to delete ourselves.
 		return PROCESS_KILL
 
 	if(assailant.client)
@@ -177,6 +181,7 @@
 CAPABILITIES(/obj/item/grab)
 	op("tighten", in_hand(), label("Tighten grip"), then(PROC_REF(interaction_tighten)))
 	owns_one(nameof(hud), starts = /atom/movable/screen/grab)
+	param(nameof(victim_at_make), pos = 1, apply = PROC_REF(grab_made), keep = FALSE)
 
 /// Old attack_self: upgrade the grab.
 /obj/item/grab/proc/interaction_tighten(datum/act/op/A)

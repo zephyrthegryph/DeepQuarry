@@ -231,10 +231,12 @@ DECLARE_INTERACTIONS(/obj/item/fulton_core, INTERACT_USE(null, PROC_REF(interact
 
 REGISTRY_MEMBERSHIP(/obj/structure/extraction_point, REGISTRY_EXTRACTION_BEACONS)
 
-// ALLOW(init/INSTANCE_STATE): name rolled at random for each instance
-/obj/structure/extraction_point/Initialize(mapload)
-	. = ..()
-	name += " ([rand(100,999)]) ([get_area_name(src, TRUE)])"
+CAPABILITIES(/obj/structure/extraction_point)
+	rolls(nameof(name), PROC_REF(roll_name))
+
+/// Rolled before init (rolls()): the beacon's number, and where it was set up.
+/obj/structure/extraction_point/proc/roll_name(datum/roller/R)
+	return "[name] ([R.number(100, 999)]) ([get_area_name(src, TRUE)])"
 
 /obj/effect/extraction_holder
 	name = "extraction holder"

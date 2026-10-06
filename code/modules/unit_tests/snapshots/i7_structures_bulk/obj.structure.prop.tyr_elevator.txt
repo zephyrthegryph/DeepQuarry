@@ -1,4 +1,5 @@
-/obj/structure/prop/tyr_elevator|human|none => tyr_elevator_item|prop_hand:not possible right now
-/obj/structure/prop/tyr_elevator|robot|none => tyr_elevator_item|prop_hand:not possible right now
+/obj/structure/prop/tyr_elevator|human|none => |prop_hand:not possible right now
+/obj/structure/prop/tyr_elevator|robot|none => |prop_hand:not possible right now
 /obj/structure/prop/tyr_elevator|ai|none => |
 /obj/structure/prop/tyr_elevator|ghost|none => |
+

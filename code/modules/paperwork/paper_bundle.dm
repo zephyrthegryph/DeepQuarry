@@ -135,7 +135,7 @@ CAPABILITIES(/obj/item/paper_bundle)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/paper_bundle's window data (declared on its UI_DATA row).
+/// /obj/item/paper_bundle's window data.
 /obj/item/paper_bundle/proc/ui_data_obj_item_paper_bundle(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["total_pages"] = length(pages)

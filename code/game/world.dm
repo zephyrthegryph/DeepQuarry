@@ -293,11 +293,6 @@ GLOBAL_VAR(restart_counter)
 	setup_autowiki()
 	#endif
 
-	#ifdef UI_TYPES_DUMP
-	// tools/build/lib/ui_types.ts: dump the declared UI tables, then stop.
-	ui_types_dump()
-	spent(world)
-	#endif
 
 /world/proc/HandleTestRun()
 	//trigger things to run the whole process
@@ -322,7 +317,7 @@ GLOBAL_VAR(restart_counter)
 #endif
 	SSticker.OnRoundstart(om_callable(null, GLOBAL_PROC_REF(om_after), null, start_delay, after_start))
 
-/// om_after() target: ends the round now (a test-harness run with no tests compiled in).
+/// after() target: ends the round now (a test-harness run with no tests compiled in).
 /proc/force_end_round()
 	SSticker.force_ending = ADMIN_FORCE_END_ROUND
 

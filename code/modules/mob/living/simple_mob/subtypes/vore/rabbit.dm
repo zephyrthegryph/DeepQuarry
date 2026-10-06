@@ -61,14 +61,14 @@
 	icon_dead = "rabbit_[body_color]_dead"
 	icon_rest = "rabbit_[body_color]_rest"
 
-/datum/om/stage/life/type_post/simple_mob/vore/rabbit
-	of = /mob/living/simple_mob/vore/rabbit
+/mob/living/simple_mob/vore/rabbit/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/rabbit/perform(mob/living/simple_mob/vore/rabbit/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/rabbit/life_type_post(datum/seq_frame/life/F)
 	..()
 
-	if(self.grumpiness > 0 && self.last_pet > (world.time + self.grump_decay))
-		self.grumpiness = max(0, self.grumpiness-rand(5,10)) // Subtract grumpiness randomly in a range of 5-10 if we've not been PAT in the last 5 seconds.
+	if(src.grumpiness > 0 && src.last_pet > (world.time + src.grump_decay))
+		src.grumpiness = max(0, src.grumpiness-rand(5,10)) // Subtract grumpiness randomly in a range of 5-10 if we've not been PAT in the last 5 seconds.
 
 /mob/living/simple_mob/vore/rabbit/examine(mob/user)
 	. = ..()
