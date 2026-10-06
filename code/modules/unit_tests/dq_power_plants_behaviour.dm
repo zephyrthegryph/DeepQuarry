@@ -1119,3 +1119,41 @@
 	pp_gravgen_done(G, run[1])
 
 #undef PP_GRAV_STEP
+
+// ============================================================================================ solars
+
+/// A panel supplies solar_gen_rate * sunfrac while it is whole, linked to a controller on its own network and unobscured; sunfrac is
+/// cos^2 of its angle off the sun, 0 past 90 degrees. The controller supplies the sum of its panels.
+/datum/unit_test/dq_pp/solar_output
+
+/datum/unit_test/dq_pp/solar_output/run_pp()
+	var/list/run = pp_run(3)
+	var/net = power_test_grid(0)
+	var/obj/machinery/power/solar_control/C = allocate(/obj/machinery/power/solar_control, run[1])
+	var/obj/machinery/power/solar/P = allocate(/obj/machinery/power/solar, run[2])
+	power_test_join(net, C)
+	power_test_join(net, P)
+	TEST_ASSERT(P.set_control(C), "the panel links to its controller")
+	C.add_panel(P)
+	var/sun = SSsolars.get_solar_angle(get_turf(P))
+	P.adir = (sun + 60) % 360
+	P.obscured = 0
+	P.update_solar_exposure()
+	TEST_ASSERT(pp_close(P.sunfrac, 0.25, 0.001), "60 degrees off the sun is cos^2 60 = 0.25: [P.sunfrac]")
+	TEST_ASSERT(pp_close(P.get_power_supplied(), GLOB.solar_gen_rate * 0.25, 0.001), "and supplies a quarter of [GLOB.solar_gen_rate] W")
+	P.adir = (sun + 120) % 360
+	P.update_solar_exposure()
+	TEST_ASSERT_EQUAL(P.sunfrac, 0, "past 90 degrees it gets nothing")
+	P.sunfrac = 1
+	P.obscured = 1
+	TEST_ASSERT_EQUAL(P.get_power_supplied(), 0, "obscured it supplies nothing")
+	P.obscured = 0
+	var/net2 = power_test_grid(0)
+	power_test_join(net2, P)
+	TEST_ASSERT_EQUAL(P.get_power_supplied(), 0, "off its controller's network it supplies nothing")
+	power_test_join(net, P)
+	TEST_ASSERT_EQUAL(P.get_power_supplied(), GLOB.solar_gen_rate, "facing the sun it supplies the full rate")
+	C.remove_panel(P)
+	P.unset_control()
+	power_test_drop_grid(net)
+	power_test_drop_grid(net2)
