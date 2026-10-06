@@ -71,33 +71,42 @@
 
 
 /// Old attackby.
-/obj/item/inducer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/inducer/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/cell))
 		if(opened)
 			if(!cell)
 				to_chat(user, span_notice("You insert [W] into [src]."))
 				if(!move_into(src, nameof(src.cell), W, user))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 				update_icon()
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			else
 				to_chat(user, span_warning("[src] already has \a [cell] installed!"))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 	if(cantbeused(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(recharge(W, user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
-/obj/item/inducer/screwdriver_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/item/inducer)
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+/obj/item/inducer/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	playsound(src, tool.usesound, 50, 1)
 	opened = !opened
 	to_chat(user, span_notice("You [opened ? "open" : "close"] the battery compartment."))
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/inducer/proc/recharge(atom/movable/A, mob/user)
 	if(!isturf(A) && user.loc == A)
@@ -191,13 +200,9 @@
 		act_message(user, null, MSG_SELF(span_notice("You recharged [A]!")), MSG_OTHERS(span_notice("%U% recharged [A]!")))
 	recharging = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/inducer, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_self.
-/obj/item/inducer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/inducer/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(opened && cell)
 		act_message(user, src, MSG_SELF(span_notice("You remove [cell].")), MSG_OTHERS(span_notice("%U% removes [cell] from %T%!")))
 		cell.update_icon()

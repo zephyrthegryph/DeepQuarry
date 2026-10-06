@@ -18,6 +18,10 @@ APPEARANCE_TEMPLATE(/obj/structure/grille, "{initial(icon_state)}{destroyed?-b:}
 
 CAPABILITIES(/obj/structure/grille)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("hand", hand(), label("Kick"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Something walked into it (the bump action's notice).
 /obj/structure/grille/proc/bumped_into(datum/act/A)
@@ -25,20 +29,8 @@ CAPABILITIES(/obj/structure/grille)
 	var/atom/user = N.bumper
 	if(ismob(user)) shock(user, 70)
 
-/obj/structure/grille/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/grille_hand,
-		/datum/interaction/entry_item/grille_item,
-	)
-	..()
-
-/// Old attack_hand: kick the grille (and maybe get shocked).
-/datum/interaction/entry_hand/grille_hand
-	id = "grille_hand"
-	name = "Kick"
-	effect = /obj/structure/grille/proc/interaction_hand
-
-/obj/structure/grille/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/grille/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 
 	user.setClickCooldown(user.get_attack_speed())
 	play_sfx(src, SFX_EFFECTS_GRILLEHIT, 1.6)
@@ -105,13 +97,9 @@ CAPABILITIES(/obj/structure/grille)
 		var/datum/damage_packet/packet = damage_packet(Proj, Proj.firer, null, null, DAMAGE_PACKET_PROJECTILE, Proj.armor_penetration, Proj.dir)
 		receive_split(packet, Proj.injury_kind, Proj.injury_kinds, damage * 0.2)
 
-/// Old attackby: place a window, or take a hit (and maybe get shocked).
-/datum/interaction/entry_item/grille_item
-	id = "grille_item"
-	name = "Use"
-	effect = /obj/structure/grille/proc/interaction_item
-
-/obj/structure/grille/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/grille/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/rcd)) // To stop us from hitting the grille when building windows, because grilles don't let parent handle it properly.
 		return TRUE
 	//window placing begin //TODO CONVERT PROPERLY TO MATERIAL DATUM
@@ -194,21 +182,25 @@ CAPABILITIES(/obj/structure/grille)
 	new /obj/item/stack/rods(get_turf(src))
 	return ..()
 
-/obj/structure/grille/wirecutter_act(mob/user, obj/item/W)
+/obj/structure/grille/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!shock(user, 100))
 		playsound(src, W.usesound, 100, 1)
 		replace_with(src, /obj/item/stack/rods, destroyed ? 1 : 2)
-	return TRUE
+	return OP_OK
 
-/obj/structure/grille/screwdriver_act(mob/user, obj/item/W)
+/obj/structure/grille/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(loc, /turf/simulated) && !anchored)
-		return TRUE
+		return OP_OK
 	if(!shock(user, 90))
 		playsound(src, W.usesound, 100, 1)
 		set_anchored(!anchored)
 		act_message(user, null, MSG_SELF(span_notice("You have [anchored ? "fastened the grille to" : "unfastened the grille from"] the floor.")), \
 			MSG_OTHERS(span_notice("%U% [anchored ? "fastens" : "unfastens"] the grille.")))
-	return TRUE
+	return OP_OK
 
 // shock user with probability prb (if all connections & power are working)
 // returns 1 if shocked, 0 otherwise

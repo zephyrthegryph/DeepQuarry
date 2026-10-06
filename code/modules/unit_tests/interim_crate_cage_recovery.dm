@@ -8,7 +8,7 @@
 	var/obj/item/tool/crowbar/tool = allocate(/obj/item/tool/crowbar, T)
 	TEST_ASSERT(user.put_in_active_hand(tool), "the actor holds the actual crowbar")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/stack/material/wood)), 0, "the floor starts without returned wood")
-	TEST_ASSERT(crate.crowbar_act(user, tool), "actual crate opening reports success")
+	TEST_ASSERT(test_op_handler(crate, "crowbar_used", user, tool), "actual crate opening reports success")
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(crate), "actual opening consumes the original crate")
 	TEST_ASSERT(!QDELETED(book), "the original gathered book survives opening")

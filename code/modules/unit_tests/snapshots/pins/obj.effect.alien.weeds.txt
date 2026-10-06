@@ -47,7 +47,8 @@ human|/obj/item/weldingtool menu: Insert a soap (refused: needs a soap)
 human|/obj/item/weldingtool menu: Interaction hit weeds
 human|/obj/item/weldingtool menu: Interaction touch weeds
 human|/obj/item/weldingtool menu: Tear up (refused: combat mode is off)
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Insert a mop (refused: needs a mop)
 human|/obj/item/stack/cable_coil menu: Insert a soap (refused: needs a soap)
 human|/obj/item/stack/cable_coil menu: Interaction hit weeds
@@ -79,5 +80,5 @@ human|/obj/item/soap menu: Interaction hit weeds
 human|/obj/item/soap menu: Interaction touch weeds
 human|/obj/item/soap menu: Tear up (refused: combat mode is off)
 human|/obj/item/soap click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_touch_weeds, gen_insert_interaction_pass, gen_item_interaction_hit_weeds
+keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_touch_weeds, gen_insert_interaction_pass, gen_item_interaction_hit_weeds, use_welder
 

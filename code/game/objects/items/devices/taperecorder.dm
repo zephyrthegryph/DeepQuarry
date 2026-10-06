@@ -389,6 +389,7 @@ DECLARE_APPEARANCE(/obj/item/rectape, "ruined", list( \
 CAPABILITIES(/obj/item/rectape)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item/pen), label("Label"), then(PROC_REF(interaction_item)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/item/rectape/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
@@ -432,11 +433,13 @@ CAPABILITIES(/obj/item/rectape)
 		open_request(src, /datum/prompt/text, PROC_REF(label_entered), answerer = user, title = "Tape labeling", question = "What would you like to label the tape?", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/rectape/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/rectape/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!ruined)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	use_tool(user, tool, src, delay = 12 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, start_self = "You start winding the tape back in...", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/rectape/proc/screwdriver_act_tool_done(mob/user)
 	if(!(ruined))

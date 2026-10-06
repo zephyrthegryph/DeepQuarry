@@ -9,7 +9,8 @@ human|/obj/item/tool/screwdriver click: nothing
 human|/obj/item/tool/crowbar menu: Lift
 human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Lift
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Lift
 human|/obj/item/tool/wirecutters click: nothing
 human|/obj/item/multitool menu: Lift
@@ -23,5 +24,5 @@ human|/obj/item/stack/material/steel menu: Lift
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Lift
 human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, weightlifter_hand
+keys: gen_drag_interaction_drag_buckle, use_wrench, weightlifter_hand
 

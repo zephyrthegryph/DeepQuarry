@@ -9,19 +9,11 @@
 /obj/structure/prop/desert_rock/rock
 	name = "desert rock"
 
-/obj/structure/prop/desert_rock/rock/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/desert_rock_push,
-	)
-	..()
+CAPABILITIES(/obj/structure/prop/desert_rock/rock)
+	op("push", hand(), label("Push"), then(PROC_REF(interaction_push)))
 
-/// Old attack_hand: push the rock in the direction the user is facing.
-/datum/interaction/entry_hand/desert_rock_push
-	id = "desert_rock_push"
-	name = "Push"
-	effect = /obj/structure/prop/desert_rock/rock/proc/interaction_push
-
-/obj/structure/prop/desert_rock/rock/proc/interaction_push(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/prop/desert_rock/rock/proc/interaction_push(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(user.is_incorporeal())
 		return TRUE
 	to_chat(user, "You push on the [src].")

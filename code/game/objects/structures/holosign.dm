@@ -22,33 +22,21 @@
 	. = ..()
 	. += rel_many(nameof(signs), back = nameof(/obj/structure/holosign::projector))
 
-/obj/structure/holosign/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/holosign_hand,
-		/datum/interaction/entry_item/holosign_item,
-	)
-	..()
+CAPABILITIES(/obj/structure/holosign)
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
-/// Old attack_hand: punch the sign.
-/datum/interaction/entry_hand/holosign_hand
-	id = "holosign_hand"
-	name = "Use"
-	effect = /obj/structure/holosign/proc/interaction_hand
-
-/obj/structure/holosign/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/holosign/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	user.setClickCooldown(user.get_attack_speed())
 	user.do_attack_animation(src)
 	play_sfx(loc, SFX_WEAPONS_EGLOVES, 1.6, extrarange = 0)
 	take_damage(5, BRUTE, MELEE, sound_effect = FALSE)
 	return TRUE
 
-/// Old attackby: hit the sign with a weapon.
-/datum/interaction/entry_item/holosign_item
-	id = "holosign_item"
-	name = "Use"
-	effect = /obj/structure/holosign/proc/interaction_item
-
-/obj/structure/holosign/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/holosign/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(user.get_attack_speed(W))
 	user.do_attack_animation(src)
 	play_sfx(loc, SFX_WEAPONS_EGLOVES, 1.6, extrarange = 0)

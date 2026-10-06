@@ -34,21 +34,23 @@ DECLARE_PERIODIC_WHILE(/obj/item/powersink, PERIODIC_SLOW, "operating")
 /obj/item/powersink/proc/operating()
 	return mode == 2
 
-/obj/item/powersink/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/powersink/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(mode == 0)
 		var/turf/T = loc
 		if(!isturf(T) || !T.is_plating())
 			to_chat(user, "Device must be placed over an exposed cable to attach to it.")
-			return ITEM_INTERACT_BLOCKING
+			return OP_OK
 		rel_set(src, nameof(attached), locate_within(T, /obj/structure/cable))
 		if(!attached())
 			to_chat(user, "No exposed cable here to attach to.")
-			return ITEM_INTERACT_BLOCKING
+			return OP_OK
 		set_anchored(TRUE)
 		set_mode(1)
 		act_message(user, src, others = span_notice("%U% attaches %T% to the cable!"))
 		playsound(src, tool.usesound, 50, 1)
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	if(mode == 2)
 		set_anchored(FALSE)
 	set_mode(0)
@@ -56,11 +58,12 @@ DECLARE_PERIODIC_WHILE(/obj/item/powersink, PERIODIC_SLOW, "operating")
 	set_light(0)
 	playsound(src, tool.usesound, 50, 1)
 	icon_state = "powersink0"
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 
 CAPABILITIES(/obj/item/powersink)
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/item/powersink/proc/interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor

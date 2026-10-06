@@ -6,7 +6,7 @@
 	var/obj/item/tool/screwdriver/screwdriver = allocate(/obj/item/tool/screwdriver, T)
 	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench, T)
 	TEST_ASSERT(!pack.b_stat, "The actual original electropack starts closed to modification")
-	TEST_ASSERT_EQUAL(pack.screwdriver_act(actor, screwdriver), ITEM_INTERACT_SUCCESS, "The actual screwdriver opens the original pack for assembly")
+	TEST_ASSERT_EQUAL(test_op_handler(pack, "screwdriver_used", actor, screwdriver), OP_OK, "The actual screwdriver opens the original pack for assembly")
 	TEST_ASSERT(pack.b_stat, "The actual opened pack permits real assembly")
 	pack.interaction_item(actor, helmet, null)
 	var/obj/item/assembly/shock_kit/kit = locate_within(actor, /obj/item/assembly/shock_kit)

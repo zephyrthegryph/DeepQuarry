@@ -39,7 +39,8 @@ def write(p, text):
 
 
 def strip_strings(l):
-    return re.sub(r'"(?:[^"\\]|\\.)*"', '""', l)
+    """A string literal's text goes; its embedded expressions ("[user]") stay, as code."""
+    return re.sub(r'"(?:[^"\\]|\\.)*"', lambda m: '"' + " ".join(re.findall(r"\[([^\]]*)\]", m.group(0))) + '"', l)
 
 
 def body_end(lines, i):
@@ -64,6 +65,7 @@ def main(argv):
         dirs = [d.rstrip("/") + "/" for d in argv[argv.index("--dirs") + 1:] if not d.startswith("--")]
     files = {}
     for base, _d, fs in os.walk(os.path.join(ROOT, "code")):
+        _d[:] = [d for d in _d if d != "_generated"]  # build output (analyze gen), not source
         for f in fs:
             if f.endswith(".dm"):
                 p = os.path.join(base, f)

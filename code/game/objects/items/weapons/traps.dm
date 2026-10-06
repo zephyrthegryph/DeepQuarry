@@ -55,19 +55,17 @@
 	set_anchored(TRUE)
 	log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
 
-DECLARE_INTERACTIONS(/obj/item/beartrap, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-)
-
 CAPABILITIES(/obj/item/beartrap)
 	op("deploy", in_hand(), label("Deploy trap"), then(PROC_REF(deploy_trap_input)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /obj/item/beartrap/proc/deploy_trap_input(datum/act/op/A)
 	interaction_self(A.actor, A.held, null)
 	return OP_OK
 
 /// Old attack_hand.
-/obj/item/beartrap/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/beartrap/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_buckled_mobs() && can_use(user))
 		var/victim = english_list(src?.buckled_mob_list())
 		act_message(user, src, MSG_SELF(span_notice("You carefully begin to free [victim] from %T%.")), \
@@ -81,7 +79,7 @@ CAPABILITIES(/obj/item/beartrap)
 
 		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /obj/item/beartrap/proc/attack_hand_timed_done(mob/user, victim)
@@ -215,6 +213,7 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 
 CAPABILITIES(/obj/item/material/barbedwire)
 	op("deploy", in_hand(), label("Deploy trap"), then(PROC_REF(deploy_trap_input)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 
 /obj/item/material/barbedwire/proc/deploy_trap_input(datum/act/op/A)
 	interaction_self(A.actor, A.held, null)
@@ -279,9 +278,11 @@ CAPABILITIES(/obj/item/material/barbedwire)
 
 	return FALSE
 
-/obj/item/material/barbedwire/wirecutter_act(mob/user, obj/item/tool)
+/obj/item/material/barbedwire/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!istype(tool))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 
 	if((tool.flags & NOCONDUCT) || !shock(user, 70, pick(BP_L_HAND, BP_R_HAND)))
 		user.setClickCooldown(user.get_attack_speed(tool))
@@ -299,7 +300,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 
 		material_wear(inc_damage * MATERIAL_WEAR_UNIT)
 
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "{initial(icon_state)}{anchored?-out:}")
 

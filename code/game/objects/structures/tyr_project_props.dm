@@ -8,19 +8,11 @@
 	var/descendx
 	var/descendy
 
-/obj/structure/prop/tyr_elevator/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/tyr_elevator_item,
-	)
-	..()
+CAPABILITIES(/obj/structure/prop/tyr_elevator)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
-/// Old attackby: pry the doors open and teleport away.
-/datum/interaction/entry_item/tyr_elevator_item
-	id = "tyr_elevator_item"
-	name = "Use"
-	effect = /obj/structure/prop/tyr_elevator/proc/interaction_item
-
-/obj/structure/prop/tyr_elevator/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/prop/tyr_elevator/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
 	om_task_timed(user, 30, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	return TRUE
 

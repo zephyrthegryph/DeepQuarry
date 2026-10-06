@@ -53,7 +53,8 @@ human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Pick up
 human|/obj/item/tool/wirecutters menu: Repair
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wirecutters click: Click: Repair
+human|/obj/item/tool/wirecutters menu: Use wirecutter
+human|/obj/item/tool/wirecutters click: Click: Use wirecutter
 human|/obj/item/multitool menu: Armor insert item
 human|/obj/item/multitool menu: Armor plating item
 human|/obj/item/multitool menu: Collect (refused: needs a storage)
@@ -71,7 +72,8 @@ human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Pick up
 human|/obj/item/weldingtool menu: Repair
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/weldingtool click: Click: Repair
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Armor insert item
 human|/obj/item/stack/cable_coil menu: Armor plating item
 human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
@@ -118,5 +120,5 @@ human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Repair
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage click: Click: Repair
-keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_armor_insert_item, gen_item_armor_plating_item, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, material_interaction_item
+keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_armor_insert_item, gen_item_armor_plating_item, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, material_interaction_item, use_welder, use_wirecutter
 

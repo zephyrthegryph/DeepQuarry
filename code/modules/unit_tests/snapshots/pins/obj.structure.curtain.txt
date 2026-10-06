@@ -12,7 +12,8 @@ human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Toggle
 human|/obj/item/tool/wrench click: nothing
 human|/obj/item/tool/wirecutters menu: Toggle
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters menu: Use wirecutter
+human|/obj/item/tool/wirecutters click: Click: Use wirecutter
 human|/obj/item/multitool menu: Toggle
 human|/obj/item/multitool click: nothing
 human|/obj/item/weldingtool menu: Toggle
@@ -24,5 +25,5 @@ human|/obj/item/stack/material/steel menu: Toggle
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Toggle
 human|/obj/item/card/id click: nothing
-keys: curtain_toggle, curtain_toggle_item, gen_drag_interaction_drag_buckle, gen_silicon_curtain_silicon_toggle
+keys: curtain_toggle, curtain_toggle_item, gen_drag_interaction_drag_buckle, gen_silicon_curtain_silicon_toggle, use_wirecutter
 

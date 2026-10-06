@@ -65,6 +65,7 @@
 
 CAPABILITIES(/obj/structure/simple_door)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /// Something walked into it (the bump action's notice).
 /obj/structure/simple_door/proc/bumped_into(datum/act/A)
@@ -207,13 +208,15 @@ APPEARANCE_TEMPLATE(/obj/structure/simple_door, "{appearance_base}{state?open:}"
 	act_message(user, src, others = span_danger("%U% finished digging %T%!"))
 	Dismantle()
 
-/obj/structure/simple_door/welder_act(mob/user, obj/item/W)
+/obj/structure/simple_door/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!breakable)
-		return TRUE
+		return OP_OK
 	var/obj/item/weldingtool/WT = W.get_welder()
 	if(material.ignition_point && WT.remove_fuel(0, user))
 		TemperatureAct(150)
-	return TRUE
+	return OP_OK
 
 /// Projectile adapter: a door soaks most of a round.
 /obj/structure/simple_door/projectile_damage(obj/item/projectile/P, def_zone)

@@ -12,7 +12,7 @@
 		toilet.interaction_hand(user, null, null)
 	TEST_ASSERT(!toilet.open, "the actual hand interaction leaves the seat closed for cistern retrieval")
 	TEST_ASSERT(user.put_in_active_hand(crowbar), "the actor holds the actual cistern opening tool")
-	TEST_ASSERT(toilet.crowbar_act(user, crowbar), "the actual crowbar action starts opening the cistern")
+	TEST_ASSERT(test_op_handler(toilet, "crowbar_used", user, crowbar), "the actual crowbar action starts opening the cistern")
 	TEST_ASSERT(LAZYLEN(user.do_afters), "opening the actual cistern creates a pending timed action")
 	TEST_ASSERT(!toilet.cistern, "starting the actual delay does not open the cistern early")
 	scheduler_advance((4 SECONDS) / (1 SECOND))

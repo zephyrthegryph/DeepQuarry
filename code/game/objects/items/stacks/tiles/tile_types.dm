@@ -44,16 +44,21 @@
 			recipes = material.get_recipes()
 			stacktype = material.stack_type
 
-/obj/item/stack/tile/welder_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/item/stack/tile)
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+
+/obj/item/stack/tile/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!can_weld)
 		to_chat(user, "You can't reform these into their original components.")
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(get_amount() < 4)
 		to_chat(user, span_warning("You need at least four tiles to do this."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder.remove_fuel(0, user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	new welds_into(user.loc)
 	user.update_icon()
 	act_message(src, user, others = span_notice("%U% is shaped by %T% with the welding tool."), blind = "You hear welding.")
@@ -61,7 +66,7 @@
 	use(4)
 	if(QDELETED(src) && replace)
 		user.put_in_hands(new welds_into)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /*
  * Grass

@@ -31,6 +31,7 @@ DECLARE_APPEARANCE(/obj/structure/low_wall, null, list(APPEARANCE_ANY = list(APP
 CAPABILITIES(/obj/structure/low_wall)
 	after_init(0, then(PROC_REF(connect_after_init)))
 	climb()
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 /obj/structure/low_wall/Initialize(mapload, materialtype)
 	. = ..()
@@ -93,18 +94,19 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 
 	return TRUE
 
-/obj/structure/low_wall/wrench_act(mob/user, obj/item/W)
+/obj/structure/low_wall/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	for(var/obj/structure/S in turf_contents_of_type(loc, /obj/structure))
 		if(istype(S, /obj/structure/window))
 			to_chat(user, span_notice("There is still a window on the low wall!"))
-			return TRUE
+			return OP_OK
 		if(istype(S, /obj/structure/grille))
 			to_chat(user, span_notice("There is still a grille on the low wall!"))
-			return TRUE
+			return OP_OK
 	play_sfx(loc, SFX_ITEMS_RATCHET, 2)
 	to_chat(user, span_notice("Now disassembling the low wall..."))
 	om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
-	return TRUE
+	return OP_OK
 
 /obj/structure/low_wall/proc/wrench_act_timed_done(mob/user)
 	to_chat(user, span_notice("You disassembled the low wall!"))

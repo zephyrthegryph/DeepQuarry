@@ -12,6 +12,8 @@
 
 CAPABILITIES(/obj/structure/drop_pod)
 	owns_one(nameof(air), /datum/gas_mixture/pod_air)
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("open", hand(), label("Open"), then(PROC_REF(interaction_open)))
 
 /obj/structure/drop_pod/polite
 	polite = TRUE
@@ -108,19 +110,8 @@ CAPABILITIES(/obj/structure/drop_pod)
 	own_clear(src, nameof(air), OWN_DELETE)
 	finished = TRUE
 
-/obj/structure/drop_pod/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/drop_pod_open,
-	)
-	..()
-
-/// Old attack_hand: open the pod.
-/datum/interaction/entry_hand/drop_pod_open
-	id = "drop_pod_open"
-	name = "Open"
-	effect = /obj/structure/drop_pod/proc/interaction_open
-
-/obj/structure/drop_pod/proc/interaction_open(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/drop_pod/proc/interaction_open(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(istype(user) && (Adjacent(user) || (is_in_holder(user, src))) && !user.incapacitated())
 		if(finished)
 			to_chat(user, span_warning("Nothing left to do with it now. Maybe you can break it down into materials."))
@@ -129,13 +120,15 @@ CAPABILITIES(/obj/structure/drop_pod)
 			act_message(user, src, MSG_SELF(span_infoplain("You open %T%!")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " opens %T%!")))
 	return TRUE
 
-/obj/structure/drop_pod/wrench_act(mob/user, obj/item/O)
+/obj/structure/drop_pod/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(!finished)
 		to_chat(user, span_warning("\The [src] hasn't been opened yet. Do that first."))
-		return TRUE
+		return OP_OK
 	to_chat(user, span_notice("You start breaking down \the [src]."))
 	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user, O))
-	return TRUE
+	return OP_OK
 
 /obj/structure/drop_pod/proc/wrench_act_timed_done(mob/user, obj/item/O)
 	playsound(user, O.usesound, 50, 1)

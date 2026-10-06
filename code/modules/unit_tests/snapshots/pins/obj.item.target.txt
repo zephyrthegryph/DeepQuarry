@@ -49,7 +49,8 @@ human|/obj/item/weldingtool menu: Customise (refused: needs an item)
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Pick up
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
 human|/obj/item/stack/cable_coil menu: Customise (refused: needs an item)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
@@ -81,5 +82,5 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, unpin
+keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, unpin, use_welder
 

@@ -17,7 +17,8 @@ human|/obj/item/tool/wrench menu: Insert a soap (refused: needs a soap)
 human|/obj/item/tool/wrench click: nothing
 human|/obj/item/tool/wirecutters menu: Insert a mop (refused: needs a mop)
 human|/obj/item/tool/wirecutters menu: Insert a soap (refused: needs a soap)
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters menu: Use wirecutter
+human|/obj/item/tool/wirecutters click: Click: Use wirecutter
 human|/obj/item/multitool menu: Insert a mop (refused: needs a mop)
 human|/obj/item/multitool menu: Insert a soap (refused: needs a soap)
 human|/obj/item/multitool click: nothing
@@ -40,5 +41,5 @@ human|/obj/item/mop_deploy click: nothing
 human|/obj/item/soap menu: Insert a mop (refused: needs a mop)
 human|/obj/item/soap menu: Insert a soap
 human|/obj/item/soap click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_insert_interaction_pass
+keys: gen_drag_interaction_drag_buckle, gen_insert_interaction_pass, use_wirecutter
 

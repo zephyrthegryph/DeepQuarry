@@ -53,9 +53,11 @@
 	epitaph += carving_2
 	update_icon()
 
-/obj/item/material/gravemarker/wrench_act(mob/user, obj/item/W)
+/obj/item/material/gravemarker/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH, start_self = "You start carving \the [src.name].", start_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return NONE
+	return OP_DECLINE
 
 /obj/item/material/gravemarker/proc/wrench_act_tool_done(mob/user)
 	var/datum/material/refund_material = material
@@ -90,6 +92,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/gravemarker, TYPE_PROC_REF(/atom, app
 
 CAPABILITIES(/obj/item/material/gravemarker)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 /// Old attack_self.
 /obj/item/material/gravemarker/proc/interaction_self(datum/act/op/A)

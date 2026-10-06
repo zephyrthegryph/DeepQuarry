@@ -353,7 +353,9 @@ EXTEND_INTERACTIONS(/obj/item/material/armor_plating/insert, INTERACT_ITEM(null,
 				consume(src, user)
 				return INTERACTION_HANDLED_PASS
 
-/obj/item/material/armor_plating/insert/welder_act(mob/user, obj/item/tool)
+/obj/item/material/armor_plating/insert/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/weldingtool/S = tool.get_welder()
 	if(S.remove_fuel(0,user))
 		if(!src || !S.isOn()) return ITEM_INTERACT_SUCCESS
@@ -362,15 +364,20 @@ EXTEND_INTERACTIONS(/obj/item/material/armor_plating/insert, INTERACT_ITEM(null,
 		var/obj/item/clothing/accessory/material/makeshift/light/new_armor = new(null, src.material.name)
 		user.put_in_hands(new_armor)
 		replace_with(src, new_armor)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/material/armor_plating/insert/wirecutter_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/item/material/armor_plating/insert)
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+
+/obj/item/material/armor_plating/insert/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You split the plate down the middle, and joint it at the elbow."))
 	user.drop_from_inventory(src)
 	var/obj/item/clothing/accessory/material/makeshift/armguards/new_armor = new(null, src.material.name)
 	user.put_in_hands(new_armor)
 	replace_with(src, new_armor)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 // Used to craft the makeshift helmet
 /obj/item/clothing/head/helmet/bucket

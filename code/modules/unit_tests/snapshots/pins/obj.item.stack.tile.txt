@@ -59,7 +59,8 @@ human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Pick up
 human|/obj/item/weldingtool menu: Split
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/weldingtool click: Click: Split
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
 human|/obj/item/stack/cable_coil menu: Combine
 human|/obj/item/stack/cable_coil menu: Customise (refused: needs an item)
@@ -98,5 +99,5 @@ human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Split
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage click: Click: Split
-keys: combine, consolidate, gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, make, split, ui_open
+keys: combine, consolidate, gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, make, split, ui_open, use_welder
 

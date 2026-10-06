@@ -34,6 +34,11 @@ import re
 import sys
 from collections import defaultdict
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _excl import excluded  # noqa: E402
+
+EXCLUDED = excluded("tool_act")
+
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 QUALITIES = {
     "screwdriver": "TOOL_SCREWDRIVER",
@@ -62,6 +67,7 @@ def rel(p):
 
 def dm_files():
     for base, _dirs, files in os.walk(os.path.join(ROOT, "code")):
+        _dirs[:] = [d for d in _dirs if d != "_generated"]  # build output (analyze gen), not source
         for f in files:
             if f.endswith(".dm"):
                 yield os.path.join(base, f)
@@ -106,7 +112,8 @@ def body_end(lines, i):
 
 
 def strip_strings(l):
-    return re.sub(r'"(?:[^"\\]|\\.)*"', '""', l)
+    """A string literal's text goes; its embedded expressions ("[user]") stay, as code."""
+    return re.sub(r'"(?:[^"\\]|\\.)*"', lambda m: '"' + " ".join(re.findall(r"\[([^\]]*)\]", m.group(0))) + '"', l)
 
 
 def parse_params(params):
@@ -272,6 +279,8 @@ def main(argv):
                 continue
             problems.append("external_call")
             ext_sites.append(f"{root.type}/{q}_act <- {rel(p)}:{i+1}")
+        if f"{root.type}/{q}" in EXCLUDED:
+            problems.append("excluded")
         key = f"use_{q}"
         if key_sites.get(key):
             problems.append("key_taken")

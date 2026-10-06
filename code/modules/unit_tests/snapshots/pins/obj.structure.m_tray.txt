@@ -34,5 +34,5 @@ human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Place on tray
 human|/obj/item/card/id menu: Push in
 human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, m_tray_drag, m_tray_hand
+keys: gen_drag_interaction_drag, gen_drag_interaction_drag_buckle, gen_hand_interaction_hand
 

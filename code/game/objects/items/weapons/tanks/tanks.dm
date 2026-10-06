@@ -57,6 +57,8 @@ CAPABILITIES(/obj/item/tank)
 	without("ui_open")
 	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_act_pressure)))
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /obj/item/tank/proc/init_proxy()
 	var/obj/item/tankassemblyproxy/proxy = new /obj/item/tankassemblyproxy(src)
@@ -192,7 +194,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 	var/mob/user = task.actor
 	to_chat(user, span_notice("You stop attaching the assembly."))
 
-/obj/item/tank/wirecutter_act(mob/user, obj/item/tool)
+/obj/item/tank/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(wired && src.proxyassembly.assembly)
 
 		to_chat(user, span_notice("You carefully begin clipping the wires that attach to the tank."))
@@ -203,7 +206,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 
 	else
 		to_chat(user, span_notice("There are no wires to cut!"))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/tank/proc/wire_clip_slipped(mob/user)
 	to_chat(user, span_danger("You slip and bump the igniter!"))
@@ -235,7 +238,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 	wired = 0
 	cut_overlay("bomb_assembly")
 
-/obj/item/tank/welder_act(mob/user, obj/item/tool)
+/obj/item/tank/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/weldingtool/WT = tool.get_welder()
 	if(WT?.remove_fuel(1,user))
 		if(!valve_welded)
@@ -245,7 +250,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 		else
 			to_chat(user, span_notice("The emergency pressure relief valve has already been welded."))
 	add_fingerprint(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /datum/om/task/timed/tank_welder_act
 	duration = 4 SECONDS

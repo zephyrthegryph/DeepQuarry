@@ -32,6 +32,12 @@ import re
 import sys
 from collections import defaultdict
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _excl import excluded  # noqa: E402
+
+# a type the interaction codemod leaves is not lowered either: the lowered spec would only move its legacy lines
+EXCLUDED = {**excluded("lower"), **excluded("interact")}
+
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASES = {
     "entry_hand": "HAND",
@@ -121,6 +127,7 @@ def main(argv):
         dirs = [d.rstrip("/") + "/" for d in argv[argv.index("--dirs") + 1:] if not d.startswith("--")]
     files = {}
     for base, _d, fs in os.walk(os.path.join(ROOT, "code")):
+        _d[:] = [d for d in _d if d != "_generated"]  # build output (analyze gen), not source
         for f in fs:
             if f.endswith(".dm"):
                 p = os.path.join(base, f)
@@ -181,9 +188,11 @@ def main(argv):
                     body.append(stmt)
                 k += 1
             why = None
+            if T in EXCLUDED:
+                why = "excluded"
             specs = []
             used_datums = []
-            if not body or body[-1] != "..()":
+            if not why and (not body or body[-1] != "..()"):
                 why = "no_super"
             for stmt in body[:-1] if not why else []:
                 sm = re.match(r"^into\s*\+=\s*(.*)$", stmt)

@@ -43,6 +43,7 @@
 CAPABILITIES(/obj/item/grenade)
 	op("prime", in_hand(), when(cond_not(nameof(special_handling))), label("Prime"), then(PROC_REF(grenade_primed)))
 	op("grenade_interaction_hand", hand(), ungated(), then(PROC_REF(grenade_interaction_hand)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/item/grenade/proc/grenade_primed(datum/act/op/A)
 	var/mob/user = A.actor
@@ -76,7 +77,8 @@ CAPABILITIES(/obj/item/grenade)
 		T.hotspot_expose(700,125)
 		SSmotiontracker.ping(src,100)
 
-/obj/item/grenade/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/grenade/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	switch(det_time)
 		if(1)
 			det_time = 10
@@ -91,7 +93,7 @@ CAPABILITIES(/obj/item/grenade)
 			det_time = 1
 			to_chat(user, span_notice("You set the [name] for instant detonation."))
 	add_fingerprint(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attack_hand: stops any throw walk, then the touch goes on to the gate and pickup.
 /obj/item/grenade/proc/grenade_interaction_hand(datum/act/op/A)

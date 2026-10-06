@@ -140,21 +140,12 @@
 	play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 50)
 	return TRUE
 
-/obj/structure/window/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/window_bang,
-		/datum/interaction/entry_hand/window_hand,
-		/datum/interaction/entry_item/window_item,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_TK("Knock", PROC_REF(interaction_tk)))
-	..()
-
-/// Old attack_hand's harm branch: bang on (or claw at) the window (combat mode only).
-/datum/interaction/entry_hand/window_bang
-	id = "window_bang"
-	name = "Bang on"
-	effect = /obj/structure/window/proc/interaction_bang
-	stance = I_HURT
+EXTEND_INTERACTIONS(/obj/structure/window, \
+	INTERACT_HAND_AS(I_HURT, "Bang on", PROC_REF(interaction_bang)), \
+	INTERACT_HAND("Knock", PROC_REF(interaction_hand)), \
+	INTERACT_ITEM("Use", PROC_REF(interaction_item)), \
+	INTERACT_TK("Knock", PROC_REF(interaction_tk)), \
+)
 
 /obj/structure/window/proc/interaction_bang(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.has_mutation(HULK))
@@ -173,12 +164,6 @@
 		MSG_OTHERS(span_danger("%U% bangs against %T%!")), \
 		MSG_BLIND("You hear a banging sound."))
 	return TRUE
-
-/// Old attack_hand: a Hulk smashes through, or a knock.
-/datum/interaction/entry_hand/window_hand
-	id = "window_hand"
-	name = "Knock"
-	effect = /obj/structure/window/proc/interaction_hand
 
 /obj/structure/window/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed())
@@ -207,12 +192,6 @@
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " bonks %T% harmlessly."))
 	user.do_attack_animation(src)
 	return 1
-
-/// Old attackby: slam a grabbed mob, wire for tinting, build a frame, or take a hit.
-/datum/interaction/entry_item/window_item
-	id = "window_item"
-	name = "Use"
-	effect = /obj/structure/window/proc/interaction_item
 
 /obj/structure/window/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	// Slamming.

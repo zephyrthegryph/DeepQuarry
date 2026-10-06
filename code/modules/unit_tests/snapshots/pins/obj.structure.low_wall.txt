@@ -20,7 +20,8 @@ human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tool/wrench menu: Place on wall
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tool/wirecutters menu: Place on wall
 human|/obj/item/tool/wirecutters menu: Use
@@ -46,5 +47,5 @@ human|/obj/item/card/id menu: Climb (refused: There's a material processor in th
 human|/obj/item/card/id menu: Place on wall
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing
-keys: climb.climb, climb.climb_menu, gen_drag_interaction_drag_buckle, low_wall_drag, low_wall_item
+keys: climb.climb, climb.climb_menu, gen_drag_interaction_drag_buckle, low_wall_drag, low_wall_item, use_wrench
 

@@ -37,7 +37,8 @@ human|/obj/item/weldingtool menu: Hit web
 human|/obj/item/weldingtool menu: Insert a mop (refused: needs a mop)
 human|/obj/item/weldingtool menu: Insert a soap (refused: needs a soap)
 human|/obj/item/weldingtool menu: Stomp
-human|/obj/item/weldingtool click: Click: Hit web
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Hit web
 human|/obj/item/stack/cable_coil menu: Insert a mop (refused: needs a mop)
 human|/obj/item/stack/cable_coil menu: Insert a soap (refused: needs a soap)
@@ -64,5 +65,5 @@ human|/obj/item/soap menu: Insert a mop (refused: needs a mop)
 human|/obj/item/soap menu: Insert a soap
 human|/obj/item/soap menu: Stomp
 human|/obj/item/soap click: Click: Hit web
-keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_stomp_spiderling, gen_insert_interaction_pass, hit_web
+keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_stomp_spiderling, gen_insert_interaction_pass, hit_web, use_welder
 
