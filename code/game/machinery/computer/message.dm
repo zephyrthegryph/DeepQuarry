@@ -85,6 +85,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	op("send_message", ui_act("send_message"), then(PROC_REF(ui_act_send_message)))
 	op("addtoken", ui_act("addtoken"), then(PROC_REF(ui_act_addtoken)))
 	op("deltoken", ui_act("deltoken", arg("deltoken", num())), then(PROC_REF(ui_act_deltoken)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/computer/message_monitor/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -152,20 +153,8 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 
 	return data
 
-/obj/machinery/computer/message_monitor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/message_monitor_open_ui,
-	)
-	..()
-
-/// Open the message monitor interface.
-/datum/interaction/machine_hand/ungated/message_monitor_open_ui
-	id = "message_monitor_open_ui"
-	name = "Use"
-	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/computer/message_monitor/proc/interaction_open_ui_impl
-
-/obj/machinery/computer/message_monitor/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/message_monitor/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 	if(!istype(user))

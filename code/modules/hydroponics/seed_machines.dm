@@ -78,6 +78,9 @@ CAPABILITIES(/obj/machinery/botany)
 	owns_one(nameof(loaded_disk), on_destroy = ON_DESTROY_SPILL)
 	op("eject_packet", ui_act("eject_packet"), then(PROC_REF(ui_act_eject_packet)))
 	op("eject_disk", ui_act("eject_disk"), then(PROC_REF(ui_act_eject_disk)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/machinery/botany/proc/work_step(datum/act/timer/A)
 
@@ -85,12 +88,6 @@ CAPABILITIES(/obj/machinery/botany)
 
 	if(COOLDOWN_FINISHED(src, action_cooldown))
 		finished_task()
-
-/// Old attack_hand (never called ..()): open the interface.
-/datum/interaction/machine_hand/ungated/botany_open_ui
-	id = "botany_open_ui"
-	name = "Use"
-	effect = /obj/machinery/botany/proc/interaction_open_ui_impl
 
 /obj/machinery/botany/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
@@ -111,22 +108,12 @@ CAPABILITIES(/obj/machinery/botany)
 			visible_message(span_filter_notice("[icon2html(src,viewers(src))] [src] beeps and spits out [loaded_disk]."))
 			own_take(src, nameof(loaded_disk))
 
-/obj/machinery/botany/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/botany_open_ui,
-		/datum/interaction/machine_item/botany_load_seed,
-		/datum/interaction/machine_item/botany_part_replacement,
-		/datum/interaction/machine_item/botany_load_disk,
-	)
-	..()
-
-/// Old attackby: load a seed packet.
-/datum/interaction/machine_item/botany_load_seed
-	id = "botany_load_seed"
-	name = "Load seed"
-	held_type = /obj/item/seeds
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_no_seed_loaded, "there is already a seed loaded"))
-	effect = /obj/machinery/botany/proc/interaction_load_seed
+EXTEND_INTERACTIONS(/obj/machinery/botany, \
+	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_open_ui_impl)), \
+	INTERACT_INSERT(/obj/item/seeds, PROC_REF(interaction_load_seed), "Load seed", REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_no_seed_loaded, "there is already a seed loaded")), \
+	INTERACT_INSERT(/obj/item/storage/part_replacer, PROC_REF(interaction_part_replacement_impl), "Replace parts", OFFERED_WHEN(REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_not_active, null))), \
+	INTERACT_INSERT(/obj/item/disk/botany, PROC_REF(interaction_load_disk), "Load disk", REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_disk_slot_reason, null)), \
+)
 
 /obj/machinery/botany/proc/botany_no_seed_loaded(mob/actor, atom/target, obj/item/held)
 	return !seed
@@ -141,28 +128,11 @@ CAPABILITIES(/obj/machinery/botany)
 		to_chat(user, span_filter_notice("You load [W] into [src]."))
 	return TRUE
 
-/// Old attackby: `if(!active) if(default_part_replacement(user, W)) return`.
-/datum/interaction/machine_item/botany_part_replacement
-	id = "botany_part_replacement"
-	name = "Replace parts"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/storage/part_replacer
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_not_active, null))
-	effect = /obj/machinery/botany/proc/interaction_part_replacement_impl
-
 /obj/machinery/botany/proc/botany_not_active(mob/actor, atom/target, obj/item/held)
 	return !active
 
 /obj/machinery/botany/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	return default_part_replacement(user, held) ? TRUE : FALSE
-
-/// Old attackby: load a botany data disk.
-/datum/interaction/machine_item/botany_load_disk
-	id = "botany_load_disk"
-	name = "Load disk"
-	held_type = /obj/item/disk/botany
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_disk_slot_reason, null))
-	effect = /obj/machinery/botany/proc/interaction_load_disk
 
 /obj/machinery/botany/proc/botany_disk_slot_reason(mob/actor, atom/target, obj/item/held)
 	if(loaded_disk)
@@ -182,19 +152,21 @@ CAPABILITIES(/obj/machinery/botany)
 	to_chat(user, span_filter_notice("You load [W] into [src]."))
 	return TRUE
 
-/obj/machinery/botany/screwdriver_act(mob/user, obj/item/tool)
-	return ..()
+/obj/machinery/botany/proc/screwdriver_used(datum/act/op/A)
+	return OP_DECLINE
 
-/obj/machinery/botany/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/botany/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	playsound(src, tool.usesound, 100, TRUE)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
 	set_anchored(!anchored)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/botany/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/botany/proc/crowbar_used(datum/act/op/A)
 	if(active)
-		return ITEM_INTERACT_BLOCKING
-	return ..()
+		return OP_OK
+	return OP_DECLINE
 
 // Allows for a trait to be extracted from a seed packet, destroying that seed.
 /obj/machinery/botany/extractor

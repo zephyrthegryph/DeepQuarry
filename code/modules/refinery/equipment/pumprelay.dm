@@ -11,6 +11,7 @@
 
 CAPABILITIES(/obj/machinery/pump_relay)
 	reagents(200)
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 
 /obj/machinery/pump_relay/Initialize(mapload)
 	. = ..()
@@ -19,12 +20,6 @@ CAPABILITIES(/obj/machinery/pump_relay)
 	add_hose_connector(/datum/hose_connector/input)
 	add_hose_connector(/datum/hose_connector/input)
 	add_hose_connector(/datum/hose_connector/output)
-
-/obj/machinery/pump_relay/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/part_replacement,
-	)
-	..()
 
 /obj/machinery/pump_relay/on_reagent_change(changetype)
 	. = ..()

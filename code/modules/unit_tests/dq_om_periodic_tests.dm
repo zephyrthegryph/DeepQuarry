@@ -211,7 +211,7 @@
 	igniter.set_on(FALSE)
 	TEST_ASSERT(!test_work_allowed(igniter), "a switched-off igniter may still step")
 	MACHINE_SLEEP(igniter)
-	igniter.interaction_toggle(null, null, null)
+	test_op_handler(igniter, "interaction_toggle", null)
 	kernel_drain_now() // the switch's change reaches its work at the drain
 	TEST_ASSERT(igniter.on && test_work_allowed(igniter), "switching an igniter on did not wake it")
 	igniter.set_on(FALSE)

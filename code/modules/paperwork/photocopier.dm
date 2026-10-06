@@ -29,14 +29,11 @@
 	if(Adjacent(user))
 		. += "The screen shows there's [toner ? "[toner]" : "no"] toner left in the printer."
 
-/obj/machinery/photocopier/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-		/datum/interaction/machine_item/photocopier_insert,
-		/datum/interaction/machine_item/photocopier_toner,
-		/datum/interaction/machine_item/photocopier_catchall,
-	)
-	..()
+EXTEND_INTERACTIONS(/obj/machinery/photocopier, \
+	INTERACT_INSERT(list(/obj/item/paper, /obj/item/photo, /obj/item/paper_bundle), PROC_REF(interaction_insert), "Insert"), \
+	INTERACT_INSERT(/obj/item/toner, PROC_REF(interaction_insert_toner), "Insert toner"), \
+	INTERACT_INSERT(/obj/item, TYPE_PROC_REF(/atom, interaction_swallow), "Use"), \
+)
 
 // The copier's window. An AI's photo print asks which of its pictures (asks()), when it has one to print.
 CAPABILITIES(/obj/machinery/photocopier)
@@ -47,6 +44,9 @@ CAPABILITIES(/obj/machinery/photocopier)
 	op("set_copies", ui_act("set_copies", arg("num_copies", num())), then(PROC_REF(ui_act_set_copies)))
 	op("ai_photo", ui_act("ai_photo"), asks(/datum/prompt/choice, fields = list("question" = "Select image (numbered in order taken)", "title" = "Picture Choice", "choices" = computed(PROC_REF(album_names)), "timeout" = 0), step = "picture", when = PROC_REF(album_ready)),
 		then(PROC_REF(ui_act_ai_photo)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// The window data.
 /obj/machinery/photocopier/ui_data(datum/act/eval/A)
@@ -184,12 +184,6 @@ CAPABILITIES(/obj/machinery/photocopier)
 	use_power(active_power_usage)
 	copy_next(user, left - 1)
 
-/datum/interaction/machine_item/photocopier_insert
-	id = "photocopier_insert"
-	name = "Insert"
-	held_type = list(/obj/item/paper, /obj/item/photo, /obj/item/paper_bundle)
-	effect = /obj/machinery/photocopier/proc/interaction_insert
-
 /obj/machinery/photocopier/proc/interaction_insert(mob/user, obj/item/O, datum/interaction/interaction)
 	if(!copyitem)
 		if(!move_into(src, nameof(src.copyitem), O, user))
@@ -200,13 +194,6 @@ CAPABILITIES(/obj/machinery/photocopier)
 	else
 		to_chat(user, span_notice("There is already something in \the [src]."))
 	return TRUE
-
-/datum/interaction/machine_item/photocopier_toner
-	id = "photocopier_toner"
-	name = "Insert toner"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/toner
-	effect = /obj/machinery/photocopier/proc/interaction_insert_toner
 
 /obj/machinery/photocopier/proc/interaction_insert_toner(mob/user, obj/item/toner/O, datum/interaction/interaction)
 	if(toner <= 10) //allow replacing when low toner is affecting the print darkness
@@ -223,24 +210,19 @@ CAPABILITIES(/obj/machinery/photocopier)
 		play_sfx(loc, SFX_MACHINES_BUZZ_TWO, 1.5, vary = TRUE)
 	return TRUE
 
-/// Old attackby never called ..(): any other item is silently swallowed.
-/datum/interaction/machine_item/photocopier_catchall
-	id = "photocopier_catchall"
-	name = "Use"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_swallow
+/obj/machinery/photocopier/proc/screwdriver_used(datum/act/op/A)
+	return OP_DECLINE
 
-/obj/machinery/photocopier/screwdriver_act(mob/user, obj/item/tool)
-	return ..()
+/obj/machinery/photocopier/proc/crowbar_used(datum/act/op/A)
+	return OP_DECLINE
 
-/obj/machinery/photocopier/crowbar_act(mob/user, obj/item/tool)
-	return ..()
-
-/obj/machinery/photocopier/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/photocopier/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	playsound(src, tool.usesound, 50, TRUE)
 	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 DAMAGE_REACTION(/obj/machinery/photocopier, DAMAGE_EXPLOSION, PROC_REF(photocopier_blast_spill))
 

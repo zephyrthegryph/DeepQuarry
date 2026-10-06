@@ -15,11 +15,8 @@
 	var/stop = 0.0
 	var/screen = 0 // 0 - No Access Denied, 1 - Access allowed
 
-/obj/machinery/computer/prisoner/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
+EXTEND_INTERACTIONS(/obj/machinery/computer/prisoner, \
+)
 
 CAPABILITIES(/obj/machinery/computer/prisoner)
 	interface("PrisonerManagement")

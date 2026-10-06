@@ -76,24 +76,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/at
 	var/image/arm = image(icon, icon_state = "mixer_arm", dir = angle2dir(mixer_angle))
 	. += arm
 
-/obj/machinery/reagent_refinery/mixer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/mixer_use,
-		/datum/interaction/machine_verb/mixer_set_rotation,
-	)
-	..()
-
-/// Old attack_hand: dispatched straight to the set_rotation verb, never called ..().
-/datum/interaction/machine_hand/ungated/mixer_use
-	id = "mixer_use"
-	name = "Use"
-	effect = /obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation
-
-/// Old object verb: `set src in view(1)`.
-/datum/interaction/machine_verb/mixer_set_rotation
-	id = "mixer_set_rotation"
-	name = "Set Mixer Rotation"
-	effect = /obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation
+EXTEND_INTERACTIONS(/obj/machinery/reagent_refinery/mixer, \
+	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_set_rotation)), \
+	INTERACT_VERB("Set Mixer Rotation", PROC_REF(interaction_set_rotation), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now")), \
+)
 
 /obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation(mob/user, obj/item/held, datum/interaction/interaction)
 	if(mixer_rotation_rate > 0)

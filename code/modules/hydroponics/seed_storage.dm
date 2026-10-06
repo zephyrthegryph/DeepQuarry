@@ -64,6 +64,11 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	on_wire(WIRE_SEED_SMART, cut = PROC_REF(smart_wire_cut), pulse = PROC_REF(smart_wire_pulsed))
 	on_wire(WIRE_CONTRABAND, cut = PROC_REF(contraband_wire_cut), pulse = PROC_REF(contraband_wire_pulsed))
 	on_wire(WIRE_SEED_LOCKDOWN, cut = PROC_REF(lockdown_wire_cut), pulse = PROC_REF(lockdown_wire_pulsed))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("insert_seeds", item(/obj/item/seeds), priority(OP_PRIORITY_DEFAULT - 1), label("Insert seeds"), needs(req(PROC_REF(not_locked_down_holds), because = PROC_REF(not_locked_down_refusal))), then(PROC_REF(interaction_insert_seeds)))
+	op("insert_bag", item(/obj/item/storage/bag/plants), priority(OP_PRIORITY_DEFAULT - 1), label("Empty seed bag"), needs(req(PROC_REF(not_locked_down_holds), because = PROC_REF(not_locked_down_refusal))), then(PROC_REF(interaction_insert_bag)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 
 /obj/machinery/seed_storage/proc/wire_lights()
 	return list(
@@ -263,39 +268,29 @@ CAPABILITIES(/obj/machinery/seed_storage)
 		/obj/item/seeds/wurmwoad = 3
 		)
 
-/obj/machinery/seed_storage/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/seed_storage_insert_seeds,
-		/datum/interaction/machine_item/seed_storage_insert_bag,
-		/datum/interaction/machine_hand/ungated/seed_storage_use,
-	)
-	..()
-
 /obj/machinery/seed_storage/proc/not_locked_down(mob/actor, atom/target, obj/item/held)
-	return !lockdown
+	return !lockdown // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 
-/// Insert loose seeds.
-/datum/interaction/machine_item/seed_storage_insert_seeds
-	id = "seed_storage_insert_seeds"
-	name = "Insert seeds"
-	held_type = /obj/item/seeds
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/seed_storage/proc/not_locked_down, "it's locked down"))
-	effect = /obj/machinery/seed_storage/proc/interaction_insert_seeds
+/// Requirement (was REQ_* not_locked_down): the legacy check answers TRUE to pass.
+/obj/machinery/seed_storage/proc/not_locked_down_holds(datum/act/op/A)
+	var/answer = not_locked_down(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
-/obj/machinery/seed_storage/proc/interaction_insert_seeds(mob/user, obj/item/seeds/O, datum/interaction/interaction)
+/// Why not_locked_down_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/seed_storage/proc/not_locked_down_refusal(datum/act/op/A)
+	var/answer = not_locked_down(A.actor, src, A.held)
+	return istext(answer) ? answer : "it's locked down"
+
+/obj/machinery/seed_storage/proc/interaction_insert_seeds(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/seeds/O = A.held
 	add(O)
 	act_message(user, src, MSG_SELF(span_filter_notice("You put %I% into %T%.")), MSG_OTHERS(span_filter_notice("%U% puts \the [O.name] into %T%.")), item = O)
 	return TRUE
 
-/// Empty a seed bag into storage.
-/datum/interaction/machine_item/seed_storage_insert_bag
-	id = "seed_storage_insert_bag"
-	name = "Empty seed bag"
-	held_type = /obj/item/storage/bag/plants
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/seed_storage/proc/not_locked_down, "it's locked down"))
-	effect = /obj/machinery/seed_storage/proc/interaction_insert_bag
-
-/obj/machinery/seed_storage/proc/interaction_insert_bag(mob/user, obj/item/storage/P, datum/interaction/interaction)
+/obj/machinery/seed_storage/proc/interaction_insert_bag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/storage/P = A.held
 	var/loaded = 0
 	for(var/obj/item/seeds/G in contents_of(P))
 		++loaded
@@ -307,13 +302,8 @@ CAPABILITIES(/obj/machinery/seed_storage)
 		to_chat(user, span_notice("There are no seeds in \the [P.name]."))
 	return TRUE
 
-/// Old attack_hand (never called ..()).
-/datum/interaction/machine_hand/ungated/seed_storage_use
-	id = "seed_storage_use"
-	name = "Use"
-	effect = /obj/machinery/seed_storage/proc/interaction_use
-
-/obj/machinery/seed_storage/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/seed_storage/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
 		return TRUE
 
@@ -500,20 +490,24 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	spent(N)
 	return TRUE
 
-/obj/machinery/seed_storage/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/seed_storage/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	playsound(src, tool.usesound, 50, TRUE)
 	set_anchored(!anchored)
 	to_chat(user, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/seed_storage/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/seed_storage/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	set_panel_open(!panel_open)
 	to_chat(user, span_filter_notice("You [panel_open ? "open" : "close"] the maintenance panel."))
 	playsound(src, tool.usesound, 50, TRUE)
 	cut_overlays()
 	if(panel_open)
 		add_overlay("[initial(icon_state)]-panel")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/seed_storage/wirecutter_act(mob/user, obj/item/tool)
 	if(!panel_open)

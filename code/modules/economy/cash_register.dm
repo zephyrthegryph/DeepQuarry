@@ -146,6 +146,7 @@ CAPABILITIES(/obj/machinery/cash_register)
 	op("clear", ui_act("clear", arg("item", num())), then(PROC_REF(ui_act_clear)))
 	op("clear_entry", ui_act("clear_entry"), then(PROC_REF(ui_act_clear_entry)))
 	op("reset_log", ui_act("reset_log"), then(PROC_REF(ui_act_reset_log)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
 
 /// /obj/machinery/cash_register's window data.
 /obj/machinery/cash_register/ui_data(datum/act/eval/A)
@@ -319,9 +320,11 @@ CAPABILITIES(/obj/machinery/cash_register)
 	to_chat(user, "[icon2html(src, user.client)]" + span_notice("Transaction log reset."))
 	return TRUE
 
-/obj/machinery/cash_register/wrench_act(mob/user, obj/item/tool)
+/obj/machinery/cash_register/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	toggle_anchors(tool, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// The old MouseDrop_T: an object dragged on is used on the register.
 /datum/interaction/machine_drag/cash_register_drop

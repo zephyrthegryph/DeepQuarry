@@ -195,20 +195,22 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 		if(console.sensors() == src)
 			console.refresh_sensor_light()
 
-/obj/machinery/shipsensors/welder_act(mob/user, obj/item/tool)
+/obj/machinery/shipsensors/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/damage = max_integrity - get_integrity()
 	if(!damage)
-		return ..()
+		return OP_DECLINE
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder?.isOn())
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(!welder.remove_fuel(0, user))
 		to_chat(user, span_notice("You need more welding fuel to complete this task."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, span_notice("You start repairing the damage to [src]."))
 	play_sfx(src, SFX_ITEMS_WELDER)
 	om_task_timed(user, max(5, damage / 5), src, src, PROC_REF(weld_repair_done), list(user, welder))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/shipsensors/proc/weld_repair_done(mob/user, obj/item/weldingtool/welder)
 	if(!welder.isOn())
@@ -249,6 +251,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/shipsensors, "{use_power?sensors:sensors_off}
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/shipsensors)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /obj/machinery/shipsensors/proc/work_step(datum/act/timer/A)
 	if(use_power) //can't run in non-vacuum

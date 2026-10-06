@@ -1,39 +1,29 @@
-human|none menu: Insert ID (refused: needs an identification card)
 human|none menu: Use
-human|none click: nothing
+human|none click: Click: Use
 robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Insert ID (refused: needs an identification card)
 robot|none menu: Use
-robot|none click: nothing
+robot|none click: Click: Use
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Insert ID (refused: needs an identification card)
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Insert ID (refused: needs an identification card)
+human|/obj/item/tool/screwdriver click: Click: Use
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Insert ID (refused: needs an identification card)
+human|/obj/item/tool/crowbar click: Click: Use
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Insert ID (refused: needs an identification card)
+human|/obj/item/tool/wrench click: Click: Use
 human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Insert ID (refused: needs an identification card)
+human|/obj/item/tool/wirecutters click: Click: Use
 human|/obj/item/multitool menu: Use
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Insert ID (refused: needs an identification card)
+human|/obj/item/multitool click: Click: Use
 human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Insert ID (refused: needs an identification card)
+human|/obj/item/weldingtool click: Click: Use
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Insert ID (refused: needs an identification card)
+human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Insert ID
 human|/obj/item/card/id menu: Use
-human|/obj/item/card/id click: nothing
-keys: claim, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, insert, logoff, machine_anchor, machine_deconstruct, machine_panel, machine_repair, power, processing_console_insert_id, processing_console_open_ui, showAllOres, speed_toggle, toggleSmelting
+human|/obj/item/card/id click: Click: Insert ID
+keys: claim, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, insert, insert_id, logoff, machine_anchor, machine_deconstruct, machine_panel, machine_repair, open_ui_impl, power, showAllOres, speed_toggle, toggleSmelting
 

@@ -39,6 +39,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_o
 CAPABILITIES(/obj/machinery/feeder)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(attached), nameof(beaker)), wakes_on = list(nameof(attached), nameof(beaker)))
 	drag_onto(PROC_REF(drop_input))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("insert_beaker", item(/obj/item/reagent_containers), priority(OP_PRIORITY_DEFAULT - 1), label("Insert container"), needs(req_is(nameof(beaker), FALSE, because = MSG(feeder/beaker))), then(PROC_REF(interaction_insert_beaker)))
+	op("reject", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_reject)))
+	op("take_beaker", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Take out container"), then(PROC_REF(interaction_take_beaker)))
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). A drop onto a patient attaches them,
 /// then the native drop goes on.
@@ -62,47 +66,29 @@ CAPABILITIES(/obj/machinery/feeder)
 		update_icon()
 
 
-/obj/machinery/feeder/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/feeder_insert_beaker,
-		/datum/interaction/machine_item/feeder_reject,
-		/datum/interaction/machine_hand/feeder_take_beaker,
-	)
-	..()
+MSG_DEF_SELF(feeder/beaker, "There is already a reagent container inserted.")
 
-/// Old attackby: the only branch.
-/datum/interaction/machine_item/feeder_insert_beaker
-	id = "feeder_insert_beaker"
-	name = "Insert container"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/reagent_containers
-	also_requires = list(REQ_BECAUSE(REQ_FIELD_NOT("beaker"), "there is already a reagent container inserted"))
-	effect = /obj/machinery/feeder/proc/interaction_insert_beaker
-
-/obj/machinery/feeder/proc/interaction_insert_beaker(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/feeder/proc/interaction_insert_beaker(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!move_into(src, nameof(src.beaker), W, user))
 		return TRUE
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	update_icon()
 	return TRUE
 
-/// Old attackby: fell off the end for anything else, silently doing nothing (no ..() call).
-/datum/interaction/machine_item/feeder_reject
-	id = "feeder_reject"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/feeder/proc/interaction_reject
-
-/obj/machinery/feeder/proc/interaction_reject(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/feeder/proc/interaction_reject(datum/act/op/A)
 	return TRUE
 
-/obj/machinery/feeder/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/feeder/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	playsound(src, tool.usesound, 50, TRUE)
 	set_panel_open(!panel_open)
 	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the maintenance hatch of [src]."))
 	update_icon()
 	om_task_timed(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/feeder/proc/screwdriver_act_timed_done(mob/user)
 	to_chat(user, "You deconstruct the feeder.")
@@ -126,16 +112,9 @@ CAPABILITIES(/obj/machinery/feeder)
 		beaker.reagents.trans_to_mob(attached(), transfer_amount, CHEM_INGEST)
 		update_icon()
 
-/// Old attack_hand: took out the beaker, or fell through to ..() when there was none.
-/datum/interaction/machine_hand/feeder_take_beaker
-	id = "feeder_take_beaker"
-	name = "Take out container"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/feeder/proc/interaction_take_beaker
-
-/obj/machinery/feeder/proc/interaction_take_beaker(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/feeder/proc/interaction_take_beaker(datum/act/op/A)
 	if(!beaker)
-		return FALSE
+		return OP_DECLINE
 	beaker.forceMove(get_turf(src))
 	own_take(src, nameof(beaker))
 	update_icon()

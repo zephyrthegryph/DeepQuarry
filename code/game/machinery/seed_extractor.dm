@@ -19,22 +19,13 @@
 	..()
 */
 
-/obj/machinery/seed_extractor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/seed_extractor_grown,
-		/datum/interaction/machine_item/seed_extractor_grass,
-		/datum/interaction/machine_item/seed_extractor_fossil,
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_item/seed_extractor_swallow,
-	)
-	..()
-
-/// Fruits and vegetables.
-/datum/interaction/machine_item/seed_extractor_grown
-	id = "seed_extractor_grown"
-	name = "Extract seeds"
-	held_type = list(/obj/item/reagent_containers/food/snacks/grown, /obj/item/grown)
-	effect = /obj/machinery/seed_extractor/proc/interaction_extract_grown
+EXTEND_INTERACTIONS(/obj/machinery/seed_extractor, \
+	INTERACT_INSERT(list(/obj/item/reagent_containers/food/snacks/grown, /obj/item/grown), PROC_REF(interaction_extract_grown), "Extract seeds"), \
+	INTERACT_INSERT(/obj/item/stack/tile/grass, PROC_REF(interaction_extract_grass), "Extract seeds"), \
+	INTERACT_INSERT(/obj/item/fossil/plant, PROC_REF(interaction_pulverize_fossil), "Pulverize"), \
+	INTERACT_INSERT(/obj/item/storage/part_replacer, TYPE_PROC_REF(/obj/machinery, interaction_part_replacement), "Replace parts"), \
+	INTERACT_INSERT(/obj/item, TYPE_PROC_REF(/atom, interaction_swallow), "Use"), \
+)
 
 /obj/machinery/seed_extractor/proc/interaction_extract_grown(mob/user, obj/item/O, datum/interaction/interaction)
 	var/datum/seed/new_seed_type
@@ -59,26 +50,12 @@
 		to_chat(user, "[produce_name] doesn't seem to have any usable seeds inside it.")
 	return TRUE
 
-/// Grass.
-/datum/interaction/machine_item/seed_extractor_grass
-	id = "seed_extractor_grass"
-	name = "Extract seeds"
-	held_type = /obj/item/stack/tile/grass
-	effect = /obj/machinery/seed_extractor/proc/interaction_extract_grass
-
 /obj/machinery/seed_extractor/proc/interaction_extract_grass(mob/user, obj/item/O, datum/interaction/interaction)
 	var/obj/item/stack/tile/grass/S = O
 	if(S.use(1))
 		to_chat(user, span_notice("You extract some seeds from the grass tile."))
 		new /obj/item/seeds/grassseed(loc)
 	return TRUE
-
-/// Fossils.
-/datum/interaction/machine_item/seed_extractor_fossil
-	id = "seed_extractor_fossil"
-	name = "Pulverize"
-	held_type = /obj/item/fossil/plant
-	effect = /obj/machinery/seed_extractor/proc/interaction_pulverize_fossil
 
 /obj/machinery/seed_extractor/proc/interaction_pulverize_fossil(mob/user, obj/item/O, datum/interaction/interaction)
 	var/fossil_name = "\the [O]"
@@ -87,11 +64,4 @@
 	var/obj/item/seeds/random/R = new(get_turf(src))
 	to_chat(user, "\The [src] pulverizes [fossil_name] and spits out \the [R].")
 	return TRUE
-
-/// Anything else: the old attackby never chained to ..(), so it silently swallowed the hit.
-/datum/interaction/machine_item/seed_extractor_swallow
-	id = "seed_extractor_swallow"
-	name = "Use"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_swallow
 

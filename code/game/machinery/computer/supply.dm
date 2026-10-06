@@ -29,18 +29,9 @@
 	circuit = /obj/item/circuitboard/supplycomp/control
 	authorization = SUP_SEND_SHUTTLE | SUP_ACCEPT_ORDERS
 
-/obj/machinery/computer/supplycomp/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/supplycomp_open_ui,
-	)
-	..()
-
-/// The old attack_hand's access check.
-/datum/interaction/machine_hand/supplycomp_open_ui
-	id = "supplycomp_open_ui"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/computer/supplycomp/proc/lets_in, "you don't have the required access to use this console"))
-	effect = /atom/proc/interaction_open_ui
+EXTEND_INTERACTIONS(/obj/machinery/computer/supplycomp, \
+	INTERACT_HAND("Use", TYPE_PROC_REF(/atom, interaction_open_ui), REQ_ON(PRED_TARGET, /obj/machinery/computer/supplycomp/proc/lets_in, "you don't have the required access to use this console")), \
+)
 
 /obj/machinery/computer/supplycomp/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)

@@ -49,6 +49,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("cloning_console_interaction_item", item(/obj/item), then(PROC_REF(cloning_console_interaction_item)))
 	op("cloning_console_interaction_hand", hand(), then(PROC_REF(cloning_console_interaction_hand)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
 
 // Linked pods (two-sided with each pod's connected; a pod leaves when either end dies).
 /obj/machinery/computer/cloning/ownership()
@@ -135,16 +136,18 @@ OM_FIELD(/obj/machinery/computer/cloning, autoprocess, 0, CHANGE_MACHINE_SETTING
 		SStgui.update_uis(src)
 	return TRUE
 
-/obj/machinery/computer/cloning/multitool_act(mob/user, obj/item/tool)
+/obj/machinery/computer/cloning/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!istype(tool, /obj/item/multitool))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/multitool/multitool = tool
 	var/obj/machinery/clonepod/pod = multitool.connecting()
 	if(pod && !(pod in pods))
 		rel_add(src, nameof(pods), pod)
 		pod.name = "[initial(pod.name)] #[length(pods)]"
 		to_chat(user, span_notice("You connect [pod] to [src]."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attack_hand (it never reached the machinery gate).
 /obj/machinery/computer/cloning/proc/cloning_console_interaction_hand(datum/act/op/A)

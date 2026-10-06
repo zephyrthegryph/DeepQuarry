@@ -21,22 +21,10 @@ OM_FIELD(/obj/machinery/dnaforensics, scanning, FALSE, CHANGE_MACHINE_SETTINGS)
 	. = ..()
 	default_apply_parts()
 
-/obj/machinery/dnaforensics/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/dnaforensics_insert_swab,
-		/datum/interaction/machine_hand/ungated/dnaforensics_open_ui,
-	)
-	..()
-
-/// Old attackby: insert a used blood swab for analysis.
-/datum/interaction/machine_item/dnaforensics_insert_swab
-	id = "dnaforensics_insert_swab"
-	name = "Insert swab"
-	requires = list(REQ_INTERACTION_REACH,
-		REQ_ON(PRED_TARGET, /obj/machinery/dnaforensics/proc/no_sample_loaded, "there is a sample in the machine"),
-		REQ_ON(PRED_TARGET, /obj/machinery/dnaforensics/proc/not_currently_scanning, "it is busy scanning right now"),
-		REQ_TARGET_STATE(/obj/machinery/dnaforensics/proc/can_insert_swab))
-	effect = /obj/machinery/dnaforensics/proc/interaction_insert_swab
+EXTEND_INTERACTIONS(/obj/machinery/dnaforensics, \
+	INTERACT_ITEM("Insert swab", PROC_REF(interaction_insert_swab), REQ_ON(PRED_TARGET, /obj/machinery/dnaforensics/proc/no_sample_loaded, "there is a sample in the machine"), REQ_ON(PRED_TARGET, /obj/machinery/dnaforensics/proc/not_currently_scanning, "it is busy scanning right now"), REQ_TARGET_STATE(/obj/machinery/dnaforensics/proc/can_insert_swab)), \
+	INTERACT_HAND_UNGATED("Use", TYPE_PROC_REF(/atom, interaction_open_ui)), \
+)
 
 /obj/machinery/dnaforensics/proc/no_sample_loaded(mob/actor, atom/target, obj/item/held)
 	return !bloodsamp()
@@ -66,12 +54,6 @@ OM_FIELD(/obj/machinery/dnaforensics, scanning, FALSE, CHANGE_MACHINE_SETTINGS)
 	else
 		to_chat(user, span_warning("\The [src] only accepts used swabs."))
 	return TRUE
-
-/// Old attack_hand: `tgui_interact(user)`, no gate (never called ..()).
-/datum/interaction/machine_hand/ungated/dnaforensics_open_ui
-	id = "dnaforensics_open_ui"
-	name = "Use"
-	effect = /atom/proc/interaction_open_ui
 
 CAPABILITIES(/obj/machinery/dnaforensics)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(scanning), wakes_on = list(nameof(scanning)))

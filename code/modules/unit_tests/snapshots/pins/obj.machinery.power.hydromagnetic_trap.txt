@@ -1,39 +1,29 @@
-human|none menu: Lay cable (refused: needs a cable coil)
 human|none menu: Unsecure (refused: needs a wrench)
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Lay cable (refused: needs a cable coil)
 robot|none menu: Unsecure (refused: needs a wrench)
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/tool/screwdriver menu: Unsecure (refused: needs a wrench)
 human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/tool/crowbar menu: Unsecure (refused: needs a wrench)
 human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/tool/wrench menu: Unsecure
 human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/tool/wirecutters menu: Unsecure (refused: needs a wrench)
 human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/multitool menu: Unsecure (refused: needs a wrench)
 human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/weldingtool menu: Unsecure (refused: needs a wrench)
 human|/obj/item/weldingtool click: nothing
 human|/obj/item/stack/cable_coil menu: Lay cable
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Unsecure (refused: needs a wrench)
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Lay cable (refused: needs a cable coil)
+human|/obj/item/stack/cable_coil click: Click: Lay cable
 human|/obj/item/stack/material/steel menu: Unsecure (refused: needs a wrench)
 human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Lay cable (refused: needs a cable coil)
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id click: nothing
-keys: gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, power_cable_place
+keys: cable_place, gen_drag_interaction_drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

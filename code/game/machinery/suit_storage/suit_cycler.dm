@@ -136,23 +136,13 @@ OM_DERIVE_FIELD(/obj/machinery/suit_cycler, cycler_has_work, list("active", "irr
 
 	return loaded
 
-/obj/machinery/suit_cycler/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/suit_cycler_insert_grab,
-		/datum/interaction/machine_item/suit_cycler_insert_helmet,
-		/datum/interaction/machine_item/suit_cycler_insert_suit,
-		/datum/interaction/machine_hand/suit_cycler_use,
-		/datum/interaction/machine_verb/suit_cycler_leave,
-	)
-	..()
-
-/// Put a grabbed mob inside the cycler.
-/datum/interaction/machine_item/suit_cycler_insert_grab
-	id = "suit_cycler_insert_grab"
-	name = "Put in cycler"
-	held_type = /obj/item/grab
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/suit_cycler/proc/can_insert_grabbed))
-	effect = /obj/machinery/suit_cycler/proc/interaction_insert_grab
+EXTEND_INTERACTIONS(/obj/machinery/suit_cycler, \
+	INTERACT_INSERT(/obj/item/grab, PROC_REF(interaction_insert_grab), "Put in cycler", REQ_TARGET_STATE(/obj/machinery/suit_cycler/proc/can_insert_grabbed)), \
+	INTERACT_INSERT(/obj/item/clothing/head/helmet/space/void, PROC_REF(interaction_insert_helmet), "Fit helmet", REQ_TARGET_STATE(/obj/machinery/suit_cycler/proc/can_insert_helmet), OFFERED_WHEN(REQ_NOT(REQ_TYPE(PRED_HELD, list(/obj/item/clothing/head/helmet/space/rig))))), \
+	INTERACT_INSERT(/obj/item/clothing/suit/space/void, PROC_REF(interaction_insert_suit), "Fit voidsuit", REQ_TARGET_STATE(/obj/machinery/suit_cycler/proc/can_insert_suit)), \
+	INTERACT_HAND("Use", PROC_REF(interaction_use)), \
+	INTERACT_VERB("Eject Cycler", PROC_REF(interaction_leave), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now")), \
+)
 
 /// Requirement for putting a grabbed mob in: TRUE, or why not.
 /obj/machinery/suit_cycler/proc/can_insert_grabbed(mob/user, atom/target, obj/item/grab/G)
@@ -232,15 +222,6 @@ OM_DERIVE_FIELD(/obj/machinery/suit_cycler, cycler_has_work, list("active", "irr
 	add_fingerprint(user)
 	consume(G, user)
 
-/// Fit a helmet, excluding hardsuit (rig) helmets.
-/datum/interaction/machine_item/suit_cycler_insert_helmet
-	id = "suit_cycler_insert_helmet"
-	name = "Fit helmet"
-	held_type = /obj/item/clothing/head/helmet/space/void
-	offered_when = list(REQ_NOT(REQ_TYPE(PRED_HELD, list(/obj/item/clothing/head/helmet/space/rig))))
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/suit_cycler/proc/can_insert_helmet))
-	effect = /obj/machinery/suit_cycler/proc/interaction_insert_helmet
-
 /obj/machinery/suit_cycler/proc/interaction_insert_helmet(mob/user, obj/item/clothing/head/helmet/space/void/IH, datum/interaction/interaction)
 	if(shock_live(src))
 		if(shock(user, 100))
@@ -252,14 +233,6 @@ OM_DERIVE_FIELD(/obj/machinery/suit_cycler, cycler_has_work, list("active", "irr
 
 	update_icon()
 	return TRUE
-
-/// Fit a voidsuit.
-/datum/interaction/machine_item/suit_cycler_insert_suit
-	id = "suit_cycler_insert_suit"
-	name = "Fit voidsuit"
-	held_type = /obj/item/clothing/suit/space/void
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/suit_cycler/proc/can_insert_suit))
-	effect = /obj/machinery/suit_cycler/proc/interaction_insert_suit
 
 /obj/machinery/suit_cycler/proc/interaction_insert_suit(mob/user, obj/item/clothing/suit/space/void/IS, datum/interaction/interaction)
 	if(shock_live(src))
@@ -286,13 +259,15 @@ OM_DERIVE_FIELD(/obj/machinery/suit_cycler, cycler_has_work, list("active", "irr
 /obj/machinery/suit_cycler/wirecutter_act(mob/user, obj/item/tool)
 	return hacking_tool_act(user)
 
-/obj/machinery/suit_cycler/screwdriver_act(mob/user, obj/item/tool)
+/obj/machinery/suit_cycler/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(shock_live(src) && shock(user, 100))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	set_panel_open(!panel_open)
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, "You [panel_open ? "open" : "close"] the maintenance panel.")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/suit_cycler/proc/on_emag(datum/act/op/A)
 	//Clear the access reqs, disable the safeties, and open up all paintjobs.
@@ -302,14 +277,6 @@ OM_DERIVE_FIELD(/obj/machinery/suit_cycler, cycler_has_work, list("active", "irr
 	hold(src, STAT_SAFETIES, null, src) // the corrupted protocols keep the safeties off for good
 	req_access = list()
 	return OP_OK
-
-/// Old attack_hand. The framework's hand_gate() now adds the fingerprint that used to
-/// be added before ..() was called; the stat check folds into the effect since the rest
-/// of the body has its own distinct checks.
-/datum/interaction/machine_hand/suit_cycler_use
-	id = "suit_cycler_use"
-	name = "Use"
-	effect = /obj/machinery/suit_cycler/proc/interaction_use
 
 /obj/machinery/suit_cycler/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!operable())
@@ -347,6 +314,7 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	op("eject_guy", ui_act("eject_guy"), then(PROC_REF(ui_act_eject_guy)))
 	op("uv", ui_act("uv"), then(PROC_REF(ui_act_uv)))
 	emag(then(PROC_REF(on_emag)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/machinery/suit_cycler/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -536,13 +504,6 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	suit.calc_breach_damage()
 
 	return
-
-/// Old verb/leave().
-/datum/interaction/machine_verb/suit_cycler_leave
-	id = "suit_cycler_leave"
-	name = "Eject Cycler"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/suit_cycler/proc/interaction_leave
 
 /obj/machinery/suit_cycler/proc/interaction_leave(mob/user, obj/item/held, datum/interaction/interaction)
 	eject_occupant(user)

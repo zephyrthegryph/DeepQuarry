@@ -75,11 +75,8 @@
 	"Wildlife Simulation" 		= new/datum/holodeck_program(/area/holodeck/source_wildlife, list())
 	)
 
-/obj/machinery/computer/HolodeckControl/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
+EXTEND_INTERACTIONS(/obj/machinery/computer/HolodeckControl, \
+)
 
 /**
  * Open the UI!

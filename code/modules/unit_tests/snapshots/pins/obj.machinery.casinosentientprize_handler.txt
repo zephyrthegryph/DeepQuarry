@@ -1,0 +1,71 @@
+human|none menu: Buy prize (refused: needs a broken casino chip)
+human|none menu: Management controls (refused: needs an identification card or a PDA)
+human|none menu: Release prize (refused: needs a disabled Sentient Prize Collar)
+human|none menu: Use (refused: the SPASM is disabled)
+human|none click: nothing
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Buy prize (refused: needs a broken casino chip)
+robot|none menu: Management controls (refused: needs an identification card or a PDA)
+robot|none menu: Release prize (refused: needs a disabled Sentient Prize Collar)
+robot|none menu: Use (refused: the SPASM is disabled)
+robot|none click: nothing
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Buy prize (refused: needs a broken casino chip)
+human|/obj/item/tool/screwdriver menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/tool/screwdriver menu: Release prize (refused: needs a disabled Sentient Prize Collar)
+human|/obj/item/tool/screwdriver menu: Use (refused: the SPASM is disabled)
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Buy prize (refused: needs a broken casino chip)
+human|/obj/item/tool/crowbar menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/tool/crowbar menu: Release prize (refused: needs a disabled Sentient Prize Collar)
+human|/obj/item/tool/crowbar menu: Use (refused: the SPASM is disabled)
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Buy prize (refused: needs a broken casino chip)
+human|/obj/item/tool/wrench menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/tool/wrench menu: Release prize (refused: needs a disabled Sentient Prize Collar)
+human|/obj/item/tool/wrench menu: Use (refused: the SPASM is disabled)
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Buy prize (refused: needs a broken casino chip)
+human|/obj/item/tool/wirecutters menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/tool/wirecutters menu: Release prize (refused: needs a disabled Sentient Prize Collar)
+human|/obj/item/tool/wirecutters menu: Use (refused: the SPASM is disabled)
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Buy prize (refused: needs a broken casino chip)
+human|/obj/item/multitool menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/multitool menu: Release prize (refused: needs a disabled Sentient Prize Collar)
+human|/obj/item/multitool menu: Use (refused: the SPASM is disabled)
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Buy prize (refused: needs a broken casino chip)
+human|/obj/item/weldingtool menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/weldingtool menu: Release prize (refused: needs a disabled Sentient Prize Collar)
+human|/obj/item/weldingtool menu: Use (refused: the SPASM is disabled)
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Buy prize (refused: needs a broken casino chip)
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/stack/cable_coil menu: Release prize (refused: needs a disabled Sentient Prize Collar)
+human|/obj/item/stack/cable_coil menu: Use (refused: the SPASM is disabled)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Buy prize (refused: needs a broken casino chip)
+human|/obj/item/stack/material/steel menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/stack/material/steel menu: Release prize (refused: needs a disabled Sentient Prize Collar)
+human|/obj/item/stack/material/steel menu: Use (refused: the SPASM is disabled)
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Buy prize (refused: needs a broken casino chip)
+human|/obj/item/card/id menu: Management controls (refused: not possible right now)
+human|/obj/item/card/id menu: Release prize (refused: needs a disabled Sentient Prize Collar)
+human|/obj/item/card/id menu: Use (refused: the SPASM is disabled)
+human|/obj/item/card/id click: nothing
+human|/obj/item/spacecasinocash menu: Buy prize (refused: not possible right now)
+human|/obj/item/spacecasinocash menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/spacecasinocash menu: Release prize (refused: needs a disabled Sentient Prize Collar)
+human|/obj/item/spacecasinocash menu: Use (refused: the SPASM is disabled)
+human|/obj/item/spacecasinocash click: nothing
+human|/obj/item/clothing/accessory/collar/casinosentientprize menu: Buy prize (refused: needs a broken casino chip)
+human|/obj/item/clothing/accessory/collar/casinosentientprize menu: Management controls (refused: needs an identification card or a PDA)
+human|/obj/item/clothing/accessory/collar/casinosentientprize menu: Release prize (refused: not possible right now)
+human|/obj/item/clothing/accessory/collar/casinosentientprize menu: Use (refused: the SPASM is disabled)
+human|/obj/item/clothing/accessory/collar/casinosentientprize click: nothing
+keys: gen_drag_interaction_drag_buckle, gen_hand_ungated_interaction_use, gen_insert_interaction_cash, gen_insert_interaction_collar, gen_insert_interaction_id, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+

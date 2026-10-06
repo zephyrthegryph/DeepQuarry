@@ -177,17 +177,9 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 		rel_set(src, nameof(one_setting), new one_setting)
 	dispenses = real_gear_list
 
-/obj/machinery/gear_dispenser/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/gear_dispenser_use,
-	)
-	..()
-
-/// The old attack_hand: never called ..(), picked and dispensed gear.
-/datum/interaction/machine_hand/ungated/gear_dispenser_use
-	id = "gear_dispenser_use"
-	name = "Use"
-	effect = /obj/machinery/gear_dispenser/proc/interaction_use
+EXTEND_INTERACTIONS(/obj/machinery/gear_dispenser, \
+	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_use)), \
+)
 
 /obj/machinery/gear_dispenser/proc/interaction_use(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	if(!can_use(user))
@@ -354,20 +346,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/gear_dispenser/suit_fancy, TYPE_PROC_REF(
 		if(operable())
 			. += "light2"
 
-/obj/machinery/gear_dispenser/suit_fancy/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/gear_dispenser_suit_fancy_take,
-	)
-	..()
+CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
+	op("take", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Take"), then(PROC_REF(interaction_take)))
 
-/// The old attack_hand: took the held gear if any, else fell through to ..() (the base gear_dispenser use).
-/datum/interaction/machine_hand/ungated/gear_dispenser_suit_fancy_take
-	id = "gear_dispenser_suit_fancy_take"
-	name = "Take"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/gear_dispenser/suit_fancy/proc/interaction_take
-
-/obj/machinery/gear_dispenser/suit_fancy/proc/interaction_take(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/gear_dispenser/suit_fancy/proc/interaction_take(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
 	if(held_gear_disp())
 		var/turf/T = get_turf(user)
 		var/list/spawned = held_gear_disp().spawn_gear(T, user)
@@ -377,7 +360,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/gear_dispenser/suit_fancy, TYPE_PROC_REF(
 		rel_clear(src, nameof(held_gear_disp))
 		animate_close()
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/machinery/gear_dispenser/suit_fancy/dispense(datum/gear_disp/S,mob/living/carbon/human/user,greet=TRUE)
 	if(!S.amount && !(dispenser_flags & GD_UNLIMITED))

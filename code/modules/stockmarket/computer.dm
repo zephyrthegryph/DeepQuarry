@@ -14,31 +14,14 @@
 
 	light_color = LIGHT_COLOR_GREEN
 
-/obj/machinery/computer/stockexchange/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/stockexchange_attackby,
-		/datum/interaction/machine_hand/stockexchange_use,
-	)
-	..()
-
-/// Approximation: the old attackby unconditionally called ..() then always refreshed the UIs.
-/// The ancestor call can't be replayed from here, so this declines (FALSE) to let the entry
-/// fall through to the base attackby; the UI refresh now happens before that fallback rather
-/// than after, an order approximation - see report.
-/datum/interaction/machine_item/stockexchange_attackby
-	id = "stockexchange_attackby"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/computer/stockexchange/proc/interaction_attackby
+EXTEND_INTERACTIONS(/obj/machinery/computer/stockexchange, \
+	INTERACT_INSERT(/obj/item, PROC_REF(interaction_attackby), "Use"), \
+	INTERACT_HAND("Use", PROC_REF(interaction_use)), \
+)
 
 /obj/machinery/computer/stockexchange/proc/interaction_attackby(mob/user, obj/item/W, datum/interaction/interaction)
 	SStgui.update_uis(src)
 	return FALSE
-
-/datum/interaction/machine_hand/stockexchange_use
-	id = "stockexchange_use"
-	name = "Use"
-	effect = /obj/machinery/computer/stockexchange/proc/interaction_use
 
 /obj/machinery/computer/stockexchange/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!operable())

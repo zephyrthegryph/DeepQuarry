@@ -146,12 +146,9 @@
 
 	EXPIRY_STAMP(src, last_process_time, CLOCK_WORLD)
 
-/obj/machinery/replicator/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-		/datum/interaction/machine_item/replicator_insert,
-	)
-	..()
+EXTEND_INTERACTIONS(/obj/machinery/replicator, \
+	INTERACT_INSERT(/obj/item, PROC_REF(interaction_insert), "Insert", REQ_TARGET_STATE(/obj/machinery/replicator/proc/can_insert)), \
+)
 
 CAPABILITIES(/obj/machinery/replicator)
 	started_work(step = PROC_REF(work_step))
@@ -179,15 +176,6 @@ CAPABILITIES(/obj/machinery/replicator)
 			icon_state = "borgcharger1(old)"
 		else
 			visible_message(fail_message)
-
-/// The old attackby: never called ..(), inserted a material into the replicator.
-/datum/interaction/machine_item/replicator_insert
-	id = "replicator_insert"
-	name = "Insert"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item
-	effect = /obj/machinery/replicator/proc/interaction_insert
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/replicator/proc/can_insert))
 
 /// Requirement: no armblades, no grabs, nothing the user can't let go of.
 /obj/machinery/replicator/proc/can_insert(mob/living/user, atom/target, obj/item/held)

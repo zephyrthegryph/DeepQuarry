@@ -28,6 +28,7 @@ CAPABILITIES(/obj/machinery/librarypubliccomp)
 	op("settitle", ui_act("settitle"), asks(/datum/prompt/text/library_search_text, fields = list("question" = "Enter a title to search for:"), step = "value"), then(PROC_REF(ui_act_settitle)))
 	op("setcategory", ui_act("setcategory"), asks(/datum/prompt/choice/library_search_category, fields = list("question" = "Choose a category to search for:", "title" = "Category"), step = "value"), then(PROC_REF(ui_act_setcategory)))
 	op("setauthor", ui_act("setauthor"), asks(/datum/prompt/text/library_search_text, fields = list("question" = "Enter an author to search for:"), step = "value"), then(PROC_REF(ui_act_setauthor)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/librarypubliccomp
 	name = "visitor computer"
@@ -45,19 +46,9 @@ CAPABILITIES(/obj/machinery/librarypubliccomp)
 
 // TGUI migration. attack_hand opens LibraryVisitor.tsx;
 // filter prompts and search execution move to tgui_act.
-/obj/machinery/librarypubliccomp/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/librarypubliccomp_open_ui,
-	)
-	..()
 
-/datum/interaction/machine_hand/ungated/librarypubliccomp_open_ui
-	id = "librarypubliccomp_open_ui"
-	name = "Use"
-	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/librarypubliccomp/proc/interaction_open_ui_impl
-
-/obj/machinery/librarypubliccomp/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/librarypubliccomp/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE
@@ -591,33 +582,17 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/librarycomp, PROC_REF(on_emag), null)
 	density = TRUE
 	var/tmp/obj/item/book/cache	// Last scanned book
 
-/obj/machinery/libraryscanner/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/libraryscanner_insert_book,
-		/datum/interaction/machine_hand/ungated/libraryscanner_open_ui,
-	)
-	..()
-
-/datum/interaction/machine_item/libraryscanner_insert_book
-	id = "libraryscanner_insert_book"
-	name = "Insert book"
-	held_type = /obj/item/book
-	effect = /obj/machinery/libraryscanner/proc/interaction_insert_book
-
-/obj/machinery/libraryscanner/proc/interaction_insert_book(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/libraryscanner/proc/interaction_insert_book(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	user.drop_item()
 	held.forceMove(src)
 	return TRUE
 
 // TGUI migration. attack_hand opens LibraryScanner.tsx;
 // scan/clear/eject move to tgui_act.
-/datum/interaction/machine_hand/ungated/libraryscanner_open_ui
-	id = "libraryscanner_open_ui"
-	name = "Use"
-	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/libraryscanner/proc/interaction_open_ui_impl
-
-/obj/machinery/libraryscanner/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/libraryscanner/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE
@@ -627,6 +602,8 @@ CAPABILITIES(/obj/machinery/libraryscanner)
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
+	op("insert_book", item(/obj/item/book), priority(OP_PRIORITY_DEFAULT - 1), label("Insert book"), then(PROC_REF(interaction_insert_book)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /// /obj/machinery/libraryscanner's window data.
 /obj/machinery/libraryscanner/ui_data(datum/act/eval/A)
@@ -674,17 +651,9 @@ CAPABILITIES(/obj/machinery/libraryscanner)
 CAPABILITIES(/obj/machinery/bookbinder)
 	climb()
 
-/obj/machinery/bookbinder/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/bookbinder_bind,
-	)
-	..()
-
-/datum/interaction/machine_item/bookbinder_bind
-	id = "bookbinder_bind"
-	name = "Bind"
-	held_type = list(/obj/item/paper, /obj/item/paper_bundle)
-	effect = /obj/machinery/bookbinder/proc/interaction_bind
+EXTEND_INTERACTIONS(/obj/machinery/bookbinder, \
+	INTERACT_INSERT(list(/obj/item/paper, /obj/item/paper_bundle), PROC_REF(interaction_bind), "Bind"), \
+)
 
 /obj/machinery/bookbinder/proc/interaction_bind(mob/user, obj/item/held, datum/interaction/interaction)
 	if(istype(held, /obj/item/paper))

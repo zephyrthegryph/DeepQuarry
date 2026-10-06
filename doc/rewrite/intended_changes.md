@@ -2161,6 +2161,29 @@ cadences still follow it through `relevance_changed()` until the framework goes.
   shuts a full cabinet and unwrenches an empty one after 1.5 s. **The holoplant** goes out when its anchoring changes (`on_change`),
   where its wrench proc switched it off after the machine's anchor.
 
+
+## Leftovers: the machinery sweep (rewrite/leftovers)
+
+Every machine still on datum interactions or tool procs was pinned first (`code/modules/unit_tests/snapshots/pins/`, recorded on the legacy
+code), then converted by the codemods: `tools/codemods/tool_act.py` (tool procs to `tool(Q)` ops with `wait(0)`), `tools/codemods/interaction_datums.py`
+(now also lowers the machinery bases `machine_hand`/`machine_item`/`machine_alt`/`machine_drag`/`machine_verb` and the shared `open_ui` and
+`part_replacement` datums) and `tools/dx/codemods/interact_declare.py` (compact specs to ops; the shared effects are the shared op handlers
+`op_open_ui`, `op_swallow`, `op_part_replacement`, ... in `code/datums/interactions/shared_effects.dm`). All three take `--prefix /type` now.
+
+- **A converted op answers after the ops the type already had** (`priority(OP_PRIORITY_DEFAULT - 1)`): the legacy interaction or tool proc it
+  replaces ran only when no op answered, so a click an existing op took (the window's `ui_open`, a library panel or wire op) still goes there.
+  Where no op answered, the click now resolves to the converted op by label instead of reaching the legacy attack chain ("nothing" in the old
+  pins); the effect is the same proc.
+- **The master R&D server's "no doing anything to it" op takes every item**, its library tool ops included (the legacy handler's comment was
+  the intent; the pin showed the library ops answering first).
+- **The pandemic's screwdriver ejection is gone**: the computer's own screwdriver op (disconnect) always answered first, so it was unreachable.
+- **The DNA scanner's and the suit storage unit's "climb in" checks run in the op's effect**, with their legacy refusal text: they read the
+  occupant slot, which the generated reads cannot follow.
+- **Left on the legacy forms** (residue of the codemods, not converted here): 58 types with `declare_interactions()`, 93 compact
+  `EXTEND_INTERACTIONS` sites (the lowered form the op codemod could not finish: silicon and observer specs, questions opened from the handler,
+  shared handlers, key clashes), 55 tool procs (handlers that open a request, call `..()` or return an expression), and the ten machines whose
+  conversion would have opened a request from an op effect (cable layer, floor layer, holoposter, mass driver, point defence, protean
+  reconstitutor, requests console, fax machine, conveyor and its switch).
 ## Life's OM events are actions (rewrite/om-life)
 
 - The status increase events (stun, weaken, paralyze, sleep, blind) were refusable OM events no handler ever refused;

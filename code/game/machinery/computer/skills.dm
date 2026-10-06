@@ -206,43 +206,35 @@
 	), "budget-allocation:[REF(budget)]:[world.time]:automatic", src, user)
 	return TRUE
 
-/obj/machinery/computer/skills/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/skills_insert_id,
-		/datum/interaction/machine_hand/skills_open_ui,
-	)
-	..()
-
-/// Old attackby: insert an ID card, else falls through to ..().
-/datum/interaction/machine_item/skills_insert_id
-	id = "skills_insert_id"
-	name = "Insert ID"
-	held_type = /obj/item/card/id
-	effect = /obj/machinery/computer/skills/proc/interaction_insert_id
-
-/obj/machinery/computer/skills/proc/interaction_insert_id(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/machinery/computer/skills/proc/interaction_insert_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(scan)
-		return FALSE
+		return OP_DECLINE
 	if(!move_into(src, nameof(src.scan), O, user))
-		return FALSE
+		return OP_DECLINE
 	to_chat(user, "You insert [O].")
 	tgui_interact(user)
 	return TRUE
 
 //Someone needs to break down the dat += into chunks instead of long ass lines.
-/// Old attack_hand.
-/datum/interaction/machine_hand/skills_open_ui
-	id = "skills_open_ui"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/computer/skills/proc/within_contact_range, "you're too far away from the station!"))
-	effect = /obj/machinery/computer/skills/proc/interaction_open_ui_impl
-
 /// Requirement clause: no message (like the old check) beyond the reason text.
 /obj/machinery/computer/skills/proc/within_contact_range(mob/actor, atom/target, obj/item/held)
 	var/obj/machinery/computer/skills/machine = target
-	return !using_map || (machine.z in using_map.contact_levels)
+	return !using_map || (machine.z in using_map.contact_levels) // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 
-/obj/machinery/computer/skills/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* within_contact_range): the legacy check answers TRUE to pass.
+/obj/machinery/computer/skills/proc/within_contact_range_holds(datum/act/op/A)
+	var/answer = within_contact_range(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why within_contact_range_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/computer/skills/proc/within_contact_range_refusal(datum/act/op/A)
+	var/answer = within_contact_range(A.actor, src, A.held)
+	return istext(answer) ? answer : "you're too far away from the station!"
+
+/obj/machinery/computer/skills/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 
@@ -286,6 +278,8 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(edit_question)), "default" = computed(PROC_REF(edit_value)), "inline" = TRUE, "timeout" = 0), step = "edit_text", when = PROC_REF(edit_by_text)),
 		then(PROC_REF(modal_edit)))
 	op("add_c", ui_act("modal:add_c", arg("arguments")), asks(/datum/prompt/text, fields = list("question" = "Please enter your message:", "inline" = TRUE, "timeout" = 0), step = "comment"), then(PROC_REF(modal_add_comment)))
+	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(within_contact_range_holds), because = PROC_REF(within_contact_range_refusal))), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/computer/skills/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor

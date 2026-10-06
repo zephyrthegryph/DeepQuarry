@@ -2208,7 +2208,7 @@
 	var/obj/machinery/door/blast/B = set_up[1]
 	var/obj/machinery/button/remote/button = set_up[2]
 	var/mob/living/silicon/ai/AI = make_ai()
-	button.silicon_pressed(AI)
+	test_op_handler(button, "silicon_pressed", AI)
 	settle()
 	TEST_ASSERT(!B.density, "an AI works a remote button")
 

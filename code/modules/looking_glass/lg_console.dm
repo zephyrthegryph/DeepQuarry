@@ -47,11 +47,8 @@
 		secret_programs["Teshari 1"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "sca")
 		secret_programs["Teshari 2"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "eis")
 
-/obj/machinery/computer/looking_glass/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
+EXTEND_INTERACTIONS(/obj/machinery/computer/looking_glass, \
+)
 
 CAPABILITIES(/obj/machinery/computer/looking_glass)
 	interface("LookingGlass")

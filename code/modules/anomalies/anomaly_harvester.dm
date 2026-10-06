@@ -67,31 +67,14 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	else if (stats.stability == ANOMALY_GROWING)
 		play_sfx(src, SFX_MACHINES_BUZZBEEP, 1.5)
 
-/obj/machinery/anomaly_harvester/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/anomaly_harvester_part_replacement,
-		/datum/interaction/machine_item/anomaly_harvester_attach_scanner,
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
-/// Old attackby added a fingerprint before the shared part-replacement check.
-/datum/interaction/machine_item/anomaly_harvester_part_replacement
-	id = "anomaly_harvester_part_replacement"
-	name = "Replace parts"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/storage/part_replacer
-	effect = /obj/machinery/anomaly_harvester/proc/interaction_part_replacement_impl
+EXTEND_INTERACTIONS(/obj/machinery/anomaly_harvester, \
+	INTERACT_INSERT(/obj/item/storage/part_replacer, PROC_REF(interaction_part_replacement_impl), "Replace parts"), \
+	INTERACT_INSERT(/obj/item/anomaly_scanner, PROC_REF(interaction_attach_scanner), "Attach anomaly"), \
+)
 
 /obj/machinery/anomaly_harvester/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	return default_part_replacement(user, held) ? TRUE : FALSE
-
-/datum/interaction/machine_item/anomaly_harvester_attach_scanner
-	id = "anomaly_harvester_attach_scanner"
-	name = "Attach anomaly"
-	held_type = /obj/item/anomaly_scanner
-	effect = /obj/machinery/anomaly_harvester/proc/interaction_attach_scanner
 
 /obj/machinery/anomaly_harvester/proc/interaction_attach_scanner(mob/user, obj/item/anomaly_scanner/scanner, datum/interaction/interaction)
 	add_fingerprint(user)

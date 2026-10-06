@@ -67,17 +67,9 @@
 	///What spawner is linked with this spawner
 	var/link = "MOBSPAWN"
 
-/obj/machinery/button/mob_spawner_button/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/mob_spawner_button_spawn,
-	)
-	..()
-
-/// Old attack_hand, which never called ..() (ungated: no machinery hand gate).
-/datum/interaction/machine_hand/ungated/mob_spawner_button_spawn
-	id = "mob_spawner_button_spawn"
-	name = "Spawn mob"
-	effect = /obj/machinery/button/mob_spawner_button/proc/interaction_spawn
+EXTEND_INTERACTIONS(/obj/machinery/button/mob_spawner_button, \
+	INTERACT_HAND_UNGATED("Spawn mob", PROC_REF(interaction_spawn)), \
+)
 
 /obj/machinery/button/mob_spawner_button/proc/interaction_spawn(mob/living/user, obj/item/held, datum/interaction/interaction)
 	open_request(src, /datum/prompt/choice, PROC_REF(spawn_mob_chosen), answerer = user, choices = GLOB.vr_mob_spawner_options, title = "Mob spawn", question = "Which Mob do you want to spawn?", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)

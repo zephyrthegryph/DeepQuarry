@@ -50,7 +50,9 @@ KINDS = {
 # the input (tried after everything else it offers)
 SPEC_NAME = re.compile(r"^INTERACT_(USE|SELF|HAND_UNGATED|HAND|ITEM|INSERT|DRAG|ALT|TK|VERB|SILICON|ROBOT)(_AS|_HOSTILE|_PEACEFUL|_DEFAULT_AS|_DEFAULT)?$")
 STANCE_LITERAL = re.compile(r"^I_(HELP|DISARM|GRAB|HURT)$")
-FALLS_THROUGH = ("USE", "VERB")  # an effect whose return is ignored (always handled): every other kind falls through to the next candidate on a falsy return
+FALLS_THROUGH = ("USE", "VERB")
+# the shared effects with a shared op handler (code/datums/interactions/shared_effects.dm: interaction_<name> -> op_<name>)
+SHARED_OPS = {"open_ui", "open_ui_fingerprint", "open_ui_powered", "open_ui_powered_fingerprint", "interact", "swallow", "as_touch", "fingerprint", "part_replacement"}  # an effect whose return is ignored (always handled): every other kind falls through to the next candidate on a falsy return
 HEAD = re.compile(r"^(DECLARE_INTERACTIONS|EXTEND_INTERACTIONS)\((/[\w/]+)\s*,")
 
 
@@ -505,15 +507,22 @@ def main():
             em = re.match(r"^(?:PROC_REF\((\w+)\)|TYPE_PROC_REF\(" + re.escape(t) + r",\s*(\w+)\))$", effect)
             # the shared "handled, the input not used up" effect (code/datums/interactions/shared_effects.dm): an op with passes() and no then()
             passes_only = re.match(r"^TYPE_PROC_REF\(/atom,\s*interaction_pass\)$", effect)
-            if not em and not passes_only:
+            # another shared effect: the op's then() is its shared op handler (op_<name>, beside it in shared_effects.dm); no handler is rewritten
+            shared_m = re.match(r"^TYPE_PROC_REF\((/atom|/obj/machinery),\s*interaction_(\w+)\)$", effect)
+            shared_op = None
+            if shared_m and not passes_only and shared_m.group(2) in SHARED_OPS and (t == shared_m.group(1) or t.startswith(shared_m.group(1) + "/")):
+                shared_op = (shared_m.group(1), "op_" + shared_m.group(2))
+            if not em and not passes_only and not shared_op:
                 bad = "effect_expr"
                 break
             if passes_only:
                 em = re.match(r"^(interaction_pass)$", "interaction_pass")
+            if shared_op:
+                em = re.match(r"^(\w+)$", "interaction_" + shared_m.group(2))
             if held_type is not None and not re.match(r"^/[\w/]+$", held_type):
                 bad = "interaction_forms"
                 break
-            specs.append({"kind": kind, "name": None if name == "null" else name, "proc": em.group(1) or em.group(2), "held": held_type, "carried": carried, "stance": stance, "default": suffix.startswith("_DEFAULT"), "req_parts": req_parts, "req_helpers": req_helpers})
+            specs.append({"kind": kind, "name": None if name == "null" else name, "proc": em.group(1) or em.group(2), "held": held_type, "carried": carried, "stance": stance, "default": suffix.startswith("_DEFAULT"), "req_parts": req_parts, "req_helpers": req_helpers, "shared": shared_op})
         if bad:
             residue[t] = bad
             continue
@@ -523,7 +532,7 @@ def main():
         # specs that share one handler and differ only in their input (a hand and an item doing the same thing) are one op with inputs(...)
         merged_specs = []
         for sp in specs:
-            twin = None if sp["proc"] == "interaction_pass" else next((m for m in merged_specs if m["proc"] == sp["proc"]), None)
+            twin = None if (sp["proc"] == "interaction_pass" or sp.get("shared")) else next((m for m in merged_specs if m["proc"] == sp["proc"]), None)
             if twin is None:
                 sp["extra_kinds"] = []
                 merged_specs.append(sp)
@@ -544,6 +553,9 @@ def main():
         for s in specs:
             if s["proc"] == "interaction_pass":
                 handlers.append({"actor_type": "mob", "spec": s, "rel": None, "idx": None, "first": None, "last": None, "actor": None, "held": None, "held_type": "obj/item", "body": "", "asks": [], "pass": True})
+                continue
+            if s.get("shared"):
+                handlers.append({"actor_type": "mob", "spec": s, "rel": None, "idx": None, "first": None, "last": None, "actor": None, "held": None, "held_type": "obj/item", "body": "", "asks": [], "shared": s["shared"]})
                 continue
             hits = [(r, i, prm) for (ty, r, i, prm) in defs_by_name.get(s["proc"], []) if ty == t]
             others = [1 for (ty, r, i, prm) in defs_by_name.get(s["proc"], []) if ty != t and related(ty, t) and not ty.startswith(t + "/")]
@@ -663,6 +675,12 @@ def main():
         for h in handlers:
             proc = h["spec"]["proc"]
             key = re.sub(r"^interaction_", "", proc) or proc
+            if h.get("shared"):
+                key = re.sub(r"^op_", "", h["shared"][1])
+                n = 2
+                while key in used:
+                    key = "%s_%d" % (re.sub(r"^op_", "", h["shared"][1]), n)
+                    n += 1
             if h.get("pass"):
                 key = "pass_%s" % h["spec"]["kind"].lower()
                 n = 2
@@ -775,6 +793,13 @@ def main():
             if not any(plans[t]["decl"][1].replace("\\", "/").startswith(d) for d in want):
                 del plans[t]
         residue = {t: why for t, why in residue.items() if any(decls[t][0][1].replace("\\", "/").startswith(d) for d in want)}
+    # --prefix /type: only declarations of that type or below it
+    if "--prefix" in sys.argv:
+        pfx = sys.argv[sys.argv.index("--prefix") + 1]
+        for t in list(plans):
+            if not (t == pfx or t.startswith(pfx + "/")):
+                del plans[t]
+        residue = {t: why for t, why in residue.items() if t == pfx or t.startswith(pfx + "/")}
     converted_ops = sum(len(p["handlers"]) for p in plans.values())
     if not check:
         for t, plan in sorted(plans.items()):
@@ -815,6 +840,10 @@ def main():
                 parts += h["ask_parts"]
                 if h.get("pass"):
                     parts.append("passes()")
+                    entries.append(", ".join(parts) + ")")
+                    continue
+                if h.get("shared"):
+                    parts.append("then(TYPE_PROC_REF(%s, %s))" % h["shared"])
                     entries.append(", ".join(parts) + ")")
                     continue
                 if h.get("wrap"):

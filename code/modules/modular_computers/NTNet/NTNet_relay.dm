@@ -82,11 +82,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/ntnet_relay, TYPE_PROC_REF(/atom, appeara
 	data["dos_crashed"] = dos_failure
 	return data
 
-/obj/machinery/ntnet_relay/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/open_ui,
-	)
-	..()
+EXTEND_INTERACTIONS(/obj/machinery/ntnet_relay, \
+)
 
 /obj/machinery/ntnet_relay/proc/ui_act_restart(datum/act/op/A)
 	dos_overload = 0

@@ -246,3 +246,7 @@
 #define INTERACT_VERB(name, effect, requires...) list(INTERACT_KIND_VERB, name, effect, list(requires))
 /// Requirement: the target is on the actor (held, worn or in their bags), as an old `set src in usr`.
 #define REQ_IN_INVENTORY REQ_PROC(/proc/dq_interaction_in_inventory, "you need to be carrying it")
+
+/// A lowered datum interaction's offered_when clause (tools/codemods/interaction_datums.py) on a spec the op codemod has not converted yet:
+/// the compact builder treats it as one more requirement.
+#define OFFERED_WHEN(clause) clause

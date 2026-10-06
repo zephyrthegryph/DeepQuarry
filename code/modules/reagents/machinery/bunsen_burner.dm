@@ -48,11 +48,13 @@ TRACKED_BRIDGED(/obj/machinery/bunsen_burner, heating, CHANGE_MACHINE_SETTINGS)
 			end_boil()
 	return .
 
-/obj/machinery/bunsen_burner/crowbar_act(mob/user, obj/item/tool)
+/obj/machinery/bunsen_burner/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!panel_open || !isturf(loc))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	use_tool(user, tool, src, delay = 5, receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/bunsen_burner/proc/crowbar_act_tool_done(mob/user)
 	drop_held_container()
@@ -108,6 +110,7 @@ CAPABILITIES(/obj/machinery/bunsen_burner)
 	op("remove_container", hand(), label("Remove container"), then(PROC_REF(interaction_remove_container)))
 	reagents(1, holder = /datum/reagents/distilling)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(heating), wakes_on = list(nameof(heating)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
 
 /obj/machinery/bunsen_burner/proc/work_step(datum/act/timer/A)
 	if(held_container && !anchored)

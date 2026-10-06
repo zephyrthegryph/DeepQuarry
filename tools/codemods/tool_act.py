@@ -49,7 +49,7 @@ QUALITIES = {
     "welder": "TOOL_WELDER",
 }
 BANNED = (
-    "code/modules/organs/", "code/modules/body/", "code/modules/medical/", "code/datums/om/", "code/modules/power/",
+    "code/modules/organs/", "code/modules/body/", "code/modules/medical/", "code/datums/om/",
     "code/modules/atmospherics/", "code/ATMOSPHERICS/", "code/__defines/", "code/modules/unit_tests/", "code/tests/",
     "code/engine/", "code/_onclick/",
 )
@@ -174,6 +174,8 @@ def main(argv):
     dirs = []
     if "--dirs" in argv:
         dirs = [d.rstrip("/") + "/" for d in argv[argv.index("--dirs") + 1:] if not d.startswith("--")]
+    # --prefix /type: only lineages rooted at that type or below it (a wave over one family in shared directories)
+    prefix = argv[argv.index("--prefix") + 1] if "--prefix" in argv else None
     files_text = {}
     for p in dm_files():
         t = read(p)
@@ -248,6 +250,8 @@ def main(argv):
     for q, root, members in lineages:
         problems = []
         if dirs and not any(rel(root.path).startswith(d) for d in dirs):
+            continue
+        if prefix and not (root.type == prefix or root.type.startswith(prefix + "/")):
             continue
         member_lines = {(m.path, m.line) for m in members}
         for m in members:

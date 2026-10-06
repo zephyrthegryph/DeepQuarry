@@ -206,23 +206,17 @@ CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
 		for(var/lost in find_sensors)
 			log_shuttle("[my_area] shuttle computer couldn't find [lost] sensor!")
 
-/obj/machinery/computer/shuttle_control/web/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/shuttle_control_web_register_helmet,
-	)
-	..()
-
-/datum/interaction/machine_item/shuttle_control_web_register_helmet
-	id = "shuttle_control_web_register_helmet"
-	name = "Register helmet"
-	held_type = /obj/item/clothing/head/pilot
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/computer/shuttle_control/web/proc/has_shuttle, null))
-	effect = /obj/machinery/computer/shuttle_control/web/proc/interaction_register_helmet
-
 /obj/machinery/computer/shuttle_control/web/proc/has_shuttle(mob/actor, atom/target, obj/item/held)
-	return SSshuttles.shuttles[shuttle_tag]
+	return SSshuttles.shuttles[shuttle_tag] // ALLOW(reads): the legacy check is read when the op is tried, never from a cached menu
 
-/obj/machinery/computer/shuttle_control/web/proc/interaction_register_helmet(mob/user, obj/item/clothing/head/pilot/H, datum/interaction/interaction)
+/// Requirement (was REQ_* has_shuttle): the legacy check answers TRUE to pass.
+/obj/machinery/computer/shuttle_control/web/proc/has_shuttle_holds(datum/act/op/A)
+	var/answer = has_shuttle(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/obj/machinery/computer/shuttle_control/web/proc/interaction_register_helmet(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/clothing/head/pilot/H = A.held
 	var/datum/shuttle/autodock/web_shuttle/shuttle = SSshuttles.shuttles[shuttle_tag]
 	rel_set(H, nameof(H.shuttle_comp), src)
 	rel_add(shuttle, nameof(shuttle.helmets), H)
@@ -543,6 +537,7 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control/web)
 	op("toggle_cloaking", ui_act("toggle_cloaking"), then(PROC_REF(ui_act_toggle_cloaking)))
 	op("toggle_autopilot", ui_act("toggle_autopilot"), then(PROC_REF(ui_act_toggle_autopilot)))
 	op("traverse", ui_act("traverse", arg("traverse", num())), then(PROC_REF(ui_act_traverse)))
+	op("register_helmet", item(/obj/item/clothing/head/pilot), priority(OP_PRIORITY_DEFAULT - 1), label("Register helmet"), when(req(PROC_REF(has_shuttle_holds))), then(PROC_REF(interaction_register_helmet)))
 
 /datum/prompt/text/web_shuttle_name
 	title = "Rename Shuttle"
