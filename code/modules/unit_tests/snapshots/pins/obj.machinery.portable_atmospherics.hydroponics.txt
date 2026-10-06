@@ -1,0 +1,81 @@
+human|none menu: Remove Label
+human|none menu: Set Light
+human|none menu: Toggle lid
+human|none menu: Toggle Tray Lid
+human|none menu: Use
+human|none menu: Use (refused: needs an item)
+human|none click: nothing
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Remove Label
+robot|none menu: Set Light
+robot|none menu: Toggle lid
+robot|none menu: Toggle Tray Lid
+robot|none menu: Use
+robot|none menu: Use (refused: needs an item)
+robot|none click: nothing
+ai|none click: nothing
+ghost|none menu: Harvest
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Remove Label
+human|/obj/item/tool/screwdriver menu: Set Light
+human|/obj/item/tool/screwdriver menu: Toggle lid
+human|/obj/item/tool/screwdriver menu: Toggle Tray Lid
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Remove Label
+human|/obj/item/tool/crowbar menu: Set Light
+human|/obj/item/tool/crowbar menu: Toggle lid
+human|/obj/item/tool/crowbar menu: Toggle Tray Lid
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Remove Label
+human|/obj/item/tool/wrench menu: Set Light
+human|/obj/item/tool/wrench menu: Toggle lid
+human|/obj/item/tool/wrench menu: Toggle Tray Lid
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Remove Label
+human|/obj/item/tool/wirecutters menu: Set Light
+human|/obj/item/tool/wirecutters menu: Toggle lid
+human|/obj/item/tool/wirecutters menu: Toggle Tray Lid
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Remove Label
+human|/obj/item/multitool menu: Set Light
+human|/obj/item/multitool menu: Toggle lid
+human|/obj/item/multitool menu: Toggle Tray Lid
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Remove Label
+human|/obj/item/weldingtool menu: Set Light
+human|/obj/item/weldingtool menu: Toggle lid
+human|/obj/item/weldingtool menu: Toggle Tray Lid
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Remove Label
+human|/obj/item/stack/cable_coil menu: Set Light
+human|/obj/item/stack/cable_coil menu: Toggle lid
+human|/obj/item/stack/cable_coil menu: Toggle Tray Lid
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Remove Label
+human|/obj/item/stack/material/steel menu: Set Light
+human|/obj/item/stack/material/steel menu: Toggle lid
+human|/obj/item/stack/material/steel menu: Toggle Tray Lid
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Remove Label
+human|/obj/item/card/id menu: Set Light
+human|/obj/item/card/id menu: Toggle lid
+human|/obj/item/card/id menu: Toggle Tray Lid
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: nothing
+human|/obj/item menu: Remove Label
+human|/obj/item menu: Set Light
+human|/obj/item menu: Toggle lid
+human|/obj/item menu: Toggle Tray Lid
+human|/obj/item menu: Use
+human|/obj/item click: nothing
+keys: gen_drag_interaction_drag_buckle, gen_observer_hydroponics_ghost_harvest, gen_robot_interaction_swallow, gen_tk_hydroponics_tk_harvest, hydroponics_attackby, hydroponics_close_lid, hydroponics_interact, hydroponics_remove_label, hydroponics_set_light, hydroponics_toggle_lid, machine_anchor, machine_deconstruct, machine_panel, machine_repair, port, tank_bay.holding.insert
+

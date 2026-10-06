@@ -1,0 +1,136 @@
+human|none menu: Dig (refused: needs a shovel)
+human|none menu: Fill in (refused: combat mode is off)
+human|none menu: Remove Label
+human|none menu: Set Light
+human|none menu: Toggle lid (refused: not possible right now)
+human|none menu: Toggle Tray Lid
+human|none menu: Use
+human|none menu: Use (refused: needs a tank)
+human|none menu: Use (refused: needs an item)
+human|none click: nothing
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Dig (refused: needs a shovel)
+robot|none menu: Fill in (refused: combat mode is off)
+robot|none menu: Remove Label
+robot|none menu: Set Light
+robot|none menu: Toggle lid (refused: not possible right now)
+robot|none menu: Toggle Tray Lid
+robot|none menu: Use
+robot|none menu: Use (refused: needs a tank)
+robot|none menu: Use (refused: needs an item)
+robot|none click: nothing
+ai|none click: nothing
+ghost|none menu: Harvest
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Dig (refused: needs a shovel)
+human|/obj/item/tool/screwdriver menu: Fill in (refused: combat mode is off)
+human|/obj/item/tool/screwdriver menu: Remove Label
+human|/obj/item/tool/screwdriver menu: Set Light
+human|/obj/item/tool/screwdriver menu: Toggle lid (refused: not possible right now)
+human|/obj/item/tool/screwdriver menu: Toggle Tray Lid
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver menu: Use (refused: needs a tank)
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Dig (refused: needs a shovel)
+human|/obj/item/tool/crowbar menu: Fill in (refused: combat mode is off)
+human|/obj/item/tool/crowbar menu: Remove Label
+human|/obj/item/tool/crowbar menu: Set Light
+human|/obj/item/tool/crowbar menu: Toggle lid (refused: not possible right now)
+human|/obj/item/tool/crowbar menu: Toggle Tray Lid
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar menu: Use (refused: needs a tank)
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Connect to the port (refused: Nothing happens.)
+human|/obj/item/tool/wrench menu: Dig (refused: needs a shovel)
+human|/obj/item/tool/wrench menu: Fill in (refused: combat mode is off)
+human|/obj/item/tool/wrench menu: Remove Label
+human|/obj/item/tool/wrench menu: Set Light
+human|/obj/item/tool/wrench menu: Toggle lid (refused: not possible right now)
+human|/obj/item/tool/wrench menu: Toggle Tray Lid
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench menu: Use (refused: needs a tank)
+human|/obj/item/tool/wrench click: Click: Connect to the port
+human|/obj/item/tool/wirecutters menu: Dig (refused: needs a shovel)
+human|/obj/item/tool/wirecutters menu: Fill in (refused: combat mode is off)
+human|/obj/item/tool/wirecutters menu: Remove Label
+human|/obj/item/tool/wirecutters menu: Set Light
+human|/obj/item/tool/wirecutters menu: Toggle lid (refused: not possible right now)
+human|/obj/item/tool/wirecutters menu: Toggle Tray Lid
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters menu: Use (refused: needs a tank)
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Dig (refused: needs a shovel)
+human|/obj/item/multitool menu: Fill in (refused: combat mode is off)
+human|/obj/item/multitool menu: Remove Label
+human|/obj/item/multitool menu: Set Light
+human|/obj/item/multitool menu: Toggle lid (refused: not possible right now)
+human|/obj/item/multitool menu: Toggle Tray Lid
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool menu: Use (refused: needs a tank)
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Dig (refused: needs a shovel)
+human|/obj/item/weldingtool menu: Fill in (refused: combat mode is off)
+human|/obj/item/weldingtool menu: Remove Label
+human|/obj/item/weldingtool menu: Set Light
+human|/obj/item/weldingtool menu: Toggle lid (refused: not possible right now)
+human|/obj/item/weldingtool menu: Toggle Tray Lid
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool menu: Use (refused: needs a tank)
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Dig (refused: needs a shovel)
+human|/obj/item/stack/cable_coil menu: Fill in (refused: combat mode is off)
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Remove Label
+human|/obj/item/stack/cable_coil menu: Set Light
+human|/obj/item/stack/cable_coil menu: Toggle lid (refused: not possible right now)
+human|/obj/item/stack/cable_coil menu: Toggle Tray Lid
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil menu: Use (refused: needs a tank)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Dig (refused: needs a shovel)
+human|/obj/item/stack/material/steel menu: Fill in (refused: combat mode is off)
+human|/obj/item/stack/material/steel menu: Remove Label
+human|/obj/item/stack/material/steel menu: Set Light
+human|/obj/item/stack/material/steel menu: Toggle lid (refused: not possible right now)
+human|/obj/item/stack/material/steel menu: Toggle Tray Lid
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel menu: Use (refused: needs a tank)
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Dig (refused: needs a shovel)
+human|/obj/item/card/id menu: Fill in (refused: combat mode is off)
+human|/obj/item/card/id menu: Remove Label
+human|/obj/item/card/id menu: Set Light
+human|/obj/item/card/id menu: Toggle lid (refused: not possible right now)
+human|/obj/item/card/id menu: Toggle Tray Lid
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id menu: Use (refused: needs a tank)
+human|/obj/item/card/id click: nothing
+human|/obj/item/tank menu: Dig (refused: needs a shovel)
+human|/obj/item/tank menu: Fill in (refused: combat mode is off)
+human|/obj/item/tank menu: Insert tank
+human|/obj/item/tank menu: Remove Label
+human|/obj/item/tank menu: Set Light
+human|/obj/item/tank menu: Toggle lid (refused: not possible right now)
+human|/obj/item/tank menu: Toggle Tray Lid
+human|/obj/item/tank menu: Use
+human|/obj/item/tank click: Click: Insert tank
+human|/obj/item/shovel menu: Dig
+human|/obj/item/shovel menu: Fill in (refused: combat mode is off)
+human|/obj/item/shovel menu: Remove Label
+human|/obj/item/shovel menu: Set Light
+human|/obj/item/shovel menu: Toggle lid (refused: not possible right now)
+human|/obj/item/shovel menu: Toggle Tray Lid
+human|/obj/item/shovel menu: Use
+human|/obj/item/shovel menu: Use (refused: needs a tank)
+human|/obj/item/shovel click: nothing
+human|/obj/item menu: Dig (refused: needs a shovel)
+human|/obj/item menu: Fill in (refused: combat mode is off)
+human|/obj/item menu: Remove Label
+human|/obj/item menu: Set Light
+human|/obj/item menu: Toggle lid (refused: not possible right now)
+human|/obj/item menu: Toggle Tray Lid
+human|/obj/item menu: Use
+human|/obj/item menu: Use (refused: needs a tank)
+human|/obj/item click: nothing
+keys: gen_drag_interaction_drag_buckle, gen_observer_hydroponics_ghost_harvest, gen_robot_interaction_swallow, gen_tk_hydroponics_tk_harvest, hydroponics_attackby, hydroponics_close_lid, hydroponics_interact, hydroponics_remove_label, hydroponics_set_light, hydroponics_toggle_lid, machine_anchor, machine_deconstruct, machine_panel, machine_repair, port, soil_fill, soil_shovel, soil_tank_block, tank_bay.holding.insert
+
