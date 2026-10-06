@@ -84,9 +84,14 @@ TRACKED_BRIDGED(/obj/machinery/chemical_synthesizer, _recharge_reagents, CHANGE_
 // The reagents datum acts as the machine's reaction vessel.
 
 CAPABILITIES(/obj/machinery/chemical_synthesizer)
+	owns_one(nameof(catalyst), /obj/item/reagent_containers/glass, starts = /obj/item/reagent_containers/glass/beaker)
 	reagents(600)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(_recharge_reagents), wakes_on = list(nameof(_recharge_reagents)))
 	owns_many(nameof(cartridges), /obj/item/reagent_containers/chem_disp_cartridge)
+	op("add_cartridge", item(/obj/item/reagent_containers/chem_disp_cartridge), label("Insert cartridge"), then(PROC_REF(cartridge_added)))
+	op("set_catalyst", item(/obj/item/reagent_containers/glass), label("Set catalyst"),
+		needs(req(PROC_REF(no_catalyst), silent = TRUE), req(PROC_REF(clamp_works), because = MSG(chemical_synthesizer/machine_down)), req(PROC_REF(can_extract_from), because = MSG(chemical_synthesizer/not_open))),
+		then(PROC_REF(catalyst_set)))
 	interface("ChemSynthesizer")
 	op("start_queue", ui_act("start_queue"), then(PROC_REF(ui_act_start_queue)))
 	op("rem_queue", ui_act("rem_queue", arg("q_index", num())), then(PROC_REF(ui_act_rem_queue)))
@@ -228,7 +233,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_synthesizer/proc/remove_cartridge(label)
-	. = own_take_member(src, nameof(cartridges), label)
+	. = rel_take(src, nameof(cartridges), key = label)
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_synthesizer/declare_interactions(list/into)
@@ -237,47 +242,38 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 	)
 	for(var/actor_spec in actor_specs)
 		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/chem_synthesizer_add_cartridge,
-		/datum/interaction/machine_item/chem_synthesizer_add_catalyst,
-		/datum/interaction/machine_hand/ungated/chem_synthesizer_use,
-	)
 	..()
 
-/datum/interaction/machine_item/chem_synthesizer_add_cartridge
-	id = "chem_synthesizer_add_cartridge"
-	name = "Insert cartridge"
-	held_type = /obj/item/reagent_containers/chem_disp_cartridge
-	effect = /obj/machinery/chemical_synthesizer/proc/interaction_add_cartridge
+/// The old attackby: a cartridge goes into a free slot under its label.
+/obj/machinery/chemical_synthesizer/proc/cartridge_added(datum/act/op/A)
+	add_cartridge(A.held, A.actor)
+	return OP_OK
 
-/obj/machinery/chemical_synthesizer/proc/interaction_add_cartridge(mob/user, obj/item/reagent_containers/chem_disp_cartridge/W, datum/interaction/interaction)
-	add_cartridge(W, user)
-	return TRUE
+MSG_DEF_SELF(chemical_synthesizer/machine_down, "The clamp will not secure the catalyst while the machine is down.")
+MSG_DEF_SELF(chemical_synthesizer/not_open, "You don't see how it could extract reagents from %I%.")
 
-// We don't need a busy check here as the catalyst slot must be occupied for the machine to function.
-/datum/interaction/machine_item/chem_synthesizer_add_catalyst
-	id = "chem_synthesizer_add_catalyst"
-	name = "Set catalyst"
-	held_type = /obj/item/reagent_containers/glass
-	effect = /obj/machinery/chemical_synthesizer/proc/interaction_add_catalyst
-	also_requires = list(
-		REQ_FIELD_NOT("catalyst"),
-		REQ_BECAUSE(REQ_FIELD("operable"), "the clamp will not secure the catalyst while the machine is down"),
-		REQ_TARGET_STATE(/obj/machinery/chemical_synthesizer/proc/can_extract_from),
-	)
+/// No catalyst is set. (No busy check: the catalyst slot must be occupied for the machine to work.)
+/obj/machinery/chemical_synthesizer/proc/no_catalyst(datum/act/op/A)
+	return !catalyst
 
-/// Requirement: the held container must be open for reagents to be drawn from it.
-/obj/machinery/chemical_synthesizer/proc/can_extract_from(mob/user, atom/target, obj/item/held)
-	return held?.is_open_container() ? TRUE : "you don't see how it could extract reagents from [held]"
+/// The machine works, so the clamp secures the catalyst.
+/obj/machinery/chemical_synthesizer/proc/clamp_works(datum/act/op/A)
+	return operable()
 
-/obj/machinery/chemical_synthesizer/proc/interaction_add_catalyst(mob/user, obj/item/reagent_containers/RC, datum/interaction/interaction)
+/// The held container must be open for reagents to be drawn from it.
+/obj/machinery/chemical_synthesizer/proc/can_extract_from(datum/act/op/A)
+	return A.held?.is_open_container()
+
+/// The old attackby: the catalyst container is clamped on.
+/obj/machinery/chemical_synthesizer/proc/catalyst_set(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/RC = A.held
 
 	if(!move_into(src, nameof(src.catalyst), RC, user))
-		return TRUE
+		return OP_OK
 	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
 	update_icon()
-
-	return TRUE
+	return OP_OK
 
 /obj/machinery/chemical_synthesizer/wrench_act(mob/user, obj/item/tool)
 	if(busy)
@@ -432,7 +428,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 	// Removes the catalyst bottle from the machine.
 	if(!busy && catalyst)
 		catalyst.forceMove(get_turf(src))
-		own_take(src, nameof(/obj/machinery/chemical_synthesizer::catalyst))
+		rel_take(src, nameof(catalyst))
 		update_icon()
 
 /obj/machinery/chemical_synthesizer/proc/ui_act_toggle_catalyst(datum/act/op/A)
@@ -587,18 +583,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 /obj/machinery/chemical_synthesizer/proc/chem_synthesizer_ghost_view(mob/user, obj/item/held, datum/interaction/interaction)
 	if(operable())
 		tgui_interact(user)
-	return TRUE
-
-/// Old attack_hand (never called ..()).
-/datum/interaction/machine_hand/ungated/chem_synthesizer_use
-	id = "chem_synthesizer_use"
-	name = "Use"
-	effect = /obj/machinery/chemical_synthesizer/proc/interaction_use
-
-/obj/machinery/chemical_synthesizer/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!operable())
-		return TRUE
-	tgui_interact(user)
 	return TRUE
 
 /obj/machinery/chemical_synthesizer/ui_assets(mob/user)
@@ -919,9 +903,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 #undef RECIPE_MAX_STRING
 #undef RECIPE_MAX_STEPS
 
-/obj/machinery/chemical_synthesizer/ownership()
-	. = ..()
-	. += owns(nameof(catalyst), policy = OWN_CONTAINED, starts = /obj/item/reagent_containers/glass/beaker)
 // Label -> installed cartridge (in contents); they go with the machine.
 
 /obj/machinery/chemical_synthesizer/proc/synth_recipe_answered(datum/act/request/context)

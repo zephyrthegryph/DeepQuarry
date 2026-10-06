@@ -516,7 +516,7 @@
 	TEST_ASSERT(bottle.has_latent(), "declared on the floor")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/chem_master/master = allocate(/obj/machinery/chem_master, T)
-	master.attackby(bottle, H)
+	perform_op(H, master, "load_pill_bottle", bottle, origin = ORIGIN_SYSTEM)
 	TEST_ASSERT_EQUAL(master.loaded_pill_bottle, bottle, "the bottle loaded")
 	TEST_ASSERT(!bottle.has_latent(), "nothing latent once loaded")
 	TEST_ASSERT_EQUAL(length(bottle.contents), 14, "its pills are real")

@@ -2070,6 +2070,38 @@ Design: `reagents.md`.
 * **An overdose() override that changes the reagent before calling `..()`** gets the base injury the cycle computed from the volume at the
   cycle's start. Every override in the tree calls `..()` first or unchanged.
 * **A reaction with yield below 1 and no product amount** no longer divides by zero (it skips the yield limit); none exists in the tree.
+
+## Reagent machines: interactions are ops (rewrite/reagents)
+
+The chem master, grinder, chemical dispenser, synthesizer, distillery, bunsen burner, alembic, injector maker, fluid pump and chem analyzer
+lost their `/datum/interaction/machine_*` datums for `op()` entries; their `ownership()` procs, `APPEARANCE_TEMPLATE` / `DECLARE_APPEARANCE_PROC`
+looks (except the pump's, the distillery's, the synthesizer's and the syringe's, which read untracked state), `OM_FIELD`s, `OM_EMIT`s, `om_busy`/`om_hold_busy` and `own_take*` calls went too.
+Pinned by `dq_reagent_machines_behaviour.dm` (written on master first; the analyzer test fails there on the bug below) and the generated
+conversion pins (`snapshots/pins/`, re-blessed after review).
+
+* **The generated pins record clicks now.** A click with an item on a converted machine reads `Click: Use` / `Click: Place container` where
+  the legacy datum rows said `click: nothing` (the pin harness never resolved legacy datums as clicks); the click itself did the same thing.
+  The rows for held items "the legacy interactions ask for" are gone because no legacy interaction asks any more.
+* **Duplicate "Use" menu entries are gone** on the chem master, dispenser, synthesizer and analyzer: each had a legacy touch that opened the same
+  window as the interface's own `ui_open` op (which already answered the click); the window still opens on a touch, gated as `ui_open` is
+  (the dispenser's and the master's not-broken checks are `extend(TAG_UI, ...)` / the machine hand gate).
+* **The grinder's "operating" state is a stat** (`STAT_GRINDING`, a 6 s hold from `grind()`), not the OM busy flag. Same window, same refusals.
+* **The chem analyzer's scan is an op** with a 2 s wait that claims the analyzer (`claims()`, drawn from `op_claimed()`); a broken wait says
+  "Sample moved outside of scan range". It used to runtime on its first scan (`found_reagents.Cut()` on a list nothing had made): fixed.
+* **The chem master's "You add the beaker" line** had a literal tab where `	he` was meant; fixed.
+* **The injector maker offers "Add plastic" for any material stack** and declines a non-plastic one, which goes on to the silent swallow as before
+  (the old datum hid the entry for other materials; the reads lint forbids the material lookup in a condition).
+* **Injector maker refusals** say "Storage is full." / "You cannot put a filled injector into the machine." (the old text added the capacity).
+* **The distillery's heating and mixing menu entries** need a living, capable actor as the old verb gate did (`req_capable()`).
+* **The grinder's and the distillery's radials, the distillery's slot choice and its thermostat** are the ops' own questions (`asks()`), not
+  requests opened from the effect; the buttons, their order and their effects are the same. An AI's grinder menu is refused while unpowered by
+  the input's remote authority rather than by `isAI()`.
+* **Contained beakers, bottles, the synthesizer's catalyst, the hypospray's vial and the fuel tank's rig** are `owns_one()` with the default
+  teardown (deleted with the holder), as `OWN_CONTAINED` resolved them through the holder's contents.
+* Still legacy, waiting for their replacements: the dispenser's and synthesizer's ghost view (`INTERACT_OBSERVER`: `by(AFF_OBSERVE)` has no
+  provider yet), their screwdriver cartridge removal (`rerun_ask` in `screwdriver_act`), the machines' `*_act` tool procs, the syringe's pick-up
+  (`EXTEND_INTERACTIONS` over the item base's) and look, the synthesizer's underlay look, the blood pack's look (it writes `item_state`).
+
 - **Questions are op steps** (`asks()`): the flag's rip asks yes/no, the food cart asks which food, the bar sign asks its face. The
   answer is re-checked by the op's requirements. The food cart offers "Grab food" only while it holds food; the bar sign takes an ID or
   PDA granting its `req_access` (ACCESS_BAR) in hand, or the actor's own access, as every credential requirement does. The flag burns

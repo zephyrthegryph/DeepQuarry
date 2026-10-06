@@ -104,10 +104,14 @@ CAPABILITIES(/datum/reagents)
 	return TRUE
 
 /// Called after handle_reactions() finishes processing, if reactions occurred.
-/// Base implementation emits /datum/om/event/reagents_holder_reacted.
-/// Subtypes that do not want this event (e.g. distilling) override to do nothing.
+/// Base implementation publishes /datum/notice/reagents_holder_reacted (when something listens).
+/// Subtypes that do not want this notice (e.g. distilling) override to do nothing.
 /datum/reagents/proc/on_reactions_handled(list/effect_reactions)
-	OM_EMIT(src, /datum/om/event/reagents_holder_reacted, effect_reactions)
+	if(!notice_wanted(src, /datum/notice/reagents_holder_reacted))
+		return
+	var/datum/notice/reagents_holder_reacted/N = notice_take(/datum/notice/reagents_holder_reacted)
+	N.chemical_reaction = effect_reactions
+	notice_publish(src, N)
 
 /datum/reagents/proc/handle_reactions()
 	if(QDELETED(my_atom))
@@ -242,7 +246,7 @@ CAPABILITIES(/datum/reagents)
 /datum/reagents/proc/del_reagent(id)
 	var/datum/reagent/current = reagent_by_id[id]
 	if(current)
-		own_take_member(src, nameof(reagent_list), current) // qdel'd below, after the index is fixed up
+		rel_take(src, nameof(reagent_list), member = current) // qdel'd below, after the index is fixed up
 		// If another datum with the same id remains (e.g. second blood species entry),
 		// promote it into reagent_by_id so O(1) lookups still work for that id.
 		var/datum/reagent/replacement = null

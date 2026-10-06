@@ -935,8 +935,7 @@
  },
  "/datum/om/event/hose_forcepump": {
   "emits": [
-   "code/modules/power/fusion/core/_core.dm",
-   "code/modules/reagents/machinery/pump.dm"
+   "code/modules/power/fusion/core/_core.dm"
   ],
   "fields": [],
   "listeners": [
@@ -2036,9 +2035,7 @@
   "tests": []
  },
  "/datum/om/event/reagent_expose_obj": {
-  "emits": [
-   "code/modules/reagents/reagents/_reagents.dm"
-  ],
+  "emits": [],
   "fields": [
    "reagent",
    "amount"
@@ -2055,9 +2052,7 @@
   "tests": []
  },
  "/datum/om/event/reagents_holder_reacted": {
-  "emits": [
-   "code/modules/reagents/holder/holder.dm"
-  ],
+  "emits": [],
   "fields": [
    "chemical_reaction"
   ],

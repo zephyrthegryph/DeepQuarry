@@ -79,9 +79,6 @@ CAPABILITIES(/obj/item/reagent_containers/hypospray)
 	var/obj/item/reagent_containers/glass/beaker/vial/loaded_vial //Wow, what a name.
 	volume = 0
 
-/obj/item/reagent_containers/hypospray/vial/ownership()
-	. = ..()
-	. += owns(nameof(loaded_vial), policy = OWN_CONTAINED, starts = /obj/item/reagent_containers/glass/beaker/vial)
 // Comes with an empty vial.
 
 /obj/item/reagent_containers/hypospray/vial/Initialize(mapload)
@@ -93,6 +90,7 @@ CAPABILITIES(/obj/item/reagent_containers/hypospray)
 // The vial hypospray takes a 30-unit vial for its drug supply: a vial is loaded in three seconds (once), and an empty hand takes it out when the hypospray
 // is in the other hand. What the vial held is the hypospray's while it is in.
 CAPABILITIES(/obj/item/reagent_containers/hypospray/vial)
+	owns_one(nameof(loaded_vial), /obj/item/reagent_containers/glass/beaker/vial, starts = /obj/item/reagent_containers/glass/beaker/vial)
 	configure(injector(slow = nameof(prototype), vial = nameof(loaded_vial)))
 	op("load", item(/obj/item/reagent_containers/glass/beaker/vial), priority(OP_PRIORITY_PART + 5), label("Load the vial"),
 		needs(req_is(nameof(loaded_vial), FALSE, because = MSG(hypo/has_vial))),
@@ -112,7 +110,7 @@ MSG_DEF(hypo/loaded, "You load %I% into %T%.", "%U% has loaded %I% into %T%.")
 	reagents.maximum_volume = 0
 	loaded_vial.update_icon()
 	user.put_in_hands(loaded_vial)
-	own_take(src, nameof(loaded_vial))
+	rel_take(src, nameof(loaded_vial))
 	balloon_alert(user, "vial removed from \the [src]")
 	update_icon()
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
