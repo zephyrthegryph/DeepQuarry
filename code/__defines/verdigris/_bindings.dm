@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "08d23410af0f6540"
+#define VERDIGRIS_ABI "16aae2dc81f4ab76"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -46,6 +46,9 @@
 /// BZ formation, per mole of BZ made.
 // verdigris/domains/gas/src/reaction_energy.rs
 #define BZ_FORMATION_ENERGY 80000.0
+
+// verdigris/ffi/src/chem.rs
+#define CHEM_CYCLE_OUT 5
 
 /// Carbon combustion (fire spreading on objects), per mole.
 // verdigris/domains/gas/src/reaction_energy.rs
@@ -770,6 +773,30 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:bind_handle_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, handle)
+
+/// One Life cycle of a metabolism holder (`vg_chem::metabolism::cycle`). `args` is flat, 7 values per reagent:
+/// `volume, rate, dose, max_dose, overdose_at, overdose, overdose_mod`. Returns a flat list, 5 per reagent in the same order:
+/// `removed, dose, max_dose, overdosing (0/1), overdose_injury`.
+// /proc/chem_metabolism_cycle (verdigris/ffi/src/chem.rs)
+/proc/vg_chem_metabolism_cycle(args_ref)
+	var/static/__f = load_ext(VERDIGRIS, "byond:chem_metabolism_cycle_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(args_ref)
+
+/// The base overdose injury of one uptake (`vg_chem::metabolism::overdose_injury`), for an overdose() called outside a holder's cycle.
+// /proc/chem_overdose_injury (verdigris/ffi/src/chem.rs)
+/proc/vg_chem_overdose_injury(removed, overdose_mod, volume, overdose)
+	var/static/__f = load_ext(VERDIGRIS, "byond:chem_overdose_injury_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(removed, overdose_mod, volume, overdose)
+
+/// How far one step of a reaction goes, in reaction units (`vg_chem::reaction::progress`; DM's `calc_reaction_progress()`).
+/// `reactants` is a flat list `have, ratio, ...`. The caller still takes `min(limit, progress)`.
+// /proc/chem_reaction_progress (verdigris/ffi/src/chem.rs)
+/proc/vg_chem_reaction_progress(limit, rate, multiplier, yield_, result_amount, product_have, min_reaction, reactants)
+	var/static/__f = load_ext(VERDIGRIS, "byond:chem_reaction_progress_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(limit, rate, multiplier, yield_, result_amount, product_have, min_reaction, reactants)
 
 /// Clears the gas mixture my removing all of its gases.
 // /datum/gas_mixture/proc/clear (verdigris/ffi/src/gas/binds.rs)
