@@ -31,7 +31,7 @@
 	else
 		. += span_notice("Guidance is currently disabled.")
 
-/obj/item/healthanalyzer/do_surgery(mob/living/M, mob/living/user, stance = I_HURT)
+/obj/item/healthanalyzer/use_on_patient(mob/living/M, mob/living/user, stance = I_HURT)
 	if(stance != I_HELP) //in case it is ever used as a surgery tool
 		return ..()
 	scan_mob(M, user) //default surgery behaviour is just to scan as usual

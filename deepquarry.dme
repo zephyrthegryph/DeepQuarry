@@ -4634,6 +4634,7 @@
 #include "code\modules\surgery\organs.dm"
 #include "code\modules\surgery\procedures.dm"
 #include "code\modules\surgery\surgery.dm"
+#include "code\modules\surgery\surgery_ops.dm"
 #include "code\modules\tables\bench.dm"
 #include "code\modules\tables\flipping.dm"
 #include "code\modules\tables\interactions.dm"

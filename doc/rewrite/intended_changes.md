@@ -1756,3 +1756,20 @@ is `pain_step()` on an `every(LIFE_CYCLE)` gated by `STAT_PAIN_FELT` (held while
 * **The clocks integrate at most one step**: a body clock that was parked and starts again does not integrate the time it slept (fixes a
   first-step overshoot found while pinning).
 * `life_om/derive_and_present` and `life_om/npc_vision_follows_inputs` fail on master before this branch's first body change; not touched here.
+
+## Body migration, slice 5: surgery steps are ops (rewrite/body-full)
+
+Pinned by `dq_body_pin_surgery_incision` (a scalpel click on a lying patient on an operating table runs the incision to an outcome; green on the old
+code first) and the existing `dq_surgery_*` tests. Each `/datum/surgical_step` is an op `surgery_<step>` on the human (`code/modules/surgery/surgery_ops.dm`):
+the step's state checks are its `when()`, steadiness its `needs()`, the organ choice and the drastic-step confirmation `asks()`, `claims()`, `wait()`, and
+the roll in `then()`. `do_surgery()`, the focus and step om tasks, `choose_surgical_step_for()`, `surgery_ask()`, `surgery_zones_in_progress` and the
+steps' `choose_target()`/`confirm()` are gone (steps declare `target_choices()` and `confirm_text()`).
+
+* **One click runs the best step.** With a tool several steps take, the click performs the highest-priority step (then declaration order); the others
+  are the patient's menu entries. The old click asked which step every time.
+* **One surgery per surgeon, one claim per patient.** The per-zone lock is the op's claim: while a step waits on a patient, a second claiming op on them
+  is refused (two surgeons could work two zones at once before).
+* **The surgeon must stay conscious and adjacent with the tool in hand** (the op's keeps): an interruption abandons the step, as before.
+* **Self-surgery's three seconds of focus are part of the step's wait** (was a separate focus task before choosing).
+* Scanners and stethoscopes keep their patient use through `use_on_patient()` (was an override of `do_surgery()`).
+* Boot fix found on the way: atoms created during global init (a GLOBAL_DATUM_INIT statclick) no longer index the lifecycle tables before they exist.

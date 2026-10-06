@@ -288,9 +288,14 @@
 /datum/unit_test/dq_body_pin_surgery_incision/Run()
 	test_driver_begin()
 	test_rng(1)
-	var/list/pair = dq_combat_pair(/mob/living/carbon/human)
-	var/mob/living/carbon/human/surgeon = pair[1]
-	var/mob/living/carbon/human/patient = pair[2]
+	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human)
+	dq_give_zone_sel(surgeon)
+	surgeon.next_click = 0
+	// A clientless test human counts as SSD and is put to sleep; a teleoperated one is awake, as a surgeon must be.
+	surgeon.teleop = surgeon
+	surgeon.status_end(EFFECT_SLEEPING)
+	surgeon.set_stat(CONSCIOUS)
 	var/obj/machinery/optable/table = new(patient.loc)
 	patient.status_set(EFFECT_WEAKENED, 30)
 	patient.update_canmove()
@@ -299,15 +304,19 @@
 	surgeon.put_in_active_hand(S)
 	var/obj/item/organ/external/chest = patient.get_organ(BP_TORSO)
 	var/wounds_before = length(chest.get_wounds())
-	test_click(surgeon, patient, S)
+	var/datum/op_result/R = test_click(surgeon, patient, S)
+	body_pin_log("surgery_click", "[R ? "[R.key] outcome [R.outcome] reason [R.reason]" : "nothing resolved"]")
 	test_time(12 SECONDS)
+	body_pin_log("surgery_after", "[R?.key] outcome [R?.outcome] reason [R?.reason]")
 	var/incised = chest.surgical_depth() >= INCISION_MADE
 	var/slipped = length(chest.get_wounds()) > wounds_before
 	body_pin_log("surgery_incision", "depth [chest.surgical_depth()] slipped [slipped]")
 	TEST_ASSERT(incised || slipped, "the incision step ran to an outcome (depth [chest.surgical_depth()])")
 	chest.get_incision()?.close_site()
+	surgeon.teleop = null
 	test_driver_end()
 	qdel(S)
 	qdel(table)
 	for(var/obj/effect/decal/cleanable/B in range(1, patient))
 		qdel(B)
+
