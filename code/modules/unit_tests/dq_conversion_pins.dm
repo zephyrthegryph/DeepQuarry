@@ -55,6 +55,10 @@
 	// recording, however long it runs on the test floor's air.
 	var/mob/living/carbon/human/pin_human = actors["human"]
 	pin_human.enable_godmode()
+	// A gravity generator going away switches its area's gravity off (as in play): the room gets its gravity back after the sweep, or every later
+	// test's mobs drift (dq_p2_closet/drag_stuffs_a_person_into_an_open_closet).
+	var/area/sweep_room = get_area(T)
+	var/sweep_gravity = sweep_room.has_gravity
 	var/list/actual_by_type = list()
 	for(var/type in expected_by_type)
 		// One seed per type, so a random initial state (the toilet's lid) is the same at every recording, whatever ran before it.
@@ -65,6 +69,8 @@
 			continue
 		actual_by_type[type] = dq_pin_lines(target, T, actors)
 		qdel(target)
+	if(sweep_room.has_gravity != sweep_gravity)
+		sweep_room.gravitychange(sweep_gravity)
 	own_turf_contents(T)
 	var/report = dq_snapshot_compare(DQ_PIN_DIR, "pins", actual_by_type, expected_by_type, bad)
 	TEST_ASSERT(isnull(report), report)
