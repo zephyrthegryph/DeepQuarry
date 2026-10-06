@@ -26,7 +26,7 @@
  * Called by a component signal when our song starts playing.
  */
 /obj/item/instrument/piano_synth/headphones/proc/start_playing(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 
 	icon_state = "[initial(icon_state)]_on"
 	if(ishuman(loc))
@@ -40,7 +40,7 @@
  * Called by a component signal when our song stops playing.
  */
 /obj/item/instrument/piano_synth/headphones/proc/stop_playing(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 
 	icon_state = "[initial(icon_state)]"
 	if(ishuman(loc))

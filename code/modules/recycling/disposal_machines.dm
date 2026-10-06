@@ -726,7 +726,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 
 /// Hooked on our own disposal_receive event.
 /obj/machinery/disposal/proc/on_disposal_receive(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	var/datum/notice/disposal_receive/event = A
 	packet_expel(source, event.items, event.gas)
@@ -789,7 +789,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 		AM.forceMove(T)
 	//..() //*cough
 	OM_EMIT(src, /datum/om/event/disposal_unlink) //unlinks in destroy, too.
-	destroyed(src) //Parent above should do this, but that's not a thing as of writing this.
+	destroyed(src, null, "deconstructed") //Parent above should do this, but that's not a thing as of writing this.
 
 /obj/machinery/disposal/proc/clean_items()
 	// Clean items before sending them

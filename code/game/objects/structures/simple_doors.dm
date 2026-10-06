@@ -67,6 +67,10 @@
 CAPABILITIES(/obj/structure/simple_door)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	// those aren't machinery, they're slabs of a mineral: a cyborg beside it opens it, the AI can't
+	op("silicon_open", remote(), label("Open"), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), needs(req_adjacent()), then(PROC_REF(interaction_hand)))
 
 /// Something walked into it (the bump action's notice).
 /obj/structure/simple_door/proc/bumped_into(datum/act/A)
@@ -76,31 +80,10 @@ CAPABILITIES(/obj/structure/simple_door)
 		return TryToSwitchState(user)
 	return
 
-/// Old attack_ai: those aren't machinery, they're just big slabs of a mineral. Cyborgs next to it open it; the AI can't.
-/obj/structure/simple_door/proc/simple_door_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(isAI(user)) //so the AI can't open it
-		return TRUE
-	if(isrobot(user) && get_dist(user,src) <= 1) //but cyborgs can, not remotely though
-		TryToSwitchState(user)
-	return TRUE
-
-/obj/structure/simple_door/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/simple_door_hand,
-		/datum/interaction/entry_item/simple_door_item,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Open", PROC_REF(simple_door_silicon_use)))
-	..()
-
-/// Old attack_hand: open/close the door.
-/datum/interaction/entry_hand/simple_door_hand
-	id = "simple_door_hand"
-	name = "Use"
-	effect = /obj/structure/simple_door/proc/interaction_hand
-
-/obj/structure/simple_door/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	TryToSwitchState(user)
-	return TRUE
+/// A hand (or a cyborg beside it) opens or shuts it.
+/obj/structure/simple_door/proc/interaction_hand(datum/act/op/A)
+	TryToSwitchState(A.actor)
+	return OP_OK
 
 /obj/structure/simple_door/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover, /obj/effect/beam))
@@ -167,13 +150,9 @@ CAPABILITIES(/obj/structure/simple_door)
 
 APPEARANCE_TEMPLATE(/obj/structure/simple_door, "{appearance_base}{state?open:}")
 
-/// Old attackby: lock/unlock with the matching key, dig/hit the door, or fall back to toggling.
-/datum/interaction/entry_item/simple_door_item
-	id = "simple_door_item"
-	name = "Use"
-	effect = /obj/structure/simple_door/proc/interaction_item
-
-/obj/structure/simple_door/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/simple_door/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(istype(W,/obj/item/simple_key))
 		var/obj/item/simple_key/key = W
@@ -185,7 +164,7 @@ APPEARANCE_TEMPLATE(/obj/structure/simple_door, "{appearance_base}{state?open:}"
 			act_message(user, src, others = span_notice("%U% [key.keyverb] %I% and [locked ? "unlocks" : "locks"] %T%."), item = key)
 			locked = !locked
 			playsound(src, keysound,100, 1)
-		return TRUE
+		return OP_OK
 	if(istype(W,/obj/item/pickaxe) && breakable)
 		var/obj/item/pickaxe/digTool = W
 		act_message(user, src, others = span_danger("%U% starts digging %T%!"))
@@ -200,8 +179,8 @@ APPEARANCE_TEMPLATE(/obj/structure/simple_door, "{appearance_base}{state?open:}"
 			play_sfx(src, SFX_WEAPONS_SMASH)
 		receive_weapon_hit(W, user)
 	else
-		interaction_hand(user, W, interaction)
-	return TRUE
+		TryToSwitchState(user)
+	return OP_OK
 
 /obj/structure/simple_door/proc/attackby_timed_done(mob/user)
 	if(!(src))
@@ -381,47 +360,38 @@ DECLARE_PERIODIC(/obj/structure/simple_door/uranium, PERIODIC_SLOW)
 // start: Allows removing resin doors.
 // Resin's Use fully replaces the base simple_door's (the original override never called
 // ..() into it either), so it declares its own interaction.
-/obj/structure/simple_door/resin/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/simple_door_resin_tear,
-		/datum/interaction/entry_hand/simple_door_resin_hand,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Open", PROC_REF(simple_door_silicon_use))) // doesn't chain to the base door's
+// The resin door replaces the base door's hand and item: a hand pulls at it, in combat mode tears at it; the cyborg's open stays.
+CAPABILITIES(/obj/structure/simple_door/resin)
+	without("use")
+	without("item")
+	op("resin_hand", hand(), label("Use"), stance(I_HELP, I_DISARM, I_GRAB), then(PROC_REF(interaction_resin_hand)))
+	op("tear", hand(), label("Tear at"), stance(I_HURT), then(PROC_REF(interaction_resin_tear)))
 
-/// Old attack_hand: a Hulk destroys it, a xenomorph melts through it, or it opens as usual.
-/datum/interaction/entry_hand/simple_door_resin_hand
-	id = "simple_door_resin_hand"
-	name = "Use"
-	effect = /obj/structure/simple_door/resin/proc/interaction_resin_hand
-
-/obj/structure/simple_door/resin/proc/interaction_resin_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// A Hulk destroys it, a xenomorph melts through it, or it opens as usual.
+/obj/structure/simple_door/resin/proc/interaction_resin_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if (HULK in user.mutations)
 		act_message(user, null, others = span_warning("%U% destroys the [name]!"))
 		Dismantle(1)
-		return TRUE
+		return OP_OK
 	TryToSwitchState(user)
-	return TRUE
+	return OP_OK
 
-/// Old attack_hand's harm branch: a carbon tears at the resin, or a xenomorph melts it (combat mode only).
-/datum/interaction/entry_hand/simple_door_resin_tear
-	id = "simple_door_resin_tear"
-	name = "Tear at"
-	effect = /obj/structure/simple_door/resin/proc/interaction_resin_tear
-	stance = I_HURT
-
-/obj/structure/simple_door/resin/proc/interaction_resin_tear(mob/user, obj/item/held, datum/interaction/interaction)
+/// Combat mode: a carbon tears at the resin, or a xenomorph melts it; a Hulk or anyone else gets the ordinary use.
+/obj/structure/simple_door/resin/proc/interaction_resin_tear(datum/act/op/A)
+	var/mob/user = A.actor
 	if((HULK in user.mutations) || !istype(user, /mob/living/carbon))
-		return FALSE // a Hulk destroys it, anyone else opens it: interaction_resin_hand()
+		return interaction_resin_hand(A)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	var/mob/living/carbon/M = user
 	if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode))
 		act_message(user, null, others = span_warning("%U% strokes the [name] and it melts away!"))
 		Dismantle(1)
-		return TRUE
+		return OP_OK
 	act_message(user, null, others = span_warning("%U% tears at the [name]!"))
 	take_damage(20, BRUTE, MELEE, FALSE)
-	return TRUE
+	return OP_OK
 // end.
 
 /datum/material/flockium

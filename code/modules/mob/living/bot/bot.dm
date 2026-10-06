@@ -69,24 +69,18 @@
 	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
 
 /// Bots shrug off stuns and run their AI (the old bot Life() tail after ..()).
-/datum/om/stage/life/bot_core
-	order = LIFE_PHASE_TAIL + 100
-	name = "bot core"
-	wake_on = 0
-	of = /mob/living/bot
-
-/datum/om/stage/life/bot_core/perform(mob/living/bot/self, datum/om/frame/life/ctx)
-	if(self.stat == DEAD)
+/mob/living/bot/proc/life_bot_core(datum/seq_frame/life/F)
+	if(src.stat == DEAD)
 		return
-	self.status_set(EFFECT_WEAKENED, 0)
-	self.status_set(EFFECT_STUNNED, 0)
-	self.status_set(EFFECT_PARALYZED, 0)
+	src.status_set(EFFECT_WEAKENED, 0)
+	src.status_set(EFFECT_STUNNED, 0)
+	src.status_set(EFFECT_PARALYZED, 0)
 
-	if(self.on && !self.client && !om_busy(self) && !self.paicard && !self.ai_running)
-		after(self, 0, TYPE_PROC_REF(/mob/living/bot, start_ai)) // deferred off the Life stage (was spawn)
+	if(src.on && !src.client && !om_busy(src) && !src.paicard && !src.ai_running)
+		after(src, 0, TYPE_PROC_REF(/mob/living/bot, start_ai)) // deferred off the Life stage (was spawn)
 
-/datum/om/stage/life/type_post/bot
-	of = /mob/living/bot
+/mob/living/bot/life_type_post_due()
+	return TRUE
 /*
 /mob/living/bot/examine(mob/user)
 	. = ..()
@@ -448,7 +442,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 	if(paicard)
 		ejectpai()
 	release_vore_contents()
-	destroyed(src)
+	destroyed(src, null, "explosion")
 
 /mob/living/bot/is_sentient()
 	if(paicard)

@@ -16,7 +16,7 @@
 //   CLOCK_WORLD  world.time (real game time).
 //   CLOCK_OWN    the datum's OM timer clock (om_timer_clock(): bio for living mobs, machine for
 //                machinery): it slows with the domain's rate and stops in stasis/suspension,
-//                exactly like om_after() timers on that datum.
+//                exactly like after() timers on that datum.
 // A stored value is a point on that clock; EXPIRY_AT(D, clock, delay) computes one without a var
 // (for list slots and records).
 

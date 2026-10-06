@@ -34,13 +34,13 @@
 	emote_hear = list("rawrs","grumbles","grawls", "growls", "roars")
 
 // Is it time to be mad?
-/datum/om/stage/life/special/animal/space/bear
-	of = /mob/living/simple_mob/animal/space/bear
+/mob/living/simple_mob/animal/space/bear/life_special_due()
+	return TRUE
 
-/datum/om/stage/life/special/animal/space/bear/perform(mob/living/simple_mob/animal/space/bear/self, datum/om/frame/life/ctx)
-	if(((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_FIGHT)) && !om_busy(self) && isturf(self.loc))
-		if(self.vitality() <= 0.5) // At half health, and fighting someone currently.
-			self.berserk()
+/mob/living/simple_mob/animal/space/bear/life_special(datum/seq_frame/life/F)
+	if(((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_FIGHT)) && !om_busy(src) && isturf(src.loc))
+		if(src.vitality() <= 0.5) // At half health, and fighting someone currently.
+			src.berserk()
 
 // So players can use it too.
 /mob/living/simple_mob/animal/space/bear/verb/berserk()

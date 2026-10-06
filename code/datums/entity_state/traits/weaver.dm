@@ -1,6 +1,5 @@
 
 /datum/trait_state/weaver
-	life_stage = /datum/om/stage/life/trait/weaver
 	var/silk_reserve = 100
 	var/silk_max_reserve = 500
 	var/silk_color = "#FFFFFF"
@@ -221,6 +220,6 @@ CAPABILITIES(/datum/trait_state/weaver)
 	return
 
 /// Trait system: silk production.
-/datum/om/stage/life/trait/weaver
-	name = "weaver"
-	state_type = /datum/trait_state/weaver
+/// One Life step per cycle while attached (doc/rewrite/om_retirement.md L1).
+/datum/trait_state/weaver/life_steps()
+	return list(seq_step(PROC_REF(life_tick), after = list(LIFE_INPUT, "life_type_pre"), key = "life_trait_weaver"))

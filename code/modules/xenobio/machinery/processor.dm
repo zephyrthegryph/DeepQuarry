@@ -99,12 +99,12 @@
 			S.cores--
 			return STEP_REPEAT(1 SECOND)
 		rel_remove(src, nameof(to_be_processed), S)
-		spent(S)
+		consumed(S, src)
 		return STEP_REPEAT(1 SECOND)
 	if(ishuman(AM))
 		play_sfx(src, SFX_EFFECTS_SPLAT)
 		rel_remove(src, nameof(to_be_processed), AM)
-		spent(AM)
+		consumed(AM, src)
 		monkeys_recycled++
 		return STEP_REPEAT(1 SECOND)
 	if(AM)

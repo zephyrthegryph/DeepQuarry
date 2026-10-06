@@ -70,9 +70,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/appliance, MACHINE_PIPELINE, "cooking")
 // cooking food and its containers go with the machine.
 /obj/machinery/appliance/on_destroy(force)
 	for(var/datum/cooking_item/CI as anything in cooking_objs?.Copy())
-		destroyed(CI.container())//Food is fragile, it probably doesnt survive the destruction of the machine
+		destroyed(CI.container(), src)//Food is fragile, it probably doesnt survive the destruction of the machine
 		own_take_member(src, nameof(cooking_objs), CI)
-		destroyed(CI)
+		ended_with(CI, src)
 	..()
 
 /obj/machinery/appliance/examine(mob/user)
@@ -569,10 +569,10 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 			S.reagents.trans_to_holder(buffer, S.reagents.total_volume)
 		//Cleanup these empty husk ingredients now
 		if (I)
-			spent(I)
+			consumed(I, src)
 			CI.container().food_items--
 		if(S && !QDELETED(S)) //Incase I = S up there.
-			spent(S)
+			consumed(S, src)
 			CI.container().food_items--
 
 	CI.container().reagents.trans_to_holder(buffer, CI.container().reagents.total_volume)
@@ -847,7 +847,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 //This function creates a food item which represents a dead mob
 /obj/machinery/appliance/proc/create_mob_food(obj/item/holder/H, datum/cooking_item/CI)
 	if (!istype(H) || !H.held_mob)
-		consumed(H)
+		spent(H)
 		return null
 	var/mob/living/victim = H.held_mob
 	if (victim.stat != DEAD)
@@ -875,9 +875,9 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 
 	// all done, now delete the old objects
 	rel_clear(H, nameof(H.held_mob))
-	consumed(victim, H)
+	consumed(victim, src)
 	victim = null
-	consumed(H)
+	spent(H)
 	H = null
 
 	return result

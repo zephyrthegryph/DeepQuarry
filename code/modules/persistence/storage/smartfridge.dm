@@ -13,7 +13,7 @@
 		if(S.accept_check(A))
 			S.stock(A)
 		else
-			consumed(A) // Should clean this up here, it couldn't be stocked
+			spent(A) // Should clean this up here, it couldn't be stocked
 
 
 

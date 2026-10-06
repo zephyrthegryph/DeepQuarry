@@ -82,7 +82,7 @@
 	rel_set(src, nameof(active_docking_controller), controller)
 
 /datum/shuttle/autodock/proc/docking_controller_deleted(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = A.target
 	if(shuttle_docking_controller == source)
 		rel_clear(src, nameof(shuttle_docking_controller))

@@ -44,7 +44,7 @@
 		unobserve(plate.loc, /datum/notice/atom_entered, src)
 
 /obj/machinery/mineral/proc/on_input_entered(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/atom_entered/event = A
 	var/atom/movable/arrived = event.arrived
 	if(isitem(arrived) || istype(arrived, /obj/structure/ore_box))

@@ -86,20 +86,20 @@
 		return TRUE
 	. = ..()
 
-/datum/om/stage/life/type_post/simple_mob/vore/demon
-	of = /mob/living/simple_mob/vore/demon
+/mob/living/simple_mob/vore/demon/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/demon/perform(mob/living/simple_mob/vore/demon/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/demon/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.shifted_out)
-		self.set_density(FALSE)
+	if(src.shifted_out)
+		src.set_density(FALSE)
 
-/datum/om/stage/life/environment/simple_mob/vore/demon
-	of = /mob/living/simple_mob/vore/demon
+/mob/living/simple_mob/vore/demon/life_environment_due()
+	return TRUE
 
 /// TODO - Refactor demons to use is_incorporeal()
-/datum/om/stage/life/environment/simple_mob/vore/demon/exchange(mob/living/simple_mob/vore/demon/self, datum/gas_mixture/environment)
-	if(self.shifted_out)
+/mob/living/simple_mob/vore/demon/life_environment_exchange(datum/gas_mixture/environment)
+	if(src.shifted_out)
 		return
 	. = ..()
 

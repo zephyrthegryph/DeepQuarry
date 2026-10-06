@@ -44,7 +44,16 @@
 /obj/machinery/librarywikicomp/allow_pai_interaction()
 	return TRUE
 
-DECLARE_UI(/obj/machinery/librarywikicomp, "PublicLibraryWiki")
+CAPABILITIES(/obj/machinery/librarywikicomp)
+	interface("PublicLibraryWiki")
+	without("ui_open")
+	op("closesearch", ui_act("closesearch"), then(PROC_REF(ui_act_closesearch)))
+	op("swapsearch", ui_act("swapsearch", arg("data", schema_text(4096))), then(PROC_REF(ui_act_swapsearch)))
+	op("crash", ui_act("crash"), then(PROC_REF(ui_act_crash)))
+	op("print", ui_act("print"), then(PROC_REF(ui_act_print)))
+	op("setsubcat", ui_act("setsubcat", arg("data")), then(PROC_REF(ui_act_setsubcat)))
+	op("search", ui_act("search", arg("data", schema_text(4096))), then(PROC_REF(ui_act_search)))
+	op("donate", ui_act("donate", arg("donate", num())), asks(/datum/prompt/number, fields = list("question" = "Enter pin code", "title" = "Donation", "timeout" = 0), step = "pin", when = PROC_REF(donation_needs_pin)), then(PROC_REF(ui_act_donate)))
 
 /obj/machinery/librarywikicomp/ui_opening(mob/user, datum/tgui/ui)
 	just_donated = FALSE
@@ -56,10 +65,8 @@ DECLARE_UI(/obj/machinery/librarywikicomp, "PublicLibraryWiki")
 	sub_category= null
 	searchmode = null
 
-UI_DATA_REPLACE(/obj/machinery/librarywikicomp, "merge:ui_data_obj_machinery_librarywikicomp{crash:unknown,botany_data:unknown,material_data:unknown,particle_data:unknown,catalog_data:unknown,ore_data:unknown,virus_data:unknown,gene_data:unknown,sub_categories:unknown,donated:unknown,goal:unknown,has_donated:unknown,errorText:text,searchmode:unknown,search:unknown,food_data:unknown,drink_data:unknown,chemistry_data:unknown,print:bool}")
-
 /// The computed part of /obj/machinery/librarywikicomp's window data (declared on its UI_DATA row).
-/obj/machinery/librarywikicomp/proc/ui_data_obj_machinery_librarywikicomp(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/librarywikicomp/ui_data(datum/act/eval/A)
 	var/data = list()
 	if(SSinternal_wiki)
 		data["crash"] = crash
@@ -149,15 +156,15 @@ UI_DATA_REPLACE(/obj/machinery/librarywikicomp, "merge:ui_data_obj_machinery_lib
 		data["errorText"] = "Database unreachable."
 	return data
 
-/obj/machinery/librarywikicomp/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	add_fingerprint(ui.user)
+/obj/machinery/librarywikicomp/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(user)
 	play_sfx(src, SFX_KEYBOARD) // into console
 	return TRUE
 
-UI_ACT(/obj/machinery/librarywikicomp, "closesearch", ui_act_closesearch)
-UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_closesearch)
+/obj/machinery/librarywikicomp/proc/ui_act_closesearch(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!crash)
 		rel_clear(src, nameof(/obj/machinery/librarywikicomp::P))
 		searchmode = null
@@ -166,10 +173,11 @@ UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_closesearch)
 		doc_body = ""
 	. = TRUE
 
-UI_ACT(/obj/machinery/librarywikicomp, "swapsearch", ui_act_swapsearch, UI_ARG_TEXT("data"))
-UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_swapsearch)
+/obj/machinery/librarywikicomp/proc/ui_act_swapsearch(datum/act/op/A, data)
+	if(!ui_gate(A))
+		return FALSE
 	if(!crash)
-		var/new_mode = params["data"]
+		var/new_mode = data
 		if(searchmode == new_mode)
 			return FALSE
 		rel_clear(src, nameof(/obj/machinery/librarywikicomp::P))
@@ -178,19 +186,22 @@ UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_swapsearch)
 		searchmode = new_mode
 	. = TRUE
 
-UI_ACT(/obj/machinery/librarywikicomp, "crash", ui_act_crash)
-UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_crash)
+/obj/machinery/librarywikicomp/proc/ui_act_crash(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
 	// intentional TGUI crash, amazingly awful
-	if(issilicon(ui.user) && ui.user.client)
-		ui.user.client.create_fake_ad_popup_multiple(/atom/movable/screen/popup/default, rand(4,10))
+	if((A.authority & AUTH_REMOTE_ACCESS) && user.client) // a silicon's remote press
+		user.client.create_fake_ad_popup_multiple(/atom/movable/screen/popup/default, rand(4,10))
 	if(!crash)
 		crash = TRUE
 		// crashes till it fixes itself
 		after(src, rand(100 SECONDS, 400 SECONDS), PROC_REF(uncrash))
 	. = TRUE
 
-UI_ACT(/obj/machinery/librarywikicomp, "print", ui_act_print)
-UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_print)
+/obj/machinery/librarywikicomp/proc/ui_act_print(datum/act/op/A)
+	if(!ui_gate(A))
+		return FALSE
 	if(!crash && doc_title && doc_body)
 		visible_message(span_notice("[src] rattles and prints out a sheet of paper."))
 
@@ -199,10 +210,11 @@ UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_print)
 		paper.info = doc_body
 	. = TRUE
 
-UI_ACT(/obj/machinery/librarywikicomp, "setsubcat", ui_act_setsubcat, UI_ARG_VALUE("data"))
-UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_setsubcat)
+/obj/machinery/librarywikicomp/proc/ui_act_setsubcat(datum/act/op/A, data)
+	if(!ui_gate(A))
+		return FALSE
 	if(!crash)
-		var/new_subcat = params["data"]
+		var/new_subcat = data
 		if(sub_category == new_subcat)
 			return FALSE
 		rel_clear(src, nameof(/obj/machinery/librarywikicomp::P))
@@ -212,10 +224,11 @@ UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_setsubcat)
 	. = TRUE
 // final search
 
-UI_ACT(/obj/machinery/librarywikicomp, "search", ui_act_search, UI_ARG_TEXT("data"))
-UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_search)
+/obj/machinery/librarywikicomp/proc/ui_act_search(datum/act/op/A, data)
+	if(!ui_gate(A))
+		return FALSE
 	if(!crash)
-		var/search = params["data"]
+		var/search = data
 		var/datum/internal_wiki/page/new_page = null
 		if(searchmode == "Food Recipes")
 			new_page = SSinternal_wiki.get_page_food(search)
@@ -252,22 +265,29 @@ UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_search)
 	. = TRUE
 // Support the wiki
 
-UI_ACT(/obj/machinery/librarywikicomp, "donate", ui_act_donate, UI_ARG_NUM("donate"))
-UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_donate)
+/obj/machinery/librarywikicomp/proc/ui_act_donate(datum/act/op/A, donate)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	if(!ui_gate(A))
+		return FALSE
 	if(!crash)
-		var/amount = params["donate"]
-		var/mob/living/carbon/human/H = ui.user
+		var/amount = donate
+		var/mob/living/carbon/human/H = user
 		if(!ishuman(H) || !H.IsAdvancedToolUser(TRUE))
-			to_chat(ui.user,"Donating to Bingle.exo is Byond your comprehension!")
+			to_chat(user,"Donating to Bingle.exo is Byond your comprehension!")
 		else if(amount)
 			var/obj/item/card/id/card = H.GetIdCard()
 			var/pin
 			if(id_card_needs_pin(card))
-				pin = act_ask(ui.user, action, params, ui, "pin", /datum/om/prompt/number, message = "Enter pin code", title = "Donation")
+				pin = A.step_value("pin")
 				if(isnull(pin))
 					return TRUE
-			pay_donation(card, ui.user, amount, ui, pin)
+			pay_donation(card, user, amount, ui, pin)
 	. = TRUE
+
+/// The pin question opens for a human's donation while the terminal works (the handler uses the pin only for a card that needs one).
+/obj/machinery/librarywikicomp/proc/donation_needs_pin(datum/act/op/A)
+	return !crash && ishuman(A.actor) && A.args["donate"] // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 
 /obj/machinery/librarywikicomp/proc/pay_donation(obj/item/card/id/I, mob/user, amount, datum/tgui/ui, pin)
 	act_message(user, src, others = span_info("%U% swipes a card through %T%."))
@@ -282,6 +302,6 @@ UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_donate)
 	name = "personal datacore computer"
 	desc = "Have you Bingled THAT today?"
 
-/// om_after() target: the prank crash fixes itself.
+/// after() target: the prank crash fixes itself.
 /obj/machinery/librarywikicomp/proc/uncrash()
 	crash = FALSE

@@ -464,7 +464,7 @@ CAPABILITIES(/obj/item/integrated_circuit/output/holographic_projector)
 		update_hologram()
 
 /obj/item/integrated_circuit/output/holographic_projector/proc/on_moved(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(hologram)
 		update_hologram_position()
 

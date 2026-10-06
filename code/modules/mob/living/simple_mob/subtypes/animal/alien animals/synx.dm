@@ -396,25 +396,26 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	if(message=="Honk!")
 		bikehorn()
 
-/datum/om/stage/life/type_post/simple_mob/animal/synx/ai/pet/clown
-	of = /mob/living/simple_mob/animal/synx/ai/pet/clown
+/mob/living/simple_mob/animal/synx/ai/pet/clown/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/animal/synx/ai/pet/clown/perform(mob/living/simple_mob/animal/synx/ai/pet/clown/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/synx/ai/pet/clown/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.vore_fullness)
-		self.size_multiplier = 1+(0.5*self.vore_fullness)
-		self.update_icons()
-	if(!self.vore_fullness && self.size_multiplier != 1)
-		self.size_multiplier = 1
-		self.update_icons()
-/datum/om/stage/life/type_post/simple_mob/animal/synx
-	of = /mob/living/simple_mob/animal/synx
+	if(src.vore_fullness)
+		src.size_multiplier = 1+(0.5*src.vore_fullness)
+		src.update_icons()
+	if(!src.vore_fullness && src.size_multiplier != 1)
+		src.size_multiplier = 1
+		src.update_icons()
 
-/datum/om/stage/life/type_post/simple_mob/animal/synx/perform(mob/living/simple_mob/animal/synx/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/animal/synx/life_type_post_due()
+	return TRUE
+
+/mob/living/simple_mob/animal/synx/life_type_post(datum/seq_frame/life/F)
 	..()
 //mob/living/simple_mob/animal/synx/ai/handle_idle_speaking() //Only ai-controlled synx will randomly speak
-	if(self.voices && prob(self.speak_chance/2))
-		self.randomspeech()
+	if(src.voices && prob(src.speak_chance/2))
+		src.randomspeech()
 
 /mob/living/simple_mob/animal/synx/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay) //Synx can only eat people if their organs are on the inside.
 	if(stomach_distended)

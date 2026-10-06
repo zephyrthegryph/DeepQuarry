@@ -26,7 +26,7 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 			var/type = pick(datum_spawn.hazards)
 			new type(event_turf)
 
-		consumed(datum_spawn)//idk help how do I do this better?
+		spent(datum_spawn)//idk help how do I do this better?
 
 /datum/decl/overmap_event_handler/proc/acquire_event_turfs(number_of_turfs, distance_from_origin, list/candidate_turfs, continuous = TRUE)
 	number_of_turfs = min(number_of_turfs, candidate_turfs.len)

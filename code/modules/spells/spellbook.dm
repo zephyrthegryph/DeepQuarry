@@ -17,7 +17,7 @@
 // attack_self moved to code/modules/spells/spellbook_panel.dm so it opens via structured TGUI.
 
 /// The panel's "choose" action: learns, upgrades or buys `spell_choice`.
-/obj/item/spellbook/proc/choose_spell(mob/user, spell_choice, list/params, datum/tgui/ui)
+/obj/item/spellbook/proc/choose_spell(mob/user, spell_choice)
 	if(!ishuman(user) || !istext(spell_choice))
 		return
 	var/mob/living/carbon/human/H = user

@@ -78,7 +78,7 @@
 			act_message(user, src, others = span_danger("%U% chops up %T%!"))
 			new /obj/effect/decal/cleanable/blood/splatter(get_turf(src))
 			if(gib_on_butchery)
-				spent(src, user)
+				destroyed(src, user, BRUTE)
 		else
 			act_message(user, src, others = span_danger("%U% butchers %T% messily!"))
 			if(gib_on_butchery)

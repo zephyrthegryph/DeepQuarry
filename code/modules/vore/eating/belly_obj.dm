@@ -743,7 +743,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		else if(!R.shell) // Shells don't have brainmobs in their MMIs.
 			to_chat(R, span_danger("Oops! Something went very wrong, your MMI was unable to receive your mind. You have been ghosted. Please make a bug report so we can fix this bug."))
 		if(R.shell) // Let the standard procedure for shells handle this.
-			consumed(R, M)
+			dissolved(R, M)
 			return
 
 	if(istype(hasMMI))
@@ -758,7 +758,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 			om_suspend(M, M)
 			slot_remove(M, G)
 		else
-			consumed(M)
+			dissolved(M, src)
 	owner.handle_belly_update()
 
 // Handle a mob being absorbed
@@ -1174,14 +1174,14 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 			if(O.possessed_voice && O.possessed_voice.len)
 				for(var/mob/living/voice/V in O.possessed_voice)
 					D.inhabit_item(V, null, V.tf_mob_holder)
-					spent(V)
+					replaced_by(V)
 				own_take_all(O, nameof(O.possessed_voice))
 			return TRUE
 		var/obj/item/debris_pack/digested/D = new /obj/item/debris_pack/digested(src, modified_mats)
 		if(O.possessed_voice && O.possessed_voice.len)
 			for(var/mob/living/voice/V in O.possessed_voice)
 				D.inhabit_item(V, null, V.tf_mob_holder)
-				spent(V)
+				replaced_by(V)
 			own_take_all(O, nameof(O.possessed_voice))
 	return TRUE
 
@@ -1253,7 +1253,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 /obj/belly/proc/ownegg() as /obj/item/storage/vore_egg
 	return ownegg
 
-/// om_after() target: a temporary digest mode wears off.
+/// after() target: a temporary digest mode wears off.
 /obj/belly/proc/reset_digest_mode(mode)
 	digest_mode = mode
 

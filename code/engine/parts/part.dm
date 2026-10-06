@@ -727,9 +727,10 @@
 /// op answers as if its own window sent the button; the actor's reach to the target is not asked (a window's ops have none).
 /// `window_var` (nameof(var)) names the window from a var of the host when each subtype sets its own (a module's tgui_id; `window` is null then).
 /// `autoupdate` refreshes the window every tick, `pinned` keeps it open through "close all windows" (a dedicated skin element: the lobby, a
-/// tooltip, the media panel), `preinitialized` opens a window the host already initialized (its ui_window()).
-/proc/interface(window, title = null, rights = null, host = null, input = null, state = null, forwards = null, window_var = null, autoupdate = FALSE, pinned = FALSE, preinitialized = FALSE)
-	return list(entry_make("interface", null, list("window" = window, "title" = title, "rights" = rights, "host" = host, "state" = state, "forwards" = forwards, "window_var" = window_var, "autoupdate" = autoupdate, "pinned" = pinned, "preinitialized" = preinitialized)), 		op("ui_open", inputs(input || hand(), remote()), priority(OP_PRIORITY_DEFAULT), opens_ui()))
+/// tooltip, the media panel), `preinitialized` opens a window the host already initialized (its ui_window()). `pressed` (PROC_REF(x), `x(mob/actor, action)`)
+/// runs on the holder for every button pressed in its window, its own ops' and the forwarded ones alike, before the op: the PDA's click and fingerprint.
+/proc/interface(window, title = null, rights = null, host = null, input = null, state = null, forwards = null, window_var = null, autoupdate = FALSE, pinned = FALSE, preinitialized = FALSE, pressed = null)
+	return list(entry_make("interface", null, list("window" = window, "title" = title, "rights" = rights, "host" = host, "state" = state, "forwards" = forwards, "window_var" = window_var, "autoupdate" = autoupdate, "pinned" = pinned, "preinitialized" = preinitialized, "pressed" = pressed)), 		op("ui_open", inputs(input || hand(), remote()), priority(OP_PRIORITY_DEFAULT), opens_ui()))
 
 /// ui_shape(operating, channels = list_of(row(...))): the declared shape of the window's data. `analyze gen ui_types` reads the declaration from source and
 /// writes the TypeScript type of the window (each field's schema range as the doc comment of its field); at runtime the entry carries no data. It is a

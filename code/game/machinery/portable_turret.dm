@@ -393,7 +393,7 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 	after(src, 1 SECOND, PROC_REF(cover_flick_done), with = list(flick_holder))
 
 /obj/machinery/porta_turret/proc/cover_flick_done(atom/movable/flick_holder)
-	spent(flick_holder)
+	lapsed(flick_holder)
 
 /atom/movable/porta_turret_cover
 	icon = 'icons/obj/turrets.dmi'

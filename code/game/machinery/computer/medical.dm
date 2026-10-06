@@ -579,7 +579,7 @@ DAMAGE_REACTION(/obj/machinery/computer/med_data, DAMAGE_EMP, PROC_REF(med_data_
 			continue
 
 		else if(prob(1))
-			spent(R)
+			destroyed(R, null, "emp")
 			continue
 
 /obj/machinery/computer/med_data/laptop //[TO DO] Change name to PCU and update mapdata to include replacement computers

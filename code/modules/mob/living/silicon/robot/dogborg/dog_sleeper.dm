@@ -651,7 +651,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 			else
 				hound.adjust_nutrition(5 * digested)  //drain(-50 * digested)
 	else if(istype(target,/obj/effect/decal/remains))
-		consumed(target)
+		dissolved(target, src)
 		hound.adjust_nutrition(10) //drain(-100)
 	else
 		rel_add(src, nameof(items_preserved), target)

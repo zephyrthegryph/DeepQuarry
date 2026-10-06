@@ -222,7 +222,7 @@ SYSTEM_DEF(statpanels)
 
 /datum/system/statpanels/proc/set_SDQL2_tab(client/target)
 	var/list/sdql2A = list()
-	sdql2A[++sdql2A.len] = list("", "Access Global SDQL2 List", REF(GLOB.sdql2_vv_statobj))
+	sdql2A[++sdql2A.len] = list("", "Access Global SDQL2 List", REF(sdql2_vv_statobj()))
 	var/list/sdql2B = list()
 	for(var/datum/SDQL2_query/query as anything in REGISTRY_MEMBERS(REGISTRY_SDQL2_QUERIES))
 		sdql2B = query.generate_stat()

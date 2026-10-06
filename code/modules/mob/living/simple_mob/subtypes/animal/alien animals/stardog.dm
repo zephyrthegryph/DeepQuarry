@@ -117,49 +117,49 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(fur_pick_done), done_args = list(user, that_one))
 	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/overmap/stardog
-	of = /mob/living/simple_mob/vore/overmap/stardog
+/mob/living/simple_mob/vore/overmap/stardog/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/simple_mob/vore/overmap/stardog/perform(mob/living/simple_mob/vore/overmap/stardog/self, datum/om/frame/life/ctx)
+/mob/living/simple_mob/vore/overmap/stardog/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(self.admin_override)
-		self.affinity = 9999
-		self.set_nutrition(9999)
-	if(self.devourable)	//This will cause problems probably so please do not eat the dog
-		self.devourable = FALSE
-		self.digestable = FALSE
-	if(self.ckey && self.control_node)
-		if(self.nutrition <= 200)
-			self.adjust_affinity(-10)
-		else if(self.nutrition < 500)
-			self.adjust_affinity(-3)
+	if(src.admin_override)
+		src.affinity = 9999
+		src.set_nutrition(9999)
+	if(src.devourable)	//This will cause problems probably so please do not eat the dog
+		src.devourable = FALSE
+		src.digestable = FALSE
+	if(src.ckey && src.control_node)
+		if(src.nutrition <= 200)
+			src.adjust_affinity(-10)
+		else if(src.nutrition < 500)
+			src.adjust_affinity(-3)
 		else
-			self.adjust_affinity(-1)
-		if(!self.affinity)
-			self.control_node.eject()
-	if(!self.ckey && self.resting)
-		self.lay_down()
+			src.adjust_affinity(-1)
+		if(!src.affinity)
+			src.control_node.eject()
+	if(!src.ckey && src.resting)
+		src.lay_down()
 
-	if(istype(self.loc, /turf/unsimulated/map))
-		if(!self.invisibility)
-			self.invisibility = INVISIBILITY_ABSTRACT
-			self.child_om_marker.invisibility = INVISIBILITY_NONE
+	if(istype(src.loc, /turf/unsimulated/map))
+		if(!src.invisibility)
+			src.invisibility = INVISIBILITY_ABSTRACT
+			src.child_om_marker.invisibility = INVISIBILITY_NONE
 			//legacy ai_holder wander tuning removed.
-			self.melee_damage_lower = 50
-			self.melee_damage_upper = 100
-			self.mob_size = MOB_HUGE
-			self.child_om_marker.set_light(5, 1, "#ff8df5")
-			self.movement_cooldown = 5
+			src.melee_damage_lower = 50
+			src.melee_damage_upper = 100
+			src.mob_size = MOB_HUGE
+			src.child_om_marker.set_light(5, 1, "#ff8df5")
+			src.movement_cooldown = 5
 
-	else if(self.invisibility)
-		self.invisibility = INVISIBILITY_NONE
-		self.child_om_marker.invisibility = INVISIBILITY_ABSTRACT
+	else if(src.invisibility)
+		src.invisibility = INVISIBILITY_NONE
+		src.child_om_marker.invisibility = INVISIBILITY_ABSTRACT
 		//legacy ai_holder wander tuning removed.
-		self.melee_damage_lower = 1
-		self.melee_damage_upper = 5
-		self.mob_size = MOB_SMALL
-		self.child_om_marker.set_light(0)
-		self.movement_cooldown = 0
+		src.melee_damage_lower = 1
+		src.melee_damage_upper = 5
+		src.mob_size = MOB_SMALL
+		src.child_om_marker.set_light(0)
+		src.movement_cooldown = 0
 
 /mob/living/simple_mob/vore/overmap/stardog/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay_time)
 	to_chat(src, span_warning("You can't do that."))	//The dog can move back and forth between the overmap.
@@ -1221,7 +1221,7 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 		if(dog.client)
 			var/mob/thrower = I.throwing?.get_thrower()
 			to_chat(dog, span_notice("[thrower ? "\The [thrower]" : "Someone"] feeds \the [I] to you!"))
-		spent(I)
+		consumed(I, dog)
 		GLOB.items_digested_roundstat++
 
 /obj/effect/dog_teleporter/reciever
@@ -1379,7 +1379,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 				linked_mob.adjust_nutrition(how_much)
 				H.mind?.vore_death = TRUE
 				GLOB.prey_digested_roundstat++
-			consumed(H)	//glorp
+			dissolved(H, src)	//glorp
 			return
 		H.burn_skin(damage)
 		if(linked_mob)
@@ -1400,7 +1400,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 				if(!L.ckey)
 					how_much = how_much / 10	//Braindead mobs are worth less
 				linked_mob.adjust_nutrition(how_much)
-			consumed(L) //gloop
+			dissolved(L, src) //gloop
 			return
 		L.injure(INJURY_DIGESTION, damage, source = src)
 		if(linked_mob)

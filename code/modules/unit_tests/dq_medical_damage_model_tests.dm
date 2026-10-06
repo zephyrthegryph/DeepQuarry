@@ -422,13 +422,13 @@
 	var/removals = 0
 
 /datum/dq_test_signal_counter/proc/on_severity_changed(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/affliction_severity_changed/event = N
 	severity_changes++
 	last_old_severity = event.old_severity
 
 /datum/dq_test_signal_counter/proc/on_afflictions_changed(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/notice/body_afflictions_changed/event = N
 	if(!event.added)
 		removals++

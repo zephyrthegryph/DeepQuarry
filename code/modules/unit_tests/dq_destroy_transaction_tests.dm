@@ -37,7 +37,7 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 	rel_set(src, nameof(child), new /datum/dq_destroy_transaction_owned_child(src))
 
 /obj/item/dq_destroy_transaction_phase_probe/proc/on_qdeleting(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	dq_destroy_transaction_log("guard")
 
 /obj/item/dq_destroy_transaction_phase_probe/lifecycle_unbind()
@@ -307,7 +307,7 @@ CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
 	observe(src, /datum/notice/qdeleting, src, then(PROC_REF(on_qdeleting)))
 
 /datum/dq_destroy_transaction_reentrant_pair/proc/on_qdeleting(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	if(qdel_partner_on_signal && partner && !QDELETED(partner))
 		qdel(partner)
 

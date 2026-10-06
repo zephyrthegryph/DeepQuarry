@@ -133,7 +133,7 @@ CAPABILITIES(/mob/living/simple_mob/dq_damage_probe)
 	var/list/seen
 
 /datum/unit_test/dq_damage_packet/injure_mapping/proc/on_injure(datum/act/injure/hit)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	seen += list(list(hit.kind, hit.flags))
 
 /datum/unit_test/dq_damage_packet/injure_mapping/Run()

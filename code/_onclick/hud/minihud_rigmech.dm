@@ -31,7 +31,7 @@
 
 /datum/mini_hud/rig/periodic_step()
 	if(!owner_rig())
-		spent(src)
+		ended_with(src)
 		return
 
 	var/obj/item/cell/rigcell = owner_rig().cell
@@ -75,7 +75,7 @@
 
 /datum/mini_hud/mech/periodic_step()
 	if(!owner_mech())
-		spent(src)
+		ended_with(src)
 		return
 
 	var/obj/item/cell/mechcell = owner_mech().cell

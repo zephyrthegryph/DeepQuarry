@@ -39,7 +39,7 @@
 		return null
 	var/amount = old_stock.get_amount()
 	var/obj/item/stack/material/processed_alloy/replacement = processed_spawn_stack(get_turf(location || old_stock), new_batch, amount)
-	consumed(old_stock)
+	replaced_by(old_stock, replacement)
 	return replacement
 
 /obj/machinery/material_furnace
@@ -261,7 +261,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		if(istype(existing_stock) && istype(existing_stock.material, /datum/material/processed_alloy))
 			heat_treatment = TRUE
 			batch = existing_stock.physical_batch().copy_batch()
-			spent(existing_stock)
+			consumed(existing_stock, src)
 	if(!batch)
 		batch = new
 	for(var/obj/item/stack/material/stock as anything in feedstock)
@@ -277,7 +277,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 	own_take_all(src, nameof(feedstock))
 	for(var/obj/item/ore/coal in carbon_feed)
 		batch.add_additive("carbon", 4, 0.5, MATERIAL_COST_CHEMICALS)
-		spent(coal)
+		consumed(coal, src)
 	own_take_all(src, nameof(carbon_feed))
 	if(!batch.amount)
 		spent(batch)
@@ -546,7 +546,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_INSERT(
 	if(replacement)
 		replacement.pixel_x = old_pixel_x
 		replacement.pixel_y = old_pixel_y
-	destroyed(batch)
+	destroyed(batch, null, BRUTE)
 	return 0
 
 /obj/machinery/particle_smasher/proc/try_material_stock_conditioning()
@@ -720,7 +720,7 @@ GLOBAL_LIST_INIT(material_debug_treatments, list(
 	else
 		batch.add_surface_layer(treatment, 100, "debug treatment", 0)
 	var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(stock, batch, operator.drop_location())
-	consumed(batch)
+	replaced_by(batch, replacement)
 	if(replacement)
 		operator.put_in_hands(replacement)
 		to_chat(operator, span_notice("Applied [lowertext(selection)] to [replacement]."))

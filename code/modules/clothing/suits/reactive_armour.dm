@@ -405,6 +405,6 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return FALSE
 
-/// om_after() target: the misfired cloak wears off.
+/// after() target: the misfired cloak wears off.
 /proc/reactive_cloak_wear_off(mob/living/attacker, old_alpha)
 	attacker.alpha = old_alpha

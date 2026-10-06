@@ -223,7 +223,7 @@
 	spent(src)
 
 /datum/thrownthing/proc/hit_atom(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/datum/source = N.target
 	var/atom/A = source
 	finalize(hit=TRUE, t_target=A)

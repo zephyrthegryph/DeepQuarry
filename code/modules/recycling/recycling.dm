@@ -132,13 +132,13 @@ DECLARE_APPEARANCE(/obj/machinery/recycling/stamper, "panel_open", list("1" = li
 			D.add_materials(modified_mats)
 			set_use_power(USE_POWER_IDLE)
 			icon_state = "crusher"
-			destroyed(O)
+			destroyed(O, src, BRUTE)
 			working = FALSE
 			return
 	new /obj/item/debris_pack(get_step(src, dir), modified_mats)
 	set_use_power(USE_POWER_IDLE)
 	icon_state = "crusher"
-	destroyed(O)
+	destroyed(O, src, BRUTE)
 	working = FALSE
 
 /**
@@ -181,7 +181,7 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 			materials[mat] += item_matter[mat]
 		else
 			materials[mat] = item_matter[mat]
-	spent(O)
+	consumed(O, src)
 
 /// Dispenses one dust pile every 2 seconds (declared: while dispensing) while any material has a
 /// sheet's worth, then idles.

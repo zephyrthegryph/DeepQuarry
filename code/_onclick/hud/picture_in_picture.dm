@@ -186,7 +186,7 @@ CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
 	observe(user, /datum/notice/popup_cleared, src, then(PROC_REF(on_popup_clear)))
 
 /atom/movable/screen/movable/pic_in_pic/proc/on_popup_clear(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/source = A.target
 	var/datum/notice/popup_cleared/event = A
 	if(event.window_id == "camera-[REF(src)]")

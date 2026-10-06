@@ -174,7 +174,7 @@ GLOBAL_LIST_INIT(state_legacy_component_vars, list(
 	. = ctx.apply_root(D, blob)
 	if(ctx.errors && errors)
 		errors += ctx.errors
-	consumed(ctx)
+	spent(ctx)
 
 /// The encoded delta of `D` alone (no contents or components), or null if refused.
 /proc/state_delta(datum/D, list/errors)

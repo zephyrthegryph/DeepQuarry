@@ -116,7 +116,7 @@ CAPABILITIES(/obj/item/shield_projector)
 	..()
 
 /obj/item/shield_projector/proc/moved_event(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	update_shield_positions()
 
 /obj/item/shield_projector/proc/create_shield(newloc, new_dir)
@@ -138,7 +138,7 @@ CAPABILITIES(/obj/item/shield_projector)
 	active = FALSE
 
 /obj/item/shield_projector/proc/update_shield_positions(datum/act/notice/N)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	for(var/obj/effect/directional_shield/S in active_shields)
 		S.relocate()
 

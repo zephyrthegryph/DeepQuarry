@@ -98,7 +98,7 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 		. += "\n " + span_notice("The HUD indicator reads OFF.")
 
 
-/// om_after() target: the AR screen comes back after an EMP.
+/// after() target: the AR screen comes back after an EMP.
 /obj/item/clothing/glasses/omnihud/proc/reconnect_tgar()
 	if(offline_tgarscreen && !tgarscreen)
 		own_transfer(src, nameof(offline_tgarscreen), src, nameof(tgarscreen))

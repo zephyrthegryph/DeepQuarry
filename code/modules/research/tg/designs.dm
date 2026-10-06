@@ -230,7 +230,7 @@ other types of metals and chemistry for reagents).
 	if(!material_template)
 		return product
 	if(!product.apply_material_construction(material_choices, material_template, material_total))
-		consumed(product)
+		spent(product)
 		return null
 	if(istype(product, /obj/item/material))
 		var/obj/item/material/material_item = product

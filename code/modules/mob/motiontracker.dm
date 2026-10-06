@@ -23,7 +23,7 @@
 
 // For /datum/om/event/movable_motiontracker
 /mob/proc/handle_motion_tracking(datum/act/notice/A)
-	EVENT_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	var/datum/notice/movable_motiontracker/event = A

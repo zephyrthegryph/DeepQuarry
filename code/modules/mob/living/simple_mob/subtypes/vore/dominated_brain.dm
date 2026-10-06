@@ -31,16 +31,16 @@ CAPABILITIES(/mob/living/dominated_brain)
 	. = ..()
 	lets_register_our_signals()
 
-/datum/om/stage/life/type_post/dominated_brain
-	of = /mob/living/dominated_brain
+/mob/living/dominated_brain/life_type_post_due()
+	return TRUE
 
-/datum/om/stage/life/type_post/dominated_brain/perform(mob/living/dominated_brain/self, datum/om/frame/life/ctx)
+/mob/living/dominated_brain/life_type_post(datum/seq_frame/life/F)
 	..()
-	if(!isliving(self.loc))
-		spent(self)
+	if(!isliving(src.loc))
+		spent(src)
 		return
-	if(!self.mind && !self.was_mob)
-		spent(self)
+	if(!src.mind && !src.was_mob)
+		spent(src)
 
 /mob/living/dominated_brain/say_understands(mob/other, datum/language/speaking = null)
 	if(pred_body.say_understands(other, speaking))
