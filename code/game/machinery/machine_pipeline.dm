@@ -31,7 +31,6 @@
 		/obj/machinery/power/turbinemotor,
 		/obj/machinery/power/thermoregulator,
 		/obj/machinery/air_sensor,
-		/obj/machinery/meter,
 		/obj/machinery/computer/general_air_control/fuel_injection,
 		/obj/machinery/portable_atmospherics/hydroponics,
 		/obj/machinery/portable_atmospherics/powered/reagent_distillery,
@@ -452,9 +451,6 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 
 /datum/om/stage/machine/power/step/air_sensor
 	of = /obj/machinery/air_sensor
-
-/datum/om/stage/machine/power/step/meter
-	of = /obj/machinery/meter
 
 /// Runs every frame while its automation is on (it re-reads the latest sensor broadcasts and
 /// commands the injectors) -- the one timed machine_step here; off, it parks.

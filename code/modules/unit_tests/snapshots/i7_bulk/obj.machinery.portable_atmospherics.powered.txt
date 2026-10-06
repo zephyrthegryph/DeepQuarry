@@ -2,3 +2,4 @@
 /obj/machinery/portable_atmospherics/powered|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/portable_atmospherics/powered|ai|none => |
 /obj/machinery/portable_atmospherics/powered|ghost|none => |
+

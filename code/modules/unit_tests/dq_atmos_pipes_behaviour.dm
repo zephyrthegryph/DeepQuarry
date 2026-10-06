@@ -25,6 +25,17 @@
 	SSair.rust_step_pipe_devices()
 	SSair.run_gas_frames(1)
 
+/// Time for a meter to follow its pipe's gas.
+/proc/ap_meter_settle(obj/machinery/meter/M)
+	var/before = M.needle
+	for(var/i in 1 to 60)
+		SSair.run_gas_frames(1)
+		native_system().drain()
+		if(M.needle != before)
+			break
+		stoplag()
+	am_settle()
+
 /// A radio command packet to a pipe device with radio tag `tag` (its `id`).
 /proc/ap_radio(obj/machinery/atmospherics/D, tag, list/command)
 	var/datum/signal/signal = new
@@ -670,4 +681,55 @@
 		am_settle()
 		SSair.run_gas_frames(1)
 	TEST_ASSERT(U.air_contents.return_temperature() < T20C - 5, "it cools its loop ([U.air_contents.return_temperature()] K)")
+	take_down_lines()
+
+// =====================================================================================================================
+// The pipes
+// =====================================================================================================================
+
+/// A welder seals a pipe's fatigue crack; a wrench takes a visible pipe off as its fitting.
+/datum/unit_test/dq_atmos_m/pipes/pipe_weld_and_wrench
+/datum/unit_test/dq_atmos_m/pipes/pipe_weld_and_wrench/run_gate()
+	var/list/line = pipe_line(/obj/machinery/atmospherics/pipe/simple/visible)
+	var/obj/machinery/atmospherics/pipe/P = line[2]
+	var/mob/living/carbon/human/H = person(null, tile(2, 2))
+	P.damaged_leak = TRUE
+	P.handle_leaking()
+	TEST_ASSERT(P.leaking, "a cracked pipe leaks")
+	ap_click(H, P, welder(tile(2, 2)))
+	TEST_ASSERT(!P.damaged_leak && !P.leaking, "the welder seals it")
+	ap_click(H, P, tool(/obj/item/tool/wrench, tile(2, 2)))
+	TEST_ASSERT(QDELETED(P), "the wrench takes it off")
+	TEST_ASSERT_NOTNULL(locate(/obj/item/pipe) in tile(2, 3), "as its fitting")
+	take_down_lines()
+
+// =====================================================================================================================
+// The meter
+// =====================================================================================================================
+
+/// The meter on a pipe: its needle follows the pipe's pressure; a screwdriver opens its panel, a multitool then sets its tag; a wrench takes it
+/// off as its item.
+/datum/unit_test/dq_atmos_m/pipes/meter
+/datum/unit_test/dq_atmos_m/pipes/meter/run_gate()
+	var/list/line = pipe_line(/obj/machinery/atmospherics/pipe/simple/visible)
+	var/obj/machinery/atmospherics/pipe/P = line[2]
+	var/obj/machinery/meter/M = allocate(/obj/machinery/meter, P.loc)
+	M.stat_remove(NOPOWER | BROKEN)
+	M.set_target(P)
+	var/datum/gas_mixture/air = P.return_air()
+	air.adjust_gas(GAS_N2, 2000)
+	gas_touched(air)
+	ap_meter_settle(M)
+	TEST_ASSERT(M.icon_state != "meterX" && M.icon_state != "meter0", "the needle shows the pipe's pressure ([M.icon_state])")
+	var/mob/living/carbon/human/H = person(null, tile(2, 2))
+	ap_click(H, M, tool(/obj/item/tool/screwdriver, tile(2, 2)))
+	TEST_ASSERT(M.open, "the screwdriver opens its panel")
+	ap_click(H, M, tool(/obj/item/multitool, tile(2, 2)))
+	am_answer(H, "ap_meter")
+	TEST_ASSERT_EQUAL(M.id, "ap_meter", "the multitool sets its tag")
+	ap_click(H, M, tool(/obj/item/tool/wrench, tile(2, 2)))
+	TEST_ASSERT(QDELETED(M), "the wrench takes it off")
+	TEST_ASSERT_NOTNULL(locate(/obj/item/pipe_meter) in P.loc, "as its item")
+	for(var/obj/item/pipe_meter/I in P.loc)
+		qdel(I)
 	take_down_lines()

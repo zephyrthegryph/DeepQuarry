@@ -168,15 +168,6 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 	var/datum/interaction/I = on_behalf_of
 	I?.cost_paid(actor, target, held)
 
-/// Unwrenching a pipe: whether it was under pressure when the job started, and how much.
-/datum/om/task/timed/tool_job/pipe_unwrench
-	var/unsafe = FALSE
-	var/pressure = 0
-
-/datum/om/task/timed/tool_job/pipe_unwrench/tool_done()
-	var/obj/machinery/atmospherics/pipe/P = target
-	P.wrench_act_tool_done(actor, unsafe, pressure)
-
 /// Repairing a flash's bulb with a screwdriver.
 /datum/om/task/timed/tool_job/flash_repair/tool_done()
 	var/obj/item/flash/F = target

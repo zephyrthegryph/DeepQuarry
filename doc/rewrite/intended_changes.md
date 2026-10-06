@@ -1430,3 +1430,21 @@ focused tests of the touched windows (the tests that called a handler with its o
   module's, through `ui_redirect()`) and is gone.
 * **Messages.** The ice cream vat's flavour and cone messages are `act_message()` (the actor reads "You ...").
 * **The holodeck's AI override** is asked by how the press came (`A.authority & AUTH_REMOTE_ACCESS`), not `issilicon()`.
+## Pipes and the atmospherics base (rewrite/pipenet-full)
+
+- A pipe's wrench and welder are ops: `unwrench` (1 s; refused under intact floor and while its gas pushes back; the "gush of air" warning as it
+  begins and the throw past two atmospheres when it is done, as before) and `seal` (4 s, only on a fatigue crack). The `pipe_unwrench` tool job
+  is deleted.
+- A stable leak sleeps on two native gas watches (its pipe's gas and the room's) instead of an OM condition watch; Rust's change report wakes it
+  and the same equalization test decides.
+- The base type's engineered-material fitting and pipe-painter swallow are ops (`fit_material`, `painter`); a tank swallows any other item with
+  an op (an engineered-material stack, the narrower binding, is now fitted where the tank used to swallow it too).
+
+## The meter (rewrite/pipenet-full)
+
+- **No machine step.** A gas watch on the mixture it reads (`watched_air`, which follows its pipe to a rebuilt network's mixture) moves its
+  tracked `needle`; it draws with `draw(look)`; a radio meter sends when the rounded kPa changes. It left the machine pipeline's roster.
+- Its tools are ops: the wrench (4 s, back to its item), the screwdriver (the panel, tracked `open`), the multitool (an open panel asks its tag
+  with `asks()`, re-checked when answered; a shut one moves it to the next pipe on its tile). A hand or an AI reads the gauge (it was a `Click()`
+  override); the gauge is an `examine_line()` (an AI reads it through its eye). The turf meter takes no tool (`without()`).
+- Known unrelated flake while testing: `REFRESH DRIFT: /obj/machinery/computer/station_alert/all` (not atmos; left to its owner).
