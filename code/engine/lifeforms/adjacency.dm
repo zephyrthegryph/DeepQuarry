@@ -214,3 +214,20 @@ GLOBAL_LIST_EMPTY(adjacency_free)
 		. += SOUTHEAST
 	if(mask & ADJ_JUNCTION_SW)
 		. += SOUTHWEST
+
+/// The member of `kind` that `holder` sees on the face or corner `bit` (a BYOND direction or an ADJ_JUNCTION_* bit), or null.
+/proc/adjacency_member_at(atom/holder, kind, bit)
+	switch(bit)
+		if(NORTHEAST)
+			bit = ADJ_JUNCTION_NE
+		if(NORTHWEST)
+			bit = ADJ_JUNCTION_NW
+		if(SOUTHEAST)
+			bit = ADJ_JUNCTION_SE
+		if(SOUTHWEST)
+			bit = ADJ_JUNCTION_SW
+	var/list/seen = adjacency_seen(holder, kind)
+	for(var/atom/other as anything in seen)
+		if(seen[other] == bit)
+			return other
+	return null

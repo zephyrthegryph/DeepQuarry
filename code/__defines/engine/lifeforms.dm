@@ -58,6 +58,8 @@
 /// The smoothing kind: walls, low walls, tables, catwalks, windows and the other structures that join their neighbours' look share it, and
 /// each decides through its connects proc which neighbours it joins (a join across types is a shared kind, not a second index).
 #define ADJ_KIND_SMOOTH "smooth"
+/// Conveyor belts: a belt finds the belts before and after it.
+#define ADJ_KIND_CONVEYOR "conveyor"
 /// Every direction a smoothing member looks at: the faces and the corners.
 #define ADJ_ALL_AROUND (ADJ_CARDINAL | ADJ_DIAGONALS)
 /// Junction bits of the corners in an adjacency() mask (the faces use their BYOND direction bits).
