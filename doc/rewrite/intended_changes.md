@@ -2003,7 +2003,55 @@ entries gated on a tracked var; the drift and stagger helpers are after() steps.
   the registry's `when`, where `skips_registry()` kept them out before), and the fusion cores, fuel injectors and gyrotrons filed under their
   ident tag (`key = nameof(id_tag)`, now tracked): their consoles read `registry_all(REGISTRY_X, tag)` instead of scanning every member.
   Pinned by `dq_pp/plant_registries`.
+- **Trait disabilities are granted capabilities.** Coughing, epilepsy, coprolalia, tourettes, nervousness, pollen, rotting
+  and gibbing were OM behaviours fed by the Life disabilities step's event; each is now a capability its trait grants
+  (source: the trait) with an `every(LIFE_CYCLE)` on the mob's own clock. They no longer wait on the Life frame's gates
+  (placed, status ok), so a mob in nullspace still ticks; each disability's own checks (conscious, not in a belly, not
+  transforming) are unchanged.
 
+
+## Leftovers: organ internals (rewrite/leftovers)
+
+Pinned by `dq_leftovers/*` (organ butchery, peridaxon revival, robotic limb patches, stumps, gibbed limbs) and the organ conversion pins.
+
+- **Organ state is tracked**: `status`, `damage`, `max_damage` and `robotic` are plain vars with `TRACKED` setters (were `OM_FIELD`s); the setters
+  keep their names. They no longer raise `CHANGE_EXPLICIT` or `om_field_written()`.
+- **Organ interactions are ops**: bite (help stance, aiming at the mouth, flesh only), butcher (a sharp edge, or a screwdriver on a robotic
+  organ: ten seconds by the tool's speed, `begins()`/`on_interrupt()` messages as before), revive (five units of peridaxon). A limb pulls out what
+  is stuck in it before it can be bitten, in any stance; the bench surgery on a loose limb is one op per tool and stage, and the hemostat's
+  "What would you like to remove?" is the op's question (`asks()`), offered only when the limb holds something. The context menu no longer lists the
+  legacy catch-all entries ("Use", "Organ self", a "Bite" refused while not in hand); it lists the ops that apply.
+- **Timed work is ops with `wait()`**: butchery (was `/datum/om/task/timed/organ_butcher`), a robotic limb patch (`robo_repair()` starts the key-only
+  op `robo_repair`, one second, was `/datum/om/task/timed/external_robo_repair`; walking away still abandons it, now checked when the second is up),
+  the anomalock heart's core install and removal (three seconds each; the refusals "core already in!", "no core!", "can't remove core!" are the
+  ops' requirements). The gibber still butchers at once.
+- **Tool procs are ops**: an arm-mounted augment's screwdriver swap is `swap_mount` (instant, `wait(0)`); the mimetic potato's knife and cable, and
+  the piñata and money tumours' puncture, are their own ops (each ahead of butchery, as their old item handler was).
+- **Starting contents**: the health scanner implant's analyzer and the multitool augment's matter synthesizers are `starts =` of their `owns_one` /
+  `owns_many` (were made in `Initialize()`). The species and robotize organ layouts stay runtime creation (they depend on the body, not the type).
+- **Endings say why**: a limb burnt away or blown off is `destroyed(limb, null, BURN | BRUTE)` (was `spent()`); a stump lives while it is attached
+  (`lives_while()` on its owner, once joined) instead of deleting itself in `removed()`; an MMI holder taken out is `replaced_by()` its MMI; a
+  diona limb that splits into a nymph, a brain swapped for another, and organs dropped by a robotize are `replaced_by()`; a slime limb that
+  splatters and limbs melted to regrow are `dissolved()`.
+
+
+## Leftovers: space heater, portable pumps and scrubbers, atmospherics sensors and consoles (rewrite/leftovers)
+
+- **The space heater's work is started work** (`started_work(step = work_step, starts = TRUE, when = nameof(state))`, was `DECLARE_PERIODIC_WHILE`
+  on the machine pipeline and `machine_step()`); switching it on starts it, a cell running dry stops it, power returning restarts it. Its cell
+  insert, part replacement, hand use and screwdriver hatch are ops (were datum interactions and `screwdriver_act`); its cell is the `owns_one`'s
+  `starts = nameof(cell_type)` (was the legacy `ownership()`). The screwdriver opens and closes the hatch instantly, as before (`wait(0)`).
+- **Portable pumps and scrubbers start with their cell through `starts =`** (a `starting_cell()` the pump and scrubber answer; made without one
+  when `skip_cell`), not in `Initialize()`.
+- **The gas sensor listens to its air through a `gas_watch()`** instead of the machine pipeline and an `om_watch_arm_value()` sleep: it broadcasts
+  once after it is placed and then whenever the rounded readings it sends differ from the last broadcast (the same rule as before), and again when
+  it moves or its outputs are toggled. Its wrench and multitool are ops; the multitool's two questions (which output, then the ID tag when
+  saving to the buffer) are the op's `asks()`, so the second is asked only after "-SAVE TO BUFFER-".
+- **The atmospherics control consoles' multitool menu is an op** whose first question is `asks()` (a console with ports adds Inlet and Outlet to
+  the choices); the later questions (ports, sensors, frequency) are unchanged requests. Their redundant legacy "open UI" hand interaction is gone:
+  `interface()` brings it.
+- **The fuel injection console's automation is started work** while `automation` (now `TRACKED`, was an `OM_FIELD`) holds; switching it on
+  restarts work a missing radio stopped. Both left the machine pipeline roster and their pipeline stages.
 ## Reagents: holders, reaction and metabolism maths (rewrite/reagents)
 
 Pinned by `dq_reagents_start_snapshot` (the starting reagents of every type under each declaring root, recorded on the legacy code),

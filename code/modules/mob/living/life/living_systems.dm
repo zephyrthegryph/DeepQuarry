@@ -304,7 +304,6 @@
 /// Temporary blindness, blur and deafness end on their own (timed statuses); this keeps the
 /// ones that don't (a disability, unconsciousness) topped up and heals ear damage.
 /mob/living/proc/life_disabilities(datum/seq_frame/life/F)
-	OM_EMIT(src, /datum/om/event/handle_disabilities)
 	//Eyes: blindness from disability or unconsciousness doesn't get better on its own. It is an
 	// untimed hold while the cause lasts, not a one-cycle top-up: re-topping a timed status every
 	// frame raised a status change on the mob's own frame and kept it from ever parking.
@@ -321,10 +320,8 @@
 		src.adjustEarDamage(-0.05, 0)
 
 /// Busy while a disability or unconsciousness keeps blindness or deafness up, ears are healing,
-/// a disability component listens, or the blind alert doesn't match the status yet.
+/// or the blind alert doesn't match the status yet. (Trait disabilities tick on their own every(): disability.dm.)
 /mob/living/proc/life_disabilities_due()
-	if(om_wants(src, /datum/om/event/handle_disabilities))
-		return TRUE
 	if(!life_disability_hold_matches(src, STAT_BLINDED, SRC_DISABILITY_BLIND, (src.sdisabilities & BLIND) || src.stat))
 		return TRUE
 	if(!life_disability_hold_matches(src, STAT_DEAFENED, SRC_DISABILITY_DEAF, src.sdisabilities & DEAF))

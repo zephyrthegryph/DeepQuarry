@@ -1,7 +1,8 @@
-/// Was /datum/component/epilepsy_disability: a perk-granted disability ticking on the disabilities life stage.
-/datum/om/behaviour/disability/epilepsy
+/// Was /datum/component/epilepsy_disability: a trait-granted disability ticking once a Life cycle.
+CAPABILITY_TYPE(epilepsy_disability, CAP_DISABILITY_EPILEPSY, /datum/capability/disability/epilepsy, key = NONE)
+/datum/capability/disability/epilepsy
 
-/datum/om/behaviour/disability/epilepsy/disability_tick(mob/living/owner)
+/datum/capability/disability/epilepsy/disability_tick(mob/living/owner)
 
 	if(QDELETED(owner))
 		return
