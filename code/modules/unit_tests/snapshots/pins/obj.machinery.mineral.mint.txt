@@ -23,6 +23,7 @@ human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Press coins
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Press coins (refused: needs an item)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
 human|/obj/item/stack/material menu: Press coins
 human|/obj/item/stack/material click: nothing

@@ -78,6 +78,7 @@ human|/obj/item/card/id menu: Open cash box
 human|/obj/item/card/id menu: Open Cash Box
 human|/obj/item/card/id menu: Pay / scan
 human|/obj/item/card/id menu: Put on the register
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing
 human|/obj/item menu: Emag (refused: needs a cryptographic sequencer)

@@ -67,6 +67,7 @@ human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/card/id menu: Eject Firework Star
 human|/obj/item/card/id menu: Launch (refused: there is no firework star loaded in the firework launcher)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id click: Click: Launch
 keys: drag_buckle, eject, gen_robot_interaction_swallow, launch, load_star, machine_anchor, machine_deconstruct, machine_panel, machine_repair, part_replacement

@@ -66,6 +66,7 @@ human|/obj/item/stack/material/steel menu: Toggle lid
 human|/obj/item/stack/material/steel menu: Toggle Tray Lid
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove Label
 human|/obj/item/card/id menu: Set Light
 human|/obj/item/card/id menu: Toggle lid

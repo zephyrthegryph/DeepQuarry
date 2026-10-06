@@ -31,6 +31,7 @@ human|/obj/item/stack/material/steel menu: Hit web
 human|/obj/item/stack/material/steel menu: Stomp
 human|/obj/item/stack/material/steel click: Click: Hit web
 human|/obj/item/card/id menu: Hit web
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Stomp
 human|/obj/item/card/id click: Click: Hit web
 keys: drag_buckle, gen_hand_interaction_stomp_spiderling, hit_web, pass_insert, pass_insert_2, use_welder

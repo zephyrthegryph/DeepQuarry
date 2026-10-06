@@ -67,6 +67,7 @@ human|/obj/item/card/id menu: Drain (refused: needs a  , a glass, or a shaker)
 human|/obj/item/card/id menu: Drain into vat (refused: needs a cargo train tanker)
 human|/obj/item/card/id menu: Dump into vat (refused: needs a  , a glass, a shaker, or a chemical canister)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
 human|/obj/item/reagent_containers/glass menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/reagent_containers/glass menu: Drain (refused: it's empty; there is nothing to drain)

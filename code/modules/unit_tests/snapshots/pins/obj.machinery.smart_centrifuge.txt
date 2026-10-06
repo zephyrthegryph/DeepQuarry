@@ -108,6 +108,7 @@ human|/obj/item/card/id menu: Isolate Reagents Automatically
 human|/obj/item/card/id menu: Isolate Reagents To Bottles
 human|/obj/item/card/id menu: Isolate Reagents To Canisters
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id menu: Use (refused: not possible right now)

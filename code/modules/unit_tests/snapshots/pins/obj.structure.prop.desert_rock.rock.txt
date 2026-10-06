@@ -22,6 +22,7 @@ human|/obj/item/stack/cable_coil click: Click: Push
 human|/obj/item/stack/material/steel menu: Push
 human|/obj/item/stack/material/steel click: Click: Push
 human|/obj/item/card/id menu: Push
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Push
 keys: drag_buckle, message, push
 

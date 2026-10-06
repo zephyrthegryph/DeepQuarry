@@ -43,6 +43,10 @@ CAPABILITIES(/obj/item/card/id)
 	interface("IDCard", state = nameof(GLOB.tgui_deep_inventory_state))
 	without("ui_open")
 	ui_shape(registered_name = schema_text(), sex = schema_text(), species = schema_text(), age = num(), assignment = schema_text(), fingerprint_hash = schema_text(), blood_type = schema_text(), dna_hash = schema_text(), photo_front = any)
+	// the old attack_self: flash the card (an unconfigured card has nothing to show)
+	op("show", in_hand(), label("Show"), then(PROC_REF(interaction_show)))
+	// the old object verb
+	op("read", menu(), label("Read ID Card"), needs(carried()), then(PROC_REF(verb_read)))
 
 /obj/item/card/id/proc/update_name()
 	name = "[src.registered_name]'s ID Card ([src.assignment])"
@@ -90,13 +94,13 @@ CAPABILITIES(/obj/item/card/id)
 	data["photo_front"] = front
 	return data
 
-DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interaction_show)))
+/// Old attack_self: flash the card.
+/obj/item/card/id/proc/interaction_show(datum/act/op/A)
+	return show_id_card(A.actor) ? OP_OK : OP_DECLINE
 
-/// Old attack_self: flash the card. Specially handled cards leave it to their own self-use.
-/obj/item/card/id/proc/interaction_show(mob/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
-	return show_id_card(user)
+/obj/item/card/id/proc/verb_read(datum/act/op/A)
+	id_read_effect(A.actor)
+	return OP_OK
 
 /// Flashes the card to everyone around, once it is configured. TRUE when shown.
 /obj/item/card/id/proc/show_id_card(mob/user)
@@ -114,7 +118,7 @@ DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interacti
 /obj/item/card/id/GetID()
 	return src
 
-/obj/item/card/id/proc/id_read_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/card/id/proc/id_read_effect(mob/user)
 
 	to_chat(user, "[icon2html(src, user.client)] [src.name]: The current assignment on the card is [src.assignment].")
 	to_chat(user, "The blood type on the card is [blood_type].")
@@ -341,15 +345,21 @@ DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interacti
 	var/polymorphic_type = 0
 	var/base_icon_state
 
-EXTEND_INTERACTIONS(/obj/item/card/id/event, \
-	INTERACT_USE("Configure", PROC_REF(interaction_configure)), \
-	INTERACT_ITEM("Copy access", PROC_REF(interaction_copy_access)), \
-)
+TRACKED(/obj/item/card/id/event, accessset)
+
+CAPABILITIES(/obj/item/card/id/event)
+	// the old attack_self: a configured card is flashed; an unconfigured one takes its holder's details
+	without("show")
+	op("configure", in_hand(), label("Configure"), then(PROC_REF(interaction_configure)))
+	// another ID's access is copied once (then the card's ordinary item handling goes on)
+	op("copy_access", item(/obj/item/card/id), label("Copy access"), then(PROC_REF(interaction_copy_access)))
 
 /// Old attack_self: a configured card is flashed; an unconfigured one takes its holder's details.
-/obj/item/card/id/event/proc/interaction_configure(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/card/id/event/proc/interaction_configure(datum/act/op/A)
+	var/mob/user = A.actor
 	if(configured)
-		return interaction_show(user, held, interaction)
+		show_id_card(user)
+		return OP_OK
 	if(polymorphic_type == 1)
 		icon_state = user.job
 		base_icon_state = user.job
@@ -400,7 +410,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/event, \
 
 		if(!guess)
 			to_chat(user, span_notice("ITG Cards do not seem to be able to accept the access codes for your ID."))
-			return
+			return OP_OK
 		else
 			icon_state = guess
 			base_icon_state = guess
@@ -426,9 +436,14 @@ EXTEND_INTERACTIONS(/obj/item/card/id/event, \
 
 	configured = TRUE
 	to_chat(user, span_notice("Card settings set."))
+	return OP_OK
 
 /// Old attackby: copy another card's access once; the base item handling follows.
-/obj/item/card/id/event/proc/interaction_copy_access(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/card/id/event/proc/interaction_copy_access(datum/act/op/A)
+	copy_access_from(A.actor, A.held)
+	return OP_DECLINE
+
+/obj/item/card/id/event/proc/copy_access_from(mob/user, obj/item/I)
 	if(istype(I, /obj/item/card/id) && !accessset)
 		var/obj/item/card/id/O = I
 		access |= O.GetAccess()
@@ -436,8 +451,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/event, \
 		rank = O.rank
 		to_chat(user, span_notice("You copy the access from \the [I] to \the [src]."))
 		consume(I, user)
-		accessset = 1
-	return FALSE
+		set_accessset(1)
 
 /obj/item/card/id/event/accessset
 	accessset = 1
@@ -585,18 +599,22 @@ EXTEND_INTERACTIONS(/obj/item/card/id/event, \
 	desc = "An ID card typically used by contractors."
 	polymorphic_type = 1
 
-EXTEND_INTERACTIONS(/obj/item/card/id/event/polymorphic/itg, INTERACT_ITEM("Copy access", PROC_REF(interaction_itg_copy_access)))
+CAPABILITIES(/obj/item/card/id/event/polymorphic/itg)
+	without("copy_access")
+	op("itg_copy_access", item(/obj/item/card/id), label("Copy access"), then(PROC_REF(interaction_itg_copy_access)))
 
 /// Old attackby: ITG cards refuse command and clown access; otherwise the event card's copy, then the ITG description.
-/obj/item/card/id/event/polymorphic/itg/proc/interaction_itg_copy_access(mob/user, obj/item/I, datum/interaction/interaction)
-	if(istype(I, /obj/item/card/id) && !accessset)
+/obj/item/card/id/event/polymorphic/itg/proc/interaction_itg_copy_access(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	if(!accessset)
 		var/obj/item/card/id/O = I
 		var/static/list/itgdont = list(JOB_SITE_MANAGER, JOB_HEAD_OF_PERSONNEL, JOB_COMMAND_SECRETARY, JOB_HEAD_OF_SECURITY, JOB_CHIEF_ENGINEER, JOB_CHIEF_MEDICAL_OFFICER, JOB_RESEARCH_DIRECTOR, JOB_CLOWN, JOB_MIME, JOB_TALON_CAPTAIN) //If you're in as one of these you probably aren't representing ITG
 		if(O.rank in itgdont)
 			to_chat(user, span_notice("ITG Cards do not seem to be able to accept the access codes for your ID."))
-			return INTERACTION_HANDLED_PASS
-	interaction_copy_access(user, I, interaction)
-	. = INTERACTION_HANDLED_PASS
+			return OP_PASS
+	copy_access_from(user, I)
+	. = OP_PASS
 	desc = "A small card designating affiliation with the Ironcrest Transport Group. It has a NanoTrasen insignia and a lot of very small print on the back to do with practices and regulations for contractors to use."
 
 
@@ -608,7 +626,3 @@ EXTEND_INTERACTIONS(/obj/item/card/id/event/polymorphic/itg, INTERACT_ITEM("Copy
 	desc = "A small card designating affiliation with the Ironcrest Transport Group. It has a NanoTrasen insignia and a lot of very small print on the back to do with practices and regulations for contractors to use."
 	polymorphic_type = 2
 
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/card/id, \
-	INTERACT_VERB("Read ID Card", PROC_REF(id_read_effect), REQ_IN_INVENTORY), \
-)

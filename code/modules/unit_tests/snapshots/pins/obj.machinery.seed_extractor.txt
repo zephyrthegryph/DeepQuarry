@@ -97,6 +97,7 @@ human|/obj/item/card/id menu: Extract seeds (refused: needs a fruit or a grown_w
 human|/obj/item/card/id menu: Extract seeds (refused: needs a grass tile)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id menu: Pulverize (refused: needs a Fossilised plant)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Replace parts (refused: needs a rapid part exchange device)
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id menu: Use

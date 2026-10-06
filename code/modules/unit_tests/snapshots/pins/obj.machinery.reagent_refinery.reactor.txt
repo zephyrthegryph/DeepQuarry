@@ -67,6 +67,7 @@ human|/obj/item/card/id menu: Climb (refused: There's a material processor in th
 human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/card/id menu: Drain (refused: needs a  , a glass, or a shaker)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Set transfer amount
 human|/obj/item/card/id click: nothing
 human|/obj/item/reagent_containers/glass menu: Climb (refused: There's a material processor in the way.)

@@ -76,6 +76,7 @@ human|/obj/item/card/id menu: Add carbon (refused: needs a raw carbon)
 human|/obj/item/card/id menu: Eject contents (refused: the furnace is empty)
 human|/obj/item/card/id menu: Load material (refused: needs an item)
 human|/obj/item/card/id menu: Pour (refused: needs a Container)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Transfer gas (refused: needs a tank)
 human|/obj/item/card/id menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/card/id click: nothing

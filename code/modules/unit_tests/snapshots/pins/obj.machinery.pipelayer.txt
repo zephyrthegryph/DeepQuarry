@@ -28,6 +28,7 @@ human|/obj/item/stack/material/steel menu: Load metal
 human|/obj/item/stack/material/steel menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/stack/material/steel click: Click: Load metal
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
 keys: auto_dismantle, dismantle, drag_buckle, eject, gen_robot_interaction_swallow, load, machine_anchor, machine_deconstruct, machine_panel, machine_repair, part_replacement.replace, pipe_type, recycle, toggle
 

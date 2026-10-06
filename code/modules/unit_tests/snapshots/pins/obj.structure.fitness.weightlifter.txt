@@ -22,6 +22,7 @@ human|/obj/item/stack/cable_coil click: Click: Lift
 human|/obj/item/stack/material/steel menu: Lift
 human|/obj/item/stack/material/steel click: Click: Lift
 human|/obj/item/card/id menu: Lift
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Lift
 keys: drag_buckle, lift, use_wrench
 

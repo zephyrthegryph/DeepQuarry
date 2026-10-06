@@ -44,6 +44,7 @@ human|/obj/item/stack/material/steel menu: Tear up (refused: combat mode is off)
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Interaction hit weeds
 human|/obj/item/card/id menu: Interaction touch weeds
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Tear up (refused: combat mode is off)
 human|/obj/item/card/id click: nothing
 keys: drag_buckle, gen_hand_interaction_touch_weeds, gen_item_interaction_hit_weeds, pass_insert, pass_insert_2, use_welder

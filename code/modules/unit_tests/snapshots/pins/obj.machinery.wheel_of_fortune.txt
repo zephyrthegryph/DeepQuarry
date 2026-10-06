@@ -55,6 +55,7 @@ human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Buy lottery ticket (refused: needs a broken casino chip)
 human|/obj/item/card/id menu: Change interval
 human|/obj/item/card/id menu: Management controls (refused: access denied)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing
 human|/obj/item/spacecasinocash menu: Buy lottery ticket (refused: lottery sales are currently disabled)

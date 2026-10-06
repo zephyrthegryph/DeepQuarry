@@ -23,6 +23,7 @@ human|/obj/item/stack/cable_coil menu: Rip down
 human|/obj/item/stack/cable_coil click: Click: Rip down
 human|/obj/item/stack/material/steel menu: Rip down
 human|/obj/item/stack/material/steel click: Click: Rip down
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Rip down
 human|/obj/item/card/id click: Click: Rip down
 keys: burn, drag_buckle, rip, use_screwdriver

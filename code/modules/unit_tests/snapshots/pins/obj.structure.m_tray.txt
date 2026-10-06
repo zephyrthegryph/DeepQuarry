@@ -31,6 +31,7 @@ human|/obj/item/stack/material/steel menu: Push in
 human|/obj/item/stack/material/steel click: Click: Push in
 human|/obj/item/card/id menu: Place on tray
 human|/obj/item/card/id menu: Push in
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Push in
 keys: drag_buckle, place, push_in
 

@@ -54,6 +54,7 @@ human|/obj/item/stack/material/steel menu: Wooden touch
 human|/obj/item/stack/material/steel menu: Yank the flush lever
 human|/obj/item/stack/material/steel click: Click: Wooden item
 human|/obj/item/card/id menu: Flush
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Wooden item
 human|/obj/item/card/id menu: Wooden touch
 human|/obj/item/card/id menu: Yank the flush lever

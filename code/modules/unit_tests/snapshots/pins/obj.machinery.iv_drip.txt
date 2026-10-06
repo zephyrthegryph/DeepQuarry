@@ -44,6 +44,7 @@ human|/obj/item/stack/material/steel menu: Remove container
 human|/obj/item/stack/material/steel menu: Toggle Mode
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Attach container (refused: needs a Container)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove container
 human|/obj/item/card/id menu: Toggle Mode
 human|/obj/item/card/id click: nothing

@@ -1,5 +1,5 @@
-/obj/machinery/implantchair|human|none => gen_hand_ungated_interaction_open_ui_impl,implantchair_insert,implantchair_get_out,implantchair_move_inside|
-/obj/machinery/implantchair|robot|none => gen_hand_ungated_interaction_open_ui_impl,implantchair_insert,implantchair_get_out,implantchair_move_inside|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/implantchair|human|none => gen_hand_ungated_interaction_open_ui_impl|
+/obj/machinery/implantchair|robot|none => gen_hand_ungated_interaction_open_ui_impl|gen_robot_interaction_swallow:not possible right now
 /obj/machinery/implantchair|ai|none => |
 /obj/machinery/implantchair|ghost|none => |
 

@@ -28,6 +28,7 @@ human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Climb
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
 keys: activate, climb.climb, climb.climb_menu, drag_buckle, floor_weld.bolt, floor_weld.weld, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

@@ -92,16 +92,27 @@
 				return 1
 	return 0
 
-/obj/item/robot_parts/robot_suit/proc/robot_named(datum/act/request/A)
-	if(!A.answer)
-		return
-	if (A.answer.value)
-		src.created_name = A.answer.value
+CAPABILITIES(/obj/item/robot_parts/robot_suit)
+	// the old attackby: limbs, chest, head, then the MMI that finishes it; steel arms a bare frame (the hit goes on after)
+	op("build", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	// a pen names the robot it will become
+	op("name", item(/obj/item/pen), label("Name"), priority(OP_PRIORITY_PART + 1),
+		asks(/datum/prompt/text, fields = list("title" = "name", "question" = "Enter new robot name", "default" = computed(PROC_REF(current_name)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)),
+		then(PROC_REF(robot_named)))
 
-DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+/obj/item/robot_parts/robot_suit/proc/current_name(datum/act/op/A)
+	return created_name
+
+/obj/item/robot_parts/robot_suit/proc/robot_named(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(R?.value)
+		src.created_name = R.value
+	return OP_PASS
 
 /// Old attackby.
-/obj/item/robot_parts/robot_suit/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/robot_parts/robot_suit/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/stack/material) && W.get_material_name() == MAT_STEEL && !l_arm && !r_arm && !l_leg && !r_leg && !chest && !head)
 		var/obj/item/stack/material/M = W
 		if (M.use(1))
@@ -115,34 +126,34 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 		else
 			to_chat(user, span_warning("You need one sheet of metal to arm the robot frame."))
 	if(istype(W, /obj/item/robot_parts/l_leg))
-		if(src.l_leg)	return INTERACTION_HANDLED_PASS
+		if(src.l_leg)	return OP_PASS
 		if(!move_into(src, nameof(src.l_leg), W, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/r_leg))
-		if(src.r_leg)	return INTERACTION_HANDLED_PASS
+		if(src.r_leg)	return OP_PASS
 		if(!move_into(src, nameof(src.r_leg), W, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/l_arm))
-		if(src.l_arm)	return INTERACTION_HANDLED_PASS
+		if(src.l_arm)	return OP_PASS
 		if(!move_into(src, nameof(src.l_arm), W, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/r_arm))
-		if(src.r_arm)	return INTERACTION_HANDLED_PASS
+		if(src.r_arm)	return OP_PASS
 		if(!move_into(src, nameof(src.r_arm), W, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/chest))
-		if(src.chest)	return INTERACTION_HANDLED_PASS
+		if(src.chest)	return OP_PASS
 		if(W:wires_const && W:cell)
 			if(!move_into(src, nameof(src.chest), W, user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			src.update_icon()
 		else if(!W:wires_const)
 			to_chat(user, span_warning("You need to attach wires_const to it first!"))
@@ -150,10 +161,10 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 			to_chat(user, span_warning("You need to attach a cell to it first!"))
 
 	if(istype(W, /obj/item/robot_parts/head))
-		if(src.head)	return INTERACTION_HANDLED_PASS
+		if(src.head)	return OP_PASS
 		if(W:flash2 && W:flash1)
 			if(!move_into(src, nameof(src.head), W, user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			src.update_icon()
 		else
 			to_chat(user, span_warning("You need to attach a flash to it first!"))
@@ -162,16 +173,16 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 		var/obj/item/mmi/M = W
 		if (isshell(user) && istype(W, /obj/item/mmi/inert/ai_remote))
 			to_chat(user, span_warning("Your hardware prohibits you from self-replicating."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(check_completion())
 			if(!istype(loc,/turf))
 				to_chat(user, span_warning("You can't put \the [W] in, the frame has to be standing on the ground to be perfectly precise."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			var/mob/living/carbon/brain/occupant = M.get_occupant()
 			if(!istype(W, /obj/item/mmi/inert))
 				if(!occupant)
 					to_chat(user, span_warning("Sticking an empty [W] into the frame would sort of defeat the purpose."))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 				if(!occupant.key)
 					var/ghost_can_reenter = 0
 					if(occupant.mind)
@@ -179,24 +190,24 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 							if(G.can_reenter_corpse && G.mind == occupant.mind)
 								ghost_can_reenter = 1 //May come in use again at another point.
 								to_chat(user, span_notice("\The [W] is completely unresponsive; though it may be able to auto-resuscitate.")) //Jamming a ghosted brain into a borg is likely detrimental, and may result in some problems.
-								return INTERACTION_HANDLED_PASS
+								return OP_PASS
 					if(!ghost_can_reenter)
 						to_chat(user, span_notice("\The [W] is completely unresponsive; there's no point."))
-						return INTERACTION_HANDLED_PASS
+						return OP_PASS
 
 				if(occupant.stat == DEAD)
 					to_chat(user, span_warning("Sticking a dead [W] into the frame would sort of defeat the purpose."))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(jobban_isbanned(occupant, JOB_CYBORG))
 					to_chat(user, span_warning("This [W] does not seem to fit."))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 			var/mob/living/silicon/robot/O = new /mob/living/silicon/robot(get_turf(loc), FALSE, TRUE)
-			if(!O)	return INTERACTION_HANDLED_PASS
+			if(!O)	return OP_PASS
 
 			if(!move_into(O, nameof(O.mmi), W, user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			O.post_mmi_setup()
 			O.invisibility = INVISIBILITY_NONE
 			O.custom_name = created_name
@@ -220,10 +231,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 		else
 			to_chat(user, span_warning("The MMI must go in after everything else!"))
 
-	if (istype(W, /obj/item/pen))
-		open_request(src, /datum/prompt/text, PROC_REF(robot_named), answerer = user, title = src.name, question = "Enter new robot name", default = src.created_name, max_len = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, name_text = TRUE, timeout = 0)
-
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 CAPABILITIES(/obj/item/robot_parts/chest)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

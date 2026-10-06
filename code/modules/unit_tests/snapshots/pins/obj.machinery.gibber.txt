@@ -85,6 +85,7 @@ human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/card/id menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/card/id menu: Empty Gibber
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Start gibbing
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id menu: Use

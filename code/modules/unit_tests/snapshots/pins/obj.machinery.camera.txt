@@ -68,6 +68,7 @@ human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Attack (refused: not possible right now)
 human|/obj/item/card/id menu: Bug camera (refused: needs a camera bug)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Show to camera (refused: needs a sheet of paper or a PDA)
 human|/obj/item/card/id menu: Slash (refused: not possible right now)
 human|/obj/item/card/id menu: Use
@@ -80,6 +81,7 @@ human|/obj/item menu: Use
 human|/obj/item click: nothing
 human|/obj/item/paper menu: Attack (refused: not possible right now)
 human|/obj/item/paper menu: Bug camera (refused: needs a camera bug)
+human|/obj/item/paper menu: Create Area (refused: You can't do that.)
 human|/obj/item/paper menu: Show to camera
 human|/obj/item/paper menu: Slash (refused: not possible right now)
 human|/obj/item/paper menu: Use

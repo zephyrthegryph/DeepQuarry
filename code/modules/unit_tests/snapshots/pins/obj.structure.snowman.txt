@@ -22,6 +22,7 @@ human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Crush
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Crush
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
 keys: crush, drag_buckle
 

@@ -78,6 +78,7 @@ human|/obj/item/card/id menu: Eject VR Capsule
 human|/obj/item/card/id menu: Enter VR Capsule
 human|/obj/item/card/id menu: Insert (refused: needs a mob)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing
 human|/obj/item menu: Deconstruct (refused: needs a crowbar)

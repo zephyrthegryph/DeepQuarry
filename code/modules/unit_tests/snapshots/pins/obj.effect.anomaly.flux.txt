@@ -30,6 +30,7 @@ human|/obj/item/stack/material/steel menu: Interaction flux shock
 human|/obj/item/stack/material/steel menu: Scan anomaly
 human|/obj/item/stack/material/steel click: Click: Scan anomaly
 human|/obj/item/card/id menu: Interaction flux shock
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Scan anomaly
 human|/obj/item/card/id click: Click: Scan anomaly
 keys: drag_buckle, flux_shock, flux_shock_item, pass_insert, pass_insert_2, scan_anomaly

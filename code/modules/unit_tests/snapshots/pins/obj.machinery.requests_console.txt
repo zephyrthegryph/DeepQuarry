@@ -53,6 +53,7 @@ human|/obj/item/stack/material/steel menu: Swipe ID (refused: needs an identific
 human|/obj/item/stack/material/steel menu: Ui open
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Ui open
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Stamp (refused: needs a rubber stamp)
 human|/obj/item/card/id menu: Swipe ID
 human|/obj/item/card/id menu: Ui open

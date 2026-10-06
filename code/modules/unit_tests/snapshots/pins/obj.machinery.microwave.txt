@@ -69,6 +69,7 @@ human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/card/id menu: Eject content
 human|/obj/item/card/id menu: Eject pAI (refused: hold Grab)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing
 keys: cook, dispose, drag_buckle, gen_hand_ungated_microwave_interaction_eject_pai, gen_hand_ungated_microwave_interaction_hand, gen_item_microwave_interaction_item, gen_robot_interaction_swallow, gen_verb_microwave_verb_eject, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_crowbar, use_screwdriver, use_wrench

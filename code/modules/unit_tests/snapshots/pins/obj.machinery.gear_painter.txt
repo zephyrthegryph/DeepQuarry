@@ -86,6 +86,7 @@ human|/obj/item/stack/material/steel click: Click: Ui open
 human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/card/id menu: Insert (refused: needs a you should not see this..., a backpack, a belt, or an item)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove item
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)

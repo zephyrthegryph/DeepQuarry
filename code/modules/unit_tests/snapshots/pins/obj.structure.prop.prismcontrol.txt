@@ -21,6 +21,7 @@ human|/obj/item/stack/cable_coil menu: Rotate
 human|/obj/item/stack/cable_coil click: Click: Rotate
 human|/obj/item/stack/material/steel menu: Rotate
 human|/obj/item/stack/material/steel click: Click: Rotate
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Rotate
 human|/obj/item/card/id click: Click: Rotate
 keys: drag_buckle, rotate

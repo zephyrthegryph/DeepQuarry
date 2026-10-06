@@ -44,6 +44,7 @@ human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing
 keys: drag_buckle, gen_hand_ungated_synthprinter_interaction_hand, gen_item_synthprinter_interaction_item, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair

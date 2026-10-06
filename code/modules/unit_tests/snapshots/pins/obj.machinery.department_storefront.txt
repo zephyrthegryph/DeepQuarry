@@ -42,6 +42,7 @@ human|/obj/item/stack/material/steel menu: Stock (refused: only Civilian staff m
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel menu: Use (refused: needs an identification card)
 human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Stock (refused: only Civilian staff may stock this storefront)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing

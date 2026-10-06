@@ -1,5 +1,5 @@
 human|none menu: Collect (refused: needs a storage)
-human|none menu: Create Area (refused: you need to be carrying it)
+human|none menu: Create Area (refused: You can't do that.)
 human|none menu: Crumple (refused: combat mode is off)
 human|none menu: Customise (refused: needs an item)
 human|none menu: Fold into a plane
@@ -11,7 +11,7 @@ human|none menu: Toggle Digestable (refused: you need to be carrying it)
 human|none menu: Use
 human|none click: nothing
 robot|none menu: Collect (refused: needs a storage)
-robot|none menu: Create Area (refused: you need to be carrying it)
+robot|none menu: Create Area (refused: You can't do that.)
 robot|none menu: Crumple (refused: combat mode is off)
 robot|none menu: Customise (refused: needs an item)
 robot|none menu: Equip (refused: not possible right now)
@@ -27,9 +27,10 @@ robot|none click: nothing
 ai|none menu: Equip (refused: not possible right now)
 ai|none menu: Read
 ai|none click: nothing
+ghost|none menu: Create Area (refused: You can't do that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Collect (refused: needs a storage)
-human|/obj/item/tool/screwdriver menu: Create Area (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Create Area (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Crumple (refused: combat mode is off)
 human|/obj/item/tool/screwdriver menu: Customise (refused: needs an item)
 human|/obj/item/tool/screwdriver menu: Fold into a plane
@@ -41,7 +42,7 @@ human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: you need to b
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: nothing
 human|/obj/item/tool/crowbar menu: Collect (refused: needs a storage)
-human|/obj/item/tool/crowbar menu: Create Area (refused: you need to be carrying it)
+human|/obj/item/tool/crowbar menu: Create Area (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Crumple (refused: combat mode is off)
 human|/obj/item/tool/crowbar menu: Customise (refused: needs an item)
 human|/obj/item/tool/crowbar menu: Fold into a plane
@@ -53,7 +54,7 @@ human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: you need to be ca
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Collect (refused: needs a storage)
-human|/obj/item/tool/wrench menu: Create Area (refused: you need to be carrying it)
+human|/obj/item/tool/wrench menu: Create Area (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Crumple (refused: combat mode is off)
 human|/obj/item/tool/wrench menu: Customise (refused: needs an item)
 human|/obj/item/tool/wrench menu: Fold into a plane
@@ -65,7 +66,7 @@ human|/obj/item/tool/wrench menu: Toggle Digestable (refused: you need to be car
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: nothing
 human|/obj/item/tool/wirecutters menu: Collect (refused: needs a storage)
-human|/obj/item/tool/wirecutters menu: Create Area (refused: you need to be carrying it)
+human|/obj/item/tool/wirecutters menu: Create Area (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Crumple (refused: combat mode is off)
 human|/obj/item/tool/wirecutters menu: Customise (refused: needs an item)
 human|/obj/item/tool/wirecutters menu: Fold into a plane
@@ -77,7 +78,7 @@ human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: you need to b
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: nothing
 human|/obj/item/multitool menu: Collect (refused: needs a storage)
-human|/obj/item/multitool menu: Create Area (refused: you need to be carrying it)
+human|/obj/item/multitool menu: Create Area (refused: You can't do that.)
 human|/obj/item/multitool menu: Crumple (refused: combat mode is off)
 human|/obj/item/multitool menu: Customise (refused: needs an item)
 human|/obj/item/multitool menu: Fold into a plane
@@ -89,7 +90,7 @@ human|/obj/item/multitool menu: Toggle Digestable (refused: you need to be carry
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: nothing
 human|/obj/item/weldingtool menu: Collect (refused: needs a storage)
-human|/obj/item/weldingtool menu: Create Area (refused: you need to be carrying it)
+human|/obj/item/weldingtool menu: Create Area (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Crumple (refused: combat mode is off)
 human|/obj/item/weldingtool menu: Customise (refused: needs an item)
 human|/obj/item/weldingtool menu: Fold into a plane
@@ -101,7 +102,7 @@ human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be car
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: nothing
 human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
-human|/obj/item/stack/cable_coil menu: Create Area (refused: you need to be carrying it)
+human|/obj/item/stack/cable_coil menu: Create Area (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Crumple (refused: combat mode is off)
 human|/obj/item/stack/cable_coil menu: Customise (refused: needs an item)
 human|/obj/item/stack/cable_coil menu: Fold into a plane
@@ -114,7 +115,7 @@ human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: you need to b
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Collect (refused: needs a storage)
-human|/obj/item/stack/material/steel menu: Create Area (refused: you need to be carrying it)
+human|/obj/item/stack/material/steel menu: Create Area (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Crumple (refused: combat mode is off)
 human|/obj/item/stack/material/steel menu: Customise (refused: needs an item)
 human|/obj/item/stack/material/steel menu: Fold into a plane
@@ -126,19 +127,20 @@ human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: you need 
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Collect (refused: needs a storage)
-human|/obj/item/card/id menu: Create Area (refused: you need to be carrying it)
+human|/obj/item/card/id menu: Create Area (refused: You can't do that.)
 human|/obj/item/card/id menu: Crumple (refused: combat mode is off)
 human|/obj/item/card/id menu: Customise (refused: needs an item)
 human|/obj/item/card/id menu: Fold into a plane
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Pick up
 human|/obj/item/card/id menu: Read (refused: not in your hand)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Rename paper (refused: you need to be carrying it)
 human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing
 human|/obj/item/kit menu: Collect (refused: needs a storage)
-human|/obj/item/kit menu: Create Area (refused: you need to be carrying it)
+human|/obj/item/kit menu: Create Area (refused: You can't do that.)
 human|/obj/item/kit menu: Crumple (refused: combat mode is off)
 human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Fold into a plane
@@ -150,7 +152,7 @@ human|/obj/item/kit menu: Toggle Digestable (refused: you need to be carrying it
 human|/obj/item/kit menu: Use
 human|/obj/item/kit click: nothing
 human|/obj/item/storage menu: Collect
-human|/obj/item/storage menu: Create Area (refused: you need to be carrying it)
+human|/obj/item/storage menu: Create Area (refused: You can't do that.)
 human|/obj/item/storage menu: Crumple (refused: combat mode is off)
 human|/obj/item/storage menu: Customise (refused: needs an item)
 human|/obj/item/storage menu: Fold into a plane
@@ -161,5 +163,5 @@ human|/obj/item/storage menu: Rename paper (refused: you need to be carrying it)
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/storage menu: Use
 human|/obj/item/storage click: nothing
-keys: drag_buckle, gen_alt_interaction_fold_plane, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_interaction_item, gen_silicon_item_silicon_equip_module, gen_silicon_paper_silicon_read, gen_use_interaction_paper_self, gen_verb_create_area_effect, gen_verb_move_to_top_effect, gen_verb_paper_verb_rename, gen_verb_toggle_digestable_effect, write_end, write_field
+keys: create_area, drag_buckle, gen_alt_interaction_fold_plane, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_interaction_item, gen_silicon_item_silicon_equip_module, gen_silicon_paper_silicon_read, gen_use_interaction_paper_self, gen_verb_move_to_top_effect, gen_verb_paper_verb_rename, gen_verb_toggle_digestable_effect, write_end, write_field
 

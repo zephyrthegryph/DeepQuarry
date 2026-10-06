@@ -87,18 +87,33 @@
 	var/list/mail_recipients
 	special_handling = TRUE
 
-/// Old attackby: the letter's own tagging, then a pen addresses a sealed envelope, or the item goes inside an open one.
-/obj/item/mail/blank/proc/interaction_blank_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/destTagger))
-		interaction_tag(user, W, interaction)
-	if(istype(W, /obj/item/pen) && sealed && !set_recipient)
-		setRecipient(user)
-		add_fingerprint(user)
-		return INTERACTION_HANDLED_PASS
+TRACKED(/obj/item/mail/blank, sealed)
+TRACKED(/obj/item/mail/blank, set_recipient)
 
+CAPABILITIES(/obj/item/mail/blank)
+	// a blank envelope is sealed or opened in hand, not unwrapped
+	without("unwrap")
+	op("seal", in_hand(), label("Seal or open"), then(PROC_REF(interaction_seal)))
+	// a pen addresses a sealed envelope (to a player picked from the directory)
+	op("address", item(/obj/item/pen), label("Address"), priority(OP_PRIORITY_PART + 1),
+		asks(/datum/prompt/choice, fields = list("title" = "Recipients", "question" = "Choose recipient", "choices" = computed(PROC_REF(recipient_choices)), "timeout" = 0), when = PROC_REF(addressable)),
+		then(PROC_REF(recipient_chosen)))
+	// the old attackby: anything goes inside an open, empty envelope (a tagger tags it first, then goes on here)
+	op("put_in", item(/obj/item), label("Put inside"), then(PROC_REF(interaction_blank_item)))
+	// alt-click takes the contents back out of an open envelope
+	op("take_out", hand(), ungated(), gesture(GESTURE_ALT), label("Take out"), then(PROC_REF(interaction_alt)))
+
+/// A sealed envelope with nobody on it yet can be addressed.
+/obj/item/mail/blank/proc/addressable(datum/act/op/A)
+	return sealed && !set_recipient
+
+/// Old attackby: the item goes inside an open, empty envelope.
+/obj/item/mail/blank/proc/interaction_blank_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!set_content && !sealed)
 		om_task_start(/datum/om/task/timed/blank_attackby, user, user, receiver = src, W = W)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /datum/om/task/timed/blank_attackby
 	duration = 1.5 SECONDS
@@ -118,35 +133,30 @@
 /obj/item/mail/blank/proc/attackby_timed_failed(datum/om/task/timed/blank_attackby/task)
 	set_content = FALSE
 
-/obj/item/mail/proc/setRecipient(mob/user)
-	var/list/recipients = list()
+/// The players who can be sent mail (not antagonists, and listed in the directory).
+/obj/item/mail/blank/proc/recipient_choices(datum/act/op/A)
+	. = list()
 	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!SSantag.player_is_antag(player.mind) && player.mind.show_in_directory)
-			recipients += player
+			. += player
 
-	open_request(src, /datum/prompt/choice, PROC_REF(recipient_chosen), answerer = user, title = "Recipients", question = "Choose recipient", choices = recipients, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-
-/obj/item/mail/proc/recipient_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/recipient_mob = A.answer.value
+/// The pen's choice: the envelope is addressed to them (an unsealed or addressed one lets the pen go inside instead).
+/obj/item/mail/blank/proc/recipient_chosen(datum/act/op/A)
+	if(!addressable(A))
+		return OP_DECLINE
+	add_fingerprint(A.actor)
+	var/datum/prompt/R = A.answer
+	var/mob/living/recipient_mob = R?.value
 	if(istype(recipient_mob) && recipient_mob?.mind)
 		initialize_for_recipient(recipient_mob.mind, preset_goodies = TRUE)
-		if(istype(src, /obj/item/mail/blank))
-			var/obj/item/mail/blank/B = src
-			B.set_recipient = TRUE
-		return TRUE
-
-EXTEND_INTERACTIONS(/obj/item/mail/blank, \
-	INTERACT_USE("Seal or open", PROC_REF(interaction_seal)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_blank_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-)
+		set_set_recipient(TRUE)
+	return OP_PASS
 
 /// Old click_alt.
-/obj/item/mail/blank/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mail/blank/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(sealed)
-		return TRUE
+		return OP_OK
 
 	for(var/obj/stuff as anything in contents)
 		if(isitem(stuff))
@@ -154,7 +164,7 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, \
 		else
 			stuff.forceMove(drop_location())
 	set_content = FALSE
-	return TRUE
+	return OP_OK
 
 /obj/item/mail/blank/inspected_by(mob/user)
 	..()
@@ -168,18 +178,20 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, \
 		desc = "A signed envelope, from [A.answer.value]."
 
 /// Old attack_self: seal an open envelope, or open a sealed one.
-/obj/item/mail/blank/proc/interaction_seal(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mail/blank/proc/interaction_seal(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!sealed)
 		om_task_timed(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list())
-		return
-	return unwrap(user)
+		return OP_OK
+	unwrap(user)
+	return OP_OK
 
 /obj/item/mail/blank/proc/attack_self_timed_done()
-	sealed = TRUE
+	set_sealed(TRUE)
 	return
 
 /obj/item/mail/blank/proc/attack_self_timed_failed()
-	sealed = FALSE
+	set_sealed(FALSE)
 
 DECLARE_APPEARANCE_PROC(/obj/item/mail, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/mail/appearance_overlays()
@@ -210,8 +222,18 @@ DECLARE_APPEARANCE_PROC(/obj/item/mail, TYPE_PROC_REF(/atom, appearance_overlays
 		postmark_image.appearance_flags |= RESET_COLOR
 		. += postmark_image
 
+CAPABILITIES(/obj/item/mail)
+	// the old attack_self: open the letter
+	op("unwrap", in_hand(), label("Unwrap"), then(PROC_REF(interaction_unwrap)))
+	// a destination tagger labels it
+	op("tag", item(/obj/item/destTagger), label("Tag"), priority(OP_PRIORITY_PART + 2), then(PROC_REF(interaction_tag)))
+
 /// Old attackby: destination tagging.
-/obj/item/mail/proc/interaction_tag(mob/user, obj/item/destTagger/O, datum/interaction/interaction)
+/obj/item/mail/proc/interaction_tag(datum/act/op/A)
+	tag_with(A.actor, A.held)
+	return OP_PASS
+
+/obj/item/mail/proc/tag_with(mob/user, obj/item/destTagger/O)
 	if(O.currTag)
 		if(src.sortTag != O.currTag)
 			balloon_alert(user, "labeled for [O.currTag].")
@@ -221,18 +243,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/mail, TYPE_PROC_REF(/atom, appearance_overlays
 			balloon_alert(user, "already labeled for [O.currTag].")
 	else
 		balloon_alert(user, "destination not set!")
-	return INTERACTION_HANDLED_PASS
 
-
-DECLARE_INTERACTIONS(/obj/item/mail, \
-	INTERACT_USE("Unwrap", PROC_REF(interaction_unwrap)), \
-	INTERACT_INSERT(/obj/item/destTagger, PROC_REF(interaction_tag), "Tag"), \
-)
 
 /// Old attack_self: open the letter.
-/obj/item/mail/proc/interaction_unwrap(mob/user, obj/item/held, datum/interaction/interaction)
-	unwrap(user)
-	return TRUE
+/obj/item/mail/proc/interaction_unwrap(datum/act/op/A)
+	unwrap(A.actor)
+	return OP_OK
 
 /obj/item/mail/proc/unwrap(mob/user)
 	if(addressee)

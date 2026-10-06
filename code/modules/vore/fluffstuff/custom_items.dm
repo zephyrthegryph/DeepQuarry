@@ -424,12 +424,15 @@ CAPABILITIES(/obj/item/flag)
 	assignment = "CC Medical"
 	can_configure = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/card/id/centcom/station/fluff/aronai, INTERACT_SELF("Show or configure", PROC_REF(aronai_card_self)))
+CAPABILITIES(/obj/item/card/id/centcom/station/fluff/aronai)
+	without("show")
+	op("show_or_configure", in_hand(), label("Show or configure"), then(PROC_REF(aronai_card_self)))
 
 /// Old attack_self: the card's own "Show" first (as the old ..() did); an unconfigured card takes the user's details.
-/obj/item/card/id/centcom/station/fluff/aronai/proc/aronai_card_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	if(interaction_show(user, held, interaction))
+/obj/item/card/id/centcom/station/fluff/aronai/proc/aronai_card_self(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
+	if(show_id_card(user))
 		return
 	if(configured)
 		return

@@ -69,8 +69,10 @@ human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/card/id menu: Insert (refused: needs a sheet of paper, a photo, or a paper bundle)
 human|/obj/item/card/id menu: Insert toner (refused: needs a toner cartridge)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing
+human|/obj/item/paper menu: Create Area (refused: You can't do that.)
 human|/obj/item/paper menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/paper menu: Insert
 human|/obj/item/paper menu: Insert toner (refused: needs a toner cartridge)

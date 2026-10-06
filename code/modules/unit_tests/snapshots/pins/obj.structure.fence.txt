@@ -34,6 +34,7 @@ human|/obj/item/stack/material/steel menu: Climb (refused: There is no hole in t
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Climb (refused: There is no hole in the fence to climb through.)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
 keys: climb.climb, climb.climb_menu, drag_buckle, item, touch, use_wirecutter

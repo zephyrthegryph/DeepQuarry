@@ -25,6 +25,7 @@ human|/obj/item/stack/cable_coil click: Click: Press
 human|/obj/item/stack/material/steel menu: Press
 human|/obj/item/stack/material/steel click: Click: Press
 human|/obj/item/card/id menu: Press
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Press
 human|/obj/item menu: Press
 human|/obj/item click: Click: Press

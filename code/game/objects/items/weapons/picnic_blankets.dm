@@ -14,21 +14,27 @@
 	drop_sound = SFX_ITEMS_DROP_CLOTH
 	pickup_sound = SFX_ITEMS_PICKUP_CLOTH
 
-/// A refused carried blanket must stay folded without allocating floor structures.
-/obj/item/picnic_blankets_carried/proc/can_unfold(mob/user, atom/target, obj/item/held)
-	var/reason = loc?.release_refusal(src, user)
-	if(reason)
-		return reason
-	return TRUE
+CAPABILITIES(/obj/item/picnic_blankets_carried)
+	// the old object verb: spread it out where the carrier stands
+	op("fold_out", menu(), label("Fold out"), needs(carried(), req(PROC_REF(can_unfold), because = PROC_REF(unfold_refusal))), then(PROC_REF(picnic_blankets_carried_fold_out_effect)))
 
-/obj/item/picnic_blankets_carried/proc/picnic_blankets_carried_fold_out_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	if(can_unfold(user, src, src) != TRUE || !loc.release_to(src, user.loc, null, user))
-		return FALSE
+/// A refused carried blanket must stay folded without allocating floor structures.
+/obj/item/picnic_blankets_carried/proc/can_unfold(datum/act/op/A)
+	return isnull(unfold_refusal(A))
+
+/obj/item/picnic_blankets_carried/proc/unfold_refusal(datum/act/op/A)
+	return A.actor.release_refusal(src, A.actor)
+
+/obj/item/picnic_blankets_carried/proc/picnic_blankets_carried_fold_out_effect(datum/act/op/A)
+	var/mob/user = A.actor
+	if(unfold_refusal(A) || !loc.release_to(src, user.loc, null, user))
+		return OP_OK
 	var/obj/structure/picnic_blanket_deployed/P = new /obj/structure/picnic_blanket_deployed(user.loc)
 	P.name = name
 	P.desc = unfolded_desc
 	P.unfold(user)
 	replace_with(src, P)
+	return OP_OK
 
 /obj/structure/picnic_blanket_deployed
 	name = "picnic blanket"
@@ -41,19 +47,27 @@
 	var/list/attached_blankets
 	anchored = TRUE
 
+TRACKED(/obj/structure/picnic_blanket_deployed, blanket_type)
+
 CAPABILITIES(/obj/structure/picnic_blanket_deployed)
 	owns_many(nameof(attached_blankets))
+	// the old object verb: pack it up from the center
+	op("fold_up", menu(), label("Fold up"), needs(req(PROC_REF(pred_can_fold_up), because = MSG(picnic_blanket/center))), then(PROC_REF(picnic_blanket_deployed_fold_up_effect)))
 
-/obj/structure/picnic_blanket_deployed/proc/picnic_blanket_deployed_fold_up_effect(mob/user, obj/item/held, datum/interaction/interaction)
+MSG_DEF_SELF(picnic_blanket/center, "Fold it up from the center.")
+
+/obj/structure/picnic_blanket_deployed/proc/picnic_blanket_deployed_fold_up_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	own_clear(src, nameof(attached_blankets), OWN_DELETE)
 	var/obj/item/picnic_blankets_carried/P = new /obj/item/picnic_blankets_carried(user.loc)
 	P.name = name
 	P.desc = folded_desc
 	replace_with(src, P)
+	return OP_OK
 
 /// Requirement for "Fold up" (old: the verb was removed from edge pieces and locked mapped blankets).
-/obj/structure/picnic_blanket_deployed/proc/pred_can_fold_up(mob/actor, atom/target, obj/item/held)
+/obj/structure/picnic_blanket_deployed/proc/pred_can_fold_up(datum/act/op/A)
 	return blanket_type == CENTER
 
 /obj/structure/picnic_blanket_deployed/proc/unfold(mob/user)
@@ -90,7 +104,7 @@ CAPABILITIES(/obj/structure/picnic_blanket_deployed)
 			//Actually spawning
 			var/obj/structure/picnic_blanket_deployed/side = new /obj/structure/picnic_blanket_deployed(T)
 			rel_add(src, nameof(attached_blankets), side)
-			side.blanket_type = SIDE
+			side.set_blanket_type(SIDE)
 			side.name = name //Making sure side blankets inherit our vars if they got edited at runtime
 			side.desc = desc
 			side.set_dir(dir)
@@ -124,18 +138,11 @@ DECLARE_APPEARANCE(/obj/structure/picnic_blanket_deployed, "blanket_type", list(
 	. = ..()
 	unfold()
 
-/obj/structure/picnic_blanket_deployed/for_mapping_use/pred_can_fold_up(mob/actor, atom/target, obj/item/held)
-	return !unfoldable && ..()
+TRACKED(/obj/structure/picnic_blanket_deployed/for_mapping_use, unfoldable)
 
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/structure/picnic_blanket_deployed, \
-	INTERACT_VERB("Fold up", PROC_REF(picnic_blanket_deployed_fold_up_effect), REQ_ON(PRED_TARGET, /obj/structure/picnic_blanket_deployed/proc/pred_can_fold_up, "fold it up from the center")), \
-)
+/obj/structure/picnic_blanket_deployed/for_mapping_use/pred_can_fold_up(datum/act/op/A)
+	return !unfoldable && ..()
 
 #undef CENTER
 #undef SIDE
 
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/picnic_blankets_carried, \
-	INTERACT_VERB("Fold out", PROC_REF(picnic_blankets_carried_fold_out_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/picnic_blankets_carried/proc/can_unfold)), \
-)

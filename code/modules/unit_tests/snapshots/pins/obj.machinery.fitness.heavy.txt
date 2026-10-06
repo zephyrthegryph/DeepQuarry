@@ -34,6 +34,7 @@ human|/obj/item/stack/material/steel menu: Heavy fitness safety hand
 human|/obj/item/stack/material/steel menu: Work out
 human|/obj/item/stack/material/steel click: Click: Heavy fitness safety hand
 human|/obj/item/card/id menu: Heavy fitness safety hand
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Work out
 human|/obj/item/card/id click: Click: Heavy fitness safety hand
 keys: drag_buckle, gen_hand_ungated_fitness_workout_hand, gen_robot_interaction_swallow, heavy_fitness_safety_hand, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_wrench

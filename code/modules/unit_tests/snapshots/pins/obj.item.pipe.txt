@@ -81,6 +81,7 @@ human|/obj/item/card/id menu: Customise (refused: needs an item)
 human|/obj/item/card/id menu: Flip Pipe
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Pick up
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
 human|/obj/item/card/id click: nothing
 human|/obj/item/kit menu: Collect (refused: needs a storage)

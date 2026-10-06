@@ -52,6 +52,7 @@ human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Bang on
 human|/obj/item/card/id menu: Knock
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Unscrew it from the floor (refused: needs a screwdriver)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use

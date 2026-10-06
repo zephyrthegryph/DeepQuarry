@@ -48,6 +48,7 @@ human|/obj/item/stack/material/steel menu: Touch
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id menu: Press
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Touch
 human|/obj/item/card/id click: nothing
 human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)

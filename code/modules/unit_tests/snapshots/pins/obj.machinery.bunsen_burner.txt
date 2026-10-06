@@ -53,6 +53,7 @@ human|/obj/item/stack/material/steel menu: Secure (refused: needs a wrench)
 human|/obj/item/stack/material/steel click: Click: Place container
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id menu: Place container
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove container
 human|/obj/item/card/id menu: Secure (refused: needs a wrench)
 human|/obj/item/card/id click: Click: Place container

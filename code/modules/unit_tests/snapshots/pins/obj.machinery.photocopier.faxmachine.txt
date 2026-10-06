@@ -102,6 +102,7 @@ human|/obj/item/card/id menu: Insert (refused: needs a sheet of paper, a photo, 
 human|/obj/item/card/id menu: Insert ID
 human|/obj/item/card/id menu: Insert toner (refused: needs a toner cartridge)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove ID card (refused: there is no ID card to remove)
 human|/obj/item/card/id menu: Staff Request Form
 human|/obj/item/card/id menu: Use
@@ -115,6 +116,7 @@ human|/obj/item/toner menu: Remove ID card (refused: there is no ID card to remo
 human|/obj/item/toner menu: Staff Request Form
 human|/obj/item/toner menu: Use
 human|/obj/item/toner click: nothing
+human|/obj/item/paper menu: Create Area (refused: You can't do that.)
 human|/obj/item/paper menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/paper menu: Insert
 human|/obj/item/paper menu: Insert ID (refused: needs an identification card)

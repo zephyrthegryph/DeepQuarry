@@ -23,6 +23,7 @@ human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Insert ID
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Insert ID
 keys: claim, drag_buckle, gen_robot_interaction_swallow, insert, insert_id, logoff, machine_anchor, machine_deconstruct, machine_panel, machine_repair, open_ui_impl, power, showAllOres, speed_toggle, toggleSmelting

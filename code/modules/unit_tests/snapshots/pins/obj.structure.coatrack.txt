@@ -20,6 +20,7 @@ human|/obj/item/stack/cable_coil click: Click: Hang coat
 human|/obj/item/stack/material/steel menu: Hang coat
 human|/obj/item/stack/material/steel click: Click: Hang coat
 human|/obj/item/card/id menu: Hang coat
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Hang coat
 keys: drag_buckle, hang_coat, take_coat
 

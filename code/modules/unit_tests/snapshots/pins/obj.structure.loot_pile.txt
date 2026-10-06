@@ -21,6 +21,7 @@ human|/obj/item/stack/cable_coil menu: Search
 human|/obj/item/stack/cable_coil click: Click: Search
 human|/obj/item/stack/material/steel menu: Search
 human|/obj/item/stack/material/steel click: Click: Search
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Search
 human|/obj/item/card/id click: Click: Search
 keys: drag_buckle, search

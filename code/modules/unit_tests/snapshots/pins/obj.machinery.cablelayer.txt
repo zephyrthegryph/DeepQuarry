@@ -43,6 +43,7 @@ human|/obj/item/stack/material/steel menu: Toggle (refused: doesn't have any cab
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Load cable (refused: needs a cable coil)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle (refused: doesn't have any cable loaded)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing

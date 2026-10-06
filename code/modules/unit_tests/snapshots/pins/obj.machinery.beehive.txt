@@ -80,6 +80,7 @@ human|/obj/item/card/id menu: Climb
 human|/obj/item/card/id menu: Harvest honeycombs
 human|/obj/item/card/id menu: Load frame (refused: needs a beehive frame)
 human|/obj/item/card/id menu: Move bees (refused: needs a bee pack)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Scan (refused: needs a plant analyzer)
 human|/obj/item/card/id menu: Smoke bees (refused: needs a bee smoker)
 human|/obj/item/card/id click: nothing

@@ -147,6 +147,7 @@ human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Pick up
 human|/obj/item/card/id menu: Playback Tape (refused: You can't do that.)
 human|/obj/item/card/id menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Start Recording (refused: You can't do that.)
 human|/obj/item/card/id menu: Stop (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)

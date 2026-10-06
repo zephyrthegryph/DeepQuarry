@@ -74,6 +74,7 @@ human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Crawl
 human|/obj/item/card/id menu: Cut through the outer plating (refused: needs a welder)
 human|/obj/item/card/id menu: Graffiti
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Touch
 human|/obj/item/card/id menu: Turf item
 human|/obj/item/card/id menu: Wall item
