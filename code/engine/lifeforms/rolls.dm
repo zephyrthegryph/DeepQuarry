@@ -14,7 +14,7 @@
 // Generators: pick_one(list) (uniform, or weighted by the values of an associative list), pick_weighted(list) (weighted by the values),
 // range_of(lo, hi, step = 1) (a number in [lo, hi] on the step; a step of 0 is a real number), PIXEL_JITTER(n) (with ROLL_PIXEL: each pixel
 // offset in -n..n), chance(p) (TRUE with p percent), and PROC_REF(x), a holder proc x(datum/roller/R) that answers the value from R's
-// draws (R.number(lo, hi), R.choose(list), R.chance(p), R.weighted(list), R.unit()).
+// draws (R.number(lo, hi), R.choose(list), R.chance(p), R.weighted(list), R.unit(), R.hex_colour(), R.saturated_colour()).
 //
 // The seed. Every instance rolls from its own deterministic stream: the round seed with the map position of a map-loaded instance (its turf
 // and its index among the same type there), or its creator's stream for an instance created while another one initializes (contents, a
@@ -121,6 +121,28 @@ GLOBAL_LIST_EMPTY(roll_rollers)
 		if(at < 0)
 			return key
 	return L[length(L)]
+
+/// A "#RRGGBB" colour, each channel in [lower, upper] (get_random_colour()'s distribution).
+/datum/roller/proc/hex_colour(lower = 0, upper = 255)
+	. = "#"
+	for(var/i in 1 to 3)
+		var/channel = num2hex(number(lower, upper), 2)
+		. += length(channel) < 2 ? "0[channel]" : channel
+
+/// A colour kept away from pure black and pure white, for greyscale sprites (random_color(TRUE)'s distribution).
+/datum/roller/proc/saturated_colour()
+	var/r = number(1, 255)
+	var/g = number(1, 255)
+	var/b = number(1, 255)
+	if(r + g + b < 50)
+		r += number(5, 20)
+		g += number(5, 20)
+		b += number(5, 20)
+	else if(r + g + b > 700)
+		r -= number(5, 50)
+		g -= number(5, 50)
+		b -= number(5, 50)
+	return rgb(r, g, b)
 
 /// The seed text of a new instance: its creator's stream, its map position, or the round seed and a serial.
 /proc/roll_base_for(datum/holder)

@@ -39,9 +39,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/iv_drip, TYPE_PROC_REF(/atom, appearance_
 			filling.icon += reagents.get_color()
 			. += filling
 
-/obj/machinery/iv_drip/MouseDrop(over_object, src_location, over_location)
-	..()
-	return drop_patient_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): Native patient attachment drag supplies the actor after unchanged parent input routing.
+CAPABILITIES(/obj/machinery/iv_drip)
+	drag_onto(PROC_REF(drop_input))
+
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). A drop onto a patient attaches them,
+/// then the native drop goes on.
+/obj/machinery/iv_drip/proc/drop_input(datum/act/input/A)
+	drop_patient_with_actor(A.actor, A.over)
+	return INPUT_FALLTHROUGH
 
 /obj/machinery/iv_drip/proc/drop_patient_with_actor(mob/user, atom/over_object)
 	if(!isliving(user))

@@ -4,18 +4,13 @@
 	icon_state = "crystal"
 	density = TRUE
 
-// ALLOW(init/INSTANCE_STATE): icon_state and desc rolled at random for each instance
-/obj/structure/crystal/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/crystal)
+	rolls(nameof(icon_state), pick_one(list("ano70", "ano80")))
+	rolls(nameof(desc), PROC_REF(roll_desc))
 
-	icon_state = pick("ano70","ano80")
-
-	desc = pick(
-	"It shines faintly as it catches the light.",
-	"It appears to have a faint inner glow.",
-	"It seems to draw you inward as you look it at.",
-	"Something twinkles faintly as you look at it.",
-	"It's mesmerizing to behold.")
+/// Rolled before init (rolls()): how the crystal catches the eye.
+/obj/structure/crystal/proc/roll_desc(datum/roller/R)
+	return R.choose(list("It shines faintly as it catches the light.", "It appears to have a faint inner glow.", "It seems to draw you inward as you look it at.", "Something twinkles faintly as you look at it.", "It's mesmerizing to behold."))
 
 // the crystal shatters into shards.
 /obj/structure/crystal/on_destroy(force)

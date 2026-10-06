@@ -173,12 +173,17 @@
 	mouse_opacity = 2
 	screen_loc = "SOUTHWEST to NORTHEAST"
 
-/atom/movable/screen/click_catcher/Click(location, control, params)
-	var/result = resolve_click_with_actor(usr, params) // ALLOW(sys_usr_outside_verb): Native map catcher click supplies its actor while retaining downstream turf Click in native context.
+CAPABILITIES(/atom/movable/screen/click_catcher)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm). The turf a catcher click resolves to gets
+/// the click (its own native Click, still inside this one).
+/atom/movable/screen/click_catcher/proc/click_input(datum/act/input/A)
+	var/result = resolve_click_with_actor(A.actor, A.params)
 	if(isturf(result))
 		var/turf/T = result
-		T.Click(location, control, params)
-	return 1
+		T.Click(A.native["location"], A.native["control"], A.params)
+	return TRUE
 
 /atom/movable/screen/click_catcher/proc/resolve_click_with_actor(mob/user, params)
 	var/list/P = params2list(params)

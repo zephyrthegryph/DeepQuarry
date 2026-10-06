@@ -93,14 +93,12 @@
 	endurance = 250
 	instinct = 50
 
-// ALLOW(init/INSTANCE_STATE): instinct rolled at random for each instance
-/mob/living/simple_mob/animal/sif/kururak/Initialize(mapload)
-	. = ..()
-	if(!instinct)
-		if(prob(20))
-			instinct = rand(6, 10)
-			return
-		instinct = rand(0, 5)
+CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
+	rolls(nameof(instinct), PROC_REF(roll_instinct))
+
+/// Rolled before init (rolls()): one in five is a natural leader.
+/mob/living/simple_mob/animal/sif/kururak/proc/roll_instinct(datum/roller/R)
+	return R.chance(20) ? R.number(6, 10) : R.number(0, 5)
 
 /mob/living/simple_mob/animal/sif/kururak/IIsAlly(mob/living/L)
 	. = ..()

@@ -250,6 +250,7 @@ APPEARANCE_NONE(/obj/structure/bed/roller)
 
 CAPABILITIES(/obj/structure/bed/roller)
 	op("collapse", item(/obj/item/roller_holder), label("Collapse"), then(PROC_REF(collapse_with_rack)))
+	drag_onto(PROC_REF(drop_input))
 
 /// A roller bed rack collapses an empty bed into its folded item; a bed with somebody on it lets them go instead.
 /obj/structure/bed/roller/proc/collapse_with_rack(datum/act/op/A)
@@ -348,9 +349,11 @@ CAPABILITIES(/obj/item/roller_holder)
 	update_icon()
 	return ..()
 
-/obj/structure/bed/roller/MouseDrop(over_object, src_location, over_location)
-	..()
-	return collapse_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): Native roller bed drag supplies the actor after the unchanged parent input routing.
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). Dragged onto its user, the bed
+/// collapses; the native drop goes on either way.
+/obj/structure/bed/roller/proc/drop_input(datum/act/input/A)
+	collapse_with_actor(A.actor, A.over)
+	return INPUT_FALLTHROUGH
 
 /obj/structure/bed/roller/proc/collapse_with_actor(mob/user, atom/over_object)
 	if((over_object == user && (in_range(src, user) || user.contents.Find(src))))

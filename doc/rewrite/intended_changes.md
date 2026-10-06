@@ -1776,3 +1776,16 @@ is `pain_step()` on an `every(LIFE_CYCLE)` gated by `STAT_PAIN_FELT` (held while
 * **The clocks integrate at most one step**: a body clock that was parked and starts again does not integrate the time it slept (fixes a
   first-step overshoot found while pinning).
 * `life_om/derive_and_present` and `life_om/npc_vision_follows_inputs` fail on master before this branch's first body change; not touched here.
+- Rolled at creation (`rolls()`, seeded; the distributions are unchanged): the hallucination decoy's report, tabloids, target paper, cig
+  butts, the advanced gift's chaos roll, random umbrellas and towels (`R.hex_colour()`), tilted duffle bags, first-aid kit looks, prybars,
+  junk mail, bar signs, the animal crates' contents, trash piles, hawaiian shirts, extraction points, kittens, eclectus parrots, kururak
+  instinct, the rare frog (a new `rare` var), gelatinous cubes (`R.saturated_colour()`), autocloners, crystals and greytide gear.
+- A generic arcade cabinet rolls its board before init and becomes that machine right after its init (`after_init()` + `replace_with()`),
+  instead of deleting itself from inside Initialize(); an adventure box that rolls `discarded` is spent right after its init.
+- Native input with an actor: the HUD's screen objects, alerts, radial slices, ability and spell buttons, the rig/mech air toggles, the
+  click catcher, the SDQL2 stat buttons, the changeling ID card, movable screen objects and action buttons (`drag_onto()`, new
+  `drag_over()`), IV drips, feeders, roller beds, hoist hooks, observer ghosts, overmap ships, mob holders (`drag_onto()`) and the palette
+  and environmental message tooltips (`tooltip()`) read their actor from the input. A drop handler that went on to the native parent now
+  runs before the parent's MouseDrop instead of after it. A handler that falls through (INPUT_FALLTHROUGH) no longer runs a second time
+  when the fall reaches a parent type's generated override (`input_falling`, `input_fell()`).
+- A null positional constructor argument no longer overwrites a param's var (the old overrides' `arg || default`).
