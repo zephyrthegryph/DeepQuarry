@@ -40,7 +40,7 @@
 
 /datum/unit_test/dq_km_system_key_rule/Run()
 	// Rule 2: a code folder's row.
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/observer_upkeep), "life", "the observer upkeep")
+	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/hud_on_vitals), "life", "the vitals HUD")
 	var/list/known = km_system_prefixes()
 	TEST_ASSERT(length(known) > 20, "the prefix table is built (it has [length(known)] rows)")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/pipeline/machine), "machines", "the machine pipeline")

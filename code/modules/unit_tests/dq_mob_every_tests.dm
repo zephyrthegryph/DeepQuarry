@@ -93,3 +93,12 @@
 	life_test_advance(LIFE_CYCLE_SECONDS * 2)
 	TEST_ASSERT_EQUAL(H.disability_gut_pressure, pressure, "revoked: it stops")
 	H.status_end(STAT_WEAKENED)
+
+/// Observers keep their upkeep once a Life cycle on their every(), with no Life sequence.
+/datum/unit_test/life_om/observer_upkeep_every_cycle
+
+/datum/unit_test/life_om/observer_upkeep_every_cycle/run_life()
+	var/mob/observer/dead/life_test/G = allocate(/mob/observer/dead/life_test)
+	var/before = G.upkeeps
+	life_test_advance(OBSERVER_UPKEEP_INTERVAL / 10 * 3 + 0.1)
+	TEST_ASSERT_EQUAL(G.upkeeps - before, 3, "one upkeep per cycle")

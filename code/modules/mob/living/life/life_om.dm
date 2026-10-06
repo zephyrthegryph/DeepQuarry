@@ -4,10 +4,6 @@
 // life_steps() (life_steps.dm). When steps run, sleep, wake and park is the kernel's business
 // (code/controllers/kernel/sequence.dm); nothing here decides it.
 
-/datum/om/decl/observer
-	of = /mob/observer
-	behaviours = list(/datum/om/behaviour/observer_upkeep)
-
 /// A living mob runs Life while it is in the world.
 /mob/living/on_materialize()
 	. = ..()
@@ -21,15 +17,11 @@
 	seq_stop(src, /datum/sequence/life)
 	return ..()
 
-/// Ghosts, AI eyes and the blob overmind: their old Life() upkeep.
-/datum/om/behaviour/observer_upkeep
-	name = "observer upkeep"
-	every = OBSERVER_UPKEEP_INTERVAL
-	lane = LANE_BACKGROUND
-	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
-
-/datum/om/behaviour/observer_upkeep/tick(mob/observer/O, dt)
-	O.upkeep()
+/// Ghosts, AI eyes and the blob overmind: their old Life() upkeep, once a Life cycle while the round runs (its every() in
+/// CAPABILITIES(/mob/observer)).
+/mob/observer/proc/upkeep_step(datum/act/timer/A)
+	if((RUNLEVEL_GAME | RUNLEVEL_POSTGAME) & (1 << (Kernel.current_runlevel - 1)))
+		upkeep()
 
 /mob/living
 	/// LIFE_SET_* of the Life sequence this mob type runs.

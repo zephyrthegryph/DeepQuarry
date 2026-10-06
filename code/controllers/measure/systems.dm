@@ -125,7 +125,7 @@
 	// proc statics holding type paths are set up (a static here read as null and the table came out empty).
 	var/list/rows = list(
 		// code/modules/mob/living/life/, code/modules/medical: the observer upkeep (Life itself is the kernel's life sequence).
-		"life" = list(/datum/om/behaviour/observer_upkeep, /datum/om/behaviour/hud_on_vitals),
+		"life" = list(/datum/om/behaviour/hud_on_vitals),
 		// code/game/machinery/: the machine pipeline (the machine system is a kernel work item).
 		"machines" = list(/datum/om/pipeline/machine),
 		// code/modules/combat_ai/: strategic and tactical brains, and the sleeper that wakes them.
