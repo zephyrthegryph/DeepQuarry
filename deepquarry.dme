@@ -5696,6 +5696,7 @@
 #include "code\library\mob\silicon.dm"
 #include "code\library\machine\anchor.dm"
 #include "code\library\machine\cover.dm"
+#include "code\library\machine\floor_weld.dm"
 #include "code\library\machine\panel.dm"
 #include "code\library\machine\parts.dm"
 #include "code\library\machine\wires.dm"

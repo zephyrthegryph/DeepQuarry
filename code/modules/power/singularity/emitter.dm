@@ -1,10 +1,27 @@
+// The emitter (doc/rewrite/final_api.html section 16): a heavy industrial laser that feeds the singularity engine's field generators and the
+// supermatter. It is bolted and welded to the floor (floor_weld(); welded, it joins the cable network on its tile), switched on by hand or by a
+// remote emitter button (activate()), and its controls are behind an ID lock (lock(); an emag shorts the lock open for good). While it is on
+// and whole it charges from the grid (charge_emitter(), material_equipment.dm) and fires every machine service interval its shot is ready
+// (emitter_step()): bursts of burst_shots shots burst_delay apart, then a random min_burst_delay..max_burst_delay pause. Steel sheets repair it,
+// an anomaly scanner switches it to anomalous particles, and a multitool picks the particle.
+//
+// SAFETY: the shot energy and the burst pattern are pinned in code/modules/unit_tests/dq_power_plants_behaviour.dm (emitter_*).
+
+MSG_DEF_SELF(emitter/unwelded, "It needs to be firmly secured to the floor first.")
+MSG_DEF_SELF(emitter/unwired, "It isn't connected to a wire.")
+MSG_DEF_SELF(emitter/controls_locked, "The controls are locked!")
+MSG_DEF_SELF(emitter/whole, "It's already fully repaired.")
+MSG_DEF_SELF(emitter/too_few_sheets, "You don't have enough sheets to repair it.")
+MSG_DEF(emitter/repairing, "You begin repairing %T%...", "%U% begins repairing %T%.")
+MSG_DEF(emitter/shorted, "You short out the lock.", "%U% emags %T%.")
+
 /obj/machinery/power/emitter
 	material_template = /datum/material_template/energy_device
 	material_total = 10 * SHEET_MATERIAL_AMOUNT
 	name = "emitter"
 	desc = "It is a heavy duty industrial laser."
-	icon = 'icons/obj/singularity.dmi'
-	icon_state = "emitter"
+	icon = 'icons/obj/singularity_vr.dmi' // New emitter sprite
+	icon_state = "emitter0"
 	anchored = FALSE
 	density = TRUE
 	unacidable = TRUE
@@ -15,6 +32,7 @@
 	active_power_usage = 30000	//30 kW laser. I guess that means 30 kJ per shot.
 
 	active = 0
+	/// It had the energy for its last shot (the beam overlay shows while it has).
 	var/powered = 0
 	var/fire_delay = 100
 	var/max_burst_delay = 100
@@ -23,7 +41,6 @@
 	COOLDOWN_DECLARE(shot_cooldown)
 	var/shot_number = 0
 	state = 0
-	locked = 0
 
 	// Anomaly harvesting stuff
 	var/anomalous = FALSE
@@ -31,15 +48,37 @@
 
 	var/burst_delay = 2
 	var/initial_fire_delay = 100
+	/// The rung the sprite last showed, for the flick between rungs.
+	var/previous_state = 0
 
 	max_integrity = 80
 
-/// Not BROKEN (the emitter runs on grid power, not APC power, so operable() doesn't fit).
-OM_DERIVE_FIELD(/obj/machinery/power/emitter, unbroken, list("stat"))
-/obj/machinery/power/emitter/proc/unbroken()
-	return !has_stat(BROKEN)
+TRACKED(/obj/machinery/power/emitter, anomalous)
 
-DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/emitter, MACHINE_PIPELINE, list("active", "unbroken"))
+CAPABILITIES(/obj/machinery/power/emitter)
+	climb()
+	rotatable()
+	floor_weld(busy = nameof(active), changed = PROC_REF(rung_moved))
+	lock(powered = FALSE, alt = FALSE)
+	emag(then(PROC_REF(on_emag)), say = MSG(emitter/shorted), powered = FALSE)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(emitter_step)), when = PROC_REF(firing))
+	examine_line(PROC_REF(examine_integrity))
+	op("toggle", hand(), label("Use"), ungated(), wait(0), global.tag(TAG_CONTROL),
+		needs(req(PROC_REF(is_welded), because = MSG(emitter/unwelded)), req(PROC_REF(is_wired), because = MSG(emitter/unwired))),
+		then(PROC_REF(toggled)))
+	op("repair", item(/obj/item/stack/material), label("Repair with steel"), when(req(PROC_REF(held_is_steel))),
+		needs(req(PROC_REF(damaged), because = MSG(emitter/whole)), req(PROC_REF(enough_sheets), because = MSG(emitter/too_few_sheets))),
+		says(MSG(emitter/repairing)), wait(3 SECONDS), then(PROC_REF(repaired)))
+	op("anomalous", item(/obj/item/anomaly_scanner), label("Toggle anomalous mode"), wait(0), then(PROC_REF(anomalous_toggled)))
+	op("particle", tool(TOOL_MULTITOOL), label("Select particle"), wait(0), when(nameof(anomalous)),
+		asks(/datum/prompt/choice, fields = list("title" = "Particle Selection", "question" = "Select particle type", "choices" = ANOMALY_PARTICLE_ALL)),
+		then(PROC_REF(particle_chosen)))
+
+// ALLOW(init/INSTANCE_STATE): the rung a mapped emitter starts on is the one its sprite shows first
+/obj/machinery/power/emitter/Initialize(mapload)
+	. = ..()
+	previous_state = state
+	emp_protection_flags |= EMP_PROTECT_SELF
 
 // admins are told an emitter was deleted.
 /obj/machinery/power/emitter/on_destroy(force)
@@ -48,262 +87,163 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/emitter, MACHINE_PIPELINE, list(
 	investigate_log(span_red("deleted") + " at ([x],[y],[z])","singulo")
 	..()
 
-/obj/machinery/power/emitter/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/emitter_repair,
-		/datum/interaction/machine_item/emitter_toggle_lock,
-		/datum/interaction/machine_item/emitter_toggle_anomalous,
-		/datum/interaction/machine_hand/ungated/emitter_use,
-	)
-	..()
+// ---- conditions ----
 
-/// Old attack_hand, which never called ..(): no gate.
-/datum/interaction/machine_hand/ungated/emitter_use
-	id = "emitter_use"
-	name = "Use"
-	effect = /obj/machinery/power/emitter/proc/interaction_use
+/// On and whole: its step runs (it is on grid power, not APC power, so operable() does not fit).
+/obj/machinery/power/emitter/proc/firing(datum/act/A)
+	return active && !has_stat(BROKEN)
 
-/obj/machinery/power/emitter/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	activate(user)
-	return TRUE
+/obj/machinery/power/emitter/proc/is_welded(datum/act/A)
+	return state == FLOOR_WELD_WELDED
 
+/obj/machinery/power/emitter/proc/is_wired(datum/act/A)
+	return !!power_region
+
+/obj/machinery/power/emitter/proc/held_is_steel(datum/act/op/A)
+	var/obj/item/stack/material/stack = A.held
+	return istype(stack) && stack.get_material_name() == MAT_STEEL
+
+/// The sheets a repair takes: one per 10 integrity missing.
+/obj/machinery/power/emitter/proc/repair_sheets()
+	return CEILING((max_integrity - get_integrity()) / 10, 1)
+
+/obj/machinery/power/emitter/proc/damaged(datum/act/A)
+	return repair_sheets() > 0
+
+/obj/machinery/power/emitter/proc/enough_sheets(datum/act/op/A)
+	var/obj/item/stack/material/stack = A.held
+	return istype(stack) && stack.get_amount() >= repair_sheets()
+
+// ---- effects ----
+
+/// The hand on the switch.
+/obj/machinery/power/emitter/proc/toggled(datum/act/op/A)
+	add_fingerprint(A.actor)
+	activate(A.actor)
+	return OP_OK
+
+/// Switches it on or off (the hand, a remote emitter button). It must be welded and wired, and its controls unlocked.
 /obj/machinery/power/emitter/proc/activate(mob/user as mob)
-	if(state == 2)
-		if(!power_region)
-			to_chat(user, "\The [src] isn't connected to a wire.")
-			return 1
-		if(!src.locked)
-			if(src.active==1)
-				set_active(0)
-				balloon_alert_visible("turned off")
-				message_admins("Emitter turned off by [key_name(user, user.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)",0,1)
-				log_game("EMITTER([x],[y],[z]) OFF by [key_name(user)]")
-				investigate_log("turned " + span_red("off") + " by [user.key]","singulo")
-			else
-				set_active(1)
-				EXPIRY_STAMP(src, material_last_charge, CLOCK_WORLD)
-				balloon_alert_visible("turned on")
-				src.shot_number = 0
-				src.fire_delay = get_initial_fire_delay()
-				message_admins("Emitter turned on by [key_name(user, user.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
-				log_game("EMITTER([x],[y],[z]) ON by [key_name(user)]")
-				investigate_log("turned " + span_green("on") + " by [user.key]","singulo")
-			update_icon()
-		else
-			to_chat(user, span_warning("The controls are locked!"))
-	else
+	if(state != FLOOR_WELD_WELDED)
 		to_chat(user, span_warning("\The [src] needs to be firmly secured to the floor first."))
 		return 1
-
-/obj/machinery/power/emitter/machine_step()
-	if(src.state != 2 || (!power_region && active_power_usage))
+	if(!power_region)
+		to_chat(user, "\The [src] isn't connected to a wire.")
+		return 1
+	if(lock_locked(src))
+		to_chat(user, span_warning("The controls are locked!"))
+		return 1
+	if(active == 1)
 		set_active(0)
+		balloon_alert_visible("turned off")
+		message_admins("Emitter turned off by [key_name(user, user?.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)",0,1)
+		log_game("EMITTER([x],[y],[z]) OFF by [key_name(user)]")
+		investigate_log("turned " + span_red("off") + " by [user?.key]","singulo")
+	else
+		set_active(1)
+		EXPIRY_STAMP(src, material_last_charge, CLOCK_WORLD)
+		balloon_alert_visible("turned on")
+		shot_number = 0
+		fire_delay = get_initial_fire_delay()
+		message_admins("Emitter turned on by [key_name(user, user?.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
+		log_game("EMITTER([x],[y],[z]) ON by [key_name(user)]")
+		investigate_log("turned " + span_green("on") + " by [user?.key]","singulo")
+	update_icon()
+
+/// The ladder moved: welded, it joins the cable network on its tile; loose or bolted, it leaves it. The sprite flicks between the rungs.
+/obj/machinery/power/emitter/proc/rung_moved(datum/act/op/A)
+	if(state == FLOOR_WELD_WELDED)
+		connect_to_network()
+	else
+		disconnect_from_network()
+	if(state != previous_state)
+		flick("emitterflick-[previous_state][state]", src)
+		previous_state = state
+	update_icon()
+
+/// One step while it is on (every machine service interval): it must still be welded and wired; it charges, and fires when its shot is ready
+/// and it holds the energy for it.
+/obj/machinery/power/emitter/proc/emitter_step(datum/act/timer/A)
+	if(state != FLOOR_WELD_WELDED || (!power_region && active_power_usage))
+		set_active(0)
+		update_icon()
 		return
 	charge_emitter()
-	if((COOLDOWN_FINISHED(src, shot_cooldown)) && (src.active == 1))
-		var/burst_time = (min_burst_delay + max_burst_delay)/2 + 2*(burst_shots-1)
-		var/desired_beam = active_power_usage * (burst_time / 10) / burst_shots * material_output_setting
-		var/efficiency = emitter_efficiency()
-		var/required_energy = desired_beam / efficiency
-		if(material_stored_energy >= required_energy)
-			if(!powered)
-				powered = 1
-				update_icon()
-				log_game("EMITTER([x],[y],[z]) Regained power and is ON.")
-				investigate_log("regained power and turned " + span_green("on"),"singulo")
-		else
-			if(powered)
-				powered = 0
-				update_icon()
-				log_game("EMITTER([x],[y],[z]) Lost power and was ON.")
-				investigate_log("lost power and turned" + span_red("off"),"singulo")
-			return
-
-		COOLDOWN_START(src, shot_cooldown, src.fire_delay)
-		if(src.shot_number < burst_shots)
-			src.fire_delay = get_burst_delay() //R-UST port
-			src.shot_number ++
-		else
-			src.fire_delay = get_rand_burst_delay() //R-UST port
-			src.shot_number = 0
-
-		fire_delay = max(1, round(fire_delay / material_cadence_setting))
-		material_stored_energy -= required_energy
-		material_beam_joules += desired_beam
-		var/datum/material_service/service = material_service_of(src)
-		service.output_joules += desired_beam
-		service.loss_joules += required_energy - desired_beam
-		service.last_output_watts = desired_beam / max(fire_delay / 10, 0.1)
-		EXPIRY_STAMP(service, last_work_time, CLOCK_WORLD)
-		service.add_heat(required_energy - desired_beam)
-
-		play_sfx(src, SFX_WEAPONS_EMITTER)
-		if(prob(35))
-			fx_sparks(src, 5)
-
-		var/obj/item/projectile/beam/emitter/A = get_emitter_beam()
-		A.damage = round(desired_beam/EMITTER_DAMAGE_POWER_TRANSFER)
-		rel_set(A, nameof(A.firer), src)
-		A.fire(dir2angle(dir))
-
-/obj/machinery/power/emitter/proc/construction_tool_act(mob/user, obj/item/W, tool_quality)
-
-	if(tool_quality == TOOL_WRENCH)
-		if(active)
-			to_chat(user, "Turn off [src] first.")
-			return
-		switch(state)
-			if(0)
-				set_state(1)
-				playsound(src, W.usesound, 75, 1)
-				act_message(user, src, MSG_SELF("You secure the external reinforcing bolts to the floor."), \
-					MSG_OTHERS("[user.name] secures %T% to the floor."), \
-					MSG_BLIND("You hear a ratchet."))
-				set_anchored(TRUE)
-			if(1)
-				set_state(0)
-				playsound(src, W.usesound, 75, 1)
-				act_message(user, src, MSG_SELF("You undo the external reinforcing bolts."), \
-					MSG_OTHERS("[user.name] unsecures %T% reinforcing bolts from the floor."), \
-					MSG_BLIND("You hear a ratchet."))
-				set_anchored(FALSE)
-				disconnect_from_network()
-			if(2)
-				to_chat(user, span_warning("\The [src] needs to be unwelded from the floor."))
+	if(!COOLDOWN_FINISHED(src, shot_cooldown) || active != 1)
+		return
+	var/burst_time = (min_burst_delay + max_burst_delay)/2 + 2*(burst_shots-1)
+	var/desired_beam = active_power_usage * (burst_time / 10) / burst_shots * material_output_setting
+	var/efficiency = emitter_efficiency()
+	var/required_energy = desired_beam / efficiency
+	if(material_stored_energy < required_energy)
+		if(powered)
+			powered = 0
+			update_icon()
+			log_game("EMITTER([x],[y],[z]) Lost power and was ON.")
+			investigate_log("lost power and turned" + span_red("off"),"singulo")
+		return
+	if(!powered)
+		powered = 1
 		update_icon()
-		return
+		log_game("EMITTER([x],[y],[z]) Regained power and is ON.")
+		investigate_log("regained power and turned " + span_green("on"),"singulo")
 
-	if(tool_quality == TOOL_WELDER)
-		if(active)
-			to_chat(user, "Turn off [src] first.")
-			return
-		switch(state)
-			if(0)
-				to_chat(user, span_warning("\The [src] needs to be wrenched to the floor."))
-			if(1)
-				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld [src] to the floor.", start_others = "[user.name] starts to weld [src] to the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done), done_args = list(user))
-			if(2)
-				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to cut [src] free from the floor.", start_others = "[user.name] starts to cut [src] free from the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done2), done_args = list(user))
-		update_icon()
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/power/emitter/proc/construction_tool_act_tool_done(mob/user)
-	if(!src)
-		return
-	set_state(2)
-	to_chat(user, "You weld [src] to the floor.")
-	connect_to_network()
-/obj/machinery/power/emitter/proc/construction_tool_act_tool_done2(mob/user)
-	if(!src)
-		return
-	set_state(1)
-	to_chat(user, "You cut [src] free from the floor.")
-	disconnect_from_network()
-
-/// Old attackby: repairing with steel sheets. `held_type` shows any material stack; `offered_when`
-/// restricts to steel, so a non-steel stack falls through (to the id/pda and scanner branches, then ..()).
-/datum/interaction/machine_item/emitter_repair
-	id = "emitter_repair"
-	name = "Repair with steel"
-	category = INTERACTION_CAT_REPAIR
-	held_type = /obj/item/stack/material
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/emitter/proc/repair_material_ok, null))
-	effect = /obj/machinery/power/emitter/proc/interaction_repair
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/power/emitter/proc/can_repair_with))
-
-/// Whether `held` is a steel material stack.
-/obj/machinery/power/emitter/proc/repair_material_ok(mob/actor, atom/target, obj/item/held)
-	var/obj/item/stack/material/stack = held
-	return istype(stack) && stack.get_material_name() == MAT_STEEL
-/// Requirement: TRUE, or why this stack can't repair the emitter now.
-/obj/machinery/power/emitter/proc/can_repair_with(mob/user, atom/target, obj/item/stack/material/held)
-	var/amt = CEILING((max_integrity - get_integrity()) / 10, 1)
-	if(!amt)
-		return "it's already fully repaired"
-	if(!istype(held) || !held.can_use(amt))
-		return "you don't have enough sheets to repair this; you need at least [amt] sheets"
-	return TRUE
-
-
-/obj/machinery/power/emitter/proc/interaction_repair(mob/user, obj/item/stack/material/P, datum/interaction/interaction)
-	var/amt = CEILING((max_integrity - get_integrity()) / 10, 1)
-	to_chat(user, span_notice("You begin repairing \the [src]..."))
-	om_task_start(/datum/om/task/timed/emitter_repair, user, src, receiver = src, P = P, amt = amt)
-	return TRUE
-
-/datum/om/task/timed/emitter_repair
-	duration = 3 SECONDS
-	complete_proc = /obj/machinery/power/emitter/proc/repair_done
-	var/obj/item/stack/material/P
-	var/amt
-
-/obj/machinery/power/emitter/proc/repair_done(datum/om/task/timed/emitter_repair/task)
-	var/mob/user = task.actor
-	var/obj/item/stack/material/P = task.P
-	var/amt = task.amt
-	if(P.use(amt))
-		to_chat(user, span_notice("You have repaired \the [src]."))
-		repair_damage(max_integrity)
+	COOLDOWN_START(src, shot_cooldown, fire_delay)
+	if(shot_number < burst_shots)
+		fire_delay = get_burst_delay() //R-UST port
+		shot_number++
 	else
-		to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
+		fire_delay = get_rand_burst_delay() //R-UST port
+		shot_number = 0
 
-/// Old attackby: an ID card or PDA toggles the console lock.
-/datum/interaction/machine_item/emitter_toggle_lock
-	id = "emitter_toggle_lock"
-	name = "Toggle lock"
-	category = INTERACTION_CAT_LOCK
-	held_type = list(/obj/item/card/id, /obj/item/pda)
-	effect = /obj/machinery/power/emitter/proc/interaction_toggle_lock
-	also_requires = list(REQ_BECAUSE(REQ_NOT_EMAGGED, "the lock seems to be broken"))
+	fire_delay = max(1, round(fire_delay / material_cadence_setting))
+	material_stored_energy -= required_energy
+	material_beam_joules += desired_beam
+	var/datum/material_service/service = material_service_of(src)
+	service.output_joules += desired_beam
+	service.loss_joules += required_energy - desired_beam
+	service.last_output_watts = desired_beam / max(fire_delay / 10, 0.1)
+	EXPIRY_STAMP(service, last_work_time, CLOCK_WORLD)
+	service.add_heat(required_energy - desired_beam)
 
-/obj/machinery/power/emitter/proc/interaction_toggle_lock(mob/user, obj/item/held, datum/interaction/interaction)
-	if(allowed(user))
-		set_locked(!locked)
-		to_chat(user, "The controls are now [locked ? "locked." : "unlocked."]")
-	else
-		to_chat(user, span_warning("Access denied."))
-	return TRUE
+	play_sfx(src, SFX_WEAPONS_EMITTER)
+	if(prob(35))
+		fx_sparks(src, 5)
 
-/// Old attackby: an anomaly scanner toggles anomalous particle mode.
-/datum/interaction/machine_item/emitter_toggle_anomalous
-	id = "emitter_toggle_anomalous"
-	name = "Toggle anomalous mode"
-	category = INTERACTION_CAT_CONFIGURE
-	held_type = /obj/item/anomaly_scanner
-	effect = /obj/machinery/power/emitter/proc/interaction_toggle_anomalous
+	var/obj/item/projectile/beam/emitter/beam = get_emitter_beam()
+	beam.damage = round(desired_beam/EMITTER_DAMAGE_POWER_TRANSFER)
+	rel_set(beam, nameof(beam.firer), src)
+	beam.fire(dir2angle(dir))
 
-/obj/machinery/power/emitter/proc/interaction_toggle_anomalous(mob/user, obj/item/held, datum/interaction/interaction)
-	anomalous = !anomalous
+/// Steel sheets repair it: one per 10 integrity missing.
+/obj/machinery/power/emitter/proc/repaired(datum/act/op/A)
+	var/obj/item/stack/material/sheets = A.held
+	var/amount = repair_sheets()
+	if(!sheets?.use(amount))
+		return OP_REFUSED
+	to_chat(A.actor, span_notice("You have repaired \the [src]."))
+	repair_damage(max_integrity)
+	return OP_OK
+
+/obj/machinery/power/emitter/proc/anomalous_toggled(datum/act/op/A)
+	set_anomalous(!anomalous)
 	burst_delay = anomalous ? 3 : 8
-	to_chat(user, span_notice("The beam is now set to [anomalous ? "anomalous." : "normal."]"))
-	return TRUE
+	to_chat(A.actor, span_notice("The beam is now set to [anomalous ? "anomalous." : "normal."]"))
+	return OP_OK
 
-/obj/machinery/power/emitter/wrench_act(mob/user, obj/item/W)
-	return construction_tool_act(user, W, TOOL_WRENCH)
+/obj/machinery/power/emitter/proc/particle_chosen(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/chosen = R?.value
+	if(!chosen || !(chosen in ANOMALY_PARTICLE_ALL))
+		return OP_REFUSED
+	particle = chosen
+	balloon_alert_visible("changed to [chosen]")
+	return OP_OK
 
-/obj/machinery/power/emitter/welder_act(mob/user, obj/item/W)
-	return construction_tool_act(user, W, TOOL_WELDER)
-
-/obj/machinery/power/emitter/multitool_act(mob/user, obj/item/W)
-	if(!anomalous)
-		return ITEM_INTERACT_BLOCKING
-	var/chosen_particle = rerun_ask(user, "k282", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice, message = "Select particle type", title = "Particle Selection", choices = ANOMALY_PARTICLE_ALL)
-	if(isnull(chosen_particle))
-		return ITEM_INTERACT_BLOCKING
-	if(!chosen_particle)
-		return ITEM_INTERACT_BLOCKING
-	particle = chosen_particle
-	balloon_alert_visible("changed to [chosen_particle]")
-	return ITEM_INTERACT_SUCCESS
-
-DECLARE_EMAG(/obj/machinery/power/emitter, PROC_REF(on_emag), null, null)
-/obj/machinery/power/emitter/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	set_locked(0)
-	set_emagged(1)
-	act_message(user, src, MSG_SELF(span_warning("You short out the lock.")), MSG_OTHERS("[user.name] emags %T%."))
-	return 1
+/// The card shorts the lock open for good (the lock refuses an emagged holder).
+/obj/machinery/power/emitter/proc/on_emag(datum/act/op/A)
+	key_set(src, LOCK_LOCKED, FALSE)
+	return OP_OK
 
 /obj/machinery/power/emitter/atom_destruction(damage_flag)
 	if(power_region && avail(active_power_usage))
@@ -313,23 +253,17 @@ DECLARE_EMAG(/obj/machinery/power/emitter, PROC_REF(on_emag), null, null)
 		visible_message(span_danger("\The [src] crumples apart!"), span_warning("You hear metal collapsing."))
 	return ..()
 
-/obj/machinery/power/emitter/examine(mob/user)
-	. = ..()
-	switch(state)
-		if(0)
-			. += span_warning("It is not secured in place!")
-		if(1)
-			. += span_warning("It has been bolted down securely, but not welded into place.")
-		if(2)
-			. += span_notice("It has been bolted down securely and welded down into place.")
+/// How damaged it looks.
+/obj/machinery/power/emitter/proc/examine_integrity(datum/act/A)
 	var/integrity_percentage = round((get_integrity() / max_integrity) * 100)
 	switch(integrity_percentage)
 		if(0 to 30)
-			. += span_danger("It is close to falling apart!")
+			return span_danger("It is close to falling apart!")
 		if(31 to 70)
-			. += span_danger("It is damaged.")
+			return span_danger("It is damaged.")
 		if(77 to 99)
-			. += span_warning("It is slightly damaged.")
+			return span_warning("It is slightly damaged.")
+	return null
 
 //R-UST port
 /obj/machinery/power/emitter/proc/get_initial_fire_delay()
@@ -348,45 +282,29 @@ DECLARE_EMAG(/obj/machinery/power/emitter, PROC_REF(on_emag), null, null)
 		return projectile
 	return new /obj/item/projectile/beam/emitter(get_turf(src))
 
+/// Its beam shows while it is on, fed and on a live network.
+/obj/machinery/power/emitter/proc/beam_shown()
+	return powered && power_region && avail(active_power_usage) && active
+
+/obj/machinery/power/emitter/draw(datum/look/look)
+	..()
+	emitter_look(look)
+
+/// The emitter's own sprite: its rung, the beam while it fires, the lock while its controls are locked.
+/obj/machinery/power/emitter/proc/emitter_look(datum/look/look)
+	look.state("emitter[state]")
+	if(beam_shown())
+		var/image/emitterbeam = image(icon, "emitter-beam")
+		emitterbeam.plane = PLANE_LIGHTING_ABOVE
+		look.overlay(emitterbeam)
+	if(lock_locked(src))
+		var/image/emitterlock = image(icon, "emitter-lock")
+		emitterlock.plane = PLANE_LIGHTING_ABOVE
+		look.overlay(emitterlock)
+
 /obj/machinery/power/emitter/pre_mapped
 	anchored = TRUE
-	state = 2
-
-/obj/machinery/power/emitter/pre_mapped/Initialize(mapload)
-	. = ..()
-	update_icon()
-
-/obj/machinery/power/emitter
-	icon = 'icons/obj/singularity_vr.dmi' // New emitter sprite
-	icon_state = "emitter0"
-	var/previous_state = 0
-
-CAPABILITIES(/obj/machinery/power/emitter)
-	climb()
-
-/obj/machinery/power/emitter/Initialize(mapload)
-	. = ..()
-	previous_state = state
-	make_rotatable()
-	emp_protection_flags |= EMP_PROTECT_SELF
-
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/emitter, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/power/emitter/appearance_overlays()
-	. = list()
-	icon_state = "emitter[state]"
-	if (state != previous_state)
-		flick("emitterflick-[previous_state][state]",src)
-		previous_state = state
-
-	if(powered && power_region && avail(active_power_usage) && active)
-		var/image/emitterbeam = image(icon,"emitter-beam")
-		emitterbeam.plane = PLANE_LIGHTING_ABOVE
-		. += emitterbeam
-
-	if(locked)
-		var/image/emitterlock = image(icon,"emitter-lock")
-		emitterlock.plane = PLANE_LIGHTING_ABOVE
-		. += emitterlock
+	state = FLOOR_WELD_WELDED
 
 // The old emitter sprite
 /obj/machinery/power/emitter/antique
@@ -394,18 +312,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/emitter, TYPE_PROC_REF(/atom, appea
 	desc = "An old fashioned heavy duty industrial laser."
 	icon_state = "emitter"
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/emitter/antique, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/power/emitter/antique/appearance_overlays()
-	. = list()
-	if(powered && power_region && avail(active_power_usage) && active)
-		icon_state = "emitter_+a"
-	else
-		icon_state = "emitter"
+/obj/machinery/power/emitter/antique/emitter_look(datum/look/look)
+	look.state(beam_shown() ? "emitter_+a" : "emitter")
 
 /obj/machinery/power/emitter/antique/pre_mapped
 	anchored = TRUE
-	state = 2
-
-/obj/machinery/power/emitter/antique/pre_mapped/Initialize(mapload)
-	. = ..()
-	update_icon()
+	state = FLOOR_WELD_WELDED

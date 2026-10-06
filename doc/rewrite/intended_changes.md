@@ -1469,3 +1469,30 @@ Pinned by `code/modules/unit_tests/dq_power_plants_behaviour.dm` (`dq_pp/sm_*`),
   touches the crystal (the pin's "click: nothing" became "Click: Touch"; that is what the legacy click did in play, the pin harness did not
   run the legacy click); a cyborg beside it touches it with its empty hand (as the legacy "Use" did when adjacent); a silicon at range and the
   AI open the monitor window through `interface(..., input = remote())` (was the robot interaction's `tgui_interact()` and `silicon_use`).
+
+## Power plants: the singularity, its containment, emitters, collectors and the particle accelerator (rewrite/power-plants)
+
+Pinned by `dq_pp/sing_*`, `fg_*`, `containment_field_*`, `emitter_*`, `collector_*`, `particle_*`, `pa_*`; green on the legacy code first, every
+number unchanged (size thresholds, dissipation 1 per 11 steps at stage one, field draw 2750 W alone and 8500 W linked with 3 fields, the 250 kJ
+store cap, 64 kJ per emitter shot in bursts of four, collector output moles x strength x 20 W).
+
+- **No machine pipeline, no PERIODIC lanes.** The singularity (and Nar-Sie, the cascade rift and the energy ball) steps on its `every(2 s)`
+  (`singularity_frame()`), field generators and emitters on `every(MACHINE_SERVICE_INTERVAL, when = ...)`, the control box emits on
+  `every(..., when = active)`, particles fly on `every(0.1 s)`. The singularity generator collapses at the drain after a particle brings it to
+  200 (`on_change(nameof(energy))`), not on the next 2 s frame.
+- **Containment-failure alert fixed.** `cleanup()` looked for singularities in `REGISTRY_MACHINES`, where none ever were, so the admin
+  "SINGUL/TESLOOSE!" alert never fired; it now reads `REGISTRY_SINGULARITIES`. A field generator next to the map edge no longer runtimes
+  raising its fields (it stops at the edge).
+- **Field generator warm-up** is a keyed `after()` chain (two 5 s stages, the fields at 10 s, as before); switching off cancels it and the
+  warm-up overlay goes with it (it used to stay on the dead generator).
+- **The bolt-and-weld ladder is a library capability** (`floor_weld()`, `code/library/machine/floor_weld.dm`) for emitters and field
+  generators: wrench instant, welder 2 s, refused while running; same messages.
+- **Locks are `lock()`** (emitter, collector; no alt-click): the ID swipe toggles `LOCK_LOCKED`, an emag shorts it open for good (`emag()`),
+  the collector locks only while active. `activate()` and the remote emitter button read `lock_locked()`.
+- **The particle accelerator parts and control box are on a construction graph** (loose, bolted, wired, closed; `pa_stage()` is the old
+  number). Opening a closed control box's panel now also powers it off (it stayed idle before). Parts and boxes rotate through the
+  `rotatable()` menu instead of granted verbs.
+- **The singularity generator** anchors with `anchor()`, opens with `panel()`; the screwdriver's two flavour waits (3 s then 8 s) became an
+  examine line while the panel is open; installing the super I/O coil is a 30 s op.
+- Pins: clicks the legacy harness showed as "nothing" (field touch, collector toggle) now name their op; the emitter, collector and parts lost
+  the "Repair/Load/Wire (refused: needs ...)" rows for items not held (the menu offers an item op only when that item is held).

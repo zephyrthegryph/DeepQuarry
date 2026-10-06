@@ -41,13 +41,14 @@
 		return //don't annnounce miniballs
 	..()
 
-/obj/singularity/energy_ball/periodic_step(wait = 20)
+/// The ball's step (every 2 s, the singularity's every()): its energy, then a wander of one tile per decisecond and the zap.
+/obj/singularity/energy_ball/singularity_frame(datum/act/timer/A)
 	if(!src?.orbit_target())
 		if (handle_energy())
 			return
 
 		// One step per decisecond, then the zap (basket_ball_step()).
-		basket_ball_step(max(wait - 5, 4 + length(orbiting_balls()) * 1.5), dir)
+		basket_ball_step(max(2 SECONDS - 5, 4 + length(orbiting_balls()) * 1.5), dir)
 	else
 		energy = 0 // ensure we dont have miniballs of miniballs
 
@@ -127,20 +128,19 @@
 
 	EB.orbit(src, orbitsize, pick(FALSE, TRUE), rand(10, 25), pick(3, 4, 5, 6, 36))
 
-CAPABILITIES(/obj/singularity/energy_ball)
-	op("energy_ball_touch", hand(), then(PROC_REF(interaction_energy_ball_touch)))
-
-/// Old attack_hand: touching it dusts you (instead of the singularity's consume).
-/obj/singularity/energy_ball/proc/interaction_energy_ball_touch(datum/act/op/A)
-	var/mob/user = A.actor
-	dust_mob(user)
-	return TRUE
+/// Touching the ball dusts you (instead of the singularity's consume).
+/obj/singularity/energy_ball/touched(datum/act/op/A)
+	dust_mob(A.actor)
+	return OP_OK
 
 /obj/singularity/energy_ball/Bump(atom/A)
 	dust_mob(A)
 
-/obj/singularity/energy_ball/Bumped(atom/movable/AM)
-	dust_mob(AM)
+/// Whatever runs into the ball is dusted (instead of the singularity's consume).
+/obj/singularity/energy_ball/bumped_into(datum/act/A)
+	var/datum/notice/bumped/N = A
+	if(N.bumper && !QDELETED(N.bumper))
+		dust_mob(N.bumper)
 
 /// The miniballs orbiting this ball (ghosts may orbit it too; they don't count).
 /obj/singularity/energy_ball/proc/orbiting_balls()

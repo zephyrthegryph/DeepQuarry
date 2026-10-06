@@ -17,6 +17,13 @@
 		return M.machine_step()
 	return D.periodic_step()
 
+/// Locks or unlocks a machine's controls: its lock() capability's key, or the legacy `locked` var.
+/proc/pp_set_lock(obj/machinery/M, value)
+	if(cap_of(M, CAP_LOCK, null))
+		key_set(M, LOCK_LOCKED, value)
+	else
+		M.set_locked(value)
+
 /// Moles of `gas` in `air`.
 /proc/pp_moles(datum/gas_mixture/air, gas)
 	return air.get_moles(gas)
@@ -732,10 +739,10 @@
 	E.set_anchored(TRUE)
 	E.set_state(2)
 	power_test_join(net, E)
-	E.set_locked(TRUE)
+	pp_set_lock(E, TRUE)
 	E.activate(H)
 	TEST_ASSERT_EQUAL(E.active, 0, "a locked emitter does not switch on")
-	E.set_locked(FALSE)
+	pp_set_lock(E, FALSE)
 	E.activate(H)
 	TEST_ASSERT_EQUAL(E.active, 1, "an unlocked one does")
 	E.activate(H)

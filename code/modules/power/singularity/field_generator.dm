@@ -1,17 +1,21 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:33
+// The field generator (doc/rewrite/final_api.html section 16): the singularity engine's containment. Bolted and welded to the floor
+// (floor_weld()), switched on by hand, it warms up for FIELD_GEN_WARMUP_STAGE twice (warming_up 1 -> 3) and then raises containment fields toward
+// every active generator within 9 tiles. While its fields stand it pays for them every machine service interval (field_step(): half of
+// gen_power_draw, plus gen_power_draw per linked generator and field_power_draw per field, from its own store and then its partners'); a
+// generator that cannot pay shuts down and its fields fall. Emitter beams charge its store.
+//
+// SAFETY: the fields are what holds a singularity (its can_move() refuses a field tile and an active generator's tile). Every number here is
+// pinned in code/modules/unit_tests/dq_power_plants_behaviour.dm (fg_*, containment_field_*).
 
-/**
- * field_generator power level display
- * The icon used for the field_generator need to have 'num_power_levels' number of icon states
- * named 'Field_Gen +p[num]' where 'num' ranges from 1 to 'num_power_levels'
- *
- * The power level is displayed using overlays. The current displayed power level is stored in 'powerlevel'.
- * The overlay in use and the powerlevel variable must be kept in sync.  A powerlevel equal to 0 means that
- * no power level overlay is currently in the overlays list.
- * -Aygar
- */
+/// The store a field generator holds at most, J.
+#define FIELD_GEN_MAX_POWER 250000
+/// One warm-up stage; the fields rise after the second.
+#define FIELD_GEN_WARMUP_STAGE (5 SECONDS)
 
-#define field_generator_max_power 250000
+MSG_DEF_SELF(fieldgen/unsecured, "It needs to be firmly secured to the floor first.")
+MSG_DEF_SELF(fieldgen/online, "You are unable to turn off the field generator once it is online.")
+MSG_DEF(fieldgen/activated, "You turn on %T%.", "%U% turns on %T%.")
+
 /obj/machinery/field_generator
 	name = "Field Generator"
 	desc = "A large thermal battery that projects a high amount of energy when powered."
@@ -20,15 +24,17 @@
 	anchored = FALSE
 	density = TRUE
 	use_power = USE_POWER_OFF
-	var/const/num_power_levels = 6	// Total number of power level icon has
+	/// The number of power level overlays the icon has ("+p1" .. "+p6").
+	var/const/num_power_levels = 6
+	/// Admin: the store never drains (calc_power() pays nothing).
 	var/Varpower = 0
 	active = 0
-	var/power = 30000  // Current amount of power
+	/// The store the fields are paid from, J.
+	var/power = 30000
 	state = 0
-	/// The containment fields this generator powers (shared with the generator at the far end;
-	/// each field is a map object, rooted by its turf).
+	/// The containment fields this generator powers (shared with the generator at the far end; each field is a map object, rooted by its turf).
 	var/list/obj/machinery/containment_field/fields
-	/// Generators linked to this one (symmetric membership).
+	/// Generators linked to this one (a symmetric link).
 	var/list/obj/machinery/field_generator/connected_gens
 	var/clean_up = 0
 
@@ -39,154 +45,71 @@
 	var/light_range_on = 3
 	var/light_power_on = 1
 	light_color = "#5BA8FF"
+	/// Admin quick-start: the next step brings it straight online.
+	var/Varedit_start = FALSE
+	/// Warm-up stage 0-3 (turn_on(), warm_up_step()); the fields go up at 3.
+	var/warming_up = 0
 
-/// Admin quick-start (debug.dm): the next step brings it straight online.
-OM_FIELD(/obj/machinery/field_generator, Varedit_start, FALSE, CHANGE_MACHINE_SETTINGS)
-/// Warm-up stage 0-3 (turn_on(), warm_up_step()); the fields go up at 3.
-OM_FIELD(/obj/machinery/field_generator, warming_up, 0, CHANGE_MACHINE_SETTINGS)
-/// Fields up (active 2) and drawing power, or an admin quick-start pending.
-OM_DERIVE_FIELD(/obj/machinery/field_generator, fields_running, list("active", "Varedit_start"))
-/obj/machinery/field_generator/proc/fields_running()
-	return active == 2 || Varedit_start
-/// Switched on (active 1) and still warming up.
-OM_DERIVE_FIELD(/obj/machinery/field_generator, warming, list("active", "warming_up"))
-/obj/machinery/field_generator/proc/warming()
-	return active == 1 && warming_up && warming_up < 3
-
-DECLARE_PERIODIC_WHILE(/obj/machinery/field_generator, MACHINE_PIPELINE, "fields_running")
-DECLARE_REPEAT(/obj/machinery/field_generator, 5 SECONDS, warm_up_step, "warming")
-
-/obj/machinery/field_generator/examine()
-	. = ..()
-	switch(state)
-		if(0)
-			. += span_warning("It is not secured in place!")
-		if(1)
-			. += span_warning("It has been bolted down securely, but not welded into place.")
-		if(2)
-			. += span_notice("It has been bolted down securely and welded down into place.")
-
-DECLARE_APPEARANCE_PROC(/obj/machinery/field_generator, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/field_generator/appearance_overlays()
-	. = list()
-	if(!active)
-		if(warming_up)
-			. += "+a[warming_up]"
-	if(length(fields))
-		. += "+on"
-	// Power level indicator
-	// Scale % power to % num_power_levels and truncate value
-	var/level = round(num_power_levels * power / field_generator_max_power)
-	// Clamp between 0 and num_power_levels for out of range power values
-	level = between(0, level, num_power_levels)
-	if(level)
-		. += "+p[level]"
-
-	return .
+TRACKED(/obj/machinery/field_generator, Varedit_start)
+TRACKED(/obj/machinery/field_generator, warming_up)
 
 CAPABILITIES(/obj/machinery/field_generator)
 	climb()
+	floor_weld(busy = nameof(active))
+	ref_many(nameof(fields), /obj/machinery/containment_field)
+	links(/obj/machinery/field_generator::connected_gens, /obj/machinery/field_generator::connected_gens, a_many = TRUE, b_many = TRUE)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(field_step)), when = PROC_REF(fields_running))
+	op("activate", hand(), label("Activate"), ungated(), wait(0),
+		needs(req(PROC_REF(is_secured), because = MSG(fieldgen/unsecured)), req(PROC_REF(is_off), because = MSG(fieldgen/online))),
+		says(MSG(fieldgen/activated)), then(PROC_REF(activated)))
 
 /obj/machinery/field_generator/Initialize(mapload)
 	. = ..()
 	emp_protection_flags |= EMP_PROTECT_SELF
 
-/obj/machinery/field_generator/machine_step()
+/// Its fields stand (active 2) and must be paid for, or an admin quick-start is pending.
+/obj/machinery/field_generator/proc/fields_running(datum/act/A)
+	return active == 2 || Varedit_start
+
+/obj/machinery/field_generator/proc/is_secured(datum/act/A)
+	return state == FLOOR_WELD_WELDED
+
+/obj/machinery/field_generator/proc/is_off(datum/act/A)
+	return active < 1
+
+/obj/machinery/field_generator/draw(datum/look/look)
+	..()
+	if(!active)
+		look.overlay("+a[warming_up]", when = warming_up)
+	look.overlay("+on", when = length(fields))
+	// The power level: the store's share of the maximum, in num_power_levels steps.
+	var/level = between(0, round(num_power_levels * power / FIELD_GEN_MAX_POWER), num_power_levels)
+	look.overlay("+p[level]", when = level)
+
+/// One step while the fields stand (every machine service interval): an admin quick-start, or the fields' bill.
+/obj/machinery/field_generator/proc/field_step(datum/act/timer/A)
 	if(Varedit_start)
 		if(active == 0)
 			set_active(1)
-			set_state(2)
-			power = field_generator_max_power
+			set_state(FLOOR_WELD_WELDED)
+			power = FIELD_GEN_MAX_POWER
 			set_anchored(TRUE)
 			set_warming_up(3)
 			start_fields()
 			update_icon()
 		set_Varedit_start(FALSE)
 		return
-
 	calc_power()
 	update_icon()
 
-/obj/machinery/field_generator/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/field_generator_activate,
-	)
-	..()
-
-/// Old attack_hand (never called ..()). The old dist > 1 case did nothing silently;
-/// here it's folded into the reach requirement, which shows a reach message instead.
-/datum/interaction/machine_hand/ungated/field_generator_activate
-	id = "field_generator_activate"
-	name = "Activate"
-	category = INTERACTION_CAT_TOGGLE
-	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/machinery/field_generator/proc/is_secured, "needs to be firmly secured to the floor first"), REQ_ON(PRED_TARGET, /obj/machinery/field_generator/proc/is_off, "you are unable to turn off the field generator once it is online"))
-	effect = /obj/machinery/field_generator/proc/interaction_activate
-
-/obj/machinery/field_generator/proc/is_secured(mob/actor, atom/target, obj/item/held)
-	return state == 2
-
-/obj/machinery/field_generator/proc/is_off(mob/actor, atom/target, obj/item/held)
-	return active < 1
-
-/obj/machinery/field_generator/proc/interaction_activate(mob/user, obj/item/held, datum/interaction/interaction)
-	act_message(user, null, MSG_SELF("You turn on the [name]."), MSG_OTHERS("[user.name] turns on the [name]"), MSG_BLIND("You hear heavy droning"))
+/// Switched on by hand: the warm-up starts.
+/obj/machinery/field_generator/proc/activated(datum/act/op/A)
+	var/mob/user = A.actor
 	turn_on()
 	log_game("FIELDGEN([x],[y],[z]) Activated by [key_name(user)]")
-	investigate_log(span_green("activated") + " by [user.key].","singulo")
-
+	investigate_log(span_green("activated") + " by [user?.key].","singulo")
 	add_fingerprint(user)
-	return TRUE
-
-/obj/machinery/field_generator/proc/construction_tool_act(mob/user, obj/item/W, tool_quality)
-	if(active)
-		to_chat(user, "The [src] needs to be off.")
-		return ITEM_INTERACT_BLOCKING
-	if(tool_quality == TOOL_WRENCH)
-		switch(state)
-			if(0)
-				set_state(1)
-				playsound(src, W.usesound, 75, 1)
-				act_message(user, null, MSG_SELF("You secure the external reinforcing bolts to the floor."), \
-					MSG_OTHERS("[user.name] secures [src.name] to the floor."), \
-					MSG_BLIND("You hear ratchet"))
-				set_anchored(TRUE)
-			if(1)
-				set_state(0)
-				playsound(src, W.usesound, 75, 1)
-				act_message(user, null, MSG_SELF("You undo the external reinforcing bolts."), \
-					MSG_OTHERS("[user.name] unsecures [src.name] reinforcing bolts from the floor."), \
-					MSG_BLIND("You hear ratchet"))
-				set_anchored(FALSE)
-			if(2)
-				to_chat(user, span_red("The [src.name] needs to be unwelded from the floor."))
-				return
-	else if(tool_quality == TOOL_WELDER)
-		switch(state)
-			if(0)
-				to_chat(user, span_red("The [src.name] needs to be wrenched to the floor."))
-				return
-			if(1)
-				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld the [src] to the floor.", start_others = "[user.name] starts to weld the [src.name] to the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done), done_args = list(user))
-			if(2)
-				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to cut the [src] free from the floor.", start_others = "[user.name] starts to cut the [src.name] free from the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done2), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/field_generator/proc/construction_tool_act_tool_done(mob/user)
-	if(!src)
-		return
-	set_state(2)
-	to_chat(user, "You weld the field generator to the floor.")
-/obj/machinery/field_generator/proc/construction_tool_act_tool_done2(mob/user)
-	if(!src)
-		return
-	set_state(1)
-	to_chat(user, "You cut the [src] free from the floor.")
-
-/obj/machinery/field_generator/wrench_act(mob/user, obj/item/W)
-	return construction_tool_act(user, W, TOOL_WRENCH)
-
-/obj/machinery/field_generator/welder_act(mob/user, obj/item/W)
-	return construction_tool_act(user, W, TOOL_WELDER)
+	return OP_OK
 
 /obj/machinery/field_generator/bullet_act(obj/item/projectile/Proj)
 	if(istype(Proj, /obj/item/projectile/beam))
@@ -202,6 +125,8 @@ CAPABILITIES(/obj/machinery/field_generator)
 
 /obj/machinery/field_generator/proc/turn_off()
 	set_active(0)
+	cancel_after(src, "warm_up")
+	set_warming_up(0)
 	after(src, 0.1 SECONDS, PROC_REF(finish_turn_off))
 	update_icon()
 
@@ -212,24 +137,28 @@ CAPABILITIES(/obj/machinery/field_generator)
 /obj/machinery/field_generator/proc/turn_on()
 	set_active(1)
 	set_warming_up(1)
+	after(src, FIELD_GEN_WARMUP_STAGE, PROC_REF(warm_up_step), key = "warm_up")
 	update_icon()
 
-/// Warming up (declared on `warming`): one stage every five seconds, fields up at the third.
+/// One warm-up stage (FIELD_GEN_WARMUP_STAGE after the last): the fields go up at the third.
 /obj/machinery/field_generator/proc/warm_up_step()
+	if(active != 1)
+		return
 	set_warming_up(warming_up + 1)
 	update_icon()
 	if(warming_up >= 3)
 		start_fields()
 		set_light(light_range_on, light_power_on)
-		return REPEAT_STOP
+		return
+	after(src, FIELD_GEN_WARMUP_STAGE, PROC_REF(warm_up_step), key = "warm_up")
 
 /obj/machinery/field_generator/proc/calc_power()
 	if(Varpower)
 		return 1
 
 	update_icon()
-	if(src.power > field_generator_max_power)
-		src.power = field_generator_max_power
+	if(src.power > FIELD_GEN_MAX_POWER)
+		src.power = FIELD_GEN_MAX_POWER
 
 	var/power_draw = gen_power_draw
 	power_draw += gen_power_draw * length(connected_gens)
@@ -270,7 +199,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 	return actual_draw
 
 /obj/machinery/field_generator/proc/start_fields()
-	if(src.state != 2 || !anchored)
+	if(src.state != FLOOR_WELD_WELDED || !anchored)
 		turn_off()
 		return
 	after(src, 0.1 SECONDS, PROC_REF(setup_field), with = list(1))
@@ -287,7 +216,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 		return
 	for(var/dist = 0, dist <= 9, dist += 1) // checks out to 8 tiles away for another generator
 		T = get_step(T, NSEW)
-		if(T.density)//We cant shoot a field though this
+		if(!T || T.density)//We cant shoot a field though this (or off the map)
 			return 0
 		for(var/atom/A in turf_contents_of_type(T, /atom))
 			if(ismob(A))
@@ -335,9 +264,8 @@ CAPABILITIES(/obj/machinery/field_generator)
 
 	//This is here to help fight the "hurr durr, release singulo cos nobody will notice before the
 	//singulo eats the evidence". It's not fool-proof but better than nothing.
-	//I want to avoid using global variables.
 	var/temp = 1 //stops spam
-	for(var/obj/singularity/O in REGISTRY_MEMBERS(REGISTRY_MACHINES))
+	for(var/obj/singularity/O in REGISTRY_MEMBERS(REGISTRY_SINGULARITIES))
 		if(O.last_warning && temp)
 			if(ELAPSED(O, last_warning, CLOCK_WORLD) > 5 SECONDS) //to stop message-spam
 				temp = 0
@@ -348,14 +276,8 @@ CAPABILITIES(/obj/machinery/field_generator)
 		EXPIRY_STAMP(O, last_warning, CLOCK_WORLD)
 
 /obj/machinery/field_generator/pre_mapped
-	state = 2 //Start welded.
+	state = FLOOR_WELD_WELDED //Start welded.
 	anchored = TRUE
 
-/obj/machinery/field_generator/pre_mapped/Initialize(mapload)
-	. = ..()
-	update_icon()
-
-/obj/machinery/field_generator/relations()
-	. = ..()
-	. += rel_many(nameof(fields))
-	. += rel_many(nameof(connected_gens), back = nameof(/obj/machinery/field_generator::connected_gens))
+#undef FIELD_GEN_MAX_POWER
+#undef FIELD_GEN_WARMUP_STAGE

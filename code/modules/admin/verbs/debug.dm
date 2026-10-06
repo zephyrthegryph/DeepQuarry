@@ -505,11 +505,11 @@ ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singu
 		TC.update_icon()
 	for(var/obj/structure/particle_accelerator/PA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		PA.anchored = TRUE
-		PA.construction_state = 3
+		graph_place(PA, STAGE_PA_CLOSED)
 		PA.update_icon()
 	for(var/obj/machinery/particle_accelerator/PA in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		PA.anchored = TRUE
-		PA.construction_state = 3
+		graph_place(PA, STAGE_PA_CLOSED)
 		PA.update_icon()
 
 	// /obj/machinery/power/rad_collector was deleted with the ZAS power

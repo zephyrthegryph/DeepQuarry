@@ -1,5 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:33
-
 /*Composed of 7 parts
 3 Particle emitters
 proc
@@ -13,15 +11,6 @@ Lies, only the control computer draws power.
 contains procs for mixing gas and whatever other fuel it uses
 mix_gas()
 
-1 gas holder WIP
-acts like a tank valve on the ground that you wrench gas tanks onto
-proc
-extract_gas()
-return_gas()
-attach_tank()
-remove_tank()
-get_available_mix()
-
 1 End Cap
 
 1 Control computer
@@ -29,9 +18,6 @@ interface for the pa, acts like a computer with an html menu for diff parts and 
 all other parts contain only a ref to this
 a /machine/, tells the others to do work
 contains ref for all parts
-proc
-process()
-check_build()
 
  * Setup map
  *   |EC|
@@ -40,22 +26,50 @@ check_build()
  * PE|PE|PE
 
 Icon Addemdum
-Icon system is much more robust, and the icons are all variable based.
-Each part has a reference string, powered, strength, and contruction values.
-Using this the update_icon() proc is simplified a bit (using for absolutely was problematic with naming),
-so the icon_state comes out be:
-"[reference][strength]", with a switch controlling construction_states and ensuring that it doesn't
-power on while being contructed, and all these variables are set by the computer through it's scan list
-Essential order of the icons:
+Each part has a reference string, powered, strength, and construction stage, so the icon_state comes out as
+"[reference][strength]":
 Standard - [reference]
 Wrenched - [reference]
 Wired    - [reference]w
 Closed   - [reference]c
 Powered  - [reference]p[strength]
 Strength being set by the computer and a null strength (Computer is powered off or inactive) returns a 'null', counting as empty
-So, hopefully this is helpful if any more icons are to be added/changed/wondering what the hell is going on here
-
 */
+
+// Every part of the accelerator, the control box included, is built on one ladder (doc/rewrite/final_api.html section 12): loose, bolted down
+// (a wrench), wired (a length of cable; wirecutters take it out), closed (a screwdriver; it opens the same way). pa_stage() reads it as the old
+// 0..3 number. A part placed finished (the pre_mapped subtypes) starts closed.
+STAGE_DEF(pa, loose)
+STAGE_DEF(pa, bolted)
+STAGE_DEF(pa, wired)
+STAGE_DEF(pa, closed)
+
+MSG_DEF_SELF(stage/pa/loose, "Looks like it's not attached to the flooring.")
+MSG_DEF_SELF(stage/pa/bolted, "It is missing some cables.")
+MSG_DEF_SELF(stage/pa/wired, "The panel is open.")
+MSG_DEF_SELF(stage/pa/closed, "It is assembled.")
+
+/// The 0..3 construction stage of a part of the accelerator (its build ladder's current stage).
+/proc/pa_stage_of(datum/part)
+	READS_FROM(part)
+	if(built(part, STAGE_PA_CLOSED))
+		return 3
+	if(built(part, STAGE_PA_WIRED))
+		return 2
+	if(built(part, STAGE_PA_BOLTED))
+		return 1
+	return 0
+
+/// What a stage of the ladder says about the part.
+/proc/pa_stage_examine(datum/part)
+	switch(pa_stage_of(part))
+		if(0)
+			return /datum/msg/stage/pa/loose
+		if(1)
+			return /datum/msg/stage/pa/bolted
+		if(2)
+			return /datum/msg/stage/pa/wired
+	return /datum/msg/stage/pa/closed
 
 /obj/structure/particle_accelerator
 	name = "Particle Accelerator"
@@ -64,8 +78,8 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 	icon_state = "none"
 	anchored = FALSE
 	density = TRUE
+	/// The control box this part answers to (part_scan() links it).
 	var/tmp/obj/machinery/particle_accelerator/control_box/master
-	var/construction_state = 0
 	var/reference = null
 	var/powered = 0
 	var/strength = null
@@ -73,85 +87,87 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 
 CAPABILITIES(/obj/structure/particle_accelerator)
 	climb()
+	rotatable()
+	ref_one(nameof(master), /obj/machinery/particle_accelerator/control_box)
+	construction(start(STAGE_PA_LOOSE),
+		stage(STAGE_PA_BOLTED, tool(TOOL_WRENCH), wait(0), then(PROC_REF(bolted)), undone(PROC_REF(unbolted)), undo = list(tool(TOOL_WRENCH), wait(0))),
+		stage(STAGE_PA_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(0), then(PROC_REF(wired)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(0))),
+		stage(STAGE_PA_CLOSED, tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(closed)), undone(PROC_REF(opened)), undo = list(tool(TOOL_SCREWDRIVER), wait(0))))
+	examine_line(PROC_REF(examine_stage))
 
-/obj/structure/particle_accelerator/Initialize(mapload)
-	. = ..()
-	make_rotatable()
+/// Its 0..3 construction stage.
+/obj/structure/particle_accelerator/proc/pa_stage()
+	return pa_stage_of(src)
+
+/obj/structure/particle_accelerator/proc/examine_stage(datum/act/A)
+	return pa_stage_examine(src)
 
 // its control box rescans its parts.
 /obj/structure/particle_accelerator/on_destroy(force)
-	construction_state = 0
-	if(master())
-		master().part_scan()
+	var/obj/machinery/particle_accelerator/control_box/box = master
+	rel_clear(src, nameof(master))
+	box?.part_scan()
 	..()
 
-/obj/structure/particle_accelerator/end_cap
-	name = "Alpha Particle Generation Array"
-	desc_holder = "This is where Alpha particles are generated from \[REDACTED\]"
-	icon_state = "end_cap"
-	reference = "end_cap"
+/obj/structure/particle_accelerator/proc/bolted(datum/act/op/A)
+	set_anchored(TRUE)
+	act_message(A.actor, null, MSG_SELF("You secure the external bolts."), MSG_OTHERS("[A.actor.name] secures the [src.name] to the floor."))
+	return stage_moved()
 
-/obj/structure/particle_accelerator/examine(mob/user)
-	. = ..()
+/obj/structure/particle_accelerator/proc/unbolted(datum/act/op/A)
+	set_anchored(FALSE)
+	act_message(A.actor, null, MSG_SELF("You remove the external bolts."), MSG_OTHERS("[A.actor.name] detaches the [src.name] from the floor."))
+	return stage_moved()
 
-	switch(construction_state)
-		if(0)
-			. += "Looks like it's not attached to the flooring."
-		if(1)
-			. += "It is missing some cables."
-		if(2)
-			. += "The panel is open."
-		if(3)
-			. += "It is assembled."
+/obj/structure/particle_accelerator/proc/wired(datum/act/op/A)
+	act_message(A.actor, null, MSG_SELF("You add some wires."), MSG_OTHERS("[A.actor.name] adds wires to the [src.name]."))
+	return stage_moved()
 
-DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/item/stack/cable_coil, PROC_REF(interaction_wire), "Wire"))
+/obj/structure/particle_accelerator/proc/unwired(datum/act/op/A)
+	act_message(A.actor, null, MSG_SELF("You remove some wires."), MSG_OTHERS("[A.actor.name] removes some wires from the [src.name]."))
+	return stage_moved()
 
-/// Old attackby: wire the part (a construction step).
-/obj/structure/particle_accelerator/proc/interaction_wire(mob/user, obj/item/stack/cable_coil/W, datum/interaction/interaction)
-	return process_tool_hit(W, user) ? INTERACTION_HANDLED_PASS : FALSE
+/obj/structure/particle_accelerator/proc/closed(datum/act/op/A)
+	act_message(A.actor, null, MSG_SELF("You close the access panel."), MSG_OTHERS("[A.actor.name] closes the [src.name]'s access panel."))
+	update_icon()
+	return OP_OK
 
-/obj/structure/particle_accelerator/wrench_act(mob/user, obj/item/W)
-	return process_tool_hit(W, user, TOOL_WRENCH) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+/obj/structure/particle_accelerator/proc/opened(datum/act/op/A)
+	act_message(A.actor, null, MSG_SELF("You open the access panel."), MSG_OTHERS("[A.actor.name] opens the [src.name]'s access panel."))
+	return stage_moved()
 
-/obj/structure/particle_accelerator/wirecutter_act(mob/user, obj/item/W)
-	return process_tool_hit(W, user, TOOL_WIRECUTTER) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
-
-/obj/structure/particle_accelerator/screwdriver_act(mob/user, obj/item/W)
-	return process_tool_hit(W, user, TOOL_SCREWDRIVER) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+/// The part came apart a step: its control box rescans.
+/obj/structure/particle_accelerator/proc/stage_moved()
+	update_state()
+	update_icon()
+	return OP_OK
 
 /obj/structure/particle_accelerator/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	if(master()?.active)
-		master().toggle_power()
+	if(master?.active)
+		master.toggle_power()
 		log_game("PACCEL([x],[y],[z]) Was moved while active and turned off.")
 		investigate_log("was moved whilst active; it " + span_red("powered down") + ".","singulo")
 
-APPEARANCE_TEMPLATE(/obj/structure/particle_accelerator, "{reference}{appearance_suffix}")
-
-/// The icon_state suffix for the construction state (and strength once wired and powered).
-/obj/structure/particle_accelerator/proc/appearance_suffix()
-	switch(construction_state)
+/obj/structure/particle_accelerator/draw(datum/look/look)
+	..()
+	var/suffix = ""
+	switch(pa_stage())
 		if(2)
-			return "w"
+			suffix = "w"
 		if(3)
-			return powered ? "p[strength]" : "c"
-	return ""
+			suffix = powered ? "p[strength]" : "c"
+	look.state("[reference][suffix]")
 
 /obj/structure/particle_accelerator/proc/update_state()
-	if(master())
-		master().update_state()
-		return 0
+	master?.update_state()
+	return 0
 
 /obj/structure/particle_accelerator/proc/report_ready(obj/O)
-	if(O && (O == master()))
-		if(construction_state >= 3)
-			return 1
-	return 0
+	return O && O == master && pa_stage() >= 3
 
 /obj/structure/particle_accelerator/proc/report_master()
-	if(master())
-		return master()
-	return 0
+	return master || 0
 
 /obj/structure/particle_accelerator/proc/connect_master(obj/O)
 	if(O && istype(O,/obj/machinery/particle_accelerator/control_box))
@@ -160,49 +176,19 @@ APPEARANCE_TEMPLATE(/obj/structure/particle_accelerator, "{reference}{appearance
 			return 1
 	return 0
 
-/obj/structure/particle_accelerator/proc/process_tool_hit(obj/item/O, mob/user, tool_quality)
-	if(!(O) || !(user))
-		return 0
-	if(!ismob(user) || !isobj(O))
-		return 0
-	var/temp_state = src.construction_state
+/obj/structure/particle_accelerator/end_cap
+	name = "Alpha Particle Generation Array"
+	desc_holder = "This is where Alpha particles are generated from \[REDACTED\]"
+	icon_state = "end_cap"
+	reference = "end_cap"
 
-	switch(src.construction_state)//TODO:Might be more interesting to have it need several parts rather than a single list of steps
-		if(0)
-			if(tool_quality == TOOL_WRENCH)
-				playsound(src, O.usesound, 75, 1)
-				set_anchored(TRUE)
-				act_message(user, null, MSG_SELF("You secure the external bolts."), MSG_OTHERS("[user.name] secures the [src.name] to the floor."))
-				temp_state++
-		if(1)
-			if(tool_quality == TOOL_WRENCH)
-				playsound(src, O.usesound, 75, 1)
-				set_anchored(FALSE)
-				act_message(user, null, MSG_SELF("You remove the external bolts."), MSG_OTHERS("[user.name] detaches the [src.name] from the floor."))
-				temp_state--
-			else if(istype(O, /obj/item/stack/cable_coil))
-				if(O:use(1,user))
-					act_message(user, null, MSG_SELF("You add some wires."), MSG_OTHERS("[user.name] adds wires to the [src.name]."))
-					temp_state++
-		if(2)
-			if(tool_quality == TOOL_WIRECUTTER)//TODO:Shock user if its on?
-				act_message(user, null, MSG_SELF("You remove some wires."), MSG_OTHERS("[user.name] removes some wires from the [src.name]."))
-				temp_state--
-			else if(tool_quality == TOOL_SCREWDRIVER)
-				act_message(user, null, MSG_SELF("You close the access panel."), MSG_OTHERS("[user.name] closes the [src.name]'s access panel."))
-				temp_state++
-		if(3)
-			if(tool_quality == TOOL_SCREWDRIVER)
-				act_message(user, null, MSG_SELF("You open the access panel."), MSG_OTHERS("[user.name] opens the [src.name]'s access panel."))
-				temp_state--
-	if(temp_state == src.construction_state)//Nothing changed
-		return 0
-	else
-		src.construction_state = temp_state
-		if(src.construction_state < 3)//Was taken apart, update state
-			update_state()
-		update_icon()
-		return 1
+/obj/structure/particle_accelerator/end_cap/pre_mapped
+	anchored = TRUE
+
+CAPABILITIES(/obj/structure/particle_accelerator/end_cap/pre_mapped)
+	configure(construction_graph(start = STAGE_PA_CLOSED, via = list(STAGE_PA_BOLTED, STAGE_PA_WIRED)))
+
+// ---- the control box's base ----
 
 /obj/machinery/particle_accelerator
 	name = "Particle Accelerator"
@@ -214,7 +200,6 @@ APPEARANCE_TEMPLATE(/obj/structure/particle_accelerator, "{reference}{appearance
 	use_power = USE_POWER_OFF
 	idle_power_usage = 0
 	active_power_usage = 0
-	var/construction_state = 0
 	active = 0
 	var/reference = null
 	var/powered = null
@@ -223,111 +208,58 @@ APPEARANCE_TEMPLATE(/obj/structure/particle_accelerator, "{reference}{appearance
 
 CAPABILITIES(/obj/machinery/particle_accelerator)
 	climb()
+	rotatable()
+	construction(start(STAGE_PA_LOOSE),
+		stage(STAGE_PA_BOLTED, tool(TOOL_WRENCH), wait(0), then(PROC_REF(bolted)), undone(PROC_REF(unbolted)), undo = list(tool(TOOL_WRENCH), wait(0))),
+		stage(STAGE_PA_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(0), then(PROC_REF(wired)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(0))),
+		stage(STAGE_PA_CLOSED, tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(closed)), undone(PROC_REF(opened)), undo = list(tool(TOOL_SCREWDRIVER), wait(0))))
+	examine_line(PROC_REF(examine_stage))
 
-/obj/machinery/particle_accelerator/Initialize(mapload)
-	. = ..()
-	make_rotatable()
+/// Its 0..3 construction stage.
+/obj/machinery/particle_accelerator/proc/pa_stage()
+	return pa_stage_of(src)
 
+/obj/machinery/particle_accelerator/proc/examine_stage(datum/act/A)
+	return pa_stage_examine(src)
 
-/obj/machinery/particle_accelerator/examine(mob/user)
-	. = ..()
+/obj/machinery/particle_accelerator/proc/bolted(datum/act/op/A)
+	set_anchored(TRUE)
+	act_message(A.actor, null, MSG_SELF("You secure the external bolts."), MSG_OTHERS("[A.actor.name] secures the [src.name] to the floor."))
+	update_icon()
+	return OP_OK
 
-	switch(construction_state)
-		if(0)
-			. += "Looks like it's not attached to the flooring."
-		if(1)
-			. += "It is missing some cables."
-		if(2)
-			. += "The panel is open."
-		if(3)
-			. += "It is assembled."
+/obj/machinery/particle_accelerator/proc/unbolted(datum/act/op/A)
+	set_anchored(FALSE)
+	act_message(A.actor, null, MSG_SELF("You remove the external bolts."), MSG_OTHERS("[A.actor.name] detaches the [src.name] from the floor."))
+	update_icon()
+	return OP_OK
 
-/obj/machinery/particle_accelerator/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/particle_accelerator_use,
-	)
-	..()
+/obj/machinery/particle_accelerator/proc/wired(datum/act/op/A)
+	act_message(A.actor, null, MSG_SELF("You add some wires."), MSG_OTHERS("[A.actor.name] adds wires to the [src.name]."))
+	update_icon()
+	return OP_OK
 
-/datum/interaction/machine_item/particle_accelerator_use
-	id = "particle_accelerator_use"
-	name = "Use"
-	held_type = /obj/item/stack/cable_coil
-	effect = /obj/machinery/particle_accelerator/proc/interaction_attackby
+/obj/machinery/particle_accelerator/proc/unwired(datum/act/op/A)
+	act_message(A.actor, null, MSG_SELF("You remove some wires."), MSG_OTHERS("[A.actor.name] removes some wires from the [src.name]."))
+	update_icon()
+	return OP_OK
 
-/obj/machinery/particle_accelerator/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
-	if(process_tool_hit(held, user))
-		return TRUE
-	return FALSE
+/// Closed: it powers up idle.
+/obj/machinery/particle_accelerator/proc/closed(datum/act/op/A)
+	act_message(A.actor, null, MSG_SELF("You close the access panel."), MSG_OTHERS("[A.actor.name] closes the [src.name]'s access panel."))
+	set_use_power(USE_POWER_IDLE)
+	update_state()
+	update_icon()
+	return OP_OK
 
-/obj/machinery/particle_accelerator/wrench_act(mob/user, obj/item/W)
-	return process_tool_hit(W, user, TOOL_WRENCH) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
-
-/obj/machinery/particle_accelerator/wirecutter_act(mob/user, obj/item/W)
-	return process_tool_hit(W, user, TOOL_WIRECUTTER) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
-
-/obj/machinery/particle_accelerator/screwdriver_act(mob/user, obj/item/W)
-	return process_tool_hit(W, user, TOOL_SCREWDRIVER) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+/// Opened: it stops and powers down.
+/obj/machinery/particle_accelerator/proc/opened(datum/act/op/A)
+	act_message(A.actor, null, MSG_SELF("You open the access panel."), MSG_OTHERS("[A.actor.name] opens the [src.name]'s access panel."))
+	set_active(0)
+	set_use_power(USE_POWER_OFF)
+	update_state()
+	update_icon()
+	return OP_OK
 
 /obj/machinery/particle_accelerator/proc/update_state()
 	return 0
-
-/obj/machinery/particle_accelerator/proc/process_tool_hit(obj/item/O, mob/user, tool_quality)
-	if(!(O) || !(user))
-		return 0
-	if(!ismob(user) || !isobj(O))
-		return 0
-	var/temp_state = src.construction_state
-	switch(src.construction_state)//TODO:Might be more interesting to have it need several parts rather than a single list of steps
-		if(0)
-			if(tool_quality == TOOL_WRENCH)
-				playsound(src, O.usesound, 75, 1)
-				set_anchored(TRUE)
-				act_message(user, null, MSG_SELF("You secure the external bolts."), MSG_OTHERS("[user.name] secures the [src.name] to the floor."))
-				temp_state++
-		if(1)
-			if(tool_quality == TOOL_WRENCH)
-				playsound(src, O.usesound, 75, 1)
-				set_anchored(FALSE)
-				act_message(user, null, MSG_SELF("You remove the external bolts."), MSG_OTHERS("[user.name] detaches the [src.name] from the floor."))
-				temp_state--
-			else if(istype(O, /obj/item/stack/cable_coil))
-				if(O:use(1))
-					act_message(user, null, MSG_SELF("You add some wires."), MSG_OTHERS("[user.name] adds wires to the [src.name]."))
-					temp_state++
-		if(2)
-			if(tool_quality == TOOL_WIRECUTTER)//TODO:Shock user if its on?
-				act_message(user, null, MSG_SELF("You remove some wires."), MSG_OTHERS("[user.name] removes some wires from the [src.name]."))
-				temp_state--
-			else if(tool_quality == TOOL_SCREWDRIVER)
-				act_message(user, null, MSG_SELF("You close the access panel."), MSG_OTHERS("[user.name] closes the [src.name]'s access panel."))
-				temp_state++
-		if(3)
-			if(tool_quality == TOOL_SCREWDRIVER)
-				act_message(user, null, MSG_SELF("You open the access panel."), MSG_OTHERS("[user.name] opens the [src.name]'s access panel."))
-				temp_state--
-				set_active(0)
-	if(temp_state == src.construction_state)//Nothing changed
-		return 0
-	else
-		if(src.construction_state < 3)//Was taken apart, update state
-			update_state()
-			if(use_power)
-				set_use_power(USE_POWER_OFF)
-		src.construction_state = temp_state
-		if(src.construction_state >= 3)
-			set_use_power(USE_POWER_IDLE)
-		update_icon()
-		return 1
-
-/obj/structure/particle_accelerator/end_cap/pre_mapped
-	construction_state = 3
-	anchored = TRUE
-
-/obj/structure/particle_accelerator/end_cap/pre_mapped/Initialize(mapload)
-	. = ..()
-	update_state()
-	update_icon()
-
-/// the master this refers to: a relation view, null once that is deleted.
-/obj/structure/particle_accelerator/proc/master() as /obj/machinery/particle_accelerator/control_box
-	return master
