@@ -46,8 +46,8 @@ CAPABILITIES(/obj/vehicle/train/engine/quadbike)
 	turn_off()
 	update_icon()
 
-/obj/vehicle/train/engine/quadbike/built/Initialize(mapload)
-	. = ..(mapload, TRUE)
+/obj/vehicle/train/engine/quadbike/built
+	built_from_assembly = TRUE
 
 CAPABILITIES(/obj/vehicle/train/engine/quadbike/random)
 	rolls(nameof(paint_color), PROC_REF(roll_paint_color))

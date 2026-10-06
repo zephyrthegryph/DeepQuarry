@@ -34,8 +34,9 @@
 	force = round(material.blunt_damage()*0.4)
 	update_icon()
 
-/obj/item/stool/padded/Initialize(mapload, new_material)
-	. = ..(mapload, MAT_STEEL, MAT_CARPET)
+/obj/item/stool/padded
+	material_key = MAT_STEEL
+	padding_key = MAT_CARPET
 
 DECLARE_APPEARANCE_PROC(/obj/item/stool, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/stool/appearance_overlays()
@@ -157,5 +158,6 @@ CAPABILITIES(/obj/item/stool)
 /obj/item/stool/baystool/padded
 	icon_state = "bar_stool_padded_preview" //set for the map
 
-/obj/item/stool/baystool/padded/Initialize(mapload, new_material)
-	. = ..(mapload, MAT_STEEL, MAT_CARPET)
+/obj/item/stool/baystool/padded
+	material_key = MAT_STEEL
+	padding_key = MAT_CARPET
