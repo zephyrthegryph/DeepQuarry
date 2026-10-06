@@ -44,16 +44,12 @@
 	else
 		..()
 
-/obj/item/material/fishing_rod/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/item/material/fishing_rod/proc/string_done(mob/user, obj/item/stack/cable_coil/C)
 	if(strung || !C.use(5))
 		return
 	strung = TRUE
 	to_chat(user, span_notice("You string \the [src]!"))
-	update_icon()
+	changed(src)
 
 EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF(fishing_rod_item)))
 
@@ -80,15 +76,14 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF
 		return ITEM_INTERACT_BLOCKING
 	strung = FALSE
 	to_chat(user, span_notice("You cut \the [src]'s string!"))
-	update_icon()
+	changed(src)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_rod, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/material/fishing_rod/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/material/fishing_rod/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(strung)
-		. += "[icon_state]_string"
+		look.overlay("[drawn_state]_string")
 
 /obj/item/material/fishing_rod/proc/update_bait()
 	if(istype(Bait, bait_type))

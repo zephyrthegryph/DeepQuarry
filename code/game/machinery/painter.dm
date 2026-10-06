@@ -44,9 +44,14 @@
 		0, 0, 0,
 	)
 
-APPEARANCE_TEMPLATE(/obj/machinery/gear_painter, "colormate{inserted?_active:}")
-DECLARE_APPEARANCE(/obj/machinery/gear_painter, "operable", list("0" = list(APPEARANCE_ICON_STATE = "colormate_off")))
-DECLARE_APPEARANCE(/obj/machinery/gear_painter, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "colormate_open")))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/gear_painter/draw(datum/look/look)
+	..()
+	look.state("colormate[inserted ? "_active" : ""]")
+	if(operable() == 0)
+		look.state("colormate_off")
+	if(panel_open == 1)
+		look.state("colormate_open")
 
 CAPABILITIES(/obj/machinery/gear_painter)
 	owns_one(nameof(inserted), on_destroy = ON_DESTROY_SPILL)
@@ -137,7 +142,6 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	if(isliving(user))
 		user.put_in_hands(inserted)
 	own_take(src, nameof(inserted))
-	update_icon()
 	SStgui.update_uis(src)
 
 /obj/machinery/gear_painter/ui_data(datum/act/eval/A)

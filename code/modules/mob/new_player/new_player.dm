@@ -191,7 +191,7 @@
 				//Something went wrong, but lets try to do as much as we can.
 				cryst.bound_mob.capture_caught = TRUE
 				cryst.persist_storable = FALSE
-			cryst.update_icon()
+			changed(cryst)
 			spent(src)
 			return
 
@@ -263,7 +263,7 @@
 		var/mob/living/carrier = join_props["carrier"]
 		cryst.capture(character, carrier)
 		character.forceMove(cryst)
-		cryst.update_icon()
+		changed(cryst)
 	else if(itemtf)
 		character.tf_into(itemtf, TRUE, itemtf.name)
 	else if(prey)

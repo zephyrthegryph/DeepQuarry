@@ -128,7 +128,6 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 /obj/item/camerabug/proc/interaction_wrench(mob/user, obj/item/tool, datum/interaction/interaction)
 	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "" : "un"]secure \the [src]."))
-	update_icon()
 	return TRUE
 
 /obj/item/camerabug/proc/lies_on_turf(mob/actor, atom/target, obj/item/held)

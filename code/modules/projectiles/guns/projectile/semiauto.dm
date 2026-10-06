@@ -21,7 +21,10 @@
 	auto_eject = 1
 	auto_eject_sound = SFX_WEAPONS_GARAND_PING
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/garand, "{initial(icon_state)}{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/garand/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-e"]")
 
 /*
  * Revolver Rifle

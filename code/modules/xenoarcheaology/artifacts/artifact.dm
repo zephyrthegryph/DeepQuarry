@@ -86,11 +86,13 @@ CAPABILITIES(/obj/machinery/artifact)
 		my_effect.trigger = pick(TRIGGER_TOUCH, TRIGGER_HEAT, TRIGGER_COLD)
 	artifact_master.do_large_randomization()
 	. = ..()
-	update_icon()
 /obj/machinery/artifact/proc/appearance_active()
 	return LAZYLEN(artifact_master?.get_active_effects()) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/artifact, "ano{icon_num}{appearance_active}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/artifact/draw(datum/look/look)
+	..()
+	look.state("ano[icon_num][appearance_active()]")
 
 /obj/machinery/artifact
 	icon = 'icons/obj/xenoarchaeology.dmi'

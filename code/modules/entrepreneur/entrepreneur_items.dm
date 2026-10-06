@@ -412,7 +412,7 @@ CAPABILITIES(/obj/item/entrepreneur/emf)
 		else
 			emf_change = rand(-20,15) //Trend downwards
 	emf = (emf + emf_change)
-	update_icon()
+	changed(src)
 	if(user)
 		to_chat(user, span_notice("You update the EMF scanner and check the reading. It reads [emf]mG!"))
 		COOLDOWN_START(src, scan_cooldown, 5 SECONDS)
@@ -428,7 +428,10 @@ CAPABILITIES(/obj/item/entrepreneur/emf)
 		return 60
 	return 80
 
-APPEARANCE_TEMPLATE(/obj/item/entrepreneur/emf, "emf-{appearance_level}")
+/// The look (the draw sweep: from its template).
+/obj/item/entrepreneur/emf/draw(datum/look/look)
+	..()
+	look.state("emf-[appearance_level()]")
 
 /obj/item/entrepreneur/spirit_board
 	name = "spirit board"

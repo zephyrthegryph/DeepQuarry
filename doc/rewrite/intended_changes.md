@@ -2160,3 +2160,25 @@ cadences still follow it through `relevance_changed()` until the framework goes.
 - **The extinguisher cabinet** is ops: a cyborg's module and gripper are not offered its uses (they did nothing); the wrench opens or
   shuts a full cabinet and unwrenches an empty one after 1.5 s. **The holoplant** goes out when its anchoring changes (`on_change`),
   where its wrench proc switched it off after the machine's anchor.
+
+## The draw sweep: legacy appearance declarations become draw(look) (rewrite/draw-sweep)
+
+Pinned by the look tree pins (`code/modules/unit_tests/snapshots/look_trees/`, `dq_look_tree_pin`): icon, icon_state, dir, colour, overlays and
+underlays of every creatable subtype of each converted chain, recorded from the legacy code and compared after the conversion.
+
+* **A converted type is drawn as it is created, from its state at the end of its init.** A legacy template or layer was applied inside the
+  root `Initialize()` (before the subtype's own init ran) and a provider (`DECLARE_APPEARANCE_PROC`) only on the first `update_icon()`; the draw runs at
+  the first refresh, after the whole init. So a type whose init changes what it shows now shows it at once: the armed bear trap
+  (`/obj/item/beartrap/start_active`) is armed, cliffs show their `cliff-2` sprite (they were blank until something redrew them), the suit dispenser,
+  the anomaly harvester and the shutoff monitor show their light and panel overlays, and a robot's flash lying loose shows burnt (it has no robot to
+  draw power from; in a robot it reads the robot's cell, as before).
+* **A subtype's declared look wins over the parent's init.** The mouse hole (`/obj/structure/mob_spawner/mouse_nest/mousehole`) declared
+  `tunnel_hole`, but the nest's init wrote its state after the declaration had drawn, so it showed a trash pile; it shows its hole now.
+* **The used autoinjector keeps its spent sprite** through a draw of its own; its init wrote the state by hand, which a draw would redraw over.
+* **A generic emissive blocker follows the sprite a look draws** (`look_resync_emissive_blocker()`, `code/datums/capabilities/look.dm`). The blocker
+  is a copy of the sprite taken in `/atom/movable/Initialize()`; a legacy declaration had drawn by then, a draw had not, so the copy kept the type's
+  initial state. Every `draw()` type now swaps it when its icon or state changes (before, any later state change also left it stale).
+* **The suit dispenser's frame overlay is drawn once**: its init added `special_frame` by hand beside the draw that adds it.
+* **A redraw that was immediate is at the end of the frame.** `update_icon()` re-applied a declaration on the spot; its replacement is the tracked
+  write itself (the redraw is generated) or, where the draw reads state nothing publishes, `changed(src)` at the old call site. Code that read
+  `icon_state` or `overlays` right after `update_icon()` would see the old look until the frame ends; none of the converted callers does.

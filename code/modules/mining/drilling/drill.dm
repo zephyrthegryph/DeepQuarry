@@ -151,8 +151,6 @@ CAPABILITIES(/obj/machinery/mining/drill)
 	if(need_update_field)
 		get_resource_field()
 
-	if(world.time % 10 == 0)
-		update_icon()
 
 	if(!active)
 		return
@@ -199,7 +197,6 @@ CAPABILITIES(/obj/machinery/mining/drill)
 				system_error("Insufficient storage space.")
 				set_active(0)
 				need_player_check = 1
-				update_icon()
 				return
 
 			if(current_capacity + total_harvest >= capacity)
@@ -232,7 +229,6 @@ CAPABILITIES(/obj/machinery/mining/drill)
 	else if(!length(gas_field)) // Won't stop digging if gas pressure is detected
 		set_active(0)
 		need_player_check = 1
-		update_icon()
 		system_error("Resources depleted.")
 
 /obj/machinery/mining/drill/declare_interactions(list/into)
@@ -381,7 +377,7 @@ CAPABILITIES(/datum/prompt/text/drill_label)
 		need_player_check = 0
 		if(anchored)
 			get_resource_field()
-		update_icon()
+		changed(src)
 		return TRUE
 	else if(supported && !panel_open)
 		if(use_cell_power())
@@ -398,7 +394,7 @@ CAPABILITIES(/datum/prompt/text/drill_label)
 	else
 		to_chat(user, span_notice("Turning on a piece of industrial machinery without sufficient bracing or wires exposed is a bad idea."))
 
-	update_icon()
+	changed(src)
 	return TRUE
 
 /obj/machinery/mining/drill/proc/appearance_state()
@@ -410,7 +406,10 @@ CAPABILITIES(/datum/prompt/text/drill_label)
 		return "mining_drill_braced"
 	return "mining_drill"
 
-APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/mining/drill/draw(datum/look/look)
+	..()
+	look.state("[appearance_state()]")
 
 /obj/machinery/mining/drill/RefreshParts()
 	..()
@@ -470,7 +469,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
 		for(var/obj/machinery/mining/brace/check in braces)
 			total_brace_tier += check.brace_tier
 
-	update_icon()
+	changed(src)
 
 /obj/machinery/mining/drill/proc/system_error(error)
 

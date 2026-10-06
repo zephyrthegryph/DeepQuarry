@@ -34,13 +34,15 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/launcher/spikethrower, PERIODIC_SLOW, "spik
 	if(COOLDOWN_FINISHED(src, regen_cooldown))
 		set_spikes(spikes + 1)
 		COOLDOWN_START(src, regen_cooldown, spike_gen_time)
-		update_icon()
 
 /obj/item/gun/launcher/spikethrower/examine(mob/user)
 	. = ..()
 	. += "It has [spikes] spike\s remaining."
 
-APPEARANCE_TEMPLATE(/obj/item/gun/launcher/spikethrower, "spikethrower{spikes}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/launcher/spikethrower/draw(datum/look/look)
+	..()
+	look.state("spikethrower[spikes]")
 
 /obj/item/gun/launcher/spikethrower/update_release_force()
 	return

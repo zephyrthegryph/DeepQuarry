@@ -169,7 +169,7 @@ def walk_calls(args, files, decide, removed, residue, sites):
                     t = names.get(recv)
                 if not t or not t.startswith(ATOM_ROOTS):
                     continue
-                action = decide(rel, ptype, pname, recv, t)
+                action = decide(rel, ptype, pname, recv, t, strip_code(lines[i]))
                 if action is None:
                     continue
                 folder = "/".join(rel.split("/")[:3])
@@ -265,7 +265,7 @@ def run_dead(args):
     files = {rel: File(rel) for rel in code_files()}
     chains = Chains(files)
     removed, residue, sites = collections.Counter(), collections.Counter(), []
-    walk_calls(args, files, lambda rel, ptype, pname, recv, t: None if chains.live(t) else "delete", removed, residue, sites)
+    walk_calls(args, files, lambda rel, ptype, pname, recv, t, header: None if chains.live(t) else "delete", removed, residue, sites)
     report("dead", args, removed, residue, sites)
     return 0
 
@@ -273,9 +273,13 @@ def run_dead(args):
 def run_calls(args):
     """After `convert --apply --report R`: the update_icon() calls on the converted components' types (see look_convert)."""
     import json
-    rep = json.load(open(args.report))
+    rep = json.load(open(args.report)) if args.report else {"converted": []}
     files = {rel: File(rel) for rel in code_files()}
     chains = Chains(files)
+    ix = None
+    if args.all:
+        import look_convert
+        ix = look_convert.Index(ROOT, list(files))
     member_of = {}
     for c in rep["converted"]:
         for t in c["types"]:
@@ -297,15 +301,23 @@ def run_calls(args):
                 out.append(c)
         return out
 
-    def decide(rel, ptype, pname, recv, t):
+    def decide(rel, ptype, pname, recv, t, header):
         call = "changed(src)" if recv in (None, "src") else "changed(%s)" % recv
+        # an op effect, a timer or a hook handler (it takes a datum/act): its dispatcher redraws the holder after it
+        dispatched = recv in (None, "src") and re.search(r"\bdatum/act\b", header[header.find("("):] if "(" in header else "")
         c = comp_of(t)
         if c is not None:
             if chains.live(t):
                 return None  # another legacy declaration still draws through it
             if pname == "Initialize" and recv in (None, "src"):
                 return "delete"  # the first refresh draws every atom after its init
-            if c["covered"]:
+            if c["covered"] or dispatched:
+                return "delete"
+            return ("replace", call)
+        if args.all and not chains.live(t):
+            # no legacy declaration draws through it: the call is a redraw request on whatever draw() the chain has
+            has, covered, _untracked = look_convert.draw_coverage(ix, t)
+            if not has or covered or dispatched or (pname == "Initialize" and recv in (None, "src")):
                 return "delete"
             return ("replace", call)
         if args.with_ancestors and t.count("/") > 2:
@@ -318,9 +330,36 @@ def run_calls(args):
     return 0
 
 
+def run_audit(args):
+    """The draw() procs that read state nothing publishes (untracked vars, reads through other objects, procs that do):
+    each chain once, with what it reads. A redraw request (changed()) is still needed where such state changes."""
+    import look_convert
+    files = {rel: File(rel) for rel in code_files()}
+    ix = look_convert.Index(ROOT, list(files))
+    seen = set()
+    n = 0
+    rows = []
+    for t in sorted(ix.draws):
+        if not t.startswith(ATOM_ROOTS):
+            continue
+        has, covered, untracked = look_convert.draw_coverage(ix, t)
+        key = tuple(untracked)
+        if covered or (t, key) in seen:
+            continue
+        seen.add((t, key))
+        n += 1
+        rows.append("%s: %s" % (t, ", ".join(untracked)))
+    print("look_sweep audit: %d draw() types read untracked state" % n)
+    if args.sites:
+        for r in rows:
+            print("    " + r)
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["dead", "convert", "calls"])
+    ap.add_argument("mode", choices=["dead", "convert", "calls", "audit"])
+    ap.add_argument("--all", action="store_true", help="calls: every call whose receiver's chain has no legacy declaration, by the coverage of the chain's draw() procs")
     ap.add_argument("--with-ancestors", action="store_true", help="calls: also add changed() beside the calls of ancestor procs that reach an uncovered component")
     ap.add_argument("--types", nargs="*", help="convert: only the components holding these types (or their subtypes)")
     ap.add_argument("--report", help="convert: write the components (converted, covered, untracked reads, residue) as JSON")
@@ -334,6 +373,8 @@ def main():
         return run_dead(args)
     if args.mode == "calls":
         return run_calls(args)
+    if args.mode == "audit":
+        return run_audit(args)
     if args.mode == "convert":
         import look_convert
         look_convert.run(args, ROOT, code_files(), None)

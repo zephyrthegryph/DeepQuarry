@@ -16,7 +16,6 @@
 	default_apply_parts()
 	// Update neighbours and self for state
 	update_neighbours()
-	update_icon()
 
 /obj/machinery/reagent_refinery/grinder/ownership()
 	. = ..()
@@ -87,7 +86,7 @@
 
 	if(!move_into(src, nameof(src.holdingitems), O, user))
 		return TRUE
-	update_icon()
+	changed(src)
 	return TRUE
 
 /obj/machinery/reagent_refinery/grinder/refinery_step()
@@ -116,21 +115,20 @@
 		play_sfx(src, SFX_ITEMS_ELECTRONIC_ASSEMBLY_EMPTYING)
 		play_sfx(src, SFX_EFFECTS_METALSCRAPE2)
 		if(holdingitems.len == 0)
-			update_icon()
+			changed(src)
 
 	refinery_transfer()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/grinder, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/grinder/appearance_overlays()
-	. = list()
+/obj/machinery/reagent_refinery/grinder/draw(datum/look/look)
+	..()
 	var/image/pipe = image(icon, icon_state = "grinder_cons", dir = dir)
-	. += pipe
+	look.overlay(pipe)
 	if(!operable() || !anchored)
-		icon_state = "grinder_off"
+		look.state("grinder_off")
 	else
-		icon_state = "grinder_on"
+		look.state("grinder_on")
 		var/image/dot = image(icon, icon_state = "grinder_dot_[length(holdingitems) ? "on" : "off" ]")
-		. += dot
+		look.overlay(dot)
 
 /obj/machinery/reagent_refinery/grinder/proc/conveyor_load(atom/movable/AM as mob|obj)
 	if(!AM || QDELETED(AM))

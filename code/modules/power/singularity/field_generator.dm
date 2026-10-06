@@ -112,6 +112,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 /obj/machinery/field_generator/bullet_act(obj/item/projectile/Proj)
 	if(istype(Proj, /obj/item/projectile/beam))
 		power += Proj.damage * EMITTER_DAMAGE_POWER_TRANSFER
+		changed(src)
 		return 0
 	return ..()
 
@@ -126,6 +127,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 	cancel_after(src, "warm_up_2")
 	set_warming_up(0)
 	after(src, 0.1 SECONDS, PROC_REF(finish_turn_off))
+	changed(src)
 
 /obj/machinery/field_generator/proc/finish_turn_off()
 	cleanup()
@@ -136,12 +138,14 @@ CAPABILITIES(/obj/machinery/field_generator)
 	set_warming_up(1)
 	after(src, FIELD_GEN_WARMUP_STAGE, PROC_REF(warm_up_step), key = "warm_up_1")
 	after(src, FIELD_GEN_WARMUP_STAGE * 2, PROC_REF(warm_up_step), key = "warm_up_2")
+	changed(src)
 
 /// One warm-up stage (turn_on() arms both, FIELD_GEN_WARMUP_STAGE apart): the fields go up at the third.
 /obj/machinery/field_generator/proc/warm_up_step()
 	if(active != 1)
 		return
 	set_warming_up(warming_up + 1)
+	changed(src)
 	if(warming_up >= 3)
 		start_fields()
 		set_light(light_range_on, light_power_on)
@@ -150,6 +154,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 	if(Varpower)
 		return 1
 
+	changed(src)
 	if(src.power > FIELD_GEN_MAX_POWER)
 		src.power = FIELD_GEN_MAX_POWER
 
@@ -253,6 +258,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 			FG.cleanup()
 	clean_up = 0
 
+	changed(src)
 
 	//This is here to help fight the "hurr durr, release singulo cos nobody will notice before the
 	//singulo eats the evidence". It's not fool-proof but better than nothing.

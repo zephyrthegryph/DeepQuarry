@@ -170,18 +170,17 @@
 		inserted_id.forceMove(get_turf(src))
 		own_take(src, nameof(inserted_id))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/mineral/equipment_vendor, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/mineral/equipment_vendor/appearance_overlays()
-	. = list()
+/obj/machinery/mineral/equipment_vendor/draw(datum/look/look)
+	..()
 	if(panel_open)
-		. += "[initial(icon_state)]-panel"
+		look.overlay("[initial(icon_state)]-panel")
 
 	if(has_stat(BROKEN))
-		icon_state = "[initial(icon_state)]-broken"
+		look.state("[initial(icon_state)]-broken")
 	else if(powered())
-		icon_state = initial(icon_state)
+		look.state(initial(icon_state))
 	else
-		icon_state = "[initial(icon_state)]-off"
+		look.state("[initial(icon_state)]-off")
 
 /obj/machinery/mineral/equipment_vendor/declare_interactions(list/into)
 	into += list(

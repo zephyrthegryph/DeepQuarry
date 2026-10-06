@@ -64,6 +64,7 @@
 	STANDARD_ATMOS_CHOOSE_NODE(2, node_connects[2])
 	STANDARD_ATMOS_CHOOSE_NODE(3, node_connects[3])
 
+	changed(src)
 	update_underlays()
 
 /obj/machinery/atmospherics/trinary/return_network(obj/machinery/atmospherics/reference)

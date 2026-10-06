@@ -116,7 +116,6 @@ CAPABILITIES(/obj/structure/cliff/automatic)
 	if(dir & NORTH && !bottom) // North-facing cliffs require more cliffs to be made.
 		make_bottom()
 
-	update_icon()
 
 /obj/structure/cliff/proc/make_bottom()
 	// First, make sure there's room to put the bottom side.
@@ -134,26 +133,26 @@ CAPABILITIES(/obj/structure/cliff/automatic)
 	bottom.ramp = ramp
 	bottom.layer = layer - 0.1
 	bottom.set_density(density)
-	bottom.update_icon()
+	changed(bottom)
 
 /obj/structure/cliff/set_dir(new_dir)
 	..()
-	update_icon()
+	changed(src)
 
-DECLARE_APPEARANCE_PROC(/obj/structure/cliff, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/cliff/appearance_overlays()
-	. = list()
-	icon_state = "cliff-[dir][icon_variant][bottom ? "-bottom" : ""][corner ? "-corner" : ""][ramp ? "-ramp" : ""]"
+/obj/structure/cliff/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
+	drawn_state = look.state("cliff-[dir][icon_variant][bottom ? "-bottom" : ""][corner ? "-corner" : ""][ramp ? "-ramp" : ""]")
 
 	// Now for making the top-side look like a different turf.
 	var/turf/T = get_step(src, dir)
 	if(!istype(T))
-		return .
+		return
 
-	var/subtraction_icon_state = "[icon_state]-subtract"
-	var/cache_string = "[icon_state]_[T.icon]_[T.icon_state]"
+	var/subtraction_icon_state = "[drawn_state]-subtract"
+	var/cache_string = "[drawn_state]_[T.icon]_[T.icon_state]"
 	if(T && icon_exists(icon, subtraction_icon_state))
-		. += CACHED_KEY(cliff_overlays, cache_string, icon, subtraction_icon_state, T.icon, T.icon_state, T.dir, layer - 0.2)
+		look.overlay(CACHED_KEY(cliff_overlays, cache_string, icon, subtraction_icon_state, T.icon, T.icon_state, T.dir, layer - 0.2))
 
 // Movement-related code.
 

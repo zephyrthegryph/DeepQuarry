@@ -339,13 +339,11 @@ CAPABILITIES(/obj/structure/frame)
 		D = "Requires [english_list(component_list)]."
 	desc = D
 
-DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/frame/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/structure/frame/draw(datum/look/look)
+	..()
 	if(frame_type.icon_override)
-		icon = frame_type.icon_override
-	icon_state = frame_type.get_icon_state(state)
+		look.set_icon(frame_type.icon_override)
+	look.state(frame_type.get_icon_state(state))
 
 /obj/structure/frame/proc/check_components(mob/user as mob)
 	own_take_all(src, nameof(components))
@@ -384,7 +382,6 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 	if(frame_type.frame_class == FRAME_CLASS_MACHINE)
 		set_density(TRUE)
 
-	update_icon()
 
 	make_rotatable()
 
@@ -406,7 +403,6 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 				if(CP.get_amount() > 1)
 					var/camt = min(CP.get_amount(), req_components[I]) // amount of cable to take, idealy amount required, but limited by amount provided
 					var/obj/item/stack/cable_coil/CC = new /obj/item/stack/cable_coil(src, camt)
-					CC.update_icon()
 					CP.use(camt)
 					rel_add(src, nameof(components), CC)
 					req_components[I] -= camt
@@ -427,7 +423,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 				else
 					install_part(user,P)
 
-	update_icon()
+	changed(src)
 	return INTERACTION_HANDLED_PASS
 
 /obj/structure/frame/proc/install_part(mob/user, obj/item/P, defer_feedback = FALSE)
@@ -442,7 +438,6 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 			if(ST.get_amount() > 1)
 				var/camt = min(ST.get_amount(), req_components[I]) // amount of stack to take, idealy amount required, but limited by amount provided
 				var/obj/item/stack/NS = new ST.stacktype(src, camt)
-				NS.update_icon()
 				ST.use(camt)
 				rel_add(src, nameof(components), NS)
 				req_components[I] -= camt

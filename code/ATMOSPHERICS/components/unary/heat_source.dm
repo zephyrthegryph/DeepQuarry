@@ -69,6 +69,8 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 	if(check_for_obstacles())
 		rel_clear(src, nameof(node))
 
+	if(node)
+		changed(src)
 
 
 /// Unconnected, connected and idle, or working.

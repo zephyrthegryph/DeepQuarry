@@ -392,7 +392,6 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 	assembly.set_density(TRUE)
 	graph_place(assembly, STAGE_FIREDOOR_ASSEMBLY_WIRED)
 	assembly.set_glass(glass)
-	assembly.update_icon()
 	replace_with(src, assembly)
 	return OP_OK
 

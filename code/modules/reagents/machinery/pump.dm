@@ -38,7 +38,6 @@ CAPABILITIES(/obj/machinery/pump)
 	add_hose_connector(/datum/hose_connector/output)
 
 	RefreshParts()
-	update_icon()
 
 
 
@@ -56,26 +55,25 @@ CAPABILITIES(/obj/machinery/pump)
 
 	rel_set(src, nameof(cell), locate_in_list(component_parts, /obj/item/cell)) // component_parts owns the cell; this is a view onto it
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/pump/appearance_overlays()
-	. = list()
-	. += ..()
-	. += "[icon_state]-tank"
+/obj/machinery/pump/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
+	look.overlay("[drawn_state]-tank")
 	if(!(cell?.check_charge(active_power_usage)))
-		. += "[icon_state]-lowpower"
+		look.overlay("[drawn_state]-lowpower")
 
 	if(reagents.total_volume >= 1)
-		var/image/I = image(icon, "[icon_state]-volume")
+		var/image/I = image(icon, "[drawn_state]-volume")
 		I.color = reagents.get_color()
-		. += I
-	. += "[icon_state]-glass"
+		look.overlay(I)
+	look.overlay("[drawn_state]-glass")
 
 	if(open)
-		. += "[icon_state]-open"
+		look.overlay("[drawn_state]-open")
 		if(istype(cell))
-			. += "[icon_state]-cell"
+			look.overlay("[drawn_state]-cell")
 
-	icon_state = "[initial(icon_state)][on ? "-running" : ""]"
+	drawn_state = look.state("[initial(icon_state)][on ? "-running" : ""]")
 
 /// Pumps every machine frame; runs while on (declared).
 /obj/machinery/pump/proc/work_step(datum/act/timer/A)
@@ -87,7 +85,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_ove
 	if(!istype(T))
 		return
 	T.pump_reagents(reagents, reagents_per_cycle)
-	update_icon()
 
 	if(notice_wanted(src, /datum/notice/hose_forcepump))
 		notice_publish(src, notice_take(/datum/notice/hose_forcepump))
@@ -151,7 +148,6 @@ MSG_DEF_SELF(pump/has_cell, "There is a power cell already installed.")
 		return TRUE
 	to_chat(user, span_notice("You insert the power cell."))
 	RefreshParts() // Handles cell assignment
-	update_icon()
 	return TRUE
 
 /// The old attack_hand (it never called ..(): no gate): the open panel gives up its cell, else the pump is switched.
@@ -177,7 +173,7 @@ MSG_DEF_SELF(pump/has_cell, "There is a power cell already installed.")
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You [unlocked ? "screw" : "unscrew"] the battery panel."))
 	unlocked = !unlocked
-	update_icon()
+	changed(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/pump/crowbar_act(mob/user, obj/item/tool)
@@ -185,7 +181,7 @@ MSG_DEF_SELF(pump/has_cell, "There is a power cell already installed.")
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, open ? span_notice("You crowbar the battery panel in place.") : span_notice("You remove the battery panel."))
 	open = !open
-	update_icon()
+	changed(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/pump/wrench_act(mob/user, obj/item/tool)

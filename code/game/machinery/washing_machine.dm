@@ -84,7 +84,6 @@ CAPABILITIES(/obj/machinery/washing_machine)
 		set_state(BLOODY_RUNNING)
 	else
 		set_state(RUNNING)
-	update_icon()
 	visible_message("The washing machine starts a cycle.")
 	play_sfx(src, SFX_ITEMS_WASHINGMACHINE)
 
@@ -118,7 +117,6 @@ CAPABILITIES(/obj/machinery/washing_machine)
 		gibs_ready = TRUE
 	else
 		set_state(FULL_CLOSED)
-	update_icon()
 
 /datum/interaction/machine_verb/washing_machine_climb_out
 	id = "washing_machine_climb_out"
@@ -156,8 +154,12 @@ CAPABILITIES(/obj/machinery/washing_machine)
 /obj/machinery/washing_machine/container_resist(mob/living/escapee)
 	user_climb_out(escapee)
 
-APPEARANCE_TEMPLATE(/obj/machinery/washing_machine, "wm_{state}")
-DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("panel"))))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/washing_machine/draw(datum/look/look)
+	..()
+	look.state("wm_[state]")
+	if(panel_open == 1)
+		look.overlay("panel")
 
 /datum/interaction/machine_item/washing_machine_use_item
 	id = "washing_machine_use_item"
@@ -202,7 +204,6 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 		else
 			to_chat(user, span_notice("The washing machine is full."))
 	//else: old fell through to a bare ..() (approximated as a no-op)
-	update_icon()
 	return TRUE
 
 /obj/machinery/washing_machine/proc/interaction_washing_machine_use_item_timed_done(mob/user, obj/item/grab/G)
@@ -267,7 +268,6 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 			set_state(EMPTY_OPEN)
 			own_take_all(src, nameof(washing))
 
-	update_icon()
 	return TRUE
 
 #undef EMPTY_OPEN

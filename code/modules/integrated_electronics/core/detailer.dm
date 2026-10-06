@@ -25,16 +25,11 @@
 		"hot pink" = COLOR_ASSEMBLY_HOT_PINK
 		)
 
-/obj/item/integrated_electronics/detailer/Initialize(mapload)
-	update_icon()
-	return ..()
-
-DECLARE_APPEARANCE_PROC(/obj/item/integrated_electronics/detailer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/integrated_electronics/detailer/appearance_overlays()
-	. = list()
+/obj/item/integrated_electronics/detailer/draw(datum/look/look)
+	..()
 	var/mutable_appearance/detail_overlay = mutable_appearance('icons/obj/integrated_electronics/electronic_tools.dmi', "detailer-color")
 	detail_overlay.color = detail_color
-	. += detail_overlay
+	look.overlay(detail_overlay)
 
 /obj/item/integrated_electronics/detailer/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -46,7 +41,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/integrated_electronics/detailer, TYPE_PROC_REF
 	if(!(color in color_list))
 		return // to prevent href exploits causing runtimes
 	detail_color = color_list[color]
-	update_icon()
 	return TRUE
 
 CAPABILITIES(/obj/item/integrated_electronics/detailer)

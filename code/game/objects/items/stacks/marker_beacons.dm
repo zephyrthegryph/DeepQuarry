@@ -47,7 +47,6 @@ MSG_DEF_SELF(marker_beacon/already_there, "There is already a marker beacon here
 
 /obj/item/stack/marker_beacon/Initialize(mapload)
 	. = ..()
-	update_icon()
 
 /obj/item/stack/marker_beacon/examine(mob/user)
 	. = ..()
@@ -140,7 +139,6 @@ CAPABILITIES(/obj/structure/marker_beacon)
 		set_picked_color(set_color)
 	else if(mapped_in_color)
 		set_picked_color(mapped_in_color)
-	update_icon()
 
 /// A beacon with no colour (or one the table does not know) picks one when it enters the world.
 /obj/structure/marker_beacon/on_materialize()
@@ -170,7 +168,6 @@ CAPABILITIES(/obj/structure/marker_beacon)
 /obj/structure/marker_beacon/proc/attack_hand_timed_done(mob/living/user)
 	var/obj/item/stack/marker_beacon/M = new(loc)
 	M.set_picked_color(picked_color)
-	M.update_icon()
 	transfer_fingerprints_to(M)
 	if(user.put_in_hands(M))
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)

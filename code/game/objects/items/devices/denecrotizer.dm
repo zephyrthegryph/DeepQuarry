@@ -187,7 +187,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	act_message(target, user, others = "%U%'s eyes widen, as though in revelation as it looks at %T%.", runemessage = "eyes widen")
 	if(charges == 0)
 		icon_state = "[initial(icon_state)]-o"
-		update_icon()
 
 /obj/item/denecrotizer/proc/ghostjoin_rez(mob/living/simple_mob/target, mob/living/user)
 	act_message(user, target, others = "%U% gently presses [src] to %T%...", runemessage = "presses [src] to [target]")
@@ -209,7 +208,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	charges--
 	if(charges == 0)
 		icon_state = "[initial(icon_state)]-o"
-		update_icon()
 	return
 
 /obj/item/denecrotizer/proc/basic_rez(mob/living/simple_mob/target, mob/living/user) //so medical can have a way to bring back people's pets or whatever, does not change any settings about the mob or offer it to ghosts.
@@ -230,7 +228,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	charges--
 	if(charges == 0)
 		icon_state = "[initial(icon_state)]-o"
-		update_icon()
 	return
 
 /obj/item/denecrotizer/proc/basic_rez_timed_failed(datum/om/task/timed/denecrotizer_basic_rez/task)

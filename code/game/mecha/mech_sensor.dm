@@ -56,7 +56,10 @@
 /obj/machinery/mech_sensor/proc/enabled()
 	return on && !has_stat(NOPOWER)
 
-APPEARANCE_TEMPLATE(/obj/machinery/mech_sensor, "airlock_sensor_{enabled?standby:off}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/mech_sensor/draw(datum/look/look)
+	..()
+	look.state("airlock_sensor_[enabled() ? "standby" : "off"]")
 
 /obj/machinery/mech_sensor/Initialize(mapload)
 	. = ..()

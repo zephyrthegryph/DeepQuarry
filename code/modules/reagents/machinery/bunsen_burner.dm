@@ -89,6 +89,7 @@ TRACKED_BRIDGED(/obj/machinery/bunsen_burner, heating, CHANGE_MACHINE_SETTINGS)
 	if(create_heat_body(TRUE))
 		vg_heat_body_keep(heat_body, TRUE)
 		vg_heat_body_power(heat_body, heat_power)
+	changed(src)
 
 /obj/machinery/bunsen_burner/proc/drop_held_container()
 	if(!held_container)
@@ -154,6 +155,7 @@ CAPABILITIES(/obj/machinery/bunsen_burner)
 		vg_heat_body_power(heat_body, 0)
 		vg_heat_body_keep(heat_body, FALSE)
 	visible_message(span_notice("\The [src] clicks."))
+	changed(src)
 
 /// The burner, what sits on it, and the flame while it heats.
 /obj/machinery/bunsen_burner/draw(datum/look/look)

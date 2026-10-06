@@ -431,6 +431,7 @@ CAPABILITIES(/obj/machinery/chem_master)
 		P.pixel_y = rand(-7, 7)
 		P.icon_state = "bottle-[bottlesprite]" || "bottle-1"
 		reagents.trans_to_obj(P, amount_per_bottle)
+		changed(P)
 	return TRUE
 
 /obj/machinery/chem_master/proc/modal_change_bottle_style(datum/act/op/A, list/arguments)

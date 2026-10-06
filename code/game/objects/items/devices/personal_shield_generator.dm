@@ -69,7 +69,6 @@ CAPABILITIES(/obj/item/personal_shield_generator)
 		else
 			rel_set(src, nameof(active_weapon), new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
 			rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)
-	update_icon()
 
 /// If the shield gen is active; it drains power while it is.
 /obj/item/personal_shield_generator/var/shield_active = 0
@@ -78,7 +77,10 @@ TRACKED(/obj/item/personal_shield_generator, shield_active)
 /obj/item/personal_shield_generator/loaded //starts with a cell
 	bcell = /obj/item/cell/device/shield_generator/backpack
 
-APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic{shield_active?_on:}")
+/// The look (the draw sweep: from its template).
+/obj/item/personal_shield_generator/draw(datum/look/look)
+	..()
+	look.state("shieldpack_basic[shield_active ? "_on" : ""]")
 
 /obj/item/personal_shield_generator/examine(mob/user)
 	. = ..()
@@ -117,7 +119,6 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic{shiel
 						else //It won't blow up unless you turn it back on again. Upside of using non-charging cells.
 							to_chat(src.loc, span_critical("Your shield generator sparks and suddenly goes down! A warning message pops up on screen: \
 							'WARNING, INTERNAL CELL CRITICALLY DAMAGED. REPLACE CELL IMMEDIATELY.'"))
-						update_icon()
 			else
 				if(prob(25))
 					bcell.emp_act(severity)
@@ -188,7 +189,6 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic{shiel
 			if(active_weapon)
 				rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)
 			to_chat(user, span_notice("You install a cell in \the [src]."))
-			update_icon()
 
 	else
 		return OP_DECLINE
@@ -213,7 +213,6 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator, "shieldpack_basic{shiel
 		reattach_gun()
 		rel_clear(active_weapon, nameof(active_weapon.power_supply))
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
-	update_icon()
 	return OP_OK
 
 MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
@@ -230,7 +229,6 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 		reattach_gun()
 		rel_clear(active_weapon, nameof(active_weapon.power_supply))
 	to_chat(user, span_notice("You remove the cell from \the [src], destroying the battery."))
-	update_icon()
 	return OP_OK
 
 /// The multitool sets the shield's colour.
@@ -275,7 +273,6 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 			user.apply_body_effect(modifier_type)
 			user.update_modifier_visuals() //Forces coloration to WORK.
 			play_sfx(src, SFX_WEAPONS_SABERON) //Shield turning off! PLACEHOLDER
-	update_icon()
 
 /obj/item/personal_shield_generator/proc/weapon_toggle_effect(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction) //Make this work on Alt-Click
 
@@ -300,7 +297,6 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 	else
 		if(!user.put_in_hands(active_weapon)) //Detach the gun into the user's hands
 			to_chat(user, span_warning("You need a free hand to hold the gun!"))
-		update_icon() //success
 
 /obj/item/personal_shield_generator/proc/personal_shield_generator_step(datum/act/timer/A)
 	if(!bcell) //They removed the battery midway.
@@ -337,7 +333,6 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 			var/mob/living/carbon/human/user = loc
 			to_chat(user, span_warning("The shield deactivates, an error message popping up on screen: 'Cell out of charge.'"))
 			user.remove_body_effect(/datum/body_effect/shield_projection)
-		update_icon()
 		play_sfx(src, SFX_WEAPONS_SABEROFF) //Shield turning off! PLACEHOLDER
 		return
 
@@ -373,7 +368,6 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 	else
 		active_weapon.forceMove(src)
 
-	update_icon()
 
 //The gun
 
@@ -447,7 +441,10 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 /obj/item/personal_shield_generator/belt/loaded
 	bcell = /obj/item/cell/device/shield_generator
 
-APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt, "shieldpack_basic{shield_active?_on:}")
+/// The look (the draw sweep: from its template).
+/obj/item/personal_shield_generator/belt/draw(datum/look/look)
+	..()
+	look.state("shieldpack_basic[shield_active ? "_on" : ""]")
 
 /obj/item/personal_shield_generator/belt/bruteburn //Example of a modified generator.
 	modifier_type = /datum/body_effect/shield_projection/bruteburn
@@ -471,7 +468,10 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt, "shieldpack_basic{
 /obj/item/personal_shield_generator/belt/mining/upgraded/loaded
 	bcell = /obj/item/cell/device/shield_generator
 
-APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/mining, "shieldpack_mining{shield_active?_on:}")
+/// The look (the draw sweep: from its template).
+/obj/item/personal_shield_generator/belt/mining/draw(datum/look/look)
+	..()
+	look.state("shieldpack_mining[shield_active ? "_on" : ""]")
 
 /obj/item/borg/upgrade/shield_upgrade
 	name = "mining PSG upgrade disk."
@@ -508,7 +508,10 @@ CAPABILITIES(/obj/item/personal_shield_generator/belt/mining)
 /obj/item/personal_shield_generator/belt/security/loaded
 	bcell = /obj/item/cell/device/shield_generator
 
-APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/security, "shieldpack_security{shield_active?_on:}")
+/// The look (the draw sweep: from its template).
+/obj/item/personal_shield_generator/belt/security/draw(datum/look/look)
+	..()
+	look.state("shieldpack_security[shield_active ? "_on" : ""]")
 
 //PvE focused belt
 /obj/item/personal_shield_generator/belt/melee
@@ -574,7 +577,10 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/security, "shieldpa
 /obj/item/personal_shield_generator/security/strong/loaded
 	bcell = /obj/item/cell/device/shield_generator/backpack
 
-APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/security, "shieldpack_security{shield_active?_on:}")
+/// The look (the draw sweep: from its template).
+/obj/item/personal_shield_generator/security/draw(datum/look/look)
+	..()
+	look.state("shieldpack_security[shield_active ? "_on" : ""]")
 
 //Power cells.
 /obj/item/cell/device/shield_generator //The base power cell the shield gen comes with.

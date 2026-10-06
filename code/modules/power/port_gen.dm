@@ -228,6 +228,7 @@ TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
 		overheat()
 	else if (overheating > 0)
 		overheating--
+		changed(src) //Port RS PR #484
 
 /// The temperature it cools to while off: 20, plus the room's offset from 20 C scaled by its pressure.
 /obj/machinery/power/port_gen/pacman/proc/cooling_temperature()
@@ -261,6 +262,7 @@ TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
 
 	if(overheating)
 		overheating--
+		changed(src) //Port RS PR #484
 	return temperature > cooling_temperature + 0.1 || overheating > 0
 
 /obj/machinery/power/port_gen/pacman/proc/overheat()

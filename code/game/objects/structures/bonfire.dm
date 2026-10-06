@@ -106,7 +106,6 @@ TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MA
 			R.use(1)
 			grill = TRUE
 			to_chat(user, span_notice("You add a grill to \the [src]."))
-			update_icon()
 
 /// Old attack_hand: take out fuel, or dismantle if it's empty. The buckle unbuckle check now
 /// runs earlier, in hand_gate() (code/game/objects/buckling.dm), before this interaction is tried.
@@ -153,7 +152,7 @@ TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MA
 		var/atom/movable/AM = pop(contents)
 		AM.forceMove(get_turf(src))
 		to_chat(user, span_notice("You take \the [AM] out of \the [src] before it has a chance to burn away."))
-		update_icon()
+		changed(src)
 
 /obj/structure/bonfire/permanent/remove_fuel(mob/user)
 	dismantle(user)
@@ -168,7 +167,7 @@ TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MA
 		if(S)
 			S.forceMove(src)
 			to_chat(user, span_warning("You add \the [new_fuel] to \the [src]."))
-			update_icon()
+			changed(src)
 			return TRUE
 		return FALSE
 	else
@@ -186,13 +185,13 @@ TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MA
 	if(istype(consumed_fuel, /obj/item/stack/material/log))
 		EXPIRY_SET(src, next_fuel_consumption, 6 MINUTES, CLOCK_WORLD)
 		consume(consumed_fuel)
-		update_icon()
+		changed(src)
 		return TRUE
 
 	else if(istype(consumed_fuel, /obj/item/stack/material/wood)) // One log makes two planks of wood.
 		EXPIRY_SET(src, next_fuel_consumption, 3 MINUTE, CLOCK_WORLD)
 		consume(consumed_fuel)
-		update_icon()
+		changed(src)
 		return TRUE
 	return FALSE
 
@@ -210,13 +209,13 @@ TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MA
 	. = ..()
 	if(burning)
 		set_burning(FALSE)
-		update_icon()
+		changed(src)
 		visible_message(span_infoplain(span_bold("\The [src]") + " stops burning."))
 
 /obj/structure/bonfire/proc/ignite()
 	if(!burning && get_fuel_amount())
 		set_burning(TRUE)
-		update_icon()
+		changed(src)
 		visible_message(span_warning("\The [src] starts burning!"))
 
 /obj/structure/bonfire/proc/burn_bonfire()
@@ -234,9 +233,8 @@ TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MA
 				L.adjust_fire_stacks(get_fuel_amount() / 4)
 				L.ignite_mob()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/bonfire/appearance_overlays()
-	. = list()
+/obj/structure/bonfire/draw(datum/look/look)
+	..()
 	if(burning)
 		var/state
 		switch(get_fuel_amount())
@@ -246,24 +244,24 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_
 				state = "bonfire_hot"
 		var/image/I = image(icon, state)
 		I.appearance_flags = RESET_COLOR
-		. += I
+		look.overlay(I)
 
 		if(has_buckled_mobs() && get_fuel_amount() >= 5)
 			I = image(icon, "bonfire_intense")
 			I.pixel_y = 13
 			I.layer = MOB_LAYER + 0.1
 			I.appearance_flags = RESET_COLOR
-			. += I
+			look.overlay(I)
 
 		var/light_strength = max(get_fuel_amount() / 2, 2)
-		set_light(light_strength, light_strength, "#FF9933")
+		look.light(light_strength, light_strength, "#FF9933")
 	else
-		set_light(0)
+		look.light_off()
 
 	if(grill)
 		var/image/grille_image = image(icon, "bonfire_grill")
 		grille_image.appearance_flags = RESET_COLOR
-		. += grille_image
+		look.overlay(grille_image)
 
 
 /obj/structure/bonfire/proc/bonfire_step(datum/act/timer/A)
@@ -317,7 +315,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_
 		M.pixel_y += 13
 	else // Just unbuckled someone
 		M.pixel_y -= 13
-	update_icon()
+	changed(src)
 
 /obj/structure/fireplace //more like a space heater than a bonfire. A cozier alternative to both.
 	name = "fireplace"

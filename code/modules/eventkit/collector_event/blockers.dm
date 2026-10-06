@@ -45,7 +45,10 @@
 
 REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLECTOR_BLOCKERS)
 
-APPEARANCE_TEMPLATE(/obj/structure/event_collector_blocker, "{base_icon}_{block_amount?off:on}")
+/// The look (the draw sweep: from its template).
+/obj/structure/event_collector_blocker/draw(datum/look/look)
+	..()
+	look.state("[base_icon]_[block_amount ? "off" : "on"]")
 
 /obj/structure/event_collector_blocker/proc/induce_failure(intensity = -1) //progress to remove from the machine
 	if(intensity == -1)
@@ -56,12 +59,12 @@ APPEARANCE_TEMPLATE(/obj/structure/event_collector_blocker, "{base_icon}_{block_
 		active_repair_steps = list()
 		for(var/i in 1 to 4)
 			active_repair_steps += pick(list(TOOL_CROWBAR,TOOL_MULTITOOL,TOOL_SCREWDRIVER,TOOL_WRENCH,TOOL_CABLE_COIL,TOOL_WELDER)) //todo, make this a different list on the obj "Possible failures" or whatever.
-	update_icon();
+	changed(src)
 
 /obj/structure/event_collector_blocker/proc/fix()
 	block_amount = 0
 	active_repair_steps = list()
-	update_icon();
+	changed(src)
 
 /obj/structure/event_collector_blocker/examine(mob/user, infix, suffix)
 	. = ..()

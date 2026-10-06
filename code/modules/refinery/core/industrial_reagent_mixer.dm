@@ -32,7 +32,7 @@
 		if(reagents.total_volume <= 0)
 			mixer_angle += mixer_rotation_rate
 			mixer_angle = (360 + mixer_angle) % 360
-			update_icon()
+			changed(src)
 		got_input = FALSE
 		return
 
@@ -46,35 +46,34 @@
 		return
 	mixer_angle += mixer_rotation_rate
 	mixer_angle = (360 + mixer_angle) % 360
-	update_icon()
+	changed(src)
 	got_input = FALSE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/mixer/appearance_overlays()
-	. = list()
+/obj/machinery/reagent_refinery/mixer/draw(datum/look/look)
+	..()
 	// GOOBY!
 	if(reagents && reagents.total_volume >= 5)
 		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
 		switch(percent)
-			if(5 to 20)			percent = 2
-			if(20 to 40) 		percent = 4
-			if(40 to 60)		percent = 6
-			if(60 to 80)		percent = 8
-			if(80 to INFINITY)	percent = 10
+			if(5 to 20) percent = 2
+			if(20 to 40) percent = 4
+			if(40 to 60) percent = 6
+			if(60 to 80) percent = 8
+			if(80 to INFINITY) percent = 10
 		var/image/filling = image(icon, loc, "mixer_r_[percent]",dir = dir)
 		filling.color = reagents.get_color()
-		. += filling
+		look.overlay(filling)
 	// Get main dir pipe
 	var/image/pipe = image(icon, icon_state = "mixer_cons", dir = dir)
-	. += pipe
+	look.overlay(pipe)
 	if(anchored)
 		if(operable())
 			var/image/dot = image(icon, icon_state = "mixer_dot_[ got_input ? "on" : "off" ]")
-			. += dot
-		. += update_input_connection_overlays("mixer_intakes")
+			look.overlay(dot)
+		look.overlay(update_input_connection_overlays("mixer_intakes"))
 	// Get mixer overlay
 	var/image/arm = image(icon, icon_state = "mixer_arm", dir = angle2dir(mixer_angle))
-	. += arm
+	look.overlay(arm)
 
 /obj/machinery/reagent_refinery/mixer/declare_interactions(list/into)
 	into += list(
@@ -126,7 +125,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/at
 	// If we transfered anything, then inform process() of it!
 	if(.)
 		got_input = TRUE
-		update_icon()
+		changed(src)
 
 /obj/machinery/reagent_refinery/mixer/declare_interactions(list/into)
 	. = ..()

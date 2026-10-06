@@ -86,7 +86,7 @@
 /obj/item/gun/launcher/crossbow/handle_post_fire(mob/user, atom/target)
 	own_take(src, nameof(bolt))
 	tension = 0
-	update_icon()
+	changed(src)
 	..()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
@@ -107,7 +107,7 @@
 		else
 			act_message(user, src, MSG_SELF("You relax the tension on %T%'s string."), MSG_OTHERS("%U% relaxes the tension on %T%'s string."))
 		tension = 0
-		update_icon()
+		changed(src)
 	else
 		draw_string(user)
 
@@ -136,7 +136,7 @@
 	act_message(user, src, others = "%U% stops drawing and relaxes the string of %T%.", \
 		blind = span_warning("You stop drawing back and relax the string of %T%."))
 	tension = 0
-	update_icon()
+	changed(src)
 
 /obj/item/gun/launcher/crossbow/proc/draw_notch(mob/user)
 	//double check that the user hasn't removed the bolt in the meantime
@@ -144,7 +144,7 @@
 		return
 
 	tension++
-	update_icon()
+	changed(src)
 
 	if(tension >= max_tension)
 		tension = max_tension
@@ -179,7 +179,7 @@
 			if(!move_into(src, nameof(src.bolt), W, user))
 				return
 			act_message(user, src, MSG_SELF("You slide [bolt] into %T%."), MSG_OTHERS("%U% slides [bolt] into %T%."))
-			update_icon()
+			changed(src)
 			return
 		else if(istype(W,/obj/item/stack/rods))
 			var/obj/item/stack/rods/R = W
@@ -187,7 +187,7 @@
 				rel_set(src, nameof(bolt), new /obj/item/arrow/rod(src))
 				bolt.add_fingerprint(user)
 				bolt.forceMove(src)
-				update_icon()
+				changed(src)
 				act_message(user, src, MSG_SELF("You jam [bolt] into %T%."), MSG_OTHERS("%U% jams [bolt] into %T%."))
 				superheat_rod(user)
 			return
@@ -223,7 +223,10 @@
 	if(bolt)
 		return "-nocked"
 	return ""
-APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow, "crossbow{appearance_draw_suffix}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/launcher/crossbow/draw(datum/look/look)
+	..()
+	look.state("crossbow[appearance_draw_suffix()]")
 
 
 // Crossbow construction.
@@ -235,7 +238,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow, "crossbow{appearance_draw_s
 
 	var/buildstate = 0
 
-APPEARANCE_TEMPLATE(/obj/item/crossbowframe, "crossbowframe{buildstate}")
+/// The look (the draw sweep: from its template).
+/obj/item/crossbowframe/draw(datum/look/look)
+	..()
+	look.state("crossbowframe[buildstate]")
 
 /obj/item/crossbowframe/examine(mob/user)
 	. = ..()
@@ -266,7 +272,7 @@ APPEARANCE_TEMPLATE(/obj/item/crossbowframe, "crossbowframe{buildstate}")
 			playsound(src, tool.usesound, 50, 1)
 			to_chat(user, span_notice("You weld the rods into place."))
 		buildstate++
-		update_icon()
+		changed(src)
 	return ITEM_INTERACT_SUCCESS
 
 DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(interaction_item)))
@@ -279,7 +285,7 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 			if(R.use(3))
 				to_chat(user, span_notice("You assemble a backbone of rods around the wooden stock."))
 				buildstate++
-				update_icon()
+				changed(src)
 			else
 				to_chat(user, span_notice("You need at least three rods to complete this task."))
 			return INTERACTION_HANDLED_PASS
@@ -289,7 +295,7 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 			if(C.use(5))
 				to_chat(user, span_notice("You wire a crude cell mount into the top of the crossbow."))
 				buildstate++
-				update_icon()
+				changed(src)
 			else
 				to_chat(user, span_notice("You need at least five segments of cable coil to complete this task."))
 			return INTERACTION_HANDLED_PASS
@@ -297,7 +303,7 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 			if(C.use(5))
 				to_chat(user, span_notice("You string a steel cable across the crossbow's lath."))
 				buildstate++
-				update_icon()
+				changed(src)
 			else
 				to_chat(user, span_notice("You need at least five segments of cable coil to complete this task."))
 			return INTERACTION_HANDLED_PASS
@@ -307,7 +313,7 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 			if(P.use(3))
 				to_chat(user, span_notice("You assemble and install a heavy plastic lath onto the crossbow."))
 				buildstate++
-				update_icon()
+				changed(src)
 			else
 				to_chat(user, span_notice("You need at least three plastic sheets to complete this task."))
 			return INTERACTION_HANDLED_PASS

@@ -40,7 +40,6 @@ CAPABILITIES(/obj/effect/effect/foam)
 	if(metal)
 		var/obj/structure/foamedmetal/M = new(src.loc)
 		M.metal = metal
-		M.update_icon()
 	flick("[icon_state]-disolve", src)
 	expire(5)
 
@@ -150,7 +149,14 @@ CAPABILITIES(/obj/effect/effect/foam)
 	. = ..()
 	update_nearby_tiles(1)
 
-DECLARE_APPEARANCE(/obj/structure/foamedmetal, "metal", list("1" = list(APPEARANCE_ICON_STATE = "metalfoam"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "ironfoam")))
+/// The look (the draw sweep: from its layers).
+/obj/structure/foamedmetal/draw(datum/look/look)
+	..()
+	switch("[metal]")
+		if("1")
+			look.state("metalfoam")
+		else
+			look.state("ironfoam")
 
 /obj/structure/foamedmetal/bullet_act(obj/item/projectile/P)
 	if(istype(P, /obj/item/projectile/test))

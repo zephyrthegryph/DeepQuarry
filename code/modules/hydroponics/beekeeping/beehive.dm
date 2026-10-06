@@ -23,24 +23,23 @@ CAPABILITIES(/obj/machinery/beehive)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(hive_active), wakes_on = list(nameof(bee_count), nameof(smoked)))
 	climb()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/beehive/appearance_overlays()
-	. = list()
-	icon_state = "beehive"
+/obj/machinery/beehive/draw(datum/look/look)
+	..()
+	look.state("beehive")
 	if(closed)
-		. += "lid"
+		look.overlay("lid")
 	if(length(frames))
-		. += "empty[length(frames)]"
+		look.overlay("empty[length(frames)]")
 	if(honeycombs >= 100)
-		. += "full[round(honeycombs / 100)]"
+		look.overlay("full[round(honeycombs / 100)]")
 	if(!smoked)
 		switch(bee_count)
 			if(1 to 40)
-				. += "bees1"
+				look.overlay("bees1")
 			if(41 to 80)
-				. += "bees2"
+				look.overlay("bees2")
 			if(81 to 100)
-				. += "bees3"
+				look.overlay("bees3")
 
 /obj/machinery/beehive/examine(mob/user)
 	. = ..()
@@ -67,7 +66,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_
 /obj/machinery/beehive/proc/interaction_beehive_smoke(mob/user, obj/item/held, datum/interaction/interaction)
 	act_message(user, src, MSG_SELF(span_notice("You smoke the bees in %T%.")), MSG_OTHERS(span_notice("%U% smokes the bees in %T%.")))
 	set_smoked(30)
-	update_icon()
+	changed(src)
 	return TRUE
 
 /datum/interaction/machine_item/beehive_load_frame
@@ -89,7 +88,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_
 
 /obj/machinery/beehive/proc/interaction_beehive_load_frame(mob/user, obj/item/honey_frame/held, datum/interaction/interaction)
 	act_message(user, src, MSG_SELF(span_notice("You load %I% into %T%.")), MSG_OTHERS(span_notice("%U% loads %I% into %T%.")), item = held)
-	update_icon()
+	changed(src)
 	user.drop_from_inventory(held)
 	held.forceMove(src)
 	rel_add(src, nameof(frames), held)
@@ -127,7 +126,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_
 			item = held)
 		set_bee_count(bee_count / 2)
 		held.fill()
-	update_icon()
+	changed(src)
 	return TRUE
 
 /datum/interaction/machine_item/beehive_scan
@@ -152,7 +151,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_
 /obj/machinery/beehive/crowbar_act(mob/user, obj/item/tool)
 	closed = !closed
 	act_message(user, src, MSG_SELF(span_notice("You [closed ? "close" : "open"] %T%.")), MSG_OTHERS(span_notice("%U% [closed ? "closes" : "opens"] %T%.")))
-	update_icon()
+	changed(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/beehive/wrench_act(mob/user, obj/item/tool)
@@ -198,9 +197,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_
 	var/obj/item/honey_frame/H = pop(frames)
 	H.honey = 20
 	honeycombs -= 100
-	H.update_icon()
 	H.forceMove(get_turf(src))
-	update_icon()
+	changed(src)
 	harvest_next(user)
 
 /obj/machinery/beehive/proc/interaction_beehive_harvest(mob/user, obj/item/held, datum/interaction/interaction)
@@ -219,11 +217,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_
 /obj/machinery/beehive/proc/work_step(datum/act/timer/A)
 	if(closed && !smoked && bee_count)
 		pollinate_flowers()
-		update_icon()
 	set_smoked(max(0, smoked - 1))
 	if(!smoked && bee_count)
 		set_bee_count(min(bee_count * 1.005, 100))
-		update_icon()
 
 /obj/machinery/beehive/proc/pollinate_flowers()
 	var/coef = bee_count / 100
@@ -255,7 +251,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_
 	. = ..()
 	default_apply_parts()
 	RefreshParts()
-	update_icon()
 
 /obj/machinery/honey_extractor/examine(mob/user)
 	. = ..()
@@ -270,8 +265,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_
 		return "[initial(icon_state)]_moving"
 	return initial(icon_state)
 
-APPEARANCE_TEMPLATE(/obj/machinery/honey_extractor, "{appearance_state}")
-DECLARE_APPEARANCE(/obj/machinery/honey_extractor, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("centrifuge_panel"))))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/honey_extractor/draw(datum/look/look)
+	..()
+	look.state("[appearance_state()]")
+	if(panel_open == 1)
+		look.overlay("centrifuge_panel")
 
 /obj/machinery/honey_extractor/declare_interactions(list/into)
 	into += list(
@@ -308,10 +307,9 @@ DECLARE_APPEARANCE(/obj/machinery/honey_extractor, "panel_open", list("1" = list
 		MSG_OTHERS(span_notice("%U% loads %I%'s comb into %T% and turns it on.")), \
 		item = held)
 	processing = held.honey
-	update_icon()
+	changed(src)
 	use_power_oneoff(active_power_usage * 5) //uses 5 second of active power at once, because I could not figure out how active powerdraw works and if or how the work is timed.
 	held.honey = 0
-	held.update_icon() //updates the honeyframe
 	after(src, 5 SECONDS, PROC_REF(finish_extracting))
 	return TRUE
 
@@ -347,14 +345,14 @@ DECLARE_APPEARANCE(/obj/machinery/honey_extractor, "panel_open", list("1" = list
 
 	var/honey = 0
 
-/obj/item/honey_frame/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/item/honey_frame/proc/appearance_has_honey()
 	return honey > 0
 
-DECLARE_APPEARANCE(/obj/item/honey_frame, "appearance_has_honey", list("1" = list(APPEARANCE_OVERLAYS = list("honeycomb"))))
+/// The look (the draw sweep: from its layers).
+/obj/item/honey_frame/draw(datum/look/look)
+	..()
+	if(appearance_has_honey() == 1)
+		look.overlay("honeycomb")
 
 /obj/item/honey_frame/filled
 	name = "filled beehive frame"
@@ -415,19 +413,26 @@ CAPABILITIES(/obj/item/beehive_assembly)
 	icon_state = "beepack"
 	var/full = 1
 
-DECLARE_APPEARANCE(/obj/item/bee_pack, "full", list("0" = list(APPEARANCE_OVERLAYS = list("beepack-empty")), "1" = list(APPEARANCE_OVERLAYS = list("beepack-full"))))
+/// The look (the draw sweep: from its layers).
+/obj/item/bee_pack/draw(datum/look/look)
+	..()
+	switch("[full]")
+		if("0")
+			look.overlay("beepack-empty")
+		if("1")
+			look.overlay("beepack-full")
 
 /obj/item/bee_pack/proc/empty()
 	full = 0
 	name = "empty bee pack"
 	desc = "A stasis pack for moving bees. It's empty."
-	update_icon()
+	changed(src)
 
 /obj/item/bee_pack/proc/fill()
 	full = initial(full)
 	name = initial(name)
 	desc = initial(desc)
-	update_icon()
+	changed(src)
 
 /obj/machinery/honey_extractor/wrench_act(mob/user, obj/item/tool)
 	if(processing)
@@ -453,4 +458,4 @@ DECLARE_APPEARANCE(/obj/item/bee_pack, "full", list("0" = list(APPEARANCE_OVERLA
 	new /obj/item/stack/material/wax(loc)
 	honey += processing
 	processing = 0
-	update_icon()
+	changed(src)

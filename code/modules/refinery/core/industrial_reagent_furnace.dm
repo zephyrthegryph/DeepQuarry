@@ -27,7 +27,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
 	default_apply_parts()
 	// Update neighbours and self for state
 	update_neighbours()
-	update_icon()
 
 
 /obj/machinery/reagent_refinery/furnace/refinery_step()
@@ -115,19 +114,19 @@ CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
 	if(target && reagents.total_volume > 0)
 		transfer_tank( reagents, target, dir)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/furnace, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/furnace/appearance_overlays()
-	. = list()
-	icon_state = "furnace_[filter_side == 1 ? "r" : "l"]"
+/obj/machinery/reagent_refinery/furnace/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
+	drawn_state = look.state("furnace_[filter_side == 1 ? "r" : "l"]")
 
 	if(reagents && reagents.total_volume > 0)
-		var/image/filling = image(icon, loc, "[icon_state]_r",dir = dir)
+		var/image/filling = image(icon, loc, "[drawn_state]_r",dir = dir)
 		filling.color = reagents.get_color()
-		. += filling
+		look.overlay(filling)
 	else if(beaker && beaker.reagents && beaker.reagents.total_volume > 0)
-		var/image/filling = image(icon, loc, "[icon_state]_r",dir = dir)
+		var/image/filling = image(icon, loc, "[drawn_state]_r",dir = dir)
 		filling.color = beaker.reagents.get_color()
-		. += filling
+		look.overlay(filling)
 
 /obj/machinery/reagent_refinery/furnace/declare_interactions(list/into)
 	into += list(
@@ -196,7 +195,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/furnace, TYPE_PROC_REF(/
 	if(select && select != "")
 		filter_reagent_id = tgui_list[select]
 		beaker.reagents.clear_reagents()
-		update_icon()
+		changed(src)
 	return TRUE
 
 /// The old "Flip Furnace Direction" object verb.
@@ -211,7 +210,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/furnace, TYPE_PROC_REF(/
 		return TRUE
 
 	filter_side *= -1
-	update_icon()
+	changed(src)
 	return TRUE
 
 /obj/machinery/reagent_refinery/furnace/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")

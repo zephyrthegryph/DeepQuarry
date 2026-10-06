@@ -18,7 +18,10 @@
 
 TRACKED(/obj/item/integrated_electronics/wirer, mode)
 
-APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
+/// The look (the draw sweep: from its template).
+/obj/item/integrated_electronics/wirer/draw(datum/look/look)
+	..()
+	look.state("wirer-[mode]")
 
 /obj/item/integrated_electronics/wirer/proc/wire(datum/integrated_io/io, mob/user)
 	if(!io.holder().assembly())
@@ -28,7 +31,6 @@ APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 		rel_set(src, nameof(selected_io), io)
 		to_chat(user, span_notice("You attach a data wire to \the [selected_io.holder()]'s [selected_io.name] data channel."))
 		set_mode(WIRING)
-		update_icon()
 	else if(mode == WIRING)
 		if(io == selected_io)
 			to_chat(user, span_warning("Wiring \the [selected_io.holder()]'s [selected_io.name] into itself is rather pointless."))
@@ -45,7 +47,6 @@ APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 
 		to_chat(user, span_notice("You connect \the [selected_io.holder()]'s [selected_io.name] to \the [io.holder()]'s [io.name]."))
 		set_mode(WIRE)
-		update_icon()
 		selected_io.holder().interact(user) // This is to update the UI.
 		rel_clear(src, nameof(selected_io))
 
@@ -57,7 +58,6 @@ APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 			return
 		to_chat(user, span_notice("You prepare to detach a data wire from \the [selected_io.holder()]'s [selected_io.name] data channel."))
 		set_mode(UNWIRING)
-		update_icon()
 		return
 
 	else if(mode == UNWIRING)
@@ -73,7 +73,6 @@ APPEARANCE_TEMPLATE(/obj/item/integrated_electronics/wirer, "wirer-{mode}")
 			selected_io.holder().interact(user) // This is to update the UI.
 			rel_clear(src, nameof(selected_io))
 			set_mode(UNWIRE)
-			update_icon()
 		else
 			to_chat(user, span_warning("\The [selected_io.holder()]'s [selected_io.name] and \the [io.holder()]'s \
 			[io.name] are not connected."))
@@ -100,7 +99,6 @@ CAPABILITIES(/obj/item/integrated_electronics/wirer)
 				to_chat(user, span_notice("You decide not to disconnect the data channel."))
 			rel_clear(src, nameof(selected_io))
 			set_mode(UNWIRE)
-	update_icon()
 	to_chat(user, span_notice("You set \the [src] to [mode]."))
 	return OP_OK
 

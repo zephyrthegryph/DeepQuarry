@@ -33,7 +33,6 @@ CAPABILITIES(/obj/item/defib_kit)
 /obj/item/defib_kit/Initialize(mapload) //starts without a cell for rnd
 	make_tethered(paddle_path)
 	. = ..()
-	update_icon()
 
 /obj/item/defib_kit/loaded //starts with a cell
 	bcell = /obj/item/cell/apc
@@ -41,26 +40,25 @@ CAPABILITIES(/obj/item/defib_kit)
 /obj/item/defib_kit/proc/get_paddles()
 	return tethered_handheld()
 
-DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/defib_kit/appearance_overlays()
-	. = list()
+/obj/item/defib_kit/draw(datum/look/look)
+	..()
 
 	var/obj/item/shockpaddles/linked/paddles = get_paddles()
 	if(paddles && paddles.loc == src)
-		. += "[initial(icon_state)]-paddles"
+		look.overlay("[initial(icon_state)]-paddles")
 	if(bcell && paddles)
 		if(bcell.check_charge(paddles.chargecost))
 			if(paddles.combat)
-				. += "[initial(icon_state)]-combat"
+				look.overlay("[initial(icon_state)]-combat")
 			else if(!paddles.safety)
-				. += "[initial(icon_state)]-emagged"
+				look.overlay("[initial(icon_state)]-emagged")
 			else
-				. += "[initial(icon_state)]-powered"
+				look.overlay("[initial(icon_state)]-powered")
 
 		var/ratio = CEILING(bcell.percent()/25, 1) * 25
-		. += "[initial(icon_state)]-charge[ratio]"
+		look.overlay("[initial(icon_state)]-charge[ratio]")
 	else
-		. += "[initial(icon_state)]-nocell"
+		look.overlay("[initial(icon_state)]-nocell")
 
 /// Old attack_hand: let the tether swap the paddles into hand before falling through to pickup.
 /obj/item/defib_kit/proc/interaction_hand(datum/act/op/A)
@@ -96,7 +94,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_ove
 			if(!move_into(src, nameof(src.bcell), W, user))
 				return TRUE
 			to_chat(user, span_notice("You install a cell in \the [src]."))
-			update_icon()
 		return TRUE
 	return OP_DECLINE
 
@@ -109,7 +106,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_ove
 	user.put_in_any_hand_if_possible(bcell)
 	own_take(src, nameof(bcell))
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
-	update_icon()
 	return OP_OK
 
 /// A sequencer on the kit works its paddles (their own emag, by key); the kit pays the card when they took it.
@@ -118,7 +114,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/defib_kit, TYPE_PROC_REF(/atom, appearance_ove
 	if(!paddles)
 		return OP_DECLINE
 	var/used = emag_target(paddles, 1, A.actor, A.held)
-	update_icon()
 	return (used != EMAG_DECLINED && used > 0) ? OP_OK : OP_DECLINE
 
 //checks that the base unit is in the correct slot to be used

@@ -59,7 +59,6 @@ OM_DERIVE_FIELD(/obj/machinery/vr_sleeper, vr_occupied, list(CHANGE_RELATION_ADD
 	. = ..()
 	default_apply_parts()
 	rel_set(src, nameof(smoke), new /datum/effect/effect/system/smoke_spread/bad)
-	update_icon()
 
 // its occupant exits VR (phase 2, while the slot still holds them; phase 3 spills them).
 /obj/machinery/vr_sleeper/lifecycle_dematerialize()
@@ -80,7 +79,10 @@ OM_DERIVE_FIELD(/obj/machinery/vr_sleeper, vr_occupied, list(CHANGE_RELATION_ADD
 		visible_message(span_warning("\The [src] sounds an alarm, swinging its hatch open."))
 		occupant.exit_vr(FALSE)
 
-APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/vr_sleeper/draw(datum/look/look)
+	..()
+	look.state("[base_state][appearance_occupied()]")
 
 /// 1 while the pod holds an occupant, else 0.
 /obj/machinery/vr_sleeper/proc/appearance_occupied()
@@ -229,7 +231,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 	if(!move_into(src, OCCUPANT_SLOT_VR_POD, M))
 		return
 
-	update_icon()
 
 	if(M.has_brain_worms())
 		to_chat(user, span_warning("\The [src] rejects [M] with a sharp beep."))

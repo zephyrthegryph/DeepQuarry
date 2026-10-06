@@ -30,14 +30,12 @@ CAPABILITIES(/obj/item/material/kitchen/utensil)
 /obj/item/material/kitchen/utensil/proc/roll_pixel_y(datum/roller/R)
 	return R.chance(60) ? R.number(0, 4) : pixel_y
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/material/kitchen/utensil/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/material/kitchen/utensil/draw(datum/look/look)
+	..()
 	if(loaded)
 		var/image/I = new(icon, "loadedfood")
 		I.color = loaded_color
-		. += I
+		look.overlay(I)
 
 /obj/item/material/kitchen/utensil/proc/load_food(mob/user, obj/item/reagent_containers/food/snacks/loading)
 	if (reagents.total_volume > 0)
@@ -73,7 +71,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 
 	if (loading.reagents.total_volume <= 0)
 		consume(loading, user)
-	update_icon()
+	changed(src)
 
 /obj/item/material/kitchen/utensil/proc/force_feed_done(mob/living/carbon/M, mob/living/user)
 	if(!loaded)
@@ -81,7 +79,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 	act_message(user, M, others = span_bold("%U%") + " feeds some of [loaded] to %T% with \the [src].")
 	play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,40))
 	loaded = null
-	update_icon()
+	changed(src)
 
 /obj/item/material/kitchen/utensil/attack(mob/living/carbon/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(!istype(M))
@@ -116,7 +114,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 			return ITEM_INTERACT_SUCCESS
 		play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,40))
 		loaded = null
-		update_icon()
+		changed(src)
 		return ITEM_INTERACT_SUCCESS
 	else
 		to_chat(user, span_warning("You don't have anything on \the [src]."))	//if we have help intent and no food scooped up DON'T STAB OURSELVES WITH THE FORK

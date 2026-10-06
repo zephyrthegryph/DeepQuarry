@@ -36,7 +36,6 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/gps, PERIODIC_SLOW, list("tracking", "holde
 	. = ..()
 	name = "global positioning system ([gps_tag])"
 	update_holder()
-	update_icon()
 
 /obj/item/gps/proc/check_visible_to_holder()
 	. = (holder_ref() && (holder_ref().get_active_hand() == src || holder_ref().get_inactive_hand() == src))
@@ -173,11 +172,9 @@ CAPABILITIES(/obj/item/gps)
 	else
 		update_compass(src)
 	update_holder()
-	update_icon()
 
 /// A pulse knocked it out (it shows "emp") or its outage ended (it says so).
 /obj/item/gps/proc/emp_state_changed(datum/act/A)
-	update_icon()
 	if(!emp_disabled(src))
 		visible_message("\The [src] appears to be functional again.")
 
@@ -188,10 +185,14 @@ CAPABILITIES(/obj/item/gps)
 		return "working"
 	return ""
 
-DECLARE_APPEARANCE(/obj/item/gps, "appearance_gps_state", list( \
-	"emp" = list(APPEARANCE_OVERLAYS = list("emp")), \
-	"working" = list(APPEARANCE_OVERLAYS = list("working")) \
-))
+/// The look (the draw sweep: from its layers).
+/obj/item/gps/draw(datum/look/look)
+	..()
+	switch("[appearance_gps_state()]")
+		if("emp")
+			look.overlay("emp")
+		if("working")
+			look.overlay("working")
 
 /obj/item/gps/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor

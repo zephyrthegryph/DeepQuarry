@@ -333,26 +333,23 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 	. = ..()
 	rel_set(src, nameof(door), add_vis_overlay("closed", layer = 4, unique = TRUE)) // the vis overlay service owns it
 	icon_state = "suit_storage"
-	if(special_frame)
-		add_overlay(special_frame)
 
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/gear_dispenser/suit_fancy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/gear_dispenser/suit_fancy/appearance_overlays()
-	. = list()
+/obj/machinery/gear_dispenser/suit_fancy/draw(datum/look/look)
+	..()
 
 	if(special_frame)
-		. += special_frame
+		look.overlay(special_frame)
 
 	if(needs_power && !operable())
-		. += "nopower"
+		look.overlay("nopower")
 	else
-		. += "light1"
+		look.overlay("light1")
 
 	if(held_gear_disp())
-		. += "fullsuit"
+		look.overlay("fullsuit")
 		if(operable())
-			. += "light2"
+			look.overlay("light2")
 
 /obj/machinery/gear_dispenser/suit_fancy/declare_interactions(list/into)
 	into += list(

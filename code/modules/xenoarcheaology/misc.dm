@@ -9,7 +9,6 @@
 	new /obj/item/book/manual/anomaly_testing(src)
 	new /obj/item/book/manual/anomaly_spectroscopy(src)
 	new /obj/item/book/manual/stasis(src)
-	update_icon()
 
 /obj/machinery/alarm/isolation
 	req_one_access = list(ACCESS_RESEARCH, ACCESS_ATMOSPHERICS, ACCESS_ENGINE_EQUIP)

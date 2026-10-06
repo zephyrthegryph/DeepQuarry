@@ -21,7 +21,10 @@
 
 /obj/item/t_scanner/var/on = 0
 TRACKED(/obj/item/t_scanner, on)
-APPEARANCE_TEMPLATE(/obj/item/t_scanner, "t-ray{on}")
+/// The look (the draw sweep: from its template).
+/obj/item/t_scanner/draw(datum/look/look)
+	..()
+	look.state("t-ray[on]")
 
 CAPABILITIES(/obj/item/t_scanner)
 	// Scans underfloor objects while switched on.

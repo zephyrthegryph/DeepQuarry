@@ -20,7 +20,6 @@
 
 	if (istype(loc, /obj/item/aicard))
 		var/obj/item/aicard/card = loc
-		card.update_icon()
 
 	set_density(TRUE)
 

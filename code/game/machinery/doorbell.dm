@@ -13,10 +13,6 @@
 	var/id_tag = null
 	var/chime_sound = SFX_MACHINES_DOORBELL
 
-/obj/machinery/doorbell_chime/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/machinery/doorbell_chime/proc/chime()
 	if(!operable())
 		return
@@ -29,10 +25,13 @@
 
 /obj/machinery/doorbell_chime/proc/chime_end()
 	set_light(0)
-	update_icon()
 
-APPEARANCE_TEMPLATE(/obj/machinery/doorbell_chime, "dbchime-{id_tag?standby:red}")
-DECLARE_APPEARANCE(/obj/machinery/doorbell_chime, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("dbchime-open"))))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/doorbell_chime/draw(datum/look/look)
+	..()
+	look.state("dbchime-[id_tag ? "standby" : "red"]")
+	if(panel_open == 1)
+		look.overlay("dbchime-open")
 
 /obj/machinery/doorbell_chime/declare_interactions(list/into)
 	into += list(
@@ -106,9 +105,11 @@ CAPABILITIES(/obj/machinery/button/doorbell)
 	if (!id)
 		assign_uid()
 		id = num2text(uid)
-	update_icon()
 
-APPEARANCE_TEMPLATE(/obj/machinery/button/doorbell, "doorbell-{operable?standby:off}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/button/doorbell/draw(datum/look/look)
+	..()
+	look.state("doorbell-[operable() ? "standby" : "off"]")
 
 /obj/machinery/button/doorbell/declare_interactions(list/into)
 	into += list(

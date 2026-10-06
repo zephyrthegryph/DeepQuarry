@@ -179,7 +179,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
 	frame.set_dir(dir)
 	frame.set_anchored(TRUE)
 	frame.state = 2
-	frame.update_icon()
+	changed(frame)
 	board.atom_deconstruct(TRUE, src)
 	replace_with(src, /obj/item/stack/cable_coil, 5)
 	return OP_OK

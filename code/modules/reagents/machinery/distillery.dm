@@ -80,7 +80,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 
 	setup_overlay_vars()
 
-	update_icon()
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/RefreshParts()
 	var/total_laser_rating = get_part_rating(/obj/item/stock_parts/micro_laser)
@@ -207,7 +206,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 			if(isnum(temp) && !use_atmos)
 				target_temp = clamp(temp, min_temp, max_temp)
 
-	update_icon()
 	return OP_OK
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/has_free_beaker_slot(datum/act/op/A)
@@ -239,7 +237,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 				W.add_fingerprint(user)
 				move_into(src, nameof(src.OutputBeaker), W, user)
 
-	update_icon()
 	return TRUE
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/use_power(amount, chan = -1)
@@ -318,38 +315,36 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 			use_power(power_rating * CELLRATE * 0.5)
 			reagents.trans_to_holder(OutputBeaker.reagents, amount = rand(1, 5))
 
-	update_icon()
+	changed(src)
 	if(!on)
 		distillery_heat(0, null)
 		if(isnull(heat_body))
 			return PROCESS_KILL
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/reagent_distillery, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/draw(datum/look/look)
+	..()
 
 	if(InputBeaker)
-		. += overlay_input_beaker
+		look.overlay(overlay_input_beaker)
 
 	if(OutputBeaker)
-		. += overlay_output_beaker
+		look.overlay(overlay_output_beaker)
 
 	if(on)
 		if(OutputBeaker && OutputBeaker.reagents.total_volume < OutputBeaker.reagents.maximum_volume)
-			. += overlay_dumping
+			look.overlay(overlay_dumping)
 		else if(abs(get_temperature() - target_temp) <= 0.5)
-			. += overlay_ready
+			look.overlay(overlay_ready)
 		else if(get_temperature() < target_temp)
-			. += overlay_heating
+			look.overlay(overlay_heating)
 		else
-			. += overlay_cooling
+			look.overlay(overlay_cooling)
 
 	else
-		. += overlay_off
+		look.overlay(overlay_off)
 
 	if(connected_port())
-		. += overlay_connected
+		look.overlay(overlay_connected)
 
 /*
  * Subtypes

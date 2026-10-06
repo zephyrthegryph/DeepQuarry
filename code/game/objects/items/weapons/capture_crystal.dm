@@ -22,10 +22,6 @@
 	var/capture_chance_modifier = 1		//So we can have special subtypes with different capture rates!
 	var/loadout = FALSE
 
-/obj/item/capture_crystal/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 //Let's make sure we clean up our references and things if the crystal goes away (such as when it's digested)
 // the bound mob is unleashed and freed of its command.
 /obj/item/capture_crystal/on_destroy(force)
@@ -234,20 +230,19 @@ CAPABILITIES(/datum/prompt/choice/crystal_ghost_invite)
 	M.ghostjoin = TRUE
 	to_chat(U, span_notice("\The [bound_mob] is now eligable to be joined by ghosts. It will need to be out of the crystal to be able to be joined."))
 
-DECLARE_APPEARANCE_PROC(/obj/item/capture_crystal, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/capture_crystal/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/capture_crystal/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(spawn_mob_type)
-		icon_state = full_icon
+		drawn_state = look.state(full_icon)
 	else if(!bound_mob)
-		icon_state = "inactive"
+		drawn_state = look.state("inactive")
 	else if(bound_mob in contents)
-		icon_state = full_icon
+		drawn_state = look.state(full_icon)
 	else
-		icon_state = empty_icon
+		drawn_state = look.state(empty_icon)
 	if(!cooldown_check())
-		icon_state = "[icon_state]-busy"
+		drawn_state = look.state("[drawn_state]-busy")
 
 /// Starts the activation cooldown; the busy sprite is fixed once, when it ends.
 /obj/item/capture_crystal/proc/start_activate_cooldown()
@@ -477,14 +472,12 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	rel_clear(src, nameof(owner))
 	active = FALSE
 	persist_storable = TRUE
-	update_icon()
 
 /obj/item/capture_crystal/proc/owner_was_deleted(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 	unobserve(owner, /datum/notice/qdeleting, src)
 	rel_clear(src, nameof(owner))
 	active = FALSE
-	update_icon()
 
 //If the crystal hasn't been set up, it does this
 /obj/item/capture_crystal/proc/activate(mob/living/user, target)
@@ -540,7 +533,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 			user.visible_message("\The [src] bonks into \the [S], angering it!")
 			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly."))
-		update_icon()
+		changed(src)
 		return
 	//The target is not a mob, so let's not do anything.
 	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
@@ -562,7 +555,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	else						//No we don't have a mob, let's reset the crystal.
 		to_chat(U, span_notice("\The [src] clicks unsatisfyingly."))
 		active = FALSE
-		update_icon()
+		changed(src)
 		rel_clear(src, nameof(owner))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 
@@ -578,7 +571,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 		act_message(bound_mob, src, MSG_SELF("%T% pulls you back into confinement in a flash of light!!!"), MSG_OTHERS("\The [user]'s [src] flashes, disappearing %U% in an instant!!!"))
 		animate_action(turfmemory)
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_IN)
-		update_icon()
+		changed(src)
 	else
 		to_chat(user, span_notice("\The [src] clicks and emits a small, unpleasant tone. \The [bound_mob] cannot be recalled."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
@@ -602,7 +595,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 	act_message(bound_mob, src, MSG_SELF("The world around you rematerialize as you are unleashed from %T% next to \the [user]. You feel a strong compulsion to enact \the [owner]'s will."), MSG_OTHERS("\The [user]'s [src] flashes, %U% appears in an instant!!!"))
 	animate_action(get_turf(bound_mob))
 	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_OUT)
-	update_icon()
+	changed(src)
 
 //Let's make a flashy sparkle when someone appears or disappears!
 /obj/item/capture_crystal/proc/animate_action(atom/thing)
@@ -1085,7 +1078,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 			user.visible_message("\The [src] bonks into \the [S], angering it!")
 			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			to_chat(user, span_notice("\The [src] clicks unsatisfyingly."))
-		update_icon()
+		changed(src)
 		return
 	//The target is not a mob, so let's not do anything.
 	play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)

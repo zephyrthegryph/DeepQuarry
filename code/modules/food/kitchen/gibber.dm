@@ -70,12 +70,18 @@ CAPABILITIES(/obj/machinery/gibber/autogibber)
 		return "jam"
 	return operating ? "use" : "idle"
 
-DECLARE_APPEARANCE(/obj/machinery/gibber, "dirty", list("1" = list(APPEARANCE_OVERLAYS = list("grbloody"))))
-DECLARE_APPEARANCE(/obj/machinery/gibber, "appearance_gibber_light", list(
-	"jam" = list(APPEARANCE_OVERLAYS = list("grjam")),
-	"use" = list(APPEARANCE_OVERLAYS = list("gruse")),
-	"idle" = list(APPEARANCE_OVERLAYS = list("gridle")),
-))
+/// The look (the draw sweep: from its layers).
+/obj/machinery/gibber/draw(datum/look/look)
+	..()
+	if(dirty == 1)
+		look.overlay("grbloody")
+	switch("[appearance_gibber_light()]")
+		if("jam")
+			look.overlay("grjam")
+		if("use")
+			look.overlay("gruse")
+		if("idle")
+			look.overlay("gridle")
 
 /obj/machinery/gibber/relaymove(mob/user as mob)
 	src.go_out()
@@ -171,7 +177,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 	if(!move_into(src, OCCUPANT_SLOT_GIBBER, victim, user))
 		return
 	act_message(user, victim, others = span_danger("%U% stuffs %T% into the gibber!"))
-	update_icon()
+	changed(src)
 
 /// Old Empty Gibber verb.
 /obj/machinery/gibber/proc/gibber_verb_eject(mob/user, obj/item/held, datum/interaction/interaction)
@@ -189,7 +195,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		O.forceMove(src.loc)
 	slot_remove(occupant, get_turf(src))
-	update_icon()
+	changed(src)
 	return
 
 /obj/machinery/gibber/proc/startgibbing(mob/user as mob)
@@ -203,7 +209,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 	use_power(1000)
 	visible_message(span_danger("You hear a loud [HAS_SYNTHETIC_BIOLOGY(occupant) ? "metallic" : "squelchy"] grinding sound."))
 	src.operating = 1
-	update_icon()
+	changed(src)
 
 	var/slab_name = occupant.name
 	var/slab_count = 2 + occupant.meat_amount
@@ -268,7 +274,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 		thing.forceMove(get_turf(thing)) // Drop it onto the turf for throwing.
 		thing.throw_at(get_edge_target_turf(src,gib_throw_dir),rand(0,3),emagged ? 100 : 50) // Being pelted with bits of meat and bone would hurt.
 
-	update_icon()
+	changed(src)
 
 /// the input_plate this refers to (a relation view: null once it is deleted).
 /obj/machinery/gibber/autogibber/proc/input_plate() as /turf

@@ -105,7 +105,6 @@ DECLARE_INTERACTIONS(/obj/item/ore_bag, INTERACT_ITEM(null, PROC_REF(interaction
 		W.forceMove(get_turf(src))
 
 	W.on_exit_storage(src)
-	update_icon()
 	return 1
 
 /obj/item/ore_bag/proc/gather_all(turf/T, mob/user, silent = 0)

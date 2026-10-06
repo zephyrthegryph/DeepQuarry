@@ -42,7 +42,14 @@ CAPABILITIES(/obj/machinery/igniter)
 	if(isturf(location))
 		location.hotspot_expose(1000,500,1)
 
-DECLARE_APPEARANCE(/obj/machinery/igniter, "on", list("0" = list(APPEARANCE_ICON_STATE = "igniter0"), "1" = list(APPEARANCE_ICON_STATE = "igniter1")))
+/// The look (the draw sweep: from its layers).
+/obj/machinery/igniter/draw(datum/look/look)
+	..()
+	switch("[on]")
+		if("0")
+			look.state("igniter0")
+		if("1")
+			look.state("igniter1")
 
 /obj/machinery/igniter/power_change()
 	. = ..()

@@ -29,10 +29,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/navbeacon, REGISTRY_NAVBEACONS)
 // hide the object if turf is intact
 /obj/machinery/navbeacon/hide(intact)
 	invisibility = intact ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
-	update_icon()
+	changed(src)
 
 // update the icon_state
-APPEARANCE_TEMPLATE(/obj/machinery/navbeacon, "navbeacon{open}{invisibility?-f:}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/navbeacon/draw(datum/look/look)
+	..()
+	look.state("navbeacon[open][invisibility ? "-f" : ""]")
 
 /obj/machinery/navbeacon/declare_interactions(list/into)
 	into += list(
@@ -73,7 +76,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/navbeacon, "navbeacon{open}{invisibility?-f:}
 	playsound(src, tool.usesound, 50, TRUE)
 	act_message(user, null, MSG_SELF(span_infoplain("You [open ? "open" : "close"] the beacon's cover.")), \
 		MSG_OTHERS(span_notice("%U% [open ? "opens" : "closes"] the beacon's cover.")))
-	update_icon()
+	changed(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/navbeacon

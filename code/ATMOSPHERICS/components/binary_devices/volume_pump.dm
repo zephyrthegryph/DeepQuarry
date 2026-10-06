@@ -205,6 +205,7 @@ Thus, the two variables affect pump operation are set in New():
 		return //do not update_icon
 
 	broadcast_status()
+	changed(src)
 	return
 
 MSG_DEF_SELF(volume_pump/overclocked, "The pump makes a grinding noise and air starts to hiss out as you disable its pressure limits.")

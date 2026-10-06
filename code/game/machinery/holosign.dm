@@ -21,15 +21,14 @@
 	lit = !lit
 	set_use_power(lit ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/holosign, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/holosign/appearance_overlays()
-	. = list()
+/obj/machinery/holosign/draw(datum/look/look)
+	..()
 	if(!lit)
-		icon_state = off_icon
-		set_light(0)
+		look.state(off_icon)
+		look.light_off()
 	else
-		icon_state = on_icon
-		set_light(2, 0.25, signlight)
+		look.state(on_icon)
+		look.light(2, 0.25, signlight)
 
 /obj/machinery/holosign/power_change()
 	. = ..()

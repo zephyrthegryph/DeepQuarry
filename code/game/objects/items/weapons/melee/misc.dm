@@ -37,7 +37,6 @@
 
 /obj/item/melee/umbrella/Initialize(mapload)
 	. = ..()
-	update_icon()
 
 TRACKED(/obj/item/melee/umbrella, open)
 
@@ -54,7 +53,6 @@ CAPABILITIES(/obj/item/melee/umbrella)
 	icon_state = "umbrella_[open ? "open" : "closed"]"
 	addblends = icon_state + "_a"
 	item_state = icon_state
-	update_icon()
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/H = src.loc
 		H.update_inv_l_hand(0)

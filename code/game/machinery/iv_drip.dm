@@ -11,13 +11,12 @@ OM_FIELD_VIEW(/obj/machinery/iv_drip, mob/living/carbon/human, attached, CHANGE_
 /obj/machinery/iv_drip/mode = 1 // 1 is injecting, 0 is taking blood.
 /obj/machinery/iv_drip/var/obj/item/reagent_containers/beaker = null
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/iv_drip, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/iv_drip/appearance_overlays()
-	. = list()
+/obj/machinery/iv_drip/draw(datum/look/look)
+	..()
 	if(attached())
-		icon_state = "hooked"
+		look.state("hooked")
 	else
-		icon_state = ""
+		look.state("")
 
 
 	if(beaker)
@@ -27,16 +26,16 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/iv_drip, TYPE_PROC_REF(/atom, appearance_
 
 			var/percent = round((reagents.total_volume / beaker.volume) * 100)
 			switch(percent)
-				if(0 to 9)		filling.icon_state = "reagent0"
-				if(10 to 24) 	filling.icon_state = "reagent10"
-				if(25 to 49)	filling.icon_state = "reagent25"
-				if(50 to 74)	filling.icon_state = "reagent50"
-				if(75 to 79)	filling.icon_state = "reagent75"
-				if(80 to 90)	filling.icon_state = "reagent80"
-				if(91 to INFINITY)	filling.icon_state = "reagent100"
+				if(0 to 9) filling.icon_state = "reagent0"
+				if(10 to 24) filling.icon_state = "reagent10"
+				if(25 to 49) filling.icon_state = "reagent25"
+				if(50 to 74) filling.icon_state = "reagent50"
+				if(75 to 79) filling.icon_state = "reagent75"
+				if(80 to 90) filling.icon_state = "reagent80"
+				if(91 to INFINITY) filling.icon_state = "reagent100"
 
 			filling.icon += reagents.get_color()
-			. += filling
+			look.overlay(filling)
 
 CAPABILITIES(/obj/machinery/iv_drip)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(attached), wakes_on = list(nameof(attached)))
@@ -55,13 +54,13 @@ CAPABILITIES(/obj/machinery/iv_drip)
 	if(attached())
 		visible_message("[attached()] is detached from \the [src]")
 		rel_clear(src, nameof(attached))
-		update_icon()
+		changed(src)
 		return
 
 	if(in_range(src, user) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 		act_message(user, src, others = "%U% attaches %T% to \the [over_object].")
 		rel_set(src, nameof(attached), over_object)
-		update_icon()
+		changed(src)
 
 
 EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
@@ -78,7 +77,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 	if(!move_into(src, nameof(src.beaker), W, user))
 		return FALSE
 	to_chat(user, "You attach \the [W] to \the [src].")
-	update_icon()
+	changed(src)
 	return TRUE
 
 /obj/machinery/iv_drip/screwdriver_act(mob/user, obj/item/tool)
@@ -103,7 +102,6 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 			visible_message("The needle is ripped out of [attached()], doesn't that hurt?")
 			attached().injure(INJURY_CUT, 3, pick(BP_R_ARM, BP_L_ARM), src)
 			rel_clear(src, nameof(attached))
-			update_icon()
 			return PROCESS_KILL
 
 	if(attached() && beaker)
@@ -115,7 +113,6 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 					// speed up transfer on blood packs
 					transfer_amount = 4
 				beaker.reagents.trans_to_mob(attached(), transfer_amount, CHEM_BLOOD)
-				update_icon()
 
 		// Take blood
 		else
@@ -150,7 +147,6 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 				beaker.reagents.update_total()
 				beaker.on_reagent_change()
 				beaker.reagents.handle_reactions()
-				update_icon()
 				if(SScontracts)
 					emit_contract_event(CONTRACT_EVENT_BLOOD_DONATED, list(
 						"department" = DEPARTMENT_MEDICAL,
@@ -167,7 +163,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 		return FALSE
 	beaker.forceMove(get_turf(src))
 	own_take(src, nameof(beaker))
-	update_icon()
+	changed(src)
 	return TRUE
 
 

@@ -272,6 +272,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 	part_time = get_construction_time_w_coeff(initial(D.construction_time))
 	after(src, part_time, PROC_REF(part_finished), key = "exofab_part")
 	desc = "It's building \a [D.name]."
+	changed(src)
 
 	return TRUE
 
@@ -313,6 +314,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
 	being_built = null
 	cap_key_set(src, FABRICATOR_PRINTING, FALSE, null)
 	part_time = 0
+	changed(src)
 
 	var/turf/exit = get_step(src, drop_direction)
 	if(exit.density)

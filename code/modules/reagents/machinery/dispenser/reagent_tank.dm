@@ -371,7 +371,6 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 	. = ..()
 	if(bottle)
 		reagents.add_reagent(REAGENT_ID_WATER,2000)
-	update_icon()
 	make_rotatable()
 
 /obj/structure/reagent_dispensers/water_cooler/examine(mob/user)
@@ -415,7 +414,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 	if(bottle || !anchored)
 		return
 	bottle = 1
-	update_icon()
+	changed(src)
 	to_chat(user, span_notice("You screw the bottle onto the water-cooler!"))
 	for(var/datum/reagent/R in G.reagents.reagent_list)
 		var/total_reagent = G.reagents.get_reagent_amount(R.id)
@@ -428,7 +427,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 	if (P.use(1))
 		to_chat(user, span_notice("You attach a cup dispenser onto the water-cooler."))
 		cupholder = 1
-		update_icon()
+		changed(src)
 
 /obj/structure/reagent_dispensers/water_cooler/proc/unfasten_jug_done(mob/user)
 	if(!bottle)
@@ -439,7 +438,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 		jug.reagents.add_reagent(reagent.id, reagents.get_reagent_amount(reagent.id))
 	reagents.clear_reagents()
 	bottle = FALSE
-	update_icon()
+	changed(src)
 
 /obj/structure/reagent_dispensers/water_cooler/wrench_act(mob/user, obj/item/tool)
 	add_fingerprint(user)
@@ -465,7 +464,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 			new /obj/item/reagent_containers/food/drinks/sillycup(loc)
 		cups = 0
 		cupholder = FALSE
-		update_icon()
+		changed(src)
 		return ITEM_INTERACT_SUCCESS
 	if(bottle)
 		return ITEM_INTERACT_BLOCKING
@@ -488,10 +487,15 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 		return TRUE
 	return TRUE
 
-DECLARE_APPEARANCE(/obj/structure/reagent_dispensers/water_cooler, "bottle", list(
-	"1" = list(APPEARANCE_ICON_STATE = "water_cooler", APPEARANCE_OVERLAYS = list("water_cooler_bottle")),
-	"*" = list(APPEARANCE_ICON_STATE = "water_cooler"),
-))
+/// The look (the draw sweep: from its layers).
+/obj/structure/reagent_dispensers/water_cooler/draw(datum/look/look)
+	..()
+	switch("[bottle]")
+		if("1")
+			look.state("water_cooler")
+			look.overlay("water_cooler_bottle")
+		if("*")
+			look.state("water_cooler")
 
 /obj/structure/reagent_dispensers/beerkeg
 	name = "beer keg"

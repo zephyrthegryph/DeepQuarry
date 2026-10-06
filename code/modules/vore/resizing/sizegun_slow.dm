@@ -29,7 +29,10 @@
 OM_FIELD(/obj/item/slow_sizegun, busy, FALSE, CHANGE_EXPLICIT)
 /// The beam steps every 0.3 s while busy.
 DECLARE_REPEAT(/obj/item/slow_sizegun, 0.3 SECONDS, sizegun_step, "busy")
-APPEARANCE_TEMPLATE(/obj/item/slow_sizegun, "{base_icon_state}-{sizeshift_mode}{busy?-active:}")
+/// The look (the draw sweep: from its template).
+/obj/item/slow_sizegun/draw(datum/look/look)
+	..()
+	look.state("[base_icon_state]-[sizeshift_mode][busy ? "-active" : ""]")
 
 /obj/item/slow_sizegun/proc/should_stop(mob/living/target, mob/living/user, active_hand)
 	if(!target || !user || !active_hand || !istype(target) || !istype(user) || !busy)
@@ -224,7 +227,6 @@ CAPABILITIES(/obj/item/slow_sizegun)
 		sizegun_finish()
 	else
 		sizeshift_mode = !sizeshift_mode
-		update_icon()
 		to_chat(user, span_notice("\The [src] will now [sizeshift_mode ? "grow" : "shrink"] its targets."))
 
 

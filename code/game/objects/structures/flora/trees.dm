@@ -130,7 +130,6 @@ TYPE_TABLE_DECLARE(/obj/structure/flora/tree, winter_icon_suffix, FALSE)
 
 	if(product && product_amount) // Make wooden logs.
 		var/obj/item/stack/material/M = new product(get_turf(src), product_amount)
-		M.update_icon()
 	visible_message(span_danger("\The [src] is felled!"))
 	stump()
 
@@ -364,15 +363,10 @@ TYPE_TABLE(/obj/structure/flora/tree/winter1, winter_icon_suffix, TRUE)
 	light_shift = rand(0, 5)
 	return "[base_state][light_shift]"
 
-/obj/structure/flora/tree/sif/Initialize(mapload)
-	. = ..()
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/structure/flora/tree/sif, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/flora/tree/sif/appearance_overlays()
-	. = list()
+/obj/structure/flora/tree/sif/draw(datum/look/look)
+	..()
 	var/bulbs = (5 - light_shift)
 	if(bulbs > 0)
-		set_light(bulbs, 1, "#33ccff")	// 5 variants, missing bulbs. 5th has no bulbs, so no glow.
-		. += mutable_appearance(icon, "[base_state][bulbs]_glow")
-		. += emissive_appearance(icon, "[base_state][bulbs]_glow")
+		look.light(bulbs, 1, "#33ccff")	// 5 variants, missing bulbs. 5th has no bulbs, so no glow.
+		look.overlay(mutable_appearance(icon, "[base_state][bulbs]_glow"))
+		look.overlay(emissive_appearance(icon, "[base_state][bulbs]_glow"))

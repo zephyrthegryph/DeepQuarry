@@ -14,7 +14,6 @@
 		create_reagents(default_max_vol, reagent_type)
 	// Update neighbours and self for state
 	update_neighbours()
-	update_icon()
 	make_rotatable()
 
 // its reagents are flushed.
@@ -28,11 +27,11 @@
 
 /obj/machinery/reagent_refinery/set_dir(newdir)
 	. = ..()
-	update_icon()
+	changed(src)
 	wake_refinery_line()
 
 /obj/machinery/reagent_refinery/on_reagent_change(changetype)
-	update_icon()
+	changed(src)
 	wake_refinery_line()
 
 // A refinery line runs on the machine pipeline only while something moves (roadmap S5): a machine
@@ -123,7 +122,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery)
 		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor."), \
 		MSG_BLIND("You hear a ratchet."))
 	update_neighbours()
-	update_icon()
+	changed(src)
 	wake_refinery_line()
 	return ITEM_INTERACT_SUCCESS
 
@@ -149,7 +148,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery)
 		return
 	if(N && Adjacent(user))
 		amount_per_transfer_from_this = N
-		update_icon()
+		changed(src)
 	return TRUE
 
 /// Transfers reagents from us to the next machine. Calls handle_transfer() on any target machines to check if they can accept reagents.

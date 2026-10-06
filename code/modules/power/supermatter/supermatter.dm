@@ -516,7 +516,11 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 			"detail" = "Supermatter telemetry reported [round(power)] Relative EER at [round(get_integrity())]% integrity",
 		), "supermatter-telemetry:[REF(src)]:[world.time]", src)
 
-DECLARE_APPEARANCE(/obj/machinery/power/supermatter, "final_countdown", list("1" = list(APPEARANCE_OVERLAYS = list("causality_field"))))
+/// The look (the draw sweep: from its layers).
+/obj/machinery/power/supermatter/draw(datum/look/look)
+	..()
+	if(final_countdown == 1)
+		look.overlay("causality_field")
 
 /obj/machinery/power/supermatter/proc/countdown()
 	if(!final_countdown)
@@ -532,7 +536,7 @@ DECLARE_APPEARANCE(/obj/machinery/power/supermatter, "final_countdown", list("1"
 	if(final_countdown) // We're already doing it go away
 		return
 	final_countdown = TRUE
-	update_icon()
+	changed(src)
 
 	var/speaking = "[emergency_alert] The supermatter has reached critical integrity failure. Emergency causality destabilization field has been activated."
 	GLOB.global_announcer.autosay(speaking, "Supermatter Monitor")
@@ -546,7 +550,7 @@ DECLARE_APPEARANCE(/obj/machinery/power/supermatter, "final_countdown", list("1"
 	if(damage < explosion_point) // Cutting it a bit close there engineers
 		GLOB.global_announcer.autosay("[safe_alert] Failsafe has been disengaged.", "Supermatter Monitor")
 		final_countdown = FALSE
-		update_icon()
+		changed(src)
 		return
 	// A message once every 5 seconds until the final 5 seconds which count down individualy
 	if((i % 50) == 0 || i <= 50)

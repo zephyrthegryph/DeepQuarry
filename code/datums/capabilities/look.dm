@@ -352,6 +352,8 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 /datum/look/proc/apply_to(atom/A)
 	var/was = A.look_set_bits
 	var/now = 0
+	var/old_icon = A.icon
+	var/old_state = A.icon_state
 	if(!isnull(icon))
 		A.icon = icon
 		now |= LOOK_SET_ICON
@@ -371,6 +373,8 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		now |= LOOK_SET_ICON_STATE
 	else if(was & LOOK_SET_ICON_STATE)
 		A.icon_state = initial(A.icon_state)
+	if(ismovable(A) && (A.icon != old_icon || A.icon_state != old_state))
+		look_resync_emissive_blocker(A, old_icon, old_state)
 	if(!isnull(color))
 		A.color = color
 		now |= LOOK_SET_COLOR
@@ -498,3 +502,21 @@ GLOBAL_VAR_INIT(look_flash_seq, 0)
 	else
 		LAZYREMOVE(engine.look_flashes, state)
 	changed(A)
+
+/// A movable's generic emissive blocker is a copy of its sprite taken at init (/atom/movable/Initialize()). When a look
+/// changes the sprite, the copy follows it, so the blocker keeps the shape of what is drawn rather than of the state the
+/// type started in.
+/proc/look_resync_emissive_blocker(atom/movable/AM, old_icon, old_state)
+	if(AM.blocks_emissive != EMISSIVE_BLOCK_GENERIC || !AM.priority_overlays)
+		return
+	var/list/entries = islist(AM.priority_overlays) ? AM.priority_overlays : list(AM.priority_overlays)
+	for(var/mutable_appearance/old in entries)
+		if(old.plane != PLANE_EMISSIVE || old.icon != old_icon || old.icon_state != old_state)
+			continue
+		var/mutable_appearance/blocker = mutable_appearance(AM.icon, AM.icon_state, plane = PLANE_EMISSIVE, alpha = AM.alpha)
+		blocker.color = GLOB.em_block_color
+		blocker.dir = AM.dir
+		blocker.appearance_flags |= AM.appearance_flags
+		AM.cut_overlay(list(old), TRUE)
+		AM.add_overlay(list(blocker), TRUE)
+		return

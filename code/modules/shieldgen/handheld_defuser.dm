@@ -31,7 +31,10 @@ CAPABILITIES(/obj/item/shield_diffuser)
 			if(istype(S) && cell.checked_use(10 KILOWATTS * CELLRATE))
 				spent(S)
 
-APPEARANCE_TEMPLATE(/obj/item/shield_diffuser, "hdiffuser_{enabled?on:off}")
+/// The look (the draw sweep: from its template).
+/obj/item/shield_diffuser/draw(datum/look/look)
+	..()
+	look.state("hdiffuser_[enabled ? "on" : "off"]")
 
 /// Old attack_self.
 /obj/item/shield_diffuser/proc/interaction_self(datum/act/op/A)

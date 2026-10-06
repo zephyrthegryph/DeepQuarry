@@ -26,7 +26,6 @@
 		new /obj/item/tank/oxygen(src)
 	for(var/i in 1 to phorontanks)
 		new /obj/item/tank/phoron(src)
-	update_icon()
 
 /obj/structure/dispenser/proc/appearance_oxygen()
 	return oxygentanks >= 1 ? min(oxygentanks, 4) : 0
@@ -34,8 +33,29 @@
 /obj/structure/dispenser/proc/appearance_phoron()
 	return phorontanks >= 1 ? min(phorontanks, 5) : 0
 
-DECLARE_APPEARANCE(/obj/structure/dispenser, "appearance_oxygen", list("1" = list(APPEARANCE_OVERLAYS = list("oxygen-1")), "2" = list(APPEARANCE_OVERLAYS = list("oxygen-2")), "3" = list(APPEARANCE_OVERLAYS = list("oxygen-3")), "4" = list(APPEARANCE_OVERLAYS = list("oxygen-4"))))
-DECLARE_APPEARANCE(/obj/structure/dispenser, "appearance_phoron", list("1" = list(APPEARANCE_OVERLAYS = list("phoron-1")), "2" = list(APPEARANCE_OVERLAYS = list("phoron-2")), "3" = list(APPEARANCE_OVERLAYS = list("phoron-3")), "4" = list(APPEARANCE_OVERLAYS = list("phoron-4")), "5" = list(APPEARANCE_OVERLAYS = list("phoron-5"))))
+/// The look (the draw sweep: from its layers).
+/obj/structure/dispenser/draw(datum/look/look)
+	..()
+	switch("[appearance_oxygen()]")
+		if("1")
+			look.overlay("oxygen-1")
+		if("2")
+			look.overlay("oxygen-2")
+		if("3")
+			look.overlay("oxygen-3")
+		if("4")
+			look.overlay("oxygen-4")
+	switch("[appearance_phoron()]")
+		if("1")
+			look.overlay("phoron-1")
+		if("2")
+			look.overlay("phoron-2")
+		if("3")
+			look.overlay("phoron-3")
+		if("4")
+			look.overlay("phoron-4")
+		if("5")
+			look.overlay("phoron-5")
 
 /obj/structure/dispenser/declare_interactions(list/into)
 	into += list(
@@ -95,7 +115,7 @@ CAPABILITIES(/obj/structure/dispenser)
 	if(!user.unEquip(I, target = src))
 		return TRUE
 	to_chat(user, span_notice("You put [I] in [src]."))
-	update_icon()
+	changed(src)
 	return TRUE
 
 /obj/structure/dispenser/proc/wrench_used(datum/act/op/A)
@@ -114,7 +134,6 @@ CAPABILITIES(/obj/structure/dispenser)
 		phorontanks--
 	. = TRUE
 	play_sfx(src, SFX_ITEMS_DROP_GASCAN)
-	update_icon()
 
 /obj/structure/dispenser/proc/ui_act_oxygen(datum/act/op/A)
 	var/mob/user = A.actor
@@ -128,4 +147,3 @@ CAPABILITIES(/obj/structure/dispenser)
 		oxygentanks--
 	. = TRUE
 	play_sfx(src, SFX_ITEMS_DROP_GASCAN)
-	update_icon()

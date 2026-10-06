@@ -119,7 +119,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(nul
 	panel_open = !panel_open
 	playsound(src, I.usesound, 100, 1)
 	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the wire panel."))
-	update_icon()
+	changed(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/disposalpipe/sortjunction/multitool_act(mob/user, obj/item/I)
@@ -178,12 +178,11 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(nul
 
 	return P
 
-DECLARE_APPEARANCE_PROC(/obj/structure/disposalpipe/sortjunction, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/disposalpipe/sortjunction/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/structure/disposalpipe/sortjunction/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(panel_open)
-		. += "[icon_state]-open"
+		look.overlay("[drawn_state]-open")
 
 //a three-way junction that filters all wrapped and tagged items
 /obj/structure/disposalpipe/sortjunction/wildcard

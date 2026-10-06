@@ -49,7 +49,6 @@
 		A.reagents.trans_to_obj(src, 10)
 		to_chat(user, span_notice("You fill the balloon with the contents of [A]."))
 		src.desc = "A translucent balloon with some form of liquid sloshing around in it."
-		src.update_icon()
 	return
 
 CAPABILITIES(/obj/item/toy/balloon)
@@ -72,7 +71,6 @@ CAPABILITIES(/obj/item/toy/balloon)
 					src.desc = "A translucent balloon with some form of liquid sloshing around in it."
 					to_chat(user, span_notice("You fill the balloon with the contents of [O]."))
 					O.reagents.trans_to_obj(src, 10)
-	src.update_icon()
 	return OP_PASS
 
 /obj/item/toy/balloon/throw_impact(atom/hit_atom)
@@ -1749,14 +1747,13 @@ CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake)
 		return TRUE
 	lights_glowing = !lights_glowing
 	to_chat(user, span_notice("You turn the [src]'s glow-fabric [lights_glowing ? "on" : "off"]."))
-	update_icon()
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/borgplushie/drake, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/toy/plushie/borgplushie/drake/appearance_overlays()
-	. = list()
+/obj/item/toy/plushie/borgplushie/drake/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if (lights_glowing)
-		. += emissive_appearance(icon, "[icon_state]-lights")
+		look.overlay(emissive_appearance(icon, "[drawn_state]-lights"))
 
 /obj/item/toy/plushie/borgplushie/drake/get_mechanics_info(list/additional_information)
 	return "The lights on the plushie can be toggled [lights_glowing ? "off" : "on"] by alt-clicking on it."
@@ -2683,12 +2680,15 @@ CAPABILITIES(/obj/item/storage/box/timecap)
 	var/on = FALSE
 	var/activation_sound = SFX_MACHINES_CLICK
 
-APPEARANCE_TEMPLATE(/obj/item/toy/desk, "{initial(icon_state)}{on?-on:}")
+/// The look (the draw sweep: from its template).
+/obj/item/toy/desk/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][on ? "-on" : ""]")
 
 /obj/item/toy/desk/proc/activate(mob/user as mob)
 	on = !on
 	playsound(src.loc, activation_sound, 75, 1)
-	update_icon()
+	changed(src)
 	return 1
 
 CAPABILITIES(/obj/item/toy/desk)

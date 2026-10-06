@@ -12,25 +12,21 @@
 	var/lit = TRUE // If true, will have a glowing overlay and lighting.
 	var/festive = FALSE // If true, adds a festive bow overlay to it.
 
-/obj/structure/lightpost/Initialize(mapload)
-	update_icon()
-	return ..()
-
-DECLARE_APPEARANCE_PROC(/obj/structure/lightpost, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/lightpost/appearance_overlays()
-	. = list()
+/obj/structure/lightpost/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 
 	if(lit)
-		set_light(5, 1, "#E9E4AF")
-		var/image/glow = image(icon_state = "[icon_state]-glow")
+		look.light(5, 1, "#E9E4AF")
+		var/image/glow = image(icon_state = "[drawn_state]-glow")
 		glow.plane = PLANE_LIGHTING_ABOVE
-		. += glow
+		look.overlay(glow)
 	else
-		set_light(0)
+		look.light_off()
 
 	if(festive)
-		var/image/bow = image(icon_state = "[icon_state]-festive")
-		. += bow
+		var/image/bow = image(icon_state = "[drawn_state]-festive")
+		look.overlay(bow)
 
 /obj/structure/lightpost/unlit
 	lit = FALSE

@@ -31,7 +31,6 @@ OM_DERIVE_FIELD(/obj/machinery/shield_diffuser, diffuser_has_work, list("enabled
 /obj/machinery/shield_diffuser/hide(i)
 	if(istype(loc, /turf))
 		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
-	update_icon()
 
 /obj/machinery/shield_diffuser/hides_under_flooring()
 	return 1
@@ -63,8 +62,12 @@ CAPABILITIES(/obj/machinery/shield_diffuser)
 /obj/machinery/shield_diffuser/proc/appearance_diffusing()
 	return operable() && enabled
 
-APPEARANCE_TEMPLATE(/obj/machinery/shield_diffuser, "fdiffuser_{appearance_diffusing?on:off}")
-DECLARE_APPEARANCE(/obj/machinery/shield_diffuser, "appearance_alarmed", list("1" = list(APPEARANCE_ICON_STATE = "fdiffuser_emergency")))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/shield_diffuser/draw(datum/look/look)
+	..()
+	look.state("fdiffuser_[appearance_diffusing() ? "on" : "off"]")
+	if(appearance_alarmed() == 1)
+		look.state("fdiffuser_emergency")
 
 /// Appearance reader: alarm raised (as 1/0).
 /obj/machinery/shield_diffuser/proc/appearance_alarmed()
@@ -88,7 +91,6 @@ DECLARE_APPEARANCE(/obj/machinery/shield_diffuser, "appearance_alarmed", list("1
 	if(alarm)
 		to_chat(user, "You press an override button on \the [src], re-enabling it.")
 		set_alarm(0)
-		update_icon()
 		return TRUE
 	set_enabled(!enabled)
 	set_use_power(enabled ? USE_POWER_ACTIVE : USE_POWER_IDLE)
@@ -99,7 +101,6 @@ DECLARE_APPEARANCE(/obj/machinery/shield_diffuser, "appearance_alarmed", list("1
 	if(!duration)
 		return
 	set_alarm(round(max(alarm, duration)))
-	update_icon()
 
 /// Shield segments call this when they regenerate or appear, so stable
 /// diffusers do not need to scan their four neighboring turfs forever.

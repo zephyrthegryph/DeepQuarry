@@ -693,7 +693,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	A.pixel_x = pixel_x
 	A.pixel_y = pixel_y
 	A.update_desc()
-	A.update_icon()
+	changed(A)
 	M.atom_deconstruct(TRUE, src) // the board stays in the frame (its CONTAINED circuit)
 	destroyed(src, null, "deconstructed")
 	return 1

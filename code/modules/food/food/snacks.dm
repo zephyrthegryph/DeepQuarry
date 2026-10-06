@@ -7539,6 +7539,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/reishicup)
 CAPABILITIES(/obj/item/storage/box/wings)
 	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/chickenwing)))
 
+/obj/item/storage/box/wings/Initialize(mapload)
+	. = ..()
+	return
+
 /obj/item/storage/box/wings/draw(datum/look/look)
 	. = ..()
 	look.state("[icon_base][held_count()]")

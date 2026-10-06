@@ -254,7 +254,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 
 	//	..()	Cable sprite generation is dependent upon only d1 and d2.
 	// 			Actually changing dir will rotate the generated sprite to look wrong, but function correctly.
-	update_icon()
+	changed(src)
 	if(flags & ATOM_INITIALIZED)
 		power_register()
 
@@ -271,19 +271,18 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 /obj/structure/cable/hide(i)
 	if(istype(loc, /turf))
 		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
-	update_icon()
+	changed(src)
 
 /obj/structure/cable/hides_under_flooring()
 	return 1
 
-DECLARE_APPEARANCE_PROC(/obj/structure/cable, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/cable/appearance_overlays()
-	. = list()
+/obj/structure/cable/draw(datum/look/look)
+	..()
 	// We rely on the icon state for the wire Initialize(), prevent any updates to the icon before init passed
 	if(!(flags & ATOM_INITIALIZED))
-		return .
-	icon_state = "[d1]-[d2]"
-	alpha = invisibility ? 127 : 255
+		return
+	look.state("[d1]-[d2]")
+	look.set_alpha(invisibility ? 127 : 255)
 
 // Items usable on a cable :
 //   - Wirecutters : cut it duh !
@@ -674,7 +673,7 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 	C.d1 = d1
 	C.d2 = d2
 	C.add_fingerprint(user)
-	C.update_icon()
+	changed(C)
 	C.power_register()
 
 	use(1)
@@ -752,7 +751,7 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 		C.d2 = nd2
 
 		C.add_fingerprint()
-		C.update_icon()
+		changed(C)
 		C.power_register()
 
 		use(1)

@@ -250,7 +250,6 @@ OM_DERIVE_FIELD(/obj/machinery/suit_cycler, cycler_has_work, list("active", "irr
 	if(!move_into(src, nameof(src.helmet), IH, user))
 		return TRUE
 
-	update_icon()
 	return TRUE
 
 /// Fit a voidsuit.
@@ -270,7 +269,6 @@ OM_DERIVE_FIELD(/obj/machinery/suit_cycler, cycler_has_work, list("active", "irr
 	if(!move_into(src, nameof(src.suit), IS, user))
 		return TRUE
 
-	update_icon()
 	return TRUE
 
 /obj/machinery/suit_cycler/proc/hacking_tool_act(mob/user)
@@ -561,7 +559,6 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	slot_remove(occupant, get_turf(src))
 
 	add_fingerprint(user)
-	update_icon()
 
 	return
 

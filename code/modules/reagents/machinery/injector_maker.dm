@@ -139,6 +139,7 @@ CAPABILITIES(/obj/machinery/injector_maker)
 	else
 		S.use(input_amount)
 		count_plastic = count_plastic + plastic_input
+		changed(src)
 	return TRUE
 
 /// The old adjacency/consciousness checks were silent (no message), so they stay in the effect.
@@ -165,6 +166,7 @@ CAPABILITIES(/obj/machinery/injector_maker)
 	else
 		plastic_stack.use(input_amount)
 		count_plastic = count_plastic + plastic_input
+		changed(src)
 	return TRUE
 
 /// A beaker is in.
@@ -230,6 +232,7 @@ CAPABILITIES(/obj/machinery/injector_maker)
 			else
 				beaker.forceMove(drop_location())
 			rel_take(src, nameof(beaker))
+			changed(src)
 
 
 		if("small injector")
@@ -275,6 +278,7 @@ CAPABILITIES(/obj/machinery/injector_maker)
 				if(isnull(name))
 					return
 				make_injector("small injector", injector_amount, name, material, user)
+				changed(src)
 
 
 		if("large injector")
@@ -320,6 +324,7 @@ CAPABILITIES(/obj/machinery/injector_maker)
 				if(isnull(name))
 					return
 				make_injector("large injector", injector_amount, name, material,user)
+				changed(src)
 
 
 /obj/machinery/injector_maker/proc/make_injector(size, amount, new_name, material, mob/user)
@@ -361,7 +366,7 @@ CAPABILITIES(/obj/machinery/injector_maker)
 							src.count_small_injector = src.count_small_injector - 1
 				var/obj/item/reagent_containers/hypospray/autoinjector/empty/P = new(loc)
 				beaker.reagents.trans_to_obj(P, amount_per_injector)
-				P.update_icon()
+				changed(P)
 				if(new_name)
 					P.name = new_name
 
@@ -380,7 +385,7 @@ CAPABILITIES(/obj/machinery/injector_maker)
 							src.count_large_injector = src.count_large_injector - 1
 				var/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty/P = new(loc)
 				beaker.reagents.trans_to_obj(P, amount_per_injector)
-				P.update_icon()
+				changed(P)
 				if(new_name)
 					P.name = new_name
 

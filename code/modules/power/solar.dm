@@ -148,6 +148,7 @@ CAPABILITIES(/obj/machinery/power/solar)
 
 /obj/machinery/power/solar/proc/broken()
 	unset_control()
+	changed(src)
 	climb_shake_off(src, null)
 	return
 
@@ -188,6 +189,7 @@ CAPABILITIES(/obj/machinery/power/solar)
 /obj/machinery/power/solar/proc/update_power_generation(obj/machinery/power/solar_control/SC)
 	adir = SC.cdir //instantly rotates the panel
 	occlusion()//and
+	changed(src) //update it
 	var/sgen = get_power_supplied()
 	controller_supply = sgen
 	return sgen
@@ -550,6 +552,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 		sum += S.update_power_generation(src)
 	connected_power = sum
 	set_power_supply(connected_power)
+	changed(src)
 
 //
 // MISC

@@ -92,7 +92,6 @@
 	smodule.forceMove(get_turf(loc))
 	to_chat(user, span_notice("You remove the [smodule] from \the [src]."))
 	own_take(src, nameof(/obj/item/medigun_backpack::smodule))
-	update_icon()
 	return TRUE
 
 /obj/item/medigun_backpack/proc/ui_act_rem_mani(datum/act/op/A)
@@ -104,7 +103,6 @@
 	to_chat(user, span_notice("You remove the [smanipulator] from \the [src]."))
 	own_take(src, nameof(/obj/item/medigun_backpack::smanipulator))
 	smaniptier = 0
-	update_icon()
 	return TRUE
 
 /obj/item/medigun_backpack/proc/ui_act_rem_laser(datum/act/op/A)
@@ -115,7 +113,6 @@
 	slaser.forceMove(get_turf(loc))
 	to_chat(user, span_notice("You remove the [slaser] from \the [src]."))
 	own_take(src, nameof(/obj/item/medigun_backpack::slaser))
-	update_icon()
 	return TRUE
 
 /obj/item/medigun_backpack/proc/ui_act_rem_cap(datum/act/op/A)
@@ -126,7 +123,6 @@
 	scapacitor.forceMove(get_turf(loc))
 	to_chat(user, span_notice("You remove the [scapacitor] from \the [src]."))
 	own_take(src, nameof(/obj/item/medigun_backpack::scapacitor))
-	update_icon()
 	return TRUE
 
 /obj/item/medigun_backpack/proc/ui_act_rem_bin(datum/act/op/A)
@@ -138,7 +134,6 @@
 	to_chat(user, span_notice("You remove the [sbin] from \the [src]."))
 	own_take(src, nameof(/obj/item/medigun_backpack::sbin))
 	sbintier = 0
-	update_icon()
 	return TRUE
 
 /obj/item/medigun_backpack/inspected_by(mob/user)
@@ -156,5 +151,5 @@
 	if(user)
 		to_chat(user, span_notice("You remove the [ccell] from \the [src]."))
 	own_take(src, nameof(ccell))
-	update_icon()
+	changed(src)
 	return TRUE

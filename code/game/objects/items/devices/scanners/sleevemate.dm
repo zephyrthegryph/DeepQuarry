@@ -27,7 +27,6 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 //These don't perform any checks and need to be wrapped by checks
 /obj/item/sleevemate/proc/clear_mind()
 	rel_clear(src, nameof(stored_mind))
-	update_icon()
 
 /obj/item/sleevemate/proc/get_mind(mob/living/M)
 	ASSERT(M.mind)
@@ -37,7 +36,6 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	soulcatcher_pref_flags = M.soulcatcher_pref_flags
 	M.ghostize()
 	stored_mind().current = null
-	update_icon()
 
 /obj/item/sleevemate/proc/put_mind(mob/living/M)
 	stored_mind().active = TRUE
@@ -400,7 +398,10 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 /obj/item/sleevemate/proc/appearance_has_mind()
 	return stored_mind() ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/sleevemate, "{initial(icon_state)}{appearance_has_mind?_on:}")
+/// The look (the draw sweep: from its template).
+/obj/item/sleevemate/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_has_mind() ? "_on" : ""]")
 
 /// Pulling a mind out. Re-checked on the answer: the scanner is still in hand and empty, the victim still next to the user.
 /datum/prompt/choice/sleevemate_mindsteal

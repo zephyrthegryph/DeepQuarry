@@ -57,7 +57,7 @@ CAPABILITIES(/obj/item/material/ashtray)
 /obj/item/material/ashtray/proc/sync_butts()
 	if(!set_butts(contents_count(src)))
 		describe_fill()
-	update_icon()
+	changed(src)
 
 /obj/item/material/ashtray/proc/describe_fill()
 	if(butts == max_butts)

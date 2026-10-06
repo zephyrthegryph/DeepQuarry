@@ -77,9 +77,14 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 /obj/machinery/bomb_tester/proc/appearance_tank2()
 	return tank2 ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/bomb_tester, "{icon_name}{appearance_suffix}")
-DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank1", list("1" = list(APPEARANCE_OVERLAYS = list("generic-tank1"))))
-DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = list(APPEARANCE_OVERLAYS = list("generic-tank2"))))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/bomb_tester/draw(datum/look/look)
+	..()
+	look.state("[icon_name][appearance_suffix()]")
+	if(appearance_tank1() == 1)
+		look.overlay("generic-tank1")
+	if(appearance_tank2() == 1)
+		look.overlay("generic-tank2")
 
 /obj/machinery/bomb_tester/power_change()
 	. = ..()
@@ -113,7 +118,7 @@ DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = li
 	var/adopted = tank1 ? move_into(src, nameof(src.tank2), I, user) : move_into(src, nameof(src.tank1), I, user)
 	if(!adopted)
 		return TRUE
-	update_icon()
+	changed(src)
 	SStgui.update_uis(src)
 	to_chat(user, span_notice("You connect \the [I] to \the [src]'s [I==tank1 ? "primary" : "secondary"] slot."))
 	return TRUE
@@ -188,7 +193,6 @@ DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = li
 		if(T == tank2)
 			own_take(src, nameof(/obj/machinery/bomb_tester::tank2))
 		T.forceMove(get_turf(src))
-		update_icon()
 	return TRUE
 
 /obj/machinery/bomb_tester/proc/ui_act_canister_scan(datum/act/op/A)
@@ -223,7 +227,7 @@ DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = li
 	set_use_power(USE_POWER_ACTIVE)
 	EXPIRY_STAMP(src, simulation_started, CLOCK_WORLD)
 	after(src, simulation_delay, PROC_REF(simulation_timer_fired), key = "simulation")
-	update_icon()
+	changed(src)
 	switch(sim_mode)
 		if(BOMB_TESTER_MODE_SINGLE)
 			single_tank_sim()

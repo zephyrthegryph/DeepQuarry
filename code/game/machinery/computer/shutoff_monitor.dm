@@ -27,9 +27,7 @@ CAPABILITIES(/obj/machinery/computer/shutoff_monitor)
 	monitor.tgui_interact(user)
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/shutoff_monitor, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/computer/shutoff_monitor/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/machinery/computer/shutoff_monitor/draw(datum/look/look)
+	..()
 	if(operable())
-		. += "ai-fixer-empty"
+		look.overlay("ai-fixer-empty")

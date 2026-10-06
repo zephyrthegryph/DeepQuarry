@@ -144,7 +144,6 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 		// Latent-safe types without a variant stay declared until the storage
 		// is used (C5); the rest are made now.
 		dq_latent_declare(src)
-		update_icon()
 	else
 		starts_with = null
 
@@ -240,7 +239,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 					M.show_message(span_notice("\The [user] puts [W] into [src]."))
 				else if(W.w_class >= 3) //Otherwise they can only see large or normal items from a distance...
 					M.show_message(span_notice("\The [user] puts [W] into [src]."))
-	update_icon()
+	changed(src)
 	return TRUE
 
 /// insert_item() that tells `user` why when it's refused.
@@ -300,7 +299,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 	if(W.maptext)
 		W.maptext = ""
 	W.on_exit_storage(src)
-	update_icon()
+	changed(src)
 	return TRUE
 
 /// Called before removal completes, allowing you to delay or cancel it. Only
@@ -955,7 +954,6 @@ CAPABILITIES(/obj/item/storage/trinketbox)
 /// Used in hand: the lid flips.
 /obj/item/storage/trinketbox/proc/flip_lid(datum/act/op/A)
 	set_open(!open)
-	update_icon()
 	return OP_OK
 
 /obj/item/storage/trinketbox/examine(mob/user)

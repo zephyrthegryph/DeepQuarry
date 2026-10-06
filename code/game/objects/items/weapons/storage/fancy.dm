@@ -88,12 +88,12 @@ CAPABILITIES(/obj/item/storage/fancy/egg_box)
 	if (isobserver(user))
 		return
 	set_open(TRUE)
-	update_icon()
+	changed(src)
 	..()
 
 /obj/item/storage/fancy/egg_box/close(mob/user as mob)
 	set_open(FALSE)
-	update_icon()
+	changed(src)
 	..()
 
 /*
@@ -171,7 +171,6 @@ CAPABILITIES(/obj/item/storage/fancy/blackcandle_box)
 		C.variant = v
 		C.apply_variant()
 		C.name = "[C.colourName] [initial(C.name)]"
-	update_icon()
 
 /obj/item/storage/fancy/crayons/draw(datum/look/look)
 	. = ..()
@@ -209,7 +208,6 @@ CAPABILITIES(/obj/item/storage/fancy/crayons)
 		M.variant = v
 		M.apply_variant()
 		M.name = "[M.colourName] [initial(M.name)]"
-	update_icon()
 
 /obj/item/storage/fancy/markers/draw(datum/look/look)
 	. = ..()
@@ -299,7 +297,7 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes)
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "[initial(icon_state)]_empty"
 	else
-		update_icon()
+		changed(src)
 	..()
 
 /obj/item/storage/fancy/cigarettes/close(mob/user as mob)
@@ -307,7 +305,7 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes)
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "[initial(icon_state)]_empty"
 	else
-		update_icon()
+		changed(src)
 	..()
 
 /obj/item/storage/fancy/cigarettes/remove_from_storage(obj/item/W, atom/new_location, mob/user)
@@ -341,7 +339,7 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes)
 
 		reagents.maximum_volume = 15 * length(slot_contents(CONTAINER_SLOT_STORAGE))
 		to_chat(user, span_notice("You take a cigarette out of the pack."))
-		update_icon()
+		changed(src)
 		return ITEM_INTERACT_SUCCESS
 	else
 		..()
@@ -446,12 +444,12 @@ CAPABILITIES(/obj/item/storage/fancy/cigar)
 	if(open)
 		return
 	set_open(TRUE)
-	update_icon()
+	changed(src)
 	..()
 
 /obj/item/storage/fancy/cigar/close(mob/user as mob)
 	set_open(FALSE)
-	update_icon()
+	changed(src)
 	..()
 
 /obj/item/storage/fancy/cigar/choiba
@@ -536,7 +534,6 @@ CAPABILITIES(/obj/item/storage/lockbox/vials)
 
 /obj/item/storage/lockbox/vials/Initialize(mapload)
 	. = ..()
-	update_icon()
 
 /// The box shows how many vials it holds, its lock's light, and the cover while it is locked.
 /obj/item/storage/lockbox/vials/draw(datum/look/look)
@@ -577,7 +574,6 @@ CAPABILITIES(/obj/item/storage/fancy/heartbox)
 
 /obj/item/storage/fancy/heartbox/Initialize(mapload)
 	. = ..()
-	update_icon()
 
 /obj/item/storage/fancy/heartbox/draw(datum/look/look)
 	. = ..()

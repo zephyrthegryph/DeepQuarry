@@ -46,7 +46,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/message_monitor, PROC_REF(on_ema
 			MK.info += "<br><br>" + span_red("£%@%(*$%&(£&?*(%&£/{}")
 			after(src, 100*length(linkedServer().decryptkey), PROC_REF(UnmagConsole))
 			temp = rebootmsg
-			update_icon()
+			changed(src)
 			return 1
 		else
 			to_chat(user, span_notice("A no server error appears on the screen."))
@@ -180,11 +180,11 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 		var/currentKey = linkedServer().decryptkey
 		to_chat(user, span_warning("Brute-force completed! The key is '[currentKey]'."))
 	hacking = 0
-	update_icon()
+	changed(src)
 
 /obj/machinery/computer/message_monitor/proc/UnmagConsole()
 	set_emag(FALSE)
-	update_icon()
+	changed(src)
 
 /obj/machinery/computer/message_monitor/proc/ResetMessage()
 	customsender 	= "System Administrator"
@@ -225,7 +225,6 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	var/mob/living/original = A.actor.mind.original_character
 	if((isAI(A.actor) || isrobot(A.actor)) && (A.actor.mind.special_role && (original && original == A.actor)))
 		hacking = 1
-		update_icon()
 		//Time it takes to bruteforce is dependant on the password length.
 		after(src, 100*length(linkedServer().decryptkey), PROC_REF(brute_force_done), with = list(A.actor))
 

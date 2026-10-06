@@ -237,6 +237,7 @@ CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer/hosed)
 	return OP_OK
 
 /obj/item/reagent_containers/spray/chemsprayer/hosed/reagent_spray_at(atom/target, mob/user, amount)
+	changed(src)
 
 	var/direction = get_dir(src, target)
 	var/turf/T = get_turf(target)

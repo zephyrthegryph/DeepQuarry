@@ -9,7 +9,6 @@
 
 /obj/item/stack/arcadeticket/Initialize(mapload)
 	. = ..()
-	update_icon()
 
 /// The pile shows how many tickets there are in steps.
 /obj/item/stack/arcadeticket/look_state()

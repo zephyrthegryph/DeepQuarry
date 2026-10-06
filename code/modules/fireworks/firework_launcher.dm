@@ -19,7 +19,6 @@
 
 	default_apply_parts()
 	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)	// Prevents cheesing cooldown by deconstructing and reconstructing
-	update_icon()
 
 /obj/machinery/firework_launcher/RefreshParts()
 	launch_cooldown = 5 MINUTES
@@ -28,7 +27,10 @@
 
 	. = ..()
 
-APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher{loaded_star?1:0}{anchored?1:0}{panel_open?_open:}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/firework_launcher/draw(datum/look/look)
+	..()
+	look.state("launcher[loaded_star ? "1" : "0"][anchored ? "1" : "0"][panel_open ? "_open" : ""]")
 
 /obj/machinery/firework_launcher/declare_interactions(list/into)
 	into += list(
@@ -59,19 +61,14 @@ APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher{loaded_star?1:0}
 		rel_set(src, nameof(loaded_star), O)
 		to_chat(user, span_notice("You insert the firework star into \the [src]."))
 		add_fingerprint(user)
-		update_icon()
 		return TRUE
 	return TRUE
 
 /obj/machinery/firework_launcher/screwdriver_act(mob/user, obj/item/tool)
 	. = ..()
-	if(. == ITEM_INTERACT_SUCCESS)
-		update_icon()
 
 /obj/machinery/firework_launcher/wrench_act(mob/user, obj/item/tool)
 	. = ..()
-	if(. == ITEM_INTERACT_SUCCESS)
-		update_icon()
 
 /// Old object verb.
 /datum/interaction/machine_verb/firework_launcher_eject
@@ -88,7 +85,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher{loaded_star?1:0}
 		loaded_star().forceMove(get_turf(src))
 		rel_clear(src, nameof(loaded_star))
 		add_fingerprint(user)
-		update_icon()
 	return TRUE
 
 /// Old attack_hand, which never called ..(): no gate.
@@ -127,7 +123,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher{loaded_star?1:0}
 	rel_clear(src, nameof(loaded_star))
 	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)
 	add_fingerprint(user)
-	update_icon()
 	flick("launcher_launch", src)
 	return TRUE
 

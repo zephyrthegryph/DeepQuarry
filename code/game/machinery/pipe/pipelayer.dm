@@ -55,7 +55,6 @@ CAPABILITIES(/obj/machinery/pipelayer)
 /obj/machinery/pipelayer/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	update_icon()
 
 
 /obj/machinery/pipelayer/RefreshParts()

@@ -33,7 +33,6 @@ CAPABILITIES(/obj/machinery/papershredder)
 /obj/machinery/papershredder/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	update_icon()
 
 /obj/machinery/papershredder/declare_interactions(list/into)
 	into += list(
@@ -84,7 +83,7 @@ CAPABILITIES(/obj/machinery/papershredder)
 				SP.forceMove(get_turf(src))
 				SP.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),1,5)
 			paperamount = max_paper
-		update_icon()
+		changed(src)
 		return TRUE
 	return FALSE
 
@@ -131,7 +130,7 @@ CAPABILITIES(/obj/machinery/papershredder)
 
 	else
 		to_chat(user, span_notice("You empty \the [src]."))
-	update_icon()
+	changed(src)
 
 /obj/machinery/papershredder/proc/get_shredded_paper()
 	if(!paperamount)
@@ -139,9 +138,25 @@ CAPABILITIES(/obj/machinery/papershredder)
 	paperamount--
 	return new /obj/item/shreddedp(get_turf(src))
 
-APPEARANCE_TEMPLATE(/obj/machinery/papershredder, "shredder-{operable?on:off}")
-DECLARE_APPEARANCE(/obj/machinery/papershredder, "appearance_fill", list("0" = list(APPEARANCE_OVERLAYS = list("shredder-0")), "1" = list(APPEARANCE_OVERLAYS = list("shredder-1")), "2" = list(APPEARANCE_OVERLAYS = list("shredder-2")), "3" = list(APPEARANCE_OVERLAYS = list("shredder-3")), "4" = list(APPEARANCE_OVERLAYS = list("shredder-4")), "5" = list(APPEARANCE_OVERLAYS = list("shredder-5"))))
-DECLARE_APPEARANCE(/obj/machinery/papershredder, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("panel_open"))))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/papershredder/draw(datum/look/look)
+	..()
+	look.state("shredder-[operable() ? "on" : "off"]")
+	switch("[appearance_fill()]")
+		if("0")
+			look.overlay("shredder-0")
+		if("1")
+			look.overlay("shredder-1")
+		if("2")
+			look.overlay("shredder-2")
+		if("3")
+			look.overlay("shredder-3")
+		if("4")
+			look.overlay("shredder-4")
+		if("5")
+			look.overlay("shredder-5")
+	if(panel_open == 1)
+		look.overlay("panel_open")
 
 /// Fullness, 0..5.
 /obj/machinery/papershredder/proc/appearance_fill()

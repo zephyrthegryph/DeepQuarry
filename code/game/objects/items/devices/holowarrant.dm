@@ -70,7 +70,6 @@ CAPABILITIES(/datum/prompt/yes_no/holowarrant_authorize)
 	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 		if(W.fields["namewarrant"] == A.answer.value)
 			rel_set(src, nameof(active), W)
-	update_icon()
 
 /obj/item/holowarrant/proc/authorize_answered(datum/act/request/A)
 	if(!A.answer)
@@ -103,7 +102,10 @@ CAPABILITIES(/datum/prompt/yes_no/holowarrant_authorize)
 /obj/item/holowarrant/proc/appearance_active()
 	return active() ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/holowarrant, "{appearance_active?holowarrant_filled:holowarrant}")
+/// The look (the draw sweep: from its template).
+/obj/item/holowarrant/draw(datum/look/look)
+	..()
+	look.state("[appearance_active() ? "holowarrant_filled" : "holowarrant"]")
 
 // show_content moved to code/modules/holowarrant_panel.dm (structured TGUI).
 

@@ -29,19 +29,18 @@ CAPABILITIES(/obj/item/paperplane)
 			newPaper.forceMove(src)
 	else
 		rel_set(src, nameof(internalPaper), new /obj/item/paper(src))
-	update_icon()
+	changed(src)
 
 
-DECLARE_APPEARANCE_PROC(/obj/item/paperplane, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/paperplane/appearance_overlays()
-	. = list()
+/obj/item/paperplane/draw(datum/look/look)
+	..()
 	var/list/stamped = internalPaper.stamped
 	if(!stamped)
 		stamped = new
 	else if(stamped)
 		for(var/obj/item/stamp/stamp as anything in stamped)
 			var/image/stampoverlay = image('icons/obj/bureaucracy.dmi', "paperplane_[initial(stamp.icon_state)]")
-			. += stampoverlay
+			look.overlay(stampoverlay)
 
 DECLARE_INTERACTIONS(/obj/item/paperplane, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
@@ -66,7 +65,7 @@ DECLARE_INTERACTIONS(/obj/item/paperplane, \
 
 	else if(istype(P, /obj/item/stamp)) 	//we don't randomize stamps on a paperplane
 		internalPaper.attackby(P, user) //spoofed attack to update internal paper.
-		update_icon()
+		changed(src)
 
 	else if(is_hot(P))
 		if(user.disabilities & CLUMSY && prob(10))

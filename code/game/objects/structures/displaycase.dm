@@ -22,9 +22,12 @@
 		destroyed = 1
 		new /obj/item/material/shard( src.loc )
 		play_sfx(src, SFX_SHATTER)
-		update_icon()
+		changed(src)
 
-APPEARANCE_TEMPLATE(/obj/structure/displaycase, "glassbox{destroyed?b:}{occupied}")
+/// The look (the draw sweep: from its template).
+/obj/structure/displaycase/draw(datum/look/look)
+	..()
+	look.state("glassbox[destroyed ? "b" : ""][occupied]")
 
 
 CAPABILITIES(/obj/structure/displaycase)
@@ -47,7 +50,6 @@ CAPABILITIES(/obj/structure/displaycase)
 		to_chat(user, span_notice("You deactivate the hover field built into the case."))
 		src.occupied = 0
 		src.add_fingerprint(user)
-		update_icon()
 	else
 		to_chat(user, span_warning("You kick the display case."))
 		for(var/mob/O in oviewers())

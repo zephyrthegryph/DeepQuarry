@@ -40,10 +40,6 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	op("togglesafeties", ui_act("togglesafeties"), then(PROC_REF(ui_act_togglesafeties)))
 	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
 
-/obj/machinery/suit_storage_unit/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /// Sealed occupant slot (C8a, containment.md §10). Suit, helmet and mask stay
 /// their own typed vars -- only the person hiding inside is a slot.
 /datum/om/relation/slot/occupant/suit_storage
@@ -60,7 +56,10 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 /obj/machinery/suit_storage_unit/proc/appearance_human()
 	return src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_helmet}{appearance_suit}{appearance_human}{isopen}{islocked}{isUV}{ispowered}{isbroken}{issuperUV}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/suit_storage_unit/draw(datum/look/look)
+	..()
+	look.state("suitstorage[appearance_helmet()][appearance_suit()][appearance_human()][isopen][islocked][isUV][ispowered][isbroken][issuperUV]")
 
 /obj/machinery/suit_storage_unit/power_change()
 	. = ..()
@@ -138,7 +137,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 	var/mob/user = A.actor
 	toggle_open(user)
 	. = TRUE
-	update_icon()
 	add_fingerprint(user)
 
 /obj/machinery/suit_storage_unit/proc/ui_act_dispense(datum/act/op/A, item)
@@ -151,21 +149,18 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 		if("suit")
 			dispense_suit(user)
 	. = TRUE
-	update_icon()
 	add_fingerprint(user)
 
 /obj/machinery/suit_storage_unit/proc/ui_act_uv(datum/act/op/A)
 	var/mob/user = A.actor
 	start_UV(user)
 	. = TRUE
-	update_icon()
 	add_fingerprint(user)
 
 /obj/machinery/suit_storage_unit/proc/ui_act_lock(datum/act/op/A)
 	var/mob/user = A.actor
 	toggle_lock(user)
 	. = TRUE
-	update_icon()
 	add_fingerprint(user)
 
 /obj/machinery/suit_storage_unit/proc/ui_act_eject_guy(datum/act/op/A)
@@ -174,7 +169,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 	. = TRUE
 
 	// Panel Open stuff
-	update_icon()
 	add_fingerprint(user)
 
 /obj/machinery/suit_storage_unit/proc/ui_act_toggleuv(datum/act/op/A)
@@ -183,7 +177,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 		return FALSE
 	toggleUV(user)
 	. = TRUE
-	update_icon()
 	add_fingerprint(user)
 
 /obj/machinery/suit_storage_unit/proc/ui_act_togglesafeties(datum/act/op/A)
@@ -192,7 +185,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 		return FALSE
 	togglesafeties(user)
 	. = TRUE
-	update_icon()
 	add_fingerprint(user)
 
 
@@ -301,7 +293,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 	isUV = 1
 	if(OCCUPANT && !islocked)
 		islocked = 1 //Let's lock it for good measure
-	update_icon()
+	changed(src)
 
 	after(src, 5 SECONDS, PROC_REF(uv_cycle_step), with = list(0))
 
@@ -347,7 +339,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 	if(i < 3)
 		after(src, 5 SECONDS, PROC_REF(uv_cycle_step), with = list(i + 1))
 		return
-	update_icon()
+	changed(src)
 
 /obj/machinery/suit_storage_unit/proc/cycletimeleft()
 	if(cycletime_left >= 1)
@@ -371,7 +363,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 	slot_remove(OCCUPANT, get_turf(src))
 	if(!isopen)
 		isopen = 1
-	update_icon()
+	changed(src)
 	return
 
 
@@ -388,7 +380,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 		return TRUE
 	eject_occupant(user)
 	add_fingerprint(user)
-	update_icon()
+	changed(src)
 	return TRUE
 
 /// The old "Hide in Suit Storage Unit" object verb.
@@ -422,7 +414,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 	if(!move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, user, user))
 		return TRUE
 	isopen = 0 //Close the thing after the guy gets inside
-	update_icon()
+	changed(src)
 
 	add_fingerprint(user)
 	return TRUE
@@ -465,7 +457,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 		to_chat(user, span_info("You load the [S.name] into the storage compartment."))
 		if(!move_into(src, nameof(src.SUIT), S, user))
 			return TRUE
-		update_icon()
+		changed(src)
 		return TRUE
 	if(istype(I,/obj/item/clothing/head/helmet))
 		if(!isopen)
@@ -477,7 +469,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 		to_chat(user, span_info("You load the [H.name] into the storage compartment."))
 		if(!move_into(src, nameof(src.HELMET), H, user))
 			return TRUE
-		update_icon()
+		changed(src)
 		return TRUE
 	if(istype(I,/obj/item/clothing/mask))
 		if(!isopen)
@@ -489,9 +481,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 		to_chat(user, span_info("You load the [M.name] into the storage compartment."))
 		if(!move_into(src, nameof(src.MASK), M, user))
 			return TRUE
-		update_icon()
+		changed(src)
 		return TRUE
-	update_icon()
+	changed(src)
 	return TRUE
 
 /obj/machinery/suit_storage_unit/proc/interaction_use_item_timed_done(mob/user, obj/item/grab/G)
@@ -503,7 +495,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 
 	add_fingerprint(user)
 	consume(G, user)
-	update_icon()
+	changed(src)
 	return TRUE
 
 /obj/machinery/suit_storage_unit/screwdriver_act(mob/user, obj/item/tool)
@@ -524,5 +516,5 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 	islocked = 0
 	isopen = 1
 	dump_everything()
-	update_icon()
+	changed(src)
 

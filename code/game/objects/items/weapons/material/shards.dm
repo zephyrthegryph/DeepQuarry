@@ -25,7 +25,7 @@
 
 	icon_state = "[material.shard_icon][pick("large", "medium", "small")]"
 	randpixel_xy()
-	update_icon()
+	changed(src)
 
 	if(material.shard_type)
 		name = "[material.display_name] [material.shard_type]"
@@ -38,16 +38,15 @@
 	else
 		spent(src)
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/shard, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/material/shard/appearance_overlays()
-	. = list()
+/obj/item/material/shard/draw(datum/look/look)
+	..()
 	if(material)
-		color = material.icon_colour
+		look.set_color(material.icon_colour)
 		// 1-(1-x)^2, so that glass shards with 0.3 opacity end up somewhat visible at 0.51 opacity
-		alpha = 255 * (1 - (1 - material.opacity)*(1 - material.opacity))
+		look.set_alpha(255 * (1 - (1 - material.opacity)*(1 - material.opacity)))
 	else
-		color = "#ffffff"
-		alpha = 255
+		look.set_color("#ffffff")
+		look.set_alpha(255)
 
 CAPABILITIES(/obj/item/material/shard)
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))

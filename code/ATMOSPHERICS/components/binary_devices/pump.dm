@@ -170,6 +170,7 @@ Thus, the two variables affect pump operation are set in New():
 		return //do not update_icon
 
 	after(src, 0.2 SECONDS, PROC_REF(broadcast_status))
+	changed(src)
 	return
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/pump)
@@ -218,6 +219,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/pump)
 	return OP_OK
 
 /obj/machinery/atmospherics/binary/pump/on_pump_target_reached()
+	changed(src)
 
 /obj/machinery/atmospherics/binary/pump/draw(datum/look/look)
 	..()

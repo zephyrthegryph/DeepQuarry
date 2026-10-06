@@ -109,7 +109,7 @@ DECLARE_EMAG(/obj/item/kinetic_crusher, PROC_REF(on_emag), null, null)
 		play_sfx(user, SFX_WEAPONS_PLASMA_CUTTER)
 		D.fire()
 		charged = FALSE
-		update_icon()
+		changed(src)
 		after(src, charge_time, PROC_REF(Recharge))
 		return
 	if(proximity_flag && isliving(target))
@@ -143,14 +143,14 @@ DECLARE_EMAG(/obj/item/kinetic_crusher, PROC_REF(on_emag), null, null)
 /obj/item/kinetic_crusher/proc/Recharge()
 	if(!charged)
 		charged = TRUE
-		update_icon()
+		changed(src)
 		play_sfx(src.loc, SFX_WEAPONS_KENETIC_RELOAD)
 
 /obj/item/kinetic_crusher/ui_action_click(mob/user, actiontype)
 	integ_light_on = !integ_light_on
 	play_sfx(src, SFX_WEAPONS_EMPTY, 2)
 	update_brightness(user)
-	update_icon()
+	changed(src)
 
 /obj/item/kinetic_crusher/proc/update_brightness(mob/user = null)
 	if(integ_light_on)
@@ -158,16 +158,15 @@ DECLARE_EMAG(/obj/item/kinetic_crusher, PROC_REF(on_emag), null, null)
 	else
 		set_light(0)
 
-DECLARE_APPEARANCE_PROC(/obj/item/kinetic_crusher, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/kinetic_crusher/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/kinetic_crusher/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(charge_overlay)
 		if(!charged)
-			. += "[icon_state]_uncharged"
+			look.overlay("[drawn_state]_uncharged")
 	if(integ_light_icon)
 		if(integ_light_on)
-			. += "[icon_state]_lit"
+			look.overlay("[drawn_state]_lit")
 
 /obj/item/kinetic_crusher/glaive
 	name = "kinetic glaive"

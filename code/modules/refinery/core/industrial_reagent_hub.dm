@@ -15,7 +15,6 @@
 	default_apply_parts()
 	// Update neighbours and self for state
 	update_neighbours()
-	update_icon()
 
 /obj/machinery/reagent_refinery/hub/refinery_step()
 	if(!anchored)
@@ -34,9 +33,8 @@
 			// dump reagents to next refinery machine
 			transfer_tank( tanker.reagents, target, dir)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/hub, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/hub/appearance_overlays()
-	. = list()
+/obj/machinery/reagent_refinery/hub/draw(datum/look/look)
+	..()
 	var/turf/T = get_step(get_turf(src),dir)
 	var/obj/machinery/other = locate_on(T, /obj/machinery/reagent_refinery)
 	var/intake = FALSE
@@ -60,10 +58,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/hub, TYPE_PROC_REF(/atom
 	// Get main dir pipe
 	if(intake)
 		var/image/pipe = image(icon, icon_state = "hub_intakes", dir = dir)
-		. += pipe
+		look.overlay(pipe)
 	else
 		var/image/pipe = image(icon, icon_state = "hub_cons", dir = dir)
-		. += pipe
+		look.overlay(pipe)
 
 /obj/machinery/reagent_refinery/hub/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	if(istype(origin_machine,/obj/machinery/reagent_refinery/hub)) // Hubs cannot send into other hubs

@@ -253,16 +253,15 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You trap \the [H] inside the glass roulette ball."))
 		to_chat(H.held_mob, span_warning("\The [user] traps you inside a glass roulette ball!"))
-		update_icon()
+		changed(src)
 	return INTERACTION_HANDLED_PASS
 
-DECLARE_APPEARANCE_PROC(/obj/item/roulette_ball/hollow, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/roulette_ball/hollow/appearance_overlays()
-	. = list()
+/obj/item/roulette_ball/hollow/draw(datum/look/look)
+	..()
 	if(trapped && trapped.held_mob)
-		icon_state = "roulette_ball_glass_full"
+		look.state("roulette_ball_glass_full")
 	else
-		icon_state = "roulette_ball_glass"
+		look.state("roulette_ball_glass")
 
 DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
@@ -280,12 +279,12 @@ DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
 			to_chat(user, span_notice("You take \the [trapped] out of the glass roulette ball."))
 			to_chat(trapped.held_mob, span_notice("\The [user] takes you out of a glass roulette ball."))
 		own_take(src, nameof(trapped))
-		update_icon()
+		changed(src)
 	return TRUE
 
 /obj/item/roulette_ball/hollow/on_holder_escape()
 	own_take(src, nameof(trapped))
-	update_icon()
+	changed(src)
 
 /obj/item/roulette_ball/hollow/on_spin()
 	if(trapped && trapped.held_mob)

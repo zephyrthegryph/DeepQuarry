@@ -16,7 +16,6 @@
 /obj/item/gun/projectile/automatic/serdy/Initialize(mapload)
 	. = ..()
 	update_transform()
-	update_icon()
 
 /obj/item/gun/projectile/automatic/serdy/update_transform()
 	. = ..()
@@ -44,7 +43,10 @@
 	if(load_method == MAGAZINE)
 		return ammo_magazine ? "" : "-e"
 	return bolt_open ? "-e" : ""
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/serdy, "{initial(icon_state)}{appearance_suffix}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/serdy/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_suffix()]")
 
 /obj/item/gun/projectile/automatic/serdy/asval
 	name = "AS-VAL"
@@ -1130,7 +1132,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 /// Declared icon_state suffix: rounded magazine count, or nothing when empty.
 /obj/item/gun/projectile/automatic/c20r/proc/appearance_mag_state()
 	return ammo_magazine ? "-[round(length(ammo_magazine.stored_ammo), 4)]" : ""
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/c20r, "c20r{appearance_mag_state}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/c20r/draw(datum/look/look)
+	..()
+	look.state("c20r[appearance_mag_state()]")
 
 TYPE_TABLE(/obj/item/gun/projectile/automatic/c20r, projectile_initial_transform, TRUE)
 
@@ -1163,11 +1168,11 @@ TYPE_TABLE(/obj/item/gun/projectile/automatic/sts35, projectile_initial_transfor
 	icon_expected_width = 64
 
 /* //Dont need it
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/wt550, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/wt550/appearance_overlays()
-	. = list()
-	. += ..()
-	icon_state = ammo_magazine ? "[initial(icon_state)]" : "[initial(icon_state)]-e"
+/obj/item/gun/projectile/automatic/wt550/draw(datum/look/look)
+	..()
+	look.state("wt550[appearance_mag_state()]")
+	look.state(ammo_magazine ? "[initial(icon_state)]" : "[initial(icon_state)]-e")
+
 */
 TYPE_TABLE(/obj/item/gun/projectile/automatic/wt550, projectile_initial_transform, TRUE)
 
@@ -1210,7 +1215,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 	icon_expected_height = 32
 	icon_expected_width = 64
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/mini_uzi, "{initial(icon_state)}{ammo_magazine?:-empty}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/mini_uzi/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-empty"]")
 
 /obj/item/gun/projectile/automatic/mini_uzi/Initialize(mapload)
 	. = ..()
@@ -1252,25 +1260,20 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/mini_uzi, "{initial(icon_
 	auto_loading_type = CLOSED_BOLT | LOCK_OPEN_EMPTY
 	icon_state = "m1911"
 
-/obj/item/gun/projectile/colt/Initialize(mapload)
-	.=..()
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/colt, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/colt/appearance_overlays()
-	. = list()
+/obj/item/gun/projectile/colt/draw(datum/look/look)
+	..()
 	if(ammo_magazine)
 		if(unique_reskin)
-			icon = 'icons/obj/gun.dmi'
-			icon_state = unique_reskin
+			look.set_icon('icons/obj/gun.dmi')
+			look.state(unique_reskin)
 		else
-			icon_state = initial(icon_state)
+			look.state(initial(icon_state))
 	else
 		if(unique_reskin)
-			icon = 'icons/obj/gun.dmi'
-			icon_state = "[unique_reskin]-e"
+			look.set_icon('icons/obj/gun.dmi')
+			look.state("[unique_reskin]-e")
 		else
-			icon_state = "[initial(icon_state)]-e"
+			look.state("[initial(icon_state)]-e")
 
 /obj/item/gun/projectile/sec
 	bolt_name="slide"

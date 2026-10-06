@@ -33,7 +33,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/reactor)
 	COOLDOWN_START(src, next_mode_toggle, dis_time SECONDS)
 	// Update neighbours and self for state
 	update_neighbours()
-	update_icon()
 
 
 /obj/machinery/reagent_refinery/reactor/refinery_step()
@@ -52,7 +51,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/reactor)
 		else
 			toggle_mode = REACTOR_MODE_INTAKE
 			COOLDOWN_START(src, next_mode_toggle, dis_time SECONDS)
-		update_icon()
+		changed(src)
 
 	if(amount_per_transfer_from_this <= 0 || reagents.total_volume <= 0)
 		return
@@ -66,17 +65,16 @@ CAPABILITIES(/obj/machinery/reagent_refinery/reactor)
 		if(target)
 			transfer_tank( reagents, target, dir)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/reactor, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/reactor/appearance_overlays()
-	. = list()
+/obj/machinery/reagent_refinery/reactor/draw(datum/look/look)
+	..()
 	// Get main dir pipe
 	var/image/pipe = image(icon, icon_state = "reactor_cons", dir = dir)
-	. += pipe
+	look.overlay(pipe)
 	if(anchored)
 		if(operable())
 			var/image/dot = image(icon, icon_state = "vat_dot_[ toggle_mode > REACTOR_MODE_INTAKE ? "on" : "off" ]") // Show refinery output mode
-			. += dot
-		. += update_input_connection_overlays("reactor_intakes")
+			look.overlay(dot)
+		look.overlay(update_input_connection_overlays("reactor_intakes"))
 
 /obj/machinery/reagent_refinery/reactor/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// no back/forth, filters don't use just their forward, they send the side too!

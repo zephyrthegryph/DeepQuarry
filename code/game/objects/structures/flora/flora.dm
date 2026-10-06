@@ -661,14 +661,16 @@ TYPE_TABLE(/obj/structure/flora/sif/tendrils, initial_icon_variant_count, 3)
 /obj/structure/flora/sif/frostbelle/Initialize(mapload)
 	. = ..()
 	variantnum = rand(1,3)
-	update_icon()
 
 /obj/structure/flora/sif/frostbelle/proc/appearance_variant()
 	if(max_harvests > 0 && harvest_count < max_harvests)
 		return variantnum
 	return ""
 
-APPEARANCE_TEMPLATE(/obj/structure/flora/sif/frostbelle, "{initial(icon_state)}{appearance_variant}")
+/// The look (the draw sweep: from its template).
+/obj/structure/flora/sif/frostbelle/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_variant()]")
 
 /obj/structure/flora/sif/frostbelle/get_harvestable_desc()
 	return span_notice("\The [src] seems to be budding.")

@@ -175,6 +175,7 @@ CAPABILITIES(/obj/item/shovel/wood)
 	else
 		name = "[material().display_name] shovel"
 		set_bulk_material(material().name, 50)
+		changed(src)
 
 /obj/item/shovel/wood/draw(datum/look/look)
 	..()

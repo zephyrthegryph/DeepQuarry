@@ -45,7 +45,6 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 		if(points && points >= points_to_create)
 			points -= points_to_create
 			generate_sample()
-	update_icon()
 
 /obj/machinery/anomaly_harvester/proc/add_points(add_points)
 	add_points *= efficiency
@@ -122,7 +121,6 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 		var/obj/machinery/anomaly_harvester/harvester = stats.attached_harvester
 		if(harvester)
 			rel_clear(harvester, nameof(harvester.harvested))
-			harvester.update_icon()
 		rel_clear(stats, nameof(stats.attached_harvester))
 	rel_set(src, nameof(harvested), anom)
 	rel_set(stats, nameof(stats.attached_harvester), src)
@@ -144,28 +142,27 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 		else
 			new /obj/item/research_sample/common(src)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/anomaly_harvester, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/anomaly_harvester/appearance_overlays()
-	. = list()
+/obj/machinery/anomaly_harvester/draw(datum/look/look)
+	..()
 	if(!operable() || !anchored)
-		. += "harvester_off"
+		look.overlay("harvester_off")
 	else
-		. += "harvester_on"
+		look.overlay("harvester_on")
 
 	if(harvested)
 		var/obj/effect/anomaly/anom = harvested
 		if(!istype(anom))
-			return .
+			return
 
 		var/datum/anomaly_stats/stats = anom.stats
 
 		switch(stats.stability)
 			if(ANOMALY_STABLE)
-				. += "harvester_stable"
+				look.overlay("harvester_stable")
 			if(ANOMALY_DECAYING)
-				. += "harvester_decay"
+				look.overlay("harvester_decay")
 			else
-				. += "harvester_grow"
+				look.overlay("harvester_grow")
 
 /// /obj/machinery/anomaly_harvester's window data.
 /obj/machinery/anomaly_harvester/ui_data(datum/act/eval/A)

@@ -38,6 +38,7 @@
 			rel_set(src, nameof(node), target)
 			break
 
+	changed(src)
 	update_underlays()
 
 /obj/machinery/atmospherics/unary/return_network(obj/machinery/atmospherics/reference)
@@ -73,6 +74,7 @@
 		rust_release_network_wrapper(network)
 		rel_clear(src, nameof(node))
 
+	changed(src)
 	update_underlays()
 	rust_device_dirty() // a device edge that named the node is withdrawn
 	return null

@@ -378,7 +378,6 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 			R.update_icon()
 		for(var/obj/structure/dummystairs/hazardledge/stairs in turf_contents_of_type(src, /obj/structure/dummystairs/hazardledge))
 			stairs.icon_state = "stair_hazard"
-			stairs.update_icon()
 		update_icon()
 		return
 	name = "nanite goop."
@@ -402,7 +401,6 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 		depth = 1
 		movement_cost = 8
 		stairs.icon_state = "stair_hazard_nanite"
-		stairs.update_icon()
 	for(var/atom/AM in turf_contents_of_type(src, /atom))
 		Entered(AM)
 	update_icon()

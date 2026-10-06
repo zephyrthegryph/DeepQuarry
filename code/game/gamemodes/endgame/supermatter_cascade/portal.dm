@@ -14,7 +14,6 @@
 
 	consume_range = 6
 
-APPEARANCE_NONE(/obj/singularity/narsie/large/exit)
 /// The rift's step (the singularity's every()): every player sees it, and it eats.
 /obj/singularity/narsie/large/exit/singularity_frame(datum/act/timer/A)
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))

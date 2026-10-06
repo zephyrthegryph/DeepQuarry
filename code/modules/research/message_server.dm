@@ -122,7 +122,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 	if(!noisy && active)
 		soundloop.start()
 		noisy = TRUE
-	update_icon()
 	return PROCESS_KILL
 
 /obj/machinery/message_server/proc/send_pda_message(recipient = "",sender = "",message = "")
@@ -209,7 +208,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 		return "off"
 	return "on"
 
-APPEARANCE_TEMPLATE(/obj/machinery/message_server, "server-{appearance_server_state}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/message_server/draw(datum/look/look)
+	..()
+	look.state("server-[appearance_server_state()]")
 
 /datum/feedback_variable
 	var/variable

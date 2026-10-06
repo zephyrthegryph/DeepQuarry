@@ -77,8 +77,6 @@ CAPABILITIES(/obj/item/storage/bag/trash)
 CAPABILITIES(/obj/item/storage/bag/trash/holding)
 	configure(storage(refuses = list(/obj/item/disk/nuclear), max_size = ITEMSIZE_NORMAL))
 
-APPEARANCE_NONE(/obj/item/storage/bag/trash/holding)
-
 // -----------------------------
 //        Plastic Bag
 // -----------------------------
@@ -178,13 +176,11 @@ CAPABILITIES(/obj/item/storage/bag/sheetsnatcher)
 			ledger?.refresh(sheet)
 			S.use(amount) // will qdel() if we use it all
 			refresh_hud()
-			update_icon()
 			return TRUE
 	if(amount < S.get_amount())
 		var/obj/item/stack/F = S.split(amount)
 		if(!move_into(src, CONTAINER_SLOT_STORAGE, F, user))
 			return FALSE
-		update_icon()
 		return TRUE
 	return ..()
 
@@ -209,7 +205,6 @@ CAPABILITIES(/obj/item/storage/bag/sheetsnatcher)
 		if(remainder)
 			new S.type(location, remainder)
 		spent(S, user)
-	update_icon()
 
 // Instead of removing
 /obj/item/storage/bag/sheetsnatcher/remove_from_storage(obj/item/W, atom/new_location, mob/user)

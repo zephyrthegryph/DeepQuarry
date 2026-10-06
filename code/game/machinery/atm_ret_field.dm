@@ -44,7 +44,7 @@
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You [hatch_open ? "close" : "open"] \the [src]'s access hatch."))
 	hatch_open = !hatch_open
-	update_icon()
+	changed(src)
 	if(alwaysactive && wires_intact)
 		generate_field()
 	return ITEM_INTERACT_SUCCESS
@@ -54,7 +54,7 @@
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You toggle \the [src]'s activation behavior to [alwaysactive ? "emergency" : "always-on"]."))
 	alwaysactive = !alwaysactive
-	update_icon()
+	changed(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospheric_field_generator/wirecutter_act(mob/user, obj/item/tool)
@@ -62,7 +62,7 @@
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_warning("You [wires_intact ? "cut" : "mend"] \the [src]'s wires!"))
 	wires_intact = !wires_intact
-	update_icon()
+	changed(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospheric_field_generator/welder_act(mob/user, obj/item/tool)
@@ -86,7 +86,10 @@
 		return wires_intact ? "open_wires" : "open_wirescut"
 	return isactive ? "on" : "off"
 
-APPEARANCE_TEMPLATE(/obj/machinery/atmospheric_field_generator, "arfg_{appearance_state}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/atmospheric_field_generator/draw(datum/look/look)
+	..()
+	look.state("arfg_[appearance_state()]")
 
 /obj/machinery/atmospheric_field_generator/power_change()
 	. = ..()
@@ -188,26 +191,22 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 	light_on = TRUE
 	rad_insulation = RAD_LIGHT_INSULATION
 
-DECLARE_APPEARANCE_PROC(/obj/structure/atmospheric_retention_field, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/atmospheric_retention_field/appearance_overlays()
-	. = list()
+/obj/structure/atmospheric_retention_field/draw(datum/look/look)
+	..()
 	var/list/dirs = list()
 	for(var/obj/structure/atmospheric_retention_field/F in orange(src,1))
 		dirs += get_dir(src, F)
 
 	var/list/connections = dirs_to_corner_states(dirs)
 
-	icon_state = ""
+	look.state("")
 	for(var/i = 1 to 4)
 		var/image/I = image(icon, "[basestate][connections[i]]", dir = 1<<(i-1))
-		. += I
-
-	return .
+		look.overlay(I)
 
 /obj/structure/atmospheric_retention_field/Initialize(mapload)
 	. = ..()
 	update_nearby_tiles() //Force ZAS update
-	update_icon()
 
 DESTROY_EFFECTS(/obj/structure/atmospheric_retention_field, new /datum/destroy_effects_data(neighbor_type = /obj/structure/atmospheric_retention_field))
 

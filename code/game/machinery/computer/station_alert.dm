@@ -68,4 +68,4 @@ CAPABILITIES(/obj/machinery/computer/station_alert)
 			icon_screen = initial(icon_screen)
 			play_sfx(src, SFX_EFFECTS_COMP_ALERT_CLEAR) // Alarm notifications
 		if(last_icon != icon_screen)
-			update_icon()
+			changed(src)

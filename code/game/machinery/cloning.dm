@@ -64,7 +64,6 @@
 /obj/machinery/clonepod/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	update_icon()
 
 // its containers drop out and the growing clone is ejected.
 
@@ -184,7 +183,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	// arrives as null. Without a body there is nothing to finish; the pod resets either way.
 	if(!H)
 		attempting = 0
-		update_icon()
+		changed(src)
 		return
 	OM_EMIT(H, /datum/om/event/human_dna_finalized)
 
@@ -220,7 +219,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	// right one now. set_occupant() itself now happens through the slot's
 	// own on_link() (OM relations step 3).
 	move_into(src, OCCUPANT_SLOT_CLONEPOD, H)
-	update_icon()
+	changed(src)
 	attempting = 0
 
 	return 1
@@ -412,7 +411,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	if(mess) //Clean that mess and dump those gibs!
 		mess = 0
 		gibs(src.loc)
-		update_icon()
+		changed(src)
 		return
 
 	var/mob/living/occupant = get_occupant()
@@ -427,7 +426,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 			occupant.UpdateAppearance()
 	slot_remove(occupant, get_turf(src))
 
-	update_icon()
+	changed(src)
 	return
 
 // Returns the total amount of biomass reagent in all of the pod's stored containers
@@ -489,7 +488,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	if(occupant)
 		connected_message("Critical Error!")
 		mess = 1
-		update_icon()
+		changed(src)
 		occupant.ghostize()
 		occupant.expire(0.5 SECONDS)
 
@@ -513,7 +512,10 @@ CAPABILITIES(/obj/machinery/clonepod)
 		return "g"
 	return "0"
 
-APPEARANCE_TEMPLATE(/obj/machinery/clonepod, "pod_{appearance_state}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/clonepod/draw(datum/look/look)
+	..()
+	look.state("pod_[appearance_state()]")
 
 /obj/machinery/clonepod/full/Initialize(mapload)
 	. = ..()

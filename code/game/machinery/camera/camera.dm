@@ -142,7 +142,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	if(has_stat(EMPED) && EXPIRY_EXPIRED(src, affected_by_emp_until, CLOCK_WORLD))
 		stat_remove(EMPED)
 		cancelCameraAlarm()
-		update_icon()
+		changed(src)
 		update_coverage()
 	check_motion_alarm()
 	schedule_camera_timer()
@@ -174,7 +174,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		stat_add(EMPED)
 		set_light(0)
 		triggerCameraAlarm()
-		update_icon()
+		changed(src)
 		update_coverage()
 		schedule_camera_timer()
 
@@ -442,7 +442,10 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		status = newstatus
 		update_coverage()
 
-APPEARANCE_TEMPLATE(/obj/machinery/camera, "{initial(icon_state)}{appearance_suffix}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/camera/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_suffix()]")
 
 /// "1" when off or broken, "emp" while EMP-ed, else nothing.
 /obj/machinery/camera/proc/appearance_suffix()
@@ -612,7 +615,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/camera, "{initial(icon_state)}{appearance_suf
 		return
 	atom_fix() // Fix the camera
 	wires_repair(src)
-	update_icon()
+	changed(src)
 	update_coverage()
 
 // ---- the wires ----

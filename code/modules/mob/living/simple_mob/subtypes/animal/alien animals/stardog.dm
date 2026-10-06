@@ -1435,7 +1435,6 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 /obj/structure/auto_flesh_door/Initialize(mapload)
 	. = ..()
 	countdown = rand(50,250)
-	update_icon()
 
 /// Opens and closes (and squeezes whoever is inside) only while a mob is near; otherwise it sleeps.
 /obj/structure/auto_flesh_door/periodic_step()
@@ -1507,7 +1506,7 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 	set_density(FALSE)
 	set_opacity(0)
 	state = 1
-	update_icon()
+	changed(src)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 	countdown = rand(10,20)
@@ -1525,7 +1524,7 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 	set_density(TRUE)
 	set_opacity(1)
 	state = 0
-	update_icon()
+	changed(src)
 	isSwitchingStates = 0
 	update_nearby_tiles()
 	countdown = rand(50,250)
@@ -1536,7 +1535,10 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 			L.status_at_least(STAT_WEAKENED, 3)
 			act_message(L, src, MSG_SELF(span_danger("The weight of %T% closes in on you, squeezing you on all sides so tightly that you can hardly move! It throbs against you as the way is sealed, with you stuck in the middle!!!")), MSG_OTHERS(span_danger("%T% closes up on %U%!")))
 
-APPEARANCE_TEMPLATE(/obj/structure/auto_flesh_door, "flesh-{state?open:closed}")
+/// The look (the draw sweep: from its template).
+/obj/structure/auto_flesh_door/draw(datum/look/look)
+	..()
+	look.state("flesh-[state ? "open" : "closed"]")
 
 
 /// Enzyme pools numb swimmers who opted out of digestion pain.

@@ -58,7 +58,10 @@ FLOOR SAFES
 	return num
 
 
-APPEARANCE_TEMPLATE(/obj/structure/safe, "{initial(icon_state)}{open?-open:}")
+/// The look (the draw sweep: from its template).
+/obj/structure/safe/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][open ? "-open" : ""]")
 
 
 // TGUI migration. attack_hand opens Safe.tsx; the Topic
@@ -109,7 +112,6 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 	if(check_unlocked())
 		to_chat(human_user, span_notice("You [open ? "close" : "open"] [src]."))
 		open = !open
-		update_icon()
 	else
 		to_chat(human_user, span_notice("You can't [open ? "close" : "open"] [src], the lock is engaged!"))
 	return TRUE
@@ -198,7 +200,6 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 	var/turf/T = loc
 	if(istype(T) && !T.is_plating())
 		hide(1)
-	update_icon()
 
 /obj/structure/safe/floor/hide(intact)
 	invisibility = intact ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE

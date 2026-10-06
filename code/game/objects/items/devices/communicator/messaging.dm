@@ -87,7 +87,7 @@
 			O.show_message(text("[icon2html(src,O.client)] *[ttone]*"))
 
 	alert_called = 1
-	update_icon()
+	changed(src)
 
 	//Search for holder of the device.
 	var/mob/living/L = null

@@ -362,7 +362,7 @@ def replace_word(raw, word, repl, skip_member=True):
     last = 0
     for m in re.finditer(r"(?<![\w.])" + re.escape(word) + r"(?!\w)", code):
         before = code[: m.start()].rstrip()
-        if before.endswith("initial("):
+        if before.endswith("initial(") or named_arg(code, m):
             continue
         out.append(raw[last : m.start()])
         out.append(repl)
@@ -371,9 +371,22 @@ def replace_word(raw, word, repl, skip_member=True):
     return "".join(out)
 
 
+def named_arg(code, m):
+    """TRUE when the match is a named argument of a call (`image(icon, icon_state = "x")`): inside parentheses, then `=`."""
+    if not re.match(r"^\s*=(?!=)", code[m.end():]):
+        return False
+    depth = 0
+    for ch in code[: m.start()]:
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+    return depth > 0
+
+
 def has_word(code, word):
     for m in re.finditer(r"(?<![\w.])" + re.escape(word) + r"(?!\w)", code):
-        if not code[: m.start()].rstrip().endswith("initial("):
+        if not code[: m.start()].rstrip().endswith("initial(") and not named_arg(code, m):
             return True
     return False
 
@@ -573,13 +586,16 @@ def body_reads(ix, t, lines):
             if ix.is_proc(t, name) and not before.rstrip().endswith("."):
                 calls.add(name)
             continue
-        if not ix.is_var(t, name):
-            continue
+        if before.rstrip().endswith(".") or name.isupper() or re.match(r"^[A-Z]", name):
+            continue  # a member of something else (counted at its root), a define or a constant
         if re.match(r"^\s*=(?!=)", rest) and re.search(r"(^|\n)\s*$", before):
             continue
-        reads.add(name)
         if re.match(r"^\s*\??\.\s*[A-Za-z_]", rest):
-            hops.add(name)
+            hops.add(name)  # a read through another object: whatever it is, it is not this holder's tracked state
+            continue
+        if re.match(r"^\s*(\(|=)", rest) and named_arg(text, m):
+            continue
+        reads.add(name)
     return reads, calls, hops
 
 
@@ -759,6 +775,27 @@ def verdict(ix, comp, plans):
                 if not covered_var(t, v):
                     untracked.add("%s (via %s())" % (v, c))
     return not untracked, sorted(untracked)
+
+
+_coverage_cache = {}
+
+
+def draw_coverage(ix, t):
+    """(has draws, covered, untracked) for the draw() procs in t's chain (its ancestors, itself and every subtype): what a
+    redraw request on a t can change. A chain with no draw() has nothing to redraw."""
+    ds = sorted(d for d in ix.draws if ix.related(d, t))
+    key = tuple(ds)
+    if key not in _coverage_cache:
+        if not ds:
+            _coverage_cache[key] = (False, True, [])
+        else:
+            plans = {}
+            for d in ds:
+                rel, s, e = ix.draws[d][0]
+                plans[d] = {"lines": ix.files[rel].lines[s + 1 : e]}
+            covered, untracked = verdict(ix, ds, plans)
+            _coverage_cache[key] = (True, covered, untracked)
+    return _coverage_cache[key]
 
 
 def draw_text(t, lines, note):

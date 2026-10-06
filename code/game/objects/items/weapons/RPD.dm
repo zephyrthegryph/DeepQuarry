@@ -329,7 +329,6 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 	activate()
 
 	C.add_fingerprint(user)
-	C.update_icon()
 	if(mode & WRENCH_MODE)
 		do_wrench(C, user)
 	else

@@ -582,7 +582,10 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 	if(active && !powered(power_channel))
 		toggle_tint()
 
-APPEARANCE_TEMPLATE(/obj/machinery/button/windowtint, "light{active}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/button/windowtint/draw(datum/look/look)
+	..()
+	look.state("light[active]")
 
 /obj/machinery/button/windowtint/multitool_act(mob/user, obj/item/tool)
 	var/obj/item/multitool/multitool = tool

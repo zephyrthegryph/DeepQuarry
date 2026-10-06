@@ -69,6 +69,7 @@
 	spawn_potion()
 	potion_reagent = 0
 	base_reagent = 0
+	changed(src)
 
 /obj/machinery/alembic/proc/interaction_brew(datum/act/op/A)
 	var/mob/user = A.actor

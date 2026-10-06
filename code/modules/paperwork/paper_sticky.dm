@@ -15,7 +15,10 @@
 	var/written_by
 	var/paper_type = /obj/item/paper/sticky
 
-APPEARANCE_TEMPLATE(/obj/item/sticky_pad, "{appearance_fill}{written_text?_writing:}")
+/// The look (the draw sweep: from its template).
+/obj/item/sticky_pad/draw(datum/look/look)
+	..()
+	look.state("[appearance_fill()][written_text ? "_writing" : ""]")
 
 /// The pad state for how many papers are left.
 /obj/item/sticky_pad/proc/appearance_fill()
@@ -55,7 +58,7 @@ APPEARANCE_TEMPLATE(/obj/item/sticky_pad, "{appearance_fill}{written_text?_writi
 			written_text = "[written_text] [text]"
 		else
 			written_text = text
-		update_icon()
+		changed(src)
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 
@@ -82,7 +85,7 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 	if(papers <= 0)
 		consume(src, user)
 	else
-		update_icon()
+		changed(src)
 	return TRUE
 
 CAPABILITIES(/obj/item/sticky_pad)

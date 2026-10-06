@@ -76,6 +76,7 @@ SYSTEM_DEF(solars)
 		// Update the controller
 		SC.connected_power = SC.solar_pending_sum
 		SC.set_power_supply(SC.connected_power)
+		changed(SC)
 		rel_remove(src, nameof(controller_run), SC)
 
 		if(KERNEL_OVER_BUDGET)

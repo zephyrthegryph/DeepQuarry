@@ -61,6 +61,7 @@ CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
 		last_power_draw = idle_power_usage
 	else
 		last_power_draw = 0
+	changed(src)
 
 /obj/machinery/atmospherics/binary/algae_farm/filled
 	stored_material = list(MAT_ALGAE = 10000, MAT_GRAPHITE = 0)
