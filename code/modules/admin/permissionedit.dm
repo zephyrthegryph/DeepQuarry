@@ -1116,6 +1116,8 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 
 /datum/admins/proc/permission_rank_replay(mob/user, list/replay_state)
 	switch(replay_state["entry_proc"])
+		if(PROC_REF(permission_housekeeping_stage))
+			permission_housekeeping_stage(user, replay_state["original_key"], replay_state["housekeeping_remove"], replay_state)
 		if(PROC_REF(edit_rights_topic))
 			edit_rights_topic(replay_state["original_task"], replay_state["original_key"], user, replay_state)
 		if(PROC_REF(add_rank))
@@ -1181,3 +1183,13 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		replay_state["io_values:[io_slot]"] = column_values
 	SStgui.update_uis(src)
 	world.push_usr(current_client.mob, new /datum/callback(src, PROC_REF(permission_rank_replay)), R.answerer, replay_state)
+
+/// Housekeeping starts in Topic; answers replay only the original helper, not the page.
+/datum/admins/proc/permission_housekeeping_stage(mob/user, admin_key, remove, list/replay_state)
+	if(!replay_state)
+		replay_state = list("entry_proc" = PROC_REF(permission_housekeeping_stage), "original_key" = admin_key, "housekeeping_remove" = remove)
+	replay_state["sql_cursor"] = 0
+	replay_state["pending"] = FALSE
+	if(remove)
+		return remove_admin(ckey(admin_key), admin_key, TRUE, null, user, replay_state)
+	return change_admin_rank(ckey(admin_key), admin_key, TRUE, null, null, null, user, replay_state)
