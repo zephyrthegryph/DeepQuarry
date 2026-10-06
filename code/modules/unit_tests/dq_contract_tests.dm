@@ -789,7 +789,7 @@
 	))
 	TEST_ASSERT(conditional in SScontracts.offered_contracts, "three-person therapeutic offer was not published")
 	var/mob/living/carbon/human/departing = subjects[1]
-	OM_EMIT(departing, /datum/om/event/mob_logout)
+	PUBLISH_LEGACY(departing, /datum/notice/mob_logout)
 	registry_leave(REGISTRY_PLAYERS, departing)
 	// Reconciliation is deferred to an om_after(0) timer, which fires on the next scheduler slot
 	// (OM_SLOT_DS) and pass: not always inside one decisecond on a busy test world.

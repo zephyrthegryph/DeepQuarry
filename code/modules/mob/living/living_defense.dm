@@ -264,8 +264,6 @@
 
 //This is called when the mob is thrown into a dense turf
 /mob/living/proc/turf_collision(turf/T, speed)
-	if(OM_EMIT(src, /datum/om/event/before/living_turf_collision, T, speed) & COMPONENT_LIVING_BLOCK_TURF_COLLISION)
-		return
 	injure(INJURY_BLUNT, speed * 5, null, T) // A default of 25, spread across the body.
 	playsound(src, get_sfx(SFX_PUNCH), 50) //ouch sound
 

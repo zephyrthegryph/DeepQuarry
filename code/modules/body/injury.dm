@@ -70,7 +70,7 @@
 		return 0
 	amount = ACT_FINAL(hit, amount, amount)
 	act_done(hit)
-	var/list/explain = (injury_trace || om_wants(src, /datum/om/event/living_injury_explained)) ? list() : null
+	var/list/explain = (injury_trace || WANTS(src, /datum/notice/living_injury_explained)) ? list() : null
 	var/incoming_kind = kind
 	var/before = amount
 
@@ -88,7 +88,7 @@
 
 	if(!(flags & INJURE_IGNORE_RESISTANCE) && amount > 0)
 		// 2. Energy shields.
-		if(om_wants(src, /datum/om/event/living_shield_injury))
+		if(WANTS(src, /datum/notice/living_shield_injury))
 			before = amount
 			var/list/amount_ref = list(amount)
 			PUBLISH_LEGACY(src, /datum/notice/living_shield_injury, kind, amount_ref, zone, source, flags)

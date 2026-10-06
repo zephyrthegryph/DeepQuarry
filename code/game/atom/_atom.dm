@@ -337,18 +337,18 @@ SETTER(/atom, density)
 /**
  * Respond to fire being used on our atom
  *
- * Default behaviour is to emit /datum/om/event/atom_fire_act and return
+ * Default behaviour is to publish /datum/notice/atom_fire_act and return
  */
 /atom/proc/fire_act(exposed_temperature, exposed_volume)
 	PUBLISH_LEGACY(src, /datum/notice/atom_fire_act, exposed_temperature, exposed_volume)
 	return FALSE
 
 /**
- * Emits /datum/om/event/before/atom_extinguish, which properly removes burning state if it is present.
+ * Puts out a fire on this atom. Overrides (a burning object's) end their burning state and call the parent.
  */
 /atom/proc/extinguish()
 	SHOULD_CALL_PARENT(TRUE)
-	return OM_EMIT(src, /datum/om/event/before/atom_extinguish)
+	return NONE
 
 // Returns an assoc list of RCD information.
 // Example would be: list(RCD_VALUE_MODE = RCD_DECONSTRUCT, RCD_VALUE_DELAY = 50, RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 4)

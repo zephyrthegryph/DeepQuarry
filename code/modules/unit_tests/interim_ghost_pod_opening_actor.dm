@@ -22,7 +22,7 @@
 	TEST_ASSERT_EQUAL(pod.opening_actor, operator, "a busy refusal cannot replace the accepted operator")
 	var/datum/ghost_query/query = pod.Q
 	rel_add(query, nameof(query.candidates), winner)
-	OM_EMIT(query, /datum/om/event/ghost_query_complete)
+	PUBLISH_LEGACY(query, /datum/notice/ghost_query_complete)
 	own_turf_contents(T)
 	TEST_ASSERT(pod.used && !pod.busy, "the real completion opens the pod and clears busy state")
 	TEST_ASSERT(QDELETED(query), "completion disposes of the real owned query")
@@ -43,7 +43,7 @@
 	pod.trigger(operator)
 	var/datum/ghost_query/query = pod.Q
 	rel_add(query, nameof(query.candidates), winner)
-	OM_EMIT(query, /datum/om/event/ghost_query_complete)
+	PUBLISH_LEGACY(query, /datum/notice/ghost_query_complete)
 	own_turf_contents(T)
 	TEST_ASSERT(pod.used && !pod.busy && !pod.density, "the real sword completion opens its physical spawnpoint")
 	var/obj/item/melee/cursedblade/sword = locate_within(T, /obj/item/melee/cursedblade)

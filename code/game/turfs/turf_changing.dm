@@ -79,7 +79,7 @@
 
 	// Listeners may append callbacks; each is invoked with the new turf.
 	var/list/post_change_callbacks
-	if(om_wants(src, /datum/om/event/turf_change))
+	if(WANTS(src, /datum/notice/turf_change))
 		post_change_callbacks = list()
 		PUBLISH_LEGACY(src, /datum/notice/turf_change, N, null, NONE, post_change_callbacks)
 
