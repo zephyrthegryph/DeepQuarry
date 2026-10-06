@@ -1450,3 +1450,22 @@ focused tests of the touched windows (the tests that called a handler with its o
   with `asks()`, re-checked when answered; a shut one moves it to the next pipe on its tile). A hand or an AI reads the gauge (it was a `Click()`
   override); the gauge is an `examine_line()` (an AI reads it through its eye). The turf meter takes no tool (`without()`).
 - Known unrelated flake while testing: `REFRESH DRIFT: /obj/machinery/computer/station_alert/all` (not atmos; left to its owner).
+
+## Power plants: the supermatter (rewrite/power-plants)
+
+Pinned by `code/modules/unit_tests/dq_power_plants_behaviour.dm` (`dq_pp/sm_*`), green on the legacy code first.
+
+- **No machine step.** The crystal's reaction is `every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(sm_step)))` (2 s, as the pipeline frame was);
+  it left the machine pipeline's roster. Off a turf it skips the step (it used to stop stepping for good on a null loc; a crystal with a null
+  loc never comes back, so nothing changes in play). Cadence pin: 5 steps in 10 s, before and after.
+- **The exhaust is a gas reaction in Rust** (`GAS_REACTION_SUPERMATTER`, `SUPERMATTER_THERMAL_RELEASE` = 10000 J per unit of device energy,
+  `verdigris/domains/gas/src/reaction_energy.rs`). Before, DM added the phoron and oxygen with `adjust_gas()` (the new moles arrived at the
+  mixture's temperature, so they brought their own heat) and then `heat_add()`ed the release. Now the reaction keeps the mixture's energy over
+  its new heat capacity and adds the release, so the exhaust carries no free heat: at power 500 in 500 K oxygen the step adds 5.50 MJ, where
+  it added 5.54 MJ (the 0.37 mol of phoron and 0.05 mol of oxygen at 500 K were the 37 kJ, 0.7%). Power, damage and the gas amounts are
+  unchanged (pins: `sm_energy_curve_*`, `sm_damage_*`, `sm_gas_release`). The 10000 K cap stays a `heat_set()`.
+- **Touch, item touch and bump are ops and a notice** (`touch`, `touch_item`, `on_notice(/datum/notice/bumped)`); the legacy interaction table,
+  the cyborg "Use" interaction and the `Bumped()` override are gone. What a player sees: a plain click with an empty hand or anything held
+  touches the crystal (the pin's "click: nothing" became "Click: Touch"; that is what the legacy click did in play, the pin harness did not
+  run the legacy click); a cyborg beside it touches it with its empty hand (as the legacy "Use" did when adjacent); a silicon at range and the
+  AI open the monitor window through `interface(..., input = remote())` (was the robot interaction's `tgui_interact()` and `silicon_use`).

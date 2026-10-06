@@ -319,7 +319,7 @@
 	var/list/room = pp_room(300, o2 = 0, n2 = 200)
 	var/obj/machinery/power/supermatter/SM = pp_sm(room[1])
 	var/obj/item/stack/rods/rod = new(room[2])
-	SM.Bumped(rod)
+	rod.bump_into(SM)
 	TEST_ASSERT(QDELETED(rod), "the object is gone")
 	TEST_ASSERT_EQUAL(SM.power, 200, "and the crystal gained 200 power")
 
