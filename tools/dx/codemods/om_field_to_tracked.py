@@ -39,6 +39,20 @@ for d, _, fs in os.walk(os.path.join(ROOT, 'code')):
             files.append(p)
 text = {p: open(os.path.join(ROOT, p), encoding='utf-8', errors='surrogateescape', newline='').read() for p in files}
 
+# Lines that still read fields through the OM field registry (a periodic or repeat gate, a derived field's inputs, a stage's
+# field list, an om_set/om_get by name), or write one through an ownership accessor, which raises the registered channel.
+CONSUMER = re.compile(r'^\s*(DECLARE_PERIODIC\w*|DECLARE_REPEAT|OM_DERIVE_FIELD)\('
+                      r'|\b(reads|wake_fields|fields|inputs)\s*=\s*list\('
+                      r'|\bom_(set|get|read|value_of|field\w*)\(')
+OWN_CALL = re.compile(r'\b(rel_set|rel_clear|rel_add|rel_remove|own_take|own_clear|own_set|shared_set|proto_set)\(')
+CONSUMER_LINES = []
+for p in files:
+    if '_generated' in p:
+        continue
+    for line in text[p].split('\n'):
+        if CONSUMER.search(line) or OWN_CALL.search(line):
+            CONSUMER_LINES.append((p, line))
+
 sites = []
 for p in files:
     if p.startswith(SKIP):
@@ -58,8 +72,12 @@ for p, i, m, a in sites:
         skipped += 1
         continue
     T, F = a[0], (a[2] if typed else a[1])
-    quoted = re.compile(r'"' + re.escape(F) + r'"')
-    users = [q for q in files if quoted.search(text[q])]
+    if p.startswith('code/modules/unit_tests/'):
+        skipped += 1
+        continue
+    # Still read through the OM field registry: a periodic or repeat gate, a derived field's inputs, a stage's field list, an
+    # om_set/om_get by name; or written by an ownership accessor, which raises the registered channel (own_field_changed()).
+    users = [u for u, line in CONSUMER_LINES if ('"' + F + '"') in line or re.search(r'\b' + re.escape(F) + r'\b', line) and OWN_CALL.search(line)]
     if users:
         print('KEEP', p, i + 1, F, users[:3])
         skipped += 1

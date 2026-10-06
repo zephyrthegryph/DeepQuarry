@@ -556,21 +556,27 @@ OM_FIELD(/mob/living, instability, 0, CHANGE_MOB_CONDITIONS)
 /mob/living/var/virtual_reality_mob = FALSE // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
 TRACKED_BRIDGED(/mob/living, virtual_reality_mob, CHANGE_MOB_CONDITIONS)
 /// If they're glowing!
-OM_FIELD(/mob/living, glow_toggle, FALSE, CHANGE_MOB_CONDITIONS)
+/mob/living/var/glow_toggle = FALSE // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob/living, glow_toggle, CHANGE_MOB_CONDITIONS)
 /// Ignore the manual toggle.
 /mob/living/var/glow_override = FALSE // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
 TRACKED_BRIDGED(/mob/living, glow_override, CHANGE_MOB_CONDITIONS)
-OM_FIELD(/mob/living, glow_range, 2, CHANGE_MOB_CONDITIONS)
-OM_FIELD(/mob/living, glow_intensity, null, CHANGE_MOB_CONDITIONS)
+/mob/living/var/glow_range = 2 // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob/living, glow_range, CHANGE_MOB_CONDITIONS)
+/mob/living/var/glow_intensity = null // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob/living, glow_intensity, CHANGE_MOB_CONDITIONS)
 /// The color they're glowing!
-OM_FIELD(/mob/living, glow_color, "#FFFFFF", CHANGE_MOB_CONDITIONS)
+/mob/living/var/glow_color = "#FFFFFF" // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob/living, glow_color, CHANGE_MOB_CONDITIONS)
 /// The mob this one was transformed from (vore/mob_tf.dm).
 /mob/living/var/mob/living/tf_mob_holder = null // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
 TRACKED_BRIDGED(/mob/living, tf_mob_holder, CHANGE_MOB_CONDITIONS)
 /// sdisabilities and ear_damage are /mob vars (every mob type writes them); Life reads them.
 /mob/var/sdisabilities = 0 // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
 TRACKED_BRIDGED(/mob, sdisabilities, CHANGE_MOB_STATUS)
-OM_FIELD(/mob, ear_damage, 0, CHANGE_MOB_STATUS)
+/mob/var/ear_damage = 0 // ALLOW(base_vars): was an OM_FIELD on this type; moved, not added
+TRACKED_BRIDGED(/mob, ear_damage, CHANGE_MOB_STATUS)
 /// Cult stuff.
-OM_FIELD(/mob/living/simple_mob, purge, 0, CHANGE_MOB_STATUS)
+/mob/living/simple_mob/var/purge = 0
+TRACKED_BRIDGED(/mob/living/simple_mob, purge, CHANGE_MOB_STATUS)
 
