@@ -38,7 +38,8 @@
 	var/mob/living/simple_mob/SM = brain.get_owner()
 	if(!istype(SM))
 		return DQ_BEHAVIOR_FAILED
-	SM.shoot_target(target)
+	if(!brain.perform_attack_op(SM, target, "mob_attacks.shoot"))
+		return DQ_BEHAVIOR_FAILED
 	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 

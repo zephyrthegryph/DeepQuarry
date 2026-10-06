@@ -37,7 +37,9 @@
 	var/mob/living/simple_mob/SM = brain.get_owner()
 	if(!istype(SM))
 		return DQ_BEHAVIOR_FAILED
-	SM.attack_target(target, SM.input_stance())
+	// The swing is the mob's own "mob_attacks.melee" op: the same requirements and refusals as any other actor's.
+	if(!brain.perform_attack_op(SM, target, "mob_attacks.melee"))
+		return DQ_BEHAVIOR_FAILED
 	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE  // single-tick action; attack_target handles cooldown
 

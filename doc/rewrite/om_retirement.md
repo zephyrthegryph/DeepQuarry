@@ -142,7 +142,7 @@ on October 6 2026, game code only (no framework, tests or generated files):
 | `om_ask*`, `/datum/om/prompt`, `/datum/om/flow` | 352 / 111 | native requests (`open_request()`, `asks()`): the prompts track |
 | `/datum/om/relation`, `om_link` (slots and edges) | 292 / 69 | containment: body and items tracks |
 | `OM_FIELD*`, `OM_DERIVE_FIELD` | 203 / 127 | F1: with the machine pipeline (channels) and the periodic gates |
-| `/datum/om/behaviour`, `om_attach` | 202 / 44 | object behaviours (items), AI brains (combat AI), looping sounds |
+| `/datum/om/behaviour`, `om_attach` | 202 / 44 | object behaviours (items), looping sounds (the combat AI brains are already capabilities with `every()`: none left in `code/modules/combat_ai`) |
 | `OM_EMIT`, `om_emit`, `om_hook` | 199 / 110 | Phase C: `PUBLISH`/`ACT_TRY` per `om_event_map.json` |
 | machine pipeline, `machine_step`, `MACHINE_WAKE` | 140 / 25 | `rewrite/machines-full`, `rewrite/pipenet-full` |
 | `DECLARE_PERIODIC*`, `DECLARE_REPEAT` | 126 / 107 | `periodic_while.py` residue: items and structures |

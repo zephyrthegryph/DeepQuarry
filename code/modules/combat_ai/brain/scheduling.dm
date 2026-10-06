@@ -4,7 +4,9 @@
 //
 // Each loop is a capability the brain grants to its mob (start_loop()) and revokes (stop_loop()):
 // - relevance: a low-priority mob on a z-level with no living player is at RELEVANCE_NONE (life_update_relevance()) and its
-//   loops skip their runs (dq_ai_loops_may_run()), as SSai's process_z/low_priority test used to skip it. They resume the
+//   loops park on `when = STAT_RELEVANCE` (final_api section 3), as SSai's process_z/low_priority test used to skip it.
+//   Mobs hold relevance by z-level occupancy, not by SSproximity: an AI mob changes simulation state (it attacks, walks, opens doors)
+//   and a mob out of every player's sight still has to be where the round expects it (framework_gaps.md F6). They resume the
 //   moment a player arrives, without catch-up.
 // - clock: CLOCK_OWN, the mob's own clock: suspension pauses the loops.
 // - runlevels: outside RUNLEVEL_GAME and RUNLEVEL_POSTGAME the loops skip their runs.
@@ -27,11 +29,16 @@ GLOBAL_VAR_INIT(ai_brain_cost_ms, 0)
 		return null
 	return A
 
-/// The loops run while the mob is relevant (a player on its z-level, or a high-priority mob) and the round is on.
+/// The round is on: the loops skip their runs outside RUNLEVEL_GAME and RUNLEVEL_POSTGAME.
+/proc/dq_ai_runlevel_ok()
+	return !!((RUNLEVEL_GAME | RUNLEVEL_POSTGAME) & (1 << (Kernel.current_runlevel - 1)))
+
+/// The loops run while the mob is relevant (a player on its z-level, or a high-priority mob) and the round is on. The relevance half is the loops'
+/// own `when = STAT_RELEVANCE`; this is the whole answer for tests and diagnostics.
 /proc/dq_ai_loops_may_run(mob/living/L)
 	if(stat_value(L, STAT_RELEVANCE) < RELEVANCE_NEAR)
 		return FALSE
-	return !!((RUNLEVEL_GAME | RUNLEVEL_POSTGAME) & (1 << (Kernel.current_runlevel - 1)))
+	return dq_ai_runlevel_ok()
 
 /// Perception, threat choice and hibernation. Deferred brains (next_strategic_at in the future: calm brains use a long discovery
 /// cadence) cost one compare.
@@ -40,10 +47,10 @@ CAPABILITY_TYPE(ai_strategic, CAP_AI_STRATEGIC, /datum/capability/ai_loop/strate
 	loop_flag = DQAI_PROCESSING
 
 /datum/capability/ai_loop/strategic/entries()
-	return list(every(2 SECONDS, then(CAP_PROC(strategic_tick))))
+	return list(every(2 SECONDS, then(CAP_PROC(strategic_tick)), when = STAT_RELEVANCE))
 
 /datum/capability/ai_loop/strategic/proc/strategic_tick(datum/act/timer/A)
-	if(!dq_ai_loops_may_run(A.holder))
+	if(!dq_ai_runlevel_ok())
 		return
 	var/datum/ai_brain/brain = brain_of(A.holder)
 	brain?.strategic_tick()
@@ -64,10 +71,10 @@ CAPABILITY_TYPE(ai_tactical, CAP_AI_TACTICAL, /datum/capability/ai_loop/tactical
 	loop_flag = DQAI_FASTPROCESSING
 
 /datum/capability/ai_loop/tactical/entries()
-	return list(every(0.25 SECONDS, then(CAP_PROC(tactical_tick))))
+	return list(every(0.25 SECONDS, then(CAP_PROC(tactical_tick)), when = STAT_RELEVANCE))
 
 /datum/capability/ai_loop/tactical/proc/tactical_tick(datum/act/timer/A)
-	if(!dq_ai_loops_may_run(A.holder))
+	if(!dq_ai_runlevel_ok())
 		return
 	var/datum/ai_brain/brain = brain_of(A.holder)
 	brain?.tactical_tick()

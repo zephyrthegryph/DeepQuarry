@@ -80,6 +80,32 @@
 	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_PHYSICAL) > before, "melee_attack dealt no physical injury in twelve swings")
 	TEST_ASSERT(B.last_attack_at, "melee_attack did not stamp last_attack_at")
 
+/// The swing and the shot are the mob's own ops: the AI meets the same requirements as any other actor.
+/datum/unit_test/dq_ai_tactic_attacks_are_ops
+
+/datum/unit_test/dq_ai_tactic_attacks_are_ops/Run()
+	var/list/pair = ai_pair(ai_floor(0), ai_floor(3))
+	var/mob/living/simple_mob/S = pair[1]
+	var/mob/living/carbon/human/H = pair[2]
+	var/datum/op_result/far = perform_op(S, H, "mob_attacks.melee", null, ORIGIN_AI, AUTH_AI)
+	TEST_ASSERT(far?.outcome != ACT_COMMITTED, "a melee op committed against a target three tiles away")
+	H.forceMove(ai_floor(1))
+	S.next_click = world.time + 50
+	var/datum/op_result/cooling = perform_op(S, H, "mob_attacks.melee", null, ORIGIN_AI, AUTH_AI)
+	TEST_ASSERT_EQUAL(cooling?.outcome, ACT_REFUSED, "the melee op ran while the mob was on attack cooldown")
+	TEST_ASSERT_EQUAL(cooling?.reason, /datum/msg/mob_attacks/cooling, "the refusal does not say why")
+	S.next_click = 0
+	var/datum/op_result/swing = perform_op(S, H, "mob_attacks.melee", null, ORIGIN_AI, AUTH_AI)
+	TEST_ASSERT_EQUAL(swing?.outcome, ACT_COMMITTED, "the melee op was refused: [reason_text(swing?.reason)]")
+	TEST_ASSERT(!S.checkClickCooldown(), "the swing did not start the attack cooldown")
+	S.next_click = 0
+	var/datum/op_result/no_shot = perform_op(S, H, "mob_attacks.shoot", null, ORIGIN_AI, AUTH_AI)
+	TEST_ASSERT_EQUAL(no_shot?.reason, /datum/msg/mob_attacks/no_shot, "a mob with no projectile was allowed to shoot")
+	// A brain's refusal is traced and fails the tactic (the target slipped out of reach).
+	H.forceMove(ai_floor(4))
+	var/datum/ai_behavior/melee_attack/M = dq_get_behavior(/datum/ai_behavior/melee_attack)
+	TEST_ASSERT_EQUAL(M.start(S.ai_brain, H, null), DQ_BEHAVIOR_FAILED, "melee_attack carried on against a target out of reach")
+
 // --- approach_threat --------------------------------------------------------------------------
 
 /datum/unit_test/dq_ai_tactic_approach_threat
