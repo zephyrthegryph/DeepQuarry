@@ -237,3 +237,44 @@
 /datum/unit_test/dq_body_pin/healthy_organs_idle/pin(mob/living/carbon/human/H)
 	for(var/obj/item/organ/I as anything in H.internal_organ_list())
 		TEST_ASSERT(I.life_step_idle(), "[I] has nothing to do in a healthy body")
+
+// --- Slice 4: germs and pain ---------------------------------------------------------------------------------------
+
+/// Antibiotics in the blood bring an infected limb's germs down.
+/datum/unit_test/dq_body_pin/antibiotics_clear_germs
+
+/datum/unit_test/dq_body_pin/antibiotics_clear_germs/pin(mob/living/carbon/human/H)
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	arm.adjust_germ_level(300)
+	H.bloodstr.add_reagent(REAGENT_ID_SPACEACILLIN, 15)
+	for(var/i in 1 to 10)
+		body_pin_frame(H)
+	body_pin_log("antibiotics_clear_germs", arm.germ_level)
+	TEST_ASSERT(arm.germ_level < 300, "antibiotics lower a limb's germs ([arm.germ_level])")
+
+/// A limb past the third infection level, untreated, dies.
+/datum/unit_test/dq_body_pin/necrosis_kills_limb
+
+/datum/unit_test/dq_body_pin/necrosis_kills_limb/pin(mob/living/carbon/human/H)
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	arm.adjust_germ_level(INFECTION_LEVEL_THREE + 50)
+	for(var/i in 1 to 3)
+		body_pin_frame(H)
+	TEST_ASSERT(arm.status & ORGAN_DEAD, "a limb past infection level three dies")
+
+/// A hurt limb hurts: its pain step sends a pain message naming it. (The test human has no air to breathe, so it is made
+/// conscious and the step is run once, directly.)
+/datum/unit_test/dq_body_pin/hurt_limb_pain
+
+/datum/unit_test/dq_body_pin/hurt_limb_pain/pin(mob/living/carbon/human/H)
+	H.injure(INJURY_BLUNT, 15, BP_L_LEG, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
+	H.set_stat(CONSCIOUS)
+	H.last_pain_message = ""
+	H.next_pain_time = 0
+	H.multilimb_pain_time = 0
+	body_pin_pain_step(H)
+	TEST_ASSERT(findtext(H.last_pain_message, "leg"), "a hurt leg sends a pain message (got '[H.last_pain_message]')")
+
+/// Runs the pain messaging once.
+/proc/body_pin_pain_step(mob/living/carbon/human/H)
+	om_stage_run_now(H, /datum/om/stage/life/pain)
