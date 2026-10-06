@@ -1714,3 +1714,7 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
 - The base `/obj/machinery/atmospherics/machine_step()` is deleted (no atmospherics device is stepped by the machine pipeline any more), the
   pipeline's MACHINE_WAKE of each pipe on joining is gone (HE pipes reconsider on their `parent`), and the engineered-material follow-up timer is
   checked with `after_left()` instead of `om_timer_slot_pending()`.
+- **Object verbs keep their legacy base requirements** (reach and an actor who can act: `needs(req_adjacent(), req_capable())`
+  on a converted `INTERACT_VERB` that is not `carried()`); a ghost now sees them greyed out instead of not at all.
+- **`interaction_pass` specs are ops with `passes()`** (the flesh and transit turfs, solid rock, the skipjack wall): the click is
+  handled and goes on, as before.

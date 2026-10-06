@@ -15,7 +15,7 @@ robot|none menu: Toggle Digestable (refused: you need to be carrying it)
 robot|none click: nothing
 ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
-ghost|none menu: Print Data (refused: no)
+ghost|none menu: Print Data (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Collect (refused: needs a storage)
 human|/obj/item/tool/screwdriver menu: Customise (refused: needs an item)

@@ -51,7 +51,8 @@ TYPE_TABLE(/turf/simulated/wall/concrete, wall_forced_materials, list(MAT_CONCRE
 // Kind of wondering if this is going to bite me in the butt.
 TYPE_TABLE(/turf/simulated/wall/skipjack, wall_forced_materials, list(MAT_ALIENALLOY))
 // Old attackby: items do nothing here.
-EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
+CAPABILITIES(/turf/simulated/wall/skipjack)
+	op("pass_item", item(/obj/item), label("Nothing"), passes())
 TYPE_TABLE(/turf/simulated/wall/titanium, wall_forced_materials, list(MAT_TITANIUM))
 
 /turf/simulated/wall/durasteel
@@ -492,7 +493,8 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/wall/tgmc, TYPE_PROC_REF(/atom, appearan
 	blocks_air = 1
 
 // Old attackby: items do nothing here.
-EXTEND_INTERACTIONS(/turf/simulated/flesh, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
+CAPABILITIES(/turf/simulated/flesh)
+	op("pass_item", item(/obj/item), label("Nothing"), passes())
 
 /turf/simulated/flesh/Initialize(mapload)
 	. = ..()
