@@ -51,7 +51,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/integrated_electronics/detailer, TYPE_PROC_REF
 
 CAPABILITIES(/obj/item/integrated_electronics/detailer)
 	op("controls", in_hand(), label("Open assembly detailer"), then(PROC_REF(detailer_controls_requested)))
-	interface("ICDetailer", state = nameof(GLOB.tgui_inventory_state), input = in_hand())
+	interface("ICDetailer", state = nameof(GLOB.tgui_inventory_state))
+	without("ui_open")
 	op("change_color", ui_act("change_color", arg("color", schema_text(4096))), then(PROC_REF(ui_act_change_color)))
 
 /obj/item/integrated_electronics/detailer/proc/detailer_controls_requested(datum/act/op/A)

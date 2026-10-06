@@ -31,6 +31,7 @@ CAPABILITIES(/obj/structure/filingcabinet)
 	op("interaction_item", item(/obj/item), then(PROC_REF(interaction_item)))
 	op("interaction_tk", tk(), then(PROC_REF(interaction_tk)))
 	interface("FileCabinet", state = nameof(GLOB.tgui_physical_state))
+	without("ui_open")
 	op("remove_object", ui_act("remove_object", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove_object)))
 
 /obj/structure/filingcabinet/Initialize(mapload)

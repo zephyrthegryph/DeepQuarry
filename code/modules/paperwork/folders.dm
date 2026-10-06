@@ -120,7 +120,8 @@ DECLARE_INTERACTIONS(/obj/item/folder, \
 	return TRUE
 
 CAPABILITIES(/obj/item/folder)
-	interface("Folder", input = in_hand())
+	interface("Folder")
+	without("ui_open")
 	op("remove", ui_act("remove", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove)))
 	op("rename", ui_act("rename", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_rename)))
 	op("open", ui_act("open", arg("kind", schema_text(4096)), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_open)))

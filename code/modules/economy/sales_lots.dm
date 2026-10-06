@@ -277,12 +277,17 @@
 		return max(1, SSsupply.export_revenue(item.economic_export_value))
 	return max(5, round(item.w_class * 5))
 
-DECLARE_UI(/obj/machinery/department_storefront, "DepartmentStorefront")
-
-UI_DATA_REPLACE(/obj/machinery/department_storefront, "merge:ui_data_obj_machinery_department_storefront{}")
+CAPABILITIES(/obj/machinery/department_storefront)
+	interface("DepartmentStorefront")
+	without("ui_open")
+	op("buy", ui_act("buy", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_buy)))
+	op("withdraw", ui_act("withdraw", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_withdraw)))
+	op("set_price", ui_act("set_price", arg("price", num()), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_set_price)))
+	op("set_markup", ui_act("set_markup", arg("markup", num())), then(PROC_REF(ui_act_set_markup)))
 
 /// The computed part of /obj/machinery/department_storefront's window data (declared on its UI_DATA row).
-/obj/machinery/department_storefront/proc/ui_data_obj_machinery_department_storefront(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/department_storefront/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/stock = list()
 	var/list/rows_by_key = list()
 	// Listing never materializes (systems.md §18): stock is placed real by the stocking action.
@@ -312,34 +317,46 @@ UI_DATA_REPLACE(/obj/machinery/department_storefront, "merge:ui_data_obj_machine
 		"stock" = stock,
 	)
 
-/obj/machinery/department_storefront/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/obj/machinery/department_storefront/proc/ui_gate(datum/act/op/A)
 	latent_materialize_all() // a walk needs real things (C5)
 	return TRUE
 
-UI_ACT(/obj/machinery/department_storefront, "buy", ui_act_buy, UI_ARG_REF("ref", "contents", /obj/item))
-UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_buy)
-	var/obj/item/item = params["ref"] // latent contents are materialized by ui_act_allowed()
-	return storefront_purchase(item, ui.user)
+/obj/machinery/department_storefront/proc/ui_act_buy(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in contents_of(src)))
+		return FALSE
+	if(isnull(ref))
+		return FALSE
+	var/obj/item/item = ref // latent contents are materialized by ui_act_allowed()
+	return storefront_purchase(item, user)
 
-UI_ACT(/obj/machinery/department_storefront, "withdraw", ui_act_withdraw, UI_ARG_REF("ref", "contents", /obj/item))
-UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_withdraw)
-	var/obj/item/item = params["ref"] // latent contents are materialized by ui_act_allowed()
-	if(!item || !storefront_staff_authorized(ui.user))
+/obj/machinery/department_storefront/proc/ui_act_withdraw(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
+		return FALSE
+	if(!isnull(ref) && !(ref in contents_of(src)))
+		return FALSE
+	var/obj/item/item = ref // latent contents are materialized by ui_act_allowed()
+	if(!item || !storefront_staff_authorized(user))
 		return FALSE
 	storefront_forget_item(item)
 	item.forceMove(get_turf(src))
-	ui.user.put_in_hands(item)
+	user.put_in_hands(item)
 	return TRUE
 
-UI_ACT(/obj/machinery/department_storefront, "set_price", ui_act_set_price, UI_ARG_NUM("price"), UI_ARG_REF("ref", "contents", /obj/item))
-UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_set_price)
-	var/obj/item/item = params["ref"] // latent contents are materialized by ui_act_allowed()
-	var/item_ref = item ? REF(item) : null
-	if(!item || !storefront_staff_authorized(ui.user))
+/obj/machinery/department_storefront/proc/ui_act_set_price(datum/act/op/A, price, ref)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
 		return FALSE
-	var/new_price = params["price"]
+	if(!isnull(ref) && !(ref in contents_of(src)))
+		return FALSE
+	var/obj/item/item = ref // latent contents are materialized by ui_act_allowed()
+	var/item_ref = item ? REF(item) : null
+	if(!item || !storefront_staff_authorized(user))
+		return FALSE
+	var/new_price = price
 	if(!isnum(new_price) || new_price < 1 || new_price > 100000)
 		return FALSE
 	var/old_price = stock_prices[item_ref]
@@ -350,11 +367,13 @@ UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_set_price)
 			stock_prices[matching_ref] = round(new_price)
 	return TRUE
 
-UI_ACT(/obj/machinery/department_storefront, "set_markup", ui_act_set_markup, UI_ARG_NUM("markup"))
-UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_set_markup)
-	if(!storefront_staff_authorized(ui.user))
+/obj/machinery/department_storefront/proc/ui_act_set_markup(datum/act/op/A, markup)
+	var/mob/user = A.actor
+	if(!ui_gate(A))
 		return FALSE
-	var/new_markup = params["markup"]
+	if(!storefront_staff_authorized(user))
+		return FALSE
+	var/new_markup = markup
 	if(!isnum(new_markup) || new_markup < -90 || new_markup > 500)
 		return FALSE
 	markup_percent = round(new_markup)

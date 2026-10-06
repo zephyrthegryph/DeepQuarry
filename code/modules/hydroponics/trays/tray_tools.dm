@@ -25,7 +25,8 @@ CAPABILITIES(/obj/item/analyzer/plant_analyzer)
 	op("print", ui_act(), then(PROC_REF(ui_act_print)))
 	op("close", ui_act(), then(PROC_REF(ui_act_close)))
 	owns_one(nameof(last_seed), on_destroy = ON_DESTROY_PRIVATE_COPY)
-	interface("PlantAnalyzer", state = nameof(GLOB.tgui_inventory_state), input = in_hand())
+	interface("PlantAnalyzer", state = nameof(GLOB.tgui_inventory_state))
+	without("ui_open")
 	ui_shape(reagents = list_of(), no_seed = bool(), seed = any)
 
 /obj/item/analyzer/plant_analyzer

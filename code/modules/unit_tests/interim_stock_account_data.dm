@@ -7,7 +7,7 @@
 	TEST_ASSERT_EQUAL(console.logged_in, "Cargo Department", "actual stock console starts with its declared cargo account")
 	TEST_ASSERT_EQUAL(other.logged_in, "Cargo Department", "each actual stock console independently starts logged in")
 	TEST_ASSERT_EQUAL(console.balance(), SSsupply.budget_balance(), "logged-in console exposes the real supply budget")
-	console.ui_act_logout(user, list(), null, null, "logout")
+	op_ui_act(user, console, "logout")
 	TEST_ASSERT(isnull(console.logged_in), "actual logout clears the account")
 	TEST_ASSERT_EQUAL(console.balance(), 0, "actual logged-out console exposes no spending balance")
 	TEST_ASSERT_EQUAL(other.logged_in, "Cargo Department", "logging out one console preserves the other console account")

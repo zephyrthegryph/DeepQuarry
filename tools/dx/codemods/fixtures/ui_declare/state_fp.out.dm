@@ -3,6 +3,7 @@
 
 CAPABILITIES(/obj/machinery/guarded)
 	interface("Guarded", state = nameof(GLOB.tgui_physical_state))
+	without("ui_open")
 	op("go", ui_act("go"), then(PROC_REF(ui_act_go)))
 
 /obj/machinery/guarded/proc/ui_act_go(datum/act/op/A)
@@ -16,6 +17,7 @@ CAPABILITIES(/obj/machinery/guarded)
 
 CAPABILITIES(/obj/machinery/checked)
 	interface("Checked")
+	without("ui_open")
 	op("go", ui_act("go"), then(PROC_REF(ui_act_go)))
 
 /obj/machinery/checked/proc/ui_gate(datum/act/op/A)

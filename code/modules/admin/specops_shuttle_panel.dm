@@ -22,6 +22,7 @@
 
 CAPABILITIES(/obj/machinery/computer/specops_shuttle)
 	interface("SpecopsShuttle", title = "Special Operations Shuttle", state = nameof(GLOB.tgui_default_state))
+	without("ui_open")
 	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))
 	op("send_to_station", ui_act("send_to_station"), then(PROC_REF(ui_act_send_to_station)))
 

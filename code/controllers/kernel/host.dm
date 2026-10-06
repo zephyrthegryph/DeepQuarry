@@ -127,8 +127,6 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		return STATUS_CLOSE
 	return STATUS_INTERACTIVE
 
-DECLARE_UI(/datum/controller/kernel, "ControllerOverview")
-
 /datum/controller/kernel/ui_opening(mob/user, datum/tgui/ui)
 	use_rolling_usage = TRUE
 
@@ -142,7 +140,15 @@ DECLARE_UI(/datum/controller/kernel, "ControllerOverview")
 		use_rolling_usage = FALSE
 	return ..()
 
-UI_DATA_REPLACE(/datum/controller/kernel, "fast_update=overview_fast_update:num", "rolling_length=rolling_usage_length:num", "merge:ui_data_datum_controller_kernel{subsystems:list,world_time:unknown,map_cpu:unknown}")
+/datum/controller/kernel/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["fast_update"] = overview_fast_update
+	data["rolling_length"] = rolling_usage_length
+	var/list/merged_1 = ui_data_datum_controller_kernel(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /datum/controller/kernel's window data (declared on its UI_DATA row).
 /datum/controller/kernel/proc/ui_data_datum_controller_kernel(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -178,32 +184,30 @@ UI_DATA_REPLACE(/datum/controller/kernel, "fast_update=overview_fast_update:num"
 
 	return data
 
-UI_ACT(/datum/controller/kernel, "toggle_fast_update", ui_act_toggle_fast_update)
-UI_ACT_PROC(/datum/controller/kernel, ui_act_toggle_fast_update)
+/datum/controller/kernel/proc/ui_act_toggle_fast_update(datum/act/op/A)
 	overview_fast_update = !overview_fast_update
 	return TRUE
 
-UI_ACT(/datum/controller/kernel, "set_rolling_length", ui_act_set_rolling_length, UI_ARG_NUM("rolling_length"))
-UI_ACT_PROC(/datum/controller/kernel, ui_act_set_rolling_length)
-	var/length = params["rolling_length"]
+/datum/controller/kernel/proc/ui_act_set_rolling_length(datum/act/op/A, rolling_length)
+	var/length = rolling_length
 	if(!length || length < 0)
 		return
 	rolling_usage_length = length SECONDS
 	return TRUE
 
-UI_ACT(/datum/controller/kernel, "view_variables", ui_act_view_variables, UI_ARG_REF("ref", "subsystems", /datum/system))
-UI_ACT_PROC(/datum/controller/kernel, ui_act_view_variables)
-	if(!check_rights_for(ui.user.client, R_DEBUG))
+/datum/controller/kernel/proc/ui_act_view_variables(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	if(!check_rights_for(user.client, R_DEBUG))
 		message_admins(
-			"[key_name(ui.user)] tried to view kernel variables while having improper rights, \
+			"[key_name(user)] tried to view kernel variables while having improper rights, \
 			this is potentially a malicious exploit and worth noting."
 		)
 
-	var/datum/system/system = params["ref"]
+	var/datum/system/system = ref
 	if(isnull(system))
-		to_chat(ui.user, span_warning("Failed to locate system."))
+		to_chat(user, span_warning("Failed to locate system."))
 		return
-	SSadmin_verbs.dynamic_invoke_verb(ui.user, /datum/admin_verb/debug_variables, system)
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/debug_variables, system)
 	return TRUE
 
 /datum/controller/kernel/proc/check_and_perform_fast_update()

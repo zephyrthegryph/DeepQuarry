@@ -436,6 +436,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar_control, TYPE_PROC_REF(/atom,
 
 CAPABILITIES(/obj/machinery/power/solar_control)
 	interface("SolarControl")
+	without("ui_open")
 	op("azimuth", ui_act("azimuth", arg("adjust", num()), arg("value", num())), then(PROC_REF(ui_act_azimuth)))
 	op("azimuth_rate", ui_act("azimuth_rate", arg("adjust", num()), arg("value", num())), then(PROC_REF(ui_act_azimuth_rate)))
 	op("tracking", ui_act("tracking", arg("mode", num())), then(PROC_REF(ui_act_tracking)))

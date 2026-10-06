@@ -31,14 +31,15 @@
 /datum/interaction_menu/proc/target()
 	return QDELETED(target) ? null : target
 
-DECLARE_UI_STATE(/datum/interaction_menu, GLOB.tgui_always_state)
-
-DECLARE_UI(/datum/interaction_menu, "InteractionMenu")
-
-UI_DATA_REPLACE(/datum/interaction_menu, "merge:ui_data_datum_interaction_menu{}")
+CAPABILITIES(/datum/interaction_menu)
+	interface("InteractionMenu", state = nameof(GLOB.tgui_always_state))
+	op("run", ui_act("run", arg("id", schema_text(4096))), then(PROC_REF(ui_act_run)))
+	op("action", ui_act("action", arg("id", schema_text(4096))), then(PROC_REF(ui_act_action)))
+	op("verb", ui_act("verb", arg("name", schema_text(4096))), then(PROC_REF(ui_act_verb)))
 
 /// The computed part of /datum/interaction_menu's window data (declared on its UI_DATA row).
-/datum/interaction_menu/proc/ui_data_datum_interaction_menu(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/datum/interaction_menu/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/atom/target = target()
 	if(!target)
 		return list("target" = null)
@@ -85,25 +86,30 @@ UI_DATA_REPLACE(/datum/interaction_menu, "merge:ui_data_datum_interaction_menu{}
 	if(target != user && isliving(user))
 		. += list(list("id" = INPUT_ACTION_POINT, "name" = "Point at"))
 
-/datum/interaction_menu/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/interaction_menu/proc/ui_gate(datum/act/op/A)
+	var/mob/user = A.actor
 	var/atom/target = target()
 	if(!user || !target)
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/interaction_menu, "run", ui_act_run, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/datum/interaction_menu, ui_act_run)
+/datum/interaction_menu/proc/ui_act_run(datum/act/op/A, id)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	if(!ui_gate(A))
+		return FALSE
 	var/atom/target = target()
 	ui.close()
-	run_chosen_interaction(user, target, params["id"])
+	run_chosen_interaction(user, target, id)
 	return TRUE
 
-UI_ACT(/datum/interaction_menu, "action", ui_act_action, UI_ARG_TEXT("id"))
-UI_ACT_PROC(/datum/interaction_menu, ui_act_action)
+/datum/interaction_menu/proc/ui_act_action(datum/act/op/A, id)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	if(!ui_gate(A))
+		return FALSE
 	var/atom/target = target()
-	var/action_id = params["id"]
+	var/action_id = id
 	var/valid = FALSE
 	for(var/list/entry as anything in interaction_menu_actions(user, target))
 		if(entry["id"] == action_id)
@@ -118,10 +124,13 @@ UI_ACT_PROC(/datum/interaction_menu, ui_act_action)
 		call(user, handler)(target, "")
 	return TRUE
 
-UI_ACT(/datum/interaction_menu, "verb", ui_act_verb, UI_ARG_TEXT("name"))
-UI_ACT_PROC(/datum/interaction_menu, ui_act_verb)
+/datum/interaction_menu/proc/ui_act_verb(datum/act/op/A, name)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
+	if(!ui_gate(A))
+		return FALSE
 	var/atom/target = target()
-	var/verb_name = params["name"]
+	var/verb_name = name
 	if(!interaction_menu_can_reach(user, target))
 		to_chat(user, span_warning("You are too far from \the [target]."))
 		return

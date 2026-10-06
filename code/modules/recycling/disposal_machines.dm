@@ -40,6 +40,7 @@
 CAPABILITIES(/obj/machinery/disposal)
 	owns_one(nameof(air_contents), /datum/gas_mixture)
 	interface("DisposalBin")
+	without("ui_open")
 	op("pumpOn", ui_act("pumpOn"), then(PROC_REF(ui_act_pumpon)))
 	op("pumpOff", ui_act("pumpOff"), then(PROC_REF(ui_act_pumpoff)))
 	op("engageHandle", ui_act("engageHandle"), then(PROC_REF(ui_act_engagehandle)))

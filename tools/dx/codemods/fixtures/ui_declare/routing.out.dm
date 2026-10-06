@@ -5,6 +5,7 @@
 
 CAPABILITIES(/obj/machinery/gap_ctl)
 	interface("GapCtl", title = "Gap controller", forwards = nameof(unit))
+	without("ui_open")
 	op("program_command", ui_act("*"), then(PROC_REF(ui_act_program_command)))
 	op("reset", ui_act("reset", arg("level", num(0, 10))), then(PROC_REF(ui_act_reset)))
 

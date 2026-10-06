@@ -47,6 +47,7 @@
 CAPABILITIES(/obj/machinery/microwave)
 	owns_one(nameof(soundloop), /datum/looping_sound/microwave)
 	interface("Microwave")
+	without("ui_open")
 	op("cook", ui_act("cook"), then(PROC_REF(ui_act_cook)))
 	op("dispose", ui_act("dispose"), then(PROC_REF(ui_act_dispose)))
 

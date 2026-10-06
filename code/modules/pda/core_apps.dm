@@ -348,6 +348,7 @@ CAPABILITIES(/datum/data/pda/app/news)
 CAPABILITIES(/datum/data/pda/app/timeclock)
 	op("switch-to-offduty", ui_act(), then(PROC_REF(ui_act_switch_to_offduty)))
 	owns_one(nameof(announce), /obj/item/radio/intercom)
+	op("switch-to-onduty-rank", ui_act("switch-to-onduty-rank", arg("switch-to-onduty-assignment"), arg("switch-to-onduty-rank")), then(PROC_REF(ui_act_switch_to_onduty_rank)))
 
 /datum/data/pda/app/timeclock/start()
 	. = ..()
@@ -388,11 +389,11 @@ CAPABILITIES(/datum/data/pda/app/timeclock)
 			if(job && job.timeoff_factor < 0) // Currently are Off Duty, so gotta lookup what on-duty jobs are open
 				data["job_choices"] = getOpenOnDutyJobs(user, job.pto_type)
 
-UI_ACT(/datum/data/pda/app/timeclock, "switch-to-onduty-rank", ui_act_switch_to_onduty_rank, UI_ARG_VALUE("switch-to-onduty-assignment"), UI_ARG_VALUE("switch-to-onduty-rank"))
-UI_ACT_PROC(/datum/data/pda/app/timeclock, ui_act_switch_to_onduty_rank)
-	if(checkFace(ui.user))
-		if(checkCardCooldown(ui.user))
-			makeOnDuty(ui.user, params["switch-to-onduty-rank"], params["switch-to-onduty-assignment"])
+/datum/data/pda/app/timeclock/proc/ui_act_switch_to_onduty_rank(datum/act/op/A, switch_to_onduty_assignment_arg, switch_to_onduty_rank_arg)
+	var/mob/user = A.actor
+	if(checkFace(user))
+		if(checkCardCooldown(user))
+			makeOnDuty(user, switch_to_onduty_rank_arg, switch_to_onduty_assignment_arg)
 	return TRUE
 
 /datum/data/pda/app/timeclock/proc/ui_act_switch_to_offduty(datum/act/op/A)

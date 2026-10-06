@@ -48,6 +48,7 @@ DECLARE_EMAG(/obj/machinery/computer/rdservercontrol, PROC_REF(on_emag), null, n
 
 CAPABILITIES(/obj/machinery/computer/rdservercontrol)
 	interface("ServerControl")
+	without("ui_open")
 	op("lockdown_server", ui_act("lockdown_server", arg("selected_server", schema_ref(/obj/machinery/rnd/server))), then(PROC_REF(ui_act_lockdown_server)))
 	op("lock_console", ui_act("lock_console", arg("selected_console", schema_ref(/obj/machinery/computer/rdconsole_tg))), then(PROC_REF(ui_act_lock_console)))
 

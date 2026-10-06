@@ -14,6 +14,7 @@
 CAPABILITIES(/obj/structure/noticeboard)
 	owns_many(nameof(notices))
 	interface("NoticeBoard")
+	without("ui_open")
 	op("read", ui_act("read", arg("ref", schema_ref(/obj/item/paper))), then(PROC_REF(ui_act_read)))
 	op("look", ui_act("look", arg("ref", schema_ref(/obj/item/photo))), then(PROC_REF(ui_act_look)))
 	op("remove", ui_act("remove", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove)))

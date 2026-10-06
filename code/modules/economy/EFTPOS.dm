@@ -86,9 +86,29 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_UI(/obj/item/eftpos, "Eftpos", UI_TITLE("EFTPOS scanner"))
+CAPABILITIES(/obj/item/eftpos)
+	interface("Eftpos", title = "EFTPOS scanner")
+	without("ui_open")
+	op("change_code", ui_act("change_code"), then(PROC_REF(ui_act_change_code)))
+	op("change_id", ui_act("change_id"), then(PROC_REF(ui_act_change_id)))
+	op("link_account", ui_act("link_account"), then(PROC_REF(ui_act_link_account)))
+	op("trans_purpose", ui_act("trans_purpose"), then(PROC_REF(ui_act_trans_purpose)))
+	op("trans_value", ui_act("trans_value"), then(PROC_REF(ui_act_trans_value)))
+	op("toggle_lock", ui_act("toggle_lock"), then(PROC_REF(ui_act_toggle_lock)))
+	op("scan_card", ui_act("scan_card"), then(PROC_REF(ui_act_scan_card)))
+	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
 
-UI_DATA_REPLACE(/obj/item/eftpos, "eftpos_name:text", "machine_id:text", "transaction_purpose:text", "transaction_amount:num", "merge:ui_data_obj_item_eftpos{transaction_locked:bool,transaction_paid:bool,linked_account_name:text}")
+/obj/item/eftpos/ui_data(datum/act/eval/A)
+	var/list/data = list()
+	data["eftpos_name"] = eftpos_name
+	data["machine_id"] = machine_id
+	data["transaction_purpose"] = transaction_purpose
+	data["transaction_amount"] = transaction_amount
+	var/list/merged_1 = ui_data_obj_item_eftpos(A.actor, null, null)
+	if(islist(merged_1))
+		for(var/merged_key_1 in merged_1)
+			data[merged_key_1] = merged_1[merged_key_1]
+	return data
 
 /// The computed part of /obj/item/eftpos's window data (declared on its UI_DATA row).
 /obj/item/eftpos/proc/ui_data_obj_item_eftpos(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -134,8 +154,9 @@ UI_DATA_REPLACE(/obj/item/eftpos, "eftpos_name:text", "machine_id:text", "transa
 	return INTERACTION_HANDLED_PASS
 
 // Topic switch lifted into tgui_act with stable action names.
-UI_ACT(/obj/item/eftpos, "change_code", ui_act_change_code)
-UI_ACT_PROC(/obj/item/eftpos, ui_act_change_code)
+/obj/item/eftpos/proc/ui_act_change_code(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
 	return eftpos_change_code_stage(user, ui, list())
 
 /obj/item/eftpos/proc/eftpos_change_code_stage(mob/user, datum/tgui/ui, list/eftpos_answers)
@@ -161,8 +182,9 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_change_code)
 		to_chat(user, "[icon2html(src, user.client)]" + span_warning("Incorrect code entered."))
 	return TRUE
 
-UI_ACT(/obj/item/eftpos, "change_id", ui_act_change_id)
-UI_ACT_PROC(/obj/item/eftpos, ui_act_change_id)
+/obj/item/eftpos/proc/ui_act_change_id(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
 	return eftpos_change_id_stage(user, ui, list())
 
 /obj/item/eftpos/proc/eftpos_change_id_stage(mob/user, datum/tgui/ui, list/eftpos_answers)
@@ -185,8 +207,9 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_change_id)
 		to_chat(user, "[icon2html(src, user.client)]" + span_warning("Incorrect code entered."))
 	return TRUE
 
-UI_ACT(/obj/item/eftpos, "link_account", ui_act_link_account)
-UI_ACT_PROC(/obj/item/eftpos, ui_act_link_account)
+/obj/item/eftpos/proc/ui_act_link_account(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
 	return eftpos_link_account_stage(user, ui, list())
 
 /obj/item/eftpos/proc/eftpos_link_account_stage(mob/user, datum/tgui/ui, list/eftpos_answers)
@@ -211,8 +234,9 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_link_account)
 		to_chat(user, "[icon2html(src, user.client)]" + span_warning("Account not found."))
 	return TRUE
 
-UI_ACT(/obj/item/eftpos, "trans_purpose", ui_act_trans_purpose)
-UI_ACT_PROC(/obj/item/eftpos, ui_act_trans_purpose)
+/obj/item/eftpos/proc/ui_act_trans_purpose(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
 	return eftpos_trans_purpose_stage(user, ui, list())
 
 /obj/item/eftpos/proc/eftpos_trans_purpose_stage(mob/user, datum/tgui/ui, list/eftpos_answers)
@@ -226,8 +250,9 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_trans_purpose)
 		transaction_purpose = choice
 	return TRUE
 
-UI_ACT(/obj/item/eftpos, "trans_value", ui_act_trans_value)
-UI_ACT_PROC(/obj/item/eftpos, ui_act_trans_value)
+/obj/item/eftpos/proc/ui_act_trans_value(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
 	return eftpos_trans_value_stage(user, ui, list())
 
 /obj/item/eftpos/proc/eftpos_trans_value_stage(mob/user, datum/tgui/ui, list/eftpos_answers)
@@ -243,8 +268,9 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_trans_value)
 		transaction_amount = round(try_num)
 	return TRUE
 
-UI_ACT(/obj/item/eftpos, "toggle_lock", ui_act_toggle_lock)
-UI_ACT_PROC(/obj/item/eftpos, ui_act_toggle_lock)
+/obj/item/eftpos/proc/ui_act_toggle_lock(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/tgui/ui = A.window_ui() || SStgui.get_open_ui(user, src) // the window the button was pressed in
 	return eftpos_toggle_lock_stage(user, ui, list())
 
 /obj/item/eftpos/proc/eftpos_toggle_lock_stage(mob/user, datum/tgui/ui, list/eftpos_answers)
@@ -268,8 +294,8 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_toggle_lock)
 		to_chat(user, "[icon2html(src, user.client)]" + span_warning("No account connected to send transactions to."))
 	return TRUE
 
-UI_ACT(/obj/item/eftpos, "scan_card", ui_act_scan_card)
-UI_ACT_PROC(/obj/item/eftpos, ui_act_scan_card)
+/obj/item/eftpos/proc/ui_act_scan_card(datum/act/op/A)
+	var/mob/user = A.actor
 	if(linked_account())
 		var/obj/item/I = user.get_active_hand()
 		if(istype(I, /obj/item/card))
@@ -278,8 +304,8 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_scan_card)
 		to_chat(user, "[icon2html(src, user.client)]" + span_warning("Unable to link accounts."))
 	return TRUE
 
-UI_ACT(/obj/item/eftpos, "reset", ui_act_reset)
-UI_ACT_PROC(/obj/item/eftpos, ui_act_reset)
+/obj/item/eftpos/proc/ui_act_reset(datum/act/op/A)
+	var/mob/user = A.actor
 	var/obj/item/I = user.get_active_hand()
 	if(istype(I, /obj/item/card))
 		var/obj/item/card/id/C = I

@@ -53,6 +53,8 @@
 #define OP_UI_WINDOW_ACTION "window_action"
 /// The datum whose window forwarded the button to the op's holder (interface(forwards =)): A.window_forwarder().
 #define OP_UI_FORWARDED_BY "window_forwarded_by"
+/// The tgui window a button was pressed in (A.window_ui()), when it came through one.
+#define OP_UI_TGUI "window_tgui"
 /// How many windows deep a window action is forwarded (interface(forwards = ...)).
 #define OP_UI_FORWARD_DEPTH 3
 

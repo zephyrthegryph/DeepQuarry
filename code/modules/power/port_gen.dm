@@ -372,6 +372,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/power/port_gen/pacman, PROC_REF(on_emag),
 
 CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 	interface("PortableGenerator")
+	without("ui_open")
 	op("toggle_power", ui_act("toggle_power"), then(PROC_REF(ui_act_toggle_power)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("lower_power", ui_act("lower_power"), then(PROC_REF(ui_act_lower_power)))

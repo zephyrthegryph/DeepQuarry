@@ -58,7 +58,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/timer, TYPE_PROC_REF(/atom, appearanc
 	return .
 
 CAPABILITIES(/obj/item/assembly/timer)
-	interface("AssemblyTimer", state = nameof(GLOB.tgui_deep_inventory_state), input = in_hand())
+	interface("AssemblyTimer", state = nameof(GLOB.tgui_deep_inventory_state))
+	without("ui_open")
 	op("timing", ui_act("timing"), then(PROC_REF(ui_act_timing)))
 	op("set_time", ui_act("set_time", arg("time", num())), then(PROC_REF(ui_act_set_time)))
 

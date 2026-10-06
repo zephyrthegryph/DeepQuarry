@@ -25,6 +25,7 @@
 CAPABILITIES(/obj/machinery/ntnet_relay)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
 	interface("NTNetRelay")
+	without("ui_open")
 	op("restart", ui_act("restart"), then(PROC_REF(ui_act_restart)))
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("purge", ui_act("purge"), then(PROC_REF(ui_act_purge)))

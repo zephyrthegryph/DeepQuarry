@@ -35,6 +35,7 @@
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/item/clipboard/board = allocate(/obj/item/clipboard, T)
 	actor.put_in_inactive_hand(board) // the window works in the hand that holds it
+	actor.put_in_inactive_hand(board) // the window works in the hand that holds it
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
 	TEST_ASSERT(actor.put_in_active_hand(pen), "the explicit actor holds the pen")
 	TEST_ASSERT(test_op_committed(op_ui_act(actor, board, "add_pen")), "the insertion action is handled")

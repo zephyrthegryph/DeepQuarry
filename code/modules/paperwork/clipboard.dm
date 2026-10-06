@@ -89,7 +89,8 @@ DECLARE_INTERACTIONS(/obj/item/clipboard, \
 	return TRUE
 
 CAPABILITIES(/obj/item/clipboard)
-	interface("Clipboard", title = "Clipboard", input = in_hand())
+	interface("Clipboard", title = "Clipboard")
+	without("ui_open")
 	op("remove_pen", ui_act("remove_pen"), then(PROC_REF(ui_act_remove_pen)))
 	op("add_pen", ui_act("add_pen"), then(PROC_REF(ui_act_add_pen)))
 	op("write", ui_act("write", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_write)))

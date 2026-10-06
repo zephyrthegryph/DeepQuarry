@@ -96,16 +96,17 @@
 	data["used_guesses"] = LAZYLEN(guesses)
 	data["target_word"] = target_word //if people fuck around with tgui to cheat at nerdle then I can't really be assed enough to care. we'll know who you are.
 
-/datum/data/pda/app/nerdle/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
+/datum/data/pda/app/nerdle/proc/ui_gate(datum/act/op/A)
 	unnotify()
 	return TRUE
 
-UI_ACT(/datum/data/pda/app/nerdle, "guess", ui_act_guess, UI_ARG_TEXT("lastword"))
-UI_ACT_PROC(/datum/data/pda/app/nerdle, ui_act_guess)
+CAPABILITIES(/datum/data/pda/app/nerdle)
+	op("guess", ui_act("guess", arg("lastword", schema_text(4096))), then(PROC_REF(ui_act_guess)))
+/datum/data/pda/app/nerdle/proc/ui_act_guess(datum/act/op/A, lastword)
+	if(!ui_gate(A))
+		return FALSE
 	. = TRUE
-	var/guess = params["lastword"]
+	var/guess = lastword
 	var/did_we_guess = try_guess(guess)
 	return did_we_guess
 
