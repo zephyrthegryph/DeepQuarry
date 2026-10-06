@@ -71,17 +71,8 @@
 		counts["[AM.type]"] = (counts["[AM.type]"] || 0) + 1
 	return counts
 
-/// The rows one trigger produced on a fresh `type`.
-/datum/unit_test/proc/dq_hit_capture(type, trigger, turf/T, mob/living/carbon/human/actor)
-	rand_seed(dq_test_seed_for("[type][trigger]"))
-	var/atom/target = dq_snapshot_allocate(type, T)
-	if(QDELETED(target))
-		return list("[trigger] | deleted itself on creation")
-	if(ismachinery(target))
-		var/obj/machinery/M = target
-		M.stat_remove(NOPOWER|BROKEN)
-	var/list/before = dq_hit_state(target)
-	var/list/turf_before = dq_hit_turf_rows(T, target)
+/// One trigger delivered through the thing's public entry.
+/datum/unit_test/proc/dq_hit_apply(atom/target, trigger, mob/living/carbon/human/actor)
 	switch(trigger)
 		if("emp 1")
 			target.emp_act(1)
@@ -110,8 +101,28 @@
 		if("emag")
 			var/obj/item/card/emag/card = allocate(/obj/item/card/emag)
 			test_click(actor, target, card)
+
+/// The rows one trigger produced on a fresh `type`.
+/datum/unit_test/proc/dq_hit_capture(type, trigger, turf/T, mob/living/carbon/human/actor)
+	rand_seed(dq_test_seed_for("[type][trigger]"))
+	var/atom/target = dq_snapshot_allocate(type, T)
+	if(QDELETED(target))
+		return list("[trigger] | deleted itself on creation")
+	if(ismachinery(target))
+		var/obj/machinery/M = target
+		M.stat_remove(NOPOWER|BROKEN)
+	var/list/before = dq_hit_state(target)
+	var/list/turf_before = dq_hit_turf_rows(T, target)
+	var/runtime = null
+	try
+		dq_hit_apply(target, trigger, actor)
+	catch(var/exception/e)
+		runtime = "[e.name]"
 	test_drain()
 	. = list()
+	if(runtime)
+		. += "[trigger] | runtime: [runtime]"
+
 	if(QDELETED(target))
 		. += "[trigger] | deleted"
 	else
@@ -132,6 +143,7 @@
 		. += "[trigger] | nothing"
 	if(!QDELETED(target))
 		qdel(target)
+	own_turf_contents(T)
 
 /datum/unit_test/dq_hit_pin/Run()
 	var/list/bad = list()
@@ -146,8 +158,8 @@
 	var/room_gravity = room.has_gravity
 	var/list/actual_by_type = list()
 	for(var/type in expected_by_type)
-		if(ispath(type, /turf))
-			actual_by_type[type] = list("a turf is not hit-pinned")
+		if(ispath(type, /turf) || ispath(type, /mob))
+			actual_by_type[type] = list("a turf or a mob is not hit-pinned")
 			continue
 		var/list/rows = list()
 		for(var/trigger in triggers)
