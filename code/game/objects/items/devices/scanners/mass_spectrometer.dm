@@ -30,7 +30,8 @@ MATERIAL_MIX(/obj/item/mass_spectrometer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	else
 		icon_state = initial(icon_state)
 
-DECLARE_INTERACTIONS(/obj/item/mass_spectrometer, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/mass_spectrometer/proc/can_analyze)))
+CAPABILITIES(/obj/item/mass_spectrometer)
+	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_analyze_holds), because = PROC_REF(can_analyze_refusal))), then(PROC_REF(interaction_self)))
 
 /// Requirement: only a dexterous user can work the spectrometer.
 /obj/item/mass_spectrometer/proc/can_analyze(mob/user, atom/target, obj/item/held)
@@ -40,7 +41,18 @@ DECLARE_INTERACTIONS(/obj/item/mass_spectrometer, INTERACT_USE(null, PROC_REF(in
 		return "you don't have the dexterity to do this"
 	return TRUE
 
-/obj/item/mass_spectrometer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* can_analyze): the legacy check answers TRUE to pass.
+/obj/item/mass_spectrometer/proc/can_analyze_holds(datum/act/op/A)
+	var/answer = can_analyze(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_analyze_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/mass_spectrometer/proc/can_analyze_refusal(datum/act/op/A)
+	var/answer = can_analyze(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/item/mass_spectrometer/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if (user.stat)
 		return
 	if(reagents.total_volume)

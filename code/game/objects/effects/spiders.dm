@@ -11,6 +11,7 @@
 //similar to weeds, but only barfed out by nurses manually
 CAPABILITIES(/obj/effect/spider)
 	op("hit_web", item(/obj/item), then(PROC_REF(interaction_hit_web)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /// Old attackby: any item hits the web (afterattack still follows, as before).
 /obj/effect/spider/proc/interaction_hit_web(datum/act/op/A)
@@ -27,15 +28,17 @@ CAPABILITIES(/obj/effect/spider)
 	receive_weapon_hit(W, user, W.force / 4)
 	return OP_PASS
 
-/obj/effect/spider/welder_act(mob/user, obj/item/tool)
+/obj/effect/spider/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder.remove_fuel(0, user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	user.setClickCooldown(user.get_attack_speed(tool))
 	act_message(src, user, others = span_warning("%U% has been burned with %I% by %T%."), item = tool)
 	playsound(src, tool.usesound, 100, TRUE)
 	take_damage(15, BRUTE, MELEE, sound_effect = FALSE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 	INTERACT_HAND("Stomp", PROC_REF(interaction_stomp_spiderling)), \

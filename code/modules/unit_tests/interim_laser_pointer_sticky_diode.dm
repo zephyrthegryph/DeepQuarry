@@ -10,7 +10,7 @@
 	TEST_ASSERT_EQUAL(owner_of(diode), pointer, "actual default diode is owned by original pointer")
 	own(diode)
 	TEST_ASSERT(user.put_in_active_hand(tool), "actor holds real canonical screwdriver")
-	pointer.screwdriver_act(user, tool)
+	test_op_handler(pointer, "screwdriver_used", user, tool)
 	TEST_ASSERT_NULL(pointer.diode, "actual screwdriver action clears loaded diode field")
 	TEST_ASSERT_EQUAL(diode.loc, T, "actual removal refunds exact original diode to floor")
 	TEST_ASSERT_NULL(owner_of(diode), "actual removal releases original diode ownership stamp")

@@ -52,10 +52,13 @@
 		src.update_icon()
 	return
 
-DECLARE_INTERACTIONS(/obj/item/toy/balloon, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/toy/balloon)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/toy/balloon/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
+/obj/item/toy/balloon/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/O = A.held
 	if(istype(O, /obj/item/reagent_containers/glass))
 		if(O.reagents)
 			if(O.reagents.total_volume < 1)
@@ -70,7 +73,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/balloon, INTERACT_ITEM(null, PROC_REF(interac
 					to_chat(user, span_notice("You fill the balloon with the contents of [O]."))
 					O.reagents.trans_to_obj(src, 10)
 	src.update_icon()
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/toy/balloon/throw_impact(atom/hit_atom)
 	if(src.reagents.total_volume >= 1)
@@ -1735,10 +1738,12 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/teppi, \
 	icon = 'icons/obj/drakietoy.dmi'
 	var/lights_glowing = FALSE
 
-EXTEND_INTERACTIONS(/obj/item/toy/plushie/borgplushie/drake, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake)
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 
 /// Old click_alt.
-/obj/item/toy/plushie/borgplushie/drake/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/plushie/borgplushie/drake/proc/interaction_alt(datum/act/op/A)
+	var/mob/living/user = A.actor
 	var/turf/T = get_turf(src)
 	if(!T.AdjacentQuick(user)) // So people aren't messing with these from across the room
 		return TRUE
@@ -2206,13 +2211,13 @@ CAPABILITIES(/obj/item/storage/box/handcuffs/fake)
 	icon_state = "nuketoyidle"
 	var/cooldown = 0
 
-DECLARE_INTERACTIONS(/obj/item/toy/nuke, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/toy/nuke)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_self.
-/obj/item/toy/nuke/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/nuke/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 180 SECONDS) //3 minutes
 		act_message(user, src, MSG_SELF(span_notice("You activate %T%, it plays a loud noise!")), MSG_OTHERS(span_warning("%U% presses a button on %T%")), MSG_BLIND(span_notice("You hear the click of a button.")))
@@ -2223,10 +2228,12 @@ DECLARE_INTERACTIONS(/obj/item/toy/nuke, \
 	return TRUE
 
 /// Old attackby.
-/obj/item/toy/nuke/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/obj/item/toy/nuke/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/disk/nuclear))
 		to_chat(user, span_warning("Nice try. Put that disk back where it belongs."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /*
  * Toy gibber
@@ -2242,15 +2249,13 @@ DECLARE_INTERACTIONS(/obj/item/toy/nuke, \
 
 CAPABILITIES(/obj/item/toy/minigibber)
 	owns_one(nameof(stored_minature), /obj)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("feed", item(/obj/item), label("Feed"), then(PROC_REF(interaction_feed)))
 
-
-DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM("Feed", PROC_REF(interaction_feed)), \
-)
 
 /// Old attack_self.
-/obj/item/toy/minigibber/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/minigibber/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(stored_minature)
 		to_chat(user, span_danger("\The [src] makes a violent grinding noise as it tears apart the miniature figure inside!"))
 		play_sfx(src, SFX_EFFECTS_SPLAT)
@@ -2263,12 +2268,14 @@ DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
 	return TRUE
 
 /// Old attackby: feed a figure into the gibber.
-/obj/item/toy/minigibber/proc/interaction_feed(mob/user, obj/O, datum/interaction/interaction)
+/obj/item/toy/minigibber/proc/interaction_feed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/O = A.held
 	if(istype(O,/obj/item/toy/figure) || istype(O,/obj/item/toy/character) && O.loc == user)
 		to_chat(user, span_notice("You start feeding \the [O] [icon2html(O, user.client)] into \the [src]'s mini-input."))
 		om_task_start(/datum/om/task/timed/minigibber_attackby, user, src, receiver = src, O = O)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /datum/om/task/timed/minigibber_attackby
 	duration = 1 SECOND
@@ -2494,13 +2501,13 @@ DECLARE_LOOT(/obj/random/miniature, LOOT_TABLE(LOOT_TYPES(1, typesof(/obj/item/t
 	if(prob(0.1))
 		real = 1
 
-DECLARE_INTERACTIONS(/obj/item/toy/snake_popper, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/toy/snake_popper)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_self.
-/obj/item/toy/snake_popper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/snake_popper/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!popped)
 		to_chat(user, span_warning("A snake popped out of [src]!"))
 		if(real == 0)
@@ -2526,13 +2533,14 @@ DECLARE_INTERACTIONS(/obj/item/toy/snake_popper, \
 	return TRUE
 
 /// Old attackby.
-/obj/item/toy/snake_popper/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
+/obj/item/toy/snake_popper/proc/interaction_item(datum/act/op/A)
+	var/obj/O = A.held
 	if(istype(O, /obj/item/toy/plushie/snakeplushie) || !real)
 		if(popped && !real)
 			qdel(O)
 			popped = 0
 			icon_state = "tastybread"
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/toy/snake_popper/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(ishuman(M))
@@ -2684,18 +2692,19 @@ APPEARANCE_TEMPLATE(/obj/item/toy/desk, "{initial(icon_state)}{on?-on:}")
 	update_icon()
 	return 1
 
-DECLARE_INTERACTIONS(/obj/item/toy/desk, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-)
+CAPABILITIES(/obj/item/toy/desk)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 
 /// Old attack_self.
-/obj/item/toy/desk/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/desk/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	activate(user)
 	return TRUE
 
 /// Old click_alt.
-/obj/item/toy/desk/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/toy/desk/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	activate(user)
 	return TRUE
 

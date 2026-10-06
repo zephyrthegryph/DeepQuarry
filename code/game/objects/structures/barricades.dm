@@ -33,17 +33,9 @@
 		return receive_projectile(P, def_zone, heavy ? 0.5 : 0.25)
 	return receive_projectile(P, def_zone, heavy ? 0.25 : 0.1)
 
-/obj/structure/barricade/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/barricade_item,
-	)
-	..()
-
-/// Old attackby: repair with a matching material stack, or take a weapon hit.
-/datum/interaction/entry_item/barricade_item
-	id = "barricade_item"
-	name = "Use"
-	effect = /obj/structure/barricade/proc/interaction_item
+EXTEND_INTERACTIONS(/obj/structure/barricade, \
+	INTERACT_ITEM("Use", PROC_REF(interaction_item)), \
+)
 
 /obj/structure/barricade/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed(W))

@@ -16,13 +16,12 @@
 	if(!capsuleowner())
 		rel_set(src, nameof(capsuleowner), user)
 
-DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/buttonofnormal)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_self.
-/obj/item/buttonofnormal/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/buttonofnormal/proc/interaction_self(datum/act/op/A)
 	if(colorindex)
 		nonrandom()
 	after(src, 1 SECONDS, PROC_REF(do_size_effect), with = list(capsuleowner()))
@@ -43,14 +42,15 @@ DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
 	sizetouse = rand(25,200)/100 //randmization occurs after press
 
 /// Old attackby.
-/obj/item/buttonofnormal/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/buttonofnormal/proc/interaction_item(datum/act/op/A)
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/pen))
 		colorindex = (colorindex + 1) % 6
 		icon_state = "mobcap[colorindex]"
 		update_icon()
 	if(istype(W, /obj/item/card/id))
 		rel_clear(src, nameof(capsuleowner))
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/buttonofnormal/proc/nonrandom() //Secret ball randmoizer rig code
 	switch(colorindex)
@@ -80,22 +80,23 @@ DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
 	)
 
 /// Old attackby.
-/obj/item/daredevice/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/daredevice/proc/interaction_item(datum/act/op/A)
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/pen))
 		colorindex += 1
 		if(colorindex >= 6)
 			colorindex = 0
 		icon_state = "mobcap[colorindex]"
 		update_icon()
-	return FALSE
+	return OP_DECLINE
 
-DECLARE_INTERACTIONS(/obj/item/daredevice, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/daredevice)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_self.
-/obj/item/daredevice/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/daredevice/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/capsuleowner = user
 	play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 	var/item = pick(winitems)

@@ -10,20 +10,11 @@
 	density = TRUE
 	var/static/list/hit_message = list("hit", "punch", "kick", "robust")
 
-/obj/structure/fitness/punchingbag/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/punchingbag_hand,
-	)
-	..()
+CAPABILITIES(/obj/structure/fitness/punchingbag)
+	op("hand", hand(), stance(I_HURT), label("Punch"), then(PROC_REF(interaction_hand)))
 
-/// Old attack_hand: hit the punching bag (combat mode only).
-/datum/interaction/entry_hand/punchingbag_hand
-	id = "punchingbag_hand"
-	name = "Punch"
-	effect = /obj/structure/fitness/punchingbag/proc/interaction_hand
-	stance = I_HURT
-
-/obj/structure/fitness/punchingbag/proc/interaction_hand(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/fitness/punchingbag/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
 	if(!istype(user))
 		return TRUE
 	if(user.nutrition < 70) // Set minimum nutrition to be the same as in fitness_machines_vr.dm
@@ -48,11 +39,15 @@
 	var/weight = 1
 	var/static/list/qualifiers = list("with ease", "without any trouble", "with great effort")
 
-/obj/structure/fitness/weightlifter/wrench_act(mob/user, obj/item/W)
+CAPABILITIES(/obj/structure/fitness/weightlifter)
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+
+/obj/structure/fitness/weightlifter/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.5)
 	weight = ((weight) % qualifiers.len) + 1
 	to_chat(user, "You set the machine's weight level to [weight].")
-	return TRUE
+	return OP_OK
 
 /obj/structure/fitness/weightlifter/declare_interactions(list/into)
 	into += list(

@@ -53,7 +53,7 @@
 	TEST_ASSERT(!QDELETED(outcrop), "The actual unpowered refusal preserves the original outcrop")
 	TEST_ASSERT_EQUAL(length(turf_contents_of_type(T, /obj/item/ore)), length(before), "The actual unpowered refusal creates no ore product")
 	TEST_ASSERT_EQUAL(cell.charge, charge, "The actual unpowered refusal spends no original battery charge")
-	TEST_ASSERT(tool.interaction_self(actor, tool, null), "The actual public maul self-use begins charging")
+	TEST_ASSERT(test_op_handler(tool, "interaction_self", actor, tool), "The actual public maul self-use begins charging")
 	scheduler_advance((1.9 SECONDS) / (1 SECOND))
 	TEST_ASSERT(!tool.status, "The actual maul remains off until its original charging deadline")
 	scheduler_advance((0.2 SECONDS) / (1 SECOND))

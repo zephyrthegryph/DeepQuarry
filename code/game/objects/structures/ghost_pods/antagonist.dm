@@ -30,19 +30,12 @@
 	play_sfx(src, SFX_EFFECTS_SLIME_SQUISH)
 	return ..()
 
-/obj/structure/ghost_pod/automatic/xenomorph_egg/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/xenomorph_egg_item,
-	)
-	..()
+CAPABILITIES(/obj/structure/ghost_pod/automatic/xenomorph_egg)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
-/// Old attackby: hit the egg.
-/datum/interaction/entry_item/xenomorph_egg_item
-	id = "xenomorph_egg_item"
-	name = "Use"
-	effect = /obj/structure/ghost_pod/automatic/xenomorph_egg/proc/interaction_item
-
-/obj/structure/ghost_pod/automatic/xenomorph_egg/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/ghost_pod/automatic/xenomorph_egg/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(user.get_attack_speed(W))
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 	switch(W.obj_damage_type())

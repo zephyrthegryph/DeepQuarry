@@ -30,6 +30,7 @@
 CAPABILITIES(/obj/structure/fence)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	climb(gate = PROC_REF(needs_a_climbable_hole))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 
 /// A fence is climbed through a medium hole: an intact one is too tight to, and a large one is walked through.
 /obj/structure/fence/proc/needs_a_climbable_hole(mob/living/climber)
@@ -81,29 +82,15 @@ CAPABILITIES(/obj/structure/fence)
 		return TRUE
 	return ..()
 
-/obj/structure/fence/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/fence_hand,
-		/datum/interaction/entry_item/fence_item,
-	)
-	..()
-
-/// Old attack_hand: shocks a living, corporeal user if the fence is electrified.
-/datum/interaction/entry_hand/fence_hand
-	id = "fence_hand"
-	name = "Use"
-	effect = /obj/structure/fence/proc/interaction_hand
+EXTEND_INTERACTIONS(/obj/structure/fence, \
+	INTERACT_HAND("Use", PROC_REF(interaction_hand)), \
+	INTERACT_ITEM("Use", PROC_REF(interaction_item)), \
+)
 
 /obj/structure/fence/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(electric && isliving(user) && !user.is_incorporeal())
 		electrocute(user)
 	return TRUE
-
-/// Old attackby: same, but a NOCONDUCT item protects the user.
-/datum/interaction/entry_item/fence_item
-	id = "fence_item"
-	name = "Use"
-	effect = /obj/structure/fence/proc/interaction_item
 
 /obj/structure/fence/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
@@ -111,25 +98,27 @@ CAPABILITIES(/obj/structure/fence)
 		electrocute(user)
 	return TRUE
 
-/obj/structure/fence/wirecutter_act(mob/user, obj/item/W)
+/obj/structure/fence/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(electric && isliving(user) && !user.is_incorporeal() && !(W.flags & NOCONDUCT) && electrocute(user))
-		return TRUE
+		return OP_OK
 	if(!cuttable)
 		to_chat(user, span_warning("This section of the fence can't be cut."))
-		return TRUE
+		return OP_OK
 	if(invulnerable)
 		to_chat(user, span_warning("This fence is too strong to cut through."))
-		return TRUE
+		return OP_OK
 	var/current_stage = hole_size
 	if(current_stage >= MAX_HOLE_SIZE)
 		to_chat(user, span_notice("This fence has too much cut out of it already."))
-		return TRUE
+		return OP_OK
 	act_message(user, src, MSG_SELF(span_danger("You start cutting through %T% with %I%.")), \
 		MSG_OTHERS(span_danger("%U% starts cutting through %T% with %I%.")), \
 		item = W)
 	use_tool(user, W, src, delay = CUT_TIME, quality = TOOL_WIRECUTTER, volume = 50, receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user, current_stage))
-	return TRUE
+	return OP_OK
 
 /obj/structure/fence/proc/wirecutter_act_tool_done(mob/user, current_stage)
 	if(!(current_stage == hole_size))

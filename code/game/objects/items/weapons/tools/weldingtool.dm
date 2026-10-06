@@ -106,29 +106,31 @@ DECLARE_PERIODIC_WHILE(/obj/item/weldingtool, PERIODIC_SLOW, "burner_active")
 	remove_fuel(1, user)
 
 /// Old attackby.
-/obj/item/weldingtool/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/weldingtool/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(W.has_tool_quality(TOOL_SCREWDRIVER))
 		if(welding)
 			to_chat(user, span_danger("Stop welding first!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		status = !status
 		if(status)
 			to_chat(user, span_notice("You secure the welder."))
 		else
 			to_chat(user, span_notice("The welder can now be attached and modified."))
 		add_fingerprint(user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if((!status) && (istype(W,/obj/item/stack/rods)))
 		var/obj/item/stack/rods/R = W
 		R.use(1)
 		var/obj/item/flamethrower/F = new/obj/item/flamethrower(get_turf(user))
 		if(!move_into(F, nameof(F.weldtool), src, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		add_fingerprint(user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/weldingtool/periodic_step()
 	if(welding)
@@ -173,13 +175,13 @@ DECLARE_PERIODIC_WHILE(/obj/item/weldingtool, PERIODIC_SLOW, "burner_active")
 			L.ignite_mob()
 		if (istype(location, /turf))
 			location.hotspot_expose(700, 50, 1)
-DECLARE_INTERACTIONS(/obj/item/weldingtool, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/weldingtool)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_self.
-/obj/item/weldingtool/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/weldingtool/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	setWelding(!welding, user)
 	return TRUE
 
