@@ -64,7 +64,7 @@ CAPABILITIES(/datum/pipeline)
 			needs_followup = TRUE
 		if(!member.check_pressure(pressure))
 			break
-	if(needs_followup && !om_timer_slot_pending(src, "engineered_exposure_timer"))
+	if(needs_followup && !after_left(src, "engineered_exposure_timer"))
 		after(src, 5 SECONDS, PROC_REF(wake_engineered_exposure), key = "engineered_exposure_timer")
 
 /// The engineered pipes still had work: the network runs its engineered-material pass again.

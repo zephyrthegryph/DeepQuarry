@@ -610,7 +610,6 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		rel_set(pipeline, nameof(pipeline.network), network)
 		for(var/obj/machinery/atmospherics/pipe/pipe as anything in region_pipes)
 			rel_set(pipe, nameof(pipe.parent), pipeline) // two-sided: adds the pipe to pipeline.members
-			MACHINE_WAKE(pipe) // a pipe with DM work (HE pipes) re-evaluates on joining; others don't listen
 			if(pipe.leaking)
 				rel_add(pipeline, nameof(pipeline.leaks), pipe)
 				rel_add(network, nameof(network.leaks), pipe)
