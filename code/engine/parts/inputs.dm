@@ -206,6 +206,11 @@
 /// A window button: the op with that ui_act() binding runs with origin ORIGIN_UI, its arguments validated by their schemas first.
 /proc/op_ui_act(mob/actor, datum/holder, action, list/payload, forward_depth = 0, datum/forwarded_by = null, datum/tgui/pressed_in = null)
 	RETURN_TYPE(/datum/op_result)
+	if(!forward_depth)
+		var/datum/entry/window_decl = present_interface(holder)
+		var/pressed = window_decl?.args["pressed"]
+		if(pressed)
+			call(holder, pressed)(actor, action) // interface(pressed =): the holder's reaction to any press in its window
 	var/list/found = list()
 	var/datum/op_plan/P = op_plan_by_ui_action(holder, action, found, payload)
 	if(!P)

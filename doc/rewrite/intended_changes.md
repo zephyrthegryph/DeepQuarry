@@ -1718,3 +1718,9 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
   on a converted `INTERACT_VERB` that is not `carried()`); a ghost now sees them greyed out instead of not at all.
 - **`interaction_pass` specs are ops with `passes()`** (the flesh and transit turfs, solid rock, the skipjack wall): the click is
   handled and goes on, as before.
+- `interface(pressed = PROC_REF(x))`: a holder reacts to every button pressed in its window, its own ops' and the forwarded ones. The PDA's click, fingerprint and clown honk use it; before this they ran in its `ui_act_allowed()`.
+- PDA power app: forwards to its power monitor through `interface(null, forwards = nameof(power_monitor))`.
+- PDA status display, notekeeper, contracts; borg hypo recipe save; wiki donation; secrets menu: their questions are `asks()` steps. The status lines, the red-contract opt-in, the vetting question, the recipe-overwrite question and the shuttle-jump transition questions open only when they apply (`when =`). The wiki pin question now opens for any human's donation while the terminal works, and the handler uses the pin only for a card that needs one. The secrets menu's questions are now asked of the pressing admin's mob instead of their client.
+- Spellbook: `choose_spell()` no longer takes the unused params/window.
+- Wiki crash prank: the fake ads go to a silicon's remote press (`AUTH_REMOTE_ACCESS`) instead of checking `issilicon()`.
+- Fishing program: dropped a dead UI_DATA_REPLACE row whose helper did not exist.
