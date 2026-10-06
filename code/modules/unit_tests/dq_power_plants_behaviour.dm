@@ -780,3 +780,134 @@
 	TEST_ASSERT_EQUAL(CO.input_power_multiplier, 2, "a collector takes it all at x2")
 	TEST_ASSERT_EQUAL(CO.zap_range, 0, "and does not arc")
 	TEST_ASSERT_EQUAL(CO.power_loss, 1, "and loses nothing")
+
+// ============================================================================================ fusion
+
+#define PP_FIELD_STEP "field_react"
+#define PP_INJECTOR_STEP "inject_step"
+#define PP_TRAP_STEP "trap_step"
+
+/// A core with its field up at `strength`, on a clear floor.
+/datum/unit_test/dq_pp/proc/pp_fusion_field(turf/T, strength = 1)
+	var/obj/machinery/power/fusion_core/core = allocate(/obj/machinery/power/fusion_core, T)
+	core.field_strength = strength
+	core.Startup()
+	TEST_ASSERT_NOTNULL(core.owned_field, "the core raised its field")
+	return core.owned_field
+
+/// The field's size follows the core's strength: up to 50 is 1, 200 is 3, 500 is 5, above is 7; the strength is clamped to 1..1000 and the
+/// core draws 5 W per unit of it.
+/datum/unit_test/dq_pp/fusion_field_strength
+
+/datum/unit_test/dq_pp/fusion_field_strength/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/effect/fusion_em_field/F = pp_fusion_field(run[1])
+	var/obj/machinery/power/fusion_core/core = F.owned_core
+	var/list/expected = list("1" = 1, "50" = 1, "51" = 3, "200" = 3, "201" = 5, "500" = 5, "501" = 7, "1000" = 7)
+	for(var/strength in expected)
+		F.ChangeFieldStrength(text2num(strength))
+		TEST_ASSERT_EQUAL(F.size, expected[strength], "strength [strength] makes a field of size [expected[strength]]")
+	core.set_strength(5000)
+	TEST_ASSERT_EQUAL(core.field_strength, 1000, "the strength is capped at 1000")
+	TEST_ASSERT_EQUAL(core.active_power_usage, 5000, "and draws 5 W a unit")
+	core.set_strength(0)
+	TEST_ASSERT_EQUAL(core.field_strength, 1, "and floored at 1")
+	core.Shutdown()
+
+/// Heating: 100 energy is 1 K of plasma; energy also steadies an unstable field (energy / 10000 off its instability).
+/datum/unit_test/dq_pp/fusion_add_energy
+
+/datum/unit_test/dq_pp/fusion_add_energy/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/effect/fusion_em_field/F = pp_fusion_field(run[1])
+	F.percent_unstable = 0.5
+	F.AddEnergy(250, 3)
+	TEST_ASSERT_EQUAL(F.plasma_temperature, 5, "3 K plus 250 energy's 2 K")
+	TEST_ASSERT_EQUAL(F.energy, 50, "50 energy left over")
+	TEST_ASSERT(pp_close(F.percent_unstable, 0.5 - 0.025, 0.0001), "250 energy steadies it by 0.025: [F.percent_unstable]")
+	F.owned_core.Shutdown()
+
+/// A field step with nothing to react: 1% of the plasma's heat is lost to radiation.
+/datum/unit_test/dq_pp/fusion_field_decay
+
+/datum/unit_test/dq_pp/fusion_field_decay/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/effect/fusion_em_field/F = pp_fusion_field(run[1])
+	F.plasma_temperature = 500
+	F.radiation = 0
+	pp_step(F, PP_FIELD_STEP)
+	TEST_ASSERT(pp_close(F.plasma_temperature, 495, 0.0001), "500 K loses 1%: [F.plasma_temperature]")
+	TEST_ASSERT(pp_close(F.radiation, 5, 0.0001), "to radiation: [F.radiation]")
+	F.owned_core.Shutdown()
+
+/// Instability: a step's tick instability adds tick * size / 10000 to the field's instability (a calm step's bleed rounds to nothing).
+/datum/unit_test/dq_pp/fusion_instability
+
+/datum/unit_test/dq_pp/fusion_instability/run_pp()
+	var/list/run = pp_run(1)
+	var/obj/effect/fusion_em_field/F = pp_fusion_field(run[1])
+	F.tick_instability = 100
+	F.check_instability()
+	TEST_ASSERT(pp_close(F.percent_unstable, 0.01, 0.0001), "100 instability on a size-1 field is 1%: [F.percent_unstable]")
+	TEST_ASSERT_EQUAL(F.tick_instability, 0, "and the tick's count is spent")
+	F.check_instability()
+	TEST_ASSERT(pp_close(F.percent_unstable, 0.01, 0.0001), "a calm step's bleed is rand(0.01, 0.03), which rounds to 0: it stays: [F.percent_unstable]")
+	F.owned_core.Shutdown()
+
+/// The reaction table (rates per unit reacted): D+D 1 in, 2 out; D+He3 1 in, 5 out; D+T 1 in, 1 out, He3 product, 0.5 instability; D+Li 2 in,
+/// 0 out, 3 radiation, T product, 1 instability; O+O 10 in.
+/datum/unit_test/dq_pp/fusion_reaction_rates
+
+/datum/unit_test/dq_pp/fusion_reaction_rates/run_pp()
+	var/datum/decl/fusion_reaction/R = get_fusion_reaction(REAGENT_ID_DEUTERIUM, REAGENT_ID_DEUTERIUM)
+	TEST_ASSERT(R && R.energy_consumption == 1 && R.energy_production == 2, "D+D")
+	R = get_fusion_reaction(REAGENT_ID_HELIUM3, REAGENT_ID_DEUTERIUM)
+	TEST_ASSERT(R && R.energy_consumption == 1 && R.energy_production == 5, "D+He3 either way round")
+	R = get_fusion_reaction(REAGENT_ID_DEUTERIUM, REAGENT_ID_SLIMEJELLY)
+	TEST_ASSERT(R && R.energy_production == 1 && R.instability == 0.5 && R.products[REAGENT_ID_HELIUM3] == 1, "D+T")
+	R = get_fusion_reaction(REAGENT_ID_DEUTERIUM, REAGENT_ID_LITHIUM)
+	TEST_ASSERT(R && R.energy_consumption == 2 && R.radiation == 3 && R.instability == 1, "D+Li")
+	R = get_fusion_reaction(REAGENT_ID_OXYGEN, REAGENT_ID_OXYGEN)
+	TEST_ASSERT(R && R.energy_consumption == 10, "O+O")
+	TEST_ASSERT_EQUAL(R.minimum_reaction_temperature, 100, "reactions need 100 K")
+
+/// The fuel injector fires one particle per fuel in its rod a step, and burns fuel_usage (30) of each; it stops when it cannot work.
+/datum/unit_test/dq_pp/fusion_injector_fuel_use
+
+/datum/unit_test/dq_pp/fusion_injector_fuel_use/run_pp()
+	var/list/run = pp_run(2)
+	var/obj/machinery/fusion_fuel_injector/I = allocate(/obj/machinery/fusion_fuel_injector, run[1])
+	var/obj/item/fuel_assembly/rod = allocate(/obj/item/fuel_assembly, run[1])
+	rod.rod_quantities = list(REAGENT_ID_DEUTERIUM = 3000000)
+	TEST_ASSERT(move_into(I, nameof(I.cur_assembly), rod), "the rod went in")
+	I.BeginInjecting()
+	TEST_ASSERT(I.injecting, "it injects")
+	pp_step(I, PP_INJECTOR_STEP)
+	TEST_ASSERT_EQUAL(rod.rod_quantities[REAGENT_ID_DEUTERIUM], 3000000 - 30, "a step burns 30")
+	TEST_ASSERT(pp_close(rod.percent_depleted, (3000000 - 30) / 3000000, 0.000001), "and the rod reports it")
+	for(var/obj/effect/accelerated_particle/P in range(12, I))
+		qdel(P)
+	I.StopInjecting()
+
+/// The hydromagnetic trap takes 20 W per K from a field within 7 tiles once its plasma is above 10000 K.
+/datum/unit_test/dq_pp/fusion_trap_threshold
+
+/datum/unit_test/dq_pp/fusion_trap_threshold/run_pp()
+	var/list/run = pp_run(3)
+	var/obj/effect/fusion_em_field/F = pp_fusion_field(run[1])
+	var/obj/machinery/power/hydromagnetic_trap/T = allocate(/obj/machinery/power/hydromagnetic_trap, run[3])
+	var/net = power_test_grid(0)
+	power_test_join(net, T)
+	F.plasma_temperature = 9999
+	pp_step(T, PP_TRAP_STEP)
+	TEST_ASSERT_EQUAL(T.icon_state, "mag_trap0", "below 10000 K it takes nothing")
+	TEST_ASSERT(T.active, "but it found the field")
+	F.plasma_temperature = 10001
+	pp_step(T, PP_TRAP_STEP)
+	TEST_ASSERT_EQUAL(T.icon_state, "mag_trap1", "above 10000 K it takes power")
+	power_test_drop_grid(net)
+	F.owned_core.Shutdown()
+
+#undef PP_FIELD_STEP
+#undef PP_INJECTOR_STEP
+#undef PP_TRAP_STEP
