@@ -720,6 +720,47 @@ fn resource_archive_names_preserve_source_spelling_and_external_disk_paths() {
         .position(|path| path.ends_with("/external/ExternalAsset.txt"))
         .unwrap();
     let original = input.resources[asset_index].clone();
+    // Git can rewrite small text-like assets (including opaque.bin) between LF
+    // and CRLF, unlike the bytes captured in the native receipt. Exercise its exact
+    // inputs in an isolated root, without weakening content-ID/payload assertions
+    // or changing the checked-out fixtures.
+    let fixture_root = root;
+    let root = std::env::temp_dir().join(format!(
+        "dmb-resource-archive-inputs-{}",
+        std::process::id()
+    ));
+    for path in &input.resources {
+        let name = &input.resource_archive_names[path][0];
+        let resource = archive
+            .iter()
+            .find_map(|entry| match entry {
+                Entry::Named(resource) if resource.name == name.as_bytes() => Some(resource),
+                _ => None,
+            })
+            .unwrap();
+        let expected = resource.asset_bytes().unwrap();
+        let checkout = std::fs::read(fixture_root.join(path)).unwrap();
+        let normalize = |bytes: &[u8]| -> Vec<u8> {
+            bytes
+                .iter()
+                .enumerate()
+                .filter_map(|(at, byte)| {
+                    if *byte == b'\r' && bytes.get(at + 1) == Some(&b'\n') {
+                        None
+                    } else {
+                        Some(*byte)
+                    }
+                })
+                .collect()
+        };
+        assert!(
+            checkout == expected || normalize(&checkout) == normalize(expected),
+            "resource fixture differs beyond checkout line endings: {path}"
+        );
+        let target = root.join(path);
+        std::fs::create_dir_all(target.parent().unwrap()).unwrap();
+        std::fs::write(target, expected).unwrap();
+    }
     assert_eq!(
         input.resource_archive_names[&original],
         [
@@ -730,13 +771,7 @@ fn resource_archive_names_preserve_source_spelling_and_external_disk_paths() {
     );
     let external =
         std::env::temp_dir().join(format!("dmb-external-resource-{}.txt", std::process::id()));
-    std::fs::write(
-        &external,
-        include_bytes!(
-            "../fixtures/translation/resource_archive_assets/external/ExternalAsset.txt"
-        ),
-    )
-    .unwrap();
+    std::fs::write(&external, std::fs::read(root.join(&original)).unwrap()).unwrap();
     let physical = external.to_string_lossy().replace('\\', "/");
     input.resources[asset_index] = physical.clone();
     for string in &mut input.strings {
@@ -815,6 +850,7 @@ fn resource_archive_names_preserve_source_spelling_and_external_disk_paths() {
     input.resource_archive_names.remove(&physical);
     assert!(crate::od_emit::emit_with_baseline(&input, Some(&baseline), &template, &root).is_err());
     std::fs::remove_file(external).unwrap();
+    std::fs::remove_dir_all(root).unwrap();
 }
 #[test]
 fn rgb_constants_match_native_channels_alpha_and_hue_normalization() {

@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "status": "pending publisher implementation; not executed",
+  "cases": [
+    "temp-write-kill",
+    "rename-before-session-record-kill",
+    "conventional-rsc-copy-kill",
+    "conventional-dmb-copy-kill",
+    "marker-rename-kill",
+    "duplicate-pair-publish",
+    "acquire-first-file-vs-evict",
+    "evict-after-acquire",
+    "same-length-corruption",
+    "first-boot-torn-pair",
+    "cross-volume-copy",
+    "locked-conventional-output"
+  ],
+  "required_assertions": [
+    "no partial runnable slot",
+    "no modification of existing immutable pair",
+    "current session last-three protected under store lock",
+    "acquired slot bytes survive store-name eviction",
+    "authentication precedes world start"
+  ]
+}

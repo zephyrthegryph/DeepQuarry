@@ -5,6 +5,8 @@ use byond_dmb::{
     translate::translate_named_debug,
 };
 use std::path::Path;
+#[path = "support/reference_inputs.rs"]
+mod reference_inputs;
 
 type Signature = (u8, u32, Vec<u8>, u32, Vec<u8>);
 fn signatures(entries: &[Entry]) -> Vec<Signature> {
@@ -78,10 +80,11 @@ fn authored_resource_phases_preserve_complete_native_archive_order() {
         ))
         .unwrap();
         let expected = signatures(&archive);
+        let inputs = reference_inputs::prepare(&fixtures, &archive, |name| name.ends_with(".dms"));
         assert!(expected.len() >= 2, "{name}: nonvacuous ordered archive");
         for debug in [false, true] {
             let output =
-                translate_named_debug(&input, &baseline, &template, &fixtures, Some(name), debug)
+                translate_named_debug(&input, &baseline, &template, &inputs.0, Some(name), debug)
                     .unwrap();
             assert_eq!(
                 signatures(&output.resources),

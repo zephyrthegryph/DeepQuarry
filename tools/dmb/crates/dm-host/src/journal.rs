@@ -338,7 +338,7 @@ fn scan_records_batched(
     let mut changed = false;
     while offset < bytes.len() {
         let length = read_u32(bytes, offset)? as usize;
-        if length < 8 || length % 8 != 0 {
+        if length < 8 || !length.is_multiple_of(8) {
             return None;
         }
         let record = bytes.get(offset..offset.checked_add(length)?)?;
@@ -566,9 +566,9 @@ mod windows {
                 ),
             ] {
                 let volume_id = stamp.volume_id()?;
-                if !devices.contains_key(&volume_id) {
+                if let std::collections::btree_map::Entry::Vacant(e) = devices.entry(volume_id) {
                     let volume = device(path)?;
-                    devices.insert(volume_id, volume.clone());
+                    e.insert(volume.clone());
                     by_volume.entry(volume).or_default();
                 }
             }

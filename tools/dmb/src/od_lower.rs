@@ -2135,9 +2135,9 @@ impl PickLowering<'_> {
     fn lower(&mut self, weighted: bool, count: usize) -> Result<(), LowerError> {
         let code = self.code;
         let start = self.start;
-        let mut out = &mut *self.out;
-        let mut offsets = &mut *self.offsets;
-        let mut fixups = &mut *self.fixups;
+        let out = &mut *self.out;
+        let offsets = &mut *self.offsets;
+        let fixups = &mut *self.fixups;
         let world_flow = &mut *self.world_flow;
         let state = &mut *self.state;
         let probability_regions = &mut *self.probability_regions;
@@ -2164,7 +2164,7 @@ impl PickLowering<'_> {
             let mut end = out.len();
             let mut spans = Vec::with_capacity(operand_count);
             for _ in 0..operand_count {
-                let at = guarded_assignment_spans(&out[..end], code, &offsets, &fixups, start, 0)
+                let at = guarded_assignment_spans(&out[..end], code, offsets, fixups, start, 0)
                     .map(|(first, _)| first)
                     .or_else(|| constructor_argument_start(&out[..end], 1))
                     .ok_or_else(|| LowerError {
@@ -2177,14 +2177,14 @@ impl PickLowering<'_> {
             }
             spans.reverse();
             let base = end;
-            if !closed_spans(&spans, &offsets, &fixups) {
+            if !closed_spans(&spans, offsets, fixups) {
                 return Err(LowerError {
                     kind: LowerErrorKind::MalformedControlFlow,
                     offset: start,
                     reason: "PickWeighted operands have nonlocal branches".into(),
                 });
             }
-            world_flow.separate_reordered_arguments(&spans, &offsets, code.len());
+            world_flow.separate_reordered_arguments(&spans, offsets, code.len());
             state.cached_world_owner = false;
             state.pending_world_ref = None;
             state.last_reference_push = None;
@@ -2290,17 +2290,10 @@ impl PickLowering<'_> {
                     remapped_offsets.push((source, new));
                 }
             }
-            let original_offsets = moved_offset_snapshot(&offsets, &fixups, &moved);
-            replace_words(
-                &mut out,
-                &mut offsets,
-                &mut fixups,
-                base,
-                old_end - base,
-                &replacement,
-            );
+            let original_offsets = moved_offset_snapshot(offsets, fixups, &moved);
+            replace_words(out, offsets, fixups, base, old_end - base, &replacement);
             offsets.extend(remapped_offsets);
-            remap_closed_spans(&original_offsets, &mut offsets, &mut fixups, &moved);
+            remap_closed_spans(&original_offsets, offsets, fixups, &moved);
             for target in external_entries {
                 offsets.insert(target, base as u32);
             }
@@ -2341,28 +2334,27 @@ impl PickLowering<'_> {
                 let mut end = out.len();
                 let mut spans = Vec::with_capacity(count);
                 for _ in 0..count {
-                    let at =
-                        guarded_assignment_spans(&out[..end], code, &offsets, &fixups, start, 0)
-                            .map(|(first, _)| first)
-                            .or_else(|| constructor_argument_start(&out[..end], 1))
-                            .ok_or_else(|| LowerError {
-                                kind: LowerErrorKind::MalformedControlFlow,
-                                offset: start,
-                                reason: "PickUnweighted operand has unknown stack effects".into(),
-                            })?;
+                    let at = guarded_assignment_spans(&out[..end], code, offsets, fixups, start, 0)
+                        .map(|(first, _)| first)
+                        .or_else(|| constructor_argument_start(&out[..end], 1))
+                        .ok_or_else(|| LowerError {
+                            kind: LowerErrorKind::MalformedControlFlow,
+                            offset: start,
+                            reason: "PickUnweighted operand has unknown stack effects".into(),
+                        })?;
                     spans.push((at, end));
                     end = at;
                 }
                 spans.reverse();
                 let base = end;
-                if !closed_spans(&spans, &offsets, &fixups) {
+                if !closed_spans(&spans, offsets, fixups) {
                     return Err(LowerError {
                         kind: LowerErrorKind::MalformedControlFlow,
                         offset: start,
                         reason: "PickUnweighted operands have nonlocal branches".into(),
                     });
                 }
-                world_flow.separate_reordered_arguments(&spans, &offsets, code.len());
+                world_flow.separate_reordered_arguments(&spans, offsets, code.len());
                 state.cached_world_owner = false;
                 state.pending_world_ref = None;
                 state.last_reference_push = None;
@@ -2399,9 +2391,9 @@ impl PickLowering<'_> {
                 }
                 let old_end = out.len();
                 replace_closed_spans(
-                    &mut out,
-                    &mut offsets,
-                    &mut fixups,
+                    out,
+                    offsets,
+                    fixups,
                     base,
                     old_end - base,
                     &replacement,
@@ -2441,9 +2433,9 @@ fn lower_constant_and_switch(
     reader: &mut Reader<'_>,
     ids: &impl SymbolResolver,
     start: usize,
-    mut out: &mut Vec<u32>,
-    mut offsets: &mut HashMap<u32, u32>,
-    mut fixups: &mut Vec<Fixup>,
+    out: &mut Vec<u32>,
+    offsets: &mut HashMap<u32, u32>,
+    fixups: &mut Vec<Fixup>,
     spawn_targets: &[u32],
 ) -> Result<bool, LowerError> {
     match op {
@@ -2582,7 +2574,7 @@ fn lower_constant_and_switch(
                 })?;
                 let type_id = mapped(ids.type_id(old), start, "type")?;
                 if count > 0 {
-                    let args_at = constructor_argument_start(&out, count as usize)
+                    let args_at = constructor_argument_start(out, count as usize)
                         .or_else(|| {
                             // The final constructor argument may be a
                             // short-circuit `target || fallback` or
@@ -2603,15 +2595,9 @@ fn lower_constant_and_switch(
                         })?;
                     let mut type_push = Vec::new();
                     push_value(&mut type_push, tag, type_id);
-                    insert_expression_prefix(
-                        &mut out,
-                        &mut offsets,
-                        &mut fixups,
-                        args_at,
-                        &type_push,
-                    );
+                    insert_expression_prefix(out, offsets, fixups, args_at, &type_push);
                 } else {
-                    push_value(&mut out, tag, type_id);
+                    push_value(out, tag, type_id);
                 }
                 offsets.insert(reader.at as u32, out.len() as u32);
                 reader.at += 5; // PushType + type ID
@@ -2695,13 +2681,13 @@ fn lower_constant_and_switch(
                 });
                 return Ok(true);
             }
-            if let Some(old_type) = simple_new_tail(&reader, 1) {
+            if let Some(old_type) = simple_new_tail(reader, 1) {
                 let tag = ids.type_tag(old_type).ok_or_else(|| LowerError {
                     kind: LowerErrorKind::UnresolvedSymbol,
                     offset: start,
                     reason: "unresolved type tag".into(),
                 })?;
-                push_value(&mut out, tag, mapped(ids.type_id(old_type), start, "type")?);
+                push_value(out, tag, mapped(ids.type_id(old_type), start, "type")?);
                 let null_at = reader.at;
                 offsets.insert(null_at as u32, (out.len() - 3) as u32);
                 offsets.insert((null_at + 1) as u32, (out.len() - 3) as u32);

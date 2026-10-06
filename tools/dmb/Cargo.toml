@@ -190,3 +190,8 @@ path = "dev-scripts/proc_inventory.rs"
 [[example]]
 name = "var_pair"
 path = "dev-scripts/var_pair.rs"
+
+[profile.release]
+lto = "thin"
+debug = "line-tables-only"
+codegen-units = 16

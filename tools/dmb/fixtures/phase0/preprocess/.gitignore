@@ -1,0 +1,6 @@
+# Execution receipts belong in the Phase 0 evidence directory, not source fixtures.
+*.dmb
+*.rsc
+*.log
+*.int
+*.lk

@@ -265,6 +265,8 @@ fn discover_with_cache_with_proof(
     .map(|(project, sources, proof, _, _)| (project, sources, proof))
 }
 
+// Keep the frozen domain tuple and public return contract.
+#[allow(clippy::type_complexity)]
 fn discover_with_retained(
     root: &Path,
     defines: &BTreeMap<String, String>,

@@ -1,0 +1,6 @@
+/world/New()
+    ..()
+    phase0_preprocess_value("before_payload", file2text(before_resource))
+    phase0_preprocess_value("during_payload", file2text(during_resource))
+    phase0_preprocess_value("after_payload", file2text(after_resource))
+    phase0_preprocess_finish()

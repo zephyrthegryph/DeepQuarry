@@ -1,0 +1,35 @@
+[
+  {
+    "label": "sequence",
+    "value": [
+      "z",
+      "a",
+      "z",
+      "m"
+    ]
+  },
+  {
+    "label": "associative_keys",
+    "value": [
+      "z",
+      "a",
+      "m"
+    ]
+  },
+  {
+    "label": "associative_values",
+    "value": [
+      1,
+      4,
+      3
+    ]
+  },
+  {
+    "label": "reinserted_keys",
+    "value": [
+      "z",
+      "m",
+      "a"
+    ]
+  }
+]

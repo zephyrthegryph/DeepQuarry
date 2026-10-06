@@ -1444,6 +1444,8 @@ impl Compiler<'_> {
         Ok(())
     }
 
+    // Clause ordinals drive the frozen branch construction and labels.
+    #[allow(clippy::needless_range_loop)]
     fn statements(&mut self, body: &[Item]) -> Result<(), LowerError> {
         let mut index = 0;
         while index < body.len() {

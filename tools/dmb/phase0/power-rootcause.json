@@ -1,0 +1,60 @@
+{
+  "status": "partial source diagnosis; native-silence cause unresolved",
+  "scope": "Phase0 evidence only; no semantic fix",
+  "procedure": "/datum/controller/subsystem/machines/proc/process_power",
+  "procedure_ids": {
+    "byond": 4177,
+    "native": 33419
+  },
+  "evidence": [
+    {
+      "path": "D:\\dmb-native-v2-phase0\\power-bridge-byond-code.log",
+      "sha256": "e61f58de586d91daf6de5e7206b0349b8ace5bb93d5aab2735eae5b760e0dcbb",
+      "bytes": 6314
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\power-bridge-native-code.log",
+      "sha256": "1c525e52f7cd3ec8015d391caed3a8ae800d799f69087f0aa278169eae657ae6",
+      "bytes": 5971
+    },
+    {
+      "path": "D:\\dmb-native-v2-phase0\\power-bridge-opcode-diff.log",
+      "sha256": "43edcd1aefdef6def30e24dc6ce8d14da8d64ce62a58f50fadd4209ee0e8ce3c",
+      "bytes": 14174
+    }
+  ],
+  "source_findings": [
+    {
+      "path": "frozen/source/code/modules/power/power_bridge.dm",
+      "lines": [
+        47,
+        85,
+        91,
+        151,
+        154,
+        156
+      ],
+      "finding": "power_regions is a list used with numeric region handle IDs, without demonstrated dense positional bounds; retired removal also uses numeric value subtraction."
+    },
+    {
+      "path": "frozen/source/verdigris/ffi/src/power.rs",
+      "lines": [
+        287,
+        292,
+        296
+      ],
+      "finding": "Region identity exported as raw handle bits+1; decoding reconstructs raw handle rather than specifying a dense list position."
+    }
+  ],
+  "bytecode_findings": [
+    "Both retired branches compare the event kind against numeric constant3.",
+    "Both contain the same nested GetVar/events[at]/ListGet/ListGet indexing shape; evidence does not support a missing bounds/index lowering operation.",
+    "Native switch uses __dmb_switch_8 temporary and Teq/Pop/Jnz; reference uses switch dispatch. Call versus CallStatement and debug/local layouts differ. These differences alone do not establish a behavioral defect."
+  ],
+  "unresolved": [
+    "Whether differing event streams, timing, switch dispatch or other upstream execution reaches the retired branch differently.",
+    "No per-event runtime ownership proof; original test failure messages may attribute background power runtimes to the currently active test."
+  ],
+  "classification": "Concrete unsafe source indexing pattern; runtime list-bounds errors observed in reference. Native absence is an unresolved behavioral divergence, not proof native code is correct.",
+  "next_evidence": "Controlled equal-event-stream replay and resolved branch/call analysis if later authorized; no execution performed by this review."
+}

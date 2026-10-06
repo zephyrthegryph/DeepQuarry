@@ -175,6 +175,7 @@ pub fn publish_generation_reusing_archive(
     fs::create_dir_all(root.join("generations"))?;
     let lock = OpenOptions::new()
         .create(true)
+        .truncate(false)
         .read(true)
         .write(true)
         .open(root.join("HEAD.lock"))?;
@@ -245,6 +246,7 @@ pub fn publish_generation_reusing_archive(
     if head_id(root)?.as_deref() != Some(id.as_str()) {
         let mut head = OpenOptions::new()
             .create(true)
+            .truncate(false)
             .append(true)
             .open(&head_path)?;
         head.write_all(id.as_bytes())?;
@@ -363,6 +365,7 @@ pub fn publish_generation_with_archive(
     fs::create_dir_all(root.join("generations"))?;
     let lock = OpenOptions::new()
         .create(true)
+        .truncate(false)
         .read(true)
         .write(true)
         .open(root.join("HEAD.lock"))?;
@@ -456,6 +459,7 @@ pub fn publish_generation_with_archive(
     if head_id(root)?.as_deref() != Some(id.as_str()) {
         let mut head = OpenOptions::new()
             .create(true)
+            .truncate(false)
             .append(true)
             .open(head_path)?;
         head.write_all(id.as_bytes())?;

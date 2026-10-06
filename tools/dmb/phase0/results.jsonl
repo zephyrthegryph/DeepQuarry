@@ -1,0 +1,8 @@
+{"phase":0,"kind":"harness-tests","result":"passed","passed":18,"evidence":"python -m unittest discover -s tools/dmb/phase0 -p test_*.py"}
+{"phase":0,"kind":"workspace-clippy","result":"passed","seconds":10.22,"evidence":"D:/dmb-native-v2-phase0/clippy-workspace-final.log"}
+{"phase":0,"kind":"release-build","result":"passed","seconds":260,"compiler_benchmark":false,"evidence":"D:/dmb-native-v2-phase0/release-build.log","note":"Final rebuild follows test fixture portability repairs; not a game compile latency."}
+{"phase":0,"kind":"runtime-replay","producer":"byond","repetition":1,"suite_complete":true,"baseline_eligible":false,"selected_tests":1089,"passed":979,"failed":52,"skipped":58,"seconds":1773.4865791,"evidence":"D:/dmb-native-v2-phase0/runtime-replays-selected/replay-b5222b76b0b14af88ce736619229272c/byond-1/receipt.json","note":"Missing external constraint JSON fixture; excluded, corrected session running."}
+{"phase":0,"kind":"workspace-tests","result":"passed","passed":1199,"failed":0,"ignored":0,"result_targets":96,"evidence":"D:/dmb-native-v2-phase0/cargo-test-final-retry4.log"}
+{"compiler_benchmark":false,"workers":2,"seconds":100.4969646,"phase":0,"cpu_seconds":33.671875,"bytes":1305855805,"evidence":"E:/dmb-native-v2-phase0/profile-source-verified-parallel.json","result":"equal","kind":"snapshot-authentication","files":24218}
+{"kind":"workspace-clippy","phase":0,"result":"passed","evidence":"D:/dmb-native-v2-phase0/clippy-commit-gate.log","seconds":7.29}
+{"seconds":264,"compiler_benchmark":false,"phase":0,"kind":"release-build","result":"passed","evidence":"D:/dmb-native-v2-phase0/release-final.log"}

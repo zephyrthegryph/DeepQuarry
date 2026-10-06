@@ -79,7 +79,7 @@ pub struct SpanToken {
 }
 
 impl SpanToken {
-    pub fn text<'a>(self, source: &'a str) -> &'a str {
+    pub fn text(self, source: &str) -> &str {
         &source[self.span.range()]
     }
 }
@@ -242,8 +242,8 @@ pub fn visit_tokens(source: &str, mut visitor: impl FnMut(SpanToken)) -> Vec<Dia
             } else {
                 (TokenKind::Comment, source.len(), true)
             }
-        } else if rest.starts_with("@'") {
-            let close = rest[2..].find('\'').map(|at| at + 3);
+        } else if let Some(stripped) = rest.strip_prefix("@'") {
+            let close = stripped.find('\'').map(|at| at + 3);
             (
                 TokenKind::String,
                 pos + close.unwrap_or(rest.len()),
@@ -517,10 +517,10 @@ impl ExprParser {
         loop {
             if self.ternary_then_depth > 0
                 && self.peek().is_some_and(|token| token.text == ":")
-                && !self
+                && self
                     .tokens
                     .get(self.index + 1)
-                    .is_some_and(|token| token.text == ":")
+                    .is_none_or(|token| token.text != ":")
                 && !self.colon_member_before_ternary_separator(&lhs)
             {
                 break;

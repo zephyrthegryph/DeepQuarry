@@ -1,5 +1,4 @@
 /// Lower OpenDream call forms into native BYOND call instructions.
-
 struct CallLowering<'a, 'code, R: SymbolResolver> {
     code: &'code [u8],
     reader: &'a mut Reader<'code>,
@@ -18,12 +17,12 @@ struct CallLowering<'a, 'code, R: SymbolResolver> {
 impl<R: SymbolResolver> CallLowering<'_, '_, R> {
     fn lower(&mut self) -> Result<(), LowerError> {
         let code = self.code;
-        let mut reader = &mut *self.reader;
+        let reader = &mut *self.reader;
         let ids = self.ids;
         let start = self.start;
-        let mut out = &mut *self.out;
-        let mut offsets = &mut *self.offsets;
-        let mut fixups = &mut *self.fixups;
+        let out = &mut *self.out;
+        let offsets = &mut *self.offsets;
+        let fixups = &mut *self.fixups;
         let world_flow = &mut *self.world_flow;
         let state = &mut *self.state;
         let pending_view_range_iterator = &mut *self.pending_view_range_iterator;
@@ -58,7 +57,7 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
             // Native CallStatement retains the managed result in
             // Eval and skips its following Pop marker. A shared Pop
             // reached by another branch must remain an actual Pop.
-            let discard_result = world_flow.pop_is_unshared(&reader, &fixups);
+            let discard_result = world_flow.pop_is_unshared(reader, fixups);
             out.push(if discard_result { 0x2a } else { 0x29 });
             out.extend(Variable::SetCache(Box::new(Variable::Src), Box::new(selector)).encode());
             out.push(if mode == 2 || mode == 3 {
@@ -66,7 +65,7 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
             } else {
                 count
             });
-            finish_native_statement_call(&mut reader, &mut out, &mut offsets, discard_result);
+            finish_native_statement_call(reader, out, offsets, discard_result);
             state.cached_world_owner = false;
             if let Some(pending) = &mut state.pending_world_ref {
                 pending.rhs_changed_cache = true;
@@ -112,24 +111,18 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
             {
                 let generator =
                     mapped(ids.generator_type_string(), start, "/generator type string")?;
-                let args_at = guarded_assignment_spans(
-                    &out,
-                    code,
-                    &offsets,
-                    &fixups,
-                    start,
-                    count as usize - 1,
-                )
-                .map(|(first, _)| first)
-                .or_else(|| constructor_argument_start(&out, count as usize))
-                .ok_or_else(|| LowerError {
-                    kind: LowerErrorKind::MalformedControlFlow,
-                    offset: start,
-                    reason: "generator arguments have unknown stack effects".into(),
-                })?;
+                let args_at =
+                    guarded_assignment_spans(out, code, offsets, fixups, start, count as usize - 1)
+                        .map(|(first, _)| first)
+                        .or_else(|| constructor_argument_start(out, count as usize))
+                        .ok_or_else(|| LowerError {
+                            kind: LowerErrorKind::MalformedControlFlow,
+                            offset: start,
+                            reason: "generator arguments have unknown stack effects".into(),
+                        })?;
                 let mut type_words = Vec::new();
                 push_value(&mut type_words, 6, generator);
-                insert_expression_prefix(&mut out, &mut offsets, &mut fixups, args_at, &type_words);
+                insert_expression_prefix(out, offsets, fixups, args_at, &type_words);
                 if mode == 3 {
                     out.push(0xcf);
                 } else {
@@ -143,20 +136,20 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
             (None, Some(0x108), 1) if count == 1 => out.push(0x108),
             (None, Some(0x127), 1) if (2..=3).contains(&count) => {
                 out.push(if count == 2 { 0x8f } else { 0x127 });
-                finish_native_void_result(&mut reader, &mut out, &mut offsets, &fixups, world_flow);
+                finish_native_void_result(reader, out, offsets, fixups, world_flow);
             }
             (None, Some(0x118), 1) if count == 2 => out.push(0x118),
             (None, Some(0x14b), 1) if count == 1 => out.push(0x14b),
             (None, Some(0x10e), 1) if count == 3 => {
                 out.push(0x10e);
-                finish_native_void_result(&mut reader, &mut out, &mut offsets, &fixups, world_flow);
+                finish_native_void_result(reader, out, offsets, fixups, world_flow);
             }
             (None, Some(0x57), 1) if count == 1 => out.push(0x5f),
             (None, Some(0x57), 1) if count == 2 => out.push(0x57),
             (None, Some(0xb9 | 0x94), 1) if count == 1 => out.push(builtin.unwrap()),
             (None, Some(0xda), 1) if count == 1 => {
                 out.push(0xda);
-                finish_native_void_result(&mut reader, &mut out, &mut offsets, &fixups, world_flow);
+                finish_native_void_result(reader, out, offsets, fixups, world_flow);
             }
             (None, Some(0x18), 1) if (1..=6).contains(&count) => {
                 for _ in count..6 {
@@ -166,7 +159,7 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
             }
             (None, Some(0x10f), 1) if count == 3 => {
                 out.push(0x10f); // winshow is void
-                finish_native_void_result(&mut reader, &mut out, &mut offsets, &fixups, world_flow);
+                finish_native_void_result(reader, out, offsets, fixups, world_flow);
             }
             (None, Some(0x1b | 0x59 | 0x1c | 0xe5 | 0xe6 | 0xe7 | 0xe8), 0 | 1)
                 if count <= 2 && {
@@ -271,7 +264,7 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
                 } else {
                     builtin.unwrap()
                 });
-                finish_native_void_result(&mut reader, &mut out, &mut offsets, &fixups, world_flow);
+                finish_native_void_result(reader, out, offsets, fixups, world_flow);
             }
             (None, Some(0x37 | 0x71), 1) if (2..=255).contains(&count) => {
                 let opcode = builtin.unwrap();
@@ -293,8 +286,8 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
                         let at = guarded_assignment_spans(
                             &out[..end],
                             reader.code,
-                            &offsets,
-                            &fixups,
+                            offsets,
+                            fixups,
                             start,
                             0,
                         )
@@ -351,14 +344,7 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
                         })
                         .collect();
                     let old_len = out.len() - end;
-                    replace_words(
-                        &mut out,
-                        &mut offsets,
-                        &mut fixups,
-                        end,
-                        old_len,
-                        &replacement,
-                    );
+                    replace_words(out, offsets, fixups, end, old_len, &replacement);
                     offsets.extend(relocated);
                     for (index, fixup) in internal_fixups {
                         let ((lo, _), new) = moved
@@ -424,7 +410,7 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
                     out.extend([0x60, 0, 0]); // walk's omitted speed
                 }
                 out.push(builtin.unwrap()); // flick/walk
-                finish_native_void_result(&mut reader, &mut out, &mut offsets, &fixups, world_flow);
+                finish_native_void_result(reader, out, offsets, fixups, world_flow);
             }
             (None, Some(0xc7), 1) if count == 1 => {
                 out.push(0xc7); // CRASH(msg) never returns a value.
@@ -514,48 +500,30 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
             (None, Some(0xbe), 1) if count == 1 => out.push(0xbe), // html_encode
             (None, Some(0x170), 3) if count == 1 => {
                 let sound = mapped(ids.sound_type_string(), start, "/sound type string")?;
-                let args_at = guarded_assignment_spans(&out, code, &offsets, &fixups, start, 0)
+                let args_at = guarded_assignment_spans(out, code, offsets, fixups, start, 0)
                     .map(|(first, _)| first)
-                    .or_else(|| constructor_argument_start(&out, 1))
+                    .or_else(|| constructor_argument_start(out, 1))
                     .ok_or_else(|| LowerError {
                         kind: LowerErrorKind::MalformedControlFlow,
                         offset: start,
                         reason: "sound arglist has unknown stack effects".into(),
                     })?;
-                insert_expression_prefix(
-                    &mut out,
-                    &mut offsets,
-                    &mut fixups,
-                    args_at,
-                    &[0x60, 6, sound],
-                );
+                insert_expression_prefix(out, offsets, fixups, args_at, &[0x60, 6, sound]);
                 out.push(0xcf);
             }
             (None, Some(0x173), 3) if count == 1 => out.push(0xd3), // image(arglist(L))
             (None, Some(0x170), 1) if (1..=255).contains(&count) => {
                 let sound = mapped(ids.sound_type_string(), start, "/sound type string")?;
-                let args_at = guarded_assignment_spans(
-                    &out,
-                    code,
-                    &offsets,
-                    &fixups,
-                    start,
-                    count as usize - 1,
-                )
-                .map(|(first, _)| first)
-                .or_else(|| constructor_argument_start(&out, count as usize))
-                .ok_or_else(|| LowerError {
-                    kind: LowerErrorKind::MalformedControlFlow,
-                    offset: start,
-                    reason: "sound constructor arguments have unknown stack effects".into(),
-                })?;
-                insert_expression_prefix(
-                    &mut out,
-                    &mut offsets,
-                    &mut fixups,
-                    args_at,
-                    &[0x60, 6, sound],
-                );
+                let args_at =
+                    guarded_assignment_spans(out, code, offsets, fixups, start, count as usize - 1)
+                        .map(|(first, _)| first)
+                        .or_else(|| constructor_argument_start(out, count as usize))
+                        .ok_or_else(|| LowerError {
+                            kind: LowerErrorKind::MalformedControlFlow,
+                            offset: start,
+                            reason: "sound constructor arguments have unknown stack effects".into(),
+                        })?;
+                insert_expression_prefix(out, offsets, fixups, args_at, &[0x60, 6, sound]);
                 out.extend([0x01, count]);
             }
             (None, Some(0x170), 2) if (2..=510).contains(&count) && count % 2 == 0 => {
@@ -563,15 +531,14 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
                 let mut end = out.len();
                 let mut spans = Vec::new();
                 for _ in 0..count {
-                    let at =
-                        guarded_assignment_spans(&out[..end], code, &offsets, &fixups, start, 0)
-                            .map(|(first, _)| first)
-                            .or_else(|| constructor_argument_start(&out[..end], 1))
-                            .ok_or_else(|| LowerError {
-                                kind: LowerErrorKind::MalformedControlFlow,
-                                offset: start,
-                                reason: "named sound arguments have unknown stack effects".into(),
-                            })?;
+                    let at = guarded_assignment_spans(&out[..end], code, offsets, fixups, start, 0)
+                        .map(|(first, _)| first)
+                        .or_else(|| constructor_argument_start(&out[..end], 1))
+                        .ok_or_else(|| LowerError {
+                            kind: LowerErrorKind::MalformedControlFlow,
+                            offset: start,
+                            reason: "named sound arguments have unknown stack effects".into(),
+                        })?;
                     spans.push((at, end));
                     end = at;
                 }
@@ -580,60 +547,42 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
                 for index in (0..count as usize / 2).rev() {
                     let (key_at, key_end) = spans[index * 2];
                     if out[key_at..key_end] == [0x60, 0, 0] {
-                        replace_words(
-                            &mut out,
-                            &mut offsets,
-                            &mut fixups,
-                            key_at,
-                            3,
-                            &[0x50, index as u32 + 1],
-                        );
+                        replace_words(out, offsets, fixups, key_at, 3, &[0x50, index as u32 + 1]);
                     }
                 }
                 let mut type_words = Vec::new();
                 push_value(&mut type_words, 6, sound);
-                insert_expression_prefix(&mut out, &mut offsets, &mut fixups, args_at, &type_words);
+                insert_expression_prefix(out, offsets, fixups, args_at, &type_words);
                 out.extend([0xc8, count / 2, 0xcf]);
             }
             (None, Some(0x171), 1) if (1..=255).contains(&count) => {
                 let icon = mapped(ids.icon_type_string(), start, "/icon type string")?;
-                let args_at = guarded_assignment_spans(
-                    &out,
-                    code,
-                    &offsets,
-                    &fixups,
-                    start,
-                    count as usize - 1,
-                )
-                .map(|(first, _)| first)
-                .or_else(|| constructor_argument_start(&out, count as usize))
-                .or_else(|| {
-                    // A conditional final argument ends in OD's
-                    // JumpIfFalse/Jump diamond. Find its branch start,
-                    // then split only the preceding arguments.
-                    let jump = fixups.iter().rev().find(|fixup| {
-                        fixup.target == start as u32 && reader.code.get(fixup.source) == Some(&0x0e)
-                    })?;
-                    let branch = fixups.iter().rev().find(|fixup| {
-                        fixup.source < jump.source
-                            && fixup.target == (jump.source + 5) as u32
-                            && reader.code.get(fixup.source) == Some(&0x8b)
-                    })?;
-                    let conditional_at = *offsets.get(&(branch.source as u32))? as usize;
-                    constructor_argument_start(&out[..conditional_at], count as usize - 1)
-                })
-                .ok_or_else(|| LowerError {
-                    kind: LowerErrorKind::MalformedControlFlow,
-                    offset: start,
-                    reason: "icon constructor arguments have unknown stack effects".into(),
-                })?;
-                insert_expression_prefix(
-                    &mut out,
-                    &mut offsets,
-                    &mut fixups,
-                    args_at,
-                    &[0x60, 6, icon],
-                );
+                let args_at =
+                    guarded_assignment_spans(out, code, offsets, fixups, start, count as usize - 1)
+                        .map(|(first, _)| first)
+                        .or_else(|| constructor_argument_start(out, count as usize))
+                        .or_else(|| {
+                            // A conditional final argument ends in OD's
+                            // JumpIfFalse/Jump diamond. Find its branch start,
+                            // then split only the preceding arguments.
+                            let jump = fixups.iter().rev().find(|fixup| {
+                                fixup.target == start as u32
+                                    && reader.code.get(fixup.source) == Some(&0x0e)
+                            })?;
+                            let branch = fixups.iter().rev().find(|fixup| {
+                                fixup.source < jump.source
+                                    && fixup.target == (jump.source + 5) as u32
+                                    && reader.code.get(fixup.source) == Some(&0x8b)
+                            })?;
+                            let conditional_at = *offsets.get(&(branch.source as u32))? as usize;
+                            constructor_argument_start(&out[..conditional_at], count as usize - 1)
+                        })
+                        .ok_or_else(|| LowerError {
+                            kind: LowerErrorKind::MalformedControlFlow,
+                            offset: start,
+                            reason: "icon constructor arguments have unknown stack effects".into(),
+                        })?;
+                insert_expression_prefix(out, offsets, fixups, args_at, &[0x60, 6, icon]);
                 out.extend([0x01, count]);
             }
             (None, Some(0x170 | 0x171), 0) if count == 0 => {
@@ -649,15 +598,14 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
                 let mut end = out.len();
                 let mut spans = Vec::new();
                 for _ in 0..count {
-                    let at =
-                        guarded_assignment_spans(&out[..end], code, &offsets, &fixups, start, 0)
-                            .map(|(first, _)| first)
-                            .or_else(|| constructor_argument_start(&out[..end], 1))
-                            .ok_or_else(|| LowerError {
-                                kind: LowerErrorKind::MalformedControlFlow,
-                                offset: start,
-                                reason: "named icon arguments have unknown stack effects".into(),
-                            })?;
+                    let at = guarded_assignment_spans(&out[..end], code, offsets, fixups, start, 0)
+                        .map(|(first, _)| first)
+                        .or_else(|| constructor_argument_start(&out[..end], 1))
+                        .ok_or_else(|| LowerError {
+                            kind: LowerErrorKind::MalformedControlFlow,
+                            offset: start,
+                            reason: "named icon arguments have unknown stack effects".into(),
+                        })?;
                     spans.push((at, end));
                     end = at;
                 }
@@ -666,19 +614,12 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
                 for index in (0..count as usize / 2).rev() {
                     let (key_at, key_end) = spans[index * 2];
                     if out[key_at..key_end] == [0x60, 0, 0] {
-                        replace_words(
-                            &mut out,
-                            &mut offsets,
-                            &mut fixups,
-                            key_at,
-                            3,
-                            &[0x50, index as u32 + 1],
-                        );
+                        replace_words(out, offsets, fixups, key_at, 3, &[0x50, index as u32 + 1]);
                     }
                 }
                 let mut type_words = Vec::new();
                 push_value(&mut type_words, 6, icon);
-                insert_expression_prefix(&mut out, &mut offsets, &mut fixups, args_at, &type_words);
+                insert_expression_prefix(out, offsets, fixups, args_at, &type_words);
                 out.extend([0xc8, count / 2, 0xcf]);
             }
             (None, Some(0x173), 1) if count == 1 => out.extend([0xd4, 1]),
@@ -693,39 +634,27 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
                 out.extend([0xc8, count / 2, 0xd3]); // image(named arguments)
             }
             (None, Some(0x172), 3) if count == 1 => {
-                let args_at = guarded_assignment_spans(&out, code, &offsets, &fixups, start, 0)
+                let args_at = guarded_assignment_spans(out, code, offsets, fixups, start, 0)
                     .map(|(first, _)| first)
-                    .or_else(|| constructor_argument_start(&out, 1))
+                    .or_else(|| constructor_argument_start(out, 1))
                     .ok_or_else(|| LowerError {
                         kind: LowerErrorKind::MalformedControlFlow,
                         offset: start,
                         reason: "file arglist has unknown stack effects".into(),
                     })?;
-                insert_expression_prefix(
-                    &mut out,
-                    &mut offsets,
-                    &mut fixups,
-                    args_at,
-                    &[0x60, 39, 0],
-                );
+                insert_expression_prefix(out, offsets, fixups, args_at, &[0x60, 39, 0]);
                 out.push(0xcf);
             }
             (None, Some(0x172), 1) if count == 1 => {
-                let args_at = guarded_assignment_spans(&out, code, &offsets, &fixups, start, 0)
+                let args_at = guarded_assignment_spans(out, code, offsets, fixups, start, 0)
                     .map(|(first, _)| first)
-                    .or_else(|| constructor_argument_start(&out, 1))
+                    .or_else(|| constructor_argument_start(out, 1))
                     .ok_or_else(|| LowerError {
                         kind: LowerErrorKind::MalformedControlFlow,
                         offset: start,
                         reason: "file constructor argument has unknown stack effects".into(),
                     })?;
-                insert_expression_prefix(
-                    &mut out,
-                    &mut offsets,
-                    &mut fixups,
-                    args_at,
-                    &[0x60, 39, 0],
-                );
+                insert_expression_prefix(out, offsets, fixups, args_at, &[0x60, 39, 0]);
                 out.extend([0x01, 1]);
             }
             (None, Some(0x12a), 1) if count <= 255 => out.extend([0x12a, count]),
@@ -783,13 +712,7 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
             (None, Some(0x10c | 0x10d), 1) if count == 3 => {
                 out.push(builtin.unwrap()); // winset/winget
                 if builtin == Some(0x10c) {
-                    finish_native_void_result(
-                        &mut reader,
-                        &mut out,
-                        &mut offsets,
-                        &fixups,
-                        world_flow,
-                    );
+                    finish_native_void_result(reader, out, offsets, fixups, world_flow);
                 }
             }
             (None, Some(0x76), 1) if count == 2 => out.push(0x158), // text2num radix
@@ -800,7 +723,7 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
             }
             (None, Some(0x24), 1) if count == 1 => {
                 out.push(0x24); // sleep(t) has no BYOND result
-                finish_native_void_result(&mut reader, &mut out, &mut offsets, &fixups, world_flow);
+                finish_native_void_result(reader, out, offsets, fixups, world_flow);
             }
             (None, Some(0x98), 1) if count == 1 => out.push(0x98), // shell(command)
             (None, Some(0x09), 1)
@@ -816,18 +739,18 @@ impl<R: SymbolResolver> CallLowering<'_, '_, R> {
             (None, Some(0x86), 1) if count == 3 => out.extend([0x11e, 0x36]),
             (None, Some(0x8b), 1) if (3..=4).contains(&count) => {
                 out.push(if count == 3 { 0x8b } else { 0x123 });
-                finish_native_void_result(&mut reader, &mut out, &mut offsets, &fixups, world_flow);
+                finish_native_void_result(reader, out, offsets, fixups, world_flow);
             }
             (None, Some(0x125), 1) if (3..=4).contains(&count) => {
                 if count == 3 {
                     out.extend([0x60, 0, 0]);
                 }
                 out.push(0x8d);
-                finish_native_void_result(&mut reader, &mut out, &mut offsets, &fixups, world_flow);
+                finish_native_void_result(reader, out, offsets, fixups, world_flow);
             }
             (None, Some(0x125), 1) if count == 5 => {
                 out.push(0x125); // walk_away(movable, target, distance, delay, speed)
-                finish_native_void_result(&mut reader, &mut out, &mut offsets, &fixups, world_flow);
+                finish_native_void_result(reader, out, offsets, fixups, world_flow);
             }
             (None, Some(0x186 | 0x188 | 0x189), 1) if count == 1 => {
                 out.push(builtin.unwrap());

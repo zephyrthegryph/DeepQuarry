@@ -16,12 +16,12 @@ impl<R: SymbolResolver> AssignmentLowering<'_, '_, R> {
     /// Returns true when the source loop must start at the next instruction.
     fn lower(&mut self) -> Result<bool, LowerError> {
         let code = self.code;
-        let mut reader = &mut *self.reader;
+        let reader = &mut *self.reader;
         let ids = self.ids;
         let start = self.start;
-        let mut out = &mut *self.out;
-        let mut offsets = &mut *self.offsets;
-        let mut fixups = &mut *self.fixups;
+        let out = &mut *self.out;
+        let offsets = &mut *self.offsets;
+        let fixups = &mut *self.fixups;
         let state = &mut *self.state;
         let safe = &mut *self.safe;
         let is_initializer = self.is_initializer;
@@ -32,9 +32,9 @@ impl<R: SymbolResolver> AssignmentLowering<'_, '_, R> {
                 reader.byte()?;
                 out.push(0x7c);
             } else {
-                let target = reference(&mut reader, ids)?;
+                let target = reference(reader, ids)?;
                 if let Variable::Field(field) = target {
-                    let guarded_owner = crate::bytecode::decode(&out)
+                    let guarded_owner = crate::bytecode::decode(out)
                         .ok()
                         .and_then(|items| {
                             items
@@ -59,7 +59,7 @@ impl<R: SymbolResolver> AssignmentLowering<'_, '_, R> {
                                         (*target as usize) >= *at + 1 + owner.encode().len()
                                             && (*target as usize) <= out.len()
                                     })
-                            }) && crate::bytecode::decode(&out)
+                            }) && crate::bytecode::decode(out)
                                 .ok()
                                 .and_then(|items| {
                                     items
@@ -79,7 +79,7 @@ impl<R: SymbolResolver> AssignmentLowering<'_, '_, R> {
                             .encode(),
                         );
                         let length = 1 + owner.encode().len();
-                        replace_words(&mut out, &mut offsets, &mut fixups, at, length, &[]);
+                        replace_words(out, offsets, fixups, at, length, &[]);
                         out.extend(replacement);
                     } else {
                         out.extend([0x34, 0xffd8, 0x34, field]);
@@ -100,7 +100,7 @@ impl<R: SymbolResolver> AssignmentLowering<'_, '_, R> {
                 if reader.code.get(branch.source) != Some(&0x2f) || branch.target > start as u32 {
                     return None;
                 }
-                let items = crate::bytecode::decode(&out).ok()?;
+                let items = crate::bytecode::decode(out).ok()?;
                 let jump_at = items.iter().rposition(|item| item.opcode == 0xb2)?;
                 let before = items.get(jump_at.checked_sub(5)?..jump_at)?;
                 if before.iter().map(|item| item.opcode).collect::<Vec<_>>()
@@ -144,14 +144,7 @@ impl<R: SymbolResolver> AssignmentLowering<'_, '_, R> {
                         fixup.at = moved(fixup.at);
                     }
                 }
-                replace_words(
-                    &mut out,
-                    &mut offsets,
-                    &mut fixups,
-                    list_at,
-                    end - list_at,
-                    &replacement,
-                );
+                replace_words(out, offsets, fixups, list_at, end - list_at, &replacement);
                 if branch_at_assignment {
                     let synthetic_target = u32::MAX - start as u32;
                     offsets.insert(synthetic_target, (list_at + value_len) as u32);
@@ -162,7 +155,7 @@ impl<R: SymbolResolver> AssignmentLowering<'_, '_, R> {
                 return Ok(true);
             }
             if let Some((list_at, value_at)) =
-                guarded_indexed_spans(&out, code, &offsets, &fixups, start)
+                guarded_indexed_spans(out, code, offsets, fixups, start)
             {
                 // Native evaluates the entire conditional RHS before
                 // the destination list/key, including enclosing calls.
@@ -188,14 +181,7 @@ impl<R: SymbolResolver> AssignmentLowering<'_, '_, R> {
                         fixup.at = moved(fixup.at);
                     }
                 }
-                replace_words(
-                    &mut out,
-                    &mut offsets,
-                    &mut fixups,
-                    list_at,
-                    end - list_at,
-                    &replacement,
-                );
+                replace_words(out, offsets, fixups, list_at, end - list_at, &replacement);
                 let synthetic_target = u32::MAX - start as u32;
                 // Safe RHS exits already carry per-edge cache-unwind
                 // adjustments. Their shared join starts before trailing
@@ -292,7 +278,7 @@ impl<R: SymbolResolver> AssignmentLowering<'_, '_, R> {
                     .map(|item| branch_at + item.offset + 1)
                     .collect::<Vec<_>>();
                 for at in redundant_cache.into_iter().rev() {
-                    replace_words(&mut out, &mut offsets, &mut fixups, at, 2, &[]);
+                    replace_words(out, offsets, fixups, at, 2, &[]);
                 }
                 let tail_items = crate::bytecode::decode(&out[branch_at..]).ok();
                 let cache_unwind = tail_items.as_ref().map_or(0, |items| {
@@ -339,14 +325,7 @@ impl<R: SymbolResolver> AssignmentLowering<'_, '_, R> {
                         fixup.at = moved(fixup.at);
                     }
                 }
-                replace_words(
-                    &mut out,
-                    &mut offsets,
-                    &mut fixups,
-                    list_at,
-                    end - list_at,
-                    &replacement,
-                );
+                replace_words(out, offsets, fixups, list_at, end - list_at, &replacement);
                 let synthetic_target = u32::MAX - start as u32;
                 offsets.insert(
                     synthetic_target,
@@ -369,7 +348,7 @@ impl<R: SymbolResolver> AssignmentLowering<'_, '_, R> {
             let mut spans = Vec::new();
             for _ in 0..3 {
                 let Some(at) = constructor_argument_start(&out[..end], 1).or_else(|| {
-                    guarded_assignment_spans(&out[..end], code, &offsets, &fixups, start, 0)
+                    guarded_assignment_spans(&out[..end], code, offsets, fixups, start, 0)
                         .map(|(first, _)| first)
                 }) else {
                     break;
@@ -383,7 +362,7 @@ impl<R: SymbolResolver> AssignmentLowering<'_, '_, R> {
                 // stack for the first indexed write. DreamMaker stores
                 // it, then fetches the list after computing the value.
                 let key_at = spans[0].0;
-                if let Ok(instructions) = crate::bytecode::decode(&out) {
+                if let Ok(instructions) = crate::bytecode::decode(out) {
                     if let Some(initializer) =
                         instructions.iter().rev().find(|item| item.offset < key_at)
                     {
@@ -397,14 +376,7 @@ impl<R: SymbolResolver> AssignmentLowering<'_, '_, R> {
                             replacement.extend_from_slice(&out[spans[0].0..spans[0].1]);
                             replacement.push(0x7c);
                             let old_len = out.len() - key_at;
-                            replace_words(
-                                &mut out,
-                                &mut offsets,
-                                &mut fixups,
-                                key_at,
-                                old_len,
-                                &replacement,
-                            );
+                            replace_words(out, offsets, fixups, key_at, old_len, &replacement);
                             out[initializer.offset] = 0x34;
                             return Ok(true);
                         }
@@ -439,9 +411,9 @@ impl<R: SymbolResolver> AssignmentLowering<'_, '_, R> {
                                             replacement.push(0x7c);
                                             let old_len = out.len() - list_at;
                                             replace_words(
-                                                &mut out,
-                                                &mut offsets,
-                                                &mut fixups,
+                                                out,
+                                                offsets,
+                                                fixups,
                                                 list_at,
                                                 old_len,
                                                 &replacement,
@@ -490,18 +462,11 @@ impl<R: SymbolResolver> AssignmentLowering<'_, '_, R> {
             replacement.push(0x7c); // ListSet
             let at = spans[0].0;
             let old_len = out.len() - at;
-            replace_words(
-                &mut out,
-                &mut offsets,
-                &mut fixups,
-                at,
-                old_len,
-                &replacement,
-            );
+            replace_words(out, offsets, fixups, at, old_len, &replacement);
             return Ok(true);
         }
         out.push(0x34);
-        let target = reference(&mut reader, ids)?;
+        let target = reference(reader, ids)?;
         if matches!(target, Variable::Field(_)) {
             return Err(LowerError {
                 kind: LowerErrorKind::MalformedControlFlow,
@@ -522,7 +487,7 @@ impl<R: SymbolResolver> AssignmentLowering<'_, '_, R> {
             target
         };
         emit_tracked_reference(
-            &mut out,
+            out,
             &target,
             &mut state.cached_world_owner,
             &mut state.pending_world_ref,

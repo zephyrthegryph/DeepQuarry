@@ -136,6 +136,8 @@ impl WorkerPool {
         Ok(pool)
     }
 
+    // Return the rejected job intact for caller recovery without a new box allocation.
+    #[allow(clippy::result_large_err)]
     pub fn submit(&mut self, job: Job) -> Result<(), (Job, String)> {
         let worktree = match &job.request {
             Request::Ping => PathBuf::new(),

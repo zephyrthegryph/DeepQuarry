@@ -1189,6 +1189,8 @@ impl Coordinator {
             .join(dm_compiler::incremental::digest(&family)))
     }
 
+    // Keep the frozen compiler entry-point argument contract.
+    #[allow(clippy::too_many_arguments)]
     fn prepare_native_build(
         &mut self,
         artifact: &ArtifactKey,
@@ -1245,6 +1247,8 @@ impl Coordinator {
                     frontend.resident_bytes()
                 );
             }
+            // Preserve baseline enum layout rather than introducing new heap allocations.
+            #[allow(clippy::large_enum_variant)]
             enum Candidate {
                 Live(RetainedWorld),
                 Disk(PathBuf),
@@ -2222,6 +2226,8 @@ impl Coordinator {
                 Err(error) => return failed_project(error.to_string()),
             }
         };
+        // End the source-snapshot closure borrow before moving frontend state.
+        #[allow(clippy::drop_non_drop)]
         drop(source_snapshot);
         self.outline_cache = Some(frontend);
         // DiscoveryCache bounds original-source and expansion data to 128 MiB.

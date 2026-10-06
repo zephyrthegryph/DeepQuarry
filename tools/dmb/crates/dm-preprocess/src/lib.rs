@@ -369,8 +369,8 @@ impl CachedUnit {
                 })
                 .sum::<usize>();
         self.dependencies
-            .iter()
-            .map(|(path, _)| path.as_os_str().len() + 96)
+            .keys()
+            .map(|path| path.as_os_str().len() + 96)
             .sum::<usize>()
             + self
                 .map_includes
@@ -979,6 +979,8 @@ impl<P: SourceProvider> Context<'_, P> {
         });
     }
 
+    // Preserve original UTF-8 boundary checks before hashing frozen source slices.
+    #[allow(clippy::sliced_string_as_bytes)]
     fn visit(&mut self, path: PathBuf) {
         let path = normalize(path);
         if self.stack.contains(&path) {
@@ -1886,6 +1888,8 @@ fn expand_mode(
     )
 }
 
+// Preserve original UTF-8 boundary checks before hashing frozen source slices.
+#[allow(clippy::sliced_string_as_bytes)]
 fn expand_mode_disabled<'a>(
     source: &str,
     macros: &'a BTreeMap<String, Macro>,
@@ -2502,6 +2506,8 @@ impl ConditionParser<'_> {
         }
     }
 
+    // Preserve frozen precedence parser control flow and binding-power exit.
+    #[allow(clippy::while_let_loop)]
     fn parse(&mut self, min_bp: u8) -> Result<i64, String> {
         let mut lhs = if self.take("!") {
             (self.parse(21)? == 0) as i64

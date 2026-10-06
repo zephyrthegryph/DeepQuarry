@@ -9,6 +9,19 @@ fn root() -> std::path::PathBuf {
     std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("fixtures/translation/client_header_probe")
 }
+#[path = "support/reference_inputs.rs"]
+mod fixture_inputs;
+fn reference_inputs(name: &str) -> fixture_inputs::ReferenceInputs {
+    let candidate = root().join(format!("{name}.native.rsc.bin"));
+    // Subtype DMBs refer to the same example.dms as the script_file receipt.
+    let archive = if candidate.exists() {
+        candidate
+    } else {
+        root().join("script_file.native.rsc.bin")
+    };
+    let entries = rsc::read_all(&mut std::fs::read(archive).unwrap().as_slice()).unwrap();
+    fixture_inputs::prepare(&root(), &entries, |_| true)
+}
 fn pair(name: &str) -> (OpenDreamProgram, Dmb) {
     let root = root();
     (
@@ -67,7 +80,8 @@ fn native_inline_file_and_include_scripts_match_across_source_transitions() {
     for names in [cases.to_vec(), cases.iter().rev().copied().collect()] {
         for name in names {
             let (input, native) = pair(name);
-            let output = emit_with_baseline(&input, Some(&baseline), &template, &root()).unwrap();
+            let inputs = reference_inputs(name);
+            let output = emit_with_baseline(&input, Some(&baseline), &template, &inputs.0).unwrap();
             assert_eq!(script(&output.dmb), script(&native), "script text {name}");
             assert_eq!(files(&output.dmb), files(&native), "script files {name}");
             assert_eq!(output.dmb.world.unknown_byte, 0);
@@ -557,7 +571,8 @@ fn native_client_subtype_settings_follow_native_class_postorder() {
         "subtype_script_file",
     ] {
         let (input, native) = pair(name);
-        let output = emit_with_baseline(&input, Some(&baseline), &template, &root()).unwrap();
+        let inputs = reference_inputs(name);
+        let output = emit_with_baseline(&input, Some(&baseline), &template, &inputs.0).unwrap();
         assert_eq!(
             output.dmb.header.flags & 0x3bf4_ffef,
             native.header.flags & 0x3bf4_ffef,
@@ -596,7 +611,8 @@ fn native_client_subtype_settings_follow_native_class_postorder() {
         let (baseline, template) = pair(name);
         for target in ["preload0", "preload1", "preload2", "subtype_sibling_b"] {
             let (input, native) = pair(target);
-            let output = emit_with_baseline(&input, Some(&baseline), &template, &root()).unwrap();
+            let inputs = reference_inputs(name);
+            let output = emit_with_baseline(&input, Some(&baseline), &template, &inputs.0).unwrap();
             assert_eq!(
                 output.dmb.header.flags & 0x1800,
                 native.header.flags & 0x1800,

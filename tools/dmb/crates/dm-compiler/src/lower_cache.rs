@@ -84,7 +84,8 @@ pub fn project_cache_root(project: &Path) -> PathBuf {
         .and_then(|r| String::from_utf8(r.stdout).ok())
         .map(|r| r.trim().to_owned())
         .filter(|r| !r.is_empty());
-    let root = match common {
+
+    match common {
         Some(common) => {
             let path = PathBuf::from(common);
             let path = if path.is_absolute() {
@@ -97,8 +98,7 @@ pub fn project_cache_root(project: &Path) -> PathBuf {
                 .join("dm-compiled-cache")
         }
         None => directory.join(".dm-cache"),
-    };
-    root
+    }
 }
 
 pub fn default_cache_root(project: &Path) -> PathBuf {
@@ -218,6 +218,8 @@ pub fn shared_binding_fingerprint<T: serde::Serialize>(bindings: &T) -> String {
 
 /// Prepare member dependencies once rather than serializing the project index
 /// for every procedure. Adding an unrelated member preserves existing keys.
+// Keep the frozen domain tuple and public return contract.
+#[allow(clippy::type_complexity)]
 pub fn prepare_member_type_fingerprints(bindings: &mut SharedLowerBindings) {
     let ancestry = shared_binding_fingerprint(&bindings.parent_types);
     let mut members: BTreeMap<

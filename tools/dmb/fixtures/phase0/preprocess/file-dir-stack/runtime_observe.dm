@@ -1,0 +1,5 @@
+/world/New()
+    ..()
+    phase0_preprocess_observe("during_text", copytext(file2text(during), 1, 6), "early")
+    phase0_preprocess_observe("after_text", copytext(file2text(after), 1, 6), "early")
+    phase0_preprocess_finish()

@@ -81,7 +81,7 @@ fn capture_handle(file: &fs::File, require_file: bool) -> Option<FileStamp> {
         ]
     };
     #[cfg(windows)]
-    let mut identity = windows_identity(&file)?;
+    let mut identity = windows_identity(file)?;
     #[cfg(windows)]
     if require_file {
         identity.push(windows_file_usn(file)?);

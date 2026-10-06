@@ -1,0 +1,140 @@
+{
+  "case": "resources",
+  "status": "baseline_divergence",
+  "reference": [
+    {
+      "label": "global_alias",
+      "value": "alias_a.txt"
+    },
+    {
+      "label": "field_alias",
+      "value": "alias_a.txt"
+    },
+    {
+      "label": "proc_alias",
+      "value": "alias_a.txt"
+    },
+    {
+      "label": "alias_equal",
+      "value": 1
+    }
+  ],
+  "native": [
+    {
+      "label": "global_alias",
+      "value": "alias_z.txt"
+    },
+    {
+      "label": "field_alias",
+      "value": "alias_z.txt"
+    },
+    {
+      "label": "proc_alias",
+      "value": "alias_z.txt"
+    },
+    {
+      "label": "alias_equal",
+      "value": 1
+    }
+  ],
+  "differences": [
+    {
+      "label": "field_alias",
+      "reference": "alias_a.txt",
+      "native": "alias_z.txt",
+      "classification": "resource_alias_identity"
+    },
+    {
+      "label": "global_alias",
+      "reference": "alias_a.txt",
+      "native": "alias_z.txt",
+      "classification": "resource_alias_identity"
+    },
+    {
+      "label": "proc_alias",
+      "reference": "alias_a.txt",
+      "native": "alias_z.txt",
+      "classification": "resource_alias_identity"
+    }
+  ],
+  "provenance": {
+    "results": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\results.json",
+    "source_hashes": {
+      "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\source\\resources.dme": "745fde03f320a0ebdee6d573ff2032769ca91bba1f0f37e832480e046466459e",
+      "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\source\\common.dm": "426285dfb48222978fca2550be2cc6dd438154b65d98ad1856d544a2a9426c08",
+      "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\source\\resources.dm": "c15a7729d09054a3ff2948d8a9f61490ed98cf23801851995efac4d16cbcf247",
+      "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\source\\alias_a.txt": "8860670afe59ed20edbd4c709bd817fd0803b7536f8fb5dff51612fb4d7a3b1d",
+      "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\source\\alias_m.txt": "8860670afe59ed20edbd4c709bd817fd0803b7536f8fb5dff51612fb4d7a3b1d",
+      "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\source\\alias_z.txt": "8860670afe59ed20edbd4c709bd817fd0803b7536f8fb5dff51612fb4d7a3b1d"
+    },
+    "observations": {
+      "byond": {
+        "path": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\byond-observations.json",
+        "sha256": "a79727687b1506128832a7ea3c2c5b8a4b3b40137d7298fc3a9fab986f2af0e0"
+      },
+      "native": {
+        "path": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\native-observations.json",
+        "sha256": "ed8a9fd5d33c74077bb2798c5e9e3be19e37e51cd72a5893ca2da7046b273c88"
+      }
+    },
+    "compiler_hashes": {
+      "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+      "D:\\dmb-native-v2-phase0\\frozen\\compiler-integration-fiftieth.exe": "87eaa5f265756588e001a29931528d40091a72d8f542abdba940ee6aacb19040"
+    },
+    "native_builtins": {
+      "path": "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+    },
+    "commands_and_outcomes": {
+      "byond_compile": {
+        "exit_code": 0,
+        "seconds": 0.3421840999944834,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\source\\resources.dme"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\byond-compile.log"
+      },
+      "byond_runtime": {
+        "exit_code": 0,
+        "seconds": 1.2171300000045449,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\source\\resources.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\byond-runtime.log"
+      },
+      "native_compile": {
+        "exit_code": 0,
+        "seconds": 4.074310600000899,
+        "timed_out": false,
+        "command": [
+          "D:\\dmb-native-v2-phase0\\frozen\\compiler-integration-fiftieth.exe",
+          "build-project",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\source\\resources.dme",
+          "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\native"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\native-compile.log"
+      },
+      "native_runtime": {
+        "exit_code": 0,
+        "seconds": 1.26657370000612,
+        "timed_out": false,
+        "command": [
+          "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+          "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\native-slot\\world.dmb",
+          "0",
+          "-trusted",
+          "-close"
+        ],
+        "log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-resources\\native-runtime.log"
+      }
+    }
+  }
+}

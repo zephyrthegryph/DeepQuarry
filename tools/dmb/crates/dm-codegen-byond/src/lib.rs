@@ -218,6 +218,8 @@ impl Ledger {
     }
     /// Assign IDs in caller-provided serialized table order, never interner or
     /// hash-map iteration order. A separate ordered list is required per table.
+    // Preserve checked ID conversion and original insertion order.
+    #[allow(clippy::explicit_counter_loop)]
     pub fn assign(
         &mut self,
         table: Table,

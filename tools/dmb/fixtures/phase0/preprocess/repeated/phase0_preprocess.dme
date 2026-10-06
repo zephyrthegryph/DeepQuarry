@@ -1,0 +1,4 @@
+#define VALUE 1
+#include "body.dm"
+#define VALUE 2
+#include "body.dm"

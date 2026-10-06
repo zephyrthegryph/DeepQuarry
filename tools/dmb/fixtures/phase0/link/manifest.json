@@ -1,0 +1,438 @@
+{
+  "version": 1,
+  "baseline_commit": "ac1af55d1a",
+  "dreammaker_version_evidence": "516.1687",
+  "output": "phase0-link.json",
+  "log_prefix": "PHASE0 ",
+  "status": "paired preserved Build50 vs DreamMaker516.1687: order, initialization, resource alias and procedure metadata divergences; lists match",
+  "cases": [
+    {
+      "manifest": "observable.dme",
+      "labels": [
+        "types",
+        "vars",
+        "verbs",
+        "override_result",
+        "proc_reference",
+        "verb_reference"
+      ],
+      "expected_values": {
+        "types": [
+          "/obj/link_order",
+          "/obj/link_order/base",
+          "/obj/link_order/a_child",
+          "/obj/link_order/z_child"
+        ],
+        "vars": [
+          "z_value",
+          "a_value",
+          "reopened_value",
+          "animate_movement",
+          "loc",
+          "x",
+          "y",
+          "z",
+          "screen_loc",
+          "pixel_step_size",
+          "bounds",
+          "locs",
+          "step_x",
+          "step_y",
+          "step_size",
+          "bound_x",
+          "bound_y",
+          "bound_width",
+          "bound_height",
+          "glide_size",
+          "vis_contents",
+          "vis_locs",
+          "vis_flags",
+          "particles",
+          "pixloc",
+          "type",
+          "parent_type",
+          "tag",
+          "name",
+          "desc",
+          "suffix",
+          "text",
+          "icon",
+          "icon_state",
+          "overlays",
+          "underlays",
+          "dir",
+          "visibility",
+          "luminosity",
+          "opacity",
+          "density",
+          "layer",
+          "gender",
+          "mouse_over_pointer",
+          "mouse_drag_pointer",
+          "mouse_drop_pointer",
+          "mouse_drop_zone",
+          "verbs",
+          "vars",
+          "contents",
+          "invisibility",
+          "infra_luminosity",
+          "pixel_x",
+          "pixel_y",
+          "mouse_opacity",
+          "pixel_z",
+          "override",
+          "maptext",
+          "maptext_width",
+          "maptext_height",
+          "transform",
+          "alpha",
+          "color",
+          "blend_mode",
+          "appearance",
+          "maptext_x",
+          "maptext_y",
+          "plane",
+          "appearance_flags",
+          "pixel_w",
+          "filters",
+          "render_source",
+          "render_target",
+          "icon_w",
+          "icon_z"
+        ],
+        "verbs": [
+          "/obj/link_order/base/verb/a_verb",
+          "/obj/link_order/base/verb/z_verb"
+        ],
+        "override_result": "child|base",
+        "proc_reference": "/obj/link_order/base/proc/foo",
+        "verb_reference": "/obj/link_order/base/verb/z_verb"
+      },
+      "order_expectations": "Exact DreamMaker observation for these captured inputs only; native parity pending",
+      "reference": {
+        "compiler": "BYOND516.1687",
+        "compile_exit": 0,
+        "runtime_exit": 0,
+        "observations": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-observable\\byond-observations.json",
+        "observations_sha256": "2c6ee016ac0af52fceb59846c81ed2e17201ad1757bb89473e9d38bce14528d9",
+        "compile_log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-observable\\byond-compile.log",
+        "runtime_log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-observable\\byond-runtime.log",
+        "source_hashes": {
+          "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-observable\\source\\observable.dme": "d400f9b88b6f26257893d53a102ca469c026cd730d2dfab7e23e4a41ad09d2a5",
+          "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-observable\\source\\common.dm": "426285dfb48222978fca2550be2cc6dd438154b65d98ad1856d544a2a9426c08",
+          "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-observable\\source\\observable.dm": "8b21221ebaae0362a71f4cd1fc09823d2669b9f042b2e5301da5578114cf4ff6"
+        }
+      },
+      "paired_receipt": "observable.paired.json",
+      "paired_status": "baseline_divergence",
+      "divergent_labels": [
+        "types",
+        "verbs"
+      ],
+      "native_expected_values": {
+        "types": [
+          "/obj/link_order",
+          "/obj/link_order/base",
+          "/obj/link_order/z_child",
+          "/obj/link_order/a_child"
+        ],
+        "vars": [
+          "z_value",
+          "a_value",
+          "reopened_value",
+          "animate_movement",
+          "loc",
+          "x",
+          "y",
+          "z",
+          "screen_loc",
+          "pixel_step_size",
+          "bounds",
+          "locs",
+          "step_x",
+          "step_y",
+          "step_size",
+          "bound_x",
+          "bound_y",
+          "bound_width",
+          "bound_height",
+          "glide_size",
+          "vis_contents",
+          "vis_locs",
+          "vis_flags",
+          "particles",
+          "pixloc",
+          "type",
+          "parent_type",
+          "tag",
+          "name",
+          "desc",
+          "suffix",
+          "text",
+          "icon",
+          "icon_state",
+          "overlays",
+          "underlays",
+          "dir",
+          "visibility",
+          "luminosity",
+          "opacity",
+          "density",
+          "layer",
+          "gender",
+          "mouse_over_pointer",
+          "mouse_drag_pointer",
+          "mouse_drop_pointer",
+          "mouse_drop_zone",
+          "verbs",
+          "vars",
+          "contents",
+          "invisibility",
+          "infra_luminosity",
+          "pixel_x",
+          "pixel_y",
+          "mouse_opacity",
+          "pixel_z",
+          "override",
+          "maptext",
+          "maptext_width",
+          "maptext_height",
+          "transform",
+          "alpha",
+          "color",
+          "blend_mode",
+          "appearance",
+          "maptext_x",
+          "maptext_y",
+          "plane",
+          "appearance_flags",
+          "pixel_w",
+          "filters",
+          "render_source",
+          "render_target",
+          "icon_w",
+          "icon_z"
+        ],
+        "verbs": [
+          "/obj/link_order/base/verb/z_verb",
+          "/obj/link_order/base/verb/a_verb"
+        ],
+        "override_result": "child|base",
+        "proc_reference": "/obj/link_order/base/proc/foo",
+        "verb_reference": "/obj/link_order/base/verb/z_verb"
+      },
+      "decoded_metadata_divergences": [
+        {
+          "classification": "procedure_metadata_divergence",
+          "fixture_setting": "set src in world",
+          "proc": "/obj/link_order/base/z_verb",
+          "field": "proc.source",
+          "expected_raw": "Other { kind: 16, parameter: 127 }",
+          "actual_raw": "Default",
+          "comparison_log": "D:\\dmb-native-v2-phase0\\contracts-paired-run1\\link-observable\\opcode-diff.log",
+          "comparison_log_sha256": "c822c9a15a924913a74a9a734a7abfc7a3a81afc1e79f3ba09c2e90bd0e87ad7",
+          "scope": "Comparator reports one discrepancy for the compared /obj/link_order prefix; no broader metadata parity claim."
+        }
+      ]
+    },
+    {
+      "manifest": "lists.dme",
+      "labels": [
+        "sequence",
+        "associative_keys",
+        "associative_values",
+        "reinserted_keys"
+      ],
+      "expected_values": {
+        "sequence": [
+          "z",
+          "a",
+          "z",
+          "m"
+        ],
+        "associative_keys": [
+          "z",
+          "a",
+          "m"
+        ],
+        "associative_values": [
+          1,
+          4,
+          3
+        ],
+        "reinserted_keys": [
+          "z",
+          "m",
+          "a"
+        ]
+      },
+      "order_expectations": "Exact DreamMaker observation for these captured inputs only; native parity pending",
+      "reference": {
+        "compiler": "BYOND516.1687",
+        "compile_exit": 0,
+        "runtime_exit": 0,
+        "observations": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-lists\\byond-observations.json",
+        "observations_sha256": "7e308aae522ea7c1780f4cffe459a575c8099af53bdec0ccb99d74966bea6dc6",
+        "compile_log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-lists\\byond-compile.log",
+        "runtime_log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-lists\\byond-runtime.log",
+        "source_hashes": {
+          "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-lists\\source\\lists.dme": "b7ae303439e5933aca5cfdbdbe464481a3ede0e13bf6400e5e3ae752bfa30e66",
+          "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-lists\\source\\common.dm": "426285dfb48222978fca2550be2cc6dd438154b65d98ad1856d544a2a9426c08",
+          "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-lists\\source\\lists.dm": "30a123258b0e44be8a021019a37e694c3d01e4e12d5702a229fd0b9a9c59a39e"
+        }
+      },
+      "paired_receipt": "lists.paired.json",
+      "paired_status": "observed_match",
+      "divergent_labels": [],
+      "native_expected_values": {
+        "sequence": [
+          "z",
+          "a",
+          "z",
+          "m"
+        ],
+        "associative_keys": [
+          "z",
+          "a",
+          "m"
+        ],
+        "associative_values": [
+          1,
+          4,
+          3
+        ],
+        "reinserted_keys": [
+          "z",
+          "m",
+          "a"
+        ]
+      }
+    },
+    {
+      "manifest": "initialization.dme",
+      "labels": [
+        "startup",
+        "base_constructed",
+        "local_static_twice",
+        "child_constructed"
+      ],
+      "expected_values": {
+        "startup": "global_z|static_z|local_static|global_a|",
+        "base_constructed": "global_z|static_z|local_static|global_a|instance_z|base_New|",
+        "local_static_twice": "global_z|static_z|local_static|global_a|instance_z|base_New|",
+        "child_constructed": "global_z|static_z|local_static|global_a|instance_z|base_New|instance_z|child_value|base_New|child_New|"
+      },
+      "order_expectations": "Exact DreamMaker observation for these captured inputs only; native parity pending",
+      "reference": {
+        "compiler": "BYOND516.1687",
+        "compile_exit": 0,
+        "runtime_exit": 0,
+        "observations": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-initialization\\byond-observations.json",
+        "observations_sha256": "72c1d28bfd1b3dbf36133828ec9ef50f223468f8bd8c1c0f3d227ba70fe06c10",
+        "compile_log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-initialization\\byond-compile.log",
+        "runtime_log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-initialization\\byond-runtime.log",
+        "source_hashes": {
+          "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-initialization\\source\\initialization.dme": "13aac7099a297d3f6eca4f3bf7c77f1c3e09b3ede1c76293e45d61659b13b4ab",
+          "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-initialization\\source\\common.dm": "426285dfb48222978fca2550be2cc6dd438154b65d98ad1856d544a2a9426c08",
+          "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-initialization\\source\\initialization.dm": "93543a335502dc4cf89e7aff94092baf98ef7b1cb55ef70b99d3b3641a60a6f3"
+        }
+      },
+      "paired_receipt": "initialization.paired.json",
+      "paired_status": "baseline_divergence",
+      "divergent_labels": [
+        "base_constructed",
+        "child_constructed",
+        "local_static_twice",
+        "startup"
+      ],
+      "native_expected_values": {
+        "startup": "static_z|global_z|global_a|local_static|",
+        "base_constructed": "static_z|global_z|global_a|local_static|instance_z|base_New|",
+        "local_static_twice": "static_z|global_z|global_a|local_static|instance_z|base_New|",
+        "child_constructed": "static_z|global_z|global_a|local_static|instance_z|base_New|instance_z|child_value|base_New|child_New|"
+      }
+    },
+    {
+      "manifest": "resources.dme",
+      "labels": [
+        "global_alias",
+        "field_alias",
+        "proc_alias",
+        "alias_equal"
+      ],
+      "expected_values": {
+        "global_alias": "alias_a.txt",
+        "field_alias": "alias_a.txt",
+        "proc_alias": "alias_a.txt",
+        "alias_equal": 1
+      },
+      "order_expectations": "Exact DreamMaker observation for these captured inputs only; native parity pending",
+      "reference": {
+        "compiler": "BYOND516.1687",
+        "compile_exit": 0,
+        "runtime_exit": 0,
+        "observations": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-resources\\byond-observations.json",
+        "observations_sha256": "a79727687b1506128832a7ea3c2c5b8a4b3b40137d7298fc3a9fab986f2af0e0",
+        "compile_log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-resources\\byond-compile.log",
+        "runtime_log": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-resources\\byond-runtime.log",
+        "source_hashes": {
+          "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-resources\\source\\resources.dme": "745fde03f320a0ebdee6d573ff2032769ca91bba1f0f37e832480e046466459e",
+          "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-resources\\source\\common.dm": "426285dfb48222978fca2550be2cc6dd438154b65d98ad1856d544a2a9426c08",
+          "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-resources\\source\\resources.dm": "c15a7729d09054a3ff2948d8a9f61490ed98cf23801851995efac4d16cbcf247",
+          "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-resources\\source\\alias_a.txt": "8860670afe59ed20edbd4c709bd817fd0803b7536f8fb5dff51612fb4d7a3b1d",
+          "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-resources\\source\\alias_m.txt": "8860670afe59ed20edbd4c709bd817fd0803b7536f8fb5dff51612fb4d7a3b1d",
+          "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\link-resources\\source\\alias_z.txt": "8860670afe59ed20edbd4c709bd817fd0803b7536f8fb5dff51612fb4d7a3b1d"
+        }
+      },
+      "paired_receipt": "resources.paired.json",
+      "paired_status": "baseline_divergence",
+      "divergent_labels": [
+        "field_alias",
+        "global_alias",
+        "proc_alias"
+      ],
+      "native_expected_values": {
+        "global_alias": "alias_z.txt",
+        "field_alias": "alias_z.txt",
+        "proc_alias": "alias_z.txt",
+        "alias_equal": 1
+      }
+    },
+    {
+      "manifest": "map_startup.dme",
+      "labels": [
+        "creation_before_world_new",
+        "placed_world_iteration"
+      ],
+      "status": "source probe; compilation, decoded metadata and paired runtime receipts pending",
+      "expected_values": null,
+      "reference_receipt": null,
+      "paired_receipt": null
+    },
+    {
+      "manifest": "metadata_modes.dme",
+      "labels": [
+        "metadata_verbs",
+        "metadata_source_paths"
+      ],
+      "status": "source probe; compilation, decoded metadata and paired runtime receipts pending",
+      "expected_values": null,
+      "reference_receipt": null,
+      "paired_receipt": null
+    },
+    {
+      "manifest": "reopens_parent.dme",
+      "labels": [
+        "reopen_types",
+        "reopen_verbs",
+        "reopen_vars",
+        "reopen_override"
+      ],
+      "status": "source probe; compilation, decoded metadata and paired runtime receipts pending",
+      "expected_values": null,
+      "reference_receipt": null,
+      "paired_receipt": null
+    }
+  ],
+  "reference_results": "D:\\dmb-native-v2-phase0\\contracts-reference-run2\\results.json"
+}

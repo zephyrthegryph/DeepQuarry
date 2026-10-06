@@ -1,0 +1,2 @@
+/world/proc/late()
+    return VALUE

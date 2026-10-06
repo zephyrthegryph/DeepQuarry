@@ -21,9 +21,9 @@ impl<R: SymbolResolver> SafeGuardLowering<'_, '_, R> {
         let reader = &mut *self.reader;
         let ids = self.ids;
         let start = self.start;
-        let mut out = &mut *self.out;
-        let mut offsets = &mut *self.offsets;
-        let mut fixups = &mut *self.fixups;
+        let out = &mut *self.out;
+        let offsets = &mut *self.offsets;
+        let fixups = &mut *self.fixups;
         let state = &mut *self.state;
         let safe = &mut *self.safe;
         let pending_receivers = &mut *self.pending_receivers;
@@ -64,7 +64,7 @@ impl<R: SymbolResolver> SafeGuardLowering<'_, '_, R> {
             if let std::collections::hash_map::Entry::Vacant(e) =
                 guarded_assign_into.entry(terminal)
             {
-                let base_at = constructor_argument_start(&out, 1).ok_or_else(|| LowerError {
+                let base_at = constructor_argument_start(out, 1).ok_or_else(|| LowerError {
                     kind: LowerErrorKind::MalformedControlFlow,
                     offset: start,
                     reason: "guarded AssignInto base has unknown stack effects".into(),
@@ -107,7 +107,7 @@ impl<R: SymbolResolver> SafeGuardLowering<'_, '_, R> {
                 if prior_target == target && end_byte == start {
                     out[fixups[outer_index].at - 1] = 0x13e;
                     if out.get(field_at.wrapping_sub(1)) != Some(&0x142) {
-                        replace_words(&mut out, &mut offsets, &mut fixups, field_at, 0, &[0x142]);
+                        replace_words(out, offsets, fixups, field_at, 0, &[0x142]);
                     }
                     safe.safe_chain_fixups.push(outer_index);
                     for index in &safe.safe_chain_fixups {
@@ -187,7 +187,7 @@ impl<R: SymbolResolver> SafeGuardLowering<'_, '_, R> {
             });
             out.extend([0x142, 0x33, 0xffd8]);
             offsets.insert(string_at as u32, out.len() as u32);
-            push_value(&mut out, 6, key);
+            push_value(out, 6, key);
             offsets.insert(index_at as u32, out.len() as u32);
             out.extend([0x7b, 0x143]);
             state.last_reference_push = None;
@@ -344,7 +344,7 @@ impl<R: SymbolResolver> SafeGuardLowering<'_, '_, R> {
             {
                 if end_byte == start && prior_target == target {
                     out[fixups[outer_index].at - 1] = if discard { 0x13e } else { 0x13d };
-                    replace_words(&mut out, &mut offsets, &mut fixups, field_at, 0, &[0x142]);
+                    replace_words(out, offsets, fixups, field_at, 0, &[0x142]);
                     safe.safe_chain_fixups.push(outer_index);
                     for index in &safe.safe_chain_fixups {
                         *safe.safe_skip_pop.entry(*index).or_default() += 1;
@@ -417,7 +417,7 @@ impl<R: SymbolResolver> SafeGuardLowering<'_, '_, R> {
                             .into(),
                     });
                 }
-                replace_words(&mut out, &mut offsets, &mut fixups, field_at, 0, &[0x142]);
+                replace_words(out, offsets, fixups, field_at, 0, &[0x142]);
                 safe.safe_chain_fixups.push(outer_index);
                 for index in &safe.safe_chain_fixups {
                     *safe.safe_skip_pop.entry(*index).or_default() += 1;

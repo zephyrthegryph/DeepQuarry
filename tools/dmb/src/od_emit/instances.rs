@@ -53,18 +53,13 @@ impl Builder<'_> {
                         let Some(json) = typ.variables.get(name) else {
                             continue;
                         };
-                        let unchanged = self
-                            .baseline
-                            .and_then(|base| {
-                                self.baseline_type_by_path
-                                    .get(typ.path.as_str())
-                                    .and_then(|&index| base.types.get(index))
-                                    .map(|t| (base, t))
-                            })
-                            .and_then(|(base, t)| t.variables.get(name).map(|old| (base, old)))
-                            .is_some_and(|(base, old)| {
-                                same_od_constant(json, old, self.input, base)
-                            });
+                        let unchanged = self.baseline.is_some_and(|base| {
+                            self.baseline_type_by_path
+                                .get(typ.path.as_str())
+                                .and_then(|&index| base.types.get(index))
+                                .and_then(|t| t.variables.get(name))
+                                .is_some_and(|old| same_od_constant(json, old, self.input, base))
+                        });
                         if unchanged {
                             continue;
                         }

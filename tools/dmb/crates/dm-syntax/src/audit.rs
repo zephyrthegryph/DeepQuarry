@@ -164,15 +164,15 @@ impl StreamingAudit {
             group = "<other>".into();
         }
         *self.diagnostic_groups.entry(group.clone()).or_default() += 1;
-        if !self.diagnostic_examples.contains_key(&group) {
+        self.diagnostic_examples.entry(group).or_insert_with(|| {
             let mut example = diagnostic.clone();
             example.span.start += offset;
             example.span.end += offset;
             if example.message.len() > 512 {
                 example.message.truncate(512);
             }
-            self.diagnostic_examples.insert(group, example);
-        }
+            example
+        });
         if self.diagnostics.len() < sample_limit {
             diagnostic.span.start += offset;
             diagnostic.span.end += offset;

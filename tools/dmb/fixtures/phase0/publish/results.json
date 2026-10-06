@@ -1,0 +1,106 @@
+{
+  "status": "runtime evidence collected; access trace deferred at user request",
+  "executed": true,
+  "engine_version": "5.0.516.1687",
+  "engine_sha256": "2E3815875C4DCF3C50DE70C1C6E017849EFE8697C428F02AB9EE77C306C8ABF0",
+  "cases": [
+    {
+      "status": "runtime-pass-access-unassessed",
+      "case": "writable-copy",
+      "root": "D:\\dmb-native-v2-phase0\\access\\access-1de7b1b6617c4a61b67bfc92ce0fb6c1",
+      "engine": "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+      "engine_sha256": "2E3815875C4DCF3C50DE70C1C6E017849EFE8697C428F02AB9EE77C306C8ABF0",
+      "engine_file_version": "5.0.516.1687",
+      "arguments": [
+        "D:\\dmb-native-v2-phase0\\access\\access-1de7b1b6617c4a61b67bfc92ce0fb6c1\\slot\\access_probe.dmb",
+        "0",
+        "-trusted",
+        "-close"
+      ],
+      "timeout_seconds": 30,
+      "pid": 34544,
+      "started_utc": "2026-10-06T19:41:20.5777038Z",
+      "exit_code": 0,
+      "timed_out": false,
+      "before": [
+        {
+          "path": "D:\\dmb-native-v2-phase0\\access\\access-1de7b1b6617c4a61b67bfc92ce0fb6c1\\slot\\access_probe.dmb",
+          "sha256": "6387624A0FD55C0B2FD5FC0EB922DE1B38DC129F3866BC50763C831B4ED1FBFC"
+        },
+        {
+          "path": "D:\\dmb-native-v2-phase0\\access\\access-1de7b1b6617c4a61b67bfc92ce0fb6c1\\slot\\access_probe.rsc",
+          "sha256": "140A77E9580E20132BFAAB85FDB4394D16726E25CE0CC47BBD3F2E120500CBB4"
+        }
+      ],
+      "after": [
+        {
+          "path": "D:\\dmb-native-v2-phase0\\access\\access-1de7b1b6617c4a61b67bfc92ce0fb6c1\\slot\\access_probe.dmb",
+          "sha256": "6387624A0FD55C0B2FD5FC0EB922DE1B38DC129F3866BC50763C831B4ED1FBFC"
+        },
+        {
+          "path": "D:\\dmb-native-v2-phase0\\access\\access-1de7b1b6617c4a61b67bfc92ce0fb6c1\\slot\\access_probe.rsc",
+          "sha256": "140A77E9580E20132BFAAB85FDB4394D16726E25CE0CC47BBD3F2E120500CBB4"
+        }
+      ],
+      "marker_ok": true,
+      "pair_unchanged": true,
+      "access_trace_status": "deferred at user request",
+      "procmon": "",
+      "backing_file": "",
+      "hardlink_access_conclusion": "read-only hardlink functional failure observed; desired-access cause unconfirmed",
+      "finished_utc": "2026-10-06T19:41:23.6821557Z"
+    },
+    {
+      "status": "fail",
+      "case": "readonly-hardlink",
+      "root": "D:\\dmb-native-v2-phase0\\access\\access-8f34e1f4ccf240bcbf92269e8badbb26",
+      "engine": "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+      "engine_sha256": "2E3815875C4DCF3C50DE70C1C6E017849EFE8697C428F02AB9EE77C306C8ABF0",
+      "engine_file_version": "5.0.516.1687",
+      "arguments": [
+        "D:\\dmb-native-v2-phase0\\access\\access-8f34e1f4ccf240bcbf92269e8badbb26\\slot\\access_probe.dmb",
+        "0",
+        "-trusted",
+        "-close"
+      ],
+      "timeout_seconds": 30,
+      "pid": 30680,
+      "started_utc": "2026-10-06T19:41:24.2168299Z",
+      "exit_code": 0,
+      "timed_out": false,
+      "before": [
+        {
+          "path": "D:\\dmb-native-v2-phase0\\access\\access-8f34e1f4ccf240bcbf92269e8badbb26\\slot\\access_probe.dmb",
+          "sha256": "6387624A0FD55C0B2FD5FC0EB922DE1B38DC129F3866BC50763C831B4ED1FBFC"
+        },
+        {
+          "path": "D:\\dmb-native-v2-phase0\\access\\access-8f34e1f4ccf240bcbf92269e8badbb26\\slot\\access_probe.rsc",
+          "sha256": "140A77E9580E20132BFAAB85FDB4394D16726E25CE0CC47BBD3F2E120500CBB4"
+        }
+      ],
+      "after": [
+        {
+          "path": "D:\\dmb-native-v2-phase0\\access\\access-8f34e1f4ccf240bcbf92269e8badbb26\\slot\\access_probe.dmb",
+          "sha256": "6387624A0FD55C0B2FD5FC0EB922DE1B38DC129F3866BC50763C831B4ED1FBFC"
+        },
+        {
+          "path": "D:\\dmb-native-v2-phase0\\access\\access-8f34e1f4ccf240bcbf92269e8badbb26\\slot\\access_probe.rsc",
+          "sha256": "140A77E9580E20132BFAAB85FDB4394D16726E25CE0CC47BBD3F2E120500CBB4"
+        }
+      ],
+      "marker_ok": false,
+      "pair_unchanged": true,
+      "access_trace_status": "deferred at user request",
+      "procmon": "",
+      "backing_file": "",
+      "hardlink_access_conclusion": "read-only hardlink functional failure observed; desired-access cause unconfirmed",
+      "finished_utc": "2026-10-06T19:41:26.9798477Z"
+    }
+  ],
+  "hardlink_policy": "copy writable run slots; read-only hardlink runtime failed",
+  "trace_csv": "D:/dmb-native-v2-phase0/pair-access.csv",
+  "limitations": [
+    "Procmon access analysis deferred at user request; requested access masks and failure cause remain unconfirmed.",
+    "Exit code 0 does not establish fixture success."
+  ]
+}

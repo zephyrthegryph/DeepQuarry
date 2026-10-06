@@ -348,7 +348,7 @@ impl OutlineSession {
             .and_then(|value| value.parse::<usize>().ok())
             .unwrap_or(1024 * 1024);
         let edit = (self.last_limit == limit)
-            .then(|| self.last_source.as_deref())
+            .then_some(self.last_source.as_deref())
             .flatten()
             .and_then(|previous| layout::edited_layout(previous, &self.last_layout, source, limit));
         let (region, mut ordered, after, validation_bytes) = if let Some(edit) = edit {
@@ -466,10 +466,10 @@ impl OutlineSession {
         }
         self.db = crate::Database::default();
         if complete {
-            if !self
+            if self
                 .last_source
                 .as_deref()
-                .is_some_and(|previous| previous == source)
+                .is_none_or(|previous| previous != source)
             {
                 self.last_source = Some(Arc::from(source));
             }
@@ -498,7 +498,7 @@ impl OutlineSession {
 fn compact_ast(chunks: &[(usize, Arc<ParsedChunk>)]) -> AstFile {
     fn rebase(item: &Item, offset: usize) -> Item {
         Item {
-            kind: item.kind.clone(),
+            kind: item.kind,
             header: item.header.clone(),
             span: Span::new(item.span.start + offset, item.span.end + offset),
             header_span: Span::new(
@@ -536,6 +536,8 @@ pub fn compact_snapshot_cached(
     OutlineSession::new(cache_root).compact_snapshot(source)
 }
 
+// Preserve original UTF-8 boundary checks before hashing frozen source slices.
+#[allow(clippy::sliced_string_as_bytes)]
 fn assemble_outline(
     source: &str,
     chunks: &[(usize, Arc<ParsedChunk>)],

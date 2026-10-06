@@ -546,6 +546,8 @@ pub fn compile_preprocessed_project_with_resources_prepared(
     )
 }
 
+// Keep the frozen compiler entry-point argument contract.
+#[allow(clippy::too_many_arguments)]
 fn compile_preprocessed_project_with_loaded_resources(
     dme_path: &Path,
     preprocessed: &PreprocessedProject,
@@ -1030,9 +1032,7 @@ fn resolve_resource_path(
 
 fn skin_archive_name(root: &Path, skin: &Path) -> Result<String, String> {
     let root = std::fs::canonicalize(root).map_err(|error| error.to_string())?;
-    let disk = if skin.is_absolute() {
-        skin.to_path_buf()
-    } else if skin.exists() {
+    let disk = if skin.is_absolute() || skin.exists() {
         skin.to_path_buf()
     } else {
         root.join(skin)
@@ -1908,6 +1908,8 @@ pub(crate) fn outline_descriptors(
         .collect())
 }
 
+// Preserve original UTF-8 boundary checks before hashing frozen source slices.
+#[allow(clippy::sliced_string_as_bytes)]
 fn source_outline_from_snapshot(
     source: &str,
     ast: &dm_syntax::AstFile,
@@ -2288,8 +2290,10 @@ pub fn audit_lowering(
             }
         }
     }
-    let mut shared = SharedLowerBindings::default();
-    shared.modified_instances = modified.parents.clone();
+    let mut shared = SharedLowerBindings {
+        modified_instances: modified.parents.clone(),
+        ..Default::default()
+    };
     seed_builtin_constants(&mut shared);
     seed_native_member_procs(&mut shared, &builtin);
     seed_member_globals(&mut shared, &builtin);
@@ -2593,6 +2597,8 @@ fn emit_global_procs_mode(
     )
 }
 
+// Keep the frozen compiler entry-point argument contract.
+#[allow(clippy::too_many_arguments)]
 fn emit_global_procs_mode_with_workers(
     source: &str,
     builtin_image: &[u8],
@@ -2616,6 +2622,8 @@ fn emit_global_procs_mode_with_workers(
     )
 }
 
+// Keep the frozen compiler entry-point argument contract.
+#[allow(clippy::too_many_arguments)]
 fn emit_global_procs_mode_with_frontend(
     source: &str,
     builtin_image: &[u8],
@@ -3965,6 +3973,8 @@ fn emit_global_procs_mode_with_frontend(
     Ok((dmb, emitted, rsc_bytes))
 }
 
+// Keep the frozen compiler entry-point argument contract.
+#[allow(clippy::too_many_arguments)]
 fn resolve_pending_parent_metadata(
     dmb: &Dmb,
     owner: u32,
@@ -4225,6 +4235,8 @@ fn literal_initializer(expression: &str, dmb: &Dmb, strings: &StringIndex) -> bo
             .is_some_and(|expr| literal(expr, dmb, strings))
 }
 
+// Keep the frozen compiler entry-point argument contract.
+#[allow(clippy::too_many_arguments)]
 fn emit_dynamic_initializers_with_pool(
     dmb: &mut Dmb,
     pending: Vec<PendingDynamic>,
@@ -4400,7 +4412,7 @@ fn emit_dynamic_initializers_with_pool(
             }
             let mut ledger = Ledger::default();
             bind_builtin_global_vars(dmb, strings, &mut ledger)?;
-            bind_modified_instances(&strings, &mut ledger, &simple.code)?;
+            bind_modified_instances(strings, &mut ledger, &simple.code)?;
             for key in &simple.strings {
                 ledger
                     .bind(
@@ -5037,6 +5049,8 @@ fn propagate_builtin_parent_defaults(
         }
     }
 }
+// Keep the frozen compiler entry-point argument contract.
+#[allow(clippy::too_many_arguments)]
 fn emit_type<'a>(
     item: &'a Item,
     dmb: &mut Dmb,
@@ -5765,6 +5779,8 @@ fn append_builtin_override(
     }
 }
 
+// Keep the frozen compiler entry-point argument contract.
+#[allow(clippy::too_many_arguments)]
 fn emit_class_var(
     item: &Item,
     class_id: u32,
@@ -5787,8 +5803,8 @@ fn emit_class_var(
         });
     let mut parts = name.split('/').collect::<Vec<_>>();
     let name = parts.pop().unwrap_or("");
-    let is_tmp = parts.iter().any(|part| *part == "tmp");
-    let is_const = parts.iter().any(|part| *part == "const");
+    let is_tmp = parts.contains(&"tmp");
+    let is_const = parts.contains(&"const");
     let is_static = parts
         .iter()
         .any(|part| matches!(*part, "static" | "global"));
@@ -5880,7 +5896,7 @@ fn emit_global_var(
         });
     let mut parts = raw_name.split('/').collect::<Vec<_>>();
     let name = parts.pop().unwrap_or("");
-    let is_const = parts.iter().any(|part| *part == "const");
+    let is_const = parts.contains(&"const");
     if name.is_empty() || globals.contains_key(name) {
         return Err(format!(
             "unsupported or duplicate global variable: {declaration}"
@@ -6233,7 +6249,7 @@ fn qualify_expression_with_aliases(source: &str, aliases: &HashMap<String, Strin
     }
     let mut edits = Vec::new();
     if let Some(expr) = dm_syntax::parse_expression(source).expr {
-        references(&expr, &aliases, &mut edits);
+        references(&expr, aliases, &mut edits);
     }
     edits.sort_by_key(|edit| edit.0);
     let mut output = String::new();
@@ -9510,8 +9526,21 @@ mod tests {
     fn manifest_skin_and_its_icon_enter_output_resources() {
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../fixtures/translation/selected_skin");
+        mod fixture_inputs {
+            include!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../tests/support/reference_inputs.rs"));
+        }
+        let inputs = fixture_inputs::prepare(&root, &[], |_| false);
+        // This pinned native skin receipt was generated from CRLF source. Keep
+        // exact native IDs below; only restore its newline spelling in the mirror.
+        let skin_path = inputs.0.join("skin.dmf");
+        let skin_source = std::fs::read(&skin_path).unwrap();
+        let normalized: Vec<_> = skin_source.iter().enumerate().filter_map(|(index, &byte)| {
+            if byte == b'\r' && skin_source.get(index + 1) == Some(&b'\n') { None } else { Some(byte) }
+        }).collect();
+        let reference_source = normalized.iter().flat_map(|&byte| if byte == b'\n' { vec![b'\r', b'\n'] } else { vec![byte] }).collect::<Vec<_>>();
+        std::fs::write(skin_path, reference_source).unwrap();
         let project =
-            compile_project_with_resources(&root.join("probe.dme"), BUILTINS, "skin").unwrap();
+            compile_project_with_resources(&inputs.0.join("probe.dme"), BUILTINS, "skin").unwrap();
         let native = Dmb::from_bytes(include_bytes!(
             "../../../fixtures/translation/selected_skin/probe.native.bin"
         ))

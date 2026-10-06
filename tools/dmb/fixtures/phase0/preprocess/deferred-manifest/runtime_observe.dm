@@ -1,0 +1,6 @@
+/world/New()
+    ..()
+    phase0_preprocess_observe("early", early(), 1)
+    phase0_preprocess_observe("second", second(), 3)
+    phase0_preprocess_observe("late", late(), 2)
+    phase0_preprocess_finish()

@@ -6,6 +6,8 @@ use byond_dmb::{
     translate::translate_named_debug,
 };
 use std::path::Path;
+#[path = "support/reference_inputs.rs"]
+mod reference_inputs;
 
 type Signature = (u8, u32, Vec<u8>, u32, Vec<u8>);
 fn signatures(entries: &[Entry]) -> Vec<Signature> {
@@ -48,6 +50,22 @@ fn first_archive_crc_kind_survives_native_phase_reordering() {
         ))
         .unwrap();
         let expected = signatures(&archive);
+        let mut authored_archive = archive.clone();
+        // All three source spellings intentionally contain identical PNG bytes.
+        // Git may treat the .txt alias as text while keeping .png/.dmi binary.
+        let asset = archive
+            .iter()
+            .find_map(|entry| match entry {
+                Entry::Named(asset) => Some(asset),
+                _ => None,
+            })
+            .unwrap();
+        for alias in ["same.txt", "same.png", "same.dmi"] {
+            let mut alias_asset = asset.clone();
+            alias_asset.name = alias.as_bytes().to_vec();
+            authored_archive.push(Entry::Named(alias_asset));
+        }
+        let inputs = reference_inputs::prepare(&fixtures, &authored_archive, |_| true);
         assert_eq!(expected.len(), 2, "{name}");
         assert_eq!(expected[0].2, first_name.as_bytes(), "{name}");
         assert_eq!(expected[0].0, kind, "{name}");
@@ -60,7 +78,7 @@ fn first_archive_crc_kind_survives_native_phase_reordering() {
             &input,
             Some(&baseline),
             &template,
-            &fixtures,
+            &inputs.0,
             Some(name),
         )
         .unwrap();
@@ -68,7 +86,7 @@ fn first_archive_crc_kind_survives_native_phase_reordering() {
         assert_eq!(hashed.dmb.resources, native.resources, "{name}: hash only");
         for debug in [false, true] {
             let output =
-                translate_named_debug(&input, &baseline, &template, &fixtures, Some(name), debug)
+                translate_named_debug(&input, &baseline, &template, &inputs.0, Some(name), debug)
                     .unwrap();
             assert_eq!(
                 signatures(&output.resources),

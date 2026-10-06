@@ -385,6 +385,8 @@ pub fn plan_file_streaming<O: Read + Seek, N: Read + Seek>(
 
 /// A DMB/RSC pair is a single generation: one changed length rebuilds both.
 #[derive(Clone, Debug, Eq, PartialEq)]
+// Preserve baseline enum layout rather than introducing new heap allocations.
+#[allow(clippy::large_enum_variant)]
 pub enum PairPlan {
     Unchanged,
     Patch {
@@ -611,6 +613,7 @@ fn acquire_pair_lock(journal_path: &Path) -> io::Result<File> {
         .read(true)
         .write(true)
         .create(true)
+        .truncate(false)
         .open(journal_path.with_extension("lock"))?;
     lock.try_lock()?;
     Ok(lock)
