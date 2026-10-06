@@ -52,20 +52,14 @@
 	if(frequency)
 		set_frequency(frequency)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/trinary/atmos_filter/appearance_overlays()
-	. = list()
-	if(mirrored)
-		icon_state = "m"
-	else
-		icon_state = ""
+/obj/machinery/atmospherics/trinary/atmos_filter/draw(datum/look/look)
+	..()
+	var/prefix = mirrored ? "m" : "" // ALLOW(derived_reads): its orientation is fixed by its fitting; nothing changes it after it is built
+	look.state("[prefix][(operable() && node1 && node2 && node3 && use_power) ? "on" : "off"]")
 
-	if(!powered())
-		icon_state += "off"
-	else if(node2 && node3 && node1)
-		icon_state += use_power ? "on" : "off"
-	else
-		icon_state += "off"
+/obj/machinery/atmospherics/trinary/atmos_filter/derived()
+	. = ..()
+	. += drawn_from(nameof(use_power))
 
 /// The gases the filter takes out of the input, by its setting.
 /obj/machinery/atmospherics/trinary/atmos_filter/proc/filtered_gas_ids()

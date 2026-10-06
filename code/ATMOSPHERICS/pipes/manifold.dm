@@ -75,13 +75,19 @@
 	if(node3)
 		node3.update_underlays()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/manifold, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/pipe/manifold/appearance_overlays()
-	. = list()
-	alpha = 255
+/obj/machinery/atmospherics/pipe/manifold/draw(datum/look/look)
+	..()
+	look.set_alpha(255)
+	look.overlay(GLOB.icon_manager.get_atmos_icon("manifold", , pipe_color, "core" + icon_connect_type))
+	look.overlay(GLOB.icon_manager.get_atmos_icon("manifold", , , "clamps" + icon_connect_type))
 
-	. += GLOB.icon_manager.get_atmos_icon("manifold", , pipe_color, "core" + icon_connect_type)
-	. += GLOB.icon_manager.get_atmos_icon("manifold", , , "clamps" + icon_connect_type)
+/obj/machinery/atmospherics/pipe/manifold/derived()
+	. = ..()
+	. += drawn_from(nameof(pipe_color), nameof(icon_connect_type))
+
+/// The pipe stubs toward its neighbours (a look has no underlays): rebuilt when a neighbour or the floor over it changes.
+/obj/machinery/atmospherics/pipe/manifold/update_underlays()
+	..()
 	underlays.Cut()
 
 	var/turf/T = get_turf(src)
@@ -104,10 +110,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/manifold, TYPE_PROC_REF
 
 	for(var/D in directions)
 		add_underlay(T,,D,icon_connect_type)
-
-/obj/machinery/atmospherics/pipe/manifold/update_underlays()
-	..()
 	update_icon()
+
+/obj/machinery/atmospherics/pipe/manifold/hide(i)
+	..()
+	update_underlays()
 
 /obj/machinery/atmospherics/pipe/manifold/atmos_init()
 	var/connect_directions = (NORTH|SOUTH|EAST|WEST)&(~dir)

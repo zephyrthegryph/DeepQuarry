@@ -32,7 +32,6 @@ CAPABILITIES(/obj/machinery/atmospherics/omni)
 	pipe_device_switch()
 	pipe_device_unwrench()
 
-DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "base")))
 
 /obj/machinery/atmospherics/omni/Initialize(mapload)
 	. = ..()
@@ -54,19 +53,22 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 
 	build_icons()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/omni, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/omni/appearance_overlays()
-	. = list()
+/obj/machinery/atmospherics/omni/draw(datum/look/look)
+	..()
+	look.state("base")
+	var/list/shown
 	if(has_stat(NOPOWER))
-		. += overlays_off
+		shown = overlays_off // ALLOW(derived_reads): update_ports() and power_change() redraw it whenever the port icons or its power change
 	else if(error_check())
-		. += overlays_error
+		shown = overlays_error // ALLOW(derived_reads): update_ports() and power_change() redraw it whenever the port icons or its power change
 	else
-		. += use_power ? (overlays_on) : (overlays_off)
+		shown = use_power ? overlays_on : overlays_off // ALLOW(derived_reads): update_ports() redraws it whenever the port icons change
+	for(var/image in shown)
+		look.overlay(image)
 
-	underlays = underlays_current
-
-	return .
+/obj/machinery/atmospherics/omni/derived()
+	. = ..()
+	. += drawn_from(nameof(use_power))
 
 /obj/machinery/atmospherics/omni/proc/error_check()
 	return
@@ -128,6 +130,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/omni, TYPE_PROC_REF(/atom, a
 				overlays_off[ref_layer] = null
 				overlays_on[ref_layer] = null
 
+	underlays = underlays_current // the pipe stubs under its ports (a look has no underlays)
 	update_icon()
 
 /obj/machinery/atmospherics/omni/proc/select_port_icons(datum/omni_port/P)
