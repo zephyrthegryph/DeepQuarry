@@ -184,6 +184,8 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	var/area/here = isturf(loc) ? loc.loc : null // ALLOW(reads): the turret's area is asked when a button is pressed; a bolted turret does not move
 	return !!length(here?.turret_controls)
 
+TRACKED(/obj/machinery/porta_turret, ailock)
+
 /// The firewall (ailock) is down: a silicon over its link may work the window (req_window_usable() asks this only of a remote user).
 /obj/machinery/porta_turret/proc/firewall_open(datum/act/op/A)
 	return !ailock

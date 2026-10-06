@@ -430,6 +430,7 @@ impl Generator for Declare {
             out.line("#endif");
         }
         keyed_targets(cx, out);
+        make_procs(cx, out);
         for d in std::mem::take(&mut tests.diags) {
             out.diag(&d.rel, d.line, d.msg);
         }
@@ -602,6 +603,135 @@ fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String
             close_section(&current, out);
             out.blank();
         }
+        lifeform_type_extras(cx, out, &in_half);
+}
+
+/// The first argument of a `nameof(x)` text: `x`.
+fn nameof_inner(arg: &str) -> Option<String> {
+    let t = arg.trim();
+    t.strip_prefix("nameof(").and_then(|s| s.strip_suffix(')')).map(|s| s.trim().to_string())
+}
+
+/// Whether a type path names an atom (its instances initialize through Initialize(), not New()).
+fn is_atom_path(ty: &str) -> bool {
+    ["/atom", "/obj", "/mob", "/turf", "/area"].iter().any(|p| ty == *p || ty.starts_with(&format!("{}/", p)))
+}
+
+/// The calls a block names, by constructor name (a quick scan: a name followed by `(`, outside strings).
+fn block_calls(args: &[String], name: &str) -> Vec<Vec<String>> {
+    use std::cell::RefCell;
+    let found: RefCell<Vec<Vec<String>>> = RefCell::new(Vec::new());
+    for a in args.iter().skip(1) {
+        rewrite_calls(a, name, &|inner| {
+            found.borrow_mut().push(inner.to_vec());
+            String::new()
+        });
+    }
+    found.into_inner()
+}
+
+/// The lifecycle forms (code/engine/lifeforms/) a type's block needs the generator for:
+/// - a non-atom type whose block names a form, or an owns_one/owns_many with starts =, gets `lifeform_declared = TRUE`, so /datum/New() runs it;
+/// - a type whose block names click_on(), drag_onto(), hover() or tooltip() gets the native override that reads `usr` (the engine's, here) and
+///   hands the engine the actor: Click(), MouseDrop(), MouseEntered()/MouseExited().
+fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> bool) {
+    const FORMS: &[&str] = &["rolls", "param", "built_from", "registry", "radio_listen", "per_type", "initial_contents", "knows", "starts_as", "derives", "lives_while", "on_ending"];
+    let mut lists: Vec<&Marker> = cx.markers("CAPABILITIES").filter(|m| in_half(&m.rel)).collect();
+    lists.sort_by(|a, b| (a.args.first(), &a.rel, a.line).cmp(&(b.args.first(), &b.rel, b.line)));
+    for m in lists {
+        let Some(ty) = m.args.first() else { continue };
+        let ty = ty.trim();
+        if !is_atom_path(ty) && ty.starts_with("/datum") {
+            let mut declared = FORMS.iter().any(|f| !block_calls(&m.args, f).is_empty());
+            for owns in ["owns_one", "owns_many"] {
+                if block_calls(&m.args, owns).iter().any(|a| a.iter().any(|x| split_opt(x).map(|(k, _)| k == "starts").unwrap_or(false))) {
+                    declared = true;
+                }
+            }
+            if declared {
+                out.doc(format!("{} declares a lifecycle form ({}:{}): /datum/New() runs it.", ty, m.rel, m.line));
+                out.line(ty);
+                out.line("\tlifeform_declared = TRUE");
+            }
+        }
+        if !is_atom_path(ty) {
+            continue;
+        }
+        let click = !block_calls(&m.args, "click_on").is_empty();
+        let drag = !block_calls(&m.args, "drag_onto").is_empty();
+        let hover = !block_calls(&m.args, "hover").is_empty();
+        let tip = !block_calls(&m.args, "tooltip").is_empty();
+        if click {
+            out.doc(format!("click_on() of {} ({}:{}): the native click hands the engine its actor.", ty, m.rel, m.line));
+            out.line(format!("{}/Click(location, control, params)", ty));
+            out.line("\tif(input_dispatch(src, usr, INPUT_CLICK_ON, params))");
+            out.line("\t\treturn");
+            out.line("\treturn ..()");
+        }
+        if drag {
+            out.doc(format!("drag_onto() of {} ({}:{}): the native drop hands the engine its actor.", ty, m.rel, m.line));
+            out.line(format!("{}/MouseDrop(over_object, src_location, over_location, src_control, over_control, params)", ty));
+            out.line("\tif(input_dispatch(src, usr, INPUT_DRAG_ONTO, params, over_object))");
+            out.line("\t\treturn");
+            out.line("\treturn ..()");
+        }
+        if hover || tip {
+            out.doc(format!("hover()/tooltip() of {} ({}:{}): the native mouse-over hands the engine its actor.", ty, m.rel, m.line));
+            for (native, entered) in [("MouseEntered", "TRUE"), ("MouseExited", "FALSE")] {
+                out.line(format!("{}/{}(location, control, params)", ty, native));
+                if tip {
+                    out.line(format!("\tinput_tooltip(src, usr, {}, params)", entered));
+                }
+                if hover {
+                    out.line(format!("\tinput_dispatch(src, usr, INPUT_HOVER, params, null, {})", entered));
+                }
+                out.line("\treturn ..()");
+            }
+        }
+        if click || drag || hover || tip {
+            out.blank();
+        }
+    }
+}
+
+/// make(type, at =, by =, parts =, name = value...) and make_args(name = value...): their named parameters are every name a param() declares,
+/// so DM checks a call's names; the bodies are the engine's (code/engine/lifeforms/params.dm). `analyze` checks each call against the made type.
+fn make_procs(cx: &GenCx, out: &mut GenOut) {
+    const RESERVED: &[&str] = &["type", "at", "by", "parts", "given", "src", "usr", "args"];
+    let mut names: BTreeSet<String> = BTreeSet::new();
+    for m in cx.markers("CAPABILITIES") {
+        for call in block_calls(&m.args, "param") {
+            let Some(first) = call.first() else { continue };
+            let Some(name) = nameof_inner(first) else {
+                out.diag(&m.rel, m.line, format!("param({}): the var is nameof(var)", first));
+                continue;
+            };
+            if RESERVED.contains(&name.as_str()) {
+                out.diag(&m.rel, m.line, format!("param(nameof({})): `{}` is one of make()'s own parameters; rename the var", name, name));
+                continue;
+            }
+            names.insert(name);
+        }
+    }
+    let params: Vec<String> = names.iter().map(|n| format!("{} = MAKE_UNSET", n)).collect();
+    let tail = if params.is_empty() { String::new() } else { format!(", {}", params.join(", ")) };
+    out.doc("make(type, at =, by =, parts =, name = value...): a new instance with its params set before init (code/engine/lifeforms/params.dm).");
+    out.line(format!("/proc/make(type, at = null, by = null, parts = null{})", tail));
+    out.line("\tvar/list/given = list()");
+    for n in &names {
+        out.line(format!("\tif({} != MAKE_UNSET)", n));
+        out.line(format!("\t\tgiven[{}] = {}", quote(n), n));
+    }
+    out.line("\treturn make_build(type, at, by, parts, given)");
+    out.doc("make_args(name = value...): the params of what a starts = makes (OWNER is the holder).");
+    out.line(format!("/proc/make_args({})", params.join(", ")));
+    out.line("\tvar/list/given = list()");
+    for n in &names {
+        out.line(format!("\tif({} != MAKE_UNSET)", n));
+        out.line(format!("\t\tgiven[{}] = {}", quote(n), n));
+    }
+    out.line("\treturn make_args_build(given)");
+    out.blank();
 }
 
 /// The arguments of a `section(...)` header entry, or None when the entry is not one.
@@ -672,6 +802,19 @@ CAPABILITIES(/obj/thing, \
         assert!(ids.contains("#define GRAPH_DOOR 1"));
         assert!(ids.contains("#define WIDGET_ARMED CAPKEY_ID(CAP_WIDGET, 1)"));
         assert!(ids.contains("#define WIDGET_LIT CAPKEY_ID(CAP_WIDGET, 2)"));
+    }
+
+    #[test]
+    fn lifecycle_forms_get_make_a_datum_flag_and_native_input() {
+        let src = "CAPABILITIES(/datum/req, \\\n\tparam(nameof(charge), int()), \\\n\trolls(nameof(x), range_of(1, 2)))\nCAPABILITIES(/obj/screen_thing, \\\n\tclick_on(PROC_REF(clicked)), \\\n\ttooltip(PROC_REF(tip)))\n";
+        let (_, decl, diags) = gen(vec![("code/a.dm", src)]);
+        assert!(diags.is_empty(), "{:?}", diags);
+        assert!(decl.contains("/proc/make(type, at = null, by = null, parts = null, charge = MAKE_UNSET)"), "{}", decl);
+        assert!(decl.contains("/proc/make_args(charge = MAKE_UNSET)"), "{}", decl);
+        assert!(decl.contains("/datum/req\n\tlifeform_declared = TRUE"), "{}", decl);
+        assert!(decl.contains("/obj/screen_thing/Click(location, control, params)\n\tif(input_dispatch(src, usr, INPUT_CLICK_ON, params))"), "{}", decl);
+        assert!(decl.contains("/obj/screen_thing/MouseEntered(location, control, params)\n\tinput_tooltip(src, usr, TRUE, params)"), "{}", decl);
+        assert!(!decl.contains("/obj/screen_thing\n\tlifeform_declared"), "an atom runs its forms from Initialize()");
     }
 
     #[test]

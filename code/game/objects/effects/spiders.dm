@@ -174,7 +174,8 @@ TYPE_TABLE(/obj/effect/spider/spiderling/varied, spiderling_grow_as, list(/mob/l
 		amount_grown = 1
 	get_light_and_color(parent)
 
-DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
+CAPABILITIES(/obj/effect/spider/spiderling)
+	every(2 SECONDS, then(PROC_REF(spiderling_step)))
 
 /obj/effect/spider/spiderling/Bump(atom/user)
 	if(istype(user, /obj/structure/table))
@@ -187,7 +188,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
 	..()
 
-/obj/effect/spider/spiderling/periodic_step()
+/obj/effect/spider/spiderling/proc/spiderling_step(datum/act/timer/A)
 	if(travelling_in_vent)
 		if(istype(src.loc, /turf))
 			travelling_in_vent = 0

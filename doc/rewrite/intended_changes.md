@@ -1644,3 +1644,28 @@ store cap, 64 kJ per emitter shot in bursts of four, collector output moles x st
   begin line to the user as well as onlookers, and the wait scales by the tool's speed as every tool op does.
 - **The window tint button's cutters**: with the panel shut they go on to the legacy tool handling instead of being swallowed.
 - **The portable sign asks its direction as an op step** (`asks()`), so the question is the op's and the answer is re-checked.
+
+## Lifecycle forms (rolls, params, registries, adjacency, endings, input)
+
+The nine forms of `code/engine/lifeforms/` (final_api.html section 6 "Lifecycle forms"; tests `dq_lifeform_*_tests.dm`) and the codemods that moved
+`Initialize()`, `qdel(src)` and `usr` sites onto them.
+
+* **Random per-instance values are seeded.** A `rand()`/`pick()`/`prob()` an `Initialize()` drew from the world RNG is a `rolls()` entry drawing from
+  the instance's own stream (the round seed with its map position, or its creator's stream). The distributions are the same (`range_of(a, b)` is
+  `rand(a, b)`, `pick_one()` is `pick()`, `pick_weighted()` is `pickweight()`, `chance(p)` is `prob(p)`, `PIXEL_JITTER(n)` is each pixel offset in
+  `rand(-n, n)`); the realisation differs: the same round seed rolls the same map, and the world RNG no longer advances for them.
+* **A rolled value is suppressed by a map edit or a given param.** The old overrides re-rolled a var even where the map set it (a mapped `icon_state`
+  of a random rock was overwritten); a roll now leaves a value that differs from the compiled default alone.
+* **Rolls run before the type's own init code.** An override that rolled after `..()` rolled after the capabilities initialized; a capability whose
+  `on_holder_init()` read a rolled var now sees the rolled value instead of the default.
+* **Constructor arguments are set before init.** A `param(pos = N)` writes the positional argument in `/atom/New()`, before the root of `Initialize()`,
+  where the override wrote it after `..()`: init code between sees the value instead of the default.
+* **Contents made by `contains()` are created in nullspace** and moved in with the capabilities' init, as `starts =` already did: a content's own
+  `Initialize()` sees no loc.
+* **Every ending publishes `/datum/notice/ended` with a cause** (when something listens), and the endings the verbs make record it: `expire()`
+  is `END_EXPIRED`, `replace_with()` `END_REPLACED`, `consume()` `END_CONSUMED`. Nothing listened to an ending before, so no behaviour changes.
+* **A `lives_while()` scope ends its holder when the scope ends** instead of the host's `on_destroy()` deleting it: the order changes (the holder
+  ends in the host's first destroy step, before the host's links are cleared) and the holder's ended notice says `END_OWNER`.
+* **Input handlers take their actor from the input.** A converted `Click()`/`MouseDrop()`/`MouseEntered()` override read `usr`; the generated native
+  override reads it once and hands the handler `A.actor`. An admin or callback path that set `usr` by hand runs under `with_actor()`, which restores
+  the previous `usr` even when the callback throws (the hand-written swaps left it set).

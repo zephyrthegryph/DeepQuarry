@@ -55,7 +55,7 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 		cuts_into ? op("cut", item(/obj/item), when(CAP_PROC(held_cuts)), label("Cut it up"), then(CAP_PROC(cut_up))) : null,
 		op("dissolve", at_target(), when(CAP_PROC(target_is_open_holder)), priority(OP_PRIORITY_PART), label("Dissolve in it"),
 			needs(req(CAP_PROC(target_has_reagents), because = MSG(dose/target_empty)), req(CAP_PROC(target_has_room), because = MSG(reagent_container/full))),
-			costs(RES_REAGENTS, CAP_PROC(whole)), consumes(), then(CAP_PROC(dissolved)), says(MSG(dose/dissolved))))
+			costs(RES_REAGENTS, CAP_PROC(whole)), consumes(), then(CAP_PROC(dose_dissolved)), says(MSG(dose/dissolved))))
 
 /// (source, sink, mode) of the act's op: the thing into the one it is taken by, put on, or dissolved in.
 /datum/capability/lib/dose/proc/flow_of(datum/act/op/A)
@@ -203,7 +203,7 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 	return OP_OK
 
 /// It is dissolved in a container.
-/datum/capability/lib/dose/proc/dissolved(datum/act/op/A)
+/datum/capability/lib/dose/proc/dose_dissolved(datum/act/op/A)
 	var/mob/user = A.actor
 	var/atom/holder = A.holder
 	add_attack_logs(user, A.target, "Spiked [A.target] with a pill containing [holder.reagents.get_reagents()]")

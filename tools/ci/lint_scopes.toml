@@ -25,8 +25,9 @@ exempt_files = [
 ]
 
 [lint."sys/usr_use"]
-# usr_use.py SKIP_PREFIXES: a `#define` in the macro library is read in the caller's context.
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/__defines/"]
+# usr_use.py SKIP_PREFIXES: a `#define` in the macro library is read in the caller's context. code/engine/ is the engine's one reader and
+# writer of usr: the generated native input overrides and with_actor() (code/engine/lifeforms/input.dm).
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/__defines/", "code/engine/"]
 
 [lint.ui_actions]
 # ui_actions_lint.py EXEMPT: tests and benchmarks build act_ procs without a TSX client on purpose.
@@ -156,7 +157,12 @@ exempt_files = [
     "code/datums/lifecycle/links.dm",
     "code/datums/lifecycle/verbs.dm",
     "code/datums/containment/lifecycle.dm",
+    "code/engine/lifeforms/lifetimes.dm",
 ]
+
+[lint.lifeforms]
+# The lifecycle forms' checks (tools/analyze/src/lints/lifeforms.rs): the tests make bad make() calls on purpose to see them reported.
+exempt_prefixes = ["code/modules/unit_tests/", "code/tests/"]
 
 [lint.qdel_src]
 # qdel_src_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI), the lifecycle engine
@@ -169,6 +175,7 @@ exempt_files = [
     "code/datums/lifecycle/links.dm",
     "code/datums/lifecycle/verbs.dm",
     "code/datums/containment/lifecycle.dm",
+    "code/engine/lifeforms/lifetimes.dm",
 ]
 
 [lint.spatial]
@@ -306,7 +313,7 @@ objects_ratchet_on_legacy_interactions = 165
 objects_ratchet_on_tool_act_overrides = 8
 objects_ratchet_on_damage_reactions = 0
 objects_ratchet_on_declare_emag = 1
-objects_ratchet_on_periodic = 32
+objects_ratchet_on_periodic = 29
 heat_ratchet_on_fire_act_overrides_h3 = 6
 damage_ratchet_on_non_turf_ex_act_overrides_d5 = 10
 damage_ratchet_on_atom_break_set_broken_overrides_d4 = 18

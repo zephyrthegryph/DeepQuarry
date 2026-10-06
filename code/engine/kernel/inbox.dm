@@ -419,10 +419,10 @@ SYSTEM_DEF(input)
 /// Runs `E.resolve()` as `user_mob` (usr), and puts usr back.
 /world/proc/input_run(mob/user_mob, datum/input_event/E)
 	set waitfor = FALSE // ALLOW(scheduler): kernel code: an input that sleeps (a legacy Topic) detaches here instead of holding phase K
-	var/temp = usr // ALLOW(sys_usr_outside_verb): the inbox runs an input as its actor: this is the one place usr is set for a resolved input
-	usr = user_mob // ALLOW(sys_usr_outside_verb): the same actor-as-usr swap, set for the one resolved input
+	var/temp = usr // the inbox runs an input as its actor: the engine sets usr for a resolved input
+	usr = user_mob
 	. = E.resolve()
-	usr = temp // ALLOW(sys_usr_outside_verb): the same actor-as-usr swap, undone after the input
+	usr = temp
 
 /// Phase K: serves the queues round-robin, each client's oldest first, under the input budget (one event at least).
 /datum/system/input/proc/drain_step(dt, unlimited = FALSE)

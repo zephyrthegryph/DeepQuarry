@@ -120,7 +120,15 @@
 /proc/owns_one(var_name, type = null, starts = null, starts_args = null, on_destroy = ON_DESTROY_DELETE, copy_on_write = FALSE, key = null)
 	return entry_make(ENTRY_OWNS_ONE, key, list("var" = var_name, "type" = type, "starts" = starts, "starts_args" = starts_args, "on_destroy" = on_destroy, "copy_on_write" = copy_on_write))
 
-/proc/owns_many(var_name, type = null, starts = null, starts_args = null, on_destroy = ON_DESTROY_DELETE, copy_on_write = FALSE, key = null)
+/// `count =` makes that many of `starts` (or of `type` when starts is left out): owns_many(nameof(cells), /obj/item/cell, count = 2).
+/proc/owns_many(var_name, type = null, starts = null, starts_args = null, on_destroy = ON_DESTROY_DELETE, copy_on_write = FALSE, key = null, count = null)
+	if(!isnull(count))
+		var/made = isnull(starts) ? type : starts
+		if(ispath(made))
+			starts = list()
+			starts[made] = count
+		else
+			declare_report("owns_many(\"[var_name]\", count = [count]): count needs one type in starts = or type =")
 	return entry_make(ENTRY_OWNS_MANY, key, list("var" = var_name, "type" = type, "starts" = starts, "starts_args" = starts_args, "on_destroy" = on_destroy, "copy_on_write" = copy_on_write))
 
 /// link_pair(/type::var, /type::var): the macro of code/__defines/engine/declare.dm passes each end as the text it was written as.

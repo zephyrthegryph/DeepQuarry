@@ -202,6 +202,7 @@ GLOBAL_VAR(declare_report_capture)
 		. |= ENGINE_HOOK_INIT | ENGINE_HOOK_COND_SCOPED
 	if(stat_table_needs_init(T))
 		. |= ENGINE_HOOK_INIT | ENGINE_HOOK_STATS
+	. |= lifeform_hook_flags(T) // the lifecycle forms (code/engine/lifeforms/forms.dm)
 
 
 
