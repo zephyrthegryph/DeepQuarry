@@ -4,11 +4,13 @@
 GLOBAL_LIST(ghost_traps)
 
 /proc/get_ghost_trap(trap_key)
+	READS_FROM() // the table of traps is fixed at boot: no entity state
 	if(!GLOB.ghost_traps)
 		populate_ghost_traps()
 	return GLOB.ghost_traps[trap_key]
 
 /proc/populate_ghost_traps()
+	READS_FROM() // builds the fixed table of traps once: no entity state
 	GLOB.ghost_traps = list()
 	for(var/traptype in typesof(/datum/ghosttrap))
 		var/datum/ghosttrap/G = new traptype
@@ -22,19 +24,27 @@ GLOBAL_LIST(ghost_traps)
 
 TYPE_TABLE_DECLARE(/datum/ghosttrap, ghosttrap_ban_checks, list(JOB_AI,JOB_CYBORG))
 
-// Check for bans, proper atom types, etc.
-/datum/ghosttrap/proc/assess_candidate(mob/observer/dead/candidate)
+/// Why the candidate may not enter play as this trap's object, or null: the text of the refusal (an empty string for a ghost that cannot be asked at all).
+/datum/ghosttrap/proc/candidate_refusal(mob/observer/dead/candidate)
+	READS_FROM() // the bans and the respawn rules are read when the ghost asks, never cached
 	if(!istype(candidate) || !candidate.client || !candidate.ckey)
-		return 0
+		return /datum/msg/req_silent
 	if(!candidate.MayRespawn())
-		to_chat(candidate, span_infoplain("You have made use of the AntagHUD and hence cannot enter play as \a [object]."))
-		return 0
+		return span_infoplain("You have made use of the AntagHUD and hence cannot enter play as  [object].")
 	if(islist(TYPE_TABLE_GET(src, ghosttrap_ban_checks)))
 		for(var/bantype in TYPE_TABLE_GET(src, ghosttrap_ban_checks))
 			if(jobban_isbanned(candidate, "[bantype]"))
-				to_chat(candidate, span_infoplain("You are banned from one or more required roles and hence cannot enter play as \a [object]."))
-				return 0
-	return 1
+				return span_infoplain("You are banned from one or more required roles and hence cannot enter play as  [object].")
+	return null
+
+// Check for bans, proper atom types, etc.
+/datum/ghosttrap/proc/assess_candidate(mob/observer/dead/candidate)
+	var/why = candidate_refusal(candidate)
+	if(isnull(why))
+		return 1
+	if(istext(why))
+		to_chat(candidate, why)
+	return 0
 
 // Print a message to all ghosts with the right prefs/lack of bans.
 /datum/ghosttrap/proc/request_player(mob/target, request_string)
