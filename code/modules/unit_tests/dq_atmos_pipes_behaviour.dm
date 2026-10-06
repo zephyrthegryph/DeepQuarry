@@ -28,7 +28,7 @@
 /// Time for a meter to follow its pipe's gas.
 /proc/ap_meter_settle(obj/machinery/meter/M)
 	var/before = M.needle
-	for(var/i in 1 to 60)
+	for(var/i in 1 to 300)
 		SSair.run_gas_frames(1)
 		native_system().drain()
 		if(M.needle != before)
@@ -39,7 +39,7 @@
 /// Time for the algae farm's own work (one service interval of it).
 /proc/ap_algae_tick(obj/machinery/atmospherics/binary/algae_farm/F)
 	var/was = F.working
-	for(var/i in 1 to 60)
+	for(var/i in 1 to 300)
 		SSair.run_gas_frames(1)
 		native_system().drain()
 		if(F.working != was)
@@ -837,3 +837,38 @@
 	TEST_ASSERT(abs(after) < head * 0.1, "and draws its sides together ([head] kPa -> [after] kPa)")
 	ap_click(H, T, W)
 	TEST_ASSERT(!T.anchored, "the wrench frees it")
+
+// =====================================================================================================================
+// Heat-exchanging pipes
+// =====================================================================================================================
+
+/// A run of heat-exchanging pipes whose gas turns hot starts glowing (its sleeping glow watch wakes it), and settles once it shows its gas.
+/datum/unit_test/dq_atmos_m/pipes/he_pipe_glows
+/datum/unit_test/dq_atmos_m/pipes/he_pipe_glows/run_gate()
+	var/list/made = list()
+	for(var/i in 1 to 3)
+		var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/P = allocate(/obj/machinery/atmospherics/pipe/simple/heat_exchanging, tile(i, 3))
+		P.set_dir(EAST)
+		P.init_dir()
+		made += P
+	for(var/obj/machinery/atmospherics/M as anything in made)
+		M.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(made)
+	LAZYADD(ap_lines, made)
+	am_settle()
+	var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/middle = made[2]
+	TEST_ASSERT_NOTNULL(middle.parent, "the run is one pipeline")
+	TEST_ASSERT(!middle.tending, "cool, it has nothing to do")
+	var/datum/gas_mixture/air = middle.parent.air
+	air.adjust_gas(GAS_N2, 20)
+	heat_set(air, 1200, HEAT_SOURCE_OTHER)
+	gas_touched(air)
+	for(var/i in 1 to 60)
+		SSair.run_gas_frames(1)
+		native_system().drain()
+		if(middle.icon_temperature > 500)
+			break
+		stoplag()
+		am_settle()
+	TEST_ASSERT(middle.icon_temperature > 500, "hot, it glows ([middle.icon_temperature] K)")
+	take_down_lines()

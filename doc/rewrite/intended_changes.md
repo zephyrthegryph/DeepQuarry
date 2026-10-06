@@ -1599,3 +1599,12 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
 - Its hand switch (empty hand), wrench and multitool target (an `asks()` number in degrees C) are ops; a hand on an unbolted one is refused with a
   reason (it did nothing). The Southern Cross and Cryogaia regulators keep their own step and wrench (the Cryogaia one's message is the shared
   one). Its look is `draw(look)`; its display is an `examine_line()`.
+
+## Heat-exchanging pipes (rewrite/pipenet-full)
+
+- An HE pipe's DM work is only what Rust does not do: a body lying on it (heat equalize and the burn) and its glow. It works on
+  `every(when = tending)` (a body on it, or its glow more than 10 K behind its gas above 500 K); asleep, it watches its pipeline's gas with
+  `gas_watch_many()`. Its pipeline joining, a buckle, a move and a disconnect reconsider. The OM watch, the machine step and its roster entry are
+  gone; the dead leak branch in the step is gone (HE pipes cannot leak). The exchange itself stays the shell's heat body and the sky link.
+- Its watch is on every change of the gas, not temperature alone: a heat-domain write to a pipe region (`heat_set`) does not report a
+  temperature-only change to a gas dependency watch (reported to the thermal owner).
