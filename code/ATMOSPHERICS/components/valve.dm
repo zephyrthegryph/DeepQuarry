@@ -23,10 +23,15 @@
 	open = 1
 	icon_state = "map_valve1"
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/valve/appearance_overlays()
-	. = list()
-	icon_state = "valve[open]"
+TRACKED(/obj/machinery/atmospherics/valve, open)
+
+/obj/machinery/atmospherics/valve/draw(datum/look/look)
+	..()
+	look.state("valve[open]")
+
+/obj/machinery/atmospherics/valve/derived()
+	. = ..()
+	. += drawn_from(nameof(open))
 
 /// The wheel-turning animation, played when the toggle starts (the state follows a second later).
 /obj/machinery/atmospherics/valve/proc/animate_toggle()
@@ -58,7 +63,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve, TYPE_PROC_REF(/atom, 
 	if(open) return 0
 
 	var/list/old_edges = rust_pipe_internal_edges()
-	open = 1
+	set_open(1)
 	update_icon()
 	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
@@ -69,7 +74,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve, TYPE_PROC_REF(/atom, 
 		return 0
 
 	var/list/old_edges = rust_pipe_internal_edges()
-	open = 0
+	set_open(0)
 	update_icon()
 	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
@@ -192,12 +197,10 @@ CAPABILITIES(/obj/machinery/atmospherics/valve/digital)
 	open = 1
 	icon_state = "map_valve1"
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve/digital, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/atmospherics/valve/digital/appearance_overlays()
-	. = list()
-	. += ..()
-	if(!powered())
-		icon_state = "valve[open]nopower"
+/obj/machinery/atmospherics/valve/digital/draw(datum/look/look)
+	..()
+	if(has_stat(NOPOWER))
+		look.state("valve[open]nopower")
 
 /obj/machinery/atmospherics/valve/digital/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)

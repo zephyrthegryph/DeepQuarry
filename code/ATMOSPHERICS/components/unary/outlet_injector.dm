@@ -31,11 +31,9 @@
 	if(frequency)
 		set_frequency(frequency)
 
-/// Appearance reader: powered and switched on.
-/obj/machinery/atmospherics/unary/outlet_injector/proc/appearance_injecting()
-	return powered() && use_power
-
-APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/outlet_injector, "{appearance_injecting?on:off}")
+/obj/machinery/atmospherics/unary/outlet_injector/draw(datum/look/look)
+	..()
+	look.state((operable() && use_power) ? "on" : "off")
 
 /obj/machinery/atmospherics/unary/outlet_injector/update_underlays()
 	..()
@@ -66,6 +64,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/outlet_injector, "{appeara
 /obj/machinery/atmospherics/unary/outlet_injector/derived()
 	. = ..()
 	. += rust_push(nameof(rust_device_rev), nameof(volume_rate))
+	. += drawn_from(nameof(use_power))
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/inject()
 	if(injecting || (has_stat(NOPOWER)))

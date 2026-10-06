@@ -75,17 +75,17 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/freezer, 120, null)
 	if(node)
 		update_icon()
 
-/// Appearance reader: 0 unconnected, 1 connected idle, 2 connected and cooling.
-/obj/machinery/atmospherics/unary/freezer/proc/appearance_freezer_state()
-	if(!node)
-		return 0
-	return (use_power && cooling) ? 2 : 1
+/// Unconnected, connected and idle, or working.
+/obj/machinery/atmospherics/unary/freezer/draw(datum/look/look)
+	..()
+	if(!node) // ALLOW(derived_reads): atmos_init() and disconnect() redraw it when its pipe comes or goes
+		look.state("freezer_0")
+	else
+		look.state((use_power && cooling) ? "freezer_1" : "freezer")
 
-DECLARE_APPEARANCE(/obj/machinery/atmospherics/unary/freezer, "appearance_freezer_state", list(
-	"0" = list(APPEARANCE_ICON_STATE = "freezer_0"),
-	"1" = list(APPEARANCE_ICON_STATE = "freezer"),
-	"2" = list(APPEARANCE_ICON_STATE = "freezer_1"),
-))
+/obj/machinery/atmospherics/unary/freezer/derived()
+	. = ..()
+	. += drawn_from(nameof(use_power), nameof(cooling))
 
 /obj/machinery/atmospherics/unary/freezer
 	silicon_use = SILICON_USE_UI
