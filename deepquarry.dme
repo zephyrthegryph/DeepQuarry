@@ -5307,6 +5307,7 @@
 #include "code\modules\map_stubs\map_stubs.dm"
 #include "code\modules\body\affliction.dm"
 #include "code\modules\body\body.dm"
+#include "code\modules\body\body_clock.dm"
 #include "code\modules\body\body_effects.dm"
 #include "code\modules\body\breath_profile.dm"
 #include "code\modules\body\factors.dm"

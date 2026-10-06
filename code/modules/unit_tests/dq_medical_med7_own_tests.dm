@@ -1,7 +1,7 @@
 // MED-7: regression tests for the CLOCK / OWN / NULL rows of doc/medical_audit_findings.md.
 // One test per row, named by row id.
 
-/// D17: a wound's bleed timer runs down by biological time, not by how often update_damages() runs.
+/// D17: a wound's bleed timer runs down by the body time spent bleeding, not by how often anything runs.
 /datum/unit_test/dq_med7_d17_bleed_timer_clock
 
 /datum/unit_test/dq_med7_d17_bleed_timer_clock/Run()
@@ -12,15 +12,12 @@
 	TEST_ASSERT(length(wounds), "setup: the cut should leave a wound")
 	var/datum/affliction/wound/W = wounds[1]
 	W.bleed_timer = 10
-	W.bleed_clock_at = null
-	W.run_bleed_clock(1000, TRUE)
-	TEST_ASSERT_EQUAL(W.bleed_timer, 10, "the first reading only anchors the clock")
 	for(var/i in 1 to 20)
-		W.run_bleed_clock(1000, TRUE)
-	TEST_ASSERT_EQUAL(W.bleed_timer, 10, "repeated calls at the same biological time cost nothing")
-	W.run_bleed_clock(1000 + 3 * LIFE_CYCLE, TRUE)
+		W.run_bleed(0, TRUE)
+	TEST_ASSERT_EQUAL(W.bleed_timer, 10, "repeated calls with no time passing cost nothing")
+	W.run_bleed(3, TRUE)
 	TEST_ASSERT_EQUAL(W.bleed_timer, 7, "three life cycles of bleeding cost three")
-	W.run_bleed_clock(1000 + 6 * LIFE_CYCLE, FALSE)
+	W.run_bleed(3, FALSE)
 	TEST_ASSERT_EQUAL(W.bleed_timer, 7, "time spent not bleeding costs nothing")
 
 /// D10: one defib window on the brain, in real minutes of biological time, read by revival,

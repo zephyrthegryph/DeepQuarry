@@ -63,7 +63,6 @@
 	var/digi_prosthetic = FALSE 		//is it a prosthetic that can be digitigrade
 
 	// Wound and structural data.
-	var/wound_update_accuracy = 1      // how often wounds should be updated, a higher number means less often
 	// Wounds are /datum/affliction/wound located on this limb: see get_wounds() (body/parts/limb.dm).
 	var/obj/item/organ/external/parent // Master-limb.
 	var/list/children                  // Sub-limbs.
@@ -623,8 +622,6 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 
 	//Sync the organ's damage with its wounds
 	src.update_damages()
-	if(owner)
-		src.update_wounds()
 
 	var/result = update_damage_state()
 	return result
@@ -843,10 +840,6 @@ This function completely restores a damaged organ to perfect condition.
 /obj/item/organ/external/periodic_step()
 	if(owner)
 
-		// Process wounds, doing healing etc. Only do this every few ticks to save processing power
-		if(owner.is_alive() && owner.life_tick % wound_update_accuracy == 0)
-			update_wounds()
-
 		//Chem traces slowly vanish
 		if(owner.life_tick % 10 == 0)
 			for(var/chemID in trace_chemicals)
@@ -957,55 +950,6 @@ Note that amputating the affected organ does in fact remove the infection from t
 			for (var/obj/item/organ/external/child in children)
 				child.germ_level += 110 //Burst of infection from a parent organ becoming necrotic
 
-//Updating wounds. Handles natural wound healing, scar removal and infections of wounds.
-/obj/item/organ/external/proc/update_wounds()
-	var/list/current_wounds = get_wounds()
-	if((is_robotic()) || (data.get_species_flags() & UNDEAD)) //Robotic and dead limbs don't heal or get worse.
-		var/removed_any = FALSE
-		for(var/datum/affliction/wound/W as anything in current_wounds) //Repaired wounds disappear though
-			if(W.damage <= 0)  //and they disappear right away
-				remove_wound(W)
-				removed_any = TRUE
-		if(removed_any)
-			update_damages()
-			if(update_damage_state())
-				owner?.UpdateDamageIcon(1)
-		return
-
-	var/wound_count = length(current_wounds)
-	for(var/datum/affliction/wound/W as anything in current_wounds)
-		// wounds can disappear after 10 minutes at the earliest
-		if(W.damage <= 0 && ELAPSED(W, created, CLOCK_WORLD) >= 10 MINUTES)
-			remove_wound(W)
-			continue
-		// slow healing
-		var/heal_amt = 0
-
-		// if damage >= 50 AFTER treatment then it's probably too severe to heal within the timeframe of a round.
-		if (W.can_autoheal() && W.wound_damage() < 50)
-			heal_amt += 0.5
-
-		//we only update wounds once in [wound_update_accuracy] ticks so have to emulate realtime
-		heal_amt = heal_amt * wound_update_accuracy
-		//configurable regen speed woo, no-regen hardcore or instaheal hugbox, choose your destiny
-		heal_amt = heal_amt * CONFIG_GET(number/organ_regeneration_multiplier)
-		// amount of healing is spread over all the wounds
-		heal_amt = heal_amt / (wound_count + 1)
-		// making it look prettier on scanners
-		heal_amt = round(heal_amt,0.1)
-		if(heal_amt > 0)
-			W.heal_damage(heal_amt)
-
-		// Salving also helps against infection
-		if(W.germ_level > 0 && W.salved && prob(2))
-			W.disinfected = 1
-			W.germ_level = 0
-
-	// sync the organ's damage with its wounds
-	src.update_damages()
-	if (update_icon())
-		owner?.UpdateDamageIcon(1)
-
 /// Rebuilds limb integrity from its wounds and updates the BLEEDING status
 /// and fractures.
 /obj/item/organ/external/proc/update_damages()
@@ -1017,13 +961,11 @@ Note that amputating the affected organ does in fact remove the infection from t
 		H = owner
 
 	var/can_bleed = !(is_robotic()) && H && H.should_have_organ(O_HEART) && !(H.species.flags & NO_BLOOD)
-	var/bio_now = can_bleed ? om_clock_now(H, CLOCK_BIO) : 0
-	for(var/datum/affliction/wound/W as anything in get_wounds())
-		var/bleeding = can_bleed && W.bleeding()
-		if(can_bleed)
-			W.run_bleed_clock(bio_now, bleeding)
-		if(bleeding)
-			set_status(status | ORGAN_BLEEDING)
+	if(can_bleed)
+		for(var/datum/affliction/wound/W as anything in get_wounds())
+			if(W.bleeding())
+				set_status(status | ORGAN_BLEEDING)
+				break
 
 	// An open, unclamped surgical site bleeds.
 	var/datum/affliction/surgical_incision/incision = get_incision()

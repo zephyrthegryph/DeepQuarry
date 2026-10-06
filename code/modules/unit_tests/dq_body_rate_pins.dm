@@ -46,7 +46,7 @@
 	for(var/i in 1 to 10)
 		body_pin_frame(H)
 	body_pin_log("autoheal", W.damage)
-	TEST_ASSERT(body_pin_close(W.damage, 4), "a dressed 8-point cut heals to 4 in ten cycles (got [W.damage])")
+	TEST_ASSERT(body_pin_close(W.damage, 4.75), "a dressed 8-point cut heals to 4.75 in ten cycles (got [W.damage])")
 	TEST_ASSERT(body_pin_close(arm.get_trauma(), W.damage), "the arm's trauma follows its wound (got [arm.get_trauma()])")
 
 /// An open 20-point arm cut bleeds; blood comes back once below full.
@@ -61,7 +61,7 @@
 		body_pin_frame(H)
 	var/lost = before - body_pin_blood(H)
 	body_pin_log("external_bleed", lost)
-	TEST_ASSERT(body_pin_close(lost, 2.106), "an open 20-point arm cut costs 2.106 blood in five cycles (got [lost])")
+	TEST_ASSERT(body_pin_close(lost, 1.991), "an open 20-point arm cut costs 1.991 blood in five cycles (got [lost])")
 
 /// A 20-point torn artery in the torso tears further and bleeds inside.
 /datum/unit_test/dq_body_pin/internal_bleed
@@ -76,8 +76,8 @@
 		body_pin_frame(H)
 	var/lost = before - body_pin_blood(H)
 	body_pin_log("internal_bleed", "[lost] tear [W.damage]")
-	TEST_ASSERT(body_pin_close(lost, 2.1), "a 20-point torn artery costs 2.1 blood in five cycles (got [lost])")
-	TEST_ASSERT(body_pin_close(W.damage, 20.5), "an untreated torn artery tears 0.1 a cycle (got [W.damage])")
+	TEST_ASSERT(body_pin_close(lost, 1.725), "a 20-point torn artery costs 1.725 blood in five cycles (got [lost])")
+	TEST_ASSERT(body_pin_close(W.damage, 20.4), "an untreated torn artery tears 0.1 a cycle (got [W.damage])")
 
 /// Blood comes back after a draw.
 /datum/unit_test/dq_body_pin/blood_regen
@@ -89,7 +89,7 @@
 		body_pin_frame(H)
 	var/gained = body_pin_blood(H) - before
 	body_pin_log("blood_regen", gained)
-	TEST_ASSERT(body_pin_close(gained, 1), "blood regenerates 1 in ten cycles (got [gained])")
+	TEST_ASSERT(body_pin_close(gained, 0.9), "blood regenerates 0.9 in ten cycles (got [gained])")
 
 /// A 5-point cut bleeds for about five cycles of body time, then clots.
 /datum/unit_test/dq_body_pin/bleed_clock
@@ -99,14 +99,14 @@
 	var/datum/affliction/wound/W = arm.create_wound(CUT, 5)
 	arm.update_damages()
 	TEST_ASSERT(W.bleeding(), "a fresh 5-point cut bleeds")
+	for(var/i in 1 to 3)
+		body_pin_frame(H)
+	TEST_ASSERT(W.bleeding(), "a 5-point cut still bleeds after three cycles (timer [W.bleed_timer], damage [W.damage])")
 	for(var/i in 1 to 4)
 		body_pin_frame(H)
-	TEST_ASSERT(W.bleeding(), "a 5-point cut still bleeds after four cycles (timer [W.bleed_timer])")
-	body_pin_frame(H)
-	body_pin_frame(H)
-	TEST_ASSERT(!W.bleeding(), "a 5-point cut has clotted after six cycles (timer [W.bleed_timer])")
+	TEST_ASSERT(!W.bleeding(), "a 5-point cut has clotted after seven cycles (timer [W.bleed_timer], damage [W.damage])")
 
-/// A wound healed to nothing stays: on a limb with nothing else to process, nothing removes it.
+/// A wound healed to nothing stays until ten minutes after it was made, then fades (its fade is a timer).
 /datum/unit_test/dq_body_pin/wound_fades
 
 /datum/unit_test/dq_body_pin/wound_fades/pin(mob/living/carbon/human/H)
@@ -119,4 +119,25 @@
 	TEST_ASSERT(!QDELETED(W) && (W in arm.get_wounds()), "a closed wound stays for ten minutes")
 	test_time(2 MINUTES)
 	body_pin_frame(H)
-	TEST_ASSERT(!QDELETED(W) && (W in arm.get_wounds()), "a closed wound on an otherwise healthy limb is never processed, so it stays")
+	TEST_ASSERT(QDELETED(W) || !(W in arm.get_wounds()), "a closed wound fades ten minutes after it was made")
+
+/// The rates themselves, integrated over a known span without the kernel (no clock phase): a minute of body time.
+/datum/unit_test/dq_body_clock_rates
+
+/datum/unit_test/dq_body_clock_rates/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	var/datum/affliction/wound/W = arm.create_wound(CUT, 8)
+	W.bandage()
+	H.body_clock_advance(10 * LIFE_CYCLE)
+	TEST_ASSERT(body_pin_close(W.damage, 8 - 10 * 0.25), "a lone dressed wound heals 0.25 a cycle (got [W.damage])")
+	var/obj/item/organ/external/other = H.get_organ(BP_R_ARM)
+	var/datum/affliction/wound/C = other.create_wound(CUT, 20)
+	TEST_ASSERT(body_pin_close(H.blood_loss_rate(other), 20 / 35.01), "a 20-point arm cut bleeds 20 / 35.01 a cycle (got [H.blood_loss_rate(other)])")
+	TEST_ASSERT(H.body_clock_active, "an open wound runs the clock")
+	other.remove_wound(C)
+	arm.remove_wound(W)
+	H.body_clock_refresh()
+	TEST_ASSERT(!H.body_clock_active, "a healthy, full body parks the clock")
+	for(var/obj/effect/decal/cleanable/blood/B in range(1, H))
+		qdel(B)

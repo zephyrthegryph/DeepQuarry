@@ -1450,3 +1450,19 @@ focused tests of the touched windows (the tests that called a handler with its o
   with `asks()`, re-checked when answered; a shut one moves it to the next pipe on its tile). A hand or an AI reads the gauge (it was a `Click()`
   override); the gauge is an `examine_line()` (an AI reads it through its eye). The turf meter takes no tool (`without()`).
 - Known unrelated flake while testing: `REFRESH DRIFT: /obj/machinery/computer/station_alert/all` (not atmos; left to its owner).
+
+## Body migration, slice 1: wounds, bleeding and blood on the body clock (rewrite/body-full)
+
+Pinned by `code/modules/unit_tests/dq_body_rate_pins.dm` (green on the old code first; numbers below are old -> new over the pin's span).
+Wound healing, bleeding, arterial tears and blood refill are rates integrated over the time that passed (`code/modules/body/body_clock.dm`),
+run by one `every(LIFE_CYCLE)` per human gated by `body_clock_active`; the Life stage `blood` and the limb's `update_wounds()` are gone.
+
+* **No per-tick rounding.** Autoheal was rounded to a tenth per update ("prettier on scanners") and the whole-body external bleed to a tenth per
+  cycle: a lone dressed wound now heals 0.25 a cycle (was 0.3 rounded; the old pipeline ran it a little more often still: a dressed 8-point cut was
+  4.0 after ten cycles, now 4.75); a 20-point arm cut bleeds 20/35.01 = 0.571 a cycle (was 0.6). Pins: external bleed over five cycles 2.106 -> 1.991,
+  arterial tear 2.100 -> 1.725 (tear 20.5 -> 20.4), refill over ten cycles 1.0 -> 0.9.
+* **The first step comes one cycle after the clock starts** (the every() arms one interval after it is raised), so the first cycle of a fresh wound or
+  draw is integrated at the second step; totals over a span are one cycle behind, never ahead. A 5-point cut bleeds one cycle longer in the pin.
+* **A healed wound fades ten minutes after it was made**, by a timer. Before, a wound healed to 0 on a limb with nothing else to process was never
+  removed (the limb stopped being processed); the pin records it gone after 11 minutes.
+* A salved wound's per-cycle 2% disinfection chance is 2% per cycle of elapsed time (same rate).

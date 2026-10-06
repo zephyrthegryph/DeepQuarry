@@ -6,6 +6,7 @@
 
 CAPABILITIES(/mob/living/carbon/human)
 	hands()
+	body_clock(nameof(body_clock_active))
 	owns_one(nameof(character_forms), /datum/forms)
 	owns_one(nameof(vessel), /datum/reagents)
 	owns_one(nameof(xenochimera), /datum/xenochimera)
