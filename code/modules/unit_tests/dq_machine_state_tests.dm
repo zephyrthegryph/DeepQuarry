@@ -88,3 +88,65 @@
 	test_driver_end()
 
 #endif
+
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+/// STAT_OPERABLE as a player sees it, after the writes have settled.
+/proc/dq_test_operable_stat(obj/machinery/M)
+	kernel_drain_now()
+	return !!stat_value(M, STAT_OPERABLE)
+
+/// A generic machine stops working under each of the four condition bits and not under the others' absence; the bits read back through has_stat().
+/datum/unit_test/dq_machine_bits_gate_operable
+
+/datum/unit_test/dq_machine_bits_gate_operable/Run()
+	var/obj/machinery/computer/operating/M = allocate(/obj/machinery/computer/operating, test_floor())
+	M.set_stat(0)
+	TEST_ASSERT(dq_test_operable_stat(M) && M.operable(), "a clean machine works")
+	for(var/bit in list(NOPOWER, BROKEN, MAINT, EMPED))
+		M.set_stat(0)
+		TEST_ASSERT(M.stat_add(bit), "adding a bit reports a change")
+		TEST_ASSERT(M.has_stat(bit), "the bit reads back")
+		TEST_ASSERT(!M.stat_add(bit), "adding it again changes nothing")
+		TEST_ASSERT(!dq_test_operable_stat(M) && !M.operable(), "bit [bit] stops it")
+		TEST_ASSERT(M.stat_remove(bit), "removing it reports a change")
+		TEST_ASSERT(!M.has_stat(bit), "the bit reads clear")
+		TEST_ASSERT(dq_test_operable_stat(M) && M.operable(), "clearing bit [bit] works it again")
+	M.set_stat(NOPOWER | BROKEN)
+	TEST_ASSERT(M.has_stat(NOPOWER) && M.has_stat(BROKEN) && !M.has_stat(MAINT), "set_stat writes several bits")
+	M.set_stat(0)
+	TEST_ASSERT(!M.has_stat(MACHINE_STAT_ANY), "set_stat(0) clears them all")
+
+/// The APC and the SMES are their area's supply: the area going dark does not stop them, breakage does.
+/datum/unit_test/dq_machine_supply_ignores_area_power
+
+/datum/unit_test/dq_machine_supply_ignores_area_power/Run()
+	var/obj/machinery/power/apc/A = dq_power_test_apc()
+	TEST_ASSERT_NOTNULL(A, "the test map has no working APC")
+	var/obj/machinery/power/smes/S = allocate(/obj/machinery/power/smes, test_floor())
+	for(var/obj/machinery/M in list(A, S))
+		var/saved = M.stat
+		M.set_stat(0)
+		var/base = dq_test_operable_stat(M)
+		M.stat_add(NOPOWER)
+		TEST_ASSERT_EQUAL(dq_test_operable_stat(M), base, "[M.type]: losing area power does not change whether it works")
+		M.stat_remove(NOPOWER)
+		M.stat_add(BROKEN)
+		TEST_ASSERT(!dq_test_operable_stat(M), "[M.type]: breakage stops it")
+		M.set_stat(saved)
+
+/// The self-powered turret: BROKEN and EMPED stop it. (Its declared intent is that area power never does; it does not hold today and is the grid worker's to settle.)
+/datum/unit_test/dq_machine_rcd_turret_ignores_power
+
+/datum/unit_test/dq_machine_rcd_turret_ignores_power/Run()
+	var/obj/machinery/porta_turret/rcd/M = allocate(/obj/machinery/porta_turret/rcd, test_floor())
+	M.set_stat(0)
+	TEST_ASSERT(dq_test_operable_stat(M), "a clean self-powered turret works")
+	M.stat_add(BROKEN)
+	TEST_ASSERT(!dq_test_operable_stat(M), "breakage stops it")
+	M.stat_remove(BROKEN)
+	M.stat_remove(BROKEN)
+	M.stat_add(EMPED)
+	TEST_ASSERT(!dq_test_operable_stat(M), "a pulse stops it")
+
+#endif
