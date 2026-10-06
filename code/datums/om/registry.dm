@@ -197,7 +197,6 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 
 /datum/om/registry/proc/build_effects()
 	var/list/rows = om_library_effects()
-	rows[EFFECT_RELEVANCE] = list("combine" = COMBINE_MAX, "channel" = CHANGE_RELEVANCE, "default" = RELEVANCE_NONE, "kind" = OM_EFFECT_RELEVANCE)
 	rows[EFFECT_SUSPENDED] = list("combine" = COMBINE_ANY, "kind" = OM_EFFECT_SUSPEND)
 	for(var/datum/om/clock_def/C as anything in clocks)
 		rows["clock:[C.id]:mult"] = list("combine" = COMBINE_MULTIPLY, "channel" = CHANGE_CLOCK, "default" = 1, "kind" = OM_EFFECT_CLOCK_MULT, "clock" = C.id)

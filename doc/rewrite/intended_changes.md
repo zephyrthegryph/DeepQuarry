@@ -2033,3 +2033,9 @@ Design: `reagents.md`.
   with a lighter or any welder (lit or not, as before) after 2 s.
 - **The girder's hulk smash**: its offered_when asked a girder proc of the actor, which never answered, so it was never offered; the
   girder stays legacy (it reads mob mutations) and keeps that.
+
+## Relevance is a stat (rewrite/om-life)
+
+`EFFECT_RELEVANCE` on the OM contribution store is `STAT_RELEVANCE` (MAX, on `/datum`): `om_observe`/`om_unobserve`/`om_relevance`
+are `hold()`/`release()`/`stat_value()`. Same levels, same sources (a datum source deleted drops its hold, as before); the OM
+cadences still follow it through `relevance_changed()` until the framework goes. No behaviour change intended.

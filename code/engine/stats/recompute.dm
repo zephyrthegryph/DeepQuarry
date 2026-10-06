@@ -215,6 +215,9 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 	// A status started or ended: its holder's hooks and presentation follow at once (code/library/mob/statuses.dm).
 	if(def.units && ((isnum(old) && old > 0) != (isnum(new_value) && new_value > 0)))
 		E.status_flipped(def.id, isnum(new_value) && new_value > 0)
+	// Relevance moved: the sequences sweeping E and the OM cadences that read it follow (code/datums/om/contribution.dm).
+	else if(def.id == STAT_RELEVANCE)
+		relevance_changed(E, new_value || RELEVANCE_NONE)
 	return TRUE
 
 /// The value a stat holds now, without computing it.

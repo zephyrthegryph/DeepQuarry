@@ -13,6 +13,9 @@ STAT(/atom, invisibility, MAX)
 STAT(/atom, light_range, MAX, virtual = TRUE)
 STAT(/atom/movable, suspended, ANY, virtual = TRUE)
 STAT(/atom, clock_rate, MIN, base = 1, virtual = TRUE)
+/// How much anything cares about this entity now (RELEVANCE_*): the highest level any source holds. A sequence with min_relevance sweeps a member only
+/// at or above it; hold(E, STAT_RELEVANCE, RELEVANCE_NEAR, source) / release(E, STAT_RELEVANCE, source), and a datum source deleted drops its hold.
+STAT(/datum, relevance, MAX, base = RELEVANCE_NONE, virtual = TRUE)
 STAT(/mob/living, clock_rate_bio, MIN, base = 1)
 STAT(/area, lights_nightshift, ANY)
 STAT(/area, lights_emergency_off, ANY)

@@ -111,12 +111,9 @@
 #define OM_EFFECT_PLAIN 0
 #define OM_EFFECT_CLOCK_MULT 1
 #define OM_EFFECT_CLOCK_INHIBIT 2
-#define OM_EFFECT_RELEVANCE 3
 #define OM_EFFECT_SUSPEND 4
-/// A timed status (units, wear rate, immunity, hooks): status.dm.
 
 // Built-in effect ids (library.dm defines the rest).
-#define EFFECT_RELEVANCE "om_relevance"
 #define EFFECT_SUSPENDED "om_suspended"
 
 // Grant kinds (effects with COMBINE_SUM_PER_KEY).

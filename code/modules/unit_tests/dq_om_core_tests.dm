@@ -589,12 +589,12 @@
 	om_attach(E, /datum/om/behaviour/test/relevant)
 	scheduler_advance(3)
 	TEST_ASSERT_EQUAL(E.ticks, 0, "RELEVANCE_NONE sleeps this behaviour")
-	om_observe(E, viewer, RELEVANCE_WATCHED)
-	TEST_ASSERT_EQUAL(om_relevance(E), RELEVANCE_WATCHED, "relevance derives from observers")
+	hold(E, STAT_RELEVANCE, RELEVANCE_WATCHED, viewer)
+	TEST_ASSERT_EQUAL(stat_value(E, STAT_RELEVANCE), RELEVANCE_WATCHED, "relevance derives from observers")
 	scheduler_advance(1)
 	TEST_ASSERT(E.ticks >= 5, "WATCHED runs every decisecond: [E.ticks]")
 	qdel(viewer)
-	TEST_ASSERT_EQUAL(om_relevance(E), RELEVANCE_NONE, "observer gone, relevance drops")
+	TEST_ASSERT_EQUAL(stat_value(E, STAT_RELEVANCE), RELEVANCE_NONE, "observer gone, relevance drops")
 	var/before = E.ticks
 	scheduler_advance(2)
 	TEST_ASSERT_EQUAL(E.ticks, before, "back to sleep")
@@ -1045,7 +1045,7 @@
 	var/datum/om_test_entity/session = entity(made)
 	var/datum/om_test_entity/target = entity(made)
 	om_ui_bind(session, target, CHANGE_DATUM_A)
-	TEST_ASSERT_EQUAL(om_relevance(target), RELEVANCE_WATCHED, "binding raises relevance to WATCHED")
+	TEST_ASSERT_EQUAL(stat_value(target, STAT_RELEVANCE), RELEVANCE_WATCHED, "binding raises relevance to WATCHED")
 	changed(target, CHANGE_DATUM_A)
 	changed(target, CHANGE_DATUM_A)
 	changed(target, CHANGE_DATUM_A)
@@ -1057,7 +1057,7 @@
 	scheduler_advance(0.3)
 	TEST_ASSERT_EQUAL(session.ui_pushes, 2, "the throttled change is pushed later")
 	om_ui_unbind(session, target)
-	TEST_ASSERT_EQUAL(om_relevance(target), RELEVANCE_NONE, "unbinding drops relevance")
+	TEST_ASSERT_EQUAL(stat_value(target, STAT_RELEVANCE), RELEVANCE_NONE, "unbinding drops relevance")
 
 // ---------------------------------------------------------------- K: helpers
 
@@ -1118,7 +1118,7 @@
 	var/datum/om_test_entity/viewer = entity(made)
 	om_attach(A, B)
 	om_attach(C, B)
-	om_observe(A, viewer, RELEVANCE_WATCHED)
+	hold(A, STAT_RELEVANCE, RELEVANCE_WATCHED, viewer)
 	scheduler_advance(1)
 	TEST_ASSERT(A.ticks > 0 && C.ticks == 0, "per-entity relevance, not per-type")
 	for(var/i in 1 to 4)

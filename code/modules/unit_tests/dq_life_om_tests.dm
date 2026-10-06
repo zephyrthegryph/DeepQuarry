@@ -578,7 +578,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	life_test_add(H, /datum/life_test_step/counter)
-	TEST_ASSERT_EQUAL(om_relevance(H), RELEVANCE_NEAR, "a mob that isn't low priority keeps itself relevant")
+	TEST_ASSERT_EQUAL(stat_value(H, STAT_RELEVANCE), RELEVANCE_NEAR, "a mob that isn't low priority keeps itself relevant")
 	H.set_low_priority(TRUE)
 	var/z = get_z(H)
 	var/datum/life_z_presence/P = life_z_presence(z)
@@ -587,7 +587,7 @@
 		TEST_NOTICE(src, "the test z-level has a living player; relevance by presence not checked")
 		H.set_low_priority(FALSE)
 		return
-	TEST_ASSERT_EQUAL(om_relevance(H), RELEVANCE_NONE, "a low-priority mob on a z-level without players is not relevant")
+	TEST_ASSERT_EQUAL(stat_value(H, STAT_RELEVANCE), RELEVANCE_NONE, "a low-priority mob on a z-level without players is not relevant")
 	life_test_advance(LIFE_CYCLE_SECONDS)
 	var/before = life_test_frames(H)
 	life_test_advance(LIFE_CYCLE_SECONDS * 3)
@@ -595,11 +595,11 @@
 	GLOB.living_players_by_zlevel[z] += H
 	defer_cleanup(null, GLOBAL_PROC_REF(life_test_drop_living_player), z, H)
 	life_z_occupancy_changed(z)
-	TEST_ASSERT_EQUAL(om_relevance(H), RELEVANCE_NEAR, "a living player arriving makes the z-level's low-priority mobs relevant")
+	TEST_ASSERT_EQUAL(stat_value(H, STAT_RELEVANCE), RELEVANCE_NEAR, "a living player arriving makes the z-level's low-priority mobs relevant")
 	life_test_advance(LIFE_CYCLE_SECONDS * 2)
 	TEST_ASSERT(life_test_frames(H) > before, "so they run again")
 	life_test_drop_living_player(z, H)
-	TEST_ASSERT_EQUAL(om_relevance(H), RELEVANCE_NONE, "and the last one leaving takes them out of the sweep")
+	TEST_ASSERT_EQUAL(stat_value(H, STAT_RELEVANCE), RELEVANCE_NONE, "and the last one leaving takes them out of the sweep")
 	H.set_low_priority(FALSE)
 	TEST_ASSERT(!(H in P.members), "a mob that isn't low priority leaves the presence")
 
