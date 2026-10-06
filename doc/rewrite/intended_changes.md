@@ -1669,3 +1669,32 @@ The nine forms of `code/engine/lifeforms/` (final_api.html section 6 "Lifecycle 
 * **Input handlers take their actor from the input.** A converted `Click()`/`MouseDrop()`/`MouseEntered()` override read `usr`; the generated native
   override reads it once and hands the handler `A.actor`. An admin or callback path that set `usr` by hand runs under `with_actor()`, which restores
   the previous `usr` even when the callback throws (the hand-written swaps left it set).
+## The gas turbine and its motor (rewrite/pipenet-full)
+
+Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
+
+- The turbine works on `every(when = spinning)` (bolted, whole, and spinning or with a head across it); asleep it watches its two sides with
+  `gas_watch_many()` (the shared multi-mixture watch, also used now by the TEG and a pipe's sleeping leak). The motor works on
+  `every(when = converting)`, which the turbine's step reconsiders instead of MACHINE_WAKE. OM derived fields, the periodic declarations, the OM
+  watch and the `ownership()` table proc are gone; both left the machine pipeline roster. Their wrenches are ops; the turbine's look is
+  `draw(look)` from tracked `driven` and `speed_band`.
+- **Bug fixed:** after a stroke the turbine handed its input side `remove(volume_ratio)` (0.2 moles) instead of `remove_ratio(volume_ratio)` (its
+  share by volume), so nearly all the gas was dumped to the output and the head flipped. Its two sides now settle at one pressure.
+
+## The thermoregulator (rewrite/pipenet-full)
+
+- It works on `every(when = regulating)`: on, bolted, on the grid and its room a degree or more off its target. A gas watch on its room's air
+  (temperature), its switch, its target (tracked `target_temp`) and moving it reconsider; the OM watch, the periodic declaration and MACHINE_WAKE
+  are gone, and it left the machine pipeline roster. The heat itself stays the thermal domain's `heat_pump`.
+- Its hand switch (empty hand), wrench and multitool target (an `asks()` number in degrees C) are ops; a hand on an unbolted one is refused with a
+  reason (it did nothing). The Southern Cross and Cryogaia regulators keep their own step and wrench (the Cryogaia one's message is the shared
+  one). Its look is `draw(look)`; its display is an `examine_line()`.
+
+## Heat-exchanging pipes (rewrite/pipenet-full)
+
+- An HE pipe's DM work is only what Rust does not do: a body lying on it (heat equalize and the burn) and its glow. It works on
+  `every(when = tending)` (a body on it, or its glow more than 10 K behind its gas above 500 K); asleep, it watches its pipeline's gas with
+  `gas_watch_many()`. Its pipeline joining, a buckle, a move and a disconnect reconsider. The OM watch, the machine step and its roster entry are
+  gone; the dead leak branch in the step is gone (HE pipes cannot leak). The exchange itself stays the shell's heat body and the sky link.
+- Its watch is on every change of the gas, not temperature alone: a heat-domain write to a pipe region (`heat_set`) does not report a
+  temperature-only change to a gas dependency watch (reported to the thermal owner).

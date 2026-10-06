@@ -20,7 +20,7 @@ CAPABILITIES(/obj/structure/cable/generated_station)
 
 /// A compact station turbine has no circulators or loops: it supplies its rate steadily while it is not broken.
 /obj/machinery/power/generator/generated_station/reconsider(datum/act/A)
-	own_clear(src, nameof(loop_watches), OWN_DELETE)
+	gas_watch_many_clear(src, nameof(loop_watches))
 	set_generating(FALSE)
 	set_power_supply(has_stat(BROKEN) ? 0 : generation_rate)
 
