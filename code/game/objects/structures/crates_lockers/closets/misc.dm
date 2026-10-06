@@ -32,7 +32,6 @@
 
 CAPABILITIES(/obj/structure/closet/secure_closet/guncabinet/rifle)
 	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/closet/secure_closet/guncabinet/rifle/proc/roll_starts_with(datum/roller/R)
@@ -85,7 +84,6 @@ CAPABILITIES(/obj/structure/closet/secure_closet/guncabinet/rifle)
 		/obj/item/cataloguer)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/explorer)
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
 	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
@@ -244,7 +242,6 @@ CAPABILITIES(/obj/structure/closet/secure_closet/sar)
 		)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/pilot)
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
 	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.

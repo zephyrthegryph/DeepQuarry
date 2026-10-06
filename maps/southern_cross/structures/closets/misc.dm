@@ -16,7 +16,7 @@
 		/obj/item/gun/projectile/shotgun/pump/rifle = 2)
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
-/obj/structure/closet/secure_closet/guncabinet/rifle/proc/roll_starts_with(datum/roller/R)
+/obj/structure/closet/secure_closet/guncabinet/rifle/roll_starts_with(datum/roller/R) // the map overrides the roll it had in code/
 	. = islist(starts_with) ? list() + starts_with : starts_with
 	if(R.chance(85))
 		. += /obj/item/gun/projectile/shotgun/pump/rifle
@@ -59,7 +59,7 @@
 		)
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
-/obj/structure/closet/secure_closet/explorer/proc/roll_starts_with(datum/roller/R)
+/obj/structure/closet/secure_closet/explorer/roll_starts_with(datum/roller/R) // the map overrides the roll it had in code/
 	. = islist(starts_with) ? list() + starts_with : starts_with
 	if(R.chance(50))
 		. += /obj/item/storage/backpack
@@ -125,7 +125,7 @@
 		/obj/item/radio)
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
-/obj/structure/closet/secure_closet/pilot/proc/roll_starts_with(datum/roller/R)
+/obj/structure/closet/secure_closet/pilot/roll_starts_with(datum/roller/R) // the map overrides the roll it had in code/
 	. = islist(starts_with) ? list() + starts_with : starts_with
 	if(R.chance(50))
 		. += /obj/item/storage/backpack
