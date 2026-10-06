@@ -56,23 +56,26 @@ CAPABILITIES(/obj/machinery/pump)
 
 	rel_set(src, nameof(cell), locate_in_list(component_parts, /obj/item/cell)) // component_parts owns the cell; this is a view onto it
 
-/// The pump, its tank and glass, the fluid's colour, the battery panel and cell, low power, running.
-/obj/machinery/pump/draw(datum/look/look)
-	..()
-	var/base = initial(icon_state)
-	look.state("[base][on ? "-running" : ""]")
-	look.overlay("[base]-tank")
+DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
+/obj/machinery/pump/appearance_overlays()
+	. = list()
+	. += ..()
+	. += "[icon_state]-tank"
 	if(!(cell?.check_charge(active_power_usage)))
-		look.overlay("[base]-lowpower")
+		. += "[icon_state]-lowpower"
+
 	if(reagents.total_volume >= 1)
-		var/image/I = image(icon, "[base]-volume")
+		var/image/I = image(icon, "[icon_state]-volume")
 		I.color = reagents.get_color()
-		look.overlay(I)
-	look.overlay("[base]-glass")
+		. += I
+	. += "[icon_state]-glass"
+
 	if(open)
-		look.overlay("[base]-open")
+		. += "[icon_state]-open"
 		if(istype(cell))
-			look.overlay("[base]-cell")
+			. += "[icon_state]-cell"
+
+	icon_state = "[initial(icon_state)][on ? "-running" : ""]"
 
 /// Pumps every machine frame; runs while on (declared).
 /obj/machinery/pump/proc/work_step(datum/act/timer/A)
@@ -126,7 +129,7 @@ MSG_DEF_SELF(pump/has_cell, "There is a power cell already installed.")
 
 /// The battery panel is open.
 /obj/machinery/pump/proc/battery_panel_open(datum/act/op/A)
-	return open
+	return open // ALLOW(reads): the panel is read when a cell is offered to it, never from a cached menu
 
 /// Why the battery panel is shut: screwed, or watertight until a crowbar opens it.
 /obj/machinery/pump/proc/battery_panel_shut_reason(datum/act/op/A)
@@ -134,7 +137,7 @@ MSG_DEF_SELF(pump/has_cell, "There is a power cell already installed.")
 
 /// No cell is installed.
 /obj/machinery/pump/proc/no_cell(datum/act/op/A)
-	return !istype(cell)
+	return isnull(cell) // ALLOW(reads): the cell slot is read when a cell is offered to it, never from a cached menu
 
 /**
  * The old attackby returned early (skipping the trailing RefreshParts()/update_icon()) when the

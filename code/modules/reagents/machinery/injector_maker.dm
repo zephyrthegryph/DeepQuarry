@@ -53,7 +53,7 @@ CAPABILITIES(/obj/machinery/injector_maker)
 	op("add_large_injector", item(/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty), label("Add injector"),
 		needs(req(PROC_REF(large_rack_free), because = MSG(injector_maker/rack_full)), req(PROC_REF(injector_empty), because = MSG(injector_maker/filled))),
 		then(PROC_REF(large_injector_added)))
-	op("add_plastic", item(/obj/item/stack/material), when(PROC_REF(is_plastic_stack)), label("Add plastic"), then(PROC_REF(plastic_added)))
+	op("add_plastic", item(/obj/item/stack/material), label("Add plastic"), then(PROC_REF(plastic_added)))
 	op("swallow", item(/obj/item), label("Use")) // the old attackby never called ..(): anything else (or a non-plastic stack) is swallowed silently
 	op("drag_plastic", item(/obj/item/stack/material/plastic), gesture(GESTURE_DRAG), label("Add plastic"), then(PROC_REF(plastic_dragged)))
 	op("eject_beaker", hand(), ungated(), gesture(GESTURE_ALT), when(PROC_REF(has_beaker)), label("Eject beaker"), then(PROC_REF(beaker_ejected)))
@@ -91,15 +91,15 @@ CAPABILITIES(/obj/machinery/injector_maker)
 
 /// The small injector rack has room.
 /obj/machinery/injector_maker/proc/small_rack_free(datum/act/op/A)
-	return count_small_injector < capacity_small_injector
+	return count_small_injector < capacity_small_injector // ALLOW(reads): the rack is counted when an injector is offered to it, never from a cached menu
 
 /// The large injector rack has room.
 /obj/machinery/injector_maker/proc/large_rack_free(datum/act/op/A)
-	return count_large_injector < capacity_large_injector
+	return count_large_injector < capacity_large_injector // ALLOW(reads): the rack is counted when an injector is offered to it, never from a cached menu
 
 /// The held injector is empty.
 /obj/machinery/injector_maker/proc/injector_empty(datum/act/op/A)
-	return !(A.held?.reagents?.total_volume > 0)
+	return !(A.held?.reagents?.total_volume > 0) // ALLOW(reads): the held injector's contents are read when it is offered, never from a cached menu
 
 /// An empty small injector goes on its rack.
 /obj/machinery/injector_maker/proc/small_injector_added(datum/act/op/A)
@@ -119,14 +119,12 @@ CAPABILITIES(/obj/machinery/injector_maker)
 	update_icon()
 	return TRUE
 
-/// The held stack is plastic.
-/obj/machinery/injector_maker/proc/is_plastic_stack(datum/act/op/A)
-	var/obj/item/held = A.held
-	return held.get_material_name() == MAT_PLASTIC
-
-/// Plastic sheets in hand: asks how many go in.
+/// Plastic sheets in hand: asks how many go in. Any other material is not taken: the click goes on (to the swallow below), as before.
 /obj/machinery/injector_maker/proc/plastic_added(datum/act/op/A)
-	return maker_plastic_stage(A.actor, A.held, list())
+	var/obj/item/stack/S = A.held
+	if(S.get_material_name() != MAT_PLASTIC)
+		return OP_DECLINE
+	return maker_plastic_stage(A.actor, S, list())
 
 /obj/machinery/injector_maker/proc/maker_plastic_stage(mob/user, obj/item/stack/S, list/maker_answers)
 	if(!("a1" in maker_answers))

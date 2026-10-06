@@ -27,7 +27,9 @@ CAPABILITIES(/obj/machinery/reagentgrinder)
 	owns_one(nameof(beaker), /obj/item/reagent_containers, starts = /obj/item/reagent_containers/glass/beaker/large)
 	op("use", item(/obj/item), label("Use"), then(PROC_REF(item_used)))
 	op("replace_beaker", hand(), ungated(), gesture(GESTURE_ALT), label("Replace beaker"), needs(req_adjacent()), then(PROC_REF(beaker_replaced)))
-	op("interact", hand(), ungated(), label("Use"), then(PROC_REF(touched)))
+	op("interact", hand(), ungated(), label("Use"), needs(req(PROC_REF(menu_available), silent = TRUE)),
+		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(radial_choices)), "radial" = TRUE, "autopick_single_option" = FALSE, "timeout" = 0), step = "choice"),
+		then(PROC_REF(radial_chosen)))
 
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/reagentgrinder/Initialize(mapload)
@@ -139,46 +141,37 @@ CAPABILITIES(/obj/machinery/reagentgrinder)
 	replace_beaker(user)
 	return OP_OK
 
-/// The old attack_hand (it never called ..()): the radial menu.
-/obj/machinery/reagentgrinder/proc/touched(datum/act/op/A)
-	interact(A.actor)
-	return OP_OK
+/// Not while it grinds; an AI (a remote hand) not while it is unpowered. The old menu opened silently or not at all. (Otherwise, with no power
+/// or broken, the procs fail but the buttons still show.)
+/obj/machinery/reagentgrinder/proc/menu_available(datum/act/op/A)
+	if(grinding)
+		return FALSE
+	return !((A.authority & AUTH_REMOTE_ACCESS) && has_stat(NOPOWER))
 
-/obj/machinery/reagentgrinder/interact(mob/user) // The microwave Menu //I am reasonably certain that this is not a microwave
-	if(grinding || user.incapacitated())
-		return
-
+/// The radial's buttons: eject what it holds, grind it, and an examine for a remote hand.
+/obj/machinery/reagentgrinder/proc/radial_choices(datum/act/op/A)
 	var/list/options = list()
-
 	if(beaker || length(holdingitems))
 		options["eject"] = radial_eject
-
-	if(isAI(user))
-		if(has_stat(NOPOWER))
-			return
+	if(A.authority & AUTH_REMOTE_ACCESS)
 		options["examine"] = radial_examine
-
-	// if there is no power or it's broken, the procs will fail but the buttons will still show
 	if(length(holdingitems))
 		options["grind"] = radial_grind
+	return options
 
-	open_request(src, /datum/prompt/choice, PROC_REF(radial_option_chosen), answerer = user, choices = options, anchor = src, require_near = !issilicon(user), autopick_single_option = FALSE, radial = TRUE, timeout = 0)
-
-/obj/machinery/reagentgrinder/proc/radial_option_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	// post choice verification
-	if(!user || grinding || (isAI(user) && has_stat(NOPOWER)) || user.incapacitated())
-		return
-
-	switch(A.answer.value)
+/// The old attack_hand (it never called ..()): the radial menu, then what was chosen.
+/obj/machinery/reagentgrinder/proc/radial_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	if(grinding || user.incapacitated()) // post choice verification
+		return OP_OK
+	switch(A.step_value("choice"))
 		if("eject")
 			eject(user)
 		if("grind")
 			grind(user)
 		if("examine")
 			examine(user)
+	return OP_OK
 
 /obj/machinery/reagentgrinder/proc/eject(mob/user)
 	if(user.incapacitated())

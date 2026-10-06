@@ -33,7 +33,7 @@
 	look.state("alembic[appearance_stage()]")
 
 /obj/machinery/alembic/proc/alembic_no_reagent(datum/act/op/A)
-	return !potion_reagent
+	return !potion_reagent // ALLOW(reads): the slot is read when a material is offered to it, never from a cached menu
 
 /obj/machinery/alembic/proc/interaction_load_reagent(datum/act/op/A)
 	var/mob/user = A.actor
@@ -48,7 +48,7 @@
 	return TRUE
 
 /obj/machinery/alembic/proc/alembic_no_base(datum/act/op/A)
-	return !base_reagent
+	return !base_reagent // ALLOW(reads): the slot is read when a base is offered to it, never from a cached menu
 
 /obj/machinery/alembic/proc/interaction_load_base(datum/act/op/A)
 	var/mob/user = A.actor

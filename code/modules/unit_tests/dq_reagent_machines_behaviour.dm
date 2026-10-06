@@ -5,7 +5,7 @@
 /// The machine under test, allocated next to the actor.
 /datum/unit_test/dq_p2_reagents/proc/rm_machine(type)
 	var/obj/machinery/M = allocate(type, run_loc_floor_bottom_left)
-	M.anchored = TRUE
+	M.set_anchored(TRUE) // wrenched down, as it would be in use
 	return M
 
 /// A beaker clicked onto an empty chem master loads it; a second one is refused and stays in hand; a pill bottle loads into its own slot.

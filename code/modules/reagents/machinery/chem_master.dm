@@ -181,7 +181,7 @@ CAPABILITIES(/obj/machinery/chem_master)
 // ---- what the modals ask about (requirements read when the modal is opened and again when it is answered) ----
 
 /obj/machinery/chem_master/proc/has_pill_bottle(datum/act/op/A)
-	return !!loaded_pill_bottle // ALLOW(reads): the loaded bottle is read when the modal opens and again when it is answered, never cached
+	return !!loaded_pill_bottle
 
 /obj/machinery/chem_master/proc/beaker_has_reagents(datum/act/op/A)
 	return beaker?.reagents?.total_volume > 0 // ALLOW(reads): the beaker's volume is read when the modal opens and again when it is answered, never cached

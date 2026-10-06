@@ -179,7 +179,7 @@
 /datum/reagent/proc/touch_obj(obj/O, amount, mob/user = null) // Acid melting, cleaner cleaning, etc
 	if(notice_wanted(O, /datum/notice/reagent_expose_obj))
 		var/datum/notice/reagent_expose_obj/N = notice_take(/datum/notice/reagent_expose_obj)
-		N.reagent = src // ALLOW(ownership): a pooled notice holds its entities for one trigger and is reset on release
+		N.reagent = src
 		N.amount = amount
 		notice_publish(O, N)
 
