@@ -24,6 +24,9 @@
 	var/panelopen = 0
 	var/safetieson = 1
 	var/cycletime_left = 0
+TRACKED(/obj/machinery/suit_storage_unit, isUV)
+TRACKED(/obj/machinery/suit_storage_unit, islocked)
+TRACKED(/obj/machinery/suit_storage_unit, issuperUV)
 
 CAPABILITIES(/obj/machinery/suit_storage_unit)
 	owns_one(nameof(HELMET), /obj/item/clothing/head/helmet/space, starts = nameof(helmet_type))
@@ -195,10 +198,10 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	else  //welp, the guy is protected, we can continue
 		if(issuperUV)
 			to_chat(user, span_info("You slide the dial back towards \"185nm\"."))
-			issuperUV = 0
+			set_issuperUV(0)
 		else
 			to_chat(user, span_info("You crank the dial all the way up to \"15nm\"."))
-			issuperUV = 1
+			set_issuperUV(1)
 		return
 
 
@@ -240,7 +243,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 
 /obj/machinery/suit_storage_unit/proc/dump_everything()
 	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
-	islocked = 0 //locks go free
+	set_islocked(0) //locks go free
 	if(SUIT)
 		SUIT.forceMove(get_turf(src))
 		own_take(src, nameof(SUIT))
@@ -274,7 +277,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 		return
 	if(isopen)
 		return
-	islocked = !islocked
+	set_islocked(!islocked)
 	return
 
 
@@ -290,9 +293,9 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 		return
 	to_chat(user, span_notice("You start the Unit's cauterisation cycle."))
 	cycletime_left = 20
-	isUV = 1
+	set_isUV(1)
 	if(OCCUPANT && !islocked)
-		islocked = 1 //Let's lock it for good measure
+		set_islocked(1) //Let's lock it for good measure
 	changed(src)
 
 	after(src, 5 SECONDS, PROC_REF(uv_cycle_step), with = list(0))
@@ -333,9 +336,9 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 			visible_message(span_danger("With a loud whining noise, the Suit Storage Unit's door grinds open. Puffs of ashen smoke come out of its chamber."), 3)
 			isbroken = 1
 			isopen = 1
-			islocked = 0
+			set_islocked(0)
 			eject_occupant(OCCUPANT) //Mixing up these two lines causes bug. DO NOT DO IT.
-		isUV = 0 //Cycle ends
+		set_isUV(0) //Cycle ends
 	if(i < 3)
 		after(src, 5 SECONDS, PROC_REF(uv_cycle_step), with = list(i + 1))
 		return
@@ -513,7 +516,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 
 /obj/machinery/suit_storage_unit/proc/lose_power()
 	ispowered = 0
-	islocked = 0
+	set_islocked(0)
 	isopen = 1
 	dump_everything()
 	changed(src)

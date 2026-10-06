@@ -1,11 +1,11 @@
 /obj/item/gun/projectile/dartgun icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/dartgun state: dartgun-5
 /obj/item/gun/projectile/dartgun dir: 2
-/obj/item/gun/projectile/dartgun overlay: icons/obj/gun.dmi:dartgun-empty:8:#000000
+/obj/item/gun/projectile/dartgun overlay: icons/obj/gun.dmi:dartgun-5:8:#000000
 /obj/item/gun/projectile/dartgun/research icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/dartgun/research state: dartgun_sci-3
 /obj/item/gun/projectile/dartgun/research dir: 2
-/obj/item/gun/projectile/dartgun/research overlay: icons/obj/gun.dmi:dartgun_sci-empty:8:#000000
+/obj/item/gun/projectile/dartgun/research overlay: icons/obj/gun.dmi:dartgun_sci-3:8:#000000
 /obj/item/gun/projectile/dartgun/tranq icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/dartgun/tranq state: tranqgun
 /obj/item/gun/projectile/dartgun/tranq dir: 2

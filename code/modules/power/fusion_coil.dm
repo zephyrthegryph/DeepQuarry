@@ -20,6 +20,7 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 	var/coil_charged = TRUE	//have we been discharged into something yet?
 	var/coil_damaged = FALSE	//have we been damaged? one hit is fine, but two direct hits will explode us if we're charged
 	var/coil_charge = 4800000	//how much power do we dump into the SMES on use? restores the main (if unupgraded) by 20%, or engine by 80%
+TRACKED(/obj/item/fusion_coil, coil_damaged)
 
 /obj/item/fusion_coil/draw(datum/look/look)
 	..()
@@ -58,6 +59,6 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 	visible_message(span_danger("\The [src] sparks and sputters!"))
 	fx_sparks(src.loc, 5, FALSE)
 	play_sfx(src, SFX_SPARKS)
-	coil_damaged = TRUE
+	set_coil_damaged(TRUE)
 	coil_charge = (coil_charge / 2)
 	changed(src)

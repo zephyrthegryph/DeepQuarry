@@ -159,13 +159,13 @@ CAPABILITIES(/datum/prompt/number/cablelayer_cut)
 		return reset()
 	var/obj/structure/cable/NC = new(new_turf)
 	NC.cableColor("red")
-	NC.d1 = 0
-	NC.d2 = fdirn
+	NC.set_d1(0)
+	NC.set_d2(fdirn)
 	changed(NC)
 
 	if(last_piece() && last_piece().d2 != M_Dir)
-		last_piece().d1 = min(last_piece().d2, M_Dir)
-		last_piece().d2 = max(last_piece().d2, M_Dir)
+		last_piece().set_d1(min(last_piece().d2, M_Dir))
+		last_piece().set_d2(max(last_piece().d2, M_Dir))
 		changed(last_piece())
 		last_piece().power_register()
 	NC.power_register()

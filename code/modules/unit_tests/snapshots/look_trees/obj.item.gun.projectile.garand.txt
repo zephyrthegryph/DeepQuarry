@@ -1,5 +1,5 @@
 /obj/item/gun/projectile/garand icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/garand state: garand
 /obj/item/gun/projectile/garand dir: 2
-/obj/item/gun/projectile/garand overlay: icons/obj/gun.dmi:garand-e:8:#000000
+/obj/item/gun/projectile/garand overlay: icons/obj/gun.dmi:garand:8:#000000
 

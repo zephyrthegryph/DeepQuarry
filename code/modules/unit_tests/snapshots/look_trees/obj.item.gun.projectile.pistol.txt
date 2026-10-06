@@ -1,17 +1,17 @@
 /obj/item/gun/projectile/pistol icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/pistol state: pistol
 /obj/item/gun/projectile/pistol dir: 2
-/obj/item/gun/projectile/pistol overlay: icons/obj/gun.dmi:pistol-e:8:#000000
+/obj/item/gun/projectile/pistol overlay: icons/obj/gun.dmi:pistol:8:#000000
 /obj/item/gun/projectile/pistol/toy icon: icons/obj/gun_toy.dmi
 /obj/item/gun/projectile/pistol/toy state: pistol
 /obj/item/gun/projectile/pistol/toy dir: 2
-/obj/item/gun/projectile/pistol/toy overlay: icons/obj/gun_toy.dmi:pistol-e:8:#000000
+/obj/item/gun/projectile/pistol/toy overlay: icons/obj/gun_toy.dmi:pistol:8:#000000
 /obj/item/gun/projectile/pistol/toy/n99 icon: icons/obj/gun_toy.dmi
 /obj/item/gun/projectile/pistol/toy/n99 state: n99
 /obj/item/gun/projectile/pistol/toy/n99 dir: 2
-/obj/item/gun/projectile/pistol/toy/n99 overlay: icons/obj/gun_toy.dmi:n99-e:8:#000000
+/obj/item/gun/projectile/pistol/toy/n99 overlay: icons/obj/gun_toy.dmi:n99:8:#000000
 /obj/item/gun/projectile/pistol/flash icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/pistol/flash state: pistol
 /obj/item/gun/projectile/pistol/flash dir: 2
-/obj/item/gun/projectile/pistol/flash overlay: icons/obj/gun.dmi:pistol-e:8:#000000
+/obj/item/gun/projectile/pistol/flash overlay: icons/obj/gun.dmi:pistol:8:#000000
 

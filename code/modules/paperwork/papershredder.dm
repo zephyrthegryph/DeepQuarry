@@ -25,6 +25,7 @@
 		/obj/item/card/id = 3,
 		/obj/item/paper_bundle = 3,
 		)
+TRACKED(/obj/machinery/papershredder, paperamount)
 
 CAPABILITIES(/obj/machinery/papershredder)
 	climb()
@@ -73,7 +74,7 @@ CAPABILITIES(/obj/machinery/papershredder)
 			return TRUE
 		if(!consume(W, user))
 			return TRUE
-		paperamount += paper_result
+		set_paperamount(paperamount + (paper_result))
 		play_sfx(src, SFX_ITEMS_PSHRED)
 		flick(shred_anim, src)
 		if(paperamount > max_paper)
@@ -82,8 +83,7 @@ CAPABILITIES(/obj/machinery/papershredder)
 				var/obj/item/shreddedp/SP = get_shredded_paper()
 				SP.forceMove(get_turf(src))
 				SP.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),1,5)
-			paperamount = max_paper
-		changed(src)
+			set_paperamount(max_paper)
 		return TRUE
 	return FALSE
 
@@ -130,12 +130,11 @@ CAPABILITIES(/obj/machinery/papershredder)
 
 	else
 		to_chat(user, span_notice("You empty \the [src]."))
-	changed(src)
 
 /obj/machinery/papershredder/proc/get_shredded_paper()
 	if(!paperamount)
 		return
-	paperamount--
+	set_paperamount(paperamount - 1)
 	return new /obj/item/shreddedp(get_turf(src))
 
 /// The look (the draw sweep: from its template and its layers).

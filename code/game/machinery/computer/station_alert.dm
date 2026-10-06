@@ -62,10 +62,10 @@ CAPABILITIES(/obj/machinery/computer/station_alert)
 		var/last_icon = icon_screen
 		var/list/alarms = alarm_monitor ? alarm_monitor.major_alarms() : list()
 		if(alarms.len)
-			icon_screen = "alert:2"
+			set_icon_screen("alert:2")
 			play_sfx(src, SFX_EFFECTS_COMP_ALERT_MAJOR) // Alarm notifications
 		else
-			icon_screen = initial(icon_screen)
+			set_icon_screen(initial(icon_screen))
 			play_sfx(src, SFX_EFFECTS_COMP_ALERT_CLEAR) // Alarm notifications
 		if(last_icon != icon_screen)
 			changed(src)

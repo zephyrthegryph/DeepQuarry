@@ -34,7 +34,7 @@
 	if(.)
 		return TRUE
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-	bolt_open = !bolt_open
+	set_bolt_open(!bolt_open)
 	if(bolt_open)
 		if(chambered)
 			to_chat(user, span_notice("You work the bolt open, ejecting [chambered]!"))
@@ -45,9 +45,8 @@
 			to_chat(user, span_notice("You work the bolt open."))
 	else
 		to_chat(user, span_notice("You work the bolt closed."))
-		bolt_open = 0
+		set_bolt_open(0)
 	add_fingerprint(user)
-	changed(src)
 
 /obj/item/gun/projectile/heavysniper/special_check(mob/user)
 	if(bolt_open)

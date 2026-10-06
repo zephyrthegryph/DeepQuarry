@@ -1,5 +1,5 @@
 /obj/machinery/magnetic_module icon: icons/obj/objects.dmi
 /obj/machinery/magnetic_module state: floor_magnet0-f
 /obj/machinery/magnetic_module dir: 2
-/obj/machinery/magnetic_module overlay: icons/obj/objects.dmi:floor_magnet0:8:#000000
+/obj/machinery/magnetic_module overlay: icons/obj/objects.dmi:floor_magnet0-f:8:#000000
 

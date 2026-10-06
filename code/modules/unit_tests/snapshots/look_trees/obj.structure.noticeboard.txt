@@ -5,7 +5,7 @@
 /obj/structure/noticeboard/anomaly icon: icons/obj/stationobjs.dmi
 /obj/structure/noticeboard/anomaly state: nboard00
 /obj/structure/noticeboard/anomaly dir: 2
-/obj/structure/noticeboard/anomaly overlay: icons/obj/stationobjs.dmi:nboard05:8:#000000
+/obj/structure/noticeboard/anomaly overlay: icons/obj/stationobjs.dmi:nboard00:8:#000000
 /obj/structure/noticeboard/medical icon: icons/obj/stationobjs.dmi
 /obj/structure/noticeboard/medical state: nboard02
 /obj/structure/noticeboard/medical dir: 2

@@ -18,6 +18,7 @@
 
 	clicksound = SFX_KEYBOARD
 	integrity_failure = 0.5
+TRACKED(/obj/machinery/computer, icon_screen)
 
 MSG_DEF(computer/gripper_use, "You use the gripper's tool with %T%.", "")
 MSG_DEF_SELF(computer/gripper_empty, "The gripper is not holding anything.")

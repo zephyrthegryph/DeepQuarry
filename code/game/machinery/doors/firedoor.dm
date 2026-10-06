@@ -53,6 +53,8 @@
 	)
 	var/open_sound = SFX_MACHINES_FIRELOCKOPEN // firedoor sound variable.
 	var/close_sound = SFX_MACHINES_FIRELOCKCLOSE // firedoor sound variable.
+TRACKED(/obj/machinery/door/firedoor, dir_alerts)
+TRACKED(/obj/machinery/door/firedoor, pdiff_alert)
 
 TRACKED(/obj/machinery/door/firedoor, blocked)
 TRACKED(/obj/machinery/door/firedoor, hatch_open)
@@ -473,7 +475,7 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 	var/new_pdiff_alert = pdiff >= FIREDOOR_MAX_PRESSURE_DIFF
 	lockdown ||= new_pdiff_alert
 	if(pdiff_alert != new_pdiff_alert)
-		pdiff_alert = new_pdiff_alert
+		set_pdiff_alert(new_pdiff_alert)
 		redraw = TRUE
 	var/list/tile_info = getCardinalAirInfo(src.loc, list("temperature", "pressure"))
 	var/any_alerts = FALSE
@@ -483,12 +485,12 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 		if((LAZYACCESS(dir_alerts, index) || 0) != alerts)
 			redraw = TRUE
 			if(!dir_alerts)
-				dir_alerts = new /list(4)
+				set_dir_alerts(new /list(4))
 			dir_alerts[index] = alerts
 		any_alerts ||= alerts
 		lockdown ||= alerts
 	if(!any_alerts)
-		dir_alerts = null
+		set_dir_alerts(null)
 	if(redraw)
 		changed(src) // the alert lights are no tracked var: the look is redrawn by hand
 

@@ -7,11 +7,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/power_monitor, TYPE_PROC_REF(/at
 /obj/machinery/computer/power_monitor/appearance_overlays()
 	. = list()
 	if(has_stat(BROKEN))
-		icon_screen = "broken"
+		set_icon_screen("broken")
 	else if(alerting)
-		icon_screen = "power_monitor_warn"
+		set_icon_screen("power_monitor_warn")
 	else
-		icon_screen = "power_monitor"
+		set_icon_screen("power_monitor")
 	. += ..()
 
 /obj/machinery/computer/rcon

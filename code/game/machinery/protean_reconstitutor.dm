@@ -32,6 +32,7 @@
 
 	//component vars
 	circuit = /obj/item/circuitboard/protean_reconstitutor
+TRACKED(/obj/machinery/protean_reconstitutor, nanomass_reserve)
 
 // This board declares no req_components, so its default parts are declared
 // here instead of read off the board (roadmap C6): still resolved lazily
@@ -159,11 +160,10 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 		var/paste_label = "\the [NP]"
 		if(!consume(NP, user))
 			return TRUE
-		nanomass_reserve += paste_gain
+		set_nanomass_reserve(nanomass_reserve + (paste_gain))
 		if(nanomass_reserve > nanotank_max)
-			nanomass_reserve = nanotank_max
+			set_nanomass_reserve(nanotank_max)
 		to_chat(user,span_notice("You fill \the [src] with paste from [paste_label]. The display now reads [nanomass_reserve]/[nanotank_max] units."))
-	changed(src)
 	return FALSE
 
 /obj/machinery/protean_reconstitutor/wrench_act(mob/user, obj/item/tool)
@@ -224,7 +224,6 @@ CAPABILITIES(/datum/prompt/choice/protean_component)
 		//no brain, no orchestrator, and/or not enough goo
 		to_chat(user,span_warning("Essential components missing, or insufficient materials available!"))
 		playsound(src, buzzsound, 100, 1, -1)
-		changed(src)
 		return TRUE
 	if(!protean_brain.get_occupant()?.client)
 		src.visible_message(span_warning("\The [src] chirps, \"Warning, no positronic neural network activity detected! Recommend removing inactive core.\""))
@@ -238,10 +237,9 @@ CAPABILITIES(/datum/prompt/choice/protean_component)
 			play_sfx(src, SFX_MACHINES_BLENDER)
 		else
 			playsound(src, clicksound, 50, 1)
-		nanomass_reserve -= nanomass_required
+		set_nanomass_reserve(nanomass_reserve - (nanomass_required))
 		log_game("PROTEAN: [key_name(user)] started a reconstitution cycle at [AREACOORD(src)]")
 		after(src, base_cook_time, PROC_REF(reconstitute_begin))
-	changed(src)
 	return TRUE
 
 /// Reconstitution step 1: the body is grown after the base cook time.
@@ -370,7 +368,6 @@ CAPABILITIES(/datum/prompt/choice/protean_component)
 	P.forceMove(src.loc)
 	processing_revive = FALSE
 	log_game("PROTEAN: [key_name(P)] was reconstituted at [AREACOORD(src)]")
-	changed(src)
 
 /// Stop a cycle cleanly: salvaged components go back into the tank, the
 /// unfinished body is dissolved, the nanites are refunded and the machine is
@@ -389,9 +386,8 @@ CAPABILITIES(/datum/prompt/choice/protean_component)
 		if(protean_brain && protean_brain.loc != src)
 			protean_brain.forceMove(src)
 		spent(P)
-	nanomass_reserve = min(nanotank_max, nanomass_reserve + nanomass_required)
+	set_nanomass_reserve(min(nanotank_max, nanomass_reserve + nanomass_required))
 	processing_revive = FALSE
-	changed(src)
 
 /obj/machinery/protean_reconstitutor/ownership()
 	. = ..()

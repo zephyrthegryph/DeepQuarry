@@ -18,6 +18,7 @@
 		/obj/item/clothing/mask/gas/clown_hat,
 		/obj/item/clothing/head/beret
 	)
+TRACKED(/obj/item/reagent_containers/cooking_container, food_items)
 
 
 // A cooking container is a dish, basket or rack that holds the solid things on its list (up to the sum of their sizes) and, open to reagents, whatever is
@@ -66,7 +67,7 @@ MSG_DEF_SELF(cooking_container/nothing_in_it, "There's nothing in it you can rem
 		return OP_REFUSED
 	thing.forceMove(src)
 	to_chat(user, span_notice("You put the [thing] into the [src]."))
-	food_items += 1
+	set_food_items(food_items + (1))
 	changed(src)
 	return OP_OK
 
@@ -114,7 +115,7 @@ MSG_DEF_SELF(cooking_container/nothing_in_it, "There's nothing in it you can rem
 	for (var/atom/movable/A in contents)
 		A.forceMove(get_turf(src))
 
-	food_items = 0
+	set_food_items(0)
 	to_chat(user, span_notice("You remove all the solid items from the [src]."))
 	changed(src)
 

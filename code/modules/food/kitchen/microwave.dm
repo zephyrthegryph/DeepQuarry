@@ -83,7 +83,7 @@ CAPABILITIES(/obj/machinery/microwave)
 	item_capacity = (advanced_microwave ? 40 : 10) * mbrating
 	reagents.maximum_volume = (advanced_microwave ? 200 : 40) * mbrating
 	efficiency = mlrating
-	active_power_usage = max(100, 2000 / caprating)
+	set_active_power_usage(max(100, 2000 / caprating))
 
 /obj/machinery/microwave/Initialize(mapload)
 	. = ..()

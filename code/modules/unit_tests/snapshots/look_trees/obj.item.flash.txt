@@ -7,7 +7,7 @@
 /obj/item/flash/synthetic dir: 2
 /obj/item/flash/synthetic overlay: icons/obj/device.dmi:sflash:8:#000000
 /obj/item/flash/robot icon: icons/obj/device.dmi
-/obj/item/flash/robot state: flash
+/obj/item/flash/robot state: flashburnt
 /obj/item/flash/robot dir: 2
-/obj/item/flash/robot overlay: icons/obj/device.dmi:flash:8:#000000
+/obj/item/flash/robot overlay: icons/obj/device.dmi:flashburnt:8:#000000
 

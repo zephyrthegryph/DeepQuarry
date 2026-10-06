@@ -33,6 +33,9 @@
 	var/cost_plastic_small = 25
 	var/cost_plastic_large = 250
 	var/capacity_plastic = 60000 // 30 sheets of plastic
+TRACKED(/obj/machinery/injector_maker, count_large_injector)
+TRACKED(/obj/machinery/injector_maker, count_plastic)
+TRACKED(/obj/machinery/injector_maker, count_small_injector)
 
 
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with
@@ -104,7 +107,7 @@ CAPABILITIES(/obj/machinery/injector_maker)
 /obj/machinery/injector_maker/proc/small_injector_added(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/E = A.held
-	count_small_injector = count_small_injector + 1
+	set_count_small_injector(count_small_injector + 1)
 	consume(E, user)
 	return TRUE
 
@@ -112,7 +115,7 @@ CAPABILITIES(/obj/machinery/injector_maker)
 /obj/machinery/injector_maker/proc/large_injector_added(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/E = A.held
-	count_large_injector = count_large_injector + 1
+	set_count_large_injector(count_large_injector + 1)
 	consume(E, user)
 	return TRUE
 
@@ -138,8 +141,7 @@ CAPABILITIES(/obj/machinery/injector_maker)
 		to_chat(user, span_warning("Storage is full! There is only [free_space] units worth of space left!"))
 	else
 		S.use(input_amount)
-		count_plastic = count_plastic + plastic_input
-		changed(src)
+		set_count_plastic(count_plastic + plastic_input)
 	return TRUE
 
 /// The old adjacency/consciousness checks were silent (no message), so they stay in the effect.
@@ -165,8 +167,7 @@ CAPABILITIES(/obj/machinery/injector_maker)
 		to_chat(user, span_warning("Storage is full! There is only [free_space] units worth of space left!"))
 	else
 		plastic_stack.use(input_amount)
-		count_plastic = count_plastic + plastic_input
-		changed(src)
+		set_count_plastic(count_plastic + plastic_input)
 	return TRUE
 
 /// A beaker is in.
@@ -232,7 +233,6 @@ CAPABILITIES(/obj/machinery/injector_maker)
 			else
 				beaker.forceMove(drop_location())
 			rel_take(src, nameof(beaker))
-			changed(src)
 
 
 		if("small injector")
@@ -278,7 +278,6 @@ CAPABILITIES(/obj/machinery/injector_maker)
 				if(isnull(name))
 					return
 				make_injector("small injector", injector_amount, name, material, user)
-				changed(src)
 
 
 		if("large injector")
@@ -324,7 +323,6 @@ CAPABILITIES(/obj/machinery/injector_maker)
 				if(isnull(name))
 					return
 				make_injector("large injector", injector_amount, name, material,user)
-				changed(src)
 
 
 /obj/machinery/injector_maker/proc/make_injector(size, amount, new_name, material, mob/user)
@@ -358,12 +356,12 @@ CAPABILITIES(/obj/machinery/injector_maker)
 						if(src.count_plastic < cost_plastic_small)
 							return
 						else
-							src.count_plastic = src.count_plastic - cost_plastic_small
+							set_count_plastic(src.count_plastic - cost_plastic_small)
 					if("use injectors")
 						if(!src.count_small_injector)
 							return
 						else
-							src.count_small_injector = src.count_small_injector - 1
+							set_count_small_injector(src.count_small_injector - 1)
 				var/obj/item/reagent_containers/hypospray/autoinjector/empty/P = new(loc)
 				beaker.reagents.trans_to_obj(P, amount_per_injector)
 				changed(P)
@@ -377,12 +375,12 @@ CAPABILITIES(/obj/machinery/injector_maker)
 						if(src.count_plastic < cost_plastic_large)
 							return
 						else
-							src.count_plastic = src.count_plastic - cost_plastic_large
+							set_count_plastic(src.count_plastic - cost_plastic_large)
 					if("use injectors")
 						if(!src.count_large_injector)
 							return
 						else
-							src.count_large_injector = src.count_large_injector - 1
+							set_count_large_injector(src.count_large_injector - 1)
 				var/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty/P = new(loc)
 				beaker.reagents.trans_to_obj(P, amount_per_injector)
 				changed(P)

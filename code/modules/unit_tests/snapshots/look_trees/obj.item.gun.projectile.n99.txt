@@ -1,5 +1,5 @@
 /obj/item/gun/projectile/n99 icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/n99 state: n99
 /obj/item/gun/projectile/n99 dir: 2
-/obj/item/gun/projectile/n99 overlay: icons/obj/gun.dmi:n99-e:8:#000000
+/obj/item/gun/projectile/n99 overlay: icons/obj/gun.dmi:n99:8:#000000
 

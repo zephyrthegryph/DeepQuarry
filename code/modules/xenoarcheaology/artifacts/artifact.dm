@@ -17,6 +17,7 @@
 
 	/// The artifact master type created at Initialize (the instance lives in /atom/var/artifact_master).
 	var/artifact_master_type = /datum/artifact_master
+TRACKED(/obj/machinery/artifact, icon_num)
 
 /// Air too hot: it breaks. Otherwise it sleeps on a watch of its tile's air crossing
 /// ARTIFACT_HEAT_BREAK (and re-arms when moved).
@@ -56,9 +57,9 @@ CAPABILITIES(/obj/machinery/artifact)
 	var/datum/artifact_effect/my_effect = artifact_master.get_primary() //Gets the primary effect of the artifact.
 
 	if(!isnull(predefined_icon_num))
-		icon_num = predefined_icon_num
+		set_icon_num(predefined_icon_num)
 	else
-		icon_num = rand(0, 15)
+		set_icon_num(rand(0, 15))
 
 	icon_state = "ano[icon_num]0"
 	if(icon_num == 7 || icon_num == 8 || icon_num == 15)

@@ -50,7 +50,7 @@ CAPABILITIES(/obj/machinery/computer/atmos_alert)
 	if(!operable())
 		return
 	var/level = length(GLOB.atmosphere_alarm.major_alarms()) ? 2 : (length(GLOB.atmosphere_alarm.minor_alarms()) ? 1 : 0)
-	icon_screen = level ? "alert:[level]" : initial(icon_screen)
+	set_icon_screen(level ? "alert:[level]" : initial(icon_screen))
 	switch(level)
 		if(2)
 			play_sfx(src, SFX_EFFECTS_COMP_ALERT_MAJOR)

@@ -26,6 +26,7 @@
 	var/cast = FALSE
 
 	attackspeed = 3 SECONDS
+TRACKED(/obj/item/material/fishing_rod, strung)
 
 /obj/item/material/fishing_rod/built
 	strung = FALSE
@@ -47,9 +48,8 @@
 /obj/item/material/fishing_rod/proc/string_done(mob/user, obj/item/stack/cable_coil/C)
 	if(strung || !C.use(5))
 		return
-	strung = TRUE
+	set_strung(TRUE)
 	to_chat(user, span_notice("You string \the [src]!"))
-	changed(src)
 
 EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF(fishing_rod_item)))
 
@@ -74,9 +74,8 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF
 /obj/item/material/fishing_rod/wirecutter_act(mob/user, obj/item/tool)
 	if(!strung)
 		return ITEM_INTERACT_BLOCKING
-	strung = FALSE
+	set_strung(FALSE)
 	to_chat(user, span_notice("You cut \the [src]'s string!"))
-	changed(src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/material/fishing_rod/draw(datum/look/look)

@@ -1,17 +1,17 @@
 /obj/machinery/artifact icon: icons/obj/xenoarchaeology.dmi
 /obj/machinery/artifact state: ano31
 /obj/machinery/artifact dir: 2
-/obj/machinery/artifact overlay: icons/obj/xenoarchaeology.dmi:ano30:8:#000000
+/obj/machinery/artifact overlay: icons/obj/xenoarchaeology.dmi:ano31:8:#000000
 /obj/machinery/artifact underlay: icons/effects/effects.dmi:shield-old:-32767:#00b7ff
 /obj/machinery/artifact/predefined icon: icons/obj/xenoarchaeology.dmi
 /obj/machinery/artifact/predefined state: ano31
 /obj/machinery/artifact/predefined dir: 2
-/obj/machinery/artifact/predefined overlay: icons/obj/xenoarchaeology.dmi:ano30:8:#000000
+/obj/machinery/artifact/predefined overlay: icons/obj/xenoarchaeology.dmi:ano31:8:#000000
 /obj/machinery/artifact/predefined underlay: icons/effects/effects.dmi:shield-old:-32767:#00b7ff
 /obj/machinery/artifact/predefined/hungry_statue icon: icons/obj/xenoarchaeology.dmi
 /obj/machinery/artifact/predefined/hungry_statue state: ano141
 /obj/machinery/artifact/predefined/hungry_statue dir: 2
-/obj/machinery/artifact/predefined/hungry_statue overlay: icons/obj/xenoarchaeology.dmi:ano140:8:#000000
+/obj/machinery/artifact/predefined/hungry_statue overlay: icons/obj/xenoarchaeology.dmi:ano141:8:#000000
 /obj/machinery/artifact/predefined/hungry_statue underlay: icons/effects/effects.dmi:gravisphere:-32767:#ff0000
 /obj/machinery/artifact/predefined/hungry_statue underlay: icons/effects/effects.dmi:pulsing:-32767:#00c3ff
 

@@ -9,5 +9,5 @@
 /obj/item/gun/projectile/automatic/c20r/empty icon: icons/obj/64x32guns_ch.dmi
 /obj/item/gun/projectile/automatic/c20r/empty state: c20r
 /obj/item/gun/projectile/automatic/c20r/empty dir: 2
-/obj/item/gun/projectile/automatic/c20r/empty overlay: icons/obj/64x32guns_ch.dmi:c20r-20:8:#000000
+/obj/item/gun/projectile/automatic/c20r/empty overlay: icons/obj/64x32guns_ch.dmi:c20r:8:#000000
 

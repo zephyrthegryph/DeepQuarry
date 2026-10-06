@@ -1,9 +1,9 @@
 /obj/structure/extinguisher_cabinet icon: icons/obj/closet.dmi
 /obj/structure/extinguisher_cabinet state: extinguisher_closed_standard
 /obj/structure/extinguisher_cabinet dir: 2
-/obj/structure/extinguisher_cabinet overlay: icons/obj/closet.dmi:extinguisher:8:#000000
+/obj/structure/extinguisher_cabinet overlay: icons/obj/closet.dmi:extinguisher_closed_standard:8:#000000
 /obj/structure/extinguisher_cabinet/old icon: icons/obj/closet.dmi
 /obj/structure/extinguisher_cabinet/old state: oldextinguisher_closed_standard
 /obj/structure/extinguisher_cabinet/old dir: 2
-/obj/structure/extinguisher_cabinet/old overlay: icons/obj/closet.dmi:oldextinguisher:8:#000000
+/obj/structure/extinguisher_cabinet/old overlay: icons/obj/closet.dmi:oldextinguisher_closed_standard:8:#000000
 

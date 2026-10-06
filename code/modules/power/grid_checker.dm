@@ -14,6 +14,7 @@
 	var/wire_allow_manual_2 = FALSE
 	var/wire_allow_manual_3 = FALSE
 	var/opened = FALSE
+TRACKED(/obj/machinery/power/grid_checker, power_failing)
 
 /obj/machinery/power/grid_checker/Initialize(mapload)
 	. = ..()
@@ -86,7 +87,7 @@
 		when Engineering can manually resolve the issue.",
 		"Critical Power Failure",
 		new_sound = ANNOUNCER_MSG_POWER_OFF)
-	power_failing = TRUE
+	set_power_failing(TRUE)
 	if(power_region)
 		for(var/obj/machinery/power/terminal/T in power_grid_nodes(power_region)) // APCs that are "downstream" of the grid.
 
@@ -99,7 +100,6 @@
 		for(var/obj/machinery/power/smes/smes in power_grid_nodes(power_region)) // These are "upstream"
 			smes.do_grid_check()
 
-	changed(src)
 
 	after(src, rand(4 MINUTES, 10 MINUTES), PROC_REF(power_failure_times_out))
 
@@ -108,8 +108,7 @@
 		GLOB.command_announcement.Announce("Power has been restored to [station_name()]. We apologize for the inconvenience.",
 		"Power Systems Nominal",
 		new_sound = ANNOUNCER_MSG_POWER_ON)
-	power_failing = FALSE
-	changed(src)
+	set_power_failing(FALSE)
 
 	for(var/obj/machinery/power/terminal/T in power_grid_nodes(power_region))
 		if(istype(T.master(), /obj/machinery/power/apc))

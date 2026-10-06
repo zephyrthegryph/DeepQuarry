@@ -9,6 +9,7 @@
 	var/honeycombs = 0 // Percent
 	var/list/frames	// List of frames inside.
 	var/maxFrames = 5
+TRACKED(/obj/machinery/beehive, honeycombs)
 
 /// Percent.
 OM_FIELD(/obj/machinery/beehive, bee_count, 0, CHANGE_MACHINE_SETTINGS)
@@ -196,7 +197,7 @@ CAPABILITIES(/obj/machinery/beehive)
 		return
 	var/obj/item/honey_frame/H = pop(frames)
 	H.honey = 20
-	honeycombs -= 100
+	set_honeycombs(honeycombs - (100))
 	H.forceMove(get_turf(src))
 	changed(src)
 	harvest_next(user)
@@ -228,7 +229,7 @@ CAPABILITIES(/obj/machinery/beehive)
 		if(H.seed && !H.dead)
 			H.health += 0.05 * coef
 			++trays
-	honeycombs = min(honeycombs + 0.1 * coef * min(trays, 5), length(frames) * 100)
+	set_honeycombs(min(honeycombs + 0.1 * coef * min(trays, 5), length(frames) * 100))
 
 /obj/machinery/honey_extractor
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -412,6 +413,7 @@ CAPABILITIES(/obj/item/beehive_assembly)
 	icon = 'icons/obj/beekeeping.dmi'
 	icon_state = "beepack"
 	var/full = 1
+TRACKED(/obj/item/bee_pack, full)
 
 /// The look (the draw sweep: from its layers).
 /obj/item/bee_pack/draw(datum/look/look)
@@ -423,16 +425,14 @@ CAPABILITIES(/obj/item/beehive_assembly)
 			look.overlay("beepack-full")
 
 /obj/item/bee_pack/proc/empty()
-	full = 0
+	set_full(0)
 	name = "empty bee pack"
 	desc = "A stasis pack for moving bees. It's empty."
-	changed(src)
 
 /obj/item/bee_pack/proc/fill()
-	full = initial(full)
+	set_full(initial(full))
 	name = initial(name)
 	desc = initial(desc)
-	changed(src)
 
 /obj/machinery/honey_extractor/wrench_act(mob/user, obj/item/tool)
 	if(processing)

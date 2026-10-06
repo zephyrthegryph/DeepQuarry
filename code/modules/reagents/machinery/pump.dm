@@ -43,7 +43,7 @@ CAPABILITIES(/obj/machinery/pump)
 
 /obj/machinery/pump/RefreshParts()
 	var/pump_power = get_part_rating(/obj/item/stock_parts/manipulator) // scaling off the manipulator and not motor because motors have no upgrades
-	active_power_usage = initial(active_power_usage) / (pump_power / max(1, get_part_count(/obj/item/stock_parts/manipulator)))
+	set_active_power_usage(initial(active_power_usage) / (pump_power / max(1, get_part_count(/obj/item/stock_parts/manipulator))))
 	reagents_per_cycle = initial(reagents_per_cycle) * pump_power
 
 	var/bin_size = get_part_rating(/obj/item/stock_parts/matter_bin)

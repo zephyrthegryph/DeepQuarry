@@ -53,7 +53,7 @@ CAPABILITIES(/obj/machinery/power/tracker)
 	set_dir(turn(NORTH, -angle - 22.5))	// 22.5 deg bias ensures, e.g. 67.5-112.5 is EAST
 
 	if(power_region && (power_region == control().power_region)) //update if we're still in the same grid
-		control().cdir = angle
+		control().set_cdir(angle)
 
 /// The glass is off: an anchored tracker assembly and the sheets are left.
 /obj/machinery/power/tracker/proc/remove_glass_done(datum/act/op/A)

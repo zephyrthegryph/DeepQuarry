@@ -5,5 +5,5 @@
 /obj/item/gun/projectile/automatic/advanced_smg/loaded icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/automatic/advanced_smg/loaded state: advanced_smg
 /obj/item/gun/projectile/automatic/advanced_smg/loaded dir: 2
-/obj/item/gun/projectile/automatic/advanced_smg/loaded overlay: icons/obj/gun.dmi:advanced_smg-e:8:#000000
+/obj/item/gun/projectile/automatic/advanced_smg/loaded overlay: icons/obj/gun.dmi:advanced_smg:8:#000000
 

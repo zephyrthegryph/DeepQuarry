@@ -1,5 +1,5 @@
 /obj/structure/mob_spawner/mouse_nest/mousehole icon: icons/effects/effects.dmi
-/obj/structure/mob_spawner/mouse_nest/mousehole state: pilechair
+/obj/structure/mob_spawner/mouse_nest/mousehole state: tunnel_hole
 /obj/structure/mob_spawner/mouse_nest/mousehole dir: 2
 /obj/structure/mob_spawner/mouse_nest/mousehole overlay: icons/effects/effects.dmi:tunnel_hole:8:#000000
 

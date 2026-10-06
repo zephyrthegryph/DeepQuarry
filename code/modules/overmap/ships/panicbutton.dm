@@ -10,6 +10,7 @@
 
 	var/glass = TRUE
 	var/launched = FALSE
+TRACKED(/obj/structure/panic_button, launched)
 
 // In case we're annihilated by a meteor
 // an unlaunched button launches.
@@ -65,7 +66,7 @@ DECLARE_INTERACTIONS(/obj/structure/panic_button, INTERACT_HAND_AS(I_HURT, "Smas
 /obj/structure/panic_button/proc/launch(mob/living/user)
 	if(launched)
 		return
-	launched = TRUE
+	set_launched(TRUE)
 	var/obj/effect/overmap/visitable/S = get_overmap_sector(z)
 	if(!S)
 		log_mapping("## ERROR Distress button hit on z[z] but that's not an overmap sector...")

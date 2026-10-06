@@ -29,6 +29,7 @@
 
 	var/datum/gas_mixture/faketank
 	var/faketank_integrity
+TRACKED(/obj/machinery/bomb_tester, simulating)
 
 CAPABILITIES(/obj/machinery/bomb_tester)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
@@ -118,7 +119,6 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 	var/adopted = tank1 ? move_into(src, nameof(src.tank2), I, user) : move_into(src, nameof(src.tank1), I, user)
 	if(!adopted)
 		return TRUE
-	changed(src)
 	SStgui.update_uis(src)
 	to_chat(user, span_notice("You connect \the [I] to \the [src]'s [I==tank1 ? "primary" : "secondary"] slot."))
 	return TRUE
@@ -223,11 +223,10 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 		simulation_results = "Unstable"
 		simulation_finish()
 		return
-	simulating = 1
+	set_simulating(1)
 	set_use_power(USE_POWER_ACTIVE)
 	EXPIRY_STAMP(src, simulation_started, CLOCK_WORLD)
 	after(src, simulation_delay, PROC_REF(simulation_timer_fired), key = "simulation")
-	changed(src)
 	switch(sim_mode)
 		if(BOMB_TESTER_MODE_SINGLE)
 			single_tank_sim()
@@ -357,7 +356,7 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 
 /obj/machinery/bomb_tester/proc/simulation_finish(cancelled = 0)
 	cancel_after(src, "simulation")
-	simulating = 0
+	set_simulating(0)
 	set_use_power(USE_POWER_IDLE)
 	if(test_canister() && test_canister().anchored && !test_canister().connected_port())
 		test_canister().anchored = FALSE

@@ -1,5 +1,5 @@
 /obj/item/gun/projectile/automatic/glock icon: icons/obj/gun_yw.dmi
 /obj/item/gun/projectile/automatic/glock state: glock
 /obj/item/gun/projectile/automatic/glock dir: 2
-/obj/item/gun/projectile/automatic/glock overlay: icons/obj/gun_yw.dmi:glock-empty:8:#000000
+/obj/item/gun/projectile/automatic/glock overlay: icons/obj/gun_yw.dmi:glock:8:#000000
 

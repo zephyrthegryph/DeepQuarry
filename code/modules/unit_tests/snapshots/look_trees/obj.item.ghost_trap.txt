@@ -5,5 +5,5 @@
 /obj/item/ghost_trap/start_active icon: icons/obj/ghost_trap.dmi
 /obj/item/ghost_trap/start_active state: on
 /obj/item/ghost_trap/start_active dir: 2
-/obj/item/ghost_trap/start_active overlay: icons/obj/ghost_trap.dmi:item:8:#000000
+/obj/item/ghost_trap/start_active overlay: icons/obj/ghost_trap.dmi:on:8:#000000
 

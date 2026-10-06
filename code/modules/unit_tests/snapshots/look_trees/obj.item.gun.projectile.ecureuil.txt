@@ -1,13 +1,13 @@
 /obj/item/gun/projectile/ecureuil icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/ecureuil state: ecureuil
 /obj/item/gun/projectile/ecureuil dir: 2
-/obj/item/gun/projectile/ecureuil overlay: icons/obj/gun.dmi:ecureuil-e:8:#000000
+/obj/item/gun/projectile/ecureuil overlay: icons/obj/gun.dmi:ecureuil:8:#000000
 /obj/item/gun/projectile/ecureuil/tac icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/ecureuil/tac state: tac_ecureuil
 /obj/item/gun/projectile/ecureuil/tac dir: 2
-/obj/item/gun/projectile/ecureuil/tac overlay: icons/obj/gun.dmi:tac_ecureuil-e:8:#000000
+/obj/item/gun/projectile/ecureuil/tac overlay: icons/obj/gun.dmi:tac_ecureuil:8:#000000
 /obj/item/gun/projectile/ecureuil/tac2 icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/ecureuil/tac2 state: tac2_ecureuil
 /obj/item/gun/projectile/ecureuil/tac2 dir: 2
-/obj/item/gun/projectile/ecureuil/tac2 overlay: icons/obj/gun.dmi:tac2_ecureuil-e:8:#000000
+/obj/item/gun/projectile/ecureuil/tac2 overlay: icons/obj/gun.dmi:tac2_ecureuil:8:#000000
 

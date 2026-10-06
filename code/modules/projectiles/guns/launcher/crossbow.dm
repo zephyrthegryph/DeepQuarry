@@ -73,6 +73,7 @@
 	///Var for attack_self chain
 	var/is_bow = FALSE
 	special_handling = TRUE
+TRACKED(/obj/item/gun/launcher/crossbow, tension)
 
 /obj/item/gun/launcher/crossbow/update_release_force()
 	release_force = tension*release_speed
@@ -85,8 +86,7 @@
 
 /obj/item/gun/launcher/crossbow/handle_post_fire(mob/user, atom/target)
 	own_take(src, nameof(bolt))
-	tension = 0
-	changed(src)
+	set_tension(0)
 	..()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
@@ -106,8 +106,7 @@
 			A.removed(user)
 		else
 			act_message(user, src, MSG_SELF("You relax the tension on %T%'s string."), MSG_OTHERS("%U% relaxes the tension on %T%'s string."))
-		tension = 0
-		changed(src)
+		set_tension(0)
 	else
 		draw_string(user)
 
@@ -122,7 +121,7 @@
 
 	current_user = user
 	act_message(user, src, MSG_SELF(span_notice("You begin to draw back the string of %T%.")), MSG_OTHERS("%U% begins to draw back the string of %T%."))
-	tension = 1
+	set_tension(1)
 	draw_step(user)
 
 /// One notch of tension every 2.5 seconds (a timed action each) up to max_tension.
@@ -135,19 +134,17 @@
 /obj/item/gun/launcher/crossbow/proc/draw_relaxed(mob/user)
 	act_message(user, src, others = "%U% stops drawing and relaxes the string of %T%.", \
 		blind = span_warning("You stop drawing back and relax the string of %T%."))
-	tension = 0
-	changed(src)
+	set_tension(0)
 
 /obj/item/gun/launcher/crossbow/proc/draw_notch(mob/user)
 	//double check that the user hasn't removed the bolt in the meantime
 	if(!(bolt && tension && loc == current_user))
 		return
 
-	tension++
-	changed(src)
+	set_tension(tension + 1)
 
 	if(tension >= max_tension)
-		tension = max_tension
+		set_tension(max_tension)
 		to_chat(user, "[src] clunks as you draw the string to its maximum tension!")
 		return
 
@@ -179,7 +176,6 @@
 			if(!move_into(src, nameof(src.bolt), W, user))
 				return
 			act_message(user, src, MSG_SELF("You slide [bolt] into %T%."), MSG_OTHERS("%U% slides [bolt] into %T%."))
-			changed(src)
 			return
 		else if(istype(W,/obj/item/stack/rods))
 			var/obj/item/stack/rods/R = W
@@ -187,7 +183,6 @@
 				rel_set(src, nameof(bolt), new /obj/item/arrow/rod(src))
 				bolt.add_fingerprint(user)
 				bolt.forceMove(src)
-				changed(src)
 				act_message(user, src, MSG_SELF("You jam [bolt] into %T%."), MSG_OTHERS("%U% jams [bolt] into %T%."))
 				superheat_rod(user)
 			return

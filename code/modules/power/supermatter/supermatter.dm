@@ -121,6 +121,7 @@
 	var/critwarn = FALSE
 	var/causalitywarn = FALSE
 	var/stationcrystal = FALSE
+TRACKED(/obj/machinery/power/supermatter, final_countdown)
 
 // The crystal (doc/rewrite/final_api.html section 16): its reaction runs every machine service interval while it sits on a turf (sm_step(); in a
 // crate or an exosuit it waits), whatever touches it is consumed (the touch ops and the bump), and silicons read its monitor window from afar. Its
@@ -535,8 +536,7 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 
 	if(final_countdown) // We're already doing it go away
 		return
-	final_countdown = TRUE
-	changed(src)
+	set_final_countdown(TRUE)
 
 	var/speaking = "[emergency_alert] The supermatter has reached critical integrity failure. Emergency causality destabilization field has been activated."
 	GLOB.global_announcer.autosay(speaking, "Supermatter Monitor")
@@ -549,8 +549,7 @@ CAPABILITIES(/obj/machinery/power/supermatter)
 		return
 	if(damage < explosion_point) // Cutting it a bit close there engineers
 		GLOB.global_announcer.autosay("[safe_alert] Failsafe has been disengaged.", "Supermatter Monitor")
-		final_countdown = FALSE
-		changed(src)
+		set_final_countdown(FALSE)
 		return
 	// A message once every 5 seconds until the final 5 seconds which count down individualy
 	if((i % 50) == 0 || i <= 50)

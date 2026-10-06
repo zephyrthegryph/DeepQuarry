@@ -1,5 +1,5 @@
 /obj/item/gun/projectile/makarov icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/makarov state: Makarov
 /obj/item/gun/projectile/makarov dir: 2
-/obj/item/gun/projectile/makarov overlay: icons/obj/gun.dmi:Makarov-e:8:#000000
+/obj/item/gun/projectile/makarov overlay: icons/obj/gun.dmi:Makarov:8:#000000
 

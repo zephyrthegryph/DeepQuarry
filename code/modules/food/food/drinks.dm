@@ -452,7 +452,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/sillycup)
 					return TRUE
 				W.cups++
 				to_chat(user, message)
-				changed(W)
 		return TRUE
 	return FALSE
 

@@ -322,6 +322,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	var/sound_eject = SFX_WEAPONS_BALLISTICS_PISTOL_EJECT
 	var/sound_chamber = SFX_WEAPONS_BALLISTICS_PISTOL_CHAMBER
 	special_handling = TRUE
+TRACKED(/obj/item/gun/projectile, bolt_open)
 
 /obj/item/gun/projectile/handle_post_fire(mob/user, atom/target, pointblank=0, reflex=0)
 	if(fire_anim)
@@ -422,7 +423,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		if(auto_loading_type)
 			var/able_to_lock = (CHECK_BITFIELD(auto_loading_type,LOCK_OPEN_EMPTY) || (CHECK_BITFIELD(auto_loading_type,LOCK_MANUAL_LOCK) && manual))
 			if(CHECK_BITFIELD(auto_loading_type,OPEN_BOLT))
-				bolt_open = TRUE
+				set_bolt_open(TRUE)
 				var/ejected = process_chambered()
 				var/output = BOLT_OPENED
 				if(ejected) output |= BOLT_CASING_EJECTED
@@ -437,14 +438,14 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 			else
 				if(!manual)
 					visible_message(src,span_notice("The [src] fires its last round, causing the [bolt_name] to lock."))
-				bolt_open = TRUE
+				set_bolt_open(TRUE)
 				bolt_locked = TRUE
 				var/ejected = process_chambered()
 				var/output = BOLT_OPENED | BOLT_LOCKED
 				if(ejected) output |= BOLT_CASING_EJECTED
 				return output
 		else
-			bolt_open = TRUE
+			set_bolt_open(TRUE)
 			var/ejected = process_chambered()
 
 			var/output = BOLT_OPENED
@@ -462,22 +463,22 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 					else
 						return BOLT_NOEVENT
 				else
-					bolt_open = FALSE
+					set_bolt_open(FALSE)
 					return BOLT_CLOSED
 			else if(bolt_locked)
 				var/chambering = FALSE
 				if(!chambered)
 					chambering = chamber_bullet()
 				bolt_locked = FALSE
-				bolt_open = FALSE
+				set_bolt_open(FALSE)
 				var/output = BOLT_CLOSED | BOLT_UNLOCKED
 				if(chambering) output |= BOLT_CASING_CHAMBERED
 				return output
 			else
-				bolt_open = FALSE
+				set_bolt_open(FALSE)
 				return BOLT_CLOSED
 		else
-			bolt_open = FALSE
+			set_bolt_open(FALSE)
 			var/output = BOLT_CLOSED
 			var/chambering = chamber_bullet()
 			if(chambering) output |= BOLT_CASING_CHAMBERED

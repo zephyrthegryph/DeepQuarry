@@ -31,6 +31,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	var/tmp/obj/machinery/power/solar_control/control
 	var/glass_type = /obj/item/stack/material/glass
 	var/SOLAR_MAX_DIST = 60 // ours are >40 away
+TRACKED(/obj/machinery/power/solar, adir)
 
 /obj/machinery/power/solar/drain_power()
 	return -1
@@ -148,7 +149,6 @@ CAPABILITIES(/obj/machinery/power/solar)
 
 /obj/machinery/power/solar/proc/broken()
 	unset_control()
-	changed(src)
 	climb_shake_off(src, null)
 	return
 
@@ -187,7 +187,7 @@ CAPABILITIES(/obj/machinery/power/solar)
 
 /// Updates the power generation of a solar panel.
 /obj/machinery/power/solar/proc/update_power_generation(obj/machinery/power/solar_control/SC)
-	adir = SC.cdir //instantly rotates the panel
+	set_adir(SC.cdir) //instantly rotates the panel
 	occlusion()//and
 	changed(src) //update it
 	var/sgen = get_power_supplied()
@@ -303,6 +303,7 @@ TRACKED(/obj/item/solar_assembly, tracker)
 	/// Running power sum for the solar service's current pass.
 	var/solar_pending_sum = 0
 	var/auto_start = SOLAR_AUTO_START_NO
+TRACKED(/obj/machinery/power/solar_control, cdir)
 
 // Used for mapping in solar arrays which automatically start itself.
 // Generally intended for far away and remote locations, where player intervention is rare.
@@ -401,7 +402,7 @@ TRACKED(/obj/item/solar_assembly, tracker)
 	switch(track)
 		if(1)
 			if(trackrate) //we're manual tracking. If we set a rotation speed...
-				cdir = targetdir //...the current direction is the targetted one (and rotates panels to it)
+				set_cdir(targetdir) //...the current direction is the targetted one (and rotates panels to it)
 		if(2) // auto-tracking
 			if(connected_tracker())
 				connected_tracker().set_angle(SSsolars.get_solar_angle(get_turf(src)))
@@ -510,7 +511,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 	if(adjust)
 		value = cdir + adjust
 	if(value != null)
-		cdir = value
+		set_cdir(value)
 		set_panels(cdir)
 		return TRUE
 	return FALSE
@@ -552,7 +553,6 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 		sum += S.update_power_generation(src)
 	connected_power = sum
 	set_power_supply(connected_power)
-	changed(src)
 
 //
 // MISC

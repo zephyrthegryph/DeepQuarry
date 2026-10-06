@@ -1,5 +1,5 @@
 /obj/machinery/bluespace_beacon icon: icons/obj/objects.dmi
 /obj/machinery/bluespace_beacon state: floor_beaconf
 /obj/machinery/bluespace_beacon dir: 2
-/obj/machinery/bluespace_beacon overlay: icons/obj/objects.dmi:floor_beacon:8:#000000
+/obj/machinery/bluespace_beacon overlay: icons/obj/objects.dmi:floor_beaconf:8:#000000
 

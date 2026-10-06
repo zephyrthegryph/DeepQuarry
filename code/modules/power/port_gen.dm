@@ -131,6 +131,7 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 	var/sheet_left = 0		//How much is left of the current sheet
 	var/temperature = 0		//The current temperature
 	var/overheating = 0		//if this gets high enough the generator explodes
+TRACKED(/obj/machinery/power/port_gen/pacman, overheating)
 
 TRACKED(/obj/machinery/power/port_gen/pacman, sheets)
 TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
@@ -227,7 +228,7 @@ TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
 	if (temperature > max_temperature)
 		overheat()
 	else if (overheating > 0)
-		overheating--
+		set_overheating(overheating - 1)
 		changed(src) //Port RS PR #484
 
 /// The temperature it cools to while off: 20, plus the room's offset from 20 C scaled by its pressure.
@@ -261,12 +262,12 @@ TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
 		temperature = cooling_temperature
 
 	if(overheating)
-		overheating--
+		set_overheating(overheating - 1)
 		changed(src) //Port RS PR #484
 	return temperature > cooling_temperature + 0.1 || overheating > 0
 
 /obj/machinery/power/port_gen/pacman/proc/overheat()
-	overheating++
+	set_overheating(overheating + 1)
 	if (overheating > 60)
 		explode()
 

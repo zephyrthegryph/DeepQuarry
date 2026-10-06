@@ -42,6 +42,7 @@
 
 	//what tools we need
 	var/list/active_repair_steps = list() // ALLOW(instance_list): d: event prop repair state
+TRACKED(/obj/structure/event_collector_blocker, block_amount)
 
 REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLECTOR_BLOCKERS)
 
@@ -54,17 +55,15 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLE
 	if(intensity == -1)
 		intensity = default_block_amount
 
-	block_amount = intensity
+	set_block_amount(intensity)
 	if(tools_to_fix)
 		active_repair_steps = list()
 		for(var/i in 1 to 4)
 			active_repair_steps += pick(list(TOOL_CROWBAR,TOOL_MULTITOOL,TOOL_SCREWDRIVER,TOOL_WRENCH,TOOL_CABLE_COIL,TOOL_WELDER)) //todo, make this a different list on the obj "Possible failures" or whatever.
-	changed(src)
 
 /obj/structure/event_collector_blocker/proc/fix()
-	block_amount = 0
+	set_block_amount(0)
 	active_repair_steps = list()
-	changed(src)
 
 /obj/structure/event_collector_blocker/examine(mob/user, infix, suffix)
 	. = ..()

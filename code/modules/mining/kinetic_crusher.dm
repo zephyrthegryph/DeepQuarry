@@ -52,6 +52,8 @@
 	var/charge_overlay = TRUE
 	/// do we update item state?
 	var/update_item_state = FALSE
+TRACKED(/obj/item/kinetic_crusher, charged)
+TRACKED(/obj/item/kinetic_crusher, integ_light_on)
 
 /obj/item/kinetic_crusher/cyborg //probably give this a unique sprite later
 	desc = "An integrated version of the standard kinetic crusher with a grinded down axe head to dissuade mis-use against crewmen. Deals damage equal to the standard crusher against creatures, however."
@@ -108,8 +110,7 @@ DECLARE_EMAG(/obj/item/kinetic_crusher, PROC_REF(on_emag), null, null)
 		rel_set(D, nameof(D.hammer_synced), src)
 		play_sfx(user, SFX_WEAPONS_PLASMA_CUTTER)
 		D.fire()
-		charged = FALSE
-		changed(src)
+		set_charged(FALSE)
 		after(src, charge_time, PROC_REF(Recharge))
 		return
 	if(proximity_flag && isliving(target))
@@ -142,15 +143,13 @@ DECLARE_EMAG(/obj/item/kinetic_crusher, PROC_REF(on_emag), null, null)
 
 /obj/item/kinetic_crusher/proc/Recharge()
 	if(!charged)
-		charged = TRUE
-		changed(src)
+		set_charged(TRUE)
 		play_sfx(src.loc, SFX_WEAPONS_KENETIC_RELOAD)
 
 /obj/item/kinetic_crusher/ui_action_click(mob/user, actiontype)
-	integ_light_on = !integ_light_on
+	set_integ_light_on(!integ_light_on)
 	play_sfx(src, SFX_WEAPONS_EMPTY, 2)
 	update_brightness(user)
-	changed(src)
 
 /obj/item/kinetic_crusher/proc/update_brightness(mob/user = null)
 	if(integ_light_on)

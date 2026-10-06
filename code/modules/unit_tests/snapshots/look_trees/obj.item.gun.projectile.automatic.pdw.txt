@@ -1,5 +1,5 @@
 /obj/item/gun/projectile/automatic/pdw icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/automatic/pdw state: pdw
 /obj/item/gun/projectile/automatic/pdw dir: 2
-/obj/item/gun/projectile/automatic/pdw overlay: icons/obj/gun.dmi:pdw-e:8:#000000
+/obj/item/gun/projectile/automatic/pdw overlay: icons/obj/gun.dmi:pdw:8:#000000
 

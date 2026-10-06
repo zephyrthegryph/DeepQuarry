@@ -1,5 +1,5 @@
 /obj/item/gun/projectile/automatic/combatsmg icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/automatic/combatsmg state: combatsmg
 /obj/item/gun/projectile/automatic/combatsmg dir: 2
-/obj/item/gun/projectile/automatic/combatsmg overlay: icons/obj/gun.dmi:combatsmg-empty:8:#000000
+/obj/item/gun/projectile/automatic/combatsmg overlay: icons/obj/gun.dmi:combatsmg:8:#000000
 

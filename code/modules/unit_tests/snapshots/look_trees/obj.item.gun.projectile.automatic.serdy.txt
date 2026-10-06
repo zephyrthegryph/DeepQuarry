@@ -33,7 +33,7 @@
 /obj/item/gun/projectile/automatic/serdy/ak74/variantm icon: icons/obj/64x32guns_ch.dmi
 /obj/item/gun/projectile/automatic/serdy/ak74/variantm state: ak74mplum
 /obj/item/gun/projectile/automatic/serdy/ak74/variantm dir: 2
-/obj/item/gun/projectile/automatic/serdy/ak74/variantm overlay: icons/obj/64x32guns_ch.dmi:ak74m:8:#000000
+/obj/item/gun/projectile/automatic/serdy/ak74/variantm overlay: icons/obj/64x32guns_ch.dmi:ak74mplum:8:#000000
 /obj/item/gun/projectile/automatic/serdy/hunter icon: icons/obj/64x32guns_ch.dmi
 /obj/item/gun/projectile/automatic/serdy/hunter state: hunter
 /obj/item/gun/projectile/automatic/serdy/hunter dir: 2
@@ -185,7 +185,7 @@
 /obj/item/gun/projectile/automatic/serdy/rpk icon: icons/obj/64x32guns_ch.dmi
 /obj/item/gun/projectile/automatic/serdy/rpk state: rpk47drum
 /obj/item/gun/projectile/automatic/serdy/rpk dir: 2
-/obj/item/gun/projectile/automatic/serdy/rpk overlay: icons/obj/64x32guns_ch.dmi:rpk47:8:#000000
+/obj/item/gun/projectile/automatic/serdy/rpk overlay: icons/obj/64x32guns_ch.dmi:rpk47drum:8:#000000
 /obj/item/gun/projectile/automatic/serdy/kord icon: icons/obj/64x32guns_ch.dmi
 /obj/item/gun/projectile/automatic/serdy/kord state: kord
 /obj/item/gun/projectile/automatic/serdy/kord dir: 2

@@ -1,9 +1,9 @@
 /obj/item/gun/projectile/automatic/toy icon: icons/obj/gun_toy.dmi
 /obj/item/gun/projectile/automatic/toy state: smg
 /obj/item/gun/projectile/automatic/toy dir: 2
-/obj/item/gun/projectile/automatic/toy overlay: icons/obj/gun_toy.dmi:smg-e:8:#000000
+/obj/item/gun/projectile/automatic/toy overlay: icons/obj/gun_toy.dmi:smg:8:#000000
 /obj/item/gun/projectile/automatic/toy/riot icon: icons/obj/gun_toy.dmi
 /obj/item/gun/projectile/automatic/toy/riot state: smg
 /obj/item/gun/projectile/automatic/toy/riot dir: 2
-/obj/item/gun/projectile/automatic/toy/riot overlay: icons/obj/gun_toy.dmi:smg-e:8:#000000
+/obj/item/gun/projectile/automatic/toy/riot overlay: icons/obj/gun_toy.dmi:smg:8:#000000
 

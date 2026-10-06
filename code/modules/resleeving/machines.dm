@@ -53,7 +53,6 @@
 	H.status_at_least(STAT_SLEEPING, 4)
 
 	//Machine specific stuff at the end
-	changed(src)
 	attempting = 0
 	return 1
 

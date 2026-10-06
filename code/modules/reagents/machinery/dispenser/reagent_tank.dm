@@ -355,6 +355,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/acid)
 	var/bottle = 0
 	var/cups = 0
 	var/cupholder = 0
+TRACKED(/obj/structure/reagent_dispensers/water_cooler, bottle)
 
 /obj/structure/reagent_dispensers/water_cooler/full
 	bottle = 1
@@ -413,8 +414,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 /obj/structure/reagent_dispensers/water_cooler/proc/bottle_done(mob/user, obj/item/reagent_containers/glass/cooler_bottle/G)
 	if(bottle || !anchored)
 		return
-	bottle = 1
-	changed(src)
+	set_bottle(1)
 	to_chat(user, span_notice("You screw the bottle onto the water-cooler!"))
 	for(var/datum/reagent/R in G.reagents.reagent_list)
 		var/total_reagent = G.reagents.get_reagent_amount(R.id)
@@ -427,7 +427,6 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 	if (P.use(1))
 		to_chat(user, span_notice("You attach a cup dispenser onto the water-cooler."))
 		cupholder = 1
-		changed(src)
 
 /obj/structure/reagent_dispensers/water_cooler/proc/unfasten_jug_done(mob/user)
 	if(!bottle)
@@ -437,8 +436,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 	for(var/datum/reagent/reagent in reagents.reagent_list)
 		jug.reagents.add_reagent(reagent.id, reagents.get_reagent_amount(reagent.id))
 	reagents.clear_reagents()
-	bottle = FALSE
-	changed(src)
+	set_bottle(FALSE)
 
 /obj/structure/reagent_dispensers/water_cooler/wrench_act(mob/user, obj/item/tool)
 	add_fingerprint(user)
@@ -464,7 +462,6 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 			new /obj/item/reagent_containers/food/drinks/sillycup(loc)
 		cups = 0
 		cupholder = FALSE
-		changed(src)
 		return ITEM_INTERACT_SUCCESS
 	if(bottle)
 		return ITEM_INTERACT_BLOCKING

@@ -98,7 +98,6 @@
 		return ITEM_INTERACT_BLOCKING
 	rel_set(src, nameof(linked_pad), multitool.connectable())
 	to_chat(user, span_notice("You link [src] to the one in [tool]'s buffer."))
-	changed(src)
 	return ITEM_INTERACT_SUCCESS
 /obj/machinery/power/quantumpad/draw(datum/look/look)
 	..()
@@ -181,7 +180,6 @@
 		ghost.forceMove(get_turf(linked_pad()))
 
 /obj/machinery/power/quantumpad/proc/doteleport(mob/user)
-	changed(src)
 	if(!linked_pad())
 		return
 	// ition Start
@@ -198,7 +196,6 @@
 	. = FALSE
 	// The keyed relation links mapped pads when they materialize; this only reports it.
 	if(linked_pad())
-		changed(src)
 		. = TRUE
 
 /obj/machinery/power/quantumpad/proc/use_teleport_power()

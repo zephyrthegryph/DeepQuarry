@@ -14,6 +14,7 @@
 	var/written_text
 	var/written_by
 	var/paper_type = /obj/item/paper/sticky
+TRACKED(/obj/item/sticky_pad, written_text)
 
 /// The look (the draw sweep: from its template).
 /obj/item/sticky_pad/draw(datum/look/look)
@@ -55,9 +56,9 @@
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " jots a note down on %T%."))
 		written_by = user.ckey
 		if(written_text)
-			written_text = "[written_text] [text]"
+			set_written_text("[written_text] [text]")
 		else
-			written_text = text
+			set_written_text(text)
 		changed(src)
 		return INTERACTION_HANDLED_PASS
 	return FALSE
@@ -78,7 +79,7 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 	paper.set_content(written_text, "sticky note")
 	paper.last_modified_ckey = written_by
 	paper.color = color
-	written_text = null
+	set_written_text(null)
 	user.put_in_hands(paper)
 	to_chat(user, span_notice("You pull \the [paper] off \the [src]."))
 	papers--

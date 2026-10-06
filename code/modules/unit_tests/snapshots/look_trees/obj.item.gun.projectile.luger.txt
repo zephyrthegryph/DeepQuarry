@@ -1,9 +1,9 @@
 /obj/item/gun/projectile/luger icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/luger state: p08a
 /obj/item/gun/projectile/luger dir: 2
-/obj/item/gun/projectile/luger overlay: icons/obj/gun.dmi:p08a-e:8:#000000
+/obj/item/gun/projectile/luger overlay: icons/obj/gun.dmi:p08a:8:#000000
 /obj/item/gun/projectile/luger/brown icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/luger/brown state: p08b
 /obj/item/gun/projectile/luger/brown dir: 2
-/obj/item/gun/projectile/luger/brown overlay: icons/obj/gun.dmi:p08b-e:8:#000000
+/obj/item/gun/projectile/luger/brown overlay: icons/obj/gun.dmi:p08b:8:#000000
 

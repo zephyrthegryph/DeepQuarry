@@ -56,9 +56,9 @@ def find_decl(ix, U, var):
                 continue
             if block == U and inner.match(l):
                 j = i + 1
-                while j < len(L) and (not L[j].strip() or L[j][0] in " \t"):
-                    j += 1
-                while j - 1 > i and not L[j - 1].strip():
+                while j < len(L) and (not L[j].strip() or L[j][0] in " \t" or L[j].startswith("//")):
+                    j += 1  # a column-0 comment inside the block does not end it
+                while j - 1 > i and (not L[j - 1].strip() or L[j - 1].startswith("//")):
                     j -= 1
                 return rel, j - 1, l
     return None

@@ -68,6 +68,8 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	/// Optional registered composite. Ordinary mapped cable retains baseline behavior.
 	var/engineered_material_id
 	var/material_current = 0
+TRACKED(/obj/structure/cable, d1)
+TRACKED(/obj/structure/cable, d2)
 
 /obj/structure/cable/proc/engineered_material() as /datum/material
 	return material_for_role(MATERIAL_ROLE_CONDUCTOR) || (engineered_material_id ? get_material_by_name(engineered_material_id) : null)
@@ -209,9 +211,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 
 	var/dash = findtext(icon_state, "-")
 
-	d1 = text2num( copytext( icon_state, 1, dash ) )
+	set_d1(text2num( copytext( icon_state, 1, dash ) ))
 
-	d2 = text2num( copytext( icon_state, dash+1 ) )
+	set_d2(text2num( copytext( icon_state, dash+1 ) ))
 
 	var/turf/T = src.loc			// hide if turf is not intact
 	if(level==1) hide(!T.is_plating())
@@ -243,14 +245,14 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 	if(d1)
 		// Using turn will maintain the cable's shape
 		// Taking the difference between current orientation and new one
-		d1 = turn(d1, dir2angle(new_dir) - dir2angle(dir))
-	d2 = turn(d2, dir2angle(new_dir) - dir2angle(dir))
+		set_d1(turn(d1, dir2angle(new_dir) - dir2angle(dir)))
+	set_d2(turn(d2, dir2angle(new_dir) - dir2angle(dir)))
 
 	// Maintain d1 < d2
 	if(d1 > d2)
 		var/temp = d1
-		d1 = d2
-		d2 = temp
+		set_d1(d2)
+		set_d2(temp)
 
 	//	..()	Cable sprite generation is dependent upon only d1 and d2.
 	// 			Actually changing dir will rotate the generated sprite to look wrong, but function correctly.
@@ -670,8 +672,8 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 	C.set_engineered_material(material_engineered_id(src))
 	C.copy_material_construction_from(src)
 	C.cableColor(color)
-	C.d1 = d1
-	C.d2 = d2
+	C.set_d1(d1)
+	C.set_d2(d2)
 	C.add_fingerprint(user)
 	changed(C)
 	C.power_register()
@@ -747,8 +749,8 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 		C.set_engineered_material(material_engineered_id(src))
 		C.copy_material_construction_from(src)
 
-		C.d1 = nd1
-		C.d2 = nd2
+		C.set_d1(nd1)
+		C.set_d2(nd2)
 
 		C.add_fingerprint()
 		changed(C)

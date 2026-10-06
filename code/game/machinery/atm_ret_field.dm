@@ -22,6 +22,8 @@
 	var/list/areas_added
 	var/field_type = /obj/structure/atmospheric_retention_field
 	circuit = /obj/item/circuitboard/arf_generator
+TRACKED(/obj/machinery/atmospheric_field_generator, isactive)
+TRACKED(/obj/machinery/atmospheric_field_generator, wires_intact)
 
 /obj/machinery/atmospheric_field_generator/impassable
 	desc = "An older model of ARF-G that generates an impassable retention field. Works just as well as the modern variety, but is slightly more energy-efficient.<br><br>Note: prolonged immersion in active atmospheric retention fields may have negative long-term health consequences."
@@ -61,7 +63,7 @@
 	if(!hatch_open)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_warning("You [wires_intact ? "cut" : "mend"] \the [src]'s wires!"))
-	wires_intact = !wires_intact
+	set_wires_intact(!wires_intact)
 	changed(src)
 	return ITEM_INTERACT_SUCCESS
 
@@ -131,7 +133,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 	if(!ispowered || hatch_open || !wires_intact || isactive) //if it's not powered, the hatch is open, the wires are busted, or it's already on, don't do anything
 		return
 	else
-		isactive = TRUE
+		set_isactive(TRUE)
 		icon_state = "arfg_on"
 		new field_type (src.loc)
 		src.visible_message(span_warning("The ARF-G crackles to life!"),span_warning("You hear an ARF-G coming online!"))
@@ -148,7 +150,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 				spent(F)
 			src.visible_message("The ARF-G shuts down with a low hum.","You hear an ARF-G powering down.")
 			set_use_power(USE_POWER_IDLE)
-			isactive = FALSE
+			set_isactive(FALSE)
 	return
 
 /obj/machinery/atmospheric_field_generator/Initialize(mapload)

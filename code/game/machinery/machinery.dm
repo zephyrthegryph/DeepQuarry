@@ -140,6 +140,8 @@ Class Procs:
 
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
+TRACKED(/obj/machinery, active_power_usage)
+TRACKED(/obj/machinery, power_channel)
 
 CAPABILITIES(/obj/machinery)
 	owns_one(nameof(circuit), /obj/item/circuitboard)

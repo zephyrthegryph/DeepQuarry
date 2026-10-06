@@ -24,6 +24,7 @@
 	var/obj/item/scan_hand
 	var/datum/beam/scan_beam_effect
 	var/trading = 0
+TRACKED(/obj/item/slow_sizegun, sizeshift_mode)
 
 /// Set to true when scanning, to stop multiple scans.
 OM_FIELD(/obj/item/slow_sizegun, busy, FALSE, CHANGE_EXPLICIT)
@@ -226,7 +227,7 @@ CAPABILITIES(/obj/item/slow_sizegun)
 	if(busy)
 		sizegun_finish()
 	else
-		sizeshift_mode = !sizeshift_mode
+		set_sizeshift_mode(!sizeshift_mode)
 		to_chat(user, span_notice("\The [src] will now [sizeshift_mode ? "grow" : "shrink"] its targets."))
 
 

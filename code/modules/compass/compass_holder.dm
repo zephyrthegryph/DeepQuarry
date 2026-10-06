@@ -23,6 +23,8 @@
 		"NW",
 		"N"
 	)
+TRACKED(/obj/compass_holder, compass_heading_marker)
+TRACKED(/obj/compass_holder, compass_waypoint_markers)
 
 CAPABILITIES(/obj/compass_holder)
 	owns_many(nameof(compass_waypoints))
@@ -30,7 +32,7 @@ CAPABILITIES(/obj/compass_holder)
 /obj/compass_holder/Initialize(mapload, ...)
 	. = ..()
 	if(show_heading)
-		compass_heading_marker = new /image/compass_marker
+		set_compass_heading_marker(new /image/compass_marker)
 		compass_heading_marker.maptext = "<center>" + span_normal(span_cyan(span_bold("△"))) + "</center>"
 		compass_heading_marker.filters = filter(type="drop_shadow", color = "#00ffffaa", size = 2, offset = 1,x = 0, y = 0)
 		compass_heading_marker.layer = LAYER_HUD_UNDER
@@ -114,7 +116,7 @@ CAPABILITIES(/obj/compass_holder)
 		rebuild_overlay_lists(TRUE)
 
 /obj/compass_holder/proc/rebuild_overlay_lists(update_icon = FALSE)
-	compass_waypoint_markers = null
+	set_compass_waypoint_markers(null)
 	var/turf/T = get_turf(src)
 	if(istype(T))
 		for(var/id in compass_waypoints)

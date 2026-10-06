@@ -23,6 +23,7 @@
 	/// `/obj/machinery/power` is a `Producer` (verdigris/domains/power);
 	/// most never set a nonzero supply, which costs nothing.
 	var/power_supply_rate = 0
+TRACKED(/obj/machinery/power, power_region)
 
 REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 
@@ -200,7 +201,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 			power_grid_move_node(src, 0, region_id)
 		return
 	var/old = power_region
-	power_region = region_id
+	set_power_region(region_id)
 	power_grid_move_node(src, old, region_id)
 	power_network_changed(old, region_id)
 

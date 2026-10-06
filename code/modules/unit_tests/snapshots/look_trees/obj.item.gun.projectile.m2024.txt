@@ -1,5 +1,5 @@
 /obj/item/gun/projectile/m2024 icon: icons/obj/gun_yw.dmi
 /obj/item/gun/projectile/m2024 state: m2024
 /obj/item/gun/projectile/m2024 dir: 2
-/obj/item/gun/projectile/m2024 overlay: icons/obj/gun_yw.dmi:m2024-empty:8:#000000
+/obj/item/gun/projectile/m2024 overlay: icons/obj/gun_yw.dmi:m2024:8:#000000
 

@@ -1,17 +1,17 @@
 /obj/machinery/airlock_sensor icon: icons/obj/airlock_machines.dmi
 /obj/machinery/airlock_sensor state: airlock_sensor_standby
 /obj/machinery/airlock_sensor dir: 2
-/obj/machinery/airlock_sensor overlay: icons/obj/airlock_machines.dmi:airlock_sensor_off:8:#000000
+/obj/machinery/airlock_sensor overlay: icons/obj/airlock_machines.dmi:airlock_sensor_standby:8:#000000
 /obj/machinery/airlock_sensor/airlock_interior icon: icons/obj/airlock_machines.dmi
 /obj/machinery/airlock_sensor/airlock_interior state: airlock_sensor_standby
 /obj/machinery/airlock_sensor/airlock_interior dir: 2
-/obj/machinery/airlock_sensor/airlock_interior overlay: icons/obj/airlock_machines.dmi:airlock_sensor_off:8:#000000
+/obj/machinery/airlock_sensor/airlock_interior overlay: icons/obj/airlock_machines.dmi:airlock_sensor_standby:8:#000000
 /obj/machinery/airlock_sensor/airlock_exterior icon: icons/obj/airlock_machines.dmi
 /obj/machinery/airlock_sensor/airlock_exterior state: airlock_sensor_standby
 /obj/machinery/airlock_sensor/airlock_exterior dir: 2
-/obj/machinery/airlock_sensor/airlock_exterior overlay: icons/obj/airlock_machines.dmi:airlock_sensor_off:8:#000000
+/obj/machinery/airlock_sensor/airlock_exterior overlay: icons/obj/airlock_machines.dmi:airlock_sensor_standby:8:#000000
 /obj/machinery/airlock_sensor/airlock_exterior/shuttle icon: icons/obj/airlock_machines.dmi
 /obj/machinery/airlock_sensor/airlock_exterior/shuttle state: airlock_sensor_alert
 /obj/machinery/airlock_sensor/airlock_exterior/shuttle dir: 2
-/obj/machinery/airlock_sensor/airlock_exterior/shuttle overlay: icons/obj/airlock_machines.dmi:airlock_sensor_off:8:#000000
+/obj/machinery/airlock_sensor/airlock_exterior/shuttle overlay: icons/obj/airlock_machines.dmi:airlock_sensor_alert:8:#000000
 

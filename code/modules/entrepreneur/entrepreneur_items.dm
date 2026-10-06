@@ -343,6 +343,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_RE
 
 	///How often we can use the EMF actively.
 	COOLDOWN_DECLARE(scan_cooldown)
+TRACKED(/obj/item/entrepreneur/emf, emf)
 
 /obj/item/entrepreneur/emf/examine(mob/user)
 	. = ..()
@@ -397,9 +398,9 @@ CAPABILITIES(/obj/item/entrepreneur/emf)
 				ghosts_present++
 
 	if(emf >= 100)
-		emf = 100
+		set_emf(100)
 	if(emf <= 20)
-		emf = 20
+		set_emf(20)
 
 	if(ghosts_present)
 		if(advanced)
@@ -411,8 +412,7 @@ CAPABILITIES(/obj/item/entrepreneur/emf)
 			emf_change = rand(-5, -1)
 		else
 			emf_change = rand(-20,15) //Trend downwards
-	emf = (emf + emf_change)
-	changed(src)
+	set_emf((emf + emf_change))
 	if(user)
 		to_chat(user, span_notice("You update the EMF scanner and check the reading. It reads [emf]mG!"))
 		COOLDOWN_START(src, scan_cooldown, 5 SECONDS)

@@ -1,13 +1,13 @@
 /obj/item/gun/projectile/deagle icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/deagle state: deagle
 /obj/item/gun/projectile/deagle dir: 2
-/obj/item/gun/projectile/deagle overlay: icons/obj/gun.dmi:deagle-e:8:#000000
+/obj/item/gun/projectile/deagle overlay: icons/obj/gun.dmi:deagle:8:#000000
 /obj/item/gun/projectile/deagle/gold icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/deagle/gold state: deagleg
 /obj/item/gun/projectile/deagle/gold dir: 2
-/obj/item/gun/projectile/deagle/gold overlay: icons/obj/gun.dmi:deagleg-e:8:#000000
+/obj/item/gun/projectile/deagle/gold overlay: icons/obj/gun.dmi:deagleg:8:#000000
 /obj/item/gun/projectile/deagle/camo icon: icons/obj/gun.dmi
 /obj/item/gun/projectile/deagle/camo state: deaglecamo
 /obj/item/gun/projectile/deagle/camo dir: 2
-/obj/item/gun/projectile/deagle/camo overlay: icons/obj/gun.dmi:deaglecamo-e:8:#000000
+/obj/item/gun/projectile/deagle/camo overlay: icons/obj/gun.dmi:deaglecamo:8:#000000
 

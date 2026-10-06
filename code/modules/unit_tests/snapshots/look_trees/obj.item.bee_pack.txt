@@ -2,5 +2,5 @@
 /obj/item/bee_pack state: beepack
 /obj/item/bee_pack dir: 2
 /obj/item/bee_pack overlay: icons/obj/beekeeping.dmi:beepack-full:-32767
-/obj/item/bee_pack overlay: icons/obj/beekeeping.dmi:beepack:8:#000000
+/obj/item/bee_pack overlay: icons/obj/beekeeping.dmi:beepack:8:#000000 x2
 
