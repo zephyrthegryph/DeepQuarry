@@ -157,13 +157,13 @@ DECLARE_APPEARANCE(/obj/structure/foamedmetal, "metal", list("1" = list(APPEARAN
 	else if(metal == 1 || prob(50))
 		consume(src)
 
-DECLARE_INTERACTIONS(/obj/structure/foamedmetal, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/structure/foamedmetal)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_hand.
-/obj/structure/foamedmetal/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/foamedmetal/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if ((user.has_mutation(HULK)) || (prob(75 - metal * 25)))
 		act_message(user, null, MSG_SELF(span_notice("You smash through the metal foam wall.")), \
 			MSG_OTHERS(span_warning("%U% smashes through the foamed metal.")))
@@ -173,7 +173,9 @@ DECLARE_INTERACTIONS(/obj/structure/foamedmetal, \
 	return TRUE
 
 /// Old attackby.
-/obj/structure/foamedmetal/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/foamedmetal/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/grab))
 		var/obj/item/grab/G = I
 		var/mob/grabbed = G?.grab_target()
@@ -181,7 +183,7 @@ DECLARE_INTERACTIONS(/obj/structure/foamedmetal, \
 		visible_message(span_warning("[G?.grab_assailant()] smashes [grabbed] through the foamed metal wall."))
 		consume(I, user)
 		consume(src, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(prob(I.force * 20 - metal * 25))
 		act_message(user, null, MSG_SELF(span_notice("You smash through the foamed metal with %I%.")), \
@@ -190,7 +192,7 @@ DECLARE_INTERACTIONS(/obj/structure/foamedmetal, \
 		consume(src, user)
 	else
 		to_chat(user, span_notice("You hit the metal foam to no effect."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/effect/effect/foam/firefighting
 	name = "firefighting foam"

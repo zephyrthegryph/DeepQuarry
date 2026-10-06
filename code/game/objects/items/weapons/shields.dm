@@ -330,12 +330,9 @@ CAPABILITIES(/obj/item/shield/riot/tele)
 
 //POURPEL WHY U NO COVER
 
-EXTEND_INTERACTIONS(/obj/item/shield/riot/explorer, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-)
-
 /// Old attack_self.
-/obj/item/shield/riot/explorer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/shield/riot/explorer/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(brightness_on)
 		if(!isturf(user.loc))
 			to_chat(user, "You cannot turn the light on while in this [user.loc]")
@@ -370,6 +367,7 @@ APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer, "explorer_shield{on?_lighted
 
 CAPABILITIES(/obj/item/shield/riot/explorer)
 	op("machete_bash", item(/obj/item/material/knife/machete), label("Bash shield"), then(PROC_REF(machete_bashed)), passes())
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /obj/item/shield/riot/explorer/proc/machete_bashed(datum/act/op/A)
 	if(COOLDOWN_FINISHED(src, cooldown))

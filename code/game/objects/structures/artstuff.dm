@@ -13,21 +13,11 @@
 
 CAPABILITIES(/obj/structure/easel)
 	climb()
+	op("item", item(/obj/item/canvas), label("Use"), then(PROC_REF(interaction_item)))
 
-/obj/structure/easel/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/easel_item,
-	)
-	..()
-
-/// Old attackby: adding canvases.
-/datum/interaction/entry_item/easel_item
-	id = "easel_item"
-	name = "Use"
-	held_type = /obj/item/canvas
-	effect = /obj/structure/easel/proc/interaction_item
-
-/obj/structure/easel/proc/interaction_item(mob/user, obj/item/canvas/canvas, datum/interaction/interaction)
+/obj/structure/easel/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/canvas/canvas = A.held
 	user.drop_from_inventory(canvas)
 	rel_set(src, nameof(painting), canvas) // the canvas sits on our turf: a view, not owned
 	canvas.forceMove(get_turf(src))
@@ -453,19 +443,12 @@ CAPABILITIES(/datum/prompt/color/paint_palette)
 	. = ..()
 	SSpersistence.painting_frames -= src // ALLOW(ownership): the persistence system's list of painting frames, joined and left by the frame itself
 
-/obj/structure/sign/painting/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/sign_painting_item,
-	)
-	..()
+CAPABILITIES(/obj/structure/sign/painting)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
-/// Old attackby: frame a canvas, or rename with a pen.
-/datum/interaction/entry_item/sign_painting_item
-	id = "sign_painting_item"
-	name = "Use"
-	effect = /obj/structure/sign/painting/proc/interaction_item
-
-/obj/structure/sign/painting/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/sign/painting/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(!current_canvas && istype(I, /obj/item/canvas))
 		frame_canvas(user, I)
 	else if(current_canvas && current_canvas.painting_name == initial(current_canvas.painting_name) && istype(I,/obj/item/pen))

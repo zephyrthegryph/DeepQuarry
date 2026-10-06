@@ -169,30 +169,33 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/shock_maul, TYPE_PROC_REF(/atom, appeara
 			. += span_warning("The concussion maul does not have a power source installed.")
 
 /// Old attackby.
-/obj/item/melee/shock_maul/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/melee/shock_maul/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!user.IsAdvancedToolUser())
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(W, /obj/item/cell))
 		if(istype(W, /obj/item/cell/device))
 			if(!bcell)
 				if(!move_into(src, nameof(src.bcell), W, user))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 				to_chat(user, span_notice("You install a cell in \the [src]."))
 				update_held_icon()
 			else
 				to_chat(user, span_notice("\The [src] already has a cell."))
 		else
 			to_chat(user, span_notice("This cell is not fitted for [src]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/melee/shock_maul)
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(shock_maul_emp)))
 
 /// Old attack_hand.
-/obj/item/melee/shock_maul/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/melee/shock_maul/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(!user.IsAdvancedToolUser())
 			return TRUE
@@ -204,12 +207,13 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 			status = 0
 			update_held_icon()
 			return TRUE
-		return FALSE
+		return OP_DECLINE
 	else
-		return FALSE
+		return OP_DECLINE
 
 /// Old attack_self.
-/obj/item/melee/shock_maul/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/melee/shock_maul/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.IsAdvancedToolUser())
 		return TRUE
 	if(!status && bcell && bcell.charge >= hitcost)
@@ -285,9 +289,8 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 		update_held_icon()
 	powercheck(hitcost)
 
-DAMAGE_REACTION(/obj/item/melee/shock_maul, DAMAGE_EMP, PROC_REF(shock_maul_emp))
 /// An EMP kills the power field.
-/obj/item/melee/shock_maul/proc/shock_maul_emp(datum/damage_packet/packet)
+/obj/item/melee/shock_maul/proc/shock_maul_emp(datum/act/A)
 	if(!status)
 		return
 	status = FALSE

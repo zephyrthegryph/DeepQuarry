@@ -62,18 +62,10 @@ CAPABILITIES(/obj/structure/morgue)
 /obj/structure/morgue
 	silicon_use = ROBOT_USE_HAND_ADJACENT
 
-/obj/structure/morgue/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/morgue_hand,
-		/datum/interaction/entry_item/morgue_item,
-	)
-	..()
-
-/// Old attack_hand: open/close the tray.
-/datum/interaction/entry_hand/morgue_hand
-	id = "morgue_hand"
-	name = "Use"
-	effect = /obj/structure/morgue/proc/interaction_hand
+EXTEND_INTERACTIONS(/obj/structure/morgue, \
+	INTERACT_HAND("Use", PROC_REF(interaction_hand)), \
+	INTERACT_ITEM("Use", PROC_REF(interaction_item)), \
+)
 
 /obj/structure/morgue/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (src.connected)
@@ -107,12 +99,6 @@ CAPABILITIES(/obj/structure/morgue)
 	else
 		own_clear(src, nameof(connected), OWN_DELETE)
 
-
-/// Old attackby: relabel with a pen.
-/datum/interaction/entry_item/morgue_item
-	id = "morgue_item"
-	name = "Use"
-	effect = /obj/structure/morgue/proc/interaction_item
 
 /obj/structure/morgue/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
 	if (istype(P, /obj/item/pen))
@@ -161,18 +147,10 @@ CAPABILITIES(/obj/structure/morgue)
 /obj/structure/m_tray
 	silicon_use = ROBOT_USE_HAND_ADJACENT
 
-/obj/structure/m_tray/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/m_tray_hand,
-		/datum/interaction/entry_drag/m_tray_drag,
-	)
-	..()
-
-/// Old attack_hand: push the tray back in.
-/datum/interaction/entry_hand/m_tray_hand
-	id = "m_tray_hand"
-	name = "Push in"
-	effect = /obj/structure/m_tray/proc/interaction_hand
+EXTEND_INTERACTIONS(/obj/structure/m_tray, \
+	INTERACT_HAND("Push in", PROC_REF(interaction_hand)), \
+	INTERACT_DRAG("Place on tray", PROC_REF(interaction_drag)), \
+)
 
 /obj/structure/m_tray/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (src.connected)
@@ -185,12 +163,6 @@ CAPABILITIES(/obj/structure/morgue)
 		own_clear(M, nameof(M.connected), OWN_DELETE) // the morgue owns this tray: deletes src
 		M.update()
 	return TRUE
-
-/// Old MouseDrop_T: slide a body (or body bag) onto the tray.
-/datum/interaction/entry_drag/m_tray_drag
-	id = "m_tray_drag"
-	name = "Place on tray"
-	effect = /obj/structure/m_tray/proc/interaction_drag
 
 /obj/structure/m_tray/proc/interaction_drag(mob/user, atom/movable/O, datum/interaction/interaction)
 	if ((!( istype(O, /atom/movable) ) || O.anchored || get_dist(user, src) > 1 || get_dist(user, O) > 1 || user.contents.Find(src) || user.contents.Find(O)))

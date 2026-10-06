@@ -27,19 +27,23 @@
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 
-/obj/item/plastique/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/plastique/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	open_panel = !open_panel
 	to_chat(user, span_notice("You [open_panel ? "open" : "close"] the wire panel."))
 	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/plastique/wirecutter_act(mob/user, obj/item/tool)
+/obj/item/plastique/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
 	wires_open(src, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/plastique/multitool_act(mob/user, obj/item/tool)
+/obj/item/plastique/proc/multitool_used(datum/act/op/A)
+	var/mob/user = A.actor
 	wires_open(src, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 DECLARE_INTERACTIONS(/obj/item/plastique, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
@@ -58,6 +62,9 @@ CAPABILITIES(/obj/item/plastique)
 	on_wire(WIRE_EXPLODE, cut = PROC_REF(explode_wire), pulse = PROC_REF(explode_wire))
 	op("timer", in_hand(), needs(req_self_held(), req(PROC_REF(timer_item_in_hands), because = MSG(op/not_available)), req_capable()), label("Set explosive timer"),
 		asks(/datum/prompt/number, keeps = 0, fields = list("title" = "Timer", "question" = "Please set the timer.", "default" = 10, "min_value" = 10, "max_value" = 60000, "step" = 1, "timeout" = 0)), then(PROC_REF(timer_set)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 
 /// ASK_HELD used either actual hand, not the input event's saved held reference.
 /obj/item/plastique/proc/timer_item_in_hands(datum/act/op/A)

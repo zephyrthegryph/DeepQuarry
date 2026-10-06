@@ -6,11 +6,16 @@
 	force_divisor = 0.1
 	thrown_force_divisor = 0.1
 
-/obj/item/material/butterflyconstruction/screwdriver_act(mob/user, obj/item/tool)
+CAPABILITIES(/obj/item/material/butterflyconstruction)
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+
+/obj/item/material/butterflyconstruction/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	to_chat(user, "You finish the concealed blade weapon.")
 	playsound(src, tool.usesound, 50, 1)
 	replace_with(src, /obj/item/material/butterfly, material.name)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/material/butterflyblade
 	name = "knife blade"

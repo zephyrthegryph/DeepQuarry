@@ -121,6 +121,7 @@ CAPABILITIES(/obj/item/storage/wallet/poly)
 	op("recolor", menu(), needs(carried(), req_capable()), label("Change wallet color"),
 		asks(/datum/prompt/color, fields = list("question" = "Pick a new color", "title" = "Wallet Color", "default" = nameof(color))),
 		then(PROC_REF(recolored)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(poly_wallet_emp)))
 
 /obj/item/storage/wallet/poly/Initialize(mapload)
 	. = ..()
@@ -142,9 +143,8 @@ CAPABILITIES(/obj/item/storage/wallet/poly)
 		color = picked.value
 	return OP_OK
 
-DAMAGE_REACTION(/obj/item/storage/wallet/poly, DAMAGE_EMP, PROC_REF(poly_wallet_emp))
 /// An EMP glitches the wallet's colour display for a while.
-/obj/item/storage/wallet/poly/proc/poly_wallet_emp(datum/damage_packet/packet)
+/obj/item/storage/wallet/poly/proc/poly_wallet_emp(datum/act/A)
 	var/original_state = icon_state
 	icon_state = "wallet-emp"
 	update_icon()

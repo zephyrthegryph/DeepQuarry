@@ -466,11 +466,12 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/mining, "shieldpack
 	icon_state = "modkit"
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/personal_shield_generator/belt/mining/declare_interactions(list/into)
-	into += dq_interaction_from_spec(type, INTERACT_INSERT(/obj/item/borg/upgrade/shield_upgrade, PROC_REF(interaction_upgrade), "Upgrade"))
-	..()
+CAPABILITIES(/obj/item/personal_shield_generator/belt/mining)
+	op("upgrade", item(/obj/item/borg/upgrade/shield_upgrade), label("Upgrade"), then(PROC_REF(interaction_upgrade)))
 
-/obj/item/personal_shield_generator/belt/mining/proc/interaction_upgrade(mob/user, obj/item/borg/upgrade/shield_upgrade/W, datum/interaction/interaction)
+/obj/item/personal_shield_generator/belt/mining/proc/interaction_upgrade(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/borg/upgrade/shield_upgrade/W = A.held
 	if(modifier_type == /datum/body_effect/shield_projection/mining/strong)
 		to_chat(user, span_warning("This shield generator is already upgraded!"))
 		return TRUE

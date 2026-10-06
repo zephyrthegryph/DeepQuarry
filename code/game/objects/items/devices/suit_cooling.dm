@@ -31,6 +31,7 @@ CAPABILITIES(/obj/item/suit_cooling_unit)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item/cell), label("Insert cell"), then(PROC_REF(interaction_item)))
 	every(2 SECONDS, then(PROC_REF(suit_cooling_unit_step)), when = nameof(on))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /obj/item/suit_cooling_unit/ui_action_click(mob/user, actiontype)
 	toggle(user)
@@ -160,12 +161,14 @@ TRACKED(/obj/item/suit_cooling_unit, on)
 	update_icon()
 	return TRUE
 
-/obj/item/suit_cooling_unit/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/suit_cooling_unit/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	cover_open = !cover_open
 	to_chat(user, "You [cover_open ? "unscrew" : "screw"] the panel [cover_open ? "open" : "into place"].")
 	playsound(src, tool.usesound, 50, 1)
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 DECLARE_APPEARANCE_PROC(/obj/item/suit_cooling_unit, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/suit_cooling_unit/appearance_overlays()
@@ -232,6 +235,7 @@ APPEARANCE_NONE(/obj/item/suit_cooling_unit/emergency)
 		return null // Don't let recharging happen while we're on
 	return cell
 
-/obj/item/suit_cooling_unit/emergency/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/suit_cooling_unit/emergency/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_warning("This cooler's cell is permanently installed!"))
-	return ITEM_INTERACT_BLOCKING
+	return OP_OK
