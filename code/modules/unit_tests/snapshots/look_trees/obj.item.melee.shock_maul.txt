@@ -1,0 +1,13 @@
+/obj/item/melee/shock_maul icon: icons/obj/weapons.dmi
+/obj/item/melee/shock_maul state: forcemaul_nocell0
+/obj/item/melee/shock_maul dir: 2
+/obj/item/melee/shock_maul overlay: icons/obj/weapons.dmi:forcemaul_nocell0:8:#000000
+/obj/item/melee/shock_maul/loaded icon: icons/obj/weapons.dmi
+/obj/item/melee/shock_maul/loaded state: forcemaul0
+/obj/item/melee/shock_maul/loaded dir: 2
+/obj/item/melee/shock_maul/loaded overlay: icons/obj/weapons.dmi:forcemaul0:8:#000000
+/obj/item/melee/shock_maul/harmless icon: icons/obj/weapons.dmi
+/obj/item/melee/shock_maul/harmless state: forcemaul_nocell0
+/obj/item/melee/shock_maul/harmless dir: 2
+/obj/item/melee/shock_maul/harmless overlay: icons/obj/weapons.dmi:forcemaul_nocell0:8:#000000
+

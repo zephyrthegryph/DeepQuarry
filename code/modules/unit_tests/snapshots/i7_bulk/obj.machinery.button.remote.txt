@@ -3,3 +3,4 @@
 /obj/machinery/button/remote|ai|none => |
 /obj/machinery/button/remote|ghost|none => |
 /obj/machinery/button/remote|human|/obj/item => button_press|
+

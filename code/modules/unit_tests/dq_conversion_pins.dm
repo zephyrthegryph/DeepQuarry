@@ -100,6 +100,16 @@
 		var/path = islist(interaction.held_type) ? interaction.held_type[1] : interaction.held_type
 		if(ispath(path, /obj/item) && !ispath(path, /obj/item/grab))
 			held_types |= path
+	// ...and each item an op of the type binds (item(T), stack(T)), so a converted type is probed with what its legacy interactions asked for
+	var/datum/op_index/probe_index = op_index_of_table(table_of(target))
+	for(var/key in probe_index?.by_key)
+		var/datum/op_plan/plan = probe_index.by_key[key]
+		for(var/datum/entry/part/bind/binding as anything in plan?.bindings)
+			if(binding.bind_kind != BIND_ITEM && binding.bind_kind != BIND_STACK)
+				continue
+			var/bound = binding.args["type"]
+			if(ispath(bound, /obj/item) && !ispath(bound, /obj/item/grab))
+				held_types |= bound
 	var/list/combinations = list(list("human", null), list("robot", null), list("ai", null), list("ghost", null))
 	for(var/path in held_types)
 		combinations += list(list("human", path))

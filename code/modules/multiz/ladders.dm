@@ -27,9 +27,7 @@
 		for(var/obj/structure/ladder/L in GetBelow(src))
 			if(L.allowed_directions & UP)
 				rel_set(src, nameof(target_down), L)
-				L.update_icon()
 				break
-	update_icon()
 
 CAPABILITIES(/obj/structure/ladder)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
@@ -175,7 +173,10 @@ DECLARE_INTERACTIONS(/obj/structure/ladder, \
 /obj/structure/ladder/proc/appearance_down()
 	return !!(allowed_directions & DOWN)
 
-APPEARANCE_TEMPLATE(/obj/structure/ladder, "ladder{appearance_up}{appearance_down}")
+/// The look (the draw sweep: from its template).
+/obj/structure/ladder/draw(datum/look/look)
+	..()
+	look.state("ladder[appearance_up()][appearance_down()]")
 
 /obj/structure/ladder/up
 	allowed_directions = UP

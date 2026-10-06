@@ -53,7 +53,10 @@ CAPABILITIES(/obj/machinery/pda_multicaster)
 	default_apply_parts()
 
 
-APPEARANCE_TEMPLATE(/obj/machinery/pda_multicaster, "{initial(icon_state)}{on?:_off}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/pda_multicaster/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][on ? "" : "_off"]")
 
 /obj/machinery/pda_multicaster/proc/interaction_toggle(datum/act/op/A)
 	var/mob/user = A.actor
@@ -99,7 +102,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/pda_multicaster, "{initial(icon_state)}{on?:_
 		if(soundloop)
 			soundloop.stop()
 		noisy = FALSE
-	update_icon()
 
 /obj/machinery/pda_multicaster/proc/work_step(datum/act/timer/A)
 	update_power()

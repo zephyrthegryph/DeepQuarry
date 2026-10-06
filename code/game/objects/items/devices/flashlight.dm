@@ -42,6 +42,11 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 CAPABILITIES(/obj/item/flashlight)
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
 	drag_onto(PROC_REF(mousedrop_input))
+	op("switch", in_hand(), needs(req(PROC_REF(can_switch), because = PROC_REF(switch_refusal))), then(PROC_REF(interaction_self)))
+	// held in the other hand, an empty hand takes the cell out (otherwise the click declines to pick up); a device cell goes in
+	op("take_cell", hand(), label("Remove cell"), then(PROC_REF(interaction_hand)))
+	op("insert_cell", item(/obj/item/cell), label("Install cell"), when(nameof(power_use)), then(PROC_REF(interaction_item)))
+
 
 /obj/item/flashlight/Initialize(mapload)
 	. = ..()
@@ -89,26 +94,32 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/flashlight, PERIODIC_SLOW, list("on", "powe
 		else if(cell.charge > cell.maxcharge*0.75 && cell.charge <= cell.maxcharge)
 			. += "It appears to have a high amount of power remaining."
 
-DECLARE_INTERACTIONS(/obj/item/flashlight, \
-	INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/flashlight/proc/can_switch)), \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+/// Requirement: the light can be switched now (a spent single-use light and a special one are the effect's business).
+/obj/item/flashlight/proc/can_switch(datum/act/op/A)
+	return isnull(flashlight_switch_refusal(src, A.actor))
 
-/// Requirement: TRUE, or why the light can't be switched (cases the effect declines silently pass).
-/obj/item/flashlight/proc/can_switch(mob/user, atom/target, obj/item/held)
-	if((single_use && on) || special_handling)
-		return TRUE
-	if(flickering)
-		return "the light is currently malfunctioning and you're unable to adjust it" //To prevent some lighting anomalities.
-	if(power_use)
+/obj/item/flashlight/proc/switch_refusal(datum/act/op/A)
+	return flashlight_switch_refusal(src, A.actor)
+
+/// Why `user` can't switch `light` now, or null.
+/proc/flashlight_switch_refusal(obj/item/flashlight/light, mob/user)
+	READS_FROM() // a flicker, the user's place and the cell's charge are asked when the switch is flicked
+	if((light.single_use && light.on) || light.special_handling)
+		return null
+	if(light.flickering)
+		return "The light is currently malfunctioning and you're unable to adjust it." //To prevent some lighting anomalities.
+	if(light.power_use)
 		if(!isturf(user.loc))
-			return "you cannot turn the light on while in this [user.loc]" //To prevent some lighting anomalities.
-		if(!cell || cell.charge == 0)
-			return "you flick the switch on it, but nothing happens"
-	return TRUE
+			return "You cannot turn the light on while in this [user.loc]." //To prevent some lighting anomalities.
+		if(!light.cell || light.cell.charge == 0)
+			return "You flick the switch on it, but nothing happens."
+	return null
 
-/obj/item/flashlight/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_self: switch the light (a flare or a glowstick says more, in its override of switch_light()).
+/obj/item/flashlight/proc/interaction_self(datum/act/op/A)
+	return switch_light(A.actor) ? OP_OK : OP_DECLINE
+
+/obj/item/flashlight/proc/switch_light(mob/user)
 	if(single_use && on)
 		return FALSE
 	if(special_handling)
@@ -173,7 +184,9 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 	else
 		return ..()
 
-/obj/item/flashlight/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: the hand on a light held in the other hand takes its cell out (anything else is the pick up).
+/obj/item/flashlight/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src && cell)
 		cell.update_icon()
 		user.put_in_hands(cell)
@@ -182,8 +195,8 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 		play_sfx(src, SFX_MACHINES_BUTTON)
 		set_on(0)
 		update_brightness()
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/item/flashlight/proc/mousedrop_input(datum/act/input/A)
@@ -221,14 +234,17 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 		src.add_fingerprint(user)
 	return TRUE
 
-/obj/item/flashlight/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: a device cell goes into a powered light.
+/obj/item/flashlight/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!power_use)
-		return FALSE
+		return OP_DECLINE
 	if(istype(W, /obj/item/cell))
 		if(istype(W, /obj/item/cell/device))
 			if(!cell)
 				if(!move_into(src, nameof(src.cell), W, user))
-					return FALSE
+					return OP_DECLINE
 				to_chat(user, span_notice("You install a cell in \the [src]."))
 				play_sfx(src, SFX_MACHINES_BUTTON)
 				update_brightness()
@@ -236,7 +252,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 				to_chat(user, span_notice("\The [src] already has a cell."))
 		else
 			to_chat(user, span_notice("\The [src] cannot use that type of cell."))
-	return TRUE
+	return OP_OK
 
 /obj/item/flashlight/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
 	. = ..()
@@ -443,7 +459,7 @@ CAPABILITIES(/obj/item/flashlight/flare)
 	src.injury_kind = initial(src.injury_kind)
 	update_brightness()
 
-/obj/item/flashlight/flare/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/flashlight/flare/switch_light(mob/user)
 	. = ..()
 	if(.)
 		return TRUE
@@ -502,7 +518,7 @@ CAPABILITIES(/obj/item/flashlight/glowstick)
 	set_on(FALSE)
 	update_brightness()
 
-/obj/item/flashlight/glowstick/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/flashlight/glowstick/switch_light(mob/user)
 	. = ..()
 	if(.)
 		return TRUE

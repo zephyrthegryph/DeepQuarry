@@ -2,3 +2,4 @@
 /obj/machinery/computer/card|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/card|ai|none => |
 /obj/machinery/computer/card|ghost|none => |
+

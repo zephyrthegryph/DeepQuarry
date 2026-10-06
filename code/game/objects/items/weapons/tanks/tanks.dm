@@ -697,7 +697,6 @@ TYPE_TABLE(/obj/item/tank/oxygen/onetankbomb/small, oxygen_bomb_forced_fill, 0)
 	rel_set(S, nameof(S.master), src.proxyassembly) //Tell the assembly about its new owner
 	S.forceMove(src)			//Move the assembly
 
-	src.update_icon()
 
 	src.add_bomb_overlay()
 
@@ -718,7 +717,6 @@ TYPE_TABLE(/obj/item/tank/oxygen/onetankbomb/small, oxygen_bomb_forced_fill, 0)
 	rel_clear(assy, nameof(assy.master))
 	rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
 	destroyed(assy)
-	src.update_icon()
 	src.update_gauge()
 
 	heat_add(air_contents, 15000, HEAT_SOURCE_OTHER)

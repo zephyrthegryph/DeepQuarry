@@ -2,3 +2,4 @@
 /obj/machinery/librarywikicomp|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/librarywikicomp|ai|none => |
 /obj/machinery/librarywikicomp|ghost|none => |
+

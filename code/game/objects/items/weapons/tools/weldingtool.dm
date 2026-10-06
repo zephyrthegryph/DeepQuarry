@@ -238,6 +238,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, TYPE_PROC_REF(/atom, appearance_o
 	else
 		set_light(0)
 
+
 //	icon_state = welding ? "[icon_state]1" : "[initial(icon_state)]"
 	var/mob/M = loc
 	if(istype(M))
@@ -554,10 +555,6 @@ OM_DERIVE_FIELD(/obj/item/weldingtool/tubefed, burner_active, list("mounted_pack
 /obj/item/weldingtool/electric/unloaded
 	cell_type = null
 
-/obj/item/weldingtool/electric/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/item/weldingtool/electric/get_cell()
 	return power_supply
 
@@ -644,6 +641,7 @@ CAPABILITIES(/obj/item/weldingtool/electric)
 			to_chat(user, span_notice("\The [src] cannot use that type of cell."))
 	else
 		return OP_DECLINE
+	return OP_PASS
 
 /obj/item/weldingtool/electric/proc/get_external_power_supply()
 	if(isrobotmultibelt(src.loc)) //We are in a multibelt

@@ -1,0 +1,9 @@
+/obj/item/taperecorder icon: icons/obj/device.dmi
+/obj/item/taperecorder state: taperecorder_idle
+/obj/item/taperecorder dir: 2
+/obj/item/taperecorder overlay: icons/obj/device.dmi:taperecorder_idle:8:#000000
+/obj/item/taperecorder/empty icon: icons/obj/device.dmi
+/obj/item/taperecorder/empty state: taperecorder_empty
+/obj/item/taperecorder/empty dir: 2
+/obj/item/taperecorder/empty overlay: icons/obj/device.dmi:taperecorder_empty:8:#000000
+

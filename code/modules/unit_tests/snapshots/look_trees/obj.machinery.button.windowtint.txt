@@ -1,0 +1,13 @@
+/obj/machinery/button/windowtint icon: icons/obj/stationobjs.dmi
+/obj/machinery/button/windowtint state: light0
+/obj/machinery/button/windowtint dir: 2
+/obj/machinery/button/windowtint overlay: icons/obj/stationobjs.dmi:light0:8:#000000
+/obj/machinery/button/windowtint/multitint icon: icons/obj/stationobjs.dmi
+/obj/machinery/button/windowtint/multitint state: light0
+/obj/machinery/button/windowtint/multitint dir: 2
+/obj/machinery/button/windowtint/multitint overlay: icons/obj/stationobjs.dmi:light0:8:#000000
+/obj/machinery/button/windowtint/doortint icon: icons/obj/stationobjs.dmi
+/obj/machinery/button/windowtint/doortint state: light0
+/obj/machinery/button/windowtint/doortint dir: 2
+/obj/machinery/button/windowtint/doortint overlay: icons/obj/stationobjs.dmi:light0:8:#000000
+

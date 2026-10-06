@@ -255,13 +255,6 @@ CAPABILITIES(/obj/item/uplink/hidden)
 	. = ..()
 	rel_set(src, nameof(hidden_uplink), new /obj/item/uplink/hidden(src))
 
-/obj/item/multitool/uplink/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	. = ..()
-	if(.)
-		return TRUE
-	if(item_hidden_uplink(src))
-		item_hidden_uplink(src).trigger(user)
-
 /obj/item/radio/headset/uplink
 	traitor_frequency = BEACON_FREQ
 

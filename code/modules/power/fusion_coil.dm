@@ -20,31 +20,26 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 	var/coil_charged = TRUE	//have we been discharged into something yet?
 	var/coil_damaged = FALSE	//have we been damaged? one hit is fine, but two direct hits will explode us if we're charged
 	var/coil_charge = 4800000	//how much power do we dump into the SMES on use? restores the main (if unupgraded) by 20%, or engine by 80%
+TRACKED(/obj/item/fusion_coil, coil_damaged)
 
-/obj/item/fusion_coil/Initialize(mapload)
-	. = ..()
-
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/item/fusion_coil, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/fusion_coil/appearance_overlays()
-	. = list()
-	icon_state = "fc_spent"
+/obj/item/fusion_coil/draw(datum/look/look)
+	..()
+	look.state("fc_spent")
 
 
 	if(coil_damaged)
-		. += mutable_appearance(icon, "fc_unstable")
-		. += emissive_appearance(icon, "fc_unstable")
-		set_light(1, 3, light_color_danger)
-		return .
+		look.overlay(mutable_appearance(icon, "fc_unstable"))
+		look.overlay(emissive_appearance(icon, "fc_unstable"))
+		look.light(1, 3, light_color_danger)
+		return
 
 	if(coil_charged)
-		. += mutable_appearance(icon, "fc_charged")
-		. += emissive_appearance(icon, "fc_charged")
-		set_light(1, 2, light_color)
-		return .
+		look.overlay(mutable_appearance(icon, "fc_charged"))
+		look.overlay(emissive_appearance(icon, "fc_charged"))
+		look.light(1, 2, light_color)
+		return
 
-	set_light(0)
+	look.light_off()
 
 /obj/item/fusion_coil/bullet_act(obj/item/projectile/P, def_zone)
 	. = ..()
@@ -64,6 +59,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/fusion_coil, TYPE_PROC_REF(/atom, appearance_o
 	visible_message(span_danger("\The [src] sparks and sputters!"))
 	fx_sparks(src.loc, 5, FALSE)
 	play_sfx(src, SFX_SPARKS)
-	coil_damaged = TRUE
+	set_coil_damaged(TRUE)
 	coil_charge = (coil_charge / 2)
-	update_icon()
+	changed(src)

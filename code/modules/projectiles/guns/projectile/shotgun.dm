@@ -69,18 +69,16 @@
 	if(pump_animation) // This affects all bolt action and shotguns.
 		flick("[pump_animation]", src) // This plays any pumping
 
-	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/shotgun/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/shotgun/pump/appearance_overlays()//This adds empty sprite capability for shotguns.
-	. = list()
-	. += ..()
+/obj/item/gun/projectile/shotgun/pump/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(!empty_sprite)//Just a dirty check
-		return .
+		return
 	if((length(loaded)) || (chambered))
-		icon_state = "[icon_state]"
+		drawn_state = look.state("[drawn_state]")
 	else
-		icon_state = "[icon_state]-empty"
+		drawn_state = look.state("[drawn_state]-empty")
 
 /obj/item/gun/projectile/shotgun/pump/empty
 	ammo_type = null
@@ -353,7 +351,10 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/compact)
 	allowed_magazines = list(/obj/item/ammo_magazine/m12gdrumjack)
 	projectile_type = /obj/item/projectile/bullet/shotgun
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/revolvershotgun, "revolvshot{ammo_magazine?:-empty}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/revolvershotgun/draw(datum/look/look)
+	..()
+	look.state("revolvshot[ammo_magazine ? "" : "-empty"]")
 
 /obj/item/ammo_magazine/m12gdrumjack
 	name = "drum magazine (12 gauge slug)"

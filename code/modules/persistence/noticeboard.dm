@@ -36,22 +36,17 @@ CAPABILITIES(/obj/structure/noticeboard)
 		if(LAZYLEN(notices) >= max_notices)
 			break
 
-	update_icon()
 
 /obj/structure/noticeboard/proc/add_paper(atom/movable/paper, skip_icon_update)
 	if(istype(paper))
 		paper.forceMove(src)
 		own_move(paper, src, nameof(notices)) // it may come from another holder (a bundle, a clipboard)
-		if(!skip_icon_update)
-			update_icon()
 
 /obj/structure/noticeboard/proc/remove_paper(atom/movable/paper, skip_icon_update)
 	if(istype(paper) && paper.loc == src)
 		paper.dropInto(loc)
 		own_take_member(src, nameof(notices), paper)
 		SSpersistence.forget_value(paper, /datum/persistent/paper)
-		if(!skip_icon_update)
-			update_icon()
 
 /obj/structure/noticeboard/proc/dismantle()
 	for(var/thing in notices)
@@ -69,7 +64,10 @@ DAMAGE_REACTION(/obj/structure/noticeboard, DAMAGE_EXPLOSION, PROC_REF(noticeboa
 /obj/structure/noticeboard/proc/appearance_count()
 	return LAZYLEN(notices)
 
-APPEARANCE_TEMPLATE(/obj/structure/noticeboard, "{base_icon_state}{appearance_count}")
+/// The look (the draw sweep: from its template).
+/obj/structure/noticeboard/draw(datum/look/look)
+	..()
+	look.state("[base_icon_state][appearance_count()]")
 
 /// Old attackby.
 /obj/structure/noticeboard/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)

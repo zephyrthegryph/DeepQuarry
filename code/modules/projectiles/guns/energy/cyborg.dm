@@ -227,7 +227,6 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 				force = 15
 				armor_penetration = 0
 				defend_chance = 5
-		update_icon()
 	return OP_OK
 
 

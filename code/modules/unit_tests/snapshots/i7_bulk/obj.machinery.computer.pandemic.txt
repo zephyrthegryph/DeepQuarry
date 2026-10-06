@@ -2,3 +2,4 @@
 /obj/machinery/computer/pandemic|robot|none => |machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now,gen_item_interaction_insert_beaker:not possible right now
 /obj/machinery/computer/pandemic|ai|none => |
 /obj/machinery/computer/pandemic|ghost|none => |
+

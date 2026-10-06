@@ -1,0 +1,13 @@
+/obj/machinery/power/supermatter icon: icons/obj/supermatter.dmi
+/obj/machinery/power/supermatter state: darkmatter
+/obj/machinery/power/supermatter dir: 2
+/obj/machinery/power/supermatter overlay: icons/obj/supermatter.dmi:darkmatter:8:#000000
+/obj/machinery/power/supermatter/shard icon: icons/obj/supermatter.dmi
+/obj/machinery/power/supermatter/shard state: darkmatter_shard
+/obj/machinery/power/supermatter/shard dir: 2
+/obj/machinery/power/supermatter/shard overlay: icons/obj/supermatter.dmi:darkmatter_shard:8:#000000
+/obj/machinery/power/supermatter/station icon: icons/obj/supermatter.dmi
+/obj/machinery/power/supermatter/station state: darkmatter
+/obj/machinery/power/supermatter/station dir: 2
+/obj/machinery/power/supermatter/station overlay: icons/obj/supermatter.dmi:darkmatter:8:#000000
+

@@ -166,7 +166,6 @@ DECLARE_PERIODIC(/obj/item/coin/uranium, PERIODIC_SLOW)
 	if(!string_attached)
 		return ITEM_INTERACT_SKIP_TO_ATTACK
 	var/obj/item/stack/cable_coil/cable = new(user.loc, 1)
-	cable.update_icon()
 	cut_overlays()
 	string_attached = null
 	balloon_alert(user, "string detached")

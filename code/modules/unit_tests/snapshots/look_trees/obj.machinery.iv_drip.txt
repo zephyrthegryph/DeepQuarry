@@ -1,0 +1,5 @@
+/obj/machinery/iv_drip icon: icons/obj/iv_drip.dmi
+/obj/machinery/iv_drip state: 
+/obj/machinery/iv_drip dir: 2
+/obj/machinery/iv_drip overlay: icons/obj/iv_drip.dmi::8:#000000
+

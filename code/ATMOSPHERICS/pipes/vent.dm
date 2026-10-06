@@ -48,7 +48,6 @@
 			rel_set(src, nameof(node1), target)
 			break
 
-	update_icon()
 
 /obj/machinery/atmospherics/pipe/vent/disconnect(obj/machinery/atmospherics/reference)
 	if(reference == node1)
@@ -56,7 +55,6 @@
 			rust_invalidate_pipeline_wrapper(parent)
 		rel_clear(src, nameof(node1))
 
-	update_icon()
 
 	return null
 

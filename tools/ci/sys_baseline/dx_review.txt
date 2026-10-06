@@ -32,8 +32,6 @@ effect_refusal	code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm	retu
 effect_refusal	code/modules/reagents/reagent_containers/glass.dm	return OP_REFUSED
 effect_refusal	code/modules/reagents/reagent_containers/glass.dm	return OP_REFUSED
 effect_refusal	code/modules/reagents/reagent_containers/glass.dm	return OP_REFUSED
-request_in_effect	code/modules/mob/living/carbon/human/species/station/traits/states/radiation_effects.dm	open_request(src, /datum/prompt/color, PROC_REF(radiation_color_picked), answerer = user, question = "Select a color you wish your radioactive glow to be!", default = radiation_color, title = "Color Selector", timeout = 0)
-request_in_effect	code/modules/mob/living/carbon/human/species/station/traits/states/weaver.dm	open_request(src, /datum/prompt/color, PROC_REF(silk_color_picked), answerer = user, question = "Select a color you wish your silk to be!", default = silk_color, title = "Color Selector", timeout = 0)
 request_in_effect	code/game/gamemodes/cult/ritual.dm	open_request(src, /datum/prompt/choice, PROC_REF(tome_menu_chosen), answerer = user, title = "Tome", question = "You open the tome", buttons = TRUE, choices = list("Read it", "Scribe a rune", "Cancel"), ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
 request_in_effect	code/game/gamemodes/cult/ritual.dm	open_request(src, /datum/prompt/choice/imbued_rune, PROC_REF(imbued_rune_picked), answerer = user, question = "Choose a rune to scribe", choices = runes)
 request_in_effect	code/game/gamemodes/nuclear/pinpointer.dm	open_request(src, /datum/prompt/choice/pinpointer_carried, PROC_REF(pinpointer_mode_chosen), answerer = user, title = "Pinpointer Mode Select", question = "Please select the mode you want to put the pinpointer in.", choices = list("Location", "Disk Recovery", "Other Signature"), buttons = TRUE)
@@ -90,6 +88,8 @@ request_in_effect	code/modules/clothing/masks/miscellaneous.dm	open_request(src,
 request_in_effect	code/modules/mob/living/bot/mulebot.dm	open_request(src, /datum/prompt/choice, PROC_REF(home_tag_chosen), answerer = user, valid = PROC_REF(beacon_prompt_usable), title = beacon_prompt_title(), question = "Select new home tag", choices = beaconlist, timeout = 0)
 request_in_effect	code/modules/mob/living/carbon/human/species/lleill/lleill_items.dm	open_request(src, /datum/prompt/choice, PROC_REF(homunculus_target_chosen), answerer = user, title = "homunculus", question = "Which target do you wish to create a homunculus of?", choices = targets, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
 request_in_effect	code/modules/mob/living/carbon/human/species/lleill/lleill_items.dm	open_request(src, /datum/prompt/choice, PROC_REF(homunculus_action_chosen), answerer = user, title = "Actions", question = "What would you like to do with your homunculus?", choices = list("Recall", "Speak Through", "Cancel"), buttons = TRUE, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
+request_in_effect	code/modules/mob/living/carbon/human/species/station/traits/states/radiation_effects.dm	open_request(src, /datum/prompt/color, PROC_REF(radiation_color_picked), answerer = user, question = "Select a color you wish your radioactive glow to be!", default = radiation_color, title = "Color Selector", timeout = 0)
+request_in_effect	code/modules/mob/living/carbon/human/species/station/traits/states/weaver.dm	open_request(src, /datum/prompt/color, PROC_REF(silk_color_picked), answerer = user, question = "Select a color you wish your silk to be!", default = silk_color, title = "Color Selector", timeout = 0)
 request_in_effect	code/modules/mob/living/silicon/pai/software_modules.dm	var/datum/prompt/yes_no/pai_dna_sample/sample = open_request(src, /datum/prompt/yes_no/pai_dna_sample, PROC_REF(dna_sample_answered), answerer = M, title = "[P] Check DNA", question = "[P] is requesting a DNA sample from you. Will you allow it to confirm your identity?", timeout = 0)
 request_in_effect	code/modules/mob/living/silicon/robot/robot_items.dm	open_request(src, /datum/prompt/choice, PROC_REF(robopen_choice_made), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Change What?", question = "Would you like to change colour or mode?", choices = list("Colour", "Mode", "Cancel"), buttons = TRUE, timeout = 0)
 request_in_effect	code/modules/mob/living/silicon/robot/robot_items.dm	open_request(src, /datum/prompt/choice, PROC_REF(shield_level_chosen), answerer = A.actor, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Shield Level", question = "How much damage should the shield absorb?", choices = list("5", "10", "25", "50", "75", "100"), timeout = 0)
@@ -171,8 +171,6 @@ nameof_unrelated	code/modules/modular_computers/file_system/programs/research/em
 nameof_unrelated	code/modules/modular_computers/file_system/programs/research/email_administration.dm	rel_clear(src, nameof(/datum/tgui_module/email_client::current_account))
 nameof_unrelated	code/modules/modular_computers/file_system/programs/research/email_administration.dm	rel_set(src, nameof(/datum/tgui_module/email_client::current_message), received_message)
 nameof_unrelated	code/modules/modular_computers/file_system/programs/research/email_administration.dm	rel_set(src, nameof(/datum/tgui_module/email_client::current_account), email_account)
-nameof_unrelated	code/modules/reagents/machinery/chem_master.dm	own_take(src, nameof(/obj/machinery/biogenerator::beaker))
-nameof_unrelated	code/modules/reagents/machinery/dispenser/dispenser2.dm	own_take(src, nameof(/datum/cooking_item::container))
 nameof_unrelated	code/modules/research/tg/rdmachines.dm	on_change(nameof(/atom/movable::anchored), ANY, then(PROC_REF(anchor_moved)))
 nameof_unrelated	code/modules/resleeving/computers.dm	rel_clear(src, nameof(/obj/machinery/transhuman/synthprinter::current_br))
 nameof_unrelated	code/modules/resleeving/computers.dm	rel_clear(src, nameof(/obj/machinery/transhuman/synthprinter::current_br))
@@ -182,9 +180,9 @@ nameof_unrelated	code/modules/tgui/modules/supermatter_monitor.dm	rel_clear(src,
 nameof_unrelated	code/modules/tgui/modules/supermatter_monitor.dm	rel_set(src, nameof(/area/looking_glass::active), S)
 nameof_unrelated	code/modules/tgui/modules/teleporter.dm	rel_set(src, nameof(/datum/cinematic::locked), L[desc])
 nameof_unrelated	code/modules/xenoarcheaology/tools/artifact_harvester.dm	rel_clear(src, nameof(/obj/item/anodevice::inserted_battery))
-unkeyed_wire_after	code/game/gamemodes/changeling/state/powers/panacea.dm	after(src, 1 SECOND, PROC_REF(changeling_panacea_pulse), with = list(heal_amount, left - 1))
 unkeyed_wire_after	code/game/dna/dna_modifier.dm	after(src, radiation_duration SECONDS, PROC_REF(do_pulse), with = list(lock_state))
 unkeyed_wire_after	code/game/dna/dna_modifier.dm	after(src, radiation_duration SECONDS, PROC_REF(do_irradiate), with = list(lock_state, block))
+unkeyed_wire_after	code/game/gamemodes/changeling/state/powers/panacea.dm	after(src, 1 SECOND, PROC_REF(changeling_panacea_pulse), with = list(heal_amount, left - 1))
 unkeyed_wire_after	code/game/machinery/nuclear_bomb.dm	after(src, 10 SECONDS, PROC_REF(toggle_lighthack))
 unkeyed_wire_after	code/game/machinery/nuclear_bomb.dm	after(src, 10 SECONDS, PROC_REF(toggle_safety))
 unkeyed_wire_after	code/game/objects/effects/mines.dm	after(src, 2 SECONDS, PROC_REF(explode))

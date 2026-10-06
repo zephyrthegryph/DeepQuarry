@@ -53,6 +53,8 @@
 	)
 	var/open_sound = SFX_MACHINES_FIRELOCKOPEN // firedoor sound variable.
 	var/close_sound = SFX_MACHINES_FIRELOCKCLOSE // firedoor sound variable.
+TRACKED(/obj/machinery/door/firedoor, dir_alerts)
+TRACKED(/obj/machinery/door/firedoor, pdiff_alert)
 
 TRACKED(/obj/machinery/door/firedoor, blocked)
 TRACKED(/obj/machinery/door/firedoor, hatch_open)
@@ -255,7 +257,7 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 /// A xeno's claws are on the hand.
 /obj/machinery/door/firedoor/proc/claws_force(datum/act/op/A)
 	var/mob/living/carbon/human/X = A.actor
-	return !A.held && istype(X) && istype(X.species, /datum/species/xenos) // ALLOW(reads): a body's species is fixed for the touch's life; the click re-evaluates it
+	return !A.held && istype(X) && istype(X.species, /datum/species/xenos)
 
 /// Claws dig into a welded one for five seconds, force a shut one open for two and push an open one shut at once.
 /obj/machinery/door/firedoor/proc/claws_wait(datum/act/A)
@@ -392,7 +394,6 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 	assembly.set_density(TRUE)
 	graph_place(assembly, STAGE_FIREDOOR_ASSEMBLY_WIRED)
 	assembly.set_glass(glass)
-	assembly.update_icon()
 	replace_with(src, assembly)
 	return OP_OK
 
@@ -474,7 +475,7 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 	var/new_pdiff_alert = pdiff >= FIREDOOR_MAX_PRESSURE_DIFF
 	lockdown ||= new_pdiff_alert
 	if(pdiff_alert != new_pdiff_alert)
-		pdiff_alert = new_pdiff_alert
+		set_pdiff_alert(new_pdiff_alert)
 		redraw = TRUE
 	var/list/tile_info = getCardinalAirInfo(src.loc, list("temperature", "pressure"))
 	var/any_alerts = FALSE
@@ -484,12 +485,12 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 		if((LAZYACCESS(dir_alerts, index) || 0) != alerts)
 			redraw = TRUE
 			if(!dir_alerts)
-				dir_alerts = new /list(4)
+				set_dir_alerts(new /list(4))
 			dir_alerts[index] = alerts
 		any_alerts ||= alerts
 		lockdown ||= alerts
 	if(!any_alerts)
-		dir_alerts = null
+		set_dir_alerts(null)
 	if(redraw)
 		changed(src) // the alert lights are no tracked var: the look is redrawn by hand
 

@@ -2,3 +2,4 @@
 /obj/machinery/computer/telescience|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/telescience|ai|none => |
 /obj/machinery/computer/telescience|ghost|none => |
+

@@ -1,6 +1,5 @@
-/obj/machinery/department_storefront|human|none => machine_open_ui_ungated|storefront_id_fallthrough:needs an identification card,storefront_stock:needs an item
-/obj/machinery/department_storefront|robot|none => machine_open_ui_ungated|gen_robot_interaction_swallow:not possible right now,storefront_id_fallthrough:needs an identification card,storefront_stock:needs an item
+/obj/machinery/department_storefront|human|none => |
+/obj/machinery/department_storefront|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/department_storefront|ai|none => |
 /obj/machinery/department_storefront|ghost|none => |
-/obj/machinery/department_storefront|human|/obj/item/card/id => storefront_id_fallthrough,machine_open_ui_ungated|storefront_stock:only Civilian staff may stock this storefront
-/obj/machinery/department_storefront|human|/obj/item => machine_open_ui_ungated|storefront_id_fallthrough:needs an identification card,storefront_stock:only Civilian staff may stock this storefront
+

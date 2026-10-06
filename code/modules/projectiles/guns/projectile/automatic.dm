@@ -39,7 +39,10 @@
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-10,-10), dispersion=list(0.0, 0.3, 0.6))
 	)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/advanced_smg, "advanced_smg{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/advanced_smg/draw(datum/look/look)
+	..()
+	look.state("advanced_smg[ammo_magazine ? "" : "-e"]")
 
 /obj/item/gun/projectile/automatic/advanced_smg/loaded
 	magazine_type = /obj/item/ammo_magazine/m9mmAdvanced
@@ -111,7 +114,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, TYPE_PROC_REF(
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/pdw, "pdw{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/pdw/draw(datum/look/look)
+	..()
+	look.state("pdw[ammo_magazine ? "" : "-e"]")
 
 /*
  * Machine Pistol (WT550)
@@ -137,7 +143,6 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/pdw, "pdw{ammo_magazine?:
 /// Declared icon_state suffix: rounded magazine count, or nothing when empty.
 /obj/item/gun/projectile/automatic/wt550/proc/appearance_mag_state()
 	return ammo_magazine ? "-[round(length(ammo_magazine.stored_ammo), 4)]" : ""
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/wt550, "wt550{appearance_mag_state}")
 
 /*
  * Battle Rifle (Z8)
@@ -344,7 +349,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF
 		list(mode_name="3-round bursts", burst=3, move_delay=6, burst_accuracy = list(0,-15,-15,-30,-30), dispersion = list(0.0, 0.6, 0.6))
 		)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/as24, "ashot{ammo_magazine?:-empty}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/as24/draw(datum/look/look)
+	..()
+	look.state("ashot[ammo_magazine ? "" : "-empty"]")
 
 /*
  * Uzi
@@ -425,16 +433,15 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/as24, "ashot{ammo_magazin
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-15,-15), dispersion=list(0.0, 0.6, 1.0))
 		)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/tommygun, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/tommygun/appearance_overlays()
-	. = list()
+/obj/item/gun/projectile/automatic/tommygun/draw(datum/look/look)
+	..()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m45tommy))
-		icon_state = "tommygun-mag"
+		look.state("tommygun-mag")
 	else if(istype(ammo_magazine,/obj/item/ammo_magazine/m45tommydrum))
-		icon_state = "tommygun-drum"
+		look.state("tommygun-drum")
 	else
-		icon_state = "tommygun-empty"
-	update_held_icon()
+		look.state("tommygun-empty")
+	// the hands that hold it redraw when the look changes its sprite (look.apply_to())
 
 /*
  * Bullpup Rifle
@@ -462,17 +469,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/tommygun, TYPE_PROC_R
 		list(mode_name="2-round bursts", burst=2, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15), dispersion=list(0.0, 0.6))
 		)
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/bullpup, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/bullpup/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/gun/projectile/automatic/bullpup/draw(datum/look/look)
+	..()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m762))
-		icon_state = "bullpup-small"
+		look.state("bullpup-small")
 	else if(istype(ammo_magazine,/obj/item/ammo_magazine/m762/ext))
-		icon_state = "bullpup"
+		look.state("bullpup")
 	else
-		item_state = "bullpup-empty"
-	update_held_icon()
+		look.held_state("bullpup-empty")
+	// the hands that hold it redraw when the look changes its sprite (look.apply_to())
 
 /*
  * Combat SMG (PP3 Ten)
@@ -496,7 +501,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/bullpup, TYPE_PROC_RE
 		list(mode_name="3-round bursts", burst=3, burst_delay=1, fire_delay=4, move_delay=4, burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/combatsmg, "combatsmg{ammo_magazine?:-empty}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/combatsmg/draw(datum/look/look)
+	..()
+	look.state("combatsmg[ammo_magazine ? "" : "-empty"]")
 
 //
 ///
@@ -547,7 +555,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/combatsmg, "combatsmg{amm
 /// Declared icon_state suffix: rounded magazine count, or "empty".
 /obj/item/gun/projectile/automatic/p90/proc/appearance_mag_state()
 	return ammo_magazine ? round(length(ammo_magazine.stored_ammo), 6) : "empty"
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/p90, "p90smgnew-{appearance_mag_state}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/p90/draw(datum/look/look)
+	..()
+	look.state("p90smgnew-[appearance_mag_state()]")
 
 // C-20R
 
@@ -617,7 +628,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/p90, "p90smgnew-{appearan
 		list(mode_name="2-round bursts", burst=2, fire_delay=null, move_delay=6,    burst_accuracy=list(60,35), dispersion=list(0.0, 0.6))
 		)
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/fal, "{initial(icon_state)}{ammo_magazine?:-empty}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/automatic/fal/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-empty"]")
 
 /obj/item/gun/projectile/automatic/wt550/lethal
 	magazine_type = /obj/item/ammo_magazine/m9mmt
@@ -657,13 +671,11 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/fal, "{initial(icon_state
 	allowed_magazines = list(/obj/item/ammo_magazine/mtg)
 	load_method = MAGAZINE
 
-DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/stg, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/gun/projectile/automatic/stg/appearance_overlays()
-	. = list()
-	. += ..()
-	icon_state = (ammo_magazine)? "stg60" : "stg60-empty"
-	item_state = (ammo_magazine)? "arifle" : "arifle-empty"
-	update_held_icon()
+/obj/item/gun/projectile/automatic/stg/draw(datum/look/look)
+	..()
+	look.state((ammo_magazine)? "stg60" : "stg60-empty")
+	look.held_state((ammo_magazine)? "arifle" : "arifle-empty")
+	// the hands that hold it redraw when the look changes its sprite (look.apply_to())
 
 //////////////////// Eris Ported Guns ////////////////////
 // No idea what this is for.

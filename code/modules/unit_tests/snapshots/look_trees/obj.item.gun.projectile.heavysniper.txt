@@ -1,0 +1,9 @@
+/obj/item/gun/projectile/heavysniper icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/heavysniper state: heavysniper
+/obj/item/gun/projectile/heavysniper dir: 2
+/obj/item/gun/projectile/heavysniper overlay: icons/obj/gun.dmi:heavysniper:8:#000000
+/obj/item/gun/projectile/heavysniper/collapsible icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/heavysniper/collapsible state: heavysniper
+/obj/item/gun/projectile/heavysniper/collapsible dir: 2
+/obj/item/gun/projectile/heavysniper/collapsible overlay: icons/obj/gun.dmi:heavysniper:8:#000000
+

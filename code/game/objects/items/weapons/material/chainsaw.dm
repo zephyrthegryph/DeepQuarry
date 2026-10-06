@@ -44,7 +44,6 @@ TRACKED(/obj/item/chainsaw, on)
 	edge = TRUE
 	sharp = TRUE
 	set_on(TRUE)
-	update_icon()
 
 /obj/item/chainsaw/proc/turnOn_timed_failed2(mob/user)
 	to_chat(user, "You fumble with the string.")
@@ -58,7 +57,6 @@ TRACKED(/obj/item/chainsaw, on)
 	edge = FALSE
 	sharp = FALSE
 	set_on(FALSE)
-	update_icon()
 
 CAPABILITIES(/obj/item/chainsaw)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
@@ -134,12 +132,11 @@ CAPABILITIES(/obj/item/chainsaw)
 	if(max_fuel && get_dist(user, src) == 0)
 		. += span_notice("The [src] feels like it contains roughtly [get_fuel()] units of fuel left.")
 
-DECLARE_APPEARANCE_PROC(/obj/item/chainsaw, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/chainsaw/appearance_overlays()
-	. = list()
+/obj/item/chainsaw/draw(datum/look/look)
+	..()
 	if(on)
-		icon_state = "chainsaw1"
-		item_state = "chainsaw1"
+		look.state("chainsaw1")
+		look.held_state("chainsaw1")
 	else
-		icon_state = "chainsaw0"
-		item_state = "chainsaw0"
+		look.state("chainsaw0")
+		look.held_state("chainsaw0")

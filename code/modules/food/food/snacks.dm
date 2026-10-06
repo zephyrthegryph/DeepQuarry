@@ -3850,6 +3850,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza)
 	// ALLOW(instance_list): d: stacked pizza boxes, edited in place
 	var/list/boxes = list() // If the boxes are stacked, they come here
 	var/boxtag = ""
+TRACKED(/obj/item/pizzabox, ismessy)
 
 // A pizza box: using it opens and shuts it (a stack stays shut); an empty hand takes the pizza out of an open one, or the top box off a stack held in the
 // other hand; a box goes on a shut box up to five high, a pizza into an open one, and a pen writes on the tag of a shut one.
@@ -3929,7 +3930,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 /obj/item/pizzabox/proc/toggled(datum/act/op/A)
 	open = !open
 	if( open && pizza )
-		ismessy = 1
+		set_ismessy(1)
 	update_icon()
 	return OP_OK
 
@@ -7538,11 +7539,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/reishicup)
 
 CAPABILITIES(/obj/item/storage/box/wings)
 	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/chickenwing)))
-
-/obj/item/storage/box/wings/Initialize(mapload)
-	. = ..()
-	update_icon()
-	return
 
 /obj/item/storage/box/wings/draw(datum/look/look)
 	. = ..()

@@ -34,8 +34,6 @@ TRACKED_BRIDGED(/obj/machinery/bunsen_burner, heating, CHANGE_MACHINE_SETTINGS)
 	to_chat(user, span_notice("You put \the [held_container] onto \the [src]."))
 	if(held_container.reagents.total_volume > 0)
 		start_boiling()
-	else
-		update_icon()
 	return TRUE
 
 /obj/machinery/bunsen_burner/wrench_act(mob/user, obj/item/tool)
@@ -79,7 +77,6 @@ TRACKED_BRIDGED(/obj/machinery/bunsen_burner, heating, CHANGE_MACHINE_SETTINGS)
 	if(heating)
 		end_boil()
 		return TRUE
-	update_icon()
 	return TRUE
 
 /obj/machinery/bunsen_burner/proc/start_boiling()
@@ -94,7 +91,7 @@ TRACKED_BRIDGED(/obj/machinery/bunsen_burner, heating, CHANGE_MACHINE_SETTINGS)
 	if(create_heat_body(TRUE))
 		vg_heat_body_keep(heat_body, TRUE)
 		vg_heat_body_power(heat_body, heat_power)
-	update_icon()
+	changed(src)
 
 /obj/machinery/bunsen_burner/proc/drop_held_container()
 	if(!held_container)
@@ -131,7 +128,6 @@ CAPABILITIES(/obj/machinery/bunsen_burner)
 	held_container.reagents.trans_to_obj(src, held_container.reagents.total_volume)
 	if(reagents.handle_reactions())
 		held_container.update_icon()
-		update_icon()
 	reagents.trans_to_obj(held_container, reagents.total_volume)
 
 	// every 25 degree step, do a message to show we are working
@@ -162,7 +158,7 @@ CAPABILITIES(/obj/machinery/bunsen_burner)
 		vg_heat_body_power(heat_body, 0)
 		vg_heat_body_keep(heat_body, FALSE)
 	visible_message(span_notice("\The [src] clicks."))
-	update_icon()
+	changed(src)
 
 /// The burner, what sits on it, and the flame while it heats.
 /obj/machinery/bunsen_burner/draw(datum/look/look)

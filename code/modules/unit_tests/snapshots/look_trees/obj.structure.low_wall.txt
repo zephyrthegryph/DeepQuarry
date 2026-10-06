@@ -1,0 +1,133 @@
+/obj/structure/low_wall icon: 
+/obj/structure/low_wall state: blank
+/obj/structure/low_wall dir: 2
+/obj/structure/low_wall overlay: :blank:8:#000000
+/obj/structure/low_wall/bay icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay state: frame
+/obj/structure/low_wall/bay dir: 2
+/obj/structure/low_wall/bay overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#666666 x4
+/obj/structure/low_wall/bay overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/reinforced icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/reinforced state: frame
+/obj/structure/low_wall/bay/reinforced dir: 2
+/obj/structure/low_wall/bay/reinforced overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#777777 x4
+/obj/structure/low_wall/bay/reinforced overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/reinforced/steel icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/reinforced/steel state: frame
+/obj/structure/low_wall/bay/reinforced/steel dir: 2
+/obj/structure/low_wall/bay/reinforced/steel overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#777777 x4
+/obj/structure/low_wall/bay/reinforced/steel overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/reinforced/steel overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767:#3d5e80 x4
+/obj/structure/low_wall/bay/reinforced/red icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/reinforced/red state: frame
+/obj/structure/low_wall/bay/reinforced/red dir: 2
+/obj/structure/low_wall/bay/reinforced/red overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#777777 x4
+/obj/structure/low_wall/bay/reinforced/red overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/reinforced/red overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767:#8c1d11 x4
+/obj/structure/low_wall/bay/reinforced/brown icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/reinforced/brown state: frame
+/obj/structure/low_wall/bay/reinforced/brown dir: 2
+/obj/structure/low_wall/bay/reinforced/brown overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#777777 x4
+/obj/structure/low_wall/bay/reinforced/brown overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/reinforced/brown overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767:#785134 x4
+/obj/structure/low_wall/bay/reinforced/purple icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/reinforced/purple state: frame
+/obj/structure/low_wall/bay/reinforced/purple dir: 2
+/obj/structure/low_wall/bay/reinforced/purple overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#777777 x4
+/obj/structure/low_wall/bay/reinforced/purple overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/reinforced/purple overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767:#5a19a8 x4
+/obj/structure/low_wall/bay/reinforced/blue icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/reinforced/blue state: frame
+/obj/structure/low_wall/bay/reinforced/blue dir: 2
+/obj/structure/low_wall/bay/reinforced/blue overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#777777 x4
+/obj/structure/low_wall/bay/reinforced/blue overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/reinforced/blue overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767:#2e2aa1 x4
+/obj/structure/low_wall/bay/reinforced/orange icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/reinforced/orange state: frame
+/obj/structure/low_wall/bay/reinforced/orange dir: 2
+/obj/structure/low_wall/bay/reinforced/orange overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#777777 x4
+/obj/structure/low_wall/bay/reinforced/orange overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/reinforced/orange overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767:#e6ab22 x4
+/obj/structure/low_wall/bay/reinforced/white icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/reinforced/white state: frame
+/obj/structure/low_wall/bay/reinforced/white dir: 2
+/obj/structure/low_wall/bay/reinforced/white overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#777777 x4
+/obj/structure/low_wall/bay/reinforced/white overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/reinforced/white overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767 x4
+/obj/structure/low_wall/bay/reinforced/black icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/reinforced/black state: frame
+/obj/structure/low_wall/bay/reinforced/black dir: 2
+/obj/structure/low_wall/bay/reinforced/black overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#777777 x4
+/obj/structure/low_wall/bay/reinforced/black overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/reinforced/black overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767:#2e2e2e x4
+/obj/structure/low_wall/bay/reinforced/green icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/reinforced/green state: frame
+/obj/structure/low_wall/bay/reinforced/green dir: 2
+/obj/structure/low_wall/bay/reinforced/green overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#777777 x4
+/obj/structure/low_wall/bay/reinforced/green overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/reinforced/green overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767:#00ab03 x4
+/obj/structure/low_wall/bay/steel icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/steel state: frame
+/obj/structure/low_wall/bay/steel dir: 2
+/obj/structure/low_wall/bay/steel overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#666666 x4
+/obj/structure/low_wall/bay/steel overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/steel overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767:#3d5e80 x4
+/obj/structure/low_wall/bay/red icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/red state: frame
+/obj/structure/low_wall/bay/red dir: 2
+/obj/structure/low_wall/bay/red overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#666666 x4
+/obj/structure/low_wall/bay/red overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/red overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767:#8c1d11 x4
+/obj/structure/low_wall/bay/brown icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/brown state: frame
+/obj/structure/low_wall/bay/brown dir: 2
+/obj/structure/low_wall/bay/brown overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#666666 x4
+/obj/structure/low_wall/bay/brown overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/brown overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767:#785134 x4
+/obj/structure/low_wall/bay/purple icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/purple state: frame
+/obj/structure/low_wall/bay/purple dir: 2
+/obj/structure/low_wall/bay/purple overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#666666 x4
+/obj/structure/low_wall/bay/purple overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/purple overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767:#5a19a8 x4
+/obj/structure/low_wall/bay/blue icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/blue state: frame
+/obj/structure/low_wall/bay/blue dir: 2
+/obj/structure/low_wall/bay/blue overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#666666 x4
+/obj/structure/low_wall/bay/blue overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/blue overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767:#2e2aa1 x4
+/obj/structure/low_wall/bay/orange icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/orange state: frame
+/obj/structure/low_wall/bay/orange dir: 2
+/obj/structure/low_wall/bay/orange overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#666666 x4
+/obj/structure/low_wall/bay/orange overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/orange overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767:#e6ab22 x4
+/obj/structure/low_wall/bay/white icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/white state: frame
+/obj/structure/low_wall/bay/white dir: 2
+/obj/structure/low_wall/bay/white overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#666666 x4
+/obj/structure/low_wall/bay/white overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/white overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767 x4
+/obj/structure/low_wall/bay/black icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/black state: frame
+/obj/structure/low_wall/bay/black dir: 2
+/obj/structure/low_wall/bay/black overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#666666 x4
+/obj/structure/low_wall/bay/black overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/black overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767:#2e2e2e x4
+/obj/structure/low_wall/bay/green icon: icons/obj/wall_frame_bay.dmi
+/obj/structure/low_wall/bay/green state: frame
+/obj/structure/low_wall/bay/green dir: 2
+/obj/structure/low_wall/bay/green overlay: icons/obj/wall_frame_bay.dmi:frame0:-32767:#666666 x4
+/obj/structure/low_wall/bay/green overlay: icons/obj/wall_frame_bay.dmi:frame:8:#000000
+/obj/structure/low_wall/bay/green overlay: icons/obj/wall_frame_bay.dmi:stripe0:-32767:#00ab03 x4
+/obj/structure/low_wall/eris icon: icons/obj/wall_frame_eris.dmi
+/obj/structure/low_wall/eris state: frame
+/obj/structure/low_wall/eris dir: 2
+/obj/structure/low_wall/eris overlay: icons/obj/wall_frame_eris.dmi:frame0:-32767:#666666 x4
+/obj/structure/low_wall/eris overlay: icons/obj/wall_frame_eris.dmi:frame:8:#000000
+/obj/structure/low_wall/eris/reinforced icon: icons/obj/wall_frame_eris.dmi
+/obj/structure/low_wall/eris/reinforced state: frame
+/obj/structure/low_wall/eris/reinforced dir: 2
+/obj/structure/low_wall/eris/reinforced overlay: icons/obj/wall_frame_eris.dmi:frame0:-32767:#777777 x4
+/obj/structure/low_wall/eris/reinforced overlay: icons/obj/wall_frame_eris.dmi:frame:8:#000000
+

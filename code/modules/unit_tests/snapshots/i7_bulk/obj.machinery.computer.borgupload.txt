@@ -3,3 +3,4 @@
 /obj/machinery/computer/borgupload|ai|none => |
 /obj/machinery/computer/borgupload|ghost|none => gen_observer_interaction_swallow|
 /obj/machinery/computer/borgupload|human|/obj/item/aiModule => gen_insert_interaction_install|gen_hand_ungated_interaction_select_borg:no free cyborgs detected
+

@@ -1,0 +1,5 @@
+/obj/machinery/pump_relay icon: icons/obj/machines/refinery_machines.dmi
+/obj/machinery/pump_relay state: pumprelay
+/obj/machinery/pump_relay dir: 2
+/obj/machinery/pump_relay overlay: icons/obj/machines/refinery_machines.dmi:pumprelay:8:#000000
+

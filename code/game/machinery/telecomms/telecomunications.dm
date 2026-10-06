@@ -228,7 +228,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	else
 		soundloop?.stop()
 	update_heat_output()
-	update_icon()
 
 /// How long between thermal steps: `delay` + 1 machine frames.
 /obj/machinery/telecomms/proc/thermal_interval(datum/act/A)

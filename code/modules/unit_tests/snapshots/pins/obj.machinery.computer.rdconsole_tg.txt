@@ -46,5 +46,15 @@ human|/obj/item/card/id menu: Climb
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id menu: Use item
 human|/obj/item/card/id click: Click: Use item
+human|/obj/item/gripper deleted itself on creation
+human|/obj/item menu: Climb
+human|/obj/item menu: Use
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Use item
+human|/obj/item/disk menu: Climb
+human|/obj/item/disk menu: Insert disk
+human|/obj/item/disk menu: Use
+human|/obj/item/disk menu: Use item
+human|/obj/item/disk click: Click: Use item
 keys: climb.climb, climb.climb_menu, dequeueNode, disconnect, drag_buckle, ejectDisk, enqueueNode, gen_robot_interaction_swallow, insert_disk, loadTech, machine_anchor, machine_deconstruct, machine_panel, machine_repair, open_ui_impl, researchNode, toggleLock, uploadDisk, use_gripper, use_item
 

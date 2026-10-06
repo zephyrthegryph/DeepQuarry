@@ -311,7 +311,7 @@ lint is a hard ban). Converting a machine:
 
 ## 11. Lifecycle forms: what replaces Initialize() overrides, qdel(src) and usr
 
-Nine declaration forms (`code/engine/lifeforms/`, `doc/rewrite/final_api.html` section 6 "Lifecycle forms", one test file each:
+Ten declaration forms (`code/engine/lifeforms/`, `doc/rewrite/final_api.html` section 6 "Lifecycle forms", one test file each:
 `code/modules/unit_tests/dq_lifeform_*_tests.dm`) take over what an `Initialize()` override, a `qdel(src)` or a read of `usr` did by hand. The
 codemods of `tools/codemods/` (`init_overrides.py`, `qdel_src.py`, `usr_sites.py`) do the mechanical half; the table says what to write by hand.
 
@@ -327,6 +327,7 @@ codemods of `tools/codemods/` (`init_overrides.py`, `qdel_src.py`, `usr_sites.py
 | `set_frequency(frequency)` in `Initialize()` and a hand-written retune | `radio_listen(freq = nameof(frequency), filter = RADIO_X)`; the frequency var must be `TRACKED` |
 | `update_neighbours()` / `update_connections(1)` in `Initialize()` and `on_destroy()` | `adjacency(ADJ_KIND_X, into = nameof(connections), changed = PROC_REF(update_icon))` |
 | an `Initialize()` that builds the same list for every instance | `per_type(nameof(table), PROC_REF(build_table))` |
+| `apply_variant()` before `..()` in `Initialize()`, copying a variant family's row of vars (`code/datums/variants/`) | `variants(nameof(variant), PROC_REF(variant_table))`, the proc returning the family's table; `/obj/item/apply_variant()` applies it again for a later key |
 | `new /obj/item/x(src)` in `Initialize()` | `initial_contents(/obj/item/x)`, `initial_contents(/obj/item/x, count = 3)`, `initial_contents(/obj/item/x, slot = SLOT_X)` |
 | `new /obj/item/x(src, src)` (the child told its owner) | `starts_args = list(OWNER)` on the `owns_one`, or `initial_contents(/obj/item/x, args = list(OWNER))` |
 | `add_language(LANGUAGE_X)` in a mob's `Initialize()` | `knows(LANGUAGE_X)` |

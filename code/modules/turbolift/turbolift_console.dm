@@ -75,7 +75,6 @@ TRACKED(/obj/structure/lift/button, light_up)
 
 /obj/structure/lift/button/proc/reset()
 	set_light_up(FALSE)
-	update_icon()
 
 // Hit it with a PDA or ID to enable priority call mode
 EXTEND_INTERACTIONS(/obj/structure/lift/button, INTERACT_ITEM(null, PROC_REF(interaction_item)))
@@ -114,7 +113,6 @@ EXTEND_INTERACTIONS(/obj/structure/lift/button, INTERACT_ITEM(null, PROC_REF(int
 
 /obj/structure/lift/button/proc/light_up()
 	set_light_up(TRUE)
-	update_icon()
 
 /obj/structure/lift/button/draw(datum/look/look)
 	..()

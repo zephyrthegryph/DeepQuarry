@@ -49,7 +49,6 @@ CAPABILITIES(/obj/item/storage/box/donut)
 			var/type_to_spawn = pickweight(GLOB.random_weighted_donuts)
 			new type_to_spawn(src)
 	. = ..()
-	update_icon()
 
 /obj/item/storage/box/donut/draw(datum/look/look)
 	. = ..()
@@ -85,10 +84,6 @@ CAPABILITIES(/obj/item/storage/box/wormcan)
 		/obj/item/reagent_containers/food/snacks/wormsickly,
 		/obj/item/reagent_containers/food/snacks/worm,
 		/obj/item/reagent_containers/food/snacks/wormdeluxe)))
-
-/obj/item/storage/box/wormcan/Initialize(mapload)
-	. = ..()
-	update_icon()
 
 /obj/item/storage/box/wormcan/draw(datum/look/look)
 	. = ..()

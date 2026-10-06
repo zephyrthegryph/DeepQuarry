@@ -140,6 +140,8 @@ Class Procs:
 
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
+TRACKED(/obj/machinery, active_power_usage)
+TRACKED(/obj/machinery, power_channel)
 
 CAPABILITIES(/obj/machinery)
 	owns_one(nameof(circuit), /obj/item/circuitboard)
@@ -815,3 +817,15 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 
 /// The maintenance panel is open.
 OM_FIELD(/obj/machinery, panel_open, FALSE, CHANGE_MACHINE_PANEL)
+
+/// Who is in the machine's sealed occupant slot `slot_id` (a /datum/om/relation/slot/occupant), or null. The accessor requirements read: the slot
+/// publishes OCCUPANT_KEY when someone gets in or out (code/datums/containment/occupant_slot.dm), so a cached menu follows it.
+/obj/machinery/proc/slot_occupant(slot_id)
+	return slot_item(slot_id)
+
+READS_AS(/obj/machinery/proc/slot_occupant, OCCUPANT_KEY)
+
+/// The machine's maintenance panel is shut (a legacy machine panel, maintenance_flags; not a capability door): the requirement of an op
+/// that must not reach into an open machine.
+/obj/machinery/proc/maintenance_panel_shut(datum/act/op/A)
+	return !panel_open

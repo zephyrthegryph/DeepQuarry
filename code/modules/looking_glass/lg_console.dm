@@ -47,9 +47,6 @@
 		secret_programs["Teshari 1"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "sca")
 		secret_programs["Teshari 2"] = image(icon = 'icons/skybox/skybox_vr.dmi', icon_state = "eis")
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/looking_glass, \
-)
-
 CAPABILITIES(/obj/machinery/computer/looking_glass)
 	interface("LookingGlass")
 	op("program", ui_act("program", arg("program", schema_text(4096))), then(PROC_REF(ui_act_program)))

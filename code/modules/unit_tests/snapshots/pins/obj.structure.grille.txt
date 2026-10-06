@@ -34,5 +34,8 @@ human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Kick
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Kick
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
 keys: drag_buckle, hand, item, use_screwdriver, use_wirecutter
 

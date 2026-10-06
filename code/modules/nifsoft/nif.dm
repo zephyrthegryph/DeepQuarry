@@ -102,7 +102,6 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		wear(0) //Just make it update.
 
 	//Draw me yo.
-	update_icon()
 
 /obj/item/nif/proc/register_human()
 	observe(human, /datum/notice/mob_death, src, then(PROC_REF(on_human_death)))
@@ -194,7 +193,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	own_clear(src, nameof(menu_ref), OWN_DELETE)
 	unregister_human()
 	install_done = null
-	update_icon()
+	changed(src)
 
 //Wear update/check proc
 /obj/item/nif/proc/wear(wear = 0)
@@ -207,7 +206,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	if(durability <= 0)
 		durability = 0	//failsafe us to a minimum of 0% so we don't just wash into massively negative durability from repeated EMPs
 		stat = NIF_TEMPFAIL
-		update_icon()
+		changed(src)
 
 		if(human)
 			notify("Danger! General system insta#^!($",TRUE)
@@ -233,7 +232,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		if(durability >= initial(durability))
 			to_chat(user,span_notice("There's no damaged wiring that needs replacing!"))
 			open = 3
-			update_icon()
+			changed(src)
 			return INTERACTION_HANDLED_PASS
 		task_timed(user, 6 SECONDS, src, src, PROC_REF(rewire_done), list(user, C))
 	else
@@ -245,7 +244,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		act_message(user, src, MSG_SELF(span_notice("You replace any burned out wiring in %T%.")), MSG_OTHERS("%U% replaces some wiring in %T%."))
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		open = 2
-		update_icon()
+		changed(src)
 
 /obj/item/nif/proc/pry_open_done(mob/user, obj/item/tool)
 	if(open != 0)
@@ -253,7 +252,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	act_message(user, src, MSG_SELF(span_notice("You unscrew and pry open %T%.")), MSG_OTHERS("%U% unscrews and pries open %T%."))
 	playsound(src, tool.usesound, 50, 1)
 	open = 1
-	update_icon()
+	changed(src)
 
 /obj/item/nif/proc/reseal_done(mob/user, obj/item/tool)
 	if(open != 3)
@@ -263,14 +262,14 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	open = FALSE
 	repair(initial(durability))
 	stat = NIF_PREINSTALL
-	update_icon()
+	changed(src)
 
 /obj/item/nif/proc/reset_circuits_done(mob/user)
 	if(open != 2)
 		return
 	act_message(user, src, MSG_SELF(span_notice("You find and repair any faulty circuits in %T%.")), MSG_OTHERS("%U% resets several circuits in %T%."))
 	open = 3
-	update_icon()
+	changed(src)
 
 /obj/item/nif/screwdriver_act(mob/user, obj/item/tool)
 	if(open == 0)
@@ -299,7 +298,10 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 			return "0"
 	return "2"
 
-APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
+/// The look (the draw sweep: from its template).
+/obj/item/nif/draw(datum/look/look)
+	..()
+	look.state("nif_[appearance_nif_state()]")
 
 //The (dramatic) install process
 /obj/item/nif/proc/handle_install()

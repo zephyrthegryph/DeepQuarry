@@ -8,18 +8,21 @@
 	anchored = TRUE
 	var/coinsToProduce = 6	//how many coins do we make per sheet? a sheet is 2000 units whilst a coin is 250, and some material should be lost in the process
 
-EXTEND_INTERACTIONS(/obj/machinery/mineral/mint, \
-	INTERACT_INSERT(/obj/item/stack/material, PROC_REF(interaction_press), "Press coins", REQ_BECAUSE(REQ_ANCHORED, "it must be properly secured to operate")), \
-)
+CAPABILITIES(/obj/machinery/mineral/mint)
+	op("press", item(/obj/item/stack/material), priority(OP_PRIORITY_DEFAULT - 1), label("Press coins"), needs(req_is(nameof(anchored), TRUE, because = MSG(mint/unanchored))), then(PROC_REF(interaction_press)))
 
-/obj/machinery/mineral/mint/proc/interaction_press(mob/user, obj/item/stack/material/M, datum/interaction/interaction)
+MSG_DEF_SELF(mint/unanchored, "it must be properly secured to operate")
+
+/obj/machinery/mineral/mint/proc/interaction_press(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/material/M = A.held
 	if(!M.coin_type)
 		user.visible_message(span_notice("You can't make coins out of that."))
-		return TRUE
+		return OP_OK
 	else if(M.coin_type)
 		act_message(user, src, others = "%U% starts to feed a sheet of [M.default_type] into %T%.")
 		press_next(user, M)
-	return TRUE
+	return OP_OK
 
 /// One sheet every 2 seconds (a timed action each) until the stack runs out.
 /obj/machinery/mineral/mint/proc/press_next(mob/user, obj/item/stack/material/M)

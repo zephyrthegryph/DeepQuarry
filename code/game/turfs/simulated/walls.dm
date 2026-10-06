@@ -1383,7 +1383,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 			if(destroyed)
 				destroyed = 0
 				repair_damage(max_integrity)
-				update_icon()
+				changed(src)
 				set_density(1)
 				to_chat(user, span_notice("You repair \the [src]."))
 				return TRUE

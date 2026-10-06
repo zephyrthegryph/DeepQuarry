@@ -1,0 +1,5 @@
+/obj/item/gun/projectile/automatic/l6_saw icon: icons/obj/64x32guns_ch.dmi
+/obj/item/gun/projectile/automatic/l6_saw state: l6closed50
+/obj/item/gun/projectile/automatic/l6_saw dir: 2
+/obj/item/gun/projectile/automatic/l6_saw overlay: icons/obj/64x32guns_ch.dmi:l6closed100:8:#000000
+

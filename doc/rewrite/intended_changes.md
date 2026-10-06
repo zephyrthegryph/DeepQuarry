@@ -2207,6 +2207,12 @@ cadences still follow it through `relevance_changed()` until the framework goes.
   `TRACKED`). **The crematorium button** needs crematorium access through `req_access()`.
 - **`req_mutation(M, of = ON_ACTOR)`**: an engine requirement on the actor's mutations (reads `MOB_KEY_CONDITIONS`); the girder's hulk
   smash is `when(req_mutation(HULK))`.
+- **Devices**: the emergency beacon's pick-up refusal and wrench appear only once it is active (an inactive beacon is picked up as any
+  item); the flashlight takes only a cell (`item(/obj/item/cell)`, only while it uses power); the transfer valve takes only a tank or an
+  assembly; the intercom no longer has a catch-all item op that only fingerprinted it; the plant analyzer drops the gas scan it never ran.
+  The uplink multitool opens its uplink through its own in-hand op. The pAI's radio inherits the ordinary item ops it once replaced (it
+  lives inside the card, out of reach).
+- **A ghost joining a simple mob** is the observer op `ghost_join` with a yes/no step (re-checked on the answer); `ghostjoin` is `TRACKED`.
 
 ## Leftovers: the machinery sweep (rewrite/leftovers)
 
@@ -2276,3 +2282,81 @@ Pinned by `code/modules/unit_tests/dq_retired_behaviour_pins.dm` and the existin
   their only handler.
 - **attack_self is an action** (`ACTION(attack_self, ...)`): the tether host takes it over with an `instead()`; everything else that used
   the OM veto event is gone with it.
+
+## Machinery, round 2: the residue onto ops (rewrite/machinery-2)
+
+`tools/codemods/machine_ops.py` converts what the first sweep left on machine types in one step: a `declare_interactions()` override listing
+machine datum interactions or compact specs, or an `EXTEND_INTERACTIONS` row, becomes ops of the type's `CAPABILITIES` block (the same table as
+`interact_declare.py`, plus the datum fields `held_type`, `requires`, `also_requires`, `offered_when`, `stance` and `consumes_input`). Converted
+ops answer after the ops the type already had (`priority(OP_PRIORITY_DEFAULT - 1)`, as in the first sweep); a second op of the type on the same
+input takes the next tier down, so the legacy declaration order still decides.
+
+- **A type whose legacy override dropped `..()` (a replacement) gets `without()`** for each parent op it never had: the ghost jukebox takes no
+  touch or item, the refinery's furnace, grinder, mixer, pipe, splitter, vat and waste drop the parent's transfer-amount verb (`into -=`).
+- **A held list of item types is one op with `inputs(item(A), item(B))`** (`held_type = list(...)`): the menu lists it only for those items.
+- **The alien VR pod's own scan answers before the VR pod's** (`vr_sleeper_scan` is a tier lower), and the microwave's grab-stance pAI eject
+  before its plain touch, as the legacy order had them.
+- **Verbs (`menu()`) need `req_adjacent()` and `req_capable()`** in place of the per-type `dq_actor_can_act` wrappers: a living actor who is
+  not incapacitated, beside the machine.
+- **Requirements read tracked state**: the claw machine's `gamepaid`, the item bank's `busy_bank`, the emergency shield generator's
+  `is_open` and `malfunction`, the shield wall generator's `power` and the storefront's `department_id` are `TRACKED`; the records console's
+  ID slot is `req_empty(nameof(scan))`; the DNA analyzer's sample is a `ref_one()` relation and its slot `req_empty(nameof(bloodsamp))`, its
+  busy check `req_is(nameof(scanning), FALSE)`; the holomap's watcher check is `req_is(nameof(watching_mob), FALSE)` (a watcher touching it
+  again is told someone is watching, where it did nothing) and "stand in front" is the new library `req_on_holder_turf()`; the refinery drain
+  is `req_reagents(0, more = TRUE)`; the cryopod's occupied checks read `slot_occupant()`, which follows `OCCUPANT_KEY`.
+- **A held item that can't be let go** (a sticky trait, a slot that refuses) is refused by the new library `req_held_releasable()` with the
+  release refusal as the reason: the DNA analyzer refuses a stuck swab, used or not (an unused stuck swab was taken and then rejected).
+- **The centrifuge's trolley drop** checks its silent guard (the actor can reach both, is free and able) in the effect and declines, as the
+  old `MouseDrop_T` did, instead of a cached condition on the actor's position.
+- **The security camera console's cyborg use** declines for an AI shell (it interfaces as the AI) from the op instead of asking `isrobot()`;
+  the robotics console's cyborg use declines when the cyborg has access (the window answers), as before.
+- **Conversion pins probe each item an op binds** (`item(T)`), not only the items legacy interactions named, so a converted type keeps the
+  rows its legacy interactions had; pins of types converted earlier gained those rows.
+- **Second pass (30 more machines).** Legacy requirement forms translate: `REQ_FIELD`/`REQ_FIELD_NOT` are `req_is(nameof(v), ...)` with the
+  legacy text, `REQ_ANCHORED` and `REQ_PANEL` read `anchored`/`panel_open`, `REQ_TYPE(PRED_ACTOR, T)` is `req(T, of = ON_ACTOR)`.
+  `REQ_ON(PRED_ACTOR, /machine/proc/x)` asked a machine proc of the actor, which never has it, so it always refused (the specops shuttle
+  console's access check, the paper shredder's "empty bin"): it is asked of the machine, as meant.
+- **The reads analysis knows legacy `ownership()` declarations**: a var listed with `owns(nameof(v))` is written only through the ownership
+  accessors, whose `own_field_changed()` publishes the var's name, so a requirement may read it (the grinder's held items, the cable
+  layer's reel). A `var/const` is a constant. Sixteen `ALLOW(reads)` annotations that this made unnecessary are gone; the windoor's claw
+  check is the library's `req_can_shred(15)`.
+- **Requirements on tracked state**: the beehive's `closed`, the honey extractor's `processing` and `honey`, the material furnace's
+  `firing`, the paper shredder's `paperamount`, a honey frame's `honey` and a bee pack's `full` are `TRACKED`; the beehive's frames
+  (`ref_many`) and the furnace's output (`ref_one`) are declared relations. The shredder's "empty bin" needs `req_capable()` and paper in
+  the bin; its separate posture check (lying, restrained) is gone.
+- **Arcade tickets are a `stack()` binding** that takes the two tickets itself; a short stack is refused with the binding's "You don't have
+  enough for that." (was "you need 2 tickets to claim a prize").
+- **The waste processor's drops** check their silent guard in the effect and decline, like the centrifuge; **the resleever's drag** is
+  offered to humans and cyborgs only (a `when()` on the actor) and needs the machine panel shut (`maintenance_panel_shut()`); **a
+  cyborg's item click on a conveyor** is its own op that takes the click and does nothing (the module never drops), ahead of the drop.
+
+## The draw sweep: legacy appearance declarations become draw(look) (rewrite/draw-sweep)
+
+Pinned by the look tree pins (`code/modules/unit_tests/snapshots/look_trees/`, `dq_look_tree_pin`): icon, icon_state, dir, colour, overlays and
+underlays of every creatable subtype of each converted chain, recorded from the legacy code and compared after the conversion.
+
+* **A converted type is drawn as it is created, from its state at the end of its init.** A legacy template or layer was applied inside the
+  root `Initialize()` (before the subtype's own init ran) and a provider (`DECLARE_APPEARANCE_PROC`) only on the first `update_icon()`; the draw runs at
+  the first refresh, after the whole init. So a type whose init changes what it shows now shows it at once: the armed bear trap
+  (`/obj/item/beartrap/start_active`) is armed, the suit dispenser and the shutoff monitor show their light and panel overlays, and a robot's flash lying loose shows burnt (it has no robot to
+  draw power from; in a robot it reads the robot's cell, as before).
+* **A subtype's declared look wins over the parent's init.** The mouse hole (`/obj/structure/mob_spawner/mouse_nest/mousehole`) declared
+  `tunnel_hole`, but the nest's init wrote its state after the declaration had drawn, so it showed a trash pile; it shows its hole now.
+* **Three providers named one subtype's sprite for the whole chain**, which a redraw showed (now at creation): shock paddles drew
+  `defibpaddles` for jumper cables too, the multitool's idle state was `multitool` for every disguised hacktool, and a casing mapped spent
+  became `-spent-spent`. Each draws from its own type's `initial(icon_state)` now.
+* **`look.held_state()` and `look.identity()`** (code/datums/capabilities/look.dm): a draw sets the inhand state, the name and the description
+  through the look, and the hands holding an item redraw when its sprite or inhand state changes (providers called `update_held_icon()` by hand).
+  A draw that does not set them leaves them as they are, so a rename or a reskin stays.
+* **The used autoinjector keeps its spent sprite** through a draw of its own; its init wrote the state by hand, which a draw would redraw over.
+* **A generic emissive blocker follows the sprite a look draws** (`look_resync_emissive_blocker()`, `code/datums/capabilities/look.dm`). The blocker
+  is a copy of the sprite taken in `/atom/movable/Initialize()`; a legacy declaration had drawn by then, a draw had not, so the copy kept the type's
+  initial state. Every `draw()` type now swaps it when its icon or state changes (before, any later state change also left it stale).
+* **The suit dispenser's frame overlay is drawn once**: its init added `special_frame` by hand beside the draw that adds it.
+* **Chains whose look reads another object's state stay on their legacy declarations** (35 draws: reagent machines reading a beaker,
+  guns reading a magazine's rounds, vehicles reading a tank...), and so do 13 that built layers by writing an image's members or redrew
+  their holder's hands: a `draw()` reads only tracked state and writes nothing (`sys/dx_reactive`, which now also checks `look_parts()`).
+  Their looks are unchanged; `look_sweep` reports them as residue (hop_read).
+* **A redraw that was immediate is at the end of the frame.** `update_icon()` re-applied a declaration on the spot; its replacement is the tracked
+  write itself (the redraw is generated) or, where the draw reads state nothing publishes, `changed(src)` at the old call site. Code that read
+  `icon_state` or `overlays` right after `update_icon()` would see the old look until the frame ends; none of the converted callers does.

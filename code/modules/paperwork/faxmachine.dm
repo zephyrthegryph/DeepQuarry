@@ -399,14 +399,14 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 /obj/machinery/photocopier/faxmachine/proc/default_title_to_admins(datum/act/op/A)
 	if(!authenticated || !copyitem || !(destination in GLOB.admin_departments)) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 		return FALSE
-	if(istype(copyitem, /obj/item/paper_bundle)) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
-		var/obj/item/paper_bundle/B = copyitem // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+	if(istype(copyitem, /obj/item/paper_bundle))
+		var/obj/item/paper_bundle/B = copyitem
 		if(B.name != initial(B.name)) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 			var/atom/page1 = B.pages[1] // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 			var/atom/page2 = B.pages[2]
-			return (istype(page1) && B.name == page1.name) || (istype(page2) && B.name == page2.name)
+			return (istype(page1) && B.name == page1.name) || (istype(page2) && B.name == page2.name) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 		return TRUE
-	return copyitem.name == initial(copyitem.name) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
+	return copyitem.name == initial(copyitem.name)
 
 /obj/machinery/photocopier/faxmachine/proc/default_title_question(datum/act/op/A)
 	var/question_text = "Your fax is set to its default name. It's advisable to rename it to something self-explanatory to"

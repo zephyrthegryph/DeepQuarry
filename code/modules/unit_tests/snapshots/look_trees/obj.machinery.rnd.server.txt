@@ -1,0 +1,10 @@
+/obj/machinery/rnd/server icon: icons/obj/machines/research_vr.dmi
+/obj/machinery/rnd/server state: RD-server-on
+/obj/machinery/rnd/server dir: 2
+/obj/machinery/rnd/server overlay: icons/obj/machines/research_vr.dmi:RD-server-on:8:#000000
+/obj/machinery/rnd/server/master icon: icons/obj/machines/research_vr.dmi
+/obj/machinery/rnd/server/master state: RD-server-on
+/obj/machinery/rnd/server/master dir: 2
+/obj/machinery/rnd/server/master overlay: icons/obj/machines/research_vr.dmi:RD-server-objective-stripes:-32767
+/obj/machinery/rnd/server/master overlay: icons/obj/machines/research_vr.dmi:RD-server-on:8:#000000 x2
+

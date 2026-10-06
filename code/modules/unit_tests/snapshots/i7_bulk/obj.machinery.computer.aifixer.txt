@@ -2,3 +2,4 @@
 /obj/machinery/computer/aifixer|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/aifixer|ai|none => |
 /obj/machinery/computer/aifixer|ghost|none => |
+

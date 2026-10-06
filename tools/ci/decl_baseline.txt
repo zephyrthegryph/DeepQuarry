@@ -128,14 +128,11 @@ init_scheduling	code/modules/shieldgen/directional_shield.dm	after(src, 0, PROC_
 init_visuals	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	add_overlay(I)
 init_visuals	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	add_overlay(I)
 init_visuals	code/datums/reactive_icon_update.dm	icon_state = "screwdriver"
-init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	icon_state = "dark_maw_used"
-init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	icon_state = "dark_maw_used"
 init_visuals	code/game/area/areas.dm	icon_state = ""
 init_visuals	code/game/machinery/computer/bodycamera.dm	add_overlay("glass")
 init_visuals	code/game/machinery/computer/camera.dm	add_overlay(MAT_GLASS)
 init_visuals	code/game/machinery/doors/windowdoor.dm	icon_state = "[icon_state]"
 init_visuals	code/game/machinery/gear_dispenser.dm	icon_state = "suit_storage"
-init_visuals	code/game/machinery/gear_dispenser.dm	add_overlay(special_frame)
 init_visuals	code/game/machinery/teleporter.dm	add_overlay("controller-wires")
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = DEFAULTPICK(random_icon_states, null)
 init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = "writing1"
@@ -176,6 +173,7 @@ init_visuals	code/game/turfs/simulated/walls.dm	icon_state = "blank"
 init_visuals	code/game/turfs/unsimulated.dm	icon_state = "[((x + y) ^ ~(x * y) + z) % 25]"
 init_visuals	code/game/turfs/unsimulated/beach.dm	add_overlay(image("icon"='icons/misc/beach.dmi',"icon_state"="water2","layer"=MOB_LAYER+0.1))
 init_visuals	code/game/turfs/unsimulated/beach.dm	add_overlay(image("icon"='icons/misc/beach.dmi',"icon_state"="water5","layer"=MOB_LAYER+0.1))
+init_visuals	code/modules/body/organs/subtypes/nano.dm	icon_state = "posi"
 init_visuals	code/modules/clothing/accessories/clothing.dm	icon_state = "hawaiian_[random_color]"
 init_visuals	code/modules/clothing/accessories/clothing.dm	icon_state = initial(new_item.icon_state)
 init_visuals	code/modules/clothing/clothing.dm	icon_state = O.icon_state
@@ -197,9 +195,10 @@ init_visuals	code/modules/mining/machinery/machine_input_output_plates.dm	icon_s
 init_visuals	code/modules/mining/machinery/machine_input_output_plates.dm	icon_state = "blank"
 init_visuals	code/modules/mining/mine_outcrops.dm	add_overlay("[initial(icon_state)]-egg")
 init_visuals	code/modules/mining/mineral_effect.dm	icon_state = "rock_[ore_key]"
+init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	icon_state = "dark_maw_used"
+init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	icon_state = "dark_maw_used"
 init_visuals	code/modules/multiz/turf.dm	add_overlay(GLOB.openspace_backdrop_one_for_all) //Special grey square for projecting backdrop darkness filter on it.
 init_visuals	code/modules/multiz/turf.dm	icon_state = "" //Prevent the normal icon from appearing behind the smooth overlays
-init_visuals	code/modules/body/organs/subtypes/nano.dm	icon_state = "posi"
 init_visuals	code/modules/overmap/events/overmap_event.dm	icon_state = pick(event_icon_states)
 init_visuals	code/modules/overmap/sectors.dm	icon_state = unknown_state
 init_visuals	code/modules/overmap/turfs.dm	add_overlay(I)
@@ -224,7 +223,6 @@ init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	add_overla
 init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state = "blank"
 init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state = "blank"
 init_visuals	code/modules/power/privacy_switch.dm	icon_state = "privacy1"
-init_visuals	code/modules/reagents/reagent_containers/hypospray.dm	icon_state = "[initial(icon_state)]0"
 init_visuals	code/modules/research/tg/server.dm	add_overlay("RD-server-objective-stripes")
 init_visuals	code/modules/samples/samples.dm	icon_state = "generic_sample[sample_icon]"
 init_visuals	code/modules/vehicles/Securitrain.dm	add_overlay(I)
@@ -258,8 +256,6 @@ init_new_child	code/_onclick/hud/picture_in_picture.dm	rel_set(src, nameof(popup
 init_new_child	code/game/machinery/Beacon.dm	rel_set(src, nameof(Beacon), new /obj/item/radio/beacon)
 init_new_child	code/game/machinery/CableLayer.dm	rel_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, max_cable))
 init_new_child	code/game/machinery/air_alarm.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/alarm/decompression_alarm(list(src), FALSE))
-init_new_child	code/game/machinery/atmoalter/pump.dm	rel_set(src, nameof(cell), new/obj/item/cell/apc(src))
-init_new_child	code/game/machinery/atmoalter/scrubber.dm	rel_set(src, nameof(cell), new/obj/item/cell/apc(src))
 init_new_child	code/game/machinery/bomb_tester.dm	rel_set(src, nameof(faketank), new /datum/gas_mixture)
 init_new_child	code/game/machinery/camera/camera.dm	rel_set(src, nameof(assembly), new /obj/item/camera_assembly(src))
 init_new_child	code/game/machinery/computer/ai_core.dm	rel_set(src, nameof(laws), new using_map.default_law_type)
@@ -308,6 +304,7 @@ init_new_child	code/modules/artifice/telecube.dm	rel_set(src, nameof(mate), new 
 init_new_child	code/modules/blob2/overmind/overmind.dm	rel_set(src, nameof(blob_type), new desired_blob_type())
 init_new_child	code/modules/blob2/overmind/overmind.dm	rel_set(src, nameof(blob_type), new BT())
 init_new_child	code/modules/body/body.dm	rel_set(src, nameof(body), new body_type(src))
+init_new_child	code/modules/body/organs/subtypes/machine.dm	rel_set(src, nameof(stored_mmi), new brain_type(src))
 init_new_child	code/modules/clothing/spacesuits/rig/modules/modules.dm	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/activate(src))
 init_new_child	code/modules/clothing/spacesuits/rig/modules/modules.dm	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/deactivate(src))
 init_new_child	code/modules/clothing/spacesuits/rig/modules/modules.dm	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/engage(src))
@@ -347,13 +344,9 @@ init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.
 init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	rel_add(src, nameof(rat_diseases), new /datum/affliction/contagion/engineered/random(2, 2, 1, infected = src))
 init_new_child	code/modules/mob/living/simple_mob/subtypes/vore/plants/pitcher.dm	rel_set(src, nameof(pit), new /obj/item/seeds/pitcherseed(src))
 init_new_child	code/modules/modular_computers/NTNet/NTNet_relay.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
-init_new_child	code/modules/body/organs/internal/augment/armmounted.dm	rel_add(src, nameof(synths), new datumpath)
-init_new_child	code/modules/body/organs/internal/augment/bio.dm	rel_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer/advanced)
-init_new_child	code/modules/body/organs/subtypes/machine.dm	rel_set(src, nameof(stored_mmi), new brain_type(src))
 init_new_child	code/modules/overmap/overmap_object.dm	rel_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
 init_new_child	code/modules/overmap/overmap_object.dm	rel_set(src, nameof(cam_background), new /atom/movable/screen/background)
 init_new_child	code/modules/power/generator.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE))
-init_new_child	code/modules/power/supermatter/supermatter.dm	rel_set(src, nameof(soundloop), new /datum/looping_sound/supermatter(list(src), TRUE))
 init_new_child	code/modules/power/turbine.dm	rel_set(src, nameof(gas_contained), new /datum/gas_mixture())
 init_new_child	code/modules/projectiles/ammunition.dm	rel_add(src, nameof(stored_ammo), new ammo_type(src))
 init_new_child	code/modules/projectiles/gun.dm	rel_set(src, nameof(attached_lock), new /obj/item/dnalockingchip(src))

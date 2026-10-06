@@ -3,3 +3,4 @@
 /obj/machinery/button|ai|none => |
 /obj/machinery/button|ghost|none => |
 /obj/machinery/button|human|/obj/item => button_press,button_press_item|
+

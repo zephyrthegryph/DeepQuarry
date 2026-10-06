@@ -585,7 +585,10 @@ CAPABILITIES(/obj/structure/window/reinforced/polarized)
 	if(active && !powered(power_channel))
 		toggle_tint()
 
-APPEARANCE_TEMPLATE(/obj/machinery/button/windowtint, "light{active}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/button/windowtint/draw(datum/look/look)
+	..()
+	look.state("light[active]")
 
 /// The question a multitool asks of a button with no id yet.
 /obj/machinery/button/windowtint/proc/id_question(datum/act/A)
@@ -613,7 +616,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/windowtint, "light{active}")
 	if(id && istype(multitool))
 		to_chat(user, span_notice("You store \the [src] ID ('[id]') in \the [multitool]'s buffer!"))
 		rel_set(multitool, nameof(multitool.connectable), src)
-		multitool.update_icon()
+		changed(multitool)
 
 MSG_DEF(windowtint/wires_cut, "You have cut the wires inside %T%.", "%U% has cut the wires inside %T%!")
 

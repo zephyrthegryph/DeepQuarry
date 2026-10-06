@@ -1,0 +1,7 @@
+/obj/machinery/pump icon: icons/obj/machines/reagent.dmi
+/obj/machinery/pump state: pump
+/obj/machinery/pump dir: 2
+/obj/machinery/pump overlay: icons/obj/machines/reagent.dmi:pump-glass:-32767
+/obj/machinery/pump overlay: icons/obj/machines/reagent.dmi:pump-tank:-32767
+/obj/machinery/pump overlay: icons/obj/machines/reagent.dmi:pump:8:#000000 x2
+

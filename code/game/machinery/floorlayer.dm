@@ -21,42 +21,26 @@
 		if(work_modes["collect"])
 			CollectTiles(old_turf())
 
-
 	rel_set(src, nameof(old_turf), loc)
 
-/obj/machinery/floorlayer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/floorlayer_toggle,
-		/datum/interaction/machine_item/floorlayer_load_tile,
-	)
-	..()
+CAPABILITIES(/obj/machinery/floorlayer)
+	op("floorlayer_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
+	op("floorlayer_load_tile", item(/obj/item/stack/tile), priority(OP_PRIORITY_DEFAULT - 1), label("Load tile"), then(PROC_REF(interaction_load_tile)))
 
-/// Old attack_hand: never called ..(), so it works without power.
-/datum/interaction/machine_hand/ungated/floorlayer_toggle
-	id = "floorlayer_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/floorlayer/proc/interaction_toggle
-
-/obj/machinery/floorlayer/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/floorlayer/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	set_on(!on)
 	act_message(user, src, MSG_SELF(span_notice("You [!on?"de":""]activate %T%.")), MSG_OTHERS(span_notice("%U% has [!on?"de":""]activated %T%.")))
-	return TRUE
+	return OP_OK
 
-/// Old attackby: load a tile stack.
-/datum/interaction/machine_item/floorlayer_load_tile
-	id = "floorlayer_load_tile"
-	name = "Load tile"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/stack/tile
-	effect = /obj/machinery/floorlayer/proc/interaction_load_tile
-
-/obj/machinery/floorlayer/proc/interaction_load_tile(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/floorlayer/proc/interaction_load_tile(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!own_bring_in(src, nameof(contents), W, null, user, TRUE, null, FALSE))
-		return TRUE
+		return OP_OK
 	to_chat(user, span_notice("\The [W] successfully loaded."))
 	TakeTile(W)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/floorlayer/wrench_act(mob/user, obj/item/tool)
 	open_request(src, /datum/prompt/choice, PROC_REF(work_mode_chosen), answerer = user, title = "Mode", question = "Choose work mode", choices = work_modes, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)

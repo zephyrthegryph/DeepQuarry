@@ -330,7 +330,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 /obj/item/communicator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	initialize_exonet(user)
 	alert_called = 0
-	update_icon()
+	changed(src)
 	tgui_interact(user)
 	return TRUE
 
@@ -404,7 +404,10 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 		return "-called"
 	return ""
 
-APPEARANCE_TEMPLATE(/obj/item/communicator, "{initial(icon_state)}{appearance_comm_suffix}")
+/// The look (the draw sweep: from its template).
+/obj/item/communicator/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_comm_suffix()]")
 
 // A camera preset for spawning in the communicator
 /obj/machinery/camera/communicator

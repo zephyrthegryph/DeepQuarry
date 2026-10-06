@@ -1,5 +1,5 @@
-/obj/machinery/vr_sleeper|human|none => vr_sleeper_eject,vr_sleeper_climb_in|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,vr_sleeper_scan:needs an item,vr_sleeper_enter:needs a mob
-/obj/machinery/vr_sleeper|robot|none => vr_sleeper_eject,vr_sleeper_climb_in|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,vr_sleeper_scan:needs an item,vr_sleeper_enter:needs a mob
+/obj/machinery/vr_sleeper|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/vr_sleeper|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/vr_sleeper|ai|none => |
 /obj/machinery/vr_sleeper|ghost|none => |
-/obj/machinery/vr_sleeper|human|/obj/item => vr_sleeper_scan,vr_sleeper_eject,vr_sleeper_climb_in|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,vr_sleeper_enter:needs a mob
+

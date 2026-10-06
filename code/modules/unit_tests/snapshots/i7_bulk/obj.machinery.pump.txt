@@ -2,3 +2,4 @@
 /obj/machinery/pump|robot|none => |machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/pump|ai|none => |
 /obj/machinery/pump|ghost|none => |
+

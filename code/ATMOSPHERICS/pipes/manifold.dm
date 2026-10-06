@@ -54,7 +54,6 @@
 			rust_invalidate_pipeline_wrapper(parent)
 		rel_clear(src, nameof(node3))
 
-	update_icon()
 	handle_leaking()
 
 	..()
@@ -110,7 +109,6 @@
 
 	for(var/D in directions)
 		add_underlay(T,,D,icon_connect_type)
-	update_icon()
 
 /obj/machinery/atmospherics/pipe/manifold/hide(i)
 	..()
@@ -155,7 +153,6 @@
 
 	var/turf/T = get_turf(src)
 	if(level == 1 && !T.is_plating()) hide(1)
-	update_icon()
 	handle_leaking()
 
 /obj/machinery/atmospherics/pipe/manifold/visible

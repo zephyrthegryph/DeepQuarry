@@ -102,7 +102,6 @@ CAPABILITIES(/obj/machinery/atmospherics/portables_connector)
 			rel_set(src, nameof(node), target)
 			break
 
-	update_icon()
 	update_underlays()
 
 /obj/machinery/atmospherics/portables_connector/return_network(obj/machinery/atmospherics/reference)

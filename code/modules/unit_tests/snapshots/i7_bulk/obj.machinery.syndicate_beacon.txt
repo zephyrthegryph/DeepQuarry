@@ -2,3 +2,4 @@
 /obj/machinery/syndicate_beacon|robot|none => gen_hand_ungated_interaction_talk|gen_robot_interaction_swallow:not possible right now
 /obj/machinery/syndicate_beacon|ai|none => |
 /obj/machinery/syndicate_beacon|ghost|none => |
+

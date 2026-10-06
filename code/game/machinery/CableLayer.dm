@@ -16,51 +16,39 @@
 	. = ..()
 	layCable(loc,direction)
 
-/obj/machinery/cablelayer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/cablelayer_load,
-		/datum/interaction/machine_item/cablelayer_swallow,
-		/datum/interaction/machine_hand/ungated/cablelayer_toggle,
-	)
-	..()
+CAPABILITIES(/obj/machinery/cablelayer)
+	op("cablelayer_load", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Load cable"), then(PROC_REF(interaction_load)))
+	op("swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("cablelayer_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(has_cable_or_on_holds), because = PROC_REF(has_cable_or_on_refusal))), then(PROC_REF(interaction_toggle)))
 
-/// Load a coil into the reel.
-/datum/interaction/machine_item/cablelayer_load
-	id = "cablelayer_load"
-	name = "Load cable"
-	held_type = /obj/item/stack/cable_coil
-	effect = /obj/machinery/cablelayer/proc/interaction_load
+/// Requirement (was REQ_* has_cable_or_on): the legacy check answers TRUE to pass.
+/obj/machinery/cablelayer/proc/has_cable_or_on_holds(datum/act/op/A)
+	var/answer = has_cable_or_on(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
-/obj/machinery/cablelayer/proc/interaction_load(mob/user, obj/item/stack/cable_coil/O, datum/interaction/interaction)
+/// Why has_cable_or_on_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/cablelayer/proc/has_cable_or_on_refusal(datum/act/op/A)
+	var/answer = has_cable_or_on(A.actor, src, A.held)
+	return istext(answer) ? answer : "doesn't have any cable loaded"
+
+/obj/machinery/cablelayer/proc/interaction_load(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/cable_coil/O = A.held
 	var/result = load_cable(O)
 	if(!result)
 		to_chat(user, span_warning("\The [src]'s cable reel is full."))
 	else
 		to_chat(user, "You load [result] lengths of cable into [src].")
-	return TRUE
-
-/// Old attackby: any other item did nothing and the base attackby was never reached.
-/datum/interaction/machine_item/cablelayer_swallow
-	id = "cablelayer_swallow"
-	name = "Use"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_swallow
-
-/// Old attack_hand (never called ..()): toggle the layer on/off.
-/datum/interaction/machine_hand/ungated/cablelayer_toggle
-	id = "cablelayer_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/machinery/cablelayer/proc/has_cable_or_on, "doesn't have any cable loaded"))
-	effect = /obj/machinery/cablelayer/proc/interaction_toggle
+	return OP_OK
 
 /obj/machinery/cablelayer/proc/has_cable_or_on(mob/actor, atom/target, obj/item/held)
 	return cable || on
 
-/obj/machinery/cablelayer/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/cablelayer/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	set_on(!on)
 	act_message(user, src, MSG_SELF("You switch %T% [on? "on" : "off"]"), MSG_OTHERS("%U% [!on?"dea":"a"]ctivates %T%."))
-	return TRUE
+	return OP_OK
 
 /obj/machinery/cablelayer/wirecutter_act(mob/user, obj/item/tool)
 	if(!cable || !cable.get_amount())
@@ -159,14 +147,14 @@ CAPABILITIES(/datum/prompt/number/cablelayer_cut)
 		return reset()
 	var/obj/structure/cable/NC = new(new_turf)
 	NC.cableColor("red")
-	NC.d1 = 0
-	NC.d2 = fdirn
-	NC.update_icon()
+	NC.set_d1(0)
+	NC.set_d2(fdirn)
+	changed(NC)
 
 	if(last_piece() && last_piece().d2 != M_Dir)
-		last_piece().d1 = min(last_piece().d2, M_Dir)
-		last_piece().d2 = max(last_piece().d2, M_Dir)
-		last_piece().update_icon()
+		last_piece().set_d1(min(last_piece().d2, M_Dir))
+		last_piece().set_d2(max(last_piece().d2, M_Dir))
+		changed(last_piece())
 		last_piece().power_register()
 	NC.power_register()
 	rel_set(src, nameof(last_piece), NC)

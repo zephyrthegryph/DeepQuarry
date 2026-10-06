@@ -1,5 +1,5 @@
-/obj/machinery/reagent_refinery/pump|human|none => gen_hand_ungated_interaction_reagent_pump_use,reagent_refinery_set_transfer_amount|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,reagent_refinery_drain:needs a  , a glass, or a shaker
-/obj/machinery/reagent_refinery/pump|robot|none => gen_hand_ungated_interaction_reagent_pump_use,reagent_refinery_set_transfer_amount|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,reagent_refinery_drain:needs a  , a glass, or a shaker
+/obj/machinery/reagent_refinery/pump|human|none => gen_hand_ungated_interaction_reagent_pump_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/reagent_refinery/pump|robot|none => gen_hand_ungated_interaction_reagent_pump_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/reagent_refinery/pump|ai|none => |
 /obj/machinery/reagent_refinery/pump|ghost|none => |
-/obj/machinery/reagent_refinery/pump|human|/obj/item/reagent_containers/glass => gen_hand_ungated_interaction_reagent_pump_use,reagent_refinery_set_transfer_amount|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,reagent_refinery_drain:it's empty; there is nothing to drain
+

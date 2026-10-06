@@ -1,0 +1,9 @@
+/obj/item/tvcamera icon: icons/obj/device.dmi
+/obj/item/tvcamera state: camcorder
+/obj/item/tvcamera dir: 2
+/obj/item/tvcamera overlay: icons/obj/device.dmi:camcorder:8:#000000
+/obj/item/tvcamera/streamer icon: icons/obj/device.dmi
+/obj/item/tvcamera/streamer state: camcorder
+/obj/item/tvcamera/streamer dir: 2
+/obj/item/tvcamera/streamer overlay: icons/obj/device.dmi:camcorder:8:#000000
+

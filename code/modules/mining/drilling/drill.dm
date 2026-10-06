@@ -92,6 +92,8 @@
 	//Flags
 	var/need_update_field = 0
 	var/need_player_check = 0
+TRACKED(/obj/machinery/mining/drill, need_player_check)
+TRACKED(/obj/machinery/mining/drill, supported)
 
 CAPABILITIES(/obj/machinery/mining/drill)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active)))
@@ -156,8 +158,6 @@ CAPABILITIES(/obj/machinery/mining/drill)
 	if(need_update_field)
 		get_resource_field()
 
-	if(world.time % 10 == 0)
-		update_icon()
 
 	if(!active)
 		return
@@ -203,8 +203,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 			if(current_capacity >= capacity)
 				system_error("Insufficient storage space.")
 				set_active(0)
-				need_player_check = 1
-				update_icon()
+				set_need_player_check(1)
 				return
 
 			if(current_capacity + total_harvest >= capacity)
@@ -236,8 +235,7 @@ CAPABILITIES(/obj/machinery/mining/drill)
 
 	else if(!length(gas_field)) // Won't stop digging if gas pressure is detected
 		set_active(0)
-		need_player_check = 1
-		update_icon()
+		set_need_player_check(1)
 		system_error("Resources depleted.")
 
 /obj/machinery/mining/drill/proc/interaction_attackby(datum/act/op/A)
@@ -367,10 +365,9 @@ CAPABILITIES(/datum/prompt/text/drill_label)
 		return TRUE
 	else if(need_player_check)
 		balloon_alert(user, "manual override hit, the drill's error checking resets.")
-		need_player_check = 0
+		set_need_player_check(0)
 		if(anchored)
 			get_resource_field()
-		update_icon()
 		return TRUE
 	else if(supported && !panel_open)
 		if(use_cell_power())
@@ -387,7 +384,6 @@ CAPABILITIES(/datum/prompt/text/drill_label)
 	else
 		to_chat(user, span_notice("Turning on a piece of industrial machinery without sufficient bracing or wires exposed is a bad idea."))
 
-	update_icon()
 	return TRUE
 
 /obj/machinery/mining/drill/proc/appearance_state()
@@ -399,7 +395,10 @@ CAPABILITIES(/datum/prompt/text/drill_label)
 		return "mining_drill_braced"
 	return "mining_drill"
 
-APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/mining/drill/draw(datum/look/look)
+	..()
+	look.state("[appearance_state()]")
 
 /obj/machinery/mining/drill/RefreshParts()
 	..()
@@ -439,7 +438,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
 
 /obj/machinery/mining/drill/proc/check_supports()
 
-	supported = 0
+	set_supported(0)
 	total_brace_tier = 0
 
 	var/list/braces = supports
@@ -452,21 +451,20 @@ APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
 
 	if(length(braces))
 		if(length(braces) >= braces_needed)
-			supported = 1
+			set_supported(1)
 		else for(var/obj/machinery/mining/brace/check in braces)
 			if(check.brace_tier >= 3)
-				supported = 1
+				set_supported(1)
 		for(var/obj/machinery/mining/brace/check in braces)
 			total_brace_tier += check.brace_tier
 
-	update_icon()
 
 /obj/machinery/mining/drill/proc/system_error(error)
 
 	if(error)
 		src.visible_message(span_infoplain(span_bold("\The [src]") + " flashes a '[error]' warning."))
 		faultreporter.autosay(error, src.name, "Supply", using_map.get_map_levels(z))
-	need_player_check = 1
+	set_need_player_check(1)
 	set_active(0)
 
 /obj/machinery/mining/drill/proc/get_resource_field()

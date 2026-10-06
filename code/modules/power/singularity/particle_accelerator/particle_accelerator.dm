@@ -127,7 +127,6 @@ CAPABILITIES(/obj/structure/particle_accelerator)
 
 /obj/structure/particle_accelerator/proc/closed(datum/act/op/A)
 	act_message(A.actor, null, MSG_SELF("You close the access panel."), MSG_OTHERS("[A.actor.name] closes the [src.name]'s access panel."))
-	update_icon()
 	return OP_OK
 
 /obj/structure/particle_accelerator/proc/opened(datum/act/op/A)
@@ -137,7 +136,6 @@ CAPABILITIES(/obj/structure/particle_accelerator)
 /// The part came apart a step: its control box rescans.
 /obj/structure/particle_accelerator/proc/stage_moved()
 	update_state()
-	update_icon()
 	return OP_OK
 
 /obj/structure/particle_accelerator/Moved(atom/old_loc, direction, forced = FALSE)
@@ -223,23 +221,19 @@ CAPABILITIES(/obj/machinery/particle_accelerator)
 /obj/machinery/particle_accelerator/proc/bolted(datum/act/op/A)
 	set_anchored(TRUE)
 	act_message(A.actor, null, MSG_SELF("You secure the external bolts."), MSG_OTHERS("[A.actor.name] secures the [src.name] to the floor."))
-	update_icon()
 	return OP_OK
 
 /obj/machinery/particle_accelerator/proc/unbolted(datum/act/op/A)
 	set_anchored(FALSE)
 	act_message(A.actor, null, MSG_SELF("You remove the external bolts."), MSG_OTHERS("[A.actor.name] detaches the [src.name] from the floor."))
-	update_icon()
 	return OP_OK
 
 /obj/machinery/particle_accelerator/proc/wired(datum/act/op/A)
 	act_message(A.actor, null, MSG_SELF("You add some wires."), MSG_OTHERS("[A.actor.name] adds wires to the [src.name]."))
-	update_icon()
 	return OP_OK
 
 /obj/machinery/particle_accelerator/proc/unwired(datum/act/op/A)
 	act_message(A.actor, null, MSG_SELF("You remove some wires."), MSG_OTHERS("[A.actor.name] removes some wires from the [src.name]."))
-	update_icon()
 	return OP_OK
 
 /// Closed: it powers up idle.
@@ -247,7 +241,6 @@ CAPABILITIES(/obj/machinery/particle_accelerator)
 	act_message(A.actor, null, MSG_SELF("You close the access panel."), MSG_OTHERS("[A.actor.name] closes the [src.name]'s access panel."))
 	set_use_power(USE_POWER_IDLE)
 	update_state()
-	update_icon()
 	return OP_OK
 
 /// Opened: it stops and powers down.
@@ -256,7 +249,6 @@ CAPABILITIES(/obj/machinery/particle_accelerator)
 	set_active(0)
 	set_use_power(USE_POWER_OFF)
 	update_state()
-	update_icon()
 	return OP_OK
 
 /obj/machinery/particle_accelerator/proc/update_state()

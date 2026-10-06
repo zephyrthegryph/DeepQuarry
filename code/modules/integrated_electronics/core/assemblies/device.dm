@@ -38,9 +38,12 @@ CAPABILITIES(/obj/item/assembly/electronic_assembly)
 	EA.opened = opened
 	to_chat(user, span_notice("You [opened ? "opened" : "closed"] \the [src]."))
 	set_secured(TRUE)
-	update_icon()
+	changed(src)
 
-APPEARANCE_TEMPLATE(/obj/item/assembly/electronic_assembly, "{initial(icon_state)}{EA?:0}{opened?-open:}")
+/// The look (the draw sweep: from its template).
+/obj/item/assembly/electronic_assembly/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][EA ? "" : "0"][opened ? "-open" : ""]")
 
 /// Old attack_self (the assembly self-use chain: /obj/item/assembly/proc/interaction_self()): use the circuit inside.
 /obj/item/assembly/electronic_assembly/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)

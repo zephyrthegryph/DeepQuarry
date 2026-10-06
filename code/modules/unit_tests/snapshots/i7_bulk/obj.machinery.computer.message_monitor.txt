@@ -3,3 +3,4 @@
 /obj/machinery/computer/message_monitor|ai|none => |
 /obj/machinery/computer/message_monitor|ghost|none => |
 /obj/machinery/computer/message_monitor|human|/obj/item/card/emag => emag|
+

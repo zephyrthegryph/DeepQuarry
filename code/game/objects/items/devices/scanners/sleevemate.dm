@@ -27,7 +27,6 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 //These don't perform any checks and need to be wrapped by checks
 /obj/item/sleevemate/proc/clear_mind()
 	rel_clear(src, nameof(stored_mind))
-	update_icon()
 
 /obj/item/sleevemate/proc/get_mind(mob/living/M)
 	ASSERT(M.mind)
@@ -37,7 +36,6 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	soulcatcher_pref_flags = M.soulcatcher_pref_flags
 	M.ghostize()
 	stored_mind().current = null
-	update_icon()
 
 /obj/item/sleevemate/proc/put_mind(mob/living/M)
 	stored_mind().active = TRUE
@@ -101,24 +99,30 @@ CAPABILITIES(/datum/prompt/choice/sleevemate_target)
 		to_chat(user,span_warning("Not a compatible subject to work with!"))
 		return ITEM_INTERACT_FAILURE
 
-DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/sleevemate/proc/can_manage_mind)))
+CAPABILITIES(/obj/item/sleevemate)
+	ref_one(nameof(stored_mind), /datum/mind)
+	// the old attack_self: what to do with the stored mind
+	op("manage_mind", in_hand(), needs(req(PROC_REF(can_manage_mind), because = MSG(sleevemate/empty))),
+		asks(/datum/prompt/choice, fields = list("title" = computed(PROC_REF(stored_title)), "question" = "What would you like to do?", "choices" = list("Delete", "Backup", "Cancel"), "buttons" = TRUE, "timeout" = 0)),
+		then(PROC_REF(stored_mind_action)))
+	emag(list(asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(hack_question)), "choices" = list("Body Snatcher", "Mind Binder"), "timeout" = 0)), then(PROC_REF(hack_chosen))), repeatable = TRUE, powered = FALSE)
 
 /// Requirement: there has to be a stored mind to manage.
-/obj/item/sleevemate/proc/can_manage_mind(mob/living/user, atom/target, obj/item/held)
-	if(!stored_mind())
-		return "no stored mind in it"
-	return TRUE
+/obj/item/sleevemate/proc/can_manage_mind(datum/act/op/A)
+	return !!stored_mind
 
-/obj/item/sleevemate/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/choice, PROC_REF(stored_mind_action), answerer = user, title = "Stored: [stored_mind().name]", question = "What would you like to do?", choices = list("Delete","Backup","Cancel"), buttons = TRUE, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
+MSG_DEF_SELF(sleevemate/empty, "There is no stored mind in it.")
 
-/obj/item/sleevemate/proc/stored_mind_action(datum/act/request/A)
-	if(!A.answer)
-		return
-	if(!stored_mind())
-		return
-	var/mob/living/user = A.request.answerer
-	switch(A.answer.value)
+/obj/item/sleevemate/proc/stored_title(datum/act/A)
+	return "Stored: [stored_mind()?.name]"
+
+/// Old attack_self: delete or back up the stored mind.
+/obj/item/sleevemate/proc/stored_mind_action(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(!R || !stored_mind())
+		return OP_OK
+	var/mob/living/user = A.actor
+	switch(R.value)
 		if("Delete")
 			to_chat(user,span_notice("Internal copy of [stored_mind().name] deleted."))
 			clear_mind()
@@ -126,7 +130,8 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 			to_chat(user,span_notice("Internal copy of [stored_mind().name] backed up to database."))
 			our_db().m_backup(stored_mind(),null,one_time = TRUE)
 		if("Cancel")
-			return
+			return OP_OK
+	return OP_OK
 
 /obj/item/sleevemate/proc/scan_mob(mob/living/carbon/human/H, mob/living/user)
 	var/output = ""
@@ -400,7 +405,10 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 /obj/item/sleevemate/proc/appearance_has_mind()
 	return stored_mind() ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/sleevemate, "{initial(icon_state)}{appearance_has_mind?_on:}")
+/// The look (the draw sweep: from its template).
+/obj/item/sleevemate/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_has_mind() ? "_on" : ""]")
 
 /// Pulling a mind out. Re-checked on the answer: the scanner is still in hand and empty, the victim still next to the user.
 /datum/prompt/choice/sleevemate_mindsteal
@@ -439,9 +447,6 @@ CAPABILITIES(/datum/prompt/choice/sleevemate_mindsteal)
 	var/mob/living/target = ask.victim
 	act_message(user, null, MSG_SELF(span_notice("You begin downloading [target]'s mind!")), MSG_OTHERS(span_warning("%U% begins downloading [target]'s mind!")))
 	task_timed(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done3), done_args = list(target, user))
-
-CAPABILITIES(/obj/item/sleevemate)
-	emag(list(asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(hack_question)), "choices" = list("Body Snatcher", "Mind Binder"), "timeout" = 0)), then(PROC_REF(hack_chosen))), repeatable = TRUE, powered = FALSE)
 
 /obj/item/sleevemate/proc/hack_question(datum/act/A)
 	return "How would you like to modify the [src]?"

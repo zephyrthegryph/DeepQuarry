@@ -73,7 +73,10 @@ CAPABILITIES(/obj/effect/mine)
 /obj/effect/mine/proc/ping_wire_pulsed(datum/act/A)
 	wire_beep("*ping*")
 
-DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "landmine_armed")))
+/// The look (the draw sweep: from its layers).
+/obj/effect/mine/draw(datum/look/look)
+	..()
+	look.state("landmine_armed")
 
 /// Phase 2: leaves the dangerous-to-step index.
 /obj/effect/mine/lifecycle_dematerialize()

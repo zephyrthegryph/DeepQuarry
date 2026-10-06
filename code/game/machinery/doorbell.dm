@@ -13,10 +13,6 @@
 	var/id_tag = null
 	var/chime_sound = SFX_MACHINES_DOORBELL
 
-/obj/machinery/doorbell_chime/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/machinery/doorbell_chime/proc/chime()
 	if(!operable())
 		return
@@ -29,18 +25,18 @@
 
 /obj/machinery/doorbell_chime/proc/chime_end()
 	set_light(0)
-	update_icon()
 
-APPEARANCE_TEMPLATE(/obj/machinery/doorbell_chime, "dbchime-{id_tag?standby:red}")
-DECLARE_APPEARANCE(/obj/machinery/doorbell_chime, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("dbchime-open"))))
-
-EXTEND_INTERACTIONS(/obj/machinery/doorbell_chime, \
-	INTERACT_INSERT(/obj/item, TYPE_PROC_REF(/atom, interaction_fingerprint), "Touch"), \
-	INTERACT_INSERT(/obj/item/storage/part_replacer, TYPE_PROC_REF(/obj/machinery, interaction_part_replacement), "Replace parts"), \
-)
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/doorbell_chime/draw(datum/look/look)
+	..()
+	look.state("dbchime-[id_tag ? "standby" : "red"]")
+	if(panel_open == 1)
+		look.overlay("dbchime-open")
 
 CAPABILITIES(/obj/machinery/doorbell_chime)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	op("fingerprint", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(TYPE_PROC_REF(/atom, op_fingerprint)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 
 /obj/machinery/doorbell_chime/proc/multitool_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -104,9 +100,11 @@ CAPABILITIES(/obj/machinery/button/doorbell)
 	if (!id)
 		assign_uid()
 		set_id(num2text(uid))
-	update_icon()
 
-APPEARANCE_TEMPLATE(/obj/machinery/button/doorbell, "doorbell-{operable?standby:off}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/button/doorbell/draw(datum/look/look)
+	..()
+	look.state("doorbell-[operable() ? "standby" : "off"]")
 
 EXTEND_INTERACTIONS(/obj/machinery/button/doorbell, \
 	INTERACT_HAND("Press", PROC_REF(interaction_press_impl)), \

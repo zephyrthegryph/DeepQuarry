@@ -139,7 +139,7 @@
 		return //do not update_icon
 
 	after(src, 0.2 SECONDS, PROC_REF(broadcast_status))
-	update_icon()
+	changed(src)
 
 /obj/machinery/atmospherics/unary/outlet_injector/hide(i)
 	update_underlays()
@@ -178,7 +178,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/outlet_injector)
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/rate_reset(datum/act/op/A)
 	set_volume_rate(ATMOS_DEFAULT_VOLUME_PUMP + 500)
-	update_icon()
 	return OP_OK
 
 /// The multitool's "-SAVE TO BUFFER-": the injector goes into the multitool's buffer (for linking).

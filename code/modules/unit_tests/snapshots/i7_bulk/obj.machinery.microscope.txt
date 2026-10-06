@@ -1,5 +1,5 @@
-/obj/machinery/microscope|human|none => microscope_remove_sample|microscope_insert_sample:needs an item,microscope_examine:the microscope has no sample to examine
-/obj/machinery/microscope|robot|none => microscope_remove_sample|gen_robot_interaction_swallow:not possible right now,microscope_insert_sample:needs an item,microscope_examine:the microscope has no sample to examine
+/obj/machinery/microscope|human|none => |
+/obj/machinery/microscope|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/microscope|ai|none => |
 /obj/machinery/microscope|ghost|none => |
-/obj/machinery/microscope|human|/obj/item => microscope_insert_sample,microscope_remove_sample|microscope_examine:the microscope has no sample to examine
+

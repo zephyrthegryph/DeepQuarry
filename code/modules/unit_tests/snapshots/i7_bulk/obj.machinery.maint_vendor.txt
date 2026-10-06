@@ -2,3 +2,4 @@
 /obj/machinery/maint_vendor|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/maint_vendor|ai|none => |
 /obj/machinery/maint_vendor|ghost|none => |
+

@@ -231,7 +231,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump)
 		add_underlay(T,, dir)
 
 /obj/machinery/atmospherics/unary/vent_pump/hide()
-	update_icon()
+	changed(src)
 	update_underlays()
 
 /// The gauge, to someone beside it.

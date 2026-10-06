@@ -1475,7 +1475,6 @@ CAPABILITIES(/datum/vore_look)
 				sm.icon_state = sm.icon_rest
 			else
 				sm.icon_state = sm.icon_living
-		T.update_icon()
 		announce_ghost_joinleave(T.mind, 0, "They now occupy their body again.")
 
 /// Reform an MMI prey: its body backup is revived around it.

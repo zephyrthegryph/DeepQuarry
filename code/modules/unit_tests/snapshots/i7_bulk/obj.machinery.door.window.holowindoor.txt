@@ -2,3 +2,4 @@
 /obj/machinery/door/window/holowindoor|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/door/window/holowindoor|ai|none => |
 /obj/machinery/door/window/holowindoor|ghost|none => |
+

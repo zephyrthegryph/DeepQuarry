@@ -46,7 +46,6 @@ CAPABILITIES(/obj/item/storage/mre)
 	if(!opened)
 		to_chat(user, span_notice("You tear open the bag, breaking the vacuum seal."))
 		set_opened(1)
-		update_icon()
 	. = ..()
 
 /obj/item/storage/mre/menu2
@@ -251,7 +250,6 @@ CAPABILITIES(/obj/item/storage/mrebag)
 	if(!opened && !isobserver(user))
 		to_chat(user, span_notice("The pouch heats up as you break the vacuum seal."))
 		set_opened(1)
-		update_icon()
 	. = ..()
 
 /obj/item/storage/mrebag/menu2

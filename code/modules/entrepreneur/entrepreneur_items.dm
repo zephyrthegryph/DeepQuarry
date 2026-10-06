@@ -343,6 +343,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_RE
 
 	///How often we can use the EMF actively.
 	COOLDOWN_DECLARE(scan_cooldown)
+TRACKED(/obj/item/entrepreneur/emf, emf)
 
 /obj/item/entrepreneur/emf/examine(mob/user)
 	. = ..()
@@ -397,9 +398,9 @@ CAPABILITIES(/obj/item/entrepreneur/emf)
 				ghosts_present++
 
 	if(emf >= 100)
-		emf = 100
+		set_emf(100)
 	if(emf <= 20)
-		emf = 20
+		set_emf(20)
 
 	if(ghosts_present)
 		if(advanced)
@@ -411,8 +412,7 @@ CAPABILITIES(/obj/item/entrepreneur/emf)
 			emf_change = rand(-5, -1)
 		else
 			emf_change = rand(-20,15) //Trend downwards
-	emf = (emf + emf_change)
-	update_icon()
+	set_emf((emf + emf_change))
 	if(user)
 		to_chat(user, span_notice("You update the EMF scanner and check the reading. It reads [emf]mG!"))
 		COOLDOWN_START(src, scan_cooldown, 5 SECONDS)
@@ -428,7 +428,10 @@ CAPABILITIES(/obj/item/entrepreneur/emf)
 		return 60
 	return 80
 
-APPEARANCE_TEMPLATE(/obj/item/entrepreneur/emf, "emf-{appearance_level}")
+/// The look (the draw sweep: from its template).
+/obj/item/entrepreneur/emf/draw(datum/look/look)
+	..()
+	look.state("emf-[appearance_level()]")
 
 /obj/item/entrepreneur/spirit_board
 	name = "spirit board"
@@ -530,7 +533,6 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 	. = ..()
 	var/list/colour_choice = list("crystal_pink","crystal_blue","crystal_green","crystal_orange","crystal_dblue","crystal_purple")
 	icon_state = pick(colour_choice)
-	update_icon()
 
 /obj/item/reagent_containers/glass/bottle/essential_oil
 	name = "essential oils"

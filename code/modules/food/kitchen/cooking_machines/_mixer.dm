@@ -34,7 +34,6 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 
 	rel_set(src, nameof(mixer_loop), new /datum/looping_sound/mixer(list(src), FALSE))
 
-
 //Mixers cannot-not do combining mode. So the default option is removed from this. A combine target must be chosen
 /obj/machinery/appliance/mixer/choose_output(mob/user, new_output)
 	if (!user.IsAdvancedToolUser())
@@ -103,7 +102,8 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 		return "there's nothing in it, add ingredients before turning [src] on"
 	return ..()
 
-/obj/machinery/appliance/mixer/appliance_toggle_power_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/appliance/mixer/appliance_toggle_power_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 

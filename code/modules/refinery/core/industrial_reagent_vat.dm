@@ -67,60 +67,39 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/vat, TYPE_PROC_REF(/atom
 		return 0
 	. = ..(origin_machine, RT, source_forward_dir, transfer_rate, filter_id)
 
-/obj/machinery/reagent_refinery/vat/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_drag/reagent_vat_drain_trolley,
-		/datum/interaction/machine_drag/reagent_vat_drain_container,
-	)
-	..()
-
 /// The old MouseDrop_T's guard clause, shared by both drag branches.
 /obj/machinery/reagent_refinery/vat/proc/mousedrop_allowed(mob/user, atom/movable/C)
 	return !(user?.buckled_to() || user.stat || user.restrained() || !Adjacent(user) || !user.Adjacent(C) || !istype(C) || (user == C && !user.canmove))
 
-/// The old MouseDrop_T's first branch: drains a trolley tank into the vat.
-/datum/interaction/machine_drag/reagent_vat_drain_trolley
-	id = "reagent_vat_drain_trolley"
-	name = "Drain into vat"
-	held_type = /obj/vehicle/train/trolley_tank
-	effect = /obj/machinery/reagent_refinery/vat/proc/interaction_drain_trolley
-
-/obj/machinery/reagent_refinery/vat/proc/interaction_drain_trolley(mob/user, atom/movable/dropping, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/vat/proc/interaction_drain_trolley(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/dropping = A.held
 	if(!mousedrop_allowed(user, dropping))
-		return TRUE
+		return OP_OK
 	var/atom/movable/C = dropping
 	// Drain it!
 	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
 	act_message(user, C, others = "%U% drains %T% into \the [src].")
 	update_icon()
-	return TRUE
+	return OP_OK
 
-/// The old MouseDrop_T's second branch: dumps a reagent container into the vat.
-/datum/interaction/machine_drag/reagent_vat_drain_container
-	id = "reagent_vat_drain_container"
-	name = "Dump into vat"
-	held_type = list(
-		/obj/item/reagent_containers/glass,
-		/obj/item/reagent_containers/food/drinks/glass2,
-		/obj/item/reagent_containers/food/drinks/shaker,
-		/obj/item/reagent_containers/chem_canister,
-	)
-	effect = /obj/machinery/reagent_refinery/vat/proc/interaction_drain_container
-
-/obj/machinery/reagent_refinery/vat/proc/interaction_drain_container(mob/user, atom/movable/dropping, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/vat/proc/interaction_drain_container(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/dropping = A.held
 	if(!mousedrop_allowed(user, dropping))
-		return TRUE
+		return OP_OK
 	var/atom/movable/C = dropping
 	// Drain it!
 	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
 	act_message(user, C, others = "%U% dumps %T% into \the [src].")
 	update_icon()
-	return TRUE
-
-/obj/machinery/reagent_refinery/vat/declare_interactions(list/into)
-	. = ..()
-	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
+	return OP_OK
 
 /// Busy while someone is buckled in to soak.
 /obj/machinery/reagent_refinery/vat/refinery_busy()
 	return length(src?.buckled_mob_list()) && reagents.total_volume > 0
+
+CAPABILITIES(/obj/machinery/reagent_refinery/vat)
+	without("reagent_refinery_set_transfer_amount")
+	op("reagent_vat_drain_trolley", item(/obj/vehicle/train/trolley_tank), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Drain into vat"), then(PROC_REF(interaction_drain_trolley)))
+	op("reagent_vat_drain_container", inputs(item(/obj/item/reagent_containers/glass), item(/obj/item/reagent_containers/food/drinks/glass2), item(/obj/item/reagent_containers/food/drinks/shaker), item(/obj/item/reagent_containers/chem_canister)), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Dump into vat"), then(PROC_REF(interaction_drain_container)))

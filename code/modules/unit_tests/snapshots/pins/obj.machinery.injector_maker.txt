@@ -25,5 +25,21 @@ human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Add plastic
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
+human|/obj/item/reagent_containers menu: Use
+human|/obj/item/reagent_containers click: Click: Use
+human|/obj/item/reagent_containers/hypospray/autoinjector/empty menu: Add injector
+human|/obj/item/reagent_containers/hypospray/autoinjector/empty menu: Use
+human|/obj/item/reagent_containers/hypospray/autoinjector/empty click: Click: Add injector
+human|/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty menu: Add injector
+human|/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty menu: Use
+human|/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty click: Click: Add injector
+human|/obj/item/stack/material menu: Add plastic
+human|/obj/item/stack/material menu: Use
+human|/obj/item/stack/material click: Click: Add plastic
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
+human|/obj/item/stack/material/plastic menu: Add plastic
+human|/obj/item/stack/material/plastic menu: Use
+human|/obj/item/stack/material/plastic click: Click: Add plastic
 keys: add_beaker, add_large_injector, add_plastic, add_small_injector, drag_buckle, drag_plastic, eject_beaker, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, swallow, use
 

@@ -1,0 +1,5 @@
+/obj/machinery/feeder icon: icons/obj/feeder.dmi
+/obj/machinery/feeder state: 
+/obj/machinery/feeder dir: 2
+/obj/machinery/feeder overlay: icons/obj/feeder.dmi::8:#000000
+

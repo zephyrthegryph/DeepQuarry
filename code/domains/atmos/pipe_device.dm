@@ -78,7 +78,6 @@ MSG_DEF_SELF(pipe_device/maxed, "You set it to its highest output.")
 	var/mob/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	toggle_power()
-	update_icon()
 	return OP_OK
 
 /// What the switch says: what it did (asked once it is done).

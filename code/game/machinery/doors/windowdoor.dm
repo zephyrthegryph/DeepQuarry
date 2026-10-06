@@ -172,7 +172,7 @@ CAPABILITIES(/obj/machinery/door/window)
 	owns_one(nameof(electronics), /obj/item/airlock_electronics)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(door_emp)))
 	op("slice", item(/obj/item/melee/energy/blade), label("Slice open"), when(PROC_REF(not_swinging)), priority(OP_PRIORITY_TAKE_OUT), wait(0), then(PROC_REF(sliced_open)))
-	op("shred", hand(), hostile(), label("Smash"), when(req(PROC_REF(claws_shred))), wait(0), then(PROC_REF(shredded)))
+	op("shred", hand(), hostile(), label("Smash"), when(req_can_shred(15)), wait(0), then(PROC_REF(shredded)))
 	op("weld_repair", tool(TOOL_WELDER), stance(I_HELP), label("Repair"), when(PROC_REF(not_swinging)), priority(OP_PRIORITY_PART), wait(4 SECONDS), costs(RES_FUEL, 1),
 		needs(req(PROC_REF(damaged_now), because = MSG(windoor/good_condition))), then(PROC_REF(repaired)), says(MSG(windoor/repaired)))
 	op("crowbar_shut", tool(TOOL_CROWBAR), when(nameof(density)), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(nothing_done)))
@@ -201,10 +201,6 @@ CAPABILITIES(/obj/machinery/door/window)
 	return OP_OK
 
 /// A hostile body with claws (a species that can shred) smashes at the glass.
-/obj/machinery/door/window/proc/claws_shred(datum/act/op/A)
-	var/mob/living/carbon/human/H = A.actor
-	return istype(H) && H.species.can_shred(H, FALSE, 15) // ALLOW(reads): a species' claws are fixed for the touch's life; the click re-evaluates it
-
 /obj/machinery/door/window/proc/shredded(datum/act/op/A)
 	var/mob/user = A.actor
 	play_sfx(src, SFX_EFFECTS_GLASSHIT)

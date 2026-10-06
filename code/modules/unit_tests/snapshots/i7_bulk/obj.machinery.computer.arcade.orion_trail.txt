@@ -3,3 +3,4 @@
 /obj/machinery/computer/arcade/orion_trail|ai|none => |
 /obj/machinery/computer/arcade/orion_trail|ghost|none => |
 /obj/machinery/computer/arcade/orion_trail|human|/obj/item/card/emag => emag_gated|
+

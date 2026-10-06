@@ -85,15 +85,17 @@
 	var/station_id
 	var/uploaded = FALSE
 
-EXTEND_INTERACTIONS(/obj/machinery/generated_station_upload_terminal, \
-	INTERACT_HAND_UNGATED("Upload payload", PROC_REF(interaction_upload), REQ_FIELD_NOT("uploaded", "the payload is already resident")), \
-)
+CAPABILITIES(/obj/machinery/generated_station_upload_terminal)
+	op("upload", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Upload payload"), needs(req_is(nameof(uploaded), FALSE, because = MSG(generated_station_upload_terminal/uploaded))), then(PROC_REF(interaction_upload)))
 
-/obj/machinery/generated_station_upload_terminal/proc/interaction_upload(mob/user, obj/item/held, datum/interaction/interaction)
+MSG_DEF_SELF(generated_station_upload_terminal/uploaded, "the payload is already resident")
+
+/obj/machinery/generated_station_upload_terminal/proc/interaction_upload(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, null, MSG_SELF(span_notice("You begin uploading the malware payload.")), \
 		MSG_OTHERS(span_notice("%U% begins uploading a control payload.")))
 	task_timed(user, 5 SECONDS, src, src, PROC_REF(upload_done), list(user))
-	return TRUE
+	return OP_OK
 
 /obj/machinery/generated_station_upload_terminal/proc/upload_done(mob/user)
 	if(uploaded)

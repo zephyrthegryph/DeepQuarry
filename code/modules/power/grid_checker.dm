@@ -14,10 +14,10 @@
 	var/wire_allow_manual_2 = FALSE
 	var/wire_allow_manual_3 = FALSE
 	var/opened = FALSE
+TRACKED(/obj/machinery/power/grid_checker, power_failing)
 
 /obj/machinery/power/grid_checker/Initialize(mapload)
 	. = ..()
-	update_icon()
 	default_apply_parts()
 
 /// `connect_to_network()` needs `vg_entity` bound, which only happens once
@@ -27,15 +27,14 @@
 	. = ..()
 	connect_to_network()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/power/grid_checker, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/power/grid_checker/appearance_overlays()
-	. = list()
+/obj/machinery/power/grid_checker/draw(datum/look/look)
+	..()
 	if(power_failing)
-		icon_state = "gridchecker_off"
-		set_light(2, 2, "#F86060")
+		look.state("gridchecker_off")
+		look.light(2, 2, "#F86060")
 	else
-		icon_state = "gridchecker_on"
-		set_light(2, 2, "#A8B0F8")
+		look.state("gridchecker_on")
+		look.light(2, 2, "#A8B0F8")
 
 /obj/machinery/power/grid_checker/screwdriver_act(mob/user, obj/item/W)
 	var/result = ..()
@@ -80,7 +79,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/grid_checker, TYPE_PROC_REF(/atom, 
 		when Engineering can manually resolve the issue.",
 		"Critical Power Failure",
 		new_sound = ANNOUNCER_MSG_POWER_OFF)
-	power_failing = TRUE
+	set_power_failing(TRUE)
 	if(power_region)
 		for(var/obj/machinery/power/terminal/T in power_grid_nodes(power_region)) // APCs that are "downstream" of the grid.
 
@@ -93,7 +92,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/grid_checker, TYPE_PROC_REF(/atom, 
 		for(var/obj/machinery/power/smes/smes in power_grid_nodes(power_region)) // These are "upstream"
 			smes.do_grid_check()
 
-	update_icon()
 
 	after(src, rand(4 MINUTES, 10 MINUTES), PROC_REF(power_failure_times_out))
 
@@ -102,8 +100,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/grid_checker, TYPE_PROC_REF(/atom, 
 		GLOB.command_announcement.Announce("Power has been restored to [station_name()]. We apologize for the inconvenience.",
 		"Power Systems Nominal",
 		new_sound = ANNOUNCER_MSG_POWER_ON)
-	power_failing = FALSE
-	update_icon()
+	set_power_failing(FALSE)
 
 	for(var/obj/machinery/power/terminal/T in power_grid_nodes(power_region))
 		if(istype(T.master(), /obj/machinery/power/apc))

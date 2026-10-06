@@ -3,3 +3,4 @@
 /obj/machinery/button/remote/airlock/survival_pod/bolts|ai|none => |
 /obj/machinery/button/remote/airlock/survival_pod/bolts|ghost|none => |
 /obj/machinery/button/remote/airlock/survival_pod/bolts|human|/obj/item => button_press|
+

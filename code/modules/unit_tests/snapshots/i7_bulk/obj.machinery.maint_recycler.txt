@@ -1,5 +1,5 @@
-/obj/machinery/maint_recycler|human|none => gen_hand_interaction_use|gen_insert_interaction_attackby:needs an item
-/obj/machinery/maint_recycler|robot|none => gen_hand_interaction_use|gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_attackby:needs an item
+/obj/machinery/maint_recycler|human|none => |
+/obj/machinery/maint_recycler|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/maint_recycler|ai|none => |
 /obj/machinery/maint_recycler|ghost|none => |
-/obj/machinery/maint_recycler|human|/obj/item => gen_hand_interaction_use|gen_insert_interaction_attackby:its door isn't open
+

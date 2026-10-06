@@ -983,7 +983,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
 	horn_color = teppi_data["horn_color"]
 	eye_color = teppi_data["eye_color"]
 	skin_color = teppi_data["skin_color"]
-	ghostjoin = 1
+	set_ghostjoin(1)
 	registry_join(REGISTRY_GHOST_PODS, src)
 	update_icon()
 

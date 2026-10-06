@@ -2,3 +2,4 @@
 /obj/machinery/computer/pod|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/pod|ai|none => |
 /obj/machinery/computer/pod|ghost|none => |
+

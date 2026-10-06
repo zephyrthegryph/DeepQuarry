@@ -241,7 +241,6 @@ CAPABILITIES(/obj/effect/engine_exhaust)
 			rel_set(src, nameof(node), target)
 			break
 
-	update_icon()
 	update_underlays()
 
 /obj/machinery/atmospherics/unary/engine/bigger/burn()
@@ -282,7 +281,6 @@ CAPABILITIES(/obj/effect/engine_exhaust)
 			rel_set(src, nameof(node), target)
 			break
 
-	update_icon()
 	update_underlays()
 
 /// Accessor for the nozzle var.

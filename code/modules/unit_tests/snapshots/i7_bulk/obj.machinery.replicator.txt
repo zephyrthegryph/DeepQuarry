@@ -3,3 +3,4 @@
 /obj/machinery/replicator|ai|none => |
 /obj/machinery/replicator|ghost|none => |
 /obj/machinery/replicator|human|/obj/item => |gen_insert_interaction_insert:you cannot put the item into the machine
+

@@ -28,7 +28,6 @@ DECLARE_PERIODIC_WHILE(/obj/structure/girder, PERIODIC_SLOW, "material_processin
 		spent(src)
 		return
 	set_material(our_material)
-	update_icon()
 
 /obj/structure/girder/periodic_step()
 	if(!radiate())

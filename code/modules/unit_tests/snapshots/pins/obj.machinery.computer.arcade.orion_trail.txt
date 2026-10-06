@@ -62,5 +62,17 @@ human|/obj/item/card/emag menu: Emag
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Use item
 human|/obj/item/card/emag click: Click: Use item
+human|/obj/item/gripper deleted itself on creation
+human|/obj/item menu: Climb
+human|/obj/item menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item menu: Use
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Use item
+human|/obj/item/stack/arcadeticket menu: Climb
+human|/obj/item/stack/arcadeticket menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/stack/arcadeticket menu: Redeem tickets (refused: You don't have enough for that.)
+human|/obj/item/stack/arcadeticket menu: Use
+human|/obj/item/stack/arcadeticket menu: Use item
+human|/obj/item/stack/arcadeticket click: Click: Use item
 keys: blackhole_around, blackhole_continue, climb.climb, climb.climb_menu, close, continue, disconnect, drag_buckle, emag_gated, gen_robot_interaction_swallow, killcrew, machine_anchor, machine_deconstruct, machine_panel, machine_repair, menu, new_game, redeem_tickets, use, use_gripper, use_item
 

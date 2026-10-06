@@ -80,7 +80,6 @@
 				to_chat(user, span_notice("You insert [W] into [src]."))
 				if(!move_into(src, nameof(src.cell), W, user))
 					return OP_PASS
-				update_icon()
 				return OP_PASS
 			else
 				to_chat(user, span_warning("[src] already has \a [cell] installed!"))
@@ -105,7 +104,6 @@ CAPABILITIES(/obj/item/inducer)
 	playsound(src, tool.usesound, 50, 1)
 	opened = !opened
 	to_chat(user, span_notice("You [opened ? "open" : "close"] the battery compartment."))
-	update_icon()
 	return OP_OK
 
 /obj/item/inducer/proc/recharge(atom/movable/A, mob/user)
@@ -208,7 +206,6 @@ CAPABILITIES(/obj/item/inducer)
 		cell.update_icon()
 		user.put_in_hands(cell)
 		own_take(src, nameof(cell))
-		update_icon()
 	return TRUE
 
 /obj/item/inducer/examine(mob/living/M)
@@ -225,10 +222,14 @@ CAPABILITIES(/obj/item/inducer)
 		return ""
 	return cell ? "bat" : "nobat"
 
-DECLARE_APPEARANCE(/obj/item/inducer, "appearance_compartment", list( \
-	"nobat" = list(APPEARANCE_OVERLAYS = list("inducer-nobat")), \
-	"bat" = list(APPEARANCE_OVERLAYS = list("inducer-bat")) \
-))
+/// The look (the draw sweep: from its layers).
+/obj/item/inducer/draw(datum/look/look)
+	..()
+	switch("[appearance_compartment()]")
+		if("nobat")
+			look.overlay("inducer-nobat")
+		if("bat")
+			look.overlay("inducer-bat")
 
 //////// Variants
 /obj/item/inducer/sci
@@ -239,10 +240,6 @@ DECLARE_APPEARANCE(/obj/item/inducer, "appearance_compartment", list( \
 	cell_type = null
 	powertransfer = 500
 	opened = TRUE
-
-/obj/item/inducer/sci/Initialize(mapload)
-	. = ..()
-	update_icon() //To get the 'open' state applied
 
 /obj/item/inducer/syndicate
 	name = "suspicious inducer"

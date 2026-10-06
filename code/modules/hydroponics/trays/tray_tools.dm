@@ -27,7 +27,14 @@ CAPABILITIES(/obj/item/analyzer/plant_analyzer)
 	owns_one(nameof(last_seed), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	interface("PlantAnalyzer", state = nameof(GLOB.tgui_inventory_state))
 	without("ui_open")
+	without("analyze") // its own window replaces the gas scan
 	ui_shape(reagents = list_of(), no_seed = bool(), seed = any)
+	op("view", in_hand(), then(PROC_REF(plant_analyzer_viewed)))
+
+/// Old attack_self: open the analyzer's window.
+/obj/item/analyzer/plant_analyzer/proc/plant_analyzer_viewed(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_OK
 
 /obj/item/analyzer/plant_analyzer
 	name = "plant analyzer"
@@ -40,10 +47,6 @@ CAPABILITIES(/obj/item/analyzer/plant_analyzer)
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 	special_handling = TRUE
 
-
-// DECLARE replaces the gas analyzer's scan, which this type always skipped (special_handling).
-// ALLOW(interactions): its Use opens the plant UI instead of the gas scan
-DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_PROC_REF(/atom, interaction_open_ui)))
 
 /obj/item/analyzer/plant_analyzer/ui_data(datum/act/eval/A)
 	var/list/data = list()

@@ -1,61 +1,41 @@
 human|none menu: Eject Pod
 human|none menu: Enter Pod
-human|none menu: Put grabbed victim in (refused: needs a grab)
-human|none menu: Put in pod (refused: needs a mob)
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Eject Pod
 robot|none menu: Enter Pod
-robot|none menu: Put grabbed victim in (refused: needs a grab)
-robot|none menu: Put in pod (refused: needs a mob)
 robot|none click: nothing
 ai|none click: nothing
+ghost|none menu: Eject Pod (refused: You can't reach that.)
+ghost|none menu: Enter Pod (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Eject Pod
 human|/obj/item/tool/screwdriver menu: Enter Pod
-human|/obj/item/tool/screwdriver menu: Put grabbed victim in (refused: needs a grab)
-human|/obj/item/tool/screwdriver menu: Put in pod (refused: needs a mob)
 human|/obj/item/tool/screwdriver click: nothing
 human|/obj/item/tool/crowbar menu: Eject Pod
 human|/obj/item/tool/crowbar menu: Enter Pod
-human|/obj/item/tool/crowbar menu: Put grabbed victim in (refused: needs a grab)
-human|/obj/item/tool/crowbar menu: Put in pod (refused: needs a mob)
 human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Eject Pod
 human|/obj/item/tool/wrench menu: Enter Pod
-human|/obj/item/tool/wrench menu: Put grabbed victim in (refused: needs a grab)
-human|/obj/item/tool/wrench menu: Put in pod (refused: needs a mob)
 human|/obj/item/tool/wrench click: nothing
 human|/obj/item/tool/wirecutters menu: Eject Pod
 human|/obj/item/tool/wirecutters menu: Enter Pod
-human|/obj/item/tool/wirecutters menu: Put grabbed victim in (refused: needs a grab)
-human|/obj/item/tool/wirecutters menu: Put in pod (refused: needs a mob)
 human|/obj/item/tool/wirecutters click: nothing
 human|/obj/item/multitool menu: Eject Pod
 human|/obj/item/multitool menu: Enter Pod
-human|/obj/item/multitool menu: Put grabbed victim in (refused: needs a grab)
-human|/obj/item/multitool menu: Put in pod (refused: needs a mob)
 human|/obj/item/multitool click: nothing
 human|/obj/item/weldingtool menu: Eject Pod
 human|/obj/item/weldingtool menu: Enter Pod
-human|/obj/item/weldingtool menu: Put grabbed victim in (refused: needs a grab)
-human|/obj/item/weldingtool menu: Put in pod (refused: needs a mob)
 human|/obj/item/weldingtool click: nothing
 human|/obj/item/stack/cable_coil menu: Eject Pod
 human|/obj/item/stack/cable_coil menu: Enter Pod
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Put grabbed victim in (refused: needs a grab)
-human|/obj/item/stack/cable_coil menu: Put in pod (refused: needs a mob)
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Eject Pod
 human|/obj/item/stack/material/steel menu: Enter Pod
-human|/obj/item/stack/material/steel menu: Put grabbed victim in (refused: needs a grab)
-human|/obj/item/stack/material/steel menu: Put in pod (refused: needs a mob)
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Eject Pod
 human|/obj/item/card/id menu: Enter Pod
-human|/obj/item/card/id menu: Put grabbed victim in (refused: needs a grab)
-human|/obj/item/card/id menu: Put in pod (refused: needs a mob)
 human|/obj/item/card/id click: nothing
 keys: cryopod_drag_in, cryopod_eject, cryopod_enter, cryopod_insert_grab, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
 

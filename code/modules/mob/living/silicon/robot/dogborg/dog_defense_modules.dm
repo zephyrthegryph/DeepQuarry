@@ -49,14 +49,12 @@ CAPABILITIES(/obj/item/self_repair_system)
 	if(destroyed_components)
 		to_chat(R, span_warning("WARNING! Destroyed modules detected. Those can not be repaired!"))
 	icon_state = active_icon
-	update_icon()
 	repairing = TRUE
 	for(var/datum/robot_component/C as anything in repairable_components)
 		to_chat(R, span_notice("Repair system initializated. Repairing plating and wiring of [C]."))
 		src.self_repair(R, C, repair_time, repair_amount)
 	repairing = FALSE
 	icon_state = disabled_icon
-	update_icon()
 	return TRUE
 
 /obj/item/self_repair_system/proc/self_repair(mob/living/silicon/robot/R, datum/robot_component/C, tick_delay, heal_per_tick)

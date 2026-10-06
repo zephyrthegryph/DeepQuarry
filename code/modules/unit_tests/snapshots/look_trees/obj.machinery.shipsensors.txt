@@ -1,0 +1,13 @@
+/obj/machinery/shipsensors icon: icons/obj/stationobjs.dmi
+/obj/machinery/shipsensors state: sensors
+/obj/machinery/shipsensors dir: 2
+/obj/machinery/shipsensors overlay: icons/obj/stationobjs.dmi:sensors:8:#000000
+/obj/machinery/shipsensors/fancy_shuttle icon: icons/turf/fancy_shuttles/_fancy_helpers.dmi
+/obj/machinery/shipsensors/fancy_shuttle state: sensors
+/obj/machinery/shipsensors/fancy_shuttle dir: 2
+/obj/machinery/shipsensors/fancy_shuttle overlay: icons/turf/fancy_shuttles/_fancy_helpers.dmi:sensors:8:#000000
+/obj/machinery/shipsensors/weak icon: icons/obj/stationobjs.dmi
+/obj/machinery/shipsensors/weak state: sensors
+/obj/machinery/shipsensors/weak dir: 2
+/obj/machinery/shipsensors/weak overlay: icons/obj/stationobjs.dmi:sensors:8:#000000
+

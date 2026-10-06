@@ -1,0 +1,17 @@
+/obj/item/gun/launcher/crossbow icon: icons/obj/weapons.dmi
+/obj/item/gun/launcher/crossbow state: crossbow
+/obj/item/gun/launcher/crossbow dir: 2
+/obj/item/gun/launcher/crossbow overlay: icons/obj/weapons.dmi:crossbow:8:#000000
+/obj/item/gun/launcher/crossbow/bow icon: icons/obj/guns/projectile/bows.dmi
+/obj/item/gun/launcher/crossbow/bow state: bow
+/obj/item/gun/launcher/crossbow/bow dir: 2
+/obj/item/gun/launcher/crossbow/bow overlay: icons/obj/guns/projectile/bows.dmi:bow:8:#000000
+/obj/item/gun/launcher/crossbow/bow/hardlight icon: icons/obj/guns/projectile/bows.dmi
+/obj/item/gun/launcher/crossbow/bow/hardlight state: bow_hardlight
+/obj/item/gun/launcher/crossbow/bow/hardlight dir: 2
+/obj/item/gun/launcher/crossbow/bow/hardlight overlay: icons/obj/guns/projectile/bows.dmi:bow_hardlight:8:#000000
+/obj/item/gun/launcher/crossbow/bow/glamour icon: icons/obj/guns/projectile/bows.dmi
+/obj/item/gun/launcher/crossbow/bow/glamour state: gbow
+/obj/item/gun/launcher/crossbow/bow/glamour dir: 2
+/obj/item/gun/launcher/crossbow/bow/glamour overlay: icons/obj/guns/projectile/bows.dmi:gbow:8:#000000
+

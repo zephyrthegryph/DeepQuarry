@@ -149,8 +149,8 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 
 		for(var/direction in connection_dirs)
 			var/obj/structure/cable/C = new/obj/structure/cable(src.loc)
-			C.d1 = 0
-			C.d2 = direction
+			C.set_d1(0)
+			C.set_d2(direction)
 			C.icon_state = "[C.d1]-[C.d2]"
 			rel_set(C, nameof(C.breaker_box), src)
 			C.power_register()

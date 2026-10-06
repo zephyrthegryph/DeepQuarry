@@ -70,7 +70,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 		rel_clear(src, nameof(node))
 
 	if(node)
-		update_icon()
+		changed(src)
 
 
 /// Unconnected, connected and idle, or working.
@@ -98,7 +98,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/heater)
 	var/on = !!(operable() && use_power)
 	set_pumping(on)
 	set_heating(on && network && air_contents.total_moles() && air_contents.return_temperature() < set_temperature)
-	update_icon()
 
 /// One interval of heating: it pays its work and uses up coolant (the heat itself moves in Rust).
 /obj/machinery/atmospherics/unary/heater/proc/service(datum/act/A)

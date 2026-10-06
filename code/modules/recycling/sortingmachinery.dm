@@ -11,9 +11,8 @@
 
 APPEARANCE_NONE(/obj/machinery/disposal/deliveryChute)
 
-EXTEND_INTERACTIONS(/obj/machinery/disposal/deliveryChute, \
-	INTERACT_ALT("Alt-click", TYPE_PROC_REF(/atom, interaction_swallow)), \
-)
+CAPABILITIES(/obj/machinery/disposal/deliveryChute)
+	op("swallow", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Alt-click"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
 /obj/machinery/disposal/deliveryChute/Bumped(atom/movable/AM) //Go straight into the chute
 	if(QDELETED(AM) || istype(AM, /obj/item/projectile) || istype(AM, /obj/effect) || istype(AM, /obj/mecha))	return

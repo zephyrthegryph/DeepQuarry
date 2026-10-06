@@ -54,5 +54,10 @@ human|/obj/item/card/id menu: Dislodge the girder (refused: needs a crowbar)
 human|/obj/item/card/id menu: Prepare for reinforcing (refused: needs a screwdriver)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Disassemble the girder (refused: needs a wrench)
+human|/obj/item menu: Dislodge the girder (refused: needs a crowbar)
+human|/obj/item menu: Prepare for reinforcing (refused: needs a screwdriver)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
 keys: drag_buckle, hulk_smash, item
 

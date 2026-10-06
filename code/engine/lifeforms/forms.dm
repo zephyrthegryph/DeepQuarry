@@ -10,6 +10,7 @@
 //	radio_listen(freq =, filter =)                       a radio listener that retunes when its var changes             registry.dm
 //	adjacency(KIND, dirs =, connects =, into =, when =)  a tracked neighbour relation the engine keeps (index in Rust)    adjacency.dm
 //	per_type(var, PROC_REF(build))                       a lazily built read-only per-type table                        per_type.dm
+//	variants(var, PROC_REF(table))                       a variant key's row of vars, applied at preinit                variants.dm
 //	initial_contents(type, slot =, count =) · knows(LANGUAGE)    initial contents and languages; OWNER in starts_args           contents.dm
 //	starts_as(STATE) · derives(target, PROC_REF, from =) an op's effects at creation; a tracked computed value           derives.dm
 //	lives_while(scope, watches =) · on_ending(PROC_REF)  a scoped lifetime; spent()/consumed()/destroyed()/dissolved()  lifetimes.dm
@@ -37,6 +38,7 @@
 	var/list/radios
 	var/list/adjacencies
 	var/list/per_types
+	var/list/variants
 	var/list/contains
 	var/list/knows
 	var/list/starts_as
@@ -74,7 +76,7 @@
 /proc/lifeform_kinds()
 	var/static/list/kinds = list( // ALLOW(sys_static_getter): the declaration tables are built while the globals are still being made
 		ENTRY_ROLLS = "rolls", ENTRY_PARAM = "params", ENTRY_BUILT_FROM = "built_from", ENTRY_REGISTRY = "registries",
-		ENTRY_RADIO_LISTEN = "radios", ENTRY_ADJACENCY = "adjacencies", ENTRY_PER_TYPE = "per_types", ENTRY_CONTAINS = "contains",
+		ENTRY_RADIO_LISTEN = "radios", ENTRY_ADJACENCY = "adjacencies", ENTRY_PER_TYPE = "per_types", ENTRY_VARIANTS = "variants", ENTRY_CONTAINS = "contains",
 		ENTRY_KNOWS = "knows", ENTRY_STARTS_AS = "starts_as", ENTRY_DERIVES = "derives", ENTRY_LIVES_WHILE = "lives_while",
 		ENTRY_ON_ENDING = "on_ending", ENTRY_INPUT = "inputs")
 	return kinds
@@ -110,7 +112,7 @@
 
 /// Works out what runs when, the watched vars and the positional params; validates against the first instance.
 /proc/lifeform_plan_finish(datum/lifeform_plan/P, datum/D)
-	P.pre = !!(P.rolls || P.params || P.per_types || P.built_from)
+	P.pre = !!(P.rolls || P.params || P.per_types || P.built_from || P.variants)
 	P.destroy = !!(P.registries || P.radios || P.adjacencies || P.on_ending || P.lives_while || P.derives)
 	for(var/datum/centry/C as anything in P.params)
 		var/datum/entry/E = C.item
@@ -178,6 +180,8 @@
 		params_preinit(holder, P, mapload)
 	if(P.per_types)
 		per_type_bind(holder, P)
+	if(P.variants)
+		variant_apply(holder) // before the rolls: a roll of a var the row sets still wins, as it did after the old apply_variant()
 	if(P.rolls)
 		rolls_run(holder, P, mapload)
 

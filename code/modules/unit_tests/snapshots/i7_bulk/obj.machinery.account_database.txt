@@ -2,3 +2,4 @@
 /obj/machinery/account_database|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/account_database|ai|none => |
 /obj/machinery/account_database|ghost|none => |
+

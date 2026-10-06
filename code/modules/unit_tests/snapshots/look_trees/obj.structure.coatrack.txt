@@ -1,0 +1,5 @@
+/obj/structure/coatrack icon: icons/obj/coatrack.dmi
+/obj/structure/coatrack state: coatrack0
+/obj/structure/coatrack dir: 2
+/obj/structure/coatrack overlay: icons/obj/coatrack.dmi:coatrack0:8:#000000
+

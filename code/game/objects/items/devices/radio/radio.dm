@@ -712,6 +712,9 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 ///////////////////////////////
 //Giving borgs their own radio to have some more room to work with -Sieve
 
+CAPABILITIES(/obj/item/radio/borg)
+	op("insert_key", item(/obj/item/encryptionkey), label("Insert key"), then(PROC_REF(interaction_item)))
+
 /obj/item/radio/borg
 	var/tmp/mob/living/silicon/robot/myborg // Cyborg which owns this radio (a relation view). Used for power checks
 	// owned: installed encryption key, kept in the radio's contents
@@ -731,20 +734,19 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		var/mob/living/silicon/robot/R = src.loc
 		R.use_component(ROBOT_SLOT_RADIO)
 
-/obj/item/radio/borg/declare_interactions(list/into)
-	into += dq_interaction_from_spec(type, INTERACT_INSERT(/obj/item/encryptionkey, PROC_REF(interaction_item), "Insert key"))
-	..()
-
-/obj/item/radio/borg/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// An encryption key goes into the free key slot.
+/obj/item/radio/borg/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(keyslot)
 		to_chat(user, "The radio can't hold another key!")
-		return TRUE
+		return OP_OK
 
 	if(!keyslot)
 		move_into(src, nameof(src.keyslot), W, user)
 
 	recalculateChannels()
-	return TRUE
+	return OP_OK
 
 /obj/item/radio/borg/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor

@@ -24,5 +24,8 @@ human|/obj/item/stack/material/steel menu: Climb (refused: There's a material pr
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/card/id click: nothing
+human|/obj/item/canvas menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/canvas menu: Use
+human|/obj/item/canvas click: Click: Use
 keys: climb.climb, climb.climb_menu, drag_buckle, item
 

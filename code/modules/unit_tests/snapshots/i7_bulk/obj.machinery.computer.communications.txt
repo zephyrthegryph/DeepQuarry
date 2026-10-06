@@ -2,3 +2,4 @@
 /obj/machinery/computer/communications|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/communications|ai|none => |
 /obj/machinery/computer/communications|ghost|none => |
+

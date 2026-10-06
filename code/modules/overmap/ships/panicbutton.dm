@@ -10,6 +10,7 @@
 
 	var/glass = TRUE
 	var/launched = FALSE
+TRACKED(/obj/structure/panic_button, launched)
 
 // In case we're annihilated by a meteor
 // an unlaunched button launches.
@@ -26,7 +27,10 @@
 		return "_open"
 	return ""
 
-APPEARANCE_TEMPLATE(/obj/structure/panic_button, "{initial(icon_state)}{appearance_panic_suffix}")
+/// The look (the draw sweep: from its template).
+/obj/structure/panic_button/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_panic_suffix()]")
 
 DECLARE_INTERACTIONS(/obj/structure/panic_button, INTERACT_HAND_AS(I_HURT, "Smash the glass", PROC_REF(interaction_hand)), INTERACT_HAND(null, PROC_REF(interaction_hand)))
 
@@ -47,7 +51,7 @@ DECLARE_INTERACTIONS(/obj/structure/panic_button, INTERACT_HAND_AS(I_HURT, "Smas
 			user.automatic_custom_emote(VISIBLE_MESSAGE, "smashes the glass on [src]!")
 			glass = FALSE
 			play_sfx(src, SFX_EFFECTS_HIT_ON_SHATTERED_GLASS, volume = 0, vary = FALSE)
-			update_icon()
+			changed(src)
 		else
 			user.automatic_custom_emote(VISIBLE_MESSAGE, "pats [src] in a friendly manner.")
 			to_chat(user, span_warning("If you're trying to break the glass, you'll have to hit it harder than that..."))
@@ -56,13 +60,13 @@ DECLARE_INTERACTIONS(/obj/structure/panic_button, INTERACT_HAND_AS(I_HURT, "Smas
 		user.automatic_custom_emote(VISIBLE_MESSAGE, "pushes the button on [src]!")
 		launch(user)
 		playsound(src, get_sfx(SFX_BUTTON))
-		update_icon()
+		changed(src)
 	return TRUE
 
 /obj/structure/panic_button/proc/launch(mob/living/user)
 	if(launched)
 		return
-	launched = TRUE
+	set_launched(TRUE)
 	var/obj/effect/overmap/visitable/S = get_overmap_sector(z)
 	if(!S)
 		log_mapping("## ERROR Distress button hit on z[z] but that's not an overmap sector...")

@@ -1,5 +1,5 @@
-/obj/machinery/media/jukebox|human|none => gen_hand_ungated_interaction_interact|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_insert_interaction_fingerprint:needs an item
-/obj/machinery/media/jukebox|robot|none => gen_hand_ungated_interaction_interact|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_fingerprint:needs an item
+/obj/machinery/media/jukebox|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+/obj/machinery/media/jukebox|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/media/jukebox|ai|none => |
 /obj/machinery/media/jukebox|ghost|none => |
-/obj/machinery/media/jukebox|human|/obj/item => gen_insert_interaction_fingerprint,gen_hand_ungated_interaction_interact|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
+

@@ -38,7 +38,7 @@
 
 /mob/living/simple_mob/animal/passive/raccoon/Initialize(mapload)
 	. = ..()
-	ghostjoin = 1
+	set_ghostjoin(1)
 	ghostjoin_icon()
 
 /datum/say_list/raccoon

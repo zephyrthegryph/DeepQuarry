@@ -26,7 +26,10 @@
 TRACKED(/obj/structure/reflector, finished)
 TRACKED(/obj/structure/reflector, admin)
 
-DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "reflector_base")))
+/// The look (the draw sweep: from its layers).
+/obj/structure/reflector/draw(datum/look/look)
+	..()
+	look.state("reflector_base")
 
 /obj/structure/reflector/Initialize(mapload)
 	. = ..()

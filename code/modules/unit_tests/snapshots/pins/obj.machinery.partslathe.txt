@@ -56,5 +56,10 @@ human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriv
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use item
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item menu: Ui open
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Ui open
 keys: attackby, cancel, drag_buckle, ejectBoard, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, queue, queueBoard, remove_mat, ui_open
 

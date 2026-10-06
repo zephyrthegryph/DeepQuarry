@@ -16,5 +16,6 @@ human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id click: nothing
+human|/obj/item/stack/material/plasteel click: nothing
 keys: drag_buckle, gentoggle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, repair_plate, repair_screws, repair_weld, repair_wrench, ui_open
 

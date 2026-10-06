@@ -298,7 +298,7 @@ CAPABILITIES(/obj/structure/table)
 /// A claw (a xenomorph's hand) tears the table apart.
 /obj/structure/table/proc/actor_is_xeno(datum/act/op/A)
 	var/mob/living/carbon/human/X = A.actor
-	return istype(X) && istype(X.species, /datum/species/xenos) // ALLOW(reads): a body's species is fixed for the touch that asks; the click asks again
+	return istype(X) && istype(X.species, /datum/species/xenos)
 
 /obj/structure/table/proc/clawed_apart(datum/act/op/A)
 	attack_alien(A.actor)
@@ -446,6 +446,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/table, TYPE_PROC_REF(/atom, appearance_ov
 
 		if(carpeted)
 			. += "carpet_flip[type]"
+
 
 /// Flood-fills the connected tables into `found` (a transient working list) and returns it.
 /obj/structure/table/proc/get_all_connected_tables(list/found)

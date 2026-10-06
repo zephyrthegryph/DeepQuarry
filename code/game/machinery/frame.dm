@@ -406,7 +406,6 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 				if(CP.get_amount() > 1)
 					var/camt = min(CP.get_amount(), req_components[I]) // amount of cable to take, idealy amount required, but limited by amount provided
 					var/obj/item/stack/cable_coil/CC = new /obj/item/stack/cable_coil(src, camt)
-					CC.update_icon()
 					CP.use(camt)
 					rel_add(src, nameof(components), CC)
 					req_components[I] -= camt
@@ -442,7 +441,6 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 			if(ST.get_amount() > 1)
 				var/camt = min(ST.get_amount(), req_components[I]) // amount of stack to take, idealy amount required, but limited by amount provided
 				var/obj/item/stack/NS = new ST.stacktype(src, camt)
-				NS.update_icon()
 				ST.use(camt)
 				rel_add(src, nameof(components), NS)
 				req_components[I] -= camt

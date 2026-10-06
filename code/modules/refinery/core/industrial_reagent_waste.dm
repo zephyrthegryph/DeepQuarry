@@ -12,6 +12,8 @@
 
 CAPABILITIES(/obj/machinery/reagent_refinery/waste_processor)
 	climb()
+	op("waste_processor_drain_trolley", item(/obj/vehicle/train/trolley_tank), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Drain into processor"), then(PROC_REF(interaction_drain_trolley)))
+	op("waste_processor_drain_container", inputs(item(/obj/item/reagent_containers/glass), item(/obj/item/reagent_containers/food/drinks/glass2), item(/obj/item/reagent_containers/food/drinks/shaker)), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Dump into processor"), then(PROC_REF(interaction_drain_container)))
 
 /obj/machinery/reagent_refinery/waste_processor/Initialize(mapload)
 	. = ..()
@@ -34,37 +36,15 @@ CAPABILITIES(/obj/machinery/reagent_refinery/waste_processor)
 		use_power_oneoff(active_power_usage)
 		reagents.clear_reagents()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/waste_processor, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/waste_processor/appearance_overlays()
-	. = list()
+/obj/machinery/reagent_refinery/waste_processor/draw(datum/look/look)
+	..()
 	if(anchored)
-		. += update_input_connection_overlays("waste_intakes")
+		look.overlay(update_input_connection_overlays("waste_intakes"))
 
 /obj/machinery/reagent_refinery/waste_processor/examine(mob/user, infix, suffix)
 	. = ..()
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u. It is pumping chemicals at a rate of [amount_per_transfer_from_this]u."
 	tutorial(REFINERY_TUTORIAL_ALLIN, .)
-
-/obj/machinery/reagent_refinery/waste_processor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_drag/waste_processor_drain_trolley,
-		/datum/interaction/machine_drag/waste_processor_drain_container,
-	)
-	..()
-
-/datum/interaction/machine_drag/waste_processor_drain_trolley
-	id = "waste_processor_drain_trolley"
-	name = "Drain into processor"
-	held_type = /obj/vehicle/train/trolley_tank
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_ACTOR, /obj/machinery/reagent_refinery/waste_processor/proc/drag_actor_ok, null))
-	effect = /obj/machinery/reagent_refinery/waste_processor/proc/interaction_drain_trolley
-
-/datum/interaction/machine_drag/waste_processor_drain_container
-	id = "waste_processor_drain_container"
-	name = "Dump into processor"
-	held_type = list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food/drinks/glass2, /obj/item/reagent_containers/food/drinks/shaker)
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_ACTOR, /obj/machinery/reagent_refinery/waste_processor/proc/drag_actor_ok, null))
-	effect = /obj/machinery/reagent_refinery/waste_processor/proc/interaction_drain_container
 
 /// The old MouseDrop_T guard: actor able to act, adjacent to both, and (if dropping themself) able to move.
 /obj/machinery/reagent_refinery/waste_processor/proc/drag_actor_ok(mob/actor, atom/target, atom/movable/dropping)
@@ -72,26 +52,31 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/waste_processor, TYPE_PR
 		return FALSE
 	return TRUE
 
-/obj/machinery/reagent_refinery/waste_processor/proc/interaction_drain_trolley(mob/user, atom/movable/dropping, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/waste_processor/proc/interaction_drain_trolley(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/dropping = A.held
 	var/obj/vehicle/train/trolley_tank/C = dropping
+	if(!drag_actor_ok(A.actor, src, dropping)) // the old MouseDrop_T's silent guard: the drop goes on to whatever else takes it
+		return OP_DECLINE
 	// Drain it!
 	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
 	act_message(user, C, others = "%U% drains %T% into \the [src].")
-	update_icon()
-	return TRUE
+	return OP_OK
 
-/obj/machinery/reagent_refinery/waste_processor/proc/interaction_drain_container(mob/user, atom/movable/dropping, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/waste_processor/proc/interaction_drain_container(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/dropping = A.held
 	var/atom/movable/C = dropping
+	if(!drag_actor_ok(A.actor, src, dropping)) // the old MouseDrop_T's silent guard: the drop goes on to whatever else takes it
+		return OP_DECLINE
 	// Drain it!
 	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
 	act_message(user, C, others = "%U% dumps %T% into \the [src].")
-	update_icon()
-	return TRUE
-
-/obj/machinery/reagent_refinery/waste/declare_interactions(list/into)
-	. = ..()
-	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
+	return OP_OK
 
 /// Busy while it holds waste: it burns it off at random.
 /obj/machinery/reagent_refinery/waste_processor/refinery_busy()
 	return reagents.total_volume > 0
+
+CAPABILITIES(/obj/machinery/reagent_refinery/waste)
+	without("reagent_refinery_set_transfer_amount")

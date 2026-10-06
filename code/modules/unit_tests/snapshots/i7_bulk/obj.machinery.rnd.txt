@@ -2,3 +2,4 @@
 /obj/machinery/rnd|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/rnd|ai|none => |
 /obj/machinery/rnd|ghost|none => |
+

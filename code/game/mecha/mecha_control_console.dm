@@ -10,9 +10,6 @@
 	var/screen = 0
 	var/list/stored_data
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/mecha, \
-)
-
 /// The window data.
 /obj/machinery/computer/mecha/ui_data(datum/act/eval/A)
 	var/list/data = ..()
@@ -25,7 +22,6 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/mecha, \
 /// The computed part of the console's window data (ui_data())
 /obj/machinery/computer/mecha/proc/ui_data_obj_machinery_computer_mecha(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-
 
 	var/list/beacons = list()
 	for(var/obj/item/mecha_parts/mecha_tracking/TR in world)
@@ -132,7 +128,6 @@ DAMAGE_REACTION(/obj/item/mecha_parts/mecha_tracking, DAMAGE_EMP, TYPE_PROC_REF(
 		return list()
 	var/obj/mecha/M = loc
 	return M.get_log_tgui()
-
 
 /obj/item/storage/box/mechabeacons
 	name = "Exosuit Tracking Beacons"

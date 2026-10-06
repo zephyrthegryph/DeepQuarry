@@ -2,3 +2,4 @@
 /obj/structure/dirtybed|robot|none => |
 /obj/structure/dirtybed|ai|none => |
 /obj/structure/dirtybed|ghost|none => |
+

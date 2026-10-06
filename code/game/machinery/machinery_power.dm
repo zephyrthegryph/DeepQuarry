@@ -179,11 +179,11 @@
 	if(power_channel == new_channel)
 		return
 	if(!power_init_complete)
-		power_channel = new_channel
+		set_power_channel(new_channel)
 		return TRUE // We'll be retallying anyway.
 	var/power = POWER_CONSUMPTION
 	REPORT_POWER_CONSUMPTION_CHANGE(power, 0) // Subtract from old channel
-	power_channel = new_channel
+	set_power_channel(new_channel)
 	REPORT_POWER_CONSUMPTION_CHANGE(0, power) // Add to new channel
 	return TRUE
 
@@ -210,7 +210,7 @@
 	if(active_power_usage == new_power_usage)
 		return
 	var/old_power = active_power_usage
-	active_power_usage = new_power_usage
+	set_active_power_usage(new_power_usage)
 	if(power_init_complete && use_power == USE_POWER_ACTIVE) // If this is the channel in use
 		REPORT_POWER_CONSUMPTION_CHANGE(old_power, new_power_usage)
 

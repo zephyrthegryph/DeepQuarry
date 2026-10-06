@@ -36,12 +36,12 @@
 		wielded = 1
 		force = force_wielded
 		name = "[base_name] (wielded)"
-		update_icon()
+		changed(src)
 	else
 		wielded = 0
 		force = force_unwielded
 		name = "[base_name]"
-	update_icon()
+	changed(src)
 	..()
 
 /obj/item/material/twohanded/update_force()
@@ -55,10 +55,7 @@
 	force = force_unwielded
 	throwforce = round(force*thrown_force_divisor)
 
-/obj/item/material/twohanded/Initialize(mapload, material_key)
-	. = ..()
-	update_icon()
-
+	changed(src)
 //Allow a small chance of parrying melee attacks when wielded - maybe generalize this to other weapons someday
 /obj/item/material/twohanded/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(wielded && default_parry_check(user, attacker, damage_source) && prob(15))
@@ -67,11 +64,15 @@
 		return 1
 	return 0
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/material/twohanded/appearance_overlays()
-	. = list()
-	icon_state = "[base_icon][wielded]"
-	item_state = icon_state
+/obj/item/material/twohanded/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..()).
+/obj/item/material/twohanded/proc/look_parts(datum/look/look)
+	var/drawn_state = look.state_so_far(src)
+	drawn_state = look.state("[base_icon][wielded]")
+	look.held_state(drawn_state)
 
 /obj/item/material/twohanded/dropped(mob/user, equipping, slot)
 	if(equipping)
@@ -110,13 +111,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 		pry = 1
 		force = force_wielded
 		name = "[base_name] (wielded)"
-		update_icon()
+		changed(src)
 	else
 		wielded = 0
 		pry = 0
 		force = force_unwielded
 		name = "[base_name]"
-	update_icon()
+	changed(src)
 	..()
 
 /obj/item/material/twohanded/fireaxe/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
@@ -238,13 +239,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 		pry = 1
 		force = force_wielded
 		name = "[base_name] (wielded)"
-		update_icon()
+		changed(src)
 	else
 		wielded = 0
 		pry = 0
 		force = force_unwielded
 		name = "[base_name]"
-	update_icon()
+	changed(src)
 	..()
 
 /obj/item/material/twohanded/sledgehammer/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
@@ -295,11 +296,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded, TYPE_PROC_REF(/atom, appea
 			play_sfx(src.loc, SFX_SPARKS)
 			return
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/twohanded/sledgehammer/mjollnir, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/material/twohanded/sledgehammer/mjollnir/appearance_overlays()  //Currently only here to fuck with the on-mob icons.
-	. = list()
-	icon_state = "mjollnir[wielded]"
-	return .
+/obj/item/material/twohanded/sledgehammer/mjollnir/look_parts(datum/look/look)
+	look.state("mjollnir[wielded]")
 
 
 // === merged from twohanded_vr.dm during hard-fork de-suffix (verified no override-order change) ===

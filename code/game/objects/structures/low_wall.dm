@@ -329,34 +329,34 @@ CAPABILITIES(/obj/structure/grille/bay)
 
 DESTROY_EFFECTS(/obj/structure/grille/bay, new /datum/destroy_effects_data(neighbor_type = /obj/structure/grille))
 
-APPEARANCE_NONE(/obj/structure/grille/bay)
-DECLARE_APPEARANCE_PROC(/obj/structure/grille/bay, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/grille/bay/appearance_overlays()
-	. = list()
+/obj/structure/grille/bay/draw(datum/look/look)
+	..()
+	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	look.state(null)
 	var/on_frame = locate_on(loc, /obj/structure/low_wall/bay)
 
 	if(destroyed)
 		if(on_frame)
-			icon_state = "broke_onframe"
+			look.state("broke_onframe")
 		else
-			icon_state = "broken"
+			look.state("broken")
 	else
 		var/image/I
-		icon_state = ""
+		look.state("")
 		if(on_frame)
 			for(var/i = 1 to 4)
 				if(other_connections[i] != "0")
 					I = image(icon, "grille_other_onframe[connections[i]]", dir = 1<<(i-1))
 				else
 					I = image(icon, "grille_onframe[connections[i]]", dir = 1<<(i-1))
-				. += I
+				look.overlay(I)
 		else
 			for(var/i = 1 to 4)
 				if(other_connections[i] != "0")
 					I = image(icon, "grille_other[connections[i]]", dir = 1<<(i-1))
 				else
 					I = image(icon, "grille[connections[i]]", dir = 1<<(i-1))
-				. += I
+				look.overlay(I)
 
 /**
  * The window types for both types of short walls

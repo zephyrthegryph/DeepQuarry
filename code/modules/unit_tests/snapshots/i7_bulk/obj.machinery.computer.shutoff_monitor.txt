@@ -2,3 +2,4 @@
 /obj/machinery/computer/shutoff_monitor|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/shutoff_monitor|ai|none => |
 /obj/machinery/computer/shutoff_monitor|ghost|none => |
+

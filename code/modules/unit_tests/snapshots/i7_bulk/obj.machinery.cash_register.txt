@@ -1,6 +1,6 @@
-/obj/machinery/cash_register|human|none => cash_register_open_box_alt,cash_register_use,cash_register_open_box_verb|emag_gated:needs a cryptographic sequencer,cash_register_pay:needs an item,cash_register_drop:needs an obj
-/obj/machinery/cash_register|robot|none => cash_register_open_box_alt,cash_register_use,cash_register_open_box_verb|emag_gated:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now,cash_register_pay:needs an item,cash_register_drop:needs an obj
+/obj/machinery/cash_register|human|none => |emag_gated:needs a cryptographic sequencer
+/obj/machinery/cash_register|robot|none => |emag_gated:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/cash_register|ai|none => |
 /obj/machinery/cash_register|ghost|none => |
-/obj/machinery/cash_register|human|/obj/item => cash_register_pay,cash_register_open_box_alt,cash_register_use,cash_register_open_box_verb,cash_register_drop|emag_gated:needs a cryptographic sequencer
-/obj/machinery/cash_register|human|/obj/item/card/emag => emag_gated,cash_register_pay,cash_register_open_box_alt,cash_register_use,cash_register_open_box_verb,cash_register_drop|
+/obj/machinery/cash_register|human|/obj/item/card/emag => emag_gated|
+

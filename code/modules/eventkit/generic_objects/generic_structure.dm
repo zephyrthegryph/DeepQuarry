@@ -48,7 +48,6 @@ CAPABILITIES(/obj/structure/generic_structure)
 				icon = 'icons/obj/props/decor.dmi'
 			icon_state = icon_state_on
 			src.visible_message(span_notice("[text_activated]"))
-			update_icon()
 			if(effect == 1)
 				fx_sparks(src, 3)
 			if(effect == 2)
@@ -108,7 +107,6 @@ CAPABILITIES(/obj/structure/generic_structure)
 			else
 				icon = 'icons/obj/props/decor.dmi'
 			src.visible_message(span_notice("[text_deactivated]"))
-			update_icon()
 	return OP_DECLINE
 
 /obj/structure/generic_structure/wrench_act(mob/user, obj/item/tool)
@@ -420,7 +418,6 @@ ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a custo
 	P.icon_on = s_icon2
 	if(s_icon)
 		P.icon = s_icon
-	P.update_icon()
 
 /datum/admin_verb/generic_structure/proc/generic_setup_answered(datum/act/request/context)
 	if(!context.answer)

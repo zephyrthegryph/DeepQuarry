@@ -205,7 +205,6 @@
 	W.receive_tagged_treatment(TREAT_WOUND_PACKING, 1)
 	W.disinfect()
 	playsound(src, apply_sounds, 25)
-	update_icon()
 	// B9: one charge per wound treated; the tissue repair is applied once, in finish.
 	return used + 1
 
@@ -438,7 +437,6 @@
 	use(1)
 	affecting.salve()
 	playsound(src, apply_sounds, 25)
-	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/stack/medical/advanced/ointment/proc/attack_timed_failed2(datum/task/timed/ointment_attack2/task)
@@ -536,10 +534,6 @@ TYPE_TABLE(/obj/item/stack/medical/splint/ghetto, splint_organs, list(BP_L_ARM, 
 /obj/item/stack/medical/advanced
 	icon = 'icons/obj/stacks_vr.dmi'
 
-/obj/item/stack/medical/advanced/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /// The pack shows how many are left in steps.
 /obj/item/stack/medical/advanced/look_state()
 	switch(amount)
@@ -603,7 +597,6 @@ TYPE_TABLE(/obj/item/stack/medical/splint/ghetto, splint_organs, list(BP_L_ARM, 
 	to_chat(user, healmessage)
 	use(1)
 	playsound(src, apply_sounds, 25)
-	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
 /// The kit shows its count.

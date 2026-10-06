@@ -152,7 +152,6 @@ DECLARE_INTERACTIONS(/obj/structure/candybowl, \
 	icon_state = "nocandy"
 	has_candy = FALSE
 
-	update_icon()
 
 /obj/structure/candybowl/proc/fill()
 	name = initial(name)
@@ -160,7 +159,6 @@ DECLARE_INTERACTIONS(/obj/structure/candybowl, \
 	icon_state = "fullcandy"
 	has_candy = TRUE
 
-	update_icon()
 
 /obj/structure/candybowl/medical
 	name = "medical candy bowl"

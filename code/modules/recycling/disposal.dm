@@ -61,13 +61,16 @@
 // change visibility status and force update of icon
 /obj/structure/disposalpipe/hide(intact)
 	invisibility = intact ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE	// hide if floor is intact
-	update_icon()
+	changed(src)
 
 // update actual icon_state depending on visibility
 // if invisible, append "f" to icon_state to show faded version
 // this will be revealed if a T-scanner is used
 // if visible, use regular icon_state
-APPEARANCE_TEMPLATE(/obj/structure/disposalpipe, "{base_icon_state}")
+/// The look (the draw sweep: from its template).
+/obj/structure/disposalpipe/draw(datum/look/look)
+	..()
+	look.state("[base_icon_state]")
 
 // expel the held objects into a turf
 // called when there is a break in the pipe

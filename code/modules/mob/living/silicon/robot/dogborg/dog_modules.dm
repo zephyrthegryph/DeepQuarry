@@ -132,7 +132,6 @@ CAPABILITIES(/obj/item/robot_tongue)
 			desc = "Useful for slurping mess off the floor before affectionately licking the crew members in the face."
 			icon = 'icons/mob/dogborg_vr.dmi'
 			icon_state = "synthtongue"
-		update_icon()
 	return TRUE
 
 /obj/item/robot_tongue/proc/tongue_eat_trash(atom/target, mob/user)

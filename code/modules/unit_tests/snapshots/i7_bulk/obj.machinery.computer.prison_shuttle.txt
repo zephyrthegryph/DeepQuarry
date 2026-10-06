@@ -3,3 +3,4 @@
 /obj/machinery/computer/prison_shuttle|ai|none => |
 /obj/machinery/computer/prison_shuttle|ghost|none => |
 /obj/machinery/computer/prison_shuttle|human|/obj/item/card/emag => emag|
+

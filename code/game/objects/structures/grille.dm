@@ -14,7 +14,10 @@
 	integrity_failure = 0.375
 	var/destroyed = FALSE
 
-APPEARANCE_TEMPLATE(/obj/structure/grille, "{initial(icon_state)}{destroyed?-b:}")
+/// The look (the draw sweep: from its template).
+/obj/structure/grille/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][destroyed ? "-b" : ""]")
 
 CAPABILITIES(/obj/structure/grille)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
@@ -174,7 +177,7 @@ CAPABILITIES(/obj/structure/grille)
 	if(!destroyed)
 		set_density(FALSE)
 		destroyed = TRUE
-		update_icon()
+		changed(src)
 		new /obj/item/stack/rods(get_turf(src))
 
 // Reaching 0 integrity clears the grille entirely, dropping its last rod.

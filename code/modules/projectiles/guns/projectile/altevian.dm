@@ -9,7 +9,10 @@
 	caliber = ".48"
 	load_method = MAGAZINE
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/altevian, "{initial(icon_state)}{ammo_magazine?:-e}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/altevian/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][ammo_magazine ? "" : "-e"]")
 
 /obj/item/ammo_magazine/sam48
 	name = "ammo clip (SAM .48)"

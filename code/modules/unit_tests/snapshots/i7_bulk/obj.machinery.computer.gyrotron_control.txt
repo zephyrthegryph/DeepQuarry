@@ -2,3 +2,4 @@
 /obj/machinery/computer/gyrotron_control|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/gyrotron_control|ai|none => |
 /obj/machinery/computer/gyrotron_control|ghost|none => |
+

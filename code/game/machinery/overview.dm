@@ -4,11 +4,9 @@
 // is the source of truth for per-line diff context.
 
 //# define AMAP
-EXTEND_INTERACTIONS(/obj/machinery/computer/security, \
-	INTERACT_VERB(".map", PROC_REF(interaction_station_map), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now")), \
-)
 
-/obj/machinery/computer/security/proc/interaction_station_map(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/security/proc/interaction_station_map(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!mapping)
 		return TRUE
 	log_game("[user]([user.key]) used station map L[z] in [src.loc.loc]")
@@ -32,7 +30,6 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/security, \
 	for(var/i = 0; i<icount; i++)
 		imap += icon('icons/misc/imap.dmi', "blank")
 		imap += icon('icons/misc/imap.dmi', "blank")
-
 
 	for(var/wx = 1 ; wx <= world.maxx; wx++)
 
@@ -142,7 +139,6 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/security, \
 			var/icon/I = imap[1+(ix + icx*iy)*2]
 			var/icon/I2 = imap[2+(ix + icx*iy)*2]
 
-
 			I.DrawBox(colour, rx, ry, rx+1, ry+1)
 
 			I2.DrawBox(colour2, rx, ry, rx+1, ry+1)
@@ -155,7 +151,6 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/security, \
 		var/atom/movable/screen/H = new /atom/movable/screen()
 
 		H.screen_loc = "[5 + i%icx],[6+ round(i/icx)]"
-
 
 		H.name = (i==0)?"maprefresh":"map"
 
@@ -244,7 +239,6 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/security, \
 							else
 								colour = rgb(255,128,128)
 
-
 				var/area/A = T.loc
 
 				if(A.fire)
@@ -266,7 +260,6 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/security, \
 
 			var/icon/I = imap[1+(ix + icx*iy)]
 
-
 			I.DrawBox(colour, rx, ry, rx, ry)
 
 	user.clearmap()
@@ -277,7 +270,6 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/security, \
 		var/atom/movable/screen/H = new /atom/movable/screen()
 
 		H.screen_loc = "[5 + i%icx],[6+ round(i/icx)]"
-
 
 		H.name = (i==0)?"maprefresh":"map"
 

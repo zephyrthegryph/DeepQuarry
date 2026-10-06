@@ -31,7 +31,6 @@
 	..()
 /obj/item/melee/baton/slime/loaded/Initialize(mapload)
 	rel_set(src, nameof(bcell), new/obj/item/cell/device(src))
-	update_icon()
 	return ..()
 
 // Xeno stun gun + projectile

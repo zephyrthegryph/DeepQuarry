@@ -3,3 +3,4 @@
 /obj/machinery/recharge_station|ai|none => |
 /obj/machinery/recharge_station|ghost|none => |
 /obj/machinery/recharge_station|human|/obj/item/storage/part_replacer => recharge_station_part_replacement,recharge_station_eject,recharge_station_enter|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,recharge_station_insert_grab:needs a grab,recharge_station_drag_insert:needs a mob
+

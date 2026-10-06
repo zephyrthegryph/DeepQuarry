@@ -82,8 +82,6 @@ CAPABILITIES(/obj/item/paper_bin)
 			return TRUE
 	if(amount >= 1)
 		amount--
-		if(amount==0)
-			update_icon()
 
 		var/obj/item/paper/P
 		if(length(papers) > 0) //If there's any custom paper on the stack, use that instead of creating a new paper.
@@ -118,7 +116,6 @@ CAPABILITIES(/obj/item/paper_bin)
 		return OP_PASS
 	to_chat(user, span_notice("You put [i] in [src]."))
 	rel_add(src, nameof(papers), i)
-	update_icon()
 	amount++
 	return OP_PASS
 
@@ -131,4 +128,7 @@ CAPABILITIES(/obj/item/paper_bin)
 		else
 			. += span_notice("There are no papers in the bin.")
 
-APPEARANCE_TEMPLATE(/obj/item/paper_bin, "paper_bin{amount?1:0}")
+/// The look (the draw sweep: from its template).
+/obj/item/paper_bin/draw(datum/look/look)
+	..()
+	look.state("paper_bin[amount ? "1" : "0"]")

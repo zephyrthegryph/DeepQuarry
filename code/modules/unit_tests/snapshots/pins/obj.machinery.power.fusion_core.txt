@@ -50,5 +50,17 @@ human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id menu: Secure (refused: needs a wrench)
 human|/obj/item/card/id click: nothing
+human|/obj/item/storage/part_replacer menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/storage/part_replacer menu: Empty contents
+human|/obj/item/storage/part_replacer menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/storage/part_replacer menu: Replace parts
+human|/obj/item/storage/part_replacer menu: Secure (refused: needs a wrench)
+human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
+human|/obj/item/storage/part_replacer click: Click: Replace parts
+human|/obj/item/stack/material/processed_alloy menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/stack/material/processed_alloy menu: Load material cradle
+human|/obj/item/stack/material/processed_alloy menu: Open maintenance panel (refused: needs a screwdriver)
+human|/obj/item/stack/material/processed_alloy menu: Secure (refused: needs a wrench)
+human|/obj/item/stack/material/processed_alloy click: Click: Load material cradle
 keys: cable_place, drag_buckle, gen_robot_interaction_swallow, load_cradle, machine_anchor, machine_deconstruct, machine_panel, machine_repair, part_replacement.replace, set_ident, use
 

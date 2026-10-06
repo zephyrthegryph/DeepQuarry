@@ -1,0 +1,5 @@
+/obj/machinery/igniter icon: icons/obj/stationobjs.dmi
+/obj/machinery/igniter state: igniter1
+/obj/machinery/igniter dir: 2
+/obj/machinery/igniter overlay: icons/obj/stationobjs.dmi:igniter1:8:#000000
+

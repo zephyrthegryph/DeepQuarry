@@ -1,0 +1,5 @@
+/obj/machinery/doorbell_chime icon: icons/obj/machines/doorbell_vr.dmi
+/obj/machinery/doorbell_chime state: dbchime-red
+/obj/machinery/doorbell_chime dir: 2
+/obj/machinery/doorbell_chime overlay: icons/obj/machines/doorbell_vr.dmi:dbchime-red:8:#000000
+

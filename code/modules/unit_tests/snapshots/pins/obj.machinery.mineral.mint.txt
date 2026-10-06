@@ -1,30 +1,20 @@
-human|none menu: Press coins (refused: needs an item)
 human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Press coins (refused: needs an item)
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Press coins (refused: needs an item)
 human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Press coins (refused: needs an item)
 human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Press coins (refused: needs an item)
 human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Press coins (refused: needs an item)
 human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Press coins (refused: needs an item)
 human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Press coins (refused: needs an item)
 human|/obj/item/weldingtool click: nothing
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Press coins (refused: needs an item)
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Press coins
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Press coins (refused: needs an item)
+human|/obj/item/stack/material/steel click: Click: Press coins
 human|/obj/item/card/id click: nothing
 human|/obj/item/stack/material menu: Press coins
-human|/obj/item/stack/material click: nothing
-keys: drag_buckle, gen_insert_interaction_press, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+human|/obj/item/stack/material click: Click: Press coins
+keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, press
 

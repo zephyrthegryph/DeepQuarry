@@ -111,7 +111,6 @@ MSG_DEF_SELF(ore_bag/full, "It's too full to possibly fit anything else inside o
 		W.forceMove(get_turf(src))
 
 	W.on_exit_storage(src)
-	update_icon()
 	return 1
 
 /obj/item/ore_bag/proc/gather_all(turf/T, mob/user, silent = 0)

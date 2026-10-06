@@ -1,0 +1,5 @@
+/obj/machinery/transhuman/synthprinter icon: icons/obj/machines/synthpod.dmi
+/obj/machinery/transhuman/synthprinter state: pod_0
+/obj/machinery/transhuman/synthprinter dir: 2
+/obj/machinery/transhuman/synthprinter overlay: icons/obj/machines/synthpod.dmi:pod_0:8:#000000
+

@@ -12,9 +12,11 @@
 	var/mixer_angle = 0
 	var/mixer_rotation_rate = 45
 	var/got_input = FALSE
+TRACKED(/obj/machinery/reagent_refinery/mixer, got_input)
+TRACKED(/obj/machinery/reagent_refinery/mixer, mixer_angle)
 
 /obj/machinery/reagent_refinery/mixer/Initialize(mapload)
-	mixer_angle = dir2angle(dir)
+	set_mixer_angle(dir2angle(dir))
 	. = ..()
 	default_apply_parts()
 
@@ -30,24 +32,24 @@
 	if(mixer_angle == dir2angle(dir))
 		refinery_transfer()
 		if(reagents.total_volume <= 0)
-			mixer_angle += mixer_rotation_rate
-			mixer_angle = (360 + mixer_angle) % 360
+			set_mixer_angle(mixer_angle + (mixer_rotation_rate))
+			set_mixer_angle((360 + mixer_angle) % 360)
 			update_icon()
-		got_input = FALSE
+		set_got_input(FALSE)
 		return
 
 	// Check if we were filled...
 	if(mixer_angle % 90 != 0) // Not cardinal, keep going
-		got_input = TRUE
+		set_got_input(TRUE)
 	else if(!(locate_within(get_step(src,angle2dir(mixer_angle)), /obj/machinery/reagent_refinery))) // If nothing, keep rotating
-		got_input = TRUE
+		set_got_input(TRUE)
 
 	if(!got_input)
 		return
-	mixer_angle += mixer_rotation_rate
-	mixer_angle = (360 + mixer_angle) % 360
+	set_mixer_angle(mixer_angle + (mixer_rotation_rate))
+	set_mixer_angle((360 + mixer_angle) % 360)
 	update_icon()
-	got_input = FALSE
+	set_got_input(FALSE)
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/reagent_refinery/mixer/appearance_overlays()
@@ -76,20 +78,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/at
 	var/image/arm = image(icon, icon_state = "mixer_arm", dir = angle2dir(mixer_angle))
 	. += arm
 
-EXTEND_INTERACTIONS(/obj/machinery/reagent_refinery/mixer, \
-	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_set_rotation)), \
-	INTERACT_VERB("Set Mixer Rotation", PROC_REF(interaction_set_rotation), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now")), \
-)
-
-/obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation(datum/act/op/A)
+	var/mob/user = A.actor
 	if(mixer_rotation_rate > 0)
 		mixer_rotation_rate = -45
 		to_chat(user,span_notice("You set \the [src] to rotate counter clockwise."))
 	else
 		mixer_rotation_rate = 45
 		to_chat(user,span_notice("You set \the [src] to rotate clockwise."))
-	return TRUE
-
+	return OP_OK
 
 /obj/machinery/reagent_refinery/mixer/examine(mob/user, infix, suffix)
 	. = ..()
@@ -111,12 +108,8 @@ EXTEND_INTERACTIONS(/obj/machinery/reagent_refinery/mixer, \
 
 	// If we transfered anything, then inform process() of it!
 	if(.)
-		got_input = TRUE
+		set_got_input(TRUE)
 		update_icon()
-
-/obj/machinery/reagent_refinery/mixer/declare_interactions(list/into)
-	. = ..()
-	into -= /datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
 
 /// Busy while it turns between inputs; it waits (asleep) facing an input until reagents arrive.
 /obj/machinery/reagent_refinery/mixer/refinery_busy()
@@ -127,3 +120,8 @@ EXTEND_INTERACTIONS(/obj/machinery/reagent_refinery/mixer, \
 	if(!(locate_within(get_step(src, angle2dir(mixer_angle)), /obj/machinery/reagent_refinery)))
 		return TRUE
 	return got_input
+
+CAPABILITIES(/obj/machinery/reagent_refinery/mixer)
+	without("reagent_refinery_set_transfer_amount")
+	op("set_rotation", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_set_rotation)))
+	op("set_rotation_2", menu(), label("Set Mixer Rotation"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_set_rotation)))

@@ -2,3 +2,4 @@
 /obj/machinery/pda_multicaster|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
 /obj/machinery/pda_multicaster|ai|none => |
 /obj/machinery/pda_multicaster|ghost|none => |
+

@@ -33,7 +33,6 @@ CAPABILITIES(/obj/item/nifrepairer)
 		if((supply.get_free_space() >= efficiency) && np.use(1))
 			to_chat(user, span_notice("You convert some nanopaste into programmed nanites inside \the [src]."))
 			supply.add_reagent(id = REAGENT_ID_NIFREPAIRNANITES, amount = efficiency)
-			update_icon()
 		else if(supply.get_free_space() < efficiency)
 			to_chat(user, span_warning("\The [src] is too full. Empty it into a container first."))
 	return TRUE
@@ -41,7 +40,10 @@ CAPABILITIES(/obj/item/nifrepairer)
 /obj/item/nifrepairer/proc/appearance_filled()
 	return supply?.total_volume ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/nifrepairer, "{initial(icon_state)}{appearance_filled?2:}")
+/// The look (the draw sweep: from its template).
+/obj/item/nifrepairer/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_filled() ? "2" : ""]")
 
 /obj/item/nifrepairer/afterattack(atom/target, mob/user, proximity)
 	if(!target.is_open_container() || !target.reagents)
@@ -57,7 +59,7 @@ APPEARANCE_TEMPLATE(/obj/item/nifrepairer, "{initial(icon_state)}{appearance_fil
 
 	var/trans = supply.trans_to(target, 15)
 	to_chat(user, span_notice("You transfer [trans] units of the programmed nanites to [target]."))
-	update_icon()
+	changed(src)
 	return 1
 
 /obj/item/nifrepairer/examine(mob/user)

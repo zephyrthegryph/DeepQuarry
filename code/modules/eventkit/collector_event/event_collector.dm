@@ -101,7 +101,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 
 	set_current_step(0)
 
-	update_icon()
 
 
 /obj/structure/event_collector/proc/recipe_failed() //called when reset by an admin assuming they want it to be
@@ -244,7 +243,6 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_RE
 		if(active_recipe.len == 0)
 			start_recipe_process()
 		set_current_step(current_step + 1)
-		update_icon()
 		post_recipe_complete(user)
 		EXPIRY_SET(src, next_item_added, wait_between_items, CLOCK_WORLD)
 

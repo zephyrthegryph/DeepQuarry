@@ -1,0 +1,5 @@
+/obj/compass_holder icon: 
+/obj/compass_holder state: 
+/obj/compass_holder dir: 2
+/obj/compass_holder overlay: ::95 x24
+

@@ -56,6 +56,8 @@
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/reagent_refinery)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(anchored), wakes_on = list(nameof(anchored), nameof(stat)))
+	op("reagent_refinery_drain", inputs(item(/obj/item/reagent_containers/glass), item(/obj/item/reagent_containers/food/drinks/glass2), item(/obj/item/reagent_containers/food/drinks/shaker)), priority(OP_PRIORITY_DEFAULT - 1), label("Drain"), when(req(PROC_REF(has_reagents_holder_holds))), needs(req_reagents(0, more = TRUE, because = MSG(reagent_refinery/nothing_to_drain))), then(PROC_REF(interaction_drain)))
+	op("reagent_refinery_set_transfer_amount", menu(), label("Set transfer amount"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_set_transfer_amount)))
 
 /obj/machinery/reagent_refinery/proc/work_step(datum/act/timer/A)
 	var/before = reagents ? reagents.total_volume : 0
@@ -81,35 +83,25 @@ CAPABILITIES(/obj/machinery/reagent_refinery)
 		visible_message(span_danger("\The [src] splashes everywhere as it is disassembled!"))
 		reagents.splash_area(get_turf(src),2)
 
-/obj/machinery/reagent_refinery/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/reagent_refinery_drain,
-		/datum/interaction/machine_verb/reagent_refinery_set_transfer_amount,
-	)
-	..()
+MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to drain")
 
-/datum/interaction/machine_item/reagent_refinery_drain
-	id = "reagent_refinery_drain"
-	name = "Drain"
-	held_type = list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food/drinks/glass2, /obj/item/reagent_containers/food/drinks/shaker)
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/reagent_refinery/proc/has_reagents_holder, null))
-	effect = /obj/machinery/reagent_refinery/proc/interaction_drain
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/reagent_refinery/proc/has_reagents_to_drain))
-
-/// Requirement: something to drain.
-/obj/machinery/reagent_refinery/proc/has_reagents_to_drain(mob/user, atom/target, obj/item/held)
-	return reagents?.total_volume > 0 ? TRUE : "it's empty; there is nothing to drain"
+/// Requirement (was REQ_* has_reagents_holder): the legacy check answers TRUE to pass.
+/obj/machinery/reagent_refinery/proc/has_reagents_holder_holds(datum/act/op/A)
+	var/answer = has_reagents_holder(A.actor, src, A.held)
+	return !istext(answer) && !!answer
 
 /obj/machinery/reagent_refinery/proc/has_reagents_holder(mob/actor, atom/target, obj/item/held)
 	return !!reagents
 
-/obj/machinery/reagent_refinery/proc/interaction_drain(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/proc/interaction_drain(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	// Fill up the whole volume if we can, DUMP IT OUT
 	var/obj/item/reagent_containers/C = held
 	reagents.trans_to_obj(C, reagents.total_volume)
 	play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 	to_chat(user, "You drain \the [src] into \the [C].")
-	return TRUE
+	return OP_OK
 
 /obj/machinery/reagent_refinery/wrench_act(mob/user, obj/item/tool)
 	if(!anchored)
@@ -143,7 +135,8 @@ CAPABILITIES(/obj/machinery/reagent_refinery)
 	requires = list(REQ_INTERACTION_REACH)
 	effect = /obj/machinery/reagent_refinery/proc/interaction_set_transfer_amount
 
-/obj/machinery/reagent_refinery/proc/interaction_set_transfer_amount(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/proc/interaction_set_transfer_amount(datum/act/op/A)
+	var/mob/user = A.actor
 	var/N = rerun_ask(user, "k140", PROC_REF(interaction_set_transfer_amount), args, /datum/prompt/choice, question = "Amount per transfer from this:", title = "[src]", choices = possible_transfer_amounts)
 	if(isnull(N))
 		return

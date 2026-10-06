@@ -102,7 +102,6 @@ CAPABILITIES(/obj/machinery/power/rad_collector)
 	return OP_OK
 
 /obj/machinery/power/rad_collector/proc/tank_changed(datum/act/A)
-	update_icon()
 	return OP_OK
 
 /// Bolted down it joins the cable network on its tile; loose it leaves it.
@@ -128,15 +127,12 @@ CAPABILITIES(/obj/machinery/power/rad_collector)
 	Z.layer = initial(Z.layer)
 	if(active)
 		toggle_power()
-	else
-		update_icon()
 
 /obj/machinery/power/rad_collector/proc/toggle_power()
 	set_active(!active)
 	if(!active)
 		key_set(src, LOCK_LOCKED, FALSE)
 	flick(active ? "ca_active" : "ca_deactive", src)
-	update_icon()
 
 /obj/machinery/power/rad_collector/draw(datum/look/look)
 	..()

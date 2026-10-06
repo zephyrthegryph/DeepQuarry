@@ -25,11 +25,6 @@
 /obj/item/beartrap/start_active
 	deployed = TRUE
 
-/obj/item/beartrap/Initialize(mapload)
-	. = ..()
-	if(mapload && deployed)
-		update_icon()
-
 /obj/item/beartrap/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())
 
@@ -51,7 +46,7 @@
 
 	deployed = 1
 	user.drop_from_inventory(src)
-	update_icon()
+	changed(src)
 	set_anchored(TRUE)
 	log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
 
@@ -92,7 +87,7 @@ CAPABILITIES(/obj/item/beartrap)
 		MSG_OTHERS(span_danger("%U% has disarmed %T%.")))
 	deployed = 0
 	set_anchored(FALSE)
-	update_icon()
+	changed(src)
 
 /obj/item/beartrap/proc/attack_mob(mob/living/L)
 
@@ -145,25 +140,23 @@ CAPABILITIES(/obj/item/beartrap)
 			if(!has_buckled_mobs())
 				set_anchored(FALSE)
 			deployed = 0
-			update_icon()
+			changed(src)
 			log_and_message_admins("has sprung a [name] at \the [get_area(loc)], last touched by [forensic_data?.get_lastprint()]", L)
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/beartrap, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/beartrap/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/beartrap/draw(datum/look/look)
+	..()
 
 	if(!deployed)
 		if(camo_net)
-			alpha = 255
+			look.set_alpha(255)
 
-		icon_state = "beartrap0"
+		look.state("beartrap0")
 	else
 		if(camo_net)
-			alpha = 50
+			look.set_alpha(50)
 
-		icon_state = "beartrap1"
+		look.state("beartrap1")
 
 /obj/item/beartrap/hunting
 	name = "hunting trap"
@@ -228,12 +221,12 @@ CAPABILITIES(/obj/item/material/barbedwire)
 		task_timed(user, get_integrity() / MATERIAL_WEAR_UNIT, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done3), done_args = list(user))
 	else
 		return OP_DECLINE
+	return OP_OK
 
 /obj/item/material/barbedwire/proc/attack_hand_timed_done3(mob/user)
 	act_message(user, src, MSG_SELF(span_notice("You have collected %T%!")), \
 		MSG_OTHERS(span_danger("%U% has collected %T%.")))
 	set_anchored(FALSE)
-	update_icon()
 
 /// Old attack_self.
 /obj/item/material/barbedwire/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -254,7 +247,6 @@ CAPABILITIES(/obj/item/material/barbedwire)
 	user.drop_from_inventory(src)
 	forceMove(get_turf(src))
 	set_anchored(TRUE)
-	update_icon()
 
 /// Old attackby: wear from being hit, then falls through as its ..() did.
 /obj/item/material/barbedwire/proc/barbedwire_interaction_item(datum/act/op/A)
@@ -301,7 +293,10 @@ CAPABILITIES(/obj/item/material/barbedwire)
 
 	return OP_OK
 
-APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "{initial(icon_state)}{anchored?-out:}")
+/// The look (the draw sweep: from its template).
+/obj/item/material/barbedwire/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][anchored ? "-out" : ""]")
 
 /obj/item/material/barbedwire/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())
@@ -313,7 +308,6 @@ APPEARANCE_TEMPLATE(/obj/item/material/barbedwire, "{initial(icon_state)}{anchor
 				MSG_OTHERS(span_danger("%U% steps in %T%.")), \
 				MSG_BLIND(span_infoplain(span_bold("You hear a sharp rustling!"))))
 			attack_mob(L)
-			update_icon()
 	..()
 
 /obj/item/material/barbedwire/proc/shock(mob/user as mob, prb, target_zone = BP_TORSO)

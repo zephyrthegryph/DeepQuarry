@@ -400,7 +400,6 @@ EXTEND_INTERACTIONS(/obj/item/laserdome_hyperball, INTERACT_HAND_DEFAULT("Pick u
 	last_team = grabbing_team
 	//finally, announcer calls out which team has the ball
 	GLOB.global_announcer.autosay("[capitalize(grabbing_team)] team on offense!","Laserdome Announcer","Entertainment")
-	update_icon()
 	update_held_icon()
 
 /obj/structure/hyperball_pedestal
@@ -476,7 +475,6 @@ DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF
 		ball.forceMove(ball.start_pos) //teleport the ball back to the midfield
 		ball.icon_state = "[initial(ball.icon_state)]"
 		ball.item_state = "[initial(ball.item_state)]"
-		ball.update_icon()
 	return INTERACTION_HANDLED_PASS
 
 /obj/structure/hyperball_goal/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
@@ -509,7 +507,6 @@ DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF
 		ball.forceMove(ball.start_pos) //teleport the ball back to the midfield
 		ball.icon_state = "[initial(ball.icon_state)]"
 		ball.item_state = "[initial(ball.item_state)]"
-		ball.update_icon()
 	else
 		//todo; throw the ball in a random direction
 		src.visible_message("\The [ball] bounces off \the [src]'s rim!")

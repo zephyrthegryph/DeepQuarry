@@ -3,3 +3,4 @@
 /obj/machinery/readybutton|ai|none => gen_silicon_readybutton_silicon_refuse|
 /obj/machinery/readybutton|ghost|none => |
 /obj/machinery/readybutton|human|/obj/item => readybutton_touch,readybutton_press|
+

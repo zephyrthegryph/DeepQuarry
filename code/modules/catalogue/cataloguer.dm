@@ -58,7 +58,10 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 /obj/item/cataloguer/proc/appearance_busy()
 	return task_busy(src) ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy?_active:}")
+/// The look (the draw sweep: from its template).
+/obj/item/cataloguer/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_busy() ? "_active" : ""]")
 
 /obj/item/cataloguer/afterattack(atom/target, mob/user, proximity_flag)
 	// Things that invalidate the scan immediately.
@@ -108,7 +111,6 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 	if(istext(started))
 		scan_cleanup(target, user, effects)
 		return
-	update_icon()
 
 /datum/task/timed/cataloguer_scan
 	flags = IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE
@@ -153,7 +155,6 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 
 /obj/item/cataloguer/proc/scan_cleanup(atom/target, mob/user, list/effects)
 	// Now clean up the effects.
-	update_icon()
 	var/datum/beam/scan_beam = effects[1]
 	if(!QDELETED(scan_beam))
 		spent(scan_beam, user)
@@ -220,7 +221,6 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 	// Busy (a hold claims it) while the highlights are up.
 	if(istext(task_hold_busy(src, 2 SECONDS, TYPE_PROC_REF(/atom, update_icon))))
 		return
-	update_icon()
 	play_sfx(src, SFX_MACHINES_BEEP)
 
 	// First, get everything able to be scanned.
@@ -245,7 +245,6 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 			continue
 		A.filters -= filter
 
-	update_icon()
 	if(scannable_atoms.len)
 		play_sfx(src, SFX_MACHINES_PING)
 	else
@@ -306,7 +305,10 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 	scan_range = 3
 	toolspeed = 1
 
-APPEARANCE_TEMPLATE(/obj/item/cataloguer/compact, "{initial(icon_state)}{appearance_busy?_s:}")
+/// The look (the draw sweep: from its template).
+/obj/item/cataloguer/compact/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_busy() ? "_s" : ""]")
 
 /obj/item/cataloguer/compact/ui_action_click(mob/user, actiontype)
 	var/why = can_toggle_compact(user, src, null)

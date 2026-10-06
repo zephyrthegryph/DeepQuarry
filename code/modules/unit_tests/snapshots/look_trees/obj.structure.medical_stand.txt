@@ -1,0 +1,15 @@
+/obj/structure/medical_stand icon: icons/obj/medical_stand.dmi
+/obj/structure/medical_stand state: medical_stand_empty
+/obj/structure/medical_stand dir: 2
+/obj/structure/medical_stand overlay: icons/obj/medical_stand.dmi:medical_stand_empty:8:#000000
+/obj/structure/medical_stand/anesthetic icon: icons/obj/medical_stand.dmi
+/obj/structure/medical_stand/anesthetic state: medical_stand_empty
+/obj/structure/medical_stand/anesthetic dir: 2
+/obj/structure/medical_stand/anesthetic overlay: icons/obj/medical_stand.dmi:medical_stand_empty:8:#000000 x2
+/obj/structure/medical_stand/anesthetic overlay: icons/obj/medical_stand.dmi:tank_anest:-32767
+/obj/structure/medical_stand/anesthetic overlay: icons/obj/medical_stand.dmi:tube:-32767
+/obj/structure/medical_stand/dq_cleanup_probe icon: icons/obj/medical_stand.dmi
+/obj/structure/medical_stand/dq_cleanup_probe state: medical_stand_empty
+/obj/structure/medical_stand/dq_cleanup_probe dir: 2
+/obj/structure/medical_stand/dq_cleanup_probe overlay: icons/obj/medical_stand.dmi:medical_stand_empty:8:#000000
+

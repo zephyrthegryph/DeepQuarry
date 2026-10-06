@@ -9,6 +9,9 @@
 	var/honeycombs = 0 // Percent
 	var/list/frames	// List of frames inside.
 	var/maxFrames = 5
+TRACKED(/obj/machinery/beehive, honeycombs)
+
+TRACKED(/obj/machinery/beehive, closed)
 
 /// Percent.
 OM_FIELD(/obj/machinery/beehive, bee_count, 0, CHANGE_MACHINE_SETTINGS)
@@ -20,49 +23,72 @@ OM_DERIVE_FIELD(/obj/machinery/beehive, hive_active, list("bee_count", "smoked")
 	return bee_count || smoked
 
 CAPABILITIES(/obj/machinery/beehive)
+	ref_many(nameof(frames), /obj/item/honey_frame)
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(hive_active), wakes_on = list(nameof(bee_count), nameof(smoked)))
 	climb()
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("beehive_smoke", item(/obj/item/bee_smoker), priority(OP_PRIORITY_DEFAULT - 1), label("Smoke bees"), needs(req_is(nameof(closed), FALSE, because = MSG(beehive/closed))), then(PROC_REF(interaction_beehive_smoke)))
+	op("beehive_load_frame", item(/obj/item/honey_frame), priority(OP_PRIORITY_DEFAULT - 1), label("Load frame"), needs(req(PROC_REF(can_load_frame_holds), because = PROC_REF(can_load_frame_refusal))), then(PROC_REF(interaction_beehive_load_frame)))
+	op("beehive_bee_pack", item(/obj/item/bee_pack), priority(OP_PRIORITY_DEFAULT - 1), label("Move bees"), needs(req(PROC_REF(can_move_bees_holds), because = PROC_REF(can_move_bees_refusal))), then(PROC_REF(interaction_beehive_bee_pack)))
+	op("beehive_scan", item(/obj/item/analyzer/plant_analyzer), priority(OP_PRIORITY_DEFAULT - 1), label("Scan"), then(PROC_REF(interaction_beehive_scan)))
+	op("beehive_harvest", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Harvest honeycombs"), then(PROC_REF(interaction_beehive_harvest)))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/beehive/appearance_overlays()
-	. = list()
-	icon_state = "beehive"
+/obj/machinery/beehive/draw(datum/look/look)
+	..()
+	look.state("beehive")
 	if(closed)
-		. += "lid"
+		look.overlay("lid")
 	if(length(frames))
-		. += "empty[length(frames)]"
+		look.overlay("empty[length(frames)]")
 	if(honeycombs >= 100)
-		. += "full[round(honeycombs / 100)]"
+		look.overlay("full[round(honeycombs / 100)]")
 	if(!smoked)
 		switch(bee_count)
 			if(1 to 40)
-				. += "bees1"
+				look.overlay("bees1")
 			if(41 to 80)
-				. += "bees2"
+				look.overlay("bees2")
 			if(81 to 100)
-				. += "bees3"
+				look.overlay("bees3")
 
 /obj/machinery/beehive/examine(mob/user)
 	. = ..()
 	if(!closed)
 		. += "The lid is open."
 
-EXTEND_INTERACTIONS(/obj/machinery/beehive, \
-	INTERACT_INSERT(/obj/item/bee_smoker, PROC_REF(interaction_beehive_smoke), "Smoke bees", REQ_FIELD_NOT("closed", "you need to open it with a crowbar before smoking the bees")), \
-	INTERACT_INSERT(/obj/item/honey_frame, PROC_REF(interaction_beehive_load_frame), "Load frame", REQ_TARGET_STATE(/obj/machinery/beehive/proc/can_load_frame)), \
-	INTERACT_INSERT(/obj/item/bee_pack, PROC_REF(interaction_beehive_bee_pack), "Move bees", REQ_TARGET_STATE(/obj/machinery/beehive/proc/can_move_bees)), \
-	INTERACT_INSERT(/obj/item/analyzer/plant_analyzer, PROC_REF(interaction_beehive_scan), "Scan"), \
-	INTERACT_HAND_UNGATED("Harvest honeycombs", PROC_REF(interaction_beehive_harvest)), \
-)
+MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking the bees")
 
-/obj/machinery/beehive/proc/interaction_beehive_smoke(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* can_load_frame): the legacy check answers TRUE to pass.
+/obj/machinery/beehive/proc/can_load_frame_holds(datum/act/op/A)
+	var/obj/item/honey_frame/typed_held = A.held
+	var/answer = can_load_frame(A.actor, src, typed_held)
+	return !istext(answer) && !!answer
+
+/// Why can_load_frame_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/beehive/proc/can_load_frame_refusal(datum/act/op/A)
+	var/obj/item/honey_frame/typed_held = A.held
+	var/answer = can_load_frame(A.actor, src, typed_held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/// Requirement (was REQ_* can_move_bees): the legacy check answers TRUE to pass.
+/obj/machinery/beehive/proc/can_move_bees_holds(datum/act/op/A)
+	var/obj/item/bee_pack/typed_held = A.held
+	var/answer = can_move_bees(A.actor, src, typed_held)
+	return !istext(answer) && !!answer
+
+/// Why can_move_bees_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/beehive/proc/can_move_bees_refusal(datum/act/op/A)
+	var/obj/item/bee_pack/typed_held = A.held
+	var/answer = can_move_bees(A.actor, src, typed_held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/machinery/beehive/proc/interaction_beehive_smoke(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You smoke the bees in %T%.")), MSG_OTHERS(span_notice("%U% smokes the bees in %T%.")))
 	set_smoked(30)
-	update_icon()
-	return TRUE
+	return OP_OK
 
 /// Requirement: TRUE, or why this frame can't go in.
 /obj/machinery/beehive/proc/can_load_frame(mob/user, atom/target, obj/item/honey_frame/held)
@@ -74,13 +100,15 @@ EXTEND_INTERACTIONS(/obj/machinery/beehive, \
 		return "\The [held] is full with beeswax and honey, empty it in the extractor first"
 	return TRUE
 
-/obj/machinery/beehive/proc/interaction_beehive_load_frame(mob/user, obj/item/honey_frame/held, datum/interaction/interaction)
+/obj/machinery/beehive/proc/interaction_beehive_load_frame(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/honey_frame/held = A.held
 	act_message(user, src, MSG_SELF(span_notice("You load %I% into %T%.")), MSG_OTHERS(span_notice("%U% loads %I% into %T%.")), item = held)
-	update_icon()
+	changed(src)
 	user.drop_from_inventory(held)
 	held.forceMove(src)
 	rel_add(src, nameof(frames), held)
-	return TRUE
+	return OP_OK
 
 /// Requirement: TRUE, or why the bees can't be moved in or split out.
 /obj/machinery/beehive/proc/can_move_bees(mob/user, atom/target, obj/item/bee_pack/held)
@@ -94,7 +122,9 @@ EXTEND_INTERACTIONS(/obj/machinery/beehive, \
 		return "you need to open \the [src] with a crowbar before moving the bees"
 	return TRUE
 
-/obj/machinery/beehive/proc/interaction_beehive_bee_pack(mob/user, obj/item/bee_pack/held, datum/interaction/interaction)
+/obj/machinery/beehive/proc/interaction_beehive_bee_pack(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/bee_pack/held = A.held
 	if(held.full)
 		act_message(user, src, MSG_SELF(span_notice("You put the queen and the bees from %I% into %T%.")), \
 			MSG_OTHERS(span_notice("%U% puts the queen and the bees from %I% into %T%.")), \
@@ -107,10 +137,10 @@ EXTEND_INTERACTIONS(/obj/machinery/beehive, \
 			item = held)
 		set_bee_count(bee_count / 2)
 		held.fill()
-	update_icon()
-	return TRUE
+	return OP_OK
 
-/obj/machinery/beehive/proc/interaction_beehive_scan(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/beehive/proc/interaction_beehive_scan(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("Scan result of \the [src]..."))
 	to_chat(user, "Beehive is [bee_count ? "[round(bee_count)]% full" : "empty"].[bee_count > 90 ? " Colony is ready to split." : ""]")
 	if(length(frames))
@@ -121,13 +151,12 @@ EXTEND_INTERACTIONS(/obj/machinery/beehive, \
 		to_chat(user, "No frames installed.")
 	if(smoked)
 		to_chat(user, "The hive is smoked.")
-	return TRUE
+	return OP_OK
 
 /obj/machinery/beehive/proc/crowbar_used(datum/act/op/A)
 	var/mob/user = A.actor
-	closed = !closed
+	set_closed(!closed)
 	act_message(user, src, MSG_SELF(span_notice("You [closed ? "close" : "open"] %T%.")), MSG_OTHERS(span_notice("%U% [closed ? "closes" : "opens"] %T%.")))
-	update_icon()
 	return OP_OK
 
 /obj/machinery/beehive/proc/wrench_used(datum/act/op/A)
@@ -170,34 +199,33 @@ EXTEND_INTERACTIONS(/obj/machinery/beehive, \
 	if(honeycombs < 100 || !length(frames))
 		return
 	var/obj/item/honey_frame/H = pop(frames)
-	H.honey = 20
-	honeycombs -= 100
-	H.update_icon()
+	H.set_honey(20)
+	set_honeycombs(honeycombs - (100))
 	H.forceMove(get_turf(src))
-	update_icon()
+	changed(src)
 	harvest_next(user)
 
-/obj/machinery/beehive/proc/interaction_beehive_harvest(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/beehive/proc/interaction_beehive_harvest(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!closed)
 		if(honeycombs < 100)
 			to_chat(user, span_notice("There are no filled honeycombs."))
-			return TRUE
+			return OP_OK
 		if(!smoked && bee_count)
 			to_chat(user, span_notice("The bees won't let you take the honeycombs out like this, smoke them first."))
-			return TRUE
+			return OP_OK
 		act_message(user, src, MSG_SELF(span_notice("You start taking the honeycombs out of %T%...")), \
 			MSG_OTHERS(span_notice("%U% starts taking the honeycombs out of %T%.")))
 		harvest_next(user)
-		return TRUE
+		return OP_OK
+	return OP_DECLINE
 
 /obj/machinery/beehive/proc/work_step(datum/act/timer/A)
 	if(closed && !smoked && bee_count)
 		pollinate_flowers()
-		update_icon()
 	set_smoked(max(0, smoked - 1))
 	if(!smoked && bee_count)
 		set_bee_count(min(bee_count * 1.005, 100))
-		update_icon()
 
 /obj/machinery/beehive/proc/pollinate_flowers()
 	var/coef = bee_count / 100
@@ -206,7 +234,7 @@ EXTEND_INTERACTIONS(/obj/machinery/beehive, \
 		if(H.seed && !H.dead)
 			H.health += 0.05 * coef
 			++trays
-	honeycombs = min(honeycombs + 0.1 * coef * min(trays, 5), length(frames) * 100)
+	set_honeycombs(min(honeycombs + 0.1 * coef * min(trays, 5), length(frames) * 100))
 
 /obj/machinery/honey_extractor
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -224,12 +252,15 @@ EXTEND_INTERACTIONS(/obj/machinery/beehive, \
 	var/processing = 0
 	var/honey = 0
 
+TRACKED(/obj/machinery/honey_extractor, honey)
+
+TRACKED(/obj/machinery/honey_extractor, processing)
+
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
 /obj/machinery/honey_extractor/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
 	RefreshParts()
-	update_icon()
 
 /obj/machinery/honey_extractor/examine(mob/user)
 	. = ..()
@@ -244,13 +275,36 @@ EXTEND_INTERACTIONS(/obj/machinery/beehive, \
 		return "[initial(icon_state)]_moving"
 	return initial(icon_state)
 
-APPEARANCE_TEMPLATE(/obj/machinery/honey_extractor, "{appearance_state}")
-DECLARE_APPEARANCE(/obj/machinery/honey_extractor, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("centrifuge_panel"))))
+/// The look (the draw sweep: from its template and its layers).
+/obj/machinery/honey_extractor/draw(datum/look/look)
+	..()
+	look.state("[appearance_state()]")
+	if(panel_open == 1)
+		look.overlay("centrifuge_panel")
 
-EXTEND_INTERACTIONS(/obj/machinery/honey_extractor, \
-	INTERACT_INSERT(/obj/item/honey_frame, PROC_REF(interaction_honey_extractor_load_frame), "Load frame", REQ_ON(PRED_TARGET, /obj/machinery/honey_extractor/proc/ready_for_item, null), REQ_TARGET_STATE(/obj/machinery/honey_extractor/proc/can_extract_frame)), \
-	INTERACT_INSERT(/obj/item/reagent_containers/glass, PROC_REF(interaction_honey_extractor_collect), "Collect honey", REQ_ON(PRED_TARGET, /obj/machinery/honey_extractor/proc/ready_for_item, null), REQ_FIELD("honey", "there is no honey in it")), \
-)
+/// Requirement (was REQ_* ready_for_item): the legacy check answers TRUE to pass.
+/obj/machinery/honey_extractor/proc/ready_for_item_holds(datum/act/op/A)
+	var/answer = ready_for_item(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why ready_for_item_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/honey_extractor/proc/ready_for_item_refusal(datum/act/op/A)
+	var/answer = ready_for_item(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/// Requirement (was REQ_* can_extract_frame): the legacy check answers TRUE to pass.
+/obj/machinery/honey_extractor/proc/can_extract_frame_holds(datum/act/op/A)
+	var/obj/item/honey_frame/typed_held = A.held
+	var/answer = can_extract_frame(A.actor, src, typed_held)
+	return !istext(answer) && !!answer
+
+/// Why can_extract_frame_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/machinery/honey_extractor/proc/can_extract_frame_refusal(datum/act/op/A)
+	var/obj/item/honey_frame/typed_held = A.held
+	var/answer = can_extract_frame(A.actor, src, typed_held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+MSG_DEF_SELF(honey_extractor/honey, "there is no honey in it")
 
 /// The old attackby's shared guard: not spinning, powered, panel closed.
 /obj/machinery/honey_extractor/proc/ready_for_item(mob/actor, atom/target, obj/item/held)
@@ -268,26 +322,28 @@ EXTEND_INTERACTIONS(/obj/machinery/honey_extractor, \
 		return "\The [held] is empty, put it into a beehive"
 	return TRUE
 
-/obj/machinery/honey_extractor/proc/interaction_honey_extractor_load_frame(mob/user, obj/item/honey_frame/held, datum/interaction/interaction)
+/obj/machinery/honey_extractor/proc/interaction_honey_extractor_load_frame(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/honey_frame/held = A.held
 	act_message(user, src, MSG_SELF(span_notice("You load %I% into %T% and turn it on.")), \
 		MSG_OTHERS(span_notice("%U% loads %I%'s comb into %T% and turns it on.")), \
 		item = held)
-	processing = held.honey
-	update_icon()
+	set_processing(held.honey)
 	use_power_oneoff(active_power_usage * 5) //uses 5 second of active power at once, because I could not figure out how active powerdraw works and if or how the work is timed.
-	held.honey = 0
-	held.update_icon() //updates the honeyframe
+	held.set_honey(0)
 	after(src, 5 SECONDS, PROC_REF(finish_extracting))
-	return TRUE
+	return OP_OK
 
-/obj/machinery/honey_extractor/proc/interaction_honey_extractor_collect(mob/user, obj/item/reagent_containers/glass/held, datum/interaction/interaction)
+/obj/machinery/honey_extractor/proc/interaction_honey_extractor_collect(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/glass/held = A.held
 	var/transferred = min(held.reagents.maximum_volume - held.reagents.total_volume, honey)
 	held.reagents.add_reagent(REAGENT_ID_HONEY, transferred)
-	honey -= transferred
+	set_honey(honey - transferred)
 	act_message(user, src, MSG_SELF(span_notice("You collect [transferred] units of honey from %T% into %I%.")), \
 		MSG_OTHERS(span_notice("%U% collects honey from %T% into %I%.")), \
 		item = held)
-	return TRUE
+	return OP_OK
 
 /obj/item/bee_smoker
 	name = "bee smoker"
@@ -305,14 +361,16 @@ EXTEND_INTERACTIONS(/obj/machinery/honey_extractor, \
 
 	var/honey = 0
 
-/obj/item/honey_frame/Initialize(mapload)
-	. = ..()
-	update_icon()
+TRACKED(/obj/item/honey_frame, honey)
 
 /obj/item/honey_frame/proc/appearance_has_honey()
 	return honey > 0
 
-DECLARE_APPEARANCE(/obj/item/honey_frame, "appearance_has_honey", list("1" = list(APPEARANCE_OVERLAYS = list("honeycomb"))))
+/// The look (the draw sweep: from its layers).
+/obj/item/honey_frame/draw(datum/look/look)
+	..()
+	if(appearance_has_honey() == 1)
+		look.overlay("honeycomb")
 
 /obj/item/honey_frame/filled
 	name = "filled beehive frame"
@@ -364,28 +422,33 @@ CAPABILITIES(/obj/item/beehive_assembly)
 	pass_stack_colors = TRUE
 	supply_conversion_value = 0.5
 
-
-
 /obj/item/bee_pack
 	name = "bee pack"
 	desc = "Contains a queen bee and some worker bees. Everything you'll need to start a hive!"
 	icon = 'icons/obj/beekeeping.dmi'
 	icon_state = "beepack"
 	var/full = 1
+TRACKED(/obj/item/bee_pack, full)
 
-DECLARE_APPEARANCE(/obj/item/bee_pack, "full", list("0" = list(APPEARANCE_OVERLAYS = list("beepack-empty")), "1" = list(APPEARANCE_OVERLAYS = list("beepack-full"))))
+
+/// The look (the draw sweep: from its layers).
+/obj/item/bee_pack/draw(datum/look/look)
+	..()
+	switch("[full]")
+		if("0")
+			look.overlay("beepack-empty")
+		if("1")
+			look.overlay("beepack-full")
 
 /obj/item/bee_pack/proc/empty()
-	full = 0
+	set_full(0)
 	name = "empty bee pack"
 	desc = "A stasis pack for moving bees. It's empty."
-	update_icon()
 
 /obj/item/bee_pack/proc/fill()
-	full = initial(full)
+	set_full(initial(full))
 	name = initial(name)
 	desc = initial(desc)
-	update_icon()
 
 /obj/machinery/honey_extractor/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -408,6 +471,8 @@ CAPABILITIES(/obj/machinery/honey_extractor)
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("honey_extractor_load_frame", item(/obj/item/honey_frame), priority(OP_PRIORITY_DEFAULT - 1), label("Load frame"), needs(req(PROC_REF(ready_for_item_holds), because = PROC_REF(ready_for_item_refusal)), req(PROC_REF(can_extract_frame_holds), because = PROC_REF(can_extract_frame_refusal))), then(PROC_REF(interaction_honey_extractor_load_frame)))
+	op("honey_extractor_collect", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_DEFAULT - 1), label("Collect honey"), needs(req(PROC_REF(ready_for_item_holds), because = PROC_REF(ready_for_item_refusal)), req_is(nameof(honey), TRUE, because = MSG(honey_extractor/honey))), then(PROC_REF(interaction_honey_extractor_collect)))
 
 /obj/machinery/honey_extractor/proc/crowbar_used(datum/act/op/A)
 	if(processing)
@@ -416,6 +481,6 @@ CAPABILITIES(/obj/machinery/honey_extractor)
 
 /obj/machinery/honey_extractor/proc/finish_extracting()
 	new /obj/item/stack/material/wax(loc)
-	honey += processing
-	processing = 0
-	update_icon()
+	set_honey(honey + processing)
+	set_processing(0)
+	changed(src)

@@ -75,31 +75,13 @@ base_var	code/datums/containment/ledger.dm	/atom/movable/var/tmp/has_slot_hooks 
 base_var	code/datums/containment/ledger.dm	/atom/movable/var/tmp/move_hooks = 0
 base_var	code/datums/containment/lifecycle.dm	/atom/movable/var/tmp/atom/movable/lifecycle_successor
 base_var	code/datums/containment/pin.dm	/atom/movable/var/tmp/list/latent_pins
-base_var	code/modules/mob/living/life/dizzy_shake.dm	var/dizzy_was_resting
-base_var	code/modules/mob/living/life/jittery_shake.dm	var/jittery_was_resting
-base_var	code/game/gamemodes/changeling/state/changeling.dm	/mob/living/var/datum/changeling/changeling_state
-base_var	code/modules/crafting/crafting.dm	/mob/living/carbon/human/var/datum/personal_crafting/crafting
-base_var	code/modules/mob/living/carbon/human/species/station/traits/disabilities/gibbing.dm	var/disability_gut_pressure = 0
-base_var	code/modules/mob/living/carbon/human/species/station/traits/disabilities/gibbing.dm	var/disability_death_time = FALSE
-base_var	code/modules/mob/living/carbon/human/species/station/traits/disabilities/tourettes.dm	var/list/disability_motor_tics
-base_var	code/modules/recycling/disposal_connection.dm	/obj/var/tmp/datum/disposal_system_connection/disposal_connection
-base_var	code/modules/materials/containers/machine_shim.dm	/mob/var/datum/using_machine_shim/machine_shim
-base_var	code/modules/mob/mind_host.dm	/obj/item/var/datum/mind_host/mind_host
-base_var	code/modules/lighting/overlay_lighting.dm	var/tmp/datum/overlay_lighting/overlay_light
-base_var	code/datums/reactive_icon_update.dm	/obj/var/tmp/datum/reactive_icon_update/reactive_icon
-base_var	code/modules/reagents/hose/connector.dm	/atom/movable/var/list/hose_connectors
-base_var	code/modules/mob/remote_view.dm	var/tmp/datum/remote_view/remote_view
-base_var	code/modules/mob/living/carbon/human/species/shadekin/state/powers/phase_shift.dm	/mob/living/var/tmp/dq_phase_shift_pending_cost = 0
-base_var	code/modules/mob/living/carbon/human/species/shadekin/state/shadekin.dm	/mob/living/var/datum/shadekin/shadekin
-base_var	code/modules/mob/living/carbon/human/species/station/xenochimera_state.dm	/mob/living/carbon/human/var/datum/xenochimera/xenochimera
-base_var	code/modules/mob/living/carbon/human/species/station/traits/states/_trait_state.dm	/mob/living/var/list/trait_states
-base_var	code/modules/mob/living/turfslip.dm	/mob/living/var/datum/turfslip/turfslip
 base_var	code/datums/interactions/construction.dm	/atom/var/construction_graph
 base_var	code/datums/lifecycle/verbs.dm	/atom/movable/var/lifecycle_lifetime = 0
 base_var	code/datums/lifecycle/verbs.dm	/atom/movable/var/tmp/lifecycle_lifetime_timer
 base_var	code/datums/lifecycle/verbs.dm	/mob/living/var/delete_on_death = FALSE
 base_var	code/datums/properties/constraints.dm	var/list/constraint_overrides
 base_var	code/datums/properties/families/temperature_thresholds.dm	var/insulation = 0
+base_var	code/datums/reactive_icon_update.dm	/obj/var/tmp/datum/reactive_icon_update/reactive_icon
 base_var	code/datums/recursive_move.dm	var/tmp/datum/recursive_move/recursive_move
 base_var	code/datums/rules/world_adapter.dm	/atom/var/tmp/datum/dq_rx_node/rx_node
 base_var	code/datums/soul_link.dm	var/list/datum/soul_link/owned_soul_links // Soul links we are the owner of (owned: deleted with us).
@@ -186,6 +168,7 @@ base_var	code/game/atoms_movable.dm	var/movement_type = NONE
 base_var	code/game/atoms_movable.dm	var/autotransferable = TRUE // Toggle for autotransfer mechanics.
 base_var	code/game/atoms_movable.dm	var/listening_recursive = NON_LISTENING_ATOM
 base_var	code/game/atoms_movable.dm	var/unacidable = TRUE
+base_var	code/game/gamemodes/changeling/state/changeling.dm	/mob/living/var/datum/changeling/changeling_state
 base_var	code/game/gamemodes/cult/cultify/mob.dm	var/tmp/image/narsimage = null
 base_var	code/game/gamemodes/cult/cultify/mob.dm	var/tmp/image/narglow = null
 base_var	code/game/gamemodes/endgame/supermatter_cascade/portal.dm	var/tmp/image/riftimage = null
@@ -351,6 +334,8 @@ base_var	code/modules/body/factors.dm	var/alist/worn_factors
 base_var	code/modules/body/injury.dm	var/list/injury_trace
 base_var	code/modules/body/injury.dm	var/injury_kind = INJURY_BLUNT
 base_var	code/modules/body/injury.dm	var/alist/injury_kinds
+base_var	code/modules/body/organs/blood.dm	/mob/living/carbon/human/var/datum/reagents/vessel // Container for blood and BLOOD ONLY. Do not transfer other chems here.
+base_var	code/modules/body/organs/blood.dm	/mob/living/carbon/human/var/var/pale = 0 // Should affect how mob sprite is drawn, but currently doesn't.
 base_var	code/modules/catalogue/atoms.dm	var/list/catalogue_data = null
 base_var	code/modules/client/verbs/suicide.dm	/mob/var/suiciding = 0
 base_var	code/modules/combat_ai/integration/mob_living.dm	var/datum/ai_brain/ai_brain = null
@@ -366,6 +351,7 @@ base_var	code/modules/combat_ai/legacy_constants/say_list.dm	var/death_sound_ove
 base_var	code/modules/combat_ai/legacy_constants/say_list.dm	var/datum/looping_sound/mob/on_fire/firesoundloop
 base_var	code/modules/contracts/medical_trial.dm	var/list/contract_medical_indications
 base_var	code/modules/contracts/medical_trial.dm	var/list/clinical_exposure_history
+base_var	code/modules/crafting/crafting.dm	/mob/living/carbon/human/var/datum/personal_crafting/crafting
 base_var	code/modules/detectivework/tools/rag.dm	var/bloody_hands = 0
 base_var	code/modules/detectivework/tools/rag.dm	var/track_blood = 0
 base_var	code/modules/detectivework/tools/rag.dm	var/list/feet_blood_DNA
@@ -406,8 +392,10 @@ base_var	code/modules/lighting/lighting_atom.dm	var/light_cone_y_offset // When 
 base_var	code/modules/lighting/lighting_atom.dm	var/tmp/affecting_dynamic_lumi = 0
 base_var	code/modules/lighting/lighting_atom.dm	var/blocks_emissive = EMISSIVE_BLOCK_NONE
 base_var	code/modules/lighting/lighting_atom.dm	var/tmp/atom/movable/emissive_blocker/em_block
+base_var	code/modules/lighting/overlay_lighting.dm	var/tmp/datum/overlay_lighting/overlay_light
 base_var	code/modules/maps/map_resolvers.dm	var/map_resolver
 base_var	code/modules/maps/map_resolvers.dm	var/map_resolver_vars
+base_var	code/modules/materials/containers/machine_shim.dm	/mob/var/datum/using_machine_shim/machine_shim
 base_var	code/modules/materials/material_behaviors.dm	var/mat_luminescence = 0
 base_var	code/modules/materials/material_behaviors.dm	var/mat_radioactivity = 0
 base_var	code/modules/materials/material_behaviors.dm	var/mat_toxicity = 0
@@ -436,7 +424,6 @@ base_var	code/modules/mob/living/carbon/carbon.dm	var/synth_reag_processing = TR
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/datum/species/species //Contains icon generation and language information, set during New().
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/list/antibodies = list() // ALLOW(instance_list): d: per-mob antibodies, filled at runtime; mobs are few
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/life_tick = 0 // The amount of life ticks that have processed on this mob.
-base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/list/surgery_zones_in_progress
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/pose = null
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/pose_move = FALSE
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/image/pose_indicator
@@ -575,9 +562,16 @@ base_var	code/modules/mob/living/carbon/human/life.dm	var/environment_steady = F
 base_var	code/modules/mob/living/carbon/human/life.dm	var/nutrition_drained_at = 0
 base_var	code/modules/mob/living/carbon/human/life.dm	/mob/living/carbon/human/var/tmp/health_doll_key
 base_var	code/modules/mob/living/carbon/human/life.dm	var/synth_cosmetic_pain = FALSE
+base_var	code/modules/mob/living/carbon/human/species/shadekin/state/powers/phase_shift.dm	/mob/living/var/tmp/dq_phase_shift_pending_cost = 0
+base_var	code/modules/mob/living/carbon/human/species/shadekin/state/shadekin.dm	/mob/living/var/datum/shadekin/shadekin
 base_var	code/modules/mob/living/carbon/human/species/station/protean/forms.dm	/mob/living/carbon/human/var/datum/forms/character_forms
 base_var	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	/mob/living/var/vore_shred_time = 45 SECONDS
 base_var	code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm	var/flight_vore = FALSE
+base_var	code/modules/mob/living/carbon/human/species/station/traits/disabilities/gibbing.dm	var/disability_gut_pressure = 0
+base_var	code/modules/mob/living/carbon/human/species/station/traits/disabilities/gibbing.dm	var/disability_death_time = FALSE
+base_var	code/modules/mob/living/carbon/human/species/station/traits/disabilities/tourettes.dm	var/list/disability_motor_tics
+base_var	code/modules/mob/living/carbon/human/species/station/traits/states/_trait_state.dm	/mob/living/var/list/trait_states
+base_var	code/modules/mob/living/carbon/human/species/station/xenochimera_state.dm	/mob/living/carbon/human/var/datum/xenochimera/xenochimera
 base_var	code/modules/mob/living/carbon/human/update_icons.dm	var/list/overlays_standing[TOTAL_LAYERS] // ALLOW(instance_list): d: per-mob overlays_standing, filled at runtime; mobs are few
 base_var	code/modules/mob/living/carbon/human/update_icons.dm	var/previous_damage_appearance // store what the body last looked like, so we only have to update it if something changed
 base_var	code/modules/mob/living/carbon/shock.dm	/mob/living/var/traumatic_shock = 0
@@ -585,6 +579,8 @@ base_var	code/modules/mob/living/carbon/shock.dm	/mob/living/carbon/var/shock_st
 base_var	code/modules/mob/living/default_language.dm	var/datum/language/default_language
 base_var	code/modules/mob/living/inventory.dm	var/hand = null
 base_var	code/modules/mob/living/inventory.dm	var/obj/item/tank/internal = null//Human/Monkey
+base_var	code/modules/mob/living/life/dizzy_shake.dm	var/dizzy_was_resting
+base_var	code/modules/mob/living/life/jittery_shake.dm	var/jittery_was_resting
 base_var	code/modules/mob/living/life/life_om.dm	var/life_set = LIFE_SET_LIVING
 base_var	code/modules/mob/living/life/life_om.dm	var/tmp/life_z = 0
 base_var	code/modules/mob/living/life/living_systems.dm	var/tmp/list/global_hud_claims
@@ -657,6 +653,8 @@ base_var	code/modules/mob/living/organs.dm	var/list/organs
 base_var	code/modules/mob/living/organs.dm	var/list/organs_by_name // map organ names to organs
 base_var	code/modules/mob/living/silicon/robot/component.dm	/obj/item/var/datum/carried_afflictions/carried_afflictions
 base_var	code/modules/mob/living/status_indicators.dm	var/list/status_indicators = null // Will become a list as needed.
+base_var	code/modules/mob/living/turfslip.dm	/mob/living/var/datum/turfslip/turfslip
+base_var	code/modules/mob/mind_host.dm	/obj/item/var/datum/mind_host/mind_host
 base_var	code/modules/mob/mob.dm	var/tmp/user_vars_to_edit //fun times :3 - pretty much just grabbed from tg immabehonest - list(variable_name = variable_value) eg list("name" = "Wizardly Wizard", "real_name" = "Wizardly Wizard")
 base_var	code/modules/mob/mob.dm	var/tmp/user_vars_remembered //not needed for manual editing, just stores the original vars from the above list to make sure they go back to normal later
 base_var	code/modules/mob/mob_chunks.dm	/atom/movable/var/tmp/list/proximity_chunks
@@ -791,9 +789,8 @@ base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/xenochimera
 base_var	code/modules/mob/mob_defines.dm	var/size_multiplier = 1 //multiplier for the mob's icon size
 base_var	code/modules/mob/mob_defines.dm	var/accumulated_rads = 0 // For radiation stuff.
 base_var	code/modules/mob/mob_defines.dm	var/faction_bump_vore = FALSE // Don't bump nom mobs of the same faction
+base_var	code/modules/mob/remote_view.dm	var/tmp/datum/remote_view/remote_view
 base_var	code/modules/nifsoft/nif.dm	/mob/living/carbon/human/var/obj/item/nif/nif
-base_var	code/modules/body/organs/blood.dm	/mob/living/carbon/human/var/datum/reagents/vessel // Container for blood and BLOOD ONLY. Do not transfer other chems here.
-base_var	code/modules/body/organs/blood.dm	/mob/living/carbon/human/var/var/pale = 0 // Should affect how mob sprite is drawn, but currently doesn't.
 base_var	code/modules/persistence/serialize.dm	var/tmp/map_json_data
 base_var	code/modules/projectiles/autofire.dm	var/tmp/autofire_delay = 0
 base_var	code/modules/projectiles/autofire.dm	var/tmp/obj/item/gun/autofire_gun
@@ -801,7 +798,9 @@ base_var	code/modules/projectiles/autofire.dm	var/tmp/atom/autofire_target
 base_var	code/modules/projectiles/autofire.dm	var/tmp/autofire_params = null
 base_var	code/modules/projectiles/targeting/targeting_mob.dm	/mob/living/var/obj/aiming_overlay/aiming
 base_var	code/modules/projectiles/targeting/targeting_mob.dm	/mob/living/var/list/aimed = list()
+base_var	code/modules/reagents/hose/connector.dm	/atom/movable/var/list/hose_connectors
 base_var	code/modules/reagents/reagent_containers/glass.dm	/mob/living/var/tmp/venom_milking_cd = 0
+base_var	code/modules/recycling/disposal_connection.dm	/obj/var/tmp/datum/disposal_system_connection/disposal_connection
 base_var	code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm	/atom/movable/var/tmp/datum/experiment_handler/experiment_handler
 base_var	code/modules/resleeving/infocore_records.dm	/mob/living/carbon/human/var/resleeve_lock
 base_var	code/modules/resleeving/infocore_records.dm	/mob/living/carbon/human/var/changeling_locked

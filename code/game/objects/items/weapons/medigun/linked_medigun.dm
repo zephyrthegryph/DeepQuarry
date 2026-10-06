@@ -119,7 +119,6 @@ CAPABILITIES(/obj/item/bork_medigun/linked)
 
 	rel_set(src, nameof(current_target), target)
 	busy = MEDIGUN_BUSY
-	update_icon()
 	var/myicon = "medbeam_basic"
 	var/mycolor = "#037ffc"
 	var/datum/beam/scan_beam = user.Beam(target, icon = 'icons/obj/borkmedigun.dmi', icon_state = myicon, time = 6000)
@@ -139,7 +138,6 @@ CAPABILITIES(/obj/item/bork_medigun/linked)
 	rel_clear(src, nameof(current_target))
 
 	// Now clean up the effects.
-	update_icon()
 	QDEL_NULL(scan_beam)
 	target.filters -= filter
 	if(user.client) // If for some reason they logged out mid-scan the box will be gone anyways.
@@ -201,7 +199,7 @@ CAPABILITIES(/obj/item/bork_medigun/linked)
 	if(treated)
 		checked_use(min(10, treated))
 		ishealing = TRUE
-	medigun_base_unit().update_icon()
+	changed(medigun_base_unit())
 
 	//Blood regeneration if there is some space
 	if(lastier >= 5)

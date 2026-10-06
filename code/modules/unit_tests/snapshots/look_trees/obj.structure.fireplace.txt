@@ -1,0 +1,9 @@
+/obj/structure/fireplace icon: icons/obj/fireplace.dmi
+/obj/structure/fireplace state: fireplace
+/obj/structure/fireplace dir: 2
+/obj/structure/fireplace overlay: icons/obj/fireplace.dmi:fireplace:8:#000000
+/obj/structure/fireplace/barrel icon: icons/obj/fireplace.dmi
+/obj/structure/fireplace/barrel state: barrelfire
+/obj/structure/fireplace/barrel dir: 2
+/obj/structure/fireplace/barrel overlay: icons/obj/fireplace.dmi:barrelfire:8:#000000
+

@@ -76,7 +76,6 @@
 			var/obj/B = new container_type(src)
 			B.reagents.add_reagent(chem, 60)
 			rel_add(src, nameof(beakers), B)
-	update_icon()
 
 /// Declared icon_state suffix: "-empty", the tracked dart count, or nothing.
 /obj/item/gun/projectile/dartgun/proc/appearance_suffix()
@@ -85,7 +84,10 @@
 	if(!track_magazine)
 		return ""
 	return "-[min(length(ammo_magazine.stored_ammo), default_magazine_casing_count)]"
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/dartgun, "{base_state}{appearance_suffix}")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/dartgun/draw(datum/look/look)
+	..()
+	look.state("[base_state][appearance_suffix()]")
 
 /obj/item/gun/projectile/dartgun/consume_next_projectile()
 	. = ..()
@@ -196,7 +198,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/dartgun, "{base_state}{appearance_s
 	allowed_magazines = list(/obj/item/ammo_magazine/chemdart)
 	auto_eject = 0
 
-APPEARANCE_TEMPLATE(/obj/item/gun/projectile/dartgun/tranq, "tranqgun")
+/// The look (the draw sweep: from its template).
+/obj/item/gun/projectile/dartgun/tranq/draw(datum/look/look)
+	..()
+	look.state("tranqgun")
 
 // This is to allow xenobio to activate slime cores via remote.
 /obj/item/projectile/bullet/chemdart/on_hit(atom/target, blocked = 0, def_zone = null)

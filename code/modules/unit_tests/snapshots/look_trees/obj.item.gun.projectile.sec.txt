@@ -1,0 +1,13 @@
+/obj/item/gun/projectile/sec icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/sec state: secguncomp
+/obj/item/gun/projectile/sec dir: 2
+/obj/item/gun/projectile/sec overlay: icons/obj/gun.dmi:secguncomp:8:#000000
+/obj/item/gun/projectile/sec/flash icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/sec/flash state: secguncomp
+/obj/item/gun/projectile/sec/flash dir: 2
+/obj/item/gun/projectile/sec/flash overlay: icons/obj/gun.dmi:secguncomp:8:#000000
+/obj/item/gun/projectile/sec/wood icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/sec/wood state: secgundark
+/obj/item/gun/projectile/sec/wood dir: 2
+/obj/item/gun/projectile/sec/wood overlay: icons/obj/gun.dmi:secgundark:8:#000000
+

@@ -92,7 +92,7 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 /datum/turbolift/proc/update_ext_panel_icons()
 	for(var/datum/turbolift_floor/floor in floors)
 		if(floor.ext_panel)
-			floor.ext_panel.update_icon()
+			changed(floor.ext_panel) // the button draws the lift's modes, which publish nothing
 
 /datum/turbolift/proc/doors_are_open(datum/turbolift_floor/use_floor)
 	if(!use_floor)

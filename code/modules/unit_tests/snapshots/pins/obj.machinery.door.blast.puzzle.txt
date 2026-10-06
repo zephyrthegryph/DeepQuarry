@@ -42,5 +42,18 @@ human|/obj/item/card/id menu: Open
 human|/obj/item/card/id menu: Strike
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Open
+human|/obj/item menu: Strike
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
+human|/obj/item/card/emag menu: Open
+human|/obj/item/card/emag menu: Strike
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/stack/material/plasteel menu: Open
+human|/obj/item/stack/material/plasteel menu: Repair (refused: It is already fully repaired.)
+human|/obj/item/stack/material/plasteel menu: Strike
+human|/obj/item/stack/material/plasteel menu: Use
+human|/obj/item/stack/material/plasteel click: Click: Repair
 keys: drag_buckle, emag.subvert, emag.use, force_generic, force_xeno, gen_robot_interaction_swallow, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_repair, mend, puzzle_strike, repair, strike, touch, use
 

@@ -28,7 +28,6 @@
 		if(filled_reagents)
 			for(var/r in filled_reagents)
 				reagents.add_reagent(r, LAZYACCESS(filled_reagents, r))
-	update_icon()
 
 // A hypospray is a holder of its volume that is poured into like any open container, and that puts one transfer into the blood of a person by a click
 // (injector(), code/library/reagents/injector.dm): at once, or after three seconds when the hypospray is the prototype or the one injected is awake and
@@ -112,11 +111,13 @@ MSG_DEF(hypo/loaded, "You load %I% into %T%.", "%U% has loaded %I% into %T%.")
 	user.put_in_hands(loaded_vial)
 	rel_take(src, nameof(loaded_vial))
 	balloon_alert(user, "vial removed from \the [src]")
-	update_icon()
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 	return OP_OK
 
-APPEARANCE_TEMPLATE(/obj/item/reagent_containers/hypospray/vial, "{initial(icon_state)}{loaded_vial?:_empty}")
+/// The look (the draw sweep: from its template).
+/obj/item/reagent_containers/hypospray/vial/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][loaded_vial ? "" : "_empty"]")
 
 /// The vial goes in (the wait is over): its contents are the hypospray's.
 /obj/item/reagent_containers/hypospray/vial/proc/vial_loaded(datum/act/op/A)
@@ -131,7 +132,6 @@ APPEARANCE_TEMPLATE(/obj/item/reagent_containers/hypospray/vial, "{initial(icon_
 	reagents.maximum_volume = loaded_vial.reagents.maximum_volume
 	loaded_vial.reagents.trans_to_holder(reagents,volume)
 	balloon_alert_visible("[user] has loaded [W] into \the [src].", "loaded [W] into \the [src].")
-	update_icon()
 	play_sfx(src, SFX_WEAPONS_EMPTY)
 	return OP_OK
 
@@ -151,7 +151,7 @@ APPEARANCE_TEMPLATE(/obj/item/reagent_containers/hypospray/vial, "{initial(icon_
 
 /obj/item/reagent_containers/hypospray/autoinjector/on_reagent_change()
 	..()
-	update_icon()
+	changed(src)
 
 /obj/item/reagent_containers/hypospray/autoinjector/empty
 	filled = 0
@@ -159,19 +159,26 @@ APPEARANCE_TEMPLATE(/obj/item/reagent_containers/hypospray/vial, "{initial(icon_
 /obj/item/reagent_containers/hypospray/autoinjector/used/Initialize(mapload)
 	. = ..()
 	cap_key_set(src, REAGENT_CONTAINER_LID_OPEN, FALSE)
-	icon_state = "[initial(icon_state)]0"
+
+/// A used injector shows spent, whatever it still holds.
+/obj/item/reagent_containers/hypospray/autoinjector/used/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)]0")
 
 /obj/item/reagent_containers/hypospray/autoinjector/do_injection(mob/living/carbon/human/H, mob/living/user)
 	. = ..()
 	if(.) // Will occur if successfully injected.
 		cap_key_set(src, REAGENT_CONTAINER_LID_OPEN, FALSE)
-		update_icon()
+		changed(src)
 
 /// Appearance reader: TRUE while the autoinjector holds reagents.
 /obj/item/reagent_containers/hypospray/autoinjector/proc/appearance_filled()
 	return reagents?.total_volume > 0 ? TRUE : FALSE
 
-APPEARANCE_TEMPLATE(/obj/item/reagent_containers/hypospray/autoinjector, "{initial(icon_state)}{appearance_filled?1:0}")
+/// The look (the draw sweep: from its template).
+/obj/item/reagent_containers/hypospray/autoinjector/draw(datum/look/look)
+	..()
+	look.state("[initial(icon_state)][appearance_filled() ? "1" : "0"]")
 
 /obj/item/reagent_containers/hypospray/autoinjector/examine(mob/user)
 	. = ..()

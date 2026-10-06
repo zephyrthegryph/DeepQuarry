@@ -102,7 +102,6 @@ CAPABILITIES(/obj/machinery/meter)
 		refresh()
 
 /obj/machinery/meter/proc/needle_moved(datum/act/A)
-	update_icon()
 
 /obj/machinery/meter/draw(datum/look/look)
 	..()

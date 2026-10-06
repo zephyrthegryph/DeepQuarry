@@ -52,5 +52,9 @@ human|/obj/item/card/id menu: Make Deployable
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item/disk/nuclear menu: Make Deployable
+human|/obj/item/disk/nuclear menu: Ui open
+human|/obj/item/disk/nuclear menu: Use
+human|/obj/item/disk/nuclear click: Click: Ui open
 keys: anchor, auth, drag_buckle, gen_robot_interaction_swallow, insert_disk, machine_anchor, machine_deconstruct, machine_panel, machine_repair, make_deployable, pulse, safety, time, timer, type, ui_open, use, use_crowbar, use_screwdriver, use_welder, use_wrench, wire
 

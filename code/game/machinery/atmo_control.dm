@@ -37,7 +37,11 @@
 
 	var/datum/radio_frequency/radio_connection
 
-APPEARANCE_TEMPLATE(/obj/machinery/air_sensor, "gsensor{on}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/air_sensor/draw(datum/look/look)
+	..()
+	look.state("gsensor[on]")
+
 TRACKED(/obj/machinery/air_sensor, output)
 
 /// What the sensor reports from `air_sample`, at the resolution it broadcasts.

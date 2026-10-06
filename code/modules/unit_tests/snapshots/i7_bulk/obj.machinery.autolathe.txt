@@ -2,3 +2,4 @@
 /obj/machinery/autolathe|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/autolathe|ai|none => |
 /obj/machinery/autolathe|ghost|none => |
+

@@ -6,7 +6,7 @@
 	var/obj/item/reagent_containers/glass/beaker/beaker = allocate(/obj/item/reagent_containers/glass/beaker, T)
 	beaker.reagents.add_reagent(REAGENT_ID_WATER, 10)
 	TEST_ASSERT(actor.put_in_active_hand(beaker), "The actor must hold the actual reagent container")
-	TEST_ASSERT(drip.iv_drip_interaction_item(actor, beaker, null), "The real insertion effect must accept the container")
+	TEST_ASSERT_EQUAL(test_op_handler(drip, "iv_drip_interaction_item", actor, beaker), OP_OK, "The real insertion effect must accept the container")
 	TEST_ASSERT_EQUAL(drip.beaker, beaker, "The actual drip must own the inserted container")
 	TEST_ASSERT_NULL(actor.get_active_hand(), "Insertion must release the actor's hand")
 	var/drip_handle = om_handle(drip)

@@ -21,17 +21,6 @@ OM_FIELD(/obj/machinery/dnaforensics, scanning, FALSE, CHANGE_MACHINE_SETTINGS)
 	. = ..()
 	default_apply_parts()
 
-EXTEND_INTERACTIONS(/obj/machinery/dnaforensics, \
-	INTERACT_ITEM("Insert swab", PROC_REF(interaction_insert_swab), REQ_ON(PRED_TARGET, /obj/machinery/dnaforensics/proc/no_sample_loaded, "there is a sample in the machine"), REQ_ON(PRED_TARGET, /obj/machinery/dnaforensics/proc/not_currently_scanning, "it is busy scanning right now"), REQ_TARGET_STATE(/obj/machinery/dnaforensics/proc/can_insert_swab)), \
-	INTERACT_HAND_UNGATED("Use", TYPE_PROC_REF(/atom, interaction_open_ui)), \
-)
-
-/obj/machinery/dnaforensics/proc/no_sample_loaded(mob/actor, atom/target, obj/item/held)
-	return !bloodsamp()
-
-/obj/machinery/dnaforensics/proc/not_currently_scanning(mob/actor, atom/target, obj/item/held)
-	return !scanning
-
 /// A used forensic swab must be releasable before the analyzer accepts it.
 /obj/machinery/dnaforensics/proc/can_insert_swab(mob/user, atom/target, obj/item/held)
 	var/obj/item/forensics/swab/swab = held
@@ -41,26 +30,29 @@ EXTEND_INTERACTIONS(/obj/machinery/dnaforensics, \
 			return reason
 	return TRUE
 
-/obj/machinery/dnaforensics/proc/interaction_insert_swab(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/dnaforensics/proc/interaction_insert_swab(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/obj/item/forensics/swab/swab = W
 	if(istype(swab) && swab.is_used())
 		if(can_insert_swab(user, src, swab) != TRUE)
-			return FALSE
+			return OP_DECLINE
 		if(!swab.loc.release_to(swab, src, null, user))
-			return FALSE
+			return OP_DECLINE
 		rel_set(src, nameof(bloodsamp), swab)
 		to_chat(user, span_notice("You insert [W] into [src]."))
-		update_icon()
 	else
 		to_chat(user, span_warning("\The [src] only accepts used swabs."))
-	return TRUE
+	return OP_OK
 
 CAPABILITIES(/obj/machinery/dnaforensics)
+	ref_one(nameof(bloodsamp), /obj/item/forensics/swab)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(scanning), wakes_on = list(nameof(scanning)))
 	interface("DNAForensics", title = "QuikScan DNA Analyzer")
 	without("ui_open")
 	op("scanItem", ui_act("scanItem"), then(PROC_REF(ui_act_scanitem)))
 	op("ejectItem", ui_act("ejectItem"), then(PROC_REF(ui_act_ejectitem)))
+	op("insert_swab", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert swab"), needs(req_empty(nameof(bloodsamp), because = MSG(dnaforensics/sample_loaded)), req_is(nameof(scanning), FALSE, because = MSG(dnaforensics/scanning)), req_held_releasable()), then(PROC_REF(interaction_insert_swab)))
 
 /obj/machinery/dnaforensics/ui_prepare(mob/user, datum/tgui/ui)
 	if(has_stat(NOPOWER))
@@ -96,14 +88,12 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 	. = TRUE
 	if(scanning)
 		set_scanning(FALSE)
-		update_icon()
 	else
 		if(bloodsamp())
 			scanner_progress = 0
 			set_scanning(TRUE)
 			EXPIRY_STAMP(src, last_process_worldtime, CLOCK_WORLD)
 			to_chat(user, span_notice("Scan initiated."))
-			update_icon()
 		else
 			to_chat(user, span_warning("Insert an item to scan."))
 	. = TRUE
@@ -116,7 +106,6 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 		bloodsamp().forceMove(loc)
 		rel_clear(src, nameof(/obj/machinery/dnaforensics::bloodsamp))
 		set_scanning(FALSE)
-		update_icon()
 
 /// Scans while scanning (started from its UI); otherwise it sleeps.
 /obj/machinery/dnaforensics/proc/work_step(datum/act/timer/A)
@@ -134,7 +123,6 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 
 /obj/machinery/dnaforensics/proc/complete_scan()
 	visible_message(span_notice("[icon2html(src,viewers(src))] makes an insistent chime."), 2)
-	update_icon()
 	if(bloodsamp())
 		var/obj/item/paper/P = new(src)
 		P.name = "[src] report #[++report_num]: [bloodsamp().name]"
@@ -154,13 +142,18 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 		P.forceMove(loc)
 		P.update_icon()
 		set_scanning(FALSE)
-		update_icon()
 	return
 
 /obj/machinery/dnaforensics
 	silicon_use = SILICON_USE_UI
 
-APPEARANCE_TEMPLATE(/obj/machinery/dnaforensics, "dna{appearance_mode}")
+MSG_DEF_SELF(dnaforensics/sample_loaded, "there is a sample in the machine")
+MSG_DEF_SELF(dnaforensics/scanning, "it is busy scanning right now")
+
+/// The look (the draw sweep: from its template).
+/obj/machinery/dnaforensics/draw(datum/look/look)
+	..()
+	look.state("dna[appearance_mode()]")
 
 /obj/machinery/dnaforensics/proc/appearance_mode()
 	if(!has_stat(NOPOWER) && scanning)

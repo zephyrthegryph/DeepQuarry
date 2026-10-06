@@ -2,3 +2,4 @@
 /obj/machinery/feeder|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/feeder|ai|none => |
 /obj/machinery/feeder|ghost|none => |
+

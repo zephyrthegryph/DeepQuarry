@@ -2,3 +2,4 @@
 /obj/machinery/light/flamp|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/light/flamp|ai|none => |
 /obj/machinery/light/flamp|ghost|none => |
+

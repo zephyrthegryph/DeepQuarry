@@ -40,7 +40,6 @@ CAPABILITIES(/obj/item/stack/sandbags)
 	. = ..()
 	recipes = GLOB.sandbag_recipes
 	update_slowdown()
-	update_icon()
 	var/datum/material/M = get_material_by_name("[bag_material]")
 	if(!M)
 		return INITIALIZE_HINT_QDEL

@@ -17,7 +17,7 @@
 	return 0
 
 /obj/machinery/computer/card/proc/is_authenticated()
-	return scan ? check_access(scan) : 0 // ALLOW(reads): the scanned card is asked when the button is pressed and again when the answer arrives, never cached
+	return scan ? check_access(scan) : 0
 
 /obj/machinery/computer/card/proc/get_target_rank()
 	return modify && modify.assignment ? modify.assignment : "Unassigned"
@@ -64,7 +64,7 @@ CAPABILITIES(/obj/machinery/computer/card)
 /// needs: a slot is free for the card (the operator's slot for a card with the access, else the subject's).
 /obj/machinery/computer/card/proc/has_free_slot(datum/act/op/A)
 	var/obj/item/card/id/I = A.held
-	return istype(I) && (!modify || (!scan && (ACCESS_CHANGE_IDS in I.GetAccess()))) // ALLOW(reads): the slots are asked when the card is offered, never cached
+	return istype(I) && (!modify || (!scan && (ACCESS_CHANGE_IDS in I.GetAccess())))
 
 /// The offered card goes in: the operator's slot when it has the access and the slot is free, else the subject's.
 /obj/machinery/computer/card/proc/card_inserted(datum/act/op/A)
@@ -77,7 +77,7 @@ CAPABILITIES(/obj/machinery/computer/card)
 
 /// needs: a card is in the console.
 /obj/machinery/computer/card/proc/has_a_card(datum/act/op/A)
-	return scan || modify // ALLOW(reads): the slots are asked when the choice is made, never cached
+	return scan || modify
 
 /// "Eject ID Card": the operator's card, else the subject's, into the empty hand or onto the floor.
 /obj/machinery/computer/card/proc/eject_first_card(datum/act/op/A)
@@ -249,7 +249,7 @@ CAPABILITIES(/obj/machinery/computer/card)
 
 /// The operator is authenticated and a card is loaded.
 /obj/machinery/computer/card/proc/assign_possible(datum/act/op/A)
-	return is_authenticated() && modify // ALLOW(reads): the loaded card is asked when the button is pressed, never cached
+	return is_authenticated() && modify
 
 /// A custom assignment, typed: it works as an impromptu alt title, mainly for sechuds.
 /obj/machinery/computer/card/proc/ui_act_assign_custom(datum/act/op/A)

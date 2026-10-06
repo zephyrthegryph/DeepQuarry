@@ -40,7 +40,6 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 	radio.set_frequency(ENT_FREQ)
 	radio.icon = src.icon
 	radio.icon_state = src.icon_state
-	update_icon()
 
 /obj/item/tvcamera/hear_talk(mob/M, list/message_pieces, verb)
 	radio.hear_talk(M, message_pieces, verb)
@@ -108,16 +107,14 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 		show_tvs(loc)
 		update_feed()
 
-DECLARE_APPEARANCE_PROC(/obj/item/tvcamera, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/tvcamera/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/tvcamera/draw(datum/look/look)
+	..()
 	if(camera.status)
-		icon_state = "camcorder_on"
-		item_state = "camcorder_on"
+		look.state("camcorder_on")
+		look.held_state("camcorder_on")
 	else
-		icon_state = "camcorder"
-		item_state = "camcorder"
+		look.state("camcorder")
+		look.held_state("camcorder")
 	var/mob/living/carbon/human/H = loc
 	if(istype(H))
 		H.update_inv_r_hand()
@@ -338,7 +335,8 @@ DECLARE_INTERACTIONS(/obj/item/TVAssembly, INTERACT_ITEM(null, PROC_REF(interact
 		hide_tvs()
 		for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 			ES.stop_showing()
-	update_icon()
+	changed(src)
+	changed(src)
 
 /obj/item/tvcamera/proc/camera_toggle_audio(mob/user)
 	radio.ToggleBroadcast()

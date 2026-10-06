@@ -34,5 +34,4 @@ CAPABILITIES(/obj/item/storage/sample_container)
 			return
 		else
 			S.forceMove(src)
-			update_icon()
 			to_chat(user, span_notice("You scoop \the [S] into \the [src]."))

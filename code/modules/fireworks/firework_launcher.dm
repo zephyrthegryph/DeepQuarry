@@ -19,7 +19,6 @@
 
 	default_apply_parts()
 	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)	// Prevents cheesing cooldown by deconstructing and reconstructing
-	update_icon()
 
 /obj/machinery/firework_launcher/RefreshParts()
 	launch_cooldown = 5 MINUTES
@@ -28,7 +27,10 @@
 
 	. = ..()
 
-APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher{loaded_star?1:0}{anchored?1:0}{panel_open?_open:}")
+/// The look (the draw sweep: from its template).
+/obj/machinery/firework_launcher/draw(datum/look/look)
+	..()
+	look.state("launcher[loaded_star ? "1" : "0"][anchored ? "1" : "0"][panel_open ? "_open" : ""]")
 
 CAPABILITIES(/obj/machinery/firework_launcher)
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
@@ -60,19 +62,14 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 		rel_set(src, nameof(loaded_star), O)
 		to_chat(user, span_notice("You insert the firework star into \the [src]."))
 		add_fingerprint(user)
-		update_icon()
 		return TRUE
 	return TRUE
 
 /obj/machinery/firework_launcher/screwdriver_act(mob/user, obj/item/tool)
 	. = ..()
-	if(. == ITEM_INTERACT_SUCCESS)
-		update_icon()
 
 /obj/machinery/firework_launcher/wrench_act(mob/user, obj/item/tool)
 	. = ..()
-	if(. == ITEM_INTERACT_SUCCESS)
-		update_icon()
 
 /// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
 /obj/machinery/firework_launcher/proc/dq_actor_can_act_holds(datum/act/op/A)
@@ -93,7 +90,6 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 		loaded_star().forceMove(get_turf(src))
 		rel_clear(src, nameof(loaded_star))
 		add_fingerprint(user)
-		update_icon()
 	return TRUE
 
 /// Requirement: TRUE, or why the loaded firework can't be launched.
@@ -136,7 +132,6 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 	rel_clear(src, nameof(loaded_star))
 	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)
 	add_fingerprint(user)
-	update_icon()
 	flick("launcher_launch", src)
 	return TRUE
 

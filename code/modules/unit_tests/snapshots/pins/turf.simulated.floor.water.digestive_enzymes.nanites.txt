@@ -132,5 +132,30 @@ human|/obj/item/card/id menu: Interface
 human|/obj/item/card/id menu: Touch
 human|/obj/item/card/id menu: Turf item
 human|/obj/item/card/id click: Click: Fill
+human|/obj/item/material/fishing_rod menu: Cast a line
+human|/obj/item/material/fishing_rod menu: Crawl
+human|/obj/item/material/fishing_rod menu: Cut through the plating (refused: needs a welder)
+human|/obj/item/material/fishing_rod menu: Draw graffiti (refused: hold Grab)
+human|/obj/item/material/fishing_rod menu: Fill
+human|/obj/item/material/fishing_rod menu: Floor item
+human|/obj/item/material/fishing_rod menu: Graffiti
+human|/obj/item/material/fishing_rod menu: Hit the floor (refused: combat mode is off)
+human|/obj/item/material/fishing_rod menu: Hit the floor (refused: hold Disarm)
+human|/obj/item/material/fishing_rod menu: Interface
+human|/obj/item/material/fishing_rod menu: Touch
+human|/obj/item/material/fishing_rod menu: Turf item
+human|/obj/item/material/fishing_rod click: Click: Cast a line
+human|/obj/item menu: Crawl
+human|/obj/item menu: Cut through the plating (refused: needs a welder)
+human|/obj/item menu: Draw graffiti (refused: hold Grab)
+human|/obj/item menu: Fill
+human|/obj/item menu: Floor item
+human|/obj/item menu: Graffiti
+human|/obj/item menu: Hit the floor (refused: combat mode is off)
+human|/obj/item menu: Hit the floor (refused: hold Disarm)
+human|/obj/item menu: Interface
+human|/obj/item menu: Touch
+human|/obj/item menu: Turf item
+human|/obj/item click: Click: Fill
 keys: gen_alt_floor_graffiti_alt, gen_drag_turf_drag, gen_hand_ungated_nanites_hand, gen_hand_ungated_turf_hand, gen_item_floor_item, gen_item_turf_item, gen_silicon_nanites_silicon_interface, water_fill, water_fishing
 
