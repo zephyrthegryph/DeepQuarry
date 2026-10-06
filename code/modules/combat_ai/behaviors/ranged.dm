@@ -86,8 +86,6 @@
 	var/obj/item/gun/G = source
 	if(!owner || !istype(G))
 		return DQ_BEHAVIOR_FAILED
-	// Use the gun's existing fire pipeline. Pointblank when adjacent.
-	var/pointblank = owner.Adjacent(target)
-	G.Fire(target, owner, null, pointblank, FALSE)
+	brain.perform_attack_op(owner, target, "mob_attacks.fire", G)
 	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE

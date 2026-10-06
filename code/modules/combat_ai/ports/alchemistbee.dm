@@ -231,7 +231,7 @@ TYPE_TABLE(/mob/living/simple_mob/vr/alchemistbee, get_ai_target_selectors, list
 	var/danger_range = max(ALCHEMISTBEE_HOMINGCLUSTER_RADIUS, ALCHEMISTBEE_DANGERBOLT_RADIUS) + 3
 	var/turf/away = get_step_away(owner, target, danger_range)
 	if(away && !away.density)
-		step_to(owner, away)
+		brain.act_step(away)
 	owner.face_atom(target)
 	return DQ_BEHAVIOR_DONE
 

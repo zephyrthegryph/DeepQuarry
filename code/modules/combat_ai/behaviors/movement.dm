@@ -36,7 +36,7 @@
 	// Smart A* step; falls back gracefully when pathing fails.
 	if(!brain.smart_step_toward(target))
 		// One direct step as a backup so we don't stall in open space.
-		step_to(owner, target)
+		brain.act_step(target)
 	return DQ_BEHAVIOR_CONTINUE
 
 // --- Idle wander -------------------------------------------------------------
@@ -61,7 +61,7 @@
 	if(prob(35))
 		var/turf/T = get_step(owner, pick(GLOB.cardinal))
 		if(T && !T.density)
-			step_to(owner, T)
+			brain.act_step(T)
 	return DQ_BEHAVIOR_DONE
 
 // --- Flee at low HP ---------------------------------------------------------
@@ -96,5 +96,5 @@
 		return DQ_BEHAVIOR_DONE  // far enough
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		step_to(owner, away)
+		brain.act_step(away)
 	return DQ_BEHAVIOR_CONTINUE

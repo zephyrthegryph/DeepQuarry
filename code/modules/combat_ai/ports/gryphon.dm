@@ -180,7 +180,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/gryphon, get_ai_behaviors, list( \
 	// special_attack_target() starts special_attack_cooldown_until and runs do_special_attack
 	// (the leap, which runs on timers and toggles ai_brain.busy
 	// itself). We just kick it off.
-	G.special_attack_target(target, G.input_stance())
+	brain.perform_attack_op(G, target, "mob_attacks.special")
 	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 

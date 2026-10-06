@@ -106,5 +106,5 @@ TYPE_TABLE(/mob/living/simple_mob/vore/scrubble, get_ai_target_selectors, list( 
 	// Otherwise keep bolting away (legacy step_away distance 7).
 	var/turf/away = get_step_away(S, L, 7)
 	if(away && !away.density)
-		step_to(S, away)
+		brain.act_step(away)
 	return DQ_BEHAVIOR_CONTINUE

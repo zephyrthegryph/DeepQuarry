@@ -117,7 +117,7 @@
 		return FALSE
 	holder.face_atom(next)
 	var/old_loc = get_turf(holder)
-	step_to(holder, next)
+	act_step(next)
 	if(get_turf(holder) != old_loc)
 		planned_path.Cut(1, 2)
 		failed_steps = 0

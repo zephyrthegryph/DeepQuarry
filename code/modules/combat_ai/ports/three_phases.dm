@@ -76,7 +76,7 @@ TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_target_select
 		stance = I_DISARM            // Phase three
 	else if(hp_frac <= 0.7)
 		stance = I_GRAB              // Phase two
-	E.special_attack_target(target, stance)
+	brain.perform_attack_op(E, target, "mob_attacks.special", null, stance)
 	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
@@ -117,7 +117,7 @@ TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_target_select
 		return DQ_BEHAVIOR_DONE
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		owner.IMove(away)
+		brain.act_step(away)
 	return DQ_BEHAVIOR_CONTINUE
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).

@@ -106,6 +106,48 @@
 	var/datum/ai_behavior/melee_attack/M = dq_get_behavior(/datum/ai_behavior/melee_attack)
 	TEST_ASSERT_EQUAL(M.start(S.ai_brain, H, null), DQ_BEHAVIOR_FAILED, "melee_attack carried on against a target out of reach")
 
+/// The shared repositioning, pickup, throw, alarm and slam ops.
+/datum/unit_test/dq_ai_tactic_shared_ops
+
+/datum/unit_test/dq_ai_tactic_shared_ops/Run()
+	var/list/pair = ai_pair(ai_floor(0), ai_floor(1), /mob/living/simple_mob/combat_ai_tactics_subject/handed)
+	var/mob/living/simple_mob/S = pair[1]
+	var/mob/living/carbon/human/H = pair[2]
+	var/turf/dest = ai_floor(0, 1)
+	S.next_move = 0
+	var/datum/op_result/stepped = perform_op(S, dest, "mob_attacks.step", null, ORIGIN_AI, AUTH_AI)
+	TEST_ASSERT_EQUAL(stepped?.outcome, ACT_COMMITTED, "the step op was refused: [reason_text(stepped?.reason)]")
+	TEST_ASSERT_EQUAL(get_turf(S), dest, "the step op did not move the mob")
+	// pickup needs an item in reach and hands
+	var/obj/item/grenade/G = allocate(/obj/item/grenade, get_turf(S))
+	var/datum/op_result/picked = perform_op(S, G, "mob_attacks.pickup", null, ORIGIN_AI, AUTH_AI)
+	TEST_ASSERT_EQUAL(picked?.outcome, ACT_COMMITTED, "the pickup op was refused: [reason_text(picked?.reason)]")
+	TEST_ASSERT_EQUAL(G.loc, S, "the pickup op did not take the item")
+	// throw wants the grenade held; with nothing held it is refused
+	S.next_click = 0
+	var/datum/op_result/bare = perform_op(S, get_turf(H), "mob_attacks.throw", null, ORIGIN_AI, AUTH_AI)
+	TEST_ASSERT_EQUAL(bare?.reason, /datum/msg/mob_attacks/no_item, "a throw with nothing held was allowed")
+	S.next_click = 0
+	var/datum/op_result/thrown = perform_op(S, get_turf(H), "mob_attacks.throw", G, ORIGIN_AI, AUTH_AI)
+	TEST_ASSERT_EQUAL(thrown?.outcome, ACT_COMMITTED, "the throw op was refused: [reason_text(thrown?.reason)]")
+	TEST_ASSERT(G.active, "the thrown grenade was not primed")
+	// alarm and slam
+	var/datum/op_result/alarm = perform_op(S, S, "mob_attacks.alarm", null, ORIGIN_AI, AUTH_AI)
+	TEST_ASSERT_EQUAL(alarm?.outcome, ACT_COMMITTED, "the alarm op was refused")
+	S.forceMove(ai_floor(2, 0))
+	H.forceMove(ai_floor(3, 0))
+	var/before = H.injury_load(INJURY_CATEGORY_PHYSICAL)
+	var/datum/op_result/slam = perform_op(S, H, "mob_attacks.slam", null, ORIGIN_AI, AUTH_AI)
+	TEST_ASSERT_EQUAL(slam?.outcome, ACT_COMMITTED, "the slam op was refused: [reason_text(slam?.reason)]")
+	om_test_ticks(3)
+	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_PHYSICAL) > before, "the slam dealt no injury")
+	var/datum/op_result/special = perform_op(S, H, "mob_attacks.special", null, ORIGIN_AI, AUTH_AI)
+	TEST_ASSERT_EQUAL(special?.outcome, ACT_COMMITTED, "the special-attack op was refused")
+	// an unconscious mob does nothing
+	S.set_stat(UNCONSCIOUS)
+	var/datum/op_result/asleep = perform_op(S, ai_floor(2, 1), "mob_attacks.step", null, ORIGIN_AI, AUTH_AI)
+	TEST_ASSERT(asleep?.outcome != ACT_COMMITTED, "an unconscious mob stepped")
+
 // --- approach_threat --------------------------------------------------------------------------
 
 /datum/unit_test/dq_ai_tactic_approach_threat

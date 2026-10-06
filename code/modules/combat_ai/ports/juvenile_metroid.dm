@@ -107,7 +107,7 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile, get_ai_target_selectors, lis
 		MJ.set_use_stance(I_GRAB)             // Then eat the downed target.
 	else
 		MJ.set_use_stance(I_HURT)             // Otherwise just hurt it.
-	MJ.attack_target(L, MJ.input_stance())
+	brain.perform_attack_op(MJ, L, "mob_attacks.melee")
 	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 

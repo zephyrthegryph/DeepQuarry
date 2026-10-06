@@ -127,7 +127,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/kururak, get_ai_behaviors, list( \
 			stance = I_DISARM
 	if(issilicon(L) && stance != I_GRAB)
 		stance = I_DISARM
-	K.special_attack_target(L, stance)
+	brain.perform_attack_op(K, L, "mob_attacks.special", null, stance)
 	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 

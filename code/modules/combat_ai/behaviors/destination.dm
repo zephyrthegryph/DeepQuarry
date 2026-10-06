@@ -30,7 +30,7 @@
 		return DQ_BEHAVIOR_DONE
 	if(!brain.smart_step_toward(target, 0))
 		// Fall back to direct step if A* can't find a path.
-		step_to(brain.holder, target)
+		brain.act_step(target)
 	return DQ_BEHAVIOR_CONTINUE
 
 // ---------------------------------------------------------------------------

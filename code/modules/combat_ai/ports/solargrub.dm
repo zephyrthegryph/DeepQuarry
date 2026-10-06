@@ -175,12 +175,12 @@ TYPE_TABLE(/mob/living/simple_mob/animal/solargrub_larva, get_ai_target_selector
 		return DQ_BEHAVIOR_DONE
 	if(!LV.Adjacent(M))
 		if(!brain.smart_step_toward(M, 1))
-			step_to(LV, M)
+			brain.act_step(M)
 		return DQ_BEHAVIOR_CONTINUE
 	// Adjacent — crawl in (enter_machine / ventcrawl), then remember the machine
 	// so we spread out instead of re-nesting it. Mirrors post_melee_attack's
 	// ignored_targets ring (cap 4).
-	LV.attack_target(M)
+	brain.perform_attack_op(LV, M, "mob_attacks.melee")
 	rel_add(LV, nameof(LV.dq_ignored_machines), M)
 	if(LAZYLEN(LV.dq_ignored_machines) > 3)
 		rel_remove(LV, nameof(LV.dq_ignored_machines), LV.dq_ignored_machines[1])

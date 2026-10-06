@@ -97,7 +97,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/leech, get_ai_behaviors, list( \
 	if(get_turf(SL) == target)
 		return DQ_BEHAVIOR_DONE
 	if(!brain.smart_step_toward(target, 0))
-		step_to(SL, target)
+		brain.act_step(target)
 	return DQ_BEHAVIOR_CONTINUE
 
 // ---------------------------------------------------------------------------

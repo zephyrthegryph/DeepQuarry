@@ -144,7 +144,7 @@ GLOBAL_LIST_INIT(dq_sakimm_loot_types, list(
 		loot.attack_hand(S)
 		return DQ_BEHAVIOR_DONE
 	if(!brain.smart_step_toward(loot))
-		step_to(S, loot)
+		brain.act_step(loot)
 	return DQ_BEHAVIOR_CONTINUE
 
 // ---------------------------------------------------------------------------
@@ -200,7 +200,7 @@ GLOBAL_LIST_INIT(dq_sakimm_loot_types, list(
 			S.set_use_stance(I_DISARM)
 	else
 		S.set_use_stance(I_HURT)
-	S.attack_target(L, S.input_stance())
+	brain.perform_attack_op(S, L, "mob_attacks.melee")
 	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	// post_melee_attack: dance to the side so we're a harder target, then the
 	// generic call_for_help behavior can rally allies next selection.

@@ -121,16 +121,11 @@
 	// Step toward the target up to 6 tiles; stop at the first blocker or on contact.
 	for(var/i in 1 to 6)
 		if(!SM.Adjacent(target))
-			step_towards(SM, target)
+			brain.act_step(target)
 		if(SM.Adjacent(target))
 			break
 	if(SM.Adjacent(target))
-		var/dmg = rand(SM.melee_damage_lower, SM.melee_damage_upper) * damage_mult
-		generic_hit(target, SM, dmg, "slams into")
-		act_message(SM, target, others = span_danger("%U% slams into %T% with crushing force!"))
-		if(isliving(target))
-			var/mob/living/L = target
-			L.apply_effect(2, WEAKEN)
+		brain.perform_attack_op(SM, target, "mob_attacks.slam")
 	brain.stop_active(DQ_BEHAVIOR_STOP_COMPLETED)
 
 TYPE_TABLE(/datum/ai_behavior/charge_slam, get_player_verb_info, list( \

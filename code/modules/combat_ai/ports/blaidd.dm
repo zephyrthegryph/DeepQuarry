@@ -155,7 +155,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/blaidd, get_ai_target_selectors, list( \
 	var/mob/living/owner = brain.get_owner()
 	if(!owner || !target)
 		return DQ_BEHAVIOR_FAILED
-	step_away(owner, target, flee_distance)
+	brain.act_step_away(target, flee_distance)
 	owner.face_atom(target)
 	return DQ_BEHAVIOR_CONTINUE
 
@@ -167,7 +167,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/blaidd, get_ai_target_selectors, list( \
 	if(get_dist(B, target) >= flee_distance || !dq_blaidd_active_watcher(brain))
 		B.blaidd_watched_since = 0
 		return DQ_BEHAVIOR_DONE
-	step_away(B, target, brain.vision_range)
+	brain.act_step_away(target, brain.vision_range)
 	B.face_atom(target)
 	return DQ_BEHAVIOR_CONTINUE
 

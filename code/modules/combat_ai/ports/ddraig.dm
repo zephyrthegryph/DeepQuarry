@@ -201,7 +201,7 @@ TYPE_TABLE(/datum/ai_behavior/ddraig_tfbeam, get_player_verb_info, list( \
 	// Several big steps away, like the legacy stacked step_away calls.
 	if(target)
 		for(var/i in 1 to 5)
-			step_away(D, target, bolt_distance)
+			brain.act_step_away(target, bolt_distance)
 	after(D, cloak_duration, TYPE_PROC_REF(/atom/movable, uncloak))
 	return DQ_BEHAVIOR_DONE
 
@@ -234,5 +234,5 @@ TYPE_TABLE(/datum/ai_behavior/ddraig_tfbeam, get_player_verb_info, list( \
 		return DQ_BEHAVIOR_FAILED
 	if(!dq_get_cloaked(D) || get_dist(D, target) >= 10)
 		return DQ_BEHAVIOR_DONE
-	step_away(D, target, 8)
+	brain.act_step_away(target, 8)
 	return DQ_BEHAVIOR_CONTINUE

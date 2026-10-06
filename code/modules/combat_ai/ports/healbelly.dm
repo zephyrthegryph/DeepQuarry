@@ -146,7 +146,7 @@
 		return DQ_BEHAVIOR_DONE
 	if(!SM.Adjacent(patient))
 		if(!brain.smart_step_toward(patient))
-			step_to(SM, patient)
+			brain.act_step(patient)
 		return DQ_BEHAVIOR_CONTINUE
 	// Adjacent: ensure the right (healing) belly is selected, then swallow.
 	dq_healbelly_select_heal_gut(SM)

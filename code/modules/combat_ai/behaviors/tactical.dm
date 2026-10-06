@@ -39,7 +39,7 @@
 	brain.last_juke_at = brain.last_attack_at
 	var/turf/T = get_step(owner, pick(GLOB.alldirs))
 	if(T && !T.density)
-		step_to(owner, T)
+		brain.act_step(T)
 	owner.face_atom(target)
 	return DQ_BEHAVIOR_DONE
 
@@ -78,7 +78,7 @@
 		return DQ_BEHAVIOR_FAILED
 	var/turf/away = get_step_away(owner, target, kite_distance)
 	if(away && !away.density)
-		step_to(owner, away)
+		brain.act_step(away)
 	owner.face_atom(target)
 	return DQ_BEHAVIOR_DONE
 
@@ -116,7 +116,7 @@
 		return DQ_BEHAVIOR_FAILED
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		step_to(owner, away)
+		brain.act_step(away)
 	return DQ_BEHAVIOR_CONTINUE
 
 /datum/ai_behavior/hit_and_run/tick(datum/ai_brain/brain, atom/target, atom/source)
@@ -127,7 +127,7 @@
 		return DQ_BEHAVIOR_DONE
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		step_to(owner, away)
+		brain.act_step(away)
 	return DQ_BEHAVIOR_CONTINUE
 
 // --- Pack flee (on dying / outmatched) -------------------------------------
@@ -166,7 +166,7 @@
 		return DQ_BEHAVIOR_DONE
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		step_to(owner, away)
+		brain.act_step(away)
 	return DQ_BEHAVIOR_CONTINUE
 
 // --- Return home -----------------------------------------------------------
