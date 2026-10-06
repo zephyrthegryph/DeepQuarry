@@ -4863,6 +4863,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	work_stop(conveyor)
 	var/obj/item/conveyor_load = new(null)
 	conveyor_load.forceMove(conveyor_turf)
+	kernel_drain_now() // the arrival notice reaches the belt at the drain
 	TEST_ASSERT(work_started(conveyor), "running conveyor did not wake when movable cargo entered its turf")
 	var/obj/machinery/conveyor_switch/conveyor_switch = new(conveyor_turf)
 	conveyor_switch.set_operated(FALSE)

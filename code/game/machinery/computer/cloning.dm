@@ -421,7 +421,7 @@ OM_FIELD(/obj/machinery/computer/cloning, autoprocess, 0, CHANGE_MACHINE_SETTING
 /obj/machinery/computer/cloning/proc/scan_mob(mob/living/carbon/human/subject as mob, scan_brain = 0)
 	if(has_stat(NOPOWER))
 		return
-	if(scanner().stat & (NOPOWER|BROKEN))
+	if(scanner().has_stat(NOPOWER|BROKEN))
 		return
 	if(scan_brain && !can_brainscan())
 		return

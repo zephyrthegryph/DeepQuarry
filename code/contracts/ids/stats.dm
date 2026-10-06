@@ -4,6 +4,10 @@
 
 STAT(/obj/machinery, operable, ALL, virtual = TRUE)
 STAT(/obj/machinery, power_draw, SUM, virtual = TRUE)
+/// The machine has power for its controls: false while any source holds it down (SRC_GRID: its area's channel is dark). The NOPOWER condition bit.
+STAT(/obj/machinery, has_power, ALL, base = TRUE, virtual = TRUE)
+/// The machine is whole: false while any source holds it broken (SRC_DAMAGE: atom_break() until atom_fix()). The BROKEN condition bit, inverted.
+STAT(/obj/machinery, intact, ALL, base = TRUE, virtual = TRUE)
 STAT(/mob/living, can_act, ALL)
 STAT(/mob/living, can_move, ALL)
 STAT(/mob/living, acts_via, MASK_AND, base = ORIGIN_ALL)

@@ -511,7 +511,7 @@ VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "remove_track", PROC_REF(vv_
 /// The lights hint at the state each wire drives.
 /obj/machinery/media/jukebox/proc/wire_lights()
 	return list(
-		"The power light is [stat & (BROKEN|NOPOWER) ? "off." : "on."]",
+		"The power light is [has_stat(BROKEN|NOPOWER) ? "off." : "on."]",
 		"The parental guidance light is [hacked ? "off." : "on."]",
 		"The data light is [wire_is_cut(src, WIRE_REVERSE) ? "hauntingly dark." : "glowing softly."]")
 

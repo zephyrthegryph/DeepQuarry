@@ -192,6 +192,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 // ALLOW(init/INSTANCE_STATE): a machine faces the way it is built and, made after the map, checks its power
 /obj/machinery/Initialize(mapload)
 	. = ..()
+	var/initial_held = stat & MACHINE_STAT_HELD // a type's default BROKEN or NOPOWER moves into the stat layer
+	if(initial_held)
+		stat &= ~initial_held
+		stat_add(initial_held)
 	if(isnum(dir_at_make))
 		set_dir(dir_at_make)
 	// The board stays a type path (roadmap C6): it is only ever materialized

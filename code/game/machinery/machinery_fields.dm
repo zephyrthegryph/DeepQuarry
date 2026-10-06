@@ -13,7 +13,74 @@ OM_FIELD(/obj/machinery, emagged, FALSE, CHANGE_MACHINE_SETTINGS)
 
 /// Machine condition bits (BROKEN, NOPOWER, POWEROFF, MAINT, EMPED; code/__defines/machinery.dm).
 /// BROKEN, MAINT and EMPED raise CHANGE_MACHINE_BROKEN, NOPOWER and POWEROFF CHANGE_MACHINE_POWER.
-OM_FLAG_FIELD_BITS(/obj/machinery, stat, 0, CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER, list("[BROKEN]" = CHANGE_MACHINE_BROKEN, "[NOPOWER]" = CHANGE_MACHINE_POWER, "[POWEROFF]" = CHANGE_MACHINE_POWER, "[MAINT]" = CHANGE_MACHINE_BROKEN, "[EMPED]" = CHANGE_MACHINE_BROKEN))
+/datum/om/field_def/obj/machinery/stat
+	of = /obj/machinery
+	field = "stat"
+	channel = CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER
+
+/obj/machinery/var/stat = 0
+
+/obj/machinery/proc/stat_bit_channels()
+	var/static/list/table = list("[BROKEN]" = CHANGE_MACHINE_BROKEN, "[NOPOWER]" = CHANGE_MACHINE_POWER, "[POWEROFF]" = CHANGE_MACHINE_POWER, "[MAINT]" = CHANGE_MACHINE_BROKEN, "[EMPED]" = CHANGE_MACHINE_BROKEN)
+	return table
+
+
+/// The bits among `bits` that are set now.
+/obj/machinery/proc/stat_bits_now(bits)
+	READS_FROM(src)
+	. = stat & bits
+	if((bits & NOPOWER) && !stat_value(src, STAT_HAS_POWER))
+		. |= NOPOWER
+	if((bits & BROKEN) && !stat_value(src, STAT_INTACT))
+		. |= BROKEN
+
+/obj/machinery/proc/has_stat(bits)
+	return stat_bits_now(bits) ? TRUE : FALSE
+
+/// Sets the bits in `bits` (all other bits stay). TRUE when any changed.
+/obj/machinery/proc/stat_add(bits)
+	var/flipped = bits & ~stat_bits_now(MACHINE_STAT_ANY)
+	if(!flipped)
+		return FALSE
+	if(flipped & NOPOWER)
+		hold(src, STAT_HAS_POWER, FALSE, SRC_GRID)
+	if(flipped & BROKEN)
+		hold(src, STAT_INTACT, FALSE, SRC_DAMAGE)
+	var/bits_left = flipped & ~MACHINE_STAT_HELD
+	if(bits_left)
+		stat |= bits_left
+	stat_changed(flipped)
+	return TRUE
+
+/// Clears the bits in `bits`. TRUE when any changed.
+/obj/machinery/proc/stat_remove(bits)
+	var/flipped = stat_bits_now(MACHINE_STAT_ANY) & bits
+	if(!flipped)
+		return FALSE
+	if(flipped & NOPOWER)
+		release(src, STAT_HAS_POWER, SRC_GRID)
+	if(flipped & BROKEN)
+		release(src, STAT_INTACT, SRC_DAMAGE)
+	var/bits_left = flipped & ~MACHINE_STAT_HELD
+	if(bits_left)
+		stat &= ~bits_left
+	stat_changed(flipped)
+	return TRUE
+
+/// Writes the whole set of condition bits.
+/obj/machinery/proc/set_stat(value)
+	var/now = stat_bits_now(MACHINE_STAT_ANY)
+	. = FALSE
+	if(stat_remove(now & ~value))
+		. = TRUE
+	if(stat_add(value & ~now))
+		. = TRUE
+
+/// What a change of bits raises: their channels, the `stat` publish, and the stat layer's recompute of what reads them.
+/obj/machinery/proc/stat_changed(flipped)
+	changed(src, om_flag_channels(stat_bit_channels(), flipped, CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER))
+	PUBLISH_CHANGE(src, "stat")
+	om_field_written(src, "stat")
 
 /// Powered and working: none of NOPOWER, BROKEN, MAINT, EMPED (plus `additional_flags`), and no pulse holding it down (emp_disable()'s timed
 /// hold on STAT_OPERABLE, which this legacy reader shares with the converted machines' stat).
@@ -21,7 +88,7 @@ OM_FLAG_FIELD_BITS(/obj/machinery, stat, 0, CHANGE_MACHINE_BROKEN | CHANGE_MACHI
 /// CanUseTopic), not "the machine works".
 OM_DERIVE_FIELD(/obj/machinery, operable, list("stat"))
 /obj/machinery/proc/operable(additional_flags = 0)
-	return !(stat & (MACHINE_INOPERABLE_FLAGS | additional_flags)) && !emp_disabled(src)
+	return !stat_bits_now(MACHINE_INOPERABLE_FLAGS | additional_flags) && !emp_disabled(src)
 
 /// Anchoring: set_anchored() (atoms_movable.dm) is the setter and raises the family channel.
 OM_FIELD_SETTER(/atom/movable, anchored, 0)

@@ -851,7 +851,7 @@ CAPABILITIES(/obj/machinery/alarm)
 /obj/machinery/alarm/proc/wire_lights()
 	return list(
 		"The Air Alarm is [lock_locked(src) ? "locked." : "unlocked."]",
-		"The Air Alarm is [(shorted || (stat & (NOPOWER|BROKEN))) ? "offline." : "working properly!"]",
+		"The Air Alarm is [(shorted || (has_stat(NOPOWER|BROKEN))) ? "offline." : "working properly!"]",
 		"The 'AI control allowed' light is [aidisabled ? "off" : "on"].")
 
 /// The ID wire cut locks the interface.
