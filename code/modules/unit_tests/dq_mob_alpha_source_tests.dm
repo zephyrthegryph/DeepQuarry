@@ -12,14 +12,14 @@
 /datum/unit_test/dq_mob_alpha_sources_combine_and_dont_clobber/Run()
 	var/mob/living/carbon/human/H = new(null)
 
-	TEST_ASSERT(!om_has(H, EFFECT_ALPHA_MULT), "a fresh mob should have no active alpha sources")
+	TEST_ASSERT_EQUAL(stat_value(H, STAT_ALPHA_MULT), 1, "a fresh mob should have no active alpha sources")
 
 	// One stealth-style effect engages: 30/255 opacity (the cult "ambush" value).
-	H.set_alpha_source(ALPHA_SOURCE_AMBUSH, 30/255)
+	H.set_alpha_source(SRC_ALPHA_AMBUSH, 30/255)
 	TEST_ASSERT(H.alpha == 30, "a single alpha source should set alpha directly to its multiplier, got [H.alpha]")
 
 	// A second, independent effect engages on top of it: 50/255 (underwater stealth).
-	H.set_alpha_source(ALPHA_SOURCE_UNDERWATER_STEALTH, 50/255)
+	H.set_alpha_source(SRC_ALPHA_UNDERWATER_STEALTH, 50/255)
 	var/expected_combined = round(255 * (30/255) * (50/255))
 	TEST_ASSERT(H.alpha == expected_combined, "two concurrent alpha sources should combine multiplicatively, expected [expected_combined], got [H.alpha]")
 	TEST_ASSERT(H.alpha != 30 && H.alpha != 50, "the combined alpha should reflect both sources, not just the most recently applied one")
@@ -27,13 +27,13 @@
 	// The first effect expires. This must NOT snap the mob back to fully
 	// opaque (255) -- the second effect is still active and clobbering it
 	// would be exactly the historical bug.
-	H.clear_alpha_source(ALPHA_SOURCE_AMBUSH)
+	H.clear_alpha_source(SRC_ALPHA_AMBUSH)
 	TEST_ASSERT(H.alpha == 50, "clearing one source while another is still active should leave only the remaining source's alpha, expected 50, got [H.alpha]")
 	TEST_ASSERT(H.alpha != 255, "clearing one of two active sources must not reset the mob to fully opaque while the other is still active")
 
 	// The second effect expires too. Now, and only now, full opacity returns.
-	H.clear_alpha_source(ALPHA_SOURCE_UNDERWATER_STEALTH)
-	TEST_ASSERT(!om_has(H, EFFECT_ALPHA_MULT), "clearing the last source should leave no sources held")
+	H.clear_alpha_source(SRC_ALPHA_UNDERWATER_STEALTH)
+	TEST_ASSERT_EQUAL(stat_value(H, STAT_ALPHA_MULT), 1, "clearing the last source should leave no sources held")
 	TEST_ASSERT(H.alpha == 255, "clearing the last active alpha source should restore full opacity, got [H.alpha]")
 
 	qdel(H)

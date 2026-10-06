@@ -6,18 +6,6 @@
 	// ALLOW(sys_const_list_alloc): read once, while the OM registry builds inside the global controller's New(), before any GLOBAL_LIST_INIT exists
 	return list(
 		EFFECT_BUCKLED = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS),
-		EFFECT_SLOWED = list("combine" = COMBINE_SUM, "channel" = CHANGE_MOB_MOVEMENT),
-		// Stat sums and factors.
-		EFFECT_ARMOR_MELEE = list("combine" = COMBINE_SUM),
-		EFFECT_ARMOR_BULLET = list("combine" = COMBINE_SUM),
-		EFFECT_ARMOR_HEAT = list("combine" = COMBINE_SUM),
-		EFFECT_INSULATION = list("combine" = COMBINE_MAX, "default" = 0),
-		EFFECT_MOVE_SPEED = list("combine" = COMBINE_MULTIPLY),
-		EFFECT_POWER_DRAW = list("combine" = COMBINE_SUM),
-		EFFECT_HUD_VITALS = list("combine" = COMBINE_ANY),
-		// Source-keyed mob overrides (rewrite/mobsrc, reconciled onto the contribution store).
-		EFFECT_UNPUSHABLE = list("combine" = COMBINE_ANY),
-		EFFECT_ALPHA_MULT = list("combine" = COMBINE_MULTIPLY, "default" = 1),
 		// Body effects (body_effects.dm): factor tables keyed by definition type, value = stacks.
 		EFFECT_BODY_EFFECTS = list("combine" = COMBINE_SUM_PER_KEY, "channel" = CHANGE_MOB_CONDITIONS, "publishes" = MOB_KEY_CONDITIONS, "type" = /datum/om/effect/body_effects),
 		// Grant kinds.
@@ -251,23 +239,8 @@
 /datum/om/bundle/powered_vehicle
 	include = list(/datum/om/bundle/powered_machine)
 
-/datum/om/bundle/hud_on_vitals
-	behaviours = list(/datum/om/behaviour/hud_on_vitals)
-	self_effects = list(EFFECT_HUD_VITALS = TRUE)
-
 /datum/om/bundle/ui_live
 	ui = list(
 		list("watch" = 0xFFFFFF),
 	)
 
-/// Refreshes the vitals HUD when vitals change (calls E.om_refresh_vitals_hud()).
-/datum/om/behaviour/hud_on_vitals
-	name = "om: vitals hud"
-	lane = LANE_PRESENTATION
-	wake_on = CHANGE_MOB_VITALS | CHANGE_MOB_STAT
-
-/datum/om/behaviour/hud_on_vitals/on_wake(datum/E, changes)
-	E.om_refresh_vitals_hud()
-
-/datum/proc/om_refresh_vitals_hud()
-	return

@@ -222,14 +222,14 @@
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/cloak()
 	if(dq_get_cloaked(src))
 		return
-	set_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, cloaked_alpha/255, animate_time = 1 SECOND)
+	set_alpha_source(SRC_ALPHA_CREATURE_CLOAK, cloaked_alpha/255, animate_time = 1 SECOND)
 	dq_set_cloaked(src, TRUE)
 
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/uncloak()
 	COOLDOWN_START(src, uncloak_cooldown, cloak_cooldown)
 	if(!dq_get_cloaked(src))
 		return
-	clear_alpha_source(ALPHA_SOURCE_CREATURE_CLOAK, animate_time = 1 SECOND)
+	clear_alpha_source(SRC_ALPHA_CREATURE_CLOAK, animate_time = 1 SECOND)
 	dq_set_cloaked(src, FALSE)
 
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/proc/can_cloak()

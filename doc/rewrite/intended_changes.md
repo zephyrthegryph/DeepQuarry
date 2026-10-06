@@ -2128,3 +2128,7 @@ cadences still follow it through `relevance_changed()` until the framework goes.
   `STAT_CLOCK_RATE_BIO` at `1 - depth` (MIN, so the deepest stasis wins, as before), and CLOCK_BIO time runs at that rate
   (`clock_now(E, CLOCK_BIO)`, which replaces `om_clock_now`). A biological clock can no longer run faster than world time;
   nothing outside the OM tests did. The unused `stasis_occupant` relation is deleted.
+- **Mob alpha and push blocking are stats.** `alpha_mult` (PRODUCT, base 1, a source re-holding replaces its value) and
+  `unpushable` (ANY) on `/mob/living`, held under `SRC_ALPHA_*` / `SRC_PUSH_*` source ids (or a datum). The unused OM
+  effect rows (slowed, armour, insulation, move speed, power draw, vitals HUD) and the vitals HUD behaviour are deleted.
+  No behaviour change intended.

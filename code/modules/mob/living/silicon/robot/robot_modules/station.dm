@@ -184,11 +184,11 @@ CAPABILITIES(/obj/item/robot_module)
 
 /obj/item/robot_module/proc/apply_status_flags(mob/living/silicon/robot/R)
 	if(!can_be_pushed)
-		R.add_push_disable_source(PUSH_SOURCE_ROBOT_MODULE)
+		R.add_push_disable_source(SRC_PUSH_ROBOT_MODULE)
 
 /obj/item/robot_module/proc/remove_status_flags(mob/living/silicon/robot/R)
 	if(!can_be_pushed)
-		R.remove_push_disable_source(PUSH_SOURCE_ROBOT_MODULE)
+		R.remove_push_disable_source(SRC_PUSH_ROBOT_MODULE)
 
 /obj/item/robot_module/proc/handle_shell(mob/living/silicon/robot/R)
 	if(R.braintype == BORG_BRAINTYPE_AI_SHELL)
