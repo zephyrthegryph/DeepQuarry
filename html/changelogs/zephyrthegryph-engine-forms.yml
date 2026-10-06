@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Added the engine forms coalesce(interval), modes(var) with go() and after_in_state(), and keyed standings stance() / stance_toward()"
+  - code_imp: "Removed the unused global coalesce() helper; the name is now the hook part"
