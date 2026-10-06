@@ -1,109 +1,73 @@
-human|none menu: Deconstruct (refused: needs a crowbar)
 human|none menu: Emag (refused: needs a cryptographic sequencer)
 human|none menu: Empty Gibber
-human|none menu: Open maintenance panel (refused: needs a screwdriver)
 human|none menu: Start gibbing
-human|none menu: Unsecure (refused: needs a wrench)
 human|none click: Click: Start gibbing
 robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Deconstruct (refused: needs a crowbar)
 robot|none menu: Emag (refused: needs a cryptographic sequencer)
 robot|none menu: Empty Gibber
-robot|none menu: Open maintenance panel (refused: needs a screwdriver)
 robot|none menu: Start gibbing
-robot|none menu: Unsecure (refused: needs a wrench)
 robot|none click: Click: Start gibbing
 ai|none click: nothing
 ghost|none menu: Empty Gibber (refused: You can't reach that.)
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/tool/screwdriver menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/tool/screwdriver menu: Empty Gibber
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
 human|/obj/item/tool/screwdriver menu: Start gibbing
-human|/obj/item/tool/screwdriver menu: Unsecure (refused: needs a wrench)
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: Click: Start gibbing
+human|/obj/item/tool/screwdriver click: Click: Open maintenance panel
 human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
 human|/obj/item/tool/crowbar menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/tool/crowbar menu: Empty Gibber
-human|/obj/item/tool/crowbar menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/crowbar menu: Start gibbing
-human|/obj/item/tool/crowbar menu: Unsecure (refused: needs a wrench)
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: Click: Start gibbing
-human|/obj/item/tool/wrench menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/tool/crowbar click: Click: Deconstruct
 human|/obj/item/tool/wrench menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/tool/wrench menu: Empty Gibber
-human|/obj/item/tool/wrench menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/wrench menu: Start gibbing
 human|/obj/item/tool/wrench menu: Unsecure
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: Click: Start gibbing
-human|/obj/item/tool/wirecutters menu: Deconstruct (refused: needs a crowbar)
+human|/obj/item/tool/wrench click: Click: Unsecure
 human|/obj/item/tool/wirecutters menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/tool/wirecutters menu: Empty Gibber
-human|/obj/item/tool/wirecutters menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/tool/wirecutters menu: Start gibbing
-human|/obj/item/tool/wirecutters menu: Unsecure (refused: needs a wrench)
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Start gibbing
-human|/obj/item/multitool menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/multitool menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/multitool menu: Empty Gibber
-human|/obj/item/multitool menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/multitool menu: Start gibbing
-human|/obj/item/multitool menu: Unsecure (refused: needs a wrench)
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Start gibbing
-human|/obj/item/weldingtool menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/weldingtool menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/weldingtool menu: Empty Gibber
-human|/obj/item/weldingtool menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/weldingtool menu: Start gibbing
-human|/obj/item/weldingtool menu: Unsecure (refused: needs a wrench)
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: Click: Start gibbing
-human|/obj/item/stack/cable_coil menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/stack/cable_coil menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/stack/cable_coil menu: Empty Gibber
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/stack/cable_coil menu: Start gibbing
-human|/obj/item/stack/cable_coil menu: Unsecure (refused: needs a wrench)
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Start gibbing
-human|/obj/item/stack/material/steel menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/stack/material/steel menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/stack/material/steel menu: Empty Gibber
-human|/obj/item/stack/material/steel menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/stack/material/steel menu: Start gibbing
-human|/obj/item/stack/material/steel menu: Unsecure (refused: needs a wrench)
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Start gibbing
-human|/obj/item/card/id menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/card/id menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/card/id menu: Empty Gibber
-human|/obj/item/card/id menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/id menu: Start gibbing
-human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Start gibbing
-human|/obj/item/card/emag menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item/card/emag menu: Emag
 human|/obj/item/card/emag menu: Empty Gibber
-human|/obj/item/card/emag menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item/card/emag menu: Start gibbing
-human|/obj/item/card/emag menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Start gibbing
-human|/obj/item menu: Deconstruct (refused: needs a crowbar)
 human|/obj/item menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item menu: Empty Gibber
-human|/obj/item menu: Open maintenance panel (refused: needs a screwdriver)
 human|/obj/item menu: Start gibbing
-human|/obj/item menu: Unsecure (refused: needs a wrench)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Start gibbing
-keys: drag_buckle, emag, gen_robot_interaction_swallow, gibber_interaction_drag, gibber_interaction_hand, gibber_interaction_item, gibber_verb_eject, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: drag_buckle, emag, gen_robot_interaction_swallow, gibber_interaction_drag, gibber_interaction_hand, gibber_interaction_item, gibber_verb_eject, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor
 

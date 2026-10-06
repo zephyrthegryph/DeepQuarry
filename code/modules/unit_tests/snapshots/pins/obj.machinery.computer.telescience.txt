@@ -22,7 +22,7 @@ human|/obj/item/tool/wirecutters click: Click: Use item
 human|/obj/item/multitool menu: Climb
 human|/obj/item/multitool menu: Use item
 human|/obj/item/multitool menu: Use multitool
-human|/obj/item/multitool click: Click: Use item
+human|/obj/item/multitool click: Click: Use multitool
 human|/obj/item/weldingtool menu: Climb
 human|/obj/item/weldingtool menu: Use item
 human|/obj/item/weldingtool click: Click: Use item
@@ -48,5 +48,5 @@ human|/obj/item/gps menu: Climb
 human|/obj/item/gps menu: Insert GPS
 human|/obj/item/gps menu: Use item
 human|/obj/item/gps click: Click: Use item
-keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, eject, ejectGPS, gen_robot_interaction_swallow, insert_crystal, insert_gps, machine_anchor, machine_deconstruct, machine_panel, machine_repair, recal, receive, send, setdistance, setMemory, setrotation, setz, use_gripper, use_item, use_multitool
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, eject, ejectGPS, gen_robot_interaction_swallow, insert_crystal, insert_gps, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, recal, receive, send, setdistance, setMemory, setrotation, setz, use_gripper, use_item, use_multitool
 

@@ -57,6 +57,7 @@ CAPABILITIES(/obj/machinery/account_database)
 	op("print", ui_act("print"), then(PROC_REF(ui_act_print)))
 	op("interaction_insert_card", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_card)))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
+	display_disconnect_op()
 
 /obj/machinery/account_database/Initialize(mapload)
 	machine_id = "[station_name()] Acc. DB #[GLOB.num_financial_terminals++]"
@@ -73,9 +74,6 @@ CAPABILITIES(/obj/machinery/account_database)
 
 	attack_hand(user)
 	return TRUE
-
-/obj/machinery/account_database/screwdriver_act(mob/user, obj/item/tool)
-	return deconstruct_display(user, tool)
 
 /obj/machinery/account_database/proc/interaction_open_ui_impl(datum/act/op/A)
 	var/mob/user = A.actor

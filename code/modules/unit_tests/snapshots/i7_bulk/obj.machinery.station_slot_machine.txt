@@ -1,5 +1,5 @@
-/obj/machinery/station_slot_machine|human|none => |machine_anchor:needs a wrench
-/obj/machinery/station_slot_machine|robot|none => |machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/station_slot_machine|human|none => |
+/obj/machinery/station_slot_machine|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/station_slot_machine|ai|none => |
 /obj/machinery/station_slot_machine|ghost|none => |
 

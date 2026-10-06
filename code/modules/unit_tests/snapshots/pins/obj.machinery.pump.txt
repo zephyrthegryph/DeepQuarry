@@ -1,10 +1,8 @@
 human|none menu: Climb (refused: There's a material processor in the way.)
-human|none menu: Unsecure (refused: needs a wrench)
 human|none menu: Use
 human|none click: Click: Use
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb (refused: There's a material processor in the way.)
-robot|none menu: Unsecure (refused: needs a wrench)
 robot|none menu: Use
 robot|none click: Click: Use
 ai|none menu: Toggle
@@ -12,12 +10,10 @@ ai|none click: Click: Toggle
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Climb (refused: There's a material processor in the way.)
-human|/obj/item/tool/screwdriver menu: Unsecure (refused: needs a wrench)
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver click: Click: Use
 human|/obj/item/tool/crowbar menu: Climb (refused: There's a material processor in the way.)
-human|/obj/item/tool/crowbar menu: Unsecure (refused: needs a wrench)
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar menu: Use crowbar
 human|/obj/item/tool/crowbar click: Click: Use
@@ -27,34 +23,27 @@ human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench menu: Use wrench
 human|/obj/item/tool/wrench click: Click: Use
 human|/obj/item/tool/wirecutters menu: Climb (refused: There's a material processor in the way.)
-human|/obj/item/tool/wirecutters menu: Unsecure (refused: needs a wrench)
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Use
 human|/obj/item/multitool menu: Climb (refused: There's a material processor in the way.)
-human|/obj/item/multitool menu: Unsecure (refused: needs a wrench)
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Use
 human|/obj/item/weldingtool menu: Climb (refused: There's a material processor in the way.)
-human|/obj/item/weldingtool menu: Unsecure (refused: needs a wrench)
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: Click: Use
 human|/obj/item/stack/cable_coil menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Unsecure (refused: needs a wrench)
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Climb (refused: There's a material processor in the way.)
-human|/obj/item/stack/material/steel menu: Unsecure (refused: needs a wrench)
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
-human|/obj/item/card/id menu: Unsecure (refused: needs a wrench)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
 human|/obj/item/cell menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/cell menu: Insert power cell (refused: The battery panel is watertight and cannot be opened without a crowbar.)
-human|/obj/item/cell menu: Unsecure (refused: needs a wrench)
 human|/obj/item/cell menu: Use
 human|/obj/item/cell click: Click: Insert power cell
-keys: climb.climb, climb.climb_menu, drag_buckle, gen_robot_interaction_swallow, insert_cell, machine_anchor, machine_deconstruct, machine_panel, machine_repair, silicon_toggle, use, use_crowbar, use_screwdriver, use_wrench
+keys: climb.climb, climb.climb_menu, drag_buckle, gen_robot_interaction_swallow, insert_cell, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, silicon_toggle, use, use_crowbar, use_screwdriver, use_wrench
 

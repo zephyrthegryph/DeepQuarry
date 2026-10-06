@@ -2365,3 +2365,31 @@ underlays of every creatable subtype of each converted chain, recorded from the 
 * **A redraw that was immediate is at the end of the frame.** `update_icon()` re-applied a declaration on the spot; its replacement is the tracked
   write itself (the redraw is generated) or, where the draw reads state nothing publishes, `changed(src)` at the old call site. Code that read
   `icon_state` or `overlays` right after `update_icon()` would see the old look until the frame ends; none of the converted callers does.
+
+- **The ten prompt machines ask on the op** (`asks()` steps; the question opens before any effect, and the hand and place are kept while it
+  is open): the cable layer's wirecutters (cut length), the floor layer's wrench (work mode), crowbar (tiles to remove) and screwdriver
+  (tile type), the holoposter's multitool (poster), the mass driver's, conveyor's, conveyor switch's and fax machine's multitools (id or
+  department, behind an open panel: with the panel shut the click is taken and nothing happens, as before), both point defence multitools
+  (ident tag), the protean reconstitutor's wrench (component), and the requests console's multitool (department) and its window's write
+  and announcement buttons (the write question opens only for a department name that reads as text). Their prompt subtypes lose the tool
+  they kept (the op keeps the hand). The holoposter's fingerprint and click sound come with the answer, not before the question. A floor
+  layer with nothing in it opens no tile question (it said "is empty").
+- **The conveyor switch's tools are ops**: the welder takes the switch apart behind an open panel after 2 s (a lit welder, no fuel), the
+  wrench flips one-way operation, the wirecutters change speed behind an open panel.
+- **The fax machine's staff request form is one op**, the window's button and the menu's verb, with four questions (confirm, job, reason,
+  confirm) as `asks()` steps whose later steps read the earlier answers (`step_value()`); a "No" or a closed question ends it with
+  nothing sent. It needs a human or silicon actor, beside the fax from the menu. A silicon's touch logs it in by its own op.
+- **Machine maintenance is ops** (the `maintenance` section of `CAPABILITIES(/obj/machinery)`): the panel (an open and a close op), deconstruct
+  behind the open panel, secure and unsecure with the panel shut (the machine's wrench time, begin and end messages) and the lit welder's
+  repair, each offered by the type's `maintenance_flags`. They answer after a type's own tool ops (moved to `OP_PRIORITY_DEFAULT`, as a
+  subtype's `*_act` ran before its `..()`) and ahead of its catch-alls for any item (same tier, the tool binding is the more specific),
+  which is the legacy order: the first sweep's catch-alls had come to answer screwdrivers and crowbars before the panel (a grill, a
+  station map, a grinder, a firework launcher...); they no longer do. The legacy datums survive only as the interaction engine's own test
+  fixture (`/obj/dq_maint_probe`); the machine behaviour is pinned by `dq_machine_maintenance/*`.
+- **Every machine tool proc is an op.** Guards that swallowed the tool are needs on the base ops (`extend("machine_panel", needs(...))`:
+  the airlock controller that isn't deconstructable, an occupied recharge station, a busy washing machine or protean reconstitutor, a hot
+  or running shield generator); reactions after the base op are appended handlers (`extend("machine_anchor", then(...))`: power machines
+  join or leave the network, turbines and compressors find each other, a bunsen burner drops its container, a quantum pad re-finds its
+  power region, the grid checker's flag, the firework launcher's redraw, the anomaly harvester lets go). The six wall displays share
+  `display_disconnect_op()` (2 s, needs a board). The chemical dispenser's and synthesizer's cartridge removal ask on the op. The drill's
+  label op asks instead of opening its prompt from the effect.

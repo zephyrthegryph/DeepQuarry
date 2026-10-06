@@ -26,6 +26,16 @@
 CAPABILITIES(/obj/machinery/floorlayer)
 	op("floorlayer_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
 	op("floorlayer_load_tile", item(/obj/item/stack/tile), priority(OP_PRIORITY_DEFAULT - 1), label("Load tile"), then(PROC_REF(interaction_load_tile)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set work mode"),
+		asks(/datum/prompt/choice, fields = list("title" = "Mode", "question" = "Choose work mode", "choices" = nameof(work_modes), "timeout" = 0)),
+		then(PROC_REF(work_mode_chosen)))
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), label("Remove tiles"),
+		asks(/datum/prompt/choice, fields = list("title" = "Tiles", "question" = "Choose remove tile type.", "choices" = computed(PROC_REF(tile_choices)), "timeout" = 0)),
+		then(PROC_REF(tile_removal_chosen)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Choose tile type"),
+		asks(/datum/prompt/choice, fields = list("title" = "Tiles", "question" = "Choose tile type.", "choices" = computed(PROC_REF(tile_choices)), "timeout" = 0)),
+		then(PROC_REF(tile_type_chosen)))
+
 
 /obj/machinery/floorlayer/proc/interaction_toggle(datum/act/op/A)
 	var/mob/user = A.actor
@@ -42,50 +52,38 @@ CAPABILITIES(/obj/machinery/floorlayer)
 	TakeTile(W)
 	return OP_OK
 
-/obj/machinery/floorlayer/wrench_act(mob/user, obj/item/tool)
-	open_request(src, /datum/prompt/choice, PROC_REF(work_mode_chosen), answerer = user, title = "Mode", question = "Choose work mode", choices = work_modes, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/floorlayer/proc/work_mode_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/selected_mode = A.answer.value
+/// The wrench's answer: a work mode switched on or off.
+/obj/machinery/floorlayer/proc/work_mode_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/selected_mode = A.answer?.value
+	if(!(selected_mode in work_modes))
+		return OP_OK
 	work_modes[selected_mode] = !work_modes[selected_mode]
 	act_message(user, src, MSG_SELF(span_notice("You set %T% [selected_mode] mode [work_modes[selected_mode] ? "on" : "off"].")), \
 		MSG_OTHERS(span_notice("%U% has set %T% [selected_mode] mode [work_modes[selected_mode] ? "on" : "off"].")))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/floorlayer/crowbar_act(mob/user, obj/item/tool)
-	if(!contents_count(src) && !has_latent()) // ALLOW(latent): latent entries checked
-		to_chat(user, span_notice("\The [src] is empty."))
-		return ITEM_INTERACT_BLOCKING
-	open_request(src, /datum/prompt/choice, PROC_REF(tile_removal_chosen), answerer = user, title = "Tiles", question = "Choose remove tile type.", choices = contents, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	return ITEM_INTERACT_SUCCESS
+/// The tiles inside, offered by the crowbar's and the screwdriver's questions (read when the question opens).
+/obj/machinery/floorlayer/proc/tile_choices(datum/act/A)
+	return contents.Copy()
 
-/obj/machinery/floorlayer/proc/tile_removal_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/obj/item/stack/tile/selected = A.answer.value
-	if(selected.loc != src)
-		return
-	if(selected)
-		to_chat(user, span_notice("You remove [selected] from \the [src]."))
-		selected.forceMove(loc)
-		own_take(src, nameof(T))
-	return ITEM_INTERACT_SUCCESS
+/// The crowbar's answer: those tiles come out.
+/obj/machinery/floorlayer/proc/tile_removal_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/tile/selected = A.answer?.value
+	if(!istype(selected) || selected.loc != src)
+		return OP_OK
+	to_chat(user, span_notice("You remove [selected] from \the [src]."))
+	selected.forceMove(loc)
+	own_take(src, nameof(T))
+	return OP_OK
 
-/obj/machinery/floorlayer/screwdriver_act(mob/user, obj/item/tool)
-	open_request(src, /datum/prompt/choice, PROC_REF(tile_type_chosen), answerer = user, title = "Tiles", question = "Choose tile type.", choices = contents, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/floorlayer/proc/tile_type_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/obj/item/stack/tile/selected = A.answer.value
-	if(selected.loc == src)
+/// The screwdriver's answer: the tiles it lays next.
+/obj/machinery/floorlayer/proc/tile_type_chosen(datum/act/op/A)
+	var/obj/item/stack/tile/selected = A.answer?.value
+	if(istype(selected) && selected.loc == src)
 		rel_set(src, nameof(T), selected)
+	return OP_OK
 
 /obj/machinery/floorlayer/examine(mob/user)
 	. = ..()

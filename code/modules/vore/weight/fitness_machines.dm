@@ -71,7 +71,7 @@ EXTEND_INTERACTIONS(/obj/machinery/fitness, INTERACT_HAND_UNGATED("Work out", PR
 
 CAPABILITIES(/obj/machinery/fitness/heavy)
 	op("heavy_fitness_safety_hand", hand(), then(PROC_REF(heavy_fitness_safety_hand)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 
 /// Old attack_hand: safety checks; FALSE goes on to the workout.
 /obj/machinery/fitness/heavy/proc/heavy_fitness_safety_hand(datum/act/op/A)

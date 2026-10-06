@@ -65,12 +65,6 @@ CAPABILITIES(/obj/machinery/firework_launcher)
 		return TRUE
 	return TRUE
 
-/obj/machinery/firework_launcher/screwdriver_act(mob/user, obj/item/tool)
-	. = ..()
-
-/obj/machinery/firework_launcher/wrench_act(mob/user, obj/item/tool)
-	. = ..()
-
 /// Requirement (was REQ_* dq_actor_can_act): the legacy check answers TRUE to pass.
 /obj/machinery/firework_launcher/proc/dq_actor_can_act_holds(datum/act/op/A)
 	var/answer = dq_actor_can_act(A.actor, src, A.held)

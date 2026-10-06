@@ -42,6 +42,9 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 	op("toggle_active", ui_act("toggle_active", arg("target")), then(PROC_REF(ui_act_toggle_active)))
 	ref_many(nameof(targets))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ident tag"),
+		asks(/datum/prompt/text, fields = list("title" = computed(PROC_REF(ident_title)), "question" = "Enter a new ident tag.", "default" = nameof(id_tag), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)),
+		then(PROC_REF(ident_entered)))
 
 /obj/machinery/pointdefense_control/proc/ui_act_toggle_active(datum/act/op/A, target)
 	var/mob/user = A.actor
@@ -83,24 +86,25 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 	data["turrets"] = turrets
 	return data
 
-/obj/machinery/pointdefense_control/multitool_act(mob/user, obj/item/tool)
-	open_request(src, /datum/prompt/text, PROC_REF(ident_entered), answerer = user, title = "[src]", question = "Enter a new ident tag.", default = id_tag, max_len = MAX_NAME_LEN, usable_state = "physical", name_text = TRUE, timeout = 0)
-	return ITEM_INTERACT_SUCCESS
+/// The multitool question's title: the machine's name.
+/obj/machinery/pointdefense/proc/ident_title(datum/act/A)
+	return "[src]"
 
-/obj/machinery/pointdefense_control/proc/ident_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/new_ident = A.answer.value
-	if(new_ident && new_ident != id_tag && user.Adjacent(src))
+/obj/machinery/pointdefense_control/proc/ident_title(datum/act/A)
+	return "[src]"
+
+/// The multitool's answer: the controller joins that network, unless it already has one.
+/obj/machinery/pointdefense_control/proc/ident_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/new_ident = A.answer?.value
+	if(new_ident && new_ident != id_tag)
 		for(var/obj/machinery/pointdefense_control/PC as anything in REGISTRY_MEMBERS(REGISTRY_POINTDEFENSE_CONTROLLERS))
 			if(PC != src && PC.id_tag == new_ident)
 				to_chat(user, span_warning("The [new_ident] network already has a controller."))
-				return ITEM_INTERACT_BLOCKING
+				return OP_OK
 		to_chat(user, span_notice("You register [src] with the [new_ident] network."))
 		id_tag = new_ident
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+	return OP_OK
 
 //
 // The acutal point defense battery
@@ -149,19 +153,13 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 		if(PDC.id_tag == id_tag && (get_z(PDC) in connected_z_levels))
 			return PDC
 
-/obj/machinery/pointdefense/multitool_act(mob/user, obj/item/tool)
-	open_request(src, /datum/prompt/text, PROC_REF(ident_entered), answerer = user, title = "[src]", question = "Enter a new ident tag.", default = id_tag, max_len = MAX_NAME_LEN, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/pointdefense/proc/ident_entered(datum/act/request/A)
-	if(!A.answer)
-		return ITEM_INTERACT_BLOCKING
-	var/new_ident = A.answer.value
+/// The multitool's answer: the battery joins that network.
+/obj/machinery/pointdefense/proc/ident_entered(datum/act/op/A)
+	var/new_ident = A.answer?.value
 	if(new_ident && new_ident != id_tag)
-		to_chat(A.request.answerer, span_notice("You register [src] with the [new_ident] network."))
+		to_chat(A.actor, span_notice("You register [src] with the [new_ident] network."))
 		id_tag = new_ident
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+	return OP_OK
 
 //Guns cannot shoot through hull or generally dense turfs.
 /obj/machinery/pointdefense/proc/space_los(meteor)
@@ -206,6 +204,9 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/pointdefense)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), gate = PROC_REF(operable), wakes_on = list(nameof(active), nameof(stat)))
+	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ident tag"),
+		asks(/datum/prompt/text, fields = list("title" = computed(PROC_REF(ident_title)), "question" = "Enter a new ident tag.", "default" = nameof(id_tag), "max_len" = MAX_NAME_LEN, "timeout" = 0)),
+		then(PROC_REF(ident_entered)))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	default_parts()
 

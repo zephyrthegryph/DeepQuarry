@@ -1,96 +1,57 @@
 human|none menu: Climb (refused: There's a material processor in the way.)
 human|none menu: Emag (refused: needs a cryptographic sequencer)
-human|none menu: Rotate Clockwise
-human|none menu: Rotate Counter Clockwise
-human|none menu: Turn Around
 human|none menu: Use
 human|none click: Click: Use
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb (refused: There's a material processor in the way.)
 robot|none menu: Emag (refused: needs a cryptographic sequencer)
-robot|none menu: Rotate Clockwise
-robot|none menu: Rotate Counter Clockwise
-robot|none menu: Turn Around
 robot|none menu: Use
 robot|none click: Click: Use
 ai|none click: nothing
 ghost|none menu: Climb (refused: You can't climb right now.)
-ghost|none menu: Rotate Clockwise
-ghost|none menu: Rotate Counter Clockwise
-ghost|none menu: Turn Around
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tool/screwdriver menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/tool/screwdriver menu: Rotate Clockwise
-human|/obj/item/tool/screwdriver menu: Rotate Counter Clockwise
-human|/obj/item/tool/screwdriver menu: Turn Around
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Use
 human|/obj/item/tool/crowbar menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tool/crowbar menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/tool/crowbar menu: Rotate Clockwise
-human|/obj/item/tool/crowbar menu: Rotate Counter Clockwise
-human|/obj/item/tool/crowbar menu: Turn Around
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Use
 human|/obj/item/tool/wrench menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tool/wrench menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/tool/wrench menu: Rotate Clockwise
-human|/obj/item/tool/wrench menu: Rotate Counter Clockwise
-human|/obj/item/tool/wrench menu: Turn Around
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench menu: Use wrench
 human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tool/wirecutters menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/tool/wirecutters menu: Rotate Clockwise
-human|/obj/item/tool/wirecutters menu: Rotate Counter Clockwise
-human|/obj/item/tool/wirecutters menu: Turn Around
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Use
 human|/obj/item/multitool menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/multitool menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/multitool menu: Rotate Clockwise
-human|/obj/item/multitool menu: Rotate Counter Clockwise
-human|/obj/item/multitool menu: Turn Around
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Use
 human|/obj/item/weldingtool menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/weldingtool menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/weldingtool menu: Rotate Clockwise
-human|/obj/item/weldingtool menu: Rotate Counter Clockwise
-human|/obj/item/weldingtool menu: Turn Around
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: Click: Use
 human|/obj/item/stack/cable_coil menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/stack/cable_coil menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Rotate Clockwise
-human|/obj/item/stack/cable_coil menu: Rotate Counter Clockwise
-human|/obj/item/stack/cable_coil menu: Turn Around
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/stack/material/steel menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/stack/material/steel menu: Rotate Clockwise
-human|/obj/item/stack/material/steel menu: Rotate Counter Clockwise
-human|/obj/item/stack/material/steel menu: Turn Around
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Use
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/card/id menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/card/id menu: Rotate Clockwise
-human|/obj/item/card/id menu: Rotate Counter Clockwise
 human|/obj/item/card/id menu: Swipe ID
-human|/obj/item/card/id menu: Turn Around
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Swipe ID
 human|/obj/item/card/emag menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/card/emag menu: Emag
-human|/obj/item/card/emag menu: Rotate Clockwise
-human|/obj/item/card/emag menu: Rotate Counter Clockwise
-human|/obj/item/card/emag menu: Turn Around
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
-keys: charge_rate, climb.climb, climb.climb_menu, drag_buckle, emag, gen_robot_interaction_swallow, id_swipe, machine_anchor, machine_deconstruct, machine_panel, machine_repair, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, toggle, use, use_wrench
+keys: charge_rate, climb.climb, climb.climb_menu, drag_buckle, emag, gen_robot_interaction_swallow, id_swipe, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, toggle, use, use_wrench
 

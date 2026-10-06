@@ -208,6 +208,7 @@
 #include "dq_default_parts_tests.dm"
 #include "dq_lifeform_registry_tests.dm"
 #include "dq_lifeform_rolls_tests.dm"
+#include "dq_machine_maintenance_tests.dm"
 #include "dq_machine_reqs_tests.dm"
 #include "dq_rust_integration_tests.dm"
 #include "dq_native_tests.dm"

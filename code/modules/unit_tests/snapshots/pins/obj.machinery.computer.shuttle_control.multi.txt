@@ -55,5 +55,5 @@ human|/obj/item menu: Climb
 human|/obj/item menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
-keys: cancel, climb.climb, climb.climb_menu, disconnect, drag_buckle, emag, force, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, move, pick, set_codes, toggle_cloaked, use_gripper, use_item
+keys: cancel, climb.climb, climb.climb_menu, disconnect, drag_buckle, emag, force, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, move, pick, set_codes, toggle_cloaked, use_gripper, use_item
 

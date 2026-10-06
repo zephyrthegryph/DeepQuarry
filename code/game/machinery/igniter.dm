@@ -111,7 +111,7 @@ CAPABILITIES(/obj/machinery/igniter)
 
 CAPABILITIES(/obj/machinery/sparker)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(sparker_emp))))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("sparker_silicon_trigger", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Ignite"), then(PROC_REF(sparker_silicon_trigger)))
 
 /// An EMP makes a working sparker spark.

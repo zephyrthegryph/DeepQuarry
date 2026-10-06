@@ -82,5 +82,5 @@ human|/obj/item menu: Ui open
 human|/obj/item menu: Use (refused: access denied)
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
-keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, emag, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, open_ui_impl, send_to_dock, send_to_station, ui_open, use_gripper, use_item
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, emag, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, open_ui_impl, send_to_dock, send_to_station, ui_open, use_gripper, use_item
 

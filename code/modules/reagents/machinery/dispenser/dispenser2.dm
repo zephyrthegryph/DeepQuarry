@@ -58,6 +58,7 @@ CAPABILITIES(/obj/machinery/chemical_dispenser)
 	op("refill_cartridge", item(/obj/item/reagent_containers/chem_canister), label("Refill cartridge"), then(PROC_REF(canister_refill)))
 	op("set_container", item(/obj/item/reagent_containers), when(req(list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food))), label("Set container"),
 		needs(req(PROC_REF(no_container), silent = TRUE), req(PROC_REF(can_take_container), because = PROC_REF(container_refusal))), then(PROC_REF(container_set)))
+	op("remove_cartridge", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), label("Remove cartridge"), asks(/datum/prompt/choice, fields = list("question" = "Which cartridge would you like to remove?", "title" = "Chemical Dispenser", "choices" = computed(PROC_REF(cartridge_choices)), "timeout" = 0)), then(PROC_REF(cartridge_chosen)))
 
 /obj/machinery/chemical_dispenser/proc/canister_refill(datum/act/op/A)
 	var/obj/item/reagent_containers/chem_canister/C = A.held
@@ -152,18 +153,6 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 		return OP_OK
 	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
 	return OP_OK
-
-/obj/machinery/chemical_dispenser/screwdriver_act(mob/user, obj/item/tool)
-	var/label = rerun_ask(user, "a1", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "Which cartridge would you like to remove?", title = "Chemical Dispenser", choices = cartridges)
-	if(!label)
-		return ITEM_INTERACT_BLOCKING
-	var/obj/item/reagent_containers/chem_disp_cartridge/cartridge = remove_cartridge(label)
-	if(!cartridge)
-		return ITEM_INTERACT_BLOCKING
-	to_chat(user, span_notice("You remove \the [cartridge] from \the [src]."))
-	cartridge.forceMove(loc)
-	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/chemical_dispenser/ui_title(mob/user)
 	return ui_title
@@ -361,3 +350,21 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 	return TRUE
 
 // Label -> installed cartridge (in contents); they go with the machine.
+
+/// The cartridges the screwdriver's question offers, by label.
+/obj/machinery/chemical_dispenser/proc/cartridge_choices(datum/act/A)
+	return cartridges
+
+/// The screwdriver's answer: that cartridge comes out.
+/obj/machinery/chemical_dispenser/proc/cartridge_chosen(datum/act/op/A)
+	var/obj/item/tool = A.held
+	var/label = A.answer?.value
+	if(!label)
+		return OP_OK
+	var/obj/item/reagent_containers/chem_disp_cartridge/cartridge = remove_cartridge(label)
+	if(!cartridge)
+		return OP_OK
+	to_chat(A.actor, span_notice("You remove \the [cartridge] from \the [src]."))
+	cartridge.forceMove(loc)
+	playsound(src, tool.usesound, 50, TRUE)
+	return OP_OK

@@ -66,9 +66,6 @@
 	attack_hand(user)
 	return TRUE
 
-/obj/machinery/status_display/screwdriver_act(mob/user, obj/item/tool)
-	return deconstruct_display(user, tool)
-
 // register for radio system
 /obj/machinery/status_display/Initialize(mapload)
 	. = ..()
@@ -168,6 +165,7 @@
 CAPABILITIES(/obj/machinery/status_display)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(status_display_emp))))
 	op("attackby", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_attackby)))
+	display_disconnect_op()
 
 /// An EMP blue-screens a working display.
 /obj/machinery/status_display/proc/status_display_emp(datum/act/hit/emp/A)

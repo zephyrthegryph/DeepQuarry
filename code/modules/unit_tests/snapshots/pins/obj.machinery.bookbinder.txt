@@ -31,5 +31,5 @@ human|/obj/item/paper click: Click: Bind
 human|/obj/item/paper_bundle menu: Bind
 human|/obj/item/paper_bundle menu: Climb
 human|/obj/item/paper_bundle click: Click: Bind
-keys: bind, climb.climb, climb.climb_menu, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair
+keys: bind, climb.climb, climb.climb_menu, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor
 

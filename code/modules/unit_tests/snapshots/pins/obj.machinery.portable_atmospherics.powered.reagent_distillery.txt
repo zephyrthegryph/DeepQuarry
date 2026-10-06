@@ -65,5 +65,5 @@ human|/obj/item/reagent_containers/glass menu: Start Distillery Mixing
 human|/obj/item/reagent_containers/glass menu: Toggle Distillery Heating
 human|/obj/item/reagent_containers/glass menu: Use
 human|/obj/item/reagent_containers/glass click: Click: Install beaker
-keys: cell_in, cell_out, distillery_install_beaker, distillery_radial, distillery_toggle_mixing, distillery_toggle_power, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, port, tank_bay.holding.insert
+keys: cell_in, cell_out, distillery_install_beaker, distillery_radial, distillery_toggle_mixing, distillery_toggle_power, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, port, tank_bay.holding.insert
 

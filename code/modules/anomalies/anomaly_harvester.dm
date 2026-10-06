@@ -4,6 +4,8 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	interface("AnomalyHarvester", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")
 	op("release_sample", ui_act("release_sample", arg("ref", schema_ref(/obj/item/research_sample))), then(PROC_REF(ui_act_release_sample)))
+	extend("machine_anchor", then(PROC_REF(rewrenched)))
+	extend("machine_unanchor", then(PROC_REF(rewrenched)))
 	default_parts()
 
 /obj/machinery/anomaly_harvester
@@ -84,11 +86,6 @@ EXTEND_INTERACTIONS(/obj/machinery/anomaly_harvester, \
 /obj/machinery/anomaly_harvester/proc/attach_scanned_anomaly(obj/item/anomaly_scanner/scanner)
 	if(scanner.buffered_anomaly)
 		attach_anomaly(scanner.buffered_anomaly)
-
-/obj/machinery/anomaly_harvester/wrench_act(mob/user, obj/item/tool)
-	. = ..()
-	if(. & ITEM_INTERACT_SUCCESS)
-		rel_clear(src, nameof(harvested))
 
 /obj/machinery/anomaly_harvester/proc/attach_anomaly(obj/effect/anomaly/anomaly)
 	// The scanner's buffered_anomaly and the stats' attached_harvester are relation views.
@@ -185,3 +182,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/anomaly_harvester, TYPE_PROC_REF(/atom, a
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/anomaly_harvester/step_start_condition()
 	return anchored
+
+/// After the wrench (secure or unsecure): the harvested anomaly is let go.
+/obj/machinery/anomaly_harvester/proc/rewrenched(datum/act/op/A)
+	rel_clear(src, nameof(harvested))

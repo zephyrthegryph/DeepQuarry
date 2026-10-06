@@ -1,5 +1,5 @@
-/obj/machinery/atmospherics/binary/algae_farm|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
-/obj/machinery/atmospherics/binary/algae_farm|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/atmospherics/binary/algae_farm|human|none => |
+/obj/machinery/atmospherics/binary/algae_farm|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/atmospherics/binary/algae_farm|ai|none => |
 /obj/machinery/atmospherics/binary/algae_farm|ghost|none => |
 

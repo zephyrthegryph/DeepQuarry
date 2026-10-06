@@ -1,5 +1,5 @@
-/obj/machinery/power/grid_checker|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
-/obj/machinery/power/grid_checker|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/power/grid_checker|human|none => |
+/obj/machinery/power/grid_checker|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/power/grid_checker|ai|none => |
 /obj/machinery/power/grid_checker|ghost|none => |
 

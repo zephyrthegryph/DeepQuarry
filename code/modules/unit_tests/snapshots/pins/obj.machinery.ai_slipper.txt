@@ -49,5 +49,5 @@ human|/obj/item menu: Swipe ID
 human|/obj/item menu: Ui open
 human|/obj/item menu: Use
 human|/obj/item click: Click: Ui open
-keys: ai_slipper_toggle_lock, ai_slipper_use, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, toggle_on, toggle_use, ui_open
+keys: ai_slipper_toggle_lock, ai_slipper_use, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, toggle_on, toggle_use, ui_open
 

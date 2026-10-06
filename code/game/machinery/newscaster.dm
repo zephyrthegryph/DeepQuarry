@@ -179,6 +179,7 @@ CAPABILITIES(/obj/machinery/newscaster)
 	op("show_channel", ui_act("show_channel", arg("show_channel")), then(PROC_REF(ui_act_show_channel)))
 	op("open", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open)))
 	op("as_touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_as_touch)))
+	display_disconnect_op()
 
 /obj/machinery/newscaster/security_unit                   //Security unit
 	name = "Security Newscaster"
@@ -658,9 +659,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 			NEWSCASTER.update_icon()
 		set_temp("Wanted issue taken down.", "success", FALSE)
 		SStgui.update_uis(src)
-
-/obj/machinery/newscaster/screwdriver_act(mob/user, obj/item/tool)
-	return deconstruct_display(user, tool)
 
 /datum/news_photo
 	var/is_synth = 0

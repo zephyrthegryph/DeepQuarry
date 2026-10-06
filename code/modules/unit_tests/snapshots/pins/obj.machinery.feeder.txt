@@ -41,5 +41,5 @@ human|/obj/item/reagent_containers click: Click: Insert container
 human|/obj/item menu: Take out container
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: drag_buckle, gen_robot_interaction_swallow, insert_beaker, machine_anchor, machine_deconstruct, machine_panel, machine_repair, reject, take_beaker, use_screwdriver
+keys: drag_buckle, gen_robot_interaction_swallow, insert_beaker, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, reject, take_beaker, use_screwdriver
 

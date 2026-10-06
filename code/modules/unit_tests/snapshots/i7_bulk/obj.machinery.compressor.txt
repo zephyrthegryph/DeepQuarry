@@ -1,5 +1,5 @@
-/obj/machinery/compressor|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench
-/obj/machinery/compressor|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/compressor|human|none => |
+/obj/machinery/compressor|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/compressor|ai|none => |
 /obj/machinery/compressor|ghost|none => |
 

@@ -1,5 +1,5 @@
-/obj/machinery/reagent_refinery/waste_processor|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar
-/obj/machinery/reagent_refinery/waste_processor|robot|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/reagent_refinery/waste_processor|human|none => |
+/obj/machinery/reagent_refinery/waste_processor|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/reagent_refinery/waste_processor|ai|none => |
 /obj/machinery/reagent_refinery/waste_processor|ghost|none => |
 

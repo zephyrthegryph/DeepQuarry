@@ -39,7 +39,7 @@ CAPABILITIES(/obj/machinery/shield_gen)
 	op("strengthen_rate", ui_act("strengthen_rate", arg("val", num())), then(PROC_REF(ui_act_strengthen_rate)))
 	op("target_field_strength", ui_act("target_field_strength", arg("val", num())), then(PROC_REF(ui_act_target_field_strength)))
 	op("z_range", ui_act("z_range", arg("val", num(0, 10))), then(PROC_REF(ui_act_z_range)))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("shield_gen_swipe_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_swipe_id)))
 	op("shield_gen_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(shield_gen_not_broken_holds), because = PROC_REF(shield_gen_not_broken_refusal))), then(PROC_REF(interaction_open_ui_impl)))
 

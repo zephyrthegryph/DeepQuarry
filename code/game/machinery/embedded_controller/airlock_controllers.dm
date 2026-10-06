@@ -25,11 +25,9 @@
 	if(!allowed(user))
 		return min(STATUS_UPDATE, .)
 
-/obj/machinery/embedded_controller/radio/airlock/screwdriver_act(mob/user, obj/item/tool)
-	return deconstructable ? ..() : ITEM_INTERACT_BLOCKING
-
-/obj/machinery/embedded_controller/radio/airlock/crowbar_act(mob/user, obj/item/tool)
-	return deconstructable ? ..() : ITEM_INTERACT_BLOCKING
+/// Only a controller built to come apart opens its panel or comes off the wall (the others take the click and do nothing).
+/obj/machinery/embedded_controller/radio/airlock/proc/may_deconstruct(datum/act/op/A)
+	return deconstructable
 
 /// The window's data.
 /obj/machinery/embedded_controller/radio/airlock/ui_data(datum/act/eval/A)
@@ -66,6 +64,9 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock)
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(edit_tag_question)), "title" = computed(PROC_REF(edit_tag_title)), "default" = computed(PROC_REF(edit_tag_default)), "max_len" = 30, "name_text" = TRUE, "timeout" = 0), step = "tag"),
 		then(PROC_REF(ui_act_edit_tag)))
 	op("set_frequency", ui_act("set_frequency", arg("freq", num())), at(SPACE_PANEL), then(PROC_REF(ui_act_set_frequency)))
+	extend("machine_panel", needs(req(PROC_REF(may_deconstruct), silent = TRUE)))
+	extend("machine_panel_close", needs(req(PROC_REF(may_deconstruct), silent = TRUE)))
+	extend("machine_deconstruct", needs(req(PROC_REF(may_deconstruct), silent = TRUE)))
 
 /obj/machinery/embedded_controller/radio/airlock/proc/edit_tag_question(datum/act/op/A)
 	return "What would you like to set [A.args["tag"]] to?"

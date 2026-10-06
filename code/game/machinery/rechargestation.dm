@@ -245,13 +245,9 @@ OM_DERIVE_FIELD(/obj/machinery/recharge_station, unbroken, list("stat"))
 	go_in(user)
 	return TRUE
 
-/obj/machinery/recharge_station/screwdriver_act(mob/user, obj/item/tool)
-	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
-	return occupant ? ITEM_INTERACT_BLOCKING : ..()
-
-/obj/machinery/recharge_station/crowbar_act(mob/user, obj/item/tool)
-	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
-	return occupant ? ITEM_INTERACT_BLOCKING : ..()
+/// Nobody is charging inside (an occupant keeps the panel shut and the frame whole: the click is taken and nothing happens).
+/obj/machinery/recharge_station/proc/station_empty(datum/act/op/A)
+	return !slot_occupant(OCCUPANT_SLOT_RECHARGE_STATION)
 
 /obj/machinery/recharge_station/RefreshParts()
 	..()
@@ -313,6 +309,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station, TYPE_PROC_REF(/atom, ap
 CAPABILITIES(/obj/machinery/recharge_station)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(cell), gate = PROC_REF(unbroken), wakes_on = list(nameof(stat), nameof(cell)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	extend("machine_panel", needs(req(PROC_REF(station_empty), silent = TRUE)))
+	extend("machine_panel_close", needs(req(PROC_REF(station_empty), silent = TRUE)))
+	extend("machine_deconstruct", needs(req(PROC_REF(station_empty), silent = TRUE)))
 
 /// Something walked into it (the bump action's notice).
 /obj/machinery/recharge_station/proc/bumped_into(datum/act/A)

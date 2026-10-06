@@ -41,5 +41,5 @@ human|/obj/item/reagent_containers menu: Attach container
 human|/obj/item/reagent_containers menu: Remove container
 human|/obj/item/reagent_containers menu: Toggle Mode
 human|/obj/item/reagent_containers click: Click: Attach container
-keys: drag_buckle, gen_robot_interaction_swallow, iv_drip_interaction_hand, iv_drip_interaction_item, iv_drip_toggle_mode, machine_anchor, machine_deconstruct, machine_panel, machine_repair, use_screwdriver
+keys: drag_buckle, gen_robot_interaction_swallow, iv_drip_interaction_hand, iv_drip_interaction_item, iv_drip_toggle_mode, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, use_screwdriver
 

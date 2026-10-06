@@ -63,5 +63,5 @@ human|/obj/item/card/id menu: Rotate Counter Clockwise
 human|/obj/item/card/id menu: Turn Around
 human|/obj/item/card/id click: nothing
 wires: Interface, Maximum Power, Power Toggle, Strength
-keys: add_strength, climb.climb, climb.climb_menu, construction.build:pa_bolted, construction.build:pa_closed, construction.build:pa_wired, construction.undo:pa_bolted, construction.undo:pa_closed, construction.undo:pa_wired, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_repair, power, remove_strength, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, scan, ui_open, wires.open
+keys: add_strength, climb.climb, climb.climb_menu, construction.build:pa_bolted, construction.build:pa_closed, construction.build:pa_wired, construction.undo:pa_bolted, construction.undo:pa_closed, construction.undo:pa_wired, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, power, remove_strength, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, scan, ui_open, wires.open
 

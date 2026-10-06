@@ -50,6 +50,7 @@ CAPABILITIES(/obj/machinery/power/supply_beacon)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = cond_all(nameof(use_power), cond_not(nameof(expended))), wakes_on = list(nameof(use_power), nameof(expended)))
 	rolls(nameof(drop_type), PROC_REF(roll_drop_type), when = cond_not(nameof(drop_type)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Secure"), then(PROC_REF(wrench_used)))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/machinery/power/supply_beacon/proc/roll_drop_type(datum/roller/R)
@@ -59,16 +60,18 @@ CAPABILITIES(/obj/machinery/power/supply_beacon)
 	name = "supermatter supply beacon"
 	drop_type = "supermatter"
 
-/obj/machinery/power/supply_beacon/wrench_act(mob/user, obj/item/tool)
+/// The wrench: secures the beacon over an exposed cable, or unsecures it (a running beacon takes the click and does nothing).
+/obj/machinery/power/supply_beacon/proc/wrench_used(datum/act/op/A)
+	var/obj/item/tool = A.held
 	if(use_power)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	if(!anchored && !connect_to_network())
-		to_chat(user, span_warning("This device must be placed over an exposed cable."))
-		return ITEM_INTERACT_BLOCKING
+		to_chat(A.actor, span_warning("This device must be placed over an exposed cable."))
+		return OP_OK
 	set_anchored(!anchored)
-	act_message(user, src, others = span_notice("%U% [anchored ? "secures" : "unsecures"] %T%."))
+	act_message(A.actor, src, others = span_notice("%U% [anchored ? "secures" : "unsecures"] %T%."))
 	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/power/supply_beacon/proc/interaction_use(datum/act/op/A)
 	var/mob/user = A.actor

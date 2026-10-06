@@ -27,10 +27,12 @@ human|/obj/item/tool/wrench click: Click: Ui open
 human|/obj/item/tool/wirecutters menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/tool/wirecutters menu: Ui open
 human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters menu: Wires (refused: )
 human|/obj/item/tool/wirecutters click: Click: Ui open
 human|/obj/item/multitool menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/multitool menu: Ui open
 human|/obj/item/multitool menu: Use
+human|/obj/item/multitool menu: Wires (refused: )
 human|/obj/item/multitool click: Click: Ui open
 human|/obj/item/weldingtool menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/weldingtool menu: Ui open
@@ -66,5 +68,5 @@ human|/obj/item/storage/bag/plants menu: Ui open
 human|/obj/item/storage/bag/plants menu: Use
 human|/obj/item/storage/bag/plants click: Click: Ui open
 wires: Contraband, Electrification, Lockdown, Smart
-keys: drag_buckle, emag_gated, gen_robot_interaction_swallow, insert_bag, insert_seeds, machine_anchor, machine_deconstruct, machine_panel, machine_repair, purge, ui_open, use, use_screwdriver, use_wrench, vend
+keys: drag_buckle, emag_gated, gen_robot_interaction_swallow, insert_bag, insert_seeds, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, purge, ui_open, use, use_screwdriver, use_wire_tools, use_wrench, vend
 

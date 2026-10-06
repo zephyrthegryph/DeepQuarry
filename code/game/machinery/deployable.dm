@@ -81,7 +81,7 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 	// Two stages (the access lock, then the anchoring); a fully shorted mechanism takes no third card use.
 	extend("emag.use", needs(req(PROC_REF(emag_stage_left), because = MSG(emag/already))))
 	extend("emag.subvert", needs(req(PROC_REF(emag_stage_left), because = MSG(emag/already))))
-	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("swipe_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_swipe_id)))
 	op("hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), then(PROC_REF(interaction_hit)))
 
