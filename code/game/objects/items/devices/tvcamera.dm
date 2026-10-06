@@ -244,18 +244,16 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/accessory/bodycam, TYPE_PROC_REF(/ato
 
 //Assembly by roboticist
 
-DECLARE_INTERACTIONS(/obj/item/robot_parts/head, \
-	INTERACT_INSERT(/obj/item/assembly/infra, PROC_REF(interaction_item), null), \
-	INTERACT_INSERT(/obj/item/flash, PROC_REF(head_insert_flash), null), \
-)
-
-/obj/item/robot_parts/head/proc/interaction_item(mob/user, obj/item/assembly/S, datum/interaction/interaction)
-	var/obj/item/TVAssembly/A = new(user)
+/// An infrared sensor turns the head into a TV camera assembly.
+/obj/item/robot_parts/head/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/assembly/S = A.held
+	var/obj/item/TVAssembly/TV = new(user)
 	consume(S, user)
-	user.put_in_hands(A)
+	user.put_in_hands(TV)
 	to_chat(user, span_notice("You add the infrared sensor to the robot head."))
 	consume(src, user)
-	return TRUE
+	return OP_OK
 
 /obj/item/TVAssembly
 	name = "\improper TV Camera Assembly"
@@ -266,64 +264,72 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/head, \
 	var/buildstep = 0
 	w_class = ITEMSIZE_LARGE
 
-DECLARE_INTERACTIONS(/obj/item/TVAssembly, INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/item/TVAssembly/proc/can_insert_device)))
+TRACKED(/obj/item/TVAssembly, buildstep)
 
-/// Matching construction ingredients must be removable before advancing the assembly.
-/obj/item/TVAssembly/proc/can_insert_device(mob/user, atom/target, obj/item/held)
+CAPABILITIES(/obj/item/TVAssembly)
+	// the old attackby: the construction steps (a camera module or tape recorder must be free to take)
+	op("build", item(/obj/item), label("Build"), needs(req(PROC_REF(can_insert_device), because = PROC_REF(insert_device_refusal))), then(PROC_REF(interaction_item)))
+
+/// Requirement: a matching construction ingredient can be taken from where it is.
+/obj/item/TVAssembly/proc/can_insert_device(datum/act/op/A)
+	return isnull(insert_device_refusal(A))
+
+/obj/item/TVAssembly/proc/insert_device_refusal(datum/act/op/A)
+	var/obj/item/held = A.held
 	if((buildstep == 0 && istype(held, /obj/item/robot_parts/robot_component/camera)) || (buildstep == 1 && istype(held, /obj/item/taperecorder)))
-		var/reason = held.loc?.release_refusal(held, user)
-		if(reason)
-			return reason
-	return TRUE
+		return A.actor.release_refusal(held, A.actor)
+	return null
 
 /// Old attackby: a construction step machine. Faithfully preserved, including that a
 /// successful buildstep 0/1 match still falls through to ..() afterward (no early return there).
-/obj/item/TVAssembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/TVAssembly/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	switch(buildstep)
 		if(0)
 			if(istype(W, /obj/item/robot_parts/robot_component/camera))
 				var/obj/item/robot_parts/robot_component/camera/CA = W
 				if(!consume(CA, user))
-					return FALSE
+					return OP_DECLINE
 				to_chat(user, span_notice("You add the camera module to [src]"))
 				desc = "This TV camera assembly has a camera module."
-				buildstep++
+				set_buildstep(buildstep + 1)
 		if(1)
 			if(istype(W, /obj/item/taperecorder))
 				var/obj/item/taperecorder/T = W
 				if(!consume(T, user))
-					return FALSE
-				buildstep++
+					return OP_DECLINE
+				set_buildstep(buildstep + 1)
 				to_chat(user, span_notice("You add the tape recorder to [src]"))
 		if(2)
 			if(istype(W, /obj/item/stack/cable_coil))
 				var/obj/item/stack/cable_coil/C = W
 				if(C.get_amount() < 6)
 					to_chat(user, span_notice("You need six cable coils to wire the devices."))
-					return FALSE
+					return OP_DECLINE
 				C.use(6)
-				buildstep++
+				set_buildstep(buildstep + 1)
 				to_chat(user, span_notice("You wire the assembly"))
 				desc = "This TV camera assembly has wires sticking out"
-				return TRUE
+				return OP_OK
 		if(3)
 			if(W.has_tool_quality(TOOL_WIRECUTTER))
 				to_chat(user, span_notice(" You trim the wires."))
-				buildstep++
+				set_buildstep(buildstep + 1)
 				desc = "This TV camera assembly needs casing."
-				return TRUE
+				return OP_OK
 		if(4)
 			if(istype(W, /obj/item/stack/material/steel))
 				var/obj/item/stack/material/steel/S = W
-				buildstep++
+				set_buildstep(buildstep + 1)
 				S.use(1)
 				to_chat(user, span_notice("You encase the assembly in a Ward-Takeshi casing."))
 				var/turf/T = get_turf(src)
 				new /obj/item/tvcamera(T)
 				consume(src, user)
-				return TRUE
+				return OP_OK
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/tvcamera/proc/camera_set_channel(mob/user)
 	open_request(src, /datum/prompt/text, PROC_REF(channel_named), answerer = user, title = "Select new channel name", question = "Channel name", default = channel, max_len = MAX_NAME_LEN, usable_state = "physical", name_text = TRUE, timeout = 0)

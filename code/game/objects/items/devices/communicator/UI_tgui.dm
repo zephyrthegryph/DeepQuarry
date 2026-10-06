@@ -11,6 +11,14 @@
 
 CAPABILITIES(/obj/item/communicator)
 	after_init(5 SECONDS, then(PROC_REF(register_to_holder)))
+	// alt-click ejects the loaded ID (a silicon's alt-click goes on to its own)
+	op("remove_id", hand(), ungated(), gesture(GESTURE_ALT), label("Remove ID"), when(cond_not(req(/mob/living/silicon, of = ON_ACTOR))), then(PROC_REF(interaction_alt)))
+	// an ID updates the occupation, or goes into the slot
+	op("scan_id", item(/obj/item/card/id), label("Scan ID"), then(PROC_REF(interaction_item)))
+	// the old attack_self: the communicator's window
+	op("open", in_hand(), label("Open"), then(PROC_REF(interaction_self)))
+	// a ghost's view refreshes the device list, then the ghost's own click goes on
+	op("view", observer(), label("View"), then(PROC_REF(communicator_observer_use)))
 	owns_one(nameof(id), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(cam_background), /atom/movable/screen/background)
 	owns_one(nameof(cam_screen), /atom/movable/screen/map_view)

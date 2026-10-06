@@ -340,77 +340,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/bluespace_harpoon/wand, TYPE_PROC_REF(/atom, a
 	icon_state = "teleporter"
 	beacons_left = 3
 	cell_type = /obj/item/cell/device
-	special_handling = TRUE
+	beacon_word = "page"
+	maker_word = "tome"
+	beacon_type = /obj/item/perfect_tele_beacon/magic
 
 /obj/item/perfect_tele_beacon/magic
 	name = "teleportation page"
 	desc = "A single page from a tome, with a glowing blue symbol on it. It seems like the symbol is raised as though there were something running beneath it..."
 	icon = 'icons/obj/props/fantasy.dmi'
 	icon_state = "page"
-
-/obj/item/perfect_tele/magic/interaction_self(mob/user, obj/item/held, datum/interaction/interaction, radial_menu_anchor = src)
-	. = ..(user, held, interaction, radial_menu_anchor)
-	if(.)
-		return TRUE
-	claim_network_beacons()
-
-	if(!(user.ckey in warned_users))
-		LAZYOR(warned_users, user.ckey)
-		tgui_alert_async(user,{"
-This device can be easily used to break ERP preferences due to the nature of teleporting and tele-vore.
-Make sure you carefully examine someone's OOC prefs before teleporting them if you are going to use this device for ERP purposes.
-This device records all warnings given and teleport events for admin review in case of pref-breaking, so just don't do it.
-"},"OOC Warning")
-	open_request(src, /datum/prompt/choice, PROC_REF(page_chosen), answerer = user, choices = radial_images, radial = TRUE, anchor = radial_menu_anchor || src, require_near = TRUE, tooltips = TRUE, autopick_single_option = TRUE, timeout = 0)
-
-/obj/item/perfect_tele/magic/proc/page_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/choice = A.answer.value
-	if(!choice || !check_menu(user))
-		return
-
-	else if(choice == "New Beacon")
-		if(beacons_left <= 0)
-			to_chat(user, span_warning("The tome can't support any more pages!"))
-			return
-
-		open_request(src, /datum/prompt/text, PROC_REF(page_named), answerer = user, title = "[src]", question = "New pages's name (2-20 char):", max_len = 20, name_text = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-		return
-
-	else
-		rel_set(src, nameof(destination), find_beacon(choice))
-		rebuild_radial_images()
-
-/obj/item/perfect_tele/magic/proc/page_named(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/new_name = A.answer.value
-	if(!check_menu(user))
-		return
-	if(beacons_left <= 0)
-		to_chat(user, span_warning("The tome can't support any more pages!"))
-		return
-	if(length(new_name) > 20 || length(new_name) < 2)
-		to_chat(user, span_warning("Entered name length invalid (must be longer than 2, no more than than 20)."))
-		return
-
-	if(find_beacon(new_name))
-		to_chat(user, span_warning("No duplicate names, please. '[new_name]' exists already."))
-		return
-
-	var/obj/item/perfect_tele_beacon/magic/nb = new(get_turf(src))
-	nb.tele_name = new_name
-	rel_set(nb, nameof(nb.tele_hand), src)
-	nb.creator = user.ckey
-	rel_add(src, nameof(beacons), nb)
-	beacons_left--
-	if(isliving(user))
-		var/mob/living/L = user
-		L.put_in_any_hand_if_possible(nb)
-	rebuild_radial_images()
 
 //sizegun
 

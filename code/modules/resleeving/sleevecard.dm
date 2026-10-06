@@ -7,10 +7,12 @@ MATERIAL_MIX(/obj/item/paicard/sleevecard, list(MAT_STEEL = 4000, MAT_GLASS = 40
 	has_emag_toolkit = FALSE // sleevecards don't have multitools or signalers,  you can just change their laws
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
-	INTERACT_OBSERVER(null, TYPE_PROC_REF(/atom, interaction_swallow)), \
-	INTERACT_ITEM(null, PROC_REF(sleevecard_interaction_item)), \
-)
+CAPABILITIES(/obj/item/paicard/sleevecard)
+	// a ghost can't load into a sleevecard; the card's own item handling never reached it
+	without("inhabit")
+	without("item")
+	// the old attackby: a sleevemate uploads its stored mind; an emag binds the infomorph
+	op("sleevecard_item", item(/obj/item), label("Use"), then(PROC_REF(sleevecard_interaction_item)))
 
 /datum/om/task/timed/sleevecard_upload_mind
 	duration = 8 SECONDS
@@ -31,8 +33,10 @@ EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 	S.clear_mind()
 
 /// Old attackby (never reached paicard's own item handling).
-/obj/item/paicard/sleevecard/proc/sleevecard_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/paicard/sleevecard/proc/sleevecard_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	. = OP_PASS
 	if(istype(I,/obj/item/sleevemate))
 		var/obj/item/sleevemate/S = I
 		if(S.stored_mind() && !pai)
@@ -77,15 +81,17 @@ EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 
 	return 0
 
-/obj/item/paicard/sleevecard/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The sleevecard's self-use shows its mind's name; an emagged one opens the card as a pAI card does.
+/obj/item/paicard/sleevecard/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
-
 	if(!pai)
 		to_chat(user,span_warning("\The [src] does not have a mind in it!"))
-	else
-		if(!emagged)
-			to_chat(user,span_notice("\The [src] displays the name '[pai]'."))
-		else ..(user, TRUE)
+		return OP_OK
+	if(!emagged)
+		to_chat(user,span_notice("\The [src] displays the name '[pai]'."))
+		return OP_OK
+	return ..()
 
 /mob/living/silicon/pai/infomorph
 	name = "sleevecard" //Has the same name as the card for consistency, but this is the MOB in the card.

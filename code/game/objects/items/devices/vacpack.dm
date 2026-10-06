@@ -32,18 +32,34 @@ TYPE_TABLE_DECLARE(/obj/item/vac_attachment, vac_attachment_settings, list( \
 			"output destination" = 9 \
 			))
 
-DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/vac_attachment)
+	ref_one(nameof(output_dest), /atom/movable)
+	// the old attack_self: with no output yet, set one; otherwise pick a power level or the output
+	op("settings", in_hand(), label("Settings"),
+		asks(/datum/prompt/choice, fields = list("title" = "Vac Settings", "question" = computed(PROC_REF(settings_question)), "choices" = computed(PROC_REF(settings_choices)), "timeout" = 0), when = PROC_REF(has_output)),
+		then(PROC_REF(setting_chosen)))
+	// the old object verb
+	op("sprites", menu(), label("Toggle Vac-Pack Sprites"), needs(carried()),
+		asks(/datum/prompt/choice, fields = list("title" = "Vac-Pack Visibility Options", "question" = "Vac-Pack Visibility Options", "choices" = list("Show Pack", "Show Tube", "Hidden"), "timeout" = 0)),
+		then(PROC_REF(visibility_chosen)))
 
-/obj/item/vac_attachment/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/vac_attachment/proc/has_output(datum/act/op/A)
+	return !!output_dest
+
+/obj/item/vac_attachment/proc/settings_question(datum/act/A)
+	return "Set your [suckverb] attachment's power level or output mode."
+
+/obj/item/vac_attachment/proc/settings_choices(datum/act/A)
+	return TYPE_TABLE_GET(src, vac_attachment_settings)
+
+/obj/item/vac_attachment/proc/setting_chosen(datum/act/op/A)
 	if(!output_dest)
-		apply_setting(user, "output destination")
-		return
-	open_request(src, /datum/prompt/choice, PROC_REF(setting_chosen), answerer = user, title = "Vac Settings", question = "Set your [suckverb] attachment's power level or output mode.", choices = TYPE_TABLE_GET(src, vac_attachment_settings), ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-
-/obj/item/vac_attachment/proc/setting_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	apply_setting(A.request.answerer, A.answer.value)
+		apply_setting(A.actor, "output destination")
+		return OP_OK
+	var/datum/prompt/R = A.answer
+	if(R?.value)
+		apply_setting(A.actor, R.value)
+	return OP_OK
 
 /obj/item/vac_attachment/proc/apply_setting(mob/user, set_input)
 	if(set_input == "output destination")
@@ -361,15 +377,12 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 	. = ..()
 	icon_state = "sucker_drop"
 
-/obj/item/vac_attachment/proc/hide_pack_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
-	open_request(src, /datum/prompt/choice, PROC_REF(visibility_chosen), answerer = user, title = "Vac-Pack Visibility Options", question = "Vac-Pack Visibility Options", choices = list("Show Pack", "Show Tube", "Hidden"), ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-
-/obj/item/vac_attachment/proc/visibility_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	switch(A.answer.value)
+/obj/item/vac_attachment/proc/visibility_chosen(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(!R?.value)
+		return OP_OK
+	var/mob/user = A.actor
+	switch(R.value)
 		if("Show Pack")
 			item_state = "sucker"
 		if("Show Tube")
@@ -378,6 +391,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 			item_state = null
 	user.update_inv_r_hand()
 	user.update_inv_l_hand()
+	return OP_OK
 
 /obj/item/storage/Entered(atom/movable/thing, atom/OldLoc) //Holder the mob so they don't get stuck in trashbags etc.
 	. = ..()
@@ -416,10 +430,5 @@ TYPE_TABLE(/obj/item/vac_attachment/scoop, vac_attachment_settings, list( \
 
 /obj/effect/vac_visual/proc/ready(effect_time)
 	expire(effect_time)
-
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/vac_attachment, \
-	INTERACT_VERB("Toggle Vac-Pack Sprites", PROC_REF(hide_pack_effect), REQ_IN_INVENTORY), \
-)
 
 // The swoopie owns its built-in attachment through Vac; vac_owner points back.

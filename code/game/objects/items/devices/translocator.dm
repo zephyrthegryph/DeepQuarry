@@ -33,12 +33,26 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-	///Var for attack_self chain
-	var/special_handling = FALSE
+	/// What a beacon is called, and what makes them, in the beacon menu's messages (a tome's pages).
+	var/beacon_word = "beacon"
+	var/maker_word = "translocator"
+	/// The beacon a new one is made as.
+	var/beacon_type = /obj/item/perfect_tele_beacon
+
+TRACKED(/obj/item/perfect_tele, beacons_left)
 
 CAPABILITIES(/obj/item/perfect_tele)
 	ref_many(nameof(beacons))
 	owns_one(nameof(power_source), /obj/item/cell, starts = nameof(cell_type))
+	// held in the other hand, an empty hand takes the cell out (otherwise the click declines to pick up)
+	op("unload", hand(), label("Remove cell"), then(PROC_REF(interaction_hand)))
+	// the old attack_self: pick a beacon on the radial, or make a new one and name it
+	op("choose_beacon", in_hand(), label("Choose beacon"),
+		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(beacon_choices)), "radial" = TRUE, "tooltips" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "beacon"),
+		asks(/datum/prompt/text, fields = list("title" = "name", "question" = computed(PROC_REF(beacon_name_question)), "max_len" = 20, "name_text" = TRUE, "timeout" = 0), step = "name", when = PROC_REF(asks_beacon_name)),
+		then(PROC_REF(beacon_chosen)))
+	// a cell goes in; one of our own beacons goes back in
+	op("load", inputs(item(/obj/item/cell), item(/obj/item/perfect_tele_beacon)), label("Insert"), then(PROC_REF(interaction_item)))
 
 /obj/item/perfect_tele/Initialize(mapload)
 	. = ..()
@@ -101,17 +115,24 @@ DECLARE_APPEARANCE_PROC(/obj/item/perfect_tele, TYPE_PROC_REF(/atom, appearance_
 		I.add_overlay(radial_plus)
 		LAZYSET(radial_images, "New Beacon", I)
 
-DECLARE_INTERACTIONS(/obj/item/perfect_tele, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
-/obj/item/perfect_tele/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/perfect_tele/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		unload_ammo(user)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
+
+/// The radial's choices: our beacons (and the network's), and "New Beacon" while any are left.
+/obj/item/perfect_tele/proc/beacon_choices(datum/act/A)
+	claim_network_beacons()
+	return radial_images
+
+/obj/item/perfect_tele/proc/beacon_name_question(datum/act/op/A)
+	return "New [beacon_word]'s name (2-20 char):"
+
+/// The name step is asked after "New Beacon", while a beacon is left to make.
+/obj/item/perfect_tele/proc/asks_beacon_name(datum/act/op/A)
+	return A.step_value("beacon") == "New Beacon" && beacons_left > 0
 
 /obj/item/perfect_tele/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	afterattack(M, user)
@@ -135,11 +156,9 @@ DECLARE_INTERACTIONS(/obj/item/perfect_tele, \
 		return FALSE
 	return TRUE
 
-/obj/item/perfect_tele/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction, radial_menu_anchor = src)
-	if(special_handling)
-		return FALSE
-	claim_network_beacons()
-
+/// The chosen beacon becomes the destination; "New Beacon" makes one with the name given.
+/obj/item/perfect_tele/proc/beacon_chosen(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!(user.ckey in warned_users))
 		LAZYOR(warned_users, user.ckey)
 		tgui_alert_async(user,{"
@@ -147,38 +166,19 @@ This device can be easily used to break ERP preferences due to the nature of tel
 Make sure you carefully examine someone's OOC prefs before teleporting them if you are going to use this device for ERP purposes.
 This device records all warnings given and teleport events for admin review in case of pref-breaking, so just don't do it.
 "},"OOC Warning")
-	open_request(src, /datum/prompt/choice, PROC_REF(beacon_chosen), answerer = user, choices = radial_images, radial = TRUE, anchor = radial_menu_anchor || src, require_near = TRUE, tooltips = TRUE, autopick_single_option = TRUE, timeout = 0)
-
-/obj/item/perfect_tele/proc/beacon_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/choice = A.answer.value
+	var/choice = A.step_value("beacon")
 	if(!choice || !check_menu(user))
-		return
-
-	else if(choice == "New Beacon")
-		if(beacons_left <= 0)
-			to_chat(user, span_warning("The translocator can't support any more beacons!"))
-			return
-
-		open_request(src, /datum/prompt/text, PROC_REF(beacon_named), answerer = user, title = "[src]", question = "New beacon's name (2-20 char):", max_len = 20, name_text = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-		return
-
-	else
+		return OP_OK
+	if(choice != "New Beacon")
 		rel_set(src, nameof(destination), find_beacon(choice))
 		rebuild_radial_images()
-
-/obj/item/perfect_tele/proc/beacon_named(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/new_name = A.answer.value
-	if(!check_menu(user))
-		return
+		return OP_OK
 	if(beacons_left <= 0)
-		to_chat(user, span_warning("The translocator can't support any more beacons!"))
-		return
+		to_chat(user, span_warning("The [maker_word] can't support any more [beacon_word]s!"))
+		return OP_OK
+	var/new_name = A.step_value("name")
+	if(isnull(new_name))
+		return OP_OK
 	if(length(new_name) > 20 || length(new_name) < 2)
 		to_chat(user, span_warning("Entered name length invalid (must be longer than 2, no more than than 20)."))
 		return
@@ -187,7 +187,7 @@ This device records all warnings given and teleport events for admin review in c
 		to_chat(user, span_warning("No duplicate names, please. '[new_name]' exists already."))
 		return
 
-	var/obj/item/perfect_tele_beacon/nb = new(get_turf(src))
+	var/obj/item/perfect_tele_beacon/nb = new beacon_type(get_turf(src))
 	nb.tele_name = new_name
 	rel_set(nb, nameof(nb.tele_hand), src)
 	nb.creator = user.ckey
@@ -197,12 +197,16 @@ This device records all warnings given and teleport events for admin review in c
 		var/mob/living/L = user
 		L.put_in_any_hand_if_possible(nb)
 	rebuild_radial_images()
+	return OP_OK
 
 
-/obj/item/perfect_tele/proc/interaction_item(mob/user, obj/W, datum/interaction/interaction)
+/// A cell goes in (with none in); one of our own beacons goes back in.
+/obj/item/perfect_tele/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/W = A.held
 	if(istype(W,cell_type) && !power_source)
 		if(!move_into(src, nameof(src.power_source), W, user))
-			return
+			return OP_OK
 		power_source.update_icon() //Why doesn't a cell do this already? :|
 		to_chat(user,span_notice("You insert \the [power_source] into \the [src]."))
 		update_icon()
@@ -212,16 +216,16 @@ This device records all warnings given and teleport events for admin review in c
 		if(tb in beacons)
 			var/beacon_name = "\the [tb]"
 			if(!consume(tb, user))
-				return TRUE
+				return OP_OK
 			to_chat(user,span_notice("You re-insert [beacon_name] into \the [src]."))
 			rel_remove(src, nameof(beacons), tb)
-			beacons_left++
+			set_beacons_left(beacons_left + 1)
 		else
 			to_chat(user,span_notice("\The [tb] doesn't belong to \the [src]."))
-			return TRUE
+			return OP_OK
 	else
-		return FALSE
-	return TRUE
+		return OP_DECLINE
+	return OP_OK
 
 /obj/item/perfect_tele/proc/teleport_checks(mob/living/target,mob/living/user)
 	//Uhhuh, need that power source
@@ -424,36 +428,41 @@ This device records all warnings given and teleport events for admin review in c
 	var/tele_network = null
 	flags = NOBLUDGEON
 
-DECLARE_INTERACTIONS(/obj/item/perfect_tele_beacon, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-)
+CAPABILITIES(/obj/item/perfect_tele_beacon)
+	// the first pick-up of someone else's beacon warns first (otherwise the click declines to pick up)
+	op("warn", hand(), label("Pick up"), asks(/datum/prompt/choice, fields = list("title" = "OOC Warning", "question" = computed(PROC_REF(warning_text)), "choices" = list("Take It", "Leave It"), "buttons" = TRUE, "timeout" = 0), when = PROC_REF(needs_warning)), then(PROC_REF(warning_answered)))
+	// the old attack_self: eat the beacon, into a chosen belly, after a moment
+	op("eat", in_hand(), label("Eat"), needs(req(/mob/living, of = ON_ACTOR, because = /datum/msg/req_silent)),
+		asks(/datum/prompt/choice, fields = list("title" = "Eat beacon?", "question" = "You COULD eat the beacon...", "choices" = list("Eat it!", "No, thanks."), "buttons" = TRUE, "timeout" = 0), step = "eat"),
+		asks(/datum/prompt/choice, fields = list("title" = "Select A Belly", "question" = "Which belly?", "choices" = computed(PROC_REF(belly_choices)), "timeout" = 0), step = "belly", when = PROC_REF(asks_belly)),
+		then(PROC_REF(belly_chosen)))
 
-/obj/item/perfect_tele_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if((user.ckey != creator) && !(user.ckey in warned_users))
-		LAZYOR(warned_users, user.ckey)
-		open_request(src, /datum/prompt/choice/tele_beacon_warning, PROC_REF(warning_answered), answerer = user)
-		return TRUE
-	return FALSE
+/// The warning is asked of someone who did not make the beacon and has not been warned.
+/obj/item/perfect_tele_beacon/proc/needs_warning(datum/act/op/A)
+	return tele_beacon_warns(src, A.actor)
 
-/// The OOC warning before first picking up someone else's beacon. Re-checked on the answer: still next to it.
-/datum/prompt/choice/tele_beacon_warning
-	title = "OOC Warning"
-	question = {"
+/// The OOC warning before first picking up someone else's beacon.
+/obj/item/perfect_tele_beacon/proc/warning_text(datum/act/op/A)
+	return {"
 This device is a translocator beacon. Having it on your person may mean that anyone
 who teleports to this beacon gets teleported into your selected vore-belly. If you are prey-only
 or don't wish to potentially have a random person teleported into you, it's suggested that you
 not carry this around."}
-	choices = list("Take It", "Leave It")
-	buttons = TRUE
-	timeout = 0
-	recheck_on_open = TRUE
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 
-/obj/item/perfect_tele_beacon/proc/warning_answered(datum/act/request/A)
-	if(A.answer?.value != "Take It")
-		return
-	attack_hand(A.request.answerer)
+/// Has `user` (who did not make `beacon`) still to be warned before picking it up?
+/proc/tele_beacon_warns(obj/item/perfect_tele_beacon/beacon, mob/user)
+	READS_FROM() // who made the beacon and who was warned are asked when the hand reaches for it
+	return user.ckey != beacon.creator && !(user.ckey in beacon.warned_users)
+
+/obj/item/perfect_tele_beacon/proc/warning_answered(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!needs_warning(A))
+		return OP_DECLINE
+	LAZYOR(warned_users, user.ckey)
+	var/datum/prompt/R = A.answer
+	if(R?.value == "Take It")
+		attack_hand(user)
+	return OP_OK
 
 /obj/item/perfect_tele_beacon/stationary
 	name = "stationary translocator beacon"
@@ -464,25 +473,20 @@ not carry this around."}
 
 REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEACONS_PREMADE)
 
-/obj/item/perfect_tele_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!isliving(user))
-		return
-	open_request(src, /datum/prompt/choice, PROC_REF(ask_belly), answerer = user, title = "Eat beacon?", question = "You COULD eat the beacon...", choices = list("Eat it!", "No, thanks."), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
+/obj/item/perfect_tele_beacon/proc/asks_belly(datum/act/op/A)
+	return A.step_value("eat") == "Eat it!"
 
-/obj/item/perfect_tele_beacon/proc/ask_belly(datum/act/request/A)
-	if(A.answer?.value != "Eat it!")
-		return
-	var/mob/living/user = A.request.answerer
-	open_request(src, /datum/prompt/choice, PROC_REF(belly_chosen), answerer = user, title = "Select A Belly", question = "Which belly?", choices = user.vore_organs, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
+/obj/item/perfect_tele_beacon/proc/belly_choices(datum/act/op/A)
+	var/mob/living/user = A.actor
+	return user.vore_organs
 
-/obj/item/perfect_tele_beacon/proc/belly_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/user = A.request.answerer
-	var/obj/belly/bellychoice = A.answer.value
+/obj/item/perfect_tele_beacon/proc/belly_chosen(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/belly/bellychoice = A.step_value("belly")
 	if(istype(bellychoice) && bellychoice.owner == user)
 		act_message(user, src, MSG_SELF(span_notice("You begin putting %T% into your [bellychoice.name]!")), MSG_OTHERS(span_warning("%U% is trying to stuff %T% into [user.gender == MALE ? "his" : user.gender == FEMALE ? "her" : "their"] [bellychoice.name]!")))
 		om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, bellychoice))
+	return OP_OK
 
 /obj/item/perfect_tele_beacon/proc/attack_self_timed_done(mob/user, obj/belly/bellychoice)
 	user.unEquip(src)

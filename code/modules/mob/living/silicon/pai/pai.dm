@@ -699,3 +699,4 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance
 	if(stat != DEAD)
 		close_up()
 
+TRACKED(/mob/living/silicon/pai, idaccessible)

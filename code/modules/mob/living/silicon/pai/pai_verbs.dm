@@ -52,10 +52,10 @@
 	set desc = "Allows people to modify your access or block people from modifying your access."
 
 	if(idaccessible == 0)
-		idaccessible = 1
+		set_idaccessible(1)
 		act_message(src, null, MSG_SELF(span_notice("You allow access modifications.")), MSG_OTHERS(span_notice("%U% clicks as their access modification slot opens.")), runemessage = "click")
 	else
-		idaccessible = 0
+		set_idaccessible(0)
 		act_message(src, null, MSG_SELF(span_notice("You block access modfications.")), MSG_OTHERS(span_notice("%U% clicks as their access modification slot closes.")), runemessage = "click")
 
 /mob/living/silicon/pai/verb/toggle_gender_identity_vr()

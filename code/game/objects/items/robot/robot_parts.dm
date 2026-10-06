@@ -251,15 +251,21 @@ CAPABILITIES(/obj/item/robot_parts/chest)
 			to_chat(user, span_notice("You insert the wire!"))
 	return OP_PASS
 
-/// Old attackby's flash branch (declared with the head's other interactions in tvcamera.dm).
-/obj/item/robot_parts/head/proc/head_insert_flash(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(user,/mob/living/silicon/robot))
-		var/current_module = user.get_active_hand()
-		if(current_module == W)
-			to_chat(user, span_warning("How do you propose to do that?"))
-			return INTERACTION_HANDLED_PASS
-	add_flashes(W,user)
-	return INTERACTION_HANDLED_PASS
+CAPABILITIES(/obj/item/robot_parts/head)
+	// an infrared sensor starts a TV camera (tvcamera.dm); a flash goes into an eye socket (a cyborg's flash is its own module)
+	op("tv_sensor", item(/obj/item/assembly/infra), label("Add sensor"), then(PROC_REF(interaction_item)))
+	op("insert_flash", item(/obj/item/flash), label("Insert flash"), when(cond_not(req(/mob/living/silicon/robot, of = ON_ACTOR))), then(PROC_REF(head_insert_flash)))
+	op("insert_own_flash", item(/obj/item/flash), label("Insert flash"), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), then(PROC_REF(own_flash_refused)))
+
+/// A cyborg's flash is its own module.
+/obj/item/robot_parts/head/proc/own_flash_refused(datum/act/op/A)
+	to_chat(A.actor, span_warning("How do you propose to do that?"))
+	return OP_PASS
+
+/// Old attackby's flash branch.
+/obj/item/robot_parts/head/proc/head_insert_flash(datum/act/op/A)
+	add_flashes(A.held, A.actor)
+	return OP_PASS
 
 /obj/item/robot_parts/head/proc/add_flashes(obj/item/W as obj, mob/user as mob) //Made into a seperate proc to avoid copypasta
 	if(src.flash1 && src.flash2)
