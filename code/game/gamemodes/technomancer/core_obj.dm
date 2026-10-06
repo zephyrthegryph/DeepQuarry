@@ -153,9 +153,13 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 	src.spellpath = path
 	src.ability_icon_state = new_icon_state
 
-/obj/spellbutton/Click()
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native spell button clicking supplies the initiating actor through BYOND usr.
-	create_spell_with_actor(user)
+CAPABILITIES(/obj/spellbutton)
+	click_on(PROC_REF(click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/obj/spellbutton/proc/click_input(datum/act/input/A)
+	create_spell_with_actor(A.actor)
+	return TRUE
 
 /obj/spellbutton/proc/create_spell_with_actor(mob/user)
 	if(ishuman(user))

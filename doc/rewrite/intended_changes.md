@@ -1725,7 +1725,7 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
 - Wiki crash prank: the fake ads go to a silicon's remote press (`AUTH_REMOTE_ACCESS`) instead of checking `issilicon()`.
 - Fishing program: dropped a dead UI_DATA_REPLACE row whose helper did not exist.
 
-## Ending causes audited (rewrite/lifecycle-forms-2)
+## Lifecycle forms, second pass (rewrite/lifecycle-forms-2)
 
 - The endings codemod's heuristic picked a wrong cause for about 330 sites; `tools/codemods/ending_fix.py` re-caused them from a reviewed
   list. Only the ended notice's `cause`, `by` and `detail` change: no content reacts to the cause yet, so drops, logs and messages are as
@@ -1738,6 +1738,19 @@ Pinned by `dq_atmos_m/pipes/turbine_spins` and the generated pins.
   item in are `consumed` with the taker as `by`; explosions, burning and crushing are `destroyed` with a detail (`"explosion"`, `BURN`,
   `BRUTE`, `"emp"`, `"rcd"`, `"deconstructed"`). `create_*`, `*treat*` and `*feature*` procs were "consumed" by a substring match of "eat";
   they are `spent` (a discarded temporary) or `replaced_by`.
+- Rolled at creation (`rolls()`, seeded; the distributions are unchanged): the hallucination decoy's report, tabloids, target paper, cig
+  butts, the advanced gift's chaos roll, random umbrellas and towels (`R.hex_colour()`), tilted duffle bags, first-aid kit looks, prybars,
+  junk mail, bar signs, the animal crates' contents, trash piles, hawaiian shirts, extraction points, kittens, eclectus parrots, kururak
+  instinct, the rare frog (a new `rare` var), gelatinous cubes (`R.saturated_colour()`), autocloners, crystals and greytide gear.
+- A generic arcade cabinet rolls its board before init and becomes that machine right after its init (`after_init()` + `replace_with()`),
+  instead of deleting itself from inside Initialize(); an adventure box that rolls `discarded` is spent right after its init.
+- Native input with an actor: the HUD's screen objects, alerts, radial slices, ability and spell buttons, the rig/mech air toggles, the
+  click catcher, the SDQL2 stat buttons, the changeling ID card, movable screen objects and action buttons (`drag_onto()`, new
+  `drag_over()`), IV drips, feeders, roller beds, hoist hooks, observer ghosts, overmap ships, mob holders (`drag_onto()`) and the palette
+  and environmental message tooltips (`tooltip()`) read their actor from the input. A drop handler that went on to the native parent now
+  runs before the parent's MouseDrop instead of after it. A handler that falls through (INPUT_FALLTHROUGH) no longer runs a second time
+  when the fall reaches a parent type's generated override (`input_falling`, `input_fell()`).
+- A null positional constructor argument no longer overwrites a param's var (the old overrides' `arg || default`).
 
 ## Atmospherics looks (rewrite/pipenet-full)
 

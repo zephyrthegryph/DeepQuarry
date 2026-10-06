@@ -671,14 +671,16 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	S.tgui_interact(src)
 
 //This is called when a ghost is drag clicked to something.
-/mob/observer/dead/MouseDrop(atom/over)
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native drag delivery supplies the initiating mob; pass that actor to the confirmation helper.
-	if(!user || !over) return
-	if (isobserver(user) && user.client && check_rights_for(user.client, R_HOLDER) && isliving(over))
-		if (user.client.holder.cmd_ghost_drag(src, over, user))
-			return
-
-	return ..()
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). An admin ghost dragging a ghost
+/// onto a body offers to put it in; anything else is the native drop.
+/mob/observer/dead/proc/drop_input(datum/act/input/A)
+	var/mob/user = A.actor
+	if(!user || !A.over)
+		return TRUE
+	if(isobserver(user) && user.client && check_rights_for(user.client, R_HOLDER) && isliving(A.over))
+		if(user.client.holder.cmd_ghost_drag(src, A.over, user))
+			return TRUE
+	return INPUT_FALLTHROUGH
 
 //Used for drawing on walls with blood puddles as a spooky ghost.
 /mob/observer/dead/verb/bloody_doodle()

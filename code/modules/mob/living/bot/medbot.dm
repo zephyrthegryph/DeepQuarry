@@ -490,6 +490,7 @@ CAPABILITIES(/obj/item/storage/firstaid)
 	op("add_arm", inputs(item(/obj/item/robot_parts/l_arm), item(/obj/item/robot_parts/r_arm), item(/obj/item/organ/external/arm)),
 		when(req(PROC_REF(arm_is_robotic))), label("Add robot arm"),
 		needs(req_storage_empty(because = MSG(medbot/empty_first))), then(PROC_REF(add_robot_arm)))
+	rolls(nameof(icon_state), PROC_REF(roll_icon_state), when = nameof(icon_variety))
 
 /// A robot arm part, or an arm organ that is robotic.
 /obj/item/storage/firstaid/proc/arm_is_robotic(datum/act/op/A)

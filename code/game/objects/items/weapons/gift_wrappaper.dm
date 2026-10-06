@@ -228,14 +228,21 @@ CAPABILITIES(/obj/item/wrapping_paper)
 	var/chaos
 	special_handling = TRUE
 
-// ALLOW(init/INSTANCE_STATE): icon_state, chaos, name and desc rolled at random for each instance
-/obj/item/a_gift/advanced/Initialize(mapload)
-	. = ..()
-	if(prob(1))
-		icon_state = "chomp_present_chaos" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-		chaos = TRUE
-		name = "chaotic present"
-		desc = "The casino dev messed up and gave you the wrong present! This one pulses with potential for good or evil!"
+CAPABILITIES(/obj/item/a_gift/advanced)
+	rolls(nameof(chaos), chance(1))
+	rolls(nameof(icon_state), PROC_REF(roll_chaos_look), from = list(nameof(chaos)))
+	rolls(nameof(name), PROC_REF(roll_chaos_name), from = list(nameof(chaos)))
+	rolls(nameof(desc), PROC_REF(roll_chaos_desc), from = list(nameof(chaos)))
+
+/// Rolled before init (rolls()): one present in a hundred is the chaotic one.
+/obj/item/a_gift/advanced/proc/roll_chaos_look(datum/roller/R)
+	return chaos ? "chomp_present_chaos" : icon_state
+
+/obj/item/a_gift/advanced/proc/roll_chaos_name(datum/roller/R)
+	return chaos ? "chaotic present" : name
+
+/obj/item/a_gift/advanced/proc/roll_chaos_desc(datum/roller/R)
+	return chaos ? "The casino dev messed up and gave you the wrong present! This one pulses with potential for good or evil!" : desc
 
 // ALLOW(interactions): its Open replaces the basic gift's Open (a different loot table)
 DECLARE_INTERACTIONS(/obj/item/a_gift/advanced, INTERACT_USE("Open", PROC_REF(interaction_open_advanced)))
