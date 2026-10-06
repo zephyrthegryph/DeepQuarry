@@ -2065,3 +2065,9 @@ Design: `reagents.md`.
 * **An overdose() override that changes the reagent before calling `..()`** gets the base injury the cycle computed from the volume at the
   cycle's start. Every override in the tree calls `..()` first or unchanged.
 * **A reaction with yield below 1 and no product amount** no longer divides by zero (it skips the yield limit); none exists in the tree.
+- **Questions are op steps** (`asks()`): the flag's rip asks yes/no, the food cart asks which food, the bar sign asks its face. The
+  answer is re-checked by the op's requirements. The food cart offers "Grab food" only while it holds food; the bar sign takes an ID or
+  PDA granting its `req_access` (ACCESS_BAR) in hand, or the actor's own access, as every credential requirement does. The flag burns
+  with a lighter or any welder (lit or not, as before) after 2 s.
+- **The girder's hulk smash**: its offered_when asked a girder proc of the actor, which never answered, so it was never offered; the
+  girder stays legacy (it reads mob mutations) and keeps that.

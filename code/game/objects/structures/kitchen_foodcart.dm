@@ -14,51 +14,40 @@
 			I.forceMove(src)
 	update_icon()
 
-/obj/structure/foodcart/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/foodcart_item,
-		/datum/interaction/entry_hand/foodcart_hand,
-	)
-	..()
+CAPABILITIES(/obj/structure/foodcart)
+	op("stock", item(/obj/item/reagent_containers/food), label("Use"), then(PROC_REF(interaction_item)))
+	op("grab_food", hand(), label("Grab food"), when(req_full(nameof(contents))),
+		asks(/datum/prompt/choice, fields = list("title" = "Grab Choice", "question" = "What would you like to grab from the cart?", "choices" = computed(PROC_REF(food_choices)), "timeout" = 0)),
+		then(PROC_REF(food_chosen)))
 
-/// Old attackby: put a food item in the cart.
-/datum/interaction/entry_item/foodcart_item
-	id = "foodcart_item"
-	name = "Use"
-	held_type = /obj/item/reagent_containers/food
-	effect = /obj/structure/foodcart/proc/interaction_item
-
-/obj/structure/foodcart/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	if(!own_bring_in(src, nameof(contents), O, null, user, TRUE, null, FALSE))
-		return TRUE
+/// Food in hand goes into the cart.
+/obj/structure/foodcart/proc/interaction_item(datum/act/op/A)
+	if(!own_bring_in(src, nameof(contents), A.held, null, A.actor, TRUE, null, FALSE))
+		return OP_OK
 	update_icon()
-	return TRUE
+	return OP_OK
 
-/// Old attack_hand: pick a food item out of the cart.
-/datum/interaction/entry_hand/foodcart_hand
-	id = "foodcart_hand"
-	name = "Grab food"
-	effect = /obj/structure/foodcart/proc/interaction_hand
+/// What the cart holds, to pick from.
+/obj/structure/foodcart/proc/food_choices(datum/act/A)
+	return contents_of(src)
 
-/obj/structure/foodcart/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(contents_count(src))
-		open_request(src, /datum/prompt/choice, PROC_REF(food_chosen), answerer = user, title = "Grab Choice", question = "What would you like to grab from the cart?", choices = contents, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
-	return TRUE
-
-/obj/structure/foodcart/proc/food_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/obj/item/reagent_containers/food/choice = A.answer.value
+/// The picked food comes out into the hand (or onto the floor).
+/obj/structure/foodcart/proc/food_chosen(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(!R)
+		return OP_OK
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/food/choice = R.value
 	if(choice.loc == src)
 		if(!user.canmove)
-			return
+			return OP_OK
 		if(ishuman(user))
 			if(!user.get_active_hand())
 				user.put_in_hands(choice)
 		else
 			choice.forceMove(get_turf(src))
 		update_icon()
+	return OP_OK
 
 /obj/structure/foodcart/draw(datum/look/look)
 	..()

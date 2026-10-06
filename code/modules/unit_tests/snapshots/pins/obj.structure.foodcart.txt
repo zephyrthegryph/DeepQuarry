@@ -1,42 +1,16 @@
-human|none menu: Grab food
-human|none menu: Use (refused: needs a Container)
 human|none click: nothing
-robot|none menu: Grab food
-robot|none menu: Use (refused: needs a Container)
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Grab food
-human|/obj/item/tool/screwdriver menu: Use (refused: needs a Container)
 human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Grab food
-human|/obj/item/tool/crowbar menu: Use (refused: needs a Container)
 human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Grab food
-human|/obj/item/tool/wrench menu: Use (refused: needs a Container)
 human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Grab food
-human|/obj/item/tool/wirecutters menu: Use (refused: needs a Container)
 human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Grab food
-human|/obj/item/multitool menu: Use (refused: needs a Container)
 human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Grab food
-human|/obj/item/weldingtool menu: Use (refused: needs a Container)
 human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Grab food
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Use (refused: needs a Container)
 human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Grab food
-human|/obj/item/stack/material/steel menu: Use (refused: needs a Container)
 human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Grab food
-human|/obj/item/card/id menu: Use (refused: needs a Container)
 human|/obj/item/card/id click: nothing
-human|/obj/item/reagent_containers/food menu: Grab food
-human|/obj/item/reagent_containers/food menu: Rename food
-human|/obj/item/reagent_containers/food menu: Use
-human|/obj/item/reagent_containers/food click: nothing
-keys: foodcart_hand, foodcart_item, gen_drag_interaction_drag_buckle
+keys: gen_drag_interaction_drag_buckle, grab_food, stock
 
