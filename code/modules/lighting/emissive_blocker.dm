@@ -18,6 +18,7 @@
 	//Since only render_target handles transform we don't get any applied transform "stacking"
 	appearance_flags = RESET_TRANSFORM
 
+// ALLOW(init/CTOR_ARGS): source is a constructor argument from whoever builds it
 /atom/movable/emissive_blocker/Initialize(mapload, source)
 	. = ..()
 

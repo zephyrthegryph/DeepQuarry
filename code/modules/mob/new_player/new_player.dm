@@ -192,6 +192,7 @@
 				cryst.bound_mob.capture_caught = TRUE
 				cryst.persist_storable = FALSE
 			cryst.update_icon()
+			// ALLOW(lifecycle): the lobby mob is discarded once its player spawned
 			qdel(src)
 			return
 
@@ -219,6 +220,7 @@
 		SSticker.mode.latespawn(character)
 
 		qdel(C) //Deletes empty core (really?)
+		// ALLOW(lifecycle): the lobby mob is discarded once its player spawned
 		qdel(src) //Deletes new_player
 		return
 
@@ -287,6 +289,7 @@
 			character.forceMove(gut)
 
 	character.client.init_verbs()
+	// ALLOW(lifecycle): the lobby mob is discarded once its player spawned
 	qdel(src) // Delete new_player mob
 
 /mob/new_player/proc/AnnounceCyborg(mob/living/character, rank, join_message, channel, zlevel)

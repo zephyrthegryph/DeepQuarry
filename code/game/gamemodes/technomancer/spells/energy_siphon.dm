@@ -177,6 +177,7 @@ APPEARANCE_TEMPLATE(/obj/item/spell/energy_siphon, "energy_siphon{siphoning?_dra
 		set_density(FALSE)
 		invisibility = INVISIBILITY_ABSTRACT
 
+		// ALLOW(lifecycle): the siphon beam is spent on reaching its own caster
 		qdel(src)
 		return 1
 	..()

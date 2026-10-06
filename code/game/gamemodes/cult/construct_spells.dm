@@ -436,6 +436,7 @@
 	cast_sound = null			// Sound file played when this is used.
 	COOLDOWN_DECLARE(castcheck_cooldown) // The last time this spell was cast.
 
+// ALLOW(init/INSTANCE_STATE): a construct spell made without an owner mob is refused at creation
 /obj/item/spell/construct/Initialize(mapload)
 	. = ..(mapload, TRUE)
 	if(!owner_ref())
@@ -709,6 +710,7 @@
 	var/attack_message = task.attack_message
 	act_message(user, W, others = span_danger("%U% [attack_message] %T%, obliterating it!"))
 	W.dismantle_wall(1)
+	// ALLOW(lifecycle): the slam spell is spent once the wall is torn down
 	qdel(src)
 
 

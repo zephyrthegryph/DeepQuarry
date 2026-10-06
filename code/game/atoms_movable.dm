@@ -34,6 +34,7 @@
 	var/listening_recursive = NON_LISTENING_ATOM
 	var/unacidable = TRUE
 
+// ALLOW(init/FRAMEWORK): the movable base of the init chain runs its per-instance setup
 /atom/movable/Initialize(mapload)
 	. = ..()
 	movable_instance_setup()

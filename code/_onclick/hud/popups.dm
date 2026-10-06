@@ -66,6 +66,7 @@
 	close_button_y_start = 86
 	close_button_y_end = 94
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /atom/movable/screen/popup/default/Initialize(mapload)
 	icon_state = "popup[rand(1,10)]"
 	. = ..()

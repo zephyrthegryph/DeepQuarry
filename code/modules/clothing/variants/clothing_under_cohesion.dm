@@ -7,6 +7,7 @@ GLOBAL_LIST_INIT(dq_variants_under_cohesion, list(
 	"hazard" = list("name" = "hazard cohesion suit", "icon_state" = "cohesionsuit_hazard", "desc" = "An orange cohesion suit with yellow hazard stripes intended to assist Prometheans in maintaining their form and prevent direct skin exposure."),
 ))
 
+// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
 /obj/item/clothing/under/cohesion/Initialize(mapload)
 	apply_variant()
 	. = ..()

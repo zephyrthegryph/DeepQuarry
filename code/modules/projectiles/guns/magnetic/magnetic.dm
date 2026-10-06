@@ -312,6 +312,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 				if("blitzu")
 					visible_message(span_critical("\The [src] explodes in a blinding white light with a deafening bang!"))
 					explosion(get_turf(src),1,2,4,6)
+					// ALLOW(lifecycle): the gun explodes in a blinding blast
 					qdel(src)
 					return
 				else
@@ -403,6 +404,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 /obj/item/gun/magnetic/proc/unreliable_explode()
 	visible_message(span_danger("\The [src] explodes with the force of the shot!"))
 	explosion(get_turf(src), -1, 0, 2)
+	// ALLOW(lifecycle): the gun explodes with the force of the shot
 	qdel(src)
 
 /// A supermatter rod's aftermath: the acceleration chamber collapses, the power supply
@@ -422,4 +424,5 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 /obj/item/gun/magnetic/fuelrod/proc/fuelrod_blows()
 	visible_message(span_critical("\The [src] explodes in a blinding white light!"))
 	explosion(src.loc, -1, 1, 2, 3)
+	// ALLOW(lifecycle): the fuel rod gun explodes
 	qdel(src)

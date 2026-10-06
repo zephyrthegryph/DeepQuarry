@@ -7,6 +7,7 @@
 	icon_state = "card_pack_spaceball"
 	parentdeck = "spaceball"
 
+// ALLOW(init/INSTANCE_STATE): rolls the cards in this booster pack
 /obj/item/pack/spaceball/Initialize(mapload)
 	. = ..()
 	var/datum/playingcard/P

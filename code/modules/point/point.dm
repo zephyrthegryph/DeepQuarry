@@ -60,6 +60,7 @@
 	plane = ABOVE_PLANE
 	duration = POINT_TIME
 
+// ALLOW(init/CTOR_ARGS): set_invis is a constructor argument from whoever builds it
 /obj/effect/temp_visual/point/Initialize(mapload, set_invis = 0)
 	. = ..()
 	var/atom/old_loc = loc

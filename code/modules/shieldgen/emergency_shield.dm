@@ -30,6 +30,7 @@
 /obj/machinery/shield/atom_destruction(damage_flag)
 	. = ..()
 	visible_message(span_boldnotice("\The [src]") + " dissipates!")
+	// ALLOW(lifecycle): the shield dissipates when destroyed
 	qdel(src)
 
 /obj/machinery/shield/Initialize(mapload)

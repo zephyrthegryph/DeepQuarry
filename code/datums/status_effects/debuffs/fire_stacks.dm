@@ -42,6 +42,7 @@
 	. = ..()
 
 	if(isanimal(owner))
+		// ALLOW(lifecycle): simple animals do not carry fire or wet stacks
 		qdel(src)
 		return
 
@@ -62,6 +63,7 @@
 				qdel(enemy_effect)
 
 			if(stacks <= 0)
+				// ALLOW(lifecycle): opposing stacks cancelled this effect out completely
 				qdel(src)
 				return
 
@@ -75,6 +77,7 @@
 		if(LAZYLEN(merge_effects))
 			for(var/datum/status_effect/fire_handler/merge_effect in merge_effects)
 				merge_effect.adjust_stacks(stacks * stack_modifier / merge_effect.stack_modifier / LAZYLEN(merge_effects))
+			// ALLOW(lifecycle): the new stacks merged into the existing effects and this one is spent
 			qdel(src)
 			return
 
@@ -163,6 +166,7 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 
 /datum/status_effect/fire_handler/fire_stacks/tick(seconds_between_ticks)
 	if(stacks <= 0)
+		// ALLOW(lifecycle): burning ends when no fire stacks remain
 		qdel(src)
 		return TRUE
 
@@ -173,11 +177,13 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 	adjust_stacks(owner.fire_stack_decay_rate * decay_multiplier * seconds_between_ticks)
 
 	if(stacks <= 0)
+		// ALLOW(lifecycle): burning ends when the stacks have decayed away
 		qdel(src)
 		return TRUE
 
 	var/datum/gas_mixture/air = owner.loc.return_air()
 	if(LINDA_GAS_AMT(air, GAS_O2) < 1)
+		// ALLOW(lifecycle): burning ends without oxygen around the owner
 		qdel(src)
 		return TRUE
 
@@ -364,6 +370,7 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 	var/decay = has_trait(owner, TRAIT_WET_FOR_LONGER) ? -0.035 : -0.5
 	adjust_stacks(decay * seconds_between_ticks)
 	if(stacks <= 0)
+		// ALLOW(lifecycle): the wet effect ends when its stacks dry out
 		qdel(src)
 
 // /datum/status_effect/fire_handler/wet_stacks/check_basic_mob_immunity(mob/living/basic/basic_owner)

@@ -86,6 +86,7 @@
 	cut_overlays(TRUE)
 	unmake_z_transparent()
 	changing_turf = TRUE
+	// ALLOW(lifecycle): changing a turf deletes the old one before the new one is made in its place
 	qdel(src)
 
 	var/turf/W = new N( locate(src.x, src.y, src.z) )

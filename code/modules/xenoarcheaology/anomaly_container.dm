@@ -7,6 +7,7 @@
 
 	var/tmp/obj/machinery/artifact/contained
 
+// ALLOW(init/INSTANCE_STATE): takes in the artifact the map placed on its tile
 /obj/structure/anomaly_container/Initialize(mapload)
 	. = ..()
 

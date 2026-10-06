@@ -111,6 +111,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/holofloor/space, TYPE_PROC_REF(/at
 	base_icon = 'icons/turf/flooring/asteroid.dmi'
 	initial_flooring = null
 
+// ALLOW(init/INSTANCE_STATE): rolls whether this tile shows rocks
 /turf/simulated/floor/holofloor/desert/Initialize(mapload)
 	. = ..()
 	if(prob(10))
@@ -462,6 +463,7 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 
 	currentarea = get_area(src.loc) // a location: a plain var
 	if(!currentarea())
+		// ALLOW(lifecycle): a ready button outside any area has nothing to control
 		qdel(src)
 		return TRUE
 

@@ -17,6 +17,7 @@
 	var/dpdir = 0	// directions as disposalpipe
 	var/base_state = "pipe-s"
 
+// ALLOW(init/CTOR_ARGS): newtype, newdir, flipped and newsubtype are constructor arguments from whoever builds it
 /obj/structure/disposalconstruct/Initialize(mapload, newtype, newdir, flipped, newsubtype)
 	. = ..()
 	ptype = newtype
@@ -306,6 +307,7 @@ EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe",
 		var/obj/machinery/disposal/deliveryChute/P = new(src.loc)
 		transfer_fingerprints_to(P)
 		P.set_dir(dir)
+	// ALLOW(lifecycle): the construct is welded into the disposal part built from it
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 

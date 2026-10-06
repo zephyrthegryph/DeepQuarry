@@ -17,6 +17,7 @@
 	slot_flags = SLOT_EARS
 	volume = 60
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/item/reagent_containers/pill/Initialize(mapload)
 	. = ..()
 	if(!icon_state)
@@ -194,6 +195,7 @@ DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/happy, null, list(REAG
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/pill/zoom, null, list(REAGENT_ID_EXPIREDMEDICINE = 5, REAGENT_ID_STIMM = 5))
 
+// ALLOW(init/INSTANCE_STATE): rolls whether this pill carries mould
 /obj/item/reagent_containers/pill/zoom/Initialize(mapload)
 	. = ..()
 	if(prob(50)) // Zoom pill: chance to be more dangerous

@@ -30,6 +30,7 @@
 			else if(item_storage)
 				O.forceMove(item_storage)
 		GLOB.items_digested_roundstat++
+		// ALLOW(lifecycle): the item is digested away
 		qdel(src)
 		return w_class
 
@@ -124,10 +125,12 @@
 			g_damage = w_class / 2
 			if(B.item_digest_logs)
 				to_chat(B.owner, span_vnotice("[src] was digested inside your [lowertext(B.name)]."))
+			// ALLOW(lifecycle): the item is digested away
 			qdel(src)
 		else if(istype(src,/obj/item/stack))
 			var/obj/item/stack/S = src
 			if(S.get_amount() <= 1)
+				// ALLOW(lifecycle): the last of the stack is digested away
 				qdel(src)
 			else
 				S.use(1)
@@ -148,6 +151,7 @@
 						new goodmeal.trash(src)
 			if(istype(B) && B.item_digest_logs)
 				to_chat(B.owner, span_vnotice("[src] was digested inside your [lowertext(B.name)]."))
+			// ALLOW(lifecycle): the item is digested away
 			qdel(src)
 	if(g_damage > w_class)
 		return w_class
@@ -234,6 +238,7 @@
 		else if(isliving(B.owner))
 			B.owner.adjust_nutrition(stored_nutrition * (B.nutrition_percent / 100))
 			stored_nutrition = 0
+			// ALLOW(lifecycle): the raw nutrition is digested away
 			qdel(src)
 			return w_class
 	. = ..()

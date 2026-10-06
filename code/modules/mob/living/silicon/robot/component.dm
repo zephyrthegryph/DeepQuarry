@@ -412,6 +412,7 @@ CAPABILITIES(/obj/item)
 									"analyser_broken",
 									"radio_broken")
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/item/broken_device/random/Initialize(mapload)
 	icon_state = pick(possible_icons) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 	. = ..()

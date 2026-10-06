@@ -90,10 +90,10 @@ CAPABILITIES(/obj/item/disk/body_record)
 	desc = "A box of body record disks, apparently."
 	icon_state = "disk_kit"
 
-/obj/item/storage/box/body_record_disk/Initialize(mapload)
-	. = ..()
-	for(var/i = 0 to 7)
-		new /obj/item/disk/body_record(src)
+/obj/item/storage/box/body_record_disk
+	starts_with = list(
+		/obj/item/disk/body_record = 8,
+	)
 
 #undef MENU_MAIN
 #undef MENU_BODYRECORDS

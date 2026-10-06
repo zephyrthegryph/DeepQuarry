@@ -100,6 +100,7 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 /// Re-open Initialize to drive brain creation. Also handles say_list spawning
 /// since DM resolves all `/mob/living/Initialize` overrides to the last-defined
 /// one — having two separate re-opens silently drops the earlier definition.
+// ALLOW(init/FRAMEWORK): the living base allocates its speech table and AI brain when its type has them
 /mob/living/Initialize(mapload)
 	. = ..()
 	// Only allocate a say_list when the mob actually overrides the default

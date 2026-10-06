@@ -11,6 +11,7 @@ GLOBAL_LIST_INIT(dq_variants_accessory_poncho_roles_cloak_crop_jacket, list(
 	"drab" = list("name" = "drab crop jacket", "icon_state" = "cropjacket_drab", "desc" = "A cut down jacket that looks like it's light enough to wear on top of some other clothes. This one's a sort of olive-drab kind of colour.", "item_state" = "cropjacket_drab"),
 ))
 
+// ALLOW(init/INSTANCE_STATE): applies the variant it was given, a map or loadout edit, before the parent init
 /obj/item/clothing/accessory/poncho/roles/cloak/crop_jacket/Initialize(mapload)
 	apply_variant()
 	. = ..()

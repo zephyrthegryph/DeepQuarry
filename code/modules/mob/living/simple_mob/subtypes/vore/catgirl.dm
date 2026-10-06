@@ -38,6 +38,7 @@
 
 	faction = FACTION_CATGIRL
 
+// ALLOW(init/INSTANCE_STATE): rolls its skin when its type says to
 /mob/living/simple_mob/vore/catgirl/Initialize(mapload)
 	. = ..()
 	if(random_skin)

@@ -15,6 +15,7 @@
 	if(existing)
 		LAZYOR(existing.sources, source)
 		existing.source_added(arglist(new_source_args))
+		// ALLOW(lifecycle): the source joined the existing grouped effect, so this copy is spent
 		qdel(src)
 		return FALSE
 

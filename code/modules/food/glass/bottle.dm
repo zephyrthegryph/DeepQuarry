@@ -18,6 +18,7 @@
 CAPABILITIES(/obj/item/reagent_containers/glass/bottle)
 	configure(reagent_container(starts_open = FALSE))
 
+// ALLOW(init/INSTANCE_STATE): icon_state rolled at random for each instance
 /obj/item/reagent_containers/glass/bottle/Initialize(mapload)
 	. = ..()
 	if(!icon_state)

@@ -220,6 +220,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/cell_mag, TYPE_PROC_REF(/atom, a
 	var/type_name = null
 	projectile_type = /obj/item/projectile/beam
 
+// ALLOW(init/INSTANCE_STATE): rolls its pixel offset
 /obj/item/ammo_casing/microbattery/Initialize(mapload)
 	. = ..()
 	pixel_x = rand(-10, 10)

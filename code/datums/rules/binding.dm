@@ -264,6 +264,7 @@ CAPABILITIES(/datum)
 /// Whether the owner is still here; a binding whose owner is gone deletes itself.
 /datum/rule_binding/proc/resolve()
 	if(!owner || QDELETED(owner))
+		// ALLOW(lifecycle): a rule binding whose owner is gone has nothing to bind
 		qdel(src)
 		return FALSE
 	return TRUE
@@ -360,6 +361,7 @@ CAPABILITIES(/datum)
 		drop(i)
 	rule.fire(owner)
 	if(!QDELETED(src) && !live)
+		// ALLOW(lifecycle): a rule binding with no live rules left ends
 		qdel(src)
 
 #undef RULE_BIT

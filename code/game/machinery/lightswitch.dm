@@ -19,6 +19,7 @@
 	var/otherarea = null
 	var/image/overlay
 
+// ALLOW(init/INSTANCE_STATE): binds to the area it is placed in, or the one the map names, and takes its state
 /obj/machinery/light_switch/Initialize(mapload)
 	. = ..()
 

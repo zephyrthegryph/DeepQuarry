@@ -14,9 +14,11 @@
 	aspect = ASPECT_UNSTABLE
 	spawner_type = /obj/effect/temporary_effect/destablize
 
-/obj/item/spell/spawner/destablize/Initialize(mapload)
-	. = ..()
-	set_light(3, 2, l_color = "#C26DDE")
+/obj/item/spell/spawner/destablize
+	light_range = 3
+	light_power = 2
+	light_color = "#C26DDE"
+	light_on = TRUE
 
 /obj/item/spell/spawner/destablize/on_ranged_cast(atom/hit_atom, mob/user)
 	if(within_range(hit_atom) && pay_energy(2000))
@@ -43,6 +45,7 @@
 /// A pulse every half second until pulses_remaining runs out.
 /obj/effect/temporary_effect/destablize/proc/radiate_loop()
 	if(!pulses_remaining)
+		// ALLOW(lifecycle): the destabilizing field ends after its last pulse
 		qdel(src)
 		return
 	after(src, 0.5 SECONDS, PROC_REF(radiate_pulse))

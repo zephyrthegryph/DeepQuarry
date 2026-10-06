@@ -46,6 +46,7 @@
 	melee_damage_lower = 1
 	melee_damage_upper = 2
 
+// ALLOW(init/CTOR_ARGS): my_factory is a constructor argument from whoever builds it
 /mob/living/simple_mob/blob/spore/Initialize(mapload, obj/structure/blob/factory/my_factory)
 	if(istype(my_factory))
 		rel_set(src, nameof(factory), my_factory) // the pair adds us to factory.spores

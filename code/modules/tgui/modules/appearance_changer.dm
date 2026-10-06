@@ -1227,6 +1227,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 /datum/tgui_module/appearance_changer/vore/tgui_close(mob/user)
 	. = ..()
 	if(!QDELETED(src))
+		// ALLOW(lifecycle): this self-deleting changer lives only while its window is open
 		qdel(src)
 
 /datum/tgui_module/appearance_changer/vore/update_active_camera_screen(datum/act/notice/N)
@@ -1270,6 +1271,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 /datum/tgui_module/appearance_changer/cocoon/tgui_close(mob/user)
 	. = ..()
 	if(!QDELETED(src))
+		// ALLOW(lifecycle): this self-deleting changer lives only while its window is open
 		qdel(src)
 
 /datum/tgui_module/appearance_changer/cocoon/tgui_status(mob/user, datum/tgui_state/state)
@@ -1288,6 +1290,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 /datum/tgui_module/appearance_changer/superpower/tgui_close(mob/user)
 	. = ..()
 	if(!QDELETED(src))
+		// ALLOW(lifecycle): this self-deleting changer lives only while its window is open
 		qdel(src)
 
 /datum/tgui_module/appearance_changer/superpower/tgui_status(mob/user, datum/tgui_state/state)
@@ -1307,6 +1310,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 /datum/tgui_module/appearance_changer/innate/tgui_close(mob/user)
 	. = ..()
 	if(!QDELETED(src))
+		// ALLOW(lifecycle): this self-deleting changer lives only while its window is open
 		qdel(src)
 
 /datum/tgui_module/appearance_changer/innate/tgui_status(mob/user, datum/tgui_state/state)
@@ -1373,6 +1377,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 /datum/tgui_module/appearance_changer/self_deleting/tgui_close(mob/user)
 	. = ..()
 	if(!QDELETED(src))
+		// ALLOW(lifecycle): this self-deleting changer lives only while its window is open
 		qdel(src)
 
 /// The last_camera_turf this refers to (a relation view: null once that is deleted).

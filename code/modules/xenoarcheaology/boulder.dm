@@ -12,6 +12,7 @@
 	var/tmp/datum/artifact_find/artifact_find_static
 	COOLDOWN_DECLARE(dig_cooldown)
 
+// ALLOW(init/INSTANCE_STATE): icon_state and excavation_level rolled at random for each instance
 /obj/structure/boulder/Initialize(mapload)
 	. = ..()
 	icon_state = "boulder[rand(1,4)]"

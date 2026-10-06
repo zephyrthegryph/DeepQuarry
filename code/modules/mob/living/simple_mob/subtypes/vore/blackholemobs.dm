@@ -729,6 +729,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 ///size randomization!///
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 
+// ALLOW(init/INSTANCE_STATE): rolls the size of each creature
 /mob/living/simple_mob/vore/blackhole/Initialize(mapload)
 	. = ..()
 	var/oursize = rand(90, 150) / 100
@@ -738,11 +739,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 	. = ..()
 	resize(1) // Scale them back down
 
+// ALLOW(init/INSTANCE_STATE): rolls the size of each creature
 /mob/living/simple_mob/vore/otie/syndicate/blackhole/Initialize(mapload)
 	. = ..()
 	var/oursize = rand(100, 180) / 100
 	resize(oursize)
 
+// ALLOW(init/INSTANCE_STATE): rolls the size of each creature
 /mob/living/simple_mob/humanoid/merc/ranged/sniper/blackhole/Initialize(mapload)
 	. = ..()
 	var/oursize = rand(100, 180) / 100

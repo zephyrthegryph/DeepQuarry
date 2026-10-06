@@ -9,6 +9,7 @@
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/botany_seedextractor
 
+// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
 /obj/machinery/seed_extractor/Initialize(mapload)
 	. = ..()
 	default_apply_parts()

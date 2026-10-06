@@ -15,6 +15,7 @@
 	var/graffiti_age = 0
 	var/author = "unknown"
 
+// ALLOW(init/CTOR_ARGS): _age, _message and _author are constructor arguments from whoever builds it
 /obj/effect/decal/writing/Initialize(mapload, _age, _message, _author)
 	var/list/random_icon_states = icon_states_fast(icon)
 	for(var/obj/effect/decal/writing/writing in contents_of(loc))
@@ -83,4 +84,5 @@ EXTEND_INTERACTIONS(/obj/effect/decal/writing, \
 /obj/effect/decal/writing/proc/clear_done(mob/user, obj/item/weldingtool/welder)
 	playsound(loc, welder.usesound, 50, 1)
 	act_message(user, null, others = span_infoplain(span_bold("%U%") + " clears away some graffiti."))
+	// ALLOW(lifecycle): the graffiti is cleared away
 	qdel(src)

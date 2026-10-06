@@ -29,6 +29,7 @@
 CAPABILITIES(/obj/item/stack/material)
 	without("ui_open")
 
+// ALLOW(init/CTOR_ARGS): starting_amount is a constructor argument from whoever builds it
 /obj/item/stack/material/Initialize(mapload, starting_amount)
 	. = ..(mapload, starting_amount)
 

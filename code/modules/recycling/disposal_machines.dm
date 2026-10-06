@@ -62,6 +62,7 @@ CAPABILITIES(/obj/machinery/disposal)
 // find the attached trunk (if present) and init gas resvr.
 DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C, null)
 
+// ALLOW(init/CTOR_ARGS): make_from is a constructor argument from whoever builds it
 /obj/machinery/disposal/Initialize(mapload, obj/structure/disposalconstruct/make_from)
 	. = ..()
 
@@ -364,6 +365,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	play_sfx(new_bin, SFX_MACHINES_MACHINE_DIE_SHORT)
 	fx_sparks(new_bin, 5, FALSE)
 	// Cleanup
+	// ALLOW(lifecycle): the bin is replaced by the reconfigured one
 	qdel(src)
 
 // mouse drop another mob or self
@@ -788,6 +790,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 		AM.forceMove(T)
 	//..() //*cough
 	OM_EMIT(src, /datum/om/event/disposal_unlink) //unlinks in destroy, too.
+	// ALLOW(lifecycle): the deconstructed bin leaves its construct behind
 	qdel(src) //Parent above should do this, but that's not a thing as of writing this.
 
 /obj/machinery/disposal/proc/clean_items()

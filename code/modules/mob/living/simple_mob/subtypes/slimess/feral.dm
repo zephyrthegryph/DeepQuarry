@@ -88,6 +88,7 @@
 	for(var/turf/simulated/target_turf in view(2, src))
 		target_turf.assume_gas(GAS_PHORON, 30, 1500+T0C)
 		target_turf.hotspot_expose(1500+T0C, 400)
+	// ALLOW(lifecycle): the slime is consumed by its own inferno
 	qdel(src)
 
 CAPABILITIES(/mob/living/simple_mob/slime/feral/dark_purple)

@@ -509,6 +509,7 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 	icon = 'icons/obj/pda_vr.dmi'
 	icon_state = "pdabox"
 
+// ALLOW(init/INSTANCE_STATE): rolls the department cartridge this box carries
 /obj/item/storage/box/PDAs/Initialize(mapload)
 	. = ..()
 	new /obj/item/pda(src)

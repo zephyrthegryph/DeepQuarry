@@ -36,4 +36,5 @@
 /// A species death that leaves only ash.
 /mob/living/carbon/human/proc/species_death_crumble()
 	new /obj/effect/decal/cleanable/ash(loc)
+	// ALLOW(lifecycle): a shadow crumbles to ash when it dies
 	qdel(src)

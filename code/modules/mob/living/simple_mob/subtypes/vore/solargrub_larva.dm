@@ -190,6 +190,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 OM_FIELD(/obj/machinery/abstract_grub_machine, draining, 1, CHANGE_MACHINE_SETTINGS)
 DECLARE_PERIODIC_WHILE(/obj/machinery/abstract_grub_machine, MACHINE_PIPELINE, "draining")
 
+// ALLOW(init/INSTANCE_STATE): rolls its power use and binds to the grub it is made inside
 /obj/machinery/abstract_grub_machine/Initialize(mapload)
 	. = ..()
 	shuffle_power_usages()

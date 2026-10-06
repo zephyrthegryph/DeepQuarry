@@ -808,6 +808,7 @@ CAPABILITIES(/datum/lleill_contact_review)
 				continue
 			src.drop_from_inventory(W)
 
+	// ALLOW(lifecycle): the beast form is discarded when it reverts
 	qdel(src)
 
 //Hanner variant
