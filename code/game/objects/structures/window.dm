@@ -135,37 +135,34 @@
 	return receive_thrown(source, throwingdatum, reinf ? 0.25 : 1)
 
 /// Old attack_tk: knock on the window at range.
-/obj/structure/window/proc/interaction_tk(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_notice("Something knocks on [src]."))
+/obj/structure/window/proc/interaction_tk(datum/act/op/A)
+	A.actor.visible_message(span_notice("Something knocks on [src]."))
 	play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 50)
-	return TRUE
+	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/structure/window, \
-	INTERACT_HAND_AS(I_HURT, "Bang on", PROC_REF(interaction_bang)), \
-	INTERACT_HAND("Knock", PROC_REF(interaction_hand)), \
-	INTERACT_ITEM("Use", PROC_REF(interaction_item)), \
-	INTERACT_TK("Knock", PROC_REF(interaction_tk)), \
-)
-
-/obj/structure/window/proc/interaction_bang(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand in combat mode: bang on the window (a shredding species claws it; a Hulk smashes through).
+/obj/structure/window/proc/interaction_bang(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.has_mutation(HULK))
-		return FALSE // a Hulk smashes through: interaction_hand()
+		return interaction_hand(A) // a Hulk smashes through
 	user.setClickCooldown(user.get_attack_speed())
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		var/shreddamage = H.species.can_shred(H, FALSE, 15)
 		if(shreddamage)
 			generic_hit(src, H, shreddamage + 5, "attacks")
-			return TRUE
+			return OP_OK
 
 	play_sfx(src, SFX_EFFECTS_GLASSKNOCK)
 	user.do_attack_animation(src)
 	act_message(user, src, MSG_SELF(span_danger("You bang against %T%!")), \
 		MSG_OTHERS(span_danger("%U% bangs against %T%!")), \
 		MSG_BLIND("You hear a banging sound."))
-	return TRUE
+	return OP_OK
 
-/obj/structure/window/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: knock on the window (a Hulk smashes through).
+/obj/structure/window/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	user.setClickCooldown(user.get_attack_speed())
 	if(user.has_mutation(HULK))
 		user.say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!"))
@@ -177,7 +174,7 @@ EXTEND_INTERACTIONS(/obj/structure/window, \
 		act_message(user, null, MSG_SELF("You knock on the [src.name]."), \
 			MSG_OTHERS("[user.name] knocks on the [src.name]."), \
 			MSG_BLIND("You hear a knocking sound."))
-	return TRUE
+	return OP_OK
 
 /obj/structure/window/attack_generic(mob/user, damage)
 	user.setClickCooldown(user.get_attack_speed())
@@ -193,7 +190,10 @@ EXTEND_INTERACTIONS(/obj/structure/window, \
 	user.do_attack_animation(src)
 	return 1
 
-/obj/structure/window/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: slam a grabbed mob against it, wire it for tinting, or hit it.
+/obj/structure/window/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	// Slamming.
 	if (istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
@@ -217,9 +217,9 @@ EXTEND_INTERACTIONS(/obj/structure/window, \
 					M.status_at_least(STAT_WEAKENED, 5)
 					M.injure(INJURY_BLUNT, 20, null, src)
 					hit(50)
-			return TRUE
+			return OP_OK
 
-	if(W.flags & NOBLUDGEON) return TRUE
+	if(W.flags & NOBLUDGEON) return OP_OK
 
 	if(istype(W, /obj/item/stack/cable_coil) && reinf && state == 0 && !istype(src, /obj/structure/window/reinforced/polarized))
 		var/obj/item/stack/cable_coil/C = W
@@ -230,7 +230,7 @@ EXTEND_INTERACTIONS(/obj/structure/window, \
 				MSG_BLIND("You hear sparks."))
 			use_tool(user, C, src, delay = 2 SECONDS, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(state))
 	else if(istype(W,/obj/item/frame) && anchored)
-		return TRUE // its own op, frame.mount, hangs it on the window
+		return OP_OK // its own op, frame.mount, hangs it on the window
 	else
 		user.setClickCooldown(user.get_attack_speed(W))
 		if(W.obj_damage_type())
@@ -242,7 +242,7 @@ EXTEND_INTERACTIONS(/obj/structure/window, \
 				step(src, get_dir(user, src))
 		else
 			play_sfx(src, SFX_EFFECTS_GLASSHIT)
-	return TRUE
+	return OP_OK
 
 /obj/structure/window/proc/attackby_tool_done(state)
 	if(!(state == 0))
@@ -280,6 +280,13 @@ CAPABILITIES(/obj/structure/window)
 	smoothing()
 	param(nameof(dir), pos = 1)
 	param(nameof(constructed), pos = 2)
+	op("bang", hand(), stance(I_HURT), label("Bang on"), then(PROC_REF(interaction_bang)))
+	op("knock", hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Knock"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("tk_knock", tk(), label("Knock"), then(PROC_REF(interaction_tk)))
+	// weld repair: a lit welder in the help stance mends a damaged window
+	op("weld_repair", tool(TOOL_WELDER), stance(I_HELP), label("Repair the window"), priority(OP_PRIORITY_PART + 10), wait(4 SECONDS), costs(RES_FUEL, 1),
+		needs(req_welder_lit(), req(PROC_REF(is_damaged), because = MSG(window/undamaged))), begins(MSG(start/interaction/window_repair)), says(MSG(interaction/window_repair)), then(PROC_REF(weld_repair)))
 
 /// A window a player built (its constructor param).
 /obj/structure/window/var/constructed = FALSE
@@ -507,31 +514,37 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 	// So, they should block stuff like lasers at that time.
 	return opacity
 
-/obj/structure/window/reinforced/polarized/proc/window_id_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/t = sanitizeSafe(A.answer.value, MAX_NAME_LEN)
+/// The window's tint id: linked from the multitool's buffered tint button, else the one entered.
+/obj/structure/window/reinforced/polarized/proc/window_id_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/multitool/MT = A.held?.get_multitool()
+	if(istype(MT?.connectable(), /obj/machinery/button/windowtint))
+		var/obj/machinery/button/windowtint/buffered_button = MT.connectable()
+		src.id = buffered_button.id
+		to_chat(user, span_notice("\The [src] is linked to \the [buffered_button] with ID '[id]'."))
+		return OP_OK
+	var/datum/prompt/R = A.answer
+	if(!R)
+		return OP_OK
+	var/t = sanitizeSafe(R.value, MAX_NAME_LEN)
 	if(t)
 		src.id = t
 		to_chat(user, span_notice("The new ID of \the [src] is '[id]'."))
+	return OP_OK
 
-/// Overrides window's interaction_item(): a multitool programs the tint ID while unanchored.
-/obj/structure/window/reinforced/polarized/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	var/obj/item/multitool/MT = W.get_multitool()
-	if(MT && !anchored) // Only allow programming if unanchored!
-		// First check if they have a windowtint button buffered
-		if(istype(MT.connectable(), /obj/machinery/button/windowtint))
-			var/obj/machinery/button/windowtint/buffered_button = MT.connectable()
-			src.id = buffered_button.id
-			to_chat(user, span_notice("\The [src] is linked to \the [buffered_button] with ID '[id]'."))
-			return TRUE
-		// Otherwise fall back to asking them... and remind them what the current ID is.
-		if(id)
-			to_chat(user, "The window's current ID is [id].")
-		open_request(src, /datum/prompt/text, PROC_REF(window_id_entered), answerer = user, title = name, question = "Enter the new ID for the window.", default = id, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
-		return TRUE
-	return ..()
+/// No tint button is buffered in the multitool: the window asks for an id (and says the current one).
+/obj/structure/window/reinforced/polarized/proc/asks_id(datum/act/op/A)
+	var/obj/item/multitool/MT = A.held?.get_multitool()
+	return !istype(MT?.connectable(), /obj/machinery/button/windowtint)
+
+/obj/structure/window/reinforced/polarized/proc/id_question(datum/act/A)
+	return id ? "The window's current ID is [id]. Enter the new ID for the window." : "Enter the new ID for the window."
+
+CAPABILITIES(/obj/structure/window/reinforced/polarized)
+	// a multitool programs the tint id while the window is loose: from a buffered tint button, else as asked
+	op("program", tool(TOOL_MULTITOOL), wait(0), label("Program"), when(cond_not(nameof(anchored))),
+		asks(/datum/prompt/text, fields = list("title" = "name", "question" = computed(PROC_REF(id_question)), "default" = "id", "encode" = FALSE, "timeout" = 0), when = PROC_REF(asks_id)),
+		then(PROC_REF(window_id_entered)))
 
 /obj/structure/window/reinforced/polarized/proc/toggle()
 	if(opacity)

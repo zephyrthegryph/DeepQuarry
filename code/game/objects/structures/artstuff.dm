@@ -76,16 +76,10 @@ CAPABILITIES(/obj/structure/easel)
 		for(var/y in 1 to height)
 			grid[x][y] = canvas_color
 
-DECLARE_INTERACTIONS(/obj/item/canvas, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ITEM_AS(I_HELP, "Paint", PROC_REF(interaction_paint)), \
-)
-
-/// Old attack_self.
-/obj/item/canvas/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
+/// Old attack_self: look at the canvas.
+/obj/item/canvas/proc/interaction_self(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_OK
 
 /obj/item/canvas/dropped(mob/user, equipping, slot)
 	pixel_x = initial(pixel_x)
@@ -103,6 +97,12 @@ CAPABILITIES(/obj/item/canvas)
 	op("paint", ui_act("paint", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_paint)))
 	op("finalize", ui_act("finalize"), then(PROC_REF(ui_act_finalize)))
 	extend(TAG_UI, needs(req(PROC_REF(canvas_open), because = MSG(canvas/finished))))
+	op("view", in_hand(), then(PROC_REF(interaction_self)))
+	op("base_color", item(/obj/item/paint_palette), label("Fill"),
+		asks(/datum/prompt/yes_no, fields = list("title" = "Confirm Color Fill", "question" = "Adjusting the base color of this canvas will replace ALL pixels with the selected color. Are you sure?", "timeout" = 0), step = "sure"),
+		asks(/datum/prompt/color, fields = list("title" = "Base Color", "question" = "Select a base color for the canvas:", "default" = "canvas_color", "timeout" = 0), step = "colour", when = PROC_REF(fill_confirmed)),
+		then(PROC_REF(base_color_chosen)))
+	op("paint_open", item(/obj/item), stance(I_HELP), label("Paint"), then(PROC_REF(interaction_paint)))
 
 MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 
@@ -110,17 +110,10 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 /obj/item/canvas/proc/canvas_open(datum/act/op/A)
 	return !finalized // ALLOW(reads): a finished painting is read when a stroke is made, never from a cached menu
 
-/// Old attackby.
-/obj/item/canvas/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
-	if(istype(I, /obj/item/paint_palette))
-		open_request(src, /datum/prompt/yes_no, PROC_REF(ask_base_color), valid = PROC_REF(canvas_near), answerer = user, subject = I, ask_flags = ASK_HELD | ASK_CAPABLE, title = "Confirm Color Fill", question = "Adjusting the base color of this canvas will replace ALL pixels with the selected color. Are you sure?", timeout = 0)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
-
-/// Old attackby outside combat mode: open the canvas to paint on it.
-/obj/item/canvas/proc/interaction_paint(mob/living/user, obj/item/I, datum/interaction/interaction)
-	tgui_interact(user)
-	return INTERACTION_HANDLED_PASS
+/// Old attackby outside combat mode: open the canvas to paint on it (the click goes on).
+/obj/item/canvas/proc/interaction_paint(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_PASS
 
 /obj/item/canvas/ui_data(datum/act/eval/A)
 	return list("grid" = grid, "name" = painting_name, "finalized" = finalized)
@@ -210,26 +203,24 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 	else if(istype(I, /obj/item/soap) || istype(I, /obj/item/reagent_containers/glass/rag))
 		return canvas_color
 
-/// Filling a canvas with a palette (the subject, held throughout); the canvas stays next to the painter.
-/obj/item/canvas/proc/canvas_near(datum/request/R)
-	var/mob/M = R.answerer
-	return istype(M) && Adjacent(M)
+/// The palette's fill: asked only after a yes.
+/obj/item/canvas/proc/fill_confirmed(datum/act/op/A)
+	var/datum/prompt/R = A.step_answers?["sure"]
+	return !!R?.value
 
-/obj/item/canvas/proc/ask_base_color(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	open_request(src, /datum/prompt/color, PROC_REF(base_color_chosen), valid = PROC_REF(canvas_near), answerer = A.request.answerer, subject = A.request.subject, ask_flags = ASK_HELD | ASK_CAPABLE, title = "Base Color", question = "Select a base color for the canvas:", default = canvas_color, timeout = 0)
-
-/obj/item/canvas/proc/base_color_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/user = A.request.answerer
-	var/basecolor = A.answer.value
+/// Old attackby with a paint palette: after a yes, the whole canvas takes the chosen base colour (the click goes on).
+/obj/item/canvas/proc/base_color_chosen(datum/act/op/A)
+	var/datum/prompt/R = A.step_answers?["colour"]
+	if(!R)
+		return OP_PASS
+	var/mob/living/user = A.actor
+	var/basecolor = R.value
 	if(basecolor)
 		canvas_color = basecolor
 		reset_grid()
 		act_message(user, src, MSG_SELF("You smear paint on %T%, changing the color of the entire thing."), MSG_OTHERS("%U% smears paint on %T%, covering the entire thing in paint."), runemessage = "smears paint")
 		update_appearance()
+	return OP_PASS
 
 /obj/item/canvas/proc/try_rename(mob/user)
 	open_request(src, /datum/prompt/text, PROC_REF(renamed), answerer = user, question = "What do you want to name the painting?", max_len = 250, usable_state = "physical", timeout = 0)
@@ -323,34 +314,27 @@ MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 	icon = 'icons/obj/artstuff.dmi'
 	icon_state = "palette"
 
-DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/paint_palette)
+	// a brush dipped in the palette picks its new colour (the click goes on)
+	op("pick_color", item(/obj/item/paint_brush), label("Pick a colour"),
+		asks(/datum/prompt/color, fields = list("title" = "Paint Palette", "question" = "Select a new paint color:", "default" = computed(PROC_REF(brush_colour)), "timeout" = 0)),
+		then(PROC_REF(brush_color_picked)))
 
-/// Old attackby.
-/obj/item/paint_palette/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/paint_brush))
-		var/obj/item/paint_brush/P = W
-		open_request(src, /datum/prompt/color/paint_palette, PROC_REF(brush_color_picked), valid = PROC_REF(brush_near), answerer = user, brush = P, title = "Paint Palette", question = "Select a new paint color:", default = P.selected_color, ask_flags = ASK_NEAR_SUBJECT, timeout = 0)
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+/// The brush's colour now: the question's default.
+/obj/item/paint_palette/proc/brush_colour(datum/act/op/A)
+	var/obj/item/paint_brush/P = A.held
+	return P?.selected_color
 
-/// Picking a brush colour at a palette (the subject): both stay next to the painter.
 /datum/prompt/color/paint_palette
 	var/obj/item/paint_brush/brush
 
-CAPABILITIES(/datum/prompt/color/paint_palette)
-	ref_one(nameof(brush), /obj/item/paint_brush)
-
-/obj/item/paint_palette/proc/brush_near(datum/request/R)
-	var/datum/prompt/color/paint_palette/C = R
-	var/mob/M = R.answerer
-	return istype(M) && !QDELETED(C.brush) && M.Adjacent(C.brush)
-
-/obj/item/paint_palette/proc/brush_color_picked(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/color/paint_palette/C = A.request
-	C.brush?.update_paint(A.answer.value)
+/// Old attackby with a brush: the brush takes the picked colour.
+/obj/item/paint_palette/proc/brush_color_picked(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/obj/item/paint_brush/P = A.held
+	if(R && istype(P))
+		P.update_paint(R.value)
+	return OP_PASS
 
 /obj/item/frame/painting
 	name = "painting frame"

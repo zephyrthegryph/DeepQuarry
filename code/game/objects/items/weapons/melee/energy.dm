@@ -108,7 +108,15 @@
 	if(colorable)
 		. += span_notice("Alt-click to recolor it.")
 
+TRACKED(/obj/item/melee/energy, colorable)
+
 CAPABILITIES(/obj/item/melee/energy)
+	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
+	op("recolor", hand(), ungated(), gesture(GESTURE_ALT), label("Recolor"), when(nameof(colorable)),
+		asks(/datum/prompt/yes_no, fields = list("title" = "Confirm Recolor", "question" = "Are you sure you want to recolor your blade?", "timeout" = 0), step = "sure"),
+		asks(/datum/prompt/color/blade_recolor, fields = list("title" = "Choose Energy Color", "default" = "lcolor"), step = "colour", when = PROC_REF(recolor_confirmed)),
+		then(PROC_REF(blade_recolored)))
+	owns_one(nameof(bcell), /obj/item/cell)
 	op("power", in_hand(), when(cond_not(nameof(special_handling))), label("Toggle energy weapon"), then(PROC_REF(energy_power_requested)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))
@@ -146,23 +154,21 @@ CAPABILITIES(/obj/item/melee/energy)
 			return ITEM_INTERACT_FAILURE
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/item/melee/energy, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt), REQ_TARGET_STATE(/obj/item/melee/energy/proc/can_recolor)), \
-)
 
-/// Old attackby.
-/obj/item/melee/energy/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: a cell of its kind goes in (anything else goes on to the hit).
+/obj/item/melee/energy/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(use_cell)
 		if(istype(W, cell_type))
 			if(!bcell)
 				if(!move_into(src, nameof(src.bcell), W, user))
-					return FALSE
+					return OP_DECLINE
 				to_chat(user, span_notice("You install a cell in [src]."))
 				update_icon()
 			else
 				to_chat(user, span_notice("[src] already has a cell."))
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/melee/energy/proc/multitool_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -206,37 +212,22 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_
 		H.update_inv_l_hand()
 		H.update_inv_r_hand()
 
-/// Requirement for recolouring the blade.
-/obj/item/melee/energy/proc/can_recolor(mob/living/user, atom/target, obj/item/held)
-	if(!colorable || !in_range(src, user))
-		return TRUE // the effect declines silently
-	if(user.incapacitated() || !istype(user))
-		return "you can't do that right now"
-	return TRUE
+/// The recolour was confirmed: the colour picker is next.
+/obj/item/melee/energy/proc/recolor_confirmed(datum/act/op/A)
+	var/datum/prompt/R = A.step_answers?["sure"]
+	return !!R?.value
 
-/// Old click_alt.
-/obj/item/melee/energy/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(!colorable) //checks if is not colorable
-		return TRUE
-	if(!in_range(src, user))	//Basic checks to prevent abuse
-		return TRUE
-
-	open_request(src, /datum/prompt/yes_no, PROC_REF(ask_blade_color), answerer = user, title = "Confirm Recolor", question = "Are you sure you want to recolor your blade?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
-	return TRUE
-
-/obj/item/melee/energy/proc/ask_blade_color(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	open_request(src, /datum/prompt/color/blade_recolor, PROC_REF(blade_recolored), answerer = A.request.answerer, default = lcolor, title = "Choose Energy Color")
-
-/obj/item/melee/energy/proc/blade_recolored(datum/act/request/A)
-	if(!A.answer)
-		return
-	if(A.answer.value)
-		lcolor = sanitize_hexcolor(A.answer.value)
+/// Old click_alt: a colourable blade takes the picked colour, after a yes.
+/obj/item/melee/energy/proc/blade_recolored(datum/act/op/A)
+	var/datum/prompt/R = A.step_answers?["colour"]
+	if(!R)
+		return OP_OK
+	if(R.value)
+		lcolor = sanitize_hexcolor(R.value)
 	update_icon()
 	if(active)
 		set_light(lrange, lpower, lcolor)
+	return OP_OK
 
 /*
  * Energy Axe
@@ -602,9 +593,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy/sword/altevian, TYPE_PROC_REF(/at
 	. = ..()
 	after(src, 0, PROC_REF(check_held))
 
-/obj/item/melee/energy/ownership()
-	. = ..()
-	. += owns(nameof(bcell), policy = OWN_CONTAINED)
 
 /// Relation view: creator (reads null once it is gone).
 /obj/item/melee/energy/blade/proc/creator() as /mob/living

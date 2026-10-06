@@ -22,7 +22,7 @@
 					automatic_custom_emote(VISIBLE_MESSAGE,"[pick(friendly)] \the [A]!", check_stat = TRUE)
 			if(istype(A,/obj/structure/micro_tunnel))	//Allows simplemobs to click on mouse holes, mice should be allowed to go in mouse holes, and other mobs
 				var/obj/structure/micro_tunnel/t = A	//should be allowed to drag the mice out of the mouse holes!
-				t.tunnel_interact(src)
+				perform_op(src, t, micro_tunnel_holds(t, src) ? "inside_use" : "use", null, ORIGIN_SYSTEM)
 
 		if(I_HURT)
 			if(can_special_attack(A) && special_attack_target(A, stance))

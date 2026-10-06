@@ -73,80 +73,42 @@ DECLARE_APPEARANCE_PROC(/obj/structure/catwalk, TYPE_PROC_REF(/atom, appearance_
 		new plated_tile(src.loc)
 	consume(src, user)
 
-/obj/structure/catwalk/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/catwalk_plate,
-		/datum/interaction/catwalk_slice/help,
-		/datum/interaction/catwalk_slice/disarm,
-		/datum/interaction/catwalk_slice/grab,
-		/datum/interaction/catwalk_slice/harm,
-	)
-	..()
+/// Old welder use: slice the catwalk apart with a lit welder. Outside combat mode (help) the lattice over open space stays.
+/obj/structure/catwalk/proc/interaction_slice(datum/act/op/A)
+	atom_deconstruct(TRUE, A.actor, FALSE)
+	return OP_OK
 
-/// Abstract: slice the catwalk apart with a lit welder. Outside combat mode the lattice over open space stays.
-/datum/interaction/catwalk_slice
-	name = "Slice apart"
-	category = INTERACTION_CAT_MAINTAIN
-	priority = 10
-	default_action = INPUT_ACTION_USE
-	tool = TOOL_WELDER
-	tool_volume = 0
-	requires = list(REQ_REACH_ADJACENT)
-	effect = /obj/structure/catwalk/proc/interaction_slice
-
-/datum/interaction/catwalk_slice/help
-	id = "catwalk_slice_help"
-	name = "Slice apart, keeping the lattice"
-	stance = I_HELP
-
-/datum/interaction/catwalk_slice/disarm
-	id = "catwalk_slice_disarm"
-	stance = I_DISARM
-
-/datum/interaction/catwalk_slice/grab
-	id = "catwalk_slice_grab"
-	stance = I_GRAB
-
-/datum/interaction/catwalk_slice/harm
-	id = "catwalk_slice_harm"
-	stance = I_HURT
-
-/obj/structure/catwalk/proc/interaction_slice(mob/user, obj/item/C, datum/interaction/interaction)
-	var/obj/item/weldingtool/WT = C.get_welder()
-	if(WT.isOn() && WT.remove_fuel(0, user))
-		atom_deconstruct(TRUE, user, interaction.stance == I_HELP)
-	return TRUE
+/obj/structure/catwalk/proc/interaction_slice_keep(datum/act/op/A)
+	atom_deconstruct(TRUE, A.actor, TRUE)
+	return OP_OK
 
 /// Old attackby: plate the catwalk with a floor tile stack.
-/datum/interaction/entry_item/catwalk_plate
-	id = "catwalk_plate"
-	name = "Plate"
-	held_type = /obj/item/stack/tile/floor
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/structure/catwalk/proc/catwalk_not_plated, null))
-	effect = /obj/structure/catwalk/proc/interaction_plate
-
-/obj/structure/catwalk/proc/catwalk_not_plated(mob/actor, atom/target, obj/item/held)
-	return !plated_tile
-
-/obj/structure/catwalk/proc/interaction_plate(mob/user, obj/item/stack/tile/floor/ST, datum/interaction/interaction)
+/obj/structure/catwalk/proc/interaction_plate(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/tile/floor/ST = A.held
 	to_chat(user, span_notice("Placing tile..."))
 	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(plate_done), done_args = list(user, ST))
-	return TRUE
+	return OP_OK
 
 /obj/structure/catwalk/proc/plate_done(mob/user, obj/item/stack/tile/floor/ST)
 	if(plated_tile || !ST.use(1))
 		return
 	to_chat(user, span_notice("You plate \the [src]"))
 	name = "plated catwalk"
-	plated_tile = ST.type
+	set_plated_tile(ST.type)
 	add_fingerprint(user)
 	for(var/tiletype in plating_colors)
 		if(istype(ST, tiletype))
 			plating_color = plating_colors[tiletype]
 	update_icon()
 
+TRACKED(/obj/structure/catwalk, plated_tile)
+
 CAPABILITIES(/obj/structure/catwalk)
 	smoothing()
+	op("slice_keep", tool(TOOL_WELDER), stance(I_HELP), label("Slice apart, keeping the lattice"), wait(0), needs(req_welder_lit()), costs(RES_FUEL, 0), then(PROC_REF(interaction_slice_keep)))
+	op("slice", tool(TOOL_WELDER), stance(I_DISARM, I_GRAB, I_HURT), label("Slice apart"), wait(0), needs(req_welder_lit()), costs(RES_FUEL, 0), then(PROC_REF(interaction_slice)))
+	op("plate", item(/obj/item/stack/tile/floor), label("Plate"), when(cond_not(nameof(plated_tile))), then(PROC_REF(interaction_plate)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 
 /obj/structure/catwalk/proc/crowbar_used(datum/act/op/A)
@@ -205,7 +167,7 @@ MAP_RESOLVER_VARS(/obj/effect/catwalk_plated, "platecolor;tile")
 		WARNING("Frame Spawner: A catwalk already exists at [T.x]-[T.y]-[T.z]")
 		return
 	var/obj/structure/catwalk/C = new /obj/structure/catwalk(T)
-	C.plated_tile = MAP_VAR(P, varedits, tile)
+	C.set_plated_tile(MAP_VAR(P, varedits, tile))
 	C.plating_color = MAP_VAR(P, varedits, platecolor)
 	C.name = "plated catwalk"
 	C.update_icon()

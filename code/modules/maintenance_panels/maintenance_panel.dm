@@ -36,9 +36,8 @@ EXTEND_INTERACTIONS(/obj/structure/window/maintenance_panel, \
 
 /obj/structure/window/maintenance_panel/welder_act(mob/user, obj/item/tool)
 	// Damaged, and weld repair is meant (it is declared for I_HELP): repair it. Otherwise weld it to or cut it off the wall.
-	var/datum/interaction/window_repair/repair = INTERACTION(/datum/interaction/window_repair)
-	if(get_integrity() < max_integrity && repair.is_meant(user, src, tool))
-		return ..()
+	if(get_integrity() < max_integrity && !user.combat_mode)
+		return ..() // the window's weld repair op takes a damaged panel in the help stance
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder.remove_fuel(1, user))
 		return ITEM_INTERACT_BLOCKING

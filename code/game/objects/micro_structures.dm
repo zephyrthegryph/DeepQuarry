@@ -21,6 +21,23 @@
 
 REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
+TRACKED(/obj/structure/micro_tunnel, random)
+
+CAPABILITIES(/obj/structure/micro_tunnel)
+	// outside: climb in, or reach in (a creature that may squeeze in is asked which); a cyborg uses it from beside the hole
+	op("use", inputs(hand(), remote()), label("Use"), when(PROC_REF(actor_outside)), needs(req_adjacent()),
+		asks(/datum/prompt/choice, fields = list("title" = "Enter or reach", "question" = "Would you like to enter the tunnel, or reach inside it?", "choices" = list("Enter", "Reach"), "buttons" = TRUE, "timeout" = 0), step = "enter_or_reach", when = PROC_REF(asks_enter_or_reach)),
+		then(PROC_REF(interaction_hand)))
+	// inside: the tunnel's menu, then where to go or whom to eat when there is a choice
+	op("inside_use", inside(), label("Use"), when(PROC_REF(actor_inside)),
+		asks(/datum/prompt/choice, fields = list("title" = "Tunnel", "question" = "It's dark and gloomy in here. What would you like to do?", "choices" = computed(PROC_REF(inside_choices)), "buttons" = TRUE, "timeout" = 0), step = "action", keeps = TARGET_PRESENT),
+		asks(/datum/prompt/choice, fields = list("title" = "Pick a tunnel", "question" = "Where would you like to go?", "choices" = computed(PROC_REF(move_choices)), "timeout" = 0), step = "move_to", keeps = TARGET_PRESENT, when = PROC_REF(picks_destination)),
+		asks(/datum/prompt/choice, fields = list("title" = "Pick a target to eat", "question" = "Who would you like to eat?", "choices" = computed(PROC_REF(eat_choices)), "timeout" = 0), step = "eat", keeps = TARGET_PRESENT, when = PROC_REF(picks_meal)),
+		then(PROC_REF(tunnel_action_chosen)))
+	op("climb_in", item(/mob/living), gesture(GESTURE_DRAG), label("Climb in"), needs(req(PROC_REF(self_drag), silent = TRUE)),
+		asks(/datum/prompt/choice, fields = list("title" = "Enter or reach", "question" = "Would you like to enter the tunnel, or reach inside it?", "choices" = list("Enter", "Reach"), "buttons" = TRUE, "timeout" = 0), step = "enter_or_reach", when = PROC_REF(asks_enter_or_reach)),
+		then(PROC_REF(interaction_drag)))
+
 /obj/structure/micro_tunnel/Initialize(mapload)
 	. = ..()
 	if(name == initial(name))
@@ -89,48 +106,95 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 			destinations |= t
 	return destinations
 
-/// Old attack_hand.
-/obj/structure/micro_tunnel/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	tunnel_interact(user)
-	return FALSE
+/// Old attack_hand (and a cyborg's use beside the hole): inside, the tunnel's menu; outside, climb in when small enough, else reach in (a
+/// creature that could squeeze in is asked which). The click goes on afterwards, as the old handler answered FALSE.
+/obj/structure/micro_tunnel/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
+	if(!isliving(user))
+		return OP_PASS
+	if(micro_tunnel_fits(src, user))
+		tunnel_climb(user)
+		return OP_PASS
+	var/datum/prompt/R = A.step_answers?["enter_or_reach"]
+	if(R)
+		if(R.value == "Enter")
+			tunnel_climb(user)
+		else if(R.value == "Reach")
+			tunnel_reach(user)
+		return OP_PASS
+	tunnel_reach(user)
+	return OP_PASS
+
+/// Is `user` small enough to climb into `tunnel`?
+/proc/micro_tunnel_fits(obj/structure/micro_tunnel/tunnel, mob/living/user)
+	READS_FROM() // a body's size is asked when the click lands
+	return user.mob_size <= MOB_TINY || user.get_effective_size(TRUE) <= tunnel.micro_accepted_scale
+
+/// A creature too big to fit but allowed to squeeze in (it is asked whether to enter or to reach in).
+/proc/micro_tunnel_may_choose(obj/structure/micro_tunnel/tunnel, mob/living/user)
+	READS_FROM() // the kinds of creature are fixed
+	return !micro_tunnel_fits(tunnel, user) && is_type_in_list(user, tunnel.non_micro_types)
+
+/// Is `user` inside `tunnel`?
+/proc/micro_tunnel_holds(obj/structure/micro_tunnel/tunnel, mob/living/user)
+	READS_FROM() // where the actor is, asked when the click lands
+	return user?.loc == tunnel
+
+/// The creature drags itself onto the hole.
+/obj/structure/micro_tunnel/proc/self_drag(datum/act/op/A)
+	return A.held == A.actor
+
+/obj/structure/micro_tunnel/proc/actor_outside(datum/act/op/A)
+	return !micro_tunnel_holds(src, A.actor)
+
+/obj/structure/micro_tunnel/proc/actor_inside(datum/act/op/A)
+	return micro_tunnel_holds(src, A.actor)
+
+/obj/structure/micro_tunnel/proc/asks_enter_or_reach(datum/act/op/A)
+	return micro_tunnel_may_choose(src, A.actor)
+
+/// The tunnel's menu from inside: exit, move, and for a bigger creature, eat what else is in here.
+/obj/structure/micro_tunnel/proc/inside_choices(datum/act/op/A)
+	var/list/our_options = list("Exit", "Move")
+	if(is_type_in_list(A.actor, non_micro_types) && contents_count(src) > 1)
+		our_options |= "Eat"
+	our_options |= "Cancel"
+	return our_options
+
+/obj/structure/micro_tunnel/proc/move_choices(datum/act/A)
+	return find_destinations()
+
+/obj/structure/micro_tunnel/proc/eat_choices(datum/act/op/A)
+	var/list/our_targets = list()
+	for(var/mob/living/L in contents_of(src))
+		if(L != A.actor)
+			our_targets |= L
+	return our_targets
+
+/// "Move" with more than one place to go (a random tunnel picks for you).
+/obj/structure/micro_tunnel/proc/picks_destination(datum/act/op/A)
+	var/datum/prompt/R = A.step_answers?["action"]
+	return R?.value == "Move" && !random && micro_tunnel_destination_count(src) > 1
+
+/// "Eat" with more than one other creature inside.
+/obj/structure/micro_tunnel/proc/picks_meal(datum/act/op/A)
+	var/datum/prompt/R = A.step_answers?["action"]
+	return R?.value == "Eat" && micro_tunnel_other_count(src, A.actor) > 1
+
+/proc/micro_tunnel_destination_count(obj/structure/micro_tunnel/tunnel)
+	READS_FROM() // the linked tunnels are looked up when the choice is made
+	return length(tunnel.find_destinations())
+
+/proc/micro_tunnel_other_count(obj/structure/micro_tunnel/tunnel, mob/user)
+	READS_FROM() // who else is inside is looked up when the choice is made
+	. = 0
+	for(var/mob/living/L in contents_of(tunnel))
+		if(L != user)
+			.++
 
 /obj/structure/micro_tunnel/attack_generic(mob/user, damage, attack_verb)
-	tunnel_interact(user)
+	perform_op(user, src, micro_tunnel_holds(src, user) ? "inside_use" : "use", null, ORIGIN_SYSTEM)
 	return ..()
-
-/// Old attack_robot: only a cyborg next to the hole uses it (then its default, as the old ..()).
-/obj/structure/micro_tunnel/proc/micro_tunnel_robot_use(mob/living/user, obj/item/held, datum/interaction/interaction)
-	var/turf/hole = get_turf(src)	//Borgs can click stuff from far away, let's make sure they're next to the hole
-	var/turf/borg = get_turf(user)
-	if(hole.AdjacentQuick(borg))
-		tunnel_interact(user)
-		return FALSE
-	return TRUE
-
-/obj/structure/micro_tunnel/proc/tunnel_interact(mob/living/user)
-	if(!isliving(user))
-		return
-	if(user.loc == src)
-		var/list/our_options = list("Exit", "Move")
-
-		if(is_type_in_list(user, non_micro_types))
-			if(contents_count(src) > 1)
-				our_options |= "Eat"
-
-		our_options |= "Cancel"
-
-		open_request(src, /datum/prompt/choice, PROC_REF(tunnel_action_chosen), answerer = user, title = "Tunnel", question = "It's dark and gloomy in here. What would you like to do?", choices = our_options, buttons = TRUE, ask_flags = ASK_INSIDE, timeout = 0)
-		return
-
-	if(!can_enter(user))
-		if(may_choose_to_enter(user))
-			open_request(src, /datum/prompt/choice/tunnel_enter_or_reach, PROC_REF(enter_or_reach_chosen), answerer = user)
-			return
-		tunnel_reach(user)
-		return
-
-	tunnel_climb(user)
-	return TRUE
 
 /obj/structure/micro_tunnel/proc/tunnel_reach(mob/living/user)
 	act_message(user, src, MSG_SELF(span_warning("You reach into %T%. . .")), MSG_OTHERS(span_warning("%U% reaches into %T%. . .")))
@@ -140,7 +204,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	act_message(user, src, others = span_notice("%U% begins climbing into %T%!"))
 	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done2), done_args = list(user), on_fail = PROC_REF(tunnel_interact_timed_failed2), fail_args = list(user))
 
-/// A big mob picks between squeezing into the tunnel and reaching in.
 /datum/prompt/choice/tunnel_enter_or_reach
 	timeout = 0
 	title = "Enter or reach"
@@ -151,25 +214,13 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	/// Asked from a mouse drop: only entering does anything.
 	var/dropped = FALSE
 
-/obj/structure/micro_tunnel/proc/enter_or_reach_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/tunnel_enter_or_reach/request = A.request
-	var/mob/living/user = request.answerer
-	if(request.dropped)
-		if(A.answer.value == "Enter")
-			mouse_drop_climb(user)
-		return
-	if(A.answer.value == "Enter")
-		tunnel_climb(user)
-	else
-		tunnel_reach(user)
-
-/obj/structure/micro_tunnel/proc/tunnel_action_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/user = A.request.answerer
-	switch(A.answer.value)
+/// From inside: the action picked (and, when there was a choice, where to go or whom to eat).
+/obj/structure/micro_tunnel/proc/tunnel_action_chosen(datum/act/op/A)
+	var/datum/prompt/R = A.step_answers?["action"]
+	if(!R)
+		return OP_OK
+	var/mob/living/user = A.actor
+	switch(R.value)
 		if("Exit")
 			user.forceMove(get_turf(src.loc))
 			user.cancel_camera()
@@ -178,11 +229,13 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 			var/list/destinations = find_destinations()
 			if(!destinations.len)
 				to_chat(user, span_warning("There are no other tunnels connected to this one!"))
-				return
-			if(destinations.len == 1 || random)
-				tunnel_move(user, pick(destinations))
-				return
-			open_request(src, /datum/prompt/choice, PROC_REF(tunnel_move_chosen), answerer = user, title = "Pick a tunnel", question = "Where would you like to go?", choices = destinations, ask_flags = ASK_INSIDE, timeout = 0)
+				return OP_OK
+			var/datum/prompt/where = A.step_answers?["move_to"]
+			if(where)
+				if(where.value in destinations)
+					tunnel_move(user, where.value)
+				return OP_OK
+			tunnel_move(user, pick(destinations))
 		if("Eat")
 			var/list/our_targets = list()
 			for(var/mob/living/L in contents_of(src))
@@ -191,25 +244,17 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 				our_targets |= L
 			if(!our_targets.len)
 				to_chat(user, span_warning("There is no one in here except for you!"))
-				return
-			if(our_targets.len == 1)
-				tunnel_eat(user, pick(our_targets))
-				return
-			open_request(src, /datum/prompt/choice, PROC_REF(tunnel_eat_chosen), answerer = user, title = "Pick a target to eat", question = "Who would you like to eat?", choices = our_targets, ask_flags = ASK_INSIDE, timeout = 0)
-
-/obj/structure/micro_tunnel/proc/tunnel_move_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	tunnel_move(A.request.answerer, A.answer.value)
+				return OP_OK
+			var/datum/prompt/whom = A.step_answers?["eat"]
+			if(whom)
+				tunnel_eat(user, whom.value)
+				return OP_OK
+			tunnel_eat(user, pick(our_targets))
+	return OP_OK
 
 /obj/structure/micro_tunnel/proc/tunnel_move(mob/living/user, choice)
 	to_chat(user,span_notice("You begin moving..."))
 	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done), done_args = list(user, choice))
-
-/obj/structure/micro_tunnel/proc/tunnel_eat_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	tunnel_eat(A.request.answerer, A.answer.value)
 
 /obj/structure/micro_tunnel/proc/tunnel_eat(mob/living/user, mob/our_choice)
 	if(our_choice.loc != src)
@@ -279,24 +324,18 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 /obj/structure/micro_tunnel/proc/may_choose_to_enter(mob/living/user)
 	return is_type_in_list(user, non_micro_types)
 
-DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
-	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ROBOT("Use", PROC_REF(micro_tunnel_robot_use)), \
-)
-
-/// Old MouseDrop_T.
-/obj/structure/micro_tunnel/proc/interaction_drag(mob/living/user, mob/living/M, datum/interaction/interaction)
-	if(M != user)
-		return INTERACTION_HANDLED_PASS
-
-	if(!can_enter(user))
-		if(may_choose_to_enter(user))
-			open_request(src, /datum/prompt/choice/tunnel_enter_or_reach, PROC_REF(enter_or_reach_chosen), answerer = user, dropped = TRUE)
-		return INTERACTION_HANDLED_PASS
-
-	mouse_drop_climb(M)
-	return TRUE
+/// Old MouseDrop_T: a creature dragging itself onto the hole climbs in when small enough; one that may squeeze in is asked, and enters on "Enter".
+/obj/structure/micro_tunnel/proc/interaction_drag(datum/act/op/A)
+	var/mob/living/M = A.held
+	if(M != A.actor)
+		return OP_PASS
+	if(micro_tunnel_fits(src, M))
+		mouse_drop_climb(M)
+		return OP_OK
+	var/datum/prompt/R = A.step_answers?["enter_or_reach"]
+	if(R?.value == "Enter")
+		mouse_drop_climb(M)
+	return OP_PASS
 
 /obj/structure/micro_tunnel/proc/mouse_drop_climb(mob/living/k)
 	act_message(k, src, others = span_notice("%U% begins climbing into %T%!"))

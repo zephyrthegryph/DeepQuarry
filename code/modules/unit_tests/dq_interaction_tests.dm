@@ -116,10 +116,9 @@
 		"disarm", "grab", "dq_combat_friendly", "dq_combat_hostile", "dq_combat_needs_combat", "dq_combat_needs_peace",
 		"dq_tool_weld", "dq_tool_dig", // dq_tool_tests.dm
 		// Construction (dq_construction_tests.dm and its per-domain files). Graph edges are checked there, not here.
-		"wall_burn_rot", "wall_light_thermite", "wall_repair", "mecha_fix_temperature", "mecha_weld_repair", "mecha_weld_repair_disarm", "mecha_weld_repair_grab", "mecha_weld_strike", "window_repair",
+		"wall_burn_rot", "wall_light_thermite", "wall_repair", "mecha_fix_temperature", "mecha_weld_repair", "mecha_weld_repair_disarm", "mecha_weld_repair_grab", "mecha_weld_strike",
 		"robot_pry_help", "robot_pry_disarm", "robot_pry_grab", "robot_weld_repair_help", "robot_weld_repair_disarm", "robot_weld_repair_grab", // dq_interaction_robot_tool_stances below
 		"mecha_seal_tank", "mecha_fix_wiring", "mecha_extinguish", "mecha_paste_repair", "mecha_recalibrate", // dq_mech_body_tests.dm mech_repair_interactions
-		"catwalk_slice_help", "catwalk_slice_disarm", "catwalk_slice_grab", "catwalk_slice_harm", // code/game/objects/structures/catwalk.dm
 		"ai_slipper_toggle_lock", // code/game/machinery/ai_slipper.dm: no dedicated test or snapshot yet
 		"shadekin_phase_shift", "shadekin_dark_respite", "shadekin_regenerate_other", "shadekin_create_shade", // dq_ability_tests.dm
 		"shadekin_dark_maw", "shadekin_clear_dark_maws", "shadekin_dark_tunneling", // dq_ability_tests.dm
