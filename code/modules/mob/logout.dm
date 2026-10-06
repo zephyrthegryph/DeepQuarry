@@ -4,6 +4,8 @@
 	registry_leave(REGISTRY_PLAYERS, src)
 	disconnect_time = world.realtime // ition: logging when we disappear.
 	update_client_z(null)
+	if(client)
+		SSproximity.eye_remove(client)
 	log_access("Mob Logout: [key_name(src)]")
 	unset_machine()
 
