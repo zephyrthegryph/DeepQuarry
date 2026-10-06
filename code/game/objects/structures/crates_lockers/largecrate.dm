@@ -17,16 +17,14 @@
 		I.forceMove(src)
 	update_icon()
 
-EXTEND_INTERACTIONS(/obj/structure/largecrate, \
-	INTERACT_HAND("Use", PROC_REF(interaction_hand)), \
-)
-
-/obj/structure/largecrate/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/largecrate/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You need a crowbar to pry this open!"))
 	return TRUE
 
 CAPABILITIES(/obj/structure/largecrate)
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /obj/structure/largecrate/proc/crowbar_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -288,7 +286,7 @@ CAPABILITIES(/obj/structure/largecrate/animal/otie/phoron)
 	return list(R.weighted(list(/mob/living/simple_mob/vore/otie/cotie/phoron = 2, /mob/living/simple_mob/vore/otie/red/friendly = 0.5, /mob/living/simple_mob/vore/otie/red/chubby = 0.5)))
 
 /// Overrides largecrate's interaction_hand(): untape the crate first.
-/obj/structure/largecrate/animal/otie/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)//I just couldn't decide between the icons lmao
+/obj/structure/largecrate/animal/otie/interaction_hand(datum/act/op/A)
 	if(taped == 1)
 		play_sfx(src, SFX_ITEMS_POSTER_RIPPED, 0.5)
 		icon_state = "otiecrate"

@@ -76,7 +76,7 @@ CAPABILITIES(/obj/item/pipe_dispenser)
 	SetupPipes()
 	return TRUE
 
-/// The computed part of /obj/item/pipe_dispenser's window data (declared on its UI_DATA row).
+/// /obj/item/pipe_dispenser's window data.
 /obj/item/pipe_dispenser/ui_data(datum/act/eval/A)
 	var/list/data = list(
 		"category" = category,

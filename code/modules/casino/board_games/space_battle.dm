@@ -60,7 +60,7 @@ CAPABILITIES(/datum/board_game/space_battle)
 		"total_ships" = total_ships
 	)
 
-/// The computed part of /datum/board_game/space_battle's window data (declared on its UI_DATA row).
+/// /datum/board_game/space_battle's window data.
 /datum/board_game/space_battle/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/mob/player_one_mob = player_one

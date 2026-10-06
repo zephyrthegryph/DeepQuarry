@@ -97,7 +97,7 @@ CAPABILITIES(/obj/item/retail_scanner)
 		. += "It has a purchase of [transaction_amount] pending[transaction_purpose ? " for [transaction_purpose]" : ""]."
 	. += "Its freight printer contains [length(freight_form_paper)] blank sheet\s. Use it on a closed crate to certify a shipment."
 
-/// The computed part of /obj/item/retail_scanner's window data (declared on its UI_DATA row).
+/// /obj/item/retail_scanner's window data.
 /obj/item/retail_scanner/ui_data(datum/act/eval/A)
 	var/department_checkout = linked_account?.is_department_budget()
 	return list(

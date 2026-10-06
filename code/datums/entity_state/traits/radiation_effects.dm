@@ -280,7 +280,7 @@ CAPABILITIES(/datum/trait_state/radiation_effects)
 
 	rad.tgui_interact(src)
 
-/// The computed part of /datum/trait_state/radiation_effects's window data (declared on its UI_DATA row).
+/// /datum/trait_state/radiation_effects's window data.
 /datum/trait_state/radiation_effects/ui_data(datum/act/eval/A)
 	var/mob/living/living_guy = owner
 	var/data = list(

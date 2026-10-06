@@ -112,7 +112,7 @@ CAPABILITIES(/obj/item/paper/admin)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/paper/admin's window data (declared on its UI_DATA row).
+/// /obj/item/paper/admin's window data.
 /obj/item/paper/admin/proc/ui_data_obj_item_paper_admin(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["segments"] = get_segments()

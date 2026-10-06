@@ -111,7 +111,7 @@ CAPABILITIES(/obj/machinery/account_database)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/account_database's window data (declared on its UI_DATA row).
+/// /obj/machinery/account_database's window data.
 /obj/machinery/account_database/proc/ui_data_obj_machinery_account_database(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

@@ -1827,6 +1827,7 @@ form, robot and vore tests that run Life frames.
   step) and `MOB_PARK_SUMMARY`; the per-type `MOB_PROFILE` lines are gone (the sequence samples per step).
 * Stasis still slows biology, not the frame: the sequence runs on world time and `begin()` advances the body's stasis counter, as the pipeline did.
   Moving Life onto `CLOCK_BIO` (AFK, ambience and grabs slowing in stasis too) is left for the Life state slice.
+- Vore panel: the belly settings are sub-actions routed by `vore_nested()` (refused without a selected belly; the belly reschedules after), replacing UI_ACT_NESTED/UI_SUBACT. Each attribute's value goes through its schema, and a sub-action that asks in the window gets the window as `extra`. "Pick from inside/outside" keep their `rerun_ask()` questions in plain procs called by the ops. "Reload/load preferences" confirm with `asks()` steps. Pinned by interim_vore_panel_attributes.
 
 
 
@@ -1901,3 +1902,8 @@ target a step less rpm^2 / (500000 * efficiency)); unchanged.
   no longer needs the compressor to wake it). Their overlays are `draw()` from tracked stages (no raw overlays).
 - Ops: part replacement, the compressor's and the computer's ident tags (`asks()`); the turbine's window is an empty hand on a working turbine
   (the legacy `ui_prepare()` check); the "touch for a fingerprint" interactions on any item are gone (they swallowed every tool's click).
+- The declared UI model is deleted: code/__defines/sys_ui.dm (DECLARE_UI, UI_ACT, UI_DATA, UI_SUBACT, UI_ACT_PREF_PROC and the rest), its runtime tables and dispatch in code/datums/sys/ui.dm (ui_decl_of, ui_dispatch, ui_parse_args, ui_declared_data, ui_act_allowed, ...), `act_ask`/`om_act_ask`, the `-DUI_TYPES_DUMP` boot with the `ui-types` build target (`analyze gen ui_types` writes the interface types), and dq_sys_ui_tests. Their names are hard-banned in `[lint.legacy_forms.lists] banned`. `tgui_act()` keeps "change_ui_state" (the layout toggle) as the one action every window answers.
+- EFTPOS: settings answers resume again. Since the EFTPOS window moved to ops, `eftpos_settings_resume()` looked for a legacy row that no longer existed and dropped every answer.
+- Email administration: its buttons need the network access again (`needs(req(PROC_REF(network_admin_access), silent = TRUE))`). The old `ui_act_allowed()` guard had stopped running when the window moved to ops.
+- Shuttle consoles: the button guard is `console_gate(mob/user)`, asked by the ops (`ui_gate()`) and by the answers to the codes/destination questions (which used to call `ui_act_allowed()`). The resleeving and vore-save prompts recheck only that the window is still open and interactive.
+- tgui modals: the dead `ui_modal_opened()`/`ui_modal_answered()` hooks (no host overrode them; modals are ops bound to "modal:<id>") are deleted and hard-banned.

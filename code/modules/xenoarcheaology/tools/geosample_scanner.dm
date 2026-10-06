@@ -127,7 +127,7 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/radiocarbon_spectrometer's window data (declared on its UI_DATA row).
+/// /obj/machinery/radiocarbon_spectrometer's window data.
 /obj/machinery/radiocarbon_spectrometer/proc/ui_data_obj_machinery_radiocarbon_spectrometer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

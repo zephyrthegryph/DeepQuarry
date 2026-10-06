@@ -32,7 +32,7 @@
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/item/modular_computer's window data (declared on its UI_DATA row).
+/// /obj/item/modular_computer's window data.
 /obj/item/modular_computer/proc/ui_data_obj_item_modular_computer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()
 

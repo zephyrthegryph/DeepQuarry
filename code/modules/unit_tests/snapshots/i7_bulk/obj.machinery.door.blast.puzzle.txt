@@ -3,3 +3,4 @@
 /obj/machinery/door/blast/puzzle|ai|none => |
 /obj/machinery/door/blast/puzzle|ghost|none => |
 /obj/machinery/door/blast/puzzle|human|/obj/item => puzzle_door_touch,puzzle_door_use_help|puzzle_door_use_grab:hold Grab,puzzle_door_use_disarm:hold Disarm,puzzle_door_use_harm:combat mode is off
+

@@ -4,9 +4,7 @@ usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return om_pathfinder().
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return graph_astar(get_turf(usr), target, TYPE_PROC_REF(/turf, CardinalTurfsWithAccess), TYPE_PROC_REF(/turf, Distance), 0, 128, 1)
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	/proc/pathfinding_run_all(turf/start = get_turf(usr), turf/goal)
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	/proc/pathfinding_run_benchmark(times = 1000, turf/source = get_turf(usr))
-usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	closeToolTip(usr, src)
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	if(!can_use(usr))
-usr_outside_verb	code/_onclick/hud/radial.dm	closeToolTip(usr, src)
 usr_outside_verb	code/_onclick/hud/radial.dm	if(usr.client == parent().current_user())
 usr_outside_verb	code/_onclick/hud/screen_objects.dm	S.close(usr)
 usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(isobserver(usr))
@@ -27,7 +25,6 @@ usr_outside_verb	code/datums/callback.dm	usr = temp
 usr_outside_verb	code/datums/om/flow_io.dm	var/user_ckey = usr?.ckey
 usr_outside_verb	code/datums/om/flow_io.dm	usr = user // Flow entries are verbs, panels and topics, and read usr as they did first.
 usr_outside_verb	code/datums/om/prompt_helpers.dm	usr = actor
-usr_outside_verb	code/datums/om/prompt_helpers.dm	usr = actor // UI_ACT handlers may read usr, as they do when the user clicks.
 usr_outside_verb	code/datums/om/prompt_helpers.dm	usr = actor // Verbs and panel procs read usr, as they did when first run.
 usr_outside_verb	code/datums/topic/topic_dispatch.dm	return topic_dispatch(src, usr, href_list)
 usr_outside_verb	code/defines/procs/announce.dm	log_game("[key_name(usr)] has made \a [announcement_type]: [message_title] - [message] - [announcer]")

@@ -321,11 +321,10 @@ EXTEND_INTERACTIONS(/obj/item/material/armor_plating, INTERACT_ITEM(null, PROC_R
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 
-EXTEND_INTERACTIONS(/obj/item/material/armor_plating/insert, INTERACT_ITEM(null, PROC_REF(armor_insert_item)))
 
 /// Old attackby: make plating inserts for modular armour. The old body ran its parent's first, so this does too.
-/obj/item/material/armor_plating/insert/proc/armor_insert_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = armor_plating_item(user, O, interaction)
+/obj/item/material/armor_plating/insert/armor_plating_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = ..()
 
 	if(istype(O, /obj/item/material/armor_plating/insert))
 		var/obj/item/material/armor_plating/insert/second_plate = O

@@ -45,10 +45,9 @@ DECLARE_REAGENTS(/obj/item/mop_deploy, 5, null)
 
 // Mops and soap on an effect (decals, runes, overlays) go straight to their afterattack
 // cleaning: nothing else about the effect (signals, less specific interactions) reacts.
-EXTEND_INTERACTIONS(/obj/effect, \
-	INTERACT_INSERT(/obj/item/mop_deploy, TYPE_PROC_REF(/atom, interaction_pass), null), \
-	INTERACT_INSERT(/obj/item/soap, TYPE_PROC_REF(/atom, interaction_pass), null), \
-)
+CAPABILITIES(/obj/effect)
+	op("pass_insert", item(/obj/item/mop_deploy), label("Insert a mop"), passes())
+	op("pass_insert_2", item(/obj/item/soap), label("Insert a soap"), passes())
 
 CAPABILITIES(/obj/item/mop_deploy)
 	after_init(1, then(PROC_REF(check_held))) // after the hand that made it has taken it

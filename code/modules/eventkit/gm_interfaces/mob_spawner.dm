@@ -47,7 +47,7 @@ CAPABILITIES(/datum/eventkit/mob_spawner)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /datum/eventkit/mob_spawner's window data (declared on its UI_DATA row).
+/// /datum/eventkit/mob_spawner's window data.
 /datum/eventkit/mob_spawner/proc/ui_data_datum_eventkit_mob_spawner(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 

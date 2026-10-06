@@ -60,7 +60,7 @@
 	tgui_interact(user)
 	return TRUE
 
-/// The computed part of /obj/machinery/computer/arcade/orion_trail's window data (declared on its UI_DATA row).
+/// /obj/machinery/computer/arcade/orion_trail's window data.
 /obj/machinery/computer/arcade/orion_trail/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(gameStatus == ORION_STATUS_GAMEOVER)

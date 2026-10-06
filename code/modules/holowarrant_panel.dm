@@ -5,7 +5,7 @@ CAPABILITIES(/obj/item/holowarrant)
 	without("ui_open")
 	ui_shape(loaded = bool(), kind = schema_text(), name = schema_text(), charges = schema_text(), auth = schema_text(), jurisdiction = schema_text(), station = schema_text())
 
-/// The computed part of /obj/item/holowarrant's window data (declared on its UI_DATA row).
+/// /obj/item/holowarrant's window data.
 /obj/item/holowarrant/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	if(!active())

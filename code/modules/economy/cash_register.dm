@@ -147,7 +147,7 @@ CAPABILITIES(/obj/machinery/cash_register)
 	op("clear_entry", ui_act("clear_entry"), then(PROC_REF(ui_act_clear_entry)))
 	op("reset_log", ui_act("reset_log"), then(PROC_REF(ui_act_reset_log)))
 
-/// The computed part of /obj/machinery/cash_register's window data (declared on its UI_DATA row).
+/// /obj/machinery/cash_register's window data.
 /obj/machinery/cash_register/ui_data(datum/act/eval/A)
 	var/department_checkout = linked_account?.is_department_budget()
 	return list(

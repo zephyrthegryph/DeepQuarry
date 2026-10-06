@@ -314,7 +314,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	data["chems"] = robot_chems
 	return data
 
-/// The computed part of /obj/item/dogborg/sleeper's window data (declared on its UI_DATA row).
+/// /obj/item/dogborg/sleeper's window data.
 /obj/item/dogborg/sleeper/ui_data(datum/act/eval/A)
 	var/list/patient_data
 

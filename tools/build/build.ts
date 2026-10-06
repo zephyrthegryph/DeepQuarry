@@ -17,7 +17,6 @@ import Juke from './juke/index.js';
 import { bun, bunRoot } from './lib/bun';
 import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
-import { UI_TYPES_DIR, UI_TYPES_JSON, writeUiTypes } from './lib/ui_types';
 import {
   BALANCE_RESULTS_FILE,
   BALANCE_RUNS_DIR,
@@ -2788,45 +2787,6 @@ export const AutowikiTarget = new Juke.Target({
       Juke.logger.error('Autowiki did not generate an output, exiting');
       throw new Juke.ExitCode(1);
     }
-  },
-});
-
-// Declared UI model (doc/rewrite/systems.md section 3): boot a -DUI_TYPES_DUMP world, which
-// writes data/ui_types.json and exits, then generate the tgui interface types from it.
-export const UiTypesTarget = new Juke.Target({
-  parameters: [DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter],
-  dependsOn: () => [IconRepackTarget, VerdigrisTarget, GenTarget],
-  outputs: [UI_TYPES_JSON],
-  executes: async ({ get }) => {
-    fs.copyFileSync(`${DME_NAME}.dme`, `${DME_NAME}.test.dme`);
-    await DreamMaker(`${DME_NAME}.test.dme`, {
-      defines: ['CBT', 'UI_TYPES_DUMP', ...get(DefineParameter)],
-      warningsAsErrors: get(WarningParameter).includes('error'),
-      ignoreWarningCodes: get(NoWarningParameter),
-      namedDmVersion: get(DmVersionParameter),
-    });
-    Juke.rm(UI_TYPES_JSON);
-    try {
-      await DreamDaemon(
-        { dmbFile: `${DME_NAME}.test.dmb`, namedDmVersion: get(DmVersionParameter) },
-        '-close',
-        ddSecurityFlag(),
-        '-verbose',
-        '-params',
-        'log-directory=ci',
-      );
-    } catch (error) {
-      // The dump boot ends the world with qdel(world) as soon as the file is written; DreamDaemon
-      // reports that shutdown as a non-zero exit. The file is what counts.
-      if (!fs.existsSync(UI_TYPES_JSON)) throw error;
-    }
-    Juke.rm('*.test.*');
-    if (!fs.existsSync(UI_TYPES_JSON)) {
-      Juke.logger.error('ui-types: the dump boot wrote no data/ui_types.json');
-      throw new Juke.ExitCode(1);
-    }
-    const touched = writeUiTypes(UI_TYPES_JSON, UI_TYPES_DIR);
-    Juke.logger.info(`ui-types: ${touched.length} file(s) updated in ${UI_TYPES_DIR}`);
   },
 });
 

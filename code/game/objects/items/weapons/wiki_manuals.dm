@@ -35,7 +35,7 @@ CAPABILITIES(/obj/item/book/manual/wiki)
 /obj/item/book/manual/wiki/ui_title(mob/user)
 	return title || name
 
-/// The computed part of /obj/item/book/manual/wiki's window data (declared on its UI_DATA row).
+/// /obj/item/book/manual/wiki's window data.
 /obj/item/book/manual/wiki/ui_data(datum/act/eval/A)
 	return list(
 		"title" = title || name,

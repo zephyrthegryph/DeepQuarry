@@ -371,7 +371,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 		var/mob/living/silicon/robot/owner_robot = parent_atom.loc
 		.["theme"] = owner_robot.get_ui_theme()
 
-/// The computed part of /datum/experiment_handler's window data (declared on its UI_DATA row).
+/// /datum/experiment_handler's window data.
 /datum/experiment_handler/ui_data(datum/act/eval/A)
 	. = list(
 		"always_active" = (config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE),

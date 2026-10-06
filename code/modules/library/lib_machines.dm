@@ -71,7 +71,7 @@ CAPABILITIES(/obj/machinery/librarypubliccomp)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/librarypubliccomp's window data (declared on its UI_DATA row).
+/// /obj/machinery/librarypubliccomp's window data.
 /obj/machinery/librarypubliccomp/proc/ui_data_obj_machinery_librarypubliccomp(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["title"] = title || ""
@@ -320,7 +320,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 			data[merged_key_1] = merged_1[merged_key_1]
 	return data
 
-/// The computed part of /obj/machinery/librarycomp's window data (declared on its UI_DATA row).
+/// /obj/machinery/librarycomp's window data.
 /obj/machinery/librarycomp/proc/ui_data_obj_machinery_librarycomp(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["emagged"] = !!emagged
@@ -628,7 +628,7 @@ CAPABILITIES(/obj/machinery/libraryscanner)
 	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 
-/// The computed part of /obj/machinery/libraryscanner's window data (declared on its UI_DATA row).
+/// /obj/machinery/libraryscanner's window data.
 /obj/machinery/libraryscanner/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["has_cache"] = !!cache()

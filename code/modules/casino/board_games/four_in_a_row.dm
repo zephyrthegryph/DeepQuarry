@@ -45,7 +45,7 @@ CAPABILITIES(/datum/board_game/four_row)
 		"colors" = possible_colors
 	)
 
-/// The computed part of /datum/board_game/four_row's window data (declared on its UI_DATA row).
+/// /datum/board_game/four_row's window data.
 /datum/board_game/four_row/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
 	var/mob/player_one_mob = player_one
