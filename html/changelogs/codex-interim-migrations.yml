@@ -85,3 +85,4 @@ changes:
   - code_imp: "Migrated additional admin confirmations and resleeving consent prompts to native requests while retaining checks and tracing."
   - code_imp: "Migrated antagonist spawning, narration, and SDQL confirmations to native requests while preserving admin checks and tracing."
   - code_imp: "Migrated admin sound, travel, and firework weather selections to native requests while preserving checks and tracing."
+  - code_imp: "Migrated admin ban, news, round-mode, and feedback filter prompts to native requests with verified answers and existing authorization checks."
