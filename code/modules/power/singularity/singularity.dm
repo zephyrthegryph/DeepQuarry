@@ -496,5 +496,5 @@ CAPABILITIES(/obj/singularity)
 		var/gain = (energy/2)
 		var/dist = max((current_size - 2), 1)
 		explosion(src.loc,(dist),(dist*2),(dist*4))
-		after(src, 0, GLOBAL_PROC_REF(qdel), with = list(src))
+		after(src, 0, GLOBAL_PROC_REF(destroyed), with = list(src))
 		return gain

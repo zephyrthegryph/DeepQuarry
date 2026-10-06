@@ -100,7 +100,7 @@ CAPABILITIES(/obj/machinery/power/fusion_core)
 			owned_field.MRC()
 		else
 			owned_field.RadiateAll()
-		qdel(rel_take(src, nameof(owned_field)))
+		destroyed(rel_take(src, nameof(owned_field)), src)
 	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/power/fusion_core/proc/AddParticles(name, quantity = 1)

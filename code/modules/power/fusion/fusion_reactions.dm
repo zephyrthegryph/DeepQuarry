@@ -134,7 +134,7 @@ GLOBAL_LIST(fusion_reactions)
 	for(var/obj/machinery/fusion_fuel_injector/I in range(world.view, origin))
 		if(I.cur_assembly && I.cur_assembly.fuel_type == REAGENT_ID_SUPERMATTER)
 			explosion(get_turf(I), 1, 2, 3)
-			after(null, 5, GLOBAL_PROC_REF(qdel), with = list(I))
+			after(null, 5, GLOBAL_PROC_REF(destroyed), with = list(I))
 	spent(holder)
 	explosion(origin, 1, 2, 5)
 
