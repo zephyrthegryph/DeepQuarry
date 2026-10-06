@@ -14,12 +14,13 @@ import sys
 
 def completion_proven(receipt):
     """Clean marker is pass-quality only; exact completion proof is independent."""
-    return (receipt.get('status') == 'complete-results'
+    return (receipt.get('status') in ('complete-results', 'complete-results-abnormal-exit')
             and receipt.get('suite_complete') is True
             and receipt.get('shutdown_complete') is True
             and receipt.get('selection_coverage_exact') is True
             and receipt.get('results_present') is True
-            and receipt.get('exit_code') == 0
+            and type(receipt.get('exit_code')) is int
+            and ((receipt['status'] == 'complete-results') == (receipt['exit_code'] == 0))
             and receipt.get('stop_reason') is None)
 
 
@@ -190,7 +191,14 @@ def main():
                                   'prelaunch_proven': matches and audit.get('phase') == 'before-launch'}
         if not matches:
             raise ValueError(f'{label} engine closure audit mismatches pinned engine')
-    manifest = {'engine_closure_coverage': closure_coverage, 'pinned_engine_manifest_sha256': sha256(engine_manifest), 'evidence': evidence, 'snapshot_receipt': str(snapshot),
+    exit_outcomes = {}
+    for producer in ('byond', 'native'):
+        values = [receipts[f'{producer}:{n}'][1]['exit_code'] for n in (1, 2, 3)]
+        exit_outcomes[producer] = {'exit_codes': values, 'stable': len(set(values)) == 1,
+                                   'variable': len(set(values)) > 1,
+                                   'normal_exit_gate_passed': all(value == 0 for value in values)}
+    normal_exit_gate = all(value['normal_exit_gate_passed'] for value in exit_outcomes.values())
+    manifest = {'normal_exit_gate_passed': normal_exit_gate, 'exit_outcomes': exit_outcomes, 'engine_closure_coverage': closure_coverage, 'pinned_engine_manifest_sha256': sha256(engine_manifest), 'evidence': evidence, 'snapshot_receipt': str(snapshot),
                 'snapshot_sha256': sha256(snapshot), 'normalizer_command': command,
                 'receipts': {label: value for label, (_, value) in receipts.items()},
                 'seed_policy': 'Preserved compiled seeds; receipt/log observations only, no inferred override.'}
@@ -212,7 +220,9 @@ def main():
         'variable_runtime_identities': sum(row['nondeterministic'] for row in identities),
     }
     lines = ['# Phase 0 runtime parity observations', '',
-             'Six complete serial replays (exact selection coverage, suite/shutdown markers); preserved runs included separately.', '',
+             'Six complete result observations (exact selection coverage, suite/shutdown markers); preserved runs included separately.', '',
+             f"Normal-exit gate passed: **{normal_exit_gate}**. Completed result data does not erase a terminal crash.",
+             f"Exit outcomes: {exit_outcomes}", '',
              f"Engine closure prelaunch proof: {sum(row['prelaunch_proven'] for row in closure_coverage.values())}/6 runs; missing or post-run audits are coverage limitations.", '',
              f"Coverage complete: **{report['comparison_coverage_complete']}**. Equality is **not claimed**.",
              'Normalization is heuristic; counts are observations from three runs, not proof of distribution equivalence.', '',

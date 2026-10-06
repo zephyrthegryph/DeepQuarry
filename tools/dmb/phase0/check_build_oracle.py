@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import subprocess
 import time
+from trace_records import is_build_trace
 
 
 def pair(root):
@@ -28,7 +29,7 @@ def diagnostics(path):
     # Build tracing is timing evidence rather than a user diagnostic. Everything
     # else on stderr remains significant, including order and complete messages.
     return [line for line in path.read_text(errors="replace").splitlines()
-            if not line.startswith("DM_BUILD_TRACE")]
+            if not is_build_trace(line)]
 
 
 def require_pinned_tools(receipt):
@@ -88,7 +89,7 @@ def main():
             raise RuntimeError("Fresh compiler failed")
         evidence["captured"] = pair(args.profile / "published")
         evidence["fresh"] = pair(output / "published")
-        log = "body.stderr.log" if arguments["scenario"] == "daemon-body" else "cold.stderr.log"
+        log = "body.stderr.log" if arguments["scenario"] == "daemon-body" else "compiler.stderr.log"
         evidence["captured_diagnostics"] = diagnostics(args.profile / log)
         evidence["fresh_diagnostics"] = diagnostics(output / "stderr.log")
         evidence["bytes_equal"] = evidence["captured"] == evidence["fresh"]

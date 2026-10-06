@@ -89,3 +89,23 @@ Three additional manifests are source-only probes until the coordinator captures
 - `reopens_parent.dme` combines a child declared before its explicit nonlexical parent, a reopened parent, override dispatch, and verb source names whose display-name ordering is reversed. Capture type/vars/verbs arrays exactly.
 
 The existing four paired cases retain their recorded outcomes. Generalization beyond those finite inputs and these new pending probes remains uncertified.
+
+### Static fixture review and decoded receipt commands
+
+Static review: every new manifest includes `common.dm` before the case source; each case defines exactly one `world.New`, chains the engine implementation, emits all declared labels, and calls `phase0_finish`. No verb invocation requiring a client is needed. Map `New` hooks chain their parent and append only to the global trace; the map places four cells with two ordered objects each. Syntax legality and actual map initialization timing still require the pinned compiler run; this review is not a compile receipt. Metadata includes ordered `value as text, count = 3` parameters to cover annotation and default-source encoding in addition to flags.
+
+Use the frozen inspector recorded by the coordinator. For captured directories `REFERENCE` and `NATIVE`, retain stdout, stderr and exit status from these commands (replace only the two directory tokens with the actual captured absolute paths):
+
+```powershell
+& 'D:/dmb-native-v2-phase0/reference-release/dmb-inspect.exe' dmb-compare 'REFERENCE/metadata_modes.dmb' 'NATIVE/world.dmb' '/obj/phase0_metadata'
+& 'D:/dmb-native-v2-phase0/reference-release/dmb-inspect.exe' proc-flags-context 'REFERENCE/metadata_modes.dmb'
+& 'D:/dmb-native-v2-phase0/reference-release/dmb-inspect.exe' proc-flags-context 'NATIVE/world.dmb'
+& 'D:/dmb-native-v2-phase0/reference-release/dmb-inspect.exe' proc-source-audit 'REFERENCE/metadata_modes.dmb'
+& 'D:/dmb-native-v2-phase0/reference-release/dmb-inspect.exe' proc-source-audit 'NATIVE/world.dmb'
+& 'D:/dmb-native-v2-phase0/reference-release/dmb-inspect.exe' proc-args-audit 'REFERENCE/metadata_modes.dmb'
+& 'D:/dmb-native-v2-phase0/reference-release/dmb-inspect.exe' proc-args-audit 'NATIVE/world.dmb'
+& 'D:/dmb-native-v2-phase0/reference-release/dmb-inspect.exe' dmb-compare 'REFERENCE/reopens_parent.dmb' 'NATIVE/world.dmb' '/obj/phase0_reopen'
+& 'D:/dmb-native-v2-phase0/reference-release/dmb-inspect.exe' dmb-map-compare 'REFERENCE/map_startup.dmb' 'NATIVE/world.dmb' --semantic-values
+```
+
+The scoped metadata comparison checks decoded display/description/category/source/effective flags/invisibility/ordered arguments and argument-source procedures. It also compares code and other selected records; classify differences by the reported field instead of treating a nonzero exit as a compiler invocation failure. The three audit commands are summaries, not complete per-procedure value dumps: `proc-flags-context` prints extended-flag records only. To freeze complete raw procedure fields, obtain each authored procedure's numeric ID separately in each DMB from the existing exporter, then run `dmb-inspect proc FILE.dmb PROC_ID`; follow its string IDs with `string FILE.dmb STRING_ID` and its argument-list ID with `list FILE.dmb LIST_ID`. Never reuse reference numeric IDs for the native file. Raw source kind/parameter values remain observations until their meaning is established. Map semantic comparison verifies placement data; runtime creation order remains the `phase0-link.json` oracle, not a map-comparator conclusion.

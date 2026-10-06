@@ -46,7 +46,9 @@ with the coordinator's actual receipts and raw run directories):
 python tools/dmb/phase0/finalize_baseline.py --replay-root D:/dmb-native-v2-phase0/runtime-replays/replay-7c646... --output-root D:/dmb-native-v2-phase0/parity-final --snapshot-receipt D:/dmb-native-v2-phase0/frozen/snapshot.json --preserved byond:preserved=<raw-byond-run> --preserved native:preserved=<raw-native-run>
 ```
 
-The tool refuses fewer than six complete clean-marked receipts. It copies each
+The tool refuses fewer than six complete receipts with exact selection coverage,
+suite/shutdown messages, normal exit and no control stop. A clean marker is not
+required for the preserved failing baseline. It copies each
 unit_tests.json plus its nested structured/runtime-error logs into a separate
 normalizer input directory, hashes evidence, then invokes normalize_runtime.py
 with explicit --run arguments. An ambiguous nested log is an error, not guessed.
@@ -90,3 +92,18 @@ A mismatch refuses launch. This is a provenance check, not proof of future immut
 DLL contents. Finalization records missing engine audits as coverage limitations;
 a post-run audit is explicitly not relabelled a prelaunch check. An observed audit
 that disagrees with pinned hashes prevents finalization.
+
+## Complete observations with abnormal terminal exits
+
+A complete-results-abnormal-exit observation retains exact selection coverage,
+results, suite-finished and shutdown evidence, an observed terminal exit code,
+and no watchdog/runner stop. It is eligible as one of three observations, and
+resume skips it after the same pinned-input checks. It is **not** a healthy run:
+normal_exit_gate_passed remains false, and finalization reports all three exit
+codes per producer plus stable/variable exit outcomes. A crash after complete
+results is not erased by a zero-failure marker or excluded to manufacture a
+healthy-only baseline. Truncated, timeout, memory-limited, unknown-exit and
+clean-marker-grace forced-stop runs remain incomplete. Existing receipts are
+reclassified only by coordinator append-only proof/audit, preserving originals.
+This explicit contract supersedes earlier text requiring normal exit for result
+observation completeness; the normal-exit/reproduction gate remains separate.

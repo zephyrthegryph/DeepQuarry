@@ -13,8 +13,10 @@ import re
 import signal
 import socket
 import subprocess
+import sys
 import threading
 import time
+from trace_records import is_build_trace
 
 EDIT = Path("code/datums/interactions/tools.dm")
 PATTERN = re.compile(rb"(?m)(^/proc/tool_skill_factor\(mob/actor, quality\)\r?\n\s*return )1(?=\r?$)")
@@ -45,36 +47,43 @@ def main():
     parser.add_argument("--daemon")
     parser.add_argument("--builtins",required=True)
     parser.add_argument("--output",required=True,help="New dedicated run directory")
-    parser.add_argument("--samply",default="D:/dmb-native-v2-phase0/profiler/samply.exe")
+    parser.add_argument("--samply",help="Optional sampler path; disabled by default at user request")
     parser.add_argument("--xperf-directory",default="C:/Program Files (x86)/Windows Kits/10/Windows Performance Toolkit")
     parser.add_argument("--timeout",type=float,default=300)
+    parser.add_argument("--sample-rate",type=int,default=100)
     parser.add_argument("--define",action="append",default=[])
     parser.add_argument("--manifest",default="comparison.dme")
     args=parser.parse_args()
     if not 20<=args.timeout<=300:parser.error("Overall timeout must be20..300seconds")
+    if not 1<=args.sample_rate<=500:parser.error("Sample rate must be1..500Hz")
     if args.scenario=="daemon-body" and not args.daemon:parser.error("daemon-body requires --daemon")
     started=time.monotonic(); start_unix=time.time()
     root=Path(args.output).resolve();root.mkdir(parents=True,exist_ok=False)
     source=Path(args.source).resolve(); mirror=root/"source"; mirror.mkdir()
     env=os.environ.copy();env.pop("GIT_WORK_TREE",None)
-    if os.name=="nt":
+    if os.name=="nt" and args.samply:
         xperf=Path(args.xperf_directory)/"xperf.exe"
         if not xperf.is_file():raise FileNotFoundError(f"Windows sampling requires {xperf}")
         env["PATH"]=str(xperf.parent)+os.pathsep+env.get("PATH","")
     env.update(DM_BUILD_TRACE="1",DM_DAEMON_WORKERS="1",DM_COMPILER_WORKERS="2",DM_MEMORY_LIMIT_MB="0",GIT_DIR=str(root/"isolated.git"))
     processes=[]; handles=[]; events=[]; timed_out=threading.Event()
+    phase_deadline=started+args.timeout-15
     receipt={"arguments":vars(args),"started_unix":start_unix,"scenario":args.scenario,
              "os_cache":"uncontrolled; application caches new/empty", "events":events,
              "profile_scope":"cold whole command" if args.scenario=="cold" else "daemon startup+baseline+body edit; filter body interval from events",
              "tools":{},"status":"started", "compiler_memory_limit_mb": 0,
              "compiler_workers": 2, "daemon_workers": 1,
+             "sampling_enabled":bool(args.samply),
+             "sampling_gate":"pending sampled frames" if args.samply else "deferred at user request; built-in timing only",
+             "watchdog_scope":"input preparation and each command separately; daemon spans baseline/body commands",
+             "phase_budget_seconds":args.timeout,
              "storage":{"source":str(source),"source_drive":source.drive,
                         "run":str(root),"run_drive":root.drive,
                         "cache_drive":root.drive,"published_drive":root.drive},
              "mirror":{"copied_files":0,"copied_bytes":0,"hardlinked_files":0,"hardlinked_bytes":0}}
     def event(name,**fields):events.append(dict(name=name,elapsed=time.monotonic()-started,unix=time.time(),**fields))
     def remaining():
-        value=args.timeout-15-(time.monotonic()-started)
+        value=phase_deadline-time.monotonic()
         if timed_out.is_set() or value<=0:raise TimeoutError("overall deadline; cleanup reserve15seconds")
         return value
     def watchdog():
@@ -83,11 +92,16 @@ def main():
             try:kill_tree(process)
             except (OSError,subprocess.TimeoutExpired):pass
     timer=threading.Timer(args.timeout-15,watchdog);timer.daemon=True;timer.start()
+    def arm_watchdog(phase):
+        nonlocal timer,phase_deadline
+        remaining();timer.cancel();phase_deadline=time.monotonic()+args.timeout-15
+        timer=threading.Timer(args.timeout-15,watchdog);timer.daemon=True;timer.start()
+        event("phase_deadline_armed",phase=phase,budget_seconds=args.timeout)
     def hidden():
         if os.name!="nt":return None
         info=subprocess.STARTUPINFO();info.dwFlags|=subprocess.STARTF_USESHOWWINDOW;info.wShowWindow=0;return info
     def launch(command,name):
-        remaining();out=(root/(name+".stdout.log")).open("wb");err=(root/(name+".stderr.log")).open("wb");handles.extend((out,err))
+        arm_watchdog(name);out=(root/(name+".stdout.log")).open("wb");err=(root/(name+".stderr.log")).open("wb");handles.extend((out,err))
         process=subprocess.Popen(command,cwd=mirror,env=env,stdout=out,stderr=err,startupinfo=hidden(),
                                  creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name=="nt" else 0,
                                  start_new_session=os.name!="nt")
@@ -136,9 +150,15 @@ def main():
         event("inputs_prepared",edited_input_sha256=digest(mirror/EDIT),seconds=receipt["input_preparation_seconds"])
         defines=args.define or ["-DCBT","-DCIBUILDING","-DCITESTING"]
         command=[str(Path(args.compiler).resolve()),"build-project",args.manifest,str(Path(args.builtins).resolve()),str(root/"published"),*defines]
-        sampler=[str(Path(args.samply).resolve()),"record","--rate","500","--save-only","--no-open","--unstable-presymbolicate","--windows-symbol-cache",str(root/"symbol-cache"),"--symbol-dir",str(Path(args.compiler).resolve().parent),"--output",str(root/"profile.json"),"--"]
+        sampler=([str(Path(args.samply).resolve()),"record","--rate",str(args.sample_rate),"--keep-etl","--save-only","--no-open","--unstable-presymbolicate","--windows-symbol-cache",str(root/"symbol-cache"),"--symbol-dir",str(Path(args.compiler).resolve().parent),"--output",str(root/"profile.json"),"--"] if args.samply else [])
         if args.scenario=="cold":
-            wait(launch(sampler+command,"cold"),"cold")
+            timing=root/"compiler-timing.json"
+            wrapper=[sys.executable,str(Path(__file__).with_name("timed_command.py").resolve()),str(timing)]
+            wait(launch(sampler+wrapper+command,"cold_capture"),"cold_capture")
+            execution=json.loads(timing.read_text(encoding="utf-8"))
+            receipt["compiler_execution"]=execution
+            if execution.get("status")!="completed" or execution.get("exit_code")!=0:
+                raise RuntimeError("sampled compiler failed; see compiler-timing.json")
         else:
             # Reserve an ephemeral loopback port; failure/race is visible, not retried
             # with another compiler/cache context.
@@ -162,10 +182,14 @@ def main():
             # Ask sampler to stop and save. If backend ignores the signal, deadline
             # cleanup kills it and receipt explicitly marks the profile unavailable.
             event("sampler_stop_requested")
-            if os.name=="nt":daemon.send_signal(signal.CTRL_BREAK_EVENT)
-            else:daemon.send_signal(signal.SIGINT)
-            try:daemon.wait(timeout=min(10,remaining()))
-            except subprocess.TimeoutExpired:kill_tree(daemon)
+            arm_watchdog("sampler_finalization")
+            if args.samply:
+                if os.name=="nt":daemon.send_signal(signal.CTRL_BREAK_EVENT)
+                else:daemon.send_signal(signal.SIGINT)
+                try:daemon.wait(timeout=remaining())
+                except subprocess.TimeoutExpired:kill_tree(daemon)
+            else:
+                kill_tree(daemon)
         receipt["status"]="completed"
     except Exception as error:
         receipt["status"]="timeout" if timed_out.is_set() or isinstance(error,(TimeoutError,subprocess.TimeoutExpired)) else "failed"
@@ -183,10 +207,10 @@ def main():
         receipt["outputs"]=[]
         try:
             for path in (root/"published").glob("**/*"):
-                if time.monotonic()>=started+args.timeout-1:
+                if time.monotonic()>=phase_deadline+14:
                     receipt["output_inventory_truncated"]=True;break
                 if path.is_file() and path.suffix.lower() in (".dmb",".rsc"):
-                    try:receipt["outputs"].append({"path":str(path),"sha256":digest(path,started+args.timeout-1)})
+                    try:receipt["outputs"].append({"path":str(path),"sha256":digest(path,phase_deadline+14)})
                     except OSError as error:receipt["outputs"].append({"path":str(path),"hash_error":str(error)})
         except OSError as error:receipt["output_inventory_error"]=str(error)
         # Optional receipt enrichment cannot prevent the primary receipt write.
@@ -196,9 +220,9 @@ def main():
                     if log.name=="stages.log":continue
                     with log.open(encoding="utf-8",errors="replace") as stream:
                         for line in stream:
-                            if time.monotonic()>=started+args.timeout-1:
+                            if time.monotonic()>=phase_deadline+14:
                                 receipt["stage_summary_truncated"]=True;break
-                            if "DM_BUILD_TRACE" in line:stages.write(log.name+": "+line)
+                            if is_build_trace(line):stages.write(log.name+": "+line)
         except OSError as error:receipt["stage_summary_error"]=str(error)
         receipt["elapsed_including_receipts_seconds"]=time.monotonic()-started
         (root/"receipt.json").write_text(json.dumps(receipt,indent=2)+"\n",encoding="utf-8")

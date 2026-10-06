@@ -25,8 +25,9 @@ class BuildOracle(unittest.TestCase):
     def test_only_named_trace_records_are_excluded(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "stderr.log"
-            path.write_text("DM_BUILD_TRACE timing 1.0s\nfile.dm:1:error: bad\n  detail\n")
-            self.assertEqual(diagnostics(path), ["file.dm:1:error: bad", "  detail"])
+            path.write_text("DM_BUILD_TRACE timing 1.0s\ndm-compiled resource byte hashing: 1.234s\n"
+                            "dm-compiled compiler: invalid\nfile.dm:1:error: bad\n  detail\n")
+            self.assertEqual(diagnostics(path), ["dm-compiled compiler: invalid", "file.dm:1:error: bad", "  detail"])
 
     def test_changed_compiler_is_rejected_before_launch(self):
         with tempfile.TemporaryDirectory() as temporary:

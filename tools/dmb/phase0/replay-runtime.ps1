@@ -69,7 +69,7 @@ foreach ($repetition in 1..3) { foreach ($producer in @('byond','native')) {
         $existingFile=Join-Path $root 'receipt.json'
         if (-not (Test-Path -LiteralPath $existingFile)) { throw "Existing unfinished directory $root; coordinator must preserve/move it explicitly before resume." }
         $existing=Get-Content -LiteralPath $existingFile -Raw | ConvertFrom-Json
-        if ($existing.status -ne 'complete-results' -or -not $existing.suite_complete -or -not $existing.results_present -or -not (Test-Path -LiteralPath (Join-Path $root 'unit_tests.json'))) { throw "Existing incomplete run $id; refuse overwrite. Coordinator must stop its own child and move this directory explicitly." }
+        if ($existing.status -notin @('complete-results','complete-results-abnormal-exit') -or -not $existing.suite_complete -or -not $existing.shutdown_complete -or -not $existing.selection_coverage_exact -or $null -eq $existing.exit_code -or $null -ne $existing.stop_reason -or -not $existing.results_present -or -not (Test-Path -LiteralPath (Join-Path $root 'unit_tests.json'))) { throw "Existing incomplete run $id; refuse overwrite. Coordinator must stop its own child and move this directory explicitly." }
         if ($existing.constraint_fixture_sha256 -ne $fixtureHash -or $existing.engine_sha256 -ne $engineHash -or $existing.test_selection_sha256 -ne $selectionHash -or $existing.frozen_runtime -ne $runtimeSource -or $existing.timeout_seconds -ne $TimeoutSeconds -or $existing.memory_limit_mb -ne $MemoryLimitMB -or $existing.producer -ne $producer -or $existing.repetition -ne $repetition) { throw "Resume receipt identity/configuration mismatch: $id" }
         foreach ($extension in @('dmb','rsc')) {
             $saved=@($existing.pair | Where-Object {$_.extension -eq $extension})
@@ -153,7 +153,9 @@ foreach ($repetition in 1..3) { foreach ($producer in @('byond','native')) {
             } catch { $receipt.completion_error=$_.Exception.Message }
         }
         # clean_run.lk means no failures/runtimes, NOT suite completion.
-        $receipt.status=if ($receipt.results_present -and $receipt.selection_coverage_exact -and $receipt.suite_complete -and $receipt.shutdown_complete -and $receipt.exit_code -eq 0 -and $null -eq $receipt.stop_reason) {'complete-results'} else {'incomplete'}
+        $receipt.execution_complete=($receipt.results_present -and $receipt.selection_coverage_exact -and $receipt.suite_complete -and $receipt.shutdown_complete -and $null -ne $receipt.exit_code -and $null -eq $receipt.stop_reason)
+        $receipt.normal_exit_gate_passed=($receipt.execution_complete -and $receipt.exit_code -eq 0)
+        $receipt.status=if (-not $receipt.execution_complete) {'incomplete'} elseif ($receipt.normal_exit_gate_passed) {'complete-results'} else {'complete-results-abnormal-exit'}
         # Failed test statuses are preserved data, not a reason to skip later repetitions.
         $receipt | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $root 'receipt.json') -Encoding UTF8
         $runs+=@{run=$id;receipt=(Join-Path $root 'receipt.json');status=$receipt.status}

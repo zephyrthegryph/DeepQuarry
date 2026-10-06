@@ -1,5 +1,5 @@
 /obj/phase0_metadata
-    verb/world_mode(value as text)
+    verb/world_mode(value as text, count = 3)
         set name = "A displayed"
         set desc = "metadata all flags"
         set category = null

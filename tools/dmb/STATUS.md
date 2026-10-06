@@ -17,7 +17,8 @@ Phase 0 is open. Phase 1 implementation has not started.
 
 ## Evidence collected
 
-- Eighteen Python harness checks passed, including failed-suite completion policy.
+- Twenty Python harness checks passed, including failed-suite completion policy
+  and independent sampled-child exit/diagnostic preservation.
 - Focused Rust archive portability test passed after fixing the test's LF/CRLF
   input preparation. Native content-ID, payload and opcode assertions remain exact.
 - Eleven preprocessing fixture compilation cases captured against DreamMaker
@@ -38,12 +39,23 @@ Phase 0 is open. Phase 1 implementation has not started.
 - The power-bridge source uses encoded handles as numeric list positions. Both
   frozen outputs retain the retired branch's nested indexing; native silence is
   unresolved and is not treated as a correctness advantage.
+- Unprivileged reference cold build completed in 265.015 s (48,681 lowering
+  candidates, two bounded compiler workers, no compiler memory cap). Independent
+  fresh build passed full DMB/RSC byte and ordered diagnostic equality. Input
+  preparation took a separate 84.078 s; it is evidence staging, not compilation.
+- Corrected BYOND repetition 1 produced all 1,089 results: 984 passed, 47 failed,
+  58 skipped. After suite/shutdown completion it exited with an access violation.
+  Complete observations and abnormal exit are both retained; the normal-exit gate
+  fails. The original receipt is preserved beside its proof-backed classification.
 
 ## In progress / remaining gates
 
 - Three selected full runtime replays per original output and normalization of all
   six, including stable versus variable differences and per-test runtime counts.
-- Real release cold/body profiles, stage/end-to-end rows and ten named hot frames.
+- Real release cold/body builds with built-in stage/end-to-end timing rows.
+- External sampling and ten named hot frames are deferred: the user stopped the
+  profiler because it repeatedly requested administrator permission. The harness
+  now defaults to built-in timing and does not launch a sampler or xperf.
 - Human review of the three contracts after the evidence is assembled.
 - Requested-access tracing is deferred at the user's instruction. The probe's
   functional failure is known; its requested-access cause is not established.

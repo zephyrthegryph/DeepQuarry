@@ -17,10 +17,13 @@ class Completion(unittest.TestCase):
         for field in ('suite_complete','shutdown_complete','selection_coverage_exact','results_present'):
             receipt=self.receipt();receipt[field]=False
             self.assertFalse(completion_proven(receipt),field)
-    def test_timeout_and_nonzero_exit_decline(self):
+    def test_timeout_declines_and_complete_abnormal_exit_is_retained(self):
         receipt=self.receipt();receipt['stop_reason']='timeout'
         self.assertFalse(completion_proven(receipt))
-        receipt=self.receipt();receipt['exit_code']=1
+        receipt=self.receipt();receipt.update(exit_code=-1073741819,status='complete-results-abnormal-exit')
+        self.assertTrue(completion_proven(receipt))
+    def test_unknown_terminal_exit_is_incomplete(self):
+        receipt=self.receipt();receipt['exit_code']=None
         self.assertFalse(completion_proven(receipt))
 
 if __name__=='__main__': unittest.main()

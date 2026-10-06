@@ -22,7 +22,7 @@ def named(value):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("profile")
-    parser.add_argument("--receipt",help="Use body_start/body_end Unix interval from runner")
+    parser.add_argument("--receipt",help="Use actual cold compiler or body-client execution interval")
     parser.add_argument("--symbols",help="Official samply .syms.json precog sidecar")
     parser.add_argument("--output",required=True)
     args=parser.parse_args()
@@ -46,11 +46,16 @@ def main():
     bounds=None
     if args.receipt:
         receipt=json.loads(Path(args.receipt).read_text())
-        marks={event["name"]:event for event in receipt["events"]}
-        if "body_start" not in marks or "body_end" not in marks:raise ValueError("No completed body interval")
         origin=profile.get("meta",{}).get("startTime")
         if not isinstance(origin,(int,float)):raise ValueError("Profile has no Unix-ms startTime for alignment")
-        bounds=(marks["body_start"]["unix"]*1000-origin,marks["body_end"]["unix"]*1000-origin)
+        if receipt.get("scenario")=="cold":
+            execution=receipt.get("compiler_execution",{})
+            if execution.get("status")!="completed":raise ValueError("No completed cold compiler interval")
+            bounds=(execution["started_unix"]*1000-origin,execution["ended_unix"]*1000-origin)
+        else:
+            marks={event["name"]:event for event in receipt["events"]}
+            if "body_start" not in marks or "body_end" not in marks:raise ValueError("No completed body interval")
+            bounds=(marks["body_start"]["unix"]*1000-origin,marks["body_end"]["unix"]*1000-origin)
     inclusive,leaf=Counter(),Counter();seen=0;unknown=0;thread_errors=[];resolved=0;unresolved=0
     for thread in profile.get("threads",[]):
         try:
