@@ -43,7 +43,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
 	owns_many(nameof(side_watches), /datum/native_watch/gas)
 	after_init(0, then(PROC_REF(reconsider)))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(turbine_step)), when = nameof(spinning))
-	on_change(nameof(stat), ANY, then(PROC_REF(reconsider)))
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(reconsider)))
 	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
 
 /obj/machinery/atmospherics/pipeturbine/Initialize(mapload, newdir)

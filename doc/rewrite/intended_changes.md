@@ -2427,3 +2427,18 @@ underlays of every creatable subtype of each converted chain, recorded from the 
   `has_stat()`, `stat_add()`, `stat_remove()`, `set_stat()` and `stat_bits_now()` are shims over them (and over the `stat` bits POWEROFF, MAINT and EMPED, which
   are still bits), so every existing caller keeps its behaviour. A type's default `stat = BROKEN` or `NOPOWER` moves into the stat layer at Initialize.
 * The self-powered turret (`/obj/machinery/porta_turret/rcd`) declares that area power never stops it; it does today (not changed here). Left to the grid work.
+
+## Machines: maintenance, switch and EMP are stats (rewrite/machine-stats)
+
+* **MAINT, POWEROFF and EMPED left the bit field.** Under-maintenance is the `in_maintenance` stat (held by `SRC_MAINTENANCE`; written by the oxygen pump's
+  hatch and the pipe dispenser's unwrench), the machine's own switch is `switched_on` (held off by `SRC_SWITCH`; the cookers' on/off), and a pulse is a timed
+  `SRC_EMP` hold on `STAT_OPERABLE`. `operable()` is unchanged in meaning: powered, whole, not in maintenance, not pulsed. The switch alone never stopped a
+  machine working and still doesn't.
+* **Cookers and a wrecked turret start in their state through hooks.** A fryer, grill, oven or mixer starts switched off (`starts_off`), as before; the
+  destroyed alien turret starts broken (`starts_broken()`), as before. Both are applied at the end of the machine's Initialize.
+* **A camera's EMP outage is a timed hold.** It lasts 90 seconds over the pulse's severity, as before; the hold ends by itself and the camera's own
+  timer clears its alarm. A camera that was already pulsed keeps its first deadline (as before).
+* **Watchers moved off `stat`.** The machines that woke on any change of the condition bits (pipe turbine, air alarm, chargers, the started-work machines) now
+  wake on `STAT_OPERABLE` (cookers also on `STAT_SWITCHED_ON`). A machine whose switch alone changed used to wake those watchers; now only the cookers hear it.
+* **`panel_open` is a tracked var.** Same writers (each machine's panel op), same channel; no behaviour change.
+* The vehicle's own condition bits (`/obj/vehicle`, `stat` with EMPED) are a separate field and are not machine conditions; they are unchanged.

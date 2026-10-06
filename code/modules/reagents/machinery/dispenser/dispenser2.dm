@@ -32,7 +32,7 @@
 
 CAPABILITIES(/obj/machinery/chemical_dispenser)
 	owns_one(nameof(container), /obj/item/reagent_containers)
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(_recharge_reagents), gate = PROC_REF(operable), wakes_on = list(nameof(_recharge_reagents), nameof(stat)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(_recharge_reagents), gate = PROC_REF(operable), wakes_on = list(nameof(_recharge_reagents), STAT_OPERABLE))
 	interface("ChemDispenser")
 	op("amount", ui_act("amount", arg("amount", num())), then(PROC_REF(ui_act_amount)))
 	op("dispense", ui_act("dispense", arg("reagent", schema_text(4096))), then(PROC_REF(ui_act_dispense)))

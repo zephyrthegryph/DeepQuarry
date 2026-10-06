@@ -77,7 +77,7 @@ OM_FIELD(/obj/machinery/v_garbosystem, operating, FALSE, CHANGE_MACHINE_SETTINGS
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/v_garbosystem)
 	reagents(CARGOTANKER_VOLUME * 2)
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), nameof(stat)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), STAT_OPERABLE))
 
 /obj/machinery/v_garbosystem/proc/work_step(datum/act/timer/A)
 	if(!crusher() || (crusher().power_lost() || crusher().broken_now()))

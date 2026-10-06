@@ -17,7 +17,7 @@ OM_FIELD(/obj/machinery, emagged, FALSE, CHANGE_MACHINE_SETTINGS)
 ///   in_maintenance true while SRC_MAINTENANCE holds it (an open service hatch: set_maintenance())
 ///   switched_on    false while SRC_SWITCH holds it (the machine's own switch: set_switched_on())
 /// and a pulse is a timed SRC_EMP hold on STAT_OPERABLE (emp_disable()). STAT_OPERABLE is the machine working. The named readers below say each in
-/// one word; `stat` is a derived mirror of the first four, kept only so on_change(nameof(stat)) watchers hear a change.
+/// one word; `stat` is a derived mirror of the first four, kept only so on_change(STAT_OPERABLE) watchers hear a change.
 /datum/om/field_def/obj/machinery/stat
 	of = /obj/machinery
 	field = "stat"

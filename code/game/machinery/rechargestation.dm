@@ -307,7 +307,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station, TYPE_PROC_REF(/atom, ap
 	. += build_overlays()
 
 CAPABILITIES(/obj/machinery/recharge_station)
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(cell), gate = PROC_REF(unbroken), wakes_on = list(nameof(stat), nameof(cell)), unpowered = TRUE)
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(cell), gate = PROC_REF(unbroken), wakes_on = list(STAT_OPERABLE, nameof(cell)), unpowered = TRUE)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	extend("machine_panel", needs(req(PROC_REF(station_empty), silent = TRUE)))
 	extend("machine_panel_close", needs(req(PROC_REF(station_empty), silent = TRUE)))

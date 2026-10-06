@@ -156,7 +156,7 @@ CAPABILITIES(/obj/machinery/alarm)
 	gas_watch(changed = PROC_REF(room_changed))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(scan_room)), when = nameof(scanning))
 	on_change(STAT_SHORTED, ANY, then(PROC_REF(shorted_changed)))
-	on_change(nameof(stat), ANY, then(PROC_REF(power_changed)))
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(power_changed)))
 	on_change(nameof(regulating_temperature), ANY, then(PROC_REF(thermostat_changed)))
 	on_change(nameof(is_main), ENTER, then(PROC_REF(became_main)))
 

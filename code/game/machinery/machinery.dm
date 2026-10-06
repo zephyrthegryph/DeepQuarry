@@ -687,8 +687,9 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 	vars[R.var_name] = A.answer.value // ALLOW(api): the asked var is named by the question, so the write is by name; ask_text_var() callers pass their own var
 
 
-/// The maintenance panel is open.
-OM_FIELD(/obj/machinery, panel_open, FALSE, CHANGE_MACHINE_PANEL)
+/// The maintenance panel is open. Written only by the panel's ops (set_panel_open() from each machine's screwdriver op).
+/obj/machinery/var/panel_open = FALSE // ALLOW(base_vars): the machine maintenance panel's tracked state, read by the panel ops and the maintenance requirements
+TRACKED_BRIDGED(/obj/machinery, panel_open, CHANGE_MACHINE_PANEL)
 
 /// Who is in the machine's sealed occupant slot `slot_id` (a /datum/om/relation/slot/occupant), or null. The accessor requirements read: the slot
 /// publishes OCCUPANT_KEY when someone gets in or out (code/datums/containment/occupant_slot.dm), so a cached menu follows it.

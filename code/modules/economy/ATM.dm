@@ -204,7 +204,7 @@ DECLARE_EMAG(/obj/machinery/atm, PROC_REF(on_emag), null, null)
 	return data
 
 CAPABILITIES(/obj/machinery/atm)
-	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(has_mains_power), wakes_on = list(nameof(stat)), unpowered = TRUE)
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(has_mains_power), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 	op("insert_card", ui_act(), then(PROC_REF(ui_act_insert_card)))
 	op("logout", ui_act(), then(PROC_REF(ui_act_logout)))
 	interface("AutomatedTellerMachine")

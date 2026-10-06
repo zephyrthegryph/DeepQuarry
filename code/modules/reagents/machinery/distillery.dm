@@ -58,7 +58,7 @@
 	var/efficiency = 1
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
-	started_work(step = PROC_REF(work_step), starts = TRUE, wakes_on = list(nameof(on), nameof(stat)), unpowered = TRUE)
+	started_work(step = PROC_REF(work_step), starts = TRUE, wakes_on = list(nameof(on), STAT_OPERABLE), unpowered = TRUE)
 	op("distillery_toggle_power", menu(), when(req(/mob/living, of = ON_ACTOR)), needs(req_capable()), label("Toggle Distillery Heating"), then(PROC_REF(interaction_distillery_toggle_power)))
 	op("distillery_toggle_mixing", menu(), when(req(/mob/living, of = ON_ACTOR)), needs(req_capable()), label("Start Distillery Mixing"), then(PROC_REF(interaction_distillery_toggle_mixing)))
 	op("distillery_install_beaker", item(/obj/item/reagent_containers/glass), label("Install beaker"), when(PROC_REF(has_free_beaker_slot)),
