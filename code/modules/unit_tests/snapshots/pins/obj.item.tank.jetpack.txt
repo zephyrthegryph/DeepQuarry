@@ -3,8 +3,8 @@ human|none menu: Customise (refused: needs an item)
 human|none menu: Move To Top
 human|none menu: Pick up
 human|none menu: Toggle Digestable (refused: you need to be carrying it)
-human|none menu: Toggle Jetpack (refused: you need to be carrying it)
-human|none menu: Toggle Jetpack Stabilization (refused: you need to be carrying it)
+human|none menu: Toggle Jetpack (refused: You can't do that.)
+human|none menu: Toggle Jetpack Stabilization (refused: You can't do that.)
 human|none click: nothing
 robot|none menu: Collect (refused: needs a storage)
 robot|none menu: Customise (refused: needs an item)
@@ -12,11 +12,13 @@ robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Toggle Digestable (refused: you need to be carrying it)
-robot|none menu: Toggle Jetpack (refused: you need to be carrying it)
-robot|none menu: Toggle Jetpack Stabilization (refused: you need to be carrying it)
+robot|none menu: Toggle Jetpack (refused: You can't do that.)
+robot|none menu: Toggle Jetpack Stabilization (refused: You can't do that.)
 robot|none click: nothing
 ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
+ghost|none menu: Toggle Jetpack (refused: You can't do that.)
+ghost|none menu: Toggle Jetpack Stabilization (refused: You can't do that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Collect (refused: needs a storage)
 human|/obj/item/tool/screwdriver menu: Customise (refused: needs an item)
@@ -24,8 +26,8 @@ human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Pick up
 human|/obj/item/tool/screwdriver menu: Tank item
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/screwdriver menu: Toggle Jetpack (refused: you need to be carrying it)
-human|/obj/item/tool/screwdriver menu: Toggle Jetpack Stabilization (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Toggle Jetpack (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle Jetpack Stabilization (refused: You can't do that.)
 human|/obj/item/tool/screwdriver click: Click: Tank item
 human|/obj/item/tool/crowbar menu: Collect (refused: needs a storage)
 human|/obj/item/tool/crowbar menu: Customise (refused: needs an item)
@@ -33,8 +35,8 @@ human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Pick up
 human|/obj/item/tool/crowbar menu: Tank item
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/crowbar menu: Toggle Jetpack (refused: you need to be carrying it)
-human|/obj/item/tool/crowbar menu: Toggle Jetpack Stabilization (refused: you need to be carrying it)
+human|/obj/item/tool/crowbar menu: Toggle Jetpack (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Toggle Jetpack Stabilization (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Tank item
 human|/obj/item/tool/wrench menu: Collect (refused: needs a storage)
 human|/obj/item/tool/wrench menu: Customise (refused: needs an item)
@@ -42,8 +44,8 @@ human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Pick up
 human|/obj/item/tool/wrench menu: Tank item
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wrench menu: Toggle Jetpack (refused: you need to be carrying it)
-human|/obj/item/tool/wrench menu: Toggle Jetpack Stabilization (refused: you need to be carrying it)
+human|/obj/item/tool/wrench menu: Toggle Jetpack (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Toggle Jetpack Stabilization (refused: You can't do that.)
 human|/obj/item/tool/wrench click: Click: Tank item
 human|/obj/item/tool/wirecutters menu: Collect (refused: needs a storage)
 human|/obj/item/tool/wirecutters menu: Customise (refused: needs an item)
@@ -51,8 +53,8 @@ human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Pick up
 human|/obj/item/tool/wirecutters menu: Tank item
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wirecutters menu: Toggle Jetpack (refused: you need to be carrying it)
-human|/obj/item/tool/wirecutters menu: Toggle Jetpack Stabilization (refused: you need to be carrying it)
+human|/obj/item/tool/wirecutters menu: Toggle Jetpack (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle Jetpack Stabilization (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use wirecutter
 human|/obj/item/tool/wirecutters click: Click: Use wirecutter
 human|/obj/item/multitool menu: Collect (refused: needs a storage)
@@ -61,8 +63,8 @@ human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Pick up
 human|/obj/item/multitool menu: Tank item
 human|/obj/item/multitool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/multitool menu: Toggle Jetpack (refused: you need to be carrying it)
-human|/obj/item/multitool menu: Toggle Jetpack Stabilization (refused: you need to be carrying it)
+human|/obj/item/multitool menu: Toggle Jetpack (refused: You can't do that.)
+human|/obj/item/multitool menu: Toggle Jetpack Stabilization (refused: You can't do that.)
 human|/obj/item/multitool click: Click: Tank item
 human|/obj/item/weldingtool menu: Collect (refused: needs a storage)
 human|/obj/item/weldingtool menu: Customise (refused: needs an item)
@@ -70,8 +72,8 @@ human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Pick up
 human|/obj/item/weldingtool menu: Tank item
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/weldingtool menu: Toggle Jetpack (refused: you need to be carrying it)
-human|/obj/item/weldingtool menu: Toggle Jetpack Stabilization (refused: you need to be carrying it)
+human|/obj/item/weldingtool menu: Toggle Jetpack (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Toggle Jetpack Stabilization (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use welder
 human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
@@ -81,8 +83,8 @@ human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Pick up
 human|/obj/item/stack/cable_coil menu: Tank item
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/stack/cable_coil menu: Toggle Jetpack (refused: you need to be carrying it)
-human|/obj/item/stack/cable_coil menu: Toggle Jetpack Stabilization (refused: you need to be carrying it)
+human|/obj/item/stack/cable_coil menu: Toggle Jetpack (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle Jetpack Stabilization (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: Click: Tank item
 human|/obj/item/stack/material/steel menu: Collect (refused: needs a storage)
 human|/obj/item/stack/material/steel menu: Customise (refused: needs an item)
@@ -90,8 +92,8 @@ human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Pick up
 human|/obj/item/stack/material/steel menu: Tank item
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/stack/material/steel menu: Toggle Jetpack (refused: you need to be carrying it)
-human|/obj/item/stack/material/steel menu: Toggle Jetpack Stabilization (refused: you need to be carrying it)
+human|/obj/item/stack/material/steel menu: Toggle Jetpack (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Toggle Jetpack Stabilization (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: Click: Tank item
 human|/obj/item/card/id menu: Collect (refused: needs a storage)
 human|/obj/item/card/id menu: Customise (refused: needs an item)
@@ -99,8 +101,8 @@ human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Pick up
 human|/obj/item/card/id menu: Tank item
 human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/card/id menu: Toggle Jetpack (refused: you need to be carrying it)
-human|/obj/item/card/id menu: Toggle Jetpack Stabilization (refused: you need to be carrying it)
+human|/obj/item/card/id menu: Toggle Jetpack (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Jetpack Stabilization (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Tank item
 human|/obj/item/kit menu: Collect (refused: needs a storage)
 human|/obj/item/kit menu: Customise
@@ -108,8 +110,8 @@ human|/obj/item/kit menu: Move To Top
 human|/obj/item/kit menu: Pick up
 human|/obj/item/kit menu: Tank item
 human|/obj/item/kit menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/kit menu: Toggle Jetpack (refused: you need to be carrying it)
-human|/obj/item/kit menu: Toggle Jetpack Stabilization (refused: you need to be carrying it)
+human|/obj/item/kit menu: Toggle Jetpack (refused: You can't do that.)
+human|/obj/item/kit menu: Toggle Jetpack Stabilization (refused: You can't do that.)
 human|/obj/item/kit click: Click: Tank item
 human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Customise (refused: needs an item)
@@ -117,8 +119,8 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Tank item
 human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/storage menu: Toggle Jetpack (refused: you need to be carrying it)
-human|/obj/item/storage menu: Toggle Jetpack Stabilization (refused: you need to be carrying it)
+human|/obj/item/storage menu: Toggle Jetpack (refused: You can't do that.)
+human|/obj/item/storage menu: Toggle Jetpack Stabilization (refused: You can't do that.)
 human|/obj/item/storage click: Click: Tank item
-keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_jetpack_toggle_effect, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, gen_verb_toggle_rockets_effect, pressure, self, tank_item, toggle, use_welder, use_wirecutter
+keys: gen_drag_interaction_drag_buckle, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, jetpack_toggle_effect, pressure, self, tank_item, toggle, toggle_rockets_effect, use_welder, use_wirecutter
 
