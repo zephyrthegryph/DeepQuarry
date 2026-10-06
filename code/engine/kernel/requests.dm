@@ -194,7 +194,7 @@ SYSTEM_DEF(requests)
 		GLOB.test_prompts += R
 #endif
 	var/datum/system/requests/registry = SSrequests
-	registry.open += R // ALLOW(ownership): the kernel's own queue, appended and drained by this system only
+	registry.open += R
 	registry.opened++
 	if(R.timeout > 0)
 		after(R, R.timeout, TYPE_PROC_REF(/datum/request, timed_out), key = "request_timeout")

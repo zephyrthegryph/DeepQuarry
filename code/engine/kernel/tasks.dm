@@ -59,8 +59,8 @@ GLOBAL_VAR_INIT(task_serial, 0)
 	var/datum/target
 	/// Whose complete_proc/cancel_proc run (the item or machine doing the work). Default: the actor.
 	var/datum/receiver
-	var/started_at = 0
-	var/ends_at = 0
+	EXPIRY_DECLARE(started_at)
+	EXPIRY_DECLARE(ends_at)
 	var/state = TASK_RUNNING
 	var/reason
 	var/serial = 0
@@ -195,7 +195,7 @@ GLOBAL_VAR_INIT(task_serial, 0)
 			return "gone"
 		T.vars[key] = value // ALLOW(api): task_start() named arguments set the task's state by name
 	if(!T.receiver)
-		T.receiver = T.pick_receiver(starter)
+		T.receiver = T.pick_receiver(starter) // ALLOW(ownership): the task kernel records who the task acts for; tasks end when that entity goes
 	if(isnull(T.duration))
 		T.duration = 0
 	else if(!isnum(T.duration))
@@ -217,7 +217,7 @@ GLOBAL_VAR_INIT(task_serial, 0)
 		task_release(T)
 		return refused
 	T.serial = ++GLOB.task_serial
-	T.started_at = world.time
+	EXPIRY_SET(T, started_at, 0, null)
 	if(length(T.steps))
 		T.step_no = 1
 		task_arm(T, T.steps[2])
@@ -433,7 +433,7 @@ GLOBAL_VAR_INIT(task_serial, 0)
 
 /// The task's timer: `delay` deciseconds on the actor's clock.
 /proc/task_arm(datum/task/T, delay)
-	T.ends_at = world.time + delay
+	EXPIRY_SET(T, ends_at, delay, null)
 	after(T.actor, delay, GLOBAL_PROC_REF(task_due), key = "task:[T.serial]", with = list(T))
 
 /// The task's timer went off: the current step runs, or the task completes.

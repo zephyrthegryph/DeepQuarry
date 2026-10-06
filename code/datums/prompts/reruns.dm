@@ -87,14 +87,14 @@
 		var/client/C = value
 		return "ckey:[C.ckey]"
 	if(isdatum(value))
-		return list("rerun_h" = om_handle(value))
+		return list("rerun_h" = om_handle(value)) // ALLOW(ownership): a deletion-safe handle keeps a re-run from holding the datum alive
 	return value
 
 /proc/rerun_unwrap(value)
 	if(istext(value) && copytext(value, 1, 6) == "ckey:")
 		return GLOB.directory[copytext(value, 6)]
 	if(islist(value) && length(value) == 1 && value["rerun_h"])
-		return om_resolve(value["rerun_h"])
+		return om_resolve(value["rerun_h"]) // ALLOW(ownership): a deletion-safe handle keeps a re-run from holding the datum alive
 	return value
 
 /// TRUE when `wrapped` held a datum or client (so a null unwrap means it is gone).

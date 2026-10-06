@@ -730,8 +730,8 @@ the megaphone, the medical records console and the desk bell, is [operations_and
 // BEFORE: megaphone.dm:48-58
 DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interaction_self)))
 /obj/item/megaphone/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(shout_entered), title = "Megaphone",
-		message = "Shout a message?", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/text, PROC_REF(shout_entered), answerer = user, title = "Megaphone",
+		question = "Shout a message?", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 // AFTER (cap_use_self, needs and ask_text are all [built])
 /obj/item/megaphone/capabilities()
 	. = ..()

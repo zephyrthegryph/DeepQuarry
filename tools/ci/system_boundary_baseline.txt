@@ -27,7 +27,7 @@ B1:code/datums/loot/loot.dm:SSatoms 1
 B1:code/datums/managed_browsers/feedback_form.dm:SSsqlite 1
 B1:code/datums/managed_browsers/feedback_viewer.dm:SSsqlite 2
 B1:code/datums/mind.dm:SSticker 3
-B1:code/datums/om/io.dm:SSdbcore 1
+B1:code/engine/io/jobs.dm:SSdbcore 1
 B1:code/datums/om/watch.dm:SSmachines 3
 B1:code/datums/ownership/registry_types.dm:SStranscore 1
 B1:code/datums/state/collapse.dm:SSgarbage 2

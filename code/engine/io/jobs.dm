@@ -211,7 +211,7 @@ GLOBAL_DATUM_INIT(io_lane, /datum/io_lane, new)
 	if(!isnull(E))
 		if(QDELETED(E))
 			return 0
-		owner_h = om_handle(E)
+		owner_h = om_handle(E) // ALLOW(ownership): the IO lane keeps its own queue and a deletion-safe handle to the job owner
 		if(!owner_h)
 			return 0
 	var/datum/io_job/J = new
@@ -228,7 +228,7 @@ GLOBAL_DATUM_INIT(io_lane, /datum/io_lane, new)
 	var/datum/io_lane/lane = GLOB.io_lane
 	J.id = ++lane.seq
 	J.queued_at = REALTIMEOFDAY
-	LAZYADD(lane.jobs, J)
+	LAZYADD(lane.jobs, J) // ALLOW(ownership): the IO lane keeps its own queue and a deletion-safe handle to the job owner
 	io_try_start(lane, K, J)
 	io_lane_wake(lane)
 	return J.id
@@ -280,7 +280,7 @@ GLOBAL_DATUM_INIT(io_lane, /datum/io_lane, new)
 /proc/io_lane_wake(datum/io_lane/lane)
 	if(after_pending(lane, "io_poll"))
 		return
-	after(lane, 1, TYPE_PROC_REF(/datum/io_lane, poll_pass), key = "io_poll", clock = CLOCK_WORLD)
+	after(lane, 0.1 SECONDS, TYPE_PROC_REF(/datum/io_lane, poll_pass), key = "io_poll", clock = CLOCK_WORLD)
 
 /// The lane's after(): one pass, then the next while jobs are pending.
 /datum/io_lane/proc/poll_pass()
@@ -346,7 +346,7 @@ GLOBAL_DATUM_INIT(io_lane, /datum/io_lane, new)
 		return
 	var/datum/E = null
 	if(J.owner_h)
-		E = om_resolve(J.owner_h)
+		E = om_resolve(J.owner_h) // ALLOW(ownership): the IO lane keeps its own queue and a deletion-safe handle to the job owner
 		if(!E)
 			lane.count_stat(K, IO_STAT_DROPPED)
 			log_qdel("IO: dropped [K.name] callback [J.on_done]: its owner was deleted")

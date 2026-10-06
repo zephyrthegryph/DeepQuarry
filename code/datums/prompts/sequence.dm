@@ -100,7 +100,6 @@
 	done = TRUE
 	if(on_done)
 		call_owner(on_done)
-	qdel(src) // ALLOW(lifecycle): a question sequence is a plain record that ends with its last answer
 
 /datum/ask_sequence/proc/step_answered(datum/act/request/A)
 	if(done)
@@ -126,7 +125,6 @@
 	done = TRUE
 	if(on_stop)
 		call_owner(on_stop, reason)
-	qdel(src) // ALLOW(lifecycle): a question sequence is a plain record that ends with its last answer
 
 /// ask_sequence()'s body. `owner` is the caller's src. Returns the sequence, or a text reason it didn't start.
 /proc/ask_sequence_begin(datum/owner, sequence, mob/answerer, datum/subject, list/steps, on_done, on_stop, list/common_fields, list/params)

@@ -65,7 +65,7 @@
 				return
 			var/obj/item/pocketed = victim.get_equipped_item(slot_id)
 			if(istype(pocketed))
-				theirs = pocketed
+				theirs = pocketed // ALLOW(ownership): a transient reference held only while this short pickpocket task runs
 				next_phase("take", 1 SECOND)
 			else
 				give()
@@ -77,8 +77,8 @@
 			if(victim.get_equipped_item(slot_id) != theirs)
 				return
 			victim.drop_from_inventory(theirs)
-			took = theirs
-			theirs = null
+			took = theirs // ALLOW(ownership): a transient reference held only while this short pickpocket task runs
+			theirs = null // ALLOW(ownership): a transient reference held only while this short pickpocket task runs
 			give()
 		if("give")
 			swapped(TRUE)
@@ -90,7 +90,7 @@
 	if(!istype(own_pocket))
 		swapped(FALSE)
 		return
-	mine = own_pocket
+	mine = own_pocket // ALLOW(ownership): a transient reference held only while this short pickpocket task runs
 	next_phase("give", 1 SECOND)
 
 /// An interrupted give still keeps what was taken.
