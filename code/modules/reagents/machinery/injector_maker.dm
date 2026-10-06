@@ -38,11 +38,6 @@ TRACKED(/obj/machinery/injector_maker, count_plastic)
 TRACKED(/obj/machinery/injector_maker, count_small_injector)
 
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/injector_maker/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 MSG_DEF_SELF(injector_maker/rack_full, "Storage is full.")
 MSG_DEF_SELF(injector_maker/filled, "You cannot put a filled injector into the machine.")
 
@@ -61,6 +56,7 @@ CAPABILITIES(/obj/machinery/injector_maker)
 	op("drag_plastic", item(/obj/item/stack/material/plastic), gesture(GESTURE_DRAG), label("Add plastic"), then(PROC_REF(plastic_dragged)))
 	op("eject_beaker", hand(), ungated(), gesture(GESTURE_ALT), when(PROC_REF(has_beaker)), label("Eject beaker"), then(PROC_REF(beaker_ejected)))
 	op("use", hand(), ungated(), label("Use"), then(PROC_REF(touched)))
+	default_parts()
 
 /// What it holds: a beaker, injectors, plastic, in every combination.
 /obj/machinery/injector_maker/draw(datum/look/look)

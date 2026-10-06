@@ -27,9 +27,8 @@
 		destroyed(C)
 	..()
 
-/obj/machinery/power/breakerbox/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
+CAPABILITIES(/obj/machinery/power/breakerbox)
+	default_parts()
 
 /obj/machinery/power/breakerbox/activated
 	icon_state = "bbox_on"

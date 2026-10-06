@@ -21,11 +21,6 @@
 	var/map_pad_id = null as text //what's my name
 	var/map_pad_link_id = null as text //who's my friend
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
-/obj/machinery/power/quantumpad/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 // Mapped links: linked_pad auto-links to the pad whose map_pad_id equals our map_pad_link_id,
 // whichever of the two materializes first (replaces the static id map).
 /obj/machinery/power/quantumpad/relations()
@@ -87,6 +82,7 @@
 
 CAPABILITIES(/obj/machinery/power/quantumpad)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
+	default_parts()
 
 /obj/machinery/power/quantumpad/proc/multitool_used(datum/act/op/A)
 	var/mob/user = A.actor

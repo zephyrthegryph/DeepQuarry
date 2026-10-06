@@ -53,10 +53,7 @@ CAPABILITIES(/obj/machinery/fusion_fuel_injector)
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
-
-/obj/machinery/fusion_fuel_injector/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
+	default_parts()
 
 /obj/machinery/fusion_fuel_injector/mapped
 	anchored = TRUE

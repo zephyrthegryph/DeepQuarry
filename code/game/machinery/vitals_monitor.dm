@@ -22,10 +22,6 @@
 /// The patient on the monitor (a relation view), or null.
 OM_FIELD_VIEW(/obj/machinery/vitals_monitor, mob/living/carbon/human, victim, CHANGE_MACHINE_OCCUPANT)
 /// Tracks its patient while connected to someone.
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/vitals_monitor/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
 
 /obj/machinery/vitals_monitor/examine(mob/user)
 	. = ..()
@@ -151,6 +147,7 @@ CAPABILITIES(/obj/machinery/vitals_monitor)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(victim), wakes_on = list(nameof(victim)))
 	op("vitals_monitor_toggle_beep", menu(), label("Toggle Monitor Beeping"), then(PROC_REF(vitals_monitor_toggle_beep)))
 	drag_onto(PROC_REF(drop_input))
+	default_parts()
 
 /// Old verb "Toggle Monitor Beeping".
 /obj/machinery/vitals_monitor/proc/vitals_monitor_toggle_beep(datum/act/op/A)

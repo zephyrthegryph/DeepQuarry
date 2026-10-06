@@ -136,10 +136,6 @@ TRACKED(/obj/machinery/power/port_gen/pacman, overheating)
 TRACKED(/obj/machinery/power/port_gen/pacman, sheets)
 TRACKED(/obj/machinery/power/port_gen/pacman, max_sheets)
 
-/obj/machinery/power/port_gen/pacman/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 // its unburnt fuel drops as sheets.
 /obj/machinery/power/port_gen/pacman/on_destroy(force)
 	DropFuel()
@@ -348,6 +344,7 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 	op("higher_power", ui_act("higher_power"), then(PROC_REF(ui_act_higher_power)))
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	default_parts()
 
 /obj/machinery/power/port_gen/pacman/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -541,16 +538,13 @@ CAPABILITIES(/obj/machinery/power/port_gen/pacman)
 	var/power_gen = 1000 // Enough to power a single APC. 4000 output with T4 capacitor.
 	var/irradiate = TRUE // RTGs irradiate surroundings, but only when panel is open.
 
-/obj/machinery/power/rtg/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 // The RTG (doc/rewrite/final_api.html section 16): bolted down, it supplies power_gen W to its cable network every machine service interval
 // (rtg_step()), and irradiates its surroundings while its panel is open.
 CAPABILITIES(/obj/machinery/power/rtg)
 	after_init(0, then(PROC_REF(mapped_upgrades_after_init)))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(rtg_step)), when = nameof(anchored))
 	part_replacement()
+	default_parts()
 
 /// A mapped RTG takes the parts laid on its tile.
 /obj/machinery/power/rtg/proc/mapped_upgrades_after_init(datum/act/timer/A)

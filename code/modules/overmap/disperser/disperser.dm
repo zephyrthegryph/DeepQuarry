@@ -10,11 +10,6 @@
 	anchored = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/disperser/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 /obj/machinery/disperser/examine(mob/user)
 	. = ..()
 	if(panel_open)
@@ -40,6 +35,7 @@ CAPABILITIES(/obj/machinery/disperser)
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(screwdriver_used)))
+	default_parts()
 
 /obj/machinery/disperser/proc/crowbar_used(datum/act/op/A)
 	var/mob/user = A.actor

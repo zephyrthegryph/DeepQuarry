@@ -18,3 +18,17 @@ CAPABILITY_TYPE(part_replacement, CAP_PART_REPLACEMENT, /datum/capability/lib/pa
 	if(!istype(M) || !M.default_part_replacement(A.actor, A.held))
 		return OP_REFUSED
 	return OP_OK
+
+// default_parts(): the machine refreshes its default parts as it initializes (the board's req_components, resolved lazily, and
+// RefreshParts() over them). It replaces the Initialize() override that only called default_apply_parts() after ..(): the capability
+// runs it in on_holder_init(), after the machine's capabilities and before any type's code after its ..(). Phase 4 (the machine track)
+// replaces it with components(slots).
+CAPABILITY_TYPE(default_parts, CAP_DEFAULT_PARTS, /datum/capability/lib/default_parts, key = NONE)
+
+/datum/capability/lib/default_parts
+	holder_hooks = HOLDER_HOOK_INIT
+
+/datum/capability/lib/default_parts/on_holder_init(datum/act/eval/A)
+	var/obj/machinery/M = A.holder
+	if(istype(M))
+		M.default_apply_parts()

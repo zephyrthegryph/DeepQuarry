@@ -10,10 +10,6 @@
 
 	circuit = /obj/item/circuitboard/fusion_fuel_compressor
 
-/obj/machinery/fusion_fuel_compressor/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 TRACKED(/obj/machinery/fusion_fuel_compressor, blitzprogress)
 
 // The fuel compressor (doc/rewrite/final_api.html section 16): sheets of a fusion fuel (FUSION_ROD_SHEET_AMT of them), an open container
@@ -25,6 +21,7 @@ CAPABILITIES(/obj/machinery/fusion_fuel_compressor)
 	op("compress", item(/obj/item/reagent_containers), label("Compress"), wait(0), then(PROC_REF(container_compressed)))
 	op("compress_drag", item(/obj/machinery/power/supermatter), gesture(GESTURE_DRAG), label("Compress"), wait(0), then(PROC_REF(dragged_compressed)))
 	op("eject_sheet", menu(), label("Eject Supermatter Sheet"), wait(0), when(nameof(blitzprogress)), then(PROC_REF(sheet_ejected)))
+	default_parts()
 
 /obj/machinery/fusion_fuel_compressor/proc/dragged_compressed(datum/act/op/A)
 	do_special_fuel_compression(A.held, A.actor)

@@ -33,11 +33,7 @@
 CAPABILITIES(/obj/machinery/washing_machine)
 	owns_many(nameof(washing), on_destroy = ON_DESTROY_SPILL)
 	climb()
-
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/washing_machine/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
+	default_parts()
 
 
 /obj/machinery/washing_machine/declare_interactions(list/into)

@@ -16,10 +16,6 @@
 	var/report_num = 0
 
 OM_FIELD(/obj/machinery/dnaforensics, scanning, FALSE, CHANGE_MACHINE_SETTINGS)
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/dnaforensics/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
 
 /// A used forensic swab must be releasable before the analyzer accepts it.
 /obj/machinery/dnaforensics/proc/can_insert_swab(mob/user, atom/target, obj/item/held)
@@ -53,6 +49,7 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 	op("scanItem", ui_act("scanItem"), then(PROC_REF(ui_act_scanitem)))
 	op("ejectItem", ui_act("ejectItem"), then(PROC_REF(ui_act_ejectitem)))
 	op("insert_swab", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert swab"), needs(req_empty(nameof(bloodsamp), because = MSG(dnaforensics/sample_loaded)), req_is(nameof(scanning), FALSE, because = MSG(dnaforensics/scanning)), req_held_releasable()), then(PROC_REF(interaction_insert_swab)))
+	default_parts()
 
 /obj/machinery/dnaforensics/ui_prepare(mob/user, datum/tgui/ui)
 	if(has_stat(NOPOWER))

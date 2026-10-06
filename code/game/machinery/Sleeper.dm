@@ -128,11 +128,7 @@ CAPABILITIES(/obj/machinery/sleeper)
 		then(PROC_REF(set_stasis_choice)))
 	op("auto_eject_dead_on", ui_act("auto_eject_dead_on"), sets(nameof(auto_eject_dead), TRUE))
 	op("auto_eject_dead_off", ui_act("auto_eject_dead_off"), sets(nameof(auto_eject_dead), FALSE))
-
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
-/obj/machinery/sleeper/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
+	default_parts()
 
 /obj/machinery/sleeper/RefreshParts(limited = 0)
 	var/man_rating = 0

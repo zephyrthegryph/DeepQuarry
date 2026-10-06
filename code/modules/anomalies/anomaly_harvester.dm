@@ -4,6 +4,7 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	interface("AnomalyHarvester", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")
 	op("release_sample", ui_act("release_sample", arg("ref", schema_ref(/obj/item/research_sample))), then(PROC_REF(ui_act_release_sample)))
+	default_parts()
 
 /obj/machinery/anomaly_harvester
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
@@ -23,11 +24,6 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 
 	/// Relation view: the anomaly this harvester is attached to.
 	var/obj/effect/anomaly/harvested
-
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/anomaly_harvester/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
 
 /obj/machinery/anomaly_harvester/RefreshParts()
 	var/efficient = get_part_rating(/obj/item/stock_parts/manipulator) - 2 * get_part_count(/obj/item/stock_parts/manipulator)

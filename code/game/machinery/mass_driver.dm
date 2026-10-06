@@ -22,11 +22,6 @@
 	. = ..()
 	. += rel_key(nameof(id))
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/mass_driver/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 /obj/machinery/mass_driver/multitool_act(mob/user, obj/item/tool)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
@@ -65,6 +60,7 @@
 
 CAPABILITIES(/obj/machinery/mass_driver)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(mass_driver_emp))))
+	default_parts()
 
 /// An EMP fires the driver.
 /obj/machinery/mass_driver/proc/mass_driver_emp(datum/act/hit/emp/A)

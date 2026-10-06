@@ -61,14 +61,11 @@ CAPABILITIES(/obj/machinery/power/tesla_coil)
 	op("modify", tool(TOOL_MULTITOOL), label("Modify"), wait(0), at(SPACE_PANEL),
 		asks(/datum/prompt/choice, fields = list("title" = "Tesla Selection", "question" = "Which tesla do you wish to change it into?", "choices" = list("Normal", "Relay", "Splitter", "Amplifier", "Recaster", "Collector"))),
 		then(PROC_REF(modified)))
+	default_parts()
 
 
 /obj/machinery/power/tesla_coil/proc/zap_wire_pulsed(datum/act/A)
 	zap()
-
-/obj/machinery/power/tesla_coil/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
 
 /obj/machinery/power/tesla_coil/RefreshParts()
 	zap_cooldown = 10

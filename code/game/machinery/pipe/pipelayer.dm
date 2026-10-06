@@ -51,10 +51,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 		asks(/datum/prompt/choice, fields = list("question" = "Choose pipe type", "title" = "Pipe type", "choices" = computed(PROC_REF(pipe_choices)), "timeout" = 0)), then(PROC_REF(pipe_type_chosen)))
 	op("auto_dismantle", tool(TOOL_CROWBAR), label("Toggle auto-dismantling"), wait(0), when(PROC_REF(panel_shut)), toggles(nameof(a_dis)), says(MSG(pipelayer/dismantling)))
 	op("dismantle", tool(TOOL_CROWBAR), label("Dismantle"), priority(OP_PRIORITY_TAKE_OUT), when(PROC_REF(panel_is_open)), then(PROC_REF(dismantled)))
-
-/obj/machinery/pipelayer/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
+	default_parts()
 
 
 /obj/machinery/pipelayer/RefreshParts()

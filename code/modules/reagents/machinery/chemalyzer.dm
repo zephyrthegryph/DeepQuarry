@@ -15,11 +15,6 @@
 	circuit = /obj/item/circuitboard/chemical_analyzer
 	var/list/found_reagents
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/chemical_analyzer/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 /// The analyzer draws its working state while an analysis claims it.
 /obj/machinery/chemical_analyzer/draw(datum/look/look)
 	..()
@@ -59,6 +54,7 @@ CAPABILITIES(/obj/machinery/chemical_analyzer)
 		on_interrupt(PROC_REF(scan_failed)), then(PROC_REF(scan_done)))
 	interface("ChemAnalyzerPro")
 	ui_shape(scannedReagents = list_of(row()), beakerTotal = num(), beakerMax = num())
+	default_parts()
 
 /obj/machinery/chemical_analyzer/ui_data(datum/act/eval/A)
 	var/list/data = list()

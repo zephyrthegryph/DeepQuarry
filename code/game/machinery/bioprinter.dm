@@ -101,11 +101,7 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
 
 CAPABILITIES(/obj/machinery/organ_printer)
 	climb()
-
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/organ_printer/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
+	default_parts()
 
 /obj/machinery/organ_printer/examine(mob/user)
 	. = ..()

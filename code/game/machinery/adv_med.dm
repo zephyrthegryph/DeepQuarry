@@ -60,11 +60,7 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	interface("BodyScanner", title = "Body Scanner")
 	op("ejectify", ui_act("ejectify"), then(PROC_REF(eject_from_window)), logs(LOG_GAME))
 	op("print_p", ui_act("print_p"), then(PROC_REF(print_report)))
-
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with
-/obj/machinery/bodyscanner/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
+	default_parts()
 
 /obj/machinery/bodyscanner/RefreshParts()
 	scan_level = SCANNABLE_DIFFICULT

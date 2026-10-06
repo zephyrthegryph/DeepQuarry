@@ -327,6 +327,7 @@ codemods of `tools/codemods/` (`init_overrides.py`, `qdel_src.py`, `usr_sites.py
 | `set_frequency(frequency)` in `Initialize()` and a hand-written retune | `radio_listen(freq = nameof(frequency), filter = RADIO_X)`; the frequency var must be `TRACKED` |
 | `update_neighbours()` / `update_connections(1)` in `Initialize()` and `on_destroy()` | `adjacency(ADJ_KIND_X, into = nameof(connections), changed = PROC_REF(update_icon))` |
 | an `Initialize()` that builds the same list for every instance | `per_type(nameof(table), PROC_REF(build_table))` |
+| `default_apply_parts()` alone after `..()` in a machine's `Initialize()` | `default_parts()` in its `CAPABILITIES` block (`code/library/machine/parts.dm`; `tools/codemods/default_parts.py`): the parts refresh in `on_holder_init()`, before the type's code after `..()` |
 | `apply_variant()` before `..()` in `Initialize()`, copying a variant family's row of vars (`code/datums/variants/`) | `variants(nameof(variant), PROC_REF(variant_table))`, the proc returning the family's table; `/obj/item/apply_variant()` applies it again for a later key |
 | `new /obj/item/x(src)` in `Initialize()` | `initial_contents(/obj/item/x)`, `initial_contents(/obj/item/x, count = 3)`, `initial_contents(/obj/item/x, slot = SLOT_X)` |
 | `new /obj/item/x(src, src)` (the child told its owner) | `starts_args = list(OWNER)` on the `owns_one`, or `initial_contents(/obj/item/x, args = list(OWNER))` |

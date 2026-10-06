@@ -126,10 +126,6 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 	var/fire_sounds = SFX_WEAPONS_FRIGATE_TURRET_FRIGATE_TURRET_FIRE_MIX
 
 /// Steps (watches for and shoots meteors) while switched on and working.
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
-/obj/machinery/pointdefense/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
 
 /obj/machinery/pointdefense/get_description_interaction()
 	. = ..()
@@ -211,6 +207,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 CAPABILITIES(/obj/machinery/pointdefense)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), gate = PROC_REF(operable), wakes_on = list(nameof(active), nameof(stat)))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	default_parts()
 
 /obj/machinery/pointdefense/proc/work_step(datum/act/timer/A)
 	var/desiredir = ATAN2(transform.b, transform.a) > 0 ? NORTH : SOUTH

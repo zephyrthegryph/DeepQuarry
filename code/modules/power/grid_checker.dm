@@ -16,10 +16,6 @@
 	var/opened = FALSE
 TRACKED(/obj/machinery/power/grid_checker, power_failing)
 
-/obj/machinery/power/grid_checker/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
-
 /// `connect_to_network()` needs `vg_entity` bound, which only happens once
 /// `on_materialize()`'s `vg_bind()` runs -- see the base class override's
 /// docs (`code/modules/power/power.dm`).
@@ -135,6 +131,7 @@ CAPABILITIES(/obj/machinery/power/grid_checker)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(multitool_used)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT - 1), wait(0), then(PROC_REF(wirecutter_used)))
 	op("grid_checker_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_grid_checker_use)))
+	default_parts()
 
 
 /obj/machinery/power/grid_checker/proc/wire_lights()
