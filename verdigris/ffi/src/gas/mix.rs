@@ -251,6 +251,11 @@ struct Mixes {
     /// made every first write to a chunk copy it (the snapshot shared it).
     written: Vec<usize>,
     written_mark: Vec<bool>,
+    /// The pipe region revision each watched pipe handle's mirror was last read at. A region changes outside
+    /// [`store`] too (a device step's write-back, a heat exchanger levelling two loops), so a drain re-reads every
+    /// watched pipe handle whose region moved (`refresh_pipe_mirrors`): the network's own change tracking, not the
+    /// writer, keeps the mirror current.
+    pipe_seen: HashMap<u32, u64>,
 }
 
 impl Default for Mixes {
@@ -268,6 +273,7 @@ impl Default for Mixes {
             dirty: HashMap::new(),
             written: Vec::new(),
             written_mark: vec![false; layout.chunk_count()],
+            pipe_seen: HashMap::new(),
         }
     }
 }
@@ -302,6 +308,7 @@ pub(crate) fn reset_watches() {
         m.dirty = fresh.dirty;
         m.written = fresh.written;
         m.written_mark = fresh.written_mark;
+        m.pipe_seen = fresh.pipe_seen;
     });
     forget_turf_mark();
 }
@@ -774,6 +781,7 @@ pub fn unwatch(port: u8, id: WatchId) {
                 *n -= 1;
                 if *n == 0 {
                     m.watched.remove(&h);
+                    m.pipe_seen.remove(&h);
                 }
             }
         }
@@ -855,8 +863,12 @@ fn take_wakes() -> Vec<Wake> {
             })
             .inc();
     }
+    let pipes = refresh_pipe_mirrors();
     let evaluated = std::time::Instant::now();
     let deps = with_mixes(|m| {
+        for (h, c) in pipes {
+            set_probe(m, h, c);
+        }
         for (h, c) in fresh {
             set_probe(m, h, c);
         }
@@ -873,6 +885,57 @@ fn take_wakes() -> Vec<Wake> {
         out.append(&mut h.2);
     });
     out
+}
+
+/// The watched pipe handles whose region moved since their mirror was last read, freshly read. Pipe gas changes in
+/// ways [`store`] never sees (a device step writes its region back on the world, `crate::pipes::apply_devices`), so
+/// a watch on a pipe region asks the network's region revision instead of trusting every writer to report.
+fn refresh_pipe_mirrors() -> Vec<(u32, GasCell)> {
+    let handles: Vec<u32> = with_mixes(|m| {
+        m.watched
+            .keys()
+            .copied()
+            .filter(|&h| matches!(MixRef::from_id(h), Some(MixRef::Pipe(_))))
+            .collect()
+    });
+    if handles.is_empty() {
+        return Vec::new();
+    }
+    let revisions: Vec<(u32, u64)> = with_world(|w| {
+        let Ok(host) = w.network::<Pipes>() else {
+            return Ok(Vec::new());
+        };
+        Ok(handles
+            .iter()
+            .filter_map(|&h| {
+                let Some(MixRef::Pipe(slot)) = MixRef::from_id(h) else {
+                    return None;
+                };
+                let region = super::region_of_slot(slot)?;
+                Some((h, host.region_revision(region)))
+            })
+            .collect())
+    })
+    .unwrap_or_default();
+    let moved: Vec<(u32, u64)> = with_mixes(|m| {
+        revisions
+            .into_iter()
+            .filter(|(h, rev)| m.pipe_seen.get(h) != Some(rev))
+            .collect()
+    });
+    let fresh: Vec<(u32, u64, GasCell)> = moved
+        .into_iter()
+        .filter_map(|(h, rev)| Some((h, rev, cell_of_mixture(&load(MixRef::from_id(h)?)?))))
+        .collect();
+    with_mixes(|m| {
+        fresh
+            .into_iter()
+            .map(|(h, rev, cell)| {
+                m.pipe_seen.insert(h, rev);
+                (h, cell)
+            })
+            .collect()
+    })
 }
 
 /// Which watched turf cells a drain must re-read (`turf_refresh_plan`).
@@ -1443,5 +1506,52 @@ mod tests {
         reactor_wakes(&mut out);
         assert_eq!(out.len(), 1, "{out:?}");
         assert_eq!(out[0].source, r.id());
+    }
+
+    /// A pipe region changed outside `store` (a device step's write-back: a heat exchanger levelling two loops changes only the
+    /// temperature) still reaches a temperature watch on it: the drain reads the region's revision, not a report from the writer.
+    #[test]
+    fn a_temperature_watch_hears_a_pipe_region_written_by_the_world() {
+        use vg_gas::pipes::PipeGas;
+        with_world(|_| Ok(())).unwrap();
+        let node = with_world(|w| {
+            let node = w.entities_mut().bind().unwrap();
+            let mut gas = PipeGas::default();
+            gas.moles[vg_gas::gas::ids::GAS_OXYGEN] = 50.0;
+            gas.energy = 50.0 * 20.0 * 293.0;
+            w.edit_network::<Pipes>(move |host| {
+                let _ = host.bind_node(node, 0, 0, 100.0);
+                let region = host.region_of(node).expect("bound");
+                let _ = host.set_payload(region, gas);
+            })
+            .map_err(|e| eyre!("{e}"))?;
+            w.commit_network::<Pipes>();
+            Ok(node)
+        })
+        .unwrap();
+        let r = with_world(|w| Ok(crate::pipes::port_mixture(w, node.bits()))).unwrap().expect("a region");
+        let before = load(r).unwrap();
+        watch_dirty(r.id(), 301, GAS_CHANGE_TEMPERATURE);
+        let _ = drain_observations();
+        assert!(drain_observations().is_empty(), "nothing changed yet");
+        // The device law's write-back: the payload, on the world, with no `store`.
+        with_world(|w| {
+            w.edit_network::<Pipes>(move |host| {
+                let region = host.region_of(node).expect("bound");
+                if let Ok(p) = host.payload_mut(region) {
+                    p.energy *= 1.2;
+                }
+            })
+            .map_err(|e| eyre!("{e}"))?;
+            w.commit_network::<Pipes>();
+            Ok(())
+        })
+        .unwrap();
+        let after = load(r).unwrap();
+        assert!(after.get_temperature() > before.get_temperature() + 10.0, "the write-back heated the region");
+        let obs = drain_observations();
+        assert_eq!(obs.len(), GAS_OBSERVATION_STRIDE, "the temperature watch heard the region: {obs:?}");
+        assert!(obs[2] as u8 & GAS_CHANGE_TEMPERATURE != 0, "as a temperature change: {obs:?}");
+        unwatch_dirty(301);
     }
 }
