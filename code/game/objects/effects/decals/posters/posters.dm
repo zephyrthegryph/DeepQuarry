@@ -23,19 +23,23 @@
 	VAR_PROTECTED/datum/decl/poster/poster_decl = null
 	VAR_PROTECTED/poster_type = /obj/structure/sign/poster
 
-// ALLOW(init/CTOR_ARGS): P is a constructor argument from whoever builds it
-/obj/item/poster/Initialize(mapload, datum/decl/poster/P = null)
+CAPABILITIES(/obj/item/poster)
+	param(nameof(design_at_make), pos = 1, apply = PROC_REF(choose_design), keep = FALSE)
+
+/// The poster design a rolled poster is made with (its constructor param): a decl or its type.
+/obj/item/poster/var/tmp/design_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
+/obj/item/poster/proc/choose_design(P)
 	if(ispath(poster_decl))
 		poster_decl = get_poster_decl(poster_decl, TRUE, null)
-	else if(istype(P))
+	else if(istype(P, /datum/decl/poster))
 		poster_decl = P
 	else if(ispath(P))
 		poster_decl = get_poster_decl(P, TRUE, null)
 	else
 		poster_decl = get_poster_decl(/datum/decl/poster, FALSE, /datum/decl/poster/lewd)
-
 	name += " - [poster_decl.name]"
-	return ..()
 
 /// Get the current poster_decl
 /obj/item/poster/proc/get_decl()
@@ -99,10 +103,11 @@
 	VAR_PROTECTED/roll_type = /obj/item/poster
 	VAR_PRIVATE/ruined = FALSE
 
-// ALLOW(init/CTOR_ARGS): placement_dir and P are constructor arguments from whoever builds it
-/obj/structure/sign/poster/Initialize(mapload, placement_dir = null, obj/item/poster/P = null)
-	. = ..()
+/// The rolled poster a hung one is made from (its constructor param).
+/obj/structure/sign/poster/var/tmp/obj/item/poster/hung_from
 
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The poster takes its design and hangs on the wall it faces.
+/obj/structure/sign/poster/proc/hang(obj/item/poster/P)
 	if(ispath(poster_decl))
 		poster_decl = get_poster_decl(poster_decl, TRUE, null)
 	else if(istype(P))
@@ -119,9 +124,6 @@
 		icon = poster_decl.icon_override
 	icon_state = poster_decl.icon_state
 
-	if(placement_dir)
-		dir = placement_dir
-
 	switch (dir)
 		if (NORTH)
 			pixel_x = 0
@@ -136,10 +138,12 @@
 			pixel_x = -32
 			pixel_y = 0
 
-	flick("poster_being_set", src) // If you don't see this animation, check that the decl/poster's icon_override dmi file has the icon states for poster_being_set and poster_ripped in it.
+	flick("poster_being_set", src) // If you don't see this animation, check that the decl/poster's icon_override dmi file has the icon states for posters being set.
 
 CAPABILITIES(/obj/structure/sign/poster)
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	param(nameof(dir), pos = 1)
+	param(nameof(hung_from), pos = 2, apply = PROC_REF(hang), keep = FALSE)
 
 /obj/structure/sign/poster/proc/wirecutter_used(datum/act/op/A)
 	var/mob/user = A.actor

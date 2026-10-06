@@ -30,6 +30,10 @@
 	var/is_infesting = FALSE
 
 	can_pain_emote = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/blob/spore)
+	param(nameof(factory), /obj/structure/blob/factory, pos = 1)
+
 /datum/say_list/spore
 	emote_see = list("sways", "inflates briefly")
 

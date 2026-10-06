@@ -836,11 +836,11 @@ CAPABILITIES(/atom/movable/screen/movable/mapper_holder)
 	owns_one(nameof(frame), starts = /atom/movable/screen/mapper/frame)
 	owns_one(nameof(powbutton), starts = /atom/movable/screen/mapper/powbutton)
 	owns_one(nameof(mapbutton), starts = /atom/movable/screen/mapper/mapbutton)
+	param(nameof(owner), pos = 1)
 
-// ALLOW(init/CTOR_ARGS): newowner is a constructor argument from whoever builds it
-/atom/movable/screen/movable/mapper_holder/Initialize(mapload, newowner)
+// ALLOW(init/INSTANCE_STATE): the minimap holder frames itself for its owner's HUD and lays out its layers
+/atom/movable/screen/movable/mapper_holder/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(owner), newowner)
 
 	frame.icon_state = initial(frame.icon_state)+owner().hud_frame_hint
 

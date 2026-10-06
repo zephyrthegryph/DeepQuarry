@@ -45,6 +45,7 @@
 
 CAPABILITIES(/turf/simulated/floor)
 	extend(/datum/act/hit/blob, instead())
+	param(nameof(floortype_at_make), pos = 1)
 
 /// The tile breaks as its condition crosses the failure fraction.
 /turf/simulated/floor/on_update_integrity(old_value, new_value)

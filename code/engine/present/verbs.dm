@@ -52,6 +52,8 @@ GLOBAL_LIST_EMPTY(verb_entry_sets) // type -> /datum/verb_entry_set, or FALSE fo
 /// The verb entries of `holder`'s type (a type-level capability's included), or null when it declares none.
 /proc/verb_entries_of(atom/holder)
 	RETURN_TYPE(/datum/verb_entry_set)
+	if(!GLOB.verb_entry_sets)
+		return null // the globals are still being built
 	var/known = GLOB.verb_entry_sets[holder.type]
 	if(!isnull(known))
 		return known || null

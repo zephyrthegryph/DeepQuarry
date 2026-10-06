@@ -7,10 +7,9 @@
 	var/shockdamage = 20
 	var/emp_zap = FLUX_EMP
 
-// ALLOW(init/CTOR_ARGS): new_lifespan, drops_core and emp_zap are constructor arguments from whoever builds it
-/obj/effect/anomaly/flux/Initialize(mapload, new_lifespan, drops_core, emp_zap = FLUX_EMP)
+// ALLOW(init/INSTANCE_STATE): a flux anomaly wobbles
+/obj/effect/anomaly/flux/Initialize(mapload)
 	. = ..()
-	src.emp_zap = emp_zap
 	apply_wibbly_filters(src)
 
 /obj/effect/anomaly/flux/anomalyEffect()
@@ -32,6 +31,7 @@
 
 CAPABILITIES(/obj/effect/anomaly/flux)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	param(nameof(emp_zap), pos = 3)
 
 /// Something walked into it (the bump action's notice).
 /obj/effect/anomaly/flux/proc/bumped_into(datum/act/A)

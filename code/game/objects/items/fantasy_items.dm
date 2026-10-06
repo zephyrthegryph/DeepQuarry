@@ -407,9 +407,8 @@ This device records all warnings given and teleport events for admin review in c
 
 //locked door
 
-// ALLOW(init/CTOR_ARGS): material_name is a constructor argument from whoever builds it
-/obj/structure/simple_door/dungeon/Initialize(mapload,material_name)
-	. = ..(mapload, material_name || MAT_CULT)
+/obj/structure/simple_door/dungeon
+	material_name = MAT_CULT
 
 /obj/structure/simple_door/dungeon/locked
 	locked = TRUE

@@ -384,10 +384,9 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	var/wielded = 0
 	var/cooldown = 0
 
-// ALLOW(init/CTOR_ARGS): shield_gen is a constructor argument from whoever builds it
-/obj/item/gun/energy/gun/generator/Initialize(mapload, obj/item/personal_shield_generator/shield_gen)
+// ALLOW(init/INSTANCE_STATE): the generator's gun draws from its generator's cell, in place of the one its parents made
+/obj/item/gun/energy/gun/generator/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(linked_generator), shield_gen)
 	rel_set(src, nameof(power_supply), shield_generator()?.bcell)
 
 /obj/item/gun/energy/gun/generator/proc/can_use(mob/user, mob/M)
@@ -592,6 +591,7 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/security, "shieldpack_se
 // The generator gun runs off the generator's cell: a view, not an owned cell.
 CAPABILITIES(/obj/item/gun/energy/gun/generator)
 	ref_one(nameof(power_supply))
+	param(nameof(linked_generator), pos = 1)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/personal_shield_generator, \

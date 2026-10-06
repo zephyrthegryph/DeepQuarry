@@ -161,6 +161,9 @@ CAPABILITIES(/obj/item/shovel)
 	var/tmp/datum/material/material_static
 	resistance_flags = FLAMMABLE
 
+CAPABILITIES(/obj/item/shovel/wood)
+	param(nameof(shovel_material), pos = 1, apply = PROC_REF(carve))
+
 /// The material a shovel is carved from (its constructor param); a bare one (the survival recipe, a map, a test) is plain wood.
 /obj/item/shovel/wood/var/shovel_material = MAT_WOOD
 

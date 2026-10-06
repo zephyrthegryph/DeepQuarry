@@ -45,6 +45,9 @@ TYPE_TABLE(/obj/item/oar/sifwood, oar_forced_material, MAT_SIFWOOD)
 
 TYPE_TABLE_DECLARE(/obj/item/oar, oar_forced_material, null)
 
+CAPABILITIES(/obj/item/oar)
+	param(nameof(oar_material), pos = 1, apply = PROC_REF(carve))
+
 /// The material an oar is made of (its constructor param), or the type's forced one, or wood.
 /obj/item/oar/var/oar_material
 

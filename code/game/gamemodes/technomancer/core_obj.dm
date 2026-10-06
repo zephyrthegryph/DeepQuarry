@@ -142,19 +142,18 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 	var/obj/item/technomancer_core/core = null
 	var/ability_icon_state = null
 
-// ALLOW(init/CTOR_ARGS): path, new_name and new_icon_state are constructor arguments from whoever builds it
-/obj/spellbutton/Initialize(mapload, path, new_name, new_icon_state)
-	. = ..()
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A button belongs to the core it is made in.
+/obj/spellbutton/proc/join_core(icon_state_given)
 	rel_set(src, nameof(core), loc)
-	if(!path || !ispath(path) || !istype(core))
-		message_admins("ERROR: /obj/spellbutton/Initialize() was not given a proper path or not placed into the right location!")
-		return INITIALIZE_HINT_QDEL
-	src.name = new_name
-	src.spellpath = path
-	src.ability_icon_state = new_icon_state
+	if(!spellpath || !ispath(spellpath) || !istype(core))
+		message_admins("ERROR: /obj/spellbutton was not given a proper path or not placed into the right location!")
+		spent(src)
 
 CAPABILITIES(/obj/spellbutton)
 	click_on(PROC_REF(click_input))
+	param(nameof(spellpath), pos = 1)
+	param(nameof(name), pos = 2)
+	param(nameof(ability_icon_state), pos = 3, apply = PROC_REF(join_core))
 
 /// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
 /obj/spellbutton/proc/click_input(datum/act/input/A)

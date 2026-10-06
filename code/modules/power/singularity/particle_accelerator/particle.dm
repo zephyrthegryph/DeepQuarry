@@ -24,6 +24,7 @@
 CAPABILITIES(/obj/effect/accelerated_particle)
 	every(0.1 SECONDS, then(PROC_REF(move)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	param(nameof(dir), pos = 1, default = SOUTH)
 
 /obj/effect/accelerated_particle/weak
 	icon_state = "particle0"
@@ -40,10 +41,9 @@ CAPABILITIES(/obj/effect/accelerated_particle)
 	movement_range = 25
 	energy = 50
 
-// ALLOW(init/CTOR_ARGS): dir is a constructor argument from whoever builds it
-/obj/effect/accelerated_particle/Initialize(mapload, dir = 2)
+// ALLOW(init/INSTANCE_STATE): a particle starts moving the way it faces
+/obj/effect/accelerated_particle/Initialize(mapload)
 	. = ..()
-	set_dir(dir)
 	move()
 
 /obj/effect/accelerated_particle/Bump(atom/A)

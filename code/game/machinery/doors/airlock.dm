@@ -239,6 +239,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	op("remote_lights", remote(), gesture(GESTURE_MIDDLE), when(req(/mob/living/silicon/ai, of = ON_ACTOR)), label("Toggle the bolt lights"),
 		needs(req_wire(WIRE_BOLT_LIGHT, because = MSG(airlock/light_wire_cut))), toggles(nameof(lights)))
 	extend("remote_lights", needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)), req_window_usable(remote = PROC_REF(ai_control_allowed), remote_because = MSG(airlock/not_for_you))))
+	param(nameof(assembly_at_make), pos = 1, apply = PROC_REF(build_from_assembly), keep = FALSE)
 
 
 // ---- power ----
@@ -1061,22 +1062,30 @@ CAPABILITIES(/obj/machinery/door/airlock)
 /obj/machinery/door/airlock/can_pathfinding_enter(atom/movable/actor, dir, datum/pathfinding/search)
 	return ..() || (has_access(req_access, req_one_access, search.ss13_with_access) && !bolted && operable())
 
-// ALLOW(init/CTOR_ARGS): a door built from an assembly takes the assembly's electronics, access, name and facing (constructor arguments)
-/obj/machinery/door/airlock/Initialize(mapload, obj/structure/door_assembly/assembly = null)
-	if(istype(assembly))
-		assembly_type = assembly.type
-		var/obj/item/airlock_electronics/assembly_electronics = assembly.electronics
-		assembly_electronics.forceMove(src)
-		own_move(assembly_electronics, src, nameof(electronics)) // from the assembly to the door
-		secured_wires = electronics.secure
-		if(electronics.one_access)
-			req_access = null
-			req_one_access = electronics.conf_access
-		else
-			req_one_access = null
-			req_access = electronics.conf_access
-		name = assembly.created_name || "[istext(assembly.glass) ? "[assembly.glass] airlock" : assembly.base_name]"
-		set_dir(assembly.dir)
+/// The assembly a door is built from (its constructor param, dropped after init).
+/obj/machinery/door/airlock/var/tmp/obj/structure/door_assembly/assembly_at_make
+
+/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A door built from an assembly takes its electronics,
+/// access, name and facing.
+/obj/machinery/door/airlock/proc/build_from_assembly(obj/structure/door_assembly/assembly)
+	if(!istype(assembly))
+		return
+	assembly_type = assembly.type
+	var/obj/item/airlock_electronics/assembly_electronics = assembly.electronics
+	assembly_electronics.forceMove(src)
+	own_move(assembly_electronics, src, nameof(electronics)) // from the assembly to the door
+	secured_wires = electronics.secure
+	if(electronics.one_access)
+		req_access = null
+		req_one_access = electronics.conf_access
+	else
+		req_one_access = null
+		req_access = electronics.conf_access
+	name = assembly.created_name || "[istext(assembly.glass) ? "[assembly.glass] airlock" : assembly.base_name]"
+	set_dir(assembly.dir)
+
+// ALLOW(init/INSTANCE_STATE): a door on an admin level has secure wires, and every airlock joins its close group and tunes its radio
+/obj/machinery/door/airlock/Initialize(mapload)
 	// A door on an admin level gets the secure wires (wire_count(), wires_randomized()), made on first use.
 	var/turf/T = get_turf(src)
 	if(T && (T.z in using_map.admin_levels))
