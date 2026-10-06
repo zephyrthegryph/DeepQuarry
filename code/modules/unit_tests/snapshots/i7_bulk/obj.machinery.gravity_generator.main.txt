@@ -1,5 +1,4 @@
-/obj/machinery/gravity_generator/main|human|none => machine_open_ui|gravity_main_add_plasteel:needs a plasteel
-/obj/machinery/gravity_generator/main|robot|none => machine_open_ui|gen_robot_interaction_swallow:not possible right now,gravity_main_add_plasteel:needs a plasteel
+/obj/machinery/gravity_generator/main|human|none => |
+/obj/machinery/gravity_generator/main|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/gravity_generator/main|ai|none => |
 /obj/machinery/gravity_generator/main|ghost|none => |
-/obj/machinery/gravity_generator/main|human|/obj/item/stack/material/plasteel => machine_open_ui|gravity_main_add_plasteel:not possible right now

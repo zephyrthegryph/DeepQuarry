@@ -1899,6 +1899,12 @@ Pinned by `dq_pp/solar_output` (cos^2 exposure, nothing past 90 degrees, obscure
   empty hand; it was a legacy "Use"); the assembly's wrench, glass (two sheets of either glass), tracker electronics and crowbar. Looks are
   `draw()` (the panel's facing is `look.set_dir()`, not a write from the appearance proc). Relations are declared (`ref_one`/`ref_many`).
 
+## Power plants: the power monitoring console (rewrite/power-plants, b266f960a0)
+
+- Its legacy "Use" hand interaction (`power_monitor_use`) is the `use` op: an empty hand on an operable console opens its monitor window, as
+  before (the i7 interaction snapshot lost the legacy row; recorded here after the fact). It checks its sensors on `every(MACHINE_SERVICE_INTERVAL)`
+  instead of sleeping on their grid keys.
+
 ## Power plants: the gas turbine (rewrite/power-plants)
 
 Pinned by `dq_pp/turbine_output_curve` and `compressor_spin_up` (((rpm / 100000) ^ 0.8) * 100000 * productivity W; a tenth of the way to the

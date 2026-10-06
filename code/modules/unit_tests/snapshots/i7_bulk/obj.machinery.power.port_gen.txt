@@ -1,5 +1,5 @@
-/obj/machinery/power/port_gen|human|none => port_gen_touch|power_cable_place:needs a cable coil
-/obj/machinery/power/port_gen|robot|none => port_gen_touch|gen_robot_interaction_swallow:not possible right now,power_cable_place:needs a cable coil
+/obj/machinery/power/port_gen|human|none => |power_cable_place:needs a cable coil
+/obj/machinery/power/port_gen|robot|none => |gen_robot_interaction_swallow:not possible right now,power_cable_place:needs a cable coil
 /obj/machinery/power/port_gen|ai|none => |
 /obj/machinery/power/port_gen|ghost|none => |
-/obj/machinery/power/port_gen|human|/obj/item/stack/cable_coil => port_gen_touch,power_cable_place|
+/obj/machinery/power/port_gen|human|/obj/item/stack/cable_coil => power_cable_place|
