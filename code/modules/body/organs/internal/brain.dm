@@ -127,7 +127,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 
 /obj/item/organ/internal/brain/proc/replace_self_with(replace_path)
 	var/mob/living/carbon/human/tmp_owner = owner
-	spent(src)
+	replaced_by(src)
 	if(tmp_owner)
 		new replace_path(tmp_owner, 1) // takes the freed brain slot
 		tmp_owner = null
@@ -270,7 +270,7 @@ CAPABILITIES(/obj/item/organ/internal/brain/slime)
 	for(var/obj/item/organ/external/E in H.organs) //They've still gotta congeal, but it's faster than the clone sickness they'd normally get.
 		if(E && E.organ_tag == BP_L_ARM || E.organ_tag == BP_R_ARM || E.organ_tag == BP_L_LEG || E.organ_tag == BP_R_LEG)
 			E.removed()
-			spent(E)
+			dissolved(E) // the limb melts away to regrow
 			E = null
 	H.regenerate_icons()
 	host.release_mind(H, "promethean core revival")

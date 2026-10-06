@@ -14,11 +14,7 @@
 	/// Afflictions carried while this organ is outside a body.
 	var/list/detached_afflictions
 
-CAPABILITIES(/obj/item/organ)
-	reagents(5)
-	loose_organ_clock()
-	owns_many(nameof(detached_afflictions))
-	owns_many(nameof(autopsy_data))
+// The organ's CAPABILITIES block (organ.dm) runs its loose clock and owns its detached afflictions.
 
 /obj/item/organ/external
 	/// Cached sum of non-internal physical wound damage. Read via get_trauma().
