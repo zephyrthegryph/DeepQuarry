@@ -66,7 +66,7 @@ CAPABILITIES(/obj/item/organ/internal/kidneys/grey/colormatch)
 		var/mob/living/carbon/human/H = owner
 		color = H.species.blood_color
 
-// MED-6: when this organ's periodic_step() has nothing to do (see /obj/item/organ/proc/life_step_idle()).
+// When this organ's organ_tick() has nothing to do: the organ clock may park (/obj/item/organ/proc/life_step_idle()).
 /obj/item/organ/internal/kidneys/life_step_idle()
 	if(!..())
 		return FALSE

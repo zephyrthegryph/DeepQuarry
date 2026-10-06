@@ -77,7 +77,7 @@ CAPABILITIES(/obj/item/organ/internal/lungs/grey/colormatch)
 	name = "Erik's lungs"
 	desc = "These lungs supposedly belonged to someone named 'Erik', he loses them so often they've been displayed here for whenever they might be needed."
 
-// MED-6: when this organ's periodic_step() has nothing to do (see /obj/item/organ/proc/life_step_idle()).
+// When this organ's organ_tick() has nothing to do: the organ clock may park (/obj/item/organ/proc/life_step_idle()).
 /obj/item/organ/internal/lungs/life_step_idle()
 	if(!..())
 		return FALSE

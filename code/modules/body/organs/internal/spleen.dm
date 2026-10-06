@@ -79,7 +79,7 @@
 	. = ..()
 	adjust_scale(0.7)
 
-// MED-6: when this organ's periodic_step() has nothing to do (see /obj/item/organ/proc/life_step_idle()).
+// When this organ's organ_tick() has nothing to do: the organ clock may park (/obj/item/organ/proc/life_step_idle()).
 /obj/item/organ/internal/spleen/life_step_idle()
 	if(!..())
 		return FALSE

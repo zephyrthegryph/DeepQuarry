@@ -318,7 +318,7 @@ TYPE_TABLE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple/medical
 
 TYPE_TABLE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple/medical, synth_types, list(/datum/matter_synth/bandage))
 
-// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+// This organ has work every organ_tick(), so the body's organ clock stays running for it.
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/life_step_idle()
 	return FALSE
 

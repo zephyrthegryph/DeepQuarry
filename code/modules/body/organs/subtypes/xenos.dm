@@ -226,7 +226,7 @@ CAPABILITIES(/obj/item/organ/internal/xenos/resinspinner/grey/colormatch)
 	cannot_amputate = 1
 	eye_icon = "blank_eyes"
 
-// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+// This organ has work every organ_tick(), so the body's organ clock stays running for it.
 /obj/item/organ/internal/xenos/plasmavessel/life_step_idle()
 	return FALSE
 

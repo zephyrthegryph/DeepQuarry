@@ -240,7 +240,7 @@
 		if(prob(5)) //1/20 on a 1/4 chance. 1/80 chance every 10 ticks.
 			owner.say(pick("; Accept our gift.", "; Become one with us.", "; Join our embrace.", "; Come to us.", "; We welcome all that can hear.", "; You can be just like us."))
 
-// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+// This organ has work every organ_tick(), so the body's organ clock stays running for it.
 /obj/item/organ/internal/appendix/horror/life_step_idle()
 	return FALSE
 
