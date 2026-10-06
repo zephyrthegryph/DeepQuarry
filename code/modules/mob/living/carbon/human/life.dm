@@ -230,8 +230,12 @@
 	else
 		return species.safe_pressure + pressure_difference
 
+/// The base hold work, or brain damage enough for its random fits (below 5 none of them can happen). Injuries wake the step (body invalidate):
+/// always TRUE here made every human's step "have work" while its sequence slept it, a missed wake in the life audit.
 /mob/living/carbon/human/life_disabilities_due()
-	return TRUE
+	if(..())
+		return TRUE
+	return stat == CONSCIOUS && !isbelly(loc) && injury_load(INJURY_CATEGORY_NEURAL) >= 5
 
 /mob/living/carbon/human/life_disabilities(datum/seq_frame/life/F)
 	..()
