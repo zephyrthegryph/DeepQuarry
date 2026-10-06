@@ -252,9 +252,15 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appe
 	selecting_appearance = mutable_appearance('icons/mob/zone_sel.dmi', "[selecting]")
 	. += selecting_appearance
 
-/atom/movable/screen/Click(location, control, params)
-	..() // why the FUCK was this not called before
-	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): BYOND screen Click supplies the clicking mob through usr at this native boundary
+CAPABILITIES(/atom/movable/screen)
+	click_on(PROC_REF(screen_click_input))
+
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm). The click goes to the clicker's
+/// input inbox as any atom's does (/atom/Click()), then the named HUD controls act on it.
+/atom/movable/screen/proc/screen_click_input(datum/act/input/A)
+	input_submit(new /datum/input_event/click(A.actor, src, A.native["location"], A.native["control"], A.params))
+	click_with_actor(A.actor, A.native["location"], A.native["control"], A.params)
+	return TRUE
 
 /// The named HUD controls act on the mob supplied by their native click boundary.
 /atom/movable/screen/proc/click_with_actor(mob/user, location, control, params)
@@ -756,10 +762,13 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/inventory/hand, TYPE_PROC_REF(/atom
 
 CAPABILITIES(/atom/movable/screen/component_button)
 	param(nameof(parent), pos = 1)
+	click_on(PROC_REF(click_input))
 
-/atom/movable/screen/component_button/Click(params)
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/component_button/proc/click_input(datum/act/input/A)
 	if(parent())
-		parent().component_click(src, params, usr) // ALLOW(sys_usr_outside_verb): native HUD component Click supplies the initiating actor to its parent callback
+		parent().component_click(src, A.native["location"], A.actor)
+	return TRUE
 
 // Character setup stuff
 /atom/movable/screen/setup_preview

@@ -182,12 +182,14 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 	. += ability_icon_state
 
 
-/atom/movable/screen/ability/Click()
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native ability clicking supplies the initiating actor before its unchanged no-parent dispatch.
-	if(!user)
-		return
+CAPABILITIES(/atom/movable/screen/ability)
+	click_on(PROC_REF(click_input))
 
-	activate_with_actor(user)
+/// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
+/atom/movable/screen/ability/proc/click_input(datum/act/input/A)
+	if(A.actor)
+		activate_with_actor(A.actor)
+	return TRUE
 
 /atom/movable/screen/ability/MouseDrop(atom/A)
 	if(!A || A == src)

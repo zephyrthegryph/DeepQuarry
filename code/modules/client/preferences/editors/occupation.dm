@@ -123,22 +123,19 @@
 		"alt_titles_by_job" = alt_titles_by_job,
 	)
 
-UI_ACT(/datum/preference_editor/occupation, "set_priority", ui_act_set_priority, UI_ARG_VALUE("job"), UI_ARG_VALUE("priority"))
-UI_ACT_PREF_PROC(/datum/preference_editor/occupation, ui_act_set_priority)
+/datum/preference_editor/occupation/proc/ui_act_set_priority(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/title = params["job"]
 	var/priority = params["priority"]
 	return set_priority(preferences, title, priority)
 
-UI_ACT(/datum/preference_editor/occupation, "set_alternate_option", ui_act_set_alternate_option, UI_ARG_NUM("value"))
-UI_ACT_PREF_PROC(/datum/preference_editor/occupation, ui_act_set_alternate_option)
+/datum/preference_editor/occupation/proc/ui_act_set_alternate_option(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/value = params["value"]
 	if(isnull(value) || value < 0 || value > 2)
 		return PREF_UPDATE_REJECTED
 	preferences.update_preference_by_type(/datum/preference/numeric/human/alternate_option, value)
 	return PREF_UPDATE_ACCEPTED
 
-UI_ACT(/datum/preference_editor/occupation, "set_alt_title", ui_act_set_alt_title, UI_ARG_VALUE("alt"), UI_ARG_VALUE("job"))
-UI_ACT_PREF_PROC(/datum/preference_editor/occupation, ui_act_set_alt_title)
+/datum/preference_editor/occupation/proc/ui_act_set_alt_title(mob/user, list/params, datum/preferences/preferences, datum/tgui_state/state, action)
 	var/title = params["job"]
 	var/alt = params["alt"]
 	if(!title)
@@ -175,3 +172,27 @@ UI_ACT_PREF_PROC(/datum/preference_editor/occupation, ui_act_set_alt_title)
 	if(preferences.set_job_priority(title, priority))
 		return PREF_UPDATE_ACCEPTED
 	return PREF_UPDATE_UNCHANGED
+
+/// /datum/preference_editor/occupation's actions (the character setup window's "dq_editor_action" messages): each one's arguments go through their schemas first.
+/datum/preference_editor/occupation/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+	var/list/typed
+	switch(action)
+		if("set_priority")
+			typed = payload_args(src, params, list("job" = null, "priority" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_priority(user, typed, preferences, null, action)
+		if("set_alternate_option")
+			typed = payload_args(src, params, list("value" = num()))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_alternate_option(user, typed, preferences, null, action)
+		if("set_alt_title")
+			typed = payload_args(src, params, list("alt" = null, "job" = null))
+			if(!typed)
+				return PREF_UPDATE_REJECTED
+			before_action(preferences, user, action)
+			return ui_act_set_alt_title(user, typed, preferences, null, action)
+	return ..()
