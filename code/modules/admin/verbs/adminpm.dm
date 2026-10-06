@@ -140,7 +140,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 		return
 
 	//clean the message if it's not sent by a high-rank admin
-	if(!check_rights(R_SERVER|R_DEBUG, FALSE))//no sending html to the poor bots
+	if(!admin_require(src, R_SERVER|R_DEBUG, "cmd_admin_pm", FALSE))//no sending html to the poor bots
 		msg = trim(sanitize(copytext(msg,1,MAX_MESSAGE_LEN)))
 	if(!msg)
 		return

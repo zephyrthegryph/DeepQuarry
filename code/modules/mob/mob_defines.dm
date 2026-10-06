@@ -297,6 +297,7 @@ CAPABILITIES(/mob)
 	ref_one(nameof(spont_belly_left))
 	ref_one(nameof(spont_belly_right))
 	ref_one(nameof(previewing_belly))
+	hover(PROC_REF(hover_input))
 
 
 /mob

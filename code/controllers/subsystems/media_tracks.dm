@@ -225,7 +225,7 @@ SYSTEM_DEF(media_tracks)
 	to_chat(user, span_warning("Couldn't find a track matching the specified parameters."))
 
 /datum/system/media_tracks/proc/add_track(mob/user, new_url, new_title, new_duration, new_artist, new_genre, new_secret, new_lobby)
-	if(!check_rights(R_DEBUG|R_FUN))
+	if(!admin_require(user.client, R_DEBUG|R_FUN, "add_track", TRUE))
 		return
 	var/datum/track/T = new(new_url, new_title, new_duration, new_artist, new_genre, new_secret, new_lobby)
 	all_tracks += T
@@ -234,7 +234,7 @@ SYSTEM_DEF(media_tracks)
 	return
 
 /datum/system/media_tracks/proc/remove_track(mob/user, datum/track/T)
-	if(!check_rights(R_DEBUG|R_FUN))
+	if(!admin_require(user.client, R_DEBUG|R_FUN, "remove_track", TRUE))
 		return
 
 	if(!T)

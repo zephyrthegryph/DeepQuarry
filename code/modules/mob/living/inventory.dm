@@ -180,10 +180,11 @@ READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 	return 0
 
 // This handles the drag-open inventory panel.
-/mob/living/MouseDrop(atom/over_object)
-	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native inventory dragging supplies the initiating actor before the unchanged parent fallback.
-	if(!inventory_drop_with_actor(user, over_object))
-		. = ..()
+/// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). A mob dragged onto its dragger shows them its inventory.
+/mob/living/proc/drop_input(datum/act/input/A)
+	if(inventory_drop_with_actor(A.actor, A.over))
+		return TRUE
+	return INPUT_FALLTHROUGH
 
 /mob/living/proc/inventory_drop_with_actor(mob/user, atom/over_object)
 	var/mob/living/L = over_object

@@ -22,7 +22,7 @@
 		to_chat(src, span_danger("You have deadchat muted."))
 		return
 
-	if(!check_rights(R_HOLDER, FALSE))
+	if(!admin_require(client, R_HOLDER, "emote_dead", FALSE))
 		if(!CONFIG_GET(flag/dsay_allowed))
 			to_chat(src, span_danger("Deadchat is globally muted."))
 			return
