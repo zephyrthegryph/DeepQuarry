@@ -5,6 +5,16 @@
 
 CAPABILITIES(/obj/item/organ/external/stump)
 	param(nameof(stump_of), pos = 2, keep = FALSE)
+	// A stump is the place a limb was on a body: once it has joined one, it lives while it is attached (removed, it ends).
+	lives_while(cond_any(cond_not(nameof(stump_joined)), nameof(owner)), watches = list(nameof(owner), nameof(stump_joined)))
+
+/// TRUE once the stump has joined a body.
+/obj/item/organ/external/stump/var/stump_joined = FALSE
+TRACKED(/obj/item/organ/external/stump, stump_joined)
+
+/obj/item/organ/external/stump/joined_body(mob/living/M)
+	. = ..()
+	set_stump_joined(TRUE)
 
 /// The limb the stump replaces (its constructor param, dropped after init).
 /obj/item/organ/external/stump/var/tmp/obj/item/organ/external/stump_of
@@ -26,10 +36,6 @@ CAPABILITIES(/obj/item/organ/external/stump)
 
 /obj/item/organ/external/stump/is_stump()
 	return 1
-
-/obj/item/organ/external/stump/removed()
-	..()
-	spent(src)
 
 /obj/item/organ/external/stump/is_usable()
 	return 0

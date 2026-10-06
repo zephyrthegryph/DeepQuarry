@@ -40,17 +40,22 @@
 	var/butcherable = TRUE
 	var/meat_type	// What does butchering, if possible, make?
 
-	///Var for attack_self chain
-	var/special_handling = FALSE
 
-/// Organ condition bits (ORGAN_DEAD, ORGAN_BROKEN, ...). Plain OM_FIELD: OM_FLAG_FIELD would generate has_status(), which /datum already owns (status effects).
-OM_FIELD(/obj/item/organ, status, 0, CHANGE_EXPLICIT)
-/// Current damage to the organ.
-OM_FIELD(/obj/item/organ, damage, 0, CHANGE_EXPLICIT)
-/// Damage cap.
-OM_FIELD(/obj/item/organ, max_damage, null, CHANGE_EXPLICIT)
-/// ORGAN_FLESH / ORGAN_ASSISTED / ORGAN_ROBOT / ...
-OM_FIELD(/obj/item/organ, robotic, 0, CHANGE_EXPLICIT)
+/obj/item/organ
+	/// Organ condition bits (ORGAN_DEAD, ORGAN_BROKEN, ...).
+	var/status = 0
+	/// Current damage to the organ.
+	var/damage = 0
+	/// Damage cap.
+	var/max_damage = null
+	/// ORGAN_FLESH / ORGAN_ASSISTED / ORGAN_ROBOT / ...
+	var/robotic = 0
+
+// The organ's state is tracked: written through set_status(), set_damage(), set_max_damage() and set_robotic(), which publish the write.
+TRACKED(/obj/item/organ, status)
+TRACKED(/obj/item/organ, damage)
+TRACKED(/obj/item/organ, max_damage)
+TRACKED(/obj/item/organ, robotic)
 
 
 // afflictions on the organ are cured; organ mods removed.
@@ -562,51 +567,62 @@ DAMAGE_REACTION(/obj/item/organ, DAMAGE_EMP, PROC_REF(organ_emp))
 	user.put_in_active_hand(O)
 	consume(src, user)
 
-/// Old attack_self: bite the organ. Virtual: external limbs override it and call ..() with
-/// `callback` TRUE once they've handled their own contents (special_handling otherwise falls through).
-/obj/item/organ/proc/organ_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
-	if(special_handling && !callback)
-		return FALSE
+MSG_DEF(organ/butcher_begin, span_danger("You are preparing to butcher %T%!"), span_danger("%U% prepares to butcher %T%!"))
 
-	// Convert it to an edible form, yum yum.
-	if(!(is_robotic()) && interaction.stance == I_HELP && user.zone_sel.selecting == O_MOUTH)
-		bitten(user)
-		return TRUE
-	return FALSE
+// An organ in hand: bitten (outside combat, aiming at the mouth); an organ on the table: butchered with a blade (a screwdriver for a robotic
+// one) or revived with peridaxon.
+CAPABILITIES(/obj/item/organ)
+	loose_organ_clock()
+	owns_many(nameof(detached_afflictions))
+	owns_many(nameof(autopsy_data))
+	op("bite", in_hand(), stance(I_HELP), label("Bite"), when(PROC_REF(bite_offered)), then(PROC_REF(bite_op)))
+	op("butcher", item(/obj/item), label("Butcher"), priority(above("revive")), when(PROC_REF(butcher_offered)), begins(MSG(organ/butcher_begin)), wait(PROC_REF(butcher_wait)), on_interrupt(PROC_REF(butcher_failed)), then(PROC_REF(butcher_op_done)))
+	op("revive", item(/obj/item/reagent_containers), label("Revive"), when(PROC_REF(revive_offered)), then(PROC_REF(revive_op)))
 
-// One self-use per stance: outside combat mode (aiming at the mouth) it bites; external limbs
-// pull out embedded objects in any stance (their organ_self override).
-DECLARE_INTERACTIONS(/obj/item/organ, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_SELF_AS(I_HELP, "Bite", PROC_REF(organ_self)), \
-	INTERACT_SELF_AS(I_DISARM, null, PROC_REF(organ_self)), \
-	INTERACT_SELF_AS(I_GRAB, null, PROC_REF(organ_self)), \
-	INTERACT_SELF_AS(I_HURT, null, PROC_REF(organ_self)), \
-)
+/// The organ can be bitten: flesh, and the eater aims at the mouth.
+/obj/item/organ/proc/bite_offered(datum/act/op/A)
+	var/mob/user = A.actor
+	return !is_robotic() && user?.zone_sel?.selecting == O_MOUTH
 
-/// Old attackby.
-/obj/item/organ/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(can_butcher(W, user))
-		butcher(W, user)
-		return INTERACTION_HANDLED_PASS
+/obj/item/organ/proc/bite_op(datum/act/op/A)
+	bitten(A.actor)
 
-	var/obj/item/reagent_containers/container = W
-	if(istype(container))
-		if(container.reagents.has_reagent(REAGENT_ID_PERIDAXON, 5))
-			if(is_beyond_repair())
-				to_chat(user, span_warning("\The [src] is dead beyond any revival."))
-				return INTERACTION_HANDLED_PASS
-			set_status(status & ~ORGAN_DEAD)
-			var/obj/item/organ/internal/internal_organ = src
-			if(istype(internal_organ))
-				internal_organ.restore_lesions(1)
-			else
-				set_damage(damage - 1)
-			//Fix JUST enough damage so it doesn't immediately die again. For full repair, use denec removal surgery.
-			container.reagents.remove_reagent(REAGENT_ID_PERIDAXON, 5)
-			to_chat(user, "You use the [container] to revive \the [src]")
-			return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/item/organ/proc/butcher_offered(datum/act/op/A)
+	return can_butcher(A.held, A.actor)
+
+/// Ten seconds, by the tool's speed.
+/obj/item/organ/proc/butcher_wait(datum/act/op/A)
+	var/obj/item/O = A.held
+	return 10 SECONDS * (O?.toolspeed || 1)
+
+/obj/item/organ/proc/butcher_failed(datum/act/op/A)
+	var/mob/living/user = A.actor
+	to_chat(user, span_notice("You reconsider butchering 	he [src]..."))
+	act_message(user, src, others = span_notice("%U% reconsiders butchering %T%!"))
+
+/obj/item/organ/proc/butcher_op_done(datum/act/op/A)
+	butcher_done(A.actor)
+
+/// Peridaxon (5 units) in the held container.
+/obj/item/organ/proc/revive_offered(datum/act/op/A)
+	var/obj/item/reagent_containers/container = A.held
+	return istype(container) && container.reagents?.has_reagent(REAGENT_ID_PERIDAXON, 5)
+
+/obj/item/organ/proc/revive_op(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/container = A.held
+	if(is_beyond_repair())
+		to_chat(user, span_warning("\The [src] is dead beyond any revival."))
+		return
+	set_status(status & ~ORGAN_DEAD)
+	var/obj/item/organ/internal/internal_organ = src
+	if(istype(internal_organ))
+		internal_organ.restore_lesions(1)
+	else
+		set_damage(damage - 1)
+	//Fix JUST enough damage so it doesn't immediately die again. For full repair, use denec removal surgery.
+	container.reagents.remove_reagent(REAGENT_ID_PERIDAXON, 5)
+	to_chat(user, "You use the [container] to revive 	he [src]")
 
 /obj/item/organ/proc/can_butcher(obj/item/O, mob/living/user)
 	if(butcherable && meat_type)
@@ -624,31 +640,9 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 
 	return FALSE
 
-/// Butchers the organ into meat. With a user it's a timed action (TRUE if it started) that
-/// butchers on completion; without one it happens at once.
+/// Butchers the organ into meat at once (a person butchers through the "butcher" op, which waits); the meat goes to `newtarget`.
 /obj/item/organ/proc/butcher(obj/item/O, mob/living/user, atom/newtarget)
-
-	if(user)
-		to_chat(user, span_danger("You are preparing to butcher \the [src]!"))
-		act_message(user, src, others = span_danger("%U% prepares to butcher %T%!"))
-		//They can queue this up on multiple organs.
-		var/started = om_task_start(/datum/om/task/timed/organ_butcher, user, src, duration = 10 SECONDS * O.toolspeed, receiver = src, meat_dest = newtarget)
-		return !istext(started)
-	return butcher_done(null, newtarget)
-
-/// Butchering an organ by hand; the meat goes to `meat_dest` (default: the organ's turf).
-/datum/om/task/timed/organ_butcher
-	complete_proc = /obj/item/organ/proc/butcher_task_done
-	cancel_proc = /obj/item/organ/proc/butcher_failed
-	var/atom/meat_dest
-
-/obj/item/organ/proc/butcher_task_done(datum/om/task/timed/organ_butcher/task)
-	butcher_done(task.actor, task.meat_dest)
-
-/obj/item/organ/proc/butcher_failed(datum/om/task/timed/organ_butcher/task)
-	var/mob/living/user = task.actor
-	to_chat(user, span_notice("You reconsider butchering \the [src]..."))
-	act_message(user, src, others = span_notice("%U% reconsiders butchering %T%!"))
+	return butcher_done(user, newtarget)
 
 /obj/item/organ/proc/butcher_done(mob/living/user, atom/newtarget)
 	if(user)

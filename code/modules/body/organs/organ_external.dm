@@ -92,7 +92,6 @@
 	// HUD element variable, see organ_icon.dm get_damage_hud_image()
 	var/image/hud_damage_image
 
-	special_handling = TRUE
 
 // child limbs and internal organs go with it; it leaves its owner's organ tables.
 /obj/item/organ/external/on_destroy(force)
@@ -189,26 +188,118 @@
 		else
 			apply_wound_damage(0, scorch_damage)
 
-/// Old attack_self (virtual: /obj/item/organ/proc/organ_self()): rip out embedded objects, then the organ's own self-use.
-/obj/item/organ/external/organ_self(mob/living/user, obj/item/held, datum/interaction/interaction, callback)
-	if(!contents_count(src))
-		return ..(user, held, interaction, TRUE)
-	var/list/removable_objects = list()
+// A limb in hand: what is stuck in it (or in the limbs attached to it) is pulled out first, one thing a use, in any stance, before it
+// can be bitten. A limb on the table: the old bench surgery, one tool per stage.
+CAPABILITIES(/obj/item/organ/external)
+	after_init(0, then(PROC_REF(icon_after_init)))
+	owns_one(nameof(tourniquet))
+	owns_one(nameof(nail_polish), /datum/nail_polish)
+	op("pull_embedded", in_hand(), label("Pull out"), priority(above("bite")), when(PROC_REF(has_embedded)), then(PROC_REF(pull_embedded)))
+	op("bench_incise", item(/obj/item/surgical/scalpel), label("Cut open"), when(PROC_REF(at_stage_0)), then(PROC_REF(bench_incise)))
+	op("bench_retract", item(/obj/item/surgical/retractor), label("Crack open"), when(PROC_REF(at_stage_1)), then(PROC_REF(bench_retract)))
+	op("bench_cauterize", item(/obj/item/surgical/cautery), label("Close"), when(PROC_REF(at_stage_1)), then(PROC_REF(bench_cauterize)))
+	op("bench_extract", item(/obj/item/surgical/hemostat), label("Extract"), when(PROC_REF(at_stage_2)),
+		asks(/datum/prompt/choice, fields = list("question" = "What would you like to remove?", "title" = "Extraction", "choices" = computed(PROC_REF(extraction_names)), "timeout" = 20 SECONDS),
+			step = "extract", when = PROC_REF(has_contents)),
+		then(PROC_REF(bench_extract)))
+	op("bench_fixovein", item(/obj/item/surgical/FixOVein), label("Partially close"), when(PROC_REF(at_stage_2)), then(PROC_REF(bench_fixovein)))
+	op("bench_necrosis", item(/obj/item/surgical/scalpel), label("Cut necrotic tissue"), priority(above("bench_incise")), when(PROC_REF(at_stage_2)), then(PROC_REF(bench_necrosis)))
+	op("bench_rejuvenate", item(/obj/item/surgical/bioregen), label("Rejuvenate"), when(PROC_REF(at_stage_3)), then(PROC_REF(bench_rejuvenate)))
+	// A patch on a robotic limb takes a second with the tool in hand; the welder or the cable says what it patches (robo_repair()).
+	op("robo_repair", ai(), wait(1 SECOND, keeps = HELD | ALIVE | STAY), on_interrupt(PROC_REF(robo_repair_failed)), then(PROC_REF(robo_repair_done)))
+
+/// What can be pulled out of this limb and the limbs attached to it: anything but organs.
+/obj/item/organ/external/proc/embedded_objects()
+	. = list()
 	for(var/obj/item/organ/external/E in (contents + src))
-		if(!istype(E))
-			continue
 		for(var/obj/item/I in contents_of(E))
 			if(istype(I,/obj/item/organ))
 				continue
-			removable_objects |= I
-	if(removable_objects.len)
-		var/obj/item/I = pick(removable_objects)
-		I.forceMove(get_turf(user)) //just in case something was embedded that is not an item
-		if(istype(I))
-			user.put_in_hands(I)
-		act_message(user, src, others = span_danger("%U% rips %I% out of %T%!"), item = I)
-		return TRUE //no eating the limb until everything's been removed
-	return ..(user, held, interaction, TRUE)
+			. |= I
+
+/obj/item/organ/external/proc/has_embedded(datum/act/op/A)
+	return length(embedded_objects()) > 0
+
+/obj/item/organ/external/proc/pull_embedded(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/list/removable_objects = embedded_objects()
+	if(!length(removable_objects))
+		return
+	var/obj/item/I = pick(removable_objects)
+	I.forceMove(get_turf(user)) //just in case something was embedded that is not an item
+	if(istype(I))
+		user.put_in_hands(I)
+	act_message(user, src, others = span_danger("%U% rips %I% out of %T%!"), item = I)
+
+/obj/item/organ/external/proc/at_stage_0(datum/act/op/A)
+	return stage == 0
+/obj/item/organ/external/proc/at_stage_1(datum/act/op/A)
+	return stage == 1
+/obj/item/organ/external/proc/at_stage_2(datum/act/op/A)
+	return stage == 2
+/obj/item/organ/external/proc/at_stage_3(datum/act/op/A)
+	return stage == 3
+
+/obj/item/organ/external/proc/bench_incise(datum/act/op/A)
+	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " cuts %T% open with [A.held]!"))
+	stage++
+
+/obj/item/organ/external/proc/bench_retract(datum/act/op/A)
+	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " cracks %T% open like an egg with [A.held]!"))
+	stage++
+
+/obj/item/organ/external/proc/bench_cauterize(datum/act/op/A)
+	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " closes %T% with [A.held]!"))
+	stage--
+
+/obj/item/organ/external/proc/has_contents(datum/act/op/A)
+	return LAZYLEN(contents) > 0
+
+/// The things in the limb, by a name each (a repeated name gets its place in the list).
+/obj/item/organ/external/proc/extraction_choices()
+	. = list()
+	for(var/atom/movable/thing as anything in contents)
+		var/label = "[thing.name]"
+		if(.[label])
+			label = "[thing.name] ([length(.) + 1])"
+		.[label] = thing
+
+/obj/item/organ/external/proc/extraction_names(datum/act/op/A)
+	. = list()
+	for(var/label in extraction_choices())
+		. += label
+
+/obj/item/organ/external/proc/bench_extract(datum/act/op/A)
+	var/mob/living/user = A.actor
+	if(!LAZYLEN(contents))
+		act_message(user, src, others = span_danger(span_bold("%U%") + " fishes around fruitlessly in %T% with [A.held]."))
+		return
+	var/obj/item/removing = extraction_choices()[A.step_value("extract")]
+	if(!removing || removing.loc != src || !Adjacent(user)) //Didn't select anything or selected something that was already removed OR we walked away.
+		act_message(user, src, others = span_danger(span_bold("%U%") + " decides against removing anything from %T%"))
+		return
+	removing.forceMove(get_turf(user.loc))
+	user.put_in_hands(removing)
+	act_message(user, src, others = span_danger(span_bold("%U%") + " extracts [removing] from %T% with [A.held]!"))
+
+/obj/item/organ/external/proc/bench_fixovein(datum/act/op/A)
+	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " partially closes %T% with [A.held]!"))
+	stage--
+
+//Begin necrosis surgery
+/obj/item/organ/external/proc/bench_necrosis(datum/act/op/A)
+	if(!(status & ORGAN_DEAD))
+		to_chat(A.actor, span_notice("The limb isn't necrotic, there's no need to fix it!"))
+		return
+	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " cuts necrotic tissue off %T% with [A.held]!"))
+	stage++
+
+/obj/item/organ/external/proc/bench_rejuvenate(datum/act/op/A)
+	act_message(A.actor, src, others = span_danger(span_bold("%U%") + " rejuvinates formerly necrotic tissue on %T% with [A.held]!"))
+	germ_level = 0
+	set_status(status & ~ORGAN_DEAD)
+	clear_necrosis() // the dead-tissue afflictions go too (audit D12)
+	stage-- //Go back to stage 2
 
 /obj/item/organ/external/get_mechanics_info(list/additional_information)
 	if(!additional_information)
@@ -270,64 +361,6 @@
 				if(2)
 					. += span_danger("The [name] is cut open and the skin retracted.")
 
-EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(external_interaction_item)))
-
-/// Old attackby.
-/obj/item/organ/external/proc/external_interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction, obj/item/extraction_answer, extraction_answered = FALSE)
-	switch(stage)
-		if(0)
-			if(istype(W,/obj/item/surgical/scalpel))
-				act_message(user, src, others = span_danger(span_bold("%U%") + " cuts %T% open with [W]!"))
-				stage++
-				return INTERACTION_HANDLED_PASS
-		if(1)
-			if(istype(W,/obj/item/surgical/retractor))
-				act_message(user, src, others = span_danger(span_bold("%U%") + " cracks %T% open like an egg with [W]!"))
-				stage++
-				return INTERACTION_HANDLED_PASS
-			if(istype(W,/obj/item/surgical/cautery))
-				act_message(user, src, others = span_danger(span_bold("%U%") + " closes %T% with [W]!"))
-				stage--
-				return INTERACTION_HANDLED_PASS
-		if(2)
-			if(istype(W,/obj/item/surgical/hemostat))
-				if(LAZYLEN(contents))
-					if(!extraction_answered)
-						open_request(src, /datum/prompt/choice/organ_extraction, PROC_REF(extraction_selected), answerer = user, captured_item = W, captured_interaction = interaction, item_expected = !isnull(W), interaction_expected = !isnull(interaction), question = "What would you like to remove?", title = "Extraction", choices = contents, timeout = 20 SECONDS)
-						return TRUE
-					var/obj/item/removing = extraction_answer
-					if(isnull(removing))
-						return TRUE
-					if(!removing || removing.loc != src || !Adjacent(user)) //Didn't select anything or selected something that was already removed OR we walked away.
-						act_message(user, src, others = span_danger(span_bold("%U%") + " decides against removing anything from %T%"))
-						return INTERACTION_HANDLED_PASS
-					removing.forceMove(get_turf(user.loc))
-					user.put_in_hands(removing)
-					act_message(user, src, others = span_danger(span_bold("%U%") + " extracts [removing] from %T% with [W]!"))
-				else
-					act_message(user, src, others = span_danger(span_bold("%U%") + " fishes around fruitlessly in %T% with [W]."))
-				return INTERACTION_HANDLED_PASS
-			if(istype(W,/obj/item/surgical/FixOVein))
-				act_message(user, src, others = span_danger(span_bold("%U%") + " partially closes %T% with [W]!"))
-				stage--
-				return INTERACTION_HANDLED_PASS
-			//Begin necrosis surgery
-			if(istype(W,/obj/item/surgical/scalpel))
-				if(!(status & ORGAN_DEAD))
-					to_chat(user, span_notice("The limb isn't necrotic, there's no need to fix it!"))
-					return INTERACTION_HANDLED_PASS
-				act_message(user, src, others = span_danger(span_bold("%U%") + " cuts necrotic tissue off %T% with [W]!"))
-				stage++
-				return INTERACTION_HANDLED_PASS
-		if(3)
-			if(istype(W,/obj/item/surgical/bioregen))
-				act_message(user, src, others = span_danger(span_bold("%U%") + " rejuvinates formerly necrotic tissue on %T% with [W]!"))
-				germ_level = 0
-				set_status(status & ~ORGAN_DEAD)
-				clear_necrosis() // the dead-tissue afflictions go too (audit D12)
-				stage-- //Go back to stage 2
-				return INTERACTION_HANDLED_PASS
-	return FALSE
 
 /// Remove the dead-tissue afflictions on this limb, attached or loose (bioregeneration).
 /obj/item/organ/external/proc/clear_necrosis()
@@ -663,34 +696,39 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 			return 0
 	*/
 	user.setClickCooldown(user.get_attack_speed(tool))
-	var/started = om_task_start(/datum/om/task/timed/external_robo_repair, user, src, receiver = src, repair_amount = repair_amount, damage_type = damage_type, damage_desc = damage_desc, tool = tool, damage_amount = damage_amount, tool_proc = tool_proc, tool_args = tool_args)
-	return !istext(started)
+	LAZYSET(robo_repairs, REF(user), list(repair_amount, damage_type, damage_desc, damage_amount, tool_proc, tool_args, REF(user.loc)))
+	var/datum/op_result/R = perform_op(user, src, "robo_repair", tool, ORIGIN_SYSTEM)
+	if(R?.outcome == ACT_REFUSED)
+		LAZYREMOVE(robo_repairs, REF(user))
+		return FALSE
+	return TRUE
 
-/obj/item/organ/external/proc/robo_repair_failed(datum/om/task/timed/external_robo_repair/task)
-	var/mob/living/user = task.actor
-	to_chat(user, span_warning("You must stand still to do that."))
+/obj/item/organ/external
+	/// REF(repairer) -> list(amount, damage type, description, damage before, tool proc, tool args, REF(where the repairer stood)) of the patch
+	/// that repairer has under way.
+	var/list/robo_repairs
 
-/datum/om/task/timed/external_robo_repair
-	duration = 1 SECOND
-	complete_proc = /obj/item/organ/external/proc/robo_repair_done
-	cancel_proc = /obj/item/organ/external/proc/robo_repair_failed
-	var/repair_amount
-	var/damage_type
-	var/damage_desc
-	var/obj/item/tool
-	var/damage_amount
-	var/tool_proc
-	var/list/tool_args
 
-/obj/item/organ/external/proc/robo_repair_done(datum/om/task/timed/external_robo_repair/task)
-	var/repair_amount = task.repair_amount
-	var/damage_type = task.damage_type
-	var/damage_desc = task.damage_desc
-	var/obj/item/tool = task.tool
-	var/mob/living/user = task.actor
-	var/damage_amount = task.damage_amount
-	var/tool_proc = task.tool_proc
-	var/list/tool_args = task.tool_args
+/obj/item/organ/external/proc/robo_repair_failed(datum/act/op/A)
+	LAZYREMOVE(robo_repairs, REF(A.actor))
+	to_chat(A.actor, span_warning("You must stand still to do that."))
+
+/obj/item/organ/external/proc/robo_repair_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/tool = A.held
+	var/list/record = LAZYACCESS(robo_repairs, REF(user))
+	LAZYREMOVE(robo_repairs, REF(user))
+	if(!record)
+		return
+	var/repair_amount = record[1]
+	var/damage_type = record[2]
+	var/damage_desc = record[3]
+	var/damage_amount = record[4]
+	var/tool_proc = record[5]
+	var/list/tool_args = record[6]
+	if(REF(user.loc) != record[7]) // the repairer must stand still for the whole patch
+		to_chat(user, span_warning("You must stand still to do that."))
+		return
 	// Repair by mechanism: plating for structural damage, wiring for scorching.
 	if(owner)
 		if(damage_type == BRUTE || damage_type == "omni")
@@ -712,7 +750,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 			act_message(user, null, others = span_infoplain(span_bold("%U%") + " [fix_verb] [damage_desc] on %THEIR% [src.name] with [tool]."))
 		else
 			act_message(user, null, others = span_infoplain(span_bold("%U%") + " [fix_verb] [damage_desc] on [owner]'s [src.name] with [tool]."))
-	if(tool_proc)
+	if(tool_proc && tool)
 		call(tool, tool_proc)(arglist(list(user) + (tool_args || list())))
 
 /*
@@ -1098,7 +1136,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			for(var/obj/item/I in slot_contents())
 				if(I.w_class > ITEMSIZE_SMALL && !istype(I,/obj/item/organ))
 					slot_remove(I, droploc, null, LEDGER_MOVE_FORCED)
-			spent(src)
+			destroyed(src, null, BURN)
 		if(DROPLIMB_BLUNT)
 			var/obj/effect/decal/cleanable/blood/gibs/gore
 			if(is_robotic())
@@ -1116,7 +1154,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 				if(slot_remove(thing, droploc, null, LEDGER_MOVE_FORCED))
 					thing.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),5)
 
-			spent(src)
+			destroyed(src, null, BRUTE)
 
 		if(DROPLIMB_ACID)
 			appearance_flags &= ~PIXEL_SCALE
@@ -1361,7 +1399,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			// Deleting an organ detaches it (the hook clears every cache).
 			for(var/obj/item/organ/thing as anything in slot_contents(SLOT_ID_PART_ORGANS))
 				if(!thing.vital)
-					spent(thing)
+					replaced_by(thing)
 
 		owner.refresh_modular_limb_verbs()
 
@@ -1635,41 +1673,3 @@ Note that amputating the affected organ does in fact remove the infection from t
 #undef LIMB_DISMEMBER_SPARED
 #undef LIMB_DISMEMBER_DROPPED
 
-/obj/item/organ/external/proc/extraction_selected(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/organ_extraction/request = A.request
-	if(request.captures_gone())
-		return
-	. = external_interaction_item(request.answerer, request.captured_item, request.captured_interaction, A.answer.value, TRUE)
-	SStgui.update_uis(src)
-
-/datum/prompt/choice/organ_extraction
-	var/obj/item/captured_item
-	var/datum/interaction/captured_interaction
-	var/item_expected = FALSE
-	var/interaction_expected = FALSE
-
-CAPABILITIES(/datum/prompt/choice/organ_extraction)
-	ref_one(nameof(captured_item), /obj/item)
-	ref_one(nameof(captured_interaction), /datum/interaction)
-
-/datum/prompt/choice/organ_extraction/prepare(datum/act/A)
-	. = ..()
-	var/obj/item/item = captured_item
-	var/datum/interaction/interaction = captured_interaction
-	rel_clear(src, nameof(captured_item))
-	rel_clear(src, nameof(captured_interaction))
-	rel_set(src, nameof(captured_item), item)
-	rel_set(src, nameof(captured_interaction), interaction)
-
-/datum/prompt/choice/organ_extraction/proc/captures_gone()
-	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction))
-
-/datum/prompt/choice/organ_extraction/recheck_extra()
-	. = ..()
-	if(.)
-		return
-	if(captures_gone())
-		return "gone"
-	return null

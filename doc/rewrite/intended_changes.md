@@ -1984,3 +1984,28 @@ before the change (`code/modules/unit_tests/snapshots/pins/`) and are unchanged:
   the registry's `when`, where `skips_registry()` kept them out before), and the fusion cores, fuel injectors and gyrotrons filed under their
   ident tag (`key = nameof(id_tag)`, now tracked): their consoles read `registry_all(REGISTRY_X, tag)` instead of scanning every member.
   Pinned by `dq_pp/plant_registries`.
+
+
+## Leftovers: organ internals (rewrite/leftovers)
+
+Pinned by `dq_leftovers/*` (organ butchery, peridaxon revival, robotic limb patches, stumps, gibbed limbs) and the organ conversion pins.
+
+- **Organ state is tracked**: `status`, `damage`, `max_damage` and `robotic` are plain vars with `TRACKED` setters (were `OM_FIELD`s); the setters
+  keep their names. They no longer raise `CHANGE_EXPLICIT` or `om_field_written()`.
+- **Organ interactions are ops**: bite (help stance, aiming at the mouth, flesh only), butcher (a sharp edge, or a screwdriver on a robotic
+  organ: ten seconds by the tool's speed, `begins()`/`on_interrupt()` messages as before), revive (five units of peridaxon). A limb pulls out what
+  is stuck in it before it can be bitten, in any stance; the bench surgery on a loose limb is one op per tool and stage, and the hemostat's
+  "What would you like to remove?" is the op's question (`asks()`), offered only when the limb holds something. The context menu no longer lists the
+  legacy catch-all entries ("Use", "Organ self", a "Bite" refused while not in hand); it lists the ops that apply.
+- **Timed work is ops with `wait()`**: butchery (was `/datum/om/task/timed/organ_butcher`), a robotic limb patch (`robo_repair()` starts the key-only
+  op `robo_repair`, one second, was `/datum/om/task/timed/external_robo_repair`; walking away still abandons it, now checked when the second is up),
+  the anomalock heart's core install and removal (three seconds each; the refusals "core already in!", "no core!", "can't remove core!" are the
+  ops' requirements). The gibber still butchers at once.
+- **Tool procs are ops**: an arm-mounted augment's screwdriver swap is `swap_mount` (instant, `wait(0)`); the mimetic potato's knife and cable, and
+  the piñata and money tumours' puncture, are their own ops (each ahead of butchery, as their old item handler was).
+- **Starting contents**: the health scanner implant's analyzer and the multitool augment's matter synthesizers are `starts =` of their `owns_one` /
+  `owns_many` (were made in `Initialize()`). The species and robotize organ layouts stay runtime creation (they depend on the body, not the type).
+- **Endings say why**: a limb burnt away or blown off is `destroyed(limb, null, BURN | BRUTE)` (was `spent()`); a stump lives while it is attached
+  (`lives_while()` on its owner, once joined) instead of deleting itself in `removed()`; an MMI holder taken out is `replaced_by()` its MMI; a
+  diona limb that splits into a nymph, a brain swapped for another, and organs dropped by a robotize are `replaced_by()`; a slime limb that
+  splatters and limbs melted to regrow are `dissolved()`.

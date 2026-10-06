@@ -340,16 +340,13 @@
 			owner.custom_pain("Your [name] burns like it's on fire!",15)
 			owner.status_adjust(STAT_BLURRY, 20) //Specific level 2 'feature
 
+// A plushie or another head held to a head kisses it.
 CAPABILITIES(/obj/item/organ/external/head)
-	op("head_interaction_item", item(/obj/item), then(PROC_REF(head_interaction_item)))
+	op("kiss_plushie", item(/obj/item/toy/plushie), label("Kiss"), then(PROC_REF(head_kissed)))
+	op("kiss_head", item(/obj/item/organ/external/head), label("Kiss"), then(PROC_REF(head_kissed)))
 
-/// Old attackby.
-/obj/item/organ/external/head/proc/head_interaction_item(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/I = A.held
-	if(istype(I, /obj/item/toy/plushie) || istype(I, /obj/item/organ/external/head))
-		act_message(user, src, MSG_SELF(span_notice("You make %I% kiss %T%!.")), MSG_OTHERS(span_notice("%U% makes %I% kiss %T%!.")), item = I)
-	return OP_DECLINE
+/obj/item/organ/external/head/proc/head_kissed(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You make %I% kiss %T%!.")), MSG_OTHERS(span_notice("%U% makes %I% kiss %T%!.")), item = A.held)
 
 /obj/item/organ/external/head/get_icon(skeletal, can_apply_transparency = TRUE)
 	..()

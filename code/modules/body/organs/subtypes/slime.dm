@@ -77,7 +77,7 @@
 
 		B.basecolor = src.color
 		B.update_icon()
-		spent(src)
+		dissolved(src)
 
 /obj/item/organ/internal/regennetwork
 	name = "pneumoregenesis network"
@@ -124,7 +124,7 @@
 
 		B.basecolor = src.color
 		B.update_icon()
-		spent(src)
+		dissolved(src)
 
 	if(src && !is_bruised())
 		adjust_strain(-0.25 * max(0, (min_broken_damage - damage) / min_broken_damage)) // Decrease the current strain with respect to the current strain level.

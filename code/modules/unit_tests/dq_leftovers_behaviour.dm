@@ -105,3 +105,31 @@
 	H.forceMove(tile(3, 1))
 	test_time(3 SECONDS)
 	TEST_ASSERT_EQUAL(arm.get_trauma(), before, "a patch abandoned half way patches nothing")
+
+/// A limb torn off leaves a stump in its place; the stump taken off in turn is gone.
+/datum/unit_test/dq_leftovers/stump_ends_when_removed
+
+/datum/unit_test/dq_leftovers/stump_ends_when_removed/run_gate()
+	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human, tile(2, 2))
+	var/obj/item/organ/external/arm = patient.get_organ(BP_L_ARM)
+	arm.droplimb(FALSE, DROPLIMB_EDGE)
+	var/obj/item/organ/external/stump = patient.get_organ(BP_L_ARM)
+	TEST_ASSERT(stump?.is_stump(), "a stump takes the arm's place")
+	stump.removed()
+	test_time(1 SECOND)
+	TEST_ASSERT(QDELETED(stump), "a stump off its body is gone")
+	qdel(arm)
+
+/// A limb blown off in a shower of gore is gone, its contents thrown out.
+/datum/unit_test/dq_leftovers/limb_gibbed_is_destroyed
+
+/datum/unit_test/dq_leftovers/limb_gibbed_is_destroyed/run_gate()
+	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human, tile(2, 2))
+	var/obj/item/organ/external/arm = patient.get_organ(BP_L_ARM)
+	arm.droplimb(FALSE, DROPLIMB_BLUNT)
+	test_time(1 SECOND)
+	TEST_ASSERT(QDELETED(arm), "the arm is gone")
+	for(var/obj/effect/decal/cleanable/blood/gibs/G in range(4, tile(2, 2)))
+		qdel(G)
+	for(var/obj/item/organ/O in range(4, tile(2, 2)))
+		qdel(O)
