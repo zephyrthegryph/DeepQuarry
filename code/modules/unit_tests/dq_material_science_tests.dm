@@ -631,7 +631,7 @@
 	var/datum/material_service/service = material_service_of(emitter)
 	TEST_ASSERT(service.input_joules > 0 && emitter.material_stored_energy > 0, "A real network draw must charge the emitter reservoir")
 	COOLDOWN_RESET(emitter, shot_cooldown)
-	emitter.machine_step()
+	emitter.emitter_step(null)
 	TEST_ASSERT(emitter.material_beam_joules > 0, "Stored energy must produce a real beam (state=[emitter.state], active=[emitter.active], stat=[emitter.stat], stored=[emitter.material_stored_energy], rating=[emitter.active_power_usage], efficiency=[emitter.emitter_efficiency()], time=[world.time], cooldown=[emitter.shot_cooldown], delay=[emitter.fire_delay])")
 	TEST_ASSERT(abs(service.input_joules - emitter.material_beam_joules - service.loss_joules - emitter.material_stored_energy) < 1, "Input must equal beam energy plus heat plus remaining stored energy")
 	TEST_ASSERT(target.get_integrity() < target.max_integrity, "The accounted beam must physically hit its target")

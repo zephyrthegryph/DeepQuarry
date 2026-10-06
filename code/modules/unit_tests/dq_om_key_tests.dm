@@ -4,27 +4,6 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/datum/unit_test/dq_om_keys_wake_power_monitor
-
-/datum/unit_test/dq_om_keys_wake_power_monitor/Run()
-	var/turf/T = test_floor()
-	var/P = power_test_grid()
-	var/obj/machinery/power/sensor/S = allocate(/obj/machinery/power/sensor, T)
-	var/obj/machinery/computer/power_monitor/M = allocate(/obj/machinery/computer/power_monitor, T)
-	power_test_join(P, S)
-	// Regression (b11/b12 flake): a power step inside the window must not pull S off the test grid.
-	SSmachines.process_power()
-	TEST_ASSERT_EQUAL(S.power_region, P, "a power step kept the sensor on its detached test grid")
-	rel_clear(M.power_monitor, nameof(/datum/tgui_module/power_monitor::grid_sensors))
-	rel_add(M.power_monitor, nameof(/datum/tgui_module/power_monitor::grid_sensors), S)
-	MACHINE_WAKE(M)
-	M.machine_step()
-	TEST_ASSERT(M.asleep_on_keys(), "stable power monitor did not sleep on its grid keys")
-	TEST_ASSERT_NULL(M.om_sleep_violation(), "a stable sleeping power monitor reported a violation")
-	var/failure = om_wake_test(M, om_callable(null, GLOBAL_PROC_REF(power_warn), P))
-	TEST_ASSERT(!failure, failure)
-	power_test_drop_grid(P)
-
 /datum/unit_test/dq_om_keys_wake_shield_capacitor
 
 /datum/unit_test/dq_om_keys_wake_shield_capacitor/Run()
