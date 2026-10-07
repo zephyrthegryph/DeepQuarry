@@ -2667,6 +2667,32 @@ CAPABILITIES(/obj/machinery/light)   <span class="c">// excerpt: the full list i
       <li><strong>Banned:</strong> <code>update_icon()</code>, <code>add_overlay</code> and <code>queue_icon_update()</code> in content.</li>
     </ul>
   </div>
+  <h3 id="look-sweep-forms">What a look does besides drawing (the sweep forms)</h3>
+  <div class="prose"><p>A draw describes; it writes no state and calls nothing. The sweep found five things a legacy <code>update_icon()</code> did that are not drawing, and each has a home. All of them are on master today (<code>code/datums/capabilities/look.dm</code>, <code>refresh.dm</code>).</p></div>
+  <div class="tbl"><table>
+    <thead><tr><th>Need</th><th>Form</th><th>Rule</th></tr></thead>
+    <tbody>
+      <tr><td>Work the look triggers (a sound loop, an eye glow object, a call on another entity)</td><td><code>look.effect(PROC_REF(x), args...)</code>, <code>look.effect_if(when, PROC_REF(x), args...)</code></td><td>The draw only names the effect. It runs on the holder after the look is applied, once per applied look, outside any output, so it may write state; what it writes raises its own marks and a redraw waits for the next pass. Effects are part of the change key. State-bound work that must follow a var even when the look is unchanged is <code>on_change()</code>.</td></tr>
+      <tr><td>A draw that reads another entity (a hat's sprite, a held part, a container)</td><td><code>look.watch(thing)</code></td><td>A change published on <code>thing</code> (tracked write or <code>changed()</code>) redraws the holder. The subscription follows the draw: stop reading it and the holder stops hearing it. Subscriptions are by own key, never a reference. A plain var that nobody publishes is not heard.</td></tr>
+      <tr><td>Writes a draw used to make</td><td>A TRACKED var with its setter, or <code>look.effect()</code> of a setter</td><td>A cache the draw also read goes (the look key already is the cache). A plain write to a var the draw never reads is an effect of a generated setter.</td></tr>
+      <tr><td>A layer with its own placement or tint</td><td><code>look.overlay(look_overlay_image(icon, state, plane =, pixel_y =, color = ...))</code></td><td>A draw writes nothing, not even the members of an image it made; the image is built in one call.</td></tr>
+      <tr><td>A redraw request from code that does not know the type</td><td><code>redraw(X)</code></td><td>The one spelling for drawn and legacy types, for code that does not know which it holds. A drawn type is redrawn by the look refresh it marks (no state channel is raised, so no machine pipeline wakes); a type that still draws through <code>update_icon()</code> gets that call on the spot, as before; a type that draws nothing costs a list read after its first request. Replaces <code>X.update_icon()</code> on an /atom, /obj, /mob or /turf receiver. <code>changed(X)</code> is a state mark and never runs a legacy <code>update_icon()</code>: a legacy redraw that had no request must not appear (it would fix a stale look, and the pins would move).</td></tr>
+      <tr><td>The emissive blocker</td><td><code>look.one_blocker()</code></td><td>A movable carries a generic blocker, a priority overlay that <code>add_overlay()</code> merges into every add, so a look's first draw stacked a second one. A look that calls <code>one_blocker()</code> adds and cuts its layers without merging and keeps the one the atom has. Opt-in per type until the remaining pins are re-blessed together.</td></tr>
+      <tr><td>A late <code>..()</code></td><td>Call it where it was</td><td>The statements before it run first and the parent's draw runs there; a later <code>look.state()</code> still wins. No form is needed.</td></tr>
+      <tr><td>A draw that reads the composed <code>overlays</code></td><td>Hand work</td><td>Draw from the tracked contents the overlays were made from (a folder from its papers, a bundle from its pages).</td></tr>
+    </tbody>
+  </table></div>
+  <h3 id="look-mobs">Mobs</h3>
+  <div class="prose">
+    <p>A mob draws through the same <code>draw(look)</code>; the refresh engine already runs it for any /mob. The body of a human or a robot is still composed by <code>update_icons()</code> from <code>overlays_standing</code> (the species composite arrives with <code>look.composite()</code>), so on a mob <code>draw()</code> owns what it adds on top of that body, and never <code>icon</code>, <code>icon_state</code> or <code>overlays</code> of a chain whose legacy provider still writes them.</p>
+    <ul>
+      <li><code>look.hat(hat, pixel_y)</code>: a worn hat on a small mob, from the head icon (<code>item_state</code>, else <code>icon_state</code>), keeping its own colour, and it watches the hat. Used by hyena, armadillo and sakimm.</li>
+      <li><code>look.life_state(mob, living, rest, dead)</code>: the base state by stat, resting and incapacitation: the chain every simple mob's provider wrote into <code>icon_state</code>.</li>
+      <li><code>look.eyes(holder, state, color, when)</code>: the <code>&lt;state&gt;-eyes</code> sprite above the lighting plane (replaces <code>add_eyes()</code> / <code>remove_eyes()</code>, with no eye image kept on the mob).</li>
+      <li>Redraws: a state a draw reads that nothing publishes (stat, a hat var) is a <code>redraw(src)</code> at the place it changes, which also reaches a legacy provider that is still on the type.</li>
+      <li>A chain converts whole or not at all when the same type draws state; a subtype that only adds layers (a hat, a shadow) may convert alone, as the hat family does.</li>
+    </ul>
+  </div>
   <h3>Examine</h3>
   <div class="prose"><p><code>examine_line(text | PROC_REF, when =)</code> entries, plus <code>examine(datum/act/A)</code> as an on-demand output for anything computed (<code>A.actor</code> is the examiner). Capabilities contribute their own lines (cover state, construction progress, "Next: wrench it into place"), and the engine adds them before the type's <code>examine()</code> runs.</p></div>
   <h3>UI</h3>

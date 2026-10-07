@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The draw framework gains look.effect(), look.watch(), look.hat(), look.life_state(), look.eyes() and look.one_blocker(); changed(X) redraws drawn and legacy types alike"
+  - code_imp: "The draw sweep codemod converts effect, write, hop-read, image and late-super shapes; generic X.update_icon() calls are changed(X)"
+  - bugfix: "A lightpost keeps a single emissive blocker when it redraws"
