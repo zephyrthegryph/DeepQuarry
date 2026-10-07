@@ -22,7 +22,7 @@ MSG_DEF_SELF(analyzer/busy, "It's busy right now.")
 
 /// Busy analysing an item (or recycling parts).
 /obj/machinery/rnd/destructive_analyzer/var/busy = FALSE
-TRACKED_BRIDGED(/obj/machinery/rnd/destructive_analyzer, busy, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/rnd/destructive_analyzer, busy)
 
 ///Reset the state of this machine
 /obj/machinery/rnd/destructive_analyzer/proc/reset_busy()

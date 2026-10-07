@@ -85,6 +85,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 		. += "This spell circle reads: <i>[word1] [word2] [word3]</i>."
 
 CAPABILITIES(/obj/effect/rune)
+	ref_one(nameof(manifest_user))
 	op("erase_rune", item(/obj/item/book/tome), label("Erase rune"), then(PROC_REF(interaction_erase_rune)))
 	op("nullrod_rune", item(/obj/item/nullrod), label("Disrupt rune"), then(PROC_REF(interaction_nullrod_rune)))
 	op("invoke_rune", hand(), label("Invoke"), then(PROC_REF(interaction_invoke_rune)))

@@ -16,7 +16,7 @@
 	var/report_num = 0
 
 /obj/machinery/dnaforensics/var/scanning = FALSE
-TRACKED_BRIDGED(/obj/machinery/dnaforensics, scanning, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/dnaforensics, scanning)
 
 /// A used forensic swab must be releasable before the analyzer accepts it.
 /obj/machinery/dnaforensics/proc/can_insert_swab(mob/user, atom/target, obj/item/held)

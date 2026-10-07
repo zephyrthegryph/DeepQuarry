@@ -95,12 +95,15 @@
 	var/tmp/pending_immunity = 0
 
 /// Typed view of the owner while attached (contagions are humanoid-only).
-OM_FIELD_VIEW(/datum/affliction/contagion, tmp/mob/living/carbon/human, host, CHANGE_DATUM_A)
+/datum/affliction/contagion/var/tmp/mob/living/carbon/human/host
 /// DISEASE_SPREAD_* routes.
-OM_FIELD(/datum/affliction/contagion, spread_flags, DISEASE_SPREAD_AIRBORNE, CHANGE_DATUM_A)
+/datum/affliction/contagion/var/spread_flags = DISEASE_SPREAD_AIRBORNE
+TRACKED(/datum/affliction/contagion, spread_flags)
 /// Strain modifier bits (NEEDS_ALL_CURES, DORMANT, SPREAD_DEAD, PROCESSING, ...).
-OM_FIELD(/datum/affliction/contagion, virus_modifiers, NEEDS_ALL_CURES, CHANGE_DATUM_A)
-OM_FIELD(/datum/affliction/contagion, infectivity, 10, CHANGE_DATUM_A)
+/datum/affliction/contagion/var/virus_modifiers = NEEDS_ALL_CURES
+TRACKED(/datum/affliction/contagion, virus_modifiers)
+/datum/affliction/contagion/var/infectivity = 10
+TRACKED(/datum/affliction/contagion, infectivity)
 
 REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 
@@ -459,3 +462,6 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 			return 8
 		if(DISEASE_PANDEMIC)
 			return 9
+
+CAPABILITIES(/datum/affliction/contagion)
+	ref_one(nameof(host))

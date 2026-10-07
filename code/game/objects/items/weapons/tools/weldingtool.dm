@@ -497,7 +497,7 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 // The weldpack owns its nozzle (implicit OWN); the nozzle names its pack (one-sided REL).
 /// The pack this nozzle belongs to (a relation view, set once in Initialize()): a field, so its
 /// automatic clear when the pack is destroyed re-evaluates burner_active.
-OM_FIELD_VIEW(/obj/item/weldingtool/tubefed, obj/item/weldpack, mounted_pack, CHANGE_EXPLICIT)
+/obj/item/weldingtool/tubefed/var/obj/item/weldpack/mounted_pack
 
 /// A nozzle works (and watches its hose) only while it is out of its pack.
 /obj/item/weldingtool/tubefed/burner_active(datum/act/A)
@@ -719,3 +719,6 @@ CAPABILITIES(/obj/item/weldingtool/electric)
 /// Relation view: equip mount (reads null once it is gone).
 /obj/item/weldingtool/electric/mounted/exosuit/proc/equip_mount() as /obj/item/mecha_parts/mecha_equipment
 	return equip_mount
+
+CAPABILITIES(/obj/item/weldingtool/tubefed)
+	ref_one(nameof(mounted_pack))

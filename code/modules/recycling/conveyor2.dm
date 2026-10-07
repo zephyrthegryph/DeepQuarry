@@ -20,13 +20,11 @@
 	var/operable = 1	// true if can operate (no broken segments in this belt run)
 	var/forwards		// this is the default (forward) direction, set by the map dir
 	var/backwards		// hopefully self-explanatory
-	var/movedir			// the actual direction to move stuff in
 
 	var/list/affecting	// the list of all items that will be moved this ptick
 	var/id = ""			// the control ID	- must match controller ID
 
-/// set_operating() below is the hand setter.
-SETTER(/obj/machinery/conveyor, operating)
+TRACKED(/obj/machinery/conveyor, operating)
 /// Moves what sits on it while running and operable (the declaration also picks the machine
 /// pipeline or the fast lane on speed_process); with nothing to move it sleeps until cargo arrives.
 /obj/machinery/conveyor/centcom_auto
@@ -34,6 +32,7 @@ SETTER(/obj/machinery/conveyor, operating)
 
 	// create a conveyor
 CAPABILITIES(/obj/machinery/conveyor)
+	on_change(nameof(operating), ANY, then(PROC_REF(operating_changed)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), STAT_OPERABLE))
 	param(nameof(dir), pos = 1)
 	param(nameof(starts_on), pos = 2)
@@ -87,17 +86,8 @@ CAPABILITIES(/obj/machinery/conveyor)
 		update_active_power_usage(initial(idle_power_usage))
 	update()
 
-/obj/machinery/conveyor/proc/set_operating(new_operating)
-	if(new_operating != FORWARDS && new_operating != BACKWARDS)
-		new_operating = OFF
-	if(new_operating == operating)
-		return // No change
-	operating = new_operating
-	tracked_changed(src, nameof(operating))
-	if(operating == FORWARDS)
-		movedir = forwards
-	else if(operating == BACKWARDS)
-		movedir = backwards
+/// The belt started, stopped or reversed: it redraws.
+/obj/machinery/conveyor/proc/operating_changed(datum/act/A)
 	update()
 
 /obj/machinery/conveyor/set_dir()
@@ -211,9 +201,6 @@ CAPABILITIES(/obj/machinery/conveyor)
 	if((. = ..()))
 		update()
 
-#undef OFF
-#undef FORWARDS
-#undef BACKWARDS
 
 // the conveyor control switch
 //
@@ -364,7 +351,7 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 			continue
 		if(!A.anchored)
 			if(A.loc == src.loc) // prevents the object from being affected if it's not currently here.
-				step(A,movedir)
+				step(A, operating == BACKWARDS ? backwards : forwards)
 				items_moved++
 		if(items_moved >= 10)
 			break
@@ -397,3 +384,7 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 		to_chat(A.actor, "No input found. Please hang up and try your call again.")
 	SStgui.update_uis(src)
 	return OP_OK
+
+#undef OFF
+#undef FORWARDS
+#undef BACKWARDS

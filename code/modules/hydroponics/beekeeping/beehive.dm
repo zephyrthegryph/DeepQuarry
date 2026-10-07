@@ -15,10 +15,10 @@ TRACKED(/obj/machinery/beehive, closed)
 
 /// Percent.
 /obj/machinery/beehive/var/bee_count = 0
-TRACKED_BRIDGED(/obj/machinery/beehive, bee_count, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/beehive, bee_count)
 /// Timer (machine steps).
 /obj/machinery/beehive/var/smoked = 0
-TRACKED_BRIDGED(/obj/machinery/beehive, smoked, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/beehive, smoked)
 /// Bees inside or smoke still clearing: the hive has something to tick.
 /obj/machinery/beehive/proc/hive_active()
 	return bee_count || smoked

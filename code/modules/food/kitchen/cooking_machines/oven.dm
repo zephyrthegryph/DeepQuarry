@@ -95,7 +95,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven, TYPE_PROC_REF(/ato
 
 /// Start closed just so people don't try to preheat with it open, lol.
 /obj/machinery/appliance/cooker/oven/var/open = FALSE
-TRACKED_BRIDGED(/obj/machinery/appliance/cooker/oven, open, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/appliance/cooker/oven, open)
 
 /// With the door open it doesn't step at all (the door's heat loss is the body's coupling).
 /obj/machinery/appliance/cooker/oven/cooker_needs_step()

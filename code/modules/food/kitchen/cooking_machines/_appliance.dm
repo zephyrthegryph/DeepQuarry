@@ -65,7 +65,7 @@ CAPABILITIES(/obj/machinery/appliance)
 
 /// Whether or not the machine is currently operating (cooking its contents).
 /obj/machinery/appliance/var/cooking = FALSE
-TRACKED_BRIDGED(/obj/machinery/appliance, cooking, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/appliance, cooking)
 
 // cooking food and its containers go with the machine.
 /// A cooker that starts with its switch off is made so at initialization (machinery Initialize()).

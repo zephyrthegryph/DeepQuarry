@@ -176,7 +176,7 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 	return TRUE
 
 /obj/machinery/radiocarbon_spectrometer/var/scanning = FALSE
-TRACKED_BRIDGED(/obj/machinery/radiocarbon_spectrometer, scanning, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/radiocarbon_spectrometer, scanning)
 /// Runs the scan while scanning (start_scanning() .. stop_scanning()).
 /obj/machinery/radiocarbon_spectrometer/proc/work_step(datum/act/timer/A)
 	if(!scanned_item() || scanned_item().loc != src)

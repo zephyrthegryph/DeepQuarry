@@ -17,6 +17,7 @@
 	var/obj/item/radio/intercom/science/ghost_reporter
 
 CAPABILITIES(/obj/item/ghost_trap)
+	ref_one(nameof(captured_entity))
 	// Watches its catch every 2 s while it holds one; empty, it sleeps.
 	every(2 SECONDS, then(PROC_REF(ghost_trap_step)), when = nameof(captured_entity))
 	owns_one(nameof(ghost_reporter), /obj/item/radio/intercom/science)
@@ -26,7 +27,7 @@ CAPABILITIES(/obj/item/ghost_trap)
 	op("ghost_trap_hidden_vore_effect", menu(), label("Eat Entity"), needs(req_adjacent(), req_capable()), then(PROC_REF(ghost_trap_hidden_vore_effect)))
 
 ///The entity we currently have captured (a relation view).
-OM_FIELD_VIEW(/obj/item/ghost_trap, mob, captured_entity, CHANGE_EXPLICIT)
+/obj/item/ghost_trap/var/mob/captured_entity
 
 /obj/item/ghost_trap/Initialize(mapload)
 	. = ..()

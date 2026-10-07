@@ -13,8 +13,8 @@
 	var/makes_gurgles = TRUE
 
 /// The hose plugged into this socket (a relation view). It pumps every 2 s while one is: the gate is the relation var, so the every() polls.
-OM_FIELD_VIEW_OF(/datum/hose_connector, my_hose, CHANGE_DATUM_A)
 CAPABILITIES(/datum/hose_connector)
+	ref_one(nameof(my_hose))
 	owns_one(nameof(reagents), /datum/reagents)
 	every(2 SECONDS, then(PROC_REF(connector_step)), when = nameof(my_hose))
 

@@ -20,6 +20,8 @@
 	var/transfer_amount = 1
 
 CAPABILITIES(/obj/structure/medical_stand)
+	ref_one(nameof(attached))
+	ref_one(nameof(breather))
 	every(2 SECONDS, then(PROC_REF(medical_stand_step)), when = cond_any(nameof(valve_opened), nameof(breather), nameof(attached)))
 	owns_one(nameof(contained), /obj/item/clothing/mask/breath, starts = nameof(mask_type))
 	owns_one(nameof(beaker), /obj/item/reagent_containers)
@@ -36,10 +38,10 @@ MSG_DEF_SELF(medical_stand/cannot, "You can't do that.")
 /obj/structure/medical_stand/proc/actor_is_living(datum/act/op/A)
 	return isliving(A.actor)
 
-OM_FIELD_VIEW(/obj/structure/medical_stand, mob/living/carbon/human, breather, CHANGE_EXPLICIT)
+/obj/structure/medical_stand/var/mob/living/carbon/human/breather
 /obj/structure/medical_stand/var/valve_opened = FALSE
 TRACKED(/obj/structure/medical_stand, valve_opened)
-OM_FIELD_VIEW(/obj/structure/medical_stand, mob/living/carbon, attached, CHANGE_EXPLICIT)
+/obj/structure/medical_stand/var/mob/living/carbon/attached
 
 /obj/structure/medical_stand/Initialize(mapload)
 	. = ..()

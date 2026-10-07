@@ -306,7 +306,7 @@ CAPABILITIES(/obj/item/clothing/accessory/badge/sheriff)
 	slot_flags = SLOT_TIE
 
 /// The loaded film (set at init by its owns_one starts).
-OM_FIELD_VIEW(/obj/item/clothing/accessory/dosimeter, obj/item/dosimeter_film, current_film, CHANGE_EXPLICIT)
+/obj/item/clothing/accessory/dosimeter/var/obj/item/dosimeter_film/current_film
 
 CAPABILITIES(/obj/item/clothing/accessory/dosimeter)
 	owns_one(nameof(current_film), /obj/item/dosimeter_film, starts = /obj/item/dosimeter_film)

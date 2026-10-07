@@ -151,7 +151,7 @@
 		known[id] = type_every_cond_tracked(holder, cond) ? TRUE : FALSE
 	return known[id]
 
-/// Is `cond` a tracked var of `holder` or a stat id (STAT_RELEVANCE), or a cond_not/cond_all/cond_any tree of them?
+/// Is `cond` a tracked var or a declared relation var (ref_one/ref_many/owns/link: rel_set() and the framework's clears publish its key) of `holder`, or a stat id (STAT_RELEVANCE), or a cond_not/cond_all/cond_any tree of them?
 /proc/type_every_cond_tracked(datum/holder, cond)
 	if(islist(cond))
 		var/list/tree = cond
@@ -163,7 +163,7 @@
 		return TRUE
 	if(isnum(cond))
 		return cond >= STAT_ID_BASE && cond < CAPKEY_ID_BASE // a stat: every write of it publishes to a reader (the wake hook is one)
-	return istext(cond) && (cond in holder.vars) && hascall(holder, "__setter_[cond]")
+	return istext(cond) && (cond in holder.vars) && (hascall(holder, "__setter_[cond]") || rel_kind(holder, cond))
 
 /// Does the `when =` of the every() `C` hold on the holder now?
 /proc/type_every_gate(datum/holder, datum/centry/C)

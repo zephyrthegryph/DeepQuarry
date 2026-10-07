@@ -1,7 +1,7 @@
 // Machinery serving as a media source.
 /// Am I playing right now?
 /obj/machinery/media/var/playing = 0
-TRACKED_BRIDGED(/obj/machinery/media, playing, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/media, playing)
 /obj/machinery/media
 	var/media_url = ""			// URL of media I am playing
 	EXPIRY_DECLARE(media_start_time) // world.time when it started playing

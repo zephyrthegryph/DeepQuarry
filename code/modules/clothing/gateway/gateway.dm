@@ -83,7 +83,6 @@ TYPE_TABLE(/obj/item/clothing/suit/darkvrwizard, suit_storage_spec, list(HOLD_ON
 /// clear when the wearer is destroyed counts too) it declares the feeding work.
 /obj/item/clothing/gloves/stamina/var/worn_on_hands = FALSE
 TRACKED(/obj/item/clothing/gloves/stamina, worn_on_hands)
-OM_FIELD_VIEW_OF(/obj/item/clothing/gloves/stamina, wearer, CHANGE_EXPLICIT)
 
 CAPABILITIES(/obj/item/clothing/gloves/stamina)
 	every(2 SECONDS, then(PROC_REF(stamina_step)), when = nameof(worn_on_hands))

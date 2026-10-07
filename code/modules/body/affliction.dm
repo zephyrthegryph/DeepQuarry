@@ -20,7 +20,7 @@
 //   fire_progression_triggers()
 // Subtypes customise ONLY receive_tagged_treatment() and progress().
 /// Owning body. Null while detached (organ in a tray) or unattached.
-OM_FIELD_VIEW(/datum/affliction, datum/body, body, CHANGE_DATUM_A)
+/datum/affliction/var/datum/body/body
 
 /datum/affliction
 	var/name = "affliction"
@@ -578,3 +578,6 @@ TYPE_TABLE_DECLARE(/datum/affliction, affliction_stages, null)
 	var/obj/item/picked = pick(candidates)
 	H.drop_from_inventory(picked)
 	to_chat(H, span_warning("Your fingers slip — you drop \the [picked]."))
+
+CAPABILITIES(/datum/affliction)
+	ref_one(nameof(body))

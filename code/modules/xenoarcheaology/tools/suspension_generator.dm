@@ -12,7 +12,7 @@
 	var/power_use = 15
 
 /// The field it projects while active (activate() .. deactivate()).
-OM_FIELD_VIEW(/obj/machinery/suspension_gen, obj/effect/suspension_field, suspension_field, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/suspension_gen/var/obj/effect/suspension_field/suspension_field
 
 CAPABILITIES(/obj/machinery/suspension_gen)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(suspension_field), wakes_on = list(nameof(suspension_field)))

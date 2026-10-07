@@ -856,3 +856,29 @@
 	test_time(5 SECONDS)
 	TEST_ASSERT_NULL(test_answer(H, tank)?.key, "worn: nothing was asked")
 	TEST_ASSERT_EQUAL(suit.tank, tank, "and the tank stays in")
+
+/// A type-level every() gated on a relation var parks while unlinked (no timer), runs while linked, and parks again on unlink or on the target's death.
+/datum/unit_test/dq_gap/every_parks_on_a_relation
+/datum/unit_test/dq_gap/every_parks_on_a_relation/run_gap()
+	var/obj/gap_every_rel/E = allocate(/obj/gap_every_rel, run_loc_floor_bottom_left)
+	var/obj/item/pen/other = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(E.ticks, 0, "unlinked: it never ran")
+	TEST_ASSERT(length(E.rx?.every_parked), "and it is parked, holding no timer")
+	rel_set(E, nameof(E.target), other)
+	test_time(3 SECONDS)
+	TEST_ASSERT(E.ticks >= 2, "linked: it ran (ran [E.ticks])")
+	TEST_ASSERT(!length(E.rx?.every_parked), "no longer parked")
+	rel_clear(E, nameof(E.target))
+	var/seen = E.ticks
+	test_time(3 SECONDS)
+	TEST_ASSERT(E.ticks <= seen + 1, "unlinked again: it stopped")
+	TEST_ASSERT(length(E.rx?.every_parked), "and parked")
+	rel_set(E, nameof(E.target), other)
+	test_time(2 SECONDS)
+	qdel(other)
+	test_time(1 SECONDS)
+	seen = E.ticks
+	test_time(3 SECONDS)
+	TEST_ASSERT(E.ticks <= seen + 1, "the target died: the every() stopped")
+	TEST_ASSERT(length(E.rx?.every_parked), "and parked")

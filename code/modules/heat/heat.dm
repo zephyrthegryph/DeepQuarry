@@ -19,15 +19,7 @@
 /// cleared lazily.
 /atom/var/heat_body
 
-/// set_heat_body() is the one writer.
-
-/atom/proc/set_heat_body(value)
-	if(heat_body == value)
-		return FALSE
-	heat_body = value
-	tracked_changed(src, nameof(heat_body))
-	return TRUE
-SETTER(/atom, heat_body)
+TRACKED(/atom, heat_body)
 
 // ---------------------------------------------------------------- the API
 

@@ -65,8 +65,9 @@ CAPABILITIES(/atom)
 	var/static/list/toxic_reagents = list(TOXIN_PATH)
 
 /// The anomalous atom this state belongs to (a relation view); the master runs its effects (every 2 s) while it has one: the gate is the relation var, so the every() polls.
-OM_FIELD_VIEW(/datum/artifact_master, tmp/atom, holder, CHANGE_DATUM_A)
+/datum/artifact_master/var/tmp/atom/holder
 CAPABILITIES(/datum/artifact_master)
+	ref_one(nameof(holder))
 	owns_many(nameof(my_effects))
 	every(2 SECONDS, then(PROC_REF(master_step)), when = nameof(holder))
 

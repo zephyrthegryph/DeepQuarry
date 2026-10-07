@@ -6,8 +6,9 @@
 
 
 /// The leather hung on the rack.
-OM_FIELD_VIEW(/obj/structure/tanning_rack, obj/item/stack/wetleather, drying, CHANGE_EXPLICIT)
+/obj/structure/tanning_rack/var/obj/item/stack/wetleather/drying
 CAPABILITIES(/obj/structure/tanning_rack)
+	ref_one(nameof(drying))
 	/// Holds wet leather: dries it every 2 s (starting from wetness 30 it takes about a minute); the gate is polled, the leather's wetness is another entity's state.
 	every(2 SECONDS, then(PROC_REF(tanning_rack_step)), when = nameof(drying))
 	op("hand", hand(), label("Use"), ungated(), then(PROC_REF(interaction_hand)))

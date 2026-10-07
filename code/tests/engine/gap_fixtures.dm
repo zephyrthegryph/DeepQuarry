@@ -413,3 +413,16 @@ CAPABILITIES(/obj/gap_handover_holder)
 	var/list/salvage
 
 #endif
+
+/// A type-level every() held by a relation (ref_one): it parks while nothing is linked and wakes on rel_set().
+/obj/gap_every_rel
+	name = "gap every relation target"
+	var/obj/target
+	var/ticks = 0
+
+CAPABILITIES(/obj/gap_every_rel)
+	ref_one(nameof(target))
+	every(1 SECOND, then(PROC_REF(tick)), when = nameof(target))
+
+/obj/gap_every_rel/proc/tick(datum/act/timer/A)
+	ticks++

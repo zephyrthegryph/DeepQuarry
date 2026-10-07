@@ -18,8 +18,9 @@
 	var/target_permissions = 0 // Permission bitflags.
 
 /// What are we targeting with? Set while aiming; the aim is tracked every slow tick while it is.
-OM_FIELD_VIEW(/obj/aiming_overlay, obj/item, aiming_with, CHANGE_EXPLICIT)
+/obj/aiming_overlay/var/obj/item/aiming_with
 CAPABILITIES(/obj/aiming_overlay)
+	ref_one(nameof(aiming_with))
 	every(2 SECONDS, then(PROC_REF(aiming_step)), when = nameof(aiming_with))
 
 /obj/aiming_overlay/Initialize(mapload)

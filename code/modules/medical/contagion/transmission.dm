@@ -190,11 +190,7 @@
 	return host?.stat == DEAD && global_flag_check(virus_modifiers, SPREAD_DEAD) && !global_flag_check(virus_modifiers, DORMANT)
 
 /// The spread lane runs while the strain is in a body and either sheds airborne or keeps its
-/// course in a dead host. Every input's setter re-evaluates it: joining or leaving a body
-/// (set_body/set_host), the host dying or reviving ("host.stat"), a strain refresh
-/// (set_spread_flags/set_virus_modifiers/set_infectivity).
-OM_DERIVE_FIELD(/datum/affliction/contagion, spread_lane_wanted, list("host", "body", "spread_flags", "infectivity", "virus_modifiers", "host.stat"))
-
+/// course in a dead host; the every() below polls this gate (a proc gate, so the lane never parks).
 /datum/affliction/contagion/reactions()
 	. = ..()
 	. += every(2 SECONDS, PROC_REF(contagion_step), when = PROC_REF(spread_lane_wanted))
