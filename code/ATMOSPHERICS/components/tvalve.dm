@@ -13,7 +13,7 @@
 	dir = SOUTH
 	initialize_directions = SOUTH|NORTH|WEST
 
-	state = 0 // 0 = go straight, 1 = go to side
+	var/state = 0 // 0 = go straight, 1 = go to side
 
 	var/mirrored = FALSE
 	var/tee = FALSE // Note: Tee not actually supported for T-valves: no sprites
@@ -240,3 +240,5 @@ CAPABILITIES(/obj/machinery/atmospherics/tvalve/digital)
 	state = 1
 
 
+
+TRACKED_BRIDGED(/obj/machinery/atmospherics/tvalve, state, CHANGE_MACHINE_SETTINGS)

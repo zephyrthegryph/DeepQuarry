@@ -2542,7 +2542,6 @@
 /area/template_noop)
 "akm" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -3514,9 +3513,7 @@
 /turf/simulated/shuttle/floor/white,
 /area/survivalpod/superpose/ScienceShip)
 "aTu" = (
-/obj/machinery/atmospherics/unary/vent_pump{
-	on = 1
-	},
+/obj/machinery/atmospherics/unary/vent_pump,
 /turf/simulated/floor/tiled/white,
 /area/survivalpod/superpose/HydroCave)
 "aTE" = (
@@ -3640,7 +3637,6 @@
 /obj/item/seeds/pumpkinseed,
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -4610,7 +4606,6 @@
 "bOs" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 4;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -5277,8 +5272,7 @@
 /area/survivalpod/superpose/HellCave)
 "crY" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /obj/structure/table/reinforced,
 /obj/item/storage/firstaid/surgery,
@@ -5366,7 +5360,6 @@
 /area/survivalpod/superpose/HydroCave)
 "csJ" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -8462,8 +8455,7 @@
 /area/template_noop)
 "eyx" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 8;
-	on = 1
+	dir = 8
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
 /obj/effect/decal/cleanable/dirt,
@@ -10863,7 +10855,6 @@
 "gnx" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 8;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -12620,7 +12611,6 @@
 "huE" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -14092,8 +14082,7 @@
 /area/template_noop)
 "iyP" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /obj/structure/table/glass,
 /turf/simulated/floor/carpet,
@@ -17069,7 +17058,6 @@
 "kKO" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -19230,7 +19218,6 @@
 	},
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -19845,7 +19832,6 @@
 /area/template_noop)
 "mzh" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -20017,8 +20003,7 @@
 /area/survivalpod/superpose/HydroCave)
 "mIi" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /obj/machinery/portable_atmospherics/hydroponics,
 /obj/item/seeds/pumpkinseed,
@@ -21478,8 +21463,7 @@
 /area/survivalpod/superpose/GrandLibrary)
 "nJH" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /obj/structure/bed,
 /obj/item/bedsheet/mime,
@@ -21664,7 +21648,6 @@
 "nRY" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -22910,7 +22893,6 @@
 "oEz" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 8;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -28194,8 +28176,7 @@
 /area/survivalpod/superpose/HydroCave)
 "rnB" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /obj/structure/closet,
 /turf/simulated/floor/tiled/white,
@@ -28225,7 +28206,6 @@
 "rnM" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -28513,9 +28493,7 @@
 /turf/simulated/floor/outdoors/dirt,
 /area/survivalpod/superpose/LoneHome)
 "rCt" = (
-/obj/machinery/atmospherics/unary/vent_pump{
-	on = 1
-	},
+/obj/machinery/atmospherics/unary/vent_pump,
 /turf/simulated/floor/tiled/red,
 /area/survivalpod/superpose/HydroCave)
 "rDz" = (
@@ -28638,8 +28616,7 @@
 /area/template_noop)
 "rLo" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /turf/simulated/floor/tiled/dark,
 /area/survivalpod/superpose/HydroCave)
@@ -32220,7 +32197,6 @@
 /obj/structure/disposalpipe/segment,
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -34087,7 +34063,6 @@
 "vWB" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
 	dir = 1;
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -34434,7 +34409,6 @@
 /area/survivalpod/superpose/Dinner)
 "wmh" = (
 /obj/machinery/atmospherics/unary/vent_scrubber{
-	on = 1;
 	scrub_N2O = 0;
 	scrub_Toxins = 0
 	},
@@ -34958,8 +34932,7 @@
 /area/survivalpod/superpose/CrashedQurantineShip)
 "wCu" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 8;
-	on = 1
+	dir = 8
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden/scrubbers,
 /turf/simulated/floor/tiled,
@@ -35067,8 +35040,7 @@
 /area/template_noop)
 "wFu" = (
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /turf/simulated/floor/tiled/white,
 /area/survivalpod/superpose/HydroCave)
@@ -36405,8 +36377,7 @@
 "xAN" = (
 /obj/item/seeds/pumpkinseed,
 /obj/machinery/atmospherics/unary/vent_pump{
-	dir = 1;
-	on = 1
+	dir = 1
 	},
 /turf/simulated/floor/tiled/white,
 /area/survivalpod/superpose/HydroCave)

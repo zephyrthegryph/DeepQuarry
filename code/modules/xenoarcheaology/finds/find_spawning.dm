@@ -225,7 +225,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 					new_metal = picked_metal
 					break
 			new_metal = new new_metal(src.loc)
-			new_metal.amount = rand(5,45)
+			new_metal.set_amount(rand(5,45))
 			new_item = new_metal
 
 		if(ARCHAEO_PEN)
