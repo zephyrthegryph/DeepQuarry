@@ -1,0 +1,6 @@
+var/text = {"first
+
+last"}
+var/after = 7
+/world/New()
+	..()

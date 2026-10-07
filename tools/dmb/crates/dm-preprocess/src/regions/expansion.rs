@@ -19,7 +19,8 @@ pub struct ExpandedRegions {
 
 #[derive(Default)]
 struct RegionOutput {
-    lines: Vec<(String, usize, Span, Arc<Vec<MacroExpansion>>)>,
+    text: String,
+    lines: Vec<(Span, usize, Span, Arc<Vec<MacroExpansion>>)>,
     diagnostics: Vec<Diagnostic>,
 }
 
@@ -86,7 +87,11 @@ fn expand_regions_inner(
         }));
     }
     diagnostics.sort_by_key(|(ordinal, line, _)| (*ordinal, *line));
+    let text_capacity = outputs.iter().map(|output| output.text.len()).sum();
+    let origin_capacity = outputs.iter().map(|output| output.lines.len()).sum();
     let mut result = ExpandedRegions {
+        text: String::with_capacity(text_capacity),
+        origins: Vec::with_capacity(origin_capacity),
         diagnostics: diagnostics
             .into_iter()
             .map(|(_, _, diagnostic)| diagnostic)
@@ -106,17 +111,19 @@ fn expand_regions_inner(
             .take()
             .expect("a text region is emitted once");
         let path = plan.occurrences[region.occurrence].path.clone();
-        for (text, source_line, source_span, macro_expansions) in output.lines {
-            let start = result.text.len();
-            result.text.push_str(&text);
-            result.text.push('\n');
+        let output_start = result.text.len();
+        result.text.push_str(&output.text);
+        for (relative_span, source_line, source_span, macro_expansions) in output.lines {
             result.origins.push(ExpandedOrigin {
                 origin: Origin {
                     output_line: result.origins.len() + 1,
                     path: path.clone(),
                     source_line,
                 },
-                output_span: Span::new(start, result.text.len()),
+                output_span: Span::new(
+                    output_start + relative_span.start,
+                    output_start + relative_span.end,
+                ),
                 source_span,
                 region: *index,
                 macro_expansions,
@@ -167,12 +174,14 @@ fn expand_region(plan: &DirectivePlan, index: usize) -> RegionOutput {
                 }
             };
             let macro_expansions = Arc::new(macro_expansions);
-            for (offset, part) in text.split('\n').enumerate() {
-                if offset > 0 && part.is_empty() && text.ends_with('\n') {
-                    break;
-                }
+            // The terminal separator is not another emitted line. Interior
+            // empty lines are source content, including inside block strings.
+            for part in text.strip_suffix('\n').unwrap_or(&text).split('\n') {
+                let start = output.text.len();
+                output.text.push_str(part);
+                output.text.push('\n');
                 output.lines.push((
-                    part.to_owned(),
+                    Span::new(start, output.text.len()),
                     line.source_line,
                     line.source_span,
                     macro_expansions.clone(),
@@ -181,4 +190,119 @@ fn expand_region(plan: &DirectivePlan, index: usize) -> RegionOutput {
         }
     }
     output
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    struct Memory(BTreeMap<PathBuf, String>);
+    impl SourceProvider for Memory {
+        fn read(&self, path: &Path) -> Result<String, String> {
+            self.0.get(path).cloned().ok_or_else(|| "missing".into())
+        }
+    }
+    #[test]
+    fn contiguous_regions_preserve_line_origins_and_macro_chains() {
+        let provider = Memory(
+            [
+                (
+                    PathBuf::from("project.dme"),
+                    "#define VALUE 1\nvar/root = VALUE\n#include \"child.dm\"\nvar/tail = VALUE\n"
+                        .into(),
+                ),
+                (
+                    PathBuf::from("child.dm"),
+                    "#define VALUE 7\nvar/text = {\"alpha\nomega\"}\nvar/child = VALUE\n".into(),
+                ),
+            ]
+            .into_iter()
+            .collect(),
+        );
+        let plan = plan_regions(Path::new("project.dme"), &provider, &BTreeMap::new());
+        let serial = expand_regions_text(&plan, 1);
+        assert!(serial.diagnostics.is_empty());
+        assert_eq!(
+            serial.text,
+            "var/root = 1\nvar/text = {\"alpha\nomega\"}\nvar/child = 7\nvar/tail = 7\n"
+        );
+        assert_eq!(
+            serial
+                .origins
+                .iter()
+                .map(|origin| origin.origin.source_line)
+                .collect::<Vec<_>>(),
+            vec![2, 2, 2, 4, 4]
+        );
+        let mut offset = 0;
+        for origin in &serial.origins {
+            assert_eq!(origin.output_span.start, offset);
+            let emitted = &serial.text[origin.output_span.range()];
+            assert!(emitted.ends_with('\n'));
+            assert_eq!(emitted.bytes().filter(|byte| *byte == b'\n').count(), 1);
+            offset = origin.output_span.end;
+        }
+        assert_eq!(offset, serial.text.len());
+        assert_eq!(serial.origins[0].macro_expansions[0].name, "VALUE");
+        assert_eq!(
+            serial.origins[4].macro_expansions[0]
+                .definition
+                .as_ref()
+                .unwrap()
+                .path
+                .as_path(),
+            Path::new("child.dm")
+        );
+        let parallel = expand_regions_text(&plan, 4);
+        assert_eq!(serial.text, parallel.text);
+        assert_eq!(
+            serial
+                .origins
+                .iter()
+                .map(|origin| (
+                    &origin.origin,
+                    origin.output_span,
+                    origin.source_span,
+                    origin.region
+                ))
+                .collect::<Vec<_>>(),
+            parallel
+                .origins
+                .iter()
+                .map(|origin| (
+                    &origin.origin,
+                    origin.output_span,
+                    origin.source_span,
+                    origin.region
+                ))
+                .collect::<Vec<_>>()
+        );
+    }
+    #[test]
+    fn internal_empty_block_string_line_keeps_following_source() {
+        let provider = Memory(
+            [(
+                PathBuf::from("project.dme"),
+                "var/text = {\"first\n\nlast\"}\nvar/after = 7\n/world/New()\n\t..()\n".into(),
+            )]
+            .into_iter()
+            .collect(),
+        );
+        let plan = plan_regions(Path::new("project.dme"), &provider, &BTreeMap::new());
+        for workers in [1, 4] {
+            let expanded = expand_regions_text(&plan, workers);
+            assert!(expanded.diagnostics.is_empty());
+            assert_eq!(expanded.text, provider.0[Path::new("project.dme")]);
+            assert_eq!(expanded.origins.len(), 6);
+            assert_eq!(
+                &expanded.text[expanded.origins[1].output_span.range()],
+                "\n"
+            );
+            assert_eq!(
+                expanded.origins[0].source_span,
+                expanded.origins[2].source_span
+            );
+            assert_eq!(expanded.origins[3].origin.source_line, 4);
+            assert_eq!(expanded.origins[5].origin.source_line, 6);
+        }
+    }
 }

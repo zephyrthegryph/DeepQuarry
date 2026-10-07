@@ -1,0 +1,16 @@
+{
+  "compiler": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "argv": [
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+    "E:\\dmb-native-v2-phase0\\preprocess-blank-block-control\\probe.dme"
+  ],
+  "start_utc": "2026-10-07T05:59:42.379703+00:00",
+  "exit_code": 0,
+  "source_sha256": "b594a5b90e47d422952bd3c1cec808052ead90d716a959c232816745d375daeb",
+  "outputs": {
+    "compile.txt": "67fe805754cb6e989c4fc91f18e7437ef1b940865a7b460f35e875c54704b47d",
+    "probe.dmb": "0e5acf9b2cf64dfcefacc1aaacbc38ace86d3616009d945d0c719bcc3cab3125",
+    "probe.dme": "b594a5b90e47d422952bd3c1cec808052ead90d716a959c232816745d375daeb"
+  }
+}
