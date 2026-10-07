@@ -574,7 +574,7 @@
 	hold(user, W)
 	// A legacy wirecutter_act() is not reached by the driver's click: it is called directly while it exists.
 	test_chat_clear()
-	if(hascall(B, "wirecutter_act"))
+	if(hascall(B, "carve_pages"))
 		call(B, "wirecutter_act")(user, W)
 	else
 		test_click(user, B, W)
@@ -633,3 +633,27 @@
 	var/obj/machinery/material_furnace/F = allocate(/obj/machinery/material_furnace, run_loc_floor_bottom_left)
 	test_menu(user, F, "eject_contents")
 	TEST_ASSERT_NULL(running(user), "an empty furnace starts nothing")
+
+// ---- Candy bowl: a second search asks whether to reach in again (recorded on the converted form only: the legacy question was opened by a callback) ----
+
+/datum/unit_test/dq_timed_pin_w6/candybowl_repeat_asks
+
+/datum/unit_test/dq_timed_pin_w6/candybowl_repeat_asks/run_pin()
+	var/mob/living/carbon/human/user = person()
+	user.ckey = "pinrepeater"
+	var/obj/structure/candybowl/B = allocate(/obj/structure/candybowl, run_loc_floor_bottom_left)
+	test_click(user, B, null)
+	test_time(6 SECONDS)
+	var/obj/item/first = user.get_active_held_item()
+	TEST_ASSERT(!isnull(first), "the first search gives a sweet")
+	qdel(first)
+	test_click(user, B, null)
+	test_time(6 SECONDS)
+	TEST_ASSERT_NULL(user.get_active_held_item(), "the second search gives nothing until it is answered")
+	test_answer(user, "Leave it!")
+	TEST_ASSERT_NULL(user.get_active_held_item(), "leaving it takes nothing")
+	test_click(user, B, null)
+	test_time(6 SECONDS)
+	test_answer(user, "Reach in...")
+	TEST_ASSERT(!isnull(user.get_active_held_item()) || !B.has_candy, "reaching in takes a sweet or empties the bowl")
+	forget_ghosts()

@@ -86,18 +86,13 @@
 	var/uploaded = FALSE
 
 CAPABILITIES(/obj/machinery/generated_station_upload_terminal)
-	op("upload", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Upload payload"), needs(req_is(nameof(uploaded), FALSE, because = MSG(generated_station_upload_terminal/uploaded))), then(PROC_REF(interaction_upload)))
+	op("upload", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Upload payload"), needs(req_is(nameof(uploaded), FALSE, because = MSG(generated_station_upload_terminal/uploaded))),
+		begins(MSG(generated_station_upload_terminal/uploading)), wait(5 SECONDS), then(PROC_REF(upload_done)))
 
 MSG_DEF_SELF(generated_station_upload_terminal/uploaded, "the payload is already resident")
+MSG_DEF(generated_station_upload_terminal/uploading, span_notice("You begin uploading the malware payload."), span_notice("%U% begins uploading a control payload."))
 
-/obj/machinery/generated_station_upload_terminal/proc/interaction_upload(datum/act/op/A)
-	var/mob/user = A.actor
-	act_message(user, null, MSG_SELF(span_notice("You begin uploading the malware payload.")), \
-		MSG_OTHERS(span_notice("%U% begins uploading a control payload.")))
-	task_timed(user, 5 SECONDS, src, src, PROC_REF(upload_done), list(user))
-	return OP_OK
-
-/obj/machinery/generated_station_upload_terminal/proc/upload_done(mob/user)
+/obj/machinery/generated_station_upload_terminal/proc/upload_done(datum/act/op/A)
 	if(uploaded)
 		return
 	uploaded = TRUE

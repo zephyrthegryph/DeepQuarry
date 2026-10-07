@@ -28,7 +28,8 @@ CAPABILITIES(/obj/machinery/beehive)
 	climb()
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), needs(req(PROC_REF(can_dismantle_holds), because = PROC_REF(can_dismantle_refusal))),
+		begins(MSG(beehive/dismantling)), plays(SFX_ITEMS_SCREWDRIVER, at_start = TRUE, volume = 0.5), wait(3 SECONDS), then(PROC_REF(dismantle_done)))
 	op("beehive_smoke", item(/obj/item/bee_smoker), priority(OP_PRIORITY_DEFAULT - 1), label("Smoke bees"), needs(req_is(nameof(closed), FALSE, because = MSG(beehive/closed))), then(PROC_REF(interaction_beehive_smoke)))
 	op("beehive_load_frame", item(/obj/item/honey_frame), priority(OP_PRIORITY_DEFAULT - 1), label("Load frame"), needs(req(PROC_REF(can_load_frame_holds), because = PROC_REF(can_load_frame_refusal))), then(PROC_REF(interaction_beehive_load_frame)))
 	op("beehive_bee_pack", item(/obj/item/bee_pack), priority(OP_PRIORITY_DEFAULT - 1), label("Move bees"), needs(req(PROC_REF(can_move_bees_holds), because = PROC_REF(can_move_bees_refusal))), then(PROC_REF(interaction_beehive_bee_pack)))
@@ -168,21 +169,20 @@ MSG_DEF_SELF(beehive/closed, "you need to open it with a crowbar before smoking 
 		MSG_OTHERS(span_notice("%U% [anchored ? "wrenches" : "unwrenches"] %T%.")))
 	return OP_OK
 
-/obj/machinery/beehive/proc/screwdriver_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	if(bee_count)
-		to_chat(user, span_notice("You can't dismantle \the [src] with these bees inside."))
-		return OP_OK
-	if(length(frames))
-		to_chat(user, span_notice("You can't dismantle \the [src] with [length(frames)] frames still inside!"))
-		return OP_OK
-	to_chat(user, span_notice("You start dismantling \the [src]..."))
-	playsound(src, tool.usesound, 50, TRUE)
-	task_timed(user, 3 SECONDS, src, src, PROC_REF(dismantle_done), list(user))
-	return OP_OK
+MSG_DEF(beehive/dismantling, span_notice("You start dismantling %T%..."), span_notice("%U% starts dismantling %T%."))
 
-/obj/machinery/beehive/proc/dismantle_done(mob/user)
+/// Requirement: the hive holds no bees and no frames.
+/obj/machinery/beehive/proc/can_dismantle_holds(datum/act/op/A)
+	return !bee_count && !length(frames)
+
+/// Why can_dismantle_holds refuses: the bees, else the frames still inside.
+/obj/machinery/beehive/proc/can_dismantle_refusal(datum/act/op/A)
+	if(bee_count)
+		return span_notice("You can't dismantle the hive with these bees inside.")
+	return span_notice("You can't dismantle the hive with [length(frames)] frames still inside!")
+
+/obj/machinery/beehive/proc/dismantle_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(bee_count || length(frames))
 		return
 	act_message(user, src, MSG_SELF(span_notice("You dismantle %T%.")), MSG_OTHERS(span_notice("%U% dismantles %T%.")))
@@ -383,17 +383,13 @@ TRACKED(/obj/item/honey_frame, honey)
 	icon = 'icons/obj/apiary_bees_etc.dmi'
 	icon_state = "apiary"
 
+MSG_DEF_SELF(beehive_assembly/assembling, span_notice("You start assembling %T%..."))
+
 CAPABILITIES(/obj/item/beehive_assembly)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), begins(MSG(beehive_assembly/assembling)), wait(3 SECONDS), then(PROC_REF(assemble_done)))
 
-/// Old attack_self.
-/obj/item/beehive_assembly/proc/interaction_self(datum/act/op/A)
+/obj/item/beehive_assembly/proc/assemble_done(datum/act/op/A)
 	var/mob/user = A.actor
-	to_chat(user, span_notice("You start assembling \the [src]..."))
-	task_timed(user, 3 SECONDS, src, src, PROC_REF(assemble_done), list(user))
-	return TRUE
-
-/obj/item/beehive_assembly/proc/assemble_done(mob/user)
 	if(!consume(src, user))
 		return
 	act_message(user, null, MSG_SELF(span_notice("You construct a beehive.")), MSG_OTHERS(span_notice("%U% constructs a beehive.")))

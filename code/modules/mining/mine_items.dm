@@ -396,7 +396,7 @@ CAPABILITIES(/obj/item/stack/lightpole)
 
 CAPABILITIES(/obj/structure/trailblazer)
 	climb()
-	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), ungated(), label("Use"), wait(8 SECONDS), then(PROC_REF(knock_down_done)))
 
 /obj/structure/trailblazer/Initialize(mapload)
 	. = ..()
@@ -406,16 +406,10 @@ CAPABILITIES(/obj/structure/trailblazer)
 	icon_state = "redtrail_light_on"
 	set_light(2, 2, "#FF0000")
 
-/obj/structure/trailblazer/proc/knock_down_done(mob/user)
+/obj/structure/trailblazer/proc/knock_down_done(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = "%U% knocks down %T%.")
 	replace_with(src, stack_type, 1)
-
-/// Old attack_hand.
-/obj/structure/trailblazer/proc/interaction_hand(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!istext(task_timed(user, 8 SECONDS, src, src, PROC_REF(knock_down_done), list(user))))
-		return TRUE
-	return TRUE
 
 /obj/structure/trailblazer/red
 	name = "trail blazer"

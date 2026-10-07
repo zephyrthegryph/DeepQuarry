@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Timed actions of the generated station terminals, beehives, box piles and candy bowls, the fulton beacon core, trail blazers, event kit objects, fishing rod stringing, meteorites, shield generators, microwave ejecting, microscopes, books, logs and the material furnace are ops with a wait"
