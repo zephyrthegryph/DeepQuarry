@@ -75,6 +75,9 @@ pub struct CapturedResources {
     pub lookups: Vec<CapturedResourceLookup>,
     pub observations: Vec<CandidateObservation>,
     pub literals: Vec<LiteralRequest>,
+    /// Prefix captured from expanded source; following literals use map/skin
+    /// source coordinates and cannot be queried as expanded-source spans.
+    pub source_literal_count: usize,
     pub unsupported: Vec<UnsupportedResource>,
 }
 impl CapturedResources {
@@ -170,6 +173,7 @@ pub fn capture_expanded_with_literals<P: CaptureProvider>(
         ));
     }
     let mut literals = discover_literals(&expanded.text)?;
+    let source_literal_count = literals.len();
     literals.extend_from_slice(extra_literals);
     let root = normalize(&plan.project_dir);
     let directories = plan
@@ -268,6 +272,7 @@ pub fn capture_expanded_with_literals<P: CaptureProvider>(
         lookups,
         observations: capture.observations,
         literals,
+        source_literal_count,
         unsupported: capture.unsupported,
     })
 }
@@ -359,12 +364,15 @@ impl<P: CaptureProvider> Capture<'_, P> {
             .map_err(|error| CaptureError::Invalid(error.to_string()))?;
         if input.archive_name != request.archive_name
             || input.named.name != request.archive_name.as_bytes()
-            || input.content_digest != <[u8; 32]>::from(Sha256::digest(payload))
+            // Raw records were constructed just above from these owned source
+            // bytes. Recompute only caller-supplied encoder receipts here;
+            // immutable resolver admission separately validates every record.
+            || (encoded.is_some() && (input.content_digest != <[u8; 32]>::from(Sha256::digest(payload))
             || input.named.id
                 != input
                     .named
                     .content_id()
-                    .map_err(|error| CaptureError::Invalid(error.to_string()))?
+                    .map_err(|error| CaptureError::Invalid(error.to_string()))?))
         {
             return Err(CaptureError::Invalid(
                 "encoded resource output alias/digest/runtime identity is inconsistent".into(),
@@ -761,6 +769,11 @@ mod tests {
             ),
             Err(CaptureError::Invalid(_))
         ));
+        encoded[0].source_digest = Sha256::digest(b"source").into();
+        encoded[0].input.named.id ^= 1;
+        assert!(matches!(capture_expanded(&plan(), &source, CaptureConfig {
+            policy: &policy, encoded: &encoded, additional: &[],
+        }, &provider), Err(CaptureError::Invalid(_))));
     }
     #[test]
     fn candidate_io_failure_never_becomes_a_negative_lookup() {

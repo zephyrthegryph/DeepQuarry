@@ -46,6 +46,9 @@ fn ensure_owner(
     indexes: &mut BTreeMap<GroupKey, usize>,
     roots: &mut Vec<usize>,
 ) -> Result<usize, String> {
+    if let Some(index) = indexes.get(&GroupKey::Owner(owner)) {
+        return Ok(*index);
+    }
     let path = spelling(symbols, owner)?;
     let mut ancestors = Vec::new();
     if path == "/" {
@@ -227,34 +230,42 @@ pub fn collect<R: Resolver>(
         visit(root, &groups, &mut pending);
     }
     let mut ranks = BTreeMap::new();
+    // Every phase group for one owner has the same explicit-parent blockers.
+    // Compute those once; retain the existing ordered deferred-pass scheduler.
+    let mut owner_blockers: BTreeMap<SymbolId, Vec<SymbolId>> = BTreeMap::new();
     while !pending.is_empty() {
         let mut deferred = Vec::new();
         for index in &pending {
-            let mut ancestor = spelling(symbols, groups[*index].owner)?.to_owned();
-            let mut blocked = false;
-            while ancestor != "/" {
-                let owner = SymbolId::of(&ancestor);
-                if reparented.contains(&owner) {
-                    let parent = match resolver.resolve(ResolveQuery::Parent(owner)) {
-                        ResolvedMeaning::Symbol(parent) => Some(parent),
-                        ResolvedMeaning::Missing => None,
-                        ResolvedMeaning::Unsupported(_) => {
-                            return Err("resource phase parent is unsupported".into())
-                        }
-                        _ => return Err("resource phase parent answer is inconsistent".into()),
-                    };
-                    if let Some(parent) = parent {
-                        if parent != SymbolId::of(lexical_parent(&ancestor))
-                            && indexes.contains_key(&GroupKey::Owner(parent))
-                            && !ranks.contains_key(&GroupKey::Owner(parent))
-                        {
-                            blocked = true;
-                            break;
+            let owner = groups[*index].owner;
+            if let std::collections::btree_map::Entry::Vacant(entry) = owner_blockers.entry(owner) {
+                let mut ancestor = spelling(symbols, owner)?;
+                let mut blockers = Vec::new();
+                while ancestor != "/" {
+                    let ancestor_id = SymbolId::of(ancestor);
+                    if reparented.contains(&ancestor_id) {
+                        let parent = match resolver.resolve(ResolveQuery::Parent(ancestor_id)) {
+                            ResolvedMeaning::Symbol(parent) => Some(parent),
+                            ResolvedMeaning::Missing => None,
+                            ResolvedMeaning::Unsupported(_) => {
+                                return Err("resource phase parent is unsupported".into())
+                            }
+                            _ => return Err("resource phase parent answer is inconsistent".into()),
+                        };
+                        if let Some(parent) = parent {
+                            if parent != SymbolId::of(lexical_parent(ancestor))
+                                && indexes.contains_key(&GroupKey::Owner(parent))
+                            {
+                                blockers.push(parent);
+                            }
                         }
                     }
+                    ancestor = lexical_parent(ancestor);
                 }
-                ancestor = lexical_parent(&ancestor).to_owned();
+                entry.insert(blockers);
             }
+            let blocked = owner_blockers[&owner]
+                .iter()
+                .any(|parent| !ranks.contains_key(&GroupKey::Owner(*parent)));
             if blocked {
                 deferred.push(*index);
             } else {
@@ -313,43 +324,36 @@ pub fn captured_archive_order<R: Resolver>(
         }
     }
     let mut uses = Vec::new();
-    for (event, allocation) in frontend.allocation_ledger.events.iter().enumerate() {
-        let span = match allocation.kind {
-            AllocationKind::Field { initializer, .. } => initializer,
-            AllocationKind::Procedure { body, .. } => Some(body),
-            _ => None,
-        };
-        let Some(span) = span else { continue };
-        let source = frontend
-            .expanded
-            .text
-            .get(span.range())
-            .ok_or("allocation resource span outside captured expanded source")?;
-        for literal in
-            dm_resources::capture::discover_literals(source).map_err(|error| error.to_string())?
-        {
-            match lookups.get(literal.path.as_str()) {
-                Some(CapturedResourceOutcome::Found(ordinal)) => {
-                    let input = captured
-                        .resources
-                        .inputs
-                        .get(*ordinal)
-                        .ok_or("captured resource lookup ordinal outside resources")?;
-                    uses.push(ResourceUse {
-                        event,
-                        alias: input.archive_name.clone().into(),
-                    });
-                }
-                Some(CapturedResourceOutcome::Missing) => {}
-                Some(CapturedResourceOutcome::Unsupported) => {
-                    return Err("resource phase requires unsupported captured literal".into())
-                }
-                None => {
-                    return Err(format!(
-                        "resource phase literal has no captured lookup: {}",
-                        literal.path
-                    ))
-                }
+    let source_literals = captured
+        .literals
+        .get(..captured.source_literal_count)
+        .ok_or("resource source literal prefix outside capture")?;
+    for (event, literal) in indexed_event_literals(
+        &frontend.allocation_ledger,
+        &frontend.expanded.text,
+        source_literals,
+    )? {
+        match lookups.get(literal.path.as_str()) {
+            Some(CapturedResourceOutcome::Found(ordinal)) => {
+                let input = captured
+                    .resources
+                    .inputs
+                    .get(*ordinal)
+                    .ok_or("captured resource lookup ordinal outside resources")?;
+                uses.push(ResourceUse {
+                    event,
+                    alias: input.archive_name.clone().into(),
+                });
+            }
+            Some(CapturedResourceOutcome::Missing) => {}
+            Some(CapturedResourceOutcome::Unsupported) => {
+                return Err("resource phase requires unsupported captured literal".into())
+            }
+            None => {
+                return Err(format!(
+                    "resource phase literal has no captured lookup: {}",
+                    literal.path
+                ))
             }
         }
     }
@@ -386,6 +390,47 @@ pub fn captured_archive_order<R: Resolver>(
     Ok(result)
 }
 
+fn indexed_event_literals<'a>(
+    ledger: &AllocationLedger,
+    source: &str,
+    literals: &'a [dm_resources::capture::LiteralRequest],
+) -> Result<Vec<(usize, &'a dm_resources::capture::LiteralRequest)>, String> {
+    let mut sorted = literals.iter().collect::<Vec<_>>();
+    sorted.sort_by_key(|literal| literal.span.start);
+    for literal in &sorted {
+        let text = source
+            .get(literal.span.range())
+            .ok_or("resource literal source span outside expanded capture")?;
+        if text.as_bytes().first() != Some(&b'\'')
+            || text.as_bytes().last() != Some(&b'\'')
+            || text.get(1..text.len().saturating_sub(1)) != Some(literal.path.as_str())
+        {
+            return Err("resource literal path differs from its captured source span".into());
+        }
+    }
+    let mut result = Vec::with_capacity(literals.len());
+    for (event, allocation) in ledger.events.iter().enumerate() {
+        let span = match allocation.kind {
+            AllocationKind::Field { initializer, .. } => initializer,
+            AllocationKind::Procedure { body, .. } => Some(body),
+            _ => None,
+        };
+        let Some(span) = span else { continue };
+        source
+            .get(span.range())
+            .ok_or("allocation resource span outside captured expanded source")?;
+        let first = sorted.partition_point(|literal| literal.span.start < span.start);
+        let last = sorted.partition_point(|literal| literal.span.start < span.end);
+        for literal in &sorted[first..last] {
+            if literal.span.end > span.end {
+                return Err("resource literal crosses allocation grammar boundary".into());
+            }
+            result.push((event, *literal));
+        }
+    }
+    Ok(result)
+}
+
 /// Certified single-DMF imports precede code, with skin assets before the raw
 /// DMF. Map literals follow code in captured template/atom/assignment order.
 /// Multiple skin import phasing remains unsupported; selection itself is known.
@@ -397,13 +442,22 @@ pub fn nontext_imports(
     if nontext.skin.model.interfaces.len() > 1 {
         return Err("multiple DMF resource import phases require a distinguishing contract".into());
     }
+    let mut lookup_outcomes = BTreeMap::new();
+    let mut normalized_paths = BTreeMap::new();
+    for lookup in &captured.lookups {
+        // Preserve the previous first-encountered spelling for normalized aliases.
+        lookup_outcomes
+            .entry(lookup.path.as_str())
+            .or_insert(lookup.outcome);
+        normalized_paths
+            .entry(lookup.path.replace('\\', "/"))
+            .or_insert(lookup.path.as_str());
+    }
     let lookup = |path: &str| -> Result<Option<Arc<str>>, String> {
-        let found = captured
-            .lookups
-            .iter()
-            .find(|entry| entry.path == path)
+        let found = lookup_outcomes
+            .get(path)
             .ok_or_else(|| format!("nontext resource has no captured lookup: {path}"))?;
-        match found.outcome {
+        match *found {
             CapturedResourceOutcome::Found(ordinal) => Ok(Some(
                 captured
                     .resources
@@ -425,14 +479,10 @@ pub fn nontext_imports(
         for dependency in skin.resource_dependencies.iter() {
             // Lookups retain authored spelling; normalized dependency spellings
             // are equivalent only when the exact captured request agrees.
-            let alias = captured
-                .lookups
-                .iter()
-                .find(|entry| entry.path.replace('\\', "/") == dependency.as_ref())
-                .ok_or_else(|| {
-                    format!("skin dependency absent from captured lookup: {dependency}")
-                })?;
-            if let Some(alias) = lookup(&alias.path)? {
+            let path = normalized_paths.get(dependency.as_ref()).ok_or_else(|| {
+                format!("skin dependency absent from captured lookup: {dependency}")
+            })?;
+            if let Some(alias) = lookup(path)? {
                 prefix.push(alias);
             }
         }
@@ -524,6 +574,18 @@ mod tests {
                 }
             }
         }
+        let captured = dm_resources::capture::discover_literals(&source).unwrap();
+        let indexed = indexed_event_literals(&ledger, &source, &captured).unwrap();
+        assert_eq!(
+            indexed
+                .iter()
+                .map(|(event, literal)| (*event, literal.path.replace('\\', "/")))
+                .collect::<Vec<_>>(),
+            uses.iter()
+                .map(|resource| (resource.event, resource.alias.to_string()))
+                .collect::<Vec<_>>(),
+            "{name}"
+        );
         (ledger, symbols, uses, Parents(parents))
     }
     #[test]
