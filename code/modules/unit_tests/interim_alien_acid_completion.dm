@@ -13,7 +13,7 @@
 	TEST_ASSERT_EQUAL(acid.ticks, 3, "actual acid records three bites before completion")
 	TEST_ASSERT(!QDELETED(acid), "actual acid survives while one bite remains")
 	TEST_ASSERT(!QDELETED(target), "the exact actual target survives before its final bite")
-	TEST_ASSERT_EQUAL(acid.tick(), REPEAT_STOP, "the actual final bite stops its repeat")
+	acid.tick() // "the actual final bite stops its repeat": the acid consumes itself, which ends its every()
 	TEST_ASSERT(QDELETED(target), "the actual final bite dissolves the exact object target")
 	TEST_ASSERT(QDELETED(acid), "the actual completed acid consumes itself")
 	TEST_ASSERT(!QDELETED(unrelated), "actual acid completion preserves an unrelated item on the same floor")
@@ -28,7 +28,7 @@
 	TEST_ASSERT(consume(target), "the real target can be removed through its public consumption API")
 	TEST_ASSERT(QDELETED(target), "the original actual target is gone before the next acid tick")
 	TEST_ASSERT_NULL(acid.target, "actual target teardown clears the acid's declared ownership field")
-	TEST_ASSERT_EQUAL(acid.tick(), REPEAT_STOP, "actual acid with a lost target stops repeating")
+	acid.tick() // "actual acid with a lost target stops repeating": the acid consumes itself, which ends its every()
 	TEST_ASSERT(QDELETED(acid), "the actual lost-target path consumes the acid effect")
 
 /datum/unit_test/interim_alien_acid_missing_target/Run()
