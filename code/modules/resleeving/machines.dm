@@ -188,6 +188,8 @@ OM_FIELD(/obj/machinery/transhuman/synthprinter, busy, 0, CHANGE_MACHINE_SETTING
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(busy), wakes_on = list(nameof(busy)))
+	op("synthprinter_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(synthprinter_interaction_hand)))
+	op("synthprinter_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(synthprinter_interaction_item)))
 
 /obj/machinery/transhuman/synthprinter/proc/work_step(datum/act/timer/A)
 	if(has_stat(NOPOWER))
@@ -240,21 +242,19 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 
 	return 1
 
-EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(synthprinter_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(synthprinter_interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/machinery/transhuman/synthprinter/proc/synthprinter_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/transhuman/synthprinter/proc/synthprinter_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if((busy == 0) || (has_stat(NOPOWER)))
-		return TRUE
+		return OP_OK
 	to_chat(user, "Current print cycle is [busy]% complete.")
-	return TRUE
+	return OP_OK
 
 /// Old attackby.
-/obj/machinery/transhuman/synthprinter/proc/synthprinter_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/machinery/transhuman/synthprinter/proc/synthprinter_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	src.add_fingerprint(user)
 	if(busy)
 		to_chat(user, span_notice("\The [src] is busy. Please wait for completion of previous operation."))
