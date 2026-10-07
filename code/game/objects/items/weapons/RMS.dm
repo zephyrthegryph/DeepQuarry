@@ -64,7 +64,7 @@ TRACKED(/obj/item/rms, stored_charge)
 /// The look: the charge meter in quarters.
 /obj/item/rms/draw(datum/look/look)
 	..()
-	look.overlay("rms_charge[min(round((stored_charge / max_charge) * 4), 4)]")
+	look.overlay("rms_charge[max_charge ? min(round((stored_charge / max_charge) * 4), 4) : 0]")
 
 /obj/item/rms/examine(mob/user)
 	. = ..()
