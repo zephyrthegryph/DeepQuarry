@@ -45,7 +45,7 @@
 	capability_runtime(A).bits = now
 	changed(A, CHANGE_CAPABILITY)
 	// Waiting operations watch cap_state through their requirements' reads (operations/op_ctx.dm).
-	op_reads_changed(A, OP_KEY_CAP_STATE)
+	engine_key_changed(A, OP_KEY_CAP_STATE)
 	return TRUE
 
 /// The per-instance data datum of capability C on A, created on first use (C.data_type).
@@ -60,8 +60,6 @@
 	return !!(capability_bits(A) & CAP_PANEL_OPEN) || !!(cap_of(A, CAP_PANEL) && panel_open(A, null)) // a converted holder keeps it as a capability key (a boolean: a null `when` draws unconditionally)
 /proc/is_locked(atom/A)
 	return !!(capability_bits(A) & CAP_LOCKED)
-/proc/is_emagged(atom/A)
-	return !!(capability_bits(A) & CAP_EMAGGED) || (cap_of(A, CAP_EMAG) && emag_emagged(A)) // a converted holder keeps it as a capability key
 /proc/is_broken(atom/A)
 	if(capability_bits(A) & CAP_BROKEN)
 		return TRUE

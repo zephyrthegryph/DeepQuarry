@@ -540,8 +540,7 @@ impl<'a, 'e> Walk<'a, 'e> {
         let value = p.get();
         if !self.eng.opaque_dirs.is_empty() {
             let rel = self.eng.sem.rel(value.location);
-            if self.eng.opaque_dirs.iter().any(|d| rel.starts_with(d.as_str()))
-                && !(owner == "/" && self.eng.ann.reads_from.contains_key(p.name())) {
+            if self.eng.opaque_dirs.iter().any(|d| rel.starts_with(d.as_str())) {
                 return;
             }
         }
@@ -1185,15 +1184,18 @@ mod global_accessor_tests {
     static NEXT: AtomicUsize = AtomicUsize::new(0);
 
     #[test]
-    fn annotated_global_accessors_preserve_argument_roots_across_opaque_wrappers() {
+    fn annotated_global_accessors_preserve_argument_roots_through_library_wrappers() {
         let root = std::env::temp_dir().join(format!("dq-accessor-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
         std::fs::create_dir_all(root.join("code/engine")).unwrap();
         std::fs::create_dir_all(root.join("code/content")).unwrap();
-        let engine = "#define READS_AS(P, K)\n#define READS_FROM(A)\nREADS_AS(/proc/read_bits, bits)\n/proc/read_bits(datum/holder)\n\tREADS_FROM(holder)\n\treturn holder.raw\n/proc/wrapped_bits(datum/holder)\n\tREADS_FROM(holder)\n\treturn read_bits(holder)\n/proc/unannotated(datum/holder)\n\treturn holder.raw\n";
-        let content = "/datum/probe\n\tvar/raw = 0\n/datum/probe/proc/direct()\n\treturn read_bits(src)\n/datum/probe/proc/wrapped()\n\treturn wrapped_bits(src)\n/datum/probe/proc/blocked()\n\treturn unannotated(src)\n";
+        std::fs::create_dir_all(root.join("code/library")).unwrap();
+        let engine = "#define READS_AS(P, K)\n#define READS_FROM(A)\nREADS_AS(/proc/read_bits, bits)\n/proc/read_bits(datum/holder)\n\tREADS_FROM(holder)\n\treturn holder.raw\n/proc/unannotated(datum/holder)\n\treturn holder.raw\n/proc/opaque_empty(datum/holder)\n\tREADS_FROM()\n\treturn unannotated(holder)\n";
+        let library = "/proc/wrapped_bits(datum/holder)\n\tREADS_FROM(holder)\n\treturn read_bits(holder)\n";
+        let content = "/datum/probe\n\tvar/raw = 0\n/datum/probe/proc/direct()\n\treturn read_bits(src)\n/datum/probe/proc/wrapped()\n\treturn wrapped_bits(src)\n/datum/probe/proc/blocked()\n\treturn unannotated(src)\n/datum/probe/proc/empty_contract()\n\treturn opaque_empty(src)\n";
         std::fs::write(root.join("code/engine/probe.dm"), engine).unwrap();
         std::fs::write(root.join("code/content/probe.dm"), content).unwrap();
-        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/engine/probe.dm", engine), SourceFile::from_text("code/content/probe.dm", content)]);
+        std::fs::write(root.join("code/library/probe.dm"), library).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/engine/probe.dm", engine), SourceFile::from_text("code/content/probe.dm", content), SourceFile::from_text("code/library/probe.dm", library)]);
         tree.root = root.clone();
         let sem = Sem::build(&root, &tree).unwrap();
         let decls = Decls::get(&tree);
@@ -1209,6 +1211,9 @@ mod global_accessor_tests {
             assert_eq!(read.var, "bits");
             assert_eq!(read.kind, ReadKind::Accessor);
         }
+        let empty = engine.analyze("/datum/probe", "empty_contract");
+        assert!(empty.reads.is_empty(), "empty contracts do not track entity arguments");
+        assert!(empty.diags.is_empty(), "the empty contract must preserve the opaque body cutoff");
         let blocked = engine.analyze("/datum/probe", "blocked");
         assert!(blocked.reads.is_empty());
         assert!(blocked.diags.iter().any(|diag| diag.rule == "unannotated_global"));
