@@ -24,7 +24,6 @@ explosion 2 | look_key: null -> 'minevend|||||||||||||'
 explosion 2 | look_set_bits: 0 -> 2
 explosion 2 | refresh_queued: 131071 -> 0
 explosion 2 | refresh_swept: 0 -> 1
-explosion 2 | rx: null -> /datum/rx_state
 explosion 2 | turf: +/obj/effect/effect/sparks x5
 explosion 3 | atom_integrity: down
 explosion 3 | look_key: null -> 'minevend|||||||||||||'

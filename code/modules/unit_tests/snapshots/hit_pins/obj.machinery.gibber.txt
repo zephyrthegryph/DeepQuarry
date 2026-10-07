@@ -26,7 +26,6 @@ explosion 2 | look_key: null -> '|||||||||||||grjam'
 explosion 2 | look_overlays: null -> list(1)
 explosion 2 | refresh_queued: 131071 -> 0
 explosion 2 | refresh_swept: 0 -> 1
-explosion 2 | rx: null -> /datum/rx_state
 explosion 3 | atom_integrity: down
 explosion 3 | ledger: null -> /datum/ledger
 explosion 3 | look_key: null -> '|||||||||||||grjam'

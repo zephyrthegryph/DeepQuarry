@@ -76,6 +76,8 @@
 /obj/item/modular_computer/proc/stored_pen() as /obj/item/pen
 	return stored_pen
 
+MSG_DEF_SELF(modular_computer/already_on, "it is already on")
+
 CAPABILITIES(/obj/item/modular_computer)
 	ref_many(nameof(paired_uavs))
 	owns_one(nameof(processor_unit), /obj/item/computer_hardware/processor_unit)
@@ -104,7 +106,7 @@ CAPABILITIES(/obj/item/modular_computer)
 	op("interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
 	op("modular_computer_silicon_use", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(modular_computer_silicon_use)))
 	op("modular_computer_ghost_view", observer(), label("View"), when(req_is(nameof(enabled))), then(PROC_REF(modular_computer_ghost_view)))
-	op("modular_computer_ghost_power", observer(), priority(OP_PRIORITY_NORMAL + 1), label("View"), needs(req_is(nameof(enabled), FALSE), req_rights(R_ADMIN|R_EVENT|R_DEBUG)), asks(/datum/prompt/choice, fields = list("question" = "This computer is turned off. Would you like to turn it on?", "title" = "Admin Override", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "k98"), then(PROC_REF(modular_computer_ghost_power)))
+	op("modular_computer_ghost_power", observer(), priority(OP_PRIORITY_NORMAL + 1), label("View"), needs(req_is(nameof(enabled), FALSE, because = MSG(modular_computer/already_on)), req_rights(R_ADMIN|R_EVENT|R_DEBUG)), asks(/datum/prompt/choice, fields = list("question" = "This computer is turned off. Would you like to turn it on?", "title" = "Admin Override", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "k98"), then(PROC_REF(modular_computer_ghost_power)))
 	op("modular_computer_ghost_nothing", observer(), priority(OP_PRIORITY_DEFAULT - 1), then(TYPE_PROC_REF(/atom, op_swallow)))
 	op("computer_emergency_shutdown", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Forced Shutdown"), needs(req_adjacent(), req(PROC_REF(pred_computer_hands_on), because = PROC_REF(pred_computer_hands_on_refusal))), then(PROC_REF(computer_emergency_shutdown)))
 	op("computer_verb_eject_id", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject ID"), when(req(PROC_REF(pred_computer_has_card_slot))), needs(req_adjacent(), req(PROC_REF(pred_computer_hands_on), because = PROC_REF(pred_computer_hands_on_refusal))), then(PROC_REF(computer_verb_eject_id)))

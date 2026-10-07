@@ -172,7 +172,7 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 	return 1
 
 CAPABILITIES(/turf)
-	op("turf_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(turf_item_op)))
+	op("turf_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(turf_item_op)))
 	op("turf_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(PROC_REF(turf_touch_op)))
 	op("turf_crawl", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Crawl"), then(PROC_REF(turf_drag)))
 

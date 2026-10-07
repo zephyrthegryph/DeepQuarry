@@ -110,7 +110,9 @@
 			target.hitby(thrown, null)
 		if("emag")
 			var/obj/item/card/emag/card = allocate(/obj/item/card/emag)
+			actor.put_in_hands(card)
 			test_click(actor, target, card)
+			qdel(card)
 
 /// The rows one trigger produced on a fresh `type`.
 /datum/unit_test/proc/dq_hit_capture(type, trigger, turf/T, mob/living/carbon/human/actor)
