@@ -344,6 +344,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         self.plan
             .source_line_starts
             .insert(path.as_ref().clone(), prepared.line_starts().clone());
+        self.plan.source_texts.insert(path.as_ref().clone(),Arc::clone(prepared.original()));
         let mut line_number = 0;
         let mut region = self.begin_region(occurrence, 0);
         let mut pending = Vec::new();

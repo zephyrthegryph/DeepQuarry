@@ -89,6 +89,7 @@ pub struct Macro {
 /// Borrowed lookup keeps expansion independent of a concrete snapshot storage.
 pub(crate) trait MacroLookup {
     fn get_key_value(&self, name: &str) -> Option<(&str, &Macro)>;
+    fn location_read(&self, _file: bool) {}
     fn get(&self, name: &str) -> Option<&Macro> {
         self.get_key_value(name).map(|(_, definition)| definition)
     }
@@ -2197,11 +2198,13 @@ fn expand_mode_disabled_traced<'a>(
                 continue;
             }
             if token_text == "__LINE__" {
+                macros.location_read(false);
                 out.push_str(&location.line.to_string());
                 i += 1;
                 continue;
             }
             if token_text == "__FILE__" {
+                macros.location_read(true);
                 out.push('"');
                 for ch in location.file_name.chars() {
                     if matches!(ch, '\\' | '"') {

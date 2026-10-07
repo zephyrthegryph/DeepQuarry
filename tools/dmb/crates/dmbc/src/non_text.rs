@@ -29,6 +29,14 @@ pub fn capture<P: dm_preprocess::SourceProvider>(
     frontend: &ColdFrontend,
     provider: &P,
 ) -> Result<CapturedNonText, Error> {
+    capture_with_map_memo(frontend, provider, None)
+}
+/// Capture reads and source provenance are refreshed even on syntax hits.
+pub fn capture_with_map_memo<P: dm_preprocess::SourceProvider>(
+    frontend: &ColdFrontend,
+    provider: &P,
+    memo: Option<&crate::map_memo::MapMemo>,
+) -> Result<CapturedNonText, Error> {
     let inputs = dm_tree::non_text::capture(frontend, provider).map_err(Error::Capture)?;
     let mut cached = BTreeMap::<Arc<PathBuf>, MapPlan>::new();
     let mut maps = Vec::new();
@@ -52,12 +60,15 @@ pub fn capture<P: dm_preprocess::SourceProvider>(
                     plan.captured = source.clone();
                     plan
                 } else {
-                    let plan =
-                        dm_tree::maps::plan(source.clone()).map_err(|diagnostic| Error::Map {
-                            path: source.path.clone(),
-                            include_occurrence: source.include_occurrence,
-                            diagnostic,
-                        })?;
+                    let planned = match memo {
+                        Some(memo) => memo.parse(source.clone()),
+                        None => dm_tree::maps::plan(source.clone()),
+                    };
+                    let plan = planned.map_err(|diagnostic| Error::Map {
+                        path: source.path.clone(),
+                        include_occurrence: source.include_occurrence,
+                        diagnostic,
+                    })?;
                     cached.insert(source.path.clone(), plan.clone());
                     plan
                 };

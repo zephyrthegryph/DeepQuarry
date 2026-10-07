@@ -7,3 +7,6 @@ pub use store::{Cache, CacheSnapshot, CompactResult, RejectedSegment};
 
 #[cfg(test)]
 mod tests;
+
+mod variants;
+pub use variants::{encode_variants,decode_variants};

@@ -7,6 +7,10 @@
 pub mod diagnostics;
 pub mod debug_sources;
 pub mod publish;
+pub mod input_snapshot;
+pub mod session;
+pub mod expansion_memo;
+pub mod map_memo;
 
 pub mod engine;
 pub mod engine_abi_coverage;
@@ -15,6 +19,8 @@ pub mod type_values;
 pub mod engine_link;
 pub mod engine_host;
 pub mod lowering;
+pub mod lowering_memo;
+mod lowering_memo_wire;
 pub mod procedure_policy;
 pub mod driver_facts;
 pub mod symbolic;

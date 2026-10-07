@@ -162,6 +162,23 @@ pub fn compile_observed<R: Resolver>(
     workers: usize,
     observer: Option<&cold::ColdObserver<'_>>,
 ) -> Result<cold::ColdOutput, cold::ColdError> {
+    compile_observed_with_memo(frontend,resolver,engine,engine_bytes,links,values,resource_context,maps,stage,workers,observer,None)
+}
+
+#[allow(clippy::too_many_arguments)]pub fn compile_observed_with_memo<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    engine: &EngineSnapshot,
+    engine_bytes: &[u8],
+    links: crate::engine_link::EngineLinkFacts,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    resource_context: Option<u128>,
+    maps: Vec<crate::initialization_artifact::InitializationArtifact>,
+    stage: Option<&dyn crate::composition::NonTextOutputStage>,
+    workers: usize,
+    observer: Option<&cold::ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+) -> Result<cold::ColdOutput, cold::ColdError> {
     let order = crate::type_creation_order::collect(
         &frontend.allocation_ledger,
         &frontend.expanded.text,
@@ -175,7 +192,7 @@ pub fn compile_observed<R: Resolver>(
         symbols: frontend.snapshot.tree.symbols(),
         resource_search_context: resource_context,
     };
-    cold::compile_captured_classified_with_pinned_abi_observed(
+    cold::compile_captured_classified_with_pinned_abi_memo(
         frontend,
         resolver,
         cold::CapturedLinkInputs {
@@ -197,5 +214,6 @@ pub fn compile_observed<R: Resolver>(
         maps,
         stage,
         observer,
+        memo,
     )
 }

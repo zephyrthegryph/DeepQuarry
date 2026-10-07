@@ -358,3 +358,22 @@ traversal and checks inactivity only at root EOF. The focused
 checks those captured cases and unmatched child-close provenance. Its newly authored
 gate awaits execution. Exact native EOF message wording and broader malformed-frame
 diagnostics remain outside this finite acceptance proof; runtime was not executed.
+
+
+### Phase 2 expansion memo prototype
+
+The optional `regions::ExpansionMemo` boundary reuses region expansion after a fresh
+ordered directive plan. The plan still executes all includes, conditionals and macro
+effects; this is not an incremental directive interpreter. A record key includes exact
+raw region bytes and current active logical-line/segment topology. Actual macro lookups
+record positive definitions and negative absence per segment, including rescans and
+pasted-token lookup. Unread incoming bindings do not invalidate expansion. Executed
+`__FILE__` and `__LINE__` substitutions validate their current location values.
+
+Records contain self-contained replacement definitions and relative output/source-line
+references. Hits rebind current include occurrences, source spans and macro definition
+origins from the fresh plan. They do not reuse absolute debug coordinates. Versioned
+serialization validates identity and output spans; invalid records are misses. Storage
+and admission budgets belong to the caller, with no hidden process cache or disk access
+inside the preprocessor. Declaration parsing and the directive replay remain fresh in
+this prototype; no claim of whole-include-region minimal recomputation is made.

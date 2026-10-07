@@ -31,6 +31,7 @@ pub struct CapturedModifiedInstance {
     pub field_origins: Vec<Option<u32>>,
     pub origin: Option<u32>,
 }
+#[derive(Clone)]
 pub struct ResolverProc {
     pub modified_instances: BTreeMap<crate::Symbol, CapturedModifiedInstance>,
     pub procedure_values: BTreeMap<crate::Symbol, dm_ir::ProcedureIdentity>,

@@ -344,6 +344,18 @@ pub fn build_with_config<P: SourceProvider>(
     defines: &BTreeMap<String, String>,
     config: FrontendConfig<'_>,
 ) -> Result<ColdFrontend, Vec<Diagnostic>> {
+    build_with_expansion_memo(project, provider, defines, config, None)
+}
+
+/// Optional client-owned expansion reuse. The ordered plan and joined grammar
+/// remain authoritative, including declarations crossing include boundaries.
+pub fn build_with_expansion_memo<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+    config: FrontendConfig<'_>,
+    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
+) -> Result<ColdFrontend, Vec<Diagnostic>> {
     let workers = config.workers;
     let total_start = Instant::now();
     let mut timings = FrontendTimings::default();
@@ -379,7 +391,10 @@ pub fn build_with_config<P: SourceProvider>(
         0,
         plan.regions.len(),
     );
-    let expanded = expand_regions_text(&plan, workers);
+    let expanded = match memo {
+        Some(memo) => dm_preprocess::regions::expand_regions_text_with_memo(&plan, workers, memo),
+        None => expand_regions_text(&plan, workers),
+    };
     timings.expansion = stage_start.elapsed();
     observe(
         config,

@@ -65,6 +65,7 @@ impl Default for LoweringConfig {
         }
     }
 }
+#[derive(Clone)]
 pub struct LoweredUnit {
     pub identity: UnitIdentity,
     /// Exact immutable tree selection, independent of encounter order.
@@ -94,7 +95,7 @@ pub fn lower_frontend<R: Resolver, P: AbiPolicy>(
     policy: &P,
     config: LoweringConfig,
 ) -> LoweringBatch {
-    lower_frontend_impl(frontend, host, policy, config, None)
+    lower_frontend_impl(frontend, host, policy, config, None, None)
 }
 /// Startup admission is an exact captured body inventory, never a bypass flag.
 pub fn lower_frontend_with_statics<R: Resolver, P: AbiPolicy>(
@@ -104,7 +105,15 @@ pub fn lower_frontend_with_statics<R: Resolver, P: AbiPolicy>(
     config: LoweringConfig,
     startup: &crate::startup::CapturedStartup,
 ) -> LoweringBatch {
-    lower_frontend_impl(frontend, host, policy, config, Some(startup))
+    lower_frontend_impl(frontend, host, policy, config, Some(startup), None)
+}
+/// Memo admission retains the cold startup/ABI guards. The caller supplies a
+/// compiler policy identity; it must not substitute a whole-program tree hash.
+pub fn lower_frontend_with_memo<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend, host: &R, policy: &P, config: LoweringConfig,
+    startup: &crate::startup::CapturedStartup, memo: &crate::lowering_memo::ProcedureMemo,
+) -> LoweringBatch {
+    lower_frontend_impl(frontend, host, policy, config, Some(startup), Some(memo))
 }
 fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
     frontend: &ColdFrontend,
@@ -112,6 +121,7 @@ fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
     policy: &P,
     config: LoweringConfig,
     startup: Option<&crate::startup::CapturedStartup>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
 ) -> LoweringBatch {
     // At most eight workers and bounded chunks, independent of machine core count.
     let workers = config.workers.clamp(1, 8);
@@ -134,7 +144,7 @@ fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
                     scope.spawn(move || {
                         slice
                             .iter()
-                            .map(|body| lower_one(frontend, body, host, policy, startup))
+                            .map(|body| lower_one_memo(frontend, body, host, policy, startup, memo))
                             .collect::<Vec<_>>()
                     }),
                 ));
@@ -166,6 +176,74 @@ fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
         }
     }
     batch
+}
+fn lower_one_memo<R: Resolver, P: AbiPolicy>(
+    frontend:&ColdFrontend, body:&BodyOccurrence, host:&R, policy:&P,
+    startup:Option<&crate::startup::CapturedStartup>, memo:Option<&crate::lowering_memo::ProcedureMemo>,
+) -> Result<LoweredUnit,Vec<LoweringDiagnostic>> {
+    let Some(memo)=memo else { return lower_one(frontend,body,host,policy,startup); };
+    if startup.is_some_and(|capture|capture.validate_for(frontend).is_err()) {
+        return lower_one(frontend,body,host,policy,startup);
+    }
+    let Some(mut key)=crate::lowering_memo::key(frontend,body,memo.policy) else {
+        return lower_one(frontend,body,host,policy,startup);
+    };
+    // Frozen ABI policies are prepared before this stage. Their actual folded
+    // outputs must enter the key because no resolver call happens on replay.
+    let tree=&frontend.snapshot.tree;
+    let prepared_key=(|| {
+        let node=tree.member(body.member)?;
+        let owner=tree.type_node(node.owner)?.path;
+        let occurrence=tree.override_chain(body.member).iter().filter(|id|tree.member(**id)
+            .is_some_and(|entry|entry.owner==node.owner && entry.kind==node.kind && entry.name==node.name)).count().checked_sub(1)?;
+        let identity=UnitIdentity {owner,name:node.name,namespace:if node.kind==MemberKind::Verb {Namespace::Verb}else{Namespace::Proc},
+            occurrence:u32::try_from(occurrence).ok()?};
+        let parsed=frontend.parse_body(body).ok()?;
+        let context=AbiContext {identity,origin:&body.source,resolver:host,
+            symbols:startup.map_or(tree.symbols(),|startup|startup.plan().symbols.as_ref())};
+        let prepared=policy.prepare_captured(node.metadata.procedure.as_ref()?,&parsed,&context).ok()?;
+        crate::lowering_memo::prepared_key(&mut key,&prepared,body.expanded_span.start)
+    })();
+    if prepared_key.is_none() {return lower_one(frontend,body,host,policy,startup);}
+    if let Some(value)=memo.values.lookup(&key,host) {
+        // AST-bearing private sidecars still contain expanded spans. Ordinary
+        // code contains only symbolic operands/debug ordinals and can move.
+        let absolute_sidecars=!value.code.modified_instances.is_empty() || !value.source_helpers.is_empty();
+        if !absolute_sidecars || value.origin.expanded_span==body.expanded_span {
+            memo.counts.resident_hits.fetch_add(1,std::sync::atomic::Ordering::Relaxed);
+            let mut unit=(*value).clone();
+            unit.origin=body.clone();
+            if let Some(member)=frontend.snapshot.tree.member(body.member) {
+                if let Some(metadata)=&member.metadata.procedure {unit.metadata=Arc::clone(metadata);}
+                unit.effective=frontend.snapshot.tree.resolve(member.owner,member.name,member.kind)==Some(body.member);
+            }
+            return Ok(unit);
+        }
+    }
+    if let Some(unit)=memo.lookup_disk(&key,frontend,body,host) {
+        memo.counts.disk_hits.fetch_add(1,std::sync::atomic::Ordering::Relaxed);
+        return Ok(unit);
+    }
+    memo.counts.recomputed.fetch_add(1,std::sync::atomic::Ordering::Relaxed);
+    let recording=crate::lowering_memo::RecordingResolver::new(host);
+    let tree=&frontend.snapshot.tree;
+    if let Some(node)=tree.member(body.member) {
+        if let Some(owner)=tree.type_node(node.owner) {
+            recording.record_occurrence(dm_ir::ProcedureIdentity {
+                owner:owner.path,name:node.name,verb:node.kind==MemberKind::Verb,
+                occurrence:u32::try_from(tree.override_chain(body.member).iter().filter(|id|
+                    tree.member(**id).is_some_and(|entry|entry.owner==node.owner && entry.kind==node.kind && entry.name==node.name))
+                    .count().saturating_sub(1)).unwrap_or(u32::MAX),
+            });
+        }
+    }
+    let result=lower_one(frontend,body,&recording,policy,startup);
+    if let Ok(unit)=&result {
+        let reads=recording.reads();
+        memo.queue_disk(&key,&reads,unit);
+        memo.remember(key,reads,unit);
+    }
+    result
 }
 fn lower_one<R: Resolver, P: AbiPolicy>(
     frontend: &ColdFrontend,
@@ -428,361 +506,5 @@ impl LoweringBatch {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use dm_ir::{ResolveQuery, ResolvedMeaning};
-    use std::{collections::BTreeMap, path::Path};
-    struct Source(&'static str);
-    impl dm_preprocess::SourceProvider for Source {
-        fn read(&self, _: &Path) -> Result<String, String> {
-            Ok(self.0.into())
-        }
-    }
-    struct Host;
-    impl Resolver for Host {
-        fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
-            ResolvedMeaning::Unsupported(query)
-        }
-    }
-    struct NoParameters;
-    impl AbiPolicy for NoParameters {
-        fn inputs(
-            &self,
-            _: UnitIdentity,
-            metadata: &ProcedureMetadata,
-            _: &SymbolTable,
-            _: &SourceLocation,
-        ) -> Result<ProcedureInputs, String> {
-            if !metadata.signature.parameters.is_empty() || metadata.signature.variadic {
-                return Err("no-parameter policy does not know parameter ABI".into());
-            }
-            Ok(ProcedureInputs::default())
-        }
-    }
-    fn frontend(source: &'static str) -> ColdFrontend {
-        dm_tree::frontend::build(
-            Path::new("project.dme"),
-            &Source(source),
-            &BTreeMap::new(),
-            1,
-        )
-        .unwrap()
-    }
-    #[test]
-    fn actual_lazy_frontend_units_are_equal_with_one_or_two_workers() {
-        let frontend = frontend("/proc/first()\n    return 1\n/proc/second()\n    return 2\n");
-        let one = lower_frontend(
-            &frontend,
-            &Host,
-            &NoParameters,
-            LoweringConfig {
-                workers: 1,
-                max_chunk: 1,
-            },
-        );
-        let two = lower_frontend(
-            &frontend,
-            &Host,
-            &NoParameters,
-            LoweringConfig {
-                workers: 2,
-                max_chunk: 1,
-            },
-        );
-        assert!(one.diagnostics.is_empty(), "{:?}", one.diagnostics);
-        assert!(two.diagnostics.is_empty(), "{:?}", two.diagnostics);
-        assert_eq!(one.units.len(), 2);
-        assert_eq!(one.identity_index(), two.identity_index());
-        for (a, b) in one.units.iter().zip(&two.units) {
-            assert_eq!(a.identity, b.identity);
-            assert_eq!(a.origin.source.span, b.origin.source.span);
-            assert_eq!(a.code.procedure, b.code.procedure);
-        }
-    }
-    #[test]
-    fn startup_admission_filters_declarations_and_preserves_distinct_static_slots() {
-        let frontend = frontend("/proc/first()\n    var/static/counter = 1\n    return counter\n/proc/second()\n    var/static/counter = 2\n    return counter\n");
-        let ordinary = lower_frontend(&frontend, &Host, &NoParameters, LoweringConfig::default());
-        assert!(ordinary.units.is_empty());
-        assert_eq!(ordinary.diagnostics.len(), 2);
-        let startup = crate::startup::capture(&frontend).unwrap();
-        let host = startup.resolver(&frontend, &Host).unwrap();
-        let one = lower_frontend_with_statics(
-            &frontend,
-            &host,
-            &NoParameters,
-            LoweringConfig {
-                workers: 1,
-                max_chunk: 1,
-            },
-            &startup,
-        );
-        let two = lower_frontend_with_statics(
-            &frontend,
-            &host,
-            &NoParameters,
-            LoweringConfig {
-                workers: 2,
-                max_chunk: 1,
-            },
-            &startup,
-        );
-        assert!(one.diagnostics.is_empty(), "{:?}", one.diagnostics);
-        assert!(two.diagnostics.is_empty(), "{:?}", two.diagnostics);
-        assert_eq!(one.units.len(), 2);
-        for (a, b) in one.units.iter().zip(&two.units) {
-            assert_eq!(a.code.procedure, b.code.procedure);
-            assert_eq!(a.code.procedure_statics, b.code.procedure_statics);
-            assert_eq!(a.code.procedure_statics.len(), 1);
-        }
-        assert_ne!(
-            one.units[0].code.procedure_statics,
-            one.units[1].code.procedure_statics
-        );
-    }
-    #[test]
-    fn global_units_use_global_storage_against_the_real_tree() {
-        let frontend = frontend("var/counter = 1\n/proc/read()\n    return counter\n");
-        let batch = lower_frontend(
-            &frontend,
-            frontend.snapshot.tree.as_ref(),
-            &NoParameters,
-            LoweringConfig::default(),
-        );
-        assert!(batch.diagnostics.is_empty(), "{:?}", batch.diagnostics);
-        let body = frontend.body(&frontend.bodies[0]).unwrap();
-        let mut bindings = dm_codegen_byond::LowerBindings {
-            current_proc_path: Some("/proc/read".into()),
-            ..Default::default()
-        };
-        bindings.globals.insert("counter".into());
-        let reference =
-            dm_codegen_byond::compile_simple_proc_with_bindings(&body.children, &bindings).unwrap();
-        let mut without_debug = batch.units[0].code.procedure.clone();
-        without_debug.code.items.retain(|item| !matches!(item, dm_codegen_byond::Item::Instruction(instruction) if matches!(instruction.opcode,0x84|0x85)));
-        assert_eq!(without_debug, reference);
-        assert!(!batch.units[0].debug_origins.entries.is_empty());
-    }
-    #[test]
-    fn unsupported_parameter_policy_reports_ordered_source_diagnostics() {
-        let frontend=frontend("/proc/first(value as num)\n    return value\n/proc/second(value as text)\n    return value\n");
-        let batch = lower_frontend(
-            &frontend,
-            &Host,
-            &NoParameters,
-            LoweringConfig {
-                workers: 2,
-                max_chunk: 1,
-            },
-        );
-        assert!(batch.units.is_empty());
-        assert_eq!(batch.diagnostics.len(), 2);
-        assert!(batch.diagnostics[0].origin.line < batch.diagnostics[1].origin.line);
-        assert!(batch
-            .diagnostics
-            .iter()
-            .all(|error| error.message.contains("parameter ABI")));
-        assert!(batch
-            .diagnostics
-            .iter()
-            .all(|error| error.kind == DiagnosticKind::UnsupportedModel));
-    }
-    #[test]
-    fn included_macro_failures_report_statement_lines_in_worker_order() {
-        struct Included;
-        impl dm_preprocess::SourceProvider for Included {
-            fn read(&self, path: &Path) -> Result<String, String> {
-                match path.file_name().and_then(|name| name.to_str()) {
-                    Some("project.dme") => Ok("#include \"body.dm\"\n".into()),
-                    Some("body.dm") => Ok("#define BAD missing_call()\n/proc/first()\n    if(1)\n        return BAD\n/proc/second()\n    return BAD\n".into()),
-                    _ => Err("unexpected source".into()),
-                }
-            }
-        }
-        let frontend =
-            dm_tree::frontend::build(Path::new("project.dme"), &Included, &BTreeMap::new(), 1)
-                .unwrap();
-        let one = lower_frontend(
-            &frontend,
-            &Host,
-            &NoParameters,
-            LoweringConfig {
-                workers: 1,
-                ..Default::default()
-            },
-        );
-        let two = lower_frontend(
-            &frontend,
-            &Host,
-            &NoParameters,
-            LoweringConfig {
-                workers: 2,
-                max_chunk: 1,
-            },
-        );
-        assert!(one.units.is_empty());
-        assert_eq!(one.diagnostics.len(), 2);
-        assert_eq!(
-            one.diagnostics
-                .iter()
-                .map(|diagnostic| diagnostic.origin.line)
-                .collect::<Vec<_>>(),
-            vec![4, 6]
-        );
-        for (left, right) in one.diagnostics.iter().zip(&two.diagnostics) {
-            assert!(left.origin.semantic_path.ends_with("body.dm"));
-            assert_eq!(left.kind, DiagnosticKind::UnsupportedModel);
-            assert_eq!(left.kind, right.kind);
-            assert_eq!(left.origin.span, right.origin.span);
-            assert_eq!(left.origin.semantic_path, right.origin.semantic_path);
-            assert_eq!(left.origin.line, right.origin.line);
-            assert_eq!(
-                left.origin.encounter_ordinal,
-                right.origin.encounter_ordinal
-            );
-            assert_eq!(left.origin.include_chain, right.origin.include_chain);
-            assert_eq!(left.message, right.message);
-        }
-    }
-    #[test]
-    fn included_macro_and_loop_bodies_keep_actual_source_debug_origins() {
-        struct Included;
-        impl dm_preprocess::SourceProvider for Included {
-            fn read(&self, path: &Path) -> Result<String, String> {
-                match path.file_name().and_then(|name|name.to_str()) {
-                    Some("project.dme") => Ok("#include \"body.dm\"\n".into()),
-                    Some("body.dm") => Ok("#define VALUE 7\n/proc/p()\n    var/x = 0\n    while(x < 1)\n        x++\n    return VALUE\n".into()),
-                    _ => Err("unexpected source".into()),
-                }
-            }
-        }
-        let frontend =
-            dm_tree::frontend::build(Path::new("project.dme"), &Included, &BTreeMap::new(), 1)
-                .unwrap();
-        let batch = lower_frontend(&frontend, &Host, &NoParameters, LoweringConfig::default());
-        assert!(batch.diagnostics.is_empty(), "{:?}", batch.diagnostics);
-        assert_eq!(batch.units.len(), 1);
-        let entries = &batch.units[0].debug_origins.entries;
-        assert!(entries
-            .iter()
-            .any(|origin| origin.semantic_path.ends_with("body.dm") && origin.line == 5));
-        assert!(entries
-            .iter()
-            .any(|origin| origin.semantic_path.ends_with("body.dm") && origin.line == 6));
-        assert!(batch.require_production_abi().is_err());
-    }
-    #[test]
-    fn captured_policy_prepares_guarded_settings_and_authoritative_layout() {
-        use crate::procedure_policy::{
-            CapturedConstantEvaluator, CapturedInheritedFacts, CapturedProcedurePolicy,
-            InheritedLayout,
-        };
-        use dm_codegen_byond::procedure_abi::{AbiError, Category};
-        struct Facts;
-        impl CapturedInheritedFacts for Facts {
-            fn inherited(&self, _: &AbiContext<'_>) -> Result<InheritedLayout, AbiError> {
-                Ok(InheritedLayout::Fresh)
-            }
-        }
-        impl CapturedConstantEvaluator for Facts {
-            fn evaluate(
-                &self,
-                expression: &dm_ir::SymbolicExpression,
-                context: &AbiContext<'_>,
-            ) -> Result<dm_ir::SemanticValue, AbiError> {
-                match expression.source_text(context.symbols).as_deref() {
-                    Some("0") => Ok(dm_ir::SemanticValue::NumberBits(0f32.to_bits())),
-                    Some("1") => Ok(dm_ir::SemanticValue::NumberBits(1f32.to_bits())),
-                    Some("null") => Ok(dm_ir::SemanticValue::Null),
-                    _ => Err(AbiError("uncaptured constant".into())),
-                }
-            }
-        }
-        let frontend=frontend("/proc/p(value as num | null)\n    if(0)\n        set hidden = 1\n    else\n        set category = null\n    return value\n");
-        let facts = Facts;
-        let policy = CapturedProcedurePolicy {
-            evaluator: &facts,
-            inherited: &facts,
-            resource_search_context: None,
-        };
-        let batch = lower_frontend(&frontend, &Host, &policy, LoweringConfig::default());
-        assert!(batch.diagnostics.is_empty(), "{:?}", batch.diagnostics);
-        batch.require_production_abi().unwrap();
-        let abi = batch.units[0].abi.as_ref().unwrap();
-        assert_eq!(abi.layout.category, Category::Null);
-        assert_eq!(abi.layout.flags, 0x24);
-        assert_eq!(batch.units[0].code.procedure.argument_type_flags, [136]);
-        let helper_frontend =
-            self::frontend("/proc/source(value in list(value))\n    return value\n");
-        let helpers = lower_frontend(&helper_frontend, &Host, &policy, LoweringConfig::default());
-        assert!(helpers.diagnostics.is_empty(), "{:?}", helpers.diagnostics);
-        helpers.require_production_abi().unwrap();
-        assert_eq!(helpers.units[0].source_helpers.len(), 1);
-        let helper = &helpers.units[0].source_helpers[0];
-        assert_eq!(helper.owner, helpers.units[0].identity);
-        assert_eq!(helper.argument, 0);
-        assert!(helper.code.procedure.argument_names.is_empty());
-        assert_eq!(helper.debug_origins.entries[0].line, 1);
-        assert!(helper.code.procedure.code.items.iter().any(|item| matches!(item,dm_codegen_byond::Item::Instruction(instruction) if instruction.operands.iter().any(|word|matches!(word,dm_codegen_byond::Word::Variable(dm_codegen_byond::VariableWord::Arg(0)))))));
-    }
-    #[test]
-    fn empty_static_inventory_skips_only_actual_body_without_stored_qualifiers() {
-        let frontend = frontend(
-            "/proc/p()\n    var/local = 1\n    if(local)\n        local++\n    return local\n",
-        );
-        let startup = crate::startup::capture(&frontend).unwrap();
-        assert!(startup.procedures()[0].1.declarations.is_empty());
-        let ordinary = lower_frontend(&frontend, &Host, &NoParameters, LoweringConfig::default());
-        let captured = lower_frontend_with_statics(
-            &frontend,
-            &Host,
-            &NoParameters,
-            LoweringConfig::default(),
-            &startup,
-        );
-        assert!(ordinary.diagnostics.is_empty());
-        assert!(captured.diagnostics.is_empty());
-        assert_eq!(
-            ordinary.units[0].code.procedure,
-            captured.units[0].code.procedure
-        );
-        struct Injected;
-        impl AbiPolicy for Injected {
-            fn inputs(
-                &self,
-                _: UnitIdentity,
-                _: &ProcedureMetadata,
-                _: &SymbolTable,
-                _: &SourceLocation,
-            ) -> Result<ProcedureInputs, String> {
-                Ok(ProcedureInputs::default())
-            }
-            fn prepare(
-                &self,
-                _: &ProcedureMetadata,
-                parsed: &dm_syntax::Item,
-                _: &AbiContext<'_>,
-            ) -> Result<PreparedUnit, String> {
-                let mut prepared = PreparedUnit::local_only(ProcedureInputs::default(), parsed);
-                let injected =
-                    dm_syntax::parse("/proc/injected()\n    if(1)\n        var/static/cache = 1\n");
-                prepared
-                    .executable_body
-                    .insert(0, injected.items[0].children[0].clone());
-                Ok(prepared)
-            }
-        }
-        let injected = lower_frontend_with_statics(
-            &frontend,
-            &Host,
-            &Injected,
-            LoweringConfig::default(),
-            &startup,
-        );
-        assert!(injected.units.is_empty());
-        assert_eq!(injected.diagnostics.len(), 1);
-        assert!(injected.diagnostics[0]
-            .message
-            .contains("startup inventory differs"));
-    }
-}
+#[path = "lowering_tests.rs"]
+mod tests;

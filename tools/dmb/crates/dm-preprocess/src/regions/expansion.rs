@@ -18,34 +18,47 @@ pub struct ExpandedRegions {
 }
 
 #[derive(Default)]
-struct RegionOutput {
-    text: String,
-    lines: Vec<(Span, usize, Span, Arc<Vec<MacroExpansion>>)>,
-    diagnostics: Vec<Diagnostic>,
+pub(super) struct RegionOutput {
+    pub(super) text: String,
+    pub(super) lines: Vec<(Span, usize, Span, Arc<Vec<MacroExpansion>>)>,
+    pub(super) diagnostics: Vec<Diagnostic>,
 }
 
 /// Freeze directive state first, then expand independent regions in a bounded
 /// scoped pool. Completion order never determines emission or diagnostics order.
 pub fn expand_regions(plan: &DirectivePlan, workers: usize) -> ExpandedRegions {
-    expand_regions_inner(plan, workers, true)
+    expand_regions_inner(plan, workers, true, None)
 }
 
 /// Large cold frontends lex bounded declaration chunks themselves. Retaining
 /// millions of whole-project lexical spans would defeat the source arena model.
 pub fn expand_regions_text(plan: &DirectivePlan, workers: usize) -> ExpandedRegions {
-    expand_regions_inner(plan, workers, false)
+    expand_regions_inner(plan, workers, false, None)
 }
 
+pub fn expand_regions_text_with_memo(
+    plan: &DirectivePlan,
+    workers: usize,
+    memo: &dyn region_memo::ExpansionMemo,
+) -> ExpandedRegions {
+    expand_regions_inner(plan, workers, false, Some(memo))
+}
 fn expand_regions_inner(
     plan: &DirectivePlan,
     workers: usize,
     retain_tokens: bool,
+    memo: Option<&dyn region_memo::ExpansionMemo>,
 ) -> ExpandedRegions {
     let count = plan.regions.len();
     let hardware_workers = std::thread::available_parallelism().map_or(1, usize::from);
     let worker_count = workers.max(1).min(hardware_workers).min(count.max(1));
     let outputs = if worker_count == 1 {
-        (0..count).map(|index| expand_region(plan, index)).collect()
+        (0..count)
+            .map(|index| match memo {
+                Some(memo) => region_memo::expand(plan, index, memo),
+                None => expand_region(plan, index, None),
+            })
+            .collect()
     } else {
         let next = AtomicUsize::new(0);
         let outputs = Mutex::new((0..count).map(|_| None).collect::<Vec<_>>());
@@ -58,7 +71,10 @@ fn expand_regions_inner(
                     if index >= count {
                         break;
                     }
-                    let output = expand_region(plan, index);
+                    let output = match memo {
+                        Some(memo) => region_memo::expand(plan, index, memo),
+                        None => expand_region(plan, index, None),
+                    };
                     outputs.lock().expect("expansion output lock poisoned")[index] = Some(output);
                 });
             }
@@ -139,11 +155,16 @@ fn expand_regions_inner(
     result
 }
 
-fn expand_region(plan: &DirectivePlan, index: usize) -> RegionOutput {
+pub(super) fn expand_region(
+    plan: &DirectivePlan,
+    index: usize,
+    recorder: Option<&region_memo::Recorder>,
+) -> RegionOutput {
     let region = &plan.regions[index];
     let file_name = plan.semantic_path(region.occurrence);
     let mut output = RegionOutput::default();
-    for segment in &region.segments {
+    let mut input = 0;
+    for (segment_index, segment) in region.segments.iter().enumerate() {
         for line in &segment.lines {
             let mut macro_expansions = Vec::new();
             let mut trace = |name: &str, invocation_span: Span, chain: &[&str]| {
@@ -154,9 +175,19 @@ fn expand_region(plan: &DirectivePlan, index: usize) -> RegionOutput {
                     definition: segment.macros.definition_origin(name).cloned(),
                 });
             };
+            let recording = recorder.map(|recorder| region_memo::RecordingLookup {
+                env: &segment.macros,
+                recorder,
+                segment: segment_index,
+                input,
+            });
+            input += 1;
+            let lookup: &dyn crate::MacroLookup = recording
+                .as_ref()
+                .map_or(&segment.macros as &dyn crate::MacroLookup, |lookup| lookup);
             let text = match expand_traced(
                 line.text.trim_end_matches(['\r', '\n']),
-                &segment.macros,
+                lookup,
                 ExpandLocation {
                     file_name: &file_name,
                     line: line.source_line,
@@ -292,7 +323,10 @@ mod tests {
         for workers in [1, 4] {
             let expanded = expand_regions_text(&plan, workers);
             assert!(expanded.diagnostics.is_empty());
-            assert_eq!(expanded.text.as_ref(), provider.0[Path::new("project.dme")].as_str());
+            assert_eq!(
+                expanded.text.as_ref(),
+                provider.0[Path::new("project.dme")].as_str()
+            );
             assert_eq!(expanded.origins.len(), 6);
             assert_eq!(
                 &expanded.text[expanded.origins[1].output_span.range()],

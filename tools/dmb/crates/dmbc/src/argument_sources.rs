@@ -11,6 +11,7 @@ use dm_ir::{ProcedureMetadata, Resolver, SymbolTable};
 use dm_syntax::{Item, TokenKind};
 use dm_tree::frontend::ColdFrontend;
 
+#[derive(Clone)]
 pub struct LoweredHelper {
     pub owner: UnitIdentity,
     pub argument: u32,

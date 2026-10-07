@@ -1,4 +1,4 @@
-//! Uncached analysis and native compilation over the shared captured pipeline.
+//! Native compilation over captured inputs, with disposable validated disk memos.
 use std::collections::BTreeMap;
 use std::io::{self, Write};
 use std::path::PathBuf;
@@ -16,7 +16,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = std::env::args().skip(1);
     let command = args.next().unwrap_or_else(|| "--help".into());
     if command == "--help" || command == "-h" {
-        println!("dmbc analyze|compile [--no-daemon] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH]");
+        println!("dmbc analyze|compile [--no-daemon] [--no-cache] [--exact-inputs] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH]");
         println!("compile publishes a new immutable output pair and installs PROJECT.dmb/.rsc; unsupported semantics fail before publication.");
         return Ok(());
     }
@@ -30,9 +30,13 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut bootstrap_catalog = false;
     let mut progress_enabled = false;
     let mut output_store = None;
+    let mut exact_inputs = false;
+    let mut no_cache = false;
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--no-daemon" => {}
+            "--exact-inputs" => exact_inputs = true,
+            "--no-cache" => no_cache = true,
             "--bootstrap-catalog" => bootstrap_catalog = true,
             "--progress" => progress_enabled = true,
             "--output-store" => {
@@ -75,7 +79,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
     let project = std::fs::canonicalize(project.ok_or("a project manifest is required")?)?;
     let total = Instant::now();
-    let _build_lock = if command == "compile" {
+    let mut build_lock = if command == "compile" {
         Some(dmbc::compile_driver::acquire_build_lock(&project)?)
     } else {
         None
@@ -126,6 +130,58 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             .entry("DM_BUILD".into())
             .or_insert_with(|| "1687".into());
     }
+    let now_ns = || std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
+        .expect("clock is after epoch").as_nanos();
+    let inputs_capture = dmbc::input_snapshot::RecordingInputs::new(
+        dmbc::input_snapshot::FileSystemInputs, now_ns());
+    let mut session = None;
+    let mut pair_store = None;
+    let mut memo_policy = 0;
+    if command == "compile" && !no_cache {
+        let compiler = file_hash(&std::env::current_exe()?)?;
+        let mut policy_bytes = b"native-lowering-policy-v1\0".to_vec();
+        policy_bytes.extend_from_slice(&compiler.to_le_bytes());
+        policy_bytes.extend_from_slice(&engine.expect("compile engine captured").identity().to_le_bytes());
+        memo_policy = xxhash_rust::xxh3::xxh3_128(&policy_bytes);
+        let configuration = dmbc::session::Configuration::new(
+            project.parent().ok_or("manifest parent missing")?, &project, defines.clone(),
+            compiler, engine.expect("compile engine captured").identity(),
+            xxhash_rust::xxh3::xxh3_128(if bootstrap_catalog { b"native-session-v1-bootstrap" } else { b"native-session-v1-template" }))?;
+        let configured = dmbc::session::Session::from_locked(configuration,
+            build_lock.take().expect("compile lock held"))?;
+        let store = dmbc::publish::PairStore::open(output_store.clone()
+            .map(Ok).unwrap_or_else(|| dmbc::publish::default_store_path(&project))?)?;
+        for id in configured.latest(4)? {
+            if let Some(validated) = configured.validate(id, &dmbc::input_snapshot::FileSystemInputs,
+                exact_inputs, now_ns())? {
+                if let Ok(pair) = store.verify(validated.record().pair, exact_inputs) {
+                    if !validated.outputs_match(&dmbc::input_snapshot::FileSystemInputs, exact_inputs, now_ns())? {
+                        store.install(pair.id, &project.with_extension("dmb"), &project.with_extension("rsc"),
+                            &project.with_extension("dmb-pair.json"))?;
+                    }
+                    eprintln!("native session hit: total={:.3}s rehashed={} pair={}",
+                        total.elapsed().as_secs_f64(), validated.validation.rehashed, pair.name());
+                    return Ok(());
+                }
+            }
+        }
+        session = Some(configured);
+        pair_store = Some(store);
+    }
+    let memo_cache = if command == "compile" && !no_cache {
+        match dm_cache::Cache::user_default(dm_cache::Limits::default()) {
+            Ok(cache) => Some(cache),
+            Err(error) => { eprintln!("native cache unavailable: {error}; compiling fresh"); None }
+        }
+    } else { None };
+    let procedure_memo = memo_cache.as_ref().and_then(|cache| match cache.snapshot() {
+        Ok(snapshot) => Some(dmbc::lowering_memo::ProcedureMemo::with_disk(memo_policy, snapshot)),
+        Err(error) => { eprintln!("native cache snapshot rejected: {error}; compiling fresh"); None }
+    });
+    let expansion_memo = memo_cache.as_ref().and_then(|cache| cache.snapshot().ok())
+        .map(|snapshot| dmbc::expansion_memo::DiskExpansionMemo::new(memo_policy, snapshot));
+    let map_memo = memo_cache.as_ref().and_then(|cache| cache.snapshot().ok())
+        .map(|snapshot| dmbc::map_memo::MapMemo::with_disk(memo_policy, 64 * 1024 * 1024, snapshot));
     let seed = engine.map(dmbc::engine::EngineSnapshot::frontend_seed);
     let progress = |event: dm_tree::frontend::FrontendProgress| {
         eprintln!(
@@ -142,7 +198,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         let preparation_start = Instant::now();
         let inputs = match dmbc::native_inputs::NativeInputs::prepare(
             &project,
-            &dm_preprocess::FileSystem,
+            &inputs_capture,
             workers,
         ) {
             Ok(inputs) => Some(inputs),
@@ -161,15 +217,15 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
         let empty = dm_preprocess::regions::prepared_source::PreparedSources::default();
         let provider = match &inputs {
-            Some(inputs) => inputs.provider(&dm_preprocess::FileSystem),
+            Some(inputs) => inputs.provider(&inputs_capture),
             None => dm_preprocess::regions::prepared_source::PreparedSourceProvider::new(
                 &empty,
-                &dm_preprocess::FileSystem,
+                &inputs_capture,
             ),
         };
         // Only requested captures enter the semantic model. Release unused
         // speculative preparations before maps, resources and lowering begin.
-        dm_tree::frontend::build_with_config(
+        dm_tree::frontend::build_with_expansion_memo(
             &project,
             &provider,
             &defines,
@@ -178,6 +234,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 engine: seed.as_ref(),
                 observer: progress_enabled.then_some(&progress),
             },
+            expansion_memo.as_ref().map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
         )
     };
     let frontend = match frontend_result {
@@ -256,15 +313,16 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 );
             }
         };
-        let mut nontext = dmbc::captured_non_text_driver::capture_with_observer(
+        let mut nontext = dmbc::captured_non_text_driver::capture_with_map_memo(
             &frontend,
-            &dm_preprocess::FileSystem,
-            &dm_resources::capture::FileSystemCapture,
+            &inputs_capture,
+            &inputs_capture,
             host,
             &captured_engine,
             &roots,
             &defaults,
             Some(&capture_observer),
+            map_memo.as_ref(),
         )?;
         let nontext_seconds = nontext_started.elapsed().as_secs_f64();
         let linking_inputs_started = Instant::now();
@@ -290,7 +348,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         // One immutable captured host for this compile. Consumer read recording
         // remains outside this optimization, including on memo hits.
         let compilation_resolver = dm_ir::MemoResolver::new(&nontext.resolver, 65_536);
-        let compile_result = dmbc::compile_driver::compile_observed(
+        let compile_result = dmbc::compile_driver::compile_observed_with_memo(
             &frontend,
             &compilation_resolver,
             engine,
@@ -302,6 +360,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             Some(&nontext.stage(&frontend)),
             workers,
             progress_enabled.then_some(&cold_observer),
+            procedure_memo.as_ref(),
         );
         if progress_enabled {
             eprintln!("native resolver memo: {:?}", compilation_resolver.stats());
@@ -330,6 +389,20 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             Err(error) => return Err(format!("native compilation: {error:?}").into()),
         };
         let compilation_seconds = compilation_started.elapsed().as_secs_f64();
+        if let (Some(cache), Some(memo)) = (&memo_cache, &procedure_memo) {
+            let records = memo.take_pending();
+            publish_cache_records(cache, records);
+            use std::sync::atomic::Ordering::Relaxed;
+            eprintln!("native lowering memo: disk_hits={} resident_hits={} recomputed={} unsupported_disk={}",
+                memo.counts.disk_hits.load(Relaxed), memo.counts.resident_hits.load(Relaxed),
+                memo.counts.recomputed.load(Relaxed), memo.counts.unsupported_disk.load(Relaxed));
+        }
+        if let (Some(cache), Some(memo)) = (&memo_cache, &expansion_memo) {
+            publish_cache_records(cache, memo.take_pending());
+        }
+        if let (Some(cache), Some(memo)) = (&memo_cache, &map_memo) {
+            publish_cache_records(cache, memo.take_pending());
+        }
         let publication_started = Instant::now();
         if progress_enabled {
             eprintln!("native publication started");
@@ -338,15 +411,35 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             Some(path) => path,
             None => dmbc::publish::default_store_path(&project)?,
         };
-        let store = dmbc::publish::PairStore::open(store_path)?;
-        let session = xxhash_rust::xxh3::xxh3_128(project.to_string_lossy().as_bytes());
-        let pair = store.publish(session, &output.dmb, &nontext.resources.rsc)?;
+        let store = match pair_store.take() {
+            Some(store) => store,
+            None => dmbc::publish::PairStore::open(store_path)?,
+        };
+        let session_id = match &session {
+            Some(session) => session.identity()?,
+            None => xxhash_rust::xxh3::xxh3_128(project.to_string_lossy().as_bytes()),
+        };
+        let pair = store.publish(session_id, &output.dmb, &nontext.resources.rsc)?;
         store.install(
             pair.id,
             &project.with_extension("dmb"),
             &project.with_extension("rsc"),
             &project.with_extension("dmb-pair.json"),
         )?;
+        if let Some(session) = &session {
+            let inputs = inputs_capture.snapshot()?;
+            if inputs.restat(&dmbc::input_snapshot::FileSystemInputs)?.unchanged() {
+                let mut outputs = dmbc::input_snapshot::InputSnapshot::new(now_ns());
+                for extension in ["dmb", "rsc", "dmb-pair.json"] {
+                    let path = project.with_extension(extension);
+                    capture_output_digest(&mut outputs, &path)?;
+                }
+                session.store(dmbc::session::Record { inputs, pair: pair.id,
+                    outputs: Some(outputs) })?;
+            } else {
+                eprintln!("native session not saved: inputs changed during compilation");
+            }
+        }
         let publication_seconds = publication_started.elapsed().as_secs_f64();
         eprintln!("native stages: input_preparation={:.3}s frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s publication={:.3}s",
             input_preparation_seconds, frontend.timings.total.as_secs_f64(), facts_seconds, nontext_seconds,
@@ -375,6 +468,41 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         timings.total.as_secs_f64(),
     );
     Ok(())
+}
+
+fn file_hash(path: &std::path::Path) -> io::Result<u128> {
+    use std::io::Read;
+    let mut file = std::fs::File::open(path)?;
+    let mut buffer = [0u8; 65536];
+    let mut hash = xxhash_rust::xxh3::Xxh3::new();
+    loop {
+        let count = file.read(&mut buffer)?;
+        if count == 0 { return Ok(hash.digest128()); }
+        hash.update(&buffer[..count]);
+    }
+}
+
+fn capture_output_digest(snapshot: &mut dmbc::input_snapshot::InputSnapshot, path: &std::path::Path) -> io::Result<()> {
+    use dmbc::input_snapshot::{FileSystemInputs, SnapshotProvider};
+    let (stamp, content) = FileSystemInputs.digest(path)?;
+    snapshot.record_verified_digest(path, stamp, content)
+}
+
+fn publish_cache_records(cache: &dm_cache::Cache, records: Vec<dm_cache::Record>) {
+    let mut start = 0;
+    while start < records.len() {
+        let mut end = start;
+        let mut bytes = 0usize;
+        while end < records.len() {
+            let size = records[end].payload.len() + 4096;
+            if end > start && bytes.saturating_add(size) > 48 * 1024 * 1024 { break; }
+            bytes = bytes.saturating_add(size); end += 1;
+        }
+        if let Err(error) = cache.publish(&records[start..end]) {
+            eprintln!("native cache publication skipped: {error}");
+        }
+        start = end;
+    }
 }
 
 fn define(

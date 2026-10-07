@@ -1,4 +1,4 @@
-//! Phase 1 directive planning and parallel expansion, without persistent caches.
+//! Ordered directive planning and parallel expansion with caller-owned optional memoization.
 //!
 //! Source regions preserve directive encounter order separately from DME text
 //! emission order. Macro snapshots share persistent ordered-map roots and Arc replacement bodies.
@@ -15,10 +15,12 @@ mod environment;
 pub mod prepared_source;
 pub use environment::MacroEnvironment;
 mod expansion;
+pub mod region_memo;
+pub use region_memo::{ExpansionMemo, ExpansionRecord, EXPANSION_VERSION};
 #[cfg(test)]
 mod tests;
 
-pub use expansion::{expand_regions, expand_regions_text, ExpandedRegions};
+pub use expansion::{expand_regions, expand_regions_text, expand_regions_text_with_memo, ExpandedRegions};
 
 /// An accepted or suppressed include directive, including its parent chain.
 #[derive(Clone, Debug)]
@@ -103,6 +105,7 @@ pub enum OrderedItem {
 
 #[derive(Clone, Debug, Default)]
 pub struct DirectivePlan {
+    pub source_texts: BTreeMap<PathBuf,Arc<str>>,
     pub occurrences: Vec<IncludeOccurrence>,
     pub regions: Vec<IncludeRegion>,
     pub items: Vec<OrderedItem>,

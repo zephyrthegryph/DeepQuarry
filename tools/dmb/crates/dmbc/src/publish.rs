@@ -9,6 +9,9 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Mutex;
+use std::collections::HashMap;
+use std::time::SystemTime;
 use xxhash_rust::xxh3::{xxh3_128, Xxh3};
 
 static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
@@ -118,6 +121,7 @@ impl OutputPair {
 
 pub struct PairStore {
     root: PathBuf,
+    verified: Mutex<HashMap<u128, (OutputPair, Vec<(u64, SystemTime)>)>>,
 }
 
 /// Content identity of an archive already owned by this store. A cold linker
@@ -137,7 +141,33 @@ impl PairStore {
         for name in ["pairs", "resources", "sessions", "temporary", "quarantine"] {
             fs::create_dir_all(root.join(name))?;
         }
-        Ok(Self { root })
+        Ok(Self { root, verified: Mutex::new(HashMap::new()) })
+    }
+
+    /// First use always hashes the immutable pair. Later uses in this process
+    /// may trust unchanged stamps; exact mode deliberately hashes every use.
+    /// The store lock covers validation and use, including future eviction.
+    pub fn verify(&self, id: u128, exact: bool) -> io::Result<OutputPair> {
+        let _lock = self.lock()?;
+        self.verify_locked(id, exact)
+    }
+
+    fn verify_locked(&self, id: u128, exact: bool) -> io::Result<OutputPair> {
+        let source = self.root.join("pairs").join(format!("{id:032x}"));
+        let stamps = pair_stamps(&source)?;
+        if !exact {
+            let memo = self.verified.lock().map_err(|_| invalid("pair verification lock poisoned"))?;
+            if let Some((pair, old)) = memo.get(&id) {
+                if *old == stamps { return Ok(pair.clone()); }
+            }
+        }
+        let pair = validate_directory(&source, id)?;
+        if pair_stamps(&source)? != stamps {
+            return Err(invalid("immutable pair changed during verification"));
+        }
+        self.verified.lock().map_err(|_| invalid("pair verification lock poisoned"))?
+            .insert(id, (pair.clone(), stamps));
+        Ok(pair)
     }
 
     fn lock(&self) -> io::Result<File> {
@@ -294,7 +324,7 @@ impl PairStore {
     pub fn acquire(&self, id: u128, slots: impl AsRef<Path>) -> io::Result<PathBuf> {
         let _lock = self.lock()?;
         let source = self.root.join("pairs").join(format!("{id:032x}"));
-        let pair = validate_directory(&source, id)?;
+        let pair = self.verify_locked(id, false)?;
         fs::create_dir_all(slots.as_ref())?;
         let slot = loop {
             let sequence = TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed);
@@ -339,11 +369,11 @@ impl PairStore {
         }
         let _lock = self.lock()?;
         let source = self.root.join("pairs").join(format!("{id:032x}"));
-        let pair = validate_directory(&source, id)?;
-        replace_copy(&source.join("deepquarry.rsc"), rsc)?;
+        let pair = self.verify_locked(id, false)?;
+        replace_copy(&source.join("deepquarry.rsc"), rsc, (pair.rsc_bytes, pair.rsc_hash))?;
         #[cfg(test)]
         publication_fault("install_rsc_replaced")?;
-        replace_copy(&source.join("deepquarry.dmb"), dmb)?;
+        replace_copy(&source.join("deepquarry.dmb"), dmb, (pair.dmb_bytes, pair.dmb_hash))?;
         #[cfg(test)]
         publication_fault("install_dmb_replaced")?;
         let staged = temporary_file(marker)?;
@@ -374,7 +404,7 @@ fn temporary_file(destination: &Path) -> io::Result<PathBuf> {
     }
 }
 
-fn replace_copy(source: &Path, destination: &Path) -> io::Result<()> {
+fn replace_copy(source: &Path, destination: &Path, expected: (u64, u128)) -> io::Result<()> {
     let staged = temporary_file(destination)?;
     {
         let mut input = File::open(source)?;
@@ -386,7 +416,7 @@ fn replace_copy(source: &Path, destination: &Path) -> io::Result<()> {
         #[cfg(test)]
         publication_fault("install_copy_staged")?;
     }
-    if file_identity(source)? != file_identity(&staged)? {
+    if expected != file_identity(&staged)? {
         return Err(invalid("conventional copy failed authentication"));
     }
     atomic_replace(&staged, destination)
@@ -448,6 +478,13 @@ fn file_identity(path: &Path) -> io::Result<(u64, u128)> {
     Ok((bytes, hasher.digest128()))
 }
 
+fn pair_stamps(path: &Path) -> io::Result<Vec<(u64, SystemTime)>> {
+    ["pair.json", "deepquarry.dmb", "deepquarry.rsc"].iter().map(|name| {
+        let metadata = fs::metadata(path.join(name))?;
+        Ok((metadata.len(), metadata.modified()?))
+    }).collect()
+}
+
 fn validate_directory(path: &Path, id: u128) -> io::Result<OutputPair> {
     let pair: OutputPair =
         serde_json::from_slice(&fs::read(path.join("pair.json"))?).map_err(invalid)?;
@@ -466,6 +503,25 @@ fn validate_directory(path: &Path, id: u128) -> io::Result<OutputPair> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn first_use_and_exact_pair_verification_reject_corruption() {
+        let store = store();
+        let pair = store.publish(1, b"program", b"assets").unwrap();
+        assert_eq!(store.verify(pair.id, false).unwrap(), pair);
+        assert_eq!(store.verify(pair.id, false).unwrap(), pair);
+        let path = store.root.join("pairs").join(pair.name()).join("deepquarry.dmb");
+        let mut permissions = fs::metadata(&path).unwrap().permissions();
+        permissions.set_readonly(false);
+        fs::set_permissions(&path, permissions).unwrap();
+        let mut file = OpenOptions::new().write(true).open(&path).unwrap();
+        use std::io::Write;
+        file.write_all(b"damaged").unwrap();
+        drop(file);
+        assert!(store.verify(pair.id, true).is_err());
+        let reopened = PairStore::open(&store.root).unwrap();
+        assert!(reopened.verify(pair.id, false).is_err());
+    }
 
     fn interrupted<T>(point: &'static str, ordinal: usize, run: impl FnOnce() -> io::Result<T>) {
         struct Clear;

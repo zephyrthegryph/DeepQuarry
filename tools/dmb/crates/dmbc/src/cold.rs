@@ -186,6 +186,20 @@ pub fn compile_captured_classified_with_pinned_abi_observed<R: Resolver>(
     non_text: Option<&dyn crate::composition::NonTextOutputStage>,
     observer: Option<&ColdObserver<'_>>,
 ) -> Result<ColdOutput, ColdError> {
+    compile_captured_classified_with_pinned_abi_memo(frontend,resolver,links,declarations,config,map_initializers,non_text,observer,None)
+}
+
+#[allow(clippy::too_many_arguments)]pub fn compile_captured_classified_with_pinned_abi_memo<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+    observer: Option<&ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+) -> Result<ColdOutput, ColdError> {
     let total = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::StartupCapture);
     let startup = crate::startup::capture_with_spellings_and_workers(
@@ -226,6 +240,7 @@ pub fn compile_captured_classified_with_pinned_abi_observed<R: Resolver>(
         non_text,
         &startup,
         observer,
+        memo,
     )?;
     output.timings.abi_preparation = abi_preparation;
     output.timings.total = total.elapsed();
@@ -262,6 +277,7 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
         non_text,
         &startup,
         None,
+        None,
     )
 }
 
@@ -277,6 +293,7 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     non_text: Option<&dyn crate::composition::NonTextOutputStage>,
     startup: &crate::startup::CapturedStartup<'_>,
     observer: Option<&ColdObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
 ) -> Result<ColdOutput, ColdError> {
     startup
         .validate_for(frontend)
@@ -349,8 +366,10 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     let mut inventory = links.inventory;
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::ProcedureLowering);
-    let batch =
-        crate::lowering::lower_frontend_with_statics(frontend, resolver, policy, config, &startup);
+    let batch = match memo {
+        Some(memo)=>crate::lowering::lower_frontend_with_memo(frontend,resolver,policy,config,startup,memo),
+        None=>crate::lowering::lower_frontend_with_statics(frontend,resolver,policy,config,startup),
+    };
     let lowering = stage.elapsed();
     if !batch.diagnostics.is_empty() {
         return Err(ColdError::Lowering(batch.diagnostics));

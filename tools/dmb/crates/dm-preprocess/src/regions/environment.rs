@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 struct Binding {
-    definition: Macro,
+    definition: Arc<Macro>,
     origin: Option<DefinitionOrigin>,
 }
 
@@ -21,14 +21,24 @@ impl MacroEnvironment {
         definition: Macro,
         origin: Option<DefinitionOrigin>,
     ) {
-        self.bindings
-            .insert(Arc::from(name), Arc::new(Binding { definition, origin }));
+        self.bindings.insert(
+            Arc::from(name),
+            Arc::new(Binding {
+                definition: Arc::new(definition),
+                origin,
+            }),
+        );
     }
     pub(super) fn remove(&mut self, name: &str) {
         self.bindings.remove(name);
     }
     pub fn definition_origin(&self, name: &str) -> Option<&DefinitionOrigin> {
         self.bindings.get(name)?.origin.as_ref()
+    }
+    pub fn shared_definition(&self, name: &str) -> Option<Arc<Macro>> {
+        self.bindings
+            .get(name)
+            .map(|binding| Arc::clone(&binding.definition))
     }
     pub fn len(&self) -> usize {
         self.bindings.len()
@@ -41,7 +51,7 @@ impl MacroLookup for MacroEnvironment {
     fn get_key_value(&self, name: &str) -> Option<(&str, &Macro)> {
         self.bindings
             .get_key_value(name)
-            .map(|(key, binding)| (key.as_ref(), &binding.definition))
+            .map(|(key, binding)| (key.as_ref(), binding.definition.as_ref()))
     }
 }
 

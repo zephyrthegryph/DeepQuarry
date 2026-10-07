@@ -136,8 +136,19 @@ pub fn capture_with_observer<R: Resolver, P: dm_preprocess::SourceProvider,
     engine: &byond_dmb::dmb::Dmb, known_roots: &BTreeSet<SymbolId>,
     world_directives: &[Directive], observer: Option<CaptureObserver<'_>>,
 ) -> Result<CapturedNonTextOutput<R>, String> {
+    capture_with_map_memo(frontend, provider, resource_provider, host, engine,
+        known_roots, world_directives, observer, None)
+}
+#[allow(clippy::too_many_arguments)] // Existing capture boundary plus optional request-owned S5 memo.
+pub fn capture_with_map_memo<R: Resolver, P: dm_preprocess::SourceProvider,
+    C: dm_resources::capture::CaptureProvider>(
+    frontend: &ColdFrontend, provider: &P, resource_provider: &C, host: R,
+    engine: &byond_dmb::dmb::Dmb, known_roots: &BTreeSet<SymbolId>,
+    world_directives: &[Directive], observer: Option<CaptureObserver<'_>>,
+    map_memo: Option<&crate::map_memo::MapMemo>,
+) -> Result<CapturedNonTextOutput<R>, String> {
     let captured = timed(observer, CaptureStage::NonTextParsing, ||
-        crate::non_text::capture(frontend, provider).map_err(|error| format!("nontext capture: {error:?}")))?;
+        crate::non_text::capture_with_map_memo(frontend, provider, map_memo).map_err(|error| format!("nontext capture: {error:?}")))?;
     let resources = timed(observer, CaptureStage::AssetCapture, || {
     let resources = crate::assets::capture(frontend, &captured.assets, resource_provider).map_err(|error| error.to_string())?;
     reject_missing_literals(frontend, &captured, &resources)?;
@@ -181,12 +192,14 @@ pub fn capture_with_observer<R: Resolver, P: dm_preprocess::SourceProvider,
     let (map, descriptors, artifacts) = if captured.maps.is_empty() {
         (None, None, Vec::new())
     } else {
-        let map = timed(observer, CaptureStage::MapProjection, || crate::map_projection::project(
-            &captured.maps,
-            defaults(engine, world_directives)?,
-            &crate::map_projection::ResolverClassifier(&resolver),
-        )
-        .map_err(|error| format!("map projection: {error:?}")))?;
+        let map = timed(observer, CaptureStage::MapProjection, || {
+            let defaults = defaults(engine, world_directives)?;
+            match map_memo {
+                Some(memo) => memo.project(&captured.maps, defaults, &resolver),
+                None => crate::map_projection::project(&captured.maps, defaults,
+                    &crate::map_projection::ResolverClassifier(&resolver)),
+            }.map_err(|error| format!("map projection: {error:?}"))
+        })?;
         let descriptors = timed(observer, CaptureStage::MapDescriptors, || crate::map_output::descriptors(frontend, &map, &captured.maps)
             .map_err(|error| format!("map descriptors: {error:?}")))?;
         let artifacts = timed(observer, CaptureStage::MapInitializers, || crate::map_artifacts::lower(
