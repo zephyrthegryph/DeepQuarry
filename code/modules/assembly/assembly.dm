@@ -29,7 +29,8 @@
 	var/activation_cooldown = 3 SECONDS
 
 /// Secured (ready to act); unsecured it can be attached to other assemblies.
-OM_FIELD(/obj/item/assembly, secured, TRUE, CHANGE_EXPLICIT)
+/obj/item/assembly/var/secured = TRUE
+TRACKED(/obj/item/assembly, secured)
 
 /obj/item/assembly/proc/holder_movement()
 	return
@@ -69,19 +70,20 @@ OM_FIELD(/obj/item/assembly, secured, TRUE, CHANGE_EXPLICIT)
 		to_chat(user, span_notice("You attach \the [A] to \the [src]!"))
 		return TRUE
 
-DECLARE_INTERACTIONS(/obj/item/assembly, \
-	INTERACT_ITEM("Use", PROC_REF(interaction_item)), \
-	INTERACT_USE("Use", PROC_REF(interaction_self)), \
-)
+CAPABILITIES(/obj/item/assembly)
+	op("attach", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("use", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attackby: attach another unsecured assembly.
-/obj/item/assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/assembly/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(isassembly(W))
-		var/obj/item/assembly/A = W
-		if((!A.secured) && (!secured))
-			attach_assembly(A,user)
-			return TRUE
-	return FALSE
+		var/obj/item/assembly/other = W
+		if((!other.secured) && (!secured))
+			attach_assembly(other, user)
+			return OP_OK
+	return OP_DECLINE
 
 /obj/item/assembly/screwdriver_act(mob/user, obj/item/tool)
 	if(toggle_secure())
@@ -89,9 +91,6 @@ DECLARE_INTERACTIONS(/obj/item/assembly, \
 	else
 		to_chat(user, span_notice("\The [src] can now be attached!"))
 	return ITEM_INTERACT_SUCCESS
-
-/obj/item/assembly/periodic_step()
-	return PROCESS_KILL
 
 /obj/item/assembly/examine(mob/user)
 	. = ..()
@@ -101,18 +100,13 @@ DECLARE_INTERACTIONS(/obj/item/assembly, \
 		else
 			. += "\The [src] can be attached!"
 
-/// Old attack_self: subtypes override interaction_self() and call ..() first, matching the
-/// old override chain (a subtype's own handling takes priority; this base opens the UI).
-/// Compact INTERACT_USE dispatches virtually by proc name, so every subtype's override
-/// (voice, igniter, shock_kit, mousetrap, ...) is reached with no interaction of its own -
-/// one shared /datum/interaction/generic singleton covers the whole hierarchy.
-/obj/item/assembly/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_self: the base opens the UI. A subtype with special_handling overrides this (without ..()) and
+/// does its own thing; the op is virtual by proc name, so every override is reached through the one "use" op.
+/obj/item/assembly/proc/interaction_self(datum/act/op/A)
 	if(special_handling)
-		return FALSE
-	if(!user)
-		return FALSE
-	tgui_interact(user)
-	return TRUE
+		return OP_DECLINE
+	tgui_interact(A.actor)
+	return OP_OK
 
 
 

@@ -96,24 +96,22 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 	if(a_right)
 		a_right.on_found(finder)
 
-/obj/item/assembly_holder/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/assembly_holder_hand,
-		/datum/interaction/entry_self/assembly_holder_self,
-	)
-	..()
+CAPABILITIES(/obj/item/assembly_holder)
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("use", in_hand(), label("Use"),
+		asks(/datum/prompt/choice, fields = list("question" = "Which side would you like to use?", "title" = "Side", "choices" = list("Left", "Right"), "buttons" = TRUE, "timeout" = 0), step = "side", when = PROC_REF(asks_side)),
+		then(PROC_REF(interaction_self)))
 
 /// Old attack_hand: notify the parts before falling through (never handled the click itself).
-/datum/interaction/entry_hand/assembly_holder_hand
-	id = "assembly_holder_hand"
-	name = "Use"
-	effect = /obj/item/assembly_holder/proc/interaction_hand
-
-/obj/item/assembly_holder/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)//Perhapse this should be a holder_pickup proc instead, can add if needbe I guess
+/obj/item/assembly_holder/proc/interaction_hand(datum/act/op/A)//Perhapse this should be a holder_pickup proc instead, can add if needbe I guess
 	if(a_left && a_right)
 		a_left.holder_movement()
 		a_right.holder_movement()
-	return FALSE
+	return OP_DECLINE
+
+/// Two secured parts of the same type: which side is used is asked (the window code can not tell them apart otherwise).
+/obj/item/assembly_holder/proc/asks_side(datum/act/op/A)
+	return secured && a_left && a_right && istype(a_left, a_right.type)
 
 /obj/item/assembly_holder/screwdriver_act(mob/user, obj/item/tool)
 	if(!a_left || !a_right)
@@ -127,25 +125,19 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 	return ITEM_INTERACT_SUCCESS
 
 /// Old attack_self: split assembly (unsecured) or use the parts (secured).
-/datum/interaction/entry_self/assembly_holder_self
-	id = "assembly_holder_self"
-	name = "Use"
-	effect = /obj/item/assembly_holder/proc/interaction_self
-
-/obj/item/assembly_holder/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/assembly_holder/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(src.secured)
 		if(!a_left || !a_right)
 			to_chat(user, span_warning(" BUG:Assembly part missing, please report this!"))
-			return TRUE
+			return OP_OK
 		if(istype(a_left,a_right.type))//If they are the same type it causes issues due to window code
-			var/_answer_k143 = rerun_ask(user, "k143", PROC_REF(interaction_self), args, /datum/prompt/choice, question = "Which side would you like to use?", title = "Side", choices = list("Left","Right"), buttons = TRUE)
-			if(isnull(_answer_k143))
-				return TRUE
+			var/_answer_k143 = A.step_value("side")
 			switch(_answer_k143)
 				if("Left")	a_left.attack_self(user)
 				if("Right")	a_right.attack_self(user)
-			return TRUE
+			return OP_OK
 		else
 			if(!istype(a_left,/obj/item/assembly/igniter))
 				a_left.attack_self(user)
@@ -154,9 +146,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 	else
 		var/turf/T = get_turf(src)
 		if(!T)
-			return TRUE
+			return OP_OK
 		if(loc?.release_refusal(src, user))
-			return TRUE
+			return OP_OK
 		// Taken out of the holder before it is consumed (CONTAINED: they must leave its slots first).
 		var/obj/item/assembly/left = rel_take(src, nameof(a_left))
 		var/obj/item/assembly/right = rel_take(src, nameof(a_right))
@@ -167,7 +159,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 			rel_clear(right, nameof(right.holder))
 			right.forceMove(T)
 		consume(src, user)
-	return TRUE
+	return OP_OK
 
 /obj/item/assembly_holder/proc/process_activation(obj/D, normal = 1)
 	if(!D)

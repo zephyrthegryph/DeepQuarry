@@ -12,9 +12,8 @@ MATERIAL_MIX(/obj/item/assembly/prox_sensor, list(MAT_STEEL = 800, MAT_GLASS = 2
 
 	var/range = 2
 
-OM_FIELD(/obj/item/assembly/prox_sensor, timing, FALSE, CHANGE_EXPLICIT)
-/// Scans and counts down only while secured.
-DECLARE_PERIODIC_WHILE(/obj/item/assembly/prox_sensor, PERIODIC_SLOW, "secured")
+/obj/item/assembly/prox_sensor/var/timing = FALSE
+TRACKED(/obj/item/assembly/prox_sensor, timing)
 
 /obj/item/assembly/prox_sensor/activate()
 	if(!..())
@@ -51,11 +50,11 @@ DECLARE_PERIODIC_WHILE(/obj/item/assembly/prox_sensor, PERIODIC_SLOW, "secured")
 	if(!holder())
 		mainloc.visible_message("[icon2html(src,viewers(src))] *beep* *beep*", "*beep* *beep*")
 
-/obj/item/assembly/prox_sensor/periodic_step()
+/obj/item/assembly/prox_sensor/proc/prox_sensor_step(datum/act/timer/A)
 	if(scanning)
 		var/turf/mainloc = get_turf(src)
-		for(var/mob/living/A in range(range,mainloc))
-			if (A.move_speed < 12)
+		for(var/mob/living/L in range(range,mainloc))
+			if (L.move_speed < 12)
 				sense()
 
 	if(timing && (time >= 0))
@@ -100,6 +99,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/prox_sensor, TYPE_PROC_REF(/atom, app
 	sense()
 
 CAPABILITIES(/obj/item/assembly/prox_sensor)
+	/// Scans and counts down only while secured.
+	every(2 SECONDS, then(PROC_REF(prox_sensor_step)), when = nameof(secured))
 	interface("AssemblyProx", state = nameof(GLOB.tgui_deep_inventory_state))
 	without("ui_open")
 	op("scanning", ui_act("scanning"), then(PROC_REF(ui_act_scanning)))

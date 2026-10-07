@@ -16,8 +16,8 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 	var/tmp/datum/radio_frequency/radio_connection
 
 /// Someone is threatening to press the button: it may slip while it's not held.
-OM_FIELD(/obj/item/assembly/signaler, deadman, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/assembly/signaler, PERIODIC_SLOW, "deadman")
+/obj/item/assembly/signaler/var/deadman = FALSE
+TRACKED(/obj/item/assembly/signaler, deadman)
 
 /obj/item/assembly/signaler/Initialize(mapload)
 	. = ..()
@@ -36,6 +36,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/signaler, TYPE_PROC_REF(/atom, appear
 		holder().update_icon()
 
 CAPABILITIES(/obj/item/assembly/signaler)
+	every(2 SECONDS, then(PROC_REF(signaler_step)), when = nameof(deadman))
 	interface("Signaler", state = nameof(GLOB.tgui_deep_inventory_state))
 	without("ui_open")
 	op("signal", ui_act("signal"), then(PROC_REF(ui_act_signal)))
@@ -87,10 +88,6 @@ CAPABILITIES(/obj/item/assembly/signaler)
 		code = initial(code)
 	. = TRUE
 	update_icon()
-
-/// A subtype adding to an ancestor's compact specs uses declare_interactions() (the proven
-/// chain, ..() and all) and builds its own entry directly with dq_interaction_from_spec() -
-/// see doc/rewrite/interactions.md §5a for why get_interactions() itself doesn't chain here.
 
 /// Old attackby: tap two secured signalers together to copy frequency/code.
 /obj/item/assembly/signaler/proc/interaction_transfer(datum/act/op/A)
@@ -167,7 +164,7 @@ CAPABILITIES(/obj/item/assembly/signaler)
 	frequency = new_frequency
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
 // BEGIN re-adds stealth removal
-/obj/item/assembly/signaler/periodic_step()
+/obj/item/assembly/signaler/proc/signaler_step(datum/act/timer/A)
 	var/mob/M = src.loc
 	if(!M || !ismob(M))
 		if(prob(5))
