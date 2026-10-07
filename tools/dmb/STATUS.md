@@ -5,6 +5,12 @@ Phase 1 foundation work is now underway alongside the remaining baseline evidenc
 The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
+Release probe 37 cleared class composition and reached assembled-bytecode
+validation. It stopped on variable modifier `0xffe9`; the new canonical string
+allocator can assign a field selector to reserved VM modifier IDs, unlike the
+reference writer. The allocator/materializer correction is under implementation;
+decoder validation remains strict. External time was 31.628 s, sampled private
+memory 3,116,548,096 bytes. No output pair was produced.
 Release probe 36 names the remaining parent-ABI blocker: the authored root type
 `/procpath`, canonical index 28, has semantic parent `/`. External time was
 29.691 s, sampled private memory 3,069,820,928 bytes. Initializers, all bodies and
