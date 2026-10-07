@@ -33,6 +33,15 @@ fn trace_cpu_flame_and_summary_artifacts_are_written() {
     assert_eq!(leaf.attributed_write_bytes, 456);
     assert_eq!(leaf.io_blocked_s, Some(0.001));
     assert!(report.total_cpu_s.is_some());
+    for stage in &report.stages {
+        if let (Some(exclusive), Some(inclusive)) = (stage.exclusive_cpu_s, stage.cpu_s) {
+            assert!(
+                exclusive <= inclusive,
+                "{}: exclusive={exclusive}, inclusive={inclusive}",
+                stage.name
+            );
+        }
+    }
     #[cfg(feature = "allocation-counting")]
     {
         assert!(leaf.allocations > 0);

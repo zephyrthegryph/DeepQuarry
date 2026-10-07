@@ -326,6 +326,7 @@ fn lower_one_memo<R: Resolver, P: AbiPolicy>(
     let tree = &frontend.snapshot.tree;
     let recording = crate::lowering_memo::RecordingResolver::new(host);
     let ready = (|| {
+        let _profile = dm_profile::stage("lowering.abi_key_prepare");
         let node = tree.member(body.member)?;
         let owner = tree.type_node(node.owner)?.path;
         let occurrence = tree
@@ -407,11 +408,15 @@ fn lower_one_memo<R: Resolver, P: AbiPolicy>(
         });
     };
     use crate::lowering_memo::{MemoMissReason, MemoOutcome};
-    let (value, changed_query) = memo.values.lookup_explained(&key, host);
+    let (value, changed_query) = {
+        let _profile = dm_profile::stage("lowering.resident_validate");
+        memo.values.lookup_explained(&key, host)
+    };
     let mut miss = changed_query.map_or(MemoMissReason::NoExactVariant, |_| {
         MemoMissReason::ReadMeaningChanged
     });
     if let Some(value) = value {
+        let _profile = dm_profile::stage("lowering.resident_replay");
         // AST-bearing private sidecars still contain expanded spans. Ordinary
         // code contains only symbolic operands/debug ordinals and can move.
         let previous = &value.unit;
@@ -485,7 +490,10 @@ fn lower_one_memo<R: Resolver, P: AbiPolicy>(
     // Replay validates the stored complete read ledger (or its trusted domain
     // receipt). Issue mandatory reads only when producing a new executable.
     let occurrence_start = std::time::Instant::now();
-    recording.record_occurrence(identity);
+    {
+        let _profile = dm_profile::stage("lowering.occurrence_reads");
+        recording.record_occurrence(identity);
+    }
     memo.counts.occurrence_reads_ns.fetch_add(
         occurrence_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
         std::sync::atomic::Ordering::Relaxed,
@@ -719,13 +727,16 @@ fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         entry: parsed.header_span.start,
         capture,
     };
-    let code = compile_simple_proc_with_resolver_and_debug(
-        &executable_body,
-        &inputs,
-        symbols,
-        host,
-        Some(&debug),
-    )
+    let code = {
+        let _profile = dm_profile::stage("lowering.fresh_codegen");
+        compile_simple_proc_with_resolver_and_debug(
+            &executable_body,
+            &inputs,
+            symbols,
+            host,
+            Some(&debug),
+        )
+    }
     .map_err(|errors| {
         if let Some(capture) = capture {
             let relative = errors

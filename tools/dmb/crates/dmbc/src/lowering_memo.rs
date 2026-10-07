@@ -158,6 +158,7 @@ impl ProcedureMemo {
             .clone()
     }
     fn publish(&self, records: Vec<dm_cache::Record>) {
+        let _profile = dm_profile::stage("lowering.population_flush");
         let count = records.len();
         let start = std::time::Instant::now();
         let outcome = match &self.publisher {
@@ -264,6 +265,7 @@ impl ProcedureMemo {
         }
     }
     fn disk_variants(&self, key: &[u8]) -> Vec<Vec<u8>> {
+        let _profile = dm_profile::stage("lowering.population_previous_variants");
         let Some(snapshot) = &self.disk else {
             return Vec::new();
         };
@@ -299,11 +301,14 @@ impl ProcedureMemo {
             };
         };
         let decoded = std::cell::RefCell::new(None);
-        let view = snapshot.get(Self::record_key(key), |bytes, _symbols| {
-            let candidates = crate::lowering_memo_wire::candidates(bytes)?;
-            *decoded.borrow_mut() = Some(candidates);
-            Ok(())
-        });
+        let view = {
+            let _profile = dm_profile::stage("lowering.disk_lookup_decode");
+            snapshot.get(Self::record_key(key), |bytes, _symbols| {
+                let candidates = crate::lowering_memo_wire::candidates(bytes)?;
+                *decoded.borrow_mut() = Some(candidates);
+                Ok(())
+            })
+        };
         if view.is_none() {
             return crate::lowering_memo_wire::ProcedureLookup {
                 miss: Some(MemoMissReason::RecordAbsent),
@@ -313,6 +318,7 @@ impl ProcedureMemo {
         let Some(candidates) = decoded.into_inner() else {
             return Default::default();
         };
+        let _profile = dm_profile::stage("lowering.disk_validate_replay");
         candidates.procedure(key, identity, frontend, body, host, prepared, parsed)
     }
     pub(crate) fn queue_disk(
@@ -327,7 +333,10 @@ impl ProcedureMemo {
             return;
         }
         let start = std::time::Instant::now();
-        let payload = crate::lowering_memo_wire::encode(key, reads, versions, unit, relative_debug);
+        let payload = {
+            let _profile = dm_profile::stage("lowering.population_encode");
+            crate::lowering_memo_wire::encode(key, reads, versions, unit, relative_debug)
+        };
         self.counts.encode_ns.fetch_add(
             start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
             Ordering::Relaxed,
@@ -348,18 +357,24 @@ impl ProcedureMemo {
             return Default::default();
         };
         let decoded = std::cell::RefCell::new(None);
-        let view = snapshot.get(Self::record_key(key), |bytes, _symbols| {
-            let candidates = crate::lowering_memo_wire::candidates(bytes)?;
-            *decoded.borrow_mut() = Some(candidates);
-            Ok(())
-        });
+        let view = {
+            let _profile = dm_profile::stage("lowering.disk_lookup_decode");
+            snapshot.get(Self::record_key(key), |bytes, _symbols| {
+                let candidates = crate::lowering_memo_wire::candidates(bytes)?;
+                *decoded.borrow_mut() = Some(candidates);
+                Ok(())
+            })
+        };
         if view.is_none() {
             return Default::default();
         }
         let Some(candidates) = decoded.into_inner() else {
             return Default::default();
         };
-        let outcome = candidates.anonymous(key, host, debug_count);
+        let outcome = {
+            let _profile = dm_profile::stage("lowering.disk_validate_replay");
+            candidates.anonymous(key, host, debug_count)
+        };
         if outcome.code.is_some() || outcome.errors.is_some() {
             self.counts.disk_hits.fetch_add(1, Ordering::Relaxed);
         }
@@ -376,9 +391,11 @@ impl ProcedureMemo {
         if self.disk.is_none() {
             return;
         }
-        if let Some(payload) =
+        let payload = {
+            let _profile = dm_profile::stage("lowering.population_encode");
             crate::lowering_memo_wire::encode_failure(key, identity, reads, versions, errors)
-        {
+        };
+        if let Some(payload) = payload {
             self.queue_payload(key, payload);
         } else {
             self.wire_error(
@@ -398,7 +415,10 @@ impl ProcedureMemo {
             return;
         }
         let start = std::time::Instant::now();
-        let payload = crate::lowering_memo_wire::encode_executable(key, reads, versions, code);
+        let payload = {
+            let _profile = dm_profile::stage("lowering.population_encode");
+            crate::lowering_memo_wire::encode_executable(key, reads, versions, code)
+        };
         self.counts.encode_ns.fetch_add(
             start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
             Ordering::Relaxed,
@@ -415,6 +435,7 @@ impl ProcedureMemo {
     fn queue_payload(&self, key: &[u8], payload: Vec<u8>) {
         let record_key = Self::record_key(key);
         let previous = self.disk_variants(key);
+        let queue_profile = dm_profile::stage("lowering.population_queue");
         let mut pending = self
             .pending
             .lock()
@@ -471,6 +492,7 @@ impl ProcedureMemo {
                 .into_values()
                 .collect();
             drop(pending);
+            drop(queue_profile);
             self.publish(records);
         }
     }
@@ -500,6 +522,7 @@ impl ProcedureMemo {
         relative_debug: Vec<usize>,
         versions: Vec<(ReadDomain, u128)>,
     ) {
+        let _profile = dm_profile::stage("lowering.resident_store");
         // Unsupported AST-bearing sidecars need their absolute occurrence until
         // a dedicated rebasing wire is implemented. Resident reuse checks it.
         let mut code_bytes = dm_wire::encode(0x0204_0003, &unit.code.procedure)
@@ -629,6 +652,7 @@ pub(crate) fn key(
     body: &dm_tree::frontend::BodyOccurrence,
     policy: u128,
 ) -> Option<Vec<u8>> {
+    let _profile = dm_profile::stage("lowering.key_create");
     let tree = &frontend.snapshot.tree;
     let member = tree.member(body.member)?;
     let owner = tree.type_node(member.owner)?.path;

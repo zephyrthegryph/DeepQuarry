@@ -24,7 +24,11 @@ Throughput and memory targets are unmet. Historical disk-cache cohorts took 64-1
 - [ ] Produce full-project cold and body-edit traces with per-stage CPU, allocations, memory and I/O; write up their ten heaviest spans.
 - [ ] Record an oracle-verified eight-worker CPU baseline, median of three; keep two-worker regression rows.
 - [ ] Reproduce normalized runtime baseline and explain deterministic differences, including unlocated errors.
-- [ ] Bring stages within revision 5 budgets and private memory within 1.5 GB.
+
+
+## Queued Phase 1 work
+
+After Phase 0 closes, optimize the heaviest measured stages against revision 5 CPU/I/O budgets and the 1.5 GB memory target. Each change needs a before/after trace; a stage that misses after two trace-guided rounds is reported under the stop-loss rule.
 
 ## Current review implementation
 

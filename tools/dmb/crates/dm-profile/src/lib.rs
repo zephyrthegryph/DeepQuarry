@@ -76,8 +76,66 @@ struct Frame {
 }
 thread_local! {static STACK:RefCell<Vec<Frame>>=const {RefCell::new(Vec::new())};}
 
-fn cpu_segment(state: &State) {
-    let now = clock::thread_ns(&state.calibration);
+fn cpu_interval(start: Option<u64>, end: Option<u64>) -> Option<u64> {
+    end.zip(start)
+        .and_then(|(end, start)| end.checked_sub(start))
+}
+#[cfg(test)]
+mod interval_tests {
+    use super::*;
+    #[test]
+    fn shared_cpu_boundaries_partition_nested_intervals_exactly() {
+        let state = State {
+            calibration: clock::Calibration {
+                method: "scripted",
+                cycles_per_cpu_second: None,
+                calibration_wall_s: 0.0,
+                calibration_cpu_s: None,
+                note: "test",
+            },
+            entries: Mutex::new(BTreeMap::new()),
+            folded: Mutex::new(BTreeMap::new()),
+            wall_folded: Mutex::new(BTreeMap::new()),
+        };
+        let wall = Instant::now();
+        STACK.with(|stack| {
+            stack.borrow_mut().push(Frame {
+                name: "parent",
+                last_cpu: Some(10),
+                last_wall: wall,
+            })
+        });
+        cpu_segment(&state, Some(20), wall);
+        STACK.with(|stack| {
+            stack.borrow_mut().push(Frame {
+                name: "child",
+                last_cpu: Some(20),
+                last_wall: wall,
+            })
+        });
+        cpu_segment(&state, Some(30), wall);
+        STACK.with(|stack| {
+            let mut stack = stack.borrow_mut();
+            stack.pop();
+            stack.last_mut().unwrap().last_cpu = Some(30);
+        });
+        cpu_segment(&state, Some(50), wall);
+        let entries = state.entries.lock().unwrap();
+        assert_eq!(entries["parent"].exclusive, 30);
+        assert_eq!(entries["child"].exclusive, 10);
+        assert_eq!(
+            entries.values().map(|entry| entry.exclusive).sum::<u64>(),
+            cpu_interval(Some(10), Some(50)).unwrap()
+        );
+        drop(entries);
+        cpu_segment(&state, None, wall);
+        assert!(state.entries.lock().unwrap()["parent"].cpu_missing);
+        STACK.with(|stack| stack.borrow_mut().clear());
+        assert_eq!(cpu_interval(Some(50), Some(49)), None);
+        assert_eq!(cpu_interval(None, Some(50)), None);
+    }
+}
+fn cpu_segment(state: &State, now: Option<u64>, wall: Instant) {
     STACK.with(|stack| {
         let mut stack = stack.borrow_mut();
         let path = stack
@@ -91,9 +149,12 @@ fn cpu_segment(state: &State) {
                 .lock()
                 .unwrap_or_else(|e| e.into_inner())
                 .entry(path.clone())
-                .or_default() += frame.last_wall.elapsed().as_nanos().min(u64::MAX as u128) as u64;
-            frame.last_wall = Instant::now();
-            if let Some(delta) = now.zip(frame.last_cpu).map(|(a, b)| a.saturating_sub(b)) {
+                .or_default() += wall
+                .duration_since(frame.last_wall)
+                .as_nanos()
+                .min(u64::MAX as u128) as u64;
+            frame.last_wall = wall;
+            if let Some(delta) = cpu_interval(frame.last_cpu, now) {
                 let mut entries = state.entries.lock().unwrap_or_else(|e| e.into_inner());
                 entries.entry(frame.name).or_default().exclusive += delta;
                 *state
@@ -102,6 +163,14 @@ fn cpu_segment(state: &State) {
                     .unwrap_or_else(|e| e.into_inner())
                     .entry(path)
                     .or_default() += delta;
+            } else {
+                state
+                    .entries
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner())
+                    .entry(frame.name)
+                    .or_default()
+                    .cpu_missing = true;
             }
             frame.last_cpu = now;
         }
@@ -136,25 +205,27 @@ pub fn stage(name: &'static str) -> StageGuard {
             thread_bound: PhantomData,
         };
     }
+    let start_cpu = state
+        .as_ref()
+        .and_then(|state| clock::thread_ns(&state.calibration));
+    let start_wall = Instant::now();
     if let Some(state) = &state {
-        cpu_segment(state);
+        cpu_segment(state, start_cpu, start_wall);
         STACK.with(|stack| {
             stack.borrow_mut().push(Frame {
                 name,
-                last_cpu: clock::thread_ns(&state.calibration),
-                last_wall: Instant::now(),
+                last_cpu: start_cpu,
+                last_wall: start_wall,
             })
         });
     }
     let (allocations, bytes, _) = allocator::snapshot();
     let prior_peak = allocator::reset_peak();
     StageGuard {
-        cpu: state
-            .as_ref()
-            .and_then(|state| clock::thread_ns(&state.calibration)),
+        cpu: start_cpu,
         state,
         name,
-        start: Instant::now(),
+        start: start_wall,
         process: clock::process(),
         allocations,
         bytes,
@@ -202,16 +273,16 @@ impl Drop for StageGuard {
         let Some(state) = &self.state else {
             return;
         };
-        cpu_segment(state);
-        let cpu = clock::thread_ns(&state.calibration)
-            .zip(self.cpu)
-            .map(|(a, b)| a.saturating_sub(b));
+        let end_cpu = clock::thread_ns(&state.calibration);
+        let end_wall = Instant::now();
+        cpu_segment(state, end_cpu, end_wall);
+        let cpu = cpu_interval(self.cpu, end_cpu);
         STACK.with(|stack| {
             let mut stack = stack.borrow_mut();
             stack.pop();
             if let Some(parent) = stack.last_mut() {
-                parent.last_cpu = clock::thread_ns(&state.calibration);
-                parent.last_wall = Instant::now();
+                parent.last_cpu = end_cpu;
+                parent.last_wall = end_wall;
             }
         });
         let (allocations, bytes, _) = allocator::snapshot();
@@ -221,7 +292,7 @@ impl Drop for StageGuard {
         let entry = entries.entry(self.name).or_default();
         entry.report.name = self.name.into();
         entry.report.calls += 1;
-        entry.report.wall_s += self.start.elapsed().as_secs_f64();
+        entry.report.wall_s += end_wall.duration_since(self.start).as_secs_f64();
         if let Some(cpu) = cpu {
             *entry
                 .threads
