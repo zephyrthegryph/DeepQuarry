@@ -16,10 +16,10 @@ CAPABILITIES(/obj/item/deck)
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_alt)))
-	op("deck_verb_draw", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Draw"), needs(req(PROC_REF(can_draw_holds), because = PROC_REF(can_draw_refusal))), then(PROC_REF(deck_verb_draw_op)))
-	op("deck_verb_deal", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Deal"), needs(req(PROC_REF(can_deal_holds), because = PROC_REF(can_deal_refusal))), then(PROC_REF(deck_verb_deal_op)))
-	op("deck_verb_deal_multi", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Deal Multiple Cards"), needs(req(PROC_REF(can_deal_holds), because = PROC_REF(can_deal_refusal))), then(PROC_REF(deck_verb_deal_multi_op)))
-	op("deck_verb_search", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Search for Cards"), needs(req(PROC_REF(can_draw_holds), because = PROC_REF(can_draw_refusal))), then(PROC_REF(deck_verb_search_op)))
+	op("deck_verb_draw", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Draw"), then(PROC_REF(deck_verb_draw_op)))
+	op("deck_verb_deal", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Deal"), then(PROC_REF(deck_verb_deal_op)))
+	op("deck_verb_deal_multi", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Deal Multiple Cards"), then(PROC_REF(deck_verb_deal_multi_op)))
+	op("deck_verb_search", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Search for Cards"), then(PROC_REF(deck_verb_search_op)))
 	op("deck_verb_shuffle", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Shuffle"), then(PROC_REF(deck_verb_shuffle_op)))
 
 /// Requirement (was REQ_*): the legacy check answers TRUE to pass, else its reason.
@@ -27,20 +27,10 @@ CAPABILITIES(/obj/item/deck)
 	var/answer = can_draw(A.actor, src, A.held)
 	return !istext(answer) && !!answer
 
-/// Why can_draw_holds refuses.
-/obj/item/deck/proc/can_draw_refusal(datum/act/op/A)
-	var/answer = can_draw(A.actor, src, A.held)
-	return istext(answer) ? answer : "you can't do that"
-
 /// Requirement (was REQ_*): the legacy check answers TRUE to pass, else its reason.
 /obj/item/deck/proc/can_deal_holds(datum/act/op/A)
 	var/answer = can_deal(A.actor, src, A.held)
 	return !istext(answer) && !!answer
-
-/// Why can_deal_holds refuses.
-/obj/item/deck/proc/can_deal_refusal(datum/act/op/A)
-	var/answer = can_deal(A.actor, src, A.held)
-	return istext(answer) ? answer : "you can't do that"
 
 /obj/item/deck/holder
 	name = "card box"
@@ -158,6 +148,11 @@ CAPABILITIES(/obj/item/deck)
 
 /// Old Draw verb: Draw a card from a deck.
 /obj/item/deck/proc/deck_verb_draw_op(datum/act/op/A)
+	var/refusal = can_draw(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	deck_verb_draw(A.actor)
 	return OP_OK
 
@@ -192,6 +187,11 @@ CAPABILITIES(/obj/item/deck)
 
 /// Old Deal verb: Deal a card from a deck.
 /obj/item/deck/proc/deck_verb_deal_op(datum/act/op/A)
+	var/refusal = can_deal(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	deck_verb_deal(A.actor, A.held)
 	return OP_OK
 
@@ -221,6 +221,11 @@ CAPABILITIES(/obj/item/deck)
 
 /// Old Deal Multiple Cards verb: Deal multiple cards from a deck.
 /obj/item/deck/proc/deck_verb_deal_multi_op(datum/act/op/A)
+	var/refusal = can_deal(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	deck_verb_deal_multi(A.actor, A.held)
 	return OP_OK
 
@@ -258,6 +263,11 @@ CAPABILITIES(/obj/item/deck)
 
 /// Old Search for Cards verb: Search for and draw a specific card (or cards) in the deck. This will be an obvious action to all observers.
 /obj/item/deck/proc/deck_verb_search_op(datum/act/op/A)
+	var/refusal = can_draw(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	deck_verb_search(A.actor, A.held)
 	return OP_OK
 
@@ -556,17 +566,12 @@ CAPABILITIES(/obj/item/hand)
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_alt)))
 	op("hand_verb_discard", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Discard"), needs(carried()), then(PROC_REF(hand_verb_discard_op)))
-	op("hand_verb_remove_card", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove card"), needs(req(PROC_REF(can_remove_card_holds), because = PROC_REF(can_remove_card_refusal))), then(PROC_REF(hand_verb_remove_card_op)))
+	op("hand_verb_remove_card", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove card"), then(PROC_REF(hand_verb_remove_card_op)))
 
 /// Requirement (was REQ_*): the legacy check answers TRUE to pass, else its reason.
 /obj/item/hand/proc/can_remove_card_holds(datum/act/op/A)
 	var/answer = can_remove_card(A.actor, src, A.held)
 	return !istext(answer) && !!answer
-
-/// Why can_remove_card_holds refuses.
-/obj/item/hand/proc/can_remove_card_refusal(datum/act/op/A)
-	var/answer = can_remove_card(A.actor, src, A.held)
-	return istext(answer) ? answer : "you can't do that"
 
 /// Requirement: a free hand for the removed card (the effect's silent stat/reach guard passes here).
 /obj/item/hand/proc/can_remove_card(mob/living/carbon/user, atom/target, obj/item/held)
@@ -592,6 +597,11 @@ CAPABILITIES(/obj/item/hand)
 
 /// Old Remove card verb: Remove a card from the hand.
 /obj/item/hand/proc/hand_verb_remove_card_op(datum/act/op/A)
+	var/refusal = can_remove_card(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	hand_verb_remove_card(A.actor, A.held)
 	return OP_OK
 
