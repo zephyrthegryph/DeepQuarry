@@ -283,7 +283,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         if progress_enabled {
             eprintln!("native compilation started");
         }
-        let compile_result = dmbc::compile_driver::compile(
+        let cold_observer = |measurement: dmbc::cold::ColdMeasurement| {
+            eprintln!("native cold {:?}: {:.3}s success={:?}", measurement.stage,
+                measurement.elapsed.as_secs_f64(), measurement.succeeded);
+        };
+        let compile_result = dmbc::compile_driver::compile_observed(
             &frontend,
             &nontext.resolver,
             engine,
@@ -294,6 +298,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             artifacts,
             Some(&nontext.stage(&frontend)),
             workers,
+            progress_enabled.then_some(&cold_observer),
         );
         if progress_enabled && compile_result.is_err() {
             eprintln!("native failed stages: input_preparation={:.3}s frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s total={:.3}s",

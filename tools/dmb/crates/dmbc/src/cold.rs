@@ -11,6 +11,49 @@ use dm_link::LinkInventory;
 use dm_tree::frontend::ColdFrontend;
 use std::time::{Duration, Instant};
 
+#[derive(Clone, Copy, Debug)]
+pub enum ColdStage {
+    StartupCapture,
+    AbiPreparation,
+    Initializers,
+    ProcedureLowering,
+    RequiredTypeAdmission,
+    SymbolicLinking,
+    Composition,
+}
+#[derive(Clone, Copy, Debug)]
+pub struct ColdMeasurement {
+    pub stage: ColdStage,
+    pub elapsed: Duration,
+    /// None marks entry; Some(false) marks an early failure.
+    pub succeeded: Option<bool>,
+}
+pub type ColdObserver<'a> = dyn Fn(ColdMeasurement) + 'a;
+struct StageMeasurement<'a> {
+    observer: Option<&'a ColdObserver<'a>>,
+    stage: ColdStage,
+    started: Instant,
+    succeeded: bool,
+}
+impl<'a> StageMeasurement<'a> {
+    fn new(observer: Option<&'a ColdObserver<'a>>, stage: ColdStage) -> Self {
+        if let Some(observer) = observer {
+            observer(ColdMeasurement { stage, elapsed: Duration::ZERO, succeeded: None });
+        }
+        Self { observer, stage, started: Instant::now(), succeeded: false }
+    }
+    fn complete(mut self) { self.succeeded = true; }
+}
+impl Drop for StageMeasurement<'_> {
+    fn drop(&mut self) {
+        if let Some(observer) = self.observer {
+            observer(ColdMeasurement {
+                stage: self.stage, elapsed: self.started.elapsed(), succeeded: Some(self.succeeded),
+            });
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default)]
 pub struct ColdTimings {
     pub abi_preparation: Duration,
@@ -154,13 +197,32 @@ pub fn compile_captured_classified_with_pinned_abi<R: Resolver>(
     map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
     non_text: Option<&dyn crate::composition::NonTextOutputStage>,
 ) -> Result<ColdOutput, ColdError> {
+    compile_captured_classified_with_pinned_abi_observed(
+        frontend, resolver, links, declarations, config, map_initializers, non_text, None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn compile_captured_classified_with_pinned_abi_observed<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+    observer: Option<&ColdObserver<'_>>,
+) -> Result<ColdOutput, ColdError> {
     let total = Instant::now();
+    let measurement = StageMeasurement::new(observer, ColdStage::StartupCapture);
     let startup = crate::startup::capture_with_spellings_and_workers(
         frontend,
         &links.inventory.spellings,
         config.workers,
     )
     .map_err(ColdError::Initializer)?;
+    measurement.complete();
+    let measurement = StageMeasurement::new(observer, ColdStage::AbiPreparation);
     let prepared = crate::driver_facts::prepare_pinned_source_abi_with_startup(
         frontend,
         links.engine,
@@ -178,6 +240,7 @@ pub fn compile_captured_classified_with_pinned_abi<R: Resolver>(
     }
     let policy = crate::driver_facts::FrozenPreparedPolicy::new(frontend, &prepared.prepared)
         .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
+    measurement.complete();
     let abi_preparation = total.elapsed();
     let mut output = compile_with_startup(
         frontend,
@@ -189,6 +252,7 @@ pub fn compile_captured_classified_with_pinned_abi<R: Resolver>(
         map_initializers,
         non_text,
         &startup,
+        observer,
     )?;
     output.timings.abi_preparation = abi_preparation;
     output.timings.total = total.elapsed();
@@ -224,6 +288,7 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
         map_initializers,
         non_text,
         &startup,
+        None,
     )
 }
 
@@ -238,6 +303,7 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
     non_text: Option<&dyn crate::composition::NonTextOutputStage>,
     startup: &crate::startup::CapturedStartup<'_>,
+    observer: Option<&ColdObserver<'_>>,
 ) -> Result<ColdOutput, ColdError> {
     startup
         .validate_for(frontend)
@@ -260,6 +326,7 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         return Err(ColdError::EngineMismatch);
     }
     let stage = Instant::now();
+    let measurement = StageMeasurement::new(observer, ColdStage::Initializers);
     let static_resolver = startup
         .resolver(frontend, resolver)
         .map_err(ColdError::Initializer)?;
@@ -291,9 +358,11 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         &initialization.units,
     )
     .map_err(ColdError::Projection)?;
+    measurement.complete();
     let initializers = stage.elapsed();
     let mut inventory = links.inventory;
     let stage = Instant::now();
+    let measurement = StageMeasurement::new(observer, ColdStage::ProcedureLowering);
     let batch =
         crate::lowering::lower_frontend_with_statics(frontend, resolver, policy, config, &startup);
     let lowering = stage.elapsed();
@@ -303,6 +372,8 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     batch
         .require_production_abi()
         .map_err(|_| ColdError::NonAuthoritativeAbi)?;
+    measurement.complete();
+    let measurement = StageMeasurement::new(observer, ColdStage::RequiredTypeAdmission);
     let non_text_types = non_text
         .map(|stage| stage.required_types())
         .unwrap_or_default();
@@ -326,7 +397,9 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         &mut inventory,
     )
     .map_err(ColdError::Initializer)?;
+    measurement.complete();
     let stage = Instant::now();
+    let measurement = StageMeasurement::new(observer, ColdStage::SymbolicLinking);
     let initialization = initialization
         .units
         .into_iter()
@@ -341,8 +414,10 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         initialization,
     )
     .map_err(ColdError::Linking)?;
+    measurement.complete();
     let symbolic_linking = stage.elapsed();
     let stage = Instant::now();
+    let measurement = StageMeasurement::new(observer, ColdStage::Composition);
     let dmb = crate::composition::compose_projected_with_symbols(
         links.engine_bytes,
         &frozen,
@@ -353,6 +428,7 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         plan.symbols.as_ref(),
     )
     .map_err(ColdError::Composition)?;
+    measurement.complete();
     Ok(ColdOutput {
         dmb,
         timings: ColdTimings {
