@@ -428,7 +428,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 
 /// TRUE while the bot works on something or holds still: it takes no new job.
 /mob/living/bot/proc/bot_busy()
-	return working || holding
+	return holding || (working && length(op_pendings_of(src))) // an op ended by its target going away runs no handler: the flag alone would stay set
 
 /// The bot works on `A` for `delay` (the "work" op): it is busy until the work ends, then `on_done`(act) runs (the target is act.target, `arg` is
 /// work_arg), `on_fail` runs if the work breaks off and the icon refreshes (also when the work breaks off). Returns the op result, which is null for a bot already busy.
@@ -443,6 +443,10 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	. = perform_op(src, A, "work", null, ORIGIN_AI, AUTH_AI)
 	if(!.)
 		working = FALSE
+	update_icons()
+	after(src, delay + 1, PROC_REF(work_icons)) // the work may end without a handler (its target deleted): the icon is looked at again then
+
+/mob/living/bot/proc/work_icons(datum/act/A)
 	update_icons()
 
 /mob/living/bot/proc/work_time(datum/act/op/A)
