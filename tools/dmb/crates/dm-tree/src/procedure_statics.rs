@@ -93,6 +93,37 @@ pub struct StaticPlan {
     pub executable_body: Vec<Item>,
 }
 pub fn capture(procedure: ProcedureIdentity, body: &[Item]) -> Result<StaticPlan, String> {
+    let mut plan = capture_declarations(procedure, body)?;
+    let removed: HashSet<_> = plan
+        .origins
+        .iter()
+        .map(|origin| (origin.header_span.start, origin.header_span.end))
+        .collect();
+    fn filter(items: &[Item], removed: &HashSet<(usize, usize)>) -> Vec<Item> {
+        items
+            .iter()
+            .filter(|item| !removed.contains(&(item.header_span.start, item.header_span.end)))
+            .map(|item| Item {
+                kind: item.kind,
+                header: item.header.clone(),
+                span: item.span,
+                header_span: item.header_span,
+                indent: item.indent,
+                children: filter(&item.children, removed),
+            })
+            .collect()
+    }
+    plan.executable_body = filter(body, &removed);
+    Ok(plan)
+}
+
+/// Capture the same owned startup facts and source origins as [`capture`],
+/// without copying executable items. `executable_body` is empty; callers that
+/// need a filtered body must use `capture`. Neither path changes the input AST.
+pub fn capture_declarations(
+    procedure: ProcedureIdentity,
+    body: &[Item],
+) -> Result<StaticPlan, String> {
     let parsed = dm_syntax::parse_body_items(body);
     if !parsed.diagnostics.is_empty() {
         return Err(format!(
@@ -128,23 +159,6 @@ pub fn capture(procedure: ProcedureIdentity, body: &[Item]) -> Result<StaticPlan
             "inline procedure static extraction requires an authoritative statement rewrite".into(),
         );
     }
-    let removed: HashSet<_> = plan
-        .origins
-        .iter()
-        .map(|origin| (origin.header_span.start, origin.header_span.end))
-        .collect();
-    fn filter(items: &[Item], removed: &HashSet<(usize, usize)>) -> Vec<Item> {
-        items
-            .iter()
-            .filter(|item| !removed.contains(&(item.header_span.start, item.header_span.end)))
-            .map(|item| {
-                let mut item = item.clone();
-                item.children = filter(&item.children, removed);
-                item
-            })
-            .collect()
-    }
-    plan.executable_body = filter(body, &removed);
     Ok(plan)
 }
 fn walk(
@@ -340,5 +354,49 @@ mod tests {
         assert!(capture(identity(), &parsed.items[0].children)
             .unwrap_err()
             .contains("same-name"));
+    }
+    #[test]
+    fn declaration_capture_matches_full_capture_and_owns_its_facts() {
+        let parsed = dm_syntax::parse(
+            "/proc/p()\n    var/static/list/cache = list(1)\n    if(1)\n        var/const/count = 2\n        while(count)\n            count--\n    var/local = 3\n    return cache\n",
+        );
+        assert!(parsed.diagnostics.is_empty());
+        let body = &parsed.items[0].children;
+        let original = body.clone();
+        let full = capture(identity(), body).unwrap();
+        let declarations = capture_declarations(identity(), body).unwrap();
+        assert_eq!(body, &original);
+        assert_eq!(declarations.procedure, full.procedure);
+        assert_eq!(declarations.declarations, full.declarations);
+        assert_eq!(declarations.origins, full.origins);
+        assert_eq!(declarations.symbols.ordered(), full.symbols.ordered());
+        assert!(declarations.executable_body.is_empty());
+        assert!(!full.executable_body.is_empty());
+        drop(parsed);
+        assert_eq!(
+            declarations
+                .symbols
+                .text(declarations.declarations[0].identity.name),
+            Some("cache")
+        );
+        assert_eq!(declarations.origins.len(), 2);
+        assert!(matches!(
+            declarations.declarations[0].initializer,
+            InitializerValue::Expression(_)
+        ));
+    }
+    #[test]
+    fn declaration_capture_preserves_failure_admission() {
+        for source in [
+            "/proc/p()\n    var/static/x = 1\n    if(1)\n        var/static/x = 2\n",
+            "/proc/p()\n    for(var/static/x = 1; x; x--)\n        return x\n",
+        ] {
+            let parsed = dm_syntax::parse(source);
+            let body = &parsed.items[0].children;
+            assert_eq!(
+                capture(identity(), body).unwrap_err(),
+                capture_declarations(identity(), body).unwrap_err()
+            );
+        }
     }
 }
