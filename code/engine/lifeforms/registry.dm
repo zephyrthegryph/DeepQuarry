@@ -119,9 +119,7 @@ GLOBAL_LIST_EMPTY(lifeform_indexes) // registry id -> /datum/lifeform_index
 	if(area)
 		LAZYINITLIST(I.by_area[area])
 		LAZYADD(I.by_area[area][k], holder)
-	var/datum/registry/legacy = build_registries()[id]
-	if(legacy && !legacy.has(holder))
-		legacy.add(holder)
+	holder.registry_mirror_join(id)
 
 /proc/registry_unfile(datum/holder, id)
 	var/datum/lifeform_index/I = GLOB.lifeform_indexes[id]
@@ -135,9 +133,7 @@ GLOBAL_LIST_EMPTY(lifeform_indexes) // registry id -> /datum/lifeform_index
 		LAZYREMOVE(I.by_z[at[2]]?[k], holder)
 	if(at[3])
 		LAZYREMOVE(I.by_area[at[3]]?[k], holder)
-	var/datum/registry/legacy = build_registries()[id]
-	if(legacy?.has(holder))
-		legacy.remove(holder)
+	holder.registry_mirror_leave(id)
 
 /// The key var of a registry() entry was written: the holder is re-filed under the new key.
 /proc/registry_rekey(datum/holder, datum/centry/C)
@@ -208,3 +204,10 @@ GLOBAL_LIST_EMPTY(radio_listen_tuned) // holder -> the frequency it listens on n
 		registry_moved(holder)
 	if(holder.lifeform_moves & LIFEFORM_MOVES_ADJACENCY)
 		adjacency_moved(holder, old_loc)
+
+/// A downstream registry carrier may mirror membership in its own index.
+/datum/proc/registry_mirror_join(id)
+	return null
+
+/datum/proc/registry_mirror_leave(id)
+	return null

@@ -67,7 +67,7 @@
 			if(E.args["slot"])
 				if(move_into(holder, E.args["slot"], thing, force = TRUE))
 					continue
-			thing.forceMove(holder)
+			thing.lifeform_place(holder)
 
 /proc/knows_init(datum/holder, datum/lifeform_plan/P)
 	if(!ismob(holder))
@@ -78,4 +78,12 @@
 		var/datum/entry/E = C.item
 		if((C.whens && !op_whens_hold(holder, C.whens)) || (!isnull(E.args["when"]) && !condition_holds(holder, E.args["when"])))
 			continue
-		M.add_language(E.args["language"])
+		M.lifeform_learn(E.args["language"])
+
+/// Placement of initial contents that did not enter a declared slot.
+/atom/movable/proc/lifeform_place(atom/holder)
+	return null
+
+/// A language declaration is delivered by the mob implementation.
+/mob/proc/lifeform_learn(language)
+	return null

@@ -129,7 +129,7 @@ GLOBAL_DATUM_INIT(command_announcement, /datum/announcement/priority/command, ne
 	GLOB.command_announcement.Announce("It has come to our attention that \the [station_name()] passed through an ion storm.  Please monitor all electronic equipment for malfunctions.", "Anomaly Alert")
 
 /proc/AnnounceArrival(mob/living/carbon/human/character, rank, join_message, channel = "Common", zlevel)
-	if (SSticker.current_state == GAME_STATE_PLAYING)
+	if (round_game_state() == GAME_STATE_PLAYING)
 		var/list/zlevels = zlevel ? using_map.get_map_levels(zlevel, TRUE, om_range = DEFAULT_OVERMAP_RANGE) : null
 		if(character.mind.role_alt_title)
 			rank = character.mind.role_alt_title

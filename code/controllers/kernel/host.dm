@@ -123,7 +123,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	Kernel.tgui_interact(user.mob)
 
 /datum/controller/kernel/tgui_status(mob/user, datum/tgui_state/state)
-	if(!user.client?.holder?.check_for_rights(R_SERVER|R_DEBUG))
+	if(!admin_can(user.client, R_SERVER|R_DEBUG))
 		return STATUS_CLOSE
 	return STATUS_INTERACTIVE
 

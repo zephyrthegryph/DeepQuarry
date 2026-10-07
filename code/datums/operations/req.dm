@@ -13,7 +13,6 @@
 
 // ---- reasons ----
 
-MSG_DEF_SELF(req_failed, "You can't do that.")
 /// The reason of req(..., silent = TRUE): no text, so the refused actor is told nothing.
 MSG_DEF_SELF(req_silent, "")
 MSG_DEF_SELF(req_refused, "%DETAIL%")

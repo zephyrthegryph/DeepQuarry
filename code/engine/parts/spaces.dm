@@ -18,20 +18,12 @@
 //   req_closed(SPACE_X)                      a requirement that the space's door is shut ("Close the cover first."): what works the outside of a
 //                                            machine (an ID lock, an emag) while its insides are open.
 //   req_space_empty(SPACE_X)                 nothing sits in a slot of the space or of a space inside it ("Remove the power cell first.").
-//   size_is(min, max)                        a held item's w_class is in range, with generated reasons (too large, too small): a slot's fits =.
-//   cell_bay(slot_var, at, accepts, starts, fits)   a one-item slot over a holder var, in space `at`.
-//   telekinesis()                            a provider: AFF_MANIPULATE at TK_RANGE with line_of_sight. Spaces still gate it.
+// Item sizing, cell bays and telekinetic reach are library adapters over these engine protocols.
 //
 // The silent-or-refuse rule lives in resolution (code/engine/parts/resolve.dm): a candidate whose path is blocked is set aside, so another
 // candidate answering the same input wins; when none does, the blocked one runs and Require refuses with the blocking door's reason.
 // A door capability (cover(), panel()) checks its own latches and protrusions: its open op needs req_door_free(its cap id).
 
-/// Today's TK_MAXRANGE, in tiles (section 8).
-#define TK_RANGE TK_MAXRANGE
-
-MSG_DEF_SELF(cover/closed, "Its cover is closed.")
-MSG_DEF_SELF(cover/still_on, "Its cover is still on.")
-MSG_DEF_SELF(cover/removed, "Its cover has been removed.")
 MSG_DEF_SELF(space/closed, "It is closed.")
 MSG_DEF_SELF(space/close_first, "Close it first.")
 MSG_DEF_SELF(space/missing, "There is nowhere to put that yet.")
@@ -150,8 +142,7 @@ CAPABILITY_TYPE(space, CAP_SPACE, /datum/capability/lib/space, key = id, id = nu
 			return E.args["space"]
 	if(!ismovable(inside))
 		return null
-	var/datum/om/relation/slot/def = dq_path_slot_of(src, inside) // a ledger slot placed at a space (its `at`)
-	return def?.at
+	return space_ledger_location(inside)
 
 /// The hops of the path from the actor's side to space `id`: list(list(space, inward)), the spaces whose boundary the path crosses. The actor
 /// outside the holder starts at its outside; an actor inside a space of the holder (shut in a locker) starts there and walks out first.
@@ -237,8 +228,8 @@ CAPABILITY_TYPE(space, CAP_SPACE, /datum/capability/lib/space, key = id, id = nu
 			if(E.args["space"] == id && op_cond(A, E.args["cond"]))
 				return space_hold_because(A, E.args["because"])
 		for(var/cap_id in list(CAP_CONSTRUCTION, CAP_DEPLOYMENT))
-			var/datum/capability/construction/graph_def = cap_of(holder, cap_id)
-			var/datum/state_graph/G = graph_def?.graph
+			var/datum/capability/graph_def = cap_of(holder, cap_id)
+			var/datum/state_graph/G = graph_def?.space_construction_graph()
 			if(!G)
 				continue
 			for(var/datum/graph_edge/edge as anything in graph_edges_into(G, graph_current(holder, cap_id)))
@@ -372,99 +363,13 @@ CAPABILITY_TYPE(space, CAP_SPACE, /datum/capability/lib/space, key = id, id = nu
 			return thing
 	return null
 
-// ---- slot acceptance ----
-
-MSG_DEF_SELF(slot/too_large, "That is too large to fit.")
-MSG_DEF_SELF(slot/too_small, "That is too small to fit.")
-
-/// size_is(min, max): the held item's w_class is between min and max (max defaults to min). Refused with "too large" or "too small".
-/proc/size_is(min_size, max_size = null)
-	return part_make(/datum/entry/part/req/size_is, list("min" = min_size, "max" = isnull(max_size) ? min_size : max_size))
-
-/datum/entry/part/req/size_is
-	part_name = "size_is"
-
-/datum/entry/part/req/size_is/holds(datum/act/op/A)
-	var/obj/item/held = A.held
-	return !istype(held) || (held.w_class >= src.args["min"] && held.w_class <= src.args["max"])
-
-/datum/entry/part/req/size_is/refusal(datum/act/op/A)
-	var/obj/item/held = A.held
-	return (istype(held) && held.w_class < src.args["min"]) ? /datum/msg/slot/too_small : /datum/msg/slot/too_large
-
-// ---- cell bay ----
-
-CAPABILITY_TYPE(cell_bay, CAP_CELL_BAY, /datum/capability/lib/cell_bay, key = slot_var, slot_var = null, at = null, accepts = /obj/item/cell, starts = null, starts_args = null, fits = null)
-
-/// A power cell slot over a holder var (`slot_var`, nameof(cell)), in space `at` when given: cell_bay.<var>.insert (a cell in hand goes in, when
-/// it `fits`: size_is(ITEMSIZE_NORMAL)) and cell_bay.<var>.take (an empty hand takes it out). Both are placed at(at), so the path decides: a
-/// closed door sets them aside for whatever else the click means, and refuses with its reason when nothing else does. The cell shows through
-/// an open cover (a look layer), examine says what it holds, and cell_charge_percent() reads its charge through the bay. `starts` (any starts =
-/// form of section 6, with starts_args) fills the bay when the holder initializes.
-/datum/capability/lib/cell_bay
-	holder_hooks = HOLDER_HOOK_INIT
-
-MSG_DEF_SELF(cell_bay/missing, "The power cell is missing.")
-
-/datum/capability/lib/cell_bay/entries()
-	var/list/entries = list()
-	var/list/at_space = list()
-	var/visible = slot_var
-	if(!isnull(at))
-		entries += entry_make(ENTRY_SPACE_SLOT, null, list("var" = slot_var, "space" = at))
-		at_space += global.at(at)
-		// every space a cell bay sits in today is behind a cover: the cell shows while the cover is open and on
-		visible = cond_all(slot_var, COVER_OPEN, cond_not(COVER_REMOVED))
-	entries += op("insert", item(accepts), put_in(slot_var), at_space, fits ? needs(fits) : null)
-	entries += op("take", hand(), ungated(), when(slot_var), take_out(slot_var), at_space)
-	entries += look_layer(LOOK_CELL, when = visible)
-	entries += examine_line(CAP_PROC(examine_cell), reads = list(slot_var))
-	return entries
-
-/// The charge meter (or the missing cell, when the bay can be seen into).
-/datum/capability/lib/cell_bay/proc/examine_cell(datum/act/A)
-	var/obj/item/cell/C = A.holder.vars[slot_var]
-	if(!istype(C))
-		var/atom/holder = A.holder
-		return (!isnull(at) && istype(holder) && isnull(holder.space_reason(at, AUTH_PHYSICAL))) ? "The power cell is missing." : null
-	return "The charge meter reads [round(C.percent())]%."
-
-/// The bay starts with a thing when its holder initializes: any starts = form (starts_make(): a type, nameof(var) of a holder var holding one,
-/// pick_one(), when(cond, T), PROC_REF(x)) with starts_args. A var a mapper already filled keeps what it holds.
-/datum/capability/lib/cell_bay/on_holder_init(datum/act/eval/A)
-	var/atom/holder = A.holder
-	if(isnull(starts) || !istype(holder) || !isnull(holder.vars[slot_var]))
-		return
-	for(var/atom/movable/thing in starts_make(holder, starts, starts_args, holder))
-		if(isnull(holder.vars[slot_var]))
-			varslot_set(holder, slot_var, thing)
-		else
-			qdel(thing) // ALLOW(lifecycle): a one-item bay keeps the first thing a list-valued starts made; the rest were never placed
-
-/datum/capability/lib/cell_bay/output_reads(hook)
-	return list(slot_var)
-
-/// The charge of A's cell bay in percent: 0 with no cell (never null).
-/proc/cell_charge_percent(atom/A)
-	READS_FROM()
-	var/datum/type_table/T = table_of(A)
-	for(var/key in T.caps)
-		var/datum/capability/lib/cell_bay/bay = T.caps[key]
-		if(istype(bay) && bay.cap_id == CAP_CELL_BAY)
-			var/obj/item/cell/cell = A.vars[bay.slot_var]
-			return istype(cell) ? cell.percent() : 0
-	return 0
-
 // ---- slots over a holder var ----
 
 /// Is `slot_id` a one-item slot over a var of the holder (a cell_bay()), rather than a slot of the containment ledger?
 /proc/op_var_slot(atom/holder, slot_id)
 	if(!istext(slot_id) || !(slot_id in holder.vars))
 		return FALSE
-	for(var/datum/om/relation/slot/def as anything in dq_slot_defs_for(holder))
-		if(def.slot_id == slot_id)
-			return FALSE
-	return TRUE
+	return !holder.space_ledger_slot(slot_id)
 
 /// Sets the var of a var-slot to `thing` (which is in the holder) or empties it.
 /proc/varslot_set(atom/holder, var_name, atom/movable/thing)
@@ -474,14 +379,13 @@ MSG_DEF_SELF(cell_bay/missing, "The power cell is missing.")
 		else
 			rel_set(holder, var_name, thing)
 		return
-	holder.vars[var_name] = thing // ALLOW(api): the one writer of a one-item slot over a var: the bay capability's own slot
-	changed(holder, CHANGE_EXPLICIT, var_name)
+	op_write_key(holder, var_name, thing)
 
 /// Why `thing` cannot go into the var-slot, or null.
 /proc/varslot_refusal(atom/holder, var_name, atom/movable/thing, mob/actor)
 	if(!isnull(holder.vars[var_name]))
 		return /datum/msg/bay/full
-	return own_transfer_refusal(holder, thing, null, actor)
+	return holder.space_transfer_refusal(thing, actor)
 
 /// Puts `thing` into the var-slot of the holder. TRUE when it went in.
 /proc/varslot_insert(atom/holder, var_name, atom/movable/thing, mob/actor)
@@ -489,53 +393,47 @@ MSG_DEF_SELF(cell_bay/missing, "The power cell is missing.")
 		return FALSE
 	if(rel_kind(holder, var_name) == OWNK_OWN) // a declared owned var: the one transfer moves it in and adopts it
 		return move_into(holder, var_name, thing, actor)
-	if(!own_bring_in(holder, var_name, thing, null, actor, TRUE, null, FALSE)) // an undeclared var: placed, then the bay writes the var
+	if(!holder.space_bring_in(var_name, thing, actor)) // an undeclared var: placed, then the bay writes the var
 		return FALSE
 	varslot_set(holder, var_name, thing)
 	return TRUE
 
 /// Takes what the var-slot holds out: into the carrier that took it (a cyborg's gripper) or the actor's hand when it can take it, else onto the floor.
 /// The thing, or null when the slot is empty.
-/proc/varslot_take(atom/holder, var_name, mob/actor, obj/item/carrier = null)
+/proc/varslot_take(atom/holder, var_name, mob/actor, datum/carrier = null)
 	var/atom/movable/thing = holder.vars[var_name]
 	if(!istype(thing))
 		return null
 	varslot_set(holder, var_name, null)
-	var/obj/item/as_item = thing
-	if(carrier && istype(as_item) && carrier.can_carry(as_item, actor) && carrier.carry(as_item, actor))
+	if(carrier && carrier.space_receive(thing, actor))
 		return thing
-	if(actor && istype(as_item) && actor.put_in_hands(as_item))
+	if(actor && actor.space_receive(thing, actor))
 		return thing
-	thing.forceMove(get_turf(actor || holder))
+	thing.lifeform_place(get_turf(actor || holder))
 	return thing
 
-// ---- telekinesis ----
+// ---- declared adapters ----
 
-CAPABILITY_DEF(telekinesis, CAP_TELEKINESIS, key = NONE)
+/// A containment-ledger adapter answers the space of an immediate child, or null.
+/datum/proc/space_ledger_location(atom/movable/inside)
+	return null
 
-/// A provider of AFF_MANIPULATE with a reach of TK_RANGE tiles and line_of_sight = TRUE: any hand op on a target it can see in range. No tool or
-/// attack affordances; compartments and requirements still apply.
-/datum/capability/def/telekinesis/entries()
-	return list(provides(AFF_MANIPULATE | AFF_TELEKINESIS, reach = TK_RANGE, line_of_sight = TRUE))
+/// TRUE for a named ledger slot; a var slot instead holds exactly one movable.
+/datum/proc/space_ledger_slot(slot_id)
+	return FALSE
 
-/// The key tk_refresh() publishes (the reads of the tk_ready() condition).
-#define TK_KEY "telekinesis_ready"
+/// The inventory adapter refuses an undeclared var-slot transfer with a reason, or permits it with null.
+/datum/proc/space_transfer_refusal(atom/movable/thing, mob/actor)
+	return /datum/msg/req_failed
 
-/// Can this mob reach out with its mind now? A TK mutation, or powered kinesis gloves (has_telegrip()), and not through a remote view (the old adapter refused
-/// that too: a remote viewer that could TK would act from two places). A condition: it reads and writes nothing.
-/mob/proc/tk_ready(datum/act/A)
-	return has_telegrip() && !is_remote_viewing()
+/// Places an item into an undeclared holder var's physical container, without writing the var.
+/datum/proc/space_bring_in(var_name, atom/movable/thing, mob/actor)
+	return FALSE
 
-/// The telekinesis provider of a mob while it is tk_ready(): the telekinesis() provider, held by a condition instead of a grant, so a mutation or the power of
-/// a pair of gloves needs no bookkeeping (the condition is read when the provider set is read). AFF_TELEKINESIS marks it for the tk() binding; a hand op
-/// needs only AFF_MANIPULATE, so it does any hand op on a target in range and in sight, used only when nothing nearer reaches. A mutation added or removed, or
-/// a glove's power spent, calls tk_refresh().
-/proc/telekinetic_reach()
-	return when(TYPE_PROC_REF(/mob, tk_ready), provides(AFF_MANIPULATE | AFF_TELEKINESIS, reach = TK_RANGE, line_of_sight = TRUE), reads = list(TK_KEY))
+/// A carrier or actor adapter receives an extracted movable. FALSE leaves it for the next destination.
+/datum/proc/space_receive(atom/movable/thing, mob/actor)
+	return FALSE
 
-/// The telekinesis state of this mob changed: its provider set did, and the menus cached on it are stale.
-/mob/proc/tk_refresh()
-	if(QDELETED(src))
-		return
-	provider_set_changed(src)
-	publish_change(src, TK_KEY)
+/// A construction adapter supplies the graph whose current stage may protrude into a space.
+/datum/capability/proc/space_construction_graph()
+	return null

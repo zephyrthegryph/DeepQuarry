@@ -79,39 +79,39 @@ SYSTEM_DEF(profiler)
 	subsystems["machines"] += list("material_graphs" = material_graphs)
 	subsystems["atmos"] += list(
 		"dm_stage_average_ms" = list(
-			"high_pressure" = SSair.cost_highpressure,
-			"superconductivity" = SSair.cost_superconductivity,
-			"pipenets" = SSair.cost_pipenets,
-			"pipe_commit" = SSair.cost_pipe_commit,
-			"pipe_devices" = SSair.cost_pipe_devices,
-			"rebuilds" = SSair.cost_rebuilds,
-			"gas_tick" = SSair.cost_turfs,
-			"gas_events" = SSair.cost_gas_events,
+			"high_pressure" = air_profile_cost_highpressure(),
+			"superconductivity" = air_profile_cost_superconductivity(),
+			"pipenets" = air_profile_cost_pipenets(),
+			"pipe_commit" = air_profile_cost_pipe_commit(),
+			"pipe_devices" = air_profile_cost_pipe_devices(),
+			"rebuilds" = air_profile_cost_rebuilds(),
+			"gas_tick" = air_profile_cost_turfs(),
+			"gas_events" = air_profile_cost_gas_events(),
 		),
 		"gas_field" = vg_gas_stats(),
 		"gas_last_fire" = list(
-			"events" = SSair.gas_events_last,
-			"reactions" = SSair.gas_reactions_last,
-			"visuals" = SSair.gas_visuals_last,
-			"pressure_pushes" = SSair.gas_pressure_last,
+			"events" = air_profile_gas_events_last(),
+			"reactions" = air_profile_gas_reactions_last(),
+			"visuals" = air_profile_gas_visuals_last(),
+			"pressure_pushes" = air_profile_gas_pressure_last(),
 		),
 		"queues" = list(
 			"hotspots" = length(SSair.hotspots),
 			"pressure_deltas" = length(SSair.high_pressure_delta),
 			"pipenets" = length(SSair.networks),
-			"pipe_devices" = SSair.rust_pipe_device_count,
+			"pipe_devices" = air_profile_rust_pipe_device_count(),
 			"pipe_devices_reported" = native_system().pipe_devices_last,
 			"rebuild" = length(SSair.rebuild_queue),
 			"expansion" = length(SSair.expansion_queue),
 		),
 	)
 	subsystems["machines"] += list(
-		"stage_average_ms" = list("machinery" = SSmachines.cost_machinery, "powernets" = SSmachines.cost_powernets),
-		"stage_last_logical_run_ms" = list("machinery" = SSmachines.last_cost_machinery, "powernets" = SSmachines.last_cost_powernets),
-		"pump_commit" = list("active_ms" = SSmachines.last_pump_commit_ms, "wall_ms" = SSmachines.last_pump_commit_wall_ms, "suspended_ms" = SSmachines.last_pump_commit_suspended_ms, "operations" = SSmachines.last_pump_commit_operations, "turfs" = SSmachines.last_pump_commit_turfs),
+		"stage_average_ms" = list("machinery" = machine_profile_cost_machinery(), "powernets" = machine_profile_cost_powernets()),
+		"stage_last_logical_run_ms" = list("machinery" = machine_profile_last_cost_machinery(), "powernets" = machine_profile_last_cost_powernets()),
+		"pump_commit" = list("active_ms" = machine_profile_last_pump_commit_ms(), "wall_ms" = machine_profile_last_pump_commit_wall_ms(), "suspended_ms" = machine_profile_last_pump_commit_suspended_ms(), "operations" = machine_profile_last_pump_commit_operations(), "turfs" = machine_profile_last_pump_commit_turfs()),
 		"power" = list("regions" = length(SSmachines.power_grids)),
 		"counts" = list("all" = length(REGISTRY_MEMBERS(REGISTRY_MACHINES)), "powernets" = length(SSmachines.power_grids)),
-		"gas_wakes" = list("dirty" = SSmachines.gas_dirty_last, "subscribers_checked" = SSmachines.gas_wake_subscribers_last, "scan_ms" = SSmachines.gas_wake_scan_last_ms, "woken" = SSmachines.gas_woken_last, "dead" = SSmachines.gas_dead_last, "pending" = length(SSmachines.pending_dirty_gas_mixtures)),
+		"gas_wakes" = list("dirty" = machine_profile_gas_dirty_last(), "subscribers_checked" = machine_profile_gas_wake_subscribers_last(), "scan_ms" = machine_profile_gas_wake_scan_last_ms(), "woken" = machine_profile_gas_woken_last(), "dead" = machine_profile_gas_dead_last(), "pending" = length(SSmachines.pending_dirty_gas_mixtures)),
 	)
 	subsystems["mobs"] += list("counts" = list("world" = REGISTRY_COUNT(REGISTRY_MOBS), "parked" = members_total(sequence_def(/datum/sequence/life).parked_key), "deaths_pending" = length(SSmobs.death_list)))
 	subsystems["periodic"] = periodic_diagnostics()
