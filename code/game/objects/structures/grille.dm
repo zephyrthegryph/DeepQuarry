@@ -25,7 +25,39 @@ CAPABILITIES(/obj/structure/grille)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	op("hand", hand(), label("Kick"), then(PROC_REF(interaction_hand)))
+	op("place_window", stack(/obj/item/stack/material, 1), label("Place a window"), priority(OP_PRIORITY_PART),
+		needs(req(PROC_REF(window_sheet_held), silent = TRUE), req(PROC_REF(window_reachable), because = MSG(grille/cant_reach)), req(PROC_REF(no_window_that_way), because = MSG(grille/window_there))),
+		begins(MSG(grille/placing_window)), wait(2 SECONDS), then(PROC_REF(window_placed)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+MSG_DEF_SELF(grille/cant_reach, span_notice("You can't reach."))
+MSG_DEF_SELF(grille/window_there, span_notice("There is already a window facing this way there."))
+MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window."))
+
+/// A sheet of a material that makes windows.
+/obj/structure/grille/proc/window_sheet_held(datum/act/op/A)
+	var/obj/item/stack/material/ST = A.held
+	return !!read_once(ST.material?.created_window)
+
+/// The way a window would face when placed from where the builder stands (only the cardinal ones work), or null.
+/obj/structure/grille/proc/window_dir_for(mob/user)
+	if(loc == user.loc)
+		return user.dir
+	if(x == user.x)
+		return y > user.y ? 2 : 1
+	if(y == user.y)
+		return x > user.x ? 8 : 4
+	return null
+
+/obj/structure/grille/proc/window_reachable(datum/act/op/A)
+	return !isnull(read_once(window_dir_for(A.actor)))
+
+/obj/structure/grille/proc/no_window_that_way(datum/act/op/A)
+	var/dir_to_set = read_once(window_dir_for(A.actor))
+	for(var/obj/structure/window/WINDOW in read_once(contents_of(loc)))
+		if(read_once(WINDOW.dir) == dir_to_set)
+			return FALSE
+	return TRUE
 
 /// A blob's hit destroys the grille outright.
 /obj/structure/grille/proc/blob_destroys(datum/act/hit/blob/A)
@@ -113,34 +145,6 @@ CAPABILITIES(/obj/structure/grille)
 		return TRUE
 	//window placing begin //TODO CONVERT PROPERLY TO MATERIAL DATUM
 	else if(istype(W,/obj/item/stack/material))
-		var/obj/item/stack/material/ST = W
-		if(!ST.material.created_window)
-			return TRUE
-
-		var/dir_to_set = 1
-		if(loc == user.loc)
-			dir_to_set = user.dir
-		else
-			if( ( x == user.x ) || (y == user.y) ) //Only supposed to work for GLOB.cardinal directions.
-				if( x == user.x )
-					if( y > user.y )
-						dir_to_set = 2
-					else
-						dir_to_set = 1
-				else if( y == user.y )
-					if( x > user.x )
-						dir_to_set = 8
-					else
-						dir_to_set = 4
-			else
-				to_chat(user, span_notice("You can't reach."))
-				return TRUE //Only works for GLOB.cardinal direcitons, diagonals aren't supposed to work like this.
-		for(var/obj/structure/window/WINDOW in contents_of(loc))
-			if(WINDOW.dir == dir_to_set)
-				to_chat(user, span_notice("There is already a window facing this way there."))
-				return TRUE
-		to_chat(user, span_notice("You start placing the window."))
-		task_start(/datum/task/timed/grille_attackby, user, src, ST = ST, dir_to_set = dir_to_set)
 		return TRUE
 
 //window placing end
@@ -156,26 +160,18 @@ CAPABILITIES(/obj/structure/grille)
 				receive_weapon_hit(W, user, W.force * 0.1)
 	return TRUE
 
-/datum/task/timed/grille_attackby
-	duration = 2 SECONDS
-	complete_proc = /obj/structure/grille/proc/attackby_timed_done
-	var/obj/item/stack/material/ST
-	var/dir_to_set
-
-/obj/structure/grille/proc/attackby_timed_done(datum/task/timed/grille_attackby/task)
-	var/mob/user = task.actor
-	var/obj/item/stack/material/ST = task.ST
-	var/dir_to_set = task.dir_to_set
+/obj/structure/grille/proc/window_placed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/stack/material/ST = A.held
+	var/dir_to_set = window_dir_for(user)
 	for(var/obj/structure/window/WINDOW in contents_of(loc))
 		if(WINDOW.dir == dir_to_set)//checking this for a 2nd time to check if a window was made while we were waiting.
 			to_chat(user, span_notice("There is already a window facing this way there."))
 			return
-
 	var/wtype = ST.material.created_window
-	if (ST.use(1))
-		var/obj/structure/window/WD = new wtype(loc, dir_to_set, 1)
-		to_chat(user, span_notice("You place the [WD] on [src]."))
-		WD.update_icon()
+	var/obj/structure/window/WD = new wtype(loc, dir_to_set, 1)
+	to_chat(user, span_notice("You place the [WD] on [src]."))
+	WD.update_icon()
 
 // Crossing the integrity_failure threshold turns the grille into a passable broken stub.
 /obj/structure/grille/atom_break(damage_flag)

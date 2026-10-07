@@ -55,6 +55,8 @@ CAPABILITIES(/obj/item/uav)
 		then(PROC_REF(option_chosen)))
 	// the old attackby: a pairing computer pairs it, a cell goes in
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	// a cell goes into one that has none
+	op("insert_cell", item(/obj/item/cell), label("Insert the cell"), when(cond_not(PROC_REF(has_cell))), priority(OP_PRIORITY_PART), wait(3 SECONDS), then(PROC_REF(cell_inserted)))
 	// a pen writes its nickname
 	op("nickname", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Nickname"), priority(OP_PRIORITY_PART + 1),
 		asks(/datum/prompt/text, fields = list("title" = "Nickname", "question" = computed(PROC_REF(nickname_question)), "default" = computed(PROC_REF(current_nickname)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)),
@@ -147,9 +149,6 @@ CAPABILITIES(/obj/item/uav)
 		act_message(user, src, others = span_notice("%U% pairs [I] to [nickname]"))
 		toggle_pairing()
 
-	else if(istype(I, /obj/item/cell) && !cell)
-		task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(I, user))
-
 	else
 		return OP_DECLINE
 	return OP_PASS
@@ -168,7 +167,11 @@ CAPABILITIES(/obj/item/uav)
 		desc = initial(desc) + " This one has "  + span_notice("'[nickname]'") + " scribbled on the side."
 	return OP_PASS
 
-/obj/item/uav/proc/attackby_timed_done(obj/item/I, mob/user)
+/obj/item/uav/proc/cell_inserted(datum/act/op/A)
+	var/obj/item/I = A.held
+	var/mob/user = A.actor
+	if(cell)
+		return
 	to_chat(user, span_notice("You insert [I] into [nickname]."))
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	power_down()

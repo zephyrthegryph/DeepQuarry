@@ -2700,3 +2700,14 @@ The snapshot pins were re-blessed once, for these classes (one cause each; the r
 * **Class: an entry whose op is gated by `needs()` is shown greyed, with its refusal.** "Use screwdriver (refused: )" on a mine, a UAV, a railing or a toilet (a silent refusal has no text); "Search (refused: You see nothing...)" on a potted plant; "Refine (refused: You don't have enough for that.)" on a whetstone with a short stack.
 * **Class: the legacy blocks are ops.** "Eject pai blocked" (a crowbar on a bot with a closed panel or no pAI), "Multitool blocked" and "Screwdriver blocked" (a NIF in the wrong state) are the refusals `crowbar_act`, `screwdriver_act` and `multitool_act` ended the click with; they show as refused entries and the tool never falls through to a hit.
 * **Class: the medbot's help-intent entry.** "Right or open controls" is "Open controls" (righting a tipped bot is its own op, "Right", beside "Tip over").
+
+## Timed actions as ops, X additions
+
+Pinned by `code/modules/unit_tests/dq_timed_pin_w5_behaviour.dm` (written on the legacy forms) and the earlier pins of the same sites (`e_beacon_*`, `low_wall_*`, `railing_welder`, `barricade_repair`, `flora_uproot`, `grille_window`).
+
+* **Class: a welder that is not lit does not weld.** The railing repair and the reflector weld / cut used to take any welding tool (the reflector only asked for fuel); `lit_welder()` refuses an unlit one with "Turn on the welding tool first!", as every other converted welder op does.
+* **Class: a short stack falls through.** The low wall's rods (two) and glass (four) and the grille's window sheet are `stack(T, n)` bindings: a stack that is too small is not this op's, and the click goes on to the wall's "place" op (it used to say "You need at least two rods"). Same shape as the whetstone's short stack.
+* **Class: the cost of a stack is taken when the work ends.** The low wall's rods and glass, the grille's sheet and the barricade's sheet are reserved at the end of the wait and spent with the effect (the old handler used them in the done proc, or not at all when the stack was gone).
+* **Class: a held item that no longer fits is checked when the click is decided.** The reflector's wrench needs a loose reflector ("Unweld the reflector from the floor first!" is its refusal), the UAV's cell needs a drone with no cell, a shovel uproots only a type that can be removed. Nothing changes for a click that worked.
+* **Class: the fingerprint of a low wall build is added at the start.** `starts()`; before it was added at the click, as it is now.
+* **Class: the sniper rifle's take-down checks the carrier and the chambered round as requirements.** The legacy verb returned silently for a dead user; the op's `carried()` and `rifle_empty` refuse before the wait.

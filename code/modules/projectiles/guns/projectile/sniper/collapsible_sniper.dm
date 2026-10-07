@@ -3,24 +3,17 @@
 /obj/item/gun/projectile/heavysniper/collapsible
 
 CAPABILITIES(/obj/item/gun/projectile/heavysniper/collapsible)
-	op("collapsible_sniper_verb_take_down", menu(), label("Disassemble Rifle"), needs(carried()), then(PROC_REF(collapsible_sniper_verb_take_down)))
+	op("collapsible_sniper_verb_take_down", menu(), label("Disassemble Rifle"), needs(carried(), req(PROC_REF(rifle_empty), because = MSG(sniper/empty_first))), begins(MSG(sniper/removing_barrel)), wait(4 SECONDS), then(PROC_REF(barrel_removed)))
 
-/// Old Disassemble Rifle verb.
-/obj/item/gun/projectile/heavysniper/collapsible/proc/collapsible_sniper_verb_take_down(datum/act/op/A)
-	var/mob/living/carbon/human/user = A.actor
-	if(user.stat)
-		return
+MSG_DEF_SELF(sniper/empty_first, span_warning("You need to empty the rifle to break it down."))
+MSG_DEF_SELF(sniper/removing_barrel, span_warning("You begin removing %T%'s barrel."))
 
-	if(chambered)
-		to_chat(user, span_warning("You need to empty the rifle to break it down."))
-	else
-		collapse_rifle(user)
+/// Requirement: no round is chambered.
+/obj/item/gun/projectile/heavysniper/collapsible/proc/rifle_empty(datum/act/op/A)
+	return !chambered
 
-/obj/item/gun/projectile/heavysniper/proc/collapse_rifle(mob/user)
-	to_chat(user, span_warning("You begin removing \the [src]'s barrel."))
-	task_timed(user, 4 SECONDS, src, src, PROC_REF(barrel_removed), list(user))
-
-/obj/item/gun/projectile/heavysniper/proc/barrel_removed(mob/user)
+/obj/item/gun/projectile/heavysniper/proc/barrel_removed(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.unEquip(src, force=1))
 		to_chat(user, span_warning("You remove \the [src]'s barrel."))
 		consume(src, user)
@@ -76,21 +69,21 @@ TRACKED(/obj/item/sniper_rifle_part, part_count)
 MSG_DEF_SELF(sniper_part/last_part, "you can't disassemble this further")
 
 CAPABILITIES(/obj/item/sniper_rifle_part)
-	op("use", in_hand(), needs(req(PROC_REF(can_disassemble_holds), because = MSG(sniper_part/last_part))), then(PROC_REF(interaction_self)))
-	op("add_part", item(/obj/item/sniper_rifle_part), then(PROC_REF(interaction_item)))
+	op("use", in_hand(), needs(req(PROC_REF(can_disassemble_holds), because = MSG(sniper_part/last_part))), begins(MSG(sniper_part/disassembling)), wait(4 SECONDS), then(PROC_REF(disassembled)))
+	op("add_part", item(/obj/item/sniper_rifle_part), begins(PROC_REF(adding_text)), wait(3 SECONDS), then(PROC_REF(part_added)))
+
+MSG_DEF_SELF(sniper_part/disassembling, span_notice("You start disassembling %T%."))
+
+/// The line names the part being added.
+/obj/item/sniper_rifle_part/proc/adding_text(datum/act/op/A)
+	return msg_text(span_notice("You begin adding [A.held] to %T%."))
 
 /// Requirement: the part is more than one piece.
 /obj/item/sniper_rifle_part/proc/can_disassemble_holds(datum/act/op/A)
 	return part_count != 1
 
-/// Old attack_self.
-/obj/item/sniper_rifle_part/proc/interaction_self(datum/act/op/A)
+/obj/item/sniper_rifle_part/proc/disassembled(datum/act/op/A)
 	var/mob/user = A.actor
-	to_chat(user, span_notice("You start disassembling \the [src]."))
-	task_timed(user, 4 SECONDS, src, src, PROC_REF(disassembled), list(user))
-	return OP_OK
-
-/obj/item/sniper_rifle_part/proc/disassembled(mob/user)
 	if(part_count == 1)
 		return
 	to_chat(user, span_notice("You disassemble \the [src]."))
@@ -107,15 +100,9 @@ CAPABILITIES(/obj/item/sniper_rifle_part)
 
 	update_build(user)
 
-/// Old attackby.
-/obj/item/sniper_rifle_part/proc/interaction_item(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/sniper_rifle_part/part = A.held
-	to_chat(user, span_notice("You begin adding \the [part] to \the [src]."))
-	task_timed(user, 3 SECONDS, src, src, PROC_REF(part_added), list(part, user))
-	return OP_PASS
-
-/obj/item/sniper_rifle_part/proc/part_added(obj/item/sniper_rifle_part/A, mob/user)
+/obj/item/sniper_rifle_part/proc/part_added(datum/act/op/op_act)
+	var/obj/item/sniper_rifle_part/A = op_act.held
+	var/mob/user = op_act.actor
 	if(istype(A, /obj/item/sniper_rifle_part/trigger_group))
 		if(A.part_count > 1 && src.part_count > 1)
 			to_chat(user, span_warning("Disassemble one of these parts first!"))

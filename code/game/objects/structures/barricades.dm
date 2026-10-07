@@ -11,6 +11,7 @@
 
 CAPABILITIES(/obj/structure/barricade)
 	param(nameof(barricade_material), pos = 1, apply = PROC_REF(build_of))
+	op("repair", stack(/obj/item/stack, 1), label("Repair"), needs(req(PROC_REF(repairs_it), silent = TRUE)), priority(OP_PRIORITY_PART), starts(PROC_REF(repair_started)), begins(MSG(barricade/repairing)), wait(2 SECONDS), then(PROC_REF(repaired)))
 	op("repair_or_hit", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// The barricade's material (its constructor param; a subtype's default).
@@ -38,23 +39,29 @@ CAPABILITIES(/obj/structure/barricade)
 		return receive_projectile(P, def_zone, heavy ? 0.5 : 0.25)
 	return receive_projectile(P, def_zone, heavy ? 0.25 : 0.1)
 
-/// Old attackby: a sheet of its own material repairs it, anything else hits it.
+MSG_DEF(barricade/repairing, null, span_notice("%U% begins to repair %T%."))
+
+/// A sheet of its own material, held to a barricade that is hurt, repairs it.
+/obj/structure/barricade/proc/repairs_it(datum/act/op/A)
+	var/obj/item/stack/D = A.held
+	return get_integrity_damage() > 0 && read_once(D.get_material_name()) == read_once(material.name)
+
+/obj/structure/barricade/proc/repair_started(datum/act/op/A)
+	A.actor.setClickCooldown(A.actor.get_attack_speed(A.held))
+
+/obj/structure/barricade/proc/repaired(datum/act/op/A)
+	if(get_integrity_damage() <= 0)
+		return
+	repair_damage(max_integrity)
+	act_message(A.actor, src, others = span_notice("%U% repairs %T%."))
+
+/// Old attackby: anything else hits it (a sheet of any kind that does not repair it does nothing).
 /obj/structure/barricade/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(istype(W, /obj/item/stack))
-		var/obj/item/stack/D = W
-		if(D.get_material_name() != material.name)
-			return OP_OK //hitting things with the wrong type of stack usually doesn't produce messages, and probably doesn't need to.
-		if(get_integrity() < max_integrity)
-			if(D.get_amount() < 1)
-				to_chat(user, span_warning("You need one sheet of [material.display_name] to repair \the [src]."))
-				return OP_OK
-			act_message(user, src, others = span_notice("%U% begins to repair %T%."))
-			task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, D))
-			return OP_OK
-		return OP_OK
+		return OP_OK //hitting things with a stack usually doesn't produce messages, and probably doesn't need to.
 
 	if(material == get_material_by_name(MAT_WOOD) || material == get_material_by_name(MAT_SIFWOOD))
 		play_sfx(src, SFX_EFFECTS_WOODCUTTING)
@@ -66,14 +73,6 @@ CAPABILITIES(/obj/structure/barricade)
 		if(BRUTE)
 			receive_weapon_hit(W, user, W.force * 0.75)
 	return OP_OK
-
-/obj/structure/barricade/proc/attackby_timed_done(mob/user, obj/item/stack/D)
-	if(!(get_integrity() < max_integrity))
-		return
-	if(D.use(1))
-		repair_damage(max_integrity)
-		act_message(user, src, others = span_notice("%U% repairs %T%."))
-	return
 
 /obj/structure/barricade/atom_destruction(damage_flag)
 	dismantle()

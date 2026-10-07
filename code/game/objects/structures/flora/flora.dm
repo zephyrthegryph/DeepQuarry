@@ -58,11 +58,18 @@ TYPE_TABLE_DECLARE(/obj/structure/flora, initial_icon_variant_count, null)
 
 CAPABILITIES(/obj/structure/flora)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("uproot", item(/obj/item/shovel), label("Uproot"), when(PROC_REF(removable)), priority(OP_PRIORITY_PART), begins(MSG(flora/uprooting)), wait(3 SECONDS), then(PROC_REF(uprooted)))
+
+MSG_DEF(flora/uprooting, span_warning("You start uprooting %T%..."), null)
+
+/// A shovel uproots it when its type can be removed that way (a fixed property of the type; the shovel is no harvest tool).
+/obj/structure/flora/proc/removable(datum/act/op/A)
+	return !!read_once(removal_tool)
 
 /obj/structure/flora/proc/get_harvestable_desc()
 	return span_notice("\The [src] seems to have something hanging from it.")
 
-/// Old attackby: harvest with the harvest tool, or uproot with the removal tool.
+/// Old attackby: harvest with the harvest tool.
 /obj/structure/flora/proc/interaction_item(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/obj/item/W = A.held
@@ -76,16 +83,11 @@ CAPABILITIES(/obj/structure/flora)
 			to_chat(user, span_notice("You fail to harvest anything from \the [src]."))
 		return OP_OK
 
-	if(removal_tool && istype(W, removal_tool))
-		to_chat(user, span_warning("You start uprooting \the [src]..."))
-		task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-		return OP_OK
-
 	return OP_OK
 
-/obj/structure/flora/proc/attackby_timed_done(mob/living/user)
-	act_message(user, src, others = span_notice("%U% uproots and discards %T%!"))
-	consume(src, user)
+/obj/structure/flora/proc/uprooted(datum/act/op/A)
+	act_message(A.actor, src, others = span_notice("%U% uproots and discards %T%!"))
+	consume(src, A.actor)
 
 /obj/structure/flora/proc/can_harvest(obj/item/I)
 	. = FALSE
@@ -292,6 +294,7 @@ TYPE_TABLE(/obj/structure/flora/ausbushes/fullgrass, ausbush_icon_choice, list("
 CAPABILITIES(/obj/structure/flora/pottedplant)
 	owns_one(nameof(stored_item), /obj/item)
 	without("item")
+	without("uproot")
 	op("hide", item(/obj/item), label("Hide item"), when(req_actor_kind(/mob/living/silicon, not = TRUE)),
 		needs(req(PROC_REF(pot_empty), because = MSG(pottedplant/full)), size_is(0, ITEMSIZE_TINY)), wait(1 SECOND), on_interrupt(PROC_REF(hide_interrupted)), then(PROC_REF(item_hidden)))
 	op("search", hand(), label("Search"), needs(req(PROC_REF(pot_full), because = MSG(pottedplant/nothing))), wait(1 SECOND), then(PROC_REF(item_found)))

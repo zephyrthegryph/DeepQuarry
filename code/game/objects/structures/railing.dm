@@ -46,7 +46,7 @@ CAPABILITIES(/obj/structure/railing)
 	op("flip", menu(), label("Flip Railing"), then(PROC_REF(railing_flip_effect)))
 	op("use_wrench", tool(TOOL_WRENCH), wait(2 SECONDS), needs(req(PROC_REF(loose), silent = TRUE)), then(PROC_REF(wrench_act_done)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(1 SECOND), begins(PROC_REF(screwdriver_begins)), then(PROC_REF(screwdriver_act_done)))
-	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_welder", lit_welder(fuel = 0), needs(req(PROC_REF(damaged), silent = TRUE)), starts(PROC_REF(welder_sound)), wait(2 SECONDS), then(PROC_REF(welder_act_timed_done)))
 	param(nameof(constructed), pos = 1)
 
 /// A railing that is not anchored breaks under whoever climbed it.
@@ -227,20 +227,15 @@ DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_
 	act_message(user, src, MSG_SELF(span_notice("You dismantle %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " dismantles %T%.")))
 	replace_with(src, /obj/item/stack/material/steel, 2)
 
-/obj/structure/railing/proc/welder_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	if(get_integrity() >= max_integrity)
-		return OP_OK
-	var/obj/item/weldingtool/F = W.get_welder()
-	if(F.welding)
-		playsound(src, F.usesound, 50, 1)
-		task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(welder_act_timed_done), done_args = list(user))
-	return OP_OK
+/obj/structure/railing/proc/damaged(datum/act/op/A)
+	return get_integrity_damage() > 0
 
-/obj/structure/railing/proc/welder_act_timed_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You repair some damage to %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " repairs some damage to %T%.")))
+/obj/structure/railing/proc/welder_sound(datum/act/op/A)
+	var/obj/item/tool = A.held
+	playsound(src, tool.usesound, 50, 1)
+
+/obj/structure/railing/proc/welder_act_timed_done(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF(span_notice("You repair some damage to %T%.")), 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " repairs some damage to %T%.")))
 	repair_damage(max_integrity / 5)
 
 MSG_DEF(railing/unscrewing, null, span_info(span_bold("%U%") + " begins unscrewing %T%."))
