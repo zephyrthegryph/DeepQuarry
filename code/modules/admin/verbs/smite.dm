@@ -372,6 +372,10 @@ GLOBAL_VAR(redspace_abduction_z)
 	if(target.client)
 		target.client.screen -= loader
 
+#define SHADEKIN_SMITE_STEP_PAUSE (1 SECOND)
+#define SHADEKIN_SMITE_BELCH_PAUSE (2 SECONDS)
+#define SHADEKIN_SMITE_RELEASE (8 SECONDS)
+
 /// The shadekin smite's show, a step per timer: turn, turn, turn, belch, then phase back in and
 /// either hand the shadekin to `controller_ckey` or take both away.
 /proc/shadekin_smite_step(mob/living/simple_mob/shadekin/shadekin, mob/living/target, controller_ckey, step)
@@ -379,6 +383,9 @@ GLOBAL_VAR(redspace_abduction_z)
 		if(target)
 			target.set_transforming(FALSE)
 		return
+	if(step == 1 && target)
+		// The target's release does not ride on the shadekin's timers: if it dies mid-show they are dropped, and this one still frees the target.
+		after(target, SHADEKIN_SMITE_RELEASE, GLOBAL_PROC_REF(shadekin_smite_release), key = "shadekin_smite_release", with = list(target))
 	switch(step)
 		if(2)
 			shadekin.dir = WEST
@@ -401,7 +408,12 @@ GLOBAL_VAR(redspace_abduction_z)
 					spent(target)
 				spent(shadekin)
 			return
-	after(shadekin, step == 5 ? 2 SECONDS : 1 SECOND, GLOBAL_PROC_REF(shadekin_smite_step), with = list(shadekin, target, controller_ckey, step + 1), keeps_dead = TRUE)
+	var/next_delay = (step == 5) ? SHADEKIN_SMITE_BELCH_PAUSE : SHADEKIN_SMITE_STEP_PAUSE
+	after(shadekin, next_delay, GLOBAL_PROC_REF(shadekin_smite_step), with = list(shadekin, target, controller_ckey, step + 1))
+
+/// The shadekin smite's safety net: whatever became of the shadekin, the target moves again.
+/proc/shadekin_smite_release(mob/living/target)
+	target.set_transforming(FALSE)
 
 /// The hot dog smite: a whistle, then two seconds later the costume, gone again after five.
 /proc/hotdog_smite(mob/living/target)
