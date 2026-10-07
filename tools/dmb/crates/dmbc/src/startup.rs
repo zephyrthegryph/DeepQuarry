@@ -6,11 +6,13 @@ use dm_tree::{
     OccurrenceId,
 };
 
-pub struct CapturedStartup {
-    pub plan: InitializerPlan,
-    pub procedures: Vec<(OccurrenceId, StaticPlan)>,
+pub struct CapturedStartup<'a> {
+    frontend: &'a ColdFrontend,
+    plan: InitializerPlan,
+    procedures: Vec<(OccurrenceId, StaticPlan)>,
+    procedure_index: std::collections::HashMap<OccurrenceId, usize>,
 }
-pub fn capture(frontend: &ColdFrontend) -> Result<CapturedStartup, String> {
+pub fn capture(frontend: &ColdFrontend) -> Result<CapturedStartup<'_>, String> {
     let units = crate::driver_facts::unit_members(frontend).map_err(|e| e.to_string())?;
     let identities = units
         .into_iter()
@@ -47,14 +49,16 @@ pub fn capture(frontend: &ColdFrontend) -> Result<CapturedStartup, String> {
         &frontend.emission_order,
         &procedures,
     )?;
-    Ok(CapturedStartup { plan, procedures })
+    let procedure_index = procedures.iter().enumerate()
+        .map(|(index, (occurrence, _))| (*occurrence, index)).collect();
+    Ok(CapturedStartup { frontend, plan, procedures, procedure_index })
 }
 /// Extend only the compilation spelling dictionary. Captured declarations,
 /// source provenance and semantic identity remain the original source model.
-pub fn capture_with_spellings(
-    frontend: &ColdFrontend,
+pub fn capture_with_spellings<'a>(
+    frontend: &'a ColdFrontend,
     spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
-) -> Result<CapturedStartup, String> {
+) -> Result<CapturedStartup<'a>, String> {
     let mut startup = capture(frontend)?;
     let mut symbols = dm_ir::SymbolTable::overlay(startup.plan.symbols.clone());
     for (expected, bytes) in spellings {
@@ -120,12 +124,26 @@ impl crate::initializer_policy::CapturedInitializerEvaluator for StartupEvaluato
         self.ordinary.declaration_modifiers(write)
     }
 }
-impl CapturedStartup {
+impl CapturedStartup<'_> {
+    pub fn plan(&self) -> &InitializerPlan { &self.plan }
+    pub fn procedures(&self) -> &[(OccurrenceId, StaticPlan)] { &self.procedures }
+    pub fn procedure(&self, occurrence: OccurrenceId) -> Option<&StaticPlan> {
+        self.procedure_index.get(&occurrence).map(|index| &self.procedures[*index].1)
+    }
+    /// Issued facts are immutable and borrow the exact frontend throughout use.
+    /// Independently supplied generic plans still use the strict recapture API.
+    pub fn validate_for(&self, frontend: &ColdFrontend) -> Result<(), String> {
+        if !std::ptr::eq(self.frontend, frontend) {
+            return Err("startup capture belongs to a different frontend".into());
+        }
+        Ok(())
+    }
     pub fn resolver<'a, R: dm_ir::Resolver>(
         &'a self,
         frontend: &ColdFrontend,
         host: &'a R,
     ) -> Result<dm_tree::procedure_statics::StaticResolver<'a, R>, String> {
+        self.validate_for(frontend)?;
         if self.plan.source.tree.identity() != frontend.snapshot.tree.identity()
             || self.plan.source.occurrences.tree_identity()
                 != frontend.snapshot.occurrences.tree_identity()
@@ -150,6 +168,22 @@ mod spelling_tests {
         fn read(&self, _: &Path) -> Result<String, String> {
             Ok("/proc/p()\n    return 1\n".into())
         }
+    }
+    #[test]
+    fn issued_startup_is_bound_to_immutable_input_and_indexes_procedures() {
+        let first = dm_tree::frontend::build(Path::new("probe.dme"), &Source, &Default::default(), 1).unwrap();
+        let identical = dm_tree::frontend::build(Path::new("probe.dme"), &Source, &Default::default(), 1).unwrap();
+        let issued = capture(&first).unwrap();
+        issued.validate_for(&first).unwrap();
+        assert!(issued.validate_for(&identical).is_err());
+        for (occurrence, plan) in issued.procedures() {
+            assert!(std::ptr::eq(issued.procedure(*occurrence).unwrap(), plan));
+        }
+        // A detached generic plan retains exact content validation, including
+        // rejection of modifications; the production token exposes no mutation.
+        let mut escaped = issued.plan().clone();
+        escaped.identity ^= 1;
+        assert!(validate(&first, &escaped).is_err());
     }
     #[test]
     fn captured_alias_overlay_preserves_source_and_ledger_identity() {

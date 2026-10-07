@@ -166,7 +166,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             );
         }
         let facts_started = Instant::now();
-        let mut symbols = frontend.snapshot.tree.symbols().clone();
+        let mut symbols = dm_ir::SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
         let constants = dmbc::engine_host::ConstantCatalog::native_516_1687(&mut symbols)
             .map_err(|error| format!("engine constants: {error:?}"))?;
         let ordinary = frontend
@@ -189,7 +189,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             constants.clone(),
             runtime.clone(),
         )
-        .with_pinned_callables(engine, &frontend)?;
+        .with_pinned_callables(engine, &frontend)?
+        .with_pinned_variables(engine, &frontend)?;
         let scalar = dmbc::compile_driver::scalars(
             &frontend,
             engine,
@@ -198,7 +199,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         );
         let defaults = dmbc::compile_driver::map_defaults(&scalar)?;
         let host = dmbc::engine_host::EngineResolverHost::new(Arc::new(scalar), constants, runtime)
-            .with_pinned_callables(engine, &frontend)?;
+            .with_pinned_callables(engine, &frontend)?
+            .with_pinned_variables(engine, &frontend)?;
         let facts_seconds = facts_started.elapsed().as_secs_f64();
         let nontext_started = Instant::now();
         if progress_enabled {
@@ -212,7 +214,13 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             .into_iter()
             .map(|(id, _)| id)
             .collect();
-        let mut nontext = dmbc::captured_non_text_driver::capture(
+        let capture_observer = |measurement: dmbc::captured_non_text_driver::CaptureMeasurement| {
+            if progress_enabled {
+                eprintln!("native nontext {:?}: {:.3}s success={}",
+                    measurement.stage, measurement.seconds, measurement.succeeded);
+            }
+        };
+        let mut nontext = dmbc::captured_non_text_driver::capture_with_observer(
             &frontend,
             &dm_preprocess::FileSystem,
             &dm_resources::capture::FileSystemCapture,
@@ -220,6 +228,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             &captured_engine,
             &roots,
             &defaults,
+            Some(&capture_observer),
         )?;
         let nontext_seconds = nontext_started.elapsed().as_secs_f64();
         let linking_inputs_started = Instant::now();
@@ -227,13 +236,18 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         nontext.extend_inventory(&mut links.inventory)?;
         let values = dmbc::type_values::CapturedTypeValues::pinned(&frontend, engine)
             .map_err(|error| format!("runtime type values: {error:?}"))?;
+        let values = dmbc::resource_values::CapturedResourceValues::new(
+            &values,
+            &nontext.resolver,
+            nontext.resource_search_context,
+        );
         let artifacts = std::mem::take(&mut nontext.artifacts);
         let linking_inputs_seconds = linking_inputs_started.elapsed().as_secs_f64();
         let compilation_started = Instant::now();
         if progress_enabled {
             eprintln!("native compilation started");
         }
-        let output = match dmbc::compile_driver::compile(
+        let compile_result = dmbc::compile_driver::compile(
             &frontend,
             &nontext.resolver,
             engine,
@@ -244,7 +258,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             artifacts,
             Some(&nontext.stage(&frontend)),
             workers,
-        ) {
+        );
+        if progress_enabled && compile_result.is_err() {
+            eprintln!("native failed stages: frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s total={:.3}s",
+                frontend.timings.total.as_secs_f64(), facts_seconds, nontext_seconds,
+                linking_inputs_seconds, compilation_started.elapsed().as_secs_f64(),
+                total.elapsed().as_secs_f64());
+        }
+        let output = match compile_result {
             Ok(output) => output,
             Err(dmbc::cold::ColdError::Lowering(diagnostics)) => {
                 dmbc::diagnostics::write_lowering_diagnostics(
@@ -260,12 +281,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         if progress_enabled {
             eprintln!("native publication started");
         }
-        let store = dmbc::publish::PairStore::open(output_store.unwrap_or_else(|| {
-            project
-                .parent()
-                .expect("canonical manifest has a parent")
-                .join(".dmbc/outputs")
-        }))?;
+        let store_path = match output_store {
+            Some(path) => path,
+            None => dmbc::publish::default_store_path(&project)?,
+        };
+        let store = dmbc::publish::PairStore::open(store_path)?;
         let session = xxhash_rust::xxh3::xxh3_128(project.to_string_lossy().as_bytes());
         let pair = store.publish(session, &output.dmb, &nontext.resources.rsc)?;
         store.install(

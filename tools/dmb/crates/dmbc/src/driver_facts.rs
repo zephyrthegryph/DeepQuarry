@@ -678,7 +678,7 @@ pub fn prepare_pinned_source_abi_with_startup<R: Resolver>(
     resource_search_context: Option<u128>,
     workers: usize,
 ) -> Result<PreparedPinnedSourceAbi, AbiError> {
-    crate::startup::validate(frontend, &startup.plan).map_err(AbiError)?;
+    startup.validate_for(frontend).map_err(AbiError)?;
     let static_resolver = startup.resolver(frontend, resolver).map_err(AbiError)?;
     let resolver = &static_resolver;
     let coverage =
@@ -688,7 +688,7 @@ pub fn prepare_pinned_source_abi_with_startup<R: Resolver>(
     let evaluator = DriverEvaluator {
         resource_search_context,
         resolver,
-        symbols: startup.plan.symbols.as_ref(),
+        symbols: startup.plan().symbols.as_ref(),
     };
     let prepared = prepare_source_abi_mode(
         frontend,

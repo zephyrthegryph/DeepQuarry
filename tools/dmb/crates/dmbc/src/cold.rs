@@ -166,7 +166,7 @@ pub fn compile_captured_classified_with_pinned_abi<R: Resolver>(
     let policy = crate::driver_facts::FrozenPreparedPolicy::new(frontend, &prepared.prepared)
         .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
     let abi_preparation = total.elapsed();
-    let mut output = compile_captured_classified_with_stage(
+    let mut output = compile_with_startup(
         frontend,
         resolver,
         &policy,
@@ -175,6 +175,7 @@ pub fn compile_captured_classified_with_pinned_abi<R: Resolver>(
         config,
         map_initializers,
         non_text,
+        &startup,
     )?;
     output.timings.abi_preparation = abi_preparation;
     output.timings.total = total.elapsed();
@@ -194,6 +195,25 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
     map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
     non_text: Option<&dyn crate::composition::NonTextOutputStage>,
 ) -> Result<ColdOutput, ColdError> {
+    let startup = crate::startup::capture_with_spellings(frontend, &links.inventory.spellings)
+        .map_err(ColdError::Initializer)?;
+    compile_with_startup(frontend, resolver, policy, links, declarations, config,
+        map_initializers, non_text, &startup)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn compile_with_startup<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    policy: &P,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+    startup: &crate::startup::CapturedStartup<'_>,
+) -> Result<ColdOutput, ColdError> {
+    startup.validate_for(frontend).map_err(ColdError::Initializer)?;
     let total = Instant::now();
     for artifact in &map_initializers {
         if !matches!(artifact.identity, dm_link::InitializerIdentity::Map { .. }) {
@@ -212,13 +232,11 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
         return Err(ColdError::EngineMismatch);
     }
     let stage = Instant::now();
-    let startup = crate::startup::capture_with_spellings(frontend, &links.inventory.spellings)
-        .map_err(ColdError::Initializer)?;
     let static_resolver = startup
         .resolver(frontend, resolver)
         .map_err(ColdError::Initializer)?;
     let resolver = &static_resolver;
-    let plan = &startup.plan;
+    let plan = startup.plan();
     let startup_evaluator = crate::startup::StartupEvaluator {
         resource_search_context: declarations.resource_search_context,
         ordinary: declarations.initializers,
@@ -229,9 +247,9 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
         engine: links.engine,
         evaluator: &startup_evaluator,
     };
-    let initialization = crate::initializer_lowering::lower(
+    let initialization = crate::initializer_lowering::lower_captured(
         frontend,
-        plan,
+        startup,
         &evaluator,
         resolver,
         declarations.resource_search_context,
@@ -549,14 +567,15 @@ mod tests {
             }),
             M::Presence(false)
         );
-        for name in ["New", "never_captured_callable"] {
-            let query = Q::Proc {
-                owner,
-                name: dm_ir::SymbolId::of(name),
-                verb: true,
-            };
-            assert_eq!(host.resolve(query), M::Unsupported(query));
-        }
+        // The pinned receiver catalog certifies New as a proc, so its opposite
+        // verb namespace is absent. An uncaptured spelling is still unknown.
+        assert_eq!(host.resolve(Q::Proc {
+            owner, name: dm_ir::SymbolId::of("New"), verb: true,
+        }), M::Missing);
+        let query = Q::Proc {
+            owner, name: dm_ir::SymbolId::of("never_captured_callable"), verb: true,
+        };
+        assert_eq!(host.resolve(query), M::Unsupported(query));
 
         let evaluator = crate::driver_facts::DriverEvaluator {
             resource_search_context: None,

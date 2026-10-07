@@ -152,6 +152,7 @@ pub fn compile<R: Resolver>(
     let evaluator = driver_facts::DriverEvaluator {
         resolver,
         symbols: frontend.snapshot.tree.symbols(),
+        resource_search_context: resource_context,
     };
     cold::compile_captured_classified_with_pinned_abi(
         frontend,

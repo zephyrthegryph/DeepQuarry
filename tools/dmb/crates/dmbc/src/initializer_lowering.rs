@@ -74,13 +74,35 @@ pub fn lower<R: Resolver>(
     host: &R,
     resource_search_context: Option<u128>,
 ) -> Result<LoweredInitializers, String> {
+    lower_plan(frontend, plan, evaluator, host, resource_search_context, true)
+}
+
+pub fn lower_captured<R: Resolver>(
+    frontend: &ColdFrontend,
+    startup: &crate::startup::CapturedStartup<'_>,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    host: &R,
+    resource_search_context: Option<u128>,
+) -> Result<LoweredInitializers, String> {
+    startup.validate_for(frontend)?;
+    lower_plan(frontend, startup.plan(), evaluator, host, resource_search_context, false)
+}
+
+fn lower_plan<R: Resolver>(
+    frontend: &ColdFrontend,
+    plan: &InitializerPlan,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    host: &R,
+    resource_search_context: Option<u128>,
+    validate_statics: bool,
+) -> Result<LoweredInitializers, String> {
     if frontend.snapshot.tree.identity() != plan.source.tree.identity()
         || frontend.snapshot.occurrences.tree_identity() != plan.source.occurrences.tree_identity()
         || plan.writes.len() != plan.origins.len()
     {
         return Err("initializer plan differs from captured frontend".into());
     }
-    if plan.origins.iter().any(|origin| {
+    if validate_statics && plan.origins.iter().any(|origin| {
         matches!(
             origin.kind,
             dm_tree::initializers::InitializerOriginKind::ProcedureStatic { .. }

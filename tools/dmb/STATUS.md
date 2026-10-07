@@ -43,6 +43,19 @@ this document belong to the preserved original compiler unless explicitly labele
   resource projection 4.450 s, symbol binding 4.119 s, map projection 0.216 s,
   descriptors 0.085 s and map initializer lowering 0.187 s. These debug timings
   locate current work; no executable pair or acceptance benchmark is claimed.
+- Probe 15 passed the inherited-verb namespace boundary and stopped at the
+  uncertified native `Crossed` callback. The external attempt took 57.404 s,
+  sampled 1,943,654,400 private bytes, and published no pair. Driver timings:
+  frontend 30.779 s, captured facts 0.427 s, resources/maps 12.880 s,
+  link inputs 0.137 s and compilation through the ABI stop 11.175 s.
+  Resource projection was 0.212 s after reusing validated resource identities.
+  These are debug failed-attempt observations with different stop points and
+  uncontrolled filesystem cache state, not successful build latency or parity.
+- Production startup facts are captured once, privately sealed and borrowed from
+  the immutable frontend. ABI preparation and initializer lowering reuse them;
+  detached generic plans retain strict content validation. Procedure occurrence
+  lookup is indexed rather than a full scan per body. Two startup and three cold
+  integration checks passed. Parallel capture and AST-clone reductions are next.
 - A tiny source containing a resource-valued field and inline client stylesheet
   completed actual CLI composition and publication in 0.718 s. Its DMB was
   21,969 bytes and RSC 64 bytes; this is only an integration smoke.

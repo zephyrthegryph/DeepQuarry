@@ -174,6 +174,9 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
             message,
         }]
     };
+    if let Some(captured) = startup {
+        captured.validate_for(frontend).map_err(|message| error(None, message))?;
+    }
     let node = tree
         .member(body.member)
         .ok_or_else(|| error(None, "body member missing from immutable tree".into()))?;
@@ -219,7 +222,7 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
         .procedure
         .as_ref()
         .ok_or_else(|| unsupported("procedure signature metadata unsupported".into()))?;
-    let symbols = startup.map_or(tree.symbols(), |captured| captured.plan.symbols.as_ref());
+    let symbols = startup.map_or(tree.symbols(), |captured| captured.plan().symbols.as_ref());
     let parsed = frontend.body(body).map_err(|diagnostic| {
         vec![LoweringDiagnostic {
             kind: diagnostic.kind,
@@ -257,11 +260,7 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
     }
     let mut inputs = prepared.inputs;
     let executable_body = if let Some(startup) = startup {
-        let captured = startup
-            .procedures
-            .iter()
-            .find(|(occurrence, _)| *occurrence == body.declaration)
-            .map(|(_, plan)| plan)
+        let captured = startup.procedure(body.declaration)
             .ok_or_else(|| unsupported("procedure startup inventory missing".into()))?;
         let current =
             dm_tree::procedure_statics::capture(procedure_identity, &prepared.executable_body)
