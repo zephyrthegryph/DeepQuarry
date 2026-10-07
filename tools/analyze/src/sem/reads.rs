@@ -1190,8 +1190,8 @@ mod global_accessor_tests {
         std::fs::create_dir_all(root.join("code/content")).unwrap();
         std::fs::create_dir_all(root.join("code/library")).unwrap();
         let engine = "#define READS_AS(P, K)\n#define READS_FROM(A)\nREADS_AS(/proc/read_bits, bits)\n/proc/read_bits(datum/holder)\n\tREADS_FROM(holder)\n\treturn holder.raw\n/proc/unannotated(datum/holder)\n\treturn holder.raw\n/proc/opaque_empty(datum/holder)\n\tREADS_FROM()\n\treturn unannotated(holder)\n";
-        let library = "/proc/wrapped_bits(datum/holder)\n\tREADS_FROM(holder)\n\treturn read_bits(holder)\n";
-        let content = "/datum/probe\n\tvar/raw = 0\n/datum/probe/proc/direct()\n\treturn read_bits(src)\n/datum/probe/proc/wrapped()\n\treturn wrapped_bits(src)\n/datum/probe/proc/blocked()\n\treturn unannotated(src)\n/datum/probe/proc/empty_contract()\n\treturn opaque_empty(src)\n";
+        let library = "#define CAPABILITY_TYPE(N, I, T)\n#define cap_keys(I, K)\n#define CAP_EMAG 1\nCAPABILITY_TYPE(emag, CAP_EMAG, /datum/capability/emag)\ncap_keys(CAP_EMAG, EMAGGED)\n/proc/emag_emagged(datum/holder)\n\treturn FALSE\n/proc/native_and_legacy(datum/holder)\n\tREADS_FROM(holder)\n\treturn read_bits(holder) || emag_emagged(holder)\n/proc/wrapped_bits(datum/holder)\n\tREADS_FROM(holder)\n\treturn read_bits(holder)\n";
+        let content = "/datum/probe\n\tvar/raw = 0\n/datum/probe/proc/direct()\n\treturn read_bits(src)\n/datum/probe/proc/wrapped()\n\treturn wrapped_bits(src)\n/datum/probe/proc/blocked()\n\treturn unannotated(src)\n/datum/probe/proc/empty_contract()\n\treturn opaque_empty(src)\n/datum/probe/proc/native()\n\treturn native_and_legacy(src)\n";
         std::fs::write(root.join("code/engine/probe.dm"), engine).unwrap();
         std::fs::write(root.join("code/content/probe.dm"), content).unwrap();
         std::fs::write(root.join("code/library/probe.dm"), library).unwrap();
@@ -1211,6 +1211,11 @@ mod global_accessor_tests {
             assert_eq!(read.var, "bits");
             assert_eq!(read.kind, ReadKind::Accessor);
         }
+        let native = engine.analyze("/datum/probe", "native");
+        assert!(native.diags.is_empty(), "native accessor extraction: {:?}", native.diags);
+        assert_eq!(native.reads.len(), 2, "the wrapper must preserve both actual stores");
+        assert!(native.reads.iter().any(|read| read.root == "holder" && read.kind == ReadKind::Accessor && read.var == "EMAG_EMAGGED"));
+        assert!(native.reads.iter().any(|read| read.root == "holder" && read.kind == ReadKind::Accessor && read.var == "bits"));
         let empty = engine.analyze("/datum/probe", "empty_contract");
         assert!(empty.reads.is_empty(), "empty contracts do not track entity arguments");
         assert!(empty.diags.is_empty(), "the empty contract must preserve the opaque body cutoff");
