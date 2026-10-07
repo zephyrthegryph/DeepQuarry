@@ -61,6 +61,9 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	//return QDEL_HINT_HARDDEL_NOW Just keep track of mob references. They delete SO much faster now.
 
 /mob/show_message(msg, type, alt, alt_type)
+#ifdef UNIT_TESTS
+	test_chat_note(src, msg) // a test mob has no client: the driver keeps what it would have been shown
+#endif
 
 	if(!client && !teleop)	return
 
