@@ -104,6 +104,11 @@ impl CapturedResources {
             self.lookups,
         )
     }
+    pub fn into_resolver_shared<R: dm_ir::Resolver>(
+        self, tree: R, symbols: Arc<dm_ir::SymbolTable>,
+    ) -> io::Result<NativeResourceResolver<R>> {
+        NativeResourceResolver::from_shared_symbols(tree, symbols, self.resources, [self.context], self.lookups)
+    }
 }
 #[derive(Debug)]
 pub enum CaptureError {

@@ -157,11 +157,9 @@ pub fn capture_with_observer<R: Resolver, P: dm_preprocess::SourceProvider,
         &suffix,
     )
     })?;
-    let projection = timed(observer, CaptureStage::ResourceProjection, ||
-        crate::assets::project_resources(&resources.resources, &order).map_err(|error| format!("resource projection: {error:?}")))?;
     let context = resources.context.identity();
     let (symbols, resolver) = timed(observer, CaptureStage::SymbolBinding, || {
-    let mut symbols = frontend.snapshot.tree.symbols().clone();
+    let mut symbols = SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
     for map in captured.maps.iter() {
         for (_, text) in map.symbols.ordered() {
             symbols.intern(text).map_err(|error| error.to_string())?;
@@ -173,10 +171,13 @@ pub fn capture_with_observer<R: Resolver, P: dm_preprocess::SourceProvider,
             .map_err(|error| error.to_string())?;
     }
     let resolver = resources
-        .into_resolver(host, &symbols)
+        .into_resolver_shared(host, std::sync::Arc::new(symbols))
         .map_err(|error| error.to_string())?;
+    let symbols = SymbolTable::overlay(resolver.shared_symbols());
     Ok((symbols, resolver))
     })?;
+    let projection = timed(observer, CaptureStage::ResourceProjection, ||
+        crate::assets::project_captured_resources(&resolver, &order).map_err(|error| format!("resource projection: {error:?}")))?;
     let (map, descriptors, artifacts) = if captured.maps.is_empty() {
         (None, None, Vec::new())
     } else {

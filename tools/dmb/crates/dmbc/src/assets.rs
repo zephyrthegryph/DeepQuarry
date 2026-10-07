@@ -4,6 +4,7 @@ use dm_resources::capture::{
     CaptureConfig, CaptureError, CaptureProvider, CapturedResources, LiteralRequest,
 };
 use dm_resources::ResourceRequest;
+use dm_ir::SymbolId;
 use dm_syntax::Span;
 use dm_tree::frontend::ColdFrontend;
 use dm_tree::maps::MapPlan;
@@ -180,6 +181,22 @@ pub fn project_resources(
     resources: &dm_resources::ResourceSet,
     archive_order: &[usize],
 ) -> Result<ResourceProjection, ResourceOutputError> {
+    project_resource_rows(resources, archive_order, None)
+}
+/// Consume metadata issued by the immutable validated capture host. Its owned
+/// payloads cannot be mutated through this API; no caller-supplied hash receipt
+/// can bypass raw-input validation.
+pub fn project_captured_resources<R: dm_ir::Resolver>(
+    resolver: &dm_resources::native_resolver::NativeResourceResolver<R>,
+    archive_order: &[usize],
+) -> Result<ResourceProjection, ResourceOutputError> {
+    project_resource_rows(resolver.resources(), archive_order, Some(resolver.ordered_resources()))
+}
+fn project_resource_rows(
+    resources: &dm_resources::ResourceSet,
+    archive_order: &[usize],
+    validated: Option<&[dm_resources::native_resolver::NativeResourceRecord]>,
+) -> Result<ResourceProjection, ResourceOutputError> {
     use std::collections::{BTreeMap, BTreeSet};
     if archive_order.len() != resources.inputs.len() {
         return Err(ResourceOutputError::InvalidOrder);
@@ -203,11 +220,11 @@ pub fn project_resources(
             .asset_bytes()
             .map_err(ResourceOutputError::InvalidPayload)?;
         if input.named.name != input.archive_name.as_bytes()
-            || input
+            || (validated.is_none() && input
                 .named
                 .content_id()
                 .map_err(ResourceOutputError::InvalidPayload)?
-                != input.named.id
+                != input.named.id)
         {
             return Err(ResourceOutputError::InvalidPayload(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
@@ -215,7 +232,15 @@ pub fn project_resources(
             )));
         }
         named.push(&input.named);
-        let content = xxhash_rust::xxh3::xxh3_128(payload);
+        let content = if let Some(rows) = validated {
+            let row = rows.get(*ordinal).ok_or(ResourceOutputError::InvalidOrder)?;
+            if row.alias != SymbolId::of(&input.archive_name)
+                || row.payload_len != payload.len() || row.runtime_content_id != input.named.id
+                || row.kind != input.named.kind {
+                return Err(ResourceOutputError::ContentCollision);
+            }
+            row.content
+        } else { xxhash_rust::xxh3::xxh3_128(payload) };
         if hashes
             .insert(content, payload)
             .is_some_and(|previous| previous != payload)
@@ -377,5 +402,32 @@ mod resource_output_tests {
                 .kind,
             6
         );
+    }
+    #[test]
+    fn privately_validated_projection_matches_checked_raw_projection() {
+        struct Host;
+        impl dm_ir::Resolver for Host {
+            fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
+                dm_ir::ResolvedMeaning::Unsupported(query)
+            }
+        }
+        let inputs = resources();
+        let expected = project_resources(&inputs, &[1, 0, 2]).unwrap();
+        let backing = Arc::new(dm_ir::SymbolTable::default());
+        let host = dm_resources::native_resolver::NativeResourceResolver::from_shared_symbols(
+            Host, backing.clone(), inputs, [], [],
+        ).unwrap();
+        assert!(host.symbols().is_extension_of(&backing));
+        let actual = project_captured_resources(&host, &[1, 0, 2]).unwrap();
+        assert_eq!(actual.rsc, expected.rsc);
+        assert_eq!(actual.records, expected.records);
+        assert_eq!(actual.inventory.iter().map(|entry| (entry.key, entry.content.as_ref())).collect::<Vec<_>>(),
+            expected.inventory.iter().map(|entry| (entry.key, entry.content.as_ref())).collect::<Vec<_>>());
+        assert!(project_captured_resources(&host, &[0, 0, 2]).is_err());
+        let mut forged = resources();
+        forged.inputs[0].content_digest = [0; 32];
+        assert!(dm_resources::native_resolver::NativeResourceResolver::from_shared_symbols(
+            Host, backing, forged, [], [],
+        ).is_err());
     }
 }

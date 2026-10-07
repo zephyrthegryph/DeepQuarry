@@ -70,7 +70,7 @@ pub struct NativeResourceRecord {
 
 pub struct NativeResourceResolver<R> {
     tree: R,
-    symbols: SymbolTable,
+    symbols: Arc<SymbolTable>,
     resources: ResourceSet,
     ordered: Vec<NativeResourceRecord>,
     contexts: HashMap<u128, Arc<[u8]>>,
@@ -91,7 +91,18 @@ impl<R: Resolver> NativeResourceResolver<R> {
         contexts: impl IntoIterator<Item = CapturedSearchContext>,
         lookups: impl IntoIterator<Item = CapturedResourceLookup>,
     ) -> io::Result<Self> {
-        let mut symbols = tree_symbols.clone();
+        Self::from_shared_symbols(tree, Arc::new(tree_symbols.clone()), resources, contexts, lookups)
+    }
+    /// Immutable source dictionary plus a collision-checked resource delta.
+    /// Resource metadata remains private and is validated before publication.
+    pub fn from_shared_symbols(
+        tree: R,
+        tree_symbols: Arc<SymbolTable>,
+        resources: ResourceSet,
+        contexts: impl IntoIterator<Item = CapturedSearchContext>,
+        lookups: impl IntoIterator<Item = CapturedResourceLookup>,
+    ) -> io::Result<Self> {
+        let mut symbols = SymbolTable::overlay(tree_symbols);
         let mut ordered = Vec::with_capacity(resources.inputs.len());
         let mut aliases = HashMap::new();
         let mut content_rows = HashMap::<u128, usize>::new();
@@ -169,7 +180,7 @@ impl<R: Resolver> NativeResourceResolver<R> {
         }
         Ok(Self {
             tree,
-            symbols,
+            symbols: Arc::new(symbols),
             resources,
             ordered,
             contexts: captured_contexts,
@@ -185,6 +196,7 @@ impl<R: Resolver> NativeResourceResolver<R> {
     pub fn symbols(&self) -> &SymbolTable {
         &self.symbols
     }
+    pub fn shared_symbols(&self) -> Arc<SymbolTable> { Arc::clone(&self.symbols) }
     pub fn tree(&self) -> &R {
         &self.tree
     }
