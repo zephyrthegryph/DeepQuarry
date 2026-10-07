@@ -13,16 +13,13 @@
 	VAR_PRIVATE/initial_distance = HOSE_MAX_DISTANCE
 	VAR_PRIVATE/datum/beam/current_beam = null
 
+/// Set once both ends are attached and the hose formed; hose_step() moves reagents while it is (every()).
+/datum/hose/var/tmp/hose_formed = FALSE
+TRACKED(/datum/hose, hose_formed)
+
 CAPABILITIES(/datum/hose)
 	owns_one(nameof(current_beam), /datum/beam)
-
-/// Set once both ends are attached and the hose formed; periodic_step() moves reagents while it is (DECLARE_PERIODIC_WHILE).
-OM_FIELD_TYPED(/datum/hose, tmp, hose_formed, FALSE, CHANGE_DATUM_A)
-DECLARE_PERIODIC_WHILE(/datum/hose, PERIODIC_FAST, "hose_formed")
-
-/datum/hose/New()
-	..()
-	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
+	every(0.2 SECONDS, then(PROC_REF(hose_step)), when = nameof(hose_formed))
 
 /datum/hose/proc/get_pairing(datum/hose_connector/target)
 	RETURN_TYPE(/datum/hose_connector)
@@ -120,7 +117,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose, PERIODIC_FAST, "hose_formed")
 
 	return TRUE
 
-/datum/hose/periodic_step()
+/datum/hose/proc/hose_step(datum/act/timer/A)
 	if(node1 && node2)
 		if(!update_beam())
 			return

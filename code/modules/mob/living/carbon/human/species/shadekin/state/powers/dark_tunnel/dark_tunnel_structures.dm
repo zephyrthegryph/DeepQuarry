@@ -138,11 +138,11 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 	return TRUE
 
 CAPABILITIES(/obj/structure/dark_portal/hub)
-	op("hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), label("Use"), ungated(), then(PROC_REF(interaction_hand)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 
 CAPABILITIES(/obj/structure/dark_portal/minion)
-	op("hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), label("Use"), ungated(), then(PROC_REF(interaction_hand)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 
 /// Something walked into it (the bump action's notice).

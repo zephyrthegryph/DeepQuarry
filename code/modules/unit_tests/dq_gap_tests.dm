@@ -68,6 +68,25 @@
 	test_time(3 SECONDS)
 	TEST_ASSERT(E.ticks > seen, "woken again")
 
+/// A plain datum's type-level every() is armed by being made, parks on its tracked gate, and ends with the datum.
+/datum/unit_test/dq_gap/every_runs_on_a_plain_datum
+/datum/unit_test/dq_gap/every_runs_on_a_plain_datum/run_gap()
+	var/datum/gap_every_datum/D = new
+	test_time(5 SECONDS)
+	TEST_ASSERT(D.ticks >= 4 && D.ticks <= 5, "the ungated every() ran from creation (ran [D.ticks])")
+	TEST_ASSERT_EQUAL(D.gated_ticks, 0, "the gated one has not run")
+	D.set_active(TRUE)
+	test_time(3 SECONDS)
+	TEST_ASSERT(D.gated_ticks >= 2, "gate true: the gated one runs (ran [D.gated_ticks])")
+	D.set_active(FALSE)
+	var/gated = D.gated_ticks
+	test_time(3 SECONDS)
+	TEST_ASSERT(D.gated_ticks <= gated + 1, "gate false: it stopped")
+	var/ticks = D.ticks
+	qdel(D)
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(D.ticks, ticks, "a deleted datum's every() no longer runs")
+
 /// An instance that starts true arms at once.
 /datum/unit_test/dq_gap/every_starts_when_true
 /datum/unit_test/dq_gap/every_starts_when_true/run_gap()
@@ -581,3 +600,259 @@
 	rel_set(mindless, nameof(mindless.mmi), lost)
 	qdel(mindless)
 	TEST_ASSERT(QDELETED(lost), "a mindless borg's MMI goes with it")
+
+/// Converted datum periodics (J1): a turbolift parks while it has no busy state, steps once a second while it has one, and parks again.
+/datum/unit_test/dq_gap/datum_periodic_turbolift_steps_while_busy
+/datum/unit_test/dq_gap/datum_periodic_turbolift_steps_while_busy/run_gap()
+	var/datum/turbolift/lift = new
+	test_time(3 SECONDS)
+	TEST_ASSERT(length(lift.rx?.every_parked), "idle lift: its step is parked, holding no timer")
+	lift.set_busy_state(LIFT_WAITING_B)
+	test_time(3 SECONDS)
+	TEST_ASSERT_NULL(lift.busy_state, "its step ran and settled the state (nothing was queued)")
+	TEST_ASSERT(length(lift.rx?.every_parked), "settled: parked again")
+	qdel(lift)
+
+/// Converted datum periodic: a changeling's camouflage drain runs on its 4 s step while camo_draining is set and ends it when the owner cannot hold it.
+/datum/unit_test/dq_gap/datum_periodic_changeling_drain_follows_its_flag
+/datum/unit_test/dq_gap/datum_periodic_changeling_drain_follows_its_flag/run_gap()
+	var/datum/changeling/ling = new
+	test_time(5 SECONDS)
+	TEST_ASSERT(length(ling.rx?.every_parked), "not draining: both drains are parked")
+	ling.set_camo_draining(TRUE)
+	test_time(5 SECONDS)
+	TEST_ASSERT(!ling.camo_draining, "the drain ran and found no human owner, so it ended the camouflage")
+	qdel(ling)
+
+/// J9: a sector that goes away takes its levels out of map_sectors (keyed by the level as text), so the next get_overmap_sector() cannot hand out a dying one.
+/datum/unit_test/dq_gap/overmap_sector_unregisters_its_levels
+/datum/unit_test/dq_gap/overmap_sector_unregisters_its_levels/run_gap()
+	var/obj/effect/overmap/visitable/V = new /obj/effect/overmap/visitable(null)
+	V.map_z = list(901, 902)
+	V.register_z_levels()
+	TEST_ASSERT_EQUAL(GLOB.map_sectors["901"], V, "registered by level text")
+	TEST_ASSERT_EQUAL(GLOB.map_sectors["902"], V, "every level of the sector")
+	var/obj/effect/overmap/visitable/other = new /obj/effect/overmap/visitable(null)
+	GLOB.map_sectors["902"] = other
+	V.unregister_z_levels()
+	TEST_ASSERT_NULL(GLOB.map_sectors["901"], "the sector's own level is gone")
+	TEST_ASSERT_EQUAL(GLOB.map_sectors["902"], other, "a level another sector took over stays")
+	GLOB.map_sectors -= "902"
+	qdel(other)
+	qdel(V)
+
+/// J2: a question an old handler opened by hand is an asks() step of its op. A cat is named with a pen: the pen click asks, the answer names it, and a named cat refuses.
+/datum/unit_test/dq_gap/ask_op_names_a_cat_with_a_pen
+/datum/unit_test/dq_gap/ask_op_names_a_cat_with_a_pen/run_gap()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.enable_godmode()
+	var/mob/living/simple_mob/animal/passive/cat/C = allocate(/mob/living/simple_mob/animal/passive/cat, get_step(T, EAST))
+	var/obj/item/pen/P = allocate(/obj/item/pen, T)
+	hci_click(H, C, P)
+	test_time(1 SECOND)
+	hci_answer(H, "Tom")
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(C.name, "Tom", "the answer named the cat")
+	TEST_ASSERT(C.named, "and it is marked named")
+	hci_click(H, C, P)
+	test_time(1 SECOND)
+	TEST_ASSERT_NULL(test_answer(H, "Felix")?.key, "a named cat is not asked again (nothing open to answer)")
+	TEST_ASSERT_EQUAL(C.name, "Tom", "so the name stays")
+
+/// A sticky pad asks what to write when a pen is used on it, and writes the answer.
+/datum/unit_test/dq_gap/ask_op_writes_on_a_sticky_pad
+/datum/unit_test/dq_gap/ask_op_writes_on_a_sticky_pad/run_gap()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.enable_godmode()
+	var/obj/item/sticky_pad/pad = allocate(/obj/item/sticky_pad, get_step(T, EAST))
+	var/obj/item/pen/P = allocate(/obj/item/pen, T)
+	hci_click(H, pad, P)
+	test_time(1 SECOND)
+	hci_answer(H, "remember the milk")
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(pad.written_text, "remember the milk", "the answer is written on the pad")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// J2/J3: the converted ops, driven through the click path (hci_click / test_click) and answered as a player answers.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// Test-only stardog whose fur holds whoever the test names (the real list needs logged-in clients and a child overmap marker).
+/mob/living/simple_mob/vore/overmap/stardog/test_fur
+	var/list/in_fur = list()
+
+/mob/living/simple_mob/vore/overmap/stardog/test_fur/fur_pick_targets()
+	return in_fur.Copy()
+
+/// Stardog fur: a click with an empty hand asks whom to pick out of the fur, the answer starts the reach, and the one picked is lifted out. (The test map has an overmap, whose marker the stardog cannot own, so the overmap is switched off while it is made.)
+/datum/unit_test/dq_gap/ask_op_stardog_fur_pick
+/datum/unit_test/dq_gap/ask_op_stardog_fur_pick/run_gap()
+	var/turf/T = run_loc_floor_bottom_left
+	var/turf/fur_turf = get_step(T, NORTH)
+	var/old_type = fur_turf.type
+	fur_turf.ChangeTurf(/turf/simulated/floor/outdoors/fur)
+	fur_turf = get_step(T, NORTH)
+	var/mob/living/carbon/human/H = person(T)
+	H.pickup_pref = TRUE
+	H.pickup_active = TRUE
+	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human, fur_turf)
+	victim.enable_godmode()
+	var/had_overmap = using_map.use_overmap
+	using_map.use_overmap = FALSE
+	var/mob/living/simple_mob/vore/overmap/stardog/test_fur/dog = allocate(/mob/living/simple_mob/vore/overmap/stardog/test_fur, get_step(T, EAST))
+	using_map.use_overmap = had_overmap
+	dog.invisibility = INVISIBILITY_NONE // its life step swaps the overmap marker's visibility on this flag, and this dog has no marker
+	dog.in_fur += victim
+	hci_click(H, dog, null)
+	test_time(1 SECOND)
+	hci_answer(H, victim)
+	test_time(5 SECONDS)
+	TEST_ASSERT(victim.loc != fur_turf, "the one picked was lifted out of the fur")
+	fur_turf.ChangeTurf(old_type)
+
+/// Nanite goop, two steps: the state is asked first, and only an On answer asks what it recycles. Off asks no second question.
+/datum/unit_test/dq_gap/ask_op_nanite_goop_two_steps
+/datum/unit_test/dq_gap/ask_op_nanite_goop_two_steps/run_gap()
+	var/turf/T = run_loc_floor_bottom_left
+	var/turf/goop_turf = get_step(T, NORTH)
+	var/old_type = goop_turf.type
+	goop_turf.ChangeTurf(/turf/simulated/floor/water/digestive_enzymes/nanites)
+	var/turf/simulated/floor/water/digestive_enzymes/nanites/goop = get_step(T, NORTH)
+	var/mob/living/carbon/human/H = person(T)
+	H.nif = allocate(/obj/item/nif, H)
+	hci_click(H, goop, null)
+	test_time(1 SECOND)
+	hci_answer(H, "Off")
+	test_time(5 SECONDS)
+	TEST_ASSERT_NULL(test_answer(H, "All")?.key, "Off: no second question was asked")
+	TEST_ASSERT(!goop.active, "and the goop stays off")
+	hci_click(H, goop, null)
+	test_time(1 SECOND)
+	hci_answer(H, "On")
+	test_time(1 SECOND)
+	hci_answer(H, "All")
+	test_time(5 SECONDS)
+	TEST_ASSERT(goop.active, "On then All: the goop is on")
+	TEST_ASSERT_EQUAL(goop.moblink, H, "and linked to the one who set it")
+	goop_turf.ChangeTurf(old_type)
+
+/// A think-tank offers itself to a ghost; yes hands it over (the ghost is spent), no leaves it empty.
+/datum/unit_test/dq_gap/ask_op_think_tank_ghost_takes_control
+/datum/unit_test/dq_gap/ask_op_think_tank_ghost_takes_control/run_gap()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/silicon/robot/platform/tank = allocate(/mob/living/silicon/robot/platform, get_step(T, EAST))
+	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, T)
+	ghost.timeofdeath = -1 HOURS
+	var/old_name = tank.name
+	test_click(ghost, tank, null)
+	test_time(1 SECOND)
+	test_answer(ghost, FALSE)
+	test_time(1 SECOND)
+	TEST_ASSERT(!QDELETED(ghost), "No: the ghost keeps its body")
+	TEST_ASSERT_EQUAL(tank.name, old_name, "and the platform is not renamed")
+	test_click(ghost, tank, null)
+	test_time(1 SECOND)
+	test_answer(ghost, TRUE)
+	test_time(2 SECONDS)
+	TEST_ASSERT(QDELETED(ghost), "Yes: the ghost is spent")
+	TEST_ASSERT(tank.name != old_name, "and the platform took its new designation")
+
+/// Face of glamour: use asks whose likeness, the answer makes a homunculus of that one; use again asks what to do and Recall puts it back.
+/datum/unit_test/dq_gap/ask_op_glamour_face_makes_and_recalls
+/datum/unit_test/dq_gap/ask_op_glamour_face_makes_and_recalls/run_gap()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = person(T)
+	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, get_step(T, EAST))
+	other.real_name = "Mimic Target"
+	other.name = "Mimic Target"
+	var/obj/item/glamour_face/face = allocate(/obj/item/glamour_face, T)
+	hci_click(H, face, face)
+	test_time(1 SECOND)
+	hci_answer(H, other)
+	test_time(1 SECOND)
+	TEST_ASSERT_NOTNULL(face.homunculus, "the answer made a homunculus")
+	TEST_ASSERT_EQUAL(face.homunculus?.name, other.name, "in the chosen person's likeness")
+	var/mob/living/made = face.homunculus
+	hci_click(H, face, face)
+	test_time(1 SECOND)
+	hci_answer(H, "Recall")
+	test_time(1 SECOND)
+	TEST_ASSERT_NULL(face.homunculus, "Recall: the face lets it go")
+	TEST_ASSERT(QDELETED(made), "and the homunculus is gone")
+
+/// Glamour ring: a stranger is asked whether to break it; No leaves it, Yes starts the long break and the ring goes.
+/datum/unit_test/dq_gap/ask_op_glamour_ring_break
+/datum/unit_test/dq_gap/ask_op_glamour_ring_break/run_gap()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = person(T)
+	var/mob/living/carbon/human/owner = allocate(/mob/living/carbon/human, get_step(T, SOUTH))
+	var/obj/structure/glamour_ring/ring = allocate(/obj/structure/glamour_ring, get_step(T, EAST))
+	ring.connected_mob = owner
+	hci_click(H, ring, null)
+	test_time(1 SECOND)
+	hci_answer(H, "No")
+	test_time(11 SECONDS)
+	TEST_ASSERT(!QDELETED(ring), "No: the ring stands")
+	hci_click(H, ring, null)
+	test_time(1 SECOND)
+	hci_answer(H, "Yes")
+	test_time(11 SECONDS)
+	TEST_ASSERT(QDELETED(ring), "Yes: the ring is broken after its delay")
+
+/// A cyborg multibelt: use opens the radial of its tools and the pick is assumed as the belt's selected tool.
+/datum/unit_test/dq_gap/ask_op_multibelt_radial_selects_a_tool
+/datum/unit_test/dq_gap/ask_op_multibelt_radial_selects_a_tool/run_gap()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = person(T)
+	var/obj/item/robotic_multibelt/medical/belt = allocate(/obj/item/robotic_multibelt/medical, T)
+	var/obj/item/tool = belt.integrated_tool_at(belt.cyborg_integrated_tools[2])
+	TEST_ASSERT_NOTNULL(tool, "the belt carries a second tool")
+	hci_click(H, belt, belt)
+	test_time(1 SECOND)
+	hci_answer(H, tool.name)
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(belt.selected_item, tool, "the picked tool is the belt's selected item")
+	TEST_ASSERT_EQUAL(belt.icon_state, tool.icon_state, "and the belt looks like it")
+
+/// A cyborg cable synthesiser: use asks the colour and the answer recolours the cable it lays.
+/datum/unit_test/dq_gap/ask_op_cyborg_coil_colour
+/datum/unit_test/dq_gap/ask_op_cyborg_coil_colour/run_gap()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = person(T)
+	var/obj/item/stack/cable_coil/cyborg/coil = allocate(/obj/item/stack/cable_coil/cyborg, T)
+	var/old_color = coil.color
+	var/new_colour
+	for(var/c in GLOB.possible_cable_coil_colours)
+		if(GLOB.possible_cable_coil_colours[c] != old_color && c != old_color)
+			new_colour = c
+			break
+	TEST_ASSERT_NOTNULL(new_colour, "there is a colour to change to")
+	hci_click(H, coil, coil)
+	test_time(1 SECOND)
+	hci_answer(H, new_colour)
+	test_time(1 SECOND)
+	TEST_ASSERT(coil.color != old_color, "the answer recoloured the cable")
+
+/// A void suit's screwdriver "Remove component": a suit on the floor pops the chosen tank out; the same suit worn by the actor refuses and asks nothing.
+/datum/unit_test/dq_gap/ask_op_void_suit_screwdriver_refused_while_worn
+/datum/unit_test/dq_gap/ask_op_void_suit_screwdriver_refused_while_worn/run_gap()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = person(T)
+	var/obj/item/clothing/suit/space/void/suit = allocate(/obj/item/clothing/suit/space/void, get_step(T, NORTH))
+	var/obj/item/tank/oxygen/tank = allocate(/obj/item/tank/oxygen, T)
+	rel_set(suit, nameof(suit.tank), tank)
+	var/obj/item/tool/screwdriver/driver = dq_fast_tool(/obj/item/tool/screwdriver, T)
+	hci_click(H, suit, driver)
+	test_time(5 SECONDS)
+	hci_answer(H, tank)
+	test_time(3 SECONDS)
+	TEST_ASSERT_NULL(suit.tank, "off the body, the screwdriver took the chosen tank out")
+	suit.forceMove(T)
+	tank.forceMove(suit)
+	rel_set(suit, nameof(suit.tank), tank)
+	TEST_ASSERT(H.equip_to_slot_if_possible(suit, SLOT_ID_SUIT, disable_warning = TRUE), "the suit is worn by the one with the screwdriver")
+	hci_click(H, suit, driver)
+	test_time(5 SECONDS)
+	TEST_ASSERT_NULL(test_answer(H, tank)?.key, "worn: nothing was asked")
+	TEST_ASSERT_EQUAL(suit.tank, tank, "and the tank stays in")

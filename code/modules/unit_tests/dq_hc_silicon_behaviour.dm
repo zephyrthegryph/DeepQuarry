@@ -169,9 +169,9 @@
 	P.forceMove(get_step(H, EAST))
 	return P
 
-/// An ID swiped over a pAI, as the pAI's item handler takes it (an interaction handler today).
-/proc/hcs_swipe(mob/user, mob/living/silicon/pai/P, obj/item/card/id/ID)
-	return P.pai_interaction_item(user, ID, null)
+/// An ID swiped over a pAI: a click with the card in hand.
+/proc/hcs_swipe(mob/living/carbon/human/user, mob/living/silicon/pai/P, obj/item/card/id/ID)
+	return hci_click(user, P, ID)
 
 /datum/unit_test/dq_hc_silicon/pai_access_add_copies_the_card_access
 

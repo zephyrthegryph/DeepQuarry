@@ -64,14 +64,6 @@ CAPABILITIES(/datum/system/supply)
 	owns_many(nameof(market_counterparties))
 	owns_many(nameof(market_listings))
 
-/// The 15-minute payroll cycle runs once the first service step has started it.
-OM_FIELD(/datum/system/supply, payroll_running, FALSE, CHANGE_DATUM_A)
-DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_running")
-
-/// Delay until the next payroll_cycle(): whatever is left of next_payroll.
-/datum/system/supply/proc/payroll_delay()
-	return LEFT_UNTIL(src, next_payroll, CLOCK_WORLD)
-
 /// The cargo market and department payroll (was SSsupply, 20 s).
 /datum/system/supply/reactions()
 	. = ..()
@@ -79,9 +71,6 @@ DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_ru
 
 /datum/system/supply/initialize()
 	initialized = TRUE
-	// Starts the declarations (DECLARE_REPEAT above). Here rather than New(): the service is a
-	// GLOBAL_DATUM_INIT, created before the object model exists.
-	lifecycle_decls_init(src)
 	reset_shift_economy_tracking()
 	// build master supply list
 	for(var/typepath in subtypesof(/datum/supply_pack))
@@ -110,11 +99,12 @@ DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_ru
 
 /datum/system/supply/proc/supply_step(dt)
 	process_cargo_market()
-	set_payroll_running(TRUE)
+	if(next_payroll && EXPIRY_EXPIRED(src, next_payroll, CLOCK_WORLD))
+		payroll_cycle() // every 15 minutes, noticed on the 20 s step (payroll_cycle() sets the next time)
 	return STEP_DONE
 
-/// Every 15 minutes while payroll_running (DECLARE_REPEAT): the department budget cycle and
-/// payroll. next_payroll is the time of the next cycle; payroll_delay() re-arms from it.
+/// Every 15 minutes (supply_step() calls it once next_payroll has passed): the department budget cycle and
+/// payroll. next_payroll is the time of the next cycle.
 /datum/system/supply/proc/payroll_cycle()
 	EXPIRY_SET(src, next_payroll, 15 MINUTES, CLOCK_WORLD)
 	var/completed_service_period = service_accounting_period

@@ -41,12 +41,10 @@
 
 	feedback_add_details("changeling_powers","MV")
 
-DECLARE_REPEAT(/datum/changeling, 4 SECONDS, mimic_drain, "mimicing")
-
-/// Mimicry costs a chemical every 4 seconds while it lasts (DECLARE_REPEAT while mimicing).
-/datum/changeling/proc/mimic_drain()
+/// Mimicry costs a chemical every 4 seconds while it lasts (every() while mimicing).
+/datum/changeling/proc/mimic_drain(datum/act/timer/A)
 	if(!owner?.mind)
-		return REPEAT_STOP
+		return
 	chem_charges = max(chem_charges - 1, 0)
 
 /// Replay the current changeling state and choices after an accepted native answer.

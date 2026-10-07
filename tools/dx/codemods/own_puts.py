@@ -10,6 +10,7 @@ The analyze own_add codemod declares an undeclared var owns_many and renames own
 Unit tests and benchmarks (which the codemod skips) are converted directly. A `rel_add(.., K)` on a var nobody declared would not reach the
 owned-var accessor, so check `analyze gen --check` and the unit tests after.
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import json
 import pathlib
 import re

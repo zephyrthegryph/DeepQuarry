@@ -118,6 +118,7 @@
 /// Topic() whitelist): `what` is a type, a ref string or an instance.
 /// Returns null for a null list.
 /proc/locate_in_list(list/L, what)
+	READS_FROM() // what a list holds is asked when a choice is made, never cached
 	if(!L)
 		return null
 	return locate(what) in L

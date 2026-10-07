@@ -331,7 +331,7 @@ CAPABILITIES(/obj/item/cartridge/rd)
 CAPABILITIES(/obj/item/cartridge/storage)
 	owns_one(nameof(hold), starts = /obj/item/storage/internal)
 	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Store"), then(PROC_REF(interaction_store)))
-	op("hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), label("Use"), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_hand)))
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_self)))
 
 /obj/item/cartridge/storage/Initialize(mapload)

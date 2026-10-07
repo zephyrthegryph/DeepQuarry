@@ -11,6 +11,7 @@ robot|none menu: Pet Fur
 robot|none menu: Touch
 robot|none click: Click: Pet
 ai|none click: nothing
+ghost|none menu: Emote Beyond (refused: You can't reach that.)
 ghost|none menu: Pet Fur
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Crawl
@@ -155,5 +156,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Touch
 human|/obj/item menu: Turf item
 human|/obj/item click: Click: Nothing
-keys: floor_graffiti, floor_item_disarm, floor_item_grab, floor_item_help, floor_item_hurt, fur_item, fur_pet, fur_pet_verb, gen_verb_fur_verb_emote_beyond, turf_crawl, turf_item, turf_touch
+keys: floor_graffiti, floor_item_disarm, floor_item_grab, floor_item_help, floor_item_hurt, fur_emote_beyond, fur_item, fur_pet, fur_pet_verb, turf_crawl, turf_item, turf_touch
 

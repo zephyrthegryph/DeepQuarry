@@ -39,21 +39,33 @@
 
 OM_FLAG_FIELD(/datum/shuttle, shuttle_flags, SHUTTLE_FLAGS_NONE, CHANGE_DATUM_A)
 OM_FIELD_SETTER(/datum/shuttle, process_state, CHANGE_DATUM_A)
-/// TRUE while the shuttle has launch/move work: it processes and it is launching, moving or always processing.
-OM_DERIVE_FIELD(/datum/shuttle, shuttle_working, list("shuttle_flags", "process_state"))
 /// Long jump in transit. A field: the transit repeat runs while it is set. It is a flag rather than
 /// the destination view itself, so a landmark destroyed mid-jump still ends the jump at arrival time
 /// (falling back to the start) instead of stranding the shuttle in transit.
-OM_FIELD_TYPED(/datum/shuttle, tmp, transit_active, FALSE, CHANGE_DATUM_B)
+/datum/shuttle/var/tmp/transit_active = FALSE
+TRACKED_BRIDGED(/datum/shuttle, transit_active, CHANGE_DATUM_B)
 /// Long jump in transit: the destination and start landmarks (relation views), and whether the
 /// landing warning was made.
 /datum/shuttle/var/tmp/obj/effect/shuttle_landmark/transit_dest
 /datum/shuttle/var/tmp/obj/effect/shuttle_landmark/transit_start
 /datum/shuttle/var/tmp/transit_warned = FALSE
-DECLARE_REPEAT(/datum/shuttle, 5, long_jump_transit, "transit_active")
-/// One shuttle_step() every 2 s while it has work (code/controllers/subsystems/shuttles.dm).
-DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
+/// Set by New() once the shuttle is registered with SSshuttles.
+/datum/shuttle/var/tmp/registered = FALSE
+/// TRUE while a registered shuttle has launch/move work (shuttle_working(), kept by refresh_working()): the 2 s step runs while it is, and an idle shuttle holds no timer.
+/datum/shuttle/var/tmp/working = FALSE
+TRACKED(/datum/shuttle, working)
 
+CAPABILITIES(/datum/shuttle)
+	every(5, then(PROC_REF(long_jump_transit)), when = nameof(transit_active))
+	/// One shuttle_step() every 2 s while it has work (code/controllers/subsystems/shuttles.dm).
+	every(2 SECONDS, then(PROC_REF(shuttle_tick)), when = nameof(working))
+	on_change(nameof(shuttle_flags), ANY, then(PROC_REF(refresh_working)))
+
+/// Follows the process flag and the process state: only a shuttle New() registered runs its step (one that skipped registration is dropped by its creator).
+/datum/shuttle/proc/refresh_working(datum/act/A)
+	set_working(registered && shuttle_working())
+
+/// TRUE while the shuttle has launch/move work: it processes and it is launching, moving or always processing.
 /datum/shuttle/proc/shuttle_working()
 	return (shuttle_flags & SHUTTLE_FLAGS_PROCESS) && (always_process || process_state != IDLE_STATE)
 
@@ -86,17 +98,14 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 	if(src.name in SSshuttles.shuttles)
 		CRASH("A shuttle with the name '[name]' is already defined.")
 	SSshuttles.shuttles[src.name] = src
+	registered = TRUE
+	refresh_working()
 	if(shuttle_flags & SHUTTLE_FLAGS_PROCESS)
 		SSshuttles.process_shuttles += src
 	if(shuttle_flags & SHUTTLE_FLAGS_SUPPLY)
 		if(SSsupply.shuttle)
 			CRASH("A supply shuttle is already defined.")
 		SSsupply.shuttle = src
-	// Starts DECLARE_PERIODIC_WHILE / DECLARE_REPEAT (a non-atom has no materialize). Only once
-	// registered: a shuttle that skipped registration above is dropped by its creator, and a
-	// started declaration would give it an OM record that keeps it alive (an ownership-audit
-	// "dropped with a rec" orphan).
-	lifecycle_decls_init(src)
 
 // leaves SSshuttles and the supply shuttle slot.
 /datum/shuttle/lifecycle_dematerialize()
@@ -107,9 +116,13 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 		SSsupply.shuttle = null
 	return ..()
 
-/// The process_state setter: om_set() writes it and raises its declared channel (CHANGE_DATUM_A),
-/// which also refreshes shuttle_working.
+/// The process_state setter: om_set() writes it and raises its declared channel (CHANGE_DATUM_A); the step's gate follows.
 /datum/shuttle/proc/set_process_state(new_state)
+	var/wrote = write_process_state(new_state)
+	refresh_working()
+	return wrote
+
+/datum/shuttle/proc/write_process_state(new_state)
 	return om_set(src, "process_state", new_state)
 
 // This is called after all shuttles have been initialized by SSshuttles, but before sectors have been initialized.
@@ -239,9 +252,9 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 	set_transit_active(TRUE) // the transit repeat runs while this is set
 	long_jump_transit()
 
-/// In transit: every half second until arrival time (DECLARE_REPEAT while transit_active is set),
+/// In transit: every half second until arrival time (the every() while transit_active is set),
 /// the travel sound every four seconds (the sound file is five) and the landing warning five seconds out.
-/datum/shuttle/proc/long_jump_transit()
+/datum/shuttle/proc/long_jump_transit(datum/act/timer/A)
 	var/obj/effect/shuttle_landmark/start_location = transit_start
 	var/obj/effect/shuttle_landmark/destination = transit_dest
 	if(EXPIRY_EXPIRED(src, arrive_time, CLOCK_WORLD))

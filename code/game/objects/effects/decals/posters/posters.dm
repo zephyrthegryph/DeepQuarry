@@ -145,7 +145,7 @@ CAPABILITIES(/obj/structure/sign/poster)
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	param(nameof(dir), pos = 1)
 	param(nameof(hung_from), pos = 2, apply = PROC_REF(hang), keep = FALSE)
-	op("hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), when(cond_not(nameof(ruined))), asks(/datum/prompt/yes_no/rip_poster, fields = list("timeout" = 0), step = "rip"), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), label("Use"), ungated(), priority(OP_PRIORITY_DEFAULT - 1), when(cond_not(nameof(ruined))), asks(/datum/prompt/yes_no/rip_poster, fields = list("timeout" = 0), step = "rip"), then(PROC_REF(interaction_hand)))
 
 /obj/structure/sign/poster/proc/wirecutter_used(datum/act/op/A)
 	var/mob/user = A.actor

@@ -12,6 +12,7 @@ Only a question that stands first in the body (before any effect, check or local
 would run after. The answer is `var/x = A.step_value("k")` at the head of the new body, which keeps every later use of `x`. The guard that
 followed the question (`if(isnull(x)) return`) goes: an unanswered question ends the op. `if(isnull(x) || rest)` keeps `if(rest)`.
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import re
 import sys
 import os

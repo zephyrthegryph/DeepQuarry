@@ -1,6 +1,9 @@
-DECLARE_INTERACTIONS(/obj/item/gated, INTERACT_USE(null, PROC_REF(interaction_self), REQ_BECAUSE(REQ_FIELD("held"), "empty")))
+CAPABILITIES(/obj/item/gated)
+	op("self", in_hand(), label("Use"), needs(req_is(nameof(held), TRUE, because = MSG(gated/held))), then(PROC_REF(interaction_self)))
 
-/obj/item/gated/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+MSG_DEF_SELF(gated/held, "Empty.")
+
+/obj/item/gated/proc/interaction_self(datum/act/op/A)
 	return TRUE
 
 DECLARE_INTERACTIONS(/obj/item/falls, INTERACT_HAND(null, PROC_REF(interaction_hand)))

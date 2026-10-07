@@ -9,6 +9,7 @@ T's CAPABILITIES block. Part 2, per statement: `om_grant(E, GRANT_VERB, path, so
 a path every site of which converts (a verb granted one way and revoked another would leave the activation behind). The rest is residue with a code (--sites lists it).
 Idempotent. Run `analyze gen` afterwards.
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import os
 import re
 import subprocess

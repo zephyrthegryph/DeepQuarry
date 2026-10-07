@@ -631,11 +631,11 @@ fn block_calls(args: &[String], name: &str) -> Vec<Vec<String>> {
 }
 
 /// The lifecycle forms (code/engine/lifeforms/) a type's block needs the generator for:
-/// - a non-atom type whose block names a form, or an owns_one/owns_many with starts =, gets `lifeform_declared = TRUE`, so /datum/New() runs it;
+/// - a non-atom type whose block names a form (a type-level every() is one: lifeform_datum_new() arms it), or an owns_one/owns_many with starts =, gets `lifeform_declared = TRUE`, so /datum/New() runs it;
 /// - a type whose block names click_on(), drag_onto(), drag_over(), hover() or tooltip() gets the native override that reads `usr` (the engine's,
 ///   here) and hands the engine the actor: Click(), MouseDrop(), MouseDrag(), MouseEntered()/MouseExited().
 fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> bool) {
-    const FORMS: &[&str] = &["rolls", "param", "built_from", "registry", "radio_listen", "per_type", "variants", "initial_contents", "knows", "starts_as", "derives", "lives_while", "on_ending", "modes"];
+    const FORMS: &[&str] = &["rolls", "param", "built_from", "registry", "radio_listen", "per_type", "variants", "initial_contents", "knows", "starts_as", "derives", "lives_while", "on_ending", "modes", "every"];
     let mut lists: Vec<&Marker> = cx.markers("CAPABILITIES").filter(|m| in_half(&m.rel)).collect();
     lists.sort_by(|a, b| (a.args.first(), &a.rel, a.line).cmp(&(b.args.first(), &b.rel, b.line)));
     for m in lists {

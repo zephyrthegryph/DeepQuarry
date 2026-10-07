@@ -152,7 +152,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 		using_map.sealed_levels |= map_z
 
 /obj/effect/overmap/visitable/proc/unregister_z_levels()
-	GLOB.map_sectors -= map_z
+	// map_sectors is keyed by the level as text ("[zlevel]"): removing the numbers of map_z left a dead sector there, which a later get_overmap_sector() handed out (a
+	// dying stardog ship linked by the next test's nav console, J9).
+	for(var/zlevel in map_z)
+		if(GLOB.map_sectors["[zlevel]"] == src)
+			GLOB.map_sectors -= "[zlevel]"
 
 	using_map.player_levels -= map_z
 	if(!in_space)

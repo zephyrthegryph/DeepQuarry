@@ -8,6 +8,7 @@ One declaration at a time. The fields it names become TRACKED (an OM_FIELD turns
 type's CAPABILITIES block, and for a PERIODIC_WHILE its periodic_step() handler (and every override of it below the type) is renamed <type>_step and takes
 (datum/act/timer/A). A declaration that does not match the rules exactly is residue with a code (--sites lists them). Idempotent. Run `analyze gen` afterwards.
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import os
 import re
 import subprocess
@@ -29,7 +30,8 @@ TIME = re.compile(r"^\d+(\.\d+)?( [A-Z]+)?$")
 
 
 def is_atom(t):
-    return t.startswith(ATOM_ROOTS)
+    """A holder the engine arms an every() for: an atom at Initialize(), a plain datum at New() (lifeform_datum_new). A /datum/system arms its work from reactions()."""
+    return t.startswith(ATOM_ROOTS) or (t.startswith("/datum") and not t.startswith("/datum/system"))
 
 
 def ancestors_or_self(t, u):
@@ -312,7 +314,7 @@ def main():
         hdefs = [x for x in defs_by_name.get("periodic_step", []) if x[0] == t]
         if len(hdefs) != 1:
             return "handler_shape"
-        if any(x[0] != t and t.startswith(x[0] + "/") for x in defs_by_name.get("periodic_step", [])):
+        if any(x[0] != t and x[0] != "/datum" and t.startswith(x[0] + "/") for x in defs_by_name.get("periodic_step", [])):
             return "ancestor_handler"
         tree_defs = [x for x in defs_by_name.get("periodic_step", []) if ancestors_or_self(x[0], t)]
         if any(related(c, t) for c in call_types):

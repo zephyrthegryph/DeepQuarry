@@ -11,6 +11,7 @@ changes nothing. Entries that shared a line are split onto their own lines (the 
 
     python tools/dx/codemods/capabilities_block.py [--check] [paths...]
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import subprocess
 import sys
 

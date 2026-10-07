@@ -324,6 +324,7 @@ legacy_forms_converted = [
   "code/game/gamemodes/heist/",
   "code/game/gamemodes/infiltrator/",
   "code/game/gamemodes/malfunction/",
+  "code/game/gamemodes/meteor/",
   "code/game/gamemodes/mixed/",
   "code/game/gamemodes/ninja/",
   "code/game/gamemodes/nuclear/",
@@ -383,6 +384,7 @@ legacy_forms_converted = [
   "code/modules/datums/",
   "code/modules/debugging/",
   "code/modules/detectivework/",
+  "code/modules/economy/",
   "code/modules/emotes/",
   "code/modules/entopics/",
   "code/modules/entrepreneur/",
@@ -402,6 +404,7 @@ legacy_forms_converted = [
   "code/modules/food/",
   "code/modules/gamemaster/",
   "code/modules/games/",
+  "code/modules/generated_station/",
   "code/modules/genetics/",
   "code/modules/ghosttrap/",
   "code/modules/halloween/",
@@ -497,6 +500,7 @@ legacy_forms_converted = [
   "code/modules/radiation/",
   "code/modules/random_map/",
   "code/modules/reagents/holder/",
+  "code/modules/reagents/hose/",
   "code/modules/reagents/machinery/",
   "code/modules/reagents/reactions/",
   "code/modules/reagents/reagent_containers/",
@@ -511,6 +515,7 @@ legacy_forms_converted = [
   "code/modules/scripting/",
   "code/modules/security levels/",
   "code/modules/shieldgen/",
+  "code/modules/shuttles/",
   "code/modules/spells/",
   "code/modules/stockmarket/",
   "code/modules/surgery/",
@@ -524,6 +529,7 @@ legacy_forms_converted = [
   "code/modules/tgui_panel/",
   "code/modules/tickets/",
   "code/modules/tooltip/",
+  "code/modules/turbolift/",
   "code/modules/vehicles/",
   "code/modules/ventcrawl/",
   "code/modules/vore/",
@@ -591,7 +597,7 @@ machinery_ex_act_allow = ["code/game/machinery/machinery.dm"]
 admin_rights_shrink_only_baseline_one_mechanism_admin_can = 22
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 106
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 17
-objects_ratchet_on_legacy_interactions = 3
+objects_ratchet_on_legacy_interactions = 2
 objects_ratchet_on_tool_act_overrides = 0
 objects_ratchet_on_damage_reactions = 0
 objects_ratchet_on_declare_emag = 0

@@ -127,7 +127,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/fueltank)
 	configure(reagents(add = list(REAGENT_ID_FUEL = 1000)))
 	climb()
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tank_blast_explode))))
-	op("hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), label("Use"), ungated(), then(PROC_REF(interaction_hand)))
 	op("fueltank_interaction_item", item(/obj/item), then(PROC_REF(fueltank_interaction_item)))
 
 /obj/structure/reagent_dispensers/fueltank/high

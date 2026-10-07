@@ -1,0 +1,7 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "Plain datums can declare a type-level every(); datum periodics (changeling drains, meteor, hose, shuttle, turbolift, artifact master, station planner, payroll) converted"
+  - refactor: "Questions asked from item and hand handlers (cat naming, sticky pad, multibelt, cyborg coil, stardog fur, nanite goop, pAI access, think-tank ghost, glamour face and ring) are asks() steps of ops; the screwdriver on void suits is an op"
+  - bugfix: "A deleted overmap sector no longer stays registered by z-level, so a later console cannot link a dying ship"
+  - bugfix: "A pAI's ID swipe asks add or remove access again instead of patting it"

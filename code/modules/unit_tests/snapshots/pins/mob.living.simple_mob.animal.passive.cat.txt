@@ -15,7 +15,6 @@ human|none menu: Robot nom (refused: you don't have that ability)
 human|none menu: Shove (refused: hold Disarm)
 human|none menu: Shove with (refused: hold Disarm)
 human|none menu: Take hold (refused: hold Grab)
-human|none menu: Use
 human|none menu: Use on
 human|none click: nothing
 robot|none menu: Create shade (refused: you don't have that ability)
@@ -35,7 +34,6 @@ robot|none menu: Robot nom
 robot|none menu: Shove (refused: hold Disarm)
 robot|none menu: Shove with (refused: hold Disarm)
 robot|none menu: Take hold (refused: hold Grab)
-robot|none menu: Use
 robot|none menu: Use on
 robot|none click: nothing
 ai|none click: nothing
@@ -59,7 +57,6 @@ human|/obj/item/tool/screwdriver menu: Shove (refused: hold Disarm)
 human|/obj/item/tool/screwdriver menu: Shove with (refused: hold Disarm)
 human|/obj/item/tool/screwdriver menu: Take hold (refused: hold Grab)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver menu: Use on
 human|/obj/item/tool/screwdriver click: nothing
 human|/obj/item/tool/crowbar menu: Create shade (refused: you don't have that ability)
@@ -81,7 +78,6 @@ human|/obj/item/tool/crowbar menu: Shove (refused: hold Disarm)
 human|/obj/item/tool/crowbar menu: Shove with (refused: hold Disarm)
 human|/obj/item/tool/crowbar menu: Take hold (refused: hold Grab)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar menu: Use on
 human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Create shade (refused: you don't have that ability)
@@ -103,7 +99,6 @@ human|/obj/item/tool/wrench menu: Shove (refused: hold Disarm)
 human|/obj/item/tool/wrench menu: Shove with (refused: hold Disarm)
 human|/obj/item/tool/wrench menu: Take hold (refused: hold Grab)
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench menu: Use on
 human|/obj/item/tool/wrench click: nothing
 human|/obj/item/tool/wirecutters menu: Create shade (refused: you don't have that ability)
@@ -125,7 +120,6 @@ human|/obj/item/tool/wirecutters menu: Shove (refused: hold Disarm)
 human|/obj/item/tool/wirecutters menu: Shove with (refused: hold Disarm)
 human|/obj/item/tool/wirecutters menu: Take hold (refused: hold Grab)
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters menu: Use on
 human|/obj/item/tool/wirecutters click: nothing
 human|/obj/item/multitool menu: Create shade (refused: you don't have that ability)
@@ -147,7 +141,6 @@ human|/obj/item/multitool menu: Shove (refused: hold Disarm)
 human|/obj/item/multitool menu: Shove with (refused: hold Disarm)
 human|/obj/item/multitool menu: Take hold (refused: hold Grab)
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool menu: Use
 human|/obj/item/multitool menu: Use on
 human|/obj/item/multitool click: nothing
 human|/obj/item/weldingtool menu: Create shade (refused: you don't have that ability)
@@ -169,7 +162,6 @@ human|/obj/item/weldingtool menu: Shove (refused: hold Disarm)
 human|/obj/item/weldingtool menu: Shove with (refused: hold Disarm)
 human|/obj/item/weldingtool menu: Take hold (refused: hold Grab)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool menu: Use on
 human|/obj/item/weldingtool click: nothing
 human|/obj/item/stack/cable_coil menu: Create shade (refused: you don't have that ability)
@@ -192,7 +184,6 @@ human|/obj/item/stack/cable_coil menu: Shove (refused: hold Disarm)
 human|/obj/item/stack/cable_coil menu: Shove with (refused: hold Disarm)
 human|/obj/item/stack/cable_coil menu: Take hold (refused: hold Grab)
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil menu: Use on
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Create shade (refused: you don't have that ability)
@@ -214,7 +205,6 @@ human|/obj/item/stack/material/steel menu: Shove (refused: hold Disarm)
 human|/obj/item/stack/material/steel menu: Shove with (refused: hold Disarm)
 human|/obj/item/stack/material/steel menu: Take hold (refused: hold Grab)
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel menu: Use on
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Create shade (refused: you don't have that ability)
@@ -237,8 +227,51 @@ human|/obj/item/card/id menu: Shove (refused: hold Disarm)
 human|/obj/item/card/id menu: Shove with (refused: hold Disarm)
 human|/obj/item/card/id menu: Take hold (refused: hold Grab)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id menu: Use
 human|/obj/item/card/id menu: Use on
 human|/obj/item/card/id click: nothing
-keys: disarm, drag_buckle, gen_hand_interaction_touch, gen_item_cat_interaction_item, gen_item_interaction_hit, ghost_join, grab, mob_attacks.alarm, mob_attacks.charge, mob_attacks.fire, mob_attacks.melee, mob_attacks.pickup, mob_attacks.shoot, mob_attacks.slam, mob_attacks.special, mob_attacks.step, mob_attacks.throw, robot_customize_appearance, robot_eject_cargo, robot_mount, robot_nom, robot_pick_name, robot_pick_shell, robot_purge_nutrition, robot_recolour, robot_sensor_mode, robot_set_mail_tag, robot_spark_plug, robot_toggle_decals, robot_toggle_glowy_stomach, robot_toggle_grabbability, robot_toggle_lights, robot_toggle_module_1, robot_toggle_module_2, robot_toggle_module_3, robot_toggle_vtec, shadekin_clear_dark_maws, shadekin_create_shade, shadekin_dark_maw, shadekin_dark_respite, shadekin_dark_tunneling, shadekin_phase_shift, shadekin_regenerate_other
+human|/obj/item/pen menu: Create shade (refused: you don't have that ability)
+human|/obj/item/pen menu: Dark maw (refused: you don't have that ability)
+human|/obj/item/pen menu: Dark respite (refused: you don't have that ability)
+human|/obj/item/pen menu: Dark tunneling (refused: you don't have that ability)
+human|/obj/item/pen menu: Disarm
+human|/obj/item/pen menu: Dispel dark maws (refused: you don't have that ability)
+human|/obj/item/pen menu: Grab
+human|/obj/item/pen menu: Help
+human|/obj/item/pen menu: Hit (refused: combat mode is off)
+human|/obj/item/pen menu: Hold with (refused: hold Grab)
+human|/obj/item/pen menu: Move To Top
+human|/obj/item/pen menu: Punch (refused: combat mode is off)
+human|/obj/item/pen menu: Regenerate other (refused: you don't have that ability)
+human|/obj/item/pen menu: Robot mount/dismount (refused: you don't have that ability)
+human|/obj/item/pen menu: Robot nom (refused: you don't have that ability)
+human|/obj/item/pen menu: Shove (refused: hold Disarm)
+human|/obj/item/pen menu: Shove with (refused: hold Disarm)
+human|/obj/item/pen menu: Take hold (refused: hold Grab)
+human|/obj/item/pen menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pen menu: Use
+human|/obj/item/pen menu: Use on
+human|/obj/item/pen click: Click: Use
+human|/obj/item/flashlight/pen menu: Create shade (refused: you don't have that ability)
+human|/obj/item/flashlight/pen menu: Dark maw (refused: you don't have that ability)
+human|/obj/item/flashlight/pen menu: Dark respite (refused: you don't have that ability)
+human|/obj/item/flashlight/pen menu: Dark tunneling (refused: you don't have that ability)
+human|/obj/item/flashlight/pen menu: Disarm
+human|/obj/item/flashlight/pen menu: Dispel dark maws (refused: you don't have that ability)
+human|/obj/item/flashlight/pen menu: Grab
+human|/obj/item/flashlight/pen menu: Help
+human|/obj/item/flashlight/pen menu: Hit (refused: combat mode is off)
+human|/obj/item/flashlight/pen menu: Hold with (refused: hold Grab)
+human|/obj/item/flashlight/pen menu: Move To Top
+human|/obj/item/flashlight/pen menu: Punch (refused: combat mode is off)
+human|/obj/item/flashlight/pen menu: Regenerate other (refused: you don't have that ability)
+human|/obj/item/flashlight/pen menu: Robot mount/dismount (refused: you don't have that ability)
+human|/obj/item/flashlight/pen menu: Robot nom (refused: you don't have that ability)
+human|/obj/item/flashlight/pen menu: Shove (refused: hold Disarm)
+human|/obj/item/flashlight/pen menu: Shove with (refused: hold Disarm)
+human|/obj/item/flashlight/pen menu: Take hold (refused: hold Grab)
+human|/obj/item/flashlight/pen menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/flashlight/pen menu: Use
+human|/obj/item/flashlight/pen menu: Use on
+human|/obj/item/flashlight/pen click: Click: Use
+keys: disarm, drag_buckle, gen_hand_interaction_touch, gen_item_interaction_hit, ghost_join, grab, mob_attacks.alarm, mob_attacks.charge, mob_attacks.fire, mob_attacks.melee, mob_attacks.pickup, mob_attacks.shoot, mob_attacks.slam, mob_attacks.special, mob_attacks.step, mob_attacks.throw, name_with_pen, name_with_penlight, robot_customize_appearance, robot_eject_cargo, robot_mount, robot_nom, robot_pick_name, robot_pick_shell, robot_purge_nutrition, robot_recolour, robot_sensor_mode, robot_set_mail_tag, robot_spark_plug, robot_toggle_decals, robot_toggle_glowy_stomach, robot_toggle_grabbability, robot_toggle_lights, robot_toggle_module_1, robot_toggle_module_2, robot_toggle_module_3, robot_toggle_vtec, shadekin_clear_dark_maws, shadekin_create_shade, shadekin_dark_maw, shadekin_dark_respite, shadekin_dark_tunneling, shadekin_phase_shift, shadekin_regenerate_other
 

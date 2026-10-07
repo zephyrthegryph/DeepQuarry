@@ -10,6 +10,7 @@ on CLOCK_WORLD. Calls the script cannot parse (a call split over lines) are prin
 
 Usage: om_after_to_after.py [--write]
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import re
 import subprocess
 import sys

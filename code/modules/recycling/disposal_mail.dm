@@ -15,7 +15,7 @@
 	var/tag_x
 
 CAPABILITIES(/obj/structure/bigDelivery)
-	op("hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), label("Use"), ungated(), then(PROC_REF(interaction_hand)))
 	op("tag", item(/obj/item/destTagger), then(PROC_REF(parcel_tag)))
 	op("label", item(/obj/item/pen),
 		asks(/datum/prompt/choice, fields = list("question" = "What would you like to alter?", "title" = "Select Alteration", "choices" = list("Title", "Description", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "alteration"),

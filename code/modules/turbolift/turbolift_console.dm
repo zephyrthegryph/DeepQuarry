@@ -37,7 +37,7 @@ CAPABILITIES(/obj/structure/lift)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	param(nameof(lift), pos = 1)
 	op("hammer", hand(), ungated(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Hammer on it"), then(PROC_REF(interaction_hammer)))
-	op("hand", hand(), ungated(), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), label("Use"), ungated(), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(interaction_hand)))
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
 /obj/structure/lift/proc/smashed_by(datum/act/hit/generic/A)

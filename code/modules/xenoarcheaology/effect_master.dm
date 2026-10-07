@@ -63,12 +63,11 @@ CAPABILITIES(/atom)
 	var/static/list/volatile_reagents = list(PHORON_PATH, HYDROPHORON_PATH, THERMITE_PATH)
 	var/static/list/toxic_reagents = list(TOXIN_PATH)
 
+/// The anomalous atom this state belongs to (a relation view); the master runs its effects (every 2 s) while it has one: the gate is the relation var, so the every() polls.
+OM_FIELD_VIEW(/datum/artifact_master, tmp/atom, holder, CHANGE_DATUM_A)
 CAPABILITIES(/datum/artifact_master)
 	owns_many(nameof(my_effects))
-
-/// The anomalous atom this state belongs to (a relation view); the master runs its effects while it has one.
-OM_FIELD_VIEW(/datum/artifact_master, tmp/atom, holder, CHANGE_DATUM_A)
-DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
+	every(2 SECONDS, then(PROC_REF(master_step)), when = nameof(holder))
 
 /datum/artifact_master/New(atom/new_holder)
 	. = ..()
@@ -79,7 +78,6 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	rel_set(new_holder, nameof(/atom::artifact_master), src) // the anomalous atom owns its artifact state
 
 	rel_take_all(src, nameof(my_effects))
-	lifecycle_decls_init(src) // a non-atom: starts the holder declaration
 
 	do_setup()
 	return
@@ -437,12 +435,11 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 		if(my_effect)
 			my_effect.UpdateMove()
 
-/datum/artifact_master/periodic_step()
+/datum/artifact_master/proc/master_step(datum/act/timer/A)
 	if(!holder())	// Some instances can be created and rapidly lose their holder, if they are destroyed rapidly on creation. IE, during excavation.
-		om_task_periodic_stop(src)
 		if(!QDELETED(src))
 			ended_with(src)
-			return
+		return
 
 	var/turf/L = holder().loc
 	if(!istype(L) && !isliving(L)) 	// We're inside a non-mob container or on null turf, either way stop processing effects

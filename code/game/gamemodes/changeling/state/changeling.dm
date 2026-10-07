@@ -59,6 +59,8 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 CAPABILITIES(/datum/changeling)
 	owns_one(nameof(power_panel), /datum/changeling_panel)
 	owns_many(nameof(absorbed_dna), /datum/absorbed_dna)
+	every(4 SECONDS, then(PROC_REF(mimic_drain)), when = nameof(mimicing))
+	every(4 SECONDS, then(PROC_REF(camo_drain)), when = nameof(camo_draining))
 
 ///Checks if a mind or a mob is a changeling.
 ///Checks to see if the thing fed to it is a changeling first, then does some deeper searching.
@@ -98,14 +100,15 @@ CAPABILITIES(/datum/changeling)
 	// ALLOW(cooldown): per-ability cooldown table keyed by id (one var per ability would be dozens)
 	return (world.time < changeling_cooldowns[id])
 
-/// The voice we mimic, or "". Costs a chemical every 4 seconds while set (mimic_voice.dm, DECLARE_REPEAT).
-OM_FIELD(/datum/changeling, mimicing, "", CHANGE_DATUM_A)
-/// Digital camouflage we turned on. Costs a chemical every 4 seconds while set (digital_camo.dm, DECLARE_REPEAT).
-OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
+/// The voice we mimic, or "". Costs a chemical every 4 seconds while set (mimic_voice.dm, every()).
+/datum/changeling/var/mimicing = ""
+TRACKED(/datum/changeling, mimicing)
+/// Digital camouflage we turned on. Costs a chemical every 4 seconds while set (digital_camo.dm, every()).
+/datum/changeling/var/camo_draining = FALSE
+TRACKED(/datum/changeling, camo_draining)
 
 /datum/changeling/New(mob/living/new_owner)
 	..()
-	lifecycle_decls_init(src) // starts the chemical drain declarations (a non-atom has no materialize)
 	rel_set(src, nameof(owner), new_owner)
 	if(owner)
 		if(GLOB.possible_changeling_IDs.len)

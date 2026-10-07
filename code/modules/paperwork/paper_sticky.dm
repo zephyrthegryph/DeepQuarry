@@ -29,39 +29,41 @@ TRACKED(/obj/item/sticky_pad, written_text)
 		return "pad_used"
 	return "pad_full"
 
-/// Old attackby.
-/obj/item/sticky_pad/proc/interaction_item(datum/act/op/A)
-	return paperwork_sticky_write_stage(A.actor, A.held, null)
+MSG_DEF_SELF(sticky_pad/banned, span_warning("You are banned from leaving persistent information across rounds."))
+MSG_DEF_SELF(sticky_pad/full, span_warning("There is no room left on the pad."))
 
-/obj/item/sticky_pad/proc/paperwork_sticky_write_stage(mob/user, obj/item/thing, datum/interaction/interaction, paperwork_answer, paperwork_answer_ready = FALSE)
-	if(istype(thing, /obj/item/pen))
+/// Old attackby with a pen: the pad may be written on by someone not banned from graffiti while it has room.
+/obj/item/sticky_pad/proc/can_write(datum/act/op/A)
+	return !jobban_isbanned(A.actor, JOB_GRAFFITI)
 
-		if(jobban_isbanned(user, JOB_GRAFFITI))
-			to_chat(user, span_warning("You are banned from leaving persistent information across rounds."))
-			return OP_PASS
+/obj/item/sticky_pad/proc/has_room(datum/act/op/A)
+	return writing_space() > 0
 
-		var/writing_space = MAX_MESSAGE_LEN - length(written_text)
-		if(writing_space <= 0)
-			to_chat(user, span_warning("There is no room left on \the [src]."))
-			return OP_PASS
-		if(!paperwork_answer_ready)
-			open_request(src, /datum/prompt/text/paperwork_review, PROC_REF(paperwork_sticky_write_answered), answerer = user, paperwork_operator = user, paperwork_held = thing, paperwork_interaction = interaction, question = "What would you like to write?", max_len = writing_space, encode = FALSE, name_text = (writing_space <= MAX_NAME_LEN))
-			return OP_OK
-		var/_answer_k37 = paperwork_answer
-		if(isnull(_answer_k37))
-			return OP_OK
-		var/text = sanitizeSafe(_answer_k37, writing_space)
-		if(!text || thing.loc != user || (!Adjacent(user) && loc != user) || user.incapacitated())
-			return OP_PASS
-		act_message(user, src, others = span_infoplain(span_bold("%U%") + " jots a note down on %T%."))
-		written_by = user.ckey
-		if(written_text)
-			set_written_text("[written_text] [text]")
-		else
-			set_written_text(text)
-		changed(src)
+/obj/item/sticky_pad/proc/writing_space()
+	return MAX_MESSAGE_LEN - length(written_text)
+
+/obj/item/sticky_pad/proc/write_max_len(datum/act/A)
+	return writing_space()
+
+/obj/item/sticky_pad/proc/write_name_text(datum/act/A)
+	return writing_space() <= MAX_NAME_LEN
+
+/// The answer is written when the pen is still held and in reach, and the writer able.
+/obj/item/sticky_pad/proc/sticky_write(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/thing = A.held
+	var/text = sanitizeSafe(A.step_value("write"), writing_space())
+	if(!text || !thing || thing.loc != user || (!Adjacent(user) && loc != user) || user.incapacitated())
 		return OP_PASS
-	return OP_DECLINE
+	act_message(user, src, others = span_infoplain(span_bold("%U%") + " jots a note down on %T%."))
+	written_by = user.ckey
+	if(written_text)
+		set_written_text("[written_text] [text]")
+	else
+		set_written_text(text)
+	changed(src)
+	SStgui.update_uis(src)
+	return OP_PASS
 
 /obj/item/sticky_pad/examine(mob/user)
 	. = ..()
@@ -88,7 +90,7 @@ TRACKED(/obj/item/sticky_pad, written_text)
 CAPABILITIES(/obj/item/sticky_pad)
 	drag_onto(PROC_REF(mousedrop_input))
 	op("sticky_pad_hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
-	op("sticky_pad_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("sticky_pad_item", item(/obj/item/pen), label("Use"), needs(req(PROC_REF(can_write), because = MSG(sticky_pad/banned)), req(PROC_REF(has_room), because = MSG(sticky_pad/full))), asks(/datum/prompt/text/paperwork_review, fields = list("question" = "What would you like to write?", "max_len" = computed(PROC_REF(write_max_len)), "encode" = FALSE, "name_text" = computed(PROC_REF(write_name_text))), step = "write"), then(PROC_REF(sticky_write)))
 
 /// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/item/sticky_pad/proc/mousedrop_input(datum/act/input/A)
@@ -185,13 +187,3 @@ EXTEND_INTERACTIONS(/obj/item/paper/sticky, INTERACT_HAND_DEFAULT("Pick up", PRO
 					pixel_y += 32
 				else if(dir_offset & SOUTH)
 					pixel_y -= 32
-
-/obj/item/sticky_pad/proc/paperwork_sticky_write_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = paperwork_sticky_write_apply(A)
-	SStgui.update_uis(src)
-
-/obj/item/sticky_pad/proc/paperwork_sticky_write_apply(datum/act/request/A)
-	var/datum/prompt/text/paperwork_review/ask = A.answer
-	return paperwork_sticky_write_stage(ask.paperwork_operator, ask.paperwork_held, ask.paperwork_interaction, ask.value, TRUE)
