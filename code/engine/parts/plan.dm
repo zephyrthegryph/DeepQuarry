@@ -64,8 +64,9 @@
 	var/log_type
 	var/list/delayed
 	var/quiet = FALSE
-	/// claims(): the target is claimed while the op waits.
-	var/claims = FALSE
+	/// claims(mask): what the op holds while it waits (CLAIM_*); null when it declares none (a timed wait then holds the actor's hands and body,
+	/// a question holds nothing). claims() alone is CLAIM_ALL, claims(0) opts out.
+	var/claim_mask
 	var/passes = FALSE
 	/// silent_wait(): the wait draws no progress bar.
 	var/silent_wait = FALSE
@@ -549,7 +550,7 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 	P.quiet = TRUE
 
 /datum/entry/part/claims/compile(datum/op_plan/P, level)
-	P.claims = TRUE
+	P.claim_mask = isnull(src.args?["mask"]) ? CLAIM_ALL : src.args["mask"]
 
 /datum/entry/part/label/compile(datum/op_plan/P, level)
 	P.label = src.args["text"]

@@ -654,11 +654,16 @@
 	part_name = "quiet"
 	stages = PART_STAGE_DO
 
-/// claims(): while the op waits (a wait() step), its target is claimed: a second claiming op on the same target is refused (/datum/msg/op/claimed)
-/// instead of starting, and op_claimed(target) answers TRUE so the target can draw the work (a door being pried shows its prying sprite).
-/// The claim ends with the wait, however it ends.
-/proc/claims()
-	return part_make(/datum/entry/part/claims)
+/// claims(mask): what the op holds while it waits, as CLAIM_HANDS, CLAIM_BODY and CLAIM_TARGET ored together (claims() alone is all three, claims(0)
+/// holds nothing). Ops whose claims overlap conflict, and ops that share none coexist, however many an actor has pending:
+///   - CLAIM_TARGET: a second claiming op on the same target is refused (/datum/msg/op/claimed) instead of starting, and op_claimed(target) answers
+///     TRUE so the target can draw the work (a door being pried shows its prying sprite). It lasts as long as the op is pending.
+///   - CLAIM_HANDS and CLAIM_BODY: while a wait() step runs, the actor's next input that needs those (any physical click needs the hands) stops the
+///     wait ("You stop what you were doing."), and an AI's is refused as busy. An op with no claims() of its own that has a timed wait on a physical
+///     binding holds hands and body; a question (asks(), confirms()) holds nothing, so any number of questions are open at once.
+/// Every claim ends with the wait, however it ends.
+/proc/claims(mask = null)
+	return part_make(/datum/entry/part/claims, isnull(mask) ? null : list("mask" = mask))
 
 /datum/entry/part/claims
 	part_name = "claims"

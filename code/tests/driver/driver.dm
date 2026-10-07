@@ -136,9 +136,10 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 
 /// Answers the actor's open request with a value, or ends it with an outcome (REQ_CANCELLED, REQ_TIMED_OUT) when
 /// `outcome` is given: a REQ_* constant is a small number a value could equal, so the outcome has its own argument.
-/// Returns the /datum/op_result of the op that was waiting, now advanced.
-/proc/test_answer(mob/actor, value, outcome = REQ_ANSWERED)
-	return request_answer(actor, value, outcome)
+/// Returns the /datum/op_result of the op that was waiting, now advanced. An actor with several questions open answers the oldest, or the one of the op
+/// named `op_key`.
+/proc/test_answer(mob/actor, value, outcome = REQ_ANSWERED, op_key = null)
+	return request_answer(actor, value, outcome, op_key)
 
 /// Every prompt request opened since test_prompts_reset(), in order (null: not recording).
 GLOBAL_VAR(test_prompts)

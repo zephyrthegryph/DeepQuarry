@@ -84,6 +84,17 @@
 #define BUSY_REPLACE 1
 #define BUSY_REFUSE 2
 
+// ---- Claims (section 9): what a waiting op holds exclusively. Ops whose claims overlap conflict; ops that share none coexist. ----
+/// The actor's hands: a tool or item in use, a click that works something.
+#define CLAIM_HANDS (1<<0)
+/// The actor's body: the op needs the actor to stand and work (a timed action that is broken by moving).
+#define CLAIM_BODY (1<<1)
+/// The target: a second claiming op on it is refused, and the target draws the work (op_claimed()).
+#define CLAIM_TARGET (1<<2)
+#define CLAIM_ALL (CLAIM_HANDS | CLAIM_BODY | CLAIM_TARGET)
+/// The most pending ops (waits and open questions) one actor may have at once: one more is refused with a message.
+#define OP_PENDING_CAP 10
+
 // ---- Op wait keeps (section 9): what cancels a wait or an open asks(). ----
 #define HELD (1<<0)
 #define ADJACENT (1<<1)

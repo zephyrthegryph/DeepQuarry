@@ -158,12 +158,14 @@
 		lines += "  watching [length(P.watching)] reads"
 	return jointext(lines, "\n")
 
-/// The pending op of an actor, printed ("List Pending Ops").
+/// The pending ops of an actor, printed ("List Pending Ops"), oldest first.
 /proc/op_pending_text(mob/actor)
-	var/datum/pending_op/P = op_pending_of(actor)
-	if(!P)
+	var/list/blocks = list()
+	for(var/datum/pending_op/P as anything in op_pendings_of(actor))
+		blocks += op_pending_line(P)
+	if(!length(blocks))
 		return "[actor] has no pending op"
-	return op_pending_line(P)
+	return jointext(blocks, "\n")
 
 /// Every pending op in the world, one block each (the system-origin ones too).
 /proc/op_pending_all_text()
