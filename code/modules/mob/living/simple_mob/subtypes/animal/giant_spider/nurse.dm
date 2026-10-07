@@ -107,7 +107,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/nurse)
 	if(istype(AM, /mob/living/simple_mob/animal/giant_spider))
 		return FALSE
 	// The work holds the spider: its AI stays still.
-	var/datum/op_result/R = perform_op(src, AM, "spin_cocoon")
+	var/datum/op_result/R = perform_op(src, AM, "spin_cocoon", null, ORIGIN_AI, AUTH_AI)
 	return !!R && R.outcome != ACT_REFUSED
 
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/spin_cocoon_nurse_done(datum/act/op/A)
@@ -172,7 +172,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/nurse)
 		return FALSE
 	if(is_working())
 		return FALSE
-	var/datum/op_result/R = perform_op(src, T, "spin_web")
+	var/datum/op_result/R = perform_op(src, T, "spin_web", null, ORIGIN_AI, AUTH_AI)
 	return !!R && R.outcome != ACT_REFUSED
 
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/web_done(datum/act/op/A)
@@ -189,7 +189,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/nurse)
 		return FALSE
 	if(locate_on(T, /obj/effect/spider/eggcluster))
 		return FALSE // Already got eggs here.
-	var/datum/op_result/R = perform_op(src, T, "lay_eggs") // the op holds the spider: no egg spam
+	var/datum/op_result/R = perform_op(src, T, "lay_eggs", null, ORIGIN_AI, AUTH_AI) // the op holds the spider: no egg spam
 	return !!R && R.outcome != ACT_REFUSED
 
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/eggs_done(datum/act/op/A)
