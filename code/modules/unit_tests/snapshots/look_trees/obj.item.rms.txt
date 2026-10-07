@@ -1,0 +1,6 @@
+/obj/item/rms icon: icons/obj/tools_vr.dmi
+/obj/item/rms state: rms
+/obj/item/rms dir: 2
+/obj/item/rms overlay: icons/obj/tools_vr.dmi:rms:8:#000000
+/obj/item/rms overlay: icons/obj/tools_vr.dmi:rms_charge0:-32767
+
