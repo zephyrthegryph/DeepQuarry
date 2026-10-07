@@ -206,3 +206,122 @@
 	test_click(user, B, null)
 	TEST_ASSERT_EQUAL(length(timed_tasks_of(user)), 1, "a second click on the same target starts nothing more")
 	TEST_ASSERT_EQUAL(running(user), first, "the first is still the one running")
+
+// ---- The shapes the codemod (tools/dx/codemods/timed_task.py) converts: an op handler that only starts the action ----
+
+/datum/unit_test/dq_timed_pin/confetti_pick_up
+
+/datum/unit_test/dq_timed_pin/confetti_pick_up/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/effect/decal/cleanable/confetti/C = allocate(/obj/effect/decal/cleanable/confetti, run_loc_floor_bottom_left)
+	test_chat_clear()
+	test_click(user, C, null)
+	var/datum/task/timed/T = running(user)
+	TEST_ASSERT(istype(T), "a bare hand on confetti starts a timed action")
+	TEST_ASSERT_EQUAL(T.duration, 6 SECONDS, "it lasts six seconds")
+	TEST_ASSERT(said(user, "You start to meticulously pick up the confetti"), "it says it began")
+	test_time(5 SECONDS)
+	TEST_ASSERT(!QDELETED(C), "the confetti is there before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT(QDELETED(C), "the confetti is gone at the end")
+
+/datum/unit_test/dq_timed_pin/confetti_pick_up_cancel_on_move
+
+/datum/unit_test/dq_timed_pin/confetti_pick_up_cancel_on_move/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/effect/decal/cleanable/confetti/C = allocate(/obj/effect/decal/cleanable/confetti, run_loc_floor_bottom_left)
+	test_click(user, C, null)
+	var/datum/task/timed/T = running(user)
+	TEST_ASSERT(istype(T), "a bare hand on confetti starts a timed action")
+	user.forceMove(get_step(user, EAST))
+	test_time(8 SECONDS)
+	TEST_ASSERT(!QDELETED(C), "moving cancels")
+	TEST_ASSERT_EQUAL(T.state, TASK_CANCELLED, "the action ends cancelled")
+
+/datum/unit_test/dq_timed_pin/snow_shovel
+
+/datum/unit_test/dq_timed_pin/snow_shovel/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/effect/overlay/snow/S = allocate(/obj/effect/overlay/snow, run_loc_floor_bottom_left)
+	var/obj/item/shovel/shovel = allocate(/obj/item/shovel, run_loc_floor_bottom_left)
+	user.put_in_active_hand(shovel)
+	test_chat_clear()
+	test_click(user, S, shovel)
+	var/datum/task/timed/T = running(user)
+	TEST_ASSERT(istype(T), "a shovel on snow starts a timed action")
+	TEST_ASSERT_EQUAL(T.duration, 4 SECONDS, "it lasts four seconds")
+	test_time(3 SECONDS)
+	TEST_ASSERT(!QDELETED(S), "the snow is there before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT(QDELETED(S), "the snow is gone at the end")
+	TEST_ASSERT(said(user, "You have finished shoveling!"), "it says it finished")
+
+/datum/unit_test/dq_timed_pin/snow_shovel_cancel_on_drop
+
+/datum/unit_test/dq_timed_pin/snow_shovel_cancel_on_drop/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/effect/overlay/snow/S = allocate(/obj/effect/overlay/snow, run_loc_floor_bottom_left)
+	var/obj/item/shovel/shovel = allocate(/obj/item/shovel, run_loc_floor_bottom_left)
+	user.put_in_active_hand(shovel)
+	test_click(user, S, shovel)
+	var/datum/task/timed/T = running(user)
+	TEST_ASSERT(istype(T), "a shovel on snow starts a timed action")
+	user.drop_from_inventory(shovel)
+	test_time(6 SECONDS)
+	TEST_ASSERT(!QDELETED(S), "dropping the shovel cancels")
+	TEST_ASSERT_EQUAL(T.state, TASK_CANCELLED, "the action ends cancelled")
+
+/datum/unit_test/dq_timed_pin/catwalk_plate
+
+/datum/unit_test/dq_timed_pin/catwalk_plate/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/structure/catwalk/C = allocate(/obj/structure/catwalk, run_loc_floor_bottom_left)
+	var/obj/item/stack/tile/floor/tiles = allocate(/obj/item/stack/tile/floor, run_loc_floor_bottom_left, 5)
+	user.put_in_active_hand(tiles)
+	test_chat_clear()
+	test_click(user, C, tiles)
+	var/datum/task/timed/T = running(user)
+	TEST_ASSERT(istype(T), "a floor tile on a catwalk starts a timed action")
+	TEST_ASSERT_EQUAL(T.duration, 1 SECOND, "it lasts a second")
+	TEST_ASSERT(said(user, "Placing tile..."), "it says it began")
+	TEST_ASSERT_NULL(C.plated_tile, "nothing is plated before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(C.plated_tile, /obj/item/stack/tile/floor, "plated at the end")
+	TEST_ASSERT_EQUAL(tiles.get_amount(), 4, "one tile is used")
+	TEST_ASSERT(said(user, "You plate"), "it says it finished")
+
+/datum/unit_test/dq_timed_pin/catwalk_plate_cancel_on_move
+
+/datum/unit_test/dq_timed_pin/catwalk_plate_cancel_on_move/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/structure/catwalk/C = allocate(/obj/structure/catwalk, run_loc_floor_bottom_left)
+	var/obj/item/stack/tile/floor/tiles = allocate(/obj/item/stack/tile/floor, run_loc_floor_bottom_left, 5)
+	user.put_in_active_hand(tiles)
+	test_click(user, C, tiles)
+	var/datum/task/timed/T = running(user)
+	TEST_ASSERT(istype(T), "a floor tile on a catwalk starts a timed action")
+	user.forceMove(get_step(user, EAST))
+	test_time(3 SECONDS)
+	TEST_ASSERT_NULL(C.plated_tile, "moving cancels")
+	TEST_ASSERT_EQUAL(tiles.get_amount(), 5, "and spends nothing")
+
+/datum/unit_test/dq_timed_pin/tyr_elevator
+
+/datum/unit_test/dq_timed_pin/tyr_elevator/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/structure/prop/tyr_elevator/E = allocate(/obj/structure/prop/tyr_elevator, run_loc_floor_bottom_left)
+	var/turf/dest = get_step(run_loc_floor_bottom_left, NORTH)
+	E.descendx = dest.x
+	E.descendy = dest.y
+	var/obj/item/pen/pen = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	user.put_in_active_hand(pen)
+	test_click(user, E, pen)
+	var/datum/task/timed/T = running(user)
+	TEST_ASSERT(istype(T), "an item on the elevator starts a timed action")
+	TEST_ASSERT_EQUAL(T.duration, 3 SECONDS, "it lasts three seconds")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(get_turf(user), run_loc_floor_bottom_left, "still here before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(get_turf(user), dest, "carried to the destination at the end")
+	for(var/obj/effect/effect/sparks/S in range(3, dest))
+		qdel(S) // the teleport's sparks
