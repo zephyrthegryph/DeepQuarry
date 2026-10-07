@@ -131,7 +131,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	if(!istype(H))
 		return
 
-	if(task_busy(src))
+	if(bot_busy())
 		return
 
 	var/t = confirmTarget(H)
@@ -142,7 +142,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	if(declare_treatment)
 		var/area/location = get_area(src)
 		GLOB.global_announcer.autosay("[src] is treating <b>[H]</b> in <b>[location]</b>", "[src]", "Medical")
-	bot_work(3 SECONDS, H, PROC_REF(UnarmedAttack_medbot_done), list(H, t))
+	bot_work(3 SECONDS, H, PROC_REF(injected), t)
 
 	if(H.stat == DEAD) // This is down here because this proc won't be called again due to losing a target because of parent AI loop.
 		rel_clear(src, nameof(target))
@@ -171,7 +171,9 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 				say(message)
 				playsound(src, possible_messages[message], 50, 0)
 
-/mob/living/bot/medbot/proc/UnarmedAttack_medbot_done(mob/living/carbon/human/H, t)
+/mob/living/bot/medbot/proc/injected(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.target
+	var/t = work_arg
 	if(!emagged && use_beaker && reagent_glass?.reagents.has_reagent(t))
 		reagent_glass.reagents.trans_id_to(H, t, injection_amount)
 	else
@@ -193,7 +195,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	cut_overlays()
 	if(skin)
 		add_overlay("medskin_[skin]")
-	if(task_busy(src))
+	if(bot_busy())
 		icon_state = "medibots"
 	else
 		icon_state = "medibot[on]"
@@ -351,7 +353,7 @@ CAPABILITIES(/mob/living/bot/medbot)
 		act_message(src, null, others = span_warning("%U% buzzes oddly!"))
 		flick("medibot_spark", src)
 		rel_clear(src, nameof(target))
-		task_release_busy(src, "emagged")
+		bot_stop_work()
 		emagged = 1
 		set_on(1)
 		update_icons()
