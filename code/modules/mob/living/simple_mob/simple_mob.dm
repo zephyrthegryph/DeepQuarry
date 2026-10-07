@@ -944,7 +944,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 /mob/living/simple_mob/proc/leap_land(mob/living/T)
 	if(status_flags & LEAPING) set_status_flags(status_flags & ~LEAPING)
 
-	if(!Adjacent(T))
+	if(!T || !Adjacent(T))
 		to_chat(src, span_warning("You miss!"))
 		return
 

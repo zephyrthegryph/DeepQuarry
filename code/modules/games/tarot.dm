@@ -26,7 +26,7 @@
 
 /obj/item/deck/tarot/shuffle(mob/user)
 	if (COOLDOWN_FINISHED(src, shuffle_cooldown))
-		var/list/unshuffled = own_take_all(src, nameof(cards))
+		var/list/unshuffled = rel_take_all(src, nameof(cards))
 		while(length(unshuffled))
 			var/datum/playingcard/P = pick(unshuffled)
 			unshuffled -= P
@@ -80,7 +80,7 @@
 
 /obj/item/deck/dark_tarot/shuffle(mob/user)
 	if (COOLDOWN_FINISHED(src, shuffle_cooldown))
-		var/list/unshuffled = own_take_all(src, nameof(cards))
+		var/list/unshuffled = rel_take_all(src, nameof(cards))
 		while(length(unshuffled))
 			var/datum/playingcard/P = pick(unshuffled)
 			unshuffled -= P

@@ -60,7 +60,7 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 		log_runtime("FORMS: forms datum created for a non-human ([H]).")
 		return
 	rel_set(src, nameof(owner), H)
-	own_take_all(src, nameof(forms))
+	rel_take_all(src, nameof(forms))
 	var/list/types = TYPE_TABLE_GET(src, get_form_types)
 	for(var/form_type in types)
 		rel_add(src, nameof(forms), new form_type(), form_type)
@@ -184,14 +184,16 @@ TYPE_TABLE_DECLARE(/datum/form, get_form_verbs, null)
 		H.holder_type = holder_type
 	var/list/form_verbs = TYPE_TABLE_GET(src, get_form_verbs)
 	if(length(form_verbs))
-		om_grant_each(H, GRANT_VERB, form_verbs, src)
+		for(var/granted_path in form_verbs)
+			grant(H, granted_verb(granted_path), src)
 
 /datum/form/proc/on_exit(datum/forms/F, mob/living/carbon/human/H)
 	if(holder_type)
 		H.holder_type = F.prior_holder_type
 	var/list/form_verbs = TYPE_TABLE_GET(src, get_form_verbs)
 	if(length(form_verbs))
-		om_revoke_each(H, GRANT_VERB, form_verbs, src)
+		for(var/granted_path in form_verbs)
+			revoke(H, granted_verb(granted_path), src)
 
 /datum/form/proc/announce_enter(mob/living/carbon/human/H)
 	if(enter_message)

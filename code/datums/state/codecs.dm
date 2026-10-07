@@ -107,7 +107,7 @@ GLOBAL_LIST_EMPTY(state_codec_instances)
 /// disposed of and the new one adopted.
 /datum/state_codec/owned/decode(datum/owner, var_name, encoded, datum/state_context/ctx)
 	if(isnull(encoded))
-		own_clear(owner, var_name)
+		rel_clear(owner, var_name)
 		return
 	var/nested = encoded[STATE_WRAP_OWNED]
 	var/shape = encoded["shape"]
@@ -118,7 +118,7 @@ GLOBAL_LIST_EMPTY(state_codec_instances)
 			return
 		rel_set(owner, var_name, decode_one(nested, ctx))
 		return
-	own_clear(owner, var_name)
+	rel_clear(owner, var_name)
 	for(var/item in nested)
 		if(shape == "values")
 			var/list/pair = item

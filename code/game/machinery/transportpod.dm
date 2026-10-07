@@ -59,7 +59,8 @@ CAPABILITIES(/obj/machinery/transportpod)
 	after(src, 2 SECONDS, PROC_REF(arrive), with = list(L)) //Give explosion time so the pod itself doesn't go boom
 
 /obj/machinery/transportpod/proc/arrive(turf/L)
-	src.forceMove(L)
+	if(L)
+		src.forceMove(L)
 	play_sfx(src, SFX_EFFECTS_EXPLOSION, volume = 0)
 	after(src, 0.2 SECONDS, PROC_REF(arrive_unload))
 

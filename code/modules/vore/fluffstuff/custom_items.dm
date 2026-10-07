@@ -131,7 +131,7 @@
 			var/obj/item/gun/projectile/NM = N
 			NM.contents = list()
 			NM.magazine_type = null
-			own_take(NM, nameof(NM.ammo_magazine))
+			rel_take(NM, nameof(NM.ammo_magazine))
 		if(istype(N,/obj/item/gun/energy/))
 			var/obj/item/gun/energy/NO = N
 			NO.contents = list()

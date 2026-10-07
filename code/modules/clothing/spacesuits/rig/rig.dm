@@ -210,7 +210,7 @@ TRACKED(/obj/item/rig, carried_by_mob)
 			reset()
 		// Off a mob the slow step no longer runs (carried_by_mob), so let go of the wearer here.
 		if(wearer()?.wearing_rig == src)
-			own_take(wearer(), nameof(/mob/living/carbon/human::wearing_rig))
+			rel_take(wearer(), nameof(/mob/living/carbon/human::wearing_rig))
 		rel_clear(src, nameof(wearer))
 
 	// If we've lost any parts, grab them back.
@@ -798,7 +798,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 	// Piece retraction and seal-state reset are handled in Moved() (the universal hook
 	// that also catches forceMove); here we just drop the wearer back-references.
 	if(wearer() && wearer().wearing_rig == src)
-		own_take(wearer(), nameof(/mob/living/carbon/human::wearing_rig))
+		rel_take(wearer(), nameof(/mob/living/carbon/human::wearing_rig))
 	rel_clear(src, nameof(wearer))
 
 //Todo
@@ -1054,9 +1054,9 @@ DAMAGE_REACTION(/obj/item/rig, DAMAGE_EMP, PROC_REF(rig_emp_malfunction))
 
 /obj/item/rig/ownership()
 	. = ..()
-	. += owns(nameof(air_supply), policy = OWN_CONTAINED)
-	. += owns(nameof(cell), policy = OWN_CONTAINED)
-	. += owns(nameof(installed_modules), policy = OWN_CONTAINED, is_list = TRUE)
+	. += owns(nameof(air_supply), policy = OWN_DELETE)
+	. += owns(nameof(cell), policy = OWN_DELETE)
+	. += owns(nameof(installed_modules), policy = OWN_DELETE, is_list = TRUE)
 	. += owns(nameof(rig_storage), policy = OWN_CONTAINED)
 
 /// The person currently wearing the rig. (a relation view: null once it is deleted).

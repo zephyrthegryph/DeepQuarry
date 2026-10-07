@@ -40,7 +40,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, P
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/Initialize(mapload)
 	. = ..()
 	flags |= NOREACT
-	own_take_all(src, nameof(syringes))
+	rel_take_all(src, nameof(syringes))
 	known_reagents = list(REAGENT_ID_INAPROVALINE=REAGENT_INAPROVALINE,REAGENT_ID_ANTITOXIN=REAGENT_ANTITOXIN)
 	set_processed_reagents(list())
 

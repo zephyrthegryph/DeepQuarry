@@ -72,8 +72,8 @@ CAPABILITIES(/datum/contract/social)
 
 /datum/contract/social/New()
 	. = ..()
-	own_take_all(src, nameof(stakeholder_roles))
-	own_take_all(src, nameof(stakeholder_proposals))
+	rel_take_all(src, nameof(stakeholder_roles))
+	rel_take_all(src, nameof(stakeholder_proposals))
 
 
 /datum/contract/social/on_negotiated_terms_changed()

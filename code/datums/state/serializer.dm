@@ -503,7 +503,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	var/list/entry = own_table_of(D).entries[name]
 	switch(entry?[OWNE_KIND])
 		if(OWNK_OWN)
-			own_clear(D, name)
+			rel_clear(D, name)
 		if(OWNK_REL)
 			rel_clear(D, name)
 		if(OWNK_PROTO)

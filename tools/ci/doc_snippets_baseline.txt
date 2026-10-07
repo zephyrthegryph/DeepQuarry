@@ -49,7 +49,6 @@ doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: door_control.dm:36-48
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: door_control.dm:98 (a string template language)
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: expedition_controller.dm:249 (expedition writes flight's private index)
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: geiger.dm:131 (a replace-timer used as "reset if nothing for N")
-doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: health.dm:154-157
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:16, 81, 206
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:209, 214-215 (set a state, then a timer to put it back)
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: laserpointer.dm:230

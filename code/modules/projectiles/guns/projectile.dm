@@ -681,6 +681,8 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 
 /// Loads the next matching round from a box, one a second.
 /obj/item/gun/projectile/proc/load_from_storage(mob/user, list/rounds)
+	if(QDELETED(user))
+		return
 	var/obj/item/ammo_casing/ammo
 	while(length(rounds) && !ammo)
 		ammo = rounds[1]
@@ -690,7 +692,7 @@ TRACKED(/obj/item/gun/projectile, bolt_open)
 	if(!ammo)
 		return
 	load_ammo(ammo, user)
-	user.hud_used.update_ammo_hud(user, src)
+	user.hud_used?.update_ammo_hud(user, src)
 	if(length(loaded) >= max_shells)
 		to_chat(user, span_warning("[src] is full."))
 		return

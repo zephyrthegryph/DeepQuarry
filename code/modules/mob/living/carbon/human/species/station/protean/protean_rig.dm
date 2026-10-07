@@ -118,6 +118,8 @@
 	..()
 
 /obj/item/rig/proc/AssimilateBag(mob/living/carbon/human/P, spawned, obj/item/storage/backpack/B)
+	if(spawned && !P)
+		return
 	if(istype(B,/obj/item/storage/backpack))
 		if(spawned)
 			B = P.get_equipped_item(SLOT_ID_BACK)

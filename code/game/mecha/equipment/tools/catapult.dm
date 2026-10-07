@@ -15,6 +15,8 @@
 
 /// Pushes `A` away from `target` once every 0.2 s, `left` more times.
 /obj/item/mecha_parts/mecha_equipment/gravcatapult/proc/catapult_push(atom/movable/A, atom/target, left)
+	if(!A || !target)
+		return
 	step_away(A,target)
 	if(left > 0)
 		after(src, 0.2 SECONDS, PROC_REF(catapult_push), with = list(A, target, left - 1))

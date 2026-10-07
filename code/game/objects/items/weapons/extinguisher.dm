@@ -94,6 +94,8 @@ CAPABILITIES(/obj/item/extinguisher)
 	var/obj/structure/bed/chair/C = src
 	if(istype(C) && !isnull(propelled))
 		C.propelled = propelled
+	if(!user)
+		return
 	Move(get_step(user, movementdirection), movementdirection)
 
 /obj/item/extinguisher/afterattack(atom/target, mob/user, flag)

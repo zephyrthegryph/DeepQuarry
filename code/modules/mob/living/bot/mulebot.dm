@@ -357,7 +357,7 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	after(src, 0.2 SECONDS, PROC_REF(load_finish), with = list(C))
 
 /mob/living/bot/mulebot/proc/load_finish(atom/movable/C)
-	if(C.loc != loc) //To prevent you from going onto more than one bot.
+	if(!C || C.loc != loc) //To prevent you from going onto more than one bot.
 		return
 	move_into(src, nameof(src.load), C)
 

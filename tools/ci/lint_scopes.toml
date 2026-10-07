@@ -337,6 +337,11 @@ exempt_prefixes = ["code/engine/", "code/datums/ownership/"]
 [lint.legacy_forms.lists]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
+  "DECLARE_VERB = verb_entry(path) in the type CAPABILITIES block",
+  "DECLARE_LOGIN_VERB = verb_entry(path, login = TRUE) in the type CAPABILITIES block",
+  "DECLARE_VERB_IF = verb_entry(path, when = nameof(field)); write the tracked field through its setter",
+  "DECLARE_VERB_HIDE = verb_entry(path, hidden = TRUE) in the type CAPABILITIES block",
+  "EVENT_HANDLER = a synchronous typed action handler registered with observe() or intercept()",
   "om_hook = observe(source, /datum/notice/x, listener, then(PROC_REF(h))) (doc/rewrite/codemod_rules.md)",
   "om_unhook = unobserve(source, /datum/notice/x, listener)",
   "om_unhook_all = unobserve each source, or let the listener's death end the hooks",

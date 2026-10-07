@@ -210,7 +210,7 @@ CAPABILITIES(/obj/item/robot_parts/robot_suit)
 				for(var/datum/language/L in O.identity().languages)
 					O.add_language(L.name)
 			O.job = JOB_CYBORG
-			var/obj/item/cell/chest_cell = own_take(chest, nameof(chest.cell)) // detach from the chest first: set_cell() adopts it
+			var/obj/item/cell/chest_cell = rel_take(chest, nameof(chest.cell)) // detach from the chest first: set_cell() adopts it
 			chest_cell?.forceMove(O) // the borg's cell is CONTAINED
 			O.set_cell(chest_cell)
 			W.forceMove(O)//Should fix cybros run time erroring when blown up. It got deleted before, along with the frame.

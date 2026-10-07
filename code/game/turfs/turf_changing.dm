@@ -64,7 +64,7 @@
 	var/datum/sunlight_handler/old_shandler
 	var/turf/simulated/simself = src
 	if(istype(simself) && simself.shandler)
-		old_shandler = own_take(simself, nameof(simself.shandler)) // survives the turf's qdel below
+		old_shandler = rel_take(simself, nameof(simself.shandler)) // survives the turf's qdel below
 
 	var/turf/Ab = GetAbove(src)
 	if(Ab)

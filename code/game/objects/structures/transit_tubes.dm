@@ -129,6 +129,9 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 
 /// Launching, step 2: send the pod on its way.
 /obj/structure/transit_tube/station/proc/launch_go(obj/structure/transit_tube_pod/pod)
+	if(QDELETED(pod))
+		pod_moving = 0
+		return
 	//reverse directions for automated cycling
 	var/turf/next_loc = get_step(loc, pod.dir)
 	var/obj/structure/transit_tube/nexttube
@@ -166,7 +169,8 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 
 /obj/structure/transit_tube/station/proc/arrival_opened(obj/structure/transit_tube_pod/pod)
 	pod_moving = 0
-	pod.mix_air()
+	if(!QDELETED(pod))
+		pod.mix_air()
 	if(automatic_launch_time)
 		after(src, automatic_launch_time, PROC_REF(automatic_launch))
 
