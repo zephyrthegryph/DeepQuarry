@@ -35,6 +35,9 @@ pub enum DiagnosticKind {
     Macro,
     Directive,
     UserError,
+    /// A native language/domain feature the prototype has not implemented.
+    /// Never infer this classification from user-provided diagnostic wording.
+    Unsupported,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -1395,9 +1398,10 @@ impl<P: SourceProvider> Context<'_, P> {
                     "error" => self.error_as(&path, source_line, DiagnosticKind::UserError, rest),
                     "warning" | "warn" | "pragma" => {}
                     "" => {}
-                    other => self.error(
+                    other => self.error_as(
                         &path,
                         source_line,
+                        DiagnosticKind::Unsupported,
                         format!("unsupported preprocessor directive #{other}"),
                     ),
                 }

@@ -114,6 +114,15 @@ impl DriverEvaluator<'_> {
         let parsed = dm_syntax::parse_expression(&text);
         if !parsed.diagnostics.is_empty() { return Err("captured scalar expression failed parsing".into()); }
         let Some(ast) = parsed.expr.as_ref() else { return Ok(None); };
+        self.scalar_ast_in(owner, ast, procedure, active)
+    }
+    fn scalar_ast_in(
+        &self,
+        owner: SymbolId,
+        ast: &dm_syntax::Expr,
+        procedure: Option<dm_ir::ProcedureIdentity>,
+        active: &RefCell<std::collections::HashSet<ActiveConstant>>,
+    ) -> Result<Option<SemanticValue>, String> {
         if let dm_syntax::ExprKind::ObjectInitializer { object, fields } = &ast.kind {
             let dm_syntax::ExprKind::TypePath(path) = &object.kind else { return Err("modified default requires an explicit type path".into()); };
             let id = SymbolId::of(path.trim_end_matches('/'));
@@ -497,6 +506,11 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
                 write.lexical_procedure,
                 &RefCell::new(std::collections::HashSet::new()),
             )?
+            .map_or(Evaluation::Runtime, Evaluation::Scalar))
+    }
+    fn evaluate_ast_write(&self, write: &dm_ir::InitializerWrite, ast: &dm_syntax::Expr, _source: &str, _symbols: &dm_ir::SymbolTable) -> Result<Evaluation, String> {
+        Ok(self.scalar_ast_in(write.lexical_owner, ast, write.lexical_procedure,
+            &RefCell::new(std::collections::HashSet::new()))?
             .map_or(Evaluation::Runtime, Evaluation::Scalar))
     }
     fn evaluate(

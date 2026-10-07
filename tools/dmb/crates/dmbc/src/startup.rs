@@ -155,6 +155,12 @@ pub struct StartupEvaluator<'a> {
     pub symbols: &'a dm_ir::SymbolTable,
 }
 impl crate::initializer_policy::CapturedInitializerEvaluator for StartupEvaluator<'_> {
+    fn evaluate_ast_write(&self, write: &dm_ir::InitializerWrite, ast: &dm_syntax::Expr, source: &str, symbols: &dm_ir::SymbolTable) -> Result<crate::initializer_policy::Evaluation, String> {
+        if write.lexical_procedure.is_some() {
+            crate::initializer_policy::CapturedInitializerEvaluator::evaluate_ast_write(
+                &crate::driver_facts::DriverEvaluator {pure_calls:self.ordinary.pure_calls(), resource_search_context:self.resource_search_context, resolver:self.resolver, symbols:self.symbols}, write, ast, source, symbols)
+        } else { self.ordinary.evaluate_ast_write(write, ast, source, symbols) }
+    }
     fn initializer_token_scalar(&self, value: &dm_ir::SemanticValue) -> Result<Vec<u8>, String> {
         self.ordinary.initializer_token_scalar(value)
     }

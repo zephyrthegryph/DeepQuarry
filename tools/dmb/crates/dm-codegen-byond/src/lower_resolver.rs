@@ -706,6 +706,62 @@ mod tests {
             Q::HasMemberVar { .. } | Q::VarStorage { .. } | Q::GlobalVar(_))));
     }
     #[test]
+    fn args_receiver_type_preserves_lexical_shadows_without_outer_variable_queries() {
+        let mut symbols = SymbolTable::default();
+        symbols.intern("/list").unwrap();
+        symbols.intern("Copy").unwrap();
+        let host = Host {
+            reads: Mutex::new(vec![]),
+            answer: |query| match query {
+                Q::RuntimeType(owner) if owner == SymbolId::of("/list") => M::Symbol(owner),
+                Q::HasMemberProc { owner, name }
+                    if owner == SymbolId::of("/list") && name == SymbolId::of("Copy") => M::Presence(true),
+                Q::Proc { owner, name, verb: false }
+                    if owner == SymbolId::of("/list") && name == SymbolId::of("Copy") => M::IntrinsicProc { declaring_owner: owner, name },
+                Q::Proc { verb: true, .. } => M::Missing,
+                other => M::Unsupported(other),
+            },
+        };
+        for (source, inputs, variable) in [
+            ("/datum/demo/proc/p()\n    return args.Copy(3)\n", ProcedureInputs {
+                current_type_path: Some("/datum/demo".into()), ..Default::default()
+            }, crate::VariableWord::Args),
+            ("/proc/p(args)\n    return args.Copy(3)\n", ProcedureInputs {
+                parameters: vec!["args".into()], ..Default::default()
+            }, crate::VariableWord::Arg(0)),
+            ("/proc/p()\n    var/args = null\n    return args.Copy(3)\n", ProcedureInputs::default(), crate::VariableWord::Local(0)),
+        ] {
+            let code = lower(source, inputs, &symbols, &host).unwrap();
+            assert!(code.procedure.code.items.iter().any(|item| matches!(item,
+                crate::Item::Instruction(instruction) if instruction.operands.iter().any(|word| matches!(word,
+                    crate::Word::Variable(crate::VariableWord::SetCache(owner, _)) if owner.as_ref() == &variable)))));
+        }
+        assert!(!host.reads.lock().unwrap().iter().any(|query| matches!(query,
+            Q::HasMemberVar { .. } | Q::VarStorage { .. } | Q::GlobalVar(_) | Q::DeclaredVarType { .. })));
+    }
+    #[test]
+    fn positive_member_call_does_not_require_unrelated_global_proc_absence() {
+        let mut symbols = SymbolTable::default();
+        symbols.intern("/icon").unwrap();
+        symbols.intern("Turn").unwrap();
+        let host = Host {
+            reads: Mutex::new(vec![]),
+            answer: |query| match query {
+                Q::HasMemberProc { owner, name }
+                    if owner == SymbolId::of("/icon") && name == SymbolId::of("Turn") => M::Presence(true),
+                Q::Proc { owner, name, verb: false }
+                    if owner == SymbolId::of("/icon") && name == SymbolId::of("Turn") => M::IntrinsicProc { declaring_owner: owner, name },
+                Q::Proc { verb: true, .. } => M::Missing,
+                other => M::Unsupported(other),
+            },
+        };
+        let code = lower("/icon/proc/p()\n    Turn(90)\n", ProcedureInputs {
+            current_type_path: Some("/icon".into()), ..Default::default()
+        }, &symbols, &host);
+        assert!(code.is_ok(), "{:?}", code.err());
+        assert!(!host.reads.lock().unwrap().iter().any(|query| matches!(query, Q::GlobalProc(_))));
+    }
+    #[test]
     fn modified_resource_aliases_share_descriptor_content_after_recorded_queries() {
         let owner = SymbolId::of("/obj/base");
         let host = Host { reads: Mutex::new(vec![]), answer: |query| match query {

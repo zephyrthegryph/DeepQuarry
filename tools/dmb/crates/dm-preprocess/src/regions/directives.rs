@@ -459,7 +459,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 other => self.error(
                     occurrence,
                     source_line,
-                    DiagnosticKind::Directive,
+                    DiagnosticKind::Unsupported,
                     format!("unsupported preprocessor directive #{other}"),
                 ),
             }
@@ -509,7 +509,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 self.error(
                     parent,
                     line,
-                    DiagnosticKind::Include,
+                    DiagnosticKind::Unsupported,
                     "unverified include extension".into(),
                 );
                 return;

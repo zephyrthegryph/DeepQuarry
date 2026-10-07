@@ -433,10 +433,14 @@ pub fn build_with_config<P: SourceProvider>(
         .diagnostics
         .iter()
         .map(|diagnostic| Diagnostic {
-            kind: if diagnostic.message.starts_with("unsupported") {
-                DiagnosticKind::UnsupportedModel
-            } else {
-                DiagnosticKind::SourceError
+            kind: match diagnostic.kind {
+                dm_preprocess::DiagnosticKind::Unsupported => DiagnosticKind::UnsupportedModel,
+                dm_preprocess::DiagnosticKind::Io
+                | dm_preprocess::DiagnosticKind::Include
+                | dm_preprocess::DiagnosticKind::Conditional
+                | dm_preprocess::DiagnosticKind::Macro
+                | dm_preprocess::DiagnosticKind::Directive
+                | dm_preprocess::DiagnosticKind::UserError => DiagnosticKind::SourceError,
             },
             stage: DiagnosticStage::Preprocess,
             message: diagnostic.message.clone(),

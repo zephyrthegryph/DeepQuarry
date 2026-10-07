@@ -18,6 +18,11 @@ pub enum BindingKnowledge {
     MutableInstance { owner: SymbolId, name: SymbolId, receipt: u128 },
 }
 pub trait CapturedInitializerEvaluator {
+    /// Borrow an already parsed subtree. Compatibility evaluators retain their
+    /// existing captured-token path and lexical context checks.
+    fn evaluate_ast_write(&self, write: &InitializerWrite, ast: &dm_syntax::Expr, source: &str, symbols: &SymbolTable) -> Result<Evaluation, String> {
+        self.evaluate_write(write, &captured_scalar_subexpression(ast, source, symbols)?)
+    }
     fn initializer_token_scalar(&self, value: &SemanticValue) -> Result<Vec<u8>, String> {
         if matches!(value, SemanticValue::Resource(_)) { return Err("initializer resource token requires captured content identity".into()); }
         Ok(value.canonical_bytes())
@@ -54,6 +59,9 @@ pub struct EngineCapturedEvaluator<'a> {
     pub evaluator: &'a dyn CapturedInitializerEvaluator,
 }
 impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
+    fn evaluate_ast_write(&self, write: &InitializerWrite, ast: &dm_syntax::Expr, source: &str, symbols: &SymbolTable) -> Result<Evaluation, String> {
+        self.evaluator.evaluate_ast_write(write, ast, source, symbols)
+    }
     fn initializer_token_scalar(&self, value: &SemanticValue) -> Result<Vec<u8>, String> { self.evaluator.initializer_token_scalar(value) }
     fn initializer_constructor_type(&self, write: &InitializerWrite) -> Result<Option<SymbolId>, String> { self.evaluator.initializer_constructor_type(write) }
     fn pure_calls(&self) -> Option<&dyn dm_tree::constants::PureCalls> { self.evaluator.pure_calls() }
@@ -205,22 +213,8 @@ fn scalar_literal(
             if symbols.text(id) != Some(raw.as_str()) {
                 return Err("initializer literal spelling missing".into());
             }
-            let value = SymbolicExpression {
-                tokens: Arc::from([ExpressionToken {
-                    kind: dm_syntax::lex(raw)
-                        .tokens
-                        .first()
-                        .ok_or("empty literal")?
-                        .kind,
-                    text: id,
-                    relative_span: dm_syntax::Span {
-                        start: 0,
-                        end: raw.len(),
-                    },
-                }]),
-            };
             matches!(
-                evaluator.evaluate_write(write, &value)?,
+                evaluator.evaluate_ast_write(write, expr, source, symbols)?,
                 Evaluation::Scalar(_)
             )
         }
@@ -229,15 +223,8 @@ fn scalar_literal(
             if symbols.text(id) != Some(name.as_str()) {
                 return Err(format!("initializer symbol missing: {name}"));
             }
-            let value = SymbolicExpression {
-                tokens: Arc::from([ExpressionToken {
-                    kind: dm_syntax::TokenKind::Ident,
-                    text: id,
-                    relative_span: expr.span,
-                }]),
-            };
             matches!(
-                evaluator.evaluate_write(write, &value)?,
+                evaluator.evaluate_ast_write(write, expr, source, symbols)?,
                 Evaluation::Scalar(_)
             )
         }
@@ -284,8 +271,7 @@ fn scalar_literal(
             args.len() == 1 && dm_codegen_byond::nameof_reference(&args[0]).is_some()
         }
         ExprKind::Call { callee, .. } if matches!(&callee.kind, ExprKind::Ident(name) if evaluator.pure_calls().is_some_and(|calls| calls.accepts(name))) => {
-            let value = captured_scalar_subexpression(expr, source, symbols)?;
-            matches!(evaluator.evaluate_write(write, &value)?, Evaluation::Scalar(_))
+            matches!(evaluator.evaluate_ast_write(write, expr, source, symbols)?, Evaluation::Scalar(_))
         }
         _ => false,
     })

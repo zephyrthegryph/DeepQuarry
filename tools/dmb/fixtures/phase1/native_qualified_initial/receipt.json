@@ -1,0 +1,30 @@
+{
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "observation": "check and child_check emit PushVal type; SetVar Cache; GetVar StaticField. Repeated var declaration accepted.",
+  "files": [
+    {
+      "sha256": "f06202a408fef9b9ea69bb6b1cb8160dbb0378c5bb67a444d510d231813824c8",
+      "path": ".gitattributes"
+    },
+    {
+      "sha256": "13c5994f1f2e189d2d104f6b4a56f861a4b56d3ebf9799b2302c068b0976a360",
+      "path": "compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "compile.stderr.log"
+    },
+    {
+      "sha256": "db5eb7226f65f27c0e7a3575a780f754279225709b6e8abb568417c0c8a70291",
+      "path": "probe.dm"
+    },
+    {
+      "sha256": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876",
+      "path": "probe.dme"
+    },
+    {
+      "sha256": "dd7c739538ad43256aa4de113a7c867edf04dc89b54e26b5ddcd0848f7deb8d7",
+      "path": "probe.native.bin"
+    }
+  ]
+}

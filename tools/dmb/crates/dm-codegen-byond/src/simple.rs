@@ -3361,6 +3361,14 @@ impl Compiler<'_> {
                     if name == "world" {
                         return self.normalize_inferred_type("/world").map(Some);
                     }
+                    if name == "args" {
+                        return self.normalize_inferred_type("/list").map(Some);
+                    }
+                    if name == "." {
+                        // The return-value register has no declared receiver
+                        // type. It is not an outer member/global identifier.
+                        return Ok(None);
+                    }
                     if let (Some(lookup), Some(owner)) =
                         (self.lookup, self.bindings.current_type_path.as_deref())
                     {
@@ -4791,6 +4799,22 @@ impl Compiler<'_> {
                         );
                         return Ok(());
                     }
+                    if let ExprKind::StaticMember { object, selector } = &target.kind {
+                        let ExprKind::TypePath(path) = &object.kind else {
+                            return Err(error(statement, "qualified initial() requires a captured type path"));
+                        };
+                        if let Some(lookup) = self.lookup {
+                            if !self.semantic(lookup.presence(dm_ir::ResolveQuery::HasMemberVar {
+                                owner: dm_ir::SymbolId::of(path), name: dm_ir::SymbolId::of(selector),
+                            }))? {
+                                return Err(error(statement, "qualified initial() field is absent"));
+                            }
+                        }
+                        // The pinned compiler uses the same static-reference
+                        // selector as /type::field, rather than Initial(Global).
+                        self.expression(target, statement)?;
+                        return Ok(());
+                    }
                     let (owner, selector) = match &target.kind {
                         ExprKind::Ident(field) if self.has_field(field)? => {
                             (Some(VariableWord::Src), field.clone())
@@ -5325,7 +5349,7 @@ impl Compiler<'_> {
                 }
                 let has_member_proc = self.current_has_declared_member_proc(name)?
                     || self.current_member_proc(name)?.is_some();
-                if self.has_global_proc(name)? && !has_member_proc {
+                if !has_member_proc && self.has_global_proc(name)? {
                     if named_arguments || arglist_argument.is_some() {
                         if named_arguments {
                             self.named_arguments(args, statement)?;
@@ -7549,6 +7573,16 @@ mod tests {
         }
     }
 
+    #[test]
+    fn qualified_initial_uses_native_static_reference_selector() {
+        for path in ["/datum/base", "/datum/child"] {
+            let initial = dm_syntax::parse(&format!("/proc/check()\n    return initial({path}::value)\n"));
+            let reference = dm_syntax::parse(&format!("/proc/check()\n    return {path}::value\n"));
+            let a = compile_simple_proc_with_bindings(&initial.items[0].children, &LowerBindings::default()).unwrap();
+            let b = compile_simple_proc_with_bindings(&reference.items[0].children, &LowerBindings::default()).unwrap();
+            assert_eq!(a.code, b.code);
+        }
+    }
     #[test]
     fn initial_and_istype_use_native_static_reference_and_type_test() {
         let ast = dm_syntax::parse(include_str!(

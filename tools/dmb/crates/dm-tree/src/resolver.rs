@@ -264,19 +264,23 @@ impl SemanticTree {
             name,
         }
     }
+    /// Uniqueness within the captured declarations and supplied intrinsic rows.
+    /// This is not a full-program absence proof. A resolver host must certify
+    /// that no uncaptured engine field can share this name before using it.
+    /// Inherited assignments share the exact formal owner/name slot; an
+    /// instance field or a second distinct slot makes the name ambiguous.
+    pub fn captured_variable_uniqueness(&self, name: SymbolId) -> M {
+        self.inventory.unique.get(&name).copied().flatten()
+            .map(|(owner, name)| Self::slot(owner, name))
+            .unwrap_or(M::Missing)
+    }
     pub(crate) fn resolve_inventory(&self, query: Q) -> M {
         match query {
             Q::UniqueStaticVar(name) => {
                 if !self.inventory.complete {
                     return M::Unsupported(query);
                 }
-                self.inventory
-                    .unique
-                    .get(&name)
-                    .copied()
-                    .flatten()
-                    .map(|(owner, name)| Self::slot(owner, name))
-                    .unwrap_or(M::Missing)
+                self.captured_variable_uniqueness(name)
             }
             Q::HasMemberVar { .. } | Q::DeclaredVarType { .. } | Q::VarStorage { .. } => {
                 self.resolve_variable_fact(query)

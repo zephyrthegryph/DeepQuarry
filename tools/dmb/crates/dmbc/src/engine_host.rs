@@ -319,7 +319,7 @@ impl<R: Resolver> EngineResolverHost<R> {
             }
         }
         let mut bytes =
-            b"pinned-authored-variable-absence-v2;physical-boolean-constants".to_vec();
+            b"pinned-authored-variable-absence-v3;physical-boolean-constants;captured-slot-uniqueness".to_vec();
         bytes.extend_from_slice(&engine.identity().to_le_bytes());
         bytes.extend_from_slice(crate::engine::catalog::CATALOG_SCHEMA.as_bytes());
         bytes.extend_from_slice(CATALOG);
@@ -387,6 +387,17 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
             _ => {
                 let answer = self.tree.resolve(query);
                 if !matches!(answer, M::Unsupported(_)) {
+                    return answer;
+                }
+                if let Q::UniqueStaticVar(name) = query {
+                    // The source roster is complete, but the engine inventory
+                    // is partial. Only the pinned intrinsic-name exclusion
+                    // can close that gap; unknown/native names stay unsupported.
+                    if let Some(coverage) = &self.variable_absence {
+                        if coverage.names.contains(&name) {
+                            return coverage.source.captured_variable_uniqueness(name);
+                        }
+                    }
                     return answer;
                 }
                 if let Some(meaning) = self
@@ -803,7 +814,7 @@ mod tests {
         struct Source;
         impl dm_preprocess::SourceProvider for Source {
             fn read(&self, _: &Path) -> Result<String, String> {
-                Ok("var/global_only = 4\nvar/shared_name = 1\n/datum/probe\n    var/shared_name = 2\n/datum/probe/proc/read()\n    return shared_name + global_only\n/proc/root_read()\n    return shared_name\n#undef FALSE\n/datum/shadow\n    var/FALSE = 5\n".into())
+                Ok("var/global_only = 4\nvar/shared_name = 1\n/datum/probe\n    var/shared_name = 2\n    var/static/unique_counter = 0\n    var/static/ambiguous_counter = 0\n/datum/probe/child\n    unique_counter = 2\n/datum/other\n    var/static/ambiguous_counter = 1\n/datum/probe/proc/read()\n    return shared_name + global_only\n/proc/root_read()\n    return shared_name\n#undef FALSE\n/datum/shadow\n    var/FALSE = 5\n".into())
             }
         }
         let bytes = include_bytes!("../../../fixtures/native_template.bin");
@@ -847,6 +858,20 @@ mod tests {
         let root = SymbolId::of("/");
         let global = SymbolId::of("global_only");
         let shadow = SymbolId::of("shared_name");
+        let unique = SymbolId::of("unique_counter");
+        assert!(matches!(host.resolve(Q::UniqueStaticVar(unique)),
+            M::Slot { owner: actual, name, .. } if actual == owner && name == unique));
+        assert!(matches!(host.resolve(Q::UniqueStaticVar(global)),
+            M::Slot { owner: actual, name, .. } if actual == root && name == global));
+        // Instance fields block fallback to a same-name shared slot. Distinct
+        // formal slots also remain ambiguous, while inherited assignments do not.
+        for name in [shadow, SymbolId::of("ambiguous_counter")] {
+            assert_eq!(host.resolve(Q::UniqueStaticVar(name)), M::Missing);
+        }
+        for name in ["never_captured_variable", "tag"] {
+            let query = Q::UniqueStaticVar(SymbolId::of(name));
+            assert_eq!(host.resolve(query), M::Unsupported(query));
+        }
         for (spelling, value) in [("TRUE", 1.0_f32), ("FALSE", 0.0_f32)] {
             let name = SymbolId::of(spelling);
             assert_eq!(host.resolve(Q::GlobalVar(name)), M::Value(SemanticValue::NumberBits(value.to_bits())));

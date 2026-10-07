@@ -8,7 +8,7 @@ use std::{collections::HashMap, sync::Arc};
 pub struct Tokens {
     unique: bool,
     next: u32,
-    shared: HashMap<Vec<u8>, u32>,
+    shared: HashMap<Arc<[u8]>, u32>,
 }
 impl Tokens {
     pub fn new(debug_defined: bool) -> Self {
@@ -20,8 +20,8 @@ impl Tokens {
     }
     pub fn issue(&mut self, key: Vec<u8>) -> Result<(u32, Arc<[u8]>), String> {
         if !self.unique {
-            if let Some(&token) = self.shared.get(&key) {
-                return Ok((token, key.into()));
+            if let Some((retained, &token)) = self.shared.get_key_value(key.as_slice()) {
+                return Ok((token, retained.clone()));
             }
         }
         let token = self.next;
@@ -29,10 +29,11 @@ impl Tokens {
             .next
             .checked_add(1)
             .ok_or("initializer token space exhausted")?;
+        let key: Arc<[u8]> = key.into();
         if !self.unique {
             self.shared.insert(key.clone(), token);
         }
-        Ok((token, key.into()))
+        Ok((token, key))
     }
 }
 fn framed(output: &mut Vec<u8>, bytes: &[u8]) {
@@ -78,9 +79,9 @@ fn argument(
     if construction(expression, source, write, symbols, evaluator, output)? {
         return Ok(());
     }
-    let captured =
-        crate::initializer_policy::captured_scalar_subexpression(expression, source, symbols)?;
-    let Evaluation::Scalar(value) = evaluator.evaluate_write(write, &captured)? else {
+    let Evaluation::Scalar(value) =
+        evaluator.evaluate_ast_write(write, expression, source, symbols)?
+    else {
         return Err(KeyError::RuntimeArgument);
     };
     output.push(0);
@@ -174,17 +175,13 @@ fn construction(
                 }
                 _ => return Ok(false),
             };
-            let captured = crate::initializer_policy::captured_scalar_subexpression(
-                if let ExprKind::Call { callee, .. } = &value.kind {
-                    callee
-                } else {
-                    value
-                },
-                source,
-                symbols,
-            )?;
+            let ast = if let ExprKind::Call { callee, .. } = &value.kind {
+                callee
+            } else {
+                value
+            };
             let Evaluation::Scalar(SemanticValue::Type(path)) =
-                evaluator.evaluate_write(write, &captured)?
+                evaluator.evaluate_ast_write(write, ast, source, symbols)?
             else {
                 return Err(format!("initializer constructor type {path} is not captured").into());
             };
@@ -231,11 +228,8 @@ fn construction(
                     output.push(1);
                     output.extend_from_slice(&(args.len() as u64).to_le_bytes());
                     for value in args {
-                        let captured = crate::initializer_policy::captured_scalar_subexpression(
-                            value, source, symbols,
-                        )?;
                         let Evaluation::Scalar(SemanticValue::Type(path)) =
-                            evaluator.evaluate_write(write, &captured)?
+                            evaluator.evaluate_ast_write(write, value, source, symbols)?
                         else {
                             return Err("newlist initializer type unavailable".into());
                         };
@@ -549,7 +543,51 @@ mod tests {
         }
     }
     #[test]
+    fn borrowed_scalar_ast_matches_captured_expression_policy() {
+        use crate::initializer_policy::CapturedInitializerEvaluator;
+        for source in ["2+3*4", "null", "list(make_value())", "'missing.txt'"] {
+            let mut symbols = SymbolTable::default();
+            let value = expression(source, &mut symbols);
+            let write = InitializerWrite {
+                target: dm_ir::InitializerTarget::Shared {
+                    slot: dm_ir::SymbolId::of("slot"),
+                    owner: dm_ir::SymbolId::of("/"),
+                    name: dm_ir::SymbolId::of("value"),
+                },
+                lexical_owner: dm_ir::SymbolId::of("/"),
+                lexical_procedure: None,
+                value: dm_ir::InitializerValue::Expression(value.clone()),
+                declared_array: None,
+                declaration_flags: Some(8),
+            };
+            let evaluator = crate::driver_facts::DriverEvaluator {
+                pure_calls: None,
+                resource_search_context: None,
+                resolver: &Host,
+                symbols: &symbols,
+            };
+            let parsed = dm_syntax::parse_expression(source);
+            let captured = evaluator.evaluate_write(&write, &value);
+            let borrowed = evaluator.evaluate_ast_write(
+                &write,
+                parsed.expr.as_ref().unwrap(),
+                source,
+                &symbols,
+            );
+            match (captured, borrowed) {
+                (Ok(Evaluation::Scalar(a)), Ok(Evaluation::Scalar(b))) => assert_eq!(a, b),
+                (Ok(Evaluation::Runtime), Ok(Evaluation::Runtime)) => (),
+                (Err(a), Err(b)) => assert_eq!(a, b),
+                _ => panic!("scalar AST policy differs: {source}"),
+            }
+        }
+    }
+    #[test]
     fn token_partition_obeys_final_debug_presence() {
+        let mut shared = Tokens::new(false);
+        let first = shared.issue(vec![9]).unwrap().1;
+        let repeated = shared.issue(vec![9]).unwrap().1;
+        assert!(Arc::ptr_eq(&first, &repeated));
         let mut shared = Tokens::new(false);
         assert_eq!(shared.issue(vec![1]).unwrap().0, 0);
         assert_eq!(shared.issue(vec![2]).unwrap().0, 1);

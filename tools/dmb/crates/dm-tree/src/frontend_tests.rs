@@ -39,6 +39,27 @@ fn fixture(files: &[(&str, &str)]) -> Result<ColdFrontend, Vec<Diagnostic>> {
 }
 
 #[test]
+fn preprocessing_diagnostic_kind_is_independent_of_user_message_prefix() {
+    let errors = match fixture(&[("project.dme",
+        "#error unsupported authored message\n#include \"script.dms\"\n#unimplemented_probe\n#include not_quoted\n")]) {
+        Ok(_) => panic!("preprocessing failures must reject the frontend"),
+        Err(errors) => errors,
+    };
+    assert_eq!(errors.len(), 4);
+    assert_eq!(errors.iter().map(|error| error.kind).collect::<Vec<_>>(),
+        vec![DiagnosticKind::SourceError, DiagnosticKind::UnsupportedModel,
+             DiagnosticKind::UnsupportedModel, DiagnosticKind::SourceError]);
+    assert_eq!(errors[0].message.trim_end(), "unsupported authored message");
+    assert_eq!(errors[1].message, "unverified include extension");
+    assert_eq!(errors[2].message, "unsupported preprocessor directive #unimplemented_probe");
+    for (index, error) in errors.iter().enumerate() {
+        let origin = error.location.as_ref().expect("actual directive source location");
+        assert_eq!(origin.line, index + 1);
+        assert_eq!(origin.semantic_path.as_ref(), "project.dme");
+    }
+}
+
+#[test]
 fn parent_resolution_errors_point_to_authored_cause_not_later_reopen() {
     let errors = fixture(&[
         (

@@ -7,6 +7,7 @@ pub struct DeclarationType<'a> {
 }
 
 pub fn project_declaration_type(path: &str) -> DeclarationType<'_> {
+    let path = normalize_declaration_type(path);
     let body = path.strip_prefix('/').unwrap_or(path);
     if body == "list" || body.starts_with("list/") {
         DeclarationType {
@@ -23,6 +24,14 @@ pub fn project_declaration_type(path: &str) -> DeclarationType<'_> {
             list_element_path: None,
         }
     }
+}
+
+/// Redundant declaration namespace segments do not become type names.
+pub fn normalize_declaration_type(mut path: &str) -> &str {
+    while let Some(tail) = path.strip_prefix("var/").or_else(|| path.strip_prefix("/var/")) {
+        path = if path.starts_with('/') { &path[4..] } else { tail };
+    }
+    path
 }
 
 #[cfg(test)]

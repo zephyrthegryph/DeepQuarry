@@ -178,7 +178,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                             (header[..index].trim(), Some(header[index + 1..].trim()))
                         });
                     let (prefix, tail) = declaration
-                        .rsplit_once("var/")
+                        .split_once("var/")
                         .ok_or("var namespace block requires normalization")?;
                     let owner = if prefix == "/" || (prefix.is_empty() && header.starts_with('/')) {
                         "/".into()
@@ -187,7 +187,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                     } else {
                         absolute(owner, prefix.trim_end_matches('/'))?
                     };
-                    let tail = tail
+                    let tail = dm_syntax::normalize_declaration_type(tail)
                         .split_once(" as ")
                         .map_or(tail, |(declaration, _)| declaration)
                         .trim();
@@ -615,6 +615,14 @@ mod tests {
             prepare("/client\n    parent_type = /datum\n/datum\n    parent_type = /client\n"),
             Err(SnapshotError::Tree(crate::TreeError::InheritanceCycle(_)))
         ));
+    }
+    #[test]
+    fn repeated_var_namespace_keeps_declaring_owner_and_runtime_type() {
+        let result = adapt("/datum/base\n    var/var/obj/reference\n");
+        let tree = build(result.symbols, &result.skeletons).unwrap();
+        let field = tree.members().iter().find(|member| member.name == SymbolId::of("reference")).unwrap();
+        assert_eq!(Some(field.owner), tree.lookup_type(SymbolId::of("/datum/base")));
+        assert_eq!(field.metadata.declared_type, Some(SymbolId::of("/obj")));
     }
     #[test]
     fn typed_list_declarations_expose_the_runtime_container_type() {

@@ -8,7 +8,7 @@ use std::ops::Range;
 
 mod audit;
 mod declaration_type;
-pub use declaration_type::{project_declaration_type, DeclarationType};
+pub use declaration_type::{normalize_declaration_type, project_declaration_type, DeclarationType};
 pub mod map;
 mod statements;
 pub use audit::{
