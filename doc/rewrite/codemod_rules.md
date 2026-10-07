@@ -402,6 +402,7 @@ Evidence: the cell charger (`7bce9a692a`), which also dropped its `add_overlay()
 |---|---|
 | `convert [--types T...] [--report R] [--show]` | A **component** (a set of drawing types joined by ancestry) converts whole or not at all. Per type, in the legacy order: `..()`, the template as `look.state("...")` (`{x}` is `[x]`, `[x()]` for a reader proc, `{x?A:B}` is `[x ? "A" : "B"]`), each `DECLARE_APPEARANCE` layer as `if(x == 1)` or `switch("[x]")` of `look.state()` / `look.overlay()` / `look.set_icon()` / `look.set_color()`, `APPEARANCE_NONE` as `look.state(null)` plus `look.hide()` of what the ancestors draw, then the provider body (`. += x` is `look.overlay(x)`, `icon_state = x` is `look.state(x)`, `item_state` is `look.held_state()`, `name`/`desc` are `look.identity()`, `set_light()` is `look.light()` / `look.light_off()`, `flick(x, src)` is `look.play_flick(x)`). A provider that reads its own `icon_state` keeps it in `var/drawn_state = look.state_so_far(src)`. A chain whose subtype provider replaced its parent's (no `..()`) keeps that dispatch: the top type's draw calls `look_parts(look)`, which each type overrides. |
 | `calls --report R` | The `update_icon()` calls on a converted component's types: gone where the draw reads only tracked state, in `Initialize()` (the first refresh draws every atom after its init) and in a dispatched handler (a proc taking a `datum/act`); `changed(src)` (`changed(X)`) where it reads state nothing publishes. `--all`: the same for every call whose receiver's chain has no legacy declaration, judged by the chain's `draw()` procs. |
+| `generic [--paths P...]` | `X.update_icon()` (and `if(c) X.update_icon()`) on an /atom, /atom/movable, /obj, /mob, /mob/living, /turf, /obj/item, /obj/structure, /obj/machinery or /obj/effect receiver becomes `redraw(X)`: one redraw request for drawn and legacy types (a drawn type is redrawn by the look refresh it marks; a legacy type runs its `update_icon()` on the spot, as the call did). Skips the folders other sessions own (`code/game/machinery`, `code/modules/power`) and the redraw machinery. |
 | `dead` | Deletes the `update_icon()` calls whose receiver's chain has no legacy declaration and no `update_icon()` override (the base proc only re-applies a declaration, so they did nothing). |
 | `track` | Each var a `draw()` reads that nothing publishes becomes `TRACKED(U, var)` on its one declaring type, every write in the tree the setter (`v = x` -> `set_v(x)`, `v += x` -> `set_v(v + (x))`, `X.v = x` -> `X.set_v(x)`, also as a one-line `if(c)` tail). Left as they are: shared names, writes inside expressions or macros, a hand-written `set_<var>()` in the chain, writes in folders another session owns (`--owned-ok` takes them). |
 | `prune [--base ref]` | The `changed()` requests added since `ref` whose receiver's draws now read only tracked state go. |
@@ -413,6 +414,21 @@ Evidence: the cell charger (`7bce9a692a`), which also dropped its `add_overlay()
 other state (`writes_state:<var>`), reads `overlays`/`underlays` (`reads_layers`), calls `..()` late (`super_late`), an `update_icon()` override,
 `APPEARANCE_LEVEL` / `_EMISSIVE` / `_SLOT` (by hand). A `draw()` and its `look_parts()` read only tracked state and write nothing
 (`sys/dx_reactive`); they change no atom either (`sys/dx_review` `output_side_effect`).
+
+**The residue that now converts** (`convert`; `look_convert.py` documents each):
+
+| Shape in the provider | Becomes |
+|---|---|
+| `add_eyes()` / `update_charge(x)`: a call of a proc of the type | `look.effect(PROC_REF(add_eyes))` / `look.effect(PROC_REF(update_charge), x)`: runs when the look is applied, outside the draw |
+| `soundloop.start()` on a var of the holder | `look.effect(PROC_REF(look_effect_soundloop_start))` and a one-line helper proc `look_effect_soundloop_start()` after the draw |
+| `x = v` on a var of the holder that the draw never reads | `look.effect(PROC_REF(look_effect_set_x), v)` and a generated setter; a cache the draw reads, `x += v` and a write through a local stay residue |
+| `root.var` where root is a var of the holder | `look.watch(root)`: the holder redraws when the other end publishes a change |
+| `var/image/I = image(...)`, `I.pixel_y = ...` (plane, layer, alpha, color, dir, appearance_flags), `. += I` | `look.overlay(look_overlay_image(icon, state, pixel_y = ...))` |
+| one `..()` in the middle of the body | stays where it is in the draw |
+| `H.update_inv_l_hand()` on the holder | a comment: the look redraws the worn slot when it changes the sprite |
+
+Still hand work: `reads_layers`, an `update_icon()` or `changed()` call inside the provider, a late `..()` under a condition or in a type that has its
+own `draw()`, an image rebuilt in a branch, a cached image (`GLOB.x_cache`), `multi_def`, `look_var_read`, `layer_override`, `APPEARANCE_LEVEL`.
 
 **The look's additions** (`code/datums/capabilities/look.dm`): `look.state()` returns the state; `look.state_so_far(A)`; `look.light_off()` (an
 explicit `set_light(0)`); `look.held_state(state)` and `look.identity(name =, desc =)` (left as they are when a draw does not set them);
