@@ -90,7 +90,7 @@ TRACKED(/obj/item/gun/launcher/crossbow, tension)
 	..()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/crossbow/gun_self(datum/act/op/A, callback)
+/obj/item/gun/launcher/crossbow/gun_operate(datum/act/op/A, callback)
 	var/mob/living/user = A.actor
 	. = ..()
 	if(. == OP_OK)

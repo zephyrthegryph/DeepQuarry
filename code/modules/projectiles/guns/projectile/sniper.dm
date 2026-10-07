@@ -29,7 +29,7 @@
 	look.state("heavysniper[bolt_open ? "-open" : ""]")
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/heavysniper/gun_self(datum/act/op/A, callback)
+/obj/item/gun/projectile/heavysniper/gun_operate(datum/act/op/A, callback)
 	var/mob/user = A.actor
 	. = ..()
 	if(. == OP_OK)

@@ -179,7 +179,7 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 	load_ammo(held, user)
 
 /// Old attack_self.
-/obj/item/gun/projectile/gun_self(datum/act/op/A, callback)
+/obj/item/gun/projectile/gun_operate(datum/act/op/A, callback)
 	var/mob/user = A.actor
 	. = ..()
 	if(. == OP_OK)
@@ -187,7 +187,7 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 	if(special_weapon_handling && !callback)
 		return OP_DECLINE
 	if(manual_chamber) // Gun Rework
-		task_timed(user, 0.4 SECONDS, src, src, PROC_REF(bolt_handle), list(user, user.input_stance())) // Gun Rework
+		task_timed(user, 0.4 SECONDS, src, src, PROC_REF(bolt_handle), list(user, A.key == "gun_self_hurt" ? I_HURT : I_HELP)) // Gun Rework
 	else if(length(firemodes) > 1) // Gun Rework
 		switch_firemodes(user)
 	else

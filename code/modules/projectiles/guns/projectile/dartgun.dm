@@ -131,7 +131,7 @@
 			B.reagents.trans_to_obj(dart, mix_amount)
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/dartgun/gun_self(datum/act/op/A, callback)
+/obj/item/gun/projectile/dartgun/gun_operate(datum/act/op/A, callback)
 	var/mob/user = A.actor
 	. = ..()
 	if(. == OP_OK)

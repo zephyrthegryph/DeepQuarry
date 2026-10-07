@@ -20,11 +20,7 @@
 /// What are we targeting with? Set while aiming; the aim is tracked every slow tick while it is.
 OM_FIELD_VIEW(/obj/aiming_overlay, obj/item, aiming_with, CHANGE_EXPLICIT)
 CAPABILITIES(/obj/aiming_overlay)
-	every(2 SECONDS, then(PROC_REF(aiming_step)), when = PROC_REF(is_aiming))
-
-/// While something is aimed with, the aim is tracked every slow tick.
-/obj/aiming_overlay/proc/is_aiming(datum/act/A)
-	return !!aiming_with()
+	every(2 SECONDS, then(PROC_REF(aiming_step)), when = nameof(aiming_with))
 
 /obj/aiming_overlay/Initialize(mapload)
 	. = ..()

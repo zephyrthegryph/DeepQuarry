@@ -88,8 +88,8 @@ CAPABILITIES(/obj/machinery/v_garbosystem)
 	if(!operating)
 		to_chat(user, span_notice("You crowbar the filter hatch open, releasing the items trapped within."))
 		latent_materialize_all() // a walk needs real things (C5)
-		for(var/atom/movable/A in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
-			A.forceMove(loc)
+		for(var/atom/movable/item in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+			item.forceMove(loc)
 	else
 		to_chat(user, span_warning("Unable to empty filter while the machine is running."))
 	return OP_OK

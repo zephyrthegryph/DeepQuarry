@@ -22,7 +22,7 @@
 		)
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): pick a type to turn things into.
-/obj/item/gun/energy/mouseray/gun_self(datum/act/op/A, callback)
+/obj/item/gun/energy/mouseray/gun_operate(datum/act/op/A, callback)
 	. = ..()
 	if(. == OP_OK)
 		return OP_OK

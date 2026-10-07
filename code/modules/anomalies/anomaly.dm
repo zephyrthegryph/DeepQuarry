@@ -149,7 +149,7 @@ CAPABILITIES(/obj/item/gun/energy/anomaly)
 	extend("gun_self", asks(/datum/prompt/choice, fields = list("question" = "Select particle type", "title" = "Particle Selection", "choices" = ANOMALY_PARTICLE_ALL, "timeout" = 0), step = "particle"))
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): the particle picked is set, then the gun's own self-use.
-/obj/item/gun/energy/anomaly/gun_self(datum/act/op/A, callback)
+/obj/item/gun/energy/anomaly/gun_operate(datum/act/op/A, callback)
 	var/chosen_particle = A.step_value("particle")
 	if(!chosen_particle)
 		return OP_DECLINE
@@ -196,6 +196,7 @@ CAPABILITIES(/obj/item/gun/energy/anomaly)
 	var/picked = FALSE
 	anomaly_type = /obj/effect/anomaly/flux // Default
 
+TRACKED(/obj/item/assembly/signaler/anomaly/choice, picked)
 CAPABILITIES(/obj/item/assembly/signaler/anomaly/choice)
 	extend("use", asks(/datum/prompt/choice, fields = list("question" = "Choose an anomaly core.", "title" = "Anomaly Core Selection", "choices" = computed(PROC_REF(core_choices)), "timeout" = 0), step = "core", when = PROC_REF(core_wanted)))
 
@@ -232,28 +233,8 @@ CAPABILITIES(/obj/item/assembly/signaler/anomaly/choice)
 
 	if(choice && !picked)
 		anomaly_type = choices[choice]
-		picked = TRUE
+		set_picked(TRUE)
 	return OP_DECLINE
-
-/datum/prompt/choice/research_anomaly, PROC_REF(core_selected), answerer = user, choices = choices, question = "Choose an anomaly core.", title = "Anomaly Core Selection", captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), original_client_ckey = original_client_ckey)
-		return TRUE
-	var/choice = selected_core
-
-	if(choice && !picked)
-		anomaly_type = choices[choice]
-		picked = TRUE
-
-
-/obj/item/assembly/signaler/anomaly/choice/proc/core_selected(datum/act/request/A)
-	var/datum/prompt/choice/research_anomaly/request = A.request
-	if(!A.answer || request.captures_gone())
-		return
-	resume_core_selection(A)
-	SStgui.update_uis(src)
-
-/obj/item/assembly/signaler/anomaly/choice/proc/resume_core_selection(datum/act/request/A)
-	var/datum/prompt/choice/research_anomaly/request = A.request
-	interaction_self(request.user_value(), request.captured_item, request.captured_interaction, A.answer.value)
 
 /datum/prompt/choice/research_anomaly
 	timeout = 0

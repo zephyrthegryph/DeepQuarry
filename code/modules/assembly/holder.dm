@@ -96,6 +96,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 	if(a_right)
 		a_right.on_found(finder)
 
+TRACKED(/obj/item/assembly_holder, secured)
 CAPABILITIES(/obj/item/assembly_holder)
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("use", in_hand(), label("Use"),
@@ -119,7 +120,7 @@ CAPABILITIES(/obj/item/assembly_holder)
 		return ITEM_INTERACT_BLOCKING
 	a_left.toggle_secure()
 	a_right.toggle_secure()
-	secured = !secured
+	set_secured(!secured)
 	to_chat(user, span_notice(secured ? "\The [src] is ready!" : "\The [src] can now be taken apart!"))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -198,7 +199,7 @@ CAPABILITIES(/obj/item/assembly_holder)
 
 	rel_set(src, nameof(a_left), tmr)
 	rel_set(src, nameof(a_right), ign)
-	secured = 1
+	set_secured(TRUE)
 	update_icon()
 	name = initial(name) + " ([tmr.time] secs)"
 

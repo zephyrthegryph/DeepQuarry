@@ -89,7 +89,7 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
 	return TRUE
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/crossbow/bow/gun_self(datum/act/op/A, callback)
+/obj/item/gun/launcher/crossbow/bow/gun_operate(datum/act/op/A, callback)
 	var/mob/living/user = A.actor
 	. = ..()
 	if(. == OP_OK)
@@ -159,7 +159,7 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
 	rel_clear(src, nameof(bolt))
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/crossbow/bow/hardlight/gun_self(datum/act/op/A, callback)
+/obj/item/gun/launcher/crossbow/bow/hardlight/gun_operate(datum/act/op/A, callback)
 	var/mob/user = A.actor
 	. = ..()
 	if(. == OP_OK)

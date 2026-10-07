@@ -248,7 +248,7 @@ TRACKED(/obj/item/gun/magnetic/matfed/phoronbore, generator_state)
 /// The bore also steps while its
 /// generator runs, whatever the capacitor is doing.
 /obj/item/gun/magnetic/matfed/phoronbore/steps_now(datum/act/A)
-	return generator_state > GEN_OFF || capacitor_unsettled()
+	return generator_state > GEN_OFF || capacitor || cell
 
 /obj/item/gun/magnetic/matfed/phoronbore/magnetic_step(datum/act/timer/A)
 	if(generator_state && !mat_storage)

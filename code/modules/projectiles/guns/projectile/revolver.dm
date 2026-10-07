@@ -56,21 +56,17 @@ CAPABILITIES(/obj/item/gun/projectile/revolver)
 	caliber = ".38"
 	ammo_type = /obj/item/ammo_casing/a38
 
-MSG_DEF_SELF(gun/not_cool_enough, "you don't feel cool enough to name this gun, chump")
-
 CAPABILITIES(/obj/item/gun/projectile/revolver/detective)
-	op("rename", menu(), label("Name Gun"), needs(carried(), req(PROC_REF(detective_naming_holds), because = MSG(gun/not_cool_enough))),
+	op("rename", menu(), label("Name Gun"), needs(carried()),
 		asks(/datum/prompt/text, fields = list("question" = "What do you want to name the gun?", "title" = "Rename Revolver", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"),
 		then(PROC_REF(det_revolver_verb_rename)))
 
-/// Requirement for naming the detective's gun: the actor is the detective. No mind is left to the verb, which does nothing.
-/obj/item/gun/proc/detective_naming_holds(datum/act/op/A)
-	var/mob/actor = A.actor
+/// Whether the actor may name a gun that only the detective names: the detective, or nobody with a mind (which does nothing).
+/obj/item/gun/proc/detective_naming_ok(mob/actor)
 	return !actor?.mind || actor.mind.assigned_role == JOB_DETECTIVE
 
-/// Requirement for naming a security sidearm: the actor holds a security job. No mind is left to the verb.
-/obj/item/gun/proc/security_naming_holds(datum/act/op/A)
-	var/mob/actor = A.actor
+/// Whether the actor may name a security sidearm: a security job, or nobody with a mind (which does nothing).
+/obj/item/gun/proc/security_naming_ok(mob/actor)
 	if(!actor?.mind)
 		return TRUE
 	var/job = actor.mind.assigned_role
@@ -90,6 +86,9 @@ CAPABILITIES(/obj/item/gun/projectile/revolver/detective)
 /// Old Name Gun verb: Click to rename your gun. If you're the detective.
 /obj/item/gun/projectile/revolver/detective/proc/det_revolver_verb_rename(datum/act/op/A)
 	var/mob/M = A.actor
+	if(!detective_naming_ok(M))
+		to_chat(M, span_warning("You don't feel cool enough to name this gun, chump."))
+		return OP_DECLINE
 	if(!M.mind)
 		return OP_DECLINE
 	var/input = sanitizeSafe(A.step_value("name"))
@@ -109,7 +108,7 @@ CAPABILITIES(/obj/item/gun/projectile/revolver/detective)
 	max_shells = 6
 
 CAPABILITIES(/obj/item/gun/projectile/revolver/detective45)
-	op("rename", menu(), label("Name Gun"), needs(carried(), req(PROC_REF(detective_naming_holds), because = MSG(gun/not_cool_enough))),
+	op("rename", menu(), label("Name Gun"), needs(carried()),
 		asks(/datum/prompt/text, fields = list("question" = "What do you want to name the gun?", "title" = "Rename Revolver", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"),
 		then(PROC_REF(det45_revolver_verb_rename)))
 	op("reskin", menu(), label("Resprite gun"), needs(carried()),
@@ -119,6 +118,9 @@ CAPABILITIES(/obj/item/gun/projectile/revolver/detective45)
 /// Old Name Gun verb: rename your gun, if you are the detective.
 /obj/item/gun/projectile/revolver/detective45/proc/det45_revolver_verb_rename(datum/act/op/A)
 	var/mob/M = A.actor
+	if(!detective_naming_ok(M))
+		to_chat(M, span_warning("You don't feel cool enough to name this gun, chump."))
+		return OP_DECLINE
 	if(!M.mind)
 		return OP_DECLINE
 	var/input = sanitizeSafe(A.step_value("name"), MAX_NAME_LEN)

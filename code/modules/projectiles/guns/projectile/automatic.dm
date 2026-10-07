@@ -285,7 +285,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 	update_held_icon()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/automatic/l6_saw/gun_self(datum/act/op/A, callback)
+/obj/item/gun/projectile/automatic/l6_saw/gun_operate(datum/act/op/A, callback)
 	var/mob/user = A.actor
 	. = ..()
 	if(. == OP_OK)
@@ -822,7 +822,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sol, TYPE_PROC_REF(/a
 	update_held_icon()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/automatic/mg42/gun_self(datum/act/op/A, callback)
+/obj/item/gun/projectile/automatic/mg42/gun_operate(datum/act/op/A, callback)
 	var/mob/user = A.actor
 	if(cover_open)
 		toggle_cover(user) //close the cover

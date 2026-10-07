@@ -112,13 +112,15 @@
 	// own firemodes list / sel_mode index.
 	var/datum/gun_firemode_selector/firemode_selector = null
 
+TRACKED(/obj/item/gun, dna_lock)
 CAPABILITIES(/obj/item/gun)
 	owns_many(nameof(firemodes), starts = PROC_REF(starting_firemodes))
 	owns_one(nameof(firemode_selector), starts = /datum/gun_firemode_selector)
 	drag_onto(PROC_REF(mousedrop_input))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	op("gun_item", item(/obj/item), label("Fit"), then(PROC_REF(gun_item)))
-	op("gun_self", in_hand(), label("Operate"), then(PROC_REF(gun_self)))
+	op("gun_self", in_hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Operate"), then(PROC_REF(gun_self)))
+	op("gun_self_hurt", in_hand(), stance(I_HURT), label("Operate"), then(PROC_REF(gun_self)))
 	op("gun_verb_give_dna", menu(), label("Give DNA"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_give_dna)))
 	op("gun_verb_remove_dna", menu(), label("Remove DNA"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_remove_dna)))
 	op("gun_verb_allow_dna", menu(), label("Toggle DNA Samples Allowance"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_allow_dna)))
@@ -317,7 +319,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 		to_chat(user, span_notice("You insert \the [held] into \the [src]."))
 		if(!move_into(src, nameof(src.attached_lock), held, user))
 			return
-		dna_lock = 1
+		set_dna_lock(TRUE)
 		return
 
 	return OP_DECLINE
@@ -332,7 +334,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 /obj/item/gun/proc/screwdriver_act_tool_done(mob/user)
 	to_chat(user, span_notice("You remove \the [attached_lock] from \the [src]."))
 	user.put_in_hands(attached_lock)
-	dna_lock = FALSE
+	set_dna_lock(FALSE)
 	rel_take(src, nameof(attached_lock))
 	return ITEM_INTERACT_SUCCESS
 
@@ -834,10 +836,14 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
 	return new_mode
 
-/// Old attack_self. `callback` is the projectile gun's re-entry flag (l6_saw). A decline
+/// Old attack_self (the "gun_self" op, "gun_self_hurt" in a hostile stance). `callback` is the projectile gun's re-entry flag (l6_saw). A decline
 /// (as the old chain's falsy return) leaves the self-use unhandled. A gun type overrides this and
-/// calls ..(A, callback) the way the old attack_self chain did.
-/obj/item/gun/proc/gun_self(datum/act/op/A, callback)
+/// calls ..() the way the old attack_self chain did.
+/obj/item/gun/proc/gun_self(datum/act/op/A)
+	return gun_operate(A)
+
+/// The self-use chain of a gun type (a type overrides this and calls ..() the way the old attack_self chain did).
+/obj/item/gun/proc/gun_operate(datum/act/op/A, callback)
 	if(special_handling)
 		return OP_DECLINE
 	switch_firemodes(A.actor)

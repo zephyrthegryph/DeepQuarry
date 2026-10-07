@@ -117,18 +117,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
 	op("smash", menu(), label("Smash Bottle"), needs(carried()),
 		asks(/datum/prompt/choice, fields = list("question" = "Select what you want to smash the bottle on.", "title" = "SMASH!", "choices" = computed(PROC_REF(smash_choices)), "timeout" = 0), step = "target"),
 		then(PROC_REF(smash_bottle_effect)))
-	op("spin", menu(), label("Spin The Bottle"), needs(req(PROC_REF(can_spin_bottle), because = PROC_REF(spin_bottle_refusal))), then(PROC_REF(spin_bottle_effect)))
-
-/// Requirement: the bottle lies on the floor (observers and the unconscious are ignored silently by the effect).
-/obj/item/reagent_containers/food/drinks/bottle/proc/can_spin_bottle(datum/act/op/A)
-	var/mob/user = A.actor
-	if(isobserver(user) || user.stat)
-		return TRUE
-	return isturf(loc)
-
-/// Why can_spin_bottle refuses.
-/obj/item/reagent_containers/food/drinks/bottle/proc/spin_bottle_refusal(datum/act/op/A)
-	return "\The [src] needs to be on the floor to spin"
+	op("spin", menu(), label("Spin The Bottle"), then(PROC_REF(spin_bottle_effect)))
 
 /// Old attackby. A decline falls to the drinks handling, as the old ..() did.
 /obj/item/reagent_containers/food/drinks/bottle/proc/bottle_item(datum/act/op/A)
@@ -212,6 +201,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/bottle, TYPE_PR
 /obj/item/reagent_containers/food/drinks/bottle/proc/spin_bottle_effect(datum/act/op/A)
 	var/mob/user = A.actor
 	if(isobserver(user) || user.stat)
+		return OP_DECLINE
+	if(!isturf(loc))
+		to_chat(user, span_warning("\The [src] needs to be on the floor to spin"))
 		return OP_DECLINE
 
 	var/spin_rotation = (rand(0,359))

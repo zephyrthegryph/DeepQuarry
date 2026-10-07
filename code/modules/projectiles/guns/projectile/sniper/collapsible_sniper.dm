@@ -28,7 +28,7 @@ CAPABILITIES(/obj/item/gun/projectile/heavysniper/collapsible)
 		var/obj/item/sniper_rifle_part/assembly = new /obj/item/sniper_rifle_part/trigger_group(user)
 		var/obj/item/sniper_rifle_part/stock/stock = new(assembly)
 		rel_set(assembly, nameof(assembly.stock), stock)
-		assembly.part_count = 2
+		assembly.set_part_count(2)
 		assembly.update_build(user)
 		user.put_in_any_hand_if_possible(assembly) || assembly.dropInto(user.loc)
 		user.put_in_any_hand_if_possible(barrel) || barrel.dropInto(user.loc)
@@ -72,6 +72,7 @@ CAPABILITIES(/obj/item/gun/projectile/heavysniper/collapsible)
 	. = ..()
 	rel_set(src, nameof(trigger_group), src)
 
+TRACKED(/obj/item/sniper_rifle_part, part_count)
 MSG_DEF_SELF(sniper_part/last_part, "you can't disassemble this further")
 
 CAPABILITIES(/obj/item/sniper_rifle_part)
@@ -102,7 +103,7 @@ CAPABILITIES(/obj/item/sniper_rifle_part)
 			rel_clear(P, nameof(P.trigger_group))
 		if(P != src)
 			user.put_in_any_hand_if_possible(P) || P.dropInto(loc)
-		P.part_count = 1
+		P.set_part_count(1)
 
 	update_build(user)
 
@@ -154,7 +155,7 @@ CAPABILITIES(/obj/item/sniper_rifle_part)
 		rel_set(src, nameof(trigger_group), A.trigger_group())
 
 
-	part_count = A.part_count + src.part_count
+	set_part_count(A.part_count + src.part_count)
 	update_build(user)
 
 

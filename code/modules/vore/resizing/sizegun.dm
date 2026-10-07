@@ -27,7 +27,7 @@ CAPABILITIES(/obj/item/gun/energy/sizegun)
 	verb_entry(/obj/item/gun/energy/sizegun/proc/spin_dial)
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): set the size.
-/obj/item/gun/energy/sizegun/gun_self(datum/act/op/A, callback)
+/obj/item/gun/energy/sizegun/gun_operate(datum/act/op/A, callback)
 	. = ..()
 	if(. == OP_OK)
 		return OP_OK

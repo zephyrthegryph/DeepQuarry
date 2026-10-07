@@ -21,7 +21,7 @@
 	magazine_type = /obj/item/ammo_magazine/m45/rubber
 
 CAPABILITIES(/obj/item/gun/projectile/colt/detective)
-	op("rename", menu(), label("Name Gun"), needs(carried(), req(PROC_REF(security_naming_holds), because = MSG(gun/not_cool_enough))),
+	op("rename", menu(), label("Name Gun"), needs(carried()),
 		asks(/datum/prompt/text, fields = list("question" = "What do you want to name the gun?", "title" = "Rename Gun", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"),
 		then(PROC_REF(det_colt_verb_rename)))
 	op("reskin", menu(), label("Resprite gun"), needs(carried()),
@@ -31,6 +31,9 @@ CAPABILITIES(/obj/item/gun/projectile/colt/detective)
 /// Old Name Gun verb: Rename your gun. If you're Security.
 /obj/item/gun/projectile/colt/detective/proc/det_colt_verb_rename(datum/act/op/A)
 	var/mob/M = A.actor
+	if(!security_naming_ok(M))
+		to_chat(M, span_warning("You don\'t feel cool enough to name this gun, chump."))
+		return OP_DECLINE
 	if(!M.mind)
 		return OP_DECLINE
 	var/input = sanitizeSafe(A.step_value("name"))

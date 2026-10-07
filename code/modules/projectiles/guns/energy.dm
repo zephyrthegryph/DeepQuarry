@@ -16,7 +16,7 @@
 
 	reload_time = 5		//Energy weapons are slower to reload than ballistics by default, but this is no change from current values
 
-	//self-recharging
+	//self-recharge
 	var/use_external_power = 0 //if set, the weapon will look for an external power source to draw from, otherwise it recharges magically
 	var/use_organic_power = 0 // If set, the weapon will draw from nutrition or blood.
 	var/recharge_time = 4
@@ -32,9 +32,9 @@
 //if set, the weapon will recharge itself
 /obj/item/gun/energy/var/self_recharge = 0
 /// TRUE while a self-recharging gun may be below full: firing raises it, a step that finds the cell full drops it.
-/obj/item/gun/energy/var/tmp/recharging = TRUE
+/obj/item/gun/energy/var/tmp/recharge_due = TRUE
 TRACKED(/obj/item/gun/energy, self_recharge)
-TRACKED(/obj/item/gun/energy, recharging)
+TRACKED(/obj/item/gun/energy, recharge_due)
 
 /obj/item/gun/energy/Initialize(mapload)
 	. = ..()
@@ -58,7 +58,7 @@ TRACKED(/obj/item/gun/energy, recharging)
 	if(self_recharge) //Every [recharge_time] ticks, recharge a shot for the battery
 		if(COOLDOWN_FINISHED(src, recharge_cooldown))	//Doesn't work if you've fired recently
 			if(!power_supply || power_supply.charge >= power_supply.maxcharge)
-				set_recharging(FALSE)
+				set_recharge_due(FALSE)
 				return
 
 			charge_tick++
@@ -122,7 +122,7 @@ TRACKED(/obj/item/gun/energy, recharging)
 	if(!power_supply.checked_use(enhanced_cost)) return null
 	power_supply.material_record_enhanced_output(charge_cost, output_envelope)
 	// Charge was drawn: wake the recharge.
-	set_recharging(TRUE)
+	set_recharge_due(TRUE)
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
 		M?.hud_used?.update_ammo_hud(M, src)
@@ -188,7 +188,7 @@ TRACKED(/obj/item/gun/energy, recharging)
 // the shield generator's gun, the generator's cell: a relation view across the hierarchy.
 CAPABILITIES(/obj/item/gun/energy)
 	ref_one(nameof(power_supply))
-	every(2 SECONDS, then(PROC_REF(energy_gun_recharge_step)), when = cond_all(nameof(self_recharge), nameof(recharging)))
+	every(2 SECONDS, then(PROC_REF(energy_gun_recharge_step)), when = cond_all(nameof(self_recharge), nameof(recharge_due)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(energy_gun_emp_refresh)))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 

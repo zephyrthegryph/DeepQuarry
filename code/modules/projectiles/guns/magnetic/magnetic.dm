@@ -46,7 +46,7 @@ CAPABILITIES(/obj/item/gun/magnetic)
 
 /// The gate of the magnetic gun's step: polled, the capacitor's charge is another entity's state.
 /obj/item/gun/magnetic/proc/steps_now(datum/act/A)
-	return capacitor_unsettled()
+	return capacitor || cell
 
 /obj/item/gun/magnetic/Initialize(mapload)
 	. = ..()

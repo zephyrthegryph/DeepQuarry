@@ -49,7 +49,7 @@ CAPABILITIES(/obj/item/gun/launcher/confetti_cannon)
 		to_chat(user, span_red("The [src] is already loaded!"))
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/confetti_cannon/gun_self(datum/act/op/A, callback)
+/obj/item/gun/launcher/confetti_cannon/gun_operate(datum/act/op/A, callback)
 	var/mob/user = A.actor
 	. = ..()
 	if(. == OP_OK)

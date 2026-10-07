@@ -53,7 +53,7 @@ CAPABILITIES(/obj/machinery/disposal)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("disposal_insert", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_disposal_insert)))
 	op("disposal_drag_insert", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_disposal_drag_insert)))
-	op("disposal_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(controls_reachable_holds), because = PROC_REF(controls_reachable_refusal))), then(PROC_REF(interaction_disposal_use)))
+	op("disposal_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_disposal_use)))
 	op("disposal_flush", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle flush"), then(PROC_REF(interaction_disposal_flush)))
 	op("disposal_force_eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Force Eject"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_disposal_force_eject)))
 
@@ -441,16 +441,11 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	update_icon()
 */
 // human interact with machine
-/// Requirement: the controls can't be worked from inside the bin.
-/obj/machinery/disposal/proc/controls_reachable_holds(datum/act/op/A)
-	return A.actor?.loc != src
-
-/// Why controls_reachable_holds refuses.
-/obj/machinery/disposal/proc/controls_reachable_refusal(datum/act/op/A)
-	return "you cannot reach the controls from inside"
-
 /obj/machinery/disposal/proc/interaction_disposal_use(datum/act/op/A)
 	var/mob/user = A.actor
+	if(user.loc == src) // the controls can't be worked from inside the bin
+		to_chat(user, span_warning("You cannot reach the controls from inside."))
+		return OP_DECLINE
 	if(has_stat(BROKEN))
 		return OP_OK
 

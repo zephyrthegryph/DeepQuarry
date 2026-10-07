@@ -228,7 +228,7 @@
 	special_weapon_handling = TRUE
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/cyborgtoy/gun_self(datum/act/op/A, callback)
+/obj/item/gun/projectile/cyborgtoy/gun_operate(datum/act/op/A, callback)
 	var/mob/user = A.actor
 	. = ..()
 	if(. == OP_OK)
