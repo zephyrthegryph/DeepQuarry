@@ -268,7 +268,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gear_dispenser, \
 		LAZYOR(unique_dispense_list, user.ckey)
 
 	animate_dispensing()
-	after(src, dispense_anim_time, PROC_REF(dispense_finish), with = list(S, user, greet))
+	after(src, dispense_anim_time, PROC_REF(dispense_finish), with = list(S, user, greet), keeps_dead = TRUE)
 
 /// The dispensing animation is over: hand the gear out.
 /obj/machinery/gear_dispenser/proc/dispense_finish(datum/gear_disp/S, mob/living/carbon/human/user, greet)
@@ -374,7 +374,7 @@ CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
 	rel_set(src, nameof(held_gear_disp), S)
 
 	animate_dispensing()
-	after(src, dispense_anim_time, PROC_REF(dispense_finish), with = list(S, user, greet))
+	after(src, dispense_anim_time, PROC_REF(dispense_finish), with = list(S, user, greet), keeps_dead = TRUE)
 
 /obj/machinery/gear_dispenser/suit_fancy/dispense_finish(datum/gear_disp/S, mob/living/carbon/human/user, greet)
 	dispenser_flags &= ~GD_BUSY

@@ -1054,7 +1054,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
 	log_and_message_admins("Oil extract reaction (explosion) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 
-	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_explode), with = list(holder.my_atom, power))
+	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_explode), with = list(holder.my_atom, power), keeps_dead = TRUE)
 
 // ********************
 // * Bluespace slimes *

@@ -18,7 +18,7 @@
 	if(!has_buckled_mobs() && !M?.buckled_to() && !M.anchored && (issmall(M) || prob(round(seed().get_trait(TRAIT_POTENCY)/3))))
 		//wait a tick for the Entered() proc that called HasProximity() to finish (and thus the moving animation),
 		//so we don't appear to teleport from two tiles away when moving into a turf adjacent to vines.
-		after(src, 0.1 SECONDS, PROC_REF(entangle), with = list(M))
+		after(src, 0.1 SECONDS, PROC_REF(entangle), with = list(M), keeps_dead = TRUE)
 
 /obj/effect/plant/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()

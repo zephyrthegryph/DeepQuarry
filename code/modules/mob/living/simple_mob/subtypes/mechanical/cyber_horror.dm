@@ -139,7 +139,7 @@
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
 	// For the telegraphing.
-	after(src, leap_warmup, PROC_REF(do_special_attack_1), with = list(A))
+	after(src, leap_warmup, PROC_REF(do_special_attack_1), with = list(A), keeps_dead = TRUE)
 
 
 /mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror/proc/do_special_attack_1(atom/A)

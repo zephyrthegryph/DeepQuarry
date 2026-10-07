@@ -332,7 +332,7 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 			bowl_contents += L
 
 	if(!length(bowl_contents)) //Reduced recharge if nothing is being flushed
-		after(src, 7.5 SECONDS, PROC_REF(refill_done), with = list(TRUE))
+		after(src, 7.5 SECONDS, PROC_REF(refill_done), with = list(TRUE), keeps_dead = TRUE)
 		return
 
 	begin_flush(bowl_contents[1], bowl_contents)
@@ -354,9 +354,9 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 	pick_list -= flushed
 
 	if(!length(pick_list)) //All flushed.
-		after(src, 1.5 SECONDS, PROC_REF(tertiary_flush), with = list(flushed, TRUE))
+		after(src, 1.5 SECONDS, PROC_REF(tertiary_flush), with = list(flushed, TRUE), keeps_dead = TRUE)
 		return
-	after(src, 1.5 SECONDS, PROC_REF(tertiary_flush), with = list(flushed, FALSE)) //Put the object in the bin.
+	after(src, 1.5 SECONDS, PROC_REF(tertiary_flush), with = list(flushed, FALSE), keeps_dead = TRUE) //Put the object in the bin.
 
 	var/obj_to_be_flushed = pick_list[1]
 	after(src, 0.2 SECONDS, PROC_REF(begin_flush), with = list(obj_to_be_flushed, pick_list))
@@ -369,7 +369,7 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 
 	if(flush_completed) //Flushed it all.
 		after(src, 1 SECOND, PROC_REF(flush_send), with = list(currently_held_objects))
-		after(src, 20 SECONDS, PROC_REF(refill_done), with = list(FALSE))
+		after(src, 20 SECONDS, PROC_REF(refill_done), with = list(FALSE), keeps_dead = TRUE)
 		return
 
 /obj/structure/toilet/proc/flush_send(list/to_send)

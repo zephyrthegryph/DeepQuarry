@@ -306,6 +306,8 @@ struct Walk<'a, 'e> {
     visited: HashSet<(String, String, Root, Vec<String>)>,
     depth: usize,
     line: u32,
+    /// Inside `read_once(...)`: reads are evaluated but neither recorded nor subscribed.
+    mute: u32,
 }
 
 impl<'a> ReadsEngine<'a> {
@@ -322,7 +324,7 @@ impl<'a> ReadsEngine<'a> {
     pub fn analyze(&self, ty: &str, name: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
-        let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0 };
+        let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0 };
         let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false };
         w.run_proc(p, this, &[], true);
         out
@@ -334,7 +336,7 @@ impl<'a> ReadsEngine<'a> {
     pub fn analyze_handler(&self, ty: &str, name: &str, ctx_ty: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
-        let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0 };
+        let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0 };
         let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false };
         w.run_proc(p, this, &[], true);
         out
@@ -511,6 +513,9 @@ impl<'a, 'e> Walk<'a, 'e> {
     }
 
     fn add_read(&mut self, r: Read, rel: &str, line: u32) {
+        if self.mute > 0 {
+            return;
+        }
         if !self.out.sites.contains_key(&r) {
             self.out.sites.insert(r.clone(), (rel.to_string(), line));
         }
@@ -1022,6 +1027,15 @@ impl<'a, 'e> Walk<'a, 'e> {
     /// An unscoped call: a proc of src's type, a global with READS_FROM, or an unannotated global.
     fn call(&mut self, fr: &mut Frame<'a>, name: &str, args: &[Expression], line: u32) -> Val {
         if name == "nameof" || name == "PROC_REF" || name == "TYPE_PROC_REF" || name == "GLOBAL_PROC_REF" || name == "initial" {
+            return Val::local(None);
+        }
+        if name == "read_once" {
+            // A value read once when the question opens (code/engine/parts/cond.dm read_once()): never subscribed.
+            self.mute += 1;
+            for a in args {
+                self.eval(fr, a);
+            }
+            self.mute -= 1;
             return Val::local(None);
         }
         let argv: Vec<Val> = args.iter().map(|a| self.eval(fr, a)).collect();

@@ -20,6 +20,10 @@
 	// The type's declared interface entries open the window.
 	return ui_open(src, user, ui, parent_ui, custom_state)
 
+/// TRUE when `user` is a ghost looking at a window it may not act in: the read-only view (an admin's interactive window is not one).
+/proc/tgui_is_observer_view(mob/user, datum/tgui/ui)
+	return isobserver(user) && (!ui || ui.status != STATUS_INTERACTIVE)
+
 /**
  * public
  *
@@ -35,7 +39,7 @@
 	if(isatom(src))
 		var/atom/A = src
 		caps_ui_data(A, user, .) // capabilities add theirs (code/datums/capabilities/)
-	present_tgui_data(src, user, .) // the type's ui_data(A) output and its engine capabilities' data (code/engine/present/outputs.dm)
+	present_tgui_data(src, user, ., tgui_is_observer_view(user, ui)) // the type's ui_data(A) output and its engine capabilities' data (code/engine/present/outputs.dm)
 
 /**
  * public
@@ -106,6 +110,8 @@
 	PUBLISH_LEGACY(src, /datum/notice/ui_act, ui.user, action)
 	// If UI is not interactive or usr calling Topic is not the UI user, bail.
 	if(!ui || ui.status != STATUS_INTERACTIVE)
+		if(ui && isobserver(ui.user))
+			log_world("UI: [ui.user] (observer) pressed [action] in [src.type]'s window: refused, an observer's window is read-only")
 		return TRUE
 	// A window button is an op with a ui_act() binding: it runs first (code/engine/present/outputs.dm, present_ui_act()).
 	var/datum/op_result/button = present_ui_act(src, ui.user, action, params, ui)

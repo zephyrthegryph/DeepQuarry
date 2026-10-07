@@ -571,7 +571,7 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 			// rad_collector and ZAS binary/pump removed; supermatter only.
 			if(istype(M,/obj/machinery/power/supermatter))
 				SM = M
-				after(SM, 5 SECONDS, GLOBAL_PROC_REF(admin_boost_supermatter), with = list(SM))
+				after(SM, 5 SECONDS, GLOBAL_PROC_REF(admin_boost_supermatter), with = list(SM), keeps_dead = TRUE)
 
 			else if(istype(M,/obj/machinery/power/smes))	//This is the SMES inside the engine room.  We don't need much power.
 				var/obj/machinery/power/smes/SMES = M

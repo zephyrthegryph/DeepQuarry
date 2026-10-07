@@ -44,7 +44,7 @@
 			shake_camera(L,2 SECONDS,4)
 
 	//SHAKA SHAKA SHAKA
-	after(src, 2 SECONDS, PROC_REF(after_crash), with = list(victims, target))
+	after(src, 2 SECONDS, PROC_REF(after_crash), with = list(victims, target), keeps_dead = TRUE)
 
 /datum/shuttle/proc/after_crash(list/victims, obj/effect/shuttle_landmark/target)
 	PRIVATE_PROC(TRUE)

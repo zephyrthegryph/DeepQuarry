@@ -105,7 +105,7 @@
 
 		visible_message(span_notice("\The [src] begins to shape a nutriment slurry."))
 
-		after(src, print_delay/speed, PROC_REF(print_done), with = list(foodItem))
+		after(src, print_delay/speed, PROC_REF(print_done), with = list(foodItem), keeps_dead = TRUE)
 
 
 /obj/machinery/food_replicator/proc/interaction_scan(datum/act/op/A)

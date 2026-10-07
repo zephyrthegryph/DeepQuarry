@@ -56,7 +56,7 @@
 	// The search takes a second per tile checked; the spell is busy (a hold claims it) meanwhile.
 	var/search_time = (maximum_distance - i) SECONDS
 	task_hold_busy(src, search_time)
-	after(src, search_time, PROC_REF(passwall_found), with = list(user, hit_atom, our_turf, found_turf, total_cost))
+	after(src, search_time, PROC_REF(passwall_found), with = list(user, hit_atom, our_turf, found_turf, total_cost), keeps_dead = TRUE)
 	return 1
 
 /obj/item/spell/passwall/proc/passwall_found(mob/living/user, atom/hit_atom, turf/our_turf, turf/found_turf, total_cost)

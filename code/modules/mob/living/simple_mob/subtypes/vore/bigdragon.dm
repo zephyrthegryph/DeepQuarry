@@ -679,7 +679,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		if(!src.enraged)
 			if(src.vitality() <= 0.5)
 				src.enraged = 1
-				after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list("No more games. COME HERE."))
+				after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list("No more games. COME HERE."), keeps_dead = TRUE)
 		if(src.enraged)
 			if(src.vitality() >= 0.5)
 				src.enraged = 0
@@ -750,7 +750,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		ai_busy_begin()
 	do_windup_animation(A, charge_warmup)
 	//callbacks are more reliable than byond's process scheduler
-	after(src, charge_warmup, PROC_REF(chargeend), key = "chargetimer", with = list(A))
+	after(src, charge_warmup, PROC_REF(chargeend), key = "chargetimer", with = list(A), keeps_dead = TRUE)
 
 
 /mob/living/simple_mob/vore/bigdragon/proc/chargeend(atom/A, explicit = 0, gentle = 0)
@@ -791,7 +791,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		ai_busy_begin()
 	flames = 1
 	build_icons()
-	after(src, charge_warmup, PROC_REF(firebreathend), key = "firebreathtimer", with = list(A))
+	after(src, charge_warmup, PROC_REF(firebreathend), key = "firebreathtimer", with = list(A), keeps_dead = TRUE)
 	playsound(src, "sound/magic/Fireball.ogg", 50, 1)
 
 /mob/living/simple_mob/vore/bigdragon/proc/firebreathend(atom/A)

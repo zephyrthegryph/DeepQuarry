@@ -85,7 +85,7 @@
 
 	// Telegraph to give a small window to dodge if really close.
 	do_windup_animation(A, tunnel_warning)
-	after(src, tunnel_warning, PROC_REF(tunnel_dig), with = list(A, destination, starting_turf)) // For the telegraphing.
+	after(src, tunnel_warning, PROC_REF(tunnel_dig), with = list(A, destination, starting_turf), keeps_dead = TRUE) // For the telegraphing.
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_dig(atom/A, turf/destination, turf/starting_turf)
 	if(!destination || !starting_turf)
@@ -186,7 +186,7 @@
 	// Visuals and sound.
 	dig_under_floor(get_turf(src))
 	play_sfx(src, SFX_EFFECTS_BREAK_STONE)
-	after(src, tunnel_tile_speed, PROC_REF(tunnel_step_check), with = list(destination, steps_left - 1, last_loc, then_proc, extra))
+	after(src, tunnel_tile_speed, PROC_REF(tunnel_step_check), with = list(destination, steps_left - 1, last_loc, then_proc, extra), keeps_dead = TRUE)
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_step_check(turf/destination, steps_left, last_loc, then_proc, list/extra)
 	if(!destination)

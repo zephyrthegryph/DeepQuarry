@@ -180,7 +180,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			open_request(src, /datum/prompt/choice/cult_convert, PROC_REF(convert_answered), answerer = target, waiting_list = waiting_for_input)
 
 	if(target in converting)
-		after(src, 10 SECONDS, PROC_REF(convert_tick), with = list(attacker, target, waiting_for_input, 1)) //proc once every 10 seconds
+		after(src, 10 SECONDS, PROC_REF(convert_tick), with = list(attacker, target, waiting_for_input, 1), keeps_dead = TRUE) //proc once every 10 seconds
 
 /// The convert rune's offer. Closing it is resisting; `waiting_list` is the rune's asked-already list.
 /datum/prompt/choice/cult_convert
@@ -394,7 +394,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 				(Verbs -> Ghost -> Re-enter corpse)")))
 				break
 
-	after(src, 10 SECONDS, PROC_REF(raise_finish), with = list(user, corpse_to_raise, body_to_sacrifice))
+	after(src, 10 SECONDS, PROC_REF(raise_finish), with = list(user, corpse_to_raise, body_to_sacrifice), keeps_dead = TRUE)
 
 /obj/effect/rune/proc/raise_finish(mob/living/user, mob/living/carbon/human/corpse_to_raise, mob/living/carbon/human/body_to_sacrifice)
 	if(QDELETED(user) || QDELETED(corpse_to_raise) || QDELETED(body_to_sacrifice))
@@ -648,13 +648,13 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 	act_message(user, null, MSG_SELF(span_danger("In the last moment of your humble life, you feel an immense pain as fabric of reality mends... with your blood.")), \
 		MSG_OTHERS(span_danger("%U% keels over dead, %THEIR% blood glowing blue as it escapes %THEIR% body and dissipates into thin air.")), \
 		MSG_BLIND(span_warning("You hear faint rustle.")))
-	after(null, 1 MINUTE, GLOBAL_PROC_REF(cult_mend_rune_wait), with = list(user))
+	after(null, 1 MINUTE, GLOBAL_PROC_REF(cult_mend_rune_wait), with = list(user), keeps_dead = TRUE)
 	return
 
 /// The mend rune's strain on reality lasts while its caster stays dead (checked every minute).
 /proc/cult_mend_rune_wait(mob/living/user)
 	if(user?.stat == DEAD)
-		after(null, 1 MINUTE, GLOBAL_PROC_REF(cult_mend_rune_wait), with = list(user))
+		after(null, 1 MINUTE, GLOBAL_PROC_REF(cult_mend_rune_wait), with = list(user), keeps_dead = TRUE)
 		return
 	GLOB.runedec-=10
 

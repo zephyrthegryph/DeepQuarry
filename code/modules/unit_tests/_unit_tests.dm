@@ -1052,6 +1052,7 @@
 #include "interim_parcel_native_label.dm"
 #include "interim_handlabeler_native_configuration.dm"
 #include "interim_blob_native_pairs.dm"
+#include "dq_gap_decisions_tests.dm"
 // END_INCLUDE
 
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)

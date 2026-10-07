@@ -101,7 +101,7 @@
 	set_security_level("delta")
 	radio.autosay("Self destruct sequence has been activated. Self-destructing in 120 seconds.", "Self-Destruct Control")
 
-	after(user, 1 SECOND, GLOBAL_PROC_REF(malf_station_bomb_tick), with = list(user, radio, 120))
+	after(user, 1 SECOND, GLOBAL_PROC_REF(malf_station_bomb_tick), with = list(user, radio, 120), keeps_dead = TRUE)
 
 /// The station self-destruct countdown, once a second.
 /proc/malf_station_bomb_tick(mob/living/silicon/ai/user, obj/item/radio/radio, timer)
@@ -113,7 +113,7 @@
 	if(timer == 1)
 		radio.autosay("Self destructing now. Have a nice day.", "Self-Destruct Control")
 	if(timer > 1)
-		after(user, 1 SECOND, GLOBAL_PROC_REF(malf_station_bomb_tick), with = list(user, radio, timer - 1))
+		after(user, 1 SECOND, GLOBAL_PROC_REF(malf_station_bomb_tick), with = list(user, radio, timer - 1), keeps_dead = TRUE)
 		return
 
 	if(SSticker)

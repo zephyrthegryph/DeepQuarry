@@ -57,7 +57,7 @@
 	var/turf/T = get_turf(src)
 	if(T && !is_type_in_list(T, GLOB.suitable_fish_turf_types))
 		if(prob(50))
-			after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list(pick("Blub", "Glub", "Burble")))
+			after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list(pick("Blub", "Glub", "Burble")), keeps_dead = TRUE)
 		src.add_oxygen_debt(src.unsuitable_atoms_damage, T)
 
 // Subtypes.

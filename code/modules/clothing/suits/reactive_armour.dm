@@ -380,7 +380,7 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 	owner.alpha = 0
 	in_stealth = TRUE
 	act_message(owner, null, others = span_danger("%U% is hit by [attack_text] in the chest!"))
-	after(src, stealth_time, PROC_REF(end_stealth), with = list(owner))
+	after(src, stealth_time, PROC_REF(end_stealth), with = list(owner), keeps_dead = TRUE)
 	decoy.say("*sidestep")
 	after(src, stealth_time, PROC_REF(destroy_illusion), with = list(decoy))
 	decoy.expire(stealth_time)

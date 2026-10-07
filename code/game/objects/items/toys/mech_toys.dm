@@ -246,13 +246,13 @@ CAPABILITIES(/obj/item/toy/mecha)
 	COOLDOWN_START(src, timer, cooldown*cooldown_multiplier)
 	COOLDOWN_START(attacker, timer, attacker.cooldown*attacker.cooldown_multiplier)
 
-	after(src, 1 SECOND, PROC_REF(brawl_round), with = list(attacker, attacker_controller, opponent, 0))
+	after(src, 1 SECOND, PROC_REF(brawl_round), with = list(attacker, attacker_controller, opponent, 0), keeps_dead = TRUE)
 
 /// Checks the fighters, then half a second later the next exchange lands.
 /obj/item/toy/mecha/proc/brawl_round(obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent, battle_length)
 	//--THE BATTLE BEGINS--
 	if(!QDELETED(attacker) && combat_health > 0 && attacker.combat_health > 0 && battle_length < MAX_BATTLE_LENGTH && combat_can_continue(attacker, attacker_controller, opponent))
-		after(src, 0.5 SECONDS, PROC_REF(brawl_exchange), with = list(attacker, attacker_controller, opponent, battle_length))
+		after(src, 0.5 SECONDS, PROC_REF(brawl_exchange), with = list(attacker, attacker_controller, opponent, battle_length), keeps_dead = TRUE)
 		return
 	brawl_end(attacker, attacker_controller, opponent)
 
@@ -349,7 +349,7 @@ CAPABILITIES(/obj/item/toy/mecha)
 				act_message(attacker_controller, src, MSG_SELF(span_notice(" You don't know what to do next.")), \
 					MSG_OTHERS(span_notice(" %T% and [attacker] stand around awkwardly.")))
 
-	after(src, 0.5 SECONDS, PROC_REF(brawl_round), with = list(attacker, attacker_controller, opponent, battle_length + 1))
+	after(src, 0.5 SECONDS, PROC_REF(brawl_round), with = list(attacker, attacker_controller, opponent, battle_length + 1), keeps_dead = TRUE)
 
 /obj/item/toy/mecha/proc/brawl_end(obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent)
 	if(QDELETED(attacker))

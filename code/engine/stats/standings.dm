@@ -110,7 +110,7 @@ GLOBAL_VAR_INIT(standing_cache_drops, 0)
 		row[H_PRIORITY] = priority
 		row[H_REASON] = reason || row[H_REASON]
 	else
-		row = list(HOLD_STANDING, source, value, expires, priority, HF_BOUND, HOLD_CLOCK_WORLD, reason, ++GLOB.stat_hold_serial, key, null)
+		row = list(HOLD_STANDING, source, value, expires, priority, 0, HOLD_CLOCK_WORLD, reason, ++GLOB.stat_hold_serial, key, null)
 		rec.holds += list(row)
 		if(isdatum(source))
 			var/datum/stat_record/src_rec = stat_record_of(source)

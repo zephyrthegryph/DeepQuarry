@@ -31,7 +31,7 @@
 			return TRUE
 		add_overlay("fab-load-metal")
 		set_inserting(TRUE)
-		after(src, 0.9 SECONDS, PROC_REF(complete_insertion), with = list(user, supplied_stack))
+		after(src, 0.9 SECONDS, PROC_REF(complete_insertion), with = list(user, supplied_stack), keeps_dead = TRUE)
 		return TRUE
 	to_chat(user, "The robot part maker is full. Please remove metal from the robot part maker in order to insert more.")
 	return TRUE

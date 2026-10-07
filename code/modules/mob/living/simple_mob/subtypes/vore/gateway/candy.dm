@@ -360,7 +360,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 /mob/living/simple_mob/vore/candy/marshmellowserpent/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	do_windup_animation(A, 20)
-	after(src, 2 SECONDS, PROC_REF(chargeend), with = list(A))
+	after(src, 2 SECONDS, PROC_REF(chargeend), with = list(A), keeps_dead = TRUE)
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/proc/chargeend(atom/A)
 	if(stat) //you are dead
@@ -510,7 +510,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros)
 /mob/living/simple_mob/vore/candy/ouroboros/proc/barrage_combo(atom/target)
 	var/first = prob(50) ? /obj/item/projectile/arc/fragmentation/cherrybomb : /obj/item/projectile/bullet/cmblast
 	var/second = prob(50) ? "critters" : (first == /obj/item/projectile/bullet/cmblast ? /obj/item/projectile/arc/fragmentation/cherrybomb : /obj/item/projectile/bullet/cmblast)
-	after(src, 0.5 SECONDS, PROC_REF(barrage_shot), with = list(target, first, second))
+	after(src, 0.5 SECONDS, PROC_REF(barrage_shot), with = list(target, first, second), keeps_dead = TRUE)
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/barrage_shot(atom/target, shot, next_shot)
 	if(shot == "critters")
@@ -521,7 +521,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros)
 		var/obj/item/projectile/P = new shot(get_turf(src))
 		P.launch_projectile(target, BP_TORSO, src)
 	if(next_shot)
-		after(src, 0.5 SECONDS, PROC_REF(barrage_shot), with = list(target, next_shot, null))
+		after(src, 0.5 SECONDS, PROC_REF(barrage_shot), with = list(target, next_shot, null), keeps_dead = TRUE)
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/debuff_combo(atom/target)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% prepares to let out a thunderous roar!")))
@@ -539,7 +539,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros)
 	else
 		var/obj/item/projectile/P = new /obj/item/projectile/bullet/cmblast(get_turf(src))
 		P.launch_projectile(target, BP_TORSO, src)
-		after(P, 0.05 SECONDS, TYPE_PROC_REF(/obj/item/projectile, launch_projectile), with = list(target, BP_TORSO, src))
+		after(P, 0.05 SECONDS, TYPE_PROC_REF(/obj/item/projectile, launch_projectile), with = list(target, BP_TORSO, src), keeps_dead = TRUE)
 
 
 /obj/random/mob/candycritter

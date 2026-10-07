@@ -197,7 +197,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 /// Fades `AM` out, moves it to `T` (if any) once faded, then fades it back in (half a second each).
 /obj/item/telecube/proc/fade_and_move(atom/movable/AM, turf/T, announce = FALSE)
 	animate_out(AM)
-	after(src, 0.5 SECONDS, PROC_REF(fade_back_in), with = list(AM, T, announce))
+	after(src, 0.5 SECONDS, PROC_REF(fade_back_in), with = list(AM, T, announce), keeps_dead = TRUE)
 
 /obj/item/telecube/proc/fade_back_in(atom/movable/AM, turf/T, announce)
 	if(QDELETED(AM))
@@ -230,7 +230,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 
 	animate(target, alpha = 255, time = 5) //In
 	animate(target.filters[our_filter_index], size = 0, time = 5, flags = ANIMATION_PARALLEL)
-	after(src, 0.5 SECONDS, PROC_REF(clear_blur), with = list(target))
+	after(src, 0.5 SECONDS, PROC_REF(clear_blur), with = list(target), keeps_dead = TRUE)
 
 /obj/item/telecube/item_ctrl_click(mob/user)
 	if(Adjacent(user) && teleport_to_mate(user))

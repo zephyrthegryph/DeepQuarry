@@ -56,7 +56,7 @@ CAPABILITIES(/obj/machinery/transportpod)
 	limit_x = xc[locNum]+1
 	limit_y = yc[locNum]+1
 	build()
-	after(src, 2 SECONDS, PROC_REF(arrive), with = list(L)) //Give explosion time so the pod itself doesn't go boom
+	after(src, 2 SECONDS, PROC_REF(arrive), with = list(L), keeps_dead = TRUE) //Give explosion time so the pod itself doesn't go boom
 
 /obj/machinery/transportpod/proc/arrive(turf/L)
 	if(L)

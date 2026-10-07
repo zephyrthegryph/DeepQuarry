@@ -940,7 +940,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	play_sfx(src, SFX_EFFECTS_BODYFALL1)
 	pixel_y = default_pixel_y
-	after(src, 0.5 SECONDS, PROC_REF(leap_land), with = list(T))
+	after(src, 0.5 SECONDS, PROC_REF(leap_land), with = list(T), keeps_dead = TRUE)
 
 /mob/living/simple_mob/proc/leap_land(mob/living/T)
 	if(status_flags & LEAPING) set_status_flags(status_flags & ~LEAPING)

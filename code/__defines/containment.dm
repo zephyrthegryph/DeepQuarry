@@ -43,6 +43,8 @@
 #define OCCUPANT_SLOT_CRYO "cryo_occupant"
 /// The change key an occupant slot publishes on its holder when someone gets in or out (read through occupant_of()).
 #define OCCUPANT_KEY "occupant"
+/// Published on a holder whenever a thing enters or leaves any of its slots (the ledger's note_enter/note_exit/reslot); slot_occupancy() reads it.
+#define SLOT_OCCUPANCY_KEY "slot_occupancy"
 /// The sealed occupant slot of an advanced medical body scanner.
 #define OCCUPANT_SLOT_BODY_SCANNER "body_scanner_occupant"
 /// The sealed occupant slot of a cloning pod.

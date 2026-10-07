@@ -172,7 +172,7 @@ CAPABILITIES(/obj/machinery/clonepod)
 	set_locked(1)
 
 	eject_wait = 1
-	after(src, 3 SECONDS, PROC_REF(clear_eject_wait), with = list(BR, clonemind))
+	after(src, 3 SECONDS, PROC_REF(clear_eject_wait), with = list(BR, clonemind), keeps_dead = TRUE)
 
 /obj/machinery/clonepod/proc/clear_eject_wait(datum/transhuman/body_record/BR, datum/mind/clonemind)
 	eject_wait = 0

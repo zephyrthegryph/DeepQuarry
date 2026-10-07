@@ -278,7 +278,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	var/obj/item/nif/nif = new_character.nif
 	if(!nif)
 		nif = new record.nif_path(new_character,null,record.nif_savedata)
-	after(nif, 0, GLOBAL_PROC_REF(install_nif_software), with = list(nif, record.nif_software, record.nif_durability))
+	after(nif, 0, GLOBAL_PROC_REF(install_nif_software), with = list(nif, record.nif_software, record.nif_durability), keeps_dead = TRUE)
 
 /// Installs `software` (NIFsoft types) in the NIF, then restores its durability if given.
 /proc/install_nif_software(obj/item/nif/nif, list/software, durability)

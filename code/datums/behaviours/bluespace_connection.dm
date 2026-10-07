@@ -64,7 +64,7 @@ CAPABILITY_TYPE(bluespace_connection, CAP_BLUESPACE_CONNECTION, /datum/capabilit
 		after(exit_closet, 1 SECONDS, TYPE_PROC_REF(/obj/structure/closet, open))
 
 	playsound(exit_point, BLUESPACE_EXIT_SOUND, 50, TRUE)
-	after(assigned_closet, 1.3 SECONDS, TYPE_PROC_REF(/obj/structure/closet, bluespace_exit), with = list(exit_point, inside))
+	after(assigned_closet, 1.3 SECONDS, TYPE_PROC_REF(/obj/structure/closet, bluespace_exit), with = list(exit_point, inside), keeps_dead = TRUE)
 
 /obj/structure/closet/proc/bluespace_exit(atom/exit_point, list/moving)
 	// Nope, must be closed.

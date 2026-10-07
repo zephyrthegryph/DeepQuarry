@@ -196,11 +196,11 @@ CAPABILITIES(/obj/machinery/button/garbosystem)
 					C.forceMove(loc)
 				if(isitem(A))
 					A.SpinAnimation(5,3)
-					after(src, 1.5 SECONDS, PROC_REF(crunch_item), with = list(A))
+					after(src, 1.5 SECONDS, PROC_REF(crunch_item), with = list(A), keeps_dead = TRUE)
 					items_taken++
 				else
 					A.SpinAnimation(5,3)
-					after(src, 1.5 SECONDS, PROC_REF(crunch_thing), with = list(A))
+					after(src, 1.5 SECONDS, PROC_REF(crunch_thing), with = list(A), keeps_dead = TRUE)
 					items_taken++
 		if(items_taken >= voracity)
 			break

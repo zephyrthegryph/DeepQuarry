@@ -109,9 +109,9 @@
 		to_chat(user, span_warning("You'll need [key_name] in one of your hands to move \the [ridden()]."))
 
 /datum/riding/proc/Unbuckle(atom/movable/M)
-//	after(ridden, 0, TYPE_PROC_REF(/atom/movable, unbuckle_mob), with = list(M))
+//	after(ridden, 0, TYPE_PROC_REF(/atom/movable, unbuckle_mob), with = list(M), keeps_dead = TRUE)
 	// Deferred to the next scheduler slot, as /tg/ does with a zero-length timer.
-	after(ridden(), 0, TYPE_PROC_REF(/atom/movable, unbuckle_mob), with = list(M))
+	after(ridden(), 0, TYPE_PROC_REF(/atom/movable, unbuckle_mob), with = list(M), keeps_dead = TRUE)
 
 /datum/riding/proc/Process_Spacemove(direction)
 	if(ridden().get_gravity())

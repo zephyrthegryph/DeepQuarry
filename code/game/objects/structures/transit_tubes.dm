@@ -125,7 +125,7 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 /obj/structure/transit_tube/station/proc/launch_close(obj/structure/transit_tube_pod/pod)
 	pod_moving = 1
 	close_animation()
-	after(src, CLOSE_DURATION + 0.2 SECONDS, PROC_REF(launch_go), with = list(pod))
+	after(src, CLOSE_DURATION + 0.2 SECONDS, PROC_REF(launch_go), with = list(pod), keeps_dead = TRUE)
 
 /// Launching, step 2: send the pod on its way.
 /obj/structure/transit_tube/station/proc/launch_go(obj/structure/transit_tube_pod/pod)
@@ -165,7 +165,7 @@ CAPABILITIES(/obj/structure/transit_tube/station)
 /// A pod arrived: open the station.
 /obj/structure/transit_tube/station/proc/arrival_open(obj/structure/transit_tube_pod/pod)
 	open_animation()
-	after(src, OPEN_DURATION + 0.2 SECONDS, PROC_REF(arrival_opened), with = list(pod))
+	after(src, OPEN_DURATION + 0.2 SECONDS, PROC_REF(arrival_opened), with = list(pod), keeps_dead = TRUE)
 
 /obj/structure/transit_tube/station/proc/arrival_opened(obj/structure/transit_tube_pod/pod)
 	pod_moving = 0

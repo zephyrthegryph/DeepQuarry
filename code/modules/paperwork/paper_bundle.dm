@@ -89,7 +89,7 @@
 			MSG_OTHERS("<span class='[class]'>%U% holds %I% up to %T%, it looks like %THEYRE% trying to burn it!</span>"), \
 			item = P)
 
-		after(src, 2 SECONDS, PROC_REF(burn_through), with = list(user, P, class))
+		after(src, 2 SECONDS, PROC_REF(burn_through), with = list(user, P, class), keeps_dead = TRUE)
 
 /obj/item/paper_bundle/examine(mob/user)
 	. = ..()

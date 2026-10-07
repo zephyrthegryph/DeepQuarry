@@ -167,7 +167,7 @@ CAPABILITIES(/obj/item/storage/secure)
 	if(!emagged)
 		set_emagged(1)
 		set_sparking(TRUE)
-		after(src, 0.6 SECONDS, PROC_REF(emag_spark_done), key = "spark", with = list(user, feedback))
+		after(src, 0.6 SECONDS, PROC_REF(emag_spark_done), key = "spark", with = list(user, feedback), keeps_dead = TRUE)
 		return 1
 
 // -----------------------------

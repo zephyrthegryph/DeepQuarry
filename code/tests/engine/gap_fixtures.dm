@@ -375,6 +375,9 @@ CAPABILITIES(/obj/gap_observed_window)
 	interface("ChemDispenser", observe = TRUE)
 	extend("ui_observe", needs(req_is(nameof(blocked), FALSE, because = /datum/msg/op/not_available)))
 
+/obj/gap_observed_window/ui_data(datum/act/eval/A)
+	return list("saw_observer" = A.observer)
+
 /// Hands its part to a successor while it has one; the extra part is spilled only while the flag is set.
 /obj/gap_handover_holder
 	name = "gap handover holder"
