@@ -4,7 +4,124 @@
     "version": "516.1687",
     "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
   },
-  "files": [],
+  "files": [
+    {
+      "path": "positive.dm",
+      "sha256": "a3a00d97095d5e9e8958f8555fa9f07b75f32305073ce95081123ffab7ac8635"
+    },
+    {
+      "path": "positive.dme",
+      "sha256": "1233acdcd657624a794bf03ddc1678ebc5cfa97ea07827d81e7222902d8b5921"
+    },
+    {
+      "path": "positive.stdout.log",
+      "sha256": "2768e4594d7b27f89f2b1c38065d4a01031af60e4a0ae3e361b994c13ff1df66"
+    },
+    {
+      "path": "positive.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "positive.native.bin",
+      "sha256": "904f64e999ba7440b719e3f52bef266c774ab3ca6d676cca79a0a070ac3c4bae"
+    },
+    {
+      "path": "undef.dm",
+      "sha256": "237d5a717c1d50e01907b71967f7e5e86e9dee3cf7c7131c26b830bdffeb534d"
+    },
+    {
+      "path": "undef.dme",
+      "sha256": "57d3755b1f98753bdb2a2496ada7eeff539ecb8cb8394d3c6819820dca301f7f"
+    },
+    {
+      "path": "undef.stdout.log",
+      "sha256": "a22755b85e1495e7ab99e19c424e3d79c1c409d7a78802c531e13fdf8b2c706e"
+    },
+    {
+      "path": "undef.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "undef.native.bin",
+      "sha256": "bcae93977a5a0594bc79c95e26a9c4c9846d97b94d07825bc337d37dfe22676d"
+    },
+    {
+      "path": "qualified.dm",
+      "sha256": "3dfc6d1fdf4321258e4a0aed46b2c90c4850de15f02694606e738e20c9b51c6e"
+    },
+    {
+      "path": "qualified.dme",
+      "sha256": "169b03a71dac49393ab608d93e9f5c078858b8a87929a603bc17d0bffce7df43"
+    },
+    {
+      "path": "qualified.stdout.log",
+      "sha256": "a75713528975848fd8bb2268675ccdab33685f4419a42dcb24953f44a287d795"
+    },
+    {
+      "path": "qualified.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "qualified-undef.dm",
+      "sha256": "a74d7b3cad34423b7557641a75f82c47969fc08e354342ad14d132149d7338f1"
+    },
+    {
+      "path": "qualified-undef.dme",
+      "sha256": "02cdcd4f3dc3aabd673a31c5cfe9724cbda1af8b262eaf75dbc8c310af55310d"
+    },
+    {
+      "path": "qualified-undef.stdout.log",
+      "sha256": "f2167fd6ee91dcc89aa1bc63d0c7a4da2c6a47e0c32764db556b6823c39d43c6"
+    },
+    {
+      "path": "qualified-undef.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "qualified-undef.native.bin",
+      "sha256": "cb27bcf090cd2bff8b0eb3fc9f5cedb864c087ad3a0ee82fdd3d7d71ba7954c1"
+    },
+    {
+      "path": "define.dm",
+      "sha256": "9bdcbc75d460aa4958dae96a237a51b67223be9732359fc7cdf54bff90f74f82"
+    },
+    {
+      "path": "define.dme",
+      "sha256": "c01d45e670cda283088eca1f5fbe44392ca704007eaa5c17c8bd940bb7162eae"
+    },
+    {
+      "path": "define.stdout.log",
+      "sha256": "84606899d6bbc0585fdc44e16fbc9f28d1fe5fba57a1b19046872bc1e852e28c"
+    },
+    {
+      "path": "define.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "define.native.bin",
+      "sha256": "55cc786adcea83518b19377969db396a931821a6fba49cf68e3d80e230e16f4e"
+    },
+    {
+      "path": "shadow.dm",
+      "sha256": "f82b8439b768b18131ea631d018763ee608007da9b48f7db9aa64cd3aef06102"
+    },
+    {
+      "path": "shadow.dme",
+      "sha256": "703a73f81c63db1b9b599960459000bc055443a91ae671879953c0b6810383dd"
+    },
+    {
+      "path": "shadow.stdout.log",
+      "sha256": "ca9fc26f84fd537f3bf07682d1f575a61a5ec0b6a629c42518bd23548594159e"
+    },
+    {
+      "path": "shadow.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "shadow.native.bin",
+      "sha256": "bc72329b382a2e05671c42bc3825bc6d485e2b56f03d53b9f2d034e0f41981f4"
+    }
+  ],
   "initial_macros": [
     {
       "name": "SEE_BLACKNESS",
@@ -146,6 +263,242 @@
       "datum_words": [
         80,
         16,
+        18,
+        0
+      ]
+    }
+  ],
+  "controls": {
+    "positive": "root+datum eight vision macros emit exact integer literals",
+    "undef": "bare root/datum SEE_BLACKNESS afterundef emitsruntimeGetVar, notliteral",
+    "qualified": "default global.SEE_BLACKNESS expected nativeerror(returnglobal.1024)",
+    "qualified-undef": "global.SEE_BLACKNESS afterundef emitsruntimeGetVar",
+    "define": "source replacement7 emitsPushInt7",
+    "shadow": "authoreddatumfield9 afterundef usesfieldselector; rootusesglobalGetVar"
+  },
+  "decoded_procedures": [
+    {
+      "binary": "positive.native.bin",
+      "procedure": "/proc/probe_SEE_BLACKNESS",
+      "words": [
+        80,
+        1024,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "positive.native.bin",
+      "procedure": "/datum/proc/probe_SEE_BLACKNESS",
+      "words": [
+        80,
+        1024,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "positive.native.bin",
+      "procedure": "/proc/probe_SEE_INFRA",
+      "words": [
+        80,
+        64,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "positive.native.bin",
+      "procedure": "/datum/proc/probe_SEE_INFRA",
+      "words": [
+        80,
+        64,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "positive.native.bin",
+      "procedure": "/proc/probe_SEE_MOBS",
+      "words": [
+        80,
+        4,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "positive.native.bin",
+      "procedure": "/datum/proc/probe_SEE_MOBS",
+      "words": [
+        80,
+        4,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "positive.native.bin",
+      "procedure": "/proc/probe_SEE_OBJS",
+      "words": [
+        80,
+        8,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "positive.native.bin",
+      "procedure": "/datum/proc/probe_SEE_OBJS",
+      "words": [
+        80,
+        8,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "positive.native.bin",
+      "procedure": "/proc/probe_SEE_PIXELS",
+      "words": [
+        80,
+        256,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "positive.native.bin",
+      "procedure": "/datum/proc/probe_SEE_PIXELS",
+      "words": [
+        80,
+        256,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "positive.native.bin",
+      "procedure": "/proc/probe_SEE_SELF",
+      "words": [
+        80,
+        32,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "positive.native.bin",
+      "procedure": "/datum/proc/probe_SEE_SELF",
+      "words": [
+        80,
+        32,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "positive.native.bin",
+      "procedure": "/proc/probe_SEE_THRU",
+      "words": [
+        80,
+        512,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "positive.native.bin",
+      "procedure": "/datum/proc/probe_SEE_THRU",
+      "words": [
+        80,
+        512,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "positive.native.bin",
+      "procedure": "/proc/probe_SEE_TURFS",
+      "words": [
+        80,
+        16,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "positive.native.bin",
+      "procedure": "/datum/proc/probe_SEE_TURFS",
+      "words": [
+        80,
+        16,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "define.native.bin",
+      "procedure": "/proc/read",
+      "words": [
+        80,
+        7,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "undef.native.bin",
+      "procedure": "/proc/read",
+      "words": [
+        51,
+        65499,
+        18,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "undef.native.bin",
+      "procedure": "/datum/proc/read",
+      "words": [
+        51,
+        65499,
+        18,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "qualified-undef.native.bin",
+      "procedure": "/proc/read",
+      "words": [
+        51,
+        65499,
+        18,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "shadow.native.bin",
+      "procedure": "/datum/shadow/proc/read",
+      "words": [
+        51,
+        65500,
+        65486,
+        389,
+        18,
+        0
+      ]
+    },
+    {
+      "binary": "shadow.native.bin",
+      "procedure": "/proc/root_read",
+      "words": [
+        51,
+        65499,
+        18,
         18,
         0
       ]
