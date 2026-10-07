@@ -152,15 +152,38 @@ impl Generator for Reads {
         out.line("))");
         out.blank();
         out.doc("\"<type>::<proc>\" = list(rank, list(root id, kind, name id, hop name ids...), ...). Never edited by hand.");
-        out.line("GLOBAL_LIST_INIT(generated_reads_table, list(");
-        let trimmed = table.trim_end_matches(",\n").to_string();
-        if !trimmed.is_empty() {
-            out.line(trimmed);
-        }
-        out.line("))");
+        out.line(read_table_initializer(&table));
     }
 }
 
 pub fn register(reg: &mut Vec<Box<dyn Generator>>) {
     reg.push(Box::new(Reads));
+}
+
+/// Keep the potentially large table out of a macro argument: BYOND truncates the expanded
+/// GLOBAL_MANAGED initializer once its replacement exceeds the preprocessor limit.
+fn read_table_initializer(table: &str) -> String {
+    let rows = table.trim_end_matches(",\n");
+    format!(
+        "GLOBAL_LIST(generated_reads_table)\n/datum/controller/global_vars/InitGlobalgenerated_reads_table()\n\tgenerated_reads_table = list(\n{}\n\t)\n\tgvars_datum_init_order += \"generated_reads_table\"",
+        rows,
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::read_table_initializer;
+
+    #[test]
+    fn large_read_table_avoids_macro_argument_and_registers_initialization() {
+        let rows = (0..3000).map(|i| format!("\t\"/datum/fixture::read_{i}\" = list(0, list(1, 0, {i})),\n")).collect::<String>();
+        assert!(rows.len() > 65536);
+        let text = read_table_initializer(&rows);
+        assert!(!text.contains("GLOBAL_LIST_INIT("));
+        assert!(text.contains("GLOBAL_LIST(generated_reads_table)"));
+        assert!(text.contains("/datum/controller/global_vars/InitGlobalgenerated_reads_table()"));
+        assert!(text.contains("gvars_datum_init_order += \"generated_reads_table\""));
+        assert!(text.contains("\"/datum/fixture::read_2999\" = list(0, list(1, 0, 2999))\n\t)"));
+        assert_eq!(text.matches(" = list(0, list(1, 0,").count(), 3000);
+    }
 }
