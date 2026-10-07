@@ -186,6 +186,9 @@ CAPABILITIES(/obj/machinery/librarycomp)
 	op("sort", ui_act("sort", arg("field", schema_text(4096))), then(PROC_REF(ui_act_sort)))
 	op("hardprint", ui_act("hardprint", arg("path", schema_path(/datum))), then(PROC_REF(ui_act_hardprint)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	op("librarycomp_ghost_admin_view", observer(), label("Admin view"), then(PROC_REF(librarycomp_ghost_admin_view)))
+	op("librarycomp_link_scanner", item(/obj/item/barcodescanner), priority(OP_PRIORITY_DEFAULT - 1), label("Link scanner"), then(PROC_REF(interaction_link_scanner)))
+	op("librarycomp_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/librarycomp/Initialize(mapload)
 	. = ..()
@@ -231,43 +234,21 @@ CAPABILITIES(/obj/machinery/librarycomp)
 // TGUI migration. attack_hand and attack_ghost open
 // LibraryComp.tsx. The big browse-rendered switch and Topic dispatcher
 // move to tgui_data + tgui_act.
-/obj/machinery/librarycomp/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_OBSERVER("Admin view", PROC_REF(librarycomp_ghost_admin_view)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/librarycomp_link_scanner,
-		/datum/interaction/machine_hand/ungated/librarycomp_open_ui,
-	)
-	..()
-
-/datum/interaction/machine_item/librarycomp_link_scanner
-	id = "librarycomp_link_scanner"
-	name = "Link scanner"
-	held_type = /obj/item/barcodescanner
-	effect = /obj/machinery/librarycomp/proc/interaction_link_scanner
-
-/obj/machinery/librarycomp/proc/interaction_link_scanner(mob/user, obj/item/held, datum/interaction/interaction)
-	var/obj/item/barcodescanner/scanner = held
+/obj/machinery/librarycomp/proc/interaction_link_scanner(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/barcodescanner/scanner = A.held
 	rel_set(scanner, nameof(scanner.computer), src)
 	to_chat(user, "[scanner]'s associated machine has been set to [src].")
 	for(var/mob/V in hearers(src))
 		V.show_message("[src] lets out a low, short blip.", 2)
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_hand/ungated/librarycomp_open_ui
-	id = "librarycomp_open_ui"
-	name = "Use"
-	category = INTERACTION_CAT_CONFIGURE
-	effect = /obj/machinery/librarycomp/proc/interaction_open_ui_impl
-
-/obj/machinery/librarycomp/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/librarycomp/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	user.set_machine(src)
 	is_admin_view = FALSE
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/librarycomp/tgui_state(mob/user)
 	if(is_admin_view)
@@ -554,15 +535,16 @@ CAPABILITIES(/obj/machinery/librarycomp)
 // admin ghost view routes to LibraryComp.tsx with is_admin_view
 // set; non-admin ghosts fall through to default handling.
 /// Old attack_ghost: admins get the admin view; other ghosts the default.
-/obj/machinery/librarycomp/proc/librarycomp_ghost_admin_view(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/librarycomp/proc/librarycomp_ghost_admin_view(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!admin_require(user.client, R_ADMIN, "librarycomp_ghost_admin_view", FALSE))
-		return FALSE
+		return OP_DECLINE
 	user.set_machine(src)
 	is_admin_view = TRUE
 	screenstate = 8
 	refresh_external()
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/librarycomp/proc/on_emag(datum/act/op/A)
 	if (src.density && !src.emagged)

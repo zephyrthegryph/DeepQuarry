@@ -261,21 +261,23 @@ CAPABILITIES(/obj/structure/casino_table/roulette_table)
 	return
 
 /// Old attackby.
-/obj/item/roulette_ball/hollow/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/roulette_ball/hollow/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/holder))
 		var/obj/item/holder/H = W
 		if(!H.held_mob)
 			to_chat(user, span_warning("This holder has nobody in it? Yell at a developer!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(H.held_mob.get_effective_size(TRUE) > 50)
 			to_chat(user, span_warning("\The [H] is too big to fit inside!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!move_into(src, nameof(src.trapped), H, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		to_chat(user, span_notice("You trap \the [H] inside the glass roulette ball."))
 		to_chat(H.held_mob, span_warning("\The [user] traps you inside a glass roulette ball!"))
 		update_icon()
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 DECLARE_APPEARANCE_PROC(/obj/item/roulette_ball/hollow, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/roulette_ball/hollow/appearance_overlays()
@@ -285,16 +287,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/roulette_ball/hollow, TYPE_PROC_REF(/atom, app
 	else
 		icon_state = "roulette_ball_glass"
 
-DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_FIELD_NOT("trapped", "this ball already has something trapped in it")), \
-)
+MSG_DEF_SELF(casino/ball_full, "this ball already has something trapped in it")
 
 /// Old attack_self.
-/obj/item/roulette_ball/hollow/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/roulette_ball/hollow/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!trapped)
 		to_chat(user, span_notice("\The [src] is empty!"))
-		return TRUE
+		return OP_OK
 	else
 		user.put_in_hands(trapped)
 		if(trapped.held_mob)
@@ -302,7 +302,7 @@ DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
 			to_chat(trapped.held_mob, span_notice("\The [user] takes you out of a glass roulette ball."))
 		rel_take(src, nameof(trapped))
 		update_icon()
-	return TRUE
+	return OP_OK
 
 /obj/item/roulette_ball/hollow/on_holder_escape()
 	rel_take(src, nameof(trapped))
@@ -314,6 +314,8 @@ DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
 
 CAPABILITIES(/obj/item/roulette_ball/hollow)
 	owns_one(nameof(trapped), on_destroy = ON_DESTROY_SPILL)
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), needs(req_empty(nameof(trapped), because = MSG(casino/ball_full))), then(PROC_REF(interaction_item)))
 
 /obj/item/roulette_ball/cheat
 	cheatball = TRUE
