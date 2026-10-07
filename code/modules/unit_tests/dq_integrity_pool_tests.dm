@@ -442,35 +442,50 @@
 	var/obj/item/card/id/card = allocate(/obj/item/card/id)
 	H.put_in_hands(card)
 	H.set_use_stance(I_HELP)
-	test_click(H, building, card)
+	var/datum/op_result/calm = test_click(H, building, card)
 	TEST_ASSERT(!QDELETED(building), "a help-intent click with a card leaves the building standing")
+	TEST_ASSERT(calm && calm.outcome == ACT_REFUSED && calm.reason == MSG(harm_click_only), "a help-intent click with a card is refused with the harm-intent reason (got [calm?.outcome] [calm?.reason])")
 	H.set_use_stance(I_HURT)
-	var/before = building.get_integrity()
 	test_click(H, building, card)
-	TEST_ASSERT(building.get_integrity() < before, "a harm-intent click still hurts the building")
+	TEST_ASSERT(QDELETED(building) || building.get_integrity() <= 0 || !(building in T), "a harm-intent click with a card flattens the building")
 	clear_debris(T)
 
-/// A help-intent click on the supermatter wall with a held item never resolves to the item op (which turns the item to dust).
+/// The supermatter wall: an empty hand touches it (and is dusted), a held item is consumed only on harm intent, and any other click with an item is refused
+/// (the player is not dusted: the item op answers before the bare-hand touch).
 /datum/unit_test/dq_integrity_pool/supermatter_wall_item_gate
 
 /datum/unit_test/dq_integrity_pool/supermatter_wall_item_gate/Run()
 	var/turf/T = scratch_turf()
 	var/start = T.type
+	var/mob/living/carbon/human/bare = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/helper = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/striker = allocate(/mob/living/carbon/human, T)
 	var/turf/unsimulated/wall/supermatter/wall = T.ChangeTurf(/turf/unsimulated/wall/supermatter)
 	var/obj/item/card/id/calm_card = allocate(/obj/item/card/id)
 	var/obj/item/card/id/hard_card = allocate(/obj/item/card/id)
+	bare.set_use_stance(I_HELP)
+	var/datum/op_result/empty = test_click(bare, wall, null)
+	var/bare_dusted = QDELETED(bare) || bare.loc != T
 	helper.put_in_hands(calm_card)
 	helper.set_use_stance(I_HELP)
 	var/datum/op_result/calm = test_click(helper, wall, calm_card)
+	var/helper_safe = !QDELETED(helper) && helper.loc == T
+	var/calm_kept = !QDELETED(calm_card)
 	striker.put_in_hands(hard_card)
 	striker.set_use_stance(I_HURT)
 	var/datum/op_result/hard = test_click(striker, wall, hard_card)
-	var/calm_key = calm ? "[calm.key]" : ""
+	var/hard_consumed = QDELETED(hard_card)
+	var/striker_safe = !QDELETED(striker) && striker.loc == T
+	var/empty_key = empty ? "[empty.key]" : ""
+	var/calm_outcome = calm ? calm.outcome : null
+	var/calm_reason = calm ? calm.reason : null
 	var/hard_key = hard ? "[hard.key]" : ""
 	wall.ChangeTurf(start)
-	TEST_ASSERT(!findtext(calm_key, "supermatter_wall_item"), "a help-intent click with a card does not touch it to the wall (got [calm_key])")
-	// The plain hand touch outranks the item op on a click at every stance, so the item op is reached from the menu only; the stance gate
-	// keeps the op from answering a click that would otherwise fall to it.
-	TEST_ASSERT(findtext(hard_key, "supermatter_wall"), "a harm-intent click with a card resolves to a supermatter wall op (got [hard_key])")
+	TEST_ASSERT(findtext(empty_key, "supermatter_wall_hand"), "an empty hand touches the wall (got [empty_key])")
+	TEST_ASSERT(bare_dusted, "the bare-hand touch still dusts the toucher")
+	TEST_ASSERT(calm_outcome == ACT_REFUSED && calm_reason == MSG(harm_click_only), "a help-intent click with an item is refused with the harm-intent reason (got [calm_outcome] [calm_reason])")
+	TEST_ASSERT(helper_safe, "a help-intent click with an item does NOT dust the player")
+	TEST_ASSERT(calm_kept, "a help-intent click with an item leaves the item intact")
+	TEST_ASSERT(findtext(hard_key, "supermatter_wall_item"), "a harm-intent click with an item is the item op (got [hard_key])")
+	TEST_ASSERT(hard_consumed, "a harm-intent click with an item consumes it")
+	TEST_ASSERT(striker_safe, "a harm-intent item touch does not dust the player")
