@@ -28,6 +28,7 @@ pub mod cold;
 pub mod world_projection;
 pub mod client_projection;
 pub mod client_script;
+pub mod resource_values;
 pub mod world_writer;
 pub mod initializer_policy;
 pub mod initializer_lowering;

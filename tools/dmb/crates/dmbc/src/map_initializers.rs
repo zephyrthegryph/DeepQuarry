@@ -65,6 +65,12 @@ impl Unit {
                         bytes.extend_from_slice(&id.bits().to_le_bytes());
                     }
                 }
+                InitializerTarget::ProcedureStatic(identity) => {
+                    // Retain exact identity for forged inputs; lower_unit rejects
+                    // this storage domain because map atoms cannot own proc locals.
+                    bytes.push(2);
+                    bytes.extend_from_slice(&identity.canonical_bytes());
+                }
             }
             bytes.extend_from_slice(&assignment.lexical_owner.bits().to_le_bytes());
             let expression = assignment.expression.canonical_bytes();
@@ -316,6 +322,7 @@ pub fn lower_unit<R: Resolver>(
                 != match assignment.target {
                     InitializerTarget::Instance { name, .. }
                     | InitializerTarget::Shared { name, .. } => name,
+                    InitializerTarget::ProcedureStatic(_) => return Err(LowerError::InvalidSource),
                 }
         {
             return Err(LowerError::InvalidSource);

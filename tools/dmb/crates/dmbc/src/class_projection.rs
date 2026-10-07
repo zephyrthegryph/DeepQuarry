@@ -604,13 +604,20 @@ pub fn materialize_members(
     struct Values<'a> {
         underlying: &'a dyn TypeValuePolicy,
         mobs: HashMap<SymbolId, u32>,
+        tables: &'a dm_link::LinkTables,
     }
     impl TypeValuePolicy for Values<'_> {
         fn tag(&self, path: SymbolId) -> Result<u8, ProjectionError> {
             self.underlying.tag(path)
         }
         fn resource_index(&self, path: SymbolId) -> Result<u32, ProjectionError> {
-            self.underlying.resource_index(path)
+            let key = self.underlying.resource_key(path)?;
+            if !matches!(key, Key::Resource(_)) {
+                return Err(ProjectionError::Unsupported("resource policy returned a non-resource key".into()));
+            }
+            self.tables.index(key).ok_or_else(|| ProjectionError::Unsupported(
+                "resource content absent from frozen link inventory".into(),
+            ))
         }
         fn mob_index(&self, path: SymbolId) -> Result<u32, ProjectionError> {
             self.mobs.get(&path).copied().ok_or_else(|| {
@@ -623,6 +630,7 @@ pub fn materialize_members(
     let values = Values {
         underlying: value_types,
         mobs,
+        tables,
     };
     let value_types: &dyn TypeValuePolicy = &values;
     let text = |symbol| {
@@ -1121,6 +1129,11 @@ fn encoded_constant(kind: u8, value: u32) -> Result<Vec<u32>, ProjectionError> {
 /// Runtime-family tags must be proved by the captured resolver/target schema;
 /// modifiers/aliases cannot be inferred from the type path spelling alone.
 pub trait TypeValuePolicy {
+    /// Captured semantic content key; a dense resource ID is allocated later by
+    /// the shared linker. Runtime CRC and class IDs are different namespaces.
+    fn resource_key(&self, _path: SymbolId) -> Result<Key, ProjectionError> {
+        Err(ProjectionError::Unsupported("resource content domain was not captured".into()))
+    }
     /// Mob-table identity is a separate domain from class-table identity.
     fn mob_index(&self, _path: SymbolId) -> Result<u32, ProjectionError> {
         Err(ProjectionError::Unsupported(

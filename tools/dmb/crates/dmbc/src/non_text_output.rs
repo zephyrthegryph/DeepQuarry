@@ -17,6 +17,15 @@ pub struct CapturedOutputStage<'a> {
     pub skin: Option<&'a crate::skin::Plan>,
 }
 impl crate::composition::NonTextOutputStage for CapturedOutputStage<'_> {
+    fn required_types(&self) -> Vec<dm_ir::SymbolId> {
+        let mut seen = BTreeSet::new();
+        self.map
+            .into_iter()
+            .flat_map(|map| map.instances.iter())
+            .map(|instance| instance.atom.type_path)
+            .filter(|path| seen.insert(*path))
+            .collect()
+    }
     fn validate_source(&self, frontend: &ColdFrontend) -> Result<(), String> {
         if frontend.snapshot.tree.identity() != self.source.snapshot.tree.identity()
             || frontend.snapshot.occurrences.tree_identity()

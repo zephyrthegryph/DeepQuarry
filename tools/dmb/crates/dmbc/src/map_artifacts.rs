@@ -2,7 +2,7 @@
 use crate::debug_sources::{DebugOrigin, DebugOriginCollector, DebugOriginProvider};
 use crate::initialization_artifact::{InitializationArtifact, InitializationCoverage};
 use crate::{map_initializers, map_output, map_projection};
-use dm_ir::{Resolver, SymbolTable};
+use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver, SymbolTable};
 use dm_tree::{frontend::ColdFrontend, maps::MapPlan};
 use std::{cell::RefCell, collections::BTreeMap, sync::Arc};
 struct Origins<'a> {
@@ -11,6 +11,32 @@ struct Origins<'a> {
     source_length: usize,
     entry: usize,
     collector: RefCell<DebugOriginCollector>,
+}
+struct DiagnosticResolver<'a, R> {
+    host: &'a R,
+    unsupported: std::sync::Mutex<Vec<ResolveQuery>>,
+}
+impl<R: Resolver> Resolver for DiagnosticResolver<'_, R> {
+    fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
+        let result = self.host.resolve(query);
+        if matches!(&result, ResolvedMeaning::Unsupported(_)) {
+            if let Ok(mut queries) = self.unsupported.lock() {
+                if queries.len() < 8 { queries.push(query); }
+            }
+        }
+        result
+    }
+}
+fn query_description(query: ResolveQuery, symbols: &SymbolTable) -> String {
+    let spelling = |symbol| symbols.text(symbol).map(str::to_owned)
+        .unwrap_or_else(|| format!("{symbol:?} (spelling unavailable)"));
+    match query {
+        ResolveQuery::DeclaredVarType { owner, name }
+        | ResolveQuery::HasMemberVar { owner, name }
+        | ResolveQuery::VarStorage { owner, name } =>
+            format!("{query:?}: owner={}, field={}", spelling(owner), spelling(name)),
+        _ => format!("{query:?}"),
+    }
 }
 impl DebugOriginProvider for Origins<'_> {
     fn origin(&self, offset: usize) -> Result<DebugOrigin, String> {
@@ -110,6 +136,7 @@ pub fn lower<R: Resolver>(
             entry,
             collector: RefCell::new(DebugOriginCollector::default()),
         };
+        let diagnostics = DiagnosticResolver { host, unsupported: std::sync::Mutex::new(Vec::new()) };
         let code = map_initializers::lower_unit(
             unit,
             maps,
@@ -118,9 +145,22 @@ pub fn lower<R: Resolver>(
                 resource_search_context,
                 debug: Some(&origins),
             },
-            host,
+            &diagnostics,
         )
-        .map_err(|error| format!("map initializer lowering: {error:?}"))?;
+        .map_err(|error| {
+            let offset = match &error {
+                map_initializers::LowerError::Expression { assignment, .. } =>
+                    unit.origins.get(*assignment).map(|origin| origin.span.value_span.start).unwrap_or(entry),
+                _ => entry,
+            };
+            let line = lines[atom.map].partition_point(|start| *start <= offset);
+            let owner = symbols.text(unit.owner).unwrap_or("<owner spelling unavailable>");
+            let queries = diagnostics.unsupported.lock().map(|queries| queries.iter()
+                .map(|query| query_description(*query, symbols)).collect::<Vec<_>>().join("; "))
+                .unwrap_or_else(|_| "query diagnostic lock poisoned".into());
+            format!("{}:{line}: unsupported map initializer for {owner} (include={}, template={}, atom={}): {error:?}; unresolved queries: {queries}",
+                include.semantic_path, map.captured.include_occurrence, atom.template, atom.atom)
+        })?;
         let artifact = InitializationArtifact {
             identity,
             code,
