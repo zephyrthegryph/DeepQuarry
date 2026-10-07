@@ -137,16 +137,50 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             event.total_items
         );
     };
-    let frontend = match dm_tree::frontend::build_with_config(
-        &project,
-        &dm_preprocess::FileSystem,
-        &defines,
-        dm_tree::frontend::FrontendConfig {
+    let input_preparation_seconds;
+    let frontend_result = {
+        let preparation_start = Instant::now();
+        let inputs = match dmbc::native_inputs::NativeInputs::prepare(
+            &project,
+            &dm_preprocess::FileSystem,
             workers,
-            engine: seed.as_ref(),
-            observer: progress_enabled.then_some(&progress),
-        },
-    ) {
+        ) {
+            Ok(inputs) => Some(inputs),
+            Err(dmbc::native_inputs::NativeInputError::RequiredSourceRead { .. }) => None,
+            Err(dmbc::native_inputs::NativeInputError::InternalPreparation { message }) => {
+                return Err(format!("native internal: {message}").into())
+            }
+        };
+        input_preparation_seconds = preparation_start.elapsed().as_secs_f64();
+        if progress_enabled {
+            eprintln!(
+                "native input preparation: {:.3}s {:?}",
+                input_preparation_seconds,
+                inputs.as_ref().map(|inputs| inputs.stats())
+            );
+        }
+        let empty = dm_preprocess::regions::prepared_source::PreparedSources::default();
+        let provider = match &inputs {
+            Some(inputs) => inputs.provider(&dm_preprocess::FileSystem),
+            None => dm_preprocess::regions::prepared_source::PreparedSourceProvider::new(
+                &empty,
+                &dm_preprocess::FileSystem,
+            ),
+        };
+        // Only requested captures enter the semantic model. Release unused
+        // speculative preparations before maps, resources and lowering begin.
+        dm_tree::frontend::build_with_config(
+            &project,
+            &provider,
+            &defines,
+            dm_tree::frontend::FrontendConfig {
+                workers,
+                engine: seed.as_ref(),
+                observer: progress_enabled.then_some(&progress),
+            },
+        )
+    };
+    let frontend = match frontend_result {
         Ok(frontend) => frontend,
         Err(diagnostics) => {
             dmbc::diagnostics::write_diagnostics(&mut io::stderr().lock(), &diagnostics)?;
@@ -216,8 +250,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             .collect();
         let capture_observer = |measurement: dmbc::captured_non_text_driver::CaptureMeasurement| {
             if progress_enabled {
-                eprintln!("native nontext {:?}: {:.3}s success={}",
-                    measurement.stage, measurement.seconds, measurement.succeeded);
+                eprintln!(
+                    "native nontext {:?}: {:.3}s success={}",
+                    measurement.stage, measurement.seconds, measurement.succeeded
+                );
             }
         };
         let mut nontext = dmbc::captured_non_text_driver::capture_with_observer(
@@ -260,8 +296,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             workers,
         );
         if progress_enabled && compile_result.is_err() {
-            eprintln!("native failed stages: frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s total={:.3}s",
-                frontend.timings.total.as_secs_f64(), facts_seconds, nontext_seconds,
+            eprintln!("native failed stages: input_preparation={:.3}s frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s total={:.3}s",
+                input_preparation_seconds, frontend.timings.total.as_secs_f64(), facts_seconds, nontext_seconds,
                 linking_inputs_seconds, compilation_started.elapsed().as_secs_f64(),
                 total.elapsed().as_secs_f64());
         }
@@ -274,10 +310,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 )?;
                 return Err("native lowering did not produce a complete executable".into());
             }
-            Err(dmbc::cold::ColdError::InitializerInvariant(message)) =>
-                return Err(format!("native internal: {message}").into()),
-            Err(dmbc::cold::ColdError::Initializer(message)) =>
-                return Err(format!("native unsupported: {message}").into()),
+            Err(dmbc::cold::ColdError::InitializerInvariant(message)) => {
+                return Err(format!("native internal: {message}").into())
+            }
+            Err(dmbc::cold::ColdError::Initializer(message)) => {
+                return Err(format!("native unsupported: {message}").into())
+            }
             Err(error) => return Err(format!("native compilation: {error:?}").into()),
         };
         let compilation_seconds = compilation_started.elapsed().as_secs_f64();
@@ -299,8 +337,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             &project.with_extension("dmb-pair.json"),
         )?;
         let publication_seconds = publication_started.elapsed().as_secs_f64();
-        eprintln!("native stages: frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s publication={:.3}s",
-            frontend.timings.total.as_secs_f64(), facts_seconds, nontext_seconds,
+        eprintln!("native stages: input_preparation={:.3}s frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s publication={:.3}s",
+            input_preparation_seconds, frontend.timings.total.as_secs_f64(), facts_seconds, nontext_seconds,
             linking_inputs_seconds, compilation_seconds, publication_seconds);
         eprintln!("native compile: total={:.3}s ABI={:.3}s lowering={:.3}s initialization={:.3}s linking={:.3}s composition={:.3}s DMB={} RSC={} pair={}",
             total.elapsed().as_secs_f64(), output.timings.abi_preparation.as_secs_f64(),

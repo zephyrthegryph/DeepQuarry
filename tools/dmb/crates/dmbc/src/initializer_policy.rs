@@ -224,71 +224,233 @@ fn scalar_literal(
     })
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ClassificationIssue {
+    pub source_ordinal: usize,
+    pub reason: String,
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ClassificationError {
+    pub issues: Vec<ClassificationIssue>,
+}
+impl std::fmt::Display for ClassificationError {
+    fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (index, issue) in self.issues.iter().enumerate() {
+            if index != 0 {
+                output.write_str("\n")?;
+            }
+            output.write_str(&issue.reason)?;
+        }
+        Ok(())
+    }
+}
+impl std::error::Error for ClassificationError {}
+#[derive(Clone, Copy)]
+enum HeaderDomain {
+    Client,
+    World,
+    Savefile,
+}
+impl HeaderDomain {
+    fn label(self) -> &'static str {
+        match self {
+            Self::Client => "client",
+            Self::World => "world",
+            Self::Savefile => "savefile",
+        }
+    }
+    fn validate(self, name: &str, value: &SemanticValue) -> Result<(), String> {
+        match self {
+            Self::Client => {
+                crate::client_projection::project(name, value)
+                    .map_err(|error| format!("client header property: {error:?}"))?
+                    .ok_or("client header projection missing")?;
+            }
+            Self::World => {
+                crate::world_projection::project([(name, value)])
+                    .map_err(|error| format!("world header property: {error:?}"))?;
+            }
+            Self::Savefile => {
+                crate::savefile_projection::project(value)?;
+            }
+        }
+        Ok(())
+    }
+}
+#[derive(Clone, Copy)]
+enum ModifierFact {
+    Header(HeaderDomain),
+    Known(u32),
+}
+fn header_domain(
+    write: &InitializerWrite,
+    symbols: &SymbolTable,
+) -> Result<Option<HeaderDomain>, String> {
+    if write.declaration_flags.is_some() {
+        return Ok(None);
+    }
+    if crate::savefile_projection::is_header_target(&write.target, symbols) {
+        return Ok(Some(HeaderDomain::Savefile));
+    }
+    if crate::world_projection::is_header_target(&write.target, symbols) {
+        return Ok(Some(HeaderDomain::World));
+    }
+    if let InitializerTarget::Instance {
+        declaring_owner,
+        name,
+        ..
+    } = write.target
+    {
+        let name = symbols
+            .text(name)
+            .ok_or("client property spelling unavailable")?;
+        if declaring_owner == SymbolId::of("/client")
+            && crate::client_projection::is_header_field(name)
+        {
+            return Ok(Some(HeaderDomain::Client));
+        }
+    }
+    Ok(None)
+}
+fn modifier_facts(
+    writes: &[InitializerWrite],
+    symbols: &SymbolTable,
+    evaluator: &dyn CapturedInitializerEvaluator,
+) -> Result<Vec<ModifierFact>, ClassificationError> {
+    let mut facts = Vec::with_capacity(writes.len());
+    let mut issues = Vec::new();
+    for (ordinal, write) in writes.iter().enumerate() {
+        let fact = (|| -> Result<ModifierFact, String> {
+            if let Some(domain) = header_domain(write, symbols)? {
+                return Ok(ModifierFact::Header(domain));
+            }
+            let flags = evaluator.declaration_modifiers(write)?.ok_or_else(|| {
+                let (owner, name) = match write.target {
+                    InitializerTarget::Instance {
+                        declaring_owner,
+                        name,
+                        ..
+                    } => (declaring_owner, name),
+                    InitializerTarget::Shared { owner, name, .. } => (owner, name),
+                    InitializerTarget::ProcedureStatic(identity) => {
+                        (identity.procedure.owner, identity.name)
+                    }
+                };
+                format!(
+                    "opaque initializer declaration modifiers: {}::{} (write {ordinal})",
+                    symbols.text(owner).unwrap_or("<unknown owner>"),
+                    symbols.text(name).unwrap_or("<unknown variable>")
+                )
+            })?;
+            if write
+                .declaration_flags
+                .is_some_and(|source| source != flags)
+            {
+                return Err("captured initializer modifiers disagree with source facts".into());
+            }
+            if flags & !15 != 0 {
+                return Err("unknown initializer modifiers".into());
+            }
+            Ok(ModifierFact::Known(flags))
+        })();
+        match fact {
+            Ok(fact) => facts.push(fact),
+            Err(reason) => issues.push(ClassificationIssue {
+                source_ordinal: ordinal,
+                reason,
+            }),
+        }
+    }
+    if issues.is_empty() {
+        Ok(facts)
+    } else {
+        Err(ClassificationError { issues })
+    }
+}
+/// Capture modifier dependencies once, exposing every missing boundary before
+/// evaluating values. Classification then consumes these immutable answers.
+pub fn classify_with_diagnostics(
+    writes: &[InitializerWrite],
+    symbols: &SymbolTable,
+    evaluator: &dyn CapturedInitializerEvaluator,
+) -> Result<ClassifiedInitializers, ClassificationError> {
+    let facts = modifier_facts(writes, symbols, evaluator)?;
+    let mut source_ordinal = 0;
+    classify_from_facts(writes, symbols, evaluator, &facts, &mut source_ordinal).map_err(|reason| {
+        ClassificationError {
+            issues: vec![ClassificationIssue {
+                source_ordinal,
+                reason,
+            }],
+        }
+    })
+}
+/// Compatibility caller retains string diagnostics; production uses ordinals.
 pub fn classify(
     writes: &[InitializerWrite],
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
 ) -> Result<ClassifiedInitializers, String> {
+    classify_with_diagnostics(writes, symbols, evaluator).map_err(|error| error.to_string())
+}
+fn classify_from_facts(
+    writes: &[InitializerWrite],
+    symbols: &SymbolTable,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    facts: &[ModifierFact],
+    source_ordinal: &mut usize,
+) -> Result<ClassifiedInitializers, String> {
     let mut classified = Vec::with_capacity(writes.len());
     let mut global_constructors = 0u32;
     for (ordinal, original) in writes.iter().enumerate() {
-        // Positively catalogued client header properties have no variable
-        // modifier record. Keep their authored scalar for the separate header
-        // writer rather than manufacturing instance-variable flags or code.
-        if original.declaration_flags.is_none() {
-            if let InitializerTarget::Instance {
-                declaring_owner,
+        *source_ordinal = ordinal;
+        // Header properties are certified ABI domains, not variables with
+        // fabricated declaration flags. All domains share authored-value and
+        // lexical validation, then delegate exact value policy to their writer.
+        if let ModifierFact::Header(domain) = facts[ordinal] {
+            let InitializerTarget::Instance {
                 receiver_owner,
                 name,
+                ..
             } = original.target
-            {
-                let name_text = symbols
-                    .text(name)
-                    .ok_or("client property spelling unavailable")?;
-                if declaring_owner == SymbolId::of("/client")
-                    && crate::client_projection::is_header_field(name_text)
-                {
-                    if original.lexical_owner != receiver_owner
-                        || original.lexical_procedure.is_some()
-                    {
-                        return Err("client header lexical owner differs from receiver".into());
-                    }
-                    if original.declared_array.is_some() {
-                        return Err("client header property cannot allocate an array".into());
-                    }
-                    let InitializerValue::Expression(value) = &original.value else {
-                        return Err("client header property requires an authored value".into());
-                    };
-                    let Evaluation::Scalar(value) = evaluator.evaluate_write(original, value)?
-                    else {
-                        return Err("client header property requires a captured scalar".into());
-                    };
-                    crate::client_projection::project(name_text, &value)
-                        .map_err(|error| format!("client header property: {error:?}"))?
-                        .ok_or("client header projection missing")?;
-                    classified.push(ClassifiedWrite {
-                        source_ordinal: ordinal,
-                        write: original.clone(),
-                        default: DefaultValue::Scalar(value),
-                        phase: None,
-                        runtime_value: None,
-                    });
-                    continue;
-                }
+            else {
+                return Err("header classification fact has no instance target".into());
+            };
+            let label = domain.label();
+            if original.lexical_owner != receiver_owner || original.lexical_procedure.is_some() {
+                return Err(format!(
+                    "{label} header lexical owner differs from receiver"
+                ));
             }
+            if original.declared_array.is_some() {
+                return Err(format!("{label} header property cannot allocate an array"));
+            }
+            let InitializerValue::Expression(value) = &original.value else {
+                return Err(format!(
+                    "{label} header property requires an authored value"
+                ));
+            };
+            let Evaluation::Scalar(value) = evaluator.evaluate_write(original, value)? else {
+                return Err(format!(
+                    "{label} header property requires a captured scalar"
+                ));
+            };
+            let name = symbols
+                .text(name)
+                .ok_or_else(|| format!("{label} property spelling unavailable"))?;
+            domain.validate(name, &value)?;
+            classified.push(ClassifiedWrite {
+                source_ordinal: ordinal,
+                write: original.clone(),
+                default: DefaultValue::Scalar(value),
+                phase: None,
+                runtime_value: None,
+            });
+            continue;
         }
-        let flags = evaluator
-            .declaration_modifiers(original)?
-            .ok_or("opaque initializer declaration modifiers")?;
-        if original
-            .declaration_flags
-            .is_some_and(|source| source != flags)
-        {
-            return Err("captured initializer modifiers disagree with source facts".into());
-        }
-        if flags & !15 != 0 {
-            return Err("unknown initializer modifiers".into());
-        }
+        let ModifierFact::Known(flags) = facts[ordinal] else {
+            return Err("header classification fact was not consumed".into());
+        };
         let write = original.clone();
         if let Some(array) = &original.declared_array {
             let unsized_only = array.dimensions.len() == 1 && array.dimensions[0].is_none();
@@ -585,5 +747,178 @@ mod tests {
         assert!(classify(&[item], &mut symbols, &Evaluator)
             .unwrap_err()
             .contains("const"));
+    }
+    #[test]
+    fn missing_modifier_preflight_reports_all_ordinals_and_queries_once() {
+        struct Counting {
+            queries: std::sync::Mutex<Vec<SymbolId>>,
+            evaluations: std::sync::atomic::AtomicUsize,
+        }
+        impl CapturedInitializerEvaluator for Counting {
+            fn evaluate(&self, _: SymbolId, _: &SymbolicExpression) -> Result<Evaluation, String> {
+                self.evaluations
+                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                Ok(Evaluation::Scalar(SemanticValue::NumberBits(
+                    2f32.to_bits(),
+                )))
+            }
+            fn declaration_modifiers(
+                &self,
+                write: &InitializerWrite,
+            ) -> Result<Option<u32>, String> {
+                let name = match write.target {
+                    InitializerTarget::Shared { name, .. } => name,
+                    _ => panic!("fixture target"),
+                };
+                self.queries.lock().unwrap().push(name);
+                Ok(write.declaration_flags)
+            }
+        }
+        let mut symbols = SymbolTable::default();
+        let owner = symbols.intern("/datum/probe").unwrap();
+        let value = InitializerValue::Expression(expression("2", &mut symbols).unwrap());
+        let mut writes = ["zeta", "alpha", "middle"]
+            .into_iter()
+            .map(|name| write(owner, symbols.intern(name).unwrap(), value.clone()))
+            .collect::<Vec<_>>();
+        writes[0].declaration_flags = None;
+        writes[2].declaration_flags = None;
+        let evaluator = Counting {
+            queries: std::sync::Mutex::new(Vec::new()),
+            evaluations: std::sync::atomic::AtomicUsize::new(0),
+        };
+        let error = classify_with_diagnostics(&writes, &symbols, &evaluator).unwrap_err();
+        assert_eq!(
+            error
+                .issues
+                .iter()
+                .map(|issue| issue.source_ordinal)
+                .collect::<Vec<_>>(),
+            [0, 2]
+        );
+        assert!(error.issues[0]
+            .reason
+            .contains("/datum/probe::zeta (write 0)"));
+        assert!(error.issues[1]
+            .reason
+            .contains("/datum/probe::middle (write 2)"));
+        assert_eq!(
+            *evaluator.queries.lock().unwrap(),
+            [
+                SymbolId::of("zeta"),
+                SymbolId::of("alpha"),
+                SymbolId::of("middle")
+            ]
+        );
+        assert_eq!(
+            evaluator
+                .evaluations
+                .load(std::sync::atomic::Ordering::Relaxed),
+            0
+        );
+        evaluator.queries.lock().unwrap().clear();
+        for write in &mut writes {
+            write.declaration_flags = Some(8);
+        }
+        let result = classify_with_diagnostics(&writes, &symbols, &evaluator).unwrap();
+        assert_eq!(result.writes.len(), 3);
+        assert_eq!(evaluator.queries.lock().unwrap().len(), 3);
+        assert_eq!(
+            evaluator
+                .evaluations
+                .load(std::sync::atomic::Ordering::Relaxed),
+            3
+        );
+    }
+    #[test]
+    fn nonmodifier_failure_keeps_failing_write_ordinal() {
+        let mut symbols = SymbolTable::default();
+        let owner = symbols.intern("/").unwrap();
+        let name = symbols.intern("value").unwrap();
+        let first = write(
+            owner,
+            name,
+            InitializerValue::Expression(expression("2", &mut symbols).unwrap()),
+        );
+        let mut second = write(
+            owner,
+            name,
+            InitializerValue::Expression(expression("run()", &mut symbols).unwrap()),
+        );
+        second.declaration_flags = Some(2);
+        let error = classify_with_diagnostics(&[first, second], &symbols, &Evaluator).unwrap_err();
+        assert_eq!(error.issues.len(), 1);
+        assert_eq!(error.issues[0].source_ordinal, 1);
+        assert!(error.issues[0].reason.contains("const initializer"));
+    }
+    #[test]
+    fn savefile_header_scalar_keeps_unknown_flags_and_no_runtime_group() {
+        let mut symbols = SymbolTable::default();
+        let owner = symbols.intern("/savefile").unwrap();
+        let name = symbols.intern("byond_version").unwrap();
+        let mut header = write(
+            owner,
+            name,
+            InitializerValue::Expression(expression("2", &mut symbols).unwrap()),
+        );
+        header.target = InitializerTarget::Instance {
+            declaring_owner: owner,
+            receiver_owner: owner,
+            name,
+        };
+        header.declaration_flags = None;
+        let result = classify_with_diagnostics(&[header.clone()], &symbols, &Evaluator).unwrap();
+        assert_eq!(result.writes[0].write.declaration_flags, None);
+        assert_eq!(result.writes[0].phase, None);
+        assert!(result.groups.is_empty());
+        header.value = InitializerValue::Expression(expression("run()", &mut symbols).unwrap());
+        let error = classify_with_diagnostics(&[header], &symbols, &Evaluator).unwrap_err();
+        assert_eq!(error.issues[0].source_ordinal, 0);
+        assert!(error.issues[0]
+            .reason
+            .contains("savefile header property requires a captured scalar"));
+    }
+    #[test]
+    fn world_header_exception_is_exact_and_does_not_cover_runtime_fields() {
+        let mut symbols = SymbolTable::default();
+        let owner = symbols.intern("/world").unwrap();
+        let name = symbols.intern("fps").unwrap();
+        let mut header = write(
+            owner,
+            name,
+            InitializerValue::Expression(expression("2", &mut symbols).unwrap()),
+        );
+        header.target = InitializerTarget::Instance {
+            declaring_owner: owner,
+            receiver_owner: owner,
+            name,
+        };
+        header.declaration_flags = None;
+        let result = classify_with_diagnostics(&[header.clone()], &symbols, &Evaluator).unwrap();
+        assert_eq!(result.writes[0].write.declaration_flags, None);
+        assert_eq!(result.writes[0].phase, None);
+        assert!(result.groups.is_empty());
+        let runtime_name = symbols.intern("time").unwrap();
+        header.target = InitializerTarget::Instance {
+            declaring_owner: owner,
+            receiver_owner: owner,
+            name: runtime_name,
+        };
+        let error = classify_with_diagnostics(&[header.clone()], &symbols, &Evaluator).unwrap_err();
+        assert!(error.issues[0]
+            .reason
+            .contains("opaque initializer declaration modifiers"));
+        let child = symbols.intern("/world/child").unwrap();
+        header.lexical_owner = child;
+        header.target = InitializerTarget::Instance {
+            declaring_owner: owner,
+            receiver_owner: child,
+            name,
+        };
+        assert!(classify_with_diagnostics(&[header], &symbols, &Evaluator)
+            .unwrap_err()
+            .issues[0]
+            .reason
+            .contains("opaque initializer declaration modifiers"));
     }
 }

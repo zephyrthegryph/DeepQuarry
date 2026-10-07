@@ -38,11 +38,14 @@ pub(super) fn plan<P: SourceProvider>(
     // Install them before caller definitions; source define/undef effects then
     // apply through the same ordered environment as every other macro.
     for (name, replacement) in [("TRUE", "1"), ("FALSE", "0")] {
-        pass.plan.final_macros.insert(name.into(), Macro {
-            parameters: None,
-            variadic: false,
-            replacement: replacement.into(),
-        });
+        pass.plan.final_macros.insert(
+            name.into(),
+            Macro {
+                parameters: None,
+                variadic: false,
+                replacement: replacement.into(),
+            },
+        );
     }
     for (name, replacement) in defines {
         let definition = Macro {

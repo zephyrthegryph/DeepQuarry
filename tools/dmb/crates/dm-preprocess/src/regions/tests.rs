@@ -25,10 +25,15 @@ fn native_boolean_macros_follow_define_undef_and_caller_precedence() {
     let plan = plan_regions(Path::new("project.dme"), &provider, &BTreeMap::new());
     let expanded = expand_regions_text(&plan, 2);
     assert!(expanded.diagnostics.is_empty());
-    assert_eq!(expanded.text, "var/a = 1 + 0\nvar/b = TRUE\nvar/c = 7\nvar/d = 9\n");
+    assert_eq!(
+        expanded.text,
+        "var/a = 1 + 0\nvar/b = TRUE\nvar/c = 7\nvar/d = 9\n"
+    );
     let caller = BTreeMap::from([("TRUE".into(), "3".into()), ("FALSE".into(), "4".into())]);
     let plan = plan_regions(Path::new("project.dme"), &provider, &caller);
-    assert!(expand_regions_text(&plan, 1).text.starts_with("var/a = 3 + 4\n"));
+    assert!(expand_regions_text(&plan, 1)
+        .text
+        .starts_with("var/a = 3 + 4\n"));
 }
 
 #[test]

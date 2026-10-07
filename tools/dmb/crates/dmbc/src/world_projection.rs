@@ -3,6 +3,22 @@
 use dm_ir::{SemanticValue, SymbolId};
 use std::sync::Arc;
 
+/// Positive compile-time property domain. Runtime world members are deliberately
+/// excluded even when the engine catalog proves their presence.
+pub fn is_header_field(name: &str) -> bool {
+    matches!(name, "name" | "status" | "hub" | "hub_password"
+        | "mob" | "turf" | "area" | "maxx" | "maxy" | "maxz"
+        | "view" | "fps" | "tick_lag" | "version" | "cache_lifespan"
+        | "icon_size" | "map_format" | "sleep_offline" | "loop_checks" | "visibility")
+}
+
+pub fn is_header_target(target: &dm_ir::InitializerTarget, symbols: &dm_ir::SymbolTable) -> bool {
+    matches!(target, dm_ir::InitializerTarget::Instance { declaring_owner, receiver_owner, name }
+        if *declaring_owner == SymbolId::of("/world")
+            && *receiver_owner == SymbolId::of("/world")
+            && symbols.text(*name).is_some_and(is_header_field))
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DefaultKind { Mob, Turf, Area }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -115,6 +131,22 @@ pub fn project<'a>(values: impl IntoIterator<Item = (&'a str, &'a SemanticValue)
 mod tests {
     use super::*;
     fn n(value: f32) -> SemanticValue { SemanticValue::NumberBits(value.to_bits()) }
+    #[test]
+    fn header_domain_requires_exact_world_target_and_supported_property() {
+        let mut symbols = dm_ir::SymbolTable::default();
+        let name = symbols.intern("fps").unwrap();
+        let world = symbols.intern("/world").unwrap();
+        let child = symbols.intern("/world/child").unwrap();
+        assert!(is_header_target(&dm_ir::InitializerTarget::Instance {
+            declaring_owner: world, receiver_owner: world, name,
+        }, &symbols));
+        assert!(!is_header_target(&dm_ir::InitializerTarget::Instance {
+            declaring_owner: world, receiver_owner: child, name,
+        }, &symbols));
+        for name in ["time", "cpu", "log", "contents", "byond_version", "host"] {
+            assert!(!is_header_field(name));
+        }
+    }
     #[test]
     fn preserved_header_encodings_and_order() {
         let values = [n(40.0), n(7.0), SemanticValue::Text(Arc::from(b"15x15".as_slice())), n(0.0), n(1.0)];

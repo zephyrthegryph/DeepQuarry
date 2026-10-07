@@ -639,6 +639,17 @@ pub fn materialize_members(
         })
     };
     let world = SymbolId::of("/world");
+    let savefile = SymbolId::of("/savefile");
+    let savefile_values = projection.fields.iter()
+        .filter(|field| field.owner == savefile && field.intrinsic
+            && field.name == SymbolId::of("byond_version"))
+        .map(|field| match &field.value {
+            DefaultValue::Scalar(value) => crate::savefile_projection::project(value)
+                .map_err(ProjectionError::Unsupported),
+            _ => Err(ProjectionError::Unsupported("savefile header requires scalar default".into())),
+        }).collect::<Result<Vec<_>, _>>()?;
+    crate::savefile_projection::apply(dmb, &savefile_values)
+        .map_err(ProjectionError::Unsupported)?;
     let world_values = projection
         .fields
         .iter()
@@ -921,6 +932,11 @@ pub fn materialize_members(
         .filter(|field| field.role == FieldRole::Assignment)
     {
         if field.owner == world && field.intrinsic {
+            continue;
+        }
+        if field.owner == savefile && field.intrinsic
+            && field.name == SymbolId::of("byond_version")
+        {
             continue;
         }
         if client_owners.contains(&field.owner) && field.intrinsic

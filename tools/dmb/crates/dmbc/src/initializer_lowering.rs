@@ -128,7 +128,34 @@ fn lower_plan<R: Resolver>(
         crate::startup::validate(frontend, plan)?;
     }
     let symbols = plan.symbols.as_ref();
-    let classified = initializer_policy::classify(&plan.writes, symbols, evaluator)?;
+    let classified =
+        match initializer_policy::classify_with_diagnostics(&plan.writes, symbols, evaluator) {
+            Ok(classified) => classified,
+            Err(error) => {
+                let ordinals = error
+                    .issues
+                    .iter()
+                    .map(|issue| issue.source_ordinal)
+                    .collect::<Vec<_>>();
+                let errors = error
+                    .issues
+                    .into_iter()
+                    .enumerate()
+                    .map(|(local, issue)| dm_codegen_byond::LowerError {
+                        statement: "initializer classification".into(),
+                        reason: issue.reason,
+                        kind: dm_codegen_byond::LowerErrorKind::UnsupportedModel,
+                        span: Some(dm_codegen_byond::LowerSpan {
+                            start: local,
+                            end: local,
+                        }),
+                    })
+                    .collect();
+                return Err(InitializerLoweringError::Diagnostics(
+                    map_captured_lower_errors(errors, frontend, plan, &ordinals)?,
+                ));
+            }
+        };
     let mut units = Vec::with_capacity(classified.groups.len());
     for group in &classified.groups {
         let mut assignments = Vec::with_capacity(group.writes.len());

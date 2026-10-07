@@ -10,6 +10,17 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
+/// Recognize a literal include candidate from an already prepared logical line.
+/// Candidate discovery does not evaluate whether the directive is active.
+pub fn literal_include_path(line: &str) -> Option<PathBuf> {
+    let directive = line.trim_start().strip_prefix('#')?;
+    let (word, operand) = crate::split_word(directive.trim_start());
+    if word != "include" {
+        return None;
+    }
+    super::literal_include_path(operand)
+}
+
 #[derive(Clone, Debug)]
 pub struct PreparedLine {
     pub source_span: Span,
@@ -137,6 +148,21 @@ impl PreparedSources {
         let mut sources = BTreeMap::new();
         for ((path, _), prepared) in captures.into_iter().zip(outputs) {
             sources.insert(path, prepared.ok_or(PreparationError::WorkerPanicked)?);
+        }
+        Ok(Self { sources })
+    }
+    /// Admit already-issued immutable preparations without lexing them again.
+    /// Paths use the directive pass's access identity; duplicates are rejected
+    /// even when both entries reference the same immutable source object.
+    pub fn from_prepared(
+        captures: impl IntoIterator<Item = (PathBuf, Arc<PreparedSource>)>,
+    ) -> Result<Self, PreparationError> {
+        let mut sources = BTreeMap::new();
+        for (path, prepared) in captures {
+            let path = canonical_path(&path);
+            if sources.insert(path.clone(), prepared).is_some() {
+                return Err(PreparationError::DuplicatePath(path));
+            }
         }
         Ok(Self { sources })
     }
@@ -328,5 +354,47 @@ mod tests {
                 prepared.line_starts()[line.source_line - 1]
             );
         }
+    }
+    #[test]
+    fn issued_preparations_reuse_bytes_and_exact_access_path_policy() {
+        let issued = Arc::new(PreparedSource::new(Arc::from(
+            "#define VALUE 3\nvar/value = VALUE\n",
+        )));
+        let captures = PreparedSources::from_prepared([(
+            PathBuf::from("folder/../project.dme"),
+            issued.clone(),
+        )])
+        .unwrap();
+        assert!(Arc::ptr_eq(
+            &captures.get(Path::new("./project.dme")).unwrap(),
+            &issued
+        ));
+        assert_eq!(
+            captures.read(Path::new("project.dme")).unwrap(),
+            issued.original().as_ref()
+        );
+        let error = PreparedSources::from_prepared([
+            (PathBuf::from("folder/../project.dme"), issued.clone()),
+            (PathBuf::from("project.dme"), issued),
+        ])
+        .unwrap_err();
+        assert_eq!(
+            error,
+            PreparationError::DuplicatePath(PathBuf::from("project.dme"))
+        );
+        assert_eq!(
+            super::super::literal_include_path(r#"  "code\sub\file.dm"  "#),
+            Some(PathBuf::from("code/sub/file.dm"))
+        );
+        assert_eq!(super::super::literal_include_path("INCLUDE_MACRO"), None);
+        assert_eq!(
+            literal_include_path(r#"  #include "code\sub\file.dm" "#),
+            Some(PathBuf::from("code/sub/file.dm"))
+        );
+        assert_eq!(
+            literal_include_path(r##"var/text = "#include fake.dm""##),
+            None
+        );
+        assert_eq!(literal_include_path("#include INCLUDE_MACRO"), None);
     }
 }

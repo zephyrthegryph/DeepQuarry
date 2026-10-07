@@ -157,7 +157,7 @@ impl DirectivePlan {
 
 /// Lexical normalization preserves unresolved leading parents. It never
 /// silently drops an external relative path component.
-fn canonical_path(path: &Path) -> PathBuf {
+pub fn canonical_path(path: &Path) -> PathBuf {
     let mut out = PathBuf::new();
     for component in path.components() {
         match component {
@@ -173,6 +173,12 @@ fn canonical_path(path: &Path) -> PathBuf {
         }
     }
     out
+}
+
+/// Decode the literal operand using the ordered directive pass's exact path
+/// spelling policy. This does not expand macros or select conditional includes.
+pub fn literal_include_path(operand: &str) -> Option<PathBuf> {
+    crate::parse_include(operand)
 }
 
 /// Expanded line provenance, retaining the source interval for analysis tools.
