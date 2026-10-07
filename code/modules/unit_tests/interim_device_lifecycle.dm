@@ -31,10 +31,10 @@
 	var/datum/prompt/choice/P = new
 	P.value = choice
 	var/datum/act/op/A = take(/datum/act/op)
-	A.holder = scanner // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	A.holder = scanner
 	A.target = scanner
 	A.actor = user
-	A.answer = P // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	A.answer = P
 	. = scanner.hack_chosen(A)
 	A.release()
-	qdel(P) // ALLOW(lifecycle): the throwaway prompt record of this test call was never owned by anything
+	qdel(P)
