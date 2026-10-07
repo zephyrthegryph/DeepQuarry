@@ -65,40 +65,15 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, suit_storage_spec, l
 	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/janitor) //autoinstall the helmet
 
 
-// Overrides the voidsuit screwdriver so people can't remove the helmet.
-/obj/item/clothing/suit/space/void/responseteam/screwdriver_act(mob/user, obj/item/tool, obj/item/answered_component = null)
-	if(!isliving(user))
-		return ITEM_INTERACT_BLOCKING
-	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
-		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
-		return ITEM_INTERACT_SUCCESS
-	if(boots || tank || cooler)
-		if(isnull(answered_component))
-			open_component_request(user, tool, list(boots,tank,cooler))
-			return ITEM_INTERACT_BLOCKING
-		var/choice = answered_component
-		if(isnull(choice))
-			return ITEM_INTERACT_BLOCKING
-		if(!choice) return ITEM_INTERACT_SUCCESS
+// Overrides the voidsuit screwdriver so people can't remove the helmet: it offers boots, tank and cooling unit.
+/obj/item/clothing/suit/space/void/responseteam/has_removable_component(datum/act/op/A)
+	return !!(boots || tank || cooler)
 
-		if(choice == tank)	//No, a switch doesn't work here. Sorry. ~Techhead
-			to_chat(user, "You pop \the [tank] out of \the [src]'s storage compartment.")
-			tank.forceMove(get_turf(src))
-			playsound(src, tool.usesound, 50, 1)
-			rel_take(src, nameof(tank))
-		else if(choice == cooler)
-			to_chat(user, "You pop \the [cooler] out of \the [src]'s storage compartment.")
-			cooler.forceMove(get_turf(src))
-			playsound(src, tool.usesound, 50, 1)
-			rel_take(src, nameof(cooler))
-		else if(choice == boots)
-			to_chat(user, "You detach \the [boots] from \the [src]'s boot mounts.")
-			boots.forceMove(get_turf(src))
-			playsound(src, tool.usesound, 50, 1)
-			rel_take(src, nameof(boots))
-	else
-		to_chat(user, "\The [src] does not have anything installed.")
-	return ITEM_INTERACT_SUCCESS
+/obj/item/clothing/suit/space/void/responseteam/removable_components(datum/act/A)
+	var/list/choices = list()
+	for(var/obj/item/I in list(boots, tank, cooler))
+		choices += I
+	return choices
 
 
 /obj/item/clothing/head/helmet/space/void/responseteam

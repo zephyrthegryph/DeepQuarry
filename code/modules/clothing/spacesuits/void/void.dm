@@ -66,6 +66,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 	op("voidsuit_eject_tank_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Eject tank"), needs(any_of(req_is(nameof(tank), TRUE, because = MSG(void/nothing_to_eject)), req_is(nameof(cooler), TRUE, because = MSG(void/nothing_to_eject)))), then(PROC_REF(voidsuit_eject_tank_alt)))
 	op("voidsuit_install_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Voidsuit install item"), when(req(PROC_REF(install_item_applies))), needs(req_not_worn(SLOT_ID_SUIT, because = MSG(void/worn))), then(PROC_REF(voidsuit_install_item)))
 	op("void_toggle_helmet_verb", menu(), label("Toggle Helmet"), needs(carried(), req_is(nameof(hood), TRUE, because = MSG(void/no_helmet))), then(PROC_REF(void_toggle_helmet_verb)))
+	op("voidsuit_remove_component", tool(TOOL_SCREWDRIVER), label("Remove component"), needs(req_actor_kind(/mob/living), req_not_worn(SLOT_ID_SUIT, because = MSG(void/worn)), req(PROC_REF(has_removable_component), because = MSG(void/nothing_installed))), asks(/datum/prompt/choice, fields = list("question" = "What component would you like to remove?", "title" = "Remove Component", "choices" = computed(PROC_REF(removable_components)), "timeout" = 0), step = "component"), then(PROC_REF(remove_component)))
 	op("void_eject_tank_verb", menu(), label("Eject Voidsuit Tank/Cooler"), needs(carried(), any_of(req_is(nameof(tank), TRUE, because = MSG(void/nothing_to_eject)), req_is(nameof(cooler), TRUE, because = MSG(void/nothing_to_eject)))), then(PROC_REF(void_eject_tank_verb)))
 
 /obj/item/clothing/suit/space/void/examine(mob/user)
@@ -378,77 +379,58 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/autolok, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX))))
 
-/obj/item/clothing/suit/space/void/screwdriver_act(mob/user, obj/item/tool, obj/item/answered_component = null)
-	if(!isliving(user))
-		return ITEM_INTERACT_BLOCKING
-	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
-		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
-		return ITEM_INTERACT_SUCCESS
-	if(hood || boots || tank)
-		if(isnull(answered_component))
-			open_component_request(user, tool, list(hood,boots,tank,cooler))
-			return ITEM_INTERACT_BLOCKING
-		var/choice = answered_component
-		if(isnull(choice))
-			return ITEM_INTERACT_BLOCKING
-		if(!choice) return ITEM_INTERACT_SUCCESS
+/// Screwdriver on a suit that is not worn: pick a component (the asks() step) and pop or detach it. The ledger read (is it on the actor?) is req_not_worn().
+MSG_DEF_SELF(void/nothing_installed, "It does not have anything installed.")
 
-		if(choice == tank)	//No, a switch doesn't work here. Sorry. ~Techhead
-			to_chat(user, "You pop \the [tank] out of \the [src]'s storage compartment.")
-			tank.forceMove(get_turf(src))
-			playsound(src, tool.usesound, 50, 1)
-			rel_take(src, nameof(tank))
-		else if(choice == cooler)
-			to_chat(user, "You pop \the [cooler] out of \the [src]'s storage compartment.")
-			cooler.forceMove(get_turf(src))
-			playsound(src, tool.usesound, 50, 1)
-			rel_take(src, nameof(cooler))
-		else if(choice == hood)
-			to_chat(user, "You detach \the [hood] from \the [src]'s helmet mount.")
-			remove_helmet()
-			playsound(src, tool.usesound, 50, 1)
-		else if(choice == boots)
-			to_chat(user, "You detach \the [boots] from \the [src]'s boot mounts.")
-			boots.forceMove(get_turf(src))
-			playsound(src, tool.usesound, 50, 1)
-			rel_take(src, nameof(boots))
-	else
-		to_chat(user, "\The [src] does not have anything installed.")
-	return ITEM_INTERACT_SUCCESS
+/// Something a screwdriver can remove (a helmet, boots or a tank; the cooling unit is on the list but does not count on its own, as before).
+/obj/item/clothing/suit/space/void/proc/has_removable_component(datum/act/op/A)
+	return !!(hood || boots || tank)
 
-/obj/item/clothing/suit/space/void/autolok/screwdriver_act(mob/user, obj/item/tool, obj/item/answered_component = null)
-	if(!isliving(user))
-		return ITEM_INTERACT_BLOCKING
-	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
-		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
-		return ITEM_INTERACT_SUCCESS
-	if(boots || tank || cooler)
-		if(isnull(answered_component))
-			open_component_request(user, tool, list(boots,tank,cooler))
-			return ITEM_INTERACT_BLOCKING
-		var/choice = answered_component
-		if(isnull(choice))
-			return ITEM_INTERACT_BLOCKING
-		if(!choice) return ITEM_INTERACT_SUCCESS
+/// What the question offers.
+/obj/item/clothing/suit/space/void/proc/removable_components(datum/act/A)
+	var/list/choices = list()
+	for(var/obj/item/I in list(hood, boots, tank, cooler))
+		choices += I
+	return choices
 
-		if(choice == tank)	//No, a switch doesn't work here. Sorry. ~Techhead
-			to_chat(user, "You pop \the [tank] out of \the [src]'s storage compartment.")
-			tank.forceMove(get_turf(src))
-			playsound(src, tool.usesound, 50, 1)
-			rel_take(src, nameof(tank))
-		else if(choice == cooler)
-			to_chat(user, "You pop \the [cooler] out of \the [src]'s storage compartment.")
-			cooler.forceMove(get_turf(src))
-			playsound(src, tool.usesound, 50, 1)
-			rel_take(src, nameof(cooler))
-		else if(choice == boots)
-			to_chat(user, "You detach \the [boots] from \the [src]'s boot mounts.")
-			boots.forceMove(get_turf(src))
-			playsound(src, tool.usesound, 50, 1)
-			rel_take(src, nameof(boots))
-	else
-		to_chat(user, "\The [src] does not have anything installed.")
-	return ITEM_INTERACT_SUCCESS
+/// The chosen component comes out.
+/obj/item/clothing/suit/space/void/proc/remove_component(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
+	var/obj/item/choice = A.step_value("component")
+	if(!choice || QDELETED(choice) || !tool)
+		return OP_OK
+	if(choice == tank)	//No, a switch doesn't work here. Sorry. ~Techhead
+		to_chat(user, "You pop 	he [tank] out of 	he [src]'s storage compartment.")
+		tank.forceMove(get_turf(src))
+		playsound(src, tool.usesound, 50, 1)
+		rel_take(src, nameof(tank))
+	else if(choice == cooler)
+		to_chat(user, "You pop 	he [cooler] out of 	he [src]'s storage compartment.")
+		cooler.forceMove(get_turf(src))
+		playsound(src, tool.usesound, 50, 1)
+		rel_take(src, nameof(cooler))
+	else if(choice == hood)
+		to_chat(user, "You detach 	he [hood] from 	he [src]'s helmet mount.")
+		remove_helmet()
+		playsound(src, tool.usesound, 50, 1)
+	else if(choice == boots)
+		to_chat(user, "You detach 	he [boots] from 	he [src]'s boot mounts.")
+		boots.forceMove(get_turf(src))
+		playsound(src, tool.usesound, 50, 1)
+		rel_take(src, nameof(boots))
+	SStgui.update_uis(src)
+	return OP_OK
+
+/// The AutoLok's helmet is part of the suit: its screwdriver offers boots, tank and cooling unit.
+/obj/item/clothing/suit/space/void/autolok/has_removable_component(datum/act/op/A)
+	return !!(boots || tank || cooler)
+
+/obj/item/clothing/suit/space/void/autolok/removable_components(datum/act/A)
+	var/list/choices = list()
+	for(var/obj/item/I in list(boots, tank, cooler))
+		choices += I
+	return choices
 
 /obj/item/clothing/head/helmet/space/void/autolok
 	name = "AutoLok pressure helmet"
@@ -483,52 +465,3 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/autolok, fit_spec, list(REQ
 	. += owns(nameof(boots), policy = OWN_CONTAINED, starts = nameof(boots))
 	. += owns(nameof(tank), policy = OWN_CONTAINED, starts = nameof(tank))
 	. += owns(nameof(cooler), policy = OWN_CONTAINED)
-
-/obj/item/clothing/suit/space/void/proc/open_component_request(mob/user, obj/item/tool, list/choices)
-	open_request(src, /datum/prompt/choice/voidsuit_component, PROC_REF(component_chosen), answerer = user, captured_tool = tool, tool_expected = !isnull(tool), choices = choices)
-
-/obj/item/clothing/suit/space/void/proc/component_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	apply_component_answer(A)
-	SStgui.update_uis(src)
-
-/obj/item/clothing/suit/space/void/proc/apply_component_answer(datum/act/request/A)
-	var/datum/prompt/choice/voidsuit_component/request = A.request
-	if(request.captures_gone())
-		return
-	var/obj/item/selected = A.answer.value
-	if(QDELETED(selected))
-		return
-	return screwdriver_act(request.answerer, request.captured_tool, selected)
-
-/datum/prompt/choice/voidsuit_component
-	question = "What component would you like to remove?"
-	title = "Remove Component"
-	timeout = 0
-	var/obj/item/captured_tool
-	var/tool_expected = FALSE
-
-CAPABILITIES(/datum/prompt/choice/voidsuit_component)
-	ref_one(nameof(captured_tool), /obj/item)
-
-/datum/prompt/choice/voidsuit_component/prepare(datum/act/A)
-	. = ..()
-	var/obj/item/tool = captured_tool
-	rel_clear(src, nameof(captured_tool))
-	rel_set(src, nameof(captured_tool), tool)
-
-/datum/prompt/choice/voidsuit_component/proc/captures_gone()
-	return QDELETED(answerer) || (tool_expected && QDELETED(captured_tool))
-
-/datum/prompt/choice/voidsuit_component/recheck_extra()
-	. = ..()
-	if(.)
-		return
-	if(captures_gone())
-		return "gone"
-	if(!isnull(value))
-		var/obj/item/selected = value
-		if(!istype(selected) || QDELETED(selected))
-			return "gone"
-	return null
