@@ -189,6 +189,12 @@
 	/// TRUE: real time and the live kernel (a door deadline that reads world.time).
 	var/live = FALSE
 
+/datum/unit_test/dq_p2_door/New()
+	..()
+	// Visibility queries share this persistent cache. Warm it before the runner
+	// snapshots globals so an isolated door test leaves no lazy-init warning.
+	dview(0, test_floor())
+
 /datum/unit_test/dq_p2_door/Run()
 	if(!live)
 		test_driver_begin()
