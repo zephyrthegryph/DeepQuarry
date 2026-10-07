@@ -23,6 +23,12 @@
 		to_chat(AM, span_danger("You tumble out of the destroyed [src.name]!"))
 	return ..()
 
+/// Somebody got in or out of the compartment: the chassis recounts its passengers (a requirement reads the tracked count).
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/on_slot_changed(slot_id, atom/movable/thing, inserted)
+	. = ..()
+	if(slot_id == OCCUPANT_SLOT_MECHA_PASSENGER && chassis)
+		chassis.mecha_passenger_changed()
+
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/Exit(atom/movable/O)
 	return 0
 

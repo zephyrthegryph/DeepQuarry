@@ -28,6 +28,7 @@ CAPABILITIES(/obj/machinery/apc,
 	when(PROC_REF(calls_ctx_free)),
 	needs(PROC_REF(actor_busy)),
 	needs(PROC_REF(held_charge)),
+	when(PROC_REF(once_user)),
 	when(PROC_REF(loops)))
 
 /// The cell relation hop and C.charge are generated through READS_FROM.
@@ -64,6 +65,10 @@ CAPABILITIES(/obj/machinery/apc,
 
 /obj/machinery/apc/proc/two_arg_user(datum/act/eval/A)
 	return two_arg_helper(cell, limit) > 1
+
+/// read_once(): evaluated when the question opens, never subscribed: `mode` is an unknown read without it.
+/obj/machinery/apc/proc/once_user(datum/act/eval/A)
+	return read_once(mode) == 2
 
 /obj/machinery/apc/proc/calls_ctx_free(datum/act/eval/A)
 	return helper_same_type() > 0

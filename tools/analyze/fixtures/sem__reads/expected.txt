@@ -1,7 +1,7 @@
-condition_cycle	code/modules/apc/apc.dm	113
-dynamic_read	code/modules/apc/apc.dm	47
-hop_not_relation	code/modules/apc/apc.dm	51
-reads_as_uncovered	code/modules/apc/apc.dm	95
-unannotated_global	code/modules/apc/apc.dm	38
-unknown_field	code/modules/apc/apc.dm	54
-unknown_read	code/modules/apc/apc.dm	41
+condition_cycle	code/modules/apc/apc.dm	118
+dynamic_read	code/modules/apc/apc.dm	48
+hop_not_relation	code/modules/apc/apc.dm	52
+reads_as_uncovered	code/modules/apc/apc.dm	100
+unannotated_global	code/modules/apc/apc.dm	39
+unknown_field	code/modules/apc/apc.dm	55
+unknown_read	code/modules/apc/apc.dm	42

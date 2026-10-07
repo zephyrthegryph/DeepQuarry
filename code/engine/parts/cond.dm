@@ -655,3 +655,10 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 		if(istype(D, path))
 			return TRUE
 	return FALSE
+
+/// A value a requirement reads once, when the question opens, for state that is effectively fixed while a question is open (a mob's client,
+/// its teleop, its languages, a channel's name). The analysis (tools/analyze, sem/reads) does not subscribe to what is read inside the call, so
+/// the requirement is not re-run when it changes; use a TRACKED var, or an accessor with READS_AS, for state that changes in play.
+/proc/read_once(value)
+	READS_FROM() // by design: nothing inside the call subscribes (sem/reads mutes its argument)
+	return value
