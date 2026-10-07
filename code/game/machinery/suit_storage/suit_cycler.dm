@@ -161,7 +161,8 @@ STAT(/obj/machinery/suit_cycler, electrified, TOP, base = 0)
 		return "the cycler already contains a [part_name]"
 	if(no_cycle)
 		return "that item is not compatible with the cycler's protocols"
-	if(item.icon_override == CUSTOM_ITEM_MOB)
+	// Refitting is immediate; sample the item's current custom appearance.
+	if(read_once(item.icon_override) == CUSTOM_ITEM_MOB)
 		return "you cannot refit a customised voidsuit"
 	return TRUE
 
@@ -294,11 +295,14 @@ STAT(/obj/machinery/suit_cycler, electrified, TOP, base = 0)
 STAT(/obj/machinery/suit_cycler, safeties, ALL)
 
 MSG_DEF_SELF(suit_cycler/cannot_leave, "you can't do that right now")
+MSG_DEF_SELF(suit_cycler/needs_grab, "needs a grab")
+MSG_DEF_SELF(suit_cycler/needs_helmet, "needs a void helmet")
+MSG_DEF_SELF(suit_cycler/needs_suit, "needs a voidsuit")
 
 CAPABILITIES(/obj/machinery/suit_cycler)
-	op("cycler_insert_grab", item(/obj/item/grab), priority(OP_PRIORITY_DEFAULT - 1), label("Put in cycler"), needs(req(PROC_REF(can_insert_grabbed_holds), because = PROC_REF(can_insert_grabbed_refusal))), then(PROC_REF(interaction_insert_grab)))
-	op("cycler_insert_helmet", item(/obj/item/clothing/head/helmet/space/void), priority(OP_PRIORITY_DEFAULT - 1), label("Fit helmet"), when(PROC_REF(cycler_helmet_offered)), needs(req(PROC_REF(can_insert_helmet_holds), because = PROC_REF(can_insert_helmet_refusal))), then(PROC_REF(interaction_insert_helmet)))
-	op("cycler_insert_suit", item(/obj/item/clothing/suit/space/void), priority(OP_PRIORITY_DEFAULT - 1), label("Fit voidsuit"), needs(req(PROC_REF(can_insert_suit_holds), because = PROC_REF(can_insert_suit_refusal))), then(PROC_REF(interaction_insert_suit)))
+	op("cycler_insert_grab", inputs(item(/obj/item/grab), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Put in cycler"), needs(req(/obj/item/grab, because = MSG(suit_cycler/needs_grab)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_grabbed_holds), because = PROC_REF(can_insert_grabbed_refusal))), then(PROC_REF(interaction_insert_grab)))
+	op("cycler_insert_helmet", inputs(item(/obj/item/clothing/head/helmet/space/void), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Fit helmet"), when(PROC_REF(cycler_helmet_offered)), needs(req(/obj/item/clothing/head/helmet/space/void, because = MSG(suit_cycler/needs_helmet)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_helmet_holds), because = PROC_REF(can_insert_helmet_refusal))), then(PROC_REF(interaction_insert_helmet)))
+	op("cycler_insert_suit", inputs(item(/obj/item/clothing/suit/space/void), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Fit voidsuit"), needs(req(/obj/item/clothing/suit/space/void, because = MSG(suit_cycler/needs_suit)), req_adjacent(), req_capable(), req(PROC_REF(can_insert_suit_holds), because = PROC_REF(can_insert_suit_refusal))), then(PROC_REF(interaction_insert_suit)))
 	op("cycler_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 	op("cycler_leave", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Cycler"), needs(req_adjacent(), req_capable(), req(PROC_REF(cycler_actor_can_act), because = MSG(suit_cycler/cannot_leave))), then(PROC_REF(interaction_leave)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cycler_has_work), wakes_on = list(nameof(active), nameof(irradiating)))

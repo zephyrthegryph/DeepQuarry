@@ -113,7 +113,9 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 	else
 		update()
 
+MSG_DEF_SELF(ai_status_display/needs_item, "needs an item")
+
 CAPABILITIES(/obj/machinery/ai_status_display)
-	op("touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_as_touch)))
+	op("touch", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(/obj/item, because = MSG(ai_status_display/needs_item)), req_adjacent(), req_capable()), then(TYPE_PROC_REF(/atom, op_as_touch)))
 	op("set_status", remote(), label("Set status"), wait(0), asks(/datum/prompt/choice, fields = list("title" = "AI Status", "question" = "Please, select a status:", "choices" = computed(PROC_REF(emotion_options)), "timeout" = 0), step = "emotion"), then(PROC_REF(emotion_selected)))
 	display_disconnect_op()

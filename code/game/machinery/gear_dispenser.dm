@@ -659,34 +659,6 @@ CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
 	A.actor.client?.debug_variables(src)
 	return OP_OK
 
-/obj/machinery/gear_dispenser/proc/admin_add(mob/user)
-	if(!admin_require(user?.client, R_DEBUG|R_FUN, "check_rights in [callee?.proc]"))
-		return
-
-	var/example = @{"[
-	{
-		"menuoption": "Cool suit one",
-		"gearlist": ["/obj/item/clothing/suit/space", "/obj/item/clothing/head/helmet/space"],
-		"req_one_access": [5,63]
-	},
-	{
-		"menuoption": "Selection two",
-		"gearlist": ["/obj/random/trash"]
-	}
-]"}
-
-	/**
-	 * Needs to be valid json with keys of:
-	 * "menuoption" = string for the name
-	 * "gearlist" = array of types (yes the types are not valid json, byond parses them into real types.)
-	 * "req_one_access" = array of numbers (accesses)
-	 */
-	open_request(src, /datum/prompt/text, PROC_REF(gear_pack_entered), answerer = user, title = "Admin-load Dispenser", question = "Paste new gear pack JSON below. See example/code comments.", default = example, multiline = TRUE, rights = R_DEBUG|R_FUN, timeout = 0)
-
-/obj/machinery/gear_dispenser/proc/gear_pack_entered(datum/act/request/A)
-	if(A.answer)
-		gear_pack_load(A.request.answerer, A.answer.value)
-
 /obj/machinery/gear_dispenser/proc/gear_pack_load(mob/user, input)
 	if(isnull(input))
 		return

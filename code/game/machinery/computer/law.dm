@@ -15,7 +15,7 @@ MSG_DEF_SELF(upload/module_required, "needs a AI module")
 
 CAPABILITIES(/obj/machinery/computer/aiupload)
 	op("access_internals", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Access Computer's Internals"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_access_internals)))
-	op("install_module", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Install module"), needs(req(/obj/item, because = MSG(upload/item_required)), req_adjacent(), req_capable(), req(PROC_REF(can_connect_holds), because = PROC_REF(can_connect_refusal))), then(PROC_REF(interaction_install)))
+	op("install_module", inputs(item(/obj/item/aiModule), menu()), priority(OP_PRIORITY_DEFAULT), label("Install module"), needs(req(/obj/item, because = MSG(upload/item_required)), req_adjacent(), req_capable(), req(PROC_REF(can_connect_holds), because = PROC_REF(can_connect_refusal))), then(PROC_REF(interaction_install)))
 	op("select_ai", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Select AI"), needs(req(PROC_REF(can_select_ai_holds), because = PROC_REF(can_select_ai_refusal))),
 		asks(/datum/prompt/choice/ai_upload_selection, fields = list("title" = "AI selection", "question" = "AI signals detected:"), step = "selection"), then(PROC_REF(interaction_select_ai)))
 	op("observer_view", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("View"), then(TYPE_PROC_REF(/atom, op_swallow)))
@@ -33,7 +33,7 @@ CAPABILITIES(/obj/machinery/computer/aiupload)
 
 /// Requirement: the console only reaches the station's contact levels.
 /obj/machinery/computer/aiupload/proc/can_connect(mob/user, atom/target, obj/item/held)
-	if(using_map && !(user.z in using_map.contact_levels))
+	if(using_map && !(read_once(user.z) in using_map.contact_levels))
 		return "unable to establish a connection, you're too far away from the station"
 	return TRUE
 
@@ -74,7 +74,7 @@ CAPABILITIES(/obj/machinery/computer/aiupload)
 
 
 CAPABILITIES(/obj/machinery/computer/borgupload)
-	op("install_module", inputs(item(/obj/item/aiModule), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Install module"), needs(req(/obj/item/aiModule, because = MSG(upload/module_required)), req_adjacent(), req_capable()), then(PROC_REF(interaction_install)))
+	op("install_module", inputs(item(/obj/item/aiModule), menu()), priority(OP_PRIORITY_DEFAULT), label("Install module"), needs(req(/obj/item/aiModule, because = MSG(upload/module_required)), req_adjacent(), req_capable()), then(PROC_REF(interaction_install)))
 	op("select_borg", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Select cyborg"), needs(req(PROC_REF(can_select_borg_holds), because = PROC_REF(can_select_borg_refusal))),
 		asks(/datum/prompt/choice/borg_upload_selection, fields = list("title" = "Borg selection", "question" = "Unshackled borg signals detected:"), step = "selection"), then(PROC_REF(interaction_select_borg)))
 	op("observer_view", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("View"), then(TYPE_PROC_REF(/atom, op_swallow)))

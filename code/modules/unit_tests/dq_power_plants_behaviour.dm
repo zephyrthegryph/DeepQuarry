@@ -1047,17 +1047,33 @@
 
 #define PP_GRAV_STEP "spin_step"
 
+/// Saved on the test, not passed as a deferred argument with area-datum keys.
+/datum/unit_test/dq_pp/var/list/pp_gravity_before
+/datum/unit_test/dq_pp/var/obj/machinery/gravity_generator/main/pp_gravity_generator
+
 /// A gravity generator (no parts) on a clear floor in a powered area.
 /datum/unit_test/dq_pp/proc/pp_gravgen(turf/T)
+	pp_gravity_before = unit_test_gravity_snapshot()
 	var/area/room = get_area(T)
-	room.requires_power = FALSE
+	set_var(room, nameof(room.requires_power), FALSE)
 	var/obj/machinery/gravity_generator/main/G = allocate(/obj/machinery/gravity_generator/main, T)
+	pp_gravity_generator = G
+	defer_cleanup(src, PROC_REF(pp_gravgen_done))
 	G.power_change()
 	return G
 
-/datum/unit_test/dq_pp/proc/pp_gravgen_done(obj/machinery/gravity_generator/main/G, turf/T)
-	var/area/room = get_area(T)
-	room.requires_power = initial(room.requires_power)
+/// The live generator's destruction switches off its discovered areas: restore only afterwards.
+/// Deferred cleanup also runs if an assertion exits the spin-up/down/breaker test early.
+/datum/unit_test/dq_pp/proc/pp_gravgen_done()
+	// A dead captured generator would drop the deferred call and skip gravity restoration.
+	var/obj/machinery/gravity_generator/main/G = pp_gravity_generator
+	pp_gravity_generator = null
+	if(!QDELETED(G))
+		destroyed(G)
+	for(var/area/room as anything in pp_gravity_before)
+		if(!QDELETED(room))
+			room.gravitychange(pp_gravity_before[room])
+	pp_gravity_before = null
 
 /// Spin-up: from 0 the charge rises 2 a step; at 100 gravity comes on (the generator draws its active power) and it settles.
 /datum/unit_test/dq_pp/gravgen_spin_up
@@ -1077,7 +1093,7 @@
 	pp_step(G, PP_GRAV_STEP)
 	TEST_ASSERT_EQUAL(G.charging_state, GRAVGEN_IDLE, "at 100 it settles")
 	TEST_ASSERT_EQUAL(G.use_power, USE_POWER_ACTIVE, "and gravity is on")
-	pp_gravgen_done(G, run[1])
+	pp_gravgen_done()
 
 /// Spin-down: the charge falls 2 a step; at 0 gravity goes off.
 /datum/unit_test/dq_pp/gravgen_spin_down
@@ -1094,7 +1110,7 @@
 	pp_step(G, PP_GRAV_STEP)
 	TEST_ASSERT_EQUAL(G.charging_state, GRAVGEN_IDLE, "at 0 it settles")
 	TEST_ASSERT_EQUAL(G.use_power, USE_POWER_IDLE, "and gravity is off")
-	pp_gravgen_done(G, run[1])
+	pp_gravgen_done()
 
 /// The breaker: off while running starts the spin-down; on again while spinning down starts the spin-up.
 /datum/unit_test/dq_pp/gravgen_breaker
@@ -1110,7 +1126,7 @@
 	G.breaker = TRUE
 	G.set_power()
 	TEST_ASSERT_EQUAL(G.charging_state, GRAVGEN_UP, "back on, it spins up again")
-	pp_gravgen_done(G, run[1])
+	pp_gravgen_done()
 
 #undef PP_GRAV_STEP
 

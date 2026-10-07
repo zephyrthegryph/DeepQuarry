@@ -1192,6 +1192,17 @@
 #include "dq_time_foundation_compatibility_tests.dm"
 #include "dq_engine_policy_adapter_tests.dm"
 #include "dq_engine_foundation_adapter_tests.dm"
+#include "dq_read_once_machinery_tests.dm"
+#include "interim_cell_hand_menu.dm"
+#include "dq_round2_gravity_teardown.dm"
+#include "dq_read_once_menu_tests.dm"
+
+#include "interim_machine_missing_item_menus.dm"
+#include "interim_shuttle_authorize_menu.dm"
+#include "round2_borgupload_empty_selection.dm"
+#include "round2_upload_module_click.dm"
+#include "interim_camera_doppler_menu_parity.dm"
+#include "dq_round2_menu_refusal_restore_tests.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

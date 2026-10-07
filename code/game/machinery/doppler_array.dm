@@ -26,10 +26,12 @@
 	observe(OM_WORLD, /datum/notice/world_explosion, src, then(PROC_REF(sense_explosion)))
 	add_trait(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
 
+MSG_DEF_SELF(doppler/needs_parts, "needs a rapid part exchange device")
+
 CAPABILITIES(/obj/machinery/doppler_array)
 	interface("DopplerArray")
 	ui_shape(explosions = list_of(row(index = int(), time = schema_text(), x = int(), y = int(), z = int(), devastation_range = num(), heavy_impact_range = num(), light_impact_range = num(), seconds_taken = num())))
-	op("part_replacement_impl", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(PROC_REF(interaction_part_replacement_impl)))
+	op("part_replacement_impl", inputs(item(/obj/item/storage/part_replacer), menu()), needs(req(/obj/item/storage/part_replacer, because = MSG(doppler/needs_parts)), req_adjacent(), req_capable()), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(PROC_REF(interaction_part_replacement_impl)))
 
 /obj/machinery/doppler_array/ui_data(datum/act/eval/A)
 	var/list/data = list()

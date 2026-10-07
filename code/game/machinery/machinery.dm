@@ -386,7 +386,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// machinery_maintenance.dm declares the machine's other interactions.
 
 /obj/machinery/proc/robot_remote_blocked(datum/act/op/A)
-	return A.actor.is_remote_viewing()
+	// Sample the current input actor; menu samples are rebuilt rather than cached.
+	return read_once(A.actor.is_remote_viewing())
 
 /// The checks every machine's hand interactions pass behind (see machine_use_blocker() for the Menu's version).
 /obj/machinery/hand_gate(mob/user as mob)

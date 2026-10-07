@@ -10,9 +10,11 @@
 
 
 
+MSG_DEF_SELF(shuttle/needs_card, "needs a card")
+
 CAPABILITIES(/obj/machinery/computer/shuttle)
-	op("shuttle_authorize", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice/shuttle_authorization, fields = list("card" = computed(PROC_REF(shuttle_held_card)), "timeout" = 0), when = PROC_REF(shuttle_can_authorize)), then(PROC_REF(authorization_chosen)))
-	op("shuttle_emag_launch", item(/obj/item/card/emag), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/yes_no/shuttle_emag_launch, fields = list("card" = computed(PROC_REF(shuttle_held_card)), "timeout" = 0), when = PROC_REF(shuttle_can_emag_launch)), then(PROC_REF(emag_launch_chosen)))
+	op("shuttle_authorize", inputs(item(/obj/item/card/id), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Authorize"), when(cond_not(req(/obj/item/card/emag))), needs(req(/obj/item/card, because = MSG(shuttle/needs_card)), req_adjacent(), req_capable()), asks(/datum/prompt/choice/shuttle_authorization, fields = list("card" = computed(PROC_REF(shuttle_held_card)), "timeout" = 0), when = PROC_REF(shuttle_can_authorize)), then(PROC_REF(authorization_chosen)))
+	op("shuttle_emag_launch", item(/obj/item/card/emag), priority(OP_PRIORITY_DEFAULT - 1), label("Authorize"), asks(/datum/prompt/yes_no/shuttle_emag_launch, fields = list("card" = computed(PROC_REF(shuttle_held_card)), "timeout" = 0), when = PROC_REF(shuttle_can_emag_launch)), then(PROC_REF(emag_launch_chosen)))
 
 
 /datum/prompt/choice/shuttle_authorization

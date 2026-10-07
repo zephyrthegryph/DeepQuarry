@@ -694,6 +694,8 @@
 /// provider set generation), the ids never reused (a ref would be). An entity's act generation bumps when a published key, a relation, a stat, its place or
 /// its contents change (op_changed()), and the provider set generation when an activation with provides attaches or detaches, so a stale read never
 /// matches: the key itself is what changed. Only a menu that shows a cooldown also carries the time it was read at (a cooldown ends with no publication).
+// Temporary synchronous read scope: list(parent frame, encountered read_once).
+GLOBAL_LIST(op_menu_read_frame)
 GLOBAL_LIST_EMPTY(op_menu_cache) // ALLOW(cache): keyed by generations, so a state change makes the old entry unreachable; bounded by OP_MENU_CACHE_MAX
 #define OP_MENU_CACHE_MAX 512
 /// Menus built (cache misses) since the world started: a test or a bench reads it.
@@ -729,6 +731,21 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 
 /// The menu of `target` for `actor`: every op a pick (origin ORIGIN_MENU) could reach, with whether Require would pass now and why not.
 /proc/op_menu(mob/actor, atom/target, obj/held)
+	var/list/previous = GLOB.op_menu_read_frame
+	var/list/frame = list(previous, FALSE)
+	var/previous_pure_depth = GLOB.op_pure_depth
+	GLOB.op_menu_read_frame = frame
+	try
+		. = op_menu_read(actor, target, held, frame)
+	catch(var/exception/fault)
+		GLOB.op_menu_read_frame = previous
+		// An aborted condition may not have reached its matching op_pure_end().
+		GLOB.op_pure_depth = previous_pure_depth
+		throw fault
+	GLOB.op_menu_read_frame = previous
+
+/// Builds or reuses rows within the caller's synchronous admission read.
+/proc/op_menu_read(mob/actor, atom/target, obj/held, list/frame)
 	var/stamp = op_now()
 	// An entity that has been asked about keeps a record, so what moves or changes it from now on bumps its generation.
 	var/datum/rx_state/actor_state = actor ? rx_of(actor) : null
@@ -778,7 +795,8 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 		timed = TRUE
 	if(length(GLOB.op_menu_cache) >= OP_MENU_CACHE_MAX)
 		GLOB.op_menu_cache.Cut()
-	GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null)
+	if(!frame[2])
+		GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null)
 	return rows.Copy()
 
 /// The reason Require would refuse candidate C now (the requirements only, nothing reserved), or null.

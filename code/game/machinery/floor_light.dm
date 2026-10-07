@@ -19,7 +19,9 @@ CAPABILITIES(/obj/item/floor_light)
 
 /// Installation must be able to consume the kit from its current holder.
 /obj/item/floor_light/proc/can_install(mob/user, atom/target, obj/item/held)
-	var/reason = loc?.release_refusal(src, user)
+	// Sample the real custodian's policy; the atomic consume rechecks it too.
+	var/obj/item/floor_light/kit = read_once(src)
+	var/reason = read_once(kit.loc?.release_refusal(kit, user))
 	if(reason)
 		return reason
 	return TRUE

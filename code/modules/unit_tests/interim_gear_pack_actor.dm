@@ -2,8 +2,8 @@
 	var/tmp/mob/admin_actor
 	var/admin_calls = 0
 
-/obj/machinery/gear_dispenser/interim_actor_probe/admin_add(mob/user)
-	rel_set(src, nameof(admin_actor), user)
+/obj/machinery/gear_dispenser/interim_actor_probe/vv_topic_admin_add(datum/act/op/A)
+	rel_set(src, nameof(admin_actor), A.actor)
 	admin_calls++
 	return ..()
 
@@ -15,7 +15,7 @@
 /obj/interim_gear_pack_actor_click/Click(location, control, params)
 	result = op_topic_href(actor, dispenser, list("admin_add" = "1"), namespace = VV_TOPIC, gated = FALSE)
 
-/// Public VV dispatch refuses the supplied clientless actor before any loading helper; the private helper also refuses a missing actor.
+/// Public VV dispatch refuses a clientless actor before its effect and rejects a missing actor at the transport boundary.
 /datum/unit_test/om/interim_gear_pack_actor_refusal
 /datum/unit_test/om/interim_gear_pack_actor_refusal/run_om(list/made)
 	set_global(nameof(GLOB.test_prompts), list())
@@ -54,8 +54,9 @@
 		for(var/i in 1 to length(expected_types))
 			TEST_ASSERT_EQUAL(gear.to_spawn[i], expected_types[i], "the actual refusal preserves each existing spawn type")
 		TEST_ASSERT(!QDELETED(gear), "the actual refusal does not dispose a constructed catalog entry")
-	dispenser.admin_add(null)
-	TEST_ASSERT_EQUAL(dispenser.admin_calls, 1, "the actual missing-actor helper reaches its real guard")
+	var/datum/op_result/missing_actor = op_topic_href(null, dispenser, list("admin_add" = "1"), namespace = VV_TOPIC, gated = FALSE)
+	TEST_ASSERT_NULL(missing_actor, "the public topic transport rejects an absent actor before resolving the op")
+	TEST_ASSERT_EQUAL(dispenser.admin_calls, 0, "the public topic transport never runs the loading effect for an absent actor")
 	TEST_ASSERT_NULL(dispenser.admin_actor, "the absent actor stays absent instead of adopting ambient state")
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 0, "an absent actor opens no gear-pack prompt")
 	TEST_ASSERT_EQUAL(dispenser.dispenser_flags, original_flags, "an absent actor changes no actual dispenser flags")

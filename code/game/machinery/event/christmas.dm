@@ -82,7 +82,8 @@ CAPABILITIES(/obj/structure/event/santa_sack)
 	//Currently doesnt have an ingame way to show. Can only be viewed through View-Variables, to ensure theres no chance of players ckeys exposed - Jack
 
 /obj/structure/event/santa_sack/proc/santa_present_allowed(datum/act/op/A)
-	return A.actor?.ckey == santa_ckey
+	// Recheck the answering actor identity while retaining the tracked sack owner.
+	return read_once(A.actor?.ckey) == santa_ckey
 
 /obj/structure/event/santa_sack/proc/santa_present_receivers(datum/act/op/A)
 	return mobs_in_view(1, A.actor)

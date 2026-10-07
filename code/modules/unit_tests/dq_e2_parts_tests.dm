@@ -25,7 +25,7 @@
 /datum/unit_test/dq_e2/input_kinds
 
 /datum/unit_test/dq_e2/input_kinds/run_gate()
-	var/mob/living/simple_mob/e0_fixture/M = actor()
+	var/mob/living/simple_mob/e0_fixture/M = allocate(/mob/living/simple_mob/e0_fixture/e2_topic_actor)
 	var/obj/e2_box/B = allocate(/obj/e2_box)
 	var/obj/item/tool/crowbar/crowbar = allocate(/obj/item/tool/crowbar)
 	var/obj/item/e2_key/key = allocate(/obj/item/e2_key)
@@ -72,10 +72,19 @@
 	// topic: a link
 	var/datum/op_result/by_topic = op_topic(M, B, "ping", list("n" = 3))
 	TEST_ASSERT_EQUAL(by_topic?.key, "ping", "a topic link is the op with that topic() binding")
+	TEST_ASSERT_EQUAL(by_topic?.outcome, ACT_COMMITTED, "the real topic admission gate permits this interactive actor")
 	TEST_ASSERT_EQUAL(B.last_ping, 3, "its argument arrived")
 	var/datum/op_result/bad_topic = op_topic(M, B, "ping", list("n" = 12))
 	TEST_ASSERT_EQUAL(B.last_ping, 9, "an out-of-range number is clamped to the schema's ceiling, by the schema, never by the handler")
-	TEST_ASSERT_NOTNULL(bad_topic, "and still resolves")
+	TEST_ASSERT_EQUAL(bad_topic?.outcome, ACT_COMMITTED, "the schema-clamped topic still commits")
+	var/turf/nearby = get_turf(B)
+	var/turf/far_away = locate(nearby.x + 4, nearby.y, nearby.z)
+	TEST_ASSERT(far_away, "the fixture has a real distant turf for topic admission")
+	M.forceMove(far_away)
+	var/datum/op_result/distant_topic = op_topic(M, B, "ping", list("n" = 4))
+	TEST_ASSERT_EQUAL(distant_topic?.outcome, ACT_REFUSED, "the actual obj topic gate refuses a distant interactive actor")
+	TEST_ASSERT_EQUAL(B.last_ping, 9, "refused topic admission leaves the previous real argument unchanged")
+	M.forceMove(nearby)
 	// inside: acting on the container the actor is in
 	var/obj/e2_box/inner = allocate(/obj/e2_box)
 	M.forceMove(inner)

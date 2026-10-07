@@ -599,13 +599,18 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			take_capture(A)
 			keeps = Q.args["keeps"] & op_default_keeps(A, binding) & ~STAY // an open question outlives a step the actor takes
 			var/list/fields = op_request_fields(A, Q)
+			fields["step_name"] = Q.args["step"]
 			var/datum/request/R = request_open(src, Q.args["type"], TYPE_PROC_REF(/datum/pending_op, request_done), fields, A)
+			// Opening can synchronously finish this question and resume a later step.
+			// Its callback already owns that progress; do not attach the closed request
+			// to a finished pending record or overwrite the next step's live request.
+			if(!active || QDELETED(src) || (R && (QDELETED(R) || !R.is_open())))
+				return
 			if(!R)
 				suspend_act()
 				return cancel(/datum/msg/op/failed)
 			rel_set(src, nameof(request), R)
 			R.waiting = result // ALLOW(ownership): the caller's plain record: the request hands it back to test_answer()
-			R.step_name = Q.args["step"]
 			suspend_act()
 			return
 		cursor++

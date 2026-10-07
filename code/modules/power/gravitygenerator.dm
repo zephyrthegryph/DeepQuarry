@@ -105,9 +105,10 @@ CAPABILITIES(/obj/machinery/gravity_generator)
 
 // a broken part takes the whole generator down.
 /obj/machinery/gravity_generator/part/on_destroy(force)
-	if(main_part)
+	if(!QDELETED(main_part))
 		destroyed(main_part)
-	atom_break()
+	// Deleting a part destroys the live generator; it is not a damage event on
+	// this already-deleting part, whose stat holds have been released.
 	..()
 
 //
@@ -146,7 +147,7 @@ CAPABILITIES(/obj/machinery/gravity_generator/part)
 
 /obj/machinery/gravity_generator/part/atom_break(damage_flag)
 	. = ..()
-	if(main_part && !main_part.broken_now())
+	if(!QDELETED(main_part) && !main_part.broken_now())
 		main_part.atom_break(damage_flag)
 
 //
@@ -234,6 +235,9 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 /obj/machinery/gravity_generator/main/on_destroy(force)
 	investigate_log("was destroyed!", "gravity")
 	set_on(FALSE)
+	// The level index uses the power mode, so remove this generator before
+	// deciding whether any surviving generator still supplies gravity.
+	set_use_power(USE_POWER_IDLE)
 	update_list()
 	if(!gravity_in_level())
 		update_gravity(FALSE)
@@ -486,5 +490,3 @@ CAPABILITIES(/obj/machinery/gravity_generator/main)
 #undef GRAV_NEEDS_WELDING
 #undef GRAV_NEEDS_PLASTEEL
 #undef GRAV_NEEDS_WRENCH
-
-

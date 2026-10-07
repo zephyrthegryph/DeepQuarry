@@ -24,6 +24,7 @@
 #define DQ_PIN_DIR "code/modules/unit_tests/snapshots/pins/"
 
 /datum/unit_test/dq_conversion_pin
+	var/list/capture_gravity_before
 
 // Pinning visibility uses the shared lazy dview singleton. Warm it during fixture
 // setup, before the runner snapshots globals; it remains the production cache.
@@ -52,15 +53,22 @@
 		/obj/item/card/id,
 	)
 
+/datum/unit_test/dq_conversion_pin/proc/snapshot_name()
+	return "pins"
+
+/datum/unit_test/dq_conversion_pin/proc/snapshot_directory()
+	return DQ_PIN_DIR
+
 /datum/unit_test/dq_conversion_pin/Run()
 	// Capturing hit reactions may take an act over. Restore this framework scratch
 	// value after the sweep rather than leaving it for the next focused test.
 	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 	var/list/bad = list()
-	var/list/expected_by_type = dq_snapshot_read_dir(DQ_PIN_DIR, bad)
+	var/list/expected_by_type = dq_snapshot_read_dir(snapshot_directory(), bad)
 	if(!length(expected_by_type) && !length(bad))
 		return // no pins recorded
 	var/turf/T = test_floor()
+	capture_gravity_before = unit_test_gravity_snapshot()
 	var/list/actors = list(
 		"human" = allocate(/mob/living/carbon/human, T),
 		"robot" = allocate(/mob/living/silicon/robot, T),
@@ -114,7 +122,7 @@
 			actual_by_type[type] = list("runtime while reading it: [read.name]")
 		qdel(target)
 		TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, sweep_room, target_gravity), "capture left fixture products")
-	var/report = dq_snapshot_compare(DQ_PIN_DIR, "pins", actual_by_type, expected_by_type, bad)
+	var/report = dq_snapshot_compare(snapshot_directory(), snapshot_name(), actual_by_type, expected_by_type, bad)
 	TEST_ASSERT(isnull(report), report)
 
 /// Preserve cleanup even when a declaration error aborts the sweep; the runner still reports the original runtime.
@@ -125,8 +133,10 @@
 	for(var/datum/thing as anything in allocated?.Copy())
 		if(!QDELETED(thing))
 			qdel(thing)
-	if(sweep_room && sweep_room.has_gravity != sweep_gravity)
-		sweep_room.gravitychange(sweep_gravity)
+	for(var/area/room as anything in capture_gravity_before)
+		if(!QDELETED(room))
+			room.gravitychange(capture_gravity_before[room])
+	capture_gravity_before = null
 
 /// Identity snapshot of this fixture block, including existing actor equipment and nested contents.
 /// Do not materialize latent contents merely to identify already-existing fixture atoms.
