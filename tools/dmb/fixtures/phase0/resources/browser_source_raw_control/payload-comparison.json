@@ -1,0 +1,20 @@
+[
+  {
+    "name": "probe.mp4",
+    "kind": 0,
+    "source_bytes": 34123,
+    "payload_bytes": 34123,
+    "equal": true,
+    "source_sha256": "97a9d3a6ec1c0f5b907c30e186dbd0dfa1081f879b21359db93dceab591cc256",
+    "payload_sha256": "97a9d3a6ec1c0f5b907c30e186dbd0dfa1081f879b21359db93dceab591cc256"
+  },
+  {
+    "name": "asset.dm",
+    "kind": 0,
+    "source_bytes": 90155,
+    "payload_bytes": 90155,
+    "equal": true,
+    "source_sha256": "11ae50c787c014906bb00eec1d54f3a5495184c4167ae7eaa1b7658a18236b9d",
+    "payload_sha256": "11ae50c787c014906bb00eec1d54f3a5495184c4167ae7eaa1b7658a18236b9d"
+  }
+]

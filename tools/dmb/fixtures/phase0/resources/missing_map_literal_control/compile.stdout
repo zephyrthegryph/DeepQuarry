@@ -1,0 +1,8 @@
+DM compiler version 516.1687
+loading probe.dme
+loading map.dmm
+map.dmm:1:error: cannot find file
+map.dmm:1:error: expected )
+Failed to load map file E:\dmb-native-v2-phase0\map-resource-missing-control\map.dmm.
+probe.dmb - 2 errors, 0 warnings (10/6/26 10:51 pm)
+Total time: 0:00

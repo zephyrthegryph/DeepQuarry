@@ -507,20 +507,12 @@ fn collect_string(
                     },
                     reason: "unterminated string interpolation".into(),
                 })?;
-                let expression = &text[start..end];
-                let parsed = dm_syntax::parse_expression(expression);
-                if !parsed.diagnostics.is_empty() || parsed.expr.is_none() {
-                    return Err(CaptureError::UnsupportedExpression {
-                        span: Span {
-                            start: base + start,
-                            end: base + end,
-                        },
-                        reason:
-                            "string interpolation expression is unsupported by the syntax parser",
-                    });
-                }
-                let lexed = dm_syntax::lex_spans(expression);
-                collect_tokens(expression, &lexed.tokens, base + start, found)?;
+                // Resource discovery needs balanced lexical regions, not the
+                // complete expression grammar. Lowering owns semantic parsing.
+                // Reuse the existing lexical scan up to this interpolation's
+                // closing bracket; nested strings recurse through collect_string.
+                let count = lexed.tokens.iter().take_while(|token| token.span.end <= end - start).count();
+                collect_tokens(&text[start..], &lexed.tokens[..count], base + start, found)?;
                 at = end + 1;
             }
             _ => at += 1,
@@ -622,6 +614,17 @@ mod tests {
         for literal in &found {
             assert_eq!(&source[literal.span.range()], format!("'{}'", literal.path));
         }
+    }
+    #[test]
+    fn interpolation_resource_discovery_is_independent_of_expression_grammar() {
+        let source = "/proc/p()\n    return \"[pick(1;'asset.txt',1;null)] [\"nested [pick(1;'deep.txt',1;null)]\"] plain 'ignored.txt'\"\n";
+        let found = discover_literals(source).unwrap();
+        assert_eq!(found.iter().map(|literal| literal.path.as_str()).collect::<Vec<_>>(),
+            ["asset.txt", "deep.txt"]);
+        for literal in found {
+            assert_eq!(&source[literal.span.range()], format!("'{}'", literal.path));
+        }
+        assert!(discover_literals("\"unterminated [file('x.txt')\"").is_err());
     }
     #[test]
     fn terminal_roots_use_project_then_reverse_stack_and_record_negatives() {

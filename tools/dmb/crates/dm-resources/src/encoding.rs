@@ -9,7 +9,8 @@ use std::io;
 pub fn byond516_raw_policy() -> CapturePolicy {
     CapturePolicy {
         certified_raw_extensions: [
-            "dmi", "png", "ogg", "ttf", "txt", "html", "css", "js", "json", "dmf",
+            "dmi", "png", "ogg", "ttf", "txt", "html", "css", "js", "json", "dmf", "gif", "wav",
+            "mid", "mp3", "woff2", "webp", "mp4", "dm", "dms",
         ]
         .into_iter()
         .map(str::to_owned)
@@ -55,6 +56,45 @@ pub fn encode_raw(
 mod tests {
     use super::*;
     #[test]
+    fn additional_current_assets_match_native_payload_kind_and_id() {
+        for (control, count) in [
+            ("additional_raw_control", 6),
+            ("browser_source_raw_control", 2),
+            ("script_file_raw_control", 1),
+        ] {
+            let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../fixtures/phase0/resources")
+                .join(control);
+            let archive = std::fs::read(root.join("probe.rsc")).unwrap();
+            let records = byond_dmb::rsc::read_all(&mut archive.as_slice()).unwrap();
+            assert_eq!(records.len(), count);
+            let policy = byond516_raw_policy();
+            for record in records {
+                let byond_dmb::rsc::Entry::Named(native) = record else {
+                    panic!("opaque control resource")
+                };
+                let name = String::from_utf8(native.name.clone()).unwrap();
+                let source = std::fs::read(root.join(&name)).unwrap();
+                let encoded = encode_raw(
+                    ResourceRequest {
+                        archive_name: name.clone(),
+                        disk_path: root.join(&name),
+                    },
+                    &source,
+                    &policy,
+                )
+                .unwrap();
+                assert_eq!(encoded.input.named.kind, native.kind, "{name}");
+                assert_eq!(encoded.input.named.id, native.id, "{name}");
+                assert_eq!(
+                    encoded.input.named.asset_bytes().unwrap(),
+                    native.asset_bytes().unwrap(),
+                    "{name}"
+                );
+            }
+        }
+    }
+    #[test]
     fn source_bound_encoder_preserves_kind_and_payload() {
         let policy = byond516_raw_policy();
         for (name, kind) in [
@@ -78,7 +118,7 @@ mod tests {
             assert_eq!(output.source_digest, output.input.content_digest);
         }
         assert!(
-            matches!(encode_raw(ResourceRequest {archive_name:"a.wav".into(),disk_path:"a.wav".into()},b"unknown",&policy),Err(error) if error.kind()==io::ErrorKind::Unsupported)
+            matches!(encode_raw(ResourceRequest {archive_name:"a.jpeg".into(),disk_path:"a.jpeg".into()},b"unknown",&policy),Err(error) if error.kind()==io::ErrorKind::Unsupported)
         );
     }
 }

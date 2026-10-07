@@ -1,0 +1,9 @@
+{
+  "wrapper": 1,
+  "kind": 0,
+  "name": "example.dms",
+  "declared_bytes": 38,
+  "source_bytes": 38,
+  "native_payload_equals_source": true,
+  "outer_bytes": 67
+}
