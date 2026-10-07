@@ -145,10 +145,9 @@ if [ ${#focus} -gt 1500 ]; then
 fi
 
 run_once() {
-	case "$(uname -s)" in
-		MINGW*|MSYS*|CYGWIN*) cmd //c "tools\build\build.bat" dm-test "--focus=$focus" ${args[@]+"${args[@]}"} ;;
-		*) tools/build/build.sh dm-test "--focus=$focus" ${args[@]+"${args[@]}"} ;;
-	esac
+	# Git Bash can use the same worktree-pinned entry point and system Bun as
+	# the POSIX runner; avoid the batch bootstrap's separate tool download.
+	tools/build/build.sh dm-test "--focus=$focus" ${args[@]+"${args[@]}"}
 }
 
 if [ "$repeat" -eq 1 ]; then
