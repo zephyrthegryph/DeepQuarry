@@ -76,11 +76,11 @@ CAPABILITIES(/obj/effect/anomaly/flux)
 			tesla_zap(src, 2, 1000, FALSE, FALSE, current_jumps = 1) //Can't chain jumps.
 		if(34 to 65)
 			tesla_zap(src, 3, 1000, FALSE, FALSE, current_jumps = 1)
-			after(src, 3 SECONDS, GLOBAL_PROC_REF(tesla_zap), with = list(src, 3, 1500, FALSE, FALSE))
+			after(src, 3 SECONDS, GLOBAL_PROC_REF(tesla_zap), with = list(src, 3, 1500, FALSE, FALSE), keeps_dead = TRUE)
 		else
 			tesla_zap(src, 4, 1000, FALSE, TRUE, current_jumps = 1)
 			after(src, 3 SECONDS, PROC_REF(highSevPulse))
 
 /obj/effect/anomaly/flux/proc/highSevPulse(power, explosive, current_jumps)
 	tesla_zap(src, 4, 1250, FALSE, FALSE, current_jumps = 1)
-	after(src, 3 SECONDS, GLOBAL_PROC_REF(tesla_zap), with = list(src, 4, 1500, FALSE, FALSE))
+	after(src, 3 SECONDS, GLOBAL_PROC_REF(tesla_zap), with = list(src, 4, 1500, FALSE, FALSE), keeps_dead = TRUE)

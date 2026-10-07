@@ -48,7 +48,7 @@
 					B.visible_message(span_danger("\The [B] lashes out at \the [L]!"))
 					var/datum/beam/drain_beam = beam_origin.Beam(L, icon_state = "drain_life", time = 10 SECONDS)
 					rel_add(src, nameof(active_beams), drain_beam)
-					after(B, 9 SECONDS, TYPE_PROC_REF(/obj/structure/blob, ectoplasm_siphon), with = list(L, drain_beam))
+					after(B, 9 SECONDS, TYPE_PROC_REF(/obj/structure/blob, ectoplasm_siphon), with = list(L, drain_beam), keeps_dead = TRUE)
 
 /datum/blob_type/ectoplasmic_horror/on_received_damage(obj/structure/blob/B, damage, damage_type)
 	if(prob(round(damage * 0.5)))
@@ -88,7 +88,7 @@
 					carrier.visible_message(span_danger("[icon2html(B,viewers(carrier))] \The [B] lashes out at \the [L]!"))
 					var/datum/beam/drain_beam = carrier.Beam(L, icon_state = "drain_life", time = 10 SECONDS)
 					rel_add(src, nameof(active_beams), drain_beam)
-					after(B, 9 SECONDS, TYPE_PROC_REF(/obj/item/blobcore_chunk, chunk_siphon), with = list(carrier, L, drain_beam))
+					after(B, 9 SECONDS, TYPE_PROC_REF(/obj/item/blobcore_chunk, chunk_siphon), with = list(carrier, L, drain_beam), keeps_dead = TRUE)
 
 /// The end of an ectoplasmic lash: the blob siphons energy through the beam.
 /obj/structure/blob/proc/ectoplasm_siphon(mob/living/L, datum/beam/drain_beam)

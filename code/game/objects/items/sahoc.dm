@@ -98,7 +98,7 @@ CAPABILITIES(/obj/item/daredevice)
 	var/mob/living/capsuleowner = user
 	play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 	var/item = pick(winitems)
-	after(src, 10 SECONDS, PROC_REF(capsule_result), with = list(capsuleowner, item))
+	after(src, 10 SECONDS, PROC_REF(capsule_result), with = list(capsuleowner, item), keeps_dead = TRUE)
 	return TRUE
 
 /obj/item/daredevice/proc/capsule_result(mob/living/capsuleowner, item)

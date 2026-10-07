@@ -359,11 +359,11 @@
 		else
 			if(contract.closure_code == CONTRACT_CLOSE_FAILED)
 				record.contracts_failed++
-			after(src, CARGO_MARKET_AGENT_OFFER_DELAY, PROC_REF(queue_agent_vetting), with = list(contract.owner_account_number, contract.agent_faction))
+			after(src, CARGO_MARKET_AGENT_OFFER_DELAY, PROC_REF(queue_agent_vetting), with = list(contract.owner_account_number, contract.agent_faction), keeps_dead = TRUE)
 		return
 	if(contract.closure_code == CONTRACT_CLOSE_COMPLETED)
 		record.contracts_completed++
 	else if(contract.closure_code == CONTRACT_CLOSE_FAILED)
 		record.contracts_failed++
 	GLOB.station_faction_relations.refresh_agent_tier(record)
-	after(src, CARGO_MARKET_AGENT_OFFER_DELAY, PROC_REF(queue_agent_offers), with = list(contract.owner_account_number, contract.agent_faction))
+	after(src, CARGO_MARKET_AGENT_OFFER_DELAY, PROC_REF(queue_agent_offers), with = list(contract.owner_account_number, contract.agent_faction), keeps_dead = TRUE)

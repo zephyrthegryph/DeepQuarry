@@ -475,9 +475,9 @@
 /datum/entry/part/effect/sets
 	part_name = "sets"
 
-/// holds(STAT_X, v, lasts =, on =, source =, outlives =, bound =): a stat hold on the selected entity.
-/proc/holds(stat_id, value = null, lasts = null, on = ON_TARGET, source = null, outlives = FALSE, bound = FALSE)
-	return part_make(/datum/entry/part/effect/holds, list("stat" = stat_id, "value" = value, "lasts" = lasts, "on" = on, "source" = source, "outlives" = outlives, "bound" = bound))
+/// holds(STAT_X, v, lasts =, on =, source =, outlives =, outlives_source =): a stat hold on the selected entity.
+/proc/holds(stat_id, value = null, lasts = null, on = ON_TARGET, source = null, outlives = FALSE, outlives_source = FALSE)
+	return part_make(/datum/entry/part/effect/holds, list("stat" = stat_id, "value" = value, "lasts" = lasts, "on" = on, "source" = source, "outlives" = outlives, "outlives_source" = outlives_source))
 
 /datum/entry/part/effect/holds
 	part_name = "holds"

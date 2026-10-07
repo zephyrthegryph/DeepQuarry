@@ -502,7 +502,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 		message_admins(sender, "[uppertext(destination)] FAX", rcvdcopy, "UNKNOWN")
 
 	sendcooldown = 1800
-	after(src, 5 SECONDS, TYPE_PROC_REF(/atom, visible_message), with = list("[src] beeps, \"Message transmitted successfully.\""))
+	after(src, 5 SECONDS, TYPE_PROC_REF(/atom, visible_message), with = list("[src] beeps, \"Message transmitted successfully.\""), keeps_dead = TRUE)
 
 // Turns objects into just text.
 /obj/machinery/photocopier/faxmachine/proc/make_summary(obj/item/sent)

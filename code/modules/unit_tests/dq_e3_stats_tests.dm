@@ -1,7 +1,7 @@
 // E3, stats: the gate fixtures of doc/rewrite/final_api.html section 19 "E3, stats" (code/tests/engine/e3_fixtures.dm).
 //
 // A table-driven test per combine rule (base value, tie-break, VV override); a hold on a type that lacks the stat is a build error naming type
-// and stat; a timed hold outlives its deleted source and an untimed one does not; contributes_to releases on relation change; immunity zeroes a
+// and stat; a hold dies with its deleted source unless it outlives_source; contributes_to releases on relation change; immunity zeroes a
 // status; a stat var read is current on the next line, with no drain. Then the settle rule: a fan-out is marked and drains under a budget.
 
 /datum/unit_test/dq_e3
@@ -164,27 +164,26 @@
 	TEST_ASSERT_NULL(hold(M, STAT_E3_DRAW, 1, "text source"), "text is not a source")
 	TEST_ASSERT_EQUAL(M.e3_draw, 2, "nothing was placed")
 
-/datum/unit_test/dq_e3/hold_timed_outlives_its_source_untimed_does_not
+/datum/unit_test/dq_e3/hold_dies_with_its_source_unless_it_outlives
 	needs_clock = TRUE
 
-/datum/unit_test/dq_e3/hold_timed_outlives_its_source_untimed_does_not/run_e3()
+/datum/unit_test/dq_e3/hold_dies_with_its_source_unless_it_outlives/run_e3()
 	var/obj/e3_machine/M = allocate(/obj/e3_machine)
 	var/obj/e3_source/timed = new
 	var/obj/e3_source/untimed = new
-	var/obj/e3_source/bound = new
-	hold(M, STAT_E3_DRAW, 5, timed, lasts = 40, clock = HOLD_CLOCK_WORLD)
+	var/obj/e3_source/keeps = new
+	hold(M, STAT_E3_DRAW, 5, timed, lasts = 400, clock = HOLD_CLOCK_WORLD)
 	hold(M, STAT_E3_DRAW, 20, untimed)
-	hold(M, STAT_E3_DRAW, 100, bound, lasts = 400, clock = HOLD_CLOCK_WORLD, bound = TRUE)
+	hold(M, STAT_E3_DRAW, 100, keeps, lasts = 40, clock = HOLD_CLOCK_WORLD, outlives_source = TRUE)
 	TEST_ASSERT_EQUAL(M.e3_draw, 127, "2 + 5 + 20 + 100")
-	TEST_ASSERT(hold_left(M, STAT_E3_DRAW, timed) > 0, "the timed hold has time left")
 	qdel(untimed)
 	TEST_ASSERT_EQUAL(M.e3_draw, 107, "an untimed hold dies with its source")
-	qdel(bound)
-	TEST_ASSERT_EQUAL(M.e3_draw, 7, "a bound timed hold dies with its source")
 	qdel(timed)
-	TEST_ASSERT_EQUAL(M.e3_draw, 7, "a timed hold outlives its deleted source")
+	TEST_ASSERT_EQUAL(M.e3_draw, 102, "a timed hold dies with its source by default")
+	qdel(keeps)
+	TEST_ASSERT_EQUAL(M.e3_draw, 102, "outlives_source = TRUE keeps the hold after its source is deleted")
 	test_time(50)
-	TEST_ASSERT_EQUAL(M.e3_draw, 2, "and ends on its own deadline")
+	TEST_ASSERT_EQUAL(M.e3_draw, 2, "and it ends on its own deadline")
 	TEST_ASSERT_EQUAL(length(held_by(M, STAT_E3_DRAW)), 0, "nothing is held any more")
 
 /datum/unit_test/dq_e3/hold_reapply_follows_the_stat

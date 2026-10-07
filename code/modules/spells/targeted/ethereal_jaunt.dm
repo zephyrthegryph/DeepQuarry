@@ -38,7 +38,7 @@
 		target.forceMove(holder)
 		target.set_transforming(0) //mob is safely inside holder now, no need for protection.
 		jaunt_steam(mobloc)
-		after(src, duration, PROC_REF(jaunt_resurface), with = list(target, holder, animation))
+		after(src, duration, PROC_REF(jaunt_resurface), with = list(target, holder, animation), keeps_dead = TRUE)
 
 /// The jaunt ends: steam where the jaunter will come out.
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_resurface(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
@@ -50,14 +50,14 @@
 	jaunt_steam(mobloc)
 	target.canmove = 0
 	holder.reappearing = 1
-	after(src, 2 SECONDS, PROC_REF(jaunt_reform), with = list(target, holder, animation))
+	after(src, 2 SECONDS, PROC_REF(jaunt_reform), with = list(target, holder, animation), keeps_dead = TRUE)
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_reform(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
 	if(!target || !holder || !animation)
 		jaunt_finish(target, holder, animation)
 		return
 	jaunt_reappear(animation, target)
-	after(src, 0.5 SECONDS, PROC_REF(jaunt_finish), with = list(target, holder, animation))
+	after(src, 0.5 SECONDS, PROC_REF(jaunt_finish), with = list(target, holder, animation), keeps_dead = TRUE)
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_finish(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
 	var/mobloc = holder?.last_valid_turf() || get_turf(target)

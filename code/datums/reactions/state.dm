@@ -271,7 +271,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		return duration ? om_grant_for(target, kind, id, held_by, duration) : om_grant(target, kind, id, held_by)
 	. = rx_ledger_add(target, RELK_GRANT, what, source)
 	if(duration)
-		after(target, duration, GLOBAL_PROC_REF(rx_grant_expire), key = "grant:[what]:[source]", with = list(target, what, source))
+		after(target, duration, GLOBAL_PROC_REF(rx_grant_expire), key = "grant:[what]:[source]", with = list(target, what, source), keeps_dead = TRUE)
 
 /// Withdraws `source`'s hold on `what`. Returns TRUE when the grant is gone (no source left).
 /proc/legacy_revoke(datum/target, what, source = "grant")

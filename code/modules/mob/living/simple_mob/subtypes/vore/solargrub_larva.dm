@@ -146,7 +146,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 /// Travel time through the ducts; welded exits redirect up to `redirect_attempts` times.
 /mob/living/simple_mob/animal/solargrub_larva/proc/ventcrawl_travel(obj/machinery/atmospherics/unary/vent_pump/vent, obj/machinery/atmospherics/unary/vent_pump/end_vent, redirect_attempts)
 	var/travel_time = round(get_dist(get_turf(src), get_turf(end_vent)) / 2)
-	after(src, travel_time, PROC_REF(ventcrawl_arrive), with = list(vent, end_vent, redirect_attempts))
+	after(src, travel_time, PROC_REF(ventcrawl_arrive), with = list(vent, end_vent, redirect_attempts), keeps_dead = TRUE)
 
 /mob/living/simple_mob/animal/solargrub_larva/proc/ventcrawl_arrive(obj/machinery/atmospherics/unary/vent_pump/vent, obj/machinery/atmospherics/unary/vent_pump/end_vent, redirect_attempts)
 	if(!end_vent)

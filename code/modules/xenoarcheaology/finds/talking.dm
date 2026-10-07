@@ -56,7 +56,7 @@
 		holder_atom().loc.visible_message(span_blue("[icon2html(holder_atom(),viewers(holder_atom().loc))] [pick(options)]"))
 
 	if(prob(20))
-		after(src, 0.2 SECONDS, PROC_REF(SaySomething), with = list(pick(seperate)))
+		after(src, 0.2 SECONDS, PROC_REF(SaySomething), with = list(pick(seperate)), keeps_dead = TRUE)
 
 /datum/talking_atom/proc/SaySomething(word = null)
 	if(!holder_atom())

@@ -560,7 +560,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 		COOLDOWN_START(src, reply_cooldown, vend_delay + 20 SECONDS)
 	use_power(vend_power_usage)	//actuators and stuff
 	flick("[icon_state]-vend",src)
-	after(src, vend_delay, PROC_REF(finish_vend), key = "vend", with = list(R, user))
+	after(src, vend_delay, PROC_REF(finish_vend), key = "vend", with = list(R, user), keeps_dead = TRUE)
 
 /// A premium vend takes the coin (half the time a coin on a string is pulled back out first).
 /obj/machinery/vending/proc/swallow_coin(mob/user)
@@ -593,7 +593,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 	if(has_logs)
 		do_logging(R, user, 1)
 	if(prob(1))
-		after(src, 0.3 SECONDS, PROC_REF(bonus_vend), with = list(R))
+		after(src, 0.3 SECONDS, PROC_REF(bonus_vend), with = list(R), keeps_dead = TRUE)
 	playsound(src, "sound/[vending_sound]", 100, 1, 1)
 
 	GLOB.items_sold_shift_roundstat++

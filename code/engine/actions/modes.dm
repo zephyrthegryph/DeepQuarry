@@ -210,7 +210,7 @@
 	var/datum/holder = A.holder
 	if(!holder || QDELETED(holder) || A.dead)
 		return FALSE
-	after(holder, every_interval(holder, E, A), GLOBAL_PROC_REF(state_after_fire), key = state_after_key(A, E), with = list(A, E))
+	after(holder, every_interval(holder, E, A), GLOBAL_PROC_REF(state_after_fire), key = state_after_key(A, E), with = list(A, E), keeps_dead = TRUE)
 	return TRUE
 
 /datum/entry_engine/after_in_state/remove(datum/activation/A, datum/entry/E)

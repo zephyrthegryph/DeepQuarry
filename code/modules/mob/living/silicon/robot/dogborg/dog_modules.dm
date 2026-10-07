@@ -441,7 +441,7 @@ CAPABILITIES(/obj/item/dogborg/pounce)
 	pixel_y = default_pixel_y
 
 	if(!bluespace)
-		after(src, 0.5 SECONDS, PROC_REF(leap_land), with = list(T))
+		after(src, 0.5 SECONDS, PROC_REF(leap_land), with = list(T), keeps_dead = TRUE)
 		return
 	leap_land(T)
 

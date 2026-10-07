@@ -78,7 +78,7 @@ CAPABILITIES(/obj/item/antag_spawner/technomancer_apprentice)
 	of your own. You also have a catalog, to purchase your own functions and equipment as you see fit.")))
 	to_chat(H, span_infoplain(span_bold("It would be wise to speak to your master, and learn what their plans are for today.")))
 
-	after(src, 0.1 SECONDS, PROC_REF(finish_technomancer_spawn), with = list(H))
+	after(src, 0.1 SECONDS, PROC_REF(finish_technomancer_spawn), with = list(H), keeps_dead = TRUE)
 
 /obj/item/antag_spawner/technomancer_apprentice/proc/finish_technomancer_spawn(mob/living/carbon/human/H)
 	if(!QDELETED(H))
@@ -130,7 +130,7 @@ CAPABILITIES(/obj/item/antag_spawner/syndicate_drone)
 
 	R.key = C.key
 
-	after(src, 0.1 SECONDS, PROC_REF(finish_drone_spawn), with = list(R))
+	after(src, 0.1 SECONDS, PROC_REF(finish_drone_spawn), with = list(R), keeps_dead = TRUE)
 
 /obj/item/antag_spawner/syndicate_drone/proc/finish_drone_spawn(mob/living/silicon/robot/R)
 	if(!QDELETED(R))

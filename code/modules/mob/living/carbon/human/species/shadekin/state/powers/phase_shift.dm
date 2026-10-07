@@ -310,7 +310,7 @@
 		apply_body_effect(/datum/body_effect/shadekin_phase_vision)
 		if(SK.normal_phase)
 			apply_body_effect(/datum/body_effect/phased_out)
-		after(src, SK.phase_time, PROC_REF(complete_phase_out), with = list(original_canmove, SK))
+		after(src, SK.phase_time, PROC_REF(complete_phase_out), with = list(original_canmove, SK), keeps_dead = TRUE)
 
 
 /mob/living/proc/complete_phase_out(original_canmove, datum/shadekin/SK)

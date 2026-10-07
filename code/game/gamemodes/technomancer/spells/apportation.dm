@@ -51,7 +51,7 @@
 			L.throw_at(get_step(get_turf(src),get_turf(L)), 4, 1, src)
 			user.drop_item(src)
 			src.moveToNullspace()
-			after(src, 1 SECOND, PROC_REF(finish_apportation_grab), with = list(user, L))
+			after(src, 1 SECOND, PROC_REF(finish_apportation_grab), with = list(user, L), keeps_dead = TRUE)
 
 /obj/item/spell/apportation/proc/finish_apportation_grab(mob/living/user, mob/living/L)
 	if(QDELETED(user) || QDELETED(L) || !user.Adjacent(L))

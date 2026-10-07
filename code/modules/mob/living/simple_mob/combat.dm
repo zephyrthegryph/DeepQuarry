@@ -254,7 +254,7 @@
 	if(i < count)
 		after(src, 1 SECOND, PROC_REF(rocket_volley_step), with = list(target, rocket_type, count, retract_message, then_proc, i + 1))
 		return
-	after(src, 1 SECOND, PROC_REF(rocket_volley_end), with = list(target, retract_message, then_proc))
+	after(src, 1 SECOND, PROC_REF(rocket_volley_end), with = list(target, retract_message, then_proc), keeps_dead = TRUE)
 
 /mob/living/simple_mob/proc/rocket_volley_end(atom/target, retract_message, then_proc)
 	visible_message(span_warning(retract_message))
@@ -277,7 +277,7 @@
 
 	setClickCooldown(true_attack_delay) // Insurance against a really long attack being longer than default click delay.
 
-	if(!after(src, true_attack_delay, PROC_REF(attack_delay_done), with = list(then_proc, list(A) + args.Copy(4))))
+	if(!after(src, true_attack_delay, PROC_REF(attack_delay_done), with = list(then_proc, list(A) + args.Copy(4)), keeps_dead = TRUE))
 		ai_busy_end()
 
 /mob/living/simple_mob/proc/attack_delay_done(then_proc, list/call_args)

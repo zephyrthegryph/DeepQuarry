@@ -59,13 +59,13 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 /// global proc (/proc/x) gets `call_args`; a type proc is called on E. Returns the timer id
 /// (for om_cancel_timer()), or 0 if E or an argument is already gone. E null: the global owner.
 /proc/timer_schedule(datum/E, delay, proc_ref, ...)
-	return rx_after(E, delay, proc_ref, null, CLOCK_OWN, length(args) > 3 ? args.Copy(4) : null, TRUE)
+	return rx_after(E, delay, proc_ref, null, CLOCK_OWN, length(args) > 3 ? args.Copy(4) : null, FALSE)
 
-/// timer_schedule()'s body. nulls_for_gone (the default for timer_schedule()/after()): a captured datum argument
+/// timer_schedule()'s body. nulls_for_gone (after()'s keeps_dead = TRUE): a captured datum argument
 /// deleted before the timer fires, or already deleted when it is scheduled, is passed as null and the
-/// call runs. FALSE (after_if_alive()): the call is dropped, and an already-deleted argument is
+/// call runs. FALSE (the default): the call is dropped, and an already-deleted argument is
 /// refused up front (returns 0).
-/proc/timer_schedule_list(datum/E, delay, proc_ref, list/call_args, nulls_for_gone = TRUE, owner_first = FALSE)
+/proc/timer_schedule_list(datum/E, delay, proc_ref, list/call_args, nulls_for_gone = FALSE, owner_first = FALSE)
 	if(isnull(E))
 		E = om_global_owner()
 	if(!own_guard(E, null, "a timer ([proc_ref])")) // the one teardown guard (guard.dm)
@@ -104,7 +104,7 @@ GLOBAL_VAR_INIT(om_resolve_nulled, 0)
 /// Schedules `proc_ref` after `delay` into E's slot `slot` (an after() key), replacing any timer pending there.
 /// Returns TRUE if scheduled. E null: the global owner.
 /proc/after_slot(datum/E, slot, delay, proc_ref, ...)
-	return !!rx_after(E, delay, proc_ref, slot, CLOCK_OWN, length(args) > 4 ? args.Copy(5) : null, TRUE)
+	return !!rx_after(E, delay, proc_ref, slot, CLOCK_OWN, length(args) > 4 ? args.Copy(5) : null, FALSE)
 
 /// Cancels whatever is pending in E's slot `slot`. Returns TRUE if a timer was pending.
 /proc/om_cancel_timer_slot(datum/E, slot)
@@ -452,7 +452,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		GLOB.om_resolve_nulled = 0
 		if(!resolve_captured(captured, positions, !!(timer_flags & OM_TIMER_NULLS_FOR_GONE)))
 			rec.sched.timers_dropped++
-			log_qdel("OM: dropped timer [proc_ref] on [E] ([E.type]): a captured argument was deleted before it fired (after_if_alive)")
+			log_qdel("OM: dropped timer [proc_ref] on [E] ([E.type]): a captured argument was deleted before it fired (the default drop; keeps_dead = TRUE lets it run with null)")
 			continue
 		if(GLOB.om_resolve_nulled)
 			rec.sched.timers_nulled++

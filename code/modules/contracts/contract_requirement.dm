@@ -391,7 +391,7 @@ CAPABILITIES(/datum/contract_requirement/sustained_event)
 		return FALSE
 	var/token = event.id
 	pending_tokens[entity_key] = token
-	after(src, duration, PROC_REF(complete_duration), key = "pending:[entity_key]", with = list(entity_key, token, event.actor_account, event.value("detail")))
+	after(src, duration, PROC_REF(complete_duration), key = "pending:[entity_key]", with = list(entity_key, token, event.actor_account, event.value("detail")), keeps_dead = TRUE)
 	return TRUE
 
 /datum/contract_requirement/sustained_event/proc/complete_duration(entity_key, token, contributor_account, detail)
@@ -491,7 +491,7 @@ CAPABILITIES(/datum/contract_requirement/staged_sustained_event)
 	var/token = event.id
 	pending_tokens[stage_key] = token
 	pending_stage_indices[stage_key] = stage_index
-	after(src, max(0.1 SECONDS, stage["duration"]), PROC_REF(complete_stage), key = "pending:[stage_key]", with = list(stage_key, stage_index, token, event.actor_account, event.value("detail")))
+	after(src, max(0.1 SECONDS, stage["duration"]), PROC_REF(complete_stage), key = "pending:[stage_key]", with = list(stage_key, stage_index, token, event.actor_account, event.value("detail")), keeps_dead = TRUE)
 	changed = TRUE
 	return changed
 

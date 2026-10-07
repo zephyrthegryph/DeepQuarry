@@ -401,7 +401,7 @@ GLOBAL_VAR(redspace_abduction_z)
 					spent(target)
 				spent(shadekin)
 			return
-	after(shadekin, step == 5 ? 2 SECONDS : 1 SECOND, GLOBAL_PROC_REF(shadekin_smite_step), with = list(shadekin, target, controller_ckey, step + 1))
+	after(shadekin, step == 5 ? 2 SECONDS : 1 SECOND, GLOBAL_PROC_REF(shadekin_smite_step), with = list(shadekin, target, controller_ckey, step + 1), keeps_dead = TRUE)
 
 /// The hot dog smite: a whistle, then two seconds later the costume, gone again after five.
 /proc/hotdog_smite(mob/living/target)

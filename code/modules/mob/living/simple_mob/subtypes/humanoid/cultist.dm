@@ -99,7 +99,7 @@
 	// Telegraph to give a small window to dodge if really close.
 	flick("bloodout",A)
 	icon_state = "bloodout"
-	after(src, jaunt_warning, PROC_REF(do_special_attack_1), with = list(A, destination, starting_turf)) // For the telegraphing.
+	after(src, jaunt_warning, PROC_REF(do_special_attack_1), with = list(A, destination, starting_turf), keeps_dead = TRUE) // For the telegraphing.
 
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/proc/do_special_attack_1(atom/A, turf/destination, turf/starting_turf)

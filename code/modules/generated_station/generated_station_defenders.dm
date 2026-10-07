@@ -363,7 +363,7 @@ CAPABILITIES(/datum/generated_station_defense_runtime)
 		if(agent.squad_id == squad_id && agent.is_active())
 			agent.defender().ai_brain?.give_destination(get_turf(crate))
 			agent.defender().ai_brain?.go_wake()
-	after(src, 5 SECONDS, PROC_REF(complete_logistics_delivery), with = list(crate, destination, squad_id))
+	after(src, 5 SECONDS, PROC_REF(complete_logistics_delivery), with = list(crate, destination, squad_id), keeps_dead = TRUE)
 	return TRUE
 
 /// after() drops the call when the crate is gone (the squad then sleeps on its own order timer).

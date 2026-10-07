@@ -69,7 +69,7 @@ CAPABILITIES(/obj/structure/drop_pod)
 	PRIVATE_PROC(TRUE)
 	new /obj/effect/effect/smoke(T)
 	T.hotspot_expose(900)
-	after(src, 1 SECOND, PROC_REF(on_impact), with = list(auto_open, T))
+	after(src, 1 SECOND, PROC_REF(on_impact), with = list(auto_open, T), keeps_dead = TRUE)
 
 /obj/structure/drop_pod/proc/on_impact(auto_open, turf/T)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -99,7 +99,7 @@ CAPABILITIES(/obj/structure/drop_pod)
 	icon_state = "[initial(icon_state)]"
 
 	if(auto_open)
-		after(src, 2 SECONDS, PROC_REF(open_pod), with = list(TRUE))
+		after(src, 2 SECONDS, PROC_REF(open_pod), with = list(TRUE), keeps_dead = TRUE)
 	else
 		for(var/mob/M in contents_of(src))
 			to_chat(M, span_danger("You've landed! Open the hatch if you think it's safe! \The [src] has enough air to last for a while..."))

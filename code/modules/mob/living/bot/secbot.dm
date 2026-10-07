@@ -53,7 +53,7 @@
 			if(!pull_allowed)
 				var/mob/living/L = puller
 				after(src, 0, TYPE_PROC_REF(/mob, UnarmedAttack), with = list(L))
-				after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list("Do not interfere with active law enforcement routines!"))
+				after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list("Do not interfere with active law enforcement routines!"), keeps_dead = TRUE)
 				GLOB.global_announcer.autosay("[src] was interfered with in <b>[get_area(src)]</b>, activating defense routines.", "[src]", "Security")
 /mob/living/bot/secbot/beepsky
 	name = "Officer Beepsky"

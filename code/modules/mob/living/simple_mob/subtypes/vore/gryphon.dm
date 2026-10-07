@@ -113,7 +113,7 @@
 	to_chat(L, span_danger("\The [src] is looking right at you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
-	after(src, leap_warmup, PROC_REF(do_special_attack_1), with = list(L)) // For the telegraphing.
+	after(src, leap_warmup, PROC_REF(do_special_attack_1), with = list(L), keeps_dead = TRUE) // For the telegraphing.
 
 
 /mob/living/simple_mob/vore/gryphon/proc/do_special_attack_1(mob/living/L)

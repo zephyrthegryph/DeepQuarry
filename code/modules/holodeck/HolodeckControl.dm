@@ -350,7 +350,7 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 	for(var/obj/effect/landmark/L in linkedholodeck())
 		L.delete_me = TRUE
 		if(L.name=="Atmospheric Test Start")
-			after(src, 2 SECONDS, PROC_REF(atmos_test_ignite), with = list(get_turf(L)))
+			after(src, 2 SECONDS, PROC_REF(atmos_test_ignite), with = list(get_turf(L)), keeps_dead = TRUE)
 		if(L.name=="Holocarp Spawn")
 			rel_add(src, nameof(holographic_mobs), new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
 
