@@ -19,8 +19,8 @@
 // A seat that is full still takes a predator who sits down on it when the one on it can be eaten by them (can_stumble_vore): the occupant is freed and the
 // predator swallows them where they sit, as the old buckling did. A thing the holder is pulling is let go of when it is buckled to the holder.
 //
-// What is buckled to what is the OM relation /datum/om/relation/buckled_to (code/datums/om/library.dm): buckle_mob() and unbuckle_mob() write it, the
-// relation's own hooks do the rest (the direction, the buckled alert, the riding offsets) and drop the edge if the mob ends up off the structure's tile,
+// What is buckled to what is the sparse declared link LK_BUCKLED_TO / LK_BUCKLED_MOBS (links() in CAPABILITIES(/atom/movable)): buckle_link() and unbuckle_mob() write it, the
+// link's own hooks do the rest (the direction, the buckled alert, the riding offsets) and drop the edge if the mob ends up off the structure's tile,
 // and handle_buckled_mob_movement() carries the occupants when the structure moves. Every effect here goes through those two procs, so a structure
 // that has this capability moves its occupants, frees them when it is destroyed and answers M.buckled_to() the way the old system did. The capability
 // adds the ops, the rules (written as requirements, which a menu and an AI read too) and the world actions: ACT_TRY(holder, buckle, M) before the
@@ -157,7 +157,7 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 		return OP_REFUSED
 	if(victim.loc != holder.loc)
 		victim.forceMove(get_turf(holder))
-	om_unlink(holder, victim, /datum/om/relation/pulling) // a seat that was pulling the one who sits down lets go (a wheelchair)
+	link_break(holder, LK_PULLING, victim) // a seat that was pulling the one who sits down lets go (a wheelchair)
 	var/list/eaten = length(holder.buckled_mob_list()) >= slots ? swallowed_by(holder, victim) : list()
 	for(var/mob/living/L as anything in eaten)
 		holder.unbuckle_mob(L, TRUE)
@@ -167,8 +167,8 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 			act_message(A.actor, victim, others = span_warning("%T% is forced to sit down on [L.name] by %U%!"))
 		victim.begin_instant_nom(A.actor, L, victim, victim.vore_selected)
 	// The capability has done the checks, so the old can_buckle and max_buckled_mobs vars are not asked: the relation is written directly.
-	var/linked = om_link(victim, holder, /datum/om/relation/buckled_to)
-	if(!istype(linked, /datum/om/edge))
+	var/linked = holder.buckle_link(victim)
+	if(!linked)
 		act_cancel(B)
 		A.reason = /datum/msg/op/failed
 		log_world("BUCKLE: [victim] to [holder] did not link")

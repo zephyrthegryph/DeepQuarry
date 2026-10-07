@@ -30,9 +30,7 @@
 	TEST_ASSERT(C.buckle_mob(H, forced = TRUE), "buckle_mob should succeed on a fresh chair")
 	TEST_ASSERT_EQUAL(H?.buckled_to(), C, "H?.buckled_to() should be the chair")
 	TEST_ASSERT(H in C?.buckled_mob_list(), "H should be in the chair's BUCKLED_MOBS")
-	TEST_ASSERT_EQUAL(link_of(H, /datum/om/relation/buckled_to), C, "om_relation_of should agree with ()?.buckled_to()")
-	TEST_ASSERT(om_has(H, EFFECT_BUCKLED), "buckling should raise EFFECT_BUCKLED on the mob")
-	TEST_ASSERT_NOTNULL(dq_test_find_edge(H, C, /datum/om/relation/buckled_to), "an edge should exist between H and C")
+	TEST_ASSERT(stat_value(H, STAT_BUCKLED), "buckling should raise EFFECT_BUCKLED on the mob")
 
 /// Hard-deleting the object a mob is buckled to unbuckles it, with no dangling
 /// reference left on either side.
@@ -45,8 +43,7 @@
 	qdel(C)
 	TEST_ASSERT(QDELETED(C), "setup: the chair should be deleted")
 	TEST_ASSERT_NULL(H?.buckled_to(), "H?.buckled_to() should be cleared once the chair is deleted")
-	TEST_ASSERT_NULL(link_of(H, /datum/om/relation/buckled_to), "the relation lookup should agree")
-	TEST_ASSERT(!om_has(H, EFFECT_BUCKLED), "EFFECT_BUCKLED should be gone once unbuckled")
+	TEST_ASSERT(!stat_value(H, STAT_BUCKLED), "EFFECT_BUCKLED should be gone once unbuckled")
 
 /// Hard-deleting a buckled mob removes it from the object's buckled_mobs, with
 /// no dangling reference left behind.
@@ -67,11 +64,10 @@
 /datum/unit_test/dq_om_relation_buckling_breaks_on_range
 
 /datum/unit_test/dq_om_relation_buckling_breaks_on_range/Run()
+	test_driver_begin()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/structure/bed/chair/C = allocate(/obj/structure/bed/chair, get_turf(H))
 	TEST_ASSERT(C.buckle_mob(H, forced = TRUE), "setup: buckle_mob should succeed")
-	var/datum/om/edge/edge = dq_test_find_edge(H, C, /datum/om/relation/buckled_to)
-	TEST_ASSERT_NOTNULL(edge, "setup: an edge should exist between H and C")
 
 	var/turf/away = locate(C.x + 3, C.y, C.z)
 	TEST_ASSERT_NOTNULL(away, "setup: needs a turf 3 tiles east of the chair")
@@ -81,13 +77,11 @@
 	// The live scheduler would run this on its next lane pass (relation.dm's
 	// edge_refresh behaviour, watching CHANGE_MOB_LOC/CHANGE_ITEM_LOC); drive
 	// it directly so the test doesn't depend on tick timing.
-	om_edge_refresh(edge)
+	test_time(1 SECONDS)
+	test_driver_end()
 
 	TEST_ASSERT_NULL(H?.buckled_to(), "H?.buckled_to() should be cleared once out of range")
 	TEST_ASSERT_EQUAL(LAZYLEN(C?.buckled_mob_list()), 0, "the chair should have no buckled mobs left")
-	TEST_ASSERT_NULL(edge.source, "the edge itself should be torn down (no dangling source)")
-	TEST_ASSERT_NULL(edge.target, "the edge itself should be torn down (no dangling target)")
-	TEST_ASSERT_NULL(link_of(H, /datum/om/relation/buckled_to), "the relation lookup should agree")
 
 // ---------------------------------------------------------------- grabbing
 
@@ -104,8 +98,6 @@
 	TEST_ASSERT(!QDELETED(G), "the grab should not immediately self-delete")
 	TEST_ASSERT_EQUAL(G?.grab_target(), victim, "G?.grab_target() should be the victim")
 	TEST_ASSERT(G in victim?.grabbed_by_list(), "G should be in the victim's GRABBED_BY")
-	TEST_ASSERT_EQUAL(link_of(G, /datum/om/relation/grabbing), victim, "om_relation_of should agree with GRAB_TARGET")
-	TEST_ASSERT_NOTNULL(dq_test_find_edge(G, victim, /datum/om/relation/grabbing), "an edge should exist between G and the victim")
 
 /// Hard-deleting a grab removes it from the victim's GRABBED_BY, with no
 /// dangling reference left behind.
@@ -150,8 +142,6 @@
 	puller.start_pulling(pulled)
 	TEST_ASSERT_EQUAL(puller?.pulling_target(), pulled, "puller?.pulling_target() should be the pulled mob")
 	TEST_ASSERT_EQUAL(pulled?.pulled_by_mob(), puller, "pulled?.pulled_by_mob() should be the puller")
-	TEST_ASSERT_EQUAL(link_of(puller, /datum/om/relation/pulling), pulled, "om_relation_of should agree with ()?.pulling_target()")
-	TEST_ASSERT_NOTNULL(dq_test_find_edge(puller, pulled, /datum/om/relation/pulling), "an edge should exist between puller and pulled")
 
 /// Hard-deleting the puller clears the pulled mob's pulledby, with no
 /// dangling reference left behind.
@@ -185,23 +175,21 @@
 /datum/unit_test/dq_om_relation_pulling_breaks_on_range
 
 /datum/unit_test/dq_om_relation_pulling_breaks_on_range/Run()
+	test_driver_begin()
 	var/mob/living/carbon/human/puller = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/pulled = allocate(/mob/living/carbon/human)
 	puller.start_pulling(pulled)
-	var/datum/om/edge/edge = dq_test_find_edge(puller, pulled, /datum/om/relation/pulling)
-	TEST_ASSERT_NOTNULL(edge, "setup: an edge should exist between puller and pulled")
 
 	var/turf/away = locate(pulled.x + 5, pulled.y, pulled.z)
 	TEST_ASSERT_NOTNULL(away, "setup: needs a turf 5 tiles east of the pulled mob")
 	puller.forceMove(away)
 	TEST_ASSERT(get_dist(puller, pulled) > 1, "setup: puller should now be more than one tile from pulled")
 
-	om_edge_refresh(edge)
+	test_time(1 SECONDS)
+	test_driver_end()
 
 	TEST_ASSERT_NULL(puller?.pulling_target(), "puller?.pulling_target() should be cleared once out of range")
 	TEST_ASSERT_NULL(pulled?.pulled_by_mob(), "pulled?.pulled_by_mob() should be cleared once out of range")
-	TEST_ASSERT_NULL(edge.source, "the edge itself should be torn down (no dangling source)")
-	TEST_ASSERT_NULL(edge.target, "the edge itself should be torn down (no dangling target)")
 
 // ---------------------------------------------------------------- occupant slots
 
@@ -350,7 +338,7 @@
 	var/mob/observer/eye/aiEye/E = allocate(/mob/observer/eye/aiEye)
 	var/mob/observer/eye/aiEye/P = allocate(/mob/observer/eye/aiEye)
 	A.take_eye(E)
-	om_link(P, A, /datum/om/relation/eye_of)
+	rel_set(P, nameof(P.eye_looker), A)
 	TEST_ASSERT(P in A?.eyes_list(), "the secondary eye should be listed")
 	TEST_ASSERT_EQUAL(A?.active_eye(), E, "the secondary eye should not become active")
 	A.drop_eye()
@@ -392,12 +380,11 @@
 	var/mob/living/simple_mob/animal/borer/B = allocate(/mob/living/simple_mob/animal/borer)
 	var/obj/item/organ/external/head = H.get_organ(BP_HEAD)
 	TEST_ASSERT_NOTNULL(head, "setup: H should have a head organ")
-	var/link_result = om_link(B, H, /datum/om/relation/host_of)
-	TEST_ASSERT(istype(link_result, /datum/om/edge), "om_link should return an edge, got: [link_result]")
+	TEST_ASSERT(B.take_host(H), "infest() should link the borer")
 	TEST_ASSERT_EQUAL(B?.borer_host(), H, "B?.borer_host() should be H")
 	TEST_ASSERT(B in head.implants, "B should be listed in the host's head implants")
-	TEST_ASSERT_EQUAL(link_of(B, /datum/om/relation/host_of), H, "om_relation_of should agree with the host var")
-	om_unlink(B, H, /datum/om/relation/host_of)
+	TEST_ASSERT_EQUAL(H?.borer_of(), B, "the host should name its borer")
+	rel_set(B, nameof(B.borer_host_mob), null)
 	TEST_ASSERT_NULL(B?.borer_host(), "B?.borer_host() should be cleared after unlink")
 	TEST_ASSERT(!(B in head.implants), "B should no longer be listed in the host's head implants")
 
@@ -410,7 +397,7 @@
 /datum/unit_test/dq_om_relation_host_of_breaks_on_target_delete/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/simple_mob/animal/borer/B = allocate(/mob/living/simple_mob/animal/borer)
-	om_link(B, H, /datum/om/relation/host_of)
+	B.take_host(H)
 	qdel(H)
 	TEST_ASSERT(QDELETED(H), "setup: the host should be deleted")
 	TEST_ASSERT_NULL(B?.borer_host(), "B?.borer_host() should be cleared once the host is deleted")
@@ -424,11 +411,9 @@
 /datum/unit_test/dq_om_relation_following_establishes/Run()
 	var/mob/observer/dead/G = allocate(/mob/observer/dead)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/link_result = om_link(G, H, /datum/om/relation/following)
-	TEST_ASSERT(istype(link_result, /datum/om/edge), "om_link should return an edge, got: [link_result]")
+	rel_set(G, nameof(G.following), H)
 	TEST_ASSERT_EQUAL(G?.following_target(), H, "G?.following_target() should be H")
 	TEST_ASSERT(G in H?.follower_list(), "G should be listed in H?.follower_list()")
-	TEST_ASSERT_EQUAL(link_of(G, /datum/om/relation/following), H, "om_relation_of should agree with ()?.following_target()")
 	G.stop_following()
 	TEST_ASSERT_NULL(G?.following_target(), "G?.following_target() should be cleared after stop_following()")
 	TEST_ASSERT(!(G in H?.follower_list()), "G should no longer be listed in H?.follower_list()")
@@ -440,7 +425,7 @@
 /datum/unit_test/dq_om_relation_following_breaks_on_target_delete/Run()
 	var/mob/observer/dead/G = allocate(/mob/observer/dead)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	om_link(G, H, /datum/om/relation/following)
+	rel_set(G, nameof(G.following), H)
 	qdel(H)
 	TEST_ASSERT(QDELETED(H), "setup: the target should be deleted")
 	TEST_ASSERT_NULL(G?.following_target(), "G?.following_target() should be cleared once the target is deleted")
@@ -484,6 +469,22 @@
 	qdel(center)
 	TEST_ASSERT_NULL(orbiter?.orbit_target(), "deleting the center should end the orbit")
 
+/// The centre can be a turf, and the orbiter's transform comes back when the orbit ends (it was saved on the link).
+/datum/unit_test/dq_om_relation_orbiting_turf_centre
+
+/datum/unit_test/dq_om_relation_orbiting_turf_centre/Run()
+	var/turf/centre = get_turf(run_loc_floor_bottom_left)
+	var/obj/item/dq_containment_test/orbiter = allocate(/obj/item/dq_containment_test, centre)
+	var/matrix/before = matrix(orbiter.transform)
+	orbiter.orbit(centre, 16)
+	TEST_ASSERT_EQUAL(orbiter?.orbit_target(), centre, "a turf can be the centre")
+	TEST_ASSERT(orbiter in centre.orbiter_list(), "the turf lists its orbiter")
+	TEST_ASSERT(orbiter.transform.f != before.f || orbiter.transform.b != before.b, "the orbit shifts the orbiter")
+	orbiter.stop_orbit()
+	TEST_ASSERT_NULL(orbiter?.orbit_target(), "stop_orbit() ends it")
+	var/matrix/now = orbiter.transform
+	TEST_ASSERT(now.a == before.a && now.b == before.b && now.c == before.c && now.d == before.d && now.e == before.e && now.f == before.f, "the saved transform is back")
+
 // ---------------------------------------------------------------- leash
 
 /// A leash is two edges (pet -> leash, leash -> holder). Deleting the holder
@@ -494,8 +495,7 @@
 	var/mob/living/carbon/human/pet = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/master = allocate(/mob/living/carbon/human)
 	var/obj/item/leash/L = allocate(/obj/item/leash)
-	TEST_ASSERT(istype(om_link(pet, L, /datum/om/relation/leashed_to), /datum/om/edge), "setup: the pet edge should link")
-	TEST_ASSERT(istype(om_link(L, master, /datum/om/relation/leash_held_by), /datum/om/edge), "setup: the holder edge should link")
+	TEST_ASSERT(L.attach(pet, master), "setup: the leash should attach")
 	TEST_ASSERT_EQUAL(L?.leash_pet(), pet, "LEASH_PET should be the pet")
 	TEST_ASSERT_EQUAL(L?.leash_master(), master, "LEASH_MASTER should be the holder")
 	TEST_ASSERT_EQUAL(pet?.leash_item(), L, "pet?.leash_item() should be the leash")

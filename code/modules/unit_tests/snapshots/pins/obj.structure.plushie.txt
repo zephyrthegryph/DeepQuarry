@@ -10,6 +10,7 @@ robot|none menu: Strangle
 robot|none click: Click: Hug
 ai|none click: nothing
 ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Hug
 human|/obj/item/tool/screwdriver menu: Item
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -18,6 +19,7 @@ human|/obj/item/tool/screwdriver menu: Punch
 human|/obj/item/tool/screwdriver menu: Strangle
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver click: Click: Item
+human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Hug
 human|/obj/item/tool/crowbar menu: Item
 human|/obj/item/tool/crowbar menu: Move To Top
@@ -26,6 +28,7 @@ human|/obj/item/tool/crowbar menu: Punch
 human|/obj/item/tool/crowbar menu: Strangle
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Item
+human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Hug
 human|/obj/item/tool/wrench menu: Item
 human|/obj/item/tool/wrench menu: Move To Top
@@ -34,6 +37,7 @@ human|/obj/item/tool/wrench menu: Punch
 human|/obj/item/tool/wrench menu: Strangle
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench click: Click: Item
+human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Hug
 human|/obj/item/tool/wirecutters menu: Item
 human|/obj/item/tool/wirecutters menu: Move To Top
@@ -42,6 +46,7 @@ human|/obj/item/tool/wirecutters menu: Punch
 human|/obj/item/tool/wirecutters menu: Strangle
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters click: Click: Item
+human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Hug
 human|/obj/item/multitool menu: Item
 human|/obj/item/multitool menu: Move To Top
@@ -50,6 +55,7 @@ human|/obj/item/multitool menu: Punch
 human|/obj/item/multitool menu: Strangle
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: Click: Item
+human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Hug
 human|/obj/item/weldingtool menu: Item
 human|/obj/item/weldingtool menu: Move To Top
@@ -58,6 +64,7 @@ human|/obj/item/weldingtool menu: Punch
 human|/obj/item/weldingtool menu: Strangle
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: Click: Item
+human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Hug
 human|/obj/item/stack/cable_coil menu: Item
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
@@ -67,6 +74,7 @@ human|/obj/item/stack/cable_coil menu: Punch
 human|/obj/item/stack/cable_coil menu: Strangle
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: Click: Item
+human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Hug
 human|/obj/item/stack/material/steel menu: Item
 human|/obj/item/stack/material/steel menu: Move To Top
@@ -75,6 +83,7 @@ human|/obj/item/stack/material/steel menu: Punch
 human|/obj/item/stack/material/steel menu: Strangle
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: Click: Item
+human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Hug
 human|/obj/item/card/id menu: Item
 human|/obj/item/card/id menu: Move To Top
@@ -84,6 +93,7 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Strangle
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Item
+human|/obj/item menu: Hit
 human|/obj/item menu: Hug
 human|/obj/item menu: Item
 human|/obj/item menu: Move To Top
@@ -92,5 +102,5 @@ human|/obj/item menu: Punch
 human|/obj/item menu: Strangle
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Item
-keys: drag_buckle, hug, item, poke, punch, strangle
+keys: drag_buckle, hug, item, melee_hit, poke, punch, strangle
 

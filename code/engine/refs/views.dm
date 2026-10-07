@@ -408,6 +408,14 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		for(var/name in (islist(names) ? names : list(names)))
 			. += list(list(S, name))
 
+/// Every source whose var `var_name` names `target`, as a list: the reverse index read for one var (a one-ended link needs no var on the
+/// target's type). Empty when none; a fresh list.
+/proc/rel_sources_via(datum/target, var_name)
+	. = list()
+	for(var/list/pair as anything in rel_sources(target))
+		if(pair[2] == var_name)
+			. += pair[1]
+
 /// How many references to `target` relation views hold (one per single view, one per list view
 /// holding it). For refcount accounting (latent collapse).
 /proc/rel_incoming_refs(datum/target)

@@ -83,7 +83,6 @@ CAPABILITIES(/obj/structure/closet)
 	op("set_down", item(/obj/item), label("Put down"), at(SPACE_INTERIOR), priority(OP_PRIORITY_DEFAULT),
 		needs(req(PROC_REF(can_set_down), because = MSG(closet/cant_put_down))), then(PROC_REF(set_down)))
 	op("stuff", item(/atom/movable), gesture(GESTURE_DRAG), label("Stuff inside"), at(SPACE_INTERIOR), then(PROC_REF(stuff_dragged)))
-	op("strike", item(/obj/item), hostile(), label("Strike"), priority(OP_PRIORITY_ATTACK), then(PROC_REF(struck_with)))
 	op("break_out", ai(), label("Break out"), wait(PROC_REF(breakout_wait), keeps = TARGET_PRESENT | ALIVE),
 		needs(req_capable(), req(PROC_REF(can_break_out), because = MSG(closet/cant_break_out))),
 		begins(MSG(closet/break_begin)), then(PROC_REF(broke_out)), logs(LOG_GAME))
@@ -346,18 +345,6 @@ CAPABILITIES(/obj/structure/closet)
 /obj/structure/closet/proc/welder_lit(datum/act/op/A)
 	var/obj/item/weldingtool/welder = A.held?.get_welder()
 	return !welder || welder.isOn()
-
-/// A weapon swung at the closet in combat mode wears it down.
-/obj/structure/closet/proc/struck_with(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	add_fingerprint(user)
-	user.setClickCooldown(user.get_attack_speed(W))
-	if(W.obj_damage_type())
-		user.do_attack_animation(src)
-		act_message(user, src, others = span_danger("%U% hits %T% with %I%!"), item = W)
-		receive_weapon_hit(W, user, silent = FALSE)
-	return OP_OK
 
 /// An open closet is cut apart into a sheet of steel (what it held is already on its tile).
 /obj/structure/closet/proc/cut_apart(datum/act/op/A)

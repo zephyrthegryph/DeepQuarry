@@ -67,8 +67,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
 		then(PROC_REF(install_liner)))
 	op("refill_jetpack", item(/obj/item/tank/jetpack), label("Pulse-pressurize jetpack"), wait(0), when(PROC_REF(actor_is_robot)),
 		says(MSG(canister/jetpack)), then(PROC_REF(refill_jetpack)))
-	op("strike", item(/obj/item), hostile(), label("Strike"), priority(OP_PRIORITY_ATTACK), when(cond_not(req(/obj/item/tank))), when(cond_not(req(/obj/item/analyzer))),
-		when(cond_not(req(/obj/item/pda))), then(PROC_REF(struck_with)))
+	extend("melee_hit", when(cond_not(req(/obj/item/tank))), when(cond_not(req(/obj/item/analyzer))), when(cond_not(req(/obj/item/pda))))
 	op("weld_apart", tool(TOOL_WELDER), label("Deconstruct"), wait(2 SECONDS), needs(req(PROC_REF(empty_or_wrecked), because = MSG(canister/pressurized))),
 		says(MSG(canister/deconstructed)), then(PROC_REF(welded_apart)))
 
@@ -336,13 +335,6 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
 	var/obj/item/tank/jetpack/J = A.held
 	var/datum/gas_mixture/jetpack_air = J.air_contents
 	gas_release(air_contents, jetpack_air, min(10 * ONE_ATMOSPHERE, (air_contents.return_pressure() + jetpack_air.return_pressure()) / 2))
-	return OP_OK
-
-/// Struck with a weapon (not a tank, which goes in, or an analyzer or a PDA, which read it).
-/obj/machinery/portable_atmospherics/canister/proc/struck_with(datum/act/op/A)
-	act_message(A.actor, src, others = span_warning("%U% hits %T% with \a [A.held]!"))
-	add_fingerprint(A.actor)
-	receive_weapon_hit(A.held, A.actor, silent = FALSE)
 	return OP_OK
 
 /obj/machinery/portable_atmospherics/canister/proc/empty_or_wrecked(datum/act/A)
