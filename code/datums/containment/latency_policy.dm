@@ -1,4 +1,4 @@
-// ---- The sweep (containment.md §4.7 "Sweep and hysteresis") ----
+// ---- The sweep (containment.md Â§4.7 "Sweep and hysteresis") ----
 
 /// Checks per PERIODIC_SLOW frame (2 s): 32 per 4 s, as the reactor sweep spent.
 #define LATENCY_SWEEP_BUDGET 16
@@ -23,7 +23,7 @@ GLOBAL_LIST_EMPTY(latency_sweep_holders)
 	// registers it, so Initialize() never touches this global (lifecycle sandbox).
 	if(!(holder.flags & ATOM_MATERIALIZED))
 		return
-	if(holder.latent_contents)
+	if(holder?.latent_contents_enabled())
 		GLOB.latency_sweep_holders[holder] = TRUE
 		if(!om_task_periodic_running(GLOB.latency_sweep))
 			om_task_periodic(GLOB.latency_sweep, PERIODIC_SLOW)
@@ -36,7 +36,7 @@ GLOBAL_LIST_EMPTY(latency_sweep_holders)
 
 GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 
-// The sweep is a periodic lane member (object_model_core.md §4.10, PERIODIC_SLOW), not a
+// The sweep is a periodic lane member (object_model_core.md Â§4.10, PERIODIC_SLOW), not a
 // reactor continuous declaration: budgeted collapse over latent holders (C10). It starts
 // with the first registered holder (never at global init, before the OM core exists) and
 // keeps running; a frame with no holders costs one length check.
@@ -84,7 +84,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 			catch(var/exception/e)
 				// One bad atom must not end the whole frame (and with it every
 				// other holder's turn): log it with context and back it off.
-				COOLDOWN_START(A, latent_refused_until, max(holder.latent_idle_delay, LATENCY_REFUSAL_BACKOFF_MIN))
+				COOLDOWN_START(A, latent_refused_until, max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN))
 				stack_trace("LATENCY_SWEEP: can_be_latent([A.type] in [holder.type]) runtimed: [e.name] at [e.file]:[e.line] -- [e.desc]")
 				continue
 			if(!eligible)
@@ -94,7 +94,7 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 				break // holder.contents changed; the rest wait for next turn
 			// Refused by latent_collapse() itself: back off for the holder's idle
 			// delay instead of re-offering it (and re-running its refusal) every frame.
-			COOLDOWN_START(A, latent_refused_until, max(holder.latent_idle_delay, LATENCY_REFUSAL_BACKOFF_MIN))
+			COOLDOWN_START(A, latent_refused_until, max(holder?.latent_idle_delay_value(), LATENCY_REFUSAL_BACKOFF_MIN))
 			log_runtime("LATENCY_SWEEP: [A.type] in [holder.type] refused collapse, retry after [DisplayTimeText(COOLDOWN_TIMELEFT(A, latent_refused_until))]: [GLOB.latent_last_refusal]")
 	if(dead)
 		holders -= dead
@@ -105,13 +105,13 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 #undef LATENCY_REFUSAL_BACKOFF_MIN
 #undef LATENCY_SWEEP_FRAME_REFS
 
-// ---- Admin toggle (containment.md §4.7 "Safety") ----
+// ---- Admin toggle (containment.md Â§4.7 "Safety") ----
 
 ADMIN_VERB(toggle_latency_policy, R_DEBUG, "Toggle Latency Policy", "Disables or re-enables automatic latent collapse for one holder's contents.", ADMIN_CATEGORY_DEBUG_MISC, atom/holder as obj|turf)
-	holder.latency_policy_disabled = !holder.latency_policy_disabled
-	log_admin("[key_name(user)] turned the latency policy [holder.latency_policy_disabled ? "off" : "on"] for [holder] ([COORD(holder)]).")
-	message_admins("[key_name_admin(user)] turned the latency policy [holder.latency_policy_disabled ? "off" : "on"] for [holder].")
-	to_chat(user, span_notice("The latency policy is now [holder.latency_policy_disabled ? "off" : "on"] for [holder]."))
+	holder.set_latent_policy_disabled(!holder.latent_policy_disabled())
+	log_admin("[key_name(user)] turned the latency policy [holder.latent_policy_disabled() ? "off" : "on"] for [holder] ([COORD(holder)]).")
+	message_admins("[key_name_admin(user)] turned the latency policy [holder.latent_policy_disabled() ? "off" : "on"] for [holder].")
+	to_chat(user, span_notice("The latency policy is now [holder.latent_policy_disabled() ? "off" : "on"] for [holder]."))
 
 /atom/register_latency_sweep()
 	dq_latency_sweep_register(src)

@@ -670,7 +670,7 @@ GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 		var/atom/checked_atom = .[++i]
 		if(checked_atom.flags & ignore_flag_1)
 			continue
-		if(checked_atom.latent_contents)
+		if(checked_atom?.latent_contents_enabled())
 			checked_atom.latent_materialize_all() // a search needs real things (C5)
 		. += checked_atom.contents
 
@@ -681,7 +681,7 @@ GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 	var/i = 0
 	while(i < length(processing_list))
 		var/atom/checked_atom = processing_list[++i]
-		if(checked_atom.latent_contents)
+		if(checked_atom?.latent_contents_enabled())
 			checked_atom.latent_materialize_all() // a search needs real things (C5)
 		processing_list += checked_atom.contents
 		if(istype(checked_atom, type))

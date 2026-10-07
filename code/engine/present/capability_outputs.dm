@@ -24,15 +24,15 @@
 /// A's engine record, or null when the engine has kept nothing for it.
 /proc/cap_engine_state_of(atom/A)
 	RETURN_TYPE(/datum/cap_engine_state)
-	return A.cap_data?[/datum/cap_engine_state]
+	return capability_data(A)?[/datum/cap_engine_state]
 
 /// A's engine record, made when it has none.
 /proc/cap_engine_state_make(atom/A)
 	RETURN_TYPE(/datum/cap_engine_state)
-	var/datum/cap_engine_state/state = A.cap_data?[/datum/cap_engine_state]
+	var/datum/cap_engine_state/state = capability_data(A)?[/datum/cap_engine_state]
 	if(!state)
 		state = new
-		LAZYSET(A.cap_data, /datum/cap_engine_state, state)
+		LAZYSET(capability_runtime(A).data, /datum/cap_engine_state, state)
 	return state
 
 
@@ -46,7 +46,7 @@
 	if(!ordered)
 		ordered = caps_sort(caps_of(A), which)
 		GLOB.caps_order_cache[key] = ordered
-	return A.cap_extras ? ordered + caps_sort(A.cap_extras, which) : ordered
+	return capability_extras(A) ? ordered + caps_sort(capability_extras(A), which) : ordered
 
 GLOBAL_LIST_EMPTY(caps_order_cache) // ALLOW(cache): a per-(type, order) memo of sorted capability lists, filled on first use and never invalidated
 

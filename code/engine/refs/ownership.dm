@@ -550,6 +550,7 @@
 	for(var/var_name in T.own_vars)
 		if(!isnull(D.vars[var_name]))
 			own_clear(D, var_name)
+		D.ownership_field_disposed(var_name)
 	// Only once every child is disposed of: a dying child's own teardown may still read its
 	// owner's (now empty) list, e.g. `length(master.ability_objects - src)`.
 	for(var/var_name in T.own_vars)
@@ -574,3 +575,7 @@
 			proto_teardown(D, var_name)
 	for(var/var_name in T.ref_vars)
 		rel_clear(D, var_name)
+
+/// Extra runtime ownership can preserve the declared field cleanup order.
+/datum/proc/ownership_field_disposed(var_name)
+	return

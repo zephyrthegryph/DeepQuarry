@@ -44,12 +44,12 @@
 	var/obj/structure/closet/dq_latent_test/closet = allocate(/obj/structure/closet/dq_latent_test, test_floor())
 	// Declared: only the type that can't be latent exists, and nothing is resolved.
 	TEST_ASSERT_EQUAL(length(closet.contents), 1, "only the non-latent item should be real")
-	TEST_ASSERT(isnull(closet.ledger), "an untouched closet should have no ledger")
+	TEST_ASSERT(isnull(closet.containment_ledger()), "an untouched closet should have no ledger")
 	TEST_ASSERT(closet.has_latent(), "the closet should hold declared contents")
 	// Resolved on the first exact question, still with no atoms.
 	TEST_ASSERT_EQUAL(closet.latent_count(), 3, "three latent things")
 	TEST_ASSERT_EQUAL(length(closet.contents), 1, "resolving creates nothing")
-	var/datum/ledger/L = closet.ledger
+	var/datum/ledger/L = closet.containment_ledger()
 	var/list/problems = L.verify()
 	TEST_ASSERT(!length(problems), "ledger mismatch: [jointext(problems, "; ")]")
 	var/expected_used = 0
@@ -85,12 +85,12 @@
 	var/old_id = pens.entry_id()
 	var/list/made = closet.latent_materialize(pens, 5)
 	TEST_ASSERT_EQUAL(length(made), 2, "only two pens exist")
-	TEST_ASSERT(isnull(closet.ledger.latent_find(old_id)), "the old id is stale")
+	TEST_ASSERT(isnull(closet.containment_ledger().latent_find(old_id)), "the old id is stale")
 	TEST_ASSERT_EQUAL(length(closet.latent_materialize(pens, 1)), 0, "a spent entry yields nothing")
 	for(var/obj/item/pen/P as anything in made)
 		TEST_ASSERT_EQUAL(P.loc, closet, "materialized into the holder")
-		TEST_ASSERT_EQUAL(closet.ledger.entries[P][LEDGER_E_SLOT], CONTAINER_SLOT_INTERIOR, "into the entry's slot")
-	var/list/problems = closet.ledger.verify()
+		TEST_ASSERT_EQUAL(closet.containment_ledger().entries[P][LEDGER_E_SLOT], CONTAINER_SLOT_INTERIOR, "into the entry's slot")
+	var/list/problems = closet.containment_ledger().verify()
 	TEST_ASSERT(!length(problems), "ledger mismatch: [jointext(problems, "; ")]")
 	// The closet spills its contents (latent entries included) when it is deleted.
 	var/turf/T = closet.loc
@@ -298,7 +298,7 @@
 				if(state_canonical(list("l" = blob[STATE_KEY_LATENT])) != state_canonical(list("l" = copy_blob?[STATE_KEY_LATENT])))
 					failures += "[path]: latent entries changed in the round trip"
 				qdel(copy)
-		var/list/problems = closet.ledger?.verify()
+		var/list/problems = closet.containment_ledger()?.verify()
 		if(length(problems))
 			failures += "[path]: [jointext(problems, "; ")]"
 		closet.latent_materialize_all()

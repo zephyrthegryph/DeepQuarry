@@ -12,6 +12,21 @@
 
 /// Everything a datum holds for the reaction layer, allocated on first use (most datums never have one).
 /datum/rx_state
+	/// Containment demand and lifecycle state, allocated with the holder's reactions.
+	var/list/containment_pins
+	var/containment_move_hooks = 0
+	var/atom/movable/containment_successor
+	var/containment_declared = FALSE
+	var/containment_policy_disabled = FALSE
+	/// Cache of the last applied appearance and derived verb decisions.
+	var/look_key
+	var/list/look_overlays
+	var/list/refresh_hidden_verbs
+	var/list/refresh_granted_verbs
+	var/refresh_swept = FALSE
+	var/look_set_bits = 0
+	var/list/look_filters
+	var/list/look_vis
 	/// kind -> what -> source -> count (rx_ledger_*).
 	var/list/ledger
 	/// /datum/rx_listener records observing THIS datum.
@@ -410,5 +425,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	for(var/datum/rx_listener/L as anything in S.listening?.Copy())
 		rx_listener_remove(L)
 	GLOB.rx_pending -= D
+	if(S.containment_ledger)
+		rel_clear(S, nameof(S.containment_ledger))
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	D.rx = null

@@ -11,7 +11,6 @@
 	layer = UNDER_JUNK_LAYER
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 	flags = REMOTEVIEW_ON_ENTER
-	latent_contents = TRUE
 
 	/// The door is open. Written through set_opened(); a map says a closet starts open with `opened = 1`.
 	var/opened = 0
@@ -115,7 +114,7 @@ CAPABILITIES(/obj/structure/closet)
 		var/content_size = 0
 		for(var/atom/movable/AM as anything in contents + loose) // ALLOW(latent): the generator's latent entries are summed below
 			content_size += storage_cost_of(AM)
-		var/list/generator = latent_declared ? starts_with : null
+		var/list/generator = latent_is_declared() ? starts_with : null
 		for(var/path in generator)
 			if(dq_latent_eligible(path))
 				content_size += storage_cost_of_type(path) * dq_latent_spawn_count(generator[path])

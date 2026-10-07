@@ -1,4 +1,4 @@
-// Latent contents (doc/rewrite/containment.md §4, roadmap C5).
+// Latent contents (doc/rewrite/containment.md Â§4, roadmap C5).
 //
 // A holder type opts in with `latent_contents = TRUE`. Its contents then pass
 // through three stages:
@@ -20,7 +20,7 @@
 // entries through per-type data (dq_type_property, the material templates),
 // scaled by count, without instances.
 //
-// Collapse (opt-in, §4.5): latent_collapse() turns a real, simple item back
+// Collapse (opt-in, Â§4.5): latent_collapse() turns a real, simple item back
 // into an entry when state_collapse_blockers() is empty and it holds nothing.
 //
 // Legacy code walks `contents` directly and can't see entries, so a holder
@@ -31,10 +31,8 @@
 /// Why the last latent_collapse() refused, for tests and admins.
 GLOBAL_VAR(latent_last_refusal)
 
-/// The holder type keeps latent entries (containment.md §4). Type-level.
-/atom/var/tmp/latent_contents = FALSE
+/// The holder type keeps latent entries (containment.md Â§4). Type-level.
 /// The generator was declared at init (its non-latent types already exist).
-/atom/var/tmp/latent_declared = FALSE
 
 /// One group of identical latent things in a holder's slot.
 /datum/latent_entry
@@ -58,7 +56,7 @@ GLOBAL_VAR(latent_last_refusal)
 	/// Capacity one of them takes in its slot.
 	var/unit_cost = 0
 	/// The blob captured right after a real collapse (roadmap C10,
-	/// containment.md §4.7 "Safety"), set only when the round-trip audit is
+	/// containment.md Â§4.7 "Safety"), set only when the round-trip audit is
 	/// on (not for the original declared generator, which was never a real
 	/// atom). This is the same list object as `blob` (dq_latent_entry_blob()
 	/// mutates and returns its argument in place) at the moment of capture,
@@ -74,7 +72,7 @@ GLOBAL_VAR(latent_last_refusal)
 // ---- Eligibility and type data ----
 
 /// A type opts out of being latent for reasons the storability sandbox can't
-/// see (semantics, not side effects: containment.md §4.7) -- an admin fax
+/// see (semantics, not side effects: containment.md Â§4.7) -- an admin fax
 /// mid-composition, a reagent that isn't wired up. Override to return a
 /// non-null reason and `latent_safe_types.dm`'s hand-kept `latent_safe`
 /// still decides eligibility (dq_latent_eligible() below); this is the
@@ -84,7 +82,7 @@ GLOBAL_VAR(latent_last_refusal)
 /atom/movable/proc/latent_unsafe_reason()
 	return null
 
-/// Whether things of `path` may be latent: latent-safe (containment.md §4.4).
+/// Whether things of `path` may be latent: latent-safe (containment.md Â§4.4).
 DECLARE_SHARED_CACHE(latent_eligible, GLOBAL_PROC_REF(build_latent_eligible), SC_NEVER)
 
 /proc/dq_latent_eligible(path)
@@ -96,7 +94,7 @@ DECLARE_SHARED_CACHE(latent_eligible, GLOBAL_PROC_REF(build_latent_eligible), SC
 
 /proc/build_latent_eligible(path)
 	var/atom/movable/typed = path
-	return (ispath(path, /atom/movable) && initial(typed.latent_safe)) ? TRUE : FALSE
+	return (ispath(path, /atom/movable) && latent_type_safe(typed)) ? TRUE : FALSE
 
 /// What one `path` adds to a holder's aggregates, from type data only: the
 /// ledger snapshot shape (measures, then tag words), or null. Cached.
@@ -204,7 +202,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	if(!length(generator))
 		holder.latent_generator_clear()
 		return
-	if(!holder.latent_contents)
+	if(!holder?.latent_contents_enabled())
 		create_objects_in_loc(holder, generator)
 		holder.latent_generator_clear()
 		return
@@ -215,7 +213,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 			continue
 		dq_latent_spawn_real(holder, path, generator[path])
 	if(any)
-		holder.latent_declared = TRUE
+		holder.set_latent_declared(TRUE)
 	else
 		holder.latent_generator_clear()
 
@@ -225,11 +223,11 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 /proc/dq_latent_resolve(atom/holder, datum/ledger/L)
 	var/list/generator = holder.latent_generator()
 	if(!length(generator))
-		holder.latent_declared = FALSE
+		holder.set_latent_declared(FALSE)
 		return
-	var/declared = holder.latent_declared
+	var/declared = holder.latent_is_declared()
 	holder.latent_generator_clear()
-	holder.latent_declared = FALSE
+	holder.set_latent_declared(FALSE)
 	for(var/path in generator)
 		if(dq_latent_line_ok(holder, path, generator[path]))
 			L.latent_add(path, dq_latent_spawn_count(generator[path]))
@@ -394,11 +392,11 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 
 /// Whether this holds latent contents, declared or resolved. Cheap: builds nothing.
 /atom/proc/has_latent()
-	if(!latent_contents)
+	if(!latent_contents_enabled())
 		return FALSE
-	if(ledger)
-		return ledger.latent_total > 0
-	return latent_declared || length(latent_generator()) > 0
+	if(containment_ledger())
+		return containment_ledger().latent_total > 0
+	return latent_is_declared() || length(latent_generator()) > 0
 
 /// Entries in `slot_id` (null: every slot). Resolves the generator.
 /atom/proc/latent_entries(slot_id)
@@ -415,7 +413,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 /// Adds `n` latent things of `path` to `slot_id`. Refuses types that can't be
 /// latent and holders that don't keep entries. Returns the entry or null.
 /atom/proc/latent_add(path, n = 1, list/blob = null, slot_id = null)
-	if(!latent_contents || !dq_latent_eligible(path))
+	if(!latent_contents_enabled() || !dq_latent_eligible(path))
 		return null
 	var/datum/ledger/L = dq_ledger(src)
 	return L?.latent_add(path, n, blob, slot_id)
@@ -450,7 +448,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 		var/name = initial(typed.name)
 		. += entry.count > 1 ? "[entry.count] [name]\s" : "\a [name]"
 
-/// Collapse (containment.md §4.5): a real, simple thing inside a latent holder
+/// Collapse (containment.md Â§4.5): a real, simple thing inside a latent holder
 /// becomes an entry again. Only when it serializes, has no contents and
 /// nothing live depends on it. `held_refs` counts the caller's own references.
 /// Returns TRUE if it collapsed (and src is deleted).
@@ -461,7 +459,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	if(refusal)
 		GLOB.latent_last_refusal = refusal
 		return FALSE
-	var/datum/ledger/L = loc.ledger
+	var/datum/ledger/L = loc.containment_ledger()
 	var/list/record = L.entries[src]
 	var/list/errors = list()
 	var/list/blob = state_serialize(src, STATE_FULL, errors)
@@ -497,9 +495,9 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	var/atom/holder = loc
 	if(QDELETED(src))
 		return "it is gone"
-	if(!holder?.latent_contents)
+	if(!holder?.latent_contents_enabled())
 		return "its holder keeps no latent contents"
-	if(!latent_safe)
+	if(!latent_type_safe(type))
 		return "[type] is not latent-safe"
 	if(length(contents))
 		return "it holds things"
@@ -529,7 +527,7 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 			return dq_type_property(path, PROP_MASS) || 0
 	return 1
 
-// ---- Damage (damage.md §6, §7) ----
+// ---- Damage (damage.md Â§6, Â§7) ----
 
 /// An explosion reaches the contents at `severity`: entries are resolved as
 /// data. Each thing is tried on a sandboxed probe; destroyed ones are removed,

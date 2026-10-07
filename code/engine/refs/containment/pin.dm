@@ -1,4 +1,4 @@
-// Pins (doc/rewrite/containment.md §4.7, C10): the generic demand model that
+// Pins (doc/rewrite/containment.md Â§4.7, C10): the generic demand model that
 // decides whether an atom needs to stay real. No slot kind decides this by
 // itself -- whatever actually needs `A` real takes a pin, and `A` stays real
 // for as long as any pin is held. can_be_latent() (latency_policy.dm) never
@@ -21,36 +21,35 @@
 // Appearance-only consumers (a mob overlay, an inventory icon) don't pin:
 // they can draw from the entry (type + state blob) without a real atom.
 
-/atom/movable/var/tmp/list/latent_pins
+/// Pin reads do not allocate per-entity state.
+/atom/movable/proc/latent_pin_count(reason)
+	return rx?.containment_pins?[reason] || 0
 
-/// Takes a pin on `src`: it may not be latent while this (or any other) pin
-/// is held. Reason is any stable key (a type path, a string); repeatable.
 /atom/movable/proc/latent_pin(reason)
-	LAZYINITLIST(latent_pins)
-	latent_pins[reason] = (latent_pins[reason] || 0) + 1
+	var/datum/rx_state/S = rx_of(src)
+	LAZYINITLIST(S.containment_pins)
+	S.containment_pins[reason] = (S.containment_pins[reason] || 0) + 1
 
-/// Releases one pin of `reason`. Excess unpins (no matching pin) are a no-op,
-/// not an error: Destroy() paths and out-of-order UI teardown are common.
 /atom/movable/proc/latent_unpin(reason)
-	if(!latent_pins)
+	var/datum/rx_state/S = rx
+	if(!S?.containment_pins)
 		return
-	var/count = latent_pins[reason]
+	var/count = S.containment_pins[reason]
 	if(!count)
 		return
 	if(count <= 1)
-		latent_pins -= reason
+		S.containment_pins -= reason
 	else
-		latent_pins[reason] = count - 1
-	if(!length(latent_pins))
-		latent_pins = null
+		S.containment_pins[reason] = count - 1
+	if(!length(S.containment_pins))
+		S.containment_pins = null
 
-/// Whether `src` holds any explicit pin right now, ignoring implicit ones.
 /atom/movable/proc/latent_explicitly_pinned()
-	return LAZYLEN(latent_pins) > 0
+	return length(rx?.containment_pins) > 0
 
 /// The single read: whether `A` must stay real right now, for any reason.
 /// Combines explicit pins, the collapse blockers (behaviour, outside refs,
-/// the weakref gap, state.md §1/collapse.dm) and sitting on a turf.
+/// the weakref gap, state.md Â§1/collapse.dm) and sitting on a turf.
 /// `caller_refs`: references to `A` held by the frames above this one (each caller's own
 /// variable or argument naming it), which the collapse check must not count as outside holders.
 /// The default, 1, is a caller holding A in one variable.

@@ -5,7 +5,12 @@
 
 /// Current value of saved var `var_name` on `D`, or null if it isn't part of D's saved state.
 /proc/dq_property_state_value(datum/D, var_name)
-	return state_is_saved(D, var_name) ? D.vars[var_name] : null
+	if(!state_is_saved(D, var_name))
+		return null
+	if(isatom(D) && var_name == OP_KEY_CAP_STATE)
+		var/atom/holder = D
+		return capability_bits(holder)
+	return D.vars[var_name]
 
 /// Whether `var_name` is part of `D`'s saved state.
 /proc/dq_property_state_has_var(datum/D, var_name)

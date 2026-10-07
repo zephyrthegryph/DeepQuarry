@@ -80,7 +80,9 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 /datum/definition_registry/proc/build()
 	if(built)
 		return
+	type_metadata_registry()
 	built = TRUE
+	engine_prepare_interfaces()
 	build_bundles()
 	build_clocks()
 	build_effects()

@@ -36,6 +36,8 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 		if(D)
 			dq_lifecycle_finish_aborted(D)
 	GLOB.destroy_transaction_depth--
+	if(D && hint != QDEL_HINT_LETMELIVE)
+		capability_runtime_forget(D)
 	if(D && ismovable(D) && hint != QDEL_HINT_LETMELIVE)
 		dq_lifecycle_release_loc(D, aborted)
 	return hint
@@ -47,23 +49,36 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 /// a movable's contents deleted (as /atom/movable/Destroy() would have).
 /proc/dq_lifecycle_finish_aborted(datum/D)
 	try
+		// A fault before phase 4 leaves ordinary owned fields intact, not re-set.
+		// Dispose them by their declared policies before the leftover-state scrub.
+		if(D.destroy_phase <= LIFECYCLE_PHASE_LINKS)
+			own_teardown(D)
 		dq_lifecycle_scrub(D)
-		// Leave the registries and the live world (phase 7's /atom/Destroy()
-		// may never have run): a deleted object left in a registry is a hard-delete source.
+		// Leave the registries and the live world (phase 7 may never have run).
 		if(isatom(D))
 			var/atom/A = D
 			A.dematerialize()
 		else
 			D.leave_registries()
-		// Phase 5 may never have run: without this a non-atom kept live OM
-		// timers, hooks and tasks on a dead datum. Also releases OM handles.
+	catch(var/exception/e)
+		dq_report_caught(e, "finishing the aborted destroy of [D.type]")
+	// Mandatory runtime cleanup must still run if a child or registry hook faulted.
+	try
 		dq_lifecycle_om_teardown(D)
+	catch(var/exception/runtime_error)
+		dq_report_caught(runtime_error, "tearing down runtime state after the aborted destroy of [D.type]")
+	try
+		if(D.rx)
+			rx_teardown(D)
+	catch(var/exception/native_error)
+		dq_report_caught(native_error, "tearing down native state after the aborted destroy of [D.type]")
+	try
 		if(ismovable(D))
 			var/atom/movable/AM = D
 			for(var/atom/movable/thing in contents_of(AM).Copy())
 				qdel(thing)
-	catch(var/exception/e)
-		dq_report_caught(e, "finishing the aborted destroy of [D.type]")
+	catch(var/exception/contents_error)
+		dq_report_caught(contents_error, "disposing contents after the aborted destroy of [D.type]")
 
 /// A destroyed movable leaves its loc (/atom/movable/Destroy() ends with
 /// moveToNullspace()). One still somewhere had a Destroy() that skipped ..()
@@ -232,7 +247,7 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 /// sync() skips things being deleted.
 /proc/dq_lifecycle_leave_own_slot(atom/movable/AM)
 	var/atom/holder = AM.loc
-	var/datum/ledger/L = holder?.ledger
+	var/datum/ledger/L = holder?.containment_ledger()
 	if(!L?.entries[AM])
 		return
 	L.pending_exit_flags = LEDGER_MOVE_FORCED
@@ -316,6 +331,9 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 	// OM handles to D stop resolving (object_model_core.md §4.11).
 	if(D.om_hid)
 		om_handle_release(D)
+	// Phase 4 may have aborted before native runtime ownership was disposed.
+	if(D.rx)
+		rx_teardown(D)
 
 // ---- Phase 6: effects ----
 

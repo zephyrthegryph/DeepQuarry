@@ -155,7 +155,7 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 			. += STATE_REFS_FROM_LOC
 			// A container's ledger lists what it holds. Inside the subtree the
 			// ledger is an owned part and its lists are scanned already.
-			var/datum/ledger/L = movable.loc.ledger
+			var/datum/ledger/L = movable.loc.containment_ledger()
 			if(L && !(movable.loc in internal))
 				. += L.refs_to(movable)
 		. += state_om_slot_refs(movable, internal)

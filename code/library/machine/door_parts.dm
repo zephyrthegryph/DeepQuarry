@@ -111,7 +111,7 @@ cap_keys(CAP_WELD_SHUT, WELDED = MSG(weld/not_welded))
 /proc/is_welded(atom/A)
 	READS_FROM(A)
 	if(!cap_of(A, CAP_WELD_SHUT))
-		return !!(A.cap_state & CAP_WELDED) // the legacy bit of the holders that keep it (a vent)
+		return !!(capability_bits(A) & CAP_WELDED) // the legacy bit of the holders that keep it (a vent)
 	return weld_shut_welded(A, null)
 
 /// Welds A shut or frees it with no welder (a construct's spell, a mech clamp tearing it open).

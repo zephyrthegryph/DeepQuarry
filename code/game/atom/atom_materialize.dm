@@ -38,7 +38,7 @@
 		appearance_queued = FALSE
 		appearance_queue(src)
 	// A ledger built while sandboxed skipped the latency sweep; join it now.
-	if(ledger && latent_contents)
+	if(containment_ledger() && latent_contents_enabled())
 		dq_latency_sweep_register(src)
 	if(ismovable(src))
 		for(var/atom/movable/content as anything in contents)

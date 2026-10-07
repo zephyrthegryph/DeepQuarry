@@ -256,7 +256,7 @@ GLOBAL_LIST_EMPTY(occupant_pod_slots)
 	var/datum/capability/lib/occupant_pod/pod = occupant_pod_of(holder)
 	if(!pod)
 		return null
-	var/datum/ledger/L = holder.ledger
+	var/datum/ledger/L = holder.containment_ledger()
 	var/list/inside = L?.slots[pod.slot]
 	return length(inside) ? inside[1] : null
 

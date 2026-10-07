@@ -3,3 +3,4 @@ delete-after: true
 changes:
   - code_imp: "Separated engine scheduling, state, ownership and operation machinery from content adapters."
   - code_imp: "Added phase and lane options and member sweeps to declared periodics."
+  - bugfix: "Cleaned up owned runtime records and scheduled material work when deletion aborts."

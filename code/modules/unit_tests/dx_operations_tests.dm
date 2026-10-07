@@ -448,12 +448,12 @@
 	// A change nobody published is still caught by the re-check when the wait ends.
 	TEST_ASSERT(perform_action(H, F, ACT_TOGGLE), "starts again")
 	var/pending_id = GLOB.op_pending[1]
-	F.cap_state |= CAP_LOCKED
+	capability_runtime(F).bits |= CAP_LOCKED
 	cancel_after(H, "op_wait")
 	op_wait_done(pending_id)
 	TEST_ASSERT_NULL(F.calls, "the after-wait re-check refuses a stale go-ahead")
 	TEST_ASSERT_EQUAL(length(GLOB.op_pending), 0, "the context was released")
-	F.cap_state &= ~CAP_LOCKED
+	capability_runtime(F).bits &= ~CAP_LOCKED
 
 	// And a wait that ends with everything holding commits, through op_before / op_after.
 	TEST_ASSERT(perform_action(H, F, ACT_TOGGLE), "starts a third time")

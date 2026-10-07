@@ -1,4 +1,4 @@
-// The transaction API (doc/rewrite/containment.md §2, invariant 2).
+// The transaction API (doc/rewrite/containment.md Â§2, invariant 2).
 //
 //   move_into(holder, slot_id, thing, actor)          insert (slot_id null: the default slot)
 //   holder.slot_remove(thing, destination, actor, flags)     take out, to a place that has no slots
@@ -23,7 +23,7 @@
 // spill or transfer a holder's contents while it is being destroyed, where
 // the move must not be refusable.
 //
-// Drop policies: the destroy transaction (L1, doc/rewrite/lifecycle.md §2)
+// Drop policies: the destroy transaction (L1, doc/rewrite/lifecycle.md Â§2)
 // resolves every slot's declared policy in its contents phase, before any
 // leftover Destroy() runs, so no holder type decides what happens to its
 // contents by hand (code/datums/containment/lifecycle.dm).
@@ -100,7 +100,7 @@
 /// `flags` (LEDGER_MOVE_*) reaches note_enter()/reslot() and, through them,
 /// on_slotted()/on_unslotted() (J6).
 /proc/dq_ledger_commit(atom/movable/thing, atom/holder, slot_id, flags = 0)
-	var/datum/ledger/dest = holder.ledger
+	var/datum/ledger/dest = holder.containment_ledger()
 	var/id = slot_id || dest.default_id
 	if(thing.loc == holder)
 		dest.reslot(thing, id, flags)
@@ -296,6 +296,6 @@
 	var/datum/ledger/L = dq_ledger(src)
 	return L?.find_entry(entry_id)
 
-// The destroy transaction's contents phase (L1, doc/rewrite/lifecycle.md §2-3)
+// The destroy transaction's contents phase (L1, doc/rewrite/lifecycle.md Â§2-3)
 // replaces what used to live here (ledger_apply_drop_policies(),
 // ledger_drop_latent()): see code/datums/containment/lifecycle.dm.

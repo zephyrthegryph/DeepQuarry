@@ -1,4 +1,4 @@
-// Slot definitions (doc/rewrite/containment.md Ã‚Â§3, object_model_core.md).
+// Slot definitions (doc/rewrite/containment.md Ãƒâ€šÃ‚Â§3, object_model_core.md).
 //
 // A slot is a relation (/datum/relation_definition/slot) that also owns loc: linking a
 // thing into a slot (a ledger move) links it to the holder by this same
@@ -56,14 +56,14 @@
 	/// at insert and indexed for O(1) `slot_lookup()`. A second thing with
 	/// the same key is refused. Only keyed slots pay for the index.
 	var/keyed = FALSE
-	/// L1 (doc/rewrite/lifecycle.md Ã‚Â§2 phase 0.5, Ã‚Â§3): a TRANSFER slot whose
+	/// L1 (doc/rewrite/lifecycle.md Ãƒâ€šÃ‚Â§2 phase 0.5, Ãƒâ€šÃ‚Â§3): a TRANSFER slot whose
 	/// contents must resolve in the destroy transaction's mind pre-order
 	/// pass, before anything else -- while the mob tree is still fully
 	/// registered and has a loc. Body plans declare this on the mind slot
 	/// (DQ Medical, O2). Nothing else may set it.
 	var/is_mind_slot = FALSE
 
-	// ---- Propagation (containment.md Ã‚Â§3.2, C2; paths.dm walks these) ----
+	// ---- Propagation (containment.md Ãƒâ€šÃ‚Â§3.2, C2; paths.dm walks these) ----
 	/// SLOT_LAYER_*: order among this holder's layered slots, higher is further
 	/// out. Everything in a layer further out covers what is in this one.
 	var/layer = SLOT_LAYER_NONE
@@ -89,7 +89,7 @@
 	/// BAY_*: the compartment of the holder this slot sits in; paths cross that bay's boundary.
 	var/at
 
-/// SLOT_DROP_TRANSFER's destination (doc/rewrite/lifecycle.md Ã‚Â§3). The
+/// SLOT_DROP_TRANSFER's destination (doc/rewrite/lifecycle.md Ãƒâ€šÃ‚Â§3). The
 /// default reproduces the pre-L1 behaviour: the holder's own container, if
 /// it has slots, else null (the caller falls back to spill). Override for
 /// anything else: occupant ejection to a turf, mind transfer to a ghost or
@@ -99,7 +99,7 @@
 		return holder.loc
 	return null
 
-/// SLOT_DROP_TO_LATENT's successor (doc/rewrite/lifecycle.md Ã‚Â§3): the atom
+/// SLOT_DROP_TO_LATENT's successor (doc/rewrite/lifecycle.md Ãƒâ€šÃ‚Â§3): the atom
 /// whose ledger gets a latent entry for each thing dropped from this slot,
 /// instead of the thing staying real. Null lets the entry go (debris/wreckage
 /// declares this once it exists; until then TO_LATENT behaves like DELETE).
@@ -107,7 +107,7 @@
 	return null
 
 /// SLOT_DROP_KEEP_WITH's destination slot id on replace_with()'s successor
-/// (doc/rewrite/lifecycle.md Ã‚Â§3 and Ã‚Â§5). Null names the successor's default
+/// (doc/rewrite/lifecycle.md Ãƒâ€šÃ‚Â§3 and Ãƒâ€šÃ‚Â§5). Null names the successor's default
 /// slot.
 /datum/relation_definition/slot/proc/keep_with_slot()
 	return null

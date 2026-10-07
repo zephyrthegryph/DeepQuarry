@@ -32,19 +32,17 @@
 
 /// TRUE when every bit in `bits` is set on A.
 /proc/cap_has(atom/A, bits)
-	return (A.cap_state & bits) == bits
+	return (capability_bits(A) & bits) == bits
 
 /// Sets or clears `bits` on A through the change path. TRUE when the state changed.
 /proc/cap_set(atom/A, bits, on)
 	if(isnull(on))
 		CRASH("cap_set: `on` is required (TRUE to set, FALSE to clear) for [A?.type]")
-	var/was = A.cap_state
-	if(on)
-		A.cap_state |= bits
-	else
-		A.cap_state &= ~bits
-	if(was == A.cap_state)
+	var/was = capability_bits(A)
+	var/now = on ? (was | bits) : (was & ~bits)
+	if(was == now)
 		return FALSE
+	capability_runtime(A).bits = now
 	changed(A, CHANGE_CAPABILITY)
 	// Waiting operations watch cap_state through their requirements' reads (operations/op_ctx.dm).
 	op_reads_changed(A, OP_KEY_CAP_STATE)
@@ -56,16 +54,16 @@
 
 // The accessors, written once per capability.
 /proc/cover_is_open(atom/A)
-	return !!(A.cap_state & CAP_COVER_OPEN)
+	return !!(capability_bits(A) & CAP_COVER_OPEN)
 /proc/panel_is_open(atom/A)
 	READS_FROM(A)
-	return !!(A.cap_state & CAP_PANEL_OPEN) || !!(cap_of(A, CAP_PANEL) && panel_open(A, null)) // a converted holder keeps it as a capability key (a boolean: a null `when` draws unconditionally)
+	return !!(capability_bits(A) & CAP_PANEL_OPEN) || !!(cap_of(A, CAP_PANEL) && panel_open(A, null)) // a converted holder keeps it as a capability key (a boolean: a null `when` draws unconditionally)
 /proc/is_locked(atom/A)
-	return !!(A.cap_state & CAP_LOCKED)
+	return !!(capability_bits(A) & CAP_LOCKED)
 /proc/is_emagged(atom/A)
-	return !!(A.cap_state & CAP_EMAGGED) || (cap_of(A, CAP_EMAG) && emag_emagged(A)) // a converted holder keeps it as a capability key
+	return !!(capability_bits(A) & CAP_EMAGGED) || (cap_of(A, CAP_EMAG) && emag_emagged(A)) // a converted holder keeps it as a capability key
 /proc/is_broken(atom/A)
-	if(A.cap_state & CAP_BROKEN)
+	if(capability_bits(A) & CAP_BROKEN)
 		return TRUE
 	var/obj/machinery/M = A // a converted machine's breakable() reads the machine's own BROKEN bit
 	return istype(M) && M.broken_now() && cap_of(A, CAP_BREAKABLE)
@@ -130,18 +128,20 @@
 	if(holder.timed_until)
 		timed_cancel_all(holder)
 	var/flags = GLOB.type_derives_cache[holder.type]
-	if(!isnull(flags) && !(flags & TYPE_DERIVES_CAPS) && !holder.cap_data && !holder.cap_extras)
+	if(!isnull(flags) && !(flags & TYPE_DERIVES_CAPS) && !capability_data(holder) && !capability_extras(holder))
 		return
 	var/list/caps = caps_all(holder)
 	for(var/datum/capability/C as anything in caps)
 		C.legacy_holder_destroy(holder)
 		cap_leave_systems(holder, C)
-	holder.cap_extras = null
-	for(var/key in holder.cap_data)
-		var/datum/D = holder.cap_data[key]
-		if(isdatum(D))
-			ended_with(D, holder)
-	holder.cap_data = null
+	var/datum/capability_runtime/runtime = capability_runtime_peek(holder)
+	if(runtime)
+		runtime.extras = null
+		for(var/key in runtime.data)
+			var/datum/D = runtime.data[key]
+			if(isdatum(D))
+				ended_with(D, holder)
+		runtime.data = null
 
 
 /// Examine lines from every capability, in list order (appended by /atom/examine()).
@@ -229,21 +229,21 @@
 		return "it's broken"
 	if(!entry.works_unpowered && !A.cap_powered())
 		return "it has no power"
-	if(entry.behind & ~A.cap_state)
-		var/missing = entry.behind & ~A.cap_state
+	if(entry.behind & ~capability_bits(A))
+		var/missing = entry.behind & ~capability_bits(A)
 		if(missing & CAP_COVER_OPEN)
 			return "open the cover first"
 		return "open the maintenance panel first"
 	if(entry.cooldown && cap_engine_state_of(A)?.entry_cooldowns?[entry.id] > world.time) // ALLOW(sys_world_time_expiry): a keyed per-entry cooldown table on the atom (entry id to end time): one var per entry would be dozens, and keyed cooldowns have no declared form
 		return "it isn't ready yet"
-	if(entry.blocked_by & A.cap_state)
-		var/present = entry.blocked_by & A.cap_state
+	if(entry.blocked_by & capability_bits(A))
+		var/present = entry.blocked_by & capability_bits(A)
 		if(present & CAP_COVER_OPEN)
 			return "close the cover first"
 		if(present & CAP_PANEL_OPEN)
 			return "close the maintenance panel first"
 		return "you can't do that in its current state"
-	if(entry.locked_by && (A.cap_state & entry.locked_by))
+	if(entry.locked_by && (capability_bits(A) & entry.locked_by))
 		return "it's locked"
 	if(entry.at && !entry.op)
 		// An op entry's compartment is asked in its context's route stage; only legacy entries ask here.

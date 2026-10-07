@@ -1,4 +1,23 @@
 // Engine-declared interfaces for downstream presentation, construction and native delivery.
+
+/// Establish the stateless framework interfaces at boot, after globals are available.
+/// Getters remain safe for earlier callers and retain any provider they already created.
+/proc/engine_prepare_interfaces()
+	materialization_host()
+	native_watch_provider()
+	construction_stage_provider()
+	transfer_feedback_provider()
+	time_scheduler_factory()
+	operation_compatibility()
+	transfer_outputs()
+	input_compatibility()
+	state_reference_environment()
+	containment_slot_factory()
+	state_construction()
+	state_registry_adapter()
+	requirement_composer()
+	property_environment()
+
 /datum/proc/scheduler_presentation_mask()
 	return 0
 

@@ -390,6 +390,7 @@ pub fn own_roots_of(proc: &Proc, tree: &Tree, relations: &HashSet<String>) -> (H
     let local_from = pat!(r"\bvar/(?:[\w/]+/)?(\w+)\s*=\s*(.+)$");
     let config_calls = pat_match!(r"(?:cap_of|ladder_for|caps_of|caps_all)\s*\(");
     let cap_data_expr = pat_match!(r"(?:(\w+)\s*\??\.\s*)?cap_data\s*(?:\(|\??\[)");
+    let capability_data_expr = pat_match!(r"\bcapability_data\s*\(\s*(\w+)\s*\)");
     let relation_expr = pat_match!(r"(?:(\w+)\s*\??\.\s*)?(\w+)\s*$");
     let dotted_root = pat_match!(r"(\w+)\s*\??\.");
     for (_n, text) in proc.lines(tree) {
@@ -405,6 +406,9 @@ pub fn own_roots_of(proc: &Proc, tree: &Tree, relations: &HashSet<String>) -> (H
             context.insert(name); // `var/datum/interaction/capability/E = entry`: still context
         } else if let Some(cd) = cap_data_expr.captures(expr).filter(|cd| !cd.matched(1) || cd.s(1).is_empty() || roots.contains(cd.s(1))) {
             let _ = cd;
+            roots.insert(name);
+        } else if capability_data_expr.captures(expr).is_some_and(|cd| roots.contains(cd.s(1))) {
+            // The runtime accessor retains the same holder-owned payload identity.
             roots.insert(name);
         } else if config_calls.is_match(expr) {
             context.insert(name);
@@ -512,7 +516,7 @@ pub fn analyse(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String,
     let marking: HashSet<String> = MARKING_RELATIONS.iter().map(|s| s.to_string()).collect();
     let base_relations: HashSet<String> = watched.union(&marking).cloned().collect();
 
-    let sites: Vec<FileSites> = crate::incr::keyed("dx-reactive-judge", crate::incr::ctx_key(&ctx), files, |f| {
+    let sites: Vec<FileSites> = crate::incr::keyed("dx-reactive-judge-runtime-data-v2", crate::incr::ctx_key(&ctx), files, |f| {
         let fd = dxf.of(f);
         let mut reads: Vec<u32> = Vec::new();
         let mut writes: Vec<u32> = Vec::new();

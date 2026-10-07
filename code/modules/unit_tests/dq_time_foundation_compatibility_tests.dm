@@ -126,3 +126,84 @@
 	TEST_ASSERT(created, "Every uninitialized provider accessor creates its actual provider")
 	TEST_ASSERT(reused, "Repeated lookups retain the same provider identities")
 	TEST_ASSERT(legacy_scheduler, "The lazily created real factory preserves downstream scheduler subtype behaviour")
+
+// Scalar IDs preserve lazy per-holder storage without adding an owner reference to the store.
+/datum/unit_test/dq_capability_runtime_storage/Run()
+	var/obj/cap_fixture/first = allocate(/obj/cap_fixture, run_loc_floor_bottom_left)
+	var/obj/cap_fixture/second = allocate(/obj/cap_fixture, run_loc_floor_bottom_left)
+	TEST_ASSERT_NULL(capability_runtime_peek(first), "A plain holder has no capability runtime record")
+	TEST_ASSERT_EQUAL(capability_bits(first), 0, "Reading an unused holder returns the original zero default")
+	TEST_ASSERT_NULL(capability_data(first), "Reading unused capability data returns null")
+	TEST_ASSERT_NULL(capability_extras(first), "Reading unused extras returns null")
+	TEST_ASSERT(!cap_set(first, CAP_LOCKED, FALSE), "Clearing absent bits is a no-op")
+	TEST_ASSERT_NULL(capability_runtime_peek(first), "Reads and a no-op write preserve lazy allocation")
+	TEST_ASSERT(cap_set(first, CAP_LOCKED, TRUE), "Setting an absent bit changes real capability state")
+	TEST_ASSERT_EQUAL(capability_bits(first), CAP_LOCKED, "The stored bits match the actual mutation")
+	TEST_ASSERT_EQUAL(capability_bits(second), 0, "Another holder keeps its independent default")
+	var/datum/capability/label/capability = allocate(/datum/capability/label)
+	var/datum/cap_label_data/first_data = capability_instance_data(first, capability)
+	var/datum/cap_label_data/second_data = capability_instance_data(second, capability)
+	first_data.label = "private label"
+	TEST_ASSERT_EQUAL(capability_instance_data(first, capability), first_data, "Repeated lookup preserves the original capability-data identity")
+	TEST_ASSERT(first_data != second_data, "Two holders have distinct mutable capability data")
+	TEST_ASSERT_NULL(second_data.label, "Mutating one holder's data leaves the other unchanged")
+	var/key = first.shared_cache_uid
+	TEST_ASSERT_EQUAL(GLOB.capability_runtime_records[key], capability_runtime_peek(first), "The real store is indexed by the stable scalar UID")
+	TEST_ASSERT(!(first in GLOB.capability_runtime_records), "The store contains no strong holder keys")
+	qdel(first)
+	TEST_ASSERT_NULL(GLOB.capability_runtime_records[key], "Final destruction removes the holder's runtime entry")
+	TEST_ASSERT(QDELETED(first_data), "Capability teardown still deletes the original per-holder data datum")
+	TEST_ASSERT_EQUAL(capability_instance_data(second, capability), second_data, "Destroying one holder preserves the other holder's data identity")
+
+/datum/unit_test/dq_capability_runtime_saved_state/Run()
+	var/obj/cap_fixture/holder = allocate(/obj/cap_fixture, run_loc_floor_bottom_left)
+	cap_set(holder, CAP_LOCKED | CAP_COVER_OPEN, TRUE)
+	var/list/errors = list()
+	var/list/blob = state_serialize(holder, NONE, errors)
+	TEST_ASSERT_NOTNULL(blob, "The capability holder serializes successfully: [jointext(errors, "; ")]")
+	var/list/saved = blob[STATE_KEY_VARS]
+	TEST_ASSERT_EQUAL(saved[OP_KEY_CAP_STATE], CAP_LOCKED | CAP_COVER_OPEN, "The existing cap_state key remains in the saved-var delta")
+	TEST_ASSERT_EQUAL(dq_property_state_value(holder, OP_KEY_CAP_STATE), CAP_LOCKED | CAP_COVER_OPEN, "The saved-state property adapter reads the actual capability bits")
+	dq_rule_apply_transform(holder, list(list(RULE_OP_SET, OP_KEY_CAP_STATE, CAP_EMAGGED)))
+	TEST_ASSERT_EQUAL(capability_bits(holder), CAP_EMAGGED, "A saved-state rule transform writes the actual runtime bits")
+	cap_set(holder, CAP_LOCKED | CAP_COVER_OPEN, FALSE)
+	TEST_ASSERT(state_apply(holder, blob, NONE, errors), "The original blob applies without a schema migration: [jointext(errors, "; ")]")
+	TEST_ASSERT_EQUAL(capability_bits(holder), CAP_LOCKED | CAP_COVER_OPEN, "Applying the saved delta restores the exact original bits")
+	saved -= OP_KEY_CAP_STATE
+	TEST_ASSERT(state_apply(holder, blob, NONE, errors), "A blob omitting default capability state still applies")
+	TEST_ASSERT_EQUAL(capability_bits(holder), 0, "An omitted capability key resets initialized bits to the original zero default")
+
+// The default fixture tears down normally; only this regression opts into an early abort.
+/obj/item/cell/dq_capability_abort_fixture
+	var/abort_capability_cleanup = FALSE
+
+/obj/item/cell/dq_capability_abort_fixture/on_destroy(force)
+	if(abort_capability_cleanup)
+		CRASH("capability runtime abort fixture")
+	..()
+
+/datum/unit_test/dq_capability_runtime_aborted_data_cleanup/Run()
+	var/obj/item/cell/dq_capability_abort_fixture/holder = allocate(/obj/item/cell/dq_capability_abort_fixture, run_loc_floor_bottom_left)
+	var/datum/material_service/service = holder.enable_material_service()
+	TEST_ASSERT_NOTNULL(service, "The actual cell admits a running material service")
+	var/datum/material_assembly/assembly = material_assembly_of(holder)
+	var/datum/material_build/build = material_build(holder)
+	var/datum/capability/label/capability = allocate(/datum/capability/label)
+	var/datum/cap_label_data/data = capability_instance_data(holder, capability)
+	TEST_ASSERT(assembly && build && data, "The holder owns real material records and ordinary capability data")
+	LAZYADD(capability_runtime(holder).extras, capability)
+	TEST_ASSERT(after_pending(service, "material_service"), "The actual material service has scheduled work before the abort")
+	var/key = holder.shared_cache_uid
+	holder.abort_capability_cleanup = TRUE
+	set_global("dq_caught_capture", list())
+	qdel(holder)
+	var/list/capture = GLOB.dq_caught_capture
+	set_global("dq_caught_capture", null)
+	TEST_ASSERT(dq_diag_capture_has(capture, "destroy transaction of /obj/item/cell/dq_capability_abort_fixture"), "The real destroy transaction aborted before normal capability teardown")
+	TEST_ASSERT_NULL(GLOB.capability_runtime_records?[key], "The aborted holder leaves no UID runtime record")
+	TEST_ASSERT(QDELETED(assembly), "The aborted destroy ends its material assembly record")
+	TEST_ASSERT(QDELETED(build), "The aborted destroy ends its material build record")
+	TEST_ASSERT(QDELETED(data), "The aborted destroy ends ordinary capability data too")
+	TEST_ASSERT(QDELETED(service), "Ending the assembly invokes its actual declared service ownership cleanup")
+	TEST_ASSERT(!after_pending(service, "material_service"), "No material-service timer survives the aborted holder")
+	TEST_ASSERT(!QDELETED(capability), "The shared capability definition survives its holder's aborted cleanup")

@@ -1,7 +1,7 @@
-// The latency policy (roadmap C10, doc/rewrite/containment.md §4.7): decides,
+// The latency policy (roadmap C10, doc/rewrite/containment.md Â§4.7): decides,
 // per atom, whether it may collapse into a latent entry right now, and runs
 // the budgeted sweep that acts on that decision. Materializing stays
-// event-driven (the existing triggers, containment.md §4.3, plus a viewer
+// event-driven (the existing triggers, containment.md Â§4.3, plus a viewer
 // arriving); this only ever collapses.
 
 /// Per-atom idle clock: world.time of the last materialize, move into a
@@ -21,11 +21,9 @@
 /// A holder's configured idle delay, in deciseconds, before its contents are
 /// offered to the sweep. Holders may override for a shorter or longer delay
 /// (a busy vending machine vs. a crate in a mothballed cargo bay).
-/atom/var/latent_idle_delay = 2 MINUTES
 
-/// Per-holder admin toggle (containment.md §4.7 "Safety"): independent of the
+/// Per-holder admin toggle (containment.md Â§4.7 "Safety"): independent of the
 /// global kill switch, disables the policy just for this holder's contents.
-/atom/var/latency_policy_disabled = FALSE
 
 /**
  * Marks `A` as touched now, giving it a fresh idle timer. This is the one
@@ -36,7 +34,7 @@
  * dq_latent_create() makes it straight into the holder). Nothing else calls
  * this directly, so when DQ Medical's joint ledger before/after-move
  * transaction hook lands (medical_frameworks.md), swapping this one call
- * site onto it is the whole migration -- see containment.md §4.7.
+ * site onto it is the whole migration -- see containment.md Â§4.7.
  */
 /proc/dq_latent_touch(atom/movable/A)
 	if(A)
@@ -45,7 +43,7 @@
 // ---- Policy ----
 
 /**
- * Whether `A` may be latent right now (containment.md §4.7). Composes:
+ * Whether `A` may be latent right now (containment.md Â§4.7). Composes:
  *   - the global kill switch;
  *   - its type is verified storable (dq_latent_eligible());
  *   - it is not pinned (dq_latent_pinned(): no explicit pin, an empty
@@ -71,10 +69,10 @@ GLOBAL_VAR_INIT(latency_last_ineligible, "")
 	if(!A || QDELETED(A) || !A.loc)
 		GLOB.latency_last_ineligible = "gone or loc-less"
 		return
-	if(A.latency_policy_disabled || A.loc.latency_policy_disabled)
+	if(A.latent_policy_disabled() || A.loc.latent_policy_disabled())
 		GLOB.latency_last_ineligible = "policy disabled for [A.type] or its holder"
 		return
-	if(!A.loc.latent_contents)
+	if(!A.loc?.latent_contents_enabled())
 		GLOB.latency_last_ineligible = "[A.loc.type] holds no latent contents"
 		return
 	if(!dq_latent_eligible(A.type))
@@ -97,7 +95,7 @@ GLOBAL_VAR_INIT(latency_last_ineligible, "")
 	if(record && record[LEDGER_E_SLOT] == CONTAINER_SLOT_STOCK)
 		GLOB.latency_last_ineligible = "[A.type] is in a stock slot"
 		return
-	var/delay = A.loc.latent_idle_delay
+	var/delay = A.loc?.latent_idle_delay_value()
 	var/idle = ELAPSED(A, latent_touched_at, CLOCK_WORLD)
 	if(idle < delay)
 		GLOB.latency_last_ineligible = "[A.type] idle [idle] of [delay]"
@@ -105,7 +103,7 @@ GLOBAL_VAR_INIT(latency_last_ineligible, "")
 	GLOB.latency_last_ineligible = ""
 	return TRUE
 
-// ---- Logging (containment.md §4.7 "Safety") ----
+// ---- Logging (containment.md Â§4.7 "Safety") ----
 
 #define LATENCY_POLICY_LOG_MAX 200
 
@@ -123,7 +121,7 @@ GLOBAL_LIST_EMPTY(latency_policy_log)
 
 #undef LATENCY_POLICY_LOG_MAX
 
-// ---- Round-trip audit (containment.md §4.7 "Safety") ----
+// ---- Round-trip audit (containment.md Â§4.7 "Safety") ----
 
 /// Whether the round-trip audit runs: always in test builds, else only with
 /// the config flag (same gating shape as SSmobs.hibernation_audit_enabled()).

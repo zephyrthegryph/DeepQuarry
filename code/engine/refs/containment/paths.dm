@@ -1,4 +1,4 @@
-// Propagation paths (doc/rewrite/containment.md §3.2, roadmap C2).
+// Propagation paths (doc/rewrite/containment.md Â§3.2, roadmap C2).
 //
 // When heat, damage, gas or radiation reaches a holder, one function per
 // effect decides what reaches each thing inside and how much. Nothing else
@@ -90,7 +90,7 @@ GLOBAL_LIST_INIT(path_default_damage_sealed, list(
 	return clamp(PROPERTY(A, PROP_INSULATION) || 0, 0, 1)
 
 /// Fraction of a hit of armour key `key` that `A` stops, 0..1: its armour's
-/// deterministic soak (get_armor(), damage.md §4) after `penetration`.
+/// deterministic soak (get_armor(), damage.md Â§4) after `penetration`.
 /proc/dq_path_armor(atom/A, key, penetration = 0)
 	if(!key || !A)
 		return 0
@@ -113,7 +113,7 @@ GLOBAL_LIST_INIT(path_default_damage_sealed, list(
 	. = list()
 	if(def.layer == SLOT_LAYER_NONE)
 		return
-	var/datum/ledger/L = holder.ledger
+	var/datum/ledger/L = holder.containment_ledger()
 	if(!L)
 		return
 	var/list/outer = list()

@@ -211,7 +211,7 @@ GLOBAL_LIST_INIT(relation_scope_kinds, list(ENTRY_PROVIDES, "contributes", ENTRY
 			continue
 		var/datum/entry/E = C.item
 		if(E.args["on"] == ON_CONTENTS)
-			var/datum/ledger/L = side.ledger
+			var/datum/ledger/L = side.containment_ledger()
 			for(var/slot_id in L?.slots)
 				if(!slot_matches(E.args["slot"], slot_id, side))
 					continue
@@ -220,7 +220,7 @@ GLOBAL_LIST_INIT(relation_scope_kinds, list(ENTRY_PROVIDES, "contributes", ENTRY
 					slot_scope_apply(inside, side, slot_id, C)
 			continue
 		var/atom/container = istype(side) ? side.loc : null
-		var/datum/ledger/outer = container?.ledger
+		var/datum/ledger/outer = container?.containment_ledger()
 		var/list/entry = outer?.entries[side]
 		if(!entry || !slot_matches(E.args["slot"], entry[LEDGER_E_SLOT], container))
 			continue
@@ -304,7 +304,7 @@ GLOBAL_LIST_INIT(relation_scope_kinds, list(ENTRY_PROVIDES, "contributes", ENTRY
 	if(islist(entry_slot))
 		return slot_id in entry_slot
 	if(entry_slot == SLOT_ANY_WORN || entry_slot == SLOT_ANY_HELD || entry_slot == SLOT_ANY_CARRIED)
-		var/datum/relation_definition/slot/def = holder?.ledger?.def_by_id(slot_id)
+		var/datum/relation_definition/slot/def = holder?.containment_ledger()?.def_by_id(slot_id)
 		if(!def)
 			return FALSE
 		if(entry_slot == SLOT_ANY_HELD)

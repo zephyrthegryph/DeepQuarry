@@ -136,7 +136,7 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 
 /datum/req/state_set/test(datum/op_ctx/ctx)
 	var/atom/A = subject(ctx)
-	if(!istype(A) || (A.cap_state & bits) != bits)
+	if(!istype(A) || (capability_bits(A) & bits) != bits)
 		return reason
 	return null
 
@@ -151,7 +151,7 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 
 /datum/req/state_clear/test(datum/op_ctx/ctx)
 	var/atom/A = subject(ctx)
-	if(!istype(A) || (A.cap_state & bits))
+	if(!istype(A) || (capability_bits(A) & bits))
 		return reason
 	return null
 

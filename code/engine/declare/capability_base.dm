@@ -55,11 +55,11 @@ GLOBAL_LIST_EMPTY(caps_interned)
 		. += entry
 
 /proc/capability_instance_data(atom/A, datum/capability/C)
-	var/datum/D = A.cap_data?[C.key]
+	var/datum/D = capability_data(A)?[C.key]
 	if(D || !C.data_type)
 		return D
 	D = new C.data_type
-	LAZYSET(A.cap_data, C.key, D)
+	LAZYSET(capability_runtime(A).data, C.key, D)
 	return D
 
 /datum/capability

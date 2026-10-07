@@ -45,7 +45,7 @@
 	C = cap_intern(C)
 	if(cap_of_all(A, C.key))
 		return FALSE
-	LAZYADD(A.cap_extras, C)
+	LAZYADD(capability_runtime(A).extras, C)
 	C.legacy_holder_init(A, FALSE)
 	cap_join_systems(A, C)
 	refresh_granted_verbs(A)
@@ -54,14 +54,14 @@
 
 /// Detaches the extra capability with key (or type) `key` from A.
 /proc/remove_capability(atom/A, key)
-	for(var/datum/capability/C as anything in A.cap_extras)
+	for(var/datum/capability/C as anything in capability_extras(A))
 		if(C.key == key || (ispath(key) && istype(C, key)))
 			C.legacy_holder_destroy(A)
 			cap_leave_systems(A, C)
-			LAZYREMOVE(A.cap_extras, C)
+			LAZYREMOVE(capability_runtime(A).extras, C)
 			refresh_granted_verbs(A)
-			var/datum/data = A.cap_data?[C.key]
-			LAZYREMOVE(A.cap_data, C.key)
+			var/datum/data = capability_data(A)?[C.key]
+			LAZYREMOVE(capability_runtime(A).data, C.key)
 			if(isdatum(data))
 				spent(data)
 			changed(A, CHANGE_CAPABILITY)
@@ -74,10 +74,10 @@
 
 /// The interaction entries of A's extras (the resolver adds them to the type's candidates).
 /proc/cap_extra_interactions(atom/A)
-	if(!A.cap_extras)
+	if(!capability_extras(A))
 		return list()
 	. = list()
-	for(var/datum/capability/C as anything in A.cap_extras)
+	for(var/datum/capability/C as anything in capability_extras(A))
 		. += cap_built_entries(C, A)
 
 // ---- system membership (section 6) ----

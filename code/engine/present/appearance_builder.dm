@@ -358,20 +358,12 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 #define LOOK_SET_LAYER (1<<7)
 #define LOOK_SET_LIGHT (1<<8)
 
-/atom
-	/// LOOK_SET_* for the base properties the last applied look set (taken back when a look stops
-	/// setting them).
-	var/tmp/look_set_bits = 0
-	/// The filter names the last applied look added (removed on the next change).
-	var/tmp/list/look_filters
-	/// The vis_contents the last applied look added.
-	var/tmp/list/look_vis
-
 /// Applies the look to A. Only what the look set is touched; what it set last time and not now is
 /// taken back: overlays, filters and vis_contents are removed, and a base property (icon, color,
 /// alpha, ...) goes back to its type default.
 /datum/look/proc/apply_to(atom/A)
-	var/was = A.look_set_bits
+	var/datum/rx_state/cache = rx_of(A)
+	var/was = cache.look_set_bits
 	var/now = 0
 	var/old_icon = A.icon
 	var/old_state = A.icon_state
@@ -436,16 +428,16 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		now |= LOOK_SET_LIGHT
 	else if(was & LOOK_SET_LIGHT)
 		A.look_apply_light(0)
-	A.look_set_bits = now
+	cache.look_set_bits = now
 	if(!isnull(identity_name))
 		A.name = identity_name
 	if(!isnull(identity_desc))
 		A.desc = identity_desc
 	if(!isnull(held_state))
 		A.look_apply_held_state(held_state)
-	if(A.look_overlays)
-		A.cut_overlay(A.look_overlays)
-		A.look_overlays = null
+	if(cache.look_overlays)
+		A.cut_overlay(cache.look_overlays)
+		cache.look_overlays = null
 	var/list/added
 	for(var/name in overlays)
 		LAZYADD(added, name)
@@ -462,23 +454,23 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 			LAZYADD(added, emissive_appearance(A.icon, state))
 	if(added)
 		A.add_overlay(added)
-		A.look_overlays = added
-	for(var/name in A.look_filters)
+		cache.look_overlays = added
+	for(var/name in cache.look_filters)
 		if(!filters || !(name in filters))
 			A.look_remove_filter(name)
-	A.look_filters = null
+	cache.look_filters = null
 	for(var/name in filters)
 		A.look_add_filter(name, 1, filters[name])
-		LAZYADD(A.look_filters, name)
+		LAZYADD(cache.look_filters, name)
 	if(ismovable(A))
 		var/atom/movable/M = A
-		for(var/atom/movable/thing as anything in M.look_vis)
+		for(var/atom/movable/thing as anything in cache.look_vis)
 			if(!vis || !(thing in vis))
 				M.vis_contents -= thing
-		M.look_vis = null
+		cache.look_vis = null
 		for(var/atom/movable/thing as anything in vis)
 			M.vis_contents |= thing
-			LAZYADD(M.look_vis, thing)
+			LAZYADD(cache.look_vis, thing)
 	if(flick_state)
 		flick(flick_state, A)
 

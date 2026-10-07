@@ -20,16 +20,6 @@
 	/// The channels raised since the last refresh (on_state_changed() reads them).
 	var/tmp/refresh_bits = 0
 
-/atom
-	/// The key of the look last applied (draw()), or null when the type draws nothing.
-	var/tmp/look_key
-	/// The overlays the last applied look added (swapped out on the next change).
-	var/tmp/list/look_overlays
-	/// The verbs hidden by the last refresh.
-	var/tmp/list/refresh_hidden_verbs
-	/// The verbs granted_verbs() gave by the last refresh.
-	var/tmp/list/refresh_granted_verbs // ALLOW(base_vars): the refresh pass's memo of what it granted, beside refresh_hidden_verbs; its gate and drift check read it on every atom refresh
-
 /// The periodic pipeline should_run() gates, or null for no periodic work. A type var.
 /datum/var/periodic_cadence = null
 /// A custom interval (deciseconds) for periodic_step() instead of a shared cadence (the old
@@ -402,9 +392,9 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		// A type known to draw nothing and hide nothing skips both (review 2 H3): capabilities can
 		// draw and hide, and a type not seen yet is tried once and recorded.
 		var/flags = type_derive_flags(A)
-		var/may_draw = flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || !isnull(A.look_key)
+		var/may_draw = flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || !isnull(A.rx?.look_key)
 		// A mob may be granted verbs by its species and traits, which no type flag can know.
-		var/may_hide = flags & (TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || A.refresh_hidden_verbs || A.refresh_granted_verbs || ismob(A)
+		var/may_hide = flags & (TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || A.rx?.refresh_hidden_verbs || A.rx?.refresh_granted_verbs || ismob(A)
 		probing = flags & TYPE_DERIVES_PENDING
 		if(probing)
 			GLOB.derive_probing = TRUE
@@ -483,26 +473,26 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 	A.draw(L)
 	DERIVED_EVAL_END
 	// Transient flashes (look_flash()) sit on top of whatever draw() described.
-	var/datum/cap_engine_state/engine = A.cap_data?[/datum/cap_engine_state] // inline cap_engine_state_of(): every look refresh passes here
+	var/datum/cap_engine_state/engine = capability_data(A)?[/datum/cap_engine_state] // inline cap_engine_state_of(): every look refresh passes here
 	if(engine)
 		if(engine.look_flash_state)
 			L.state(engine.look_flash_state)
 		for(var/state in engine.look_flashes)
 			L.overlay(state)
 	if(!L.touched)
-		if(apply && !isnull(A.look_key))
+		if(apply && !isnull(A.rx?.look_key))
 			// It drew before and draws nothing now: applying the empty look takes back everything the
 			// last look set (overlays, filters, vis_contents, base properties).
 			L.apply_to(A)
-			A.look_key = null
+			rx_of(A).look_key = null
 		return null
 	var/key = L.change_key()
-	if(apply && key != A.look_key)
+	if(apply && key != A.rx?.look_key)
 		var/atom/outer = GLOB.refresh_applying
 		GLOB.refresh_applying = A
 		L.apply_to(A)
 		GLOB.refresh_applying = outer
-		A.look_key = key
+		rx_of(A).look_key = key
 	return key
 
 /// Brings A's derived verb hides in line with hidden_verbs(). The verb store stays the only writer of a
@@ -512,13 +502,13 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 	DERIVED_EVAL_BEGIN
 	var/list/hidden = A.hidden_verbs() || list()
 	DERIVED_EVAL_END
-	if(!length(hidden) && !length(A.refresh_hidden_verbs))
+	if(!length(hidden) && !length(A.rx?.refresh_hidden_verbs))
 		return hidden
 	if(!apply)
 		return hidden
-	var/list/was = A.refresh_hidden_verbs || list()
+	var/list/was = A.rx?.refresh_hidden_verbs || list()
 	var/list/flipped = (was - hidden) + (hidden - was)
-	A.refresh_hidden_verbs = length(hidden) ? hidden : null
+	rx_of(A).refresh_hidden_verbs = length(hidden) ? hidden : null
 	if(length(flipped))
 		verb_store_refresh(A, flipped)
 	return hidden
@@ -527,13 +517,13 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 /// through the verb store (which keeps hidden_verbs() winning).
 /proc/refresh_granted_verbs(atom/A, apply = TRUE)
 	var/list/granted = A.granted_verbs() || list()
-	if(!length(granted) && !length(A.refresh_granted_verbs))
+	if(!length(granted) && !length(A.rx?.refresh_granted_verbs))
 		return granted
 	if(!apply)
 		return granted
-	var/list/was = A.refresh_granted_verbs || list()
+	var/list/was = A.rx?.refresh_granted_verbs || list()
 	var/list/flipped = (was - granted) + (granted - was)
-	A.refresh_granted_verbs = length(granted) ? granted : null
+	rx_of(A).refresh_granted_verbs = length(granted) ? granted : null
 	if(length(flipped))
 		verb_store_refresh(A, flipped)
 	return granted
@@ -548,14 +538,13 @@ GLOBAL_VAR_INIT(refresh_sweep_index, 1)
 /// Drift reports this round (the drift test reads them).
 GLOBAL_LIST_EMPTY(refresh_drift)
 
-/atom/var/tmp/refresh_swept = FALSE
 
 /proc/refresh_sweep_track(atom/A)
-	if(A.refresh_swept)
+	if(A.rx?.refresh_swept)
 		return
-	if(isnull(A.look_key) && !A.refresh_hidden_verbs && !A.refresh_granted_verbs && !A.periodic_cadence && !derived_is_exact(A))
+	if(isnull(A.rx?.look_key) && !A.rx?.refresh_hidden_verbs && !A.rx?.refresh_granted_verbs && !A.periodic_cadence && !derived_is_exact(A))
 		return
-	A.refresh_swept = TRUE
+	rx_of(A).refresh_swept = TRUE
 	GLOB.refresh_sweep_list[REF(A)] = TRUE
 
 /// Re-checks up to `budget` swept atoms: a derived result that differs from what is applied means a
@@ -581,7 +570,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 		if(GLOB.refresh_sweep_index > length(L))
 			GLOB.refresh_sweep_index = 1
 		var/atom/A = locate(L[GLOB.refresh_sweep_index])
-		if(!isatom(A) || QDELETED(A) || !A.refresh_swept)
+		if(!isatom(A) || QDELETED(A) || !A.rx?.refresh_swept)
 			L.Cut(GLOB.refresh_sweep_index, GLOB.refresh_sweep_index + 1)
 			continue
 		GLOB.refresh_sweep_index++
@@ -618,16 +607,16 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 /proc/refresh_check_drift(atom/A)
 	var/list/drift = list()
 	var/key = refresh_look(A, apply = FALSE)
-	if(key != A.look_key)
+	if(key != A.rx?.look_key)
 		drift += "draw()"
 	DERIVED_EVAL_BEGIN
 	var/list/hidden = A.hidden_verbs() || list()
 	DERIVED_EVAL_END
-	var/list/was = A.refresh_hidden_verbs || list()
+	var/list/was = A.rx?.refresh_hidden_verbs || list()
 	if(length(hidden ^ was))
 		drift += "hidden_verbs()"
 	var/list/granted = A.granted_verbs() || list()
-	var/list/was_granted = A.refresh_granted_verbs || list()
+	var/list/was_granted = A.rx?.refresh_granted_verbs || list()
 	if(length(granted ^ was_granted))
 		drift += "granted_verbs()"
 	if(A.periodic_cadence)

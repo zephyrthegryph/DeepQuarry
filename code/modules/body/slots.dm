@@ -476,7 +476,7 @@
 /// the ledger is rebuilt from the new set. Things keep their slot where the
 /// new plan has it and fall back to the default slot where it doesn't.
 /mob/living/proc/rebuild_slot_ledger()
-	var/datum/ledger/old = ledger
+	var/datum/ledger/old = containment_ledger()
 	if(!old)
 		return
 	var/list/placed = list()

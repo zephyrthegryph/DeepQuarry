@@ -19,7 +19,25 @@
 // them outside its allowlist.
 
 // The containment engine's own per-atom ledger; made and torn down by ledger.dm / the destroy transaction
-/atom/var/tmp/datum/ledger/ledger
+/datum/rx_state
+	var/datum/ledger/containment_ledger
+
+CAPABILITIES(/datum/rx_state)
+	owns_one(nameof(containment_ledger), /datum/ledger)
+
+/atom/proc/containment_ledger()
+	RETURN_TYPE(/datum/ledger)
+	return rx?.containment_ledger
+
+/atom/proc/set_containment_ledger(datum/ledger/value)
+	if(!value && !rx)
+		return
+	var/datum/rx_state/S = rx_of(src)
+	return rel_set(S, nameof(S.containment_ledger), value)
+
+/atom/proc/clear_containment_ledger()
+	if(rx)
+		return rel_clear(rx, nameof(rx.containment_ledger))
 
 /// The ledger for `holder`, made on first use, synced. Null if it has no slots.
 /// `destroying`: the destroy transaction's contents phase, which runs after
@@ -29,7 +47,7 @@
 	RETURN_TYPE(/datum/ledger)
 	if(!holder)
 		return null
-	var/datum/ledger/L = holder.ledger
+	var/datum/ledger/L = holder.containment_ledger()
 	if(L && length(holder.contents) == L.tracked)
 		return L
 	// Building the ledger and adopting contents that arrived without a move are the ledger's own bookkeeping, done once and the same whoever asks: a
@@ -54,15 +72,15 @@ GLOBAL_VAR_INIT(ledger_adopting, FALSE)
 /// dq_ledger()'s slow path: the ledger built if there is none, and synced.
 /proc/dq_ledger_open(atom/holder, destroying = FALSE)
 	RETURN_TYPE(/datum/ledger)
-	var/datum/ledger/L = holder.ledger
+	var/datum/ledger/L = holder.containment_ledger()
 	if(!L)
 		var/list/defs = dq_slot_defs_for(holder)
 		if(!defs || (QDELETED(holder) && !(destroying && holder.gc_destroyed == GC_CURRENTLY_BEING_QDELETED)))
 			return null
 		L = new /datum/ledger(holder, defs)
-		holder.ledger = L
+		holder.set_containment_ledger(L)
 		// Building the ledger is the first exact question: resolve the generator (C5).
-		if(holder.latent_contents)
+		if(holder.latent_contents_enabled())
 			dq_latent_resolve(holder, L)
 			// Candidate for the latency sweep (roadmap C10, containment.md §4.7).
 			holder.register_latency_sweep()
@@ -74,7 +92,7 @@ GLOBAL_VAR_INIT(ledger_adopting, FALSE)
 /// walking a holder's children) that must not be what makes an empty holder
 /// start owning a ledger of its own.
 /proc/dq_ledger_peek(atom/holder)
-	var/datum/ledger/L = holder?.ledger
+	var/datum/ledger/L = holder?.containment_ledger()
 	L?.sync()
 	return L
 
@@ -305,7 +323,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	tracked++
 	add_snapshot(snapshot)
 	propagate()
-	if(thing.move_hooks)
+	if(thing.containment_move_flags())
 		adjust_hooked(1)
 	// The one idle-tracking seam (roadmap C10, containment.md §4.7): this is
 	// the ledger's own move path, which also covers adoption (sync()) and
@@ -317,7 +335,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	PUBLISH_LEGACY(holder, /datum/notice/slot_inserted, thing, id)
 	entity_slot_entered(holder, thing, def)
 	activations_slot_enter(thing, holder, id)
-	if(thing.has_slot_hooks)
+	if(thing.slot_hooks_enabled())
 		thing.on_slotted(holder, id, flags)
 
 /datum/ledger/proc/note_exit(atom/movable/thing)
@@ -337,13 +355,13 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	tracked--
 	remove_snapshot(entry[LEDGER_E_SNAPSHOT])
 	propagate()
-	if(thing.move_hooks)
+	if(thing.containment_move_flags())
 		adjust_hooked(-1)
 	holder.on_slot_changed(id, thing, FALSE)
 	PUBLISH_LEGACY(holder, /datum/notice/slot_removed, thing, id)
 	entity_slot_left(holder, thing, def)
 	activations_slot_exit(thing, holder, id)
-	if(thing.has_slot_hooks)
+	if(thing.slot_hooks_enabled())
 		thing.on_unslotted(holder, id, flags)
 	// The slot was its ownership (doc/rewrite/ownership.md sec 1.1): a CONTAINED / SPILL owned var
 	// naming it lets it go.
@@ -366,7 +384,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	PUBLISH_LEGACY(holder, /datum/notice/slot_removed, thing, old_id)
 	entity_slot_left(holder, thing, old_def)
 	activations_slot_exit(thing, holder, old_id)
-	if(thing.has_slot_hooks)
+	if(thing.slot_hooks_enabled())
 		thing.on_unslotted(holder, old_id, flags)
 	var/datum/relation_definition/slot/def = def_by_id(new_id)
 	entry[LEDGER_E_SLOT] = new_id
@@ -383,7 +401,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	PUBLISH_LEGACY(holder, /datum/notice/slot_inserted, thing, new_id)
 	entity_slot_entered(holder, thing, def)
 	activations_slot_enter(thing, holder, new_id)
-	if(thing.has_slot_hooks)
+	if(thing.slot_hooks_enabled())
 		thing.on_slotted(holder, new_id, flags)
 
 /// Re-reads one thing's contribution, e.g. after its own contents changed.
@@ -406,8 +424,8 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 /// Our totals changed, so the holder's own contribution to its container did.
 /datum/ledger/proc/propagate()
 	var/atom/parent = holder.loc
-	if(parent?.ledger)
-		parent.ledger.refresh(holder)
+	if(parent?.containment_ledger())
+		parent.containment_ledger().refresh(holder)
 
 // ---- Aggregates ----
 
@@ -589,7 +607,6 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 
 /// Set on a type that overrides on_slotted()/on_unslotted(), so a plain
 /// thing that never will skips the proc call on every insert and remove.
-/atom/movable/var/tmp/has_slot_hooks = FALSE
 
 /// Called on `thing` right after it commits into `slot_id` on `holder`:
 /// from note_enter() and from reslot() (a move between two of the same
@@ -636,7 +653,6 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 /// MOVE_HOOK_CLOCK, MOVE_HOOK_LATENCY and/or MOVE_HOOK_SUBTREE (the last
 /// maintained by the ledger, not set by hand). doMove() gates on this with
 /// one var test; see code/__defines/containment.dm's file header.
-/atom/movable/var/tmp/move_hooks = 0
 
 /// Called on `src` right before `loc =` (doMove()), if MOVE_HOOK_CLOCK or
 /// MOVE_HOOK_LATENCY is set. Must not move, qdel or sleep -- a debug assert
@@ -660,14 +676,14 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 /// own `loc` never changes.
 /atom/movable/proc/move_hook_walk(before)
 	for(var/atom/movable/child as anything in contents)
-		if(!child.move_hooks)
+		if(!child.containment_move_flags())
 			continue
-		if(child.move_hooks & (MOVE_HOOK_CLOCK | MOVE_HOOK_LATENCY))
+		if(child.containment_move_flags() & (MOVE_HOOK_CLOCK | MOVE_HOOK_LATENCY))
 			if(before)
 				child.move_hook_before()
 			else
 				child.move_hook_after()
-		if(child.move_hooks & MOVE_HOOK_SUBTREE)
+		if(child.containment_move_flags() & MOVE_HOOK_SUBTREE)
 			child.move_hook_walk(before)
 
 /// Dispatches both the own-hook call and the subtree walk for one side of a
@@ -678,12 +694,12 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 #ifdef TESTING
 	var/atom/check_loc = loc
 #endif
-	if(move_hooks & (MOVE_HOOK_CLOCK | MOVE_HOOK_LATENCY))
+	if(containment_move_flags() & (MOVE_HOOK_CLOCK | MOVE_HOOK_LATENCY))
 		if(before)
 			move_hook_before()
 		else
 			move_hook_after()
-	if(move_hooks & MOVE_HOOK_SUBTREE)
+	if(containment_move_flags() & MOVE_HOOK_SUBTREE)
 		move_hook_walk(before)
 #ifdef TESTING
 	if(loc != check_loc)
@@ -709,9 +725,9 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	if(ismovable(holder))
 		var/atom/movable/AM = holder
 		if(have)
-			AM.move_hooks |= MOVE_HOOK_SUBTREE
+			AM.set_containment_move_flags(AM.containment_move_flags() | MOVE_HOOK_SUBTREE)
 		else
-			AM.move_hooks &= ~MOVE_HOOK_SUBTREE
+			AM.set_containment_move_flags(AM.containment_move_flags() & ~MOVE_HOOK_SUBTREE)
 	var/datum/ledger/parent_ledger = dq_ledger_peek(holder.loc)
 	parent_ledger?.adjust_hooked(have ? 1 : -1)
 

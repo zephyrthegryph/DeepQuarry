@@ -1,10 +1,69 @@
 // Generic capability declaration caches and table interning.
 
-/atom
-	/// One bit per boolean capability state (CAP_*). A type default is free per instance.
-	var/cap_state = 0
-	/// Lazily created per-instance capability data: capability key -> datum (cap_data()).
-	var/tmp/list/cap_data
+/// Runtime capability records are keyed by stable scalar IDs, never by their owners.
+/// A holder's final lifecycle cleanup removes the entry after capability teardown.
+GLOBAL_LIST(capability_runtime_records)
+
+/datum/capability_runtime
+	var/bits = 0
+	var/list/data
+	var/list/extras
+
+/proc/capability_runtime(atom/holder)
+	RETURN_TYPE(/datum/capability_runtime)
+	var/key = SHARED_CACHE_UID(holder)
+	var/datum/capability_runtime/runtime = GLOB.capability_runtime_records?[key]
+	if(!runtime)
+		runtime = new
+		LAZYSET(GLOB.capability_runtime_records, key, runtime)
+	return runtime
+
+/proc/capability_runtime_peek(atom/holder)
+	RETURN_TYPE(/datum/capability_runtime)
+	return holder?.shared_cache_uid ? GLOB.capability_runtime_records?[holder.shared_cache_uid] : null
+
+READS_AS(/proc/capability_bits, OP_KEY_CAP_STATE)
+/proc/capability_bits(atom/holder)
+	READS_FROM() // the accessor retains the holder's capability-state dependency key
+	var/datum/capability_runtime/runtime = capability_runtime_peek(holder)
+	return runtime ? runtime.bits : 0
+
+READS_AS(/proc/capability_data, OP_KEY_CAP_DATA)
+/proc/capability_data(atom/holder)
+	READS_FROM() // preserve the original holder field dependency through the UID store
+	RETURN_TYPE(/list)
+	var/datum/capability_runtime/runtime = capability_runtime_peek(holder)
+	return runtime?.data
+
+READS_AS(/proc/capability_extras, OP_KEY_CAP_EXTRAS)
+/proc/capability_extras(atom/holder)
+	READS_FROM() // preserve the original holder field dependency through the UID store
+	RETURN_TYPE(/list)
+	var/datum/capability_runtime/runtime = capability_runtime_peek(holder)
+	return runtime?.extras
+
+/// Called only after the holder's normal or aborted destruction has finished.
+/proc/capability_runtime_forget(datum/holder)
+	if(!holder?.shared_cache_uid)
+		return
+	var/datum/capability_runtime/runtime = GLOB.capability_runtime_records?[holder.shared_cache_uid]
+	LAZYREMOVE(GLOB.capability_runtime_records, holder.shared_cache_uid)
+	if(!runtime)
+		return
+	// Normal caps_destroy already ended and cleared these values. If destruction aborted
+	// before that phase, finish each remaining datum independently, including its owned children.
+	var/list/data = runtime.data
+	runtime.data = null
+	runtime.extras = null // interned capability definitions are shared, never owned by this record
+	for(var/key in data)
+		var/datum/value = data[key]
+		if(!isdatum(value))
+			continue
+		try
+			ended_with(value, holder)
+		catch(var/exception/data_error)
+			dq_report_caught(data_error, "ending capability data of [holder.type]")
+	ended_with(runtime, holder)
 
 /atom/proc/capability_declarations()
 	RETURN_TYPE(/list)
@@ -83,12 +142,8 @@
 	var/base_key
 	var/list/overrides
 
-/atom
-	/// Capabilities attached to this instance at runtime, after the type's. Lazy.
-	var/tmp/list/cap_extras
-
 /// The type's capabilities plus this instance's extras. Shared when there are no extras.
 /proc/caps_all(atom/A)
 	RETURN_TYPE(/list)
 	var/list/type_caps = caps_of(A)
-	return A.cap_extras ? type_caps + A.cap_extras : type_caps
+	return capability_extras(A) ? type_caps + capability_extras(A) : type_caps

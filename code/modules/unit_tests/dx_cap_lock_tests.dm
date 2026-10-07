@@ -34,7 +34,7 @@
 	TEST_ASSERT(H.put_in_active_hand(good), "the human holds the good ID")
 	TEST_ASSERT(swipe.perform(H, A, good), "the good ID locks it")
 	TEST_ASSERT(is_locked(A), "locked")
-	TEST_ASSERT(A.cap_state & CAP_LOCKED, "the bit is set")
+	TEST_ASSERT(capability_bits(A) & CAP_LOCKED, "the bit is set")
 	TEST_ASSERT_EQUAL(swipe.display_name(H, A), "Unlock", "named Unlock while locked")
 	TEST_ASSERT("It is locked." in caps_examine(A, H), "examine says locked")
 	TEST_ASSERT_EQUAL(cover_entry.why_not(H, A, null), "it's locked", "a locked_by = LOCK entry refuses")

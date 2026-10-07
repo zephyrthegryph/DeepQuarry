@@ -1,5 +1,5 @@
 // Contents phases of the destroy transaction (L1, doc/rewrite/lifecycle.md
-// §2-3): phase 0.5 (mind, pre-order, whole tree) and phase 3 (everything
+// Â§2-3): phase 0.5 (mind, pre-order, whole tree) and phase 3 (everything
 // else, post-order per holder). Both are called from destroy_transaction()
 // (code/datums/lifecycle/transaction.dm); nothing else calls them.
 //
@@ -39,7 +39,7 @@
 	if(!L)
 		return
 	var/atom/drop = containment_drop_location()
-	var/atom/movable/successor = lifecycle_successor
+	var/atom/movable/successor = containment_successor()
 	// Slot types that keep latent contents of their own (stock records) apply their policy to
 	// them first; the ledger then handles the real things. The L1 move lost this call.
 	for(var/datum/relation_definition/slot/def as anything in L.defs)
@@ -55,11 +55,11 @@
 	dq_lifecycle_resolve_latent(L, drop, successor)
 
 /// End of phase 3: the contents phase must have carried out every slot's policy. Checked here,
-/// while the ledger still exists: phase 4 disposes of it (an owned var once the type's first
-/// destroy ran own_clear(src, nameof(ledger))), so a check in Destroy() read a missing ledger and
+/// while the ledger still exists: phase 4 disposes of its runtime-owned ledger through
+/// clear_containment_ledger(), so a later destroy check would read a missing ledger and
 /// reported holder-kept contents (a machine's radio, a sleeper's beaker) as unreleased.
 /atom/movable/proc/dq_lifecycle_check_released()
-	if((ledger || dq_slot_defs_for(src)) && dq_holds_unreleased())
+	if((containment_ledger() || dq_slot_defs_for(src)) && dq_holds_unreleased())
 		stack_trace("[type] still holds contents/latent entries after the destroy transaction's contents phase -- it should have released them: [dq_unreleased_report()]")
 
 /// The contents phase's check that it did its job: TRUE when something still sits in a
@@ -68,7 +68,7 @@
 /atom/movable/proc/dq_holds_unreleased()
 	if(!length(contents) && !has_latent())
 		return FALSE
-	var/datum/ledger/L = ledger
+	var/datum/ledger/L = containment_ledger()
 	if(!L)
 		// No ledger: phase 3 had nothing to go on, so only holder-kept slot sets are fine.
 		for(var/datum/relation_definition/slot/def as anything in dq_slot_defs_for(src))
@@ -86,9 +86,9 @@
 /// its real things and latent entry count, plus contents no slot accounts for.
 /atom/movable/proc/dq_unreleased_report()
 	var/list/parts = list()
-	var/datum/ledger/L = ledger
+	var/datum/ledger/L = containment_ledger()
 	if(!L)
-		parts += "no ledger (latent_contents=[latent_contents], latent_declared=[latent_declared], generator lines=[length(latent_generator())])"
+		parts += "no ledger (latent_contents=[latent_contents_enabled()], latent_declared=[latent_is_declared()], generator lines=[length(latent_generator())])"
 		for(var/atom/movable/thing as anything in contents)
 			parts += "[thing] ([thing.type])"
 		return jointext(parts, "; ")
@@ -141,7 +141,7 @@
 	if(thing.loc == holder)
 		spent(thing)
 
-/// Drop policies for latent entries, as data (damage.md §6): deleted (and
+/// Drop policies for latent entries, as data (damage.md Â§6): deleted (and
 /// holder-kept) entries are removed; SPILL/TRANSFER/TO_LATENT/KEEP_WITH entries stay latent if
 /// they land in another latent holder, and are created only where they land
 /// on a turf. Mirrors dq_lifecycle_resolve_slot_entry() for real things.
@@ -175,10 +175,9 @@
 		for(var/i in 1 to n)
 			dq_latent_create(path, blob, target)
 
-/// L3 (doc/rewrite/lifecycle.md §5): the successor replace_with() is
+/// L3 (doc/rewrite/lifecycle.md Â§5): the successor replace_with() is
 /// building, set just before it qdels the original. SLOT_DROP_KEEP_WITH
 /// slots move their contents here instead of spilling; read (and cleared)
 /// only by dq_lifecycle_resolve_contents()/dq_lifecycle_resolve_latent()
 /// during this one transaction.
 // Scoped to one destroy transaction; set and cleared by dq_lifecycle_resolve_contents()/_latent()
-/atom/movable/var/tmp/atom/movable/lifecycle_successor

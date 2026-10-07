@@ -26,3 +26,35 @@
 
 /atom/movable/proc/containment_fire(temperature, volume)
 	return
+
+/atom/movable/proc/containment_move_flags()
+	return rx?.containment_move_hooks || 0
+/atom/movable/proc/set_containment_move_flags(value)
+	if(!value && !rx)
+		return
+	var/datum/rx_state/S = rx_of(src)
+	S.containment_move_hooks = value
+
+/atom/movable/proc/containment_successor()
+	return rx?.containment_successor
+/atom/movable/proc/set_containment_successor(atom/movable/value)
+	if(!value && !rx)
+		return
+	var/datum/rx_state/S = rx_of(src)
+	S.containment_successor = value
+
+/atom/proc/latent_is_declared()
+	return !!rx?.containment_declared
+/atom/proc/set_latent_declared(value)
+	if(!value && !rx)
+		return
+	var/datum/rx_state/S = rx_of(src)
+	S.containment_declared = value
+
+/atom/proc/latent_policy_disabled()
+	return !!rx?.containment_policy_disabled
+/atom/proc/set_latent_policy_disabled(value)
+	if(!value && !rx)
+		return
+	var/datum/rx_state/S = rx_of(src)
+	S.containment_policy_disabled = value

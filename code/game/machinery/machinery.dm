@@ -118,7 +118,6 @@ Class Procs:
 	/// them out of the CONTAINER_SLOT_INTERNALS latent entries (roadmap C6):
 	/// null until then. The circuit board is not in this list; see `circuit`.
 	var/list/component_parts = null
-	latent_contents = TRUE
 	var/tmp/uid
 	var/global/gl_uid = 1
 	var/clicksound			// sound played on succesful interface. Just put it in the list of vars at the start.

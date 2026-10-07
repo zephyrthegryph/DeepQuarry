@@ -54,6 +54,9 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		if(!issaved(D.vars[name]))
 			continue
 		schema.saved_vars += name
+	// Capability bits moved out of atom vars; retain the original saved key and blob format.
+	if(isatom(D))
+		schema.saved_vars += OP_KEY_CAP_STATE
 	schema.codecs = D.state_codecs()
 	schema.nondeterministic_list_vars = D.state_nondeterministic_list_vars()
 	GLOB.state_schemas[D.type] = schema
@@ -125,7 +128,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	ids = list()
 	ids[entity_handle(D)] = ""
 	var/atom/movable/movable = D
-	latent_root = istype(movable) && movable.latent_safe
+	latent_root = istype(movable) && latent_type_safe(movable.type)
 	if((flags & STATE_CONTENTS) && isatom(D))
 		assign_ids(D, "")
 	. = serialize_datum(D, flags)
@@ -160,7 +163,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	var/datum/ledger/L
 	if((flags & STATE_CONTENTS) && isatom(D))
 		var/atom/resolving = D
-		L = resolving.ledger || (resolving.has_latent() ? dq_ledger(resolving) : null)
+		L = resolving.containment_ledger() || (resolving.has_latent() ? dq_ledger(resolving) : null)
 	var/list/delta = encode_delta(D, schema)
 	if(length(delta))
 		blob[STATE_KEY_VARS] = delta
@@ -201,6 +204,12 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	var/latent = latent_root && ismovable(D)
 	for(var/name in schema.saved_vars)
 		if(name in excluded)
+			continue
+		if(isatom(D) && name == OP_KEY_CAP_STATE)
+			var/atom/holder = D
+			var/bits = capability_bits(holder)
+			if(bits && !(variant && (name in variant) && variant[name] == bits))
+				delta[name] = bits
 			continue
 		var/value = D.vars[name]
 		if(variant && (name in variant) && variant[name] == value)
@@ -264,7 +273,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		// composition, generated sprite-state tables). A baseline sampled from
 		// one instance would swallow every other instance that matched it, and a
 		// restored copy would then re-roll. Skipping falls back to "matches if empty".
-		if(name == "atom_colours" || (name in schema.nondeterministic_list_vars))
+		if(name == OP_KEY_CAP_STATE || name == "atom_colours" || (name in schema.nondeterministic_list_vars))
 			continue
 		var/value = probe.vars[name]
 		if(!islist(value))
@@ -450,10 +459,10 @@ GLOBAL_DATUM(state_registry_adapter, /datum/state_registry_adapter)
 			if(isdatum(value) && (value in removed))
 				A.vars[name] = null // ALLOW(api): state serializer: restores saved vars
 	// The blob's latent entries replace whatever the holder declared at init.
-	if(A.latent_contents)
+	if(A?.latent_contents_enabled())
 		A.latent_generator_clear()
-		A.latent_declared = FALSE
-		A.ledger?.latent_clear()
+		A.set_latent_declared(FALSE)
+		A.containment_ledger()?.latent_clear()
 	var/index = 0
 	for(var/list/child_blob as anything in blob[STATE_KEY_CONTENTS])
 		index++
@@ -515,6 +524,12 @@ GLOBAL_DATUM(state_registry_adapter, /datum/state_registry_adapter)
 	for(var/name in schema.saved_vars)
 		if((name in vars) || (name in excluded) || (name in variant) || schema.codecs[name])
 			continue
+		if(isatom(D) && name == OP_KEY_CAP_STATE)
+			var/atom/holder = D
+			var/datum/capability_runtime/runtime = capability_runtime_peek(holder)
+			if(runtime)
+				runtime.bits = 0
+			continue
 		var/value = D.vars[name]
 		if(islist(value))
 			continue
@@ -531,6 +546,10 @@ GLOBAL_DATUM(state_registry_adapter, /datum/state_registry_adapter)
 			// The pre-L1 loader ignored keys it did not save; keep doing that for legacy blobs.
 			if(from_version != STATE_VERSION_LEGACY)
 				refuse("[D.type] has no saved var [name]; add a state_migrate() step")
+			continue
+		if(isatom(D) && name == OP_KEY_CAP_STATE)
+			var/atom/holder = D
+			capability_runtime(holder).bits = decode_value(vars[name])
 			continue
 		var/codec_path = schema.codecs[name] || state_ownership_decode_codec(D, name, vars[name])
 		if(codec_path)

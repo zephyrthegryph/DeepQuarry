@@ -72,11 +72,6 @@
 	/// Schema version of this type's saved state. See STATE_VERSION_DEFAULT.
 	var/tmp/state_version = STATE_VERSION_DEFAULT
 
-/atom/movable
-	/// Latent-safe: instances may collapse into latent entries (containment.md section 4.4).
-	/// Its Initialize() has no global side effects and its state serializes. Subtypes inherit it.
-	/// The state lint checks every saved var of these types, and dq_state_tests round-trips each one.
-	var/tmp/latent_safe = FALSE
 
 /// Renamed or removed types: "/old/path" = /new/path, or "/old/path" = null to drop blobs of it.
 GLOBAL_LIST_INIT(state_type_migrations, list())
@@ -203,7 +198,7 @@ GLOBAL_LIST_INIT(state_legacy_component_vars, list(
 /// return null.
 /proc/state_type_list_default(path, var_name)
 	var/atom/movable/typed = path
-	if(!ispath(path, /atom/movable) || !initial(typed.latent_safe))
+	if(!ispath(path, /atom/movable) || !latent_type_safe(typed))
 		return null
 	var/datum/state_context/ctx = new(NONE)
 	var/list/baseline = ctx.list_baseline_of(path)
@@ -221,3 +216,58 @@ GLOBAL_LIST_INIT(state_legacy_component_vars, list(
 /// Logs a state-schema event (failed loads, migrations) to the game log.
 /proc/log_state(text)
 	log_game("STATE: [text]")
+
+/// Immutable subtype policy rows, built once without constructing any content prototype.
+/datum/type_metadata_registry
+	var/list/rows
+
+GLOBAL_DATUM(type_metadata_registry, /datum/type_metadata_registry)
+
+/proc/type_metadata_registry()
+	RETURN_TYPE(/datum/type_metadata_registry)
+	if(!GLOB.type_metadata_registry)
+		GLOB.type_metadata_registry = new /datum/type_metadata_registry
+		GLOB.type_metadata_registry.register_defaults()
+		GLOB.type_metadata_registry.register_test_defaults()
+	return GLOB.type_metadata_registry
+
+/datum/type_metadata_registry/proc/register_defaults()
+	return
+
+/datum/type_metadata_registry/proc/register_test_defaults()
+	return
+
+/datum/type_metadata_registry/proc/register(path, key, value)
+	if(!ispath(path, /datum))
+		CRASH("type metadata requires a datum type path")
+	if(!rows)
+		rows = list()
+	var/list/policy = rows[path]
+	if(!policy)
+		policy = list()
+		rows[path] = policy
+	policy[key] = value
+
+/datum/type_metadata_registry/proc/value(path, key, fallback)
+	while(ispath(path, /datum))
+		var/list/policy = rows?[path]
+		if(policy && (key in policy))
+			return policy[key] // FALSE is an explicit override, never an absent value.
+		var/datum/typed = path
+		path = initial(typed.parent_type)
+	return fallback
+
+/proc/type_metadata_value(path, key, fallback)
+	return type_metadata_registry().value(path, key, fallback)
+
+/proc/latent_type_safe(path)
+	return ispath(path, /atom/movable) && type_metadata_value(path, TYPE_META_LATENT_SAFE, FALSE)
+
+/atom/proc/latent_contents_enabled()
+	return type_metadata_value(type, TYPE_META_LATENT_CONTENTS, FALSE)
+
+/atom/proc/latent_idle_delay_value()
+	return type_metadata_value(type, TYPE_META_LATENT_IDLE_DELAY, 2 MINUTES)
+
+/atom/movable/proc/slot_hooks_enabled()
+	return type_metadata_value(type, TYPE_META_SLOT_HOOKS, FALSE)

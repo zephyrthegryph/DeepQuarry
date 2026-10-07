@@ -47,7 +47,7 @@
 /// The per-instance part of /atom/movable/Initialize(), shared with table_initialize().
 /atom/movable/proc/movable_instance_setup()
 	PRIVATE_PROC(TRUE)
-	// L3 (doc/rewrite/lifecycle.md §5): a declared `lifetime` self-arms here
+	// L3 (doc/rewrite/lifecycle.md Â§5): a declared `lifetime` self-arms here
 	// instead of every timed-delete type calling expire()/QDEL_IN by hand.
 	lifecycle_arm_lifetime()
 	if(proximity_tracked)
@@ -95,7 +95,7 @@
 	// already set, so this never registered anything. Destroy() clears it.
 	if (listening_recursive)
 		set_listening(listening_recursive)
-	// R10 bind (doc/rewrite/rust_bindings.md §4): one call creates the Rust
+	// R10 bind (doc/rewrite/rust_bindings.md Â§4): one call creates the Rust
 	// entity and every component this type declares (vg_gas, and future
 	// vg_power/vg_heat/...), from the init_* values and the current inputs.
 	// Last, so registries and signals this atom's inputs might read (e.g.
@@ -107,7 +107,7 @@
 
 /atom/movable/on_dematerialize()
 	// R10 unbind. J1's pre_destroy() is the design's intended call site
-	// (rust_bindings.md §4); it has not landed yet (rewrite/ledger-joint).
+	// (rust_bindings.md Â§4); it has not landed yet (rewrite/ledger-joint).
 	// Until it does, this is the earliest guaranteed point every Destroy()
 	// path reaches (mirrors how L3's leave_registries() piggybacks on the
 	// same hook, __defines/misc.dm). Move this single call into pre_destroy()
@@ -132,7 +132,7 @@
 	return ..()
 
 /atom/movable/Destroy()
-	// L1 (doc/rewrite/lifecycle.md §2): contents already went where each
+	// L1 (doc/rewrite/lifecycle.md Â§2): contents already went where each
 	// slot's declared policy said, in the destroy transaction's phase 3
 	// (destroy_transaction() -> dq_lifecycle_resolve_contents()), before
 	// Destroy() ever runs. Nothing decides that here any more; phase 3 itself
@@ -151,11 +151,11 @@
 	// on_unlink() cleanup -- for both ends of a deleted entity automatically.
 
 	// Snapshot: each member's Destroy() pulls it out of contents mid-iteration
-	// (moveToNullspace), which makes DM's for-in skip members — skipped ones
+	// (moveToNullspace), which makes DM's for-in skip members â€” skipped ones
 	// never run Destroy() and keep a loc ref to this deleted container.
 	for(var/atom/movable/AM in contents.Copy())
 		ended_with(AM, src)
-	rel_clear(src, nameof(ledger))
+	clear_containment_ledger()
 
 	moveToNullspace()
 
@@ -430,7 +430,7 @@
 
 		// J5: the before-hook, right before the loc write. Gated on one var
 		// test, so an unhooked mover (almost everything) pays nothing.
-		if(move_hooks)
+		if(containment_move_flags())
 			move_hooks_dispatch(TRUE)
 
 		// Do The Move
@@ -440,14 +440,14 @@
 		// The containment ledger's commit point: account for the move before
 		// anything else can react to it.
 		if(!same_loc)
-			if(oldloc?.ledger)
-				oldloc.ledger.note_exit(src)
-			if(destination.ledger)
-				destination.ledger.note_enter(src)
+			if(oldloc?.containment_ledger())
+				oldloc.containment_ledger().note_exit(src)
+			if(destination.containment_ledger())
+				destination.containment_ledger().note_enter(src)
 
 		// J5: the after-hook, right after note_enter(), before Exited()/
 		// Uncrossed(). Not run for a same-loc "move" (nothing left or entered).
-		if(move_hooks && !same_loc)
+		if(containment_move_flags() && !same_loc)
 			move_hooks_dispatch(FALSE)
 
 		// Unset this in case it was set in some other proc. We're no longer moving diagonally for sure.
@@ -510,10 +510,10 @@
 		// J5: the before-hook still runs on a deletion move (there is no
 		// "after" -- nothing to settle into), so clocks settle and cancel
 		// instead of being silently dropped by moveToNullspace().
-		if(move_hooks)
+		if(containment_move_flags())
 			move_hooks_dispatch(TRUE)
 		loc = null // ALLOW(containment): doMove()'s nullspace commit point; note_exit follows
-		oldloc.ledger?.note_exit(src)
+		oldloc.containment_ledger()?.note_exit(src)
 
 		// Uncross everything where we left (no multitile safety like above because we are definitely not still there)
 		for(var/atom/movable/AM as anything in oldloc)

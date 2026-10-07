@@ -34,7 +34,6 @@
 CAPABILITIES(/atom)
 	owns_one(nameof(artifact_master), /datum/artifact_master)
 	owns_one(nameof(forensic_data), /datum/forensics_crime)
-	owns_one(nameof(ledger), /datum/ledger)
 	owns_one(nameof(light), /datum/light_source)
 	owns_one(nameof(reagents), /datum/reagents)
 	owns_one(nameof(rx_node), /datum/dq_rx_node)
@@ -491,3 +490,8 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 /// Accessor for the holder var.
 /datum/artifact_master/proc/holder() as /atom
 	return holder
+
+/// Preserve the old containment-ledger delete position between forensics and light.
+/atom/ownership_field_disposed(var_name)
+	if(var_name == nameof(forensic_data))
+		clear_containment_ledger()
