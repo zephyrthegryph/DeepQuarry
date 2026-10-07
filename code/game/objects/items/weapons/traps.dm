@@ -217,7 +217,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 /obj/item/material/barbedwire/proc/deploy_wire(datum/act/op/A)
 	var/mob/user = A.actor
 	play_sfx(src, SFX_ITEMS_WIRECUTTER, 0.7)
-	after(src, 0.2 SECONDS, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/items/Wirecutter.ogg', 40, 1))
+	after(src, 0.2 SECONDS, TYPE_PROC_REF(/atom, om_playsound), key = "deploy_sound", with = list('sound/items/Wirecutter.ogg', 40, 1))
 	user.drop_from_inventory(src)
 	forceMove(get_turf(src))
 	set_anchored(TRUE)

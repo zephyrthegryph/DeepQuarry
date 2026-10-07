@@ -9,6 +9,8 @@
 /datum/unit_test/dq_timed_pin/Run()
 	test_driver_begin()
 	run_pin()
+	for(var/obj/effect/decal/cleanable/dirt/D in range(3, run_loc_floor_bottom_left))
+		qdel(D) // footprints of a test that walked away
 	test_driver_end()
 
 /datum/unit_test/dq_timed_pin/proc/run_pin()
