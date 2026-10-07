@@ -293,7 +293,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 /obj/machinery/door/airlock/power_change() //putting this is obj/machinery/door itself makes non-airlock doors turn invisible for some reason
 	. = ..()
-	if(power_lost())
+	if(has_stat(NOPOWER))
 		release(src, STAT_ELECTRIFIED, SRC_ALL) // the door lights run on an internal battery; the current does not
 	resume_autoclose_if_possible()
 
@@ -670,7 +670,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	return OP_OK
 
 /obj/machinery/door/airlock/proc/panel_closable(datum/act/A)
-	return !(panel_open(src) && broken_now())
+	return !(panel_open(src) && has_stat(BROKEN))
 
 /// The panel was moved: an open one shows its wires.
 /obj/machinery/door/airlock/proc/panel_toggled(datum/act/op/A)
@@ -940,7 +940,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	da.created_name = name
 	da.update_state()
 
-	if(operating == -1 || (broken_now()))
+	if(operating == -1 || (has_stat(BROKEN)))
 		new /obj/item/circuitboard/broken(get_turf(src))
 		set_operating(0)
 	else
@@ -951,7 +951,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	replace_with(src, da)
 
 /obj/machinery/door/airlock/proc/can_remove_electronics(datum/act/A)
-	return !frozen && panel_open(src) && (operating < 0 || (!operating && weld_shut_welded(src) && !power_systems_on() && density && (!bolted || (broken_now()))))
+	return !frozen && panel_open(src) && (operating < 0 || (!operating && weld_shut_welded(src) && !power_systems_on() && density && (!bolted || (has_stat(BROKEN)))))
 
 /obj/machinery/door/airlock/on_broken()
 	key_set(src, PANEL_OPEN, TRUE)
@@ -1143,13 +1143,13 @@ GLOBAL_LIST_EMPTY(airlock_close_groups) // closeOtherId -> the airlocks sharing 
 	look.hide(LOOK_DARK)
 	look.hide(LOOK_BOLTS)
 	look.hide(LOOK_EMERGENCY)
-	var/powered = !power_lost()
+	var/powered = !has_stat(NOPOWER)
 	var/damaged = get_integrity() < max_integrity * 3/4
 	if(density)
 		look.state((bolted && lights && power_systems_on()) ? "door_locked" : "door_closed")
 		if(panel_open(src) || weld_shut_welded(src))
 			if(powered)
-				if(broken_now())
+				if(has_stat(BROKEN))
 					look.overlay("sparks_broken")
 				else if(damaged)
 					look.overlay("sparks_damaged")
@@ -1159,7 +1159,7 @@ GLOBAL_LIST_EMPTY(airlock_close_groups) // closeOtherId -> the airlocks sharing 
 		look.hide(LOOK_PANEL_OPEN)
 		look.hide("welded")
 		look.state(open_state())
-		look.overlay("sparks_open", when = broken_now() && powered)
+		look.overlay("sparks_open", when = has_stat(BROKEN) && powered)
 	look.overlay("snowairlock", when = frozen, icon = 'icons/turf/overlays.dmi')
 
 /// The icon_state of the open door (a subtype shows its bolts on an open door).
