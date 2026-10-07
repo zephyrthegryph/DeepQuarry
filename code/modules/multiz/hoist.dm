@@ -33,16 +33,6 @@ CAPABILITIES(/obj/item/hoist_kit)
 	anchored = TRUE
 	plane = ABOVE_MOB_PLANE
 
-/// Requirement (was REQ_* can_attach): the legacy check answers TRUE to pass.
-/obj/effect/hoist_hook/proc/can_attach_holds(datum/act/op/A)
-	var/answer = can_attach(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_attach_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/effect/hoist_hook/proc/can_attach_refusal(datum/act/op/A)
-	var/answer = can_attach(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /// Requirement: TRUE, or why the dragged thing can't be clamped on.
 /obj/effect/hoist_hook/proc/can_attach(mob/user, atom/target, atom/movable/held)
 	if(!istype(held) || !held.simulated || held.anchored)
@@ -53,6 +43,11 @@ CAPABILITIES(/obj/item/hoist_kit)
 
 /// Old MouseDrop_T: clamp the dragged thing onto the hook. Replaces the buckle drag.
 /obj/effect/hoist_hook/proc/interaction_hoist_hook_attach(datum/act/op/A)
+	var/refusal = can_attach(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	var/mob/user = A.actor
 	var/atom/movable/AM = A.held
 	if (use_check(user, 0))
@@ -77,7 +72,7 @@ CAPABILITIES(/obj/effect/hoist_hook)
 	drag_onto(PROC_REF(drop_input))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(hook_blast_break))))
 	op("swallow", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction swallow"), then(TYPE_PROC_REF(/atom, op_swallow)))
-	op("hoist_hook_attach", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Attach"), needs(req(PROC_REF(can_attach_holds), because = PROC_REF(can_attach_refusal))), then(PROC_REF(interaction_hoist_hook_attach)))
+	op("hoist_hook_attach", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Attach"), then(PROC_REF(interaction_hoist_hook_attach)))
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/effect/hoist_hook/proc/drop_input(datum/act/input/A)
@@ -138,8 +133,8 @@ CAPABILITIES(/obj/structure/hoist)
 	owns_one(nameof(source_hook), /obj/effect/hoist_hook)
 	param(nameof(dir), pos = 1, apply = PROC_REF(hang_hook))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(hoist_blast_break)))
-	op("hand", hand(), ungated(), label("Use"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), needs(req(PROC_REF(can_work_hoist_holds), because = PROC_REF(can_work_hoist_refusal))), then(PROC_REF(interaction_hand)))
-	op("hoist_verb_collapse", menu(), label("Collapse Hoist"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), needs(req_adjacent(), req_capable(), req(PROC_REF(can_collapse_holds), because = PROC_REF(can_collapse_refusal))), then(PROC_REF(hoist_verb_collapse)))
+	op("hand", hand(), ungated(), label("Use"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), then(PROC_REF(interaction_hand)))
+	op("hoist_verb_collapse", menu(), label("Collapse Hoist"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), needs(req_adjacent(), req_capable()), then(PROC_REF(hoist_verb_collapse)))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The hoist hangs its hook on the side it faces.
 /obj/structure/hoist/proc/hang_hook(ndir)
@@ -217,17 +212,13 @@ CAPABILITIES(/obj/structure/hoist)
 	return TRUE
 
 /// Old attack_hand.
-/// Requirement (was REQ_* can_work_hoist): the legacy check answers TRUE to pass.
-/obj/structure/hoist/proc/can_work_hoist_holds(datum/act/op/A)
-	var/answer = can_work_hoist(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_work_hoist_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/structure/hoist/proc/can_work_hoist_refusal(datum/act/op/A)
-	var/answer = can_work_hoist(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
 
 /obj/structure/hoist/proc/interaction_hand(datum/act/op/A)
+	var/refusal = can_work_hoist(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	var/mob/living/user = A.actor
 
 	var/can = can_move_dir(movedir)
@@ -264,17 +255,13 @@ CAPABILITIES(/obj/structure/hoist)
 	replace_with(src, /obj/item/hoist_kit)
 
 /// Old Collapse Hoist verb.
-/// Requirement (was REQ_* can_collapse): the legacy check answers TRUE to pass.
-/obj/structure/hoist/proc/can_collapse_holds(datum/act/op/A)
-	var/answer = can_collapse(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_collapse_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/structure/hoist/proc/can_collapse_refusal(datum/act/op/A)
-	var/answer = can_collapse(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
 
 /obj/structure/hoist/proc/hoist_verb_collapse(datum/act/op/A)
+	var/refusal = can_collapse(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	var/mob/user = A.actor
 	if (isobserver(user) || user.incapacitated())
 		return
