@@ -12,6 +12,16 @@ pub enum Evaluation {
 }
 pub trait CapturedInitializerEvaluator {
     fn evaluate(&self, owner: SymbolId, value: &SymbolicExpression) -> Result<Evaluation, String>;
+    fn evaluate_write(
+        &self,
+        write: &InitializerWrite,
+        value: &SymbolicExpression,
+    ) -> Result<Evaluation, String> {
+        if write.lexical_procedure.is_some() {
+            return Err("procedure-static initializer evaluator context is unsupported".into());
+        }
+        self.evaluate(write.lexical_owner, value)
+    }
     /// Source modifiers or positively captured inherited declaration facts.
     /// None remains unknown, rather than a fabricated zero modifier mask.
     fn declaration_modifiers(&self, write: &InitializerWrite) -> Result<Option<u32>, String> {
@@ -25,6 +35,13 @@ pub struct EngineCapturedEvaluator<'a> {
     pub evaluator: &'a dyn CapturedInitializerEvaluator,
 }
 impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
+    fn evaluate_write(
+        &self,
+        write: &InitializerWrite,
+        value: &SymbolicExpression,
+    ) -> Result<Evaluation, String> {
+        self.evaluator.evaluate_write(write, value)
+    }
     fn evaluate(&self, owner: SymbolId, value: &SymbolicExpression) -> Result<Evaluation, String> {
         self.evaluator.evaluate(owner, value)
     }
@@ -33,6 +50,7 @@ impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
             return Ok(Some(flags));
         }
         let (owner, name) = match write.target {
+            InitializerTarget::ProcedureStatic(_) => return Ok(write.declaration_flags),
             InitializerTarget::Shared { owner, name, .. } => (owner, name),
             InitializerTarget::Instance {
                 declaring_owner,
@@ -110,7 +128,7 @@ fn expression(text: &str, symbols: &mut SymbolTable) -> Result<SymbolicExpressio
 }
 fn scalar_literal(
     expr: &dm_syntax::Expr,
-    owner: SymbolId,
+    write: &InitializerWrite,
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
 ) -> Result<bool, String> {
@@ -138,7 +156,10 @@ fn scalar_literal(
                     },
                 }]),
             };
-            matches!(evaluator.evaluate(owner, &value)?, Evaluation::Scalar(_))
+            matches!(
+                evaluator.evaluate_write(write, &value)?,
+                Evaluation::Scalar(_)
+            )
         }
         ExprKind::Ident(name) => {
             let id = SymbolId::of(name);
@@ -152,24 +173,27 @@ fn scalar_literal(
                     relative_span: expr.span,
                 }]),
             };
-            matches!(evaluator.evaluate(owner, &value)?, Evaluation::Scalar(_))
+            matches!(
+                evaluator.evaluate_write(write, &value)?,
+                Evaluation::Scalar(_)
+            )
         }
-        ExprKind::Group(value) => scalar_literal(value, owner, symbols, evaluator)?,
+        ExprKind::Group(value) => scalar_literal(value, write, symbols, evaluator)?,
         ExprKind::Unary { op, value } if matches!(op.as_str(), "!" | "+" | "-" | "~") => {
-            scalar_literal(value, owner, symbols, evaluator)?
+            scalar_literal(value, write, symbols, evaluator)?
         }
         ExprKind::Binary { op, lhs, rhs } if op != "=" => {
-            scalar_literal(lhs, owner, symbols, evaluator)?
-                && scalar_literal(rhs, owner, symbols, evaluator)?
+            scalar_literal(lhs, write, symbols, evaluator)?
+                && scalar_literal(rhs, write, symbols, evaluator)?
         }
         ExprKind::Conditional {
             condition,
             then_value,
             else_value,
         } => {
-            scalar_literal(condition, owner, symbols, evaluator)?
-                && scalar_literal(then_value, owner, symbols, evaluator)?
-                && scalar_literal(else_value, owner, symbols, evaluator)?
+            scalar_literal(condition, write, symbols, evaluator)?
+                && scalar_literal(then_value, write, symbols, evaluator)?
+                && scalar_literal(else_value, write, symbols, evaluator)?
         }
         ExprKind::Call { callee, args } if matches!(&callee.kind, ExprKind::Ident(name) if name == "list") =>
         {
@@ -178,13 +202,13 @@ fn scalar_literal(
                 let value = if let ExprKind::Binary { op, lhs, rhs } = &argument.kind {
                     if op == "=" {
                         (matches!(lhs.kind, ExprKind::Ident(_))
-                            || scalar_literal(lhs, owner, symbols, evaluator)?)
-                            && scalar_literal(rhs, owner, symbols, evaluator)?
+                            || scalar_literal(lhs, write, symbols, evaluator)?)
+                            && scalar_literal(rhs, write, symbols, evaluator)?
                     } else {
-                        scalar_literal(argument, owner, symbols, evaluator)?
+                        scalar_literal(argument, write, symbols, evaluator)?
                     }
                 } else {
-                    scalar_literal(argument, owner, symbols, evaluator)?
+                    scalar_literal(argument, write, symbols, evaluator)?
                 };
                 literal &= value;
             }
@@ -208,6 +232,51 @@ pub fn classify(
     let mut classified = Vec::with_capacity(writes.len());
     let mut global_constructors = 0u32;
     for (ordinal, original) in writes.iter().enumerate() {
+        // Positively catalogued client header properties have no variable
+        // modifier record. Keep their authored scalar for the separate header
+        // writer rather than manufacturing instance-variable flags or code.
+        if original.declaration_flags.is_none() {
+            if let InitializerTarget::Instance {
+                declaring_owner,
+                receiver_owner,
+                name,
+            } = original.target
+            {
+                let name_text = symbols
+                    .text(name)
+                    .ok_or("client property spelling unavailable")?;
+                if declaring_owner == SymbolId::of("/client")
+                    && crate::client_projection::is_header_field(name_text)
+                {
+                    if original.lexical_owner != receiver_owner
+                        || original.lexical_procedure.is_some()
+                    {
+                        return Err("client header lexical owner differs from receiver".into());
+                    }
+                    if original.declared_array.is_some() {
+                        return Err("client header property cannot allocate an array".into());
+                    }
+                    let InitializerValue::Expression(value) = &original.value else {
+                        return Err("client header property requires an authored value".into());
+                    };
+                    let Evaluation::Scalar(value) = evaluator.evaluate_write(original, value)?
+                    else {
+                        return Err("client header property requires a captured scalar".into());
+                    };
+                    crate::client_projection::project(name_text, &value)
+                        .map_err(|error| format!("client header property: {error:?}"))?
+                        .ok_or("client header projection missing")?;
+                    classified.push(ClassifiedWrite {
+                        source_ordinal: ordinal,
+                        write: original.clone(),
+                        default: DefaultValue::Scalar(value),
+                        phase: None,
+                        runtime_value: None,
+                    });
+                    continue;
+                }
+            }
+        }
         let flags = evaluator
             .declaration_modifiers(original)?
             .ok_or("opaque initializer declaration modifiers")?;
@@ -231,7 +300,7 @@ pub fn classify(
                 for dimension in array.dimensions.iter() {
                     let dimension = dimension.as_ref().ok_or("mixed unsized array dimensions")?;
                     let Evaluation::Scalar(SemanticValue::NumberBits(bits)) =
-                        evaluator.evaluate(write.lexical_owner, dimension)?
+                        evaluator.evaluate_write(&write, dimension)?
                     else {
                         return Err("array dimension must be a constant integer".into());
                     };
@@ -273,7 +342,7 @@ pub fn classify(
                 return Err("array allocation lacks authored shape".into())
             }
             InitializerValue::Expression(value) => {
-                match evaluator.evaluate(write.lexical_owner, value)? {
+                match evaluator.evaluate_write(&write, value)? {
                     Evaluation::Scalar(value) if !matches!(value, SemanticValue::List(_)) => {
                         (DefaultValue::Scalar(value), None)
                     }
@@ -295,7 +364,7 @@ pub fn classify(
                         parsed_runtime = Some(expr.clone());
                         let literal =
                             matches!(evaluation, Evaluation::Scalar(SemanticValue::List(_)))
-                                || scalar_literal(expr, write.lexical_owner, symbols, evaluator)?;
+                                || scalar_literal(expr, &write, symbols, evaluator)?;
                         let constructor = text.trim_start().starts_with("new ");
                         let default = if constructor
                             && matches!(write.target,InitializerTarget::Shared{owner,..} if owner == SymbolId::of("/"))
@@ -338,6 +407,7 @@ pub fn classify(
     for write in classified.iter().filter(|write| write.phase.is_some()) {
         let receiver = match write.write.target {
             InitializerTarget::Shared { .. } => None,
+            InitializerTarget::ProcedureStatic(_) => None,
             InitializerTarget::Instance { receiver_owner, .. } => Some(receiver_owner),
         };
         let index = match groups.iter().position(|group| group.receiver == receiver) {
@@ -390,10 +460,41 @@ mod tests {
                 name,
             },
             lexical_owner: owner,
+            lexical_procedure: None,
             value,
             declared_array: None,
             declaration_flags: Some(8),
         }
+    }
+    #[test]
+    fn client_header_assignment_preserves_unknown_modifiers_without_runtime_code() {
+        let mut symbols = SymbolTable::default();
+        let client = symbols.intern("/client").unwrap();
+        let name = symbols.intern("preload_rsc").unwrap();
+        let mut header = write(
+            client,
+            name,
+            InitializerValue::Expression(expression("2", &mut symbols).unwrap()),
+        );
+        header.target = InitializerTarget::Instance {
+            declaring_owner: client,
+            receiver_owner: client,
+            name,
+        };
+        header.declaration_flags = None;
+        let result = classify(&[header.clone()], &symbols, &Evaluator).unwrap();
+        assert!(result.groups.is_empty());
+        assert_eq!(result.writes[0].write, header);
+        assert!(
+            matches!(result.writes[0].default,DefaultValue::Scalar(SemanticValue::NumberBits(bits)) if bits==2f32.to_bits())
+        );
+        header.target = InitializerTarget::Instance {
+            declaring_owner: client,
+            receiver_owner: SymbolId::of("/client/subtype"),
+            name,
+        };
+        header.lexical_owner = SymbolId::of("/client/subtype");
+        assert!(classify(&[header], &symbols, &Evaluator).is_ok());
     }
     #[test]
     fn global_literal_phase_is_stable_and_instances_keep_encounter_order() {

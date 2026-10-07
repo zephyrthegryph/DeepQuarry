@@ -4,6 +4,58 @@ use crate::{driver_facts::unit_members, engine::EngineSnapshot, lowering::UnitId
 use dm_ir::SymbolId;
 use dm_tree::{frontend::ColdFrontend, DefinitionMode, MemberId, MemberKind};
 use std::collections::{BTreeMap, HashSet};
+/// Finite positive native 516.1687 controls, not a name-absence catalog.
+/// Each callback record has flags4/source0,255 and no desc/category/extended flags.
+pub(crate) fn callback_spelling(owner: SymbolId, name: SymbolId) -> Option<&'static str> {
+    let callbacks: &[&str] = if owner == SymbolId::of("/client") {
+        &[
+            "New",
+            "Del",
+            "Topic",
+            "Stat",
+            "AllowUpload",
+            "Move",
+            "Click",
+            "DblClick",
+            "MouseDown",
+            "MouseDrag",
+            "MouseDrop",
+            "MouseEntered",
+            "MouseExited",
+            "MouseUp",
+        ]
+    } else if owner == SymbolId::of("/datum") {
+        &["New", "Del", "Topic"]
+    } else if owner == SymbolId::of("/world") {
+        &["New", "Del", "Error", "Reboot", "Topic"]
+    } else if owner == SymbolId::of("/atom") {
+        &[
+            "New",
+            "Del",
+            "Entered",
+            "Exited",
+            "Enter",
+            "Exit",
+            "Click",
+            "DblClick",
+            "MouseDrop",
+            "MouseEntered",
+            "MouseExited",
+            "MouseDown",
+            "MouseDrag",
+            "MouseUp",
+            "Stat",
+        ]
+    } else if owner == SymbolId::of("/mob") {
+        &["New", "Del", "Login", "Logout"]
+    } else {
+        &[]
+    };
+    callbacks
+        .iter()
+        .copied()
+        .find(|spelling| SymbolId::of(spelling) == name)
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BoundarySelection {
@@ -14,7 +66,7 @@ pub enum BoundarySelection {
         kind: MemberKind,
     },
     CertifiedFormalDefault,
-    CertifiedNewDel {
+    CertifiedCallback {
         owner: SymbolId,
         name: SymbolId,
     },
@@ -45,7 +97,7 @@ impl<'a> NamedEngineCoverage<'a> {
     /// Captured host configuration must include this value. It binds the finite
     /// native language policy and exact exclusion inventory, not just DMB bytes.
     pub fn policy_identity(&self) -> u128 {
-        let mut bytes = b"named-engine-abi-policy-v1;formal-default;new-del-5161687;conservative-cross-namespace-exclusions".to_vec();
+        let mut bytes = b"named-engine-abi-policy-v2;formal-default;observed-callbacks-5161687;conservative-cross-namespace-exclusions".to_vec();
         bytes.extend_from_slice(&self.engine.identity().to_le_bytes());
         bytes.extend_from_slice(&self.engine.interpretation_schema().to_le_bytes());
         bytes.extend_from_slice(include_bytes!(
@@ -70,8 +122,8 @@ impl<'a> NamedEngineCoverage<'a> {
                 BoundarySelection::CertifiedFormalDefault => {
                     result.insert(unit, crate::driver_facts::BoundaryAbi::Fresh);
                 }
-                BoundarySelection::CertifiedNewDel { owner, name } => {
-                    let receipt = crate::driver_facts::CertifiedIntrinsicAbi::new_del(
+                BoundarySelection::CertifiedCallback { owner, name } => {
+                    let receipt = crate::driver_facts::CertifiedIntrinsicAbi::callback(
                         self.engine,
                         owner,
                         name,
@@ -187,14 +239,9 @@ impl<'a> NamedEngineCoverage<'a> {
                     // replaced by an ancestor's differently inherited layout.
                     if node.kind == MemberKind::Proc
                         && node.definition != DefinitionMode::Declare
-                        && ["New", "Del"]
-                            .into_iter()
-                            .any(|name| SymbolId::of(name) == node.name)
-                        && ["/datum", "/atom", "/mob", "/client", "/world"]
-                            .into_iter()
-                            .any(|owner| SymbolId::of(owner) == path)
+                        && callback_spelling(path, node.name).is_some()
                     {
-                        selected = Some(BoundarySelection::CertifiedNewDel {
+                        selected = Some(BoundarySelection::CertifiedCallback {
                             owner: path,
                             name: node.name,
                         });
@@ -275,13 +322,13 @@ mod tests {
             crate::driver_facts::BoundaryAbi::CertifiedIntrinsic(_)
                 | crate::driver_facts::BoundaryAbi::Engine { .. }
         )));
-        assert!(crate::driver_facts::CertifiedIntrinsicAbi::new_del(
+        assert!(crate::driver_facts::CertifiedIntrinsicAbi::callback(
             &engine,
             SymbolId::of("/datum"),
             SymbolId::of("Other")
         )
         .is_err());
-        assert!(crate::driver_facts::CertifiedIntrinsicAbi::new_del(
+        assert!(crate::driver_facts::CertifiedIntrinsicAbi::callback(
             &engine,
             SymbolId::of("/unproven"),
             SymbolId::of("New")
@@ -331,6 +378,34 @@ mod tests {
         assert_eq!(
             selections[base.0],
             BoundarySelection::CertifiedFormalDefault
+        );
+    }
+}
+
+#[cfg(test)]
+mod callback_control_tests {
+    use super::*;
+    #[test]
+    fn finite_callbacks_do_not_certify_other_owner_or_name() {
+        assert_eq!(
+            callback_spelling(SymbolId::of("/client"), SymbolId::of("AllowUpload")),
+            Some("AllowUpload")
+        );
+        assert_eq!(
+            callback_spelling(SymbolId::of("/datum"), SymbolId::of("Topic")),
+            Some("Topic")
+        );
+        assert_eq!(
+            callback_spelling(SymbolId::of("/datum"), SymbolId::of("AllowUpload")),
+            None
+        );
+        assert_eq!(
+            callback_spelling(SymbolId::of("/client"), SymbolId::of("unknown_callback")),
+            None
+        );
+        assert_eq!(
+            callback_spelling(SymbolId::of("/client/child"), SymbolId::of("Topic")),
+            None
         );
     }
 }

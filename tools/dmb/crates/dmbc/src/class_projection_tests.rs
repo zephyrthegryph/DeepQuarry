@@ -16,6 +16,8 @@ fn opaque_intrinsic_name_and_layer_use_native_records_without_syntax_flags() {
     let name = symbols.intern("name").unwrap();
     let layer = symbols.intern("layer").unwrap();
     let projection = ClassProjection {
+        shared_slot_order: Arc::from([]),
+        procedure_statics: Arc::from([]),
         runtime_writes: Arc::from([]),
         tree_identity: 0,
         occurrence_count: 0,

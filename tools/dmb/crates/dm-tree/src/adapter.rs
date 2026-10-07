@@ -180,7 +180,9 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                     let (prefix, tail) = declaration
                         .rsplit_once("var/")
                         .ok_or("var namespace block requires normalization")?;
-                    let owner = if prefix.is_empty() || prefix == "/" {
+                    let owner = if prefix == "/" || (prefix.is_empty() && header.starts_with('/')) {
+                        "/".into()
+                    } else if prefix.is_empty() {
                         owner.into()
                     } else {
                         absolute(owner, prefix.trim_end_matches('/'))?
@@ -289,7 +291,9 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         .or_else(|| raw.rsplit_once(&format!("/{marker}")))
                         .or_else(|| raw.rsplit_once('/'))
                         .unwrap_or(("", raw));
-                    let owner = if prefix.is_empty() || prefix == "/" {
+                    let owner = if prefix == "/" || (prefix.is_empty() && raw.starts_with('/')) {
+                        "/".into()
+                    } else if prefix.is_empty() {
                         owner.into()
                     } else {
                         absolute(owner, prefix)?
@@ -422,6 +426,43 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
 mod tests {
     use super::*;
     use crate::{build, MemberKind, OccurrenceTable};
+    #[test]
+    fn absolute_root_members_do_not_inherit_last_type_anchor() {
+        let adapted=adapt("/datum/anchor\n    var/local_value = 1\n    var/scoped_value = 3\n    proc/scoped_read()\n        return scoped_value\n/var/global_value = 2\n/proc/root_read()\n    return global_value\n");
+        let root = SymbolId::of("/");
+        for name in ["global_value", "root_read"] {
+            assert!(adapted.skeletons.iter().any(|skeleton|matches!(skeleton,
+                Skeleton::Member{owner,name:member,..} if *owner==root && *member==SymbolId::of(name))));
+        }
+        for name in ["scoped_value", "scoped_read"] {
+            assert!(adapted.skeletons.iter().any(|skeleton|matches!(skeleton,
+                Skeleton::Member{owner,name:member,..} if *owner==SymbolId::of("/datum/anchor") && *member==SymbolId::of(name))));
+        }
+    }
+    #[test]
+    fn global_procedure_is_not_an_inherited_instance_method() {
+        let adapted=adapt("/proc/shared_name()\n    return 1\n/datum/base\n/datum/base/proc/shared_name()\n    return 2\n/datum/base/child\n");
+        let tree = build(adapted.symbols, &adapted.skeletons).unwrap();
+        let root = tree.lookup_type(SymbolId::of("/")).unwrap();
+        let base = tree.lookup_type(SymbolId::of("/datum/base")).unwrap();
+        let child = tree.lookup_type(SymbolId::of("/datum/base/child")).unwrap();
+        let name = SymbolId::of("shared_name");
+        let global = tree.resolve(root, name, MemberKind::Proc).unwrap();
+        let method = tree.resolve(base, name, MemberKind::Proc).unwrap();
+        assert_ne!(global, method);
+        assert_eq!(tree.override_chain(method), vec![method]);
+        assert_eq!(tree.resolve(child, name, MemberKind::Proc), Some(method));
+        let other = adapt("/proc/shared_name()\n    return 1\n/datum/other\n");
+        let other = build(other.symbols, &other.skeletons).unwrap();
+        assert_eq!(
+            other.resolve(
+                other.lookup_type(SymbolId::of("/datum/other")).unwrap(),
+                name,
+                MemberKind::Proc
+            ),
+            None
+        );
+    }
     fn adapt(source: &str) -> AdaptedDeclarations {
         from_ast(
             &dm_syntax::parse(source),

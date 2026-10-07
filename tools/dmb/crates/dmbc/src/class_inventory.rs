@@ -41,9 +41,18 @@ pub fn contribute(
     if source_type_order.len() != source_types.len()
         || source_type_order.iter().copied().collect::<HashSet<_>>() != source_types
     {
-        return Err(
-            "source class order must explicitly cover all fresh classes exactly once".into(),
-        );
+        let supplied: HashSet<_> = source_type_order.iter().copied().collect();
+        let mut missing: Vec<_> = source_types
+            .difference(&supplied)
+            .map(|id| symbols.text(*id).unwrap_or("<uncaptured>"))
+            .collect();
+        let mut extra: Vec<_> = supplied
+            .difference(&source_types)
+            .map(|id| symbols.text(*id).unwrap_or("<uncaptured>"))
+            .collect();
+        missing.sort_unstable();
+        extra.sort_unstable();
+        return Err(format!("source class order must explicitly cover all fresh classes exactly once; missing={missing:?}; extra={extra:?}; ordered={}, unique={}, required={}",source_type_order.len(),supplied.len(),source_types.len()));
     }
     let mut variable_order = Vec::new();
     for field in plan
@@ -78,6 +87,48 @@ pub fn contribute(
         }
         variable_order.push(key);
     }
+    for local in plan.procedure_statics.iter() {
+        let key = Key::ProcedureStatic(local.identity);
+        if retained.contains(&key) {
+            return Err("source static redeclares retained slot".into());
+        }
+        let mut content = local.identity.canonical_bytes();
+        content.extend_from_slice(&local.wire_flags.to_le_bytes());
+        inventory.entries.push(Entry {
+            key,
+            content: content.into(),
+        });
+        for symbol in [
+            local.identity.procedure.owner,
+            local.identity.procedure.name,
+            local.identity.name,
+        ] {
+            inventory.spellings.push((
+                symbol,
+                Arc::from(
+                    symbols
+                        .text(symbol)
+                        .ok_or("procedure static spelling absent")?
+                        .as_bytes(),
+                ),
+            ));
+        }
+        variable_order.push(key);
+    }
+    let all: BTreeSet<_> = variable_order.iter().copied().collect();
+    let projected: Vec<_> = plan
+        .shared_slot_order
+        .iter()
+        .copied()
+        .filter(|key| !retained.contains(key))
+        .collect();
+    if projected.len() != all.len() || projected.iter().copied().collect::<BTreeSet<_>>() != all {
+        return Err(
+            "shared slot source order does not cover class/global/procedure slots exactly once"
+                .into(),
+        );
+    }
+    variable_order = projected;
     for (table, fresh) in [
         (
             Table::Type,

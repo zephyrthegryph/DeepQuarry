@@ -49,3 +49,11 @@ pub mod resource_order;
 
 pub mod skin;
 pub mod captured_non_text_driver;
+
+pub mod required_types;
+
+pub mod startup;
+
+pub mod client_projection;
+
+pub mod client_script;

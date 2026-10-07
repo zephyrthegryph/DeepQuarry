@@ -28,6 +28,7 @@ pub enum InitializerIdentity {
 /// Proc and verb semantic namespaces remain distinct even when sharing a wire table.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Key {
+    ProcedureStatic(dm_ir::ProcedureStaticIdentity),
     String(SymbolId),
     Type(SymbolId),
     Proc {
@@ -74,7 +75,7 @@ impl Key {
             | Self::Verb { .. }
             | Self::ArgumentSource { .. }
             | Self::Initializer(_) => Table::Procedure,
-            Self::Variable { .. } => Table::Variable,
+            Self::Variable { .. } | Self::ProcedureStatic(_) => Table::Variable,
             Self::BuiltinGlobalVars => Table::VariableRecord,
             Self::Instance(_) | Self::MapInstance { .. } | Self::DefaultMapInstance { .. } => {
                 Table::Instance
@@ -358,6 +359,11 @@ impl LinkTables {
 }
 fn symbols(key: Key) -> Vec<SymbolId> {
     match key {
+        Key::ProcedureStatic(identity) => vec![
+            identity.procedure.owner,
+            identity.procedure.name,
+            identity.name,
+        ],
         Key::Initializer(InitializerIdentity::Class(owner)) => vec![owner],
         Key::DefaultMapInstance { owner, .. } => vec![owner],
         Key::String(id) | Key::Type(id) | Key::Instance(id) => vec![id],
@@ -373,6 +379,7 @@ fn reference_key(
     slots: &BTreeMap<SymbolId, (SymbolId, SymbolId)>,
 ) -> Option<Key> {
     Some(match reference {
+        SymRef::ProcedureStatic(identity) => Key::ProcedureStatic(identity),
         SymRef::String(id) => Key::String(id),
         SymRef::Type(id) => Key::Type(id),
         SymRef::Proc {
@@ -595,7 +602,8 @@ mod tests {
             Key::Variable {
                 owner,
                 name: SymbolId::of("vars")
-            }.table()
+            }
+            .table()
         );
     }
 

@@ -1,10 +1,13 @@
 //! Symbolic initializer inputs. Scheduling/materialization policy belongs to
 //! the target backend; source origins and output table IDs stay outside this IR.
-use crate::{ArrayDeclaration, SymbolId, SymbolicExpression};
+use crate::{
+    ArrayDeclaration, ProcedureIdentity, ProcedureStaticIdentity, SymbolId, SymbolicExpression,
+};
 use std::sync::Arc;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum InitializerTarget {
+    ProcedureStatic(ProcedureStaticIdentity),
     Shared {
         slot: SymbolId,
         owner: SymbolId,
@@ -28,6 +31,7 @@ pub struct InitializerWrite {
     pub target: InitializerTarget,
     /// Declaration/assignment scope for name and type resolution.
     pub lexical_owner: SymbolId,
+    pub lexical_procedure: Option<ProcedureIdentity>,
     pub value: InitializerValue,
     /// Authored formal array shape, even when an explicit expression exists.
     /// An assignment inheriting array metadata has no authored shape here.
@@ -56,8 +60,12 @@ fn framed(bytes: &mut Vec<u8>, value: &[u8]) {
 }
 impl InitializerWrite {
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        let mut bytes = b"dm-initializer-write-v1\0".to_vec();
+        let mut bytes = b"dm-initializer-write-v2\0".to_vec();
         match self.target {
+            InitializerTarget::ProcedureStatic(identity) => {
+                bytes.push(2);
+                framed(&mut bytes, &identity.canonical_bytes());
+            }
             InitializerTarget::Shared { slot, owner, name } => {
                 bytes.push(0);
                 symbol(&mut bytes, slot);
@@ -76,6 +84,13 @@ impl InitializerWrite {
             }
         }
         symbol(&mut bytes, self.lexical_owner);
+        bytes.push(u8::from(self.lexical_procedure.is_some()));
+        if let Some(procedure) = self.lexical_procedure {
+            symbol(&mut bytes, procedure.owner);
+            symbol(&mut bytes, procedure.name);
+            bytes.push(u8::from(procedure.verb));
+            bytes.extend_from_slice(&procedure.occurrence.to_le_bytes());
+        }
         bytes.push(u8::from(self.declaration_flags.is_some()));
         if let Some(flags) = self.declaration_flags {
             bytes.extend_from_slice(&flags.to_le_bytes());

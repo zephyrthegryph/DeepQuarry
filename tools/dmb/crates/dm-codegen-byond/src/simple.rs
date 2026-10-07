@@ -77,6 +77,8 @@ impl SimpleProc {
 /// Names resolved by the declaration index before bytecode lowering.
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct LowerBindings {
+    #[serde(skip)]
+    pub procedure_identity: Option<dm_ir::ProcedureIdentity>,
     /// Canonical path of the procedure being lowered, for compiler context values.
     pub current_proc_path: Option<String>,
     /// Canonical owner path, absent for global procedures.
@@ -348,6 +350,7 @@ pub fn compile_typed_scopes_with_resolver<R: dm_ir::Resolver>(
     let prepared = crate::typed_scopes::prepare(scopes)?;
     let bindings = LowerBindings::default();
     let lookup = crate::lower_resolver::ProjectResolver {
+        procedure_statics: std::cell::RefCell::new(Default::default()),
         resolver,
         symbols,
         slots: std::cell::RefCell::new(Default::default()),
@@ -365,6 +368,7 @@ pub fn compile_typed_scopes_with_resolver<R: dm_ir::Resolver>(
         debug,
     )?;
     Ok(crate::lower_resolver::ResolverProc {
+        procedure_statics: lookup.procedure_statics.into_inner(),
         procedure,
         slots: lookup.slots.into_inner(),
         resources: lookup.resources.into_inner(),
@@ -382,6 +386,7 @@ fn compile_resolver_body<R: dm_ir::Resolver>(
 ) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
     let bindings = inputs.lexical_bindings();
     let lookup = crate::lower_resolver::ProjectResolver {
+        procedure_statics: std::cell::RefCell::new(Default::default()),
         resolver,
         symbols,
         slots: std::cell::RefCell::new(Default::default()),
@@ -392,6 +397,7 @@ fn compile_resolver_body<R: dm_ir::Resolver>(
     };
     let procedure = compile_with_lookup(body, statements, None, &bindings, Some(&lookup), debug)?;
     Ok(crate::lower_resolver::ResolverProc {
+        procedure_statics: lookup.procedure_statics.into_inner(),
         procedure,
         slots: lookup.slots.into_inner(),
         resources: lookup.resources.into_inner(),
@@ -746,18 +752,28 @@ impl Compiler<'_> {
     }
     fn has_field(&self, name: &str) -> Result<bool, LowerError> {
         match self.lookup {
-            Some(lookup) => match &self.bindings.current_type_path {
-                Some(owner) => {
-                    if self.member_global(owner, name)?.is_some() {
-                        return Ok(false);
-                    }
-                    self.semantic(lookup.presence(dm_ir::ResolveQuery::HasMemberVar {
-                        owner: dm_ir::SymbolId::of(owner),
-                        name: dm_ir::SymbolId::of(name),
-                    }))
+            Some(lookup) => {
+                // Captured lexical statics shadow instance fields. Resolve this
+                // before a class-storage query, whose intrinsic coverage may be partial.
+                if self
+                    .semantic(lookup.procedure_static(self.bindings.procedure_identity, name))?
+                    .is_some()
+                {
+                    return Ok(false);
                 }
-                None => Ok(false),
-            },
+                match &self.bindings.current_type_path {
+                    Some(owner) => {
+                        if self.member_global(owner, name)?.is_some() {
+                            return Ok(false);
+                        }
+                        self.semantic(lookup.presence(dm_ir::ResolveQuery::HasMemberVar {
+                            owner: dm_ir::SymbolId::of(owner),
+                            name: dm_ir::SymbolId::of(name),
+                        }))
+                    }
+                    None => Ok(false),
+                }
+            }
             None => Ok(self.bindings.has_field(name)),
         }
     }
@@ -778,6 +794,14 @@ impl Compiler<'_> {
         }
     }
     fn has_visible_global(&self, name: &str) -> Result<bool, LowerError> {
+        if let Some(lookup) = self.lookup {
+            if self
+                .semantic(lookup.procedure_static(self.bindings.procedure_identity, name))?
+                .is_some()
+            {
+                return Ok(true);
+            }
+        }
         if self.lookup.is_some() {
             if let Some(owner) = self.bindings.current_type_path.as_deref() {
                 if self.member_global(owner, name)?.is_some() {
@@ -2764,6 +2788,13 @@ impl Compiler<'_> {
         if let Some(index) = self.bindings.parameters.iter().position(|n| n == name) {
             return Ok(VariableWord::Arg(index as u32));
         }
+        if let Some(lookup) = self.lookup {
+            if let Some(slot) =
+                self.semantic(lookup.procedure_static_slot(self.bindings.procedure_identity, name))?
+            {
+                return Ok(VariableWord::Global(slot));
+            }
+        }
         if self.lookup.is_some() && !matches!(name, "src" | "usr" | "world" | "args" | ".") {
             if let Some(owner) = self.bindings.current_type_path.as_deref() {
                 if let Some(slot) = self.member_global(owner, name)? {
@@ -3114,6 +3145,43 @@ impl Compiler<'_> {
                 {
                     Some(path.clone())
                 } else {
+                    if let Some(lookup) = self.lookup {
+                        if let Some(declaration) = self.semantic(
+                            lookup.procedure_static(self.bindings.procedure_identity, name),
+                        )? {
+                            return declaration
+                                .declared_type
+                                .map(|id| {
+                                    self.semantic(lookup.text(
+                                        dm_ir::ResolveQuery::ProcedureStatic {
+                                            procedure: declaration.identity.procedure,
+                                            name: declaration.identity.name,
+                                        },
+                                        id,
+                                    ))
+                                })
+                                .transpose();
+                        }
+                    }
+                    if let (Some(lookup), Some(owner)) =
+                        (self.lookup, self.bindings.current_type_path.as_deref())
+                    {
+                        if self.semantic(lookup.presence(dm_ir::ResolveQuery::HasMemberVar {
+                            owner: dm_ir::SymbolId::of(owner),
+                            name: dm_ir::SymbolId::of(name),
+                        }))? {
+                            // Proven untyped is an answer, not permission to look
+                            // through the nearer field into the global namespace.
+                            return self
+                                .field_type(name)?
+                                .map(|path| self.normalize_inferred_type(&path))
+                                .transpose();
+                        }
+                        return self
+                            .global_type(name)?
+                            .map(|path| self.normalize_inferred_type(&path))
+                            .transpose();
+                    }
                     match self.field_type(name)? {
                         Some(path) => Some(path),
                         None => self.global_type(name)?,

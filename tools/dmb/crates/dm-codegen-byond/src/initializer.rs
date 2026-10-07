@@ -31,6 +31,17 @@ pub fn lower_write<R: Resolver>(
     context: InitializerContext<'_>,
     host: &R,
 ) -> Result<Option<InitializerProcedure>, InitializerError> {
+    let expected_procedure = match write.target {
+        InitializerTarget::ProcedureStatic(identity) => Some(identity.procedure),
+        _ => None,
+    };
+    if write.lexical_procedure != expected_procedure
+        || expected_procedure.is_some_and(|procedure| procedure.owner != write.lexical_owner)
+    {
+        return Err(InitializerError::Invalid(
+            "initializer lexical procedure differs from target".into(),
+        ));
+    }
     let expression = match &write.value {
         InitializerValue::NoAuthoredValue => return Ok(None),
         InitializerValue::ArrayAllocation(_) => {
@@ -147,6 +158,10 @@ pub fn lower_scoped_assignments<R: Resolver>(
             InitializerError::Invalid("initializer lexical owner spelling missing".into())
         })?;
         inputs.push(ProcedureInputs {
+            procedure_identity: match target {
+                InitializerTarget::ProcedureStatic(identity) => Some(identity.procedure),
+                _ => None,
+            },
             current_type_path: (owner_text != "/").then(|| owner_text.to_owned()),
             resource_search_context: context.resource_search_context,
             ..ProcedureInputs::default()
@@ -206,7 +221,14 @@ fn prepare_assignment<R: Resolver>(
         })
     };
     let lexical_owner = text(lexical_owner)?;
+    if matches!(target, InitializerTarget::ProcedureStatic(identity) if identity.procedure.owner != dm_ir::SymbolId::of(lexical_owner))
+    {
+        return Err(InitializerError::Invalid(
+            "static initializer lexical owner differs from procedure".into(),
+        ));
+    }
     let (owner, name) = match *target {
+        InitializerTarget::ProcedureStatic(identity) => (identity.procedure.owner, identity.name),
         InitializerTarget::Shared { owner, name, .. } => (owner, name),
         InitializerTarget::Instance {
             receiver_owner,
@@ -221,9 +243,19 @@ fn prepare_assignment<R: Resolver>(
             "initializer target is not one identifier".into(),
         ));
     }
-    let query = ResolveQuery::VarStorage { owner, name };
+    let query = match target {
+        InitializerTarget::ProcedureStatic(identity) => ResolveQuery::ProcedureStatic {
+            procedure: identity.procedure,
+            name: identity.name,
+        },
+        _ => ResolveQuery::VarStorage { owner, name },
+    };
     let meaning = host.resolve(query);
     let target_slot = match (target, meaning) {
+        (
+            InitializerTarget::ProcedureStatic(identity),
+            ResolvedMeaning::ProcedureStatic(declaration),
+        ) if declaration.identity == *identity => None,
         (
             InitializerTarget::Shared { slot, owner, name },
             ResolvedMeaning::Slot {
@@ -263,6 +295,10 @@ fn prepare_assignment<R: Resolver>(
     let owner_text = text(owner)?;
     let span = value.span;
     let target_expr = match *target {
+        InitializerTarget::ProcedureStatic(_) => dm_syntax::Expr {
+            span,
+            kind: dm_syntax::ExprKind::Ident(name_text.to_owned()),
+        },
         InitializerTarget::Shared { .. } => dm_syntax::Expr {
             span,
             kind: dm_syntax::ExprKind::Member {
@@ -433,6 +469,68 @@ mod tests {
         }
     }
     #[test]
+    fn static_startup_assignments_keep_separate_procedure_slots_in_one_unit() {
+        struct StaticHost;
+        impl Resolver for StaticHost {
+            fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
+                match query {
+                    ResolveQuery::ProcedureStatic { procedure, name } => {
+                        ResolvedMeaning::ProcedureStatic(std::sync::Arc::new(
+                            dm_ir::ProcedureStaticDeclaration {
+                                identity: dm_ir::ProcedureStaticIdentity { procedure, name },
+                                declared_type: None,
+                                modifiers: 1,
+                                declared_array: None,
+                                initializer: InitializerValue::NoAuthoredValue,
+                            },
+                        ))
+                    }
+                    other => ResolvedMeaning::Unsupported(other),
+                }
+            }
+        }
+        let mut symbols = SymbolTable::default();
+        for text in ["/", "first", "second", "counter"] {
+            symbols.intern(text).unwrap();
+        }
+        let targets = ["first", "second"].map(|name| {
+            InitializerTarget::ProcedureStatic(dm_ir::ProcedureStaticIdentity {
+                procedure: dm_ir::ProcedureIdentity {
+                    owner: SymbolId::of("/"),
+                    name: SymbolId::of(name),
+                    verb: false,
+                    occurrence: 0,
+                },
+                name: SymbolId::of("counter"),
+            })
+        });
+        let value = dm_syntax::parse_expression("1").expr.unwrap();
+        let assignments = targets
+            .into_iter()
+            .map(|target| (target, SymbolId::of("/"), value.clone()))
+            .collect::<Vec<_>>();
+        let code = lower_scoped_assignments(
+            &assignments,
+            InitializerContext {
+                symbols: &symbols,
+                resource_search_context: None,
+                debug: None,
+            },
+            &StaticHost,
+        )
+        .unwrap();
+        assert_eq!(code.procedure_statics.len(), 2);
+        assert!(code
+            .procedure_statics
+            .values()
+            .any(|identity| identity.procedure.name == SymbolId::of("first")));
+        assert!(code
+            .procedure_statics
+            .values()
+            .any(|identity| identity.procedure.name == SymbolId::of("second")));
+        assert_eq!(code.procedure.code.items.iter().filter(|item|matches!(item,crate::Item::Instruction(instruction) if instruction.opcode==opcode::END)).count(),1);
+    }
+    #[test]
     fn shared_assignment_retains_exact_slot_receipt_without_output_tables() {
         let mut symbols = SymbolTable::default();
         symbols.intern("/").unwrap();
@@ -444,6 +542,7 @@ mod tests {
                 name: SymbolId::of("counter"),
             },
             lexical_owner: SymbolId::of("/"),
+            lexical_procedure: None,
             value: InitializerValue::Expression(expression("7", &mut symbols)),
             declared_array: None,
             declaration_flags: Some(8),
@@ -486,6 +585,7 @@ mod tests {
                 name,
             },
             lexical_owner: owner,
+            lexical_procedure: None,
             value: InitializerValue::Expression(expression("7", &mut symbols)),
             declared_array: None,
             declaration_flags: Some(0),
@@ -566,6 +666,7 @@ mod tests {
                 name: SymbolId::of("x"),
             },
             lexical_owner: SymbolId::of("/"),
+            lexical_procedure: None,
             value,
             declared_array: None,
             declaration_flags: None,

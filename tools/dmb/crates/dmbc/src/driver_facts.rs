@@ -51,15 +51,98 @@ impl DriverEvaluator<'_> {
         owner: SymbolId,
         expression: &SymbolicExpression,
     ) -> Result<Option<SemanticValue>, String> {
+        self.scalar_in(
+            owner,
+            expression,
+            None,
+            &RefCell::new(std::collections::HashSet::new()),
+        )
+    }
+    fn scalar_in(
+        &self,
+        owner: SymbolId,
+        expression: &SymbolicExpression,
+        procedure: Option<dm_ir::ProcedureIdentity>,
+        active: &RefCell<std::collections::HashSet<dm_ir::ProcedureStaticIdentity>>,
+    ) -> Result<Option<SemanticValue>, String> {
         let failure = RefCell::new(None);
         let value = dm_tree::constants::evaluate_with(
             &expression
                 .source_text(self.symbols)
                 .ok_or("expression spelling is not captured")?,
             |name| {
+                let unqualified = !name.contains("::");
                 let (scope, name) = name
                     .rsplit_once("::")
                     .map_or((owner, name), |(path, name)| (SymbolId::of(path), name));
+                if let Some(procedure) = procedure.filter(|_| scope == owner && unqualified) {
+                    match self.resolver.resolve(ResolveQuery::ProcedureStatic {
+                        procedure,
+                        name: SymbolId::of(name),
+                    }) {
+                        ResolvedMeaning::ProcedureStatic(declaration) => {
+                            if declaration.identity
+                                != (dm_ir::ProcedureStaticIdentity {
+                                    procedure,
+                                    name: SymbolId::of(name),
+                                })
+                            {
+                                *failure.borrow_mut() = Some(
+                                    "static constant answer belongs to another lexical slot".into(),
+                                );
+                                return None;
+                            }
+                            if declaration.modifiers & 2 == 0 {
+                                return None;
+                            }
+                            let dm_ir::InitializerValue::Expression(value) =
+                                &declaration.initializer
+                            else {
+                                *failure.borrow_mut() =
+                                    Some("static constant has no scalar expression".into());
+                                return None;
+                            };
+                            let inserted = active.borrow_mut().insert(declaration.identity);
+                            if !inserted {
+                                *failure.borrow_mut() = Some(format!(
+                                    "procedure static constant cycle at {:?}",
+                                    declaration.identity
+                                ));
+                                return None;
+                            }
+                            let result = self.scalar_in(owner, value, Some(procedure), active);
+                            active.borrow_mut().remove(&declaration.identity);
+                            return match result {
+                                Ok(Some(SemanticValue::Null)) => Some(Constant::Null),
+                                Ok(Some(SemanticValue::NumberBits(bits))) => {
+                                    Some(Constant::Number(f32::from_bits(bits)))
+                                }
+                                Ok(Some(SemanticValue::Text(bytes))) => {
+                                    Some(Constant::EncodedText(bytes.to_vec()))
+                                }
+                                Ok(Some(SemanticValue::Type(path))) => self
+                                    .symbols
+                                    .text(path)
+                                    .map(|text| Constant::TypePath(text.into())),
+                                Ok(_) => {
+                                    *failure.borrow_mut() =
+                                        Some("static constant is not scalar".into());
+                                    None
+                                }
+                                Err(error) => {
+                                    *failure.borrow_mut() = Some(error);
+                                    None
+                                }
+                            };
+                        }
+                        ResolvedMeaning::Missing => {}
+                        other => {
+                            *failure.borrow_mut() =
+                                Some(format!("static lexical inventory unavailable: {other:?}"));
+                            return None;
+                        }
+                    }
+                }
                 let query = ResolveQuery::Constant {
                     owner: scope,
                     name: SymbolId::of(name),
@@ -158,7 +241,47 @@ impl CapturedConstantEvaluator for DriverEvaluator<'_> {
             .ok_or_else(|| AbiError("ABI setting is not a captured scalar".into()))
     }
 }
+/// Lexical procedure-static ABI evaluation is used only with a complete captured
+/// StaticResolver inventory; its Missing answers permit ordinary constant lookup.
+struct LexicalAbiEvaluator<'a>(&'a DriverEvaluator<'a>);
+impl CapturedConstantEvaluator for LexicalAbiEvaluator<'_> {
+    fn evaluate(
+        &self,
+        expression: &SymbolicExpression,
+        context: &AbiContext<'_>,
+    ) -> Result<SemanticValue, AbiError> {
+        let procedure = dm_ir::ProcedureIdentity {
+            owner: context.identity.owner,
+            name: context.identity.name,
+            verb: context.identity.namespace == Namespace::Verb,
+            occurrence: context.identity.occurrence,
+        };
+        self.0
+            .scalar_in(
+                context.identity.owner,
+                expression,
+                Some(procedure),
+                &RefCell::new(std::collections::HashSet::new()),
+            )
+            .map_err(AbiError)?
+            .ok_or_else(|| AbiError("ABI setting is not a captured scalar".into()))
+    }
+}
 impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
+    fn evaluate_write(
+        &self,
+        write: &dm_ir::InitializerWrite,
+        expression: &SymbolicExpression,
+    ) -> Result<Evaluation, String> {
+        Ok(self
+            .scalar_in(
+                write.lexical_owner,
+                expression,
+                write.lexical_procedure,
+                &RefCell::new(std::collections::HashSet::new()),
+            )?
+            .map_or(Evaluation::Runtime, Evaluation::Scalar))
+    }
     fn evaluate(
         &self,
         owner: SymbolId,
@@ -189,26 +312,19 @@ pub struct CertifiedIntrinsicAbi {
     layout: ProcLayout,
 }
 impl CertifiedIntrinsicAbi {
-    pub(crate) fn new_del(
+    pub(crate) fn callback(
         engine: &EngineSnapshot,
         owner: SymbolId,
         name: SymbolId,
     ) -> Result<Self, AbiError> {
         const TEMPLATE: &[u8] = include_bytes!("../../../fixtures/native_template.bin");
-        if !engine.matches_template(TEMPLATE, 1)
-            || !["/datum", "/atom", "/mob", "/client", "/world"]
-                .into_iter()
-                .any(|path| SymbolId::of(path) == owner)
-        {
-            return Err(AbiError("unsupported intrinsic ABI receipt domain".into()));
+        if !engine.matches_template(TEMPLATE, 1) {
+            return Err(AbiError(
+                "unsupported intrinsic ABI receipt template".into(),
+            ));
         }
-        let spelling = if name == SymbolId::of("New") {
-            "New"
-        } else if name == SymbolId::of("Del") {
-            "Del"
-        } else {
-            return Err(AbiError("unsupported intrinsic ABI receipt name".into()));
-        };
+        let spelling = crate::engine_abi_coverage::callback_spelling(owner, name)
+            .ok_or_else(|| AbiError("unsupported intrinsic ABI receipt callback".into()))?;
         Ok(Self {
             engine_identity: engine.identity(),
             owner,
@@ -355,6 +471,39 @@ pub struct PreparedPinnedSourceAbi {
     pub policy_identity: u128,
     pub prepared: PreparedSourceAbi,
 }
+/// Preserve every failed unit's actual captured origin and cause. Preparation
+/// stores encounter ordinals; these are never compiler-generated output IDs.
+pub fn abi_diagnostics(
+    frontend: &ColdFrontend,
+    prepared: &PreparedSourceAbi,
+) -> Result<Vec<crate::lowering::LoweringDiagnostic>, AbiError> {
+    let identities: HashMap<_, _> = unit_members(frontend)?
+        .into_iter()
+        .map(|(unit, member)| (member, unit))
+        .collect();
+    let mut diagnostics = prepared
+        .diagnostics
+        .iter()
+        .map(|(ordinal, message)| {
+            let body = frontend.bodies.get(*ordinal).ok_or_else(|| {
+                AbiError("ABI diagnostic body ordinal is outside captured frontend".into())
+            })?;
+            Ok(crate::lowering::LoweringDiagnostic {
+                kind: dm_tree::frontend::DiagnosticKind::UnsupportedModel,
+                identity: identities.get(&body.member).copied(),
+                origin: body.source.clone(),
+                message: message.clone(),
+            })
+        })
+        .collect::<Result<Vec<_>, AbiError>>()?;
+    diagnostics.sort_by_key(|diagnostic| {
+        (
+            diagnostic.origin.encounter_ordinal,
+            diagnostic.origin.span.start,
+        )
+    });
+    Ok(diagnostics)
+}
 /// Production constructor: dependency waves consume exact source predecessors
 /// and pinned engine boundary certificates; callers cannot fill all rows Fresh.
 pub fn prepare_pinned_source_abi(
@@ -385,6 +534,41 @@ pub fn prepare_pinned_source_abi(
         prepared,
     })
 }
+/// Production startup variant: settings and parameter scalar expressions resolve
+/// lexical statics through the same captured inventory as executable lowering.
+pub fn prepare_pinned_source_abi_with_startup<R: Resolver>(
+    frontend: &ColdFrontend,
+    engine: &EngineSnapshot,
+    resolver: &R,
+    startup: &crate::startup::CapturedStartup,
+    resource_search_context: Option<u128>,
+    workers: usize,
+) -> Result<PreparedPinnedSourceAbi, AbiError> {
+    crate::startup::validate(frontend, &startup.plan).map_err(AbiError)?;
+    let static_resolver = startup.resolver(frontend, resolver).map_err(AbiError)?;
+    let resolver = &static_resolver;
+    let coverage =
+        crate::engine_abi_coverage::NamedEngineCoverage::pinned(engine).map_err(AbiError)?;
+    let policy_identity = coverage.policy_identity();
+    let boundaries = coverage.boundaries(frontend).map_err(AbiError)?;
+    let evaluator = DriverEvaluator {
+        resolver,
+        symbols: startup.plan.symbols.as_ref(),
+    };
+    let prepared = prepare_source_abi_mode(
+        frontend,
+        engine,
+        &evaluator,
+        &boundaries,
+        resource_search_context,
+        workers,
+        true,
+    )?;
+    Ok(PreparedPinnedSourceAbi {
+        policy_identity,
+        prepared,
+    })
+}
 /// Dependency-ready waves borrow one immutable predecessor-layout map. A wave
 /// never mutates that map while workers read it, and clones no project bindings.
 /// Unsupported roots fail explicitly; their descendants cannot inherit defaults.
@@ -395,6 +579,26 @@ pub fn prepare_source_abi(
     boundaries: &BTreeMap<UnitIdentity, BoundaryAbi>,
     resource_search_context: Option<u128>,
     workers: usize,
+) -> Result<PreparedSourceAbi, AbiError> {
+    prepare_source_abi_mode(
+        frontend,
+        engine,
+        evaluator,
+        boundaries,
+        resource_search_context,
+        workers,
+        false,
+    )
+}
+
+fn prepare_source_abi_mode(
+    frontend: &ColdFrontend,
+    engine: &EngineSnapshot,
+    evaluator: &DriverEvaluator<'_>,
+    boundaries: &BTreeMap<UnitIdentity, BoundaryAbi>,
+    resource_search_context: Option<u128>,
+    workers: usize,
+    lexical_statics: bool,
 ) -> Result<PreparedSourceAbi, AbiError> {
     let index = unit_members(frontend)?;
     let identities: HashMap<_, _> = index.iter().map(|(key, id)| (*id, *key)).collect();
@@ -433,8 +637,11 @@ pub fn prepare_source_abi(
             boundaries,
             unit_members: &index,
         };
+        let lexical = LexicalAbiEvaluator(evaluator);
+        let selected_evaluator: &dyn CapturedConstantEvaluator =
+            if lexical_statics { &lexical } else { evaluator };
         let policy = crate::procedure_policy::CapturedProcedurePolicy {
-            evaluator,
+            evaluator: selected_evaluator,
             inherited: &inherited,
             resource_search_context,
         };
@@ -464,7 +671,7 @@ pub fn prepare_source_abi(
                                     })?;
                                     let context = AbiContext {
                                         identity: identities[&body.member],
-                                        symbols: tree.symbols(),
+                                        symbols: evaluator.symbols,
                                         origin: &body.source,
                                         resolver: evaluator.resolver,
                                     };
@@ -590,7 +797,7 @@ impl<'a> FrozenPreparedPolicy<'a> {
         symbols: &dm_ir::SymbolTable,
         origin: &dm_tree::frontend::SourceLocation,
     ) -> Result<&dm_tree::frontend::BodyOccurrence, String> {
-        if !std::ptr::eq(symbols, self.frontend.snapshot.tree.symbols()) {
+        if !symbols.is_extension_of(self.frontend.snapshot.tree.symbols()) {
             return Err("prepared ABI symbol snapshot changed".into());
         }
         let member = self
@@ -705,6 +912,135 @@ mod tests {
         .unwrap()
     }
     #[test]
+    fn lexical_abi_constants_support_long_acyclic_chains_and_reject_exact_cycles() {
+        let procedure = dm_ir::ProcedureIdentity {
+            owner: SymbolId::of("/"),
+            name: SymbolId::of("work"),
+            verb: false,
+            occurrence: 0,
+        };
+        for cyclic in [false, true] {
+            let mut source = "/proc/work()\n".to_owned();
+            for index in 0..72 {
+                let value = if index == 0 {
+                    if cyclic {
+                        "c71".into()
+                    } else {
+                        "7".into()
+                    }
+                } else {
+                    format!("c{}", index - 1)
+                };
+                source.push_str(&format!("    var/static/const/c{index} = {value}\n"));
+            }
+            source.push_str("    var/static/const/result = c71\n");
+            let ast = dm_syntax::parse(&source);
+            let captured =
+                dm_tree::procedure_statics::capture(procedure, &ast.items[0].children).unwrap();
+            let resolver = dm_tree::procedure_statics::StaticResolver::from_plans(
+                &MissingHost,
+                [(procedure, &captured)],
+            )
+            .unwrap();
+            let evaluator = DriverEvaluator {
+                resolver: &resolver,
+                symbols: &captured.symbols,
+            };
+            let declaration = captured
+                .declarations
+                .iter()
+                .find(|declaration| declaration.identity.name == SymbolId::of("result"))
+                .unwrap();
+            let dm_ir::InitializerValue::Expression(expression) = &declaration.initializer else {
+                panic!("expression");
+            };
+            let frontend = frontend();
+            let context = AbiContext {
+                identity: UnitIdentity {
+                    owner: procedure.owner,
+                    name: procedure.name,
+                    namespace: Namespace::Proc,
+                    occurrence: 0,
+                },
+                symbols: &captured.symbols,
+                origin: &frontend.bodies[0].source,
+                resolver: &resolver,
+            };
+            let answer = LexicalAbiEvaluator(&evaluator).evaluate(expression, &context);
+            if cyclic {
+                assert!(answer.unwrap_err().0.contains("constant cycle"));
+            } else {
+                assert_eq!(answer.unwrap(), SemanticValue::NumberBits(7f32.to_bits()));
+            }
+        }
+    }
+    #[test]
+    fn startup_evaluation_respects_procedure_static_shadowing() {
+        let procedure = dm_ir::ProcedureIdentity {
+            owner: SymbolId::of("/"),
+            name: SymbolId::of("work"),
+            verb: false,
+            occurrence: 0,
+        };
+        let body=dm_syntax::parse("/proc/work()\n    var/static/const/base = 7\n    var/static/value = base + 1\n    return value\n");
+        let captured =
+            dm_tree::procedure_statics::capture(procedure, &body.items[0].children).unwrap();
+        let resolver = dm_tree::procedure_statics::StaticResolver::from_plans(
+            &MissingHost,
+            [(procedure, &captured)],
+        )
+        .unwrap();
+        let evaluator = DriverEvaluator {
+            resolver: &resolver,
+            symbols: &captured.symbols,
+        };
+        let value = captured
+            .declarations
+            .iter()
+            .find(|value| value.identity.name == SymbolId::of("value"))
+            .unwrap();
+        let dm_ir::InitializerValue::Expression(expression) = &value.initializer else {
+            panic!("expression");
+        };
+        let write = dm_ir::InitializerWrite {
+            target: dm_ir::InitializerTarget::ProcedureStatic(value.identity),
+            lexical_owner: procedure.owner,
+            lexical_procedure: Some(procedure),
+            value: value.initializer.clone(),
+            declared_array: None,
+            declaration_flags: Some(value.modifiers),
+        };
+        assert!(
+            matches!(evaluator.evaluate_write(&write,expression).unwrap(),Evaluation::Scalar(SemanticValue::NumberBits(bits)) if f32::from_bits(bits)==8.0)
+        );
+    }
+    struct MissingHost;
+    impl Resolver for MissingHost {
+        fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
+            ResolvedMeaning::Unsupported(query)
+        }
+    }
+    #[test]
+    fn abi_failures_keep_each_captured_source_and_specific_cause() {
+        let frontend = frontend();
+        let prepared = PreparedSourceAbi {
+            units: Vec::new(),
+            diagnostics: vec![
+                (1, "second specific cause".into()),
+                (0, "first specific cause".into()),
+            ],
+        };
+        let diagnostics = abi_diagnostics(&frontend, &prepared).unwrap();
+        assert_eq!(diagnostics.len(), 2);
+        assert_eq!(diagnostics[0].message, "first specific cause");
+        assert_eq!(diagnostics[1].message, "second specific cause");
+        for (ordinal, diagnostic) in diagnostics.iter().enumerate() {
+            assert_eq!(diagnostic.origin.path, frontend.bodies[ordinal].source.path);
+            assert_eq!(diagnostic.origin.line, frontend.bodies[ordinal].source.line);
+            assert!(diagnostic.identity.is_some());
+        }
+    }
+    #[test]
     fn pinned_constructor_prepares_source_dependency_without_caller_fresh_map() {
         let engine =
             EngineSnapshot::from_bytes(include_bytes!("../../../fixtures/native_template.bin"), 1)
@@ -732,11 +1068,43 @@ mod tests {
         assert_eq!(prepared.prepared.units.len(), frontend.bodies.len());
         assert_ne!(prepared.policy_identity, engine.identity());
         let policy = FrozenPreparedPolicy::new(&frontend, &prepared.prepared).unwrap();
+        let mut overlay = dm_ir::SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
+        overlay.intern("body-only-static-name").unwrap();
+        let body = &frontend.bodies[0];
+        let identity = *unit_members(&frontend)
+            .unwrap()
+            .iter()
+            .find(|(_, member)| **member == body.member)
+            .unwrap()
+            .0;
+        let metadata = frontend
+            .snapshot
+            .tree
+            .member(body.member)
+            .unwrap()
+            .metadata
+            .procedure
+            .as_ref()
+            .unwrap();
+        assert!(policy
+            .validate(identity, metadata, &overlay, &body.source)
+            .is_ok());
+        assert!(policy
+            .validate(
+                identity,
+                metadata,
+                &dm_ir::SymbolTable::default(),
+                &body.source
+            )
+            .is_err());
         let lowered = crate::lowering::lower_frontend(
             &frontend,
             frontend.snapshot.tree.as_ref(),
             &policy,
-            crate::lowering::LoweringConfig { workers: 2, ..Default::default() },
+            crate::lowering::LoweringConfig {
+                workers: 2,
+                ..Default::default()
+            },
         );
         assert!(lowered.diagnostics.is_empty(), "{:?}", lowered.diagnostics);
         assert!(lowered.units.iter().all(|unit| unit.abi.is_some()));

@@ -20,6 +20,8 @@ pub use initializer::{
 };
 pub mod map;
 pub mod skin;
+mod procedure_static;
+pub use procedure_static::{ProcedureIdentity, ProcedureStaticDeclaration, ProcedureStaticIdentity};
 
 mod resolver;
 pub use resolver::{ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};

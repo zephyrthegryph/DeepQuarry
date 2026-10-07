@@ -493,7 +493,15 @@ fn extract_procs(
             .ok_or_else(|| EngineError::Invalid("invalid procedure path".into()))?;
         let layout = procedure_abi::capture_layout(record, |id| dmb.string(id))
             .map_err(|error| EngineError::Invalid(error.to_string()))?;
-        let Some(name) = path.rsplit('/').next().filter(|v| !v.is_empty()) else {
+        // Operator procedure names contain slashes (operator/=, operator/).
+        // A qualified namespace boundary separates owner from the entire name;
+        // taking only the final path component silently renames those members.
+        let name = path
+            .rsplit_once("/proc/")
+            .or_else(|| path.rsplit_once("/verb/"))
+            .map(|(_, name)| name)
+            .or_else(|| path.rsplit('/').next());
+        let Some(name) = name.filter(|v| !v.is_empty()) else {
             layouts.push(EngineProcedureLayout {
                 owner,
                 name: None,

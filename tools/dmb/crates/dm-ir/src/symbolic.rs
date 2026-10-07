@@ -5,6 +5,7 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SymRef {
+    ProcedureStatic(crate::ProcedureStaticIdentity),
     String(SymbolId),
     Type(SymbolId),
     Proc {
@@ -67,9 +68,10 @@ impl SymRef {
             Self::Proc { .. } | Self::Verb { .. } | Self::ArgumentSource { .. } => {
                 RelocationKind::Procedure
             }
-            Self::Var { .. } | Self::VariableSlot(_) | Self::BuiltinGlobalVars => {
-                RelocationKind::Variable
-            }
+            Self::Var { .. }
+            | Self::VariableSlot(_)
+            | Self::BuiltinGlobalVars
+            | Self::ProcedureStatic(_) => RelocationKind::Variable,
             Self::ConstantList(_) => RelocationKind::List,
             Self::Resource(_) => RelocationKind::Resource,
             Self::Instance(_) => RelocationKind::Instance,
@@ -318,6 +320,10 @@ fn encode_reference(bytes: &mut Vec<u8>, reference: SymRef) {
             bytes.push(4);
             bytes.extend_from_slice(&owner.bits().to_le_bytes());
             bytes.extend_from_slice(&name.bits().to_le_bytes())
+        }
+        SymRef::ProcedureStatic(identity) => {
+            bytes.push(14);
+            bytes.extend_from_slice(&identity.canonical_bytes());
         }
         SymRef::VariableSlot(symbol) => {
             bytes.push(5);

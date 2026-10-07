@@ -4,19 +4,28 @@ use crate::{DefinitionMode, MemberId, MemberKind, OccurrenceId, Provenance, Targ
 use dm_ir::{InitializerTarget, InitializerValue, InitializerWrite, ResolveQuery, ResolvedMeaning};
 use std::sync::Arc;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct InitializerOrigin {
     pub occurrence: OccurrenceId,
-    pub member: MemberId,
+    pub kind: InitializerOriginKind,
     pub encounter_ordinal: usize,
     pub emission_ordinal: usize,
     pub provenance: Provenance,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum InitializerOriginKind {
+    Declaration(MemberId),
+    ProcedureStatic {
+        identity: dm_ir::ProcedureStaticIdentity,
+        expanded_span: dm_syntax::Span,
+    },
 }
 #[derive(Clone, Debug)]
 pub struct InitializerPlan {
     /// Retains formal/effective defaults and inherited opaque knowledge without
     /// copying a project binding table or conflating their lexical scopes.
     pub source: TreeSnapshot,
+    pub symbols: Arc<dm_ir::SymbolTable>,
     pub writes: Arc<[InitializerWrite]>,
     /// One source sidecar per write, excluded from semantic identity.
     pub origins: Arc<[InitializerOrigin]>,
@@ -141,6 +150,7 @@ pub fn plan(
         writes.push(InitializerWrite {
             target,
             lexical_owner,
+            lexical_procedure: None,
             value,
             declared_array,
             declaration_flags: metadata
@@ -150,7 +160,7 @@ pub fn plan(
         });
         origins.push(InitializerOrigin {
             occurrence: id,
-            member: member_id,
+            kind: InitializerOriginKind::Declaration(member_id),
             encounter_ordinal: id.0 as usize,
             emission_ordinal,
             provenance: occurrence.provenance.clone(),
@@ -167,7 +177,129 @@ pub fn plan(
         canonical.extend_from_slice(&bytes);
     }
     Ok(InitializerPlan {
+        symbols: source.tree.shared_symbols(),
         source: source.clone(),
+        writes: writes.into(),
+        origins: origins.into(),
+        identity: xxhash_rust::xxh3::xxh3_128(&canonical),
+    })
+}
+
+/// Interleave captured procedure statics at the procedure declaration's actual
+/// emission position. Class-global and procedure-static writes share one ledger.
+pub fn with_procedure_statics(
+    base: &InitializerPlan,
+    order: &[OccurrenceId],
+    captures: &[(OccurrenceId, crate::procedure_statics::StaticPlan)],
+) -> Result<InitializerPlan, String> {
+    let current = plan(&base.source, order)
+        .map_err(|error| format!("startup declaration order: {error:?}"))?;
+    if current.identity != base.identity {
+        return Err("startup base ledger differs from current declarations".into());
+    }
+    let mut symbols = dm_ir::SymbolTable::overlay(base.source.tree.shared_symbols());
+    let mut by_occurrence = std::collections::HashMap::new();
+    for (occurrence, capture) in captures {
+        if by_occurrence.insert(*occurrence, capture).is_some()
+            || capture.declarations.len() != capture.origins.len()
+        {
+            return Err("duplicate or incomplete procedure static capture".into());
+        }
+        for (_, text) in capture.symbols.ordered() {
+            symbols.intern(text).map_err(|e| e.to_string())?;
+        }
+    }
+    let mut declarations = base
+        .origins
+        .iter()
+        .enumerate()
+        .map(|(index, origin)| (origin.occurrence, index))
+        .collect::<std::collections::HashMap<_, _>>();
+    let mut writes = Vec::new();
+    let mut origins = Vec::new();
+    for (emission_ordinal, occurrence_id) in order.iter().enumerate() {
+        if let Some(index) = declarations.remove(occurrence_id) {
+            writes.push(base.writes[index].clone());
+            origins.push(base.origins[index].clone());
+        }
+        if let Some(capture) = by_occurrence.remove(occurrence_id) {
+            let occurrence = base
+                .source
+                .occurrences
+                .get(*occurrence_id)
+                .ok_or("static procedure occurrence absent")?;
+            let Target::Member(member) = occurrence.target else {
+                return Err("static owner occurrence is not a member".into());
+            };
+            let node = base
+                .source
+                .tree
+                .member(member)
+                .ok_or("static procedure member absent")?;
+            let owner = base
+                .source
+                .tree
+                .type_node(node.owner)
+                .ok_or("static procedure owner absent")?
+                .path;
+            let procedure_occurrence = base
+                .source
+                .tree
+                .override_chain(member)
+                .iter()
+                .filter(|id| {
+                    base.source.tree.member(**id).is_some_and(|entry| {
+                        entry.owner == node.owner
+                            && entry.name == node.name
+                            && entry.kind == node.kind
+                    })
+                })
+                .count()
+                .checked_sub(1)
+                .ok_or("static procedure chain empty")?;
+            for (declaration, origin) in capture.declarations.iter().zip(&capture.origins) {
+                let identity = declaration.identity;
+                if usize::try_from(identity.procedure.occurrence).ok() != Some(procedure_occurrence)
+                    || identity.procedure.owner != owner
+                    || identity.procedure.name != node.name
+                    || identity.procedure.verb != (node.kind == MemberKind::Verb)
+                    || node.kind == MemberKind::Var
+                {
+                    return Err("static declaration belongs to another procedure".into());
+                }
+                writes.push(InitializerWrite {
+                    target: InitializerTarget::ProcedureStatic(identity),
+                    lexical_owner: owner,
+                    lexical_procedure: Some(identity.procedure),
+                    value: declaration.initializer.clone(),
+                    declared_array: declaration.declared_array.clone(),
+                    declaration_flags: Some(declaration.modifiers),
+                });
+                origins.push(InitializerOrigin {
+                    occurrence: *occurrence_id,
+                    kind: InitializerOriginKind::ProcedureStatic {
+                        identity,
+                        expanded_span: origin.header_span,
+                    },
+                    encounter_ordinal: occurrence_id.0 as usize,
+                    emission_ordinal,
+                    provenance: occurrence.provenance.clone(),
+                });
+            }
+        }
+    }
+    if !declarations.is_empty() || !by_occurrence.is_empty() {
+        return Err("startup captures are outside complete emission order".into());
+    }
+    let mut canonical = b"dm-authored-startup-plan-v2\0".to_vec();
+    for write in &writes {
+        let bytes = write.canonical_bytes();
+        canonical.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
+        canonical.extend_from_slice(&bytes);
+    }
+    Ok(InitializerPlan {
+        source: base.source.clone(),
+        symbols: Arc::new(symbols),
         writes: writes.into(),
         origins: origins.into(),
         identity: xxhash_rust::xxh3::xxh3_128(&canonical),
@@ -194,6 +326,40 @@ mod tests {
         (0..snapshot.occurrences.source_order().len())
             .map(|index| OccurrenceId(index as u32))
             .collect()
+    }
+    #[test]
+    fn procedure_statics_join_global_writes_at_source_encounter() {
+        let source = "var/a = mark(1)\n/proc/work()\n    var/static/local = mark(2)\n    return local\nvar/b = mark(3)\n";
+        let snapshot = snapshot(source, 0);
+        let order = order(&snapshot);
+        let ast = dm_syntax::parse(source);
+        let procedure = ast
+            .items
+            .iter()
+            .find(|item| item.header.contains("work("))
+            .unwrap();
+        let identity = dm_ir::ProcedureIdentity {
+            owner: SymbolId::of("/"),
+            name: SymbolId::of("work"),
+            verb: false,
+            occurrence: 0,
+        };
+        let capture = crate::procedure_statics::capture(identity, &procedure.children).unwrap();
+        let occurrence = order.iter().copied().find(|id| snapshot.occurrences.get(*id).is_some_and(|row| matches!(row.target,Target::Member(member) if snapshot.tree.member(member).is_some_and(|node| node.kind==MemberKind::Proc)))).unwrap();
+        let base = plan(&snapshot, &order).unwrap();
+        let startup = with_procedure_statics(&base, &order, &[(occurrence, capture)]).unwrap();
+        assert_eq!(startup.writes.len(), 3);
+        assert!(
+            matches!(startup.writes[0].target,InitializerTarget::Shared{name,..} if name==SymbolId::of("a"))
+        );
+        assert!(
+            matches!(startup.writes[1].target,InitializerTarget::ProcedureStatic(id) if id.procedure==identity && id.name==SymbolId::of("local"))
+        );
+        assert!(
+            matches!(startup.writes[2].target,InitializerTarget::Shared{name,..} if name==SymbolId::of("b"))
+        );
+        assert_eq!(startup.writes[1].lexical_procedure, Some(identity));
+        assert_eq!(startup.symbols.text(SymbolId::of("local")), Some("local"));
     }
     #[test]
     fn globals_statics_instance_overrides_and_allocations_retain_scopes_and_order() {
@@ -223,7 +389,10 @@ mod tests {
             InitializerValue::Expression(_)
         ));
         assert!(plan.writes[6].declared_array.is_none());
-        let node = plan.source.tree.member(plan.origins[5].member).unwrap();
+        let InitializerOriginKind::Declaration(member) = plan.origins[5].kind else {
+            panic!("expected declaration");
+        };
+        let node = plan.source.tree.member(member).unwrap();
         assert!(node.metadata.declared_initializer.is_some());
         assert!(node.metadata.initializer.is_some());
     }

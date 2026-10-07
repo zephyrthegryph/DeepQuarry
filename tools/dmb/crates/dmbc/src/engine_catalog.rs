@@ -16,7 +16,7 @@ pub struct CatalogField {
 }
 /// Mirrors the pinned native bootstrap inventory. It is not a claim that all
 /// BYOND versions expose exactly this catalog or that source defaults are known.
-pub const CATALOG_SCHEMA: &str = "dm-bootstrap-builtin-fields-v2-savefile";
+pub const CATALOG_SCHEMA: &str = "dm-bootstrap-builtin-fields-v4-client-script";
 pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::SymbolCollision> {
     let mut fields = Vec::new();
     for owner in [
@@ -148,6 +148,12 @@ pub fn names(path: &str) -> &'static [&'static str] {
             "group",
         ],
         "/client" => &[
+            // Current pinned compile-only source assignment/read/write control:
+            // phase0/link/client_intrinsic_presence. Metadata stays opaque.
+            "preload_rsc",
+            // phase0/link/client_script_current and script_storage certify
+            // authored header text plus positive instance reads/writes.
+            "script",
             "gender",
             "dir",
             "byond_version",
@@ -271,6 +277,9 @@ mod tests {
             field("/client", "mob").declared_type,
             FieldTypeMeaning::Known(SymbolId::of("/mob"))
         );
+        let preload = field("/client", "preload_rsc");
+        assert_eq!(preload.declared_type, FieldTypeMeaning::Unsupported);
+        assert!(preload.presence().instance_storage_proven);
         assert!(fields.iter().all(|f| f.presence().shared_owner.is_none()));
     }
 }

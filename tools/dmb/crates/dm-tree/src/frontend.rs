@@ -855,8 +855,8 @@ fn resolution_error(
             | crate::TreeError::MissingOverride { owner, name, kind }) => skeletons.iter().rposition(|skeleton| matches!(skeleton,
                 Skeleton::Member { owner: found_owner, name: found_name, kind: found_kind, .. } if found_owner == owner && found_name == name && found_kind == kind)),
         SnapshotError::Tree(crate::TreeError::ConflictingParent(path)
-            | crate::TreeError::InheritanceCycle(path)
-            | crate::TreeError::MissingParent(path)) => skeletons.iter().rposition(|skeleton| matches!(skeleton, Skeleton::Type { path: found, .. } if found == path)),
+            | crate::TreeError::InheritanceCycle(path)) => skeletons.iter().rposition(|skeleton| matches!(skeleton, Skeleton::Type { path: found, explicit_parent: Some(_), .. } if found == path)).or_else(|| skeletons.iter().rposition(|skeleton| matches!(skeleton, Skeleton::Type { path: found, .. } if found == path))),
+        SnapshotError::Tree(crate::TreeError::MissingParent(path)) => skeletons.iter().rposition(|skeleton| matches!(skeleton, Skeleton::Type { explicit_parent: Some(parent), .. } if parent == path)),
         _ => None,
     };
     let location = index

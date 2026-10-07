@@ -460,6 +460,13 @@ fn freeze_artifact(
             content: Arc::from(bytes),
         });
     }
+    for (symbol, identity) in &code.procedure_statics {
+        insert(
+            &mut bindings,
+            symbol.clone(),
+            SymRef::ProcedureStatic(*identity),
+        )?;
+    }
     for (symbol, slot) in &code.slots {
         insert(
             &mut bindings,

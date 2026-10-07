@@ -27,6 +27,9 @@ pub enum CompositionError {
 /// Implementations verify source closure and return every exact linker key they
 /// attached; the composer rejects dropped keys and unattached map initializers.
 pub trait NonTextOutputStage {
+    fn required_types(&self) -> Vec<SymbolId> {
+        Vec::new()
+    }
     fn validate_source(&self, frontend: &dm_tree::frontend::ColdFrontend) -> Result<(), String>;
     fn apply(&self, dmb: &mut Dmb, batch: &FrozenBatch) -> Result<BTreeSet<Key>, String>;
 }
@@ -76,12 +79,12 @@ fn validate_binding(
             owner,
             name,
             occurrence: 0,
-        } => {
-            dmb.procs
-                .get(index as usize)
-                .and_then(|proc| dmb.string(proc.strings[0]))
-                == Some(proc_path(symbols, owner, name)?.as_bytes())
-        }
+        } => retained_named_procedure(dmb, symbols, owner, name, index, false)?,
+        Key::Verb {
+            owner,
+            name,
+            occurrence: 0,
+        } => retained_named_procedure(dmb, symbols, owner, name, index, true)?,
         Key::Variable { owner, name } if text(symbols, owner)? == "/" => {
             dmb.lists
                 .get(dmb.variable_footer as usize)
@@ -97,6 +100,51 @@ fn validate_binding(
     } else {
         Err(CompositionError::InvalidBinding(key, index))
     }
+}
+/// Engine member names may be bare rather than qualified procedure paths. The
+/// captured owner's procedure/verb list proves ownership independently of that
+/// spelling; accepting only a matching bare name would conflate owners.
+fn retained_named_procedure(
+    dmb: &Dmb,
+    symbols: &SymbolTable,
+    owner: SymbolId,
+    name: SymbolId,
+    index: u32,
+    verb: bool,
+) -> Result<bool, CompositionError> {
+    let owner_text = text(symbols, owner)?;
+    let name_text = text(symbols, name)?;
+    let list = if owner_text == "/" && !verb {
+        Some(dmb.world.proc_list_id())
+    } else {
+        dmb.classes
+            .iter()
+            .find(|class| dmb.string(class.path_string_id()) == Some(owner_text.as_bytes()))
+            .map(|class| {
+                if verb {
+                    class.verb_list_id()
+                } else {
+                    class.proc_list_id()
+                }
+            })
+    };
+    let owned = list
+        .and_then(|list| dmb.lists.get(list as usize))
+        .is_some_and(|list| list.contains(&index));
+    let namespace = if verb { "verb" } else { "proc" };
+    let qualified = format!(
+        "{}/{namespace}/{name_text}",
+        owner_text.trim_end_matches('/')
+    );
+    let implicit_path = format!("{}/{name_text}", owner_text.trim_end_matches('/'));
+    let actual = dmb
+        .procs
+        .get(index as usize)
+        .and_then(|proc| dmb.string(proc.strings[0]));
+    Ok(owned
+        && (actual == Some(name_text.as_bytes())
+            || actual == Some(qualified.as_bytes())
+            || actual == Some(implicit_path.as_bytes())))
 }
 fn append_list(dmb: &mut Dmb, words: Vec<u32>) -> Result<u32, CompositionError> {
     let id = u32::try_from(dmb.lists.len()).map_err(|_| unsupported("list count overflow"))?;
@@ -256,6 +304,26 @@ pub fn compose_projected_with_stage(
     values: &dyn crate::class_projection::TypeValuePolicy,
     stage: Option<&dyn NonTextOutputStage>,
 ) -> Result<Vec<u8>, CompositionError> {
+    compose_projected_with_symbols(
+        engine_bytes,
+        batch,
+        frontend,
+        projection,
+        values,
+        stage,
+        frontend.snapshot.tree.symbols(),
+    )
+}
+/// Body-local startup declarations use the collision-checked captured union dictionary.
+pub fn compose_projected_with_symbols(
+    engine_bytes: &[u8],
+    batch: &FrozenBatch,
+    frontend: &dm_tree::frontend::ColdFrontend,
+    projection: &crate::class_projection::ClassProjection,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    stage: Option<&dyn NonTextOutputStage>,
+    symbols: &SymbolTable,
+) -> Result<Vec<u8>, CompositionError> {
     if projection.tree_identity != frontend.snapshot.tree.identity()
         || projection.occurrence_count != frontend.snapshot.occurrences.source_order().len()
     {
@@ -293,7 +361,7 @@ pub fn compose_projected_with_stage(
     compose_records(
         engine_bytes,
         batch,
-        frontend.snapshot.tree.symbols(),
+        symbols,
         Some((projection, values)),
         stage,
     )
@@ -386,7 +454,7 @@ fn compose_records(
                 );
             }
             Key::Type(_) if (index as usize) >= dmb.classes.len() && projection.is_some() => {}
-            Key::Variable { .. } if projection.is_some() => {}
+            Key::Variable { .. } | Key::ProcedureStatic(_) if projection.is_some() => {}
             Key::ArgumentSource { .. } if (index as usize) >= engine_procs => {
                 helpers.insert(index, key);
             }
@@ -771,6 +839,35 @@ fn emit_anonymous(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn every_captured_engine_named_procedure_binding_is_validated() {
+        let bytes = include_bytes!("../../../fixtures/native_template.bin");
+        let engine = crate::engine::EngineSnapshot::from_bytes(bytes, 1).unwrap();
+        let dmb = Dmb::from_bytes(bytes).unwrap();
+        let links = crate::engine_link::capture(bytes, &engine).unwrap();
+        for (key, index) in links.inventory.fixed {
+            if !matches!(key, Key::Proc { .. } | Key::Verb { .. }) {
+                continue;
+            }
+            let result = validate_binding(&dmb, key, index, engine.symbols(), None);
+            let record = &dmb.procs[index as usize];
+            assert!(
+                result.is_ok(),
+                "{result:?}; index={index}; strings={:?}; key={key:?}; layouts={:?}",
+                record.strings.map(|id| dmb.string(id)),
+                engine
+                    .procedure_layouts()
+                    .iter()
+                    .filter(|layout| layout.wire_proc == index)
+                    .map(|layout| (
+                        engine.symbols().text(layout.owner),
+                        layout.name.and_then(|name| engine.symbols().text(name)),
+                        layout.kind
+                    ))
+                    .collect::<Vec<_>>()
+            );
+        }
+    }
     #[test]
     fn builtin_global_vars_uses_variable_record_domain_without_footer_allocation() {
         let bytes = include_bytes!(

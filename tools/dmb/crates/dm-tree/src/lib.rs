@@ -14,6 +14,7 @@ mod normalize;
 mod procedure;
 mod resolver;
 pub mod settings;
+pub mod procedure_statics;
 mod variable_facts;
 pub use adapter::{
     from_ast, from_ast_in_scope, AdaptedDeclarations, AdapterError, SnapshotError, TreeSnapshot,
@@ -150,6 +151,7 @@ impl SemanticTree {
     pub fn symbols(&self) -> &SymbolTable {
         &self.symbols
     }
+    pub fn shared_symbols(&self) -> Arc<SymbolTable> { Arc::clone(&self.symbols) }
     pub fn identity(&self) -> u128 {
         self.identity
     }
@@ -175,7 +177,13 @@ impl SemanticTree {
         &self.declaration_targets
     }
     pub fn resolve(&self, mut owner: TypeId, name: SymbolId, kind: MemberKind) -> Option<MemberId> {
+        let instance_namespace = self.types[owner.index()].path != SymbolId::of("/")
+            && matches!(kind, MemberKind::Proc | MemberKind::Verb);
         loop {
+            // The synthetic root owns global procedures, not inherited methods.
+            if instance_namespace && self.types[owner.index()].path == SymbolId::of("/") {
+                return None;
+            }
             if let Some(id) = self.direct.get(&(owner, name, kind)) {
                 return Some(*id);
             }
@@ -536,6 +544,10 @@ pub fn build_with_intrinsic_fields(
             let mut parent = tree.parent(node.owner);
             let mut previous = None;
             while let Some(owner) = parent {
+                if matches!(node.kind, MemberKind::Proc | MemberKind::Verb)
+                    && tree.types[owner.index()].path == root {
+                    break;
+                }
                 if let Some(id) = tree.direct.get(&(owner, node.name, node.kind)) {
                     previous = Some(*id);
                     break;
@@ -893,6 +905,7 @@ impl dm_ir::Resolver for SemanticTree {
             }
             Q::Resource(_)
             | Q::ResourceIn { .. }
+            | Q::ProcedureStatic { .. }
             | Q::RuntimeType(_)
             | Q::PredefinedConstant(_) => M::Unsupported(query),
         };

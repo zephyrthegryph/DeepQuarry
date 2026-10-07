@@ -10,6 +10,7 @@ use dm_tree::{initializers::InitializerPlan, OccurrenceId};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 pub struct CapturedDefault {
+    pub origin_kind: dm_tree::initializers::InitializerOriginKind,
     pub source_ordinal: usize,
     pub occurrence: OccurrenceId,
     pub value: DefaultValue,
@@ -72,6 +73,7 @@ fn admit_coverage<'a>(
     }
     let mut seen = BTreeSet::new();
     let mut occurrences = HashSet::new();
+    let mut statics = HashSet::new();
     let mut defaults = Vec::with_capacity(classified.writes.len());
     for fact in &classified.writes {
         let ordinal = fact.source_ordinal;
@@ -87,14 +89,63 @@ fn admit_coverage<'a>(
             .occurrences
             .get(origin.occurrence)
             .ok_or("default occurrence absent")?;
-        if current.target != dm_tree::Target::Member(origin.member)
-            || current.provenance != origin.provenance
-            || !occurrences.insert(origin.occurrence)
-        {
+        if current.provenance != origin.provenance {
             return Err("default source occurrence is stale or duplicated".into());
+        }
+        match &origin.kind {
+            dm_tree::initializers::InitializerOriginKind::Declaration(member) => {
+                if current.target != dm_tree::Target::Member(*member)
+                    || !occurrences.insert(origin.occurrence)
+                {
+                    return Err("default declaration occurrence is stale or duplicated".into());
+                }
+            }
+            dm_tree::initializers::InitializerOriginKind::ProcedureStatic {
+                identity,
+                expanded_span,
+            } => {
+                let dm_tree::Target::Member(member) = current.target else {
+                    return Err("procedure static is not anchored to a procedure occurrence".into());
+                };
+                let tree = &plan.source.tree;
+                let node = tree.member(member).ok_or("static procedure missing")?;
+                let owner = tree
+                    .type_node(node.owner)
+                    .ok_or("static procedure owner missing")?
+                    .path;
+                let verb = node.kind == dm_tree::MemberKind::Verb;
+                let occurrence = tree
+                    .override_chain(member)
+                    .iter()
+                    .filter(|entry| {
+                        tree.member(**entry).is_some_and(|entry| {
+                            entry.owner == node.owner
+                                && entry.name == node.name
+                                && entry.kind == node.kind
+                        })
+                    })
+                    .count()
+                    .checked_sub(1)
+                    .ok_or("static procedure chain empty")?;
+                if !matches!(
+                    node.kind,
+                    dm_tree::MemberKind::Proc | dm_tree::MemberKind::Verb
+                ) || identity.procedure.owner != owner
+                    || identity.procedure.name != node.name
+                    || identity.procedure.verb != verb
+                    || usize::try_from(identity.procedure.occurrence).ok() != Some(occurrence)
+                    || expanded_span.end < expanded_span.start
+                    || fact.write.target != InitializerTarget::ProcedureStatic(*identity)
+                    || fact.write.lexical_procedure != Some(identity.procedure)
+                    || !statics.insert(*identity)
+                {
+                    return Err("procedure static source identity is stale or duplicated".into());
+                }
+            }
         }
         let expected = match fact.write.target {
             InitializerTarget::Shared { .. } => InitializerIdentity::Global,
+            InitializerTarget::ProcedureStatic(_) => InitializerIdentity::Global,
             InitializerTarget::Instance { receiver_owner, .. } => {
                 InitializerIdentity::Class(receiver_owner)
             }
@@ -109,6 +160,7 @@ fn admit_coverage<'a>(
             return Err("scalar default has unexpected runtime initializer coverage".into());
         }
         defaults.push(CapturedDefault {
+            origin_kind: origin.kind.clone(),
             source_ordinal: ordinal,
             occurrence: origin.occurrence,
             value: fact.default.clone(),

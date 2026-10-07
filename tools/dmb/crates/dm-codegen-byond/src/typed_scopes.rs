@@ -45,6 +45,7 @@ pub(crate) fn prepare<'a>(
         prepared.push(PreparedScope {
             bindings: LowerBindings {
                 current_type_path: input.current_type_path.clone(),
+                procedure_identity: input.procedure_identity,
                 ..LowerBindings::default()
             },
             statements: scope.statements,

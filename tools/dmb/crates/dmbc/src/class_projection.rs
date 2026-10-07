@@ -51,6 +51,8 @@ pub struct ProcedureChain {
 }
 #[derive(Clone, Debug)]
 pub struct ClassProjection {
+    pub shared_slot_order: Arc<[Key]>,
+    pub procedure_statics: Arc<[ProcedureStaticProjection]>,
     pub runtime_writes: Arc<[(usize, dm_link::InitializerIdentity)]>,
     pub tree_identity: u128,
     pub occurrence_count: usize,
@@ -59,6 +61,13 @@ pub struct ClassProjection {
     /// from assignment records, retaining each ordered assignment.
     pub fields: Arc<[FieldProjection]>,
     pub chains: Arc<[ProcedureChain]>,
+}
+#[derive(Clone, Debug)]
+pub struct ProcedureStaticProjection {
+    pub identity: dm_ir::ProcedureStaticIdentity,
+    pub wire_flags: u32,
+    pub value: DefaultValue,
+    pub source_ordinal: usize,
 }
 /// Evaluator reads only a captured immutable resolver/configuration. Dynamic
 /// initializers must use initializer artifacts; failures are not replaced by0.
@@ -110,7 +119,65 @@ pub fn project_classified(
     }
     let ledger = crate::class_initialization::admit_lowered(plan, classified, units)
         .map_err(ProjectionError::Unsupported)?;
-    project_inner(source, order, &NoEvaluation, Some(&ledger))
+    let mut projection = project_inner(source, order, &NoEvaluation, Some(&ledger))?;
+    let mut statics = Vec::new();
+    for default in &ledger.defaults {
+        if let dm_tree::initializers::InitializerOriginKind::ProcedureStatic { identity, .. } =
+            &default.origin_kind
+        {
+            let write = plan
+                .writes
+                .get(default.source_ordinal)
+                .ok_or(ProjectionError::MissingMember)?;
+            let flags = write.declaration_flags.ok_or_else(|| {
+                ProjectionError::Unsupported("static modifier knowledge missing".into())
+            })?;
+            let (flags, shared) = wire_flags(flags, identity.procedure.owner)?;
+            if !shared {
+                return Err(ProjectionError::Unsupported(
+                    "procedure static lacks shared storage modifiers".into(),
+                ));
+            }
+            statics.push(ProcedureStaticProjection {
+                identity: *identity,
+                wire_flags: flags,
+                value: default.value.clone(),
+                source_ordinal: default.source_ordinal,
+            });
+        }
+    }
+    projection.procedure_statics = statics.into();
+    let mut order = Vec::new();
+    let mut seen = std::collections::BTreeSet::new();
+    for default in &ledger.defaults {
+        let write = &plan.writes[default.source_ordinal];
+        let key = match &default.origin_kind {
+            dm_tree::initializers::InitializerOriginKind::ProcedureStatic { identity, .. } => {
+                Some(Key::ProcedureStatic(*identity))
+            }
+            dm_tree::initializers::InitializerOriginKind::Declaration(member)
+                if source
+                    .tree
+                    .member(*member)
+                    .is_some_and(|member| member.definition == DefinitionMode::Declare) =>
+            {
+                match write.target {
+                    dm_ir::InitializerTarget::Shared { owner, name, .. } => {
+                        Some(Key::Variable { owner, name })
+                    }
+                    _ => None,
+                }
+            }
+            _ => None,
+        };
+        if let Some(key) = key {
+            if seen.insert(key) {
+                order.push(key);
+            }
+        }
+    }
+    projection.shared_slot_order = order.into();
+    Ok(projection)
 }
 fn project_inner(
     source: &TreeSnapshot,
@@ -142,6 +209,12 @@ fn project_inner(
     let default_index: HashMap<_, _> = defaults
         .into_iter()
         .flat_map(|ledger| ledger.defaults.iter())
+        .filter(|value| {
+            matches!(
+                value.origin_kind,
+                dm_tree::initializers::InitializerOriginKind::Declaration(_)
+            )
+        })
         .map(|value| (value.occurrence, &value.value))
         .collect();
     let mut group_order = Vec::new();
@@ -335,6 +408,16 @@ fn project_inner(
         })
         .collect::<Vec<_>>();
     Ok(ClassProjection {
+        shared_slot_order: fields
+            .iter()
+            .filter(|field| field.role == FieldRole::Declaration && field.shared)
+            .map(|field| Key::Variable {
+                owner: field.owner,
+                name: field.name,
+            })
+            .collect::<Vec<_>>()
+            .into(),
+        procedure_statics: Arc::from([]),
         runtime_writes: defaults
             .into_iter()
             .flat_map(|ledger| ledger.defaults.iter())
@@ -561,6 +644,31 @@ pub fn materialize_members(
         .collect::<Result<Vec<_>, ProjectionError>>()?;
     let directives = crate::world_projection::project(world_values)
         .map_err(|error| ProjectionError::Unsupported(format!("world policy {error:?}")))?;
+    let client = SymbolId::of("/client");
+    let client_types = projection.types.iter().filter_map(|typ| {
+        tables.index(Key::Type(typ.path)).map(|ordinal| (typ.path, typ.parent, ordinal))
+    }).collect::<Vec<_>>();
+    let client_order = crate::client_projection::configuration_order(client, &client_types)
+        .map_err(|error| ProjectionError::Unsupported(format!("client order {error:?}")))?;
+    let client_owners: HashSet<_> = client_order.iter().copied().collect();
+    let mut client_directives = Vec::new();
+    for owner in client_order {
+    for field in projection.fields.iter().filter(|field| field.intrinsic && field.owner == owner) {
+        let name = text(field.name)?;
+        if !crate::client_projection::is_header_field(name) {
+            continue;
+        }
+        let DefaultValue::Scalar(value) = &field.value else {
+            return Err(ProjectionError::Unsupported("client header requires scalar default".into()));
+        };
+        if let Some(directive) = crate::client_projection::project(name, value)
+            .map_err(|error| ProjectionError::Unsupported(format!("client policy {error:?}")))?
+        {
+            client_directives.push(directive);
+        }
+    }
+    }
+    crate::client_projection::apply(dmb, &client_directives);
     struct Defaults<'a> {
         tables: &'a dm_link::LinkTables,
         values: &'a dyn TypeValuePolicy,
@@ -594,6 +702,29 @@ pub fn materialize_members(
         },
     )
     .map_err(ProjectionError::Unsupported)?;
+    if let Some(script) = client_directives.iter().rev().find_map(|directive| {
+        match directive {
+            crate::client_projection::Directive::Script(script) => Some(script),
+            _ => None,
+        }
+    }) {
+        struct ScriptBindings<'a> {
+            strings: &'a mut crate::composition::StringIndex,
+            resources: &'a dyn TypeValuePolicy,
+        }
+        impl crate::client_script::Bindings for ScriptBindings<'_> {
+            fn string(&mut self, dmb: &mut byond_dmb::dmb::Dmb, bytes: &[u8]) -> Result<u32, String> {
+                self.strings.intern(dmb, bytes).map_err(|error| format!("{error:?}"))
+            }
+            fn resource(&self, symbol: SymbolId) -> Result<u32, String> {
+                self.resources.resource_index(symbol).map_err(|error| format!("{error:?}"))
+            }
+        }
+        crate::client_script::apply(dmb, script, &mut ScriptBindings {
+            strings: &mut world_strings,
+            resources: value_types,
+        }).map_err(ProjectionError::Unsupported)?;
+    }
     let mut classes = HashMap::new();
     let mut declarations = HashMap::new();
     for (index, class) in dmb.classes.iter().enumerate() {
@@ -683,6 +814,7 @@ pub fn materialize_members(
             )),
         }
     }
+    let mut shared_records = BTreeMap::new();
     for field in projection
         .fields
         .iter()
@@ -705,31 +837,18 @@ pub fn materialize_members(
         dmb.variables.push(Variable { kind, value, name });
         declarations.insert((field.owner, field.name), variable);
         if field.shared {
-            let position = if dmb.variable_footer == NONE {
-                0
-            } else {
-                let footer = dmb
-                    .lists
-                    .get(dmb.variable_footer as usize)
-                    .ok_or(ProjectionError::MissingMember)?;
-                if footer.len() % 2 != 0 {
-                    return Err(ProjectionError::Unsupported(
-                        "invalid variable footer".into(),
-                    ));
-                }
-                footer.len() / 2
-            };
-            if tables.index(Key::Variable {
+            let key = Key::Variable {
                 owner: field.owner,
                 name: field.name,
-            }) != Some(position as u32)
-            {
+            };
+            let index = tables.index(key).ok_or_else(|| {
+                ProjectionError::Unsupported("shared slot binding missing".into())
+            })?;
+            if shared_records.insert(index, (variable, flags)).is_some() {
                 return Err(ProjectionError::Unsupported(
-                    "shared slot order disagrees with footer allocation".into(),
+                    "duplicate shared slot record".into(),
                 ));
             }
-            let footer = dmb.variable_footer;
-            dmb.variable_footer = extend(dmb, footer, vec![variable, flags])?;
         }
         if field.owner != SymbolId::of("/") {
             let class = *classes
@@ -740,12 +859,67 @@ pub fn materialize_members(
             dmb.classes[class as usize].lists_and_procs[4] = id;
         }
     }
+    for local in projection.procedure_statics.iter() {
+        let index = tables
+            .index(Key::ProcedureStatic(local.identity))
+            .ok_or_else(|| {
+                ProjectionError::Unsupported("procedure static slot binding missing".into())
+            })?;
+        let name = pool
+            .intern(dmb, text(local.identity.name)?.as_bytes())
+            .map_err(|error| {
+                ProjectionError::Unsupported(format!("procedure static name {error:?}"))
+            })?;
+        let (kind, value) = scalar(dmb, &mut pool, &local.value, tables, value_types)?;
+        let variable = u32::try_from(dmb.variables.len())
+            .map_err(|_| ProjectionError::Unsupported("procedure static record overflow".into()))?;
+        dmb.variables.push(Variable { kind, value, name });
+        if shared_records
+            .insert(index, (variable, local.wire_flags))
+            .is_some()
+        {
+            return Err(ProjectionError::Unsupported(
+                "duplicate procedure static shared slot".into(),
+            ));
+        }
+    }
+    if !shared_records.is_empty() {
+        let mut footer = if dmb.variable_footer == NONE {
+            Vec::new()
+        } else {
+            dmb.lists
+                .get(dmb.variable_footer as usize)
+                .ok_or(ProjectionError::MissingMember)?
+                .clone()
+        };
+        if footer.len() % 2 != 0 {
+            return Err(ProjectionError::Unsupported(
+                "invalid variable footer".into(),
+            ));
+        }
+        for (index, (record, flags)) in shared_records {
+            if usize::try_from(index).ok() != Some(footer.len() / 2) {
+                return Err(ProjectionError::Unsupported(
+                    "shared slot order disagrees with footer allocation".into(),
+                ));
+            }
+            footer.extend([record, flags]);
+        }
+        dmb.variable_footer = list(dmb, footer)?;
+    }
     for field in projection
         .fields
         .iter()
         .filter(|field| field.role == FieldRole::Assignment)
     {
         if field.owner == world && field.intrinsic {
+            continue;
+        }
+        if client_owners.contains(&field.owner) && field.intrinsic
+            && crate::client_projection::is_header_field(text(field.name)?)
+            && !(text(field.name)? == "preload_rsc"
+                && matches!(&field.value, DefaultValue::Scalar(SemanticValue::Text(_))))
+        {
             continue;
         }
         if field.shared {

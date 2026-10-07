@@ -1,6 +1,6 @@
 //! Cold initializer artifacts from captured authored writes and explicit ABI
 //! classification. No mutable DMB, filesystem reads or project binding copies.
-use crate::debug_sources::{DebugOrigin, DebugOrigins};
+use crate::debug_sources::{DebugOrigin, DebugOriginProvider, DebugOrigins};
 use crate::initializer_policy::{
     self, CapturedInitializerEvaluator, ClassifiedInitializers, RuntimeValue,
 };
@@ -80,7 +80,15 @@ pub fn lower<R: Resolver>(
     {
         return Err("initializer plan differs from captured frontend".into());
     }
-    let symbols = plan.source.tree.symbols();
+    if plan.origins.iter().any(|origin| {
+        matches!(
+            origin.kind,
+            dm_tree::initializers::InitializerOriginKind::ProcedureStatic { .. }
+        )
+    }) {
+        crate::startup::validate(frontend, plan)?;
+    }
+    let symbols = plan.symbols.as_ref();
     let classified = initializer_policy::classify(&plan.writes, symbols, evaluator)?;
     let mut units = Vec::with_capacity(classified.groups.len());
     for group in &classified.groups {
@@ -97,7 +105,36 @@ pub fn lower<R: Resolver>(
                 .occurrences
                 .get(origin.occurrence)
                 .ok_or("initializer current occurrence missing")?;
-            if current.target != dm_tree::Target::Member(origin.member)
+            let expected_member = match &origin.kind {
+                dm_tree::initializers::InitializerOriginKind::Declaration(member) => *member,
+                dm_tree::initializers::InitializerOriginKind::ProcedureStatic {
+                    identity, ..
+                } => {
+                    let dm_tree::Target::Member(member) = current.target else {
+                        return Err("static origin is not a procedure".into());
+                    };
+                    let node = frontend
+                        .snapshot
+                        .tree
+                        .member(member)
+                        .ok_or("static procedure missing")?;
+                    let owner = frontend
+                        .snapshot
+                        .tree
+                        .type_node(node.owner)
+                        .ok_or("static owner missing")?
+                        .path;
+                    if owner != identity.procedure.owner
+                        || node.name != identity.procedure.name
+                        || (node.kind == dm_tree::MemberKind::Verb) != identity.procedure.verb
+                        || node.kind == dm_tree::MemberKind::Var
+                    {
+                        return Err("static origin procedure differs".into());
+                    }
+                    member
+                }
+            };
+            if current.target != dm_tree::Target::Member(expected_member)
                 || current.provenance.span != origin.provenance.span
                 || current.provenance.include_occurrence != origin.provenance.include_occurrence
                 || current.provenance.region != origin.provenance.region
@@ -122,10 +159,18 @@ pub fn lower<R: Resolver>(
                 return Err("initializer source span out of bounds".into());
             }
             let line = file.line_starts.partition_point(|start| *start <= offset);
-            entries.push(DebugOrigin {
-                semantic_path: occurrence.semantic_path.to_string(),
-                line: u32::try_from(line).map_err(|_| "initializer source line exceeds u32")?,
-            });
+            if let dm_tree::initializers::InitializerOriginKind::ProcedureStatic {
+                expanded_span,
+                ..
+            } = &origin.kind
+            {
+                entries.push(frontend.origin(expanded_span.start)?);
+            } else {
+                entries.push(DebugOrigin {
+                    semantic_path: occurrence.semantic_path.to_string(),
+                    line: u32::try_from(line).map_err(|_| "initializer source line exceeds u32")?,
+                });
+            }
             let mut value = value_expression(
                 write
                     .runtime_value

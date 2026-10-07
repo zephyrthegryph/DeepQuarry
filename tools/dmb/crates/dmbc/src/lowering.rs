@@ -85,6 +85,25 @@ pub fn lower_frontend<R: Resolver, P: AbiPolicy>(
     policy: &P,
     config: LoweringConfig,
 ) -> LoweringBatch {
+    lower_frontend_impl(frontend, host, policy, config, None)
+}
+/// Startup admission is an exact captured body inventory, never a bypass flag.
+pub fn lower_frontend_with_statics<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    host: &R,
+    policy: &P,
+    config: LoweringConfig,
+    startup: &crate::startup::CapturedStartup,
+) -> LoweringBatch {
+    lower_frontend_impl(frontend, host, policy, config, Some(startup))
+}
+fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    host: &R,
+    policy: &P,
+    config: LoweringConfig,
+    startup: Option<&crate::startup::CapturedStartup>,
+) -> LoweringBatch {
     // At most eight workers and bounded chunks, independent of machine core count.
     let workers = config.workers.clamp(1, 8);
     let chunk = config.max_chunk.clamp(1, 256);
@@ -106,7 +125,7 @@ pub fn lower_frontend<R: Resolver, P: AbiPolicy>(
                     scope.spawn(move || {
                         slice
                             .iter()
-                            .map(|body| lower_one(frontend, body, host, policy))
+                            .map(|body| lower_one(frontend, body, host, policy, startup))
                             .collect::<Vec<_>>()
                     }),
                 ));
@@ -144,6 +163,7 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
     body: &BodyOccurrence,
     host: &R,
     policy: &P,
+    startup: Option<&crate::startup::CapturedStartup>,
 ) -> Result<LoweredUnit, Vec<LoweringDiagnostic>> {
     let tree = &frontend.snapshot.tree;
     let error = |identity, message| {
@@ -199,7 +219,7 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
         .procedure
         .as_ref()
         .ok_or_else(|| unsupported("procedure signature metadata unsupported".into()))?;
-    let symbols = tree.symbols();
+    let symbols = startup.map_or(tree.symbols(), |captured| captured.plan.symbols.as_ref());
     let parsed = frontend.body(body).map_err(|diagnostic| {
         vec![LoweringDiagnostic {
             kind: diagnostic.kind,
@@ -217,7 +237,59 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
     let prepared = policy
         .prepare(metadata, &parsed, &context)
         .map_err(unsupported)?;
+    let procedure_identity = dm_ir::ProcedureIdentity {
+        owner: identity.owner,
+        name: identity.name,
+        verb: identity.namespace == Namespace::Verb,
+        occurrence: identity.occurrence,
+    };
+    fn may_have_statics(items: &[dm_syntax::Item]) -> bool {
+        items.iter().any(|item| {
+            item.header.find("var/").is_some_and(|at| {
+                item.header[at + 4..]
+                    .split('=')
+                    .next()
+                    .unwrap_or("")
+                    .split('/')
+                    .any(|component| matches!(component.trim(), "static" | "const" | "global"))
+            }) || may_have_statics(&item.children)
+        })
+    }
     let mut inputs = prepared.inputs;
+    let executable_body = if let Some(startup) = startup {
+        let captured = startup
+            .procedures
+            .iter()
+            .find(|(occurrence, _)| *occurrence == body.declaration)
+            .map(|(_, plan)| plan)
+            .ok_or_else(|| unsupported("procedure startup inventory missing".into()))?;
+        let current =
+            dm_tree::procedure_statics::capture(procedure_identity, &prepared.executable_body)
+                .map_err(unsupported)?;
+        if captured.procedure != current.procedure
+            || captured.declarations != current.declarations
+            || captured.origins != current.origins
+        {
+            return Err(unsupported(
+                "procedure startup inventory differs from current body".into(),
+            ));
+        }
+        inputs.procedure_identity = Some(procedure_identity);
+        current.executable_body
+    } else {
+        if may_have_statics(&prepared.executable_body) {
+            let static_plan =
+                dm_tree::procedure_statics::capture(procedure_identity, &prepared.executable_body)
+                    .map_err(unsupported)?;
+            if !static_plan.declarations.is_empty() {
+                return Err(unsupported(
+                    "procedure statics require verified shared-slot/default/startup admission"
+                        .into(),
+                ));
+            }
+        }
+        prepared.executable_body
+    };
     let owner_text = symbols
         .text(owner)
         .ok_or_else(|| error(Some(identity), "owner spelling missing".into()))?;
@@ -237,7 +309,7 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
     ));
     let debug = FrontendDebugProvider::new(frontend, parsed.header_span.start);
     let code = compile_simple_proc_with_resolver_and_debug(
-        &prepared.executable_body,
+        &executable_body,
         &inputs,
         symbols,
         host,
@@ -401,6 +473,47 @@ mod tests {
             assert_eq!(a.origin.source.span, b.origin.source.span);
             assert_eq!(a.code.procedure, b.code.procedure);
         }
+    }
+    #[test]
+    fn startup_admission_filters_declarations_and_preserves_distinct_static_slots() {
+        let frontend = frontend("/proc/first()\n    var/static/counter = 1\n    return counter\n/proc/second()\n    var/static/counter = 2\n    return counter\n");
+        let ordinary = lower_frontend(&frontend, &Host, &NoParameters, LoweringConfig::default());
+        assert!(ordinary.units.is_empty());
+        assert_eq!(ordinary.diagnostics.len(), 2);
+        let startup = crate::startup::capture(&frontend).unwrap();
+        let host = startup.resolver(&frontend, &Host).unwrap();
+        let one = lower_frontend_with_statics(
+            &frontend,
+            &host,
+            &NoParameters,
+            LoweringConfig {
+                workers: 1,
+                max_chunk: 1,
+            },
+            &startup,
+        );
+        let two = lower_frontend_with_statics(
+            &frontend,
+            &host,
+            &NoParameters,
+            LoweringConfig {
+                workers: 2,
+                max_chunk: 1,
+            },
+            &startup,
+        );
+        assert!(one.diagnostics.is_empty(), "{:?}", one.diagnostics);
+        assert!(two.diagnostics.is_empty(), "{:?}", two.diagnostics);
+        assert_eq!(one.units.len(), 2);
+        for (a, b) in one.units.iter().zip(&two.units) {
+            assert_eq!(a.code.procedure, b.code.procedure);
+            assert_eq!(a.code.procedure_statics, b.code.procedure_statics);
+            assert_eq!(a.code.procedure_statics.len(), 1);
+        }
+        assert_ne!(
+            one.units[0].code.procedure_statics,
+            one.units[1].code.procedure_statics
+        );
     }
     #[test]
     fn global_units_use_global_storage_against_the_real_tree() {

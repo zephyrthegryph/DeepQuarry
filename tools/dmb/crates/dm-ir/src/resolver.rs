@@ -11,6 +11,10 @@ pub enum ReadDomain {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ResolveQuery {
+    ProcedureStatic {
+        procedure: crate::ProcedureIdentity,
+        name: SymbolId,
+    },
     Type(SymbolId),
     Parent(SymbolId),
     Ancestry(SymbolId),
@@ -89,6 +93,7 @@ impl ResolveQuery {
 /// Fingerprints cover complete values/settings/signatures, never arena IDs.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ResolvedMeaning {
+    ProcedureStatic(Arc<crate::ProcedureStaticDeclaration>),
     /// An unfinished resolver is never allowed to pretend a declaration is absent.
     Unsupported(ResolveQuery),
     Missing,

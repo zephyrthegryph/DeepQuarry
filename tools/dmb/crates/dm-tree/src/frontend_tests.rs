@@ -24,6 +24,46 @@ fn fixture(files: &[(&str, &str)]) -> Result<ColdFrontend, Vec<Diagnostic>> {
 }
 
 #[test]
+fn parent_resolution_errors_point_to_authored_cause_not_later_reopen() {
+    let errors = fixture(&[
+        (
+            "project.dme",
+            "#include \"first.dm\"\n#include \"second.dm\"\n#include \"reopen.dm\"\n",
+        ),
+        (
+            "first.dm",
+            "/datum/a\n/datum/b\n/datum/child\n    parent_type = /datum/a\n",
+        ),
+        ("second.dm", "/datum/child\n    parent_type = /datum/b\n"),
+        ("reopen.dm", "/datum/child\n    var/example\n"),
+    ])
+    .unwrap_err();
+    let error = errors
+        .iter()
+        .find(|error| error.message.contains("ConflictingParent"))
+        .unwrap();
+    assert_eq!(
+        error.location.as_ref().unwrap().path.as_path(),
+        Path::new("second.dm")
+    );
+    let errors = fixture(&[
+        ("project.dme", "#include \"child.dm\"\n"),
+        (
+            "child.dm",
+            "/datum/child\n    parent_type = /not_declared\n",
+        ),
+    ])
+    .unwrap_err();
+    let error = errors
+        .iter()
+        .find(|error| error.message.contains("MissingParent"))
+        .unwrap();
+    assert_eq!(
+        error.location.as_ref().unwrap().path.as_path(),
+        Path::new("child.dm")
+    );
+}
+#[test]
 fn nested_settings_guard_identity_and_include_origins_survive_body_compaction() {
     let make = |guard: &str, body: &str| {
         let text = format!("    if ({guard})\n        set waitfor = 0\n        return {body}\n    else\n        set background = 1\n");

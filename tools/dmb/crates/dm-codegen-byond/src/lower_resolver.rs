@@ -6,6 +6,7 @@ use dm_ir::{
 };
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
+use std::sync::Arc;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResolvedSlot {
@@ -19,6 +20,7 @@ pub struct ResolvedInstance {
     pub runtime_type: SymbolId,
 }
 pub struct ResolverProc {
+    pub procedure_statics: BTreeMap<crate::Symbol, dm_ir::ProcedureStaticIdentity>,
     pub procedure: crate::SimpleProc,
     /// Exact resolver-issued slot tuples; no output slot is selected here.
     pub slots: BTreeMap<crate::Symbol, ResolvedSlot>,
@@ -30,6 +32,7 @@ pub struct ResolverProc {
 
 #[derive(Clone, Debug, Default)]
 pub struct ProcedureInputs {
+    pub procedure_identity: Option<dm_ir::ProcedureIdentity>,
     pub current_proc_path: Option<String>,
     pub current_type_path: Option<String>,
     pub parameters: Vec<String>,
@@ -43,6 +46,7 @@ pub struct ProcedureInputs {
 impl ProcedureInputs {
     pub(crate) fn lexical_bindings(&self) -> LowerBindings {
         LowerBindings {
+            procedure_identity: self.procedure_identity,
             current_proc_path: self.current_proc_path.clone(),
             current_type_path: self.current_type_path.clone(),
             parameters: self.parameters.clone(),
@@ -55,6 +59,7 @@ impl ProcedureInputs {
     }
 }
 pub(crate) struct ProjectResolver<'a> {
+    pub procedure_statics: RefCell<BTreeMap<crate::Symbol, dm_ir::ProcedureStaticIdentity>>,
     pub resolver: &'a dyn Resolver,
     pub symbols: &'a SymbolTable,
     pub slots: RefCell<BTreeMap<crate::Symbol, ResolvedSlot>>,
@@ -64,6 +69,51 @@ pub(crate) struct ProjectResolver<'a> {
     pub resource_search_context: Option<u128>,
 }
 impl ProjectResolver<'_> {
+    pub fn procedure_static(
+        &self,
+        procedure: Option<dm_ir::ProcedureIdentity>,
+        name: &str,
+    ) -> Result<Option<Arc<dm_ir::ProcedureStaticDeclaration>>, LowerError> {
+        let Some(procedure) = procedure else {
+            return Ok(None);
+        };
+        let query = Q::ProcedureStatic {
+            procedure,
+            name: SymbolId::of(name),
+        };
+        match self.answer(query)? {
+            M::Missing => Ok(None),
+            M::ProcedureStatic(declaration)
+                if declaration.identity.procedure == procedure
+                    && declaration.identity.name == SymbolId::of(name) =>
+            {
+                Ok(Some(declaration))
+            }
+            _ => Err(self.error(query, "invalid procedure-static declaration answer")),
+        }
+    }
+    pub fn procedure_static_slot(
+        &self,
+        procedure: Option<dm_ir::ProcedureIdentity>,
+        name: &str,
+    ) -> Result<Option<String>, LowerError> {
+        let Some(declaration) = self.procedure_static(procedure, name)? else {
+            return Ok(None);
+        };
+        let identity = declaration.identity;
+        let key = format!(
+            "procedure-static:{:016x}:{:016x}:{}:{}:{:016x}",
+            identity.procedure.owner.bits(),
+            identity.procedure.name.bits(),
+            u8::from(identity.procedure.verb),
+            identity.procedure.occurrence,
+            identity.name.bits()
+        );
+        self.procedure_statics
+            .borrow_mut()
+            .insert(crate::Symbol::new(crate::Table::Variable, &key), identity);
+        Ok(Some(key))
+    }
     pub fn runtime_type(&self, path: &str) -> Result<String, LowerError> {
         let alias = SymbolId::of(path);
         let query = Q::RuntimeType(alias);
@@ -257,6 +307,96 @@ mod tests {
     ) -> Result<ResolverProc, Vec<LowerError>> {
         let ast = dm_syntax::parse(source);
         crate::compile_simple_proc_with_resolver(&ast.items[0].children, &inputs, symbols, host)
+    }
+    #[test]
+    fn known_untyped_field_shadows_global_type_demand() {
+        let host = Host {
+            reads: Mutex::new(Vec::new()),
+            answer: |query| match query {
+                Q::HasMemberVar { name, .. } if name == SymbolId::of("field") => M::Presence(true),
+                Q::DeclaredVarType { name, .. } if name == SymbolId::of("field") => {
+                    M::DeclaredType(None)
+                }
+                Q::VarStorage { owner, name } if name == SymbolId::of("field") => {
+                    M::InstanceField {
+                        declaring_owner: owner,
+                        name,
+                    }
+                }
+                other => M::Unsupported(other),
+            },
+        };
+        let code = lower(
+            "/datum/item/proc/p()\n    return new field()\n",
+            ProcedureInputs {
+                current_type_path: Some("/datum/item".into()),
+                ..Default::default()
+            },
+            &SymbolTable::default(),
+            &host,
+        );
+        assert!(code.is_ok(), "{code:?}");
+        assert!(!host
+            .reads
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|query| matches!(query,Q::GlobalVar(name) if *name==SymbolId::of("field"))));
+    }
+    #[test]
+    fn procedure_static_uses_exact_slot_tuple_and_parameter_shadowing() {
+        let procedure = dm_ir::ProcedureIdentity {
+            owner: SymbolId::of("/datum/demo"),
+            name: SymbolId::of("read"),
+            verb: false,
+            occurrence: 1,
+        };
+        let host = Host {
+            reads: Mutex::new(Vec::new()),
+            answer: |query| match query {
+                Q::ProcedureStatic { procedure, name } if name == SymbolId::of("counter") => {
+                    M::ProcedureStatic(Arc::new(dm_ir::ProcedureStaticDeclaration {
+                        identity: dm_ir::ProcedureStaticIdentity { procedure, name },
+                        declared_type: None,
+                        modifiers: 1,
+                        declared_array: None,
+                        initializer: dm_ir::InitializerValue::NoAuthoredValue,
+                    }))
+                }
+                Q::ProcedureStatic { .. } => M::Missing,
+                other => M::Unsupported(other),
+            },
+        };
+        let code = lower(
+            "/proc/read()\n    counter += 1\n    return counter\n",
+            ProcedureInputs {
+                procedure_identity: Some(procedure),
+                ..Default::default()
+            },
+            &SymbolTable::default(),
+            &host,
+        )
+        .unwrap();
+        assert_eq!(code.procedure_statics.len(), 1);
+        assert_eq!(
+            code.procedure_statics.values().next(),
+            Some(&dm_ir::ProcedureStaticIdentity {
+                procedure,
+                name: SymbolId::of("counter")
+            })
+        );
+        let shadowed = lower(
+            "/proc/read(counter)\n    return counter\n",
+            ProcedureInputs {
+                procedure_identity: Some(procedure),
+                parameters: vec!["counter".into()],
+                ..Default::default()
+            },
+            &SymbolTable::default(),
+            &host,
+        )
+        .unwrap();
+        assert!(shadowed.procedure_statics.is_empty());
     }
     #[test]
     fn locals_need_no_project_snapshot_and_globals_query_host() {
@@ -463,6 +603,7 @@ mod tests {
             },
         };
         let lookup = ProjectResolver {
+            procedure_statics: RefCell::new(Default::default()),
             resolver: &host,
             symbols: &symbols,
             slots: RefCell::new(BTreeMap::new()),

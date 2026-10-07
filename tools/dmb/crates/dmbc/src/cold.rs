@@ -146,14 +146,22 @@ pub fn compile_captured_classified_with_pinned_abi<R: Resolver>(
     non_text: Option<&dyn crate::composition::NonTextOutputStage>,
 ) -> Result<ColdOutput, ColdError> {
     let total = Instant::now();
-    let prepared = crate::driver_facts::prepare_pinned_source_abi(
+    let startup = crate::startup::capture(frontend).map_err(ColdError::Initializer)?;
+    let prepared = crate::driver_facts::prepare_pinned_source_abi_with_startup(
         frontend,
         links.engine,
         resolver,
+        &startup,
         declarations.resource_search_context,
         config.workers,
     )
     .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
+    if !prepared.prepared.diagnostics.is_empty() {
+        return Err(ColdError::Lowering(
+            crate::driver_facts::abi_diagnostics(frontend, &prepared.prepared)
+                .map_err(|error| ColdError::AbiPreparation(error.to_string()))?,
+        ));
+    }
     let policy = crate::driver_facts::FrozenPreparedPolicy::new(frontend, &prepared.prepared)
         .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
     let abi_preparation = total.elapsed();
@@ -203,15 +211,24 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
         return Err(ColdError::EngineMismatch);
     }
     let stage = Instant::now();
-    let plan = dm_tree::initializers::plan(&frontend.snapshot, &frontend.emission_order)
-        .map_err(|errors| ColdError::Initializer(format!("initializer planning: {errors:?}")))?;
+    let startup = crate::startup::capture(frontend).map_err(ColdError::Initializer)?;
+    let static_resolver = startup
+        .resolver(frontend, resolver)
+        .map_err(ColdError::Initializer)?;
+    let resolver = &static_resolver;
+    let plan = &startup.plan;
+    let startup_evaluator = crate::startup::StartupEvaluator {
+        ordinary: declarations.initializers,
+        resolver,
+        symbols: plan.symbols.as_ref(),
+    };
     let evaluator = crate::initializer_policy::EngineCapturedEvaluator {
         engine: links.engine,
-        evaluator: declarations.initializers,
+        evaluator: &startup_evaluator,
     };
     let initialization = crate::initializer_lowering::lower(
         frontend,
-        &plan,
+        plan,
         &evaluator,
         resolver,
         declarations.resource_search_context,
@@ -220,22 +237,16 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
     let projection = crate::class_projection::project_classified(
         &frontend.snapshot,
         &frontend.emission_order,
-        &plan,
+        plan,
         &initialization.classified,
         &initialization.units,
     )
     .map_err(ColdError::Projection)?;
     let initializers = stage.elapsed();
     let mut inventory = links.inventory;
-    crate::class_inventory::contribute(
-        &projection,
-        frontend.snapshot.tree.symbols(),
-        declarations.source_type_order,
-        &mut inventory,
-    )
-    .map_err(ColdError::Initializer)?;
     let stage = Instant::now();
-    let batch = lower_frontend(frontend, resolver, policy, config);
+    let batch =
+        crate::lowering::lower_frontend_with_statics(frontend, resolver, policy, config, &startup);
     let lowering = stage.elapsed();
     if !batch.diagnostics.is_empty() {
         return Err(ColdError::Lowering(batch.diagnostics));
@@ -243,6 +254,29 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
     batch
         .require_production_abi()
         .map_err(|_| ColdError::NonAuthoritativeAbi)?;
+    let non_text_types = non_text
+        .map(|stage| stage.required_types())
+        .unwrap_or_default();
+    let (projection, source_type_order) = crate::required_types::admit(
+        projection,
+        crate::required_types::Inputs {
+            source_order: declarations.source_type_order,
+            bodies: &batch,
+            initializers: &initialization.units,
+            maps: &map_initializers,
+            inventory: &inventory,
+            symbols: plan.symbols.as_ref(),
+            non_text_types: &non_text_types,
+        },
+    )
+    .map_err(ColdError::Initializer)?;
+    crate::class_inventory::contribute(
+        &projection,
+        plan.symbols.as_ref(),
+        &source_type_order,
+        &mut inventory,
+    )
+    .map_err(ColdError::Initializer)?;
     let stage = Instant::now();
     let initialization = initialization
         .units
@@ -252,7 +286,7 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
         .collect();
     let frozen = crate::symbolic::freeze_artifact_tables(
         batch,
-        frontend.snapshot.tree.symbols(),
+        plan.symbols.as_ref(),
         links.references,
         inventory,
         initialization,
@@ -260,13 +294,14 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
     .map_err(ColdError::Linking)?;
     let symbolic_linking = stage.elapsed();
     let stage = Instant::now();
-    let dmb = crate::composition::compose_projected_with_stage(
+    let dmb = crate::composition::compose_projected_with_symbols(
         links.engine_bytes,
         &frozen,
         frontend,
         &projection,
         declarations.type_values,
         non_text,
+        plan.symbols.as_ref(),
     )
     .map_err(ColdError::Composition)?;
     Ok(ColdOutput {
@@ -321,7 +356,10 @@ mod tests {
             }
         }
         let bytes = include_bytes!("../../../fixtures/native_template.bin");
-        let engine = EngineSnapshot::from_bytes(bytes, 1).unwrap();
+        let engine = EngineSnapshot::from_bytes(bytes, 1)
+            .unwrap()
+            .with_bootstrap_catalog()
+            .unwrap();
         let seed = engine.frontend_seed();
         let frontend = dm_tree::frontend::build_with_config(
             Path::new("project.dme"),
@@ -409,6 +447,210 @@ mod tests {
                 .iter()
                 .any(|proc| image.string(proc.strings[0])
                     == Some(b"/datum/demo/proc/read".as_slice()))
+        );
+    }
+    #[test]
+    fn pinned_cold_startup_interleaves_globals_class_and_distinct_procedure_statics() {
+        struct StartupSource;
+        impl dm_preprocess::SourceProvider for StartupSource {
+            fn read(&self, _: &Path) -> Result<String, String> {
+                Ok("var/global_first = make_value()\n/datum/startup_probe\n    var/static/class_middle = make_value()\n/datum/startup_probe/proc/first()\n    var/static/counter = make_value()\n    return counter\n/datum/startup_probe/proc/second()\n    var/static/counter = make_value()\n    return counter\nvar/global_last = make_value()\n/proc/make_value()\n    return 7\n".into())
+            }
+        }
+        struct NoTypeDefaults;
+        impl crate::class_projection::TypeValuePolicy for NoTypeDefaults {
+            fn tag(
+                &self,
+                _: dm_ir::SymbolId,
+            ) -> Result<u8, crate::class_projection::ProjectionError> {
+                Err(crate::class_projection::ProjectionError::Unsupported(
+                    "no type defaults".into(),
+                ))
+            }
+        }
+        let bytes = include_bytes!("../../../fixtures/native_template.bin");
+        let engine = EngineSnapshot::from_bytes(bytes, 1)
+            .unwrap()
+            .with_bootstrap_catalog()
+            .unwrap();
+        let seed = engine.frontend_seed();
+        let frontend = dm_tree::frontend::build_with_config(
+            Path::new("project.dme"),
+            &StartupSource,
+            &Default::default(),
+            FrontendConfig {
+                workers: 2,
+                engine: Some(&seed),
+                observer: None,
+            },
+        )
+        .unwrap();
+        let make_query = dm_ir::ResolveQuery::GlobalProc(dm_ir::SymbolId::of("make_value"));
+        assert!(
+            matches!(
+                dm_ir::Resolver::resolve(frontend.snapshot.tree.as_ref(), make_query),
+                dm_ir::ResolvedMeaning::Member { .. }
+            ),
+            "query={make_query:?}, answer={:?}",
+            dm_ir::Resolver::resolve(frontend.snapshot.tree.as_ref(), make_query)
+        );
+        let mut host_symbols = frontend.snapshot.tree.symbols().clone();
+        let constants =
+            crate::engine_host::ConstantCatalog::native_516_1687(&mut host_symbols).unwrap();
+        let runtime = crate::engine_host::RuntimeAliasCatalog::new(
+            engine.identity(),
+            &host_symbols,
+            Vec::new(),
+            frontend
+                .snapshot
+                .tree
+                .types()
+                .iter()
+                .map(|node| node.path)
+                .collect(),
+            crate::engine_host::Completeness::Partial,
+        )
+        .unwrap();
+        let host = crate::engine_host::EngineResolverHost::new(
+            frontend.snapshot.tree.clone(),
+            constants,
+            runtime,
+        )
+        .with_pinned_callables(&engine, &frontend)
+        .unwrap();
+        use dm_ir::{ResolveQuery as Q, ResolvedMeaning as M, Resolver as _};
+        let owner = dm_ir::SymbolId::of("/datum/startup_probe");
+        assert!(matches!(host.resolve(make_query), M::Member { .. }));
+        let first = dm_ir::SymbolId::of("first");
+        assert!(matches!(
+            host.resolve(Q::Proc {
+                owner,
+                name: first,
+                verb: false
+            }),
+            M::Member { .. }
+        ));
+        assert_eq!(
+            host.resolve(Q::Proc {
+                owner,
+                name: first,
+                verb: true
+            }),
+            M::Missing
+        );
+        assert_eq!(
+            host.resolve(Q::HasMemberProc {
+                owner,
+                name: dm_ir::SymbolId::of("make_value")
+            }),
+            M::Presence(false)
+        );
+        for name in ["New", "never_captured_callable"] {
+            let query = Q::Proc {
+                owner,
+                name: dm_ir::SymbolId::of(name),
+                verb: true,
+            };
+            assert_eq!(host.resolve(query), M::Unsupported(query));
+        }
+
+        let evaluator = crate::driver_facts::DriverEvaluator {
+            resolver: &host,
+            symbols: frontend.snapshot.tree.symbols(),
+        };
+        let links = crate::engine_link::capture(bytes, &engine).unwrap();
+        let order = crate::type_creation_order::collect(
+            &frontend.allocation_ledger,
+            &frontend.expanded.text,
+            frontend.snapshot.tree.symbols(),
+            &links.inventory,
+        )
+        .unwrap();
+        let output = compile_captured_classified_with_pinned_abi(
+            &frontend,
+            &host,
+            CapturedLinkInputs {
+                engine_bytes: bytes,
+                engine: &engine,
+                references: &links.references,
+                inventory: links.inventory,
+            },
+            CapturedDeclarationInputs {
+                initializers: &evaluator,
+                type_values: &NoTypeDefaults,
+                resource_search_context: None,
+                source_type_order: &order,
+            },
+            LoweringConfig {
+                workers: 2,
+                max_chunk: 1,
+            },
+            Vec::new(),
+            None,
+        )
+        .unwrap();
+        let image = byond_dmb::dmb::Dmb::from_bytes(&output.dmb).unwrap();
+        image.validate_references().unwrap();
+        let footer = &image.lists[image.variable_footer as usize];
+        let mut selected = Vec::new();
+        for (slot, pair) in footer.chunks_exact(2).enumerate() {
+            let name = image
+                .string(image.variables[pair[0] as usize].name)
+                .unwrap();
+            if [
+                b"global_first".as_slice(),
+                b"class_middle",
+                b"counter",
+                b"global_last",
+            ]
+            .contains(&name)
+            {
+                selected.push((slot as u32, name.to_vec(), pair[0]));
+            }
+        }
+        assert_eq!(
+            selected
+                .iter()
+                .map(|(_, name, _)| name.as_slice())
+                .collect::<Vec<_>>(),
+            vec![
+                b"global_first".as_slice(),
+                b"class_middle",
+                b"counter",
+                b"counter",
+                b"global_last"
+            ]
+        );
+        assert_ne!(selected[2].0, selected[3].0);
+        assert_ne!(selected[2].2, selected[3].2);
+        let initializer = image.world.ids[4];
+        assert_ne!(initializer, 0xffff);
+        let code = &image.lists[image.procs[initializer as usize].code_locals_args[0] as usize];
+        let instructions = byond_dmb::bytecode::decode(code).unwrap();
+        assert_eq!(
+            instructions
+                .iter()
+                .filter(|instruction| instruction.name == "End")
+                .count(),
+            1
+        );
+        let slots = instructions
+            .iter()
+            .filter(|instruction| instruction.name == "SetVar")
+            .flat_map(|instruction| instruction.typed_operands().unwrap())
+            .filter_map(|operand| match operand {
+                byond_dmb::bytecode::Operand::Variable(byond_dmb::operands::Variable::Global(
+                    slot,
+                )) => Some(slot),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            slots,
+            selected
+                .iter()
+                .map(|(slot, _, _)| *slot)
+                .collect::<Vec<_>>()
         );
     }
     struct MustNotLower;

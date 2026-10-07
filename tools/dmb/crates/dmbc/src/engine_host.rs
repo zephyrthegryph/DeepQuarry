@@ -147,6 +147,7 @@ pub struct EngineResolverHost<R> {
     tree: Arc<R>,
     constants: ConstantCatalog,
     runtime: RuntimeAliasCatalog,
+    callable_absence: Option<Arc<BTreeSet<SymbolId>>>,
 }
 impl<R: Resolver> EngineResolverHost<R> {
     pub fn new(tree: Arc<R>, constants: ConstantCatalog, runtime: RuntimeAliasCatalog) -> Self {
@@ -154,12 +155,67 @@ impl<R: Resolver> EngineResolverHost<R> {
             tree,
             constants,
             runtime,
+            callable_absence: None,
         }
+    }
+    /// Certify the opposite callable namespace for authored names outside the
+    /// pinned intrinsic exclusion catalog. This does not certify arbitrary
+    /// absent names, variable fields, or layouts of intrinsic callbacks.
+    pub fn with_pinned_callables(
+        mut self,
+        engine: &crate::engine::EngineSnapshot,
+        frontend: &dm_tree::frontend::ColdFrontend,
+    ) -> Result<Self, String> {
+        crate::engine_abi_coverage::NamedEngineCoverage::pinned(engine)?;
+        if frontend.engine.as_ref().map(|status| status.identity) != Some(engine.identity()) {
+            return Err("callable coverage belongs to another engine capture".into());
+        }
+        let catalog: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../../fixtures/native_template_nativebuiltins_5161687.json"
+        ))
+        .map_err(|error| error.to_string())?;
+        let intrinsic = catalog["Procs"]
+            .as_array()
+            .ok_or("native callable catalog absent")?
+            .iter()
+            .map(|proc| {
+                proc["Name"]
+                    .as_str()
+                    .map(SymbolId::of)
+                    .ok_or("native callable name absent")
+            })
+            .collect::<Result<BTreeSet<_>, _>>()?;
+        self.callable_absence = Some(Arc::new(
+            frontend
+                .snapshot
+                .tree
+                .members()
+                .iter()
+                .filter(|member| {
+                    matches!(
+                        member.kind,
+                        dm_tree::MemberKind::Proc | dm_tree::MemberKind::Verb
+                    )
+                })
+                .map(|member| member.name)
+                .filter(|name| !intrinsic.contains(name))
+                .collect(),
+        ));
+        Ok(self)
     }
     pub fn configuration_identity(&self) -> u128 {
         let mut bytes = b"dm-engine-host-v1\0".to_vec();
         bytes.extend_from_slice(&self.constants.identity.to_le_bytes());
         bytes.extend_from_slice(&self.runtime.identity.to_le_bytes());
+        if let Some(names) = &self.callable_absence {
+            bytes.extend_from_slice(b"pinned-authored-callable-absence-v1");
+            bytes.extend_from_slice(include_bytes!(
+                "../../../fixtures/native_template_nativebuiltins_5161687.json"
+            ));
+            for name in names.iter() {
+                bytes.extend_from_slice(&name.bits().to_le_bytes());
+            }
+        }
         xxhash_rust::xxh3::xxh3_128(&bytes)
     }
 }
@@ -195,7 +251,31 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                     _ => M::Unsupported(query),
                 }
             }
-            _ => self.tree.resolve(query),
+            _ => {
+                let answer = self.tree.resolve(query);
+                if !matches!(answer, M::Unsupported(_)) {
+                    return answer;
+                }
+                let (owner, name, presence) = match query {
+                    Q::Proc { owner, name, .. } => (owner, name, false),
+                    Q::HasMemberProc { owner, name } => (owner, name, true),
+                    _ => return answer,
+                };
+                if self
+                    .callable_absence
+                    .as_ref()
+                    .is_some_and(|names| names.contains(&name))
+                    && self.runtime.ordinary.contains(&owner)
+                {
+                    if presence {
+                        M::Presence(false)
+                    } else {
+                        M::Missing
+                    }
+                } else {
+                    answer
+                }
+            }
         }
     }
 }

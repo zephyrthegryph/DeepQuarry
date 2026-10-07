@@ -291,6 +291,11 @@ impl SemanticTree {
             Q::HasMemberProc { owner, name } => {
                 let mut current = self.lookup_type(owner);
                 while let Some(id) = current {
+                    if owner != SymbolId::of("/")
+                        && self.types[id.index()].path == SymbolId::of("/")
+                    {
+                        break;
+                    }
                     if [MemberKind::Proc, MemberKind::Verb]
                         .iter()
                         .any(|kind| self.direct.contains_key(&(id, name, *kind)))
