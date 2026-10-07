@@ -1516,9 +1516,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 		P.submunition_spread_max = 100 //More spread when sawn off
 
 /// Old attackby (this file's; its ..() is shotgun.dm's definition, included earlier).
-/obj/item/gun/projectile/shotgun/doublebarrel/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
-	if(istype(A, /obj/item/surgical/circular_saw) || istype(A, /obj/item/melee/energy) || istype(A, /obj/item/pickaxe/plasmacutter))
-		. = INTERACTION_HANDLED_PASS
+/obj/item/gun/projectile/shotgun/doublebarrel/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
+	if(istype(held, /obj/item/surgical/circular_saw) || istype(held, /obj/item/melee/energy) || istype(held, /obj/item/pickaxe/plasmacutter))
+		. = OP_PASS
 		if(sawn_off) //Don't do anything if we were already sawed off.
 			return
 		to_chat(user, span_notice("You begin to shorten the barrel of \the [src]."))

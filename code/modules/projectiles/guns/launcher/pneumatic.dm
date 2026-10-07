@@ -29,6 +29,10 @@
 
 CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 	owns_one(nameof(item_storage), starts = /obj/item/storage)
+	op("pneumatic_hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("pneumatic_verb_set_pressure", menu(), label("Set Valve Pressure"), needs(carried()),
+		asks(/datum/prompt/choice, fields = list("question" = "Percentage of tank used per shot:", "title" = computed(PROC_REF(pressure_title)), "choices" = nameof(possible_pressure_amounts), "timeout" = 0), step = "pressure"),
+		then(PROC_REF(pneumatic_verb_set_pressure)))
 
 /obj/item/gun/launcher/pneumatic/Initialize(mapload)
 	. = ..()
@@ -37,29 +41,18 @@ CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 	item_storage.max_storage_space = max_storage_space
 	item_storage.use_sound = null
 
+/// The pressure question's title.
+/obj/item/gun/launcher/pneumatic/proc/pressure_title(datum/act/op/A)
+	return "[src]"
+
 /// Old Set Valve Pressure verb.
-/obj/item/gun/launcher/pneumatic/proc/pneumatic_verb_set_pressure(mob/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/choice/pneumatic_pressure, PROC_REF(pneumatic_pressure_chosen), answerer = user, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), question = "Percentage of tank used per shot:", title = "[src]", choices = possible_pressure_amounts, timeout = 0)
-
-/obj/item/gun/launcher/pneumatic/proc/pneumatic_pressure_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/pneumatic_pressure/request = A.request
-	if(request.captures_gone())
-		return
-	. = apply_pneumatic_pressure(A)
-	SStgui.update_uis(src)
-
-/obj/item/gun/launcher/pneumatic/proc/apply_pneumatic_pressure(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/N = A.answer.value
-	if(isnull(N))
-		return
-	if (N)
+/obj/item/gun/launcher/pneumatic/proc/pneumatic_verb_set_pressure(datum/act/op/A)
+	var/mob/user = A.actor
+	var/N = A.step_value("pressure")
+	if(N)
 		pressure_setting = N
 		to_chat(user, "You dial the pressure valve to [pressure_setting]%.")
+	return OP_OK
 
 /obj/item/gun/launcher/pneumatic/proc/eject_tank(mob/user) //Remove the tank.
 	if(!tank())
@@ -81,25 +74,22 @@ CAPABILITIES(/obj/item/gun/launcher/pneumatic)
 	else
 		to_chat(user, "There is nothing to remove in \the [src].")
 
-DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_VERB("Set Valve Pressure", PROC_REF(pneumatic_verb_set_pressure), REQ_IN_INVENTORY), \
-)
-
 /// Old attack_hand.
-/obj/item/gun/launcher/pneumatic/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.get_inactive_hand() == src)
-		unload_hopper(user)
+/obj/item/gun/launcher/pneumatic/proc/interaction_hand(datum/act/op/A)
+	if(A.actor.get_inactive_hand() == src)
+		unload_hopper(A.actor)
 	else
-		return FALSE
-	return TRUE
+		return OP_DECLINE
+	return OP_OK
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
-/obj/item/gun/launcher/pneumatic/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/gun/launcher/pneumatic/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	if(!tank() && istype(W,/obj/item/tank))
 		if(!own_bring_in(src, nameof(tank), W, null, user, TRUE, null, FALSE))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		rel_set(src, nameof(tank), W)
 		act_message(user, src, MSG_SELF("You jam [W] into %T%'s valve and twist it closed."), MSG_OTHERS("%U% jams [W] into %T%'s valve and twists it closed."))
 		update_icon()
@@ -107,10 +97,11 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
 		item_storage.try_insert(W, user)
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/pneumatic/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/launcher/pneumatic/gun_self(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	eject_tank(user)
 
 /obj/item/gun/launcher/pneumatic/consume_next_projectile(mob/user=null)
@@ -269,34 +260,3 @@ CAPABILITIES(/obj/item/cannonframe)
 /// Tank of gas for use in firing the cannon. (a relation view: null once it is deleted).
 /obj/item/gun/launcher/pneumatic/proc/tank() as /obj/item/tank
 	return tank
-
-
-/datum/prompt/choice/pneumatic_pressure
-	var/obj/item/captured_item
-	var/datum/interaction/captured_interaction
-	var/item_expected = FALSE
-	var/interaction_expected = FALSE
-
-CAPABILITIES(/datum/prompt/choice/pneumatic_pressure)
-	ref_one(nameof(captured_item), /obj/item)
-	ref_one(nameof(captured_interaction), /datum/interaction)
-
-/datum/prompt/choice/pneumatic_pressure/prepare(datum/act/A)
-	. = ..()
-	var/obj/item/item = captured_item
-	var/datum/interaction/interaction = captured_interaction
-	rel_clear(src, nameof(captured_item))
-	rel_clear(src, nameof(captured_interaction))
-	rel_set(src, nameof(captured_item), item)
-	rel_set(src, nameof(captured_interaction), interaction)
-
-/datum/prompt/choice/pneumatic_pressure/proc/captures_gone()
-	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction))
-
-/datum/prompt/choice/pneumatic_pressure/recheck_extra()
-	. = ..()
-	if(.)
-		return
-	if(captures_gone())
-		return "gone"
-	return null

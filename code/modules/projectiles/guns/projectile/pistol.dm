@@ -227,18 +227,20 @@ CAPABILITIES(/obj/item/gun/projectile/colt/detective)
 	return ..()
 
 /// Old attackby.
-/obj/item/gun/projectile/pistol/gun_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/obj/item/gun/projectile/pistol/gun_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/silencer))
 		if(!user.item_is_in_hands(src))	//if we're not in his hands
 			to_chat(user, span_notice("You'll need [src] in your hands to do that."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		user.drop_item()
 		to_chat(user, span_notice("You screw [I] onto [src]."))
 		silenced = I	//dodgy?
 		w_class = ITEMSIZE_NORMAL
 		I.forceMove(src) //put the silencer into the gun
 		changed(src)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	return ..()
 
 /// The look (the draw sweep: from its template).
@@ -276,17 +278,19 @@ CAPABILITIES(/obj/item/gun/projectile/colt/detective)
 	return ..()
 
 /// Old attackby.
-/obj/item/gun/projectile/aps/gun_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/obj/item/gun/projectile/aps/gun_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/silencer))
 		if(!user.item_is_in_hands(src))	//if we're not in his hands
 			to_chat(user, span_notice("You'll need [src] in your hands to do that."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		user.drop_item()
 		to_chat(user, span_notice("You screw [I] onto [src]."))
 		silenced = I	//dodgy?
 		I.forceMove(src) //put the silencer into the gun
 		changed(src)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	return ..()
 
 /// The look (the draw sweep: from its template).

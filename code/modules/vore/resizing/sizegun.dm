@@ -27,11 +27,11 @@ CAPABILITIES(/obj/item/gun/energy/sizegun)
 	verb_entry(/obj/item/gun/energy/sizegun/proc/spin_dial)
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): set the size.
-/obj/item/gun/energy/sizegun/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/energy/sizegun/gun_self(datum/act/op/A, callback)
 	. = ..()
-	if(.)
-		return TRUE
-	select_size(user)
+	if(. == OP_OK)
+		return OP_OK
+	select_size(A.actor)
 
 /obj/item/gun/energy/sizegun/proc/spin_dial()
 	set name = "Spin Size Dial"

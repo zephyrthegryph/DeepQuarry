@@ -71,19 +71,22 @@
 		to_chat(user, span_warning("[src] is empty."))
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/grenade/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/launcher/grenade/gun_self(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(underslung)
-		return FALSE
+		return OP_DECLINE
 	pump(user)
 
 /// Old attackby.
-/obj/item/gun/launcher/grenade/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/gun/launcher/grenade/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if((istype(I, /obj/item/grenade)))
 		load(I, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	return ..()
 
 CAPABILITIES(/obj/item/gun/launcher/grenade)

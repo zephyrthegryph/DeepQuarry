@@ -72,17 +72,22 @@ CAPABILITIES(/obj/item/gun/projectile/heavysniper/collapsible)
 	. = ..()
 	rel_set(src, nameof(trigger_group), src)
 
-DECLARE_INTERACTIONS(/obj/item/sniper_rifle_part, \
-	INTERACT_USE(null, PROC_REF(interaction_self), REQ_NOT(REQ_FIELD_EQ("part_count", 1, "you can't disassemble this further"))), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+MSG_DEF_SELF(sniper_part/last_part, "you can't disassemble this further")
+
+CAPABILITIES(/obj/item/sniper_rifle_part)
+	op("use", in_hand(), needs(req(PROC_REF(can_disassemble_holds), because = MSG(sniper_part/last_part))), then(PROC_REF(interaction_self)))
+	op("add_part", item(/obj/item/sniper_rifle_part), then(PROC_REF(interaction_item)))
+
+/// Requirement: the part is more than one piece.
+/obj/item/sniper_rifle_part/proc/can_disassemble_holds(datum/act/op/A)
+	return part_count != 1
 
 /// Old attack_self.
-/obj/item/sniper_rifle_part/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-
+/obj/item/sniper_rifle_part/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You start disassembling \the [src]."))
 	task_timed(user, 4 SECONDS, src, src, PROC_REF(disassembled), list(user))
-	return TRUE
+	return OP_OK
 
 /obj/item/sniper_rifle_part/proc/disassembled(mob/user)
 	if(part_count == 1)
@@ -102,11 +107,12 @@ DECLARE_INTERACTIONS(/obj/item/sniper_rifle_part, \
 	update_build(user)
 
 /// Old attackby.
-/obj/item/sniper_rifle_part/proc/interaction_item(mob/user, obj/item/sniper_rifle_part/A, datum/interaction/interaction)
-
-	to_chat(user, span_notice("You begin adding \the [A] to \the [src]."))
-	task_timed(user, 3 SECONDS, src, src, PROC_REF(part_added), list(A, user))
-	return INTERACTION_HANDLED_PASS
+/obj/item/sniper_rifle_part/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/sniper_rifle_part/part = A.held
+	to_chat(user, span_notice("You begin adding \the [part] to \the [src]."))
+	task_timed(user, 3 SECONDS, src, src, PROC_REF(part_added), list(part, user))
+	return OP_PASS
 
 /obj/item/sniper_rifle_part/proc/part_added(obj/item/sniper_rifle_part/A, mob/user)
 	if(istype(A, /obj/item/sniper_rifle_part/trigger_group))

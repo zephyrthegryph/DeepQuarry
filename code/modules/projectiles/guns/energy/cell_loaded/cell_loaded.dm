@@ -72,10 +72,10 @@
 		M?.hud_used?.update_ammo_hud(M, src)
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/cell_loaded/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/cell_loaded/gun_self(datum/act/op/A, callback)
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(!chambered)
 		return
 

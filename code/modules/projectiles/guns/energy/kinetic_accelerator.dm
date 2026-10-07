@@ -112,11 +112,13 @@
 	return NONE
 
 /// Old attackby.
-/obj/item/gun/energy/kinetic_accelerator/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/gun/energy/kinetic_accelerator/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/borg/upgrade/modkit))
 		var/obj/item/borg/upgrade/modkit/MK = I
 		MK.install(src, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	return ..()
 
 /obj/item/gun/energy/kinetic_accelerator/proc/get_remaining_mod_capacity()

@@ -117,6 +117,13 @@ CAPABILITIES(/obj/item/gun)
 	owns_one(nameof(firemode_selector), starts = /datum/gun_firemode_selector)
 	drag_onto(PROC_REF(mousedrop_input))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	op("gun_item", item(/obj/item), label("Fit"), then(PROC_REF(gun_item)))
+	op("gun_self", in_hand(), label("Operate"), then(PROC_REF(gun_self)))
+	op("gun_verb_give_dna", menu(), label("Give DNA"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_give_dna)))
+	op("gun_verb_remove_dna", menu(), label("Remove DNA"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_remove_dna)))
+	op("gun_verb_allow_dna", menu(), label("Toggle DNA Samples Allowance"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_allow_dna)))
+
+MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
 /// The gun's firemodes: one /datum/firemode per settings row the gun (or a map edit) put in `firemodes`.
 /obj/item/gun/proc/starting_firemodes(list/settings)
@@ -294,37 +301,26 @@ CAPABILITIES(/obj/item/gun)
 	else
 		return ..() //Pistolwhippin'
 
-// EXTEND, not DECLARE: gun subtypes DECLARE interactions of their own, which this must not replace.
-// Both effects are override chains: gun subtypes override gun_item()/gun_self() with ..(), as they
-// overrode attackby()/attack_self(), so the parent-first order of those chains is kept.
-EXTEND_INTERACTIONS(/obj/item/gun, \
-	INTERACT_ITEM("Fit", PROC_REF(gun_item)), \
-	INTERACT_SELF_AS(I_HELP, "Operate", PROC_REF(gun_self)), \
-	INTERACT_SELF_AS(I_DISARM, "Operate", PROC_REF(gun_self)), \
-	INTERACT_SELF_AS(I_GRAB, "Operate", PROC_REF(gun_self)), \
-	INTERACT_SELF_AS(I_HURT, "Operate", PROC_REF(gun_self)), \
-	INTERACT_VERB("Give DNA", PROC_REF(gun_verb_give_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
-	INTERACT_VERB("Remove DNA", PROC_REF(gun_verb_remove_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
-	INTERACT_VERB("Toggle DNA Samples Allowance", PROC_REF(gun_verb_allow_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
-)
-
 /**
- * Old attackby. TRUE uses the item up (no afterattack), INTERACTION_HANDLED_PASS handled it but
- * afterattack follows, FALSE falls through to the base item's attackby (as the old ..() did).
+ * Old attackby. OP_OK uses the item up (no afterattack), OP_PASS handled it but afterattack
+ * follows, OP_DECLINE falls through to the base item's attackby (as the old ..() did).
+ * A gun type overrides this and calls ..(A) the way the old attackby chain did.
  */
-/obj/item/gun/proc/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
-	if(istype(A, /obj/item/dnalockingchip))
-		. = INTERACTION_HANDLED_PASS
+/obj/item/gun/proc/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
+	if(istype(held, /obj/item/dnalockingchip))
+		. = OP_PASS
 		if(dna_lock)
 			to_chat(user, span_notice("\The [src] already has a [attached_lock]."))
 			return
-		to_chat(user, span_notice("You insert \the [A] into \the [src]."))
-		if(!move_into(src, nameof(src.attached_lock), A, user))
+		to_chat(user, span_notice("You insert \the [held] into \the [src]."))
+		if(!move_into(src, nameof(src.attached_lock), held, user))
 			return
 		dna_lock = 1
 		return
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/gun/screwdriver_act(mob/user, obj/item/tool)
 	if(!dna_lock || !attached_lock || attached_lock.controller_lock)
@@ -838,12 +834,14 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 
 	return new_mode
 
-/// Old attack_self. `callback` is the projectile gun's re-entry flag (l6_saw). A falsy return
-/// (as the old chain's) leaves the self-use unhandled.
-/obj/item/gun/proc/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/// Old attack_self. `callback` is the projectile gun's re-entry flag (l6_saw). A decline
+/// (as the old chain's falsy return) leaves the self-use unhandled. A gun type overrides this and
+/// calls ..(A, callback) the way the old attack_self chain did.
+/obj/item/gun/proc/gun_self(datum/act/op/A, callback)
 	if(special_handling)
-		return FALSE
-	switch_firemodes(user)
+		return OP_DECLINE
+	switch_firemodes(A.actor)
+	return OP_DECLINE
 
 /* TGMC Ammo HUD Port Begin */
 /obj/item/gun

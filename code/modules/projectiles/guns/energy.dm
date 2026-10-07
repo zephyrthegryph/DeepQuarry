@@ -178,9 +178,11 @@ TRACKED(/obj/item/gun/energy, recharging)
 		to_chat(user, span_notice("[src] does not have a power cell."))
 
 /// Old attackby: the parent's first, then loading.
-/obj/item/gun/energy/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
+/obj/item/gun/energy/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	. = ..()
-	load_ammo(A, user)
+	load_ammo(held, user)
 
 // power_supply names the cell in the gun's contents (the contents own it and it goes with the gun), or, for
 // the shield generator's gun, the generator's cell: a relation view across the hierarchy.

@@ -191,10 +191,12 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
 	rel_set(src, nameof(launcher), new /obj/item/gun/launcher/grenade/underslung(src))
 
 /// Old attackby.
-/obj/item/gun/projectile/automatic/z8/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/gun/projectile/automatic/z8/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if((istype(I, /obj/item/grenade)))
 		launcher.load(I, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	return ..()
 
 /// Old attack_hand.
@@ -283,14 +285,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 	update_held_icon()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/automatic/l6_saw/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/automatic/l6_saw/gun_self(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(cover_open)
 		toggle_cover(user) //close the cover
 	else
-		return ..(user, held, interaction, TRUE) //once closed, behave like normal
+		return ..(A, TRUE) //once closed, behave like normal
 
 /// Old attack_hand.
 /obj/item/gun/projectile/automatic/l6_saw/gun_hand(datum/act/op/A)
@@ -819,9 +822,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sol, TYPE_PROC_REF(/a
 	update_held_icon()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/automatic/mg42/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/automatic/mg42/gun_self(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	if(cover_open)
 		toggle_cover(user) //close the cover
+		return OP_DECLINE
 	else
 		return ..() //once closed, behave like normal
 

@@ -135,22 +135,24 @@ CAPABILITIES(/obj/item/gun/energy/particle)
 	safetycatch = 0
 
 /// Old attackby.
-/obj/item/gun/energy/particle/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
-	if(istype(A, /obj/item/pressurelock))
+/obj/item/gun/energy/particle/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
+	if(istype(held, /obj/item/pressurelock))
 		if(safetycatch)
 			to_chat(user, span_notice("\The [src] already has a [attached_safety]."))
-			return INTERACTION_HANDLED_PASS
-		to_chat(user, span_notice("You insert \the [A] into \the [src]."))
-		if(!move_into(src, nameof(src.attached_safety), A, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
+		to_chat(user, span_notice("You insert \the [held] into \the [src]."))
+		if(!move_into(src, nameof(src.attached_safety), held, user))
+			return OP_PASS
 		safetycatch = 1
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
-	if(A.has_tool_quality(TOOL_SCREWDRIVER))
+	if(held.has_tool_quality(TOOL_SCREWDRIVER))
 		if(safetycatch && attached_safety)
 			to_chat(user, span_notice("You begin removing \the [attached_safety] from \the [src]."))
 			task_timed(user, 2.5 SECONDS, src, src, PROC_REF(safety_removed), list(user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	return ..()
 
 

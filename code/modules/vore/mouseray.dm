@@ -22,12 +22,12 @@
 		)
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): pick a type to turn things into.
-/obj/item/gun/energy/mouseray/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/energy/mouseray/gun_self(datum/act/op/A, callback)
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(tf_allow_select)
-		pick_type(user)
+		pick_type(A.actor)
 
 /obj/item/gun/energy/mouseray/proc/pick_type(mob/user)
 	var/list/offered_types = tf_possible_types

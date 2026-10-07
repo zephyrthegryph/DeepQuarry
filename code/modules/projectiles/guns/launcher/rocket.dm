@@ -26,8 +26,10 @@
 	. += owns(nameof(rockets), policy = OWN_CONTAINED, is_list = TRUE)
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
-/obj/item/gun/launcher/rocket/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/gun/launcher/rocket/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	. = OP_PASS
 	if(istype(I, /obj/item/ammo_casing/rocket))
 		if(length(rockets) < max_rockets)
 			if(!move_into(src, nameof(src.rockets), I, user))

@@ -90,20 +90,21 @@ TRACKED(/obj/item/gun/launcher/crossbow, tension)
 	..()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/crossbow/gun_self(mob/living/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/launcher/crossbow/gun_self(datum/act/op/A, callback)
+	var/mob/living/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(is_bow)
-		return FALSE
+		return OP_DECLINE
 	if(tension)
 		if(bolt)
 			act_message(user, src, MSG_SELF("You relax the tension on %T%'s string and remove [bolt]."), \
 				MSG_OTHERS("%U% relaxes the tension on %T%'s string and removes [bolt]."))
 			bolt.forceMove(get_turf(src))
-			var/obj/item/arrow/A = bolt
+			var/obj/item/arrow/removed_arrow = bolt
 			rel_take(src, nameof(bolt))
-			A.removed(user)
+			removed_arrow.removed(user)
 		else
 			act_message(user, src, MSG_SELF("You relax the tension on %T%'s string."), MSG_OTHERS("%U% relaxes the tension on %T%'s string."))
 		set_tension(0)
@@ -169,8 +170,10 @@ TRACKED(/obj/item/gun/launcher/crossbow, tension)
 	return ITEM_INTERACT_SUCCESS
 
 /// Old attackby.
-/obj/item/gun/launcher/crossbow/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/gun/launcher/crossbow/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	if(!bolt)
 		if (istype(W,/obj/item/arrow))
 			if(!move_into(src, nameof(src.bolt), W, user))

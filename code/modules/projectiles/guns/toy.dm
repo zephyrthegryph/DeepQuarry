@@ -228,10 +228,11 @@
 	special_weapon_handling = TRUE
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/cyborgtoy/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/cyborgtoy/gun_self(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	cleanup = !cleanup
 	to_chat(user, "The [src] is now on [cleanup ? "cleanup" : "battle"] mode.")
 

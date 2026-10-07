@@ -17,20 +17,22 @@
 	fire_sound = SFX_WEAPONS_BLADESLICE
 	fire_sound_text = "a strange noise"
 
-OM_FIELD(/obj/item/gun/launcher/spikethrower, spikes, 5, CHANGE_EXPLICIT)
-/// Short of spikes: derived from spikes (raised by set_spikes()).
-OM_DERIVE_FIELD(/obj/item/gun/launcher/spikethrower, spikes_short, list("spikes"))
-/obj/item/gun/launcher/spikethrower/proc/spikes_short()
+/obj/item/gun/launcher/spikethrower/var/spikes = 5
+TRACKED(/obj/item/gun/launcher/spikethrower, spikes)
+/// Regrows spikes every 2 s while short of them; full, the gate keeps it idle.
+CAPABILITIES(/obj/item/gun/launcher/spikethrower)
+	every(2 SECONDS, then(PROC_REF(spikethrower_step)), when = PROC_REF(spikes_short))
+
+/// Short of spikes.
+/obj/item/gun/launcher/spikethrower/proc/spikes_short(datum/act/A)
 	return spikes < max_spikes
-DECLARE_PERIODIC_WHILE(/obj/item/gun/launcher/spikethrower, PERIODIC_SLOW, "spikes_short")
 
 // ALLOW(init/INSTANCE_STATE): starts its spike regeneration timer from when it is made
 /obj/item/gun/launcher/spikethrower/Initialize(mapload)
 	. = ..()
 	COOLDOWN_START(src, regen_cooldown, spike_gen_time)
 
-/// Regrows spikes every 2 s while short (declared on spikes_short); full, it sleeps.
-/obj/item/gun/launcher/spikethrower/periodic_step()
+/obj/item/gun/launcher/spikethrower/proc/spikethrower_step(datum/act/timer/A)
 	if(COOLDOWN_FINISHED(src, regen_cooldown))
 		set_spikes(spikes + 1)
 		COOLDOWN_START(src, regen_cooldown, spike_gen_time)

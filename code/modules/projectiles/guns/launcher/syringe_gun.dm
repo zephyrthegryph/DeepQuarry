@@ -118,10 +118,11 @@ CAPABILITIES(/obj/item/syringe_cartridge)
 	rel_clear(src, nameof(next))
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/syringe/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/launcher/syringe/gun_self(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(next())
 		act_message(user, src, MSG_SELF(span_warning("You unlatch and carefully relax the bolt on %T%, unloading the spring.")), \
 			MSG_OTHERS("%U% unlatches and carefully relaxes the bolt on %T%."))
@@ -156,16 +157,18 @@ CAPABILITIES(/obj/item/gun/launcher/syringe)
 	return TRUE
 
 /// Old attackby.
-/obj/item/gun/launcher/syringe/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
-	if(istype(A, /obj/item/syringe_cartridge))
-		var/obj/item/syringe_cartridge/C = A
+/obj/item/gun/launcher/syringe/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
+	if(istype(held, /obj/item/syringe_cartridge))
+		var/obj/item/syringe_cartridge/C = held
 		if(length(darts) >= max_darts)
 			to_chat(user, span_warning("[src] is full!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!move_into(src, nameof(src.darts), C, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		act_message(user, src, MSG_SELF(span_notice("You insert \a [C] into %T%.")), MSG_OTHERS("%U% inserts \a [C] into %T%."))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	return ..()
 
 /obj/item/gun/launcher/syringe/rapid

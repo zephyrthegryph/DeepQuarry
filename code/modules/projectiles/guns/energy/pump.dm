@@ -55,7 +55,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/martin, TYPE_PROC_REF(/atom, ap
 	var/lockable = 1
 
 /// Old attackby.
-/obj/item/gun/energy/locked/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/gun/energy/locked/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/obj/item/card/id/id = I.GetID()
 	if(istype(id) && lockable)
 		if(check_access(id))
@@ -64,7 +66,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/martin, TYPE_PROC_REF(/atom, ap
 		else
 			to_chat(user, span_warning("Access denied."))
 		act_message(user, src, others = span_notice("%U% swipes %I% against %T%."), item = I)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	return ..()
 
 /obj/item/gun/energy/locked/on_emag(remaining_charges, mob/user, obj/item/emag_source)

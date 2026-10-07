@@ -23,8 +23,10 @@ CAPABILITIES(/obj/item/gun/launcher/confetti_cannon)
 		. += span_blue("It's loaded with [confetti_charge] ball\s of confetti.")
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
-/obj/item/gun/launcher/confetti_cannon/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/gun/launcher/confetti_cannon/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	. = OP_PASS
 	if(istype(I, /obj/item/paper) || istype(I, /obj/item/shreddedp))
 		if(confetti_charge < max_confetti)
 			user.drop_item()
@@ -47,10 +49,11 @@ CAPABILITIES(/obj/item/gun/launcher/confetti_cannon)
 		to_chat(user, span_red("The [src] is already loaded!"))
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/confetti_cannon/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/launcher/confetti_cannon/gun_self(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	pump(user)
 
 /obj/item/gun/launcher/confetti_cannon/consume_next_projectile()

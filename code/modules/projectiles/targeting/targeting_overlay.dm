@@ -19,7 +19,12 @@
 
 /// What are we targeting with? Set while aiming; the aim is tracked every slow tick while it is.
 OM_FIELD_VIEW(/obj/aiming_overlay, obj/item, aiming_with, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/aiming_overlay, PERIODIC_SLOW, "aiming_with")
+CAPABILITIES(/obj/aiming_overlay)
+	every(2 SECONDS, then(PROC_REF(aiming_step)), when = PROC_REF(is_aiming))
+
+/// While something is aimed with, the aim is tracked every slow tick.
+/obj/aiming_overlay/proc/is_aiming(datum/act/A)
+	return !!aiming_with()
 
 /obj/aiming_overlay/Initialize(mapload)
 	. = ..()
@@ -80,11 +85,10 @@ DECLARE_PERIODIC_WHILE(/obj/aiming_overlay, PERIODIC_SLOW, "aiming_with")
 	if(aiming_at)
 		to_chat(aiming_at, "<span class='[use_span]'>You are [message].</span>")
 
-/obj/aiming_overlay/periodic_step()
+/obj/aiming_overlay/proc/aiming_step(datum/act/timer/A)
 	if(!owner())
 		consume(src)
 		return
-	..()
 	update_aiming()
 
 /obj/aiming_overlay/relations()
