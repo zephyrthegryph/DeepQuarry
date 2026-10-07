@@ -242,7 +242,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/locked/frontier/carbine, TYPE_PROC_
 	)
 
 /obj/item/gun/energy/locked/frontier/rifle/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(frontier_rifle_verb_scope))
+	perform_scope_interaction(user, "frontier_rifle_verb_scope")
 
 CAPABILITIES(/obj/item/gun/energy/locked/frontier/rifle)
 	op("frontier_rifle_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(frontier_rifle_verb_scope_op)))

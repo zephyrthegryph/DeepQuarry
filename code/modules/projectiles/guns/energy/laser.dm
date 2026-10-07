@@ -231,7 +231,7 @@
 	//End .
 
 /obj/item/gun/energy/sniperrifle/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(sniperrifle_verb_scope))
+	perform_scope_interaction(user, "sniperrifle_verb_scope")
 
 CAPABILITIES(/obj/item/gun/energy/sniperrifle)
 	op("sniperrifle_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(sniperrifle_verb_scope_op)))
@@ -341,7 +341,7 @@ CAPABILITIES(/obj/item/gun/energy/sniperrifle)
 	var/scope_multiplier = 1.5
 
 /obj/item/gun/energy/monorifle/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(monorifle_verb_sights))
+	perform_scope_interaction(user, "monorifle_verb_sights")
 
 CAPABILITIES(/obj/item/gun/energy/monorifle)
 	op("monorifle_verb_sights", menu(), label("Aim Down Sights"), needs(carried()), then(PROC_REF(monorifle_verb_sights_op)))

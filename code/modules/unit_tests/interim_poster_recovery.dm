@@ -27,7 +27,7 @@
 		defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 		var/mob/living/carbon/human/ripper = allocate(/mob/living/carbon/human, T)
 		test_click(ripper, wall_poster, null)
-		TEST_ASSERT_NULL(test_answer(ripper, TRUE), "the actual native confirmation delivers the rip")
+		TEST_ASSERT(test_op_committed(test_answer(ripper, TRUE)), "the actual native confirmation delivers the rip")
 		TEST_ASSERT(wall_poster.is_ruined(), "the actual rip callback ruins the wall poster before removal")
 		TEST_ASSERT_EQUAL(wall_poster.icon_state, "poster_ripped", "the actual rip replaces the wall poster appearance")
 	var/obj/item/poster/recovered

@@ -66,7 +66,7 @@
 	..()
 
 /obj/item/gun/projectile/heavysniper/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(heavysniper_verb_scope))
+	perform_scope_interaction(user, "heavysniper_verb_scope")
 
 CAPABILITIES(/obj/item/gun/projectile/heavysniper)
 	op("heavysniper_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(heavysniper_verb_scope_op)))
@@ -112,7 +112,7 @@ CAPABILITIES(/obj/item/gun/projectile/heavysniper)
 	look.state("SVD[ammo_magazine ? "" : "-empty"]")
 
 /obj/item/gun/projectile/SVD/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(svd_verb_scope))
+	perform_scope_interaction(user, "svd_verb_scope")
 
 CAPABILITIES(/obj/item/gun/projectile/SVD)
 	op("svd_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(svd_verb_scope_op)))
