@@ -255,6 +255,7 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
         });
         let mut ctx = if in_asks_when || in_op_when { Ctx::Op } else { f.ctx };
         let mut notice = String::new();
+        let mut role = f.role;
         if matches!(f.kw, "then" | "when") {
             let mut outer: Option<&(usize, usize, usize)> = None;
             for r in &ranges {
@@ -268,6 +269,9 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
             }
             if let Some(&(oidx, s, e)) = outer {
                 ctx = HOOK_FORMS[oidx].ctx;
+                if f.kw == "then" && HOOK_FORMS[oidx].role == Role::Reaction {
+                    role = Role::Reaction;
+                }
                 match HOOK_FORMS[oidx].kw {
                     "on_notice" => notice = split_args(&body[s..e]).first().cloned().unwrap_or_default(),
                     "on_op" => notice = "/datum/notice/op_done".to_string(),
@@ -275,8 +279,13 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
                 }
             }
         }
+        let condition_value = f.kw == "on_change" && split_args(&body[bs..be]).first().is_some_and(|argument| {
+            body[bs..be].find(argument).is_some_and(|offset| start >= bs + offset && start < bs + offset + argument.len())
+        });
+        if condition_value { ctx = Ctx::Eval; }
+        if condition_value { role = Role::Output; }
         let ui_args = if f.kw == "then" && ctx == Ctx::Op { op_ui_args(body, start) } else { None };
-        out.push(HandlerRef { owner: ty, cap_proc, cap_type: cap_type.clone(), proc, form: f.kw, ctx, role: f.role, rel: m.rel.clone(), line: m.line_at(start), notice, ui_args });
+        out.push(HandlerRef { owner: ty, cap_proc, cap_type: cap_type.clone(), proc, form: f.kw, ctx, role, rel: m.rel.clone(), line: m.line_at(start), notice, ui_args });
     }
 }
 
@@ -404,6 +413,36 @@ mod context_tests {
         }
         assert!(!found.is_empty(), "the fixture must discover its declarations");
         found
+    }
+
+    #[test]
+    fn change_value_getter_is_an_output_but_handler_is_a_reaction() {
+        let found = handlers("CAPABILITIES(/datum/probe)\n\ton_change(cond_all(PROC_REF(value), PROC_REF(other)), ANY, then(PROC_REF(deliver)))\n");
+        let value = found.iter().find(|h| h.proc == "value").unwrap();
+        assert_eq!(value.ctx, Ctx::Eval);
+        assert_eq!(value.role, Role::Output);
+        assert!(value.role.reads_covered());
+        assert_eq!(found.iter().find(|h| h.proc == "other").unwrap().role, Role::Output);
+        let deliver = found.iter().find(|h| h.proc == "deliver").unwrap();
+        assert_eq!(deliver.ctx, Ctx::Notice);
+        assert_eq!(deliver.role, Role::Reaction);
+    }
+
+    #[test]
+    fn only_notice_carried_then_handlers_gain_reaction_role() {
+        let found = handlers("CAPABILITIES(/datum/probe)
+	on_notice(/datum/notice/probe, then(PROC_REF(noticed)))
+	on_op(\"use\", then(PROC_REF(completed)))
+	every(10, then(PROC_REF(tick)))
+	op(\"ordinary\", then(PROC_REF(effect)))
+");
+        for name in ["noticed", "completed"] {
+            let handler = found.iter().find(|h| h.proc == name).unwrap();
+            assert_eq!(handler.role, Role::Reaction);
+            assert_eq!(handler.ctx, Ctx::Notice);
+        }
+        assert_eq!(found.iter().find(|h| h.proc == "tick").unwrap().role, Role::Effect);
+        assert_eq!(found.iter().find(|h| h.proc == "effect").unwrap().role, Role::Effect);
     }
 
     #[test]

@@ -156,7 +156,7 @@ impl Annotations {
                 // /type/proc/name or /type/name
                 let (ty, name) = first.rsplit_once('/').unwrap();
                 let ty = ty.strip_suffix("/proc").unwrap_or(ty);
-                owners.push((ty.to_string(), name.to_string()));
+                owners.push((if ty.is_empty() { "/".to_string() } else { ty.to_string() }, name.to_string()));
             } else {
                 for c in sem.owner_candidates(&m.rel, m.line) {
                     owners.push((c, first.clone()));
@@ -540,7 +540,8 @@ impl<'a, 'e> Walk<'a, 'e> {
         let value = p.get();
         if !self.eng.opaque_dirs.is_empty() {
             let rel = self.eng.sem.rel(value.location);
-            if self.eng.opaque_dirs.iter().any(|d| rel.starts_with(d.as_str())) {
+            if self.eng.opaque_dirs.iter().any(|d| rel.starts_with(d.as_str()))
+                && !(owner == "/" && self.eng.ann.reads_from.contains_key(p.name())) {
                 return;
             }
         }
@@ -1078,6 +1079,18 @@ impl<'a, 'e> Walk<'a, 'e> {
                 return Val::local(None);
             }
             if let Some(params) = self.eng.ann.reads_from.get(name) {
+                if let Some((key, via)) = self.eng.ann.reads_as.get(&("/".to_string(), name.to_string())) {
+                    for (i, parameter) in p.get().parameters.iter().enumerate() {
+                        if !params.contains(&parameter.name) { continue; }
+                        if let Some(value) = argv.get(i).filter(|value| value.tracked()) {
+                            let mut hops = value.hops.clone();
+                            if let Some(via) = via { hops.push(via.clone()); }
+                            let read = Read { root: value.root_name(), hops, var: key.clone(), owner: String::new(), kind: ReadKind::Accessor, hop_ok: value.hop_ok };
+                            self.add_read(read, &rel, line);
+                        }
+                    }
+                    return Val::local(None);
+                }
                 // Follow the body with the named params bound to what the call passed.
                 let value = p.get();
                 let mut bind: Vec<Val> = Vec::new();
@@ -1162,4 +1175,43 @@ fn is_builtin_name(name: &str) -> bool {
 pub fn summarize(set: &ReadSet) -> String {
     let keys: Vec<String> = set.reads.iter().map(|r| r.key()).collect();
     format!("{} reads [{}], {} diags", keys.len(), keys.join(", "), set.diags.len())
+}
+
+#[cfg(test)]
+mod global_accessor_tests {
+    use super::*;
+    use crate::tree::{SourceFile, Tree};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    static NEXT: AtomicUsize = AtomicUsize::new(0);
+
+    #[test]
+    fn annotated_global_accessors_preserve_argument_roots_across_opaque_wrappers() {
+        let root = std::env::temp_dir().join(format!("dq-accessor-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+        std::fs::create_dir_all(root.join("code/engine")).unwrap();
+        std::fs::create_dir_all(root.join("code/content")).unwrap();
+        let engine = "#define READS_AS(P, K)\n#define READS_FROM(A)\nREADS_AS(/proc/read_bits, bits)\n/proc/read_bits(datum/holder)\n\tREADS_FROM(holder)\n\treturn holder.raw\n/proc/wrapped_bits(datum/holder)\n\tREADS_FROM(holder)\n\treturn read_bits(holder)\n/proc/unannotated(datum/holder)\n\treturn holder.raw\n";
+        let content = "/datum/probe\n\tvar/raw = 0\n/datum/probe/proc/direct()\n\treturn read_bits(src)\n/datum/probe/proc/wrapped()\n\treturn wrapped_bits(src)\n/datum/probe/proc/blocked()\n\treturn unannotated(src)\n";
+        std::fs::write(root.join("code/engine/probe.dm"), engine).unwrap();
+        std::fs::write(root.join("code/content/probe.dm"), content).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/engine/probe.dm", engine), SourceFile::from_text("code/content/probe.dm", content)]);
+        tree.root = root.clone();
+        let sem = Sem::build(&root, &tree).unwrap();
+        let decls = Decls::get(&tree);
+        let annotations = Annotations::get(&sem, &decls);
+        assert!(annotations.reads_as.contains_key(&("/".to_string(), "read_bits".to_string())));
+        let engine = ReadsEngine::new(&sem, &decls, &annotations).with_opaque(&["code/engine/"]);
+        for name in ["direct", "wrapped"] {
+            let reads = engine.analyze("/datum/probe", name);
+            assert!(reads.diags.is_empty(), "{name}: {:?}", reads.diags);
+            assert_eq!(reads.reads.len(), 1, "{name} must have the actual accessor dependency");
+            let read = reads.reads.iter().next().unwrap();
+            assert_eq!(read.root, "holder");
+            assert_eq!(read.var, "bits");
+            assert_eq!(read.kind, ReadKind::Accessor);
+        }
+        let blocked = engine.analyze("/datum/probe", "blocked");
+        assert!(blocked.reads.is_empty());
+        assert!(blocked.diags.iter().any(|diag| diag.rule == "unannotated_global"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
 }

@@ -18,7 +18,7 @@
 //! A kind is READ_KIND_VAR (0), READ_KIND_ACCESSOR (1), READ_KIND_NATIVE (2) or READ_KIND_SYSTEM (3).
 //! `rank` is the evaluation order of the handler's derived reads (0 = reads only base state).
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::sem::decls::Decls;
 use crate::sem::gen::{GenCx, GenOut, Generator};
@@ -63,10 +63,13 @@ impl Generator for Reads {
         let handlers: Vec<_> = cx.handlers().into_iter().filter(|h| h.role.reads_covered() && !h.owner.is_empty()).collect();
         let mut rows: BTreeMap<String, Vec<Row>> = BTreeMap::new();
         let mut ranks: BTreeMap<String, u32> = BTreeMap::new();
+        let mut capability_keys = BTreeSet::new();
+        let defines = Decls::get(cx.tree).defines.iter().cloned().collect();
         if !handlers.is_empty() {
             if let Some(sem) = cx.sem() {
                 let decls = Decls::get(cx.tree);
                 let ann = Annotations::get(&sem, &decls);
+                capability_keys.extend(ann.capkey_accessors.values().cloned());
                 let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(OPAQUE);
                 for h in &handlers {
                     let id = format!("{}::{}", h.owner, h.proc);
@@ -120,7 +123,7 @@ impl Generator for Reads {
                     ReadKind::Native => 2,
                     ReadKind::System => 3,
                 };
-                let mut parts = vec![roots.id(root).to_string(), kind_id.to_string(), names.id(var).to_string()];
+                let mut parts = vec![roots.id(root).to_string(), kind_id.to_string(), names.id(&canonical_read_key(kind, var, &capability_keys, &defines)).to_string()];
                 for h in hops {
                     parts.push(names.id(h).to_string());
                 }
@@ -160,6 +163,18 @@ pub fn register(reg: &mut Vec<Box<dyn Generator>>) {
     reg.push(Box::new(Reads));
 }
 
+/// A declared capability accessor reads the actual numeric key published by capability_key_changed.
+/// Keep its define as DM interpolation so the generated name uses the authoritative compile-time ID.
+fn canonical_read_key(kind: &ReadKind, name: &str, capability_keys: &BTreeSet<String>, defines: &BTreeSet<String>) -> String {
+    if *kind == ReadKind::Accessor && capability_keys.contains(name) {
+        format!("capkey:[{name}]")
+    } else if *kind == ReadKind::Accessor && defines.contains(name) {
+        format!("[{name}]")
+    } else {
+        name.to_string()
+    }
+}
+
 /// Keep the potentially large table out of a macro argument: BYOND truncates the expanded
 /// GLOBAL_MANAGED initializer once its replacement exceeds the preprocessor limit.
 fn read_table_initializer(table: &str) -> String {
@@ -172,7 +187,20 @@ fn read_table_initializer(table: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::read_table_initializer;
+    use super::{canonical_read_key, read_table_initializer};
+    use crate::sem::reads::ReadKind;
+    use std::collections::BTreeSet;
+    #[test]
+    fn declared_capability_accessor_uses_its_actual_published_key() {
+        let keys = BTreeSet::from(["EMAG_EMAGGED".to_string()]);
+        let defines = BTreeSet::from(["OP_KEY_CAP_STATE".to_string()]);
+        assert_eq!(canonical_read_key(&ReadKind::Accessor, "EMAG_EMAGGED", &keys, &defines), "capkey:[EMAG_EMAGGED]");
+        assert_eq!(canonical_read_key(&ReadKind::Accessor, "cap_state", &keys, &defines), "cap_state");
+        assert_eq!(canonical_read_key(&ReadKind::Accessor, "OP_KEY_CAP_STATE", &keys, &defines), "[OP_KEY_CAP_STATE]");
+        assert_eq!(canonical_read_key(&ReadKind::Var, "EMAG_EMAGGED", &keys, &defines), "EMAG_EMAGGED");
+        assert_eq!(canonical_read_key(&ReadKind::Accessor, "UNKNOWN_STATE", &keys, &defines), "UNKNOWN_STATE");
+    }
+
 
     #[test]
     fn large_read_table_avoids_macro_argument_and_registers_initialization() {
