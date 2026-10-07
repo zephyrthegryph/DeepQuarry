@@ -48,7 +48,7 @@ CAPABILITIES(/obj/item/uav)
 	every(2 SECONDS, then(PROC_REF(uav_step)), when = PROC_REF(is_flying))
 	owns_one(nameof(cell), /obj/item/cell)
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), needs(req(PROC_REF(has_cell), silent = TRUE)), wait(3 SECONDS), then(PROC_REF(screwdriver_used)))
 	// the old attack_hand: on the floor, a radial of what to do with it (elsewhere the click declines to the ordinary hand)
 	op("handle", hand(), label("Handle"),
 		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(handle_options)), "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), when = PROC_REF(uav_on_floor)),
@@ -174,17 +174,15 @@ CAPABILITIES(/obj/item/uav)
 	power_down()
 	move_into(src, nameof(src.cell), I, user)
 
+/// Requirement: a cell is in the drone.
+/obj/item/uav/proc/has_cell(datum/act/op/A)
+	return !isnull(cell)
+
 /obj/item/uav/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
 	if(!cell)
 		return OP_OK
-	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user, tool))
-	return OP_OK
-
-/obj/item/uav/proc/screwdriver_act_timed_done(mob/user, obj/item/tool)
-	if(!(cell))
-		return
 	to_chat(user, span_notice("You remove [cell] from [nickname]."))
 	playsound(src, tool.usesound, 50, 1)
 	power_down()
