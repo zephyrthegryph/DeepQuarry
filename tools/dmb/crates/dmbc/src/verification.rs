@@ -151,79 +151,27 @@ pub fn run_cli(arguments: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     );
     Ok(())
 }
+#[derive(serde::Deserialize)]
+struct MeasurementPolicy {
+    schema: u32,
+    stage_prefixes: std::collections::BTreeMap<String, Vec<String>>,
+    prefixes: Vec<String>,
+}
 fn is_measurement(line: &str) -> bool {
-    for (prefix, names) in [
-        (
-            "native cold ",
-            &[
-                "StartupCapture",
-                "AbiPreparation",
-                "Initializers",
-                "InitializerClassification",
-                "InitializerCodegen",
-                "ProcedureLowering",
-                "RequiredTypeAdmission",
-                "SymbolicLinking",
-                "Composition",
-            ][..],
-        ),
-        (
-            "native nontext ",
-            &[
-                "NonTextParsing",
-                "ResourceDemand",
-                "ResourceAdmission",
-                "RetainedResourceOrder",
-                "ResourceCatalog",
-                "AssetCapture",
-                "ResourceOrder",
-                "ResourceProjection",
-                "SymbolBinding",
-                "MapProjection",
-                "MapDescriptors",
-                "MapInitializers",
-            ][..],
-        ),
-        (
-            "native resource ",
-            &[
-                "FilesystemProofCapture",
-                "CatalogRestore",
-                "DemandAdmission",
-                "InputValidation",
-                "ArchiveAuthentication",
-            ][..],
-        ),
-    ] {
-        if line
-            .strip_prefix(prefix)
+    static POLICY: std::sync::OnceLock<MeasurementPolicy> = std::sync::OnceLock::new();
+    let policy = POLICY.get_or_init(|| {
+        let policy: MeasurementPolicy = serde_json::from_str(include_str!(
+            "../../../diagnostic-measurements.json"
+        ))
+        .expect("embedded diagnostic measurement policy must be valid");
+        assert_eq!(policy.schema, 1, "unsupported diagnostic measurement policy");
+        policy
+    });
+    policy.stage_prefixes.iter().any(|(prefix, names)| {
+        line.strip_prefix(prefix.as_str())
             .and_then(|tail| tail.split_once(':'))
-            .is_some_and(|(name, _)| names.contains(&name))
-        {
-            return true;
-        }
-    }
-    [
-        "native stages:",
-        "native compile:",
-        "native resolver memo:",
-        "native lowering memo:",
-        "native declaration reuse:",
-        "native session validation:",
-        "native session hit:",
-        "native input preparation:",
-        "native failed stages:",
-        "native cache unavailable:",
-        "native cache snapshot rejected:",
-        "native cache publication skipped:",
-        "native cache population incomplete:",
-        "native expansion cache population incomplete:",
-        "native map cache population incomplete:",
-        "native cache lease skipped:",
-        "native telemetry skipped:",
-    ]
-    .iter()
-    .any(|prefix| line.starts_with(prefix))
+            .is_some_and(|(name, _)| names.iter().any(|known| known == name))
+    }) || policy.prefixes.iter().any(|prefix| line.starts_with(prefix.as_str()))
 }
 fn run_child(arguments: &[String], log: &Path, deadline: Instant) -> io::Result<Option<i32>> {
     if Instant::now() >= deadline {

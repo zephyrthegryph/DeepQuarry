@@ -1,10 +1,10 @@
-# dmb-bench — revision 5 protocol
+# dmb-bench â€” revision 5 protocol
 
-The benchmark harness is scaffolding for root-run traces. It has not been run on the full project. No new acceptance result is claimed. Historical rows imported from A–K remain context only.
+The benchmark harness is scaffolding for root-run traces. It has not been run on the full project. No new acceptance result is claimed. Historical rows imported from Aâ€“K remain context only.
 
 ## Protocol
 
-`dmb-bench.py` runs three repetitions at **8 workers**, then three at **2 workers** as a regression series. It appends individual runs and medians to `results.jsonl`. Each measured compilation runs with `--trace`. A separate, unmeasured `--verify` invocation compares a captured snapshot against its fresh cold oracle, including diagnostics. The harness also checks that its measured DMB/RSC hashes equal the verified installed pair. A failed oracle, moved frozen input or watchdog expiry cannot count as a performance result.
+`dmb-bench.py` runs three repetitions at **8 workers**, then three at **2 workers** as a regression series. It appends individual runs and medians to `results.jsonl`. Each measured compilation runs with `--trace`. A separate, unmeasured `--verify` invocation compares a captured snapshot against its fresh cold oracle, including diagnostics. The harness also checks that its measured DMB/RSC hashes equal the verified installed pair and that measured stderr diagnostics match both verifier child logs. Rust embeds and Python loads the same `diagnostic-measurements.json` exact whitelist. Only declared observational prefixes and stage names are removed; unknown errors and warnings remain. The ledger preserves policy, raw child-log and normalized diagnostic hashes. Missing evidence or different diagnostics fail the run. A failed oracle, moved frozen input or watchdog expiry cannot count as a performance result.
 
 Every compiler invocation has a **285-second maximum watchdog**, including the oracle. A timeout stops only that invocation's process tree. Competing processes are observed, never stopped. The harness records visible process count and Cargo/rustc/DreamDaemon counts before and after compilation. The process-list scope excludes the harness; it is context, not a measure of runnable CPU contention.
 
@@ -36,7 +36,7 @@ An ordered scenario file supplies compiler flags and exact edit replacements. `p
 ]
 ```
 
-Each repetition restores the original private edit files, then performs the ordered scenarios. Edits require exactly one byte match. Original bytes are restored on exit, including failure. Output logs and traces are retained in a new evidence directory; it must not already exist.
+Each repetition uses a new cache under `--cache/<evidence-directory-name>/<workers>-<repeat>`. Before cold begins, prior `project/.dmbc/input-sessions` records are moved into that repetition cache as preserved archives, preventing an old edited session from bypassing compilation. The cold oracle populates the unedited cache before the first edited body is compiled. Source edits are restored between repetitions, then the ordered scenarios run. Derived outputs and archived sessions remain evidence; they are not deleted or rolled back. Edits require exactly one byte match. Original bytes are restored on exit, including failure. Output logs and traces are retained in a new evidence directory; it must not already exist.
 
 ## Run after profiler integration
 
@@ -44,7 +44,7 @@ Each repetition restores the original private edit files, then performs the orde
 python tools/dmb/bench/dmb-bench.py --compiler FROZEN_DMBC_EXE --project-root PRIVATE_MIRROR --snapshot captured.json --scenarios scenarios.json --output NEW_EVIDENCE_DIRECTORY --stage-map stage-map.json
 ```
 
-Replace the example compiler token with the actual frozen executable path. `--cache` defaults to `DMB_CACHE_DIR`, otherwise `E:/.dmbd/cache`. The harness checks at least 4 GiB free before population; `--min-free-bytes` is explicit. Compiler publication independently checks space. The harness does not evict files or stop processes to obtain space.
+Replace the example compiler token with the actual frozen executable path. `--cache` defaults to `DMB_CACHE_DIR`, otherwise `E:/dq-cache/dmb/bench`. The harness checks at least 4 GiB free before each repetition; `--min-free-bytes` is explicit. Compiler publication independently checks space. The harness does not evict files or stop processes to obtain space.
 
 The profiler contract is schema 1. For trace `run.trace.json`, it reads `run.trace.report.json`, retaining `critical_path_cpu_s`, `total_cpu_s`, stages, I/O bytes, allocation availability and private memory. Chrome trace and sibling CPU/wall folded stacks and SVGs remain raw evidence.
 
@@ -70,7 +70,7 @@ The report must include the exact unique `critical_path_stages` supplied to prof
 
 Raw profiler reports are hash-bound in run rows. Nonfinite JSON measurements are retained in that raw report; ledger values become unknown with an explicit `profile_error`. The results ledger uses strict JSON (no NaN/Infinity).
 
-Stage `read_bytes`/`write_bytes` remain **overlapping process windows**. Separate `attributed_io` rows retain explicit operation bytes and blocked durations; these are partial measurements, not complete stage coverage. I/O acceptance requires an explicit `io_coverage: "complete"` report plus measured blocked time. The current profiler does not issue that completeness claim, so I/O acceptance remains open even if process byte budgets pass. No stage-window or partial-operation sum is represented as full-process I/O.
+Stage `read_bytes`/`write_bytes` remain **overlapping process windows**. Separate `attributed_io` rows retain explicit operation bytes, `call_elapsed_s`, `calls`, `failed_calls` and blocked durations. Call elapsed is observed wall time around annotated I/O calls, including scheduling, copying and filesystem processing; it is not blocked time. Failed operations may have unknown partial byte counts. These are partial measurements, not complete stage coverage. I/O acceptance requires an explicit `io_coverage: "complete"` report plus measured blocked time. The current profiler does not issue that completeness claim, so I/O acceptance remains open even if process byte budgets pass. No stage-window or partial-operation sum is represented as full-process I/O.
 
 ### Authenticated unchanged shortcut
 

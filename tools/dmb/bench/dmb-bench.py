@@ -45,6 +45,44 @@ def check_snapshot(root, expected):
             raise ValueError("frozen input changed: " + relative)
 
 
+def normalized_diagnostics(path, policy):
+    """Use the same exact whitelist embedded by the Rust snapshot oracle."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    def measurement(line):
+        for prefix, names in policy["stage_prefixes"].items():
+            if line.startswith(prefix):
+                name, separator, _ = line[len(prefix):].partition(":")
+                if separator and name in names:
+                    return True
+        return any(line.startswith(prefix) for prefix in policy["prefixes"])
+    return [line for line in lines if not measurement(line)]
+
+
+def compare_measured_diagnostics(measured_log, oracle_log, root, policy):
+    prefix = "native verification passed: output and diagnostics match; evidence "
+    lines = oracle_log.read_text(encoding="utf-8").splitlines()
+    evidence = [line[len(prefix):] for line in lines if line.startswith(prefix)]
+    if len(evidence) != 1:
+        raise ValueError("oracle must report exactly one successful evidence directory")
+    directory = Path(evidence[0]).resolve()
+    if not directory.is_relative_to(root):
+        raise ValueError("oracle evidence escaped private project")
+    measured = normalized_diagnostics(measured_log, policy)
+    result = {"measured_normalized_sha256": hashlib.sha256(
+        json.dumps(measured, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest(),
+        "evidence_directory": str(directory), "children": {}}
+    matched = True
+    for name in ("incremental", "cold"):
+        child_path = directory / (name + ".log")
+        child = normalized_diagnostics(child_path, policy)
+        result["children"][name] = {"log": str(child_path), "raw_sha256": sha(child_path),
+            "normalized_sha256": hashlib.sha256(json.dumps(
+                child, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()}
+        matched = matched and measured == child
+    result["matched"] = matched
+    return result
+
+
 def process_context():
     """Observation only; no process is suspended or stopped."""
     try:
@@ -335,6 +373,11 @@ def main():
         if any(arg in forbidden for arg in scenario["arguments"]):
             parser.error("scenario arguments may not override harness-owned options")
     stage_map = json.loads(args.stage_map.read_text()) if args.stage_map else {}
+    policy_path = Path(__file__).resolve().parent.parent / "diagnostic-measurements.json"
+    diagnostic_policy = json.loads(policy_path.read_text(encoding="utf-8"))
+    if diagnostic_policy.get("schema") != 1:
+        parser.error("unsupported diagnostic measurement policy")
+    policy_identity = sha(policy_path)
     expected = dict(snapshot["files"])
     check_snapshot(root, expected)
     args.cache.mkdir(parents=True, exist_ok=True)
@@ -414,6 +457,8 @@ def main():
                     # Verification is deliberately outside the measured build and uses
                     # a fresh captured snapshot. Source hashes must still match both sides.
                     verified = False
+                    diagnostic_comparison = None
+                    diagnostic_error = None
                     if code == 0 and not timeout:
                         vcode, _, vtimeout = run(command + ["--verify"], root,
                                                 Path(str(prefix) + "-oracle"), args.watchdog, env)
@@ -421,6 +466,20 @@ def main():
                         verified = vcode == 0 and not vtimeout
                         if verified:
                             verified = all(sha(manifest.with_suffix(ext)) == digest for ext, digest in pair_hashes.items())
+                        if verified:
+                            try:
+                                if sha(policy_path) != policy_identity:
+                                    raise ValueError("diagnostic measurement policy changed")
+                                diagnostic_comparison = compare_measured_diagnostics(
+                                    prefix.with_suffix(".stderr.log"),
+                                    Path(str(prefix) + "-oracle").with_suffix(".stderr.log"),
+                                    root, diagnostic_policy)
+                                verified = diagnostic_comparison["matched"]
+                                if not verified:
+                                    diagnostic_error = "measured diagnostics differ from verified children"
+                            except (OSError, ValueError) as error:
+                                diagnostic_error = str(error)
+                                verified = False
                     row = {"schema": SCHEMA, "kind": "run", "commit": snapshot["commit"],
                            "compiler_sha256": compiler_identity, "scenario": name, "workers": workers,
                            "repeat": repeat + 1, "wall_s": wall, "status": "watchdog" if timeout else ("verified" if verified else "failed"),
@@ -430,6 +489,8 @@ def main():
                            "profile_error": report.get("profile_error"),
                            "command": measured_command, "cache": str(run_cache),
                            "pair_sha256": pair_hashes, "competing_processes_start": competing_start, "competing_processes_end": competing_end,
+                           "diagnostic_policy_sha256": policy_identity,
+                           "diagnostic_comparison": diagnostic_comparison, "diagnostic_error": diagnostic_error,
                            "stages": report.get("stages", []), "critical_path_cpu_s": report.get("critical_path_cpu_s"),
                            "total_cpu_s": report.get("total_cpu_s"), "covered_thread_cpu_s": report.get("covered_thread_cpu_s"),
                            "critical_path_stages": report.get("critical_path_stages"), "calibration": report.get("calibration"),
@@ -437,6 +498,8 @@ def main():
                            "io_coverage": report.get("io_coverage"), "process_io_scope": "whole_measured_process",
                            "attributed_io": [{"stage": stage.get("name"), "read_bytes": stage.get("attributed_read_bytes"),
                                               "write_bytes": stage.get("attributed_write_bytes"), "blocked_s": stage.get("io_blocked_s"),
+                                              "call_elapsed_s": stage.get("io_call_elapsed_s"),
+                                              "calls": stage.get("io_calls"), "failed_calls": stage.get("io_failed_calls"),
                                               "coverage": "explicit_operations_only"} for stage in report.get("stages", [])],
                            "read_bytes": report.get("read_bytes"),
                            "write_bytes": report.get("write_bytes"), "peak_private_bytes": report.get("peak_private_bytes"),
