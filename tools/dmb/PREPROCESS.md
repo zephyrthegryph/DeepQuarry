@@ -53,35 +53,33 @@ Regions receive active spans or an explicit conditional-entry snapshot; the choi
 of representation cannot change which bytes are active. Structural directive reads
 (`#if`, `#ifdef`, include selection) are recorded even if a text region is empty.
 
-### Manifest text has distinct encounter and emission order
+### Manifest context and ordering: preserved-native deferral is a divergence
 
 The preserved base test `manifest_dm_is_deferred_but_macros_expand_at_encounter`
-asserts a special DME rule: active DM text in an included `.dme` expands using the
-macro state at encounter, but is emitted after ordinary included DM text. The test
-expects an ordinary body's `early` procedure before deferred manifest `late` and
-`second` procedures, while `late` still contains the earlier macro value 2 rather
-than the body's later value 4. `included_dme_preserves_active_startup_dm_and_cache_replay`
-and `cached_dm_subtree_preserves_deferred_manifest_startup` also assert preservation
-through replay. The runtime probe also observes early=1, second=3, late=2. This supports
-encounter-time macro expansion for that input; it does not itself inspect
-procedure table emission order.
+asserts that DME text expands at encounter but is emitted after ordinary DM.
+That is a native implementation assertion, not a DreamMaker rule. The first
+runtime probe (early=1, second=3, late=2) establishes values, not table ordering.
+Its decoded DreamMaker output places global second at proc2 before global early
+at proc3; both belong to the same owner. Blanket manifest-last ordering predicts
+the reverse and is contradicted by this captured output. World late at proc0 and
+World New at proc1 additionally show owner grouping; wire-table ordering remains
+a LINK concern, not raw preprocessor text rearrangement.
 
-Therefore retain both directive encounter ordinal and token emission ordinal. Macro
-effects and conditionals execute at encounter; deferred text carries its already
-expanded tokens and origins into the emission queue. Do not defer expansion itself,
-or sort declarations by encounter ordinal afterward. The earlier ordinary-DM child
-interleaving rule applies to DM text; it must not erase this manifest exception.
-The exact scope of deferral for nested manifests requires the paired fixture below.
+The paths-origins fixture establishes that a manifest `/datum/a` header supplies
+context to included indented members. Moving every manifest line after included
+text loses that context and is the preserved native indentation failure. Parse
+the joined encounter stream; included files are not independent programs.
 
-The paths-origins fixture additionally establishes that a manifest `/datum/a`
-header supplies context to an included indented member file. Moving every manifest
-line after all included text loses that context and is the preserved native
-compiler's observed indentation failure. Grammar must therefore remain in joined
-encounter order; deferred declaration emission is a separate tree/link ordering
-projection. Preserve the region of each header/member instead of parsing included
-files independently or moving raw header text. Reordering standalone declarations
-and override chains requires the LINK contract; this observation is not permission
-to change their semantics.
+Six compile-only precedence worlds are retained with decoded evidence in
+`evidence/manifest-order-constants.json`. Defaults and overriding assignments
+remain separate records. A manifest value1 assignment followed by child value2
+assignment yields ordered overrides [1,2]. A proc base body0 followed by manifest
+implicit override1 and child implicit override2 yields effective chain [2,1,0].
+These finite probes support encounter precedence for same-owner overrides.
+Preserve the exact semantic declaration ledger and source origins. Keep an
+explicit linker ordering projection, but do not defer manifest declarations or
+change override priority to mimic the preserved native test. Nested/cyclic
+manifest cases and broader owner grouping still require their own evidence.
 
 Non-text includes retain source ordinal and directive provenance. DMM and DMF bytes
 do not enter the DM token parser. Their content identity and existence are captured
@@ -331,7 +329,7 @@ receipt has been overwritten or reclassified as a successful capture.
 
 - Canonical alias and recursive include suppression; unknown extensions and
   macro-computed include operands.
-- Unbalanced/cross-file conditional diagnostics and nested manifest deferral.
+- Unbalanced/cross-file conditional diagnostics and nested manifest context.
 - Empty/function-like FILE_DIR, unmatched pops, and missing earlier candidates.
 - Full external-path/case/junction policy and complete diagnostic provenance.
   The existing fixture now pins full `__FILE__` constants in

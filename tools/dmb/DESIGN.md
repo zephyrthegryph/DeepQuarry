@@ -319,9 +319,12 @@ shows a stage dominating and the memo paying back 10×.
   from the current occurrence table at link or report time. Inserting a line above a procedure
   does not force it to be lowered again, and a region shared by two files reports locations in the
   file that included it.
-- **Canonical paths.** File paths in `__FILE__`, provenance and resource names use one normalized
-  form, relative to the `.dme` with DreamMaker's separator. Windows and Linux builds of the same
-  snapshot produce the same bytes. `PREPROCESS.md` defines the form.
+- **Canonical paths.** Filesystem access and first-visit include suppression use normalized host
+  identity. Emitted `__FILE__` and its provenance retain the relative include spelling observed
+  from DreamMaker: separators become `/`, but resolvable `..` components remain. Do not substitute
+  the host identity into emitted source strings. Resource archive naming follows its separate
+  search/alias contract. Windows and Linux builds of the same snapshot produce the same bytes;
+  `PREPROCESS.md` defines these representations and their captured fixtures.
 
 ### 3.4 The disk cache
 

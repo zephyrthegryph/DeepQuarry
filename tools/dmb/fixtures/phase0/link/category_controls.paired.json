@@ -1,0 +1,53 @@
+{
+  "results": [
+    {
+      "name": "byond-compile",
+      "command": [
+        "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+        "E:\\dmb-native-v2-phase0\\link-category-controls-1\\source\\category_controls.dme"
+      ],
+      "exit": 0,
+      "seconds": 0.4503460000123596,
+      "log": "E:\\dmb-native-v2-phase0\\link-category-controls-1\\byond-compile.log"
+    },
+    {
+      "name": "native-compile",
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dm-compile.exe",
+        "build-project",
+        "E:\\dmb-native-v2-phase0\\link-category-controls-1\\source\\category_controls.dme",
+        "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin",
+        "E:\\dmb-native-v2-phase0\\link-category-controls-1\\native"
+      ],
+      "exit": 0,
+      "seconds": 1.8471761000109836,
+      "log": "E:\\dmb-native-v2-phase0\\link-category-controls-1\\native-compile.log"
+    },
+    {
+      "name": "decoded-compare",
+      "command": [
+        "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe",
+        "dmb-compare",
+        "E:\\dmb-native-v2-phase0\\link-category-controls-1\\source\\category_controls.dmb",
+        "E:\\dmb-native-v2-phase0\\link-category-controls-1\\native\\generations\\19911e827df82ee3d742cae6fd8610a780460f38809b6a6cbf8e7fbf33d12a65\\world.dmb",
+        "/obj/phase0_category"
+      ],
+      "exit": 1,
+      "seconds": 0.2734182999993209,
+      "log": "E:\\dmb-native-v2-phase0\\link-category-controls-1\\decoded-compare.log"
+    }
+  ],
+  "sha256": {
+    "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+    "D:\\dmb-native-v2-phase0\\reference-release\\dm-compile.exe": "a9cadac131c0e8c6d112a4e0c05526692330a3d8ffc515e1a3c94e37a72e56d7",
+    "D:\\dmb-native-v2-phase0\\reference-release\\dmb-inspect.exe": "ae3659b4697f970e8d92a0d8556df3db1247fa4501851a833885de3e35608f45",
+    "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\tools\\dmb\\fixtures\\native_template.bin": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540",
+    "E:\\dmb-native-v2-phase0\\link-category-controls-1\\source\\category_controls.dm": "17b84403c9e46287a30c54fec61399e4cda748f3ae2e930b8a9d7dd30ea36f8f",
+    "E:\\dmb-native-v2-phase0\\link-category-controls-1\\source\\category_controls.dme": "f9e512220898c26cd69eaa3bec3a060587636ef123b1b10dda0d163aeba3bbc9",
+    "E:\\dmb-native-v2-phase0\\link-category-controls-1\\source\\category_controls.dmb": "636d70695a3ca120054b2f8d5c669c9c1a5e2b1a728778708d3a4161581bb0db",
+    "E:\\dmb-native-v2-phase0\\link-category-controls-1\\native\\generations\\19911e827df82ee3d742cae6fd8610a780460f38809b6a6cbf8e7fbf33d12a65\\world.dmb": "827fd116df7e96f21c8c6bc588aa2d13d11f313d82572da75744dbd88c91074f",
+    "E:\\dmb-native-v2-phase0\\link-category-controls-1\\decoded-compare.log": "1a3bfff884acd40d11ecd7b465cce3ef7a1cc638843ed368af4117570c59737f"
+  },
+  "decoded_difference": "/obj/phase0_category/null_category proc.flags: expected 36, actual 4\nerror: 1 semantic discrepancies (showing at most 100)\n",
+  "scope": "compile-only category controls; no DreamDaemon run"
+}

@@ -29,7 +29,7 @@ The resource audit establishes separate explicit `/var`, `/proc`, `/verb` namesp
 
 ## Procedure and declaration metadata
 
-All `set` metadata belongs to declaration meaning and its memo key, even when executable statements are unchanged. Preserve source proc path independently from visible name. Baseline procedure settings include `name`, `desc`, `category` (including null), `src` selection mode, `invisibility`, `waitfor`, `hidden`, `background`, `instant`, and `popup_menu`. Baseline flag mapping includes hidden=1, waitfor=4, popup-menu-disabled=0x40, background=0x100, instant=0x200. These flags must be compared in decoded output; a runtime verb enumeration alone cannot verify them. Preserve parameter order, type annotations, defaults and named-argument dispatch metadata; proc reference table entries; world/header settings; type variable flags and initial values; initializer references; client script/interface settings. Unknown `set` settings must retain the baseline diagnostic rather than silently disappear.
+All `set` metadata belongs to declaration meaning and its memo key, even when executable statements are unchanged. Preserve source proc path independently from visible name. Baseline procedure settings include `name`, `desc`, `category` (including null), `src` selection mode, `invisibility`, `waitfor`, `hidden`, `background`, `instant`, and `popup_menu`. Baseline flag mapping includes hidden=1, waitfor=4, popup-menu-disabled=0x40, background=0x100, instant=0x200, and explicit null category=0x20. These flags must be compared in decoded output; a runtime verb enumeration alone cannot verify them. Preserve parameter order, type annotations, defaults and named-argument dispatch metadata; proc reference table entries; world/header settings; type variable flags and initial values; initializer references; client script/interface settings. Unknown `set` settings must retain the baseline diagnostic rather than silently disappear.
 
 `observable.dm` uses an `/obj` hierarchy so runtime verb lists exist, and includes all listed boolean flags plus visible text, src and invisibility. Expected decoded metadata should be captured alongside runtime labels by the existing DMB exporter; it is not yet a generated reference receipt.
 
@@ -118,6 +118,29 @@ The three source probes above now have legal-source receipts in `fixtures/phase0
 | --- | --- |
 | Map/startup | Both outputs match exactly. Area New precedes turfs; these four turf calls run (2,2), (1,2), (2,1), (1,1). Object New and world enumeration run (1,1), (2,1), (1,2), (2,2), preserving each cell's authored object ordering. Decoded semantic map comparison reports no discrepancies. This does not certify arbitrary map sizes, z levels, overrides or initialization effects. |
 | Reopens/nonlexical parent | Reference types are root, base, a_child, z_child; native swaps the children. Reference verbs are z_source, a_source (display names A then Z), native a_source, z_source. Vars and child\|base override agree. Scoped decoded proc comparison reports no discrepancies. Display-name order is observable here; a universal comparator/tie-break rule remains uncertified. |
-| Metadata modes | Reference verb enumeration is view_mode, loc_mode, usr_mode, world_mode; native uses declaration order world_mode, usr_mode, loc_mode, view_mode. Source-path reflection agrees. Scoped decoded comparison finds three differences, all on world_mode: src reference Other { kind: 16, parameter: 127 } vs native Default; effective flags 1017 vs 985 (difference 0x20, not assigned a guessed meaning); count argument reference type_flags 136 vs native 0. Other selected metadata/procs compare equal in this fixture. |
+| Metadata modes | Reference verb enumeration is view_mode, loc_mode, usr_mode, world_mode; native uses declaration order world_mode, usr_mode, loc_mode, view_mode. Source-path reflection agrees. Scoped decoded comparison finds three differences, all on world_mode: src reference Other { kind: 16, parameter: 127 } vs native Default; effective flags 1017 vs 985 (difference 0x20; subsequently identified as the missing no-category flag by the controls below); count argument reference type_flags 136 vs native 0. Other selected metadata/procs compare equal in this fixture. |
 
 The metadata comparison is `E:/dmb-native-v2-phase0/link-final-3/link-metadata_modes/metadata-diff.log`; the map comparison is `E:/dmb-native-v2-phase0/link-final-1/link-map_startup/map-diff.log`; the reopen comparison is `E:/dmb-native-v2-phase0/link-final-2/link-reopens_parent/proc-diff.log`. Exact arrays and SHA256 identities are in the tracked paired receipts. The fixtures exercise both boolean flag values and representative argument/source modes; this finite coverage does not prove every metadata encoding or alias rule. These observations supersede the pending status of these three probes, while broader rule certification and full-game parity remain open.
+
+
+## Category flag correction - compile-only controls
+
+The initial metadata receipt left the `1017` versus `985` flag difference
+unclassified. Source review of `Proc::has_no_category()` in `src/dmb.rs` and the
+existing `FORMAT.md` flag contract identifies `0x20` as `set category = null`.
+A new isolated paired control confirms that interpretation: `category_controls`
+contains otherwise identical verbs with null, named, and default categories.
+DreamMaker sets flags **36 (0x24)** for the null-category verb; the frozen native
+compiler sets **4 (0x04)**. The named/default category procedures produce no
+semantic discrepancies in the scoped decoded comparison. Thus the existing
+world_mode's missing 0x20 is specifically the no-category metadata divergence,
+not an unidentified flag. The original raw receipt and earlier classification
+remain preserved as history.
+
+The compile-only receipt is `fixtures/phase0/link/category_controls.paired.json`;
+raw files are at `E:/dmb-native-v2-phase0/link-category-controls-1`. It pins source,
+compiler, builtin and decoded-output hashes, commands, exit outcomes and the
+single decoded difference. No DreamDaemon or runtime observation was used for
+these controls, and no frozen production compiler behavior was changed. The
+new shared semantic model retains the actual category setting expression so
+future flag encoding can apply this known rule.
