@@ -33,13 +33,14 @@
 	)
 	return skip
 
-/// One var's value as a pin row writes it: stable between runs. A number near the clock is written relative to it.
-/proc/dq_hit_value(value)
+/// One var's value as a pin row writes it: stable between runs. A var that holds a clock reading (a cooldown, a ready time) is written as set or not,
+/// and the integrity as up, down or level: both are drawn from the clock or the generator, which a pin row cannot pin to the digit.
+/proc/dq_hit_value(value, name)
 	if(isnull(value))
 		return "null"
 	if(isnum(value))
-		if(world.time > 1000 && value >= world.time - 5 && value <= world.time + 18000 && value == round(value))
-			return "<now+[value - world.time]>"
+		if(name && findtext(name, regex("cooldown|ready|_time|time_|next_|last_|delay|timer|_at$|stamp", "i")))
+			return value ? "<set>" : "0"
 		return "[round(value, 0.0001)]"
 	if(istext(value))
 		return "'[value]'"
@@ -61,7 +62,7 @@
 		if(name in skip)
 			continue
 		var/value = target.vars[name]
-		.[name] = dq_hit_value(value)
+		.[name] = dq_hit_value(value, name)
 
 /// The things standing on a tile besides `target`: type -> count.
 /proc/dq_hit_turf_rows(turf/T, atom/target)
@@ -133,9 +134,19 @@
 	else
 		var/list/after = dq_hit_state(target)
 		for(var/name in after)
-			if(before[name] != after[name])
-				. += "[trigger] | [name]: [before[name]] -> [after[name]]"
+			if(before[name] == after[name])
+				continue
+			if(trigger == "blob")
+				continue // a blob's hit rolls its own damage: only whether the thing survives it is pinned (below)
+			if(name == "atom_integrity" && isnum(target.vars[name]) && isnum(text2num(before[name])))
+				var/delta = target.vars[name] - text2num(before[name])
+				. += "[trigger] | atom_integrity: [delta < 0 ? "down" : "up"]"
+				continue
+			. += "[trigger] | [name]: [before[name]] -> [after[name]]"
 	var/list/turf_after = dq_hit_turf_rows(T, target)
+	if(trigger == "blob")
+		. += "blob | [QDELETED(target) ? "destroyed" : "survives"]"
+		turf_after = turf_before
 	for(var/row in turf_after)
 		var/gained = turf_after[row] - (turf_before[row] || 0)
 		if(gained > 0)
