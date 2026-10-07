@@ -4,6 +4,8 @@ use dm_ir::{
     SymbolTable, SymbolicExpression,
 };
 use dm_syntax::{Span, TokenKind};
+mod header;
+use header::{HeaderView, LexedHeader};
 fn intern(symbols: &mut SymbolTable, text: &str) -> Result<SymbolId, String> {
     symbols.intern(text).map_err(|error| error.to_string())
 }
@@ -11,12 +13,18 @@ pub(crate) fn expression(
     text: &str,
     symbols: &mut SymbolTable,
 ) -> Result<SymbolicExpression, String> {
-    let lexed = dm_syntax::lex(text);
-    if !lexed.diagnostics.is_empty() {
+    let lexed = LexedHeader::new(text);
+    if !lexed.valid() {
         return Err("invalid expression tokens in procedure declaration".into());
     }
+    expression_view(lexed.view(), symbols)
+}
+fn expression_view(
+    view: HeaderView<'_>,
+    symbols: &mut SymbolTable,
+) -> Result<SymbolicExpression, String> {
     let mut tokens = Vec::new();
-    for token in lexed.tokens {
+    for token in view.tokens() {
         if matches!(
             token.kind,
             TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
@@ -25,8 +33,8 @@ pub(crate) fn expression(
         }
         tokens.push(ExpressionToken {
             kind: token.kind,
-            text: intern(symbols, &token.text)?,
-            relative_span: token.span,
+            text: intern(symbols, view.spelling(token))?,
+            relative_span: view.relative_span(token),
         });
     }
     if tokens.is_empty() {
@@ -37,34 +45,28 @@ pub(crate) fn expression(
     })
 }
 fn top_level_tokens(text: &str) -> Vec<(String, Span)> {
-    let mut depth = 0;
-    let mut result = Vec::new();
-    for token in dm_syntax::lex(text).tokens {
-        match token.text.as_str() {
-            "(" | "[" | "{" => depth += 1,
-            ")" | "]" | "}" => depth -= 1,
-            _ => {
-                if depth == 0 {
-                    result.push((token.text, token.span))
-                }
-            }
-        }
-    }
-    result
+    LexedHeader::new(text)
+        .view()
+        .top_level()
+        .into_iter()
+        .map(|(text, span)| (text.to_owned(), span))
+        .collect()
 }
 fn parameter(text: &str, start: usize, symbols: &mut SymbolTable) -> Result<Parameter, String> {
-    if !dm_syntax::lex_spans(text).diagnostics.is_empty() {
+    let lexed = LexedHeader::new(text);
+    if !lexed.valid() {
         return Err("invalid procedure argument tokens".into());
     }
-    let top = top_level_tokens(text);
-    let equal = dm_syntax::top_level_assignment_index(text);
+    let view = lexed.view();
+    let top = view.top_level();
+    let equal = view.assignment();
     let annotation = top
         .iter()
-        .find(|(token, _)| token == "as")
+        .find(|(token, _)| *token == "as")
         .map(|(_, span)| *span);
     let source = top
         .iter()
-        .find(|(token, _)| token == "in")
+        .find(|(token, _)| *token == "in")
         .map(|(_, span)| *span);
     let positions = [
         equal,
@@ -83,8 +85,8 @@ fn parameter(text: &str, start: usize, symbols: &mut SymbolTable) -> Result<Para
     let parts: Vec<_> = path.trim_matches('/').split('/').map(str::trim).collect();
     let name = parts.last().copied().unwrap_or("");
     if parts.iter().any(|part| {
-        let tokens = dm_syntax::lex_spans(part);
-        tokens.tokens.len() != 1 || tokens.tokens[0].kind != TokenKind::Ident
+        let offset = part.as_ptr() as usize - text.as_ptr() as usize;
+        !view.slice(offset, offset + part.len()).ident()
     }) {
         return Err("unsupported procedure argument declaration path".into());
     }
@@ -107,7 +109,12 @@ fn parameter(text: &str, start: usize, symbols: &mut SymbolTable) -> Result<Para
     } else {
         Some(intern(symbols, &format!("/{}", type_parts.join("/")))?)
     };
-    let array = parse_array(declaration, element_type, symbols)?;
+    let declaration_start = declaration.as_ptr() as usize - text.as_ptr() as usize;
+    let array = parse_array_view(
+        view.slice(declaration_start, declaration_start + declaration.len()),
+        element_type,
+        symbols,
+    )?;
     let declared_type = if array.is_some() {
         Some(intern(symbols, "/list")?)
     } else {
@@ -124,24 +131,27 @@ fn parameter(text: &str, start: usize, symbols: &mut SymbolTable) -> Result<Para
     }
     let default = equal
         .map(|index| {
-            expression(
-                text[index + 1..end(&positions, index, text.len())].trim(),
+            expression_view(
+                view.slice(index + 1, end(&positions, index, text.len()))
+                    .trim(),
                 symbols,
             )
         })
         .transpose()?;
     let input_annotation = annotation
         .map(|span| {
-            expression(
-                text[span.end..end(&positions, span.start, text.len())].trim(),
+            expression_view(
+                view.slice(span.end, end(&positions, span.start, text.len()))
+                    .trim(),
                 symbols,
             )
         })
         .transpose()?;
     let source_expression = source
         .map(|span| {
-            expression(
-                text[span.end..end(&positions, span.start, text.len())].trim(),
+            expression_view(
+                view.slice(span.end, end(&positions, span.start, text.len()))
+                    .trim(),
                 symbols,
             )
         })
@@ -256,17 +266,24 @@ pub(crate) fn parse_array(
     element_type: Option<SymbolId>,
     symbols: &mut SymbolTable,
 ) -> Result<Option<std::sync::Arc<dm_ir::ArrayDeclaration>>, String> {
-    let tokens = dm_syntax::lex(declaration);
-    if !tokens.diagnostics.is_empty() {
+    let tokens = LexedHeader::new(declaration);
+    if !tokens.valid() {
         return Err("invalid array declaration tokens".into());
     }
+    parse_array_view(tokens.view(), element_type, symbols)
+}
+fn parse_array_view(
+    view: HeaderView<'_>,
+    element_type: Option<SymbolId>,
+    symbols: &mut SymbolTable,
+) -> Result<Option<std::sync::Arc<dm_ir::ArrayDeclaration>>, String> {
     let mut depth = 0;
     let mut start = None;
     let mut dimensions = Vec::new();
-    for token in tokens.tokens {
+    for token in view.tokens() {
         if depth == 0
             && !dimensions.is_empty()
-            && token.text != "["
+            && view.spelling(token) != "["
             && !matches!(
                 token.kind,
                 TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
@@ -274,10 +291,10 @@ pub(crate) fn parse_array(
         {
             return Err("unsupported text after array declaration".into());
         }
-        match token.text.as_str() {
+        match view.spelling(token) {
             "[" => {
                 if depth == 0 {
-                    start = Some(token.span.end)
+                    start = Some(view.relative_span(token).end)
                 }
                 depth += 1
             }
@@ -287,11 +304,13 @@ pub(crate) fn parse_array(
                 }
                 depth -= 1;
                 if depth == 0 {
-                    let text = declaration[start.take().unwrap()..token.span.start].trim();
-                    dimensions.push(if text.is_empty() {
+                    let dimension = view
+                        .slice(start.take().unwrap(), view.relative_span(token).start)
+                        .trim();
+                    dimensions.push(if dimension.text().is_empty() {
                         None
                     } else {
-                        Some(expression(text, symbols)?)
+                        Some(expression_view(dimension, symbols)?)
                     });
                 }
             }
@@ -444,6 +463,74 @@ mod tests {
         assert_ne!(
             compact.tokens[1].relative_span,
             spaced.tokens[1].relative_span
+        );
+    }
+    #[test]
+    fn borrowed_header_views_match_owned_expression_tokens_and_local_spans() {
+        fn owned_expression(text: &str, symbols: &mut SymbolTable) -> SymbolicExpression {
+            let lexed = dm_syntax::lex(text);
+            assert!(lexed.diagnostics.is_empty());
+            SymbolicExpression {
+                tokens: lexed
+                    .tokens
+                    .into_iter()
+                    .filter(|token| {
+                        !matches!(
+                            token.kind,
+                            TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
+                        )
+                    })
+                    .map(|token| ExpressionToken {
+                        kind: token.kind,
+                        text: symbols.intern(&token.text).unwrap(),
+                        relative_span: token.span,
+                    })
+                    .collect::<Vec<_>>()
+                    .into(),
+            }
+        }
+        let arguments = "  tmp/datum/item/values[ 2 + length(list(1, 2)) ][ ] = list(\"as\", \"in\", call(1, 2)) as anything | null in world.contents , resource = 'icons/é.dmi' , ...";
+        let mut symbols = SymbolTable::default();
+        let signature = parse_signature(arguments, "as num | null", &mut symbols).unwrap();
+        assert_eq!(signature.parameters.len(), 2);
+        assert!(signature.variadic);
+        let first = &signature.parameters[0];
+        assert_eq!(first.name, SymbolId::of("values"));
+        assert_eq!(first.flags, 4);
+        assert_eq!(first.declared_type, Some(SymbolId::of("/list")));
+        let array = first.array.as_ref().unwrap();
+        assert_eq!(array.element_type, Some(SymbolId::of("/datum/item")));
+        assert_eq!(
+            array.dimensions.as_ref(),
+            &[
+                Some(owned_expression("2 + length(list(1, 2))", &mut symbols)),
+                None
+            ]
+        );
+        assert_eq!(
+            first.default,
+            Some(owned_expression(
+                "list(\"as\", \"in\", call(1, 2))",
+                &mut symbols
+            ))
+        );
+        assert_eq!(
+            first.input_annotation,
+            Some(owned_expression("anything | null", &mut symbols))
+        );
+        assert_eq!(
+            first.source_expression,
+            Some(owned_expression("world.contents", &mut symbols))
+        );
+        let first_end = arguments.find(" , resource").unwrap();
+        assert_eq!(first.relative_span, Span::new(2, first_end));
+        assert_eq!(
+            signature.parameters[1].default,
+            Some(owned_expression("'icons/é.dmi'", &mut symbols))
+        );
+        assert_eq!(
+            signature.return_annotation,
+            Some(owned_expression("num | null", &mut symbols))
         );
     }
 }
