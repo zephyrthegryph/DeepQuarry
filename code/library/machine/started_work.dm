@@ -31,7 +31,7 @@ cap_keys(CAP_STARTED_WORK, ACTIVE = MSG(started_work/stopped), WAITING_POWER = M
 		gate = cond_all(gate, STAT_OPERABLE) // an unpowered or broken machine's work parks and costs nothing
 	. = list(
 		every(interval, then(CAP_PROC(run_step)), when = gate),
-		on_change(nameof(/obj/machinery::stat), ANY, then(CAP_PROC(condition_changed))))
+		on_change(STAT_OPERABLE, ANY, then(CAP_PROC(condition_changed))))
 	for(var/key in wakes_on)
 		. += on_change(key, ANY, then(CAP_PROC(woken)))
 

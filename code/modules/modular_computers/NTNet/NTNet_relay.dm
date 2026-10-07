@@ -33,7 +33,7 @@ CAPABILITIES(/obj/machinery/ntnet_relay)
 
 // TODO: Implement more logic here. For now it's only a placeholder.
 /obj/machinery/ntnet_relay/operable(additional_flags = 0)
-	if(!..(additional_flags))
+	if(!..())
 		return 0
 	if(dos_failure)
 		return 0

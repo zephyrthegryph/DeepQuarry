@@ -1439,7 +1439,7 @@
 	click(H, C, F)
 	TEST_ASSERT(p2l_frame_cell(C) == E, "a second is refused (cell [p2l_frame_cell(C)] E loc [E.loc] F loc [F.loc])")
 	click(H, C, null)
-	TEST_ASSERT_NULL(p2l_frame_cell(C), "a hand takes it out (operable [C.operable()], stat [C.stat])")
+	TEST_ASSERT_NULL(p2l_frame_cell(C), "a hand takes it out (operable [C.operable()])")
 	TEST_ASSERT(H.get_active_hand() == E, "into the hand")
 
 // ---------------------------------------------------------------------------------------------------------------------
