@@ -12,25 +12,22 @@
 	var/lit = TRUE // If true, will have a glowing overlay and lighting.
 	var/festive = FALSE // If true, adds a festive bow overlay to it.
 
-/obj/structure/lightpost/Initialize(mapload)
-	update_icon()
-	return ..()
+TRACKED(/obj/structure/lightpost, lit)
+TRACKED(/obj/structure/lightpost, festive)
 
-DECLARE_APPEARANCE_PROC(/obj/structure/lightpost, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/lightpost/appearance_overlays()
-	. = list()
-
+/// The glow and the light while it is lit, the bow when it is festive. The look owns its one emissive blocker: the old add_overlay() stacked a
+/// second generic blocker on the first redraw (doc/rewrite/intended_changes.md, "Lightpost").
+/obj/structure/lightpost/draw(datum/look/look)
+	..()
+	look.one_blocker()
+	var/base = look.state_so_far(src)
 	if(lit)
-		set_light(5, 1, "#E9E4AF")
-		var/image/glow = image(icon_state = "[icon_state]-glow")
-		glow.plane = PLANE_LIGHTING_ABOVE
-		. += glow
+		look.light(5, 1, "#E9E4AF")
+		look.overlay(look_overlay_image(null, "[base]-glow", plane = PLANE_LIGHTING_ABOVE))
 	else
-		set_light(0)
-
+		look.light_off()
 	if(festive)
-		var/image/bow = image(icon_state = "[icon_state]-festive")
-		. += bow
+		look.overlay(look_overlay_image(null, "[base]-festive"))
 
 /obj/structure/lightpost/unlit
 	lit = FALSE
