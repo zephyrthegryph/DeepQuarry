@@ -68,7 +68,6 @@ CAPABILITIES(/obj/machinery/computer/prison_shuttle)
 	every(0.5 SECONDS, then(PROC_REF(prison_process)), when = nameof(in_flight))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_open_console_holds), because = PROC_REF(can_open_console_refusal))), then(PROC_REF(interaction_open_ui_impl)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
-	extend("emag.use", binds(menu()), needs(req_adjacent(), req_capable()), label("Emag"))
 
 /obj/machinery/computer/prison_shuttle/ui_data(datum/act/eval/A)
 	var/list/data = list()

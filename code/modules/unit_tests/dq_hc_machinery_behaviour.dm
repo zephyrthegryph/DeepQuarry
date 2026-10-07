@@ -1155,8 +1155,8 @@ CAPABILITIES(/obj/machinery/dq_native_emag_storage)
 		TEST_ASSERT_EQUAL(found?["reason"], expected[2], "the original refusal stays visible")
 		qdel(M)
 
-/datum/unit_test/dq_hc_struct/emag_menus_preserve_card_refusals
-/datum/unit_test/dq_hc_struct/emag_menus_preserve_card_refusals/run_gate()
+/datum/unit_test/dq_hc_struct/emag_menus_follow_integrator_policy
+/datum/unit_test/dq_hc_struct/emag_menus_follow_integrator_policy/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/card/emag/card = allocate(/obj/item/card/emag, H.loc)
 	card.uses = 0
@@ -1171,10 +1171,43 @@ CAPABILITIES(/obj/machinery/dq_native_emag_storage)
 			for(var/list/row as anything in op_menu(H, M, held))
 				if(row["key"] == "emag.use")
 					found = row
-			TEST_ASSERT_NOTNULL(found, "[path] retains its Emag menu row")
-			TEST_ASSERT(!found?["enabled"], "missing and exhausted cards both refuse")
-			TEST_ASSERT_EQUAL(found?["reason"], held ? "That has no uses left." : "needs a cryptographic sequencer", "the real card state determines the refusal")
+			if(held)
+				TEST_ASSERT_NOTNULL(found, "the actual held sequencer reaches its item-bound op")
+				TEST_ASSERT(!found?["enabled"], "an exhausted card cannot subvert the machine")
+				TEST_ASSERT_EQUAL(found?["reason"], "That has no uses left.", "the real exhausted-card refusal is preserved")
+			else
+				TEST_ASSERT_NULL(found, "the integrator policy removes the legacy Emag row without a sequencer")
 			if(held)
 				H.drop_item()
 		TEST_ASSERT(!M.emagged(), "menu inspection cannot subvert the machine")
 		qdel(M)
+
+/datum/unit_test/dq_hc_struct/robot_blocked_menu_preserves_physical_selection
+/datum/unit_test/dq_hc_struct/robot_blocked_menu_preserves_physical_selection/run_gate()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, tile(2, 2))
+	var/obj/machinery/button/B = mach(/obj/machinery/button, tile(3, 2))
+	TEST_ASSERT(!R.is_remote_viewing(), "the actual keyless robot is not viewing through a camera")
+	var/list/found
+	for(var/list/row as anything in op_menu(R, B, null))
+		if(row["key"] == "robot_remote_blocked")
+			found = row
+	TEST_ASSERT_NOTNULL(found, "the robot still sees the Blocked menu row")
+	TEST_ASSERT(!found?["enabled"], "that row is disabled outside remote viewing")
+	TEST_ASSERT_EQUAL(found?["reason"], "not possible right now", "the original disabled reason is preserved")
+	var/datum/op_result/click = test_click(R, B)
+	TEST_ASSERT(click?.key != "robot_remote_blocked", "offering the disabled menu row cannot swallow an ordinary physical click")
+	var/mob/living/carbon/human/H = person()
+	for(var/list/row as anything in op_menu(H, B, null))
+		TEST_ASSERT(row["key"] != "robot_remote_blocked", "the robot-only row is never offered to a human")
+
+/datum/unit_test/dq_hc_struct/cell_item_menu_preserves_disabled_row
+/datum/unit_test/dq_hc_struct/cell_item_menu_preserves_disabled_row/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/cell/C = allocate(/obj/item/cell, tile(3, 2))
+	var/list/found
+	for(var/list/row as anything in op_menu(H, C, null))
+		if(row["key"] == "inject_cell")
+			found = row
+	TEST_ASSERT_NOTNULL(found, "the single-item Use row remains visible with an empty hand")
+	TEST_ASSERT(!found?["enabled"], "the item-use row cannot run without an item")
+	TEST_ASSERT_EQUAL(found?["reason"], "needs an item", "the old item-use refusal is preserved")

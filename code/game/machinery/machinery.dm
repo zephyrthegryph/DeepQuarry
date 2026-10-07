@@ -145,8 +145,12 @@ TRACKED(/obj/machinery, power_channel)
 TRACKED(/obj/machinery, power_forced)
 SETTER(/obj/machinery, use_power)
 
+MSG_DEF_SELF(machine/robot_remote_unavailable, "not possible right now")
+
 CAPABILITIES(/obj/machinery)
-	op("robot_remote_blocked", inputs(hand(), item(/obj/item), remote()), ungated(), priority(OP_PRIORITY_SUBVERT + 1), label("Blocked"), when(cond_all(req(/mob/living/silicon/robot, of = ON_ACTOR), req(PROC_REF(robot_remote_blocked)))), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("robot_remote_blocked", inputs(hand(), item(/obj/item), remote(), menu()), ungated(), priority(OP_PRIORITY_SUBVERT + 1), label("Blocked"),
+		when(cond_all(req(/mob/living/silicon/robot, of = ON_ACTOR), cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(robot_remote_blocked))))),
+		needs(req_on_origin(ORIGIN_MENU, req(PROC_REF(robot_remote_blocked), because = MSG(machine/robot_remote_unavailable)))), then(TYPE_PROC_REF(/atom, op_swallow)))
 	contributes(STAT_OPERABLE, STAT_INTACT, key = "intact_operable", reason = MSG(machine/inoperable))
 	contributes(STAT_OPERABLE, cond_not(STAT_IN_MAINTENANCE), key = "maint_operable", reason = MSG(machine/inoperable))
 	// The grid's reading: the machine has power while its area's channel is energized (the area's tracked channel vars, one hop through power_area).

@@ -65,8 +65,10 @@ TRACKED(/obj/item/cell, recharging)
 TRACKED(/obj/item/cell, gradual_charge_left)
 
 // A self-charging cell steps every two seconds while it is below full; a gradual charge steps every second while it has steps left.
+MSG_DEF_SELF(cell/needs_item, "needs an item")
+
 CAPABILITIES(/obj/item/cell)
-	op("inject_cell", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
+	op("inject_cell", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(/obj/item, because = MSG(cell/needs_item)), req_adjacent(), req_capable()), then(PROC_REF(interaction_item)))
 	op("electrovore_charge", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HELP), label("Charge with your body"), then(PROC_REF(electrovore_charge)))
 	op("electrovore_drain", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HURT), label("Drain its charge"), then(PROC_REF(electrovore_drain)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(cell_emp_drain)))

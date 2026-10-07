@@ -16,7 +16,6 @@
 /proc/is_emagged(atom/A)
 	READS_FROM(A)
 	return !!(capability_bits(A) & CAP_EMAGGED) || (cap_of(A, CAP_EMAG) && emag_emagged(A)) // a converted holder keeps it as a capability key
-MSG_DEF_SELF(emag/missing_card, "needs a cryptographic sequencer")
 MSG_DEF_SELF(emag/no_charge, "That has no uses left.")
 MSG_DEF_SELF(emag/already, "It is already subverted.")
 MSG_DEF(emag/done, "You subvert %T% with %I%.", "%U% subverts %T% with %I%.")
@@ -63,11 +62,6 @@ cap_keys(CAP_EMAG, EMAGGED = MSG(emag/already))
 /datum/entry/part/req/emag_card
 	part_name = "req_emag_card"
 	default_reason = /datum/msg/emag/no_charge
-
-/datum/entry/part/req/emag_card/refusal(datum/act/op/A)
-	if(!istype(A.held, /obj/item/card/emag))
-		return MSG(emag/missing_card)
-	return ..()
 
 /datum/entry/part/req/emag_card/holds(datum/act/op/A)
 	var/obj/item/card/emag/card = A.held
