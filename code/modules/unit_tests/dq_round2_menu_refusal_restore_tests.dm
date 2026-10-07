@@ -3,6 +3,10 @@
 	parent_type = /datum/unit_test/read_once_machinery_admission
 	abstract_type = /datum/unit_test/round2_menu_refusal_restore
 
+/datum/unit_test/round2_menu_refusal_restore/New()
+	..()
+	status_policies()
+
 /datum/unit_test/round2_menu_refusal_restore/status_display
 /datum/unit_test/round2_menu_refusal_restore/status_display/run_gate()
 	set_global(nameof(GLOB.op_menu_builds), GLOB.op_menu_builds)
@@ -20,6 +24,7 @@
 	rejected = test_menu(H, D, "touch")
 	TEST_ASSERT_EQUAL(rejected?.outcome, ACT_REFUSED, "Distant item-touch menu picks are refused")
 	H.forceMove(tile(2, 2))
+	H.disable_godmode()
 	H.status_at_least(STAT_STUNNED, 2)
 	TEST_ASSERT(!H.operation_actor_capable(0), "The real stun disables action capability")
 	rejected = test_menu(H, D, "touch")
@@ -67,6 +72,7 @@
 	TEST_ASSERT_NULL(P.beaker, "Distance refusal leaves the real slot empty")
 	TEST_ASSERT_EQUAL(H.get_active_hand(), container, "Distance refusal preserves hand custody")
 	H.forceMove(tile(2, 2))
+	H.disable_godmode()
 	H.status_at_least(STAT_STUNNED, 2)
 	TEST_ASSERT(!H.operation_actor_capable(0), "The real stun disables insertion capability")
 	rejected = test_menu(H, P, "insert_beaker")
