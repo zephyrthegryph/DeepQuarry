@@ -782,11 +782,10 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 		return
 
 /// Use the same declared requirements and feedback for an action button as the interaction menu.
-/obj/item/gun/proc/perform_scope_interaction(mob/user, effect)
-	for(var/datum/interaction/candidate as anything in interaction_candidates(src))
-		if(candidate.effect == effect && candidate.applies_to(src))
-			return candidate.perform(user, src, user?.get_active_hand())
-	return FALSE
+/// The scope button: runs the gun's scope menu op (`key`) as the user's own choice.
+/obj/item/gun/proc/perform_scope_interaction(mob/user, key)
+	var/datum/op_result/result = perform_op(user, src, key, user?.get_active_hand(), ORIGIN_MENU, AUTH_PHYSICAL)
+	return result?.outcome == ACT_COMMITTED
 
 /obj/item/gun/proc/toggle_scope(zoom_amount=2.0, mob/living/user)
 	//looking through a scope limits your periphereal vision

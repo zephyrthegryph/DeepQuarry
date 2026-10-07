@@ -67,19 +67,21 @@
 	var/heldname = "default name"
 
 CAPABILITIES(/obj/item/borg/upgrade/utility/rename)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), asks(/datum/prompt/text, fields = list("title" = "Robot Reclassification", "question" = "Enter new robot name", "default" = computed(PROC_REF(name_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "subject" = computed(PROC_REF(name_subject)), "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = REQUEST_NO_TIMEOUT)), then(PROC_REF(name_entered)))
 
-/// Old attack_self.
-/obj/item/borg/upgrade/utility/rename/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	open_request(src, /datum/prompt/text, PROC_REF(name_entered), answerer = user, title = "Robot Reclassification", question = "Enter new robot name", default = heldname, max_len = MAX_NAME_LEN, name_text = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-	return TRUE
+/// The prompt's starting text: the board's current name.
+/obj/item/borg/upgrade/utility/rename/proc/name_default(datum/act/A)
+	return heldname
 
-/obj/item/borg/upgrade/utility/rename/proc/name_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	if(A.answer.value)
+/// The question's subject, for the carried recheck of an answer: the board itself.
+/obj/item/borg/upgrade/utility/rename/proc/name_subject(datum/act/A)
+	return src
+
+/// Old attack_self's question was answered: the board takes the name.
+/obj/item/borg/upgrade/utility/rename/proc/name_entered(datum/act/op/A)
+	if(A.answer?.value)
 		heldname = A.answer.value
+	return OP_OK
 
 /obj/item/borg/upgrade/utility/rename/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE

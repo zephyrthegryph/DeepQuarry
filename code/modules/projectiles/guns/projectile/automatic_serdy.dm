@@ -214,7 +214,7 @@
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
 /obj/item/gun/projectile/automatic/serdy/hunter/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(serdy_hunter_verb_scope))
+	perform_scope_interaction(user, "serdy_hunter_verb_scope")
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hunter)
 	op("serdy_hunter_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_hunter_verb_scope_op)))
@@ -469,7 +469,7 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hunter)
 	one_handed_penalty = 70
 
 /obj/item/gun/projectile/automatic/serdy/mosin/scoped/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(serdy_mosin_verb_scope))
+	perform_scope_interaction(user, "serdy_mosin_verb_scope")
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/mosin/scoped)
 	op("serdy_mosin_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_mosin_verb_scope_op)))
@@ -546,7 +546,7 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/mosin/scoped)
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
 /obj/item/gun/projectile/automatic/serdy/awp/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(serdy_awp_verb_scope))
+	perform_scope_interaction(user, "serdy_awp_verb_scope")
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/awp)
 	op("serdy_awp_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_awp_verb_scope_op)))
@@ -593,7 +593,7 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/awp)
 
 
 /obj/item/gun/projectile/automatic/serdy/hectate/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(serdy_hectate_verb_scope))
+	perform_scope_interaction(user, "serdy_hectate_verb_scope")
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hectate)
 	op("serdy_hectate_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_hectate_verb_scope_op)))
