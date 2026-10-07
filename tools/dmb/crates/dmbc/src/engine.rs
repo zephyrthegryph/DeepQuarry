@@ -127,6 +127,7 @@ impl EngineSnapshot {
                         name,
                         kind: MemberKind::Var,
                         shared_owner: (flags & 1 != 0).then_some(owner),
+                        instance_storage_proven: flags & 1 == 0,
                     });
                     opaque.push(OpaqueMember {
                         owner,
@@ -169,6 +170,7 @@ impl EngineSnapshot {
                     name,
                     kind: MemberKind::Var,
                     shared_owner: Some(root),
+                    instance_storage_proven: false,
                 });
                 opaque.push(OpaqueMember {
                     owner: root,
@@ -234,7 +236,10 @@ impl EngineSnapshot {
                 let root = self.symbols.intern("/")?;
                 self.hierarchy.parents.push((special, Some(root)));
                 let mut types = self.types.to_vec();
-                types.push(Skeleton::Type { path: special, explicit_parent: Some(root) });
+                types.push(Skeleton::Type {
+                    path: special,
+                    explicit_parent: Some(root),
+                });
                 self.types = types.into();
             }
         }
@@ -298,14 +303,21 @@ impl EngineSnapshot {
         &self.opaque
     }
     pub fn field_bases(&self) -> Vec<dm_ir::OpaqueFieldBase> {
-        self.catalog_fields.iter().map(|field| dm_ir::OpaqueFieldBase {
-            owner: field.owner,
-            name: field.name,
-            declared_type: match field.declared_type {
-                catalog::FieldTypeMeaning::Known(path) => dm_ir::DeclaredTypeKnowledge::Known(path),
-                catalog::FieldTypeMeaning::Unsupported => dm_ir::DeclaredTypeKnowledge::Unsupported,
-            },
-        }).collect()
+        self.catalog_fields
+            .iter()
+            .map(|field| dm_ir::OpaqueFieldBase {
+                owner: field.owner,
+                name: field.name,
+                declared_type: match field.declared_type {
+                    catalog::FieldTypeMeaning::Known(path) => {
+                        dm_ir::DeclaredTypeKnowledge::Known(path)
+                    }
+                    catalog::FieldTypeMeaning::Unsupported => {
+                        dm_ir::DeclaredTypeKnowledge::Unsupported
+                    }
+                },
+            })
+            .collect()
     }
     pub fn frontend_seed(&self) -> dm_tree::frontend::EngineSeed {
         dm_tree::frontend::EngineSeed {
@@ -381,6 +393,7 @@ fn extract_procs(
             name,
             kind,
             shared_owner: None,
+            instance_storage_proven: false,
         });
         opaque.push(OpaqueMember {
             owner,
@@ -403,7 +416,8 @@ mod tests {
         let tree = engine.build_tree(SymbolTable::default(), &[]).unwrap();
         let obj = tree.lookup_type(SymbolId::of("/obj")).unwrap();
         assert_eq!(
-            tree.symbols().text(tree.type_node(tree.parent(obj).unwrap()).unwrap().path),
+            tree.symbols()
+                .text(tree.type_node(tree.parent(obj).unwrap()).unwrap().path),
             Some("/atom/movable")
         );
         assert_eq!(

@@ -277,6 +277,8 @@ pub fn compile_simple_proc_with_resolver<R: dm_ir::Resolver>(
         symbols,
         slots: std::cell::RefCell::new(Default::default()),
         resources: std::cell::RefCell::new(Default::default()),
+        instances:std::cell::RefCell::new(Default::default()),
+        runtime_types:std::cell::RefCell::new(Default::default()),
         resource_search_context: inputs.resource_search_context,
     };
     let procedure = compile_with_lookup(body, &bindings, Some(&lookup))?;
@@ -284,6 +286,7 @@ pub fn compile_simple_proc_with_resolver<R: dm_ir::Resolver>(
         procedure,
         slots: lookup.slots.into_inner(),
         resources: lookup.resources.into_inner(),
+        instances:lookup.instances.into_inner(),
     })
 }
 
@@ -332,7 +335,23 @@ fn compile_with_lookup(
     compiler.result.argument_names = bindings.parameters.clone();
     compiler.result.argument_type_flags = bindings.parameter_type_flags.clone();
     compiler.result.argument_value_sources = bindings.parameter_value_sources.clone();
-    if let Some(shared) = &bindings.shared {
+    if let Some(lookup)=lookup {
+        let mut seen=BTreeSet::new();
+        for item in &mut compiler.result.code.items {
+            let CodeItem::Instruction(instruction)=item else {continue;};
+            for operand in &mut instruction.operands {
+                if let Word::Value(ValueWord::ClassPath {path,..})=operand {
+                    let runtime_type=lookup.runtime_type(path).map_err(|error|vec![error])?;
+                    if runtime_type!=*path {
+                        let alias=path.clone();
+                        if seen.insert(alias.clone()) {compiler.result.instance_paths.push(alias.clone());}
+                        *operand=Word::Value(ValueWord::Instance(alias));
+                    }
+                }
+            }
+        }
+        compiler.result.class_paths.retain(|path|!seen.contains(path));
+    } else if let Some(shared) = &bindings.shared {
         compiler
             .result
             .class_paths
@@ -530,7 +549,8 @@ impl Compiler<'_> {
         let Some(lookup) = self.lookup else {
             return Ok(class_tag(path));
         };
-        let query = dm_ir::ResolveQuery::Ancestry(dm_ir::SymbolId::of(path));
+        let runtime_type=self.semantic(lookup.runtime_type(path))?;
+        let query = dm_ir::ResolveQuery::Ancestry(dm_ir::SymbolId::of(&runtime_type));
         match self.semantic(lookup.answer(query))? {
             dm_ir::ResolvedMeaning::Missing => Ok(None),
             dm_ir::ResolvedMeaning::Symbols(ancestors) => {
@@ -561,7 +581,7 @@ impl Compiler<'_> {
             Some(lookup) => match &self.bindings.current_type_path {
                 Some(owner) => {
                     if self.member_global(owner,name)?.is_some() { return Ok(false); }
-                    self.semantic(lookup.presence(dm_ir::ResolveQuery::Var {
+                    self.semantic(lookup.presence(dm_ir::ResolveQuery::HasMemberVar {
                     owner: dm_ir::SymbolId::of(owner),
                     name: dm_ir::SymbolId::of(name),
                 })) },
@@ -595,7 +615,7 @@ impl Compiler<'_> {
     fn field_type(&self, name: &str) -> Result<Option<String>, LowerError> {
         match (self.lookup, self.bindings.current_type_path.as_deref()) {
             (Some(lookup), Some(owner)) => {
-                self.semantic(lookup.declared_type(dm_ir::ResolveQuery::Var {
+                self.semantic(lookup.declared_type(dm_ir::ResolveQuery::DeclaredVarType {
                     owner: dm_ir::SymbolId::of(owner),
                     name: dm_ir::SymbolId::of(name),
                 }))
@@ -614,7 +634,7 @@ impl Compiler<'_> {
     }
     fn member_type(&self, owner: &str, name: &str) -> Result<Option<String>, LowerError> {
         match self.lookup {
-            Some(lookup) => self.semantic(lookup.declared_type(dm_ir::ResolveQuery::Var {
+            Some(lookup) => self.semantic(lookup.declared_type(dm_ir::ResolveQuery::DeclaredVarType {
                 owner: dm_ir::SymbolId::of(owner),
                 name: dm_ir::SymbolId::of(name),
             })),
@@ -623,7 +643,7 @@ impl Compiler<'_> {
     }
     fn member_global(&self, owner: &str, name: &str) -> Result<Option<String>, LowerError> {
         match self.lookup {
-            Some(lookup) => self.semantic(lookup.slot(dm_ir::ResolveQuery::StaticVar {
+            Some(lookup) => self.semantic(lookup.slot(dm_ir::ResolveQuery::VarStorage {
                 owner: dm_ir::SymbolId::of(owner),
                 name: dm_ir::SymbolId::of(name),
             })),
@@ -2822,10 +2842,12 @@ impl Compiler<'_> {
             ExprKind::TypePath(path) => Some(path.clone()),
             ExprKind::Ident(name) => {
                 if name == "src" {
-                    return Ok(self.bindings.current_type_path.clone());
+                    return match self.bindings.current_type_path.as_deref() {
+                        Some(path)=>self.normalize_inferred_type(path).map(Some),None=>Ok(None),
+                    };
                 }
                 if name == "usr" {
-                    return Ok(Some("/mob".into()));
+                    return self.normalize_inferred_type("/mob").map(Some);
                 }
                 if let Some(path) = self
                     .local_types
@@ -2845,10 +2867,10 @@ impl Compiler<'_> {
                 object, selector, ..
             } => {
                 if matches!(&object.kind, ExprKind::Ident(name) if name == "global") {
-                    return self.global_type(selector);
+                    return self.global_type(selector)?.map(|path|self.normalize_inferred_type(&path)).transpose();
                 }
                 if matches!(&object.kind, ExprKind::Ident(name) if name == "src") {
-                    return self.field_type(selector);
+                    return self.field_type(selector)?.map(|path|self.normalize_inferred_type(&path)).transpose();
                 }
                 match self.inferred_expression_type(object)? {
                     Some(owner) => self.member_type(&owner, selector)?,
@@ -2866,28 +2888,18 @@ impl Compiler<'_> {
         let Some(path) = inferred else {
             return Ok(None);
         };
-        if let Some(lookup) = self.lookup {
-            let query = dm_ir::ResolveQuery::Type(dm_ir::SymbolId::of(&path));
-            if self.semantic(lookup.presence(query))? {
-                return Ok(Some(path));
-            }
-            let query = dm_ir::ResolveQuery::RuntimeType(dm_ir::SymbolId::of(&path));
-            return match self.semantic(lookup.answer(query))? {
-                dm_ir::ResolvedMeaning::Symbol(id) => {
-                    self.semantic(lookup.text(query, id)).map(Some)
-                }
-                dm_ir::ResolvedMeaning::Missing => Ok(None),
-                _ => self.semantic(Err(lookup.error(query, "invalid runtime type answer"))),
-            };
-        }
-        Ok(Some(
+        self.normalize_inferred_type(&path).map(Some)
+    }
+    fn normalize_inferred_type(&self,path:&str)->Result<String,LowerError> {
+        if let Some(lookup)=self.lookup { return self.semantic(lookup.runtime_type(path)); }
+        Ok(
             self.bindings
                 .shared
                 .as_ref()
-                .and_then(|shared| shared.modified_instances.get(&path))
+                .and_then(|shared| shared.modified_instances.get(path))
                 .cloned()
-                .unwrap_or(path),
-        ))
+                .unwrap_or_else(||path.to_owned()),
+        )
     }
     fn expression_member_global(
         &self,

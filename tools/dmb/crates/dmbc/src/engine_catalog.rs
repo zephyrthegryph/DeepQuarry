@@ -64,6 +64,7 @@ impl CatalogField {
             name: self.name,
             kind: MemberKind::Var,
             shared_owner: None,
+            instance_storage_proven: true,
         }
     }
 }

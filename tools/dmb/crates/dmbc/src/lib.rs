@@ -10,3 +10,4 @@ pub mod publish;
 pub mod engine;
 pub mod engine_host;
 pub mod lowering;
+pub mod symbolic;

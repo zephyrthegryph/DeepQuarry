@@ -10,6 +10,7 @@ pub mod frontend;
 mod normalize;
 mod procedure;
 mod resolver;
+mod variable_facts;
 pub use adapter::{
     from_ast, from_ast_in_scope, AdaptedDeclarations, AdapterError, SnapshotError, TreeSnapshot,
 };
@@ -102,6 +103,7 @@ pub struct SemanticTree {
     declaration_targets: Arc<[Target]>,
     identity: u128,
     inventory: resolver::ResolverInventory,
+    intrinsic_fields: Arc<HashMap<(SymbolId,SymbolId),dm_ir::OpaqueFieldBase>>,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum TreeError {
@@ -417,6 +419,7 @@ pub fn build_with_intrinsic_fields(
         declaration_targets: Arc::from([]),
         identity: 0,
         inventory: resolver::ResolverInventory::default(),
+        intrinsic_fields: Arc::new(HashMap::new()),
     };
     let mut intrinsic_fields = HashMap::new();
     for field in fields {
@@ -441,6 +444,7 @@ pub fn build_with_intrinsic_fields(
             });
         }
     }
+    tree.intrinsic_fields = Arc::new(fields.iter().map(|field|((field.owner,field.name),field.clone())).collect());
     let mut members: Vec<MemberNode> = Vec::new();
     let mut targets = Vec::new();
     let mut owned = vec![Vec::new(); tree.types.len()];
@@ -837,7 +841,8 @@ impl dm_ir::Resolver for SemanticTree {
                     }
                 })
                 .unwrap_or(M::Missing),
-            Q::StaticVar { .. } | Q::UniqueStaticVar(_) | Q::HasMemberProc { .. } => {
+            Q::HasMemberVar { .. } | Q::DeclaredVarType { .. } | Q::VarStorage { .. }
+            | Q::StaticVar { .. } | Q::UniqueStaticVar(_) | Q::HasMemberProc { .. } => {
                 // Inventory queries certify their own positive/negative coverage.
                 // A known instance field is authoritatively not a shared slot,
                 // even while unrelated intrinsic member names remain unknown.

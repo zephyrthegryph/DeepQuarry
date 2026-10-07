@@ -18,6 +18,21 @@ pub enum ResolveQuery {
         owner: SymbolId,
         name: SymbolId,
     },
+    /// Presence independent of inherited defaults/flags/type knowledge.
+    HasMemberVar {
+        owner: SymbolId,
+        name: SymbolId,
+    },
+    /// Some is a proven type, None is proven untyped; unknown is Unsupported.
+    DeclaredVarType {
+        owner: SymbolId,
+        name: SymbolId,
+    },
+    /// Instance/shared storage proof, independent of declaration metadata.
+    VarStorage {
+        owner: SymbolId,
+        name: SymbolId,
+    },
     Proc {
         owner: SymbolId,
         name: SymbolId,
@@ -78,6 +93,11 @@ pub enum ResolvedMeaning {
     Unsupported(ResolveQuery),
     Missing,
     Presence(bool),
+    DeclaredType(Option<SymbolId>),
+    InstanceField {
+        declaring_owner: SymbolId,
+        name: SymbolId,
+    },
     /// Exact scalar/list semantic value, not an output-table index.
     Value(SemanticValue),
     /// Symbolic variable-slot key. Ordinary slots and global.vars are distinct.

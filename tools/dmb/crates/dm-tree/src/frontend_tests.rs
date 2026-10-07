@@ -276,14 +276,14 @@ fn explicit_engine_seed_keeps_intrinsic_metadata_and_source_origins_separate() {
                 name: SymbolId::of("engine_call"),
                 kind: MemberKind::Proc,
                 shared_owner: None,
-            instance_storage_proven: false,
+                instance_storage_proven: false,
             },
             crate::IntrinsicMember {
                 owner: SymbolId::of("/engine/base"),
                 name: SymbolId::of("native_value"),
                 kind: MemberKind::Var,
                 shared_owner: None,
-            instance_storage_proven: false,
+                instance_storage_proven: false,
             },
         ]
         .into(),
@@ -398,7 +398,7 @@ fn opaque_intrinsic_field_bases_preserve_authored_values_without_inventing_metad
             name: base.name,
             kind: MemberKind::Var,
             shared_owner: None,
-        instance_storage_proven: false,
+            instance_storage_proven: false,
         }]
         .into(),
         fields: vec![base.clone()].into(),

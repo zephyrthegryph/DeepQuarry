@@ -147,8 +147,9 @@ The production compiler has not switched to the new pipeline.
   conservative token-pasting dependencies are encountered. Persistent macro
   bindings now share immutable snapshots and expansion borrows them directly.
   The bounded rerun reached declaration diagnostics in 37.305 s (exit 1):
-  directive planning 19.152 s, expansion 2.264 s, source indexing 1.533 s,
-  declaration parsing 12.401 s. A sampled private footprint was 0.626 GiB;
+  directive planning 19.152 s, expansion 2.264 s, source indexing 1.533 s;
+  descriptor parsing reached 150/150 at 12.401 s, then adaptation failed.
+  A sampled private footprint was 0.626 GiB;
   this is not a peak measurement. Qualified field assignments were rejected;
   their owner-path adapter fix is awaiting its combined focused gate.
   Evidence: `E:/dmb-native-v2-phase0/source-analysis-probe-20261006-2/receipt.json`.
@@ -157,6 +158,12 @@ The production compiler has not switched to the new pipeline.
   preserves current source diagnostics. Three focused tests passed, including
   actual tree global storage and worker-count equivalence. Full production ABI
   policy, symbolic composition and output emission remain incomplete.
+- The subsequent integration gate passed 220 backend, 10 IR, 44 tree and 16
+  client tests, strict Clippy and the executable build. Actual lowering results
+  now freeze through the shared encoder and canonical linker tables; required
+  external payloads and ordering facts stay explicit. Full DMB generation is
+  still absent from the new driver. Granular field facts and modified-instance
+  RuntimeType classification are covered by focused checks.
 
 ## In progress / remaining gates
 

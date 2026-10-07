@@ -13,11 +13,19 @@ pub struct ResolvedSlot {
     pub owner: SymbolId,
     pub name: SymbolId,
 }
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ResolvedInstance {
+    pub alias: SymbolId,
+    pub runtime_type: SymbolId,
+}
 pub struct ResolverProc {
     pub procedure: crate::SimpleProc,
     /// Exact resolver-issued slot tuples; no output slot is selected here.
     pub slots: BTreeMap<crate::Symbol, ResolvedSlot>,
     pub resources: BTreeMap<String, u128>,
+    /// RuntimeType licenses alias classification, not the modifier payload.
+    /// The linker still requires an explicit semantic instance artifact.
+    pub instances: BTreeMap<String, ResolvedInstance>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -51,9 +59,38 @@ pub(crate) struct ProjectResolver<'a> {
     pub symbols: &'a SymbolTable,
     pub slots: RefCell<BTreeMap<crate::Symbol, ResolvedSlot>>,
     pub resources: RefCell<BTreeMap<String, u128>>,
+    pub instances: RefCell<BTreeMap<String, ResolvedInstance>>,
+    pub runtime_types: RefCell<BTreeMap<String, SymbolId>>,
     pub resource_search_context: Option<u128>,
 }
 impl ProjectResolver<'_> {
+    pub fn runtime_type(&self, path: &str) -> Result<String, LowerError> {
+        let alias = SymbolId::of(path);
+        let query = Q::RuntimeType(alias);
+        let runtime_type = match self.answer(query)? {
+            M::Symbol(id) => id,
+            M::Missing => return Err(self.error(query, "runtime type coverage is missing")),
+            _ => return Err(self.error(query, "invalid runtime type answer")),
+        };
+        let text = self.text(query, runtime_type)?;
+        let old = self
+            .runtime_types
+            .borrow_mut()
+            .insert(path.to_owned(), runtime_type);
+        if old.is_some_and(|old| old != runtime_type) {
+            return Err(self.error(query, "conflicting runtime type answers"));
+        }
+        if runtime_type != alias {
+            self.instances.borrow_mut().insert(
+                path.to_owned(),
+                ResolvedInstance {
+                    alias,
+                    runtime_type,
+                },
+            );
+        }
+        Ok(text)
+    }
     pub fn resource(&self, path: &str) -> Result<String, LowerError> {
         let path_id = SymbolId::of(path);
         let query = match self.resource_search_context {
@@ -105,6 +142,7 @@ impl ProjectResolver<'_> {
     pub fn declared_type(&self, query: Q) -> Result<Option<String>, LowerError> {
         match self.answer(query)? {
             M::Missing => Ok(None),
+            M::DeclaredType(value) => value.map(|id| self.text(query, id)).transpose(),
             M::Member { data, .. } => data
                 .declared_type
                 .map(|id| self.text(query, id))
@@ -115,6 +153,15 @@ impl ProjectResolver<'_> {
     pub fn slot(&self, query: Q) -> Result<Option<String>, LowerError> {
         match self.answer(query)? {
             M::Missing => Ok(None),
+            M::InstanceField {
+                declaring_owner,
+                name,
+            } if matches!(query, Q::VarStorage { .. }) => {
+                // Consume the issued storage tuple without demanding opaque default metadata.
+                self.text(query, declaring_owner)?;
+                self.text(query, name)?;
+                Ok(None)
+            }
             M::Slot {
                 symbol,
                 owner,
@@ -292,5 +339,159 @@ mod tests {
         .unwrap();
         assert_eq!(result.resources.get("assets/icon.dmi"), Some(&123));
         assert_eq!(result.procedure.resources, ["assets/icon.dmi"]);
+    }
+    #[test]
+    fn modified_alias_is_issued_as_instance_and_ordinary_type_stays_class() {
+        let mut symbols = SymbolTable::default();
+        for path in ["/datum/modified", "/datum/ordinary", "/datum"] {
+            symbols.intern(path).unwrap();
+        }
+        let host = Host {
+            reads: Mutex::new(vec![]),
+            answer: |query| match query {
+                Q::RuntimeType(id) if id == SymbolId::of("/datum/modified") => {
+                    M::Symbol(SymbolId::of("/datum"))
+                }
+                Q::RuntimeType(id) if id == SymbolId::of("/datum/ordinary") => M::Symbol(id),
+                Q::Ancestry(id) if id == SymbolId::of("/datum") => M::Symbols(vec![id]),
+                Q::Ancestry(id) if id == SymbolId::of("/datum/ordinary") => {
+                    M::Symbols(vec![id, SymbolId::of("/datum")])
+                }
+                _ => M::Unsupported(query),
+            },
+        };
+        let result = lower(
+            "/proc/p()\n    return list(/datum/modified,/datum/ordinary)\n",
+            Default::default(),
+            &symbols,
+            &host,
+        )
+        .unwrap();
+        assert_eq!(
+            result.instances.get("/datum/modified"),
+            Some(&ResolvedInstance {
+                alias: SymbolId::of("/datum/modified"),
+                runtime_type: SymbolId::of("/datum")
+            })
+        );
+        assert_eq!(result.procedure.instance_paths, ["/datum/modified"]);
+        assert_eq!(result.procedure.class_paths, ["/datum/ordinary"]);
+        assert!(result.procedure.code.items.iter().any(|item|matches!(item,crate::Item::Instruction(instruction) if instruction.operands.iter().any(|word|matches!(word,crate::Word::Value(crate::ValueWord::Instance(path)) if path=="/datum/modified")))));
+    }
+    #[test]
+    fn type_presence_cannot_substitute_for_unknown_runtime_alias_coverage() {
+        let mut symbols = SymbolTable::default();
+        symbols.intern("/datum/alias").unwrap();
+        let host = Host {
+            reads: Mutex::new(vec![]),
+            answer: |query| match query {
+                Q::Type(id) => M::Symbol(id),
+                _ => M::Unsupported(query),
+            },
+        };
+        let errors = lower(
+            "/proc/p()\n    return /datum/alias\n",
+            Default::default(),
+            &symbols,
+            &host,
+        )
+        .err()
+        .unwrap();
+        assert!(errors
+            .iter()
+            .any(|error| error.reason.contains("RuntimeType")));
+    }
+    #[test]
+    fn opaque_intrinsic_field_read_uses_presence_and_storage_only() {
+        let mut symbols = SymbolTable::default();
+        for text in ["/atom", "name"] {
+            symbols.intern(text).unwrap();
+        }
+        let host = Host {
+            reads: Mutex::new(vec![]),
+            answer: |query| match query {
+                Q::HasMemberVar { owner, name }
+                    if owner == SymbolId::of("/atom") && name == SymbolId::of("name") =>
+                {
+                    M::Presence(true)
+                }
+                Q::VarStorage { owner, name }
+                    if owner == SymbolId::of("/atom") && name == SymbolId::of("name") =>
+                {
+                    M::InstanceField {
+                        declaring_owner: owner,
+                        name,
+                    }
+                }
+                Q::GlobalVar(_) => M::Missing,
+                Q::PredefinedConstant(_) => M::Missing,
+                _ => M::Unsupported(query),
+            },
+        };
+        let result = lower(
+            "/atom/proc/p()\n    return name\n",
+            ProcedureInputs {
+                current_type_path: Some("/atom".into()),
+                ..Default::default()
+            },
+            &symbols,
+            &host,
+        );
+        assert!(result.is_ok());
+        let reads = host.reads.lock().unwrap();
+        assert!(reads
+            .iter()
+            .any(|query| matches!(query, Q::HasMemberVar { .. })));
+        assert!(reads
+            .iter()
+            .any(|query| matches!(query, Q::VarStorage { .. })));
+        assert!(!reads.iter().any(|query| matches!(
+            query,
+            Q::Var { .. } | Q::StaticVar { .. } | Q::DeclaredVarType { .. }
+        )));
+    }
+    #[test]
+    fn known_untyped_is_distinct_from_unknown_type_or_storage() {
+        let symbols = SymbolTable::default();
+        let host = Host {
+            reads: Mutex::new(vec![]),
+            answer: |query| match query {
+                Q::DeclaredVarType { name, .. } if name == SymbolId::of("known") => {
+                    M::DeclaredType(None)
+                }
+                _ => M::Unsupported(query),
+            },
+        };
+        let lookup = ProjectResolver {
+            resolver: &host,
+            symbols: &symbols,
+            slots: RefCell::new(BTreeMap::new()),
+            resources: RefCell::new(BTreeMap::new()),
+            instances: RefCell::new(BTreeMap::new()),
+            runtime_types: RefCell::new(BTreeMap::new()),
+            resource_search_context: None,
+        };
+        let owner = SymbolId::of("/datum");
+        assert_eq!(
+            lookup
+                .declared_type(Q::DeclaredVarType {
+                    owner,
+                    name: SymbolId::of("known")
+                })
+                .unwrap(),
+            None
+        );
+        assert!(lookup
+            .declared_type(Q::DeclaredVarType {
+                owner,
+                name: SymbolId::of("unknown")
+            })
+            .is_err());
+        assert!(lookup
+            .slot(Q::VarStorage {
+                owner,
+                name: SymbolId::of("unknown")
+            })
+            .is_err());
     }
 }

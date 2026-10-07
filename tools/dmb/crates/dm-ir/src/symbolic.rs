@@ -196,7 +196,7 @@ impl SymbolicCode {
     }
     /// Stable content identity with explicit fields, never Debug, pointer values,
     /// arena IDs or worker enumeration. Relocations are already in offset order.
-    pub fn fingerprint(&self) -> u128 {
+    pub fn canonical_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(b"dm-symbolic-code-v2\0");
         bytes.extend_from_slice(&(self.words.len() as u64).to_le_bytes());
@@ -215,7 +215,11 @@ impl SymbolicCode {
             }
             encode_reference(&mut bytes, relocation.reference);
         }
-        xxhash_rust::xxh3::xxh3_128(&bytes)
+        bytes
+    }
+
+    pub fn fingerprint(&self) -> u128 {
+        xxhash_rust::xxh3::xxh3_128(&self.canonical_bytes())
     }
 
     pub fn words(&self) -> &[u32] {

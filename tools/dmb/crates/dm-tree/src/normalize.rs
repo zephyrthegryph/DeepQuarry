@@ -51,7 +51,12 @@ fn walk(items: &[Item], owner: &str, namespace: Option<&str>, out: &mut Vec<Item
             out.push(member);
             continue;
         }
-        let declaration = header.split_once('(').map_or(header, |(path, _)| path);
+        // Namespace markers belong to the declaration target, never its value.
+        // A callback default such as /proc/finish is an expression, not a proc
+        // namespace enclosing the field being assigned.
+        let target = dm_syntax::top_level_assignment_index(header)
+            .map_or(header, |index| header[..index].trim_end());
+        let declaration = target.split_once('(').map_or(target, |(path, _)| path);
         let parts: Vec<_> = declaration.trim_matches('/').split('/').collect();
         let namespace_index = parts
             .iter()

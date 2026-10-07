@@ -11,6 +11,8 @@ pub struct IntrinsicMember {
     pub name: SymbolId,
     pub kind: MemberKind,
     pub shared_owner: Option<SymbolId>,
+    /// Explicit instance-storage proof; shared_owner=None alone proves nothing.
+    pub instance_storage_proven: bool,
 }
 /// Caller-supplied authoritative engine hierarchy, already merged into this
 /// tree. `parents` includes root and every engine type; schema pins the source.
@@ -25,6 +27,10 @@ pub enum InventoryError {
     DuplicateType(SymbolId),
     UnknownOwner(SymbolId),
     ParentMismatch(SymbolId),
+    InvalidStorage {
+        owner: SymbolId,
+        name: SymbolId,
+    },
     ConflictingMember {
         owner: SymbolId,
         name: SymbolId,
@@ -33,11 +39,11 @@ pub enum InventoryError {
 }
 #[derive(Clone, Debug, Default)]
 pub(crate) struct ResolverInventory {
-    complete: bool,
+    pub(super) complete: bool,
     hierarchy_certified: bool,
     source_identity: Option<u128>,
     intrinsic: Arc<[IntrinsicMember]>,
-    index: HashMap<(SymbolId, SymbolId, MemberKind), IntrinsicMember>,
+    pub(super) index: HashMap<(SymbolId, SymbolId, MemberKind), IntrinsicMember>,
     unique: HashMap<SymbolId, Option<(SymbolId, SymbolId)>>,
 }
 impl SemanticTree {
@@ -90,6 +96,14 @@ impl SemanticTree {
         }
         let mut index = HashMap::new();
         for entry in &entries {
+            if entry.instance_storage_proven
+                && (entry.kind != MemberKind::Var || entry.shared_owner.is_some())
+            {
+                return Err(InventoryError::InvalidStorage {
+                    owner: entry.owner,
+                    name: entry.name,
+                });
+            }
             for owner in [Some(entry.owner), entry.shared_owner]
                 .into_iter()
                 .flatten()
@@ -112,7 +126,7 @@ impl SemanticTree {
         }
         entries.sort_by_key(|e| (e.owner, e.name, e.kind as u8, e.shared_owner));
         entries.dedup();
-        let mut bytes = b"dm-tree-intrinsics-v1\0".to_vec();
+        let mut bytes = b"dm-tree-intrinsics-v2\0".to_vec();
         let source_identity = *self.inventory.source_identity.get_or_insert(self.identity);
         bytes.extend_from_slice(&source_identity.to_le_bytes());
         bytes.push(u8::from(complete));
@@ -130,6 +144,7 @@ impl SemanticTree {
             bytes.extend_from_slice(&e.owner.bits().to_le_bytes());
             bytes.extend_from_slice(&e.name.bits().to_le_bytes());
             bytes.push(e.kind as u8);
+            bytes.push(u8::from(e.instance_storage_proven));
             bytes.push(u8::from(e.shared_owner.is_some()));
             if let Some(owner) = e.shared_owner {
                 bytes.extend_from_slice(&owner.bits().to_le_bytes());
@@ -230,6 +245,13 @@ impl SemanticTree {
     fn source_slot(&self, mut id: MemberId) -> Option<(SymbolId, SymbolId)> {
         loop {
             let node = &self.members[id.index()];
+            if let Some(base) = &node.metadata.inherited_opaque {
+                return self
+                    .inventory
+                    .index
+                    .get(&(base.owner, base.name, MemberKind::Var))
+                    .and_then(|entry| entry.shared_owner.map(|owner| (owner, base.name)));
+            }
             if matches!(
                 node.definition,
                 DefinitionMode::Override | DefinitionMode::Reopen
@@ -243,7 +265,7 @@ impl SemanticTree {
                 .then_some((self.types[node.owner.index()].path, node.name));
         }
     }
-    fn slot(owner: SymbolId, name: SymbolId) -> M {
+    pub(super) fn slot(owner: SymbolId, name: SymbolId) -> M {
         // Domain-separated structural identity; the returned owner/name mapping
         // lets a linker assign a slot without reverse-decoding the hash.
         // The exact (owner,name) tuple is authoritative; symbol is a convenience
@@ -273,38 +295,14 @@ impl SemanticTree {
                     .map(|(owner, name)| Self::slot(owner, name))
                     .unwrap_or(M::Missing)
             }
+            Q::HasMemberVar { .. } | Q::DeclaredVarType { .. } | Q::VarStorage { .. } => {
+                self.resolve_variable_fact(query)
+            }
             Q::StaticVar { owner, name } => {
-                let mut current = self.lookup_type(owner);
-                while let Some(id) = current {
-                    if let Some(member) = self.direct.get(&(id, name, MemberKind::Var)) {
-                        if self.members[member.index()]
-                            .metadata
-                            .inherited_opaque
-                            .is_some()
-                        {
-                            return M::Unsupported(query);
-                        }
-                        return self
-                            .source_slot(*member)
-                            .map(|(owner, name)| Self::slot(owner, name))
-                            .unwrap_or(M::Missing);
-                    }
-                    if let Some(e) = self.inventory.index.get(&(
-                        self.types[id.index()].path,
-                        name,
-                        MemberKind::Var,
-                    )) {
-                        return e
-                            .shared_owner
-                            .map(|owner| Self::slot(owner, name))
-                            .unwrap_or(M::Missing);
-                    }
-                    current = self.parent(id);
-                }
-                if self.inventory.complete {
-                    M::Missing
-                } else {
-                    M::Unsupported(query)
+                match self.resolve_variable_fact(Q::VarStorage { owner, name }) {
+                    M::InstanceField { .. } => M::Missing,
+                    M::Unsupported(_) => M::Unsupported(query),
+                    answer => answer,
                 }
             }
             Q::HasMemberProc { owner, name } => {
@@ -364,11 +362,19 @@ mod tests {
     #[test]
     fn known_instance_field_is_not_a_shared_slot_with_partial_inventory() {
         let tree = tree("/datum/a\n    var/value = 1\n/datum/a/b\n");
-        assert_eq!(Resolver::resolve(&tree, Q::StaticVar {
-            owner: SymbolId::of("/datum/a/b"), name: SymbolId::of("value")
-        }), M::Missing);
+        assert_eq!(
+            Resolver::resolve(
+                &tree,
+                Q::StaticVar {
+                    owner: SymbolId::of("/datum/a/b"),
+                    name: SymbolId::of("value")
+                }
+            ),
+            M::Missing
+        );
         let unknown = Q::StaticVar {
-            owner: SymbolId::of("/datum/a/b"), name: SymbolId::of("unknown")
+            owner: SymbolId::of("/datum/a/b"),
+            name: SymbolId::of("unknown"),
         };
         assert_eq!(Resolver::resolve(&tree, unknown), M::Unsupported(unknown));
     }
@@ -439,6 +445,7 @@ mod tests {
                     name,
                     kind: MemberKind::Var,
                     shared_owner: None,
+                    instance_storage_proven: false,
                 }],
             )
             .unwrap();
@@ -465,6 +472,7 @@ mod tests {
             name: SymbolId::of("x"),
             kind: MemberKind::Proc,
             shared_owner: None,
+            instance_storage_proven: false,
         };
         let b = IntrinsicMember {
             name: SymbolId::of("y"),
@@ -502,6 +510,7 @@ mod tests {
             name: SymbolId::of("engine_proc"),
             kind: MemberKind::Proc,
             shared_owner: None,
+            instance_storage_proven: false,
         };
         let complete = merged
             .with_complete_intrinsics(proof, vec![member.clone()])

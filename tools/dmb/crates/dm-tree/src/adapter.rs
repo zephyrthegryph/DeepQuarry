@@ -365,8 +365,13 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                 ItemKind::Unknown | ItemKind::Statement => {
                     let index = dm_syntax::top_level_assignment_index(header)
                         .ok_or_else(|| format!("unsupported declaration: {header}"))?;
-                    let name = header[..index].trim();
-                    if name.is_empty() || name.contains('/') || name.contains('[') {
+                    let target = header[..index].trim();
+                    let (assignment_owner, name) = match target.rsplit_once('/') {
+                        Some(("", name)) => ("/".to_owned(), name),
+                        Some((prefix, name)) => (absolute(owner, prefix)?, name),
+                        None => (owner.to_owned(), target),
+                    };
+                    if name.is_empty() || name.contains('[') {
                         return Err(format!("unsupported field assignment: {header}"));
                     }
                     let metadata = MemberMetadata {
@@ -380,7 +385,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                     };
                     let content = xxhash_rust::xxh3::xxh3_128(&metadata.canonical);
                     Ok(Some(Skeleton::Member {
-                        owner: symbol(context.symbols, owner)?,
+                        owner: symbol(context.symbols, &assignment_owner)?,
                         name: symbol(context.symbols, name)?,
                         kind: MemberKind::Var,
                         mode: DefinitionMode::Override,
@@ -425,6 +430,18 @@ mod tests {
             11,
         )
         .unwrap()
+    }
+    #[test]
+    fn qualified_assignment_preserves_owner_and_procedure_reference() {
+        let result = adapt("/datum/base\n    var/callback\n/datum/base/callback = /proc/finish\n");
+        let tree = build(result.symbols, &result.skeletons).unwrap();
+        let owner = tree.lookup_type(SymbolId::of("/datum/base")).unwrap();
+        let field = tree.member(tree.resolve(owner, SymbolId::of("callback"), MemberKind::Var).unwrap()).unwrap();
+        assert!(field.previous.is_some());
+        let initializer = field.metadata.initializer.as_ref().unwrap();
+        let spelling: String = initializer.tokens.iter()
+            .map(|token| tree.symbols.text(token.text).unwrap()).collect();
+        assert_eq!(spelling, "/proc/finish");
     }
     #[test]
     fn namespaces_arrays_defaults_and_settings_bridge_to_tree() {

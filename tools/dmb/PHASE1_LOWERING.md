@@ -97,4 +97,10 @@ assign wire indexes. `SymbolicCode` relocations describe direct words or packed
 24-bit values with their exact ABI tag. Both packed placeholder words, overlap,
 table kind, encoding and range are checked. The shared IR linker produces private
 linked words and leaves reusable code unchanged, including on failed resolution.
-Production procedure lowering still needs its project reads migrated to Resolver.
+Production procedure lowering has a direct Resolver entry with request-local
+lexical inputs. The bounded client driver parses retained bodies on demand and
+freezes actual results through this encoder into canonical linker tables. Known
+field presence, storage and declared type are separate queries; unknown opaque
+facts remain unsupported. Runtime aliases become explicit instance sidecars.
+Full production procedure ABI policy, initializer emission and DMB section
+composition remain migration work.
