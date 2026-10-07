@@ -449,3 +449,28 @@
 	test_click(H, building, card)
 	TEST_ASSERT(building.get_integrity() < before, "a harm-intent click still hurts the building")
 	clear_debris(T)
+
+/// A help-intent click on the supermatter wall with a held item never resolves to the item op (which turns the item to dust).
+/datum/unit_test/dq_integrity_pool/supermatter_wall_item_gate
+
+/datum/unit_test/dq_integrity_pool/supermatter_wall_item_gate/Run()
+	var/turf/T = scratch_turf()
+	var/start = T.type
+	var/mob/living/carbon/human/helper = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/striker = allocate(/mob/living/carbon/human, T)
+	var/turf/unsimulated/wall/supermatter/wall = T.ChangeTurf(/turf/unsimulated/wall/supermatter)
+	var/obj/item/card/id/calm_card = allocate(/obj/item/card/id)
+	var/obj/item/card/id/hard_card = allocate(/obj/item/card/id)
+	helper.put_in_hands(calm_card)
+	helper.set_use_stance(I_HELP)
+	var/datum/op_result/calm = test_click(helper, wall, calm_card)
+	striker.put_in_hands(hard_card)
+	striker.set_use_stance(I_HURT)
+	var/datum/op_result/hard = test_click(striker, wall, hard_card)
+	var/calm_key = calm ? "[calm.key]" : ""
+	var/hard_key = hard ? "[hard.key]" : ""
+	wall.ChangeTurf(start)
+	TEST_ASSERT(!findtext(calm_key, "supermatter_wall_item"), "a help-intent click with a card does not touch it to the wall (got [calm_key])")
+	// The plain hand touch outranks the item op on a click at every stance, so the item op is reached from the menu only; the stance gate
+	// keeps the op from answering a click that would otherwise fall to it.
+	TEST_ASSERT(findtext(hard_key, "supermatter_wall"), "a harm-intent click with a card resolves to a supermatter wall op (got [hard_key])")

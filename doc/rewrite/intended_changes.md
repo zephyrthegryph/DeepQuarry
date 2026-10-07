@@ -2669,5 +2669,5 @@ A held-item op answers a click (a generic "Pick up" only with an empty hand), bu
 or consumes its target must not fire on a casual click. Gate it individually with `stance(I_HURT)` or an `asks()` confirm.
 Changed: smole buildings and smole ruins no longer flatten when clicked with any item on help intent (harm intent still
 does; disarm still takes a building apart by hand); remains crumble only on harm intent. Tool-specific ops (a welder cutting
-a closet, a knife slicing food) are deliberate and stay ungated. Reviewed and left as is: supermatter wall "Touch with"
-(thematic hazard) and the stardog/tank "swallow" item ops (they take the item, not the target).
+a closet, a knife slicing food) are deliberate and stay ungated. The supermatter wall's "Touch with" (it turns the held item to dust) is gated the same way: only harm intent
+resolves to it (the menu still lists the op; a help click is the plain hand touch). Reviewed and left as is: the stardog/tank "swallow" item ops (they take the item, not the target).
