@@ -1,11 +1,18 @@
+# ARCHIVED reference tool: requires an original ac1af55d1a checkout containing
+# dm-compile. It does not exercise the native-v2 dmbc compiler or current tree.
 param(
     [Parameter(Mandatory = $true)]
     [string]$ByondDirectory,
+    [Parameter(Mandatory = $true)]
+    [string]$ReferenceToolRoot,
     [int]$TimeoutSeconds = 15
 )
 
 $ErrorActionPreference = 'Stop'
-$toolRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$toolRoot = [System.IO.Path]::GetFullPath($ReferenceToolRoot)
+if (-not (Test-Path -LiteralPath (Join-Path $toolRoot 'crates/dm-compile/Cargo.toml') -PathType Leaf)) {
+    throw 'ReferenceToolRoot must be the original ac1af55d1a tools/dmb directory.'
+}
 $daemon = Join-Path $ByondDirectory 'dd.exe'
 if (-not (Test-Path -LiteralPath $daemon -PathType Leaf)) {
     throw "Console DreamDaemon not found: $daemon"
