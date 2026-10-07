@@ -16,6 +16,7 @@
 	remove_calls++
 	return ..()
 
+/datum/unit_test/om/interim_media_track_actor_refusal
 /datum/unit_test/om/interim_media_track_actor_refusal/run_om(list/made)
 	test_prompts_reset()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
@@ -44,6 +45,7 @@
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 0, "an absent actor opens no media prompt")
 	TEST_ASSERT_EQUAL(tracks.all_tracks[1], retained, "absent actor refusal preserves the actual catalog member")
 
+/datum/unit_test/om/interim_ghost_jukebox_track_actor_refusal
 /datum/unit_test/om/interim_ghost_jukebox_track_actor_refusal/run_om(list/made)
 	test_prompts_reset()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
