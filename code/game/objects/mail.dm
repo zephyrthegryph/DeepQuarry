@@ -291,7 +291,7 @@ CAPABILITIES(/obj/item/mail)
 	name = "[initial(name)] for [recipient.name] ([current_title])"
 	rel_set(src, nameof(addressee), recipient)
 
-	var/datum/job/this_job = SSjob.occupations_by_name[recipient.assigned_role]
+	var/datum/job/this_job = SSjob.get_job(recipient.assigned_role)
 
 	var/list/goodies = generic_goodies
 	if(this_job)

@@ -1,35 +1,8 @@
-// Message templates runtime (doc/rewrite/systems.md §15). See code/__defines/messages.dm.
-
-/// The /datum/msg singletons, by type.
-GLOBAL_LIST_EMPTY(msg_defs)
-
-/**
- * A declared message template (a DEF singleton: never mutated, shared by every sender).
- * `self` goes to the actor, `others` to the people who see it, `blind` to those who can't.
- * Each is wrapped in `span_class` when shown ("notice" -> span_notice); null leaves it raw.
- * Subtypes whose wording depends on the call override texts().
- */
-/datum/msg
-	var/self
-	var/others
-	var/blind
-	var/span_class = "notice"
-	/// Range for the others line.
-	var/range
+// Content-aware message rendering and delivery.
 
 /// The lines for this call as list(self, others, blind), still holding tokens.
 /datum/msg/proc/texts(atom/user, atom/target, obj/item/item)
 	return list(self, others, blind)
-
-/// The singleton for a template type.
-/proc/msg_def(msg_type)
-	var/datum/msg/def = GLOB.msg_defs[msg_type]
-	if(!def)
-		if(!ispath(msg_type, /datum/msg))
-			CRASH("msg_def: [msg_type] is not a /datum/msg type")
-		def = new msg_type
-		GLOB.msg_defs[msg_type] = def
-	return def
 
 /// Wraps text in a span class, or leaves it as is.
 /proc/msg_span(text, span_class)

@@ -1,3 +1,6 @@
+MSG_DEF_SELF(cover/closed, "Its cover is closed.")
+MSG_DEF_SELF(cover/still_on, "Its cover is still on.")
+MSG_DEF_SELF(cover/removed, "Its cover has been removed.")
 // The cover capability (doc/rewrite/final_api.html, section 11 "The library": cover(name, open, remove, replace)).
 //
 // A cover over the holder's insides: the door of a space (space(SPACE_HATCH, door = CAP_COVER), code/engine/library/spaces.dm). State keys

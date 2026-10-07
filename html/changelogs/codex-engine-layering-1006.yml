@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Separated physical spaces and content adapters, and replaced direct system reads with APIs."

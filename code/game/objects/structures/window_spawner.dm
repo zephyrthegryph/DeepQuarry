@@ -22,7 +22,7 @@ MAP_RESOLVER_VARS(/obj/effect/wingrille_spawn, "id;win_path")
 /proc/resolve_wingrille(atom/loc, path, list/varedits)
 	var/obj/effect/wingrille_spawn/P = path
 	var/turf/T = get_turf(loc)
-	if(!T || !MAP_VAR(P, varedits, win_path) || !SSticker || SSticker.current_state >= GAME_STATE_FINISHED)
+	if(!T || !MAP_VAR(P, varedits, win_path) || !SSticker || round_game_state() >= GAME_STATE_FINISHED)
 		return TRUE
 	LAZYSET(GLOB.map_resolve_scratch["wingrille"], T, path)
 	map_resolve_later(GLOBAL_PROC_REF(wingrille_build), T, path, varedits)
