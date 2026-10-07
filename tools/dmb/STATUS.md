@@ -5,6 +5,11 @@ Phase 1 foundation work is now underway alongside the remaining baseline evidenc
 The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
+Release probe 38 cleared bytecode validation but stopped during encoded-DMB
+round-trip validation on an invalid reserved procedure record. Canonical
+procedure allocation must leave the nullable `0xffff` slot as its exact empty
+native record; this boundary fix is underway. External time was 30.715 s,
+sampled private memory 3,210,928,128 bytes; no output pair was produced.
 Release probe 37 cleared class composition and reached assembled-bytecode
 validation. It stopped on variable modifier `0xffe9`; the new canonical string
 allocator can assign a field selector to reserved VM modifier IDs, unlike the
