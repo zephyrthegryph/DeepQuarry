@@ -1,17 +1,21 @@
-/obj/item/modular_computer/proc/pred_computer_has_drive(mob/actor, atom/target, obj/item/held)
+/obj/item/modular_computer/proc/pred_computer_has_drive(datum/act/op/A)
 	return !!portable_drive
 
-/obj/item/modular_computer/proc/pred_computer_has_card_slot(mob/actor, atom/target, obj/item/held)
+/obj/item/modular_computer/proc/pred_computer_has_card_slot(datum/act/op/A)
 	return !!card_slot
 
 /// Requirement: a living, able, non-animal user (simple mobs can't work the buttons). Reach is the verb's own clause.
-/obj/item/modular_computer/proc/pred_computer_hands_on(mob/actor, atom/target, obj/item/held)
-	if(!isliving(actor) || isanimal(actor) || actor.incapacitated())
-		return "you can't do that"
-	return TRUE
+/obj/item/modular_computer/proc/pred_computer_hands_on(datum/act/op/A)
+	var/mob/actor = A.actor
+	return isliving(actor) && !isanimal(actor) && !actor.incapacitated()
+
+/// Why pred_computer_hands_on refuses.
+/obj/item/modular_computer/proc/pred_computer_hands_on_refusal(datum/act/op/A)
+	return "you can't do that"
 
 /// Old verb "Forced Shutdown": to be used when something bugs out and the UI is nonfunctional.
-/obj/item/modular_computer/proc/computer_emergency_shutdown(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/modular_computer/proc/computer_emergency_shutdown(datum/act/op/A)
+	var/mob/user = A.actor
 	if(enabled)
 		bsod = 1
 		update_icon()
@@ -20,12 +24,12 @@
 		after(src, 2 SECONDS, PROC_REF(clear_bsod))
 
 /// Old verb "Eject ID": eject the ID card from the computer, if it has an ID slot with a card inside.
-/obj/item/modular_computer/proc/computer_verb_eject_id(mob/user, obj/item/held, datum/interaction/interaction)
-	proc_eject_id(user)
+/obj/item/modular_computer/proc/computer_verb_eject_id(datum/act/op/A)
+	proc_eject_id(A.actor)
 
 /// Old verb "Eject Portable Storage".
-/obj/item/modular_computer/proc/computer_verb_eject_usb(mob/user, obj/item/held, datum/interaction/interaction)
-	proc_eject_usb(user)
+/obj/item/modular_computer/proc/computer_verb_eject_usb(datum/act/op/A)
+	proc_eject_usb(A.actor)
 
 /obj/item/modular_computer/proc/proc_eject_id(mob/user)
 	if(!user)
@@ -59,77 +63,76 @@
 	update_uis()
 
 /// Old attack_ghost: view the screen; staff may turn a powered-off computer on. Never fell through.
-/obj/item/modular_computer/proc/modular_computer_ghost_view(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
+/obj/item/modular_computer/proc/modular_computer_ghost_view(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
 	if(enabled)
 		tgui_interact(user)
 	else if(check_rights_for(user.client, R_ADMIN|R_EVENT|R_DEBUG))
-		var/response = rerun_ask(user, "k98", PROC_REF(modular_computer_ghost_view), args, /datum/prompt/choice, question = "This computer is turned off. Would you like to turn it on?", title = "Admin Override", choices = list("Yes", "No"), buttons = TRUE)
+		var/response = A.step_value("k98")
 		if(isnull(response))
-			return TRUE
+			return OP_OK
 		if(response == "Yes")
 			turn_on(user)
-	return TRUE
+	return OP_OK
+
+/// Staff are asked before they turn a powered-off computer on.
+/obj/item/modular_computer/proc/ghost_may_turn_on(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
+	return !enabled && check_rights_for(user?.client, R_ADMIN|R_EVENT|R_DEBUG)
 
 /// Old attack_ai: use it as in hand.
-/obj/item/modular_computer/proc/modular_computer_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	attack_self(user)
-	return TRUE
-
-DECLARE_INTERACTIONS(/obj/item/modular_computer, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_SILICON("Use", PROC_REF(modular_computer_silicon_use)), \
-	INTERACT_OBSERVER("View", PROC_REF(modular_computer_ghost_view)), \
-	INTERACT_VERB("Forced Shutdown", PROC_REF(computer_emergency_shutdown), REQ_TARGET_STATE(/obj/item/modular_computer/proc/pred_computer_hands_on)), \
-	INTERACT_VERB("Eject ID", PROC_REF(computer_verb_eject_id), REQ_ON(PRED_TARGET, /obj/item/modular_computer/proc/pred_computer_has_card_slot, null), REQ_TARGET_STATE(/obj/item/modular_computer/proc/pred_computer_hands_on)), \
-	INTERACT_VERB("Eject Portable Storage", PROC_REF(computer_verb_eject_usb), REQ_ON(PRED_TARGET, /obj/item/modular_computer/proc/pred_computer_has_drive, null), REQ_TARGET_STATE(/obj/item/modular_computer/proc/pred_computer_hands_on)), \
-)
+/obj/item/modular_computer/proc/modular_computer_silicon_use(datum/act/op/A)
+	attack_self(A.actor)
+	return OP_OK
 
 /// Old attack_hand.
-/obj/item/modular_computer/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/modular_computer/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(anchored || ispAI(user))
-		return attack_self(user)
-	return FALSE
+		return attack_self(user) ? OP_OK : OP_DECLINE
+	return OP_DECLINE
 
 // On-click handling. Turns on the computer if it's off and opens the GUI.
 /// Old attack_self.
-/obj/item/modular_computer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/modular_computer/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(enabled && screen_on)
 		if(isliving(user) && has_trait(user, TRAIT_UNLUCKY) && prob(5))
 			var/mob/living/unlucky_soul = user
 			to_chat(user, span_danger("You interact with \the [src] and are met with a sudden shock!"))
 			fx_sparks(src, 5)
 			unlucky_soul.electrocute_act(5, src, 1)
-			return TRUE
+			return OP_OK
 		tgui_interact(user)
 	else if(!enabled && screen_on)
 		if(has_trait(user, TRAIT_UNLUCKY) && prob(25))
 			to_chat(user, "You try to turn on \the [src] but it doesn't respond.")
-			return TRUE
+			return OP_OK
 		turn_on(user)
-	return TRUE
+	return OP_OK
 
 /// Old attackby.
-/obj/item/modular_computer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/modular_computer/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/card/id)) // ID Card, try to insert it.
 		var/obj/item/card/id/I = W
 		if(!card_slot)
 			to_chat(user, "You try to insert \the [I] into \the [src], but it does not have an ID card slot installed.")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(card_slot.stored_card())
 			to_chat(user, "You try to insert \the [I] into \the [src], but it's ID card slot is occupied.")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		user.drop_from_inventory(I)
 		rel_set(card_slot, nameof(card_slot.stored_card), I)
 		I.forceMove(src)
 		update_uis()
 		to_chat(user, "You insert \the [I] into \the [src].")
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(W, /obj/item/paper) || istype(W, /obj/item/paper_bundle))
 		if(!nano_printer)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		nano_printer.attackby(W, user)
 	if(istype(W, /obj/item/computer_hardware))
 		var/obj/item/computer_hardware/C = W
@@ -137,7 +140,7 @@ DECLARE_INTERACTIONS(/obj/item/modular_computer, \
 			try_install_component(user, C)
 		else
 			to_chat(user, "This component is too large for \the [src].")
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/modular_computer/wrench_act(mob/user, obj/item/tool)
 	var/list/components = get_all_components()
