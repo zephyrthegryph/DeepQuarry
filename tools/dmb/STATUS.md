@@ -5,6 +5,11 @@ Phase 1 foundation work is now underway alongside the remaining baseline evidenc
 The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
+Release probe 36 names the remaining parent-ABI blocker: the authored root type
+`/procpath`, canonical index 28, has semantic parent `/`. External time was
+29.691 s, sampled private memory 3,069,820,928 bytes. Initializers, all bodies and
+symbolic linking passed; composition stopped before producing a pair. A native
+root-type control is being captured to define the source-root record policy.
 Release probe 35 cleared retained-client projection and reached the next class
 composition gate: an admitted source type has no physical parent ABI binding.
 All bodies and symbolic linking passed again. External time was 30.657 s,
