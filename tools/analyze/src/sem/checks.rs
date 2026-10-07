@@ -484,7 +484,7 @@ pub fn named_argument_positions(sem: &super::Sem, file: &str) -> BTreeSet<(usize
                 }
             };
             match &term.elem {
-                Term::Call(_, args) | Term::NewPrefab { args: Some(args), .. } | Term::NewImplicit { args: Some(args) } => collect(args),
+                Term::Call(_, args) | Term::List(args) | Term::NewPrefab { args: Some(args), .. } | Term::NewImplicit { args: Some(args) } => collect(args),
                 _ => {}
             }
             for item in follow.iter() {

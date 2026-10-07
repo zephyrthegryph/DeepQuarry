@@ -482,6 +482,14 @@ mod named_argument_tests {
         assert!(hits("\tvar/row = new /datum/row(\n\t\temagged = TRUE,\n\t\tstate = 1\n\t)").is_empty());
     }
     #[test]
+    fn list_associative_key_is_not_entity_storage() {
+        assert!(hits("\tvar/row = list(emagged = src.emagged, state = 1)").is_empty());
+    }
+    #[test]
+    fn parenthesized_assignment_inside_list_remains_a_write() {
+        assert_eq!(hits("\tvar/row = list((state = 2), emagged = TRUE)"), vec![5]);
+    }
+    #[test]
     fn bare_state_assignment_remains_a_violation() {
         assert_eq!(hits("\tstate = 1"), vec![5]);
     }
