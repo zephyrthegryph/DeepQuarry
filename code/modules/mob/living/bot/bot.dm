@@ -444,7 +444,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	if(!.)
 		working = FALSE
 	update_icons()
-	after(src, delay + 1, PROC_REF(work_icons)) // the work may end without a handler (its target deleted): the icon is looked at again then
+	after(src, delay + 1 TICK, PROC_REF(work_icons)) // the work may end without a handler (its target deleted): the icon is looked at again then
 
 /mob/living/bot/proc/work_icons(datum/act/A)
 	update_icons()
