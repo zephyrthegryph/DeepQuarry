@@ -29,6 +29,7 @@
 		"tag", "x", "y", "z", "loc", "locs", "bound_x", "bound_y", "bound_width", "bound_height", "step_x", "step_y", "weak_reference",
 		"datum_flags", "gc_destroyed", "comp_lookup", "signal_procs", "status_traits", "_listen_lookup", "active_timers", "cooldowns",
 		"light", "light_sources", "x_pos", "y_pos", "z_pos", "ckey", "key", "mind", "client", "last_move", "last_move_time", "pixloc",
+		"om_hid", "own_key_text", "last_damage_flag",
 	)
 	return skip
 
@@ -67,6 +68,9 @@
 	var/list/counts = list()
 	for(var/atom/movable/AM as anything in contents_of(T))
 		if(AM == target || istype(AM, /obj/effect/landmark) || ismob(AM))
+			continue
+		// the harness's own props (the projectile, the card, the thrown crowbar, the blob that hits)
+		if(istype(AM, /obj/item/projectile) || istype(AM, /obj/item/card/emag) || istype(AM, /obj/item/tool/crowbar) || istype(AM, /obj/structure/blob))
 			continue
 		counts["[AM.type]"] = (counts["[AM.type]"] || 0) + 1
 	return counts
@@ -113,6 +117,7 @@
 		M.stat_remove(NOPOWER|BROKEN)
 	var/list/before = dq_hit_state(target)
 	var/list/turf_before = dq_hit_turf_rows(T, target)
+	rand_seed(dq_test_seed_for("[type][trigger]applied"))
 	var/runtime = null
 	try
 		dq_hit_apply(target, trigger, actor)
