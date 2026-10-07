@@ -30,6 +30,9 @@
 /datum/unit_test/dq_conversion_pin/New()
 	..()
 	dview(0, test_floor())
+	// Status lookup builds a persistent policy cache; retain the production cache
+	// and initialize it before the runner records its globals.
+	status_policies()
 	// Rogue-zone console initialization uses this same persistent lazy controller.
 	// Build it before the runner snapshots globals, without resetting its live state.
 	if(!GLOB.rm_controller)
@@ -50,6 +53,9 @@
 	)
 
 /datum/unit_test/dq_conversion_pin/Run()
+	// Capturing hit reactions may take an act over. Restore this framework scratch
+	// value after the sweep rather than leaving it for the next focused test.
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 	var/list/bad = list()
 	var/list/expected_by_type = dq_snapshot_read_dir(DQ_PIN_DIR, bad)
 	if(!length(expected_by_type) && !length(bad))
@@ -267,7 +273,7 @@
 	own(core) // emergency test teardown also owns this initializer product
 	TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, room, gravity), "the self-deleting target follows the same cleanup path")
 	TEST_ASSERT(QDELETED(core), "the orphan core cannot add Climb to subsequent captures")
-	TEST_ASSERT(!QDELETED(sentinel) && held in H.get_all_held_items(), "a second cleanup still preserves the baseline fixture")
+	TEST_ASSERT(!QDELETED(sentinel) && (held in H.get_all_held_items()), "a second cleanup still preserves the baseline fixture")
 
 /datum/unit_test/dq_conversion_pin_fixture_gravity/Run()
 	var/turf/T = test_floor()

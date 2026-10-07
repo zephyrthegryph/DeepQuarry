@@ -192,6 +192,7 @@
 /datum/unit_test/dq_p2_door/Run()
 	if(!live)
 		test_driver_begin()
+		set_global(nameof(GLOB.test_prompts), list())
 		p2_door_capture_prompts()
 	run_gate()
 	if(!live)
