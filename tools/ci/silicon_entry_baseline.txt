@@ -89,7 +89,6 @@ legacy_entry	code/ATMOSPHERICS/components/unary/heat_source.dm	silicon_use = SIL
 legacy_entry	code/ATMOSPHERICS/components/valve.dm	silicon_use = NONE
 legacy_entry	code/ATMOSPHERICS/components/valve.dm	silicon_use = SILICON_USE_HAND
 legacy_entry	code/game/dna/dna_modifier.dm	silicon_use = SILICON_USE_UI
-legacy_entry	code/game/gamemodes/endgame/supermatter_cascade/blob.dm	EXTEND_INTERACTIONS(/turf/unsimulated/wall/supermatter, INTERACT_ROBOT("Touch", PROC_REF(supermatter_wall_robot)), INTERACT_SILICON("Examine", PROC_REF(supermatter_wall_examine)), INTERACT_OBSERVER("Examine", PROC_REF(supermatter_wall_examine)), \
 legacy_entry	code/game/machinery/camera/tracking.dm	EXTEND_INTERACTIONS(/obj/machinery/camera, INTERACT_SILICON("Look through", PROC_REF(camera_silicon_look)))
 legacy_entry	code/game/machinery/camera/tracking.dm	EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_SILICON("Camera list", PROC_REF(ai_silicon_camera_list)))
 legacy_entry	code/game/machinery/computer/robot.dm	silicon_use = SILICON_USE_UI
@@ -117,25 +116,16 @@ legacy_entry	code/game/objects/structures/morgue.dm	silicon_use = ROBOT_USE_HAND
 legacy_entry	code/game/objects/structures/tank_dispenser.dm	silicon_use = ROBOT_USE_HAND_ADJACENT
 legacy_entry	code/game/turfs/simulated/nanogoop.dm	INTERACT_SILICON("Interface", PROC_REF(nanites_silicon_interface)), \
 legacy_entry	code/game/turfs/turf.dm	silicon_use = ROBOT_USE_HAND
-legacy_entry	code/modules/clothing/clothing.dm	INTERACT_SILICON("Wear hat", PROC_REF(head_silicon_wear)), \
 legacy_entry	code/modules/detectivework/microscope/dnascanner.dm	silicon_use = SILICON_USE_UI
-legacy_entry	code/modules/holodeck/HolodeckObjects.dm	INTERACT_SILICON("Use", PROC_REF(readybutton_silicon_refuse)),
 legacy_entry	code/modules/holomap/station_holomap.dm	silicon_use = NONE // Silicons can't use it yet (TODO: implement for AI).
 legacy_entry	code/modules/keybindings/adapters.dm	var/silicon_use = NONE
 legacy_entry	code/modules/materials/sheets/organic/tanning/tanning_rack.dm	silicon_use = ROBOT_USE_HAND // attack_hand has the adjacency checks
 legacy_entry	code/modules/mob/living/bot/bot.dm	silicon_use = SILICON_USE_HAND
 legacy_entry	code/modules/mob/living/silicon/robot/robot.dm	INTERACT_SILICON("Deploy to shell", PROC_REF(robot_ai_deploy_shell)))
-legacy_entry	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_interactions.dm	INTERACT_SILICON("Unload cargo", PROC_REF(platform_silicon_unload)), \
-legacy_entry	code/modules/modular_computers/computers/modular_computer/interaction.dm	INTERACT_SILICON("Use", PROC_REF(modular_computer_silicon_use)), \
 legacy_entry	code/modules/multiz/hoist.dm	silicon_use = ROBOT_USE_HAND
 legacy_entry	code/modules/multiz/ladders.dm	silicon_use = ROBOT_USE_HAND
-legacy_entry	code/modules/overmap/ships/computers/ship.dm	INTERACT_SILICON("Use", PROC_REF(ship_silicon_use)),
-legacy_entry	code/modules/paperwork/paper.dm	INTERACT_SILICON("Read", PROC_REF(paper_silicon_read)), \
-legacy_entry	code/modules/persistence/noticeboard.dm	INTERACT_SILICON("Examine", PROC_REF(noticeboard_silicon_examine)), \
 legacy_entry	code/modules/power/breaker_box.dm	INTERACT_SILICON("Toggle", PROC_REF(breakerbox_silicon_toggle)),
 legacy_entry	code/modules/power/privacy_switch.dm	silicon_use = SILICON_USE_HAND
-legacy_entry	code/modules/random_map/drop/droppod_doors.dm	INTERACT_SILICON("Open", PROC_REF(droppod_door_silicon_use)), \
 legacy_entry	code/modules/reagents/machinery/pump.dm	silicon_use = ROBOT_USE_HAND | SILICON_USE_HAND
 legacy_entry	code/modules/recycling/disposal_machines.dm	silicon_use = SILICON_USE_UI
-legacy_entry	code/modules/security levels/keycard authentication.dm	INTERACT_SILICON("Use", PROC_REF(keycard_auth_silicon_refuse)),
 legacy_entry	code/modules/turbolift/turbolift_console.dm	silicon_use = SILICON_USE_HAND
