@@ -397,7 +397,8 @@
 		// unpowered until the power subsystem's next tick in a full-suite run.
 		if(ismachinery(target))
 			var/obj/machinery/M = target
-			M.stat_remove(NOPOWER|BROKEN)
+			M.set_grid_power(TRUE)
+			M.set_broken_condition(FALSE)
 		for(var/list/combination as anything in combinations)
 			var/datum/interaction_resolution/resolution = interactions_for(actors[combination[1]], target, held_items[combination[2]])
 			actual += "[type]|[combination[1]]|[combination[2]] => [dq_resolution_text(resolution)]"

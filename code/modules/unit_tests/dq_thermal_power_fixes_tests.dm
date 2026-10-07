@@ -25,22 +25,22 @@
 	var/cool_gain = cool.get_temperature() - before
 	TEST_ASSERT(cool_gain < hot_gain, "a room-temperature exposure with a large volume heated the window as much as a hot one ([cool_gain] vs [hot_gain])")
 
-/// Q11 (was the SSmachines roster; roadmap S5): MACHINE_WAKE gives a machine step work on the
-/// machine pipeline, MACHINE_SLEEP ends it, and neither disturbs another machine.
+/// Q11 (was the SSmachines roster; roadmap S5): work_start() gives a machine work, work_stop() ends it, and neither disturbs another machine.
 /datum/unit_test/dq_machine_roster_swap_remove
 
 /datum/unit_test/dq_machine_roster_swap_remove/Run()
 	var/turf/T = test_floor()
 	var/list/machines = list()
 	for(var/i in 1 to 3)
-		var/obj/machinery/M = allocate(/obj/machinery, T)
-		MACHINE_WAKE(M)
+		var/obj/machinery/dq_step_probe/M = allocate(/obj/machinery/dq_step_probe, T)
+		M.work = 100
+		work_start(M)
 		machines += M
 	var/obj/machinery/middle = machines[2]
-	MACHINE_SLEEP(middle)
+	work_stop(middle)
 	TEST_ASSERT(!machine_stepping(middle), "stopped machine still has step work")
 	TEST_ASSERT(machine_stepping(machines[1]) && machine_stepping(machines[3]), "stopping one machine stopped another")
-	MACHINE_WAKE(middle)
+	work_start(middle)
 	TEST_ASSERT(machine_stepping(middle), "restarted machine has no step work")
 
 /// B8: a wall's heat transfer coefficient follows its material instead of

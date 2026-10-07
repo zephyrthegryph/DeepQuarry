@@ -115,7 +115,7 @@ STAT(/obj/machinery/power/smes, working, ALL)
 
 CAPABILITIES(/obj/machinery/power/smes)
 	after_init(0, then(PROC_REF(mapped_after_init)))
-	machine_basics(repair = NONE, powered = FALSE)
+	machine_basics(repair = NONE, powered = FALSE, area_power = FALSE)
 	membership(joins = REGISTRY_SMES)
 	contributes(STAT_OPERABLE, cond_not(nameof(unwired)), reason = MSG(smes/unwired))
 	contributes(STAT_WORKING, STAT_OPERABLE)
@@ -129,10 +129,16 @@ CAPABILITIES(/obj/machinery/power/smes)
 
 	section(controls, "The unit's window and the buttons in it")
 	interface("Smes")
+	extend("ui_open", ungated()) // a unit with no input terminal (unwired, so not operable) still shows its window; its buttons stay behind the operable gate
 	op("tryinput", ui_act(), toggles(nameof(input_attempt)), then(PROC_REF(input_switched)))
 	op("tryoutput", ui_act(), toggles(nameof(output_attempt)), then(PROC_REF(output_switched)))
 	op("input", ui_act(arg("adjust"), arg("target")), then(PROC_REF(ui_set_input)))
 	op("output", ui_act(arg("adjust"), arg("target")), then(PROC_REF(ui_set_output)))
+
+	// the hatch's tools answer before the window does (the window answers any click of the hand, a held tool included)
+	extend("machine_panel", priority(OP_PRIORITY_DEFAULT + 1))
+	extend("machine_panel_close", priority(OP_PRIORITY_DEFAULT + 1))
+	extend("machine_deconstruct", priority(OP_PRIORITY_DEFAULT + 1))
 
 	section(hatch, "What the tools do behind the open hatch")
 	op("add_cable", stack(/obj/item/stack/cable_coil, 10), at(SPACE_PANEL),
@@ -184,8 +190,6 @@ CAPABILITIES(/obj/machinery/power/smes)
 	return TRUE
 
 /// STAT_OPERABLE's reading of the machine core's bits, for a SMES: only BROKEN. The unit feeds its network, so the area going dark must not stop it.
-/obj/machinery/power/smes/stat_bits_allow(datum/act/A)
-	return !has_stat(BROKEN)
 
 /// A mapped SMES's late pass: the coils laid on its tile and its preset settings.
 /obj/machinery/power/smes/proc/mapped_after_init(datum/act/timer/A)
@@ -310,7 +314,7 @@ CAPABILITIES(/obj/machinery/power/smes)
 
 /// TRUE when the status overlays are hidden: broken, or unwired.
 /obj/machinery/power/smes/proc/status_dark()
-	return has_stat(BROKEN) || unwired
+	return broken_now() || unwired
 
 /// The unit's look: its output, input and charge overlays, none while it is dark.
 /obj/machinery/power/smes/draw(datum/look/look)

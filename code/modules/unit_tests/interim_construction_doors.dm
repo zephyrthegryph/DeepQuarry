@@ -132,7 +132,7 @@
 	actor.real_name = "Explicit Wire Operator"
 	actor.name = actor.real_name
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock)
-	door.set_stat(0)
+	dq_machine_clear(door)
 	TEST_ASSERT(door.power_systems_on(), "Fixture must have working airlock power")
 	var/datum/wires_test_adapter/wires = wires_test(door)
 	TEST_ASSERT_NOTNULL(wires, "Airlock did not provide wires")
@@ -224,7 +224,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/obj/machinery/door/door = allocate(/obj/machinery/door, locate(T.x + 2, T.y + 2, T.z))
 	door.set_autoclose(FALSE)
-	door.set_stat(0)
+	dq_machine_clear(door)
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, locate(T.x + 3, T.y + 2, T.z))
 	var/obj/item/card/emag/emag = allocate(/obj/item/card/emag, actor.loc)
 	actor.put_in_active_hand(emag)
@@ -244,7 +244,8 @@
 	TEST_ASSERT_EQUAL(emag.uses, uses - 1, "An already open door must consume no emag uses")
 	var/obj/machinery/door/unpowered = allocate(/obj/machinery/door, locate(T.x + 2, T.y + 3, T.z))
 	unpowered.set_autoclose(FALSE)
-	unpowered.set_stat(NOPOWER)
+	dq_machine_clear(unpowered)
+	unpowered.set_grid_power(FALSE)
 	actor.forceMove(locate(T.x + 3, T.y + 3, T.z))
 	actor.next_click = 0
 	test_click(actor, unpowered, emag)

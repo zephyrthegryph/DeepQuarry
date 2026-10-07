@@ -139,7 +139,7 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 
 /// Appearance reader: TRUE while the vendor has power (product display glow).
 /obj/machinery/maint_vendor/proc/appearance_powered()
-	return has_stat(NOPOWER) ? FALSE : TRUE
+	return power_lost() ? FALSE : TRUE
 
 //product display. screen is distinct.
 DECLARE_APPEARANCE(/obj/machinery/maint_vendor, "appearance_powered", list(
@@ -224,5 +224,5 @@ APPEARANCE_EMISSIVE(/obj/machinery/maint_vendor, "appearance_powered", list("1" 
 
 /obj/machinery/maint_vendor/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		set_on_state(FALSE)

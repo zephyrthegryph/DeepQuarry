@@ -14,12 +14,9 @@ MSG_DEF(breakable/repaired, "You repair %T%.", "%U% repairs %T%.")
 MSG_DEF_SELF(breakable/examine, "It is broken.")
 MSG_DEF(machine/slash, "You slash at %T%!", "%U% slashes at %T%!")
 
-// ---- the legacy stat bits, as one contribution ----
-
-/// STAT_OPERABLE's reading of the machine core's condition bits: none of BROKEN, NOPOWER, POWEROFF, MAINT, EMPED is set. Written once, here, and
-/// deleted with the bits (phase 4).
-/obj/machinery/proc/stat_bits_allow(datum/act/A)
-	return !has_stat(MACHINE_INOPERABLE_FLAGS)
+// ---- STAT_OPERABLE's conditions ----
+// A machine works while it is whole and not under maintenance (and has power: machinery.dm). They are contributions of the base machine with keys, so a
+// type that says its own (the APC, the SMES, the self-powered turret) drops them with without().
 
 /// The machine works (STAT_OPERABLE), else "It isn't working." The requirement of every control a dead machine refuses.
 /proc/req_operable()
@@ -73,7 +70,7 @@ MSG_DEF(machine/slash, "You slash at %T%!", "%U% slashes at %T%!")
 
 /// The machine is broken (the BROKEN bit atom_break() sets): what breakable() draws and says.
 /obj/machinery/proc/stat_is_broken(datum/act/A)
-	return has_stat(BROKEN)
+	return broken_now()
 
 // ---- breakable ----
 
@@ -91,7 +88,7 @@ CAPABILITY_TYPE(breakable, CAP_BREAKABLE, /datum/capability/lib/breakable, key =
 
 /datum/capability/lib/breakable/proc/is_broken(datum/act/A)
 	var/obj/machinery/M = A.holder
-	return istype(M) && M.has_stat(BROKEN)
+	return istype(M) && M.broken_now()
 
 // ---- the wall mount ----
 
@@ -129,7 +126,7 @@ CAPABILITY_TYPE(wall_mount, CAP_WALL_MOUNT, /datum/capability/lib/wall_mount, ke
 
 // ---- machine basics ----
 
-CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS, key = NONE, board = null, repair = TOOL_WELDER, frame = null, powered = TRUE)
+CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS, key = NONE, board = null, repair = TOOL_WELDER, frame = null, powered = TRUE, area_power = TRUE)
 
 /// The machine core's own: breakable with welder repair (`repair` = NONE: none), powered (`powered` = FALSE: a machine whose look says its own),
 /// the build ladder `frame` (a construction(...) capability, NONE for none), the claws' slash, STAT_OPERABLE's bridge, and the rule that every
@@ -137,22 +134,25 @@ CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS, key = NONE, board = null, rep
 /datum/capability/def/machine_basics/entries()
 	var/list/entries = list(
 		breakable(repair),
-		contributes(STAT_OPERABLE, TYPE_PROC_REF(/obj/machinery, stat_bits_allow), reason = MSG(machine/inoperable), reads = list("stat")),
 		op("slash", hand(), label("Slash"), priority(OP_PRIORITY_CLAW), \
 			when(TYPE_PROC_REF(/atom, claw_slash_offered)), \
 			then(TYPE_PROC_REF(/atom, claw_slash)), says(MSG(machine/slash))),
 		extend(TAG_CONTROL, needs(req_operable())))
 	if(powered)
 		entries += powered()
+	if(!area_power)
+		entries += without("area_power") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
+		entries += without("power_operable") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
+		entries += without("maint_operable") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op // a machine that says its own power (the APC, the SMES, a self-powered turret) is not darkened by its area's channel
 	if(frame && frame != NONE)
 		entries += frame
 	return entries
 
-CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE, key = NONE, board = null, repair = TOOL_WELDER, frame = null, powered = TRUE, offset = 26, offset_ns = null)
+CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE, key = NONE, board = null, repair = TOOL_WELDER, frame = null, powered = TRUE, area_power = TRUE, offset = 26, offset_ns = null)
 
 /// machine_basics() without anchoring (it hangs on the wall), plus the wall mount.
 /datum/capability/def/wall_machine/entries()
-	return list(machine_basics(board, repair, frame, powered), wall_mount(offset, offset_ns))
+	return list(machine_basics(board, repair, frame, powered, area_power), wall_mount(offset, offset_ns))
 
 /// The actor has claws that tear machines open (a species that can_shred() at `force`: a windoor asks 15).
 /proc/req_can_shred(force = 14)

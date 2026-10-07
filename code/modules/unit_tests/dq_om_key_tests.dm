@@ -9,7 +9,7 @@
 /datum/unit_test/dq_om_keys_wake_turret/Run()
 	var/turf/T = locate(1, 1, 1)
 	var/obj/machinery/porta_turret/turret = allocate(/obj/machinery/porta_turret, T)
-	turret.set_stat(0)
+	dq_machine_clear(turret)
 	turret.set_enabled(FALSE)
 	TEST_ASSERT(!turret.armed, "a switched-off turret is not armed (its scan parks)")
 	turret.set_enabled(TRUE)

@@ -30,7 +30,7 @@
 	TEST_ASSERT_NULL(chair.slot_item(OCCUPANT_SLOT_IMPLANT_CHAIR), "External ejection must clear the actual occupant slot")
 	TEST_ASSERT_EQUAL(patient.loc, T, "External ejection must return the patient to the floor")
 	TEST_ASSERT_EQUAL(chair.icon_state, "implantchair", "Ejection must restore unoccupied presentation")
-	chair.set_stat(0)
+	dq_machine_clear(chair)
 	TEST_ASSERT(chair.operable(), "The self-entry fixture must be operable")
 	test_op_handler(chair, "interaction_move_inside", actor)
 	TEST_ASSERT_EQUAL(probe.last_actor_ref, REF(actor), "Self-entry must forward its initiator to the slot boundary")

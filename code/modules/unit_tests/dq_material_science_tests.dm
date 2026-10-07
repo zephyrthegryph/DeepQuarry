@@ -506,8 +506,8 @@
 	var/datum/material_service/service = material_service_of(cell)
 	service.rebind()
 	TEST_ASSERT(length(service.mixture_ids), "The test must actually subscribe to a real atmosphere")
-	for(var/subscribed_id in service.mixture_ids)
-		TEST_ASSERT(om_watch_armed(service, "gas[subscribed_id]"), "Material subscriptions must use the coalesced mixture registry")
+	TEST_ASSERT_EQUAL(length(service.gas_watches), length(service.mixture_ids), "Material subscriptions must be one native gas watch per watched mixture")
+	var/list/watches = service.gas_watches.Copy()
 	TEST_ASSERT(length(service.movement_sources), "A stationary assembly must watch movement while sleeping")
 	cancel_after(service, "material_service")
 	service.timer = FALSE
@@ -526,8 +526,8 @@
 	qdel(cell)
 	TEST_ASSERT(QDELETED(service), "Deleting the assembly must delete its operating state")
 	TEST_ASSERT(!after_pending(service, "material_service"), "Deleting an assembly must remove its queued exposure work")
-	for(var/id in ids)
-		TEST_ASSERT(!GLOB.om_gas_watches_by_mixture["[id]"], "Deleted assemblies must release mixture subscriptions")
+	for(var/datum/native_watch/gas/W as anything in watches)
+		TEST_ASSERT(QDELETED(W) || !W.handle, "Deleted assemblies must release mixture subscriptions")
 
 /datum/unit_test/dq_material_gas_publication_filtering
 
@@ -632,7 +632,7 @@
 	TEST_ASSERT(service.input_joules > 0 && emitter.material_stored_energy > 0, "A real network draw must charge the emitter reservoir")
 	COOLDOWN_RESET(emitter, shot_cooldown)
 	emitter.emitter_step(null)
-	TEST_ASSERT(emitter.material_beam_joules > 0, "Stored energy must produce a real beam (state=[emitter.state], active=[emitter.active], stat=[emitter.stat], stored=[emitter.material_stored_energy], rating=[emitter.active_power_usage], efficiency=[emitter.emitter_efficiency()], time=[world.time], cooldown=[emitter.shot_cooldown], delay=[emitter.fire_delay])")
+	TEST_ASSERT(emitter.material_beam_joules > 0, "Stored energy must produce a real beam (state=[emitter.state], active=[emitter.active], stored=[emitter.material_stored_energy], rating=[emitter.active_power_usage], efficiency=[emitter.emitter_efficiency()], time=[world.time], cooldown=[emitter.shot_cooldown], delay=[emitter.fire_delay])")
 	TEST_ASSERT(abs(service.input_joules - emitter.material_beam_joules - service.loss_joules - emitter.material_stored_energy) < 1, "Input must equal beam energy plus heat plus remaining stored energy")
 	TEST_ASSERT(target.get_integrity() < target.max_integrity, "The accounted beam must physically hit its target")
 	for(var/obj/item/projectile/beam/emitter/beam in range(2, emitter))

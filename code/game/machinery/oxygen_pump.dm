@@ -66,14 +66,14 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 
 /// Requirement: the mask needs a tank behind it (removing the tank in maintenance is always fine).
 /obj/machinery/oxygen_pump/proc/can_use_pump(datum/act/op/A)
-	return A.actor.is_incorporeal() || has_stat(MAINT) || tank
+	return A.actor.is_incorporeal() || under_maintenance() || tank
 
 /// Old attack_hand (it never reached the machinery gate).
 /obj/machinery/oxygen_pump/proc/oxygen_pump_interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor
 	if(user.is_incorporeal())
 		return TRUE
-	if((has_stat(MAINT)) && tank)
+	if((under_maintenance()) && tank)
 		act_message(user, src, MSG_SELF(span_notice("You remove \the [tank] from %T%.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " removes \the [tank] from %T%.")))
 		user.put_in_hands(tank)
@@ -134,7 +134,7 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 	if(!tank)
 		to_chat(user, span_warning("There is no tank in \the [src]."))
 		return
-	if(has_stat(MAINT))
+	if(under_maintenance())
 		to_chat(user, span_warning("Please close the maintenance hatch first."))
 		return
 	if(!Adjacent(target))
@@ -156,7 +156,7 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 	var/obj/item/W = A.held
 	if(user.is_incorporeal())
 		return TRUE
-	if(istype(W, /obj/item/tank) && (has_stat(MAINT)))
+	if(istype(W, /obj/item/tank) && (under_maintenance()))
 		if(tank)
 			to_chat(user, span_warning("\The [src] already has a tank installed!"))
 		else
@@ -166,7 +166,7 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 				MSG_OTHERS(span_infoplain(span_bold("%U%") + " installs %I% into %T%.")), \
 				item = tank)
 			src.add_fingerprint(user)
-	if(istype(W, /obj/item/tank) && !has_stat(MACHINE_STAT_ANY))
+	if(istype(W, /obj/item/tank) && !has_condition())
 		to_chat(user, span_warning("Please open the maintenance hatch first."))
 	return TRUE
 
@@ -174,11 +174,10 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 	var/mob/user = A.actor
 	if(user.is_incorporeal())
 		return OP_OK
-	if(!stat_remove(MAINT))
-		stat_add(MAINT)
-	act_message(user, src, MSG_SELF(span_notice("You [has_stat(MAINT) ? "open" : "close"] %T%.")), \
-		MSG_OTHERS(span_notice("%U% [has_stat(MAINT) ? "opens" : "closes"] %T%.")))
-	icon_state = (has_stat(MAINT)) ? icon_state_open : icon_state_closed
+	set_maintenance(!under_maintenance())
+	act_message(user, src, MSG_SELF(span_notice("You [under_maintenance() ? "open" : "close"] %T%.")), \
+		MSG_OTHERS(span_notice("%U% [under_maintenance() ? "opens" : "closes"] %T%.")))
+	icon_state = (under_maintenance()) ? icon_state_open : icon_state_closed
 	return OP_OK
 
 /obj/machinery/oxygen_pump/examine(mob/user)

@@ -880,8 +880,8 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		for(var/datum/E as anything in sample)
 			if(QDELETED(E) || !E.om_rec)
 				continue
-			// Its declared first wake is still queued (a machine's materialize_wakes() after a big
-			// map load): it has not been woken yet, so nothing can have been missed.
+			// An extension may still have its initial wake queued: it has not been woken
+			// yet, so nothing can have been missed.
 			if(P.first_wake_pending(E))
 				GLOB.om_audit_first_wake_skips++
 				continue

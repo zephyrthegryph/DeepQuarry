@@ -238,7 +238,7 @@ CAPABILITIES(/obj/effect/spider/spiderling)
 	else if(prob(1))
 		src.visible_message(span_infoplain(span_bold("\The [src]") + " skitters."))
 
-	if(amount_grown >= 0)
+	if(amount_grown >= 0 && !istype(loc, /obj/item/glass_jar)) // no growing inside jars
 		amount_grown += rand(0,2)
 
 /obj/effect/spider/spiderling/proc/vent_crawl_async(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)

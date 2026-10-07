@@ -52,7 +52,7 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 	default_parts()
 
 /obj/machinery/dnaforensics/ui_prepare(mob/user, datum/tgui/ui)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return FALSE
 	return TRUE
 
@@ -74,7 +74,7 @@ CAPABILITIES(/obj/machinery/dnaforensics)
 	return data
 
 /obj/machinery/dnaforensics/proc/ui_gate(datum/act/op/A)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return FALSE
 	return TRUE
 
@@ -153,7 +153,7 @@ MSG_DEF_SELF(dnaforensics/scanning, "it is busy scanning right now")
 	look.state("dna[appearance_mode()]")
 
 /obj/machinery/dnaforensics/proc/appearance_mode()
-	if(!has_stat(NOPOWER) && scanning)
+	if(!power_lost() && scanning)
 		return "working"
 	return bloodsamp() ? "closed" : "open"
 

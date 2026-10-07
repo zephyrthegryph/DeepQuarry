@@ -92,7 +92,8 @@
 	// As the i7 snapshots do: a freshly made machine can read unpowered until the power system's next step.
 	if(ismachinery(target))
 		var/obj/machinery/M = target
-		M.stat_remove(NOPOWER|BROKEN)
+		M.set_grid_power(TRUE)
+		M.set_broken_condition(FALSE)
 	var/list/held_types = dq_pin_tools()
 	for(var/datum/interaction/interaction as anything in interaction_candidates(target))
 		if(!interaction.held_type)

@@ -859,7 +859,6 @@
 	var/start = REALTIMEOFDAY
 	for(var/i in 1 to doors_n)
 		var/obj/machinery/door/airlock/door = new(T)
-		door.set_stat(0)
 		doors += door
 	metric("airlock_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
 	end_window("airlock_allocation")

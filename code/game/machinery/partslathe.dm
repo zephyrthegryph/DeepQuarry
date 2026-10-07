@@ -143,7 +143,7 @@
 	return 1
 
 /obj/machinery/partslathe/proc/work_step(datum/act/timer/A)
-	if(has_stat(MACHINE_STAT_ANY))
+	if(has_condition())
 		return
 	if(queue.len == 0)
 		if (busy)

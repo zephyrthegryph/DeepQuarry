@@ -1,9 +1,8 @@
 //
 // The machine system (was SSmachines): gas wakes, the batched pump commit and
 // the power step (M3: the power network itself runs in Rust, see code/modules/power/power_bridge.dm),
-// run every MACHINE_SERVICE_INTERVAL by machine_step. It polls no machines: their DM work runs on the machine pipeline
-// (code/game/machinery/machine_pipeline.dm), woken by MACHINE_WAKE(), their channels and their
-// watches (roadmap S5). Pipenets live on SSair (LINDA).
+// run every MACHINE_SERVICE_INTERVAL by machine_step. It polls no machines: a machine's own work is an every(when = ...) that
+// parks while the machine is not operable (started_work(), code/library/machine/started_work.dm). Pipenets live on SSair (LINDA).
 //
 
 SYSTEM_DEF(machines)
@@ -161,7 +160,6 @@ SYSTEM_DEF(machines)
 /datum/system/machines/stat_entry(msg)
 	. = "[..()]C:{MC:[round(last_cost_machinery,1)]/[round(cost_machinery,1)]|"
 	. += "PN:[round(last_cost_powernets,1)]/[round(cost_powernets,1)]} "
-	. += "MP:[om_pipeline_parked_count(/datum/om/pipeline/machine)] parked|"
 	. += "PN:[length(power_grids)]|"
 	. += "GD:[gas_dirty_last] GW:[gas_woken_last] GX:[gas_dead_last]"
 

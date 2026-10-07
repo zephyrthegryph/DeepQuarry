@@ -85,7 +85,7 @@ TRACKED(/obj/machinery/atmospheric_field_generator, wires_intact)
 	generate_field()
 
 /obj/machinery/atmospheric_field_generator/proc/appearance_state()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return "broken"
 	if(hatch_open)
 		return wires_intact ? "open_wires" : "open_wirescut"

@@ -72,8 +72,6 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 	var/list/unbind_movers = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// /datum/registry -> members leaving it in one pass.
 	var/list/registry_leaves = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
-	/// om_watch_entity_key()s of the batch's material services, disarmed as one set at the end.
-	var/list/material_service_watch_keys = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Turf -> TRUE once one object's destroy effects played there.
 	var/list/effect_turfs = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Turf -> list of /datum/destroy_effects_data whose apply_after() runs once at the end.
@@ -179,8 +177,6 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 		SSvg.unregister_many(batch.unbind_movers)
 	if(length(batch.unbind_entities))
 		vg_entity_unbind_list(batch.unbind_entities)
-	if(length(batch.material_service_watch_keys))
-		om_watch_disarm_keys(batch.material_service_watch_keys)
 	for(var/datum/registry/registry as anything in batch.registry_leaves)
 		registry.remove_many(batch.registry_leaves[registry])
 	for(var/turf/T as anything in batch.after_effects)

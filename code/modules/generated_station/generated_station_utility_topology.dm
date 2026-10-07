@@ -22,11 +22,11 @@ CAPABILITIES(/obj/structure/cable/generated_station)
 /obj/machinery/power/generator/generated_station/reconsider(datum/act/A)
 	gas_watch_many_clear(src, nameof(loop_watches))
 	set_generating(FALSE)
-	set_power_supply(has_stat(BROKEN) ? 0 : generation_rate)
+	set_power_supply(broken_now() ? 0 : generation_rate)
 
 /// Breaking or mending it changes what it supplies.
 CAPABILITIES(/obj/machinery/power/generator/generated_station)
-	on_change(nameof(stat), ANY, then(PROC_REF(reconsider)))
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(reconsider)))
 
 /obj/machinery/atmospherics/pipe/tank/air/full/generated_station
 	dir = EAST
@@ -100,13 +100,13 @@ CAPABILITIES(/datum/generated_station_utility_topology)
 /datum/generated_station_utility_topology/proc/power_available()
 	var/has_source = FALSE
 	for(var/obj/machinery/power/generator/generated_station/generator in power_objects)
-		if(!QDELETED(generator) && !generator.has_stat(BROKEN) && generator.power_region)
+		if(!QDELETED(generator) && !generator.broken_now() && generator.power_region)
 			has_source = TRUE
 			break
 	for(var/obj/machinery/power/smes/SMES in power_objects)
 		if(has_source)
 			break
-		if(QDELETED(SMES) || (SMES.has_stat(BROKEN)) || SMES.stored_charge() <= 0)
+		if(QDELETED(SMES) || (SMES.broken_now()) || SMES.stored_charge() <= 0)
 			continue
 		for(var/obj/machinery/power/terminal/terminal in SMES.terminals)
 			if(terminal.power_region)
@@ -117,13 +117,13 @@ CAPABILITIES(/datum/generated_station_utility_topology)
 	if(!has_source)
 		return FALSE
 	for(var/obj/machinery/power/apc/APC in apcs)
-		if(!QDELETED(APC) && !APC.has_stat(BROKEN) && APC.cell && APC.terminal?.power_region)
+		if(!QDELETED(APC) && !APC.broken_now() && APC.cell && APC.terminal?.power_region)
 			return TRUE
 	return FALSE
 
 /datum/generated_station_utility_topology/proc/atmosphere_available()
 	for(var/obj/machinery/atmospherics/unary/vent_pump/vent in supply_vents)
-		if(!QDELETED(vent) && !vent.has_stat(BROKEN) && vent.node && vent.network && vent.air_contents?.return_pressure() > ONE_ATMOSPHERE)
+		if(!QDELETED(vent) && !vent.broken_now() && vent.node && vent.network && vent.air_contents?.return_pressure() > ONE_ATMOSPHERE)
 			return TRUE
 	return FALSE
 

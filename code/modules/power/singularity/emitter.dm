@@ -89,7 +89,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 
 /// On and whole: its step runs (it is on grid power, not APC power, so operable() does not fit).
 /obj/machinery/power/emitter/proc/firing(datum/act/A)
-	return active && !has_stat(BROKEN)
+	return active && !broken_now()
 
 /obj/machinery/power/emitter/proc/is_welded(datum/act/A)
 	return state == FLOOR_WELD_WELDED

@@ -176,6 +176,7 @@
 	return owner()
 
 CAPABILITIES(/datum/material_service)
+	owns_many(nameof(gas_watches), /datum/native_watch/gas)
 	interface("EngineeringAssembly")
 	op("emitter_setting", ui_act("emitter_setting", arg("setting"), arg("value", num(0.25, 3))), then(PROC_REF(ui_act_emitter_setting)))
 

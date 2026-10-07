@@ -27,6 +27,8 @@
 	anchored = TRUE
 	density = TRUE
 	var/datum/gas_mixture/air_contents	// internal reservoir
+	/// While a charging bin sleeps: a gas watch on the air of its turf, which it draws from (gas_watch_many()).
+	var/list/datum/native_watch/gas/intake_watches
 	mode = DISPOSALMODE_CHARGING
 	var/flush = FALSE	// true if flush handle is pulled
 	var/flushing = FALSE	// true if flushing in progress
@@ -40,6 +42,7 @@
 CAPABILITIES(/obj/machinery/disposal)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(air_contents), /datum/gas_mixture)
+	owns_many(nameof(intake_watches), /datum/native_watch/gas)
 	interface("DisposalBin")
 	without("ui_open")
 	op("pumpOn", ui_act("pumpOn"), then(PROC_REF(ui_act_pumpon)))
@@ -134,7 +137,12 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 /obj/machinery/disposal/proc/hibernate_until_intake_changes()
 	var/datum/gas_mixture/environment = loc.return_air()
 	// Callers stop it themselves: work_step() returns PROCESS_KILL right after.
-	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
+	gas_watch_many(src, nameof(intake_watches), list(environment), GAS_DEPENDENCY_PRESSURE, PROC_REF(intake_heard))
+
+/// The turf's air changed: the bin wakes when it can draw from it now (its own eligibility rule, not every change).
+/obj/machinery/disposal/proc/intake_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
+	if(gas_wake_condition())
+		wake_from_gas()
 
 /obj/machinery/disposal/proc/gas_wake_condition()
 	if(mode != DISPOSALMODE_CHARGING || (!operable()))
@@ -143,7 +151,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	return environment && can_pressurize_from(environment)
 
 /obj/machinery/disposal/proc/clear_gas_dependency()
-	om_watch_disarm(src, "gas")
+	gas_watch_many_clear(src, nameof(intake_watches))
 
 /obj/machinery/disposal/proc/wake_from_gas()
 	clear_gas_dependency()
@@ -198,7 +206,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 /obj/machinery/disposal/proc/interaction_disposal_insert(mob/user, obj/item/I, datum/interaction/interaction, drag_dropped = FALSE)
 	wake_for_state_change()
-	if(has_stat(BROKEN) || !I || !user || !istype(I))
+	if(broken_now() || !I || !user || !istype(I))
 		return TRUE
 
 	add_fingerprint(user)
@@ -364,7 +372,8 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	var/obj/machinery/disposal/new_bin = new new_disposal_path(loc)
 	if(nametag) // mailer only
 		new_bin.name = "[initial(new_bin.name)]([nametag])"
-	new_bin.set_stat(stat) // ALLOW(sys_stat_bits): copies the whole condition onto the replacement bin
+	new_bin.set_broken_condition(broken_now())
+	new_bin.set_maintenance(under_maintenance())
 	new_bin.set_mode(mode)
 	new_bin.dir = new_dir
 	new_bin.update_icon() // the new dir: sets up wall outlets
@@ -443,7 +452,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	silicon_use = SILICON_USE_UI
 /*
 /obj/machinery/disposal/attack_paw()
-	if(stat & BROKEN)
+	if(broken_now())
 		return
 	flush = !flush
 	update_icon()
@@ -460,7 +469,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	return user?.loc == src ? "you cannot reach the controls from inside" : TRUE
 
 /obj/machinery/disposal/proc/interaction_disposal_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return TRUE
 
 	// Clumsy folks can only flush it.
@@ -520,7 +529,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	if(mode == DISPOSALMODE_EJECTONLY && action != "eject") // If the mode is -1, only allow ejection
 		to_chat(user, span_warning("The disposal units power is disabled."))
 		return FALSE
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return FALSE
 	add_fingerprint(user)
 	if(flushing)
@@ -588,7 +597,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/disposal/appearance_overlays()
 	. = list()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		icon_state = "disposal-broken"
 		return .
 
@@ -597,7 +606,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 		. += "[controls_iconstate]-handle"
 
 	// only handle is shown if no power
-	if(has_stat(NOPOWER) || mode == DISPOSALMODE_EJECTONLY)
+	if(power_lost() || mode == DISPOSALMODE_EJECTONLY)
 		return .
 
 	// 	check for items in disposal - occupied light
@@ -613,9 +622,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 // timed process
 // charge the gas reservoir and perform flush if ready
 /obj/machinery/disposal/proc/work_step(datum/act/timer/A)
-	if(!air_contents || (has_stat(BROKEN)))			// nothing can happen if broken
+	if(!air_contents || (broken_now()))			// nothing can happen if broken
 		set_use_power(USE_POWER_OFF)
-		if(has_stat(BROKEN)) // a broken bin stops pumping and won't flush (the redraw used to do this)
+		if(broken_now()) // a broken bin stops pumping and won't flush (the redraw used to do this)
 			set_mode(DISPOSALMODE_OFF)
 			flush = 0
 		return PROCESS_KILL
@@ -648,7 +657,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 			return PROCESS_KILL
 
 /obj/machinery/disposal/proc/pressurize()
-	if(has_stat(NOPOWER))			// won't charge if no power
+	if(power_lost())			// won't charge if no power
 		set_use_power(USE_POWER_OFF)
 		return FALSE
 
@@ -719,7 +728,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 	if(.)
 		if(flush || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			wake_for_state_change()
-		else if(mode == DISPOSALMODE_CHARGING && !has_stat(NOPOWER) && can_pressurize_from(loc.return_air()) && !after_pending(src, "power_retry_timer"))
+		else if(mode == DISPOSALMODE_CHARGING && !power_lost() && can_pressurize_from(loc.return_air()) && !after_pending(src, "power_retry_timer"))
 			// A station-wide restoration otherwise wakes every empty bin in the
 			// same tick, their combined pump surge drops the grid, and all of them
 			// go back to sleep without charging. Spread retries across the cycle.

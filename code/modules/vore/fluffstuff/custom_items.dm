@@ -565,13 +565,21 @@ CAPABILITIES(/obj/item/clothing/suit/fluff/purp_robes)
 // an active crystal finishes its step.
 /obj/item/clothing/accessory/collar/khcrystal/on_destroy(force) //Waitwaitwait
 	if(state == 1)
-		periodic_step() //Nownownow
+		crystal_step(null) //Nownownow
 	..()
 
-/obj/item/clothing/accessory/collar/khcrystal/periodic_step()
+CAPABILITIES(/obj/item/clothing/accessory/collar/khcrystal)
+	every(2 SECONDS, then(PROC_REF(crystal_step)), when = nameof(watching))
+
+/// TRUE once the crystal is paired and until it breaks or loses its owner.
+/obj/item/clothing/accessory/collar/khcrystal/var/tmp/watching = FALSE
+TRACKED(/obj/item/clothing/accessory/collar/khcrystal, watching)
+
+/// Watches its owner every 2 s once paired; a broken crystal or a lost owner stops it.
+/obj/item/clothing/accessory/collar/khcrystal/proc/crystal_step(datum/act/A)
 	check_owner()
 	if((state > 1) || !owner)
-		om_task_periodic_stop(src)
+		set_watching(FALSE)
 
 EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF("Pair", PROC_REF(khcrystal_pair_self)))
 
@@ -586,7 +594,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 	owner_c = user.client	//This is his client
 	update_state(1)
 	to_chat(user, span_notice("The [name] glows pleasantly blue."))
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_watching(TRUE)
 
 /obj/item/clothing/accessory/collar/khcrystal/proc/check_owner()
 	//He's dead, jim

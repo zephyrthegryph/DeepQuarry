@@ -119,7 +119,6 @@ init_scheduling	code/game/objects/effects/chem/foam.dm	after(src, 3 + metal * 3,
 init_scheduling	code/game/objects/effects/chem/foam.dm	after(src, 12 SECONDS, PROC_REF(pre_harden))
 init_scheduling	code/game/objects/effects/chem/foam.dm	after(src, 15 SECONDS, PROC_REF(harden))
 init_scheduling	code/game/objects/effects/decals/Cleanable/humans.dm	after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
-init_scheduling	code/game/objects/effects/decals/Cleanable/vore.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/game/objects/effects/prop/columnblast.dm	after(src, time_to_die - 0.2 SECONDS, PROC_REF(on_eruption), with = list(get_turf(src)))
 init_scheduling	code/game/objects/structures/crates_lockers/closets/statue.dm	after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
 init_scheduling	code/modules/asset_cache/transports/asset_transport.dm	after(src, 1 SECONDS, PROC_REF(send_assets_slow), with = list(C, preload))

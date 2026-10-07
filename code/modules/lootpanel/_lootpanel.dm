@@ -14,9 +14,13 @@
 	var/notified = FALSE
 	/// The turf being searched
 	var/tmp/turf/source_turf
+	/// TRUE while icons are left to generate (was SSlooting): the step runs on its own until the queue is empty.
+	var/tmp/imaging = FALSE
+TRACKED(/datum/lootpanel, imaging)
 
 CAPABILITIES(/datum/lootpanel)
 	owns_many(nameof(searchables), /datum/search_object)
+	every(0.5 SECONDS, then(PROC_REF(image_step)), when = nameof(imaging))
 	interface("LootPanel")
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("grab", ui_act("grab", arg("ref", schema_ref(/datum/search_object)), arg("ctrl", bool()), arg("middle", bool()), arg("shift", bool()), arg("alt", bool()), arg("right", bool())), then(PROC_REF(ui_act_grab)))

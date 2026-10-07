@@ -68,7 +68,7 @@
 	if(A.cap_state & CAP_BROKEN)
 		return TRUE
 	var/obj/machinery/M = A // a converted machine's breakable() reads the machine's own BROKEN bit
-	return istype(M) && M.has_stat(BROKEN) && cap_of(A, CAP_BREAKABLE)
+	return istype(M) && M.broken_now() && cap_of(A, CAP_BREAKABLE)
 /**
  * Whether A's screen or lamps show: it has power, isn't broken and nothing overrides its display
  * (screen_override()). What a lamp or glow draws behind, so every machine answers it the same way.
@@ -97,7 +97,7 @@
 	return TRUE
 
 /obj/machinery/cap_powered()
-	return !has_stat(NOPOWER)
+	return !power_lost()
 
 // ---- lifecycle hooks ----
 

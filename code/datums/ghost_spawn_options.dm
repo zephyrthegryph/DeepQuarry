@@ -98,7 +98,7 @@
 
 	if(!chosen_fabricator)
 		return
-	if(chosen_fabricator.has_stat(NOPOWER) || !chosen_fabricator.produce_drones)
+	if(chosen_fabricator.power_lost() || !chosen_fabricator.produce_drones)
 		return
 	if(chosen_fabricator.drone_progress < 100)
 		return

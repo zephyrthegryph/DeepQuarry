@@ -144,7 +144,7 @@
 /datum/unit_test/dq_h3_appliance_energy/Run()
 	dq_h3_cool_floor(test_floor())
 	var/obj/machinery/appliance/cooker/oven/oven = allocate(/obj/machinery/appliance/cooker/oven, test_floor())
-	MACHINE_SLEEP(oven)
+	work_stop(oven)
 	oven.set_heating(TRUE)
 	TEST_ASSERT(!isnull(oven.heat_body), "a heating cooker is a heat body")
 	// Isolate it from the room so every joule stays in the oven and its contents.

@@ -148,7 +148,7 @@
 		var/mob/living/occupant = pod.get_occupant()
 		if(pod.mess)
 			status = "mess"
-		else if(occupant && !pod.has_stat(NOPOWER))
+		else if(occupant && !pod.power_lost())
 			status = "cloning"
 		clonepods += list(list(
 			"pod" = REF(pod),

@@ -274,11 +274,19 @@
 			H.custom_pain("Your hands hurt like hell!",1)
 	..()
 
-/// Works every 2 s while worn (equipped() starts it); taken off, it sleeps.
-/obj/item/clothing/gloves/toxinregen/periodic_step()
+/// TRUE while worn (equipped() sets it): the slow step purges the wearer's toxins; taken off, it parks.
+/obj/item/clothing/gloves/toxinregen/var/tmp/purging = FALSE
+TRACKED(/obj/item/clothing/gloves/toxinregen, purging)
+
+CAPABILITIES(/obj/item/clothing/gloves/toxinregen)
+	every(2 SECONDS, then(PROC_REF(purge_step)), when = nameof(purging))
+
+/// Works every 2 s while worn.
+/obj/item/clothing/gloves/toxinregen/proc/purge_step(datum/act/A)
 	var/mob/living/carbon/human/H = ishuman(wearer) ? wearer : null
 	if(!H || H.get_equipped_item(SLOT_ID_GLOVES) != src)
-		return PROCESS_KILL
+		set_purging(FALSE)
+		return
 	if(!H || H.stat == DEAD || H.nutrition <= 10)
 		return
 	H.mend(TREAT_ANTITOXIN, 0.5) // organic tag: synthetic bodies are unaffected
@@ -286,4 +294,4 @@
 /obj/item/clothing/gloves/toxinregen/equipped(mob/user, slot)
 	. = ..()
 	if(ismob(wearer))
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_purging(TRUE)

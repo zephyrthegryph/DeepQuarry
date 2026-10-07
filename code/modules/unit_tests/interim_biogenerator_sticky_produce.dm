@@ -6,7 +6,7 @@
 	var/obj/item/reagent_containers/food/snacks/grown/fruit = allocate(/obj/item/reagent_containers/food/snacks/grown, T, PLANT_APPLE)
 	TEST_ASSERT(!QDELETED(fruit), "the actual apple seed creates a live grown fruit")
 	TEST_ASSERT_NOTNULL(fruit.seed(), "the actual grown fruit has its real seed data")
-	generator.set_stat(0)
+	dq_machine_clear(generator)
 	var/points_before = generator.points
 	var/volume_before = fruit.reagents.total_volume
 	var/nutriment = fruit.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT)

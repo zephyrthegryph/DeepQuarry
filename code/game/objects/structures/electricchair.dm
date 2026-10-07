@@ -64,7 +64,6 @@ CAPABILITIES(/obj/structure/bed/chair/e_chair)
 	if(!A.powered(EQUIP))
 		return
 	A.use_power_oneoff(5000, EQUIP)
-	var/light = A.power_light
 	A.update_icon()
 
 	flick("echair1", src)
@@ -77,7 +76,6 @@ CAPABILITIES(/obj/structure/bed/chair/e_chair)
 			L.status_at_least(STAT_STUNNED, 600)
 	visible_message(span_danger("The electric chair went off!"), span_danger("You hear a deep sharp shock!"))
 
-	A.power_light = light
 	A.update_icon()
 	return
 

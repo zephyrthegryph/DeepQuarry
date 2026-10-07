@@ -36,6 +36,7 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 
 /// The value of stat `stat_id` on E: its var, or (a virtual stat) what the record holds, or what it composes to now.
 /proc/stat_value(datum/E, stat_id)
+	READS_FROM(E)
 	var/datum/stat_def/def = stat_def_of(stat_id)
 	if(!def || !isdatum(E))
 		return null

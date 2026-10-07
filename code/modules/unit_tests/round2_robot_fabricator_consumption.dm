@@ -11,7 +11,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/robotic_fabricator/machine = allocate(/obj/machinery/robotic_fabricator, T)
 	var/obj/item/stack/material/steel/original = allocate(/obj/item/stack/material/steel, T, 2)
-	machine.set_stat(0)
+	dq_machine_clear(machine)
 	TEST_ASSERT_EQUAL(machine.metal_amount, 0, "actual fabricator starts with no stock")
 	TEST_ASSERT_EQUAL(original.get_amount(), 2, "actual steel stack initializes exactly two sheets")
 	TEST_ASSERT_EQUAL(original.get_material_name(), MAT_STEEL, "actual insertion ingredient is steel")

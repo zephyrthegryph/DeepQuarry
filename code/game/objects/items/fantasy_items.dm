@@ -126,7 +126,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven/yeoldoven, TYPE_PRO
 /obj/machinery/appliance/cooker/oven/yeoldoven/appearance_overlays()
 	. = list()
 	if(!open)
-		if(!has_stat(MACHINE_STAT_ANY))
+		if(!has_condition())
 			icon_state = "yeoldovenclosed_on"
 			if(cooking == TRUE)
 				icon_state = "yeoldovenclosed_cooking"

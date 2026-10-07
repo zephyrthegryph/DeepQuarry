@@ -15,14 +15,13 @@
 // and evaluates once.
 //
 // Gate: while a type's while-declaration doesn't hold, om_task_periodic() on its cadence and
-// MACHINE_WAKE() refuse to start the work, and the machine stages don't run machine_step(), so the
-// body never needs to guard on the declared fields.
+// work_start() refuse to start the work, so the body never needs to guard on the declared fields.
 
 /// One DECLARE_PERIODIC_WHILE(_ALL) / DECLARE_REPEAT line. Instantiated once (sys_periodic_defs()).
 /datum/sys_periodic_def
 	/// The declaring type.
 	var/of
-	/// While-declaration: the periodic pipeline type, or MACHINE_PIPELINE. Null for a repeat.
+	/// While-declaration: the periodic pipeline type. Null for a repeat.
 	var/cadence
 	/// While-declaration: the field specs as written ("name" or "!name").
 	var/list/fields
@@ -153,9 +152,7 @@ REGISTRY_TYPE(/datum/sys_periodic_def, GLOBAL_PROC_REF(registry_sys_periodic_def
 /proc/sys_periodic_stop(datum/E, datum/sys_periodic_table/T)
 	var/datum/sys_periodic_def/W = T.while_def
 	if(W)
-		if(W.cadence == MACHINE_PIPELINE)
-			machine_sleep(E)
-		else if(E.periodic_pipe == W.cadence)
+		if(E.periodic_pipe == W.cadence)
 			om_task_periodic_stop(E)
 	for(var/proc_name in T.repeats)
 		cancel_after(E, "sys_repeat:[proc_name]")
@@ -173,20 +170,7 @@ REGISTRY_TYPE(/datum/sys_periodic_def, GLOBAL_PROC_REF(registry_sys_periodic_def
 	var/datum/sys_periodic_def/W = T.while_def
 	if(W)
 		var/want = sys_periodic_def_holds(E, W)
-		if(W.cadence == MACHINE_PIPELINE)
-			var/obj/machinery/M = E
-			if(M.speed_process)
-				// Fast mode runs machine_step() on the fast periodic lane instead.
-				if(want)
-					om_task_periodic(M, PERIODIC_FAST)
-				else if(M.periodic_pipe == PERIODIC_FAST)
-					om_task_periodic_stop(M)
-			else if(want)
-				if(!M.step_active)
-					machine_wake(M)
-			else if(M.step_active || M.step_waiting_power)
-				machine_sleep(M)
-		else if(want)
+		if(want)
 			om_task_periodic(E, W.cadence)
 		else if(E.periodic_pipe == W.cadence)
 			om_task_periodic_stop(E)
@@ -200,7 +184,7 @@ REGISTRY_TYPE(/datum/sys_periodic_def, GLOBAL_PROC_REF(registry_sys_periodic_def
 			cancel_after(E, slot)
 
 /// The gate: FALSE while E's type declares while-work on `cadence` whose fields don't hold.
-/// om_task_periodic() and MACHINE_WAKE() ask it; so do the machine stages before machine_step().
+/// om_task_periodic() asks it.
 /proc/sys_periodic_allows(datum/E, cadence)
 	var/datum/lifecycle_decls/decls = lifecycle_decls_of(E)
 	var/datum/sys_periodic_table/T = decls?.sys_periodic

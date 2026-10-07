@@ -29,6 +29,7 @@
 	var/datum/track/current_track
 
 CAPABILITIES(/obj/machinery/media/jukebox)
+	contributes(STAT_HAS_POWER, nameof(anchored)) // a jukebox that is not bolted down has no power, whatever its area gives
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(playing), wakes_on = list(nameof(playing)))
 	climb()
 	interface("Jukebox", title = "RetroBox - Space Style")
@@ -146,8 +147,7 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 	return OP_OK
 
 /obj/machinery/media/jukebox/power_change()
-	set_powered(powered(power_channel) && anchored)
-
+	. = ..()
 	if(!operable() && playing)
 		StopPlaying()
 	update_icon()
@@ -158,7 +158,7 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 /obj/machinery/media/jukebox/proc/appearance_suffix()
 	if(appearance_live())
 		return ""
-	return has_stat(BROKEN) ? "-broken" : "-nopower"
+	return broken_now() ? "-broken" : "-nopower"
 
 /obj/machinery/media/jukebox/proc/appearance_running()
 	if(!appearance_live() || !playing)
@@ -511,7 +511,7 @@ VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "remove_track", PROC_REF(vv_
 /// The lights hint at the state each wire drives.
 /obj/machinery/media/jukebox/proc/wire_lights()
 	return list(
-		"The power light is [stat & (BROKEN|NOPOWER) ? "off." : "on."]",
+		"The power light is [(broken_now() || power_lost()) ? "off." : "on."]",
 		"The parental guidance light is [hacked ? "off." : "on."]",
 		"The data light is [wire_is_cut(src, WIRE_REVERSE) ? "hauntingly dark." : "glowing softly."]")
 

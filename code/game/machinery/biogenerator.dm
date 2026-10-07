@@ -266,7 +266,7 @@ CAPABILITIES(/obj/machinery/biogenerator)
 
 /obj/machinery/biogenerator/proc/interaction_use(datum/act/op/A)
 	var/mob/user = A.actor
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -274,7 +274,7 @@ CAPABILITIES(/obj/machinery/biogenerator)
 /obj/machinery/biogenerator/proc/activate(mob/user)
 	if(user.stat)
 		return
-	if(has_stat(MACHINE_STAT_ANY)) //NOPOWER etc
+	if(has_condition()) //NOPOWER etc
 		return
 	if(processing)
 		to_chat(user, span_notice("The biogenerator is in the process of working."))

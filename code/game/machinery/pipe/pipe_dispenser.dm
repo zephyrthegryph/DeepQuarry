@@ -132,10 +132,10 @@ MSG_DEF_SELF(pipedispenser/cannot_use, "You can't work the dispenser.")
 	set_unwrenched(!unwrenched)
 	set_anchored(!unwrenched)
 	if(unwrenched)
-		stat_add(MAINT)
+		set_maintenance(TRUE)
 		SStgui.close_uis(src)
 	else
-		stat_remove(MAINT)
+		set_maintenance(FALSE)
 		power_change()
 	return OP_OK
 

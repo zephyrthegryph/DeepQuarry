@@ -303,7 +303,7 @@
 	D.secured_wires = TRUE
 	D.take_damage(D.max_integrity * 0.9, BRUTE, MELEE)
 	settle()
-	TEST_ASSERT(D.has_stat(BROKEN), "broken")
+	TEST_ASSERT(D.broken_now(), "broken")
 	TEST_ASSERT(p2_door_panel_open(D), "its panel burst open")
 	TEST_ASSERT(p2_door_bolted(D), "and its bolts dropped")
 

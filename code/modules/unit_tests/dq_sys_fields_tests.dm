@@ -9,52 +9,6 @@
 		if(raise[1] == E && (raise[2] & mask))
 			.++
 
-/// stat_add()/stat_remove()/set_stat() write the bits, raise only on a change, and raise the
-/// channel of the bit that changed (BROKEN -> CHANGE_MACHINE_BROKEN, NOPOWER -> CHANGE_MACHINE_POWER).
-/datum/unit_test/dq_sys_fields_stat_flag_setters
-
-/datum/unit_test/dq_sys_fields_stat_flag_setters/Run()
-	var/obj/machinery/M = allocate(/obj/machinery)
-	M.set_stat(0)
-	var/datum/om/rec/rec = om_rec_of(M)
-	var/datum/om/scheduler/sched = rec.sched
-	M.om_listen |= CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER
-
-	sched.test_raises = list()
-	TEST_ASSERT(M.stat_add(BROKEN), "stat_add() of a new bit returned FALSE")
-	TEST_ASSERT(!M.stat_add(BROKEN), "stat_add() of a set bit returned TRUE")
-	TEST_ASSERT(M.has_stat(BROKEN), "has_stat(BROKEN) after stat_add(BROKEN)")
-	TEST_ASSERT(!M.has_stat(NOPOWER), "has_stat(NOPOWER) with only BROKEN set")
-	TEST_ASSERT_EQUAL(dq_sys_fields_count_raises(sched, M, CHANGE_MACHINE_BROKEN), 1, "BROKEN raises for one change and one no-op")
-	TEST_ASSERT_EQUAL(dq_sys_fields_count_raises(sched, M, CHANGE_MACHINE_POWER), 0, "a BROKEN change raised the power channel")
-
-	sched.test_raises = list()
-	TEST_ASSERT(M.stat_add(NOPOWER), "stat_add(NOPOWER) returned FALSE")
-	TEST_ASSERT_EQUAL(dq_sys_fields_count_raises(sched, M, CHANGE_MACHINE_POWER), 1, "NOPOWER raises the power channel")
-	TEST_ASSERT_EQUAL(dq_sys_fields_count_raises(sched, M, CHANGE_MACHINE_BROKEN), 0, "a NOPOWER change raised the broken channel")
-
-	sched.test_raises = list()
-	TEST_ASSERT(M.stat_remove(BROKEN | NOPOWER), "stat_remove() of set bits returned FALSE")
-	TEST_ASSERT(!M.stat_remove(BROKEN), "stat_remove() of a clear bit returned TRUE")
-	TEST_ASSERT(!M.has_stat(MACHINE_STAT_ANY), "bits left after stat_remove()")
-	TEST_ASSERT(!M.set_stat(0), "set_stat() to the same value returned TRUE")
-	TEST_ASSERT_EQUAL(dq_sys_fields_count_raises(sched, M, CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER), 1, "one raise for one combined change")
-	sched.test_raises = null
-
-/// operable() is FALSE while any of NOPOWER, BROKEN, MAINT, EMPED is set, and honours extra bits.
-/datum/unit_test/dq_sys_fields_operable
-
-/datum/unit_test/dq_sys_fields_operable/Run()
-	var/obj/machinery/M = allocate(/obj/machinery)
-	M.set_stat(0)
-	TEST_ASSERT(M.operable(), "a machine with no condition bits is not operable")
-	for(var/bit in list(NOPOWER, BROKEN, MAINT, EMPED))
-		M.set_stat(bit)
-		TEST_ASSERT(!M.operable(), "operable() with stat [bit]")
-	M.set_stat(POWEROFF)
-	TEST_ASSERT(M.operable(), "POWEROFF alone should not make a machine inoperable")
-	TEST_ASSERT(!M.operable(POWEROFF), "operable(POWEROFF) with POWEROFF set")
-
 /// The registry knows the core fields with their family channels, the derived operable field and
 /// the registered hand-written setters (anchored, density, use_power).
 /datum/unit_test/dq_sys_fields_registered

@@ -231,10 +231,10 @@
 
 /obj/machinery/casino_prize_dispenser/power_change()
 	. = ..()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		icon_state = "[initial(icon_state)]-broken"
 	else
-		if(!has_stat(NOPOWER))
+		if(!power_lost())
 			icon_state = initial(icon_state)
 		else
 			after(src, rand(0 SECONDS, 1.5 SECONDS), TYPE_PROC_REF(/atom, set_icon_state), with = list("[initial(icon_state)]-off"))
@@ -405,7 +405,7 @@ CAPABILITIES(/obj/machinery/casino_prize_dispenser)
 	//Currently doesnt have an ingame way to show. Can only be viewed through View-Variables, to ensure theres no chance of players ckeys exposed - Jack
 
 /obj/machinery/casino_prize_dispenser/proc/speak(message)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
 
 	if(!message)

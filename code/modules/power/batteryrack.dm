@@ -59,6 +59,7 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 	owns_many(nameof(internal_cells), /obj/item/cell)
 	part_replacement()
 	interface("Batteryrack")
+	extend("ui_open", ungated()) // the window opens on an inoperable rack too; its buttons stay behind the operable gate
 	op("insert_cell", item(/obj/item/cell), needs(req(PROC_REF(cell_room), because = MSG(batteryrack/full))), then(PROC_REF(cell_inserted)), says(MSG(batteryrack/inserted)))
 	op("disable", ui_act(), then(PROC_REF(ui_disable)))
 	op("enable", ui_act(arg("enable")), then(PROC_REF(ui_enable)))

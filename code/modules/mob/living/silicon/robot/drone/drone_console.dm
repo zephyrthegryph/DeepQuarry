@@ -116,7 +116,7 @@ CAPABILITIES(/obj/machinery/computer/drone_control)
 		return
 
 	for(var/obj/machinery/drone_fabricator/fab in oview(3,src))
-		if(fab.has_stat(NOPOWER))
+		if(fab.power_lost())
 			continue
 
 		rel_set(src, nameof(/obj/machinery/computer/drone_control::dronefab), fab)

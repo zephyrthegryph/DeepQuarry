@@ -91,6 +91,8 @@
 
 	var/attacked = FALSE		//if set to TRUE, the turret gets pissed off and shoots at people nearby (unless they have sec access!)
 
+	/// The turret's capacitors hold its power: TRUE while its area gives power, until a moment after it stops (power_change()).
+	var/power_held = TRUE
 	var/enabled = TRUE			//determines if the turret is on (the setting someone chose)
 	var/lethal = FALSE			//whether in lethal or stun mode
 	var/lethal_is_configurable = TRUE // if false, its lethal setting cannot be changed
@@ -108,6 +110,7 @@ TRACKED(/obj/machinery/porta_turret, icon_color)
 TRACKED(/obj/machinery/porta_turret, lethal_icon_color)
 
 TRACKED(/obj/machinery/porta_turret, enabled)
+TRACKED(/obj/machinery/porta_turret, power_held)
 TRACKED(/obj/machinery/porta_turret, lethal)
 TRACKED(/obj/machinery/porta_turret, check_arrest)
 TRACKED(/obj/machinery/porta_turret, check_records)
@@ -138,6 +141,8 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	membership(joins = REGISTRY_TURRETS)
 	lock(starts_locked = nameof(lock_at_start), alt = FALSE, guarded = FALSE)
 	contributes(STAT_ARMED, nameof(enabled))
+	// Power loss reaches a turret a moment late (its capacitors): its own reading replaces the area's, and power_change() moves it after the delay.
+	contributes(STAT_HAS_POWER, nameof(power_held), key = "turret_power")
 	contributes(STAT_ARMED, STAT_OPERABLE)
 	emp_disable(list(6 SECONDS, 60 SECONDS))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(scramble_settings)))
@@ -170,7 +175,7 @@ CAPABILITIES(/obj/machinery/porta_turret)
 	op("authdown", ui_act(), toggles(nameof(check_down), when = nameof(targetting_is_configurable)))
 
 /obj/machinery/porta_turret/can_catalogue(mob/user) // Dead turrets can't be scanned.
-	if(has_stat(BROKEN))
+	if(broken_now())
 		to_chat(user, span_warning("\The [src] was destroyed, so it cannot be scanned."))
 		return FALSE
 	return ..()
@@ -213,16 +218,20 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 
 // ---- power, pulses, the emag ----
 
-/// Power loss reaches a turret a moment late (its capacitors); power that comes back first cancels the loss.
+/// Power loss reaches a turret a moment late (its capacitors); power that comes back first cancels the loss. The turret's STAT_HAS_POWER reads
+/// `power_held`, which this moves: at once on restore, after the delay on loss (a declared delay on the turret's side, not a second writer of the grid's state).
 /obj/machinery/porta_turret/power_change()
 	if(powered())
 		cancel_after(src, "power_loss")
-		set_powered(TRUE)
+		set_power_held(TRUE)
 	else
 		after(src, rand(0 SECONDS, 1.5 SECONDS), PROC_REF(power_off_delayed), key = "power_loss")
 
+/obj/machinery/porta_turret/area_gives_power(datum/act/A)
+	return TRUE // the capacitors' reading (power_held) is the turret's own
+
 /obj/machinery/porta_turret/proc/power_off_delayed()
-	set_powered(FALSE)
+	set_power_held(FALSE)
 
 /// A pulse on a running turret scrambles its targets, with a slight chance of an emag's effect (the outage itself is emp_disable()'s).
 /obj/machinery/porta_turret/proc/scramble_settings(datum/act/A)
@@ -249,7 +258,7 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 // ---- wrench, crowbar, a blow ----
 
 /obj/machinery/porta_turret/proc/intact(datum/act/op/A)
-	return !has_stat(BROKEN)
+	return !broken_now()
 
 /// The wrench moves only a switched-off turret with its cover down.
 /obj/machinery/porta_turret/proc/idle_for_the_wrench(datum/act/op/A)
@@ -356,10 +365,10 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 
 /// The icon_state prefix before turret_type.
 /obj/machinery/porta_turret/proc/appearance_prefix()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return "destroyed_target_prism_"
 	if(popup_cover_raised(src) || popup_cover_moving(src))
-		if(!has_stat(NOPOWER) && enabled)
+		if(!power_lost() && enabled)
 			return "[lethal ? lethal_icon_color : icon_color]_target_prism_"
 		return "grey_target_prism_"
 	return "turret_cover_"
@@ -467,7 +476,7 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 	check_down = TRUE
 
 /obj/machinery/porta_turret/can_catalogue(mob/user) // Dead turrets can't be scanned.
-	if(has_stat(BROKEN))
+	if(broken_now())
 		to_chat(user, span_warning("\The [src] was destroyed, so it cannot be scanned."))
 		return FALSE
 	return ..()
@@ -520,11 +529,13 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 CAPABILITIES(/obj/machinery/porta_turret/alien)
 	configure(emp_disable(lasts = list(1 MINUTE, 2 MINUTES), resist = 75))
 
+/obj/machinery/porta_turret/alien/destroyed/starts_broken()
+	return TRUE
+
 /obj/machinery/porta_turret/alien/destroyed // Turrets that are already dead, to act as a warning of what the rest of the submap contains.
 	name = "broken interior anti-boarding turret"
 	desc = "A very tough looking turret made by alien hands. This one looks destroyed, thankfully."
 	icon_state = "destroyed_target_prism_alien"
-	stat = BROKEN
 	can_salvage = FALSE // So you need to actually kill a turret to get the alien gun.
 
 /obj/machinery/porta_turret/industrial
@@ -1032,19 +1043,21 @@ CAPABILITIES(/obj/machinery/porta_turret_construct)
 	. = ..()
 	update_integrity(5)
 
-/// Runs on its own supply: only BROKEN and EMPED stop it, never its area's power.
+/// Runs on its own supply: only BROKEN and EMPED stop it, never its area's power (neither the grid's reading nor the capacitors' delay applies).
 CAPABILITIES(/obj/machinery/porta_turret/rcd)
+	without("turret_power") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
 	configure(machine_basics(repair = NONE, powered = FALSE))
+	without("maint_operable") // ALLOW(keys): without() drops an inherited contributes() entry by its key, not an op
 
-/obj/machinery/porta_turret/rcd/stat_bits_allow(datum/act/A)
-	return !has_stat(BROKEN | EMPED)
+/obj/machinery/porta_turret/rcd/power_change()
+	return
 
 /// It sees through walls.
 /obj/machinery/porta_turret/rcd/scan_candidates()
 	return mobs_in_xray_view(world.view, src)
 
 /obj/machinery/porta_turret/rcd/appearance_prefix()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return "destroyed_target_prism_"
 	if(popup_cover_raised(src) || popup_cover_moving(src))
 		if(enabled)

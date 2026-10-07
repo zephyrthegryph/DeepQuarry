@@ -257,6 +257,7 @@ CAPABILITIES(/obj/machinery/power)
 		power_source = source_area.get_apc()
 	var/region = 0
 	var/obj/item/cell/cell
+	var/obj/machinery/power/apc/source_apc
 	if(istype(power_source,/obj/structure/cable))
 		var/obj/structure/cable/Cable = power_source
 		region = Cable.get_power_region()
@@ -264,6 +265,7 @@ CAPABILITIES(/obj/machinery/power)
 		var/obj/machinery/power/P = power_source
 		if(istype(P, /obj/machinery/power/apc))
 			var/obj/machinery/power/apc/apc = P
+			source_apc = apc
 			cell = apc.cell
 			region = apc.terminal?.power_region
 		else
@@ -311,6 +313,8 @@ CAPABILITIES(/obj/machinery/power)
 		source_area.use_power_oneoff(drained_energy/CELLRATE, EQUIP)
 	else if (from_grid && region)
 		power_draw(region, drained_energy/CELLRATE)
+	else if (source_apc)
+		source_apc.set_cell_charge(cell.charge - drained_energy) // the cell and the power domain's charge together
 	else if (cell)
 		cell.use(drained_energy)
 	return drained_energy

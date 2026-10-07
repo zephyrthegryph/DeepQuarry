@@ -811,7 +811,6 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/fuel_injection)
 #undef SENSOR_N2O
 #undef SENSOR_CH4
 
-/// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
 /// radio connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/air_sensor/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection

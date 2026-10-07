@@ -25,7 +25,7 @@
 
 /// The unit is broken (its overlays dark, its input and output off).
 /proc/p2_smes_broken(obj/machinery/power/smes/S)
-	return !!(S.has_stat(BROKEN) || S.unwired)
+	return !!(S.broken_now() || S.unwired)
 
 /// The charge held, in SMES units.
 /proc/p2_smes_charge(obj/machinery/power/smes/S)
@@ -1389,3 +1389,17 @@
 	var/list/data = list()
 	present_tgui_data(R, H, data)
 	TEST_ASSERT(!("capacityPercent" in data), "and sends none of the SMES window data")
+
+/// A unit with no input terminal (unwired, so not operable) still opens its window for a hand. Its buttons are not behind the operable gate
+/// (window buttons never were: only TAG_CONTROL ops and the hand gate read operable), so the input button still moves its switch.
+/datum/unit_test/dq_p2_smes/unwired_window_opens_buttons_keep_working
+
+/datum/unit_test/dq_p2_smes/unwired_window_opens_buttons_keep_working/run_gate()
+	var/obj/machinery/power/smes/S = p2_bare_smes()
+	var/mob/living/carbon/human/H = p2_actor()
+	TEST_ASSERT(S.unwired, "a unit with no terminal is unwired")
+	var/datum/op_result/opened = test_menu(H, S, "ui_open")
+	TEST_ASSERT_EQUAL(opened?.outcome, ACT_COMMITTED, "the window of an unwired unit opens for a human")
+	var/before = S.input_attempt
+	press(H, S, "tryinput", list())
+	TEST_ASSERT(S.input_attempt != before, "its input button still toggles the switch")

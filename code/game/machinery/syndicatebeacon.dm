@@ -100,7 +100,6 @@ EXTEND_INTERACTIONS(/obj/machinery/syndicate_beacon, \
 	anchored = FALSE
 	density = TRUE
 	layer = MOB_LAYER - 0.1 //so people can't hide it and it's REALLY OBVIOUS
-	stat = 0
 
 	active = 0
 	var/icontype = "beacon"

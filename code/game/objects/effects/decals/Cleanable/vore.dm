@@ -44,7 +44,6 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood/reagent)
 	custombasecolor = spill_color
 
 	update_icon()
-	om_task_periodic(src, PERIODIC_SLOW)
 
 DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/reagent, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/effect/decal/cleanable/blood/reagent/appearance_overlays()

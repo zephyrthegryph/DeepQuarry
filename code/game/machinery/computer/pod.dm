@@ -55,7 +55,7 @@ OM_FIELD(/obj/machinery/computer/pod, timing, FALSE, CHANGE_MACHINE_SETTINGS)
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/pod)
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), nameof(stat)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), STAT_OPERABLE))
 	interface("PodComputer")
 	op("toggle_door", ui_act("toggle_door"), then(PROC_REF(ui_act_toggle_door)))
 	op("start_stop", ui_act("start_stop"), then(PROC_REF(ui_act_start_stop)))

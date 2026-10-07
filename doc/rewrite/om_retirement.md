@@ -124,7 +124,7 @@ Behaviour changes go to [intended_changes.md](intended_changes.md).
 | C clocks | landed | CLOCK_BIO runs at `STAT_CLOCK_RATE_BIO`; stasis holds it; `clock_now()` replaces `om_clock_now()`; the unused machine and chem domains are deleted; CLOCK_OWN is still the OM record's timer clock |
 | E effects | started | alpha and push blocking are stats; dead library rows deleted; left: `EFFECT_BUCKLED` (the buckle relation), `EFFECT_BODY_EFFECTS` (body), the `GRANT_*` kinds |
 | V Life events | landed | status announcements, vision and darksight are FIXED actions (`world_actions.dm`); the mutations veto is deleted; Life has no OM_EMIT left |
-| M machine pipeline | owned by `rewrite/machines-full` and `rewrite/pipenet-full` | they move machines off `machine_step()`; the pipeline goes with their last wave |
+| M machine pipeline | landed (rewrite/machine-stats) | the pipeline, `machine_step()` and `MACHINE_WAKE()` are deleted; machines run `started_work()` / `every(when =)` |
 | `OM_EMIT` / `om_hook` | Phase C codemod track | needs `ACTION()` declarations for `publish_<x>()` |
 | E entity_state | landed | every file moved to its module (`git mv` only, DME lines in place); `code/datums/entity_state` is gone. Left in the moved content: one `om_task_timed` (weaver, B4), the changeling/crafting/hose/material OM forms (their tracks) |
 | I internals, D | open | relations and slots, timed actions, scheduler, clocks, contribution store, prompts and flows, io |
@@ -144,11 +144,11 @@ on October 6 2026, game code only (no framework, tests or generated files):
 | `OM_FIELD*`, `OM_DERIVE_FIELD` | 203 / 127 | F1: with the machine pipeline (channels) and the periodic gates |
 | `/datum/om/behaviour`, `om_attach` | 202 / 44 | object behaviours (items), AI brains (combat AI), looping sounds |
 | `OM_EMIT`, `om_emit`, `om_hook` | 199 / 110 | Phase C: `PUBLISH`/`ACT_TRY` per `om_event_map.json` |
-| machine pipeline, `machine_step`, `MACHINE_WAKE` | 140 / 25 | `rewrite/machines-full`, `rewrite/pipenet-full` |
+| machine pipeline, `machine_step`, `MACHINE_WAKE` | 0 / 0 | deleted (rewrite/machine-stats) |
 | `DECLARE_PERIODIC*`, `DECLARE_REPEAT` | 126 / 107 | `periodic_while.py` residue: items and structures |
 | `om_io`, `io_request` | 82 / 24 | native requests (`/datum/io/*`) |
 | `om_grant*`, `om_revoke*` | 73 / 29 | verbs: `granted_verb()` (`verb_decl.py`) |
-| `om_watch`, gas watches | 67 / 22 | pipenet |
+| `om_watch`, gas watches | 67 / 22 | F5 done: `gas_level()` / `gas_watch_many()`; the remainder (value and condition watches) is machine-pipeline code (F7) |
 
 The framework's own internals follow their last caller: the timer store and scheduler (`after()` is built on them), the
 OM record's own clock (CLOCK_OWN), the contribution store (now only `EFFECT_BUCKLED`, `EFFECT_BODY_EFFECTS` and the

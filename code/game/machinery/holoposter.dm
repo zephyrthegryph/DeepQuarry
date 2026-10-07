@@ -47,13 +47,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/holoposter/appearance_overlays()
 	. = list()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		icon_state = "off"
 		examine_addon = "It appears to be powered off."
 		set_light(0)
 		return .
 	var/new_color = LIGHT_COLOR_HALOGEN
-	if(has_stat(BROKEN))
+	if(broken_now())
 		icon_state = "glitch"
 		examine_addon = "It appears to be malfunctioning."
 		new_color = "#6A6C71"
@@ -84,7 +84,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, TYPE_PROC_REF(/atom, appearan
 
 /// The multitool works a powered poster (an unpowered one takes the click and does nothing).
 /obj/machinery/holoposter/proc/is_powered(datum/act/op/A)
-	return !has_stat(NOPOWER)
+	return !power_lost()
 
 /// The posters the multitool's question offers.
 /obj/machinery/holoposter/proc/poster_choices(datum/act/A)
@@ -95,7 +95,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, TYPE_PROC_REF(/atom, appearan
 	add_fingerprint(A.actor)
 	play_sfx(src, SFX_ITEMS_PENCLICK, 1.2)
 	var/choice = A.answer?.value
-	if(!choice || has_stat(NOPOWER))
+	if(!choice || power_lost())
 		return OP_OK
 	icon_state = choice
 	if(icon_state == "random")
@@ -118,7 +118,7 @@ CAPABILITIES(/obj/machinery/holoposter)
 
 /// An EMP breaks the poster.
 /obj/machinery/holoposter/proc/holoposter_emp(datum/act/hit/emp/A)
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return HOOK_DECLINE
 	atom_break()
 	return HOOK_DECLINE

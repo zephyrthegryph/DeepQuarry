@@ -184,7 +184,7 @@ SYSTEM_DEF(time_track)
 			SSmachines.cost_machinery,
 			SSmachines.cost_powernets,
 			0, // power objects: gone (powersinks drain on their own periodic step)
-			om_pipeline_parked_count(/datum/om/pipeline/machine),
+			0, // parked machines: none (a machine's work is a stat-gated every())
 			length(SSmachines.power_grids),
 			SSmachines.fire_cost,
 			SSmachines.times_fired,

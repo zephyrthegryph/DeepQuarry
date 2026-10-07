@@ -39,7 +39,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/drone_fabricator, REGISTRY_DRONE_FABRICATORS)
 
 /obj/machinery/drone_fabricator/power_change()
 	. = ..()
-	if (has_stat(NOPOWER))
+	if (power_lost())
 		icon_state = "drone_fab_nopower"
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
@@ -56,7 +56,7 @@ CAPABILITIES(/obj/machinery/drone_fabricator)
 /obj/machinery/drone_fabricator/proc/update_drone_progress()
 	if(SSticker.current_state < GAME_STATE_PLAYING || !produce_drones)
 		return drone_progress
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		icon_state = "drone_fab_nopower"
 		return drone_progress
 	var/was_ready = drone_progress >= 100
@@ -75,7 +75,7 @@ CAPABILITIES(/obj/machinery/drone_fabricator)
 /obj/machinery/drone_fabricator/proc/create_drone(client/player)
 	update_drone_progress()
 
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
 
 	if(!produce_drones || !CONFIG_GET(flag/allow_drone_spawn) || count_drones() >= CONFIG_GET(number/max_maint_drones))

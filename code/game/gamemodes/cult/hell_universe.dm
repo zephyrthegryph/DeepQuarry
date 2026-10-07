@@ -67,10 +67,10 @@ In short:
 			new /obj/effect/gateway/active/cult(T)
 
 	for (var/obj/machinery/firealarm/alm in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if (!alm.has_stat(BROKEN))
+		if (!alm.broken_now())
 			alm.ex_act(2)
 
 /datum/universal_state/hell/proc/APCSet()
 	for (var/obj/machinery/power/apc/APC in REGISTRY_MEMBERS(REGISTRY_APCS))
-		if (!APC.has_stat(BROKEN) && !APC.is_critical)
+		if (!APC.broken_now() && !APC.is_critical)
 			key_set(APC, EMAG_EMAGGED, TRUE)

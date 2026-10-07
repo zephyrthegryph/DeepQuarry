@@ -43,7 +43,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
 	owns_many(nameof(side_watches), /datum/native_watch/gas)
 	after_init(0, then(PROC_REF(reconsider)))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(turbine_step)), when = nameof(spinning))
-	on_change(nameof(stat), ANY, then(PROC_REF(reconsider)))
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(reconsider)))
 	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
 
 /obj/machinery/atmospherics/pipeturbine/Initialize(mapload, newdir)
@@ -67,12 +67,12 @@ CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
 
 /// Whether it has work: bolted, whole, and spinning or driven by a pressure head. Asleep, it watches its two sides.
 /obj/machinery/atmospherics/pipeturbine/proc/reconsider(datum/act/A)
-	if(anchored && !has_stat(BROKEN) && (kin_energy >= TURBINE_MIN_KIN_ENERGY || gas_wake_condition()))
+	if(anchored && !broken_now() && (kin_energy >= TURBINE_MIN_KIN_ENERGY || gas_wake_condition()))
 		gas_watch_many_clear(src, nameof(side_watches))
 		set_spinning(TRUE)
 		return
 	set_spinning(FALSE)
-	if(anchored && !has_stat(BROKEN))
+	if(anchored && !broken_now())
 		gas_watch_many(src, nameof(side_watches), list(air_in, air_out), GAS_DEPENDENCY_PRESSURE, PROC_REF(side_heard))
 	else
 		gas_watch_many_clear(src, nameof(side_watches))
@@ -117,7 +117,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
 
 /// A pressure head across it worth turning.
 /obj/machinery/atmospherics/pipeturbine/proc/gas_wake_condition()
-	return anchored && !has_stat(BROKEN) && air_in.return_pressure() - air_out.return_pressure() > 10
+	return anchored && !broken_now() && air_in.return_pressure() - air_out.return_pressure() > 10
 
 /// Speed bands: 1 above 100 kJ, 2 above 500 kJ, 3 above 1 MJ of kinetic energy.
 /obj/machinery/atmospherics/pipeturbine/proc/update_display()
@@ -276,13 +276,13 @@ CAPABILITIES(/obj/machinery/power/turbinemotor)
 		rel_set(src, nameof(turbine), locate_within(get_step(src,dir), /obj/machinery/atmospherics/pipeturbine))
 		if(!turbine)
 			return
-		if (turbine.has_stat(BROKEN) || !turbine.anchored || turn(turbine.dir,180) != dir)
+		if (turbine.broken_now() || !turbine.anchored || turn(turbine.dir,180) != dir)
 			rel_clear(src, nameof(turbine))
 
 /// Whether it has work: on a turbine with spin to draw.
 /obj/machinery/power/turbinemotor/proc/reconsider(datum/act/A)
 	updateConnection()
-	set_converting(!!(anchored && !has_stat(BROKEN) && turbine && turbine.kin_energy >= TURBINE_MIN_KIN_ENERGY))
+	set_converting(!!(anchored && !broken_now() && turbine && turbine.kin_energy >= TURBINE_MIN_KIN_ENERGY))
 
 /// One service interval of converting its turbine's spin to power (its every(), while its turbine spins).
 /obj/machinery/power/turbinemotor/proc/motor_step(datum/act/A)

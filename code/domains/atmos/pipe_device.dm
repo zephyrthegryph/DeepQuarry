@@ -54,7 +54,7 @@ MSG_DEF_SELF(pipe_device/maxed, "You set it to its highest output.")
 
 /// It is not running: unpowered, or switched off. A device whose running is something else (a regulator's open valve) says so here.
 /obj/machinery/atmospherics/proc/pipe_device_idle(datum/act/A)
-	return has_stat(NOPOWER) || !use_power
+	return power_lost() || !use_power
 
 /// Its gas lets it come off its pipes (can_unwrench(): the inside not too far above the room).
 /obj/machinery/atmospherics/proc/unwrench_safe(datum/act/A)

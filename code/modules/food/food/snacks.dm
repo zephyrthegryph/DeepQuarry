@@ -778,6 +778,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut/plain/jelly/cherryje
 
 // A crayon of the colours an egg takes colours it.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/egg)
+	every(2 SECONDS, then(PROC_REF(grow_step)), when = nameof(growing))
 	configure(reagents(add = list(REAGENT_ID_EGG = 3)))
 	op("colour", item(/obj/item/pen/crayon), priority(OP_PRIORITY_PART), label("Colour it"),
 		needs(req(PROC_REF(takes_colour), because = MSG(snack/egg_refuses))), then(PROC_REF(coloured)))

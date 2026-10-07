@@ -79,7 +79,7 @@
 	TEST_ASSERT(A.party, "the alarm button starts the party")
 	press(H, P, "reset")
 	TEST_ASSERT(!A.party, "the reset button ends it")
-	P.stat_add(NOPOWER)
+	P.set_grid_power(FALSE)
 	press(H, P, "tp", list("value" = 5))
 	TEST_ASSERT_EQUAL(P.time, 120, "a dead button takes no presses")
 
@@ -328,7 +328,8 @@
 	)
 	for(var/type in expected)
 		var/obj/machinery/M = allocate(type, tile(3, 2))
-		M.stat_remove(NOPOWER | BROKEN)
+		M.set_grid_power(TRUE)
+		M.set_broken_condition(FALSE)
 		TEST_ASSERT_EQUAL(hcs_window_keys(M, H), expected[type], "[type] sends the window data it always did")
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -777,7 +778,7 @@
 	var/obj/machinery/oxygen_pump/P = mach(/obj/machinery/oxygen_pump/anesthetic, tile(3, 2))
 	var/obj/item/tank/T = P.tank
 	TEST_ASSERT_NOTNULL(T, "the pump starts with a tank")
-	P.stat_add(MAINT)
+	P.set_maintenance(TRUE)
 	hci_click(H, P, null)
 	settle()
 	TEST_ASSERT_NULL(P.tank, "a bare hand takes the tank out in maintenance")

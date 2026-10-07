@@ -95,7 +95,7 @@
 
 /// The light switch has no power (the NOPOWER state its own power change keeps).
 /proc/p2l_switch_unpowered(obj/machinery/light_switch/S)
-	return !!S.has_stat(NOPOWER)
+	return !!S.power_lost()
 
 /// The area the switch works (its own area, or the one it is pointed at).
 /proc/p2l_switch_area(obj/machinery/light_switch/S)
@@ -341,7 +341,7 @@
 	TEST_ASSERT(!p2l_emergency(L), "a light that is switched off does not use its cell")
 	TEST_ASSERT_EQUAL(L.light_range, 0, "it gives no light")
 	set_area_switch(1)
-	TEST_ASSERT(L.on, "switched on again (status [L.status], last [L.last_area_power], has_power [L.has_power()], switch [p2l_area.lightswitch], light [p2l_area.power_light], req [p2l_area.requires_power], sc [L.switchcount], subs [length(p2l_area.power_machines)] [L in p2l_area.power_machines], NOPOWER [L.has_stat(NOPOWER)], flick [L.flickering])")
+	TEST_ASSERT(L.on, "switched on again (status [L.status], last [L.last_area_power], has_power [L.has_power()], switch [p2l_area.lightswitch], light [p2l_area.power_light], req [p2l_area.requires_power], sc [L.switchcount], subs [length(p2l_area.power_machines)] [L in p2l_area.power_machines], NOPOWER [L.power_lost()], flick [L.flickering])")
 	TEST_ASSERT_EQUAL(L.light_range, 6, "its light is back")
 
 /// Losing the light channel puts a fixture with a cell on its emergency power: dim, red, an eighth of the range.
@@ -433,16 +433,16 @@
 /datum/unit_test/dq_p2_lights/fixture_power_use_follows_its_state
 
 /datum/unit_test/dq_p2_lights/fixture_power_use_follows_its_state/run_gate()
-	var/before = p2l_area.static_light
+	var/before = dq_grid_demand(p2l_area, LIGHT)
 	var/obj/machinery/light/L = light()
-	TEST_ASSERT_EQUAL(p2l_area.static_light - before, 12, "an active tube is twelve watts of the area's light channel")
+	TEST_ASSERT_EQUAL(dq_grid_demand(p2l_area, LIGHT) - before, 12, "an active tube is twelve watts of the area's light channel")
 	set_area_switch(0)
-	TEST_ASSERT_EQUAL(p2l_area.static_light - before, 2, "a switched-off fixture draws its idle two watts")
+	TEST_ASSERT_EQUAL(dq_grid_demand(p2l_area, LIGHT) - before, 2, "a switched-off fixture draws its idle two watts")
 	set_area_switch(1)
-	TEST_ASSERT_EQUAL(p2l_area.static_light - before, 12, "back to active")
+	TEST_ASSERT_EQUAL(dq_grid_demand(p2l_area, LIGHT) - before, 12, "back to active")
 	qdel(L)
 	settle()
-	TEST_ASSERT_EQUAL(p2l_area.static_light - before, 0, "a deleted fixture draws nothing")
+	TEST_ASSERT_EQUAL(dq_grid_demand(p2l_area, LIGHT) - before, 0, "a deleted fixture draws nothing")
 
 // ---------------------------------------------------------------------------------------------------------------------
 // The emergency cell (live: the discharge and the recharge run on world.time)
@@ -1439,7 +1439,7 @@
 	click(H, C, F)
 	TEST_ASSERT(p2l_frame_cell(C) == E, "a second is refused (cell [p2l_frame_cell(C)] E loc [E.loc] F loc [F.loc])")
 	click(H, C, null)
-	TEST_ASSERT_NULL(p2l_frame_cell(C), "a hand takes it out (operable [C.operable()], stat [C.stat])")
+	TEST_ASSERT_NULL(p2l_frame_cell(C), "a hand takes it out (operable [C.operable()])")
 	TEST_ASSERT(H.get_active_hand() == E, "into the hand")
 
 // ---------------------------------------------------------------------------------------------------------------------

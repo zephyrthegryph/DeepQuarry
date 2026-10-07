@@ -23,7 +23,7 @@ CAPABILITIES(/obj/machinery/power/port_gen)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(gen_step)), when = PROC_REF(has_work))
 
 /obj/machinery/power/port_gen/proc/IsBroken()
-	return has_stat(BROKEN) || emp_disabled(src)
+	return broken_now() || emp_disabled(src)
 
 /obj/machinery/power/port_gen/proc/HasFuel() //Placeholder for fuel check.
 	return 1

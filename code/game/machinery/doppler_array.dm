@@ -44,7 +44,7 @@ CAPABILITIES(/obj/machinery/doppler_array)
 	var/light_impact_range = event.light_impact_range
 	var/seconds_taken = event.took
 
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
 
 	var/x0 = epicenter.x
@@ -74,7 +74,7 @@ CAPABILITIES(/obj/machinery/doppler_array)
 
 /obj/machinery/doppler_array/power_change()
 	. = ..()
-	if(!has_stat(NOPOWER))
+	if(!power_lost())
 		icon_state = initial(icon_state)
 	else
 		icon_state = "[initial(icon_state)]_off"

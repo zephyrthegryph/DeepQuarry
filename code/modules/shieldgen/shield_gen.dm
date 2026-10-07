@@ -115,7 +115,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 	return istext(answer) ? answer : /datum/msg/req_failed
 
 /obj/machinery/shield_gen/proc/shield_gen_not_broken(mob/actor, atom/target, obj/item/held)
-	return !has_stat(BROKEN)
+	return !broken_now()
 
 /obj/machinery/shield_gen/proc/interaction_open_ui_impl(datum/act/op/A)
 	var/mob/user = A.actor
@@ -123,7 +123,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 	return OP_OK
 
 /obj/machinery/shield_gen/tgui_status(mob/user)
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return STATUS_CLOSE
 	return ..()
 
@@ -193,7 +193,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 
 			for(var/obj/machinery/shield_capacitor/capacitor in active_capacitors)
 				capacitor.stored_charge -= max(assumed_charge / active_capacitors.len, 0) // Drain from all active capacitors evenly.
-				MACHINE_WAKE(capacitor)
+				work_start(capacitor)
 
 		else
 			renwick_upkeep_per_field = max(renwick_upkeep_per_field, 0.5)
@@ -287,7 +287,7 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 DECLARE_APPEARANCE_PROC(/obj/machinery/shield_gen, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/shield_gen/appearance_overlays()
 	. = list()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		icon_state = "broke"
 		set_light(0)
 		shield_hum.stop()

@@ -131,7 +131,7 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 
 /obj/machinery/ai_status_display/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		cut_overlays()
 	else
 		update()

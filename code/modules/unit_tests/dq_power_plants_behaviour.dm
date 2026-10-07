@@ -3,18 +3,15 @@
 // containment failure are round-ending, so every curve and threshold the plants run on is pinned here, green on the legacy machine_step() code
 // first, then kept green while each plant moves onto the final forms (every(), the power and heat domains).
 //
-// Rules: a plant's periodic work is run one step at a time through pp_step() (the adapter: the legacy machine_step(), or the converted step
+// Rules: a plant's periodic work is run one step at a time through pp_step() (the adapter: the converted step
 // proc the plant's every() runs), so a pin states what ONE step does from a known state; the cadence pins run real time (test_time) instead.
 // Numbers are recomputed in the test from the documented formula, independently of the code under test. Where a number changes on purpose,
 // doc/rewrite/intended_changes.md ("Power plants") records it and the pin is edited in the same commit.
 
-/// One step of a plant's periodic work: the converted step proc named `step` when the plant has it, else the legacy machine_step().
+/// One step of a plant's periodic work: the converted step proc named `step` when the plant has it, else its periodic_step().
 /proc/pp_step(datum/D, step)
 	if(step && hascall(D, step))
 		return call(D, step)(null)
-	var/obj/machinery/M = D
-	if(istype(M))
-		return M.machine_step()
 	return D.periodic_step()
 
 /// Locks or unlocks a machine's controls: its lock() capability's key, or the legacy `locked` var.
