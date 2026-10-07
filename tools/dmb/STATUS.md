@@ -6,6 +6,13 @@ The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
 
+Release probe 29 completed initializer classification (2.129 s) and codegen
+(0.338 s), then stopped after lowering all 64,964 bodies. The failure report has
+2,195 diagnostics, led by 1,758 unsupported `UniqueStaticVar` queries. External
+time was 26.657 s (24.379 s driver), sampled private memory 2,500,485,120 bytes.
+No pair was produced. Resolver admission, builtin inference, qualified `initial`
+and repeated-var parsing fixes are being gated against this broader failure set.
+
 Release probe 28 stopped during initializer classification at `basic.dm:3`:
 the token builder rejected string association keys in `new/list(...)` as ordinary
 named arguments. External time was 18.569 s (16.989 s driver), sampled private
@@ -16,6 +23,9 @@ each; diagnostic severity/wording still differs from DreamMaker.
 The actual CLI worker gate passed four tiny-fixture runs (workers 1 and 2 twice):
 identical 23,413-byte DMB, 42-byte RSC and pair identity. Times were 0.097–0.118 s.
 This certifies only that fixture, not complete-project determinism or timings.
+The [frozen power audit](phase0/POWER_RUNTIME_AUDIT.md) finds native raw bounds
+errors with missing source locations. Apparent reference-only per-test errors
+cannot establish runtime correctness while those unlocated errors remain.
 
 Release probe 27 passed initializer classification and cleared the modified-literal
 failure from probe 26. It stopped at `message_server.dm:301`, where a declaration
