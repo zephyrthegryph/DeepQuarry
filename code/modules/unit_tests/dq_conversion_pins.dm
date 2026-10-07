@@ -74,7 +74,12 @@
 			actual_by_type[type] = dq_pin_lines(changed, T, actors)
 			beside = changed.ChangeTurf(beside_type)
 			continue
-		var/atom/target = dq_snapshot_allocate(type, T)
+		var/atom/target = null
+		try
+			target = dq_snapshot_allocate(type, T)
+		catch(var/exception/made)
+			actual_by_type[type] = list("runtime while making it: [made.name]")
+			continue
 		if(QDELETED(target))
 			actual_by_type[type] = list("deleted itself on creation")
 			continue
