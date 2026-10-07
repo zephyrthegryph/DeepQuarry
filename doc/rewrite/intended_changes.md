@@ -2671,3 +2671,7 @@ Pinned by `code/modules/unit_tests/dq_timed_pin_behaviour.dm` (written and green
 * **Class: the refusal only the old handler wrote.** `whetstone` with fewer than five sheets said "You need 5 [whetstone] to refine it ..."; the binding is `stack(/obj/item/stack/material, 5)` now, so a short stack is not a candidate and the click falls through unanswered. Pin: `whetstone_short_of_sheets` keeps "starts nothing" and "spends nothing" and drops the message line.
 * **Class: a sound played when the action starts plays when it ends.** The bear trap's disarm clicked at the start; `plays()` is a commit-stage part.
 * **Class: a message that named the victims.** The bear trap's free-the-victim lines named them (`[victim]`); the template says "the one caught in %T%".
+
+## Timed actions as ops, W4 additions
+
+* **Class: the start message of a few ops names the actor and the item by template.** The fuel tank's detach line says "the device" where it named the rigged assembly, and the outcrop's line reads "%U% begins to hack away at %T%." (the legacy text named `[user]` and was sent to the actor only). Pins: `fueltank_rig_and_detach`, `outcrop_dig` check the verb phrase only.

@@ -33,18 +33,21 @@
 	anchored = TRUE
 	/// Set TRUE once a scanner logs its data; the survey objective polls this.
 	var/scanned = FALSE
+TRACKED(/obj/structure/expedition_survey_beacon, scanned)
+
+MSG_DEF(survey_beacon/logging, span_notice("You begin logging %T%'s readings with %I%..."), span_notice("%U% sweeps %I% across %T%."))
+MSG_DEF_SELF(survey_beacon/logged, span_warning("%T% has already been logged."))
 
 CAPABILITIES(/obj/structure/expedition_survey_beacon)
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
-	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("survey_scanner", item(/obj/item/survey_scanner), label("Use"), needs(req(PROC_REF(not_logged), because = MSG(survey_beacon/logged))),
+		begins(MSG(survey_beacon/logging)), wait(3 SECONDS), then(PROC_REF(log_readings_done)))
+	op("analyzer", item(/obj/item/analyzer), label("Use"), needs(req(PROC_REF(not_logged), because = MSG(survey_beacon/logged))),
+		begins(MSG(survey_beacon/logging)), wait(3 SECONDS), then(PROC_REF(log_readings_done)))
 
-/// Requirement: the marker hasn't been logged yet (only asked of scanners; other items fall through).
-/obj/structure/expedition_survey_beacon/proc/can_log(mob/user, atom/target, obj/item/held)
-	if(!istype(held, /obj/item/survey_scanner) && !istype(held, /obj/item/analyzer))
-		return TRUE
-	if(scanned)
-		return "[src] has already been logged"
-	return TRUE
+/// Requirement: the marker hasn't been logged yet.
+/obj/structure/expedition_survey_beacon/proc/not_logged(datum/act/op/A)
+	return !scanned
 
 /// Old attack_hand.
 /obj/structure/expedition_survey_beacon/proc/interaction_hand(datum/act/op/A)
@@ -53,27 +56,13 @@ CAPABILITIES(/obj/structure/expedition_survey_beacon)
 	return TRUE
 
 // Scanned with a survey scanner or any handheld analyzer.
-/// Old attackby.
-
-/obj/structure/expedition_survey_beacon/proc/interaction_item(datum/act/op/A)
-	var/refusal = can_log(A.actor, src, A.held)
-	if(refusal != TRUE)
-		if(istext(refusal))
-			to_chat(A.actor, span_warning(refusal))
-		return OP_DECLINE
+/obj/structure/expedition_survey_beacon/proc/log_readings_done(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	if(!istype(W, /obj/item/survey_scanner) && !istype(W, /obj/item/analyzer))
-		return OP_DECLINE
-	act_message(user, src, MSG_SELF(span_notice("You begin logging %T%'s readings with [W]...")), MSG_OTHERS(span_notice("%U% sweeps [W] across %T%.")))
-	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 0.6)
-	task_timed(user, 3 SECONDS, src, src, PROC_REF(log_readings_done), list(W, user))
-	return OP_PASS
-
-/obj/structure/expedition_survey_beacon/proc/log_readings_done(obj/item/W, mob/user)
 	if(scanned)
 		return
-	scanned = TRUE
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 0.6)
+	set_scanned(TRUE)
 	to_chat(user, span_notice("Survey data logged to [W]."))
 
 // Handheld survey scanner — exploration department gear (in the explorer kit;

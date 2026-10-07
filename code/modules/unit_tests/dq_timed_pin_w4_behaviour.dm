@@ -6,10 +6,10 @@
 	abstract_type = /datum/unit_test/dq_timed_pin_w4
 	parent_type = /datum/unit_test/dq_timed_pin
 
-/// A mob given a ckey in a test leaves an observer behind: remove it.
+/// A mob that still has a ckey when it is deleted leaves an observer behind: take the ckeys off.
 /datum/unit_test/dq_timed_pin_w4/proc/forget_ghosts()
-	for(var/mob/observer/dead/G in world)
-		qdel(G)
+	for(var/mob/living/carbon/human/H in range(3, run_loc_floor_bottom_left))
+		H.ckey = null
 
 // ---- Dumbbell: an item in hand, refused while too hungry ----
 
@@ -17,7 +17,7 @@
 
 /datum/unit_test/dq_timed_pin_w4/dumbbell_exercise/run_pin()
 	var/mob/living/carbon/human/user = person()
-	user.nutrition = 400
+	user.set_nutrition(400)
 	var/obj/item/entrepreneur/dumbbell/D = allocate(/obj/item/entrepreneur/dumbbell, run_loc_floor_bottom_left)
 	user.put_in_active_hand(D)
 	test_chat_clear()
@@ -35,7 +35,7 @@
 
 /datum/unit_test/dq_timed_pin_w4/dumbbell_cancel_on_move/run_pin()
 	var/mob/living/carbon/human/user = person()
-	user.nutrition = 400
+	user.set_nutrition(400)
 	var/obj/item/entrepreneur/dumbbell/D = allocate(/obj/item/entrepreneur/dumbbell, run_loc_floor_bottom_left)
 	user.put_in_active_hand(D)
 	test_click(user, D, D)
@@ -50,7 +50,7 @@
 
 /datum/unit_test/dq_timed_pin_w4/dumbbell_cancel_on_drop/run_pin()
 	var/mob/living/carbon/human/user = person()
-	user.nutrition = 400
+	user.set_nutrition(400)
 	var/obj/item/entrepreneur/dumbbell/D = allocate(/obj/item/entrepreneur/dumbbell, run_loc_floor_bottom_left)
 	user.put_in_active_hand(D)
 	test_click(user, D, D)
@@ -65,7 +65,7 @@
 
 /datum/unit_test/dq_timed_pin_w4/dumbbell_too_hungry/run_pin()
 	var/mob/living/carbon/human/user = person()
-	user.nutrition = 50
+	user.set_nutrition(50)
 	var/obj/item/entrepreneur/dumbbell/D = allocate(/obj/item/entrepreneur/dumbbell, run_loc_floor_bottom_left)
 	user.put_in_active_hand(D)
 	test_chat_clear()
