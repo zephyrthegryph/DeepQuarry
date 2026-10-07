@@ -1,0 +1,49 @@
+{
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "files": [
+    {
+      "sha256": "f06202a408fef9b9ea69bb6b1cb8160dbb0378c5bb67a444d510d231813824c8",
+      "path": ".gitattributes"
+    },
+    {
+      "sha256": "adb83950472a26e5942a7e0b01b675e9d8f6aec6a3ffa65ef623c3fe565f4cb4",
+      "path": "alist/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "alist/compile.stderr.log"
+    },
+    {
+      "sha256": "d0bc6adfd7b372cb7e0e40ddfaa9796ff907f749c46ede3efcf1f5d384ace83c",
+      "path": "alist/probe.dm"
+    },
+    {
+      "sha256": "d526d2155a298fca3a107bda960eb1d5787f0e9030b0a6d827ab15fb59decf7d",
+      "path": "alist/probe.dme"
+    },
+    {
+      "sha256": "2ee87601668fcaee7c350ccd6506932a786ee0779ba4e9d91d2142203ffa565f",
+      "path": "alist/probe.native.bin"
+    },
+    {
+      "sha256": "adb83950472a26e5942a7e0b01b675e9d8f6aec6a3ffa65ef623c3fe565f4cb4",
+      "path": "list/compile.log"
+    },
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "list/compile.stderr.log"
+    },
+    {
+      "sha256": "ee19acbf197797bb98ac5f80aaa1b884384de86e070033d144938cede5a480e4",
+      "path": "list/probe.dm"
+    },
+    {
+      "sha256": "d526d2155a298fca3a107bda960eb1d5787f0e9030b0a6d827ab15fb59decf7d",
+      "path": "list/probe.dme"
+    },
+    {
+      "sha256": "3c133235330ea7242a6cab03b5edbd97d25c07f4c8b3d80bb88a8c81d4ecef8d",
+      "path": "list/probe.native.bin"
+    }
+  ]
+}

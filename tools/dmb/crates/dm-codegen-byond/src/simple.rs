@@ -555,10 +555,12 @@ fn compile_with_lookup(
             for operand in &mut instruction.operands {
                 if let Word::Value(ValueWord::ClassPath { path, .. }) = operand {
                     let runtime_type = lookup.runtime_type(path).map_err(|error| vec![error])?;
-                    if path == "/list" && runtime_type == *path {
-                        seen.insert(path.clone());
-                        *operand = Word::Value(ValueWord::ListType);
-                        continue;
+                    if runtime_type == *path {
+                        if let Some(primitive) = crate::NativePrimitiveType::from_path(path) {
+                            seen.insert(path.clone());
+                            *operand = Word::Value(ValueWord::PrimitiveType(primitive));
+                            continue;
+                        }
                     }
                     if runtime_type != *path {
                         let alias = path.clone();

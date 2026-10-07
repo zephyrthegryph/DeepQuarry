@@ -13,6 +13,9 @@ memory 1,923,665,920 bytes. No pair was produced; this is failed-attempt latency
 The primitive list and previous modified-object gaps pass their focused cold gate.
 The fresh release rejects both native-invalid bare returns, with one diagnostic
 each; diagnostic severity/wording still differs from DreamMaker.
+The actual CLI worker gate passed four tiny-fixture runs (workers 1 and 2 twice):
+identical 23,413-byte DMB, 42-byte RSC and pair identity. Times were 0.097–0.118 s.
+This certifies only that fixture, not complete-project determinism or timings.
 
 Release probe 27 passed initializer classification and cleared the modified-literal
 failure from probe 26. It stopped at `message_server.dm:301`, where a declaration

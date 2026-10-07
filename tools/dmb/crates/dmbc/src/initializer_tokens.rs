@@ -136,7 +136,20 @@ fn new_key(
 ) -> Result<(), KeyError> {
     output.push(2);
     output.extend_from_slice(&path.bits().to_le_bytes());
-    arguments(args, false, source, write, symbols, evaluator, output)
+    // Native builtin container constructors accept association keys as values,
+    // not only ordinary constructor parameter names. Their family remains New:
+    // new/list(3) is a length allocation, unlike the one-item literal list(3).
+    let associations =
+        path == dm_ir::SymbolId::of("/list") || path == dm_ir::SymbolId::of("/alist");
+    arguments(
+        args,
+        associations,
+        source,
+        write,
+        symbols,
+        evaluator,
+        output,
+    )
 }
 fn construction(
     expression: &Expr,
@@ -210,6 +223,10 @@ fn construction(
                     output.push(1);
                     arguments(args, true, source, write, symbols, evaluator, output)?;
                 }
+                "alist" => {
+                    output.push(4);
+                    arguments(args, true, source, write, symbols, evaluator, output)?;
+                }
                 "newlist" => {
                     output.push(1);
                     output.extend_from_slice(&(args.len() as u64).to_le_bytes());
@@ -247,7 +264,9 @@ mod tests {
         fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
             match query {
                 dm_ir::ResolveQuery::Type(id)
-                    if id == dm_ir::SymbolId::of("/datum/token_target") =>
+                    if ["/datum/token_target", "/list", "/alist"]
+                        .iter()
+                        .any(|path| id == dm_ir::SymbolId::of(path)) =>
                 {
                     dm_ir::ResolvedMeaning::Symbol(id)
                 }
@@ -489,6 +508,45 @@ mod tests {
             result.writes[0].phase,
             Some(crate::initializer_policy::Phase::Runtime)
         );
+    }
+    #[test]
+    fn native_container_constructor_associations_preserve_family_identity() {
+        for (family, bytes) in [
+            ("list", include_bytes!("../../../fixtures/phase1/native_container_constructor_tokens/list/probe.native.bin").as_slice()),
+            ("alist", include_bytes!("../../../fixtures/phase1/native_container_constructor_tokens/alist/probe.native.bin").as_slice()),
+        ] {
+            let native = byond_dmb::dmb::Dmb::from_bytes(bytes).unwrap();
+            let names = ["assoc_a", "assoc_b", "literal", "length", "element"];
+            let expressions = [
+                format!("new/{family}(\"donor\"=null,\"antibodies\"=list())"),
+                format!("new/{family}(donor=null,\"antibodies\"=list())"),
+                format!("{family}(\"donor\"=null,\"antibodies\"=list())"),
+                format!("new/{family}(3)"),
+                format!("{family}(3)"),
+            ];
+            let mut symbols = SymbolTable::default();
+            symbols.intern(&format!("/{family}")).unwrap();
+            let writes: Vec<_> = expressions.iter().map(|source| InitializerWrite {
+                target: dm_ir::InitializerTarget::Shared { slot: dm_ir::SymbolId::of("slot"), owner: dm_ir::SymbolId::of("/"), name: dm_ir::SymbolId::of("value") },
+                lexical_owner: dm_ir::SymbolId::of("/"), lexical_procedure: None,
+                value: dm_ir::InitializerValue::Expression(expression(source, &mut symbols)),
+                declared_array: None, declaration_flags: Some(8),
+            }).collect();
+            let evaluator = crate::driver_facts::DriverEvaluator { pure_calls: None, resource_search_context: None, resolver: &Host, symbols: &symbols };
+            let mut tokens = Tokens::new(false);
+            let ids: Vec<_> = writes.iter().zip(&expressions).map(|(write,source)| {
+                let parsed=dm_syntax::parse_expression(source);
+                tokens.issue(construction_key(parsed.expr.as_ref().unwrap(),source,write,&symbols,&evaluator).unwrap().unwrap()).unwrap().0
+            }).collect();
+            let native_ids: Vec<_> = names.iter().map(|name| {
+                let record=native.variables.iter().find(|record| native.string(record.name)==Some(name.as_bytes())).unwrap();
+                assert_eq!(record.kind,62);
+                record.value
+            }).collect();
+            for left in 0..names.len() { for right in 0..names.len() {
+                assert_eq!(ids[left]==ids[right],native_ids[left]==native_ids[right],"{family}: {} / {}",names[left],names[right]);
+            }}
+        }
     }
     #[test]
     fn token_partition_obeys_final_debug_presence() {

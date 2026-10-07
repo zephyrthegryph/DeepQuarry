@@ -235,7 +235,9 @@ fn encode_internal(
                         words.extend([12 | ((id >> 16) << 8), id & 0xffff]);
                     }
                     Word::Value(ValueWord::FileType) => words.extend([39, 0]),
-                    Word::Value(ValueWord::ListType) => words.extend([40, 0]),
+                    Word::Value(ValueWord::PrimitiveType(kind)) => {
+                        words.extend([u32::from(kind.tag()), 0])
+                    }
                     Word::Value(ValueWord::ClassPath { path, tag }) => {
                         let symbol = Symbol::new(Table::Class, path);
                         let id = resolve(&symbol)?;
@@ -454,7 +456,9 @@ mod tests {
             items: vec![
                 Item::Instruction(Instruction {
                     opcode: 0x60,
-                    operands: vec![Word::Value(ValueWord::ListType)],
+                    operands: vec![Word::Value(ValueWord::PrimitiveType(
+                        crate::NativePrimitiveType::List,
+                    ))],
                 }),
                 Item::Instruction(Instruction {
                     opcode: 1,
@@ -472,6 +476,35 @@ mod tests {
         .unwrap();
         assert_eq!(encoded.linked.words, [0x60, 40, 0, 1, 0, 0]);
         assert!(encoded.sites.is_empty());
+    }
+    #[test]
+    fn savefile_primitive_has_zero_payload_without_type_relocation() {
+        let proc = SymbolicProc {
+            items: vec![
+                Item::Instruction(Instruction {
+                    opcode: 0x60,
+                    operands: vec![Word::Value(ValueWord::PrimitiveType(
+                        crate::NativePrimitiveType::Savefile,
+                    ))],
+                }),
+                Item::Instruction(Instruction {
+                    opcode: 1,
+                    operands: vec![Word::Immediate(0)],
+                }),
+                Item::Instruction(Instruction {
+                    opcode: 0,
+                    operands: vec![],
+                }),
+            ],
+        };
+        let encoded = encode(&proc, &mut |_| {
+            panic!("primitive must not require an output table binding")
+        })
+        .unwrap();
+        assert_eq!(encoded.linked.words, [0x60, 36, 0, 1, 0, 0]);
+        assert!(encoded.sites.is_empty());
+        assert_eq!(crate::NativePrimitiveType::from_path("/alist"), None);
+        assert_eq!(crate::NativePrimitiveType::from_path("/world"), None);
     }
     #[test]
     fn packed_and_nested_operands_match_existing_linked_abi() {

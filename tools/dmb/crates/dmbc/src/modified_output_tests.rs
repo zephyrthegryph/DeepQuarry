@@ -11,6 +11,7 @@ impl dm_preprocess::SourceProvider for Source {
             "    var/static/shared = 0\n    var/const/fixed = 0\n",
             "/datum/modifier_holder\n",
             "    var/list/datum/modifier_base/typed_items = new()\n",
+            "    var/savefile/archive = new()\n    var/archive_type = /savefile\n",
             "    var/preset = /datum/modifier_base{accessories=list(/obj/wcoat);amount=1;shared=2;fixed=3}\n",
             "/proc/modified_first()\n",
             "    return (/datum/modifier_base{fixed=3;shared=2;amount=1;accessories=list(/obj/wcoat)})\n",
@@ -126,6 +127,29 @@ fn actual_cold_modified_descriptors_keep_type_dedup_and_src_override_writes() {
             .iter()
             .any(|instruction| instruction.name == "PushVal" && instruction.operands == [40, 0]),
         "implicit constructor must use the native list primitive operand"
+    );
+    assert!(
+        !image
+            .classes
+            .iter()
+            .any(|class| image.string(class.path_string_id()) == Some(b"/savefile")),
+        "native savefile primitive has no class table row"
+    );
+    assert!(
+        constructor
+            .iter()
+            .any(|instruction| instruction.name == "PushVal" && instruction.operands == [36, 0]),
+        "savefile constructor must use the native primitive operand"
+    );
+    let archive_type = image
+        .variables
+        .iter()
+        .find(|variable| image.string(variable.name) == Some(b"archive_type"))
+        .unwrap();
+    assert_eq!(
+        (archive_type.kind, archive_type.value),
+        (36, 0),
+        "stored primitive type values also retain zero payload"
     );
     let original = image
         .classes

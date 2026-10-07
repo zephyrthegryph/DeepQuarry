@@ -802,8 +802,11 @@ pub fn materialize_members(
             )),
             SemanticValue::Type(path) => {
                 let tag = types.tag(*path)?;
-                if *path == SymbolId::of("/list") && tag == 40 {
-                    return Ok((40, 0));
+                if let Some(primitive) = dm_codegen_byond::NativePrimitiveType::from_symbol(*path) {
+                    if tag != primitive.tag() {
+                        return Err(ProjectionError::Unsupported("primitive family policy disagrees with captured native tag".into()));
+                    }
+                    return Ok((tag, 0));
                 }
                 let index = if tag == 8 {
                     types.mob_index(*path)?
