@@ -49,7 +49,7 @@ TYPE_TABLE_DECLARE(/obj/item/clothing/mask/gas, gasmask_filtered_gases, list(GAS
 
 //Turn it into a hailer mask
 CAPABILITIES(/obj/item/clothing/mask/gas/half)
-	op("half_mask_add_hailer_item", item(/obj/item), label("Half mask add hailer item"), needs(req(PROC_REF(can_fit_hailer_holds), because = PROC_REF(can_fit_hailer_refusal))), then(PROC_REF(half_mask_add_hailer_item)))
+	op("half_mask_add_hailer_item", item(/obj/item), label("Half mask add hailer item"), then(PROC_REF(half_mask_add_hailer_item)))
 
 /// Both ingredients must be releasable before fitting a hailer changes either one.
 /obj/item/clothing/mask/gas/half/proc/can_fit_hailer(mob/user, atom/target, obj/item/held)
@@ -64,17 +64,13 @@ CAPABILITIES(/obj/item/clothing/mask/gas/half)
 	return TRUE
 
 /// Fit a hailer, retaining the original mask's slot and forensic evidence.
-/// Requirement (was REQ_* can_fit_hailer): the legacy check answers TRUE to pass.
-/obj/item/clothing/mask/gas/half/proc/can_fit_hailer_holds(datum/act/op/A)
-	var/answer = can_fit_hailer(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_fit_hailer_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/clothing/mask/gas/half/proc/can_fit_hailer_refusal(datum/act/op/A)
-	var/answer = can_fit_hailer(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
 
 /obj/item/clothing/mask/gas/half/proc/half_mask_add_hailer_item(datum/act/op/A)
+	var/refusal = can_fit_hailer(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
 	if(istype(I, /obj/item/hailer))

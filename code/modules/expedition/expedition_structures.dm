@@ -36,7 +36,7 @@
 
 CAPABILITIES(/obj/structure/expedition_survey_beacon)
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
-	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(can_log_holds), because = PROC_REF(can_log_refusal))), then(PROC_REF(interaction_item)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Requirement: the marker hasn't been logged yet (only asked of scanners; other items fall through).
 /obj/structure/expedition_survey_beacon/proc/can_log(mob/user, atom/target, obj/item/held)
@@ -54,17 +54,13 @@ CAPABILITIES(/obj/structure/expedition_survey_beacon)
 
 // Scanned with a survey scanner or any handheld analyzer.
 /// Old attackby.
-/// Requirement (was REQ_* can_log): the legacy check answers TRUE to pass.
-/obj/structure/expedition_survey_beacon/proc/can_log_holds(datum/act/op/A)
-	var/answer = can_log(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_log_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/structure/expedition_survey_beacon/proc/can_log_refusal(datum/act/op/A)
-	var/answer = can_log(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
 
 /obj/structure/expedition_survey_beacon/proc/interaction_item(datum/act/op/A)
+	var/refusal = can_log(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	if(!istype(W, /obj/item/survey_scanner) && !istype(W, /obj/item/analyzer))

@@ -47,7 +47,7 @@ CAPABILITIES(/obj/structure/casino_table/roulette_table)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
 	op("hand", hand(), ungated(), label("Spin"), needs(req(PROC_REF(can_spin_holds), because = PROC_REF(can_spin_refusal))), then(PROC_REF(interaction_hand)))
 	op("insert_ball", item(/obj/item/roulette_ball), label("Insert a roulette ball"), then(PROC_REF(interaction_insert_ball)))
-	op("roulette_table_remove_ball_effect", menu(), label("Remove Roulette Ball"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_remove_ball_holds), because = PROC_REF(can_remove_ball_refusal))), then(PROC_REF(roulette_table_remove_ball_effect)))
+	op("roulette_table_remove_ball_effect", menu(), label("Remove Roulette Ball"), needs(req_adjacent(), req_capable()), then(PROC_REF(roulette_table_remove_ball_effect)))
 
 /obj/structure/casino_table/roulette_table/examine(mob/user)
 	.=..()
@@ -123,17 +123,12 @@ CAPABILITIES(/obj/structure/casino_table/roulette_table)
 	to_chat(user, span_notice("You insert [W] into [src]."))
 	return OP_PASS
 
-/// Requirement (was REQ_* can_remove_ball): the legacy check answers TRUE to pass.
-/obj/structure/casino_table/roulette_table/proc/can_remove_ball_holds(datum/act/op/A)
-	var/answer = can_remove_ball(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_remove_ball_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/structure/casino_table/roulette_table/proc/can_remove_ball_refusal(datum/act/op/A)
-	var/answer = can_remove_ball(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/structure/casino_table/roulette_table/proc/roulette_table_remove_ball_effect(datum/act/op/A)
+	var/refusal = can_remove_ball(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	var/mob/user = A.actor
 
 	if(!user || !isturf(user.loc))

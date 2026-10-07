@@ -30,16 +30,6 @@
 		return OP_DECLINE
 	return OP_PASS
 
-/// Requirement (was REQ_* can_remove_extra): the legacy check answers TRUE to pass.
-/obj/item/reagent_containers/food/drinks/glass2/proc/can_remove_extra_holds(datum/act/op/A)
-	var/answer = can_remove_extra(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_remove_extra_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/reagent_containers/food/drinks/glass2/proc/can_remove_extra_refusal(datum/act/op/A)
-	var/answer = can_remove_extra(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /// Requirement: something on the glass to remove (only asked while the glass is in the other hand; otherwise the effect falls through).
 /obj/item/reagent_containers/food/drinks/glass2/proc/can_remove_extra(mob/user, atom/target, obj/item/held)
 	if(src != user.get_inactive_hand())
@@ -50,6 +40,11 @@
 
 /// Old attack_hand.
 /obj/item/reagent_containers/food/drinks/glass2/proc/interaction_hand(datum/act/op/A)
+	var/refusal = can_remove_extra(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	var/mob/user = A.actor
 	if(src != user.get_inactive_hand())
 		return OP_DECLINE

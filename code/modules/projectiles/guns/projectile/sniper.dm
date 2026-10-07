@@ -69,20 +69,15 @@
 	perform_scope_interaction(user, PROC_REF(heavysniper_verb_scope))
 
 CAPABILITIES(/obj/item/gun/projectile/heavysniper)
-	op("heavysniper_verb_scope", menu(), label("Use Scope"), needs(carried(), req(PROC_REF(zoom_view_allowed_holds), because = PROC_REF(zoom_view_allowed_refusal))), then(PROC_REF(heavysniper_verb_scope_op)))
-
-/// Requirement (was REQ_* zoom_view_allowed): the legacy check answers TRUE to pass.
-/obj/item/gun/projectile/heavysniper/proc/zoom_view_allowed_holds(datum/act/op/A)
-	var/answer = zoom_view_allowed(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why zoom_view_allowed_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/gun/projectile/heavysniper/proc/zoom_view_allowed_refusal(datum/act/op/A)
-	var/answer = zoom_view_allowed(A.actor, src, A.held)
-	return istext(answer) ? answer : "You are too distracted to do that."
+	op("heavysniper_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(heavysniper_verb_scope_op)))
 
 /// The heavysniper_verb_scope op: the verb's effect, as the old resolver ran it.
 /obj/item/gun/projectile/heavysniper/proc/heavysniper_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	heavysniper_verb_scope(A.actor, A.held, null)
 	return OP_OK
 
@@ -120,20 +115,15 @@ CAPABILITIES(/obj/item/gun/projectile/heavysniper)
 	perform_scope_interaction(user, PROC_REF(svd_verb_scope))
 
 CAPABILITIES(/obj/item/gun/projectile/SVD)
-	op("svd_verb_scope", menu(), label("Use Scope"), needs(carried(), req(PROC_REF(zoom_view_allowed_holds), because = PROC_REF(zoom_view_allowed_refusal))), then(PROC_REF(svd_verb_scope_op)))
-
-/// Requirement (was REQ_* zoom_view_allowed): the legacy check answers TRUE to pass.
-/obj/item/gun/projectile/SVD/proc/zoom_view_allowed_holds(datum/act/op/A)
-	var/answer = zoom_view_allowed(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why zoom_view_allowed_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/gun/projectile/SVD/proc/zoom_view_allowed_refusal(datum/act/op/A)
-	var/answer = zoom_view_allowed(A.actor, src, A.held)
-	return istext(answer) ? answer : "You are too distracted to do that."
+	op("svd_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(svd_verb_scope_op)))
 
 /// The svd_verb_scope op: the verb's effect, as the old resolver ran it.
 /obj/item/gun/projectile/SVD/proc/svd_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	svd_verb_scope(A.actor, A.held, null)
 	return OP_OK
 

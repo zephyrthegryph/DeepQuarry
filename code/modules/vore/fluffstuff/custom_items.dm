@@ -1271,7 +1271,7 @@ TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join
 TYPE_TABLE(/obj/item/rig/nikki, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
 
 CAPABILITIES(/obj/item/rig/nikki)
-	op("nikki_rig_module_item", item(/obj/item/rig_module), label("Install module"), needs(req(PROC_REF(accepts_module_holds), because = PROC_REF(accepts_module_refusal))), then(PROC_REF(nikki_rig_module_item)))
+	op("nikki_rig_module_item", item(/obj/item/rig_module), label("Install module"), then(PROC_REF(nikki_rig_module_item)))
 
 /// Requirement: with the panel open, only mounted size guns go in.
 /obj/item/rig/nikki/proc/accepts_module(mob/user, atom/target, obj/item/held)
@@ -1280,17 +1280,13 @@ CAPABILITIES(/obj/item/rig/nikki)
 	return TRUE
 
 /// Old attackby: this thing accepts ONLY mounted sizeguns (the requirement). Accepted modules fall through to the rig's own install.
-/// Requirement (was REQ_* accepts_module): the legacy check answers TRUE to pass.
-/obj/item/rig/nikki/proc/accepts_module_holds(datum/act/op/A)
-	var/answer = accepts_module(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why accepts_module_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/rig/nikki/proc/accepts_module_refusal(datum/act/op/A)
-	var/answer = accepts_module(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
 
 /obj/item/rig/nikki/proc/nikki_rig_module_item(datum/act/op/A)
+	var/refusal = accepts_module(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	return OP_DECLINE
 
 TYPE_TABLE(/obj/item/rig/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/rig/nikki/proc/owner_fit, "the necklace never quite gets past your head"))))

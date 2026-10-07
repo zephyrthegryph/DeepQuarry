@@ -146,5 +146,5 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2, TYPE_PR
 // A glass is splashed in combat mode, and is not fed to anyone then.
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2)
 	configure(reagent_container(splash = TRUE, ingest_hostile = FALSE))
-	op("hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_remove_extra_holds), because = PROC_REF(can_remove_extra_refusal))), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_hand)))
 	op("glass2_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Glass2 item"), then(PROC_REF(glass2_item)))

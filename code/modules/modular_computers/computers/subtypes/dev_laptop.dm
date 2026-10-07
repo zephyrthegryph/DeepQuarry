@@ -17,7 +17,7 @@
 	var/icon_state_closed = "laptop-closed"
 
 CAPABILITIES(/obj/item/modular_computer/laptop)
-	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), needs(req(PROC_REF(can_fold_holds), because = PROC_REF(can_fold_refusal))), then(PROC_REF(interaction_alt)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 
 /// Requirement: laptops open only on a stable surface (a table, unless already open), so open laptops aren't carried in hand
 /// and tablets keep their mobility advantage.
@@ -29,17 +29,13 @@ CAPABILITIES(/obj/item/modular_computer/laptop)
 	return "you will need a better supporting surface before opening it"
 
 /// Old click_alt.
-/// Requirement (was REQ_* can_fold): the legacy check answers TRUE to pass.
-/obj/item/modular_computer/laptop/proc/can_fold_holds(datum/act/op/A)
-	var/answer = can_fold(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_fold_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/modular_computer/laptop/proc/can_fold_refusal(datum/act/op/A)
-	var/answer = can_fold(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
 
 /obj/item/modular_computer/laptop/proc/interaction_alt(datum/act/op/A)
+	var/refusal = can_fold(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	var/mob/living/carbon/user = A.actor
 	// We need to be close to it to open it
 	if((!in_range(src, user)) || user.stat || user.restrained())

@@ -14,19 +14,9 @@
 
 CAPABILITIES(/obj/item/clothing/accessory/locket)
 	op("locket_flip_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Flip open"), then(PROC_REF(locket_flip_self)))
-	op("locket_insert_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Locket insert item"), needs(req_is(nameof(open), TRUE, because = MSG(locket/no_open)), req(PROC_REF(can_insert_keepsake_holds), because = PROC_REF(can_insert_keepsake_refusal))), then(PROC_REF(locket_insert_item)))
+	op("locket_insert_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Locket insert item"), needs(req_is(nameof(open), TRUE, because = MSG(locket/no_open))), then(PROC_REF(locket_insert_item)))
 
 MSG_DEF_SELF(locket/no_open, "you have to open it first")
-
-/// Requirement (was REQ_* can_insert_keepsake): the legacy check answers TRUE to pass.
-/obj/item/clothing/accessory/locket/proc/can_insert_keepsake_holds(datum/act/op/A)
-	var/answer = can_insert_keepsake(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_insert_keepsake_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/clothing/accessory/locket/proc/can_insert_keepsake_refusal(datum/act/op/A)
-	var/answer = can_insert_keepsake(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
 
 /// Old attack_self: flip the locket open or closed.
 /obj/item/clothing/accessory/locket/proc/locket_flip_self(datum/act/op/A)
@@ -62,6 +52,11 @@ MSG_DEF_SELF(locket/no_open, "you have to open it first")
 
 /// Old attackby: slip a paper or photo inside.
 /obj/item/clothing/accessory/locket/proc/locket_insert_item(datum/act/op/A)
+	var/refusal = can_insert_keepsake(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
 	if(istype(O,/obj/item/paper) || istype(O, /obj/item/photo))

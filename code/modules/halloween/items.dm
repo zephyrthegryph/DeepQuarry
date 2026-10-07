@@ -82,7 +82,7 @@ TYPE_TABLE_DECLARE(/obj/structure/candybowl, candy_choices, list( \
 	))
 
 CAPABILITIES(/obj/structure/candybowl)
-	op("hand", hand(), ungated(), label("Use"), needs(req(PROC_REF(can_search_holds), because = PROC_REF(can_search_refusal))), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Requirement: TRUE, or why the bowl can't be searched.
@@ -94,17 +94,13 @@ CAPABILITIES(/obj/structure/candybowl)
 	return TRUE
 
 /// Old attack_hand.
-/// Requirement (was REQ_* can_search): the legacy check answers TRUE to pass.
-/obj/structure/candybowl/proc/can_search_holds(datum/act/op/A)
-	var/answer = can_search(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_search_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/structure/candybowl/proc/can_search_refusal(datum/act/op/A)
-	var/answer = can_search(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
 
 /obj/structure/candybowl/proc/interaction_hand(datum/act/op/A)
+	var/refusal = can_search(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	var/mob/user = A.actor
 
 	task_timed(user, 5 SECONDS, src, src, PROC_REF(search_done), list(user), claims = TRUE)

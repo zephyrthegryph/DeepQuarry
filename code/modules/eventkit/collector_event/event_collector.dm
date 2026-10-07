@@ -55,7 +55,7 @@ TRACKED(/obj/structure/event_collector, current_step)
 TRACKED(/obj/structure/event_collector, awaiting_next_recipe)
 CAPABILITIES(/obj/structure/event_collector)
 	every(2 SECONDS, then(PROC_REF(event_collector_step)), when = nameof(awaiting_next_recipe))
-	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_take_item_holds), because = PROC_REF(can_take_item_refusal))), then(PROC_REF(interaction_item)))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 
 //list of items that can make up a recipe.
 TYPE_TABLE_DECLARE(/obj/structure/event_collector, event_collector_ingredients, list( \
@@ -186,13 +186,13 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 	var/answer = can_take_item(A.actor, src, A.held)
 	return !istext(answer) && !!answer
 
-/// Why can_take_item_holds refuses: the check's own text.
-/obj/structure/event_collector/proc/can_take_item_refusal(datum/act/op/A)
-	var/answer = can_take_item(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /// Old attackby.
 /obj/structure/event_collector/proc/interaction_item(datum/act/op/A)
+	var/refusal = can_take_item(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
 	if(active_recipe.len > 0) //do we have something active at all

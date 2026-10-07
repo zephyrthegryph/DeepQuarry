@@ -44,7 +44,7 @@
 		move_trader()
 
 CAPABILITIES(/obj/trader)
-	op("trader_hand", hand(), label("Trade"), needs(req(PROC_REF(can_trade_holds), because = PROC_REF(can_trade_refusal))), then(PROC_REF(interaction_trader_hand)))
+	op("trader_hand", hand(), label("Trade"), then(PROC_REF(interaction_trader_hand)))
 	op("trader_item", item(/obj/item), label("Interaction trader item"), then(PROC_REF(interaction_trader_item)))
 
 /// Requirement: TRUE, or why no trade can start.
@@ -56,17 +56,13 @@ CAPABILITIES(/obj/trader)
 	return TRUE
 
 /// Old attack_hand: start a trade with one customer at a time.
-/// Requirement (was REQ_* can_trade): the legacy check answers TRUE to pass.
-/obj/trader/proc/can_trade_holds(datum/act/op/A)
-	var/answer = can_trade(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_trade_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/trader/proc/can_trade_refusal(datum/act/op/A)
-	var/answer = can_trade(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
 
 /obj/trader/proc/interaction_trader_hand(datum/act/op/A)
+	var/refusal = can_trade(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	var/mob/living/user = A.actor
 	trading = TRUE
 	switch(accepts)

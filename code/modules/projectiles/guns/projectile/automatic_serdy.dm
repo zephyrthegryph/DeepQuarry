@@ -217,20 +217,15 @@
 	perform_scope_interaction(user, PROC_REF(serdy_hunter_verb_scope))
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hunter)
-	op("serdy_hunter_verb_scope", menu(), label("Use Scope"), needs(carried(), req(PROC_REF(zoom_view_allowed_holds), because = PROC_REF(zoom_view_allowed_refusal))), then(PROC_REF(serdy_hunter_verb_scope_op)))
-
-/// Requirement (was REQ_* zoom_view_allowed): the legacy check answers TRUE to pass.
-/obj/item/gun/projectile/automatic/serdy/hunter/proc/zoom_view_allowed_holds(datum/act/op/A)
-	var/answer = zoom_view_allowed(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why zoom_view_allowed_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/gun/projectile/automatic/serdy/hunter/proc/zoom_view_allowed_refusal(datum/act/op/A)
-	var/answer = zoom_view_allowed(A.actor, src, A.held)
-	return istext(answer) ? answer : "You are too distracted to do that."
+	op("serdy_hunter_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_hunter_verb_scope_op)))
 
 /// The serdy_hunter_verb_scope op: the verb's effect, as the old resolver ran it.
 /obj/item/gun/projectile/automatic/serdy/hunter/proc/serdy_hunter_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	serdy_hunter_verb_scope(A.actor, A.held, null)
 	return OP_OK
 
@@ -477,20 +472,15 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hunter)
 	perform_scope_interaction(user, PROC_REF(serdy_mosin_verb_scope))
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/mosin/scoped)
-	op("serdy_mosin_verb_scope", menu(), label("Use Scope"), needs(carried(), req(PROC_REF(zoom_view_allowed_holds), because = PROC_REF(zoom_view_allowed_refusal))), then(PROC_REF(serdy_mosin_verb_scope_op)))
-
-/// Requirement (was REQ_* zoom_view_allowed): the legacy check answers TRUE to pass.
-/obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/zoom_view_allowed_holds(datum/act/op/A)
-	var/answer = zoom_view_allowed(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why zoom_view_allowed_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/zoom_view_allowed_refusal(datum/act/op/A)
-	var/answer = zoom_view_allowed(A.actor, src, A.held)
-	return istext(answer) ? answer : "You are too distracted to do that."
+	op("serdy_mosin_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_mosin_verb_scope_op)))
 
 /// The serdy_mosin_verb_scope op: the verb's effect, as the old resolver ran it.
 /obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/serdy_mosin_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	serdy_mosin_verb_scope(A.actor, A.held, null)
 	return OP_OK
 
@@ -559,20 +549,15 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/mosin/scoped)
 	perform_scope_interaction(user, PROC_REF(serdy_awp_verb_scope))
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/awp)
-	op("serdy_awp_verb_scope", menu(), label("Use Scope"), needs(carried(), req(PROC_REF(zoom_view_allowed_holds), because = PROC_REF(zoom_view_allowed_refusal))), then(PROC_REF(serdy_awp_verb_scope_op)))
-
-/// Requirement (was REQ_* zoom_view_allowed): the legacy check answers TRUE to pass.
-/obj/item/gun/projectile/automatic/serdy/awp/proc/zoom_view_allowed_holds(datum/act/op/A)
-	var/answer = zoom_view_allowed(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why zoom_view_allowed_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/gun/projectile/automatic/serdy/awp/proc/zoom_view_allowed_refusal(datum/act/op/A)
-	var/answer = zoom_view_allowed(A.actor, src, A.held)
-	return istext(answer) ? answer : "You are too distracted to do that."
+	op("serdy_awp_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_awp_verb_scope_op)))
 
 /// The serdy_awp_verb_scope op: the verb's effect, as the old resolver ran it.
 /obj/item/gun/projectile/automatic/serdy/awp/proc/serdy_awp_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	serdy_awp_verb_scope(A.actor, A.held, null)
 	return OP_OK
 
@@ -611,20 +596,15 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/awp)
 	perform_scope_interaction(user, PROC_REF(serdy_hectate_verb_scope))
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hectate)
-	op("serdy_hectate_verb_scope", menu(), label("Use Scope"), needs(carried(), req(PROC_REF(zoom_view_allowed_holds), because = PROC_REF(zoom_view_allowed_refusal))), then(PROC_REF(serdy_hectate_verb_scope_op)))
-
-/// Requirement (was REQ_* zoom_view_allowed): the legacy check answers TRUE to pass.
-/obj/item/gun/projectile/automatic/serdy/hectate/proc/zoom_view_allowed_holds(datum/act/op/A)
-	var/answer = zoom_view_allowed(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why zoom_view_allowed_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/gun/projectile/automatic/serdy/hectate/proc/zoom_view_allowed_refusal(datum/act/op/A)
-	var/answer = zoom_view_allowed(A.actor, src, A.held)
-	return istext(answer) ? answer : "You are too distracted to do that."
+	op("serdy_hectate_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_hectate_verb_scope_op)))
 
 /// The serdy_hectate_verb_scope op: the verb's effect, as the old resolver ran it.
 /obj/item/gun/projectile/automatic/serdy/hectate/proc/serdy_hectate_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	serdy_hectate_verb_scope(A.actor, A.held, null)
 	return OP_OK
 

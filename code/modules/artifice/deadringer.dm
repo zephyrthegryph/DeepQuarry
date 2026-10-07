@@ -19,7 +19,7 @@ TRACKED(/obj/item/deadringer, timer)
 /// Armed or cooling down: periodic_step() runs (its every()).
 CAPABILITIES(/obj/item/deadringer)
 	every(2 SECONDS, then(PROC_REF(deadringer_step)), when = cond_any(nameof(activated), nameof(timer)))
-	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_use_ringer_holds), because = PROC_REF(can_use_ringer_refusal))), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /obj/item/deadringer/proc/ringer_busy()
 	return activated || timer
@@ -44,17 +44,13 @@ CAPABILITIES(/obj/item/deadringer)
 	return TRUE
 
 /// Old attack_self.
-/// Requirement (was REQ_* can_use_ringer): the legacy check answers TRUE to pass.
-/obj/item/deadringer/proc/can_use_ringer_holds(datum/act/op/A)
-	var/answer = can_use_ringer(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_use_ringer_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/deadringer/proc/can_use_ringer_refusal(datum/act/op/A)
-	var/answer = can_use_ringer(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
 
 /obj/item/deadringer/proc/interaction_self(datum/act/op/A)
+	var/refusal = can_use_ringer(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	var/mob/living/H = src.loc
 	if(!activated)
 		if(timer == 0)

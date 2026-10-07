@@ -415,17 +415,7 @@ CAPABILITIES(/obj/structure/material_anvil)
 
 CAPABILITIES(/obj/structure/bed/bath/material_treatment)
 	configure(reagents(volume = 200))
-	op("material_treatment_interaction_item", item(/obj/item/stack/material/processed_alloy), priority(OP_PRIORITY_DEFAULT - 1), label("Treat alloy"), needs(req(PROC_REF(has_medium_holds), because = PROC_REF(has_medium_refusal))), then(PROC_REF(material_treatment_interaction_item)))
-
-/// Requirement (was REQ_* has_medium): the legacy check answers TRUE to pass.
-/obj/structure/bed/bath/material_treatment/proc/has_medium_holds(datum/act/op/A)
-	var/answer = has_medium(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why has_medium_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/structure/bed/bath/material_treatment/proc/has_medium_refusal(datum/act/op/A)
-	var/answer = has_medium(A.actor, src, A.held)
-	return istext(answer) ? answer : "the bath contains no treatment medium"
+	op("material_treatment_interaction_item", item(/obj/item/stack/material/processed_alloy), priority(OP_PRIORITY_DEFAULT - 1), label("Treat alloy"), then(PROC_REF(material_treatment_interaction_item)))
 
 /// Requirement: the bath holds some treatment medium.
 /obj/structure/bed/bath/material_treatment/proc/has_medium(mob/user, atom/target, obj/item/held)
@@ -433,6 +423,11 @@ CAPABILITIES(/obj/structure/bed/bath/material_treatment)
 
 /// Old attackby.
 /obj/structure/bed/bath/material_treatment/proc/material_treatment_interaction_item(datum/act/op/A)
+	var/refusal = has_medium(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
 	var/mob/user = A.actor
 	var/obj/item/item = A.held
 	var/obj/item/stack/material/processed_alloy/stock = item
