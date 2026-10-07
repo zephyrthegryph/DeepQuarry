@@ -5,6 +5,12 @@ Phase 1 foundation work is now underway alongside the remaining baseline evidenc
 The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
+Release probe 34 passed initializer codegen, all 64,964 procedure bodies and
+symbolic linking (4.726 s). Composition stopped on retained engine inheritance
+projection. External time was 28.639 s, sampled private memory 3,053,125,632
+bytes; no DMB/RSC pair was produced. This is failed-attempt latency, not a cold
+build benchmark. The next integration task is identifying and projecting the
+retained class whose captured parent differs from its source-model parent.
 Release probe 33 stopped during initializer codegen after 16.460 s, with sampled
 private memory 1,887,870,976 bytes. The exact-global correction exposed an old
 initializer target check that still expected a raw root variable name. Both paths
