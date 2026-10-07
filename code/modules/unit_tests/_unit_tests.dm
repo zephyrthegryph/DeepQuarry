@@ -198,6 +198,7 @@
 #include "dq_lifeform_contents_tests.dm"
 #include "dq_lifeform_derives_tests.dm"
 #include "dq_lifeform_input_tests.dm"
+#include "dq_engine_layering_tests.dm"
 #include "dq_system_boundary_accessor_tests.dm"
 #include "dq_ending_causes_tests.dm"
 #include "dq_lifeform_ctor_tests.dm"

@@ -94,7 +94,7 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 	var/control
 	var/params
 	/// Driver-built clicks: the held item and the gesture the click stands for.
-	var/obj/item/held
+	var/atom/movable/held
 	var/gesture = GESTURE_CLICK
 
 /datum/input_event/click/New(mob/user, atom/clicked, location, control, params)
@@ -156,9 +156,9 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 	resolve_threshold = INPUT_CLICK_THRESHOLD
 	var/atom/target
 	var/op_key
-	var/obj/item/held
+	var/atom/movable/held
 
-/datum/input_event/menu/New(mob/user, atom/picked, key, obj/item/in_hand)
+/datum/input_event/menu/New(mob/user, atom/picked, key, atom/movable/in_hand)
 	..(user)
 	if(picked)
 		target = picked // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
@@ -181,18 +181,21 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 	var/action
 	var/list/payload
 	/// A player's: the window and the state it ran under. Null for a driver-built one.
-	var/datum/tgui/ui
-	var/datum/tgui_state/state
+	var/datum/ui
+	var/datum/state
 	/// A driver-built one: the entity hosting the window.
 	var/datum/window
 
-/datum/input_event/ui_act/New(mob/user, datum/tgui/window_ui, act_type, list/act_payload, datum/tgui_state/act_state)
+CAPABILITIES(/datum/input_event/ui_act)
+	ref_one(nameof(state))
+
+/datum/input_event/ui_act/New(mob/user, datum/window_ui, act_type, list/act_payload, datum/act_state)
 	..(user)
 	if(window_ui)
 		ui = window_ui // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 	action = act_type
 	payload = act_payload
-	state = act_state
+	rel_set(src, nameof(state), act_state)
 
 /datum/input_event/ui_act/subject()
 	return ui || window
@@ -203,7 +206,11 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 /datum/input_event/ui_act/resolve()
 	if(driven)
 		return input_resolve_ui(src)
-	ui.on_act_message(action, payload, state)
+	ui.input_window_action(action, payload, state)
+	return null
+
+/// The presentation adapter supplies a window's concrete dispatch protocol.
+/datum/proc/input_window_action(action, list/payload, datum/state)
 	return null
 
 /// A Topic href: the dispatch the client's own hrefs and every datum's Topic() take. Never dropped.
@@ -417,6 +424,7 @@ SYSTEM_DEF(input)
 		meter.click_done(entry_time, dispatch_usage)
 
 /// Runs `E.resolve()` as `user_mob` (usr), and puts usr back.
+/// Deliberate native-input shim: unconverted callbacks still receive BYOND's acting mob through usr; engine event records carry actor explicitly.
 /world/proc/input_run(mob/user_mob, datum/input_event/E)
 	set waitfor = FALSE // ALLOW(scheduler): kernel code: an input that sleeps (a legacy Topic) detaches here instead of holding phase K
 	var/temp = usr // the inbox runs an input as its actor: the engine sets usr for a resolved input
@@ -542,7 +550,7 @@ SYSTEM_DEF(input)
 
 /// Resolves a click through the input inbox as origin `origin` would, and returns the op's /datum/op_result (null outcome
 /// while it waits), or null when nothing resolved (queued, dropped, or E2's resolver is not there yet).
-/proc/inbox_click(mob/actor, atom/target, obj/item/held, gesture, origin)
+/proc/inbox_click(mob/actor, atom/target, atom/movable/held, gesture, origin)
 	RETURN_TYPE(/datum/op_result)
 	var/datum/input_event/click/E = new(actor, target, null, "mapwindow.map", input_params_for(gesture))
 	E.driven = TRUE
@@ -570,7 +578,7 @@ SYSTEM_DEF(input)
 	return E.result
 
 /// Picks an op by key from a target's menu (origin ORIGIN_MENU), with `held` as the held item. Returns the op's /datum/op_result.
-/proc/inbox_menu(mob/actor, atom/target, op_key, obj/item/held)
+/proc/inbox_menu(mob/actor, atom/target, op_key, atom/movable/held)
 	RETURN_TYPE(/datum/op_result)
 	var/datum/input_event/menu/E = new(actor, target, op_key, held)
 	E.driven = TRUE
