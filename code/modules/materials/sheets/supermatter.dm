@@ -9,14 +9,16 @@
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-DECLARE_PERIODIC(/obj/item/stack/material/supermatter, PERIODIC_SLOW)
+CAPABILITIES(/obj/item/stack/material/supermatter)
+	every(2 SECONDS, then(PROC_REF(supermatter_step)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(supermatter_blast_detonate))))
+	op("pick_up", hand(), priority(OP_PRIORITY_DEFAULT), label("Pick up"), then(PROC_REF(supermatter_pick_up)))
 
-/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
-/obj/item/stack/material/supermatter/periodic_step()
+/// Radiates only while a mob is close enough to be affected.
+/obj/item/stack/material/supermatter/proc/supermatter_step(datum/act/timer/A)
 	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+		return
 	radiate()
-	..()
 
 /obj/item/stack/material/supermatter/proc/radiate()
 	if(active)
@@ -52,13 +54,12 @@ DECLARE_PERIODIC(/obj/item/stack/material/supermatter, PERIODIC_SLOW)
 		return
 	supermatter_touched(A.actor)
 
-EXTEND_INTERACTIONS(/obj/item/stack/material/supermatter, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(supermatter_pick_up)))
-
 /// Picking supermatter up: it re-weighs itself and may scorch the holder.
-/obj/item/stack/material/supermatter/proc/supermatter_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
+/obj/item/stack/material/supermatter/proc/supermatter_pick_up(datum/act/op/A)
+	var/mob/living/user = A.actor
+	pick_up_by_hand(user)
 	supermatter_touched(user)
+	return OP_OK
 
 /// Old attack_hand's tail: after a touch, the stack re-weighs itself and may scorch the toucher.
 /obj/item/stack/material/supermatter/proc/supermatter_touched(mob/user)
@@ -86,9 +87,6 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/supermatter, INTERACT_HAND_DEFAULT(
 
 	if(burn_user)
 		M.injure(INJURY_BURN, amount, null, src)
-
-CAPABILITIES(/obj/item/stack/material/supermatter)
-	extend(/datum/act/hit/explosion, instead(then(PROC_REF(supermatter_blast_detonate))))
 
 /// An incredibly hard to manufacture material, SM chunks are unstable by their 'stabilized' nature: a blast can set the stack off.
 /obj/item/stack/material/supermatter/proc/supermatter_blast_detonate(datum/act/hit/explosion/A)

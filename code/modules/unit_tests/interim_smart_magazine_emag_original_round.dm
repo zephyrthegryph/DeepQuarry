@@ -11,7 +11,7 @@
 	TEST_ASSERT(move_into(magazine, nameof(magazine.stored_ammo), round), "the actual owned-ammunition accessor installs the original real round")
 	TEST_ASSERT_EQUAL(owner_of(round), magazine, "the original real round belongs to the magazine's actual ammunition list")
 	TEST_ASSERT(user.put_in_inactive_hand(magazine), "the actor holds the real smart magazine in the removal hand")
-	TEST_ASSERT(!magazine.magazine_interaction_hand(user, null, null), "actual hand removal refuses while the smart magazine's safety is intact")
+	TEST_ASSERT(magazine.magazine_interaction_hand(hand_act(user)) == OP_DECLINE, "actual hand removal refuses while the smart magazine's safety is intact")
 	TEST_ASSERT_EQUAL(round.loc, magazine, "intact removal refusal preserves the same original round inside")
 	TEST_ASSERT_EQUAL(magazine.ammo_count(), 1, "intact removal refusal preserves exactly one original round")
 	TEST_ASSERT(user.put_in_active_hand(card), "the actor holds the actual emag card")
@@ -27,10 +27,16 @@
 	TEST_ASSERT_EQUAL(emag.attempt(user, magazine, card), INTERACTION_TRY_BLOCKED, "the actual gated interaction refuses another emag")
 	TEST_ASSERT_EQUAL(card.uses, uses_before - 1, "the repeated refusal spends no additional card use")
 	TEST_ASSERT(user.unEquip(card), "the actor actually clears the card hand before taking the original round")
-	TEST_ASSERT(magazine.magazine_interaction_hand(user, null, null), "the actual emagged magazine permits its public hand-removal behavior")
+	TEST_ASSERT(magazine.magazine_interaction_hand(hand_act(user)) == OP_OK, "the actual emagged magazine permits its public hand-removal behavior")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), round, "actual unlocked removal returns the exact original round")
 	TEST_ASSERT_EQUAL(round.loc, user, "actual unlocked removal restores real inventory containment")
 	TEST_ASSERT_EQUAL(magazine.ammo_count(), 0, "actual unlocked removal empties the magazine")
 	TEST_ASSERT_NULL(owner_of(round), "actual unlocked removal releases the original ammunition ownership stamp")
 	qdel(magazine)
 	TEST_ASSERT(!QDELETED(round), "the returned original round survives empty-magazine teardown")
+
+/// A bare hand op context of `user`, as the op engine hands a handler (the test drives the handler directly).
+/datum/unit_test/interim_smart_magazine_emag_original_round/proc/hand_act(mob/user)
+	var/datum/act/op/A = take(/datum/act/op)
+	A.actor = user
+	return A

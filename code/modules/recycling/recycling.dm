@@ -146,8 +146,10 @@ MSG_DEF_SELF(recycling/working, "it's busy; wait until it's idle")
 	working = FALSE
 
 /// TRUE while it hands out dust piles (after a sort): dispense_if_possible() every 2 seconds.
-OM_FIELD(/obj/machinery/recycling/sorter, dispensing, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible, "dispensing")
+/obj/machinery/recycling/sorter/var/dispensing = FALSE
+TRACKED_BRIDGED(/obj/machinery/recycling/sorter, dispensing, CHANGE_MACHINE_SETTINGS)
+CAPABILITIES(/obj/machinery/recycling/sorter)
+	every(2 SECONDS, then(PROC_REF(dispense_if_possible)), when = nameof(dispensing))
 
 /obj/machinery/recycling/sorter/can_accept_item(obj/item/O)
 	if(istype(O, /obj/item/debris_pack))
@@ -174,9 +176,9 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 			materials[mat] = item_matter[mat]
 	consumed(O, src)
 
-/// Dispenses one dust pile every 2 seconds (declared: while dispensing) while any material has a
+/// Dispenses one dust pile every 2 seconds (while dispensing) while any material has a
 /// sheet's worth, then idles.
-/obj/machinery/recycling/sorter/proc/dispense_if_possible()
+/obj/machinery/recycling/sorter/proc/dispense_if_possible(datum/act/timer/A)
 	for(var/mat in materials)
 		if(materials[mat] >= (SHEET_MATERIAL_AMOUNT))
 			materials[mat] -= (SHEET_MATERIAL_AMOUNT)
@@ -186,7 +188,6 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 	set_use_power(USE_POWER_IDLE)
 	icon_state = "sorter"
 	working = FALSE
-	return REPEAT_STOP
 
 /**
  * This machine makes sheets after being provided with material dust from a sorter.

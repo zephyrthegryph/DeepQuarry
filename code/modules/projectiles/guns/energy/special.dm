@@ -75,8 +75,10 @@
 	return ITEM_INTERACT_SUCCESS
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
-/obj/item/gun/energy/floragun/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/gun/energy/floragun/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	if(istype(W, /obj/item/stock_parts/micro_laser))
 		if(!emitter)
 			if(!move_into(src, nameof(src.emitter), W, user))

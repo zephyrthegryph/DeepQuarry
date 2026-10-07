@@ -86,62 +86,59 @@
 	replace_with(src, B)
 	return B
 
-/obj/item/reagent_containers/food/drinks/bottle/proc/smash_bottle_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
+/// The dense things next to the actor the bottle can be smashed on.
+/obj/item/reagent_containers/food/drinks/bottle/proc/smash_choices(datum/act/op/A)
+	var/mob/user = A.actor
 	var/list/things_to_smash_on = list()
-	for(var/atom/A in range (1, user))
-		if(A.density && user.Adjacent(A) && !istype(A, /mob))
-			things_to_smash_on += A
+	for(var/atom/T in range (1, user))
+		if(T.density && user.Adjacent(T) && !istype(T, /mob))
+			things_to_smash_on += T
+	return things_to_smash_on
 
-	var/atom/choice = rerun_ask(user, "k104", PROC_REF(smash_bottle_effect), args, /datum/prompt/choice, question = "Select what you want to smash the bottle on.", title = "SMASH!", choices = things_to_smash_on)
-	if(isnull(choice))
-		return
+/obj/item/reagent_containers/food/drinks/bottle/proc/smash_bottle_effect(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/choice = A.step_value("target")
 	if(!choice)
-		return
+		return OP_DECLINE
 	if(!(choice.density && user.Adjacent(choice)))
 		to_chat(user, span_warning("You must stay close to your target! You moved away from \the [choice]"))
-		return
+		return OP_DECLINE
 
 	user.put_in_hands(src.smash(user.loc, choice))
 	act_message(user, src, others = span_danger("%U% smashed %T% on \the [choice]!"))
 	to_chat(user, span_danger("You smash \the [src] on \the [choice]!"))
+	return OP_OK
 
 // A bottle is opened (or its rag pulled out) by bottle_self(), the legacy entry below, and not by the drinks' own open op.
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
 	without("open")
+	op("bottle_self", in_hand(), then(PROC_REF(bottle_self)))
+	op("bottle_item", item(/obj/item), then(PROC_REF(bottle_item)))
+	op("smash", menu(), label("Smash Bottle"), needs(carried()),
+		asks(/datum/prompt/choice, fields = list("question" = "Select what you want to smash the bottle on.", "title" = "SMASH!", "choices" = computed(PROC_REF(smash_choices)), "timeout" = 0), step = "target"),
+		then(PROC_REF(smash_bottle_effect)))
+	op("spin", menu(), label("Spin The Bottle"), then(PROC_REF(spin_bottle_effect)))
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
-	INTERACT_SELF(null, PROC_REF(bottle_self)), \
-	INTERACT_ITEM(null, PROC_REF(bottle_item)), \
-	INTERACT_VERB("Smash Bottle", PROC_REF(smash_bottle_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Spin The Bottle", PROC_REF(spin_bottle_effect), REQ_TARGET_STATE(/obj/item/reagent_containers/food/drinks/bottle/proc/can_spin_bottle)), \
-)
-
-/// Requirement: the bottle lies on the floor (observers and the unconscious are ignored silently by the effect).
-/obj/item/reagent_containers/food/drinks/bottle/proc/can_spin_bottle(mob/user, atom/target, obj/item/held)
-	if(isobserver(user) || user.stat)
-		return TRUE
-	if(!isturf(loc))
-		return "\The [src] needs to be on the floor to spin"
-	return TRUE
-
-/// Old attackby. FALSE falls to the drinks handling, as the old ..() did.
-/obj/item/reagent_containers/food/drinks/bottle/proc/bottle_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby. A decline falls to the drinks handling, as the old ..() did.
+/obj/item/reagent_containers/food/drinks/bottle/proc/bottle_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!rag && istype(W, /obj/item/reagent_containers/glass/rag))
 		insert_rag(W, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(rag && istype(W, /obj/item/flame))
 		rag.light_with(W, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
-/// Old attack_self: pull the rag out, else open the bottle (the drinks self-use, forced past special_handling).
-/obj/item/reagent_containers/food/drinks/bottle/proc/bottle_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_self: pull the rag out, else open the bottle (forced past special_handling).
+/obj/item/reagent_containers/food/drinks/bottle/proc/bottle_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(rag)
 		remove_rag(user)
-	else
-		drinks_self(user, held, interaction, TRUE)
-	return TRUE
+	else if(!is_open_container())
+		open(user)
+	return OP_OK
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/insert_rag(obj/item/reagent_containers/glass/rag/R, mob/user)
 	if(!isGlass || rag) return
@@ -201,15 +198,19 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/bottle, TYPE_PR
 	var/obj/item/broken_bottle/B = smash(target.loc, target)
 	user.put_in_active_hand(B)
 
-/obj/item/reagent_containers/food/drinks/bottle/proc/spin_bottle_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
+/obj/item/reagent_containers/food/drinks/bottle/proc/spin_bottle_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isobserver(user) || user.stat)
-		return
+		return OP_DECLINE
+	if(!isturf(loc))
+		to_chat(user, span_warning("\The [src] needs to be on the floor to spin"))
+		return OP_DECLINE
 
 	var/spin_rotation = (rand(0,359))
 	act_message(user, src, MSG_SELF(span_notice("You spin %T%!")), MSG_OTHERS(span_warning("%U% spins %T%!")))
 	SpinAnimation(3,10)
 	after(src, 3 SECONDS, PROC_REF(finish_spin), with = list(spin_rotation))
+	return OP_OK
 
 //Keeping this here for now, I'll ask if I should keep it here.
 /obj/item/broken_bottle

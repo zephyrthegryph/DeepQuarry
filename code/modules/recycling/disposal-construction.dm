@@ -22,6 +22,9 @@ CAPABILITIES(/obj/structure/disposalconstruct)
 	param(nameof(dir), pos = 2)
 	param(nameof(flipped_at_make), pos = 3)
 	param(nameof(subtype_at_make), pos = 4)
+	op("flip", menu(), label("Flip Pipe"), needs(req_adjacent(), req_capable(), req_is(nameof(anchored), FALSE, because = MSG(disposalconstruct/unfasten_first))), then(PROC_REF(disposalconstruct_verb_flip)))
+
+MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe before flipping it")
 
 /// Whether the part is made flipped, and its sort type (its constructor params).
 /obj/structure/disposalconstruct/var/flipped_at_make = FALSE
@@ -129,14 +132,14 @@ CAPABILITIES(/obj/structure/disposalconstruct)
 	invisibility = (intact && level==1) ? INVISIBILITY_ABSTRACT: INVISIBILITY_NONE	// hide if floor is intact
 	update()
 
-EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe", PROC_REF(disposalconstruct_verb_flip), REQ_BECAUSE(REQ_NOT(REQ_ANCHORED), "you must unfasten the pipe before flipping it")))
-
 /// Old Flip Pipe verb.
-/obj/structure/disposalconstruct/proc/disposalconstruct_verb_flip(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/disposalconstruct/proc/disposalconstruct_verb_flip(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat)
-		return
+		return OP_DECLINE
 
 	do_a_flip()
+	return OP_OK
 
 /obj/structure/disposalconstruct/proc/do_a_flip()
 	switch(ptype)

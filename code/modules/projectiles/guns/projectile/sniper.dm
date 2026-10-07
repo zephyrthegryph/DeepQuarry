@@ -29,10 +29,11 @@
 	look.state("heavysniper[bolt_open ? "-open" : ""]")
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/heavysniper/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/heavysniper/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 	set_bolt_open(!bolt_open)
 	if(bolt_open)

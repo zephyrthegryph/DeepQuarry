@@ -296,6 +296,7 @@ CAPABILITIES(/datum/material/processed_alloy)
 
 CAPABILITIES(/obj/item/stack/material/processed_alloy)
 	owns_one(nameof(batch_state), /datum/material_batch)
+	every(2 SECONDS, then(PROC_REF(processed_alloy_step)), when = nameof(hot))
 	op("processed_alloy_item", item(/obj/item), then(PROC_REF(processed_alloy_item)))
 	param(nameof(default_type), pos = 2)
 
@@ -313,9 +314,9 @@ CAPABILITIES(/obj/item/stack/material/processed_alloy)
 /// Hot stock's conductance to the air, per J/K of its heat capacity, W/K: the old 8 % of the gap per 2 s step (-ln(0.92) / 2 s).
 #define PROCESSED_STOCK_COOLING_RATE 0.0417
 
-/// Hot stock glowing and cooling towards ambient (update_thermal_processing(), periodic_step()).
-OM_FIELD(/obj/item/stack/material/processed_alloy, hot, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, "hot")
+/// Hot stock glowing and cooling towards ambient (update_thermal_processing(), processed_alloy_step()).
+/obj/item/stack/material/processed_alloy/var/hot = FALSE
+TRACKED(/obj/item/stack/material/processed_alloy, hot)
 
 /obj/item/stack/material/processed_alloy/proc/physical_batch() as /datum/material_batch
 	if(batch_state)
@@ -335,7 +336,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, 
 
 /// Hot stock cools through a heat link to its turf's air (PROCESSED_STOCK_COOLING_RATE of its capacity, W/K: the old 8 % of the gap per
 /// 2 s), and gives the rest to the air and lets its heat store go once within 5 K of it.
-/obj/item/stack/material/processed_alloy/periodic_step()
+/obj/item/stack/material/processed_alloy/proc/processed_alloy_step(datum/act/timer/A)
 	var/datum/material_batch/batch = physical_batch()
 	if(!batch)
 		set_hot(FALSE)

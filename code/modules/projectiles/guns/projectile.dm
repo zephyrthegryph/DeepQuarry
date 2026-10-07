@@ -172,19 +172,22 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 	user.hud_used?.update_ammo_hud(user, src)
 
 /// Old attackby: the parent's first, then loading.
-/obj/item/gun/projectile/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
+/obj/item/gun/projectile/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	. = ..()
-	load_ammo(A, user)
+	load_ammo(held, user)
 
 /// Old attack_self.
-/obj/item/gun/projectile/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(special_weapon_handling && !callback)
-		return FALSE
+		return OP_DECLINE
 	if(manual_chamber) // Gun Rework
-		task_timed(user, 0.4 SECONDS, src, src, PROC_REF(bolt_handle), list(user, interaction?.stance)) // Gun Rework
+		task_timed(user, 0.4 SECONDS, src, src, PROC_REF(bolt_handle), list(user, A.key == "gun_self_hurt" ? I_HURT : I_HELP)) // Gun Rework
 	else if(length(firemodes) > 1) // Gun Rework
 		switch_firemodes(user)
 	else

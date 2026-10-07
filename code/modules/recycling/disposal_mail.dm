@@ -14,16 +14,21 @@
 	var/label_x
 	var/tag_x
 
-DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ROBOT("Unwrap", PROC_REF(big_delivery_robot_unwrap)), \
-)
+CAPABILITIES(/obj/structure/bigDelivery)
+	op("hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
+	op("tag", item(/obj/item/destTagger), then(PROC_REF(parcel_tag)))
+	op("label", item(/obj/item/pen),
+		asks(/datum/prompt/choice, fields = list("question" = "What would you like to alter?", "title" = "Select Alteration", "choices" = list("Title", "Description", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "alteration"),
+		asks(/datum/prompt/text, fields = list("question" = "Label text?", "title" = "Set label", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "title", when = PROC_REF(label_asks_title)),
+		asks(/datum/prompt/text, fields = list("question" = "Label text?", "title" = "Set label", "timeout" = 0), step = "description", when = PROC_REF(label_asks_description)),
+		then(PROC_REF(parcel_label)))
+	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
+	op("robot_unwrap", remote(), when(req_actor_kind(/mob/living/silicon/robot)), label("Unwrap"), then(PROC_REF(big_delivery_robot_unwrap)))
 
 /// Old attack_hand.
-/obj/structure/bigDelivery/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/bigDelivery/proc/interaction_hand(datum/act/op/A)
 	unwrap()
-	return TRUE
+	return OP_OK
 
 /obj/structure/bigDelivery/proc/unwrap()
 	if(loc?.release_refusal(src))
@@ -32,83 +37,81 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 	// Teardown drops our wrapped object on the turf, so let it.
 	consume(src)
 
-/// Old attackby.
-/obj/structure/bigDelivery/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	return parcel_item_stage(user, W, interaction, list())
+/// Old attackby for any other item: handled, the item not used up.
+/obj/structure/bigDelivery/proc/interaction_item(datum/act/op/A)
+	return OP_PASS
 
-/obj/structure/bigDelivery/proc/parcel_item_stage(mob/user, obj/item/W, datum/interaction/interaction, list/parcel_answers)
-	if(istype(W, /obj/item/destTagger))
-		var/obj/item/destTagger/O = W
-		if(O.currTag)
-			if(src.sortTag != O.currTag)
-				to_chat(user, span_notice("You have labeled the destination as [O.currTag]."))
-				if(!src.sortTag)
-					src.sortTag = O.currTag
-					update_icon()
-				else
-					src.sortTag = O.currTag
-				play_sfx(src, SFX_MACHINES_TWOBEEP)
+/// A destination tagger sets the sort tag.
+/obj/structure/bigDelivery/proc/parcel_tag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/destTagger/O = A.held
+	if(O.currTag)
+		if(src.sortTag != O.currTag)
+			to_chat(user, span_notice("You have labeled the destination as [O.currTag]."))
+			if(!src.sortTag)
+				src.sortTag = O.currTag
+				update_icon()
 			else
-				to_chat(user, span_warning("The package is already labeled for [O.currTag]."))
+				src.sortTag = O.currTag
+			play_sfx(src, SFX_MACHINES_TWOBEEP)
 		else
-			to_chat(user, span_warning("You need to set a destination first!"))
+			to_chat(user, span_warning("The package is already labeled for [O.currTag]."))
+	else
+		to_chat(user, span_warning("You need to set a destination first!"))
+	return OP_PASS
 
-	else if(istype(W, /obj/item/pen))
-		if(!("k43" in parcel_answers))
-			open_request(src, /datum/prompt/choice/parcel_label_review, PROC_REF(parcel_label_answered), answerer = user, parcel_operator = user, parcel_pen = W, parcel_interaction = interaction, parcel_answers = parcel_answers, parcel_key = "k43", question = "What would you like to alter?", title = "Select Alteration", choices = list("Title","Description","Cancel"), buttons = TRUE)
-			return TRUE
-		var/_answer_k43 = parcel_answers["k43"]
-		if(isnull(_answer_k43))
-			return TRUE
-		switch(_answer_k43)
-			if("Title")
-				if(!("k45" in parcel_answers))
-					open_request(src, /datum/prompt/text/parcel_label_review, PROC_REF(parcel_label_answered), answerer = user, parcel_operator = user, parcel_pen = W, parcel_interaction = interaction, parcel_answers = parcel_answers, parcel_key = "k45", question = "Label text?", title = "Set label", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
-					return TRUE
-				var/_answer_k45 = parcel_answers["k45"]
-				if(isnull(_answer_k45))
-					return TRUE
-				var/str = sanitizeSafe(_answer_k45, MAX_NAME_LEN)
-				if(!str || !length(str))
-					to_chat(user, span_warning(" Invalid text."))
-					return INTERACTION_HANDLED_PASS
-				act_message(user, src, MSG_SELF(span_notice("You title %T%: \"[MSG_LITERAL(str)]\"")), \
-					MSG_OTHERS("%U% titles %T% with \a [W], marking down: \"[MSG_LITERAL(str)]\""), \
-					MSG_BLIND("You hear someone scribbling a note."))
-				play_sfx(src, SFX_BUREAUCRACY_PEN)
-				name = "[name] ([str])"
-				if(!examtext && !nameset)
-					nameset = 1
-					update_icon()
-				else
-					nameset = 1
-			if("Description")
-				if(!("k60" in parcel_answers))
-					open_request(src, /datum/prompt/text/parcel_label_review, PROC_REF(parcel_label_answered), answerer = user, parcel_operator = user, parcel_pen = W, parcel_interaction = interaction, parcel_answers = parcel_answers, parcel_key = "k60", question = "Label text?", title = "Set label")
-					return TRUE
-				var/str = parcel_answers["k60"]
-				if(isnull(str))
-					return TRUE
-				if(!str || !length(str))
-					to_chat(user, span_red("Invalid text."))
-					return INTERACTION_HANDLED_PASS
-				if(!examtext && !nameset)
-					examtext = str
-					update_icon()
-				else
-					examtext = str
-				act_message(user, src, MSG_SELF(span_notice("You label %T%: \"[MSG_LITERAL(examtext)]\"")), \
-					MSG_OTHERS("%U% labels %T% with \a [W], scribbling down: \"[MSG_LITERAL(examtext)]\""), \
-					MSG_BLIND("You hear someone scribbling a note."))
-				play_sfx(src, SFX_BUREAUCRACY_PEN)
-	return INTERACTION_HANDLED_PASS
+/// The pen's menu answered Title: the title is asked.
+/obj/structure/bigDelivery/proc/label_asks_title(datum/act/op/A)
+	return A.step_value("alteration") == "Title"
+
+/// The pen's menu answered Description: the description is asked.
+/obj/structure/bigDelivery/proc/label_asks_description(datum/act/op/A)
+	return A.step_value("alteration") == "Description"
+
+/// A pen titles the parcel or writes the note on it.
+/obj/structure/bigDelivery/proc/parcel_label(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	switch(A.step_value("alteration"))
+		if("Title")
+			var/str = sanitizeSafe(A.step_value("title"), MAX_NAME_LEN)
+			if(!str || !length(str))
+				to_chat(user, span_warning(" Invalid text."))
+				return OP_PASS
+			act_message(user, src, MSG_SELF(span_notice("You title %T%: \"[MSG_LITERAL(str)]\"")), \
+				MSG_OTHERS("%U% titles %T% with \a [W], marking down: \"[MSG_LITERAL(str)]\""), \
+				MSG_BLIND("You hear someone scribbling a note."))
+			play_sfx(src, SFX_BUREAUCRACY_PEN)
+			name = "[name] ([str])"
+			if(!examtext && !nameset)
+				nameset = 1
+				update_icon()
+			else
+				nameset = 1
+		if("Description")
+			var/str = A.step_value("description")
+			if(!str || !length(str))
+				to_chat(user, span_red("Invalid text."))
+				return OP_PASS
+			if(!examtext && !nameset)
+				examtext = str
+				update_icon()
+			else
+				examtext = str
+			act_message(user, src, MSG_SELF(span_notice("You label %T%: \"[MSG_LITERAL(examtext)]\"")), \
+				MSG_OTHERS("%U% labels %T% with \a [W], scribbling down: \"[MSG_LITERAL(examtext)]\""), \
+				MSG_BLIND("You hear someone scribbling a note."))
+			play_sfx(src, SFX_BUREAUCRACY_PEN)
+	SStgui.update_uis(src)
+	return OP_PASS
 
 /// Old attack_robot: an adjacent cyborg unwraps it. Never fell through.
-/obj/structure/bigDelivery/proc/big_delivery_robot_unwrap(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/bigDelivery/proc/big_delivery_robot_unwrap(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(user.stat || !Adjacent(user))
-		return TRUE
+		return OP_OK
 	unwrap()
-	return TRUE
+	return OP_OK
 
 DECLARE_APPEARANCE_PROC(/obj/structure/bigDelivery, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/bigDelivery/appearance_overlays()
@@ -176,14 +179,20 @@ DESTROY_EFFECTS(/obj/structure/bigDelivery, new /datum/destroy_effects_data(drop
 	var/nameset = 0
 	var/tag_x
 
-DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ROBOT("Unwrap", PROC_REF(small_delivery_robot_unwrap)), \
-)
+CAPABILITIES(/obj/item/smallDelivery)
+	op("use", in_hand(), then(PROC_REF(interaction_self)))
+	op("tag", item(/obj/item/destTagger), then(PROC_REF(parcel_tag)))
+	op("label", item(/obj/item/pen),
+		asks(/datum/prompt/choice, fields = list("question" = "What would you like to alter?", "title" = "Select Alteration", "choices" = list("Title", "Description", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "alteration"),
+		asks(/datum/prompt/text, fields = list("question" = "Label text?", "title" = "Set label", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "title", when = PROC_REF(label_asks_title)),
+		asks(/datum/prompt/text, fields = list("question" = "Label text?", "title" = "Set label", "timeout" = 0), step = "description", when = PROC_REF(label_asks_description)),
+		then(PROC_REF(parcel_label)))
+	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
+	op("robot_unwrap", remote(), when(req_actor_kind(/mob/living/silicon/robot)), label("Unwrap"), then(PROC_REF(small_delivery_robot_unwrap)))
 
 /// Old attack_self.
-/obj/item/smallDelivery/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/smallDelivery/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if (wrapped) //sometimes items can disappear. For example, bombs. --rastaf0
 		wrapped.forceMove(user.loc)
 		if(ishuman(user))
@@ -192,86 +201,83 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 			wrapped.forceMove(get_turf(src))
 
 	consume(src, user)
-	return TRUE
+	return OP_OK
 
-/// Old attackby.
-/obj/item/smallDelivery/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	return parcel_item_stage(user, W, interaction, list())
+/// Old attackby for any other item: handled, the item not used up.
+/obj/item/smallDelivery/proc/interaction_item(datum/act/op/A)
+	return OP_PASS
 
-/obj/item/smallDelivery/proc/parcel_item_stage(mob/user, obj/item/W, datum/interaction/interaction, list/parcel_answers)
-	if(istype(W, /obj/item/destTagger))
-		var/obj/item/destTagger/O = W
-		if(O.currTag)
-			if(src.sortTag != O.currTag)
-				to_chat(user, span_notice("You have labeled the destination as [O.currTag]."))
-				if(!src.sortTag)
-					src.sortTag = O.currTag
-					update_icon()
-				else
-					src.sortTag = O.currTag
-				play_sfx(src, SFX_MACHINES_TWOBEEP)
+/// A destination tagger sets the sort tag.
+/obj/item/smallDelivery/proc/parcel_tag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/destTagger/O = A.held
+	if(O.currTag)
+		if(src.sortTag != O.currTag)
+			to_chat(user, span_notice("You have labeled the destination as [O.currTag]."))
+			if(!src.sortTag)
+				src.sortTag = O.currTag
+				update_icon()
 			else
-				to_chat(user, span_warning("The package is already labeled for [O.currTag]."))
+				src.sortTag = O.currTag
+			play_sfx(src, SFX_MACHINES_TWOBEEP)
 		else
-			to_chat(user, span_warning("You need to set a destination first!"))
+			to_chat(user, span_warning("The package is already labeled for [O.currTag]."))
+	else
+		to_chat(user, span_warning("You need to set a destination first!"))
+	return OP_PASS
 
-	else if(istype(W, /obj/item/pen))
-		if(!("k174" in parcel_answers))
-			open_request(src, /datum/prompt/choice/parcel_label_review, PROC_REF(parcel_label_answered), answerer = user, parcel_operator = user, parcel_pen = W, parcel_interaction = interaction, parcel_answers = parcel_answers, parcel_key = "k174", question = "What would you like to alter?", title = "Select Alteration", choices = list("Title","Description","Cancel"), buttons = TRUE)
-			return TRUE
-		var/_answer_k174 = parcel_answers["k174"]
-		if(isnull(_answer_k174))
-			return TRUE
-		switch(_answer_k174)
-			if("Title")
-				if(!("k176" in parcel_answers))
-					open_request(src, /datum/prompt/text/parcel_label_review, PROC_REF(parcel_label_answered), answerer = user, parcel_operator = user, parcel_pen = W, parcel_interaction = interaction, parcel_answers = parcel_answers, parcel_key = "k176", question = "Label text?", title = "Set label", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
-					return TRUE
-				var/_answer_k176 = parcel_answers["k176"]
-				if(isnull(_answer_k176))
-					return TRUE
-				var/str = sanitizeSafe(_answer_k176, MAX_NAME_LEN)
-				if(!str || !length(str))
-					to_chat(user, span_warning(" Invalid text."))
-					return INTERACTION_HANDLED_PASS
-				act_message(user, src, MSG_SELF(span_notice("You title %T%: \"[MSG_LITERAL(str)]\"")), \
-					MSG_OTHERS("%U% titles %T% with \a [W], marking down: \"[MSG_LITERAL(str)]\""), \
-					MSG_BLIND("You hear someone scribbling a note."))
-				play_sfx(src, SFX_BUREAUCRACY_PEN)
-				name = "[name] ([str])"
-				if(!examtext && !nameset)
-					nameset = 1
-					update_icon()
-				else
-					nameset = 1
+/// The pen's menu answered Title: the title is asked.
+/obj/item/smallDelivery/proc/label_asks_title(datum/act/op/A)
+	return A.step_value("alteration") == "Title"
 
-			if("Description")
-				if(!("k192" in parcel_answers))
-					open_request(src, /datum/prompt/text/parcel_label_review, PROC_REF(parcel_label_answered), answerer = user, parcel_operator = user, parcel_pen = W, parcel_interaction = interaction, parcel_answers = parcel_answers, parcel_key = "k192", question = "Label text?", title = "Set label")
-					return TRUE
-				var/str = parcel_answers["k192"]
-				if(isnull(str))
-					return TRUE
-				if(!str || !length(str))
-					to_chat(user, span_red("Invalid text."))
-					return INTERACTION_HANDLED_PASS
-				if(!examtext && !nameset)
-					examtext = str
-					update_icon()
-				else
-					examtext = str
-				act_message(user, src, MSG_SELF(span_notice("You label %T%: \"[MSG_LITERAL(examtext)]\"")), \
-					MSG_OTHERS("%U% labels %T% with \a [W], scribbling down: \"[MSG_LITERAL(examtext)]\""), \
-					MSG_BLIND("You hear someone scribbling a note."))
-				play_sfx(src, SFX_BUREAUCRACY_PEN)
-	return INTERACTION_HANDLED_PASS
+/// The pen's menu answered Description: the description is asked.
+/obj/item/smallDelivery/proc/label_asks_description(datum/act/op/A)
+	return A.step_value("alteration") == "Description"
+
+/// A pen titles the parcel or writes the note on it.
+/obj/item/smallDelivery/proc/parcel_label(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	switch(A.step_value("alteration"))
+		if("Title")
+			var/str = sanitizeSafe(A.step_value("title"), MAX_NAME_LEN)
+			if(!str || !length(str))
+				to_chat(user, span_warning(" Invalid text."))
+				return OP_PASS
+			act_message(user, src, MSG_SELF(span_notice("You title %T%: \"[MSG_LITERAL(str)]\"")), \
+				MSG_OTHERS("%U% titles %T% with \a [W], marking down: \"[MSG_LITERAL(str)]\""), \
+				MSG_BLIND("You hear someone scribbling a note."))
+			play_sfx(src, SFX_BUREAUCRACY_PEN)
+			name = "[name] ([str])"
+			if(!examtext && !nameset)
+				nameset = 1
+				update_icon()
+			else
+				nameset = 1
+		if("Description")
+			var/str = A.step_value("description")
+			if(!str || !length(str))
+				to_chat(user, span_red("Invalid text."))
+				return OP_PASS
+			if(!examtext && !nameset)
+				examtext = str
+				update_icon()
+			else
+				examtext = str
+			act_message(user, src, MSG_SELF(span_notice("You label %T%: \"[MSG_LITERAL(examtext)]\"")), \
+				MSG_OTHERS("%U% labels %T% with \a [W], scribbling down: \"[MSG_LITERAL(examtext)]\""), \
+				MSG_BLIND("You hear someone scribbling a note."))
+			play_sfx(src, SFX_BUREAUCRACY_PEN)
+	SStgui.update_uis(src)
+	return OP_PASS
 
 /// Old attack_robot: an adjacent cyborg unwraps it as in hand. Never fell through.
-/obj/item/smallDelivery/proc/small_delivery_robot_unwrap(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/smallDelivery/proc/small_delivery_robot_unwrap(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(user.stat || !Adjacent(user))
-		return TRUE
+		return OP_OK
 	attack_self(user)
-	return TRUE
+	return OP_OK
 
 DECLARE_APPEARANCE_PROC(/obj/item/smallDelivery, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/smallDelivery/appearance_overlays()
@@ -314,109 +320,3 @@ DECLARE_APPEARANCE_PROC(/obj/item/smallDelivery, TYPE_PROC_REF(/atom, appearance
 /// the wrapped this refers to (a relation view: it reads null once the target is deleted).
 /obj/structure/bigDelivery/proc/wrapped() as /obj
 	return wrapped
-
-/obj/structure/bigDelivery/proc/parcel_label_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = parcel_label_apply(A)
-	SStgui.update_uis(src)
-
-/obj/structure/bigDelivery/proc/parcel_label_apply(datum/act/request/A)
-	if(istype(A.answer, /datum/prompt/choice/parcel_label_review))
-		var/datum/prompt/choice/parcel_label_review/ask = A.answer
-		ask.parcel_answers[ask.parcel_key] = ask.value
-		return parcel_item_stage(ask.parcel_operator, ask.parcel_pen, ask.parcel_interaction, ask.parcel_answers)
-	var/datum/prompt/text/parcel_label_review/ask = A.answer
-	ask.parcel_answers[ask.parcel_key] = ask.value
-	return parcel_item_stage(ask.parcel_operator, ask.parcel_pen, ask.parcel_interaction, ask.parcel_answers)
-
-/obj/item/smallDelivery/proc/parcel_label_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = parcel_label_apply(A)
-	SStgui.update_uis(src)
-
-/obj/item/smallDelivery/proc/parcel_label_apply(datum/act/request/A)
-	if(istype(A.answer, /datum/prompt/choice/parcel_label_review))
-		var/datum/prompt/choice/parcel_label_review/ask = A.answer
-		ask.parcel_answers[ask.parcel_key] = ask.value
-		return parcel_item_stage(ask.parcel_operator, ask.parcel_pen, ask.parcel_interaction, ask.parcel_answers)
-	var/datum/prompt/text/parcel_label_review/ask = A.answer
-	ask.parcel_answers[ask.parcel_key] = ask.value
-	return parcel_item_stage(ask.parcel_operator, ask.parcel_pen, ask.parcel_interaction, ask.parcel_answers)
-
-/datum/prompt/choice/parcel_label_review
-	timeout = 0
-	var/mob/parcel_operator
-	var/obj/item/parcel_pen
-	var/datum/interaction/parcel_interaction
-	var/parcel_operator_expected = FALSE
-	var/parcel_pen_expected = FALSE
-	var/parcel_interaction_expected = FALSE
-	var/list/parcel_answers
-	var/parcel_key
-
-CAPABILITIES(/datum/prompt/choice/parcel_label_review)
-	ref_one(nameof(parcel_operator), /mob)
-	ref_one(nameof(parcel_pen), /obj/item)
-	ref_one(nameof(parcel_interaction), /datum/interaction)
-
-/datum/prompt/choice/parcel_label_review/prepare(datum/act/A)
-	. = ..()
-	var/mob/captured_operator = parcel_operator
-	var/obj/item/captured_pen = parcel_pen
-	var/datum/interaction/captured_interaction = parcel_interaction
-	parcel_operator_expected = !isnull(captured_operator)
-	parcel_pen_expected = !isnull(captured_pen)
-	parcel_interaction_expected = !isnull(captured_interaction)
-	rel_clear(src, nameof(parcel_operator))
-	rel_clear(src, nameof(parcel_pen))
-	rel_clear(src, nameof(parcel_interaction))
-	if(captured_operator && !QDELETED(captured_operator))
-		rel_set(src, nameof(parcel_operator), captured_operator)
-	if(captured_pen && !QDELETED(captured_pen))
-		rel_set(src, nameof(parcel_pen), captured_pen)
-	if(captured_interaction && !QDELETED(captured_interaction))
-		rel_set(src, nameof(parcel_interaction), captured_interaction)
-
-/datum/prompt/choice/parcel_label_review/recheck_extra()
-	if((parcel_operator_expected && QDELETED(parcel_operator)) || (parcel_pen_expected && QDELETED(parcel_pen)) || (parcel_interaction_expected && QDELETED(parcel_interaction)))
-		return "gone"
-
-/datum/prompt/text/parcel_label_review
-	timeout = 0
-	var/mob/parcel_operator
-	var/obj/item/parcel_pen
-	var/datum/interaction/parcel_interaction
-	var/parcel_operator_expected = FALSE
-	var/parcel_pen_expected = FALSE
-	var/parcel_interaction_expected = FALSE
-	var/list/parcel_answers
-	var/parcel_key
-
-CAPABILITIES(/datum/prompt/text/parcel_label_review)
-	ref_one(nameof(parcel_operator), /mob)
-	ref_one(nameof(parcel_pen), /obj/item)
-	ref_one(nameof(parcel_interaction), /datum/interaction)
-
-/datum/prompt/text/parcel_label_review/prepare(datum/act/A)
-	. = ..()
-	var/mob/captured_operator = parcel_operator
-	var/obj/item/captured_pen = parcel_pen
-	var/datum/interaction/captured_interaction = parcel_interaction
-	parcel_operator_expected = !isnull(captured_operator)
-	parcel_pen_expected = !isnull(captured_pen)
-	parcel_interaction_expected = !isnull(captured_interaction)
-	rel_clear(src, nameof(parcel_operator))
-	rel_clear(src, nameof(parcel_pen))
-	rel_clear(src, nameof(parcel_interaction))
-	if(captured_operator && !QDELETED(captured_operator))
-		rel_set(src, nameof(parcel_operator), captured_operator)
-	if(captured_pen && !QDELETED(captured_pen))
-		rel_set(src, nameof(parcel_pen), captured_pen)
-	if(captured_interaction && !QDELETED(captured_interaction))
-		rel_set(src, nameof(parcel_interaction), captured_interaction)
-
-/datum/prompt/text/parcel_label_review/recheck_extra()
-	if((parcel_operator_expected && QDELETED(parcel_operator)) || (parcel_pen_expected && QDELETED(parcel_pen)) || (parcel_interaction_expected && QDELETED(parcel_interaction)))
-		return "gone"

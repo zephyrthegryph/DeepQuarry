@@ -68,9 +68,11 @@
 	var/sawn_off = FALSE
 
 /// Old attackby.
-/obj/item/gun/projectile/shotgun/pump/rifle/ceremonial/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
-	if(istype(A, /obj/item/surgical/circular_saw) || istype(A, /obj/item/melee/energy) || istype(A, /obj/item/pickaxe/plasmacutter) && w_class != ITEMSIZE_NORMAL)
-		. = INTERACTION_HANDLED_PASS
+/obj/item/gun/projectile/shotgun/pump/rifle/ceremonial/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
+	if(istype(held, /obj/item/surgical/circular_saw) || istype(held, /obj/item/melee/energy) || istype(held, /obj/item/pickaxe/plasmacutter) && w_class != ITEMSIZE_NORMAL)
+		. = OP_PASS
 		if(sawn_off)
 			to_chat(user, span_warning("The [src] is already shortened!"))
 			return

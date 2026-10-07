@@ -57,7 +57,7 @@
 CAPABILITIES(/obj/machinery/reagent_refinery)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(anchored), wakes_on = list(nameof(anchored), nameof(stat)))
 	op("reagent_refinery_drain", inputs(item(/obj/item/reagent_containers/glass), item(/obj/item/reagent_containers/food/drinks/glass2), item(/obj/item/reagent_containers/food/drinks/shaker)), priority(OP_PRIORITY_DEFAULT - 1), label("Drain"), when(req(PROC_REF(has_reagents_holder_holds))), needs(req_reagents(0, more = TRUE, because = MSG(reagent_refinery/nothing_to_drain))), then(PROC_REF(interaction_drain)))
-	op("reagent_refinery_set_transfer_amount", menu(), label("Set transfer amount"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_set_transfer_amount)))
+	op("reagent_refinery_set_transfer_amount", menu(), label("Set transfer amount"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/choice, fields = list("question" = "Amount per transfer from this:", "title" = computed(PROC_REF(transfer_amount_title)), "choices" = nameof(possible_transfer_amounts), "timeout" = 0), step = "amount"), then(PROC_REF(interaction_set_transfer_amount)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), label("Secure"), then(PROC_REF(wrench_used)))
 
 /obj/machinery/reagent_refinery/proc/work_step(datum/act/timer/A)
@@ -137,22 +137,18 @@ MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to
 		if(other && other.anchored)
 			other.update_icon()
 
-/// Changes the transfer rate of reagents from this machine to the next
-/datum/interaction/machine_verb/reagent_refinery_set_transfer_amount
-	id = "reagent_refinery_set_transfer_amount"
-	name = "Set transfer amount"
-	requires = list(REQ_INTERACTION_REACH)
-	effect = /obj/machinery/reagent_refinery/proc/interaction_set_transfer_amount
+/// The question's title.
+/obj/machinery/reagent_refinery/proc/transfer_amount_title(datum/act/op/A)
+	return "[src]"
 
+/// Changes the transfer rate of reagents from this machine to the next
 /obj/machinery/reagent_refinery/proc/interaction_set_transfer_amount(datum/act/op/A)
 	var/mob/user = A.actor
-	var/N = rerun_ask(user, "k140", PROC_REF(interaction_set_transfer_amount), args, /datum/prompt/choice, question = "Amount per transfer from this:", title = "[src]", choices = possible_transfer_amounts)
-	if(isnull(N))
-		return
+	var/N = A.step_value("amount")
 	if(N && Adjacent(user))
 		amount_per_transfer_from_this = N
 		update_icon()
-	return TRUE
+	return OP_OK
 
 /// Transfers reagents from us to the next machine. Calls handle_transfer() on any target machines to check if they can accept reagents.
 /obj/machinery/reagent_refinery/proc/transfer_tank( datum/reagents/RT, obj/machinery/reagent_refinery/target, source_forward_dir, filter_id = "")

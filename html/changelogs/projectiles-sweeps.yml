@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Guns, magazines, assemblies, drinks, cooking machines, disposals, recyclers and the refinery use the final op, hit-hook and every() forms instead of DECLARE_INTERACTIONS, DAMAGE_REACTION and DECLARE_PERIODIC"
