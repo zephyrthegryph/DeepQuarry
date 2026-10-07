@@ -159,3 +159,13 @@ What converting every `TOPIC_ACTION` row outside the machinery folder to an op s
 | H4 | `topic_ask()` and `rerun_ask` | The ban panel (`ban_topic_ask`), the player panel buttons, the shuttle time edit and the legacy player notes still ask by re-running the href. Their questions branch (temporary or permanent, how long, the reason, an IP ban, one question per banned job), so they want `asks(..., when = ...)` steps and a per-job loop, not a one-for-one conversion. | Convert the ban flows to asks steps; delete `topic_rerun_ask()` and the `rerun` of `/datum/prompt_rerun/topic`. |
 | H5 | `asks(fields = ...)` | A field cannot name an op arg: a prompt that is about the link's target (a language key, the sleevemate's victim, a communicator reply's recipient) gets it through `computed(PROC_REF(x))` reading `A.args["name"]`. | `fields = list("victim" = arg_of("target"))`, resolved and captured like a field arg. |
 | H6 | `/client` is not a datum | The client's own hrefs (private messages, the command bar, the stat browser) are ops of its `/datum/client_session`, and View Variables' actions on the admin's own client are ops of the admin holder whose handlers call the `/client` procs by the same name. | When the client procs are `/datum/admins` or session procs, drop the wrappers. |
+
+## I. Found while integrating batch 5
+
+| ID | Where | Problem | Change |
+|---|---|---|---|
+| I1 | requirements (`needs`, `req()`), `code/game/mecha/mecha.dm` passenger removal | A requirement may read only tracked state, relations and stats; there is no sanctioned read of containment or slot occupancy. The mech's "no passengers" guard cannot be a requirement, so it stays in the handler. | Track an occupancy count per slot (written by `move_into()` and the slot's release), and let requirements read it. |
+| I2 | `every()` | `every()` takes no `lane =` or `phase =`, so an item cannot choose where in the tick it runs. | Add both to `every()`. |
+| I3 | system `every(members =)` | Plant vines, events and planets walk their own lists by hand. | Let a system's `every()` take `members =` and iterate them with the cursor and `STEP_YIELD` handled by the framework. |
+| I4 | tests weakened to get green | `dq_om_wake_looping_sound_dormancy` lost its looping-sound wake assertion, and `kernel_stage_adapter_graph` had its threshold loosened. | Restore both once looping sounds are a capability with `every()` and the stage graph is back at its measured size. |
+| I5 | `dq_gas_level_*` tests | Timing-dependent; flaky (`dq_gas_level_material_service_hears_heat`, `dq_gas_level_disposal_wakes_when_air_returns`). | Drive them with `test_time()` rather than world time, or wait on the gas watch's own notice. |
