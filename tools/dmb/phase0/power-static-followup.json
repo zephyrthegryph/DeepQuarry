@@ -156,6 +156,26 @@
       "path": "E:/dmb-native-v2-phase0/power-init-frame-native.log",
       "bytes": 8,
       "sha256": "e9dcb6811b2daa05c264a5a1cb3d2b462e1abc561fe4bb62f063e52b0ea98f9b"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-parent-full-byond.log",
+      "bytes": 159,
+      "sha256": "fcc5ef417dc4c45a5bf0893e6ee45cfa117cc72be4ba7303ce75a00e4d9d48d3"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-parent-full-native.log",
+      "bytes": 94,
+      "sha256": "72c7fcdfbb2c92e4e1de352ac3990571d556660022f2d0cd936a3df1ccfe2d36"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-new-byond.log",
+      "bytes": 645,
+      "sha256": "81017c76accc567ca9827eb3621e9bc2ba90257e11cbc57a6a207c6fddb3e7f0"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-new-native.log",
+      "bytes": 580,
+      "sha256": "38ed3d2d0046a3ad06bfe78ed65dbf36c97c77d54de4e95fc110ba38fdf0914a"
     }
   ],
   "retired_branch": {
@@ -331,5 +351,20 @@
     "default_marker": "Typed Variable.hidden_initializer_marker treats kind62 as compiler-assigned initializer marker. Payload380 is not interpreted as a table pointer. Native plain-null placeholder lacks this marker; runtime meaning/timing effect remains unresolved.",
     "allocation_order": "Native dependency list assignment comes first; BYOND dependency assignment comes last. Power list assignments retain power_ops, power_regions, power_dirty_areas, power_material_cables order in both. BYOND targets redundant nested Src-cache path; native single Src-cache path. These are recorded differences, not proved equivalent.",
     "limit": "Direct initializer binding, metadata and named parent-chain agreement eliminate a missing class slot or obvious flags/source-frame mismatch as a static explanation. They do not prove runtime invocation, inheritance scheduling, allocation timing or the engine meaning of kind62 versus null under different header compatibility flags."
+  },
+  "parent_initializer_body": {
+    "byond": "52117: DBG line95/file14091, NewList[0] at0x4, nested Src SetVar rolling_usage string14111 at0x6, END0xc",
+    "native": "48850: NewList[0] at0x0, single Src SetVar rolling_usage string69845 at0x2, END0x6",
+    "finding": "Both complete parent bodies allocate/store rolling_usage only; neither contains an explicit parent call. Controller and datum class records have no initializer slot. These facts do not prove VM automatic parent initialization scheduling.",
+    "construction_gap": "Frozen subsystem source only has commented New declaration; named construction dispatch/global startup allocation has not yet been decoded. No causal conclusion."
+  },
+  "construction": {
+    "byond_new": 4140,
+    "native_new": 2743,
+    "membership": "Direct machines procedure list includes own New in both; not inherited fallback. Both flags4/source0,255.",
+    "source": "SUBSYSTEM_DEF(machines) expands own New: NEW_SS_GLOBAL(SSmachines); PreInit(). GLOBAL_REAL declares typed global without authored new. Master.New enumerates subsystem types, then constructs new I for missing instances.",
+    "sequence": "Both compare global SSmachines to src; istype previous with exact machines class40/697; Recover(), qdel(previous); global SSmachines=src; PreInit(); END.",
+    "difference": "BYOND calls Recover/PreInit with opcode0x2a CallStatement, native0x29 Call; both followed POP. Debug absent native. Global slot32998/23349 and qdel proc-ref894/2615 not yet independently table-renamed.",
+    "limit": "No explicit initializer call appears in own New. VM scheduling of bound class/parent initializers before New remains engine behavior not proved here. Master New dynamic allocation bytecode has not yet been decoded."
   }
 }

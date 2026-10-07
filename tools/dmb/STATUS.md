@@ -55,6 +55,23 @@ ABI ordering all passed, along with the CLI build. A serial release build is
 underway to establish target-relevant timings. No completed full build or cold
 performance improvement is claimed yet.
 
+Release probe 21 completed its failure diagnostics in 151.242 s externally,
+sampled 1,824,755,712 private bytes, and published no pair. Input preparation
+took 1.458 s, frontend 7.430 s, resource/map capture 4.695 s, startup capture
+4.018 s, and ABI preparation 0.377 s. Classification plus error mapping took
+70.272 s. The failed-stage report was emitted at 88.649 s; external completion
+includes the subsequent large diagnostic output. This is a failed release
+attempt, not a cold compiler acceptance result.
+
+The error batch consists of missing intrinsic modifier facts (for example
+15,677 `/atom::name` and 14,237 `/atom::icon_state` writes). Its location mapper
+performed a full expanded-origin scan per error: a concrete quadratic reporting
+path, now replaced with one request-local reverse provenance index. Diagnostic
+output is also buffered while preserving format/order and propagating flush
+errors. Both changes are awaiting integration gates. Intrinsic admission is being
+split into positively evidenced mutable instance semantics and unknown wire
+modifier bits; those bits must not be invented as zero.
+
 The entries below describe the new uncached path. Older measurements later in
 this document belong to the preserved original compiler unless explicitly labeled.
 

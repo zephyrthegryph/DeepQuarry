@@ -1,0 +1,27 @@
+{
+  "scope": "uncached-compiler-cli",
+  "compiler_sha256": "D90F983734CF0A538F45064C8ECA12F9686D20395EF7BF92C0929241662CB17F",
+  "engine_sha256": "9221528EFB715BE5B8DF23020989E0C2A53EA32BFF9894747166DBE04D785540",
+  "project": "C:\\Users\\bmene\\.codex\\worktrees\\native-v2\\CHOMPStation2\\deepquarry.dme",
+  "defines": [
+    "DM_VERSION=516",
+    "DM_BUILD=1687",
+    "CITESTING=1"
+  ],
+  "workers": 2,
+  "watchdog_seconds": 285,
+  "process_completed": true,
+  "model_completed": true,
+  "artifact_completed": false,
+  "sample_interval_seconds": 1,
+  "sampled_max_private_bytes": 1824755712,
+  "status": "failed",
+  "pid": 44652,
+  "exit_code": 1,
+  "model_counts": {
+    "members": 281789,
+    "types": 43921,
+    "bodies": 64964
+  },
+  "seconds": 151.241766
+}
