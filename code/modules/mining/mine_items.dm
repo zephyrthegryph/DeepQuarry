@@ -32,7 +32,6 @@
 	var/destroy_artefacts = FALSE // some mining tools will destroy artefacts completely while avoiding side-effects.
 	var/borg_flags = COUNTS_AS_ROBOTIC_MELEE //The ONLY reason this gets this here is because pickaxes are SO hardcoded that it's easier to add it here than everywhere else. Please do not attach this to everything that you desire. Only VERY SPECIFIC THINGS under CERTAIN CIRCUMSTANCES, PLEASE. 99% of things can be added to code\modules\projectiles\guns\energy\cyborg.dm
 
-
 /obj/item/pickaxe/silver
 	name = "silver pickaxe"
 	icon_state = "spickaxe"
@@ -230,6 +229,9 @@ CAPABILITIES(/obj/item/shovel/wood)
 
 CAPABILITIES(/obj/item/stack/flag)
 	without("ui_open")
+	op("flag_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(flag_interaction_item)))
+	op("flag_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Knock down"), then(PROC_REF(flag_hand)))
+	op("flag_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Plant"), needs(req(PROC_REF(can_plant_holds), because = PROC_REF(can_plant_refusal))), then(PROC_REF(flag_self)))
 
 /obj/item/stack/flag/Initialize(mapload)
 	. = ..()
@@ -255,29 +257,36 @@ CAPABILITIES(/obj/item/stack/flag)
 	singular_name = "green flag"
 	icon_state = "greenflag"
 
-EXTEND_INTERACTIONS(/obj/item/stack/flag, \
-	INTERACT_ITEM(null, PROC_REF(flag_interaction_item)), \
-	INTERACT_HAND_UNGATED("Knock down", PROC_REF(flag_hand)), \
-	INTERACT_USE("Plant", PROC_REF(flag_self), REQ_TARGET_STATE(/obj/item/stack/flag/proc/can_plant)), \
-)
+/// Requirement (was REQ_* can_plant): the legacy check answers TRUE to pass.
+/obj/item/stack/flag/proc/can_plant_holds(datum/act/op/A)
+	var/answer = can_plant(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_plant_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/stack/flag/proc/can_plant_refusal(datum/act/op/A)
+	var/answer = can_plant(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
 
 /// Old attackby.
-/obj/item/stack/flag/proc/flag_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/stack/flag/proc/flag_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(upright && istype(W,src.type))
 		src.attack_hand(user)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /// Old attack_hand: knock an upright flag down; otherwise fall through to the stack's split and pickup.
-/obj/item/stack/flag/proc/flag_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/stack/flag/proc/flag_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!upright)
-		return FALSE
+		return OP_DECLINE
 	upright = 0
 	icon_state = base_state
 	set_anchored(FALSE)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " knocks down %T%."))
-	return TRUE
+	return OP_OK
 
 /// Requirement: TRUE, or why the flag can't be planted here.
 /obj/item/stack/flag/proc/can_plant(mob/user, atom/target, obj/item/held)
@@ -290,7 +299,8 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, \
 	return TRUE
 
 /// Old attack_self: plant a flag.
-/obj/item/stack/flag/proc/flag_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/stack/flag/proc/flag_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/turf/T = get_turf(src)
 	var/obj/item/stack/flag/newflag = new src.type(T)
 	newflag.set_amount(1, TRUE)

@@ -33,10 +33,15 @@ CAPABILITIES(/obj/item/hoist_kit)
 	anchored = TRUE
 	plane = ABOVE_MOB_PLANE
 
-EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
-	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_swallow)), \
-	INTERACT_DRAG("Attach", PROC_REF(interaction_hoist_hook_attach), REQ_TARGET_STATE(/obj/effect/hoist_hook/proc/can_attach)), \
-)
+/// Requirement (was REQ_* can_attach): the legacy check answers TRUE to pass.
+/obj/effect/hoist_hook/proc/can_attach_holds(datum/act/op/A)
+	var/answer = can_attach(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_attach_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/effect/hoist_hook/proc/can_attach_refusal(datum/act/op/A)
+	var/answer = can_attach(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
 
 /// Requirement: TRUE, or why the dragged thing can't be clamped on.
 /obj/effect/hoist_hook/proc/can_attach(mob/user, atom/target, atom/movable/held)
@@ -47,15 +52,17 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	return TRUE
 
 /// Old MouseDrop_T: clamp the dragged thing onto the hook. Replaces the buckle drag.
-/obj/effect/hoist_hook/proc/interaction_hoist_hook_attach(mob/user, atom/movable/AM, datum/interaction/interaction)
+/obj/effect/hoist_hook/proc/interaction_hoist_hook_attach(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/AM = A.held
 	if (use_check(user, 0))
-		return TRUE
+		return OP_OK
 
 	source_hoist().attach_hoistee(AM)
 	act_message(user, AM, MSG_SELF(span_danger("You attach %T% to \the [src].")), \
 		MSG_OTHERS(span_danger("%U% attaches %T% to \the [src].")), \
 		MSG_BLIND(span_danger("You hear something clamp into place.")))
-	return TRUE
+	return OP_OK
 
 /obj/structure/hoist/proc/attach_hoistee(atom/movable/AM)
 	if (get_turf(AM) != get_turf(source_hook))
@@ -69,6 +76,8 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 CAPABILITIES(/obj/effect/hoist_hook)
 	drag_onto(PROC_REF(drop_input))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(hook_blast_break))))
+	op("swallow", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction swallow"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("hoist_hook_attach", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Attach"), needs(req(PROC_REF(can_attach_holds), because = PROC_REF(can_attach_refusal))), then(PROC_REF(interaction_hoist_hook_attach)))
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/effect/hoist_hook/proc/drop_input(datum/act/input/A)
@@ -136,7 +145,6 @@ CAPABILITIES(/obj/structure/hoist)
 	var/turf/newloc = get_step(src, dir)
 	rel_set(src, nameof(source_hook), new /obj/effect/hoist_hook(newloc))
 	rel_set(source_hook, nameof(source_hook.source_hoist), src)
-
 
 // whatever hangs from the hoist is released.
 /obj/structure/hoist/on_destroy(force)

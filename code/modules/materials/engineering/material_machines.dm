@@ -415,22 +415,33 @@ CAPABILITIES(/obj/structure/material_anvil)
 
 CAPABILITIES(/obj/structure/bed/bath/material_treatment)
 	configure(reagents(volume = 200))
+	op("material_treatment_interaction_item", item(/obj/item/stack/material/processed_alloy), priority(OP_PRIORITY_DEFAULT - 1), label("Treat alloy"), needs(req(PROC_REF(has_medium_holds), because = PROC_REF(has_medium_refusal))), then(PROC_REF(material_treatment_interaction_item)))
 
-EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_INSERT(/obj/item/stack/material/processed_alloy, PROC_REF(material_treatment_interaction_item), "Treat alloy", REQ_BECAUSE(REQ_TARGET_STATE(/obj/structure/bed/bath/material_treatment/proc/has_medium), "the bath contains no treatment medium")))
+/// Requirement (was REQ_* has_medium): the legacy check answers TRUE to pass.
+/obj/structure/bed/bath/material_treatment/proc/has_medium_holds(datum/act/op/A)
+	var/answer = has_medium(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why has_medium_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/structure/bed/bath/material_treatment/proc/has_medium_refusal(datum/act/op/A)
+	var/answer = has_medium(A.actor, src, A.held)
+	return istext(answer) ? answer : "the bath contains no treatment medium"
 
 /// Requirement: the bath holds some treatment medium.
 /obj/structure/bed/bath/material_treatment/proc/has_medium(mob/user, atom/target, obj/item/held)
 	return reagents?.total_volume ? TRUE : FALSE
 
 /// Old attackby.
-/obj/structure/bed/bath/material_treatment/proc/material_treatment_interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
+/obj/structure/bed/bath/material_treatment/proc/material_treatment_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/item = A.held
 	var/obj/item/stack/material/processed_alloy/stock = item
 	var/datum/material_batch/batch = stock.physical_batch().copy_batch()
 	var/required_medium = max(2, stock.get_amount() * 2)
 	if(reagents.total_volume < required_medium)
 		to_chat(user, span_warning("Treating [stock.get_amount()] sheets requires at least [required_medium] units of medium."))
 		consumed(batch, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	var/acid = reagents.get_reagent_amount(REAGENT_ID_SACID) + reagents.get_reagent_amount(REAGENT_ID_PACID)
 	var/process_succeeded
 	var/process_description
@@ -448,13 +459,13 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_INSERT(
 	if(!process_succeeded)
 		to_chat(user, span_warning("The stock is not hot and solution-treated enough to quench. Heat-treat it in the alloy furnace first."))
 		consumed(batch, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(stock, batch, user.drop_location())
 	user.put_in_hands(replacement)
 	reagents.remove_any(required_medium)
 	consumed(batch, user)
 	act_message(user, src, others = span_notice("%U% [process_description] [stock] in %T%."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /// Old attackby: surface treatments and measurements; anything else falls through as its ..() did.
 /obj/item/stack/material/processed_alloy/proc/processed_alloy_item(datum/act/op/A)

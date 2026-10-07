@@ -198,10 +198,11 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
 	return ..()
 
 /// Old attack_hand.
-/obj/item/gun/projectile/automatic/z8/gun_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/automatic/z8/gun_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src && use_launcher)
 		launcher.unload(user)
-		return TRUE
+		return OP_OK
 	return ..()
 
 /obj/item/gun/projectile/automatic/z8/Fire(atom/target, mob/living/user, params, pointblank=0, reflex=0, stance = I_HURT)
@@ -292,10 +293,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 		return ..(user, held, interaction, TRUE) //once closed, behave like normal
 
 /// Old attack_hand.
-/obj/item/gun/projectile/automatic/l6_saw/gun_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/automatic/l6_saw/gun_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!cover_open && user.get_inactive_hand() == src)
 		toggle_cover(user) //open the cover
-		return TRUE
+		return OP_OK
 	return ..() //once open, behave like normal
 
 DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF(/atom, appearance_overlays), list())
@@ -380,7 +382,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF
 		list(mode_name="semiauto", burst=1, fire_delay=0.1),
 		list(mode_name="3-round bursts", burst=3, burst_delay=1, fire_delay=4, move_delay=4, burst_accuracy = list(0,-15,-15,-30,-30), dispersion = list(0.6, 1.0, 1.0))
 		)
-
 
 // Uzi tilting
 /obj/item/gun/projectile/automatic/mini_uzi/Initialize(mapload)
@@ -596,7 +597,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, TYPE_PROC_REF
 		list(mode_name="semi-automatic", burst=1, fire_delay=0, move_delay=0),
 		list(mode_name="two-shot rapidfire", burst=2, fire_delay=null, burst_delay=1, move_delay=0, burst_accuracy=list(-5,-10), dispersion=list(0.5, 1.0)),
 		)
-
 
 /obj/item/gun/projectile/automatic/c20r/rubber
 	magazine_type = /obj/item/ammo_magazine/m10mm/rubber
@@ -826,10 +826,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sol, TYPE_PROC_REF(/a
 		return ..() //once closed, behave like normal
 
 /// Old attack_hand.
-/obj/item/gun/projectile/automatic/mg42/gun_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/automatic/mg42/gun_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!cover_open && user.get_inactive_hand() == src)
 		toggle_cover(user) //open the cover
-		return TRUE
+		return OP_OK
 	return ..() //once open, behave like normal
 
 DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/mg42, TYPE_PROC_REF(/atom, appearance_overlays), list())

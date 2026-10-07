@@ -138,10 +138,8 @@ CAPABILITIES(/obj/structure/bed/double/weaversilk_nest)
 			desc += " Actually, it looks like it's been all spent."
 	..()
 
-
-EXTEND_INTERACTIONS(/obj/effect/weaversilk/trap, \
-	INTERACT_DRAG(null, TYPE_PROC_REF(/atom, interaction_swallow)), \
-)
+CAPABILITIES(/obj/effect/weaversilk/trap)
+	op("swallow", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction swallow"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
 // Items
 

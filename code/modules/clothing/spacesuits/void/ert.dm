@@ -64,7 +64,6 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, suit_storage_spec, l
 	. = ..()
 	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/janitor) //autoinstall the helmet
 
-
 // Overrides the voidsuit screwdriver so people can't remove the helmet.
 /obj/item/clothing/suit/space/void/responseteam/screwdriver_act(mob/user, obj/item/tool, obj/item/answered_component = null)
 	if(!isliving(user))
@@ -100,19 +99,31 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, suit_storage_spec, l
 		to_chat(user, "\The [src] does not have anything installed.")
 	return ITEM_INTERACT_SUCCESS
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/responseteam, INTERACT_ITEM(null, PROC_REF(responseteam_worn_item), REQ_TARGET_STATE(/obj/item/clothing/suit/space/void/proc/can_modify_unworn)))
+CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam)
+	op("responseteam_worn_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Responseteam worn item"), needs(req(PROC_REF(can_modify_unworn_holds), because = PROC_REF(can_modify_unworn_refusal))), then(PROC_REF(responseteam_worn_item)))
+
+/// Requirement (was REQ_* can_modify_unworn): the legacy check answers TRUE to pass.
+/obj/item/clothing/suit/space/void/responseteam/proc/can_modify_unworn_holds(datum/act/op/A)
+	var/answer = can_modify_unworn(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_modify_unworn_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/clothing/suit/space/void/responseteam/proc/can_modify_unworn_refusal(datum/act/op/A)
+	var/answer = can_modify_unworn(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
 
 /// Old attackby: no modifying it while worn.
-/obj/item/clothing/suit/space/void/responseteam/proc/responseteam_worn_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/clothing/suit/space/void/responseteam/proc/responseteam_worn_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 
 	if(!isliving(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(W, /obj/item/clothing/accessory) || istype(W, /obj/item/hand_labeler))
-		return FALSE
+		return OP_DECLINE
 
-	return FALSE
-
+	return OP_DECLINE
 
 /obj/item/clothing/head/helmet/space/void/responseteam
 	name = "Mark VII Emergency Response Helmet"

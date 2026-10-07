@@ -13,7 +13,6 @@
 	load_method = MAGAZINE
 	move_delay = 0 // Pistols have move_delay of 0
 
-
 /*
  * Detective M1911
  */
@@ -220,7 +219,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	magazine_type = /obj/item/ammo_magazine/m9mm/compact/flash
 
 /// Old attack_hand.
-/obj/item/gun/projectile/pistol/gun_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/pistol/gun_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(silenced)
 			if(!user.item_is_in_hands(src))
@@ -230,7 +230,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 			silenced = 0
 			w_class = ITEMSIZE_SMALL
 			changed(src)
-			return TRUE
+			return OP_OK
 	return ..()
 
 /// Old attackby.
@@ -269,7 +269,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	projectile_type = /obj/item/projectile/bullet/pistol
 
 /// Old attack_hand.
-/obj/item/gun/projectile/aps/gun_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/aps/gun_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(silenced)
 			if(!user.item_is_in_hands(src))
@@ -278,7 +279,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 			user.put_in_hands(silenced)
 			silenced = 0
 			changed(src)
-			return TRUE
+			return OP_OK
 	return ..()
 
 /// Old attackby.
@@ -584,7 +585,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	..()
 	look.state("[initial(icon_state)][ammo_magazine ? "" : "-empty"]")
 
-
 /*******PPK*******/
 /obj/item/gun/projectile/ppk
 	name = "PPK"
@@ -602,7 +602,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 /obj/item/gun/projectile/ppk/draw(datum/look/look)
 	..()
 	look.state("[initial(icon_state)][ammo_magazine ? "" : "-empty"]")
-
 
 /*******M2024*******/
 /obj/item/gun/projectile/m2024

@@ -219,6 +219,8 @@ CAPABILITIES(/obj/item/mmi)
 
 CAPABILITIES(/obj/item/mmi/digital)
 	owns_one(nameof(Q), /datum/ghost_query)
+	op("pass", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction pass"), passes())
+	op("digital_mmi_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Boot"), then(PROC_REF(digital_mmi_self)))
 
 /obj/item/mmi/digital/Initialize(mapload)
 	. = ..()
@@ -232,11 +234,6 @@ CAPABILITIES(/obj/item/mmi/digital)
 
 /obj/item/mmi/digital/update_occupied_state()
 	return
-
-EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
-	INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)), \
-	INTERACT_SELF("Boot", PROC_REF(digital_mmi_self)), \
-)
 
 /obj/item/mmi/digital/examine(mob/user)
 	. = ..()
@@ -263,15 +260,16 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 		view.set_stat(CONSCIOUS)
 
 /// Old attack_self: boot the device. Subtypes with is_digital_robot fall through.
-/obj/item/mmi/digital/proc/digital_mmi_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mmi/digital/proc/digital_mmi_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(is_digital_robot)
-		return FALSE
+		return OP_DECLINE
 	var/mob/living/carbon/brain/occupant = get_occupant()
 	if(occupant && !occupant.key && searching == 0)
 		//Start the process of searching for a new user.
 		to_chat(user, span_blue("You carefully locate the manual activation switch and start the [src]'s boot process."))
 		request_player()
-	return TRUE
+	return OP_OK
 
 /obj/item/mmi/digital/proc/request_player()
 	if(!ghost_query_type)

@@ -1,6 +1,8 @@
 /// Old attackby. FALSE falls to the drinks handling, as the old ..() did.
-/obj/item/reagent_containers/food/drinks/glass2/proc/glass2_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(length(extras) >= 2) return FALSE // max 2 extras, one on each side of the drink
+/obj/item/reagent_containers/food/drinks/glass2/proc/glass2_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	if(length(extras) >= 2) return OP_DECLINE // max 2 extras, one on each side of the drink
 
 	if(istype(I, /obj/item/glass_extra))
 		var/obj/item/glass_extra/GE = I
@@ -15,7 +17,7 @@
 	else if(istype(I, /obj/item/reagent_containers/food/snacks/fruit_slice))
 		if(!rim_pos)
 			to_chat(user, span_warning("There's no space to put \the [I] on \the [src]!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/obj/item/reagent_containers/food/snacks/fruit_slice/FS = I
 		rel_add(src, nameof(extras), FS)
 		user.remove_from_mob(FS)
@@ -25,13 +27,18 @@
 		to_chat(user, span_notice("You add \the [FS] to \the [src]."))
 		update_icon()
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/item/reagent_containers/food/drinks/glass2/proc/can_remove_extra)), \
-	INTERACT_ITEM(null, PROC_REF(glass2_item)), \
-)
+/// Requirement (was REQ_* can_remove_extra): the legacy check answers TRUE to pass.
+/obj/item/reagent_containers/food/drinks/glass2/proc/can_remove_extra_holds(datum/act/op/A)
+	var/answer = can_remove_extra(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_remove_extra_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/reagent_containers/food/drinks/glass2/proc/can_remove_extra_refusal(datum/act/op/A)
+	var/answer = can_remove_extra(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
 
 /// Requirement: something on the glass to remove (only asked while the glass is in the other hand; otherwise the effect falls through).
 /obj/item/reagent_containers/food/drinks/glass2/proc/can_remove_extra(mob/user, atom/target, obj/item/held)
@@ -42,15 +49,16 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, \
 	return TRUE
 
 /// Old attack_hand.
-/obj/item/reagent_containers/food/drinks/glass2/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/reagent_containers/food/drinks/glass2/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(src != user.get_inactive_hand())
-		return FALSE
+		return OP_DECLINE
 
 	var/choice = rerun_ask(user, "k37", PROC_REF(interaction_hand), args, /datum/prompt/choice, question = "What would you like to remove from the glass?", title = "Removal Choice", choices = extras)
 	if(isnull(choice))
-		return TRUE
+		return OP_OK
 	if(!choice || !(choice in extras))
-		return TRUE
+		return OP_OK
 
 	if(user.put_in_active_hand(choice))
 		to_chat(user, span_notice("You remove \the [choice] from \the [src]."))
@@ -59,7 +67,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, \
 		to_chat(user, span_warning("Something went wrong, please try again."))
 
 	update_icon()
-	return TRUE
+	return OP_OK
 
 /obj/item/glass_extra
 	name = "generic glass addition"

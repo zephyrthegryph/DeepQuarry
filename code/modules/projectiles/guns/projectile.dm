@@ -43,6 +43,7 @@ CAPABILITIES(/obj/item/gun/projectile)
 	ref_one(nameof(chambered))
 	owns_many(nameof(loaded))
 	param(nameof(starts_loaded), pos = 1)
+	op("gun_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Unload"), then(PROC_REF(gun_hand)))
 
 TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE)
 
@@ -189,14 +190,13 @@ TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE
 	else
 		unload_ammo(user)
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PROC_REF(gun_hand)))
-
 /// Old attack_hand: unload from the off hand. Subtypes override it with ..(); FALSE goes on to pickup.
-/obj/item/gun/projectile/proc/gun_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/proc/gun_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		unload_ammo(user, allow_dump=0)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /obj/item/gun/projectile/afterattack(atom/A, mob/living/user)
 	..()
@@ -226,7 +226,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	if(chambered)
 		bullets += 1
 	return bullets
-
 
 // TGMC Ammo HUD Insertion
 /obj/item/gun/projectile/has_ammo_counter()

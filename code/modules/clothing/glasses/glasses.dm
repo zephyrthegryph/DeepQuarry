@@ -89,12 +89,14 @@ BLIND     // can't see anything
 	// Tint, flash protection, sight flags and the worn overlay all changed: the sight and HUD reactions read MOB_KEY_VIEW.
 	PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(glasses_toggle_self)))
+CAPABILITIES(/obj/item/clothing/glasses)
+	op("glasses_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Glasses toggle self"), then(PROC_REF(glasses_toggle_self)))
 
 /// Old attack_self: toggle the optical matrix. FALSE where the old body returned nothing.
-/obj/item/clothing/glasses/proc/glasses_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/proc/glasses_toggle_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(specialty_goggles)
-		return FALSE
+		return OP_DECLINE
 	if(toggleable)
 		if(!can_toggle(user))
 			to_chat(user, span_warning("You don't seem to be able to toggle \the [src] here."))
@@ -104,7 +106,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(gla
 				to_chat(user, span_notice("You activate the optical matrix on the [src]."))
 			else
 				to_chat(user, span_notice("You deactivate the optical matrix on the [src]."))
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/glasses/meson
 	name = "optical meson scanner"
@@ -347,7 +349,6 @@ CAPABILITIES(/obj/item/clothing/glasses/eyepatchwhite)
 	name = "thin-rimmed glasses"
 	desc = "Glasses with frames are so last century."
 	icon_state = "glasses_thin"
-
 
 /obj/item/clothing/glasses/sunglasses
 	name = "sunglasses"
@@ -676,7 +677,6 @@ CAPABILITIES(/obj/item/clothing/glasses/aerogelgoggles)
 		update_clothing_icon()
 		user.update_mob_action_buttons()
 
-
 /obj/item/clothing/glasses/proc/prescribe(mob/user)
 	prescription = !prescription
 
@@ -854,14 +854,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vi
 	off_state = "tajblind"
 	body_parts_covered = EYES
 
-
 /obj/item/clothing/glasses/omnihud/visor/tesh
 	name = "AR V-visor"
 	desc = "A modified VZR-AR visor refitted for Teshari."
 	icon_state = "AR_visor_tesh"
 	item_state = "AR_visor_tesh"
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/eyes/mob_teshari.dmi')
-
 
 /obj/item/clothing/glasses/darksight
 	name = "voidviewer goggles"

@@ -148,7 +148,6 @@
 							temp = "You have purchased a scrying orb, and gained x-ray vision."
 							max_uses--
 
-
 //Single Use Spellbooks//
 
 /obj/item/spellbook/oneuse
@@ -165,13 +164,13 @@
 	. = ..()
 	name += spellname
 
-EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
-	INTERACT_USE("Read", PROC_REF(interaction_learn_spell)), \
-	INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)), \
-)
+CAPABILITIES(/obj/item/spellbook/oneuse)
+	op("learn_spell", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Read"), then(PROC_REF(interaction_learn_spell)))
+	op("pass", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction pass"), passes())
 
 /// Old attack_self: learn the book's one spell.
-/obj/item/spellbook/oneuse/proc/interaction_learn_spell(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/spellbook/oneuse/proc/interaction_learn_spell(datum/act/op/A)
+	var/mob/user = A.actor
 	var/datum/spell/S = new spell(user)
 	for(var/datum/spell/knownspell in user.spell_list)
 		if(knownspell.type == S.type)
