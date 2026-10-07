@@ -24,7 +24,7 @@ GLOBAL_LIST(capability_runtime_records)
 
 READS_AS(/proc/capability_bits, OP_KEY_CAP_STATE)
 /proc/capability_bits(atom/holder)
-	READS_FROM() // the accessor retains the holder's capability-state dependency key
+	READS_FROM(holder) // the accessor retains the holder's capability-state dependency key
 	var/datum/capability_runtime/runtime = capability_runtime_peek(holder)
 	return runtime ? runtime.bits : 0
 

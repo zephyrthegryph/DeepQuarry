@@ -246,11 +246,12 @@ GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read i
 			if(findtext(root, "system:") == 1)
 				keys += list("sys:[copytext(root, 8)].[name]")
 			continue
-		if(read[2] != SREAD_KIND_VAR || read[1] != SREAD_ROOT_HOLDER)
+		if(!(read[2] in list(SREAD_KIND_VAR, SREAD_KIND_ACCESSOR)) || read[1] != SREAD_ROOT_HOLDER)
 			continue
 		var/key = ""
-		for(var/h in 4 to length(read))
-			key += "[names[read[h]]]."
+		if(length(read) > 3)
+			for(var/h in 4 to length(read))
+				key += "[names[read[h]]]."
 		keys += list("[key][name]")
 	return keys
 
