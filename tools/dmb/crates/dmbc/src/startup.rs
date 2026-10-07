@@ -87,11 +87,10 @@ fn capture_impl(
     for result in chunks {
         procedures.extend(result?);
     }
-    let base = dm_tree::initializers::plan(&frontend.snapshot, &frontend.emission_order)
+    let base = dm_tree::initializers::capture_declaration_plan(&frontend.snapshot, &frontend.emission_order)
         .map_err(|e| format!("startup declarations: {e:?}"))?;
-    let plan = dm_tree::initializers::with_procedure_statics(
+    let plan = dm_tree::initializers::with_captured_procedure_statics(
         &base,
-        &frontend.emission_order,
         &procedures,
     )?;
     let procedure_index = procedures

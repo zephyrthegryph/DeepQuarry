@@ -750,22 +750,14 @@ fn compose_records(
         if attached != stage_keys {
             return Err(unsupported("non-text output stage linker coverage differs"));
         }
+        let map_initializers: HashSet<u32> = dmb.instances.iter()
+            .map(|instance| instance.initializer).collect();
         for key in stage_keys {
             let index = batch
                 .tables
                 .index(key)
                 .ok_or_else(|| unsupported("attached key has no linker index"))?;
-            let present = match key {
-                Key::MapInstance { .. } | Key::DefaultMapInstance { .. } => {
-                    dmb.instances.get(index as usize).is_some()
-                }
-                Key::Resource(_) => dmb.resources.get(index as usize).is_some(),
-                Key::Initializer(dm_link::InitializerIdentity::Map { .. }) => dmb
-                    .instances
-                    .iter()
-                    .any(|instance| instance.initializer == index),
-                _ => false,
-            };
+            let present = attached_key_present(&dmb, key, index, &map_initializers);
             if !present {
                 return Err(CompositionError::InvalidBinding(key, index));
             }
@@ -804,6 +796,16 @@ fn compose_records(
         .map_err(CompositionError::Decode)?;
     Ok(bytes)
 }
+fn attached_key_present(dmb: &Dmb, key: Key, index: u32, map_initializers: &HashSet<u32>) -> bool {
+    match key {
+        Key::MapInstance { .. } | Key::DefaultMapInstance { .. } =>
+            dmb.instances.get(index as usize).is_some(),
+        Key::Resource(_) => dmb.resources.get(index as usize).is_some(),
+        Key::Initializer(dm_link::InitializerIdentity::Map { .. }) => map_initializers.contains(&index),
+        _ => false,
+    }
+}
+
 fn emit_anonymous(
     dmb: &mut Dmb,
     strings: &mut StringIndex,
@@ -839,6 +841,19 @@ fn emit_anonymous(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn map_initializer_attachment_coverage_uses_exact_index_and_domain() {
+        let mut image = Dmb::from_bytes(include_bytes!("../../../fixtures/native_template.bin")).unwrap();
+        assert!(!image.instances.is_empty());
+        image.instances[0].initializer = 17;
+        let index: HashSet<u32> = image.instances.iter().map(|instance| instance.initializer).collect();
+        let key = Key::Initializer(dm_link::InitializerIdentity::Map { source: 1, descriptor: 2 });
+        assert!(attached_key_present(&image, key, 17, &index));
+        assert!(!attached_key_present(&image, key, 999_999, &index));
+        assert!(!attached_key_present(&image, Key::Initializer(dm_link::InitializerIdentity::Global), 17, &index));
+        assert!(attached_key_present(&image, Key::MapInstance { source: 1, descriptor: 2 }, 0, &index));
+        assert!(!attached_key_present(&image, Key::MapInstance { source: 1, descriptor: 2 }, image.instances.len() as u32, &index));
+    }
     #[test]
     fn every_captured_engine_named_procedure_binding_is_validated() {
         let bytes = include_bytes!("../../../fixtures/native_template.bin");

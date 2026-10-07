@@ -33,6 +33,31 @@ pub struct InitializerPlan {
     /// resolver dependency receipts or backend policy/configuration identity.
     pub identity: u128,
 }
+/// Issued declaration ledger for one immutable source and emission projection.
+/// The private plan cannot be replaced by a detached mutable public ledger.
+pub struct DeclarationPlan<'a> {
+    source: &'a TreeSnapshot,
+    order: &'a [OccurrenceId],
+    plan: InitializerPlan,
+}
+impl DeclarationPlan<'_> {
+    pub fn source(&self) -> &TreeSnapshot { self.source }
+    pub fn plan(&self) -> &InitializerPlan { &self.plan }
+}
+pub fn capture_declaration_plan<'a>(
+    source: &'a TreeSnapshot,
+    order: &'a [OccurrenceId],
+) -> Result<DeclarationPlan<'a>, Vec<PlanError>> {
+    let plan = plan(source, order)?;
+    Ok(DeclarationPlan { source, order, plan })
+}
+/// Join against the issuer's exact private ledger without replaying declarations.
+pub fn with_captured_procedure_statics(
+    declarations: &DeclarationPlan<'_>,
+    captures: &[(OccurrenceId, crate::procedure_statics::StaticPlan)],
+) -> Result<InitializerPlan, String> {
+    assemble_procedure_statics(&declarations.plan, declarations.order, captures)
+}
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PlanError {
     SnapshotIdentityMismatch,
@@ -194,9 +219,18 @@ pub fn with_procedure_statics(
 ) -> Result<InitializerPlan, String> {
     let current = plan(&base.source, order)
         .map_err(|error| format!("startup declaration order: {error:?}"))?;
-    if current.identity != base.identity {
+    if current.identity != base.identity
+        || current.writes.as_ref() != base.writes.as_ref()
+        || current.origins.as_ref() != base.origins.as_ref() {
         return Err("startup base ledger differs from current declarations".into());
     }
+    assemble_procedure_statics(base, order, captures)
+}
+fn assemble_procedure_statics(
+    base: &InitializerPlan,
+    order: &[OccurrenceId],
+    captures: &[(OccurrenceId, crate::procedure_statics::StaticPlan)],
+) -> Result<InitializerPlan, String> {
     let mut symbols = dm_ir::SymbolTable::overlay(base.source.tree.shared_symbols());
     let mut by_occurrence = std::collections::HashMap::new();
     for (occurrence, capture) in captures {
@@ -451,5 +485,29 @@ mod tests {
             InitializerValue::Expression(_)
         ));
         assert!(plan.writes[2].declared_array.is_some());
+    }
+    #[test]
+    fn issued_declaration_plan_matches_strict_join_and_rejects_detached_tampering() {
+        let snapshot = snapshot("var/first = 1\nvar/second = 2\n", 0);
+        let order = order(&snapshot);
+        let issued = capture_declaration_plan(&snapshot, &order).unwrap();
+        assert!(std::ptr::eq(issued.source(), &snapshot));
+        let strict = with_procedure_statics(issued.plan(), &order, &[]).unwrap();
+        let captured = with_captured_procedure_statics(&issued, &[]).unwrap();
+        assert_eq!(strict.identity, captured.identity);
+        assert_eq!(strict.writes.as_ref(), captured.writes.as_ref());
+        assert_eq!(strict.origins.as_ref(), captured.origins.as_ref());
+        let mut forged_write = issued.plan().clone();
+        Arc::make_mut(&mut forged_write.writes)[0].value = InitializerValue::NoAuthoredValue;
+        assert_eq!(forged_write.identity, issued.plan().identity);
+        assert!(with_procedure_statics(&forged_write, &order, &[]).is_err());
+        let mut forged_origin = issued.plan().clone();
+        Arc::make_mut(&mut forged_origin.origins)[0].provenance.include_occurrence += 1;
+        assert_eq!(forged_origin.identity, issued.plan().identity);
+        assert!(with_procedure_statics(&forged_origin, &order, &[]).is_err());
+        // Detached copies cannot alter the issuer's read-only ledger.
+        let still_captured = with_captured_procedure_statics(&issued, &[]).unwrap();
+        assert_eq!(still_captured.writes.as_ref(), captured.writes.as_ref());
+        assert_eq!(still_captured.origins.as_ref(), captured.origins.as_ref());
     }
 }

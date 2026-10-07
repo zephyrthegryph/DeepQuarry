@@ -414,7 +414,13 @@ fn append_debug_inventory(
     origins: &crate::debug_sources::DebugOrigins,
     inventory: &mut LinkInventory,
 ) {
+    // Lines retain separate debug origins, but identical path spellings need
+    // only one inventory entry. Compare the full spelling, never just its hash.
+    let mut paths = std::collections::HashSet::new();
     for origin in &origins.entries {
+        if !paths.insert(origin.semantic_path.as_str()) {
+            continue;
+        }
         let bytes: Arc<[u8]> = Arc::from(origin.semantic_path.as_bytes());
         let symbol = SymbolId::of(&origin.semantic_path);
         inventory.spellings.push((symbol, bytes.clone()));
@@ -533,6 +539,22 @@ fn freeze_artifact(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn debug_inventory_retains_first_path_encounter_without_duplicate_lines() {
+        let origins = crate::debug_sources::DebugOrigins {
+            entries: ["code/a.dm", "code/a.dm", "code/b.dm", "code/a.dm"]
+                .iter().enumerate().map(|(line, path)| crate::debug_sources::DebugOrigin {
+                    semantic_path: (*path).into(), line: line as u32 + 1,
+                }).collect(),
+        };
+        let mut inventory = dm_link::LinkInventory::default();
+        super::append_debug_inventory(&origins, &mut inventory);
+        assert_eq!(inventory.entries.len(), 2);
+        assert_eq!(inventory.spellings.len(), 2);
+        assert_eq!(inventory.entries[0].content.as_ref(), b"code/a.dm");
+        assert_eq!(inventory.entries[1].content.as_ref(), b"code/b.dm");
+        assert_eq!(origins.entries.len(), 4);
+    }
     use super::*;
     use crate::lowering::{lower_frontend, AbiPolicy, LoweringConfig};
     use dm_codegen_byond::ProcedureInputs;

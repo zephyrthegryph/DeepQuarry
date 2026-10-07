@@ -6,7 +6,18 @@ The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
 
-Latest release probe 23 cleared the vision macros and reached a missing `NORTH`
+Latest release probe 24 cleared initial SDK macros and reached the procedure-path
+initializer `/proc/default_pathfinding_adjacency` at
+`code/_helpers/pathfinding/common.dm:53`. It failed in 16.457 s externally
+(15.128 s driver clock), sampled 1,870,815,232 private bytes, and produced no pair.
+Startup capture took 1.145 s versus probe 23's 3.730 s after avoiding full parsing
+of bodies without stored local declarations. ABI preparation took 0.320 s and
+initializer classification 1.094 s. The stop points differ; no completed cold
+compiler benchmark or Phase 1 exit is claimed. Native macro values, 21 native
+expression-precedence cases, and emitted inherited-static shared-slot operands
+passed focused gates. The procedure-path initializer fix is in progress.
+
+Release probe 23 cleared the vision macros and reached a missing `NORTH`
 initializer at `code/_helpers/game.dm:621`. It failed in 20.579 s externally
 (18.752 s driver clock), sampled 2,038,902,784 private bytes, and produced no pair.
 Native compile-only controls now bind 148 initial SDK macros to decoded binary
