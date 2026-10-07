@@ -77,3 +77,4 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 
 CAPABILITIES(/mob/living/carbon/alien/diona)
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
+	op("diona_interaction_hat", item(/obj/item/clothing/head), stance(I_HELP), label("Put on hat"), needs(req_is(nameof(hat), FALSE, because = /datum/msg/req_failed)), then(PROC_REF(diona_interaction_hat)))

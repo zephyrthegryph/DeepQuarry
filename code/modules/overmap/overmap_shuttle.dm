@@ -141,13 +141,9 @@
 	opened = 1	//shows open so you can diagnose 'oops, no gas' easily
 	icon_state = "fuel_port_empty"	//set the default state just to be safe
 
-DECLARE_INTERACTIONS(/obj/structure/fuel_port, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/structure/fuel_port/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/fuel_port/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!opened)
 		to_chat(user, "<spawn class='notice'>The door is secured tightly. You'll need a crowbar to open it.")
 		return TRUE
@@ -169,16 +165,18 @@ DECLARE_APPEARANCE_PROC(/obj/structure/fuel_port, TYPE_PROC_REF(/atom, appearanc
 	. += ..()
 
 /// Old attackby.
-/obj/structure/fuel_port/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/fuel_port/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/tank))
 		if(!opened)
 			to_chat(user, "<spawn class='warning'>\The [src] door is still closed!")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(contents_count(src) == 0)
 			user.unEquip(W, src)
 			W.forceMove(src)
 	update_icon()
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/fuel_port/crowbar_act(mob/user, obj/item/tool)
 	opened = !opened
@@ -198,3 +196,5 @@ DECLARE_APPEARANCE_PROC(/obj/structure/fuel_port, TYPE_PROC_REF(/atom, appearanc
 /// A fuel port sits in its shuttle's fuel_ports; deleting it leaves the list.
 CAPABILITIES(/obj/structure/fuel_port)
 	links(/obj/structure/fuel_port::parent_shuttle, /datum/shuttle/autodock/overmap::fuel_ports, b_many = TRUE)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

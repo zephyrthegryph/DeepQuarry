@@ -18,6 +18,7 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/generator)
 	owns_one(nameof(fuel), starts = nameof(fuel_type))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 
 OM_FIELD(/obj/item/mecha_parts/mecha_equipment/generator, generating, FALSE, CHANGE_EXPLICIT)
@@ -96,10 +97,10 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/generator, "toggle", PROC_REF
 			return 0
 	return
 
-DECLARE_INTERACTIONS(/obj/item/mecha_parts/mecha_equipment/generator, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/item/mecha_parts/mecha_equipment/generator/proc/interaction_item(mob/user, obj/item/weapon, datum/interaction/interaction)
+/obj/item/mecha_parts/mecha_equipment/generator/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/weapon = A.held
 	var/result = load_fuel(weapon)
 	if(isnull(result))
 		act_message(user, src, MSG_SELF(span_warning("[fuel] traces minimal. [weapon] cannot be used as fuel.")), \
@@ -108,7 +109,7 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/mecha_equipment/generator, INTERACT_I
 		to_chat(user, "Unit is full.")
 	else
 		act_message(user, src, MSG_SELF("[result] unit\s of [fuel] successfully loaded."), MSG_OTHERS("%U% loads %T% with [fuel]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/mecha_parts/mecha_equipment/generator/critfail()
 	..()

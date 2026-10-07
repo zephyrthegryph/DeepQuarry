@@ -314,6 +314,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, \
 
 CAPABILITIES(/obj/item/stack/lightpole)
 	without("ui_open")
+	op("lightpole_self", in_hand(), label("Plant"), needs(req(PROC_REF(can_plant_holds), because = PROC_REF(can_plant_refusal))), then(PROC_REF(lightpole_self)))
 
 /obj/item/stack/lightpole/red
 	name = "red flags"
@@ -333,8 +334,6 @@ CAPABILITIES(/obj/item/stack/lightpole)
 	icon_state = "yellowtrail_light"
 	blazer_type = /obj/structure/trailblazer/yellow
 
-EXTEND_INTERACTIONS(/obj/item/stack/lightpole, INTERACT_USE("Plant", PROC_REF(lightpole_self), REQ_TARGET_STATE(/obj/item/stack/lightpole/proc/can_plant)))
-
 /// Requirement: TRUE, or why the light can't be planted where the user stands.
 /obj/item/stack/lightpole/proc/can_plant(mob/user, atom/target, obj/item/held)
 	var/turf/T = get_turf(user)
@@ -345,7 +344,18 @@ EXTEND_INTERACTIONS(/obj/item/stack/lightpole, INTERACT_USE("Plant", PROC_REF(li
 	return TRUE
 
 /// Old attack_self: plant a trail light.
-/obj/item/stack/lightpole/proc/lightpole_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* can_plant): the legacy check answers TRUE to pass.
+/obj/item/stack/lightpole/proc/can_plant_holds(datum/act/op/A)
+	var/answer = can_plant(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_plant_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/stack/lightpole/proc/can_plant_refusal(datum/act/op/A)
+	var/answer = can_plant(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/item/stack/lightpole/proc/lightpole_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/turf/T = get_turf(user)
 	task_timed(user, 8 SECONDS, src, src, PROC_REF(plant_done), list(user, T))
 	return TRUE
@@ -376,6 +386,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/lightpole, INTERACT_USE("Plant", PROC_REF(li
 
 CAPABILITIES(/obj/structure/trailblazer)
 	climb()
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /obj/structure/trailblazer/Initialize(mapload)
 	. = ..()
@@ -389,10 +400,9 @@ CAPABILITIES(/obj/structure/trailblazer)
 	act_message(user, src, others = "%U% knocks down %T%.")
 	replace_with(src, stack_type, 1)
 
-DECLARE_INTERACTIONS(/obj/structure/trailblazer, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
-
 /// Old attack_hand.
-/obj/structure/trailblazer/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/trailblazer/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!istext(task_timed(user, 8 SECONDS, src, src, PROC_REF(knock_down_done), list(user))))
 		return TRUE
 	return TRUE

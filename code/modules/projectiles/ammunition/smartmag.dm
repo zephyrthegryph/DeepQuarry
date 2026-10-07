@@ -30,6 +30,7 @@
 
 CAPABILITIES(/obj/item/ammo_magazine/smart)
 	every(2 SECONDS, then(PROC_REF(smart_step)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /obj/item/ammo_magazine/smart/proc/smart_step(datum/act/timer/A)
 	if(!holding_gun())	// Yes, this is awful, sorry. Don't know a better way to figure out if we've been moved into or out of a gun.
@@ -63,15 +64,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/smart, TYPE_PROC_REF(/atom, appe
 		icon_state = "smartmag-empty"
 
 // Emagging lets you remove bullets from your bullet-making magazine
-DECLARE_EMAG(/obj/item/ammo_magazine/smart, PROC_REF(on_emag), null, null)
 
-/obj/item/ammo_magazine/smart/mark_emagged()
-	emagged = TRUE
-/obj/item/ammo_magazine/smart/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/ammo_magazine/smart/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You overload \the [src]'s security measures causing widespread destabilisation. It is likely you could empty \the [src] now."))
 	emagged = TRUE
 	can_remove_ammo = TRUE
-	return TRUE
+	return OP_OK
 
 EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 	INTERACT_ITEM(null, PROC_REF(smart_interaction_item)), \

@@ -266,6 +266,7 @@ DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interacti
 CAPABILITIES(/obj/item/stock_parts)
 	rolls(nameof(pixel_x), range_of(-5.0, 5))
 	rolls(nameof(pixel_y), range_of(-5.0, 5))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/stock_parts/get_rating()
 	return rating

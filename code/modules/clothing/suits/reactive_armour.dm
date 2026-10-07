@@ -64,6 +64,7 @@ TRACKED(/obj/item/clothing/suit/armor/reactive, active)
 
 CAPABILITIES(/obj/item/clothing/suit/armor/reactive)
 	op("toggle", in_hand(), label("Toggle"), then(PROC_REF(reactive_toggled)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(reactive_emp_glitch)))
 
 /obj/item/clothing/suit/armor/reactive/proc/reactive_toggled(datum/act/op/A)
 	var/mob/user = A.actor
@@ -94,10 +95,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/reactive)
 	owner.visible_message(span_danger("The reactive armor doesn't do much, despite being emp'd! Besides giving off a special message, of course."))
 	return TRUE
 
-DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(reactive_emp_glitch))
 
 /// A pulse makes active armour act up (at most once per cooldown).
-/obj/item/clothing/suit/armor/reactive/proc/reactive_emp_glitch(datum/damage_packet/packet)
+/obj/item/clothing/suit/armor/reactive/proc/reactive_emp_glitch(datum/act/A)
 	if(!COOLDOWN_FINISHED(src, bad_effect) || !active)
 		return
 	visible_message(emp_message)

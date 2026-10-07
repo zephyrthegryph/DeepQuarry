@@ -82,15 +82,15 @@
 	rel_clear(src, nameof(paired_uavs))
 	..()
 
-DECLARE_EMAG_REPEATABLE(/obj/item/modular_computer, PROC_REF(on_emag), null)
-/obj/item/modular_computer/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/modular_computer/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(computer_emagged)
 		to_chat(user, "\The [src] was already emagged.")
-		return //NO_EMAG_ACT
+		return OP_DECLINE
 	else
 		computer_emagged = 1
 		to_chat(user, "You emag \the [src]. It's screen briefly shows a \"OVERRIDE ACCEPTED: New software downloads available.\" message.")
-		return 1
+		return OP_OK
 
 DECLARE_APPEARANCE_PROC(/obj/item/modular_computer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/modular_computer/appearance_overlays()

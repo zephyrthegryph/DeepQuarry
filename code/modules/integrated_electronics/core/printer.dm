@@ -57,24 +57,27 @@
 	debug = TRUE
 
 /// Old attack_robot: an adjacent cyborg opens the UI; otherwise the default.
-/obj/item/integrated_circuit_printer/proc/circuit_printer_robot_open(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/integrated_circuit_printer/proc/circuit_printer_robot_open(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!Adjacent(user))
-		return FALSE
+		return OP_DECLINE
 	tgui_interact(user)
 	return TRUE
 
 /// Old attackby.
-/obj/item/integrated_circuit_printer/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/integrated_circuit_printer/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O,/obj/item/stack/material))
 		var/obj/item/stack/material/stack = O
 		if(stack.material.name == MAT_STEEL)
 			if(debug)
 				to_chat(user, span_warning("\The [src] does not need any material."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			var/num = min((max_metal - metal) / metal_per_sheet, stack.get_amount())
 			if(num < 1)
 				to_chat(user, span_warning("\The [src] is too full to add more metal."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			if(stack.use(max(1, round(num)))) // We don't want to create stacks that aren't whole numbers
 				to_chat(user, span_notice("You add [num] sheet\s to \the [src]."))
 				metal += num * metal_per_sheet
@@ -118,7 +121,7 @@
 		attack_self(user)
 		return TRUE
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/integrated_circuit_printer/vv_edit_var(var_name, var_value)
 	// Gotta update the static data in case an admin VV's the upgraded var for some reason..!
@@ -126,14 +129,9 @@
 		dirty_items = TRUE
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ROBOT("Open", PROC_REF(circuit_printer_robot_open)), \
-)
-
 /// Old attack_self.
-/obj/item/integrated_circuit_printer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/integrated_circuit_printer/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 
@@ -142,6 +140,9 @@ CAPABILITIES(/obj/item/integrated_circuit_printer)
 	without("ui_open")
 	op("import_circuit", ui_act("import_circuit"), then(PROC_REF(ui_act_import_circuit)))
 	op("build", ui_act("build", arg("build", schema_path(/datum))), then(PROC_REF(ui_act_build)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("circuit_printer_robot_open", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), label("Open"), then(PROC_REF(circuit_printer_robot_open)))
 
 /obj/item/integrated_circuit_printer/ui_prepare(mob/user, datum/tgui/ui)
 	// Update static data if need be

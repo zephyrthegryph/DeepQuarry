@@ -310,10 +310,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mouse, INTERACT_HAND_U
 
 TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/white/apple, preserve_mouse_identity, TRUE)
 
-EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/holder/mouse)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/holder/mouse/proc/interaction_self(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
+/obj/item/holder/mouse/proc/interaction_self(datum/act/op/A)
+	var/mob/living/carbon/user = A.actor
 	user.setClickCooldown(user.get_attack_speed())
 	for(var/L in contents)
 		if(isanimal(L))

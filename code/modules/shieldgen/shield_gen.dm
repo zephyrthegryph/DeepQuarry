@@ -42,6 +42,7 @@ CAPABILITIES(/obj/machinery/shield_gen)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("shield_gen_swipe_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_swipe_id)))
 	op("shield_gen_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(shield_gen_not_broken_holds), because = PROC_REF(shield_gen_not_broken_refusal))), then(PROC_REF(interaction_open_ui_impl)))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(shield_gen_blast_trip)))
 
 /obj/machinery/shield_gen/advanced
 	name = "advanced bubble shield generator"
@@ -242,10 +243,9 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 	z_range = val
 	. = TRUE
 
-DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen_blast_trip))
 
 /// A blast trips a running generator off.
-/obj/machinery/shield_gen/proc/shield_gen_blast_trip(datum/damage_packet/packet)
+/obj/machinery/shield_gen/proc/shield_gen_blast_trip(datum/act/A)
 	if(active)
 		toggle()
 

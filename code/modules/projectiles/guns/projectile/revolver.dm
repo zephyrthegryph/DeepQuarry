@@ -18,10 +18,12 @@
 	var/chamber_offset = 0 //how many empty chambers in the cylinder until you hit a round
 	fire_sound = SFX_WEAPONS_GUNSHOT4
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver, INTERACT_VERB("Spin cylinder", PROC_REF(revolver_verb_spin_cylinder), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/gun/projectile/revolver)
+	op("revolver_verb_spin_cylinder", menu(), label("Spin cylinder"), needs(carried()), then(PROC_REF(revolver_verb_spin_cylinder)))
 
 /// Old Spin cylinder verb: Fun when you're bored out of your skull.
-/obj/item/gun/projectile/revolver/proc/revolver_verb_spin_cylinder(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/revolver/proc/revolver_verb_spin_cylinder(datum/act/op/A)
+	var/mob/user = A.actor
 	chamber_offset = 0
 	act_message(user, src, others = span_warning("%U% spins the cylinder of %T%!"), blind = span_notice("You hear something metallic spin and click."))
 	play_sfx(src, SFX_WEAPONS_REVOLVER_SPIN)
@@ -317,7 +319,8 @@ CAPABILITIES(/obj/item/gun/projectile/revolver/lemat)
 		rel_add(src, nameof(loaded), casing)
 
 /// Old Spin cylinder verb override: the LeMat spins whichever cylinder it is firing from.
-/obj/item/gun/projectile/revolver/lemat/revolver_verb_spin_cylinder(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/revolver/lemat/revolver_verb_spin_cylinder(datum/act/op/A)
+	var/mob/user = A.actor
 	chamber_offset = 0
 	act_message(user, src, others = span_warning("%U% spins the cylinder of %T%!"), blind = span_notice("You hear something metallic spin and click."))
 	play_sfx(src, SFX_WEAPONS_REVOLVER_SPIN)

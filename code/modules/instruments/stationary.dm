@@ -10,6 +10,7 @@
 
 CAPABILITIES(/obj/structure/musician)
 	owns_one(nameof(song), /datum/song/stationary)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /obj/structure/musician/Initialize(mapload)
 	. = ..()
@@ -31,10 +32,9 @@ CAPABILITIES(/obj/structure/musician)
 		return FALSE
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/structure/musician, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
-
 /// Old attack_hand.
-/obj/structure/musician/proc/interaction_hand(mob/M, obj/item/held, datum/interaction/interaction)
+/obj/structure/musician/proc/interaction_hand(datum/act/op/A)
+	var/mob/M = A.actor
 	if(!M.IsAdvancedToolUser())
 		return TRUE
 

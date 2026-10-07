@@ -20,10 +20,10 @@
 /obj/effect/blob/CanPass(atom/movable/mover, turf/target)
 	return FALSE
 
-DAMAGE_REACTION(/obj/effect/blob, DAMAGE_EXPLOSION, PROC_REF(blob_blast_damage))
 
 /// A blast hurts the blob by its own severity ladder, scaled down by its brute resistance (instead of the blast packet).
-/obj/effect/blob/proc/blob_blast_damage(datum/damage_packet/packet)
+/obj/effect/blob/proc/blob_blast_damage(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	switch(packet.severity)
 		if(1)
 			take_damage(rand(100, 120) / brute_resist)
@@ -31,7 +31,7 @@ DAMAGE_REACTION(/obj/effect/blob, DAMAGE_EXPLOSION, PROC_REF(blob_blast_damage))
 			take_damage(rand(60, 100) / brute_resist)
 		if(3)
 			take_damage(rand(20, 60) / brute_resist)
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/effect/blob/proc/appearance_state()
 	return get_integrity() > max_integrity / 2 ? "blob" : "blob_damaged"
@@ -138,6 +138,7 @@ DAMAGE_REACTION(/obj/effect/blob, DAMAGE_EXPLOSION, PROC_REF(blob_blast_damage))
 
 CAPABILITIES(/obj/effect/blob)
 	op("hit_blob", item(/obj/item), then(PROC_REF(interaction_hit_blob)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blob_blast_damage))))
 
 /// Old attackby: any item hits the blob (afterattack still follows, as before).
 /obj/effect/blob/proc/interaction_hit_blob(datum/act/op/A)

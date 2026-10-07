@@ -197,15 +197,16 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 			return TRUE
 	return FALSE
 
-DECLARE_EMAG_REPEATABLE(/obj/item/rig, PROC_REF(on_emag), null)
-/obj/item/rig/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/rig/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!subverted)
 		req_access = null
 		req_one_access = null
 		locked = 0
 		subverted = 1
 		to_chat(user, span_danger("You short out the access protocol for the suit."))
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /obj/item/rig/proc/open_maintenance_request(mob/user, obj/item/tool, question, list/choices, mount_choice = null)
 	var/original_client_ckey

@@ -34,10 +34,9 @@
 	/// Set TRUE once a scanner logs its data; the survey objective polls this.
 	var/scanned = FALSE
 
-DECLARE_INTERACTIONS(/obj/structure/expedition_survey_beacon, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/structure/expedition_survey_beacon/proc/can_log)), \
-)
+CAPABILITIES(/obj/structure/expedition_survey_beacon)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(can_log_holds), because = PROC_REF(can_log_refusal))), then(PROC_REF(interaction_item)))
 
 /// Requirement: the marker hasn't been logged yet (only asked of scanners; other items fall through).
 /obj/structure/expedition_survey_beacon/proc/can_log(mob/user, atom/target, obj/item/held)
@@ -48,19 +47,32 @@ DECLARE_INTERACTIONS(/obj/structure/expedition_survey_beacon, \
 	return TRUE
 
 /// Old attack_hand.
-/obj/structure/expedition_survey_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/expedition_survey_beacon/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_warning("[src] needs a survey scanner or analyzer to log its readings — your bare hands won't cut it."))
 	return TRUE
 
 // Scanned with a survey scanner or any handheld analyzer.
 /// Old attackby.
-/obj/structure/expedition_survey_beacon/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Requirement (was REQ_* can_log): the legacy check answers TRUE to pass.
+/obj/structure/expedition_survey_beacon/proc/can_log_holds(datum/act/op/A)
+	var/answer = can_log(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_log_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/structure/expedition_survey_beacon/proc/can_log_refusal(datum/act/op/A)
+	var/answer = can_log(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/structure/expedition_survey_beacon/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W, /obj/item/survey_scanner) && !istype(W, /obj/item/analyzer))
-		return FALSE
+		return OP_DECLINE
 	act_message(user, src, MSG_SELF(span_notice("You begin logging %T%'s readings with [W]...")), MSG_OTHERS(span_notice("%U% sweeps [W] across %T%.")))
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 0.6)
 	task_timed(user, 3 SECONDS, src, src, PROC_REF(log_readings_done), list(W, user))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/expedition_survey_beacon/proc/log_readings_done(obj/item/W, mob/user)
 	if(scanned)
@@ -101,21 +113,22 @@ DECLARE_INTERACTIONS(/obj/structure/expedition_survey_beacon, \
 	new /obj/effect/decal/cleanable/ash(get_turf(src))
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/structure/expedition_demo_target, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/structure/expedition_demo_target/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/expedition_demo_target/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W))
-		return FALSE
+		return OP_DECLINE
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(W.obj_damage_type())
 		user.do_attack_animation(src)
 		receive_weapon_hit(W, user, silent = FALSE)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 CAPABILITIES(/obj/structure/expedition_demo_target)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
 /obj/structure/expedition_demo_target/proc/smashed_by(datum/act/hit/generic/A)

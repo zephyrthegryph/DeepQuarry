@@ -45,6 +45,9 @@ CAPABILITIES(/obj/structure/casino_table)
 
 CAPABILITIES(/obj/structure/casino_table/roulette_table)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
+	op("hand", hand(), ungated(), label("Spin"), needs(req(PROC_REF(can_spin_holds), because = PROC_REF(can_spin_refusal))), then(PROC_REF(interaction_hand)))
+	op("insert_ball", item(/obj/item/roulette_ball), label("Insert a roulette ball"), then(PROC_REF(interaction_insert_ball)))
+	op("roulette_table_remove_ball_effect", menu(), label("Remove Roulette Ball"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_remove_ball_holds), because = PROC_REF(can_remove_ball_refusal))), then(PROC_REF(roulette_table_remove_ball_effect)))
 
 /obj/structure/casino_table/roulette_table/examine(mob/user)
 	.=..()
@@ -52,12 +55,6 @@ CAPABILITIES(/obj/structure/casino_table/roulette_table)
 		. += "It's currently using [ball.get_ball_desc()]."
 	else
 		. += "It doesn't have a ball."
-
-EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
-	INTERACT_HAND_UNGATED("Spin", PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/structure/casino_table/roulette_table/proc/can_spin)), \
-	INTERACT_INSERT(/obj/item/roulette_ball, PROC_REF(interaction_insert_ball), null), \
-	INTERACT_VERB("Remove Roulette Ball", PROC_REF(roulette_table_remove_ball_effect), REQ_TARGET_STATE(/obj/structure/casino_table/roulette_table/proc/can_remove_ball)), \
-)
 
 /// Requirement: TRUE, or why the wheel can't be spun.
 /obj/structure/casino_table/roulette_table/proc/can_spin(mob/user, atom/target, obj/item/held)
@@ -78,7 +75,18 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 	return TRUE
 
 /// Old attack_hand.
-/obj/structure/casino_table/roulette_table/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* can_spin): the legacy check answers TRUE to pass.
+/obj/structure/casino_table/roulette_table/proc/can_spin_holds(datum/act/op/A)
+	var/answer = can_spin(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_spin_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/structure/casino_table/roulette_table/proc/can_spin_refusal(datum/act/op/A)
+	var/answer = can_spin(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/structure/casino_table/roulette_table/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, null, others = span_notice("%U% spins the roulette and throws [ball.get_ball_desc()] into it."))
 	play_sfx(src.loc, SFX_MACHINES_ROULETTE)
 	task_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
@@ -105,15 +113,28 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 	return TRUE
 
 /// Old attackby: load a ball into an empty wheel; with one already in, it goes on the table.
-/obj/structure/casino_table/roulette_table/proc/interaction_insert_ball(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/casino_table/roulette_table/proc/interaction_insert_ball(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(ball)
-		return FALSE
+		return OP_DECLINE
 	if(!move_into(src, nameof(src.ball), W, user))
-		return FALSE
+		return OP_DECLINE
 	to_chat(user, span_notice("You insert [W] into [src]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-/obj/structure/casino_table/roulette_table/proc/roulette_table_remove_ball_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* can_remove_ball): the legacy check answers TRUE to pass.
+/obj/structure/casino_table/roulette_table/proc/can_remove_ball_holds(datum/act/op/A)
+	var/answer = can_remove_ball(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_remove_ball_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/structure/casino_table/roulette_table/proc/can_remove_ball_refusal(datum/act/op/A)
+	var/answer = can_remove_ball(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/structure/casino_table/roulette_table/proc/roulette_table_remove_ball_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	if(!user || !isturf(user.loc))
 		return

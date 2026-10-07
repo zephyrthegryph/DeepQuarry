@@ -67,8 +67,8 @@ OM_DERIVE_FIELD(/obj/machinery/atm, has_mains_power, list("stat"))
 	if(ticks_left_timeout <= 0 && ticks_left_locked_down <= 0 && !(locate_within(src, /obj/item/spacecash)))
 		return PROCESS_KILL
 
-DECLARE_EMAG(/obj/machinery/atm, PROC_REF(on_emag), null, null)
-/obj/machinery/atm/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/atm/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	//short out the machine, shoot sparks, spew money!
 	set_emagged(1)
 	fx_sparks(src, 5, FALSE)
@@ -79,7 +79,7 @@ DECLARE_EMAG(/obj/machinery/atm, PROC_REF(on_emag), null, null)
 	//display a message to the user
 	var/response = pick("Initiating withdraw. Have a nice day!", "CRITICAL ERROR: Activating cash chamber panic siphon.","PIN Code accepted! Emptying account balance.", "Jackpot!")
 	to_chat(user, span_warning("[icon2html(src, user.client)] The [src] beeps: \"[response]\""))
-	return 1
+	return OP_OK
 
 /obj/machinery/atm/declare_interactions(list/into)
 	into += list(
@@ -219,6 +219,7 @@ CAPABILITIES(/obj/machinery/atm)
 	op("e_withdrawal", ui_act("e_withdrawal", arg("funds_amount", num())), then(PROC_REF(ui_act_e_withdrawal)))
 	op("withdrawal", ui_act("withdrawal", arg("funds_amount", num())), then(PROC_REF(ui_act_withdrawal)))
 	display_disconnect_op()
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /obj/machinery/atm/proc/ui_act_insert_card(datum/act/op/A)
 	if(held_card())

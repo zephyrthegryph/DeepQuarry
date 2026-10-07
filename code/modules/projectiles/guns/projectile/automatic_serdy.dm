@@ -216,7 +216,23 @@
 /obj/item/gun/projectile/automatic/serdy/hunter/ui_action_click(mob/user, actiontype)
 	perform_scope_interaction(user, PROC_REF(serdy_hunter_verb_scope))
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hunter, INTERACT_VERB("Use Scope", PROC_REF(serdy_hunter_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hunter)
+	op("serdy_hunter_verb_scope", menu(), label("Use Scope"), needs(carried(), req(PROC_REF(zoom_view_allowed_holds), because = PROC_REF(zoom_view_allowed_refusal))), then(PROC_REF(serdy_hunter_verb_scope_op)))
+
+/// Requirement (was REQ_* zoom_view_allowed): the legacy check answers TRUE to pass.
+/obj/item/gun/projectile/automatic/serdy/hunter/proc/zoom_view_allowed_holds(datum/act/op/A)
+	var/answer = zoom_view_allowed(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why zoom_view_allowed_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/gun/projectile/automatic/serdy/hunter/proc/zoom_view_allowed_refusal(datum/act/op/A)
+	var/answer = zoom_view_allowed(A.actor, src, A.held)
+	return istext(answer) ? answer : "You are too distracted to do that."
+
+/// The serdy_hunter_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/automatic/serdy/hunter/proc/serdy_hunter_verb_scope_op(datum/act/op/A)
+	serdy_hunter_verb_scope(A.actor, A.held, null)
+	return OP_OK
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/automatic/serdy/hunter/proc/serdy_hunter_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
@@ -460,7 +476,23 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hunter, INTERACT_VE
 /obj/item/gun/projectile/automatic/serdy/mosin/scoped/ui_action_click(mob/user, actiontype)
 	perform_scope_interaction(user, PROC_REF(serdy_mosin_verb_scope))
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/mosin/scoped, INTERACT_VERB("Use Scope", PROC_REF(serdy_mosin_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/mosin/scoped)
+	op("serdy_mosin_verb_scope", menu(), label("Use Scope"), needs(carried(), req(PROC_REF(zoom_view_allowed_holds), because = PROC_REF(zoom_view_allowed_refusal))), then(PROC_REF(serdy_mosin_verb_scope_op)))
+
+/// Requirement (was REQ_* zoom_view_allowed): the legacy check answers TRUE to pass.
+/obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/zoom_view_allowed_holds(datum/act/op/A)
+	var/answer = zoom_view_allowed(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why zoom_view_allowed_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/zoom_view_allowed_refusal(datum/act/op/A)
+	var/answer = zoom_view_allowed(A.actor, src, A.held)
+	return istext(answer) ? answer : "You are too distracted to do that."
+
+/// The serdy_mosin_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/serdy_mosin_verb_scope_op(datum/act/op/A)
+	serdy_mosin_verb_scope(A.actor, A.held, null)
+	return OP_OK
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/serdy_mosin_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
@@ -526,7 +558,23 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/mosin/scoped, INTER
 /obj/item/gun/projectile/automatic/serdy/awp/ui_action_click(mob/user, actiontype)
 	perform_scope_interaction(user, PROC_REF(serdy_awp_verb_scope))
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/awp, INTERACT_VERB("Use Scope", PROC_REF(serdy_awp_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/awp)
+	op("serdy_awp_verb_scope", menu(), label("Use Scope"), needs(carried(), req(PROC_REF(zoom_view_allowed_holds), because = PROC_REF(zoom_view_allowed_refusal))), then(PROC_REF(serdy_awp_verb_scope_op)))
+
+/// Requirement (was REQ_* zoom_view_allowed): the legacy check answers TRUE to pass.
+/obj/item/gun/projectile/automatic/serdy/awp/proc/zoom_view_allowed_holds(datum/act/op/A)
+	var/answer = zoom_view_allowed(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why zoom_view_allowed_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/gun/projectile/automatic/serdy/awp/proc/zoom_view_allowed_refusal(datum/act/op/A)
+	var/answer = zoom_view_allowed(A.actor, src, A.held)
+	return istext(answer) ? answer : "You are too distracted to do that."
+
+/// The serdy_awp_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/automatic/serdy/awp/proc/serdy_awp_verb_scope_op(datum/act/op/A)
+	serdy_awp_verb_scope(A.actor, A.held, null)
+	return OP_OK
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/automatic/serdy/awp/proc/serdy_awp_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
@@ -562,7 +610,23 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/awp, INTERACT_VERB(
 /obj/item/gun/projectile/automatic/serdy/hectate/ui_action_click(mob/user, actiontype)
 	perform_scope_interaction(user, PROC_REF(serdy_hectate_verb_scope))
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_VERB("Use Scope", PROC_REF(serdy_hectate_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hectate)
+	op("serdy_hectate_verb_scope", menu(), label("Use Scope"), needs(carried(), req(PROC_REF(zoom_view_allowed_holds), because = PROC_REF(zoom_view_allowed_refusal))), then(PROC_REF(serdy_hectate_verb_scope_op)))
+
+/// Requirement (was REQ_* zoom_view_allowed): the legacy check answers TRUE to pass.
+/obj/item/gun/projectile/automatic/serdy/hectate/proc/zoom_view_allowed_holds(datum/act/op/A)
+	var/answer = zoom_view_allowed(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why zoom_view_allowed_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/gun/projectile/automatic/serdy/hectate/proc/zoom_view_allowed_refusal(datum/act/op/A)
+	var/answer = zoom_view_allowed(A.actor, src, A.held)
+	return istext(answer) ? answer : "You are too distracted to do that."
+
+/// The serdy_hectate_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/automatic/serdy/hectate/proc/serdy_hectate_verb_scope_op(datum/act/op/A)
+	serdy_hectate_verb_scope(A.actor, A.held, null)
+	return OP_OK
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/automatic/serdy/hectate/proc/serdy_hectate_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)

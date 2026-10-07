@@ -43,9 +43,9 @@ DECLARE_INTERACTIONS(/obj/dq_compact_probe, \
 /// chains ..() reliably) and builds its own entry directly with dq_interaction_from_spec().
 /obj/dq_compact_probe/extended
 
-/obj/dq_compact_probe/extended/declare_interactions(list/into)
-	into += dq_interaction_from_spec(type, INTERACT_USE("Wave", PROC_REF(wave)))
-	..()
+EXTEND_INTERACTIONS(/obj/dq_compact_probe/extended, \
+	INTERACT_USE("Wave", PROC_REF(wave)), \
+)
 
 /obj/dq_compact_probe/extended/proc/wave()
 	LAZYADD(log, "wave")

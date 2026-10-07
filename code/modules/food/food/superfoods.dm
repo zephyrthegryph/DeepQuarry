@@ -192,16 +192,19 @@
 			"its The Infinity Cake! This huge imposing cake made by immense efforts and resources stands tall in you, radiating a menacing aura of frosty goodness and diabetes for those not wary of it's infinite might!"
 		)
 
-DECLARE_INTERACTIONS(/obj/structure/thecake, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/thecake)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/thecake/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/thecake/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/material/knife))
 		if(edible == 1)
 			HasSliceMissing()
 			if(slices <= 0)
 				to_chat(user, span_warning("The cake hums away quietly as the singulo powered goodness slowly recovers the large amount of lost mass, best to give it a moment before cutting another slice."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			else
 				to_chat(user, span_notice("You cut a slice of the cake. The slice looks like the cake was just baked, and you can see before your eyes as the spot where you cut the slice slowly regenerates!"))
 				slices = slices - 1
@@ -209,7 +212,7 @@ DECLARE_INTERACTIONS(/obj/structure/thecake, INTERACT_ITEM(null, PROC_REF(intera
 
 		else
 			to_chat(user, span_notice("It looks so good... But it feels so wrong to eat it before it's finished..."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	if(istype(W,/obj/item/thecake_layer))
 		var/obj/item/thecake_layer/C = W
 		if(C.layer_stage == 5)
@@ -231,7 +234,7 @@ DECLARE_INTERACTIONS(/obj/structure/thecake, INTERACT_ITEM(null, PROC_REF(intera
 			icon_state = "thecake_stage-[stage]"
 		else
 			to_chat(user, span_warning("Hmm, doesnt seem like this layer is supposed to be added there?"))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 // Chaos cake
 
@@ -491,16 +494,19 @@ DECLARE_INTERACTIONS(/obj/structure/thecake, INTERACT_ITEM(null, PROC_REF(intera
 			reagents.add_reagent(REAGENT_ID_KELOTANE, 2)
 			bitesize = 4
 
-DECLARE_INTERACTIONS(/obj/structure/chaoscake, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/chaoscake)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/chaoscake/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/chaoscake/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/material/knife))
 		if(edible == 1)
 			HasSliceMissing()
 			if(slices <= 0)
 				to_chat(user, span_notice("The cake hums away quietly as the chaos powered goodness slowly recovers the large amount of lost mass, best to give it a moment before cutting another slice."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			else
 				to_chat(user, span_notice("You cut a slice of the cake. The slice looks like the cake was just baked, and you can see before your eyes as the spot where you cut the slice slowly regenerates!"))
 				slices = slices - 1
@@ -509,7 +515,7 @@ DECLARE_INTERACTIONS(/obj/structure/chaoscake, INTERACT_ITEM(null, PROC_REF(inte
 
 		else
 			to_chat(user, span_notice("It looks so good... But it feels so wrong to eat it before it's finished..."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	if(istype(W,/obj/item/chaoscake_layer))
 		var/obj/item/chaoscake_layer/C = W
 		if(C.layer_stage == 8)
@@ -530,7 +536,7 @@ DECLARE_INTERACTIONS(/obj/structure/chaoscake, INTERACT_ITEM(null, PROC_REF(inte
 			icon_state = "chaoscake_stage-[stage]"
 		else
 			to_chat(user, span_warning("Hmm, doesnt seem like this layer is supposed to be added there?"))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 // The One Pizza
 
@@ -558,15 +564,18 @@ DECLARE_INTERACTIONS(/obj/structure/chaoscake, INTERACT_ITEM(null, PROC_REF(inte
 		new slicetype(src.loc)
 	consume(src, user)
 
-DECLARE_INTERACTIONS(/obj/structure/theonepizza, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/theonepizza)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/theonepizza/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/theonepizza/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/material/knife))
 		act_message(user, null, MSG_SELF(span_notice("You start to slowly cut through The One Pizza.")), \
 			MSG_OTHERS(span_bold("%U%") + " starts to slowly cut through The One Pizza."))
 		task_timed(user, slicetime, src, src, PROC_REF(slice_done), list(user))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita/bigslice
 	name = "Giant Margherita slice"

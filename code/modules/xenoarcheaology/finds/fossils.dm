@@ -26,17 +26,20 @@ MAP_RESOLVER(/obj/item/fossil/base, GLOBAL_PROC_REF(resolve_loot))
 	icon_state = "hskull"
 	desc = "It's a fossilised, horned skull."
 
-DECLARE_INTERACTIONS(/obj/item/fossil/skull, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/fossil/skull)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/fossil/skull/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/fossil/skull/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/fossil/bone))
 		var/obj/o = new /obj/skeleton(get_turf(src))
 		new /obj/item/fossil/bone(o)
 		new src.type(o)
 		consume(W, user)
 		consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/skeleton
 	name = "Incomplete skeleton"

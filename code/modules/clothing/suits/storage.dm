@@ -37,12 +37,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage, \
 	flags_inv = HIDEHOLSTER
 	var/open = 0	//0 is closed, 1 is open, -1 means it won't be able to toggle
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/toggle, \
-	INTERACT_VERB("Toggle Coat Buttons", PROC_REF(toggle_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle)
+	op("toggle_toggle_verb", menu(), label("Toggle Coat Buttons"), needs(carried()), then(PROC_REF(toggle_toggle_verb)))
 
 /// Old verb "Toggle Coat Buttons".
-/obj/item/clothing/suit/storage/toggle/proc/toggle_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/storage/toggle/proc/toggle_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
 		return 0
 

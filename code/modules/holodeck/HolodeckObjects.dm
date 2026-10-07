@@ -9,7 +9,8 @@
 	flags = TURF_ACID_IMMUNE
 
 // Old attackby: the holofloor ignores items.
-EXTEND_INTERACTIONS(/turf/simulated/floor/holofloor, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
+CAPABILITIES(/turf/simulated/floor/holofloor)
+	op("pass_item", item(/obj/item), label("Nothing"), passes())
 
 /turf/simulated/floor/holofloor/set_flooring()
 	return
@@ -294,13 +295,13 @@ CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 		return TRUE
 	return FALSE
 
-DECLARE_INTERACTIONS(/obj/item/holo/esword, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/holo/esword)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_self.
-/obj/item/holo/esword/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/holo/esword/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	active = !active
 	if (active)
 		force = 30
@@ -320,7 +321,9 @@ DECLARE_INTERACTIONS(/obj/item/holo/esword, \
 	return TRUE
 
 /// Old attackby.
-/obj/item/holo/esword/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/holo/esword/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(W.has_tool_quality(TOOL_MULTITOOL) && !active)
 		if(!rainbow)
 			rainbow = TRUE
@@ -328,7 +331,7 @@ DECLARE_INTERACTIONS(/obj/item/holo/esword, \
 			rainbow = FALSE
 		to_chat(user, span_notice("You manipulate the color controller in [src]."))
 		update_icon()
-	return FALSE
+	return OP_DECLINE
 
 DECLARE_APPEARANCE_PROC(/obj/item/holo/esword, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/holo/esword/appearance_overlays()
@@ -365,26 +368,29 @@ DECLARE_APPEARANCE_PROC(/obj/item/holo/esword, TYPE_PROC_REF(/atom, appearance_o
 	unacidable = TRUE
 	throwpass = 1
 
-DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/holohoop)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/holohoop/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/holohoop/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if (istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
 		if(G.state<2)
 			to_chat(user, span_warning("You need a better grip to do that!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/mob/grabbed = G?.grab_target()
 		grabbed.forceMove(src.loc)
 		grabbed.status_at_least(STAT_WEAKENED, 5)
 		visible_message(span_warning("[G?.grab_assailant()] dunks [grabbed] into the [src]!"), 3)
 		consume(W, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	else if (istype(W, /obj/item) && get_dist(src,user)<2)
 		user.drop_item(src.loc)
 		act_message(user, src, others = span_notice("%U% dunks [W] into %T%!"))
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return OP_PASS
+	return OP_PASS
 
 /obj/structure/holohoop/CanPass(atom/movable/mover, turf/target)
 	if (istype(mover,/obj/item) && mover.throwing)

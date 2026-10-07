@@ -237,6 +237,7 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	op("voucher", item(/obj/item/mining_voucher), priority(OP_PRIORITY_DEFAULT - 1), label("Redeem voucher"), then(PROC_REF(interaction_voucher)))
 	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(vendor_blast_sparks)))
 
 /obj/machinery/mineral/equipment_vendor/ui_prepare(mob/user, datum/tgui/ui)
 	// Update static data if need be
@@ -418,9 +419,8 @@ CAPABILITIES(/obj/machinery/mineral/equipment_vendor)
 	extra[name] = new /datum/data/mining_equipment(name, path, cost)
 	dirty_items = TRUE
 
-DAMAGE_REACTION(/obj/machinery/mineral/equipment_vendor, DAMAGE_EXPLOSION, PROC_REF(vendor_blast_sparks))
 
 /// A blast throws sparks off the vendor.
-/obj/machinery/mineral/equipment_vendor/proc/vendor_blast_sparks(datum/damage_packet/packet)
+/obj/machinery/mineral/equipment_vendor/proc/vendor_blast_sparks(datum/act/A)
 	fx_sparks(src, 5)
 

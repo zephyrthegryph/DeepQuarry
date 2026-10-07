@@ -3,6 +3,7 @@ CAPABILITIES(/obj/item/spellbook)
 	interface("Spellbook", title = "The Book of Spells", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")
 	op("choose", ui_act("choose", arg("id", schema_text(4096))), then(PROC_REF(ui_act_choose)))
+	op("read_spellbook", in_hand(), label("Read"), needs(req(PROC_REF(can_read_markings_holds), because = PROC_REF(can_read_markings_refusal))), then(PROC_REF(interaction_read_spellbook)))
 
 // Wizard spellbook — structured TGUI panel that replaces the legacy attack_self HTML.
 
@@ -74,7 +75,6 @@ GLOBAL_TABLE(spellbook_catalog, GLOBAL_PROC_REF(build_spellbook_catalog))
 	return TRUE
 
 // spellbook now opens via TGUI panel rather than admin_log_show.
-DECLARE_INTERACTIONS(/obj/item/spellbook, INTERACT_SELF("Read", PROC_REF(interaction_read_spellbook), REQ_TARGET_STATE(/obj/item/spellbook/proc/can_read_markings)))
 
 /// Requirement: only wizards (or the mindless) make sense of the markings; special books handle this themselves.
 /obj/item/spellbook/proc/can_read_markings(mob/user, atom/target, obj/item/held)
@@ -84,12 +84,24 @@ DECLARE_INTERACTIONS(/obj/item/spellbook, INTERACT_SELF("Read", PROC_REF(interac
 
 /// Requirement: the actor is a wizard, or has no mind to judge (the old `user.mind && !is_antagonist` gate).
 /proc/dq_actor_is_wizard_or_mindless(mob/actor, atom/target, obj/item/held)
+	READS_FROM(actor)
 	return !actor?.mind || GLOB.wizards.is_antagonist(actor.mind) ? TRUE : FALSE
 
 /// Old attack_self: the spellbook panel opens via TGUI. Specially handled books leave it to their own self-use.
-/obj/item/spellbook/proc/interaction_read_spellbook(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* can_read_markings): the legacy check answers TRUE to pass.
+/obj/item/spellbook/proc/can_read_markings_holds(datum/act/op/A)
+	var/answer = can_read_markings(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_read_markings_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/spellbook/proc/can_read_markings_refusal(datum/act/op/A)
+	var/answer = can_read_markings(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/item/spellbook/proc/interaction_read_spellbook(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	if(!user)
 		return TRUE
 	dq_open_spellbook(user)

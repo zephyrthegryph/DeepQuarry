@@ -1,10 +1,7 @@
 // Implant chair — structured TGUI.
 
-EXTEND_INTERACTIONS(/obj/machinery/implantchair, \
-	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_open_ui_impl)), \
-)
-
-/obj/machinery/implantchair/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/implantchair/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE

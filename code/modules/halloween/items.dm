@@ -81,10 +81,9 @@ TYPE_TABLE_DECLARE(/obj/structure/candybowl, candy_choices, list( \
 		/obj/item/reagent_containers/food/snacks/oort \
 	))
 
-DECLARE_INTERACTIONS(/obj/structure/candybowl, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/structure/candybowl/proc/can_search)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/structure/candybowl)
+	op("hand", hand(), ungated(), label("Use"), needs(req(PROC_REF(can_search_holds), because = PROC_REF(can_search_refusal))), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Requirement: TRUE, or why the bowl can't be searched.
 /obj/structure/candybowl/proc/can_search(mob/user, atom/target, obj/item/held)
@@ -95,7 +94,18 @@ DECLARE_INTERACTIONS(/obj/structure/candybowl, \
 	return TRUE
 
 /// Old attack_hand.
-/obj/structure/candybowl/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* can_search): the legacy check answers TRUE to pass.
+/obj/structure/candybowl/proc/can_search_holds(datum/act/op/A)
+	var/answer = can_search(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_search_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/structure/candybowl/proc/can_search_refusal(datum/act/op/A)
+	var/answer = can_search(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/structure/candybowl/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 
 	task_timed(user, 5 SECONDS, src, src, PROC_REF(search_done), list(user), claims = TRUE)
 	return TRUE
@@ -137,13 +147,15 @@ DECLARE_INTERACTIONS(/obj/structure/candybowl, \
 	user.put_in_hands(goodie)
 
 /// Old attackby.
-/obj/structure/candybowl/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/structure/candybowl/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/reagent_containers/food/snacks) && !has_candy)
 		to_chat(user, span_notice("You add \the [O] to the bowl."))
 		if(prob(20))
 			fill()
 		consume(O, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/candybowl/proc/empty()
 	var/newname = "empty " + initial(name)
@@ -222,10 +234,12 @@ TYPE_TABLE(/obj/structure/candybowl/security, candy_choices, ..() + list( \
 
 	costumes = typesof(/obj/item/storage/box/halloween/)
 
-DECLARE_INTERACTIONS(/obj/structure/boxpile, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/structure/boxpile)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/structure/boxpile/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/boxpile/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	task_timed(user, 5 SECONDS, src, src, PROC_REF(rummage_done), list(user), claims = TRUE)
 	return TRUE
 

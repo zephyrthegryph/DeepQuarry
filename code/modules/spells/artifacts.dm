@@ -12,10 +12,22 @@
 	force = 10
 	hitsound = SFX_ITEMS_WELDER2
 
-DECLARE_INTERACTIONS(/obj/item/scrying, INTERACT_USE(null, PROC_REF(interaction_self), REQ_PROC(/proc/dq_actor_is_wizard_or_mindless, "you stare into the orb and see nothing but your own reflection")))
+CAPABILITIES(/obj/item/scrying)
+	op("self", in_hand(), label("Use"), needs(req(PROC_REF(dq_actor_is_wizard_or_mindless_holds), because = PROC_REF(dq_actor_is_wizard_or_mindless_refusal))), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/scrying/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* dq_actor_is_wizard_or_mindless): the legacy check answers TRUE to pass.
+/obj/item/scrying/proc/dq_actor_is_wizard_or_mindless_holds(datum/act/op/A)
+	var/answer = dq_actor_is_wizard_or_mindless(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why dq_actor_is_wizard_or_mindless_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/scrying/proc/dq_actor_is_wizard_or_mindless_refusal(datum/act/op/A)
+	var/answer = dq_actor_is_wizard_or_mindless(A.actor, src, A.held)
+	return istext(answer) ? answer : "you stare into the orb and see nothing but your own reflection"
+
+/obj/item/scrying/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 
 	to_chat(user, span_info("You can see... everything!"))
 	act_message(user, src, others = span_danger("%U% stares into %T%, %THEIR% eyes glazing over."))

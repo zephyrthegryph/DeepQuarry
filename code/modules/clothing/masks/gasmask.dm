@@ -48,7 +48,8 @@ TYPE_TABLE_DECLARE(/obj/item/clothing/mask/gas, gasmask_filtered_gases, list(GAS
 	armor_spec = "melee=10;bullet=10;laser=10;bio=55"
 
 //Turn it into a hailer mask
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/half, INTERACT_ITEM(null, PROC_REF(half_mask_add_hailer_item), REQ_TARGET_STATE(/obj/item/clothing/mask/gas/half/proc/can_fit_hailer)))
+CAPABILITIES(/obj/item/clothing/mask/gas/half)
+	op("half_mask_add_hailer_item", item(/obj/item), label("Half mask add hailer item"), needs(req(PROC_REF(can_fit_hailer_holds), because = PROC_REF(can_fit_hailer_refusal))), then(PROC_REF(half_mask_add_hailer_item)))
 
 /// Both ingredients must be releasable before fitting a hailer changes either one.
 /obj/item/clothing/mask/gas/half/proc/can_fit_hailer(mob/user, atom/target, obj/item/held)
@@ -63,21 +64,33 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/half, INTERACT_ITEM(null, PROC_R
 	return TRUE
 
 /// Fit a hailer, retaining the original mask's slot and forensic evidence.
-/obj/item/clothing/mask/gas/half/proc/half_mask_add_hailer_item(mob/user, obj/item/I, datum/interaction/interaction)
+/// Requirement (was REQ_* can_fit_hailer): the legacy check answers TRUE to pass.
+/obj/item/clothing/mask/gas/half/proc/can_fit_hailer_holds(datum/act/op/A)
+	var/answer = can_fit_hailer(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_fit_hailer_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/clothing/mask/gas/half/proc/can_fit_hailer_refusal(datum/act/op/A)
+	var/answer = can_fit_hailer(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/item/clothing/mask/gas/half/proc/half_mask_add_hailer_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/hailer))
 		if(can_fit_hailer(user, src, I) != TRUE)
-			return FALSE
+			return OP_DECLINE
 		var/obj/item/clothing/mask/gas/sechailer/N = new /obj/item/clothing/mask/gas/sechailer(get_turf(src))
 		if(!I.loc.release_to(I, N, null, user))
 			consume(N, user)
-			return FALSE
+			return OP_DECLINE
 		play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 		transfer_blooddna_to(N)
 		transfer_fingerprints_to(N)
 		transfer_fibres_to(N)
 		rel_set(N, nameof(N.hailer), I)
 		replace_with(src, N)
-	return FALSE
+	return OP_DECLINE
 
 //Plague Dr suit can be found in clothing/suits/bio.dm
 /obj/item/clothing/mask/gas/plaguedoctor

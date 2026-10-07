@@ -184,9 +184,8 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	else
 		..()
 
-DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
-/mob/living/bot/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	return 0
+/mob/living/bot/proc/on_emag(datum/act/op/A)
+	return OP_DECLINE
 
 /// Calls `step_proc` `count` times, `delay` apart (the bot's movement within one AI tick).
 /mob/living/bot/proc/bot_steps(count, delay, step_proc)
@@ -624,6 +623,7 @@ CAPABILITIES(/mob/living/bot)
 	owns_one(nameof(botcard), starts = /obj/item/card/id)
 	owns_one(nameof(access_scanner), starts = /obj)
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /mob/living/bot/ownership()
 	. = ..()

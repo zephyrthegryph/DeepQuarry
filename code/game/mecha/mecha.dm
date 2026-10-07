@@ -229,6 +229,8 @@ CAPABILITIES(/obj/mecha)
 	op("maint_protocol", ui_act("maint_protocol"), then(PROC_REF(ui_act_maint_protocol)))
 	op("maint_set_air", ui_act("maint_set_air"), then(PROC_REF(ui_act_maint_set_air)))
 	op("maint_remove_passenger", ui_act("maint_remove_passenger"), then(PROC_REF(ui_act_maint_remove_passenger)))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(mecha_blast)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(mecha_emp)))
 
 TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_equipment, null)
 
@@ -1162,9 +1164,10 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	return FALSE
 
 //This refer to whenever you are caught in an explosion.
-DAMAGE_REACTION(/obj/mecha, DAMAGE_EXPLOSION, PROC_REF(mecha_blast))
 /// The armour may soften a blast by a severity step: the packet is rescaled to the new severity.
-/obj/mecha/proc/mecha_blast(datum/damage_packet/packet)
+/obj/mecha/proc/mecha_blast(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	src.mecha_log_message("Affected by explosion of severity: [packet.severity].",1)
 	var/severity = mech_body_plan().blast_severity(src, packet.severity)
 	if(severity != packet.severity)
@@ -1178,9 +1181,10 @@ DAMAGE_REACTION_AFTER(/obj/mecha, DAMAGE_EXPLOSION, PROC_REF(mecha_blast_afflict
 	if(packet.severity <= 3)
 		mech_body_plan().roll_affliction(src, list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)
 
-DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 /// An EMP drains the cell, burns the hull and risks internal damage.
-/obj/mecha/proc/mecha_emp(datum/damage_packet/packet)
+/obj/mecha/proc/mecha_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(get_charge())
 		use_power((cell.charge/2)/packet.severity)
 		take_damage(50 / packet.severity,"energy")

@@ -16,15 +16,13 @@
 
 CAPABILITIES(/obj/structure/casino_table/board_game)
 	owns_one(nameof(game_ui), /datum/board_game, starts = nameof(game_ui))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 
-
-EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-)
 
 /// Old attack_hand.
-/obj/structure/casino_table/board_game/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/casino_table/board_game/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		if(!game_ui)
 			pick_game(user)
@@ -33,7 +31,8 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 	return TRUE
 
 /// Old click_alt.
-/obj/structure/casino_table/board_game/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/casino_table/board_game/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	pick_game(user)
 	return TRUE
 

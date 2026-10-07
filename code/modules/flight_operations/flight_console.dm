@@ -237,6 +237,7 @@ CAPABILITIES(/datum/flight_operations_ui)
 	var/datum/flight_operations_ui/flight_operations_ui
 
 CAPABILITIES(/obj/machinery/computer/ship)
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	owns_one(nameof(flight_operations_ui), /datum/flight_operations_ui)
 	// The buttons every ship console's window has (code/modules/overmap/ships/computers/ship.dm).
 	op("sync", ui_act("sync"), then(PROC_REF(ui_act_sync)))

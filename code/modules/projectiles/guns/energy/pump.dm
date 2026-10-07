@@ -242,7 +242,23 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/locked/frontier/carbine, TYPE_PROC_
 /obj/item/gun/energy/locked/frontier/rifle/ui_action_click(mob/user, actiontype)
 	perform_scope_interaction(user, PROC_REF(frontier_rifle_verb_scope))
 
-EXTEND_INTERACTIONS(/obj/item/gun/energy/locked/frontier/rifle, INTERACT_VERB("Use Scope", PROC_REF(frontier_rifle_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+CAPABILITIES(/obj/item/gun/energy/locked/frontier/rifle)
+	op("frontier_rifle_verb_scope", menu(), label("Use Scope"), needs(carried(), req(PROC_REF(zoom_view_allowed_holds), because = PROC_REF(zoom_view_allowed_refusal))), then(PROC_REF(frontier_rifle_verb_scope_op)))
+
+/// Requirement (was REQ_* zoom_view_allowed): the legacy check answers TRUE to pass.
+/obj/item/gun/energy/locked/frontier/rifle/proc/zoom_view_allowed_holds(datum/act/op/A)
+	var/answer = zoom_view_allowed(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why zoom_view_allowed_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/gun/energy/locked/frontier/rifle/proc/zoom_view_allowed_refusal(datum/act/op/A)
+	var/answer = zoom_view_allowed(A.actor, src, A.held)
+	return istext(answer) ? answer : "You are too distracted to do that."
+
+/// The frontier_rifle_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/energy/locked/frontier/rifle/proc/frontier_rifle_verb_scope_op(datum/act/op/A)
+	frontier_rifle_verb_scope(A.actor, A.held, null)
+	return OP_OK
 
 /// Old Use Scope verb.
 /obj/item/gun/energy/locked/frontier/rifle/proc/frontier_rifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)

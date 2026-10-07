@@ -228,11 +228,12 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 	dismantle()
 	return TRUE
 //checks for projectile damage and does the same as dismaintle but spawns material instead.
-DAMAGE_REACTION(/obj/structure/smolebuilding, DAMAGE_PROJECTILE, PROC_REF(smolebuilding_shot))
+CAPABILITIES(/obj/structure/smolebuilding)
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(smolebuilding_shot))))
 
-/obj/structure/smolebuilding/proc/smolebuilding_shot(datum/damage_packet/packet)
+/obj/structure/smolebuilding/proc/smolebuilding_shot(datum/act/hit/projectile/A)
 	displode()
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 //is the same as dismaintal but instead of ruins it just makes it all explode
 /obj/structure/smolebuilding/proc/displode()
 	visible_message(span_danger("\The [src] explodes into pieces!"))
@@ -262,12 +263,13 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISAR
 	displode()
 	return TRUE
 
-DAMAGE_REACTION(/obj/structure/smoleruins, DAMAGE_PROJECTILE, PROC_REF(smoleruins_shot))
+CAPABILITIES(/obj/structure/smoleruins)
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(smoleruins_shot))))
 
 /// Ruins blow apart when shot, same as buildings.
-/obj/structure/smoleruins/proc/smoleruins_shot(datum/damage_packet/packet)
+/obj/structure/smoleruins/proc/smoleruins_shot(datum/act/hit/projectile/A)
 	displode()
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/structure/smoleruins/proc/displode()
 	visible_message(span_danger("\The [src] explodes into pieces!"))

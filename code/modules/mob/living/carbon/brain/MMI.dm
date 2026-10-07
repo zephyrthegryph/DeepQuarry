@@ -26,6 +26,9 @@ CAPABILITIES(/obj/item/mmi)
 	owns_one(nameof(body_backup), /mob/living)
 	owns_one(nameof(radio), starts = /obj/item/radio/headset/mmi_radio)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_interference)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("mmi_self", in_hand(), label("Upend"), then(PROC_REF(mmi_self)))
+	op("mmi_verb_toggle_radio", menu(), label("Toggle Brain Radio"), needs(carried()), then(PROC_REF(mmi_verb_toggle_radio)))
 
 /obj/item/mmi/Initialize(mapload)
 	. = ..()
@@ -65,7 +68,8 @@ CAPABILITIES(/obj/item/mmi)
 	locked = 1
 
 /// Old Toggle Brain Radio verb: Enables or disables the integrated brain radio, which is only usable outside of a body.
-/obj/item/mmi/proc/mmi_verb_toggle_radio(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mmi/proc/mmi_verb_toggle_radio(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
 		return 0
 
@@ -80,28 +84,24 @@ CAPABILITIES(/obj/item/mmi)
 	else
 		to_chat (user, "You were unable to toggle the [src]'s radio.")
 
-DECLARE_INTERACTIONS(/obj/item/mmi, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_SELF("Upend", PROC_REF(mmi_self)), \
-	INTERACT_VERB("Toggle Brain Radio", PROC_REF(mmi_verb_toggle_radio), REQ_IN_INVENTORY), \
-)
-
 /// Old attackby.
-/obj/item/mmi/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/mmi/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	var/mob/living/carbon/brain/occupant = get_occupant()
 	// An empty view with no brain behind it (left after its mind was released) doesn't block a new brain.
 	if(istype(O,/obj/item/organ/internal/brain) && (!occupant || (!occupant.mind && !brainobj))) //Time to stick a brain in it --NEO
 		var/obj/item/organ/internal/brain/B = O
 		if(B.is_brain_dead())
 			to_chat(user, span_warning("That brain is well and truly dead."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/mob/living/carbon/brain/view = B.hosted_view()
 		if(!view)
 			to_chat(user, span_warning("You aren't sure where this brain came from, but you're pretty sure it's useless."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(view.identity().has_genetic_effect(/datum/body_effect/no_borg))	//Can't be shoved in an MMI.
 			to_chat(user, span_warning("\The [src] appears to reject this brain.  It is incompatible."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " sticks \a [O] into %T%."))
 		user.drop_item()
@@ -109,7 +109,7 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 
 		feedback_inc("cyborg_mmis_filled",1)
 
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if((istype(O,/obj/item/card/id)||istype(O,/obj/item/pda)) && occupant)
 		if(allowed(user))
@@ -117,11 +117,11 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 			to_chat(user, span_notice("You [locked ? "lock" : "unlock"] the brain holder."))
 		else
 			to_chat(user, span_warning("Access denied."))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(occupant)
 		O.attack(occupant, user)//Oh noooeeeee
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /// Seat a removed brain: the organ becomes the tissue and its view (with the
 /// mind) moves into this MMI. Nothing is copied.
@@ -135,9 +135,10 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 	update_occupied_state()
 
 /// Old attack_self: upend the MMI. Subtypes with special_handling fall through.
-/obj/item/mmi/proc/mmi_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mmi/proc/mmi_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	if(!get_occupant())
 		to_chat(user, span_warning("You upend the MMI, but there's nothing in it."))
 	else if(locked)

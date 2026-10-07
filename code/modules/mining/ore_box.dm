@@ -31,18 +31,19 @@
 
 CAPABILITIES(/obj/structure/ore_box)
 	climb()
-
-DECLARE_INTERACTIONS(/obj/structure/ore_box, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/ore_box/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/ore_box/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/ore))
 		var/obj/item/ore/ore = W
 		var/ore_material = ore.material
 		if(!consume(ore, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		stored_ore[ore_material]++
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(W, /obj/item/dogborg/sleeper/compactor/supply))
 		var/obj/item/dogborg/sleeper/compactor/supply/borg_sleeper = W
@@ -57,9 +58,9 @@ DECLARE_INTERACTIONS(/obj/structure/ore_box, INTERACT_ITEM(null, PROC_REF(intera
 				S.stored_ore[ore_id] = 0 				// Set the value of the ore in the satchel to 0.
 				S.set_current_capacity(0)				// Set the amount of ore in the satchel  to 0.
 		to_chat(user, span_notice("You empty the satchel into the box."))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/ore_box/examine(mob/user)
 	. = ..()

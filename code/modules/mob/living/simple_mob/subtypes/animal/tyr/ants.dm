@@ -428,12 +428,13 @@ TYPE_TABLE(/obj/structure/mob_spawner/ant_hill, mob_spawner_types, list( \
 	density = FALSE
 	max_integrity = 15 //1 thwack with sword, 2 with spear
 
-EXTEND_INTERACTIONS(/obj/effect/ant_structure, \
-	INTERACT_ITEM(null, PROC_REF(interaction_hit_ant_structure)), \
-)
+CAPABILITIES(/obj/effect/ant_structure)
+	op("hit_ant_structure", item(/obj/item), label("Interaction hit ant structure"), then(PROC_REF(interaction_hit_ant_structure)))
 
 /// Old attackby: any item hits the structure, welders burn it (afterattack still follows, as before).
-/obj/effect/ant_structure/proc/interaction_hit_ant_structure(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/ant_structure/proc/interaction_hit_ant_structure(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	var/obj/item/W = held
 	user.setClickCooldown(user.get_attack_speed(W))
 
@@ -452,7 +453,7 @@ EXTEND_INTERACTIONS(/obj/effect/ant_structure, \
 			playsound(src, W.usesound, 100, 1)
 
 	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 
 /obj/effect/ant_structure/proc/die()

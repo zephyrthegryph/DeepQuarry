@@ -20,11 +20,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/syringe_cartridge, TYPE_PROC_REF(/atom, appear
 		if(length(syringe().filling)) underlays += syringe().filling
 
 /// Old attackby.
-/obj/item/syringe_cartridge/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/syringe_cartridge/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/reagent_containers/syringe))
 		if(syringe())
 			to_chat(user, span_warning("[src] already has a syringe loaded!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		rel_set(src, nameof(syringe), I)
 		to_chat(user, span_notice("You carefully insert [syringe()] into [src]."))
 		user.remove_from_mob(syringe())
@@ -32,15 +34,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/syringe_cartridge, TYPE_PROC_REF(/atom, appear
 		sharp = TRUE
 		name = "syringe dart"
 		update_icon()
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
-DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/syringe_cartridge)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_self.
-/obj/item/syringe_cartridge/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/syringe_cartridge/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(syringe())
 		to_chat(user, span_notice("You remove [syringe()] from [src]."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)

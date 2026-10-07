@@ -233,10 +233,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 	if(Adjacent(user) && teleport_to_mate(user))
 		cooldown(mate_too = FALSE)
 
-DECLARE_INTERACTIONS(/obj/item/telecube, INTERACT_ALT(null, PROC_REF(interaction_alt)))
-
 /// Old click_alt.
-/obj/item/telecube/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/telecube/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(Adjacent(user) && swap_with_mate())
 		cooldown(mate_too = TRUE)
 	return TRUE
@@ -248,6 +247,7 @@ DECLARE_INTERACTIONS(/obj/item/telecube, INTERACT_ALT(null, PROC_REF(interaction
 
 CAPABILITIES(/obj/item/telecube)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 
 /// Something walked into it (the bump action's notice).
 /obj/item/telecube/proc/bumped_into(datum/act/A)

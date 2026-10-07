@@ -107,15 +107,18 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller/
 		"internalTemplateName" = "EscapePodBerthConsole",
 	)
 
-DECLARE_EMAG(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth, PROC_REF(on_emag), null, null)
-/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+CAPABILITIES(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth)
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
+
+/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You emag the [src], arming the escape pod!"))
 	set_emagged(1)
 	if (istype(program, /datum/embedded_program/docking/simple/escape_pod_berth))
 		var/datum/embedded_program/docking/simple/escape_pod_berth/P = program
 		if (!P.armed)
 			P.arm()
-	return 1
+	return OP_OK
 
 //A docking controller program for a simple door based docking port
 /datum/embedded_program/docking/simple/escape_pod_berth

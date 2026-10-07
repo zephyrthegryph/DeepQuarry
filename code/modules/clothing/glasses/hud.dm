@@ -83,6 +83,7 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 	op("omnihud_display_self", in_hand(), then(PROC_REF(omnihud_display_self)))
 	op("omnihud_chromatize_verb", menu(), label("Toggle AR Glasses Shading"), needs(carried()), then(PROC_REF(omnihud_chromatize_verb)))
 	op("omnihud_toggle_ar_planes_verb", menu(), label("Toggle AR Heads-Up Display"), needs(carried()), then(PROC_REF(omnihud_toggle_ar_planes_verb)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(omnihud_emp_disconnect)))
 
 
 /obj/item/clothing/glasses/omnihud/dropped(mob/user, equipping, slot)
@@ -103,10 +104,9 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 	if(offline_tgarscreen && !tgarscreen)
 		rel_move(src, nameof(offline_tgarscreen), src, nameof(tgarscreen))
 
-DAMAGE_REACTION(/obj/item/clothing/glasses/omnihud, DAMAGE_EMP, PROC_REF(omnihud_emp_disconnect))
 
 /// A pulse drops the AR link for a while (and can glitch the lenses).
-/obj/item/clothing/glasses/omnihud/proc/omnihud_emp_disconnect(datum/damage_packet/packet)
+/obj/item/clothing/glasses/omnihud/proc/omnihud_emp_disconnect(datum/act/A)
 	if(tgarscreen)
 		SStgui.close_uis(src)
 	if(tgarscreen && !offline_tgarscreen)

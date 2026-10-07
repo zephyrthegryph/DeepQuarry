@@ -79,28 +79,28 @@ CAPABILITIES(/obj/item/anodevice)
 	op("startup", ui_act("startup"), then(PROC_REF(ui_act_startup)))
 	op("shutdown", ui_act("shutdown"), then(PROC_REF(ui_act_shutdown)))
 	op("ejectbattery", ui_act("ejectbattery"), then(PROC_REF(ui_act_ejectbattery)))
-
-DECLARE_INTERACTIONS(/obj/item/anodevice, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_USE("Open", PROC_REF(interaction_open)), \
-)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("open", in_hand(), label("Open"), then(PROC_REF(interaction_open)))
 
 /// Old attackby.
-/obj/item/anodevice/proc/interaction_item(mob/user, obj/I, datum/interaction/interaction)
+/obj/item/anodevice/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/I = A.held
 	if(istype(I, /obj/item/anobattery))
 		if(!inserted_battery())
 			if(!own_bring_in(src, nameof(inserted_battery), I, null, user, TRUE, null, FALSE))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			to_chat(user, span_blue("You insert the battery."))
 			rel_set(src, nameof(inserted_battery), I)
 			UpdateSprite()
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 
 /// Old attack_self: open the interface.
-/obj/item/anodevice/proc/interaction_open(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/anodevice/proc/interaction_open(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 

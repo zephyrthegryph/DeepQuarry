@@ -49,6 +49,9 @@ CAPABILITIES(/obj/item/mapping_unit)
 	owns_one(nameof(hud_datum), /datum/mini_hud/mapper)
 	owns_many(nameof(icon_image_cache))
 	owns_many(nameof(map_image_cache))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_use_mapper_holds), because = PROC_REF(can_use_mapper_refusal))), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/mapping_unit/deathsquad
 	name = "deathsquad mapping unit"
@@ -133,7 +136,18 @@ CAPABILITIES(/obj/item/mapping_unit)
 	return TRUE
 
 /// Old attack_self.
-/obj/item/mapping_unit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* can_use_mapper): the legacy check answers TRUE to pass.
+/obj/item/mapping_unit/proc/can_use_mapper_holds(datum/act/op/A)
+	var/answer = can_use_mapper(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_use_mapper_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/mapping_unit/proc/can_use_mapper_refusal(datum/act/op/A)
+	var/answer = can_use_mapper(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/item/mapping_unit/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat != CONSCIOUS)
 		return TRUE
 
@@ -150,14 +164,9 @@ CAPABILITIES(/obj/item/mapping_unit)
 		to_chat(H, span_notice("You hold \the [src] where you can see it."))
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/mapping_unit/proc/can_use_mapper)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/item/mapping_unit/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mapping_unit/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(cell && user.get_inactive_hand() == src) // click with empty off hand
 		to_chat(user,span_notice("You eject \the [cell] from \the [src]."))
 		user.put_in_hands(cell)
@@ -165,17 +174,19 @@ DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
 		if(updating)
 			stop_updates()
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /// Old attackby.
-/obj/item/mapping_unit/proc/interaction_item(mob/user, obj/W, datum/interaction/interaction)
+/obj/item/mapping_unit/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/W = A.held
 	if(istype(W,cell_type) && !cell)
 		if(!move_into(src, nameof(src.cell), W, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		cell.update_icon() //Why doesn't a cell do this already? :|
 		to_chat(user,span_notice("You insert \the [cell] into \the [src]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/mapping_unit/proc/first_run(mob/user)
 	rel_set(src, nameof(hud_datum), new /datum/mini_hud/mapper(user.hud_used, src))

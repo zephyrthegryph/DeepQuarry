@@ -50,6 +50,8 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 	op("spell_choice", ui_act("spell_choice", arg("name", schema_text(4096))), then(PROC_REF(ui_act_spell_choice)))
 	op("item_choice", ui_act("item_choice", arg("name", schema_text(4096))), then(PROC_REF(ui_act_item_choice)))
 	op("refund_functions", ui_act("refund_functions"), then(PROC_REF(ui_act_refund_functions)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(can_refund_holds), because = PROC_REF(can_refund_refusal))), then(PROC_REF(interaction_item)))
 
 /obj/item/technomancer_catalog/apprentice
 	name = "apprentice's catalog"
@@ -119,13 +121,10 @@ CAPABILITIES(/obj/item/technomancer_catalog)
 
 // TGUI migration: full structured data, no embedded
 // byond:// hrefs. All actions dispatched via tgui_act.
-DECLARE_INTERACTIONS(/obj/item/technomancer_catalog, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/item/technomancer_catalog/proc/can_refund)), \
-)
 
 /// Old attack_self.
-/obj/item/technomancer_catalog/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/technomancer_catalog/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user)
 		return TRUE
 	if(owner && user != owner)
@@ -283,12 +282,24 @@ DECLARE_INTERACTIONS(/obj/item/technomancer_catalog, \
 	return TRUE
 
 /// Old attackby.
-/obj/item/technomancer_catalog/proc/interaction_item(mob/user, atom/movable/AM, datum/interaction/interaction)
+/// Requirement (was REQ_* can_refund): the legacy check answers TRUE to pass.
+/obj/item/technomancer_catalog/proc/can_refund_holds(datum/act/op/A)
+	var/answer = can_refund(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_refund_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/technomancer_catalog/proc/can_refund_refusal(datum/act/op/A)
+	var/answer = can_refund(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/item/technomancer_catalog/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/AM = A.held
 	for(var/datum/technomancer/equipment/E in equipment_instances + assistance_instances)
 		if(AM.type == E.obj_path) // We got a match.
 			if(budget + E.cost > max_budget)
 				to_chat(user, span_warning("\The [src] will not allow you to overflow your maximum budget by refunding that."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			else
 				budget = budget + E.cost
 				to_chat(user, span_notice("You've refunded \the [AM]."))
@@ -304,8 +315,8 @@ DECLARE_INTERACTIONS(/obj/item/technomancer_catalog, \
 								core.remove_spell(spell)
 								break
 				consumed(AM, src)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 	to_chat(user, span_warning("\The [src] is unable to refund \the [AM]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 #undef ALL_SPELLS

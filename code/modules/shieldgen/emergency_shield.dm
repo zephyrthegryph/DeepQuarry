@@ -126,6 +126,8 @@ CAPABILITIES(/obj/machinery/shieldgen)
 	op("shieldgen_toggle_lock", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle lock"), then(PROC_REF(interaction_toggle_lock)))
 	op("shieldgen_insert_cell", item(/obj/item/cell), priority(OP_PRIORITY_DEFAULT - 1), label("Insert cell"), then(PROC_REF(interaction_insert_cell)))
 	op("shieldgen_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(unlocked_holds), because = PROC_REF(unlocked_refusal)), req(PROC_REF(panel_closed_holds), because = PROC_REF(panel_closed_refusal))), then(PROC_REF(interaction_toggle)))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(shieldgen_blast_malfunction)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 // its shields collapse.
 /obj/machinery/shieldgen/on_destroy(force)
@@ -199,10 +201,11 @@ CAPABILITIES(/obj/machinery/shieldgen)
 	explosion(explosion_turf, 0, 0, 1, 0, 0, 0)
 	return ..()
 
-DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EXPLOSION, PROC_REF(shieldgen_blast_malfunction))
 
 /// A heavy blast can knock the generator into malfunctioning.
-/obj/machinery/shieldgen/proc/shieldgen_blast_malfunction(datum/damage_packet/packet)
+/obj/machinery/shieldgen/proc/shieldgen_blast_malfunction(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(packet.severity == 2 && prob(15))
 		set_malfunction(TRUE)
 
@@ -269,12 +272,12 @@ DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EMP, PROC_REF(emp_scramble))
 			to_chat(user, "The device must first be secured to the floor.")
 	return OP_OK
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/shieldgen, PROC_REF(on_emag), null)
-/obj/machinery/shieldgen/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/shieldgen/proc/on_emag(datum/act/op/A)
 	if(!malfunction)
 		set_malfunction(TRUE)
 		changed(src)
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /obj/machinery/shieldgen/proc/needs_repair(mob/actor, atom/target, obj/item/held)
 	return malfunction && is_open

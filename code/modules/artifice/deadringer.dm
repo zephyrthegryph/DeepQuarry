@@ -19,6 +19,7 @@ TRACKED(/obj/item/deadringer, timer)
 /// Armed or cooling down: periodic_step() runs (DECLARE_PERIODIC_WHILE).
 CAPABILITIES(/obj/item/deadringer)
 	every(2 SECONDS, then(PROC_REF(deadringer_step)), when = cond_any(nameof(activated), nameof(timer)))
+	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_use_ringer_holds), because = PROC_REF(can_use_ringer_refusal))), then(PROC_REF(interaction_self)))
 
 /obj/item/deadringer/proc/ringer_busy()
 	return activated || timer
@@ -36,8 +37,6 @@ CAPABILITIES(/obj/item/deadringer)
 		reveal()
 		rel_clear(src, nameof(watchowner))
 
-DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/deadringer/proc/can_use_ringer)))
-
 /// Requirement: TRUE, or why the ringer can't be used.
 /obj/item/deadringer/proc/can_use_ringer(mob/user, atom/target, obj/item/held)
 	if(!ishuman(loc))
@@ -45,7 +44,17 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 	return TRUE
 
 /// Old attack_self.
-/obj/item/deadringer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* can_use_ringer): the legacy check answers TRUE to pass.
+/obj/item/deadringer/proc/can_use_ringer_holds(datum/act/op/A)
+	var/answer = can_use_ringer(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_use_ringer_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/deadringer/proc/can_use_ringer_refusal(datum/act/op/A)
+	var/answer = can_use_ringer(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/item/deadringer/proc/interaction_self(datum/act/op/A)
 	var/mob/living/H = src.loc
 	if(!activated)
 		if(timer == 0)

@@ -73,13 +73,10 @@
 
 // TGUI migration. attack_self opens Eftpos.tsx; the
 // Topic switch is converted to tgui_act below.
-DECLARE_INTERACTIONS(/obj/item/eftpos, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
 
 /// Old attack_self.
-/obj/item/eftpos/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/eftpos/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(get_dist(src, user) > 1)
 		SStgui.close_uis(src)
 		return TRUE
@@ -97,6 +94,8 @@ CAPABILITIES(/obj/item/eftpos)
 	op("toggle_lock", ui_act("toggle_lock"), then(PROC_REF(ui_act_toggle_lock)))
 	op("scan_card", ui_act("scan_card"), then(PROC_REF(ui_act_scan_card)))
 	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/eftpos/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -119,7 +118,9 @@ CAPABILITIES(/obj/item/eftpos)
 	return data
 
 /// Old attackby.
-/obj/item/eftpos/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/eftpos/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 
 	var/obj/item/card/id/I = O.GetID()
 
@@ -150,8 +151,8 @@ CAPABILITIES(/obj/item/eftpos)
 			to_chat(user, "[icon2html(src, user.client)]" + span_warning("EFTPOS is not connected to an account."))
 
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 // Topic switch lifted into tgui_act with stable action names.
 /obj/item/eftpos/proc/ui_act_change_code(datum/act/op/A)

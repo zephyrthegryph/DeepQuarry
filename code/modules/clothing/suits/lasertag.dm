@@ -30,14 +30,12 @@
 
 TYPE_TABLE(/obj/item/clothing/suit/lasertag, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/gun/energy/lasertag))))
 
-DECLARE_EMAG(/obj/item/clothing/suit/lasertag, PROC_REF(on_emag), null, null)
 
-/obj/item/clothing/suit/lasertag/mark_emagged()
-	emagged = TRUE
-/obj/item/clothing/suit/lasertag/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/clothing/suit/lasertag/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	emagged = TRUE
 	to_chat(user, span_warning("You disable the safeties on the lasertag vest."))
-	return TRUE
+	return OP_OK
 
 
 /obj/item/clothing/suit/lasertag/examine(mob/user)
@@ -49,6 +47,7 @@ CAPABILITIES(/obj/item/clothing/suit/lasertag)
 	op("lasertag_adjust_health_verb", menu(), label("Adjust Suit Health"), needs(carried()), then(PROC_REF(lasertag_adjust_health_verb)))
 	op("lasertag_adjust_heal_time_verb", menu(), label("Adjust Healing Timer"), needs(carried()), then(PROC_REF(lasertag_adjust_heal_time_verb)))
 	every(2 SECONDS, then(PROC_REF(lasertag_step)), when = nameof(tag_worn))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /// Old verb "Adjust Suit Health".
 /obj/item/clothing/suit/lasertag/proc/lasertag_adjust_health_verb(datum/act/op/A)

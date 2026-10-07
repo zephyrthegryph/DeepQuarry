@@ -156,14 +156,15 @@ Ships can now be hijacked!
 /obj/machinery/computer/ship
 	var/hacked = 0   // Has been emagged, no access restrictions.
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/ship, PROC_REF(on_emag), null)
-/obj/machinery/computer/ship/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/ship/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if (!hacked)
 		req_access = list()
 		req_one_access = list()
 		hacked = 1
 		to_chat(user, "You short out the console's ID checking system. It's now available to everyone!")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /// Accessor for the linked var.
 /obj/machinery/computer/ship/proc/linked() as /obj/effect/overmap/visitable/ship

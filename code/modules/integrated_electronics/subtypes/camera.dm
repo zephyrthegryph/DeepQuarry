@@ -29,6 +29,7 @@
 
 CAPABILITIES(/obj/item/integrated_circuit/output/video_camera)
 	owns_one(nameof(camera), /obj/machinery/camera/intcircuit)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 // ALLOW(init/INSTANCE_STATE): gets its own camera network id and the camera that uses it
 /obj/item/integrated_circuit/output/video_camera/Initialize(mapload)
@@ -69,10 +70,10 @@ CAPABILITIES(/obj/item/integrated_circuit/output/video_camera)
 		camera.set_status(FALSE)
 	power_draw_idle = 0
 
-DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/item/integrated_circuit/output/video_camera/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/integrated_circuit/output/video_camera/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/integrated_circuit/input/video_camera_input))
 		var/obj/item/integrated_circuit/input/video_camera_input/input = W
 		if(src in input.paired_cameras)
@@ -81,8 +82,8 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 		else
 			rel_add(input, nameof(input.paired_cameras), src)
 			to_chat(user, span_notice("You pair \the [input] with \the [src]. The input circuit will now receive this camera's feed."))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/item/integrated_circuit/output/video_camera/examine(mob/user)
 	. = ..()
@@ -172,6 +173,7 @@ CAPABILITIES(/obj/machinery/camera/intcircuit)
 
 CAPABILITIES(/obj/item/integrated_circuit/input/video_camera_input)
 	owns_one(nameof(camera_module), /datum/tgui_module/camera/intcircuit, starts = /datum/tgui_module/camera/intcircuit)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 
 /obj/item/integrated_circuit/input/video_camera_input/ask_for_input(mob/user)
@@ -198,14 +200,14 @@ CAPABILITIES(/obj/item/integrated_circuit/input/video_camera_input)
 		var/status_text = cam.camera?.can_use() ? "ACTIVE" : "INACTIVE"
 		. += span_notice(" - [cam.camera?.c_tag || "Unknown"] ([status_text])")
 
-DECLARE_INTERACTIONS(/obj/item/integrated_circuit/input/video_camera_input, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/item/integrated_circuit/input/video_camera_input/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/integrated_circuit/input/video_camera_input/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/integrated_circuit/output/video_camera))
 		W.attackby(src, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/item/integrated_circuit/input/video_camera_input/power_fail()
 	// Close any open UIs

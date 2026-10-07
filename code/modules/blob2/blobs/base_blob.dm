@@ -21,6 +21,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 
 CAPABILITIES(/obj/structure/blob)
 	param(nameof(overmind), pos = 1)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(blob_on_emp)))
 
 // ALLOW(init/INSTANCE_STATE): a blob takes its overmind's faction, faces a random way and consumes its tile before its parents' init
 /obj/structure/blob/Initialize(mapload)
@@ -78,10 +81,11 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob, TYPE_PROC_REF(/atom, appearance_ove
 		return overmind.blob_type.effect_desc
 	return ..()
 
-DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
 
 /// A live blob's type reacts to a pulse.
-/obj/structure/blob/proc/blob_on_emp(datum/damage_packet/packet)
+/obj/structure/blob/proc/blob_on_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(!overmind)
 		return
 	overmind.blob_type.on_emp(src, packet.severity)
@@ -251,13 +255,9 @@ DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
 
 	adjust_integrity(-damage)
 
-DECLARE_INTERACTIONS(/obj/structure/blob, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/structure/blob/proc/interaction_hand(mob/living/M, obj/item/held, datum/interaction/interaction)
+/obj/structure/blob/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/M = A.actor
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		H.setClickCooldown(H.get_attack_speed())
@@ -320,7 +320,9 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 	return TRUE
 
 /// Old attackby.
-/obj/structure/blob/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/blob/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 	act_message(src, user, others = span_danger("%U% has been attacked with %I%[user ? " by %T%." : "."]"), item = W)
@@ -349,7 +351,7 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 	if(overmind)
 		damage = overmind.blob_type.on_received_damage(src, damage, W.obj_damage_type(), user)
 	adjust_integrity(-damage)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /// Packet sink for the adapters with nothing blob-specific to say (fire,
 /// explosions, shocks): each kind is scaled by the blob type's brute or burn

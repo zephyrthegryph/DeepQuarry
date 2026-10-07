@@ -58,6 +58,8 @@ CAPABILITIES(/obj/item/cataloguer)
 	without("ui_open")
 	op("show_data", ui_act("show_data", arg("ref", schema_ref(/datum/category_item/catalogue))), then(PROC_REF(ui_act_show_data)))
 	op("debug_unlock", ui_act("debug_unlock", arg("ref", schema_ref(/datum/category_item/catalogue))), then(PROC_REF(ui_act_debug_unlock)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 
 /obj/item/cataloguer/proc/ui_act_pulse_scan(datum/act/op/A)
 	pulse_scan(A.actor)

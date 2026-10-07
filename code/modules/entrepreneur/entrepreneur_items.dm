@@ -306,7 +306,8 @@ CAPABILITIES(/obj/item/bedsheet/pillow/exercise)
 	icon = 'icons/obj/entrepreneur.dmi'
 	icon_state = "dumbbell"
 
-DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/entrepreneur/dumbbell/proc/can_exercise)))
+CAPABILITIES(/obj/item/entrepreneur/dumbbell)
+	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_exercise_holds), because = PROC_REF(can_exercise_refusal))), then(PROC_REF(interaction_self)))
 
 /// Requirement: the user isn't too hungry to exercise.
 /obj/item/entrepreneur/dumbbell/proc/can_exercise(mob/user, atom/target, obj/item/held)
@@ -316,7 +317,18 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_RE
 	return TRUE
 
 /// Old attack_self.
-/obj/item/entrepreneur/dumbbell/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* can_exercise): the legacy check answers TRUE to pass.
+/obj/item/entrepreneur/dumbbell/proc/can_exercise_holds(datum/act/op/A)
+	var/answer = can_exercise(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_exercise_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/entrepreneur/dumbbell/proc/can_exercise_refusal(datum/act/op/A)
+	var/answer = can_exercise(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/item/entrepreneur/dumbbell/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/M = user
 	task_timed(user, 3 SECONDS, src, src, PROC_REF(exercise_done), list(M))
 	return TRUE
@@ -559,10 +571,12 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 	rollertype = /obj/item/roller/massage
 	bedtype = /obj/structure/bed/roller/massage
 
-EXTEND_INTERACTIONS(/obj/structure/bed/roller/massage, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+CAPABILITIES(/obj/structure/bed/roller/massage)
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 
 /// Old click_alt.
-/obj/structure/bed/roller/massage/proc/interaction_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/bed/roller/massage/proc/interaction_alt(datum/act/op/A)
+	var/mob/living/carbon/user = A.actor
 	if(anchored)
 		set_anchored(0)
 		act_message(user, src, others = span_notice("%U% turns the breaks off on %T%!"))

@@ -538,10 +538,13 @@ CAPABILITIES(/obj/item/storage/firstaid)
 		if("o2")
 			look.overlay("kit_skin_o2")
 
-DECLARE_INTERACTIONS(/obj/item/firstaid_arm_assembly, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/firstaid_arm_assembly)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/firstaid_arm_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/firstaid_arm_assembly/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/pen))
 		ask_name_var(user)
 	else
@@ -565,7 +568,7 @@ DECLARE_INTERACTIONS(/obj/item/firstaid_arm_assembly, INTERACT_ITEM(null, PROC_R
 					S.skin = skin
 					S.name = created_name
 					consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 // Undefine these.
 #undef MEDBOT_PANIC_NONE

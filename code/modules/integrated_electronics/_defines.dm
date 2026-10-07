@@ -88,6 +88,7 @@ CAPABILITIES(/obj/item/integrated_circuit)
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("examine", ui_act("examine", arg("ref", schema_ref(/obj/item/integrated_circuit))), then(PROC_REF(ui_act_examine)))
 	op("remove", ui_act("remove"), then(PROC_REF(ui_act_remove)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(circuit_emp_scramble)))
 
 /// Reference to the assembly holding this circuit, if any. (a relation view: null once that is deleted).
 /obj/item/integrated_circuit/proc/assembly() as /obj/item/electronic_assembly

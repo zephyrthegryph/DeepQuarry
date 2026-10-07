@@ -45,10 +45,9 @@ a creative player the means to solve many problems.  Circuits are held inside an
 	return
 
 
-DAMAGE_REACTION(/obj/item/integrated_circuit, DAMAGE_EMP, PROC_REF(circuit_emp_scramble))
 
 /// A pulse scrambles every pin.
-/obj/item/integrated_circuit/proc/circuit_emp_scramble(datum/damage_packet/packet)
+/obj/item/integrated_circuit/proc/circuit_emp_scramble(datum/act/A)
 	for(var/datum/integrated_io/io in inputs + outputs + activators)
 		io.scramble()
 

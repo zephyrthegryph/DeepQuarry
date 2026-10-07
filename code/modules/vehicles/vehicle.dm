@@ -55,6 +55,7 @@ CAPABILITIES(/obj/vehicle)
 	op("vehicle_item", item(/obj/item), then(PROC_REF(interaction_vehicle_item)))
 	emp_disable(PROC_REF(emp_outage))
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(emp_state_changed)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 //-------------------------------------------
 // Standard procs
@@ -234,17 +235,18 @@ CAPABILITIES(/obj/vehicle)
 	set_light(0)
 	update_icon()
 
-DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
-/obj/vehicle/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/vehicle/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!mechanical)
-		return FALSE
+		return OP_DECLINE
 
 	if(!emagged)
 		emagged = 1
 		if(locked)
 			locked = 0
 			to_chat(user, span_warning("You bypass [src]'s controls."))
-		return TRUE
+		return OP_OK
+	return OP_DECLINE
 
 /obj/vehicle/proc/explode()
 	src.visible_message(span_bolddanger("[src] blows apart!"), 1)

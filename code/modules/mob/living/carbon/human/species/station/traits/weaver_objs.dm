@@ -9,26 +9,25 @@
 
 CAPABILITIES(/obj/effect/weaversilk)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blasted_away))))
+	op("hit_weaversilk", item(/obj/item), label("Interaction hit weaversilk"), then(PROC_REF(interaction_hit_weaversilk)))
+	op("tear_weaversilk", hand(), stance(I_HURT), label("Tear down"), then(PROC_REF(interaction_tear_weaversilk)))
 
 /// Any blast destroys the silk outright.
 /obj/effect/weaversilk/proc/blasted_away(datum/act/A)
 	spent(src)
 	return TRUE
 
-EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
-	INTERACT_ITEM(null, PROC_REF(interaction_hit_weaversilk)), \
-	INTERACT_HAND_HOSTILE("Tear down", PROC_REF(interaction_tear_weaversilk)), \
-)
-
 /// Old attackby: any real hit tears the silk (afterattack still follows, as before).
-/obj/effect/weaversilk/proc/interaction_hit_weaversilk(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/weaversilk/proc/interaction_hit_weaversilk(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	var/obj/item/W = held
 	user.setClickCooldown(user.get_attack_speed(W))
 
 	if(W.force)
 		act_message(user, src, others = span_warning("%T% has been [LAZYLEN(W.attack_verb) ? pick(W.attack_verb) : "attacked"] with %I% by %U%."), item = W)
 		consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/effect/weaversilk/bullet_act(obj/item/projectile/Proj)
 	..()
@@ -46,7 +45,8 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 		consume(src, user)
 
 /// Old attack_hand on harm intent: tear the silk down by hand.
-/obj/effect/weaversilk/proc/interaction_tear_weaversilk(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/weaversilk/proc/interaction_tear_weaversilk(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user,span_warning("You easily tear down [name]."))
 	consume(src, user)
 	return TRUE
@@ -92,21 +92,22 @@ CAPABILITIES(/obj/effect/weaversilk/wall)
 
 APPEARANCE_NONE(/obj/structure/bed/double/weaversilk_nest)
 
-EXTEND_INTERACTIONS(/obj/structure/bed/double/weaversilk_nest, \
-	INTERACT_HAND_HOSTILE("Tear down", PROC_REF(interaction_tear_down)), \
-	INTERACT_ITEM(null, PROC_REF(weaversilk_nest_interaction_item)), \
-)
+CAPABILITIES(/obj/structure/bed/double/weaversilk_nest)
+	op("tear_down", hand(), stance(I_HURT), label("Tear down"), then(PROC_REF(interaction_tear_down)))
+	op("weaversilk_nest_interaction_item", item(/obj/item), label("Use"), then(PROC_REF(weaversilk_nest_interaction_item)))
 
 /// Old attackby.
-/obj/structure/bed/double/weaversilk_nest/proc/weaversilk_nest_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/bed/double/weaversilk_nest/proc/weaversilk_nest_interaction_item(datum/act/op/A)
+	var/obj/item/W = A.held
 	if(W.has_tool_quality(TOOL_WRENCH) || istype(W,/obj/item/stack) || W.has_tool_quality(TOOL_WIRECUTTER))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /// Old attack_hand's harm branch: tear the empty nest down (combat mode only).
-/obj/structure/bed/double/weaversilk_nest/proc/interaction_tear_down(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/bed/double/weaversilk_nest/proc/interaction_tear_down(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_buckled_mobs())
-		return FALSE
+		return OP_DECLINE
 	to_chat(user,span_warning("You easily tear down [name]."))
 	consume(src, user)
 	return TRUE

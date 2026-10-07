@@ -792,10 +792,12 @@ DECLARE_APPEARANCE_PROC(/obj/structure/table/survival_pod, TYPE_PROC_REF(/atom, 
 /obj/item/gps/computer/proc/disassemble_done()
 	replace_with(src, /obj/item/gps)
 
-EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/gps/computer)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/item/gps/computer/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gps/computer/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	attack_self(user)
 	return TRUE
 

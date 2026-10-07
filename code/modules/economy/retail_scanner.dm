@@ -60,11 +60,6 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 	src.dir = SOUTH
 	src.pixel_y = 0
 
-DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-)
-
 CAPABILITIES(/obj/item/retail_scanner)
 	op("controls", in_hand(), label("Open retail scanner"), then(PROC_REF(retail_scanner_controls_opened)))
 	interface("RetailScanner")
@@ -79,6 +74,9 @@ CAPABILITIES(/obj/item/retail_scanner)
 	op("clear", ui_act("clear", arg("item", num())), then(PROC_REF(ui_act_clear)))
 	op("clear_entry", ui_act("clear_entry"), then(PROC_REF(ui_act_clear_entry)))
 	op("reset_log", ui_act("reset_log"), then(PROC_REF(ui_act_reset_log)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /obj/item/retail_scanner/proc/retail_scanner_controls_opened(datum/act/op/A)
 	var/mob/user = A.actor
@@ -86,7 +84,8 @@ CAPABILITIES(/obj/item/retail_scanner)
 	return OP_OK
 
 /// Old click_alt.
-/obj/item/retail_scanner/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/retail_scanner/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(Adjacent(user))
 		tgui_interact(user)
 	return TRUE
@@ -264,17 +263,19 @@ CAPABILITIES(/obj/item/retail_scanner)
 	return TRUE
 
 /// Old attackby.
-/obj/item/retail_scanner/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
+/obj/item/retail_scanner/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/O = A.held
 	if(istype(O, /obj/item/paper))
 		var/obj/item/paper/form = O
 		if(form.info || form.shipping_ledger_data)
 			to_chat(user, span_warning("The freight printer accepts only blank ordinary paper."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!user.drop_from_inventory(form, src))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		rel_add(src, nameof(freight_form_paper), form)
 		to_chat(user, span_notice("You load [form] into [src]'s freight printer."))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	// Check for a method of paying (ID, PDA, e-wallet, cash, ect.)
 	var/obj/item/card/id/I = O.GetID()
 	if(I)
@@ -286,11 +287,11 @@ CAPABILITIES(/obj/item/retail_scanner)
 		to_chat(user, span_warning("This device does not accept cash."))
 
 	else if(istype(O, /obj/item/card/emag))
-		return FALSE
+		return OP_DECLINE
 	// Not paying: Look up price and add it to transaction_amount
 	else
 		scan_item_price(O, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/retail_scanner/showoff(mob/user)
 	for (var/mob/M in view(user))
@@ -526,15 +527,14 @@ CAPABILITIES(/obj/item/retail_scanner)
 	service_staff_name = null
 	ticket_changed()
 
-DECLARE_EMAG(/obj/item/retail_scanner, PROC_REF(on_emag), null, null)
 
-/obj/item/retail_scanner/mark_emagged()
-	emagged = TRUE
-/obj/item/retail_scanner/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/retail_scanner/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_danger("You stealthily swipe the cryptographic sequencer through \the [src]."))
 	play_sfx(src, SFX_SPARKS)
 	req_access = list()
 	emagged = 1
+	return OP_OK
 
 //--Premades--//
 

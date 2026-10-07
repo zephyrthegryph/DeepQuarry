@@ -407,13 +407,18 @@ MATERIAL_MIX(/obj/item/clothing/glasses/welding, list(MAT_STEEL = 1500, MAT_GLAS
 	tint = TINT_HEAVY
 	specialty_goggles = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/welding, \
-	INTERACT_USE("Flip", PROC_REF(welding_goggles_flip_self)), \
-	INTERACT_VERB("Adjust welding goggles", PROC_REF(welding_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/welding)
+	op("welding_goggles_flip_self", in_hand(), label("Flip"), then(PROC_REF(welding_goggles_flip_self)))
+	op("welding_toggle_verb", menu(), label("Adjust welding goggles"), needs(carried()), then(PROC_REF(welding_toggle_verb_op)))
+
+/// The welding_toggle_verb op: the verb's effect, as the old resolver ran it.
+/obj/item/clothing/glasses/welding/proc/welding_toggle_verb_op(datum/act/op/A)
+	welding_toggle_verb(A.actor, A.held, null)
+	return OP_OK
 
 /// Old attack_self.
-/obj/item/clothing/glasses/welding/proc/welding_goggles_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/welding/proc/welding_goggles_flip_self(datum/act/op/A)
+	var/mob/user = A.actor
 	welding_toggle_verb(user)
 
 /// Old verb "Adjust welding goggles".
@@ -572,10 +577,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/glasses/sunglasses/sechud/aviator, TY
 	enables_planes = list(VIS_FULLBRIGHT, VIS_CLOAKED)
 	flash_protection = FLASH_PROTECTION_REDUCED
 
-DAMAGE_REACTION(/obj/item/clothing/glasses/thermal, DAMAGE_EMP, PROC_REF(thermal_emp_overload))
+CAPABILITIES(/obj/item/clothing/glasses/thermal)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(thermal_emp_overload)))
 
 /// A pulse overloads the scanner and blinds whoever wears it.
-/obj/item/clothing/glasses/thermal/proc/thermal_emp_overload(datum/damage_packet/packet)
+/obj/item/clothing/glasses/thermal/proc/thermal_emp_overload(datum/act/A)
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/M = src.loc
 		to_chat(M, span_red("The Optical Thermal Scanner overloads and blinds you!"))
@@ -638,13 +644,18 @@ DAMAGE_REACTION(/obj/item/clothing/glasses/thermal, DAMAGE_EMP, PROC_REF(thermal
 
 TYPE_TABLE(/obj/item/clothing/glasses/aerogelgoggles, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
-	INTERACT_USE("Flip", PROC_REF(aerogel_goggles_flip_self)), \
-	INTERACT_VERB("Adjust Orange Goggles", PROC_REF(aerogelgoggles_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/aerogelgoggles)
+	op("aerogel_goggles_flip_self", in_hand(), label("Flip"), then(PROC_REF(aerogel_goggles_flip_self)))
+	op("aerogelgoggles_toggle_verb", menu(), label("Adjust Orange Goggles"), needs(carried()), then(PROC_REF(aerogelgoggles_toggle_verb_op)))
+
+/// The aerogelgoggles_toggle_verb op: the verb's effect, as the old resolver ran it.
+/obj/item/clothing/glasses/aerogelgoggles/proc/aerogelgoggles_toggle_verb_op(datum/act/op/A)
+	aerogelgoggles_toggle_verb(A.actor, A.held, null)
+	return OP_OK
 
 /// Old attack_self.
-/obj/item/clothing/glasses/aerogelgoggles/proc/aerogel_goggles_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/aerogelgoggles/proc/aerogel_goggles_flip_self(datum/act/op/A)
+	var/mob/user = A.actor
 	aerogelgoggles_toggle_verb(user)
 
 /// Old verb "Adjust Orange Goggles".

@@ -185,6 +185,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 	op("orderbyid", ui_act("orderbyid"), asks(/datum/prompt/number/library_order_id, step = "id"), then(PROC_REF(ui_act_orderbyid)))
 	op("sort", ui_act("sort", arg("field", schema_text(4096))), then(PROC_REF(ui_act_sort)))
 	op("hardprint", ui_act("hardprint", arg("path", schema_path(/datum))), then(PROC_REF(ui_act_hardprint)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /obj/machinery/librarycomp/Initialize(mapload)
 	. = ..()
@@ -563,11 +564,11 @@ CAPABILITIES(/obj/machinery/librarycomp)
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/librarycomp, PROC_REF(on_emag), null)
-/obj/machinery/librarycomp/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/librarycomp/proc/on_emag(datum/act/op/A)
 	if (src.density && !src.emagged)
 		set_emagged(1)
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /*
  * Library Scanner

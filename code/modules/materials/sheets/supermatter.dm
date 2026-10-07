@@ -87,10 +87,12 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/supermatter, INTERACT_HAND_DEFAULT(
 	if(burn_user)
 		M.injure(INJURY_BURN, amount, null, src)
 
-DAMAGE_REACTION(/obj/item/stack/material/supermatter, DAMAGE_EXPLOSION, PROC_REF(supermatter_blast_detonate))
+CAPABILITIES(/obj/item/stack/material/supermatter)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(supermatter_blast_detonate))))
 
 /// An incredibly hard to manufacture material, SM chunks are unstable by their 'stabilized' nature: a blast can set the stack off.
-/obj/item/stack/material/supermatter/proc/supermatter_blast_detonate(datum/damage_packet/packet)
+/obj/item/stack/material/supermatter/proc/supermatter_blast_detonate(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	if(prob((4 / packet.severity) * 20))
 		radiation_pulse(
 			src,
@@ -102,4 +104,5 @@ DAMAGE_REACTION(/obj/item/stack/material/supermatter, DAMAGE_EXPLOSION, PROC_REF
 			)
 		explosion(get_turf(src),round(amount / 12) , round(amount / 6), round(amount / 3), round(amount / 25))
 		destroyed(src, null, "explosion")
-		return DAMAGE_REACTION_BLOCK
+		return OP_OK
+	return HOOK_DECLINE

@@ -78,6 +78,7 @@ OM_FIELD(/obj/machinery/v_garbosystem, operating, FALSE, CHANGE_MACHINE_SETTINGS
 CAPABILITIES(/obj/machinery/v_garbosystem)
 	reagents(CARGOTANKER_VOLUME * 2)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), nameof(stat)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /obj/machinery/v_garbosystem/proc/work_step(datum/act/timer/A)
 	if(!crusher() || crusher().stat & (NOPOWER|BROKEN))
@@ -88,10 +89,10 @@ CAPABILITIES(/obj/machinery/v_garbosystem)
 	affecting = loc.contents - src
 	after(src, 0.1 SECONDS, PROC_REF(grind_affecting))
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
-/obj/machinery/v_garbosystem/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/v_garbosystem/proc/on_emag(datum/act/op/A)
 	set_emagged(!emagged)
 	update()
+	return OP_OK
 
 /datum/interaction/machine_item/v_garbosystem_crowbar_open
 	id = "v_garbosystem_crowbar_open"

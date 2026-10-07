@@ -68,6 +68,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 
 CAPABILITIES(/obj/effect/hoist_hook)
 	drag_onto(PROC_REF(drop_input))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(hook_blast_break))))
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/effect/hoist_hook/proc/drop_input(datum/act/input/A)
@@ -127,6 +128,8 @@ CAPABILITIES(/obj/effect/hoist_hook)
 CAPABILITIES(/obj/structure/hoist)
 	owns_one(nameof(source_hook), /obj/effect/hoist_hook)
 	param(nameof(dir), pos = 1, apply = PROC_REF(hang_hook))
+	op("hand", hand(), ungated(), label("Use"), needs(req(PROC_REF(can_work_hoist_holds), because = PROC_REF(can_work_hoist_refusal))), then(PROC_REF(interaction_hand)))
+	op("hoist_verb_collapse", menu(), label("Collapse Hoist"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_collapse_holds), because = PROC_REF(can_collapse_refusal))), then(PROC_REF(hoist_verb_collapse)))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The hoist hangs its hook on the side it faces.
 /obj/structure/hoist/proc/hang_hook(ndir)
@@ -166,7 +169,6 @@ CAPABILITIES(/obj/structure/hoist)
 	rel_clear(src, nameof(source_hook))
 
 DAMAGE_REACTION_AFTER(/obj/structure/hoist, DAMAGE_EXPLOSION, PROC_REF(hoist_blast_break))
-DAMAGE_REACTION(/obj/effect/hoist_hook, DAMAGE_EXPLOSION, PROC_REF(hook_blast_break))
 
 /// A hoist that survives a heavy blast is broken by it.
 /obj/structure/hoist/proc/hoist_blast_break(datum/damage_packet/packet)
@@ -174,18 +176,14 @@ DAMAGE_REACTION(/obj/effect/hoist_hook, DAMAGE_EXPLOSION, PROC_REF(hook_blast_br
 		break_hoist()
 
 /// A hit on the hook wrenches the hoist; it breaks more often the closer the blast (the hook itself takes nothing).
-/obj/effect/hoist_hook/proc/hook_blast_break(datum/damage_packet/packet)
+/obj/effect/hoist_hook/proc/hook_blast_break(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	if(prob(100 / packet.severity))
 		source_hoist().break_hoist()
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/structure/hoist
 	silicon_use = ROBOT_USE_HAND
-
-DECLARE_INTERACTIONS(/obj/structure/hoist, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/structure/hoist/proc/can_work_hoist)), \
-	INTERACT_VERB("Collapse Hoist", PROC_REF(hoist_verb_collapse), REQ_TARGET_STATE(/obj/structure/hoist/proc/can_collapse)), \
-)
 
 /// Requirement: TRUE, or why this user can't work the hoist. Non-humanoids are turned away silently by the effect.
 /obj/structure/hoist/proc/can_work_hoist(mob/living/user, atom/target, obj/item/held)
@@ -210,7 +208,18 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, \
 	return TRUE
 
 /// Old attack_hand.
-/obj/structure/hoist/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* can_work_hoist): the legacy check answers TRUE to pass.
+/obj/structure/hoist/proc/can_work_hoist_holds(datum/act/op/A)
+	var/answer = can_work_hoist(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_work_hoist_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/structure/hoist/proc/can_work_hoist_refusal(datum/act/op/A)
+	var/answer = can_work_hoist(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/structure/hoist/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if (!(ishuman(user) || issilicon(user)))
 		return TRUE
 
@@ -248,7 +257,18 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, \
 	replace_with(src, /obj/item/hoist_kit)
 
 /// Old Collapse Hoist verb.
-/obj/structure/hoist/proc/hoist_verb_collapse(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement (was REQ_* can_collapse): the legacy check answers TRUE to pass.
+/obj/structure/hoist/proc/can_collapse_holds(datum/act/op/A)
+	var/answer = can_collapse(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_collapse_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/structure/hoist/proc/can_collapse_refusal(datum/act/op/A)
+	var/answer = can_collapse(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/obj/structure/hoist/proc/hoist_verb_collapse(datum/act/op/A)
+	var/mob/user = A.actor
 	if (!(ishuman(user) || issilicon(user)))
 		return
 

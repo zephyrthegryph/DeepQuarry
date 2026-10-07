@@ -87,6 +87,7 @@ CAPABILITIES(/obj/item/modular_computer)
 	owns_one(nameof(portable_drive), /obj/item/computer_hardware/hard_drive/portable)
 	owns_one(nameof(tesla_link), /obj/item/computer_hardware/tesla_link)
 	every(2 SECONDS, then(PROC_REF(modular_computer_step)), when = nameof(enabled))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	interface("NtosMain", autoupdate = TRUE)
 	without("ui_open")
 	op("PC_exit", ui_act("PC_exit"), then(PROC_REF(ui_act_pc_exit)))
@@ -96,6 +97,8 @@ CAPABILITIES(/obj/item/modular_computer)
 	op("PC_runprogram", ui_act("PC_runprogram", arg("name", schema_text(4096))), then(PROC_REF(ui_act_pc_runprogram)))
 	op("PC_setautorun", ui_act("PC_setautorun", arg("name", schema_text(4096))), then(PROC_REF(ui_act_pc_setautorun)))
 	op("PC_Eject_Disk", ui_act("PC_Eject_Disk", arg("name", schema_text(4096))), then(PROC_REF(ui_act_pc_eject_disk)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(computer_blast_damage))))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(computer_emp_damage)))
 
 
 /// Whether the computer is turned on. periodic_step() runs its programs while it is (DECLARE_PERIODIC_WHILE).

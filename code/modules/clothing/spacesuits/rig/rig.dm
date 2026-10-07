@@ -109,6 +109,7 @@
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/rig)
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	owns_one(nameof(boots), /obj/item/clothing/shoes)
 	owns_one(nameof(chest), /obj/item/clothing/suit/space/rig)
 	owns_one(nameof(gloves), /obj/item/clothing/gloves/gauntlets/rig)
@@ -134,6 +135,7 @@ CAPABILITIES(/obj/item/rig)
 	op("toggle_piece", ui_act("toggle_piece", arg("piece", schema_text(4096))), then(PROC_REF(ui_act_toggle_piece)))
 	op("interact_module", ui_act("interact_module", arg("charge_type", schema_text(4096)), arg("module", num()), arg("module_mode", schema_text(4096))), then(PROC_REF(ui_act_interact_module)))
 	op("tank_settings", ui_act("tank_settings"), then(PROC_REF(ui_act_tank_settings)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(rig_emp_malfunction)))
 
 /obj/item/rig/Initialize(mapload)
 	. = ..()
@@ -805,10 +807,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 /obj/item/rig/proc/malfunction()
 	return 0
 
-DAMAGE_REACTION(/obj/item/rig, DAMAGE_EMP, PROC_REF(rig_emp_malfunction))
 
 /// A pulse makes the suit malfunction, drains its cell and can damage modules.
-/obj/item/rig/proc/rig_emp_malfunction(datum/damage_packet/packet)
+/obj/item/rig/proc/rig_emp_malfunction(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	//set malfunctioning
 	if(emp_protection < 30) //for ninjas, really.
 		malfunctioning += 10

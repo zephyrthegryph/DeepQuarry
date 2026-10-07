@@ -91,10 +91,12 @@
 	attack_verb = null
 
 
-EXTEND_INTERACTIONS(/obj/item/cell/device/weapon/gunsword, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/cell/device/weapon/gunsword)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/cell/device/weapon/gunsword/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/cell/device/weapon/gunsword/proc/interaction_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if (active)
 		if (CLUMSY_HARM_CHANCE(user))
 			act_message(user, src, MSG_SELF(span_danger("You accidentally cut yourself with %T%.")), \

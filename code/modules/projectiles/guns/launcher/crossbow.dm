@@ -270,10 +270,13 @@ TRACKED(/obj/item/gun/launcher/crossbow, tension)
 		changed(src)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/crossbowframe)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/crossbowframe/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/crossbowframe/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/stack/rods))
 		if(buildstate == 0)
 			var/obj/item/stack/rods/R = W
@@ -283,7 +286,7 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 				changed(src)
 			else
 				to_chat(user, span_notice("You need at least three rods to complete this task."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	else if(istype(W, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/C = W
 		if(buildstate == 2)
@@ -293,7 +296,7 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 				changed(src)
 			else
 				to_chat(user, span_notice("You need at least five segments of cable coil to complete this task."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else if(buildstate == 4)
 			if(C.use(5))
 				to_chat(user, span_notice("You string a steel cable across the crossbow's lath."))
@@ -301,7 +304,7 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 				changed(src)
 			else
 				to_chat(user, span_notice("You need at least five segments of cable coil to complete this task."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	else if(istype(W,/obj/item/stack/material) && W.get_material_name() == MAT_PLASTIC)
 		if(buildstate == 3)
 			var/obj/item/stack/material/P = W
@@ -311,10 +314,10 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 				changed(src)
 			else
 				to_chat(user, span_notice("You need at least three plastic sheets to complete this task."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /// Used for firing superheated rods. (a relation view: null once it is deleted).
 /obj/item/gun/launcher/crossbow/proc/cell() as /obj/item/cell

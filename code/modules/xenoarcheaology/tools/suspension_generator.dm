@@ -27,6 +27,7 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 	op("swipe_card", item(/obj/item/card), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe card"), then(PROC_REF(interaction_swipe_card)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 	rotatable()
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /// Holds its field (draining its cell); runs while it has one (declared).
 /obj/machinery/suspension_gen/proc/work_step(datum/act/timer/A)
@@ -161,11 +162,11 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 		if(!locked)
 			return 1
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/suspension_gen, PROC_REF(on_emag), null)
-/obj/machinery/suspension_gen/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/suspension_gen/proc/on_emag(datum/act/op/A)
 	if(cell && cell.charge > 0 && locked)
 		set_locked(0)
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 //checks for whether the machine can be activated or not should already have occurred by this point
 /obj/machinery/suspension_gen/proc/activate()

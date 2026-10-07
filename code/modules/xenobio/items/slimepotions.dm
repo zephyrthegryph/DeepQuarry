@@ -348,18 +348,21 @@
 	return ITEM_INTERACT_SUCCESS
 
 
-DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/slimepotion)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/slimepotion/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/slimepotion/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/slimepotion/mimic))
 		if(!consume(O, user))
-			return FALSE
+			return OP_DECLINE
 		to_chat(user, span_notice("You apply the mimic to the slime potion as it copies it's effects."))
 		play_sfx(src, SFX_EFFECTS_BUBBLES)
 		var/newtype = src.type
 		new newtype(get_turf(src))
-	return FALSE
+	return OP_DECLINE
 
 
 /obj/item/slimepotion/infertility/get_mechanics_info(list/additional_information)

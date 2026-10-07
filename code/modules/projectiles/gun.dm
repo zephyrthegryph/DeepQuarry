@@ -116,6 +116,7 @@ CAPABILITIES(/obj/item/gun)
 	owns_many(nameof(firemodes), starts = PROC_REF(starting_firemodes))
 	owns_one(nameof(firemode_selector), starts = /datum/gun_firemode_selector)
 	drag_onto(PROC_REF(mousedrop_input))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /// The gun's firemodes: one /datum/firemode per settings row the gun (or a map edit) put in `firemodes`.
 /obj/item/gun/proc/starting_firemodes(list/settings)
@@ -339,14 +340,15 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 	rel_take(src, nameof(attached_lock))
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
-/obj/item/gun/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/gun/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(dna_lock && attached_lock.controller_lock)
 		to_chat(user, span_notice("You short circuit the internal locking mechanisms of \the [src]!"))
 		attached_lock.controller_dna = null
 		attached_lock.controller_lock = 0
 		attached_lock.stored_dna = list()
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/item/gun/proc/mousedrop_input(datum/act/input/A)

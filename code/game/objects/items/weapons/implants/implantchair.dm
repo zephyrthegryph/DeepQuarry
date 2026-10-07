@@ -29,6 +29,7 @@ CAPABILITIES(/obj/machinery/implantchair)
 	// the old verbs
 	op("get_out", menu(), label("Eject occupant"), needs(req_conscious()), then(PROC_REF(interaction_get_out)))
 	op("move_inside", menu(), label("Move Inside"), needs(req_conscious()), then(PROC_REF(interaction_move_inside)))
+	op("open_ui_impl", hand(), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/implantchair/Initialize(mapload)
 	. = ..()

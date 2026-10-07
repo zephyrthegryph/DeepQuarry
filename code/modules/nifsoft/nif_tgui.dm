@@ -31,6 +31,7 @@ CAPABILITIES(/obj/item/nif)
 	op("dismissNotification", ui_act("dismissNotification"), then(PROC_REF(ui_act_dismissnotification)))
 	param(nameof(wear_at_make), pos = 1)
 	param(nameof(load_data_at_make), pos = 2)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /**
  * Small helper datum to manage the HUD icon.

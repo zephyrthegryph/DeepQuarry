@@ -406,6 +406,7 @@ CAPABILITIES(/obj/vehicle/train/trolley_tank)
 	op("relabel", item(/obj/item/pen), priority(OP_PRIORITY_PART + 1),
 		asks(/datum/prompt/text, fields = list("question" = "What would you like the label to be?", "title" = computed(PROC_REF(label_title)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0), step = "k491"),
 		then(PROC_REF(relabelled)))
+	op("trolley_tank_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Interaction trolley tank drag"), then(PROC_REF(interaction_trolley_tank_drag)))
 
 /obj/vehicle/train/trolley_tank/Initialize(mapload)
 	. = ..()
@@ -422,13 +423,12 @@ CAPABILITIES(/obj/vehicle/train/trolley_tank)
 		return //so people can't knock others over by pushing a trolley around
 	..()
 
-EXTEND_INTERACTIONS(/obj/vehicle/train/trolley_tank, \
-	INTERACT_DRAG(null, PROC_REF(interaction_trolley_tank_drag)))
-
 /// Old MouseDrop_T: climb, empty a beaker in, or latch another car (the only train drag it allows).
-/obj/vehicle/train/trolley_tank/proc/interaction_trolley_tank_drag(mob/user, atom/movable/C, datum/interaction/interaction)
+/obj/vehicle/train/trolley_tank/proc/interaction_trolley_tank_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/C = A.held
 	if(C == user) // climbing is the climb capability's own drag
-		return FALSE
+		return OP_DECLINE
 
 	if(istype(C,/obj/item/reagent_containers/glass))
 		var/obj/item/reagent_containers/glass/G = C
@@ -437,7 +437,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/trolley_tank, \
 		return TRUE
 
 	if(istype(C,/obj/vehicle/train)) // Only allow latching
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /obj/vehicle/train/trolley_tank/load(atom/movable/C, mob/living/user)

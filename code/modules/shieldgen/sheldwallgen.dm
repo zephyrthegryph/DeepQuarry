@@ -263,6 +263,7 @@ CAPABILITIES(/obj/machinery/shieldwall)
 	param(nameof(gen_primary), pos = 1)
 	param(nameof(gen_secondary), pos = 2, apply = PROC_REF(span_generators))
 	op("swallow", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(shieldwall_blast_drain))))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). A wall stands between two active generators, which pay for it.
 /obj/machinery/shieldwall/proc/span_generators(obj/machinery/shieldwallgen/B)
@@ -303,15 +304,15 @@ CAPABILITIES(/obj/machinery/shieldwall)
 	..()
 	return
 
-DAMAGE_REACTION(/obj/machinery/shieldwall, DAMAGE_EXPLOSION, PROC_REF(shieldwall_blast_drain))
 
 /// The wall itself is energy; the blast drains a generator instead.
-/obj/machinery/shieldwall/proc/shieldwall_blast_drain(datum/damage_packet/packet)
+/obj/machinery/shieldwall/proc/shieldwall_blast_drain(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	if(needs_power)
 		var/obj/machinery/shieldwallgen/G = prob(50) ? gen_primary : gen_secondary
 		var/static/list/drain = list(120000, 30000, 12000)
 		G.storedpower -= drain[clamp(round(packet.severity), 1, 3)]
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/machinery/shieldwall/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSGLASS))

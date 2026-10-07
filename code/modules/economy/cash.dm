@@ -199,7 +199,8 @@ DECLARE_INTERACTIONS(/obj/item/spacecash, \
 	var/owner_name = "" //So the ATM can set it so the EFTPOS can put a valid name on transactions.
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/spacecash/ewallet, INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)))
+CAPABILITIES(/obj/item/spacecash/ewallet)
+	op("pass_item", item(/obj/item), label("Interaction pass"), passes())
 
 APPEARANCE_NONE(/obj/item/spacecash/ewallet)
 

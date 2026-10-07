@@ -310,10 +310,13 @@ EXTEND_INTERACTIONS(/obj/item/laserdome_flag, INTERACT_HAND_DEFAULT("Pick up", P
 /obj/structure/flag_decor/red
 	icon_state = "red_flag_deco"
 
-DECLARE_INTERACTIONS(/obj/structure/flag_base, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/flag_base)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/flag_base/proc/interaction_item(mob/user, obj/F, datum/interaction/interaction)
+/obj/structure/flag_base/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/F = A.held
 
 	//TODO- require the team's flag to be present before they can score?
 	if(istype(F,/obj/item/laserdome_flag))
@@ -333,7 +336,7 @@ DECLARE_INTERACTIONS(/obj/structure/flag_base, INTERACT_ITEM(null, PROC_REF(inte
 			GLOB.global_announcer.autosay("[capitalize(base_team)] flag returned!","Laserdome Announcer","Entertainment")
 			user.drop_from_inventory(flag)
 			flag.forceMove(src.loc)			//place our flag neatly back on its pedestal
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/laserdome_hyperball/get_mechanics_info(list/additional_information)
 	return ..(list("Dunking the ball directly into the opposing goal scores more points than throwing it in, but you must be next to the goal.") + additional_information)
@@ -436,10 +439,13 @@ EXTEND_INTERACTIONS(/obj/item/laserdome_hyperball, INTERACT_HAND_DEFAULT("Pick u
 	icon_state = "hyperball_goal_red"
 	goal_team = "red"
 
-DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/hyperball_goal)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/hyperball_goal/proc/interaction_item(mob/user, obj/B, datum/interaction/interaction)
+/obj/structure/hyperball_goal/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/B = A.held
 	var/mob/living/carbon/human/M = user
 	var/dunking_team
 	if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/redtag))
@@ -447,7 +453,7 @@ DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF
 	else if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/bluetag))
 		dunking_team = "blue"
 	else
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(B,/obj/item/laserdome_hyperball))
 		var/obj/item/laserdome_hyperball/ball = B
@@ -475,7 +481,7 @@ DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF
 		ball.forceMove(ball.start_pos) //teleport the ball back to the midfield
 		ball.icon_state = "[initial(ball.icon_state)]"
 		ball.item_state = "[initial(ball.item_state)]"
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/hyperball_goal/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	. = ..()

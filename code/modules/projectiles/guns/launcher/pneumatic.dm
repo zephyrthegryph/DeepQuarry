@@ -231,17 +231,20 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/launcher/pneumatic, TYPE_PROC_REF(/atom, a
 			replace_with(src, /obj/item/gun/launcher/pneumatic)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/cannonframe, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/cannonframe)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/cannonframe/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/cannonframe/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/pipe))
 		if(buildstate == 0)
 			consume(W, user)
 			to_chat(user, span_notice("You secure the piping inside the frame."))
 			buildstate++
 			changed(src)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	else if(istype(W,/obj/item/stack/material) && W.get_material_name() == MAT_STEEL)
 		if(buildstate == 2)
 			var/obj/item/stack/material/M = W
@@ -251,17 +254,17 @@ DECLARE_INTERACTIONS(/obj/item/cannonframe, INTERACT_ITEM(null, PROC_REF(interac
 				changed(src)
 			else
 				to_chat(user, span_notice("You need at least five metal sheets to complete this task."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	else if(istype(W,/obj/item/transfer_valve))
 		if(buildstate == 4)
 			consume(W, user)
 			to_chat(user, span_notice("You install the transfer valve and connect it to the piping."))
 			buildstate++
 			changed(src)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /// Tank of gas for use in firing the cannon. (a relation view: null once it is deleted).
 /obj/item/gun/launcher/pneumatic/proc/tank() as /obj/item/tank

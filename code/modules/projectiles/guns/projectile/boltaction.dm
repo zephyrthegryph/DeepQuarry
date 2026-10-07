@@ -146,7 +146,13 @@
 /obj/item/gun/projectile/shotgun/pump/rifle/ui_action_click(mob/user, actiontype)
 	pump_rifle_verb_scope(user)
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/shotgun/pump/rifle, INTERACT_VERB("Use Scope", PROC_REF(pump_rifle_verb_scope), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle)
+	op("pump_rifle_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(pump_rifle_verb_scope_op)))
+
+/// The pump_rifle_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/shotgun/pump/rifle/proc/pump_rifle_verb_scope_op(datum/act/op/A)
+	pump_rifle_verb_scope(A.actor, A.held, null)
+	return OP_OK
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/shotgun/pump/rifle/proc/pump_rifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)

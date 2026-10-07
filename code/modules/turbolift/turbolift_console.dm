@@ -77,22 +77,24 @@ TRACKED(/obj/structure/lift/button, light_up)
 	set_light_up(FALSE)
 
 // Hit it with a PDA or ID to enable priority call mode
-EXTEND_INTERACTIONS(/obj/structure/lift/button, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/lift/button)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/lift/button/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/lift/button/proc/interaction_item(datum/act/op/A)
+	var/obj/item/W = A.held
 	var/obj/item/card/id/id = W.GetID()
 	if(istype(id))
 		if(!check_access(id))
 			play_sfx(src, SFX_MACHINES_BUZZ_TWO)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		lift().priority_mode()
 		if(floor == lift().current_floor())
 			lift().open_doors()
 		else
 			lift().queue_move_to(floor)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/structure/lift/button/interact(mob/user, stance = I_HELP)
 	if(!..())

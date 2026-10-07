@@ -42,6 +42,8 @@ CAPABILITIES(/obj/item/assembly/signaler)
 	op("freq", ui_act("freq", arg("freq", num())), then(PROC_REF(ui_act_freq)))
 	op("code", ui_act("code", arg("code", num())), then(PROC_REF(ui_act_code)))
 	op("reset", ui_act("reset", arg("reset", schema_text(4096))), then(PROC_REF(ui_act_reset)))
+	op("transfer", item(/obj/item), label("Transfer"), then(PROC_REF(interaction_transfer)))
+	op("deadman_it_effect", menu(), label("Threaten to push the button!"), needs(carried()), then(PROC_REF(deadman_it_effect)))
 
 /obj/item/assembly/signaler/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -89,13 +91,11 @@ CAPABILITIES(/obj/item/assembly/signaler)
 /// A subtype adding to an ancestor's compact specs uses declare_interactions() (the proven
 /// chain, ..() and all) and builds its own entry directly with dq_interaction_from_spec() -
 /// see doc/rewrite/interactions.md §5a for why get_interactions() itself doesn't chain here.
-/obj/item/assembly/signaler/declare_interactions(list/into)
-	into += dq_interaction_from_spec(type, INTERACT_ITEM("Transfer", PROC_REF(interaction_transfer)))
-	into += dq_interaction_from_spec(type, INTERACT_VERB("Threaten to push the button!", PROC_REF(deadman_it_effect), REQ_IN_INVENTORY))
-	..()
 
 /// Old attackby: tap two secured signalers together to copy frequency/code.
-/obj/item/assembly/signaler/proc/interaction_transfer(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/assembly/signaler/proc/interaction_transfer(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(issignaler(W))
 		var/obj/item/assembly/signaler/signaler2 = W
 		if(secured && signaler2.secured)
@@ -103,7 +103,7 @@ CAPABILITIES(/obj/item/assembly/signaler)
 			set_frequency(signaler2.frequency)
 			to_chat(user, "You transfer the frequency and code of [signaler2] to [src].")
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/assembly/signaler/proc/signal()
 	if(!COOLDOWN_FINISHED(src, next_activate))
@@ -176,7 +176,8 @@ CAPABILITIES(/obj/item/assembly/signaler)
 	else if(prob(5))
 		act_message(M, src, others = "%U%'s finger twitches a bit over %T%'s signal button!")
 
-/obj/item/assembly/signaler/proc/deadman_it_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/assembly/signaler/proc/deadman_it_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	set_deadman(TRUE)
 	log_and_message_admins("is threatening to trigger a signaler deadman's switch", user)
 	act_message(user, src, others = "<font color='red'>%U% moves their finger over %T%'s signal button...</font>")

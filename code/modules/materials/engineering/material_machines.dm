@@ -365,43 +365,44 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 	var/tmp/obj/item/stack/material/processed_alloy/stock
 
 /// Old attackby.
-/obj/structure/material_anvil/proc/interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
+/obj/structure/material_anvil/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/item = A.held
 	if(istype(item, /obj/item/stack/material/processed_alloy))
 		if(stock())
 			to_chat(user, span_warning("There is already stock() on [src]."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/obj/item/stack/material/processed_alloy/incoming = item
 		if(!istype(incoming.material, /datum/material/processed_alloy))
 			to_chat(user, span_warning("[incoming] is not processed stock()."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!user.drop_from_inventory(incoming))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		incoming.forceMove(src)
 		rel_set(src, nameof(stock), incoming)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(item, /obj/item/melee/hammer) && stock())
 		var/datum/material_batch/batch = stock().physical_batch().copy_batch()
 		if(!batch.apply_process(MATERIAL_PROCESS_FORGE))
 			to_chat(user, span_warning("The stock is outside its forging range; heat it in the alloy furnace first."))
 			consumed(batch, src)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(stock(), batch, src)
 		rel_set(src, nameof(stock), replacement)
 		stock().forceMove(src)
 		consumed(batch, src)
 		act_message(user, null, others = span_notice("%U% works the alloy under the hammer, refining its shape and internal structure."))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
-DECLARE_INTERACTIONS(/obj/structure/material_anvil, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/structure/material_anvil)
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_hand.
-/obj/structure/material_anvil/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/material_anvil/proc/interaction_hand(datum/act/op/A)
 	if(!stock())
-		return FALSE
+		return OP_DECLINE
 	stock().forceMove(get_turf(src))
 	rel_clear(src, nameof(stock))
 	return TRUE
