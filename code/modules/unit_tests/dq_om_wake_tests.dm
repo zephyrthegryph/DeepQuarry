@@ -73,6 +73,10 @@
 /datum/om_wake_test_subscriber
 	var/list/wakes = list()
 
+/// A mob chunk watch's handler (watch_mob_chunks(watcher, chunks, mask, handler) calls handler(chunk, bits) on the watcher).
+/datum/om_wake_test_subscriber/proc/chunk_woke(datum/mob_chunk/C, bits)
+	wakes += bits
+
 /datum/om/behaviour/sleeper/test_subscriber
 	name = "test subscriber"
 
@@ -219,8 +223,9 @@
 	TEST_ASSERT(loop.dormant_chunk_tokens, "a loop nobody can hear did not go dormant")
 	TEST_ASSERT(GLOB.player_chunk_watches > 0, "a dormant loop left no chunk subscriptions")
 	TEST_ASSERT_NULL(loop.sleep_violation(), "a dormant loop's audit failed")
-	var/failure = om_wake_test(loop, om_callable(null, GLOBAL_PROC_REF(publish_player_chunk), T))
-	TEST_ASSERT(!failure, failure)
+	// The chunk watch calls the loop's chunk_woke() (watch_mob_chunks() takes a proc, not an OM behaviour).
+	publish_player_chunk(T)
+	om_test_ticks(4)
 	TEST_ASSERT(loop.dormant_chunk_tokens, "a chunk wake with nobody in range left dormancy")
 	loop.stop()
 	TEST_ASSERT(!loop.dormant_chunk_tokens && !after_pending(loop, "loop_token"), "stop() left the loop subscribed")
@@ -232,23 +237,15 @@
 /datum/unit_test/dq_om_wake_player_chunk_keys/Run()
 	var/turf/T = test_floor()
 	var/datum/om_wake_test_subscriber/players = allocate(/datum/om_wake_test_subscriber)
-	om_attach(players, /datum/om/behaviour/sleeper/test_subscriber)
-	var/list/tokens = watch_mob_chunks(players, mob_chunks_around(T, 0), CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/test_subscriber)
+	var/list/tokens = watch_mob_chunks(players, mob_chunks_around(T, 0), CHANGE_CHUNK_PLAYER, TYPE_PROC_REF(/datum/om_wake_test_subscriber, chunk_woke))
 	TEST_ASSERT(length(tokens), "watch_mob_chunks returned no chunks")
 	TEST_ASSERT(GLOB.player_chunk_watches > 0, "a player chunk subscription was not counted")
-	om_trace(players)
-	om_settle(players, 40)
-	om_test_ticks(4)
-	var/before = om_traced_count(players)
 	var/mob/living/npc = allocate(/mob/living, T)
 	npc.Move(get_step(T, NORTH))
-	om_test_ticks(4)
-	TEST_ASSERT_EQUAL(om_traced_count(players), before, "a mob without a client woke a player chunk subscriber")
-	om_untrace(players)
-	var/failure = om_wake_test(players, om_callable(null, GLOBAL_PROC_REF(publish_player_chunk), T))
-	TEST_ASSERT(!failure, failure)
-	unwatch_mob_chunks(players, tokens, CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/test_subscriber)
-	TEST_ASSERT_EQUAL(length(players.wakes) >= 1, TRUE, "no wake recorded")
+	TEST_ASSERT_EQUAL(length(players.wakes), 0, "a mob without a client woke a player chunk subscriber")
+	publish_player_chunk(T)
+	TEST_ASSERT_EQUAL(length(players.wakes) >= 1, TRUE, "a player in the chunk woke the subscriber")
+	unwatch_mob_chunks(players, tokens, CHANGE_CHUNK_PLAYER)
 
 #endif
 

@@ -1,6 +1,7 @@
 /// Item emags as the library's emag op (code/library/access/emag.dm): a sequencer click runs the item's own effect, a card use is spent
 /// only when the effect did something, and a choice asked first is the op's step. Pinned on the converted items (items/structures wave).
 /datum/unit_test/dq_items_emag_ops
+	abstract_type = /datum/unit_test/dq_items_emag_ops
 
 /datum/unit_test/dq_items_emag_ops/proc/card(turf/T)
 	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, T)

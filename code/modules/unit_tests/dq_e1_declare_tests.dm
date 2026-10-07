@@ -52,8 +52,8 @@
   contributes "glow" (stat=light_range, value=2) from e1_widget:a
   ref_one (var=species, type=/datum/e1_species, on_other_deleted=1)
   rel_grants (var=species)
-  owns_one (var=gizmo, type=/obj/item/e1_part, starts=/obj/item/e1_part, on_destroy=1)
-  owns_many (var=gizmos, type=/obj/item/e1_part, on_destroy=1)
+  owns_one (var=gizmo, type=/obj/item/e1_part, starts=/obj/item/e1_part, on_destroy=1, otherwise=1)
+  owns_many (var=gizmos, type=/obj/item/e1_part, on_destroy=1, otherwise=1)
   ref_many (var=watchers, type=/mob, on_other_deleted=1)
   link (a_type=/obj/e1_fixture, a_var=partner, b_type=/obj/e1_fixture, b_var=partner)
   slot (id=e1_slot, accepts=list, capacity=1)
@@ -67,8 +67,8 @@
   contributes "glow" (stat=light_range, value=2) from e1_widget:a
   ref_one (var=species, type=/datum/e1_species, on_other_deleted=1)
   rel_grants (var=species)
-  owns_one (var=gizmo, type=/obj/item/e1_part, starts=/obj/item/e1_part, on_destroy=1)
-  owns_many (var=gizmos, type=/obj/item/e1_part, on_destroy=1)
+  owns_one (var=gizmo, type=/obj/item/e1_part, starts=/obj/item/e1_part, on_destroy=1, otherwise=1)
+  owns_many (var=gizmos, type=/obj/item/e1_part, on_destroy=1, otherwise=1)
   ref_many (var=watchers, type=/mob, on_other_deleted=1)
   link (a_type=/obj/e1_fixture, a_var=partner, b_type=/obj/e1_fixture, b_var=partner)
   slot (id=e1_slot, accepts=list, capacity=1)
@@ -254,6 +254,9 @@
 	TEST_ASSERT_EQUAL(tarnished, 1, "pick_one() made its pick")
 	TEST_ASSERT(labelled?.label == "conditional", "when(cond, T) made it and starts_args reached its constructor")
 	TEST_ASSERT(istype(S.cell, /obj/item/e0_fixture/cell) && S.cell.loc == S, "cell_bay(starts = PROC_REF(x)) filled the bay from the proc's answer")
+	// a destroyed holder drops what its slots hold on its turf; the test deletes the contents itself
+	for(var/obj/item/I in S.contents)
+		qdel(I)
 
 /datum/unit_test/dq_e1/capability_lifecycle_hooks
 

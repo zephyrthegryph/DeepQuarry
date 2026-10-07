@@ -429,6 +429,7 @@
 	force = 0
 	show_examine = FALSE
 	core = null
+	coreless = TRUE // a construct spell never needs a technomancer core (coreless is a constructor param now, not Initialize's second argument)
 	cast_methods = null			// Controls how the spell is casted.
 	aspect = ASPECT_UNHOLY		// Used for combining spells. Pretty much any cult spell is unholy.
 	toggled = 0					// Mainly used for overlays.
@@ -438,7 +439,7 @@
 
 // ALLOW(init/INSTANCE_STATE): a construct spell made without an owner mob is refused at creation
 /obj/item/spell/construct/Initialize(mapload)
-	. = ..(mapload, TRUE)
+	. = ..()
 	if(!owner_ref())
 		return INITIALIZE_HINT_QDEL
 

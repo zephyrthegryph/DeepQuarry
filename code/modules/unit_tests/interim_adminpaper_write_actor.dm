@@ -29,7 +29,7 @@
 	TEST_ASSERT_NULL(actor.get_active_hand(), "the actual administrative writer needs no held pen")
 	paper.info = "Existing."
 	var/space_before = paper.free_space
-	TEST_ASSERT(paper.ui_act_write_end(actor, list(), null, null, "write_end"), "the actual administrative UI handles append")
+	TEST_ASSERT(test_op_handler(paper, "ui_act_write_end", actor), "the actual administrative UI handles append")
 	TEST_ASSERT_EQUAL(paper.write_actor_ref, REF(actor), "the administrative writer receives the supplied actor")
 	interim_adminpaper_answer(actor, "Added.", "append")
 	TEST_ASSERT_EQUAL(paper.write_calls, 1, "the actual UI invokes administrative writing exactly once")
@@ -38,7 +38,7 @@
 	TEST_ASSERT(findtext(paper.info_links, "Added."), "the rendered paper content reflects the actual appended text")
 	var/info_before = paper.info
 	var/remaining_space = paper.free_space
-	paper.ui_act_write_end(actor, list(), null, null, "write_end")
+	test_op_handler(paper, "ui_act_write_end", actor)
 	interim_adminpaper_answer(actor, "", "empty append")
 	TEST_ASSERT_EQUAL(paper.info, info_before, "empty input preserves actual paper content")
 	TEST_ASSERT_EQUAL(paper.free_space, remaining_space, "empty input consumes no paper capacity")
@@ -55,7 +55,7 @@
 	paper.info = "Before<span class=\"paper_field\"></span>After"
 	paper.fields = 1
 	var/space_before = paper.free_space
-	TEST_ASSERT(paper.ui_act_write_field(actor, list("id" = "1"), null, null, "write_field"), "the actual administrative UI handles field insertion")
+	TEST_ASSERT(test_op_handler(paper, "ui_act_write_field", actor, null, "1"), "the actual administrative UI handles field insertion")
 	TEST_ASSERT_EQUAL(paper.write_actor_ref, REF(actor), "the actual field writer receives the supplied actor")
 	interim_adminpaper_answer(actor, "Entered", "field")
 	TEST_ASSERT_EQUAL(strip_html_properly(paper.info), "BeforeEnteredAfter", "the actual writer inserts entered text between surrounding content")
@@ -65,6 +65,6 @@
 	TEST_ASSERT_EQUAL(length(segments), 3, "actual paper rendering retains surrounding text and its field")
 	paper.free_space = 0
 	var/info_before = paper.info
-	paper.ui_act_write_field(actor, list("id" = "1"), null, null, "write_field")
+	test_op_handler(paper, "ui_act_write_field", actor, null, "1")
 	TEST_ASSERT_EQUAL(paper.info, info_before, "the actual full-paper guard refuses further insertion")
 	TEST_ASSERT_EQUAL(paper.free_space, 0, "the actual full-paper guard preserves exhausted capacity")

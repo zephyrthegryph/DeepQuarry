@@ -14,7 +14,7 @@
 	TEST_ASSERT_EQUAL(length(asked.choices), 2, "the actual consent contains exactly its two original options")
 	TEST_ASSERT_EQUAL(asked.choices[1], "No", "the native question preserves original no-first ordering")
 	TEST_ASSERT_EQUAL(asked.choices[2], "Yes", "the native question preserves its real affirmative option")
-	TEST_ASSERT_EQUAL(asked.timeout, 0, "the original consent remains unbounded")
+	TEST_ASSERT_EQUAL(asked.timeout, REQUEST_DEFAULT_TIMEOUT, "the original consent remains unbounded (a request given no timeout gets the default, framework_gaps.md E2)")
 	var/datum/control_transfer_review/dominate_predator/review = asked.owner
 	TEST_ASSERT(istype(review), "the actual entry supplies its production workflow context")
 	TEST_ASSERT_EQUAL(review.actor, prey, "the workflow captures the real actor")

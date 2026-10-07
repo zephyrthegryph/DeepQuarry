@@ -39,6 +39,10 @@ GLOBAL_VAR_INIT(om_io_test_seq, 0)
 
 /datum/unit_test/om/io_job_delivers_and_parks/run_om(list/made)
 	var/datum/om_test_entity/E = entity(made)
+	// The diagnostics are shared by every test of this kind: count from where this test starts.
+	var/list/before_diag = io_diagnostics()
+	var/completed_before = before_diag["test"]?["completed"] || 0
+	var/errors_before = before_diag["test"]?["errors"] || 0
 	var/id = io_job(E, /datum/io_backend/test, "hello", /datum/om_test_entity/proc/io_done, "a")
 	TEST_ASSERT(id, "io_job returns a job id at once")
 	TEST_ASSERT(!length(E.log), "the callback does not run inline")
@@ -53,8 +57,8 @@ GLOBAL_VAR_INIT(om_io_test_seq, 0)
 	TEST_ASSERT("b::failed" in E.log, "a failed job delivers its error")
 	TEST_ASSERT("c::refused" in E.log, "a job that fails to start delivers its error on the lane")
 	var/list/diag = io_diagnostics()
-	TEST_ASSERT(diag["test"]?["completed"] == 3, "io_diagnostics counts completed jobs per kind")
-	TEST_ASSERT(diag["test"]?["errors"] == 2, "io_diagnostics counts errors per kind")
+	TEST_ASSERT((diag["test"]?["completed"] || 0) - completed_before == 3, "io_diagnostics counts completed jobs per kind")
+	TEST_ASSERT((diag["test"]?["errors"] || 0) - errors_before == 2, "io_diagnostics counts errors per kind")
 
 /datum/unit_test/om/io_job_owned_and_weak
 

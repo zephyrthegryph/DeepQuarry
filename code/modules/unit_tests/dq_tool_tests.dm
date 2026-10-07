@@ -181,17 +181,19 @@
 	TEST_ASSERT(QDELETED(girder), "disassembled")
 	own_turf_contents(T) // the salvaged steel
 
-/// Manual valve: unwrenching takes 40 ticks at volume 50.
+/// Manual valve: the wrench is an op with a 4 s wait (intended_changes.md, "Pipe devices"; was a use_tool() of 40 ticks).
 /datum/unit_test/dq_tool_parity_valve
 
 /datum/unit_test/dq_tool_parity_valve/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/item/tool/wrench/wrench = dq_zero_speed(allocate(/obj/item/tool/wrench, T))
+	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench, T)
 	var/obj/machinery/atmospherics/valve/valve = allocate(/obj/machinery/atmospherics/valve, T)
-
-	TEST_ASSERT(valve.wrench_act(H, wrench) & ITEM_INTERACT_SUCCESS, "the wrench unfastens it")
-	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 40, "unfastening takes 40 ticks")
-	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["quality"], TOOL_WRENCH, "as a wrench")
-	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["volume"], 50, "at volume 50")
-	own_turf_contents(T) // the unfastened valve comes off as a pipe item
+	test_click(H, valve, wrench)
+	test_time(3 SECONDS)
+	TEST_ASSERT(!QDELETED(valve), "the wrench is still unfastening it after 3 s")
+	test_time(2 SECONDS)
+	TEST_ASSERT(QDELETED(valve), "the valve comes off as a pipe item after its 4 s wait")
+	test_driver_end()
+	own_turf_contents(T)

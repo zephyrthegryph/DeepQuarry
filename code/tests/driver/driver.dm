@@ -280,11 +280,21 @@ GLOBAL_VAR(test_prompts)
 	. = call(holder, proc_name)(arglist(call_args))
 	A.release()
 
-/// Calls a request handler directly: x(datum/act/request/A) for a request that `answerer` answered with `value` (a prompt of `kind`, answered as given).
-/proc/test_request_handler(datum/holder, proc_name, mob/answerer, value, kind = /datum/prompt/choice)
+/// Calls a request handler directly (`as_op`: an op handler that reads A.answer and A.actor): x(datum/act/request/A) for a request that `answerer` answered with `value` (a prompt of `kind`, answered as given).
+/proc/test_request_handler(datum/holder, proc_name, mob/answerer, value, kind = /datum/prompt/choice, as_op = FALSE)
 	var/datum/request/R = new kind
 	R.answerer = answerer // ALLOW(ownership): a throwaway request record for one direct handler call, discarded at the end of the proc
 	R.value = value
+	if(as_op) // an op's asks() step answered: the handler gets the op's context (actor, answer) as then() gives it
+		var/datum/act/op/O = take(/datum/act/op)
+		O.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		O.target = holder
+		O.actor = answerer
+		O.answer = R // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		. = call(holder, proc_name)(O)
+		O.release()
+		qdel(R) // ALLOW(lifecycle): the throwaway request record of this test call was never owned by anything
+		return
 	var/datum/act/request/A = take(/datum/act/request)
 	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	A.request = R // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release

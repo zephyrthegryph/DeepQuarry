@@ -49,6 +49,6 @@
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
 	TEST_ASSERT(beam && !QDELETED(beam), "The actual orphan starts alive before its real periodic endpoint")
 	TEST_ASSERT_NULL(beam.master(), "The actual orphan has no surviving emitter relation")
-	beam.periodic_step()
+	test_op_handler(beam, "i_beam_step", null) // the beam's every() step (periodic_step() is gone)
 	TEST_ASSERT(QDELETED(beam), "The actual periodic endpoint consumes the exact orphan beam")
 	TEST_ASSERT(!QDELETED(pen) && pen.loc == T, "Actual orphan cleanup preserves the exact unrelated floor pen")

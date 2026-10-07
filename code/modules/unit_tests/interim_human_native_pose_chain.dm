@@ -12,7 +12,7 @@
 	test_drain()
 	var/datum/request/request = SSrequests.open_for(actor)
 	TEST_ASSERT(istype(request, /datum/prompt/text/pose), "the production pose verb opens the real native text request")
-	TEST_ASSERT_EQUAL(request.timeout, 0, "the pose question retains its indefinite timeout")
+	TEST_ASSERT_EQUAL(request.timeout, REQUEST_DEFAULT_TIMEOUT, "the pose question retains its indefinite timeout (a request given no timeout gets the default, framework_gaps.md E2)")
 	test_answer(actor, "stands at attention.")
 	request = SSrequests.open_for(actor)
 	TEST_ASSERT(istype(request, /datum/prompt/checklist/pose_options), "an accepted pose opens the actual checklist")

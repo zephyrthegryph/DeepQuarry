@@ -27,8 +27,9 @@
 	var/mob/living/visitor = allocate(/mob/living, locate(world.maxx, world.maxy, T.z))
 	TEST_ASSERT(B.hibernate_calm(), "calm brain refused to hibernate")
 	TEST_ASSERT_NULL(B.sleep_violation(), "a calm hibernating brain reported a violation")
-	var/failure = om_wake_test(B, om_callable(visitor, TYPE_PROC_REF(/atom/movable, forceMove), T))
-	TEST_ASSERT(!failure, failure)
+	// The chunk watch calls the brain's chunk_woke() as the visitor arrives (watch_mob_chunks() takes a proc, not an OM behaviour).
+	visitor.forceMove(T)
+	om_test_ticks(4)
 	TEST_ASSERT(B.loop_running(DQAI_PROCESSING), "woken brain did not rejoin strategic processing")
 	// The audit catches a brain asleep with a threat.
 	B.hibernate_calm()
@@ -41,23 +42,16 @@
 
 /datum/unit_test/dq_om_keys_mob_chunk_masks/Run()
 	var/turf/T = run_loc_floor_bottom_left || locate(1, 1, 1)
-	var/datum/players = allocate(/datum/om_wake_test_subscriber)
-	var/datum/anyone = allocate(/datum/om_wake_test_subscriber)
-	om_attach(players, /datum/om/behaviour/sleeper/test_subscriber)
-	om_attach(anyone, /datum/om/behaviour/sleeper/test_subscriber)
-	var/list/player_tokens = watch_mob_chunks(players, mob_chunks_around(T, 0), CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/test_subscriber)
-	var/list/any_tokens = watch_mob_chunks(anyone, list(mob_chunk(mob_chunk_id(T))), CHANGE_CHUNK_ANY_MOB, /datum/om/behaviour/sleeper/test_subscriber)
+	var/datum/om_wake_test_subscriber/players = allocate(/datum/om_wake_test_subscriber)
+	var/datum/om_wake_test_subscriber/anyone = allocate(/datum/om_wake_test_subscriber)
+	var/list/player_tokens = watch_mob_chunks(players, mob_chunks_around(T, 0), CHANGE_CHUNK_PLAYER, TYPE_PROC_REF(/datum/om_wake_test_subscriber, chunk_woke))
+	var/list/any_tokens = watch_mob_chunks(anyone, list(mob_chunk(mob_chunk_id(T))), CHANGE_CHUNK_ANY_MOB, TYPE_PROC_REF(/datum/om_wake_test_subscriber, chunk_woke))
 	var/mob/living/npc = allocate(/mob/living, locate(world.maxx, world.maxy, T.z))
-	om_trace(players)
-	om_trace(anyone)
-	om_test_ticks(4)
 	npc.forceMove(T)
-	TEST_ASSERT(om_wait_for_wake(anyone), "a mob moving into the chunk did not wake an any-mob subscriber")
-	TEST_ASSERT(!om_traced_count(players), "a mob without a client woke a player-chunk subscriber")
-	om_untrace(players)
-	om_untrace(anyone)
-	unwatch_mob_chunks(players, player_tokens, CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/test_subscriber)
-	unwatch_mob_chunks(anyone, any_tokens, CHANGE_CHUNK_ANY_MOB, /datum/om/behaviour/sleeper/test_subscriber)
+	TEST_ASSERT(length(anyone.wakes), "a mob moving into the chunk did not wake an any-mob subscriber")
+	TEST_ASSERT(!length(players.wakes), "a mob without a client woke a player-chunk subscriber")
+	unwatch_mob_chunks(players, player_tokens, CHANGE_CHUNK_PLAYER)
+	unwatch_mob_chunks(anyone, any_tokens, CHANGE_CHUNK_ANY_MOB)
 
 #endif
 
