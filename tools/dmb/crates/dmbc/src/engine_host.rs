@@ -7,7 +7,7 @@ use dm_ir::{
     ResolveQuery as Q, ResolvedMeaning as M, Resolver, SemanticValue, SymbolId, SymbolTable,
 };
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::{BTreeMap, BTreeSet, HashSet},
     sync::Arc,
 };
 
@@ -86,7 +86,7 @@ impl ConstantCatalog {
 #[derive(Clone, Debug)]
 pub struct RuntimeAliasCatalog {
     aliases: Arc<BTreeMap<SymbolId, SymbolId>>,
-    ordinary: Arc<BTreeSet<SymbolId>>,
+    ordinary: Arc<HashSet<SymbolId>>,
     completeness: Completeness,
     identity: u128,
     policy_identity: u128,
@@ -99,7 +99,7 @@ impl RuntimeAliasCatalog {
         ordinary: Vec<SymbolId>,
         completeness: Completeness,
     ) -> Result<Self, HostError> {
-        let ordinary: BTreeSet<_> = ordinary.into_iter().collect();
+        let ordinary: HashSet<_> = ordinary.into_iter().collect();
         let mut mapping = BTreeMap::new();
         for &(alias, target) in &aliases {
             for id in [alias, target] {
@@ -117,7 +117,9 @@ impl RuntimeAliasCatalog {
                 return Err(HostError::ConflictingAlias(alias));
             }
         }
-        for id in &ordinary {
+        let mut ordered_ordinary: Vec<_> = ordinary.iter().copied().collect();
+        ordered_ordinary.sort_unstable();
+        for id in &ordered_ordinary {
             if symbols.text(*id).is_none() {
                 return Err(HostError::UnknownSymbol(*id));
             }
@@ -132,7 +134,7 @@ impl RuntimeAliasCatalog {
             bytes.extend_from_slice(&target.bits().to_le_bytes());
         }
         bytes.extend_from_slice(&(ordinary.len() as u64).to_le_bytes());
-        for id in &ordinary {
+        for id in ordered_ordinary {
             bytes.extend_from_slice(&id.bits().to_le_bytes());
         }
         Ok(Self {
@@ -154,8 +156,7 @@ impl RuntimeAliasCatalog {
 }
 #[derive(Clone, Debug)]
 struct VariableAbsence {
-    names: BTreeSet<SymbolId>,
-    owners: BTreeSet<SymbolId>,
+    names: HashSet<SymbolId>,
     identity: u128,
     source: Arc<dm_tree::SemanticTree>,
 }
@@ -164,7 +165,7 @@ pub struct EngineResolverHost<R> {
     tree: Arc<R>,
     constants: ConstantCatalog,
     runtime: RuntimeAliasCatalog,
-    callable_absence: Option<Arc<BTreeSet<SymbolId>>>,
+    callable_absence: Option<Arc<HashSet<SymbolId>>>,
     intrinsic_methods: Option<Arc<intrinsic_methods::IntrinsicMethods>>,
     variable_absence: Option<Arc<VariableAbsence>>,
 }
@@ -280,7 +281,7 @@ impl<R: Resolver> EngineResolverHost<R> {
         {
             intrinsic.insert(field.name);
         }
-        let mut names: BTreeSet<_> = frontend
+        let mut names: HashSet<_> = frontend
             .snapshot
             .tree
             .members()
@@ -301,13 +302,6 @@ impl<R: Resolver> EngineResolverHost<R> {
                 names.insert(*name);
             }
         }
-        let owners: BTreeSet<_> = frontend
-            .snapshot
-            .tree
-            .types()
-            .iter()
-            .map(|node| node.path)
-            .collect();
         let mut bytes =
             b"pinned-authored-variable-absence-v1;conservative-cross-owner-exclusions".to_vec();
         bytes.extend_from_slice(&engine.identity().to_le_bytes());
@@ -318,7 +312,6 @@ impl<R: Resolver> EngineResolverHost<R> {
         }
         self.variable_absence = Some(Arc::new(VariableAbsence {
             names,
-            owners,
             identity: xxhash_rust::xxh3::xxh3_128(&bytes),
             source: Arc::clone(&frontend.snapshot.tree),
         }));
@@ -415,7 +408,8 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                         }
                     }
                     if self.variable_absence.as_ref().is_some_and(|coverage| {
-                        coverage.names.contains(&name) && coverage.owners.contains(&owner)
+                        coverage.names.contains(&name)
+                            && coverage.source.lookup_type(owner).is_some()
                     }) && self.runtime.ordinary.contains(&owner)
                     {
                         return if presence {
@@ -458,6 +452,32 @@ mod tests {
         fn resolve(&self, _: Q) -> M {
             M::Missing
         }
+    }
+    #[test]
+    fn unordered_type_membership_has_canonical_content_and_policy_identity() {
+        let mut symbols = SymbolTable::default();
+        let first = symbols.intern("/datum/first").unwrap();
+        let second = symbols.intern("/datum/second").unwrap();
+        let left = RuntimeAliasCatalog::new(
+            1,
+            &symbols,
+            Vec::new(),
+            vec![first, second],
+            Completeness::Partial,
+        )
+        .unwrap();
+        let right = RuntimeAliasCatalog::new(
+            1,
+            &symbols,
+            Vec::new(),
+            vec![second, first, second],
+            Completeness::Partial,
+        )
+        .unwrap();
+        assert_eq!(left.identity(), right.identity());
+        assert_eq!(left.policy_identity(), right.policy_identity());
+        assert!(left.ordinary.contains(&first));
+        assert!(right.ordinary.contains(&second));
     }
     #[test]
     fn pinned_receiver_methods_lower_dynamically_without_fabricated_abi() {

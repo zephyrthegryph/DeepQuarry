@@ -1,7 +1,7 @@
 //! Positive receiver-method inventory from the pinned native compiler catalog.
 //! SourceInfo, argument annotations/default presence and raw records are kept
 //! opaque. None is converted to source signature flags or output procedure IDs.
-use dm_ir::{ResolveQuery, ResolvedMeaning, SymbolId};
+use dm_ir::{ResolveQuery, ResolvedMeaning, SymbolId, SymbolTable};
 use std::{collections::BTreeMap, sync::Arc};
 
 #[derive(Clone, Debug)]
@@ -21,7 +21,7 @@ impl IntrinsicMethods {
             .as_array()
             .ok_or("native callable catalog absent")?;
         let mut methods = BTreeMap::new();
-        let mut spellings = source.symbols().clone();
+        let mut spellings = SymbolTable::overlay(source.shared_symbols());
         for record in procs {
             if record
                 .get("IsVerb")
