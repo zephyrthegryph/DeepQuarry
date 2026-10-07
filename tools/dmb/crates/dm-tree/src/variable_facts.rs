@@ -11,6 +11,9 @@ impl SemanticTree {
     fn variable_origin(&self, owner: SymbolId, name: SymbolId) -> Option<Origin<'_>> {
         let mut current = self.lookup_type(owner);
         while let Some(id) = current {
+            if owner != SymbolId::of("/") && self.types[id.index()].path == SymbolId::of("/") {
+                break;
+            }
             if let Some(member) = self.direct.get(&(id, name, MemberKind::Var)) {
                 return Some(Origin::Source(*member));
             }
@@ -170,13 +173,63 @@ mod tests {
                     name
                 }
             ),
-            slot
+            M::Unsupported(Q::VarStorage {
+                owner: SymbolId::of("/datum/a"),
+                name
+            })
+        );
+        assert!(
+            matches!(Resolver::resolve(&tree,Q::GlobalVar(name)),M::Member{owner:actual,..} if actual==owner)
         );
         let complete = tree
             .clone()
             .with_complete_intrinsics(hierarchy(&tree), vec![])
             .unwrap();
         assert_eq!(Resolver::resolve(&complete, Q::UniqueStaticVar(name)), slot);
+        assert_eq!(
+            Resolver::resolve(
+                &complete,
+                Q::VarStorage {
+                    owner: SymbolId::of("/datum/a"),
+                    name
+                }
+            ),
+            M::Missing
+        );
+        assert_eq!(
+            Resolver::resolve(
+                &complete,
+                Q::HasMemberVar {
+                    owner: SymbolId::of("/datum/a"),
+                    name
+                }
+            ),
+            M::Presence(false)
+        );
+    }
+    #[test]
+    fn instance_shadow_has_no_global_override_predecessor() {
+        let tree = tree("var/value = 1\n/datum/a\n    var/value = 2\n/datum/a/b\n    value = 3\n");
+        let name = SymbolId::of("value");
+        let base = tree
+            .resolve(
+                tree.lookup_type(SymbolId::of("/datum/a")).unwrap(),
+                name,
+                MemberKind::Var,
+            )
+            .unwrap();
+        let child = tree
+            .resolve(
+                tree.lookup_type(SymbolId::of("/datum/a/b")).unwrap(),
+                name,
+                MemberKind::Var,
+            )
+            .unwrap();
+        assert_eq!(tree.override_chain(base), vec![base]);
+        assert_eq!(tree.override_chain(child), vec![child, base]);
+        assert!(
+            matches!(Resolver::resolve(&tree,Q::VarStorage{owner:SymbolId::of("/datum/a/b"),name}),M::InstanceField{declaring_owner,..} if declaring_owner==SymbolId::of("/datum/a"))
+        );
     }
     #[test]
     fn authored_storage_and_type_are_independent_facts() {

@@ -177,10 +177,9 @@ impl SemanticTree {
         &self.declaration_targets
     }
     pub fn resolve(&self, mut owner: TypeId, name: SymbolId, kind: MemberKind) -> Option<MemberId> {
-        let instance_namespace = self.types[owner.index()].path != SymbolId::of("/")
-            && matches!(kind, MemberKind::Proc | MemberKind::Verb);
+        let instance_namespace = self.types[owner.index()].path != SymbolId::of("/");
         loop {
-            // The synthetic root owns global procedures, not inherited methods.
+            // The synthetic root owns globals, not inherited instance members.
             if instance_namespace && self.types[owner.index()].path == SymbolId::of("/") {
                 return None;
             }
@@ -544,8 +543,7 @@ pub fn build_with_intrinsic_fields(
             let mut parent = tree.parent(node.owner);
             let mut previous = None;
             while let Some(owner) = parent {
-                if matches!(node.kind, MemberKind::Proc | MemberKind::Verb)
-                    && tree.types[owner.index()].path == root {
+                if tree.types[owner.index()].path == root {
                     break;
                 }
                 if let Some(id) = tree.direct.get(&(owner, node.name, node.kind)) {

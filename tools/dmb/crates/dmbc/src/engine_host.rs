@@ -87,6 +87,7 @@ pub struct RuntimeAliasCatalog {
     ordinary: Arc<BTreeSet<SymbolId>>,
     completeness: Completeness,
     identity: u128,
+    policy_identity: u128,
 }
 impl RuntimeAliasCatalog {
     pub fn new(
@@ -122,6 +123,7 @@ impl RuntimeAliasCatalog {
         let mut bytes = b"dm-runtime-alias-catalog-v1\0".to_vec();
         bytes.extend_from_slice(&schema.to_le_bytes());
         bytes.push(completeness as u8);
+        let policy_identity = xxhash_rust::xxh3::xxh3_128(&bytes);
         bytes.extend_from_slice(&(mapping.len() as u64).to_le_bytes());
         for (alias, target) in &mapping {
             bytes.extend_from_slice(&alias.bits().to_le_bytes());
@@ -132,15 +134,28 @@ impl RuntimeAliasCatalog {
             bytes.extend_from_slice(&id.bits().to_le_bytes());
         }
         Ok(Self {
+            policy_identity,
             aliases: Arc::new(mapping),
             ordinary: Arc::new(ordinary),
             completeness,
             identity: xxhash_rust::xxh3::xxh3_128(&bytes),
         })
     }
+    /// Exact catalog content, including source membership and captured aliases.
     pub fn identity(&self) -> u128 {
         self.identity
     }
+    /// Immutable runtime schema and completeness policy; mappings are query data.
+    pub fn policy_identity(&self) -> u128 {
+        self.policy_identity
+    }
+}
+#[derive(Clone, Debug)]
+struct VariableAbsence {
+    names: BTreeSet<SymbolId>,
+    owners: BTreeSet<SymbolId>,
+    identity: u128,
+    source: Arc<dm_tree::SemanticTree>,
 }
 #[derive(Clone, Debug)]
 pub struct EngineResolverHost<R> {
@@ -148,6 +163,7 @@ pub struct EngineResolverHost<R> {
     constants: ConstantCatalog,
     runtime: RuntimeAliasCatalog,
     callable_absence: Option<Arc<BTreeSet<SymbolId>>>,
+    variable_absence: Option<Arc<VariableAbsence>>,
 }
 impl<R: Resolver> EngineResolverHost<R> {
     pub fn new(tree: Arc<R>, constants: ConstantCatalog, runtime: RuntimeAliasCatalog) -> Self {
@@ -156,6 +172,7 @@ impl<R: Resolver> EngineResolverHost<R> {
             constants,
             runtime,
             callable_absence: None,
+            variable_absence: None,
         }
     }
     /// Certify the opposite callable namespace for authored names outside the
@@ -203,18 +220,116 @@ impl<R: Resolver> EngineResolverHost<R> {
         ));
         Ok(self)
     }
+    /// Name exclusion is limited to authored declarations under one pinned
+    /// engine schema. Unknown names and catalog intrinsics remain unsupported.
+    pub fn with_pinned_variables(
+        mut self,
+        engine: &crate::engine::EngineSnapshot,
+        frontend: &dm_tree::frontend::ColdFrontend,
+    ) -> Result<Self, String> {
+        crate::engine_abi_coverage::NamedEngineCoverage::pinned(engine)?;
+        if frontend.engine.as_ref().map(|status| status.identity) != Some(engine.identity()) {
+            return Err("variable coverage belongs to another engine capture".into());
+        }
+        const CATALOG: &[u8] =
+            include_bytes!("../../../fixtures/native_template_nativebuiltins_5161687.json");
+        let catalog: serde_json::Value =
+            serde_json::from_slice(CATALOG).map_err(|error| error.to_string())?;
+        let mut intrinsic = BTreeSet::new();
+        for owner in catalog["Types"]
+            .as_array()
+            .ok_or("native variable catalog absent")?
+        {
+            for domain in ["Variables", "GlobalVariables"] {
+                if domain == "GlobalVariables" && owner["Path"].as_str() == Some("/") {
+                    continue;
+                }
+                if let Some(values) = owner.get(domain) {
+                    for name in values
+                        .as_object()
+                        .ok_or("native variable domain malformed")?
+                        .keys()
+                    {
+                        intrinsic.insert(SymbolId::of(name));
+                    }
+                }
+            }
+            if let Some(values) = owner.get("ConstVariables") {
+                for name in values
+                    .as_array()
+                    .ok_or("native const variable catalog malformed")?
+                {
+                    intrinsic.insert(SymbolId::of(
+                        name.as_str()
+                            .ok_or("native const variable name malformed")?,
+                    ));
+                }
+            }
+        }
+        let mut catalog_symbols = SymbolTable::default();
+        for field in crate::engine::catalog::fields(&mut catalog_symbols)
+            .map_err(|error| error.to_string())?
+        {
+            intrinsic.insert(field.name);
+        }
+        let mut names: BTreeSet<_> = frontend
+            .snapshot
+            .tree
+            .members()
+            .iter()
+            .filter(|member| {
+                member.kind == dm_tree::MemberKind::Var
+                    && member.definition == dm_tree::DefinitionMode::Declare
+            })
+            .map(|member| member.name)
+            .filter(|name| !intrinsic.contains(name))
+            .collect();
+        // Positive compiler constants are a separate semantic domain from root
+        // runtime globals. Only exact pinned values may certify lexical absence.
+        let pinned_constants = ConstantCatalog::native_516_1687(&mut catalog_symbols)
+            .map_err(|error| format!("pinned constants {error:?}"))?;
+        for (name, value) in pinned_constants.values.iter() {
+            if !intrinsic.contains(name) && self.constants.values.get(name) == Some(value) {
+                names.insert(*name);
+            }
+        }
+        let owners: BTreeSet<_> = frontend
+            .snapshot
+            .tree
+            .types()
+            .iter()
+            .map(|node| node.path)
+            .collect();
+        let mut bytes =
+            b"pinned-authored-variable-absence-v1;conservative-cross-owner-exclusions".to_vec();
+        bytes.extend_from_slice(&engine.identity().to_le_bytes());
+        bytes.extend_from_slice(crate::engine::catalog::CATALOG_SCHEMA.as_bytes());
+        bytes.extend_from_slice(CATALOG);
+        for name in &intrinsic {
+            bytes.extend_from_slice(&name.bits().to_le_bytes());
+        }
+        self.variable_absence = Some(Arc::new(VariableAbsence {
+            names,
+            owners,
+            identity: xxhash_rust::xxh3::xxh3_128(&bytes),
+            source: Arc::clone(&frontend.snapshot.tree),
+        }));
+        Ok(self)
+    }
+    /// Compiler policy only. Source membership and alias mapping are RuntimeType
+    /// and declaration query inputs, never blanket procedure invalidation keys.
     pub fn configuration_identity(&self) -> u128 {
         let mut bytes = b"dm-engine-host-v1\0".to_vec();
         bytes.extend_from_slice(&self.constants.identity.to_le_bytes());
-        bytes.extend_from_slice(&self.runtime.identity.to_le_bytes());
-        if let Some(names) = &self.callable_absence {
+        bytes.extend_from_slice(&self.runtime.policy_identity.to_le_bytes());
+        if self.callable_absence.is_some() {
             bytes.extend_from_slice(b"pinned-authored-callable-absence-v1");
             bytes.extend_from_slice(include_bytes!(
                 "../../../fixtures/native_template_nativebuiltins_5161687.json"
             ));
-            for name in names.iter() {
-                bytes.extend_from_slice(&name.bits().to_le_bytes());
-            }
+        }
+        if let Some(coverage) = &self.variable_absence {
+            bytes.extend_from_slice(&coverage.identity.to_le_bytes());
         }
         xxhash_rust::xxh3::xxh3_128(&bytes)
     }
@@ -256,6 +371,46 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                 if !matches!(answer, M::Unsupported(_)) {
                     return answer;
                 }
+                let variable = match query {
+                    Q::Var { owner, name }
+                    | Q::DeclaredVarType { owner, name }
+                    | Q::VarStorage { owner, name }
+                    | Q::StaticVar { owner, name }
+                    | Q::Constant { owner, name } => Some((owner, name, false)),
+                    Q::HasMemberVar { owner, name } => Some((owner, name, true)),
+                    Q::GlobalVar(name) => Some((SymbolId::of("/"), name, false)),
+                    _ => None,
+                };
+                if let Some((owner, name, presence)) = variable {
+                    if let Some(coverage) = &self.variable_absence {
+                        // An evaluation layer can lack a scalar outcome while
+                        // the captured declaration still has authoritative metadata.
+                        let declared = dm_ir::Resolver::resolve(coverage.source.as_ref(), query);
+                        if !matches!(declared, M::Unsupported(_) | M::Missing) {
+                            return declared;
+                        }
+                        if matches!(
+                            dm_ir::Resolver::resolve(
+                                coverage.source.as_ref(),
+                                Q::HasMemberVar { owner, name }
+                            ),
+                            M::Presence(true)
+                        ) {
+                            return answer;
+                        }
+                    }
+                    if self.variable_absence.as_ref().is_some_and(|coverage| {
+                        coverage.names.contains(&name) && coverage.owners.contains(&owner)
+                    }) && self.runtime.ordinary.contains(&owner)
+                    {
+                        return if presence {
+                            M::Presence(false)
+                        } else {
+                            M::Missing
+                        };
+                    }
+                    return answer;
+                }
                 let (owner, name, presence) = match query {
                     Q::Proc { owner, name, .. } => (owner, name, false),
                     Q::HasMemberProc { owner, name } => (owner, name, true),
@@ -286,6 +441,240 @@ mod tests {
     impl Resolver for Missing {
         fn resolve(&self, _: Q) -> M {
             M::Missing
+        }
+    }
+    #[test]
+    fn source_membership_changes_do_not_change_compiler_policy_identity() {
+        use std::path::Path;
+        struct Source(&'static str);
+        impl dm_preprocess::SourceProvider for Source {
+            fn read(&self, _: &Path) -> Result<String, String> {
+                Ok(self.0.into())
+            }
+        }
+        let engine = crate::engine::EngineSnapshot::from_bytes(
+            include_bytes!("../../../fixtures/native_template.bin"),
+            1,
+        )
+        .unwrap()
+        .with_bootstrap_catalog()
+        .unwrap();
+        let seed = engine.frontend_seed();
+        let build = |source| {
+            let frontend = dm_tree::frontend::build_with_config(
+                Path::new("project.dme"),
+                &Source(source),
+                &Default::default(),
+                dm_tree::frontend::FrontendConfig {
+                    workers: 1,
+                    engine: Some(&seed),
+                    observer: None,
+                },
+            )
+            .unwrap();
+            let mut symbols = frontend.snapshot.tree.symbols().clone();
+            let constants = ConstantCatalog::native_516_1687(&mut symbols).unwrap();
+            let runtime = RuntimeAliasCatalog::new(
+                engine.identity(),
+                &symbols,
+                Vec::new(),
+                frontend
+                    .snapshot
+                    .tree
+                    .types()
+                    .iter()
+                    .map(|node| node.path)
+                    .collect(),
+                Completeness::Partial,
+            )
+            .unwrap();
+            EngineResolverHost::new(frontend.snapshot.tree.clone(), constants, runtime)
+                .with_pinned_callables(&engine, &frontend)
+                .unwrap()
+                .with_pinned_variables(&engine, &frontend)
+                .unwrap()
+        };
+        let before = build("/datum/probe\n");
+        let after = build("/datum/probe\n/datum/unrelated\n    var/fresh = 1\n    proc/new_function()\n        return fresh\n");
+        assert_eq!(
+            before.configuration_identity(),
+            after.configuration_identity()
+        );
+        let type_query = Q::RuntimeType(SymbolId::of("/datum/unrelated"));
+        assert_ne!(
+            before.resolve(type_query.clone()),
+            after.resolve(type_query)
+        );
+        let variable_query = Q::Var {
+            owner: SymbolId::of("/datum/unrelated"),
+            name: SymbolId::of("fresh"),
+        };
+        assert_ne!(
+            before.resolve(variable_query.clone()),
+            after.resolve(variable_query)
+        );
+        let proc_query = Q::Proc {
+            owner: SymbolId::of("/datum/unrelated"),
+            name: SymbolId::of("new_function"),
+            verb: false,
+        };
+        assert_ne!(
+            before.resolve(proc_query.clone()),
+            after.resolve(proc_query)
+        );
+    }
+    #[test]
+    fn pinned_authored_variable_absence_preserves_global_and_field_shadow_domains() {
+        use std::path::Path;
+        struct Source;
+        impl dm_preprocess::SourceProvider for Source {
+            fn read(&self, _: &Path) -> Result<String, String> {
+                Ok("var/global_only = 4\nvar/shared_name = 1\n/datum/probe\n    var/shared_name = 2\n/datum/probe/proc/read()\n    return shared_name + global_only\n/proc/root_read()\n    return shared_name\n".into())
+            }
+        }
+        let bytes = include_bytes!("../../../fixtures/native_template.bin");
+        let engine = crate::engine::EngineSnapshot::from_bytes(bytes, 1)
+            .unwrap()
+            .with_bootstrap_catalog()
+            .unwrap();
+        let seed = engine.frontend_seed();
+        let frontend = dm_tree::frontend::build_with_config(
+            Path::new("project.dme"),
+            &Source,
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(&seed),
+                observer: None,
+            },
+        )
+        .unwrap();
+        let mut symbols = frontend.snapshot.tree.symbols().clone();
+        let constants = ConstantCatalog::native_516_1687(&mut symbols).unwrap();
+        let runtime = RuntimeAliasCatalog::new(
+            engine.identity(),
+            &symbols,
+            Vec::new(),
+            frontend
+                .snapshot
+                .tree
+                .types()
+                .iter()
+                .map(|node| node.path)
+                .collect(),
+            Completeness::Partial,
+        )
+        .unwrap();
+        let base = EngineResolverHost::new(frontend.snapshot.tree.clone(), constants, runtime);
+        let base_identity = base.configuration_identity();
+        let host = base.with_pinned_variables(&engine, &frontend).unwrap();
+        assert_ne!(host.configuration_identity(), base_identity);
+        let owner = SymbolId::of("/datum/probe");
+        let root = SymbolId::of("/");
+        let global = SymbolId::of("global_only");
+        let shadow = SymbolId::of("shared_name");
+        assert!(
+            matches!(host.resolve(Q::GlobalVar(global)),M::Member{owner:actual,..} if actual==root)
+        );
+        assert_eq!(
+            host.resolve(Q::Var {
+                owner,
+                name: global
+            }),
+            M::Missing
+        );
+        assert_eq!(
+            host.resolve(Q::VarStorage {
+                owner,
+                name: global
+            }),
+            M::Missing
+        );
+        assert_eq!(
+            host.resolve(Q::HasMemberVar {
+                owner,
+                name: global
+            }),
+            M::Presence(false)
+        );
+        assert!(
+            matches!(host.resolve(Q::VarStorage{owner,name:shadow}),M::InstanceField{declaring_owner,name} if declaring_owner==owner&&name==shadow)
+        );
+        assert_eq!(
+            host.resolve(Q::Var {
+                owner,
+                name: SymbolId::of("NORTH")
+            }),
+            M::Missing
+        );
+        assert!(matches!(
+            host.resolve(Q::PredefinedConstant(SymbolId::of("NORTH"))),
+            M::Value(_)
+        ));
+        for name in ["never_captured_variable"] {
+            let query = Q::Var {
+                owner,
+                name: SymbolId::of(name),
+            };
+            assert_eq!(host.resolve(query), M::Unsupported(query));
+        }
+        let unknown_owner = Q::Var {
+            owner: SymbolId::of("/never_captured_owner"),
+            name: global,
+        };
+        assert_eq!(host.resolve(unknown_owner), M::Unsupported(unknown_owner));
+        let intrinsic = Q::DeclaredVarType {
+            owner,
+            name: SymbolId::of("tag"),
+        };
+        assert_eq!(host.resolve(intrinsic), M::Unsupported(intrinsic));
+        let tree = &frontend.snapshot.tree;
+        let instance = tree
+            .resolve(
+                tree.lookup_type(owner).unwrap(),
+                shadow,
+                dm_tree::MemberKind::Var,
+            )
+            .unwrap();
+        assert_eq!(tree.override_chain(instance), vec![instance]);
+        for body in frontend.bodies.iter() {
+            let parsed = frontend.body(body).unwrap();
+            let member = tree.member(body.member).unwrap();
+            let path = tree.type_node(member.owner).unwrap().path;
+            let inputs = dm_codegen_byond::ProcedureInputs {
+                current_type_path: (path != root)
+                    .then(|| tree.symbols().text(path).unwrap().to_owned()),
+                ..Default::default()
+            };
+            let code = dm_codegen_byond::compile_simple_proc_with_resolver(
+                &parsed.children,
+                &inputs,
+                tree.symbols(),
+                &host,
+            )
+            .unwrap();
+            let expected = if path == root { shadow } else { global };
+            let expected_text = tree.symbols().text(expected).unwrap();
+            let globals: Vec<_> = code
+                .procedure
+                .code
+                .items
+                .iter()
+                .flat_map(|item| match item {
+                    dm_codegen_byond::Item::Instruction(instruction) => instruction
+                        .operands
+                        .iter()
+                        .filter_map(|word| match word {
+                            dm_codegen_byond::Word::Variable(
+                                dm_codegen_byond::VariableWord::Global(name),
+                            ) => Some(name.as_str()),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>(),
+                    _ => Vec::new(),
+                })
+                .collect();
+            assert_eq!(globals, vec![expected_text]);
         }
     }
     #[test]
