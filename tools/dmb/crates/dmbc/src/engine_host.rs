@@ -157,6 +157,7 @@ impl RuntimeAliasCatalog {
 #[derive(Clone, Debug)]
 struct VariableAbsence {
     names: HashSet<SymbolId>,
+    positive_constants: BTreeMap<SymbolId, SemanticValue>,
     identity: u128,
     source: Arc<dm_tree::SemanticTree>,
 }
@@ -302,8 +303,23 @@ impl<R: Resolver> EngineResolverHost<R> {
                 names.insert(*name);
             }
         }
+        // TRUE/FALSE also survive native #undef as actual pinned const globals.
+        // Require physical const metadata and the exact observed catalog value;
+        // neither an arbitrary engine field nor a caller supplied constant qualifies.
+        let mut positive_constants = BTreeMap::new();
+        for spelling in ["TRUE", "FALSE"] {
+            let name = SymbolId::of(spelling);
+            let value = pinned_constants.values.get(&name);
+            if engine.declaration_modifiers(SymbolId::of("/"), name)
+                .map_err(|error| format!("pinned constant metadata {error:?}"))?
+                .is_some_and(|flags| flags & 2 != 0)
+                && value.is_some() && self.constants.values.get(&name) == value
+            {
+                positive_constants.insert(name, value.unwrap().clone());
+            }
+        }
         let mut bytes =
-            b"pinned-authored-variable-absence-v1;conservative-cross-owner-exclusions".to_vec();
+            b"pinned-authored-variable-absence-v2;physical-boolean-constants".to_vec();
         bytes.extend_from_slice(&engine.identity().to_le_bytes());
         bytes.extend_from_slice(crate::engine::catalog::CATALOG_SCHEMA.as_bytes());
         bytes.extend_from_slice(CATALOG);
@@ -312,6 +328,7 @@ impl<R: Resolver> EngineResolverHost<R> {
         }
         self.variable_absence = Some(Arc::new(VariableAbsence {
             names,
+            positive_constants,
             identity: xxhash_rust::xxh3::xxh3_128(&bytes),
             source: Arc::clone(&frontend.snapshot.tree),
         }));
@@ -396,6 +413,15 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                         let declared = dm_ir::Resolver::resolve(coverage.source.as_ref(), query);
                         if !matches!(declared, M::Unsupported(_) | M::Missing) {
                             return declared;
+                        }
+                        if matches!(query, Q::Constant { .. } | Q::GlobalVar(_))
+                            && coverage.source.lookup_type(owner).is_some()
+                        {
+                            if let Some(value) = coverage.positive_constants.get(&name) {
+                                // Authored declarations, including unresolved scalar
+                                // outcomes, were handled above and always shadow this.
+                                return M::Value(value.clone());
+                            }
                         }
                         if matches!(
                             dm_ir::Resolver::resolve(
@@ -819,6 +845,11 @@ mod tests {
         let root = SymbolId::of("/");
         let global = SymbolId::of("global_only");
         let shadow = SymbolId::of("shared_name");
+        for (spelling, value) in [("TRUE", 1.0_f32), ("FALSE", 0.0_f32)] {
+            let name = SymbolId::of(spelling);
+            assert_eq!(host.resolve(Q::GlobalVar(name)), M::Value(SemanticValue::NumberBits(value.to_bits())));
+            assert_eq!(host.resolve(Q::Constant { owner, name }), M::Value(SemanticValue::NumberBits(value.to_bits())));
+        }
         assert!(
             matches!(host.resolve(Q::GlobalVar(global)),M::Member{owner:actual,..} if actual==root)
         );
