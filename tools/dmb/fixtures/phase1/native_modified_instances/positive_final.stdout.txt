@@ -1,0 +1,7 @@
+DM compiler version 516.1687
+loading probe.dme
+probe.dme:14:warning (unused_var): local_type: variable defined but not used
+probe.dme:16:warning (unused_var): local_type: variable defined but not used
+saving probe.dmb
+probe.dmb - 0 errors, 2 warnings (10/7/26 3:27 am)
+Total time: 0:00
