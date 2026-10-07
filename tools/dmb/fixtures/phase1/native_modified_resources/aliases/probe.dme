@@ -1,0 +1,7 @@
+/world
+/obj/base
+    var/asset
+var/global/a=/obj/base{asset='asset.txt'}
+var/global/b=/obj/base{asset='./asset.txt'}
+/datum/holder
+    var/c=/obj/base{asset='asset.txt'}

@@ -1,0 +1,5 @@
+/world
+/obj/base
+    var/asset
+var/global/a=/obj/base{asset='one/asset.txt'}
+var/global/b=/obj/base{asset='two/asset.txt'}

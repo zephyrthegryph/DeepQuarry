@@ -1,0 +1,8 @@
+/world
+/obj/base
+    var/asset
+#define FILE_DIR "one"
+var/global/a=/obj/base{asset='asset.txt'}
+#undef FILE_DIR
+#define FILE_DIR "two"
+var/global/b=/obj/base{asset='asset.txt'}
