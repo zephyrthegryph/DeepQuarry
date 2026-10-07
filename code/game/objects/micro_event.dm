@@ -7,7 +7,8 @@
 	var/size_limit = 0.5
 
 /// Old attack_ghost: staff also get the size settings, then the portal's own ghost use.
-/obj/structure/portal_event/resize/portal_event_ghost_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/portal_event/resize/portal_event_ghost_use(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
 	if(!target && check_rights_for(user?.client, R_HOLDER))
 		open_request(src, /datum/prompt/choice, PROC_REF(ask_size_mode), answerer = user, title = "Change portal size settings", question = "Would you like to adjust the portal's size settings?", choices = list("No", "Yes"), buttons = TRUE, rights = R_HOLDER, timeout = 0)
 	return ..()

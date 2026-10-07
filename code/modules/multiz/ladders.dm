@@ -32,6 +32,8 @@
 CAPABILITIES(/obj/structure/ladder)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	links(/obj/structure/ladder::target_down, /obj/structure/ladder::target_up)
+	op("hand", hand(), ungated(), asks(/datum/prompt/choice, fields = list("question" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "direction", when = PROC_REF(asks_direction)), then(PROC_REF(interaction_hand)))
+	op("ladder_ghost_climb", observer(), label("Climb"), asks(/datum/prompt/choice, fields = list("question" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "direction", when = PROC_REF(asks_direction)), then(PROC_REF(ladder_ghost_climb)))
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
 /obj/structure/ladder/proc/smashed_by(datum/act/hit/generic/A)
@@ -73,45 +75,53 @@ CAPABILITIES(/obj/structure/ladder)
 	A.set_anchored(TRUE)
 	destroyed(src, user, "deconstructed")
 
-DECLARE_INTERACTIONS(/obj/structure/ladder, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_OBSERVER("Climb", PROC_REF(ladder_ghost_climb)), \
-)
-
 /// Old attack_hand.
-/obj/structure/ladder/proc/interaction_hand(mob/M, obj/item/held, datum/interaction/interaction)
+/obj/structure/ladder/proc/interaction_hand(datum/act/op/A)
+	var/mob/M = A.actor
 	if(!M.may_climb_ladders(src))
-		return TRUE
+		return OP_OK
 
-	var/obj/structure/ladder/target_ladder = getTargetLadder(M, PROC_REF(interaction_hand), args)
+	var/obj/structure/ladder/target_ladder = getTargetLadder(M, A.step_value("direction"))
 	if(!target_ladder)
-		return TRUE
+		return OP_OK
 	if(!(M.loc == loc) && !M.Move(get_turf(src)))
 		to_chat(M, span_notice("You fail to reach \the [src]."))
-		return TRUE
+		return OP_OK
 
 	climbLadder(M, target_ladder)
-	return TRUE
+	return OP_OK
 
 /// Old attack_ghost: drift up or down the ladder. Never fell through to the default.
-/obj/structure/ladder/proc/ladder_ghost_climb(mob/M, obj/item/held, datum/interaction/interaction)
-	var/target_ladder = getTargetLadder(M, PROC_REF(ladder_ghost_climb), args)
+/obj/structure/ladder/proc/ladder_ghost_climb(datum/act/op/A)
+	var/mob/M = A.actor
+	var/target_ladder = getTargetLadder(M, A.step_value("direction"))
 	if(target_ladder)
 		M.forceMove(get_turf(target_ladder))
+	return OP_OK
+
+/// A complete ladder with both ends asks which way, for an actor who can climb it.
+/obj/structure/ladder/proc/asks_direction(datum/act/op/A)
+	if(!ladder_complete())
+		return FALSE
+	if(!(target_down && target_up))
+		return FALSE
+	return isnull(A.actor.climb_refusal(src))
+
+/// Whether both of the ladder's ends that exist are standing on turfs.
+/obj/structure/ladder/proc/ladder_complete()
+	if((!target_up && !target_down) || (target_up && !istype(target_up.loc, /turf) || (target_down && !istype(target_down.loc,/turf))))
+		return FALSE
 	return TRUE
 
 /obj/structure/ladder
 	silicon_use = ROBOT_USE_HAND
 
-/// The ladder to climb to. Asking up or down re-runs `caller_proc` with `caller_args` on the answer,
-/// and returns null meanwhile.
-/obj/structure/ladder/proc/getTargetLadder(mob/M, caller_proc, list/caller_args)
-	if((!target_up && !target_down) || (target_up && !istype(target_up.loc, /turf) || (target_down && !istype(target_down.loc,/turf))))
+/// The ladder to climb to, given the answer to the up-or-down question (null when it was not asked).
+/obj/structure/ladder/proc/getTargetLadder(mob/M, direction)
+	if(!ladder_complete())
 		to_chat(M, span_notice("\The [src] is incomplete and can't be climbed."))
 		return
 	if(target_down && target_up)
-		var/direction = rerun_ask(M, "direction", caller_proc, caller_args, /datum/prompt/choice, question = "Do you want to go up or down?", title = "Ladder", choices = list("Up", "Down", "Cancel"), buttons = TRUE)
-
 		if(!direction || direction == "Cancel")
 			return
 
@@ -126,16 +136,22 @@ DECLARE_INTERACTIONS(/obj/structure/ladder, \
 	else
 		return target_down || target_up
 
-/mob/proc/may_climb_ladders(ladder)
+/// Why this mob cannot climb the ladder now, or null.
+/mob/proc/climb_refusal(ladder)
 	if(!Adjacent(ladder))
-		to_chat(src, span_warning("You need to be next to \the [ladder] to start climbing."))
-		return FALSE
+		return "You need to be next to \the [ladder] to start climbing."
 	if(incapacitated())
-		to_chat(src, span_warning("You are physically unable to climb \the [ladder]."))
-		return FALSE
-	return TRUE
+		return "You are physically unable to climb \the [ladder]."
+	return null
 
-/mob/observer/dead/may_climb_ladders(ladder)
+/mob/observer/dead/climb_refusal(ladder)
+	return null
+
+/mob/proc/may_climb_ladders(ladder)
+	var/why = climb_refusal(ladder)
+	if(why)
+		to_chat(src, span_warning(why))
+		return FALSE
 	return TRUE
 
 /obj/structure/ladder/proc/climbLadder(mob/M, obj/target_ladder)

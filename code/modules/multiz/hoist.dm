@@ -137,6 +137,7 @@ CAPABILITIES(/obj/effect/hoist_hook)
 CAPABILITIES(/obj/structure/hoist)
 	owns_one(nameof(source_hook), /obj/effect/hoist_hook)
 	param(nameof(dir), pos = 1, apply = PROC_REF(hang_hook))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(hoist_blast_break)))
 	op("hand", hand(), ungated(), label("Use"), needs(req(PROC_REF(can_work_hoist_holds), because = PROC_REF(can_work_hoist_refusal))), then(PROC_REF(interaction_hand)))
 	op("hoist_verb_collapse", menu(), label("Collapse Hoist"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_collapse_holds), because = PROC_REF(can_collapse_refusal))), then(PROC_REF(hoist_verb_collapse)))
 
@@ -176,10 +177,10 @@ CAPABILITIES(/obj/structure/hoist)
 		release_hoistee()
 	rel_clear(src, nameof(source_hook))
 
-DAMAGE_REACTION_AFTER(/obj/structure/hoist, DAMAGE_EXPLOSION, PROC_REF(hoist_blast_break))
-
 /// A hoist that survives a heavy blast is broken by it.
-/obj/structure/hoist/proc/hoist_blast_break(datum/damage_packet/packet)
+/obj/structure/hoist/proc/hoist_blast_break(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(packet.severity <= 2 && !broken)
 		break_hoist()
 
