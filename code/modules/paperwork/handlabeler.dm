@@ -64,11 +64,13 @@
 	act_message(user, A, MSG_SELF(span_notice("You label %T% as [label].")), MSG_OTHERS(span_notice("%U% labels %T% as [label].")))
 	A.name = "[A.name] ([label])"
 
-DECLARE_INTERACTIONS(/obj/item/hand_labeler, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/hand_labeler)
+	op("labeler_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/hand_labeler/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	return label_configuration_begin(user, held, interaction)
+/obj/item/hand_labeler/proc/interaction_self(datum/act/op/A)
+	label_configuration_begin(A.actor, A.held, null)
+	return OP_OK
 
 /obj/item/hand_labeler/proc/label_configuration_begin(mob/user, obj/item/held, datum/interaction/interaction)
 	mode = !mode

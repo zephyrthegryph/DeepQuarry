@@ -4,11 +4,22 @@
 	var/uses = 0
 	info = "<center><img src='talisman.png'></center><br/><br/>"
 
-EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple", PROC_REF(interaction_talisman)), INTERACT_USE("Invoke", PROC_REF(interaction_talisman)))
+// Its own self-use ops come before the paper's (the old EXTEND listed the child's specs first).
+CAPABILITIES(/obj/item/paper/talisman)
+	op("talisman_crumple", in_hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Crumple"), then(PROC_REF(talisman_crumple_op)))
+	op("talisman_invoke", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Invoke"), then(PROC_REF(talisman_invoke_op)))
+
+/obj/item/paper/talisman/proc/talisman_crumple_op(datum/act/op/A)
+	talisman_use(A.actor, I_HURT)
+	return OP_OK
+
+/obj/item/paper/talisman/proc/talisman_invoke_op(datum/act/op/A)
+	talisman_use(A.actor, I_HELP)
+	return OP_OK
 
 /// Old attack_self: the paper's own self-use (read or crumple), then the talisman's effect.
-/obj/item/paper/talisman/proc/interaction_talisman(mob/living/user, obj/item/held, datum/interaction/interaction)
-	interaction_paper_self(user, held, interaction)
+/obj/item/paper/talisman/proc/talisman_use(mob/living/user, stance)
+	paper_use(user, stance)
 	if(QDELETED(src))
 		return TRUE
 	if(iscultist(user))

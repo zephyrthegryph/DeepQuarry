@@ -54,17 +54,20 @@ a creative player the means to solve many problems.  Circuits are held inside an
 /obj/item/integrated_circuit/proc/check_interactivity(mob/user)
 	return tgui_status(user, GLOB.tgui_physical_state) == STATUS_INTERACTIVE
 
-EXTEND_INTERACTIONS(/obj/item/integrated_circuit, INTERACT_VERB("Rename Circuit", PROC_REF(integrated_circuit_verb_rename), REQ_IN_INVENTORY))
+/// The Rename Circuit menu entry.
+/obj/item/integrated_circuit/proc/circuit_rename_op(datum/act/op/A)
+	integrated_circuit_verb_rename(A.actor)
+	return OP_OK
 
 /// Old Rename Circuit verb: Rename your circuit, useful to stay organized.
-/obj/item/integrated_circuit/proc/integrated_circuit_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/integrated_circuit/proc/integrated_circuit_verb_rename(mob/user)
 	var/mob/M = user
 	if(!check_interactivity(M))
 		return
 
 	if(!ismob(M) || QDELETED(M))
 		return
-	open_request(src, /datum/prompt/text/electronics_rename, PROC_REF(rename_entered), answerer = M, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), question = "What do you want to name the circuit?", default = name)
+	open_request(src, /datum/prompt/text/electronics_rename, PROC_REF(rename_entered), answerer = M, question = "What do you want to name the circuit?", default = name)
 
 /obj/item/integrated_circuit/proc/rename_entered(datum/act/request/A)
 	var/datum/prompt/text/electronics_rename/request = A.request

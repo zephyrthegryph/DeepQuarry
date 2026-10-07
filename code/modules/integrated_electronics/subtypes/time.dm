@@ -48,8 +48,15 @@
 	// Modified due to this simlpe circuit being able to drain a cell in seconds.
 	var/max_power_draw = 250
 
-OM_FIELD(/obj/item/integrated_circuit/time/ticker, is_running, FALSE, CHANGE_EXPLICIT)
-DECLARE_REPEAT(/obj/item/integrated_circuit/time/ticker, "delay", tick, "is_running")
+/obj/item/integrated_circuit/time/ticker/var/is_running = FALSE
+TRACKED(/obj/item/integrated_circuit/time/ticker, is_running)
+
+CAPABILITIES(/obj/item/integrated_circuit/time/ticker)
+	every(PROC_REF(ticker_delay), then(PROC_REF(tick)), when = nameof(is_running))
+
+/// The every() interval: the delay pin, read each time the tick re-arms.
+/obj/item/integrated_circuit/time/ticker/proc/ticker_delay(datum/act/A)
+	return delay
 
 /obj/item/integrated_circuit/time/ticker/on_data_written()
 	var/delay_input = get_pin_data(IC_INPUT, 2)
@@ -61,16 +68,17 @@ DECLARE_REPEAT(/obj/item/integrated_circuit/time/ticker, "delay", tick, "is_runn
 	var/do_tick = get_pin_data(IC_INPUT, 1)
 	if(do_tick && !is_running)
 		set_is_running(TRUE)
-		tick() // the first pulse now; the declaration repeats it every delay
+		tick() // the first pulse now; the every() repeats it every delay
 	else if(!do_tick && is_running)
 		set_is_running(FALSE)
 
 
-/// One tick (DECLARE_REPEAT every delay while is_running). Out of power, the ticker stops
+/// One tick (every delay while is_running). Out of power, the ticker stops
 /// until it is next switched on.
-/obj/item/integrated_circuit/time/ticker/proc/tick()
+/obj/item/integrated_circuit/time/ticker/proc/tick(datum/act/timer/A)
 	if(!check_power())
-		return REPEAT_STOP
+		set_is_running(FALSE)
+		return
 	if(ELAPSED_SINCE(src, next_fire, CLOCK_WORLD) > 0)
 		EXPIRY_SET(src, next_fire, delay, CLOCK_WORLD)
 		activate_pin(1)

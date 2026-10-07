@@ -79,6 +79,12 @@ CAPABILITIES(/obj/item/paper)
 	op("write_end", ui_act("write_end"), then(PROC_REF(ui_act_write_end)))
 	// the old object verb: any paper can mark out a small new area where it is buildable (blueprints.dm)
 	op("create_area", menu(), label("Create Area"), needs(carried(), req_conscious(), req_is(nameof(created_area), FALSE, because = MSG(paper/area_made))), then(PROC_REF(create_area_effect)))
+	op("paper_crumple", in_hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 3), label("Crumple"), then(PROC_REF(paper_crumple_op)))
+	op("paper_read", in_hand(), priority(OP_PRIORITY_DEFAULT - 4), label("Read"), then(PROC_REF(paper_read_op)))
+	op("paper_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
+	op("paper_fold_plane", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Fold into a plane"), then(PROC_REF(interaction_fold_plane)))
+	op("paper_silicon_read", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Read"), then(PROC_REF(paper_silicon_read)))
+	op("paper_rename", menu(), label("Rename paper"), needs(carried()), then(PROC_REF(paper_rename_op)))
 	param(nameof(info), pos = 1)
 	param(nameof(name), pos = 2)
 	rolls(nameof(pixel_x), range_of(-9, 9))
@@ -322,6 +328,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlay
 /obj/item/paper/proc/on_field_written(mob/living/user, field_id, obj/item/pen/writing_implement)
 	return
 
+/// The Rename paper menu entry.
+/obj/item/paper/proc/paper_rename_op(datum/act/op/A)
+	paper_verb_rename(A.actor)
+	return OP_OK
+
 /// Old Rename paper verb.
 /obj/item/paper/proc/paper_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
 	return paper_rename_stage(user, held, interaction)
@@ -347,11 +358,20 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlay
 		add_fingerprint(user)
 	return
 
-/// Old attack_self: read it, or crumple it in combat mode.
-/obj/item/paper/proc/interaction_paper_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_self, as an op: read it, or crumple it in combat mode.
+/obj/item/paper/proc/paper_crumple_op(datum/act/op/A)
+	paper_use(A.actor, I_HURT)
+	return OP_OK
+
+/obj/item/paper/proc/paper_read_op(datum/act/op/A)
+	paper_use(A.actor, I_HELP)
+	return OP_OK
+
+/// Old attack_self: read it, or crumple it when `stance` is harm.
+/obj/item/paper/proc/paper_use(mob/living/user, stance)
 	if(occult)
 		return
-	if(interaction.stance == I_HURT)
+	if(stance == I_HURT)
 		if(icon_state == "scrap")
 			user.show_message(span_warning("\The [src] is already crumpled."))
 			return
@@ -370,7 +390,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlay
 
 // AI/cyborg viewer routes through the same TGUI paper window.
 /// Old attack_ai: read the paper; close enough (via the AI's camera) to read it properly.
-/obj/item/paper/proc/paper_silicon_read(mob/living/silicon/ai/user, obj/item/held, datum/interaction/interaction)
+/obj/item/paper/proc/paper_silicon_read(datum/act/op/A)
+	var/mob/living/silicon/ai/user = A.actor
 	var/dist
 	if(istype(user) && user.camera)
 		dist = get_dist(src, user.camera)
@@ -379,7 +400,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlay
 	can_read_view = (dist < 2)
 	tgui_view = "read"
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/paper/proc/wipe_lipstick_done(mob/living/user, mob/living/carbon/human/H)
 	act_message(user, H, MSG_SELF(span_notice("You wipe off %T%'s lipstick.")), MSG_OTHERS(span_notice("%U% wipes %T%'s lipstick off with \the [src].")))
@@ -506,17 +527,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlay
 		return "paper" //Gross, but required for now.
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/item/paper, \
-	INTERACT_USE_AS(I_HURT, "Crumple", PROC_REF(interaction_paper_self)), \
-	INTERACT_USE("Read", PROC_REF(interaction_paper_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT("Fold into a plane", PROC_REF(interaction_fold_plane)), \
-	INTERACT_SILICON("Read", PROC_REF(paper_silicon_read)), \
-	INTERACT_VERB("Rename paper", PROC_REF(paper_verb_rename), REQ_IN_INVENTORY), \
-)
-
 /// Old attackby.
-/obj/item/paper/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
+/obj/item/paper/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/P = A.held
 	var/clown = 0
 	if(user.mind && ((user.mind.role_alt_title == JOB_CLOWN) || (user.mind.role_alt_title == JOB_ALT_JESTER) || (user.mind.role_alt_title == JOB_ALT_FOOL))) // Let clows/fools/jesters use clown stamps
 		clown = 1
@@ -524,7 +538,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 	if(istype(P, /obj/item/tape_roll))
 		var/obj/item/tape_roll/tape = P
 		tape.stick(src, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(P, /obj/item/clipboard))
 		var/obj/item/clipboard/CB = P
@@ -547,7 +561,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 			if (!C.iscopy && !C.copied)
 				to_chat(user, span_notice("Take off the carbon copy first."))
 				add_fingerprint(user)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 		var/obj/item/paper_bundle/B = new(src.loc)
 		if (name != initial(name))
 			B.name = name
@@ -588,7 +602,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 	else if(istype(P, /obj/item/pen))
 		if(icon_state == "scrap")
 			to_chat(user, span_warning("\The [src] is too crumpled to write on."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		var/obj/item/pen/robopen/RP = P
 		if(istype(RP) && RP.mode == 2)
@@ -600,12 +614,12 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 			can_read_view = TRUE
 			tgui_view = "write"
 			tgui_interact(user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	else if(istype(P, /obj/item/stamp) || istype(P, /obj/item/clothing/accessory/ring/seal))
 		stamps += (stamps=="" ? "<HR>" : "<BR>") + span_italics(stamp_mark_text(P, "paper"))
 		if((!in_range(src, user) && loc != user && !( istype(loc, /obj/item/clipboard) ) && loc.loc != user && user.get_active_hand() != P))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/image/stampoverlay = image('icons/obj/bureaucracy.dmi')
 		var/x, y
 		if(istype(P, /obj/item/stamp/captain) || istype(P, /obj/item/stamp/centcomm))
@@ -621,7 +635,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 
 		if(!clown && !stamp_usable_by(P, user))
 			to_chat(user, span_notice("You are totally unable to use the stamp. HONK!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(!ico)
 			ico = new
@@ -640,7 +654,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 		burnpaper(P, user)
 
 	add_fingerprint(user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /*
  * Premade paper

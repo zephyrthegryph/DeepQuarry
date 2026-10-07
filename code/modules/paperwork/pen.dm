@@ -36,23 +36,23 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/pen, \
-	INTERACT_SELF("Click", PROC_REF(interaction_click)), \
-	INTERACT_ALT("Click", PROC_REF(interaction_click_alt)), \
-)
+CAPABILITIES(/obj/item/pen)
+	op("pen_click", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Click"), then(PROC_REF(interaction_click)))
+	op("pen_click_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 2), label("Click"), then(PROC_REF(interaction_click_alt)))
 
 /// Old attack_self: click the pen. Specially handled pens leave it to their own self-use.
-/obj/item/pen/proc/interaction_click(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/proc/interaction_click(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	if(!user.checkClickCooldown())
-		return TRUE
+		return OP_OK
 	if(!can_click)
-		return TRUE
+		return OP_OK
 	user.setClickCooldown(1 SECOND)
 	to_chat(user, span_notice("Click."))
 	play_sfx(src, SFX_ITEMS_PENCLICK)
-	return TRUE
+	return OP_OK
 
 /*
  * Coloured Pens
@@ -117,12 +117,13 @@ DECLARE_INTERACTIONS(/obj/item/pen, \
 	special_handling = TRUE
 
 /// Old click_alt.
-/obj/item/pen/proc/interaction_click_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/proc/interaction_click_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!Adjacent(user))
-		return TRUE
+		return OP_OK
 	to_chat(user, span_notice("Click."))
 	play_sfx(src, SFX_ITEMS_PENCLICK)
-	return TRUE
+	return OP_OK
 
 CAPABILITIES(/obj/item/pen/multi)
 	op("cycle_colour", in_hand(), label("Change colour"), then(PROC_REF(interaction_cycle_colour)))
@@ -199,18 +200,21 @@ CAPABILITIES(/obj/item/pen/reagent)
 	active_icon_state = "[icon_state]-x"
 	default_icon_state = icon_state
 
-EXTEND_INTERACTIONS(/obj/item/pen/blade, INTERACT_ALT("Toggle blade", PROC_REF(interaction_toggle_blade)))
+// Its alt-click comes before the pen's own (the old EXTEND listed the child's specs first).
+CAPABILITIES(/obj/item/pen/blade)
+	op("pen_toggle_blade", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle blade"), then(PROC_REF(interaction_toggle_blade)))
 
 /// Old click_alt: the pen's click, then the blade toggles.
-/obj/item/pen/blade/proc/interaction_toggle_blade(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_click_alt(user, held, interaction)
+/obj/item/pen/blade/proc/interaction_toggle_blade(datum/act/op/A)
+	var/mob/user = A.actor
+	interaction_click_alt(A)
 	if(active)
 		deactivate(user)
 	else
 		activate(user)
 
 	to_chat(user, span_notice("You [active ? "de" : ""]activate \the [src]'s blade."))
-	return TRUE
+	return OP_OK
 
 /obj/item/pen/blade/proc/activate(mob/living/user)
 	if(active)
@@ -290,14 +294,20 @@ CAPABILITIES(/obj/item/pen/reagent/paralysis)
 	var/signature = ""
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/pen/chameleon, \
-	INTERACT_USE("Set signature", PROC_REF(interaction_signature)), \
-	INTERACT_VERB("Change Pen Colour", PROC_REF(chameleon_pen_verb_colour), REQ_IN_INVENTORY), \
-)
+// Its self-use comes before the pen's own click (the old EXTEND listed the child's specs first).
+CAPABILITIES(/obj/item/pen/chameleon)
+	op("pen_signature", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Set signature"), then(PROC_REF(interaction_signature)))
+	op("pen_colour", menu(), label("Change Pen Colour"), needs(carried()), then(PROC_REF(chameleon_pen_colour_op)))
 
 /// Old attack_self.
-/obj/item/pen/chameleon/proc/interaction_signature(mob/user, obj/item/held, datum/interaction/interaction)
-	return paperwork_signature_stage(user, held, interaction)
+/obj/item/pen/chameleon/proc/interaction_signature(datum/act/op/A)
+	paperwork_signature_stage(A.actor, A.held, null)
+	return OP_OK
+
+/// The Change Pen Colour menu entry.
+/obj/item/pen/chameleon/proc/chameleon_pen_colour_op(datum/act/op/A)
+	chameleon_pen_verb_colour(A.actor)
+	return OP_OK
 
 /obj/item/pen/chameleon/proc/paperwork_signature_stage(mob/user, obj/item/held, datum/interaction/interaction, paperwork_answer, paperwork_answer_ready = FALSE)
 	/*

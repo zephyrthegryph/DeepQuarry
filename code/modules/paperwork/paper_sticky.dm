@@ -30,29 +30,29 @@ TRACKED(/obj/item/sticky_pad, written_text)
 	return "pad_full"
 
 /// Old attackby.
-/obj/item/sticky_pad/proc/interaction_item(mob/user, obj/item/thing, datum/interaction/interaction)
-	return paperwork_sticky_write_stage(user, thing, interaction)
+/obj/item/sticky_pad/proc/interaction_item(datum/act/op/A)
+	return paperwork_sticky_write_stage(A.actor, A.held, null)
 
 /obj/item/sticky_pad/proc/paperwork_sticky_write_stage(mob/user, obj/item/thing, datum/interaction/interaction, paperwork_answer, paperwork_answer_ready = FALSE)
 	if(istype(thing, /obj/item/pen))
 
 		if(jobban_isbanned(user, JOB_GRAFFITI))
 			to_chat(user, span_warning("You are banned from leaving persistent information across rounds."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		var/writing_space = MAX_MESSAGE_LEN - length(written_text)
 		if(writing_space <= 0)
 			to_chat(user, span_warning("There is no room left on \the [src]."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!paperwork_answer_ready)
 			open_request(src, /datum/prompt/text/paperwork_review, PROC_REF(paperwork_sticky_write_answered), answerer = user, paperwork_operator = user, paperwork_held = thing, paperwork_interaction = interaction, question = "What would you like to write?", max_len = writing_space, encode = FALSE, name_text = (writing_space <= MAX_NAME_LEN))
-			return TRUE
+			return OP_OK
 		var/_answer_k37 = paperwork_answer
 		if(isnull(_answer_k37))
-			return TRUE
+			return OP_OK
 		var/text = sanitizeSafe(_answer_k37, writing_space)
 		if(!text || thing.loc != user || (!Adjacent(user) && loc != user) || user.incapacitated())
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " jots a note down on %T%."))
 		written_by = user.ckey
 		if(written_text)
@@ -60,21 +60,17 @@ TRACKED(/obj/item/sticky_pad, written_text)
 		else
 			set_written_text(text)
 		changed(src)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/item/sticky_pad/examine(mob/user)
 	. = ..()
 	if(.)
 		to_chat(user, span_notice("It has [papers] sticky note\s left."))
 
-DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_hand.
-/obj/item/sticky_pad/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/sticky_pad/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	var/obj/item/paper/paper = new paper_type(get_turf(src))
 	paper.set_content(written_text, "sticky note")
 	paper.last_modified_ckey = written_by
@@ -87,10 +83,12 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 		consume(src, user)
 	else
 		changed(src)
-	return TRUE
+	return OP_OK
 
 CAPABILITIES(/obj/item/sticky_pad)
 	drag_onto(PROC_REF(mousedrop_input))
+	op("sticky_pad_hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("sticky_pad_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/item/sticky_pad/proc/mousedrop_input(datum/act/input/A)

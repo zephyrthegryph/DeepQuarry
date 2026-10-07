@@ -526,6 +526,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	log_and_message_admins("used a manifest rune.")
 	rel_set(this_rune, nameof(this_rune.manifest_dummy), D)
 	rel_set(this_rune, nameof(this_rune.manifest_user), user)
+	this_rune.set_manifesting(TRUE)
 	this_rune.manifest_tick()
 	return
 
@@ -534,15 +535,21 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 OM_FIELD_VIEW(/obj/effect/rune, mob/living, manifest_user, CHANGE_EXPLICIT)
 /// The manifested homunculus (a relation view).
 /obj/effect/rune/var/mob/living/carbon/human/dummy/manifest_dummy
-DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
+/// A homunculus is manifested: manifest_tick() runs every 3 seconds while it is (the gate of the rune's every()).
+/obj/effect/rune/var/manifesting = FALSE
+TRACKED(/obj/effect/rune, manifesting)
 
 /// The summoner bleeds for the homunculus every 3 seconds while they hold the rune; it dies when they stop.
-/obj/effect/rune/proc/manifest_tick()
+/obj/effect/rune/proc/manifest_tick(datum/act/timer/A)
 	var/mob/living/user = manifest_user
 	var/mob/living/carbon/human/dummy/D = manifest_dummy
+	if(!user) // the summoner was destroyed: the framework cleared the link, and the old repeat simply stopped
+		set_manifesting(FALSE)
+		return
 	if(user && user.stat==CONSCIOUS && user.client && user.loc==loc)
 		user.injure(INJURY_BLUNT, 1)
 		return
+	set_manifesting(FALSE)
 	rel_clear(src, nameof(manifest_dummy))
 	rel_clear(src, nameof(manifest_user))
 	if(D)

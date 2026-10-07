@@ -117,13 +117,14 @@ CAPABILITIES(/obj/item/integrated_electronics/wirer)
 	var/data_to_write = null
 	var/accepting_refs = 0
 
-DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/integrated_electronics/debugger)
+	op("debugger_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/integrated_electronics/debugger/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/integrated_electronics/debugger/proc/interaction_self(datum/act/op/A)
 	var/datum/circuit_memory_review/review = new
-	review.start(user, src, held, interaction, FALSE)
-	return TRUE
+	review.start(A.actor, src, A.held, null, FALSE)
+	return OP_OK
 
 /obj/item/integrated_electronics/debugger/proc/memory_type_selected(datum/circuit_memory_review/review)
 	var/mob/user = review.user_value()

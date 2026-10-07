@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Gamemodes, mecha equipment, xenoarchaeology, paperwork, integrated electronics, economy and xenobio interactions, hit hooks and periodic work moved to ops, hit hooks and every()"

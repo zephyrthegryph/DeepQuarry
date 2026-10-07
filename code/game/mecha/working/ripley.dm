@@ -20,6 +20,7 @@
 	icon_scale_y = 1.2
 
 CAPABILITIES(/obj/mecha/working/ripley)
+	op("ripley_detect_ore", menu(), label("Detect Ores"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(ripley_detect_ore)))
 	owns_one(nameof(orescanner), /obj/item/mining_scanner)
 
 TYPE_TABLE(/obj/mecha/working/ripley, mecha_starting_components, list( \
@@ -120,13 +121,10 @@ TYPE_TABLE(/obj/mecha/working/ripley/deathripley, mecha_starting_equipment, list
 	. = ..()
 	rel_set(src, nameof(orescanner), new /obj/item/mining_scanner)
 
-EXTEND_INTERACTIONS(/obj/mecha/working/ripley, \
-	INTERACT_VERB("Detect Ores", PROC_REF(ripley_detect_ore), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
-)
-
 /// Old verb "Detect Ores".
-/obj/mecha/working/ripley/proc/ripley_detect_ore(mob/user, obj/item/held, datum/interaction/interaction)
-	orescanner.attack_self(user)
+/obj/mecha/working/ripley/proc/ripley_detect_ore(datum/act/op/A)
+	orescanner.attack_self(A.actor)
+	return OP_OK
 
 //Meant for random spawns.
 /obj/mecha/working/ripley/mining/old
