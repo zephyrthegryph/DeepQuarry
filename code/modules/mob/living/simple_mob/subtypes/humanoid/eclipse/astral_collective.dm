@@ -362,17 +362,16 @@
 	icon_state = "blade_tosser"
 	icon_living = "blade_tosser"
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/body/dagger, INTERACT_ITEM(null, PROC_REF(astral_dagger_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/body/dagger)
+	op("astral_dagger_item", item(/obj/item), then(PROC_REF(astral_dagger_interaction_item)))
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(blink_when_shot)))
 
 /// Old attackby: may teleport, then the normal attack.
-/mob/living/simple_mob/humanoid/astral_collective/body/dagger/proc/astral_dagger_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/humanoid/astral_collective/body/dagger/proc/astral_dagger_interaction_item(datum/act/op/A)
+	. = OP_OK
 	if(prob(50))
 		teleport_attack(src)
-	return FALSE
-
-CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/body/dagger)
-	on_notice(/datum/notice/hit/projectile, then(PROC_REF(blink_when_shot)))
+	return OP_DECLINE
 
 /mob/living/simple_mob/humanoid/astral_collective/body/dagger/proc/blink_when_shot(datum/act/A)
 	if(prob(50))
@@ -408,20 +407,23 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/body/dagger)
 	special_attack_cooldown = 10 SECONDS
 
 //Gravity shield. Hit it with melee, and a sudden gravity surge may tear your weapon to the ground
-EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity, INTERACT_ITEM(null, PROC_REF(astral_gravity_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity)
+	op("astral_gravity_item", item(/obj/item), then(PROC_REF(astral_gravity_interaction_item)))
 
 /// Old attackby: may pull the weapon to the ground.
-/mob/living/simple_mob/humanoid/astral_collective/mind/gravity/proc/astral_gravity_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/humanoid/astral_collective/mind/gravity/proc/astral_gravity_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(O.force)
 		if(prob(30))
 			visible_message(span_boldwarning(span_orange("[O] is pulled to the ground!.")))
 			user.drop_item()
 			return
 		else
-			return FALSE
+			return OP_DECLINE
 	else
-		return FALSE
+		return OP_DECLINE
 
 /mob/living/simple_mob/humanoid/astral_collective/mind/gravity/do_special_attack(atom/A, stance)
 	for(var/mob/living/L in orange(src, 7)) //despite the attack range being 6 we do 7 so folks don't wander in then get confused why they are getting hit by it

@@ -485,11 +485,15 @@
 	attack_sound = SFX_WEAPONS_BLADESLICE
 
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM(null, PROC_REF(cultist_elite_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
+	op("cultist_elite_item", item(/obj/item), then(PROC_REF(cultist_elite_interaction_item)))
+	immune_to_incapacitation()
 
 /// Old attackby: shield block.
-/mob/living/simple_mob/humanoid/cultist/elite/proc/cultist_elite_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/humanoid/cultist/elite/proc/cultist_elite_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(O.force)
 		if(prob(30))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
@@ -497,7 +501,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM
 				ai_brain.react_to_attack(user)
 			return
 		else
-			return FALSE
+			return OP_DECLINE
 	else
 		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
 		act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
@@ -932,8 +936,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/initiate)
 	immune_to_incapacitation()
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
-CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
-	immune_to_incapacitation()
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/hunter)

@@ -27,6 +27,7 @@
 
 CAPABILITIES(/mob/living/simple_mob/animal/goat)
 	owns_one(nameof(udder), /datum/reagents)
+	op("goat_item", item(/obj/item), then(PROC_REF(goat_interaction_item)))
 
 /mob/living/simple_mob/animal/goat/Initialize(mapload)
 	. = ..()
@@ -64,11 +65,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/goat)
 		for(var/obj/effect/plant/SV in contents_of(loc))
 			SV.die_off(1)
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/goat, INTERACT_ITEM(null, PROC_REF(goat_interaction_item)))
-
 /// Old attackby: milking.
-/mob/living/simple_mob/animal/goat/proc/goat_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/animal/goat/proc/goat_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	var/obj/item/reagent_containers/glass/G = O
 	if(stat == CONSCIOUS && istype(G) && G.is_open_container())
 		act_message(user, src, null, MSG_OTHERS(span_notice("%U% milks %T% using %I%.")), item = O)
@@ -78,7 +79,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/goat, INTERACT_ITEM(null, PROC
 		if(!transfered)
 			to_chat(user, span_red("The udder is dry. Wait a bit longer..."))
 	else
-		return FALSE
+		return OP_DECLINE
 
 /datum/say_list/goat
 	speak = list("EHEHEHEHEH","eh?")

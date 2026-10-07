@@ -157,11 +157,15 @@ CAPABILITIES(/datum/armalis_commune_review)
 	set name = "Shriek"
 	set desc = "Give voice to a psychic shriek."
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vox/armalis, INTERACT_ITEM(null, PROC_REF(armalis_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/vox/armalis)
+	op("armalis_item", item(/obj/item), then(PROC_REF(armalis_interaction_item)))
+	immune_to_incapacitation()
 
 /// Old attackby: armour/amp fitting, and its own weapon resistance (never reaches the normal attack).
-/mob/living/simple_mob/vox/armalis/proc/armalis_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vox/armalis/proc/armalis_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(istype(O,/obj/item/vox/armalis_armour))
 		user.drop_item(O)
 		armour = O
@@ -230,5 +234,3 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vox/armalis, INTERACT_ITEM(null, PROC
 	quills++
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
-CAPABILITIES(/mob/living/simple_mob/vox/armalis)
-	immune_to_incapacitation()

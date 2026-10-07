@@ -83,11 +83,12 @@
 			act_message(user, ejecting, others = span_infoplain(span_bold("%U%") + " pulls %T% from \the [src]'s cargo compartment."))
 
 /// Old attack_ai: an adjacent cyborg unloads cargo; otherwise the next silicon Use / default.
-/mob/living/silicon/robot/platform/proc/platform_silicon_unload(mob/user, obj/item/held, datum/interaction/interaction)
-	if(isrobot(user) && user.Adjacent(src))
+/mob/living/silicon/robot/platform/proc/platform_silicon_unload(datum/act/op/A)
+	var/mob/user = A.actor
+	if(user.Adjacent(src))
 		try_remove_cargo(user)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /mob/living/silicon/robot/platform/proc/try_remove_cargo(mob/user)
 	if(!length(stored_atoms) || !istype(user))
@@ -131,17 +132,19 @@
 
 /// Old MouseDrop_T: start loading the dropped thing into cargo. A refused drop still falls to the
 /// cyborg's drag block, as the old override never reached the base drag-buckle.
-/mob/living/silicon/robot/platform/proc/platform_interaction_drag(mob/living/user, atom/movable/dropping, datum/interaction/interaction)
+/mob/living/silicon/robot/platform/proc/platform_interaction_drag(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/atom/movable/dropping = A.held
 	if(!istype(user) || !istype(dropping) || user.incapacitated())
-		return FALSE
+		return OP_DECLINE
 	if(!can_mouse_drop(dropping, user) || !can_store_atom(dropping, user))
-		return FALSE
+		return OP_DECLINE
 	if(user == src)
 		act_message(src, dropping, others = span_infoplain(span_bold("%U%") + " begins loading %T% into its cargo compartment."))
 	else
 		act_message(user, dropping, others = span_infoplain(span_bold("%U%") + " begins loading %T% into \the [src]'s cargo compartment."))
 	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_T_platform_done), done_args = list(dropping, user))
-	return TRUE
+	return OP_OK
 
 /mob/living/silicon/robot/platform/proc/MouseDrop_T_platform_done(atom/movable/dropping, mob/living/user)
 	if(!(can_mouse_drop(dropping, user) && can_store_atom(dropping, user)))

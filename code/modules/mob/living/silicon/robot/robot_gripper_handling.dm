@@ -82,11 +82,7 @@
 			return pocket_content
 	return null
 
-DECLARE_INTERACTIONS(/obj/item/gripper, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-)
+DECLARE_INTERACTIONS(/obj/item/gripper, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /// Old attack_self.
 /obj/item/gripper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -142,9 +138,11 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 	return TRUE
 
 /// Old attackby.
-/obj/item/gripper/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/gripper/proc/interaction_item(datum/act/op/A, stance)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(is_in_use(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	var/obj/item/wrapped = get_wrapped_item()
 	if(wrapped)
@@ -155,27 +153,27 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 		//The object has been deleted. Select a new pocket and stop here.
 		if(!wrapped)
 			clear_and_select_pocket()
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		//Object is not in our contents AND is not in the gripper storage still. AKA, it was moved into something or somewhere. Either way, it's not ours anymore.
 		if(item_left_gripper(wrapped))
 			clear_and_select_pocket()
-			return TRUE
+			return OP_OK
 
 		//We were not given a resolved, the object still exists, AND we hit something. Attack that thing with our wrapped item.
 		if(!resolved && wrapped && O)
-			O.afterattack(wrapped, user, 1, null, interaction.stance)
+			O.afterattack(wrapped, user, 1, null, stance)
 			wrapped = get_wrapped_item()
 			//The object still exists, but is not in our contents OR back in the gripper storage.
 			if(item_left_gripper(wrapped))
 				clear_and_select_pocket()
-			return TRUE
+			return OP_OK
 
 		//Nothing happened to it. Just put it back into our pocket.
 		wrapped.forceMove(current_pocket)
-		return TRUE
+		return OP_OK
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/gripper/afterattack(atom/target, mob/living/user, proximity, params, stance = I_HURT)
 	if(!proximity)

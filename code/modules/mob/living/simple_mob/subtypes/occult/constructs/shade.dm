@@ -31,16 +31,19 @@
 
 	loot_list = list(/obj/item/ectoplasm = 100)
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/construct/shade, INTERACT_ITEM(null, PROC_REF(shade_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/construct/shade)
+	op("shade_item", item(/obj/item), then(PROC_REF(shade_interaction_item)))
 
 /// Old attackby: soulstone capture.
-/mob/living/simple_mob/construct/shade/proc/shade_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/construct/shade/proc/shade_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(istype(O, /obj/item/soulstone))
 		var/obj/item/soulstone/S = O;
 		S.transfer_soul("SHADE", src, user)
 		return
-	return FALSE
+	return OP_DECLINE
 
 /mob/living/simple_mob/construct/shade
 	delete_on_death = TRUE

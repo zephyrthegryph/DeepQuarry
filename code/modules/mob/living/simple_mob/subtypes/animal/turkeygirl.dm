@@ -73,16 +73,19 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/turkeygirl, TYPE_PROC_REF(/a
 	if(resting)
 		icon_state = "[icon_state]-resting"
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/turkeygirl, INTERACT_ITEM(null, PROC_REF(turkeygirl_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/vore/turkeygirl)
+	op("turkeygirl_item", item(/obj/item), then(PROC_REF(turkeygirl_interaction_item)))
 
 /// Old attackby: feeding.
-/mob/living/simple_mob/vore/turkeygirl/proc/turkeygirl_interaction_item(mob/user, obj/item/reagent_containers/food/snacks/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/turkeygirl/proc/turkeygirl_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/food/snacks/O = A.held
+	. = OP_OK
 	if(stat)
-		return FALSE
+		return OP_DECLINE
 
 	if(!istype(O, /obj/item/reagent_containers/food/snacks))
-		return FALSE
+		return OP_DECLINE
 
 	if(nutrition >= max_nutrition)
 		if(user == src)
