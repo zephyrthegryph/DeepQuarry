@@ -572,6 +572,7 @@ CAPABILITIES(/obj/item/clothing/suit/fluff/purp_robes)
 
 CAPABILITIES(/obj/item/clothing/accessory/collar/khcrystal)
 	every(2 SECONDS, then(PROC_REF(crystal_step)), when = nameof(watching))
+	op("khcrystal_pair_self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Pair"), then(PROC_REF(khcrystal_pair_self)))
 
 /// TRUE once the crystal is paired and until it breaks or loses its owner.
 /obj/item/clothing/accessory/collar/khcrystal/var/tmp/watching = FALSE
@@ -583,8 +584,6 @@ TRACKED(/obj/item/clothing/accessory/collar/khcrystal, watching)
 	if((state > 1) || !owner)
 		set_watching(FALSE)
 
-CAPABILITIES(/obj/item/clothing/accessory/collar/khcrystal)
-	op("khcrystal_pair_self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Pair"), then(PROC_REF(khcrystal_pair_self)))
 
 /// Old attack_self: pair the crystal to its user, once. special_collar: the inherited collar tag self-use steps aside.
 /obj/item/clothing/accessory/collar/khcrystal/proc/khcrystal_pair_self(datum/act/op/A)

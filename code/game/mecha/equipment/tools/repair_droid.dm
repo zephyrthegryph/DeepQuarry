@@ -18,6 +18,7 @@ TRACKED(/obj/item/mecha_parts/mecha_equipment/repair_droid, repairing)
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/repair_droid)
 	every(2 SECONDS, then(PROC_REF(repair_droid_step)), when = nameof(repairing))
+	op("toggle_repairs", topic("toggle_repairs"), then(PROC_REF(topic_toggle_repairs)))
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/add_equip_overlay(obj/mecha/M as obj)
 	..()
@@ -42,8 +43,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/repair_droid)
 	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_repairs=1'>[repairing?"Dea":"A"]ctivate</a>"
 
 
-CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/repair_droid)
-	op("toggle_repairs", topic("toggle_repairs"), then(PROC_REF(topic_toggle_repairs)))
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/proc/topic_toggle_repairs(datum/act/op/A)
 	chassis.cut_overlay(droid_overlay)

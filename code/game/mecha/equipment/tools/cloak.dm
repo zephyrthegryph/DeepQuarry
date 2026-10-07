@@ -11,6 +11,7 @@ TRACKED(/obj/item/mecha_parts/mecha_equipment/cloak, cloaking)
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/cloak)
 	every(2 SECONDS, then(PROC_REF(cloak_step)), when = nameof(cloaking))
+	op("toggle_cloak", topic("toggle_cloak"), then(PROC_REF(topic_toggle_cloak)))
 
 /obj/item/mecha_parts/mecha_equipment/cloak/proc/cloak_step(datum/act/timer/A)
 	//Removed from chassis or ran out of power
@@ -28,8 +29,6 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/cloak)
 		return
 	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_cloak=1'>[equip_ready ? "A" : "Dea"]ctivate</a>"
 
-CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/cloak)
-	op("toggle_cloak", topic("toggle_cloak"), then(PROC_REF(topic_toggle_cloak)))
 
 /obj/item/mecha_parts/mecha_equipment/cloak/proc/topic_toggle_cloak(datum/act/op/A)
 	if(equip_ready)

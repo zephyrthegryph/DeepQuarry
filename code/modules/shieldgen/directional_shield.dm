@@ -104,11 +104,12 @@ CAPABILITIES(/obj/item/shield_projector)
 	owns_many(nameof(active_shields))
 	every(2 SECONDS, then(PROC_REF(regen_step)), when = nameof(regenerating))
 
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_self)))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(projector_emp_drain))))
+
 /// TRUE while the projector regenerates (damage starts it); whole, it parks.
 /obj/item/shield_projector/var/tmp/regenerating = FALSE
 TRACKED(/obj/item/shield_projector, regenerating)
-	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_self)))
-	extend(/datum/act/hit/emp, instead(then(PROC_REF(projector_emp_drain))))
 
 /obj/item/shield_projector/Initialize(mapload)
 	max_integrity = max_integrity
