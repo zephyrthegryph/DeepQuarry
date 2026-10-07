@@ -167,7 +167,7 @@
 /mob/living/simple_mob/proc/try_reload()
 	if(is_working())
 		return
-	perform_op(src, src, "reload", origin = ORIGIN_SYSTEM)
+	perform_op(src, src, "reload")
 
 /mob/living/simple_mob/proc/reload_wait(datum/act/op/A)
 	return reload_time

@@ -11,7 +11,7 @@
 
 /datum/unit_test/dq_timed_pin_w3/gootrap_free/run_pin()
 	var/mob/living/carbon/human/user = person()
-	var/mob/living/carbon/human/victim = person(get_step(run_loc_floor_bottom_left, EAST))
+	var/mob/living/carbon/human/victim = person()
 	var/obj/structure/gootrap/G = allocate(/obj/structure/gootrap, run_loc_floor_bottom_left)
 	G.set_can_buckle(TRUE)
 	G.buckle_mob(victim)
@@ -30,7 +30,7 @@
 
 /datum/unit_test/dq_timed_pin_w3/gootrap_free_cancel_on_move/run_pin()
 	var/mob/living/carbon/human/user = person()
-	var/mob/living/carbon/human/victim = person(get_step(run_loc_floor_bottom_left, EAST))
+	var/mob/living/carbon/human/victim = person()
 	var/obj/structure/gootrap/G = allocate(/obj/structure/gootrap, run_loc_floor_bottom_left)
 	G.set_can_buckle(TRUE)
 	G.buckle_mob(victim)
@@ -462,6 +462,7 @@
 	test_time(2 SECONDS)
 	TEST_ASSERT(!isnull(locate(/obj/effect/spider/stickyweb) in T), "the web is there at the end")
 	TEST_ASSERT_NULL(running(N), "and the spider is free again")
+	qdel(locate(/obj/effect/spider/stickyweb) in T)
 
 /datum/unit_test/dq_timed_pin_w3/spider_web_cancel_on_move
 
@@ -490,6 +491,7 @@
 	test_time(2 SECONDS)
 	TEST_ASSERT(!isnull(locate(/obj/effect/spider/eggcluster) in T), "the eggs are there at the end")
 	TEST_ASSERT_EQUAL(N.fed, 1, "and one feeding is spent")
+	qdel(locate(/obj/effect/spider/eggcluster) in T)
 
 /datum/unit_test/dq_timed_pin_w3/spider_spins_cocoon
 
@@ -501,6 +503,7 @@
 	TEST_ASSERT(isnull(locate(/obj/effect/spider/cocoon) in get_turf(P)), "no cocoon before the end")
 	test_time(2 SECONDS)
 	TEST_ASSERT(!isnull(locate(/obj/effect/spider/cocoon) in get_turf(P)), "the cocoon is there at the end")
+	qdel(locate(/obj/effect/spider/cocoon) in get_turf(P))
 
 /datum/unit_test/dq_timed_pin_w3/simple_mob_reloads
 

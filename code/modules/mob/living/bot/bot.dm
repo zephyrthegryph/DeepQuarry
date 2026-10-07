@@ -440,7 +440,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	work_done = on_done
 	work_arg = arg
 	work_failed = on_fail
-	. = perform_op(src, A, "work", origin = ORIGIN_SYSTEM)
+	. = perform_op(src, A, "work")
 	if(!.)
 		working = FALSE
 	update_icons()
@@ -468,7 +468,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	holding = TRUE
 	hold_done = on_end
 	work_delay = delay
-	if(!perform_op(src, src, "hold", origin = ORIGIN_SYSTEM))
+	if(!perform_op(src, src, "hold"))
 		holding = FALSE
 		return FALSE
 	return TRUE
