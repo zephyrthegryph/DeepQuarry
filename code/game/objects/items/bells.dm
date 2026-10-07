@@ -125,18 +125,21 @@
 	return 0
 
 CAPABILITIES(/obj/item/deskbell)
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), needs(req(PROC_REF(on_floor), silent = TRUE)), wait(0.5 SECONDS), then(PROC_REF(wrench_used)))
+
+/// TRUE when `A` lies on a turf (asked when an op starts).
+/proc/atom_on_turf(atom/A)
+	READS_FROM() // where an atom lies is asked when the op starts
+	return isturf(A.loc)
+
+/// Requirement: the bell lies on a turf (not in a hand or a bag).
+/obj/item/deskbell/proc/on_floor(datum/act/op/A)
+	return atom_on_turf(src)
 
 /obj/item/deskbell/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!isturf(loc))
-		return OP_OK
-	task_timed(user, 0.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
-	return OP_OK
-
-/obj/item/deskbell/proc/wrench_act_timed_done(mob/user)
-	to_chat(user, span_notice("You disassemble the desk bell."))
+	to_chat(A.actor, span_notice("You disassemble the desk bell."))
 	replace_with(src, /obj/item/stack/material/steel, 1)
+	return OP_OK
 
 /obj/item/deskbell/proc/break_bell(mob/user)
 	to_chat(user,span_notice("The ringing abruptly stops as [src]'s ringer gets jammed inside!"))

@@ -73,34 +73,36 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/gravemarker, TYPE_PROC_REF(/atom, app
 	. += ..()
 
 CAPABILITIES(/obj/item/material/gravemarker)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), needs(req(PROC_REF(on_turf), silent = TRUE), req(PROC_REF(spot_free), because = MSG(gravemarker/occupied))),
+		begins(MSG(gravemarker/placing)), wait(1 SECOND), then(PROC_REF(place_done)))
 	op("carve", tool(TOOL_SCREWDRIVER), label("Carve"), wait(0),
 		asks(/datum/prompt/text, fields = list("title" = "Gravestone Naming", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "name"),
 		asks(/datum/prompt/text, fields = list("title" = "Epitaph Carving", "question" = computed(PROC_REF(epitaph_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "epitaph"),
 		then(PROC_REF(carved)))
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
-/// Old attack_self.
-/obj/item/material/gravemarker/proc/interaction_self(datum/act/op/A)
+MSG_DEF_SELF(gravemarker/placing, "You begin to place %T%.")
+MSG_DEF_SELF(gravemarker/occupied, "There's already something there.")
+
+/// Requirement: the actor stands on a turf.
+/obj/item/material/gravemarker/proc/on_turf(datum/act/op/A)
+	return atom_on_turf(A.actor)
+
+/// The grave marker where `A` stands, or null.
+/proc/grave_marker_at(atom/A)
+	READS_FROM() // what stands where an atom does is asked when the op starts
+	return locate(/obj/structure/gravemarker, A.loc)
+
+/// Requirement: no marker stands where the actor does.
+/obj/item/material/gravemarker/proc/spot_free(datum/act/op/A)
+	return !grave_marker_at(A.actor)
+
+/obj/item/material/gravemarker/proc/place_done(datum/act/op/A)
 	var/mob/user = A.actor
-	src.add_fingerprint(user)
-
-	if(!isturf(user.loc))
-		return TRUE
-
-	if(locate(/obj/structure/gravemarker, user.loc))
-		to_chat(user, span_warning("There's already something there."))
-		return TRUE
-	else
-		to_chat(user, span_notice("You begin to place 	he [src.name]."))
-		task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(place_done), done_args = list(user))
-	return TRUE
-
-/obj/item/material/gravemarker/proc/place_done(mob/user)
 	if(!isturf(user.loc) || locate(/obj/structure/gravemarker, user.loc))
-		return
+		return OP_OK
 	var/obj/structure/gravemarker/G = new /obj/structure/gravemarker/(user.loc, src.get_material())
-	to_chat(user, span_notice("You place 	he [src.name]."))
+	to_chat(user, span_notice("You place [src.name]."))
 	G.grave_name = grave_name
 	G.epitaph = epitaph
 	G.add_fingerprint(user)

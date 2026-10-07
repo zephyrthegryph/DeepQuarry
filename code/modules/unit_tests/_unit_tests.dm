@@ -580,6 +580,7 @@
 #include "dq_p2_storage_engine_tests.dm"
 #include "dq_gap_tests.dm"
 #include "dq_timed_pin_behaviour.dm"
+#include "dq_timed_pin_w1_behaviour.dm"
 #include "dq_proximity_tests.dm"
 #include "dq_fwg3_inputs.dm"
 #include "dq_medical_pods_behaviour.dm"
