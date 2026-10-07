@@ -18,12 +18,14 @@
 	throwforce = 0
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(MAT_STEEL, 18750)
-	var/deployed = 0
+	var/deployed = FALSE
 	var/camo_net = FALSE
 	var/stun_length = 0.25 SECONDS
 
 /obj/item/beartrap/start_active
 	deployed = TRUE
+
+TRACKED(/obj/item/beartrap, deployed)
 
 /obj/item/beartrap/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())
@@ -58,7 +60,7 @@ CAPABILITIES(/obj/item/beartrap)
 	var/mob/user = A.actor
 	play_sfx(src, SFX_MACHINES_CLICK, 1.4)
 
-	deployed = 1
+	set_deployed(TRUE)
 	user.drop_from_inventory(src)
 	changed(src)
 	set_anchored(TRUE)
@@ -70,7 +72,7 @@ CAPABILITIES(/obj/item/beartrap)
 	set_anchored(FALSE)
 
 /obj/item/beartrap/proc/disarm_trap(datum/act/op/A)
-	deployed = 0
+	set_deployed(FALSE)
 	set_anchored(FALSE)
 	changed(src)
 
@@ -97,7 +99,7 @@ CAPABILITIES(/obj/item/beartrap)
 		if(!affected) // took it clean off!
 			to_chat(H, span_danger("The steel jaws of \the [src] take your limb clean off!"))
 			L.status_at_least(STAT_STUNNED, stun_length*2)
-			deployed = 0
+			set_deployed(FALSE)
 			set_anchored(FALSE)
 			return
 
@@ -107,7 +109,7 @@ CAPABILITIES(/obj/item/beartrap)
 	buckle_mob(L)
 	L.status_at_least(STAT_STUNNED, stun_length)
 	to_chat(L, span_danger("The steel jaws of \the [src] bite into you, trapping you in place!"))
-	deployed = 0
+	set_deployed(FALSE)
 	set_anchored(FALSE)
 	set_can_buckle(initial(can_buckle))
 
@@ -124,7 +126,7 @@ CAPABILITIES(/obj/item/beartrap)
 			attack_mob(L)
 			if(!has_buckled_mobs())
 				set_anchored(FALSE)
-			deployed = 0
+			set_deployed(FALSE)
 			changed(src)
 			log_and_message_admins("has sprung a [name] at \the [get_area(loc)], last touched by [forensic_data?.get_lastprint()]", L)
 	..()
