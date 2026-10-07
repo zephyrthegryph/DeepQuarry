@@ -1,0 +1,260 @@
+human|none menu: Collect (refused: needs a storage)
+human|none menu: Customise (refused: needs an item)
+human|none menu: Emag (refused: needs a cryptographic sequencer)
+human|none menu: Fit
+human|none menu: Give DNA (refused: you need to be carrying it)
+human|none menu: Move To Top
+human|none menu: Name Gun (refused: you need to be carrying it)
+human|none menu: Operate (refused: combat mode is off)
+human|none menu: Operate (refused: hold Disarm)
+human|none menu: Operate (refused: hold Grab)
+human|none menu: Operate (refused: not in your hand)
+human|none menu: Pick up
+human|none menu: Remove DNA (refused: you need to be carrying it)
+human|none menu: Spin cylinder (refused: you need to be carrying it)
+human|none menu: Toggle Digestable (refused: you need to be carrying it)
+human|none menu: Toggle DNA Samples Allowance (refused: you need to be carrying it)
+human|none menu: Unload
+human|none click: nothing
+robot|none menu: Collect (refused: needs a storage)
+robot|none menu: Customise (refused: needs an item)
+robot|none menu: Emag (refused: needs a cryptographic sequencer)
+robot|none menu: Equip (refused: not possible right now)
+robot|none menu: Fit
+robot|none menu: Give DNA (refused: you need to be carrying it)
+robot|none menu: Move To Top
+robot|none menu: Name Gun (refused: you need to be carrying it)
+robot|none menu: Operate (refused: combat mode is off)
+robot|none menu: Operate (refused: hold Disarm)
+robot|none menu: Operate (refused: hold Grab)
+robot|none menu: Operate (refused: not in your hand)
+robot|none menu: Pick up
+robot|none menu: Remove DNA (refused: you need to be carrying it)
+robot|none menu: Spin cylinder (refused: you need to be carrying it)
+robot|none menu: Toggle Digestable (refused: you need to be carrying it)
+robot|none menu: Toggle DNA Samples Allowance (refused: you need to be carrying it)
+robot|none menu: Unload
+robot|none click: nothing
+ai|none menu: Equip (refused: not possible right now)
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Collect (refused: needs a storage)
+human|/obj/item/tool/screwdriver menu: Customise (refused: needs an item)
+human|/obj/item/tool/screwdriver menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/screwdriver menu: Fit
+human|/obj/item/tool/screwdriver menu: Give DNA (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Name Gun (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Operate (refused: combat mode is off)
+human|/obj/item/tool/screwdriver menu: Operate (refused: hold Disarm)
+human|/obj/item/tool/screwdriver menu: Operate (refused: hold Grab)
+human|/obj/item/tool/screwdriver menu: Operate (refused: not in your hand)
+human|/obj/item/tool/screwdriver menu: Pick up
+human|/obj/item/tool/screwdriver menu: Remove DNA (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Spin cylinder (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Toggle DNA Samples Allowance (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Unload
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Collect (refused: needs a storage)
+human|/obj/item/tool/crowbar menu: Customise (refused: needs an item)
+human|/obj/item/tool/crowbar menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/crowbar menu: Fit
+human|/obj/item/tool/crowbar menu: Give DNA (refused: you need to be carrying it)
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Name Gun (refused: you need to be carrying it)
+human|/obj/item/tool/crowbar menu: Operate (refused: combat mode is off)
+human|/obj/item/tool/crowbar menu: Operate (refused: hold Disarm)
+human|/obj/item/tool/crowbar menu: Operate (refused: hold Grab)
+human|/obj/item/tool/crowbar menu: Operate (refused: not in your hand)
+human|/obj/item/tool/crowbar menu: Pick up
+human|/obj/item/tool/crowbar menu: Remove DNA (refused: you need to be carrying it)
+human|/obj/item/tool/crowbar menu: Spin cylinder (refused: you need to be carrying it)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/tool/crowbar menu: Toggle DNA Samples Allowance (refused: you need to be carrying it)
+human|/obj/item/tool/crowbar menu: Unload
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Collect (refused: needs a storage)
+human|/obj/item/tool/wrench menu: Customise (refused: needs an item)
+human|/obj/item/tool/wrench menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/wrench menu: Fit
+human|/obj/item/tool/wrench menu: Give DNA (refused: you need to be carrying it)
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Name Gun (refused: you need to be carrying it)
+human|/obj/item/tool/wrench menu: Operate (refused: combat mode is off)
+human|/obj/item/tool/wrench menu: Operate (refused: hold Disarm)
+human|/obj/item/tool/wrench menu: Operate (refused: hold Grab)
+human|/obj/item/tool/wrench menu: Operate (refused: not in your hand)
+human|/obj/item/tool/wrench menu: Pick up
+human|/obj/item/tool/wrench menu: Remove DNA (refused: you need to be carrying it)
+human|/obj/item/tool/wrench menu: Spin cylinder (refused: you need to be carrying it)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/tool/wrench menu: Toggle DNA Samples Allowance (refused: you need to be carrying it)
+human|/obj/item/tool/wrench menu: Unload
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Collect (refused: needs a storage)
+human|/obj/item/tool/wirecutters menu: Customise (refused: needs an item)
+human|/obj/item/tool/wirecutters menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/wirecutters menu: Fit
+human|/obj/item/tool/wirecutters menu: Give DNA (refused: you need to be carrying it)
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Name Gun (refused: you need to be carrying it)
+human|/obj/item/tool/wirecutters menu: Operate (refused: combat mode is off)
+human|/obj/item/tool/wirecutters menu: Operate (refused: hold Disarm)
+human|/obj/item/tool/wirecutters menu: Operate (refused: hold Grab)
+human|/obj/item/tool/wirecutters menu: Operate (refused: not in your hand)
+human|/obj/item/tool/wirecutters menu: Pick up
+human|/obj/item/tool/wirecutters menu: Remove DNA (refused: you need to be carrying it)
+human|/obj/item/tool/wirecutters menu: Spin cylinder (refused: you need to be carrying it)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/tool/wirecutters menu: Toggle DNA Samples Allowance (refused: you need to be carrying it)
+human|/obj/item/tool/wirecutters menu: Unload
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Collect (refused: needs a storage)
+human|/obj/item/multitool menu: Customise (refused: needs an item)
+human|/obj/item/multitool menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/multitool menu: Fit
+human|/obj/item/multitool menu: Give DNA (refused: you need to be carrying it)
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Name Gun (refused: you need to be carrying it)
+human|/obj/item/multitool menu: Operate (refused: combat mode is off)
+human|/obj/item/multitool menu: Operate (refused: hold Disarm)
+human|/obj/item/multitool menu: Operate (refused: hold Grab)
+human|/obj/item/multitool menu: Operate (refused: not in your hand)
+human|/obj/item/multitool menu: Pick up
+human|/obj/item/multitool menu: Remove DNA (refused: you need to be carrying it)
+human|/obj/item/multitool menu: Spin cylinder (refused: you need to be carrying it)
+human|/obj/item/multitool menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/multitool menu: Toggle DNA Samples Allowance (refused: you need to be carrying it)
+human|/obj/item/multitool menu: Unload
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Collect (refused: needs a storage)
+human|/obj/item/weldingtool menu: Customise (refused: needs an item)
+human|/obj/item/weldingtool menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/weldingtool menu: Fit
+human|/obj/item/weldingtool menu: Give DNA (refused: you need to be carrying it)
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Name Gun (refused: you need to be carrying it)
+human|/obj/item/weldingtool menu: Operate (refused: combat mode is off)
+human|/obj/item/weldingtool menu: Operate (refused: hold Disarm)
+human|/obj/item/weldingtool menu: Operate (refused: hold Grab)
+human|/obj/item/weldingtool menu: Operate (refused: not in your hand)
+human|/obj/item/weldingtool menu: Pick up
+human|/obj/item/weldingtool menu: Remove DNA (refused: you need to be carrying it)
+human|/obj/item/weldingtool menu: Spin cylinder (refused: you need to be carrying it)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/weldingtool menu: Toggle DNA Samples Allowance (refused: you need to be carrying it)
+human|/obj/item/weldingtool menu: Unload
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
+human|/obj/item/stack/cable_coil menu: Customise (refused: needs an item)
+human|/obj/item/stack/cable_coil menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/stack/cable_coil menu: Fit
+human|/obj/item/stack/cable_coil menu: Give DNA (refused: you need to be carrying it)
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Name Gun (refused: you need to be carrying it)
+human|/obj/item/stack/cable_coil menu: Operate (refused: combat mode is off)
+human|/obj/item/stack/cable_coil menu: Operate (refused: hold Disarm)
+human|/obj/item/stack/cable_coil menu: Operate (refused: hold Grab)
+human|/obj/item/stack/cable_coil menu: Operate (refused: not in your hand)
+human|/obj/item/stack/cable_coil menu: Pick up
+human|/obj/item/stack/cable_coil menu: Remove DNA (refused: you need to be carrying it)
+human|/obj/item/stack/cable_coil menu: Spin cylinder (refused: you need to be carrying it)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/stack/cable_coil menu: Toggle DNA Samples Allowance (refused: you need to be carrying it)
+human|/obj/item/stack/cable_coil menu: Unload
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Collect (refused: needs a storage)
+human|/obj/item/stack/material/steel menu: Customise (refused: needs an item)
+human|/obj/item/stack/material/steel menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/stack/material/steel menu: Fit
+human|/obj/item/stack/material/steel menu: Give DNA (refused: you need to be carrying it)
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Name Gun (refused: you need to be carrying it)
+human|/obj/item/stack/material/steel menu: Operate (refused: combat mode is off)
+human|/obj/item/stack/material/steel menu: Operate (refused: hold Disarm)
+human|/obj/item/stack/material/steel menu: Operate (refused: hold Grab)
+human|/obj/item/stack/material/steel menu: Operate (refused: not in your hand)
+human|/obj/item/stack/material/steel menu: Pick up
+human|/obj/item/stack/material/steel menu: Remove DNA (refused: you need to be carrying it)
+human|/obj/item/stack/material/steel menu: Spin cylinder (refused: you need to be carrying it)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/stack/material/steel menu: Toggle DNA Samples Allowance (refused: you need to be carrying it)
+human|/obj/item/stack/material/steel menu: Unload
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Collect (refused: needs a storage)
+human|/obj/item/card/id menu: Customise (refused: needs an item)
+human|/obj/item/card/id menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/card/id menu: Fit
+human|/obj/item/card/id menu: Give DNA (refused: you need to be carrying it)
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Name Gun (refused: you need to be carrying it)
+human|/obj/item/card/id menu: Operate (refused: combat mode is off)
+human|/obj/item/card/id menu: Operate (refused: hold Disarm)
+human|/obj/item/card/id menu: Operate (refused: hold Grab)
+human|/obj/item/card/id menu: Operate (refused: not in your hand)
+human|/obj/item/card/id menu: Pick up
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Remove DNA (refused: you need to be carrying it)
+human|/obj/item/card/id menu: Spin cylinder (refused: you need to be carrying it)
+human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/card/id menu: Toggle DNA Samples Allowance (refused: you need to be carrying it)
+human|/obj/item/card/id menu: Unload
+human|/obj/item/card/id click: nothing
+human|/obj/item/kit menu: Collect (refused: needs a storage)
+human|/obj/item/kit menu: Customise
+human|/obj/item/kit menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/kit menu: Fit
+human|/obj/item/kit menu: Give DNA (refused: you need to be carrying it)
+human|/obj/item/kit menu: Move To Top
+human|/obj/item/kit menu: Name Gun (refused: you need to be carrying it)
+human|/obj/item/kit menu: Operate (refused: combat mode is off)
+human|/obj/item/kit menu: Operate (refused: hold Disarm)
+human|/obj/item/kit menu: Operate (refused: hold Grab)
+human|/obj/item/kit menu: Operate (refused: not in your hand)
+human|/obj/item/kit menu: Pick up
+human|/obj/item/kit menu: Remove DNA (refused: you need to be carrying it)
+human|/obj/item/kit menu: Spin cylinder (refused: you need to be carrying it)
+human|/obj/item/kit menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/kit menu: Toggle DNA Samples Allowance (refused: you need to be carrying it)
+human|/obj/item/kit menu: Unload
+human|/obj/item/kit click: nothing
+human|/obj/item/storage menu: Collect
+human|/obj/item/storage menu: Customise (refused: needs an item)
+human|/obj/item/storage menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/storage menu: Fit
+human|/obj/item/storage menu: Give DNA (refused: you need to be carrying it)
+human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Name Gun (refused: you need to be carrying it)
+human|/obj/item/storage menu: Operate (refused: combat mode is off)
+human|/obj/item/storage menu: Operate (refused: hold Disarm)
+human|/obj/item/storage menu: Operate (refused: hold Grab)
+human|/obj/item/storage menu: Operate (refused: not in your hand)
+human|/obj/item/storage menu: Pick up
+human|/obj/item/storage menu: Remove DNA (refused: you need to be carrying it)
+human|/obj/item/storage menu: Spin cylinder (refused: you need to be carrying it)
+human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/storage menu: Toggle DNA Samples Allowance (refused: you need to be carrying it)
+human|/obj/item/storage menu: Unload
+human|/obj/item/storage click: nothing
+human|/obj/item/card/emag menu: Collect (refused: needs a storage)
+human|/obj/item/card/emag menu: Customise (refused: needs an item)
+human|/obj/item/card/emag menu: Emag
+human|/obj/item/card/emag menu: Fit
+human|/obj/item/card/emag menu: Give DNA (refused: you need to be carrying it)
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Name Gun (refused: you need to be carrying it)
+human|/obj/item/card/emag menu: Operate (refused: combat mode is off)
+human|/obj/item/card/emag menu: Operate (refused: hold Disarm)
+human|/obj/item/card/emag menu: Operate (refused: hold Grab)
+human|/obj/item/card/emag menu: Operate (refused: not in your hand)
+human|/obj/item/card/emag menu: Pick up
+human|/obj/item/card/emag menu: Remove DNA (refused: you need to be carrying it)
+human|/obj/item/card/emag menu: Spin cylinder (refused: you need to be carrying it)
+human|/obj/item/card/emag menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/card/emag menu: Toggle DNA Samples Allowance (refused: you need to be carrying it)
+human|/obj/item/card/emag menu: Unload
+human|/obj/item/card/emag click: nothing
+keys: drag_buckle, emag, gen_hand_interaction_pick_up, gen_hand_ungated_gun_hand, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_gun_item, gen_self_gun_self, gen_silicon_item_silicon_equip_module, gen_verb_det_revolver_verb_rename, gen_verb_gun_verb_allow_dna, gen_verb_gun_verb_give_dna, gen_verb_gun_verb_remove_dna, gen_verb_move_to_top_effect, gen_verb_revolver_verb_spin_cylinder, gen_verb_toggle_digestable_effect
+

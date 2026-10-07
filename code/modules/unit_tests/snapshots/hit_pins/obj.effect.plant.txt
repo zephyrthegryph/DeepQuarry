@@ -1,0 +1,13 @@
+blob | survives
+emag | periodic_pipe: null -> /datum/cadence/plants
+emp 1 | refresh_bits: 1 -> 0
+emp 1 | refresh_queued: 131071 -> 0
+emp 2 | nothing
+explosion 1 | om_rec: null -> /datum/om/rec
+explosion 1 | rx: null -> /datum/rx_state
+explosion 2 | om_rec: null -> /datum/om/rec
+explosion 2 | rx: null -> /datum/rx_state
+explosion 3 | nothing
+projectile | nothing
+thrown | nothing
+

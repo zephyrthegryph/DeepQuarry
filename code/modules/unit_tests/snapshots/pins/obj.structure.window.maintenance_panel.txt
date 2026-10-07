@@ -1,0 +1,68 @@
+human|none menu: Bang on
+human|none menu: Knock
+human|none menu: Unscrew it from the floor (refused: needs a screwdriver)
+human|none menu: Use
+human|none click: Click: Knock
+robot|none menu: Bang on
+robot|none menu: Knock
+robot|none menu: Unscrew it from the floor (refused: needs a screwdriver)
+robot|none menu: Use
+robot|none click: Click: Knock
+ai|none click: nothing
+ghost|none menu: Nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Bang on
+human|/obj/item/tool/screwdriver menu: Knock
+human|/obj/item/tool/screwdriver menu: Unscrew it from the floor
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Use
+human|/obj/item/tool/crowbar menu: Bang on
+human|/obj/item/tool/crowbar menu: Knock
+human|/obj/item/tool/crowbar menu: Unscrew it from the floor (refused: needs a screwdriver)
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Use
+human|/obj/item/tool/wrench menu: Bang on
+human|/obj/item/tool/wrench menu: Knock
+human|/obj/item/tool/wrench menu: Unscrew it from the floor (refused: needs a screwdriver)
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Use
+human|/obj/item/tool/wirecutters menu: Bang on
+human|/obj/item/tool/wirecutters menu: Knock
+human|/obj/item/tool/wirecutters menu: Unscrew it from the floor (refused: needs a screwdriver)
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/multitool menu: Bang on
+human|/obj/item/multitool menu: Knock
+human|/obj/item/multitool menu: Unscrew it from the floor (refused: needs a screwdriver)
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Use
+human|/obj/item/weldingtool menu: Bang on
+human|/obj/item/weldingtool menu: Knock
+human|/obj/item/weldingtool menu: Repair the window (refused: It is already in good condition.)
+human|/obj/item/weldingtool menu: Unscrew it from the floor (refused: needs a screwdriver)
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Repair the window
+human|/obj/item/stack/cable_coil menu: Bang on
+human|/obj/item/stack/cable_coil menu: Knock
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Unscrew it from the floor (refused: needs a screwdriver)
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Use
+human|/obj/item/stack/material/steel menu: Bang on
+human|/obj/item/stack/material/steel menu: Knock
+human|/obj/item/stack/material/steel menu: Unscrew it from the floor (refused: needs a screwdriver)
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Bang on
+human|/obj/item/card/id menu: Knock
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Unscrew it from the floor (refused: needs a screwdriver)
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Bang on
+human|/obj/item menu: Knock
+human|/obj/item menu: Unscrew it from the floor (refused: needs a screwdriver)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
+keys: bang, drag_buckle, gen_item_maintenance_panel_interaction_item, gen_observer_interaction_swallow, item, knock, tk_knock, weld_repair
+

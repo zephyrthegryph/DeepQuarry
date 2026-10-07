@@ -1,0 +1,68 @@
+human|none menu: Disrupt rune (refused: needs a null rod)
+human|none menu: Erase rune (refused: needs an arcane tome)
+human|none menu: Invoke
+human|none click: nothing
+robot|none menu: Disrupt rune (refused: needs a null rod)
+robot|none menu: Erase rune (refused: needs an arcane tome)
+robot|none menu: Invoke
+robot|none click: nothing
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Disrupt rune (refused: needs a null rod)
+human|/obj/item/tool/screwdriver menu: Erase rune (refused: needs an arcane tome)
+human|/obj/item/tool/screwdriver menu: Invoke
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Disrupt rune (refused: needs a null rod)
+human|/obj/item/tool/crowbar menu: Erase rune (refused: needs an arcane tome)
+human|/obj/item/tool/crowbar menu: Invoke
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Disrupt rune (refused: needs a null rod)
+human|/obj/item/tool/wrench menu: Erase rune (refused: needs an arcane tome)
+human|/obj/item/tool/wrench menu: Invoke
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Disrupt rune (refused: needs a null rod)
+human|/obj/item/tool/wirecutters menu: Erase rune (refused: needs an arcane tome)
+human|/obj/item/tool/wirecutters menu: Invoke
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Disrupt rune (refused: needs a null rod)
+human|/obj/item/multitool menu: Erase rune (refused: needs an arcane tome)
+human|/obj/item/multitool menu: Invoke
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Disrupt rune (refused: needs a null rod)
+human|/obj/item/weldingtool menu: Erase rune (refused: needs an arcane tome)
+human|/obj/item/weldingtool menu: Invoke
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Disrupt rune (refused: needs a null rod)
+human|/obj/item/stack/cable_coil menu: Erase rune (refused: needs an arcane tome)
+human|/obj/item/stack/cable_coil menu: Invoke
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Disrupt rune (refused: needs a null rod)
+human|/obj/item/stack/material/steel menu: Erase rune (refused: needs an arcane tome)
+human|/obj/item/stack/material/steel menu: Invoke
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Disrupt rune (refused: needs a null rod)
+human|/obj/item/card/id menu: Erase rune (refused: needs an arcane tome)
+human|/obj/item/card/id menu: Invoke
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id click: nothing
+human|/obj/item/book/tome menu: Disrupt rune (refused: needs a null rod)
+human|/obj/item/book/tome menu: Erase rune
+human|/obj/item/book/tome menu: Invoke
+human|/obj/item/book/tome click: nothing
+human|/obj/item/nullrod menu: Disrupt rune
+human|/obj/item/nullrod menu: Erase rune (refused: needs an arcane tome)
+human|/obj/item/nullrod menu: Invoke
+human|/obj/item/nullrod click: nothing
+human|/obj/item/mop_deploy menu: Disrupt rune (refused: needs a null rod)
+human|/obj/item/mop_deploy menu: Erase rune (refused: needs an arcane tome)
+human|/obj/item/mop_deploy menu: Insert a mop
+human|/obj/item/mop_deploy menu: Invoke
+human|/obj/item/mop_deploy click: Click: Insert a mop
+human|/obj/item/soap menu: Disrupt rune (refused: needs a null rod)
+human|/obj/item/soap menu: Erase rune (refused: needs an arcane tome)
+human|/obj/item/soap menu: Insert a soap
+human|/obj/item/soap menu: Invoke
+human|/obj/item/soap click: Click: Insert a soap
+keys: drag_buckle, gen_hand_interaction_invoke_rune, gen_insert_interaction_erase_rune, gen_insert_interaction_nullrod_rune, pass_insert, pass_insert_2
+

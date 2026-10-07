@@ -1,0 +1,12 @@
+blob | deleted
+blob | destroyed
+emag | nothing
+emp 1 | refresh_bits: 73 -> 0
+emp 1 | refresh_queued: 131071 -> 0
+emp 2 | nothing
+explosion 1 | turf: +/obj/effect/effect/smoke x5
+explosion 2 | turf: +/obj/effect/effect/smoke x5
+explosion 3 | turf: +/obj/effect/effect/smoke x5
+projectile | turf: +/obj/effect/effect/smoke x5
+thrown | atom_integrity: down
+

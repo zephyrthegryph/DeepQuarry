@@ -1,0 +1,39 @@
+human|none menu: Interaction trader item
+human|none menu: Trade (refused: The trader hasn't got anything to sell)
+human|none click: nothing
+robot|none menu: Interaction trader item
+robot|none menu: Trade (refused: The trader hasn't got anything to sell)
+robot|none click: nothing
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Interaction trader item
+human|/obj/item/tool/screwdriver menu: Trade (refused: The trader hasn't got anything to sell)
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Interaction trader item
+human|/obj/item/tool/crowbar menu: Trade (refused: The trader hasn't got anything to sell)
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Interaction trader item
+human|/obj/item/tool/wrench menu: Trade (refused: The trader hasn't got anything to sell)
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Interaction trader item
+human|/obj/item/tool/wirecutters menu: Trade (refused: The trader hasn't got anything to sell)
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Interaction trader item
+human|/obj/item/multitool menu: Trade (refused: The trader hasn't got anything to sell)
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Interaction trader item
+human|/obj/item/weldingtool menu: Trade (refused: The trader hasn't got anything to sell)
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Interaction trader item
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Trade (refused: The trader hasn't got anything to sell)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Interaction trader item
+human|/obj/item/stack/material/steel menu: Trade (refused: The trader hasn't got anything to sell)
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Interaction trader item
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Trade (refused: The trader hasn't got anything to sell)
+human|/obj/item/card/id click: nothing
+keys: drag_buckle, gen_hand_interaction_trader_hand, gen_item_interaction_trader_item
+

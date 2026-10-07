@@ -1,0 +1,10 @@
+blob | survives
+emag | nothing
+emp 1 | refresh_queued: 131071 -> 0
+emp 2 | nothing
+explosion 1 | nothing
+explosion 2 | nothing
+explosion 3 | nothing
+projectile | nothing
+thrown | nothing
+

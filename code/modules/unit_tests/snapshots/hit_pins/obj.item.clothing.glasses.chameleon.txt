@@ -1,0 +1,11 @@
+blob | survives
+emag | nothing
+emp 1 | desc: 'It looks like a plain set of mesons, but on closer inspection, it seems to have a small dial inside.' -> 'It's a set of mesons.'
+emp 1 | refresh_queued: 131071 -> 0
+emp 2 | desc: 'It looks like a plain set of mesons, but on closer inspection, it seems to have a small dial inside.' -> 'It's a set of mesons.'
+explosion 1 | deleted
+explosion 2 | atom_integrity: down
+explosion 3 | atom_integrity: down
+projectile | atom_integrity: down
+thrown | atom_integrity: down
+

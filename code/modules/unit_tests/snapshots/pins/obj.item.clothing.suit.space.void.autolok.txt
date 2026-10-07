@@ -1,0 +1,220 @@
+human|none menu: Autolok worn item
+human|none menu: Clothing accessory hand
+human|none menu: Clothing accessory item
+human|none menu: Clothing circuit self (refused: not in your hand)
+human|none menu: Clothing remove accessory alt
+human|none menu: Collect (refused: needs a storage)
+human|none menu: Customise (refused: needs an item)
+human|none menu: Eject tank
+human|none menu: Eject Voidsuit Tank/Cooler (refused: you need to be carrying it)
+human|none menu: Move To Top
+human|none menu: Pick up
+human|none menu: Toggle Digestable (refused: you need to be carrying it)
+human|none menu: Toggle Helmet (refused: you need to be carrying it)
+human|none menu: Voidsuit install item
+human|none click: nothing
+robot|none menu: Autolok worn item
+robot|none menu: Clothing accessory hand
+robot|none menu: Clothing accessory item
+robot|none menu: Clothing circuit self (refused: not in your hand)
+robot|none menu: Clothing remove accessory alt
+robot|none menu: Collect (refused: needs a storage)
+robot|none menu: Customise (refused: needs an item)
+robot|none menu: Eject tank
+robot|none menu: Eject Voidsuit Tank/Cooler (refused: you need to be carrying it)
+robot|none menu: Equip (refused: not possible right now)
+robot|none menu: Move To Top
+robot|none menu: Pick up
+robot|none menu: Toggle Digestable (refused: you need to be carrying it)
+robot|none menu: Toggle Helmet (refused: you need to be carrying it)
+robot|none menu: Voidsuit install item
+robot|none click: nothing
+ai|none menu: Equip (refused: not possible right now)
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Autolok worn item
+human|/obj/item/tool/screwdriver menu: Clothing accessory hand
+human|/obj/item/tool/screwdriver menu: Clothing accessory item
+human|/obj/item/tool/screwdriver menu: Clothing circuit self (refused: not in your hand)
+human|/obj/item/tool/screwdriver menu: Clothing remove accessory alt
+human|/obj/item/tool/screwdriver menu: Collect (refused: needs a storage)
+human|/obj/item/tool/screwdriver menu: Customise (refused: needs an item)
+human|/obj/item/tool/screwdriver menu: Eject tank
+human|/obj/item/tool/screwdriver menu: Eject Voidsuit Tank/Cooler (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Pick up
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Toggle Helmet (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Voidsuit install item
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Autolok worn item
+human|/obj/item/tool/crowbar menu: Clothing accessory hand
+human|/obj/item/tool/crowbar menu: Clothing accessory item
+human|/obj/item/tool/crowbar menu: Clothing circuit self (refused: not in your hand)
+human|/obj/item/tool/crowbar menu: Clothing remove accessory alt
+human|/obj/item/tool/crowbar menu: Collect (refused: needs a storage)
+human|/obj/item/tool/crowbar menu: Customise (refused: needs an item)
+human|/obj/item/tool/crowbar menu: Eject tank
+human|/obj/item/tool/crowbar menu: Eject Voidsuit Tank/Cooler (refused: you need to be carrying it)
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Pick up
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/tool/crowbar menu: Toggle Helmet (refused: you need to be carrying it)
+human|/obj/item/tool/crowbar menu: Voidsuit install item
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Autolok worn item
+human|/obj/item/tool/wrench menu: Clothing accessory hand
+human|/obj/item/tool/wrench menu: Clothing accessory item
+human|/obj/item/tool/wrench menu: Clothing circuit self (refused: not in your hand)
+human|/obj/item/tool/wrench menu: Clothing remove accessory alt
+human|/obj/item/tool/wrench menu: Collect (refused: needs a storage)
+human|/obj/item/tool/wrench menu: Customise (refused: needs an item)
+human|/obj/item/tool/wrench menu: Eject tank
+human|/obj/item/tool/wrench menu: Eject Voidsuit Tank/Cooler (refused: you need to be carrying it)
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Pick up
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/tool/wrench menu: Toggle Helmet (refused: you need to be carrying it)
+human|/obj/item/tool/wrench menu: Voidsuit install item
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Autolok worn item
+human|/obj/item/tool/wirecutters menu: Clothing accessory hand
+human|/obj/item/tool/wirecutters menu: Clothing accessory item
+human|/obj/item/tool/wirecutters menu: Clothing circuit self (refused: not in your hand)
+human|/obj/item/tool/wirecutters menu: Clothing remove accessory alt
+human|/obj/item/tool/wirecutters menu: Collect (refused: needs a storage)
+human|/obj/item/tool/wirecutters menu: Customise (refused: needs an item)
+human|/obj/item/tool/wirecutters menu: Eject tank
+human|/obj/item/tool/wirecutters menu: Eject Voidsuit Tank/Cooler (refused: you need to be carrying it)
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Pick up
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/tool/wirecutters menu: Toggle Helmet (refused: you need to be carrying it)
+human|/obj/item/tool/wirecutters menu: Voidsuit install item
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Autolok worn item
+human|/obj/item/multitool menu: Clothing accessory hand
+human|/obj/item/multitool menu: Clothing accessory item
+human|/obj/item/multitool menu: Clothing circuit self (refused: not in your hand)
+human|/obj/item/multitool menu: Clothing remove accessory alt
+human|/obj/item/multitool menu: Collect (refused: needs a storage)
+human|/obj/item/multitool menu: Customise (refused: needs an item)
+human|/obj/item/multitool menu: Eject tank
+human|/obj/item/multitool menu: Eject Voidsuit Tank/Cooler (refused: you need to be carrying it)
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Pick up
+human|/obj/item/multitool menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/multitool menu: Toggle Helmet (refused: you need to be carrying it)
+human|/obj/item/multitool menu: Voidsuit install item
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Autolok worn item
+human|/obj/item/weldingtool menu: Clothing accessory hand
+human|/obj/item/weldingtool menu: Clothing accessory item
+human|/obj/item/weldingtool menu: Clothing circuit self (refused: not in your hand)
+human|/obj/item/weldingtool menu: Clothing remove accessory alt
+human|/obj/item/weldingtool menu: Collect (refused: needs a storage)
+human|/obj/item/weldingtool menu: Customise (refused: needs an item)
+human|/obj/item/weldingtool menu: Eject tank
+human|/obj/item/weldingtool menu: Eject Voidsuit Tank/Cooler (refused: you need to be carrying it)
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Pick up
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/weldingtool menu: Toggle Helmet (refused: you need to be carrying it)
+human|/obj/item/weldingtool menu: Voidsuit install item
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Autolok worn item
+human|/obj/item/stack/cable_coil menu: Clothing accessory hand
+human|/obj/item/stack/cable_coil menu: Clothing accessory item
+human|/obj/item/stack/cable_coil menu: Clothing circuit self (refused: not in your hand)
+human|/obj/item/stack/cable_coil menu: Clothing remove accessory alt
+human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
+human|/obj/item/stack/cable_coil menu: Customise (refused: needs an item)
+human|/obj/item/stack/cable_coil menu: Eject tank
+human|/obj/item/stack/cable_coil menu: Eject Voidsuit Tank/Cooler (refused: you need to be carrying it)
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Pick up
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/stack/cable_coil menu: Toggle Helmet (refused: you need to be carrying it)
+human|/obj/item/stack/cable_coil menu: Voidsuit install item
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Autolok worn item
+human|/obj/item/stack/material/steel menu: Clothing accessory hand
+human|/obj/item/stack/material/steel menu: Clothing accessory item
+human|/obj/item/stack/material/steel menu: Clothing circuit self (refused: not in your hand)
+human|/obj/item/stack/material/steel menu: Clothing remove accessory alt
+human|/obj/item/stack/material/steel menu: Collect (refused: needs a storage)
+human|/obj/item/stack/material/steel menu: Customise (refused: needs an item)
+human|/obj/item/stack/material/steel menu: Eject tank
+human|/obj/item/stack/material/steel menu: Eject Voidsuit Tank/Cooler (refused: you need to be carrying it)
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Pick up
+human|/obj/item/stack/material/steel menu: Space suit patch item
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/stack/material/steel menu: Toggle Helmet (refused: you need to be carrying it)
+human|/obj/item/stack/material/steel menu: Voidsuit install item
+human|/obj/item/stack/material/steel click: Click: Space suit patch item
+human|/obj/item/card/id menu: Autolok worn item
+human|/obj/item/card/id menu: Clothing accessory hand
+human|/obj/item/card/id menu: Clothing accessory item
+human|/obj/item/card/id menu: Clothing circuit self (refused: not in your hand)
+human|/obj/item/card/id menu: Clothing remove accessory alt
+human|/obj/item/card/id menu: Collect (refused: needs a storage)
+human|/obj/item/card/id menu: Customise (refused: needs an item)
+human|/obj/item/card/id menu: Eject tank
+human|/obj/item/card/id menu: Eject Voidsuit Tank/Cooler (refused: you need to be carrying it)
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Pick up
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/card/id menu: Toggle Helmet (refused: you need to be carrying it)
+human|/obj/item/card/id menu: Voidsuit install item
+human|/obj/item/card/id click: nothing
+human|/obj/item/storage menu: Autolok worn item
+human|/obj/item/storage menu: Clothing accessory hand
+human|/obj/item/storage menu: Clothing accessory item
+human|/obj/item/storage menu: Clothing circuit self (refused: not in your hand)
+human|/obj/item/storage menu: Clothing remove accessory alt
+human|/obj/item/storage menu: Collect
+human|/obj/item/storage menu: Customise (refused: needs an item)
+human|/obj/item/storage menu: Eject tank
+human|/obj/item/storage menu: Eject Voidsuit Tank/Cooler (refused: you need to be carrying it)
+human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Pick up
+human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/storage menu: Toggle Helmet (refused: you need to be carrying it)
+human|/obj/item/storage menu: Voidsuit install item
+human|/obj/item/storage click: nothing
+human|/obj/item/kit menu: Autolok worn item
+human|/obj/item/kit menu: Clothing accessory hand
+human|/obj/item/kit menu: Clothing accessory item
+human|/obj/item/kit menu: Clothing circuit self (refused: not in your hand)
+human|/obj/item/kit menu: Clothing remove accessory alt
+human|/obj/item/kit menu: Collect (refused: needs a storage)
+human|/obj/item/kit menu: Customise
+human|/obj/item/kit menu: Eject tank
+human|/obj/item/kit menu: Eject Voidsuit Tank/Cooler (refused: you need to be carrying it)
+human|/obj/item/kit menu: Move To Top
+human|/obj/item/kit menu: Pick up
+human|/obj/item/kit menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/kit menu: Toggle Helmet (refused: you need to be carrying it)
+human|/obj/item/kit menu: Voidsuit install item
+human|/obj/item/kit click: nothing
+human|/obj/item/stack/material menu: Autolok worn item
+human|/obj/item/stack/material menu: Clothing accessory hand
+human|/obj/item/stack/material menu: Clothing accessory item
+human|/obj/item/stack/material menu: Clothing circuit self (refused: not in your hand)
+human|/obj/item/stack/material menu: Clothing remove accessory alt
+human|/obj/item/stack/material menu: Collect (refused: needs a storage)
+human|/obj/item/stack/material menu: Customise (refused: needs an item)
+human|/obj/item/stack/material menu: Eject tank
+human|/obj/item/stack/material menu: Eject Voidsuit Tank/Cooler (refused: you need to be carrying it)
+human|/obj/item/stack/material menu: Move To Top
+human|/obj/item/stack/material menu: Pick up
+human|/obj/item/stack/material menu: Space suit patch item
+human|/obj/item/stack/material menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/stack/material menu: Toggle Helmet (refused: you need to be carrying it)
+human|/obj/item/stack/material menu: Voidsuit install item
+human|/obj/item/stack/material click: Click: Space suit patch item
+keys: drag_buckle, gen_alt_clothing_remove_accessory_alt, gen_alt_voidsuit_eject_tank_alt, gen_hand_interaction_pick_up, gen_hand_ungated_clothing_accessory_hand, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_autolok_worn_item, gen_item_clothing_accessory_item, gen_item_voidsuit_install_item, gen_self_clothing_circuit_self, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, gen_verb_void_eject_tank_verb, gen_verb_void_toggle_helmet_verb, space_suit_patch_item
+

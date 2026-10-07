@@ -1,0 +1,11 @@
+blob | survives
+emag | nothing
+emp 1 | desc: 'They're comfy black shoes, with clever cloaking technology built in. It seems to have a small dial on the back of each shoe.' -> 'A pair of black shoes.'
+emp 1 | refresh_queued: 131071 -> 0
+emp 2 | desc: 'They're comfy black shoes, with clever cloaking technology built in. It seems to have a small dial on the back of each shoe.' -> 'A pair of black shoes.'
+explosion 1 | deleted
+explosion 2 | atom_integrity: down
+explosion 3 | atom_integrity: down
+projectile | atom_integrity: down
+thrown | atom_integrity: down
+

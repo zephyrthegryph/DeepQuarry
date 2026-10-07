@@ -1,0 +1,47 @@
+human|none menu: Interaction clear dead plant
+human|none menu: Interaction clear dead plant item
+human|none click: nothing
+robot|none menu: Interaction clear dead plant
+robot|none menu: Interaction clear dead plant item
+robot|none click: nothing
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Interaction clear dead plant
+human|/obj/item/tool/screwdriver menu: Interaction clear dead plant item
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Interaction clear dead plant
+human|/obj/item/tool/crowbar menu: Interaction clear dead plant item
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Interaction clear dead plant
+human|/obj/item/tool/wrench menu: Interaction clear dead plant item
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Interaction clear dead plant
+human|/obj/item/tool/wirecutters menu: Interaction clear dead plant item
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Interaction clear dead plant
+human|/obj/item/multitool menu: Interaction clear dead plant item
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Interaction clear dead plant
+human|/obj/item/weldingtool menu: Interaction clear dead plant item
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Interaction clear dead plant
+human|/obj/item/stack/cable_coil menu: Interaction clear dead plant item
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Interaction clear dead plant
+human|/obj/item/stack/material/steel menu: Interaction clear dead plant item
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Interaction clear dead plant
+human|/obj/item/card/id menu: Interaction clear dead plant item
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id click: nothing
+human|/obj/item/mop_deploy menu: Insert a mop
+human|/obj/item/mop_deploy menu: Interaction clear dead plant
+human|/obj/item/mop_deploy menu: Interaction clear dead plant item
+human|/obj/item/mop_deploy click: Click: Insert a mop
+human|/obj/item/soap menu: Insert a soap
+human|/obj/item/soap menu: Interaction clear dead plant
+human|/obj/item/soap menu: Interaction clear dead plant item
+human|/obj/item/soap click: Click: Insert a soap
+keys: drag_buckle, gen_hand_interaction_clear_dead_plant, gen_item_interaction_clear_dead_plant_item, pass_insert, pass_insert_2
+

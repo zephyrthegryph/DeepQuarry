@@ -1,0 +1,37 @@
+blob | survives
+emag | nothing
+emp 1 | atom_integrity: down
+emp 1 | light_color: '#ffffff' -> '#ff0000'
+emp 1 | light_on: 1 -> 0
+emp 1 | light_range: 4 -> 0
+emp 1 | periodic_pipe: null -> /datum/cadence/slow
+emp 1 | refresh_bits: 1 -> 0
+emp 1 | refresh_queued: 131071 -> 0
+emp 1 | regen_cooldown: 0 -> <set>
+emp 2 | atom_integrity: down
+emp 2 | light_color: '#ffffff' -> '#7f4c7f'
+emp 2 | periodic_pipe: null -> /datum/cadence/slow
+emp 2 | regen_cooldown: 0 -> <set>
+explosion 1 | atom_integrity: down
+explosion 1 | light_color: '#ffffff' -> '#ff0000'
+explosion 1 | light_on: 1 -> 0
+explosion 1 | light_range: 4 -> 0
+explosion 1 | periodic_pipe: null -> /datum/cadence/slow
+explosion 1 | regen_cooldown: 0 -> <set>
+explosion 2 | atom_integrity: down
+explosion 2 | light_color: '#ffffff' -> '#7f4c7f'
+explosion 2 | periodic_pipe: null -> /datum/cadence/slow
+explosion 2 | regen_cooldown: 0 -> <set>
+explosion 3 | atom_integrity: down
+explosion 3 | light_color: '#ffffff' -> '#3f72bf'
+explosion 3 | periodic_pipe: null -> /datum/cadence/slow
+explosion 3 | regen_cooldown: 0 -> <set>
+projectile | atom_integrity: down
+projectile | light_color: '#ffffff' -> '#0c91f2'
+projectile | periodic_pipe: null -> /datum/cadence/slow
+projectile | regen_cooldown: 0 -> <set>
+thrown | atom_integrity: down
+thrown | light_color: '#ffffff' -> '#0496fa'
+thrown | periodic_pipe: null -> /datum/cadence/slow
+thrown | regen_cooldown: 0 -> <set>
+
