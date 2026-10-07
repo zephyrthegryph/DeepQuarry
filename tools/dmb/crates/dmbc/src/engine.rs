@@ -63,9 +63,48 @@ pub struct EngineSnapshot {
     procedure_layouts: Arc<[EngineProcedureLayout]>,
     identity: u128,
     template_identity: u128,
+    schema: u128,
     catalog_fields: Arc<[catalog::CatalogField]>,
 }
+fn template_identity(bytes: &[u8]) -> u128 {
+    xxhash_rust::xxh3::xxh3_128(bytes)
+}
 impl EngineSnapshot {
+    /// Decode only the proven declaration modifier framing. This does not
+    /// manufacture source defaults, array shape or declared type metadata.
+    pub fn declaration_modifiers(
+        &self,
+        owner: SymbolId,
+        name: SymbolId,
+    ) -> Result<Option<u32>, EngineError> {
+        let mut result = None;
+        for member in self.opaque.iter().filter(|member| {
+            member.owner == owner && member.name == Some(name) && member.kind == MemberKind::Var
+        }) {
+            let OpaqueMetadata::Variable {
+                declaration_flags, ..
+            } = &member.metadata
+            else {
+                continue;
+            };
+            let flags = *declaration_flags;
+            if flags & !7 != 0 || !matches!(flags & 3, 0 | 1 | 3) {
+                return Err(EngineError::Invalid(
+                    "unsupported captured variable declaration flags".into(),
+                ));
+            }
+            let source = (if flags & 1 != 0 { 8 } else { 0 })
+                | (if flags & 3 == 3 { 2 } else { 0 })
+                | (flags & 4);
+            if result.is_some_and(|previous| previous != source) {
+                return Err(EngineError::Invalid(
+                    "ambiguous captured declaration modifiers".into(),
+                ));
+            }
+            result = Some(source);
+        }
+        Ok(result)
+    }
     /// `schema` pins the interpretation/compiler configuration as well as exact
     /// template bytes. No mutable output DMB is retained in semantic queries.
     pub fn from_bytes(bytes: &[u8], schema: u128) -> Result<Self, EngineError> {
@@ -223,7 +262,8 @@ impl EngineSnapshot {
             opaque: opaque.into(),
             procedure_layouts: procedure_layouts.into(),
             identity,
-            template_identity: xxhash_rust::xxh3::xxh3_128(bytes),
+            template_identity: template_identity(bytes),
+            schema,
             catalog_fields: Arc::from([]),
         })
     }
@@ -232,7 +272,7 @@ impl EngineSnapshot {
     /// modifier metadata remain opaque. This does not certify a full catalog.
     pub fn with_bootstrap_catalog(mut self) -> Result<Self, EngineError> {
         const PINNED: &[u8] = include_bytes!("../../../fixtures/native_template.bin");
-        if self.template_identity != xxhash_rust::xxh3::xxh3_128(PINNED) {
+        if self.template_identity != template_identity(PINNED) {
             return Err(EngineError::Invalid(
                 "bootstrap catalog requires exact pinned template".into(),
             ));
@@ -301,6 +341,18 @@ impl EngineSnapshot {
     }
     pub fn identity(&self) -> u128 {
         self.identity
+    }
+    pub fn template_identity(&self) -> u128 {
+        self.template_identity
+    }
+
+    /// Decoder/interpretation schema supplied with the captured template.
+    /// Catalog coverage has its own identity and is not this ABI schema.
+    pub fn interpretation_schema(&self) -> u128 {
+        self.schema
+    }
+    pub fn matches_template(&self, bytes: &[u8], schema: u128) -> bool {
+        self.schema == schema && self.template_identity == template_identity(bytes)
     }
     pub fn symbols(&self) -> &SymbolTable {
         &self.symbols

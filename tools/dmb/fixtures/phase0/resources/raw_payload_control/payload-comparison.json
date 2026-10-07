@@ -1,0 +1,83 @@
+[
+  {
+    "name": "a.dmi",
+    "kind": 3,
+    "source_length": 165,
+    "payload_length": 165,
+    "equal": true,
+    "source_sha256": "d2ca672ce0a378e3512d7ff7a1b4ecdf03ccb89f96f1539c5e9649e6f44c6975",
+    "payload_sha256": "d2ca672ce0a378e3512d7ff7a1b4ecdf03ccb89f96f1539c5e9649e6f44c6975"
+  },
+  {
+    "name": "a.png",
+    "kind": 6,
+    "source_length": 87,
+    "payload_length": 87,
+    "equal": true,
+    "source_sha256": "921d4bcd40b068a0ab0399cd26bcc9efe19037f3688721d7ae8cf7286585134a",
+    "payload_sha256": "921d4bcd40b068a0ab0399cd26bcc9efe19037f3688721d7ae8cf7286585134a"
+  },
+  {
+    "name": "a.ogg",
+    "kind": 2,
+    "source_length": 2662,
+    "payload_length": 2662,
+    "equal": true,
+    "source_sha256": "23efe5f5cff6130342a05f9ab39f37d3a57267e0377b5ff5759e9c19ddeacd26",
+    "payload_sha256": "23efe5f5cff6130342a05f9ab39f37d3a57267e0377b5ff5759e9c19ddeacd26"
+  },
+  {
+    "name": "a.ttf",
+    "kind": 14,
+    "source_length": 22108,
+    "payload_length": 22108,
+    "equal": true,
+    "source_sha256": "1456c09625c93e8461c8319e1f3c342ca7fdcad2345cc036ca7f35e9de4f3031",
+    "payload_sha256": "1456c09625c93e8461c8319e1f3c342ca7fdcad2345cc036ca7f35e9de4f3031"
+  },
+  {
+    "name": "a.txt",
+    "kind": 0,
+    "source_length": 5,
+    "payload_length": 5,
+    "equal": true,
+    "source_sha256": "b9e68e1bea3e5b19ca6b2f98b73a54b73daafaa250484902e09982e07a12e733",
+    "payload_sha256": "b9e68e1bea3e5b19ca6b2f98b73a54b73daafaa250484902e09982e07a12e733"
+  },
+  {
+    "name": "a.html",
+    "kind": 0,
+    "source_length": 14,
+    "payload_length": 14,
+    "equal": true,
+    "source_sha256": "b0693dc92f76e08bf1485b3dd9b514a2e31dfd6f39422a6b60edb722671dc98f",
+    "payload_sha256": "b0693dc92f76e08bf1485b3dd9b514a2e31dfd6f39422a6b60edb722671dc98f"
+  },
+  {
+    "name": "a.css",
+    "kind": 0,
+    "source_length": 8,
+    "payload_length": 8,
+    "equal": true,
+    "source_sha256": "a06fd750de7374983daf40016564b1fb6f2168ed2c5742ccf69912e8574803c0",
+    "payload_sha256": "a06fd750de7374983daf40016564b1fb6f2168ed2c5742ccf69912e8574803c0"
+  },
+  {
+    "name": "a.js",
+    "kind": 0,
+    "source_length": 8,
+    "payload_length": 8,
+    "equal": true,
+    "source_sha256": "903de0737ff5d035e8de2cdf4700e52a6f76b0ad9b3febec5aaf092725a664f7",
+    "payload_sha256": "903de0737ff5d035e8de2cdf4700e52a6f76b0ad9b3febec5aaf092725a664f7"
+  },
+  {
+    "name": "a.json",
+    "kind": 0,
+    "source_length": 3,
+    "payload_length": 3,
+    "equal": true,
+    "source_sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+    "payload_sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+  }
+]

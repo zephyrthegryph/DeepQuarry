@@ -403,3 +403,76 @@ mod tests {
         assert_eq!(rows[0]["schema"], SCHEMA);
     }
 }
+/// Export already captured/planned maps without performing source I/O. This
+/// supplemental schema reports authored semantics, not resolved engine values.
+pub fn write_maps_jsonl(
+    maps: &[dm_tree::maps::MapPlan],
+    writer: &mut impl Write,
+) -> Result<(), ExportError> {
+    emit(
+        writer,
+        json!({"row":"map_schema","schema":"dm-symbolic-map-analysis-v1","status":"authored_unresolved","initializer_presence":"explicit"}),
+    )?;
+    for (map_index, map) in maps.iter().enumerate() {
+        let templates=map.model.templates.iter().map(|template| {
+            let atoms=template.atoms.iter().map(|atom| {
+                let assignments=atom.assignments.iter().map(|assignment| Ok::<_,ExportError>(json!({"name":spelling(&map.symbols,assignment.name)?,"value":expression(Some(&assignment.value),&map.symbols)?}))).collect::<Result<Vec<_>,_>>()?;
+                Ok::<_,ExportError>(json!({"type":spelling(&map.symbols,atom.type_path)?,"initializer_present":atom.initializer_present,"assignments":assignments}))
+            }).collect::<Result<Vec<_>,_>>()?;
+            Ok::<_,ExportError>(json!({"key":template.key,"atoms":atoms}))
+        }).collect::<Result<Vec<_>,_>>()?;
+        let records = map
+            .model
+            .records
+            .iter()
+            .map(|record| match record {
+                dm_ir::map::MapRecord::Template(index) => json!({"kind":"template","index":index}),
+                dm_ir::map::MapRecord::Block(index) => json!({"kind":"block","index":index}),
+            })
+            .collect::<Vec<_>>();
+        emit(
+            writer,
+            json!({"row":"map_semantics","map":map_index,"identity":format!("{:032x}",map.semantic_identity),"key_width":map.model.key_width,"templates":templates,"blocks":map.model.blocks.iter().map(|block|json!({"origin":block.origin,"cells":block.cells})).collect::<Vec<_>>(),"records":records}),
+        )?;
+        emit(
+            writer,
+            json!({"row":"map_occurrence","map":map_index,"source_identity":format!("{:032x}",map.source_identity),"path":map.captured.path.to_string_lossy(),"include_occurrence":map.captured.include_occurrence,
+            "templates":map.template_origins.iter().map(|template|json!({"span":[template.span.start,template.span.end],"atoms":template.atoms.iter().map(|atom|json!({"span":[atom.span.start,atom.span.end],"assignments":atom.assignments.iter().map(|assignment|json!({"span":[assignment.span.start,assignment.span.end],"value_span":[assignment.value_span.start,assignment.value_span.end]})).collect::<Vec<_>>()})).collect::<Vec<_>>()})).collect::<Vec<_>>() }),
+        )?;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod map_export_tests {
+    use super::*;
+    #[test]
+    fn map_rows_keep_empty_initializer_and_repeated_writes() {
+        let map = dm_tree::maps::plan(dm_tree::maps::CapturedMap {
+            path: std::sync::Arc::new(std::path::PathBuf::from("probe.dmm")),
+            include_occurrence: 9,
+            source: std::sync::Arc::from("\"a\"=(/obj{},/obj{x=1;x=2})\n(1,1,1)={\"a\"}"),
+        })
+        .unwrap();
+        let mut bytes = Vec::new();
+        write_maps_jsonl(&[map], &mut bytes).unwrap();
+        let rows: Vec<Value> = String::from_utf8(bytes)
+            .unwrap()
+            .lines()
+            .map(|line| serde_json::from_str(line).unwrap())
+            .collect();
+        assert_eq!(
+            rows[1]["templates"][0]["atoms"][0]["initializer_present"],
+            true
+        );
+        assert_eq!(
+            rows[1]["templates"][0]["atoms"][1]["assignments"]
+                .as_array()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(rows[2]["include_occurrence"], 9);
+        assert!(rows[1]["identity"].as_str().unwrap().len() == 32);
+    }
+}

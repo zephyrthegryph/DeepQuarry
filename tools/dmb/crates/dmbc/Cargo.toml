@@ -19,3 +19,5 @@ byond-dmb = { path = "../.." }
 dm-ir = { path = "../dm-ir" }
 dm-codegen-byond = { path = "../dm-codegen-byond" }
 dm-link = { path = "../dm-link" }
+
+dm-resources = { path = "../dm-resources" }

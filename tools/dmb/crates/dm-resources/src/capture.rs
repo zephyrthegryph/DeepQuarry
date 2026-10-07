@@ -145,6 +145,17 @@ pub fn capture_expanded<P: CaptureProvider>(
     config: CaptureConfig<'_>,
     provider: &P,
 ) -> Result<CapturedResources, CaptureError> {
+    capture_expanded_with_literals(plan, expanded, config, &[], provider)
+}
+/// Append captured map/skin literal demands to the same source-qualified search
+/// ledger. No second FILE_DIR resolution policy is introduced.
+pub fn capture_expanded_with_literals<P: CaptureProvider>(
+    plan: &DirectivePlan,
+    expanded: &ExpandedRegions,
+    config: CaptureConfig<'_>,
+    extra_literals: &[LiteralRequest],
+    provider: &P,
+) -> Result<CapturedResources, CaptureError> {
     if !plan.diagnostics.is_empty()
         || !expanded.diagnostics.is_empty()
         || !expanded.lexical_diagnostics.is_empty()
@@ -153,7 +164,8 @@ pub fn capture_expanded<P: CaptureProvider>(
             "resource capture requires successful directive/expansion output".into(),
         ));
     }
-    let literals = discover_literals(&expanded.text)?;
+    let mut literals = discover_literals(&expanded.text)?;
+    literals.extend_from_slice(extra_literals);
     let root = normalize(&plan.project_dir);
     let directories = plan
         .file_dirs
@@ -557,6 +569,44 @@ mod tests {
         CapturePolicy {
             certified_raw_extensions: BTreeSet::from(["txt".into()]),
         }
+    }
+    #[test]
+    fn extra_map_literals_share_the_qualified_search_and_dedup_ledger() {
+        let provider = memory(&[
+            ("game/late/map.txt", b"map"),
+            ("game/source.txt", b"source"),
+        ]);
+        let raw = policy();
+        let extra = [
+            LiteralRequest {
+                path: "map.txt".into(),
+                span: Span::new(8, 17),
+            },
+            LiteralRequest {
+                path: "source.txt".into(),
+                span: Span::new(18, 30),
+            },
+        ];
+        let output = capture_expanded_with_literals(
+            &plan(),
+            &expanded("/proc/p()\n    return 'source.txt'\n"),
+            CaptureConfig {
+                policy: &raw,
+                encoded: &[],
+                additional: &[],
+            },
+            &extra,
+            &provider,
+        )
+        .unwrap();
+        assert_eq!(output.lookups.len(), 2);
+        assert_eq!(output.resources.inputs.len(), 2);
+        assert_eq!(output.resources.inputs[0].archive_name, "source.txt");
+        assert_eq!(
+            output.resources.inputs[1].disk_path,
+            PathBuf::from("game/late/map.txt")
+        );
+        output.require_complete().unwrap();
     }
     #[test]
     fn grammar_discovers_only_resource_tokens_and_parsed_interpolation() {

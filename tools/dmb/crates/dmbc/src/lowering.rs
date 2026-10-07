@@ -58,11 +58,14 @@ impl Default for LoweringConfig {
 }
 pub struct LoweredUnit {
     pub identity: UnitIdentity,
+    /// Exact immutable tree selection, independent of encounter order.
+    pub effective: bool,
     pub origin: BodyOccurrence,
     pub code: ResolverProc,
     pub metadata: Arc<ProcedureMetadata>,
     pub abi: Option<Arc<PreparedAbi>>,
     pub debug_origins: DebugOrigins,
+    pub source_helpers: Vec<crate::argument_sources::LoweredHelper>,
 }
 #[derive(Clone, Debug)]
 pub struct LoweringDiagnostic {
@@ -258,13 +261,31 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
             })
             .collect::<Vec<_>>()
     })?;
+    let source_helpers = match prepared.abi.as_ref() {
+        Some(abi) => crate::argument_sources::lower_helpers(
+            crate::argument_sources::HelperInputs {
+                frontend,
+                parsed: &parsed,
+                metadata,
+                owner: identity,
+                inputs: &inputs,
+                helpers: &abi.source_helpers,
+                symbols,
+            },
+            host,
+        )
+        .map_err(unsupported)?,
+        None => Vec::new(),
+    };
     Ok(LoweredUnit {
         identity,
+        effective: tree.resolve(node.owner, node.name, node.kind) == Some(body.member),
         origin: body.clone(),
         code,
         metadata: Arc::clone(metadata),
         abi: prepared.abi,
         debug_origins: debug.finish(),
+        source_helpers,
     })
 }
 /// A deterministic identity index for subsequent linking; duplicate structural
@@ -280,9 +301,18 @@ impl LoweringBatch {
                     unit.identity
                 )
             })?;
-            if !abi.source_helpers.is_empty() {
+            if abi.source_helpers.len() != unit.source_helpers.len()
+                || abi
+                    .source_helpers
+                    .iter()
+                    .zip(unit.source_helpers.iter())
+                    .any(|(expected, actual)| {
+                        actual.owner != unit.identity
+                            || usize::try_from(actual.argument).ok() != Some(expected.argument)
+                    })
+            {
                 return Err(format!(
-                    "argument-source helper linking is not implemented for {:?}",
+                    "argument-source helper lowering is incomplete for {:?}",
                     unit.identity
                 ));
             }
@@ -487,5 +517,17 @@ mod tests {
         assert_eq!(abi.layout.category, Category::Null);
         assert_eq!(abi.layout.flags, 0x24);
         assert_eq!(batch.units[0].code.procedure.argument_type_flags, [136]);
+        let helper_frontend =
+            self::frontend("/proc/source(value in list(value))\n    return value\n");
+        let helpers = lower_frontend(&helper_frontend, &Host, &policy, LoweringConfig::default());
+        assert!(helpers.diagnostics.is_empty(), "{:?}", helpers.diagnostics);
+        helpers.require_production_abi().unwrap();
+        assert_eq!(helpers.units[0].source_helpers.len(), 1);
+        let helper = &helpers.units[0].source_helpers[0];
+        assert_eq!(helper.owner, helpers.units[0].identity);
+        assert_eq!(helper.argument, 0);
+        assert!(helper.code.procedure.argument_names.is_empty());
+        assert_eq!(helper.debug_origins.entries[0].line, 1);
+        assert!(helper.code.procedure.code.items.iter().any(|item| matches!(item,dm_codegen_byond::Item::Instruction(instruction) if instruction.operands.iter().any(|word|matches!(word,dm_codegen_byond::Word::Variable(dm_codegen_byond::VariableWord::Arg(0)))))));
     }
 }

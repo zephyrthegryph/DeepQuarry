@@ -299,7 +299,7 @@ pub fn compile_simple_proc_with_bindings(
     body: &[Item],
     bindings: &LowerBindings,
 ) -> Result<SimpleProc, Vec<LowerError>> {
-    compile_with_lookup(body, bindings, None, None)
+    compile_with_lookup(body, None, None, bindings, None, None)
 }
 
 pub fn compile_simple_proc_with_resolver<R: dm_ir::Resolver>(
@@ -323,6 +323,63 @@ pub fn compile_simple_proc_with_resolver_and_debug<R: dm_ir::Resolver>(
     resolver: &R,
     debug: Option<&dyn DebugSourceProvider>,
 ) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
+    compile_resolver_body(body, None, inputs, symbols, resolver, debug)
+}
+
+/// Lower already parsed statements through the same opcode/operand emitter.
+/// No synthetic procedure text or alternate initializer opcode implementation.
+pub fn compile_typed_statements_with_resolver<R: dm_ir::Resolver>(
+    statements: &[Statement],
+    inputs: &crate::lower_resolver::ProcedureInputs,
+    symbols: &dm_ir::SymbolTable,
+    resolver: &R,
+    debug: Option<&dyn DebugSourceProvider>,
+) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
+    compile_resolver_body(&[], Some(statements), inputs, symbols, resolver, debug)
+}
+
+/// One VM invocation, with one resolver and code/label/debug accumulator.
+pub fn compile_typed_scopes_with_resolver<R: dm_ir::Resolver>(
+    scopes: &[crate::typed_scopes::TypedScope<'_>],
+    symbols: &dm_ir::SymbolTable,
+    resolver: &R,
+    debug: Option<&dyn DebugSourceProvider>,
+) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
+    let prepared = crate::typed_scopes::prepare(scopes)?;
+    let bindings = LowerBindings::default();
+    let lookup = crate::lower_resolver::ProjectResolver {
+        resolver,
+        symbols,
+        slots: std::cell::RefCell::new(Default::default()),
+        resources: std::cell::RefCell::new(Default::default()),
+        instances: std::cell::RefCell::new(Default::default()),
+        runtime_types: std::cell::RefCell::new(Default::default()),
+        resource_search_context: prepared.resource_search_context,
+    };
+    let procedure = compile_with_lookup(
+        &[],
+        None,
+        Some(&prepared.scopes),
+        &bindings,
+        Some(&lookup),
+        debug,
+    )?;
+    Ok(crate::lower_resolver::ResolverProc {
+        procedure,
+        slots: lookup.slots.into_inner(),
+        resources: lookup.resources.into_inner(),
+        instances: lookup.instances.into_inner(),
+    })
+}
+
+fn compile_resolver_body<R: dm_ir::Resolver>(
+    body: &[Item],
+    statements: Option<&[Statement]>,
+    inputs: &crate::lower_resolver::ProcedureInputs,
+    symbols: &dm_ir::SymbolTable,
+    resolver: &R,
+    debug: Option<&dyn DebugSourceProvider>,
+) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
     let bindings = inputs.lexical_bindings();
     let lookup = crate::lower_resolver::ProjectResolver {
         resolver,
@@ -333,7 +390,7 @@ pub fn compile_simple_proc_with_resolver_and_debug<R: dm_ir::Resolver>(
         runtime_types: std::cell::RefCell::new(Default::default()),
         resource_search_context: inputs.resource_search_context,
     };
-    let procedure = compile_with_lookup(body, &bindings, Some(&lookup), debug)?;
+    let procedure = compile_with_lookup(body, statements, None, &bindings, Some(&lookup), debug)?;
     Ok(crate::lower_resolver::ResolverProc {
         procedure,
         slots: lookup.slots.into_inner(),
@@ -344,6 +401,8 @@ pub fn compile_simple_proc_with_resolver_and_debug<R: dm_ir::Resolver>(
 
 fn compile_with_lookup(
     body: &[Item],
+    statements: Option<&[Statement]>,
+    scopes: Option<&[crate::typed_scopes::PreparedScope<'_>]>,
     bindings: &LowerBindings,
     lookup: Option<&crate::lower_resolver::ProjectResolver<'_>>,
     debug: Option<&dyn DebugSourceProvider>,
@@ -382,11 +441,35 @@ fn compile_with_lookup(
         );
     }
     compiler.parameter_defaults().map_err(|error| vec![error])?;
-    let typed = parse_body_items(body);
-    let lowered = if typed.diagnostics.is_empty() && typed_statements_supported(&typed.statements) {
-        compiler.typed_statements(&typed.statements)
+    let lowered = if let Some(scopes) = scopes {
+        let mut result = Ok(());
+        for scope in scopes {
+            if !typed_statements_supported(scope.statements) {
+                result = Err(error("initializer scopes", "unsupported typed statement"));
+                break;
+            }
+            compiler.bindings = &scope.bindings;
+            result = compiler.typed_statements(scope.statements);
+            if result.is_err() {
+                break;
+            }
+        }
+        result
+    } else if let Some(statements) = statements {
+        if !typed_statements_supported(statements) {
+            return Err(vec![error(
+                "typed statements",
+                "unsupported typed statement",
+            )]);
+        }
+        compiler.typed_statements(statements)
     } else {
-        compiler.statements(body)
+        let typed = parse_body_items(body);
+        if typed.diagnostics.is_empty() && typed_statements_supported(&typed.statements) {
+            compiler.typed_statements(&typed.statements)
+        } else {
+            compiler.statements(body)
+        }
     };
     if let Some(error) = compiler.resolver_failure.take() {
         return Err(vec![error]);

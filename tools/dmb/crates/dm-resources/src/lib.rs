@@ -268,3 +268,5 @@ mod tests {
         }
     }
 }
+
+pub mod encoding;

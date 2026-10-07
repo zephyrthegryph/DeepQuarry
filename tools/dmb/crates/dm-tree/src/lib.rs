@@ -8,6 +8,8 @@ pub mod constant_resolution;
 pub mod constants;
 pub mod frontend;
 pub mod initializers;
+pub mod maps;
+pub mod non_text;
 mod normalize;
 mod procedure;
 mod resolver;

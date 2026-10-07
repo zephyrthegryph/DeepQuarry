@@ -207,6 +207,9 @@ pub fn names(path: &str) -> &'static [&'static str] {
             "byond_build",
             "params",
             "map_format",
+            // Compile-time header field observed in the pinned
+            // declaration_metadata fixture; its default/type remain opaque.
+            "cache_lifespan",
             "icon_size",
             "mob",
             "turf",

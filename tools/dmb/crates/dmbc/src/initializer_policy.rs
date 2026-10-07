@@ -1,0 +1,488 @@
+//! Captured initializer classification. Evaluation failure is never converted
+//! into a runtime initializer; the evaluator explicitly distinguishes runtime.
+use dm_ir::{
+    ExpressionToken, InitializerTarget, InitializerValue, InitializerWrite, SemanticValue,
+    SymbolId, SymbolTable, SymbolicExpression,
+};
+use std::sync::Arc;
+
+pub enum Evaluation {
+    Scalar(SemanticValue),
+    Runtime,
+}
+pub trait CapturedInitializerEvaluator {
+    fn evaluate(&self, owner: SymbolId, value: &SymbolicExpression) -> Result<Evaluation, String>;
+    /// Source modifiers or positively captured inherited declaration facts.
+    /// None remains unknown, rather than a fabricated zero modifier mask.
+    fn declaration_modifiers(&self, write: &InitializerWrite) -> Result<Option<u32>, String> {
+        Ok(write.declaration_flags)
+    }
+}
+/// Borrow the same captured engine used by the frontend and cold writer. Only
+/// exact positive declaration records supplement unknown inherited modifiers.
+pub struct EngineCapturedEvaluator<'a> {
+    pub engine: &'a crate::engine::EngineSnapshot,
+    pub evaluator: &'a dyn CapturedInitializerEvaluator,
+}
+impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
+    fn evaluate(&self, owner: SymbolId, value: &SymbolicExpression) -> Result<Evaluation, String> {
+        self.evaluator.evaluate(owner, value)
+    }
+    fn declaration_modifiers(&self, write: &InitializerWrite) -> Result<Option<u32>, String> {
+        if let Some(flags) = self.evaluator.declaration_modifiers(write)? {
+            return Ok(Some(flags));
+        }
+        let (owner, name) = match write.target {
+            InitializerTarget::Shared { owner, name, .. } => (owner, name),
+            InitializerTarget::Instance {
+                declaring_owner,
+                name,
+                ..
+            } => (declaring_owner, name),
+        };
+        self.engine
+            .declaration_modifiers(owner, name)
+            .map_err(|error| format!("captured engine declaration modifiers: {error:?}"))
+    }
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DefaultValue {
+    Scalar(SemanticValue),
+    ConstructorSequence(u32),
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Phase {
+    LiteralAllocation,
+    Runtime,
+}
+#[derive(Clone, Debug)]
+pub struct ClassifiedWrite {
+    pub source_ordinal: usize,
+    pub write: InitializerWrite,
+    pub default: DefaultValue,
+    pub phase: Option<Phase>,
+    /// Typed runtime value; dimensions come from captured constant facts.
+    pub runtime_value: Option<RuntimeValue>,
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RuntimeValue {
+    Expression(dm_syntax::Expr),
+    SizedArray(Arc<[u16]>),
+}
+#[derive(Clone, Debug)]
+pub struct RuntimeGroup {
+    /// None is the global/shared VM initializer. Class receivers are explicit.
+    pub receiver: Option<SymbolId>,
+    pub writes: Vec<ClassifiedWrite>,
+}
+#[derive(Debug)]
+pub struct ClassifiedInitializers {
+    pub writes: Vec<ClassifiedWrite>,
+    pub groups: Vec<RuntimeGroup>,
+}
+#[cfg(test)]
+fn expression(text: &str, symbols: &mut SymbolTable) -> Result<SymbolicExpression, String> {
+    let lexed = dm_syntax::lex(text);
+    let tokens = lexed
+        .tokens
+        .into_iter()
+        .filter(|token| {
+            !matches!(
+                token.kind,
+                dm_syntax::TokenKind::Whitespace
+                    | dm_syntax::TokenKind::Newline
+                    | dm_syntax::TokenKind::Comment
+            )
+        })
+        .map(|token| {
+            Ok(ExpressionToken {
+                kind: token.kind,
+                text: symbols
+                    .intern(&token.text)
+                    .map_err(|error| format!("{error:?}"))?,
+                relative_span: token.span,
+            })
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    Ok(SymbolicExpression {
+        tokens: tokens.into(),
+    })
+}
+fn scalar_literal(
+    expr: &dm_syntax::Expr,
+    owner: SymbolId,
+    symbols: &SymbolTable,
+    evaluator: &dyn CapturedInitializerEvaluator,
+) -> Result<bool, String> {
+    use dm_syntax::ExprKind;
+    Ok(match &expr.kind {
+        ExprKind::TypePath(_) => true,
+        ExprKind::Literal(raw) => {
+            // Interpolated text can execute runtime expressions; spelling as a
+            // literal is insufficient to certify an allocation-phase value.
+            let id = SymbolId::of(raw);
+            if symbols.text(id) != Some(raw.as_str()) {
+                return Err("initializer literal spelling missing".into());
+            }
+            let value = SymbolicExpression {
+                tokens: Arc::from([ExpressionToken {
+                    kind: dm_syntax::lex(raw)
+                        .tokens
+                        .first()
+                        .ok_or("empty literal")?
+                        .kind,
+                    text: id,
+                    relative_span: dm_syntax::Span {
+                        start: 0,
+                        end: raw.len(),
+                    },
+                }]),
+            };
+            matches!(evaluator.evaluate(owner, &value)?, Evaluation::Scalar(_))
+        }
+        ExprKind::Ident(name) => {
+            let id = SymbolId::of(name);
+            if symbols.text(id) != Some(name.as_str()) {
+                return Err(format!("initializer symbol missing: {name}"));
+            }
+            let value = SymbolicExpression {
+                tokens: Arc::from([ExpressionToken {
+                    kind: dm_syntax::TokenKind::Ident,
+                    text: id,
+                    relative_span: expr.span,
+                }]),
+            };
+            matches!(evaluator.evaluate(owner, &value)?, Evaluation::Scalar(_))
+        }
+        ExprKind::Group(value) => scalar_literal(value, owner, symbols, evaluator)?,
+        ExprKind::Unary { op, value } if matches!(op.as_str(), "!" | "+" | "-" | "~") => {
+            scalar_literal(value, owner, symbols, evaluator)?
+        }
+        ExprKind::Binary { op, lhs, rhs } if op != "=" => {
+            scalar_literal(lhs, owner, symbols, evaluator)?
+                && scalar_literal(rhs, owner, symbols, evaluator)?
+        }
+        ExprKind::Conditional {
+            condition,
+            then_value,
+            else_value,
+        } => {
+            scalar_literal(condition, owner, symbols, evaluator)?
+                && scalar_literal(then_value, owner, symbols, evaluator)?
+                && scalar_literal(else_value, owner, symbols, evaluator)?
+        }
+        ExprKind::Call { callee, args } if matches!(&callee.kind, ExprKind::Ident(name) if name == "list") =>
+        {
+            let mut literal = true;
+            for argument in args {
+                let value = if let ExprKind::Binary { op, lhs, rhs } = &argument.kind {
+                    if op == "=" {
+                        (matches!(lhs.kind, ExprKind::Ident(_))
+                            || scalar_literal(lhs, owner, symbols, evaluator)?)
+                            && scalar_literal(rhs, owner, symbols, evaluator)?
+                    } else {
+                        scalar_literal(argument, owner, symbols, evaluator)?
+                    }
+                } else {
+                    scalar_literal(argument, owner, symbols, evaluator)?
+                };
+                literal &= value;
+            }
+            literal
+        }
+        ExprKind::Call { callee, args } if matches!(&callee.kind, ExprKind::Ident(name) if name == "newlist") => {
+            args.is_empty()
+        }
+        ExprKind::Call { callee, args } if matches!(&callee.kind, ExprKind::Ident(name) if name == "nameof") => {
+            args.len() == 1 && dm_codegen_byond::nameof_reference(&args[0]).is_some()
+        }
+        _ => false,
+    })
+}
+
+pub fn classify(
+    writes: &[InitializerWrite],
+    symbols: &SymbolTable,
+    evaluator: &dyn CapturedInitializerEvaluator,
+) -> Result<ClassifiedInitializers, String> {
+    let mut classified = Vec::with_capacity(writes.len());
+    let mut global_constructors = 0u32;
+    for (ordinal, original) in writes.iter().enumerate() {
+        let flags = evaluator
+            .declaration_modifiers(original)?
+            .ok_or("opaque initializer declaration modifiers")?;
+        if original
+            .declaration_flags
+            .is_some_and(|source| source != flags)
+        {
+            return Err("captured initializer modifiers disagree with source facts".into());
+        }
+        if flags & !15 != 0 {
+            return Err("unknown initializer modifiers".into());
+        }
+        let write = original.clone();
+        if let Some(array) = &original.declared_array {
+            let unsized_only = array.dimensions.len() == 1 && array.dimensions[0].is_none();
+            if !unsized_only {
+                if !matches!(original.value, InitializerValue::ArrayAllocation(_)) {
+                    return Err("explicit sized array initializer is unsupported".into());
+                }
+                let mut dimensions = Vec::with_capacity(array.dimensions.len());
+                for dimension in array.dimensions.iter() {
+                    let dimension = dimension.as_ref().ok_or("mixed unsized array dimensions")?;
+                    let Evaluation::Scalar(SemanticValue::NumberBits(bits)) =
+                        evaluator.evaluate(write.lexical_owner, dimension)?
+                    else {
+                        return Err("array dimension must be a constant integer".into());
+                    };
+                    let size = f32::from_bits(bits);
+                    if !(0.0..=65535.0).contains(&size) || size.fract() != 0.0 {
+                        return Err("invalid array dimension".into());
+                    }
+                    dimensions.push(size as u16);
+                }
+                if dimensions.is_empty() {
+                    return Err("array has no dimensions".into());
+                }
+                if flags & 2 != 0 {
+                    return Err("const array allocation is unsupported".into());
+                }
+                let default = if matches!(write.target,InitializerTarget::Shared{owner,..} if owner == SymbolId::of("/"))
+                {
+                    global_constructors = global_constructors
+                        .checked_add(1)
+                        .ok_or("constructor sequence overflow")?;
+                    DefaultValue::ConstructorSequence(global_constructors)
+                } else {
+                    DefaultValue::Scalar(SemanticValue::Null)
+                };
+                classified.push(ClassifiedWrite {
+                    source_ordinal: ordinal,
+                    write,
+                    default,
+                    phase: Some(Phase::LiteralAllocation),
+                    runtime_value: Some(RuntimeValue::SizedArray(dimensions.into())),
+                });
+                continue;
+            }
+        }
+        let mut parsed_runtime = None;
+        let (default, phase) = match &write.value {
+            InitializerValue::NoAuthoredValue => (DefaultValue::Scalar(SemanticValue::Null), None),
+            InitializerValue::ArrayAllocation(_) => {
+                return Err("array allocation lacks authored shape".into())
+            }
+            InitializerValue::Expression(value) => {
+                match evaluator.evaluate(write.lexical_owner, value)? {
+                    Evaluation::Scalar(value) if !matches!(value, SemanticValue::List(_)) => {
+                        (DefaultValue::Scalar(value), None)
+                    }
+                    evaluation => {
+                        if flags & 2 != 0 {
+                            return Err("const initializer is not scalar".into());
+                        }
+                        let text = value
+                            .source_text(symbols)
+                            .ok_or("initializer spelling missing")?;
+                        let parsed = dm_syntax::parse_expression(&text);
+                        if !parsed.diagnostics.is_empty() {
+                            return Err("invalid initializer expression".into());
+                        }
+                        let expr = parsed
+                            .expr
+                            .as_ref()
+                            .ok_or("missing initializer expression")?;
+                        parsed_runtime = Some(expr.clone());
+                        let literal =
+                            matches!(evaluation, Evaluation::Scalar(SemanticValue::List(_)))
+                                || scalar_literal(expr, write.lexical_owner, symbols, evaluator)?;
+                        let constructor = text.trim_start().starts_with("new ");
+                        let default = if constructor
+                            && matches!(write.target,InitializerTarget::Shared{owner,..} if owner == SymbolId::of("/"))
+                        {
+                            global_constructors = global_constructors
+                                .checked_add(1)
+                                .ok_or("constructor sequence overflow")?;
+                            DefaultValue::ConstructorSequence(global_constructors)
+                        } else {
+                            DefaultValue::Scalar(SemanticValue::Null)
+                        };
+                        (
+                            default,
+                            Some(if literal {
+                                Phase::LiteralAllocation
+                            } else {
+                                Phase::Runtime
+                            }),
+                        )
+                    }
+                }
+            }
+        };
+        let runtime_value = if phase.is_some() {
+            Some(RuntimeValue::Expression(
+                parsed_runtime.ok_or("runtime expression missing")?,
+            ))
+        } else {
+            None
+        };
+        classified.push(ClassifiedWrite {
+            source_ordinal: ordinal,
+            write,
+            default,
+            phase,
+            runtime_value,
+        });
+    }
+    let mut groups: Vec<RuntimeGroup> = Vec::new();
+    for write in classified.iter().filter(|write| write.phase.is_some()) {
+        let receiver = match write.write.target {
+            InitializerTarget::Shared { .. } => None,
+            InitializerTarget::Instance { receiver_owner, .. } => Some(receiver_owner),
+        };
+        let index = match groups.iter().position(|group| group.receiver == receiver) {
+            Some(index) => index,
+            None => {
+                groups.push(RuntimeGroup {
+                    receiver,
+                    writes: Vec::new(),
+                });
+                groups.len() - 1
+            }
+        };
+        groups[index].writes.push(write.clone());
+    }
+    for group in &mut groups {
+        if group.receiver.is_none() {
+            // Stable partition: literal lists/sized arrays precede runtime calls;
+            // each phase retains source order. Instance writes are never sorted.
+            group
+                .writes
+                .sort_by_key(|write| write.phase == Some(Phase::Runtime));
+        }
+    }
+    Ok(ClassifiedInitializers {
+        writes: classified,
+        groups,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    struct Evaluator;
+    impl CapturedInitializerEvaluator for Evaluator {
+        fn evaluate(&self, _: SymbolId, value: &SymbolicExpression) -> Result<Evaluation, String> {
+            if value.tokens.len() == 1 && value.tokens[0].text == SymbolId::of("2") {
+                Ok(Evaluation::Scalar(SemanticValue::NumberBits(
+                    2f32.to_bits(),
+                )))
+            } else {
+                Ok(Evaluation::Runtime)
+            }
+        }
+    }
+    fn write(owner: SymbolId, name: SymbolId, value: InitializerValue) -> InitializerWrite {
+        InitializerWrite {
+            target: InitializerTarget::Shared {
+                slot: SymbolId::of("slot"),
+                owner,
+                name,
+            },
+            lexical_owner: owner,
+            value,
+            declared_array: None,
+            declaration_flags: Some(8),
+        }
+    }
+    #[test]
+    fn global_literal_phase_is_stable_and_instances_keep_encounter_order() {
+        let mut symbols = SymbolTable::default();
+        let root = symbols.intern("/").unwrap();
+        let name = symbols.intern("x").unwrap();
+        let runtime = write(
+            root,
+            name,
+            InitializerValue::Expression(expression("run()", &mut symbols).unwrap()),
+        );
+        let literal = write(
+            root,
+            name,
+            InitializerValue::Expression(expression("list(2)", &mut symbols).unwrap()),
+        );
+        let result = classify(
+            &[runtime.clone(), literal.clone(), runtime],
+            &mut symbols,
+            &Evaluator,
+        )
+        .unwrap();
+        assert_eq!(
+            result.groups[0]
+                .writes
+                .iter()
+                .map(|write| write.source_ordinal)
+                .collect::<Vec<_>>(),
+            [1, 0, 2]
+        );
+        let owner = symbols.intern("/datum/x").unwrap();
+        let instance = |mut write: InitializerWrite| {
+            write.target = InitializerTarget::Instance {
+                declaring_owner: owner,
+                receiver_owner: owner,
+                name,
+            };
+            write.lexical_owner = owner;
+            write.declaration_flags = Some(0);
+            write
+        };
+        let result = classify(
+            &[instance(result.writes[0].write.clone()), instance(literal)],
+            &mut symbols,
+            &Evaluator,
+        )
+        .unwrap();
+        assert_eq!(
+            result.groups[0]
+                .writes
+                .iter()
+                .map(|write| write.source_ordinal)
+                .collect::<Vec<_>>(),
+            [0, 1]
+        );
+    }
+    #[test]
+    fn sized_array_uses_captured_integer_dimensions_and_const_runtime_rejects() {
+        let mut symbols = SymbolTable::default();
+        let root = symbols.intern("/").unwrap();
+        let name = symbols.intern("x").unwrap();
+        let array = Arc::new(dm_ir::ArrayDeclaration {
+            dimensions: Arc::from([Some(expression("2", &mut symbols).unwrap())]),
+            element_type: None,
+        });
+        let mut item = write(
+            root,
+            name,
+            InitializerValue::ArrayAllocation(Arc::clone(&array)),
+        );
+        item.declared_array = Some(array);
+        let result = classify(&[item], &mut symbols, &Evaluator).unwrap();
+        assert_eq!(result.writes[0].phase, Some(Phase::LiteralAllocation));
+        assert_eq!(
+            result.writes[0].default,
+            DefaultValue::ConstructorSequence(1)
+        );
+        assert_eq!(
+            result.writes[0].runtime_value,
+            Some(RuntimeValue::SizedArray(Arc::from([2u16])))
+        );
+        let mut item = write(
+            root,
+            name,
+            InitializerValue::Expression(expression("run()", &mut symbols).unwrap()),
+        );
+        item.declaration_flags = Some(2);
+        assert!(classify(&[item], &mut symbols, &Evaluator)
+            .unwrap_err()
+            .contains("const"));
+    }
+}

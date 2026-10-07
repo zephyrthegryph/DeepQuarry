@@ -14,3 +14,20 @@ pub mod lowering;
 pub mod procedure_policy;
 pub mod symbolic;
 pub mod composition;
+pub mod class_projection;
+pub mod class_initialization;
+pub mod class_inventory;
+pub mod mob_writer;
+pub mod argument_sources;
+pub mod cold;
+pub mod world_projection;
+pub mod world_writer;
+pub mod initializer_policy;
+pub mod initializer_lowering;
+
+pub mod map_projection;
+
+pub mod assets;
+pub mod map_initializers;
+
+pub mod map_output;

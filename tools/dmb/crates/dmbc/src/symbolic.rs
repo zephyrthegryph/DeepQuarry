@@ -15,12 +15,29 @@ pub struct FrozenUnit {
     pub lowered: LoweredUnit,
     pub frozen: FrozenProc,
 }
+pub struct FrozenHelper {
+    pub owner: UnitIdentity,
+    pub argument: u32,
+    pub frozen: FrozenProc,
+    pub debug_origins: crate::debug_sources::DebugOrigins,
+    pub local_names: Vec<String>,
+}
 pub struct FrozenBatch {
     pub units: Vec<FrozenUnit>,
     pub tables: LinkTables,
+    pub helpers: Vec<FrozenHelper>,
+    pub initializers: Vec<FrozenInitializer>,
+}
+pub struct FrozenInitializer {
+    pub identity: dm_link::InitializerIdentity,
+    pub write_ordinals: Vec<usize>,
+    pub frozen: FrozenProc,
+    pub debug_origins: crate::debug_sources::DebugOrigins,
+    pub local_names: Vec<String>,
 }
 #[derive(Debug)]
 pub enum IntegrationError {
+    InvalidInitializer(String),
     LoweringFailed(usize),
     MissingSpelling(SymbolId),
     DuplicateUnit(UnitIdentity),
@@ -55,7 +72,18 @@ pub fn freeze_and_link_tables(
     batch: LoweringBatch,
     symbols: &SymbolTable,
     external: &ReferenceBindings,
+    inventory: LinkInventory,
+) -> Result<FrozenBatch, IntegrationError> {
+    freeze_program_tables(batch, symbols, external, inventory, Vec::new())
+}
+/// Ordinary procedures, helper expressions and initializers use the same
+/// binder and encoder before one immutable table assignment is published.
+pub fn freeze_program_tables(
+    batch: LoweringBatch,
+    symbols: &SymbolTable,
+    external: &ReferenceBindings,
     mut inventory: LinkInventory,
+    initialization: Vec<crate::initializer_lowering::LoweredInitializerUnit>,
 ) -> Result<FrozenBatch, IntegrationError> {
     if !batch.diagnostics.is_empty() {
         return Err(IntegrationError::LoweringFailed(batch.diagnostics.len()));
@@ -64,8 +92,12 @@ pub fn freeze_and_link_tables(
         .identity_index()
         .map_err(IntegrationError::DuplicateUnit)?;
     let mut units = Vec::with_capacity(batch.units.len());
+    let mut helpers = Vec::new();
     let mut source_procs = BTreeMap::new();
     for unit in &batch.units {
+        if !unit.effective {
+            continue;
+        }
         let owner = symbols
             .text(unit.identity.owner)
             .ok_or(IntegrationError::MissingSpelling(unit.identity.owner))?;
@@ -83,98 +115,24 @@ pub fn freeze_and_link_tables(
             name
         );
         let reference = unit_reference(unit.identity);
-        source_procs
-            .entry(Symbol::new(Table::Proc, path))
-            .and_modify(|old: &mut (u32, SymRef)| {
-                if old.0 < unit.identity.occurrence {
-                    *old = (unit.identity.occurrence, reference);
-                }
-            })
-            .or_insert((unit.identity.occurrence, reference));
+        if source_procs
+            .insert(
+                Symbol::new(Table::Proc, path),
+                (unit.identity.occurrence, reference),
+            )
+            .is_some()
+        {
+            return Err(IntegrationError::DuplicateUnit(unit.identity));
+        }
     }
     for lowered in batch.units {
-        let mut bindings = BTreeMap::new();
-        for spelling in &lowered.code.procedure.strings {
-            let bytes = lowered
-                .code
-                .procedure
-                .format_templates
-                .get(spelling)
-                .map(|bytes| bytes.as_slice())
-                .unwrap_or(spelling.as_bytes());
-            let id = SymbolId::of_bytes(bytes);
-            insert(
-                &mut bindings,
-                Symbol::new(Table::String, spelling),
-                SymRef::String(id),
-            )?;
-            inventory.spellings.push((id, Arc::from(bytes)));
-            inventory.entries.push(Entry {
-                key: Key::String(id),
-                content: Arc::from(bytes),
-            });
-        }
-        for (symbol, slot) in &lowered.code.slots {
-            insert(
-                &mut bindings,
-                symbol.clone(),
-                SymRef::VariableSlot(slot.symbol),
-            )?;
-            inventory.slots.push(SlotAlias {
-                symbol: slot.symbol,
-                owner: slot.owner,
-                name: slot.name,
-            });
-            // Slot payload/type/default is not derivable from presence. The
-            // caller supplies its actual entry; only identity is recorded here.
-        }
-        for (path, instance) in &lowered.code.instances {
-            insert(
-                &mut bindings,
-                Symbol::new(Table::Instance, path),
-                SymRef::Instance(instance.alias),
-            )?;
-            // Runtime type is known; the captured modifier artifact is not
-            // inferred here and must exist in the caller's inventory.
-        }
-        for (path, content) in &lowered.code.resources {
-            insert(
-                &mut bindings,
-                Symbol::new(Table::Resource, path),
-                SymRef::Resource(*content),
-            )?;
-        }
-        insert(
-            &mut bindings,
-            Symbol::new(
-                Table::Variable,
-                dm_codegen_byond::BUILTIN_GLOBAL_VARS_SYMBOL,
-            ),
-            SymRef::BuiltinGlobalVars,
+        let frozen = freeze_artifact(
+            &lowered.code,
+            lowered.identity,
+            &source_procs,
+            external,
+            &mut inventory,
         )?;
-        let frozen = freeze_proc(&lowered.code.procedure.code, |symbol| {
-            let local = bindings.get(symbol).copied();
-            let source = source_procs.get(symbol).map(|(_, reference)| *reference);
-            let captured = external.references.get(symbol).copied();
-            let selected = local
-                .or(source)
-                .or(captured)
-                .ok_or_else(|| format!("uncaptured semantic reference {symbol:?}"))?;
-            if [local, source, captured]
-                .into_iter()
-                .flatten()
-                .any(|reference| reference != selected)
-            {
-                return Err(format!(
-                    "conflicting captured semantic reference {symbol:?}"
-                ));
-            }
-            Ok(selected)
-        })
-        .map_err(|error| IntegrationError::Freeze {
-            unit: lowered.identity,
-            message: error.to_string(),
-        })?;
         for id in [lowered.identity.owner, lowered.identity.name] {
             inventory.spellings.push((
                 id,
@@ -186,22 +144,118 @@ pub fn freeze_and_link_tables(
                 ),
             ));
         }
-        for origin in &lowered.debug_origins.entries {
-            let bytes: Arc<[u8]> = Arc::from(origin.semantic_path.as_bytes());
-            let symbol = SymbolId::of(&origin.semantic_path);
-            inventory.spellings.push((symbol, bytes.clone()));
-            inventory.entries.push(Entry {
-                key: Key::String(symbol),
-                content: bytes,
-            });
-        }
+        append_debug_inventory(&lowered.debug_origins, &mut inventory);
         // Exact frozen code content is known. Remaining proc metadata belongs
         // to explicit emitter policy, separately retained in LoweredUnit.
         inventory.entries.push(Entry {
             key: unit_key(lowered.identity),
             content: procedure_content(&lowered, &frozen.code().canonical_bytes()),
         });
+        for helper in &lowered.source_helpers {
+            if helper.owner != lowered.identity || !helper.code.procedure.argument_names.is_empty()
+            {
+                return Err(IntegrationError::Freeze {
+                    unit: lowered.identity,
+                    message: "invalid companion owner/formal frame".into(),
+                });
+            }
+            let frozen_helper = freeze_artifact(
+                &helper.code,
+                helper.owner,
+                &source_procs,
+                external,
+                &mut inventory,
+            )?;
+            append_debug_inventory(&helper.debug_origins, &mut inventory);
+            let key = helper_key(helper.owner, helper.argument);
+            let mut content = b"dm-argument-source-v1\0".to_vec();
+            let code = frozen_helper.code().canonical_bytes();
+            content.extend_from_slice(&(code.len() as u64).to_le_bytes());
+            content.extend_from_slice(&code);
+            for name in &helper.code.procedure.local_names {
+                content.extend_from_slice(&(name.len() as u64).to_le_bytes());
+                content.extend_from_slice(name.as_bytes());
+            }
+            inventory.entries.push(Entry {
+                key,
+                content: content.into(),
+            });
+            helpers.push(FrozenHelper {
+                owner: helper.owner,
+                argument: helper.argument,
+                frozen: frozen_helper,
+                debug_origins: helper.debug_origins.clone(),
+                local_names: helper.code.procedure.local_names.clone(),
+            });
+        }
         units.push(FrozenUnit { lowered, frozen });
+    }
+    let mut initializers = Vec::with_capacity(initialization.len());
+    let mut initialization_keys = std::collections::BTreeSet::new();
+    for unit in initialization {
+        let identity = match unit.scope {
+            dm_ir::InitializerScope::Global => dm_link::InitializerIdentity::Global,
+            dm_ir::InitializerScope::Instance(owner) => dm_link::InitializerIdentity::Class(owner),
+        };
+        let key = Key::Initializer(identity);
+        if !initialization_keys.insert(key) {
+            return Err(IntegrationError::InvalidInitializer(
+                "duplicate initialization scope".into(),
+            ));
+        }
+        let mut unique = std::collections::BTreeSet::new();
+        if unit.write_ordinals.is_empty()
+            || unit
+                .write_ordinals
+                .iter()
+                .any(|ordinal| !unique.insert(*ordinal))
+        {
+            return Err(IntegrationError::InvalidInitializer(
+                "empty or duplicate initialization write coverage".into(),
+            ));
+        }
+        if let dm_link::InitializerIdentity::Class(owner) = identity {
+            inventory.spellings.push((
+                owner,
+                Arc::from(
+                    symbols
+                        .text(owner)
+                        .ok_or(IntegrationError::MissingSpelling(owner))?
+                        .as_bytes(),
+                ),
+            ));
+        }
+        // This context labels diagnostics only; no callable identity is issued.
+        let context = UnitIdentity {
+            owner: match unit.scope {
+                dm_ir::InitializerScope::Global => SymbolId::of("/"),
+                dm_ir::InitializerScope::Instance(owner) => owner,
+            },
+            name: SymbolId::of("<initializer>"),
+            namespace: Namespace::Proc,
+            occurrence: 0,
+        };
+        let frozen = freeze_artifact(&unit.code, context, &source_procs, external, &mut inventory)?;
+        append_debug_inventory(&unit.debug_origins, &mut inventory);
+        let mut content = b"dm-initializer-code-v1\0".to_vec();
+        let code = frozen.code().canonical_bytes();
+        content.extend_from_slice(&(code.len() as u64).to_le_bytes());
+        content.extend_from_slice(&code);
+        for name in &unit.code.procedure.local_names {
+            content.extend_from_slice(&(name.len() as u64).to_le_bytes());
+            content.extend_from_slice(name.as_bytes());
+        }
+        inventory.entries.push(Entry {
+            key,
+            content: content.into(),
+        });
+        initializers.push(FrozenInitializer {
+            identity,
+            write_ordinals: unit.write_ordinals,
+            frozen,
+            debug_origins: unit.debug_origins,
+            local_names: unit.code.procedure.local_names.clone(),
+        });
     }
     let tables = LinkTables::build(inventory).map_err(IntegrationError::Link)?;
     // Validate all captured references before publishing any linked output.
@@ -213,7 +267,25 @@ pub fn freeze_and_link_tables(
             )
             .map_err(IntegrationError::Link)?;
     }
-    Ok(FrozenBatch { units, tables })
+    for helper in &helpers {
+        tables
+            .link(
+                helper.frozen.code(),
+                &helper.debug_origins.source_bindings(),
+            )
+            .map_err(IntegrationError::Link)?;
+    }
+    for unit in &initializers {
+        tables
+            .link(unit.frozen.code(), &unit.debug_origins.source_bindings())
+            .map_err(IntegrationError::Link)?;
+    }
+    Ok(FrozenBatch {
+        units,
+        tables,
+        helpers,
+        initializers,
+    })
 }
 fn procedure_content(lowered: &LoweredUnit, code_bytes: &[u8]) -> Arc<[u8]> {
     let mut bytes = b"dm-frozen-procedure-v2\0".to_vec();
@@ -293,6 +365,120 @@ fn unit_key(identity: UnitIdentity) -> Key {
     }
 }
 
+fn append_debug_inventory(
+    origins: &crate::debug_sources::DebugOrigins,
+    inventory: &mut LinkInventory,
+) {
+    for origin in &origins.entries {
+        let bytes: Arc<[u8]> = Arc::from(origin.semantic_path.as_bytes());
+        let symbol = SymbolId::of(&origin.semantic_path);
+        inventory.spellings.push((symbol, bytes.clone()));
+        inventory.entries.push(Entry {
+            key: Key::String(symbol),
+            content: bytes,
+        });
+    }
+}
+pub fn helper_key(owner: UnitIdentity, argument: u32) -> Key {
+    Key::ArgumentSource {
+        owner: owner.owner,
+        name: owner.name,
+        verb: owner.namespace == Namespace::Verb,
+        occurrence: owner.occurrence,
+        argument,
+    }
+}
+fn freeze_artifact(
+    code: &dm_codegen_byond::lower_resolver::ResolverProc,
+    identity: UnitIdentity,
+    source_procs: &BTreeMap<Symbol, (u32, SymRef)>,
+    external: &ReferenceBindings,
+    inventory: &mut LinkInventory,
+) -> Result<FrozenProc, IntegrationError> {
+    let mut bindings = BTreeMap::new();
+    for spelling in &code.procedure.strings {
+        let bytes = code
+            .procedure
+            .format_templates
+            .get(spelling)
+            .map(|bytes| bytes.as_slice())
+            .unwrap_or(spelling.as_bytes());
+        let id = SymbolId::of_bytes(bytes);
+        insert(
+            &mut bindings,
+            Symbol::new(Table::String, spelling),
+            SymRef::String(id),
+        )?;
+        inventory.spellings.push((id, Arc::from(bytes)));
+        inventory.entries.push(Entry {
+            key: Key::String(id),
+            content: Arc::from(bytes),
+        });
+    }
+    for (symbol, slot) in &code.slots {
+        insert(
+            &mut bindings,
+            symbol.clone(),
+            SymRef::VariableSlot(slot.symbol),
+        )?;
+        inventory.slots.push(SlotAlias {
+            symbol: slot.symbol,
+            owner: slot.owner,
+            name: slot.name,
+        });
+        // Slot payload/type/default is not derivable from presence. The
+        // caller supplies its actual entry; only identity is recorded here.
+    }
+    for (path, instance) in &code.instances {
+        insert(
+            &mut bindings,
+            Symbol::new(Table::Instance, path),
+            SymRef::Instance(instance.alias),
+        )?;
+        // Runtime type is known; the captured modifier artifact is not
+        // inferred here and must exist in the caller's inventory.
+    }
+    for (path, content) in &code.resources {
+        insert(
+            &mut bindings,
+            Symbol::new(Table::Resource, path),
+            SymRef::Resource(*content),
+        )?;
+    }
+    insert(
+        &mut bindings,
+        Symbol::new(
+            Table::Variable,
+            dm_codegen_byond::BUILTIN_GLOBAL_VARS_SYMBOL,
+        ),
+        SymRef::BuiltinGlobalVars,
+    )?;
+    let frozen = freeze_proc(&code.procedure.code, |symbol| {
+        let local = bindings.get(symbol).copied();
+        let source = source_procs.get(symbol).map(|(_, reference)| *reference);
+        let captured = external.references.get(symbol).copied();
+        let selected = local
+            .or(source)
+            .or(captured)
+            .ok_or_else(|| format!("uncaptured semantic reference {symbol:?}"))?;
+        if [local, source, captured]
+            .into_iter()
+            .flatten()
+            .any(|reference| reference != selected)
+        {
+            return Err(format!(
+                "conflicting captured semantic reference {symbol:?}"
+            ));
+        }
+        Ok(selected)
+    })
+    .map_err(|error| IntegrationError::Freeze {
+        unit: identity,
+        message: error.to_string(),
+    })?;
+    Ok(frozen)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -331,6 +517,86 @@ mod tests {
     fn frontend() -> ColdFrontend {
         dm_tree::frontend::build(Path::new("project.dme"), &Source, &BTreeMap::new(), 1).unwrap()
     }
+    #[test]
+    fn implicit_before_formal_binds_the_certified_effective_body() {
+        struct Reopened;
+        impl dm_preprocess::SourceProvider for Reopened {
+            fn read(&self, _: &Path) -> Result<String, String> {
+                Ok("/datum/x/read()\n    return 2\n/datum/x/proc/read()\n    return 1\n/proc/caller()\n    return /datum/x/proc/read\n".into())
+            }
+        }
+        let frontend =
+            dm_tree::frontend::build(Path::new("project.dme"), &Reopened, &Default::default(), 1)
+                .unwrap();
+        let batch = lower_frontend(
+            &frontend,
+            frontend.snapshot.tree.as_ref(),
+            &Policy,
+            LoweringConfig::default(),
+        );
+        assert!(batch.diagnostics.is_empty(), "{:?}", batch.diagnostics);
+        let read = SymbolId::of("read");
+        let effective = batch
+            .units
+            .iter()
+            .find(|unit| unit.identity.name == read && unit.effective)
+            .unwrap()
+            .identity;
+        // Identities count semantic override depth: formal base is 0 even when
+        // encountered later; the earlier authored implicit override is 1.
+        assert_eq!(effective.occurrence, 1);
+        let selected = batch
+            .units
+            .iter()
+            .find(|unit| unit.identity == effective)
+            .unwrap();
+        let executable = selected
+            .code
+            .procedure
+            .code
+            .items
+            .iter()
+            .filter_map(|item| match item {
+                dm_codegen_byond::Item::Instruction(instruction)
+                    if !matches!(instruction.opcode, 0x84 | 0x85) =>
+                {
+                    Some(instruction)
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        // Small nonnegative integers use PUSH_INT rather than compound V.
+        assert_eq!(
+            executable[0].opcode,
+            byond_dmb::bytecode::opcode::PUSH_INT,
+            "{:?}",
+            selected.code.procedure.code
+        );
+        assert_eq!(
+            executable[0].operands,
+            vec![dm_codegen_byond::Word::Immediate(2)]
+        );
+        assert_eq!(executable[1].opcode, byond_dmb::bytecode::opcode::RET);
+        let frozen = freeze_and_link_tables(
+            batch,
+            frontend.snapshot.tree.symbols(),
+            &ReferenceBindings::default(),
+            LinkInventory::default(),
+        )
+        .unwrap();
+        let caller = frozen
+            .units
+            .iter()
+            .find(|unit| unit.lowered.identity.name == SymbolId::of("caller"))
+            .unwrap();
+        assert!(caller
+            .frozen
+            .code()
+            .relocations()
+            .iter()
+            .any(|site| site.reference == unit_reference(effective)));
+    }
+
     #[test]
     fn actual_lowered_string_body_freezes_and_links_without_legacy_ledger() {
         let frontend = frontend();

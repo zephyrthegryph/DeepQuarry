@@ -6,7 +6,7 @@ use byond_dmb::{
     dmb::{DmString, Dmb, Proc, Variable},
     ids::NONE,
 };
-use dm_codegen_byond::procedure_abi::Category;
+use dm_codegen_byond::procedure_abi::{ArgumentSource, Category};
 use dm_ir::{SymbolId, SymbolTable};
 use dm_link::Key;
 use std::{
@@ -50,9 +50,10 @@ fn validate_binding(
     key: Key,
     index: u32,
     symbols: &SymbolTable,
+    content: Option<&[u8]>,
 ) -> Result<(), CompositionError> {
     let valid = match key {
-        Key::String(symbol) => dmb.string(index) == Some(text(symbols, symbol)?.as_bytes()),
+        Key::String(_) => dmb.string(index) == content && content.is_some(),
         Key::Type(symbol) => {
             dmb.classes
                 .get(index as usize)
@@ -90,11 +91,11 @@ fn append_list(dmb: &mut Dmb, words: Vec<u32>) -> Result<u32, CompositionError> 
     dmb.lists.push(words);
     Ok(id)
 }
-struct StringIndex {
+pub(crate) struct StringIndex {
     buckets: HashMap<u128, Vec<u32>>,
 }
 impl StringIndex {
-    fn build(dmb: &Dmb) -> Result<Self, CompositionError> {
+    pub(crate) fn build(dmb: &Dmb) -> Result<Self, CompositionError> {
         let mut result = Self {
             buckets: HashMap::new(),
         };
@@ -108,7 +109,7 @@ impl StringIndex {
         }
         Ok(result)
     }
-    fn intern(&mut self, dmb: &mut Dmb, data: &[u8]) -> Result<u32, CompositionError> {
+    pub(crate) fn intern(&mut self, dmb: &mut Dmb, data: &[u8]) -> Result<u32, CompositionError> {
         let hash = xxhash_rust::xxh3::xxh3_128(data);
         if let Some(ids) = self.buckets.get(&hash) {
             for &id in ids {
@@ -131,11 +132,9 @@ impl StringIndex {
 }
 /// Validate the complete source declaration admission before composing a program.
 /// The artifact-only entry below does not claim it consumed a source program.
-pub fn compose_global_program(
-    engine_bytes: &[u8],
-    batch: &FrozenBatch,
+pub fn validate_global_program(
     frontend: &dm_tree::frontend::ColdFrontend,
-) -> Result<Vec<u8>, CompositionError> {
+) -> Result<(), CompositionError> {
     if frontend
         .plan
         .items
@@ -164,6 +163,37 @@ pub fn compose_global_program(
         Ok(())
     }
     admit(&frontend.syntax.items)?;
+    let mut names = std::collections::BTreeSet::new();
+    for body in frontend.bodies.iter() {
+        let member = frontend
+            .snapshot
+            .tree
+            .member(body.member)
+            .ok_or_else(|| unsupported("missing source member"))?;
+        let owner = frontend
+            .snapshot
+            .tree
+            .type_node(member.owner)
+            .ok_or_else(|| unsupported("missing source owner"))?
+            .path;
+        if owner != SymbolId::of("/")
+            || member.kind != dm_tree::MemberKind::Proc
+            || !names.insert(member.name)
+        {
+            return Err(unsupported(
+                "only unique fresh global procedures are admitted",
+            ));
+        }
+    }
+    Ok(())
+}
+
+pub fn compose_global_program(
+    engine_bytes: &[u8],
+    batch: &FrozenBatch,
+    frontend: &dm_tree::frontend::ColdFrontend,
+) -> Result<Vec<u8>, CompositionError> {
+    validate_global_program(frontend)?;
     let covered: HashSet<_> = batch
         .units
         .iter()
@@ -193,13 +223,91 @@ pub fn compose_global_fixture(
     batch: &FrozenBatch,
     symbols: &SymbolTable,
 ) -> Result<Vec<u8>, CompositionError> {
+    compose_records(engine_bytes, batch, symbols, None)
+}
+/// Class emission uses the same procedure/argument/helper writer as the bounded
+/// global entry, with mandatory immutable class/default/chain projection.
+pub fn compose_projected_program(
+    engine_bytes: &[u8],
+    batch: &FrozenBatch,
+    frontend: &dm_tree::frontend::ColdFrontend,
+    projection: &crate::class_projection::ClassProjection,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+) -> Result<Vec<u8>, CompositionError> {
+    if projection.tree_identity != frontend.snapshot.tree.identity()
+        || projection.occurrence_count != frontend.snapshot.occurrences.source_order().len()
+    {
+        return Err(unsupported(
+            "class projection does not cover this source model",
+        ));
+    }
+    if frontend
+        .plan
+        .items
+        .iter()
+        .any(|item| matches!(item, dm_preprocess::regions::OrderedItem::NonText { .. }))
+    {
+        return Err(unsupported("map/skin materialization is not supplied"));
+    }
+    let covered: HashSet<_> = batch
+        .units
+        .iter()
+        .map(|unit| unit.lowered.origin.declaration)
+        .collect();
+    if covered.len() != batch.units.len()
+        || frontend.bodies.len() != batch.units.len()
+        || frontend
+            .bodies
+            .iter()
+            .any(|body| !covered.contains(&body.declaration))
+    {
+        return Err(unsupported("source procedure coverage mismatch"));
+    }
+    compose_records(
+        engine_bytes,
+        batch,
+        frontend.snapshot.tree.symbols(),
+        Some((projection, values)),
+    )
+}
+fn compose_records(
+    engine_bytes: &[u8],
+    batch: &FrozenBatch,
+    symbols: &SymbolTable,
+    projection: Option<(
+        &crate::class_projection::ClassProjection,
+        &dyn crate::class_projection::TypeValuePolicy,
+    )>,
+) -> Result<Vec<u8>, CompositionError> {
     let mut dmb = Dmb::from_bytes(engine_bytes).map_err(CompositionError::Decode)?;
+    if let Some((plan, _)) = projection {
+        let required: BTreeMap<_, _> = plan.runtime_writes.iter().copied().collect();
+        let mut actual = BTreeMap::new();
+        for unit in &batch.initializers {
+            for &ordinal in &unit.write_ordinals {
+                if actual.insert(ordinal, unit.identity).is_some() {
+                    return Err(unsupported("duplicate executable initializer coverage"));
+                }
+            }
+        }
+        if required.len() != plan.runtime_writes.len() || actual != required {
+            return Err(unsupported(
+                "classified runtime defaults differ from executable initializer coverage",
+            ));
+        }
+    } else if !batch.initializers.is_empty() {
+        return Err(unsupported(
+            "initializer artifacts require classified declaration projection",
+        ));
+    }
     dmb.validate_references()
         .map_err(CompositionError::Decode)?;
     let engine_strings = dmb.strings.len();
     let engine_procs = dmb.procs.len();
     let mut strings = BTreeMap::new();
     let mut procs = BTreeMap::new();
+    let mut helpers = BTreeMap::new();
+    let mut initializers = BTreeMap::new();
     for (&key, &index) in batch.tables.assignments() {
         match key {
             Key::String(_) if (index as usize) >= engine_strings => {
@@ -213,13 +321,45 @@ pub fn compose_global_fixture(
                 owner,
                 name,
                 occurrence,
-            } if (index as usize) >= engine_procs => {
-                if text(symbols, owner)? != "/" || occurrence != 0 {
-                    return Err(unsupported("only fresh global procedures are supported"));
-                }
-                procs.insert(index, (owner, name));
             }
-            _ => validate_binding(&dmb, key, index, symbols)?,
+            | Key::Verb {
+                owner,
+                name,
+                occurrence,
+            } if (index as usize) >= engine_procs => {
+                let namespace = if matches!(key, Key::Verb { .. }) {
+                    Namespace::Verb
+                } else {
+                    Namespace::Proc
+                };
+                if projection.is_none()
+                    && (text(symbols, owner)? != "/"
+                        || occurrence != 0
+                        || namespace != Namespace::Proc)
+                {
+                    return Err(unsupported(
+                        "only fresh global procedures are supported by the bounded entry",
+                    ));
+                }
+                procs.insert(
+                    index,
+                    crate::lowering::UnitIdentity {
+                        owner,
+                        name,
+                        namespace,
+                        occurrence,
+                    },
+                );
+            }
+            Key::Type(_) if (index as usize) >= dmb.classes.len() && projection.is_some() => {}
+            Key::Variable { .. } if projection.is_some() => {}
+            Key::ArgumentSource { .. } if (index as usize) >= engine_procs => {
+                helpers.insert(index, key);
+            }
+            Key::Initializer(identity) if (index as usize) >= engine_procs => {
+                initializers.insert(index, identity);
+            }
+            _ => validate_binding(&dmb, key, index, symbols, batch.tables.content(key))?,
         }
     }
     for (index, data) in strings {
@@ -235,30 +375,53 @@ pub fn compose_global_fixture(
             long_chunks: chunks,
         });
     }
+    if let Some((plan, _)) = projection {
+        crate::class_projection::materialize_types(&mut dmb, plan, &batch.tables, symbols)
+            .map_err(|e| unsupported(format!("class skeleton {e:?}")))?;
+    }
     let mut string_index = StringIndex::build(&dmb)?;
+    if helpers.len() != batch.helpers.len() {
+        return Err(unsupported("helper inventory coverage mismatch"));
+    }
+    let helper_order = batch
+        .helpers
+        .iter()
+        .map(|helper| crate::symbolic::helper_key(helper.owner, helper.argument))
+        .collect::<Vec<_>>();
+    let source_references = dm_link::ArgumentSourceReferences::assign(
+        &batch.tables,
+        dmb.proc_references.len(),
+        &helper_order,
+    )
+    .map_err(|e| unsupported(format!("argument references {e:?}")))?;
+    for key in &helper_order {
+        dmb.proc_references.push(
+            batch
+                .tables
+                .index(*key)
+                .ok_or_else(|| unsupported("missing helper procedure index"))?,
+        );
+    }
     if procs.len() != batch.units.len() {
         return Err(unsupported("every unit must be one fresh global procedure"));
     }
     let mut units = BTreeMap::new();
     for (index, unit) in batch.units.iter().enumerate() {
         let identity = unit.lowered.identity;
-        if identity.namespace != Namespace::Proc
-            || identity.occurrence != 0
-            || units
-                .insert((identity.owner, identity.name), (index, unit))
-                .is_some()
-        {
-            return Err(unsupported("duplicate or unsupported procedure artifact"));
+        if units.insert(identity, (index, unit)).is_some() {
+            return Err(unsupported("duplicate procedure artifact"));
         }
     }
-    for (index, (owner, name)) in procs {
+    for (index, identity) in procs {
+        let owner = identity.owner;
+        let name = identity.name;
         if index as usize != dmb.procs.len() {
             return Err(CompositionError::NonContiguous(
                 "procedure table indexes".into(),
             ));
         }
         let &(unit_index, unit) = units
-            .get(&(owner, name))
+            .get(&identity)
             .ok_or_else(|| unsupported("missing global procedure artifact"))?;
         let abi = unit
             .lowered
@@ -266,13 +429,10 @@ pub fn compose_global_fixture(
             .as_ref()
             .ok_or_else(|| unsupported("procedure ABI was not authoritative"))?;
         let proc = &unit.lowered.code.procedure;
-        if !proc.argument_names.is_empty()
-            || !abi.argument_sources.is_empty()
-            || !abi.source_helpers.is_empty()
+        if proc.argument_names.len() != proc.argument_type_flags.len()
+            || proc.argument_names.len() != abi.argument_sources.len()
         {
-            return Err(unsupported(
-                "arguments and argument-source helpers are not supported",
-            ));
+            return Err(unsupported("argument metadata count mismatch"));
         }
         if proc.local_count as usize != proc.local_names.len() {
             return Err(unsupported("local metadata count mismatch"));
@@ -294,8 +454,46 @@ pub fn compose_global_fixture(
             locals.push(variable_id);
         }
         let locals_id = append_list(&mut dmb, locals)?;
-        let args_id = append_list(&mut dmb, Vec::new())?;
-        let path = proc_path(symbols, owner, name)?;
+        let mut args = Vec::new();
+        for (argument, name) in proc.argument_names.iter().enumerate() {
+            let name_id = string_index.intern(&mut dmb, name.as_bytes())?;
+            let variable_id = u32::try_from(dmb.variables.len())
+                .map_err(|_| unsupported("argument record overflow"))?;
+            dmb.variables.push(Variable {
+                kind: 0,
+                value: 0,
+                name: name_id,
+            });
+            let value_source = match &abi.argument_sources[argument] {
+                ArgumentSource::Builtin { kind, parameter } => {
+                    u32::from(*kind) | (u32::from(*parameter) << 8)
+                }
+                ArgumentSource::Helper {
+                    argument: helper_argument,
+                } => {
+                    let key = crate::symbolic::helper_key(
+                        unit.lowered.identity,
+                        u32::try_from(*helper_argument)
+                            .map_err(|_| unsupported("helper argument overflow"))?,
+                    );
+                    let position = source_references
+                        .index(key)
+                        .ok_or_else(|| unsupported("missing argument source companion"))?;
+                    0x40 | (u32::from(position) << 8)
+                }
+            };
+            args.extend([
+                proc.argument_type_flags[argument],
+                value_source,
+                variable_id,
+                0,
+            ]);
+        }
+        let args_id = append_list(&mut dmb, args)?;
+        let mut path = proc_path(symbols, owner, name)?;
+        if identity.namespace == Namespace::Verb {
+            path = path.replacen("/proc/", "/verb/", 1);
+        }
         let path_id = string_index.intern(&mut dmb, path.as_bytes())?;
         let default_display = text(symbols, name)?.replace('_', " ");
         let display = abi
@@ -321,6 +519,109 @@ pub fn compose_global_fixture(
             extended_flags,
             code_locals_args: [code_id, locals_id, args_id],
         });
+    }
+    let by_key: BTreeMap<_, _> = batch
+        .helpers
+        .iter()
+        .map(|helper| {
+            (
+                crate::symbolic::helper_key(helper.owner, helper.argument),
+                helper,
+            )
+        })
+        .collect();
+    if by_key.len() != batch.helpers.len() {
+        return Err(unsupported("duplicate helper artifact"));
+    }
+    for (index, key) in helpers {
+        if index as usize != dmb.procs.len() {
+            return Err(CompositionError::NonContiguous(
+                "helper procedure indexes".into(),
+            ));
+        }
+        let helper = by_key
+            .get(&key)
+            .ok_or_else(|| unsupported("missing helper artifact"))?;
+        let image = batch
+            .tables
+            .link(
+                helper.frozen.code(),
+                &helper.debug_origins.source_bindings(),
+            )
+            .map_err(|e| unsupported(format!("helper link {e:?}")))?;
+        emit_anonymous(
+            &mut dmb,
+            &mut string_index,
+            &image.words,
+            &helper.local_names,
+        )?;
+    }
+    if initializers.len() != batch.initializers.len() {
+        return Err(unsupported("initializer inventory coverage mismatch"));
+    }
+    let initialization: BTreeMap<_, _> = batch
+        .initializers
+        .iter()
+        .map(|unit| (unit.identity, unit))
+        .collect();
+    if initialization.len() != batch.initializers.len() {
+        return Err(unsupported("duplicate initializer artifact"));
+    }
+    for (index, identity) in initializers {
+        if index as usize != dmb.procs.len() {
+            return Err(CompositionError::NonContiguous(
+                "initializer indexes".into(),
+            ));
+        }
+        let unit = initialization
+            .get(&identity)
+            .ok_or_else(|| unsupported("initializer artifact absent"))?;
+        let image = batch
+            .tables
+            .link(unit.frozen.code(), &unit.debug_origins.source_bindings())
+            .map_err(|e| unsupported(format!("initializer link {e:?}")))?;
+        emit_anonymous(&mut dmb, &mut string_index, &image.words, &unit.local_names)?;
+        match identity {
+            dm_link::InitializerIdentity::Global => {
+                if dmb.world.ids[4] != NONE {
+                    return Err(unsupported(
+                        "retained global initializer requires explicit composition",
+                    ));
+                }
+                dmb.world.ids[4] = index;
+            }
+            dm_link::InitializerIdentity::Class(owner) => {
+                let class = batch
+                    .tables
+                    .index(Key::Type(owner))
+                    .ok_or(CompositionError::MissingSymbol(owner))?;
+                let record = dmb
+                    .classes
+                    .get_mut(class as usize)
+                    .ok_or_else(|| unsupported("initializer class absent"))?;
+                if record.lists_and_procs[2] != NONE {
+                    return Err(unsupported(
+                        "retained class initializer requires explicit composition",
+                    ));
+                }
+                record.lists_and_procs[2] = index;
+            }
+            dm_link::InitializerIdentity::Map { .. } => {
+                return Err(unsupported(
+                    "map initializer attachment requires descriptor inventory",
+                ))
+            }
+        }
+    }
+    if let Some((plan, values)) = projection {
+        crate::class_projection::materialize_members(
+            &mut dmb,
+            plan,
+            &batch.tables,
+            symbols,
+            values,
+        )
+        .map_err(|e| unsupported(format!("class members {e:?}")))?;
     }
     let mut external = false;
     let mut debug = false;
@@ -355,10 +656,76 @@ pub fn compose_global_fixture(
         .map_err(CompositionError::Decode)?;
     Ok(bytes)
 }
+fn emit_anonymous(
+    dmb: &mut Dmb,
+    strings: &mut StringIndex,
+    words: &[u32],
+    names: &[String],
+) -> Result<(), CompositionError> {
+    let code = append_list(dmb, words.to_vec())?;
+    let mut locals = Vec::with_capacity(names.len());
+    for name in names {
+        let name = strings.intern(dmb, name.as_bytes())?;
+        let id = u32::try_from(dmb.variables.len())
+            .map_err(|_| unsupported("anonymous local overflow"))?;
+        dmb.variables.push(Variable {
+            kind: 0,
+            value: 0,
+            name,
+        });
+        locals.push(id);
+    }
+    let locals = append_list(dmb, locals)?;
+    let args = append_list(dmb, Vec::new())?;
+    dmb.procs.push(Proc {
+        strings: [NONE; 4],
+        source_parameter: 255,
+        source_kind: 0,
+        flags: 4,
+        extended_flags: None,
+        code_locals_args: [code, locals, args],
+    });
+    Ok(())
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    struct Source(&'static str);
+    impl dm_preprocess::SourceProvider for Source {
+        fn read(&self, _: &std::path::Path) -> Result<String, String> {
+            Ok(self.0.into())
+        }
+    }
+    fn frontend(source: &'static str) -> dm_tree::frontend::ColdFrontend {
+        dm_tree::frontend::build(
+            std::path::Path::new("project.dme"),
+            &Source(source),
+            &Default::default(),
+            1,
+        )
+        .unwrap()
+    }
+    #[test]
+    fn full_source_admission_rejects_globals_classes_and_missing_bodies() {
+        assert!(validate_global_program(&frontend("/var/x = 1\n")).is_err());
+        assert!(validate_global_program(&frontend("/datum/x\n")).is_err());
+        assert!(
+            validate_global_program(&frontend("/datum/x/proc/read()\n    return 1\n")).is_err()
+        );
+        let source = frontend("/proc/read()\n    return 1\n");
+        assert!(validate_global_program(&source).is_ok());
+        let batch = FrozenBatch {
+            units: vec![],
+            helpers: vec![],
+            initializers: vec![],
+            tables: dm_link::LinkTables::build(Default::default()).unwrap(),
+        };
+        assert!(
+            matches!(compose_global_program(b"invalid",&batch,&source),Err(CompositionError::Unsupported(message)) if message.contains("coverage"))
+        );
+    }
+
     #[test]
     fn real_pinned_image_composes_and_retains_external_feature_bit() {
         let engine = include_bytes!(
@@ -366,6 +733,8 @@ mod tests {
         );
         let batch = FrozenBatch {
             units: vec![],
+            helpers: vec![],
+            initializers: vec![],
             tables: dm_link::LinkTables::build(Default::default()).unwrap(),
         };
         let bytes = compose_global_fixture(engine, &batch, &SymbolTable::default()).unwrap();
@@ -397,6 +766,8 @@ mod tests {
         };
         let batch = FrozenBatch {
             units: vec![],
+            helpers: vec![],
+            initializers: vec![],
             tables: dm_link::LinkTables::build(inventory).unwrap(),
         };
         assert!(matches!(

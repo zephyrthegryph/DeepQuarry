@@ -15,6 +15,14 @@ pub enum Table {
     List,
     Resource,
 }
+/// Anonymous executable initialization domains. A map descriptor has its own
+/// occurrence identity even when it initializes the same receiver class.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum InitializerIdentity {
+    Global,
+    Class(SymbolId),
+    Map { source: u128, descriptor: u32 },
+}
 /// Proc and verb semantic namespaces remain distinct even when sharing a wire table.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Key {
@@ -41,8 +49,17 @@ pub enum Key {
         occurrence: u32,
         argument: u32,
     },
+    Initializer(InitializerIdentity),
     BuiltinGlobalVars,
     Instance(SymbolId),
+    MapInstance {
+        source: u128,
+        descriptor: u32,
+    },
+    DefaultMapInstance {
+        kind: u8,
+        owner: SymbolId,
+    },
     List(u128),
     Resource(u128),
 }
@@ -51,9 +68,14 @@ impl Key {
         match self {
             Self::String(_) => Table::String,
             Self::Type(_) => Table::Type,
-            Self::Proc { .. } | Self::Verb { .. } | Self::ArgumentSource { .. } => Table::Procedure,
+            Self::Proc { .. }
+            | Self::Verb { .. }
+            | Self::ArgumentSource { .. }
+            | Self::Initializer(_) => Table::Procedure,
             Self::Variable { .. } | Self::BuiltinGlobalVars => Table::Variable,
-            Self::Instance(_) => Table::Instance,
+            Self::Instance(_) | Self::MapInstance { .. } | Self::DefaultMapInstance { .. } => {
+                Table::Instance
+            }
             Self::List(_) => Table::List,
             Self::Resource(_) => Table::Resource,
         }
@@ -288,6 +310,8 @@ impl LinkTables {
 }
 fn symbols(key: Key) -> Vec<SymbolId> {
     match key {
+        Key::Initializer(InitializerIdentity::Class(owner)) => vec![owner],
+        Key::DefaultMapInstance { owner, .. } => vec![owner],
         Key::String(id) | Key::Type(id) | Key::Instance(id) => vec![id],
         Key::Proc { owner, name, .. }
         | Key::Verb { owner, name, .. }
@@ -381,8 +405,80 @@ impl LinkTables {
         Ok(())
     }
 }
+
+/// Positions in DMB.proc_references are an 8-bit argument-source ABI domain,
+/// distinct from the helper's canonical procedure table index.
+#[derive(Clone, Debug)]
+pub struct ArgumentSourceReferences {
+    references: BTreeMap<Key, u8>,
+}
+impl ArgumentSourceReferences {
+    pub fn assign(
+        tables: &LinkTables,
+        retained_count: usize,
+        order: &[Key],
+    ) -> Result<Self, LinkError> {
+        let mut references = BTreeMap::new();
+        for (ordinal, &key) in order.iter().enumerate() {
+            if !matches!(key, Key::ArgumentSource { .. }) {
+                return Err(LinkError::WrongTable(key));
+            }
+            if tables.index(key).is_none() {
+                return Err(LinkError::UnknownKey(key));
+            }
+            let position = retained_count
+                .checked_add(ordinal)
+                .and_then(|value| u8::try_from(value).ok())
+                .ok_or(LinkError::IndexOverflow(Table::Procedure))?;
+            if references.insert(key, position).is_some() {
+                return Err(LinkError::DuplicateOrder(key));
+            }
+        }
+        let expected = tables
+            .assignments()
+            .keys()
+            .filter(|key| matches!(key, Key::ArgumentSource { .. }))
+            .count();
+        if expected != references.len() {
+            return Err(LinkError::IncompleteOrder(Table::Procedure));
+        }
+        Ok(Self { references })
+    }
+    pub fn index(&self, key: Key) -> Option<u8> {
+        self.references.get(&key).copied()
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn initialization_domains_do_not_alias_callable_or_map_occurrences() {
+        use super::*;
+        let owner = SymbolId::of("/obj/a");
+        let keys = [
+            Key::Initializer(InitializerIdentity::Global),
+            Key::Initializer(InitializerIdentity::Class(owner)),
+            Key::Initializer(InitializerIdentity::Map {
+                source: 1,
+                descriptor: 0,
+            }),
+            Key::Initializer(InitializerIdentity::Map {
+                source: 1,
+                descriptor: 1,
+            }),
+            Key::Initializer(InitializerIdentity::Map {
+                source: 2,
+                descriptor: 0,
+            }),
+            Key::Proc {
+                owner,
+                name: SymbolId::of("Initialize"),
+                occurrence: 0,
+            },
+        ];
+        assert_eq!(keys.into_iter().collect::<BTreeSet<_>>().len(), 6);
+        assert!(keys.into_iter().all(|key| key.table() == Table::Procedure));
+    }
     use super::*;
     use dm_ir::{Relocation, RelocationEncoding};
     fn sample_inventory() -> LinkInventory {

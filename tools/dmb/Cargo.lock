@@ -273,6 +273,7 @@ dependencies = [
  "dm-ir",
  "dm-link",
  "dm-preprocess",
+ "dm-resources",
  "dm-syntax",
  "dm-tree",
  "fs2",

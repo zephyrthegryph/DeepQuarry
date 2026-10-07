@@ -333,15 +333,16 @@ pub fn prepare_verified_procedure(
     let mut helpers = Vec::new();
     let mut argument_sources = Vec::new();
     for (index, param) in metadata.signature.parameters.iter().enumerate() {
-        if param.flags != 0 {
-            return Err(fail(
-                "parameter declaration modifiers are not supported by the procedure ABI",
-            ));
-        }
-        if param.array.is_some() {
-            return Err(fail(
-                "parameter array allocation semantics are not supported by the procedure ABI",
-            ));
+        match crate::parameter_abi::formal_shape(param)? {
+            crate::parameter_abi::FormalShape::Scalar { .. } => {}
+            crate::parameter_abi::FormalShape::UnsizedList { element_type: None } => {}
+            crate::parameter_abi::FormalShape::UnsizedList {
+                element_type: Some(_),
+            } => {
+                return Err(fail(
+                    "typed parameter array element inference is unsupported",
+                ));
+            }
         }
         let name = symbols
             .text(param.name)
@@ -734,7 +735,46 @@ mod tests {
         )
         .err()
         .unwrap();
-        assert!(error.0.contains("array allocation"));
+        assert!(error.0.contains("array"));
+    }
+    #[test]
+    fn unsized_untyped_list_formal_does_not_allocate_a_default() {
+        let mut symbols = SymbolTable::default();
+        let mut metadata = metadata(&[], &mut symbols);
+        metadata.signature.parameters = vec![Parameter {
+            name: symbols.intern("values").unwrap(),
+            declared_type: Some(symbols.intern("/list").unwrap()),
+            flags: 0,
+            array: Some(std::sync::Arc::new(dm_ir::ArrayDeclaration {
+                dimensions: vec![None].into(),
+                element_type: None,
+            })),
+            default: None,
+            input_annotation: None,
+            source_expression: None,
+            relative_span: Span::new(0, 8),
+        }]
+        .into();
+        let prepared = prepare_procedure(
+            &metadata,
+            &symbols,
+            &[],
+            ProcedureInputs::default(),
+            InheritedAbi::Fresh,
+            |_| Err(fail("no evaluation needed")),
+        )
+        .unwrap();
+        assert_eq!(
+            prepared
+                .inputs
+                .parameter_types
+                .get("values")
+                .map(String::as_str),
+            Some("/list")
+        );
+        assert_eq!(prepared.inputs.parameter_defaults, [None]);
+        assert_eq!(prepared.inputs.parameter_type_flags, [0]);
+        assert!(prepared.source_helpers.is_empty());
     }
     #[test]
     fn guarded_settings_short_circuit_inactive_unsupported_contexts() {

@@ -1,0 +1,166 @@
+//! Cold initializer artifacts from captured authored writes and explicit ABI
+//! classification. No mutable DMB, filesystem reads or project binding copies.
+use crate::debug_sources::{DebugOrigin, DebugOrigins};
+use crate::initializer_policy::{
+    self, CapturedInitializerEvaluator, ClassifiedInitializers, RuntimeValue,
+};
+use dm_codegen_byond::{
+    initializer::InitializerContext, lower_resolver::ResolverProc, DebugSourceProvider,
+};
+use dm_ir::{InitializerScope, Resolver};
+use dm_tree::{frontend::ColdFrontend, initializers::InitializerPlan};
+
+pub struct LoweredInitializerUnit {
+    pub scope: InitializerScope,
+    /// Exact selected source writes, in executable order after ABI phasing.
+    pub write_ordinals: Vec<usize>,
+    pub code: ResolverProc,
+    pub debug_origins: DebugOrigins,
+}
+pub struct LoweredInitializers {
+    pub classified: ClassifiedInitializers,
+    pub units: Vec<LoweredInitializerUnit>,
+}
+struct CapturedOrigins {
+    origins: DebugOrigins,
+}
+impl DebugSourceProvider for CapturedOrigins {
+    fn entry_ordinal(&self) -> Result<u32, String> {
+        Ok(0)
+    }
+    fn ordinal(&self, write_ordinal: usize) -> Result<u32, String> {
+        if write_ordinal >= self.origins.entries.len() {
+            return Err("initializer debug occurrence missing".into());
+        }
+        u32::try_from(write_ordinal).map_err(|_| "initializer debug ordinal exceeds u32".into())
+    }
+}
+fn value_expression(value: &RuntimeValue) -> dm_syntax::Expr {
+    use dm_syntax::{Expr, ExprKind, Span};
+    match value {
+        RuntimeValue::Expression(value) => value.clone(),
+        RuntimeValue::SizedArray(dimensions) => {
+            // A policy-issued typed constructor; no DM source is generated.
+            let span = Span::new(0, 0);
+            Expr {
+                span,
+                kind: ExprKind::Unary {
+                    op: "new".into(),
+                    value: Box::new(Expr {
+                        span,
+                        kind: ExprKind::Call {
+                            callee: Box::new(Expr {
+                                span,
+                                kind: ExprKind::TypePath("/list".into()),
+                            }),
+                            args: dimensions
+                                .iter()
+                                .map(|size| Expr {
+                                    span,
+                                    kind: ExprKind::Literal(size.to_string()),
+                                })
+                                .collect(),
+                        },
+                    }),
+                },
+            }
+        }
+    }
+}
+pub fn lower<R: Resolver>(
+    frontend: &ColdFrontend,
+    plan: &InitializerPlan,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    host: &R,
+    resource_search_context: Option<u128>,
+) -> Result<LoweredInitializers, String> {
+    if frontend.snapshot.tree.identity() != plan.source.tree.identity()
+        || frontend.snapshot.occurrences.tree_identity() != plan.source.occurrences.tree_identity()
+        || plan.writes.len() != plan.origins.len()
+    {
+        return Err("initializer plan differs from captured frontend".into());
+    }
+    let symbols = plan.source.tree.symbols();
+    let classified = initializer_policy::classify(&plan.writes, symbols, evaluator)?;
+    let mut units = Vec::with_capacity(classified.groups.len());
+    for group in &classified.groups {
+        let mut assignments = Vec::with_capacity(group.writes.len());
+        let mut entries = Vec::with_capacity(group.writes.len());
+        let mut write_ordinals = Vec::with_capacity(group.writes.len());
+        for (index, write) in group.writes.iter().enumerate() {
+            let origin = plan
+                .origins
+                .get(write.source_ordinal)
+                .ok_or("initializer origin missing")?;
+            let current = frontend
+                .snapshot
+                .occurrences
+                .get(origin.occurrence)
+                .ok_or("initializer current occurrence missing")?;
+            if current.target != dm_tree::Target::Member(origin.member)
+                || current.provenance.span != origin.provenance.span
+                || current.provenance.include_occurrence != origin.provenance.include_occurrence
+                || current.provenance.region != origin.provenance.region
+                || current.provenance.expansion_stack != origin.provenance.expansion_stack
+            {
+                return Err("initializer source provenance differs from current occurrence".into());
+            }
+            let occurrence = frontend
+                .plan
+                .occurrences
+                .get(origin.provenance.include_occurrence as usize)
+                .ok_or("initializer include occurrence missing")?;
+            let file = frontend
+                .files
+                .get(origin.provenance.span.file.index())
+                .ok_or("initializer source file missing")?;
+            if file.path.as_ref() != occurrence.path.as_ref() || !file.captured {
+                return Err("initializer origin does not bind captured source".into());
+            }
+            let offset = origin.provenance.span.start as usize;
+            if offset > file.text.len() {
+                return Err("initializer source span out of bounds".into());
+            }
+            let line = file.line_starts.partition_point(|start| *start <= offset);
+            entries.push(DebugOrigin {
+                semantic_path: occurrence.semantic_path.to_string(),
+                line: u32::try_from(line).map_err(|_| "initializer source line exceeds u32")?,
+            });
+            let mut value = value_expression(
+                write
+                    .runtime_value
+                    .as_ref()
+                    .ok_or("initializer runtime value missing")?,
+            );
+            // Typed statements carry a local occurrence discriminator. The
+            // provider above binds it to captured source provenance, never to
+            // synthetic parser text or inferred source byte offsets.
+            value.span = dm_syntax::Span::new(index, index);
+            assignments.push((write.write.target.clone(), write.write.lexical_owner, value));
+            write_ordinals.push(write.source_ordinal);
+        }
+        let debug = CapturedOrigins {
+            origins: DebugOrigins { entries },
+        };
+        let code = dm_codegen_byond::initializer::lower_scoped_assignments(
+            &assignments,
+            InitializerContext {
+                symbols,
+                resource_search_context,
+                debug: Some(&debug),
+            },
+            host,
+        )
+        .map_err(|error| format!("initializer lowering: {error:?}"))?;
+        units.push(LoweredInitializerUnit {
+            scope: group
+                .receiver
+                .map(InitializerScope::Instance)
+                .unwrap_or(InitializerScope::Global),
+            write_ordinals,
+            code,
+            debug_origins: debug.origins,
+        });
+    }
+    Ok(LoweredInitializers { classified, units })
+}

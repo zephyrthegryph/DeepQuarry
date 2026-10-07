@@ -18,6 +18,7 @@ mod initializer;
 pub use initializer::{
     InitializerScope, InitializerTarget, InitializerUnit, InitializerValue, InitializerWrite,
 };
+pub mod map;
 
 mod resolver;
 pub use resolver::{ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};

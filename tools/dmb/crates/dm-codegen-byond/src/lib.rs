@@ -14,15 +14,19 @@ pub const BUILTIN_GLOBAL_VARS_SYMBOL: &str = "@builtin/global.vars";
 mod builtin_catalog;
 pub mod encoder;
 pub use encoder::{freeze_proc, FreezeError, FrozenProc, OperandEncoding, OperandSite};
-mod simple;
+pub mod initializer;
 pub mod lower_resolver;
+pub mod parameter_abi;
 pub mod procedure_abi;
+mod simple;
+pub mod typed_scopes;
 pub use lower_resolver::ProcedureInputs;
 pub use simple::{
     compile_simple_proc, compile_simple_proc_with_bindings, compile_simple_proc_with_params,
-    compile_simple_proc_with_resolver, compile_simple_proc_with_resolver_and_debug, DebugSourceProvider,
-    decode_constant_string_literal, nameof_reference, ArgumentMetadata, LowerBindings, LowerError,
-    SharedLowerBindings, SimpleProc,
+    compile_simple_proc_with_resolver, compile_simple_proc_with_resolver_and_debug,
+    compile_typed_scopes_with_resolver, compile_typed_statements_with_resolver,
+    decode_constant_string_literal, nameof_reference, ArgumentMetadata, DebugSourceProvider,
+    LowerBindings, LowerError, SharedLowerBindings, SimpleProc,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
