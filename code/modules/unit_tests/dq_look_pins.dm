@@ -119,3 +119,121 @@
 	sortTim(., GLOBAL_PROC_REF(cmp_text_asc))
 
 #undef DQ_LOOK_PIN_DIR
+
+/**
+ * Look state pins: how each creatable subtype of a root looks after the state its look reacts to changes, one file per root
+ * (code/modules/unit_tests/snapshots/look_states/<root>.txt). A look tree pin sees only the look a type is made with; this one
+ * moves state and records the look again:
+ *
+ *   bash tools/dq_pin.sh --look-state /obj/item/gun [...]
+ *
+ * Per type, for each numeric var the type declares below its base (/obj or /mob; at most DQ_LOOK_STATE_MAX_VARS of them, in
+ * declaration order), a fresh instance has the var written (0, 1 and 2, whichever differ from its made value; through its tracked
+ * setter when it has one, else the raw var), a redraw requested the way a caller does (update_icon(), then changed()), the
+ * presentation lane flushed, and the look compared with the made look. A row is the probe and what the look gained or lost:
+ *
+ *   <type> <var>=<n> +overlay: ...        <type> <var>=<n> -state: ...        <type> <var>=<n> runtime: <message>
+ *
+ * A probe that changes nothing writes no row, so a var the look ignores is silent and a conversion that makes it matter shows.
+ * The rows are the look a conversion must keep: the same file before and after.
+ */
+#define DQ_LOOK_STATE_DIR "code/modules/unit_tests/snapshots/look_states/"
+#define DQ_LOOK_STATE_MAX_VARS 24
+
+/datum/unit_test/dq_look_state_pin
+	tier = TEST_TIER_EXHAUSTIVE
+	timeout = 1800
+
+/datum/unit_test/dq_look_state_pin/Run()
+	var/list/bad = list()
+	var/list/expected_by_type = dq_snapshot_read_dir(DQ_LOOK_STATE_DIR, bad)
+	if(!length(expected_by_type) && !length(bad))
+		return
+	var/turf/T = test_floor()
+	var/list/base_vars_obj = dq_look_state_base_vars(/obj, T)
+	var/list/base_vars_mob = dq_look_state_base_vars(/mob, T)
+	var/list/actual_by_type = list()
+	for(var/root in expected_by_type)
+		var/list/rows = list()
+		for(var/type in typesof(root))
+			if(!ispath(type, /obj) && !ispath(type, /mob))
+				continue
+			if(is_abstract(type) || (type in uncreatables))
+				continue
+			rows += dq_look_state_rows(type, T, ispath(type, /obj) ? base_vars_obj : base_vars_mob)
+		actual_by_type[root] = rows
+	var/report = dq_snapshot_compare(DQ_LOOK_STATE_DIR, "look_states", actual_by_type, expected_by_type, bad)
+	TEST_ASSERT(isnull(report), report)
+
+/// The var names of the base type `base`: what a probe leaves alone.
+/datum/unit_test/proc/dq_look_state_base_vars(base, turf/T)
+	var/atom/A = allocate(base, T)
+	. = list()
+	for(var/name in A.vars)
+		. += name
+	qdel(A)
+	own_turf_contents(T)
+
+/// The probe rows of one type (see the pin's comment).
+/datum/unit_test/proc/dq_look_state_rows(type, turf/T, list/base_vars)
+	. = list()
+	var/list/names = list()
+	try
+		var/atom/probe = dq_snapshot_allocate(type, T)
+		if(QDELETED(probe))
+			return
+		for(var/name in probe.vars)
+			if(name in base_vars)
+				continue
+			if(isnum(probe.vars[name]) && !findtext(name, "time") && !findtext(name, "cooldown") && !findtext(name, "last") && !findtext(name, "next"))
+				names += name
+		qdel(probe)
+	catch(var/exception/e)
+		. += "[type] runtime: [dq_look_state_error(e)]"
+		own_turf_contents(T)
+		return
+	own_turf_contents(T)
+	if(length(names) > DQ_LOOK_STATE_MAX_VARS)
+		names.Cut(DQ_LOOK_STATE_MAX_VARS + 1)
+	var/list/base = dq_look_capture(type, T)
+	for(var/name in names)
+		for(var/value in list(0, 1, 2))
+			. += dq_look_state_probe(type, T, name, value, base)
+
+/// One probe: a fresh `type` with `name` written to `value`, redrawn, against the made look `base`; rows only for a difference.
+/datum/unit_test/proc/dq_look_state_probe(type, turf/T, name, value, list/base)
+	. = list()
+	rand_seed(dq_test_seed_for("[type]/[name]=[value]"))
+	try
+		var/atom/target = dq_snapshot_allocate(type, T)
+		if(QDELETED(target))
+			return
+		appearance_flush()
+		if(target.vars[name] == value)
+			qdel(target)
+			own_turf_contents(T)
+			return
+		var/setter = "set_[name]"
+		if(hascall(target, setter))
+			call(target, setter)(value)
+		else
+			target.vars[name] = value
+		target.update_icon()
+		changed(target)
+		appearance_flush()
+		var/list/now = dq_look_pin_lines(target)
+		for(var/row in now - base)
+			. += "[type] [name]=[value] +[row]"
+		for(var/row in base - now)
+			. += "[type] [name]=[value] -[row]"
+		qdel(target)
+	catch(var/exception/e)
+		. += "[type] [name]=[value] runtime: [dq_look_state_error(e)]"
+	own_turf_contents(T)
+
+/proc/dq_look_state_error(exception/e)
+	var/static/regex/where = regex(@"^\S+\.dm:\d+:")
+	return where.Replace(e.name, "")
+
+#undef DQ_LOOK_STATE_DIR
+#undef DQ_LOOK_STATE_MAX_VARS
