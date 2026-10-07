@@ -72,7 +72,7 @@
 	TEST_ASSERT(bowl.has_candy, "actual initialized bowl contains candy")
 	TEST_ASSERT_NULL(user.get_active_hand(), "actual search fixture begins with an empty active hand")
 	TEST_ASSERT_EQUAL(bowl.can_search(user, bowl, null), TRUE, "actual full idle bowl permits searching")
-	TEST_ASSERT_EQUAL(bowl.interaction_hand(user, null, null), TRUE, "actual hand entry starts the real timed search")
+	TEST_ASSERT_EQUAL(test_op_handler(bowl, "interaction_hand", user), TRUE, "actual hand entry starts the real timed search")
 	TEST_ASSERT(task_busy(bowl), "actual search claims its bowl while the task runs")
 	test_time(4 SECONDS)
 	TEST_ASSERT_NULL(user.get_active_hand(), "actual search creates no candy before its five-second deadline")

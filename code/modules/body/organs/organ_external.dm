@@ -164,8 +164,10 @@
 		rel_clear(source, nameof(source.imp_in))
 
 /// A robotic limb is also scorched by a pulse.
-/obj/item/organ/external/organ_emp(datum/damage_packet/packet)
+/obj/item/organ/external/organ_emp(datum/act/A)
 	..()
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	for(var/obj/O as anything in contents_of(src))
 		O.emp_act(packet.severity)
 

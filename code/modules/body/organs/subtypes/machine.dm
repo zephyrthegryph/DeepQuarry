@@ -17,8 +17,10 @@
 		owner.visible_message(span_danger("\The [owner] twitches visibly!"))
 
 /// A pulse drains the owner's charge.
-/obj/item/organ/internal/cell/organ_emp(datum/damage_packet/packet)
+/obj/item/organ/internal/cell/organ_emp(datum/act/A)
 	..()
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	owner?.adjust_nutrition(-rand(10 / packet.severity, 50 / packet.severity))
 
 /obj/item/organ/internal/cell/machine/handle_organ_proc_special(cycles)

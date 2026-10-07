@@ -147,6 +147,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
 	on_notice(/datum/notice/wire_cut, then(PROC_REF(wire_changed_look)))
 	on_notice(/datum/notice/wire_pulsed, then(PROC_REF(wire_changed_look)))
+	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_moved), pulse = PROC_REF(shock_wire_moved)) // and the admins' history names who did it
 	on_wire(WIRE_IDSCAN, pulse = PROC_REF(idscan_wire_pulsed)) // and the deny light flashes
 	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(main_power_wire_cut), pulse = PROC_REF(main_power_wire_pulsed))
 	on_wire(WIRE_MAIN_POWER2, cut = PROC_REF(main_power_wire_cut), pulse = PROC_REF(main_power_wire_pulsed))
@@ -1308,6 +1309,18 @@ CAPABILITIES(/datum/cap_data/wires/airlock)
 	if(!issilicon(T.user) && electrified && shock(T.user, 100)) // ALLOW(silicon_entry): moved from the deleted airlock wire datum unchanged: a silicon reaches the wires window with no hand on a live wire
 		return OP_REFUSED
 	return HOOK_DECLINE
+
+/// The shock wire was cut or pulsed and the door is live: the admins' history names whoever did it (a mended wire releases and names no one).
+/obj/machinery/door/airlock/proc/shock_wire_moved(datum/act/A)
+	var/datum/notice/wire_cut/cut = A
+	if(istype(cut) && cut.mended)
+		return
+	var/datum/notice/wire_pulsed/pulse = A
+	var/mob/user = istype(cut) ? cut.user : (istype(pulse) ? pulse.user : null)
+	if(!user || !electrified)
+		return
+	LAZYADD(shockedby, "\[[time_stamp()]\] - [user](ckey:[user.ckey])")
+	add_attack_logs(user, src, "Electrified a door")
 
 /// Any wire moved: the door's look and panel follow it.
 /obj/machinery/door/airlock/proc/wire_changed_look(datum/act/A)
