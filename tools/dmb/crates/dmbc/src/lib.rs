@@ -34,6 +34,7 @@ pub mod client_script;
 pub mod resource_values;
 pub mod world_writer;
 pub mod initializer_policy;
+mod initializer_tokens;
 pub mod intrinsic_initializer_facts;
 pub mod initializer_lowering;
 pub mod initializer_diagnostics;
@@ -66,3 +67,12 @@ pub mod startup;
 mod native_macro_receipts;
 #[cfg(test)]
 mod static_storage_receipts;
+#[cfg(test)]
+mod modified_instance_receipts;
+
+pub mod pure_calls;
+pub mod modified_output;
+#[cfg(test)]
+mod modified_output_tests;
+
+pub mod modified_initializers;

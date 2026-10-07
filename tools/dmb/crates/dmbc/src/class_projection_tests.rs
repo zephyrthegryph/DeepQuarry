@@ -1,5 +1,46 @@
 use super::*;
 #[test]
+fn procedure_literal_default_uses_exact_frozen_procedure_table_index() {
+    let bytes = include_bytes!("../../../fixtures/native_template.bin");
+    let engine = crate::engine::EngineSnapshot::from_bytes(bytes, 1).unwrap();
+    let mut symbols = engine.symbols().clone();
+    let layout = engine.procedure_layouts().iter().find(|layout|
+        layout.name.is_some() && layout.kind == MemberKind::Proc).unwrap();
+    let identity = dm_ir::ProcedureIdentity {
+        owner: layout.owner, name: layout.name.unwrap(), verb: false, occurrence: 0,
+    };
+    let callable = Key::Proc { owner: identity.owner, name: identity.name, occurrence: 0 };
+    let root = symbols.intern("/").unwrap();
+    let name = symbols.intern("saved_callback").unwrap();
+    let variable = Key::Variable { owner: root, name };
+    let mut dmb = byond_dmb::dmb::Dmb::from_bytes(bytes).unwrap();
+    let footer_index = dmb.lists[dmb.variable_footer as usize].len() as u32 / 2;
+    let mut inventory = dm_link::LinkInventory::default();
+    for id in [root, name, identity.owner, identity.name] {
+        inventory.spellings.push((id, Arc::from(symbols.text(id).unwrap().as_bytes())));
+    }
+    for key in [variable, callable] {
+        inventory.entries.push(dm_link::Entry { key, content: Arc::from([]) });
+    }
+    inventory.fixed = vec![(variable, footer_index), (callable, layout.wire_proc)];
+    let tables = dm_link::LinkTables::build(inventory).unwrap();
+    let projection = ClassProjection {
+        shared_slot_order: Arc::from([variable]), procedure_statics: Arc::from([]),
+        runtime_writes: Arc::from([]), tree_identity: 0, occurrence_count: 1,
+        types: Arc::from([]), chains: Arc::from([]), fields: Arc::from([FieldProjection {
+            owner: root, declaring_owner: root, name, role: FieldRole::Declaration,
+            wire_flags: Some(1), intrinsic: false, shared: true,
+            value: DefaultValue::Scalar(SemanticValue::Procedure(identity)),
+        }]),
+    };
+    materialize_members(&mut dmb, &projection, &tables, &symbols, &NoTypes).unwrap();
+    let record_id = dmb.lists[dmb.variable_footer as usize][footer_index as usize * 2];
+    let record = &dmb.variables[record_id as usize];
+    assert_eq!((record.kind, record.value), (38, layout.wire_proc));
+    assert_eq!(dmb.string(record.name), Some(b"saved_callback".as_slice()));
+    dmb.validate_references().unwrap();
+}
+#[test]
 fn indexed_client_headers_preserve_owner_and_repeated_write_effects() {
     let mut symbols = dm_ir::SymbolTable::default();
     let parent = symbols.intern("/client").unwrap();

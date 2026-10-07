@@ -11,3 +11,4 @@ path = "src/lib.rs"
 [dependencies]
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
 dm-syntax = { path = "../dm-syntax" }
+serde_json = "1"

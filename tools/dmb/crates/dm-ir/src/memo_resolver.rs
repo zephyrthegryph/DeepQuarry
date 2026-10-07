@@ -65,6 +65,8 @@ fn retainable(meaning: &ResolvedMeaning) -> bool {
                 SemanticValue::Null
                     | SemanticValue::NumberBits(_)
                     | SemanticValue::Type(_)
+                    | SemanticValue::Procedure(_)
+                    | SemanticValue::ModifiedInstance(_)
                     | SemanticValue::Resource(_)
             )
     )

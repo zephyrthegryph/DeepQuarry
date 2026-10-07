@@ -459,13 +459,16 @@ fn compose_records(
                 helpers.insert(index, key);
             }
             Key::Initializer(identity) if (index as usize) >= engine_procs => {
-                if matches!(identity, dm_link::InitializerIdentity::Map { .. }) {
+                if matches!(identity, dm_link::InitializerIdentity::Map { .. } | dm_link::InitializerIdentity::Modified(_)) {
                     if stage.is_none() {
                         return Err(unsupported("map initializer attachment stage absent"));
                     }
                     stage_keys.insert(key);
                 }
                 initializers.insert(index, identity);
+            }
+            Key::Instance(_) if stage.is_some() && (index as usize) >= dmb.instances.len() => {
+                stage_keys.insert(key);
             }
             Key::MapInstance { .. } | Key::DefaultMapInstance { .. } | Key::Resource(_)
                 if stage.is_some() =>
@@ -732,7 +735,7 @@ fn compose_records(
                 }
                 record.lists_and_procs[2] = index;
             }
-            dm_link::InitializerIdentity::Map { .. } => (),
+            dm_link::InitializerIdentity::Map { .. } | dm_link::InitializerIdentity::Modified(_) => (),
         }
     }
     if let Some((plan, values)) = projection {
@@ -798,10 +801,11 @@ fn compose_records(
 }
 fn attached_key_present(dmb: &Dmb, key: Key, index: u32, map_initializers: &HashSet<u32>) -> bool {
     match key {
-        Key::MapInstance { .. } | Key::DefaultMapInstance { .. } =>
+        Key::Instance(_) | Key::MapInstance { .. } | Key::DefaultMapInstance { .. } =>
             dmb.instances.get(index as usize).is_some(),
         Key::Resource(_) => dmb.resources.get(index as usize).is_some(),
         Key::Initializer(dm_link::InitializerIdentity::Map { .. }) => map_initializers.contains(&index),
+        Key::Initializer(dm_link::InitializerIdentity::Modified(_)) => map_initializers.contains(&index),
         _ => false,
     }
 }

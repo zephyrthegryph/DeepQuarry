@@ -358,6 +358,14 @@ fn parse_if(item: &Item, else_items: &[Item], diagnostics: &mut Vec<Diagnostic>)
 
 fn parse_one(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Statement {
     let header = item.header.trim();
+    if crate::return_has_block(header, !item.children.is_empty()) {
+        diagnostics.push(Diagnostic {
+            span: item.header_span,
+            kind: DiagnosticKind::Unsupported,
+            message: crate::RETURN_BLOCK_UNSUPPORTED.into(),
+        });
+        return unsupported(item);
+    }
     let kind = if starts_keyword(header, "while") {
         parse_control_condition(item, "while", diagnostics).map(|condition| StatementKind::While {
             condition,

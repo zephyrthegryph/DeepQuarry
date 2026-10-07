@@ -330,7 +330,7 @@ pub fn compile_simple_proc_with_bindings(
     body: &[Item],
     bindings: &LowerBindings,
 ) -> Result<SimpleProc, Vec<LowerError>> {
-    compile_with_lookup(body, None, None, bindings, None, None)
+    compile_with_lookup(body, None, bindings, None, None)
 }
 
 pub fn compile_simple_proc_with_resolver<R: dm_ir::Resolver>(
@@ -366,7 +366,7 @@ pub fn compile_typed_statements_with_resolver<R: dm_ir::Resolver>(
     resolver: &R,
     debug: Option<&dyn DebugSourceProvider>,
 ) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
-    compile_resolver_body(&[], Some(statements), inputs, symbols, resolver, debug)
+    compile_resolver_body(&[], Some(TypedInput::Statements(statements)), inputs, symbols, resolver, debug)
 }
 
 /// One VM invocation, with one resolver and code/label/debug accumulator.
@@ -379,6 +379,8 @@ pub fn compile_typed_scopes_with_resolver<R: dm_ir::Resolver>(
     let prepared = crate::typed_scopes::prepare(scopes)?;
     let bindings = LowerBindings::default();
     let lookup = crate::lower_resolver::ProjectResolver {
+        modified_instances: std::cell::RefCell::new(Default::default()),
+        procedure_values: std::cell::RefCell::new(Default::default()),
         procedure_statics: std::cell::RefCell::new(Default::default()),
         resolver,
         symbols,
@@ -390,13 +392,14 @@ pub fn compile_typed_scopes_with_resolver<R: dm_ir::Resolver>(
     };
     let procedure = compile_with_lookup(
         &[],
-        None,
-        Some(&prepared.scopes),
+        Some(TypedInput::Scopes(&prepared.scopes)),
         &bindings,
         Some(&lookup),
         debug,
     )?;
     Ok(crate::lower_resolver::ResolverProc {
+        modified_instances: lookup.modified_instances.into_inner(),
+        procedure_values: lookup.procedure_values.into_inner(),
         procedure_statics: lookup.procedure_statics.into_inner(),
         procedure,
         slots: lookup.slots.into_inner(),
@@ -407,7 +410,7 @@ pub fn compile_typed_scopes_with_resolver<R: dm_ir::Resolver>(
 
 fn compile_resolver_body<R: dm_ir::Resolver>(
     body: &[Item],
-    statements: Option<&[Statement]>,
+    typed: Option<TypedInput<'_>>,
     inputs: &crate::lower_resolver::ProcedureInputs,
     symbols: &dm_ir::SymbolTable,
     resolver: &R,
@@ -415,6 +418,8 @@ fn compile_resolver_body<R: dm_ir::Resolver>(
 ) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
     let bindings = inputs.lexical_bindings();
     let lookup = crate::lower_resolver::ProjectResolver {
+        modified_instances: std::cell::RefCell::new(Default::default()),
+        procedure_values: std::cell::RefCell::new(Default::default()),
         procedure_statics: std::cell::RefCell::new(Default::default()),
         resolver,
         symbols,
@@ -424,8 +429,10 @@ fn compile_resolver_body<R: dm_ir::Resolver>(
         runtime_types: std::cell::RefCell::new(Default::default()),
         resource_search_context: inputs.resource_search_context,
     };
-    let procedure = compile_with_lookup(body, statements, None, &bindings, Some(&lookup), debug)?;
+    let procedure = compile_with_lookup(body, typed, &bindings, Some(&lookup), debug)?;
     Ok(crate::lower_resolver::ResolverProc {
+        modified_instances: lookup.modified_instances.into_inner(),
+        procedure_values: lookup.procedure_values.into_inner(),
         procedure_statics: lookup.procedure_statics.into_inner(),
         procedure,
         slots: lookup.slots.into_inner(),
@@ -434,10 +441,26 @@ fn compile_resolver_body<R: dm_ir::Resolver>(
     })
 }
 
+#[derive(Clone, Copy)]
+enum TypedInput<'a> {
+    Statements(&'a [Statement]),
+    Scopes(&'a [crate::typed_scopes::PreparedScope<'a>]),
+    Modified(&'a [(String, Expr)]),
+}
+/// This boundary is crate-private: initializer::lower_modified_assignments
+/// admits target/RHS semantics before selecting the certified Src setter.
+pub(crate) fn compile_modified_fields_with_resolver<R: dm_ir::Resolver>(
+    fields: &[(String, Expr)],
+    inputs: &crate::lower_resolver::ProcedureInputs,
+    symbols: &dm_ir::SymbolTable,
+    resolver: &R,
+    debug: Option<&dyn DebugSourceProvider>,
+) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
+    compile_resolver_body(&[], Some(TypedInput::Modified(fields)), inputs, symbols, resolver, debug)
+}
 fn compile_with_lookup(
     body: &[Item],
-    statements: Option<&[Statement]>,
-    scopes: Option<&[crate::typed_scopes::PreparedScope<'_>]>,
+    typed: Option<TypedInput<'_>>,
     bindings: &LowerBindings,
     lookup: Option<&crate::lower_resolver::ProjectResolver<'_>>,
     debug: Option<&dyn DebugSourceProvider>,
@@ -450,6 +473,7 @@ fn compile_with_lookup(
         debug_current: None,
         debug_last: None,
         statement_span: None,
+        discarded_call_root: None,
         resolver_failure: std::cell::RefCell::new(None),
         locals: Vec::new(),
         local_slots: HashMap::new(),
@@ -477,7 +501,7 @@ fn compile_with_lookup(
         );
     }
     compiler.parameter_defaults().map_err(|error| vec![error])?;
-    let lowered = if let Some(scopes) = scopes {
+    let lowered = if let Some(TypedInput::Scopes(scopes)) = typed {
         let mut result = Ok(());
         for scope in scopes {
             if !typed_statements_supported(scope.statements) {
@@ -491,7 +515,7 @@ fn compile_with_lookup(
             }
         }
         result
-    } else if let Some(statements) = statements {
+    } else if let Some(TypedInput::Statements(statements)) = typed {
         if !typed_statements_supported(statements) {
             return Err(vec![error(
                 "typed statements",
@@ -499,6 +523,8 @@ fn compile_with_lookup(
             )]);
         }
         compiler.typed_statements(statements)
+    } else if let Some(TypedInput::Modified(fields)) = typed {
+        compiler.modified_fields(fields)
     } else {
         let typed = parse_body_items(body);
         if typed.diagnostics.is_empty() && typed_statements_supported(&typed.statements) {
@@ -529,6 +555,11 @@ fn compile_with_lookup(
             for operand in &mut instruction.operands {
                 if let Word::Value(ValueWord::ClassPath { path, .. }) = operand {
                     let runtime_type = lookup.runtime_type(path).map_err(|error| vec![error])?;
+                    if path == "/list" && runtime_type == *path {
+                        seen.insert(path.clone());
+                        *operand = Word::Value(ValueWord::ListType);
+                        continue;
+                    }
                     if runtime_type != *path {
                         let alias = path.clone();
                         if seen.insert(alias.clone()) {
@@ -671,6 +702,10 @@ fn local_name(declaration: &str) -> Option<&str> {
     (!name.is_empty() && name.chars().all(|ch| ch.is_alphanumeric() || ch == '_')).then_some(name)
 }
 
+fn runtime_declaration_path(path: &str) -> String {
+    format!("/{}", dm_syntax::project_declaration_type(path).runtime_path.trim_start_matches('/'))
+}
+
 fn local_array_dimensions(declaration: &str) -> Option<Vec<&str>> {
     let raw = declaration.strip_prefix("var/")?;
     let first = raw.find('[')?;
@@ -717,6 +752,9 @@ struct Compiler<'a> {
     debug_current: Option<u32>,
     debug_last: Option<u32>,
     statement_span: Option<LowerSpan>,
+    // Exact AST node identity, not source-span equality: synthesized expressions
+    // can share spans. Only an immediate statement call may discard its result.
+    discarded_call_root: Option<*const Expr>,
     // Some legacy syntax fallbacks catch LowerError. Semantic query failures
     // survive those fallbacks and prevent any successful lowered result.
     resolver_failure: std::cell::RefCell<Option<LowerError>>,
@@ -1165,8 +1203,7 @@ impl Compiler<'_> {
                             continue;
                         }
                     }
-                    self.expression(value, &statement.raw_header)?;
-                    self.emit(opcode::POP, vec![]);
+                    self.discarded_expression(value, &statement.raw_header)?;
                 }
                 StatementKind::Assign { target, op, value } => {
                     self.assign_expr(target, op, value, &statement.raw_header)?;
@@ -1202,7 +1239,7 @@ impl Compiler<'_> {
                         .strip_prefix("var/")
                         .and_then(|raw| raw.rsplit_once('/'))
                     {
-                        self.local_types.insert(name.into(), format!("/{path}"));
+                        self.local_types.insert(name.into(), runtime_declaration_path(path));
                     } else if declaration.trim_end().ends_with("[]") {
                         self.local_types.insert(name.into(), "/list".into());
                     }
@@ -1276,7 +1313,7 @@ impl Compiler<'_> {
                     let (type_name, _) = raw.rsplit_once('/').ok_or_else(|| {
                         error(&statement.raw_header, "world iterator requires a type")
                     })?;
-                    let path = format!("/{type_name}");
+                    let path = runtime_declaration_path(type_name);
                     let tag = self.class_tag(&path)?.ok_or_else(|| {
                         error(&statement.raw_header, "unsupported world iterator type")
                     })?;
@@ -1377,7 +1414,7 @@ impl Compiler<'_> {
                             .strip_prefix("var/")
                             .and_then(|raw| raw.rsplit_once('/'))
                         {
-                            self.local_types.insert(name.into(), format!("/{path}"));
+                            self.local_types.insert(name.into(), runtime_declaration_path(path));
                         }
                         self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
                         self.emit(
@@ -1417,7 +1454,7 @@ impl Compiler<'_> {
                             .strip_prefix("var/")
                             .and_then(|raw| raw.rsplit_once('/'))
                         {
-                            let path = format!("/{type_name}");
+                            let path = runtime_declaration_path(type_name);
                             let tag = self.class_tag(&path)?.ok_or_else(|| {
                                 error(&statement.raw_header, "unsupported iterator type")
                             })?;
@@ -1480,7 +1517,7 @@ impl Compiler<'_> {
                                 .strip_prefix("var/")
                                 .and_then(|raw| raw.rsplit_once('/'))
                             {
-                                self.local_types.insert(name.into(), format!("/{path}"));
+                                self.local_types.insert(name.into(), runtime_declaration_path(path));
                             }
                             self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
                             self.emit(
@@ -2468,8 +2505,31 @@ impl Compiler<'_> {
                 return self.assign_expr(lhs, op, rhs, statement);
             }
         }
-        self.expression(expr, statement)?;
-        self.emit(opcode::POP, vec![]);
+        self.discarded_expression(expr, statement)?;
+        Ok(())
+    }
+
+    fn direct_call_opcode(&self, expr: &Expr) -> u32 {
+        if self.discarded_call_root.is_some_and(|root| std::ptr::eq(root, expr)) {
+            0x2a
+        } else {
+            opcode::CALL
+        }
+    }
+    fn discarded_expression(&mut self, expr: &Expr, statement: &str) -> Result<(), LowerError> {
+        let previous = self.discarded_call_root.replace(expr);
+        let result = self.expression(expr, statement);
+        self.discarded_call_root = previous;
+        result?;
+        if matches!(self.result.code.items.last(), Some(CodeItem::Instruction(instruction)) if instruction.opcode == 0x2a) {
+            // CallStatement skips one raw word. A source marker must never be
+            // inserted between it and this otherwise executable Pop marker.
+            self.result.code.items.push(CodeItem::Instruction(Instruction {
+                opcode: opcode::POP, operands: vec![],
+            }));
+        } else {
+            self.emit(opcode::POP, vec![]);
+        }
         Ok(())
     }
 
@@ -2985,6 +3045,21 @@ impl Compiler<'_> {
         }
     }
 
+    fn modified_fields(&mut self, fields: &[(String, Expr)]) -> Result<(), LowerError> {
+        let owner = self.bindings.current_type_path.clone().ok_or_else(|| error("modified initializer", "receiver type is missing"))?;
+        for (index, (name, value)) in fields.iter().enumerate() {
+            self.statement_span = Some(LowerSpan { start:value.span.start, end:value.span.end });
+            if let Some(debug) = self.debug { self.debug_current = Some(debug.ordinal(index).map_err(|reason| error("modified initializer", &reason))?); }
+            let lookup = self.lookup.ok_or_else(|| error("modified initializer", "immutable resolver is missing"))?;
+            if !self.semantic(lookup.presence(dm_ir::ResolveQuery::HasMemberVar {owner:dm_ir::SymbolId::of(&owner),name:dm_ir::SymbolId::of(name)}))? {
+                return Err(error("modified initializer", "modified field is absent"));
+            }
+            self.expression(value, "modified initializer")?;
+            self.intern_string(name);
+            self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::SetCache(Box::new(VariableWord::Src), Box::new(VariableWord::Field(name.clone()))))]);
+        }
+        Ok(())
+    }
     fn inc_dec(&mut self, target: &Expr, opcode: u32, statement: &str) -> Result<(), LowerError> {
         if let ExprKind::Call { callee, args } = &target.kind {
             if matches!(&callee.kind, ExprKind::Ident(name) if name == "length") {
@@ -3101,7 +3176,7 @@ impl Compiler<'_> {
                 .map(|(path, _)| path)
                 .filter(|path| !path.is_empty())
                 .ok_or_else(|| error(statement, "locate() requires a typed assignment"))?;
-            let path = format!("/{type_name}");
+            let path = runtime_declaration_path(type_name);
             let tag = self
                 .class_tag(&path)?
                 .ok_or_else(|| error(statement, "unsupported inferred locate type"))?;
@@ -3126,7 +3201,7 @@ impl Compiler<'_> {
                     .map(|(path, _)| path)
                     .filter(|path| !path.is_empty())
                     .ok_or_else(|| error(statement, "locate() requires a typed assignment"))?;
-                let path = format!("/{type_name}");
+                let path = runtime_declaration_path(type_name);
                 let tag = self
                     .class_tag(&path)?
                     .ok_or_else(|| error(statement, "unsupported inferred locate type"))?;
@@ -3179,7 +3254,7 @@ impl Compiler<'_> {
                 .filter(|path| !path.is_empty())
                 .or_else(|| declaration.trim_end().ends_with("[]").then_some("list"))
                 .ok_or_else(|| error(statement, "inferred new requires a typed local"))?;
-            let path = format!("/{type_name}");
+            let path = runtime_declaration_path(type_name);
             let tag = self
                 .class_tag(&path)?
                 .ok_or_else(|| error(statement, "unsupported inferred constructor type"))?;
@@ -3246,7 +3321,7 @@ impl Compiler<'_> {
                     return self
                         .local_types
                         .get(name)
-                        .map(|path| self.normalize_inferred_type(path))
+                        .map(|path| self.normalize_inferred_type(&runtime_declaration_path(path)))
                         .transpose();
                 }
                 if self
@@ -3259,7 +3334,7 @@ impl Compiler<'_> {
                         .bindings
                         .parameter_types
                         .get(name)
-                        .map(|path| self.normalize_inferred_type(path))
+                        .map(|path| self.normalize_inferred_type(&runtime_declaration_path(path)))
                         .transpose();
                 }
                 {
@@ -3280,6 +3355,9 @@ impl Compiler<'_> {
                                 })
                                 .transpose();
                         }
+                    }
+                    if name == "world" {
+                        return self.normalize_inferred_type("/world").map(Some);
                     }
                     if let (Some(lookup), Some(owner)) =
                         (self.lookup, self.bindings.current_type_path.as_deref())
@@ -3575,11 +3653,18 @@ impl Compiler<'_> {
             return Ok(());
         }
         match &expr.kind {
-            ExprKind::ObjectInitializer { .. } => {
-                return Err(error(
-                    statement,
-                    "object initializer requires an anonymous class entry",
-                ));
+            ExprKind::ObjectInitializer { object, fields } => {
+                let ExprKind::TypePath(path) = &object.kind else {
+                    return Err(error(statement, "modified instance requires an explicit type"));
+                };
+                let lookup = self.lookup.ok_or_else(|| error(statement,
+                    "object initializer requires captured descriptor support"))?;
+                let owner = self.bindings.current_type_path.as_deref().unwrap_or("/");
+                let alias = self.semantic(lookup.modified_instance(path.trim_end_matches('/'), owner, fields, self.debug_current))?;
+                if !self.result.instance_paths.contains(&alias) {
+                    self.result.instance_paths.push(alias.clone());
+                }
+                self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Instance(alias))]);
             }
             ExprKind::TypeFilter { .. } => {
                 if let Some((args, types)) = self.input_form(expr) {
@@ -3756,9 +3841,13 @@ impl Compiler<'_> {
                     || path.starts_with("/verb/")
                     || path.contains("/verb/")
                 {
+                    let value_path = match self.lookup {
+                        Some(lookup) => self.semantic(lookup.procedure_literal(path))?,
+                        None => path.clone(),
+                    };
                     self.emit(
                         opcode::PUSH_VAL,
-                        vec![Word::Value(ValueWord::ProcPath(path.clone()))],
+                        vec![Word::Value(ValueWord::ProcPath(value_path))],
                     );
                     return Ok(());
                 }
@@ -3784,7 +3873,8 @@ impl Compiler<'_> {
                     };
                     return self.expression(&literal, statement);
                 }
-                if !self.local_slots.contains_key(name)
+                if !matches!(name.as_str(), "src" | "usr" | "world" | "args" | ".")
+                    && !self.local_slots.contains_key(name)
                     && !self
                         .bindings
                         .parameters
@@ -4323,7 +4413,7 @@ impl Compiler<'_> {
                             }
                         }
                         self.emit(
-                            opcode::CALL,
+                            self.direct_call_opcode(expr),
                             vec![
                                 Word::Variable(VariableWord::SetCache(
                                     Box::new(owner),
@@ -5319,7 +5409,7 @@ impl Compiler<'_> {
                         }
                     }
                     self.emit(
-                        opcode::CALL,
+                        self.direct_call_opcode(expr),
                         vec![
                             Word::Variable(VariableWord::SetCache(
                                 Box::new(VariableWord::Src),
@@ -5696,6 +5786,81 @@ mod tests {
     }
     use super::*;
     use crate::{link_proc, Ledger, Table};
+
+    #[test]
+    fn direct_discarded_calls_match_native_ownership_modes_and_pop_markers() {
+        fn find<'a>(items: &'a [Item], name: &str) -> Option<&'a Item> {
+            for item in items {
+                if item.header.split('(').next()?.rsplit('/').next() == Some(name) {
+                    return Some(item);
+                }
+                if let Some(found) = find(&item.children, name) { return Some(found); }
+            }
+            None
+        }
+        struct Debug;
+        impl DebugSourceProvider for Debug {
+            fn entry_ordinal(&self) -> Result<u32, String> { Ok(0) }
+            fn ordinal(&self, offset: usize) -> Result<u32, String> {
+                u32::try_from(offset).map_err(|error| error.to_string())
+            }
+        }
+        type Cases<'a> = &'a [(&'a str, &'a [&'a str])];
+        let fixtures: [(&str, &[u8], Cases<'_>); 3] = [
+            (include_str!("../../../fixtures/lowering/self_call_ownership.dm"),
+             include_bytes!("../../../fixtures/lowering/self_call_ownership.bin"),
+             &[("discard", &[]), ("named", &[]), ("with_args", &["L"]),
+               ("value", &[]), ("choice", &["a"]), ("reverse", &["a"]), ("multiline", &[])]),
+            (include_str!("../../../fixtures/lowering/computed_call_ownership.dm"),
+             include_bytes!("../../../fixtures/lowering/computed_call_ownership.bin"),
+             &[("computed_empty", &["O"]), ("computed_positional", &["O"]),
+               ("computed_named", &["O"]), ("computed_arglist", &["O", "L"]),
+               ("computed_conditional", &["a", "O", "P"]), ("computed_short", &["a", "O"]),
+               ("computed_value", &["O"]), ("computed_safe", &["O"]),
+               ("direct_child", &["O"]), ("direct_owner", &["O"]), ("direct_multiline", &["O"])]),
+            (include_str!("../../../fixtures/lowering/grouped_call_ownership.dm"),
+             include_bytes!("../../../fixtures/lowering/grouped_call_ownership.bin"),
+             &[("group_self", &[]), ("group_direct", &["O"]), ("group_computed", &["O"])]),
+        ];
+        for (source, bytes, cases) in fixtures {
+            let ast = dm_syntax::parse(source);
+            let native = byond_dmb::dmb::Dmb::from_bytes(bytes).unwrap();
+            for &(name, parameters) in cases {
+                let item = find(&ast.items, name).unwrap();
+                let id = native.procs.iter().position(|proc| native.string(proc.strings[0])
+                    .is_some_and(|path| path.ends_with(format!("/{name}").as_bytes()))).unwrap();
+                let native_calls = byond_dmb::bytecode::decode(native.proc_code_words(id).unwrap()).unwrap()
+                    .into_iter().filter(|instruction| matches!(instruction.opcode, 0x29 | 0x2a))
+                    .map(|instruction| instruction.opcode).collect::<Vec<_>>();
+                for debug in [false, true] {
+                    let mut bindings = LowerBindings { parameters: parameters.iter().map(|name| (*name).into()).collect(), ..Default::default() };
+                    bindings.global_procs.insert("getter".into());
+                    for parameter in ["O", "P"] {
+                        bindings.parameter_types.insert(parameter.into(), "/datum/ownership".into());
+                    }
+                    bindings.parameter_types.insert("L".into(), "/list".into());
+                    let compiled = compile_with_lookup(&item.children, None, &bindings, None,
+                        debug.then_some(&Debug as &dyn DebugSourceProvider)).unwrap();
+                    let frozen = crate::freeze_proc(&compiled.code, |symbol| Ok(match symbol.table {
+                        Table::String => dm_ir::SymRef::String(dm_ir::SymbolId::of(&symbol.key)),
+                        Table::Class => dm_ir::SymRef::Type(dm_ir::SymbolId::of(&symbol.key)),
+                        Table::Proc => dm_ir::SymRef::Proc { owner: dm_ir::SymbolId::of("/"), name: dm_ir::SymbolId::of(symbol.key.rsplit('/').next().unwrap()), occurrence: 0 },
+                        _ => return Err(format!("unexpected ownership fixture reference: {symbol:?}")),
+                    })).unwrap();
+                    let words = frozen.code().words();
+                    let decoded = byond_dmb::bytecode::decode(words).unwrap();
+                    let calls = decoded.iter().filter(|instruction| matches!(instruction.opcode, 0x29 | 0x2a))
+                        .map(|instruction| instruction.opcode).collect::<Vec<_>>();
+                    assert_eq!(calls, native_calls, "{name}, debug={debug}");
+                    for call in decoded.iter().filter(|instruction| instruction.opcode == 0x2a) {
+                        let marker = call.offset + 1 + call.operands.len();
+                        assert_eq!(words[marker], opcode::POP, "{name}, debug={debug}");
+                        assert!(decoded.iter().all(|instruction| !instruction.branch_targets().unwrap().contains(&(marker as u32))), "branch enters skipped Pop: {name}");
+                    }
+                }
+            }
+        }
+    }
 
     #[test]
     fn nameof_fields_and_variables_match_native_without_evaluating_receivers() {

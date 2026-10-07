@@ -359,6 +359,22 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         .require_production_abi()
         .map_err(|_| ColdError::NonAuthoritativeAbi)?;
     measurement.complete();
+    // Discover anonymous descriptors only from actual emitted operand sites.
+    // Recursive descriptor initializers append to one request-local graph.
+    let seeds = batch.units.iter().flat_map(|unit| std::iter::once((&unit.code, &unit.debug_origins))
+        .chain(unit.source_helpers.iter().map(|helper| (&helper.code, &helper.debug_origins))))
+        .chain(initialization.units.iter().map(|unit| (&unit.code, &unit.debug_origins)))
+        .chain(map_initializers.iter().map(|unit| (&unit.code, &unit.debug_origins)));
+    let modified_defaults = crate::modified_initializers::default_seeds(frontend, &plan, &initialization.classified)
+        .map_err(ColdError::Initializer)?;
+    let modified = crate::modified_initializers::collect_with_defaults(seeds, &modified_defaults, plan.symbols.as_ref(), resolver, declarations.initializers.pure_calls())
+        .map_err(ColdError::Initializer)?;
+    crate::modified_output::contribute(&modified.descriptors, &mut inventory).map_err(ColdError::Initializer)?;
+    let modified_stage = crate::modified_initializers::Stage { descriptors:&modified.descriptors, types:declarations.type_values, next:non_text };
+    let non_text = Some(&modified_stage as &dyn crate::composition::NonTextOutputStage);
+    // Every anonymous initializer uses the same operand reachability pass and
+    // freezer, including type operands used only inside descriptor field values.
+    let initialization_artifacts: Vec<_> = map_initializers.into_iter().chain(modified.artifacts).collect();
     let measurement = StageMeasurement::new(observer, ColdStage::RequiredTypeAdmission);
     let non_text_types = non_text
         .map(|stage| stage.required_types())
@@ -369,7 +385,7 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
             source_order: declarations.source_type_order,
             bodies: &batch,
             initializers: &initialization.units,
-            maps: &map_initializers,
+            maps: &initialization_artifacts,
             inventory: &inventory,
             symbols: plan.symbols.as_ref(),
             non_text_types: &non_text_types,
@@ -390,7 +406,7 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         .units
         .into_iter()
         .map(Into::into)
-        .chain(map_initializers)
+        .chain(initialization_artifacts)
         .collect();
     let frozen = crate::symbolic::freeze_artifact_tables(
         batch,
@@ -450,7 +466,7 @@ mod tests {
         impl dm_preprocess::SourceProvider for ClassSource {
             fn read(&self, _: &Path) -> Result<String, String> {
                 Ok(
-                    "/datum/demo\n    var/value = 7\n/datum/demo/proc/read()\n    return value\n"
+                    "/datum/demo\n    var/value = 7\n    var/preset = /datum/demo{value=3}\n/datum/demo/proc/read()\n    return value\n"
                         .into(),
                 )
             }
@@ -459,8 +475,9 @@ mod tests {
         impl crate::class_projection::TypeValuePolicy for NoTypeDefaults {
             fn tag(
                 &self,
-                _: dm_ir::SymbolId,
+                path: dm_ir::SymbolId,
             ) -> Result<u8, crate::class_projection::ProjectionError> {
+                if path == dm_ir::SymbolId::of("/datum/demo") { return Ok(32); }
                 Err(crate::class_projection::ProjectionError::Unsupported(
                     "fixture has no type defaults".into(),
                 ))
@@ -483,9 +500,19 @@ mod tests {
             },
         )
         .unwrap();
-        let evaluator = DriverEvaluator {
+        // Runtime type interpretation is a captured host policy, not a tree
+        // declaration query. Use the same host boundary as production.
+        let mut host_symbols = frontend.snapshot.tree.symbols().clone();
+        let constants = crate::engine_host::ConstantCatalog::native_516_1687(&mut host_symbols).unwrap();
+        let runtime = crate::engine_host::RuntimeAliasCatalog::new(
+            engine.identity(), &host_symbols, Vec::new(),
+            frontend.snapshot.tree.types().iter().map(|node| node.path).collect(),
+            crate::engine_host::Completeness::Partial,
+        ).unwrap();
+        let host = crate::engine_host::EngineResolverHost::new(frontend.snapshot.tree.clone(), constants, runtime);
+        let evaluator = DriverEvaluator { pure_calls: None,
             resource_search_context: None,
-            resolver: frontend.snapshot.tree.as_ref(),
+            resolver: &host,
             symbols: frontend.snapshot.tree.symbols(),
         };
         // This finite fixture explicitly certifies read as a new procedure. It
@@ -509,7 +536,7 @@ mod tests {
         .unwrap();
         let output = compile_captured_classified_program(
             &frontend,
-            frontend.snapshot.tree.as_ref(),
+            &host,
             &policy,
             CapturedLinkInputs {
                 engine_bytes: bytes,
@@ -553,6 +580,14 @@ mod tests {
                 && record.kind == 42
                 && record.value == 7f32.to_bits()
         }));
+        let preset = declarations.iter().find_map(|(id, _)| {
+            let record = &image.variables[*id as usize];
+            (image.string(record.name) == Some(b"preset".as_slice())).then_some(record)
+        }).unwrap();
+        assert_eq!(preset.kind, 41, "modified default must remain a stored descriptor");
+        assert!((preset.value as usize) < image.instances.len());
+        assert_eq!(image.classes[class].lists_and_procs[2], u32::from(u16::MAX),
+            "stored modified defaults must not add a class runtime assignment");
         assert!(
             image
                 .procs
@@ -674,7 +709,7 @@ mod tests {
         };
         assert_eq!(host.resolve(query), M::Unsupported(query));
 
-        let evaluator = crate::driver_facts::DriverEvaluator {
+        let evaluator = crate::driver_facts::DriverEvaluator { pure_calls: None,
             resource_search_context: None,
             resolver: &host,
             symbols: frontend.snapshot.tree.symbols(),

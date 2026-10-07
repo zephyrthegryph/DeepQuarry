@@ -85,12 +85,19 @@ def main():
     if compiler_identities["byond"] != fixture_receipt["compiler_sha256"]:
         raise ValueError("BYOND executable differs from captured fixture compiler")
     results = []
-    for case in args.case or DEFAULT_CASES:
+    default_cases = (["bare", "outer_visible"] if (args.fixtures / "bare/probe.dme").is_file()
+                     else DEFAULT_CASES)
+    for case in args.case or default_cases:
         if Path(case).name != case:
             raise ValueError("case must be a fixture basename")
+        # Flat scalar controls and self-contained per-case captures share the
+        # same comparison path; do not assume a particular fixture layout.
         original = args.fixtures / f"{case}.dm"
+        if not original.is_file():
+            original = args.fixtures / case / "probe.dme"
         source_hash = sha(original)
-        if source_hash != fixture_receipt["files"][original.name]:
+        source_key = original.relative_to(args.fixtures).as_posix()
+        if source_hash != fixture_receipt["files"][source_key]:
             raise ValueError(f"captured source hash mismatch: {case}")
         directory = args.output / case
         directory.mkdir()

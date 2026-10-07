@@ -166,9 +166,15 @@ fn encode_internal(
                 match operand {
                     Word::Immediate(value) => words.push(*value),
                     Word::SourceFile(origin) | Word::SourceLine(origin) => {
-                        let expected = if matches!(operand, Word::SourceFile(_)) { 0x84 } else { 0x85 };
+                        let expected = if matches!(operand, Word::SourceFile(_)) {
+                            0x84
+                        } else {
+                            0x85
+                        };
                         if instruction.opcode != expected || instruction.operands.len() != 1 {
-                            return Err(LinkError::Decode("debug source operand used outside its DBG instruction".into()));
+                            return Err(LinkError::Decode(
+                                "debug source operand used outside its DBG instruction".into(),
+                            ));
                         }
                         if !allow_debug {
                             return Err(LinkError::MissingDebugOrigin(*origin));
@@ -229,6 +235,7 @@ fn encode_internal(
                         words.extend([12 | ((id >> 16) << 8), id & 0xffff]);
                     }
                     Word::Value(ValueWord::FileType) => words.extend([39, 0]),
+                    Word::Value(ValueWord::ListType) => words.extend([40, 0]),
                     Word::Value(ValueWord::ClassPath { path, tag }) => {
                         let symbol = Symbol::new(Table::Class, path);
                         let id = resolve(&symbol)?;
@@ -441,6 +448,31 @@ mod tests {
         assert!(frozen.code().link(|_| None).is_err());
     }
 
+    #[test]
+    fn list_primitive_has_zero_payload_without_type_relocation() {
+        let proc = SymbolicProc {
+            items: vec![
+                Item::Instruction(Instruction {
+                    opcode: 0x60,
+                    operands: vec![Word::Value(ValueWord::ListType)],
+                }),
+                Item::Instruction(Instruction {
+                    opcode: 1,
+                    operands: vec![Word::Immediate(0)],
+                }),
+                Item::Instruction(Instruction {
+                    opcode: 0,
+                    operands: vec![],
+                }),
+            ],
+        };
+        let encoded = encode(&proc, &mut |_| {
+            panic!("primitive must not require an output table binding")
+        })
+        .unwrap();
+        assert_eq!(encoded.linked.words, [0x60, 40, 0, 1, 0, 0]);
+        assert!(encoded.sites.is_empty());
+    }
     #[test]
     fn packed_and_nested_operands_match_existing_linked_abi() {
         let proc = SymbolicProc {

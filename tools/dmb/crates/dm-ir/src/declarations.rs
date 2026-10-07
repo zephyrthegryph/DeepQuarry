@@ -74,6 +74,8 @@ impl SymbolicExpression {
 pub struct Parameter {
     pub name: SymbolId,
     pub declared_type: Option<SymbolId>,
+    /// Authored list/T element hint, distinct from the runtime /list container.
+    pub list_element_type: Option<SymbolId>,
     /// Declaration modifiers, using the shared variable declaration flag masks.
     pub flags: u32,
     pub array: Option<Arc<ArrayDeclaration>>,
@@ -153,6 +155,8 @@ impl ProcedureSignature {
                     .to_le_bytes(),
             );
             append_expression(&mut bytes, parameter.default.as_ref());
+            bytes.push(u8::from(parameter.list_element_type.is_some()));
+            bytes.extend_from_slice(&parameter.list_element_type.map(SymbolId::bits).unwrap_or(0).to_le_bytes());
             append_expression(&mut bytes, parameter.input_annotation.as_ref());
             append_expression(&mut bytes, parameter.source_expression.as_ref());
         }
@@ -244,6 +248,9 @@ pub enum SemanticValue {
     NumberBits(u32),
     Text(Arc<[u8]>),
     Type(SymbolId),
+    /// Exact resolver-issued source callable occurrence; not a type or wire ID.
+    Procedure(crate::ProcedureIdentity),
+    ModifiedInstance(Arc<crate::ModifiedInstance>),
     Resource(SymbolId),
     /// Ordered entries; None is a positional entry, Some is an associative key.
     /// Mutable list identity is retained by the initializer occurrence, not
@@ -267,6 +274,19 @@ impl SemanticValue {
             Self::Type(path) => {
                 bytes.push(3);
                 bytes.extend_from_slice(&path.bits().to_le_bytes());
+            }
+            Self::Procedure(procedure) => {
+                bytes.push(6);
+                bytes.extend_from_slice(&procedure.owner.bits().to_le_bytes());
+                bytes.extend_from_slice(&procedure.name.bits().to_le_bytes());
+                bytes.push(u8::from(procedure.verb));
+                bytes.extend_from_slice(&procedure.occurrence.to_le_bytes());
+            }
+            Self::ModifiedInstance(instance) => {
+                bytes.push(7);
+                let data = instance.canonical_bytes();
+                bytes.extend_from_slice(&(data.len() as u64).to_le_bytes());
+                bytes.extend_from_slice(data);
             }
             Self::Resource(path) => {
                 bytes.push(4);
@@ -330,6 +350,8 @@ pub struct DeclarationMeaning {
     /// Consumers must not interpret syntax-only zero/None as inherited values.
     pub inherited_opaque: Option<OpaqueFieldBase>,
     pub declared_type: Option<SymbolId>,
+    /// Formal authored list/T hint. Inherited opaque metadata leaves it unknown.
+    pub list_element_type: Option<SymbolId>,
     pub display_name: Option<SymbolId>,
     pub flags: u32,
     pub procedure: Option<Arc<ProcedureMetadata>>,
@@ -345,6 +367,7 @@ impl Default for DeclarationMeaning {
         Self {
             inherited_opaque: None,
             declared_type: None,
+            list_element_type: None,
             display_name: None,
             flags: 0,
             procedure: None,

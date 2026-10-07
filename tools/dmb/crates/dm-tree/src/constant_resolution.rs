@@ -1,6 +1,6 @@
 //! Demand-driven scalar evaluation over one immutable declaration snapshot.
 //! Backend decoding is explicit; unsupported values never become null/missing.
-use crate::constants::{evaluate_with, Constant};
+use crate::constants::{evaluate_with_resources_and_calls, Constant, PureCallError, PureCalls};
 use crate::{DefinitionMode, MemberId, MemberKind, SemanticTree, TreeSnapshot};
 use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver, SemanticValue, SymbolId};
 use dm_syntax::Expr;
@@ -57,6 +57,7 @@ impl UnsupportedReason {
 pub enum ScalarOutcome {
     Value(SemanticValue),
     Unsupported(UnsupportedReason),
+    RejectedPureCall(PureCallError),
     /// Actual dependency-cycle traversal, rotated to its lowest structural key.
     Cycle(Arc<[ScalarQuery]>),
 }
@@ -104,6 +105,7 @@ struct Pass<'a> {
     backend: &'a ScalarBackend<'a>,
     memo: RefCell<Memo>,
     predefined: Option<&'a dyn Resolver>,
+    calls: Option<&'a dyn PureCalls>,
 }
 impl Pass<'_> {
     fn member(&self, owner: SymbolId, name: SymbolId) -> Option<MemberId> {
@@ -174,7 +176,7 @@ impl Pass<'_> {
             return ScalarOutcome::Unsupported(UnsupportedReason::RuntimeOrUnsupportedExpression);
         };
         let failure = RefCell::new(None);
-        let result = evaluate_with(
+        let result = evaluate_with_resources_and_calls(
             &text,
             |name| {
                 let dependency = if let Some((path, name)) = name.rsplit_once("::") {
@@ -253,13 +255,18 @@ impl Pass<'_> {
                 }
                 result
             },
+            |_| None,
+            self.calls,
         );
         match result {
-            Some(value) => to_semantic(value, self.tree).map_or(
+            Err(error) => failure
+                .into_inner()
+                .unwrap_or(ScalarOutcome::RejectedPureCall(error)),
+            Ok(Some(value)) => to_semantic(value, self.tree).map_or(
                 ScalarOutcome::Unsupported(UnsupportedReason::UnknownType),
                 ScalarOutcome::Value,
             ),
-            None => failure.into_inner().unwrap_or(ScalarOutcome::Unsupported(
+            Ok(None) => failure.into_inner().unwrap_or(ScalarOutcome::Unsupported(
                 UnsupportedReason::RuntimeOrUnsupportedExpression,
             )),
         }
@@ -275,6 +282,8 @@ fn to_constant(value: &SemanticValue, tree: &SemanticTree) -> Option<Constant> {
             Err(error) => Constant::EncodedText(error.into_bytes()),
         },
         SemanticValue::Type(path) => Constant::TypePath(tree.symbols().text(*path)?.into()),
+        SemanticValue::Procedure(procedure) => Constant::Procedure(*procedure),
+        SemanticValue::ModifiedInstance(instance) => Constant::ModifiedInstance(instance.clone()),
         SemanticValue::Resource(path) => Constant::Resource(*path),
         SemanticValue::List(_) => return None,
     })
@@ -283,10 +292,20 @@ fn to_semantic(value: Constant, tree: &SemanticTree) -> Option<SemanticValue> {
     Some(match value {
         Constant::Null => SemanticValue::Null,
         Constant::Resource(path) => SemanticValue::Resource(path),
+        Constant::Procedure(procedure) => SemanticValue::Procedure(procedure),
+        Constant::ModifiedInstance(instance) => SemanticValue::ModifiedInstance(instance),
         Constant::Number(value) => SemanticValue::NumberBits(value.to_bits()),
         Constant::Text(text) => SemanticValue::Text(Arc::from(text.as_bytes())),
         Constant::EncodedText(bytes) => SemanticValue::Text(bytes.into()),
         Constant::TypePath(path) => {
+            if let Some(query) = crate::constants::procedure_literal_query(&path) {
+                return match dm_ir::Resolver::resolve(tree, query) {
+                    dm_ir::ResolvedMeaning::Value(value @ SemanticValue::Procedure(_)) => {
+                        Some(value)
+                    }
+                    _ => None,
+                };
+            }
             let symbol = SymbolId::of(&path);
             tree.lookup_type(symbol)?;
             if tree.symbols().text(symbol) != Some(path.as_str()) {
@@ -315,12 +334,29 @@ pub fn resolve_with_predefined(
     backend: &ScalarBackend<'_>,
     predefined: Option<&dyn Resolver>,
 ) -> ScalarSnapshot {
+    resolve_with_predefined_and_calls(snapshot, requests, backend, predefined, None)
+}
+/// Pure-call policy identity is framed into the snapshot independently of decoder identity.
+pub fn resolve_with_predefined_and_calls(
+    snapshot: &TreeSnapshot,
+    requests: &[ScalarQuery],
+    backend: &ScalarBackend<'_>,
+    predefined: Option<&dyn Resolver>,
+    calls: Option<&dyn PureCalls>,
+) -> ScalarSnapshot {
+    let mut policy = backend.identity.to_le_bytes().to_vec();
+    policy.push(u8::from(calls.is_some()));
+    if let Some(calls) = calls {
+        policy.extend_from_slice(&calls.identity().to_le_bytes());
+    }
+    let backend_identity = xxhash_rust::xxh3::xxh3_128(&policy);
     let requested = requests.iter().copied().collect::<BTreeSet<_>>();
     let pass = Pass {
         tree: &snapshot.tree,
         backend,
         memo: RefCell::new(Memo::default()),
         predefined,
+        calls,
     };
     for query in &requested {
         pass.query(*query);
@@ -331,9 +367,13 @@ pub fn resolve_with_predefined(
         .into_iter()
         .map(|(query, edges)| (query, edges.into_iter().collect::<Vec<_>>().into()))
         .collect();
-    let mut bytes = b"dm-scalar-overlay-v2\0".to_vec();
+    let mut bytes = b"dm-scalar-overlay-v3\0".to_vec();
     bytes.extend_from_slice(&snapshot.tree.identity().to_le_bytes());
     bytes.extend_from_slice(&backend.identity.to_le_bytes());
+    bytes.push(u8::from(calls.is_some()));
+    if let Some(calls) = calls {
+        bytes.extend_from_slice(&calls.identity().to_le_bytes());
+    }
     bytes.extend_from_slice(&(requested.len() as u64).to_le_bytes());
     for query in &requested {
         query.encode(&mut bytes);
@@ -350,6 +390,13 @@ pub fn resolve_with_predefined(
             ScalarOutcome::Unsupported(reason) => {
                 bytes.push(1);
                 bytes.push(reason.tag());
+            }
+            ScalarOutcome::RejectedPureCall(error) => {
+                bytes.push(3);
+                for text in [&error.name, &error.reason] {
+                    bytes.extend_from_slice(&(text.len() as u64).to_le_bytes());
+                    bytes.extend_from_slice(text.as_bytes());
+                }
             }
             ScalarOutcome::Cycle(cycle) => {
                 bytes.push(2);
@@ -385,7 +432,7 @@ pub fn resolve_with_predefined(
     ScalarSnapshot {
         source: snapshot.clone(),
         identity: xxhash_rust::xxh3::xxh3_128(&bytes),
-        backend_identity: backend.identity,
+        backend_identity,
         requested: requested.into_iter().collect::<Vec<_>>().into(),
         outcomes: Arc::new(memo.values),
         dependencies: Arc::new(dependencies),
@@ -476,6 +523,69 @@ mod tests {
             decode_string: &|_| None,
             nameof: &|_| None,
         }
+    }
+    #[test]
+    fn pure_call_rejections_and_policy_are_retained_in_scalar_snapshot() {
+        struct Calls(u128);
+        impl PureCalls for Calls {
+            fn identity(&self) -> u128 {
+                self.0
+            }
+            fn accepts(&self, name: &str) -> bool {
+                name == "pure"
+            }
+            fn evaluate(
+                &self,
+                name: &str,
+                arguments: &[Option<Constant>],
+            ) -> Result<Constant, PureCallError> {
+                match arguments {
+                    [Some(value)] => Ok(value.clone()),
+                    _ => Err(PureCallError {
+                        name: name.into(),
+                        reason: "constant argument required".into(),
+                    }),
+                }
+            }
+        }
+        let source = snapshot("var/const/a = pure(7)\nvar/const/b = pure(runtime())\nvar/const/c = pure(d)\nvar/const/d = c\n");
+        let requests = [query("/", "a"), query("/", "b")];
+        let first = resolve_with_predefined_and_calls(
+            &source,
+            &requests,
+            &backend_disabled(),
+            None,
+            Some(&Calls(1)),
+        );
+        assert_eq!(first.outcome(requests[0]), Some(&number(7.0)));
+        assert!(
+            matches!(first.outcome(requests[1]), Some(ScalarOutcome::RejectedPureCall(error)) if error.name == "pure")
+        );
+        let second = resolve_with_predefined_and_calls(
+            &source,
+            &requests,
+            &backend_disabled(),
+            None,
+            Some(&Calls(2)),
+        );
+        assert_ne!(first.identity, second.identity);
+        assert_ne!(first.backend_identity, second.backend_identity);
+        let cycle = resolve_with_predefined_and_calls(
+            &source,
+            &[query("/", "c")],
+            &backend_disabled(),
+            None,
+            Some(&Calls(1)),
+        );
+        assert!(matches!(
+            cycle.outcome(query("/", "c")),
+            Some(ScalarOutcome::Cycle(_))
+        ));
+        let legacy = resolve(&source, &requests, &backend_disabled());
+        assert!(matches!(
+            legacy.outcome(requests[0]),
+            Some(ScalarOutcome::Unsupported(_))
+        ));
     }
     #[test]
     fn predefined_reads_are_recorded_separately_and_source_names_shadow_them() {

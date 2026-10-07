@@ -218,6 +218,10 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         .copied()
                         .filter(|part| !matches!(*part, "static" | "const" | "tmp" | "global"))
                         .collect();
+                    let authored_type = format!("/{}", type_parts.join("/"));
+                    let projection = dm_syntax::project_declaration_type(&authored_type);
+                    let list_element_type = projection.list_element_path
+                        .map(|path| symbol(context.symbols, &format!("/{path}"))).transpose()?;
                     let declared_type = if declaration.contains('[') {
                         Some(symbol(context.symbols, "/list")?)
                     } else if type_parts.is_empty() {
@@ -225,7 +229,11 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                     } else {
                         Some(symbol(
                             context.symbols,
-                            &format!("/{}", type_parts.join("/")),
+                            dm_syntax::project_declaration_type(&format!(
+                                "/{}",
+                                type_parts.join("/")
+                            ))
+                            .runtime_path,
                         )?)
                     };
                     let symbolic_initializer = initializer
@@ -255,6 +263,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                     let metadata = MemberMetadata {
                         inherited_opaque: None,
                         declared_type,
+                        list_element_type,
                         display_name: None,
                         flags,
                         procedure: None,
@@ -330,6 +339,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                     let metadata = MemberMetadata {
                         inherited_opaque: None,
                         declared_type: None,
+                        list_element_type: None,
                         display_name,
                         flags: 0,
                         procedure,
@@ -473,6 +483,33 @@ mod tests {
         )
         .unwrap()
     }
+
+    #[test]
+    fn resolution_observer_borrows_exact_source_ledger_only_on_failure() {
+        let adapted =
+            adapt("/datum/a\n    parent_type = /datum\n/datum/a\n    parent_type = /obj\n");
+        let skeleton_address = adapted.skeletons.as_ptr();
+        let origin_address = adapted.origins.as_ptr();
+        let expected_origins = adapted.origins.clone();
+        let mut calls = 0;
+        let result = adapted.finish_with_engine_observed(None, |error, skeletons, origins| {
+            calls += 1;
+            assert!(matches!(
+                error,
+                SnapshotError::Tree(crate::TreeError::ConflictingParent(_))
+            ));
+            assert_eq!(skeletons.as_ptr(), skeleton_address);
+            assert_eq!(origins.as_ptr(), origin_address);
+            assert_eq!(origins, expected_origins);
+        });
+        assert!(result.is_err());
+        assert_eq!(calls, 1);
+        adapt("/datum/a\n    var/value = 1\n")
+            .finish_with_engine_observed(None, |_, _, _| {
+                panic!("successful resolution notified observer")
+            })
+            .unwrap();
+    }
     #[test]
     fn qualified_assignment_preserves_owner_and_procedure_reference() {
         let result = adapt("/datum/base\n    var/callback\n/datum/base/callback = /proc/finish\n");
@@ -580,6 +617,37 @@ mod tests {
         ));
     }
     #[test]
+    fn typed_list_declarations_expose_the_runtime_container_type() {
+        let result = adapt("/datum/base\n    var/list/datum/feedback_variable/feedback = new()\n    proc/read(list/datum/feedback_variable/values)\n        return values\n");
+        let tree = build(result.symbols, &result.skeletons).unwrap();
+        let field = tree
+            .members()
+            .iter()
+            .find(|member| member.name == SymbolId::of("feedback"))
+            .unwrap();
+        assert_eq!(field.metadata.declared_type, Some(SymbolId::of("/list")));
+        assert!(
+            field.metadata.array.is_none(),
+            "a typed list is not a sized array"
+        );
+        let procedure = tree
+            .members()
+            .iter()
+            .find(|member| member.name == SymbolId::of("read"))
+            .unwrap();
+        assert_eq!(
+            procedure
+                .metadata
+                .procedure
+                .as_ref()
+                .unwrap()
+                .signature
+                .parameters[0]
+                .declared_type,
+            Some(SymbolId::of("/list"))
+        );
+    }
+    #[test]
     fn namespaces_arrays_defaults_and_settings_bridge_to_tree() {
         let result=adapt("/datum/base\n    var\n        static/list\n            values[2][3]\n    proc\n        read(value = 3 as num)\n            set name = \"Reader\"\n            set waitfor = 0\n            return value\n");
         let tree = build(result.symbols, &result.skeletons).unwrap();
@@ -622,6 +690,18 @@ mod tests {
         assert_eq!(field.metadata.declared_type, Some(SymbolId::of("/list")));
         assert_eq!(field.metadata.flags & 4, 4);
         assert!(field.previous.is_some());
+    }
+    #[test]
+    fn typed_list_hints_survive_formal_inheritance_without_changing_container() {
+        let result = adapt("/datum/base\n    var/list/datum/item/values\n/datum/child\n    parent_type = /datum/base\n    values = list()\n");
+        let tree = build(result.symbols, &result.skeletons).unwrap();
+        for path in ["/datum/base", "/datum/child"] {
+            let owner = tree.lookup_type(SymbolId::of(path)).unwrap();
+            let field = tree.member(tree.resolve(owner, SymbolId::of("values"), MemberKind::Var).unwrap()).unwrap();
+            assert_eq!(field.metadata.declared_type, Some(SymbolId::of("/list")));
+            assert_eq!(field.metadata.list_element_type, Some(SymbolId::of("/datum/item")));
+            assert!(field.metadata.array.is_none());
+        }
     }
     #[test]
     fn forward_multilevel_field_inheritance_resolves_in_dependency_order() {
@@ -845,6 +925,16 @@ impl AdaptedDeclarations {
         self,
         seed: Option<&crate::frontend::EngineSeed>,
     ) -> Result<TreeSnapshot, SnapshotError> {
+        self.finish_with_engine_observed(seed, |_, _, _| {})
+    }
+
+    /// Report failures while their original source ledger is still borrowed.
+    /// Successful resolution does not clone the source ledger for diagnostics.
+    pub fn finish_with_engine_observed(
+        self,
+        seed: Option<&crate::frontend::EngineSeed>,
+        mut on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
+    ) -> Result<TreeSnapshot, SnapshotError> {
         let mut skeletons = Vec::new();
         // Engine parents seed defaults; authored parent_type has language
         // precedence. Keep conflicts between two authored explicit parents an
@@ -858,9 +948,9 @@ impl AdaptedDeclarations {
             {
                 if let Some(previous) = authored_parents.insert(*path, *parent) {
                     if previous != *parent {
-                        return Err(SnapshotError::Tree(crate::TreeError::ConflictingParent(
-                            *path,
-                        )));
+                        let error = SnapshotError::Tree(crate::TreeError::ConflictingParent(*path));
+                        on_error(&error, &self.skeletons, &self.origins);
+                        return Err(error);
                     }
                 }
             }
@@ -891,18 +981,32 @@ impl AdaptedDeclarations {
         let intrinsics = seed.map_or(&[][..], |seed| seed.intrinsics.as_ref());
         let mut tree =
             crate::build_with_intrinsic_members(self.symbols, &skeletons, fields, intrinsics)
-                .map_err(SnapshotError::Tree)?;
+                .map_err(|error| {
+                    let error = SnapshotError::Tree(error);
+                    on_error(&error, &skeletons[engine_count..], &self.origins);
+                    error
+                })?;
         // The source ledger is a projection, not a made-up origin for seeds.
         tree.declaration_targets = tree.declaration_targets[engine_count..].into();
         if let Some(seed) = seed {
             tree = tree
                 .with_engine_intrinsics(hierarchy.unwrap(), seed.intrinsics.to_vec())
-                .map_err(SnapshotError::Inventory)?;
+                .map_err(|error| {
+                    let error = SnapshotError::Inventory(error);
+                    on_error(&error, &skeletons[engine_count..], &self.origins);
+                    error
+                })?;
         }
         let tree = Arc::new(tree);
-        let occurrences = Arc::new(
-            crate::OccurrenceTable::build(&tree, self.origins).map_err(SnapshotError::Origins)?,
-        );
+        let occurrences = Arc::new(crate::OccurrenceTable::build(&tree, self.origins).map_err(
+            |error| {
+                let error = SnapshotError::Origins(error);
+                // Origin validation errors carry their own exact error value;
+                // resolution_error never selects a declaration for this domain.
+                on_error(&error, &skeletons[engine_count..], &[]);
+                error
+            },
+        )?);
         Ok(TreeSnapshot { tree, occurrences })
     }
 }

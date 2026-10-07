@@ -122,7 +122,8 @@ impl SemanticTree {
                 }
             }
             let declaring_owner = self.types[node.owner.index()].path;
-            return if declaring_owner == SymbolId::of("/") || node.metadata.flags & (1 | 8) != 0 {
+            return if declaring_owner == SymbolId::of("/") || node.metadata.flags & (1 | 2 | 8) != 0
+            {
                 Self::slot(declaring_owner, name)
             } else {
                 M::InstanceField {
@@ -205,6 +206,38 @@ mod tests {
                 }
             ),
             M::Presence(false)
+        );
+    }
+    #[test]
+    fn const_declarations_use_shared_storage_at_the_formal_owner() {
+        // Native const-only controls allocate a footer slot with wire flags3;
+        // modified-instance setters remain a separate receiver-bound ABI.
+        let tree = tree("/datum/a\n    var/const/fixed = 3\n    var/static/shared = 4\n    var/value = 5\n/datum/a/b\n");
+        let declaring_owner = SymbolId::of("/datum/a");
+        let child = SymbolId::of("/datum/a/b");
+        for spelling in ["fixed", "shared"] {
+            let name = SymbolId::of(spelling);
+            let formal = Resolver::resolve(
+                &tree,
+                Q::VarStorage {
+                    owner: declaring_owner,
+                    name,
+                },
+            );
+            assert!(matches!(formal, M::Slot { owner, name: actual, .. }
+                if owner == declaring_owner && actual == name));
+            assert_eq!(
+                Resolver::resolve(&tree, Q::VarStorage { owner: child, name }),
+                formal
+            );
+        }
+        let name = SymbolId::of("value");
+        assert_eq!(
+            Resolver::resolve(&tree, Q::VarStorage { owner: child, name }),
+            M::InstanceField {
+                declaring_owner,
+                name
+            }
         );
     }
     #[test]

@@ -684,3 +684,27 @@ fn parsed_body_receipts_reject_other_issuers_and_public_capture_replacement() {
     changed_syntax.syntax = Arc::new((*frontend.syntax).clone());
     assert!(changed_syntax.compact_body(&changed_syntax.bodies[0]).is_err());
 }
+
+#[test]
+fn procedure_literals_issue_exact_formal_and_effective_occurrences() {
+    use dm_ir::{ResolveQuery as Q, ResolvedMeaning as M, Resolver, SemanticValue, ProcedureIdentity};
+    let provider = Memory(BTreeMap::from([(PathBuf::from("project.dme"),
+        "/proc/callback()\n    return 1\nvar/const/cb = /proc/callback\n/datum/base/proc/callback()\n    return 1\n/datum/base/callback()\n    return 2\n/datum/child\n    parent_type = /datum/base\n".into())]));
+    let frontend = build(Path::new("project.dme"), &provider, &BTreeMap::new(), 2).unwrap();
+    let tree = frontend.snapshot.tree.as_ref();
+    let name = SymbolId::of("callback");
+    let owner = SymbolId::of("/datum/base");
+    for (formal, occurrence) in [(true, 0), (false, 1)] {
+        assert_eq!(Resolver::resolve(tree, Q::ProcedureValue {owner,name,verb:false,formal}),
+            M::Value(SemanticValue::Procedure(ProcedureIdentity {owner,name,verb:false,occurrence})));
+    }
+    // Native controls reject child/proc/callback even with an own implicit override.
+    let query = Q::ProcedureValue {owner:SymbolId::of("/datum/child"),name,verb:false,formal:true};
+    assert!(!matches!(Resolver::resolve(tree,query), M::Value(_)));
+    let scalar = crate::constant_resolution::resolve(&frontend.snapshot,
+        &[crate::constant_resolution::ScalarQuery::Const {owner:SymbolId::of("/"),name:SymbolId::of("cb")}],
+        &crate::constant_resolution::ScalarBackend {identity:1,decode_string:&|_|None,nameof:&|_|None});
+    assert_eq!(scalar.outcome(crate::constant_resolution::ScalarQuery::Const {owner:SymbolId::of("/"),name:SymbolId::of("cb")}),
+        Some(&crate::constant_resolution::ScalarOutcome::Value(SemanticValue::Procedure(ProcedureIdentity {
+            owner:SymbolId::of("/"),name,verb:false,occurrence:0}))));
+}

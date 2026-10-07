@@ -94,14 +94,27 @@ pub struct StaticPlan {
 }
 const STORED_LOCAL_QUALIFIERS: &[(&str, u32)] = &[("static", 1), ("const", 2), ("global", 8)];
 fn stored_local_modifier(component: &str) -> u32 {
-    STORED_LOCAL_QUALIFIERS.iter().find_map(|(name, bit)| (*name == component).then_some(*bit)).unwrap_or(0)
+    STORED_LOCAL_QUALIFIERS
+        .iter()
+        .find_map(|(name, bit)| (*name == component).then_some(*bit))
+        .unwrap_or(0)
 }
 /// Negative-only eligibility check over already expanded source. The producer
 /// requires one of these literal path components. Substrings in comments,
 /// strings or longer identifiers deliberately remain candidates; no grammar or
 /// syntax admission is performed here. Final executable parsing is mandatory.
 pub fn may_contain_stored_declarations(expanded_source: &str) -> bool {
-    STORED_LOCAL_QUALIFIERS.iter().any(|(name, _)| expanded_source.contains(name))
+    STORED_LOCAL_QUALIFIERS
+        .iter()
+        .any(|(name, _)| expanded_source.contains(name))
+}
+/// Apply the same negative proof to the actual prepared body, including bodies
+/// transformed by a caller's ABI policy. No source-only admission is assumed.
+pub fn items_may_contain_stored_declarations(items: &[Item]) -> bool {
+    items.iter().any(|item| {
+        may_contain_stored_declarations(&item.header)
+            || items_may_contain_stored_declarations(&item.children)
+    })
 }
 pub fn capture(procedure: ProcedureIdentity, body: &[Item]) -> Result<StaticPlan, String> {
     let mut plan = capture_declarations(procedure, body)?;
@@ -200,8 +213,11 @@ fn walk(
                         "tmp" => modifiers |= 4,
                         other => {
                             let storage = stored_local_modifier(other);
-                            if storage != 0 { modifiers |= storage; }
-                            else { types.push(other); }
+                            if storage != 0 {
+                                modifiers |= storage;
+                            } else {
+                                types.push(other);
+                            }
                         }
                     }
                 }

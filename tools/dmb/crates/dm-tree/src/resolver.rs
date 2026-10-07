@@ -181,7 +181,7 @@ impl SemanticTree {
             Q::Var { owner, name } | Q::Constant { owner, name } => {
                 Some((owner, name, MemberKind::Var))
             }
-            Q::Proc { owner, name, verb } | Q::OverrideChain { owner, name, verb } => Some((
+            Q::Proc { owner, name, verb } | Q::ProcedureValue { owner, name, verb, .. } | Q::OverrideChain { owner, name, verb } => Some((
                 owner,
                 name,
                 if verb {

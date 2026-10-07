@@ -282,6 +282,12 @@ pub fn freeze_artifact_tables(
                 content.extend_from_slice(&(canonical_body.len() as u64).to_le_bytes());
                 content.extend_from_slice(canonical_body);
             }
+            crate::initialization_artifact::InitializationCoverage::ModifiedAssignments { count, canonical_body } => {
+                content.push(2);
+                content.extend_from_slice(&count.to_le_bytes());
+                content.extend_from_slice(&(canonical_body.len() as u64).to_le_bytes());
+                content.extend_from_slice(canonical_body);
+            }
         }
         let code = frozen.code().canonical_bytes();
         content.extend_from_slice(&(code.len() as u64).to_le_bytes());
@@ -473,6 +479,14 @@ fn freeze_artifact(
             SymRef::ProcedureStatic(*identity),
         )?;
     }
+    for (symbol, identity) in &code.procedure_values {
+        let reference = if identity.verb {
+            SymRef::Verb { owner: identity.owner, name: identity.name, occurrence: identity.occurrence }
+        } else {
+            SymRef::Proc { owner: identity.owner, name: identity.name, occurrence: identity.occurrence }
+        };
+        insert(&mut bindings, symbol.clone(), reference)?;
+    }
     for (symbol, slot) in &code.slots {
         insert(
             &mut bindings,
@@ -486,6 +500,13 @@ fn freeze_artifact(
         });
         // Slot payload/type/default is not derivable from presence. The
         // caller supplies its actual entry; only identity is recorded here.
+    }
+    for (symbol, captured) in &code.modified_instances {
+        let alias = captured.descriptor.alias();
+        if symbol != &Symbol::new(Table::Instance, &alias) {
+            return Err(IntegrationError::InvalidInitializer("modified descriptor symbol differs from exact content".into()));
+        }
+        insert(&mut bindings, symbol.clone(), SymRef::Instance(SymbolId::of(&alias)))?;
     }
     for (path, instance) in &code.instances {
         insert(
@@ -592,6 +613,37 @@ mod tests {
         dm_tree::frontend::build(Path::new("project.dme"), &Source, &BTreeMap::new(), 1).unwrap()
     }
     #[test]
+    fn runtime_list_procedure_literal_keeps_formal_body_identity() {
+        struct Procedures;
+        impl dm_preprocess::SourceProvider for Procedures {
+            fn read(&self, _: &Path) -> Result<String, String> {
+                Ok("/datum/base/proc/callback()\n    return 1\n/datum/base/callback()\n    return 2\n/proc/caller()\n    return list(/datum/base/proc/callback)\n".into())
+            }
+        }
+        let frontend = dm_tree::frontend::build(Path::new("project.dme"), &Procedures,
+            &BTreeMap::new(), 1).unwrap();
+        let tree = frontend.snapshot.tree.as_ref();
+        let query = |formal| Resolver::resolve(tree, ResolveQuery::ProcedureValue {
+            owner: SymbolId::of("/datum/base"), name: SymbolId::of("callback"), verb: false, formal,
+        });
+        let ResolvedMeaning::Value(dm_ir::SemanticValue::Procedure(formal)) = query(true) else { panic!("formal identity unavailable") };
+        let ResolvedMeaning::Value(dm_ir::SemanticValue::Procedure(effective)) = query(false) else { panic!("effective identity unavailable") };
+        assert_ne!(formal, effective);
+        let lowered = lower_frontend(&frontend, tree, &Policy, LoweringConfig::default());
+        assert!(lowered.diagnostics.is_empty(), "{:?}", lowered.diagnostics);
+        let frozen = freeze_and_link_tables(lowered, tree.symbols(),
+            &ReferenceBindings::default(), LinkInventory::default()).unwrap();
+        let caller = frozen.units.iter().position(|unit| unit.lowered.identity.name == SymbolId::of("caller")).unwrap();
+        let expected = SymRef::Proc { owner: formal.owner, name: formal.name, occurrence: formal.occurrence };
+        assert!(frozen.units[caller].frozen.code().relocations().iter().any(|site| site.reference == expected));
+        let index = frozen.tables.index(Key::Proc { owner: formal.owner, name: formal.name, occurrence: formal.occurrence }).unwrap();
+        let linked = frozen.link_unit(caller, &SourceBindings::default()).unwrap();
+        let decoded = byond_dmb::bytecode::decode(&linked.words).unwrap();
+        assert!(decoded.iter().any(|instruction| instruction.name == "PushVal"
+            && instruction.operands == [38, index]));
+        assert!(decoded.iter().any(|instruction| instruction.name == "NewList"));
+    }
+    #[test]
     fn implicit_before_formal_binds_the_certified_effective_body() {
         struct Reopened;
         impl dm_preprocess::SourceProvider for Reopened {
@@ -651,6 +703,7 @@ mod tests {
             vec![dm_codegen_byond::Word::Immediate(2)]
         );
         assert_eq!(executable[1].opcode, byond_dmb::bytecode::opcode::RET);
+        let batch_formal = batch.units.iter().find(|unit| unit.identity.name == read && !unit.effective).unwrap().identity;
         let frozen = freeze_and_link_tables(
             batch,
             frontend.snapshot.tree.symbols(),
@@ -668,7 +721,7 @@ mod tests {
             .code()
             .relocations()
             .iter()
-            .any(|site| site.reference == unit_reference(effective)));
+            .any(|site| site.reference == unit_reference(batch_formal)));
     }
 
     #[test]

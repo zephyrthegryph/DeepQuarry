@@ -673,6 +673,7 @@ mod tests {
         metadata.signature.parameters = vec![Parameter {
             name: symbols.intern("count").unwrap(),
             declared_type: None,
+            list_element_type: None,
             flags: 0,
             array: None,
             default: Some(expression("1", &mut symbols)),
@@ -711,6 +712,7 @@ mod tests {
             .map(|(index, element)| Parameter {
                 name: symbols.intern(&format!("values{index}")).unwrap(),
                 declared_type: Some(list),
+                list_element_type: None,
                 flags: 0,
                 array: Some(std::sync::Arc::new(dm_ir::ArrayDeclaration {
                     dimensions: [None].into(),
@@ -785,6 +787,7 @@ mod tests {
         metadata.signature.parameters = vec![Parameter {
             name: symbols.intern("caller").unwrap(),
             declared_type: Some(symbols.intern("/callee").unwrap()),
+            list_element_type: None,
             flags: 2,
             array: None,
             default: None,
@@ -869,6 +872,7 @@ mod tests {
         let parameter = Parameter {
             name: symbols.intern("value").unwrap(),
             declared_type: Some(symbols.intern("/datum").unwrap()),
+            list_element_type: None,
             flags: 2,
             array: None,
             default: None,
@@ -914,6 +918,7 @@ mod tests {
         metadata.signature.parameters = vec![Parameter {
             name: symbols.intern("values").unwrap(),
             declared_type: Some(symbols.intern("/list").unwrap()),
+            list_element_type: None,
             flags: 0,
             array: Some(std::sync::Arc::new(dm_ir::ArrayDeclaration {
                 dimensions: vec![None].into(),

@@ -258,38 +258,42 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
         verb: identity.namespace == Namespace::Verb,
         occurrence: identity.occurrence,
     };
-    fn may_have_statics(items: &[dm_syntax::Item]) -> bool {
-        items.iter().any(|item| {
-            item.header.find("var/").is_some_and(|at| {
-                item.header[at + 4..]
-                    .split('=')
-                    .next()
-                    .unwrap_or("")
-                    .split('/')
-                    .any(|component| matches!(component.trim(), "static" | "const" | "global"))
-            }) || may_have_statics(&item.children)
-        })
-    }
     let mut inputs = prepared.inputs;
     let executable_body = if let Some(startup) = startup {
         let captured = startup
             .procedure(body.declaration)
             .ok_or_else(|| unsupported("procedure startup inventory missing".into()))?;
-        let current =
-            dm_tree::procedure_statics::capture(procedure_identity, &prepared.executable_body)
-                .map_err(unsupported)?;
-        if captured.procedure != current.procedure
-            || captured.declarations != current.declarations
-            || captured.origins != current.origins
-        {
+        if captured.procedure != procedure_identity {
             return Err(unsupported(
                 "procedure startup inventory differs from current body".into(),
             ));
         }
         inputs.procedure_identity = Some(procedure_identity);
-        current.executable_body
+        if captured.declarations.is_empty()
+            && captured.origins.is_empty()
+            && !dm_tree::procedure_statics::items_may_contain_stored_declarations(
+                &prepared.executable_body,
+            )
+        {
+            prepared.executable_body
+        } else {
+            let current =
+                dm_tree::procedure_statics::capture(procedure_identity, &prepared.executable_body)
+                    .map_err(unsupported)?;
+            if captured.procedure != current.procedure
+                || captured.declarations != current.declarations
+                || captured.origins != current.origins
+            {
+                return Err(unsupported(
+                    "procedure startup inventory differs from current body".into(),
+                ));
+            }
+            current.executable_body
+        }
     } else {
-        if may_have_statics(&prepared.executable_body) {
+        if dm_tree::procedure_statics::items_may_contain_stored_declarations(
+            &prepared.executable_body,
+        ) {
             let static_plan =
                 dm_tree::procedure_statics::capture(procedure_identity, &prepared.executable_body)
                     .map_err(unsupported)?;
@@ -717,5 +721,65 @@ mod tests {
         assert!(helper.code.procedure.argument_names.is_empty());
         assert_eq!(helper.debug_origins.entries[0].line, 1);
         assert!(helper.code.procedure.code.items.iter().any(|item| matches!(item,dm_codegen_byond::Item::Instruction(instruction) if instruction.operands.iter().any(|word|matches!(word,dm_codegen_byond::Word::Variable(dm_codegen_byond::VariableWord::Arg(0)))))));
+    }
+    #[test]
+    fn empty_static_inventory_skips_only_actual_body_without_stored_qualifiers() {
+        let frontend = frontend(
+            "/proc/p()\n    var/local = 1\n    if(local)\n        local++\n    return local\n",
+        );
+        let startup = crate::startup::capture(&frontend).unwrap();
+        assert!(startup.procedures()[0].1.declarations.is_empty());
+        let ordinary = lower_frontend(&frontend, &Host, &NoParameters, LoweringConfig::default());
+        let captured = lower_frontend_with_statics(
+            &frontend,
+            &Host,
+            &NoParameters,
+            LoweringConfig::default(),
+            &startup,
+        );
+        assert!(ordinary.diagnostics.is_empty());
+        assert!(captured.diagnostics.is_empty());
+        assert_eq!(
+            ordinary.units[0].code.procedure,
+            captured.units[0].code.procedure
+        );
+        struct Injected;
+        impl AbiPolicy for Injected {
+            fn inputs(
+                &self,
+                _: UnitIdentity,
+                _: &ProcedureMetadata,
+                _: &SymbolTable,
+                _: &SourceLocation,
+            ) -> Result<ProcedureInputs, String> {
+                Ok(ProcedureInputs::default())
+            }
+            fn prepare(
+                &self,
+                _: &ProcedureMetadata,
+                parsed: &dm_syntax::Item,
+                _: &AbiContext<'_>,
+            ) -> Result<PreparedUnit, String> {
+                let mut prepared = PreparedUnit::local_only(ProcedureInputs::default(), parsed);
+                let injected =
+                    dm_syntax::parse("/proc/injected()\n    if(1)\n        var/static/cache = 1\n");
+                prepared
+                    .executable_body
+                    .insert(0, injected.items[0].children[0].clone());
+                Ok(prepared)
+            }
+        }
+        let injected = lower_frontend_with_statics(
+            &frontend,
+            &Host,
+            &Injected,
+            LoweringConfig::default(),
+            &startup,
+        );
+        assert!(injected.units.is_empty());
+        assert_eq!(injected.diagnostics.len(), 1);
+        assert!(injected.diagnostics[0]
+            .message
+            .contains("startup inventory differs"));
     }
 }

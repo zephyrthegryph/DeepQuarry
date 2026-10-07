@@ -660,6 +660,7 @@ pub(crate) fn build_with_intrinsic_members(
                     let metadata = Arc::make_mut(&mut members[i].metadata);
                     metadata.inherited_opaque = inherited.inherited_opaque.clone();
                     metadata.declared_type = inherited.declared_type;
+                    metadata.list_element_type = inherited.list_element_type;
                     metadata.flags = inherited.flags;
                     metadata.array = inherited.array.clone();
                     metadata.declared_initializer = inherited.declared_initializer.clone();
@@ -730,7 +731,7 @@ fn metadata_fingerprint(metadata: &MemberMetadata) -> u128 {
     if let Some(base) = &metadata.inherited_opaque {
         bytes.extend_from_slice(&base.canonical_bytes());
     }
-    for symbol in [metadata.declared_type, metadata.display_name] {
+    for symbol in [metadata.declared_type, metadata.list_element_type, metadata.display_name] {
         bytes.push(u8::from(symbol.is_some()));
         bytes.extend_from_slice(&symbol.map(SymbolId::bits).unwrap_or(0).to_le_bytes());
     }
@@ -825,6 +826,30 @@ impl dm_ir::Resolver for SemanticTree {
                     MemberKind::Proc
                 },
             ),
+            Q::ProcedureValue { owner, name, verb, formal } => {
+                let kind = if verb { MemberKind::Verb } else { MemberKind::Proc };
+                let selected = self.lookup_type(owner).and_then(|id| self.resolve(id, name, kind)).and_then(|head| {
+                    if !formal { return Some(head); }
+                    self.override_chain(head).into_iter().find(|id| {
+                        self.member(*id).is_some_and(|node| {
+                            self.types[node.owner.index()].path == owner
+                                && node.definition == DefinitionMode::Declare
+                        })
+                    })
+                });
+                selected.and_then(|id| {
+                    let node = self.member(id)?;
+                    node.metadata.procedure.as_ref()?;
+                    let occurrence = self.override_chain(id).into_iter().filter(|previous| {
+                        self.member(*previous).is_some_and(|other|
+                            other.owner == node.owner && other.name == node.name && other.kind == node.kind)
+                    }).count().checked_sub(1)?;
+                    Some(M::Value(dm_ir::SemanticValue::Procedure(dm_ir::ProcedureIdentity {
+                        owner: self.types[node.owner.index()].path,
+                        name, verb, occurrence: u32::try_from(occurrence).ok()?,
+                    })))
+                }).unwrap_or(M::Missing)
+            }
             Q::GlobalVar(name) => member(root, name, MemberKind::Var),
             Q::GlobalProc(name) => member(root, name, MemberKind::Proc),
             Q::OverrideChain { owner, name, verb } => {

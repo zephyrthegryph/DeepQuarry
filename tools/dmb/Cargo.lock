@@ -91,6 +91,7 @@ name = "dm-ir"
 version = "0.1.0"
 dependencies = [
  "dm-syntax",
+ "serde_json",
  "xxhash-rust",
 ]
 
@@ -154,6 +155,7 @@ dependencies = [
  "fs2",
  "serde",
  "serde_json",
+ "sha2",
  "xxhash-rust",
 ]
 

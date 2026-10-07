@@ -111,3 +111,88 @@ fn native_negative_macro_precedence_matches_fresh_scalar_ast() {
         );
     }
 }
+
+#[test]
+fn native_procedure_value_receipts_preserve_formal_and_override_selection() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures/phase1/native_procedure_values");
+    let image =
+        byond_dmb::dmb::Dmb::from_bytes(&std::fs::read(root.join("selection.native.bin")).unwrap())
+            .unwrap();
+    for (field, path) in [
+        ("global_ref", "/proc/global_callback"),
+        ("proc_ref", "/datum/base/proc/callback"),
+        ("implicit_ref", "/datum/base/callback"),
+        ("verb_ref", "/datum/base/verb/action"),
+        ("inherited_ref", "/datum/base/proc/callback"),
+    ] {
+        let procedure = image
+            .procs
+            .iter()
+            .position(|proc| image.string(proc.strings[0]) == Some(path.as_bytes()))
+            .unwrap();
+        let variable = image
+            .variables
+            .iter()
+            .find(|variable| image.string(variable.name) == Some(field.as_bytes()))
+            .unwrap();
+        assert_eq!(variable.kind, 38, "{field}");
+        assert_eq!(variable.value, procedure as u32, "{field}");
+    }
+}
+
+#[test]
+fn native_rgb_initializer_defaults_match_pinned_pure_call_policy() {
+    use dm_tree::constants::{evaluate_with_resources_and_calls, Constant};
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures/phase1/native_rgb_initializers");
+    let receipt: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(root.join("receipt.json")).unwrap()).unwrap();
+    let image =
+        byond_dmb::dmb::Dmb::from_bytes(&std::fs::read(root.join("positive.native.bin")).unwrap())
+            .unwrap();
+    let engine = crate::engine::EngineSnapshot::from_bytes(
+        include_bytes!("../../../fixtures/native_template.bin"),
+        1,
+    )
+    .unwrap();
+    let policy = crate::pure_calls::PinnedPureCalls::new(&engine).unwrap();
+    for case in receipt["cases"].as_array().unwrap() {
+        let name = case["name"].as_str().unwrap();
+        let value = case["value"].as_str().unwrap();
+        let variable = &image.variables[case["native_variable_index"].as_u64().unwrap() as usize];
+        assert_eq!(image.string(variable.name), Some(name.as_bytes()));
+        assert_eq!(variable.kind, 6);
+        assert_eq!(image.string(variable.value), Some(value.as_bytes()));
+        let path = format!("/proc/{name}");
+        let procedure = image
+            .procs
+            .iter()
+            .position(|proc| image.string(proc.strings[0]) == Some(path.as_bytes()))
+            .unwrap();
+        assert_eq!(
+            image.proc_code_words(procedure).unwrap(),
+            [0x60, 6, variable.value, 0x12, 0]
+        );
+        assert_eq!(
+            evaluate_with_resources_and_calls(
+                case["expression"].as_str().unwrap(),
+                |name| (name == "R_COMPONENT").then_some(Constant::Number(255.0)),
+                |_| None,
+                |_| None,
+                |_| None,
+                Some(&policy)
+            ),
+            Ok(Some(Constant::Text(value.into())))
+        );
+    }
+    let receiver = image
+        .classes
+        .iter()
+        .find(|class| image.string(class.initial_ids[0]) == Some(b"/datum/probe"))
+        .unwrap();
+    assert_eq!(
+        receiver.lists_and_procs[2], 65535,
+        "native RGB defaults have no runtime initializer"
+    );
+}

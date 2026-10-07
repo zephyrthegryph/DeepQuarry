@@ -77,6 +77,8 @@ pub enum ValueWord {
     String(String),
     Resource(String),
     FileType,
+    /// Pinned native list primitive: tag40 with zero payload, no class table row.
+    ListType,
     ClassPath {
         path: String,
         tag: u8,

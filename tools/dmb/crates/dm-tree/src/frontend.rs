@@ -591,8 +591,6 @@ pub fn build_with_config<P: SourceProvider>(
             .collect::<Result<Vec<_>, _>>()?
             .into();
     }
-    let error_origins = adapted.origins.clone();
-    let skeletons = adapted.skeletons.clone();
     timings.provenance_and_body_indexing += provenance_start.elapsed();
     observe(
         config,
@@ -611,15 +609,12 @@ pub fn build_with_config<P: SourceProvider>(
         0,
         adapted.skeletons.len(),
     );
-    let snapshot = adapted.finish_with_engine(config.engine).map_err(|error| {
-        vec![resolution_error(
-            error,
-            &skeletons,
-            &error_origins,
-            &mapping,
-            config.engine.is_some(),
-        )]
-    })?;
+    let mut resolution_diagnostic = None;
+    let snapshot = adapted.finish_with_engine_observed(config.engine, |error, skeletons, origins| {
+        resolution_diagnostic = Some(resolution_error(
+            error, skeletons, origins, &mapping, config.engine.is_some(),
+        ));
+    }).map_err(|_| vec![resolution_diagnostic.expect("resolution failure must notify observer")])?;
     timings.tree_resolution = resolution_start.elapsed();
     observe(
         config,
@@ -904,7 +899,7 @@ impl Mapping<'_> {
 }
 
 fn resolution_error(
-    error: SnapshotError,
+    error: &SnapshotError,
     skeletons: &[Skeleton],
     origins: &[crate::Provenance],
     mapping: &Mapping<'_>,

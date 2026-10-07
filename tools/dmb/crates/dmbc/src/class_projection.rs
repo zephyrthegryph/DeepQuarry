@@ -790,7 +790,7 @@ pub fn materialize_members(
     ) -> Result<(u8, u32), ProjectionError> {
         let value = match default {
             DefaultValue::Scalar(value) => value,
-            DefaultValue::ConstructorSequence(sequence) => return Ok((62, *sequence)),
+            DefaultValue::InitializerExpression { token, .. } => return Ok((62, *token)),
         };
         match value {
             SemanticValue::Null => Ok((0, 0)),
@@ -802,6 +802,9 @@ pub fn materialize_members(
             )),
             SemanticValue::Type(path) => {
                 let tag = types.tag(*path)?;
+                if *path == SymbolId::of("/list") && tag == 40 {
+                    return Ok((40, 0));
+                }
                 let index = if tag == 8 {
                     types.mob_index(*path)?
                 } else {
@@ -812,6 +815,24 @@ pub fn materialize_members(
                 Ok((tag, index))
             }
             SemanticValue::Resource(path) => Ok((12, types.resource_index(*path)?)),
+            SemanticValue::Procedure(identity) => {
+                let key = if identity.verb {
+                    Key::Verb { owner: identity.owner, name: identity.name, occurrence: identity.occurrence }
+                } else {
+                    Key::Proc { owner: identity.owner, name: identity.name, occurrence: identity.occurrence }
+                };
+                let index = tables.index(key).ok_or_else(|| ProjectionError::Unsupported(
+                    "procedure literal absent from frozen link inventory".into()))?;
+                Ok((38, index))
+            }
+            SemanticValue::ModifiedInstance(instance) => {
+                let key = Key::Instance(SymbolId::of(&instance.alias()));
+                let index = tables.index(key).ok_or_else(|| ProjectionError::Unsupported("modified default descriptor absent from frozen inventory".into()))?;
+                if tables.content(key) != Some(instance.canonical_bytes()) {
+                    return Err(ProjectionError::Unsupported("modified default descriptor content differs from frozen inventory".into()));
+                }
+                Ok((41, index))
+            }
             SemanticValue::List(_) => Err(ProjectionError::Unsupported(
                 "list literal requires initializer materialization".into(),
             )),

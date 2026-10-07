@@ -40,11 +40,11 @@ reusable region value. Inactive includes produce no child tokens or resource ite
 The sequential directive interpreter owns conditional state: each frame carries
 parent-active, branch-taken, current-active, and whether `else` was seen. It evaluates
 conditional expressions with the actual macro state at that directive. A parent
-conditional spanning an include remains suspended during the child and resumes with
-the same frame. A child's conditionals must close in that child; unbalanced/cross-file
-conditionals are a diagnostic, unless a paired fixture establishes a different rule.
-The captured `conditional-boundary` probe returns after=2; it supports this
-case but does not establish the unbalanced/cross-file diagnostic rule.
+conditional spanning an include shares the encounter-wide stack with its child:
+either file may open or close a frame. Inactive includes never execute child directives.
+The pinned cross-file controls below certify this rule. Root EOF in an inactive
+conditional is rejected; an active unfinished conditional is accepted by the pinned
+compiler. Unmatched closing directives remain diagnostics at their actual location.
 
 The directive pass computes both the active item list and exact incoming expansion
 state. Parallel region expansion may begin only after that state exists. It must not
@@ -329,7 +329,7 @@ receipt has been overwritten or reclassified as a successful capture.
 
 - Canonical alias and recursive include suppression; unknown extensions and
   macro-computed include operands.
-- Unbalanced/cross-file conditional diagnostics and nested manifest context.
+- Nested manifest context and further unmatched/duplicate conditional diagnostics.
 - Empty/function-like FILE_DIR, unmatched pops, and missing earlier candidates.
 - Full external-path/case/junction policy and complete diagnostic provenance.
   The existing fixture now pins full `__FILE__` constants in
@@ -342,3 +342,19 @@ receipt has been overwritten or reclassified as a successful capture.
 The observed inclusion and terminal-resource rules above constrain Phase 1.
 Unmeasured cases remain explicit; the preserved compiler is evidence, not the
 DreamMaker oracle. Human contract review is still required.
+
+### Phase 1 conditional-boundary admission audit
+
+`fixtures/phase1/native_cross_file_conditionals/receipt.json` captures seven
+compile-only controls with BYOND 516.1687 and compiler/source/output hashes.
+Parent opens active/child closes, and child opens active or inactive/parent closes,
+are accepted. An inactive parent suppresses its include, so its child's closing
+directive cannot run: native rejects root EOF at line 4. Unclosed root `#if 1`
+is accepted, while unclosed root `#if 0` is rejected at EOF line 3.
+
+The region interpreter now retains one conditional stack throughout ordered include
+traversal and checks inactivity only at root EOF. The focused
+`native_cross_file_conditionals_share_encounter_stack_and_root_eof_policy` fixture
+checks those captured cases and unmatched child-close provenance. Its newly authored
+gate awaits execution. Exact native EOF message wording and broader malformed-frame
+diagnostics remain outside this finite acceptance proof; runtime was not executed.

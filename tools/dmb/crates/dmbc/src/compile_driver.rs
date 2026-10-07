@@ -65,7 +65,8 @@ pub fn scalars(
     let mut identity = b"native-scalar-policy-v1:byond-string-decoder:nameof-reference".to_vec();
     identity.extend_from_slice(&engine.identity().to_le_bytes());
     identity.extend_from_slice(&predefined_identity.to_le_bytes());
-    dm_tree::constant_resolution::resolve_with_predefined(
+    let calls = crate::pure_calls::PinnedPureCalls::new(engine).ok();
+    dm_tree::constant_resolution::resolve_with_predefined_and_calls(
         &frontend.snapshot,
         &requests,
         &ScalarBackend {
@@ -74,6 +75,7 @@ pub fn scalars(
             nameof: &nameof,
         },
         Some(predefined),
+        calls.as_ref().map(|calls| calls as &dyn dm_tree::constants::PureCalls),
     )
 }
 
@@ -167,7 +169,8 @@ pub fn compile_observed<R: Resolver>(
         &links.inventory,
     )
     .map_err(cold::ColdError::Initializer)?;
-    let evaluator = driver_facts::DriverEvaluator {
+    let calls = crate::pure_calls::PinnedPureCalls::new(engine).map_err(cold::ColdError::Initializer)?;
+    let evaluator = driver_facts::DriverEvaluator { pure_calls: Some(&calls),
         resolver,
         symbols: frontend.snapshot.tree.symbols(),
         resource_search_context: resource_context,

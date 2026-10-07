@@ -155,12 +155,20 @@ pub struct StartupEvaluator<'a> {
     pub symbols: &'a dm_ir::SymbolTable,
 }
 impl crate::initializer_policy::CapturedInitializerEvaluator for StartupEvaluator<'_> {
+    fn initializer_token_scalar(&self, value: &dm_ir::SemanticValue) -> Result<Vec<u8>, String> {
+        self.ordinary.initializer_token_scalar(value)
+    }
+    fn initializer_constructor_type(&self, write: &dm_ir::InitializerWrite) -> Result<Option<dm_ir::SymbolId>, String> {
+        crate::initializer_policy::CapturedInitializerEvaluator::initializer_constructor_type(
+            &crate::driver_facts::DriverEvaluator {pure_calls:self.ordinary.pure_calls(), resource_search_context:self.resource_search_context, resolver:self.resolver, symbols:self.symbols}, write)
+    }
+    fn pure_calls(&self) -> Option<&dyn dm_tree::constants::PureCalls> { self.ordinary.pure_calls() }
     fn instance_storage(
         &self,
         write: &dm_ir::InitializerWrite,
     ) -> Result<Option<(dm_ir::SymbolId, dm_ir::SymbolId)>, String> {
         crate::initializer_policy::CapturedInitializerEvaluator::instance_storage(
-            &crate::driver_facts::DriverEvaluator {
+            &crate::driver_facts::DriverEvaluator { pure_calls: self.ordinary.pure_calls(),
                 resource_search_context: self.resource_search_context,
                 resolver: self.resolver,
                 symbols: self.symbols,
@@ -182,7 +190,7 @@ impl crate::initializer_policy::CapturedInitializerEvaluator for StartupEvaluato
     ) -> Result<crate::initializer_policy::Evaluation, String> {
         if write.lexical_procedure.is_some() {
             crate::initializer_policy::CapturedInitializerEvaluator::evaluate_write(
-                &crate::driver_facts::DriverEvaluator {
+                &crate::driver_facts::DriverEvaluator { pure_calls: self.ordinary.pure_calls(),
                     resource_search_context: self.resource_search_context,
                     resolver: self.resolver,
                     symbols: self.symbols,

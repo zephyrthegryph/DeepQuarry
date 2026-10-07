@@ -21,3 +21,6 @@ dm-codegen-byond = { path = "../dm-codegen-byond" }
 dm-link = { path = "../dm-link" }
 
 dm-resources = { path = "../dm-resources" }
+
+[dev-dependencies]
+sha2 = "0.10"

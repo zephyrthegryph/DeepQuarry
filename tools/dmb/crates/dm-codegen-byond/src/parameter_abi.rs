@@ -45,6 +45,7 @@ mod tests {
         let mut parameter = Parameter {
             name: SymbolId::of("values"),
             declared_type: Some(SymbolId::of("/list")),
+            list_element_type: None,
             flags: 0,
             array: Some(Arc::new(ArrayDeclaration {
                 dimensions: Arc::from([None]),

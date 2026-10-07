@@ -42,6 +42,8 @@ pub enum ResolveQuery {
         name: SymbolId,
         verb: bool,
     },
+    /// A callable literal selects an exact source formal or effective body.
+    ProcedureValue { owner: SymbolId, name: SymbolId, verb: bool, formal: bool },
     OverrideChain {
         owner: SymbolId,
         name: SymbolId,
@@ -130,6 +132,20 @@ pub enum ResolvedMeaning {
         path: SymbolId,
         content: u128,
     },
+}
+
+/// Grammar-shaped explicit callable path; authority comes only from resolution.
+pub fn procedure_value_query(path: &str) -> Option<ResolveQuery> {
+    let (owner, name, verb) = if let Some((owner, name)) = path.rsplit_once("/proc/") {
+        (owner, name, false)
+    } else if let Some((owner, name)) = path.rsplit_once("/verb/") {
+        (owner, name, true)
+    } else { return None; };
+    if name.is_empty() || name.contains('/') { return None; }
+    Some(ResolveQuery::ProcedureValue {
+        owner: SymbolId::of(if owner.is_empty() { "/" } else { owner }),
+        name: SymbolId::of(name), verb, formal: true,
+    })
 }
 
 /// The sole view of other declarations and resource search available to lowering.

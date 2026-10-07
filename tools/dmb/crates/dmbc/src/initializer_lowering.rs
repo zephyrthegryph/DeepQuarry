@@ -148,7 +148,7 @@ fn lower_plan<R: Resolver>(
     let symbols = plan.symbols.as_ref();
     let measurement = crate::stage_measurements::Scope::new(observer, InitializerStage::Classification);
     let classified =
-        match initializer_policy::classify_with_diagnostics(&plan.writes, symbols, evaluator) {
+        match initializer_policy::classify_with_token_mode(&plan.writes, symbols, evaluator, frontend.plan.final_macros.contains_key("DEBUG")) {
             Ok(classified) => classified,
             Err(error) => {
                 let ordinals = error

@@ -7,6 +7,8 @@
 use std::ops::Range;
 
 mod audit;
+mod declaration_type;
+pub use declaration_type::{project_declaration_type, DeclarationType};
 pub mod map;
 mod statements;
 pub use audit::{
@@ -1592,6 +1594,12 @@ fn body_keyword(header: &str, keyword: &str) -> bool {
         })
 }
 
+pub(crate) const RETURN_BLOCK_UNSUPPORTED: &str =
+    "a block following a return expression has unsupported semantics";
+pub(crate) fn return_has_block(header: &str, has_children: bool) -> bool {
+    has_children && body_keyword(header, "return")
+}
+
 fn retain_setting_chains(items: Vec<Item>) -> Vec<Item> {
     fn has_setting(item: &Item) -> bool {
         body_keyword(&item.header, "set") || item.children.iter().any(has_setting)
@@ -1651,6 +1659,13 @@ fn parse_level(
         } else {
             classify(header, has_children)
         };
+        if context.in_body && return_has_block(header, has_children) {
+            diagnostics.push(Diagnostic {
+                span: Span::new(line.header_start, line.header_end),
+                kind: DiagnosticKind::Unsupported,
+                message: RETURN_BLOCK_UNSUPPORTED.into(),
+            });
+        }
         if has_children {
             let (parsed, next) = parse_level(
                 source,
@@ -1884,6 +1899,29 @@ mod tests {
     }
 
     #[test]
+    fn returned_modified_type_keeps_its_field_expression_in_the_body() {
+        let ast = parse("/proc/p()\n    return (/obj/base{a=1;a=2;b=list(/obj/base)})\n");
+        let body = &ast.items[0].children;
+        assert_eq!(body.len(), 1, "{body:?}");
+        assert!(body[0].children.is_empty());
+        let parsed = parse_expression(body[0].header.strip_prefix("return ").unwrap());
+        assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+        let ExprKind::Group(value) = parsed.expr.unwrap().kind else {
+            panic!("expected grouped native expression");
+        };
+        let ExprKind::ObjectInitializer { fields, .. } = value.kind else {
+            panic!("return lost its modified-type expression");
+        };
+        assert_eq!(
+            fields
+                .iter()
+                .map(|(name, _)| name.as_str())
+                .collect::<Vec<_>>(),
+            ["a", "a", "b"]
+        );
+    }
+
+    #[test]
     fn object_initializer_expression_preserves_field_overrides() {
         let parsed = parse_expression("new /datum/object_probe{value = 11; name = \"probe\"}");
         assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
@@ -1901,6 +1939,33 @@ mod tests {
         assert_eq!(fields.len(), 2);
         assert_eq!(fields[0].0, "value");
         assert_eq!(fields[1].0, "name");
+    }
+    #[test]
+    fn native_invalid_return_blocks_stop_before_skeleton_compaction() {
+        for source in [
+            include_str!("../../../fixtures/phase1/native_modified_returns/bare/probe.dme"),
+            include_str!("../../../fixtures/phase1/native_modified_returns/outer_visible/probe.dme"),
+        ] {
+            for parsed in [parse_with_body_mode(source,false), parse_declaration_skeleton(source)] {
+                assert!(parsed.diagnostics.iter().any(|diagnostic| diagnostic.kind == DiagnosticKind::Unsupported && diagnostic.message == RETURN_BLOCK_UNSUPPORTED));
+            }
+            fn find(items: &[Item]) -> Option<&Item> {
+                for item in items {
+                    if item.header.starts_with("return ") { return Some(item); }
+                    if let Some(found) = find(&item.children) { return Some(found); }
+                }
+                None
+            }
+            let ast = parse(source);
+            let item = find(&ast.items).unwrap();
+            assert_eq!(item.children.len(),1);
+            assert_eq!(item.children[0].header,"amount=1");
+            let typed = parse_body_items(std::slice::from_ref(item));
+            assert!(typed.diagnostics.iter().any(|diagnostic| diagnostic.message == RETURN_BLOCK_UNSUPPORTED));
+        }
+        let grouped = include_str!("../../../fixtures/phase1/native_modified_returns/grouped/probe.dme");
+        assert!(parse(grouped).diagnostics.is_empty());
+        assert!(parse_declaration_skeleton(grouped).diagnostics.is_empty());
     }
 
     #[test]

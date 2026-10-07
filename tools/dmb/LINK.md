@@ -23,6 +23,19 @@ a diagnostic rather than silently borrowing a surrounding scope. This finite
 compile-only evidence does not establish runtime effects of modifying static
 or const fields, or general side-effect ordering between distinct fields.
 
+The const and static controls also distinguish ordinary storage from modifier
+setter selection. Const-only `amount` appears in both its class declaration
+list and the indexed global-variable footer with flags 3; static `amount`
+appears in both with flags 1. Const therefore requires shared-slot allocation.
+The modified initializer uses Src-field SetVar operands for both. That special
+setter cannot be used to infer ordinary declaration storage.
+
+Scalar-equivalence controls show that `1`, `1 + 0` and `(1)` share a descriptor,
+as do `"x"` and `"x" + ""`. Descriptor identity must use evaluated scalar values,
+not just a canonical serialization of the expression syntax. List/newlist and
+nested-modifier controls retain their allocation operations; they are not
+replaced indiscriminately by scalar folding.
+
 Status: inventory and source probes, 6 October 2026. Four source probes were compiled and run by the coordinator under DreamMaker/DreamDaemon516.1687; paired preserved Build50 comparison now recorded below. Baseline: `ac1af55d1a`; format evidence is from that commit. This document distinguishes existing evidence from rules still requiring paired DreamMaker/native receipts. A cold-versus-incremental native oracle cannot prove DreamMaker order parity.
 
 ## Authority and acceptance

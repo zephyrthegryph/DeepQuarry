@@ -79,8 +79,23 @@ remain read-only. No global compatible-client behavior is changed by this decisi
 | Cross-volume slot | Complete copied pair; no partial visible slot |
 | Locked conventional output | Clear report; valid pair ID remains usable |
 
-fixtures/phase0/publish/cases.json is the executable-test specification for the later
-publisher implementation. Those tests are pending, not simulated by a text manifest.
+The publisher is implemented in `crates/dmbc/src/publish.rs`. Focused fixtures inject
+deterministic I/O errors after staging writes, pair-directory rename, session staging,
+each slot copy and completion marker, and each conventional copy/rename boundary.
+They check authenticated old/new generations, retry repair, and immediate acquisition
+after failure (the OS lock must have been released). Fault hooks exist only in test
+builds and are thread-local. These newly authored gates await execution.
+
+Incomplete temporary pairs and slots remain on disk without being exposed as runnable;
+an installed pair interrupted before its session update can be an authenticated orphan.
+No recursive cleanup mutates read-only shared inodes. Eviction and automatic abandoned
+slot cleanup remain future work. Conventional paths can temporarily mix generations:
+their old marker does not authenticate those changed copies, and world starters must
+acquire an authenticated immutable pair into a completed writable slot instead.
+
+These fixtures exercise returned errors and unwinding, not process termination,
+power-loss durability, competing eviction, or DreamDaemon open rights. Those cases in
+fixtures/phase0/publish/cases.json remain open. No fsync durability guarantee is made.
 The Phase 0 access probe is independently runnable; see its README.
 
 ## Observed Phase 0 access probe

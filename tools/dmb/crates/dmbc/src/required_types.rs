@@ -100,7 +100,10 @@ pub fn admit(
     }
     fn values(value: &SemanticValue, requests: &mut Vec<SymbolId>) {
         match value {
+            SemanticValue::Type(path) if *path == SymbolId::of("/list") => (),
             SemanticValue::Type(path) => requests.push(*path),
+            SemanticValue::Procedure(identity) => requests.push(identity.owner),
+            SemanticValue::ModifiedInstance(instance) => requests.push(instance.runtime_type()),
             SemanticValue::List(entries) => {
                 for (key, value) in entries.iter() {
                     if let Some(key) = key {
@@ -149,6 +152,9 @@ pub fn admit(
         // resolved runtime class is a real dependency of the instance artifact.
         for instance in code.instances.values() {
             requests.push(instance.runtime_type);
+        }
+        for instance in code.modified_instances.values() {
+            requests.push(instance.descriptor.runtime_type());
         }
         failure.map_or(Ok(()), Err)
     }

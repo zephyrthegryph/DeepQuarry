@@ -20,11 +20,14 @@ pub use initializer::{
 };
 pub mod map;
 pub mod skin;
+mod modified_instance;
+pub use modified_instance::{CapturedModifiedResource, ModifiedInstance};
+pub mod constants;
 mod procedure_static;
 pub use procedure_static::{ProcedureIdentity, ProcedureStaticDeclaration, ProcedureStaticIdentity};
 
 mod resolver;
-pub use resolver::{ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};
+pub use resolver::{procedure_value_query, ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};
 mod memo_resolver;
 pub use memo_resolver::{MemoResolver, MemoStats};
 

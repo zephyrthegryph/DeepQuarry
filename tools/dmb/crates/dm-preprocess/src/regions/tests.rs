@@ -1,4 +1,5 @@
 use super::*;
+use crate::DiagnosticKind;
 
 struct Memory(BTreeMap<PathBuf, String>);
 
@@ -16,6 +17,64 @@ fn fixture(files: &[(&str, &str)]) -> DirectivePlan {
             .collect(),
     );
     plan_regions(Path::new("project.dme"), &provider, &BTreeMap::new())
+}
+
+#[test]
+fn native_cross_file_conditionals_share_encounter_stack_and_root_eof_policy() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures/phase1/native_cross_file_conditionals");
+    for name in [
+        "balanced-parent",
+        "child-open-active",
+        "child-open-inactive",
+        "parent-open-active",
+        "parent-open-inactive",
+        "unclosed-0",
+        "unclosed-1",
+    ] {
+        let directory = root.join(name);
+        let project = std::fs::read_to_string(directory.join("project.dme")).unwrap();
+        let child = std::fs::read_to_string(directory.join("child.dm")).ok();
+        let mut files = vec![("project.dme", project.as_str())];
+        if let Some(child) = child.as_deref() {
+            files.push(("child.dm", child));
+        }
+        let plan = fixture(&files);
+        let rejected = matches!(name, "parent-open-inactive" | "unclosed-0");
+        assert_eq!(
+            plan.diagnostics.len(),
+            usize::from(rejected),
+            "{name}: {:?}",
+            plan.diagnostics
+        );
+        if rejected {
+            assert_eq!(plan.diagnostics[0].path, PathBuf::from("project.dme"));
+            assert_eq!(
+                plan.diagnostics[0].line,
+                if name == "unclosed-0" { 3 } else { 4 }
+            );
+            assert_eq!(plan.diagnostics[0].kind, DiagnosticKind::Conditional);
+        } else {
+            let expanded = expand_regions_text(&plan, 2);
+            assert!(expanded.diagnostics.is_empty(), "{name}");
+            if name == "child-open-inactive" {
+                assert!(!expanded.text.contains("included"));
+                assert!(expanded.text.contains("var/after = 1"));
+            } else if name == "unclosed-1" {
+                assert!(expanded.text.contains("var/value = 1"));
+            } else {
+                assert!(expanded.text.contains("var/included = 1"));
+                assert!(expanded.text.contains("var/after = 1"));
+            }
+        }
+    }
+    let unmatched = fixture(&[
+        ("project.dme", "#include \"child.dm\"\n"),
+        ("child.dm", "#endif\n"),
+    ]);
+    assert_eq!(unmatched.diagnostics.len(), 1);
+    assert_eq!(unmatched.diagnostics[0].path, PathBuf::from("child.dm"));
+    assert_eq!(unmatched.diagnostics[0].line, 1);
 }
 
 #[test]
@@ -49,7 +108,9 @@ fn native_vision_macros_preserve_undef_shadow_and_caller_precedence() {
     }
     let caller = BTreeMap::from([("SEE_BLACKNESS".into(), "11".into())]);
     let plan = plan_regions(Path::new("project.dme"), &provider, &caller);
-    assert!(expand_regions_text(&plan, 1).text.starts_with("var/a = 11 | 64"));
+    assert!(expand_regions_text(&plan, 1)
+        .text
+        .starts_with("var/a = 11 | 64"));
 }
 
 #[test]
@@ -200,7 +261,10 @@ fn terminal_file_dir_and_nontext_items_are_separate_from_text() {
         vec![Path::new("skin.dmf")]
     );
     assert!(!plan.dependencies.contains(Path::new("missing.dm")));
-    assert_eq!(expand_regions(&plan, 2).text.as_ref(), "var/asset = 'asset.txt'\n");
+    assert_eq!(
+        expand_regions(&plan, 2).text.as_ref(),
+        "var/asset = 'asset.txt'\n"
+    );
 }
 
 #[test]
@@ -304,7 +368,10 @@ fn persistent_full_environments_keep_token_paste_and_definition_epochs_exact() {
     let plan=fixture(&[("project.dme","#define CAT(a,b) a##b\n#define VALUE1 11\nvar/a = CAT(VALUE,1)\n#define VALUE1 22\nvar/b = CAT(VALUE,1)\n#undef VALUE1\nvar/c = CAT(VALUE,1)\n")]);
     let result = expand_regions(&plan, 2);
     assert!(result.diagnostics.is_empty(), "{:?}", result.diagnostics);
-    assert_eq!(result.text.as_ref(), "var/a = 11\nvar/b = 22\nvar/c = VALUE1\n");
+    assert_eq!(
+        result.text.as_ref(),
+        "var/a = 11\nvar/b = 22\nvar/c = VALUE1\n"
+    );
     let origins = result
         .origins
         .iter()
@@ -328,11 +395,14 @@ fn persistent_full_environments_keep_token_paste_and_definition_epochs_exact() {
 fn native_sdk_macro_receipts_bind_sources_and_seed_exact_literals() {
     use sha2::{Digest, Sha256};
     let base = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/phase1");
-    for directory in ["native_sdk_macros", "native_vision_macros"] {
+    for directory in [
+        "native_sdk_macros",
+        "native_vision_macros",
+        "native_procedure_values",
+    ] {
         let root = base.join(directory);
-        let receipt: serde_json::Value = serde_json::from_slice(
-            &std::fs::read(root.join("receipt.json")).unwrap(),
-        ).unwrap();
+        let receipt: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(root.join("receipt.json")).unwrap()).unwrap();
         assert_eq!(receipt["compiler"]["version"], "516.1687");
         for file in receipt["files"].as_array().unwrap() {
             let path = root.join(file["path"].as_str().unwrap());
@@ -345,10 +415,21 @@ fn native_sdk_macro_receipts_bind_sources_and_seed_exact_literals() {
             let source = format!("var/a = {name}\n#undef {name}\nvar/b = {name}\n#define {name} 73\nvar/c = {name}\n");
             let plan = fixture(&[("project.dme", &source)]);
             let expanded = expand_regions(&plan, 2);
-            assert!(expanded.diagnostics.is_empty(), "{name}: {:?}", expanded.diagnostics);
-            assert_eq!(expanded.text.as_ref(), format!("var/a = {replacement}\nvar/b = {name}\nvar/c = 73\n"), "{name}");
+            assert!(
+                expanded.diagnostics.is_empty(),
+                "{name}: {:?}",
+                expanded.diagnostics
+            );
+            assert_eq!(
+                expanded.text.as_ref(),
+                format!("var/a = {replacement}\nvar/b = {name}\nvar/c = 73\n"),
+                "{name}"
+            );
         }
     }
     let plan = fixture(&[("project.dme", "var/a = DM_VERSION\n")]);
-    assert_eq!(expand_regions(&plan, 1).text.as_ref(), "var/a = DM_VERSION\n");
+    assert_eq!(
+        expand_regions(&plan, 1).text.as_ref(),
+        "var/a = DM_VERSION\n"
+    );
 }

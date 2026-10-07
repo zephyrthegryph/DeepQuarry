@@ -18,6 +18,12 @@ pub enum BindingKnowledge {
     MutableInstance { owner: SymbolId, name: SymbolId, receipt: u128 },
 }
 pub trait CapturedInitializerEvaluator {
+    fn initializer_token_scalar(&self, value: &SemanticValue) -> Result<Vec<u8>, String> {
+        if matches!(value, SemanticValue::Resource(_)) { return Err("initializer resource token requires captured content identity".into()); }
+        Ok(value.canonical_bytes())
+    }
+    fn initializer_constructor_type(&self, _write: &InitializerWrite) -> Result<Option<SymbolId>, String> { Ok(None) }
+    fn pure_calls(&self) -> Option<&dyn dm_tree::constants::PureCalls> { None }
     fn evaluate(&self, owner: SymbolId, value: &SymbolicExpression) -> Result<Evaluation, String>;
     fn evaluate_write(
         &self,
@@ -48,6 +54,9 @@ pub struct EngineCapturedEvaluator<'a> {
     pub evaluator: &'a dyn CapturedInitializerEvaluator,
 }
 impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
+    fn initializer_token_scalar(&self, value: &SemanticValue) -> Result<Vec<u8>, String> { self.evaluator.initializer_token_scalar(value) }
+    fn initializer_constructor_type(&self, write: &InitializerWrite) -> Result<Option<SymbolId>, String> { self.evaluator.initializer_constructor_type(write) }
+    fn pure_calls(&self) -> Option<&dyn dm_tree::constants::PureCalls> { self.evaluator.pure_calls() }
     fn binding_knowledge(&self, write: &InitializerWrite) -> Result<Option<BindingKnowledge>, String> {
         if let Some(flags) = self.declaration_modifiers(write)? {
             return Ok(Some(BindingKnowledge::Modifiers(flags)));
@@ -96,7 +105,7 @@ impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DefaultValue {
     Scalar(SemanticValue),
-    ConstructorSequence(u32),
+    InitializerExpression { token: u32, canonical: Arc<[u8]> },
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Phase {
@@ -156,10 +165,34 @@ fn expression(text: &str, symbols: &mut SymbolTable) -> Result<SymbolicExpressio
         tokens: tokens.into(),
     })
 }
+/// Use spans issued by the parser of this exact captured spelling. The same
+/// lexer and collision-checked dictionary retain token identities/adjacency;
+/// no subtree parser or pure-call interpretation is introduced here.
+pub(crate) fn captured_scalar_subexpression(
+    expression: &dm_syntax::Expr,
+    source: &str,
+    symbols: &SymbolTable,
+) -> Result<SymbolicExpression, String> {
+    let source = source.get(expression.span.start..expression.span.end)
+        .ok_or("initializer subtree span is outside captured expression")?;
+    let parsed = dm_syntax::lex(source);
+    if !parsed.diagnostics.is_empty() { return Err("initializer subtree tokenization failed".into()); }
+    let tokens = parsed.tokens.into_iter().filter(|token| !matches!(token.kind,
+        dm_syntax::TokenKind::Whitespace | dm_syntax::TokenKind::Newline | dm_syntax::TokenKind::Comment))
+        .map(|token| {
+            let text = SymbolId::of(&token.text);
+            if symbols.text(text) != Some(token.text.as_str()) {
+                return Err("initializer subtree token spelling is not captured".into());
+            }
+            Ok(ExpressionToken {kind:token.kind,text,relative_span:token.span})
+        }).collect::<Result<Vec<_>, String>>()?;
+    Ok(SymbolicExpression {tokens:tokens.into()})
+}
 fn scalar_literal(
     expr: &dm_syntax::Expr,
     write: &InitializerWrite,
     symbols: &SymbolTable,
+    source: &str,
     evaluator: &dyn CapturedInitializerEvaluator,
 ) -> Result<bool, String> {
     use dm_syntax::ExprKind;
@@ -208,22 +241,22 @@ fn scalar_literal(
                 Evaluation::Scalar(_)
             )
         }
-        ExprKind::Group(value) => scalar_literal(value, write, symbols, evaluator)?,
+        ExprKind::Group(value) => scalar_literal(value, write, symbols, source, evaluator)?,
         ExprKind::Unary { op, value } if matches!(op.as_str(), "!" | "+" | "-" | "~") => {
-            scalar_literal(value, write, symbols, evaluator)?
+            scalar_literal(value, write, symbols, source, evaluator)?
         }
         ExprKind::Binary { op, lhs, rhs } if op != "=" => {
-            scalar_literal(lhs, write, symbols, evaluator)?
-                && scalar_literal(rhs, write, symbols, evaluator)?
+            scalar_literal(lhs, write, symbols, source, evaluator)?
+                && scalar_literal(rhs, write, symbols, source, evaluator)?
         }
         ExprKind::Conditional {
             condition,
             then_value,
             else_value,
         } => {
-            scalar_literal(condition, write, symbols, evaluator)?
-                && scalar_literal(then_value, write, symbols, evaluator)?
-                && scalar_literal(else_value, write, symbols, evaluator)?
+            scalar_literal(condition, write, symbols, source, evaluator)?
+                && scalar_literal(then_value, write, symbols, source, evaluator)?
+                && scalar_literal(else_value, write, symbols, source, evaluator)?
         }
         ExprKind::Call { callee, args } if matches!(&callee.kind, ExprKind::Ident(name) if name == "list") =>
         {
@@ -232,13 +265,13 @@ fn scalar_literal(
                 let value = if let ExprKind::Binary { op, lhs, rhs } = &argument.kind {
                     if op == "=" {
                         (matches!(lhs.kind, ExprKind::Ident(_))
-                            || scalar_literal(lhs, write, symbols, evaluator)?)
-                            && scalar_literal(rhs, write, symbols, evaluator)?
+                            || scalar_literal(lhs, write, symbols, source, evaluator)?)
+                            && scalar_literal(rhs, write, symbols, source, evaluator)?
                     } else {
-                        scalar_literal(argument, write, symbols, evaluator)?
+                        scalar_literal(argument, write, symbols, source, evaluator)?
                     }
                 } else {
-                    scalar_literal(argument, write, symbols, evaluator)?
+                    scalar_literal(argument, write, symbols, source, evaluator)?
                 };
                 literal &= value;
             }
@@ -249,6 +282,10 @@ fn scalar_literal(
         }
         ExprKind::Call { callee, args } if matches!(&callee.kind, ExprKind::Ident(name) if name == "nameof") => {
             args.len() == 1 && dm_codegen_byond::nameof_reference(&args[0]).is_some()
+        }
+        ExprKind::Call { callee, .. } if matches!(&callee.kind, ExprKind::Ident(name) if evaluator.pure_calls().is_some_and(|calls| calls.accepts(name))) => {
+            let value = captured_scalar_subexpression(expr, source, symbols)?;
+            matches!(evaluator.evaluate_write(write, &value)?, Evaluation::Scalar(_))
         }
         _ => false,
     })
@@ -417,9 +454,15 @@ pub fn classify_with_diagnostics(
     symbols: &SymbolTable,
     evaluator: &dyn CapturedInitializerEvaluator,
 ) -> Result<ClassifiedInitializers, ClassificationError> {
+    classify_with_token_mode(writes, symbols, evaluator, false)
+}
+pub fn classify_with_token_mode(
+    writes: &[InitializerWrite], symbols: &SymbolTable,
+    evaluator: &dyn CapturedInitializerEvaluator, debug_defined: bool,
+) -> Result<ClassifiedInitializers, ClassificationError> {
     let facts = modifier_facts(writes, symbols, evaluator)?;
     let mut source_ordinal = 0;
-    classify_from_facts(writes, symbols, evaluator, &facts, &mut source_ordinal).map_err(|reason| {
+    classify_from_facts(writes, symbols, evaluator, &facts, &mut source_ordinal, debug_defined).map_err(|reason| {
         ClassificationError {
             issues: vec![ClassificationIssue {
                 source_ordinal,
@@ -442,9 +485,10 @@ fn classify_from_facts(
     evaluator: &dyn CapturedInitializerEvaluator,
     facts: &[ModifierFact],
     source_ordinal: &mut usize,
+    debug_defined: bool,
 ) -> Result<ClassifiedInitializers, String> {
     let mut classified = Vec::with_capacity(writes.len());
-    let mut global_constructors = 0u32;
+    let mut tokens = crate::initializer_tokens::Tokens::new(debug_defined);
     for (ordinal, original) in writes.iter().enumerate() {
         *source_ordinal = ordinal;
         // Header properties are certified ABI domains, not variables with
@@ -523,15 +567,9 @@ fn classify_from_facts(
                 if constant_binding {
                     return Err("const array allocation is unsupported".into());
                 }
-                let default = if matches!(write.target,InitializerTarget::Shared{owner,..} if owner == SymbolId::of("/"))
-                {
-                    global_constructors = global_constructors
-                        .checked_add(1)
-                        .ok_or("constructor sequence overflow")?;
-                    DefaultValue::ConstructorSequence(global_constructors)
-                } else {
-                    DefaultValue::Scalar(SemanticValue::Null)
-                };
+                // Native sized-array declarations retain null defaults; they
+                // allocate during initialization without an expression token.
+                let default = DefaultValue::Scalar(SemanticValue::Null);
                 classified.push(ClassifiedWrite {
                     source_ordinal: ordinal,
                     write,
@@ -571,18 +609,11 @@ fn classify_from_facts(
                         parsed_runtime = Some(expr.clone());
                         let literal =
                             matches!(evaluation, Evaluation::Scalar(SemanticValue::List(_)))
-                                || scalar_literal(expr, &write, symbols, evaluator)?;
-                        let constructor = text.trim_start().starts_with("new ");
-                        let default = if constructor
-                            && matches!(write.target,InitializerTarget::Shared{owner,..} if owner == SymbolId::of("/"))
-                        {
-                            global_constructors = global_constructors
-                                .checked_add(1)
-                                .ok_or("constructor sequence overflow")?;
-                            DefaultValue::ConstructorSequence(global_constructors)
-                        } else {
-                            DefaultValue::Scalar(SemanticValue::Null)
-                        };
+                                || scalar_literal(expr, &write, symbols, &text, evaluator)?;
+                        let default = if let Some(key) = crate::initializer_tokens::construction_key(expr, &text, &write, symbols, evaluator)? {
+                            let (token, canonical) = tokens.issue(key)?;
+                            DefaultValue::InitializerExpression { token, canonical }
+                        } else { DefaultValue::Scalar(SemanticValue::Null) };
                         (
                             default,
                             Some(if literal {
@@ -648,6 +679,26 @@ fn classify_from_facts(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn nested_pure_calls_keep_literal_allocation_and_reject_unavailable_components() {
+        use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};
+        struct Empty;
+        impl Resolver for Empty { fn resolve(&self, _:ResolveQuery)->ResolvedMeaning { ResolvedMeaning::Missing } }
+        let engine = crate::engine::EngineSnapshot::from_bytes(include_bytes!("../../../fixtures/native_template.bin"),1).unwrap();
+        let calls = crate::pure_calls::PinnedPureCalls::new(&engine).unwrap();
+        let mut symbols = SymbolTable::default();
+        let root = symbols.intern("/").unwrap();
+        let name = symbols.intern("colors").unwrap();
+        let value = expression("list(rgb(255,201,49), list(rgb(1,2,3,128)))", &mut symbols).unwrap();
+        let captured = write(root,name,InitializerValue::Expression(value));
+        let evaluator = crate::driver_facts::DriverEvaluator {pure_calls:Some(&calls),resource_search_context:None,resolver:&Empty,symbols:&symbols};
+        let result = classify(&[captured], &symbols, &evaluator).unwrap();
+        assert_eq!(result.writes[0].phase, Some(Phase::LiteralAllocation));
+        let invalid = expression("list(rgb(rand(0,255),2,3))", &mut symbols).unwrap();
+        let invalid = write(root,name,InitializerValue::Expression(invalid));
+        let evaluator = crate::driver_facts::DriverEvaluator {pure_calls:Some(&calls),resource_search_context:None,resolver:&Empty,symbols:&symbols};
+        assert!(classify(&[invalid], &symbols, &evaluator).unwrap_err().to_string().contains("rgb components must be captured constant numbers"));
+    }
     #[test]
     fn mutable_instance_knowledge_retains_opaque_modifiers() {
         struct Mutable;
@@ -841,7 +892,7 @@ mod tests {
         assert_eq!(result.writes[0].phase, Some(Phase::LiteralAllocation));
         assert_eq!(
             result.writes[0].default,
-            DefaultValue::ConstructorSequence(1)
+            DefaultValue::Scalar(SemanticValue::Null)
         );
         assert_eq!(
             result.writes[0].runtime_value,

@@ -24,6 +24,7 @@ pub enum InitializerIdentity {
     Global,
     Class(SymbolId),
     Map { source: u128, descriptor: u32 },
+    Modified(SymbolId),
 }
 /// Proc and verb semantic namespaces remain distinct even when sharing a wire table.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -365,6 +366,7 @@ fn symbols(key: Key) -> Vec<SymbolId> {
             identity.name,
         ],
         Key::Initializer(InitializerIdentity::Class(owner)) => vec![owner],
+        Key::Initializer(InitializerIdentity::Modified(alias)) => vec![alias],
         Key::DefaultMapInstance { owner, .. } => vec![owner],
         Key::String(id) | Key::Type(id) | Key::Instance(id) => vec![id],
         Key::Proc { owner, name, .. }

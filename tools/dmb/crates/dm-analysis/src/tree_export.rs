@@ -113,6 +113,18 @@ fn constant(value: &SemanticValue, symbols: &SymbolTable) -> Result<Value, Expor
         SemanticValue::NumberBits(bits) => json!({"kind":"number", "f32_bits":bits}),
         SemanticValue::Text(bytes) => json!({"kind":"text", "bytes":bytes.as_ref()}),
         SemanticValue::Type(path) => json!({"kind":"type", "path":spelling(symbols,*path)?}),
+        SemanticValue::Procedure(identity) => json!({
+            "kind":"procedure", "owner":spelling(symbols,identity.owner)?,
+            "name":spelling(symbols,identity.name)?, "verb":identity.verb,
+            "occurrence":identity.occurrence
+        }),
+        SemanticValue::ModifiedInstance(descriptor) => json!({
+            "kind":"modified_instance", "identity":descriptor.alias(),
+            "runtime_type":spelling(symbols,descriptor.runtime_type())?,
+            "fields":descriptor.fields().iter().map(|(name,value)| json!({
+                "name":name,"value":modified_expression(value)
+            })).collect::<Vec<_>>()
+        }),
         SemanticValue::Resource(path) => {
             json!({"kind":"resource", "path":spelling(symbols,*path)?})
         }
@@ -122,6 +134,58 @@ fn constant(value: &SemanticValue, symbols: &SymbolTable) -> Result<Value, Expor
         }).collect::<Result<Vec<_>, ExportError>>()?})
         }
     })
+}
+/// Descriptor expressions are issued, normalized semantic values. Source spans
+/// and lexical context belong to occurrence rows, never this structural value.
+fn modified_expression(value: &dm_syntax::Expr) -> Value {
+    use dm_syntax::ExprKind;
+    match &value.kind {
+        ExprKind::Ident(text) => json!({"kind":"identifier","text":text}),
+        ExprKind::Literal(text) => json!({"kind":"literal","text":text}),
+        ExprKind::TypePath(path) => json!({"kind":"type_path","path":path}),
+        ExprKind::Unary { op, value } => {
+            json!({"kind":"unary","operator":op,"value":modified_expression(value)})
+        }
+        ExprKind::Binary { op, lhs, rhs } => {
+            json!({"kind":"binary","operator":op,"lhs":modified_expression(lhs),"rhs":modified_expression(rhs)})
+        }
+        ExprKind::Conditional {
+            condition,
+            then_value,
+            else_value,
+        } => {
+            json!({"kind":"conditional","condition":modified_expression(condition),"then_value":modified_expression(then_value),"else_value":modified_expression(else_value)})
+        }
+        ExprKind::Call { callee, args } => {
+            json!({"kind":"call","callee":modified_expression(callee),"arguments":args.iter().map(modified_expression).collect::<Vec<_>>()})
+        }
+        ExprKind::Member {
+            object,
+            selector,
+            via_colon,
+        } => {
+            json!({"kind":"member","object":modified_expression(object),"selector":selector,"via_colon":via_colon})
+        }
+        ExprKind::StaticMember { object, selector } => {
+            json!({"kind":"static_member","object":modified_expression(object),"selector":selector})
+        }
+        ExprKind::SafeMember { object, selector } => {
+            json!({"kind":"safe_member","object":modified_expression(object),"selector":selector})
+        }
+        ExprKind::Index { object, index } => {
+            json!({"kind":"index","object":modified_expression(object),"index":modified_expression(index)})
+        }
+        ExprKind::SafeIndex { object, index } => {
+            json!({"kind":"safe_index","object":modified_expression(object),"index":modified_expression(index)})
+        }
+        ExprKind::Group(value) => json!({"kind":"group","value":modified_expression(value)}),
+        ExprKind::TypeFilter { value, types } => {
+            json!({"kind":"type_filter","value":modified_expression(value),"types":types})
+        }
+        ExprKind::ObjectInitializer { object, fields } => {
+            json!({"kind":"object_initializer","object":modified_expression(object),"fields":fields.iter().map(|(name,value)|json!({"name":name,"value":modified_expression(value)})).collect::<Vec<_>>()})
+        }
+    }
 }
 fn setting_nodes(
     nodes: &[ProcedureSettingNode],
@@ -229,6 +293,8 @@ pub fn write_jsonl(
             let parameters = procedure.signature.parameters.iter().map(|parameter| Ok(json!({
                 "name":spelling(symbols,parameter.name)?,
                 "declared_type":parameter.declared_type.map(|id| spelling(symbols,id)).transpose()?,
+                "list_element_type":parameter.list_element_type.map(|id| spelling(symbols,id)).transpose()?,
+                "list_element_type_status":"known",
                 "flags":parameter.flags,
                 "array":parameter.array.as_ref().map(|array| Ok::<_, ExportError>(json!({
                     "element_type":array.element_type.map(|id| spelling(symbols,id)).transpose()?,
@@ -258,6 +324,8 @@ pub fn write_jsonl(
             "meaning":format!("{:032x}",member.content), "name":spelling(symbols,member.name)?, "kind":kind(member.kind),"definition":definition(member.definition),
             "previous":member.previous.map(|previous| &member_keys[previous.index()]),
             "declared_type":metadata.declared_type.map(|id| spelling(symbols,id)).transpose()?,
+            "list_element_type":metadata.inherited_opaque.is_none().then_some(metadata.list_element_type).flatten().map(|id| spelling(symbols,id)).transpose()?,
+            "list_element_type_status":if metadata.inherited_opaque.is_some() { "unknown" } else { "known" },
             "display_name":metadata.display_name.map(|id| spelling(symbols,id)).transpose()?,
             "inherited_opaque":opaque,
             "flags":metadata.inherited_opaque.is_none().then_some(metadata.flags),
@@ -328,6 +396,84 @@ pub fn write_jsonl(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn typed_list_hints_export_as_structural_facts_separate_from_arrays() {
+        let rows = source_rows("/datum/probe\n    var/list/datum/item/values\n    proc/read(list/datum/item/argument)\n        return 1\n");
+        let field = rows.iter().find(|row| row["row"] == "member" && row["name"] == "values").unwrap();
+        assert_eq!(field["declared_type"], "/list");
+        assert_eq!(field["list_element_type"], "/datum/item");
+        assert_eq!(field["list_element_type_status"], "known");
+        assert!(field["array"].is_null());
+        let procedure = rows.iter().find(|row| row["kind"] == "proc").unwrap();
+        let argument = &procedure["procedure"]["parameters"][0];
+        assert_eq!(argument["declared_type"], "/list");
+        assert_eq!(argument["list_element_type"], "/datum/item");
+        assert!(argument["array"].is_null());
+    }
+    #[test]
+    fn modified_values_export_structural_identity_without_source_offsets() {
+        use super::*;
+        let mut symbols = SymbolTable::default();
+        let owner = symbols.intern("/obj/base").unwrap();
+        let lexical = symbols.intern("/datum/holder").unwrap();
+        let capture = |source: &str| {
+            let parsed = dm_syntax::parse_expression(source).expr.unwrap();
+            let dm_syntax::ExprKind::ObjectInitializer { fields, .. } = parsed.kind else {
+                panic!("modified expression")
+            };
+            SemanticValue::ModifiedInstance(std::sync::Arc::new(dm_ir::ModifiedInstance::capture(
+                owner, lexical, None, &fields,
+            )))
+        };
+        let first = constant(
+            &capture("/obj/base{amount=1;amount=2;other=list(3)}"),
+            &symbols,
+        )
+        .unwrap();
+        let shifted = constant(
+            &capture("  /obj/base { amount = 1; amount = 2; other = list(3) }"),
+            &symbols,
+        )
+        .unwrap();
+        assert_eq!(first, shifted);
+        assert_eq!(first["kind"], "modified_instance");
+        assert_eq!(first["runtime_type"], "/obj/base");
+        assert_eq!(first["fields"][0]["name"], "amount");
+        assert_eq!(first["fields"][1]["name"], "amount");
+        assert_eq!(first["fields"][1]["value"]["text"], "2");
+        assert_eq!(first["fields"][2]["value"]["kind"], "call");
+        assert_ne!(
+            first,
+            constant(
+                &capture("/obj/base{amount=2;amount=1;other=list(3)}"),
+                &symbols
+            )
+            .unwrap()
+        );
+        let encoded = first.to_string();
+        assert!(!encoded.contains("span"));
+        assert!(!encoded.contains("lexical_owner"));
+        assert!(!encoded.contains("arena"));
+    }
+    #[test]
+    fn procedure_constants_export_structural_identity_separately_from_types() {
+        let mut symbols = dm_ir::SymbolTable::default();
+        let owner = symbols.intern("/datum/base").unwrap();
+        let name = symbols.intern("callback").unwrap();
+        let value = SemanticValue::Procedure(dm_ir::ProcedureIdentity {
+            owner,
+            name,
+            verb: true,
+            occurrence: 3,
+        });
+        assert_eq!(
+            super::constant(&value, &symbols).unwrap(),
+            json!({
+                "kind":"procedure", "owner":"/datum/base", "name":"callback",
+                "verb":true, "occurrence":3
+            })
+        );
+    }
     use super::*;
     use std::collections::BTreeMap;
     use std::path::{Path, PathBuf};

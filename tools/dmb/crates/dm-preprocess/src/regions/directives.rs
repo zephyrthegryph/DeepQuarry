@@ -19,6 +19,7 @@ pub(super) fn plan<P: SourceProvider>(
         file_dir_definitions: Vec::new(),
         environment: MacroEnvironment::default(),
         file_dir_origins: Vec::new(),
+        conditionals: Vec::new(),
     };
     for (name, replacement) in [
         ("EXCEPTION", "new /exception(message, __FILE__, __LINE__)"),
@@ -225,6 +226,8 @@ struct DirectivePass<'a, P> {
     file_dir_definitions: Vec<Macro>,
     environment: MacroEnvironment,
     file_dir_origins: Vec<Option<DefinitionOrigin>>,
+    // Includes splice their directives into the same encounter stream.
+    conditionals: Vec<Conditional>,
 }
 
 impl<P: SourceProvider> DirectivePass<'_, P> {
@@ -341,7 +344,6 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         self.plan
             .source_line_starts
             .insert(path.as_ref().clone(), prepared.line_starts().clone());
-        let mut conditionals: Vec<Conditional> = Vec::new();
         let mut line_number = 0;
         let mut region = self.begin_region(occurrence, 0);
         let mut pending = Vec::new();
@@ -351,7 +353,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             let span = logical.source_span;
             let start = span.start;
             let end = span.end;
-            let active = conditionals.last().is_none_or(|frame| frame.active);
+            let active = self.conditionals.last().is_none_or(|frame| frame.active);
             let Some(directive) = logical.text.trim_start().strip_prefix('#') else {
                 if active {
                     pending.push(RegionLine {
@@ -364,7 +366,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             };
             let (word, rest) = split_word(directive.trim_start());
             if matches!(word, "if" | "ifdef" | "ifndef" | "elif" | "else" | "endif") {
-                self.conditional(occurrence, source_line, word, rest, &mut conditionals);
+                self.conditional(occurrence, source_line, word, rest);
                 continue;
             }
             if word == "include" {
@@ -464,10 +466,14 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         }
         self.freeze_lines(region, &mut pending);
         self.plan.regions[region].source_span.end = prepared.original().len();
-        if !conditionals.is_empty() {
+        // Native accepts an active unfinished conditional at root EOF, but an
+        // inactive root EOF is an error. A child EOF never closes the stack.
+        if self.plan.occurrences[occurrence].parent.is_none()
+            && self.conditionals.last().is_some_and(|frame| !frame.active)
+        {
             self.error(
                 occurrence,
-                line_number,
+                line_number + 1,
                 DiagnosticKind::Conditional,
                 "unterminated #if block".into(),
             );
@@ -520,15 +526,8 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         }
     }
 
-    fn conditional(
-        &mut self,
-        occurrence: usize,
-        line: usize,
-        word: &str,
-        rest: &str,
-        frames: &mut Vec<Conditional>,
-    ) {
-        let active = frames.last().is_none_or(|frame| frame.active);
+    fn conditional(&mut self, occurrence: usize, line: usize, word: &str, rest: &str) {
+        let active = self.conditionals.last().is_none_or(|frame| frame.active);
         match word {
             "if" | "ifdef" | "ifndef" => {
                 let result = if active {
@@ -540,7 +539,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     self.error(occurrence, line, DiagnosticKind::Conditional, error);
                     false
                 });
-                frames.push(Conditional {
+                self.conditionals.push(Conditional {
                     parent_active: active,
                     branch_taken: yes,
                     active: active && yes,
@@ -548,7 +547,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 });
             }
             "elif" | "else" => {
-                let Some(mut frame) = frames.pop() else {
+                let Some(mut frame) = self.conditionals.pop() else {
                     self.error(
                         occurrence,
                         line,
@@ -579,10 +578,10 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 frame.active = frame.parent_active && yes;
                 frame.branch_taken |= yes;
                 frame.else_seen |= word == "else";
-                frames.push(frame);
+                self.conditionals.push(frame);
             }
             "endif" => {
-                if frames.pop().is_none() {
+                if self.conditionals.pop().is_none() {
                     self.error(
                         occurrence,
                         line,

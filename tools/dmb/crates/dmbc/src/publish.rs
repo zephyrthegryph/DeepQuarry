@@ -13,6 +13,29 @@ use xxhash_rust::xxh3::{xxh3_128, Xxh3};
 
 static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
+#[cfg(test)]
+thread_local! {
+    static FAULT: std::cell::RefCell<Option<(&'static str, usize)>> = const { std::cell::RefCell::new(None) };
+}
+#[cfg(test)]
+fn publication_fault(point: &'static str) -> io::Result<()> {
+    FAULT.with(|fault| {
+        let mut fault = fault.borrow_mut();
+        if let Some((selected, remaining)) = fault.as_mut() {
+            if *selected == point {
+                *remaining -= 1;
+                if *remaining == 0 {
+                    *fault = None;
+                    return Err(io::Error::other(format!(
+                        "injected publication interruption: {point}"
+                    )));
+                }
+            }
+        }
+        Ok(())
+    })
+}
+
 /// Select the shared output store on the destination drive. Callers may override
 /// this for network volumes or installations without a writable drive root.
 pub fn default_store_path(project: &Path) -> io::Result<PathBuf> {
@@ -24,7 +47,9 @@ pub fn default_store_path(project: &Path) -> io::Result<PathBuf> {
     }
     #[cfg(not(windows))]
     {
-        Ok(project.parent().ok_or_else(|| io::Error::other("manifest has no parent"))?
+        Ok(project
+            .parent()
+            .ok_or_else(|| io::Error::other("manifest has no parent"))?
             .join(".dmbc/outputs"))
     }
 }
@@ -34,13 +59,15 @@ fn windows_store_path(project: &Path, local: &Path) -> io::Result<PathBuf> {
     use std::path::{Component, Prefix};
     let drive = |path: &Path| match path.components().next() {
         Some(Component::Prefix(prefix)) => match prefix.kind() {
-            Prefix::Disk(letter) | Prefix::VerbatimDisk(letter) => Some(letter.to_ascii_uppercase()),
+            Prefix::Disk(letter) | Prefix::VerbatimDisk(letter) => {
+                Some(letter.to_ascii_uppercase())
+            }
             _ => None,
         },
         _ => None,
     };
-    let destination = drive(project).ok_or_else(||
-        io::Error::other("network output volume requires --output-store"))?;
+    let destination = drive(project)
+        .ok_or_else(|| io::Error::other("network output volume requires --output-store"))?;
     if drive(local) == Some(destination) {
         Ok(local.join("dmbd/pairs"))
     } else {
@@ -181,6 +208,8 @@ impl PairStore {
         }
         let temp = self.temporary("pair")?;
         fs::write(temp.join("deepquarry.dmb"), dmb)?;
+        #[cfg(test)]
+        publication_fault("pair_dmb_written")?;
         let resource = self
             .root
             .join("resources")
@@ -194,6 +223,8 @@ impl PairStore {
                 rsc.ok_or_else(|| invalid("shared RSC identity is absent from this store"))?;
             let staged = self.temporary("resource")?.join("archive.rsc");
             fs::write(&staged, rsc)?;
+            #[cfg(test)]
+            publication_fault("resource_written")?;
             if file_identity(&staged)? != (pair.rsc_bytes, pair.rsc_hash) {
                 return Err(invalid("new RSC bytes do not match identity"));
             }
@@ -201,11 +232,15 @@ impl PairStore {
             permissions.set_readonly(true);
             fs::set_permissions(&staged, permissions)?;
             fs::rename(staged, &resource)?;
+            #[cfg(test)]
+            publication_fault("resource_renamed")?;
         }
         if fs::hard_link(&resource, temp.join("deepquarry.rsc")).is_err() {
             fs::copy(&resource, temp.join("deepquarry.rsc"))?;
         }
         write_json(&temp.join("pair.json"), &pair)?;
+        #[cfg(test)]
+        publication_fault("pair_manifest_written")?;
         validate_directory(&temp, pair.id)?;
         for name in ["deepquarry.dmb", "deepquarry.rsc", "pair.json"] {
             let path = temp.join(name);
@@ -224,7 +259,11 @@ impl PairStore {
         } else {
             fs::rename(&temp, &destination)?;
         }
+        #[cfg(test)]
+        publication_fault("pair_directory_renamed")?;
         self.record_session(session, pair.id)?;
+        #[cfg(test)]
+        publication_fault("pair_session_committed")?;
         Ok(pair)
     }
 
@@ -243,6 +282,8 @@ impl PairStore {
         pairs.truncate(3);
         let temp = self.temporary("session")?.join("record.json");
         write_json(&temp, &pairs)?;
+        #[cfg(test)]
+        publication_fault("session_staged")?;
         // Session records are mutable hints protected by the store lock. Keep
         // the old complete record until replacement succeeds on every platform.
         atomic_replace(&temp, &path)
@@ -276,10 +317,16 @@ impl PairStore {
                 .create_new(true)
                 .open(destination)?;
             io::copy(&mut input, &mut output)?;
+            #[cfg(test)]
+            publication_fault("slot_copy_finished")?;
         }
         write_json(&slot.join("pair.json"), &pair)?;
+        #[cfg(test)]
+        publication_fault("slot_manifest_written")?;
         validate_directory(&slot, id)?;
         fs::write(slot.join("slot-complete"), pair.name())?;
+        #[cfg(test)]
+        publication_fault("slot_complete_written")?;
         Ok(slot)
     }
 
@@ -294,9 +341,15 @@ impl PairStore {
         let source = self.root.join("pairs").join(format!("{id:032x}"));
         let pair = validate_directory(&source, id)?;
         replace_copy(&source.join("deepquarry.rsc"), rsc)?;
+        #[cfg(test)]
+        publication_fault("install_rsc_replaced")?;
         replace_copy(&source.join("deepquarry.dmb"), dmb)?;
+        #[cfg(test)]
+        publication_fault("install_dmb_replaced")?;
         let staged = temporary_file(marker)?;
         write_json(&staged, &pair)?;
+        #[cfg(test)]
+        publication_fault("install_marker_staged")?;
         atomic_replace(&staged, marker)
     }
 }
@@ -330,6 +383,8 @@ fn replace_copy(source: &Path, destination: &Path) -> io::Result<()> {
             .truncate(true)
             .open(&staged)?;
         io::copy(&mut input, &mut output)?;
+        #[cfg(test)]
+        publication_fault("install_copy_staged")?;
     }
     if file_identity(source)? != file_identity(&staged)? {
         return Err(invalid("conventional copy failed authentication"));
@@ -412,12 +467,129 @@ fn validate_directory(path: &Path, id: u128) -> io::Result<OutputPair> {
 mod tests {
     use super::*;
 
+    fn interrupted<T>(point: &'static str, ordinal: usize, run: impl FnOnce() -> io::Result<T>) {
+        struct Clear;
+        impl Drop for Clear {
+            fn drop(&mut self) {
+                FAULT.with(|fault| *fault.borrow_mut() = None);
+            }
+        }
+        FAULT.with(|fault| *fault.borrow_mut() = Some((point, ordinal)));
+        let _clear = Clear;
+        let error = match run() {
+            Ok(_) => panic!("fault boundary was not reached: {point}"),
+            Err(error) => error,
+        };
+        assert!(
+            error
+                .to_string()
+                .contains("injected publication interruption"),
+            "{error}"
+        );
+    }
+
+    fn assert_slot(store: &PairStore, pair: &OutputPair) {
+        let slot = store.acquire(pair.id, store.root.join("slots")).unwrap();
+        assert_eq!(validate_directory(&slot, pair.id).unwrap(), *pair);
+        assert!(slot.join("slot-complete").exists());
+    }
+
+    #[test]
+    fn publication_fault_boundaries_preserve_authenticated_generations_and_release_lock() {
+        for point in [
+            "pair_dmb_written",
+            "resource_written",
+            "resource_renamed",
+            "pair_manifest_written",
+            "pair_directory_renamed",
+            "session_staged",
+            "pair_session_committed",
+        ] {
+            let store = store();
+            let old = store.publish(1, b"old-code", b"old-assets").unwrap();
+            let new = OutputPair::from_bytes(b"new-code", b"new-assets");
+            interrupted(point, 1, || store.publish(1, b"new-code", b"new-assets"));
+            assert_slot(&store, &old);
+            let destination = store.root.join("pairs").join(new.name());
+            if destination.exists() {
+                assert_eq!(validate_directory(&destination, new.id).unwrap(), new);
+            }
+            assert_eq!(store.publish(1, b"new-code", b"new-assets").unwrap(), new);
+            assert_slot(&store, &new);
+        }
+    }
+
+    #[test]
+    fn acquisition_fault_boundaries_never_mark_partial_slots_complete() {
+        for (point, ordinal) in [
+            ("slot_copy_finished", 1),
+            ("slot_copy_finished", 2),
+            ("slot_manifest_written", 1),
+            ("slot_complete_written", 1),
+        ] {
+            let store = store();
+            let pair = store.publish(1, b"code", b"assets").unwrap();
+            let slots = store.root.join("slots");
+            interrupted(point, ordinal, || store.acquire(pair.id, &slots));
+            for entry in fs::read_dir(&slots).unwrap() {
+                let path = entry.unwrap().path();
+                if path.join("slot-complete").exists() {
+                    assert_eq!(validate_directory(&path, pair.id).unwrap(), pair);
+                }
+            }
+            assert_slot(&store, &pair);
+        }
+    }
+
+    #[test]
+    fn conventional_fault_boundaries_keep_old_marker_and_repair_from_immutable_pair() {
+        for (point, ordinal) in [
+            ("install_copy_staged", 1),
+            ("install_copy_staged", 2),
+            ("install_rsc_replaced", 1),
+            ("install_dmb_replaced", 1),
+            ("install_marker_staged", 1),
+        ] {
+            let store = store();
+            let root = store.root.join("worktree");
+            let dmb = root.join("deepquarry.dmb");
+            let rsc = root.join("deepquarry.rsc");
+            let marker = root.join("deepquarry.pair");
+            let old = store.publish(1, b"old-code", b"old-assets").unwrap();
+            let new = store.publish(1, b"new-code", b"new-assets").unwrap();
+            store.install(old.id, &dmb, &rsc, &marker).unwrap();
+            interrupted(point, ordinal, || {
+                store.install(new.id, &dmb, &rsc, &marker)
+            });
+            let marked: OutputPair = serde_json::from_slice(&fs::read(&marker).unwrap()).unwrap();
+            assert_eq!(marked, old);
+            let copies = OutputPair::from_bytes(&fs::read(&dmb).unwrap(), &fs::read(&rsc).unwrap());
+            if copies != old {
+                assert_ne!(
+                    marked, copies,
+                    "mixed compatibility copies must not authenticate"
+                );
+            }
+            assert_slot(&store, &old);
+            assert_slot(&store, &new);
+            store.install(new.id, &dmb, &rsc, &marker).unwrap();
+            let marked: OutputPair = serde_json::from_slice(&fs::read(&marker).unwrap()).unwrap();
+            assert_eq!(marked, new);
+            assert_eq!(
+                OutputPair::from_bytes(&fs::read(&dmb).unwrap(), &fs::read(&rsc).unwrap()),
+                new
+            );
+        }
+    }
+
     #[cfg(windows)]
     #[test]
     fn output_store_is_shared_by_destination_drive() {
         let local = Path::new("C:/Users/demo/AppData/Local");
-        assert_eq!(windows_store_path(Path::new("C:/work/a/project.dme"), local).unwrap(),
-            local.join("dmbd/pairs"));
+        assert_eq!(
+            windows_store_path(Path::new("C:/work/a/project.dme"), local).unwrap(),
+            local.join("dmbd/pairs")
+        );
         let first = windows_store_path(Path::new("E:/work/a/project.dme"), local).unwrap();
         let second = windows_store_path(Path::new("E:/work/b/project.dme"), local).unwrap();
         assert_eq!(first, second);

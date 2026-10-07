@@ -18,7 +18,7 @@ backend, tree and analysis gates pass, including inherited element hints and
 signature identity. The next release/full-project probe remains pending.
 
 A bounded native/error comparison found that release probe 27 silently accepts
-two native-invalid bare modified returns. Explicit rejection is being added;
+two native-invalid bare modified returns. Explicit pre-compaction rejection now passes;
 exact native diagnostic wording and compile-error parity remain open.
 
 The focused cold integration gate passes stored modified defaults, canonical
