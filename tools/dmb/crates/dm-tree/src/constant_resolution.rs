@@ -76,6 +76,15 @@ pub struct ScalarSnapshot {
     pub requested: Arc<[ScalarQuery]>,
     pub outcomes: Arc<BTreeMap<ScalarQuery, ScalarOutcome>>,
     pub dependencies: Arc<BTreeMap<ScalarQuery, Arc<[ScalarQuery]>>>,
+    /// Separate engine-domain reads: a missing source declaration can resolve
+    /// a predefined constant, but a nonconstant source declaration shadows it.
+    pub predefined_reads: Arc<BTreeMap<SymbolId, PredefinedOutcome>>,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum PredefinedOutcome {
+    Value(SemanticValue),
+    Missing,
+    Unsupported,
 }
 impl ScalarSnapshot {
     pub fn outcome(&self, query: ScalarQuery) -> Option<&ScalarOutcome> {
@@ -88,11 +97,13 @@ struct Memo {
     values: BTreeMap<ScalarQuery, ScalarOutcome>,
     active: Vec<ScalarQuery>,
     edges: BTreeMap<ScalarQuery, BTreeSet<ScalarQuery>>,
+    predefined: BTreeMap<SymbolId, PredefinedOutcome>,
 }
 struct Pass<'a> {
     tree: &'a SemanticTree,
     backend: &'a ScalarBackend<'a>,
     memo: RefCell<Memo>,
+    predefined: Option<&'a dyn Resolver>,
 }
 impl Pass<'_> {
     fn member(&self, owner: SymbolId, name: SymbolId) -> Option<MemberId> {
@@ -189,6 +200,33 @@ impl Pass<'_> {
                     .insert(dependency);
                 match self.query(dependency) {
                     ScalarOutcome::Value(value) => to_constant(&value, self.tree),
+                    ScalarOutcome::Unsupported(UnsupportedReason::MissingDeclaration)
+                        if !name.contains("::") && self.predefined.is_some() =>
+                    {
+                        let symbol = SymbolId::of(name);
+                        let outcome = match self
+                            .predefined
+                            .unwrap()
+                            .resolve(ResolveQuery::PredefinedConstant(symbol))
+                        {
+                            ResolvedMeaning::Value(value) => PredefinedOutcome::Value(value),
+                            ResolvedMeaning::Missing => PredefinedOutcome::Missing,
+                            _ => PredefinedOutcome::Unsupported,
+                        };
+                        self.memo
+                            .borrow_mut()
+                            .predefined
+                            .insert(symbol, outcome.clone());
+                        match outcome {
+                            PredefinedOutcome::Value(value) => to_constant(&value, self.tree),
+                            _ => {
+                                *failure.borrow_mut() = Some(ScalarOutcome::Unsupported(
+                                    UnsupportedReason::MissingDeclaration,
+                                ));
+                                None
+                            }
+                        }
+                    }
                     unsupported => {
                         if failure.borrow().is_none() {
                             *failure.borrow_mut() = Some(unsupported);
@@ -264,11 +302,23 @@ pub fn resolve(
     requests: &[ScalarQuery],
     backend: &ScalarBackend<'_>,
 ) -> ScalarSnapshot {
+    resolve_with_predefined(snapshot, requests, backend, None)
+}
+
+/// `backend.identity` must bind the captured predefined catalog as well as
+/// string/nameof rules. Engine reads remain separate from source dependency edges.
+pub fn resolve_with_predefined(
+    snapshot: &TreeSnapshot,
+    requests: &[ScalarQuery],
+    backend: &ScalarBackend<'_>,
+    predefined: Option<&dyn Resolver>,
+) -> ScalarSnapshot {
     let requested = requests.iter().copied().collect::<BTreeSet<_>>();
     let pass = Pass {
         tree: &snapshot.tree,
         backend,
         memo: RefCell::new(Memo::default()),
+        predefined,
     };
     for query in &requested {
         pass.query(*query);
@@ -279,7 +329,7 @@ pub fn resolve(
         .into_iter()
         .map(|(query, edges)| (query, edges.into_iter().collect::<Vec<_>>().into()))
         .collect();
-    let mut bytes = b"dm-scalar-overlay-v1\0".to_vec();
+    let mut bytes = b"dm-scalar-overlay-v2\0".to_vec();
     bytes.extend_from_slice(&snapshot.tree.identity().to_le_bytes());
     bytes.extend_from_slice(&backend.identity.to_le_bytes());
     bytes.extend_from_slice(&(requested.len() as u64).to_le_bytes());
@@ -315,6 +365,21 @@ pub fn resolve(
             dependency.encode(&mut bytes);
         }
     }
+    bytes.push(255);
+    bytes.extend_from_slice(&(memo.predefined.len() as u64).to_le_bytes());
+    for (name, outcome) in &memo.predefined {
+        bytes.extend_from_slice(&name.bits().to_le_bytes());
+        match outcome {
+            PredefinedOutcome::Value(value) => {
+                bytes.push(0);
+                let value = value.canonical_bytes();
+                bytes.extend_from_slice(&(value.len() as u64).to_le_bytes());
+                bytes.extend_from_slice(&value);
+            }
+            PredefinedOutcome::Missing => bytes.push(1),
+            PredefinedOutcome::Unsupported => bytes.push(2),
+        }
+    }
     ScalarSnapshot {
         source: snapshot.clone(),
         identity: xxhash_rust::xxh3::xxh3_128(&bytes),
@@ -322,6 +387,7 @@ pub fn resolve(
         requested: requested.into_iter().collect::<Vec<_>>().into(),
         outcomes: Arc::new(memo.values),
         dependencies: Arc::new(dependencies),
+        predefined_reads: Arc::new(memo.predefined),
     }
 }
 
@@ -408,6 +474,44 @@ mod tests {
             decode_string: &|_| None,
             nameof: &|_| None,
         }
+    }
+    #[test]
+    fn predefined_reads_are_recorded_separately_and_source_names_shadow_them() {
+        struct Engine;
+        impl Resolver for Engine {
+            fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
+                match query {
+                    ResolveQuery::PredefinedConstant(name)
+                        if name == SymbolId::of("ENGINE_VALUE") =>
+                    {
+                        ResolvedMeaning::Value(SemanticValue::NumberBits(7.0f32.to_bits()))
+                    }
+                    _ => ResolvedMeaning::Missing,
+                }
+            }
+        }
+        let source = snapshot("/datum/probe\n    var/const/a = ENGINE_VALUE + 1\n");
+        let a = query("/datum/probe", "a");
+        let result = resolve_with_predefined(&source, &[a], &backend_disabled(), Some(&Engine));
+        assert_eq!(result.outcome(a), Some(&number(8.0)));
+        assert_eq!(
+            result.predefined_reads.get(&SymbolId::of("ENGINE_VALUE")),
+            Some(&PredefinedOutcome::Value(SemanticValue::NumberBits(
+                7.0f32.to_bits()
+            )))
+        );
+        assert!(result.dependencies[&a]
+            .iter()
+            .any(|dependency| *dependency == query("/", "ENGINE_VALUE")));
+        let source = snapshot(
+            "/datum/probe\n    var/ENGINE_VALUE = 4\n    var/const/a = ENGINE_VALUE + 1\n",
+        );
+        let result = resolve_with_predefined(&source, &[a], &backend_disabled(), Some(&Engine));
+        assert_eq!(
+            result.outcome(a),
+            Some(&ScalarOutcome::Unsupported(UnsupportedReason::NotConst))
+        );
+        assert!(result.predefined_reads.is_empty());
     }
     #[test]
     fn forward_const_dependencies_and_short_circuit_are_demand_driven() {
