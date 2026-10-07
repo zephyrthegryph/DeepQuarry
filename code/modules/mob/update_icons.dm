@@ -5,7 +5,7 @@
 	return
 
 /mob/proc/update_icons()
-	redraw(src) //Ugh.
+	update_icon() //Ugh.
 	return
 
 // Obsolete

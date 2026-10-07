@@ -95,7 +95,7 @@
 	else
 		belly.nom_atom(prey, user)
 
-	redraw(user)
+	user.update_icon()
 
 	var/mob/living/carbon/victim = prey // Check for afk vore
 	if(istype(victim) && !victim.client && !victim.ai_brain && victim.ckey)

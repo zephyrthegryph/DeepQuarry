@@ -1,5 +1,4 @@
-// The draw framework forms (doc/rewrite/final_api.html section 13): look.effect(), look.watch(), the one redraw request for drawn and legacy
-// types, the look's single emissive blocker, and the mob look helpers (look.hat(), look.life_state()).
+// The draw framework forms (doc/rewrite/final_api.html section 13): look.effect(), look.watch(), the look's single emissive blocker, and the mob look helpers (look.hat(), look.life_state()).
 
 // ---- look.effect(): the work a look does besides drawing ----
 
@@ -86,50 +85,6 @@ TRACKED(/obj/dq_draw_watched, shown)
 	TEST_ASSERT(!length(B.rel_watchers), "a draw that stops reading the other end stops hearing it")
 	TEST_ASSERT(!length(cap_engine_state_of(A)?.look_watching), "and keeps no subscription of its own")
 	A.other = null
-
-// ---- redraw(): one redraw request for drawn and legacy types ----
-
-/obj/dq_draw_legacy
-	name = "draw legacy"
-	icon = 'icons/obj/stock_parts.dmi'
-	icon_state = "fix"
-	var/redraws = 0
-
-/obj/dq_draw_legacy/update_icon()
-	redraws++
-	..()
-
-/datum/unit_test/dq_draw_redraw_reaches_a_legacy_type
-
-/datum/unit_test/dq_draw_redraw_reaches_a_legacy_type/Run()
-	var/turf/T = test_floor()
-	var/obj/dq_draw_legacy/A = allocate(/obj/dq_draw_legacy, T)
-	appearance_flush()
-	var/before = A.redraws
-	redraw(A)
-	TEST_ASSERT_EQUAL(A.redraws, before + 1, "redraw(A) runs update_icon() on the spot, as the call it replaces")
-	TEST_ASSERT_EQUAL(GLOB.type_legacy_draw[A.type], 1, "the type is known to draw through update_icon()")
-	redraw(A)
-	TEST_ASSERT_EQUAL(A.redraws, before + 2, "and again for the next request")
-	changed(A)
-	appearance_flush()
-	TEST_ASSERT_EQUAL(A.redraws, before + 2, "changed(A) is a state mark: it does not run a legacy update_icon()")
-
-/datum/unit_test/dq_draw_redraw_skips_update_icon_on_a_drawn_type
-
-/datum/unit_test/dq_draw_redraw_skips_update_icon_on_a_drawn_type/Run()
-	var/turf/T = test_floor()
-	var/obj/dq_draw_effect/A = allocate(/obj/dq_draw_effect, T)
-	refresh_flush()
-	var/before = A.effects_seen
-	redraw(A)
-	refresh_flush()
-	TEST_ASSERT_EQUAL(GLOB.type_legacy_draw[A.type], 0, "a drawn type is probed once and known not to draw through update_icon()")
-	TEST_ASSERT_EQUAL(A.effects_seen, before, "and its redraw is the look refresh: a look that did not change applies nothing")
-	A.mode = 3 // a raw write nothing published: the request is what redraws it
-	redraw(A)
-	refresh_flush()
-	TEST_ASSERT(("mode-3" in A.look_overlays), "the request redraws a drawn type: [json_encode(A.look_overlays)]")
 
 // ---- the look owns one emissive blocker ----
 

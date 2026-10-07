@@ -133,7 +133,7 @@
 			healths.overlays = null
 			healths.icon_state = "health6"
 		// The HUD and sight follow set_stat(DEAD) by themselves (it published nameof(stat)).
-		redraw(src)
+		update_icon()
 
 	// 8. Antagonist bookkeeping.
 	SSticker?.mode?.check_win()

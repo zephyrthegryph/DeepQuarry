@@ -70,7 +70,7 @@ This saves us from having to call add_fingerprint() any time something is put in
 				update_inv_ears(0)
 				update_inv_wear_mask(0)
 			if(inserted && istype(I, /obj/item/clothing/head/kitty))
-				redraw(I)
+				I.update_icon()
 		if(SLOT_ID_MASK)
 			if(istype(I) && (I.flags_inv & (BLOCKHAIR|BLOCKHEADHAIR)))
 				update_hair(0)	//rebuild hair

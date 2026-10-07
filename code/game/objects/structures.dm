@@ -85,7 +85,7 @@
 /obj/structure/proc/smooth_changed(mask)
 	smooth_mask = mask
 	update_connections()
-	redraw(src)
+	update_icon()
 
 /obj/structure/proc/update_connections(propagate = 0)
 	if(propagate)
@@ -134,4 +134,4 @@
 
 /obj/structure/proc/refresh_neighbors()
 	for(var/turf/T as anything in RANGE_TURFS(1, src))
-		redraw(T)
+		T.update_icon()

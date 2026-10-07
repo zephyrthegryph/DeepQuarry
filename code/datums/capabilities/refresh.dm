@@ -669,7 +669,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 GLOBAL_VAR_INIT(refresh_drift_expected, FALSE)
 
 
-// ---- what a look does besides drawing: effects, watches and legacy redraws (doc/rewrite/final_api.html section 13) ----
+// ---- what a look does besides drawing: effects and watches (doc/rewrite/final_api.html section 13) ----
 
 /// Effects named by applied looks that have not run yet: list(atom, list(list(proc_ref, args...), ...)).
 GLOBAL_LIST_EMPTY(look_effects_due)
@@ -711,67 +711,3 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 			if(seen)
 				rel_observe(seen, A)
 	engine.look_watching = keys
-
-/// Atoms whose type draws through update_icon() (a declared appearance or an override), by type: 1 yes, 0 no; unknown until its first redraw.
-GLOBAL_LIST_EMPTY(type_legacy_draw)
-/// Set while the first redraw of a type runs, to see whether the base update_icon() was reached by an override.
-GLOBAL_VAR_INIT(update_icon_probing, FALSE)
-GLOBAL_DATUM(update_icon_probe_target, /atom)
-/// What the probe saw of the target's base update_icon(): reached with no override in between, or through an override's ..().
-GLOBAL_VAR_INIT(update_icon_base_direct, FALSE)
-GLOBAL_VAR_INIT(update_icon_base_via_override, FALSE)
-/// The atom whose update_icon() runs on the presentation lane now: a redraw request it raises meanwhile is its own.
-GLOBAL_DATUM(legacy_redrawing, /atom)
-
-/**
- * A redraw request from code that does not know whether the type draws: `redraw(A)` is the spelling of `A.update_icon()` for every atom. A drawn
- * type is redrawn by the look refresh the request marks; a type that still draws through update_icon() (a declared appearance or an
- * override) also gets its update_icon() on the spot, as the call it replaces; a type that draws nothing costs a list read after its first
- * request. changed(A) is a state mark: it never runs a legacy update_icon() (the declared appearance watches do).
- */
-/proc/redraw(atom/A)
-	if(!A || QDELETED(A))
-		return
-	var/known = GLOB.type_legacy_draw[A.type]
-	if((isnull(known) || known) && A != GLOB.legacy_redrawing) // null == 0 in DM: an unprobed type must not be taken for a probed one
-		legacy_redraw(A)
-	// The look only: no OM channel is raised, so the machine pipelines that wake on CHANGE_EXPLICIT stay asleep, as they did for update_icon().
-	if(refresh_wanted(A))
-		refresh_mark(A, DEP_DRAW)
-	else
-		refresh_mark_owner(A, DEP_DRAW, 0)
-
-/// update_icon() of one atom through redraw(): the first of a type also learns whether it draws that way (the base update_icon() reached
-/// directly, with no declared appearance, means it never did).
-/proc/legacy_redraw(atom/A)
-	var/atom/outer = GLOB.legacy_redrawing
-	GLOB.legacy_redrawing = A
-	var/probe = isnull(GLOB.type_legacy_draw[A.type])
-	if(probe)
-		GLOB.update_icon_probing = TRUE
-		GLOB.update_icon_probe_target = A
-		GLOB.update_icon_base_direct = FALSE
-		GLOB.update_icon_base_via_override = FALSE
-	try
-		A.update_icon()
-	catch(var/exception/e)
-		GLOB.update_icon_probing = FALSE
-		GLOB.update_icon_probe_target = null
-		GLOB.legacy_redrawing = outer
-		throw e
-	if(probe)
-		GLOB.update_icon_probing = FALSE
-		GLOB.update_icon_probe_target = null
-		var/datum/lifecycle_decls/decls = lifecycle_decls_of(A)
-		// An override (its ..() reached the base, or the base was never reached) or a declared appearance: update_icon() draws.
-		GLOB.type_legacy_draw[A.type] = (GLOB.update_icon_base_via_override || !GLOB.update_icon_base_direct || decls?.appearance_draws) ? 1 : 0
-	GLOB.legacy_redrawing = outer
-
-/// The base update_icon() was reached while a type is probed: directly (not through an override's ..()) means the type has no override.
-/proc/legacy_probe_note(atom/who, callee/caller)
-	if(who != GLOB.update_icon_probe_target)
-		return // another atom's update_icon() reached from the target's
-	if(derive_called_by_override(caller, "update_icon"))
-		GLOB.update_icon_base_via_override = TRUE
-	else
-		GLOB.update_icon_base_direct = TRUE

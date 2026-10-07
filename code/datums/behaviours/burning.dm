@@ -77,7 +77,7 @@ CAPABILITIES(/obj)
 	O.resistance_flags |= ON_FIRE
 	if(O.burn_overlay)
 		O.add_overlay(O.burn_overlay)
-	redraw(O)
+	O.update_icon()
 
 /datum/capability/burning/on_deactivate(datum/activation/A)
 	var/obj/O = A.holder
@@ -89,7 +89,7 @@ CAPABILITIES(/obj)
 		O.resistance_flags &= ~ON_FIRE
 		if(O.burn_overlay)
 			O.cut_overlay(O.burn_overlay)
-		redraw(O)
+		O.update_icon()
 	O.burn_overlay = null
 
 /// The heat source and the cooling watch on the object's heat body.

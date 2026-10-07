@@ -129,7 +129,7 @@
 		SSexplosions.defer_turf_update(W)
 	else
 		W.levelupdate()
-		redraw(W)
+		W.update_icon()
 		W.post_change()
 	. =  W
 
@@ -207,7 +207,7 @@
 /turf/proc/finalize_explosion_deferred_appearance()
 	// The subsystem already deduplicated the complete one-tile neighborhood, so
 	// do not recursively update the same nine turfs for every changed floor.
-	redraw(src)
+	update_icon()
 	if(CONFIG_GET(number/starlight))
 		if(istype(src, /turf/space))
 			var/turf/space/S = src

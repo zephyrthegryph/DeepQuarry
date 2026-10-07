@@ -130,8 +130,8 @@ CAPABILITY_TYPE(tether_handheld, CAP_TETHER_HANDHELD, /datum/capability/tether_h
 	if(!user.put_in_hands(hand_held))
 		to_chat(user, span_warning("You need a free hand to hold the \the [hand_held]!"))
 		return FALSE
-	redraw(src)
-	redraw(hand_held)
+	update_icon()
+	hand_held.update_icon()
 	to_chat(user,span_notice("You remove \the [hand_held] from \the [src]."))
 	return TRUE
 
@@ -155,9 +155,9 @@ CAPABILITY_TYPE(tether_handheld, CAP_TETHER_HANDHELD, /datum/capability/tether_h
 	if(QDELETED(src) || !tether_path)
 		return
 	tether_make_handheld()
-	redraw(src)
+	update_icon()
 	var/obj/item/remade = tethered_handheld()
-	redraw(remade)
+	remade?.update_icon()
 
 // Absolutely illegal to be anywhere else except in the slot you were allowed to remove it from
 /obj/item/proc/tether_check()
@@ -180,8 +180,8 @@ CAPABILITY_TYPE(tether_handheld, CAP_TETHER_HANDHELD, /datum/capability/tether_h
 		handheld_mob.drop_from_inventory(hand_held, src)
 	else
 		hand_held.forceMove(src)
-	redraw(src)
-	redraw(hand_held)
+	update_icon()
+	hand_held.update_icon()
 
 // By default this expects to be worn on your back
 /obj/item/proc/tether_slot_check()

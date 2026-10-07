@@ -15,13 +15,6 @@ dead
     `else` follows. A block left empty by the removal goes too when its opener is side-effect free (`if(...)` with no `else`
     after it, `else`, a `for(var/x in ...)` loop); otherwise the call stays (residue `empty_block`).
     Unit tests and the engine are not edited. Idempotent. Report: removed calls by folder, residue by code.
-
-generic
-    `X.update_icon()` on an /atom, /obj, /atom/movable, /mob, /mob/living, /turf, /obj/item, /obj/structure, /obj/machinery or /obj/effect
-    receiver (what the call reaches depends on the subtype) becomes `redraw(X)`: a redraw request that works for a drawn type (the look refresh it
-    marks redraws it) and a legacy one (it runs its update_icon() on the spot, as the call did), so the caller need not know which it holds.
-    The same statement forms as `dead`. A receiver typed by a concrete type, and the machinery and power folders other sessions own, stay
-    (`--paths` scopes further). Idempotent.
 """
 import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import argparse
@@ -278,26 +271,6 @@ def run_dead(args):
     return 0
 
 
-GENERIC_ROOTS = {"/atom", "/atom/movable", "/obj", "/mob", "/mob/living", "/turf", "/obj/item", "/obj/structure", "/obj/machinery", "/obj/effect"}
-OWNED_BY_OTHERS = ("code/game/machinery/", "code/modules/power/")
-# the redraw machinery itself calls update_icon() on purpose
-REDRAW_MACHINERY = ("code/datums/capabilities/refresh.dm", "code/datums/sys/appearance.dm", "code/game/atom/_atom.dm")
-
-
-def run_generic(args):
-    files = {rel: File(rel) for rel in code_files() if not rel.startswith(OWNED_BY_OTHERS) and rel not in REDRAW_MACHINERY}
-    removed, residue, sites = collections.Counter(), collections.Counter(), []
-
-    def decide(rel, ptype, pname, recv, t, header):
-        if t not in GENERIC_ROOTS:
-            return None
-        return ("replace", "redraw(%s)" % ("src" if recv in (None, "src") else recv))
-
-    walk_calls(args, files, decide, removed, residue, sites)
-    report("generic", args, removed, residue, sites)
-    return 0
-
-
 def run_calls(args):
     """After `convert --apply --report R`: the update_icon() calls on the converted components' types (see look_convert)."""
     import json
@@ -455,7 +428,7 @@ def run_prune(args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["dead", "generic", "convert", "calls", "audit", "track", "prune"])
+    ap.add_argument("mode", choices=["dead", "convert", "calls", "audit", "track", "prune"])
     ap.add_argument("--owned-ok", action="store_true", help="track: also rewrite writes in the folders other sessions own")
     ap.add_argument("--vars", nargs="*", help="track: only these vars")
     ap.add_argument("--base", default="origin/master", help="prune: the changed() calls added since this ref are the ones considered")
@@ -471,8 +444,6 @@ def main():
     os.chdir(ROOT)
     if args.mode == "dead":
         return run_dead(args)
-    if args.mode == "generic":
-        return run_generic(args)
     if args.mode == "calls":
         return run_calls(args)
     if args.mode == "audit":

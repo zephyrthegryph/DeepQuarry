@@ -55,7 +55,7 @@ MAP_RESOLVER(/obj/effect/floor_decal/reset, GLOBAL_PROC_REF(resolve_floor_decal_
 	var/turf/T = get_turf(loc)
 	if(T && length(T.decals))
 		T.decals.Cut()
-		redraw(T)
+		T.update_icon()
 	return TRUE
 
 /obj/effect/floor_decal/corner

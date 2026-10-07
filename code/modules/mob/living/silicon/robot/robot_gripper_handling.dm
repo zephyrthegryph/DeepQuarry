@@ -445,7 +445,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gripper, TYPE_PROC_REF(/atom, appearance_overl
 		return FALSE
 	thing.add_fingerprint(actor)
 	thing.forceMove(P)
-	redraw(thing)
+	thing.update_icon()
 	rel_set(src, nameof(current_pocket), P)
 	update_ref(thing)
 	return TRUE

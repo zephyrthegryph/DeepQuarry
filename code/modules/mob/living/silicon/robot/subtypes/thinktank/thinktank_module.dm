@@ -41,7 +41,7 @@
 	if(QDELETED(user))
 		return
 	pupil_color = (A.answer ? A.answer.value : null) || initial(pupil_color)
-	redraw(user)
+	user.update_icon()
 
 /obj/item/robot_module/robot/platform/explorer
 	armor_color = "#528052"

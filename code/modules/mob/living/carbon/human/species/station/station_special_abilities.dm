@@ -1121,11 +1121,11 @@ CAPABILITIES(/datum/shred_limb_review)
 			var/mob/living/F = firer
 			if(F.appendage_alt_setting == 1)
 				F.throw_at(M, throw_range, firer.throw_speed, F) //Firer thrown at target.
-				redraw(F)
+				F.update_icon()
 				return
 		if(istype(M))
 			M.throw_at(firer, throw_range, M.throw_speed, firer) //Fun fact: living things have a throw_speed of 2.
-			redraw(M)
+			M.update_icon()
 			return
 		else //Anything that isn't a /living
 			return

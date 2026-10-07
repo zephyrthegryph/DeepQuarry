@@ -37,7 +37,7 @@
 
 /datum/construction_graph/vehicle/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
 	if(!QDELETED(target))
-		redraw(target)
+		target.update_icon()
 
 /datum/interaction/construction/vehicle
 	tool_volume = 50
