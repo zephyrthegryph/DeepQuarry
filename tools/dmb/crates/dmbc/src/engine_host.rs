@@ -1,6 +1,8 @@
 //! Immutable compiler configuration resolver; no output tables or legacy bindings.
 #[path = "engine_constants.rs"]
 mod constants;
+#[path = "intrinsic_methods.rs"]
+mod intrinsic_methods;
 use dm_ir::{
     ResolveQuery as Q, ResolvedMeaning as M, Resolver, SemanticValue, SymbolId, SymbolTable,
 };
@@ -163,6 +165,7 @@ pub struct EngineResolverHost<R> {
     constants: ConstantCatalog,
     runtime: RuntimeAliasCatalog,
     callable_absence: Option<Arc<BTreeSet<SymbolId>>>,
+    intrinsic_methods: Option<Arc<intrinsic_methods::IntrinsicMethods>>,
     variable_absence: Option<Arc<VariableAbsence>>,
 }
 impl<R: Resolver> EngineResolverHost<R> {
@@ -172,6 +175,7 @@ impl<R: Resolver> EngineResolverHost<R> {
             constants,
             runtime,
             callable_absence: None,
+            intrinsic_methods: None,
             variable_absence: None,
         }
     }
@@ -191,6 +195,10 @@ impl<R: Resolver> EngineResolverHost<R> {
             "../../../fixtures/native_template_nativebuiltins_5161687.json"
         ))
         .map_err(|error| error.to_string())?;
+        self.intrinsic_methods = Some(Arc::new(intrinsic_methods::IntrinsicMethods::capture(
+            Arc::clone(&frontend.snapshot.tree),
+            &catalog,
+        )?));
         let intrinsic = catalog["Procs"]
             .as_array()
             .ok_or("native callable catalog absent")?
@@ -323,7 +331,7 @@ impl<R: Resolver> EngineResolverHost<R> {
         bytes.extend_from_slice(&self.constants.identity.to_le_bytes());
         bytes.extend_from_slice(&self.runtime.policy_identity.to_le_bytes());
         if self.callable_absence.is_some() {
-            bytes.extend_from_slice(b"pinned-authored-callable-absence-v1");
+            bytes.extend_from_slice(b"pinned-callable-policy-v2;explicit-runtime-receiver-methods");
             bytes.extend_from_slice(include_bytes!(
                 "../../../fixtures/native_template_nativebuiltins_5161687.json"
             ));
@@ -371,6 +379,13 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                 if !matches!(answer, M::Unsupported(_)) {
                     return answer;
                 }
+                if let Some(meaning) = self
+                    .intrinsic_methods
+                    .as_ref()
+                    .and_then(|catalog| catalog.resolve(query))
+                {
+                    return meaning;
+                }
                 let variable = match query {
                     Q::Var { owner, name }
                     | Q::DeclaredVarType { owner, name }
@@ -414,6 +429,7 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                 let (owner, name, presence) = match query {
                     Q::Proc { owner, name, .. } => (owner, name, false),
                     Q::HasMemberProc { owner, name } => (owner, name, true),
+                    Q::GlobalProc(name) => (SymbolId::of("/"), name, false),
                     _ => return answer,
                 };
                 if self
@@ -441,6 +457,216 @@ mod tests {
     impl Resolver for Missing {
         fn resolve(&self, _: Q) -> M {
             M::Missing
+        }
+    }
+    #[test]
+    fn pinned_receiver_methods_lower_dynamically_without_fabricated_abi() {
+        use std::path::Path;
+        struct Source;
+        impl dm_preprocess::SourceProvider for Source {
+            fn read(&self, _: &Path) -> Result<String, String> {
+                Ok(
+                    "/datum/probe\n/proc/copy_probe(list/items)\n    return items.Copy(1, 2)\n"
+                        .into(),
+                )
+            }
+        }
+        let engine = crate::engine::EngineSnapshot::from_bytes(
+            include_bytes!("../../../fixtures/native_template.bin"),
+            1,
+        )
+        .unwrap()
+        .with_bootstrap_catalog()
+        .unwrap();
+        let seed = engine.frontend_seed();
+        let frontend = dm_tree::frontend::build_with_config(
+            Path::new("project.dme"),
+            &Source,
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(&seed),
+                observer: None,
+            },
+        )
+        .unwrap();
+        let mut symbols = frontend.snapshot.tree.symbols().clone();
+        let constants = ConstantCatalog::native_516_1687(&mut symbols).unwrap();
+        let runtime = RuntimeAliasCatalog::new(
+            engine.identity(),
+            &symbols,
+            Vec::new(),
+            frontend
+                .snapshot
+                .tree
+                .types()
+                .iter()
+                .map(|node| node.path)
+                .collect(),
+            Completeness::Partial,
+        )
+        .unwrap();
+        let host = EngineResolverHost::new(frontend.snapshot.tree.clone(), constants, runtime)
+            .with_pinned_callables(&engine, &frontend)
+            .unwrap();
+        let list = SymbolId::of("/list");
+        let copy = SymbolId::of("Copy");
+        assert_eq!(
+            host.resolve(Q::Proc {
+                owner: list,
+                name: copy,
+                verb: false
+            }),
+            M::IntrinsicProc {
+                declaring_owner: list,
+                name: copy
+            }
+        );
+        assert_eq!(
+            host.resolve(Q::Proc {
+                owner: list,
+                name: copy,
+                verb: true
+            }),
+            M::Missing
+        );
+        assert_eq!(
+            host.resolve(Q::HasMemberProc {
+                owner: list,
+                name: copy
+            }),
+            M::Presence(true)
+        );
+        let read = SymbolId::of("Read");
+        assert_eq!(
+            host.resolve(Q::Proc {
+                owner: SymbolId::of("/datum/probe"),
+                name: read,
+                verb: false
+            }),
+            M::IntrinsicProc {
+                declaring_owner: SymbolId::of("/datum"),
+                name: read
+            }
+        );
+        for query in [
+            Q::GlobalProc(copy),
+            Q::Proc {
+                owner: SymbolId::of("/never_captured"),
+                name: copy,
+                verb: false,
+            },
+            Q::Proc {
+                owner: list,
+                name: SymbolId::of("never_authored"),
+                verb: false,
+            },
+        ] {
+            assert_eq!(host.resolve(query), M::Unsupported(query));
+        }
+        let body = frontend.body(&frontend.bodies[0]).unwrap();
+        let inputs = dm_codegen_byond::ProcedureInputs {
+            parameters: vec!["items".into()],
+            parameter_types: [("items".into(), "/list".into())].into(),
+            ..Default::default()
+        };
+        let lowered = dm_codegen_byond::compile_simple_proc_with_resolver(
+            &body.children,
+            &inputs,
+            &symbols,
+            &host,
+        )
+        .unwrap();
+        let receiver_call = lowered
+            .procedure
+            .code
+            .items
+            .iter()
+            .find_map(|item| match item {
+                dm_codegen_byond::Item::Instruction(instruction)
+                    if instruction.opcode == byond_dmb::bytecode::opcode::CALL =>
+                {
+                    Some(instruction)
+                }
+                _ => None,
+            })
+            .expect("receiver Copy call");
+        assert_eq!(
+            receiver_call.operands,
+            vec![
+                dm_codegen_byond::Word::Variable(dm_codegen_byond::VariableWord::SetCache(
+                    Box::new(dm_codegen_byond::VariableWord::Arg(0)),
+                    Box::new(dm_codegen_byond::VariableWord::DynamicProc("Copy".into())),
+                )),
+                dm_codegen_byond::Word::Immediate(2),
+            ]
+        );
+    }
+    #[test]
+    fn pinned_global_callable_absence_keeps_source_and_intrinsic_domains_distinct() {
+        use std::path::Path;
+        struct Source;
+        impl dm_preprocess::SourceProvider for Source {
+            fn read(&self, _: &Path) -> Result<String, String> {
+                Ok("/datum/probe/proc/member_only()\n    return 1\n/proc/global_only()\n    return 2\n".into())
+            }
+        }
+        let engine = crate::engine::EngineSnapshot::from_bytes(
+            include_bytes!("../../../fixtures/native_template.bin"),
+            1,
+        )
+        .unwrap()
+        .with_bootstrap_catalog()
+        .unwrap();
+        let seed = engine.frontend_seed();
+        let frontend = dm_tree::frontend::build_with_config(
+            Path::new("project.dme"),
+            &Source,
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(&seed),
+                observer: None,
+            },
+        )
+        .unwrap();
+        let mut symbols = frontend.snapshot.tree.symbols().clone();
+        let constants = ConstantCatalog::native_516_1687(&mut symbols).unwrap();
+        let runtime = RuntimeAliasCatalog::new(
+            engine.identity(),
+            &symbols,
+            Vec::new(),
+            frontend
+                .snapshot
+                .tree
+                .types()
+                .iter()
+                .map(|node| node.path)
+                .collect(),
+            Completeness::Partial,
+        )
+        .unwrap();
+        let host = EngineResolverHost::new(frontend.snapshot.tree.clone(), constants, runtime)
+            .with_pinned_callables(&engine, &frontend)
+            .unwrap();
+        assert_eq!(
+            host.resolve(Q::GlobalProc(SymbolId::of("member_only"))),
+            M::Missing
+        );
+        assert!(
+            matches!(host.resolve(Q::GlobalProc(SymbolId::of("global_only"))), M::Member { owner, .. } if owner == SymbolId::of("/"))
+        );
+        assert!(matches!(
+            host.resolve(Q::Proc {
+                owner: SymbolId::of("/datum/probe"),
+                name: SymbolId::of("member_only"),
+                verb: false
+            }),
+            M::Member { .. }
+        ));
+        for name in ["sin", "never_authored_name"] {
+            let query = Q::GlobalProc(SymbolId::of(name));
+            assert_eq!(host.resolve(query), M::Unsupported(query));
         }
     }
     #[test]

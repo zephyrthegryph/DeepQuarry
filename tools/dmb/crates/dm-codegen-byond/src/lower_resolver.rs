@@ -185,7 +185,7 @@ impl ProjectResolver<'_> {
         match self.answer(query)? {
             M::Missing => Ok(false),
             M::Presence(value) => Ok(value),
-            M::Member { .. } | M::Symbol(_) | M::Slot { .. } => Ok(true),
+            M::Member { .. } | M::IntrinsicProc { .. } | M::Symbol(_) | M::Slot { .. } => Ok(true),
             _ => Err(self.error(query, "invalid presence answer")),
         }
     }
@@ -266,6 +266,15 @@ impl ProjectResolver<'_> {
             }
         };
         match answer {
+            M::IntrinsicProc {
+                declaring_owner,
+                name,
+            } if namespace == "proc" && name == name_id => {
+                // A runtime method is called by the existing dynamic name
+                // selector. Its engine implementation has no emitted proc image.
+                self.text(query, declaring_owner)?;
+                Ok(None)
+            }
             M::Member { owner, name, .. } => Ok(Some(format!(
                 "{}/{}/{}",
                 self.text(query, owner)?.trim_end_matches('/'),

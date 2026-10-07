@@ -114,6 +114,12 @@ pub enum ResolvedMeaning {
     Symbol(SymbolId),
     Symbols(Vec<SymbolId>),
     Members(Vec<ResolvedMeaning>),
+    /// Pinned engine receiver method selected dynamically by name. This is
+    /// positive presence, not a source procedure image or an invented ABI.
+    IntrinsicProc {
+        declaring_owner: SymbolId,
+        name: SymbolId,
+    },
     Member {
         owner: SymbolId,
         name: SymbolId,
