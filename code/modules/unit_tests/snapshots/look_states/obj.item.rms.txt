@@ -1,2 +1,2 @@
-/obj/item/rms max_charge=0 runtime: Division by zero
+/obj/item/rms max_charge=0 runtime: refresh of /obj/item/rms: Division by zero (:)%//%["code/datums/capabilities/refresh.dm",342]%//%
 
