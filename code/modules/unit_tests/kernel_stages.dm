@@ -62,7 +62,7 @@
 		TEST_ASSERT(W.phase == KERNEL_PHASE_P, "[stage_type] lands in phase P")
 		items += W
 		by_family["[T.pipeline]:[T.family]"] = W
-	TEST_ASSERT(adapted > 200, "the registry holds the life and machine stages: [adapted]")
+	TEST_ASSERT(adapted > 0, "the registry still holds the stages not yet off the engine (retired pipelines left it, intended_changes.md): [adapted]")
 	TEST_ASSERT(with_reads > 0, "declared reads carry over to the adapters")
 	// The stage after-edges, within a pipeline, as work-item edges.
 	for(var/datum/work_item/stage/W as anything in items)

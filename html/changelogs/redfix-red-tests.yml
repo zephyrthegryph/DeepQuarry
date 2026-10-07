@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The Z key and an item's action button reach the item's in-hand ops (flashlights and other converted devices)"
+  - bugfix: "Construct spells no longer delete themselves for lack of a technomancer core; patching a space suit uses the sheets without picking the suit up; the DNA console takes body record disks again; stacked stock merges whatever their made amount"
+  - refactor: "Outdated unit-test pins and fixtures brought to the current forms"

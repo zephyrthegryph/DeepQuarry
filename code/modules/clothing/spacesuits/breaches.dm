@@ -189,6 +189,7 @@ CAPABILITIES(/obj/item/clothing/suit/space)
 		var/use_amt = min(P.get_amount(), 3)
 		if(use_amt && P.use(use_amt))
 			repair_breaches(BURN, use_amt * repair_power, user)
+			return OP_OK // the patch used the sheets up: the click does not go on to pick the suit up with the emptied hand
 		return OP_PASS
 
 	return OP_DECLINE

@@ -57,7 +57,7 @@
 	var/obj/item/binoculars/interim_actor_probe/device = allocate(/obj/item/binoculars/interim_actor_probe, T)
 	TEST_ASSERT_NULL(actor.client, "the fixture exercises actual clientless refusal")
 	TEST_ASSERT(actor.put_in_active_hand(device), "the actor holds the actual optical device")
-	TEST_ASSERT(run_interaction_entry(actor, device, null, INTERACTION_ENTRY_SELF, null, TRUE), "the actual self-use dispatcher runs")
+	TEST_ASSERT(device.attack_self(actor), "the actual self-use dispatcher runs its in_hand() op")
 	TEST_ASSERT_EQUAL(device.zoom_calls, 1, "the handler invokes real zoom once")
 	TEST_ASSERT_EQUAL(device.zoom_actor_ref, REF(actor), "the handler forwards its actual actor")
 	TEST_ASSERT_EQUAL(device.zoom_offset_seen, 14, "the correct offset remains separate from interaction arguments")

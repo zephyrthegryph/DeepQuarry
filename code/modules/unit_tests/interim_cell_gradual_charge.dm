@@ -14,7 +14,8 @@
 	cell.gradual_charge_step()
 	TEST_ASSERT_EQUAL(cell.charge, cell.maxcharge, "the second real step clamps at the actual cell capacity")
 	TEST_ASSERT_EQUAL(cell.gradual_charge_left, 0, "the final real step exhausts the countdown")
-	TEST_ASSERT_EQUAL(cell.gradual_charge_step(), REPEAT_STOP, "an exhausted countdown stops rather than charging again")
+	cell.gradual_charge_step()
+	TEST_ASSERT_EQUAL(cell.gradual_charge_left, 0, "an exhausted countdown stops rather than charging again (the clock is a timer now, not a REPEAT_STOP; intended_changes.md: power cell)")
 	TEST_ASSERT_EQUAL(cell.charge, cell.maxcharge, "an exhausted callback cannot overcharge the cell")
 
 /// Actor-bound charging must stop when deletion clears its declared relation, retaining the charge already delivered.
@@ -35,6 +36,7 @@
 	TEST_ASSERT(QDELETED(user), "the actual charging actor is deleted")
 	TEST_ASSERT(!QDELETED(cell), "the released cell survives independently")
 	TEST_ASSERT_NULL(cell.gradual_user, "actor deletion clears the actual charging relation")
-	TEST_ASSERT_EQUAL(cell.gradual_charge_step(), REPEAT_STOP, "the actual pending charging callback stops without its actor")
+	cell.gradual_charge_step()
+	TEST_ASSERT_EQUAL(cell.gradual_charge_left, 0, "the actual pending charging callback stops without its actor (the clock is a timer now, not a REPEAT_STOP; intended_changes.md: power cell)")
 	TEST_ASSERT_EQUAL(cell.gradual_charge_left, 0, "losing the actor cancels all remaining steps")
 	TEST_ASSERT_EQUAL(cell.charge, 50, "actor-loss cancellation preserves only the charge already delivered")

@@ -1876,7 +1876,7 @@ CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake)
 		play_sfx(loc, SFX_MACHINES_DING)
 
 CAPABILITIES(/obj/item/toy/plushie/ipc)
-	op("ipc_interaction_item", item(/obj/item), then(PROC_REF(ipc_interaction_item)))
+	op("ipc_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT + 1), then(PROC_REF(ipc_interaction_item)))
 
 /// Old attackby.
 /obj/item/toy/plushie/ipc/proc/ipc_interaction_item(datum/act/op/A)

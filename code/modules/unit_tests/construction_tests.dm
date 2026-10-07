@@ -64,6 +64,10 @@
 			continue
 		if(machine_path == /obj/machinery/power/smes/p2_test) // The plain unit of the SMES behaviour tests: a fixture no board builds
 			continue
+		if((machine_path in typesof(/obj/machinery/dq_default_parts_probe)) || (machine_path in typesof(/obj/machinery/dq_default_parts_probe_plain))) // The default-parts test fixtures borrow a real board
+			continue
+		if(machine_path == /obj/machinery/computer/mfc_probe) // The plain console of the console behaviour tests: a fixture with a borrowed board
+			continue
 		if(!machine_path.circuit)
 			continue
 		var/obj/item/circuitboard/board_path = initial(machine_path.circuit)

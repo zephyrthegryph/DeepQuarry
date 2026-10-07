@@ -141,7 +141,7 @@
 	TEST_ASSERT_EQUAL(B.get_integrity(), 20, "brute resistance divides a hit by four")
 	B.blob_damage(6, BURN)
 	TEST_ASSERT_EQUAL(B.get_integrity(), 14, "burns land in full")
-	TEST_ASSERT_EQUAL(B.icon_state, "blob_damaged", "below half integrity the blob looks damaged")
+	TEST_ASSERT_EQUAL(B.appearance_state(), "blob_damaged", "below half integrity the blob looks damaged (its look declares the state; icon_state stays the mapped sprite)")
 	B.regen()
 	TEST_ASSERT_EQUAL(B.get_integrity(), 15, "a pulse regenerates one point")
 	B.take_damage(100)

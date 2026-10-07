@@ -159,7 +159,7 @@ CAPABILITIES(/datum/stored_item)
 	var/list/vars = copy[STATE_KEY_VARS]
 	if(islist(vars))
 		vars = vars.Copy()
-		vars -= list("amount", "icon_state", "pixel_x", "pixel_y")
+		vars -= list("amount", "amount_at_make", "icon_state", "pixel_x", "pixel_y")
 		copy[STATE_KEY_VARS] = vars
 	return state_hash(copy)
 
