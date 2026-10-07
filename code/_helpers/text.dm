@@ -28,6 +28,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
  */
 //Simply removes < and > and limits the length of the message
 /proc/strip_html_simple(t,limit=MAX_MESSAGE_LEN)
+	READS_FROM() // Only the supplied text and limit determine the returned text.
 	var/static/list/strip_chars = list("<",">")
 	t = copytext(t,1,limit)
 	for(var/char in strip_chars)
@@ -272,6 +273,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 
 //Returns a string with reserved characters and spaces before the first word and after the last word removed.
 /proc/trim(text)
+	READS_FROM() // Only the supplied text determines the returned trimmed text.
 	return trim_left(trim_right(text))
 
 //Returns a string with the first element of the string capitalized.

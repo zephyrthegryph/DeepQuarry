@@ -119,6 +119,7 @@ GLOBAL_DATUM_INIT(command_announcement, /datum/announcement/priority/command, ne
 		message_admins("[key_name_admin(usr)] has made \a [announcement_type].", 1)
 
 /proc/GetNameAndAssignmentFromId(obj/item/card/id/I)
+	READS_FROM(I) // The formatted identity depends on the supplied card fields.
 	// Format currently matches that of newscaster feeds: Registered Name (Assigned Rank)
 	return I.assignment ? "[I.registered_name] ([I.assignment])" : I.registered_name
 
