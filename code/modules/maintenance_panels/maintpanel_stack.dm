@@ -12,16 +12,22 @@
 	can_weld = TRUE
 	no_variants = FALSE
 
+MSG_DEF_SELF(maintenance_panel/clumsy, "this task is too complex for your clumsy hands")
+
 CAPABILITIES(/obj/item/stack/tile/maintenance_panel)
 	without("ui_open")
+	op("maintenance_panel_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Build panel"), needs(req(PROC_REF(actor_dexterous_holds), because = MSG(maintenance_panel/clumsy))), then(PROC_REF(maintenance_panel_self)))
 
-EXTEND_INTERACTIONS(/obj/item/stack/tile/maintenance_panel, INTERACT_SELF("Build panel", PROC_REF(maintenance_panel_self), REQ_ON(PRED_ACTOR, /mob/proc/IsAdvancedToolUser, "this task is too complex for your clumsy hands")))
+/// Requirement: the actor can use tools.
+/obj/item/stack/tile/maintenance_panel/proc/actor_dexterous_holds(datum/act/op/A)
+	return !!A.actor.IsAdvancedToolUser()
 
 /// Old attack_self: build a panel.
-/obj/item/stack/tile/maintenance_panel/proc/maintenance_panel_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/stack/tile/maintenance_panel/proc/maintenance_panel_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/turf/T = user.loc
 	if(!user || (loc != user && !isrobot(user)) || user.stat || user.loc != T)
-		return FALSE
+		return OP_DECLINE
 
 	// Get data for building windows here.
 	var/list/possible_directions = GLOB.cardinal.Copy()
@@ -51,20 +57,20 @@ EXTEND_INTERACTIONS(/obj/item/stack/tile/maintenance_panel, INTERACT_SELF("Build
 			failed_to_build = 1
 	if(failed_to_build)
 		to_chat(user, span_warning("There is no room in this location."))
-		return TRUE
+		return OP_OK
 
 	var/sheets_needed = 1
 	if(get_amount() < sheets_needed)
 		to_chat(user, span_warning("You need at least [sheets_needed] sheets to build this."))
-		return TRUE
+		return OP_OK
 	if(build_dir == SOUTHWEST)
 		to_chat(user, span_warning("A maintenance panel cannot be built like that!"))
-		return TRUE
+		return OP_OK
 
 	// Build the structure and update sheet count etc.
 	use(sheets_needed)
 	new /obj/structure/window/maintenance_panel(T, build_dir, 1)
-	return TRUE
+	return OP_OK
 
 // Spawner
 /obj/fiftyspawner/maintenance_panel

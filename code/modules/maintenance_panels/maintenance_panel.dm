@@ -20,16 +20,15 @@
 /obj/structure/window/maintenance_panel/is_fulltile()
 	return FALSE // NEVER
 
-EXTEND_INTERACTIONS(/obj/structure/window/maintenance_panel, \
-	INTERACT_ITEM(null, PROC_REF(maintenance_panel_interaction_item)), \
-	INTERACT_OBSERVER("Nothing", TYPE_PROC_REF(/atom, interaction_swallow)), \
-)
+CAPABILITIES(/obj/structure/window/maintenance_panel)
+	op("maintenance_panel_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(maintenance_panel_interaction_item)))
+	op("swallow", observer(), label("Nothing"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
 /// Old attackby.
-/obj/structure/window/maintenance_panel/proc/maintenance_panel_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/stack/cable_coil))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/structure/window/maintenance_panel/proc/maintenance_panel_interaction_item(datum/act/op/A)
+	if(istype(A.held, /obj/item/stack/cable_coil))
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/structure/window/maintenance_panel/screwdriver_act(mob/user, obj/item/tool)
 	return ITEM_INTERACT_BLOCKING
