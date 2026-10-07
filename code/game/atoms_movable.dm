@@ -611,6 +611,8 @@ SETTER(/atom/movable, anchored)
 CAPABILITIES(/atom/movable/overlay)
 	op("pass_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(overlay_pass_touch)))
 	op("pass_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(overlay_pass_item)))
+	op("overlay_pass_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(overlay_pass_touch)))
+	op("overlay_pass_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(overlay_pass_item)))
 
 /atom/movable/overlay/proc/overlay_pass_touch(datum/act/op/A)
 	var/mob/user = A.actor

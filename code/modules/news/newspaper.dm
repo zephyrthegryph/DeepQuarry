@@ -25,17 +25,19 @@
 // single TGUI window with all channels/messages shipped in one payload
 // and curr_page driving the view. Photo embedding (browse_rsc) is not
 // yet wired through TGUI assets, so message photos are omitted.
-DECLARE_INTERACTIONS(/obj/item/newspaper, \
-	INTERACT_USE(null, PROC_REF(interaction_self), REQ_BECAUSE(REQ_TYPE(PRED_ACTOR, list(/mob/living/carbon/human)), "the paper is full of unintelligible symbols")), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+TRACKED(/obj/item/newspaper, curr_page)
+TRACKED(/obj/item/newspaper, scribble_page)
+
+MSG_DEF_SELF(newspaper/unintelligible, "the paper is full of unintelligible symbols")
 
 /// Old attack_self.
-/obj/item/newspaper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
+/obj/item/newspaper/proc/interaction_self(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_OK
 
 CAPABILITIES(/obj/item/newspaper)
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req_actor_kind(/mob/living/carbon/human, because = MSG(newspaper/unintelligible))), then(PROC_REF(interaction_self)))
+	op("scribble", item(/obj/item/pen), priority(OP_PRIORITY_DEFAULT - 2), asks(/datum/prompt/text, fields = list("question" = "Write something", "title" = "Newspaper"), step = "scribble", when = PROC_REF(scribble_free)), passes(), then(PROC_REF(interaction_item)))
 	interface("Newspaper", title = "The Griffon")
 	op("next_page", ui_act("next_page"), then(PROC_REF(ui_act_next_page)))
 	op("prev_page", ui_act("prev_page"), then(PROC_REF(ui_act_prev_page)))
@@ -91,7 +93,7 @@ CAPABILITIES(/obj/item/newspaper)
 		screen = 2
 	else if(curr_page == 0)
 		screen = 1
-	curr_page++
+	set_curr_page(curr_page + 1)
 	play_sfx(src, SFX_PAGETURN)
 	return TRUE
 
@@ -102,28 +104,29 @@ CAPABILITIES(/obj/item/newspaper)
 		screen = 0
 	else if(curr_page == pages + 1)
 		screen = 1
-	curr_page--
+	set_curr_page(curr_page - 1)
 	play_sfx(src, SFX_PAGETURN)
 	return TRUE
 
-/// Old attackby.
-/obj/item/newspaper/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/pen))
-		if(scribble_page == curr_page)
-			to_chat(user, span_blue("There's already a scribble in this page... You wouldn't want to make things too cluttered, would you?"))
-		else
-			var/s = rerun_ask(user, "k108", PROC_REF(interaction_item), args, /datum/prompt/text, question = "Write something", title = "Newspaper")
-			if(isnull(s))
-				return TRUE
-			if(!s)
-				return INTERACTION_HANDLED_PASS
-			if(!in_range(src, user) && src.loc != user)
-				return INTERACTION_HANDLED_PASS
-			scribble_page = curr_page
-			scribble = s
-			attack_self(user)
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+/// A pen can write on a page that has no scribble yet: only then is the text asked.
+/obj/item/newspaper/proc/scribble_free(datum/act/op/A)
+	return scribble_page != curr_page
+
+/// Old attackby with a pen: the answer is written on the current page; the click goes on either way.
+/obj/item/newspaper/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	if(scribble_page == curr_page)
+		to_chat(user, span_blue("There's already a scribble in this page... You wouldn't want to make things too cluttered, would you?"))
+		return OP_PASS
+	var/s = A.step_value("scribble")
+	if(!s)
+		return OP_PASS
+	if(!in_range(src, user) && src.loc != user)
+		return OP_PASS
+	set_scribble_page(curr_page)
+	scribble = s
+	attack_self(user)
+	return OP_PASS
 
 /// The important_message this refers to (a relation view: null once that is deleted).
 /obj/item/newspaper/proc/important_message() as /datum/feed_message

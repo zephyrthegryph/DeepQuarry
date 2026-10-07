@@ -23,6 +23,7 @@
 
 CAPABILITIES(/obj/item/storage/part_replacer)
 	configure(storage(accepts = list(/obj/item/stock_parts), max_size = ITEMSIZE_NORMAL))
+	op("reskin", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Reskin"), then(PROC_REF(interaction_reskin_alt)))
 
 /obj/item/storage/part_replacer/proc/play_rped_sound()
 	//Plays the sound for RPED exhanging or installing parts.
@@ -33,14 +34,13 @@ CAPABILITIES(/obj/item/storage/part_replacer)
 	if(!reskin_ran)
 		. += span_notice("[src]'s external casing can be modified via alt-click.")
 
-EXTEND_INTERACTIONS(/obj/item/storage/part_replacer, INTERACT_ALT("Reskin", PROC_REF(interaction_reskin_alt)))
-
 /// Old click_alt: the storage's own alt-click, then the one-time reskin menu.
-/obj/item/storage/part_replacer/proc/interaction_reskin_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	. = toggle_window(user)
+/obj/item/storage/part_replacer/proc/interaction_reskin_alt(datum/act/op/A)
+	var/mob/user = A.actor
+	. = toggle_window(user) ? OP_OK : OP_DECLINE
 	if(!reskin_ran)
 		reskin_radial(user)
-		return TRUE
+		return OP_OK
 
 /obj/item/storage/part_replacer/proc/reskin_radial(mob/M)
 	if(!LAZYLEN(unique_reskin))
