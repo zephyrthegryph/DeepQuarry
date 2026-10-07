@@ -32,9 +32,9 @@ After Phase 0 closes, optimize the heaviest measured stages against revision 5 C
 
 ## Current review implementation
 
-The Phase 0 draft removes tree persistence, queues every computed disk-cache record and propagates population errors. Resident memo limits evict entries rather than discard population. The Windows default cache is `E:/.dmbd/cache`; population checks available space.
+Committed Phase 0 cleanup removes tree persistence, queues every computed disk-cache record and propagates population errors. Arbitrary variant-codec and declaration-record size/count ceilings are removed; descriptor encoding failures now propagate through the frontend error path. Old variant history may be evicted after retaining each new result. Resident memo limits evict entries rather than discard population. The Windows default cache is `E:/.dmbd/cache`; population checks available space.
 
-The no-elevation profiler writes Chrome traces, CPU/wall folded stacks and SVGs, plus CPU, allocator and process-memory summaries. The CLI counting allocator is feature-gated. Per-stage process I/O windows overlap; attributed operation bytes are partial and blocked-I/O duration is not yet measured, so complete I/O acceptance remains unevaluable.
+The no-elevation profiler writes Chrome traces, CPU/wall folded stacks and SVGs, plus CPU, allocator and process-memory summaries. Annotated synchronous I/O calls report actual call duration and successful byte counts; call duration is not classified as blocked storage time. The CLI counting allocator is feature-gated. Per-stage process I/O windows overlap; attributed operation bytes are partial and blocked-I/O duration is not yet measured, so complete I/O acceptance remains unevaluable.
 
 The cleaned-up source passes `cargo check --release -p dmbc --features allocation-counting`. The full release workspace tests are running with one Cargo worker, two test threads and `CARGO_PROFILE_RELEASE_LTO=false` for this test command only. Evidence: `E:/dmb-native-v2-phase0/review-full-release-tests-cleaned.log`. The preceding LTO test build was stopped during integration-executable linking; it has no test counts and its log is preserved. Earlier compilation attempts exposed and fixed a stale symbolic-test call signature. Benchmark binaries retain the normal release LTO profile. No full-suite pass or post-change compiler performance is claimed yet.
 
@@ -42,6 +42,6 @@ The cleaned-up source passes `cargo check --release -p dmbc --features allocatio
 
 [bench/results.jsonl](bench/results.jsonl) holds receipt-backed historical rows. Unknown critical-path CPU and I/O are `null`; total process CPU is imported only when explicitly present in the receipt. Missing metrics are not passing gates.
 
-[bench/README.md](bench/README.md) documents the new `dmb-bench` protocol. The harness does not stop competing processes, infer CPU from wall time, or launch DreamDaemon. Its full-project acceptance run is pending profiler integration and root execution.
+[bench/README.md](bench/README.md) documents the new `dmb-bench` protocol. The harness does not stop competing processes, infer CPU from wall time, or launch DreamDaemon. Its full-project acceptance run is pending profiler integration and root execution. Repetitions use isolated caches and archive prior private-project session records, so a previously compiled edit cannot turn later edit samples into unchanged hits.
 
 Historical narratives: [prior status](archive/STATUS-20261007-pre-review.md), [disk-cache cohorts](archive/PHASE2_PROGRESS-20261007-pre-review.md). Neither closes a phase.
