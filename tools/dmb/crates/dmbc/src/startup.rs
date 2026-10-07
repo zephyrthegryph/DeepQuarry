@@ -13,6 +13,12 @@ pub struct CapturedStartup<'a> {
     procedure_index: std::collections::HashMap<OccurrenceId, usize>,
 }
 pub fn capture(frontend: &ColdFrontend) -> Result<CapturedStartup<'_>, String> {
+    capture_with_workers(frontend, 1)
+}
+pub fn capture_with_workers(
+    frontend: &ColdFrontend,
+    workers: usize,
+) -> Result<CapturedStartup<'_>, String> {
     let units = crate::driver_facts::unit_members(frontend).map_err(|e| e.to_string())?;
     let identities = units
         .into_iter()
@@ -28,19 +34,45 @@ pub fn capture(frontend: &ColdFrontend) -> Result<CapturedStartup<'_>, String> {
             )
         })
         .collect::<std::collections::HashMap<_, _>>();
-    let mut procedures = Vec::with_capacity(frontend.bodies.len());
-    for body in frontend.bodies.iter() {
+    let capture_body = |body: &dm_tree::frontend::BodyOccurrence| {
         let identity = *identities
             .get(&body.member)
             .ok_or("startup procedure identity missing")?;
         let parsed = frontend
             .body(body)
             .map_err(|e| format!("startup body: {e:?}"))?;
-        let mut plan = dm_tree::procedure_statics::capture(identity, &parsed.children)?;
-        // Retain declaration facts only; procedure workers re-capture their own
-        // bounded executable bodies instead of duplicating the whole corpus.
-        plan.executable_body = Vec::new();
-        procedures.push((body.declaration, plan));
+        let plan = dm_tree::procedure_statics::capture_declarations(identity, &parsed.children)?;
+        Ok::<_, String>((body.declaration, plan))
+    };
+    let workers = workers.clamp(1, 8).min(frontend.bodies.len().max(1));
+    let chunk = frontend.bodies.len().div_ceil(workers).max(1);
+    let chunks = std::thread::scope(|scope| {
+        let handles: Vec<_> = frontend
+            .bodies
+            .chunks(chunk)
+            .map(|bodies| {
+                let capture_body = &capture_body;
+                scope.spawn(move || {
+                    bodies
+                        .iter()
+                        .map(capture_body)
+                        .collect::<Result<Vec<_>, String>>()
+                })
+            })
+            .collect();
+        handles
+            .into_iter()
+            .map(|handle| {
+                handle
+                    .join()
+                    .unwrap_or_else(|_| Err("startup capture worker panicked".into()))
+            })
+            .collect::<Vec<_>>()
+    });
+    let mut procedures = Vec::with_capacity(frontend.bodies.len());
+    // Chunk order is source order, including deterministic first-error selection.
+    for result in chunks {
+        procedures.extend(result?);
     }
     let base = dm_tree::initializers::plan(&frontend.snapshot, &frontend.emission_order)
         .map_err(|e| format!("startup declarations: {e:?}"))?;
@@ -49,9 +81,17 @@ pub fn capture(frontend: &ColdFrontend) -> Result<CapturedStartup<'_>, String> {
         &frontend.emission_order,
         &procedures,
     )?;
-    let procedure_index = procedures.iter().enumerate()
-        .map(|(index, (occurrence, _))| (*occurrence, index)).collect();
-    Ok(CapturedStartup { frontend, plan, procedures, procedure_index })
+    let procedure_index = procedures
+        .iter()
+        .enumerate()
+        .map(|(index, (occurrence, _))| (*occurrence, index))
+        .collect();
+    Ok(CapturedStartup {
+        frontend,
+        plan,
+        procedures,
+        procedure_index,
+    })
 }
 /// Extend only the compilation spelling dictionary. Captured declarations,
 /// source provenance and semantic identity remain the original source model.
@@ -59,12 +99,24 @@ pub fn capture_with_spellings<'a>(
     frontend: &'a ColdFrontend,
     spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
 ) -> Result<CapturedStartup<'a>, String> {
-    let mut startup = capture(frontend)?;
+    capture_with_spellings_and_workers(frontend, spellings, 1)
+}
+pub fn capture_with_spellings_and_workers<'a>(
+    frontend: &'a ColdFrontend,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    workers: usize,
+) -> Result<CapturedStartup<'a>, String> {
+    let mut startup = capture_with_workers(frontend, workers)?;
     let mut symbols = dm_ir::SymbolTable::overlay(startup.plan.symbols.clone());
     for (expected, bytes) in spellings {
-        let text = std::str::from_utf8(bytes).map_err(|_| "captured symbol spelling is not UTF-8")?;
-        let actual = symbols.intern(text).map_err(|error| format!("captured symbol collision: {error:?}"))?;
-        if actual != *expected { return Err("captured spelling does not match symbolic identity".into()); }
+        let text =
+            std::str::from_utf8(bytes).map_err(|_| "captured symbol spelling is not UTF-8")?;
+        let actual = symbols
+            .intern(text)
+            .map_err(|error| format!("captured symbol collision: {error:?}"))?;
+        if actual != *expected {
+            return Err("captured spelling does not match symbolic identity".into());
+        }
     }
     startup.plan.symbols = std::sync::Arc::new(symbols);
     Ok(startup)
@@ -125,10 +177,16 @@ impl crate::initializer_policy::CapturedInitializerEvaluator for StartupEvaluato
     }
 }
 impl CapturedStartup<'_> {
-    pub fn plan(&self) -> &InitializerPlan { &self.plan }
-    pub fn procedures(&self) -> &[(OccurrenceId, StaticPlan)] { &self.procedures }
+    pub fn plan(&self) -> &InitializerPlan {
+        &self.plan
+    }
+    pub fn procedures(&self) -> &[(OccurrenceId, StaticPlan)] {
+        &self.procedures
+    }
     pub fn procedure(&self, occurrence: OccurrenceId) -> Option<&StaticPlan> {
-        self.procedure_index.get(&occurrence).map(|index| &self.procedures[*index].1)
+        self.procedure_index
+            .get(&occurrence)
+            .map(|index| &self.procedures[*index].1)
     }
     /// Issued facts are immutable and borrow the exact frontend throughout use.
     /// Independently supplied generic plans still use the strict recapture API.
@@ -171,8 +229,12 @@ mod spelling_tests {
     }
     #[test]
     fn issued_startup_is_bound_to_immutable_input_and_indexes_procedures() {
-        let first = dm_tree::frontend::build(Path::new("probe.dme"), &Source, &Default::default(), 1).unwrap();
-        let identical = dm_tree::frontend::build(Path::new("probe.dme"), &Source, &Default::default(), 1).unwrap();
+        let first =
+            dm_tree::frontend::build(Path::new("probe.dme"), &Source, &Default::default(), 1)
+                .unwrap();
+        let identical =
+            dm_tree::frontend::build(Path::new("probe.dme"), &Source, &Default::default(), 1)
+                .unwrap();
         let issued = capture(&first).unwrap();
         issued.validate_for(&first).unwrap();
         assert!(issued.validate_for(&identical).is_err());
@@ -186,17 +248,51 @@ mod spelling_tests {
         assert!(validate(&first, &escaped).is_err());
     }
     #[test]
+    fn bounded_parallel_startup_preserves_source_order_and_facts() {
+        struct Multiple;
+        impl dm_preprocess::SourceProvider for Multiple {
+            fn read(&self, _: &Path) -> Result<String, String> {
+                Ok("/datum/demo\n    var/static/class_tick = 0\n    proc/first()\n        var/static/value = 1\n        return value\n    proc/second()\n        var/static/value = 2\n        return value\n".into())
+            }
+        }
+        let frontend =
+            dm_tree::frontend::build(Path::new("probe.dme"), &Multiple, &Default::default(), 1)
+                .unwrap();
+        let serial = capture_with_workers(&frontend, 1).unwrap();
+        let parallel = capture_with_workers(&frontend, 2).unwrap();
+        assert_eq!(serial.plan.identity, parallel.plan.identity);
+        assert_eq!(serial.plan.writes.as_ref(), parallel.plan.writes.as_ref());
+        assert_eq!(serial.plan.origins.as_ref(), parallel.plan.origins.as_ref());
+        assert_eq!(serial.procedures.len(), 2);
+        for ((left_id, left), (right_id, right)) in
+            serial.procedures.iter().zip(&parallel.procedures)
+        {
+            assert_eq!(left_id, right_id);
+            assert_eq!(left.procedure, right.procedure);
+            assert_eq!(left.declarations, right.declarations);
+            assert_eq!(left.origins, right.origins);
+            assert!(left.executable_body.is_empty() && right.executable_body.is_empty());
+        }
+    }
+    #[test]
     fn captured_alias_overlay_preserves_source_and_ledger_identity() {
-        let frontend = dm_tree::frontend::build(Path::new("probe.dme"), &Source, &Default::default(), 1).unwrap();
+        let frontend =
+            dm_tree::frontend::build(Path::new("probe.dme"), &Source, &Default::default(), 1)
+                .unwrap();
         let original = capture(&frontend).unwrap();
         let alias = dm_ir::SymbolId::of("asset.txt");
         assert!(frontend.snapshot.tree.symbols().text(alias).is_none());
-        let issued = capture_with_spellings(&frontend, &[(alias, Arc::from(b"asset.txt".as_slice()))]).unwrap();
+        let issued =
+            capture_with_spellings(&frontend, &[(alias, Arc::from(b"asset.txt".as_slice()))])
+                .unwrap();
         assert_eq!(issued.plan.symbols.text(alias), Some("asset.txt"));
         assert!(frontend.snapshot.tree.symbols().text(alias).is_none());
         assert_eq!(issued.plan.identity, original.plan.identity);
         assert_eq!(issued.plan.writes.as_ref(), original.plan.writes.as_ref());
         validate(&frontend, &issued.plan).unwrap();
-        assert!(capture_with_spellings(&frontend, &[(alias, Arc::from(b"other.txt".as_slice()))]).is_err());
+        assert!(
+            capture_with_spellings(&frontend, &[(alias, Arc::from(b"other.txt".as_slice()))])
+                .is_err()
+        );
     }
 }

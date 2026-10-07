@@ -146,8 +146,12 @@ pub fn compile_captured_classified_with_pinned_abi<R: Resolver>(
     non_text: Option<&dyn crate::composition::NonTextOutputStage>,
 ) -> Result<ColdOutput, ColdError> {
     let total = Instant::now();
-    let startup = crate::startup::capture_with_spellings(frontend, &links.inventory.spellings)
-        .map_err(ColdError::Initializer)?;
+    let startup = crate::startup::capture_with_spellings_and_workers(
+        frontend,
+        &links.inventory.spellings,
+        config.workers,
+    )
+    .map_err(ColdError::Initializer)?;
     let prepared = crate::driver_facts::prepare_pinned_source_abi_with_startup(
         frontend,
         links.engine,
@@ -195,10 +199,23 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
     map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
     non_text: Option<&dyn crate::composition::NonTextOutputStage>,
 ) -> Result<ColdOutput, ColdError> {
-    let startup = crate::startup::capture_with_spellings(frontend, &links.inventory.spellings)
-        .map_err(ColdError::Initializer)?;
-    compile_with_startup(frontend, resolver, policy, links, declarations, config,
-        map_initializers, non_text, &startup)
+    let startup = crate::startup::capture_with_spellings_and_workers(
+        frontend,
+        &links.inventory.spellings,
+        config.workers,
+    )
+    .map_err(ColdError::Initializer)?;
+    compile_with_startup(
+        frontend,
+        resolver,
+        policy,
+        links,
+        declarations,
+        config,
+        map_initializers,
+        non_text,
+        &startup,
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -213,7 +230,9 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     non_text: Option<&dyn crate::composition::NonTextOutputStage>,
     startup: &crate::startup::CapturedStartup<'_>,
 ) -> Result<ColdOutput, ColdError> {
-    startup.validate_for(frontend).map_err(ColdError::Initializer)?;
+    startup
+        .validate_for(frontend)
+        .map_err(ColdError::Initializer)?;
     let total = Instant::now();
     for artifact in &map_initializers {
         if !matches!(artifact.identity, dm_link::InitializerIdentity::Map { .. }) {
@@ -569,11 +588,18 @@ mod tests {
         );
         // The pinned receiver catalog certifies New as a proc, so its opposite
         // verb namespace is absent. An uncaptured spelling is still unknown.
-        assert_eq!(host.resolve(Q::Proc {
-            owner, name: dm_ir::SymbolId::of("New"), verb: true,
-        }), M::Missing);
+        assert_eq!(
+            host.resolve(Q::Proc {
+                owner,
+                name: dm_ir::SymbolId::of("New"),
+                verb: true,
+            }),
+            M::Missing
+        );
         let query = Q::Proc {
-            owner, name: dm_ir::SymbolId::of("never_captured_callable"), verb: true,
+            owner,
+            name: dm_ir::SymbolId::of("never_captured_callable"),
+            verb: true,
         };
         assert_eq!(host.resolve(query), M::Unsupported(query));
 
