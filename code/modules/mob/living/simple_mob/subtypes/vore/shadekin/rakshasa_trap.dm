@@ -19,24 +19,18 @@
 	..()
 	look.set_color(basecolor)
 
+MSG_DEF(gootrap/freeing, "You carefully begin to free the one caught in %T%.", "%U% begins freeing the one caught in %T%.")
+MSG_DEF(gootrap/freed, "You free the one caught in %T%.", "%U% frees the one caught in %T%.")
+
 CAPABILITIES(/obj/structure/gootrap)
-	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
+	op("free", hand(), label("Free the victim"), when(PROC_REF(can_free)), begins(MSG(gootrap/freeing)), wait(0.5 SECONDS), then(PROC_REF(free_victims)), says(MSG(gootrap/freed)))
 
-/// Old attack_hand.
-/obj/structure/gootrap/proc/interaction_hand(datum/act/op/A)
-	var/mob/user = A.actor
-	if(has_buckled_mobs() && can_use(user))
-		var/victim = english_list(src?.buckled_mob_list())
-		act_message(user, victim, MSG_SELF(span_notice("You carefully begin to free %T% from \the [src].")), MSG_OTHERS(span_notice("%U% begins freeing %T% from \the [src].")))
-		task_timed(user, 5, target = src, receiver = src, on_done = PROC_REF(attack_hand_gootrap_done), done_args = list(user, victim))
-	else
-		return OP_DECLINE
-	return TRUE
+/obj/structure/gootrap/proc/can_free(datum/act/op/A)
+	return has_buckled_mobs() && can_use(A.actor)
 
-/obj/structure/gootrap/proc/attack_hand_gootrap_done(mob/user, victim)
-	act_message(victim, user, null, MSG_OTHERS(span_notice("%U% has been freed from \the [src] by %T%.")))
-	for(var/A in src?.buckled_mob_list())
-		unbuckle_mob(A)
+/obj/structure/gootrap/proc/free_victims(datum/act/op/A)
+	for(var/mob/victim in src?.buckled_mob_list())
+		unbuckle_mob(victim)
 	set_anchored(0)
 
 /obj/structure/gootrap/proc/attack_mob(mob/living/L)

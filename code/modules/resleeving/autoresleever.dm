@@ -288,4 +288,4 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 	for(var/path in software)
 		new path(nif)
 	if(!isnull(durability))
-		nif.durability = durability
+		nif.set_durability(durability)

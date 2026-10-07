@@ -15,6 +15,7 @@
 	/// Below this vitality the patient is too unstable for anything but inaprovaline.
 	var/min_vitality = 0
 	var/cleaning = 0
+	var/working = FALSE
 	var/patient_laststat = null
 	var/eject_port = "ingestion"
 	/// Things in our contents spared from digestion.
@@ -51,7 +52,11 @@
 	var/obj/item/ore_bag/sleeper/ore_bag //Used by supply compactor
 	flags = NOBLUDGEON
 
+/// The sleeper has something to look after (a patient, a clean cycle or a last look for one): its step runs every two seconds while it holds.
+TRACKED(/obj/item/dogborg/sleeper, working)
+
 CAPABILITIES(/obj/item/dogborg/sleeper)
+	every(2 SECONDS, then(PROC_REF(sleeper_step)), when = nameof(working))
 	owns_one(nameof(med_analyzer), /obj/item/healthanalyzer)
 	owns_one(nameof(ore_bag), /obj/item/ore_bag/sleeper)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
@@ -113,7 +118,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	else //If you don't have someone in you, proceed.
 		H.forceMove(src)
 		update_patient()
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_working(TRUE)
 		act_message(user, src, MSG_SELF(span_notice("Your %T% lights up as [H] slips inside. Life support functions engaged.")), \
 			MSG_OTHERS(span_warning("[hound.name]'s [src.name] lights up as [H.name] slips inside.")))
 		log_admin("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
@@ -206,7 +211,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	if(!(!patient && !trashman?.buckled_to() && contents_count(src) < max_item_count))
 		return
 	trashman.forceMove(src)
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_working(TRUE)
 	act_message(user, trashman, MSG_SELF(span_notice("Your [src.name] groans lightly as %T% slips inside.")), \
 		MSG_OTHERS(span_warning("[hound.name]'s [src.name] groans lightly as %T% slips inside.")))
 	log_attack("[key_name(hound)] has eaten [key_name(patient)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
@@ -391,7 +396,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 		return FALSE
 	cleaning = TRUE
 	drain(startdrain)
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_working(TRUE)
 	update_patient()
 	if(patient)
 		to_chat(patient, span_danger("[hound.name]'s [src.name] fills with caustic enzymes around you!"))
@@ -656,7 +661,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	else
 		rel_add(src, nameof(items_preserved), target)
 
-/obj/item/dogborg/sleeper/periodic_step()
+/obj/item/dogborg/sleeper/proc/sleeper_step(datum/act/A)
 	if(!istype(src.loc,/mob/living/silicon/robot))
 		return
 
@@ -676,7 +681,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 
 	if(!patient && !cleaning) //We think we're done working.
 		if(!update_patient()) //One last try to find someone
-			om_task_periodic_stop(src)
+			set_working(FALSE)
 			return
 
 /obj/item/dogborg/sleeper/proc/get_experiment_handler()

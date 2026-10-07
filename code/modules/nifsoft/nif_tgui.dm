@@ -31,7 +31,11 @@ CAPABILITIES(/obj/item/nif)
 	op("dismissNotification", ui_act("dismissNotification"), then(PROC_REF(ui_act_dismissnotification)))
 	param(nameof(wear_at_make), pos = 1)
 	param(nameof(load_data_at_make), pos = 2)
-	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("rewire", stack(/obj/item/stack/cable_coil, 3), label("Replace the wiring"), when(PROC_REF(needs_rewiring)), wait(6 SECONDS), then(PROC_REF(rewire_done)), says(MSG(nif/rewired)))
+	op("rewire_intact", stack(/obj/item/stack/cable_coil, 3), when(PROC_REF(wiring_intact)), priority(OP_PRIORITY_PART + 1), wait(0), then(PROC_REF(wiring_checked)), says(MSG(nif/wiring_intact)))
+	op("pry_open", tool(TOOL_SCREWDRIVER), label("Pry open"), when(req_is(nameof(open), 0)), wait(4 SECONDS), then(PROC_REF(pry_open_done)), says(MSG(nif/pried_open)))
+	op("reseal", tool(TOOL_SCREWDRIVER), label("Re-seal"), when(req_is(nameof(open), 3)), priority(OP_PRIORITY_PART + 1), wait(3 SECONDS), then(PROC_REF(reseal_done)), says(MSG(nif/resealed)))
+	op("reset_circuits", tool(TOOL_MULTITOOL), label("Reset the circuits"), when(req_is(nameof(open), 2)), wait(8 SECONDS), then(PROC_REF(reset_circuits_done)), says(MSG(nif/reset)))
 
 /**
  * Small helper datum to manage the HUD icon.

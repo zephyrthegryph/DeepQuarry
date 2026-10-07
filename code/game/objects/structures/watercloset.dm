@@ -1079,7 +1079,7 @@ CAPABILITIES(/obj/structure/sink)
 		needs(req(PROC_REF(hand_usable), because = PROC_REF(hand_refusal)), req(PROC_REF(sink_free), because = MSG(sink/busy))), then(PROC_REF(interaction_wash)))
 	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(sink_free), because = MSG(sink/busy))), then(PROC_REF(interaction_item)))
 	op("empty", item(/obj/item/reagent_containers), gesture(GESTURE_DRAG), label("Empty into sink"), then(PROC_REF(interaction_drag)))
-	op("sink_wash_gurgled_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Wash"), then(PROC_REF(sink_wash_gurgled_item)))
+	op("sink_wash_gurgled_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Wash"), when(req(PROC_REF(holding_gurgled))), claims(), begins(MSG(sink/washing_gurgled)), wait(4 SECONDS), then(PROC_REF(wash_gurgled_done)), says(MSG(sink/washed_gurgled)))
 
 MSG_DEF_SELF(sink/busy, "Someone's already washing here.")
 
