@@ -56,7 +56,7 @@ TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_target_select
 
 /datum/ai_behavior/three_phases_special/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/mechanical/mecha/eclipse/E = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(E) || !threat)
 		return null
 	// Mob-side range + cooldown + should_special_attack gating (legacy shim).
@@ -76,7 +76,7 @@ TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_target_select
 		stance = I_DISARM            // Phase three
 	else if(hp_frac <= 0.7)
 		stance = I_GRAB              // Phase two
-	E.special_attack_target(target, stance)
+	brain.perform_attack_op(E, target, "mob_attacks.special", null, stance)
 	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
@@ -100,7 +100,7 @@ TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_target_select
 
 /datum/ai_behavior/three_phases_kite/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/owner = brain.get_owner()
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!owner || !threat)
 		return null
 	if(get_dist(owner, threat) >= desired_distance)
@@ -117,7 +117,7 @@ TYPE_TABLE(/mob/living/simple_mob/mechanical/mecha/eclipse, get_ai_target_select
 		return DQ_BEHAVIOR_DONE
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		owner.IMove(away)
+		brain.act_step(away)
 	return DQ_BEHAVIOR_CONTINUE
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).

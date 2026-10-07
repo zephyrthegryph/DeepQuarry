@@ -20,7 +20,7 @@
 
 /datum/ai_behavior/maul_unconscious/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/owner = brain.get_owner()
-	if(!owner || !brain.model)
+	if(!owner)
 		return null
 	// Look for unconscious living mobs in melee reach. Prefer faction-enemies but
 	// don't strictly require the disposition check — pack predators don't care.
@@ -52,7 +52,7 @@
 	cooldown = 15 SECONDS
 
 /datum/ai_behavior/idle_speak/evaluate(datum/ai_brain/brain, atom/source)
-	if(brain.primary_threat)
+	if(brain.primary_target())
 		return null
 	var/mob/living/owner = brain.get_owner()
 	if(!owner || !owner.say_list)
@@ -89,11 +89,11 @@
 	cooldown = 1 SECOND
 
 /datum/ai_behavior/retaliate_to_attacker/evaluate(datum/ai_brain/brain, atom/source)
-	var/atom/attacker = brain.model?.get_last_attacker()
+	var/atom/attacker = brain.last_attacker()
 	if(!ismob(attacker))
 		return null
 	// If they're already our primary threat, nothing to do.
-	if(attacker == brain.primary_threat)
+	if(attacker == brain.primary_target())
 		return null
 	// Promote them.
 	return DQAI_RESULT(100, attacker)
@@ -101,6 +101,6 @@
 /datum/ai_behavior/retaliate_to_attacker/start(datum/ai_brain/brain, atom/target, atom/source)
 	// Switching primary_threat will make the standard attack behaviors pick the
 	// attacker on the next tick.
-	rel_set(brain, nameof(brain.primary_threat), target)
+	brain.set_primary_target(target)
 	brain.invalidate_selection()
 	return DQ_BEHAVIOR_DONE

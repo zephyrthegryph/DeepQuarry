@@ -282,6 +282,8 @@ GLOBAL_REAL_VAR(list/lifeform_watch_keys)
 		make_pending_for(D) // a make() of this type: its params, before anything else
 	lifecycle_decls_init(D) // preinit (rolls, params) and owns_one/owns_many starts =
 	var/datum/type_table/T = table_of(D)
+	if(T.hook_flags & ENGINE_HOOK_MODES)
+		modes_init(D, T) // a plain datum with modes() starts in the state its var names, as an atom does when it initializes
 	if(T.hook_flags & ENGINE_HOOK_LIFEFORMS)
 		lifeform_init(D, FALSE)
 		if(param_drop_pending?[D])

@@ -25,14 +25,13 @@
 	rel_clear(B, nameof(B.primary_threat))
 	B.active_behavior_type = null
 	var/mob/living/visitor = allocate(/mob/living, locate(world.maxx, world.maxy, T.z))
-	TEST_ASSERT(B.hibernate_calm(), "calm brain refused to hibernate")
-	TEST_ASSERT_NULL(B.sleep_violation(), "a calm hibernating brain reported a violation")
-	// The chunk watch calls the brain's chunk_woke() as the visitor arrives (watch_mob_chunks() takes a proc, not an OM behaviour).
+	TEST_ASSERT(B.park_calm(), "calm brain refused to park")
+	TEST_ASSERT_NULL(B.sleep_violation(), "a calm parked brain reported a violation")
 	visitor.forceMove(T)
-	om_test_ticks(4)
-	TEST_ASSERT(B.loop_running(DQAI_PROCESSING), "woken brain did not rejoin strategic processing")
+	B.pack.perceive(TRUE) // the pack, which watches the chunks around its members, perceives the visitor
+	TEST_ASSERT(B.loop_running(DQAI_PROCESSING), "woken brain did not rejoin the loop (wakes [B.wakes] parked [B.parked] passes [B.pack?.perceptions] friendlies [length(B.model.visible_friendlies)] visitor at [AREACOORD(visitor)] brain at [AREACOORD(M)])")
 	// The audit catches a brain asleep with a threat.
-	B.hibernate_calm()
+	B.park_calm()
 	rel_set(B, nameof(B.primary_threat), visitor)
 	TEST_ASSERT(B.sleep_violation(), "the audit missed a hibernating brain with a threat")
 	rel_clear(B, nameof(B.primary_threat))

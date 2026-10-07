@@ -35,9 +35,9 @@ TYPE_TABLE(/mob/living/simple_mob/glitch_boss, get_ai_target_selectors, list(/da
 /// Count live, non-illusion hostiles the boss can target.
 /proc/dq_glitch_real_target_count(datum/ai_brain/brain)
 	. = 0
-	if(!brain.model)
+	if(!brain.perceives())
 		return 0
-	for(var/mob/living/M as anything in brain.model.visible_hostiles)
+	for(var/mob/living/M as anything in brain.known_hostiles())
 		if(istype(M, /mob/living/simple_mob/glitch_boss_fake))
 			continue
 		. += 1
@@ -64,16 +64,16 @@ TYPE_TABLE(/mob/living/simple_mob/glitch_boss, get_ai_target_selectors, list(/da
 	return istype(owner, /mob/living/simple_mob/glitch_boss)
 
 /datum/ai_behavior/glitch_ads/evaluate(datum/ai_brain/brain, atom/source)
-	if(!brain.primary_threat) return null
+	if(!brain.primary_target()) return null
 	// Worthless if no clients to spam.
 	var/has_client = FALSE
-	for(var/mob/living/M as anything in brain.model?.visible_hostiles)
+	for(var/mob/living/M as anything in brain.known_hostiles())
 		if(M.client)
 			has_client = TRUE
 			break
 	if(!has_client)
 		return null
-	return DQAI_RESULT(70, brain.primary_threat)
+	return DQAI_RESULT(70, brain.primary_target())
 
 /datum/ai_behavior/glitch_ads/start(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/simple_mob/glitch_boss/GB = brain.holder
@@ -94,10 +94,10 @@ TYPE_TABLE(/mob/living/simple_mob/glitch_boss, get_ai_target_selectors, list(/da
 	return istype(owner, /mob/living/simple_mob/glitch_boss)
 
 /datum/ai_behavior/glitch_calldown/evaluate(datum/ai_brain/brain, atom/source)
-	if(!brain.primary_threat) return null
+	if(!brain.primary_target()) return null
 	if(dq_glitch_real_target_count(brain) < 1)
 		return null
-	return DQAI_RESULT(72, brain.primary_threat)
+	return DQAI_RESULT(72, brain.primary_target())
 
 /datum/ai_behavior/glitch_calldown/start(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/simple_mob/glitch_boss/GB = brain.holder
@@ -118,10 +118,10 @@ TYPE_TABLE(/mob/living/simple_mob/glitch_boss, get_ai_target_selectors, list(/da
 	return istype(owner, /mob/living/simple_mob/glitch_boss)
 
 /datum/ai_behavior/glitch_bomb_lines/evaluate(datum/ai_brain/brain, atom/source)
-	if(!brain.primary_threat) return null
+	if(!brain.primary_target()) return null
 	if(dq_glitch_real_target_count(brain) < 1)
 		return null
-	return DQAI_RESULT(72, brain.primary_threat)
+	return DQAI_RESULT(72, brain.primary_target())
 
 /datum/ai_behavior/glitch_bomb_lines/start(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/simple_mob/glitch_boss/GB = brain.holder
@@ -142,9 +142,9 @@ TYPE_TABLE(/mob/living/simple_mob/glitch_boss, get_ai_target_selectors, list(/da
 	return istype(owner, /mob/living/simple_mob/glitch_boss)
 
 /datum/ai_behavior/glitch_bullethell/evaluate(datum/ai_brain/brain, atom/source)
-	if(!brain.primary_threat) return null
+	if(!brain.primary_target()) return null
 	// Always rated mid-tier so it fires when nothing else is available.
-	return DQAI_RESULT(60, brain.primary_threat)
+	return DQAI_RESULT(60, brain.primary_target())
 
 /datum/ai_behavior/glitch_bullethell/start(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/simple_mob/glitch_boss/GB = brain.holder
@@ -165,10 +165,10 @@ TYPE_TABLE(/mob/living/simple_mob/glitch_boss, get_ai_target_selectors, list(/da
 	return istype(owner, /mob/living/simple_mob/glitch_boss)
 
 /datum/ai_behavior/glitch_illusions/evaluate(datum/ai_brain/brain, atom/source)
-	if(!brain.primary_threat) return null
+	if(!brain.primary_target()) return null
 	if(dq_glitch_illusion_count(brain) > 4)
 		return null
-	return DQAI_RESULT(72, brain.primary_threat)
+	return DQAI_RESULT(72, brain.primary_target())
 
 /datum/ai_behavior/glitch_illusions/start(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/simple_mob/glitch_boss/GB = brain.holder
@@ -189,10 +189,10 @@ TYPE_TABLE(/mob/living/simple_mob/glitch_boss, get_ai_target_selectors, list(/da
 	return istype(owner, /mob/living/simple_mob/glitch_boss)
 
 /datum/ai_behavior/glitch_confusion/evaluate(datum/ai_brain/brain, atom/source)
-	if(!brain.primary_threat) return null
+	if(!brain.primary_target()) return null
 	if(dq_glitch_real_target_count(brain) < 2)
 		return null
-	return DQAI_RESULT(72, brain.primary_threat)
+	return DQAI_RESULT(72, brain.primary_target())
 
 /datum/ai_behavior/glitch_confusion/start(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/simple_mob/glitch_boss/GB = brain.holder
@@ -213,10 +213,10 @@ TYPE_TABLE(/mob/living/simple_mob/glitch_boss, get_ai_target_selectors, list(/da
 	return istype(owner, /mob/living/simple_mob/glitch_boss)
 
 /datum/ai_behavior/glitch_speedup/evaluate(datum/ai_brain/brain, atom/source)
-	if(!brain.primary_threat) return null
+	if(!brain.primary_target()) return null
 	// Higher score when there's only one real target — matches legacy logic.
 	var/single_target = dq_glitch_real_target_count(brain) < 2
-	return DQAI_RESULT(single_target ? 85 : 65, brain.primary_threat)
+	return DQAI_RESULT(single_target ? 85 : 65, brain.primary_target())
 
 /datum/ai_behavior/glitch_speedup/start(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/simple_mob/glitch_boss/GB = brain.holder

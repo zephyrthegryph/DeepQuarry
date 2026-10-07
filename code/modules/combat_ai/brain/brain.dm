@@ -46,10 +46,7 @@
 	// --- Per-behavior state ---
 	var/list/behavior_state = null       // typepath => list("cooldown" = world.time, "charges" = N)
 
-	// --- Personal relationships. Lazylist. ---
-	var/list/personal = null             // ref text of the mob => list("disp", "expires"); valid only while the mob is in personal_mobs
-	/// The mobs personal names (a relation list: a deleted mob leaves it, and its entry goes stale).
-	var/list/personal_mobs = null
+	// Dispositions are standings (standings/standings.dm): grudges, effects and faction rows are rows on the mob, not a list on the brain.
 
 	// --- Behavior trigger subscriptions ---
 	var/list/subscribed_signals = null   // DQAI_TRIGGER_* => list(behavior_typepath, ...)
@@ -67,13 +64,21 @@
 	/// brain uses a long discovery cadence while combat stays responsive.
 	EXPIRY_DECLARE(next_strategic_at)
 	var/idle_strategic_interval = 10 SECONDS
-	/// While hibernating: the chunks it watches (watch_mob_chunks()).
-	var/tmp/list/react_sleep_tokens
+	/// Tactics started so far (type => times): diagnostics for traces and the creature smoke tests.
+	var/tmp/list/started_counts = null
+	/// The interval the action loop was last armed with (action_interval()); poke_action_loop() re-arms a stretched one.
+	var/tmp/armed_interval = 0
+	/// world.time of the last behaviour selection (pick_and_run()); engaged brains re-select at least every DQ_ENGAGED_RECHECK.
+	EXPIRY_DECLARE(last_pick_at)
+	/// The op the active tactic is waiting on (act_waiting()), null when none.
+	var/datum/op_result/waiting_op = null
 
 CAPABILITIES(/datum/ai_brain)
 	ref_many(nameof(behavior_sources))
-	ref_many(nameof(personal_mobs))
 	owns_one(nameof(model), /datum/world_model)
+	ref_one(nameof(lord))
+	ref_one(nameof(waiting_op))
+	modes(nameof(ai_state))
 
 /datum/ai_brain/New(mob/living/owner)
 	if(!owner)
@@ -90,9 +95,14 @@ CAPABILITIES(/datum/ai_brain)
 	// Lazily add the player-castable-moves dispatcher verb on login — avoids
 	// bloating the verbs list of every wild simple_mob in the round.
 	observe(holder, /datum/notice/mob_login, src, then(PROC_REF(on_holder_login_event)))
+	observe(holder, /datum/notice/mob_logout, src, then(PROC_REF(on_holder_logout_event)))
+	observe(holder, /datum/notice/standing_changed, src, then(PROC_REF(standings_changed)))
 	if(holder.client)
 		on_holder_login(holder)
 	rebuild_behaviors()
+	EXPIRY_STAMP(src, born_at, CLOCK_WORLD)
+	set_ai_state(state_set()["calm"])
+	seek_pack()
 	return ..()
 
 
@@ -102,7 +112,7 @@ CAPABILITIES(/datum/ai_brain)
 /// A running behaviour is stopped (it ends ai_busy on holder) and the loops and chunk sleep are
 /// cancelled while holder is still set; phase 4 then clears holder and holder.ai_brain.
 /datum/ai_brain/lifecycle_prerelease()
-	cancel_chunk_sleep()
+	leave_pack("brain deleted")
 	if(active_behavior_type)
 		var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
 		B.stop(src, active_target(), active_source(), DQ_BEHAVIOR_STOP_QDEL)
@@ -118,6 +128,13 @@ CAPABILITIES(/datum/ai_brain)
 
 /datum/ai_brain/proc/set_leader(mob/new_leader)
 	rel_set(src, nameof(leader), new_leader)
+	// Following a mob that has a brain is swearing to it: the follower joins its pack as sworn (roles/roles.dm). A player or a brainless leader is only followed.
+	if(!new_leader)
+		unserve()
+	else if(isliving(new_leader) && new_leader != holder)
+		var/mob/living/lead = new_leader
+		if(lead.ai_brain)
+			serve(lead)
 
 /// The atom granting behaviour `btype`, or null (innate, or the source was deleted).
 /datum/ai_brain/proc/behavior_source(btype)
@@ -126,18 +143,6 @@ CAPABILITIES(/datum/ai_brain)
 		return null
 	var/atom/A = locate(key)
 	return (A in behavior_sources) ? A : null
-
-/// The personal-disposition entry for `other`, or null. Stale entries (a deleted mob) are dropped.
-/datum/ai_brain/proc/personal_entry(mob/other)
-	if(!personal || !other)
-		return null
-	var/key = ref(other)
-	var/list/entry = personal[key]
-	if(entry && !(other in personal_mobs))
-		personal -= key
-		UNSETEMPTY(personal)
-		return null
-	return entry
 
 // ---------------------------------------------------------------------------
 // Loop scheduling (scheduling.dm).
@@ -148,10 +153,6 @@ CAPABILITIES(/datum/ai_brain)
 		DQAI_START_PROCESSING(src)
 	else
 		DQAI_STOP_PROCESSING(src)
-	if(desired & DQAI_FASTPROCESSING)
-		DQAI_START_FASTPROCESSING(src)
-	else
-		DQAI_STOP_FASTPROCESSING(src)
 
 /// Legacy stance setter; accepted as a no-op. The brain has no stance enum.
 /datum/ai_brain/proc/set_stance(_stance)
@@ -163,14 +164,14 @@ CAPABILITIES(/datum/ai_brain)
 		// Never qdel from the subsystem tick: the holder's Destroy (or a
 		// revive via on_stat_change) owns the brain's lifetime. Just stop
 		// ticking; on_stat_change re-arms processing if the mob comes back.
-		dqai_log("[holder] brain: strategic tick on dead/deleted holder, sleeping")
+		dqai_log("[holder] brain: tick on dead/deleted holder, sleeping")
 		manage_processing(0)
 		return
 	if(holder.client && !autopilot)
 		return
 	rebuild_behaviors()
-	model.update_perception(src)
-	expire_personal()
+	// Perception is the pack's: this is only the backstop for a pack nothing has stirred for a window.
+	pack?.perceive_if_due()
 	update_primary_threat()
 	selection_dirty = TRUE
 	if(primary_threat)
@@ -178,24 +179,18 @@ CAPABILITIES(/datum/ai_brain)
 		EXPIRY_SET(src, next_strategic_at, 2 SECONDS, CLOCK_WORLD)
 		sync_fast_processing()
 		return
-	// Calm: this is the ONLY place no-threat behaviors (wander, idle speak,
-	// walk_to_destination, return_home, follow_leader, scavenge, ...) get
-	// selected. The tactical loop is combat-scoped, so running pick_and_run
-	// here keeps idle cost at the strategic cadence rather than per-250ms.
+	// Calm: this is the place no-threat behaviors (wander, idle speak, walk_to_destination, return_home, follow_leader, scavenge, ...) get
+	// selected, on the slow cadence rather than per action tick.
 	var/idle_pending = pick_and_run()
 	if(active_behavior_type)
-		// A tick-driven idle behavior is running: let the fast loop drive it
-		// until it finishes (sync_fast_processing drops us again on DONE).
+		// A tick-driven idle behavior is running: the loop drives it until it finishes.
 		EXPIRY_SET(src, next_strategic_at, 2 SECONDS, CLOCK_WORLD)
-		sync_fast_processing()
 		return
 	EXPIRY_SET(src, next_strategic_at, idle_strategic_interval, CLOCK_WORLD)
-	sync_fast_processing()
-	// Only hibernate when nothing idle wants to run and no one-shot walk is
-	// queued. A brain with an idle behavior scoring > 0 (or cooling down
+	// Only park when nothing idle wants to run and no one-shot walk is queued. A brain with an idle behavior scoring > 0 (or cooling down
 	// toward one) stays on the slow cadence so it actually gets to act.
 	if(!idle_pending && !destination())
-		hibernate_calm()
+		park_calm()
 
 /// Tactical tick. Fast — 250ms. Runs while a threat exists OR while a
 /// tick-driven behavior (combat or idle) is active; see sync_fast_processing.
@@ -213,6 +208,12 @@ CAPABILITIES(/datum/ai_brain)
 		var/result = B.tick(src, active_target(), active_source())
 		switch(result)
 			if(DQ_BEHAVIOR_CONTINUE)
+				// Still running: re-select only on an event (selection_dirty) or, engaged, once DQ_ENGAGED_RECHECK has passed.
+				if(!primary_threat || (!selection_dirty && BEFORE(src, last_pick_at + DQ_ENGAGED_RECHECK, CLOCK_WORLD)))
+					return
+				if(!selection_dirty)
+					trace("engaged recheck (minimum interval)")
+				pick_and_run()
 				return
 			if(DQ_BEHAVIOR_DONE)
 				stop_active(DQ_BEHAVIOR_STOP_COMPLETED)
@@ -222,13 +223,10 @@ CAPABILITIES(/datum/ai_brain)
 				stop_active(DQ_BEHAVIOR_STOP_FAILED)
 
 	if(!primary_threat)
-		// Calm: idle selection lives on the strategic cadence (handle_strategicals),
-		// never here — that is what keeps wandering mobs off the 250ms loop.
-		// If the idle behavior just finished, ask for a prompt re-pick on the
-		// next 2s SSai tick instead of waiting out idle_strategic_interval.
+		// Calm: idle selection lives on the slow cadence (handle_strategicals), never here.
+		// If the idle behavior just finished, ask for a prompt re-pick on the next slow run.
 		if(!active_behavior_type)
 			next_strategic_at = 0
-		sync_fast_processing()
 		return
 
 	if(!selection_dirty && active_behavior_type)
@@ -316,6 +314,8 @@ CAPABILITIES(/datum/ai_brain)
 /// use this to decide whether a calm brain may hibernate), FALSE otherwise.
 /datum/ai_brain/proc/pick_and_run()
 	selection_dirty = FALSE
+	EXPIRY_STAMP(src, last_pick_at, CLOCK_WORLD)
+	assess_state()
 	if(!effective_behaviors || !length(effective_behaviors))
 		return FALSE
 
@@ -331,7 +331,7 @@ CAPABILITIES(/datum/ai_brain)
 		var/datum/ai_behavior/B = dq_get_behavior(btype)
 		if(B.requires_held_source && !source)
 			continue
-		if(!B.no_threat_required && !primary_threat && B.priority_class >= DQ_BEHAVIOR_PRIORITY_NORMAL)
+		if(!state_allows(B))
 			continue
 		if(!B.applicable_to(holder))
 			continue
@@ -377,16 +377,23 @@ CAPABILITIES(/datum/ai_brain)
 	rel_set(src, nameof(active_target), target)
 	rel_set(src, nameof(active_source), source)
 	var/datum/ai_behavior/B = dq_get_behavior(btype)
+	LAZYINITLIST(started_counts)
+	started_counts[btype] = (started_counts[btype] || 0) + 1
+	trace("start [btype] on [target]")
 	var/result = B.start(src, target, source)
 	if(result == DQ_BEHAVIOR_DONE)
 		stop_active(DQ_BEHAVIOR_STOP_COMPLETED)
 	else if(result == DQ_BEHAVIOR_FAILED)
 		stop_active(DQ_BEHAVIOR_STOP_FAILED)
+	else
+		assess_state() // a fleeing tactic running makes the brain fleeing
 
 /datum/ai_brain/proc/stop_active(reason)
 	if(!active_behavior_type)
 		return
 	var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
+	trace("stop [active_behavior_type] (reason [reason])")
+	cancel_waiting_op()
 	B.stop(src, active_target(), active_source(), reason)
 	active_behavior_type = null
 	rel_clear(src, nameof(active_target))
@@ -398,18 +405,18 @@ CAPABILITIES(/datum/ai_brain)
 	// Force the next tick to re-pick rather than wait for the slow tick to
 	// flip selection_dirty.
 	selection_dirty = TRUE
+	assess_state()
 
 /datum/ai_brain/proc/invalidate_selection()
 	selection_dirty = TRUE
 	next_strategic_at = 0
-	wake_from_chunks()
+	wake_loops()
 	sync_fast_processing()
+	poke_action_loop()
 
-/// Keeps the quarter-second tactical loop limited to brains that have a combat
-/// target or a tick-driven behavior in flight (an idle walk still needs to step).
-/// Calm brains with nothing active never sit on the fast loop.
+/// The action loop runs while the brain is awake (not parked), alive and not player-driven.
 /datum/ai_brain/proc/sync_fast_processing()
-	var/should_process_fast = (primary_threat || active_behavior_type) && holder && !QDELETED(holder) && holder.stat < DEAD && (!holder.client || autopilot)
+	var/should_process_fast = (process_flags & DQAI_PROCESSING) && holder && !QDELETED(holder) && holder.stat < DEAD && (!holder.client || autopilot)
 	if(should_process_fast)
 		DQAI_START_FASTPROCESSING(src)
 	else
@@ -444,14 +451,19 @@ CAPABILITIES(/datum/ai_brain)
 	// Target is visible again — reset the grace timer.
 	lose_threat_at = 0
 	var/new_threat = null
+	// The pack hands each member the hostiles it may pick from (doctrine: spread or focus); a pack of one gets its own list.
+	var/list/candidates = pack ? pack.targeting_candidates(src) : model.visible_hostiles
 	for(var/typepath as anything in target_selector_chain)
 		var/datum/target_selector/S = dq_get_selector(typepath)
-		new_threat = S.select(src, model.visible_hostiles)
+		new_threat = S.select(src, candidates)
 		if(new_threat)
 			break
 	if(new_threat != primary_threat)
+		trace("target [new_threat || "none"] (was [primary_threat || "none"]) from [length(candidates)] candidate(s)")
+		pack?.trace("[holder] assigned [new_threat || "no target"]")
 		rel_set(src, nameof(primary_threat), new_threat)
 		sync_fast_processing()
+		assess_state()
 
 /// Shared "we no longer have a threat" path: clears the slot, signals, stops
 /// whatever combat behavior was chasing it and leaves the fast loop.
@@ -461,6 +473,7 @@ CAPABILITIES(/datum/ai_brain)
 	if(active_behavior_type)
 		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 	sync_fast_processing()
+	assess_state()
 
 /// TRUE if being struck by `attacker` should make us hostile to them. Same-faction
 /// mobs and table-declared allies don't feud over friendly fire / splash damage;
@@ -468,8 +481,8 @@ CAPABILITIES(/datum/ai_brain)
 /datum/ai_brain/proc/should_retaliate_against(mob/attacker)
 	if(!attacker || !holder || attacker == holder)
 		return FALSE
-	var/list/grudge = personal_entry(attacker)
-	if(grudge && grudge["disp"] <= DQ_DISPOSITION_HOSTILE)
+	var/grudge = grudge_value(attacker)
+	if(!isnull(grudge) && dq_standing_disposition(grudge) <= DQ_DISPOSITION_HOSTILE)
 		return TRUE
 	if(holder.faction && attacker.faction == holder.faction)
 		dqai_log("[holder] brain: ignoring hit from faction-mate [attacker]")
@@ -480,68 +493,8 @@ CAPABILITIES(/datum/ai_brain)
 	return TRUE
 
 // ---------------------------------------------------------------------------
-// Dispositions.
+// Dispositions: standings/standings.dm (disposition_to(), add_personal(), grudge_value()).
 // ---------------------------------------------------------------------------
-
-/datum/ai_brain/proc/disposition_to(mob/other)
-	if(!other || other == holder)
-		return DQ_DISPOSITION_ALLY
-	var/list/entry = personal_entry(other)
-	if(entry)
-		if(entry["expires"] && ELAPSED_SINCE(src, entry["expires"], CLOCK_WORLD) > 0)
-			personal -= ref(other)
-			UNSETEMPTY(personal)
-			rel_remove(src, nameof(personal_mobs), other)
-		else
-			return entry["disp"]
-	var/datum/faction_data/data = dq_faction_data_for(holder.faction)
-	var/result
-	if(other.client)
-		result = data.player_disposition
-	else
-		var/other_faction = other.faction
-		result = data.disposition_to_faction(other_faction)
-	// Fallback for mobs whose faction string isn't in the registry: honor the
-	// per-mob ai_attack_on_sight flag so unenumerated factions still aggress
-	// on strangers as expected. Faction-mates and explicit ALLY/FRIENDLY/WARY
-	// entries from the table are preserved.
-	if(result == DQ_DISPOSITION_NEUTRAL && istype(holder, /mob/living/simple_mob))
-		var/mob/living/simple_mob/SM = holder
-		if(SM.ai_attack_on_sight && holder.faction != other.faction)
-			result = DQ_DISPOSITION_HOSTILE
-	return result
-
-/datum/ai_brain/proc/add_personal(mob/other, disposition, duration = DQ_PERSONAL_DEFAULT_DURATION, reason = null)
-	if(!other)
-		return
-	LAZYINITLIST(personal)
-	rel_add(src, nameof(personal_mobs), other)
-	personal[ref(other)] = list(
-		"disp" = disposition,
-		"expires" = duration ? world.time + duration : 0,
-		"reason" = reason,
-	)
-	selection_dirty = TRUE
-
-/datum/ai_brain/proc/expire_personal()
-	if(!personal)
-		return
-	var/now = world.time
-	// Collect expired keys into a reused temp and subtract once, rather than
-	// Copy()ing the whole assoc list every strategic tick. Iterating the live
-	// list while only reading is safe; mutation happens after the loop.
-	var/list/expired
-	for(var/ref in personal)
-		var/list/entry = personal[ref]
-		var/mob/M = locate(ref)
-		if(!(M in personal_mobs)) // the mob was deleted: its entry is stale
-			LAZYADD(expired, ref)
-		else if(entry && entry["expires"] && entry["expires"] < now)
-			LAZYADD(expired, ref)
-			rel_remove(src, nameof(personal_mobs), M)
-	if(expired)
-		personal -= expired
-	UNSETEMPTY(personal)
 
 // ---------------------------------------------------------------------------
 // Behavior state (cooldowns, charges).
@@ -587,16 +540,21 @@ CAPABILITIES(/datum/ai_brain)
 	if(new_stat >= DEAD)
 		manage_processing(0)
 		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
+		release_servants()
+		unserve()
+		leave_pack("died")
 	else if(old_stat >= DEAD)
 		manage_processing(DQAI_PROCESSING)
+		seek_pack()
 
 /// Called by /mob/living/dq_notify_damage when the mob takes a hit.
 /datum/ai_brain/proc/notify_damage(amount, injury_kind, atom/attacker)
 	if(!model || !holder)
 		return
 	model.record_damage(amount, injury_kind, attacker)
+	stir_pack("member hurt")
 	if(ismob(attacker) && attacker != holder && should_retaliate_against(attacker))
-		add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "hit me")
+		add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_GRUDGE_DURATION, "hit me")
 		if(!primary_threat)
 			rel_set(src, nameof(primary_threat), attacker)
 	PUBLISH_LEGACY(holder, /datum/notice/dqai_damage_taken, amount, injury_kind, attacker)
@@ -619,6 +577,8 @@ CAPABILITIES(/datum/ai_brain)
 /// The loops check this: TRUE while a task claims the brain's mob -- an ability's wind-up, a timed
 /// action, or a behavior that blocks reselection (code/datums/om/task.dm, task_busy()).
 /datum/ai_brain/proc/is_busy()
+	if(waits_on_op())
+		return TRUE
 	return holder ? task_busy(holder) : FALSE
 
 /// An AI mob starts an ability whose later steps are timers: a hold task claims the mob, so its

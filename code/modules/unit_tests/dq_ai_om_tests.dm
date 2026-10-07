@@ -16,14 +16,15 @@
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human)
 	var/datum/ai_brain/B = hunter.ai_brain
 	TEST_ASSERT_NOTNULL(B, "test subject has no brain")
-	TEST_ASSERT(granted(hunter, /datum/capability/ai_loop/strategic), "a new brain did not attach its strategic loop")
-	TEST_ASSERT(!granted(hunter, /datum/capability/ai_loop/tactical), "an idle brain attached its tactical loop")
+	TEST_ASSERT(granted(hunter, /datum/capability/ai_loop/tactical), "a new brain did not attach its loop")
+	TEST_ASSERT_EQUAL(B.action_interval(), DQ_CALM_TICK, "an idle brain's loop is not on the calm cadence")
 	B.give_target(target, TRUE)
-	TEST_ASSERT(granted(hunter, /datum/capability/ai_loop/tactical), "a combat target did not attach the tactical loop")
+	TEST_ASSERT(granted(hunter, /datum/capability/ai_loop/tactical), "a combat target took the loop away")
+	TEST_ASSERT(B.action_interval() <= DQ_ACTION_TICK, "a brain with a target is not on the action cadence")
 	B.lose_target()
-	TEST_ASSERT(!granted(hunter, /datum/capability/ai_loop/tactical), "the tactical loop stayed after the target was lost")
+	TEST_ASSERT_EQUAL(B.action_interval(), DQ_CALM_TICK, "the loop stayed fast after the target was lost")
 	qdel(B)
-	TEST_ASSERT(!granted(hunter, /datum/capability/ai_loop/strategic), "a deleted brain left its strategic loop on the mob")
+	TEST_ASSERT(!granted(hunter, /datum/capability/ai_loop/tactical), "a deleted brain left its loop on the mob")
 
 /// A low-priority AI mob on a z-level with no living player is at RELEVANCE_NONE and its loops
 /// skip their runs (the old SSai process_z skip); an observer at NEAR puts them back.
@@ -35,19 +36,16 @@
 	hunter.low_priority = TRUE
 	hunter.life_update_relevance()
 	hunter.ai_brain.give_target(target, TRUE)
-	TEST_ASSERT(granted(hunter, /datum/capability/ai_loop/strategic), "strategic loop not attached")
-	TEST_ASSERT(granted(hunter, /datum/capability/ai_loop/tactical), "tactical loop not attached")
+	TEST_ASSERT(granted(hunter, /datum/capability/ai_loop/tactical), "the loop is not attached")
 	if(stat_value(hunter, STAT_RELEVANCE) != RELEVANCE_NONE)
 		TEST_NOTICE(src, "the test z-level holds a living player; parking was not exercised")
 		return
-	TEST_ASSERT(!dq_ai_test_on_ring(hunter, /datum/capability/ai_loop/strategic), "strategic loop ran with no player on the z-level")
-	TEST_ASSERT(!dq_ai_test_on_ring(hunter, /datum/capability/ai_loop/tactical), "tactical loop ran with no player on the z-level")
+	TEST_ASSERT(!dq_ai_test_on_ring(hunter, /datum/capability/ai_loop/tactical), "the loop ran with no player on the z-level")
 	var/datum/observer = allocate(/datum)
 	hold(hunter, STAT_RELEVANCE, RELEVANCE_NEAR, observer)
-	TEST_ASSERT(dq_ai_test_on_ring(hunter, /datum/capability/ai_loop/strategic), "strategic loop did not resume when relevant")
-	TEST_ASSERT(dq_ai_test_on_ring(hunter, /datum/capability/ai_loop/tactical), "tactical loop did not resume when relevant")
+	TEST_ASSERT(dq_ai_test_on_ring(hunter, /datum/capability/ai_loop/tactical), "the loop did not resume when relevant")
 	release(hunter, STAT_RELEVANCE, observer)
-	TEST_ASSERT(!dq_ai_test_on_ring(hunter, /datum/capability/ai_loop/strategic), "strategic loop did not park again")
+	TEST_ASSERT(!dq_ai_test_on_ring(hunter, /datum/capability/ai_loop/tactical), "the loop did not park again")
 
 /// Hibernating calm brains leave the strategic loop; being attacked wakes them and gives them
 /// the attacker as their target.
@@ -59,12 +57,11 @@
 	var/datum/ai_brain/B = victim.ai_brain
 	rel_clear(B, nameof(B.primary_threat))
 	B.active_behavior_type = null
-	TEST_ASSERT(B.hibernate_calm(), "calm brain refused to hibernate")
-	TEST_ASSERT(!granted(victim, /datum/capability/ai_loop/strategic), "hibernating brain kept its strategic loop")
+	TEST_ASSERT(B.park_calm(), "calm brain refused to park")
+	TEST_ASSERT(!granted(victim, /datum/capability/ai_loop/tactical), "a parked brain kept its loop")
 	B.notify_damage(10, INJURY_BLUNT, attacker)
 	TEST_ASSERT_EQUAL(B.primary_threat, attacker, "an attack did not give the brain its attacker as target")
-	TEST_ASSERT(granted(victim, /datum/capability/ai_loop/strategic), "an attack did not wake the strategic loop")
-	TEST_ASSERT(granted(victim, /datum/capability/ai_loop/tactical), "an attack did not start the tactical loop")
+	TEST_ASSERT(granted(victim, /datum/capability/ai_loop/tactical), "an attack did not wake the loop")
 	TEST_ASSERT_NULL(B.sleep_violation(), "a woken brain reported a sleep violation")
 
 /// Driven through its loops, a brain with a target walks to it and attacks it.

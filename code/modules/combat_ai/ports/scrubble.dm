@@ -81,10 +81,10 @@ TYPE_TABLE(/mob/living/simple_mob/vore/scrubble, get_ai_target_selectors, list( 
 
 /datum/ai_behavior/scrubble_skitter/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/vore/scrubble/S = brain.holder
-	if(!istype(S) || !brain.primary_threat)
+	if(!istype(S) || !brain.primary_target())
 		return null
 	// Always engaged while a target exists (dying_threshold 1.1 ⇒ always flee).
-	return DQAI_RESULT(100, brain.primary_threat)
+	return DQAI_RESULT(100, brain.primary_target())
 
 /datum/ai_behavior/scrubble_skitter/start(datum/ai_brain/brain, atom/target, atom/source)
 	. = ..()
@@ -106,5 +106,5 @@ TYPE_TABLE(/mob/living/simple_mob/vore/scrubble, get_ai_target_selectors, list( 
 	// Otherwise keep bolting away (legacy step_away distance 7).
 	var/turf/away = get_step_away(S, L, 7)
 	if(away && !away.density)
-		step_to(S, away)
+		brain.act_step(away)
 	return DQ_BEHAVIOR_CONTINUE

@@ -86,7 +86,7 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile, get_ai_target_selectors, lis
 
 /datum/ai_behavior/metroid_smart_attack/evaluate(datum/ai_brain/brain, atom/source)
 	var/mob/living/simple_mob/metroid/juvenile/MJ = brain.holder
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!istype(MJ) || !threat || !MJ.Adjacent(threat))
 		return null
 	if(!MJ.checkClickCooldown())
@@ -107,7 +107,7 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile, get_ai_target_selectors, lis
 		MJ.set_use_stance(I_GRAB)             // Then eat the downed target.
 	else
 		MJ.set_use_stance(I_HURT)             // Otherwise just hurt it.
-	MJ.attack_target(L, MJ.input_stance())
+	brain.perform_attack_op(MJ, L, "mob_attacks.melee")
 	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 

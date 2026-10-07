@@ -73,7 +73,7 @@
 	else if(slime_state)
 		if(slime_state.rabid)
 			mood = "angry"
-		else if(ai_brain?.primary_threat)
+		else if(ai_brain?.primary_target())
 			mood = "mischevous"
 		else if(slime_state.discipline)
 			mood = "pout"

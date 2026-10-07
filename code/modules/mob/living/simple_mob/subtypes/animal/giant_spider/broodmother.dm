@@ -92,6 +92,7 @@
 		var/broodling_type = pick(possible_brood_types)
 		var/mob/living/simple_mob/animal/giant_spider/broodling = new broodling_type(src.loc)
 		broodling.faction = faction
+		broodling.ai_brain?.serve(src) // sworn: it joins the mother's pack and never splits off
 		step_away(broodling, src)
 		count++
 
@@ -104,6 +105,7 @@
 		var/broodling_type = pick(possible_brood_types)
 		var/mob/living/simple_mob/animal/giant_spider/broodling = new broodling_type(src.loc)
 		broodling.faction = faction
+		broodling.ai_brain?.serve(src)
 		step_away(broodling, src)
 		broodling.throw_at(A, 10)
 		count++

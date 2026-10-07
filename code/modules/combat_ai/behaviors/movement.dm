@@ -12,7 +12,7 @@
 	cooldown = 0
 
 /datum/ai_behavior/approach_threat/evaluate(datum/ai_brain/brain, atom/source)
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!threat)
 		return null
 	var/mob/living/owner = brain.get_owner()
@@ -36,7 +36,7 @@
 	// Smart A* step; falls back gracefully when pathing fails.
 	if(!brain.smart_step_toward(target))
 		// One direct step as a backup so we don't stall in open space.
-		step_to(owner, target)
+		brain.act_step(target)
 	return DQ_BEHAVIOR_CONTINUE
 
 // --- Idle wander -------------------------------------------------------------
@@ -48,7 +48,7 @@
 	no_threat_required = TRUE
 
 /datum/ai_behavior/idle_wander/evaluate(datum/ai_brain/brain, atom/source)
-	if(brain.primary_threat)
+	if(brain.primary_target())
 		return null  // not idle if there's a threat
 	if(!brain.wander)
 		return null  // honor the legacy wander toggle
@@ -61,7 +61,7 @@
 	if(prob(35))
 		var/turf/T = get_step(owner, pick(GLOB.cardinal))
 		if(T && !T.density)
-			step_to(owner, T)
+			brain.act_step(T)
 	return DQ_BEHAVIOR_DONE
 
 // --- Flee at low HP ---------------------------------------------------------
@@ -81,7 +81,7 @@
 	var/hp_frac = owner.vitality()
 	if(hp_frac > DQ_LOW_HP_THRESHOLD)
 		return null
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!threat)
 		return null
 	// Score grows as HP drops. At 0% HP and a NEMESIS attacker, this is decisive.
@@ -96,5 +96,5 @@
 		return DQ_BEHAVIOR_DONE  // far enough
 	var/turf/away = get_step_away(owner, target)
 	if(away && !away.density)
-		step_to(owner, away)
+		brain.act_step(away)
 	return DQ_BEHAVIOR_CONTINUE
