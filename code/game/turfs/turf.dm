@@ -173,8 +173,8 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 
 CAPABILITIES(/turf)
 	op("turf_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(turf_item_op)))
-	op("turf_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(PROC_REF(turf_touch_op)))
-	op("turf_crawl", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Crawl"), then(PROC_REF(turf_drag)))
+	op("turf_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 10), label("Touch"), then(PROC_REF(turf_touch_op)))
+	op("turf_crawl", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 10), label("Crawl"), then(PROC_REF(turf_drag)))
 
 /// The touch op: the old attack_hand.
 /turf/proc/turf_touch_op(datum/act/op/A)
