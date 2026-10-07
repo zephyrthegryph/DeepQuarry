@@ -12,6 +12,8 @@
 #                                                                       # emag change on a fresh one (snapshots/hit_pins/, test dq_hit_pin)
 #   bash tools/dq_pin.sh --look-tree /obj/item/gun [...]                # the look pin of every subtype, one file per root
 #                                                                       # (snapshots/look_trees/, test dq_look_tree_pin)
+#   bash tools/dq_pin.sh --ui /datum/foo_panel [...]                    # a window-data pin: what a window host shows after scripted state
+#                                                                       # changes (snapshots/ui_pins/, test dq_ui_data_pin, a /datum/ui_pin driver)
 #
 # A pin is one file, code/modules/unit_tests/snapshots/pins/<type with / as .>.txt; an empty file is recorded on
 # the next run of dq_conversion_pin instead of failing it. Commit the recorded files with the conversion.
@@ -28,6 +30,7 @@ for arg in "$@"; do
 		--look) dir="code/modules/unit_tests/snapshots/looks"; test="dq_look_pin" ;;
 		--hit) dir="code/modules/unit_tests/snapshots/hit_pins"; test="dq_hit_pin" ;;
 		--look-tree) dir="code/modules/unit_tests/snapshots/look_trees"; test="dq_look_tree_pin" ;;
+		--ui) dir="code/modules/unit_tests/snapshots/ui_pins"; test="dq_ui_data_pin" ;;
 		-h|--help) sed -n '2,15p' "$0"; exit 0 ;;
 		/*) types+=("$arg") ;;
 		*) echo "not a type path (it starts with /): $arg" >&2; exit 2 ;;

@@ -98,3 +98,13 @@ hit as `survives` or `destroyed` (a blob rolls its damage). Mobs and turfs are n
 state at the end of the call and one drain later, not a timer seconds on, and not a hit hook that runs after the hit instead of before it unless that
 changes the end state: hand-written tests cover those. A type whose entry throws on a bare instance (the rig's shock wire without a wearer) is a
 finding, not a pin: leave it out and say so.
+
+## Window data pins
+
+A pin of what a window host shows after a scripted set of state changes, for the window conversions (a hand `update_uis()` or `changed()` mark
+deleted, the state the window reads tracked; `code/modules/unit_tests/dq_ui_pins.dm`). `bash tools/dq_pin.sh --ui /datum/foo_panel` records one host
+(`snapshots/ui_pins/`, test `dq_ui_data_pin`). The host's driver is a `/datum/ui_pin` subtype in a `dq_ui_pins_*.dm` file: `script()` builds the host,
+then alternates the changes the window's buttons and the world make with `snap("label")`, which writes one row per top-level key of the host's
+`tgui_data()` (`<label> | <key>: <json>`, refs written as `[ref]`, keys sorted). Record the pins in one run on the unmodified code; after the
+conversion every changed row is a visible change: bless it only with a documented cause in `intended_changes.md`. The driver also attaches a probe
+window (`watch_host()`), so a push test can assert that a step that changed the data pushed the window exactly once.
