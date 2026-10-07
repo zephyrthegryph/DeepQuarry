@@ -146,7 +146,7 @@ TRACKED(/obj/machinery, power_forced)
 SETTER(/obj/machinery, use_power)
 
 CAPABILITIES(/obj/machinery)
-	op("robot_remote_blocked", inputs(hand(), item(/obj/item), remote()), ungated(), priority(OP_PRIORITY_SUBVERT + 1), label("Blocked"), when(req(PROC_REF(robot_remote_blocked))), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("robot_remote_blocked", inputs(hand(), item(/obj/item), remote()), ungated(), priority(OP_PRIORITY_SUBVERT + 1), label("Blocked"), when(cond_all(req(/mob/living/silicon/robot, of = ON_ACTOR), req(PROC_REF(robot_remote_blocked)))), then(TYPE_PROC_REF(/atom, op_swallow)))
 	contributes(STAT_OPERABLE, STAT_INTACT, key = "intact_operable", reason = MSG(machine/inoperable))
 	contributes(STAT_OPERABLE, cond_not(STAT_IN_MAINTENANCE), key = "maint_operable", reason = MSG(machine/inoperable))
 	// The grid's reading: the machine has power while its area's channel is energized (the area's tracked channel vars, one hop through power_area).
@@ -382,7 +382,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// machinery_maintenance.dm declares the machine's other interactions.
 
 /obj/machinery/proc/robot_remote_blocked(datum/act/op/A)
-	return isrobot(A.actor) && A.actor.is_remote_viewing()
+	return A.actor.is_remote_viewing()
 
 /// The checks every machine's hand interactions pass behind (see machine_use_blocker() for the Menu's version).
 /obj/machinery/hand_gate(mob/user as mob)

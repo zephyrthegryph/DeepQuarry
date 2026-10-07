@@ -20,7 +20,7 @@
 	clickvol = 40
 
 	circuit = /obj/item/circuitboard/washing
-	state = EMPTY_OPEN
+	var/state = EMPTY_OPEN
 	var/hacked = TRUE //Bleh, screw hacking, let's have it hacked by default.
 	var/gibs_ready = FALSE
 	var/obj/crayon
@@ -30,11 +30,13 @@
 		/obj/item/clothing/head/helmet/space
 		)
 
+MSG_DEF_SELF(washing_machine/not_inside, "you aren't inside it")
+
 CAPABILITIES(/obj/machinery/washing_machine)
 	op("washing_machine_use_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_washing_machine_use_item)))
 	op("washing_machine_start", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Start"), then(PROC_REF(interaction_washing_machine_start)))
 	op("washing_machine_start_washing", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Start Washing"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_washing_machine_start_washing)))
-	op("washing_machine_climb_out", menu(), reach(REACH_ANY), priority(OP_PRIORITY_DEFAULT - 2), label("Climb out"), needs(req(PROC_REF(actor_inside_holds), because = "you aren't inside it")), then(PROC_REF(interaction_washing_machine_climb_out)))
+	op("washing_machine_climb_out", menu(), reach(REACH_ANY), priority(OP_PRIORITY_DEFAULT - 2), label("Climb out"), needs(req(PROC_REF(actor_inside_holds), because = MSG(washing_machine/not_inside))), then(PROC_REF(interaction_washing_machine_climb_out)))
 	op("washing_machine_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_washing_machine_use)))
 	owns_many(nameof(washing), on_destroy = ON_DESTROY_SPILL)
 	climb()
@@ -245,7 +247,7 @@ CAPABILITIES(/obj/machinery/washing_machine)
 
 
 /obj/machinery/washing_machine/proc/actor_inside_holds(datum/act/op/A)
-	return A.actor?.loc == src
+	return A.actor && (A.actor in contents_of(src))
 
 #undef EMPTY_OPEN
 #undef EMPTY_CLOSED
@@ -266,3 +268,5 @@ CAPABILITIES(/obj/machinery/washing_machine)
 /// crayon (a relation view: it reads null once the target is deleted).
 /obj/machinery/washing_machine/proc/crayon() as /obj
 	return crayon
+
+TRACKED_BRIDGED(/obj/machinery/washing_machine, state, CHANGE_MACHINE_SETTINGS)

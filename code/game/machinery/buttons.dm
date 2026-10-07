@@ -16,9 +16,11 @@ TRACKED(/obj/machinery/button, id)
 /obj/machinery/button/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 
+MSG_DEF_SELF(button/needs_item, "needs an item")
+
 CAPABILITIES(/obj/machinery/button)
 	op("button_press", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Press"), then(PROC_REF(interaction_press)))
-	op("button_press_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Press"), when(PROC_REF(local_item_press)), then(TYPE_PROC_REF(/atom, op_as_touch)))
+	op("button_press_item", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Press"), needs(req(/obj/item, because = MSG(button/needs_item)), req_adjacent(), req_capable()), when(PROC_REF(local_item_press)), then(TYPE_PROC_REF(/atom, op_as_touch)))
 
 /obj/machinery/button/proc/local_item_press(datum/act/op/A)
 	return !istype(src, /obj/machinery/button/remote)
@@ -52,7 +54,7 @@ CAPABILITIES(/obj/machinery/button)
 	var/link = "MOBSPAWN"
 
 CAPABILITIES(/obj/machinery/button/mob_spawner_button)
-	op("spawn_mob", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Spawn mob"),
+	op("spawn_mob", hand(), ungated(), priority(OP_PRIORITY_DEFAULT), label("Spawn mob"),
 		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(spawn_options)), "title" = "Mob spawn", "question" = "Which Mob do you want to spawn?", "timeout" = 0), step = "mob"),
 		asks(/datum/prompt/choice, fields = list("title" = "Faction", "question" = "Do you want the mob's faction to remain the same or be passive?", "choices" = list("Normal", "Neutral"), "buttons" = TRUE), step = "faction"), then(PROC_REF(spawn_choices_made)))
 

@@ -44,8 +44,8 @@ TRACKED_BRIDGED(/obj/machinery/firealarm, timing, CHANGE_MACHINE_SETTINGS)
 	channel = CHANGE_MACHINE_SETTINGS
 
 CAPABILITIES(/obj/machinery/firealarm)
-	op("firealarm_trigger", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Trigger"), then(PROC_REF(interaction_firealarm_trigger)))
-	op("firealarm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(firealarm_use_ready), silent = TRUE)), then(PROC_REF(interaction_firealarm_use)))
+	op("firealarm_trigger", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Trigger"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_firealarm_trigger)))
+	op("firealarm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), needs(req(PROC_REF(firealarm_use_ready), silent = TRUE)), then(PROC_REF(interaction_firealarm_use)))
 	started_work(step = PROC_REF(work_step), when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), STAT_OPERABLE))
 	owns_one(nameof(causality), /datum/looping_sound/alarm/sm_causality_alarm)
 	owns_one(nameof(critalarm), /datum/looping_sound/alarm/sm_critical_alarm)
@@ -215,8 +215,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 	var/mob/user = A.actor
 
 	add_fingerprint(user)
-	var/area/A = get_area(src)
-	if(A.fire)
+	var/area/zone = get_area(src)
+	if(zone.fire)
 		reset(user)
 	else
 		alarm(0, user)

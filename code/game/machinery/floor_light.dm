@@ -185,10 +185,10 @@ CAPABILITIES(/obj/machinery/floor_light)
 	update_brightness()
 
 /obj/item/floor_light/proc/can_install_holds(datum/act/op/A)
-	return isturf(A.actor?.loc) && can_install(A.actor, src, A.held) == TRUE
+	return (A.actor && (A.actor in turf_contents_of_type(get_turf(A.actor), /mob))) && can_install(A.actor, src, A.held) == TRUE
 
 /obj/item/floor_light/proc/can_install_refusal(datum/act/op/A)
-	if(!isturf(A.actor?.loc))
+	if(!(A.actor && (A.actor in turf_contents_of_type(get_turf(A.actor), /mob))))
 		return "you can't use that here"
 	var/result = can_install(A.actor, src, A.held)
 	return istext(result) ? result : "the kit cannot be installed"

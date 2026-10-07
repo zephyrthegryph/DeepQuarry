@@ -42,11 +42,13 @@
 
 	var/client_huds = null
 
+MSG_DEF_SELF(camera/nonfunctional, "camera non-functional")
+
 CAPABILITIES(/obj/machinery/camera)
 	op("camera_shred", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), hostile(), label("Slash"), when(PROC_REF(actor_can_shred_holds)), then(PROC_REF(interaction_shred)))
 	op("camera_update_coverage", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_update_coverage)))
 	op("camera_paper_show", inputs(item(/obj/item/paper), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 2), label("Show to camera"), when(PROC_REF(paper_show_meant_holds)), then(PROC_REF(interaction_show_paper)))
-	op("camera_bug_toggle", item(/obj/item/camera_bug), priority(OP_PRIORITY_DEFAULT - 3), label("Bug camera"), needs(req(PROC_REF(camera_can_use_holds), because = "camera non-functional")), then(PROC_REF(interaction_toggle_bug)))
+	op("camera_bug_toggle", item(/obj/item/camera_bug), priority(OP_PRIORITY_DEFAULT - 3), label("Bug camera"), needs(req(PROC_REF(camera_can_use_holds), because = MSG(camera/nonfunctional))), then(PROC_REF(interaction_toggle_bug)))
 	op("camera_bash", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 4), hostile(), label("Attack"), when(PROC_REF(held_is_bashing_holds)), then(PROC_REF(interaction_bash)))
 	op("camera_silicon_look", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Look through"), then(PROC_REF(camera_silicon_look)))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
@@ -406,9 +408,11 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	cancelCameraAlarm()
 	update_coverage()
 
+SETTER(/obj/machinery/camera, status)
 /obj/machinery/camera/proc/set_status(newstatus)
 	if (status != newstatus)
 		status = newstatus
+		tracked_changed(src, nameof(status))
 		update_coverage()
 
 /// The look (the draw sweep: from its template).

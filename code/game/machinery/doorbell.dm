@@ -33,6 +33,8 @@
 	if(panel_open == 1)
 		look.overlay("dbchime-open")
 
+MSG_DEF_SELF(doorbell/needs_item, "needs an item")
+
 CAPABILITIES(/obj/machinery/doorbell_chime)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("fingerprint", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(TYPE_PROC_REF(/atom, op_fingerprint)))
@@ -83,8 +85,11 @@ CAPABILITIES(/obj/machinery/doorbell_chime)
 	flags = WALL_ITEM
 
 CAPABILITIES(/obj/machinery/button/doorbell)
-	op("doorbell_press", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Press"), then(PROC_REF(interaction_press_impl)))
-	op("doorbell_rename", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"),
+	// The subtype handles item touches; multitool and wrench actions keep their higher priority.
+	extend("button_press_item", priority(OP_PRIORITY_DEFAULT - 2))
+	extend("button_press", priority(OP_PRIORITY_DEFAULT - 3))
+	op("doorbell_press", hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Press"), then(PROC_REF(interaction_press_impl)))
+	op("doorbell_rename", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), needs(req(/obj/item, because = MSG(doorbell/needs_item)), req_adjacent(), req_capable()),
 		asks(/datum/prompt/text/doorbell_label, fields = list("question" = computed(PROC_REF(rename_question)), "title" = computed(PROC_REF(rename_title)), "default" = computed(PROC_REF(rename_default)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), when = PROC_REF(rename_possible)), then(PROC_REF(rename_fingerprint)), then(PROC_REF(doorbell_named)))
 	param(nameof(dir), pos = 1)
 	param(nameof(building), pos = 2)
@@ -194,6 +199,6 @@ CAPABILITIES(/obj/machinery/button/doorbell)
 /// Opening the rename records the touch even when the visitor cancels the question.
 /datum/prompt/text/doorbell_label/prepare(datum/act/A)
 	..()
-	var/obj/machinery/button/doorbell/bell = owner
+	var/obj/machinery/button/doorbell/bell = A?.holder
 	if(istype(bell))
 		bell.add_fingerprint(answerer)

@@ -81,7 +81,7 @@
 /obj/machinery/computer/telecomms/traffic/proc/traffic_access(mob/user)
 	add_fingerprint(user)
 	user.set_machine(src)
-	if(!src.allowed(user) && !emagged)
+	if(!src.allowed(user) && !emagged())
 		to_chat(user, span_warning("ACCESS DENIED."))
 		return FALSE
 	return TRUE

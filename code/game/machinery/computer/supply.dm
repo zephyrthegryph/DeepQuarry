@@ -32,6 +32,7 @@
 CAPABILITIES(/obj/machinery/computer/supplycomp)
 	op("open_ui", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(lets_in_holds), because = PROC_REF(lets_in_refusal))), then(TYPE_PROC_REF(/atom, op_open_ui)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	extend("emag.use", binds(menu()), needs(req_adjacent(), req_capable()), label("Emag"))
 
 /// Requirement (was REQ_* lets_in): the legacy check answers TRUE to pass.
 /obj/machinery/computer/supplycomp/proc/lets_in_holds(datum/act/op/A)

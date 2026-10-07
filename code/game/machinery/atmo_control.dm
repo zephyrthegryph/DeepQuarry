@@ -19,7 +19,6 @@
 	desc = "Senses atmospheric conditions."
 
 	anchored = TRUE
-	state = 0
 
 	var/id_tag
 	var/frequency = PUMPS_FREQ

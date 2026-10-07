@@ -82,7 +82,7 @@ CAPABILITIES(/datum/prompt/yes_no/shuttle_emag_launch)
 /obj/machinery/computer/shuttle/proc/emag_launch_chosen(datum/act/op/A)
 	if(!A.answer || !A.answer.value)
 		return
-	if(!emagged && !SSemergency_shuttle.location())
+	if(!emagged() && !SSemergency_shuttle.location())
 		to_chat(world, span_boldnotice("Alert: Shuttle launch time shortened to 10 seconds!"))
 		SSemergency_shuttle.set_launch_countdown(10)
 		set_emagged(1)
@@ -96,7 +96,7 @@ CAPABILITIES(/datum/prompt/yes_no/shuttle_emag_launch)
 
 
 /obj/machinery/computer/shuttle/proc/shuttle_can_emag_launch(datum/act/op/A)
-	return operable() && SSticker && !SSemergency_shuttle.location() && A.actor && !emagged
+	return operable() && SSticker && !SSemergency_shuttle.location() && A.actor && !emagged()
 
 /datum/prompt/choice/shuttle_authorization/prepare(datum/act/A)
 	..()

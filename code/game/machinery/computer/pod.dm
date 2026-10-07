@@ -59,6 +59,8 @@ TRACKED_BRIDGED(/obj/machinery/computer/pod, timing, CHANGE_MACHINE_SETTINGS)
 	tgui_interact(user)
 	return TRUE
 
+MSG_DEF_SELF(pod/access_denied, "access denied")
+
 CAPABILITIES(/obj/machinery/computer/pod)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), STAT_OPERABLE))
 	interface("PodComputer")
@@ -136,7 +138,8 @@ CAPABILITIES(/obj/machinery/computer/pod)
 	req_access = list(ACCESS_SYNDICATE)
 
 CAPABILITIES(/obj/machinery/computer/pod/old/syndicate)
-	extend("open_ui_impl", needs(req(PROC_REF(lets_in_holds), because = "access denied")))
+	extend("ui_open", needs(req(PROC_REF(lets_in_holds), because = MSG(pod/access_denied))))
+	extend("open_ui_impl", needs(req(PROC_REF(lets_in_holds), because = MSG(pod/access_denied))))
 
 /obj/machinery/computer/pod/old/syndicate/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)

@@ -85,8 +85,10 @@
 	print_form(strain, user)
 	return TRUE
 
+MSG_DEF_SELF(pandemic/beaker_loaded, "a beaker is already loaded")
+
 CAPABILITIES(/obj/machinery/computer/pandemic)
-	op("insert_beaker", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert beaker"), when(PROC_REF(beaker_item_holds)), needs(req(PROC_REF(empty_slot_holds), because = "a beaker is already loaded")), then(PROC_REF(interaction_insert_beaker)))
+	op("insert_beaker", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert beaker"), when(PROC_REF(beaker_item_holds)), needs(req(PROC_REF(empty_slot_holds), because = MSG(pandemic/beaker_loaded))), then(PROC_REF(interaction_insert_beaker)))
 	interface("Pandemic", state = nameof(GLOB.tgui_default_state))
 	op("create_culture_bottle", ui_act("create_culture_bottle", arg("index", num())), then(PROC_REF(ui_act_create_culture_bottle)))
 	op("create_vaccine_bottle", ui_act("create_vaccine_bottle", arg("index", schema_text(4096))), then(PROC_REF(ui_act_create_vaccine_bottle)))

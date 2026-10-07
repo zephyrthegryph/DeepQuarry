@@ -8,6 +8,8 @@
 	anchored = 1.0
 	density = 0
 
+MSG_DEF_SELF(santa/present_unavailable, "only Santa can give presents (be nice or you might end up in Santa's sack)")
+
 CAPABILITIES(/obj/structure/event/present)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(10))
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
@@ -48,7 +50,7 @@ CAPABILITIES(/obj/structure/event/present)
 
 
 CAPABILITIES(/obj/structure/event/santa_sack)
-	op("give_present", hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(santa_present_allowed), because = "only Santa can give presents (be nice or you might end up in Santa's sack)")), asks(/datum/prompt/choice, fields = list("title" = "Give Present", "question" = "Choose who to give a present to.", "choices" = computed(PROC_REF(santa_present_receivers)), "timeout" = 0)), then(PROC_REF(present_receiver_chosen)))
+	op("give_present", hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(santa_present_allowed), because = MSG(santa/present_unavailable))), asks(/datum/prompt/choice, fields = list("title" = "Give Present", "question" = "Choose who to give a present to.", "choices" = computed(PROC_REF(santa_present_receivers)), "timeout" = 0)), then(PROC_REF(present_receiver_chosen)))
 	op("bind_sack", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Bind/unbind sack"), needs(req_adjacent(), req_capable()), then(PROC_REF(santa_sack_setanchor)))
 
 /// Requirement: only Santa hands out presents.

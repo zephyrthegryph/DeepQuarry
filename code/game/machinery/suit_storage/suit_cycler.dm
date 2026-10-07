@@ -293,12 +293,14 @@ STAT(/obj/machinery/suit_cycler, electrified, TOP, base = 0)
 /// The cycler won't start with a living thing inside it unless the safeties are off: the safety wire cut or pulsed, or an emag (safety_wire()).
 STAT(/obj/machinery/suit_cycler, safeties, ALL)
 
+MSG_DEF_SELF(suit_cycler/cannot_leave, "you can't do that right now")
+
 CAPABILITIES(/obj/machinery/suit_cycler)
 	op("cycler_insert_grab", item(/obj/item/grab), priority(OP_PRIORITY_DEFAULT - 1), label("Put in cycler"), needs(req(PROC_REF(can_insert_grabbed_holds), because = PROC_REF(can_insert_grabbed_refusal))), then(PROC_REF(interaction_insert_grab)))
 	op("cycler_insert_helmet", item(/obj/item/clothing/head/helmet/space/void), priority(OP_PRIORITY_DEFAULT - 1), label("Fit helmet"), when(PROC_REF(cycler_helmet_offered)), needs(req(PROC_REF(can_insert_helmet_holds), because = PROC_REF(can_insert_helmet_refusal))), then(PROC_REF(interaction_insert_helmet)))
 	op("cycler_insert_suit", item(/obj/item/clothing/suit/space/void), priority(OP_PRIORITY_DEFAULT - 1), label("Fit voidsuit"), needs(req(PROC_REF(can_insert_suit_holds), because = PROC_REF(can_insert_suit_refusal))), then(PROC_REF(interaction_insert_suit)))
 	op("cycler_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
-	op("cycler_leave", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Cycler"), needs(req_adjacent(), req_capable(), req(PROC_REF(cycler_actor_can_act), because = "you can't do that right now")), then(PROC_REF(interaction_leave)))
+	op("cycler_leave", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Cycler"), needs(req_adjacent(), req_capable(), req(PROC_REF(cycler_actor_can_act), because = MSG(suit_cycler/cannot_leave))), then(PROC_REF(interaction_leave)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cycler_has_work), wakes_on = list(nameof(active), nameof(irradiating)))
 	interface("SuitCycler", state = nameof(GLOB.tgui_notcontained_state))
 	space(SPACE_PANEL, door = nameof(panel_open))
@@ -330,7 +332,7 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	data["locked"] = locked
 	data["active"] = active
 	data["uv_active"] = (active && irradiating > 0)
-	data["max_uv_level"] = emagged ? 5 : 3
+	data["max_uv_level"] = emagged() ? 5 : 3
 	if(helmet)
 		data["helmet"] = helmet.name
 	else
@@ -362,7 +364,7 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 		department_keys += key
 
 	// emagged at the bottom
-	if(emagged)
+	if(emagged())
 		for(var/key in emagged_departments)
 			department_keys += key
 
@@ -391,7 +393,7 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 	var/choice = department
 	if(choice in departments)
 		target_department_static = departments[choice]
-	else if(emagged && (choice in emagged_departments))
+	else if(emagged() && (choice in emagged_departments))
 		target_department_static = emagged_departments[choice]
 		. = TRUE
 
@@ -402,7 +404,7 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 		. = TRUE
 
 /obj/machinery/suit_cycler/proc/ui_act_radlevel(datum/act/op/A, radlevel)
-	radiation_level = clamp(radlevel, 1, emagged ? 5 : 3)
+	radiation_level = clamp(radlevel, 1, emagged() ? 5 : 3)
 	. = TRUE
 
 /obj/machinery/suit_cycler/proc/ui_act_repair_suit(datum/act/op/A)

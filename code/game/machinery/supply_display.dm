@@ -47,7 +47,7 @@
 
 /obj/machinery/status_display/supply_display/receive_signal/(datum/signal/signal)
 	if(signal.data["command"] == "supply")
-		mode = STATUS_DISPLAY_CUSTOM
+		set_mode(STATUS_DISPLAY_CUSTOM)
 		refresh()
 	else
 		..(signal)

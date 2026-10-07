@@ -1,3 +1,5 @@
+TRACKED(/obj/item/card/id/guest, expired)
+
 /////////////////////////////////////////////
 //Guest pass ////////////////////////////////
 /////////////////////////////////////////////
@@ -45,9 +47,12 @@ APPEARANCE_NONE(/obj/item/card/id/guest)
 	return
 
 // Replaces the card's own flash: the old override ran both and flashed the pass twice.
+MSG_DEF_SELF(guest_pass/deactivation_unavailable, "this guest pass is already deactivated or no longer carried")
+
 CAPABILITIES(/obj/item/card/id/guest)
+	without("show")
 	op("show_pass", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HELP, I_DISARM, I_GRAB), label("Show"), then(PROC_REF(interaction_guest_pass_show)))
-	op("deactivate_pass", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HURT), label("Deactivate"), needs(req(PROC_REF(deactivation_allowed), because = "this guest pass is already deactivated or no longer carried")),
+	op("deactivate_pass", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HURT), label("Deactivate"), needs(req(PROC_REF(deactivation_allowed), because = MSG(guest_pass/deactivation_unavailable))),
 		asks(/datum/prompt/yes_no, fields = list("title" = "Confirm Deactivation", "question" = "Do you really want to deactivate this guest pass? (you can't reactivate it)", "timeout" = 0)), then(PROC_REF(interaction_guest_pass_deactivate)))
 
 /// Old attack_self outside combat mode: flash the pass.
@@ -61,19 +66,19 @@ CAPABILITIES(/obj/item/card/id/guest)
 /// Old attack_self in combat mode: deactivate the pass.
 /obj/item/card/id/guest/proc/deactivation_allowed(datum/act/op/A)
 	var/mob/living/user = A.actor
-	return istype(user) && loc == user && !user.incapacitated() && icon_state != "guest-invalid"
+	return istype(user) && (src in contents_of(user)) && !user.incapacitated() && !expired
 
 /obj/item/card/id/guest/proc/interaction_guest_pass_deactivate(datum/act/op/A)
 	if(!A.answer?.value)
 		return OP_OK
 	var/mob/living/user = A.actor
-	if(icon_state != "guest-invalid")
+	if(!expired)
 		//rip guest pass </3
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + "deactivates %T%."))
 		icon_state = "guest-invalid"
 		update_icon()
 		EXPIRY_STAMP(src, expiration_time, CLOCK_WORLD)
-		expired = 1
+		set_expired(TRUE)
 
 /obj/item/card/id/guest/Initialize(mapload)
 	. = ..()
@@ -88,7 +93,7 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 	visible_message(span_warning("\The [src] flashes a few times before turning red."))
 	icon_state = "guest-invalid"
 	update_icon()
-	expired = 1
+	set_expired(TRUE)
 
 /////////////////////////////////////////////
 //Guest pass terminal////////////////////////

@@ -88,6 +88,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	op("deltoken", ui_act("deltoken", arg("deltoken", num())), then(PROC_REF(ui_act_deltoken)))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	extend("emag.use", binds(menu()), needs(req_adjacent(), req_capable()), label("Emag"))
 
 /obj/machinery/computer/message_monitor/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -227,7 +228,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
 		temp = noserver
 		return TRUE
-	linkedServer().active = !linkedServer().active
+	linkedServer().set_active(!linkedServer().active)
 	. = TRUE
 //Clears the logs - KEY REQUIRED
 

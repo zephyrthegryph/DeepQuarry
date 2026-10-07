@@ -75,6 +75,7 @@
 //Someone needs to break down the dat += into chunks instead of long ass lines.
 CAPABILITIES(/obj/machinery/computer/secure_data)
 	interface("SecurityRecords", title = "Security Records")
+	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(record_open_touch)))
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("login", ui_act("login", arg("login_type", num())), then(PROC_REF(ui_act_login)))
@@ -100,8 +101,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		then(PROC_REF(modal_edit)))
 	op("add_c", ui_act("modal:add_c", arg("arguments")), asks(/datum/prompt/text, fields = list("question" = "Please enter your message:", "inline" = TRUE, "timeout" = 0), step = "comment"), then(PROC_REF(modal_add_comment)))
 	op("secure_data_eject_id", menu(), label("Eject ID Card"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_secure_data_eject_id)))
-	op("secure_data_insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), when(req_empty(nameof(scan))), then(PROC_REF(interaction_secure_data_insert_id)))
-	op("open_ui_fingerprint", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_open_ui_fingerprint)))
+	op("secure_data_insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT), label("Insert ID"), when(req_empty(nameof(scan))), then(PROC_REF(interaction_secure_data_insert_id)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(secure_data_emp)))
 
 /obj/machinery/computer/secure_data/ui_data(datum/act/eval/A)
@@ -673,3 +673,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 /// The selected record (a relation view).
 /obj/machinery/computer/secure_data/proc/active2() as /datum/data/record
 	return active2
+
+/obj/machinery/computer/secure_data/proc/record_open_touch(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK

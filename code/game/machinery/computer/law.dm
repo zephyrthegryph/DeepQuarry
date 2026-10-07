@@ -1,3 +1,6 @@
+MSG_DEF_SELF(upload/item_required, "needs an item")
+MSG_DEF_SELF(upload/module_required, "needs a AI module")
+
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
 
 /obj/machinery/computer/aiupload
@@ -12,7 +15,7 @@
 
 CAPABILITIES(/obj/machinery/computer/aiupload)
 	op("access_internals", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Access Computer's Internals"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_access_internals)))
-	op("install_module", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Install module"), needs(req(PROC_REF(can_connect_holds), because = PROC_REF(can_connect_refusal))), then(PROC_REF(interaction_install)))
+	op("install_module", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Install module"), needs(req(/obj/item, because = MSG(upload/item_required)), req_adjacent(), req_capable(), req(PROC_REF(can_connect_holds), because = PROC_REF(can_connect_refusal))), then(PROC_REF(interaction_install)))
 	op("select_ai", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Select AI"), needs(req(PROC_REF(can_select_ai_holds), because = PROC_REF(can_select_ai_refusal))),
 		asks(/datum/prompt/choice/ai_upload_selection, fields = list("title" = "AI selection", "question" = "AI signals detected:"), step = "selection"), then(PROC_REF(interaction_select_ai)))
 	op("observer_view", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("View"), then(TYPE_PROC_REF(/atom, op_swallow)))
@@ -71,7 +74,7 @@ CAPABILITIES(/obj/machinery/computer/aiupload)
 
 
 CAPABILITIES(/obj/machinery/computer/borgupload)
-	op("install_module", item(/obj/item/aiModule), priority(OP_PRIORITY_DEFAULT - 1), label("Install module"), then(PROC_REF(interaction_install)))
+	op("install_module", inputs(item(/obj/item/aiModule), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Install module"), needs(req(/obj/item/aiModule, because = MSG(upload/module_required)), req_adjacent(), req_capable()), then(PROC_REF(interaction_install)))
 	op("select_borg", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Select cyborg"), needs(req(PROC_REF(can_select_borg_holds), because = PROC_REF(can_select_borg_refusal))),
 		asks(/datum/prompt/choice/borg_upload_selection, fields = list("title" = "Borg selection", "question" = "Unshackled borg signals detected:"), step = "selection"), then(PROC_REF(interaction_select_borg)))
 	op("observer_view", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("View"), then(TYPE_PROC_REF(/atom, op_swallow)))
