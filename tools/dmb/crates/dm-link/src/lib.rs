@@ -10,6 +10,15 @@ pub fn is_reserved_string_index(index: u32) -> bool {
     (0xffcd..=0xfff1).contains(&index) || index == 0xffff
 }
 
+/// Confirmed native holes only; other table policies remain independent.
+pub fn is_reserved_table_index(table: Table, index: u32) -> bool {
+    match table {
+        Table::String => is_reserved_string_index(index),
+        Table::Procedure => index == 0xffff,
+        _ => false,
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Table {
     String,
@@ -207,8 +216,8 @@ impl LinkTables {
         let mut indexes = BTreeMap::new();
         let mut occupied: BTreeMap<Table, BTreeSet<u32>> = BTreeMap::new();
         for (key, index) in inventory.fixed {
-            if key.table() == Table::String && is_reserved_string_index(index) {
-                return Err(LinkError::ReservedIndex(Table::String, index));
+            if is_reserved_table_index(key.table(), index) {
+                return Err(LinkError::ReservedIndex(key.table(), index));
             }
             if !content.contains_key(&key) {
                 return Err(LinkError::UnknownKey(key));
@@ -263,8 +272,8 @@ impl LinkTables {
                 }
                 let mut next = 0u64;
                 for key in order {
-                    while table == Table::String
-                        && u32::try_from(next).is_ok_and(is_reserved_string_index)
+                    while u32::try_from(next)
+                        .is_ok_and(|index| is_reserved_table_index(table, index))
                     {
                         next += 1;
                     }
@@ -319,8 +328,8 @@ impl LinkTables {
                     fresh.as_slice()
                 };
                 for &key in allocation {
-                    while table == Table::String
-                        && u32::try_from(next).is_ok_and(is_reserved_string_index)
+                    while u32::try_from(next)
+                        .is_ok_and(|index| is_reserved_table_index(table, index))
                     {
                         next += 1;
                     }
@@ -673,6 +682,55 @@ mod tests {
             LinkTables::build(invalid).unwrap_err(),
             LinkError::ReservedIndex(Table::String, 0xffe9)
         );
+    }
+
+    #[test]
+    fn procedure_allocation_skips_native_absent_slot_in_both_order_modes() {
+        let owner = SymbolId::of("/datum/owner");
+        let name = SymbolId::of("repeated");
+        let mut inventory = LinkInventory::default();
+        inventory.spellings = vec![
+            (owner, Arc::from(b"/datum/owner".as_slice())),
+            (name, Arc::from(b"repeated".as_slice())),
+        ];
+        let mut order = Vec::new();
+        for occurrence in 0..65536 {
+            let key = Key::Proc {
+                owner,
+                name,
+                occurrence,
+            };
+            inventory.entries.push(Entry {
+                key,
+                content: Arc::from([]),
+            });
+            order.push(key);
+        }
+        for explicit in [false, true] {
+            let mut input = inventory.clone();
+            if explicit {
+                input.orders.insert(Table::Procedure, order.clone());
+            } else {
+                input.append_orders.insert(Table::Procedure, order.clone());
+            }
+            let tables = LinkTables::build(input).unwrap();
+            for (ordinal, key) in order.iter().enumerate() {
+                let expected = ordinal as u32 + u32::from(ordinal >= 0xffff);
+                assert_eq!(tables.index(*key), Some(expected));
+                assert!(!is_reserved_table_index(Table::Procedure, expected));
+            }
+            assert_eq!(tables.index(order[65535]), Some(0x10000));
+        }
+        let mut invalid = LinkInventory::default();
+        invalid.spellings = inventory.spellings.clone();
+        invalid.entries.push(inventory.entries[0].clone());
+        invalid.fixed.push((order[0], 0xffff));
+        assert_eq!(
+            LinkTables::build(invalid).unwrap_err(),
+            LinkError::ReservedIndex(Table::Procedure, 0xffff)
+        );
+        assert!(!is_reserved_table_index(Table::Resource, 0xffff));
+        assert!(!is_reserved_table_index(Table::Variable, 0xffff));
     }
 
     #[test]

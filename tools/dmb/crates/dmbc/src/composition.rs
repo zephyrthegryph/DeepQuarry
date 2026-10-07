@@ -551,6 +551,7 @@ fn compose_records(
     for (index, identity) in procs {
         let owner = identity.owner;
         let name = identity.name;
+        reserve_procedure_sentinel(&mut dmb);
         if index as usize != dmb.procs.len() {
             return Err(CompositionError::NonContiguous(
                 "procedure table indexes".into(),
@@ -670,6 +671,7 @@ fn compose_records(
         return Err(unsupported("duplicate helper artifact"));
     }
     for (index, key) in helpers {
+        reserve_procedure_sentinel(&mut dmb);
         if index as usize != dmb.procs.len() {
             return Err(CompositionError::NonContiguous(
                 "helper procedure indexes".into(),
@@ -704,6 +706,7 @@ fn compose_records(
         return Err(unsupported("duplicate initializer artifact"));
     }
     for (index, identity) in initializers {
+        reserve_procedure_sentinel(&mut dmb);
         if index as usize != dmb.procs.len() {
             return Err(CompositionError::NonContiguous(
                 "initializer indexes".into(),
@@ -824,6 +827,19 @@ fn attached_key_present(dmb: &Dmb, key: Key, index: u32, map_initializers: &Hash
     }
 }
 
+/// Native wide ProcIDs keep the nullable NONE slot as an exact blank record.
+fn reserve_procedure_sentinel(dmb: &mut Dmb) {
+    if dm_link::is_reserved_table_index(dm_link::Table::Procedure, dmb.procs.len() as u32) {
+        dmb.procs.push(Proc {
+            strings: [byond_dmb::ids::NONE; 4],
+            source_parameter: 255,
+            source_kind: 0,
+            flags: 4,
+            extended_flags: None,
+            code_locals_args: [byond_dmb::ids::NONE; 3],
+        });
+    }
+}
 fn emit_anonymous(
     dmb: &mut Dmb,
     strings: &mut StringIndex,
@@ -860,6 +876,23 @@ fn emit_anonymous(
 mod tests {
     use super::*;
     #[test]
+    fn native_reserved_procedure_padding_roundtrips_and_preserves_next_proc() {
+        let mut dmb=Dmb::from_bytes(include_bytes!("../../../fixtures/native_template.bin")).unwrap();
+        let template=dmb.procs[0].clone();
+        dmb.procs.resize(byond_dmb::ids::NONE as usize,template.clone());
+        reserve_procedure_sentinel(&mut dmb);
+        assert!(dmb.is_reserved_proc_slot(byond_dmb::ids::NONE as usize));
+        let count=dmb.procs.len();
+        reserve_procedure_sentinel(&mut dmb);
+        assert_eq!(dmb.procs.len(),count);
+        dmb.procs.push(template.clone());
+        dmb.header.flags |= 0x4000_0000;
+        dmb.validate_references().unwrap();
+        let decoded=Dmb::from_bytes(&dmb.to_bytes().unwrap()).unwrap();
+        decoded.validate_references().unwrap();
+        assert!(decoded.is_reserved_proc_slot(byond_dmb::ids::NONE as usize));
+        assert_eq!(decoded.procs[0x10000],template);
+    }    #[test]
     fn writer_string_interning_preserves_reserved_holes_and_safe_field_decoding() {
         let mut image=Dmb::from_bytes(include_bytes!("../../../fixtures/native_template.bin")).unwrap();
         image.strings.resize(0xffcd, DmString {data:Vec::new(),long_chunks:0});

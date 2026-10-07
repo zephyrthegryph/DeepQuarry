@@ -10,6 +10,10 @@ round-trip validation on an invalid reserved procedure record. Canonical
 procedure allocation must leave the nullable `0xffff` slot as its exact empty
 native record; this boundary fix is underway. External time was 30.715 s,
 sampled private memory 3,210,928,128 bytes; no output pair was produced.
+Both canonical procedure allocation modes now skip `0xffff`; the composer
+materializes its exact native empty record for bodies, helpers and initializers.
+The 65,536-entry allocation gate and complete binary sentinel/next-record
+round-trip gate pass. Other table reservation rules were not broadened.
 Release probe 37 cleared class composition and reached assembled-bytecode
 validation. It stopped on variable modifier `0xffe9`; the new canonical string
 allocator can assign a field selector to reserved VM modifier IDs, unlike the
