@@ -52,7 +52,7 @@ CAPABILITIES(/obj/structure/lift)
 
 /// Old attack_hand with any other stance.
 /obj/structure/lift/proc/interaction_hand(datum/act/op/A)
-	interact(A.actor, A.actor.input_stance())
+	interact(A.actor, I_HELP)
 	return OP_OK
 
 /// `stance`: the touch's stance, passed on to pressed().

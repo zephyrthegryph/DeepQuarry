@@ -64,21 +64,14 @@
 
 /// Old attack_ghost: view the screen; staff may turn a powered-off computer on. Never fell through.
 /obj/item/modular_computer/proc/modular_computer_ghost_view(datum/act/op/A)
-	var/mob/observer/dead/user = A.actor
-	if(enabled)
-		tgui_interact(user)
-	else if(check_rights_for(user.client, R_ADMIN|R_EVENT|R_DEBUG))
-		var/response = A.step_value("k98")
-		if(isnull(response))
-			return OP_OK
-		if(response == "Yes")
-			turn_on(user)
+	tgui_interact(A.actor)
 	return OP_OK
 
-/// Staff are asked before they turn a powered-off computer on.
-/obj/item/modular_computer/proc/ghost_may_turn_on(datum/act/op/A)
-	var/mob/observer/dead/user = A.actor
-	return !enabled && check_rights_for(user?.client, R_ADMIN|R_EVENT|R_DEBUG)
+/// Old attack_ghost: staff turn a powered-off computer on if they say so.
+/obj/item/modular_computer/proc/modular_computer_ghost_power(datum/act/op/A)
+	if(A.step_value("k98") == "Yes")
+		turn_on(A.actor)
+	return OP_OK
 
 /// Old attack_ai: use it as in hand.
 /obj/item/modular_computer/proc/modular_computer_silicon_use(datum/act/op/A)
@@ -87,10 +80,7 @@
 
 /// Old attack_hand.
 /obj/item/modular_computer/proc/interaction_hand(datum/act/op/A)
-	var/mob/user = A.actor
-	if(anchored || ispAI(user))
-		return attack_self(user) ? OP_OK : OP_DECLINE
-	return OP_DECLINE
+	return attack_self(A.actor) ? OP_OK : OP_DECLINE
 
 // On-click handling. Turns on the computer if it's off and opens the GUI.
 /// Old attack_self.

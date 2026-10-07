@@ -26,7 +26,7 @@ CAPABILITIES(/obj/item/stack/tile/maintenance_panel)
 /obj/item/stack/tile/maintenance_panel/proc/maintenance_panel_self(datum/act/op/A)
 	var/mob/user = A.actor
 	var/turf/T = user.loc
-	if(!user || (loc != user && !isrobot(user)) || user.stat || user.loc != T)
+	if(!user || user.stat || user.loc != T)
 		return OP_DECLINE
 
 	// Get data for building windows here.

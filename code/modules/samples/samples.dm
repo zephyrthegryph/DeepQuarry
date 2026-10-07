@@ -59,9 +59,16 @@ TYPE_TABLE_DECLARE(/obj/item/research_sample, research_sample_resources, list(/o
 	make_sellable(/datum/sellable/research_sample)
 
 CAPABILITIES(/obj/item/research_sample)
-	op("pick_up", hand(), label("Pick up"), then(PROC_REF(sample_pick_up)))
-	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_self)))
+	op("pick_up", hand(), label("Pick up"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(sample_pick_up)))
+	op("pick_up_robot", hand(), label("Pick up"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(sample_pick_up_robot)))
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_self)))
+	op("self_robot", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon/robot)), then(TYPE_PROC_REF(/atom, op_swallow)))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
+
+/// A cyborg picks a sample up unharmed.
+/obj/item/research_sample/proc/sample_pick_up_robot(datum/act/op/A)
+	pick_up_by_hand(A.actor)
+	return OP_OK
 
 /// Picking a sample up may burn an unprotected holder.
 /obj/item/research_sample/proc/sample_pick_up(datum/act/op/A)
@@ -115,9 +122,6 @@ CAPABILITIES(/obj/item/research_sample)
 					H.visible_message(span_notice("\The [src] flickers with kaleidoscopic light. You should report this to someone immediately."))
 			H.drop_from_inventory(src, get_turf(H))
 			return
-
-	if(isrobot(user))
-		burn_user = FALSE
 
 	if(burn_user)
 		M.injure(INJURY_BURN, rand(min_damage,max_damage), null, src)
@@ -186,9 +190,6 @@ CAPABILITIES(/obj/item/research_sample)
 		else	//short delay, so you can abort/cancel if you misclick
 			task_timed(user, 3 SECONDS, src, src, PROC_REF(crush_done), list(H))
 			return OP_OK
-
-	if(isrobot(user))
-		burn_user = FALSE
 
 	if(burn_user)
 		M.injure(INJURY_BURN, rand(min_damage,max_damage), null, src)

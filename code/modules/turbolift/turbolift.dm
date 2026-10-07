@@ -21,13 +21,17 @@ CAPABILITIES(/datum/turbolift)
 	owns_one(nameof(control_panel_interior), /obj/structure/lift/panel)
 	owns_many(nameof(floors))
 
-/// Used for controller processing: periodic_step() drives the lift while set (DECLARE_PERIODIC_WHILE).
+/// Used for controller processing: lift_step() drives the lift once a second while set (a timer chain, arm_lift()).
 OM_FIELD_TYPED(/datum/turbolift, tmp, busy_state, null, CHANGE_DATUM_A)
-DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 
-/datum/turbolift/New()
-	..()
-	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
+/// Starts the one-second step chain when the lift has work and none is pending; each step re-arms it while work remains.
+/datum/turbolift/proc/arm_lift()
+	if(busy_state && !after_pending(src, "lift_step"))
+		after(src, 1 SECOND, PROC_REF(lift_step), key = "lift_step")
+
+/datum/turbolift/proc/lift_step()
+	lift_step_body()
+	arm_lift()
 
 /datum/turbolift/proc/emergency_stop()
 	cancel_pending_floors()
@@ -120,7 +124,7 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 #define LIFT_WAITING_A 2	// Waiting 15ds after arrival to announce, then goto LIFT_WAITING_B
 #define LIFT_WAITING_B 3	// Waiting floor_wait_delay after announcement before potentially moving again.
 
-/datum/turbolift/periodic_step()
+/datum/turbolift/proc/lift_step_body()
 	if(EXPIRY_ACTIVE(src, next_process, CLOCK_WORLD))
 		return
 	switch(busy_state)
@@ -233,6 +237,7 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 	floor.pending_move(src)
 	rel_add(src, nameof(queued_floors), floor)
 	set_busy_state(LIFT_MOVING)
+	arm_lift()
 
 // TODO: dummy machine ('lift mechanism') in powered area for functionality/blackout checks.
 /datum/turbolift/proc/is_functional()

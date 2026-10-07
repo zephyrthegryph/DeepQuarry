@@ -423,27 +423,28 @@ CAPABILITIES(/obj/item/roulette_ball/hollow)
 
 CAPABILITIES(/obj/machinery/wheel_of_fortune)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
+	op("wheel_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(not_spinning), because = MSG(casino/wheel_spinning))), then(PROC_REF(interaction_use)))
+	op("wheel_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req(PROC_REF(not_busy_and_actor_able), because = PROC_REF(not_busy_refusal)), req(PROC_REF(can_manage), because = MSG(casino/access_denied))), then(PROC_REF(interaction_id)))
+	op("wheel_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy lottery ticket"), needs(req(PROC_REF(not_busy_and_actor_able), because = PROC_REF(not_busy_refusal)), req(PROC_REF(can_buy_ticket), because = PROC_REF(can_buy_ticket_refusal))), then(PROC_REF(interaction_cash)))
+	op("wheel_setinterval", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Change interval"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_setinterval_verb)))
 
-EXTEND_INTERACTIONS(/obj/machinery/wheel_of_fortune, \
-	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_use), REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/wheel_of_fortune/proc/not_spinning), "the wheel of fortune is already spinning")), \
-	INTERACT_INSERT(list(/obj/item/card/id, /obj/item/pda), PROC_REF(interaction_id), "Management controls", REQ_ON(PRED_TARGET, /obj/machinery/wheel_of_fortune/proc/not_busy_and_actor_able, null), REQ_TARGET_STATE(/obj/machinery/wheel_of_fortune/proc/can_manage)), \
-	INTERACT_INSERT(/obj/item/spacecasinocash, PROC_REF(interaction_cash), "Buy lottery ticket", REQ_ON(PRED_TARGET, /obj/machinery/wheel_of_fortune/proc/not_busy_and_actor_able, null), REQ_TARGET_STATE(/obj/machinery/wheel_of_fortune/proc/can_buy_ticket)), \
-	INTERACT_VERB("Change interval", PROC_REF(interaction_setinterval_verb), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now")), \
-)
+MSG_DEF_SELF(casino/wheel_spinning, "the wheel of fortune is already spinning")
+MSG_DEF_SELF(casino/access_denied, "access denied")
 
 /// Requirement: the wheel isn't mid-spin.
-/obj/machinery/wheel_of_fortune/proc/not_spinning(mob/user, atom/target, obj/item/held)
+/obj/machinery/wheel_of_fortune/proc/not_spinning(datum/act/op/A)
 	return !task_busy(src)
 
-/obj/machinery/wheel_of_fortune/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	return wheel_use_stage(user, held, interaction, list())
+/obj/machinery/wheel_of_fortune/proc/interaction_use(datum/act/op/A)
+	wheel_use_stage(A.actor, A.held, list())
+	return OP_OK
 
-/obj/machinery/wheel_of_fortune/proc/wheel_use_stage(mob/user, obj/item/held, datum/interaction/interaction, list/wheel_answers)
+/obj/machinery/wheel_of_fortune/proc/wheel_use_stage(mob/user, obj/item/held, list/wheel_answers)
 	if(user.incapacitated())
 		return TRUE
 	if(ishuman(user) || isrobot(user))
 		if(!("k410" in wheel_answers))
-			open_request(src, /datum/prompt/choice/wheel_review, PROC_REF(wheel_use_answered), answerer = user, wheel_operator = user, wheel_answers = wheel_answers, wheel_key = "k410", wheel_held = held, wheel_interaction = interaction, question = "Choose what to do", title = "Wheel Of Fortune", choices = list("Spin the Wheel! (Not Lottery)", "Set the interval", "Cancel"))
+			open_request(src, /datum/prompt/choice/wheel_review, PROC_REF(wheel_use_answered), answerer = user, wheel_operator = user, wheel_answers = wheel_answers, wheel_key = "k410", wheel_held = held, question = "Choose what to do", title = "Wheel Of Fortune", choices = list("Spin the Wheel! (Not Lottery)", "Set the interval", "Cancel"))
 			return
 		var/_answer_k410 = wheel_answers["k410"]
 		if(isnull(_answer_k410))
@@ -462,26 +463,27 @@ EXTEND_INTERACTIONS(/obj/machinery/wheel_of_fortune, \
 	return TRUE
 
 /// Requirement: the swiped card carries management access.
-/obj/machinery/wheel_of_fortune/proc/can_manage(mob/user, atom/target, obj/item/held)
-	if(!check_access(held))
-		return "access denied"
-	return TRUE
+/obj/machinery/wheel_of_fortune/proc/can_manage(datum/act/op/A)
+	return !!check_access(A.held)
 
-/obj/machinery/wheel_of_fortune/proc/not_busy_and_actor_able(mob/actor, atom/target, obj/item/held)
-	if (task_busy(src))
+/obj/machinery/wheel_of_fortune/proc/not_busy_and_actor_able(datum/act/op/A)
+	return !task_busy(src) && !A.actor.incapacitated()
+
+/// Why not_busy_and_actor_able refuses.
+/obj/machinery/wheel_of_fortune/proc/not_busy_refusal(datum/act/op/A)
+	if(task_busy(src))
 		return "the wheel of fortune is already spinning!"
-	if(actor.incapacitated())
-		return FALSE
-	return TRUE
+	return "you can't do that right now"
 
-/obj/machinery/wheel_of_fortune/proc/interaction_id(mob/user, obj/item/W, datum/interaction/interaction)
-	return wheel_management_stage(user, W, interaction, list())
+/obj/machinery/wheel_of_fortune/proc/interaction_id(datum/act/op/A)
+	wheel_management_stage(A.actor, A.held, list())
+	return OP_OK
 
-/obj/machinery/wheel_of_fortune/proc/wheel_management_stage(mob/user, obj/item/W, datum/interaction/interaction, list/wheel_answers)
+/obj/machinery/wheel_of_fortune/proc/wheel_management_stage(mob/user, obj/item/W, list/wheel_answers)
 	to_chat(user, span_warning("Proper access, allowed staff controls."))
 	if(ishuman(user) || isrobot(user))
 		if(!("k445" in wheel_answers))
-			open_request(src, /datum/prompt/choice/wheel_review, PROC_REF(wheel_management_answered), answerer = user, wheel_operator = user, wheel_answers = wheel_answers, wheel_key = "k445", wheel_held = W, wheel_interaction = interaction, question = "Choose what to do (Management)", title = "Wheel Of Fortune (Management)", choices = list("Spin the Lottery Wheel!", "Toggle Lottery Sales", "Toggle Public Spins", "Reset Lottery", "Cancel"))
+			open_request(src, /datum/prompt/choice/wheel_review, PROC_REF(wheel_management_answered), answerer = user, wheel_operator = user, wheel_answers = wheel_answers, wheel_key = "k445", wheel_held = W, question = "Choose what to do (Management)", title = "Wheel Of Fortune (Management)", choices = list("Spin the Lottery Wheel!", "Toggle Lottery Sales", "Toggle Public Spins", "Reset Lottery", "Cancel"))
 			return
 		var/_answer_k445 = wheel_answers["k445"]
 		if(isnull(_answer_k445))
@@ -511,7 +513,7 @@ EXTEND_INTERACTIONS(/obj/machinery/wheel_of_fortune, \
 
 			if("Reset Lottery")
 				if(!("k469" in wheel_answers))
-					open_request(src, /datum/prompt/choice/wheel_review, PROC_REF(wheel_management_answered), answerer = user, wheel_operator = user, wheel_answers = wheel_answers, wheel_key = "k469", wheel_held = W, wheel_interaction = interaction, question = "Are you sure you want to reset Lottery?", title = "Confirm Lottery Reset", choices = list("Yes", "No"), buttons = TRUE)
+					open_request(src, /datum/prompt/choice/wheel_review, PROC_REF(wheel_management_answered), answerer = user, wheel_operator = user, wheel_answers = wheel_answers, wheel_key = "k469", wheel_held = W, question = "Are you sure you want to reset Lottery?", title = "Confirm Lottery Reset", choices = list("Yes", "No"), buttons = TRUE)
 					return
 				var/confirm = wheel_answers["k469"]
 				if(isnull(confirm))
@@ -523,20 +525,30 @@ EXTEND_INTERACTIONS(/obj/machinery/wheel_of_fortune, \
 					lottery_tickets_ckeys = null
 	return TRUE
 
-/// Requirement: TRUE, or why no ticket can be bought.
-/obj/machinery/wheel_of_fortune/proc/can_buy_ticket(mob/user, atom/target, obj/item/held)
+/// The reason no ticket can be bought, or null.
+/obj/machinery/wheel_of_fortune/proc/ticket_refusal_text(mob/user)
 	if(lottery_sale == "disabled")
 		return "lottery sales are currently disabled"
 	if(user.client && (user.client.ckey in lottery_tickets_ckeys))
 		return "the scanner beeps in an upset manner, you already have a ticket"
-	return TRUE
+	return null
 
-/obj/machinery/wheel_of_fortune/proc/interaction_cash(mob/user, obj/item/spacecasinocash/C, datum/interaction/interaction)
+/// Requirement: a ticket can be bought.
+/obj/machinery/wheel_of_fortune/proc/can_buy_ticket(datum/act/op/A)
+	return isnull(ticket_refusal_text(A.actor))
+
+/// Why can_buy_ticket refuses.
+/obj/machinery/wheel_of_fortune/proc/can_buy_ticket_refusal(datum/act/op/A)
+	return ticket_refusal_text(A.actor)
+
+/obj/machinery/wheel_of_fortune/proc/interaction_cash(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/spacecasinocash/C = A.held
 	if(!user.client)
-		return TRUE
+		return OP_OK
 
 	insert_chip(C, user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/wheel_of_fortune/proc/insert_chip(obj/item/spacecasinocash/cashmoney, mob/user)
 	if(!user.client)
@@ -580,9 +592,9 @@ EXTEND_INTERACTIONS(/obj/machinery/wheel_of_fortune, \
 
 		after(src, 5 SECONDS, PROC_REF(wheel_stops), with = list("The wheel of fortune stops spinning, and the winner is [result]!"))
 
-/obj/machinery/wheel_of_fortune/proc/interaction_setinterval_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_setinterval(user)
-	return TRUE
+/obj/machinery/wheel_of_fortune/proc/interaction_setinterval_verb(datum/act/op/A)
+	interaction_setinterval(A.actor)
+	return OP_OK
 
 /// Old verb body, also called directly from the attack_hand "Set the interval" menu option.
 /obj/machinery/wheel_of_fortune/proc/interaction_setinterval(mob/user)
@@ -625,28 +637,28 @@ EXTEND_INTERACTIONS(/obj/machinery/wheel_of_fortune, \
 
 CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	ref_many(nameof(collar_list), /obj/item/clothing/accessory/collar/casinosentientprize)
+	op("spasm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_use_spasm), because = MSG(casino/spasm_disabled))), then(PROC_REF(interaction_use)))
+	op("spasm_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy prize"), needs(req(PROC_REF(actor_not_incapacitated)), req(PROC_REF(can_buy_prize), because = PROC_REF(can_buy_prize_refusal))), then(PROC_REF(interaction_cash)))
+	op("spasm_collar", item(/obj/item/clothing/accessory/collar/casinosentientprize), priority(OP_PRIORITY_DEFAULT - 1), label("Release prize"), needs(req(PROC_REF(actor_not_incapacitated)), req(PROC_REF(can_release_collar), because = MSG(casino/collar_not_yours))), then(PROC_REF(interaction_collar)))
+	op("spasm_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req(PROC_REF(actor_not_incapacitated)), req(PROC_REF(can_manage), because = MSG(casino/access_denied))), then(PROC_REF(interaction_id)))
 
-EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
-	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_use), REQ_TARGET_STATE(/obj/machinery/casinosentientprize_handler/proc/can_use_spasm)), \
-	INTERACT_INSERT(/obj/item/spacecasinocash, PROC_REF(interaction_cash), "Buy prize", REQ_ON(PRED_ACTOR, /obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated, null), REQ_TARGET_STATE(/obj/machinery/casinosentientprize_handler/proc/can_buy_prize)), \
-	INTERACT_INSERT(/obj/item/clothing/accessory/collar/casinosentientprize, PROC_REF(interaction_collar), "Release prize", REQ_ON(PRED_ACTOR, /obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated, null), REQ_TARGET_STATE(/obj/machinery/casinosentientprize_handler/proc/can_release_collar)), \
-	INTERACT_INSERT(list(/obj/item/card/id, /obj/item/pda), PROC_REF(interaction_id), "Management controls", REQ_ON(PRED_ACTOR, /obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated, null), REQ_TARGET_STATE(/obj/machinery/casinosentientprize_handler/proc/can_manage)), \
-)
+MSG_DEF_SELF(casino/spasm_disabled, "the SPASM is disabled")
 
-/// Requirement: TRUE, or why the SPASM can't be used (an incapacitated user is refused silently by the effect).
-/obj/machinery/casinosentientprize_handler/proc/can_use_spasm(mob/user, atom/target, obj/item/held)
-	if(user.incapacitated())
-		return TRUE
-	if(casinosentientprize_sale == "disabled")
-		return "the SPASM is disabled"
-	return TRUE
+/// Requirement: the SPASM can be used (an incapacitated user is refused silently by the effect).
+/obj/machinery/casinosentientprize_handler/proc/can_use_spasm(datum/act/op/A)
+	return A.actor.incapacitated() || casinosentientprize_sale != "disabled"
 
-/obj/machinery/casinosentientprize_handler/proc/interaction_use(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/casinosentientprize_handler/proc/interaction_use(datum/act/op/A)
+	spasm_use(A.actor, A.held)
+	return OP_OK
+
+/// The SPASM's use; it asks its questions by re-running itself with the same arguments.
+/obj/machinery/casinosentientprize_handler/proc/spasm_use(mob/living/user, obj/item/held = null)
 	if(user.incapacitated())
 		return TRUE
 
 	if(ishuman(user) || isrobot(user))
-		var/_answer_k604 = rerun_ask(user, "k604", PROC_REF(interaction_use), args, /datum/prompt/choice, question = "Choose what to do", title = "SPASM", choices = list("Show selected Prize", "Select Prize", "Become Prize (Please examine yourself first)", "Cancel"))
+		var/_answer_k604 = rerun_ask(user, "k604", PROC_REF(spasm_use), args, /datum/prompt/choice, question = "Choose what to do", title = "SPASM", choices = list("Show selected Prize", "Select Prize", "Become Prize (Please examine yourself first)", "Cancel"))
 		if(isnull(_answer_k604))
 			return
 		switch(_answer_k604)
@@ -669,7 +681,7 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 					to_chat(user, span_warning("This prize is already owned by [selected_collar.ownername]"))
 
 			if("Select Prize")
-				var/_answer_k624 = rerun_ask(user, "k624", PROC_REF(interaction_use), args, /datum/prompt/choice, question = "Select a prize", title = "Chose a collar", choices = collar_list || list())
+				var/_answer_k624 = rerun_ask(user, "k624", PROC_REF(spasm_use), args, /datum/prompt/choice, question = "Select a prize", title = "Chose a collar", choices = collar_list || list())
 				if(isnull(_answer_k624))
 					return
 				rel_set(src, nameof(selected_collar), _answer_k624)
@@ -687,7 +699,7 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 				if(safety_ckey in sentientprizes_ckeys_list)
 					to_chat(user, span_warning("The SPASM beeps in an upset manner, you already have a collar!"))
 					return TRUE
-				var/confirm = rerun_ask(user, "k639", PROC_REF(interaction_use), args, /datum/prompt/choice, question = "Are you sure you want to become a sentient prize?", title = "Confirm Sentient Prize", choices = list("Yes", "No"), buttons = TRUE)
+				var/confirm = rerun_ask(user, "k639", PROC_REF(spasm_use), args, /datum/prompt/choice, question = "Are you sure you want to become a sentient prize?", title = "Confirm Sentient Prize", choices = list("Yes", "No"), buttons = TRUE)
 				if(isnull(confirm))
 					return
 				if(!confirm)
@@ -695,7 +707,7 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 				if(confirm == "No")
 					to_chat(user, span_warning("The SPASM beeps in a sad manner at your impolite decline..."))
 					return TRUE
-				var/confirmitemtf = rerun_ask(user, "k645", PROC_REF(interaction_use), args, /datum/prompt/choice, question = "Would you like to allow others to turn you into an item upon claiming you if they choose to?", title = "Confirm Item TF Preference", choices = list("Yes", "No"), buttons = TRUE)
+				var/confirmitemtf = rerun_ask(user, "k645", PROC_REF(spasm_use), args, /datum/prompt/choice, question = "Would you like to allow others to turn you into an item upon claiming you if they choose to?", title = "Confirm Item TF Preference", choices = list("Yes", "No"), buttons = TRUE)
 				if(isnull(confirmitemtf))
 					return
 				var/allowitemtf = FALSE
@@ -721,37 +733,53 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 				spawn_casinochips(casinosentientprize_price, src.loc)
 	return TRUE
 
-/// Requirement: TRUE, or why no prize can be bought.
-/obj/machinery/casinosentientprize_handler/proc/can_buy_prize(mob/user, atom/target, obj/item/held)
+/// The reason no prize can be bought, or null.
+/obj/machinery/casinosentientprize_handler/proc/buy_prize_refusal_text()
 	if(casinosentientprize_sale == "disabled")
 		return "sentient prize sales are currently disabled"
 	if(!selected_collar)
 		return "select a prize first"
-	return TRUE
+	return null
 
-/obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated(mob/actor, atom/target, obj/item/held)
-	return !actor.incapacitated()
+/// Requirement: a prize can be bought.
+/obj/machinery/casinosentientprize_handler/proc/can_buy_prize(datum/act/op/A)
+	return isnull(buy_prize_refusal_text())
 
-/obj/machinery/casinosentientprize_handler/proc/interaction_cash(mob/user, obj/item/W, datum/interaction/interaction)
+/// Why can_buy_prize refuses.
+/obj/machinery/casinosentientprize_handler/proc/can_buy_prize_refusal(datum/act/op/A)
+	return buy_prize_refusal_text()
+
+/obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated(datum/act/op/A)
+	return !A.actor.incapacitated()
+
+/obj/machinery/casinosentientprize_handler/proc/interaction_cash(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!selected_collar.ownername)
 		if(!user.client)
-			return TRUE
-		var/obj/item/spacecasinocash/C = W
+			return OP_OK
+		var/obj/item/spacecasinocash/C = A.held
 		if(user.client.ckey == selected_collar.sentientprizeckey)
 			insert_chip(C, user, "selfbuy")
-			return TRUE
+			return OP_OK
 		insert_chip(C, user, "buy")
-		return TRUE
+		return OP_OK
 	to_chat(user, span_warning("This Sentient Prize is already owned! If you are the owner you can release the prize by swiping the collar on the SPASM!"))
-	return TRUE
+	return OP_OK
+
+MSG_DEF_SELF(casino/collar_not_yours, "this sentient prize collar isn't yours, please give it to the one it tagged for, belongs to, or a casino staff member")
 
 /// Requirement: the collar belongs to the user (as prize or owner).
-/obj/machinery/casinosentientprize_handler/proc/can_release_collar(mob/user, atom/target, obj/item/clothing/accessory/collar/casinosentientprize/held)
-	if(user.name != held.sentientprizename && user.name != held.ownername)
-		return "this sentient prize collar isn't yours, please give it to the one it tagged for, belongs to, or a casino staff member"
-	return TRUE
+/obj/machinery/casinosentientprize_handler/proc/can_release_collar(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/clothing/accessory/collar/casinosentientprize/held = A.held
+	return user.name == held.sentientprizename || user.name == held.ownername
 
-/obj/machinery/casinosentientprize_handler/proc/interaction_collar(mob/user, obj/item/clothing/accessory/collar/casinosentientprize/C, datum/interaction/interaction)
+/obj/machinery/casinosentientprize_handler/proc/interaction_collar(datum/act/op/A)
+	spasm_collar(A.actor, A.held)
+	return OP_OK
+
+/// Releasing a prize collar; it asks its question by re-running itself with the same arguments.
+/obj/machinery/casinosentientprize_handler/proc/spasm_collar(mob/user, obj/item/clothing/accessory/collar/casinosentientprize/C)
 	if(user.name == C.sentientprizename)
 		if(!C.ownername)
 			to_chat(user,span_notice("If collar isn't disabled and entry removed, please select your entry and insert chips. Or contact staff if you need assistance."))
@@ -760,7 +788,7 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 			to_chat(user,span_notice("If collar isn't disabled and entry removed, please ask your owner to free you with collar swipe on the SPASM, or contact staff if you need assistance."))
 			return TRUE
 	if(user.name == C.ownername)
-		var/confirm = rerun_ask(user, "k717", PROC_REF(interaction_collar), args, /datum/prompt/choice, question = "Are you sure you want to wipe [C.sentientprizename] entry?", title = "Confirm Sentient Prize Release", choices = list("Yes", "No"), buttons = TRUE)
+		var/confirm = rerun_ask(user, "k717", PROC_REF(spasm_collar), args, /datum/prompt/choice, question = "Are you sure you want to wipe [C.sentientprizename] entry?", title = "Confirm Sentient Prize Release", choices = list("Yes", "No"), buttons = TRUE)
 		if(isnull(confirm))
 			return
 		if(confirm == "Yes")
@@ -775,15 +803,18 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 	return TRUE
 
 /// Requirement: the swiped card carries management access.
-/obj/machinery/casinosentientprize_handler/proc/can_manage(mob/user, atom/target, obj/item/held)
-	if(!check_access(held))
-		return "access denied"
-	return TRUE
+/obj/machinery/casinosentientprize_handler/proc/can_manage(datum/act/op/A)
+	return !!check_access(A.held)
 
-/obj/machinery/casinosentientprize_handler/proc/interaction_id(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/casinosentientprize_handler/proc/interaction_id(datum/act/op/A)
+	spasm_id(A.actor, A.held)
+	return OP_OK
+
+/// The management menu; it asks its questions by re-running itself with the same arguments.
+/obj/machinery/casinosentientprize_handler/proc/spasm_id(mob/user, obj/item/W)
 	to_chat(user, span_warning("Proper access, allowed staff controls."))
 	if(ishuman(user) || isrobot(user))
-		var/_answer_k743 = rerun_ask(user, "k743", PROC_REF(interaction_id), args, /datum/prompt/choice, question = "Choose what to do (Management)", title = "SPASM (Management)", choices = list("Toggle Sentient Prize Sales", "Wipe Selected Prize Entry", "Change Prize Value", "Cancel"))
+		var/_answer_k743 = rerun_ask(user, "k743", PROC_REF(spasm_id), args, /datum/prompt/choice, question = "Choose what to do (Management)", title = "SPASM (Management)", choices = list("Toggle Sentient Prize Sales", "Wipe Selected Prize Entry", "Change Prize Value", "Cancel"))
 		if(isnull(_answer_k743))
 			return
 		switch(_answer_k743)
@@ -811,7 +842,7 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 					rel_clear(src, nameof(selected_collar))
 					return TRUE
 				var/safety_ckey = selected_collar.sentientprizeckey
-				var/confirm = rerun_ask(user, "k770", PROC_REF(interaction_id), args, /datum/prompt/choice, question = "Are you sure you want to wipe [selected_collar.sentientprizename] entry?", title = "Confirm Sentient Prize", choices = list("Yes", "No"), buttons = TRUE)
+				var/confirm = rerun_ask(user, "k770", PROC_REF(spasm_id), args, /datum/prompt/choice, question = "Are you sure you want to wipe [selected_collar.sentientprizename] entry?", title = "Confirm Sentient Prize", choices = list("Yes", "No"), buttons = TRUE)
 				if(isnull(confirm))
 					return
 				if(confirm == "Yes")
@@ -1123,7 +1154,7 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 /obj/machinery/wheel_of_fortune/proc/wheel_use_apply(datum/act/request/A)
 	var/datum/prompt/choice/wheel_review/ask = A.answer
 	ask.wheel_answers[ask.wheel_key] = ask.value
-	return wheel_use_stage(ask.wheel_operator, ask.wheel_held, ask.wheel_interaction, ask.wheel_answers)
+	return wheel_use_stage(ask.wheel_operator, ask.wheel_held, ask.wheel_answers)
 
 /obj/machinery/wheel_of_fortune/proc/wheel_management_answered(datum/act/request/A)
 	if(!A.answer)
@@ -1134,7 +1165,7 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 /obj/machinery/wheel_of_fortune/proc/wheel_management_apply(datum/act/request/A)
 	var/datum/prompt/choice/wheel_review/ask = A.answer
 	ask.wheel_answers[ask.wheel_key] = ask.value
-	return wheel_management_stage(ask.wheel_operator, ask.wheel_held, ask.wheel_interaction, ask.wheel_answers)
+	return wheel_management_stage(ask.wheel_operator, ask.wheel_held, ask.wheel_answers)
 
 /obj/machinery/wheel_of_fortune/proc/wheel_interval_answered(datum/act/request/A)
 	if(!A.answer)
@@ -1153,15 +1184,12 @@ EXTEND_INTERACTIONS(/obj/machinery/casinosentientprize_handler, \
 	var/wheel_operator_expected = FALSE
 	var/obj/item/wheel_held
 	var/wheel_held_expected = FALSE
-	var/datum/interaction/wheel_interaction
-	var/wheel_interaction_expected = FALSE
 	var/list/wheel_answers
 	var/wheel_key
 
 CAPABILITIES(/datum/prompt/choice/wheel_review)
 	ref_one(nameof(wheel_operator), /mob)
 	ref_one(nameof(wheel_held), /obj/item)
-	ref_one(nameof(wheel_interaction), /datum/interaction)
 
 /datum/prompt/choice/wheel_review/prepare(datum/act/A)
 	. = ..()
@@ -1175,14 +1203,9 @@ CAPABILITIES(/datum/prompt/choice/wheel_review)
 	rel_clear(src, nameof(wheel_held))
 	if(captured_wheel_held && !QDELETED(captured_wheel_held))
 		rel_set(src, nameof(wheel_held), captured_wheel_held)
-	var/datum/interaction/captured_wheel_interaction = wheel_interaction
-	wheel_interaction_expected = !isnull(captured_wheel_interaction)
-	rel_clear(src, nameof(wheel_interaction))
-	if(captured_wheel_interaction && !QDELETED(captured_wheel_interaction))
-		rel_set(src, nameof(wheel_interaction), captured_wheel_interaction)
 
 /datum/prompt/choice/wheel_review/recheck_extra()
-	if((wheel_operator_expected && QDELETED(wheel_operator)) || (wheel_held_expected && QDELETED(wheel_held)) || (wheel_interaction_expected && QDELETED(wheel_interaction)))
+	if((wheel_operator_expected && QDELETED(wheel_operator)) || (wheel_held_expected && QDELETED(wheel_held)))
 		return "gone"
 
 /datum/prompt/number/wheel_review
@@ -1194,15 +1217,12 @@ CAPABILITIES(/datum/prompt/choice/wheel_review)
 	var/wheel_operator_expected = FALSE
 	var/obj/item/wheel_held
 	var/wheel_held_expected = FALSE
-	var/datum/interaction/wheel_interaction
-	var/wheel_interaction_expected = FALSE
 	var/list/wheel_answers
 	var/wheel_key
 
 CAPABILITIES(/datum/prompt/number/wheel_review)
 	ref_one(nameof(wheel_operator), /mob)
 	ref_one(nameof(wheel_held), /obj/item)
-	ref_one(nameof(wheel_interaction), /datum/interaction)
 
 /datum/prompt/number/wheel_review/prepare(datum/act/A)
 	. = ..()
@@ -1216,14 +1236,9 @@ CAPABILITIES(/datum/prompt/number/wheel_review)
 	rel_clear(src, nameof(wheel_held))
 	if(captured_wheel_held && !QDELETED(captured_wheel_held))
 		rel_set(src, nameof(wheel_held), captured_wheel_held)
-	var/datum/interaction/captured_wheel_interaction = wheel_interaction
-	wheel_interaction_expected = !isnull(captured_wheel_interaction)
-	rel_clear(src, nameof(wheel_interaction))
-	if(captured_wheel_interaction && !QDELETED(captured_wheel_interaction))
-		rel_set(src, nameof(wheel_interaction), captured_wheel_interaction)
 
 /datum/prompt/number/wheel_review/recheck_extra()
-	if((wheel_operator_expected && QDELETED(wheel_operator)) || (wheel_held_expected && QDELETED(wheel_held)) || (wheel_interaction_expected && QDELETED(wheel_interaction)))
+	if((wheel_operator_expected && QDELETED(wheel_operator)) || (wheel_held_expected && QDELETED(wheel_held)))
 		return "gone"
 
 /datum/prompt/number/wheel_review/present(mob/user)

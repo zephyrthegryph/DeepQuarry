@@ -234,22 +234,13 @@ CAPABILITIES(/obj/item/book)
 	without("ui_open")
 	ui_shape(title = bool(), author = bool(), content = bool())
 	op("read", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Read"), then(PROC_REF(interaction_read)))
-	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), when(req(PROC_REF(is_carved))), then(PROC_REF(interaction_store)))
-	op("edit", item(/obj/item/pen), priority(OP_PRIORITY_DEFAULT - 2), when(req(PROC_REF(is_plain))), asks(/datum/prompt/choice, fields = list("question" = "What would you like to change?", "title" = "Change What?", "choices" = list("Title", "Contents", "Author", "Cancel"), "timeout" = 0), step = "k248", when = PROC_REF(pen_may_edit)), asks(/datum/prompt/text, fields = list("question" = "Write a new title:", "encode" = FALSE, "timeout" = 0), step = "k251", when = PROC_REF(editing_title)), asks(/datum/prompt/text, fields = list("question" = "Write your book's contents (HTML NOT allowed):", "max_len" = MAX_BOOK_MESSAGE_LEN, "multiline" = TRUE, "name_text" = ((MAX_BOOK_MESSAGE_LEN) <= MAX_NAME_LEN), "timeout" = 0), step = "k259", when = PROC_REF(editing_contents)), asks(/datum/prompt/text, fields = list("question" = "Write the author's name:", "max_len" = MAX_LNAME_LEN, "name_text" = ((MAX_LNAME_LEN) <= MAX_NAME_LEN), "timeout" = 0), step = "k266", when = PROC_REF(editing_author)), then(PROC_REF(interaction_edit)))
-	op("scan", item(/obj/item/barcodescanner), priority(OP_PRIORITY_DEFAULT - 3), when(req(PROC_REF(is_plain))), then(PROC_REF(interaction_scan)))
-	op("carve", item(/obj/item/material/knife), priority(OP_PRIORITY_DEFAULT - 4), when(req(PROC_REF(is_plain))), then(PROC_REF(interaction_carve)))
+	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), when(req_is(nameof(carved))), then(PROC_REF(interaction_store)))
+	op("edit", item(/obj/item/pen), priority(OP_PRIORITY_DEFAULT - 2), when(req_is(nameof(carved), FALSE)), asks(/datum/prompt/choice, fields = list("question" = "What would you like to change?", "title" = "Change What?", "choices" = list("Title", "Contents", "Author", "Cancel"), "timeout" = 0), step = "k248", when = req_is(nameof(unique), FALSE)), asks(/datum/prompt/text, fields = list("question" = "Write a new title:", "encode" = FALSE, "timeout" = 0), step = "k251", when = PROC_REF(editing_title)), asks(/datum/prompt/text, fields = list("question" = "Write your book's contents (HTML NOT allowed):", "max_len" = MAX_BOOK_MESSAGE_LEN, "multiline" = TRUE, "name_text" = ((MAX_BOOK_MESSAGE_LEN) <= MAX_NAME_LEN), "timeout" = 0), step = "k259", when = PROC_REF(editing_contents)), asks(/datum/prompt/text, fields = list("question" = "Write the author's name:", "max_len" = MAX_LNAME_LEN, "name_text" = ((MAX_LNAME_LEN) <= MAX_NAME_LEN), "timeout" = 0), step = "k266", when = PROC_REF(editing_author)), then(PROC_REF(interaction_edit)))
+	op("scan", item(/obj/item/barcodescanner), priority(OP_PRIORITY_DEFAULT - 3), when(req_is(nameof(carved), FALSE)), then(PROC_REF(interaction_scan)))
+	op("carve", item(/obj/item/material/knife), priority(OP_PRIORITY_DEFAULT - 4), when(req_is(nameof(carved), FALSE)), then(PROC_REF(interaction_carve)))
 
-/// The book has been hollowed out.
-/obj/item/book/proc/is_carved(datum/act/op/A)
-	return !!carved
-
-/// The book has not been hollowed out.
-/obj/item/book/proc/is_plain(datum/act/op/A)
-	return !carved
-
-/// A pen asks what to change unless the pages take no ink.
-/obj/item/book/proc/pen_may_edit(datum/act/op/A)
-	return !unique
+TRACKED(/obj/item/book, carved)
+TRACKED(/obj/item/book, unique)
 
 /obj/item/book/proc/editing_title(datum/act/op/A)
 	return A.step_value("k248") == "Title"
@@ -390,7 +381,7 @@ CAPABILITIES(/obj/item/book)
 	to_chat(user, span_notice("You carve out the pages from [title]! You didn't want to read it anyway."))
 	play_sfx(src, SFX_BUREAUCRACY_PAPERCRUMPLE)
 	new /obj/item/shreddedp(get_turf(src))
-	carved = TRUE
+	set_carved(TRUE)
 
 /obj/item/book/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(user.zone_sel.selecting == O_EYES)

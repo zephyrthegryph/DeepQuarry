@@ -32,8 +32,8 @@
 CAPABILITIES(/obj/structure/ladder)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	links(/obj/structure/ladder::target_down, /obj/structure/ladder::target_up)
-	op("hand", hand(), ungated(), asks(/datum/prompt/choice, fields = list("question" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "direction", when = PROC_REF(asks_direction)), then(PROC_REF(interaction_hand)))
-	op("ladder_ghost_climb", observer(), label("Climb"), asks(/datum/prompt/choice, fields = list("question" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "direction", when = PROC_REF(asks_direction)), then(PROC_REF(ladder_ghost_climb)))
+	op("hand", hand(), ungated(), needs(req_capable()), asks(/datum/prompt/choice, fields = list("question" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "direction", when = cond_all(nameof(target_down), nameof(target_up))), then(PROC_REF(interaction_hand)))
+	op("ladder_ghost_climb", observer(), label("Climb"), asks(/datum/prompt/choice, fields = list("question" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "direction", when = cond_all(nameof(target_down), nameof(target_up))), then(PROC_REF(ladder_ghost_climb)))
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
 /obj/structure/ladder/proc/smashed_by(datum/act/hit/generic/A)
@@ -98,14 +98,6 @@ CAPABILITIES(/obj/structure/ladder)
 	if(target_ladder)
 		M.forceMove(get_turf(target_ladder))
 	return OP_OK
-
-/// A complete ladder with both ends asks which way, for an actor who can climb it.
-/obj/structure/ladder/proc/asks_direction(datum/act/op/A)
-	if(!ladder_complete())
-		return FALSE
-	if(!(target_down && target_up))
-		return FALSE
-	return isnull(A.actor.climb_refusal(src))
 
 /// Whether both of the ladder's ends that exist are standing on turfs.
 /obj/structure/ladder/proc/ladder_complete()

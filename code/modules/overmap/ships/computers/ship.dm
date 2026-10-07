@@ -70,9 +70,6 @@ TOPIC_ACTION(/obj/machinery/computer/ship, "sync", PROC_REF(topic_sync))
 /// Old attack_ai: open the interface if silicon control is allowed. Never fell through.
 /obj/machinery/computer/ship/proc/ship_silicon_use(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!ai_control && issilicon(user))
-		to_chat(user, span_warning("Access Denied."))
-		return OP_OK
 	if(tgui_status(user, tgui_state()) > STATUS_CLOSE)
 		interface_interact(user)
 	return OP_OK
@@ -82,17 +79,14 @@ TOPIC_ACTION(/obj/machinery/computer/ship, "sync", PROC_REF(topic_sync))
 	interface_interact(A.actor)
 	return OP_OK
 
-/// Requirement (old attack_hand): AI/silicon control, then ID access.
-/obj/machinery/computer/ship/proc/ship_access_holds(datum/act/op/A)
-	if(!ai_control && issilicon(A.actor))
-		return FALSE
-	if(!allowed(A.actor))
-		return FALSE
-	return TRUE
+MSG_DEF_SELF(ship/ai_denied, "Access Denied.")
+MSG_DEF_SELF(ship/access_denied, "access denied")
 
-/// Why ship_access_holds refuses.
-/obj/machinery/computer/ship/proc/ship_access_refusal(datum/act/op/A)
-	return "access denied"
+TRACKED(/obj/machinery/computer/ship, ai_control)
+
+/// Requirement (old attack_hand): ID access.
+/obj/machinery/computer/ship/proc/ship_access_holds(datum/act/op/A)
+	return !!allowed(A.actor)
 
 /// Old attack_hand: opens the interface if it isn't already.
 /obj/machinery/computer/ship/proc/interaction_use(datum/act/op/A)

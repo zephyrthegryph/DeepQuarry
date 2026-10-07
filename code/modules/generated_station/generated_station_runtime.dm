@@ -37,11 +37,13 @@
 		. += span_notice("Control authority has been captured by [captured_by || "an expedition team"].")
 
 CAPABILITIES(/obj/machinery/generated_station_department_control)
-	op("department_control_override", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Override"), when(req(PROC_REF(capturable))), then(PROC_REF(interaction_override)))
+	op("department_control_override", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Override"), when(req_is(nameof(captured), FALSE), req(PROC_REF(has_integrity))), then(PROC_REF(interaction_override)))
 
-/// The control authority can still be taken: not captured, not wrecked.
-/obj/machinery/generated_station_department_control/proc/capturable(datum/act/op/A)
-	return !captured && get_integrity() > 0
+TRACKED(/obj/machinery/generated_station_department_control, captured)
+
+/// The control is not wrecked.
+/obj/machinery/generated_station_department_control/proc/has_integrity(datum/act/op/A)
+	return get_integrity() > 0
 
 /obj/machinery/generated_station_department_control/proc/interaction_override(datum/act/op/A)
 	var/mob/user = A.actor
@@ -52,7 +54,7 @@ CAPABILITIES(/obj/machinery/generated_station_department_control)
 /obj/machinery/generated_station_department_control/proc/override_done(mob/user)
 	if(get_integrity() <= 0)
 		return
-	captured = TRUE
+	set_captured(TRUE)
 	captured_by = user.ckey || user.name
 	visible_message(span_notice("[src] accepts the new control authority."))
 
