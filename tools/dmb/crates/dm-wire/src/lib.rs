@@ -6,10 +6,10 @@ use std::io::{self, Write};
 const MAGIC: &[u8; 8] = b"DMWIRE01";
 const HEADER: usize = 32;
 pub const MAX_BYTES: usize = 32 * 1024 * 1024;
-struct Bounded(Vec<u8>);
+struct Bounded(Vec<u8>, usize);
 impl Write for Bounded {
     fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-        if bytes.len() > MAX_BYTES.saturating_sub(self.0.len()) {
+        if bytes.len() > self.1.saturating_sub(self.0.len()) {
             return Err(io::Error::other("wire payload exceeds bound"));
         }
         self.0.extend_from_slice(bytes);
@@ -43,16 +43,29 @@ pub fn encoded_len<T: Serialize>(schema: u32, value: &T) -> Result<usize, String
 }
 /// Encode standard little-endian varint serde data within the fixed payload cap.
 pub fn encode<T: Serialize>(schema: u32, value: &T) -> Result<Vec<u8>, String> {
-    let mut payload = Bounded(Vec::new());
+    encode_bounded(schema, value, MAX_BYTES + HEADER)
+}
+/// Apply a smaller complete-frame bound without changing the shared wire format.
+/// The writer enforces the bound while encoding, before extending its buffer.
+pub fn encode_bounded<T: Serialize>(
+    schema: u32,
+    value: &T,
+    frame_bytes: usize,
+) -> Result<Vec<u8>, String> {
+    let payload_limit = frame_bytes
+        .checked_sub(HEADER)
+        .ok_or("wire frame bound is smaller than its header")?
+        .min(MAX_BYTES);
+    let mut payload = Bounded(vec![0; HEADER], HEADER + payload_limit);
     bincode::serde::encode_into_std_write(value, &mut payload, bincode::config::standard())
         .map_err(|error| error.to_string())?;
-    let mut result = Vec::with_capacity(HEADER + payload.0.len());
-    result.extend_from_slice(MAGIC);
-    result.extend_from_slice(&schema.to_le_bytes());
-    result.extend_from_slice(&(payload.0.len() as u32).to_le_bytes());
-    result.extend_from_slice(&xxhash_rust::xxh3::xxh3_128(&payload.0).to_le_bytes());
-    result.extend_from_slice(&payload.0);
-    Ok(result)
+    let length = payload.0.len() - HEADER;
+    let checksum = xxhash_rust::xxh3::xxh3_128(&payload.0[HEADER..]);
+    payload.0[..8].copy_from_slice(MAGIC);
+    payload.0[8..12].copy_from_slice(&schema.to_le_bytes());
+    payload.0[12..16].copy_from_slice(&(length as u32).to_le_bytes());
+    payload.0[16..32].copy_from_slice(&checksum.to_le_bytes());
+    Ok(payload.0)
 }
 /// Reject wrong schema, checksum, truncation, trailing bytes and oversize frames
 /// before decoding. Bincode's independent byte-read budget is also enforced.
@@ -130,5 +143,14 @@ mod tests {
         let mut bytes = encode(1, &1u32).unwrap();
         bytes[12..16].copy_from_slice(&u32::MAX.to_le_bytes());
         assert!(decode::<u32>(1, &bytes, usize::MAX).is_err());
+    }
+    #[test]
+    fn bounded_wire_frames_preserve_bytes_and_enforce_exact_limit() {
+        let value = vec![173u8; 1024];
+        let bytes = encode(17, &value).unwrap();
+        assert_eq!(encode_bounded(17, &value, bytes.len()).unwrap(), bytes);
+        assert!(encode_bounded(17, &value, bytes.len() - 1).is_err());
+        assert!(encode_bounded(17, &value, HEADER - 1).is_err());
+        assert_eq!(decode::<Vec<u8>>(17, &bytes, MAX_BYTES).unwrap(), value);
     }
 }

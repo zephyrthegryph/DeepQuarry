@@ -4,12 +4,12 @@ use dm_tree::tree_reuse::{TreePublication, TreeReuseStorage};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 const STAGE: u32 = 7;
-const MANIFEST_VERSION: u32 = 2;
-const CHUNK_VERSION: u32 = 3;
+const MANIFEST_VERSION: u32 = 4;
+const CHUNK_VERSION: u32 = 5;
 const CHUNK_BYTES: usize = 8 * 1024 * 1024;
 const STREAM_BYTES: usize = 256 * 1024 * 1024;
 const MAX_CHUNKS: usize = 4096;
-const CHUNK_MAGIC: &[u8; 8] = b"TREECH03";
+const CHUNK_MAGIC: &[u8; 8] = b"TREECH05";
 #[derive(Serialize, Deserialize)]
 struct ChunkRef {
     hash: u128,
@@ -40,7 +40,7 @@ impl DiskTreeMemo {
     }
     fn key(&self, key: &[Vec<u8>]) -> dm_cache::RecordKey {
         let mut hash = xxhash_rust::xxh3::Xxh3::new();
-        hash.update(b"dmbc-tree-stream-v2\0");
+        hash.update(b"dmbc-tree-stream-v4\0");
         hash.update(&self.policy.to_le_bytes());
         hash.update(&(key.len() as u64).to_le_bytes());
         for chunk in key {
@@ -122,7 +122,7 @@ fn manifest(bytes: &[u8]) -> Result<Manifest, String> {
     if bytes.len() > CHUNK_BYTES {
         return Err("tree manifest exceeds bound".into());
     }
-    let value: Manifest = dm_wire::decode(2, bytes, CHUNK_BYTES)?;
+    let value: Manifest = dm_wire::decode(4, bytes, CHUNK_BYTES)?;
     valid_refs(&value.keys)?;
     valid_refs(&value.payload)?;
     Ok(value)
@@ -145,14 +145,14 @@ fn chunk(bytes: &[u8]) -> Result<&[u8], String> {
     }
     Ok(payload)
 }
-fn framed_chunk(payload: &[u8]) -> Result<Vec<u8>, String> {
+fn framed_chunk(payload: &[u8], hash: u128) -> Result<Vec<u8>, String> {
     if payload.is_empty() || payload.len() > CHUNK_BYTES {
         return Err("tree chunk exceeds bound".into());
     }
     let mut bytes = Vec::with_capacity(32 + payload.len());
     bytes.extend_from_slice(CHUNK_MAGIC);
     bytes.extend_from_slice(&(payload.len() as u64).to_le_bytes());
-    bytes.extend_from_slice(&xxhash_rust::xxh3::xxh3_128(payload).to_le_bytes());
+    bytes.extend_from_slice(&hash.to_le_bytes());
     bytes.extend_from_slice(payload);
     Ok(bytes)
 }
@@ -202,7 +202,7 @@ impl TreeReuseStorage for DiskTreeMemo {
         };
         valid_refs(&manifest.keys)?;
         valid_refs(&manifest.payload)?;
-        let size = dm_wire::encoded_len(2, &manifest)?;
+        let size = dm_wire::encoded_len(4, &manifest)?;
         if size > CHUNK_BYTES {
             return Ok(TreePublication {
                 envelope_bytes: size as u64,
@@ -211,18 +211,22 @@ impl TreeReuseStorage for DiskTreeMemo {
         }
         // One bounded chunk per callback. The shared sink batches bounded segments.
         // Orphan chunks after failure are harmless; no manifest authorizes them.
-        for bytes in exact_key.iter().chain(payload.iter()) {
-            let hash = xxhash_rust::xxh3::xxh3_128(bytes);
+        for (bytes, reference) in exact_key
+            .iter()
+            .chain(payload.iter())
+            .zip(manifest.keys.iter().chain(manifest.payload.iter()))
+        {
+            let hash = reference.hash;
             (self.publisher)(vec![dm_cache::Record {
                 key: chunk_key(hash),
                 symbols: Vec::new(),
-                payload: framed_chunk(bytes)?.into(),
+                payload: framed_chunk(bytes, hash)?.into(),
             }])?;
         }
         (self.publisher)(vec![dm_cache::Record {
             key: self.key(exact_key),
             symbols: Vec::new(),
-            payload: dm_wire::encode(2, &manifest)?.into(),
+            payload: dm_wire::encode(4, &manifest)?.into(),
         }])?;
         Ok(TreePublication {
             envelope_bytes: size as u64,
@@ -235,9 +239,9 @@ mod tests {
     use super::*;
     #[test]
     fn tree_disk_envelope_checks_exact_bounds_and_truncated_lengths() {
-        assert!(DiskTreeMemo::validate_cache_payload(2, &[]).is_err());
-        assert!(DiskTreeMemo::validate_cache_payload(3, &[]).is_err());
-        let good = framed_chunk(b"payload").unwrap();
+        assert!(DiskTreeMemo::validate_cache_payload(4, &[]).is_err());
+        assert!(DiskTreeMemo::validate_cache_payload(5, &[]).is_err());
+        let good = framed_chunk(b"payload", xxhash_rust::xxh3::xxh3_128(b"payload")).unwrap();
         assert_eq!(chunk(&good).unwrap(), b"payload");
         let mut corrupt = good.clone();
         *corrupt.last_mut().unwrap() ^= 1;
@@ -251,7 +255,7 @@ mod tests {
             }],
             payload: vec![ChunkRef { hash: 2, bytes: 1 }],
         };
-        assert!(DiskTreeMemo::validate_payload(&dm_wire::encode(2, &bad).unwrap()).is_err());
+        assert!(DiskTreeMemo::validate_payload(&dm_wire::encode(4, &bad).unwrap()).is_err());
     }
     #[test]
     fn tree_disk_key_is_policy_and_exact_input_scoped() {

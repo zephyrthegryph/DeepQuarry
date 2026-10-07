@@ -285,12 +285,13 @@ fn key_chunk<T: Serialize>(
     out: &mut ExactTreeKey,
     total: &mut usize,
 ) -> Result<(), String> {
-    let size = dm_wire::encoded_len(4, value)?;
-    *total = total.checked_add(size).ok_or("tree key length overflow")?;
-    if size > 8 * 1024 * 1024 || *total > 256 * 1024 * 1024 || out.len() >= 4096 {
+    if out.len() >= 4096 || *total >= 256 * 1024 * 1024 {
         return Err("tree key chunk stream exceeds bound".into());
     }
-    out.push(dm_wire::encode(4, value)?);
+    let limit = (8 * 1024 * 1024).min(256 * 1024 * 1024 - *total);
+    let bytes = dm_wire::encode_bounded(4, value, limit)?;
+    *total += bytes.len();
+    out.push(bytes);
     Ok(())
 }
 

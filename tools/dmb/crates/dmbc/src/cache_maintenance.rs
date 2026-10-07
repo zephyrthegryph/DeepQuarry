@@ -16,7 +16,7 @@ fn validate(key: dm_cache::RecordKey, bytes: &[u8], _: &[(u64, &[u8])]) -> Resul
             for entry in dm_cache::decode_variants(bytes)? { DirectiveRecord::from_bytes(entry)?; }
             Ok(())
         }
-        7 if matches!(key.version, 2 | 3) => {
+        7 if matches!(key.version, 4 | 5) => {
             crate::tree_memo::DiskTreeMemo::validate_cache_payload(key.version, bytes)
         }
         8 if key.version == dm_preprocess::regions::FRAGMENT_VERSION => {

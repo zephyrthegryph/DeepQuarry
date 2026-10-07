@@ -318,6 +318,7 @@ pub(crate) fn encode_failure(
     };
     dm_wire::encode(FAILURE_SCHEMA, &payload).ok()
 }
+#[cfg(test)]
 pub(crate) fn decode_failure<R: Resolver>(
     bytes: &[u8],
     key: &[u8],
@@ -371,6 +372,7 @@ pub(crate) fn encode_executable(
     };
     dm_wire::encode(EXECUTABLE_SCHEMA, &payload).ok()
 }
+#[cfg(test)]
 pub(crate) fn decode_executable<R: Resolver>(
     bytes: &[u8],
     key: &[u8],

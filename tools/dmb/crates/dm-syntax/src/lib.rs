@@ -13,7 +13,8 @@ pub mod map;
 mod statements;
 pub use audit::{
     audit_source_streaming, for_each_parsed_chunk, for_each_source_chunk,
-    for_each_source_chunk_with_limits, parse_proc_at_span, ChunkReport, StreamingAudit,
+    for_each_source_chunk_with_limits, for_each_stable_source_chunk, parse_proc_at_span,
+    ChunkReport, StreamingAudit,
 };
 pub use statements::{
     parse_body_items, parse_proc_body, ForControl, ForInitializer, ParsedBody, Statement,
@@ -1944,26 +1945,43 @@ mod tests {
     fn native_invalid_return_blocks_stop_before_skeleton_compaction() {
         for source in [
             include_str!("../../../fixtures/phase1/native_modified_returns/bare/probe.dme"),
-            include_str!("../../../fixtures/phase1/native_modified_returns/outer_visible/probe.dme"),
+            include_str!(
+                "../../../fixtures/phase1/native_modified_returns/outer_visible/probe.dme"
+            ),
         ] {
-            for parsed in [parse_with_body_mode(source,false), parse_declaration_skeleton(source)] {
-                assert!(parsed.diagnostics.iter().any(|diagnostic| diagnostic.kind == DiagnosticKind::Unsupported && diagnostic.message == RETURN_BLOCK_UNSUPPORTED));
+            for parsed in [
+                parse_with_body_mode(source, false),
+                parse_declaration_skeleton(source),
+            ] {
+                assert!(parsed
+                    .diagnostics
+                    .iter()
+                    .any(|diagnostic| diagnostic.kind == DiagnosticKind::Unsupported
+                        && diagnostic.message == RETURN_BLOCK_UNSUPPORTED));
             }
             fn find(items: &[Item]) -> Option<&Item> {
                 for item in items {
-                    if item.header.starts_with("return ") { return Some(item); }
-                    if let Some(found) = find(&item.children) { return Some(found); }
+                    if item.header.starts_with("return ") {
+                        return Some(item);
+                    }
+                    if let Some(found) = find(&item.children) {
+                        return Some(found);
+                    }
                 }
                 None
             }
             let ast = parse(source);
             let item = find(&ast.items).unwrap();
-            assert_eq!(item.children.len(),1);
-            assert_eq!(item.children[0].header,"amount=1");
+            assert_eq!(item.children.len(), 1);
+            assert_eq!(item.children[0].header, "amount=1");
             let typed = parse_body_items(std::slice::from_ref(item));
-            assert!(typed.diagnostics.iter().any(|diagnostic| diagnostic.message == RETURN_BLOCK_UNSUPPORTED));
+            assert!(typed
+                .diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.message == RETURN_BLOCK_UNSUPPORTED));
         }
-        let grouped = include_str!("../../../fixtures/phase1/native_modified_returns/grouped/probe.dme");
+        let grouped =
+            include_str!("../../../fixtures/phase1/native_modified_returns/grouped/probe.dme");
         assert!(parse(grouped).diagnostics.is_empty());
         assert!(parse_declaration_skeleton(grouped).diagnostics.is_empty());
     }

@@ -373,7 +373,6 @@ fn lower_one_memo<R: Resolver, P: AbiPolicy>(
         key_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
         std::sync::atomic::Ordering::Relaxed,
     );
-    recording.record_occurrence(identity);
     let lookup_start = std::time::Instant::now();
     let note = |outcome, reason, changed_query| {
         memo.counts.lookup_ns.fetch_add(
@@ -463,6 +462,14 @@ fn lower_one_memo<R: Resolver, P: AbiPolicy>(
     memo.counts
         .recomputed
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    // Replay validates the stored complete read ledger (or its trusted domain
+    // receipt). Issue mandatory reads only when producing a new executable.
+    let occurrence_start = std::time::Instant::now();
+    recording.record_occurrence(identity);
+    memo.counts.occurrence_reads_ns.fetch_add(
+        occurrence_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+        std::sync::atomic::Ordering::Relaxed,
+    );
     let capture = RefCell::new(MemoCapture::default());
     let result = lower_one_captured(
         frontend,

@@ -16,7 +16,6 @@ struct MemberRow {
     owner: u32,
     name: SymbolId,
     kind: MemberKind,
-    metadata: Vec<u8>,
     content: u128,
     previous: Option<u32>,
 }
@@ -77,16 +76,30 @@ pub(super) fn encode(
     _seed: Option<&EngineSeed>,
     size: &mut usize,
 ) -> Result<Vec<Vec<u8>>, String> {
-    let record = Record {
-        identity: tree.identity,
-        symbols: tree
-            .symbols
-            .ordered()
-            .into_iter()
-            .map(|(id, text)| (id, text.to_owned()))
-            .collect(),
-        types: tree
-            .types
+    let symbols = tree.symbols.ordered();
+    let mut output = Vec::new();
+    *size = 0;
+    append(
+        ChunkView::Header {
+            identity: tree.identity,
+            counts: [
+                symbols.len(),
+                tree.types.len(),
+                tree.members.len(),
+                tree.declaration_targets.len(),
+            ],
+        },
+        &mut output,
+        size,
+    )?;
+    // Metadata comes from the current exact-key-authorized source, not this DTO.
+    // Only one neutral row batch is materialized at a time. Strings remain
+    // borrowed from the immutable tree dictionary throughout serialization.
+    for rows in symbols.chunks(1024) {
+        append(ChunkView::Symbols(rows), &mut output, size)?;
+    }
+    for rows in tree.types.chunks(1024) {
+        let rows: Vec<_> = rows
             .iter()
             .map(|node| TypeRow {
                 path: node.path,
@@ -94,48 +107,33 @@ pub(super) fn encode(
                 explicit: node.explicit_parent,
                 synthetic: node.synthetic,
             })
-            .collect(),
-        members: tree
-            .members
+            .collect();
+        append(ChunkView::Types(&rows), &mut output, size)?;
+    }
+    for rows in tree.members.chunks(1024) {
+        let rows: Vec<_> = rows
             .iter()
             .map(|node| MemberRow {
                 definition: node.definition,
                 owner: node.owner.0,
                 name: node.name,
                 kind: node.kind,
-                metadata: node.metadata.canonical_bytes(),
                 content: node.content,
                 previous: node.previous.map(|id| id.0),
             })
-            .collect(),
-        targets: tree
-            .declaration_targets
+            .collect();
+        append(ChunkView::Members(&rows), &mut output, size)?;
+    }
+    for rows in tree.declaration_targets.chunks(1024) {
+        let rows: Vec<_> = rows
             .iter()
             .map(|target| match target {
                 Target::Type(id) => TargetRow::Type(id.0),
                 Target::Member(id) => TargetRow::Member(id.0),
             })
-            .collect(),
-    };
-    *size = dm_wire::encoded_len(2, &record)?;
-    let mut output = Vec::new();
-    append(
-        &mut output,
-        Chunk::Header {
-            identity: record.identity,
-            counts: [
-                record.symbols.len(),
-                record.types.len(),
-                record.members.len(),
-                record.targets.len(),
-            ],
-        },
-    )?;
-    partition(record.symbols, Chunk::Symbols, &mut output)?;
-    partition(record.types, Chunk::Types, &mut output)?;
-    partition(record.members, Chunk::Members, &mut output)?;
-    partition(record.targets, Chunk::Targets, &mut output)?;
-    *size = output.iter().map(Vec::len).sum();
+            .collect();
+        append(ChunkView::Targets(&rows), &mut output, size)?;
+    }
     Ok(output)
 }
 const CHUNK_BYTES: usize = 8 * 1024 * 1024;
@@ -149,53 +147,52 @@ enum Chunk {
     Members(Vec<MemberRow>),
     Targets(Vec<TargetRow>),
 }
-fn append(output: &mut Vec<Vec<u8>>, value: Chunk) -> Result<(), String> {
-    let size = dm_wire::encoded_len(2, &value)?;
-    if size > CHUNK_BYTES
-        || output.len() >= MAX_CHUNKS
-        || output
-            .iter()
-            .map(Vec::len)
-            .sum::<usize>()
-            .checked_add(size)
-            .is_none_or(|total| total > STREAM_BYTES)
-    {
+// The variants and field order exactly mirror Chunk; borrowing changes ownership,
+// not the wire representation. The decoder always issues owned neutral records.
+#[derive(Clone, Copy, Serialize)]
+enum ChunkView<'a> {
+    Header { identity: u128, counts: [usize; 4] },
+    Symbols(&'a [(SymbolId, &'a str)]),
+    Types(&'a [TypeRow]),
+    Members(&'a [MemberRow]),
+    Targets(&'a [TargetRow]),
+}
+fn append(
+    value: ChunkView<'_>,
+    output: &mut Vec<Vec<u8>>,
+    total: &mut usize,
+) -> Result<(), String> {
+    if output.len() >= MAX_CHUNKS || *total >= STREAM_BYTES {
         return Err("tree chunk stream exceeds bound".into());
     }
-    output.push(dm_wire::encode(2, &value)?);
-    Ok(())
-}
-fn partition<T: Serialize>(
-    rows: Vec<T>,
-    wrap: fn(Vec<T>) -> Chunk,
-    output: &mut Vec<Vec<u8>>,
-) -> Result<(), String> {
-    let mut rows = rows.into_iter();
-    loop {
-        let batch: Vec<_> = rows.by_ref().take(1024).collect();
-        if batch.is_empty() {
-            return Ok(());
+    let limit = CHUNK_BYTES.min(STREAM_BYTES - *total);
+    match dm_wire::encode_bounded(3, &value, limit) {
+        Ok(bytes) => {
+            *total += bytes.len();
+            output.push(bytes);
+            Ok(())
         }
-        split_batch(batch, wrap, output)?;
+        Err(error) => {
+            macro_rules! split {
+                ($rows:expr,$variant:ident) => {{
+                    let rows = $rows;
+                    if rows.len() <= 1 {
+                        return Err(error);
+                    }
+                    let (left, right) = rows.split_at(rows.len() / 2);
+                    append(ChunkView::$variant(left), output, total)?;
+                    append(ChunkView::$variant(right), output, total)
+                }};
+            }
+            match value {
+                ChunkView::Header { .. } => Err(error),
+                ChunkView::Symbols(rows) => split!(rows, Symbols),
+                ChunkView::Types(rows) => split!(rows, Types),
+                ChunkView::Members(rows) => split!(rows, Members),
+                ChunkView::Targets(rows) => split!(rows, Targets),
+            }
+        }
     }
-}
-fn split_batch<T: Serialize>(
-    mut batch: Vec<T>,
-    wrap: fn(Vec<T>) -> Chunk,
-    output: &mut Vec<Vec<u8>>,
-) -> Result<(), String> {
-    if dm_wire::encoded_len(2, &batch)?
-        .checked_add(64)
-        .is_some_and(|n| n <= CHUNK_BYTES)
-    {
-        return append(output, wrap(batch));
-    }
-    if batch.len() <= 1 {
-        return Err("individual tree row exceeds chunk bound".into());
-    }
-    let right = batch.split_off(batch.len() / 2);
-    split_batch(batch, wrap, output)?;
-    split_batch(right, wrap, output)
 }
 fn decode(chunks: &[Vec<u8>]) -> Result<Record, String> {
     if chunks.is_empty()
@@ -215,7 +212,7 @@ fn decode(chunks: &[Vec<u8>]) -> Result<Record, String> {
     let mut expected = None;
     let mut section = 0;
     for (ordinal, bytes) in chunks.iter().enumerate() {
-        let chunk: Chunk = dm_wire::decode(2, bytes, CHUNK_BYTES)?;
+        let chunk: Chunk = dm_wire::decode(3, bytes, CHUNK_BYTES)?;
         let next = match chunk {
             Chunk::Header { identity, counts } if ordinal == 0 => {
                 if counts.iter().any(|n| *n > MAX_NODES) {
@@ -600,9 +597,6 @@ pub(super) fn replay(
                         current = tree.parent(owner);
                     }
                 }
-            }
-            if expected.canonical_bytes() != record.members[i].metadata {
-                return Err(invalid());
             }
             if node.definition == DefinitionMode::Override
                 && node.previous.is_none()

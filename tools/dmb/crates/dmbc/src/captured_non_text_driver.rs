@@ -13,6 +13,10 @@ use std::collections::BTreeSet;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CaptureStage {
     NonTextParsing,
+    ResourceDemand,
+    ResourceAdmission,
+    RetainedResourceOrder,
+    ResourceCatalog,
     AssetCapture,
     ResourceOrder,
     ResourceProjection,
@@ -236,20 +240,22 @@ pub fn capture_with_resource_reuse<
         crate::non_text::capture_with_map_memo(frontend, provider, map_memo)
             .map_err(|error| format!("nontext capture: {error:?}"))
     })?;
-    let demand = dm_resources::capture::discover_demand(
-        &frontend.plan,
-        &frontend.expanded,
-        &captured.assets.literals,
-        &captured.assets.skins,
-    )
-    .map_err(|error| error.to_string())?;
+    let demand = timed(observer, CaptureStage::ResourceDemand, || {
+        dm_resources::capture::discover_demand(
+            &frontend.plan,
+            &frontend.expanded,
+            &captured.assets.literals,
+            &captured.assets.skins,
+        )
+        .map_err(|error| error.to_string())
+    })?;
     let context = demand.context.identity();
     let retained = match admission {
-        Some(admit) => timed(observer, CaptureStage::AssetCapture, || admit(&demand))?,
+        Some(admit) => timed(observer, CaptureStage::ResourceAdmission, || admit(&demand))?,
         None => None,
     };
     let retained = if let Some(retained) = retained {
-        let candidate = (|| {
+        let candidate = timed(observer, CaptureStage::RetainedResourceOrder, || {
             reject_missing_demands(
                 frontend,
                 &captured,
@@ -267,7 +273,7 @@ pub fn capture_with_resource_reuse<
                 &prefix,
                 &suffix,
             )
-        })();
+        });
         match candidate {
             Ok(order) if order == retained.order => Some(retained),
             _ => None,
@@ -278,24 +284,29 @@ pub fn capture_with_resource_reuse<
     let (resolver, projection, order, retained_inputs, retained_catalog) = if let Some(retained) =
         retained
     {
-        let mut symbols = SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
-        for map in captured.maps.iter() {
-            for (_, text) in map.symbols.ordered() {
-                symbols.intern(text).map_err(|error| error.to_string())?;
+        let resolver = timed(observer, CaptureStage::SymbolBinding, || {
+            let mut symbols = SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
+            for map in captured.maps.iter() {
+                for (_, text) in map.symbols.ordered() {
+                    symbols.intern(text).map_err(|error| error.to_string())?;
+                }
             }
-        }
-        let resolver = NativeResourceResolver::from_catalog(
-            host,
-            std::sync::Arc::new(symbols),
-            &retained.catalog,
-        )
-        .map_err(|error| error.to_string())?;
-        let projection = crate::assets::project_retained_resources(
-            &retained.catalog,
-            &retained.order,
-            retained.archive,
-        )
-        .map_err(|error| format!("retained resource projection: {error:?}"))?;
+            let resolver = NativeResourceResolver::from_catalog(
+                host,
+                std::sync::Arc::new(symbols),
+                &retained.catalog,
+            )
+            .map_err(|error| error.to_string())?;
+            Ok(resolver)
+        })?;
+        let projection = timed(observer, CaptureStage::ResourceProjection, || {
+            crate::assets::project_retained_resources(
+                &retained.catalog,
+                &retained.order,
+                retained.archive,
+            )
+            .map_err(|error| format!("retained resource projection: {error:?}"))
+        })?;
         (
             resolver,
             projection,
@@ -349,7 +360,9 @@ pub fn capture_with_resource_reuse<
     let resolver = resolver.into_metadata();
     // This is the same immutable catalog used to construct the metadata host.
     // Reissuing it would clone/sort every lookup and reserialize its identity.
-    let catalog = retained_catalog.unwrap_or_else(|| resolver.catalog());
+    let catalog = timed(observer, CaptureStage::ResourceCatalog, || {
+        Ok(retained_catalog.unwrap_or_else(|| resolver.catalog()))
+    })?;
     let symbols = SymbolTable::overlay(resolver.shared_symbols());
     let (map, descriptors, artifacts) = if captured.maps.is_empty() {
         (None, None, Vec::new())

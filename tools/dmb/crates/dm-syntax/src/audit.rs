@@ -9,6 +9,37 @@ use std::collections::BTreeMap;
 
 const MAX_DIAGNOSTIC_GROUPS: usize = 256;
 
+#[cfg(test)]
+mod stable_group_tests {
+    use super::*;
+    #[test]
+    fn body_length_edits_preserve_following_grammar_groups() {
+        let original = (0..180)
+            .map(|n| format!("/proc/p{n}()\n    return {n}\n"))
+            .collect::<String>();
+        let changed = original.replace(
+            "    return 2\n",
+            "    return list(1, 2, 3, 4, 5, 6, 7, 8)\n",
+        );
+        let groups = |source: &str| {
+            let mut groups = Vec::new();
+            let report = for_each_stable_source_chunk(source, source.len(), 32, |text, _| {
+                groups.push(text.to_string())
+            });
+            assert_eq!(report.skipped_declarations, 0);
+            assert_eq!(groups.concat(), source);
+            groups
+        };
+        let first = groups(&original);
+        let second = groups(&changed);
+        assert_eq!(first.len(), second.len());
+        assert_eq!(first.iter().zip(&second).filter(|(a, b)| a != b).count(), 1);
+        for group in second {
+            assert!(parse(&group).diagnostics.is_empty());
+        }
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct ChunkReport {
     pub parsed_chunks: usize,
@@ -95,6 +126,71 @@ pub fn for_each_source_chunk_with_limits(
     on_boundary(source.len());
     if chunk_end > chunk_start {
         parse_chunk(chunk_start, chunk_end, &mut report);
+    }
+    report
+}
+
+/// Group complete root declarations by header anchors, rather than body byte
+/// counts. Body edits preserve following groups; an insertion resynchronizes at
+/// the next anchor. Large type blocks remain indivisible grammar units.
+pub fn for_each_stable_source_chunk(
+    source: &str,
+    max_declaration_bytes: usize,
+    max_declarations: usize,
+    mut visit: impl FnMut(&str, usize),
+) -> ChunkReport {
+    let limit = max_declaration_bytes.max(1);
+    let maximum = max_declarations.max(1);
+    let mut report = ChunkReport::default();
+    let mut start = 0;
+    let mut declaration_start = 0;
+    let mut count = 0;
+    let mut boundary = |end: usize| {
+        if end <= declaration_start {
+            return;
+        }
+        let declaration = &source[declaration_start..end];
+        if declaration.len() > limit {
+            if declaration_start > start && !source[start..declaration_start].trim().is_empty() {
+                visit(&source[start..declaration_start], start);
+                report.parsed_chunks += 1;
+                report.parsed_bytes += declaration_start - start;
+            }
+            report.skipped_declarations += 1;
+            report.skipped_bytes += declaration.len();
+            report
+                .first_skipped_span
+                .get_or_insert(Span::new(declaration_start, end));
+            start = end;
+            count = 0;
+        } else {
+            count += 1;
+            // Fixed FNV framing is only a grouping rule, never cache authority.
+            let header = declaration
+                .lines()
+                .find(|line| !line.trim().is_empty())
+                .unwrap_or("");
+            let hash = header.bytes().fold(0xcbf29ce484222325u64, |hash, byte| {
+                (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3)
+            });
+            if count >= maximum || hash & 15 == 0 {
+                if !source[start..end].trim().is_empty() {
+                    visit(&source[start..end], start);
+                    report.parsed_chunks += 1;
+                    report.parsed_bytes += end - start;
+                }
+                start = end;
+                count = 0;
+            }
+        }
+        declaration_start = end;
+    };
+    for_each_top_level_boundary(source, &mut boundary);
+    boundary(source.len());
+    if start < source.len() && !source[start..].trim().is_empty() {
+        visit(&source[start..], start);
+        report.parsed_chunks += 1;
+        report.parsed_bytes += source.len() - start;
     }
     report
 }

@@ -24,6 +24,8 @@ pub struct MemoCounts {
     pub parsed_preparations: AtomicU64,
     /// Resident/disk lookup, typed decoding, and current meaning verification.
     pub lookup_ns: AtomicU64,
+    pub occurrence_reads_ns: AtomicU64,
+    pub explanation_ns: AtomicU64,
     /// Supported result wire creation, excluding publication IO.
     pub encode_ns: AtomicU64,
     pub publication_ns: AtomicU64,
@@ -183,6 +185,7 @@ impl ProcedureMemo {
             .collect()
     }
     pub(crate) fn note(&self, record: MemoExplanation) {
+        let start = std::time::Instant::now();
         let mut records = self
             .explanations
             .lock()
@@ -191,6 +194,10 @@ impl ProcedureMemo {
         if records.len() > self.explanation_limit {
             records.pop_last();
         }
+        self.counts.explanation_ns.fetch_add(
+            start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+            Ordering::Relaxed,
+        );
     }
     pub fn new(policy: u128) -> Self {
         Self {
@@ -346,30 +353,6 @@ impl ProcedureMemo {
             self.counts.disk_hits.fetch_add(1, Ordering::Relaxed);
         }
         outcome
-    }
-    pub(crate) fn executable<R: Resolver>(
-        &self,
-        key: &[u8],
-        host: &R,
-        debug_count: usize,
-    ) -> Option<dm_codegen_byond::lower_resolver::ResolverProc> {
-        let result = self.disk_variants(key).into_iter().rev().find_map(|bytes| {
-            crate::lowering_memo_wire::decode_executable(&bytes, key, host, debug_count)
-        });
-        if result.is_some() {
-            self.counts.disk_hits.fetch_add(1, Ordering::Relaxed);
-        }
-        result
-    }
-    pub(crate) fn failure<R: Resolver>(
-        &self,
-        key: &[u8],
-        identity: Option<dm_ir::ProcedureIdentity>,
-        host: &R,
-    ) -> Option<Vec<dm_codegen_byond::LowerError>> {
-        self.disk_variants(key).into_iter().rev().find_map(|bytes| {
-            crate::lowering_memo_wire::decode_failure(&bytes, key, identity, host)
-        })
     }
     pub(crate) fn remember_failure(
         &self,

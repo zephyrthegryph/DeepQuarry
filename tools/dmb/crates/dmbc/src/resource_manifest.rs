@@ -26,6 +26,34 @@ pub struct ValidatedResources {
     pub(crate) archive: ResourceIdentity,
     pub(crate) order: Vec<usize>,
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ResourceValidationStage {
+    CatalogRestore,
+    DemandAdmission,
+    InputValidation,
+    ArchiveAuthentication,
+}
+#[derive(Clone, Copy, Debug)]
+pub struct ResourceValidationMeasurement {
+    pub stage: ResourceValidationStage,
+    pub seconds: f64,
+}
+pub type ResourceValidationObserver<'a> = &'a dyn Fn(ResourceValidationMeasurement);
+fn measured<T>(
+    observer: Option<ResourceValidationObserver<'_>>,
+    stage: ResourceValidationStage,
+    run: impl FnOnce() -> T,
+) -> T {
+    let start = std::time::Instant::now();
+    let result = run();
+    if let Some(observer) = observer {
+        observer(ResourceValidationMeasurement {
+            stage,
+            seconds: start.elapsed().as_secs_f64(),
+        });
+    }
+    result
+}
 impl ResourceManifest {
     /// Inputs must contain every selected asset and candidate/negative folder
     /// observation. The CLI constructs this subset from its recorded capture.
@@ -76,61 +104,95 @@ impl ResourceManifest {
         now: u128,
         authenticate: impl FnOnce(ResourceIdentity) -> io::Result<bool>,
     ) -> io::Result<Option<ValidatedResources>> {
+        self.validate_observed(policy, demand, provider, exact, now, authenticate, None)
+    }
+    /// Timings include unsuccessful admission attempts. Filesystem proof capture
+    /// precedes this call and must be measured by the caller separately.
+    pub fn validate_observed(
+        &self,
+        policy: u128,
+        demand: &ResourceDemand,
+        provider: &impl SnapshotProvider,
+        exact: bool,
+        now: u128,
+        authenticate: impl FnOnce(ResourceIdentity) -> io::Result<bool>,
+        observer: Option<ResourceValidationObserver<'_>>,
+    ) -> io::Result<Option<ValidatedResources>> {
         if self.version != 1 || self.policy != policy {
             return Ok(None);
         }
-        let catalog = match ResourceCatalog::restore(self.catalog.clone(), self.catalog_identity) {
+        let catalog = match measured(observer, ResourceValidationStage::CatalogRestore, || {
+            ResourceCatalog::restore(self.catalog.clone(), self.catalog_identity)
+        }) {
             Ok(value) => value,
             Err(_) => return Ok(None),
         };
-        validate_order(&self.order, catalog.record().aliases.len())?;
-        if catalog
-            .record()
-            .aliases
-            .iter()
-            .any(|alias| !self.inputs.contains_file(&alias.disk_path))
-        {
-            return Ok(None);
-        }
+        let admitted = measured(
+            observer,
+            ResourceValidationStage::DemandAdmission,
+            || -> io::Result<bool> {
+                validate_order(&self.order, catalog.record().aliases.len())?;
+                if catalog
+                    .record()
+                    .aliases
+                    .iter()
+                    .any(|alias| !self.inputs.contains_file(&alias.disk_path))
+                {
+                    return Ok(false);
+                }
 
-        if catalog.record().contexts.len() != 1
-            || catalog.record().contexts[0].as_slice() != demand.context.bytes()
-        {
+                if catalog.record().contexts.len() != 1
+                    || catalog.record().contexts[0].as_slice() != demand.context.bytes()
+                {
+                    return Ok(false);
+                }
+                let requested: BTreeSet<&str> = demand
+                    .literals
+                    .iter()
+                    .map(|literal| literal.path.as_str())
+                    .collect();
+                let previous: BTreeSet<&str> = catalog
+                    .record()
+                    .lookups
+                    .iter()
+                    .map(|lookup| lookup.path.as_str())
+                    .collect();
+                if requested != previous
+                    || catalog.record().lookups.iter().any(|lookup| {
+                        lookup.search_context != demand.context.identity()
+                            || matches!(
+                                lookup.outcome,
+                                dm_resources::native_resolver::CapturedResourceOutcome::Unsupported
+                            )
+                    })
+                {
+                    return Ok(false);
+                }
+                for request in &demand.additional {
+                    if !catalog.record().aliases.iter().any(|alias| {
+                        alias.name == request.archive_name && alias.disk_path == request.disk_path
+                    }) {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            },
+        )?;
+        if !admitted {
             return Ok(None);
         }
-        let requested: BTreeSet<&str> = demand
-            .literals
-            .iter()
-            .map(|literal| literal.path.as_str())
-            .collect();
-        let previous: BTreeSet<&str> = catalog
-            .record()
-            .lookups
-            .iter()
-            .map(|lookup| lookup.path.as_str())
-            .collect();
-        if requested != previous
-            || catalog.record().lookups.iter().any(|lookup| {
-                lookup.search_context != demand.context.identity()
-                    || matches!(
-                        lookup.outcome,
-                        dm_resources::native_resolver::CapturedResourceOutcome::Unsupported
-                    )
-            })
-        {
-            return Ok(None);
-        }
-        for request in &demand.additional {
-            if !catalog.record().aliases.iter().any(|alias| {
-                alias.name == request.archive_name && alias.disk_path == request.disk_path
-            }) {
-                return Ok(None);
-            }
-        }
-        let Some((_, inputs)) = self.inputs.validate_for_reuse(provider, exact, now)? else {
+        let Some((_, inputs)) =
+            measured(observer, ResourceValidationStage::InputValidation, || {
+                self.inputs.validate_for_reuse(provider, exact, now)
+            })?
+        else {
             return Ok(None);
         };
-        if !authenticate(self.archive)? {
+        if !measured(
+            observer,
+            ResourceValidationStage::ArchiveAuthentication,
+            || authenticate(self.archive),
+        )? {
             return Ok(None);
         }
         Ok(Some(ValidatedResources {
@@ -241,12 +303,32 @@ mod tests {
         let archive = ResourceIdentity { bytes: 9, hash: 42 };
         let manifest = ResourceManifest::capture(3, &catalog, inputs, vec![0], archive).unwrap();
         let demand = dm_resources::capture::discover_demand(&plan, &expanded, &[], &[]).unwrap();
+        let stages = std::cell::RefCell::new(Vec::new());
+        let observer = |measurement: ResourceValidationMeasurement| {
+            assert!(measurement.seconds.is_finite() && measurement.seconds >= 0.0);
+            stages.borrow_mut().push(measurement.stage);
+        };
         assert!(manifest
-            .validate(3, &demand, &provider, true, 20_000_000_000, |value| Ok(
-                value == archive
-            ))
+            .validate_observed(
+                3,
+                &demand,
+                &provider,
+                true,
+                20_000_000_000,
+                |value| Ok(value == archive),
+                Some(&observer)
+            )
             .unwrap()
             .is_some());
+        assert_eq!(
+            *stages.borrow(),
+            vec![
+                ResourceValidationStage::CatalogRestore,
+                ResourceValidationStage::DemandAdmission,
+                ResourceValidationStage::InputValidation,
+                ResourceValidationStage::ArchiveAuthentication
+            ]
+        );
         assert!(manifest
             .validate(3, &demand, &provider, false, 20_000_000_000, |_| Ok(false))
             .unwrap()

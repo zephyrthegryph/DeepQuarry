@@ -405,12 +405,17 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         let admit_resources = |demand: &dm_resources::capture::ResourceDemand| {
             let Some((prior_pair, manifest)) = resource_prior.as_ref() else { return Ok(None); };
             let Some(store) = pair_store.as_ref() else { return Ok(None); };
+            let proof_started = std::time::Instant::now();
             let proofs = manifest.filesystem_proofs();
-            manifest.validate(memo_policy, demand, &proofs,
+            eprintln!("native resource FilesystemProofCapture: {:.3}s", proof_started.elapsed().as_secs_f64());
+            let observer = |measurement: dmbc::resource_manifest::ResourceValidationMeasurement| {
+                eprintln!("native resource {:?}: {:.3}s", measurement.stage, measurement.seconds);
+            };
+            manifest.validate_observed(memo_policy, demand, &proofs,
                 exact_inputs, now_ns(), |identity| {
                     Ok(store.verify(*prior_pair, exact_inputs).is_ok_and(|pair|
                         pair.rsc_bytes == identity.bytes && pair.rsc_hash == identity.hash))
-                }).map_err(|error| error.to_string())
+                }, Some(&observer)).map_err(|error| error.to_string())
         };
         let mut nontext = dmbc::captured_non_text_driver::capture_with_resource_reuse(
             &frontend,
@@ -576,7 +581,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }).collect();
         let memo_stats = procedure_memo.as_ref().map(|memo| {
             use std::sync::atomic::Ordering::Relaxed;
-            serde_json::json!({"disk_hits":memo.counts.disk_hits.load(Relaxed),"issued_preparations":memo.counts.issued_preparations.load(Relaxed),"parsed_preparations":memo.counts.parsed_preparations.load(Relaxed),"recomputed":memo.counts.recomputed.load(Relaxed),"pending_dropped":memo.counts.pending_dropped.load(Relaxed),"published_records":memo.counts.published_records.load(Relaxed),"publication_failed":memo.counts.publication_failed.load(Relaxed),"key_preparation_seconds":memo.counts.key_preparation_ns.load(Relaxed) as f64 / 1e9,"lookup_seconds":memo.counts.lookup_ns.load(Relaxed) as f64 / 1e9,"encode_seconds":memo.counts.encode_ns.load(Relaxed) as f64 / 1e9,"publication_cpu_scope_seconds":memo.counts.publication_ns.load(Relaxed) as f64 / 1e9,"errors":memo.publication_errors()})
+            serde_json::json!({"disk_hits":memo.counts.disk_hits.load(Relaxed),"issued_preparations":memo.counts.issued_preparations.load(Relaxed),"parsed_preparations":memo.counts.parsed_preparations.load(Relaxed),"recomputed":memo.counts.recomputed.load(Relaxed),"pending_dropped":memo.counts.pending_dropped.load(Relaxed),"published_records":memo.counts.published_records.load(Relaxed),"publication_failed":memo.counts.publication_failed.load(Relaxed),"key_preparation_seconds":memo.counts.key_preparation_ns.load(Relaxed) as f64 / 1e9,"lookup_seconds":memo.counts.lookup_ns.load(Relaxed) as f64 / 1e9,"occurrence_reads_seconds":memo.counts.occurrence_reads_ns.load(Relaxed) as f64 / 1e9,"explanation_seconds":memo.counts.explanation_ns.load(Relaxed) as f64 / 1e9,"encode_seconds":memo.counts.encode_ns.load(Relaxed) as f64 / 1e9,"publication_cpu_scope_seconds":memo.counts.publication_ns.load(Relaxed) as f64 / 1e9,"errors":memo.publication_errors()})
         });
         let expansion_stats = expansion_memo.as_ref().map(|memo| {
             use std::sync::atomic::Ordering::Relaxed;

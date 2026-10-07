@@ -848,12 +848,10 @@ fn parse_declarations(
     let workers = config.workers;
     let parse_start = Instant::now();
     let mut chunks = Vec::new();
-    let report = dm_syntax::for_each_source_chunk_with_limits(
-        source,
-        32 * 1024,
-        source.len().max(1),
-        |text, offset| chunks.push((offset, text.len())),
-    );
+    let report =
+        dm_syntax::for_each_stable_source_chunk(source, source.len().max(1), 32, |text, offset| {
+            chunks.push((offset, text.len()))
+        });
     if report.skipped_declarations != 0 {
         return Err(vec![internal("grammar chunker omitted a declaration")]);
     }
@@ -981,18 +979,22 @@ fn parse_declarations(
                         Err(Vec::new())
                     };
                     let parsed = ast.items;
-                    if !cached_fragment_hit {
-                        if let Some(memo) = memo {
+                    let produced_payload =
+                        if memo.is_some() && (!cached_fragment_hit || !has_cached_facts) {
                             let facts_bytes = facts.as_ref().ok().and_then(|(facts, ledger)| {
                                 chunkfacts::encode(facts, ledger, offset)
                             });
-                            if let Some(bytes) =
-                                parserwire::encode_with_facts(&parsed, &errors, offset, facts_bytes)
-                            {
+                            parserwire::encode_with_facts(&parsed, &errors, offset, facts_bytes)
+                        } else {
+                            None
+                        };
+                    if !cached_fragment_hit {
+                        if let Some(memo) = memo {
+                            if let Some(bytes) = &produced_payload {
                                 if let Some(record) = dm_preprocess::regions::FragmentRecord::new(
                                     parserwire::VERSION,
                                     text,
-                                    bytes.into(),
+                                    Arc::from(bytes.as_slice()),
                                 ) {
                                     memo.insert_fragment(Arc::new(record));
                                 }
@@ -1003,11 +1005,7 @@ fn parse_declarations(
                         None
                     } else {
                         receipt.zip(relative).and_then(|(_, span)| {
-                            let bytes = facts.as_ref().ok().and_then(|(facts, ledger)| {
-                                chunkfacts::encode(facts, ledger, offset)
-                            });
-                            parserwire::encode_with_facts(&parsed, &errors, offset, bytes)
-                                .map(|bytes| (receipt_index, span, bytes))
+                            produced_payload.map(|bytes| (receipt_index, span, bytes))
                         })
                     };
                     if sender

@@ -279,3 +279,18 @@ Next saved cohort adds separately bounded chunked key/tree disk streams,
 independent exact-source parser fragments, unified anonymous initializer replay,
 and retained resource catalog reuse. These changes require a new release and
 full CLI measurements before any improvement claim. No DM/runtime tests run.
+## J cohort: full tree disk admission, performance still regressed
+
+Release6C33C6E2D6CF028B5FA7479723469E7D21B155EE4F02D581A8F4BD23A1217D7A.
+Fresh population142.700s; unchanged4.396s; body110.255s; cold82.901s.
+Tree key112820342 and payload122186962 bytes admitted via bounded chunks;
+manifest30233 bytes; no oversize or publication errors. Body tree disk_hits1,
+resolved0/rejected0, confirming actual current-authority replay.
+Procedure77563diskhits/1recompute; bodyfrontend16.115,nontext7.477,
+compilation67.668,publication4.750s. Lowering43.806s despite only one miss;
+workerkey2.152/lookup9.978s do not account for all stage time. Follow-up targets
+prelookup occurrence-read recording outside those timers, plus explanation locks.
+Cold and edited DMB/RSC byte-identical. These runs DO NOT meet Phase2 targets.
+Next source cohort removes duplicate tree metadata payload/serialization/hash
+passes, adds stable grammar groups and finer nontext timing. No runtime tests.
+Receipts E:/dmb-native-v2-phase0/phase2-20261007-j-*.
