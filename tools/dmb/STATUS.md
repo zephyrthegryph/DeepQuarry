@@ -5,9 +5,16 @@ Phase 1 foundation work is now underway alongside the remaining baseline evidenc
 The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
+Release probe 30 stopped in tree resolution after 8.356 s (sampled private
+memory 1,021,616,128 bytes). A declaration namespace match split the owner
+component `type_var` into `type_`; the component-boundary correction now has
+a focused regression. No output pair was produced. The native intrinsic-field
+gate and positive-procedure namespace gate pass; the next complete-project
+attempt remains pending. The class readiness queue preserves the old ordering
+and passes branching, deep-chain, missing-parent and cycle checks.
 
 Release probe 29 completed initializer classification (2.129 s) and codegen
-(0.338 s), then stopped after lowering all 64,964 bodies. The failure report has
+(0.338 s), then stopped after attempting to lower all 64,964 bodies. The failure report has
 2,195 diagnostics, led by 1,758 unsupported `UniqueStaticVar` queries. External
 time was 26.657 s (24.379 s driver), sampled private memory 2,500,485,120 bytes.
 No pair was produced. Resolver admission, builtin inference, qualified `initial`

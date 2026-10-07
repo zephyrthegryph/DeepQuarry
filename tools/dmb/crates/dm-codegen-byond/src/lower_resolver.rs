@@ -253,6 +253,10 @@ impl ProjectResolver<'_> {
                     _ => String::new(),
                 }
             }
+            Q::GlobalVar(name) | Q::GlobalProc(name) | Q::UniqueStaticVar(name)
+            | Q::PredefinedConstant(name) => self.symbols.text(name)
+                .map(|name| format!(" (name={name})"))
+                .unwrap_or_default(),
             _ => String::new(),
         };
         LowerError {
@@ -339,17 +343,18 @@ impl ProjectResolver<'_> {
             verb: true,
         };
         let procedure = self.answer(proc_query)?;
-        let verb = self.answer(verb_query)?;
-        let (answer, query, namespace) = match (procedure, verb) {
-            (M::Missing, M::Missing) => return Ok(None),
-            (answer, M::Missing) => (answer, proc_query, "proc"),
-            (M::Missing, answer) => (answer, verb_query, "verb"),
-            _ => {
-                return Err(self.error(
-                    proc_query,
-                    "proc/verb selection requires explicit precedence metadata",
-                ))
-            }
+        // The semantic tree rejects cross-namespace callable declarations.
+        // A positively issued procedure therefore selects the callable without
+        // requiring an unrelated negative answer from a partial engine catalog.
+        let (answer, query, namespace) = match procedure {
+            answer @ (M::Member { .. } | M::IntrinsicProc { .. }) =>
+                (answer, proc_query, "proc"),
+            M::Missing => match self.answer(verb_query)? {
+                M::Missing => return Ok(None),
+                answer @ M::Member { .. } => (answer, verb_query, "verb"),
+                _ => return Err(self.error(verb_query, "procedure declaration metadata unavailable")),
+            },
+            _ => return Err(self.error(proc_query, "procedure declaration metadata unavailable")),
         };
         match answer {
             M::IntrinsicProc {
@@ -971,6 +976,48 @@ mod tests {
                 name: SymbolId::of("unknown")
             })
             .is_err());
+    }
+    #[test]
+    fn positive_member_proc_does_not_require_opposite_namespace_absence() {
+        let mut symbols = SymbolTable::default();
+        symbols.intern("/datum/probe").unwrap();
+        for name in ["authored", "intrinsic", "verb_only", "unknown"] {
+            symbols.intern(name).unwrap();
+        }
+        let host = Host {
+            reads: Mutex::new(vec![]),
+            answer: |query| match query {
+                Q::Proc { owner, name, verb: false } if name == SymbolId::of("authored") =>
+                    M::Member { owner, name, fingerprint: 1, data: std::sync::Arc::new(Default::default()) },
+                Q::Proc { owner, name, verb: false } if name == SymbolId::of("intrinsic") =>
+                    M::IntrinsicProc { declaring_owner: owner, name },
+                Q::Proc { name, verb: false, .. } if name == SymbolId::of("verb_only") => M::Missing,
+                Q::Proc { owner, name, verb: true } if name == SymbolId::of("verb_only") =>
+                    M::Member { owner, name, fingerprint: 2, data: std::sync::Arc::new(Default::default()) },
+                _ => M::Unsupported(query),
+            },
+        };
+        let lookup = ProjectResolver {
+            modified_instances: RefCell::new(Default::default()),
+            procedure_values: RefCell::new(Default::default()),
+            procedure_statics: RefCell::new(Default::default()),
+            resolver: &host,
+            symbols: &symbols,
+            slots: RefCell::new(Default::default()),
+            resources: RefCell::new(Default::default()),
+            instances: RefCell::new(Default::default()),
+            runtime_types: RefCell::new(Default::default()),
+            resource_search_context: None,
+        };
+        assert_eq!(lookup.member_proc("/datum/probe", "authored").unwrap(),
+            Some("/datum/probe/proc/authored".into()));
+        assert_eq!(lookup.member_proc("/datum/probe", "intrinsic").unwrap(), None);
+        assert_eq!(host.reads.lock().unwrap().len(), 2);
+        assert!(host.reads.lock().unwrap().iter().all(|query|
+            matches!(query, Q::Proc { verb: false, .. })));
+        assert_eq!(lookup.member_proc("/datum/probe", "verb_only").unwrap(),
+            Some("/datum/probe/verb/verb_only".into()));
+        assert!(lookup.member_proc("/datum/probe", "unknown").is_err());
     }
     #[test]
     fn procedure_literal_lowering_keeps_exact_formal_identity_sidecar() {
