@@ -259,6 +259,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 
 //Returns a string with reserved characters and spaces before the first letter removed
 /proc/trim_left(text)
+	READS_FROM() // Purely transforms the supplied text.
 	for (var/i = 1 to length(text))
 		if (text2ascii(text, i) > 32)
 			return copytext(text, i)
@@ -266,6 +267,7 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 
 //Returns a string with reserved characters and spaces after the last letter removed
 /proc/trim_right(text)
+	READS_FROM() // Purely transforms the supplied text.
 	for (var/i = length(text), i > 0, i--)
 		if (text2ascii(text, i) > 32)
 			return copytext(text, 1, i + 1)
