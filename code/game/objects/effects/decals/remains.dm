@@ -62,9 +62,9 @@
 	icon_state = "mummified2"
 
 CAPABILITIES(/obj/effect/decal/remains)
-	op("crumble_remains", hand(), then(PROC_REF(interaction_crumble_remains)))
+	op("crumble_remains", hand(), stance(I_HURT), then(PROC_REF(interaction_crumble_remains)))
 
-/// Old attack_hand: the remains crumble away at a touch.
+/// Old attack_hand: harm intent crumbles the remains away.
 /obj/effect/decal/remains/proc/interaction_crumble_remains(datum/act/op/A)
 	var/mob/user = A.actor
 	if(loc?.release_refusal(src, user))

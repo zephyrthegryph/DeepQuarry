@@ -2662,3 +2662,12 @@ Each changed pin row is one of these classes; nothing else was blessed. `dq_inte
   registered and the next `get_overmap_sector()` handed out a dying one (`rel_set` refused "is being destroyed" in `i7_bulk` after `dq_conversion_pin`). It removes the text keys it owns.
   `i7_bulk` still fails alone and combined on master for another reason (a gravity generator part's break during its own destroy, `hold(...): the holder is deleted`), which is in
   `code/game/machinery`.
+
+## Destructive held-item and hand ops need harm intent (rewrite/om-leftovers)
+
+A held-item op answers a click (a generic "Pick up" only with an empty hand), but an op that destroys, crumbles, dismantles
+or consumes its target must not fire on a casual click. Gate it individually with `stance(I_HURT)` or an `asks()` confirm.
+Changed: smole buildings and smole ruins no longer flatten when clicked with any item on help intent (harm intent still
+does; disarm still takes a building apart by hand); remains crumble only on harm intent. Tool-specific ops (a welder cutting
+a closet, a knife slicing food) are deliberate and stay ungated. Reviewed and left as is: supermatter wall "Touch with"
+(thematic hazard) and the stardog/tank "swallow" item ops (they take the item, not the target).
