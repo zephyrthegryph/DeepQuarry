@@ -917,3 +917,85 @@
 	TEST_ASSERT(victim.loc == fur_turf, "moving cancels: the one picked stays in the fur")
 	TEST_ASSERT(was_cancelled(R, H), "the action ends cancelled")
 	fur_turf.ChangeTurf(old_type)
+
+// ---- Mobs at timed work of their own (AI-started): ants building, a mouse cloaking ----
+
+/datum/unit_test/dq_timed_pin_w6/ant_builder_builds
+
+/datum/unit_test/dq_timed_pin_w6/ant_builder_builds/run_pin()
+	var/mob/living/simple_mob/animal/tyr/mineral_ants/builder/B = allocate(/mob/living/simple_mob/animal/tyr/mineral_ants/builder, run_loc_floor_bottom_left)
+	B.set_nutrition(150)
+	var/turf/T = get_turf(B)
+	TEST_ASSERT(B.build_tile(T), "the builder starts building")
+	TEST_ASSERT(!isnull(running(B)), "and is at work")
+	TEST_ASSERT(!B.build_tile(T), "a builder at work takes no second job")
+	test_time(4 SECONDS)
+	TEST_ASSERT(isnull(locate(/obj/effect/ant_structure) in T), "nothing is built before the end")
+	TEST_ASSERT_EQUAL(B.nutrition, 150, "and nothing is spent")
+	test_time(2 SECONDS)
+	TEST_ASSERT(!isnull(locate(/obj/effect/ant_structure) in T), "a structure stands at the end")
+	TEST_ASSERT_EQUAL(B.nutrition, 120, "and thirty nutrition are spent")
+	TEST_ASSERT_NULL(running(B), "and the builder is free again")
+	for(var/obj/effect/ant_structure/S in T)
+		qdel(S)
+
+/datum/unit_test/dq_timed_pin_w6/ant_queen_builds
+
+/datum/unit_test/dq_timed_pin_w6/ant_queen_builds/run_pin()
+	var/mob/living/simple_mob/animal/tyr/mineral_ants/queen/Q = allocate(/mob/living/simple_mob/animal/tyr/mineral_ants/queen, run_loc_floor_bottom_left)
+	Q.set_nutrition(630)
+	var/turf/T = get_turf(Q)
+	TEST_ASSERT(Q.build_tile(T), "the queen starts building")
+	TEST_ASSERT(!isnull(running(Q)), "and is at work")
+	test_time(4 SECONDS)
+	TEST_ASSERT(isnull(locate(/obj/effect/spider/spiderling/antling) in T), "nothing is laid before the end")
+	TEST_ASSERT_EQUAL(Q.nutrition, 630, "and nothing is spent")
+	test_time(2 SECONDS)
+	TEST_ASSERT(!isnull(locate(/obj/effect/spider/spiderling/antling) in T), "an antling is laid at the end")
+	TEST_ASSERT_EQUAL(Q.nutrition, 600, "and thirty nutrition are spent")
+	for(var/obj/effect/spider/spiderling/antling/S in T)
+		qdel(S)
+
+/datum/unit_test/dq_timed_pin_w6/ant_builder_wanders_off
+
+/datum/unit_test/dq_timed_pin_w6/ant_builder_wanders_off/run_pin()
+	var/mob/living/simple_mob/animal/tyr/mineral_ants/builder/B = allocate(/mob/living/simple_mob/animal/tyr/mineral_ants/builder, run_loc_floor_bottom_left)
+	B.set_nutrition(150)
+	var/turf/T = get_turf(B)
+	TEST_ASSERT(B.build_tile(T), "the builder starts building")
+	B.forceMove(get_step(get_step(get_step(B, EAST), EAST), EAST))
+	test_time(6 SECONDS)
+	TEST_ASSERT(isnull(locate(/obj/effect/ant_structure) in T), "a builder three tiles away builds nothing")
+	TEST_ASSERT_EQUAL(B.nutrition, 150, "and spends nothing")
+	TEST_ASSERT(said(B, "stay still"), "it is told to stay still")
+
+/datum/unit_test/dq_timed_pin_w6/ant_builder_too_hungry
+
+/datum/unit_test/dq_timed_pin_w6/ant_builder_too_hungry/run_pin()
+	var/mob/living/simple_mob/animal/tyr/mineral_ants/builder/B = allocate(/mob/living/simple_mob/animal/tyr/mineral_ants/builder, run_loc_floor_bottom_left)
+	B.set_nutrition(50)
+	TEST_ASSERT(!B.build_tile(get_turf(B)), "a hungry builder starts nothing")
+	TEST_ASSERT_NULL(running(B), "and is not at work")
+
+/datum/unit_test/dq_timed_pin_w6/mouse_cloaks
+
+/datum/unit_test/dq_timed_pin_w6/mouse_cloaks/run_pin()
+	var/mob/living/simple_mob/animal/space/mouse_army/stealth/M = allocate(/mob/living/simple_mob/animal/space/mouse_army/stealth, run_loc_floor_bottom_left)
+	M.start_cloaking()
+	TEST_ASSERT(!isnull(running(M)), "the mouse is at work")
+	test_time(0.5 SECONDS)
+	TEST_ASSERT(M.plane != CLOAKED_PLANE, "it is not yet on the cloaked plane")
+	test_time(1 SECOND)
+	TEST_ASSERT(M.plane == CLOAKED_PLANE, "it is on the cloaked plane at the end")
+	TEST_ASSERT_NULL(running(M), "and is free again")
+
+/datum/unit_test/dq_timed_pin_w6/mouse_cloak_dies
+
+/datum/unit_test/dq_timed_pin_w6/mouse_cloak_dies/run_pin()
+	var/mob/living/simple_mob/animal/space/mouse_army/stealth/M = allocate(/mob/living/simple_mob/animal/space/mouse_army/stealth, run_loc_floor_bottom_left)
+	M.start_cloaking()
+	TEST_ASSERT(!isnull(running(M)), "the mouse is at work")
+	M.death()
+	test_time(2 SECONDS)
+	TEST_ASSERT(M.plane != CLOAKED_PLANE, "a mouse that dies never reaches the cloaked plane")
+	TEST_ASSERT(!M.is_cloaked(), "and is not cloaked")
