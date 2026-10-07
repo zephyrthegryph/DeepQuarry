@@ -1,0 +1,538 @@
+//! Independent deterministic table assignment. No DMB writer or global ledger.
+use dm_ir::{RelocationError, SymRef, SymbolId, SymbolicCode};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    sync::Arc,
+};
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Table {
+    String,
+    Type,
+    Procedure,
+    Variable,
+    Instance,
+    List,
+    Resource,
+}
+/// Proc and verb semantic namespaces remain distinct even when sharing a wire table.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Key {
+    String(SymbolId),
+    Type(SymbolId),
+    Proc {
+        owner: SymbolId,
+        name: SymbolId,
+        occurrence: u32,
+    },
+    Verb {
+        owner: SymbolId,
+        name: SymbolId,
+        occurrence: u32,
+    },
+    Variable {
+        owner: SymbolId,
+        name: SymbolId,
+    },
+    BuiltinGlobalVars,
+    Instance(SymbolId),
+    List(u128),
+    Resource(u128),
+}
+impl Key {
+    pub fn table(self) -> Table {
+        match self {
+            Self::String(_) => Table::String,
+            Self::Type(_) => Table::Type,
+            Self::Proc { .. } | Self::Verb { .. } => Table::Procedure,
+            Self::Variable { .. } | Self::BuiltinGlobalVars => Table::Variable,
+            Self::Instance(_) => Table::Instance,
+            Self::List(_) => Table::List,
+            Self::Resource(_) => Table::Resource,
+        }
+    }
+}
+#[derive(Clone, Debug)]
+pub struct Entry {
+    pub key: Key,
+    pub content: Arc<[u8]>,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SlotAlias {
+    pub symbol: SymbolId,
+    pub owner: SymbolId,
+    pub name: SymbolId,
+}
+#[derive(Clone, Debug, Default)]
+pub struct LinkInventory {
+    pub entries: Vec<Entry>,
+    /// Exact spellings validate hashed SymbolId identity across all inventories.
+    pub spellings: Vec<(SymbolId, Arc<[u8]>)>,
+    pub slots: Vec<SlotAlias>,
+    /// Pinned engine indexes. Unfilled holes remain reserved, never silently reused.
+    pub fixed: Vec<(Key, u32)>,
+    /// Full observable order for a table, when supplied. Unordered tables use
+    /// canonical structural key order; the linker never guesses BYOND order.
+    pub orders: BTreeMap<Table, Vec<Key>>,
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum LinkError {
+    SymbolCollision(SymbolId),
+    InvalidSymbol(SymbolId),
+    MissingSpelling(SymbolId),
+    ContentCollision(Key),
+    SlotCollision(SymbolId),
+    UnknownKey(Key),
+    DuplicateFixed(Key),
+    FixedIndexCollision(Table, u32),
+    DuplicateOrder(Key),
+    WrongTable(Key),
+    IncompleteOrder(Table),
+    OrderConflictsFixed(Key),
+    IndexOverflow(Table),
+    UnknownReference(SymRef),
+    MissingSourceFile(u32),
+    SourceLineOverflow(u32),
+    Relocation(RelocationError),
+}
+#[derive(Clone, Debug)]
+pub struct LinkTables {
+    indexes: Arc<BTreeMap<Key, u32>>,
+    slots: Arc<BTreeMap<SymbolId, (SymbolId, SymbolId)>>,
+    content: Arc<BTreeMap<Key, Arc<[u8]>>>,
+}
+impl LinkTables {
+    pub fn index(&self, key: Key) -> Option<u32> {
+        self.indexes.get(&key).copied()
+    }
+    pub fn assignments(&self) -> &BTreeMap<Key, u32> {
+        &self.indexes
+    }
+    pub fn content(&self, key: Key) -> Option<&[u8]> {
+        self.content.get(&key).map(AsRef::as_ref)
+    }
+    pub fn build(inventory: LinkInventory) -> Result<Self, LinkError> {
+        let mut spellings = BTreeMap::new();
+        for (id, bytes) in inventory.spellings {
+            if SymbolId::of_bytes(&bytes) != id {
+                return Err(LinkError::InvalidSymbol(id));
+            }
+            if spellings
+                .insert(id, Arc::clone(&bytes))
+                .is_some_and(|previous| previous != bytes)
+            {
+                return Err(LinkError::SymbolCollision(id));
+            }
+        }
+        let mut content = BTreeMap::new();
+        for entry in inventory.entries {
+            for symbol in symbols(entry.key) {
+                if !spellings.contains_key(&symbol) {
+                    return Err(LinkError::MissingSpelling(symbol));
+                }
+            }
+            if content
+                .insert(entry.key, Arc::clone(&entry.content))
+                .is_some_and(|previous| previous != entry.content)
+            {
+                return Err(LinkError::ContentCollision(entry.key));
+            }
+        }
+        let mut slots = BTreeMap::new();
+        for slot in inventory.slots {
+            let tuple = (slot.owner, slot.name);
+            if slots
+                .insert(slot.symbol, tuple)
+                .is_some_and(|previous| previous != tuple)
+            {
+                return Err(LinkError::SlotCollision(slot.symbol));
+            }
+            if !content.contains_key(&Key::Variable {
+                owner: slot.owner,
+                name: slot.name,
+            }) {
+                return Err(LinkError::UnknownKey(Key::Variable {
+                    owner: slot.owner,
+                    name: slot.name,
+                }));
+            }
+        }
+        let mut indexes = BTreeMap::new();
+        let mut occupied: BTreeMap<Table, BTreeSet<u32>> = BTreeMap::new();
+        for (key, index) in inventory.fixed {
+            if !content.contains_key(&key) {
+                return Err(LinkError::UnknownKey(key));
+            }
+            if indexes.insert(key, index).is_some() {
+                return Err(LinkError::DuplicateFixed(key));
+            }
+            if !occupied.entry(key.table()).or_default().insert(index) {
+                return Err(LinkError::FixedIndexCollision(key.table(), index));
+            }
+        }
+        for table in [
+            Table::String,
+            Table::Type,
+            Table::Procedure,
+            Table::Variable,
+            Table::Instance,
+            Table::List,
+            Table::Resource,
+        ] {
+            let keys: Vec<_> = content
+                .keys()
+                .copied()
+                .filter(|key| key.table() == table)
+                .collect();
+            let ordered = inventory.orders.get(&table);
+            if let Some(order) = ordered {
+                let mut seen = BTreeSet::new();
+                for key in order {
+                    if key.table() != table {
+                        return Err(LinkError::WrongTable(*key));
+                    }
+                    if !content.contains_key(key) {
+                        return Err(LinkError::UnknownKey(*key));
+                    }
+                    if !seen.insert(*key) {
+                        return Err(LinkError::DuplicateOrder(*key));
+                    }
+                }
+                if seen.len() != keys.len() {
+                    return Err(LinkError::IncompleteOrder(table));
+                }
+                for (i, key) in order.iter().enumerate() {
+                    let index = u32::try_from(i).map_err(|_| LinkError::IndexOverflow(table))?;
+                    if indexes.get(key).is_some_and(|fixed| *fixed != index) {
+                        return Err(LinkError::OrderConflictsFixed(*key));
+                    }
+                    if !indexes.contains_key(key)
+                        && occupied.entry(table).or_default().contains(&index)
+                    {
+                        return Err(LinkError::FixedIndexCollision(table, index));
+                    }
+                    indexes.insert(*key, index);
+                    occupied.entry(table).or_default().insert(index);
+                }
+            } else {
+                let mut next = occupied
+                    .get(&table)
+                    .and_then(|set| set.last())
+                    .map(|i| u64::from(*i) + 1)
+                    .unwrap_or(0);
+                for key in keys {
+                    if indexes.contains_key(&key) {
+                        continue;
+                    }
+                    let index = u32::try_from(next).map_err(|_| LinkError::IndexOverflow(table))?;
+                    indexes.insert(key, index);
+                    next += 1;
+                }
+            }
+        }
+        Ok(Self {
+            indexes: Arc::new(indexes),
+            slots: Arc::new(slots),
+            content: Arc::new(content),
+        })
+    }
+    pub fn link(
+        &self,
+        code: &SymbolicCode,
+        source: &SourceBindings,
+    ) -> Result<ProcedureImage, LinkError> {
+        let mut resolved = BTreeMap::new();
+        for relocation in code.relocations() {
+            let reference = relocation.reference;
+            let index = match reference {
+                SymRef::LineDelta(delta) => source
+                    .first_line
+                    .checked_add(delta)
+                    .ok_or(LinkError::SourceLineOverflow(delta))?,
+                SymRef::SourceFile(origin) => {
+                    let symbol = *source
+                        .files
+                        .get(&origin)
+                        .ok_or(LinkError::MissingSourceFile(origin))?;
+                    self.index(Key::String(symbol))
+                        .ok_or(LinkError::UnknownKey(Key::String(symbol)))?
+                }
+                _ => {
+                    let key = reference_key(reference, &self.slots)
+                        .ok_or(LinkError::UnknownReference(reference))?;
+                    self.index(key)
+                        .ok_or(LinkError::UnknownReference(reference))?
+                }
+            };
+            resolved.insert(reference, index);
+        }
+        let words = code
+            .link(|reference| resolved.get(&reference).copied())
+            .map_err(LinkError::Relocation)?;
+        Ok(ProcedureImage {
+            words: words.into(),
+        })
+    }
+}
+fn symbols(key: Key) -> Vec<SymbolId> {
+    match key {
+        Key::String(id) | Key::Type(id) | Key::Instance(id) => vec![id],
+        Key::Proc { owner, name, .. }
+        | Key::Verb { owner, name, .. }
+        | Key::Variable { owner, name } => vec![owner, name],
+        _ => vec![],
+    }
+}
+fn reference_key(
+    reference: SymRef,
+    slots: &BTreeMap<SymbolId, (SymbolId, SymbolId)>,
+) -> Option<Key> {
+    Some(match reference {
+        SymRef::String(id) => Key::String(id),
+        SymRef::Type(id) => Key::Type(id),
+        SymRef::Proc {
+            owner,
+            name,
+            occurrence,
+        } => Key::Proc {
+            owner,
+            name,
+            occurrence,
+        },
+        SymRef::Verb {
+            owner,
+            name,
+            occurrence,
+        } => Key::Verb {
+            owner,
+            name,
+            occurrence,
+        },
+        SymRef::Var { owner, name } => Key::Variable { owner, name },
+        SymRef::VariableSlot(symbol) => {
+            let &(owner, name) = slots.get(&symbol)?;
+            Key::Variable { owner, name }
+        }
+        SymRef::BuiltinGlobalVars => Key::BuiltinGlobalVars,
+        SymRef::Instance(id) => Key::Instance(id),
+        SymRef::ConstantList(id) => Key::List(id),
+        SymRef::Resource(id) => Key::Resource(id),
+        SymRef::SourceFile(_) | SymRef::LineDelta(_) => return None,
+    })
+}
+#[derive(Clone, Debug, Default)]
+pub struct SourceBindings {
+    pub first_line: u32,
+    pub files: BTreeMap<u32, SymbolId>,
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProcedureImage {
+    pub words: Arc<[u32]>,
+}
+
+/// Initializer dependencies/registration order are supplied by semantic lowering,
+/// separately from code words. This linker validates identities; it does not
+/// infer constructor order or lower initializer expressions.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct InitializerReferences {
+    pub reads: Vec<Key>,
+    pub writes: Vec<Key>,
+    pub registrations: Vec<Key>,
+}
+impl LinkTables {
+    pub fn validate_initializer(&self, sidecar: &InitializerReferences) -> Result<(), LinkError> {
+        for key in sidecar
+            .reads
+            .iter()
+            .chain(&sidecar.writes)
+            .chain(&sidecar.registrations)
+        {
+            if self.index(*key).is_none() {
+                return Err(LinkError::UnknownKey(*key));
+            }
+        }
+        Ok(())
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use dm_ir::{Relocation, RelocationEncoding};
+    fn sample_inventory() -> LinkInventory {
+        let names = ["/datum/a", "read", "vars", "text", "/datum/a/modified"];
+        let owner = SymbolId::of(names[0]);
+        let name = SymbolId::of(names[1]);
+        LinkInventory {
+            spellings: names
+                .iter()
+                .map(|s| (SymbolId::of(s), Arc::from(s.as_bytes())))
+                .collect(),
+            entries: vec![
+                Key::String(SymbolId::of("text")),
+                Key::Type(owner),
+                Key::Proc {
+                    owner,
+                    name,
+                    occurrence: 0,
+                },
+                Key::Verb {
+                    owner,
+                    name,
+                    occurrence: 0,
+                },
+                Key::Variable {
+                    owner,
+                    name: SymbolId::of("vars"),
+                },
+                Key::BuiltinGlobalVars,
+                Key::Instance(SymbolId::of(names[4])),
+            ]
+            .into_iter()
+            .map(|key| Entry {
+                key,
+                content: Arc::from([]),
+            })
+            .collect(),
+            ..Default::default()
+        }
+    }
+    #[test]
+    fn independent_inventory_orders_produce_identical_tables() {
+        let inventory = sample_inventory();
+        let a = LinkTables::build(inventory.clone()).unwrap();
+        let mut reversed = inventory;
+        reversed.entries.reverse();
+        reversed.spellings.reverse();
+        let b = LinkTables::build(reversed).unwrap();
+        assert_eq!(a.assignments(), b.assignments());
+        let owner = SymbolId::of("/datum/a");
+        let name = SymbolId::of("read");
+        assert_ne!(
+            a.index(Key::Proc {
+                owner,
+                name,
+                occurrence: 0
+            }),
+            a.index(Key::Verb {
+                owner,
+                name,
+                occurrence: 0
+            })
+        );
+        assert_ne!(
+            a.index(Key::BuiltinGlobalVars),
+            a.index(Key::Variable {
+                owner,
+                name: SymbolId::of("vars")
+            })
+        );
+    }
+    #[test]
+    fn explicit_orders_and_fixed_bindings_are_constraints() {
+        let mut inventory = sample_inventory();
+        let key = Key::Type(SymbolId::of("/datum/a"));
+        inventory.fixed.push((key, 12));
+        let a = LinkTables::build(inventory.clone()).unwrap();
+        assert_eq!(a.index(key), Some(12));
+        inventory.orders.insert(Table::Type, vec![key]);
+        assert_eq!(
+            LinkTables::build(inventory).unwrap_err(),
+            LinkError::OrderConflictsFixed(key)
+        );
+        let mut inventory = sample_inventory();
+        inventory.orders.insert(Table::Procedure, vec![]);
+        assert_eq!(
+            LinkTables::build(inventory).unwrap_err(),
+            LinkError::IncompleteOrder(Table::Procedure)
+        );
+    }
+    #[test]
+    fn exact_slot_aliases_reject_hash_collision_and_unknown_refs() {
+        let mut inventory = sample_inventory();
+        let owner = SymbolId::of("/datum/a");
+        let name = SymbolId::of("vars");
+        let symbol = SymbolId::of("slot");
+        inventory.slots = vec![
+            SlotAlias {
+                symbol,
+                owner,
+                name,
+            },
+            SlotAlias {
+                symbol,
+                owner,
+                name: SymbolId::of("read"),
+            },
+        ];
+        assert_eq!(
+            LinkTables::build(inventory).unwrap_err(),
+            LinkError::SlotCollision(symbol)
+        );
+        let tables = LinkTables::build(sample_inventory()).unwrap();
+        let reference = SymRef::VariableSlot(symbol);
+        let code = SymbolicCode::new(
+            vec![0],
+            vec![Relocation {
+                offset: 0,
+                reference,
+                encoding: RelocationEncoding::Direct,
+            }],
+        )
+        .unwrap();
+        assert_eq!(
+            tables.link(&code, &SourceBindings::default()).unwrap_err(),
+            LinkError::UnknownReference(reference)
+        );
+    }
+    #[test]
+    fn packed_direct_and_source_operands_are_immutable() {
+        let mut inventory = sample_inventory();
+        let key = Key::Type(SymbolId::of("/datum/a"));
+        inventory.fixed.push((key, 0x123456));
+        let tables = LinkTables::build(inventory.clone()).unwrap();
+        let code = SymbolicCode::new(
+            vec![42, 0, 0, 0, 0],
+            vec![
+                Relocation {
+                    offset: 1,
+                    reference: SymRef::Type(SymbolId::of("/datum/a")),
+                    encoding: RelocationEncoding::Direct,
+                },
+                Relocation {
+                    offset: 2,
+                    reference: SymRef::Type(SymbolId::of("/datum/a")),
+                    encoding: RelocationEncoding::PackedValue24 { tag: 6 },
+                },
+                Relocation {
+                    offset: 4,
+                    reference: SymRef::LineDelta(4),
+                    encoding: RelocationEncoding::Direct,
+                },
+            ],
+        )
+        .unwrap();
+        let image = tables
+            .link(
+                &code,
+                &SourceBindings {
+                    first_line: 20,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        assert_eq!(&*image.words, &[42, 0x123456, 0x1206, 0x3456, 24]);
+        assert_eq!(code.words(), &[42, 0, 0, 0, 0]);
+        inventory.fixed = vec![(key, 0x1000000)];
+        let oversized = LinkTables::build(inventory).unwrap();
+        assert_eq!(
+            oversized
+                .link(&code, &SourceBindings::default())
+                .unwrap_err(),
+            LinkError::Relocation(RelocationError::PackedValueOverflow {
+                offset: 2,
+                value: 0x1000000
+            })
+        );
+        assert_eq!(code.words(), &[42, 0, 0, 0, 0]);
+    }
+}

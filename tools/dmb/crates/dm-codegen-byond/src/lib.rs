@@ -12,9 +12,14 @@ use std::fmt;
 pub const BUILTIN_GLOBAL_VARS_SYMBOL: &str = "@builtin/global.vars";
 
 mod builtin_catalog;
+pub mod encoder;
+pub use encoder::{freeze_proc, FreezeError, FrozenProc, OperandEncoding, OperandSite};
 mod simple;
+pub mod lower_resolver;
+pub use lower_resolver::ProcedureInputs;
 pub use simple::{
     compile_simple_proc, compile_simple_proc_with_bindings, compile_simple_proc_with_params,
+    compile_simple_proc_with_resolver,
     decode_constant_string_literal, nameof_reference, ArgumentMetadata, LowerBindings, LowerError,
     SharedLowerBindings, SimpleProc,
 };
@@ -65,7 +70,10 @@ pub enum ValueWord {
     String(String),
     Resource(String),
     FileType,
-    ClassPath { path: String, tag: u8 },
+    ClassPath {
+        path: String,
+        tag: u8,
+    },
     ProcPath(String),
     /// A native modified-type instance, rather than a generated subtype.
     Instance(String),
@@ -286,226 +294,12 @@ pub struct LinkedProc {
 }
 
 pub fn link_proc(proc: &SymbolicProc, ledger: &Ledger) -> Result<LinkedProc, LinkError> {
-    let mut labels = BTreeMap::new();
-    let mut offset = 0usize;
-    for item in &proc.items {
-        match item {
-            Item::Label(label) => {
-                let at = u32::try_from(offset).map_err(|_| LinkError::OffsetOverflow)?;
-                if labels.insert(label.clone(), at).is_some() {
-                    return Err(LinkError::DuplicateLabel(label.clone()));
-                }
-            }
-            Item::Instruction(instruction) => {
-                offset = offset
-                    .checked_add(1 + instruction.operands.iter().map(Word::width).sum::<usize>())
-                    .ok_or(LinkError::OffsetOverflow)?;
-            }
-        }
-    }
-    let mut words = Vec::with_capacity(offset);
-    let mut relocations = Vec::new();
-    let mut branch_slots = Vec::new();
-    let mut starts = Vec::new();
-    for item in &proc.items {
-        if let Item::Instruction(instruction) = item {
-            starts.push(words.len());
-            words.push(instruction.opcode);
-            for operand in &instruction.operands {
-                let slot = words.len();
-                match operand {
-                    Word::Immediate(value) => words.push(*value),
-                    Word::Reference(symbol) => {
-                        relocations.push((slot, symbol.clone()));
-                        words.push(
-                            ledger
-                                .id(symbol)
-                                .ok_or_else(|| LinkError::MissingSymbol(symbol.clone()))?,
-                        );
-                    }
-                    Word::Branch(label) => {
-                        branch_slots.push(slot);
-                        words.push(
-                            *labels
-                                .get(label)
-                                .ok_or_else(|| LinkError::MissingLabel(label.clone()))?,
-                        );
-                    }
-                    Word::Value(ValueWord::Null) => words.extend([0, 0]),
-                    Word::Value(ValueWord::Number(bits)) => {
-                        words.extend([0x2a, bits >> 16, bits & 0xffff]);
-                    }
-                    Word::Value(ValueWord::String(key)) => {
-                        let symbol = Symbol::new(Table::String, key);
-                        let id = ledger
-                            .id(&symbol)
-                            .ok_or_else(|| LinkError::MissingSymbol(symbol.clone()))?;
-                        if id > 0x00ff_ffff {
-                            return Err(LinkError::TooManyRecords(Table::String));
-                        }
-                        relocations.push((slot, symbol));
-                        words.extend([6 | ((id >> 16) << 8), id & 0xffff]);
-                    }
-                    Word::Value(ValueWord::Resource(key)) => {
-                        let symbol = Symbol::new(Table::Resource, key);
-                        let id = ledger
-                            .id(&symbol)
-                            .ok_or_else(|| LinkError::MissingSymbol(symbol.clone()))?;
-                        if id > 0x00ff_ffff {
-                            return Err(LinkError::TooManyRecords(Table::Resource));
-                        }
-                        relocations.push((slot, symbol));
-                        words.extend([12 | ((id >> 16) << 8), id & 0xffff]);
-                    }
-                    Word::Value(ValueWord::FileType) => words.extend([39, 0]),
-                    Word::Value(ValueWord::ClassPath { path, tag }) => {
-                        let symbol = Symbol::new(Table::Class, path);
-                        let id = ledger
-                            .id(&symbol)
-                            .ok_or_else(|| LinkError::MissingSymbol(symbol.clone()))?;
-                        if id > 0x00ff_ffff {
-                            return Err(LinkError::TooManyRecords(Table::Class));
-                        }
-                        relocations.push((slot, symbol));
-                        words.extend([u32::from(*tag) | ((id >> 16) << 8), id & 0xffff]);
-                    }
-                    Word::Value(ValueWord::Instance(path)) => {
-                        let symbol = Symbol::new(Table::Instance, path);
-                        let id = ledger
-                            .id(&symbol)
-                            .ok_or_else(|| LinkError::MissingSymbol(symbol.clone()))?;
-                        if id > 0x00ff_ffff {
-                            return Err(LinkError::TooManyRecords(Table::Instance));
-                        }
-                        relocations.push((slot, symbol));
-                        words.extend([41 | ((id >> 16) << 8), id & 0xffff]);
-                    }
-                    Word::Value(ValueWord::ProcPath(path)) => {
-                        let symbol = Symbol::new(Table::Proc, path);
-                        let id = ledger
-                            .id(&symbol)
-                            .ok_or_else(|| LinkError::MissingSymbol(symbol.clone()))?;
-                        if id > 0x00ff_ffff {
-                            return Err(LinkError::TooManyRecords(Table::Proc));
-                        }
-                        relocations.push((slot, symbol));
-                        words.extend([38 | ((id >> 16) << 8), id & 0xffff]);
-                    }
-                    Word::Variable(variable) => {
-                        encode_variable(variable, ledger, &mut words, &mut relocations)?
-                    }
-                }
-            }
-        }
-    }
-    let decoded = byond_dmb::bytecode::decode(&words)
-        .map_err(|error| LinkError::Decode(format!("{error:?}")))?;
-    for (expected, instruction) in starts.into_iter().zip(decoded.iter()) {
-        if expected != instruction.offset {
-            return Err(LinkError::InstructionBoundary {
-                expected,
-                decoded: instruction.offset,
-            });
-        }
-    }
-    if decoded.len()
-        != proc
-            .items
-            .iter()
-            .filter(|item| matches!(item, Item::Instruction(_)))
-            .count()
-    {
-        return Err(LinkError::Decode(
-            "decoded instruction count differs".into(),
-        ));
-    }
-    let mut legal_slots = Vec::new();
-    for instruction in &decoded {
-        legal_slots.extend(
-            instruction
-                .branch_target_word_offsets()
-                .map_err(|error| LinkError::Decode(format!("{error:?}")))?,
-        );
-    }
-    for slot in branch_slots {
-        if !legal_slots.contains(&slot) {
-            return Err(LinkError::BranchOperandIsNotTarget { offset: slot });
-        }
-    }
-    Ok(LinkedProc {
-        words,
-        labels,
-        relocations,
+    encoder::encode(proc, &mut |symbol| {
+        ledger
+            .id(symbol)
+            .ok_or_else(|| LinkError::MissingSymbol(symbol.clone()))
     })
-}
-
-fn encode_variable(
-    variable: &VariableWord,
-    ledger: &Ledger,
-    words: &mut Vec<u32>,
-    relocations: &mut Vec<(usize, Symbol)>,
-) -> Result<(), LinkError> {
-    match variable {
-        VariableWord::Arg(id) => words.extend([0xffd9, *id]),
-        VariableWord::Local(id) => words.extend([0xffda, *id]),
-        VariableWord::Src => words.push(0xffce),
-        VariableWord::Usr => words.push(0xffcd),
-        VariableWord::World => words.push(0xffe5),
-        VariableWord::Args => words.push(0xffcf),
-        VariableWord::Null => words.push(0xffe6),
-        VariableWord::Dot => words.push(0xffd0),
-        VariableWord::Cache => words.push(0xffd8),
-        VariableWord::CacheKey => words.push(0xffe3),
-        VariableWord::CacheIndex => words.push(0xffe4),
-        VariableWord::Field(key)
-        | VariableWord::StaticField(key)
-        | VariableWord::Global(key)
-        | VariableWord::DynamicProc(key) => {
-            let table = if matches!(variable, VariableWord::Global(_)) {
-                Table::Variable
-            } else {
-                Table::String
-            };
-            let symbol = Symbol::new(table, key);
-            let id = ledger
-                .id(&symbol)
-                .ok_or_else(|| LinkError::MissingSymbol(symbol.clone()))?;
-            if matches!(variable, VariableWord::Global(_)) {
-                words.push(0xffdb);
-            }
-            if matches!(variable, VariableWord::DynamicProc(_)) {
-                words.push(0xffdd);
-            }
-            if matches!(variable, VariableWord::StaticField(_)) {
-                words.push(0xffe7);
-            }
-            relocations.push((words.len(), symbol));
-            words.push(id);
-        }
-        VariableWord::StaticProc(path) | VariableWord::StaticVerb(path) => {
-            let symbol = Symbol::new(Table::Proc, path);
-            let id = ledger
-                .id(&symbol)
-                .ok_or_else(|| LinkError::MissingSymbol(symbol.clone()))?;
-            words.push(if matches!(variable, VariableWord::StaticVerb(_)) { 0xffe0 } else { 0xffdf });
-            relocations.push((words.len(), symbol));
-            words.push(id);
-        }
-        VariableWord::SetCache(a, b) => {
-            words.push(0xffdc);
-            encode_variable(a, ledger, words, relocations)?;
-            encode_variable(b, ledger, words, relocations)?;
-        }
-        VariableWord::Initial(variable) => {
-            words.push(0xffe7);
-            encode_variable(variable, ledger, words, relocations)?;
-        }
-        VariableWord::IsSaved(variable) => {
-            words.push(0xffe8);
-            encode_variable(variable, ledger, words, relocations)?;
-        }
-    }
-    Ok(())
+    .map(|encoded| encoded.linked)
 }
 
 #[cfg(test)]

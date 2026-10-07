@@ -123,6 +123,7 @@ name = "dm-codegen-byond"
 version = "0.1.0"
 dependencies = [
  "byond-dmb",
+ "dm-ir",
  "dm-syntax",
  "serde",
  "serde_json",
@@ -192,6 +193,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "dm-link"
+version = "0.1.0"
+dependencies = [
+ "dm-ir",
+]
+
+[[package]]
 name = "dm-output"
 version = "0.1.0"
 dependencies = [
@@ -218,6 +226,8 @@ version = "0.1.0"
 dependencies = [
  "byond-dmb",
  "dm-ir",
+ "dm-preprocess",
+ "dm-syntax",
  "sha2",
  "xxhash-rust",
 ]
@@ -247,7 +257,9 @@ dependencies = [
 name = "dmbc"
 version = "0.1.0"
 dependencies = [
+ "byond-dmb",
  "dm-analysis",
+ "dm-ir",
  "dm-preprocess",
  "dm-tree",
  "fs2",

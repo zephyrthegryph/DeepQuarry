@@ -15,7 +15,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = std::env::args().skip(1);
     let command = args.next().unwrap_or_else(|| "--help".into());
     if command == "--help" || command == "-h" {
-        println!("dmbc analyze [--no-daemon] PROJECT [-DNAME[=VALUE]] [--workers N]");
+        println!("dmbc analyze [--no-daemon] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog]");
         println!("Streams source-declaration JSON-lines; engine and executable resolution remain incomplete.");
         return Ok(());
     }
@@ -25,9 +25,20 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut project = None;
     let mut defines = BTreeMap::new();
     let mut workers = 2usize;
+    let mut engine_template = None;
+    let mut bootstrap_catalog = false;
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--no-daemon" => {}
+            "--bootstrap-catalog" => bootstrap_catalog = true,
+            "--engine-template" => {
+                if engine_template
+                    .replace(PathBuf::from(args.next().ok_or("--engine-template requires a path")?))
+                    .is_some()
+                {
+                    return Err("--engine-template accepts one template".into());
+                }
+            }
             "--workers" => {
                 workers = args.next().ok_or("--workers requires a number")?.parse()?;
                 if workers == 0 {
@@ -47,10 +58,33 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     let project = project.ok_or("analyze requires a project manifest")?;
+    if bootstrap_catalog && engine_template.is_none() {
+        return Err("--bootstrap-catalog requires --engine-template".into());
+    }
     // These are caller-supplied source defines. No target ABI is inferred by the
     // reusable frontend; supply DM_VERSION/DM_BUILD explicitly when needed.
+    let engine = engine_template
+        .map(|path| {
+            let bytes = std::fs::read(&path)
+                .map_err(|error| format!("engine template {}: {error}", path.display()))?;
+            let snapshot = dmbc::engine::EngineSnapshot::from_bytes(&bytes, 1)
+                .map_err(|error| format!("engine template {}: {error:?}", path.display()))?;
+            if bootstrap_catalog {
+                snapshot.with_bootstrap_catalog()
+                    .map_err(|error| format!("engine catalog {}: {error:?}", path.display()))
+            } else {
+                Ok(snapshot)
+            }
+        })
+        .transpose()?;
+    let seed = engine.as_ref().map(dmbc::engine::EngineSnapshot::frontend_seed);
     let frontend =
-        match dm_tree::frontend::build(&project, &dm_preprocess::FileSystem, &defines, workers) {
+        match dm_tree::frontend::build_with_config(
+            &project,
+            &dm_preprocess::FileSystem,
+            &defines,
+            dm_tree::frontend::FrontendConfig { workers, engine: seed.as_ref() },
+        ) {
             Ok(frontend) => frontend,
             Err(diagnostics) => {
                 dmbc::diagnostics::write_diagnostics(&mut io::stderr().lock(), &diagnostics)?;

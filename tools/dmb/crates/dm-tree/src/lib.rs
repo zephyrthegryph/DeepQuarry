@@ -4,6 +4,7 @@
 //! table for every source snapshot, even when the tree remains shared in an Arc.
 //! This crate intentionally has no dependency on the legacy declaration index.
 mod adapter;
+pub mod constant_resolution;
 pub mod constants;
 pub mod frontend;
 mod normalize;
@@ -119,6 +120,10 @@ pub enum TreeError {
         owner: SymbolId,
         name: SymbolId,
         kind: MemberKind,
+    },
+    ConflictingIntrinsicField {
+        owner: SymbolId,
+        name: SymbolId,
     },
     TooManyNodes,
 }
@@ -300,7 +305,17 @@ impl OccurrenceTable {
 
 /// Resolve forward parent declarations before members, then preserve the exact
 /// source ledger for member overrides and reopens. No body/spans enter identity.
-pub fn build(mut symbols: SymbolTable, skeletons: &[Skeleton]) -> Result<SemanticTree, TreeError> {
+pub fn build(symbols: SymbolTable, skeletons: &[Skeleton]) -> Result<SemanticTree, TreeError> {
+    build_with_intrinsic_fields(symbols, skeletons, &[])
+}
+
+/// Link authored fields against a separate presence/type-only engine catalog.
+/// Intrinsic bases have no member arena IDs and no invented source occurrences.
+pub fn build_with_intrinsic_fields(
+    mut symbols: SymbolTable,
+    skeletons: &[Skeleton],
+    fields: &[dm_ir::OpaqueFieldBase],
+) -> Result<SemanticTree, TreeError> {
     let mut paths = Vec::new();
     let mut by_path = HashMap::new();
     fn ensure(
@@ -403,6 +418,29 @@ pub fn build(mut symbols: SymbolTable, skeletons: &[Skeleton]) -> Result<Semanti
         identity: 0,
         inventory: resolver::ResolverInventory::default(),
     };
+    let mut intrinsic_fields = HashMap::new();
+    for field in fields {
+        let owner = tree
+            .lookup_type(field.owner)
+            .ok_or(TreeError::UnknownSymbol(field.owner))?;
+        if tree.symbols.text(field.name).is_none() {
+            return Err(TreeError::UnknownSymbol(field.name));
+        }
+        if let dm_ir::DeclaredTypeKnowledge::Known(path) = field.declared_type {
+            if tree.symbols.text(path).is_none() {
+                return Err(TreeError::UnknownSymbol(path));
+            }
+        }
+        if intrinsic_fields
+            .insert((owner, field.name), field)
+            .is_some_and(|previous| previous != field)
+        {
+            return Err(TreeError::ConflictingIntrinsicField {
+                owner: field.owner,
+                name: field.name,
+            });
+        }
+    }
     let mut members: Vec<MemberNode> = Vec::new();
     let mut targets = Vec::new();
     let mut owned = vec![Vec::new(); tree.types.len()];
@@ -491,7 +529,33 @@ pub fn build(mut symbols: SymbolTable, skeletons: &[Skeleton]) -> Result<Semanti
                 }
                 parent = tree.parent(owner);
             }
-            if modes[i] == DefinitionMode::Override && previous.is_none() {
+            if modes[i] == DefinitionMode::Override
+                && previous.is_none()
+                && node.kind == MemberKind::Var
+            {
+                let mut owner = Some(node.owner);
+                let mut opaque = None;
+                while let Some(current) = owner {
+                    if let Some(field) = intrinsic_fields.get(&(current, node.name)) {
+                        opaque = Some((*field).clone());
+                        break;
+                    }
+                    owner = tree.parent(current);
+                }
+                if let Some(opaque) = opaque {
+                    let metadata = Arc::make_mut(&mut members[i].metadata);
+                    metadata.declared_type = match opaque.declared_type {
+                        dm_ir::DeclaredTypeKnowledge::Known(path) => Some(path),
+                        dm_ir::DeclaredTypeKnowledge::Unsupported => None,
+                    };
+                    metadata.inherited_opaque = Some(opaque);
+                }
+            }
+            let node = &members[i];
+            if modes[i] == DefinitionMode::Override
+                && previous.is_none()
+                && node.metadata.inherited_opaque.is_none()
+            {
                 return Err(TreeError::MissingOverride {
                     owner: tree.types[node.owner.index()].path,
                     name: node.name,
@@ -520,6 +584,7 @@ pub fn build(mut symbols: SymbolTable, skeletons: &[Skeleton]) -> Result<Semanti
                 if let Some(previous) = members[i].previous {
                     let inherited = members[previous.index()].metadata.clone();
                     let metadata = Arc::make_mut(&mut members[i].metadata);
+                    metadata.inherited_opaque = inherited.inherited_opaque.clone();
                     metadata.declared_type = inherited.declared_type;
                     metadata.flags = inherited.flags;
                     metadata.array = inherited.array.clone();
@@ -539,7 +604,7 @@ pub fn build(mut symbols: SymbolTable, skeletons: &[Skeleton]) -> Result<Semanti
     tree.declaration_targets = targets.into();
     // Hash an explicit versioned encoding; never Debug formatting or arena IDs.
     let mut bytes = Vec::new();
-    bytes.extend_from_slice(b"dm-tree-v1\0");
+    bytes.extend_from_slice(b"dm-tree-v2\0");
     for skeleton in skeletons {
         match skeleton {
             Skeleton::Type {
@@ -574,11 +639,23 @@ pub fn build(mut symbols: SymbolTable, skeletons: &[Skeleton]) -> Result<Semanti
             }
         }
     }
+    let mut catalog = fields.iter().collect::<Vec<_>>();
+    catalog.sort_by_key(|field| (field.owner, field.name));
+    catalog.dedup();
+    for field in catalog {
+        let data = field.canonical_bytes();
+        bytes.extend_from_slice(&(data.len() as u64).to_le_bytes());
+        bytes.extend_from_slice(&data);
+    }
     tree.identity = xxhash_rust::xxh3::xxh3_128(&bytes);
     Ok(tree)
 }
 fn metadata_fingerprint(metadata: &MemberMetadata) -> u128 {
     let mut bytes = Vec::new();
+    bytes.push(u8::from(metadata.inherited_opaque.is_some()));
+    if let Some(base) = &metadata.inherited_opaque {
+        bytes.extend_from_slice(&base.canonical_bytes());
+    }
     for symbol in [metadata.declared_type, metadata.display_name] {
         bytes.push(u8::from(symbol.is_some()));
         bytes.extend_from_slice(&symbol.map(SymbolId::bits).unwrap_or(0).to_le_bytes());
@@ -626,6 +703,9 @@ impl dm_ir::Resolver for SemanticTree {
                 .and_then(|id| self.resolve(id, name, kind))
                 .map(|id| {
                     let node = &self.members[id.index()];
+                    if node.metadata.inherited_opaque.is_some() {
+                        return M::Unsupported(query);
+                    }
                     let mut bytes = node.content.to_le_bytes().to_vec();
                     bytes.extend_from_slice(&metadata_fingerprint(&node.metadata).to_le_bytes());
                     M::Member {
@@ -743,6 +823,9 @@ impl dm_ir::Resolver for SemanticTree {
                 .and_then(|id| self.resolve(id, name, MemberKind::Var))
                 .map(|id| {
                     let node = &self.members[id.index()];
+                    if node.metadata.inherited_opaque.is_some() {
+                        return M::Unsupported(query);
+                    }
                     match &node.metadata.resolved_constant {
                         Some(bytes) => M::Member {
                             owner: self.types[node.owner.index()].path,
@@ -755,7 +838,10 @@ impl dm_ir::Resolver for SemanticTree {
                 })
                 .unwrap_or(M::Missing),
             Q::StaticVar { .. } | Q::UniqueStaticVar(_) | Q::HasMemberProc { .. } => {
-                self.resolve_inventory(query)
+                // Inventory queries certify their own positive/negative coverage.
+                // A known instance field is authoritatively not a shared slot,
+                // even while unrelated intrinsic member names remain unknown.
+                return self.resolve_inventory(query);
             }
             Q::Resource(_)
             | Q::ResourceIn { .. }

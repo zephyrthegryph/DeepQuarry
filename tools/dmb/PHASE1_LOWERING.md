@@ -73,6 +73,28 @@ No production lowerer switch, incremental performance improvement or full Phase 
 
 ## Engine completeness contract
 
-Source-only tree navigation remains available through direct analysis APIs. The full-program Resolver conservatively reports Unsupported for unknown declarations and uncertified ancestry: lexical source parents alone do not establish BYOND intrinsic inheritance (`/obj` inherits `/atom`). Complete negative queries require a caller-supplied `EngineHierarchy` with pinned schema and explicit parent rows, already merged into the tree, plus the complete intrinsic member inventory. Attachment returns structured errors for missing owners, duplicate/conflicting rows or mismatched parents. Parent and inventory configuration participate in semantic identity. Intrinsic lookups use a prebuilt owner/name/kind index; unique slots use a name index.
+Source-only tree navigation remains available through direct analysis APIs. The full-program Resolver conservatively reports Unsupported for unknown declarations and uncertified ancestry: lexical source parents alone do not establish BYOND intrinsic inheritance (`/obj` inherits `/atom/movable`, which inherits `/atom`). Complete negative queries require a caller-supplied `EngineHierarchy` with pinned schema and explicit parent rows, already merged into the tree, plus the complete intrinsic member inventory. Attachment returns structured errors for missing owners, duplicate/conflicting rows or mismatched parents. Parent and inventory configuration participate in semantic identity. Intrinsic lookups use a prebuilt owner/name/kind index; unique slots use a name index.
 
-The bounded attachment API validates a supplied engine snapshot; extracting and merging that snapshot from the pinned engine template is still pending. Presence-only intrinsic records cannot fabricate typed proc/var/constant metadata and those typed queries remain Unsupported when only presence is known. Shared-slot answers include exact declaring owner/name; that tuple is authoritative for linking and the convenience hash must not choose a slot without tuple comparison.
+The bounded attachment API validates a supplied engine snapshot. Template extraction and engine-first frontend seeding are implemented; intrinsic metadata migration remains incomplete. Presence-only intrinsic records cannot fabricate typed proc/var/constant metadata and those typed queries remain Unsupported when only presence is known. Shared-slot answers include exact declaring owner/name; that tuple is authoritative for linking and the convenience hash must not choose a slot without tuple comparison.
+
+### Pinned engine input implementation
+
+`dmbc::engine::EngineSnapshot` now decodes exact template bytes into collision-checked class paths, explicit class parents, member presence and declaring shared-slot inventory. Raw variable/procedure records remain in an explicitly opaque metadata collection; they are not interpreted as source types/defaults/modifier flags. The snapshot hashes exact template bytes and caller schema. Its engine type skeletons seed the tree before source resolution and establish `/obj` -> `/atom/movable` -> `/atom` from the decoded parent table.
+
+Template member lists alone are not a complete intrinsic catalog: existing bootstrap supplies additional intrinsic fields separately. Therefore the engine extractor attaches through `with_engine_intrinsics`, which certifies hierarchy but keeps unknown-member and unique-slot queries Unsupported. Full member completeness requires separately supplying the authoritative complete catalog. Source overrides needing an opaque intrinsic member base remain an explicit migration limitation; this slice does not manufacture MemberMetadata for them.
+
+The uncached frontend accepts an explicit engine seed before source resolution.
+Engine type entries never receive invented source occurrences. `dmbc analyze
+--engine-template PATH` decodes that input and the JSON-lines schema records its
+identity, hierarchy coverage and incomplete intrinsic metadata. It still exports
+analysis rather than compiling a DMB.
+
+### Shared ABI encoder
+
+The existing linked encoder and symbolic freezing now share one operand emission
+path. An explicit semantic binder maps old symbolic keys to `SymRef`; it does not
+assign wire indexes. `SymbolicCode` relocations describe direct words or packed
+24-bit values with their exact ABI tag. Both packed placeholder words, overlap,
+table kind, encoding and range are checked. The shared IR linker produces private
+linked words and leaves reusable code unchanged, including on failed resolution.
+Production procedure lowering still needs its project reads migrated to Resolver.

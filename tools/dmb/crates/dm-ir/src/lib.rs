@@ -10,15 +10,18 @@ pub use symbols::{SymbolCollision, SymbolId, SymbolTable};
 
 mod declarations;
 pub use declarations::{
-    ArrayDeclaration, DeclarationMeaning, ExpressionToken, Parameter, ProcedureMetadata,
-    ProcedureSetting, ProcedureSignature, SemanticValue, SettingOperation, SymbolicExpression,
+    ArrayDeclaration, DeclarationMeaning, DeclaredTypeKnowledge, ExpressionToken, OpaqueFieldBase,
+    Parameter, ProcedureMetadata, ProcedureSetting, ProcedureSignature, SemanticValue,
+    SettingOperation, SymbolicExpression,
 };
 
 mod resolver;
 pub use resolver::{ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};
 
 mod symbolic;
-pub use symbolic::{Relocation, RelocationError, RelocationKind, SymRef, SymbolicCode};
+pub use symbolic::{
+    Relocation, RelocationEncoding, RelocationError, RelocationKind, SymRef, SymbolicCode,
+};
 
 macro_rules! id {
     ($name:ident) => {

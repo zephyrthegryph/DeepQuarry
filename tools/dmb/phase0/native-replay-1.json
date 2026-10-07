@@ -1,0 +1,28 @@
+{
+  "run": "native-1",
+  "session": "replay-86cd8c1d305f43bca1de876bc9341fb6",
+  "receipt_path": "D:/dmb-native-v2-phase0/runtime-replays-corrected/replay-86cd8c1d305f43bca1de876bc9341fb6/native-1/receipt.json",
+  "receipt_sha256": "A09EE2F03F4AC5AB4441736261F19440D7087DE9446CA6647ACBA675E88D5E7E",
+  "results_sha256": "DD6B9AF525B66378643339D6B99A2A4461F3CAE48BAB39518643726A470A669D",
+  "status": "complete-results",
+  "exit_code": 0,
+  "elapsed_seconds": 3081.9726907,
+  "peak_private_bytes": 1991770112,
+  "counts": [
+    {
+      "status": 0,
+      "count": 996
+    },
+    {
+      "status": 1,
+      "count": 35
+    },
+    {
+      "status": 2,
+      "count": 58
+    }
+  ],
+  "execution_complete": true,
+  "normal_exit_gate_passed": true,
+  "qualification": "One corrected observation; three repetitions per producer and normalized variable-identity classification remain pending."
+}

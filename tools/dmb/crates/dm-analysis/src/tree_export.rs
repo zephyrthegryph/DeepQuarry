@@ -1,7 +1,9 @@
 //! Versioned JSON-lines projection, streamed directly from the immutable tree.
 //! Semantic rows omit source paths and executable bodies. Occurrence/body rows
 //! describe this build's current source, independently of semantic identity.
-use dm_ir::{SemanticValue, SymbolId, SymbolTable, SymbolicExpression, TypeId};
+use dm_ir::{
+    DeclaredTypeKnowledge, SemanticValue, SymbolId, SymbolTable, SymbolicExpression, TypeId,
+};
 use dm_syntax::TokenKind;
 use dm_tree::frontend::{ColdFrontend, SourceLocation};
 use dm_tree::{DefinitionMode, MemberKind, SemanticTree, SettingOperation, Target};
@@ -150,9 +152,18 @@ pub fn write_jsonl(
     let tree = &frontend.snapshot.tree;
     let symbols = tree.symbols();
     let mut counts = ExportCounts::default();
+    let engine = frontend.engine.as_ref().map(|engine| json!({
+        "identity":format!("{:032x}",engine.identity), "schema":format!("{:032x}",engine.schema),
+        "type_count":engine.type_count,"known_intrinsic_members":engine.known_intrinsic_members,
+        "member_catalog_complete":engine.member_catalog_complete,
+        "typed_member_metadata_decoded":engine.typed_member_metadata_decoded,
+    }));
     emit(
         writer,
-        json!({"row":"schema", "schema":SCHEMA, "source_span_precision":"logical_line", "model":"source_declarations", "engine_inventory":"not_certified_by_export", "unsupported_domains":["resource_resolution","executable_lowering"]}),
+        json!({"row":"schema","schema":SCHEMA,"source_span_precision":"logical_line",
+        "model":if frontend.engine.is_some() { "engine_hierarchy_and_source_declarations" } else { "source_declarations" },
+        "engine":engine,"engine_inventory":if frontend.engine.is_some() { "authoritative_hierarchy_partial_intrinsic_catalog" } else { "not_certified_by_export" },
+        "unsupported_domains":["resource_resolution","executable_lowering","opaque_intrinsic_metadata"]}),
     )?;
     let mut identical = HashMap::new();
     let mut member_keys = Vec::with_capacity(tree.members().len());
@@ -213,6 +224,12 @@ pub fn write_jsonl(
             "element_type":array.element_type.map(|id| spelling(symbols,id)).transpose()?,
             "dimensions":array.dimensions.iter().map(|dimension| expression(dimension.as_ref(),symbols)).collect::<Result<Vec<_>,_>>()?,
         }))).transpose()?;
+        let opaque = metadata.inherited_opaque.as_ref().map(|base| Ok::<_,ExportError>(json!({
+            "owner":spelling(symbols,base.owner)?,"name":spelling(symbols,base.name)?,
+            "declared_type":match base.declared_type { DeclaredTypeKnowledge::Known(path)=>Some(spelling(symbols,path)?),DeclaredTypeKnowledge::Unsupported=>None },
+            "declared_type_status":match base.declared_type { DeclaredTypeKnowledge::Known(_)=>"known",DeclaredTypeKnowledge::Unsupported=>"unsupported" },
+            "flags_status":"unknown", "formal_default_status":"unknown", "array_shape_status":"unknown",
+        }))).transpose()?;
         emit(
             writer,
             json!({"row":"member", "id":member_keys[index], "owner":type_key(tree,member.owner)?,
@@ -220,11 +237,17 @@ pub fn write_jsonl(
             "previous":member.previous.map(|previous| &member_keys[previous.index()]),
             "declared_type":metadata.declared_type.map(|id| spelling(symbols,id)).transpose()?,
             "display_name":metadata.display_name.map(|id| spelling(symbols,id)).transpose()?,
-            "flags":metadata.flags, "effective_flags":effective.metadata.flags, "initializer":expression(metadata.initializer.as_ref(),symbols)?,
+            "inherited_opaque":opaque,
+            "flags":metadata.inherited_opaque.is_none().then_some(metadata.flags),
+            "flags_status":if metadata.inherited_opaque.is_some() { "unknown" } else { "known" },
+            "effective_flags":effective.metadata.inherited_opaque.is_none().then_some(effective.metadata.flags),
+            "effective_flags_status":if effective.metadata.inherited_opaque.is_some() { "unknown" } else { "known" }, "initializer":expression(metadata.initializer.as_ref(),symbols)?,
             "declared_default":expression(metadata.declared_initializer.as_ref(),symbols)?,
+            "declared_default_status":if metadata.inherited_opaque.is_some() { "unknown" } else { "known" },
             "effective_default":expression(effective.metadata.initializer.as_ref(),symbols)?,
             "resolved_constant":metadata.resolved_constant.as_ref().map(|value| constant(value,symbols)).transpose()?,
-            "procedure":procedure,"array":array}),
+            "procedure":procedure,"array":array,
+            "array_status":if metadata.inherited_opaque.is_some() { "unknown" } else { "known" }}),
         )?;
         counts.semantic_rows += 1;
     }

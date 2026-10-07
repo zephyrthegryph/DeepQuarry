@@ -67,9 +67,23 @@ impl SymRef {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RelocationEncoding {
+    Direct,
+    PackedValue24 { tag: u8 },
+}
+impl RelocationEncoding {
+    fn width(self) -> u32 {
+        match self {
+            Self::Direct => 1,
+            Self::PackedValue24 { .. } => 2,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Relocation {
     pub offset: u32,
     pub reference: SymRef,
+    pub encoding: RelocationEncoding,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -93,6 +107,11 @@ pub enum RelocationError {
     Duplicate(u32),
     NonzeroPlaceholder(u32),
     Unresolved(SymRef),
+    EncodingMismatch(u32),
+    PackedValueOverflow {
+        offset: u32,
+        value: u32,
+    },
 }
 
 impl SymbolicCode {
@@ -100,14 +119,20 @@ impl SymbolicCode {
         u32::try_from(words.len()).map_err(|_| RelocationError::WordCountOverflow)?;
         let mut seen = HashSet::new();
         for relocation in &relocations {
-            let word = words
-                .get(relocation.offset as usize)
-                .ok_or(RelocationError::OutOfBounds(relocation.offset))?;
-            if !seen.insert(relocation.offset) {
-                return Err(RelocationError::Duplicate(relocation.offset));
-            }
-            if *word != 0 {
-                return Err(RelocationError::NonzeroPlaceholder(relocation.offset));
+            for delta in 0..relocation.encoding.width() {
+                let at = relocation
+                    .offset
+                    .checked_add(delta)
+                    .ok_or(RelocationError::OutOfBounds(relocation.offset))?;
+                let word = words
+                    .get(at as usize)
+                    .ok_or(RelocationError::OutOfBounds(at))?;
+                if !seen.insert(at) {
+                    return Err(RelocationError::Duplicate(at));
+                }
+                if *word != 0 {
+                    return Err(RelocationError::NonzeroPlaceholder(at));
+                }
             }
         }
         relocations.sort_unstable_by_key(|relocation| relocation.offset);
@@ -119,20 +144,43 @@ impl SymbolicCode {
     /// sites, and table-kind substitutions before any output index is assigned.
     /// `new` alone validates storage; it cannot infer an ABI from raw integers.
     pub fn validate_sites(&self, sites: &[(u32, RelocationKind)]) -> Result<(), RelocationError> {
+        self.validate_encoded_sites(
+            &sites
+                .iter()
+                .map(|&(offset, kind)| (offset, kind, RelocationEncoding::Direct))
+                .collect::<Vec<_>>(),
+        )
+    }
+    pub fn validate_encoded_sites(
+        &self,
+        sites: &[(u32, RelocationKind, RelocationEncoding)],
+    ) -> Result<(), RelocationError> {
         let mut expected = HashMap::new();
-        for &(offset, kind) in sites {
-            if self.words.get(offset as usize).is_none() {
-                return Err(RelocationError::OutOfBounds(offset));
+        let mut covered = HashSet::new();
+        for &(offset, kind, encoding) in sites {
+            for delta in 0..encoding.width() {
+                let at = offset
+                    .checked_add(delta)
+                    .ok_or(RelocationError::OutOfBounds(offset))?;
+                if self.words.get(at as usize).is_none() {
+                    return Err(RelocationError::OutOfBounds(at));
+                }
+                if !covered.insert(at) {
+                    return Err(RelocationError::DuplicateSite(at));
+                }
             }
-            if expected.insert(offset, kind).is_some() {
+            if expected.insert(offset, (kind, encoding)).is_some() {
                 return Err(RelocationError::DuplicateSite(offset));
             }
         }
         for relocation in &self.relocations {
-            let kind = expected
+            let (kind, encoding) = expected
                 .remove(&relocation.offset)
                 .ok_or(RelocationError::MissingSite(relocation.offset))?;
             let actual = relocation.reference.kind();
+            if encoding != relocation.encoding {
+                return Err(RelocationError::EncodingMismatch(relocation.offset));
+            }
             if kind != actual {
                 return Err(RelocationError::KindMismatch {
                     offset: relocation.offset,
@@ -150,7 +198,7 @@ impl SymbolicCode {
     /// arena IDs or worker enumeration. Relocations are already in offset order.
     pub fn fingerprint(&self) -> u128 {
         let mut bytes = Vec::new();
-        bytes.extend_from_slice(b"dm-symbolic-code-v1\0");
+        bytes.extend_from_slice(b"dm-symbolic-code-v2\0");
         bytes.extend_from_slice(&(self.words.len() as u64).to_le_bytes());
         for word in &self.words {
             bytes.extend_from_slice(&word.to_le_bytes())
@@ -158,6 +206,13 @@ impl SymbolicCode {
         bytes.extend_from_slice(&(self.relocations.len() as u64).to_le_bytes());
         for relocation in &self.relocations {
             bytes.extend_from_slice(&relocation.offset.to_le_bytes());
+            match relocation.encoding {
+                RelocationEncoding::Direct => bytes.push(0),
+                RelocationEncoding::PackedValue24 { tag } => {
+                    bytes.push(1);
+                    bytes.push(tag);
+                }
+            }
             encode_reference(&mut bytes, relocation.reference);
         }
         xxhash_rust::xxh3::xxh3_128(&bytes)
@@ -179,8 +234,22 @@ impl SymbolicCode {
     ) -> Result<Vec<u32>, RelocationError> {
         let mut linked = self.words.clone();
         for relocation in &self.relocations {
-            linked[relocation.offset as usize] = resolve(relocation.reference)
+            let value = resolve(relocation.reference)
                 .ok_or(RelocationError::Unresolved(relocation.reference))?;
+            let at = relocation.offset as usize;
+            match relocation.encoding {
+                RelocationEncoding::Direct => linked[at] = value,
+                RelocationEncoding::PackedValue24 { tag } => {
+                    if value > 0x00ff_ffff {
+                        return Err(RelocationError::PackedValueOverflow {
+                            offset: relocation.offset,
+                            value,
+                        });
+                    }
+                    linked[at] = u32::from(tag) | ((value >> 16) << 8);
+                    linked[at + 1] = value & 0xffff;
+                }
+            }
         }
         Ok(linked)
     }
@@ -253,11 +322,66 @@ mod tests {
     use super::*;
 
     #[test]
+    fn packed_values_validate_both_words_encoding_and_range() {
+        let reference = SymRef::String(SymbolId::of("text"));
+        let relocation = Relocation {
+            offset: 0,
+            reference,
+            encoding: RelocationEncoding::PackedValue24 { tag: 6 },
+        };
+        assert_eq!(
+            SymbolicCode::new(vec![0], vec![relocation]),
+            Err(RelocationError::OutOfBounds(1))
+        );
+        assert_eq!(
+            SymbolicCode::new(vec![0, 1], vec![relocation]),
+            Err(RelocationError::NonzeroPlaceholder(1))
+        );
+        let overlapping = Relocation {
+            offset: 1,
+            reference,
+            encoding: RelocationEncoding::Direct,
+        };
+        assert_eq!(
+            SymbolicCode::new(vec![0, 0], vec![relocation, overlapping]),
+            Err(RelocationError::Duplicate(1))
+        );
+        let code = SymbolicCode::new(vec![0, 0], vec![relocation]).unwrap();
+        assert_eq!(
+            code.validate_encoded_sites(&[(
+                0,
+                RelocationKind::String,
+                RelocationEncoding::PackedValue24 { tag: 12 }
+            )]),
+            Err(RelocationError::EncodingMismatch(0))
+        );
+        assert_eq!(code.link(|_| Some(0x123456)).unwrap(), [0x1206, 0x3456]);
+        assert_eq!(
+            code.link(|_| Some(0x1000000)),
+            Err(RelocationError::PackedValueOverflow {
+                offset: 0,
+                value: 0x1000000
+            })
+        );
+        assert_eq!(code.words(), [0, 0]);
+        let different_tag = SymbolicCode::new(
+            vec![0, 0],
+            vec![Relocation {
+                encoding: RelocationEncoding::PackedValue24 { tag: 12 },
+                ..relocation
+            }],
+        )
+        .unwrap();
+        assert_ne!(code.fingerprint(), different_tag.fingerprint());
+    }
+
+    #[test]
     fn typed_operand_sites_require_exact_reference_kinds() {
         let code = SymbolicCode::new(
             vec![42, 0],
             vec![Relocation {
                 offset: 1,
+                encoding: RelocationEncoding::Direct,
                 reference: SymRef::BuiltinGlobalVars,
             }],
         )
@@ -314,6 +438,7 @@ mod tests {
                 vec![Relocation {
                     offset: 0,
                     reference,
+                    encoding: RelocationEncoding::Direct,
                 }],
             )
             .unwrap()
@@ -327,10 +452,12 @@ mod tests {
         );
         let a = Relocation {
             offset: 0,
+            encoding: RelocationEncoding::Direct,
             reference: proc,
         };
         let b = Relocation {
             offset: 1,
+            encoding: RelocationEncoding::Direct,
             reference: SymRef::String(name),
         };
         assert_eq!(
@@ -351,10 +478,12 @@ mod tests {
             vec![
                 Relocation {
                     offset: 2,
+                    encoding: RelocationEncoding::Direct,
                     reference: SymRef::LineDelta(4),
                 },
                 Relocation {
                     offset: 1,
+                    encoding: RelocationEncoding::Direct,
                     reference: symbol,
                 },
             ],
@@ -381,6 +510,7 @@ mod tests {
     fn malformed_relocation_tables_are_rejected_before_linking() {
         let relocation = Relocation {
             offset: 0,
+            encoding: RelocationEncoding::Direct,
             reference: SymRef::LineDelta(0),
         };
         assert_eq!(

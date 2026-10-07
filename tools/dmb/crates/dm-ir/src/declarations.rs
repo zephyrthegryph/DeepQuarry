@@ -241,8 +241,41 @@ impl SemanticValue {
 /// Metadata is canonical semantic data, not original source text. The adapter
 /// must include argument names/types/defaults, all set settings, and var flags.
 /// Unknown settings must produce diagnostics before building this model.
+/// A schema-pinned catalog may certify a type without decoding inherited field
+/// flags/defaults/array shape. Unsupported never means an untyped declaration.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum DeclaredTypeKnowledge {
+    Known(SymbolId),
+    Unsupported,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct OpaqueFieldBase {
+    pub owner: SymbolId,
+    pub name: SymbolId,
+    pub declared_type: DeclaredTypeKnowledge,
+}
+impl OpaqueFieldBase {
+    pub fn canonical_bytes(&self) -> Vec<u8> {
+        let mut bytes = b"dm-opaque-intrinsic-field-v1\0".to_vec();
+        bytes.extend_from_slice(&self.owner.bits().to_le_bytes());
+        bytes.extend_from_slice(&self.name.bits().to_le_bytes());
+        match self.declared_type {
+            DeclaredTypeKnowledge::Known(path) => {
+                bytes.push(1);
+                bytes.extend_from_slice(&path.bits().to_le_bytes());
+            }
+            DeclaredTypeKnowledge::Unsupported => bytes.push(0),
+        }
+        bytes
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DeclarationMeaning {
+    /// Authored overrides preserve their exact initializer, but flags, array
+    /// shape and formal default are unknown when this inherited base is opaque.
+    /// Consumers must not interpret syntax-only zero/None as inherited values.
+    pub inherited_opaque: Option<OpaqueFieldBase>,
     pub declared_type: Option<SymbolId>,
     pub display_name: Option<SymbolId>,
     pub flags: u32,
@@ -257,6 +290,7 @@ pub struct DeclarationMeaning {
 impl Default for DeclarationMeaning {
     fn default() -> Self {
         Self {
+            inherited_opaque: None,
             declared_type: None,
             display_name: None,
             flags: 0,

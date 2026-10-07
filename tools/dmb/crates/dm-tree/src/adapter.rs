@@ -251,6 +251,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                     let array =
                         crate::procedure::parse_array(declaration, element_type, context.symbols)?;
                     let metadata = MemberMetadata {
+                        inherited_opaque: None,
                         declared_type,
                         display_name: None,
                         flags,
@@ -322,6 +323,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         settings: typed_settings.into(),
                     }));
                     let metadata = MemberMetadata {
+                        inherited_opaque: None,
                         declared_type: None,
                         display_name,
                         flags: 0,
@@ -368,6 +370,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         return Err(format!("unsupported field assignment: {header}"));
                     }
                     let metadata = MemberMetadata {
+                        inherited_opaque: None,
                         initializer: Some(crate::procedure::expression(
                             header[index + 1..].trim(),
                             context.symbols,
@@ -666,6 +669,7 @@ pub struct TreeSnapshot {
 pub enum SnapshotError {
     Tree(crate::TreeError),
     Origins(crate::OccurrenceCountMismatch),
+    Inventory(crate::InventoryError),
 }
 impl AdaptedDeclarations {
     /// Append expansion fragments in semantic emission order. Symbol collisions
@@ -679,8 +683,40 @@ impl AdaptedDeclarations {
         Ok(())
     }
     pub fn finish(self) -> Result<TreeSnapshot, SnapshotError> {
-        let tree =
-            Arc::new(crate::build(self.symbols, &self.skeletons).map_err(SnapshotError::Tree)?);
+        self.finish_with_engine(None)
+    }
+
+    /// Engine types contribute hierarchy and semantic identity, never authored
+    /// source occurrences. Intrinsic members remain opaque presence records.
+    pub fn finish_with_engine(
+        self,
+        seed: Option<&crate::frontend::EngineSeed>,
+    ) -> Result<TreeSnapshot, SnapshotError> {
+        let mut skeletons = Vec::new();
+        if let Some(seed) = seed {
+            skeletons.extend(
+                seed.hierarchy
+                    .parents
+                    .iter()
+                    .map(|&(path, parent)| Skeleton::Type {
+                        path,
+                        explicit_parent: parent,
+                    }),
+            );
+        }
+        let engine_count = skeletons.len();
+        skeletons.extend(self.skeletons);
+        let fields = seed.map_or(&[][..], |seed| seed.fields.as_ref());
+        let mut tree = crate::build_with_intrinsic_fields(self.symbols, &skeletons, fields)
+            .map_err(SnapshotError::Tree)?;
+        // The source ledger is a projection, not a made-up origin for seeds.
+        tree.declaration_targets = tree.declaration_targets[engine_count..].into();
+        if let Some(seed) = seed {
+            tree = tree
+                .with_engine_intrinsics(seed.hierarchy.clone(), seed.intrinsics.to_vec())
+                .map_err(SnapshotError::Inventory)?;
+        }
+        let tree = Arc::new(tree);
         let occurrences = Arc::new(
             crate::OccurrenceTable::build(&tree, self.origins).map_err(SnapshotError::Origins)?,
         );

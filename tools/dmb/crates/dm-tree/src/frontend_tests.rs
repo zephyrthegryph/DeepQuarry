@@ -242,3 +242,217 @@ fn bounded_parallel_chunks_preserve_declarations_bodies_and_diagnostics() {
             .collect::<Vec<_>>()
     );
 }
+
+#[test]
+fn explicit_engine_seed_keeps_intrinsic_metadata_and_source_origins_separate() {
+    use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};
+    let mut symbols = dm_ir::SymbolTable::default();
+    for name in [
+        "/",
+        "/datum",
+        "/engine",
+        "/engine/base",
+        "engine_call",
+        "native_value",
+    ] {
+        symbols.intern(name).unwrap();
+    }
+    let seed = EngineSeed {
+        identity: 0x1234,
+        symbols,
+        hierarchy: crate::EngineHierarchy {
+            schema: 0x516,
+            parents: vec![
+                (SymbolId::of("/"), None),
+                (SymbolId::of("/datum"), Some(SymbolId::of("/"))),
+                (SymbolId::of("/engine"), Some(SymbolId::of("/"))),
+                (SymbolId::of("/engine/base"), Some(SymbolId::of("/datum"))),
+            ],
+        },
+        fields: Arc::from([]),
+        intrinsics: vec![
+            crate::IntrinsicMember {
+                owner: SymbolId::of("/engine/base"),
+                name: SymbolId::of("engine_call"),
+                kind: MemberKind::Proc,
+                shared_owner: None,
+            },
+            crate::IntrinsicMember {
+                owner: SymbolId::of("/engine/base"),
+                name: SymbolId::of("native_value"),
+                kind: MemberKind::Var,
+                shared_owner: None,
+            },
+        ]
+        .into(),
+    };
+    let provider = Memory(BTreeMap::from([(PathBuf::from("project.dme"),
+        "/custom\n    parent_type = /engine/base\n    var/value = 3\n    proc/read()\n        return value\n".into())]));
+    let result = build_with_config(
+        Path::new("project.dme"),
+        &provider,
+        &BTreeMap::new(),
+        FrontendConfig {
+            workers: 2,
+            engine: Some(&seed),
+        },
+    )
+    .unwrap();
+    let tree = &result.snapshot.tree;
+    let custom = tree.lookup_type(SymbolId::of("/custom")).unwrap();
+    assert_eq!(
+        tree.type_node(tree.parent(custom).unwrap()).unwrap().path,
+        SymbolId::of("/engine/base")
+    );
+    assert_eq!(tree.members().len(), 2);
+    assert_eq!(
+        tree.declarations().len(),
+        result.snapshot.occurrences.source_order().len()
+    );
+    assert!(result
+        .snapshot
+        .occurrences
+        .source_order()
+        .iter()
+        .all(|occurrence| result
+            .source(occurrence.provenance.span.file)
+            .unwrap()
+            .path
+            .as_path()
+            == Path::new("project.dme")));
+    assert_eq!(result.bodies.len(), 1);
+    assert_eq!(
+        result.body(&result.bodies[0]).unwrap().children[0].header,
+        "return value"
+    );
+    let known = ResolveQuery::HasMemberProc {
+        owner: SymbolId::of("/custom"),
+        name: SymbolId::of("engine_call"),
+    };
+    assert_eq!(
+        Resolver::resolve(tree.as_ref(), known),
+        ResolvedMeaning::Presence(true)
+    );
+    let typed = ResolveQuery::Proc {
+        owner: SymbolId::of("/custom"),
+        name: SymbolId::of("engine_call"),
+        verb: false,
+    };
+    assert!(matches!(
+        Resolver::resolve(tree.as_ref(), typed),
+        ResolvedMeaning::Unsupported(_)
+    ));
+    let status = result.engine.unwrap();
+    assert_eq!(status.identity, seed.identity);
+    assert!(!status.member_catalog_complete);
+    assert!(!status.typed_member_metadata_decoded);
+    let override_source = Memory(BTreeMap::from([(
+        PathBuf::from("project.dme"),
+        "/engine/base\n    native_value = 9\n".into(),
+    )]));
+    let errors = match build_with_config(
+        Path::new("project.dme"),
+        &override_source,
+        &BTreeMap::new(),
+        FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+        },
+    ) {
+        Err(errors) => errors,
+        Ok(_) => panic!("opaque intrinsic override acquired fabricated typed metadata"),
+    };
+    assert_eq!(errors[0].kind, DiagnosticKind::UnsupportedModel);
+}
+
+#[test]
+fn opaque_intrinsic_field_bases_preserve_authored_values_without_inventing_metadata() {
+    use dm_ir::{DeclaredTypeKnowledge, OpaqueFieldBase, ResolveQuery, ResolvedMeaning, Resolver};
+    let mut symbols = dm_ir::SymbolTable::default();
+    for text in ["/", "/datum", "/engine", "/engine/base", "native_value"] {
+        symbols.intern(text).unwrap();
+    }
+    let base = OpaqueFieldBase {
+        owner: SymbolId::of("/engine/base"),
+        name: SymbolId::of("native_value"),
+        declared_type: DeclaredTypeKnowledge::Known(SymbolId::of("/datum")),
+    };
+    let seed = EngineSeed {
+        identity: 11,
+        symbols,
+        hierarchy: crate::EngineHierarchy {
+            schema: 22,
+            parents: vec![
+                (SymbolId::of("/"), None),
+                (SymbolId::of("/datum"), Some(SymbolId::of("/"))),
+                (SymbolId::of("/engine"), Some(SymbolId::of("/"))),
+                (SymbolId::of("/engine/base"), Some(SymbolId::of("/datum"))),
+            ],
+        },
+        intrinsics: vec![crate::IntrinsicMember {
+            owner: base.owner,
+            name: base.name,
+            kind: MemberKind::Var,
+            shared_owner: None,
+        }]
+        .into(),
+        fields: vec![base.clone()].into(),
+    };
+    let source=Memory(BTreeMap::from([(PathBuf::from("project.dme"),
+        "/custom\n    parent_type = /engine/base\n    native_value = 9\n/custom/child\n    native_value = 10\n".into())]));
+    let model = build_with_config(
+        Path::new("project.dme"),
+        &source,
+        &BTreeMap::new(),
+        FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+        },
+    )
+    .unwrap();
+    assert_eq!(model.snapshot.tree.members().len(), 2);
+    for (owner, value) in [("/custom", "9"), ("/custom/child", "10")] {
+        let ty = model
+            .snapshot
+            .tree
+            .lookup_type(SymbolId::of(owner))
+            .unwrap();
+        let member = model
+            .snapshot
+            .tree
+            .resolve(ty, base.name, MemberKind::Var)
+            .unwrap();
+        let metadata = &model.snapshot.tree.member(member).unwrap().metadata;
+        assert_eq!(metadata.inherited_opaque.as_ref(), Some(&base));
+        assert_eq!(metadata.declared_type, Some(SymbolId::of("/datum")));
+        assert_eq!(
+            metadata
+                .initializer
+                .as_ref()
+                .unwrap()
+                .source_text(model.snapshot.tree.symbols())
+                .as_deref(),
+            Some(value)
+        );
+        let query = ResolveQuery::Var {
+            owner: SymbolId::of(owner),
+            name: base.name,
+        };
+        assert_eq!(
+            Resolver::resolve(model.snapshot.tree.as_ref(), query),
+            ResolvedMeaning::Unsupported(query)
+        );
+        let query = ResolveQuery::StaticVar {
+            owner: SymbolId::of(owner),
+            name: base.name,
+        };
+        assert_eq!(
+            Resolver::resolve(model.snapshot.tree.as_ref(), query),
+            ResolvedMeaning::Unsupported(query)
+        );
+    }
+    assert_eq!(
+        model.snapshot.occurrences.source_order().len(),
+        model.snapshot.tree.declarations().len()
+    );
+}

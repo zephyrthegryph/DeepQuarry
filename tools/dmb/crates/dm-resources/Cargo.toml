@@ -9,4 +9,6 @@ description = "Deterministic resource inputs for the Rust DM compiler"
 byond-dmb = { path = "../.." }
 sha2 = "0.10"
 dm-ir = { path = "../dm-ir" }
+dm-syntax = { path = "../dm-syntax" }
+dm-preprocess = { path = "../dm-preprocess" }
 xxhash-rust = { version = "0.8", features = ["xxh3"] }

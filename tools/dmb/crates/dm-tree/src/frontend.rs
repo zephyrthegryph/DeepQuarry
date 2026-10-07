@@ -89,9 +89,39 @@ pub struct FrontendTimings {
     pub total: Duration,
 }
 
+/// Decoder-independent engine input. Only hierarchy is materialized as type
+/// skeletons. Presence/slot inventory is deliberately incomplete: binary member
+/// records do not supply decoded types, defaults, settings or signatures here.
+#[derive(Clone, Debug)]
+pub struct EngineSeed {
+    /// Exact caller-pinned engine input identity; never a fabricated typed meaning.
+    pub identity: u128,
+    pub symbols: SymbolTable,
+    pub hierarchy: crate::EngineHierarchy,
+    pub intrinsics: Arc<[crate::IntrinsicMember]>,
+    pub fields: Arc<[dm_ir::OpaqueFieldBase]>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct FrontendConfig<'a> {
+    pub workers: usize,
+    pub engine: Option<&'a EngineSeed>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct EngineModelStatus {
+    pub identity: u128,
+    pub schema: u128,
+    pub type_count: usize,
+    pub known_intrinsic_members: usize,
+    pub member_catalog_complete: bool,
+    pub typed_member_metadata_decoded: bool,
+}
+
 #[derive(Clone, Debug)]
 pub struct ColdFrontend {
     pub timings: FrontendTimings,
+    pub engine: Option<EngineModelStatus>,
     pub plan: DirectivePlan,
     pub expanded: ExpandedRegions,
     pub syntax: Arc<AstFile>,
@@ -167,6 +197,26 @@ pub fn build<P: SourceProvider>(
     defines: &BTreeMap<String, String>,
     workers: usize,
 ) -> Result<ColdFrontend, Vec<Diagnostic>> {
+    build_with_config(
+        project,
+        provider,
+        defines,
+        FrontendConfig {
+            workers,
+            engine: None,
+        },
+    )
+}
+
+/// Resolve against an explicit engine seed, without any binary decoder/compiler
+/// dependency. Caller supplies target-version macros and pinned engine identity.
+pub fn build_with_config<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+    config: FrontendConfig<'_>,
+) -> Result<ColdFrontend, Vec<Diagnostic>> {
+    let workers = config.workers;
     let total_start = Instant::now();
     let mut timings = FrontendTimings::default();
     let captured = Captured {
@@ -263,18 +313,26 @@ pub fn build<P: SourceProvider>(
     if !diagnostics.is_empty() {
         return Err(diagnostics);
     }
-    let mut adapted =
-        crate::from_ast(&syntax, SymbolTable::default(), FileId(0), 0, 0).map_err(|errors| {
-            errors
-                .into_iter()
-                .map(|error| Diagnostic {
-                    kind: DiagnosticKind::UnsupportedModel,
-                    stage: DiagnosticStage::Declaration,
-                    message: error.message,
-                    location: mapping.output(error.span.start as usize),
-                })
-                .collect::<Vec<_>>()
-        })?;
+    let mut adapted = crate::from_ast(
+        &syntax,
+        config
+            .engine
+            .map_or_else(SymbolTable::default, |engine| engine.symbols.clone()),
+        FileId(0),
+        0,
+        0,
+    )
+    .map_err(|errors| {
+        errors
+            .into_iter()
+            .map(|error| Diagnostic {
+                kind: DiagnosticKind::UnsupportedModel,
+                stage: DiagnosticStage::Declaration,
+                message: error.message,
+                location: mapping.output(error.span.start as usize),
+            })
+            .collect::<Vec<_>>()
+    })?;
     timings.declaration_parsing = parse_start.elapsed();
     let provenance_start = Instant::now();
     let expanded_spans: Vec<_> = adapted.origins.iter().map(|origin| origin.span).collect();
@@ -325,12 +383,13 @@ pub fn build<P: SourceProvider>(
     let skeletons = adapted.skeletons.clone();
     timings.provenance_and_body_indexing += provenance_start.elapsed();
     let resolution_start = Instant::now();
-    let snapshot = adapted.finish().map_err(|error| {
+    let snapshot = adapted.finish_with_engine(config.engine).map_err(|error| {
         vec![resolution_error(
             error,
             &skeletons,
             &error_origins,
             &mapping,
+            config.engine.is_some(),
         )]
     })?;
     timings.tree_resolution = resolution_start.elapsed();
@@ -370,6 +429,14 @@ pub fn build<P: SourceProvider>(
     timings.total = total_start.elapsed();
     Ok(ColdFrontend {
         timings,
+        engine: config.engine.map(|seed| EngineModelStatus {
+            identity: seed.identity,
+            schema: seed.hierarchy.schema,
+            type_count: seed.hierarchy.parents.len(),
+            known_intrinsic_members: seed.intrinsics.len(),
+            member_catalog_complete: false,
+            typed_member_metadata_decoded: false,
+        }),
         plan,
         expanded,
         syntax,
@@ -581,6 +648,7 @@ fn resolution_error(
     skeletons: &[Skeleton],
     origins: &[crate::Provenance],
     mapping: &Mapping<'_>,
+    opaque_engine: bool,
 ) -> Diagnostic {
     let index = match &error {
         SnapshotError::Tree(crate::TreeError::Duplicate { owner, name, kind }
@@ -602,9 +670,14 @@ fn resolution_error(
         });
     Diagnostic {
         kind: match &error {
+            SnapshotError::Tree(crate::TreeError::MissingOverride { .. }) if opaque_engine => {
+                DiagnosticKind::UnsupportedModel
+            }
+            SnapshotError::Inventory(_) => DiagnosticKind::Internal,
             SnapshotError::Origins(_)
             | SnapshotError::Tree(
                 crate::TreeError::Symbol(_)
+                | crate::TreeError::ConflictingIntrinsicField { .. }
                 | crate::TreeError::UnknownSymbol(_)
                 | crate::TreeError::TooManyNodes,
             ) => DiagnosticKind::Internal,

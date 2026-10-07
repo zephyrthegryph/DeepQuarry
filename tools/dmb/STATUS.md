@@ -113,7 +113,48 @@ The production compiler has not switched to the new pipeline.
   full cold-build oracle for Phase 1. Check log:
   `E:/dmb-native-v2-phase0/foundation-tests.log`.
 
+### Subsequent migration slices
+
+- The encoder now has one shared direct/packed operand path for existing linked
+  output and immutable symbolic freezing. Packed references carry exact tags,
+  cover both placeholder words and reject values outside 24 bits.
+- Procedure lowering has an explicit per-procedure input and direct Resolver
+  entry. It queries project/resource meanings without a copied SharedLowerBindings
+  snapshot, preserves exact shared-slot tuples, and fails on unsupported meanings.
+  The historical compiler entry remains available during migration.
+- Pinned engine extraction and explicit engine-first frontend seeding are wired
+  into `dmbc analyze --engine-template PATH`. The optional `--bootstrap-catalog`
+  requires the exact pinned template. Unnamed engine procedures remain opaque;
+  native `/world` and `/list` semantic roots are separate from class-table identity.
+  The catalog preserves proven types beside opaque defaults/modifiers. Source
+  overrides retain an explicit opaque base, without invented engine source rows.
+- Demand-driven scalar constant resolution returns an immutable overlay, with
+  explicit backend decoding identity, actual forward dependencies/cycles and
+  separate declared/effective defaults. Unsupported meanings remain explicit.
+- `dm-link` independently assigns tables under canonical or caller-supplied
+  observable orders and fixed engine bindings. Relocation encoding delegates to
+  shared IR. Initializer reference sidecars are supported; full initializer
+  emission, metadata policy and the production DMB driver are not migrated yet.
+- The latest backend gate passed 216 tests. Subsequent tree/analysis/link/client
+  gates passed 39/2/4/11 tests; IR passed 10. Strict Clippy passed these six crates
+  and the legacy compiler library check passed. These are focused checks, not
+  the Phase 1 full-workspace/oracle gates. The engine-seeded CLI fixture passed.
+- A real DeepQuarry source-only integration probe was stopped for PC headroom
+  after 158.403 s at about 11.5 GiB private memory. It produced no completed
+  model; it is neither a successful frontend timing nor a compiler benchmark.
+  Evidence: `E:/dmb-native-v2-phase0/source-analysis-probe-20261006/receipt.json`.
+  Static investigation found full macro-table deep clones per text segment when
+  conservative token-pasting dependencies are encountered. The shared-binding
+  fix and a fresh bounded rerun are in progress.
+
 ## In progress / remaining gates
+
+- Corrected native repetition 1 completed all 1,089 selected results, suite and
+  shutdown markers, and exited normally: 996 passed, 35 failed, 58 skipped.
+  Runtime elapsed was 3,081.973 s, with 1,991,770,112 peak private bytes. This
+  is a runtime replay, not compilation latency. Receipt/result hashes are in
+  `phase0/native-replay-1.json`. The other repetitions and normalization remain
+  necessary; the original 997/34 count is not being substituted for this run.
 
 - Three selected full runtime replays per original output and normalization of all
   six, including stable versus variable differences and per-test runtime counts.

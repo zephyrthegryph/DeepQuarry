@@ -262,9 +262,41 @@ pub fn compile_simple_proc_with_bindings(
     body: &[Item],
     bindings: &LowerBindings,
 ) -> Result<SimpleProc, Vec<LowerError>> {
+    compile_with_lookup(body, bindings, None)
+}
+
+pub fn compile_simple_proc_with_resolver<R: dm_ir::Resolver>(
+    body: &[Item],
+    inputs: &crate::lower_resolver::ProcedureInputs,
+    symbols: &dm_ir::SymbolTable,
+    resolver: &R,
+) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
+    let bindings = inputs.lexical_bindings();
+    let lookup = crate::lower_resolver::ProjectResolver {
+        resolver,
+        symbols,
+        slots: std::cell::RefCell::new(Default::default()),
+        resources: std::cell::RefCell::new(Default::default()),
+        resource_search_context: inputs.resource_search_context,
+    };
+    let procedure = compile_with_lookup(body, &bindings, Some(&lookup))?;
+    Ok(crate::lower_resolver::ResolverProc {
+        procedure,
+        slots: lookup.slots.into_inner(),
+        resources: lookup.resources.into_inner(),
+    })
+}
+
+fn compile_with_lookup(
+    body: &[Item],
+    bindings: &LowerBindings,
+    lookup: Option<&crate::lower_resolver::ProjectResolver<'_>>,
+) -> Result<SimpleProc, Vec<LowerError>> {
     let mut compiler = Compiler {
         result: SimpleProc::default(),
         bindings,
+        lookup,
+        resolver_failure: std::cell::RefCell::new(None),
         locals: Vec::new(),
         local_slots: HashMap::new(),
         local_types: HashMap::new(),
@@ -285,13 +317,15 @@ pub fn compile_simple_proc_with_bindings(
     };
     compiler.parameter_defaults().map_err(|error| vec![error])?;
     let typed = parse_body_items(body);
-    if typed.diagnostics.is_empty() && typed_statements_supported(&typed.statements) {
-        compiler
-            .typed_statements(&typed.statements)
-            .map_err(|error| vec![error])?;
+    let lowered = if typed.diagnostics.is_empty() && typed_statements_supported(&typed.statements) {
+        compiler.typed_statements(&typed.statements)
     } else {
-        compiler.statements(body).map_err(|error| vec![error])?;
+        compiler.statements(body)
+    };
+    if let Some(error) = compiler.resolver_failure.take() {
+        return Err(vec![error]);
     }
+    lowered.map_err(|error| vec![error])?;
     compiler.emit(opcode::END, vec![]);
     compiler.result.local_count = compiler.locals.len() as u32;
     compiler.result.local_names = compiler.locals;
@@ -299,10 +333,15 @@ pub fn compile_simple_proc_with_bindings(
     compiler.result.argument_type_flags = bindings.parameter_type_flags.clone();
     compiler.result.argument_value_sources = bindings.parameter_value_sources.clone();
     if let Some(shared) = &bindings.shared {
-        compiler.result.class_paths.retain(|path| !shared.modified_instances.contains_key(path));
+        compiler
+            .result
+            .class_paths
+            .retain(|path| !shared.modified_instances.contains_key(path));
         let mut seen = BTreeSet::new();
         for item in &mut compiler.result.code.items {
-            let CodeItem::Instruction(instruction) = item else { continue };
+            let CodeItem::Instruction(instruction) = item else {
+                continue;
+            };
             for operand in &mut instruction.operands {
                 if let Word::Value(ValueWord::ClassPath { path, .. }) = operand {
                     if shared.modified_instances.contains_key(path) {
@@ -462,6 +501,10 @@ fn is_output_target(expr: &Expr) -> bool {
 struct Compiler<'a> {
     result: SimpleProc,
     bindings: &'a LowerBindings,
+    lookup: Option<&'a crate::lower_resolver::ProjectResolver<'a>>,
+    // Some legacy syntax fallbacks catch LowerError. Semantic query failures
+    // survive those fallbacks and prevent any successful lowered result.
+    resolver_failure: std::cell::RefCell<Option<LowerError>>,
     locals: Vec<String>,
     local_slots: HashMap<String, u32>,
     local_types: HashMap<String, String>,
@@ -483,6 +526,176 @@ struct Compiler<'a> {
 }
 
 impl Compiler<'_> {
+    fn class_tag(&self, path: &str) -> Result<Option<u8>, LowerError> {
+        let Some(lookup) = self.lookup else {
+            return Ok(class_tag(path));
+        };
+        let query = dm_ir::ResolveQuery::Ancestry(dm_ir::SymbolId::of(path));
+        match self.semantic(lookup.answer(query))? {
+            dm_ir::ResolvedMeaning::Missing => Ok(None),
+            dm_ir::ResolvedMeaning::Symbols(ancestors) => {
+                for ancestor in ancestors {
+                    let name = self.semantic(lookup.text(query, ancestor))?;
+                    if name.trim_start_matches('/').contains('/') {
+                        continue;
+                    }
+                    if let Some(tag) = class_tag(&name) {
+                        return Ok(Some(tag));
+                    }
+                }
+                Ok(None)
+            }
+            _ => self.semantic(Err(lookup.error(query, "invalid ancestry answer"))),
+        }
+    }
+    fn semantic<T>(&self, result: Result<T, LowerError>) -> Result<T, LowerError> {
+        if let Err(error) = &result {
+            self.resolver_failure
+                .borrow_mut()
+                .get_or_insert_with(|| error.clone());
+        }
+        result
+    }
+    fn has_field(&self, name: &str) -> Result<bool, LowerError> {
+        match self.lookup {
+            Some(lookup) => match &self.bindings.current_type_path {
+                Some(owner) => {
+                    if self.member_global(owner,name)?.is_some() { return Ok(false); }
+                    self.semantic(lookup.presence(dm_ir::ResolveQuery::Var {
+                    owner: dm_ir::SymbolId::of(owner),
+                    name: dm_ir::SymbolId::of(name),
+                })) },
+                None => Ok(false),
+            },
+            None => Ok(self.bindings.has_field(name)),
+        }
+    }
+    fn has_global(&self, name: &str) -> Result<bool, LowerError> {
+        match self.lookup {
+            Some(lookup) => self.semantic(lookup.presence(dm_ir::ResolveQuery::GlobalVar(dm_ir::SymbolId::of(name)))),
+            None => Ok(self.bindings.has_global(name)),
+        }
+    }
+    fn has_global_proc(&self, name: &str) -> Result<bool, LowerError> {
+        match self.lookup {
+            Some(lookup) => self.semantic(
+                lookup.presence(dm_ir::ResolveQuery::GlobalProc(dm_ir::SymbolId::of(name))),
+            ),
+            None => Ok(self.bindings.has_global_proc(name)),
+        }
+    }
+    fn has_visible_global(&self,name:&str)->Result<bool,LowerError> {
+        if self.lookup.is_some() {
+            if let Some(owner)=self.bindings.current_type_path.as_deref() {
+                if self.member_global(owner,name)?.is_some() { return Ok(true); }
+            }
+        }
+        self.has_global(name)
+    }
+    fn field_type(&self, name: &str) -> Result<Option<String>, LowerError> {
+        match (self.lookup, self.bindings.current_type_path.as_deref()) {
+            (Some(lookup), Some(owner)) => {
+                self.semantic(lookup.declared_type(dm_ir::ResolveQuery::Var {
+                    owner: dm_ir::SymbolId::of(owner),
+                    name: dm_ir::SymbolId::of(name),
+                }))
+            }
+            (Some(_), None) => Ok(None),
+            (None, _) => Ok(self.bindings.field_type(name).map(str::to_owned)),
+        }
+    }
+    fn global_type(&self, name: &str) -> Result<Option<String>, LowerError> {
+        match self.lookup {
+            Some(lookup) => self.semantic(
+                lookup.declared_type(dm_ir::ResolveQuery::GlobalVar(dm_ir::SymbolId::of(name))),
+            ),
+            None => Ok(self.bindings.global_type(name).map(str::to_owned)),
+        }
+    }
+    fn member_type(&self, owner: &str, name: &str) -> Result<Option<String>, LowerError> {
+        match self.lookup {
+            Some(lookup) => self.semantic(lookup.declared_type(dm_ir::ResolveQuery::Var {
+                owner: dm_ir::SymbolId::of(owner),
+                name: dm_ir::SymbolId::of(name),
+            })),
+            None => Ok(self.bindings.member_type(owner, name).map(str::to_owned)),
+        }
+    }
+    fn member_global(&self, owner: &str, name: &str) -> Result<Option<String>, LowerError> {
+        match self.lookup {
+            Some(lookup) => self.semantic(lookup.slot(dm_ir::ResolveQuery::StaticVar {
+                owner: dm_ir::SymbolId::of(owner),
+                name: dm_ir::SymbolId::of(name),
+            })),
+            None => Ok(self.bindings.member_global(owner, name).map(str::to_owned)),
+        }
+    }
+    fn unique_member_global(&self, name: &str) -> Result<Option<String>, LowerError> {
+        match self.lookup {
+            Some(lookup) => self.semantic(lookup.slot(dm_ir::ResolveQuery::UniqueStaticVar(
+                dm_ir::SymbolId::of(name),
+            ))),
+            None => Ok(self.bindings.unique_member_global(name).map(str::to_owned)),
+        }
+    }
+    fn member_proc(&self, owner: &str, name: &str) -> Result<Option<String>, LowerError> {
+        match self.lookup {
+            Some(lookup) => self.semantic(lookup.member_proc(owner, name)),
+            None => Ok(self.bindings.member_proc(owner, name).map(str::to_owned)),
+        }
+    }
+    fn has_declared_member_proc(&self, owner: &str, name: &str) -> Result<bool, LowerError> {
+        match self.lookup {
+            Some(lookup) => self.semantic(lookup.presence(dm_ir::ResolveQuery::HasMemberProc {
+                owner: dm_ir::SymbolId::of(owner),
+                name: dm_ir::SymbolId::of(name),
+            })),
+            None => Ok(self.bindings.has_declared_member_proc(owner, name)),
+        }
+    }
+    fn numeric_constant(&self, name: &str) -> Result<Option<u32>, LowerError> {
+        if let Some(lookup) = self.lookup {
+            return match self.semantic(lookup.constant(name))? {
+                Some(dm_ir::SemanticValue::NumberBits(bits)) => Ok(Some(bits)),
+                Some(dm_ir::SemanticValue::Text(_)) | None => Ok(None),
+                _ => self.semantic(Err(lookup.error(
+                    dm_ir::ResolveQuery::PredefinedConstant(dm_ir::SymbolId::of(name)),
+                    "unsupported predefined constant value",
+                ))),
+            };
+        }
+        Ok(self
+            .bindings
+            .shared
+            .as_ref()
+            .and_then(|shared| shared.numeric_constants.get(name))
+            .copied())
+    }
+    fn string_constant(&self, name: &str) -> Result<Option<String>, LowerError> {
+        if let Some(lookup) = self.lookup {
+            return match self.semantic(lookup.constant(name))? {
+                Some(dm_ir::SemanticValue::Text(bytes)) => {
+                    self.semantic(String::from_utf8(bytes.to_vec()).map(Some).map_err(|_| {
+                        lookup.error(
+                            dm_ir::ResolveQuery::PredefinedConstant(dm_ir::SymbolId::of(name)),
+                            "predefined constant is not UTF-8",
+                        )
+                    }))
+                }
+                Some(dm_ir::SemanticValue::NumberBits(_)) | None => Ok(None),
+                _ => self.semantic(Err(lookup.error(
+                    dm_ir::ResolveQuery::PredefinedConstant(dm_ir::SymbolId::of(name)),
+                    "unsupported predefined constant value",
+                ))),
+            };
+        }
+        Ok(self
+            .bindings
+            .shared
+            .as_ref()
+            .and_then(|shared| shared.string_constants.get(name))
+            .cloned())
+    }
     fn prepare_user_labels(
         &mut self,
         statements: &[Statement],
@@ -658,9 +871,15 @@ impl Compiler<'_> {
                     self.output_statement(value, &statement.raw_header)?;
                 }
                 StatementKind::Call(value) | StatementKind::Expression(value) => {
-                    if self.crash_statement(value, &statement.raw_header)? { continue; }
-                    if self.output_statement(value, &statement.raw_header)? { continue; }
-                    if self.builtin_statement(value, &statement.raw_header)? { continue; }
+                    if self.crash_statement(value, &statement.raw_header)? {
+                        continue;
+                    }
+                    if self.output_statement(value, &statement.raw_header)? {
+                        continue;
+                    }
+                    if self.builtin_statement(value, &statement.raw_header)? {
+                        continue;
+                    }
                     if let ExprKind::Binary { op, lhs, rhs } = &value.kind {
                         if op == "||=" || op == "&&=" {
                             self.assign_expr(lhs, op, rhs, &statement.raw_header)?;
@@ -726,7 +945,10 @@ impl Compiler<'_> {
                         );
                     } else if !self.loops.is_empty() {
                         self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
-                        self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Local(slot))]);
+                        self.emit(
+                            opcode::SET_VAR,
+                            vec![Word::Variable(VariableWord::Local(slot))],
+                        );
                     }
                 }
                 StatementKind::While { condition, body } => {
@@ -786,7 +1008,7 @@ impl Compiler<'_> {
                         error(&statement.raw_header, "world iterator requires a type")
                     })?;
                     let path = format!("/{type_name}");
-                    let tag = class_tag(&path).ok_or_else(|| {
+                    let tag = self.class_tag(&path)?.ok_or_else(|| {
                         error(&statement.raw_header, "unsupported world iterator type")
                     })?;
                     if self.local_slots.contains_key(name) {
@@ -914,15 +1136,19 @@ impl Compiler<'_> {
                         vec![Word::Variable(binding_variable.clone())],
                     );
                     self.emit(opcode::JZ, vec![Word::Branch(end.clone())]);
-                    if mask == 0 || (explicit_mask.is_none() && binding.strip_prefix("var/")
-                        .and_then(|raw| raw.rsplit_once('/'))
-                        .is_some_and(|(path, _)| path.contains('/'))) {
+                    if mask == 0
+                        || (explicit_mask.is_none()
+                            && binding
+                                .strip_prefix("var/")
+                                .and_then(|raw| raw.rsplit_once('/'))
+                                .is_some_and(|(path, _)| path.contains('/')))
+                    {
                         if let Some((type_name, _)) = binding
                             .strip_prefix("var/")
                             .and_then(|raw| raw.rsplit_once('/'))
                         {
                             let path = format!("/{type_name}");
-                            let tag = class_tag(&path).ok_or_else(|| {
+                            let tag = self.class_tag(&path)?.ok_or_else(|| {
                                 error(&statement.raw_header, "unsupported iterator type")
                             })?;
                             if self.seen_classes.insert(path.clone()) {
@@ -1036,11 +1262,20 @@ impl Compiler<'_> {
                         },
                     body,
                 } => {
-                    if step.as_ref().and_then(fold_number).is_some_and(|value| !value.is_finite() || value == 0.0) {
-                        return Err(error(&statement.raw_header, "range step must be finite and nonzero"));
+                    if step
+                        .as_ref()
+                        .and_then(fold_number)
+                        .is_some_and(|value| !value.is_finite() || value == 0.0)
+                    {
+                        return Err(error(
+                            &statement.raw_header,
+                            "range step must be finite and nonzero",
+                        ));
                     }
                     let binding_name = if binding.starts_with("var/") {
-                        let name = local_name(binding).ok_or_else(|| error(&statement.raw_header, "unsupported range binding"))?;
+                        let name = local_name(binding).ok_or_else(|| {
+                            error(&statement.raw_header, "unsupported range binding")
+                        })?;
                         if self.local_slots.contains_key(name) {
                             return Err(error(&statement.raw_header, "repeated range binding"));
                         }
@@ -1048,7 +1283,10 @@ impl Compiler<'_> {
                         self.locals.push(name.into());
                         self.local_slots.insert(name.into(), slot);
                         self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
-                        self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Local(slot))]);
+                        self.emit(
+                            opcode::SET_VAR,
+                            vec![Word::Variable(VariableWord::Local(slot))],
+                        );
                         name
                     } else {
                         binding.as_str()
@@ -1065,8 +1303,17 @@ impl Compiler<'_> {
                     self.emit(if step.is_some() { 0xfe } else { 0xfc }, vec![]);
                     let loop_start = self.label();
                     let loop_end = self.label();
-                    self.result.code.items.push(CodeItem::Label(loop_start.clone()));
-                    self.emit(if step.is_some() { 0xff } else { 0xfd }, vec![Word::Branch(loop_end.clone()), Word::Variable(binding_variable)]);
+                    self.result
+                        .code
+                        .items
+                        .push(CodeItem::Label(loop_start.clone()));
+                    self.emit(
+                        if step.is_some() { 0xff } else { 0xfd },
+                        vec![
+                            Word::Branch(loop_end.clone()),
+                            Word::Variable(binding_variable),
+                        ],
+                    );
                     self.loops.push((loop_start.clone(), loop_end.clone()));
                     self.breaks.push(loop_end.clone());
                     let result = self.typed_statements(body);
@@ -1075,7 +1322,10 @@ impl Compiler<'_> {
                     result?;
                     self.emit(opcode::JMP_LOOP, vec![Word::Branch(loop_start)]);
                     self.result.code.items.push(CodeItem::Label(loop_end));
-                    self.emit(0xfb, vec![Word::Immediate(if step.is_some() { 3 } else { 2 })]);
+                    self.emit(
+                        0xfb,
+                        vec![Word::Immediate(if step.is_some() { 3 } else { 2 })],
+                    );
                 }
                 StatementKind::For {
                     control:
@@ -1606,12 +1856,17 @@ impl Compiler<'_> {
                     self.expression_text(start_value.trim(), text)?;
                     self.expression_text(end_value, text)?;
                     let has_step = remainder.contains(" step ");
-                    if has_step { self.expression_text(step_value, text)?; }
+                    if has_step {
+                        self.expression_text(step_value, text)?;
+                    }
                     self.emit(if has_step { 0xfe } else { 0xfc }, vec![]);
                     let start = self.label();
                     let end = self.label();
                     self.result.code.items.push(CodeItem::Label(start.clone()));
-                    self.emit(if has_step { 0xff } else { 0xfd }, vec![Word::Branch(end.clone()), Word::Variable(binding_variable)]);
+                    self.emit(
+                        if has_step { 0xff } else { 0xfd },
+                        vec![Word::Branch(end.clone()), Word::Variable(binding_variable)],
+                    );
                     self.loops.push((start.clone(), end.clone()));
                     self.breaks.push(end.clone());
                     let result = self.statements(&item.children);
@@ -1815,7 +2070,10 @@ impl Compiler<'_> {
                 );
             } else if !self.loops.is_empty() {
                 self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
-                self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Local(slot))]);
+                self.emit(
+                    opcode::SET_VAR,
+                    vec![Word::Variable(VariableWord::Local(slot))],
+                );
             }
             return Ok(());
         }
@@ -1848,9 +2106,15 @@ impl Compiler<'_> {
                 return self.assign_expr(lhs, op, rhs, text);
             }
         }
-        if self.crash_statement(&expr, text)? { return Ok(()); }
-        if self.output_statement(&expr, text)? { return Ok(()); }
-        if self.builtin_statement(&expr, text)? { return Ok(()); }
+        if self.crash_statement(&expr, text)? {
+            return Ok(());
+        }
+        if self.output_statement(&expr, text)? {
+            return Ok(());
+        }
+        if self.builtin_statement(&expr, text)? {
+            return Ok(());
+        }
         self.expression(&expr, text)?;
         self.emit(opcode::POP, vec![]);
         Ok(())
@@ -1904,61 +2168,79 @@ impl Compiler<'_> {
     }
 
     fn output_statement(&mut self, expr: &Expr, statement: &str) -> Result<bool, LowerError> {
-        let ExprKind::Binary { op, lhs, rhs } = &expr.kind else { return Ok(false); };
+        let ExprKind::Binary { op, lhs, rhs } = &expr.kind else {
+            return Ok(false);
+        };
         if op == ">>" {
             self.output_receiver(lhs, statement)?;
-            self.emit(0xaf,vec![]);
-            if let ExprKind::Index { object,index } = &rhs.kind {
-                self.expression(object,statement)?;
-                self.expression(index,statement)?;
-                self.emit(opcode::LIST_SET,vec![]);
+            self.emit(0xaf, vec![]);
+            if let ExprKind::Index { object, index } = &rhs.kind {
+                self.expression(object, statement)?;
+                self.expression(index, statement)?;
+                self.emit(opcode::LIST_SET, vec![]);
                 return Ok(true);
             }
             let variable = match self.variable_expr(rhs, statement) {
                 Ok(variable) => variable,
                 Err(_) => {
-                    let ExprKind::Member { object,selector,.. } = &rhs.kind else {
-                        return Err(error(statement,"unsupported read destination"));
+                    let ExprKind::Member {
+                        object, selector, ..
+                    } = &rhs.kind
+                    else {
+                        return Err(error(statement, "unsupported read destination"));
                     };
-                    self.expression(object,statement)?;
-                    self.emit(opcode::SET_VAR,vec![Word::Variable(VariableWord::Cache)]);
+                    self.expression(object, statement)?;
+                    self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
                     self.intern_string(selector);
                     VariableWord::Field(selector.clone())
                 }
             };
-            self.emit(opcode::SET_VAR,vec![Word::Variable(variable)]);
+            self.emit(opcode::SET_VAR, vec![Word::Variable(variable)]);
             return Ok(true);
         }
-        if op != "<<" { return Ok(false); }
+        if op != "<<" {
+            return Ok(false);
+        }
         self.output_receiver(lhs, statement)?;
         if let ExprKind::Call { callee, args } = &rhs.kind {
             if let ExprKind::Ident(name) = &callee.kind {
                 if name == "load_resource" {
-                    if args.len()<2 { return Err(error(statement,"load_resource expects at least two arguments")); }
-                    for arg in args { self.expression(arg,statement)?; }
-                    self.emit(0x165,vec![Word::Immediate(args.len() as u32+1)]);
+                    if args.len() < 2 {
+                        return Err(error(
+                            statement,
+                            "load_resource expects at least two arguments",
+                        ));
+                    }
+                    for arg in args {
+                        self.expression(arg, statement)?;
+                    }
+                    self.emit(0x165, vec![Word::Immediate(args.len() as u32 + 1)]);
                     return Ok(true);
                 }
                 let special = match (name.as_str(), args.len()) {
-                    ("run",1) => Some((0x09,false)),
-                    ("link",1) => Some((0x07,false)),
-                    ("browse",1) => Some((0xaa,false)),
-                    ("browse",2) => Some((0xab,false)),
-                    ("browse_rsc",1..=2) => Some((0x27,args.len()==1)),
-                    ("ftp",1..=2) => Some((0x08,args.len()==1)),
-                    ("output",2) => Some((0x10b,false)),
+                    ("run", 1) => Some((0x09, false)),
+                    ("link", 1) => Some((0x07, false)),
+                    ("browse", 1) => Some((0xaa, false)),
+                    ("browse", 2) => Some((0xab, false)),
+                    ("browse_rsc", 1..=2) => Some((0x27, args.len() == 1)),
+                    ("ftp", 1..=2) => Some((0x08, args.len() == 1)),
+                    ("output", 2) => Some((0x10b, false)),
                     _ => None,
                 };
-                if let Some((opcode,pad_null)) = special {
-                    for arg in args { self.expression(arg, statement)?; }
-                    if pad_null { self.emit(opcode::PUSH_VAL,vec![Word::Value(ValueWord::Null)]); }
-                    self.emit(opcode,vec![]);
+                if let Some((opcode, pad_null)) = special {
+                    for arg in args {
+                        self.expression(arg, statement)?;
+                    }
+                    if pad_null {
+                        self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
+                    }
+                    self.emit(opcode, vec![]);
                     return Ok(true);
                 }
             }
         }
         self.expression(rhs, statement)?;
-        self.emit(0x03,vec![]);
+        self.emit(0x03, vec![]);
         Ok(true)
     }
 
@@ -2062,11 +2344,13 @@ impl Compiler<'_> {
             self.emit(opcode::PUSH_CACHE, vec![]);
             self.expression(value, statement)?;
             self.emit(opcode::POP_CACHE, vec![]);
-            let variable = self.inferred_expression_type(object)
-                .and_then(|owner| self.bindings.member_global(&owner, selector))
+            let variable = self
+                .expression_member_global(object, selector)?
                 .map(|symbol| VariableWord::Global(symbol.to_owned()))
                 .unwrap_or_else(|| VariableWord::Field(selector.clone()));
-            if matches!(variable, VariableWord::Field(_)) { self.intern_string(selector); }
+            if matches!(variable, VariableWord::Field(_)) {
+                self.intern_string(selector);
+            }
             let assignment_opcode = match op {
                 "=" => opcode::SET_VAR,
                 "+=" => opcode::AUG_ADD,
@@ -2081,10 +2365,7 @@ impl Compiler<'_> {
                 ">>=" => 0x4e,
                 _ => return Err(error(statement, "unsupported safe member assignment")),
             };
-            self.emit(
-                assignment_opcode,
-                vec![Word::Variable(variable)],
-            );
+            self.emit(assignment_opcode, vec![Word::Variable(variable)]);
             self.result.code.items.push(CodeItem::Label(end));
             return Ok(());
         }
@@ -2148,7 +2429,7 @@ impl Compiler<'_> {
                 }
             }
             let var = self.variable_expr(target, statement)?;
-            if let Some(path) = self.inferred_expression_type(target) {
+            if let Some(path) = self.inferred_expression_type(target)? {
                 let declaration = format!("var{path}/__value");
                 self.local_initializer(value, &declaration, statement)?;
             } else {
@@ -2208,20 +2489,25 @@ impl Compiler<'_> {
         if let Some(index) = self.bindings.parameters.iter().position(|n| n == name) {
             return Ok(VariableWord::Arg(index as u32));
         }
+        if self.lookup.is_some() && !matches!(name,"src"|"usr"|"world"|"args"|".") {
+            if let Some(owner)=self.bindings.current_type_path.as_deref() {
+                if let Some(slot)=self.member_global(owner,name)? { return Ok(VariableWord::Global(slot)); }
+            }
+        }
         match name {
             "src" => Ok(VariableWord::Src),
             "usr" => Ok(VariableWord::Usr),
             "world" => Ok(VariableWord::World),
             "args" => Ok(VariableWord::Args),
             "." => Ok(VariableWord::Dot),
-            _ if self.bindings.has_field(name) => {
+            _ if self.has_field(name)? => {
                 self.intern_string(name);
                 Ok(VariableWord::SetCache(
                     Box::new(VariableWord::Src),
                     Box::new(VariableWord::Field(name.to_owned())),
                 ))
             }
-            _ if self.bindings.has_global(name) => Ok(VariableWord::Global(name.to_owned())),
+            _ if self.has_global(name)? => Ok(VariableWord::Global(name.to_owned())),
             _ => Err(error(
                 statement,
                 &format!("unresolved variable name: {name}"),
@@ -2240,7 +2526,7 @@ impl Compiler<'_> {
                     if selector == "vars" {
                         return Ok(VariableWord::Global(BUILTIN_GLOBAL_VARS_SYMBOL.into()));
                     }
-                    if self.bindings.has_global(selector) {
+                    if self.has_global(selector)? {
                         return Ok(VariableWord::Global(selector.clone()));
                     }
                     return Err(error(
@@ -2248,8 +2534,8 @@ impl Compiler<'_> {
                         &format!("unresolved global variable: {selector}"),
                     ));
                 }
-                if let Some(owner) = self.inferred_expression_type(object) {
-                    if let Some(symbol) = self.bindings.member_global(&owner, selector) {
+                if let Some(owner) = self.inferred_expression_type(object)? {
+                    if let Some(symbol) = self.member_global(&owner, selector)? {
                         return Ok(VariableWord::Global(symbol.to_owned()));
                     }
                 }
@@ -2264,16 +2550,30 @@ impl Compiler<'_> {
         }
     }
 
-    fn assignment_value_preserving_cache(&mut self, variable: &VariableWord, value: &Expr, statement: &str) -> Result<(), LowerError> {
+    fn assignment_value_preserving_cache(
+        &mut self,
+        variable: &VariableWord,
+        value: &Expr,
+        statement: &str,
+    ) -> Result<(), LowerError> {
         let clobbers = !matches!(&value.kind, ExprKind::Ident(_) | ExprKind::TypePath(_))
             && !matches!(&value.kind, ExprKind::Literal(text) if !text.contains('['));
-        let receiver = clobbers && matches!(variable, VariableWord::CacheIndex | VariableWord::Field(_));
+        let receiver =
+            clobbers && matches!(variable, VariableWord::CacheIndex | VariableWord::Field(_));
         let index = clobbers && matches!(variable, VariableWord::CacheIndex);
-        if receiver { self.emit(opcode::PUSH_CACHE, vec![]); }
-        if index { self.emit(opcode::PUSH_CACHE_KEY, vec![]); }
+        if receiver {
+            self.emit(opcode::PUSH_CACHE, vec![]);
+        }
+        if index {
+            self.emit(opcode::PUSH_CACHE_KEY, vec![]);
+        }
         self.expression(value, statement)?;
-        if index { self.emit(opcode::POP_CACHE_KEY, vec![]); }
-        if receiver { self.emit(opcode::POP_CACHE, vec![]); }
+        if index {
+            self.emit(opcode::POP_CACHE_KEY, vec![]);
+        }
+        if receiver {
+            self.emit(opcode::POP_CACHE, vec![]);
+        }
         Ok(())
     }
 
@@ -2303,7 +2603,7 @@ impl Compiler<'_> {
                 };
                 self.expression(object, statement)?;
                 self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
-                if let Some(symbol) = self.bindings.unique_member_global(selector) {
+                if let Some(symbol) = self.unique_member_global(selector)? {
                     return Ok(VariableWord::Global(symbol.to_owned()));
                 }
                 self.intern_string(selector);
@@ -2392,7 +2692,8 @@ impl Compiler<'_> {
                 .filter(|path| !path.is_empty())
                 .ok_or_else(|| error(statement, "locate() requires a typed assignment"))?;
             let path = format!("/{type_name}");
-            let tag = class_tag(&path)
+            let tag = self
+                .class_tag(&path)?
                 .ok_or_else(|| error(statement, "unsupported inferred locate type"))?;
             if self.seen_classes.insert(path.clone()) {
                 self.result.class_paths.push(path.clone());
@@ -2416,7 +2717,8 @@ impl Compiler<'_> {
                     .filter(|path| !path.is_empty())
                     .ok_or_else(|| error(statement, "locate() requires a typed assignment"))?;
                 let path = format!("/{type_name}");
-                let tag = class_tag(&path)
+                let tag = self
+                    .class_tag(&path)?
                     .ok_or_else(|| error(statement, "unsupported inferred locate type"))?;
                 if self.seen_classes.insert(path.clone()) {
                     self.result.class_paths.push(path.clone());
@@ -2468,7 +2770,8 @@ impl Compiler<'_> {
                 .or_else(|| declaration.trim_end().ends_with("[]").then_some("list"))
                 .ok_or_else(|| error(statement, "inferred new requires a typed local"))?;
             let path = format!("/{type_name}");
-            let tag = class_tag(&path)
+            let tag = self
+                .class_tag(&path)?
                 .ok_or_else(|| error(statement, "unsupported inferred constructor type"))?;
             if self.seen_classes.insert(path.clone()) {
                 self.result.class_paths.push(path.clone());
@@ -2514,54 +2817,110 @@ impl Compiler<'_> {
         self.expression(expr, statement)
     }
 
-    fn inferred_expression_type(&self, expr: &Expr) -> Option<String> {
+    fn inferred_expression_type(&self, expr: &Expr) -> Result<Option<String>, LowerError> {
         let inferred = match &expr.kind {
             ExprKind::TypePath(path) => Some(path.clone()),
             ExprKind::Ident(name) => {
                 if name == "src" {
-                    return self.bindings.current_type_path.clone();
+                    return Ok(self.bindings.current_type_path.clone());
                 }
                 if name == "usr" {
-                    return Some("/mob".into());
+                    return Ok(Some("/mob".into()));
                 }
-                self.local_types
+                if let Some(path) = self
+                    .local_types
                     .get(name)
-                    .map(String::as_str)
-                    .or_else(|| self.bindings.parameter_types.get(name).map(String::as_str))
-                    .or_else(|| self.bindings.field_type(name))
-                    .or_else(|| self.bindings.global_type(name))
-                    .map(str::to_owned)
+                    .or_else(|| self.bindings.parameter_types.get(name))
+                {
+                    Some(path.clone())
+                } else {
+                    match self.field_type(name)? {
+                        Some(path) => Some(path),
+                        None => self.global_type(name)?,
+                    }
+                }
             }
-            ExprKind::Group(inner) => self.inferred_expression_type(inner),
+            ExprKind::Group(inner) => self.inferred_expression_type(inner)?,
             ExprKind::Member {
                 object, selector, ..
             } => {
                 if matches!(&object.kind, ExprKind::Ident(name) if name == "global") {
-                    return self.bindings.global_type(selector).map(str::to_owned);
+                    return self.global_type(selector);
                 }
                 if matches!(&object.kind, ExprKind::Ident(name) if name == "src") {
-                    return self.bindings.field_type(selector).map(str::to_owned);
+                    return self.field_type(selector);
                 }
-                let owner = self.inferred_expression_type(object)?;
-                self.bindings
-                    .member_type(&owner, selector)
-                    .map(str::to_owned)
+                match self.inferred_expression_type(object)? {
+                    Some(owner) => self.member_type(&owner, selector)?,
+                    None => None,
+                }
             }
             ExprKind::SafeMember { object, selector } => {
-                let owner = self.inferred_expression_type(object)?;
-                self.bindings
-                    .member_type(&owner, selector)
-                    .map(str::to_owned)
+                match self.inferred_expression_type(object)? {
+                    Some(owner) => self.member_type(&owner, selector)?,
+                    None => None,
+                }
             }
             _ => None,
         };
-        inferred.map(|path| {
-            self.bindings.shared.as_ref()
+        let Some(path) = inferred else {
+            return Ok(None);
+        };
+        if let Some(lookup) = self.lookup {
+            let query = dm_ir::ResolveQuery::Type(dm_ir::SymbolId::of(&path));
+            if self.semantic(lookup.presence(query))? {
+                return Ok(Some(path));
+            }
+            let query = dm_ir::ResolveQuery::RuntimeType(dm_ir::SymbolId::of(&path));
+            return match self.semantic(lookup.answer(query))? {
+                dm_ir::ResolvedMeaning::Symbol(id) => {
+                    self.semantic(lookup.text(query, id)).map(Some)
+                }
+                dm_ir::ResolvedMeaning::Missing => Ok(None),
+                _ => self.semantic(Err(lookup.error(query, "invalid runtime type answer"))),
+            };
+        }
+        Ok(Some(
+            self.bindings
+                .shared
+                .as_ref()
                 .and_then(|shared| shared.modified_instances.get(&path))
-                .cloned().unwrap_or(path)
-        })
+                .cloned()
+                .unwrap_or(path),
+        ))
     }
-
+    fn expression_member_global(
+        &self,
+        object: &Expr,
+        name: &str,
+    ) -> Result<Option<String>, LowerError> {
+        match self.inferred_expression_type(object)? {
+            Some(owner) => self.member_global(&owner, name),
+            None => Ok(None),
+        }
+    }
+    fn expression_member_proc(
+        &self,
+        object: &Expr,
+        name: &str,
+    ) -> Result<Option<String>, LowerError> {
+        match self.inferred_expression_type(object)? {
+            Some(owner) => self.member_proc(&owner, name),
+            None => Ok(None),
+        }
+    }
+    fn current_member_proc(&self, name: &str) -> Result<Option<String>, LowerError> {
+        match self.bindings.current_type_path.as_deref() {
+            Some(owner) => self.member_proc(owner, name),
+            None => Ok(None),
+        }
+    }
+    fn current_has_declared_member_proc(&self, name: &str) -> Result<bool, LowerError> {
+        match self.bindings.current_type_path.as_deref() {
+            Some(owner) => self.has_declared_member_proc(owner, name),
+            None => Ok(false),
+        }
+    }
     fn local_array(&mut self, dimensions: &[&str], statement: &str) -> Result<(), LowerError> {
         if dimensions.len() > 1 {
             let path = "/list".to_owned();
@@ -2767,7 +3126,9 @@ impl Compiler<'_> {
             }
             ExprKind::Binary { op, lhs, rhs } if op == "in" => {
                 if let ExprKind::Call { callee, args } = &lhs.kind {
-                    if matches!(&callee.kind, ExprKind::Ident(name) if name == "locate") && args.len() == 1 {
+                    if matches!(&callee.kind, ExprKind::Ident(name) if name == "locate")
+                        && args.len() == 1
+                    {
                         self.expression(&args[0], statement)?;
                         self.expression(rhs, statement)?;
                         self.emit(0x97, vec![]);
@@ -2895,12 +3256,16 @@ impl Compiler<'_> {
                             "escaped or interpolated resource path is unsupported",
                         ));
                     }
-                    if self.seen_resources.insert(path.into()) {
-                        self.result.resources.push(path.into());
+                    let path = match self.lookup {
+                        Some(lookup) => self.semantic(lookup.resource(path))?,
+                        None => path.to_owned(),
+                    };
+                    if self.seen_resources.insert(path.clone()) {
+                        self.result.resources.push(path.clone());
                     }
                     self.emit(
                         opcode::PUSH_VAL,
-                        vec![Word::Value(ValueWord::Resource(path.into()))],
+                        vec![Word::Value(ValueWord::Resource(path))],
                     );
                 } else if let Ok(number) = literal.parse::<f32>() {
                     self.emit(
@@ -2916,7 +3281,10 @@ impl Compiler<'_> {
                     // A procedure namespace is a native string path used by
                     // typesof(), not a runtime class or a single procedure.
                     self.intern_string(path);
-                    self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::String(path.clone()))]);
+                    self.emit(
+                        opcode::PUSH_VAL,
+                        vec![Word::Value(ValueWord::String(path.clone()))],
+                    );
                     return Ok(());
                 }
                 if path.starts_with("/proc/")
@@ -2930,7 +3298,8 @@ impl Compiler<'_> {
                     );
                     return Ok(());
                 }
-                let tag = class_tag(path)
+                let tag = self
+                    .class_tag(path)?
                     .ok_or_else(|| error(statement, "unsupported type path literal"))?;
                 if self.seen_classes.insert(path.clone()) {
                     self.result.class_paths.push(path.clone());
@@ -2957,8 +3326,8 @@ impl Compiler<'_> {
                         .parameters
                         .iter()
                         .any(|parameter| parameter == name)
-                    && !self.bindings.has_field(name)
-                    && !self.bindings.has_global(name)
+                    && !self.has_field(name)?
+                    && !self.has_visible_global(name)?
                 {
                     if name == "__PROC__" {
                         let path = self
@@ -2978,7 +3347,7 @@ impl Compiler<'_> {
                     if name == "__TYPE__" {
                         if let Some(path) = self.bindings.current_type_path.as_ref() {
                             let path = path.clone();
-                            let tag = class_tag(&path).ok_or_else(|| {
+                            let tag = self.class_tag(&path)?.ok_or_else(|| {
                                 error(statement, "__TYPE__ has unsupported owner type")
                             })?;
                             if self.seen_classes.insert(path.clone()) {
@@ -2993,13 +3362,7 @@ impl Compiler<'_> {
                         }
                         return Ok(());
                     }
-                    if let Some(bits) = self
-                        .bindings
-                        .shared
-                        .as_ref()
-                        .and_then(|shared| shared.numeric_constants.get(name))
-                        .copied()
-                    {
+                    if let Some(bits) = self.numeric_constant(name)? {
                         let number = f32::from_bits(bits);
                         if number >= 0.0 && number <= u16::MAX as f32 && number.fract() == 0.0 {
                             self.emit(opcode::PUSH_INT, vec![Word::Immediate(number as u32)]);
@@ -3008,13 +3371,7 @@ impl Compiler<'_> {
                         }
                         return Ok(());
                     }
-                    if let Some(value) = self
-                        .bindings
-                        .shared
-                        .as_ref()
-                        .and_then(|shared| shared.string_constants.get(name))
-                        .cloned()
-                    {
+                    if let Some(value) = self.string_constant(name)? {
                         self.intern_string(&value);
                         self.emit(
                             opcode::PUSH_VAL,
@@ -3040,7 +3397,7 @@ impl Compiler<'_> {
                         self.expression(object, statement)?;
                         safe_labels = self.defer_safe_postfix_labels(object);
                         self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
-                        if let Some(symbol) = self.bindings.unique_member_global(selector) {
+                        if let Some(symbol) = self.unique_member_global(selector)? {
                             VariableWord::Global(symbol.to_owned())
                         } else {
                             self.intern_string(selector);
@@ -3066,15 +3423,14 @@ impl Compiler<'_> {
                 self.expression(object, statement)?;
                 let end = self.label();
                 self.emit(317, vec![Word::Branch(end.clone())]);
-                let variable = self.inferred_expression_type(object)
-                    .and_then(|owner| self.bindings.member_global(&owner, selector))
+                let variable = self
+                    .expression_member_global(object, selector)?
                     .map(|symbol| VariableWord::Global(symbol.to_owned()))
                     .unwrap_or_else(|| VariableWord::Field(selector.clone()));
-                if matches!(variable, VariableWord::Field(_)) { self.intern_string(selector); }
-                self.emit(
-                    opcode::GET_VAR,
-                    vec![Word::Variable(variable)],
-                );
+                if matches!(variable, VariableWord::Field(_)) {
+                    self.intern_string(selector);
+                }
+                self.emit(opcode::GET_VAR, vec![Word::Variable(variable)]);
                 self.result.code.items.push(CodeItem::Label(end));
             }
             ExprKind::Index { object, index } => {
@@ -3141,21 +3497,20 @@ impl Compiler<'_> {
                                     }
                                 }
                                 self.emit(opcode::POP_CACHE, vec![]);
-                                let proc_selector = if let ExprKind::Call { callee, .. } =
-                                    &object.kind
-                                {
-                                    if let ExprKind::TypePath(path) = &callee.kind {
-                                        self.bindings.member_proc(path, selector).map(str::to_owned)
+                                let proc_selector =
+                                    if let ExprKind::Call { callee, .. } = &object.kind {
+                                        if let ExprKind::TypePath(path) = &callee.kind {
+                                            self.member_proc(path, selector)?
+                                        } else {
+                                            None
+                                        }
                                     } else {
                                         None
-                                    }
-                                } else {
-                                    None
-                                };
+                                    };
                                 let proc_selector =
-                                    proc_selector.map(member_proc_selector).unwrap_or_else(
-                                        || VariableWord::DynamicProc(selector.replace('_', " ")),
-                                    );
+                                    proc_selector.map(member_proc_selector).unwrap_or_else(|| {
+                                        VariableWord::DynamicProc(selector.replace('_', " "))
+                                    });
                                 if let VariableWord::DynamicProc(display) = &proc_selector {
                                     self.intern_string(display);
                                 }
@@ -3414,12 +3769,7 @@ impl Compiler<'_> {
                 }
                 if let ExprKind::SafeMember { object, selector } = &callee.kind {
                     let proc_selector = self
-                        .inferred_expression_type(object)
-                        .and_then(|owner| {
-                            self.bindings
-                                .member_proc(&owner, selector)
-                                .map(str::to_owned)
-                        })
+                        .expression_member_proc(object, selector)?
                         .map(member_proc_selector)
                         .unwrap_or_else(|| VariableWord::DynamicProc(selector.replace('_', " ")));
                     self.expression(object, statement)?;
@@ -3458,7 +3808,7 @@ impl Compiler<'_> {
                 } = &callee.kind
                 {
                     if matches!(&object.kind, ExprKind::Ident(name) if name == "global") {
-                        if !self.bindings.has_global_proc(selector) {
+                        if !self.has_global_proc(selector)? {
                             return Err(error(
                                 statement,
                                 &format!("unresolved global procedure: {selector}"),
@@ -3491,12 +3841,7 @@ impl Compiler<'_> {
                         return Ok(());
                     }
                     let proc_selector = self
-                        .inferred_expression_type(object)
-                        .and_then(|owner| {
-                            self.bindings
-                                .member_proc(&owner, selector)
-                                .map(str::to_owned)
-                        })
+                        .expression_member_proc(object, selector)?
                         .map(member_proc_selector)
                         .unwrap_or_else(|| VariableWord::DynamicProc(selector.replace('_', " ")));
                     if let VariableWord::DynamicProc(display) = &proc_selector {
@@ -3562,7 +3907,10 @@ impl Compiler<'_> {
                 };
                 if matches!(name.as_str(), "cmptext" | "cmptextEx") {
                     if args.len() < 2 || named_arguments || arglist_argument.is_some() {
-                        return Err(error(statement, "text comparison requires at least two positional arguments"));
+                        return Err(error(
+                            statement,
+                            "text comparison requires at least two positional arguments",
+                        ));
                     }
                     self.expression(&args[0], statement)?;
                     self.expression(&args[1], statement)?;
@@ -3580,28 +3928,46 @@ impl Compiler<'_> {
                     return Ok(());
                 }
                 if name == "vector" {
-                    if !(1..=3).contains(&args.len()) || named_arguments || arglist_argument.is_some() {
-                        return Err(error(statement, "vector expects one to three positional arguments"));
+                    if !(1..=3).contains(&args.len())
+                        || named_arguments
+                        || arglist_argument.is_some()
+                    {
+                        return Err(error(
+                            statement,
+                            "vector expects one to three positional arguments",
+                        ));
                     }
-                    for argument in args { self.expression(argument, statement)?; }
+                    for argument in args {
+                        self.expression(argument, statement)?;
+                    }
                     self.emit(0x180, vec![Word::Immediate(args.len() as u32)]);
                     return Ok(());
                 }
                 if name == "gradient" {
-                    if args.len()<2 && arglist_argument.is_none() { return Err(error(statement,"gradient expects at least two arguments")); }
-                    if named_arguments { self.named_arguments(args,statement)?; }
-                    else if let Some(list)=arglist_argument { self.expression(list,statement)?; }
-                    else {
-                        for arg in args { self.expression(arg,statement)?; }
-                        self.emit(opcode::NEW_LIST,vec![Word::Immediate(args.len() as u32)]);
+                    if args.len() < 2 && arglist_argument.is_none() {
+                        return Err(error(statement, "gradient expects at least two arguments"));
                     }
-                    self.emit(0x164,vec![]);
+                    if named_arguments {
+                        self.named_arguments(args, statement)?;
+                    } else if let Some(list) = arglist_argument {
+                        self.expression(list, statement)?;
+                    } else {
+                        for arg in args {
+                            self.expression(arg, statement)?;
+                        }
+                        self.emit(opcode::NEW_LIST, vec![Word::Immediate(args.len() as u32)]);
+                    }
+                    self.emit(0x164, vec![]);
                     return Ok(());
                 }
-                if name == "statpanel" && args.len()==1 && !named_arguments && arglist_argument.is_none() {
-                    self.expression(&args[0],statement)?;
-                    self.emit(0xa2,vec![]);
-                    self.emit(0x36,vec![]);
+                if name == "statpanel"
+                    && args.len() == 1
+                    && !named_arguments
+                    && arglist_argument.is_none()
+                {
+                    self.expression(&args[0], statement)?;
+                    self.emit(0xa2, vec![]);
+                    self.emit(0x36, vec![]);
                     return Ok(());
                 }
                 if name == "new" {
@@ -3768,7 +4134,9 @@ impl Compiler<'_> {
                         };
                         let weight_expr = weight_expr.map(|weight| {
                             if let ExprKind::Call { callee, args } = &weight.kind {
-                                if matches!(&callee.kind, ExprKind::Ident(name) if name == "prob") && args.len() == 1 {
+                                if matches!(&callee.kind, ExprKind::Ident(name) if name == "prob")
+                                    && args.len() == 1
+                                {
                                     return &args[0];
                                 }
                             }
@@ -3837,15 +4205,26 @@ impl Compiler<'_> {
                         ));
                     };
                     let direct = match &target.kind {
-                        ExprKind::Ident(name) => self.variable(name, statement).ok()
-                            .filter(|variable| matches!(variable, VariableWord::Arg(_) | VariableWord::Local(_) | VariableWord::Global(_))),
-                        ExprKind::Member { object, .. }
-                            if matches!(&object.kind, ExprKind::Ident(name) if name == "global") =>
-                            Some(self.variable_expr(target, statement)?),
+                        ExprKind::Ident(name) => {
+                            self.variable(name, statement).ok().filter(|variable| {
+                                matches!(
+                                    variable,
+                                    VariableWord::Arg(_)
+                                        | VariableWord::Local(_)
+                                        | VariableWord::Global(_)
+                                )
+                            })
+                        }
+                        ExprKind::Member { object, .. } if matches!(&object.kind, ExprKind::Ident(name) if name == "global") => {
+                            Some(self.variable_expr(target, statement)?)
+                        }
                         _ => None,
                     };
                     if let Some(variable) = direct {
-                        self.emit(opcode::GET_VAR, vec![Word::Variable(VariableWord::Initial(Box::new(variable)))]);
+                        self.emit(
+                            opcode::GET_VAR,
+                            vec![Word::Variable(VariableWord::Initial(Box::new(variable)))],
+                        );
                         return Ok(());
                     }
                     if matches!(&target.kind, ExprKind::Index { .. }) {
@@ -3857,7 +4236,7 @@ impl Compiler<'_> {
                         return Ok(());
                     }
                     let (owner, selector) = match &target.kind {
-                        ExprKind::Ident(field) if self.bindings.has_field(field) => {
+                        ExprKind::Ident(field) if self.has_field(field)? => {
                             (Some(VariableWord::Src), field.clone())
                         }
                         ExprKind::Member {
@@ -3917,14 +4296,15 @@ impl Compiler<'_> {
                             self.emit(0x7d, vec![]);
                             return Ok(());
                         }
-                        [value] => self.inferred_expression_type(value),
+                        [value] => self.inferred_expression_type(value)?,
                         _ => {
                             return Err(error(statement, "istype() requires one or two arguments"))
                         }
                     }
                     .ok_or_else(|| error(statement, "istype() cannot infer a declared type"))?;
                     self.expression(&args[0], statement)?;
-                    let tag = class_tag(&target_type)
+                    let tag = self
+                        .class_tag(&target_type)?
                         .ok_or_else(|| error(statement, "istype() inferred unsupported type"))?;
                     if self.seen_classes.insert(target_type.clone()) {
                         self.result.class_paths.push(target_type.clone());
@@ -3949,8 +4329,12 @@ impl Compiler<'_> {
                     let [arg] = args.as_slice() else {
                         return Err(error(statement, "nameof() requires one reference"));
                     };
-                    let leaf = nameof_reference(arg)
-                        .ok_or_else(|| error(statement, "nameof() requires a variable, procedure, or type reference"))?;
+                    let leaf = nameof_reference(arg).ok_or_else(|| {
+                        error(
+                            statement,
+                            "nameof() requires a variable, procedure, or type reference",
+                        )
+                    })?;
                     self.intern_string(leaf);
                     self.emit(
                         opcode::PUSH_VAL,
@@ -4370,7 +4754,9 @@ impl Compiler<'_> {
                         crate::builtin_catalog::OpcodeCountPolicy::EmittedArgs => {
                             vec![Word::Immediate(args.len() as u32)]
                         }
-                        crate::builtin_catalog::OpcodeCountPolicy::Fixed(value) => vec![Word::Immediate(value)],
+                        crate::builtin_catalog::OpcodeCountPolicy::Fixed(value) => {
+                            vec![Word::Immediate(value)]
+                        }
                     };
                     self.emit(spec.opcode, operands);
                     if let Some(post_opcode) = spec.post_opcode {
@@ -4381,11 +4767,9 @@ impl Compiler<'_> {
                     }
                     return Ok(());
                 }
-                let has_member_proc = self.bindings.current_type_path.as_deref().is_some_and(|owner| {
-                    self.bindings.has_declared_member_proc(owner, name)
-                        || self.bindings.member_proc(owner, name).is_some()
-                });
-                if self.bindings.has_global_proc(name) && !has_member_proc {
+                let has_member_proc = self.current_has_declared_member_proc(name)?
+                    || self.current_member_proc(name)?.is_some();
+                if self.has_global_proc(name)? && !has_member_proc {
                     if named_arguments || arglist_argument.is_some() {
                         if named_arguments {
                             self.named_arguments(args, statement)?;
@@ -4446,15 +4830,17 @@ impl Compiler<'_> {
                 }
                 {
                     let proc_selector = self
-                        .bindings
-                        .current_type_path
-                        .as_deref()
-                        .and_then(|owner| self.bindings.member_proc(owner, name).map(str::to_owned))
+                        .current_member_proc(name)?
                         .map(member_proc_selector)
                         .unwrap_or_else(|| VariableWord::DynamicProc(name.replace('_', " ")));
-                    if self.bindings.shared.is_some() && matches!(proc_selector, VariableWord::DynamicProc(_))
-                        && !self.bindings.current_type_path.as_deref().is_some_and(|owner|self.bindings.has_declared_member_proc(owner,name)) {
-                        return Err(error(statement, &format!("unresolved unqualified procedure: {name}")));
+                    if (self.lookup.is_some() || self.bindings.shared.is_some())
+                        && matches!(proc_selector, VariableWord::DynamicProc(_))
+                        && !self.current_has_declared_member_proc(name)?
+                    {
+                        return Err(error(
+                            statement,
+                            &format!("unresolved unqualified procedure: {name}"),
+                        ));
                     }
                     if let VariableWord::DynamicProc(display) = &proc_selector {
                         self.intern_string(display);
@@ -4490,7 +4876,11 @@ impl Compiler<'_> {
 }
 
 fn member_proc_selector(path: String) -> VariableWord {
-    if path.contains("/verb/") { VariableWord::StaticVerb(path) } else { VariableWord::StaticProc(path) }
+    if path.contains("/verb/") {
+        VariableWord::StaticVerb(path)
+    } else {
+        VariableWord::StaticProc(path)
+    }
 }
 
 fn class_tag(path: &str) -> Option<u8> {
@@ -4517,7 +4907,9 @@ pub fn nameof_reference(expr: &Expr) -> Option<&str> {
     match &expr.kind {
         ExprKind::Ident(name) => Some(name),
         ExprKind::TypePath(path) => path.rsplit('/').next().filter(|name| !name.is_empty()),
-        ExprKind::Member { selector, .. } | ExprKind::StaticMember { selector, .. } => Some(selector),
+        ExprKind::Member { selector, .. } | ExprKind::StaticMember { selector, .. } => {
+            Some(selector)
+        }
         ExprKind::Group(inner) => nameof_reference(inner),
         _ => None,
     }
@@ -4774,9 +5166,12 @@ fn fold_number(expr: &Expr) -> Option<f32> {
                 "-" => a - b,
                 "*" => a * b,
                 "/" if b != 0.0 => a / b,
-                "%" if a.is_finite() && b.is_finite()
-                    && a >= i32::MIN as f32 && a < 2_147_483_648.0
-                    && b >= i32::MIN as f32 && b < 2_147_483_648.0 =>
+                "%" if a.is_finite()
+                    && b.is_finite()
+                    && a >= i32::MIN as f32
+                    && a < 2_147_483_648.0
+                    && b >= i32::MIN as f32
+                    && b < 2_147_483_648.0 =>
                 {
                     // DM's % truncates both operands; %% is the real-valued
                     // modulo operator. Checked remainder avoids zero/overflow.
@@ -5641,10 +6036,9 @@ mod tests {
 
     #[test]
     fn invalid_builtin_argument_count_fails_closed() {
-        for (source, expected) in [(
-            "/proc/test()\n    return alert()\n",
-            "alert() requires one to six arguments",
-        )] {
+        {
+            let source = "/proc/test()\n    return alert()\n";
+            let expected = "alert() requires one to six arguments";
             let ast = dm_syntax::parse(source);
             let errors = compile_simple_proc(&ast.items[0].children).unwrap_err();
             assert!(errors[0].reason.contains(expected), "{errors:?}");
@@ -8611,7 +9005,7 @@ mod tests {
                 _ => None,
             }).collect();
             let id = native.procs.iter().position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes())).unwrap();
-            assert_eq!(native.proc_code_words(id).unwrap()[0], expected as u32, "{path}");
+            assert_eq!(native.proc_code_words(id).unwrap()[0], expected, "{path}");
             assert_eq!(calls, vec![expected], "{path}");
         }
     }
@@ -10073,4 +10467,3 @@ mod tests {
         assert_eq!(words, [0x50,99,0x34,0xffda,0,0x33,0xffd9,0,0x33,0xffd9,1,0xfc,0xfd,23,0xffda,0,0x50,10,0x45,0xffda,0,0xf8,12,0xfb,2,0x33,0xffda,0,0x12,0]);
     }
 }
-

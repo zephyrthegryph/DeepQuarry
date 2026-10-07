@@ -6,3 +6,6 @@
 
 pub mod diagnostics;
 pub mod publish;
+
+pub mod engine;
+pub mod engine_host;

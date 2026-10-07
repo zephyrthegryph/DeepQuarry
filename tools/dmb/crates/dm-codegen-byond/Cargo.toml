@@ -6,6 +6,7 @@ license = "GPL-3.0-only"
 description = "Symbolic native BYOND bytecode and deterministic relocation"
 
 [dependencies]
+dm-ir = { path = "../dm-ir" }
 byond-dmb = { path = "../.." }
 dm-syntax = { path = "../dm-syntax" }
 serde = { version = "1", features = ["derive"] }

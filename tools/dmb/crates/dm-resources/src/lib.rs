@@ -2,6 +2,7 @@
 //! Callers resolve DM file literals to an authored archive name and a disk path.
 
 pub mod native_resolver;
+pub mod capture;
 
 use byond_dmb::rsc::{NamedResource, ResourceKind};
 #[cfg(test)]

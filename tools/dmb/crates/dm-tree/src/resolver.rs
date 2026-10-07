@@ -34,6 +34,7 @@ pub enum InventoryError {
 #[derive(Clone, Debug, Default)]
 pub(crate) struct ResolverInventory {
     complete: bool,
+    hierarchy_certified: bool,
     source_identity: Option<u128>,
     intrinsic: Arc<[IntrinsicMember]>,
     index: HashMap<(SymbolId, SymbolId, MemberKind), IntrinsicMember>,
@@ -44,9 +45,26 @@ impl SemanticTree {
     /// pinned engine. This produces another immutable snapshot; no global state
     /// or wire IDs enter the model. Source declarations take precedence.
     pub fn with_complete_intrinsics(
+        self,
+        hierarchy: EngineHierarchy,
+        entries: Vec<IntrinsicMember>,
+    ) -> Result<Self, InventoryError> {
+        self.attach_intrinsics(hierarchy, entries, true)
+    }
+    /// Certify hierarchy while retaining incomplete member inventory. Known
+    /// presence/slots resolve; unknown declarations remain Unsupported.
+    pub fn with_engine_intrinsics(
+        self,
+        hierarchy: EngineHierarchy,
+        entries: Vec<IntrinsicMember>,
+    ) -> Result<Self, InventoryError> {
+        self.attach_intrinsics(hierarchy, entries, false)
+    }
+    fn attach_intrinsics(
         mut self,
         mut hierarchy: EngineHierarchy,
         mut entries: Vec<IntrinsicMember>,
+        complete: bool,
     ) -> Result<Self, InventoryError> {
         hierarchy.parents.sort_by_key(|entry| entry.0);
         let mut parents = HashMap::new();
@@ -97,6 +115,7 @@ impl SemanticTree {
         let mut bytes = b"dm-tree-intrinsics-v1\0".to_vec();
         let source_identity = *self.inventory.source_identity.get_or_insert(self.identity);
         bytes.extend_from_slice(&source_identity.to_le_bytes());
+        bytes.push(u8::from(complete));
         bytes.extend_from_slice(&hierarchy.schema.to_le_bytes());
         bytes.extend_from_slice(&(hierarchy.parents.len() as u64).to_le_bytes());
         for (owner, parent) in hierarchy.parents {
@@ -117,15 +136,21 @@ impl SemanticTree {
             }
         }
         self.identity = xxhash_rust::xxh3::xxh3_128(&bytes);
-        self.inventory.complete = true;
+        self.inventory.complete = complete;
+        self.inventory.hierarchy_certified = true;
         self.inventory.intrinsic = entries.into();
         self.inventory.index = index;
         self.rebuild_inventory();
         Ok(self)
     }
     pub(crate) fn complete_answer(&self, query: Q, answer: M) -> M {
-        if !self.inventory.complete && matches!(query, Q::Parent(_) | Q::Ancestry(_)) {
+        if !self.inventory.hierarchy_certified && matches!(query, Q::Parent(_) | Q::Ancestry(_)) {
             return M::Unsupported(query);
+        }
+        if let Q::Parent(path) = query {
+            if self.inventory.hierarchy_certified && self.lookup_type(path).is_some() {
+                return answer;
+            }
         }
         if answer == M::Missing && matches!(query, Q::Signature(_)) {
             return M::Unsupported(query);
@@ -252,6 +277,13 @@ impl SemanticTree {
                 let mut current = self.lookup_type(owner);
                 while let Some(id) = current {
                     if let Some(member) = self.direct.get(&(id, name, MemberKind::Var)) {
+                        if self.members[member.index()]
+                            .metadata
+                            .inherited_opaque
+                            .is_some()
+                        {
+                            return M::Unsupported(query);
+                        }
                         return self
                             .source_slot(*member)
                             .map(|(owner, name)| Self::slot(owner, name))
@@ -328,6 +360,17 @@ mod tests {
                 .map(|node| (node.path, node.parent.map(|id| tree.types[id.index()].path)))
                 .collect(),
         }
+    }
+    #[test]
+    fn known_instance_field_is_not_a_shared_slot_with_partial_inventory() {
+        let tree = tree("/datum/a\n    var/value = 1\n/datum/a/b\n");
+        assert_eq!(Resolver::resolve(&tree, Q::StaticVar {
+            owner: SymbolId::of("/datum/a/b"), name: SymbolId::of("value")
+        }), M::Missing);
+        let unknown = Q::StaticVar {
+            owner: SymbolId::of("/datum/a/b"), name: SymbolId::of("unknown")
+        };
+        assert_eq!(Resolver::resolve(&tree, unknown), M::Unsupported(unknown));
     }
     #[test]
     fn source_positives_and_intrinsic_negatives_are_distinct() {
