@@ -412,16 +412,16 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 		"leopardmander" = /mob/living/simple_mob/vore/leopardmander
 		)
 
-DECLARE_INTERACTIONS(/obj/item/glamour_unstable, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_HAND_DEFAULT("Pick up", PROC_REF(glamour_pick_up)), \
-)
+CAPABILITIES(/obj/item/glamour_unstable)
+	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("glamour_pick_up", hand(), priority(OP_PRIORITY_DEFAULT), label("Pick up"), then(PROC_REF(glamour_pick_up)))
 
 /// Old attack_self.
-/obj/item/glamour_unstable/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/glamour_unstable/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/M = user
 	if(!istype(M))
-		return TRUE
+		return OP_OK
 	act_message(user, src, MSG_SELF(span_danger("You trigger %T%!")), MSG_OTHERS(span_warning("%U% triggers %T%!")))
 	fx_sparks(get_turf(src), 5)
 	var/effect_choice = rand(1,4)
@@ -437,7 +437,7 @@ DECLARE_INTERACTIONS(/obj/item/glamour_unstable, \
 			size_change(M)
 		if(4)
 			M.apply_effect(200, IRRADIATE)
-	return TRUE
+	return OP_OK
 
 /obj/item/glamour_unstable/proc/blink_mob(mob/living/L)
 	var/starting_loc = (get_turf(src))
@@ -481,9 +481,10 @@ DECLARE_INTERACTIONS(/obj/item/glamour_unstable, \
 	L.resize(new_size, ignore_prefs = FALSE)
 
 /// Picking the unstable glamour up bare-handed may set it off.
-/obj/item/glamour_unstable/proc/glamour_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
+/obj/item/glamour_unstable/proc/glamour_pick_up(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
+	pick_up_by_hand(user)
 
 	var/mob/living/M = user
 	if(!istype(M))

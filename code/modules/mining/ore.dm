@@ -10,6 +10,7 @@
 CAPABILITIES(/obj/item/ore)
 	owns_one(nameof(geologic_data), /datum/geosample)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/ore/archeology_debris
 	name = "rocky debris"
@@ -163,16 +164,16 @@ CAPABILITIES(/obj/item/ore)
 	icon_state = "slag"
 	material = null
 
-DECLARE_INTERACTIONS(/obj/item/ore, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/item/ore/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/ore/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/core_sampler))
 		var/obj/item/core_sampler/C = W
 		C.sample_item(src, user)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /obj/item/ore/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(M.handle_eat_minerals(src, user))

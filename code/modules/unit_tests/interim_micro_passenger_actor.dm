@@ -2,10 +2,9 @@
 /obj/interim_micro_passenger_actor_click
 	var/obj/mecha/micro/mech
 	var/mob/actor
-	var/datum/interaction/entry
 
 /obj/interim_micro_passenger_actor_click/Click(location, control, params)
-	entry.perform(actor, mech, null)
+	test_menu(actor, mech, "mecha_enter_passenger")
 
 /datum/unit_test/interim_micro_passenger_actor/Run()
 	test_driver_begin()
@@ -27,21 +26,14 @@
 	TEST_ASSERT_EQUAL(bay.loc, mech, "actual equipment containment physically mounts the passenger compartment")
 	TEST_ASSERT(mech.pred_mecha_has_passenger_bay(actor, mech, null), "actual mounted ledger exposes the declared passenger entry")
 	TEST_ASSERT_NULL(bay.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER), "actual passenger compartment starts empty")
-	var/datum/interaction/entry
-	for(var/datum/interaction/candidate as anything in interaction_candidates(mech))
-		if(candidate.effect == nameof(/obj/mecha/proc/move_inside_passenger))
-			entry = candidate
-			break
-	TEST_ASSERT_NOTNULL(entry, "actual micro mech inherits its declared Enter Passenger Compartment interaction")
-	TEST_ASSERT_NULL(entry.why_not(actor, mech, null), "actual resized human satisfies the inherited declared entry requirements")
 	mech.move_inside_passenger(null, null, null)
 	TEST_ASSERT_NULL(bay.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER), "absent explicit actor cannot establish a passenger slot")
-	entry.perform(bystander, mech, null)
+	test_menu(bystander, mech, "mecha_enter_passenger")
 	test_time(5 SECONDS)
 	TEST_ASSERT_NULL(bay.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER), "the actual large human cannot enter the micro passenger bay")
 	TEST_ASSERT_EQUAL(bystander.loc, T, "size refusal preserves the actual unrelated human floor")
 	TEST_ASSERT(bay.door_locked, "actual initialized compartment starts locked")
-	entry.perform(actor, mech, null)
+	test_menu(actor, mech, "mecha_enter_passenger")
 	test_time(5 SECONDS)
 	TEST_ASSERT_NULL(bay.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER), "real locked compartment refuses actual small-human boarding")
 	TEST_ASSERT_EQUAL(actor.loc, T, "real lock refusal preserves the actual resized human floor")
@@ -49,7 +41,7 @@
 	TEST_ASSERT(!bay.door_locked, "actual existing hatch control unlocks the real mounted compartment")
 	actor.forceMove(far)
 	TEST_ASSERT(!actor.Adjacent(mech), "the actual distant resized human fails the parent proximity guard")
-	entry.perform(actor, mech, null)
+	test_menu(actor, mech, "mecha_enter_passenger")
 	test_time(5 SECONDS)
 	TEST_ASSERT_NULL(bay.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER), "actual distant human cannot establish a passenger slot")
 	TEST_ASSERT_EQUAL(actor.loc, far, "actual parent range refusal preserves the distant actor")
@@ -57,7 +49,6 @@
 	var/obj/interim_micro_passenger_actor_click/native = allocate(/obj/interim_micro_passenger_actor_click, T)
 	native.mech = mech
 	native.actor = actor
-	native.entry = entry
 	km_synthetic_click(bystander, native)
 	test_time(3 SECONDS)
 	TEST_ASSERT_NULL(bay.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER), "actual accepted boarding waits its genuine four-second duration")

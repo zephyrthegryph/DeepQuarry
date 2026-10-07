@@ -40,6 +40,8 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/flashlight)
+	// Battery drain runs while a powered light is on.
+	every(2 SECONDS, then(PROC_REF(flashlight_step)), when = cond_all(nameof(on), nameof(power_use)))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
 	drag_onto(PROC_REF(mousedrop_input))
 	op("switch", in_hand(), needs(req(PROC_REF(can_switch), because = PROC_REF(switch_refusal))), then(PROC_REF(interaction_self)))
@@ -52,15 +54,15 @@ CAPABILITIES(/obj/item/flashlight)
 	. = ..()
 	update_brightness()
 
-OM_FIELD(/obj/item/flashlight, on, 0, CHANGE_EXPLICIT)
-OM_FIELD(/obj/item/flashlight, power_use, 1, CHANGE_EXPLICIT)
-// Battery drain runs while a powered light is on.
-DECLARE_PERIODIC_WHILE_ALL(/obj/item/flashlight, PERIODIC_SLOW, list("on", "power_use"))
+/obj/item/flashlight/var/on = 0
+/obj/item/flashlight/var/power_use = 1
+TRACKED(/obj/item/flashlight, on)
+TRACKED(/obj/item/flashlight, power_use)
 
 /obj/item/flashlight/get_cell()
 	return cell
 
-/obj/item/flashlight/periodic_step()
+/obj/item/flashlight/proc/flashlight_step(datum/act/timer/A)
 	if(!cell)
 		return
 
@@ -434,17 +436,16 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	light_system = MOVABLE_LIGHT
 	single_use = TRUE
 
-// Flares burn fuel while lit (they have no cell, so power_use is off).
-DECLARE_PERIODIC_WHILE(/obj/item/flashlight/flare, PERIODIC_SLOW, "on")
-
 CAPABILITIES(/obj/item/flashlight/flare)
+	// Flares burn fuel while lit (they have no cell, so power_use is off).
+	every(2 SECONDS, then(PROC_REF(flare_step)), when = nameof(on))
 	rolls(nameof(fuel), PROC_REF(roll_fuel))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/item/flashlight/flare/proc/roll_fuel(datum/roller/R)
 	return fuel + (R.number(0, 200))
 
-/obj/item/flashlight/flare/periodic_step()
+/obj/item/flashlight/flare/proc/flare_step(datum/act/timer/A)
 	var/turf/pos = get_turf(src)
 	if(pos)
 		pos.hotspot_expose(produce_heat, 5)
@@ -499,16 +500,15 @@ CAPABILITIES(/obj/item/flashlight/flare)
 	cell_type = null
 	single_use = TRUE
 
-DECLARE_PERIODIC_WHILE(/obj/item/flashlight/glowstick, PERIODIC_SLOW, "on")
-
 CAPABILITIES(/obj/item/flashlight/glowstick)
+	every(2 SECONDS, then(PROC_REF(glowstick_step)), when = nameof(on))
 	rolls(nameof(fuel), PROC_REF(roll_fuel))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/item/flashlight/glowstick/proc/roll_fuel(datum/roller/R)
 	return fuel + (R.number(0, 400))
 
-/obj/item/flashlight/glowstick/periodic_step()
+/obj/item/flashlight/glowstick/proc/glowstick_step(datum/act/timer/A)
 	fuel = max(fuel - 1, 0)
 	if(!fuel)
 		turn_off()

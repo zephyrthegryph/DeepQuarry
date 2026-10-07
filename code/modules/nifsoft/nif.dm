@@ -117,7 +117,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 /obj/item/nif/proc/on_human_death(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/carbon/human/source = A.target
-	after(src, 0, PROC_REF(persist_on_death), with = list(source))
+	after(src, 0, PROC_REF(persist_on_death), with = list(source), keeps_dead = TRUE)
 
 /obj/item/nif/proc/persist_on_death(mob/living/carbon/human/source)
 	if(!QDELETED(source))
@@ -220,24 +220,25 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		persist_nif_data(human)
 
 //Attackby proc, for maintenance
-DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/nif/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/nif/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(open == 1 && istype(W,/obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/C = W
 		if(C.get_amount() < 3)
 			to_chat(user,span_warning("You need at least three coils of wire to add them to \the [src]."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(durability >= initial(durability))
 			to_chat(user,span_notice("There's no damaged wiring that needs replacing!"))
 			open = 3
 			changed(src)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		task_timed(user, 6 SECONDS, src, src, PROC_REF(rewire_done), list(user, C))
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /obj/item/nif/proc/rewire_done(mob/user, obj/item/stack/cable_coil/C)
 	if(open == 1 && C.use(3))

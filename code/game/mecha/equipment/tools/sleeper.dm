@@ -13,8 +13,8 @@
 	allow_duplicate = TRUE
 
 /// Life support is engaged on a loaded occupant.
-OM_FIELD(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, sustaining, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, PERIODIC_SECOND, "sustaining")
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/var/sustaining = FALSE
+TRACKED(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, sustaining)
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
 /datum/om/relation/slot/occupant/mecha_sleeper
@@ -127,6 +127,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 	op("topic_eject", topic("eject"), then(PROC_REF(topic_eject)))
 	op("view_stats", topic("view_stats"), then(PROC_REF(topic_view_stats)))
 	op("topic_inject", topic("inject", arg("inject", schema_ref(/datum/reagent), optional = TRUE, among = PROC_REF(topic_injectable_pool)), arg("source", schema_ref(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun), optional = TRUE, among = PROC_REF(topic_chassis_equipment))), then(PROC_REF(topic_inject)))
+	every(1 SECOND, then(PROC_REF(sleeper_step)), when = nameof(sustaining))
 
 /// /obj/item/mecha_parts/mecha_equipment/tool/sleeper's window data.
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/ui_data(datum/act/eval/A)
@@ -316,17 +317,18 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 		return
 	go_out()//and release him from the eternal prison.
 
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/periodic_step()
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/sleeper_step(datum/act/timer/A)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER)
-	..()
 	if(!chassis)
 		set_ready_state(TRUE)
-		return PROCESS_KILL
+		set_sustaining(FALSE) // the old step dropped out of the sweep here; the gate stays shut until an occupant is loaded again
+		return
 	if(!chassis.has_charge(energy_drain))
 		set_ready_state(TRUE)
 		src.mecha_log_message("Deactivated.")
 		occupant_message(span_infoplain("[src] deactivated - no power."))
-		return PROCESS_KILL
+		set_sustaining(FALSE)
+		return
 	var/mob/living/carbon/M = occupant
 	if(!M)
 		return

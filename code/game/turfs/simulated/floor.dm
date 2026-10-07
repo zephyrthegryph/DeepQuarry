@@ -117,9 +117,10 @@
 	return TRUE
 
 /// Old click_alt: graffiti with the held item; otherwise the default alt-click.
-/turf/simulated/floor/proc/floor_graffiti_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/turf/simulated/floor/proc/floor_graffiti_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		var/mob/living/livingUser = user
 		if(try_graffiti(livingUser, livingUser.get_active_hand()))
-			return TRUE
-	return FALSE
+			return OP_OK
+	return OP_DECLINE

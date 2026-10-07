@@ -88,7 +88,7 @@
 			reagents.trans_to_obj(C, amount_per_transfer_from_this)
 			update_icon()
 			SStgui.update_uis(DISP)
-			to_chat(user, span_notice("You fill 	he [DISP] with '	he [src]."))
+			to_chat(user, span_notice("You fill \the [DISP] with '\the [src]."))
 			return TRUE
 	if(found_any)
 		to_chat(user, span_notice("The [label] is already full."))

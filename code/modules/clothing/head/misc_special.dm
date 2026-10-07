@@ -34,13 +34,18 @@ MATERIAL_MIX(/obj/item/clothing/head/welding, list(MAT_STEEL = 3000, MAT_GLASS =
 	special_handling = TRUE
 	resistance_flags = FIRE_PROOF
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/welding, \
-	INTERACT_USE("Flip", PROC_REF(welding_mask_flip_self)), \
-	INTERACT_VERB("Adjust welding mask", PROC_REF(head_welding_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/head/welding)
+	op("welding_mask_flip_self", in_hand(), label("Flip"), then(PROC_REF(welding_mask_flip_self)))
+	op("head_welding_toggle_verb", menu(), label("Adjust welding mask"), needs(carried()), then(PROC_REF(head_welding_toggle_verb_op)))
+
+/// The head_welding_toggle_verb op: the verb's effect, as the old resolver ran it.
+/obj/item/clothing/head/welding/proc/head_welding_toggle_verb_op(datum/act/op/A)
+	head_welding_toggle_verb(A.actor, A.held, null)
+	return OP_OK
 
 /// Old attack_self.
-/obj/item/clothing/head/welding/proc/welding_mask_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/welding/proc/welding_mask_flip_self(datum/act/op/A)
+	var/mob/user = A.actor
 	head_welding_toggle_verb(user)
 
 /// Old verb "Adjust welding mask".

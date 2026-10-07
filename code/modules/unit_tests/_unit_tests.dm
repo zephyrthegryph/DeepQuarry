@@ -393,6 +393,7 @@
 #include "dq_reagents_start_snapshot.dm"
 #include "dq_conversion_pins.dm"
 #include "dq_look_pins.dm"
+#include "dq_hit_pins.dm"
 #include "dq_interaction_entry_tests.dm"
 #include "dx_cap_anchor_tests.dm"
 #include "dx_cap_assembly_tests.dm"
@@ -1052,6 +1053,7 @@
 #include "interim_parcel_native_label.dm"
 #include "interim_handlabeler_native_configuration.dm"
 #include "interim_blob_native_pairs.dm"
+#include "dq_gap_decisions_tests.dm"
 // END_INCLUDE
 
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)

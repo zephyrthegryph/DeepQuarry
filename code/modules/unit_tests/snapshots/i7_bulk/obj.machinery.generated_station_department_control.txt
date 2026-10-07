@@ -1,5 +1,5 @@
-/obj/machinery/generated_station_department_control|human|none => department_control_override|
-/obj/machinery/generated_station_department_control|robot|none => department_control_override|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/generated_station_department_control|human|none => |
+/obj/machinery/generated_station_department_control|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/generated_station_department_control|ai|none => |
 /obj/machinery/generated_station_department_control|ghost|none => |
 

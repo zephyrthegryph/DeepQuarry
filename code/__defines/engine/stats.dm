@@ -67,8 +67,8 @@
 /// A contribution applied by an activation: the compiled contribution evaluated at recompute time (its condition and value are live).
 #define H_SPEC 11
 
-/// The source dies with its datum even though the hold is timed.
-#define HF_BOUND (1<<0)
+/// The hold outlives its datum source (outlives_source = TRUE); by default it is released when the source dies.
+#define HF_OUTLIVES (1<<0)
 /// The hold replaces the composed value instead of joining it (hold_override).
 #define HF_OVERRIDE (1<<1)
 

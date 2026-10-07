@@ -118,44 +118,47 @@ REMOVAL
 	else
 		.+= "There appears to be an empty slot for attaching a [loadable_name]."
 
-DECLARE_INTERACTIONS(/obj/item/xenobio, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/xenobio)
+	op("interaction_hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("interaction_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("interaction_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_hand.
-/obj/item/xenobio/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/xenobio/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src && loaded_item)
 		user.put_in_hands(loaded_item)
 		act_message(user, src, MSG_SELF(span_notice("You remove [loaded_item] from %T%.")), MSG_OTHERS(span_notice("%U% removes [loaded_item] from %T%.")))
 		loaded_item = null
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 	else
-		return FALSE
-	return TRUE
+		return OP_DECLINE
+	return OP_OK
 
 /// Old attackby.
-/obj/item/xenobio/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/xenobio/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, loadable_item))
 		if(loaded_item)
 			to_chat(user, span_warning("[I] doesn't seem to fit into [src]."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!own_bring_in(src, nameof(loaded_item), I, null, user, TRUE, null, FALSE))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		loaded_item = I
 		act_message(user, src, MSG_SELF(span_notice("You slot [I] into %T%.")), MSG_OTHERS(span_notice("%U% inserts [I] into %T%.")))
-		return 1
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /// Old attack_self.
-/obj/item/xenobio/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/xenobio/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(loaded_item)
 		user.put_in_hands(loaded_item)
 		act_message(user, src, MSG_SELF(span_notice("You remove [loaded_item] from %T%.")), MSG_OTHERS(span_notice("%U% removes [loaded_item] from %T%.")))
 		loaded_item = null
 		play_sfx(src, SFX_WEAPONS_EMPTY)
-	return TRUE
+	return OP_OK
 
 /obj/item/xenobio/afterattack(atom/A, mob/user as mob)
 	if(!loaded_item)
@@ -209,9 +212,12 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 	var/list/to_be_processed
 	var/monkeys_recycled = 0
 
-/// Set after a monkey is ground: make_cubes() runs every second while it is (DECLARE_REPEAT).
-OM_FIELD(/obj/item/slime_grinder, cube_making, FALSE, CHANGE_EXPLICIT)
-DECLARE_REPEAT(/obj/item/slime_grinder, 1 SECOND, make_cubes, "cube_making")
+/// Set after a monkey is ground: make_cubes() runs every second while it is (every()).
+/obj/item/slime_grinder/var/cube_making = FALSE
+TRACKED(/obj/item/slime_grinder, cube_making)
+
+CAPABILITIES(/obj/item/slime_grinder)
+	every(1 SECOND, then(PROC_REF(make_cubes)), when = nameof(cube_making))
 
 /// Grinds `AM`: one core per timed action for slimes; a monkey is one timed action, then cubes.
 /obj/item/slime_grinder/proc/extract(atom/movable/AM, mob/living/user)
@@ -246,11 +252,11 @@ DECLARE_REPEAT(/obj/item/slime_grinder, 1 SECOND, make_cubes, "cube_making")
 	set_cube_making(TRUE)
 
 /// One monkey cube a second while four monkeys' worth is recycled.
-/obj/item/slime_grinder/proc/make_cubes()
+/obj/item/slime_grinder/proc/make_cubes(datum/act/timer/A)
 	if(monkeys_recycled < 4)
 		processing = FALSE
 		set_cube_making(FALSE)
-		return REPEAT_STOP
+		return
 	new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
 	play_sfx(src, SFX_EFFECTS_SPLAT)
 	monkeys_recycled -= 4

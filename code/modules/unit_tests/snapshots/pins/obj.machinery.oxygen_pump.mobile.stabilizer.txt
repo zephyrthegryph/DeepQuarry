@@ -11,57 +11,77 @@ ai|none menu: Ui open
 ai|none click: Click: Ui open
 ghost|none menu: Show Tank Settings
 ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Oxygen pump hand
 human|/obj/item/tool/screwdriver menu: Oxygen pump item
 human|/obj/item/tool/screwdriver menu: Show Tank Settings
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Ui open
 human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver click: Click: Oxygen pump item
+human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Oxygen pump hand
 human|/obj/item/tool/crowbar menu: Oxygen pump item
 human|/obj/item/tool/crowbar menu: Show Tank Settings
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Ui open
 human|/obj/item/tool/crowbar click: Click: Oxygen pump item
+human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Oxygen pump hand
 human|/obj/item/tool/wrench menu: Oxygen pump item
 human|/obj/item/tool/wrench menu: Show Tank Settings
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Ui open
 human|/obj/item/tool/wrench click: Click: Oxygen pump item
+human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Oxygen pump hand
 human|/obj/item/tool/wirecutters menu: Oxygen pump item
 human|/obj/item/tool/wirecutters menu: Show Tank Settings
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Ui open
 human|/obj/item/tool/wirecutters click: Click: Oxygen pump item
+human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Oxygen pump hand
 human|/obj/item/multitool menu: Oxygen pump item
 human|/obj/item/multitool menu: Show Tank Settings
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Ui open
 human|/obj/item/multitool click: Click: Oxygen pump item
+human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Oxygen pump hand
 human|/obj/item/weldingtool menu: Oxygen pump item
 human|/obj/item/weldingtool menu: Show Tank Settings
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Ui open
 human|/obj/item/weldingtool click: Click: Oxygen pump item
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Oxygen pump hand
 human|/obj/item/stack/cable_coil menu: Oxygen pump item
 human|/obj/item/stack/cable_coil menu: Show Tank Settings
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Ui open
 human|/obj/item/stack/cable_coil click: Click: Oxygen pump item
+human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Oxygen pump hand
 human|/obj/item/stack/material/steel menu: Oxygen pump item
 human|/obj/item/stack/material/steel menu: Show Tank Settings
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Ui open
 human|/obj/item/stack/material/steel click: Click: Oxygen pump item
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Oxygen pump hand
 human|/obj/item/card/id menu: Oxygen pump item
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Show Tank Settings
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Oxygen pump item
+human|/obj/item menu: Move To Top
 human|/obj/item menu: Oxygen pump hand
 human|/obj/item menu: Oxygen pump item
 human|/obj/item menu: Show Tank Settings
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Ui open
 human|/obj/item click: Click: Oxygen pump item
 keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, oxygen_pump_hand, oxygen_pump_item, oxygen_pump_settings, pressure, ui_open, use_screwdriver

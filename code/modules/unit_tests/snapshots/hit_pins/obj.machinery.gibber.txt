@@ -1,0 +1,47 @@
+blob | survives
+emag | emagged: 0 -> 1
+emag | ledger: null -> /datum/ledger
+emag | look_key: null -> '|||||||||||||grjam'
+emag | look_overlays: null -> list(1)
+emag | refresh_queued: 131071 -> 0
+emag | refresh_swept: 0 -> 1
+emp 1 | ledger: null -> /datum/ledger
+emp 1 | look_key: null -> '|||||||||||||grjam'
+emp 1 | look_overlays: null -> list(1)
+emp 1 | refresh_queued: 131071 -> 0
+emp 1 | refresh_swept: 0 -> 1
+emp 1 | turf: +/obj/effect/overlay x1
+emp 2 | ledger: null -> /datum/ledger
+emp 2 | look_key: null -> '|||||||||||||grjam'
+emp 2 | look_overlays: null -> list(1)
+emp 2 | refresh_queued: 131071 -> 0
+emp 2 | refresh_swept: 0 -> 1
+emp 2 | turf: +/obj/effect/overlay x1
+explosion 1 | deleted
+explosion 1 | turf: +/obj/effect/effect/sparks x5
+explosion 2 | atom_integrity: down
+explosion 2 | cap_data: null -> list(1)
+explosion 2 | ledger: null -> /datum/ledger
+explosion 2 | look_key: null -> '|||||||||||||grjam'
+explosion 2 | look_overlays: null -> list(1)
+explosion 2 | refresh_queued: 131071 -> 0
+explosion 2 | refresh_swept: 0 -> 1
+explosion 3 | atom_integrity: down
+explosion 3 | ledger: null -> /datum/ledger
+explosion 3 | look_key: null -> '|||||||||||||grjam'
+explosion 3 | look_overlays: null -> list(1)
+explosion 3 | refresh_queued: 131071 -> 0
+explosion 3 | refresh_swept: 0 -> 1
+projectile | atom_integrity: down
+projectile | ledger: null -> /datum/ledger
+projectile | look_key: null -> '|||||||||||||grjam'
+projectile | look_overlays: null -> list(1)
+projectile | refresh_queued: 131071 -> 0
+projectile | refresh_swept: 0 -> 1
+thrown | atom_integrity: down
+thrown | ledger: null -> /datum/ledger
+thrown | look_key: null -> '|||||||||||||grjam'
+thrown | look_overlays: null -> list(1)
+thrown | refresh_queued: 131071 -> 0
+thrown | refresh_swept: 0 -> 1
+

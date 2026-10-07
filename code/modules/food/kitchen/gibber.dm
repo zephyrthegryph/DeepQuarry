@@ -92,6 +92,7 @@ CAPABILITIES(/obj/machinery/gibber)
 	op("gibber_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_feed_grab_holds), because = PROC_REF(can_feed_grab_refusal))), then(PROC_REF(gibber_interaction_item)))
 	op("gibber_interaction_drag", item(/mob), priority(OP_PRIORITY_DEFAULT - 1), gesture(GESTURE_DRAG), label("Put inside"), then(PROC_REF(gibber_interaction_drag)))
 	op("gibber_verb_eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Empty Gibber"), needs(req_adjacent(), req_capable()), then(PROC_REF(gibber_verb_eject)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /// Requirement: the gibber isn't already running (an inoperable one is ignored silently by the effect).
 /obj/machinery/gibber/proc/can_start_gibbing(mob/user, atom/target, obj/item/held)
@@ -128,11 +129,11 @@ CAPABILITIES(/obj/machinery/gibber)
 	. = ..()
 	. += "The safety guard is [emagged() ? span_danger("disabled") : "enabled"]."
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
-/obj/machinery/gibber/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/gibber/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	set_emagged(!emagged())
 	to_chat(user, span_danger("You [emagged() ? "disable" : "enable"] the gibber safety guard."))
-	return 1
+	return OP_OK
 
 /// Old attackby.
 /// Requirement (was REQ_* can_feed_grab): the legacy check answers TRUE to pass.

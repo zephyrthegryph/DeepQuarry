@@ -24,18 +24,18 @@
 /obj/structure/anomaly_container/proc/can_contain(obj/O)
 	return O.is_anomalous()
 
-DECLARE_INTERACTIONS(/obj/structure/anomaly_container, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ROBOT("Release", PROC_REF(anomaly_container_robot_release)), \
-)
+CAPABILITIES(/obj/structure/anomaly_container)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("anomaly_container_robot_release", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), label("Release"), then(PROC_REF(anomaly_container_robot_release)))
 
 /// Old attack_hand.
-/obj/structure/anomaly_container/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/anomaly_container/proc/interaction_hand(datum/act/op/A)
 	release()
 	return TRUE
 
 /// Old attack_robot: an adjacent cyborg releases the contents. Never fell through.
-/obj/structure/anomaly_container/proc/anomaly_container_robot_release(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/anomaly_container/proc/anomaly_container_robot_release(datum/act/op/A)
+	var/mob/user = A.actor
 	if(Adjacent(user))
 		release()
 	return TRUE

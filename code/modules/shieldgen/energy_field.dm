@@ -53,12 +53,12 @@
 			for(var/obj/effect/energy_field/F in turf_contents_of_type(T, /obj/effect/energy_field))
 				F.update_icon()
 
-DAMAGE_REACTION(/obj/effect/energy_field, DAMAGE_EXPLOSION, PROC_REF(field_blast_drain))
 
 /// A blast drains the field instead of damaging it.
-/obj/effect/energy_field/proc/field_blast_drain(datum/damage_packet/packet)
+/obj/effect/energy_field/proc/field_blast_drain(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	adjust_strength(-(4 - packet.severity) * 4)
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/effect/energy_field/bullet_act(obj/item/projectile/Proj)
 	adjust_strength(-Proj.get_structure_damage() / 10)
@@ -67,6 +67,7 @@ CAPABILITIES(/obj/effect/energy_field)
 	op("hit_energy_field", item(/obj/item), then(PROC_REF(interaction_hit_energy_field)))
 	op("touch_energy_field", hand(), then(PROC_REF(interaction_touch_energy_field)))
 	param(nameof(my_gen), pos = 1, apply = PROC_REF(raise_field))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(field_blast_drain))))
 
 /// Old attackby: a forceful hit weakens the field; the item's normal handling carries on.
 /obj/effect/energy_field/proc/interaction_hit_energy_field(datum/act/op/A)

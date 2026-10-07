@@ -1300,7 +1300,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(!entity)
 		return OP_FAILED
 	var/source = op_default_source(A, entity, src.args["source"], src.args["outlives"])
-	var/placed = hold(entity, src.args["stat"], src.args["value"], source, src.args["lasts"], bound = src.args["bound"])
+	var/placed = hold(entity, src.args["stat"], src.args["value"], source, src.args["lasts"], outlives_source = src.args["outlives_source"])
 	return placed ? OP_OK : OP_FAILED
 
 /datum/entry/part/effect/releases/run_effect(datum/act/op/A)

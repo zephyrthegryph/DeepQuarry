@@ -473,33 +473,69 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 	add_overlay(skin_image)
 	/////HIGHEST LAYER/////
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
-	INTERACT_ITEM_AS(I_HELP, "Tend", PROC_REF(teppi_interaction_item)), \
-	INTERACT_ITEM_AS(I_HURT, "Hit", PROC_REF(teppi_interaction_item)), \
-	INTERACT_ITEM_AS(I_DISARM, "Hit", PROC_REF(teppi_interaction_item)), \
-	INTERACT_ITEM_AS(I_GRAB, "Hit", PROC_REF(teppi_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(teppi_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Remove accessory", PROC_REF(teppi_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_HURT, "Handle roughly", PROC_REF(teppi_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Handle roughly", PROC_REF(teppi_interaction_hand)))
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
+	op("teppi_item_help", item(/obj/item), stance(I_HELP), label("Tend"), then(PROC_REF(teppi_interaction_item_help)))
+	op("teppi_item_hurt", item(/obj/item), stance(I_HURT), label("Hit"), then(PROC_REF(teppi_interaction_item_hurt)))
+	op("teppi_item_disarm", item(/obj/item), stance(I_DISARM), label("Hit"), then(PROC_REF(teppi_interaction_item_disarm)))
+	op("teppi_item_grab", item(/obj/item), stance(I_GRAB), label("Hit"), then(PROC_REF(teppi_interaction_item_grab)))
+	op("teppi_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(teppi_interaction_hand_help)))
+	op("teppi_hand_grab", hand(), ungated(), stance(I_GRAB), label("Remove accessory"), then(PROC_REF(teppi_interaction_hand_grab)))
+	op("teppi_hand_hurt", hand(), ungated(), stance(I_HURT), label("Handle roughly"), then(PROC_REF(teppi_interaction_hand_hurt)))
+	op("teppi_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Handle roughly"), then(PROC_REF(teppi_interaction_hand_disarm)))
+	param(nameof(parent_one), pos = 1, keep = FALSE)
+	param(nameof(parent_two), pos = 2, apply = PROC_REF(inherit_made), keep = FALSE)
+
+/// The help-stance input of teppi_interaction_item: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_item_help(datum/act/op/A)
+	return teppi_interaction_item(A, I_HELP)
+
+/// The hurt-stance input of teppi_interaction_item: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_item_hurt(datum/act/op/A)
+	return teppi_interaction_item(A, I_HURT)
+
+/// The disarm-stance input of teppi_interaction_item: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_item_disarm(datum/act/op/A)
+	return teppi_interaction_item(A, I_DISARM)
+
+/// The grab-stance input of teppi_interaction_item: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_item_grab(datum/act/op/A)
+	return teppi_interaction_item(A, I_GRAB)
+
+/// The help-stance input of teppi_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_hand_help(datum/act/op/A)
+	return teppi_interaction_hand(A, I_HELP)
+
+/// The grab-stance input of teppi_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_hand_grab(datum/act/op/A)
+	return teppi_interaction_hand(A, I_GRAB)
+
+/// The hurt-stance input of teppi_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_hand_hurt(datum/act/op/A)
+	return teppi_interaction_hand(A, I_HURT)
+
+/// The disarm-stance input of teppi_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_hand_disarm(datum/act/op/A)
+	return teppi_interaction_hand(A, I_DISARM)
 
 /// Old attackby: shearing, feeding, butchering, collars.
-/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_item(datum/act/op/A, stance)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(stat == DEAD)
-		return FALSE
+		return OP_DECLINE
 	/////GRABS AND HOLDERS/////
 	if(istype(O, /obj/item/grab))
-		return FALSE
+		return OP_DECLINE
 	if(istype(O, /obj/item/holder))
-		return FALSE
-	if(interaction.stance != I_HELP) //be gentle
+		return OP_DECLINE
+	if(stance != I_HELP) //be gentle
 		if(resting)
 			lay_down()
 		handle_affinity(user, -5)
 		act_message(user, src, MSG_SELF(span_notice("You hit %T% with %I%. %T% grumbles at you.")), MSG_OTHERS(span_notice("%U% hits %T% with %I%. %T% grumbles at %U%.")), item = O)
 		play_sfx(src, SFX_WEAPONS_TAP, extrarange = -1)
-		return FALSE
+		return OP_DECLINE
 	if(teppi_wool)
 		if(teppi_shear(user, O))
 			return
@@ -556,12 +592,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 	/////WEAPONS/////
 	if(istype(O, /obj/item/material/knife))
 		if(client)
-			return FALSE
+			return OP_DECLINE
 		if(resting)
 			act_message(user, src, MSG_SELF(span_attack("You approach %T%'s neck with %I%.")), MSG_OTHERS(span_attack("%U% approaches %T%'s neck with %I%.")), item = O)
 			task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_teppi_done), done_args = list(user))
 		else
-			return FALSE
+			return OP_DECLINE
 	if(istype(O, /obj/item/clothing/accessory/collar/craftable))
 		var/obj/item/clothing/accessory/collar/craftable/C = O
 		if(item_type == "collar")
@@ -580,7 +616,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 		log_admin("[key_name_admin(user)] renamed a teppi to [name] - [COORD(src)]")
 		return
 	/////EVERYTHING ELSE/////
-	return FALSE
+	return OP_DECLINE
 
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/attackby_teppi_done(mob/user)
 	if(resting)
@@ -592,22 +628,23 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 
 //Wake up the teppi if it is resting, which they like to do sometimes.
 /// Old attack_hand: petting, collar removal, affinity.
-/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/carbon/human/M = A.actor
+	. = OP_OK
 	if(stat == DEAD)
-		return FALSE
-	if(interaction.stance == I_GRAB && item_type)
+		return OP_DECLINE
+	if(stance == I_GRAB && item_type)
 		if(LAZYACCESS(affinity, M.real_name) >= 30)
 			act_message(M, src, MSG_SELF(span_notice("You remove %T%'s [item_type].")), MSG_OTHERS(span_notice("\The [M.name] removes %T%'s [item_type].")))
 			item_type = null
 			update_icon()
 			return
-	if(interaction.stance != I_HELP) //be gentle
+	if(stance != I_HELP) //be gentle
 		handle_affinity(M, -5)
 		to_chat(M, span_notice("\The [src] fusses at your rough treatment!!"))
 		if(resting)
 			lay_down()
-		return FALSE
+		return OP_DECLINE
 	if(resting)
 		act_message(M, src, MSG_SELF(span_notice("You shake %T% awake!")), MSG_OTHERS(span_notice("\The [M.name] shakes %T% awake from their nap.")))
 		play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
@@ -643,7 +680,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 			teppi_pounce(M)
 			wantpet = 100
 	else
-		return FALSE
+		return OP_DECLINE
 
 /mob/living/simple_mob/vore/alienanimals/teppi/examine()
 	. = ..()
@@ -764,10 +801,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	handle_affinity(user, 5)
 	teppi_sound()
 	return TRUE
-
-CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
-	param(nameof(parent_one), pos = 1, keep = FALSE)
-	param(nameof(parent_two), pos = 2, apply = PROC_REF(inherit_made), keep = FALSE)
 
 /// The teppi (or the baby) a teppi is made from, and the second parent (its constructor params, dropped once inherited).
 /mob/living/simple_mob/vore/alienanimals/teppi/var/tmp/mob/living/simple_mob/vore/alienanimals/teppi/parent_one

@@ -246,7 +246,7 @@ pub enum Flt {
     /// A path allowlist (`grep -v '^code/a|^code/b/'`): drop a hit whose file is in the named
     /// `[lint.check_grep.lists]` list: an exact file, or a directory written with a trailing `/`.
     DropPaths(&'static str),
-    /// Keep only findings in the folders that completed a migration.
+    /// The opposite: keep only a hit whose file is in the named `[lint.check_grep.lists]` list (a ban scoped to the folders that were converted).
     KeepPaths(&'static str),
 }
 

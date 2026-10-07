@@ -150,14 +150,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks)
 /obj/item/reagent_containers/food/drinks/on_rag_wipe(obj/item/reagent_containers/glass/rag/R)
 	wash(CLEAN_SCRUB)
 
-/// Old attack_self. `special_pass` is set when a subtype (the bottle) calls it directly to force the open.
-/obj/item/reagent_containers/food/drinks/proc/drinks_self(mob/user, obj/item/held, datum/interaction/interaction, special_pass)
-	if(special_handling && !special_pass)
-		return FALSE
-	if(!is_open_container() && !(is_can && interaction.stance == I_HURT))
-		open(user)
-	return TRUE
-
 /obj/item/reagent_containers/food/drinks/proc/open(mob/user)
 	if(!cant_open)
 		play_sfx(src, SFX_CANOPEN, volume = rand(10,50))

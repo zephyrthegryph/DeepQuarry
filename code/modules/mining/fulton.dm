@@ -14,90 +14,37 @@
 	. = ..()
 	. += "It has [uses_left] use\s remaining."
 
-DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/extraction_pack)
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "Select a beacon to connect to", "title" = "Balloon Extraction Pack", "choices" = computed(PROC_REF(possible_beacon_choices)), "timeout" = 0), step = "beacon", when = PROC_REF(has_possible_beacons)), then(PROC_REF(interaction_self)))
 
-/// Old attack_self.
-/obj/item/extraction_pack/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The extraction beacons on this pack's networks.
+/obj/item/extraction_pack/proc/possible_beacons()
 	var/list/possible_beacons = list()
 	for(var/obj/structure/extraction_point/EP as anything in REGISTRY_MEMBERS(REGISTRY_EXTRACTION_BEACONS))
 		if(EP.beacon_network in beacon_networks)
 			possible_beacons += EP
+	return possible_beacons
 
-	if(!possible_beacons.len)
+/// The beacons the question offers.
+/obj/item/extraction_pack/proc/possible_beacon_choices(datum/act/op/A)
+	return possible_beacons()
+
+/// The question is asked only when there is a beacon to choose.
+/obj/item/extraction_pack/proc/has_possible_beacons(datum/act/op/A)
+	return length(possible_beacons()) > 0
+
+/// Old attack_self: link the pack to a beacon.
+/obj/item/extraction_pack/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!length(possible_beacons()))
 		to_chat(user, "There are no extraction beacons in existence!")
-		return TRUE
-
-	var/original_client_ckey
-	if(istype(user, /client))
-		var/client/C = user
-		original_client_ckey = C.ckey
-		user = C.mob
-	if(!ismob(user) || QDELETED(user))
-		return TRUE
-	open_request(src, /datum/prompt/choice/extraction_beacon, PROC_REF(beacon_selected), answerer = user, choices = possible_beacons, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), original_client_ckey = original_client_ckey)
-	return TRUE
-
-/obj/item/extraction_pack/proc/beacon_selected(datum/act/request/A)
-	var/datum/prompt/choice/extraction_beacon/request = A.request
-	if(!A.answer || request.captures_gone())
-		return
-	apply_beacon_selection(A)
-	SStgui.update_uis(src)
-
-/obj/item/extraction_pack/proc/apply_beacon_selection(datum/act/request/A)
-	var/datum/prompt/choice/extraction_beacon/request = A.request
-	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
-	var/list/possible_beacons = list()
-	for(var/obj/structure/extraction_point/EP as anything in REGISTRY_MEMBERS(REGISTRY_EXTRACTION_BEACONS))
-		if(EP.beacon_network in beacon_networks)
-			possible_beacons += EP
-	if(!possible_beacons.len)
-		to_chat(user, "There are no extraction beacons in existence!")
-		return TRUE
-	var/obj/structure/extraction_point/selected = A.answer.value
+		return OP_OK
+	var/obj/structure/extraction_point/selected = A.step_value("beacon")
 	if(!istype(selected) || QDELETED(selected))
-		return TRUE
+		return OP_OK
 	rel_set(src, nameof(beacon), selected)
 	to_chat(user, "You link the extraction pack to the beacon system.")
-	return TRUE
-
-/datum/prompt/choice/extraction_beacon
-	question = "Select a beacon to connect to"
-	title = "Balloon Extraction Pack"
-	timeout = 0
-	var/obj/item/captured_item
-	var/datum/interaction/captured_interaction
-	var/item_expected = FALSE
-	var/interaction_expected = FALSE
-	var/original_client_ckey
-
-CAPABILITIES(/datum/prompt/choice/extraction_beacon)
-	ref_one(nameof(captured_item), /obj/item)
-	ref_one(nameof(captured_interaction), /datum/interaction)
-
-/datum/prompt/choice/extraction_beacon/prepare(datum/act/A)
-	. = ..()
-	var/obj/item/item = captured_item
-	var/datum/interaction/interaction = captured_interaction
-	rel_clear(src, nameof(captured_item))
-	rel_clear(src, nameof(captured_interaction))
-	rel_set(src, nameof(captured_item), item)
-	rel_set(src, nameof(captured_interaction), interaction)
-
-/datum/prompt/choice/extraction_beacon/proc/captures_gone()
-	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction)) || (original_client_ckey && !GLOB.directory[original_client_ckey])
-
-/datum/prompt/choice/extraction_beacon/recheck_extra()
-	. = ..()
-	if(.)
-		return
-	if(captures_gone())
-		return "gone"
-	if(!isnull(value))
-		var/obj/structure/extraction_point/selected = value
-		if(!istype(selected) || QDELETED(selected))
-			return "the extraction beacon is gone"
-	return null
+	return OP_OK
 
 /obj/item/extraction_pack/afterattack(atom/movable/A, mob/living/carbon/human/user, flag, params)
 	if(!beacon())
@@ -189,7 +136,7 @@ CAPABILITIES(/datum/prompt/choice/extraction_beacon)
 /obj/effect/extraction_holder/proc/fulton_retract(atom/movable/A)
 	cut_overlays()
 	add_overlay(fulton_balloon("fulton_retract"))
-	after(src, 0.4 SECONDS, PROC_REF(fulton_land), with = list(A))
+	after(src, 0.4 SECONDS, PROC_REF(fulton_land), with = list(A), keeps_dead = TRUE)
 
 /obj/effect/extraction_holder/proc/fulton_land(atom/movable/A)
 	cut_overlays()
@@ -197,7 +144,7 @@ CAPABILITIES(/datum/prompt/choice/extraction_beacon)
 		A.set_anchored(FALSE) // An item has to be unanchored to be extracted in the first place.
 		A.set_density(initial(A.density))
 	animate(src, pixel_z = 0, time = 0.5 SECONDS)
-	after(src, 0.5 SECONDS, PROC_REF(fulton_release), with = list(A))
+	after(src, 0.5 SECONDS, PROC_REF(fulton_release), with = list(A), keeps_dead = TRUE)
 
 /obj/effect/extraction_holder/proc/fulton_release(atom/movable/A)
 	if(A)
@@ -212,12 +159,20 @@ CAPABILITIES(/datum/prompt/choice/extraction_beacon)
 	icon = 'icons/obj/fulton.dmi'
 	icon_state = "extraction_pointoff"
 
-DECLARE_INTERACTIONS(/obj/item/fulton_core, INTERACT_USE(null, PROC_REF(interaction_self), REQ_BECAUSE(REQ_ON_TURF, "you must be standing on solid ground to deploy an extraction beacon")))
+MSG_DEF_SELF(fulton/needs_ground, "you must be standing on solid ground to deploy an extraction beacon")
+
+CAPABILITIES(/obj/item/fulton_core)
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(actor_on_turf_holds), because = MSG(fulton/needs_ground))), then(PROC_REF(interaction_self)))
+
+/// Requirement: the actor stands on a real turf.
+/obj/item/fulton_core/proc/actor_on_turf_holds(datum/act/op/A)
+	return !!get_turf(A.actor)
 
 /// Old attack_self.
-/obj/item/fulton_core/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/fulton_core/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	task_timed(user, 1.5 SECONDS, user, src, PROC_REF(deploy_done), list(user))
-	return TRUE
+	return OP_OK
 
 /obj/item/fulton_core/proc/deploy_done(mob/user)
 	replace_with(src, /obj/structure/extraction_point)

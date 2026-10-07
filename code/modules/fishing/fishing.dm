@@ -91,10 +91,11 @@ GLOBAL_LIST_INIT(generic_fishing_chance_list, list(FISHING_RARE = 5, FISHING_UNC
 		junk_list = GLOB.generic_fishing_pool_list
 		fishing_loot = GLOB.generic_fishing_chance_list
 
-DAMAGE_REACTION(/turf/simulated/floor/water, DAMAGE_EXPLOSION, PROC_REF(explosive_fishing))
 
 /// Explosive fishing: a blast may kill a fish and float it up.
-/turf/simulated/floor/water/proc/explosive_fishing(datum/damage_packet/packet)
+/turf/simulated/floor/water/proc/explosive_fishing(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(prob(5 * packet.severity))
 		pick_fish()
 		if(fish_type)

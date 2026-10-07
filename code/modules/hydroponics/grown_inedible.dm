@@ -47,15 +47,18 @@ CAPABILITIES(/obj/item/grown)
 	throw_speed = 4
 	throw_range = 20
 
-DECLARE_INTERACTIONS(/obj/item/corncob, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/corncob)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/corncob/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/corncob/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/surgical/circular_saw) || istype(W, /obj/item/material/knife/machete/hatchet) || istype(W, /obj/item/material/knife))
 		to_chat(user, span_notice("You use [W] to fashion a pipe out of the corn cob!"))
 		replace_with(src, /obj/item/clothing/mask/smokable/pipe/cobpipe)
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return OP_PASS
+	return OP_PASS
 
 /obj/item/bananapeel
 	name = "banana peel"

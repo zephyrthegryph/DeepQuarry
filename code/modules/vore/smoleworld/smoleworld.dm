@@ -79,33 +79,36 @@ CAPABILITIES(/obj/item/storage/smolebrickcase)
 	. = ..()
 	make_rotatable()
 
-EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Take apart", PROC_REF(smoletrack_dismantle_hand)), \
-	INTERACT_VERB("Use Color Pieces", PROC_REF(smoletrack_verb_color)), \
-	INTERACT_VERB("Take Road Apart", PROC_REF(smoletrack_verb_dismantle)), \
-)
+CAPABILITIES(/obj/structure/smoletrack)
+	op("smoletrack_dismantle_hand", hand(), ungated(), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 1), label("Take apart"), then(PROC_REF(smoletrack_dismantle_hand)))
+	op("smoletrack_verb_color", menu(), label("Use Color Pieces"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/color/smole_paint, fields = list("default" = nameof(color)), step = "colour"), then(PROC_REF(smoletrack_verb_color)))
+	op("smoletrack_verb_dismantle", menu(), label("Take Road Apart"), needs(req_adjacent(), req_capable()), then(PROC_REF(smoletrack_verb_dismantle)))
 
 /// Old attack_hand, disarm: take the piece apart.
-/obj/structure/smoletrack/proc/smoletrack_dismantle_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/structure/smoletrack/proc/smoletrack_dismantle_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
-		return
+		return OP_OK
 	to_chat(user, span_notice("[src] was dismantaled into bricks."))
 	play_sfx(src, SFX_ITEMS_SMOLESMALLBUILD, volume_channel = VOLUME_CHANNEL_MASTER)
 	var/turf/simulated/floor/F = get_turf(src)
 	if(istype(F))
 		new /obj/item/stack/material/smolebricks(F)
 	destroyed(src, user, "deconstructed")
+	return OP_OK
 
 /obj/structure/smoletrack/ghosts_can_use_rotate_verbs()
 	return CONFIG_GET(flag/ghost_interaction)
 
 //color roads
 /// Old Use Color Pieces verb.
-/obj/structure/smoletrack/proc/smoletrack_verb_color(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/smoletrack/proc/smoletrack_verb_color(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
-	open_request(src, /datum/prompt/color/smole_paint, PROC_REF(smole_paint_picked), answerer = user, default = color)
+	var/picked = A.step_value("colour")
+	if(picked)
+		color = picked
 
 /// A smole road or building's colour. Re-checked on the answer: the painter is still next to it.
 /datum/prompt/color/smole_paint
@@ -114,17 +117,10 @@ EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
 	ask_flags = ASK_NEAR_SUBJECT
 	timeout = 0
 
-/obj/structure/smoletrack/proc/smole_paint_picked(datum/act/request/A)
-	if(A.answer)
-		color = A.answer.value
-
-/obj/structure/smolebuilding/proc/smole_paint_picked(datum/act/request/A)
-	if(A.answer)
-		color = A.answer.value
-
 // probably redundant, allows for direct way to dismantal without knowing intents
 /// Old Take Road Apart verb.
-/obj/structure/smoletrack/proc/smoletrack_verb_dismantle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/smoletrack/proc/smoletrack_verb_dismantle(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
 	play_sfx(src, SFX_ITEMS_SMOLESMALLBUILD, volume_channel = VOLUME_CHANNEL_MASTER)
@@ -175,22 +171,21 @@ EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
 	max_integrity = 75 // Three stomps.
 
 //makes it so buildings can be dismaintaled or GodZilla style attacked
-EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Knock on", PROC_REF(smolebuilding_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Take apart", PROC_REF(smolebuilding_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Knock on", PROC_REF(smolebuilding_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_HURT, "Bang on", PROC_REF(smolebuilding_hand)), \
-	INTERACT_ITEM(null, PROC_REF(smolebuilding_item)), \
-	INTERACT_VERB("Use Color Pieces", PROC_REF(smolebuilding_verb_color)), \
-	INTERACT_VERB("Take Building Apart", PROC_REF(smolebuilding_verb_dismantle)), \
-)
 
 /// Old attack_hand: dismantle (disarm), bang on (harm) or knock on the building.
-/obj/structure/smolebuilding/proc/smolebuilding_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	if(interaction.stance == I_DISARM)
+/obj/structure/smolebuilding/proc/smolebuilding_knock(datum/act/op/A)
+	return smolebuilding_hand(A.actor, I_HELP)
+
+/obj/structure/smolebuilding/proc/smolebuilding_dismantle_hand(datum/act/op/A)
+	return smolebuilding_hand(A.actor, I_DISARM)
+
+/obj/structure/smolebuilding/proc/smolebuilding_bang_hand(datum/act/op/A)
+	return smolebuilding_hand(A.actor, I_HURT)
+
+/obj/structure/smolebuilding/proc/smolebuilding_hand(mob/user, stance)
+	if(stance == I_DISARM)
 		if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
-			return
+			return OP_OK
 		to_chat(user, span_notice("[src] was dismantaled into bricks."))
 		play_sfx(src, SFX_ITEMS_SMOLESMALLBUILD, volume_channel = VOLUME_CHANNEL_MASTER)
 		if(!isnull(loc))
@@ -198,11 +193,10 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 			new /obj/item/stack/material/smolebricks(loc)
 		spent(src, user)
 
-	else if (interaction.stance == I_HURT)
+	else if (stance == I_HURT)
 
 		if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
-			return
-
+			return OP_OK
 		play_sfx(src, SFX_ITEMS_SMOLEBUILDINGHIT2)
 		user.do_attack_animation(src)
 		act_message(user, src, MSG_SELF(span_danger("You bang against %T%!")), \
@@ -211,7 +205,7 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 		take_damage(25, BRUTE, MELEE, FALSE)
 	else
 		act_message(user, null, MSG_SELF("You knock on the [src.name]."), MSG_OTHERS("[user.name] knocks on the [src.name]."))
-	return
+	return OP_OK
 
 /// Stomped flat: the building leaves ruins.
 /obj/structure/smolebuilding/handle_deconstruct(disassembled = TRUE)
@@ -224,15 +218,23 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 
 //checks for items and does the same as dismaintle but spawns material instead.
 /// Old attackby: any hit with an item flattens it.
-/obj/structure/smolebuilding/proc/smolebuilding_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/smolebuilding/proc/smolebuilding_item(datum/act/op/A)
 	dismantle()
-	return TRUE
+	return OP_OK
 //checks for projectile damage and does the same as dismaintle but spawns material instead.
-DAMAGE_REACTION(/obj/structure/smolebuilding, DAMAGE_PROJECTILE, PROC_REF(smolebuilding_shot))
+CAPABILITIES(/obj/structure/smolebuilding)
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(smolebuilding_shot))))
+	op("smolebuilding_knock_help", hand(), ungated(), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 1), label("Knock on"), then(PROC_REF(smolebuilding_knock)))
+	op("smolebuilding_dismantle", hand(), ungated(), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 1), label("Take apart"), then(PROC_REF(smolebuilding_dismantle_hand)))
+	op("smolebuilding_knock_grab", hand(), ungated(), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 1), label("Knock on"), then(PROC_REF(smolebuilding_knock)))
+	op("smolebuilding_bang", hand(), ungated(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Bang on"), then(PROC_REF(smolebuilding_bang_hand)))
+	op("smolebuilding_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Smolebuilding item"), then(PROC_REF(smolebuilding_item)))
+	op("smolebuilding_verb_color", menu(), label("Use Color Pieces"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/color/smole_paint, fields = list("default" = nameof(color)), step = "colour"), then(PROC_REF(smolebuilding_verb_color)))
+	op("smolebuilding_verb_dismantle", menu(), label("Take Building Apart"), needs(req_adjacent(), req_capable()), then(PROC_REF(smolebuilding_verb_dismantle)))
 
-/obj/structure/smolebuilding/proc/smolebuilding_shot(datum/damage_packet/packet)
+/obj/structure/smolebuilding/proc/smolebuilding_shot(datum/act/hit/projectile/A)
 	displode()
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 //is the same as dismaintal but instead of ruins it just makes it all explode
 /obj/structure/smolebuilding/proc/displode()
 	visible_message(span_danger("\The [src] explodes into pieces!"))
@@ -242,32 +244,35 @@ DAMAGE_REACTION(/obj/structure/smolebuilding, DAMAGE_PROJECTILE, PROC_REF(smoleb
 	return
 
 //get material from ruins
-EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISARM, "Take apart", PROC_REF(smoleruins_dismantle_hand)), 	INTERACT_ITEM(null, PROC_REF(smoleruins_item)), )
 
 /// Old attack_hand, disarm: take the ruins apart.
-/obj/structure/smoleruins/proc/smoleruins_dismantle_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/structure/smoleruins/proc/smoleruins_dismantle_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
-		return
+		return OP_OK
 	to_chat(user, span_notice("[src] was dismantaled into bricks."))
 	play_sfx(src, SFX_ITEMS_SMOLELARGEUNBUILD, volume_channel = VOLUME_CHANNEL_MASTER)
 	if(!isnull(loc))
 		new /obj/item/stack/material/smolebricks(loc)
 		new /obj/item/stack/material/smolebricks(loc)
 	destroyed(src, user, "deconstructed")
+	return OP_OK
 
 //Ruins go asplode same as buildings if attacked
 /// Old attackby: any hit with an item blows the ruins apart.
-/obj/structure/smoleruins/proc/smoleruins_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/smoleruins/proc/smoleruins_item(datum/act/op/A)
 	displode()
-	return TRUE
+	return OP_OK
 
-DAMAGE_REACTION(/obj/structure/smoleruins, DAMAGE_PROJECTILE, PROC_REF(smoleruins_shot))
+CAPABILITIES(/obj/structure/smoleruins)
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(smoleruins_shot))))
+	op("smoleruins_dismantle_hand", hand(), ungated(), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 1), label("Take apart"), then(PROC_REF(smoleruins_dismantle_hand)))
+	op("smoleruins_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Smoleruins item"), then(PROC_REF(smoleruins_item)))
 
 /// Ruins blow apart when shot, same as buildings.
-/obj/structure/smoleruins/proc/smoleruins_shot(datum/damage_packet/packet)
+/obj/structure/smoleruins/proc/smoleruins_shot(datum/act/hit/projectile/A)
 	displode()
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/structure/smoleruins/proc/displode()
 	visible_message(span_danger("\The [src] explodes into pieces!"))
@@ -278,14 +283,18 @@ DAMAGE_REACTION(/obj/structure/smoleruins, DAMAGE_PROJECTILE, PROC_REF(smoleruin
 
 //color buildings
 /// Old Use Color Pieces verb.
-/obj/structure/smolebuilding/proc/smolebuilding_verb_color(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/smolebuilding/proc/smolebuilding_verb_color(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
-	open_request(src, /datum/prompt/color/smole_paint, PROC_REF(smole_paint_picked), answerer = user, default = color)
+	var/picked = A.step_value("colour")
+	if(picked)
+		color = picked
 
 //probably a bit redundant but gives a more direct way to disassemble buildings without using intents
 /// Old Take Building Apart verb.
-/obj/structure/smolebuilding/proc/smolebuilding_verb_dismantle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/smolebuilding/proc/smolebuilding_verb_dismantle(datum/act/op/A)
+	var/mob/user = A.actor
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
 	play_sfx(src, SFX_ITEMS_SMOLESMALLBUILD, volume_channel = VOLUME_CHANNEL_MASTER)

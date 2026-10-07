@@ -1,6 +1,5 @@
-/obj/machinery/v_garbosystem|human|none => v_garbosystem_toggle|emag:needs a cryptographic sequencer,v_garbosystem_crowbar_open:needs a crowbar
-/obj/machinery/v_garbosystem|robot|none => v_garbosystem_toggle|emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now,v_garbosystem_crowbar_open:needs a crowbar
+/obj/machinery/v_garbosystem|human|none => |
+/obj/machinery/v_garbosystem|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/v_garbosystem|ai|none => |
 /obj/machinery/v_garbosystem|ghost|none => |
-/obj/machinery/v_garbosystem|human|/obj/item/card/emag => emag,v_garbosystem_toggle|v_garbosystem_crowbar_open:needs a crowbar
 

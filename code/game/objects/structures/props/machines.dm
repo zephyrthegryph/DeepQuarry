@@ -678,7 +678,7 @@ CAPABILITIES(/obj/structure/prop/machine/nt_pod)
 			flick("nt_pod_emptying", fluid) // 8ds
 
 			// Door opens
-			after(src, 0.8 SECONDS, PROC_REF(delayed_flick), with = list(door, "nothing", "nt_pod_opening", 0.9 SECONDS)) // 9ds
+			after(src, 0.8 SECONDS, PROC_REF(delayed_flick), with = list(door, "nothing", "nt_pod_opening", 0.9 SECONDS), keeps_dead = TRUE) // 9ds
 
 		if("closed")
 			changing_state = TRUE

@@ -51,29 +51,35 @@
 	update_fail_chance()
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_USE("Change fire mode", PROC_REF(interaction_fire_mode)), \
-	INTERACT_VERB("Change Fire Mode", PROC_REF(harpoon_verb_fire_mode), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Toggle Spatial Rearrangement", PROC_REF(harpoon_verb_dropnom_mode), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/bluespace_harpoon)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("fire_mode", in_hand(), label("Change fire mode"), then(PROC_REF(interaction_fire_mode)))
+	op("harpoon_verb_fire_mode", menu(), label("Change Fire Mode"), needs(carried()), then(PROC_REF(harpoon_verb_fire_mode_op)))
+	op("harpoon_verb_dropnom_mode", menu(), label("Toggle Spatial Rearrangement"), needs(carried()), then(PROC_REF(harpoon_verb_dropnom_mode)))
+
+/// The harpoon_verb_fire_mode op: the verb's effect, as the old resolver ran it.
+/obj/item/bluespace_harpoon/proc/harpoon_verb_fire_mode_op(datum/act/op/A)
+	harpoon_verb_fire_mode(A.actor, A.held, null)
+	return OP_OK
 
 /// Old attackby.
-/obj/item/bluespace_harpoon/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/obj/item/bluespace_harpoon/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(!istype(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(I, /obj/item/stock_parts/scanning_module))
 		if(scanmod)
 			to_chat(user, span_warning("There's already [scanmod] installed! Remove it first."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!move_into(src, nameof(src.scanmod), I, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		to_chat(user, span_notice("You install [scanmod] into [src]."))
 		update_fail_chance()
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /obj/item/bluespace_harpoon/afterattack(atom/A, mob/user as mob)
 	if(!user || !A || isstorage(A))
@@ -207,7 +213,8 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 
 
 /// Old attack_self: switch the fire mode.
-/obj/item/bluespace_harpoon/proc/interaction_fire_mode(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/bluespace_harpoon/proc/interaction_fire_mode(datum/act/op/A)
+	var/mob/user = A.actor
 	harpoon_verb_fire_mode(user)
 	return TRUE
 
@@ -220,7 +227,8 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 	update_icon()
 
 /// Old Toggle Spatial Rearrangement verb.
-/obj/item/bluespace_harpoon/proc/harpoon_verb_dropnom_mode(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/bluespace_harpoon/proc/harpoon_verb_dropnom_mode(datum/act/op/A)
+	var/mob/user = A.actor
 	dropnoms_active = !dropnoms_active
 	to_chat(user,span_info("You switch \the [src]'s spatial rearrangement [dropnoms_active ? "on" : "off"]. (Telenoms [dropnoms_active ? "enabled" : "disabled"])"))
 

@@ -38,6 +38,8 @@
 	var/chargecap = 1000
 
 CAPABILITIES(/obj/item/medigun_backpack)
+	// Recharges its tanks and cell every 2 s while its manipulator, capacitor and matter bin are all fitted.
+	every(2 SECONDS, then(PROC_REF(medigun_backpack_step)), when = cond_all(nameof(smanipulator), nameof(scapacitor), nameof(sbin)))
 	owns_one(nameof(scapacitor), /obj/item/stock_parts/capacitor, starts = nameof(scapacitor))
 	owns_one(nameof(slaser), /obj/item/stock_parts/micro_laser, starts = nameof(slaser))
 	owns_one(nameof(smanipulator), /obj/item/stock_parts/manipulator, starts = nameof(smanipulator))
@@ -189,7 +191,7 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 	toxvol -= modifier
 	toxcharge += modifier
 
-/obj/item/medigun_backpack/periodic_step()
+/obj/item/medigun_backpack/proc/medigun_backpack_step(datum/act/timer/A)
 	if(!bcell)
 		return
 
@@ -312,8 +314,6 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 OM_FIELD_VIEW_OF(/obj/item/medigun_backpack, sbin, CHANGE_EXPLICIT)
 OM_FIELD_VIEW_OF(/obj/item/medigun_backpack, smanipulator, CHANGE_EXPLICIT)
 OM_FIELD_VIEW_OF(/obj/item/medigun_backpack, scapacitor, CHANGE_EXPLICIT)
-/// Recharges its tanks and cell every 2 s while its manipulator, capacitor and matter bin are all fitted.
-DECLARE_PERIODIC_WHILE_ALL(/obj/item/medigun_backpack, PERIODIC_SLOW, list("smanipulator", "scapacitor", "sbin"))
 
 /obj/item/medigun_backpack/proc/get_medigun()
 	return tethered_handheld()

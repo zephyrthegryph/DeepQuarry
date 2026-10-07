@@ -527,7 +527,7 @@
 		I.buf.types = DNA2_BUF_SE
 		I.has_radiation = FALSE // SAFE!
 		atom_say("Beginning injector synthesis.")
-		after(src, 10 SECONDS, PROC_REF(dispense_injector), with = list(I))
+		after(src, 10 SECONDS, PROC_REF(dispense_injector), with = list(I), keeps_dead = TRUE)
 	rel_clear(src, nameof(current_br))
 
 /obj/machinery/computer/transhuman/resleeving/proc/dispense_injector(obj/item/dnainjector/I)

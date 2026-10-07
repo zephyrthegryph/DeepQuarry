@@ -409,7 +409,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 	if(istype(L))
 		L.injure(INJURY_BLUNT, 25, null, src)
 	if(hits < 3)
-		after(src, 1 SECOND, PROC_REF(blackhole_hurt), with = list(L, hits + 1))
+		after(src, 1 SECOND, PROC_REF(blackhole_hurt), with = list(L, hits + 1), keeps_dead = TRUE)
 
 // Event screens embed href links (event()); the tgui buttons call the orion_* procs directly.
 
@@ -558,7 +558,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 				src.show_message("\The [src] states, 'YOU ARE EXPERIENCING A BLACKHOLE. BE TERRIFIED.","You hear something say, 'YOU ARE EXPERIENCING A BLACKHOLE. BE TERRFIED'")
 				to_chat(user, span_warning("Something draws you closer and closer to the machine."))
 				//spawning a literal blackhole would be fun, but a bit disruptive.
-				after(src, 1 SECOND, PROC_REF(blackhole_hurt), with = list(user, 0))
+				after(src, 1 SECOND, PROC_REF(blackhole_hurt), with = list(user, 0), keeps_dead = TRUE)
 		else
 			event = null
 			turns += 1

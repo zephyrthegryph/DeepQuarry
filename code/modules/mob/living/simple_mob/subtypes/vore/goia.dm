@@ -234,6 +234,16 @@ CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
 	verb_entry(/mob/living/simple_mob/vore/zorgoia/proc/import_style)
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+	op("zorgoia_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(zorgoia_interaction_hand_help)))
+	op("zorgoia_hand_grab", hand(), ungated(), stance(I_GRAB), label("Grab"), then(PROC_REF(zorgoia_interaction_hand_grab)))
+
+/// The help-stance input of zorgoia_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/zorgoia/proc/zorgoia_interaction_hand_help(datum/act/op/A)
+	return zorgoia_interaction_hand(A, I_HELP)
+
+/// The grab-stance input of zorgoia_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/zorgoia/proc/zorgoia_interaction_hand_grab(datum/act/op/A)
+	return zorgoia_interaction_hand(A, I_GRAB)
 
 /mob/living/simple_mob/vore/zorgoia/Initialize(mapload)
 	. = ..()
@@ -326,19 +336,15 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/zorgoia, TYPE_PROC_REF(/atom
 
 	. += cached_zorgoia_overlay("[goia_overlays["underbelly"]][resting? "-rest" : (vore_fullness? "-[vore_fullness]" : null)]", goia_overlays["zorgoia_underbelly"], MOB_PLANE, MOB_LAYER)
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(zorgoia_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Grab", PROC_REF(zorgoia_interaction_hand)), \
-)
-
 /// Old attack_hand (ran before the gate): help pets/tames, grab is refused while alive and AI-run. FALSE = default touch.
-/mob/living/simple_mob/vore/zorgoia/proc/zorgoia_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
-	switch(interaction.stance)
+/mob/living/simple_mob/vore/zorgoia/proc/zorgoia_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/carbon/human/M = A.actor
+	switch(stance)
 		if(I_HELP)
 			if(stat != DEAD)
 				if(M.zone_sel.selecting == BP_GROIN)
 					if(M.vore_bellyrub(src))
-						return TRUE
+						return OP_OK
 				act_message(M, src, null, MSG_OTHERS(span_notice("%U% [response_help] %T%.")))
 				if(ai_brain)
 					var/datum/ai_brain/AI = ai_brain
@@ -350,7 +356,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 						if(tamed != 1)
 							tamed = 1
 							faction = M.faction
-			return TRUE
+			return OP_OK
 
 		if(I_GRAB)
 			if(stat != DEAD)
@@ -360,10 +366,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 					if(M == friend)
 						AI.lose_follow()
 						rel_clear(src, nameof(friend))
-					return TRUE
-			return FALSE
+					return OP_OK
+			return OP_DECLINE
 
-	return FALSE
+	return OP_DECLINE
 
 /mob/living/simple_mob/vore/zorgoia/Login()
 	. = ..()

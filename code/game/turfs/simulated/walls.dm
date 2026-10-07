@@ -36,6 +36,10 @@
 TYPE_TABLE_DECLARE(/turf/simulated/wall, wall_forced_materials, null)
 
 CAPABILITIES(/turf/simulated/wall)
+	every(2 SECONDS, then(PROC_REF(wall_step)), when = nameof(radioactive))
+	op("wall_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(wall_item)))
+	op("wall_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Touch"), then(PROC_REF(wall_hand)))
+	op("wall_graffiti", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Graffiti"), then(PROC_REF(wall_graffiti_alt)))
 	adjacency(ADJ_KIND_SMOOTH, dirs = ADJ_ALL_AROUND, connects = PROC_REF(smooth_joins), changed = PROC_REF(smooth_changed))
 	param(nameof(wall_material_key), pos = 1)
 	param(nameof(reinf_material_key), pos = 2)
@@ -63,13 +67,11 @@ CAPABILITIES(/turf/simulated/wall)
 	check_radioactive()
 
 /// TRUE while one of its materials is radioactive.
-OM_FIELD(/turf/simulated/wall, radioactive, FALSE, CHANGE_EXPLICIT)
+/turf/simulated/wall/var/radioactive = FALSE
+TRACKED(/turf/simulated/wall, radioactive)
 /// TRUE while the wall carries a thermite coating (draws it; lighting it melts the wall).
 /turf/simulated/wall/var/thermite = FALSE
 TRACKED(/turf/simulated/wall, thermite)
-/// A wall radiates on the slow lane only while one of its materials is radioactive; any other wall
-/// never joins it (walls are numerous).
-DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 
 /// Call after its materials change.
 /turf/simulated/wall/proc/check_radioactive()
@@ -81,10 +83,10 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 /turf/simulated/wall/examine_icon()
 	return icon(icon=initial(icon), icon_state=initial(icon_state))
 
-/turf/simulated/wall/periodic_step()
-	// Calling parent will kill processing
+/// A wall radiates only while one of its materials is radioactive (every(), parked otherwise: walls are numerous).
+/turf/simulated/wall/proc/wall_step(datum/act/timer/A)
 	if(!radiate())
-		return PROCESS_KILL
+		set_radioactive(FALSE)
 
 /turf/simulated/wall/proc/get_material()
 	return material
@@ -317,7 +319,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 	F.icon_state = "dmg[rand(1,4)]"
 	to_chat(user, span_warning("The thermite starts melting through the wall."))
 
-	after(src, 10 SECONDS, PROC_REF(thermitemelt_cleanup), with = list(O))
+	after(src, 10 SECONDS, PROC_REF(thermitemelt_cleanup), with = list(O), keeps_dead = TRUE)
 //	F.sd_LumReset()		//TODO: ~Carn
 	return
 
@@ -363,12 +365,13 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 	return TRUE
 
 /// Old click_alt: graffiti with the held item; otherwise the default alt-click.
-/turf/simulated/wall/proc/wall_graffiti_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/turf/simulated/wall/proc/wall_graffiti_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		var/mob/living/livingUser = user
 		if(try_graffiti(livingUser, livingUser.get_active_hand()))
-			return TRUE
-	return FALSE
+			return OP_OK
+	return OP_DECLINE
 
 // === merged from RCD_chomp.dm during hard-fork de-suffix. Placed in this file because it
 // is the highest-positioned definer in the override chain for the members it

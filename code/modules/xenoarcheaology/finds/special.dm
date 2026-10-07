@@ -61,13 +61,12 @@ CAPABILITIES(/obj/item/reagent_containers/glass/replenishing)
 
 CAPABILITIES(/obj/item/vampiric)
 	owns_many(nameof(shadow_wights))
+	every(2 SECONDS, then(PROC_REF(vampiric_step)))
 
-DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
-
-/// Acts only while a player is near; otherwise it sleeps until one comes near.
-/obj/item/vampiric/periodic_step()
+/// Acts only while a player is near; with none near, the run does nothing.
+/obj/item/vampiric/proc/vampiric_step(datum/act/timer/A)
 	if(!mob_near(world.view, TRUE))
-		return sleep_until_mob_near(world.view, TRUE)
+		return
 	//see if we've identified anyone nearby
 	if(ELAPSED(src, last_bloodcall, CLOCK_WORLD) > bloodcall_interval && length(nearby_mobs))
 		var/mob/living/carbon/human/M = pop(nearby_mobs)
@@ -151,17 +150,18 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 	var/tmp/turf/target_turf
 	var/loc_last_process
 
-DECLARE_PERIODIC(/obj/effect/decal/cleanable/blood/splatter/animated, PERIODIC_SLOW)
+CAPABILITIES(/obj/effect/decal/cleanable/blood/splatter/animated)
+	every(2 SECONDS, then(PROC_REF(animated_blood_step)), when = nameof(target_turf))
 
 // ALLOW(init/INSTANCE_STATE): remembers where it starts so it can leave a trail
 /obj/effect/decal/cleanable/blood/splatter/animated/Initialize(mapload, _age)
 	. = ..()
 	loc_last_process = src.loc
 
-/// Crawls toward its target turf every 2 s; arrived, it sleeps.
-/obj/effect/decal/cleanable/blood/splatter/animated/periodic_step()
+/// Crawls toward its target turf every 2 s (every() gated on target_turf); arrived, it does nothing.
+/obj/effect/decal/cleanable/blood/splatter/animated/proc/animated_blood_step(datum/act/timer/A)
 	if(!target_turf())
-		return PROCESS_KILL
+		return
 	if(target_turf() && src.loc != target_turf())
 		step_towards(src,target_turf())
 		if(src.loc == loc_last_process)
@@ -178,8 +178,6 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/blood/splatter/animated, PERIODIC_S
 				if(prob(50))
 					D = new(src.loc)
 					D.init_forensic_data().merge_blooddna(forensic_data)
-	else
-		..()
 
 /obj/effect/shadow_wight
 	name = "shadow wight"
@@ -187,12 +185,13 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/blood/splatter/animated, PERIODIC_S
 	icon_state = "shade"
 	density = TRUE
 
-DECLARE_PERIODIC(/obj/effect/shadow_wight, PERIODIC_SLOW)
+CAPABILITIES(/obj/effect/shadow_wight)
+	every(2 SECONDS, then(PROC_REF(shadow_wight_step)))
 
-/// Acts only while a player is near; otherwise it sleeps until one comes near.
-/obj/effect/shadow_wight/periodic_step()
+/// Acts only while a player is near; with none near, the run does nothing.
+/obj/effect/shadow_wight/proc/shadow_wight_step(datum/act/timer/A)
 	if(!mob_near(world.view, TRUE))
-		return sleep_until_mob_near(world.view, TRUE)
+		return
 	if(src.loc)
 		src.forceMove(get_turf(pick(orange(1,src))))
 		var/mob/living/carbon/M = locate_within(src.loc, /mob/living/carbon)

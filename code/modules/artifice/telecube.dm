@@ -197,7 +197,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 /// Fades `AM` out, moves it to `T` (if any) once faded, then fades it back in (half a second each).
 /obj/item/telecube/proc/fade_and_move(atom/movable/AM, turf/T, announce = FALSE)
 	animate_out(AM)
-	after(src, 0.5 SECONDS, PROC_REF(fade_back_in), with = list(AM, T, announce))
+	after(src, 0.5 SECONDS, PROC_REF(fade_back_in), with = list(AM, T, announce), keeps_dead = TRUE)
 
 /obj/item/telecube/proc/fade_back_in(atom/movable/AM, turf/T, announce)
 	if(QDELETED(AM))
@@ -230,16 +230,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 
 	animate(target, alpha = 255, time = 5) //In
 	animate(target.filters[our_filter_index], size = 0, time = 5, flags = ANIMATION_PARALLEL)
-	after(src, 0.5 SECONDS, PROC_REF(clear_blur), with = list(target))
+	after(src, 0.5 SECONDS, PROC_REF(clear_blur), with = list(target), keeps_dead = TRUE)
 
 /obj/item/telecube/item_ctrl_click(mob/user)
 	if(Adjacent(user) && teleport_to_mate(user))
 		cooldown(mate_too = FALSE)
 
-DECLARE_INTERACTIONS(/obj/item/telecube, INTERACT_ALT(null, PROC_REF(interaction_alt)))
-
 /// Old click_alt.
-/obj/item/telecube/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/telecube/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(Adjacent(user) && swap_with_mate())
 		cooldown(mate_too = TRUE)
 	return TRUE
@@ -251,6 +250,7 @@ DECLARE_INTERACTIONS(/obj/item/telecube, INTERACT_ALT(null, PROC_REF(interaction
 
 CAPABILITIES(/obj/item/telecube)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 
 /// Something walked into it (the bump action's notice).
 /obj/item/telecube/proc/bumped_into(datum/act/A)

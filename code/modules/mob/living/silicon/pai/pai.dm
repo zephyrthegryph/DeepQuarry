@@ -125,6 +125,8 @@ CAPABILITIES(/mob/living/silicon/pai)
 	verb_entry(/mob/living/proc/shred_limb)
 	verb_entry(/mob/living/proc/toggle_trash_catching)
 	verb_entry(/mob/verb/toggle_gun_mode, hidden = TRUE) // no gun support, and it shouldn't use guns anyway
+	op("pai_pat_help", hand(), ungated(), stance(I_HELP), label("Pat"), then(PROC_REF(pai_interaction_pat)))
+	op("pai_boop_disarm", hand(), ungated(), stance(I_DISARM), label("Boop shut"), then(PROC_REF(pai_interaction_boop)))
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Init and destroy
@@ -310,12 +312,10 @@ CAPABILITIES(/mob/living/silicon/pai)
 // Click interactions
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
-	INTERACT_ITEM(null, PROC_REF(pai_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Pat", PROC_REF(pai_interaction_pat)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Boop shut", PROC_REF(pai_interaction_boop)))
 
 /// Old attackby (never reached the default attack): ID access edits, else its own hit or bonk.
+EXTEND_INTERACTIONS(/mob/living/silicon/pai, INTERACT_ITEM(null, PROC_REF(pai_interaction_item)))
+
 /mob/living/silicon/pai/proc/pai_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	var/obj/item/card/id/ID = W.GetID()
 	if(ID)
@@ -375,15 +375,17 @@ CAPABILITIES(/datum/prompt/choice/pai_access)
 		radio.recalculateChannels()
 
 /// Old attack_hand, help: pat it. (Grab and harm reach the gate and the default touch.)
-/mob/living/silicon/pai/proc/pai_interaction_pat(mob/user, obj/item/held, datum/interaction/interaction)
+/mob/living/silicon/pai/proc/pai_interaction_pat(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_notice("%U% pats %T%."))
-	return TRUE
+	return OP_OK
 
 /// Old attack_hand, disarm: boop it shut.
-/mob/living/silicon/pai/proc/pai_interaction_boop(mob/user, obj/item/held, datum/interaction/interaction)
+/mob/living/silicon/pai/proc/pai_interaction_boop(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_danger("%U% boops %T% on the head."))
 	close_up()
-	return TRUE
+	return OP_OK
 
 /mob/living/silicon/pai/UnarmedAttack(atom/A, proximity_flag, stance = I_HURT)
 	. = ..()

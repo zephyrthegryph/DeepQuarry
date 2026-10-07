@@ -47,6 +47,7 @@
 
 CAPABILITIES(/obj/item/holder)
 	drag_onto(PROC_REF(drop_input))
+	op("holder_pick_up", hand(), priority(OP_PRIORITY_DEFAULT), label("Pick up"), then(PROC_REF(holder_pick_up)))
 	param(nameof(held_at_make), pos = 1, apply = PROC_REF(take_held), keep = FALSE)
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm). Dropped onto its dragger, the held mob
@@ -63,11 +64,12 @@ CAPABILITIES(/obj/item/holder)
 	for(var/mob/living/carbon/human/O in contents)
 		O.show_inventory_panel(user, state = GLOB.tgui_deep_inventory_state)
 
-EXTEND_INTERACTIONS(/obj/item/holder/micro, INTERACT_SELF("Pet", PROC_REF(micro_holder_pet_self)))
+CAPABILITIES(/obj/item/holder/micro)
+	op("micro_holder_pet_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Pet"), then(PROC_REF(micro_holder_pet_self)))
 
 /// Old attack_self: reworked so it works w/ nonhumans.
-/obj/item/holder/micro/proc/micro_holder_pet_self(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/item/holder/micro/proc/micro_holder_pet_self(datum/act/op/A)
+	var/mob/living/carbon/user = A.actor
 	user.setClickCooldown(user.get_attack_speed())
 	for(var/L in contents)
 		if(ishuman(L))
@@ -76,6 +78,7 @@ EXTEND_INTERACTIONS(/obj/item/holder/micro, INTERACT_SELF("Pet", PROC_REF(micro_
 		if(isanimal(L))
 			var/mob/living/simple_mob/S = L
 			act_message(user, S, others = span_notice("%U% [S.response_help] %T%."))
+	return OP_OK
 
 //Egg features. (The egged-mob check lives in /obj/item/holder/proc/holder_pick_up(), holder.dm.)
 /obj/item/holder/container_resist(mob/living/held)

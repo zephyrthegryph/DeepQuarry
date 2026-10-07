@@ -27,14 +27,8 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-// A new discount every offer_time (only /hidden makes use of this; the base proc is a stub).
-DECLARE_REPEAT(/obj/item/uplink, "offer_time", next_offer, null)
-
 /obj/item/uplink/get_item_cost(item_type, item_cost)
 	return (discount_item() && (item_type == discount_item())) ? max(1, round(item_cost*discount_amount)) : item_cost
-
-/obj/item/uplink/proc/next_offer()
-	return //Stub, used on children.
 
 // HIDDEN UPLINK - Can be stored in anything but the host item has to have a trigger for it.
 /** How to create an uplink in 3 easy steps!
@@ -61,7 +55,12 @@ DECLARE_REPEAT(/obj/item/uplink, "offer_time", next_offer, null)
 	if(!isitem(loc))
 		return INITIALIZE_HINT_QDEL
 
-/obj/item/uplink/hidden/next_offer()
+/// The deciseconds to the next discount.
+/obj/item/uplink/hidden/proc/offer_delay(datum/act/A)
+	return offer_time
+
+/// A new discount every offer_time (the every() of CAPABILITIES(/obj/item/uplink/hidden)).
+/obj/item/uplink/hidden/proc/next_offer(datum/act/timer/A)
 	discount_item_static = GLOB.default_uplink_selection.get_random_item(INFINITY)
 	discount_amount = pick(90;0.9, 80;0.8, 70;0.7, 60;0.6, 50;0.5, 40;0.4, 30;0.3, 20;0.2, 10;0.1)
 	EXPIRY_SET(src, next_offer_time, offer_time, CLOCK_WORLD)
@@ -203,6 +202,7 @@ DECLARE_REPEAT(/obj/item/uplink, "offer_time", next_offer, null)
 	SStgui.close_uis(src)
 
 CAPABILITIES(/obj/item/uplink/hidden)
+	every(PROC_REF(offer_delay), then(PROC_REF(next_offer)))
 	op("compact_toggle", ui_act(), then(PROC_REF(ui_act_compact_toggle)))
 	interface("Uplink", title = "Remote Uplink", state = nameof(GLOB.tgui_deep_inventory_state))
 	without("ui_open")

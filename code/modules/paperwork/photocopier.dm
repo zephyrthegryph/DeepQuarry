@@ -40,6 +40,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	op("insert_toner", item(/obj/item/toner), priority(OP_PRIORITY_DEFAULT - 2), label("Insert toner"), then(PROC_REF(interaction_insert_toner)))
 	op("swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
 	default_parts()
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(photocopier_blast_spill)))
 
 /// The window data.
 /obj/machinery/photocopier/ui_data(datum/act/eval/A)
@@ -221,10 +222,11 @@ CAPABILITIES(/obj/machinery/photocopier)
 	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return OP_OK
 
-DAMAGE_REACTION(/obj/machinery/photocopier, DAMAGE_EXPLOSION, PROC_REF(photocopier_blast_spill))
 
 /// A blast can burst the toner out onto the floor.
-/obj/machinery/photocopier/proc/photocopier_blast_spill(datum/damage_packet/packet)
+/obj/machinery/photocopier/proc/photocopier_blast_spill(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(packet.severity >= 2 && prob(50) && toner > 0)
 		new /obj/effect/decal/cleanable/blood/oil(get_turf(src))
 		toner = 0

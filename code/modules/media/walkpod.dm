@@ -27,6 +27,11 @@
 	slot_flags = SLOT_BELT
 
 CAPABILITIES(/obj/item/walkpod)
+	every(2 SECONDS, then(PROC_REF(walkpod_step)), when = nameof(listener))
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_alt)))
+	op("walkpod_verb_take_headpods", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Take HeadPods"), needs(carried(), req_empty(nameof(deployed_headpods), because = MSG(walkpod/headpods_deployed))), then(PROC_REF(walkpod_verb_take_headpods)))
 	op("stop", ui_act(), then(PROC_REF(ui_act_stop)))
 	op("play", ui_act(), then(PROC_REF(ui_act_play)))
 	owns_one(nameof(deployed_headpods), /obj/item/headpods)
@@ -36,9 +41,9 @@ CAPABILITIES(/obj/item/walkpod)
 	op("loopmode", ui_act("loopmode", arg("loopmode", num())), then(PROC_REF(ui_act_loopmode)))
 	op("volume", ui_act("volume", arg("val", num())), then(PROC_REF(ui_act_volume)))
 
-/// Person whomst is listening to us. periodic_step() checks on them and plays music while set (DECLARE_PERIODIC_WHILE).
+/// Person whomst is listening to us. walkpod_step() checks on them and plays music while set (its every(), gated on it).
 OM_FIELD_VIEW(/obj/item/walkpod, mob/living, listener, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/walkpod, PERIODIC_SLOW, "listener")
+MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 
 // stops listening.
 /obj/item/walkpod/on_destroy(force)
@@ -80,31 +85,26 @@ DECLARE_PERIODIC_WHILE(/obj/item/walkpod, PERIODIC_SLOW, "listener")
 	listener()?.force_music(media_url, media_start_time, volume) // Calling this with "" url (when we aren't playing) helpfully disables forced music
 
 /// Old click_alt.
-/obj/item/walkpod/proc/interaction_alt(mob/living/L, obj/item/held, datum/interaction/interaction)
+/obj/item/walkpod/proc/interaction_alt(datum/act/op/A)
+	var/mob/living/L = A.actor
 	if(L == listener() && check_listener())
 		tgui_interact(L)
 	else if(loc == L) // at least they're holding it
 		to_chat(L, span_warning("Turn on the [src] first."))
-	return TRUE
-
-DECLARE_INTERACTIONS(/obj/item/walkpod, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-	INTERACT_VERB("Take HeadPods", PROC_REF(walkpod_verb_take_headpods), REQ_IN_INVENTORY, REQ_FIELD_NOT("deployed_headpods", "the HeadPods are already deployed")), \
-)
+	return OP_OK
 
 /// Old attack_self.
-/obj/item/walkpod/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/walkpod/proc/interaction_self(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(!istype(user) || loc != user)
-		return TRUE
+		return OP_OK
 	if(!listener())
 		set_listener(user)
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 // Process ticks to ensure our listener remains valid and we do music-ing
-/obj/item/walkpod/periodic_step()
+/obj/item/walkpod/proc/walkpod_step(datum/act/timer/A)
 	if(!check_headpods())
 		restore_headpods()
 	if(!check_listener())
@@ -244,8 +244,8 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 
 // Silly verb
 /// Old Take HeadPods verb: Grab the pair of HeadPods.
-/obj/item/walkpod/proc/walkpod_verb_take_headpods(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/living/L = user
+/obj/item/walkpod/proc/walkpod_verb_take_headpods(datum/act/op/A)
+	var/mob/living/L = A.actor
 	if(!istype(L))
 		return
 	rel_set(src, nameof(deployed_headpods), new /obj/item/headpods ())
@@ -253,11 +253,13 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 	changed(src)
 
 /// Old attackby.
-/obj/item/walkpod/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/walkpod/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(W == deployed_headpods)
 		restore_headpods(user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/item/walkpod/proc/restore_headpods(mob/living/potential_holder)
 	if(!deployed_headpods)

@@ -237,25 +237,36 @@
 	icon_living = "hotiesc"
 	icon_rest = "hotiesc_rest"
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
-	INTERACT_INSERT(/obj/item/reagent_containers/food, PROC_REF(otie_interaction_feed), "Feed"), \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(otie_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Grab", PROC_REF(otie_interaction_hand)), \
-)
+CAPABILITIES(/mob/living/simple_mob/vore/otie)
+	op("otie_feed", item(/obj/item/reagent_containers/food), label("Feed"), then(PROC_REF(otie_interaction_feed)))
+	op("otie_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(otie_interaction_hand_help)))
+	op("otie_hand_grab", hand(), ungated(), stance(I_GRAB), label("Grab"), then(PROC_REF(otie_interaction_hand_grab)))
+	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
+	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+
+/// The help-stance input of otie_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/otie/proc/otie_interaction_hand_help(datum/act/op/A)
+	return otie_interaction_hand(A, I_HELP)
+
+/// The grab-stance input of otie_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/otie/proc/otie_interaction_hand_grab(datum/act/op/A)
+	return otie_interaction_hand(A, I_GRAB)
 
 /// Old attackby: trade donuts for bellybrig victims.
-/mob/living/simple_mob/vore/otie/proc/otie_interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
+/mob/living/simple_mob/vore/otie/proc/otie_interaction_feed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	consume(O, user)
 	play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
 	if(!(ai_brain != null))//No autobarf on player control.
-		return TRUE
+		return OP_OK
 	if(istype(O, /obj/item/reagent_containers/food/snacks/donut) && istype(src, /mob/living/simple_mob/vore/otie/security))
 		to_chat(user,span_notice("The guard pup accepts your offer for their catch."))
 		release_vore_contents()
 	else if(prob(2)) //Small chance to get prey out from non-sec oties.
 		to_chat(user,span_notice("The pup accepts your offer for their catch."))
 		release_vore_contents()
-	return TRUE
+	return OP_OK
 
 /mob/living/simple_mob/vore/otie/security/feed_grabbed_to_self(mob/living/user, mob/living/prey) // Make the gut start out safe for bellybrigging.
 	if(ishuman(prey))
@@ -280,13 +291,14 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
 //Pet 4 friendly
 
 /// Old attack_hand (ran before the gate): help pets/tames, grab is refused while alive. FALSE = default touch.
-/mob/living/simple_mob/vore/otie/proc/otie_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
-	switch(interaction.stance)
+/mob/living/simple_mob/vore/otie/proc/otie_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/carbon/human/M = A.actor
+	switch(stance)
 		if(I_HELP)
 			if(stat != DEAD)
 				if(M.zone_sel.selecting == BP_GROIN)
 					if(M.vore_bellyrub(src))
-						return TRUE
+						return OP_OK
 				act_message(M, src, null, MSG_OTHERS(span_notice("%U% [response_help] %T%.")))
 				if(ai_brain)
 					var/datum/ai_brain/AI = ai_brain
@@ -298,7 +310,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
 						if(tamed != 1)
 							tamed = 1
 							faction = M.faction
-			return TRUE
+			return OP_OK
 
 		if(I_GRAB)
 			if(stat != DEAD)
@@ -308,10 +320,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
 					if(M == friend)
 						AI.lose_follow()
 						rel_clear(src, nameof(friend))
-				return TRUE
-			return FALSE
+				return OP_OK
+			return OP_DECLINE
 
-	return FALSE
+	return OP_DECLINE
 
 /mob/living/simple_mob/vore/otie
 	death_message = "dies!"
@@ -320,10 +332,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
 	.=..()
 	set_resting(0)
 	icon_state = icon_dead
-
-CAPABILITIES(/mob/living/simple_mob/vore/otie)
-	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
-	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
 /mob/living/simple_mob/vore/otie/Login()
 	. = ..()

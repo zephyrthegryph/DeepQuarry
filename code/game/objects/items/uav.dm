@@ -45,6 +45,7 @@
 
 CAPABILITIES(/obj/item/uav)
 	ref_many(nameof(masters), /mob)
+	every(2 SECONDS, then(PROC_REF(uav_step)), when = PROC_REF(is_flying))
 	owns_one(nameof(cell), /obj/item/cell)
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
@@ -227,15 +228,15 @@ CAPABILITIES(/obj/item/uav)
 
 // "2" is UAV_PAIRING.
 
-OM_FIELD(/obj/item/uav, state, UAV_OFF, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/item/uav, is_flying, list("state"))
-/// Drains its cell and watches for masters every 2 s while flying.
-DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
+/obj/item/uav/var/state = UAV_OFF
+TRACKED(/obj/item/uav, state)
 
-/obj/item/uav/proc/is_flying()
+/// Whether it flies (the every() gate, polled).
+/obj/item/uav/proc/is_flying(datum/act/A)
 	return state == UAV_ON
 
-/obj/item/uav/periodic_step()
+/// Drains its cell and watches for masters every 2 s while flying.
+/obj/item/uav/proc/uav_step(datum/act/timer/A)
 	if(cell?.use(power_per_process) != power_per_process)
 		visible_message(span_warning("[src] sputters and thuds to the ground, inert."))
 		play_sfx(src, SFX_ITEMS_DROP_METALBOOTS)

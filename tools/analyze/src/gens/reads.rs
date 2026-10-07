@@ -111,11 +111,11 @@ impl Generator for Reads {
         for r in ["holder", "actor", "held", "target"] {
             roots.id(r);
         }
-        let mut table = String::new();
+        let mut entries: Vec<String> = Vec::new();
         for (id, reads) in &rows {
             // A handler runs after every derived value it reads: one more than the deepest.
             let rank = reads.iter().filter(|r| r.1 == ReadKind::Var).filter_map(|r| ranks.get(&format!("{}::{}", r.4, r.2)).map(|k| k + 1)).max().unwrap_or(0);
-            table.push_str(&format!("\t\"{}\" = list({}", id, rank));
+            let mut entry = format!("\t\t\"{}\" = list({}", id, rank);
             for (root, kind, var, hops, _owner) in reads {
                 let kind_id = match kind {
                     ReadKind::Var => 0,
@@ -127,9 +127,10 @@ impl Generator for Reads {
                 for h in hops {
                     parts.push(names.id(h).to_string());
                 }
-                table.push_str(&format!(",\n\t\tlist({})", parts.join(", ")));
+                entry.push_str(&format!(",\n\t\tlist({})", parts.join(", ")));
             }
-            table.push_str("),\n");
+            entry.push(')');
+            entries.push(entry);
         }
         out.line("#define READ_ROOT_HOLDER 1");
         out.line("#define READ_ROOT_ACTOR 2");
@@ -154,8 +155,8 @@ impl Generator for Reads {
         }
         out.line("))");
         out.blank();
-        out.doc("\"<type>::<proc>\" = list(rank, list(root id, kind, name id, hop name ids...), ...). Never edited by hand.");
-        out.line(read_table_initializer(&table));
+        out.doc("Chunked read rows; one global initializer assembles the complete table.");
+        out.line(read_table_initializer(&entries));
     }
 }
 
@@ -175,14 +176,28 @@ fn canonical_read_key(kind: &ReadKind, name: &str, capability_keys: &BTreeSet<St
     }
 }
 
-/// Keep the potentially large table out of a macro argument: BYOND truncates the expanded
-/// GLOBAL_MANAGED initializer once its replacement exceeds the preprocessor limit.
-fn read_table_initializer(table: &str) -> String {
-    let rows = table.trim_end_matches(",\n");
-    format!(
-        "GLOBAL_RAW(/list/generated_reads_table)\n/datum/controller/global_vars/proc/InitGlobalgenerated_reads_table()\n\tgenerated_reads_table = list(\n{}\n\t)\n\tgvars_datum_init_order += \"generated_reads_table\"",
-        rows,
-    )
+/// Keep large lists outside macro arguments and limit each literal to the master's 300-row bound.
+fn read_table_initializer(entries: &[String]) -> String {
+    let chunks: Vec<_> = entries.chunks(300).collect();
+    let mut lines = Vec::new();
+    for (i, chunk) in chunks.iter().enumerate() {
+        lines.push(format!("/proc/generated_reads_chunk_{i}()"));
+        lines.push("\treturn list(".to_string());
+        lines.push(chunk.join(",\n"));
+        lines.push("\t)".to_string());
+    }
+    lines.push("/proc/generated_reads_assemble()".to_string());
+    lines.push("\t. = list()".to_string());
+    lines.push("\tvar/list/chunks = list(".to_string());
+    for i in 0..chunks.len() {
+        lines.push(format!("\t\tgenerated_reads_chunk_{}(){}", i, if i + 1 < chunks.len() { "," } else { "" }));
+    }
+    lines.push("\t)".to_string());
+    lines.push("\tfor(var/list/chunk as anything in chunks)".to_string());
+    lines.push("\t\tfor(var/key in chunk)".to_string());
+    lines.push("\t\t\t.[key] = chunk[key]".to_string());
+    lines.push("GLOBAL_LIST_INIT(generated_reads_table, generated_reads_assemble())".to_string());
+    lines.join("\n")
 }
 
 #[cfg(test)]
@@ -203,17 +218,17 @@ mod tests {
 
 
     #[test]
-    fn large_read_table_avoids_macro_argument_and_registers_initialization() {
-        let rows = (0..3000).map(|i| format!("\t\"/datum/fixture::read_{i}\" = list(0, list(1, 0, {i})),\n")).collect::<String>();
-        assert!(rows.len() > 65536);
+    fn large_read_table_has_bounded_chunks_and_one_real_initializer() {
+        let rows = (0..3000).map(|i| format!("\t\t\"/datum/fixture::read_{i}\" = list(0, list(1, 0, {i}))")).collect::<Vec<_>>();
+        assert!(rows.iter().map(String::len).sum::<usize>() > 65536);
         let text = read_table_initializer(&rows);
-        assert!(!text.contains("GLOBAL_LIST_INIT("));
-        assert!(text.contains("GLOBAL_RAW(/list/generated_reads_table)"));
-        assert!(!text.contains("GLOBAL_LIST("));
-        assert_eq!(text.matches("InitGlobalgenerated_reads_table()").count(), 1);
-        assert!(text.contains("/datum/controller/global_vars/proc/InitGlobalgenerated_reads_table()"));
-        assert!(text.contains("gvars_datum_init_order += \"generated_reads_table\""));
-        assert!(text.contains("\"/datum/fixture::read_2999\" = list(0, list(1, 0, 2999))\n\t)"));
+        assert_eq!(text.matches("/proc/generated_reads_chunk_").count(), 10);
+        assert_eq!(text.matches("GLOBAL_LIST_INIT(generated_reads_table,").count(), 1);
+        assert!(text.contains("GLOBAL_LIST_INIT(generated_reads_table, generated_reads_assemble())"));
+        assert!(!text.contains("GLOBAL_LIST(generated_reads_table)"));
         assert_eq!(text.matches(" = list(0, list(1, 0,").count(), 3000);
+        for chunk in text.split("/proc/generated_reads_chunk_").skip(1) {
+            assert_eq!(chunk.matches(" = list(0, list(1, 0,").count(), 300);
+        }
     }
 }

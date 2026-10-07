@@ -156,7 +156,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig/util)
 			to_chat(user, span_notice("You insert [I] into [src]."))
 	return OP_OK
 
-/// Using it in the hand switches it on or off; the clothing's own self-use still follows, as the old ..() did.
+/// Using it in the hand switches it on or off; the click ends here (dq_hc_items b_ecig_toggles... needs it on after one use).
 /obj/item/clothing/mask/smokable/ecig/proc/toggled(datum/act/op/A)
 	var/mob/user = A.actor
 	if(active)
@@ -170,7 +170,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig/util)
 		set_active(TRUE)
 		to_chat(user, span_notice("You turn on \the [src]. "))
 		update_icon()
-	return OP_DECLINE
+	return OP_OK
 
 /// An empty hand on the held e-cig ejects the cartridge.
 /obj/item/clothing/mask/smokable/ecig/proc/cartridge_ejected(datum/act/op/A)

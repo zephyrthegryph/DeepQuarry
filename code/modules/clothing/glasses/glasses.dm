@@ -89,12 +89,14 @@ BLIND     // can't see anything
 	// Tint, flash protection, sight flags and the worn overlay all changed: the sight and HUD reactions read MOB_KEY_VIEW.
 	PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(glasses_toggle_self)))
+CAPABILITIES(/obj/item/clothing/glasses)
+	op("glasses_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Glasses toggle self"), then(PROC_REF(glasses_toggle_self)))
 
 /// Old attack_self: toggle the optical matrix. FALSE where the old body returned nothing.
-/obj/item/clothing/glasses/proc/glasses_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/proc/glasses_toggle_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(specialty_goggles)
-		return FALSE
+		return OP_DECLINE
 	if(toggleable)
 		if(!can_toggle(user))
 			to_chat(user, span_warning("You don't seem to be able to toggle \the [src] here."))
@@ -104,7 +106,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(gla
 				to_chat(user, span_notice("You activate the optical matrix on the [src]."))
 			else
 				to_chat(user, span_notice("You deactivate the optical matrix on the [src]."))
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/glasses/meson
 	name = "optical meson scanner"
@@ -348,7 +350,6 @@ CAPABILITIES(/obj/item/clothing/glasses/eyepatchwhite)
 	desc = "Glasses with frames are so last century."
 	icon_state = "glasses_thin"
 
-
 /obj/item/clothing/glasses/sunglasses
 	name = "sunglasses"
 	desc = "Strangely ancient technology used to help provide rudimentary eye cover. Enhanced shielding blocks many flashes."
@@ -407,13 +408,18 @@ MATERIAL_MIX(/obj/item/clothing/glasses/welding, list(MAT_STEEL = 1500, MAT_GLAS
 	tint = TINT_HEAVY
 	specialty_goggles = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/welding, \
-	INTERACT_USE("Flip", PROC_REF(welding_goggles_flip_self)), \
-	INTERACT_VERB("Adjust welding goggles", PROC_REF(welding_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/welding)
+	op("welding_goggles_flip_self", in_hand(), label("Flip"), then(PROC_REF(welding_goggles_flip_self)))
+	op("welding_toggle_verb", menu(), label("Adjust welding goggles"), needs(carried()), then(PROC_REF(welding_toggle_verb_op)))
+
+/// The welding_toggle_verb op: the verb's effect, as the old resolver ran it.
+/obj/item/clothing/glasses/welding/proc/welding_toggle_verb_op(datum/act/op/A)
+	welding_toggle_verb(A.actor, A.held, null)
+	return OP_OK
 
 /// Old attack_self.
-/obj/item/clothing/glasses/welding/proc/welding_goggles_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/welding/proc/welding_goggles_flip_self(datum/act/op/A)
+	var/mob/user = A.actor
 	welding_toggle_verb(user)
 
 /// Old verb "Adjust welding goggles".
@@ -572,10 +578,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/glasses/sunglasses/sechud/aviator, TY
 	enables_planes = list(VIS_FULLBRIGHT, VIS_CLOAKED)
 	flash_protection = FLASH_PROTECTION_REDUCED
 
-DAMAGE_REACTION(/obj/item/clothing/glasses/thermal, DAMAGE_EMP, PROC_REF(thermal_emp_overload))
+CAPABILITIES(/obj/item/clothing/glasses/thermal)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(thermal_emp_overload)))
 
 /// A pulse overloads the scanner and blinds whoever wears it.
-/obj/item/clothing/glasses/thermal/proc/thermal_emp_overload(datum/damage_packet/packet)
+/obj/item/clothing/glasses/thermal/proc/thermal_emp_overload(datum/act/A)
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/M = src.loc
 		to_chat(M, span_red("The Optical Thermal Scanner overloads and blinds you!"))
@@ -638,13 +645,18 @@ DAMAGE_REACTION(/obj/item/clothing/glasses/thermal, DAMAGE_EMP, PROC_REF(thermal
 
 TYPE_TABLE(/obj/item/clothing/glasses/aerogelgoggles, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
-	INTERACT_USE("Flip", PROC_REF(aerogel_goggles_flip_self)), \
-	INTERACT_VERB("Adjust Orange Goggles", PROC_REF(aerogelgoggles_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/aerogelgoggles)
+	op("aerogel_goggles_flip_self", in_hand(), label("Flip"), then(PROC_REF(aerogel_goggles_flip_self)))
+	op("aerogelgoggles_toggle_verb", menu(), label("Adjust Orange Goggles"), needs(carried()), then(PROC_REF(aerogelgoggles_toggle_verb_op)))
+
+/// The aerogelgoggles_toggle_verb op: the verb's effect, as the old resolver ran it.
+/obj/item/clothing/glasses/aerogelgoggles/proc/aerogelgoggles_toggle_verb_op(datum/act/op/A)
+	aerogelgoggles_toggle_verb(A.actor, A.held, null)
+	return OP_OK
 
 /// Old attack_self.
-/obj/item/clothing/glasses/aerogelgoggles/proc/aerogel_goggles_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/aerogelgoggles/proc/aerogel_goggles_flip_self(datum/act/op/A)
+	var/mob/user = A.actor
 	aerogelgoggles_toggle_verb(user)
 
 /// Old verb "Adjust Orange Goggles".
@@ -664,7 +676,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
 			to_chat(user, "You push \the [src] up from in front of your eyes.")
 		update_clothing_icon()
 		user.update_mob_action_buttons()
-
 
 /obj/item/clothing/glasses/proc/prescribe(mob/user)
 	prescription = !prescription
@@ -779,23 +790,22 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
 		"Scanning pattern 4" = image(icon = src.icon, icon_state = "tacsecvis4"),
 		)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis, INTERACT_USE("Scanning pattern", PROC_REF(tactical_sec_vis_pattern_self)))
+CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis)
+	op("tactical_sec_vis_pattern_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Scanning pattern"), asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(tactical_sec_vis_choices)), "radius" = 36, "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "pattern"), then(PROC_REF(tactical_sec_vis_pattern_self)))
 
-/// Old attack_self: pick a scanning pattern, after the glasses toggle (the old ..()).
-/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/tactical_sec_vis_pattern_self(mob/user, obj/item/held, datum/interaction/interaction)
-	glasses_toggle_self(user, held, interaction)
+/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/tactical_sec_vis_choices(datum/act/op/A)
+	return tac_sec_vis_anim
+
+/// Old attack_self: the glasses toggle (the old ..()), then the chosen scanning pattern.
+/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/tactical_sec_vis_pattern_self(datum/act/op/A)
+	var/mob/user = A.actor
+	glasses_toggle_self(A)
 	if(!istype(user) || user.incapacitated())
 		return
 
-	open_request(src, /datum/prompt/choice, PROC_REF(tactical_sec_vis_pattern_chosen), answerer = user, choices = tac_sec_vis_anim, anchor = src, radius = 36, require_near = TRUE, radial = TRUE, autopick_single_option = TRUE, timeout = 0)
-
-/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/tactical_sec_vis_pattern_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/choice = A.answer.value
+	var/choice = A.step_value("pattern")
 	var/static/list/options = list("Scanning pattern 1" = "tacsecvis1", "Scanning pattern 2" = "tacsecvis2", "Scanning pattern 3" = "tacsecvis3","Scanning pattern 4" ="tacsecvis4")
-	if(istype(user) && choice && options[choice] && !user.incapacitated() && in_range(user, src))
+	if(choice && options[choice] && !user.incapacitated() && in_range(user, src))
 		icon_state = options[choice]
 		user.update_inv_glasses()
 		user.update_mob_action_buttons()
@@ -843,14 +853,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vi
 	off_state = "tajblind"
 	body_parts_covered = EYES
 
-
 /obj/item/clothing/glasses/omnihud/visor/tesh
 	name = "AR V-visor"
 	desc = "A modified VZR-AR visor refitted for Teshari."
 	icon_state = "AR_visor_tesh"
 	item_state = "AR_visor_tesh"
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/eyes/mob_teshari.dmi')
-
 
 /obj/item/clothing/glasses/darksight
 	name = "voidviewer goggles"

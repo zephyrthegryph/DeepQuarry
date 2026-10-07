@@ -250,6 +250,17 @@
 	var/datum/relation_definition/slot/def = L.def_by_id(id)
 	return (L.used[id] || 0) + (def ? def.latent_used(src) : 0)
 
+/// How many things are in `slot_id` (null: the default slot) right now. The occupancy count a requirement may read: the ledger writes it (move_into()
+/// and every release land in note_enter/note_exit) and publishes SLOT_OCCUPANCY_KEY, which this accessor stands for (READS_AS below).
+/atom/proc/slot_occupancy(slot_id)
+	var/datum/ledger/L = dq_ledger(src)
+	if(!L)
+		return 0
+	var/list/things = L.slots[slot_id || L.default_id]
+	return length(things)
+
+READS_AS(/atom/proc/slot_occupancy, SLOT_OCCUPANCY_KEY)
+
 /// The limit of `slot_id` on this holder, or null when it has none.
 /atom/proc/slot_capacity(slot_id)
 	var/datum/ledger/L = dq_ledger(src)

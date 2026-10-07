@@ -125,18 +125,17 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood, TYPE_PROC_REF(/atom, 
 	color = adjust_brightness(color, -50)
 	amount = 0
 
-EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/blood, \
-	INTERACT_HAND(null, PROC_REF(interaction_touch_blood)), \
-)
+CAPABILITIES(/obj/effect/decal/cleanable/blood)
+	op("touch_blood", hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_touch_blood)))
 
 /// Old attack_hand: bare hands pick up some of the blood (and any touch-spread disease).
-/obj/effect/decal/cleanable/blood/proc/interaction_touch_blood(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/effect/decal/cleanable/blood/proc/interaction_touch_blood(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
 	if (amount && istype(user))
 		add_fingerprint(user)
 
 		if (user.get_equipped_item(SLOT_ID_GLOVES))
-			return
+			return OP_OK
 		var/taken = rand(1,amount)
 		amount -= taken
 		to_chat(user, span_notice("You get some of \the [src] on your hands."))
@@ -150,6 +149,7 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/blood, \
 		for(var/datum/affliction/contagion/D in viruses)
 			if(D.IsSpreadByTouch())
 				user.expose_contagion(D, BP_R_HAND)
+	return OP_OK
 
 /obj/effect/decal/cleanable/blood/splatter
 		random_icon_states = list("mgibbl1", "mgibbl2", "mgibbl3", "mgibbl4", "mgibbl5")
@@ -282,22 +282,22 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs, TYPE_PROC_REF(/a
 				continue
 			perp.expose_contagion(D, BP_R_FOOT)
 
-EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/mucus, \
-	INTERACT_HAND(null, PROC_REF(interaction_touch_contagion)), \
-)
+CAPABILITIES(/obj/effect/decal/cleanable/mucus)
+	op("touch_mucus", hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_touch_contagion)))
 
 /// Old mucus/vomit attack_hand: touching it can pass on its contagious diseases.
-/obj/effect/decal/cleanable/proc/interaction_touch_contagion(mob/living/carbon/human/perp, obj/item/held, datum/interaction/interaction)
+/obj/effect/decal/cleanable/proc/interaction_touch_contagion(datum/act/op/A)
+	var/mob/living/carbon/human/perp = A.actor
 	if(perp.is_incorporeal())
-		return TRUE
+		return OP_OK
 	if(!istype(perp))
-		return TRUE
+		return OP_OK
 	if(viruses)
 		for(var/datum/affliction/contagion/D in viruses)
 			if(D.spread_flags & (DISEASE_SPREAD_SPECIAL | DISEASE_SPREAD_NON_CONTAGIOUS))
 				continue
 			perp.expose_contagion(D, BP_R_HAND)
-	return TRUE
+	return OP_OK
 
 /obj/effect/decal/cleanable/vomit/Crossed(mob/living/carbon/human/perp)
 	if(perp.is_incorporeal())
@@ -310,9 +310,8 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/mucus, \
 				continue
 			perp.expose_contagion(D, BP_R_FOOT)
 
-EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/vomit, \
-	INTERACT_HAND(null, PROC_REF(interaction_touch_contagion)), \
-)
+CAPABILITIES(/obj/effect/decal/cleanable/vomit)
+	op("touch_vomit", hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_touch_contagion)))
 
 /obj/effect/decal/cleanable/mucus/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run)
 	. = ..()

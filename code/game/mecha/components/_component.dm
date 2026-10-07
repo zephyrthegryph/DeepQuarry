@@ -55,9 +55,10 @@
 
 // Damage code.
 
-DAMAGE_REACTION(/obj/item/mecha_parts/component, DAMAGE_EMP, PROC_REF(component_emp))
 /// An EMP wears the component down, less so the more resistant it is.
-/obj/item/mecha_parts/component/proc/component_emp(datum/damage_packet/packet)
+/obj/item/mecha_parts/component/proc/component_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	var/severity = packet.severity || EMP_HARMLESS
 	if(severity + emp_resistance >= EMP_NONE)
 		return
@@ -169,22 +170,26 @@ DAMAGE_REACTION(/obj/item/mecha_parts/component, DAMAGE_EMP, PROC_REF(component_
 	else
 		paste_repair_step(user, NP, site)
 
-DECLARE_INTERACTIONS(/obj/item/mecha_parts/component, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/mecha_parts/component)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(component_emp)))
 
 /// Old attackby.
-/obj/item/mecha_parts/component/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/mecha_parts/component/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/stack/nanopaste))
 		var/obj/item/stack/nanopaste/NP = W
 
 		if(get_integrity() < max_integrity)
 			to_chat(user, span_notice("You start to repair damage to \the [src]."))
 			paste_repair_step(user, NP, src)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		else
 			to_chat(user, span_notice("\The [src] doesn't require repairs."))
 
-	return FALSE
+	return OP_DECLINE
 
 // Various procs to handle different calls by Exosuits. IE, movement actions, damage actions, etc.
 

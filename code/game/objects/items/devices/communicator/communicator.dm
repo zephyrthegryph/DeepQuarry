@@ -97,11 +97,9 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 /// accessors and the framework's auto-clears (a partner or voice destroyed) re-evaluate the watchdog.
 OM_FIELD_VIEW_OF(/obj/item/communicator, communicating, CHANGE_EXPLICIT)
 OM_FIELD_VIEW_OF(/obj/item/communicator, voice_mobs, CHANGE_EXPLICIT)
-/// The connection watchdog runs while a connection is open.
-OM_DERIVE_FIELD(/obj/item/communicator, has_connections, list("communicating", "voice_mobs"))
-/obj/item/communicator/proc/has_connections()
+/// The connection watchdog runs while a connection is open (its every() gate, polled: the lists are relations).
+/obj/item/communicator/proc/has_connections(datum/act/A)
 	return length(voice_mobs) || length(communicating)
-DECLARE_PERIODIC_WHILE(/obj/item/communicator, PERIODIC_SLOW, "has_connections")
 //This is a pretty terrible way of doing this.
 
 // ITION START: Ayo communicator are better than PDAs /obj/item/communicator
@@ -279,7 +277,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/communicator, PERIODIC_SLOW, "has_connections")
 // Proc: process()
 // Parameters: None
 // Description: Ticks the update_ticks variable, and checks to see if it needs to disconnect communicators every five ticks..
-/obj/item/communicator/periodic_step()
+/obj/item/communicator/proc/communicator_step(datum/act/timer/A)
 	// The watchdog only guards open connections (declared on has_connections).
 	update_ticks++
 	// Connection maintenance is the five-tick watchdog, not four of every five

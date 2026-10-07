@@ -1,0 +1,11 @@
+blob | survives
+emag | can_remove_ammo: 0 -> 1
+emag | emagged: 0 -> 1
+emp 1 | refresh_queued: 131071 -> 0
+emp 2 | nothing
+explosion 1 | deleted
+explosion 2 | atom_integrity: down
+explosion 3 | atom_integrity: down
+projectile | atom_integrity: down
+thrown | atom_integrity: down
+

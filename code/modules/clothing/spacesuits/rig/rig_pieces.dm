@@ -82,13 +82,13 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig, fit_spec, list(REQ_FITS_BODYTYPES(
 
 TYPE_TABLE(/obj/item/clothing/suit/space/rig, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS,/obj/item/storage))))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(rig_suit_draw_knife_hand)), \
-	INTERACT_ITEM(null, PROC_REF(rig_suit_sheathe_knife_item)), \
-)
+CAPABILITIES(/obj/item/clothing/suit/space/rig)
+	op("rig_suit_draw_knife_hand", hand(), ungated(), label("Rig suit draw knife hand"), then(PROC_REF(rig_suit_draw_knife_hand)))
+	op("rig_suit_sheathe_knife_item", item(/obj/item), label("Rig suit sheathe knife item"), then(PROC_REF(rig_suit_sheathe_knife_item)))
 
 /// Old attack_hand: slide the tactical knife out.
-/obj/item/clothing/suit/space/rig/proc/rig_suit_draw_knife_hand(mob/living/M, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/space/rig/proc/rig_suit_draw_knife_hand(datum/act/op/A)
+	var/mob/living/M = A.actor
 	if(tacknife())
 		tacknife().forceMove(get_turf(src))
 		if(M.put_in_active_hand(tacknife()))
@@ -97,20 +97,22 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
 			rel_clear(src, nameof(tacknife))
 			update_icon()
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /// Old attackby: slide a tactical knife in. Always fell through to ..() afterwards.
-/obj/item/clothing/suit/space/rig/proc/rig_suit_sheathe_knife_item(mob/living/M, obj/item/I, datum/interaction/interaction)
+/obj/item/clothing/suit/space/rig/proc/rig_suit_sheathe_knife_item(datum/act/op/A)
+	var/mob/living/M = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/material/knife/tacknife))
 		if(tacknife())
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		M.drop_item()
 		rel_set(src, nameof(tacknife), I)
 		I.forceMove(src)
 		to_chat(M, span_notice("You slide the [I] into [src]."))
 		play_sfx(src, SFX_WEAPONS_FLIPBLADE, 0.8)
 		update_icon()
-	return FALSE
+	return OP_DECLINE
 
 //TODO: move this to modules
 /obj/item/clothing/head/helmet/space/rig/proc/prevent_track()

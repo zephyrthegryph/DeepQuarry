@@ -214,9 +214,20 @@
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
 /obj/item/gun/projectile/automatic/serdy/hunter/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(serdy_hunter_verb_scope))
+	perform_scope_interaction(user, "serdy_hunter_verb_scope")
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hunter, INTERACT_VERB("Use Scope", PROC_REF(serdy_hunter_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hunter)
+	op("serdy_hunter_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_hunter_verb_scope_op)))
+
+/// The serdy_hunter_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/automatic/serdy/hunter/proc/serdy_hunter_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	serdy_hunter_verb_scope(A.actor, A.held, null)
+	return OP_OK
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/automatic/serdy/hunter/proc/serdy_hunter_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
@@ -458,9 +469,20 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hunter, INTERACT_VE
 	one_handed_penalty = 70
 
 /obj/item/gun/projectile/automatic/serdy/mosin/scoped/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(serdy_mosin_verb_scope))
+	perform_scope_interaction(user, "serdy_mosin_verb_scope")
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/mosin/scoped, INTERACT_VERB("Use Scope", PROC_REF(serdy_mosin_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/mosin/scoped)
+	op("serdy_mosin_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_mosin_verb_scope_op)))
+
+/// The serdy_mosin_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/serdy_mosin_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	serdy_mosin_verb_scope(A.actor, A.held, null)
+	return OP_OK
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/serdy_mosin_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
@@ -524,9 +546,20 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/mosin/scoped, INTER
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
 /obj/item/gun/projectile/automatic/serdy/awp/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(serdy_awp_verb_scope))
+	perform_scope_interaction(user, "serdy_awp_verb_scope")
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/awp, INTERACT_VERB("Use Scope", PROC_REF(serdy_awp_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/awp)
+	op("serdy_awp_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_awp_verb_scope_op)))
+
+/// The serdy_awp_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/automatic/serdy/awp/proc/serdy_awp_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	serdy_awp_verb_scope(A.actor, A.held, null)
+	return OP_OK
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/automatic/serdy/awp/proc/serdy_awp_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
@@ -560,9 +593,20 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/awp, INTERACT_VERB(
 
 
 /obj/item/gun/projectile/automatic/serdy/hectate/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(serdy_hectate_verb_scope))
+	perform_scope_interaction(user, "serdy_hectate_verb_scope")
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_VERB("Use Scope", PROC_REF(serdy_hectate_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+CAPABILITIES(/obj/item/gun/projectile/automatic/serdy/hectate)
+	op("serdy_hectate_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(serdy_hectate_verb_scope_op)))
+
+/// The serdy_hectate_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/automatic/serdy/hectate/proc/serdy_hectate_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	serdy_hectate_verb_scope(A.actor, A.held, null)
+	return OP_OK
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/automatic/serdy/hectate/proc/serdy_hectate_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
@@ -1452,9 +1496,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, TYPE_PROC_REF(/at
 		P.submunition_spread_max = 100 //More spread when sawn off
 
 /// Old attackby (this file's; its ..() is shotgun.dm's definition, included earlier).
-/obj/item/gun/projectile/shotgun/doublebarrel/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
-	if(istype(A, /obj/item/surgical/circular_saw) || istype(A, /obj/item/melee/energy) || istype(A, /obj/item/pickaxe/plasmacutter))
-		. = INTERACTION_HANDLED_PASS
+/obj/item/gun/projectile/shotgun/doublebarrel/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
+	if(istype(held, /obj/item/surgical/circular_saw) || istype(held, /obj/item/melee/energy) || istype(held, /obj/item/pickaxe/plasmacutter))
+		. = OP_PASS
 		if(sawn_off) //Don't do anything if we were already sawed off.
 			return
 		to_chat(user, span_notice("You begin to shorten the barrel of \the [src]."))

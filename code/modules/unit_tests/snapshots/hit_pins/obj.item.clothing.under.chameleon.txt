@@ -1,0 +1,15 @@
+blob | survives
+emag | nothing
+emp 1 | desc: 'It's a plain jumpsuit. It seems to have a small dial on the wrist.' -> 'Groovy!'
+emp 1 | icon_state: 'black' -> 'psyche'
+emp 1 | name: 'black jumpsuit' -> 'psychedelic'
+emp 1 | refresh_queued: 131071 -> 0
+emp 2 | desc: 'It's a plain jumpsuit. It seems to have a small dial on the wrist.' -> 'Groovy!'
+emp 2 | icon_state: 'black' -> 'psyche'
+emp 2 | name: 'black jumpsuit' -> 'psychedelic'
+explosion 1 | deleted
+explosion 2 | atom_integrity: down
+explosion 3 | atom_integrity: down
+projectile | atom_integrity: down
+thrown | atom_integrity: down
+

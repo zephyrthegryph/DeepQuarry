@@ -193,6 +193,11 @@ SYSTEM_DEF(requests)
 		if(name == "outcome")
 			CRASH("open_request(): outcome is the engine's to set")
 		R.vars[name] = value // ALLOW(api): open_request() named arguments: typed request fields by name
+	// A question an op asks is about the op's holder unless its fields name another subject (the rechecks of ASK_ADJACENT and ASK_NEAR_SUBJECT read it).
+	if(isnull(R.subject) && istype(owner, /datum/pending_op) && istype(context, /datum/act/op))
+		var/datum/act/op/asking = context
+		if(isatom(asking.holder))
+			R.subject = asking.holder // ALLOW(ownership): a transient reference: the request is deleted when it ends
 	R.owner = owner // ALLOW(ownership): a transient reference: the request is deleted when it ends, and the act is pooled and reset on release
 	R.handler = handler
 	R.valid = valid

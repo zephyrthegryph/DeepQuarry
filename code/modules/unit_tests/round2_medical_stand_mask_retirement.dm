@@ -13,7 +13,7 @@
 	TEST_ASSERT_NULL(patient.get_equipped_item(SLOT_ID_MASK), "Real patient begins without the supplied mask")
 	rel_set(stand, nameof(stand.breather), patient)
 	TEST_ASSERT_EQUAL(stand.breather(), patient, "Actual breather relation records the patient")
-	stand.periodic_step()
+	test_op_handler(stand, "medical_stand_step", null) // the stand's every() step
 	TEST_ASSERT(QDELETED(original), "Actual periodic invalid-patient branch retires the original owned mask")
 	var/obj/item/clothing/mask/breath/replacement = stand.contained
 	TEST_ASSERT(istype(replacement) && replacement != original && !QDELETED(replacement), "Actual replacement is a distinct live medical mask")

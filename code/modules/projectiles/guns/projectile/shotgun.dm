@@ -39,10 +39,11 @@
 	return null
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/shotgun/pump/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/shotgun/pump/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(COOLDOWN_FINISHED(src, pump_cooldown))
 		pump(user)
 		COOLDOWN_START(src, pump_cooldown, 1 SECOND)
@@ -144,9 +145,11 @@
 	..(user, allow_dump=1)
 //this is largely hacky and bad :(	-Pete //less hacky and bad now :) -Ghost
 /// Old attackby.
-/obj/item/gun/projectile/shotgun/doublebarrel/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
-	if(istype(A, /obj/item/surgical/circular_saw) || istype(A, /obj/item/melee/energy) || istype(A, /obj/item/pickaxe/plasmacutter))
-		. = INTERACTION_HANDLED_PASS
+/obj/item/gun/projectile/shotgun/doublebarrel/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
+	if(istype(held, /obj/item/surgical/circular_saw) || istype(held, /obj/item/melee/energy) || istype(held, /obj/item/pickaxe/plasmacutter))
+		. = OP_PASS
 		if(sawn_off)
 			to_chat(user, span_warning("The [src] is already shortened!"))
 			return

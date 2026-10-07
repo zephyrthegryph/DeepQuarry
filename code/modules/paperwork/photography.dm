@@ -42,32 +42,32 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	. = ..()
 	id = GLOB.photo_count++
 
-DECLARE_INTERACTIONS(/obj/item/photo, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_VERB("Rename photo", PROC_REF(photo_verb_rename), REQ_IN_INVENTORY), \
-)
-
 /// Old attack_self.
-/obj/item/photo/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/photo/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	user.examinate(src)
-	return TRUE
+	return OP_OK
 
 /// Old attackby.
-/obj/item/photo/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
-	return paperwork_caption_stage(user, P, interaction)
+/obj/item/photo/proc/interaction_item(datum/act/op/A)
+	return paperwork_caption_stage(A.actor, A.held, null)
+
+/// The Rename photo menu entry.
+/obj/item/photo/proc/photo_rename_op(datum/act/op/A)
+	photo_verb_rename(A.actor)
+	return OP_OK
 
 /obj/item/photo/proc/paperwork_caption_stage(mob/user, obj/item/P, datum/interaction/interaction, paperwork_answer, paperwork_answer_ready = FALSE)
 	if(istype(P, /obj/item/pen))
 		if(!paperwork_answer_ready)
 			open_request(src, /datum/prompt/text/paperwork_review, PROC_REF(paperwork_caption_answered), answerer = user, paperwork_operator = user, paperwork_held = P, paperwork_interaction = interaction, question = "What would you like to write on the back?", title = "Photo Writing", max_len = 128)
-			return TRUE
+			return OP_OK
 		var/txt = paperwork_answer
 		if(isnull(txt))
-			return TRUE
+			return OP_OK
 		if(loc == user && user.stat == 0)
 			scribble = txt
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/photo/examine(mob/user)
 	//This is one time we're not going to call parent, because photos are 'secret' unless you're close enough.
@@ -85,6 +85,9 @@ DECLARE_INTERACTIONS(/obj/item/photo, \
 	tgui_interact(user)
 
 CAPABILITIES(/obj/item/photo)
+	op("photo_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("photo_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("photo_rename", menu(), label("Rename photo"), needs(carried()), then(PROC_REF(photo_rename_op)))
 	interface("Photo")
 	without("ui_open")
 	ui_shape(title = schema_text(), size = num(), scribble = bool(), image_html = schema_text())
@@ -211,35 +214,42 @@ CAPABILITIES(/obj/item/storage/photo_album)
 /obj/item/camera/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE
 
-DECLARE_INTERACTIONS(/obj/item/camera, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_VERB("Set Photo Focus", PROC_REF(camera_verb_focus), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/camera)
+	op("camera_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("camera_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("camera_focus", menu(), label("Set Photo Focus"), needs(carried()), then(PROC_REF(camera_focus_op)))
+
+/// The Set Photo Focus menu entry.
+/obj/item/camera/proc/camera_focus_op(datum/act/op/A)
+	camera_verb_focus(A.actor)
+	return OP_OK
 
 /// Old attack_self.
-/obj/item/camera/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/camera/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	on = !on
 	if(on)
 		src.icon_state = icon_on
 	else
 		src.icon_state = icon_off
 	to_chat(user, "You switch the camera [on ? "on" : "off"].")
-	return TRUE
+	return OP_OK
 
 /// Old attackby.
-/obj/item/camera/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/camera/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/camera_film))
 		if(pictures_left)
 			to_chat(user, span_notice("[src] still has some film in it!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/film_name = "[I]"
 		if(!consume(I, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		to_chat(user, span_notice("You insert [film_name] into [src]."))
 		pictures_left = pictures_max
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 
 /obj/item/camera/proc/get_icon(list/turfs, turf/center)

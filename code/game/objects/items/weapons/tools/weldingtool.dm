@@ -45,12 +45,9 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 OM_FIELD(/obj/item/weldingtool, welding, 0, CHANGE_EXPLICIT)
 /// If true, keeps the welder processing even while off (fuel regeneration).
 OM_FIELD(/obj/item/weldingtool, always_process, FALSE, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/item/weldingtool, burner_active, list("welding", "always_process"))
-/// Burns fuel (or regenerates it, for always_process welders) every 2 s while lit.
-DECLARE_PERIODIC_WHILE(/obj/item/weldingtool, PERIODIC_SLOW, "burner_active")
 
-/// Whether the periodic burn/regeneration runs: lit, or a welder that always processes.
-/obj/item/weldingtool/proc/burner_active()
+/// Whether the periodic burn/regeneration runs: lit, or a welder that always processes (the every() gate, polled; a subtype overrides it).
+/obj/item/weldingtool/proc/burner_active(datum/act/A)
 	return welding || always_process
 
 /obj/item/weldingtool/Initialize(mapload)
@@ -132,7 +129,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/weldingtool, PERIODIC_SLOW, "burner_active")
 
 	return OP_DECLINE
 
-/obj/item/weldingtool/periodic_step()
+/// Burns fuel (or regenerates it, for always_process welders) every 2 s while lit (every(), CAPABILITIES(/obj/item/weldingtool)).
+/obj/item/weldingtool/proc/weldingtool_step(datum/act/timer/A)
 	if(welding)
 		if(!no_passive_burn)
 			++burned_fuel_for
@@ -176,6 +174,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/weldingtool, PERIODIC_SLOW, "burner_active")
 		if (istype(location, /turf))
 			location.hotspot_expose(700, 50, 1)
 CAPABILITIES(/obj/item/weldingtool)
+	every(2 SECONDS, then(PROC_REF(weldingtool_step)), when = PROC_REF(burner_active))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	drag_onto(PROC_REF(mousedrop_input))
@@ -433,7 +432,7 @@ MATERIAL_MIX(/obj/item/weldingtool/mini, list(MAT_METAL = 30, MAT_GLASS = 10))
 	change_icons = 0
 	always_process = TRUE
 
-/obj/item/weldingtool/alien/periodic_step()
+/obj/item/weldingtool/alien/weldingtool_step(datum/act/timer/A)
 	if(get_fuel() <= get_max_fuel())
 		reagents.add_reagent(REAGENT_ID_FUEL, 1)
 	..()
@@ -451,7 +450,7 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 	always_process = TRUE
 	var/nextrefueltick = 0
 
-/obj/item/weldingtool/experimental/periodic_step()
+/obj/item/weldingtool/experimental/weldingtool_step(datum/act/timer/A)
 	..()
 	if(get_fuel() < get_max_fuel() && COOLDOWN_FINISHED(src, nextrefueltick))
 		COOLDOWN_START(src, nextrefueltick, 1 SECONDS)
@@ -497,13 +496,12 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 /// The pack this nozzle belongs to (a relation view, set once in Initialize()): a field, so its
 /// automatic clear when the pack is destroyed re-evaluates burner_active.
 OM_FIELD_VIEW(/obj/item/weldingtool/tubefed, obj/item/weldpack, mounted_pack, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/item/weldingtool/tubefed, burner_active, list("mounted_pack", CHANGE_ITEM_LOC))
 
 /// A nozzle works (and watches its hose) only while it is out of its pack.
-/obj/item/weldingtool/tubefed/burner_active()
+/obj/item/weldingtool/tubefed/burner_active(datum/act/A)
 	return mounted_pack && loc != mounted_pack
 
-/obj/item/weldingtool/tubefed/periodic_step()
+/obj/item/weldingtool/tubefed/weldingtool_step(datum/act/timer/A)
 	if(!ishuman(mounted_pack.loc))
 		mounted_pack.return_nozzle()
 	else
@@ -680,7 +678,7 @@ CAPABILITIES(/obj/item/weldingtool/electric)
 	if(istype(loc, /obj/item/mecha_parts/mecha_equipment))
 		rel_set(src, nameof(equip_mount), loc)
 
-/obj/item/weldingtool/electric/mounted/exosuit/periodic_step()
+/obj/item/weldingtool/electric/mounted/exosuit/weldingtool_step(datum/act/timer/A)
 	..()
 
 	if(equip_mount() && equip_mount().chassis)
@@ -695,10 +693,10 @@ CAPABILITIES(/obj/item/weldingtool/electric)
 	desc = "you shouldn't be reading this. Tell a dev!"
 	welding = TRUE
 
-/obj/item/weldingtool/dummy/periodic_step()
+/obj/item/weldingtool/dummy/weldingtool_step(datum/act/timer/A)
 	return
 
-/obj/item/weldingtool/dummy/burner_active()
+/obj/item/weldingtool/dummy/burner_active(datum/act/A)
 	return FALSE
 
 /obj/item/weldingtool/dummy/get_fuel()

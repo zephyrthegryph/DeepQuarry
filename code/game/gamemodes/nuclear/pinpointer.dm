@@ -22,11 +22,14 @@
 TRACKED(/obj/item/pinpointer, active)
 CAPABILITIES(/obj/item/pinpointer)
 	every(2 SECONDS, then(PROC_REF(pinpointer_step)), when = nameof(active))
+	op("toggle", in_hand(), label("Toggle"), then(PROC_REF(pinpointer_toggle_op)))
 
-DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(interaction_self)))
+/obj/item/pinpointer/proc/pinpointer_toggle_op(datum/act/op/A)
+	pinpointer_toggle(A.actor)
+	return OP_OK
 
-/// Old attack_self.
-/obj/item/pinpointer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The toggle itself; the nuke op and shuttle pinpointers override it and run this body first.
+/obj/item/pinpointer/proc/pinpointer_toggle(mob/user)
 	if(nuclear || shuttle)
 		return
 	if(!active)
@@ -210,12 +213,9 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	var/mode = 0	//Mode 0 locates disk, mode 1 locates the shuttle
 	var/obj/machinery/computer/shuttle_control/multi/syndicate/home
 
-// ALLOW(interactions): its Toggle replaces the base pinpointer's (it runs the parent's body itself)
-DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_REF(nukeop_interaction_self)))
-
-/// Old attack_self. The old override ran the parent's body first (its ..()), so this does too.
-/obj/item/pinpointer/nukeop/proc/nukeop_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_self(user, held, interaction)
+/// The old override ran the parent's body first (its ..()), so this does too.
+/obj/item/pinpointer/nukeop/pinpointer_toggle(mob/user)
+	..()
 	if(!active)
 		set_active(TRUE)
 		if(!mode)
@@ -295,12 +295,9 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 	var/shuttle_comp_id = null
 	var/obj/machinery/computer/shuttle_control/our_shuttle
 
-// ALLOW(interactions): its Toggle replaces the base pinpointer's (it runs the parent's body itself)
-DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_REF(shuttle_interaction_self)))
-
-/// Old attack_self. The old override ran the parent's body first (its ..()), so this does too.
-/obj/item/pinpointer/shuttle/proc/shuttle_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_self(user, held, interaction)
+/// The old override ran the parent's body first (its ..()), so this does too.
+/obj/item/pinpointer/shuttle/pinpointer_toggle(mob/user)
+	..()
 	if(!active)
 		set_active(TRUE)
 		to_chat(user, span_notice("Shuttle Locator active."))

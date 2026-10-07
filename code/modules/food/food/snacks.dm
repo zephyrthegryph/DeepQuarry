@@ -334,7 +334,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 	if(reagents)
 		reagents.trans_to_mob(user, bitesize, CHEM_INGEST)
 	// On_Consume() deletes the food once it is empty: the emote fires for a finished meal.
-	after(user, 0.5 SECONDS, GLOBAL_PROC_REF(food_finished_emote), with = list(user, !reagents?.total_volume))
+	after(user, 0.5 SECONDS, GLOBAL_PROC_REF(food_finished_emote), with = list(user, !reagents?.total_volume), keeps_dead = TRUE)
 	On_Consume(user)
 
 //////////////////////////////////////////////////

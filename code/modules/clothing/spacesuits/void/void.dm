@@ -57,8 +57,16 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void, fit_spec, list(REQ_FITS_BODYTYPES
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS))))
 // A path in boots/hood/tank is created in the suit; null deploys nothing.
+MSG_DEF_SELF(void/worn, "You cannot modify that while it is being worn.")
+MSG_DEF_SELF(void/nothing_to_eject, "There is no tank or cooling unit inserted.")
+MSG_DEF_SELF(void/no_helmet, "There is no helmet installed.")
+
 CAPABILITIES(/obj/item/clothing/suit/space/void)
 	owns_one(nameof(hood), /obj/item/clothing/head, starts = nameof(hood))
+	op("voidsuit_eject_tank_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Eject tank"), needs(any_of(req_is(nameof(tank), TRUE, because = MSG(void/nothing_to_eject)), req_is(nameof(cooler), TRUE, because = MSG(void/nothing_to_eject)))), then(PROC_REF(voidsuit_eject_tank_alt)))
+	op("voidsuit_install_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Voidsuit install item"), when(req(PROC_REF(install_item_applies))), needs(req_not_worn(SLOT_ID_SUIT, because = MSG(void/worn))), then(PROC_REF(voidsuit_install_item)))
+	op("void_toggle_helmet_verb", menu(), label("Toggle Helmet"), needs(carried(), req_is(nameof(hood), TRUE, because = MSG(void/no_helmet))), then(PROC_REF(void_toggle_helmet_verb)))
+	op("void_eject_tank_verb", menu(), label("Eject Voidsuit Tank/Cooler"), needs(carried(), any_of(req_is(nameof(tank), TRUE, because = MSG(void/nothing_to_eject)), req_is(nameof(cooler), TRUE, because = MSG(void/nothing_to_eject)))), then(PROC_REF(void_eject_tank_verb)))
 
 /obj/item/clothing/suit/space/void/examine(mob/user)
 	. = ..()
@@ -155,10 +163,13 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 	if(why != TRUE)
 		to_chat(user, span_warning("[why]."))
 		return
-	void_toggle_helmet_verb(user)
+	toggle_helmet_for(user)
 
 /// Old verb "Toggle Helmet".
-/obj/item/clothing/suit/space/void/proc/void_toggle_helmet_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/space/void/proc/void_toggle_helmet_verb(datum/act/op/A)
+	return toggle_helmet_for(A.actor)
+
+/obj/item/clothing/suit/space/void/proc/toggle_helmet_for(mob/user)
 	if(!isliving(loc))
 		return
 
@@ -187,22 +198,9 @@ CAPABILITIES(/obj/item/clothing/suit/space/void)
 			to_chat(H, span_info("You deploy your suit helmet, sealing you off from the world."))
 			play_sfx(src.loc, SFX_MACHINES_CLICK2)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
-	INTERACT_ALT("Eject tank", PROC_REF(voidsuit_eject_tank_alt), REQ_TARGET_STATE(/obj/item/clothing/suit/space/void/proc/can_eject_tank)), \
-	INTERACT_ITEM(null, PROC_REF(voidsuit_install_item), REQ_TARGET_STATE(/obj/item/clothing/suit/space/void/proc/can_modify_unworn)), \
-	INTERACT_VERB("Toggle Helmet", PROC_REF(void_toggle_helmet_verb), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/clothing/suit/space/void/proc/can_toggle_helmet)), \
-	INTERACT_VERB("Eject Voidsuit Tank/Cooler", PROC_REF(void_eject_tank_verb), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/clothing/suit/space/void/proc/can_eject_tank)), \
-)
-
-/// Requirement: the suit isn't being worn while modified. Accessories and labelers (and non-living users) pass: the effect lets them through.
-/obj/item/clothing/suit/space/void/proc/can_modify_unworn(mob/user, atom/target, obj/item/held)
-	if(!isliving(user))
-		return TRUE
-	if(istype(held, /obj/item/clothing/accessory) || istype(held, /obj/item/hand_labeler))
-		return TRUE
-	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
-		return "you cannot modify \the [src] while it is being worn"
-	return TRUE
+/// The install op is for anything but an accessory or a labeler: those go on to the clothing's own attach-an-accessory op.
+/obj/item/clothing/suit/space/void/proc/install_item_applies(datum/act/op/A)
+	return !istype(A.held, /obj/item/clothing/accessory) && !istype(A.held, /obj/item/hand_labeler)
 
 /// Requirement: TRUE, or why the helmet can't be toggled (a suit nobody wears is ignored silently by the effect).
 /obj/item/clothing/suit/space/void/proc/can_toggle_helmet(mob/user, atom/target, obj/item/held)
@@ -221,12 +219,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 	return TRUE
 
 /// Old click_alt. It never reached the clothing alt-click.
-/obj/item/clothing/suit/space/void/proc/voidsuit_eject_tank_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
-	void_eject_tank_verb(user)
-	return TRUE
+/obj/item/clothing/suit/space/void/proc/voidsuit_eject_tank_alt(datum/act/op/A)
+	eject_tank_for(A.actor)
+	return OP_OK
 
 /// Old verb "Eject Voidsuit Tank/Cooler".
-/obj/item/clothing/suit/space/void/proc/void_eject_tank_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/space/void/proc/void_eject_tank_verb(datum/act/op/A)
+	return eject_tank_for(A.actor)
+
+/obj/item/clothing/suit/space/void/proc/eject_tank_for(mob/user)
 	if(!isliving(src.loc)) return
 
 	var/mob/living/carbon/human/H = user
@@ -248,12 +249,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 	H.drop_from_inventory(removing)
 
 /// Old attackby: install a helmet, magboots, tank or cooler.
-/obj/item/clothing/suit/space/void/proc/voidsuit_install_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/clothing/suit/space/void/proc/voidsuit_install_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 
-	if(!isliving(user)) return INTERACTION_HANDLED_PASS
-
-	if(istype(W,/obj/item/clothing/accessory) || istype(W, /obj/item/hand_labeler))
-		return FALSE
+	if(!isliving(user)) return OP_PASS
 
 	if(istype(W,/obj/item/clothing/head/helmet/space))
 		if(hood)
@@ -262,14 +262,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 			to_chat(user, "You attach \the [W] to \the [src]'s helmet mount.")
 			user.drop_item()
 			attach_helmet(W)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	else if(istype(W,/obj/item/clothing/shoes/magboots))
 		if(boots)
 			to_chat(user, "\The [src] already has magboots installed.")
 		else
 			to_chat(user, "You attach \the [W] to \the [src]'s boot mounts.")
 			move_into(src, nameof(src.boots), W, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	else if(istype(W,/obj/item/tank))
 		if(tank)
 			to_chat(user, "\The [src] already has an airtank installed.")
@@ -278,7 +278,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 		else
 			to_chat(user, "You insert \the [W] into \the [src]'s storage compartment.")
 			move_into(src, nameof(src.tank), W, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	else if(istype(W,/obj/item/suit_cooling_unit))
 		if(cooler)
 			to_chat(user, "\The [src] already has a suit cooling unit installed.")
@@ -287,9 +287,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 		else
 			to_chat(user, "You insert \the [W] into \the [src]'s storage compartment.")
 			move_into(src, nameof(src.cooler), W, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
 
 //
@@ -377,19 +377,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 	hood = /obj/item/clothing/head/helmet/space/void/autolok // autoinstall the helmet
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/autolok, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX))))
-
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(null, PROC_REF(autolok_worn_item), REQ_TARGET_STATE(/obj/item/clothing/suit/space/void/proc/can_modify_unworn)))
-
-/// Old attackby: no modifying it while worn.
-/obj/item/clothing/suit/space/void/autolok/proc/autolok_worn_item(mob/user, obj/item/W, datum/interaction/interaction)
-
-	if(!isliving(user))
-		return INTERACTION_HANDLED_PASS
-
-	if(istype(W, /obj/item/clothing/accessory) || istype(W, /obj/item/hand_labeler))
-		return FALSE
-
-	return FALSE
 
 /obj/item/clothing/suit/space/void/screwdriver_act(mob/user, obj/item/tool, obj/item/answered_component = null)
 	if(!isliving(user))

@@ -58,16 +58,6 @@
 	category = INTERACTION_CAT_CONFIGURE
 	requires = list(REQ_INTERACTION_REACH, REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now"))
 
-// ---- Shared interactions ----
-
-/// Old attackby: `if(default_part_replacement(user, W)) return`. Shows the parts, and swaps in better ones.
-/datum/interaction/machine_item/part_replacement
-	id = "machine_part_replacement"
-	name = "Replace parts"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/storage/part_replacer
-	effect = /obj/machinery/proc/interaction_part_replacement
-
 // ---- Requirement clauses ----
 
 /**

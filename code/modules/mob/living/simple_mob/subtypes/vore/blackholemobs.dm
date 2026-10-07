@@ -76,7 +76,7 @@
 
 	do_windup_animation(A, leap_warmup)
 
-	after(src, leap_warmup, PROC_REF(doLeap), with = list(L))
+	after(src, leap_warmup, PROC_REF(doLeap), with = list(L), keeps_dead = TRUE)
 	return TRUE
 
 /mob/living/simple_mob/vore/otie/syndicate/blackhole/proc/doLeap(mob/living/L)

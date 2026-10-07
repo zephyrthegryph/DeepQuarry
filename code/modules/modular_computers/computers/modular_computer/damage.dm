@@ -52,18 +52,19 @@
 
 // Stronger explosions cause serious damage to internal components
 // Minor explosions are mostly mitigitated by casing.
-DAMAGE_REACTION(/obj/item/modular_computer, DAMAGE_EXPLOSION, PROC_REF(computer_blast_damage))
 
 /// A blast damages the casing and components by its severity (instead of the blast packet).
-/obj/item/modular_computer/proc/computer_blast_damage(datum/damage_packet/packet)
+/obj/item/modular_computer/proc/computer_blast_damage(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	damage_computer(rand(100,200) / packet.severity, 30 / packet.severity, TRUE)
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 // EMPs are similar to explosions, but don't cause physical damage to the casing. Instead they screw up the components
-DAMAGE_REACTION(/obj/item/modular_computer, DAMAGE_EMP, PROC_REF(computer_emp_damage))
 
 /// A pulse damages the computer and its hardware.
-/obj/item/modular_computer/proc/computer_emp_damage(datum/damage_packet/packet)
+/obj/item/modular_computer/proc/computer_emp_damage(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	damage_computer(rand(100,200) / packet.severity, 50 / packet.severity, FALSE)
 
 // "Stun" weapons can cause minor damage to components (short-circuits?)

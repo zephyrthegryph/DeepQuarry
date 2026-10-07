@@ -97,7 +97,9 @@ CAPABILITIES(/atom/movable/screen/item_action)
 	return 1
 
 // Screen grabs are clicked through Click() above; touches and items do nothing.
-DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing", TYPE_PROC_REF(/atom, interaction_swallow)), 	INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_swallow)), )
+CAPABILITIES(/atom/movable/screen/grab)
+	op("swallow", hand(), ungated(), label("Nothing"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("swallow_2", item(/obj/item), label("Nothing"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
 /atom/movable/screen/storage
 	name = "storage"
@@ -1082,7 +1084,7 @@ CAPABILITIES(/atom/movable/screen/mapper/mapbutton)
 			F.icon_state = "frame"
 			user.client.screen += F
 			flick("[hud_state_empty]_flash", F)
-			after(src, 2 SECONDS, PROC_REF(end_empty_flash), with = list(user, F, empty))
+			after(src, 2 SECONDS, PROC_REF(end_empty_flash), with = list(user, F, empty), keeps_dead = TRUE)
 	else
 		warned = FALSE
 		overlays += image('icons/mob/screen_ammo.dmi', src, "[hud_state]")

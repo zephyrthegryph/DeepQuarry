@@ -51,37 +51,23 @@
 	teleport_cooldown = initial(teleport_cooldown)
 	teleport_cooldown = max(50, (teleport_cooldown - (E * 100)))
 
-/obj/machinery/power/quantumpad/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_OBSERVER("Travel", PROC_REF(quantumpad_ghost_travel)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/quantumpad_boost,
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_hand/quantumpad_use,
-	)
-	..()
 
-/// Old attackby: install a particle booster.
-/datum/interaction/machine_item/quantumpad_boost
-	id = "quantumpad_boost"
-	name = "Install booster"
-	category = INTERACTION_CAT_INSERT
-	held_type = /obj/item/quantum_pad_booster
-	effect = /obj/machinery/power/quantumpad/proc/interaction_boost
-
-/obj/machinery/power/quantumpad/proc/interaction_boost(mob/user, obj/item/quantum_pad_booster/booster, datum/interaction/interaction)
+/obj/machinery/power/quantumpad/proc/interaction_boost(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/quantum_pad_booster/booster = A.held
 	act_message(src, user, others = "%T% violently jams [booster] into the side of %U%. \The [src] beeps, quietly.", \
 	blind = "You hear the sound of a device being improperly installed in sensitive machinery, then subsequent beeping.", runemessage = "beep!")
 	play_sfx(src, SFX_ITEMS_RPED)
 	boosted = TRUE
 	consume(booster, user)
-	return TRUE
+	return OP_OK
 
 CAPABILITIES(/obj/machinery/power/quantumpad)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	op("quantumpad_ghost_travel", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("Travel"), then(PROC_REF(quantumpad_ghost_travel)))
+	op("quantumpad_boost", item(/obj/item/quantum_pad_booster), priority(OP_PRIORITY_DEFAULT - 1), label("Install booster"), then(PROC_REF(interaction_boost)))
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 2), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
+	op("quantumpad_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(panel_closed_holds), because = MSG(quantumpad/panel_open))), then(PROC_REF(interaction_use)))
 	extend("machine_panel", then(PROC_REF(panel_worked)))
 	extend("machine_panel_close", then(PROC_REF(panel_worked)))
 	default_parts()
@@ -118,53 +104,55 @@ CAPABILITIES(/obj/machinery/power/quantumpad)
 
 // Panel flips retry power cable connections so you don't have to decon the whole thing.
 
-/// Old attack_hand: standard gated pattern (`. = ..(); if(.) return`).
-/datum/interaction/machine_hand/quantumpad_use
-	id = "quantumpad_use"
-	name = "Use"
-	effect = /obj/machinery/power/quantumpad/proc/interaction_use
-	also_requires = list(REQ_BECAUSE(REQ_PANEL(FALSE), "the panel must be closed before operating this machine"))
+MSG_DEF_SELF(quantumpad/panel_open, "the panel must be closed before operating this machine")
 
-/obj/machinery/power/quantumpad/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement: the panel is closed.
+/obj/machinery/power/quantumpad/proc/panel_closed_holds(datum/act/op/A)
+	return !panel_open
+
+/// Old attack_hand: standard gated pattern (`. = ..(); if(.) return`).
+/obj/machinery/power/quantumpad/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(istype(get_area(src), /area/shuttle))
 		to_chat(user, span_warning("This is too unstable a platform for \the [src] to operate on!"))
 		// ition Start
 		if(linked_pad())
 			rel_clear(linked_pad(), nameof(/obj/machinery/hyperpad/centre::linked_pad))
 		// ition End
-		return TRUE
+		return OP_OK
 
 	if(!power_region)
 		to_chat(user, span_warning("[src] is not attached to a powernet!"))
-		return TRUE
+		return OP_OK
 
 	if(!linked_pad() || QDELETED(linked_pad()))
 		if(!map_pad_link_id || !initMappedLink())
 			to_chat(user, span_warning("There is no linked pad!"))
-			return TRUE
+			return OP_OK
 
 	if(!COOLDOWN_FINISHED(src, teleport_cooldown_until))
 		to_chat(user, span_warning("[src] is recharging power. Please wait [round(COOLDOWN_TIMELEFT(src, teleport_cooldown_until)/10)] seconds."))
-		return TRUE
+		return OP_OK
 
 	if(teleporting)
 		to_chat(user, span_warning("[src] is charging up. Please wait."))
-		return TRUE
+		return OP_OK
 
 	if(linked_pad().teleporting)
 		to_chat(user, span_warning("Linked pad is busy. Please wait."))
-		return TRUE
+		return OP_OK
 
 	if(!linked_pad().operable())
 		to_chat(user, span_warning("Linked pad is not responding to ping."))
-		return TRUE
+		return OP_OK
 	src.add_fingerprint(user)
 	doteleport(user)
-	return TRUE
+	return OP_OK
 
 /// Old attack_ghost: ran the ghost default first, then drifts the ghost to the linked pad.
-/obj/machinery/power/quantumpad/proc/quantumpad_ghost_travel(mob/observer/dead/ghost, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/machinery/power/quantumpad/proc/quantumpad_ghost_travel(datum/act/op/A)
+	var/mob/observer/dead/ghost = A.actor
+	. = OP_OK
 	if(actor_use_default(/datum/input_adapter/ghost, ghost, src))
 		return
 	if(!linked_pad() && map_pad_link_id)

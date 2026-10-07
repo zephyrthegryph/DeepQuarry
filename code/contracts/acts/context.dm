@@ -88,6 +88,8 @@
 	var/dt
 	/// The viewer, for the outputs a person reads (ui_data, examine): set there and nowhere else.
 	var/mob/actor
+	/// ui_data: TRUE when the viewer is a ghost looking at the window read-only (every ui_act it sends is refused; the window renders its buttons disabled).
+	var/observer = FALSE
 
 /// on_notice, on_op and on_change handlers. Fields set: holder, target, the notice's typed fields, outcome.
 /datum/act/notice

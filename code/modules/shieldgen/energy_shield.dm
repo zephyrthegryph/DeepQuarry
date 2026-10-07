@@ -157,6 +157,8 @@
 CAPABILITIES(/obj/effect/shield)
 	op("touch_shield", hand(), then(PROC_REF(interaction_touch_shield)))
 	op("hit_shield", item(/obj/item), then(PROC_REF(interaction_hit_shield)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(shield_emp_drain)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(shield_blast_drain))))
 
 /// Old attack_hand, just for fun: the touched segments flash.
 /obj/effect/shield/proc/interaction_touch_shield(datum/act/op/A)
@@ -235,20 +237,21 @@ CAPABILITIES(/obj/effect/shield)
 	update_nearby_tiles() //Force ZAS update
 
 // EMP. It may seem weak but keep in mind that multiple shield segments are likely to be affected.
-DAMAGE_REACTION(/obj/effect/shield, DAMAGE_EMP, PROC_REF(shield_emp_drain))
-DAMAGE_REACTION(/obj/effect/shield, DAMAGE_EXPLOSION, PROC_REF(shield_blast_drain))
 
-/obj/effect/shield/proc/shield_emp_drain(datum/damage_packet/packet)
+/obj/effect/shield/proc/shield_emp_drain(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(disabled_for)
 		return
 	deal_damage(DAMAGE_IONIC, emp_ionic_damage(packet.severity) * 0.45, flags = DAMAGE_PACKET_SILENT)
 
 // Explosions
 /// A blast lands on the shield by its own scale (instead of the blast packet).
-/obj/effect/shield/proc/shield_blast_drain(datum/damage_packet/packet)
+/obj/effect/shield/proc/shield_blast_drain(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	if(!disabled_for)
 		deal_damage(DAMAGE_BLAST, rand(10,15) / packet.severity, flags = DAMAGE_PACKET_SILENT)
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 // Fire
 /// Overheating: fire drains the shield.

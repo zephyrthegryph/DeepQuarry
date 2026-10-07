@@ -21,6 +21,8 @@ MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 CAPABILITIES(/obj/item/taperecorder)
+	// The tape fills one second at a time while recording.
+	every(1 SECOND, then(PROC_REF(record_tick)), when = nameof(recording))
 	owns_one(nameof(mytape), /obj/item/rectape, starts = nameof(mytape))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	// a tape goes in when there is none
@@ -40,13 +42,11 @@ CAPABILITIES(/obj/item/taperecorder)
 /obj/item/taperecorder/empty
 	mytape = null
 
-OM_FIELD(/obj/item/taperecorder, recording, 0, CHANGE_EXPLICIT)
+/obj/item/taperecorder/var/recording = 0
+TRACKED(/obj/item/taperecorder, recording)
 TRACKED(/obj/item/taperecorder, emagged)
 TRACKED(/obj/item/taperecorder, playing)
 TRACKED(/obj/item/rectape, ruined)
-// The tape fills one second at a time while recording.
-DECLARE_REPEAT(/obj/item/taperecorder, 1 SECOND, record_tick, "recording")
-
 /// A recorder hears what is said around it (the listening registry).
 /obj/item/taperecorder/capabilities()
 	. = ..()
@@ -308,10 +308,11 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 		to_chat(user, span_notice("The tape is full."))
 
 /// One second of recording: the tape fills up.
-/obj/item/taperecorder/proc/record_tick()
+/obj/item/taperecorder/proc/record_tick(datum/act/timer/A)
 	if(!mytape || mytape.used_capacity >= mytape.max_capacity)
+		set_recording(0) // the every() is gated on recording: this ends it
 		changed(src)
-		return REPEAT_STOP
+		return
 	mytape.used_capacity++
 	if(mytape.used_capacity >= mytape.max_capacity)
 		if(ismob(loc))
@@ -319,7 +320,6 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 			to_chat(M, span_notice("The tape is full."))
 		stop_recording()
 		changed(src)
-		return REPEAT_STOP
 
 /obj/item/taperecorder/proc/stop_recording()
 	//Sanity checks skipped, should not be called unless actually recording

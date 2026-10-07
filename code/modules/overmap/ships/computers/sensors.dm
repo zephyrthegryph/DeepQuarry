@@ -255,6 +255,7 @@ CAPABILITIES(/obj/machinery/computer/ship/sensors)
 CAPABILITIES(/obj/machinery/shipsensors)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(sensors_emp_shutdown)))
 
 /obj/machinery/shipsensors/proc/work_step(datum/act/timer/A)
 	if(use_power) //can't run in non-vacuum
@@ -283,10 +284,9 @@ CAPABILITIES(/obj/machinery/shipsensors)
 	change_power_consumption(1500 * (range**2), USE_POWER_IDLE) //Exponential increase, also affects speed of overheating
 	refresh_linked_consoles()
 
-DAMAGE_REACTION(/obj/machinery/shipsensors, DAMAGE_EMP, PROC_REF(sensors_emp_shutdown))
 
 /// A pulse knocks running sensors offline.
-/obj/machinery/shipsensors/proc/sensors_emp_shutdown(datum/damage_packet/packet)
+/obj/machinery/shipsensors/proc/sensors_emp_shutdown(datum/act/A)
 	if(!use_power)
 		return
 	toggle()

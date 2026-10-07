@@ -96,11 +96,14 @@
 	loot_list = list(/obj/item/melee/energy/sword = 100, /obj/item/shield/energy = 100)
 
 // They have a shield, so they try to block
-EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_ITEM(null, PROC_REF(merc_sword_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword)
+	op("merc_sword_item", item(/obj/item), then(PROC_REF(merc_sword_interaction_item)))
 
 /// Old attackby: shield block.
-/mob/living/simple_mob/humanoid/merc/melee/sword/proc/merc_sword_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/humanoid/merc/melee/sword/proc/merc_sword_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(O.force)
 		if(prob(20))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
@@ -108,7 +111,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 				ai_brain.react_to_attack(user)
 			return
 		else
-			return FALSE
+			return OP_DECLINE
 	else
 		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
 		act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
@@ -511,11 +514,14 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	grenade_timer = 30 // well, look what you've done, you've grouped up
 
 // being Actual Professionals, they have better (read: player-level) blocking chances
-EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor, INTERACT_ITEM(null, PROC_REF(suppressor_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor)
+	op("suppressor_item", item(/obj/item), then(PROC_REF(suppressor_interaction_item)))
 
 /// Old attackby: shield block.
-/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor/proc/suppressor_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor/proc/suppressor_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(O.force)
 		if(prob(50))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
@@ -523,7 +529,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor
 				ai_brain.react_to_attack(user)
 			return
 		else
-			return FALSE
+			return OP_DECLINE
 	else
 		act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
 

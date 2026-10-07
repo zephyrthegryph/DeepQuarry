@@ -52,9 +52,11 @@ GLOBAL_LIST_INIT(spacecash_note_layouts, build_spacecash_note_layouts())
 	return banknote
 
 /// Old attackby.
-/obj/item/spacecash/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/spacecash/proc/cash_combine(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/spacecash))
-		if(istype(W, /obj/item/spacecash/ewallet)) return INTERACTION_HANDLED_PASS
+		if(istype(W, /obj/item/spacecash/ewallet)) return OP_PASS
 
 		var/obj/item/spacecash/SC = W
 
@@ -67,7 +69,7 @@ GLOBAL_LIST_INIT(spacecash_note_layouts, build_spacecash_note_layouts())
 			h_user.put_in_hands(SC)
 		to_chat(user, span_notice("You combine the [initial_name]s to a bundle of [SC.worth] [initial_name]s."))
 		consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 DECLARE_APPEARANCE_PROC(/obj/item/spacecash, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/spacecash/appearance_overlays()
@@ -104,28 +106,31 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecash, TYPE_PROC_REF(/atom, appearance_ove
 		update_icon()
 	return worth
 
-DECLARE_INTERACTIONS(/obj/item/spacecash, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/spacecash)
+	op("cash_take", in_hand(), label("Use"),
+		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(cash_take_question)), "title" = "Take Money", "default" = 20, "max_value" = nameof(worth), "timeout" = 0), step = "k92"),
+		then(PROC_REF(cash_take)))
+	op("cash_combine", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(cash_combine)))
+
+/obj/item/spacecash/proc/cash_take_question(datum/act/op/A)
+	return "How many [initial_name]s do you want to take? (0 to [src.worth])"
 
 /// Old attack_self.
-/obj/item/spacecash/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/amount = rerun_ask(user, "k92", PROC_REF(interaction_self), args, /datum/prompt/number, question = "How many [initial_name]s do you want to take? (0 to [src.worth])", title = "Take Money", default = 20, max_value = src.worth)
-	if(isnull(amount))
-		return TRUE
+/obj/item/spacecash/proc/cash_take(datum/act/op/A)
+	var/mob/user = A.actor
+	var/amount = A.step_value("k92")
 	if(!src || QDELETED(src))
-		return TRUE
+		return OP_OK
 	amount = round(CLAMP(amount, 0, src.worth))
 
 	if(!amount)
-		return TRUE
+		return OP_OK
 
 	adjust_worth(-amount)
 	var/obj/item/spacecash/SC = new (user.loc)
 	SC.set_worth(amount)
 	user.put_in_hands(SC)
-	return TRUE
+	return OP_OK
 
 /obj/item/spacecash/c1
 	name = "1 Thaler"
@@ -199,7 +204,8 @@ DECLARE_INTERACTIONS(/obj/item/spacecash, \
 	var/owner_name = "" //So the ATM can set it so the EFTPOS can put a valid name on transactions.
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/spacecash/ewallet, INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)))
+CAPABILITIES(/obj/item/spacecash/ewallet)
+	op("pass_item", item(/obj/item), label("Interaction pass"), passes())
 
 APPEARANCE_NONE(/obj/item/spacecash/ewallet)
 

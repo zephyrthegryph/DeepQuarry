@@ -39,10 +39,11 @@
 	special_handling = TRUE
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/energy/pulse_rifle/destroyer/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/energy/pulse_rifle/destroyer/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	to_chat(user, span_warning("[src.name] has three settings, and they are all DESTROY."))
 
 /*

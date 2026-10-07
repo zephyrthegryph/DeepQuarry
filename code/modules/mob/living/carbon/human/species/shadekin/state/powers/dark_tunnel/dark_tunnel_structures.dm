@@ -49,11 +49,10 @@ REGISTRY_MEMBERSHIP(/obj/structure/dark_portal/minion, REGISTRY_DARKPORTAL_MINIO
 	locked_name = src.name
 	precision = 1
 
-DECLARE_INTERACTIONS(/obj/structure/dark_portal/hub, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
-
 /// Old attack_hand.
-/obj/structure/dark_portal/hub/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	return portal_hand_stage(user, held, interaction, list())
+/obj/structure/dark_portal/hub/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
+	return portal_hand_stage(user, A.held, null, list())
 
 /obj/structure/dark_portal/hub/proc/portal_hand_stage(mob/living/user, obj/item/held, datum/interaction/interaction, list/answers)
 	if(!isliving(user))
@@ -139,9 +138,11 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/hub, INTERACT_HAND_UNGATED(null,
 	return TRUE
 
 CAPABILITIES(/obj/structure/dark_portal/hub)
+	op("hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 
 CAPABILITIES(/obj/structure/dark_portal/minion)
+	op("hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 
 /// Something walked into it (the bump action's notice).
@@ -161,11 +162,10 @@ CAPABILITIES(/obj/structure/dark_portal/minion)
 	precision = 1
 	icon_state = "minion0"
 
-DECLARE_INTERACTIONS(/obj/structure/dark_portal/minion, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
-
 /// Old attack_hand.
-/obj/structure/dark_portal/minion/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	return portal_hand_stage(user, held, interaction, list())
+/obj/structure/dark_portal/minion/proc/interaction_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
+	return portal_hand_stage(user, A.held, null, list())
 
 /obj/structure/dark_portal/minion/proc/portal_hand_stage(mob/living/user, obj/item/held, datum/interaction/interaction, list/answers)
 	if(!isliving(user))

@@ -57,7 +57,7 @@
 	var/turf/T = get_turf(src)
 	if(T && !is_type_in_list(T, GLOB.suitable_fish_turf_types))
 		if(prob(50))
-			after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list(pick("Blub", "Glub", "Burble")))
+			after(src, 0, TYPE_PROC_REF(/mob/living, say), with = list(pick("Blub", "Glub", "Burble")), keeps_dead = TRUE)
 		src.add_oxygen_debt(src.unsuitable_atoms_damage, T)
 
 // Subtypes.
@@ -329,6 +329,26 @@ TYPE_TABLE(/datum/decl/mob_organ_names/fish, mob_organ_hit_zones, list("head", "
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/koi/poisonous)
 	reagents(60, starts = list(REAGENT_ID_TOXIN = 45, REAGENT_ID_IMPEDREZENE = 15))
+	op("koi_poisonous_hand_help", hand(), stance(I_HELP), label("Pet"), then(PROC_REF(koi_poisonous_interaction_hand_help)))
+	op("koi_poisonous_hand_hurt", hand(), stance(I_HURT), label("Hit"), then(PROC_REF(koi_poisonous_interaction_hand_hurt)))
+	op("koi_poisonous_hand_disarm", hand(), stance(I_DISARM), label("Shove"), then(PROC_REF(koi_poisonous_interaction_hand_disarm)))
+	op("koi_poisonous_hand_grab", hand(), stance(I_GRAB), label("Grab"), then(PROC_REF(koi_poisonous_interaction_hand_grab)))
+
+/// The help-stance input of koi_poisonous_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_poisonous_interaction_hand_help(datum/act/op/A)
+	return koi_poisonous_interaction_hand(A, I_HELP)
+
+/// The hurt-stance input of koi_poisonous_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_poisonous_interaction_hand_hurt(datum/act/op/A)
+	return koi_poisonous_interaction_hand(A, I_HURT)
+
+/// The disarm-stance input of koi_poisonous_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_poisonous_interaction_hand_disarm(datum/act/op/A)
+	return koi_poisonous_interaction_hand(A, I_DISARM)
+
+/// The grab-stance input of koi_poisonous_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_poisonous_interaction_hand_grab(datum/act/op/A)
+	return koi_poisonous_interaction_hand(A, I_GRAB)
 
 /mob/living/simple_mob/animal/passive/fish/koi/poisonous/life_type_post_due()
 	return TRUE
@@ -350,16 +370,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/koi/poisonous)
 	if(steps > 1)
 		after(src, 0.3 SECONDS, PROC_REF(koi_flee), with = list(M, steps - 1))
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/fish/koi/poisonous, \
-	INTERACT_HAND_AS(I_HELP, "Pet", PROC_REF(koi_poisonous_interaction_hand)), \
-	INTERACT_HAND_AS(I_HURT, "Hit", PROC_REF(koi_poisonous_interaction_hand)), \
-	INTERACT_HAND_AS(I_DISARM, "Shove", PROC_REF(koi_poisonous_interaction_hand)), \
-	INTERACT_HAND_AS(I_GRAB, "Grab", PROC_REF(koi_poisonous_interaction_hand)))
-
 /// Old attack_hand: the normal touch, then the koi flails and stings.
-/mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_poisonous_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	unarmed_touch(L, interaction.stance)
+/mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_poisonous_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/L = A.actor
+	. = OP_OK
+	unarmed_touch(L, stance)
 	if(isliving(L) && Adjacent(L))
 		var/mob/living/M = L
 		act_message(src, M, null, MSG_OTHERS(span_warning("%U%[is_dead()?"'s corpse":""] flails at %T%!")))

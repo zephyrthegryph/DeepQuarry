@@ -11,12 +11,13 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 
 /**
  * Runs `handler` (a PROC_REF on `owner`, or a GLOBAL_PROC_REF called with `handler_args`) after `delay`
- * deciseconds. Returns the timer id. A datum argument deleted before it fires arrives as null.
+ * deciseconds. Returns the timer id. A datum argument deleted before it fires drops the call (logged),
+ * unless `keeps_dead` is set: then it arrives as null.
  * `key`: names the timer; a pending timer of the same key on the same owner is replaced.
  */
-/proc/rx_after(datum/owner, delay, handler, key, clock = CLOCK_OWN, list/handler_args, nulls_for_gone = TRUE)
+/proc/rx_after(datum/owner, delay, handler, key, clock = CLOCK_OWN, list/handler_args, keeps_dead = FALSE)
 	if(isnull(key) && clock == CLOCK_OWN)
-		return timer_schedule_list(owner, delay, handler, handler_args, nulls_for_gone)
+		return timer_schedule_list(owner, delay, handler, handler_args, keeps_dead)
 	var/datum/holder = owner || timer_global_owner()
 	if(!isnull(key))
 		cancel_after(holder, key)
@@ -26,10 +27,10 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 		var/holder_handle = entity_handle(holder)
 		if(isnull(holder_handle))
 			return 0 // the owner is already gone
-		id = timer_schedule_list(null, delay, GLOBAL_PROC_REF(rx_timer_fire_ref), list(holder_handle, handler, key, token, handler_args), FALSE)
+		id = timer_schedule_list(null, delay, GLOBAL_PROC_REF(rx_timer_fire_ref), list(holder_handle, handler, key, token, handler_args), keeps_dead)
 	else
 		// The holder is the timer's owner: passed first when it fires (OM_TIMER_OWNER_FIRST), not captured as an argument.
-		id = timer_schedule_list(holder, delay, GLOBAL_PROC_REF(rx_timer_fire), list(handler, key, token, handler_args), nulls_for_gone, owner_first = TRUE)
+		id = timer_schedule_list(holder, delay, GLOBAL_PROC_REF(rx_timer_fire), list(handler, key, token, handler_args), keeps_dead, owner_first = TRUE)
 	if(id && !isnull(key))
 		rx_ledger_add(holder, RELK_TIMER, key, token)
 		var/list/ids = rx_of(holder).timer_ids
@@ -92,15 +93,16 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
  *   cancel_after() / after_pending() / after_left() find it.
  * - `clock`: CLOCK_OWN (the owner's clock: paused in stasis or suspension) or CLOCK_WORLD (real time; held by
  *   ref, so the timer never keeps a deleted owner alive).
- * - `with`: the handler's arguments. A datum argument deleted meanwhile arrives as null, so cleanup always
- *   happens; the handler checks its args (null policy). Only the owner's own deletion drops the call.
+ * - `with`: the handler's arguments. When a datum argument has been deleted by the time the timer fires, the call is
+ *   dropped and logged (the handler never sees a dead argument). `keeps_dead = TRUE` opts out: the call still runs and the
+ *   deleted argument arrives as null, for a handler that has cleanup to do with the argument gone (re-arming a flag, say).
+ *   The owner's own deletion always drops the call.
  * Returns the timer id (never store it in a var; use a key).
  */
-/proc/after(datum/owner, delay, handler, key = null, clock = CLOCK_OWN, list/with = null)
-	return rx_after(owner, delay, handler, key, clock, with, TRUE)
+/proc/after(datum/owner, delay, handler, key = null, clock = CLOCK_OWN, list/with = null, keeps_dead = FALSE)
+	return rx_after(owner, delay, handler, key, clock, with, keeps_dead)
 
-/// after() for a pure effect that makes no sense once any datum argument is gone: the call is dropped
-/// (counted and logged by the scheduler).
+/// after() with the default (drop on a deleted datum argument) spelled out; kept for callers that name it.
 /proc/after_if_alive(datum/owner, delay, handler, list/with = null)
 	return timer_schedule_list(owner, delay, handler, with, nulls_for_gone = FALSE)
 

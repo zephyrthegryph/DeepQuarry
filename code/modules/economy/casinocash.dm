@@ -68,7 +68,9 @@ CAPABILITIES(/obj/machinery/chipmachine)
 	var/worth = 0
 
 /// Old attackby.
-/obj/item/spacecasinocash/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/spacecasinocash/proc/casino_combine(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/spacecasinocash))
 
 		var/obj/item/spacecasinocash/SC = W
@@ -82,7 +84,7 @@ CAPABILITIES(/obj/machinery/chipmachine)
 			h_user.put_in_hands(SC)
 		to_chat(user, span_notice("You combine the casino chips to a stack of [SC.worth] casino credits."))
 		consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/spacecasinocash/appearance_overlays()
@@ -131,28 +133,31 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash, TYPE_PROC_REF(/atom, appearan
 		changed(src)
 	return worth
 
-DECLARE_INTERACTIONS(/obj/item/spacecasinocash, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/spacecasinocash)
+	op("casino_take", in_hand(), label("Use"),
+		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(casino_take_question)), "title" = "Take chips", "default" = 20, "max_value" = nameof(worth), "timeout" = 0), step = "k142"),
+		then(PROC_REF(casino_take)))
+	op("casino_combine", item(/obj/item), label("Use"), then(PROC_REF(casino_combine)))
+
+/obj/item/spacecasinocash/proc/casino_take_question(datum/act/op/A)
+	return "How much credits worth of chips do you want to take? (0 to [src.worth])"
 
 /// Old attack_self.
-/obj/item/spacecasinocash/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/amount = rerun_ask(user, "k142", PROC_REF(interaction_self), args, /datum/prompt/number, question = "How much credits worth of chips do you want to take? (0 to [src.worth])", title = "Take chips", default = 20, max_value = src.worth)
-	if(isnull(amount))
-		return TRUE
+/obj/item/spacecasinocash/proc/casino_take(datum/act/op/A)
+	var/mob/user = A.actor
+	var/amount = A.step_value("k142")
 	if(!src || QDELETED(src))
-		return TRUE
+		return OP_OK
 	amount = round(CLAMP(amount, 0, src.worth))
 
 	if(!amount)
-		return TRUE
+		return OP_OK
 
 	adjust_worth(-amount)
 	var/obj/item/spacecasinocash/SC = new (user.loc)
 	SC.set_worth(amount)
 	user.put_in_hands(SC)
-	return TRUE
+	return OP_OK
 
 /obj/item/spacecasinocash/c1
 	name = "1 credit casino chip"
@@ -261,7 +266,9 @@ CAPABILITIES(/obj/item/casino_platinum_chip)
 	var/worth = 0
 
 /// Old attackby.
-/obj/item/spacecasinocash_fake/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/spacecasinocash_fake/proc/casino_fake_combine(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/spacecasinocash_fake))
 
 		var/obj/item/spacecasinocash_fake/SC = W
@@ -275,7 +282,7 @@ CAPABILITIES(/obj/item/casino_platinum_chip)
 			h_user.put_in_hands(SC)
 		to_chat(user, span_notice("You combine the casino chips to a stack of [SC.worth] replica casino credits."))
 		consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash_fake, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/spacecasinocash_fake/appearance_overlays()
@@ -322,28 +329,31 @@ DECLARE_APPEARANCE_PROC(/obj/item/spacecasinocash_fake, TYPE_PROC_REF(/atom, app
 		changed(src)
 	return worth
 
-DECLARE_INTERACTIONS(/obj/item/spacecasinocash_fake, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/spacecasinocash_fake)
+	op("casino_fake_take", in_hand(), label("Use"),
+		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(casino_fake_take_question)), "title" = "Take chips", "default" = 20, "max_value" = nameof(worth), "timeout" = 0), step = "k323"),
+		then(PROC_REF(casino_fake_take)))
+	op("casino_fake_combine", item(/obj/item), label("Use"), then(PROC_REF(casino_fake_combine)))
+
+/obj/item/spacecasinocash_fake/proc/casino_fake_take_question(datum/act/op/A)
+	return "How much credits worth of chips do you want to take? (0 to [src.worth])"
 
 /// Old attack_self.
-/obj/item/spacecasinocash_fake/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/amount = rerun_ask(user, "k323", PROC_REF(interaction_self), args, /datum/prompt/number, question = "How much credits worth of chips do you want to take? (0 to [src.worth])", title = "Take chips", default = 20, max_value = src.worth)
-	if(isnull(amount))
-		return TRUE
+/obj/item/spacecasinocash_fake/proc/casino_fake_take(datum/act/op/A)
+	var/mob/user = A.actor
+	var/amount = A.step_value("k323")
 	if(!src || QDELETED(src))
-		return TRUE
+		return OP_OK
 	amount = round(CLAMP(amount, 0, src.worth))
 
 	if(!amount)
-		return TRUE
+		return OP_OK
 
 	adjust_worth(-amount)
 	var/obj/item/spacecasinocash_fake/SC = new (user.loc)
 	SC.set_worth(amount)
 	user.put_in_hands(SC)
-	return TRUE
+	return OP_OK
 
 /obj/item/spacecasinocash_fake/c1
 	name = "1 replica casino chip"

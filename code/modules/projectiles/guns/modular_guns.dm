@@ -72,7 +72,9 @@
 	return ITEM_INTERACT_SUCCESS
 
 /// Old attackby: the parent's first, then fitting a component.
-/obj/item/gun/energy/modular/gun_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/gun/energy/modular/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	//Someone's attacking us, and it's not anything we have a special case for (i.e. a tool)
 	. = ..()
 	if(assembled) // can't put anything in

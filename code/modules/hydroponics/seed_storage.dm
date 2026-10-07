@@ -71,6 +71,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	op("insert_bag", item(/obj/item/storage/bag/plants), priority(OP_PRIORITY_DEFAULT - 1), label("Empty seed bag"), needs(req(PROC_REF(not_locked_down_holds), because = PROC_REF(not_locked_down_refusal))), then(PROC_REF(interaction_insert_bag)))
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 2), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wire_tool_used)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /obj/machinery/seed_storage/proc/wire_lights()
 	return list(
@@ -516,8 +517,8 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	wires_open(src, A.actor)
 	return OP_OK
 
-DECLARE_EMAG(/obj/machinery/seed_storage, PROC_REF(on_emag), null, null)
-/obj/machinery/seed_storage/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/seed_storage/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	set_emagged(1)
 	if(lockdown)
 		to_chat(user, span_notice("\The [src]'s control panel thunks, as its cover retracts."))
@@ -528,7 +529,7 @@ DECLARE_EMAG(/obj/machinery/seed_storage, PROC_REF(on_emag), null, null)
 		to_chat(user, span_warning("\The [src]'s access mechanism shorts out."))
 		fx_sparks(src, 3, FALSE)
 		visible_message(span_warning("\The [src]'s panel sparks!"))
-	return 1
+	return OP_OK
 
 /obj/machinery/seed_storage/proc/add(obj/item/seeds/O as obj, contraband = 0)
 	if (istype(O.loc, /mob))

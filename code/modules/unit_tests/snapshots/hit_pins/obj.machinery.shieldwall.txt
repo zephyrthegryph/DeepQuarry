@@ -1,0 +1,11 @@
+blob | survives
+emag | nothing
+emp 1 | refresh_queued: 131071 -> 0
+emp 1 | turf: +/obj/effect/overlay x1
+emp 2 | turf: +/obj/effect/overlay x1
+explosion 1 | nothing
+explosion 2 | nothing
+explosion 3 | nothing
+projectile | atom_integrity: down
+thrown | atom_integrity: down
+

@@ -104,10 +104,11 @@
 	explode()
 	return TRUE
 
-EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interaction_item)))
 
 /// Old attackby: ID lock toggle, prox-sensor repair, pAI card; anything else reaches the attack.
-/mob/living/bot/proc/bot_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/mob/living/bot/proc/bot_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(O.GetID())
 		if(access_scanner.allowed(user) && !open)
 			locked = !locked
@@ -120,7 +121,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 				to_chat(user, span_warning("Please close the access panel before locking it."))
 			else
 				to_chat(user, span_warning("Access denied."))
-		return TRUE
+		return OP_OK
 	else if(istype(O, /obj/item/assembly/prox_sensor) && emagged)
 		if(open)
 			to_chat(user, span_notice("You repair the bot's systems."))
@@ -128,15 +129,15 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 			consume(O, user)
 		else
 			to_chat(user, span_notice("Unable to repair with the maintenance panel closed."))
-		return TRUE
+		return OP_OK
 	else if(istype(O, /obj/item/paicard))
 		if(open)
 			insertpai(user, O)
 			to_chat(user, span_notice("You slot the card into \the [initial(src.name)]."))
 		else
 			to_chat(user, span_notice("You must open the panel first!"))
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /mob/living/bot/screwdriver_act(mob/user, obj/item/tool)
 	if(locked)
@@ -184,9 +185,8 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	else
 		..()
 
-DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
-/mob/living/bot/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	return 0
+/mob/living/bot/proc/on_emag(datum/act/op/A)
+	return OP_DECLINE
 
 /// Calls `step_proc` `count` times, `delay` apart (the bot's movement within one AI tick).
 /mob/living/bot/proc/bot_steps(count, delay, step_proc)
@@ -624,7 +624,9 @@ CAPABILITIES(/mob/living/bot)
 	owns_one(nameof(botcard), starts = /obj/item/card/id)
 	owns_one(nameof(access_scanner), starts = /obj)
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
+	op("bot_item", item(/obj/item), then(PROC_REF(bot_interaction_item)))
 /mob/living/bot/ownership()
 	. = ..()
 	. += owns(nameof(paicard), policy = OWN_CONTAINED)

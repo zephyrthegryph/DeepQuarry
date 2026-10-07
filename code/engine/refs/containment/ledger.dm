@@ -332,6 +332,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	// DQ Medical's joint before/after-move transaction hook in one place
 	// once that lands (medical_frameworks.md).
 	dq_latent_touch(thing)
+	PUBLISH_CHANGE(holder, SLOT_OCCUPANCY_KEY)
 	holder.on_slot_changed(id, thing, TRUE)
 	PUBLISH_LEGACY(holder, /datum/notice/slot_inserted, thing, id)
 	entity_slot_entered(holder, thing, def)
@@ -358,6 +359,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	propagate()
 	if(thing.containment_move_flags())
 		adjust_hooked(-1)
+	PUBLISH_CHANGE(holder, SLOT_OCCUPANCY_KEY)
 	holder.on_slot_changed(id, thing, FALSE)
 	PUBLISH_LEGACY(holder, /datum/notice/slot_removed, thing, id)
 	entity_slot_left(holder, thing, def)
@@ -398,6 +400,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	var/list/new_things = slots[new_id]
 	new_things += thing
 	used[new_id] += entry[LEDGER_E_COST]
+	PUBLISH_CHANGE(holder, SLOT_OCCUPANCY_KEY)
 	holder.on_slot_changed(new_id, thing, TRUE)
 	PUBLISH_LEGACY(holder, /datum/notice/slot_inserted, thing, new_id)
 	entity_slot_entered(holder, thing, def)

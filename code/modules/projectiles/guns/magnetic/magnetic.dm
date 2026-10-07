@@ -31,6 +31,7 @@ OM_FIELD_VIEW(/obj/item/gun/magnetic, obj/item/cell, cell, CHANGE_EXPLICIT)
 OM_FIELD_VIEW(/obj/item/gun/magnetic, obj/item/stock_parts/capacitor, capacitor, CHANGE_EXPLICIT)
 
 CAPABILITIES(/obj/item/gun/magnetic)
+	every(2 SECONDS, then(PROC_REF(magnetic_step)), when = PROC_REF(steps_now))
 	owns_one(nameof(capacitor), /obj/item/stock_parts/capacitor)
 	owns_one(nameof(loaded), /obj/item, starts = nameof(loaded))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
@@ -40,10 +41,12 @@ CAPABILITIES(/obj/item/gun/magnetic)
 /// Swapping parts goes through rel_set()/own_take() (and a destroyed part is cleared by the
 /// ownership framework), all of which raise the part fields; the capacitor's charge is a cross-entity
 /// input (max_charge is fixed at the part's Initialize).
-OM_DERIVE_FIELD(/obj/item/gun/magnetic, capacitor_unsettled, list("cell", "capacitor", "capacitor.charge"))
 /obj/item/gun/magnetic/proc/capacitor_unsettled()
 	return capacitor && (cell ? capacitor.charge < capacitor.max_charge : capacitor.charge)
-DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic, PERIODIC_SLOW, "capacitor_unsettled")
+
+/// The gate of the magnetic gun's step: polled, the capacitor's charge is another entity's state.
+/obj/item/gun/magnetic/proc/steps_now(datum/act/A)
+	return capacitor || cell
 
 /obj/item/gun/magnetic/Initialize(mapload)
 	. = ..()
@@ -63,10 +66,10 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic, PERIODIC_SLOW, "capacitor_unsettl
 
 /// Charges its capacitor from its cell (or bleeds it without one) every 2 s while it isn't settled
 /// (declared on capacitor_unsettled); firing drains the capacitor, which restarts it.
-/obj/item/gun/magnetic/periodic_step()
+/obj/item/gun/magnetic/proc/magnetic_step(datum/act/timer/A)
 	if(!capacitor_unsettled())
 		update_state()
-		return PROCESS_KILL // it charged (or bled) itself settled
+		return // it charged (or bled) itself settled
 	if(capacitor)
 		if(cell)
 			if(capacitor.charge < capacitor.max_charge && cell.checked_use(power_per_tick))
@@ -165,8 +168,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 	return ITEM_INTERACT_SUCCESS
 
 /// Old attackby.
-/obj/item/gun/magnetic/gun_item(mob/user, obj/item/thing, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/gun/magnetic/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/thing = A.held
+	. = OP_PASS
 	if(removable_components)
 		if(istype(thing, /obj/item/cell))
 			if(cell)

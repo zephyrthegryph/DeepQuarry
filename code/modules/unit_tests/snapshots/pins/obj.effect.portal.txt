@@ -1,35 +1,57 @@
 human|none menu: Enter
-human|none click: nothing
+human|none click: Click: Enter
 robot|none menu: Enter
-robot|none click: nothing
+robot|none click: Click: Enter
 ai|none click: nothing
 ghost|none menu: Go through
-ghost|none click: nothing
+ghost|none click: Click: Go through
 human|/obj/item/tool/screwdriver menu: Enter
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Enter
 human|/obj/item/tool/crowbar menu: Enter
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Enter
 human|/obj/item/tool/wrench menu: Enter
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Enter
 human|/obj/item/tool/wirecutters menu: Enter
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Enter
 human|/obj/item/multitool menu: Enter
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Enter
 human|/obj/item/weldingtool menu: Enter
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Enter
 human|/obj/item/stack/cable_coil menu: Enter
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Enter
 human|/obj/item/stack/material/steel menu: Enter
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Enter
 human|/obj/item/card/id menu: Enter
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id click: nothing
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Enter
 human|/obj/item/mop_deploy menu: Enter
 human|/obj/item/mop_deploy menu: Insert a mop
+human|/obj/item/mop_deploy menu: Move To Top
+human|/obj/item/mop_deploy menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/mop_deploy click: Click: Insert a mop
 human|/obj/item/soap menu: Enter
 human|/obj/item/soap menu: Insert a soap
+human|/obj/item/soap menu: Move To Top
+human|/obj/item/soap menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/soap click: Click: Insert a soap
-keys: drag_buckle, gen_hand_interaction_enter_portal, gen_observer_portal_ghost_follow, pass_insert, pass_insert_2
+keys: drag_buckle, enter_portal, ghost_follow, pass_insert, pass_insert_2
 

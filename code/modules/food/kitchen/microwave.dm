@@ -46,6 +46,7 @@
 
 CAPABILITIES(/obj/machinery/microwave)
 	owns_one(nameof(soundloop), /datum/looping_sound/microwave)
+	every(PROC_REF(loop_delay), then(PROC_REF(cook_loop_step)), when = nameof(loop_running))
 	interface("Microwave")
 	without("ui_open")
 	op("cook", ui_act("cook"), then(PROC_REF(ui_act_cook)))
@@ -433,8 +434,16 @@ CAPABILITIES(/obj/machinery/microwave)
 	start()
 
 /// A cook loop is running: cook_loop() every loop_wait until its cycles run out.
-OM_FIELD(/obj/machinery/microwave, loop_running, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
+/obj/machinery/microwave/var/loop_running = FALSE
+TRACKED_BRIDGED(/obj/machinery/microwave, loop_running, CHANGE_MACHINE_SETTINGS)
+
+/// The cook loop's cadence.
+/obj/machinery/microwave/proc/loop_delay(datum/act/A)
+	return loop_wait
+
+/// One scheduled cook-loop cycle.
+/obj/machinery/microwave/proc/cook_loop_step(datum/act/timer/A)
+	cook_loop()
 
 /obj/machinery/microwave/proc/start()
 	wzhzhzh()
@@ -459,7 +468,7 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 	if(cook_loop() != REPEAT_STOP)
 		set_loop_running(TRUE)
 
-/// One cook-loop cycle (DECLARE_REPEAT while loop_running).
+/// One cook-loop cycle (every() while loop_running).
 /obj/machinery/microwave/proc/cook_loop()
 	if((broken_now()) && loop_type == MICROWAVE_PRE)
 		set_loop_running(FALSE)

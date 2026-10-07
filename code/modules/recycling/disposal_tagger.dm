@@ -29,10 +29,13 @@
 	if(sort_tag)
 		LAZYREMOVE(GLOB.tagger_locations["[sort_tag]"], get_z(src))
 
-DECLARE_INTERACTIONS(/obj/structure/disposalpipe/tagger, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/disposalpipe/tagger)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/disposalpipe/tagger/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/disposalpipe/tagger/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 
 	if(istype(I, /obj/item/destTagger))
 		var/obj/item/destTagger/O = I
@@ -47,7 +50,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/tagger, INTERACT_ITEM(null, PRO
 			to_chat(user, span_notice("Changed tag to '[sort_tag]'."))
 			updatename()
 			updatedesc()
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/disposalpipe/tagger/transfer(obj/structure/disposalholder/H)
 	if(sort_tag)

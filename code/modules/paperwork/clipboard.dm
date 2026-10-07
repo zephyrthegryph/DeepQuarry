@@ -45,11 +45,13 @@
 	look.overlay("clipboard_over")
 
 /// Old attackby.
-/obj/item/clipboard/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/clipboard/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 
 	if(istype(W, /obj/item/paper) || istype(W, /obj/item/photo))
 		if(!own_bring_in(src, nameof(contents), W, null, user, TRUE, null, FALSE))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(istype(W, /obj/item/paper))
 			rel_set(src, nameof(toppaper), W)
 		to_chat(user, span_notice("You clip the [W] onto \the [src]."))
@@ -57,7 +59,7 @@
 	else if(istype(toppaper(), /obj/item) && istype(W, /obj/item/pen))
 		toppaper().attackby(W, user)
 
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/clipboard/afterattack(turf/T as turf, mob/user)
 	for(var/obj/item/paper/P in turf_contents_of_type(T, /obj/item/paper))
@@ -69,13 +71,10 @@
 // Topic pen/write/remove/rename/read/look actions move to tgui_act.
 // Reading a paper/photo chains to that item's TGUI viewer
 // (Paper.tsx / Photo.tsx).
-DECLARE_INTERACTIONS(/obj/item/clipboard, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
 
 /// Old attack_self.
-/obj/item/clipboard/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clipboard/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	tgui_interact(user)
 	return TRUE
@@ -90,6 +89,8 @@ CAPABILITIES(/obj/item/clipboard)
 	op("rename", ui_act("rename", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_rename)))
 	op("open", ui_act("open", arg("kind", schema_text(4096)), arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_open)))
 	drag_onto(PROC_REF(mousedrop_input))
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// /obj/item/clipboard's window data.
 /obj/item/clipboard/ui_data(datum/act/eval/A)

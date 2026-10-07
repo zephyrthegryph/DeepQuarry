@@ -348,18 +348,21 @@
 	return ITEM_INTERACT_SUCCESS
 
 
-DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/slimepotion)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/slimepotion/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/slimepotion/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/slimepotion/mimic))
 		if(!consume(O, user))
-			return FALSE
+			return OP_DECLINE
 		to_chat(user, span_notice("You apply the mimic to the slime potion as it copies it's effects."))
 		play_sfx(src, SFX_EFFECTS_BUBBLES)
 		var/newtype = src.type
 		new newtype(get_turf(src))
-	return FALSE
+	return OP_DECLINE
 
 
 /obj/item/slimepotion/infertility/get_mechanics_info(list/additional_information)
@@ -502,10 +505,13 @@ DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interac
 	desc = "A potent chemical mix that will mimic effects of other slime-produced agents."
 	icon_state = "potsilver"
 
-EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mimic_interaction_item)))
+CAPABILITIES(/obj/item/slimepotion/mimic)
+	op("mimic_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(mimic_interaction_item)))
 
 /// Old attackby.
-/obj/item/slimepotion/mimic/proc/mimic_interaction_item(mob/living/user, mob/living/M, datum/interaction/interaction)
+/obj/item/slimepotion/mimic/proc/mimic_interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/M = A.held
 	if(istype(M, /obj/item/slimepotion/mimic))
 		to_chat(user, span_warning("You apply the mimic to the mimic, resulting a mimic that copies a mimic that copies a mimic that copies a mimic that-"))
 		var/location = get_turf(src)
@@ -515,8 +521,8 @@ EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mi
 		s.start()
 		consumed(M, src)
 		consume(src, user)
-		return ITEM_INTERACT_SUCCESS
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /obj/item/slimepotion/sapience/get_mechanics_info(list/additional_information)
 	return ..(list("The slime or other animal needs to be alive for this to work. The development is not always immediate and may take indeterminate time before effects show.") + additional_information)

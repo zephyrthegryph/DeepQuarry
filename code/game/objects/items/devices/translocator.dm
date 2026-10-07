@@ -461,7 +461,7 @@ not carry this around."}
 	LAZYOR(warned_users, user.ckey)
 	var/datum/prompt/R = A.answer
 	if(R?.value == "Take It")
-		attack_hand(user)
+		pick_up_by_hand(user) // the click this op answered: its own handler is running, so it cannot dispatch a second click
 	return OP_OK
 
 /obj/item/perfect_tele_beacon/stationary

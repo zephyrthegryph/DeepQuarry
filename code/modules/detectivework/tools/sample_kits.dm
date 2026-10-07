@@ -83,24 +83,18 @@ CAPABILITIES(/obj/item/sample)
 	icon_state = "fingerprint0"
 	item_state = "paper"
 
-EXTEND_INTERACTIONS(/obj/item/sample/print, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/sample/print/proc/can_press_prints)))
+MSG_DEF_SELF(sample/take_gloves_off, "Take your gloves off first.")
 
-/// Requirement: bare fingertips (a used card or a non-human is ignored silently by the effect).
-/obj/item/sample/print/proc/can_press_prints(mob/user, atom/target, obj/item/held)
-	if((evidence && length(evidence)) || !ishuman(user))
-		return TRUE
-	var/mob/living/carbon/human/H = user
-	var/obj/item/gloves = H.get_equipped_item(SLOT_ID_GLOVES)
-	if(gloves)
-		return "take \the [gloves] off first"
-	return TRUE
+CAPABILITIES(/obj/item/sample/print)
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_actor_slot_empty(SLOT_ID_GLOVES, because = MSG(sample/take_gloves_off))), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/sample/print/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/sample/print/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(evidence && length(evidence))
-		return TRUE
+		return OP_OK
 	if(!ishuman(user))
-		return TRUE
+		return OP_OK
 	var/mob/living/carbon/human/H = user
 
 	to_chat(user, span_notice("You firmly press your fingertips onto the card."))
@@ -108,7 +102,7 @@ EXTEND_INTERACTIONS(/obj/item/sample/print, INTERACT_USE(null, PROC_REF(interact
 	LAZYSET(evidence, fullprint, fullprint)
 	name = "[initial(name)] (\the [H])"
 	icon_state = "fingerprint1"
-	return TRUE
+	return OP_OK
 
 /obj/item/sample/print/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 

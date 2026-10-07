@@ -169,7 +169,7 @@ CAPABILITIES(/datum/shuttle/autodock/ferry/specops)
 		var/delay = marauder_bay_delay(M.id)
 		if(delay)
 			after(M, delay, TYPE_PROC_REF(/obj/machinery/mass_driver, drive))
-	after(null, 5 SECONDS, GLOBAL_PROC_REF(mauraders_close), with = list(special_ops)) //Doors remain open for 5 seconds.
+	after(null, 5 SECONDS, GLOBAL_PROC_REF(mauraders_close), with = list(special_ops), keeps_dead = TRUE) //Doors remain open for 5 seconds.
 
 /proc/mauraders_close(area/centcom/specops/special_ops)
 	for(var/obj/machinery/door/blast/M in area_contents_of_type(special_ops, /obj/machinery/door/blast))

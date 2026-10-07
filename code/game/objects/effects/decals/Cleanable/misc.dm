@@ -32,19 +32,18 @@ CAPABILITIES(/obj/effect/decal/cleanable/ash)
 	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
+	proximity_tracked = TRUE
 
 /obj/effect/decal/cleanable/greenglow/Initialize(mapload, _age)
 	. = ..()
 	expire(2 MINUTES)
 
-DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
+/// Radiates only while a client is near (the proximity tracker): otherwise the every() parks until one comes near.
+CAPABILITIES(/obj/effect/decal/cleanable/greenglow)
+	every(2 SECONDS, then(PROC_REF(greenglow_step)), when = STAT_RELEVANCE)
 
-/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
-/obj/effect/decal/cleanable/greenglow/periodic_step()
-	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+/obj/effect/decal/cleanable/greenglow/proc/greenglow_step(datum/act/timer/A)
 	radiate()
-	..()
 
 /obj/effect/decal/cleanable/greenglow/proc/radiate()
 	if(active)

@@ -89,9 +89,6 @@
 
 	rel_set(src, nameof(linked_node), src)
 
-// Only the node processes in a subsystem, the rest are process()'d by the node
-DECLARE_PERIODIC(/obj/effect/alien/weeds/node, PERIODIC_SLOW)
-
 /obj/effect/alien/weeds/proc/updateWeedOverlays()
 	cut_overlays()
 
@@ -121,9 +118,8 @@ DECLARE_PERIODIC(/obj/effect/alien/weeds/node, PERIODIC_SLOW)
 
 	return
 
-// NB: This is not actually called by a processing subsystem, it's called by the node processing
-/obj/effect/alien/weeds/periodic_step()
-	set background = 1
+// NB: Only the node runs a timer; the node spreads the rest of the weeds by calling this.
+/obj/effect/alien/weeds/proc/weed_spread()
 	var/turf/U = get_turf(src)
 
 	if(isspace(U))
@@ -148,8 +144,11 @@ DECLARE_PERIODIC(/obj/effect/alien/weeds/node, PERIODIC_SLOW)
 
 		new /obj/effect/alien/weeds(T2, linked_node()) // No coloration.
 
-/obj/effect/alien/weeds/node/periodic_step()
-	set background = 1
+/// The node's own timer step (every(), see CAPABILITIES(/obj/effect/alien/weeds/node)).
+/obj/effect/alien/weeds/node/proc/node_step(datum/act/timer/A)
+	weed_spread()
+
+/obj/effect/alien/weeds/node/weed_spread()
 	. = ..()
 
 	var/list/nearby_weeds = list()
@@ -164,17 +163,12 @@ DECLARE_PERIODIC(/obj/effect/alien/weeds/node, PERIODIC_SLOW)
 // W.color = W.linked_node.set_color // No coloration.
 
 		if(prob(max(10, 60 - (5 * nearby_weeds.len))))
-			W.periodic_step()
-
-EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
-	INTERACT_ITEM(null, PROC_REF(interaction_hit_weeds)), \
-	INTERACT_HAND_AS(I_HURT, "Tear up", PROC_REF(interaction_touch_weeds)), \
-	INTERACT_HAND(null, PROC_REF(interaction_touch_weeds)), \
-)
+			W.weed_spread()
 
 /// Old attackby: any item hits the weeds (afterattack still follows, as before).
-/obj/effect/alien/weeds/proc/interaction_hit_weeds(mob/user, obj/item/held, datum/interaction/interaction)
-	var/obj/item/W = held
+/obj/effect/alien/weeds/proc/interaction_hit_weeds(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(LAZYLEN(W.attack_verb))
 		act_message(src, user, others = span_danger("%U% have been [pick(W.attack_verb)] with %I%[user ? " by %T%." : "."]"), item = W)
@@ -184,12 +178,18 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 	var/damage = W.force / 4.0
 
 	take_damage(damage, BRUTE, MELEE, sound_effect = FALSE)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 CAPABILITIES(/obj/effect/alien/weeds)
 	ref_one(nameof(linked_node), /obj/effect/alien/weeds/node)
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 	param(nameof(linked_node), pos = 1)
+	op("hit_weeds", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_hit_weeds)))
+	op("tear_up", hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 2), label("Tear up"), then(PROC_REF(interaction_tear_weeds)))
+	op("touch_weeds", hand(), priority(OP_PRIORITY_DEFAULT - 3), then(PROC_REF(interaction_touch_weeds)))
+
+CAPABILITIES(/obj/effect/alien/weeds/node)
+	every(2 SECONDS, then(PROC_REF(node_step)))
 
 /obj/effect/alien/weeds/proc/welder_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -205,7 +205,17 @@ CAPABILITIES(/obj/effect/alien/weeds)
 
 // start - Smaller-ranged nodes for Xenomorph Hybrids, node/weed deletion.
 /// Old attack_hand: hulks tear the weeds up; hivenode carriers melt them on harm intent.
-/obj/effect/alien/weeds/proc/interaction_touch_weeds(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/alien/weeds/proc/interaction_touch_weeds(datum/act/op/A)
+	var/mob/user = A.actor
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	if(user.has_mutation(HULK))
+		act_message(user, null, others = span_warning("%U% destroys the [name]!"))
+		take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
+	return OP_OK
+
+/// The harm-intent touch: as the plain touch, and a hivenode carrier melts the weeds away.
+/obj/effect/alien/weeds/proc/interaction_tear_weeds(datum/act/op/A)
+	var/mob/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(user.has_mutation(HULK))
 		act_message(user, null, others = span_warning("%U% destroys the [name]!"))
@@ -214,13 +224,11 @@ CAPABILITIES(/obj/effect/alien/weeds)
 
 		// Aliens can get straight through these.
 		if(istype(user,/mob/living/carbon))
-			if(interaction.stance == I_HURT)
-				var/mob/living/carbon/M = user
-				if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode))
-					act_message(user, null, others = span_warning("%U% strokes the [name] and it melts away!"))
-					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
-					return TRUE
-	return TRUE
+			var/mob/living/carbon/M = user
+			if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode))
+				act_message(user, null, others = span_warning("%U% strokes the [name] and it melts away!"))
+				take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
+	return OP_OK
 
 /obj/effect/alien/weeds/node/weak
 	light_range = 2
@@ -254,6 +262,7 @@ CAPABILITIES(/obj/effect/alien/weeds)
 CAPABILITIES(/obj/effect/alien/acid)
 	owns_one(nameof(target), /atom)
 	param(nameof(target), pos = 1, apply = PROC_REF(start_melting))
+	every(PROC_REF(acid_tick_delay), then(PROC_REF(tick)))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). Acid takes twice as long on a turf.
 /obj/effect/alien/acid/proc/start_melting(atom/melting)
@@ -263,16 +272,15 @@ CAPABILITIES(/obj/effect/alien/acid)
 		target_strength = 4
 	tick()
 
-DECLARE_REPEAT(/obj/effect/alien/acid, "acid_tick_delay", tick, null)
-
-/// Deciseconds until the acid's next bite (read each time the repeat re-arms).
-/obj/effect/alien/acid/proc/acid_tick_delay()
+/// Deciseconds until the acid's next bite (read each time the every() re-arms).
+/obj/effect/alien/acid/proc/acid_tick_delay(datum/act/A)
 	return rand(15 SECONDS, 20 SECONDS)
 
-/obj/effect/alien/acid/proc/tick()
+/// One bite. Every ending of the acid consumes it, which ends the every() with it.
+/obj/effect/alien/acid/proc/tick(datum/act/timer/A)
 	if(!target)
 		consume(src)
-		return REPEAT_STOP
+		return
 
 	ticks += 1
 	if(ticks >= target_strength)
@@ -289,7 +297,7 @@ DECLARE_REPEAT(/obj/effect/alien/acid, "acid_tick_delay", tick, null)
 		else if(isobj(target))
 			spent(target)
 		consume(src)
-		return REPEAT_STOP
+		return
 
 	switch(target_strength - ticks)
 		if(6)

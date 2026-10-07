@@ -148,9 +148,8 @@
 	VAR_PROTECTED/mob/living/target = null
 	var/requires_hallucinating = TRUE // Mob will qdel if the target is not hallucinating if this is true
 
-DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
-
 CAPABILITIES(/obj/effect/fake_attacker/human)
+	every(2 SECONDS, then(PROC_REF(fake_attacker_human_step)))
 	param(nameof(haunting), pos = 1, keep = FALSE)
 	param(nameof(clone_appearance_from), pos = 2, apply = PROC_REF(haunt), keep = FALSE)
 
@@ -167,7 +166,7 @@ CAPABILITIES(/obj/effect/fake_attacker/human)
 	// Usually we want to face our target for maximum spooky effect
 	set_dir(get_dir(src, haunting))
 
-/obj/effect/fake_attacker/human/periodic_step()
+/obj/effect/fake_attacker/human/proc/fake_attacker_human_step(datum/act/timer/A)
 	// check if valid
 	var/mob/living/M = QDELETED(target) ? null : target
 	if(!M)
@@ -190,7 +189,7 @@ CAPABILITIES(/obj/effect/fake_attacker/human)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Attacker: Performs hostile shoves and attacks
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/obj/effect/fake_attacker/human/attacker/periodic_step()
+/obj/effect/fake_attacker/human/attacker/fake_attacker_human_step(datum/act/timer/A)
 	var/mob/living/M = ..()
 
 	if(get_dist(src,M) > 1)
@@ -210,7 +209,7 @@ CAPABILITIES(/obj/effect/fake_attacker/human)
 /obj/effect/fake_attacker/human/fleeing
 	VAR_PRIVATE/flee = FALSE
 
-/obj/effect/fake_attacker/human/fleeing/periodic_step()
+/obj/effect/fake_attacker/human/fleeing/fake_attacker_human_step(datum/act/timer/A)
 	var/mob/living/M = ..()
 	set_dir(get_dir(src,M))
 

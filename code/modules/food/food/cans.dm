@@ -8,15 +8,12 @@
 	is_can = TRUE
 
 /// How many times this can has been shaken; it settles back down over time.
-OM_FIELD(/obj/item/reagent_containers/food/drinks/cans, shaken, 0, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/item/reagent_containers/food/drinks/cans, is_shaken, list("shaken"))
-DECLARE_PERIODIC_WHILE(/obj/item/reagent_containers/food/drinks/cans, PERIODIC_SLOW, "is_shaken")
-
-/obj/item/reagent_containers/food/drinks/cans/proc/is_shaken()
-	return shaken > 0
+/obj/item/reagent_containers/food/drinks/cans/var/shaken = 0
+TRACKED(/obj/item/reagent_containers/food/drinks/cans, shaken)
 
 // A can is opened by using it, except in a hostile stance, where it is shaken (shaking a shut can makes it foam when it is opened).
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans)
+	every(2 SECONDS, then(PROC_REF(cans_step)), when = nameof(shaken))
 	extend("open", stance(I_HELP, I_DISARM, I_GRAB), then(PROC_REF(maybe_unlucky)))
 	op("shake", in_hand(), stance(I_HURT), priority(OP_PRIORITY_NORMAL + 1), when(cond_not(REAGENT_CONTAINER_LID_OPEN)), label("Shake it"), then(PROC_REF(shaken_up)))
 
@@ -48,8 +45,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans)
 				explosion(get_turf(src), -1, -1, -1, 1)
 			consume(src, user)
 
-/obj/item/reagent_containers/food/drinks/cans/periodic_step(delta)
-	set_shaken(max(0, shaken - delta / (1 SECONDS))) // the periodic lane passes deciseconds
+/// The can settles a little each step while it is shaken.
+/obj/item/reagent_containers/food/drinks/cans/proc/cans_step(datum/act/timer/A)
+	var/delta = 2 SECONDS
+	set_shaken(max(0, shaken - delta / (1 SECONDS)))
 
 //DRINKS
 

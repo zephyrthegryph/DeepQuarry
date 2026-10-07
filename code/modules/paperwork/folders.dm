@@ -81,24 +81,27 @@
 
 APPEARANCE_SLOT(/obj/item/folder, CONTAINER_SLOT_PAGES, "folder_paper")
 
-/// Old attackby.
-/obj/item/folder/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: file a paperwork item. Anything else is handled, the click going on.
+/obj/item/folder/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(HAS_TAG(W, TAG_PAPERWORK))
 		var/why = dq_ledger_refusal(W, src, CONTAINER_SLOT_PAGES, user)
 		if(why)
 			to_chat(user, span_warning("You can't put \the [W] into \the [src]: [why]."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		user.drop_item()
 		if(move_into(src, CONTAINER_SLOT_PAGES, W, user))
 			to_chat(user, span_notice("You put the [W] into \the [src]."))
-	else if(istype(W, /obj/item/pen))
-		var/_answer_k98 = rerun_ask(user, "k98", PROC_REF(interaction_item), args, /datum/prompt/text, question = "What would you like to label the folder?", title = "Folder Labelling", max_len = MAX_NAME_LEN, encode = FALSE, name_text = ((MAX_NAME_LEN) <= MAX_NAME_LEN))
-		if(isnull(_answer_k98))
-			return TRUE
-		var/n_name = sanitizeSafe(_answer_k98, MAX_NAME_LEN)
-		if(in_range(user, src) && user.stat == 0)
-			name = "folder[(n_name ? text("- '[n_name]'") : null)]"
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
+
+/// Old attackby with a pen: label the folder.
+/obj/item/folder/proc/folder_label(datum/act/op/A)
+	var/mob/user = A.actor
+	var/n_name = sanitizeSafe(A.step_value("k98"), MAX_NAME_LEN)
+	if(in_range(user, src) && user.stat == 0)
+		name = "folder[(n_name ? text("- '[n_name]'") : null)]"
+	return OP_PASS
 
 /obj/item/folder/afterattack(turf/T as turf, mob/user as mob)
 	for(var/obj/item/paper/P in turf_contents_of_type(T, /obj/item/paper))
@@ -108,18 +111,19 @@ APPEARANCE_SLOT(/obj/item/folder, CONTAINER_SLOT_PAGES, "folder_paper")
 // TGUI migration. attack_self opens Folder.tsx; the Topic
 // remove/rename/read/look/browse actions move to tgui_act. Reading a
 // paper/photo chains to that item's TGUI viewer (Paper.tsx / Photo.tsx).
-DECLARE_INTERACTIONS(/obj/item/folder, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_self.
-/obj/item/folder/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/folder/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 CAPABILITIES(/obj/item/folder)
+	op("folder_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("folder_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
+	op("folder_label", item(/obj/item/pen), priority(OP_PRIORITY_DEFAULT - 2), label("Use"),
+		asks(/datum/prompt/text, fields = list("question" = "What would you like to label the folder?", "title" = "Folder Labelling", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "k98"),
+		then(PROC_REF(folder_label)))
 	interface("Folder")
 	without("ui_open")
 	op("remove", ui_act("remove", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove)))

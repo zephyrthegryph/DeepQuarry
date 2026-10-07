@@ -85,16 +85,27 @@
 				actual_by_type[type] = list("no tile to pin a turf on")
 				continue
 			var/turf/changed = beside.ChangeTurf(type)
-			actual_by_type[type] = dq_pin_lines(changed, T, actors)
+			try
+				actual_by_type[type] = dq_pin_lines(changed, T, actors)
+			catch(var/exception/read_turf)
+				actual_by_type[type] = list("runtime while reading it: [read_turf.name]")
 			beside = changed.ChangeTurf(beside_type)
 			TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, sweep_room, target_gravity), "turf capture left fixture products")
 			continue
-		var/atom/target = dq_snapshot_allocate(type, T)
+		var/atom/target = null
+		try
+			target = dq_snapshot_allocate(type, T)
+		catch(var/exception/made)
+			actual_by_type[type] = list("runtime while making it: [made.name]")
+			continue
 		if(QDELETED(target))
 			actual_by_type[type] = list("deleted itself on creation")
 			TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, sweep_room, target_gravity), "self-deleting capture left fixture products")
 			continue
-		actual_by_type[type] = dq_pin_lines(target, T, actors)
+		try
+			actual_by_type[type] = dq_pin_lines(target, T, actors)
+		catch(var/exception/read)
+			actual_by_type[type] = list("runtime while reading it: [read.name]")
 		qdel(target)
 		TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, sweep_room, target_gravity), "capture left fixture products")
 	var/report = dq_snapshot_compare(DQ_PIN_DIR, "pins", actual_by_type, expected_by_type, bad)

@@ -40,13 +40,9 @@ CAPABILITIES(/obj/effect/spider)
 	take_damage(15, BRUTE, MELEE, sound_effect = FALSE)
 	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
-	INTERACT_HAND("Stomp", PROC_REF(interaction_stomp_spiderling)), \
-)
-
 /// Old attack_hand: try to stomp the spiderling.
-/obj/effect/spider/spiderling/proc/interaction_stomp_spiderling(mob/living/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/effect/spider/spiderling/proc/interaction_stomp_spiderling(datum/act/op/A)
+	var/mob/living/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.do_attack_animation(src)
 	if(prob(20))
@@ -54,9 +50,10 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 		var/list/nearby = oview(2, src)
 		if(length(nearby))
 			walk_to(src, pick(nearby), 2)
-			return
+			return OP_OK
 	act_message(user, src, others = span_warning("%U% stomps %T% dead!"))
 	die()
+	return OP_OK
 
 /obj/effect/spider/proc/die()
 	consume(src)
@@ -191,6 +188,7 @@ TYPE_TABLE(/obj/effect/spider/spiderling/varied, spiderling_grow_as, list(/mob/l
 
 CAPABILITIES(/obj/effect/spider/spiderling)
 	every(2 SECONDS, then(PROC_REF(spiderling_step)))
+	op("stomp", hand(), label("Stomp"), then(PROC_REF(interaction_stomp_spiderling)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(6))
 	rolls(nameof(amount_grown), PROC_REF(roll_grown))
 	param(nameof(laid_by), pos = 1, apply = PROC_REF(take_parent_look), keep = FALSE)
@@ -247,7 +245,7 @@ CAPABILITIES(/obj/effect/spider/spiderling)
 /obj/effect/spider/spiderling/proc/vent_crawl_enter(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
 	forceMove(exit_vent)
 	var/travel_time = round(get_dist(loc, exit_vent.loc) / 2)
-	after(src, travel_time, PROC_REF(vent_crawl_midway), with = list(entry, exit_vent, travel_time))
+	after(src, travel_time, PROC_REF(vent_crawl_midway), with = list(entry, exit_vent, travel_time), keeps_dead = TRUE)
 
 /obj/effect/spider/spiderling/proc/vent_crawl_midway(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent, travel_time)
 	if(!exit_vent || is_welded(exit_vent))
@@ -258,7 +256,7 @@ CAPABILITIES(/obj/effect/spider/spiderling)
 	if(prob(50))
 		src.visible_message(span_notice("You hear something squeezing through the ventilation ducts."),2)
 		SSmotiontracker.ping(src,10)
-	after(src, travel_time, PROC_REF(vent_crawl_exit), with = list(entry, exit_vent))
+	after(src, travel_time, PROC_REF(vent_crawl_exit), with = list(entry, exit_vent), keeps_dead = TRUE)
 
 /obj/effect/spider/spiderling/proc/vent_crawl_exit(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
 	if(!exit_vent || is_welded(exit_vent))

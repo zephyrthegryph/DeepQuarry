@@ -404,7 +404,7 @@
 /mob/living/flash_eyes(intensity = FLASH_PROTECTION_MODERATE, override_blindness_check = FALSE, affect_silicon = FALSE, visual = FALSE, type = /atom/movable/screen/fullscreen/flash)
 	if(override_blindness_check || !(disabilities & BLIND))
 		overlay_fullscreen("flash", type)
-		after(src, 2.5 SECONDS, TYPE_PROC_REF(/mob, clear_fullscreen), with = list("flash", 2.5 SECONDS))
+		after(src, 2.5 SECONDS, TYPE_PROC_REF(/mob, clear_fullscreen), with = list("flash", 2.5 SECONDS), keeps_dead = TRUE)
 		return 1
 
 /mob/living/proc/cannot_use_vents()
@@ -484,7 +484,7 @@
 		lastpuke = TRUE
 		to_chat(src, span_warning("You feel nauseous..."))
 		after(src, 15 SECONDS, TYPE_PROC_REF(/datum, om_chat), with = list(span_warning("You feel like you're about to throw up!")))
-		after(src, 25 SECONDS, PROC_REF(do_vomit), with = list(lost_nutrition, blood, stun, distance, message, toxic, purge))
+		after(src, 25 SECONDS, PROC_REF(do_vomit), with = list(lost_nutrition, blood, stun, distance, message, toxic, purge), keeps_dead = TRUE)
 
 /// after() target: able to vomit again.
 /mob/living/proc/puke_recovered()

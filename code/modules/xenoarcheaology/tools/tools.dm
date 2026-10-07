@@ -236,11 +236,10 @@ OM_FIELD_VIEW(/obj/item/beacon_locator, tmp/obj/item/radio, target_radio, CHANGE
 OM_DERIVE_FIELD(/obj/item/beacon_locator, locating, list("scan_ticks", "target_radio"))
 /obj/item/beacon_locator/proc/locating()
 	return scan_ticks || target_radio
-DECLARE_PERIODIC_WHILE(/obj/item/beacon_locator, PERIODIC_SLOW, "locating")
 
-/obj/item/beacon_locator/periodic_step()
+/obj/item/beacon_locator/proc/beacon_locator_step(datum/act/timer/A)
 	if(!target_radio() && !scan_ticks)
-		return PROCESS_KILL // the tracked beacon is gone
+		return // the tracked beacon is gone
 	if(target_radio())
 		set_dir(get_dir(src,target_radio()))
 		switch(get_dist(src,target_radio()))
@@ -277,6 +276,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/beacon_locator, PERIODIC_SLOW, "locating")
 
 
 CAPABILITIES(/obj/item/beacon_locator)
+	every(2 SECONDS, then(PROC_REF(beacon_locator_step)))
 	op("interaction_open", in_hand(), label("Open"), then(PROC_REF(interaction_open)))
 	interface("BeaconLocator", state = nameof(GLOB.tgui_inventory_state))
 	op("reset_tracking", ui_act("reset_tracking"), then(PROC_REF(ui_act_reset_tracking)))

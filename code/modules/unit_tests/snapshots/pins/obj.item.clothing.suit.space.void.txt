@@ -1,0 +1,151 @@
+human|none menu: Alternate use
+human|none menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+human|none menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+human|none menu: Move To Top
+human|none menu: Pick up
+human|none menu: Toggle Digestable (refused: You can't do that.)
+human|none menu: Toggle Helmet (refused: You can't do that.)
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Alternate use
+robot|none menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+robot|none menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+robot|none menu: Equip (refused: not possible right now)
+robot|none menu: Move To Top
+robot|none menu: Pick up
+robot|none menu: Toggle Digestable (refused: You can't do that.)
+robot|none menu: Toggle Helmet (refused: You can't do that.)
+robot|none menu: Use
+robot|none click: Click: Use
+ai|none menu: Equip (refused: not possible right now)
+ai|none click: nothing
+ghost|none menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
+ghost|none menu: Toggle Helmet (refused: You can't do that.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Alternate use
+human|/obj/item/tool/screwdriver menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+human|/obj/item/tool/screwdriver menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver menu: Voidsuit install item
+human|/obj/item/tool/screwdriver click: Click: Voidsuit install item
+human|/obj/item/tool/crowbar menu: Alternate use
+human|/obj/item/tool/crowbar menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+human|/obj/item/tool/crowbar menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar menu: Voidsuit install item
+human|/obj/item/tool/crowbar click: Click: Voidsuit install item
+human|/obj/item/tool/wrench menu: Alternate use
+human|/obj/item/tool/wrench menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+human|/obj/item/tool/wrench menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench menu: Voidsuit install item
+human|/obj/item/tool/wrench click: Click: Voidsuit install item
+human|/obj/item/tool/wirecutters menu: Alternate use
+human|/obj/item/tool/wirecutters menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+human|/obj/item/tool/wirecutters menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters menu: Voidsuit install item
+human|/obj/item/tool/wirecutters click: Click: Voidsuit install item
+human|/obj/item/multitool menu: Alternate use
+human|/obj/item/multitool menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+human|/obj/item/multitool menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool menu: Voidsuit install item
+human|/obj/item/multitool click: Click: Voidsuit install item
+human|/obj/item/weldingtool menu: Alternate use
+human|/obj/item/weldingtool menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+human|/obj/item/weldingtool menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool menu: Voidsuit install item
+human|/obj/item/weldingtool click: Click: Voidsuit install item
+human|/obj/item/stack/cable_coil menu: Alternate use
+human|/obj/item/stack/cable_coil menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+human|/obj/item/stack/cable_coil menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil menu: Voidsuit install item
+human|/obj/item/stack/cable_coil click: Click: Voidsuit install item
+human|/obj/item/stack/material/steel menu: Alternate use
+human|/obj/item/stack/material/steel menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+human|/obj/item/stack/material/steel menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Space suit patch item
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel menu: Voidsuit install item
+human|/obj/item/stack/material/steel click: Click: Space suit patch item
+human|/obj/item/card/id menu: Alternate use
+human|/obj/item/card/id menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+human|/obj/item/card/id menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id menu: Voidsuit install item
+human|/obj/item/card/id click: Click: Voidsuit install item
+human|/obj/item/kit menu: Alternate use
+human|/obj/item/kit menu: Customise
+human|/obj/item/kit menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+human|/obj/item/kit menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+human|/obj/item/kit menu: Move To Top
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/kit menu: Use
+human|/obj/item/kit menu: Voidsuit install item
+human|/obj/item/kit click: Click: Customise
+human|/obj/item/storage menu: Alternate use
+human|/obj/item/storage menu: Collect
+human|/obj/item/storage menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+human|/obj/item/storage menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/storage menu: Use
+human|/obj/item/storage menu: Voidsuit install item
+human|/obj/item/storage click: Click: Collect
+human|/obj/item menu: Alternate use
+human|/obj/item menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+human|/obj/item menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item menu: Use
+human|/obj/item menu: Voidsuit install item
+human|/obj/item click: Click: Voidsuit install item
+human|/obj/item/stack/material menu: Alternate use
+human|/obj/item/stack/material menu: Eject tank (refused: There is no tank or cooling unit inserted.)
+human|/obj/item/stack/material menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+human|/obj/item/stack/material menu: Move To Top
+human|/obj/item/stack/material menu: Space suit patch item
+human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/stack/material menu: Use
+human|/obj/item/stack/material menu: Voidsuit install item
+human|/obj/item/stack/material click: Click: Space suit patch item
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, space_suit_patch_item, toggle_digestable, voidsuit_eject_tank_alt, voidsuit_install_item, void_eject_tank_verb, void_toggle_helmet_verb
+

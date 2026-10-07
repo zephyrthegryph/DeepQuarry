@@ -27,12 +27,16 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/zaddat, fit_spec, list(REQ_FITS_BO
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/zaddat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS))))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/zaddat, \
-	INTERACT_VERB("Customize Shroud", PROC_REF(zaddat_custom_suit_verb), REQ_IN_INVENTORY, REQ_FIELD_NOT("has_been_customized", "this shroud has already been customized")), \
-)
+MSG_DEF_SELF(zaddat/has_been_customized, "This shroud has already been customized.")
 
-/// Old verb "Customize Shroud".
-/obj/item/clothing/suit/space/void/zaddat/proc/zaddat_custom_suit_verb(mob/user, obj/item/held, datum/interaction/interaction, selected_style = null)
+CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
+	op("zaddat_custom_suit_verb", menu(), label("Customize Shroud"), needs(carried(), req_is(nameof(has_been_customized), FALSE, because = MSG(zaddat/has_been_customized))), then(PROC_REF(zaddat_custom_suit_verb)))
+
+/// Old verb "Customize Shroud": ask which style, then zaddat_customize() applies it.
+/obj/item/clothing/suit/space/void/zaddat/proc/zaddat_custom_suit_verb(datum/act/op/A)
+	return zaddat_customize(A.actor)
+
+/obj/item/clothing/suit/space/void/zaddat/proc/zaddat_customize(mob/user, selected_style = null)
 	var/mob/M = user
 	if(isnull(selected_style))
 		return open_style_request(user, "Suit Style")
@@ -158,7 +162,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/zaddat, \
 
 
 
-/obj/item/clothing/suit/space/void/zaddat/security/zaddat_custom_suit_verb(mob/user, obj/item/held, datum/interaction/interaction, selected_style = null)
+/obj/item/clothing/suit/space/void/zaddat/security/zaddat_customize(mob/user, selected_style = null)
 	var/mob/M = user
 	if(isnull(selected_style))
 		return open_style_request(user, "Select Style")
@@ -226,7 +230,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/zaddat, \
 	return TRUE
 
 
-/obj/item/clothing/suit/space/void/zaddat/engineer/zaddat_custom_suit_verb(mob/user, obj/item/held, datum/interaction/interaction, selected_style = null)
+/obj/item/clothing/suit/space/void/zaddat/engineer/zaddat_customize(mob/user, selected_style = null)
 	var/mob/M = user
 	if(isnull(selected_style))
 		return open_style_request(user, "Select Style")
@@ -334,7 +338,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/zaddat, \
 /obj/item/clothing/suit/space/void/zaddat/proc/apply_style_answer(datum/act/request/A)
 	var/datum/prompt/choice/shroud_style/request = A.request
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
-	return zaddat_custom_suit_verb(user, null, null, A.answer.value)
+	return zaddat_customize(user, A.answer.value)
 
 /datum/prompt/choice/shroud_style
 	question = "Which suit style would you like?"

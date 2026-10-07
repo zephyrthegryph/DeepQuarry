@@ -17,6 +17,8 @@
 	var/obj/item/radio/intercom/science/ghost_reporter
 
 CAPABILITIES(/obj/item/ghost_trap)
+	// Watches its catch every 2 s while it holds one; empty, it sleeps.
+	every(2 SECONDS, then(PROC_REF(ghost_trap_step)), when = nameof(captured_entity))
 	owns_one(nameof(ghost_reporter), /obj/item/radio/intercom/science)
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
@@ -25,8 +27,6 @@ CAPABILITIES(/obj/item/ghost_trap)
 
 ///The entity we currently have captured (a relation view).
 OM_FIELD_VIEW(/obj/item/ghost_trap, mob, captured_entity, CHANGE_EXPLICIT)
-/// Watches its catch every 2 s while it holds one; empty, it sleeps.
-DECLARE_PERIODIC_WHILE(/obj/item/ghost_trap, PERIODIC_SLOW, "captured_entity")
 
 /obj/item/ghost_trap/Initialize(mapload)
 	. = ..()
@@ -97,7 +97,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ghost_trap, PERIODIC_SLOW, "captured_entity")
 	deployed = TRUE
 
 /// Watches its catch every 2 s while it holds one (declared above); empty, it sleeps.
-/obj/item/ghost_trap/periodic_step()
+/obj/item/ghost_trap/proc/ghost_trap_step(datum/act/timer/A)
 	if(captured_entity)
 		var/mob/our_entity = captured_entity
 		if(our_entity && our_entity.loc != src)

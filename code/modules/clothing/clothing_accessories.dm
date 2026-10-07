@@ -21,39 +21,35 @@
 
 	return TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing, \
-	INTERACT_ITEM(null, PROC_REF(clothing_accessory_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(clothing_accessory_hand)), \
-	INTERACT_ALT(null, PROC_REF(clothing_remove_accessory_alt)), \
-	INTERACT_SELF(null, PROC_REF(clothing_circuit_self)), \
-)
-
 /// Old attackby: attach an accessory, or forward the item to the attached accessories.
-/obj/item/clothing/proc/clothing_accessory_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/clothing/proc/clothing_accessory_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/clothing/accessory))
-		var/obj/item/clothing/accessory/A = I
-		if(attempt_attach_accessory(A, user))
-			return INTERACTION_HANDLED_PASS
+		var/obj/item/clothing/accessory/acc = I
+		if(attempt_attach_accessory(acc, user))
+			return OP_PASS
 
 	if(LAZYLEN(accessories))
-		for(var/obj/item/clothing/accessory/A in accessories)
-			A.attackby(I, user)
-		return INTERACTION_HANDLED_PASS
+		for(var/obj/item/clothing/accessory/acc in accessories)
+			acc.attackby(I, user)
+		return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
 /// Old attack_hand: forward to the attached accessories while worn.
-/obj/item/clothing/proc/clothing_accessory_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/proc/clothing_accessory_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	//only forward to the attached accessory if the clothing is equipped (not in a storage)
 	if(LAZYLEN(accessories) && src.loc == user)
-		for(var/obj/item/clothing/accessory/A in accessories)
-			A.attack_hand(user)
-		return TRUE
+		for(var/obj/item/clothing/accessory/acc in accessories)
+			acc.attack_hand(user)
+		return OP_OK
 	if (ishuman(user) && src.loc == user)
 		var/mob/living/carbon/human/H = user
 		if(src == H.get_equipped_item(SLOT_ID_UNIFORM)) // Un-equip on single click, but not on uniform.
-			return TRUE
-	return FALSE
+			return OP_OK
+	return OP_DECLINE
 
 /// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/item/clothing/proc/mousedrop_input(datum/act/input/A)

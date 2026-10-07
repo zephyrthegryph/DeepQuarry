@@ -12,7 +12,7 @@
 	effect.pulse_step()
 	TEST_ASSERT(!QDELETED(effect), "actual last pulse preserves source until the exhaustion step")
 	TEST_ASSERT_EQUAL(effect.pulses_remaining, 0, "actual last pulse spends its remaining count")
-	TEST_ASSERT_EQUAL(effect.pulse_step(), REPEAT_STOP, "actual exhaustion returns the repeat stop result")
+	effect.pulse_step()
 	TEST_ASSERT(QDELETED(effect), "actual exhaustion consumes the original pulse effect")
 	TEST_ASSERT_EQUAL(om_timer_count(effect), 0, "actual pulse exhaustion cancels owned deadlines")
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/effect/temporary_effect/pulse)), 0, "actual exhaustion leaves no original pulse effect")

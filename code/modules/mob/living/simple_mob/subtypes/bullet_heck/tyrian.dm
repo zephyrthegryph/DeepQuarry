@@ -216,19 +216,18 @@
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime)
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(spawn_antlings)))
+	op("tyrian_slime_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(tyrian_slime_interaction_item)))
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime/proc/spawn_antlings(datum/act/A)
 	for(var/i =1 to 4)
 		new /obj/effect/spider/spiderling/antling/created(src.loc)
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime, INTERACT_ITEM(null, PROC_REF(tyrian_slime_interaction_item)))
-
 /// Old attackby: spawns antlings, then the normal handling.
-/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime/proc/tyrian_slime_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime/proc/tyrian_slime_interaction_item(datum/act/op/A)
+	. = OP_OK
 	for(var/i =1 to 4)
 		new /obj/effect/spider/spiderling/antling/created(src.loc)
-	return FALSE
+	return OP_DECLINE
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime/do_special_attack(atom/A, stance)
 	for(var/i =1 to 4)

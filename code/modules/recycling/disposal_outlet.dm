@@ -31,16 +31,19 @@
 	PUBLISH_LEGACY(src, /datum/notice/disposal_unlink)
 	..()
 
-DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/disposaloutlet)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/disposaloutlet/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/disposaloutlet/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(!I || !user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	src.add_fingerprint(user)
 	if(mode == OUTLET_SCREWED)
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /obj/structure/disposaloutlet/screwdriver_act(mob/user, obj/item/I)
 	mode = mode == OUTLET_SCREWED ? OUTLET_UNSCREWED : OUTLET_SCREWED
@@ -121,7 +124,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 	if(ELAPSED(src, start_eject, CLOCK_WORLD) > 3 SECONDS)
 		EXPIRY_STAMP(src, start_eject, CLOCK_WORLD)
 		play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
-		after(src, 2 SECONDS, PROC_REF(expel_contents), with = list(received_items, gas, TRUE))
+		after(src, 2 SECONDS, PROC_REF(expel_contents), with = list(received_items, gas, TRUE), keeps_dead = TRUE)
 	else
 		after(src, 2 SECONDS, PROC_REF(expel_contents), with = list(received_items, gas))
 

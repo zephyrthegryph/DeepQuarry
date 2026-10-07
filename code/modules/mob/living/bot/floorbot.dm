@@ -356,10 +356,13 @@ CAPABILITIES(/obj/item/storage/toolbox/mechanical)
 	w_class = ITEMSIZE_NORMAL
 	var/created_name = "Floorbot"
 
-DECLARE_INTERACTIONS(/obj/item/toolbox_tiles, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/toolbox_tiles)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/toolbox_tiles/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/toolbox_tiles/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(isprox(W))
 		consume(W, user)
 		var/obj/item/toolbox_tiles_sensor/B = new /obj/item/toolbox_tiles_sensor()
@@ -369,7 +372,7 @@ DECLARE_INTERACTIONS(/obj/item/toolbox_tiles, INTERACT_ITEM(null, PROC_REF(inter
 		consume(src, user)
 	else if (istype(W, /obj/item/pen))
 		ask_name_var(user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/toolbox_tiles_sensor
 	desc = "It's a toolbox with tiles sticking out the top and a sensor attached"
@@ -383,17 +386,20 @@ DECLARE_INTERACTIONS(/obj/item/toolbox_tiles, INTERACT_ITEM(null, PROC_REF(inter
 	w_class = ITEMSIZE_NORMAL
 	var/created_name = "Floorbot"
 
-DECLARE_INTERACTIONS(/obj/item/toolbox_tiles_sensor, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/toolbox_tiles_sensor)
+	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/toolbox_tiles_sensor/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/toolbox_tiles_sensor/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/robot_parts/l_arm) || istype(W, /obj/item/robot_parts/r_arm) || (istype(W, /obj/item/organ/external/arm) && ((W.name == "robotic right arm") || (W.name == "robotic left arm"))))
 		consume(W, user)
 		var/turf/T = get_turf(user.loc)
-		var/mob/living/bot/floorbot/A = new /mob/living/bot/floorbot(T)
-		A.name = created_name
+		var/mob/living/bot/floorbot/new_bot = new /mob/living/bot/floorbot(T)
+		new_bot.name = created_name
 		to_chat(user, span_notice("You add the robot arm to the odd looking toolbox assembly! Boop beep!"))
 		consume(src, user)
 	else if(istype(W, /obj/item/pen))
 		ask_name_var(user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS

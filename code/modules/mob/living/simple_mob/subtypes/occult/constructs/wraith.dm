@@ -57,7 +57,7 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 	// Telegraph to give a small window to dodge if really close.
 	flick("phase_shift",A)
 	icon_state = "phase_shift"
-	after(src, jaunt_warning, PROC_REF(do_special_attack_1), with = list(A, destination, starting_turf)) // For the telegraphing.
+	after(src, jaunt_warning, PROC_REF(do_special_attack_1), with = list(A, destination, starting_turf), keeps_dead = TRUE) // For the telegraphing.
 
 
 /mob/living/simple_mob/construct/wraith/proc/do_special_attack_1(atom/A, turf/destination, turf/starting_turf)

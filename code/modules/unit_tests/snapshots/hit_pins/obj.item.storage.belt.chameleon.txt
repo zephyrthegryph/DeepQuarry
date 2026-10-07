@@ -1,0 +1,12 @@
+blob | survives
+emag | ledger: null -> /datum/ledger
+emag | om_rec: null -> /datum/om/rec
+emp 1 | desc: 'Can hold various things.  It also has a small dial inside one of the pouches.' -> 'Can hold various things.'
+emp 1 | refresh_queued: 131071 -> 0
+emp 2 | desc: 'Can hold various things.  It also has a small dial inside one of the pouches.' -> 'Can hold various things.'
+explosion 1 | deleted
+explosion 2 | atom_integrity: down
+explosion 3 | atom_integrity: down
+projectile | atom_integrity: down
+thrown | atom_integrity: down
+

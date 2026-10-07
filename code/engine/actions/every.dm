@@ -90,7 +90,7 @@
 	var/datum/holder = A.holder
 	if(!holder || QDELETED(holder) || A.dead)
 		return
-	after(holder, every_interval(holder, E, A), GLOBAL_PROC_REF(activation_every_fire), key = activation_every_key(A, E), with = list(A, E))
+	after(holder, every_interval(holder, E, A), GLOBAL_PROC_REF(activation_every_fire), key = activation_every_key(A, E), with = list(A, E), keeps_dead = TRUE)
 
 /// One run of an every(): the handler (unless the activation is shadowed or its when fails), then the next arming unless the handler ended the activation.
 /proc/activation_every_fire(datum/activation/A, datum/entry/E, dispatched = FALSE)
@@ -148,7 +148,7 @@
 
 /proc/type_every_schedule(datum/holder, datum/centry/C, index)
 	var/datum/entry/E = C.item
-	after(holder, every_interval(holder, E), GLOBAL_PROC_REF(type_every_fire), key = "every:type:[index]", with = list(holder, C, index))
+	after(holder, every_interval(holder, E), GLOBAL_PROC_REF(type_every_fire), key = "every:type:[index]", with = list(holder, C, index), keeps_dead = TRUE)
 
 /// TRUE when the type-level every() `C` is held by its own `when =` alone (no enclosing when() block) and that condition is built only of tracked vars of the
 /// holder (nameof(var), cond_not/cond_all/cond_any of those): every write of such a var publishes, so the every() PARKS while the condition is false (no timer

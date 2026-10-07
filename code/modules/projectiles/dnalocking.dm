@@ -12,7 +12,7 @@
 	var/exploding = 0
 
 /// Requirement for the DNA lock Menu entries: replaces the verbs gun.dm added and removed with the lock.
-/obj/item/gun/proc/pred_has_dna_lock(mob/actor, atom/target, obj/item/held)
+/obj/item/gun/proc/pred_has_dna_lock_holds(datum/act/op/A)
 	return dna_lock && attached_lock
 
 /obj/item/gun/proc/get_dna(mob/user)
@@ -41,8 +41,9 @@
 		return FALSE
 
 /// Old Give DNA verb.
-/obj/item/gun/proc/gun_verb_give_dna(mob/user, obj/item/held, datum/interaction/interaction)
-	get_dna(user)
+/obj/item/gun/proc/gun_verb_give_dna(datum/act/op/A)
+	get_dna(A.actor)
+	return OP_OK
 
 /obj/item/gun/proc/clear_dna(mob/user)
 	var/mob/living/M = user
@@ -63,8 +64,9 @@
 		return FALSE
 
 /// Old Remove DNA verb.
-/obj/item/gun/proc/gun_verb_remove_dna(mob/user, obj/item/held, datum/interaction/interaction)
-	clear_dna(user)
+/obj/item/gun/proc/gun_verb_remove_dna(datum/act/op/A)
+	clear_dna(A.actor)
+	return OP_OK
 
 /obj/item/gun/proc/toggledna(mob/user)
 	var/mob/living/M = user
@@ -79,8 +81,9 @@
 		to_chat(M, span_warning("\The [src] buzzes and displays an invalid user symbol."))
 
 /// Old Toggle DNA Samples Allowance verb.
-/obj/item/gun/proc/gun_verb_allow_dna(mob/user, obj/item/held, datum/interaction/interaction)
-	toggledna(user)
+/obj/item/gun/proc/gun_verb_allow_dna(datum/act/op/A)
+	toggledna(A.actor)
+	return OP_OK
 
 /obj/item/gun/proc/authorized_user(mob/user)
 	if(!attached_lock.stored_dna || !length(attached_lock.stored_dna))

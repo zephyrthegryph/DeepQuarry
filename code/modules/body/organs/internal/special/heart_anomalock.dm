@@ -54,11 +54,11 @@ MSG_DEF_SELF(anomalock/removing, "removing core...")
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/add_lightning_overlay(time_to_last = 10 SECONDS)
 	if(lightning_overlay)
-		after(src, time_to_last, PROC_REF(clear_lightning_overlay), key = "lightning_timer", with = list(owner))
+		after(src, time_to_last, PROC_REF(clear_lightning_overlay), key = "lightning_timer", with = list(owner), keeps_dead = TRUE)
 		return
 	lightning_overlay = mutable_appearance(icon = 'icons/effects/effects.dmi', icon_state = "lightning")
 	owner.add_overlay(lightning_overlay)
-	after(src, time_to_last, PROC_REF(clear_lightning_overlay), key = "lightning_timer", with = list(owner))
+	after(src, time_to_last, PROC_REF(clear_lightning_overlay), key = "lightning_timer", with = list(owner), keeps_dead = TRUE)
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/clear_lightning_overlay(mob/organ_owner)
 	organ_owner?.cut_overlay(lightning_overlay)

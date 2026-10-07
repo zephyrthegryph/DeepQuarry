@@ -1,6 +1,5 @@
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye|human|none => ship_emote_beyond,ship_console_use|emag:needs a cryptographic sequencer
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye|robot|none => ship_emote_beyond,gen_silicon_ship_silicon_use,ship_console_use|emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye|ai|none => gen_silicon_ship_silicon_use|
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye|ghost|none => gen_observer_ship_ghost_view|
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye|human|/obj/item/card/emag => emag,ship_emote_beyond,ship_console_use|
+/obj/machinery/computer/ship/navigation/telescreen/dog_eye|human|none => ship_emote_beyond|
+/obj/machinery/computer/ship/navigation/telescreen/dog_eye|robot|none => ship_emote_beyond|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/computer/ship/navigation/telescreen/dog_eye|ai|none => |
+/obj/machinery/computer/ship/navigation/telescreen/dog_eye|ghost|none => |
 

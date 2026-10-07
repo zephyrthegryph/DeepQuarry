@@ -253,17 +253,17 @@ CAPABILITIES(/obj/structure/simple_door)
 	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
+	proximity_tracked = TRUE
 
 /obj/structure/simple_door/uranium
 	material_name = MAT_URANIUM
 
-DECLARE_PERIODIC(/obj/structure/simple_door/uranium, PERIODIC_SLOW)
-
 // Use the uranium-specific rate-limited pulse instead of the base generic material radiation.
-/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
-/obj/structure/simple_door/uranium/periodic_step()
-	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+/// Radiates only while a client is near (the proximity tracker, STAT_RELEVANCE); otherwise the every() parks until one comes near.
+CAPABILITIES(/obj/structure/simple_door/uranium)
+	every(2 SECONDS, then(PROC_REF(uranium_door_step)), when = STAT_RELEVANCE)
+
+/obj/structure/simple_door/uranium/proc/uranium_door_step(datum/act/timer/A)
 	radiate()
 
 /obj/structure/simple_door/uranium/proc/radiate()

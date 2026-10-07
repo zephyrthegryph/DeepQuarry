@@ -16,10 +16,10 @@
 	return "[name][R.number(1, sides)]"
 
 /// Old attackby.
-/obj/item/dice/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/flame/lighter))
-		weight_die(user)
-	return INTERACTION_HANDLED_PASS
+/obj/item/dice/proc/interaction_item(datum/act/op/A)
+	if(istype(A.held, /obj/item/flame/lighter))
+		weight_die(A.actor)
+	return OP_PASS
 
 /obj/item/dice/welder_act(mob/user, obj/item/tool)
 	weight_die(user)
@@ -49,14 +49,15 @@
 	return TRUE
 
 /// Old click_alt.
-/obj/item/dice/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	return dice_cheat_stage(user, held, interaction)
+/obj/item/dice/proc/interaction_alt(datum/act/op/A)
+	dice_cheat_stage(A.actor, A.held)
+	return OP_OK
 
-/obj/item/dice/proc/dice_cheat_stage(mob/user, obj/item/held, datum/interaction/interaction, dice_answer, dice_answer_ready = FALSE)
+/obj/item/dice/proc/dice_cheat_stage(mob/user, obj/item/held, dice_answer, dice_answer_ready = FALSE)
 	if(cheater)
 		if(!loaded)
 			if(!dice_answer_ready)
-				open_request(src, /datum/prompt/number/dice_configuration, PROC_REF(dice_cheat_answered), answerer = user, dice_operator = user, dice_held = held, dice_interaction = interaction, question = "What should the [name] be weighted towards?", title = "Set the desired result", default = 1, dice_ui_max = sides)
+				open_request(src, /datum/prompt/number/dice_configuration, PROC_REF(dice_cheat_answered), answerer = user, dice_operator = user, dice_held = held, question = "What should the [name] be weighted towards?", title = "Set the desired result", default = 1, dice_ui_max = sides)
 				return TRUE
 			var/to_weight = dice_answer
 			if(isnull(to_weight))
@@ -116,14 +117,11 @@
 	sides = 10
 	result = 10
 
-DECLARE_INTERACTIONS(/obj/item/dice, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-	INTERACT_VERB("Set Face", PROC_REF(dice_verb_set_face)), \
-)
-
 CAPABILITIES(/obj/item/dice)
 	op("roll", in_hand(), label("Roll die"), then(PROC_REF(dice_roll_requested)))
+	op("interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
+	op("interaction_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_alt)))
+	op("dice_verb_set_face", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Set Face"), then(PROC_REF(dice_verb_set_face)))
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 /obj/item/dice/proc/dice_roll_requested(datum/act/op/A)
@@ -157,11 +155,13 @@ CAPABILITIES(/obj/item/dice)
 			MSG_BLIND(span_notice("You hear %T% landing on a [result]. [comment]")))
 
 /// Old Set Face verb: Turn the dice to a specific face.
-/obj/item/dice/proc/dice_verb_set_face(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/dice/proc/dice_verb_set_face(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!iscarbon(user))
-		return
+		return OP_OK
 
 	set_dice(user)
+	return OP_OK
 
 /obj/item/dice/proc/set_dice(mob/user)
 	return dice_face_stage(user)
@@ -322,7 +322,7 @@ CAPABILITIES(/obj/item/storage/dicecup)
 
 /obj/item/dice/proc/dice_cheat_apply(datum/act/request/A)
 	var/datum/prompt/number/dice_configuration/ask = A.answer
-	return dice_cheat_stage(ask.dice_operator, ask.dice_held, ask.dice_interaction, ask.value, TRUE)
+	return dice_cheat_stage(ask.dice_operator, ask.dice_held, ask.value, TRUE)
 
 /obj/item/dice/proc/dice_face_answered(datum/act/request/A)
 	if(!A.answer)
@@ -342,36 +342,28 @@ CAPABILITIES(/obj/item/storage/dicecup)
 	var/dice_ui_max = 6
 	var/mob/dice_operator
 	var/obj/item/dice_held
-	var/datum/interaction/dice_interaction
 	var/dice_operator_expected = FALSE
 	var/dice_held_expected = FALSE
-	var/dice_interaction_expected = FALSE
 
 CAPABILITIES(/datum/prompt/number/dice_configuration)
 	ref_one(nameof(dice_operator), /mob)
 	ref_one(nameof(dice_held), /obj/item)
-	ref_one(nameof(dice_interaction), /datum/interaction)
 
 /datum/prompt/number/dice_configuration/prepare(datum/act/A)
 	. = ..()
 	var/mob/captured_operator = dice_operator
 	var/obj/item/captured_held = dice_held
-	var/datum/interaction/captured_interaction = dice_interaction
 	dice_operator_expected = !isnull(captured_operator)
 	dice_held_expected = !isnull(captured_held)
-	dice_interaction_expected = !isnull(captured_interaction)
 	rel_clear(src, nameof(dice_operator))
 	rel_clear(src, nameof(dice_held))
-	rel_clear(src, nameof(dice_interaction))
 	if(captured_operator && !QDELETED(captured_operator))
 		rel_set(src, nameof(dice_operator), captured_operator)
 	if(captured_held && !QDELETED(captured_held))
 		rel_set(src, nameof(dice_held), captured_held)
-	if(captured_interaction && !QDELETED(captured_interaction))
-		rel_set(src, nameof(dice_interaction), captured_interaction)
 
 /datum/prompt/number/dice_configuration/recheck_extra()
-	if((dice_operator_expected && QDELETED(dice_operator)) || (dice_held_expected && QDELETED(dice_held)) || (dice_interaction_expected && QDELETED(dice_interaction)))
+	if((dice_operator_expected && QDELETED(dice_operator)) || (dice_held_expected && QDELETED(dice_held)))
 		return "gone"
 
 /datum/prompt/number/dice_configuration/present(mob/user)

@@ -1,0 +1,30 @@
+blob | survives
+emag | look_key: null -> 'nboard00|||||||||||||'
+emag | look_set_bits: 0 -> 2
+emag | refresh_queued: 131071 -> 0
+emag | refresh_swept: 0 -> 1
+emp 1 | look_key: null -> 'nboard00|||||||||||||'
+emp 1 | look_set_bits: 0 -> 2
+emp 1 | refresh_queued: 131071 -> 0
+emp 1 | refresh_swept: 0 -> 1
+emp 2 | look_key: null -> 'nboard00|||||||||||||'
+emp 2 | look_set_bits: 0 -> 2
+emp 2 | refresh_queued: 131071 -> 0
+emp 2 | refresh_swept: 0 -> 1
+explosion 1 | deleted
+explosion 1 | turf: +/obj/item/stack/material/wood x1
+explosion 2 | deleted
+explosion 2 | turf: +/obj/item/stack/material/wood x1
+explosion 3 | deleted
+explosion 3 | turf: +/obj/item/stack/material/wood x1
+projectile | atom_integrity: down
+projectile | look_key: null -> 'nboard00|||||||||||||'
+projectile | look_set_bits: 0 -> 2
+projectile | refresh_queued: 131071 -> 0
+projectile | refresh_swept: 0 -> 1
+thrown | atom_integrity: down
+thrown | look_key: null -> 'nboard00|||||||||||||'
+thrown | look_set_bits: 0 -> 2
+thrown | refresh_queued: 131071 -> 0
+thrown | refresh_swept: 0 -> 1
+

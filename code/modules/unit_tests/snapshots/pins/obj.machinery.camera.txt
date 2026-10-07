@@ -17,81 +17,106 @@ ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Attack (refused: not possible right now)
 human|/obj/item/tool/screwdriver menu: Bug camera (refused: needs a camera bug)
+human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Show to camera (refused: needs a sheet of paper or a PDA)
 human|/obj/item/tool/screwdriver menu: Slash (refused: not possible right now)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Attack (refused: not possible right now)
 human|/obj/item/tool/crowbar menu: Bug camera (refused: needs a camera bug)
+human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Show to camera (refused: needs a sheet of paper or a PDA)
 human|/obj/item/tool/crowbar menu: Slash (refused: not possible right now)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Attack (refused: not possible right now)
 human|/obj/item/tool/wrench menu: Bug camera (refused: needs a camera bug)
+human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Show to camera (refused: needs a sheet of paper or a PDA)
 human|/obj/item/tool/wrench menu: Slash (refused: not possible right now)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: nothing
 human|/obj/item/tool/wirecutters menu: Attack (refused: not possible right now)
 human|/obj/item/tool/wirecutters menu: Bug camera (refused: needs a camera bug)
+human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Show to camera (refused: needs a sheet of paper or a PDA)
 human|/obj/item/tool/wirecutters menu: Slash (refused: not possible right now)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters menu: Wires
 human|/obj/item/tool/wirecutters click: Click: Wires
 human|/obj/item/multitool menu: Attack (refused: not possible right now)
 human|/obj/item/multitool menu: Bug camera (refused: needs a camera bug)
+human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Show to camera (refused: needs a sheet of paper or a PDA)
 human|/obj/item/multitool menu: Slash (refused: not possible right now)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool menu: Wires
 human|/obj/item/multitool click: Click: Wires
 human|/obj/item/weldingtool menu: Attack (refused: not possible right now)
 human|/obj/item/weldingtool menu: Bug camera (refused: needs a camera bug)
+human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Show to camera (refused: needs a sheet of paper or a PDA)
 human|/obj/item/weldingtool menu: Slash (refused: not possible right now)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool menu: Use welder
 human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Attack (refused: not possible right now)
 human|/obj/item/stack/cable_coil menu: Bug camera (refused: needs a camera bug)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Show to camera (refused: needs a sheet of paper or a PDA)
 human|/obj/item/stack/cable_coil menu: Slash (refused: not possible right now)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Attack (refused: not possible right now)
 human|/obj/item/stack/material/steel menu: Bug camera (refused: needs a camera bug)
+human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Show to camera (refused: needs a sheet of paper or a PDA)
 human|/obj/item/stack/material/steel menu: Slash (refused: not possible right now)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Attack (refused: not possible right now)
 human|/obj/item/card/id menu: Bug camera (refused: needs a camera bug)
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Show to camera (refused: needs a sheet of paper or a PDA)
 human|/obj/item/card/id menu: Slash (refused: not possible right now)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing
 human|/obj/item menu: Attack (refused: not possible right now)
 human|/obj/item menu: Bug camera (refused: needs a camera bug)
+human|/obj/item menu: Move To Top
 human|/obj/item menu: Show to camera (refused: needs a sheet of paper or a PDA)
 human|/obj/item menu: Slash (refused: not possible right now)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: nothing
 human|/obj/item/paper menu: Attack (refused: not possible right now)
 human|/obj/item/paper menu: Bug camera (refused: needs a camera bug)
 human|/obj/item/paper menu: Create Area (refused: You can't do that.)
+human|/obj/item/paper menu: Move To Top
+human|/obj/item/paper menu: Rename paper (refused: You can't do that.)
 human|/obj/item/paper menu: Show to camera
 human|/obj/item/paper menu: Slash (refused: not possible right now)
+human|/obj/item/paper menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/paper menu: Use
 human|/obj/item/paper click: nothing
 human|/obj/item/camera_bug menu: Attack (refused: not possible right now)
 human|/obj/item/camera_bug menu: Bug camera
+human|/obj/item/camera_bug menu: Move To Top
 human|/obj/item/camera_bug menu: Show to camera (refused: needs a sheet of paper or a PDA)
 human|/obj/item/camera_bug menu: Slash (refused: not possible right now)
+human|/obj/item/camera_bug menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/camera_bug menu: Use
 human|/obj/item/camera_bug click: nothing
 wires: Camera Alarm, Camera Light, Focus, Primary Power

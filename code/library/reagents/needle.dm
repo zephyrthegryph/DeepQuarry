@@ -377,7 +377,7 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 	trans += holder.reagents.trans_to_mob(target, reagent_transfer_amount(holder), CHEM_BLOOD) || 0
 	holder.update_icon()
 	if(holder.reagents.total_volume > 0)
-		after(holder, cycle, GLOBAL_PROC_REF(needle_inject_cycle), key = "needle_inject:[REF(target)]", with = list(holder, user, target, cycle, trans, contained, modes, user_loc, target_loc, held))
+		after(holder, cycle, GLOBAL_PROC_REF(needle_inject_cycle), key = "needle_inject:[REF(target)]", with = list(holder, user, target, cycle, trans, contained, modes, user_loc, target_loc, held), keeps_dead = TRUE)
 		return
 	needle_inject_finish(holder, user, target, trans, contained, modes)
 

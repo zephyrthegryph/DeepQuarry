@@ -128,11 +128,14 @@
 	else
 		return //just leave them
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/fluffball, INTERACT_ITEM(null, PROC_REF(fluffball_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/vore/fluffball)
+	op("fluffball_item", item(/obj/item), then(PROC_REF(fluffball_interaction_item)))
 
 /// Old attackby: the normal attack, then it steals food into its fluff.
-/mob/living/simple_mob/vore/fluffball/proc/fluffball_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/fluffball/proc/fluffball_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_OK
 	hit_with_item(W, user)
 	if(istype(W,/obj/item/reagent_containers/food))
 		consume(W, user)

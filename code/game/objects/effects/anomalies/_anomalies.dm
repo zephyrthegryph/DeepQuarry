@@ -23,7 +23,11 @@
 	var/datum/anomaly_stats/stats
 	var/danger_mult = 1
 
+	// An anomaly acts only while a player is near (the proximity tracker, code/controllers/subsystems/proximity.dm).
+	proximity_tracked = TRUE
+
 CAPABILITIES(/obj/effect/anomaly)
+	every(2 SECONDS, then(PROC_REF(anomaly_step)), when = STAT_RELEVANCE)
 	owns_one(nameof(anomaly_core), /obj/item/assembly/signaler/anomaly)
 	owns_one(nameof(stats), /datum/anomaly_stats)
 	owns_one(nameof(countdown), starts = /obj/effect/countdown/anomaly)
@@ -70,14 +74,10 @@ CAPABILITIES(/obj/effect/anomaly)
 		detonate()
 	consume(src)
 
-/// Acts only while a player is near; otherwise it sleeps until one comes near.
-/obj/effect/anomaly/periodic_step(delta)
-	if(!mob_near(world.view * 2, TRUE))
-		return sleep_until_mob_near(world.view * 2, TRUE)
-	anomalyEffect(delta / (1 SECONDS)) // the periodic lane passes deciseconds
+/// Acts only while a player is near (STAT_RELEVANCE); otherwise the every() parks until one comes near.
+/obj/effect/anomaly/proc/anomaly_step(datum/act/timer/A)
+	anomalyEffect(2) // seconds per step: the every() interval
 	anomalyPulse()
-
-DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 
 /obj/effect/anomaly/proc/anomalyEffect(seconds_per_tick)
 	if(prob(move_chance) && !locate_within(get_turf(src), /obj/effect/suspension_field))

@@ -26,17 +26,20 @@ MAP_RESOLVER(/obj/item/fossil/base, GLOBAL_PROC_REF(resolve_loot))
 	icon_state = "hskull"
 	desc = "It's a fossilised, horned skull."
 
-DECLARE_INTERACTIONS(/obj/item/fossil/skull, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/fossil/skull)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/fossil/skull/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/fossil/skull/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/fossil/bone))
 		var/obj/o = new /obj/skeleton(get_turf(src))
 		new /obj/item/fossil/bone(o)
 		new src.type(o)
 		consume(W, user)
 		consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/skeleton
 	name = "Incomplete skeleton"
@@ -54,10 +57,16 @@ DECLARE_INTERACTIONS(/obj/item/fossil/skull, INTERACT_ITEM(null, PROC_REF(intera
 	breq = rand(6)+3
 	desc = "An incomplete skeleton, looks like it could use [breq-bnum] more bones."
 
-DECLARE_INTERACTIONS(/obj/skeleton, INTERACT_ITEM(null, PROC_REF(interaction_skeleton_item)))
+CAPABILITIES(/obj/skeleton)
+	op("skeleton_bone", item(/obj/item/fossil/bone), label("Use"), then(PROC_REF(skeleton_bone)))
+	op("skeleton_plaque", item(/obj/item/pen), label("Use"),
+		asks(/datum/prompt/text, fields = list("question" = "What would you like to write on the plaque:", "title" = "Skeleton plaque", "timeout" = 0), step = "plaque"),
+		then(PROC_REF(skeleton_plaque)))
 
-/// Old attackby: add bones until complete, or relabel the plaque with a pen.
-/obj/skeleton/proc/interaction_skeleton_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: add bones until complete.
+/obj/skeleton/proc/skeleton_bone(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/fossil/bone))
 		if(!bstate)
 			bnum++
@@ -76,62 +85,22 @@ DECLARE_INTERACTIONS(/obj/skeleton, INTERACT_ITEM(null, PROC_REF(interaction_ske
 				src.desc = "Incomplete skeleton, looks like it could use [src.breq-src.bnum] more bones."
 				to_chat(user, "Looks like it could use [src.breq-src.bnum] more bones.")
 		else
-			return FALSE
-	else if(istype(W,/obj/item/pen))
-		open_request(src, /datum/prompt/text/skeleton_plaque, PROC_REF(skeleton_plaque_answered), answerer = user, pen = W, interaction_context = interaction)
-		return TRUE
+			return OP_DECLINE
 	else
-		return FALSE
-	return TRUE
+		return OP_DECLINE
+	return OP_OK
 
-/obj/skeleton/proc/skeleton_plaque_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	apply_skeleton_plaque(context)
-	SStgui.update_uis(src)
-
-/obj/skeleton/proc/apply_skeleton_plaque(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/datum/prompt/text/skeleton_plaque/request = context.request
-	var/mob/user = request.answerer
-	plaque_contents = request.value
+/// Old attackby with a pen: relabel the plaque.
+/obj/skeleton/proc/skeleton_plaque(datum/act/op/A)
+	var/mob/user = A.actor
+	plaque_contents = A.step_value("plaque")
 	act_message(user, src, MSG_SELF("You relabel the plaque on the base of [icon2html(src,viewers(src))] %T%."), \
 		MSG_OTHERS("%U% writes something on the base of %T%."))
 	if(src.contents.Find(/obj/item/fossil/skull/horned))
 		src.desc = "A creature made of [src.contents.len-1] assorted bones and a horned skull. The plaque reads \'[plaque_contents]\'."
 	else
 		src.desc = "A creature made of [src.contents.len-1] assorted bones and a skull. The plaque reads \'[plaque_contents]\'."
-
-/datum/prompt/text/skeleton_plaque
-	title = "Skeleton plaque"
-	question = "What would you like to write on the plaque:"
-	timeout = 0
-	var/obj/item/pen
-	var/datum/interaction/interaction_context
-	var/expected_interaction = FALSE
-	recheck_on_open = TRUE
-
-CAPABILITIES(/datum/prompt/text/skeleton_plaque)
-	ref_one(nameof(pen), /obj/item)
-	ref_one(nameof(interaction_context), /datum/interaction)
-
-/datum/prompt/text/skeleton_plaque/prepare(datum/act/A)
-	. = ..()
-	var/obj/item/captured_pen = pen
-	var/datum/interaction/captured_interaction = interaction_context
-	expected_interaction = !isnull(captured_interaction)
-	rel_clear(src, nameof(pen))
-	rel_set(src, nameof(pen), captured_pen)
-	rel_clear(src, nameof(interaction_context))
-	rel_set(src, nameof(interaction_context), captured_interaction)
-
-/datum/prompt/text/skeleton_plaque/recheck_extra()
-	. = ..()
-	if(.)
-		return
-	if(QDELETED(pen) || (expected_interaction && QDELETED(interaction_context)))
-		return "The original labeling interaction is no longer available."
+	return OP_OK
 
 //shells and plants do not make skeletons
 /obj/item/fossil/shell

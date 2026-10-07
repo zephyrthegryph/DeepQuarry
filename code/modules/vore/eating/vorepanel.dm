@@ -1175,7 +1175,7 @@ CAPABILITIES(/datum/vore_look)
 			to_chat(user,span_vnotice("[span_green("You begin to push [M] to freedom!")]"))
 			to_chat(M,span_vnotice("[host()] begins to push you to freedom!"))
 			to_chat(OB.owner,span_vwarning("Someone is trying to escape from inside you!"))
-			after(OB, 5 SECONDS, TYPE_PROC_REF(/obj/belly, help_out_done), with = list(user, M, host()))
+			after(OB, 5 SECONDS, TYPE_PROC_REF(/obj/belly, help_out_done), with = list(user, M, host()), keeps_dead = TRUE)
 			return TRUE
 
 		if("Devour") //Eat the inside mob
@@ -1193,7 +1193,7 @@ CAPABILITIES(/datum/vore_look)
 			to_chat(OB.owner,span_vwarning("Someone inside you is eating someone else!"))
 
 			//Not a timed action: in a stomach, weird things abound.
-			after(OB, TB.nonhuman_prey_swallow_time, TYPE_PROC_REF(/obj/belly, inner_devour_done), with = list(user, M, host(), TB))
+			after(OB, TB.nonhuman_prey_swallow_time, TYPE_PROC_REF(/obj/belly, inner_devour_done), with = list(user, M, host(), TB), keeps_dead = TRUE)
 
 /// A mob inside this belly helped `M` out (vore panel), after the wait.
 /obj/belly/proc/help_out_done(mob/user, mob/living/M, mob/living/host)

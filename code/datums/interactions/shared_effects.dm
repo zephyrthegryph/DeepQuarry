@@ -47,10 +47,6 @@
 	add_fingerprint(user)
 	return FALSE
 
-/// A rapid part exchange device swaps the machine's parts.
-/obj/machinery/proc/interaction_part_replacement(mob/user, obj/item/held, datum/interaction/interaction)
-	return default_part_replacement(user, held) ? TRUE : FALSE
-
 // ---- The shared effects as op handlers ----
 // A converted type's op names one of these in its then() where its legacy interaction named the shared effect above
 // (tools/dx/codemods/interact_declare.py, SHARED_OPS): op_<name> does what interaction_<name> did.

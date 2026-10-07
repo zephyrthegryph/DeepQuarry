@@ -833,11 +833,12 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/security/fluff/hos, fit_spe
 	return FALSE
 
 // The inherited head-light and circuit self-uses step aside for special_handling, so this runs alone.
-EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/pompom, INTERACT_SELF("Toggle light", PROC_REF(pompom_light_self)))
+CAPABILITIES(/obj/item/clothing/head/fluff/pompom)
+	op("pompom_light_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle light"), then(PROC_REF(pompom_light_self)))
 
 /// Old attack_self: light or dim the pom-pom.
-/obj/item/clothing/head/fluff/pompom/proc/pompom_light_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/item/clothing/head/fluff/pompom/proc/pompom_light_self(datum/act/op/A)
+	var/mob/user = A.actor
 
 	if(light_on)
 		to_chat(user, "You dim your pom-pom.")
@@ -853,6 +854,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/pompom, INTERACT_SELF("Toggle 
 		var/mob/living/carbon/human/H = user
 		if(H.get_equipped_item(SLOT_ID_HEAD) == src)
 			H.update_inv_head()
+	return OP_OK
 //Viveret:Keturah
 /obj/item/clothing/under/dress/maid
 	name = "Maid Outfit"
@@ -1971,9 +1973,15 @@ TYPE_TABLE(/obj/item/clothing/shoes/fluff/nikki, equip_spec, dq_spec_join(..(), 
 
 CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 	owns_one(nameof(translocator), /obj/item/perfect_tele)
+	op("nikki_hat_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Nikki hat item"), then(PROC_REF(nikki_hat_item)))
+	op("nikki_hat_unload_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Nikki hat unload hand"), then(PROC_REF(nikki_hat_unload_hand)))
+	op("nikki_hat_unequip_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Remove translocator"), then(PROC_REF(nikki_hat_unequip_alt)))
+	op("nikki_hat_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Nikki hat self"), then(PROC_REF(nikki_hat_self)))
+	op("nikki_hat_unequip_translocator_verb", menu(), label("Nikki's Hat - Unequip Translocator"), needs(carried()), then(PROC_REF(nikki_hat_unequip_translocator_verb)))
 
 /// Old verb "Nikki's Hat - Unequip Translocator".
-/obj/item/clothing/head/fluff/nikki/proc/nikki_hat_unequip_translocator_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/fluff/nikki/proc/nikki_hat_unequip_translocator_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	translocator_unequip(translocator, user)
 
 /obj/item/clothing/head/fluff/nikki/proc/translocator_equip(obj/item/perfect_tele/T, mob/living/carbon/human/user)
@@ -2034,16 +2042,10 @@ CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 
 	else return 1
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/nikki, \
-	INTERACT_ITEM(null, PROC_REF(nikki_hat_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(nikki_hat_unload_hand)), \
-	INTERACT_ALT("Remove translocator", PROC_REF(nikki_hat_unequip_alt)), \
-	INTERACT_SELF(null, PROC_REF(nikki_hat_self)), \
-	INTERACT_VERB("Nikki's Hat - Unequip Translocator", PROC_REF(nikki_hat_unequip_translocator_verb), REQ_IN_INVENTORY), \
-)
-
 /// Old attackby: slot in (or swap) a translocator, or hand the item to the one inside.
-/obj/item/clothing/head/fluff/nikki/proc/nikki_hat_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/clothing/head/fluff/nikki/proc/nikki_hat_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if (istype(I, /obj/item/perfect_tele) && user.get_inactive_hand() == src)
 		if (translocator)
 			act_message(user, src, others = span_notice("%U% starts to pull \a [translocator] out of %T% to swap it out with %I%..."), \
@@ -2055,11 +2057,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/nikki, \
 				item = I)
 		// This works for both adding and replacing a translocator
 		translocator_equip(I, user)
-		return TRUE
+		return OP_OK
 	else if (translocator)
 		translocator.attackby(I, user)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /obj/item/clothing/head/fluff/nikki/get_description_interaction()
 	. = ..()
@@ -2072,29 +2074,32 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/nikki, \
 
 
 /// Old attack_hand: held in the inactive hand, a touch unloads the translocator.
-/obj/item/clothing/head/fluff/nikki/proc/nikki_hat_unload_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/fluff/nikki/proc/nikki_hat_unload_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if (translocator && (user.get_inactive_hand() == src))
 		translocator.unload_ammo(user, ignore_inactive_hand_check = 1)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /// Old click_alt: held in the inactive hand, pull the translocator out.
-/obj/item/clothing/head/fluff/nikki/proc/nikki_hat_unequip_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/fluff/nikki/proc/nikki_hat_unequip_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if (translocator && (user.get_inactive_hand() == src))
 		translocator_unequip(translocator, user)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /// Old attack_self: the inherited self-uses first (as the old ..() did), then work the translocator inside.
-/obj/item/clothing/head/fluff/nikki/proc/nikki_hat_self(mob/user, obj/item/held, datum/interaction/interaction)
-	head_light_self(user, held, interaction)
-	if(clothing_circuit_self(user, held, interaction))
-		return TRUE
+/obj/item/clothing/head/fluff/nikki/proc/nikki_hat_self(datum/act/op/A)
+	var/mob/user = A.actor
+	head_light_self(A)
+	if(clothing_circuit_self(A) == OP_OK)
+		return OP_OK
 	if (translocator)
 		translocator.attack_self(user, user)
 	else
 		to_chat(user, span_warning("\The [src] doesn't have a translocator inside it right now."))
-	return TRUE
+	return OP_OK
 
 /obj/item/clothing/head/fluff/nikki/examine(mob/user) // If it has a translocator installed, make it very obvious to viewers that something WEIRD is going on with this hat.
 	. = ..()

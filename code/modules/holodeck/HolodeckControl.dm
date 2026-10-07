@@ -146,8 +146,8 @@
 	toggleGravity(linkedholodeck())
 	return TRUE
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/HolodeckControl, PROC_REF(on_emag), null)
-/obj/machinery/computer/HolodeckControl/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/HolodeckControl/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_EFFECTS_SPARKS4)
 	rel_set(src, nameof(last_to_emag), user) //emag again to change the owner
 	if (!emagged())
@@ -157,8 +157,8 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/HolodeckControl, PROC_REF(on_ema
 		to_chat(user, span_notice("You vastly increase projector power and override the safety and security protocols."))
 		to_chat(user, "Warning.  Automatic shutoff and derezing protocols have been corrupted.  Please call [using_map.company_name] maintenance and do not use the simulator.")
 		log_game("[key_name(user)] emagged the Holodeck Control Computer")
-		return 1
-	return
+		return OP_OK
+	return OP_DECLINE
 
 /obj/machinery/computer/HolodeckControl/proc/update_projections()
 	if (safety_disabled)
@@ -194,15 +194,16 @@ CAPABILITIES(/obj/machinery/computer/HolodeckControl)
 	op("program", ui_act("program", arg("program", schema_text(4096))), then(PROC_REF(ui_act_program)))
 	op("AIoverride", ui_act("AIoverride"), then(PROC_REF(ui_act_aioverride)))
 	op("gravity", ui_act("gravity"), then(PROC_REF(ui_act_gravity)))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(holodeck_blast_shutdown)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /obj/machinery/computer/HolodeckControl/on_destroy(force)
 	emergencyShutdown()
 	..()
 
-DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_REF(holodeck_blast_shutdown))
 
 /// A blast shuts the holodeck down.
-/obj/machinery/computer/HolodeckControl/proc/holodeck_blast_shutdown(datum/damage_packet/packet)
+/obj/machinery/computer/HolodeckControl/proc/holodeck_blast_shutdown(datum/act/A)
 	emergencyShutdown()
 
 /obj/machinery/computer/HolodeckControl/power_change()
@@ -350,7 +351,7 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 	for(var/obj/effect/landmark/L in linkedholodeck())
 		L.delete_me = TRUE
 		if(L.name=="Atmospheric Test Start")
-			after(src, 2 SECONDS, PROC_REF(atmos_test_ignite), with = list(get_turf(L)))
+			after(src, 2 SECONDS, PROC_REF(atmos_test_ignite), with = list(get_turf(L)), keeps_dead = TRUE)
 		if(L.name=="Holocarp Spawn")
 			rel_add(src, nameof(holographic_mobs), new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
 

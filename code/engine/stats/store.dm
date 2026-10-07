@@ -1,15 +1,15 @@
 // Holds: runtime contributions to a stat (doc/rewrite/final_api.html, section 5 "Holds: runtime contributions", "Sources", "Clock and units";
 // section 19 "E3, stats").
 //
-//	hold(E, STAT_X, value, source, lasts =, priority =, clock =, reason =, bound =)   hold_until(E, STAT_X, value, source, until =, ...)
+//	hold(E, STAT_X, value, source, lasts =, priority =, clock =, reason =, outlives_source =)   hold_until(E, STAT_X, value, source, until =, ...)
 //	hold_override(E, STAT_X, value, source, priority =)   release(E, STAT_X, source)   release_all(E, source)
 //	held_by(E, STAT_X)   held_by_source(E, STAT_X, source)   hold_left(E, STAT_X, source)
 //
 // A hold is a row in the entity's stat record: (stat, source, value, deadline, priority, flags, clock, reason, serial). The source is required: a
 // datum or a SOURCE_DEF flyweight (SRC_*), and null or text is an error, so no hold is unreleasable. One source holds once per stat; holding again
 // follows the stat's reapply rule. A hold on a boolean stat takes no value: on an ALL stat it is a veto, on an ANY stat a force; the other direction
-// can never change anything and is refused. A timed hold outlives a deleted source (a stun from a projectile that deleted itself on hit still lasts
-// its four seconds) unless bound = TRUE; an untimed one dies with a datum source (stat_sources_teardown from the destroy transaction).
+// can never change anything and is refused. A hold is released when its datum source dies (stat_sources_teardown from the destroy transaction), timed or not, unless it
+// was placed with outlives_source = TRUE (a stun from a projectile that deleted itself on hit still lasts its four seconds).
 //
 // The recompute is inline (recompute.dm): when hold() returns, the stat, and the stats that read it on the entity, hold their settled values.
 //
@@ -91,19 +91,19 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 
 /// A runtime contribution to a stat, kept by `source`; `lasts` is a duration (deciseconds) on `clock`. Returns TRUE when it is placed, or null
 /// with the reason reported when it is refused.
-/proc/hold(datum/E, stat, value, source, lasts, priority = PRIORITY_DEFAULT, clock, reason, bound = FALSE)
-	return stat_hold_place(E, stat, value, source, lasts, null, priority, clock, reason, bound, FALSE, FALSE)
+/proc/hold(datum/E, stat, value, source, lasts, priority = PRIORITY_DEFAULT, clock, reason, outlives_source = FALSE)
+	return stat_hold_place(E, stat, value, source, lasts, null, priority, clock, reason, outlives_source, FALSE, FALSE)
 
 /// A hold that ends at an exact deadline on `clock` and, unlike hold(), replaces the value and may shorten: what status_set and status_adjust use.
-/proc/hold_until(datum/E, stat, value, source, until, priority = PRIORITY_DEFAULT, clock, reason, bound = FALSE)
-	return stat_hold_place(E, stat, value, source, null, until, priority, clock, reason, bound, FALSE, TRUE)
+/proc/hold_until(datum/E, stat, value, source, until, priority = PRIORITY_DEFAULT, clock, reason, outlives_source = FALSE)
+	return stat_hold_place(E, stat, value, source, null, until, priority, clock, reason, outlives_source, FALSE, TRUE)
 
 /// Replaces the composed value of a stat until released (not on a SET stat). An admin's VV edit of a stat is one of these, sourced SRC_VV.
 /proc/hold_override(datum/E, stat, value, source, priority = PRIORITY_ADMIN)
 	return stat_hold_place(E, stat, value, source, null, null, priority, HOLD_CLOCK_OWN, null, FALSE, TRUE, FALSE)
 
 /// The one place a hold is placed. `exact` is hold_until's replace-and-may-shorten; `override` the replace-the-composed-value flag.
-/proc/stat_hold_place(datum/E, stat, value, source, lasts, until, priority, clock, reason, bound, override, exact)
+/proc/stat_hold_place(datum/E, stat, value, source, lasts, until, priority, clock, reason, outlives_source, override, exact)
 	OP_PURE_GUARD("a hold on [E?.type] was placed")
 	var/datum/stat_def/def = stat_def_of(stat)
 	if(isnull(clock))
@@ -126,7 +126,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 		expires = until
 	else if(lasts)
 		expires = now + lasts
-	var/flags = (bound ? HF_BOUND : 0) | (override ? HF_OVERRIDE : 0)
+	var/flags = (outlives_source ? HF_OUTLIVES : 0) | (override ? HF_OVERRIDE : 0)
 	var/list/row = stat_hold_find(rec, def.id, source, null)
 	if(row && !override == !(row[H_FLAGS] & HF_OVERRIDE))
 		stat_hold_reapply(E, def, row, value, expires, now, lasts, exact, priority, reason, flags)
@@ -365,7 +365,7 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 		if(isnull(remaining))
 			cancel_after(E, key)
 		else
-			after(E, remaining, GLOBAL_PROC_REF(stat_expire), key = key, clock = (clock == HOLD_CLOCK_WORLD ? CLOCK_WORLD : CLOCK_OWN), with = list(E, clock))
+			after(E, remaining, GLOBAL_PROC_REF(stat_expire), key = key, clock = (clock == HOLD_CLOCK_WORLD ? CLOCK_WORLD : CLOCK_OWN), with = list(E, clock), keeps_dead = TRUE)
 
 /// A deadline fired: every hold of that clock that is due ends, and its stats settle.
 /proc/stat_expire(datum/E, clock)
@@ -386,8 +386,8 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 
 // ---- teardown ----
 
-/// The destroy transaction's call for a dying datum, as a source and as a holder. As a source: every untimed (or bound) hold it keeps on any
-/// entity ends; a timed one outlives it, its source forgotten. As a holder: its rows go, and the sources' indexes forget it.
+/// The destroy transaction's call for a dying datum, as a source and as a holder. As a source: every hold it keeps on any
+/// entity ends, unless it was placed with outlives_source = TRUE (its source is then forgotten). As a holder: its rows go, and the sources' indexes forget it.
 /proc/stat_sources_teardown(datum/D)
 	var/datum/stat_record/rec = D.rx?.stats
 	if(!rec)
@@ -402,10 +402,11 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 		for(var/list/row as anything in trec.holds)
 			if(row[H_SOURCE] != D)
 				continue
-			if(!row[H_EXPIRES] || (row[H_FLAGS] & HF_BOUND))
+			if(!(row[H_FLAGS] & HF_OUTLIVES))
 				gone += list(row)
 			else
-				row[H_SOURCE] = null // timed and not bound: it runs its course, with nothing to release it by
+				row[H_SOURCE] = null // outlives_source = TRUE: it runs its course (or stays, if untimed), with nothing to release it by
+				log_world("STAT: hold on [target.type] [row[H_STAT]] outlived its source [D.type] (outlives_source)")
 		if(length(gone))
 			stat_release_rows(target, trec, gone)
 	rec.held_on = null

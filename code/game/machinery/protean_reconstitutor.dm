@@ -252,7 +252,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 	if(!length(organs))
 		reconstitute_organs_done(P)
 		return
-	after(src, per_organ_delay, PROC_REF(reconstitute_organ), with = list(P, organs, 1))
+	after(src, per_organ_delay, PROC_REF(reconstitute_organ), with = list(P, organs, 1), keeps_dead = TRUE)
 
 /// Reconstitution step 2: one organ per per_organ_delay.
 /obj/machinery/protean_reconstitutor/proc/reconstitute_organ(mob/living/carbon/human/protean/P, list/organs, index)
@@ -327,7 +327,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 		var/datum/mind_host/core_host = get_mind_host(salvaged_brain)
 		core_host.release_mind(P, "protean reconstitution")
 	if(index < length(organs))
-		after(src, per_organ_delay, PROC_REF(reconstitute_organ), with = list(P, organs, index + 1))
+		after(src, per_organ_delay, PROC_REF(reconstitute_organ), with = list(P, organs, index + 1), keeps_dead = TRUE)
 		return
 	reconstitute_organs_done(P)
 

@@ -191,6 +191,7 @@
 
 CAPABILITIES(/mob/living/simple_mob/slime/xenobio/dark_purple)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_ignite))))
+	op("darkpurple_slime_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(darkpurple_slime_interaction_item)))
 
 /mob/living/simple_mob/slime/xenobio/dark_purple/proc/blast_ignite(datum/act/A)
 	log_and_message_admins("ignited due to a chain reaction with an explosion.", src)
@@ -204,16 +205,16 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/dark_purple)
 	else
 		..()
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_ITEM(null, PROC_REF(darkpurple_slime_interaction_item)))
-
 /// Old attackby: burning weapons ignite it.
-/mob/living/simple_mob/slime/xenobio/dark_purple/proc/darkpurple_slime_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/slime/xenobio/dark_purple/proc/darkpurple_slime_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_OK
 	if(istype(W) && W.force && W.obj_damage_type() == BURN)
 		log_and_message_admins("ignited due to being hit with a burning weapon ([W]) by [key_name(user)].", src)
 		ignite()
 	else
-		return FALSE
+		return OP_DECLINE
 
 
 
@@ -684,6 +685,7 @@ CAPABILITY(/mob/living/simple_mob/slime/xenobio/silver, reflects(list(/obj/item/
 
 CAPABILITIES(/mob/living/simple_mob/slime/xenobio/oil)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_explode))))
+	op("oilslime_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(oilslime_interaction_item)))
 
 /mob/living/simple_mob/slime/xenobio/oil/proc/blast_explode(datum/act/A)
 	log_and_message_admins("exploded due to a chain reaction with another explosion.", src)
@@ -697,16 +699,16 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/oil)
 	else
 		..()
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/oil, INTERACT_ITEM(null, PROC_REF(oilslime_interaction_item)))
-
 /// Old attackby: burning weapons make it explode.
-/mob/living/simple_mob/slime/xenobio/oil/proc/oilslime_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/slime/xenobio/oil/proc/oilslime_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_OK
 	if(istype(W) && W.force && W.obj_damage_type() == BURN)
 		log_and_message_admins("exploded due to being hit with a burning weapon ([W]) by [key_name(user)].", src)
 		explode()
 	else
-		return FALSE
+		return OP_DECLINE
 
 
 /mob/living/simple_mob/slime/xenobio/sapphire/get_mechanics_info(list/additional_information)

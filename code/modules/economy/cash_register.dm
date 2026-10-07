@@ -128,6 +128,7 @@ CAPABILITIES(/obj/machinery/cash_register)
 	op("cash_register_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 	op("cash_register_open_box_verb", menu(), label("Open Cash Box"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_open_box_verb)))
 	op("cash_register_drop", item(/obj), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Put on the register"), then(PROC_REF(interaction_drop)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /// /obj/machinery/cash_register's window data.
 /obj/machinery/cash_register/ui_data(datum/act/eval/A)
@@ -621,8 +622,8 @@ CAPABILITIES(/obj/machinery/cash_register)
 	set_anchored(!anchored)
 	return
 
-DECLARE_EMAG(/obj/machinery/cash_register, PROC_REF(on_emag), null, null)
-/obj/machinery/cash_register/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/cash_register/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_danger("%T%'s cash box springs open as %U% swipes the card through the scanner!"))
 	play_sfx(src, SFX_SPARKS)
 	req_access = list()
@@ -630,6 +631,7 @@ DECLARE_EMAG(/obj/machinery/cash_register, PROC_REF(on_emag), null, null)
 	set_locked(0)
 	cash_locked = 0
 	open_cash_box(user)
+	return OP_OK
 
 //--Premades--//
 

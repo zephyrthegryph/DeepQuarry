@@ -27,14 +27,9 @@ MATERIAL_MIX(/obj/item/assembly/voice, list(MAT_STEEL = 500, MAT_GLASS = 50))
 
 
 /// Overrides assembly's interaction_self(): activate instead of opening the UI.
-/obj/item/assembly/voice/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = ..()
-	if(.)
-		return TRUE
-	if(!user)
-		return FALSE
+/obj/item/assembly/voice/interaction_self(datum/act/op/A)
 	activate()
-	return TRUE
+	return OP_OK
 
 /obj/item/assembly/voice/toggle_secure()
 	. = ..()

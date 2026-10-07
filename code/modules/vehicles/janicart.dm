@@ -42,6 +42,9 @@
 
 CAPABILITIES(/obj/vehicle/train/engine/janicart)
 	reagents(600)
+	op("janicart_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction janicart item"), then(PROC_REF(interaction_janicart_item)))
+	op("janicart_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction janicart hand"), then(PROC_REF(interaction_janicart_hand)))
+	op("janicart_toggle_brush", menu(), label("Toggle brushes"), needs(req_on_holder_turf(), req_capable()), then(PROC_REF(janicart_toggle_brush)))
 
 /obj/vehicle/train/engine/janicart/Initialize(mapload)
 	. = ..()
@@ -53,18 +56,14 @@ CAPABILITIES(/obj/vehicle/train/engine/janicart)
 	if(prob(20))
 		callme = pick(list("pimpin' ride","thang","pussy wagon","janihound deflector","raunchy love mobile","sanitation stallion","magic carpet","crime mobile","get away car"))
 
-EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
-	INTERACT_ITEM(null, PROC_REF(interaction_janicart_item)), \
-	INTERACT_HAND(null, PROC_REF(interaction_janicart_hand)), \
-	INTERACT_VERB("Toggle brushes", PROC_REF(janicart_toggle_brush), REQ_REACH(0)), \
-)
-
 // Nothing to unlatch (old verbs -= unlatch_v on Initialize).
 /obj/vehicle/train/engine/janicart/pred_train_unlatchable(mob/actor, atom/target, obj/item/held)
 	return FALSE
 
 /// Old attackby: wet a mop, or hook on a trash bag.
-/obj/vehicle/train/engine/janicart/proc/interaction_janicart_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/vehicle/train/engine/janicart/proc/interaction_janicart_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/mop))
 		if(reagents.total_volume > 1)
 			reagents.trans_to_obj(W, 2)
@@ -72,23 +71,24 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 			play_sfx(src, SFX_EFFECTS_SLOSH)
 		else
 			to_chat(user, span_notice("This [callme] is out of water!"))
-		return TRUE
+		return OP_OK
 	if(istype(W, /obj/item/storage/bag/trash))
 		to_chat(user, span_notice("You hook the trashbag onto the [callme]."))
 		user.drop_item()
 		W.forceMove(src)
 		rel_set(src, nameof(mybag), W)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /// Old attack_hand: take the trash bag off first; otherwise the train's climb/unload.
-/obj/vehicle/train/engine/janicart/proc/interaction_janicart_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/train/engine/janicart/proc/interaction_janicart_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!mybag())
-		return FALSE
+		return OP_DECLINE
 	mybag().forceMove(get_turf(user))
 	user.put_in_hands(mybag())
 	rel_clear(src, nameof(mybag))
-	return TRUE
+	return OP_OK
 
 //-------------------------------------------
 // Interaction procs
@@ -101,7 +101,8 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 			. += "\A [mybag()] is hanging on the [callme]."
 
 /// Old verb "Toggle brushes".
-/obj/vehicle/train/engine/janicart/proc/janicart_toggle_brush(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/train/engine/janicart/proc/janicart_toggle_brush(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!ishuman(user))
 		return
 

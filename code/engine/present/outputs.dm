@@ -185,14 +185,15 @@
 /// The window data of a holder that declares an interface or overrides ui_data(): the type's ui_data(A) (A.holder the holder, A.actor the viewer)
 /// merged over `data`, and its capabilities' data under data["caps"]. A holder that declares neither adds nothing. A window that forwards
 /// (interface(forwards = nameof(v))) is its unit's panel: the first unit's data comes first and the holder's own goes over it, so the sleeper
-/// console shows its sleeper's data with no ui_data() of its own.
-/proc/present_tgui_data(datum/holder, mob/user, list/data)
+/// console shows its sleeper's data with no ui_data() of its own. `observer` is A.observer: the viewer is a ghost with the window read-only.
+/proc/present_tgui_data(datum/holder, mob/user, list/data, observer = FALSE)
 	var/datum/type_table/T = table_of(holder)
 	if(!length(T.items))
 		return
 	var/datum/act/eval/A = take(/datum/act/eval)
 	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	A.actor = user // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	A.observer = observer
 	var/datum/unit = present_forwarded_unit(holder)
 	if(unit)
 		A.holder = unit // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release

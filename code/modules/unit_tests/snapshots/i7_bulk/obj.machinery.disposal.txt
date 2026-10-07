@@ -1,5 +1,5 @@
-/obj/machinery/disposal|human|none => disposal_insert,disposal_drag_insert,disposal_use,disposal_flush,disposal_force_eject|
-/obj/machinery/disposal|robot|none => disposal_insert,disposal_drag_insert,disposal_use,disposal_flush,disposal_force_eject|gen_robot_interaction_swallow:not possible right now
+/obj/machinery/disposal|human|none => |
+/obj/machinery/disposal|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/disposal|ai|none => |
 /obj/machinery/disposal|ghost|none => |
 

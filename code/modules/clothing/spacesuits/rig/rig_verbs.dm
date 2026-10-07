@@ -1,7 +1,8 @@
 // Interface for humans. The Menu entries are declared with the rest of the rig's interactions (rig_attackby.dm).
 
 /// Old verb "Open Hardsuit Interface".
-/obj/item/rig/proc/rig_hardsuit_interface_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/proc/rig_hardsuit_interface_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(wearer() && (wearer().get_equipped_item(SLOT_ID_BACK) == src || wearer().get_equipped_item(SLOT_ID_BELT) == src))
 		tgui_interact(user)
 
@@ -11,7 +12,8 @@
 		tgui_interact(user)
 
 /// Old verb "Toggle Visor".
-/obj/item/rig/proc/rig_toggle_vision_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/proc/rig_toggle_vision_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!check_power_cost(user))
 		return
 
@@ -24,35 +26,40 @@
 		visor.deactivate(FALSE, user)
 
 /// Old verb "Toggle Helmet" (offered while the suit has that piece).
-/obj/item/rig/proc/rig_toggle_helmet_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/proc/rig_toggle_helmet_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!check_suit_access(user))
 		return
 
 	toggle_piece("helmet",wearer())
 
 /// Old verb "Toggle Chestpiece" (offered while the suit has that piece).
-/obj/item/rig/proc/rig_toggle_chest_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/proc/rig_toggle_chest_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!check_suit_access(user))
 		return
 
 	toggle_piece("chest",wearer())
 
 /// Old verb "Toggle Gauntlets" (offered while the suit has that piece).
-/obj/item/rig/proc/rig_toggle_gauntlets_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/proc/rig_toggle_gauntlets_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!check_suit_access(user))
 		return
 
 	toggle_piece("gauntlets",wearer())
 
 /// Old verb "Toggle Boots" (offered while the suit has that piece).
-/obj/item/rig/proc/rig_toggle_boots_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/proc/rig_toggle_boots_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!check_suit_access(user))
 		return
 
 	toggle_piece("boots",wearer())
 
 /// Old verb "Deploy Hardsuit".
-/obj/item/rig/proc/rig_deploy_suit_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/proc/rig_deploy_suit_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!check_suit_access(user))
 		return
 
@@ -62,14 +69,16 @@
 	deploy(wearer())
 
 /// Old verb "Toggle Hardsuit".
-/obj/item/rig/proc/rig_toggle_seals_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/proc/rig_toggle_seals_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!check_suit_access(user))
 		return
 
 	toggle_seals(wearer())
 
 /// Old verb "Switch Vision Mode".
-/obj/item/rig/proc/rig_switch_vision_mode_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/proc/rig_switch_vision_mode_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(malfunction_check(user))
 		return
 
@@ -86,14 +95,18 @@
 	visor.engage(null, FALSE, user)
 
 /// Old verb "Configure Voice Synthesiser".
-/obj/item/rig/proc/rig_alter_voice_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/proc/rig_alter_voice_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(malfunction_check(user))
 		return
 
 	speech.engage(null, FALSE, user)
 
 /// Old verb "Select Module".
-/obj/item/rig/proc/rig_select_module_verb(mob/user, obj/item/held, datum/interaction/interaction, obj/item/rig_module/answered_module = null)
+/obj/item/rig/proc/rig_select_module_verb(datum/act/op/A)
+	return select_module_for(A.actor)
+
+/obj/item/rig/proc/select_module_for(mob/user, obj/item/rig_module/answered_module = null)
 	if(malfunction_check(user))
 		return
 
@@ -128,7 +141,10 @@
 	to_chat(user, span_boldnotice("Primary system is now: [selected_module.interface_name]."))
 
 /// Old verb "Toggle Module".
-/obj/item/rig/proc/rig_toggle_module_verb(mob/user, obj/item/held, datum/interaction/interaction, obj/item/rig_module/answered_module = null)
+/obj/item/rig/proc/rig_toggle_module_verb(datum/act/op/A)
+	return toggle_module_for(A.actor)
+
+/obj/item/rig/proc/toggle_module_for(mob/user, obj/item/rig_module/answered_module = null)
 	if(malfunction_check(user))
 		return
 
@@ -165,7 +181,10 @@
 		module.activate(FALSE, user)
 
 /// Old verb "Engage Module".
-/obj/item/rig/proc/rig_engage_module_verb(mob/user, obj/item/held, datum/interaction/interaction, obj/item/rig_module/answered_module = null)
+/obj/item/rig/proc/rig_engage_module_verb(datum/act/op/A)
+	return engage_module_for(A.actor)
+
+/obj/item/rig/proc/engage_module_for(mob/user, obj/item/rig_module/answered_module = null)
 	if(malfunction_check(user))
 		return
 
@@ -210,19 +229,6 @@
 /obj/item/rig/proc/pred_has_boots(mob/actor, atom/target, obj/item/held)
 	return !!boots
 
-/// Requirement: the hardsuit is worn on a human's back or belt.
-/obj/item/rig/proc/pred_rig_worn(mob/actor, atom/target, obj/item/held)
-	var/mob/living/carbon/human/H = wearer()
-	if(!istype(H) || (H.get_equipped_item(SLOT_ID_BACK) != src && H.get_equipped_item(SLOT_ID_BELT) != src))
-		return "the hardsuit is not being worn"
-	return TRUE
-
-/// Requirement: the suit is sealed and active.
-/obj/item/rig/proc/pred_rig_active(mob/actor, atom/target, obj/item/held)
-	if(canremove)
-		return "the suit is not active"
-	return TRUE
-
 /obj/item/rig/proc/select_module_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
@@ -235,7 +241,7 @@
 	var/obj/item/rig_module/module = A.answer.value
 	if(QDELETED(module))
 		return
-	return rig_select_module_verb(user, null, null, module)
+	return select_module_for(user, module)
 
 /obj/item/rig/proc/toggle_module_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -249,7 +255,7 @@
 	var/obj/item/rig_module/module = A.answer.value
 	if(QDELETED(module))
 		return
-	return rig_toggle_module_verb(user, null, null, module)
+	return toggle_module_for(user, module)
 
 /obj/item/rig/proc/engage_module_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -263,7 +269,7 @@
 	var/obj/item/rig_module/module = A.answer.value
 	if(QDELETED(module))
 		return
-	return rig_engage_module_verb(user, null, null, module)
+	return engage_module_for(user, module)
 
 /datum/prompt/choice/rig_module_selection
 	timeout = 0

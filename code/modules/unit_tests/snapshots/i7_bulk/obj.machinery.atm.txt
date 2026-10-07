@@ -1,8 +1,5 @@
-/obj/machinery/atm|human|none => atm_use|emag_gated:needs a cryptographic sequencer,atm_insert_card:needs a card,atm_deposit_cash:needs a 0 Thaler
-/obj/machinery/atm|robot|none => |emag_gated:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now,atm_insert_card:needs a card,atm_deposit_cash:needs a 0 Thaler,atm_use:a firewall prevents you from interfacing with this device
+/obj/machinery/atm|human|none => |
+/obj/machinery/atm|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/atm|ai|none => |
 /obj/machinery/atm|ghost|none => |
-/obj/machinery/atm|human|/obj/item/card => atm_insert_card,atm_use|emag_gated:needs a cryptographic sequencer,atm_deposit_cash:needs a 0 Thaler
-/obj/machinery/atm|human|/obj/item/spacecash => atm_use|emag_gated:needs a cryptographic sequencer,atm_insert_card:needs a card,atm_deposit_cash:not possible right now
-/obj/machinery/atm|human|/obj/item/card/emag => emag_gated,atm_insert_card,atm_use|atm_deposit_cash:needs a 0 Thaler
 

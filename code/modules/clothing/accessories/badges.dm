@@ -26,23 +26,25 @@
 
 /obj/item/clothing/accessory/badge/proc/set_desc(mob/living/carbon/human/H)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge, INTERACT_SELF("Display", PROC_REF(badge_display_self)))
+CAPABILITIES(/obj/item/clothing/accessory/badge)
+	op("badge_display_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Display"), then(PROC_REF(badge_display_self)))
 
 /// Old attack_self: polish or display the badge. Returns FALSE where the old body returned nothing,
 /// so subtypes' legacy attack_self bodies that ran after ..() still run.
-/obj/item/clothing/accessory/badge/proc/badge_display_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/badge/proc/badge_display_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(sheriff_badge)
-		return FALSE
+		return OP_DECLINE
 	if(fluff_badge)
-		return FALSE
+		return OP_DECLINE
 	if(!stored_name)
 		if(holo)
 			to_chat(user, "Waving around a holobadge before swiping an ID would be pretty pointless.")
-			return FALSE
+			return OP_DECLINE
 		else
 			to_chat(user, "You polish your old badge fondly, shining up the surface.")
 		set_name(user.real_name)
-		return FALSE
+		return OP_DECLINE
 
 	if(isliving(user))
 		if(stored_name)
@@ -51,7 +53,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge, INTERACT_SELF("Display",
 		else
 			act_message(user, null, MSG_SELF(span_notice("You display your [src.name]. It reads: [badge_string].")), \
 				MSG_OTHERS(span_notice("%U% displays their [src.name].\nIt reads: [badge_string].")))
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/clothing/accessory/badge/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	act_message(user, M, MSG_SELF(span_danger("You invade %T%'s personal space, thrusting [src] into their face insistently.")), \
@@ -111,16 +113,13 @@ TRACKED(/obj/item/clothing/accessory/badge/holo, emagged)
 	icon_state = "holobadge-cord"
 	slot_flags = SLOT_MASK | SLOT_TIE | SLOT_BELT
 
-DECLARE_EMAG(/obj/item/clothing/accessory/badge/holo, PROC_REF(on_emag), null, "The badge is already cracked.")
-
-/obj/item/clothing/accessory/badge/holo/mark_emagged()
+/obj/item/clothing/accessory/badge/holo/proc/on_emag(datum/act/op/A)
 	set_emagged(TRUE)
-/obj/item/clothing/accessory/badge/holo/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	set_emagged(TRUE)
-	to_chat(user, span_danger("You crack the holobadge security checks."))
-	return 1
+	to_chat(A.actor, span_danger("You crack the holobadge security checks."))
+	return OP_OK
 
 CAPABILITIES(/obj/item/clothing/accessory/badge/holo)
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 	op("holobadge_imprint_item", item(/obj/item), needs(req(PROC_REF(imprint_credentials_holds), because = PROC_REF(imprint_credentials_refusal))), then(PROC_REF(holobadge_imprint_item)))
 
 /obj/item/clothing/accessory/badge/holo/proc/imprint_credentials_holds(datum/act/op/A)
@@ -311,50 +310,47 @@ OM_FIELD_VIEW(/obj/item/clothing/accessory/dosimeter, obj/item/dosimeter_film, c
 
 CAPABILITIES(/obj/item/clothing/accessory/dosimeter)
 	owns_one(nameof(current_film), /obj/item/dosimeter_film, starts = /obj/item/dosimeter_film)
+	op("dosimeter_remove_film_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Dosimeter remove film hand"), then(PROC_REF(dosimeter_remove_film_hand)))
+	op("dosimeter_insert_film", item(/obj/item/dosimeter_film), priority(OP_PRIORITY_DEFAULT - 1), label("Insert film"), then(PROC_REF(dosimeter_insert_film)))
+	every(2 SECONDS, then(PROC_REF(dosimeter_step)), when = PROC_REF(film_live))
 
 /// A film that can still darken is loaded: it reads the wearer's radiation.
-OM_DERIVE_FIELD(/obj/item/clothing/accessory/dosimeter, film_live, list("current_film", "current_film.state"))
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/accessory/dosimeter, PERIODIC_SLOW, "film_live")
-
-/obj/item/clothing/accessory/dosimeter/proc/film_live()
+/obj/item/clothing/accessory/dosimeter/proc/film_live(datum/act/A)
 	return current_film && current_film.state < 2
 
 /obj/item/clothing/accessory/dosimeter/Initialize(mapload)
 	. = ..()
 	update_state(current_film.state)
 
-
-/obj/item/clothing/accessory/dosimeter/periodic_step()
+/obj/item/clothing/accessory/dosimeter/proc/dosimeter_step(datum/act/timer/A)
 	check_holder()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(dosimeter_remove_film_hand)), \
-	INTERACT_INSERT(/obj/item/dosimeter_film, PROC_REF(dosimeter_insert_film), "Insert film"), \
-)
-
 /// Old attack_hand: pull the film out while holding the dosimeter in the other hand.
-/obj/item/clothing/accessory/dosimeter/proc/dosimeter_remove_film_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/dosimeter/proc/dosimeter_remove_film_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(current_film)
 			user.put_in_hands(rel_take(src, nameof(current_film)))
 			to_chat(user, span_notice("You pulled out the film out of \the [src]."))
 			desc = "This seems like a dosimeter, but there is no film inside."
 			update_state(0)
-			return TRUE
-	return FALSE
+			return OP_OK
+	return OP_DECLINE
 
 /// Old attackby: insert a film.
-/obj/item/clothing/accessory/dosimeter/proc/dosimeter_insert_film(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/clothing/accessory/dosimeter/proc/dosimeter_insert_film(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(!current_film)
 		if(!move_into(src, nameof(src.current_film), I, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		update_state(current_film.state)
 
 		to_chat(user, span_notice("You inserted the film into \the [src]."))
 		desc = "This seems like a dosimeter. It has a film inside."
 	else
 		to_chat(user, span_notice("\The [src] already has a film inside."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/clothing/accessory/dosimeter/proc/check_holder()
 	var/mob/living/carbon/human/H = wearer
@@ -421,7 +417,6 @@ OM_FIELD(/obj/item/dosimeter_film, state, 0, CHANGE_EXPLICIT)
 	storage_slots = 5
 	max_storage_space = (ITEMSIZE_COST_SMALL * 4) + (ITEMSIZE_COST_TINY * 1)
 	w_class = ITEMSIZE_SMALL
-
 
 CAPABILITIES(/obj/item/storage/box/dosimeter)
 	configure(storage(accepts = list(

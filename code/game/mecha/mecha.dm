@@ -24,6 +24,8 @@
 
 	var/obj/item/cell/cell
 	var/state = MECHA_OPERATING
+	/// Passengers in the compartments, kept by the compartments' slot changes (mecha_passenger_changed()); the tracked mirror a requirement reads.
+	var/passenger_count = 0
 	var/list/log = list() // ALLOW(instance_list): d: mech log (generic name, too many ambiguous call sites)
 	EXPIRY_DECLARE(last_message)
 	var/add_req_access = 1
@@ -181,6 +183,9 @@
 
 TRACKED(/obj/mecha, cabin_regulating)
 TRACKED(/obj/mecha, state)
+TRACKED(/obj/mecha, passenger_count)
+
+MSG_DEF_SELF(mecha_passenger/none, "There are no passengers to remove.")
 
 CAPABILITIES(/obj/mecha)
 	// Temperature control: a heat pump between the cabin air and the air outside, toward 20 C, paid from the cell (process_preserve_temp()).
@@ -204,6 +209,7 @@ CAPABILITIES(/obj/mecha)
 	owns_one(nameof(internals_action), /datum/action/innate/mecha/mech_toggle_internals, starts = /datum/action/innate/mecha/mech_toggle_internals)
 	owns_one(nameof(lights_action), /datum/action/innate/mecha/mech_toggle_lights, starts = /datum/action/innate/mecha/mech_toggle_lights)
 	owns_one(nameof(stats_action), /datum/action/innate/mecha/mech_view_stats, starts = /datum/action/innate/mecha/mech_view_stats)
+	every(2 SECONDS, then(PROC_REF(mecha_step)), when = PROC_REF(cabin_gate))
 	owns_one(nameof(strafing_action), /datum/action/innate/mecha/strafe, starts = /datum/action/innate/mecha/strafe)
 	owns_one(nameof(defence_action), /datum/action/innate/mecha/mech_defence_mode, starts = /datum/action/innate/mecha/mech_defence_mode)
 	owns_one(nameof(overload_action), /datum/action/innate/mecha/mech_overload_mode, starts = /datum/action/innate/mecha/mech_overload_mode)
@@ -253,12 +259,41 @@ CAPABILITIES(/obj/mecha)
 	op("toggle_maint_access", topic("toggle_maint_access"), then(PROC_REF(topic_toggle_maint_access)))
 	op("maint_access", topic("maint_access"), then(PROC_REF(topic_maint_access)))
 	op("set_internal_tank_valve", topic("set_internal_tank_valve"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent()), asks(/datum/prompt/number/mecha_tank_valve, fields = list("subject" = computed(PROC_REF(valve_subject)), "default" = computed(PROC_REF(valve_default))), step = "pressure"), then(PROC_REF(topic_set_internal_tank_valve)))
-	op("remove_passenger", topic("remove_passenger"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent()), asks(/datum/prompt/choice/mecha_remove_passenger, fields = list("choices" = computed(PROC_REF(passenger_choices))), step = "passenger"), then(PROC_REF(topic_remove_passenger)))
+	op("remove_passenger", topic("remove_passenger"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent(), req(PROC_REF(has_passengers), because = MSG(mecha_passenger/none))), asks(/datum/prompt/choice/mecha_remove_passenger, fields = list("choices" = computed(PROC_REF(passenger_choices))), step = "passenger"), then(PROC_REF(topic_remove_passenger)))
 	op("finish_req_access", topic("finish_req_access"), then(PROC_REF(topic_finish_req_access)))
 	op("dna_lock", topic("dna_lock"), then(PROC_REF(topic_dna_lock)))
 	op("reset_dna", topic("reset_dna"), then(PROC_REF(topic_reset_dna)))
 	op("repair_int_control_lost", topic("repair_int_control_lost"), then(PROC_REF(topic_repair_int_control_lost)))
 	op("topic_drop_from_cargo", topic("drop_from_cargo", arg("drop_from_cargo", schema_ref(/obj), optional = TRUE, among = PROC_REF(topic_cargo_pool))), then(PROC_REF(topic_drop_from_cargo)))
+	op("mecha_paint_kit", item(/obj/item/kit/paint), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(mecha_paint_kit_op)))
+	op("mecha_weld_help", item(/obj/item), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 1), label("Weld repairs"), then(PROC_REF(interaction_mecha_welder)))
+	op("mecha_weld_disarm", item(/obj/item), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 2), label("Weld repairs"), then(PROC_REF(interaction_mecha_welder)))
+	op("mecha_weld_grab", item(/obj/item), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 3), label("Weld repairs"), then(PROC_REF(interaction_mecha_welder)))
+	op("mecha_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 4), label("Use"), then(PROC_REF(interaction_mecha_item)))
+	op("mecha_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_mecha_hand)))
+	op("mecha_drag", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Enter exosuit"), then(PROC_REF(interaction_mecha_drag)))
+	op("mecha_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle strafing"), then(PROC_REF(interaction_mecha_alt)))
+	op("mecha_enter", menu(), label("Enter Exosuit"), then(PROC_REF(mecha_enter_op)))
+	op("mecha_enter_passenger", menu(), label("Enter Passenger Compartment"), then(PROC_REF(mecha_enter_passenger_op)))
+	op("mecha_eject", menu(), label("Eject"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_eject_op)))
+	op("mecha_stats", menu(), label("View Stats"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_stats_op)))
+	op("mecha_lights", menu(), label("Toggle Lights"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_lights_op)))
+	op("mecha_strafing", menu(), label("Toggle strafing"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_strafing_op)))
+	op("mecha_airtank", menu(), label("Toggle internal airtank usage"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_airtank_op)))
+	op("mecha_connect", menu(), label("Connect to port"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_connect_op)))
+	op("mecha_disconnect", menu(), label("Disconnect from port"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_disconnect_op)))
+	op("mecha_defence", menu(), label("Toggle defence mode"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_defence_op)))
+	op("mecha_overload", menu(), label("Toggle leg actuators overload"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_overload_op)))
+	op("mecha_smoke", menu(), label("Activate Smoke"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_smoke_op)))
+	op("mecha_zoom", menu(), label("Zoom"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_zoom_op)))
+	op("mecha_thrusters", menu(), label("Toggle thrusters"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_thrusters_op)))
+	op("mecha_damtype", menu(), label("Change melee damage type"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_damtype_op)))
+	op("mecha_phasing", menu(), label("Toggle phasing"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_phasing_op)))
+	op("mecha_cloak", menu(), label("Toggle cloaking"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_cloak_op)))
+	op("mecha_weapons_cycle", menu(), label("Toggle weapons only cycling"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_weapons_cycle_op)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(mecha_blast))))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(mecha_blast_afflictions)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(mecha_emp)))
 
 TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_equipment, null)
 
@@ -452,16 +487,14 @@ OM_FLAG_FIELD(/obj/mecha, current_processes, MECHA_PROC_INT_TEMP, CHANGE_EXPLICI
 /// Derived field: the cabin simulation has something to advance -- a pilot, or inertial movement /
 /// internal damage. An empty parked mech with neither does not tick. Pilot entry/exit raise the
 /// relation channels (the pilot slot's om_link/om_unlink).
-OM_DERIVE_FIELD(/obj/mecha, cabin_active, list("current_processes", CHANGE_RELATION_ADDED, CHANGE_RELATION_REMOVED))
-DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
-
-/obj/mecha/proc/cabin_active()
-	return slot_item(MECHA_SLOT_PILOT) || (current_processes & (MECHA_PROC_MOVEMENT | MECHA_PROC_DAMAGE))
+/// The every() gate: the cabin simulation has something to advance.
+/obj/mecha/proc/cabin_gate(datum/act/A)
+	return pilot_of() || (current_processes & (MECHA_PROC_MOVEMENT | MECHA_PROC_DAMAGE))
 
 // The main process loop to replace the ancient global iterators.
 // It's a bit hardcoded but I don't see anyone else adding stuff to
 // mechas, and it's easy enough to modify.
-/obj/mecha/periodic_step()
+/obj/mecha/proc/mecha_step(datum/act/timer/A)
 	var/static/max_ticks = 16
 
 	if (current_processes & MECHA_PROC_MOVEMENT)
@@ -1057,41 +1090,130 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 
 // Pilot Menu entries (old "Exosuit Interface" verbs): the pilot is inside the mech, which
 // counts as reach (movable/Adjacent: neighbor == loc); pred_mecha_pilot keeps them pilot-only.
-DECLARE_INTERACTIONS(/obj/mecha, \
-	INTERACT_ITEM(null, PROC_REF(interaction_mecha_paint_kit)), \
-	INTERACT_ITEM_AS(I_HELP, "Weld repairs", PROC_REF(interaction_mecha_welder)), \
-	INTERACT_ITEM_AS(I_DISARM, "Weld repairs", PROC_REF(interaction_mecha_welder)), \
-	INTERACT_ITEM_AS(I_GRAB, "Weld repairs", PROC_REF(interaction_mecha_welder)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_mecha_item)), \
-	INTERACT_HAND(null, PROC_REF(interaction_mecha_hand)), \
-	INTERACT_DRAG("Enter exosuit", PROC_REF(interaction_mecha_drag)), \
-	INTERACT_ALT("Toggle strafing", PROC_REF(interaction_mecha_alt)), \
-	INTERACT_VERB("Enter Exosuit", PROC_REF(mecha_verb_enter), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_outside, null)), \
-	INTERACT_VERB("Enter Passenger Compartment", PROC_REF(move_inside_passenger), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_outside, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_has_passenger_bay, null), REQ_TARGET_STATE(/obj/mecha/proc/can_enter_passenger)), \
-	INTERACT_VERB("Eject", PROC_REF(mecha_verb_eject), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
-	INTERACT_VERB("View Stats", PROC_REF(view_stats), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
-	INTERACT_VERB("Toggle Lights", PROC_REF(mecha_verb_toggle_lights), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
-	INTERACT_VERB("Toggle strafing", PROC_REF(mecha_verb_toggle_strafing), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
-	INTERACT_VERB("Toggle internal airtank usage", PROC_REF(toggle_internal_tank), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_has_airtank, null)), \
-	INTERACT_VERB("Connect to port", PROC_REF(mecha_verb_connect_to_port), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_port_connectable, null)), \
-	INTERACT_VERB("Disconnect from port", PROC_REF(mecha_verb_disconnect_from_port), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_port_connected, null)), \
-	INTERACT_VERB("Toggle defence mode", PROC_REF(mecha_verb_toggle_defence_mode), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_defence_mode, null)), \
-	INTERACT_VERB("Toggle leg actuators overload", PROC_REF(mecha_verb_toggle_overload), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_overload, null)), \
-	INTERACT_VERB("Activate Smoke", PROC_REF(mecha_verb_toggle_smoke), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_smoke, null)), \
-	INTERACT_VERB("Zoom", PROC_REF(mecha_verb_toggle_zoom), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_zoom, null)), \
-	INTERACT_VERB("Toggle thrusters", PROC_REF(mecha_verb_toggle_thrusters), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_thrusters, null)), \
-	INTERACT_VERB("Change melee damage type", PROC_REF(mecha_verb_switch_damtype), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_switch_damtype, null)), \
-	INTERACT_VERB("Toggle phasing", PROC_REF(mecha_verb_toggle_phasing), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_phasing, null)), \
-	INTERACT_VERB("Toggle cloaking", PROC_REF(mecha_verb_toggle_cloak), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_can_cloak, null)), \
-	INTERACT_VERB("Toggle weapons only cycling", PROC_REF(mecha_verb_toggle_weapons_only_cycle), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
-)
+MSG_DEF_SELF(mecha/not_pilot, "Only the pilot can do that.")
+
+/// The mech's pilot, or null: the pilot ledger slot, which publishes OCCUPANT_KEY when someone gets in or out.
+/obj/mecha/proc/pilot_of()
+	return slot_item(MECHA_SLOT_PILOT)
+
+READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
+
+/// Requirement: the actor is this mech's pilot (old `set src = usr.loc` + pilot checks).
+/obj/mecha/proc/pilot_only(datum/act/op/A)
+	return A.actor && A.actor == pilot_of()
+
+/// A paint kit customises the mech (the handler is declared with the kit's code, paintkit.dm).
+/obj/mecha/proc/mecha_paint_kit_op(datum/act/op/A)
+	interaction_mecha_paint_kit(A.actor, A.held, null)
+	return OP_OK
+
+/// The Enter Exosuit menu entry (old set src in oview(1)).
+/obj/mecha/proc/mecha_enter_op(datum/act/op/A)
+	if(A.actor.loc == src)
+		return OP_DECLINE
+	mecha_verb_enter(A.actor)
+	return OP_OK
+
+/// The Enter Passenger Compartment menu entry.
+/obj/mecha/proc/mecha_enter_passenger_op(datum/act/op/A)
+	if(A.actor.loc == src || !pred_mecha_has_passenger_bay(A.actor, src, null) || can_enter_passenger(A.actor, src, null) != TRUE)
+		return OP_DECLINE
+	move_inside_passenger(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_eject_op(datum/act/op/A)
+	mecha_verb_eject(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_stats_op(datum/act/op/A)
+	view_stats(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_lights_op(datum/act/op/A)
+	mecha_verb_toggle_lights(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_strafing_op(datum/act/op/A)
+	mecha_verb_toggle_strafing(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_airtank_op(datum/act/op/A)
+	if(!pred_mecha_has_airtank(A.actor, src, null))
+		return OP_DECLINE
+	toggle_internal_tank(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_connect_op(datum/act/op/A)
+	if(!pred_mecha_port_connectable(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_connect_to_port(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_disconnect_op(datum/act/op/A)
+	if(!pred_mecha_port_connected(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_disconnect_from_port(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_defence_op(datum/act/op/A)
+	if(!pred_mecha_can_defence_mode(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_toggle_defence_mode(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_overload_op(datum/act/op/A)
+	if(!pred_mecha_can_overload(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_toggle_overload(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_smoke_op(datum/act/op/A)
+	if(!pred_mecha_can_smoke(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_toggle_smoke(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_zoom_op(datum/act/op/A)
+	if(!pred_mecha_can_zoom(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_toggle_zoom(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_thrusters_op(datum/act/op/A)
+	if(!pred_mecha_can_thrusters(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_toggle_thrusters(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_damtype_op(datum/act/op/A)
+	if(!pred_mecha_can_switch_damtype(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_switch_damtype(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_phasing_op(datum/act/op/A)
+	if(!pred_mecha_can_phasing(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_toggle_phasing(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_cloak_op(datum/act/op/A)
+	if(!pred_mecha_can_cloak(A.actor, src, null))
+		return OP_DECLINE
+	mecha_verb_toggle_cloak(A.actor)
+	return OP_OK
+
+/obj/mecha/proc/mecha_weapons_cycle_op(datum/act/op/A)
+	mecha_verb_toggle_weapons_only_cycle(A.actor)
+	return OP_OK
 
 /// Old attack_hand.
-/obj/mecha/proc/interaction_mecha_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/interaction_mecha_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(user == occupant)
 		show_radial_occupant(user)
-		return TRUE
+		return OP_OK
 
 	user.setClickCooldown(user.get_attack_speed())
 	src.mecha_log_message("Attack by hand/paw. Attacker - [user].",1)
@@ -1119,7 +1241,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		else
 			act_message(user, src, MSG_SELF(span_danger("You hit %T% with no visible effect.")), MSG_OTHERS(span_danger("%U% hits %T%. Nothing happens.")))
 			src.log_append_to_last("Armor saved.")
-		return TRUE
+		return OP_OK
 	else if (user.has_mutation(HULK) && lands)
 		plan.injure(src, 15, MELEE)
 		if(prob(25))	//Hulks punch hard but lets not give them consistent internal damage.
@@ -1130,7 +1252,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		act_message(user, null, MSG_SELF(span_infoplain(span_red(span_bold("You hit [src.name] with no visible effect.")))), \
 			MSG_OTHERS(span_infoplain((span_red(span_bold("%U% hits [src.name]. Nothing happens."))))))
 		src.log_append_to_last("Armor saved.")
-	return TRUE
+	return OP_OK
 
 /// The mech's packet sink. Each kind lands through the machine body plan
 /// (mech_body_plan().injure), keyed by the kind's armour key. Projectiles and throws
@@ -1192,25 +1314,28 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	return FALSE
 
 //This refer to whenever you are caught in an explosion.
-DAMAGE_REACTION(/obj/mecha, DAMAGE_EXPLOSION, PROC_REF(mecha_blast))
 /// The armour may soften a blast by a severity step: the packet is rescaled to the new severity.
-/obj/mecha/proc/mecha_blast(datum/damage_packet/packet)
+/obj/mecha/proc/mecha_blast(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	src.mecha_log_message("Affected by explosion of severity: [packet.severity].",1)
 	var/severity = mech_body_plan().blast_severity(src, packet.severity)
 	if(severity != packet.severity)
 		var/old_fraction = explosion_blast_fraction(packet.severity)
 		packet.scale(old_fraction ? explosion_blast_fraction(severity) / old_fraction : 0)
 		packet.severity = severity
+	return HOOK_DECLINE
 
-DAMAGE_REACTION_AFTER(/obj/mecha, DAMAGE_EXPLOSION, PROC_REF(mecha_blast_afflictions))
 /// A blast that got through the armour risks internal damage.
-/obj/mecha/proc/mecha_blast_afflictions(datum/damage_packet/packet)
+/obj/mecha/proc/mecha_blast_afflictions(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(packet.severity <= 3)
 		mech_body_plan().roll_affliction(src, list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)
 
-DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 /// An EMP drains the cell, burns the hull and risks internal damage.
-/obj/mecha/proc/mecha_emp(datum/damage_packet/packet)
+/obj/mecha/proc/mecha_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(get_charge())
 		use_power((cell.charge/2)/packet.severity)
 		take_damage(50 / packet.severity,"energy")
@@ -1236,11 +1361,17 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 // Maintenance steps and weld repairs: mecha_maintenance.dm.
 
 /// Outside combat mode a welder never strikes the exosuit (weld repairs are its tool interaction).
-/obj/mecha/proc/interaction_mecha_welder(mob/user, obj/item/W, datum/interaction/interaction)
-	return W.has_tool_quality(TOOL_WELDER) ? TRUE : FALSE
+/obj/mecha/proc/interaction_mecha_welder(datum/act/op/A)
+	var/obj/item/W = A.held
+	return W.has_tool_quality(TOOL_WELDER) ? OP_OK : OP_DECLINE
 
-/// Old attackby: every item is handled here (maintenance, parts, else dynattackby).
-/obj/mecha/proc/interaction_mecha_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby: every item is handled here.
+/obj/mecha/proc/interaction_mecha_item(datum/act/op/A)
+	mecha_item_use(A.actor, A.held)
+	return OP_OK
+
+/// Maintenance, parts, else dynattackby.
+/obj/mecha/proc/mecha_item_use(mob/user, obj/item/W)
 
 	if(istype(W, /obj/item/mmi))
 		if(mmi_move_inside(W,user))
@@ -1274,7 +1405,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 
 	if(istype(W, /obj/item/card/robot))
 		var/obj/item/card/robot/RoC = W
-		return interaction_mecha_item(user, RoC.dummy_card, interaction)
+		return mecha_item_use(user, RoC.dummy_card)
 
 	if(istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
 		if(add_req_access || maint_access)
@@ -1606,17 +1737,19 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	return
 
 /// Old MouseDrop_T: drag yourself onto the mech to climb in.
-/obj/mecha/proc/interaction_mecha_drag(mob/user, atom/movable/O, datum/interaction/interaction)
+/obj/mecha/proc/interaction_mecha_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/O = A.held
 	//Humans can pilot mechs.
 	if(!ishuman(O))
-		return TRUE
+		return OP_OK
 
 	//Can't put other people into mechs (can comment this out if you want that to be possible)
 	if(O != user)
-		return TRUE
+		return OP_OK
 
 	move_inside(user)
-	return TRUE
+	return OP_OK
 
 /// Old verb "Enter Exosuit".
 /obj/mecha/proc/mecha_verb_enter(mob/user, obj/item/held, datum/interaction/interaction)
@@ -1742,11 +1875,12 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 				who << sound('sound/mecha/nominal.ogg',volume=50)
 
 /// Old click_alt: the pilot toggles strafing.
-/obj/mecha/proc/interaction_mecha_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/mecha/proc/interaction_mecha_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(user == occupant)
 		strafing(user)
-	return TRUE
+	return OP_OK
 
 /// Old verb "View Stats".
 /obj/mecha/proc/view_stats(mob/user, obj/item/held, datum/interaction/interaction)
@@ -2509,6 +2643,17 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 /obj/mecha/proc/bolts_exposed(datum/act/op/A)
 	return state >= MECHA_BOLTS_SECURED
 
+/// Requirement: somebody sits in a passenger compartment (the tracked passenger_count).
+/obj/mecha/proc/has_passengers(datum/act/op/A)
+	return passenger_count > 0
+
+/// A compartment's occupancy changed: recount the passengers into the tracked mirror.
+/obj/mecha/proc/mecha_passenger_changed()
+	var/count = 0
+	for(var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P in contents)
+		count += P.slot_occupancy(OCCUPANT_SLOT_MECHA_PASSENGER)
+	set_passenger_count(count)
+
 /obj/mecha/proc/valve_subject(datum/act/op/A)
 	return src
 
@@ -2535,7 +2680,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	var/list/passengers = passenger_choices(A)
 	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = passengers[A.step_value("passenger")]
 	if(!P)
-		to_chat(user, span_warning("There are no passengers to remove."))
+		log_world("MECHA: remove_passenger on [src] by [user]: the chosen passenger is gone")
 		return
 	var/mob/passenger_occupant = P.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
 	act_message(user, null, MSG_SELF(span_notice("You begin opening the hatch on %I%...")), \

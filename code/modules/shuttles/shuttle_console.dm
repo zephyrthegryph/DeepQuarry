@@ -171,6 +171,8 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control)
 	op("force", ui_act("force"), then(PROC_REF(ui_act_force)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 	op("set_codes", ui_act("set_codes"), then(PROC_REF(ui_act_set_codes)))
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(shuttle_console_ricochet))))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /obj/machinery/computer/shuttle_control/ui_title(mob/user)
 	return "[shuttle_tag] Shuttle Control"
@@ -200,21 +202,22 @@ CAPABILITIES(/obj/machinery/computer/shuttle_control)
 	shuttle_tag = new_shuttle_tag
 	return TRUE
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/shuttle_control, PROC_REF(on_emag), null)
-/obj/machinery/computer/shuttle_control/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/shuttle_control/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if (!hacked)
 		req_access = list()
 		req_one_access = list()
 		hacked = 1
 		to_chat(user, "You short out the console's ID checking system. It's now available to everyone!")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
-DAMAGE_REACTION(/obj/machinery/computer/shuttle_control, DAMAGE_PROJECTILE, PROC_REF(shuttle_console_ricochet))
 
 /// Rounds ricochet off the console harmlessly.
-/obj/machinery/computer/shuttle_control/proc/shuttle_console_ricochet(datum/damage_packet/packet)
+/obj/machinery/computer/shuttle_control/proc/shuttle_console_ricochet(datum/act/hit/projectile/A)
+	var/datum/damage_packet/packet = A.packet
 	visible_message("\The [packet.source] ricochets off \the [src]!")
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/item/paper/dockingcodes
 	name = "Docking Codes"

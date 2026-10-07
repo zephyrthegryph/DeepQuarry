@@ -18,8 +18,8 @@
 	var/wall_type = /turf/simulated/wall
 
 /// TRUE while its material needs processing (radioactive or similar); set by set_material().
-OM_FIELD(/obj/structure/girder, material_processing, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/structure/girder, PERIODIC_SLOW, "material_processing")
+/obj/structure/girder/var/material_processing = FALSE
+TRACKED(/obj/structure/girder, material_processing)
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
 /obj/structure/girder/proc/build_of(material_key)
@@ -29,9 +29,10 @@ DECLARE_PERIODIC_WHILE(/obj/structure/girder, PERIODIC_SLOW, "material_processin
 		return
 	set_material(our_material)
 
-/obj/structure/girder/periodic_step()
+/// Radiates every 2 s while its material needs processing; a material that stopped radiating ends it.
+/obj/structure/girder/proc/girder_step(datum/act/timer/A)
 	if(!radiate())
-		return PROCESS_KILL
+		set_material_processing(FALSE)
 
 /obj/structure/girder/proc/radiate()
 	// radioactivity moved to a component on /datum/material.
@@ -135,6 +136,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/girder, PERIODIC_SLOW, "material_processin
 	return receive_projectile(P, def_zone)
 
 CAPABILITIES(/obj/structure/girder)
+	every(2 SECONDS, then(PROC_REF(girder_step)), when = nameof(material_processing))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(girder_blob))))
 	param(nameof(default_material), pos = 1, apply = PROC_REF(build_of))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

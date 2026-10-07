@@ -117,6 +117,8 @@ CAPABILITIES(/obj/item/rocksliver)
 
 CAPABILITIES(/obj/item/core_sampler)
 	owns_one(nameof(filled_bag), /obj/item/evidencebag)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/core_sampler/examine(mob/user)
 	. = ..()
@@ -124,11 +126,13 @@ CAPABILITIES(/obj/item/core_sampler)
 		. += span_notice("Used to extract geological core samples - this one is [sampled_turf ? "full" : "empty"], and has [num_stored_bags] bag[num_stored_bags != 1 ? "s" : ""] remaining.")
 
 /// Old attackby.
-/obj/item/core_sampler/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/obj/item/core_sampler/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/evidencebag))
 		if(contents_count(I))
 			to_chat(user, span_warning("\The [I] is full."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(num_stored_bags < 10)
 			consume(I, user)
 			num_stored_bags += 1
@@ -136,8 +140,8 @@ CAPABILITIES(/obj/item/core_sampler)
 		else
 			to_chat(user, span_warning("\The [src] can not fit any more bags."))
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /obj/item/core_sampler/proc/sample_item(item_to_sample, mob/user)
 	var/datum/geosample/geo_data
@@ -179,13 +183,9 @@ CAPABILITIES(/obj/item/core_sampler)
 	else
 		to_chat(user, span_warning("You are unable to take a sample of [item_to_sample]."))
 
-DECLARE_INTERACTIONS(/obj/item/core_sampler, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_self.
-/obj/item/core_sampler/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/core_sampler/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(filled_bag)
 		to_chat(user, span_notice("You eject the full sample bag."))
 		var/success = 0

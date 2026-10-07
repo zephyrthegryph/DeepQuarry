@@ -47,10 +47,8 @@
 		GLOB.chamelion_jumpsuit_choices = generate_chameleon_choices(/obj/item/clothing/under, blocked)
 	. = ..()
 
-DAMAGE_REACTION(/obj/item/clothing/under/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
-
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
-/obj/item/clothing/under/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
+/obj/item/clothing/under/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "psychedelic"
 	desc = "Groovy!"
 	icon_state = "psyche"
@@ -59,6 +57,7 @@ DAMAGE_REACTION(/obj/item/clothing/under/chameleon, DAMAGE_EMP, PROC_REF(chamele
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/under/chameleon)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
 	op("chameleon_change_verb", menu(), label("Change Jumpsuit Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(chameleon_change_verb)))
 
 /// Old verb "Change Jumpsuit Appearance".
@@ -92,10 +91,8 @@ CAPABILITIES(/obj/item/clothing/under/chameleon)
 		GLOB.chamelion_head_choices = generate_chameleon_choices(/obj/item/clothing/head, blocked)
 	. = ..()
 
-DAMAGE_REACTION(/obj/item/clothing/head/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
-
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
-/obj/item/clothing/head/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
+/obj/item/clothing/head/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "grey cap"
 	desc = "It's a baseball hat in a tasteful grey colour."
 	icon_state = "greysoft"
@@ -103,6 +100,7 @@ DAMAGE_REACTION(/obj/item/clothing/head/chameleon, DAMAGE_EMP, PROC_REF(chameleo
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/head/chameleon)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
 	op("head_chameleon_change_verb", menu(), label("Change Hat/Helmet Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(head_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(head_chameleon_change_verb)))
 
 /// Old verb "Change Hat/Helmet Appearance".
@@ -135,10 +133,8 @@ CAPABILITIES(/obj/item/clothing/head/chameleon)
 		GLOB.chamelion_suit_choices = generate_chameleon_choices(/obj/item/clothing/suit, blocked)
 	. = ..()
 
-DAMAGE_REACTION(/obj/item/clothing/suit/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
-
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
-/obj/item/clothing/suit/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
+/obj/item/clothing/suit/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "armor"
 	desc = "An armored vest that protects against some damage."
 	icon_state = "armor"
@@ -146,6 +142,7 @@ DAMAGE_REACTION(/obj/item/clothing/suit/chameleon, DAMAGE_EMP, PROC_REF(chameleo
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/suit/chameleon)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
 	op("suit_chameleon_change_verb", menu(), label("Change Oversuit Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(suit_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(suit_chameleon_change_verb)))
 
 /// Old verb "Change Oversuit Appearance".
@@ -177,10 +174,8 @@ CAPABILITIES(/obj/item/clothing/suit/chameleon)
 		GLOB.chamelion_shoe_choices = generate_chameleon_choices(/obj/item/clothing/shoes, blocked)
 	. = ..()
 
-DAMAGE_REACTION(/obj/item/clothing/shoes/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
-
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
-/obj/item/clothing/shoes/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
+/obj/item/clothing/shoes/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "black shoes"
 	desc = "A pair of black shoes."
 	icon_state = "black"
@@ -188,6 +183,7 @@ DAMAGE_REACTION(/obj/item/clothing/shoes/chameleon, DAMAGE_EMP, PROC_REF(chamele
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/shoes/chameleon)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
 	op("shoes_chameleon_change_verb", menu(), label("Change Footwear Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(shoes_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(shoes_chameleon_change_verb)))
 
 /// Old verb "Change Footwear Appearance".
@@ -219,10 +215,8 @@ CAPABILITIES(/obj/item/clothing/shoes/chameleon)
 		var/blocked = list(src.type, /obj/item/storage/backpack/satchel/withwallet)
 		GLOB.chamelion_back_choices = generate_chameleon_choices(/obj/item/storage/backpack, blocked)
 
-DAMAGE_REACTION(/obj/item/storage/backpack/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
-
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
-/obj/item/storage/backpack/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
+/obj/item/storage/backpack/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "backpack"
 	desc = "You wear this on your back and put items into it."
 	icon_state = "backpack"
@@ -231,6 +225,7 @@ DAMAGE_REACTION(/obj/item/storage/backpack/chameleon, DAMAGE_EMP, PROC_REF(chame
 		M.update_inv_back()
 
 CAPABILITIES(/obj/item/storage/backpack/chameleon)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
 	op("backpack_chameleon_change_verb", menu(), label("Change Backpack Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(backpack_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(backpack_chameleon_change_verb)))
 
 /// Old verb "Change Backpack Appearance".
@@ -278,10 +273,8 @@ CAPABILITIES(/obj/item/storage/backpack/chameleon)
 		GLOB.chamelion_glove_choices = generate_chameleon_choices(/obj/item/clothing/gloves, list(src.type))
 	. = ..()
 
-DAMAGE_REACTION(/obj/item/clothing/gloves/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
-
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
-/obj/item/clothing/gloves/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
+/obj/item/clothing/gloves/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "black gloves"
 	desc = "It looks like a pair of gloves, but it seems to have a small dial inside."
 	icon_state = "black"
@@ -289,6 +282,7 @@ DAMAGE_REACTION(/obj/item/clothing/gloves/chameleon, DAMAGE_EMP, PROC_REF(chamel
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/gloves/chameleon)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
 	op("gloves_chameleon_change_verb", menu(), label("Change Gloves Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(gloves_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(gloves_chameleon_change_verb)))
 
 /// Old verb "Change Gloves Appearance".
@@ -320,10 +314,8 @@ CAPABILITIES(/obj/item/clothing/gloves/chameleon)
 		GLOB.chamelion_mask_choices = generate_chameleon_choices(/obj/item/clothing/mask, list(src.type))
 	. = ..()
 
-DAMAGE_REACTION(/obj/item/clothing/mask/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
-
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
-/obj/item/clothing/mask/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
+/obj/item/clothing/mask/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "gas mask"
 	desc = "It's a gas mask."
 	icon_state = "gas_alt" // file change
@@ -331,6 +323,7 @@ DAMAGE_REACTION(/obj/item/clothing/mask/chameleon, DAMAGE_EMP, PROC_REF(chameleo
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/mask/chameleon)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
 	op("mask_chameleon_change_verb", menu(), label("Change Mask Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(mask_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(mask_chameleon_change_verb)))
 
 /// Old verb "Change Mask Appearance".
@@ -364,10 +357,8 @@ CAPABILITIES(/obj/item/clothing/mask/chameleon)
 		clothing_choices = generate_chameleon_choices(/obj/item/clothing/glasses, list(src.type))
 	. = ..()
 
-DAMAGE_REACTION(/obj/item/clothing/glasses/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
-
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
-/obj/item/clothing/glasses/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
+/obj/item/clothing/glasses/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "Optical Meson Scanner"
 	desc = "It's a set of mesons."
 	icon_state = "meson"
@@ -375,6 +366,7 @@ DAMAGE_REACTION(/obj/item/clothing/glasses/chameleon, DAMAGE_EMP, PROC_REF(chame
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/glasses/chameleon)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
 	op("glasses_chameleon_change_verb", menu(), label("Change Glasses Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = nameof(clothing_choices), "timeout" = 0), step = "a1"), then(PROC_REF(glasses_chameleon_change_verb)))
 
 /// Old verb "Change Glasses Appearance".
@@ -403,10 +395,8 @@ CAPABILITIES(/obj/item/clothing/glasses/chameleon)
 	if(!GLOB.chamelion_belt_choices)
 		GLOB.chamelion_belt_choices = generate_chameleon_choices(/obj/item/storage/belt, list(src.type))
 
-DAMAGE_REACTION(/obj/item/storage/belt/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
-
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
-/obj/item/storage/belt/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
+/obj/item/storage/belt/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "belt"
 	desc = "Can hold various things."
 	icon_state = "utilitybelt"
@@ -415,6 +405,7 @@ DAMAGE_REACTION(/obj/item/storage/belt/chameleon, DAMAGE_EMP, PROC_REF(chameleon
 		M.update_inv_belt()
 
 CAPABILITIES(/obj/item/storage/belt/chameleon)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
 	op("belt_chameleon_change_verb", menu(), label("Change Belt Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(belt_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(belt_chameleon_change_verb)))
 
 /// Old verb "Change Belt Appearance".
@@ -451,10 +442,8 @@ CAPABILITIES(/obj/item/storage/belt/chameleon)
 		GLOB.chamelion_accessory_choices = generate_chameleon_choices(/obj/item/clothing/accessory, blocked)
 	. = ..()
 
-DAMAGE_REACTION(/obj/item/clothing/accessory/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
-
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
-/obj/item/clothing/accessory/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
+/obj/item/clothing/accessory/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "black tie"
 	desc = "Looks like a black tie, but his one also has a dial inside."
 	icon_state = "blacktie"
@@ -462,6 +451,7 @@ DAMAGE_REACTION(/obj/item/clothing/accessory/chameleon, DAMAGE_EMP, PROC_REF(cha
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/accessory/chameleon)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
 	op("accessory_chameleon_change_verb", menu(), label("Change Accessory Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(accessory_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(accessory_chameleon_change_verb)))
 
 /// Old verb "Change Accessory Appearance".
@@ -520,10 +510,8 @@ CAPABILITIES(/obj/item/clothing/accessory/chameleon)
 		P.impact_type = initial(copy_type.impact_type)
 	return P
 
-DAMAGE_REACTION(/obj/item/gun/energy/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
-
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
-/obj/item/gun/energy/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
+/obj/item/gun/energy/chameleon/proc/chameleon_emp_reveal(datum/act/A)
 	name = "desert eagle"
 	desc = "It's a desert eagle."
 	icon_state = "deagle"
@@ -551,6 +539,7 @@ DAMAGE_REACTION(/obj/item/gun/energy/chameleon, DAMAGE_EMP, PROC_REF(chameleon_e
 		copy_projectile = null
 
 CAPABILITIES(/obj/item/gun/energy/chameleon)
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
 	op("energy_chameleon_change_verb", menu(), label("Change Gun Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(energy_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(energy_chameleon_change_verb)))
 
 /// Old verb "Change Gun Appearance".

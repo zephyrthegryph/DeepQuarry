@@ -17,6 +17,7 @@
 CAPABILITIES(/obj/item/slime_extract)
 	reagents(60)
 	every(2 SECONDS, then(PROC_REF(emit_step)), when = nameof(emitting))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// TRUE while the extract emits (slime_extract_start_emitting() starts it).
 /obj/item/slime_extract/var/tmp/emitting = FALSE
@@ -26,16 +27,16 @@ TRACKED(/obj/item/slime_extract, emitting)
 /obj/item/slime_extract/proc/emit_step(datum/act/A)
 	set_emitting(FALSE)
 
-DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/item/slime_extract/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/slime_extract/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/slimepotion/enhancer))
 		if(enhanced)
 			to_chat(user, span_warning("You cannot enhance this extract further!"))
-			return FALSE
+			return OP_DECLINE
 		if(!consume(O, user))
-			return FALSE
+			return OP_DECLINE
 		to_chat(user, span_notice("You apply the enhancer to the slime extract. It may now be reused one more time."))
 		play_sfx(src, SFX_EFFECTS_BUBBLES)
 		uses += 2
@@ -47,7 +48,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 		new slime_type(get_turf(src))
 		consume(O, user)
 		consume(src, user)
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/slime_extract/examine(mob/user)
 	. = ..()
@@ -1054,7 +1055,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
 	log_and_message_admins("Oil extract reaction (explosion) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 
-	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_explode), with = list(holder.my_atom, power))
+	after(holder.my_atom, 5 SECONDS, GLOBAL_PROC_REF(slime_extract_explode), with = list(holder.my_atom, power), keeps_dead = TRUE)
 
 // ********************
 // * Bluespace slimes *

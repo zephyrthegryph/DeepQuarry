@@ -18,10 +18,12 @@
 	var/chamber_offset = 0 //how many empty chambers in the cylinder until you hit a round
 	fire_sound = SFX_WEAPONS_GUNSHOT4
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver, INTERACT_VERB("Spin cylinder", PROC_REF(revolver_verb_spin_cylinder), REQ_IN_INVENTORY))
+CAPABILITIES(/obj/item/gun/projectile/revolver)
+	op("revolver_verb_spin_cylinder", menu(), label("Spin cylinder"), needs(carried()), then(PROC_REF(revolver_verb_spin_cylinder)))
 
 /// Old Spin cylinder verb: Fun when you're bored out of your skull.
-/obj/item/gun/projectile/revolver/proc/revolver_verb_spin_cylinder(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/revolver/proc/revolver_verb_spin_cylinder(datum/act/op/A)
+	var/mob/user = A.actor
 	chamber_offset = 0
 	act_message(user, src, others = span_warning("%U% spins the cylinder of %T%!"), blind = span_notice("You hear something metallic spin and click."))
 	play_sfx(src, SFX_WEAPONS_REVOLVER_SPIN)
@@ -54,39 +56,48 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver, INTERACT_VERB("Spin cylin
 	caliber = ".38"
 	ammo_type = /obj/item/ammo_casing/a38
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective, INTERACT_VERB("Name Gun", PROC_REF(det_revolver_verb_rename), REQ_IN_INVENTORY, REQ_PROC(/proc/dq_actor_is_detective_for_naming, "you don't feel cool enough to name this gun, chump")))
+CAPABILITIES(/obj/item/gun/projectile/revolver/detective)
+	op("rename", menu(), label("Name Gun"), needs(carried()),
+		asks(/datum/prompt/text, fields = list("question" = "What do you want to name the gun?", "title" = "Rename Revolver", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"),
+		then(PROC_REF(det_revolver_verb_rename)))
 
-/// Requirement for naming the detective's gun: the actor is the detective. No mind is left to the verb, which does nothing.
-/proc/dq_actor_is_detective_for_naming(mob/actor, atom/target, obj/item/held)
+/// Whether the actor may name a gun that only the detective names: the detective, or nobody with a mind (which does nothing).
+/obj/item/gun/proc/detective_naming_ok(mob/actor)
 	return !actor?.mind || actor.mind.assigned_role == JOB_DETECTIVE
 
-/// Requirement for naming a security sidearm: the actor holds a security job. No mind is left to the verb.
-/proc/dq_actor_is_security_for_naming(mob/actor, atom/target, obj/item/held)
+/// Whether the actor may name a security sidearm: a security job, or nobody with a mind (which does nothing).
+/obj/item/gun/proc/security_naming_ok(mob/actor)
 	if(!actor?.mind)
 		return TRUE
 	var/job = actor.mind.assigned_role
 	return job == JOB_DETECTIVE || job == JOB_SECURITY_OFFICER || job == JOB_WARDEN || job == JOB_HEAD_OF_SECURITY
 
+/// The sprites a gun can be re-sprited to: name -> icon state (a type with a Resprite gun verb overrides it).
+/obj/item/gun/proc/reskin_options()
+	return list()
+
+/// The names of reskin_options(), the Resprite gun question's choices.
+/obj/item/gun/proc/reskin_choices(datum/act/op/A)
+	var/list/names = list()
+	for(var/choice in reskin_options())
+		names += choice
+	return names
+
 /// Old Name Gun verb: Click to rename your gun. If you're the detective.
-/obj/item/gun/projectile/revolver/detective/proc/det_revolver_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
-	return weapon_label_detective_name_stage(user, held, interaction)
-
-/obj/item/gun/projectile/revolver/detective/proc/weapon_label_detective_name_stage(mob/user, obj/item/held, datum/interaction/interaction, weapon_answer, weapon_answer_ready = FALSE)
-	var/mob/M = user
-	if(!M.mind)	return 0
-
-	if(!weapon_answer_ready)
-		open_request(src, /datum/prompt/text/weapon_label_review, PROC_REF(weapon_label_detective_name_answered), answerer = M, weapon_operator = user, weapon_held = held, weapon_interaction = interaction, question = "What do you want to name the gun?", title = "Rename Revolver", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
-		return
-	var/_answer_k69 = weapon_answer
-	if(isnull(_answer_k69))
-		return
-	var/input = sanitizeSafe(_answer_k69)
+/obj/item/gun/projectile/revolver/detective/proc/det_revolver_verb_rename(datum/act/op/A)
+	var/mob/M = A.actor
+	if(!detective_naming_ok(M))
+		to_chat(M, span_warning("You don't feel cool enough to name this gun, chump."))
+		return OP_DECLINE
+	if(!M.mind)
+		return OP_DECLINE
+	var/input = sanitizeSafe(A.step_value("name"))
 
 	if(src && input && !M.stat && in_range(M,src))
 		name = input
 		to_chat(M, "You name the gun [input]. Say hello to your new friend.")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /obj/item/gun/projectile/revolver/detective45
 	name = ".45 revolver"
@@ -96,37 +107,31 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective, INTERACT_VERB("
 	ammo_type = /obj/item/ammo_casing/a45/rubber
 	max_shells = 6
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
-	INTERACT_VERB("Name Gun", PROC_REF(det45_revolver_verb_rename), REQ_IN_INVENTORY, REQ_PROC(/proc/dq_actor_is_detective_for_naming, "you don't feel cool enough to name this gun, chump")), \
-	INTERACT_VERB("Resprite gun", PROC_REF(det45_revolver_verb_reskin), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/gun/projectile/revolver/detective45)
+	op("rename", menu(), label("Name Gun"), needs(carried()),
+		asks(/datum/prompt/text, fields = list("question" = "What do you want to name the gun?", "title" = "Rename Revolver", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"),
+		then(PROC_REF(det45_revolver_verb_rename)))
+	op("reskin", menu(), label("Resprite gun"), needs(carried()),
+		asks(/datum/prompt/choice, fields = list("question" = "Choose your sprite!", "title" = "Resprite Gun", "choices" = computed(PROC_REF(reskin_choices)), "timeout" = 0), step = "sprite"),
+		then(PROC_REF(det45_revolver_verb_reskin)))
 
 /// Old Name Gun verb: rename your gun, if you are the detective.
-/obj/item/gun/projectile/revolver/detective45/proc/det45_revolver_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
-	return weapon_label_detective45_name_stage(user, held, interaction)
-
-/obj/item/gun/projectile/revolver/detective45/proc/weapon_label_detective45_name_stage(mob/user, obj/item/held, datum/interaction/interaction, weapon_answer, weapon_answer_ready = FALSE)
-	var/mob/M = user
-	if(!M.mind)	return 0
-	if(!weapon_answer_ready)
-		open_request(src, /datum/prompt/text/weapon_label_review, PROC_REF(weapon_label_detective45_name_answered), answerer = M, weapon_operator = user, weapon_held = held, weapon_interaction = interaction, question = "What do you want to name the gun?", title = "Rename Revolver", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
-		return
-	var/_answer_k96 = weapon_answer
-	if(isnull(_answer_k96))
-		return
-	var/input = sanitizeSafe(_answer_k96, MAX_NAME_LEN)
+/obj/item/gun/projectile/revolver/detective45/proc/det45_revolver_verb_rename(datum/act/op/A)
+	var/mob/M = A.actor
+	if(!detective_naming_ok(M))
+		to_chat(M, span_warning("You don't feel cool enough to name this gun, chump."))
+		return OP_DECLINE
+	if(!M.mind)
+		return OP_DECLINE
+	var/input = sanitizeSafe(A.step_value("name"), MAX_NAME_LEN)
 
 	if(src && input && !M.stat && in_range(M,src))
 		name = input
 		to_chat(M, "You name the gun [input]. Say hello to your new friend.")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
-/// Old Resprite gun verb: Click to choose a sprite for your gun.
-/obj/item/gun/projectile/revolver/detective45/proc/det45_revolver_verb_reskin(mob/user, obj/item/held, datum/interaction/interaction)
-	return weapon_label_detective45_style_stage(user, held, interaction)
-
-/obj/item/gun/projectile/revolver/detective45/proc/weapon_label_detective45_style_stage(mob/user, obj/item/held, datum/interaction/interaction, weapon_answer, weapon_answer_ready = FALSE)
-	var/mob/M = user
+/obj/item/gun/projectile/revolver/detective45/reskin_options()
 	var/list/options = list()
 	options["MarsTech R1 Snubnose"] = "detective"
 	options["MarsTech R1 Snubnose (Blued)"] = "detective_blued"
@@ -137,16 +142,18 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
 	options["MarsTech Frontiersman Shadow"] = "detective_peacemaker_dark"
 	options["Jindal Duke"] = "detective_fitz"
 	options["H-H M1895"] = "nagant"
-	if(!weapon_answer_ready)
-		open_request(src, /datum/prompt/choice/weapon_label_review, PROC_REF(weapon_label_detective45_style_answered), answerer = M, weapon_operator = user, weapon_held = held, weapon_interaction = interaction, question = "Choose your sprite!", title = "Resprite Gun", choices = options)
-		return
-	var/choice = weapon_answer
-	if(isnull(choice))
-		return
+	return options
+
+/// Old Resprite gun verb: Click to choose a sprite for your gun.
+/obj/item/gun/projectile/revolver/detective45/proc/det45_revolver_verb_reskin(datum/act/op/A)
+	var/mob/M = A.actor
+	var/choice = A.step_value("sprite")
+	var/list/options = reskin_options()
 	if(src && choice && !M.stat && in_range(M,src))
 		icon_state = options[choice]
 		to_chat(M, "Your gun is now sprited as [choice]. Say hello to your new friend.")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /*
  * Lombardi Revolvers
@@ -317,7 +324,8 @@ CAPABILITIES(/obj/item/gun/projectile/revolver/lemat)
 		rel_add(src, nameof(loaded), casing)
 
 /// Old Spin cylinder verb override: the LeMat spins whichever cylinder it is firing from.
-/obj/item/gun/projectile/revolver/lemat/revolver_verb_spin_cylinder(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/revolver/lemat/revolver_verb_spin_cylinder(datum/act/op/A)
+	var/mob/user = A.actor
 	chamber_offset = 0
 	act_message(user, src, others = span_warning("%U% spins the cylinder of %T%!"), blind = span_notice("You hear something metallic spin and click."))
 	play_sfx(src, SFX_WEAPONS_REVOLVER_SPIN)
@@ -423,33 +431,3 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/revolver/consul, TYPE_PROC_REF(
 	desc = "A high-power, fancy looking revolver that can stop nearly everything it's pointed at. Comes with a standard six-round-cylinder. There is ,Hesphiastos Industries, stamped along it's cylinder." // Yes I'm serious. -Spades
 	icon_state = "cerb"
 	icon = 'icons/obj/gun_yw.dmi'
-
-/obj/item/gun/projectile/revolver/detective/proc/weapon_label_detective_name_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = weapon_label_detective_name_apply(A)
-	SStgui.update_uis(src)
-
-/obj/item/gun/projectile/revolver/detective/proc/weapon_label_detective_name_apply(datum/act/request/A)
-	var/datum/prompt/text/weapon_label_review/ask = A.answer
-	return weapon_label_detective_name_stage(ask.weapon_operator, ask.weapon_held, ask.weapon_interaction, ask.value, TRUE)
-
-/obj/item/gun/projectile/revolver/detective45/proc/weapon_label_detective45_name_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = weapon_label_detective45_name_apply(A)
-	SStgui.update_uis(src)
-
-/obj/item/gun/projectile/revolver/detective45/proc/weapon_label_detective45_name_apply(datum/act/request/A)
-	var/datum/prompt/text/weapon_label_review/ask = A.answer
-	return weapon_label_detective45_name_stage(ask.weapon_operator, ask.weapon_held, ask.weapon_interaction, ask.value, TRUE)
-
-/obj/item/gun/projectile/revolver/detective45/proc/weapon_label_detective45_style_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = weapon_label_detective45_style_apply(A)
-	SStgui.update_uis(src)
-
-/obj/item/gun/projectile/revolver/detective45/proc/weapon_label_detective45_style_apply(datum/act/request/A)
-	var/datum/prompt/choice/weapon_label_review/ask = A.answer
-	return weapon_label_detective45_style_stage(ask.weapon_operator, ask.weapon_held, ask.weapon_interaction, ask.value, TRUE)

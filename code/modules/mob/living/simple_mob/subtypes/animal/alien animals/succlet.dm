@@ -135,16 +135,19 @@
 	play_sfx(src, SFX_VOICE_SUCCLET_SHRIEK)
 	expire(25)
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet, INTERACT_ITEM(null, PROC_REF(succlet_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/succlet)
+	op("succlet_item", item(/obj/item), then(PROC_REF(succlet_interaction_item)))
 
 /// Old attackby: newspaper swat.
-/mob/living/simple_mob/vore/alienanimals/succlet/proc/succlet_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/alienanimals/succlet/proc/succlet_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(istype(O, /obj/item/newspaper) && !ckey && isturf(user.loc))
 		act_message(user, src, null, MSG_OTHERS(span_info("%U% swats %T% with %I%!")), item = O)
 		release_vore_contents()
 	else
-		return FALSE
+		return OP_DECLINE
 
 /mob/living/simple_mob/vore/alienanimals/succlet/proc/succlet_move(target)
 	if(!target)
@@ -222,13 +225,34 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet, INTERACT_I
 	icon_living = "poison_succlet"
 	icon_rest = "poison_succlet"
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet/poison, 	INTERACT_HAND_AS(I_HELP, "Pet", PROC_REF(succlet_poison_interaction_hand)), 	INTERACT_HAND_AS(I_HURT, "Hit", PROC_REF(succlet_poison_interaction_hand)), 	INTERACT_HAND_AS(I_DISARM, "Shove", PROC_REF(succlet_poison_interaction_hand)), 	INTERACT_HAND_AS(I_GRAB, "Grab", PROC_REF(succlet_poison_interaction_hand)))
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/succlet/poison)
+	op("succlet_poison_hand_help", hand(), stance(I_HELP), label("Pet"), then(PROC_REF(succlet_poison_interaction_hand_help)))
+	op("succlet_poison_hand_hurt", hand(), stance(I_HURT), label("Hit"), then(PROC_REF(succlet_poison_interaction_hand_hurt)))
+	op("succlet_poison_hand_disarm", hand(), stance(I_DISARM), label("Shove"), then(PROC_REF(succlet_poison_interaction_hand_disarm)))
+	op("succlet_poison_hand_grab", hand(), stance(I_GRAB), label("Grab"), then(PROC_REF(succlet_poison_interaction_hand_grab)))
+
+/// The help-stance input of succlet_poison_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/succlet/poison/proc/succlet_poison_interaction_hand_help(datum/act/op/A)
+	return succlet_poison_interaction_hand(A, I_HELP)
+
+/// The hurt-stance input of succlet_poison_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/succlet/poison/proc/succlet_poison_interaction_hand_hurt(datum/act/op/A)
+	return succlet_poison_interaction_hand(A, I_HURT)
+
+/// The disarm-stance input of succlet_poison_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/succlet/poison/proc/succlet_poison_interaction_hand_disarm(datum/act/op/A)
+	return succlet_poison_interaction_hand(A, I_DISARM)
+
+/// The grab-stance input of succlet_poison_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/succlet/poison/proc/succlet_poison_interaction_hand_grab(datum/act/op/A)
+	return succlet_poison_interaction_hand(A, I_GRAB)
 
 /// Old attack_hand: the normal touch, then a sting unless helping.
-/mob/living/simple_mob/vore/alienanimals/succlet/poison/proc/succlet_poison_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	unarmed_touch(user, interaction.stance)
-	. = TRUE
-	if(interaction.stance != I_HELP)
+/mob/living/simple_mob/vore/alienanimals/succlet/poison/proc/succlet_poison_interaction_hand(datum/act/op/A, stance)
+	var/mob/user = A.actor
+	unarmed_touch(user, stance)
+	. = OP_OK
+	if(stance != I_HELP)
 		if(isliving(user))
 			var/mob/living/l = user
 			to_chat(l, span_warning("You feel \the [src]'s sting!!!"))

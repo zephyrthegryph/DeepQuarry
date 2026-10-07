@@ -13,6 +13,9 @@ GLOBAL_LIST_INIT(dq_variants_accessory_gaiter, list(
 
 CAPABILITIES(/obj/item/clothing/accessory/gaiter)
 	variants(nameof(variant), PROC_REF(variant_table))
+	op("gaiter_tuck_mask_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Gaiter tuck mask item"), then(PROC_REF(gaiter_tuck_mask_item)))
+	op("gaiter_remove_mask_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Gaiter remove mask alt"), then(PROC_REF(gaiter_remove_mask_alt)))
+	op("gaiter_adjust_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Adjust"), then(PROC_REF(gaiter_adjust_self)))
 
 /// The variant rows (variants(), code/engine/lifeforms/variants.dm).
 /obj/item/clothing/accessory/gaiter/proc/variant_table()

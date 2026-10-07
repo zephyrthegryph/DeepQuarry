@@ -12,43 +12,61 @@ ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tool/screwdriver menu: Eject Beaker
+human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Open maintenance panel
 human|/obj/item/tool/crowbar menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
 human|/obj/item/tool/crowbar menu: Eject Beaker
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Deconstruct
 human|/obj/item/tool/wrench menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tool/wrench menu: Eject Beaker
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Unsecure
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: Click: Unsecure
 human|/obj/item/tool/wirecutters menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tool/wirecutters menu: Eject Beaker
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: nothing
 human|/obj/item/multitool menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/multitool menu: Eject Beaker
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: nothing
 human|/obj/item/weldingtool menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/weldingtool menu: Eject Beaker
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: nothing
 human|/obj/item/stack/cable_coil menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/stack/cable_coil menu: Eject Beaker
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/stack/material/steel menu: Eject Beaker
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/card/id menu: Eject Beaker
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: nothing
 keys: climb.climb, climb.climb_menu, drag_buckle, gen_hand_ungated_organ_printer_interaction_hand, gen_item_organ_printer_interaction_item, gen_robot_interaction_swallow, gen_verb_organ_printer_eject_beaker, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor

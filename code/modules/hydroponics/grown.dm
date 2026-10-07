@@ -18,6 +18,9 @@
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 	param(nameof(plantname), pos = 1)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
+	op("grown_squash", in_hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Squash"), then(PROC_REF(grown_squash)))
+	op("grown_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Grown self"), then(PROC_REF(grown_self)))
+	op("grown_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Grown item"), then(PROC_REF(grown_item)))
 
 // ALLOW(init/INSTANCE_STATE): produce takes its seed's name, trash, look and chemicals
 /obj/item/reagent_containers/food/snacks/grown/Initialize(mapload)
@@ -169,15 +172,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/snacks/grown, TYPE_PRO
 	if(seed()) seed().thrown_at(src,hit_atom)
 	..()
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
-	INTERACT_SELF_AS(I_HURT, "Squash", PROC_REF(grown_squash)), \
-	INTERACT_SELF(null, PROC_REF(grown_self)), \
-	INTERACT_ITEM(null, PROC_REF(grown_item)), \
-)
-
 /// Old attackby, merged with the snacks.dm potato/sunflower override its ..() reached.
 /// FALSE falls to the snack handling, as the old chain did.
-/obj/item/reagent_containers/food/snacks/grown/proc/grown_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/reagent_containers/food/snacks/grown/proc/grown_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 
 	if(seed())
 		if(seed().get_trait(TRAIT_PRODUCES_POWER) && istype(W, /obj/item/stack/cable_coil))
@@ -191,14 +190,14 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 				pocell.maxcharge = src.potency * 200
 				pocell.charge = pocell.maxcharge
 				consume(src, user)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 		if(W.sharp)
 
 			if(seed().kitchen_tag == PLANT_PUMPKIN) // Ugggh these checks are awful.
 				user.show_message(span_notice("You carve a face into [src]!"), 1)
 				replace_with(src, /obj/item/clothing/head/pumpkinhead)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 			if(seed().chems)
 
@@ -218,35 +217,35 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 							G.attackby(NG, user)
 						to_chat(user, span_filter_notice("You add the newly-formed wood to the stack. It now contains [NG.get_amount()] planks."))
 					consume(src, user)
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(seed().kitchen_tag == PLANT_SUNFLOWERS)
 					var/turf/product_turf = get_turf(src)
 					if(!consume(src, user))
-						return INTERACTION_HANDLED_PASS
+						return OP_PASS
 					new /obj/item/reagent_containers/food/snacks/rawsunflower(product_turf)
 					to_chat(user, span_notice("You remove the seeds from the flower, slightly damaging them."))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(seed().kitchen_tag == PLANT_POTATO || !isnull(seed().chems[REAGENT_ID_POTATOJUICE]))
 					to_chat(user, span_filter_notice("You slice \the [src] into sticks."))
 					replace_with(src, /obj/item/reagent_containers/food/snacks/rawsticks)
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(!isnull(seed().chems[REAGENT_ID_CARROTJUICE]))
 					to_chat(user, span_filter_notice("You slice \the [src] into sticks."))
 					replace_with(src, /obj/item/reagent_containers/food/snacks/carrotfries)
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(!isnull(seed().chems[REAGENT_ID_PINEAPPLEJUICE]))
 					to_chat(user, span_filter_notice("You slice \the [src] into rings."))
 					replace_with(src, /obj/item/reagent_containers/food/snacks/pineapple_ring)
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(!isnull(seed().chems[REAGENT_ID_SOYMILK]))
 					to_chat(user, span_filter_notice("You roughly chop up \the [src]."))
 					replace_with(src, /obj/item/reagent_containers/food/snacks/soydope)
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(seed().get_trait(TRAIT_FLESH_COLOUR))
 					to_chat(user, span_filter_notice("You slice up \the [src]."))
@@ -257,22 +256,22 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 						if(reagents_to_transfer)
 							reagents.trans_to_obj(F,reagents_to_transfer)
 					consume(src, user)
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 	// potato + knife = raw sticks
 	if(seed() && seed().kitchen_tag == PLANT_POTATO && istype(W,/obj/item/material/knife))
 		new /obj/item/reagent_containers/food/snacks/rawsticks(get_turf(src))
 		to_chat(user, span_notice("You cut the potato."))
 		consume(src, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(seed() && seed().kitchen_tag == PLANT_SUNFLOWERS && istype(W,/obj/item/material/knife))
 		var/turf/product_turf = get_turf(src)
 		if(!consume(src, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		new /obj/item/reagent_containers/food/snacks/rawsunflower(product_turf)
 		to_chat(user, span_notice("You remove the seeds from the flower, slightly damaging them."))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/item/reagent_containers/food/snacks/grown/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	. = ..()
@@ -291,26 +290,28 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 			consume(src, user)
 
 /// Old attack_self in combat mode: squash it on yourself.
-/obj/item/reagent_containers/food/snacks/grown/proc/grown_squash(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/reagent_containers/food/snacks/grown/proc/grown_squash(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!seed())
-		return FALSE
+		return OP_DECLINE
 
 	if(istype(user.loc,/turf/space))
-		return FALSE
+		return OP_DECLINE
 
 	act_message(user, src, others = span_danger("%U% squashes %T%!"))
 	seed().thrown_at(src,user)
 	if(!QDELETED(src))
 		consume(src, user)
-	return TRUE
+	return OP_OK
 
 /// Old attack_self.
-/obj/item/reagent_containers/food/snacks/grown/proc/grown_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/reagent_containers/food/snacks/grown/proc/grown_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!seed())
-		return FALSE
+		return OP_DECLINE
 
 	if(istype(user.loc,/turf/space))
-		return FALSE
+		return OP_DECLINE
 
 	if(seed().kitchen_tag == PLANT_GRASS)
 		user.show_message(span_notice("You make a grass tile out of \the [src]!"), 1)
@@ -327,7 +328,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 				NG.attackby(G, user)
 			to_chat(user, "You add the newly-formed grass to the stack. It now contains [G.get_amount()] tiles.")
 		consume(src, user)
-		return TRUE
+		return OP_OK
 
 	if(seed().kitchen_tag == PLANT_CARPET)
 		user.show_message(span_notice("You shape some carpet squares out of \the [src] fibers!"), 1)
@@ -341,15 +342,15 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 				NG.attackby(G, user)
 			to_chat(user, span_filter_notice("You add the newly-formed carpet to the stack. It now contains [G.get_amount()] tiles."))
 		consume(src, user)
-		return TRUE
+		return OP_OK
 
 	if(seed().get_trait(TRAIT_SPREAD) > 0)
 		to_chat(user, span_notice("You plant the [src.name]."))
 		new /obj/machinery/portable_atmospherics/hydroponics/soil/invisible(get_turf(user),src.seed())
 		GLOB.seed_planted_shift_roundstat++
 		consume(src, user)
-		return TRUE
-	return FALSE
+		return OP_OK
+	return OP_DECLINE
 
 /obj/item/reagent_containers/food/snacks/grown/pickup(mob/user)
 	..()

@@ -21,7 +21,7 @@
 	TEST_ASSERT(move_into(wearer, SLOT_ID_SHOES, boots), "the actual wearer equips its real jackboots")
 	var/obj/item/material/knife/tacknife/knife = allocate(/obj/item/material/knife/tacknife, T)
 	TEST_ASSERT(wearer.put_in_active_hand(knife), "the actual wearer holds a compatible boot knife")
-	boots.shoes_stuff_item(wearer, knife, null)
+	test_op_handler(boots, "shoes_stuff_item", wearer, knife)
 	TEST_ASSERT_EQUAL(boots.holding, knife, "the real insertion stores the exact supplied knife in the boots")
 	TEST_ASSERT_EQUAL(knife.loc, boots, "real insertion moves the knife into the boot contents")
 	TEST_ASSERT_NULL(wearer.get_active_hand(), "real insertion releases the knife's original hand")

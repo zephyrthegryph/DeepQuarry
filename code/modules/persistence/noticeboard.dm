@@ -19,6 +19,10 @@ CAPABILITIES(/obj/structure/noticeboard)
 	op("look", ui_act("look", arg("ref", schema_ref(/obj/item/photo))), then(PROC_REF(ui_act_look)))
 	op("remove", ui_act("remove", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove)))
 	op("write", ui_act("write", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_write)))
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("noticeboard_silicon_examine", remote(), label("Examine"), then(PROC_REF(noticeboard_silicon_examine)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(noticeboard_blast_dismantle))))
 
 // ALLOW(init/INSTANCE_STATE): takes the notices the map placed on its tile
 /obj/structure/noticeboard/Initialize(mapload)
@@ -54,12 +58,11 @@ CAPABILITIES(/obj/structure/noticeboard)
 	replace_with(src, /obj/item/stack/material/wood)
 
 
-DAMAGE_REACTION(/obj/structure/noticeboard, DAMAGE_EXPLOSION, PROC_REF(noticeboard_blast_dismantle))
 
 /// Any blast knocks the board down into its parts.
-/obj/structure/noticeboard/proc/noticeboard_blast_dismantle(datum/damage_packet/packet)
+/obj/structure/noticeboard/proc/noticeboard_blast_dismantle(datum/act/hit/explosion/A)
 	dismantle()
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/structure/noticeboard/proc/appearance_count()
 	return LAZYLEN(notices)
@@ -70,7 +73,9 @@ DAMAGE_REACTION(/obj/structure/noticeboard, DAMAGE_EXPLOSION, PROC_REF(noticeboa
 	look.state("[base_icon_state][appearance_count()]")
 
 /// Old attackby.
-/obj/structure/noticeboard/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/noticeboard/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/paper) || istype(I, /obj/item/photo))
 		if(jobban_isbanned(user, JOB_GRAFFITI))
 			to_chat(user, span_warning("You are banned from leaving persistent information across rounds."))
@@ -82,8 +87,8 @@ DAMAGE_REACTION(/obj/structure/noticeboard, DAMAGE_EXPLOSION, PROC_REF(noticeboa
 				SSpersistence.track_value(I, /datum/persistent/paper)
 			else
 				to_chat(user, span_warning("You hesitate, certain [I] will not be seen among the many others already attached to \the [src]."))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/structure/noticeboard/screwdriver_act(mob/user, obj/item/tool)
 	open_request(src, /datum/prompt/choice/noticeboard_offset, PROC_REF(noticeboard_offset_chosen), answerer = user, subject = tool)
@@ -147,18 +152,14 @@ DAMAGE_REACTION(/obj/structure/noticeboard, DAMAGE_EXPLOSION, PROC_REF(noticeboa
 	return ITEM_INTERACT_SUCCESS
 
 /// Old attack_ai: look at the board.
-/obj/structure/noticeboard/proc/noticeboard_silicon_examine(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/noticeboard/proc/noticeboard_silicon_examine(datum/act/op/A)
+	var/mob/user = A.actor
 	examine(user)
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/structure/noticeboard, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_SILICON("Examine", PROC_REF(noticeboard_silicon_examine)), \
-)
-
 /// Old attack_hand.
-/obj/structure/noticeboard/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/noticeboard/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	examine(user)
 	return TRUE
 

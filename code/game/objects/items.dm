@@ -277,16 +277,18 @@
 		else if(M.get_equipped_item(SLOT_ID_HAND_R) == src)
 			M.update_inv_r_hand()
 
-/obj/item/proc/move_to_top_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/proc/move_to_top_effect(datum/act/op/A)
+	var/mob/user = A.actor
 
 	if(!istype(src.loc, /turf) || user.stat || user.restrained() )
-		return
+		return OP_OK
 
 	var/turf/T = src.loc
 
 	src.moveToNullspace()
 
 	src.forceMove(T)
+	return OP_OK
 
 // See inventory_sizes.dm for the defines.
 /obj/item/examine(mob/user, infix, suffix)
@@ -311,34 +313,19 @@
 				size = "enormous"
 	return ..(user, "", "It is \a [size] item.")
 
-/**
- * Every item's defaults: an empty hand picks it up, and a pickup-mode storage bag
- * collects it. They come after everything else the item offers for those inputs.
- * A type that reacts to being picked up declares its own INTERACT_HAND_DEFAULT
- * "Pick up" whose effect calls interaction_pick_up() first.
- */
-/obj/item/declare_interactions(list/into)
-	..()
-	var/static/list/default_specs = list(
-		INTERACT_HAND_DEFAULT("Pick up", PROC_REF(interaction_pick_up)),
-		INTERACT_INSERT_DEFAULT(/obj/item/storage, PROC_REF(interaction_collected), "Collect"),
-	)
-	for(var/spec in default_specs)
-		into += dq_interaction_from_spec(/obj/item, spec)
-	// Old /obj/item/attack_ai. Offered only on a module's items, so it never competes with an item's own.
-	var/static/list/module_spec = INTERACT_SILICON("Equip", PROC_REF(item_silicon_equip_module), REQ_TARGET_STATE(/obj/item/proc/item_in_robot_module))
-	into += dq_interaction_from_spec(/obj/item, module_spec)
-	// Old /obj/item object verbs.
-	var/static/list/verb_specs = list(
-		INTERACT_VERB("Move To Top", PROC_REF(move_to_top_effect)),
-		INTERACT_VERB("Toggle Digestable", PROC_REF(toggle_digestable_effect), REQ_IN_INVENTORY),
-	)
-	for(var/spec in verb_specs)
-		into += dq_interaction_from_spec(/obj/item, spec)
+// Every item's defaults (the ops of CAPABILITIES(/obj/item), code/modules/mob/living/silicon/robot/component.dm): an empty hand picks it up, and a
+// pickup-mode storage bag collects it. They come after everything else the item offers for those inputs.
 
 /// A pickup-mode storage bag used on the item collects it (or its whole tile).
-/obj/item/proc/interaction_collected(mob/user, obj/item/storage/bag, datum/interaction/interaction)
-	return bag.try_collect(src, user) ? INTERACTION_HANDLED_PASS : FALSE
+/obj/item/proc/interaction_collected(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/storage/bag = A.held
+	return bag.try_collect(src, user) ? OP_PASS : OP_DECLINE
+
+/// The pick up op: the old default, an empty hand picks the item up.
+/obj/item/proc/interaction_pick_up_item(datum/act/op/A)
+	pick_up_by_hand(A.actor)
+	return OP_OK
 
 /// Pick the item up into the active hand. An anchored item is used instead (its self-use).
 /obj/item/proc/interaction_pick_up(mob/living/user, obj/item/held, datum/interaction/interaction)
@@ -397,6 +384,13 @@
 
 /obj/item/proc/item_in_robot_module(mob/actor, atom/target, obj/item/held)
 	return istype(loc, /obj/item/robot_module)
+
+/// Old /obj/item/attack_ai. Offered only on a module's items, so it never competes with an item's own. The one legacy spec left on items:
+/// its requirement reads the item's location (the module that holds it), which no op requirement can read yet.
+/obj/item/declare_interactions(list/into)
+	..()
+	var/static/list/module_spec = INTERACT_SILICON("Equip", PROC_REF(item_silicon_equip_module), REQ_TARGET_STATE(/obj/item/proc/item_in_robot_module))
+	into += dq_interaction_from_spec(/obj/item, module_spec)
 
 /// Old attack_ai: a cyborg clicking an item of its module equips it.
 /obj/item/proc/item_silicon_equip_module(mob/user, obj/item/held, datum/interaction/interaction)
@@ -1022,10 +1016,12 @@ Note: This proc can be overwritten to allow for different types of auto-alignmen
 /obj/item/proc/get_multitool()
 	return
 
-/obj/item/proc/toggle_digestable_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/proc/toggle_digestable_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	digestable = !digestable
 	if(!digestable)
 		to_chat(user, span_notice("[src] is now protected from digestion."))
+	return OP_OK
 
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_ITEM_TF_SPAWNPOINTS)
 

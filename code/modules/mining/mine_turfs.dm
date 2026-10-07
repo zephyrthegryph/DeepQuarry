@@ -85,6 +85,7 @@ CAPABILITIES(/turf/simulated/mineral)
 	owns_one(nameof(artifact_find), /datum/artifact_find)
 	owns_one(nameof(geologic_data), /datum/geosample)
 	owns_many(nameof(finds))
+	op("mineral_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Dig"), needs(req(PROC_REF(actor_dexterous_holds), because = MSG(mineral/clumsy))), then(PROC_REF(mineral_item)))
 
 /turf/simulated/mineral/ChangeTurf(turf/N, tell_universe, force_lighting_update, preserve_outdoors)
 	clear_ore_effects()
@@ -336,11 +337,18 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, TYPE_PROC_REF(/atom, appearance
 		new /obj/effect/mineral(src)
 	update_icon()
 
+MSG_DEF_SELF(mineral/clumsy, "you don't have the dexterity to do this")
+
+/// Requirement: the actor can use tools.
+/turf/simulated/mineral/proc/actor_dexterous_holds(datum/act/op/A)
+	return !!A.actor.IsAdvancedToolUser()
+
 //Not even going to touch this pile of spaghetti
-EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(mineral_item), REQ_ON(PRED_ACTOR, /mob/proc/IsAdvancedToolUser, "you don't have the dexterity to do this")))
 
 /// Old attackby: digging, excavation, sampling and scanning; anything else touches the rock.
-/turf/simulated/mineral/proc/mineral_item(mob/user, obj/item/W, datum/interaction/interaction)
+/turf/simulated/mineral/proc/mineral_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!density)
 		var/valid_tool = 0
 		var/digspeed = 40
@@ -349,7 +357,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 			var/obj/item/shovel/S = W
 			if(S.grave_mode)
 				shovel_dig_grave(user, S)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			valid_tool = 1
 			digspeed = S.digspeed
 
@@ -362,11 +370,11 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 		if(valid_tool)
 			if (sand_dug)
 				to_chat(user, span_warning("This area has already been dug."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 			var/turf/T = user.loc
 			if (!(istype(T)))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 			to_chat(user, span_notice("You start digging."))
 			play_sfx(user, SFX_EFFECTS_RUSTLE1)
@@ -378,16 +386,16 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 			if(S.collection_mode)
 				for(var/obj/item/fossil/F in contents)
 					F.attackby(W,user)
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 		else if(istype(W, /obj/item/stack/tile/floor))
 			var/obj/item/stack/tile/floor/S = W
 			if (S.get_amount() < 1)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			play_sfx(src, SFX_WEAPONS_GENHIT)
 			ChangeTurf(/turf/simulated/floor)
 			S.use(1)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 
 	else
@@ -396,12 +404,12 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 			geologic_data.UpdateNearbyArtifactInfo(src)
 			var/obj/item/core_sampler/C = W
 			C.sample_item(src, user)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if (istype(W, /obj/item/depth_scanner))
 			var/obj/item/depth_scanner/C = W
 			C.scan_atom(user, src)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if (istype(W, /obj/item/measuring_tape))
 			var/obj/item/measuring_tape/P = W
@@ -409,7 +417,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 				MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends \a [P] towards %T%.")), \
 				item = P)
 			task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(istype(W, /obj/item/xenoarch_multi_tool))
 			var/obj/item/xenoarch_multi_tool/C = W
@@ -420,16 +428,16 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 					MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends %I% over %T%, a flurry of red beams scanning %T%'s surface!")), \
 					item = C)
 				task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if (istype(W, /obj/item/melee/shock_maul))
 			if(!istype(user.loc, /turf))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 			var/obj/item/melee/shock_maul/S = W
 			if(!S.wielded)
 				to_chat(user, span_warning("\The [W] must be wielded in two hands to be used for mining!"))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 			var/newDepth = excavation_level + S.excavation_amount // Used commonly below
 
@@ -454,7 +462,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 					GetDrilled(0)
 				else
 					excavate_turf()
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 			excavation_level += S.excavation_amount
 			update_archeo_overlays(S.excavation_amount)
@@ -469,11 +477,11 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 
 		if (istype(W, /obj/item/pickaxe))
 			if(!istype(user.loc, /turf))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 			var/obj/item/pickaxe/P = W
 			if(!COOLDOWN_FINISHED(src, dig_cooldown))//prevents message spam
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			COOLDOWN_START(src, dig_cooldown, P.digspeed)
 
 			playsound(user, P.drill_sound, 20, 1)
@@ -488,9 +496,9 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 					wreckfinds(P.destroy_artefacts)
 			user.balloon_alert(user, "you start [P.drill_verb][fail_message].")
 			task_timed(user, P.digspeed, src, src, PROC_REF(pick_done), list(user, P))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
-	return attack_hand(user) ? TRUE : INTERACTION_HANDLED_PASS
+	return attack_hand(user) ? OP_OK : OP_PASS
 
 /turf/simulated/mineral/proc/dig_hole_done(mob/user)
 	if(sand_dug)

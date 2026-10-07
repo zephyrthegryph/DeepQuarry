@@ -1,0 +1,83 @@
+human|none menu: Touch
+human|none click: Click: Touch
+robot|none menu: Examine
+robot|none menu: Touch
+robot|none click: Click: Touch
+ai|none menu: Examine
+ai|none click: Click: Examine
+ghost|none menu: Examine
+ghost|none click: Click: Examine
+human|/obj/item/tool/screwdriver menu: Crawl
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Touch
+human|/obj/item/tool/screwdriver menu: Touch with
+human|/obj/item/tool/screwdriver menu: Turf item
+human|/obj/item/tool/screwdriver click: Click: Touch
+human|/obj/item/tool/crowbar menu: Crawl
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Touch
+human|/obj/item/tool/crowbar menu: Touch with
+human|/obj/item/tool/crowbar menu: Turf item
+human|/obj/item/tool/crowbar click: Click: Touch
+human|/obj/item/tool/wrench menu: Crawl
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Touch
+human|/obj/item/tool/wrench menu: Touch with
+human|/obj/item/tool/wrench menu: Turf item
+human|/obj/item/tool/wrench click: Click: Touch
+human|/obj/item/tool/wirecutters menu: Crawl
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Touch
+human|/obj/item/tool/wirecutters menu: Touch with
+human|/obj/item/tool/wirecutters menu: Turf item
+human|/obj/item/tool/wirecutters click: Click: Touch
+human|/obj/item/multitool menu: Crawl
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Touch
+human|/obj/item/multitool menu: Touch with
+human|/obj/item/multitool menu: Turf item
+human|/obj/item/multitool click: Click: Touch
+human|/obj/item/weldingtool menu: Crawl
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Touch
+human|/obj/item/weldingtool menu: Touch with
+human|/obj/item/weldingtool menu: Turf item
+human|/obj/item/weldingtool click: Click: Touch
+human|/obj/item/stack/cable_coil menu: Crawl
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Touch
+human|/obj/item/stack/cable_coil menu: Touch with
+human|/obj/item/stack/cable_coil menu: Turf item
+human|/obj/item/stack/cable_coil click: Click: Touch
+human|/obj/item/stack/material/steel menu: Crawl
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Touch
+human|/obj/item/stack/material/steel menu: Touch with
+human|/obj/item/stack/material/steel menu: Turf item
+human|/obj/item/stack/material/steel click: Click: Touch
+human|/obj/item/card/id menu: Crawl
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Touch
+human|/obj/item/card/id menu: Touch with
+human|/obj/item/card/id menu: Turf item
+human|/obj/item/card/id click: Click: Touch
+human|/obj/item menu: Crawl
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Touch
+human|/obj/item menu: Touch with
+human|/obj/item menu: Turf item
+human|/obj/item click: Click: Touch
+keys: supermatter_wall_ghost_examine, supermatter_wall_hand, supermatter_wall_item, supermatter_wall_robot, supermatter_wall_silicon_examine, turf_crawl, turf_item, turf_touch
+

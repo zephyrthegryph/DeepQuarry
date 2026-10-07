@@ -29,11 +29,16 @@
 	pain_emote_1p = list("yelp", "whine", "bark", "growl")
 	pain_emote_3p = list("yelps", "whines", "barks", "growls")
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(null, PROC_REF(dog_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/animal/passive/dog)
+	op("dog_item", item(/obj/item), then(PROC_REF(dog_interaction_item)))
+	owns_one(nameof(inventory_head), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(inventory_back), on_destroy = ON_DESTROY_SPILL)
 
 /// Old attackby: newspaper bap.
-/mob/living/simple_mob/animal/passive/dog/proc/dog_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/animal/passive/dog/proc/dog_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(istype(O, /obj/item/newspaper))
 		if(!stat)
 			for(var/mob/M in viewers(user, null))
@@ -41,7 +46,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 					M.show_message(span_blue("[user] baps [name] on the nose with the rolled up [O]."))
 			dir_sequence(list(1,2,4,8,4,2,1,2))
 	else
-		return FALSE
+		return OP_DECLINE
 
 /mob/living/simple_mob/animal/passive/dog/regenerate_icons()
 	cut_overlays()
@@ -252,7 +257,3 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 /datum/decl/mob_organ_names/corgi
 //You monster.
 TYPE_TABLE(/datum/decl/mob_organ_names/corgi, mob_organ_hit_zones, list("head", "body", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "tail", "heart"))
-
-CAPABILITIES(/mob/living/simple_mob/animal/passive/dog)
-	owns_one(nameof(inventory_head), on_destroy = ON_DESTROY_SPILL)
-	owns_one(nameof(inventory_back), on_destroy = ON_DESTROY_SPILL)

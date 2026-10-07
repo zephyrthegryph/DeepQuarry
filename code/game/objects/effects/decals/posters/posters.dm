@@ -102,6 +102,7 @@ CAPABILITIES(/obj/item/poster)
 	VAR_PROTECTED/datum/decl/poster/poster_decl = null // Assigned by Initialize() to a random poster decl. If this is mapset to a path, it will be used to locate the decl specified by that path.
 	VAR_PROTECTED/roll_type = /obj/item/poster
 	VAR_PRIVATE/ruined = FALSE
+TRACKED(/obj/structure/sign/poster, ruined)
 
 /// The rolled poster a hung one is made from (its constructor param).
 /obj/structure/sign/poster/var/tmp/obj/item/poster/hung_from
@@ -144,6 +145,7 @@ CAPABILITIES(/obj/structure/sign/poster)
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	param(nameof(dir), pos = 1)
 	param(nameof(hung_from), pos = 2, apply = PROC_REF(hang), keep = FALSE)
+	op("hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), when(cond_not(nameof(ruined))), asks(/datum/prompt/yes_no/rip_poster, fields = list("timeout" = 0), step = "rip"), then(PROC_REF(interaction_hand)))
 
 /obj/structure/sign/poster/proc/wirecutter_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -157,14 +159,19 @@ CAPABILITIES(/obj/structure/sign/poster)
 		roll_and_drop(get_turf(user), user)
 	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/structure/sign/poster, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
-
-/// Old attack_hand.
-/obj/structure/sign/poster/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(ruined)
-		return TRUE
-
-	open_request(src, /datum/prompt/yes_no/rip_poster, PROC_REF(rip_answered), answerer = user)
+/// Old attack_hand: a poster that is not ripped asks first (the rip step), then is ripped on a yes.
+/obj/structure/sign/poster/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!A.step_value("rip"))
+		return OP_OK
+	act_message(user, src, others = span_warning("%U% rips %T% in a single, decisive motion!"))
+	play_sfx(src, SFX_ITEMS_POSTER_RIPPED)
+	set_ruined(TRUE)
+	icon_state = "poster_ripped"
+	name = "ripped poster"
+	desc = "You can't make out anything from the poster's original print. It's ruined."
+	add_fingerprint(user)
+	return OP_OK
 
 /// Re-checked on the answer: still next to it, and it isn't ripped already.
 /datum/prompt/yes_no/rip_poster
@@ -174,20 +181,8 @@ DECLARE_INTERACTIONS(/obj/structure/sign/poster, INTERACT_HAND_UNGATED(null, PRO
 	timeout = 0
 
 /datum/prompt/yes_no/rip_poster/recheck_extra()
-	var/obj/structure/sign/poster/P = owner
+	var/obj/structure/sign/poster/P = subject
 	return P.is_ruined() ? "already ripped" : null
-
-/obj/structure/sign/poster/proc/rip_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/mob/user = A.request.answerer
-	act_message(user, src, others = span_warning("%U% rips %T% in a single, decisive motion!"))
-	play_sfx(src, SFX_ITEMS_POSTER_RIPPED)
-	ruined = TRUE
-	icon_state = "poster_ripped"
-	name = "ripped poster"
-	desc = "You can't make out anything from the poster's original print. It's ruined."
-	add_fingerprint(user)
 
 /// Consumes the wall poster before returning its matching rolled item.
 /obj/structure/sign/poster/proc/roll_and_drop(turf/newloc, mob/user)

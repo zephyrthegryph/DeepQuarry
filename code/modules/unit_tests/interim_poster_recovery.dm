@@ -25,9 +25,9 @@
 	if(ruined)
 		test_driver_begin()
 		defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
-		var/datum/request/ask = open_request(wall_poster, /datum/prompt/yes_no/rip_poster, TYPE_PROC_REF(/obj/structure/sign/poster, rip_answered), answerer = user)
-		TEST_ASSERT(ask && ask.is_open(), "the actual native confirmation opens for the actor")
-		TEST_ASSERT_NULL(test_answer(user, TRUE), "the actual native confirmation delivers the rip")
+		var/mob/living/carbon/human/ripper = allocate(/mob/living/carbon/human, T)
+		test_click(ripper, wall_poster, null)
+		TEST_ASSERT(test_op_committed(test_answer(ripper, TRUE)), "the actual native confirmation delivers the rip")
 		TEST_ASSERT(wall_poster.is_ruined(), "the actual rip callback ruins the wall poster before removal")
 		TEST_ASSERT_EQUAL(wall_poster.icon_state, "poster_ripped", "the actual rip replaces the wall poster appearance")
 	var/obj/item/poster/recovered

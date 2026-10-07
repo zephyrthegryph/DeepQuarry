@@ -38,14 +38,12 @@ CAPABILITIES(/obj/item/assembly/shock_kit)
 	return ITEM_INTERACT_SUCCESS
 
 /// Overrides assembly's interaction_self(): trigger both shock kit parts instead of opening the UI.
-/obj/item/assembly/shock_kit/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = ..()
-	if(.)
-		return TRUE
+/obj/item/assembly/shock_kit/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	part1.attack_self(user, status)
 	part2.attack_self(user, status)
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/assembly/shock_kit/receive_signal()
 	if(istype(loc, /obj/structure/bed/chair/e_chair))

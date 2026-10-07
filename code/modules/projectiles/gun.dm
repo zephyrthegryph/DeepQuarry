@@ -112,10 +112,20 @@
 	// own firemodes list / sel_mode index.
 	var/datum/gun_firemode_selector/firemode_selector = null
 
+TRACKED(/obj/item/gun, dna_lock)
 CAPABILITIES(/obj/item/gun)
 	owns_many(nameof(firemodes), starts = PROC_REF(starting_firemodes))
 	owns_one(nameof(firemode_selector), starts = /datum/gun_firemode_selector)
 	drag_onto(PROC_REF(mousedrop_input))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	op("gun_item", item(/obj/item), label("Fit"), then(PROC_REF(gun_item)))
+	op("gun_self", in_hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Operate"), then(PROC_REF(gun_self)))
+	op("gun_self_hurt", in_hand(), stance(I_HURT), label("Operate"), then(PROC_REF(gun_self)))
+	op("gun_verb_give_dna", menu(), label("Give DNA"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_give_dna)))
+	op("gun_verb_remove_dna", menu(), label("Remove DNA"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_remove_dna)))
+	op("gun_verb_allow_dna", menu(), label("Toggle DNA Samples Allowance"), needs(carried(), req(PROC_REF(pred_has_dna_lock_holds), because = MSG(gun/no_dna_lock))), then(PROC_REF(gun_verb_allow_dna)))
+
+MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 
 /// The gun's firemodes: one /datum/firemode per settings row the gun (or a map edit) put in `firemodes`.
 /obj/item/gun/proc/starting_firemodes(list/settings)
@@ -293,37 +303,26 @@ CAPABILITIES(/obj/item/gun)
 	else
 		return ..() //Pistolwhippin'
 
-// EXTEND, not DECLARE: gun subtypes DECLARE interactions of their own, which this must not replace.
-// Both effects are override chains: gun subtypes override gun_item()/gun_self() with ..(), as they
-// overrode attackby()/attack_self(), so the parent-first order of those chains is kept.
-EXTEND_INTERACTIONS(/obj/item/gun, \
-	INTERACT_ITEM("Fit", PROC_REF(gun_item)), \
-	INTERACT_SELF_AS(I_HELP, "Operate", PROC_REF(gun_self)), \
-	INTERACT_SELF_AS(I_DISARM, "Operate", PROC_REF(gun_self)), \
-	INTERACT_SELF_AS(I_GRAB, "Operate", PROC_REF(gun_self)), \
-	INTERACT_SELF_AS(I_HURT, "Operate", PROC_REF(gun_self)), \
-	INTERACT_VERB("Give DNA", PROC_REF(gun_verb_give_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
-	INTERACT_VERB("Remove DNA", PROC_REF(gun_verb_remove_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
-	INTERACT_VERB("Toggle DNA Samples Allowance", PROC_REF(gun_verb_allow_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
-)
-
 /**
- * Old attackby. TRUE uses the item up (no afterattack), INTERACTION_HANDLED_PASS handled it but
- * afterattack follows, FALSE falls through to the base item's attackby (as the old ..() did).
+ * Old attackby. OP_OK uses the item up (no afterattack), OP_PASS handled it but afterattack
+ * follows, OP_DECLINE falls through to the base item's attackby (as the old ..() did).
+ * A gun type overrides this and calls ..(A) the way the old attackby chain did.
  */
-/obj/item/gun/proc/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
-	if(istype(A, /obj/item/dnalockingchip))
-		. = INTERACTION_HANDLED_PASS
+/obj/item/gun/proc/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
+	if(istype(held, /obj/item/dnalockingchip))
+		. = OP_PASS
 		if(dna_lock)
 			to_chat(user, span_notice("\The [src] already has a [attached_lock]."))
 			return
-		to_chat(user, span_notice("You insert \the [A] into \the [src]."))
-		if(!move_into(src, nameof(src.attached_lock), A, user))
+		to_chat(user, span_notice("You insert \the [held] into \the [src]."))
+		if(!move_into(src, nameof(src.attached_lock), held, user))
 			return
-		dna_lock = 1
+		set_dna_lock(TRUE)
 		return
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/gun/screwdriver_act(mob/user, obj/item/tool)
 	if(!dna_lock || !attached_lock || attached_lock.controller_lock)
@@ -335,18 +334,19 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 /obj/item/gun/proc/screwdriver_act_tool_done(mob/user)
 	to_chat(user, span_notice("You remove \the [attached_lock] from \the [src]."))
 	user.put_in_hands(attached_lock)
-	dna_lock = FALSE
+	set_dna_lock(FALSE)
 	rel_take(src, nameof(attached_lock))
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
-/obj/item/gun/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/gun/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(dna_lock && attached_lock.controller_lock)
 		to_chat(user, span_notice("You short circuit the internal locking mechanisms of \the [src]!"))
 		attached_lock.controller_dna = null
 		attached_lock.controller_lock = 0
 		attached_lock.stored_dna = list()
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /// The native MouseDrop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/item/gun/proc/mousedrop_input(datum/act/input/A)
@@ -485,7 +485,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 				pointblank = 0
 
 			if(ticker < burst)
-				after(src, burst_delay, PROC_REF(handle_gunfire), with = list(target, user, clickparams, pointblank, reflex, ++ticker, TRUE, stance))
+				after(src, burst_delay, PROC_REF(handle_gunfire), with = list(target, user, clickparams, pointblank, reflex, ++ticker, TRUE, stance), keeps_dead = TRUE)
 				return
 
 			if(ticker == burst)
@@ -559,7 +559,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 			if(ticker < burst)
 				// Bug fix: was incorrectly calling handle_gunfire (which requires a user arg);
 				// userless firing loop must recurse into handle_userless_gunfire.
-				after(src, burst_delay, PROC_REF(handle_userless_gunfire), with = list(target, ++ticker, TRUE))
+				after(src, burst_delay, PROC_REF(handle_userless_gunfire), with = list(target, ++ticker, TRUE), keeps_dead = TRUE)
 
 	add_attack_logs(src,target,"Fired [src.name] (Unmanned)")
 
@@ -782,11 +782,10 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 		return
 
 /// Use the same declared requirements and feedback for an action button as the interaction menu.
-/obj/item/gun/proc/perform_scope_interaction(mob/user, effect)
-	for(var/datum/interaction/candidate as anything in interaction_candidates(src))
-		if(candidate.effect == effect && candidate.applies_to(src))
-			return candidate.perform(user, src, user?.get_active_hand())
-	return FALSE
+/// The scope button: runs the gun's scope menu op (`key`) as the user's own choice.
+/obj/item/gun/proc/perform_scope_interaction(mob/user, key)
+	var/datum/op_result/result = perform_op(user, src, key, user?.get_active_hand(), ORIGIN_MENU, AUTH_PHYSICAL)
+	return result?.outcome == ACT_COMMITTED
 
 /obj/item/gun/proc/toggle_scope(zoom_amount=2.0, mob/living/user)
 	//looking through a scope limits your periphereal vision
@@ -836,12 +835,18 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 
 	return new_mode
 
-/// Old attack_self. `callback` is the projectile gun's re-entry flag (l6_saw). A falsy return
-/// (as the old chain's) leaves the self-use unhandled.
-/obj/item/gun/proc/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/// Old attack_self (the "gun_self" op, "gun_self_hurt" in a hostile stance). `callback` is the projectile gun's re-entry flag (l6_saw). A decline
+/// (as the old chain's falsy return) leaves the self-use unhandled. A gun type overrides this and
+/// calls ..() the way the old attack_self chain did.
+/obj/item/gun/proc/gun_self(datum/act/op/A)
+	return gun_operate(A)
+
+/// The self-use chain of a gun type (a type overrides this and calls ..() the way the old attack_self chain did).
+/obj/item/gun/proc/gun_operate(datum/act/op/A, callback)
 	if(special_handling)
-		return FALSE
-	switch_firemodes(user)
+		return OP_DECLINE
+	switch_firemodes(A.actor)
+	return OP_DECLINE
 
 /* TGMC Ammo HUD Port Begin */
 /obj/item/gun

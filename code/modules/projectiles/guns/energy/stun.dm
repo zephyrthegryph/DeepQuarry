@@ -143,37 +143,31 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/stunrevolver/detective, TYPE_PROC_R
 
 	update_held_icon()
 
-EXTEND_INTERACTIONS(/obj/item/gun/energy/stunrevolver/detective, \
-	INTERACT_VERB("Name Gun", PROC_REF(det_stunrevolver_verb_rename), REQ_IN_INVENTORY, REQ_PROC(/proc/dq_actor_is_security_for_naming, "you don't feel cool enough to name this gun, chump")), \
-	INTERACT_VERB("Resprite gun", PROC_REF(det_stunrevolver_verb_reskin), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/gun/energy/stunrevolver/detective)
+	op("rename", menu(), label("Name Gun"), needs(carried()),
+		asks(/datum/prompt/text, fields = list("question" = "What do you want to name the gun?", "title" = "Rename Gun", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"),
+		then(PROC_REF(det_stunrevolver_verb_rename)))
+	op("reskin", menu(), label("Resprite gun"), needs(carried()),
+		asks(/datum/prompt/choice, fields = list("question" = "Choose your sprite!", "title" = "Resprite Gun", "choices" = computed(PROC_REF(reskin_choices)), "timeout" = 0), step = "sprite"),
+		then(PROC_REF(det_stunrevolver_verb_reskin)))
 
 /// Old Name Gun verb: Rename your gun. If you're Security.
-/obj/item/gun/energy/stunrevolver/detective/proc/det_stunrevolver_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
-	return detective_stun_name_stage(user, held, interaction)
-
-/obj/item/gun/energy/stunrevolver/detective/proc/detective_stun_name_stage(mob/user, obj/item/held, datum/interaction/interaction, settings_answer, settings_ready = FALSE)
-	var/mob/M = user
-	if(!M.mind)	return 0
-	if(!settings_ready)
-		open_request(src, /datum/prompt/text/weapon_setting_review, PROC_REF(detective_stun_name_answered), answerer = M, settings_operator = user, settings_held = held, settings_interaction = interaction, question = "What do you want to name the gun?", title = "Rename Gun", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
-		return
-	var/_answer_k156 = settings_answer
-	if(isnull(_answer_k156))
-		return
-	var/input = sanitizeSafe(_answer_k156)
+/obj/item/gun/energy/stunrevolver/detective/proc/det_stunrevolver_verb_rename(datum/act/op/A)
+	var/mob/M = A.actor
+	if(!security_naming_ok(M))
+		to_chat(M, span_warning("You don\'t feel cool enough to name this gun, chump."))
+		return OP_DECLINE
+	if(!M.mind)
+		return OP_DECLINE
+	var/input = sanitizeSafe(A.step_value("name"))
 
 	if(src && input && !M.stat && in_range(M,src))
 		name = input
 		to_chat(M, "You name the gun [input]. Say hello to your new friend.")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
-/// Old Resprite gun verb: Click to choose a sprite for your gun.
-/obj/item/gun/energy/stunrevolver/detective/proc/det_stunrevolver_verb_reskin(mob/user, obj/item/held, datum/interaction/interaction)
-	return detective_stun_skin_stage(user, held, interaction)
-
-/obj/item/gun/energy/stunrevolver/detective/proc/detective_stun_skin_stage(mob/user, obj/item/held, datum/interaction/interaction, settings_answer, settings_ready = FALSE)
-	var/mob/M = user
+/obj/item/gun/energy/stunrevolver/detective/reskin_options()
 	var/list/options = list()
 	options["Lawson Arms LAEP20"] = "stunrevolver"
 	options["Lawson Arms LTX1020"] = "vinstunrevolver"
@@ -182,17 +176,19 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/stunrevolver/detective, \
 	options["Lawson Arms LTX1020 (Stainless)"] = "stainstunrevolver"
 	options["Lawson Arms LTX1020 (Ace)"] = "snubstunrevolver"
 	options["Lawson Arms LTX1020 (Gold)"] = "goldstunrevolver"
-	if(!settings_ready)
-		open_request(src, /datum/prompt/choice/weapon_setting_review, PROC_REF(detective_stun_skin_answered), answerer = M, settings_operator = user, settings_held = held, settings_interaction = interaction, question = "Choose your sprite!", title = "Resprite Gun", choices = options)
-		return
-	var/choice = settings_answer
-	if(isnull(choice))
-		return
+	return options
+
+/// Old Resprite gun verb: Click to choose a sprite for your gun.
+/obj/item/gun/energy/stunrevolver/detective/proc/det_stunrevolver_verb_reskin(datum/act/op/A)
+	var/mob/M = A.actor
+	var/choice = A.step_value("sprite")
+	var/list/options = reskin_options()
 	if(src && choice && !M.stat && in_range(M,src))
 		icon_state = options[choice]
 		unique_reskin = options[choice]
 		to_chat(M, "Your gun is now sprited as [choice]. Say hello to your new friend.")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /*
  * Vintage Stun Revolver
@@ -222,23 +218,3 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/stunrevolver/detective, \
 	icon_state = "snubstunrevolver"
 	item_state = "stunrevolver"
 	w_class = ITEMSIZE_SMALL //small pistol is small
-
-/obj/item/gun/energy/stunrevolver/detective/proc/detective_stun_name_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	. = detective_stun_name_apply(context)
-	SStgui.update_uis(src)
-
-/obj/item/gun/energy/stunrevolver/detective/proc/detective_stun_name_apply(datum/act/request/context)
-	var/datum/prompt/text/weapon_setting_review/ask = context.answer
-	return detective_stun_name_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.value, TRUE)
-
-/obj/item/gun/energy/stunrevolver/detective/proc/detective_stun_skin_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	. = detective_stun_skin_apply(context)
-	SStgui.update_uis(src)
-
-/obj/item/gun/energy/stunrevolver/detective/proc/detective_stun_skin_apply(datum/act/request/context)
-	var/datum/prompt/choice/weapon_setting_review/ask = context.answer
-	return detective_stun_skin_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.value, TRUE)

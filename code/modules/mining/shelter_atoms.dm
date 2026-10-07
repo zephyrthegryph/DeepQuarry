@@ -172,7 +172,7 @@
 		template_static = null
 
 /// Old attack_self (virtual: /obj/item/survivalcapsule/proc/survivalcapsule_self()): pick a template first.
-/obj/item/survivalcapsule/superpose/survivalcapsule_self(mob/user, obj/item/held, datum/interaction/interaction, selected_template = null)
+/obj/item/survivalcapsule/superpose/survivalcapsule_self(mob/user, obj/item/held = null, selected_template = null)
 	if(!pod_initialized) // Populate list after round start as map templates might not exist when this item is created.
 		for(var/datum/map_template/shelter/superpose/shelter_type as anything in subtypesof(/datum/map_template/shelter))
 			if(!(initial(shelter_type.mappath)) || !(initial(shelter_type.superpose))) // Limits map templates to those marked for the superpose capsule.
@@ -181,7 +181,7 @@
 		pod_initialized = TRUE
 	if(!template_id)
 		if(isnull(selected_template))
-			open_template_request(user, held, interaction)
+			open_template_request(user, held)
 			return TRUE
 		var/answer = selected_template
 		if(isnull(answer))
@@ -193,7 +193,7 @@
 			return // Return here or the pod will activate as soon as a selection is made.
 
 	// Now we call super to run the rest of the parent proc since the choice has been handled.
-	return ..(user, held, interaction)
+	return ..(user, held)
 
 // Allows resetting the capsule if the wrong template is chosen.
 CAPABILITIES(/obj/item/survivalcapsule/superpose)
@@ -213,7 +213,7 @@ CAPABILITIES(/obj/item/survivalcapsule/superpose)
 	is_ship = TRUE //So you cant just make holes in planets
 
 /// Old attack_self (virtual: /obj/item/survivalcapsule/proc/survivalcapsule_self()): pick a shuttle template first.
-/obj/item/survivalcapsule/superpose/shuttle/survivalcapsule_self(mob/user, obj/item/held, datum/interaction/interaction, selected_template = null)
+/obj/item/survivalcapsule/superpose/shuttle/survivalcapsule_self(mob/user, obj/item/held = null, selected_template = null)
 	if(!pod_initialized)
 		for(var/datum/map_template/shelter/superpose/shelter_type as anything in subtypesof(/datum/map_template/shelter/))
 			if(!(initial(shelter_type.mappath)) || !(initial(shelter_type.shuttle)))
@@ -222,7 +222,7 @@ CAPABILITIES(/obj/item/survivalcapsule/superpose)
 		pod_initialized = TRUE
 	if(!template_id)
 		if(isnull(selected_template))
-			open_template_request(user, held, interaction)
+			open_template_request(user, held)
 			return TRUE
 		var/answer = selected_template
 		if(isnull(answer))
@@ -233,7 +233,7 @@ CAPABILITIES(/obj/item/survivalcapsule/superpose)
 			template_id = answer
 			unique_id = answer
 			return
-	return ..(user, held, interaction)
+	return ..(user, held)
 
 GLOBAL_LIST_EMPTY(unique_deployable)
 /*****************************Survival Pod********************************/
@@ -336,7 +336,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	if(fade_time > 0)
 		for(var/image/I in preview_render)
 			animate(I, alpha = 0, fade_time)
-		after(src, fade_time, PROC_REF(delete_preview_render), with = list(user, preview_render))
+		after(src, fade_time, PROC_REF(delete_preview_render), with = list(user, preview_render), keeps_dead = TRUE)
 	else
 		delete_preview_render(user, preview_render)
 
@@ -410,10 +410,19 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	if(length(temp_info))
 		. += temp_info
 
-DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(survivalcapsule_self), REQ_BECAUSE(REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_not_vr, null), "it doesn't work in VR")))
+CAPABILITIES(/obj/item/survivalcapsule)
+	op("deploy", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Deploy"), then(PROC_REF(survivalcapsule_deploy)))
+
+/// Old attack_self: deploy the shelter (survivalcapsule_self() asks its questions by re-running itself with the same arguments). It does not work in VR.
+/obj/item/survivalcapsule/proc/survivalcapsule_deploy(datum/act/op/A)
+	if(istype(get_area(A.actor), /area/vr))
+		to_chat(A.actor, span_warning("It doesn't work in VR."))
+		return OP_OK
+	survivalcapsule_self(A.actor, A.held)
+	return OP_OK
 
 /// Old attack_self: deploy the shelter. Virtual: the superpose capsules override it with ..() last.
-/obj/item/survivalcapsule/proc/survivalcapsule_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/survivalcapsule/proc/survivalcapsule_self(mob/user, obj/item/held = null, selected_template = null)
 	get_template()
 	if(!used)
 		if(unique_id && (unique_id in GLOB.unique_deployable))
@@ -793,10 +802,12 @@ DECLARE_APPEARANCE_PROC(/obj/structure/table/survival_pod, TYPE_PROC_REF(/atom, 
 /obj/item/gps/computer/proc/disassemble_done()
 	replace_with(src, /obj/item/gps)
 
-EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/gps/computer)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/item/gps/computer/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gps/computer/proc/interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	attack_self(user)
 	return TRUE
 
@@ -935,7 +946,7 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 /obj/machinery/light_switch/survival_pod/proc/target_light() as /obj/machinery/light
 	return target_light
 
-/obj/item/survivalcapsule/superpose/proc/open_template_request(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/survivalcapsule/superpose/proc/open_template_request(mob/user, obj/item/held)
 	var/original_client_ckey
 	if(istype(user, /client))
 		var/client/C = user
@@ -943,7 +954,7 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 		user = C.mob
 	if(!ismob(user) || QDELETED(user))
 		return
-	open_request(src, /datum/prompt/choice/shelter_template, PROC_REF(template_chosen), answerer = user, captured_item = held, item_expected = !isnull(held), captured_interaction = interaction, interaction_expected = !isnull(interaction), choices = template_ids, original_client_ckey = original_client_ckey)
+	open_request(src, /datum/prompt/choice/shelter_template, PROC_REF(template_chosen), answerer = user, captured_item = held, item_expected = !isnull(held), choices = template_ids, original_client_ckey = original_client_ckey)
 
 /obj/item/survivalcapsule/superpose/proc/template_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -956,33 +967,27 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 	if(request.captures_gone())
 		return
 	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
-	return survivalcapsule_self(user, request.captured_item, request.captured_interaction, A.answer.value)
+	return survivalcapsule_self(user, request.captured_item, A.answer.value)
 
 /datum/prompt/choice/shelter_template
 	question = "Which template would you like to load?"
 	title = "Available Templates"
 	timeout = 0
 	var/obj/item/captured_item
-	var/datum/interaction/captured_interaction
 	var/item_expected = FALSE
-	var/interaction_expected = FALSE
 	var/original_client_ckey
 
 CAPABILITIES(/datum/prompt/choice/shelter_template)
 	ref_one(nameof(captured_item), /obj/item)
-	ref_one(nameof(captured_interaction), /datum/interaction)
 
 /datum/prompt/choice/shelter_template/prepare(datum/act/A)
 	. = ..()
 	var/obj/item/item = captured_item
-	var/datum/interaction/interaction = captured_interaction
 	rel_clear(src, nameof(captured_item))
-	rel_clear(src, nameof(captured_interaction))
 	rel_set(src, nameof(captured_item), item)
-	rel_set(src, nameof(captured_interaction), interaction)
 
 /datum/prompt/choice/shelter_template/proc/captures_gone()
-	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction)) || (original_client_ckey && !GLOB.directory[original_client_ckey])
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (original_client_ckey && !GLOB.directory[original_client_ckey])
 
 /datum/prompt/choice/shelter_template/recheck_extra()
 	. = ..()

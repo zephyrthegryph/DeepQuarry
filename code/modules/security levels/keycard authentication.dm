@@ -22,10 +22,12 @@
 	active_power_usage = 6
 	power_channel = ENVIRON
 
+MSG_DEF_SELF(keycard_auth/unpowered, "this device is not powered")
+
 /// Old attack_ai: refuse silicons.
-/obj/machinery/keycard_auth/proc/keycard_auth_silicon_refuse(mob/user, obj/item/held, datum/interaction/interaction)
-	to_chat(user, span_warning("A firewall prevents you from interfacing with this device!"))
-	return TRUE
+/obj/machinery/keycard_auth/proc/keycard_auth_silicon_refuse(datum/act/op/A)
+	to_chat(A.actor, span_warning("A firewall prevents you from interfacing with this device!"))
+	return OP_OK
 
 /obj/machinery/keycard_auth/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -57,28 +59,10 @@
 	destroyed(src, user, "deconstructed")
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/keycard_auth/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_SILICON("Use", PROC_REF(keycard_auth_silicon_refuse)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/keycard_auth_swipe,
-		/datum/interaction/machine_hand/ungated/keycard_auth_open_ui,
-	)
-	..()
-
 /// Old attackby never called ..(): every item is swallowed by this, id cards checked for access.
-/datum/interaction/machine_item/keycard_auth_swipe
-	id = "keycard_auth_swipe"
-	name = "Swipe"
-	held_type = /obj/item
-	effect = /obj/machinery/keycard_auth/proc/interaction_swipe
-	also_requires = list(REQ_BECAUSE(REQ_FIELD("operable"), "this device is not powered"))
-
-/obj/machinery/keycard_auth/proc/interaction_swipe(mob/user, obj/item/W, datum/interaction/interaction)
-
+/obj/machinery/keycard_auth/proc/interaction_swipe(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/card/id))
 		var/obj/item/card/id/ID = W
 		if(ACCESS_KEYCARD_AUTH in ID.GetAccess())
@@ -90,7 +74,7 @@
 			else if(screen == 2)
 				rel_set(src, nameof(event_triggered_by), user)
 				broadcast_request(user) //This is the device making the initial event request. It needs to broadcast to other devices
-	return TRUE
+	return OP_OK
 
 /obj/machinery/keycard_auth/power_change()
 	. = ..()
@@ -99,12 +83,6 @@
 
 // TGUI migration. attack_hand opens KeycardAuth.tsx;
 // Topic event/reset actions move to tgui_act.
-/datum/interaction/machine_hand/ungated/keycard_auth_open_ui
-	id = "keycard_auth_open_ui"
-	name = "Use"
-	effect = /obj/machinery/keycard_auth/proc/interaction_open_ui_impl
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/keycard_auth/proc/can_open_panel))
-
 /// Requirement: TRUE, or why the panel can't be opened. Non-dexterous users fall through in the effect.
 /obj/machinery/keycard_auth/proc/can_open_panel(mob/user, atom/target, obj/item/held)
 	if(user.stat || !operable())
@@ -113,11 +91,26 @@
 		return "this device is busy"
 	return TRUE
 
-/obj/machinery/keycard_auth/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
+/// Requirement: the panel can be opened.
+/obj/machinery/keycard_auth/proc/can_open_panel_holds(datum/act/op/A)
+	var/answer = can_open_panel(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_open_panel_holds refuses: the check's own text.
+/obj/machinery/keycard_auth/proc/can_open_panel_refusal(datum/act/op/A)
+	var/answer = can_open_panel(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/// Requirement: the device is powered.
+/obj/machinery/keycard_auth/proc/swipe_powered(datum/act/op/A)
+	return operable()
+
+/obj/machinery/keycard_auth/proc/interaction_open_ui_impl(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.IsAdvancedToolUser())
-		return FALSE
+		return OP_DECLINE
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 CAPABILITIES(/obj/machinery/keycard_auth)
 	interface("KeycardAuth", title = "Keycard Authentication")
@@ -125,6 +118,9 @@ CAPABILITIES(/obj/machinery/keycard_auth)
 	op("triggerevent", ui_act("triggerevent", arg("event", schema_text(4096))), then(PROC_REF(ui_act_triggerevent)))
 	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("keycard_auth_silicon_refuse", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(keycard_auth_silicon_refuse)))
+	op("keycard_auth_swipe", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Swipe"), needs(req(PROC_REF(swipe_powered), because = MSG(keycard_auth/unpowered))), then(PROC_REF(interaction_swipe)))
+	op("keycard_auth_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), needs(req(PROC_REF(can_open_panel_holds), because = PROC_REF(can_open_panel_refusal))), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/keycard_auth/ui_data(datum/act/eval/A)
 	var/list/data = list()

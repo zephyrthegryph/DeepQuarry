@@ -1,0 +1,171 @@
+human|none menu: Alt
+human|none menu: Deal
+human|none menu: Deal Multiple Cards
+human|none menu: Draw
+human|none menu: Hand
+human|none menu: Move To Top
+human|none menu: Pick up
+human|none menu: Search for Cards
+human|none menu: Shuffle
+human|none menu: Toggle Digestable (refused: You can't do that.)
+human|none click: Click: Hand
+robot|none menu: Alt
+robot|none menu: Deal
+robot|none menu: Deal Multiple Cards
+robot|none menu: Draw
+robot|none menu: Equip (refused: not possible right now)
+robot|none menu: Hand
+robot|none menu: Move To Top
+robot|none menu: Pick up
+robot|none menu: Search for Cards
+robot|none menu: Shuffle
+robot|none menu: Toggle Digestable (refused: You can't do that.)
+robot|none click: Click: Hand
+ai|none menu: Equip (refused: not possible right now)
+ai|none click: nothing
+ghost|none menu: Deal
+ghost|none menu: Deal Multiple Cards
+ghost|none menu: Draw
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Search for Cards
+ghost|none menu: Shuffle
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Alt
+human|/obj/item/tool/screwdriver menu: Deal
+human|/obj/item/tool/screwdriver menu: Deal Multiple Cards
+human|/obj/item/tool/screwdriver menu: Draw
+human|/obj/item/tool/screwdriver menu: Hand
+human|/obj/item/tool/screwdriver menu: Item
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Search for Cards
+human|/obj/item/tool/screwdriver menu: Shuffle
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Hand
+human|/obj/item/tool/crowbar menu: Alt
+human|/obj/item/tool/crowbar menu: Deal
+human|/obj/item/tool/crowbar menu: Deal Multiple Cards
+human|/obj/item/tool/crowbar menu: Draw
+human|/obj/item/tool/crowbar menu: Hand
+human|/obj/item/tool/crowbar menu: Item
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Search for Cards
+human|/obj/item/tool/crowbar menu: Shuffle
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Hand
+human|/obj/item/tool/wrench menu: Alt
+human|/obj/item/tool/wrench menu: Deal
+human|/obj/item/tool/wrench menu: Deal Multiple Cards
+human|/obj/item/tool/wrench menu: Draw
+human|/obj/item/tool/wrench menu: Hand
+human|/obj/item/tool/wrench menu: Item
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Search for Cards
+human|/obj/item/tool/wrench menu: Shuffle
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Hand
+human|/obj/item/tool/wirecutters menu: Alt
+human|/obj/item/tool/wirecutters menu: Deal
+human|/obj/item/tool/wirecutters menu: Deal Multiple Cards
+human|/obj/item/tool/wirecutters menu: Draw
+human|/obj/item/tool/wirecutters menu: Hand
+human|/obj/item/tool/wirecutters menu: Item
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Search for Cards
+human|/obj/item/tool/wirecutters menu: Shuffle
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Hand
+human|/obj/item/multitool menu: Alt
+human|/obj/item/multitool menu: Deal
+human|/obj/item/multitool menu: Deal Multiple Cards
+human|/obj/item/multitool menu: Draw
+human|/obj/item/multitool menu: Hand
+human|/obj/item/multitool menu: Item
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Search for Cards
+human|/obj/item/multitool menu: Shuffle
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Hand
+human|/obj/item/weldingtool menu: Alt
+human|/obj/item/weldingtool menu: Deal
+human|/obj/item/weldingtool menu: Deal Multiple Cards
+human|/obj/item/weldingtool menu: Draw
+human|/obj/item/weldingtool menu: Hand
+human|/obj/item/weldingtool menu: Item
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Search for Cards
+human|/obj/item/weldingtool menu: Shuffle
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Hand
+human|/obj/item/stack/cable_coil menu: Alt
+human|/obj/item/stack/cable_coil menu: Deal
+human|/obj/item/stack/cable_coil menu: Deal Multiple Cards
+human|/obj/item/stack/cable_coil menu: Draw
+human|/obj/item/stack/cable_coil menu: Hand
+human|/obj/item/stack/cable_coil menu: Item
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Search for Cards
+human|/obj/item/stack/cable_coil menu: Shuffle
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Hand
+human|/obj/item/stack/material/steel menu: Alt
+human|/obj/item/stack/material/steel menu: Deal
+human|/obj/item/stack/material/steel menu: Deal Multiple Cards
+human|/obj/item/stack/material/steel menu: Draw
+human|/obj/item/stack/material/steel menu: Hand
+human|/obj/item/stack/material/steel menu: Item
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Search for Cards
+human|/obj/item/stack/material/steel menu: Shuffle
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Hand
+human|/obj/item/card/id menu: Alt
+human|/obj/item/card/id menu: Deal
+human|/obj/item/card/id menu: Deal Multiple Cards
+human|/obj/item/card/id menu: Draw
+human|/obj/item/card/id menu: Hand
+human|/obj/item/card/id menu: Item
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Search for Cards
+human|/obj/item/card/id menu: Shuffle
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Hand
+human|/obj/item/kit menu: Alt
+human|/obj/item/kit menu: Customise
+human|/obj/item/kit menu: Deal
+human|/obj/item/kit menu: Deal Multiple Cards
+human|/obj/item/kit menu: Draw
+human|/obj/item/kit menu: Hand
+human|/obj/item/kit menu: Item
+human|/obj/item/kit menu: Move To Top
+human|/obj/item/kit menu: Search for Cards
+human|/obj/item/kit menu: Shuffle
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit click: Click: Customise
+human|/obj/item/storage menu: Alt
+human|/obj/item/storage menu: Collect
+human|/obj/item/storage menu: Deal
+human|/obj/item/storage menu: Deal Multiple Cards
+human|/obj/item/storage menu: Draw
+human|/obj/item/storage menu: Hand
+human|/obj/item/storage menu: Item
+human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Search for Cards
+human|/obj/item/storage menu: Shuffle
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage click: Click: Collect
+human|/obj/item menu: Alt
+human|/obj/item menu: Deal
+human|/obj/item menu: Deal Multiple Cards
+human|/obj/item menu: Draw
+human|/obj/item menu: Hand
+human|/obj/item menu: Item
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Search for Cards
+human|/obj/item menu: Shuffle
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Hand
+keys: alt, collect_item, deck_verb_deal, deck_verb_deal_multi, deck_verb_draw, deck_verb_search, deck_verb_shuffle, drag_buckle, gen_silicon_item_silicon_equip_module, hand, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, self, toggle_digestable
+

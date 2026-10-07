@@ -154,7 +154,7 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 	visible_message(span_warning("A set of crystals spring out of the ground and shadowy tendrils start wrapping around [L]."))
 	if(owner() && !triggered_instantly)
 		to_chat(owner(), span_warning("A dark maw you deployed has triggered!"))
-	after(src, 1 SECOND, PROC_REF(do_trigger), with = list(L))
+	after(src, 1 SECOND, PROC_REF(do_trigger), with = list(L), keeps_dead = TRUE)
 
 /obj/effect/abstract/dark_maw/proc/do_trigger(mob/living/L)
 	var/will_vore = 1

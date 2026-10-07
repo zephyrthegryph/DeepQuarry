@@ -20,6 +20,7 @@ CAPABILITIES(/obj/effect/decal/writing)
 	param(nameof(message), pos = 2)
 	param(nameof(author), pos = 3)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
+	op("engrave_graffiti", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Engrave"), then(PROC_REF(interaction_engrave_graffiti)))
 
 // ALLOW(init/INSTANCE_STATE): graffiti not loaded with the map is tracked for persistence
 /obj/effect/decal/writing/Initialize(mapload)
@@ -43,10 +44,6 @@ CAPABILITIES(/obj/effect/decal/writing)
 	. = ..()
 	. += "\n It reads \"[message]\"."
 
-EXTEND_INTERACTIONS(/obj/effect/decal/writing, \
-	INTERACT_ITEM("Engrave", PROC_REF(interaction_engrave_graffiti), REQ_TARGET_STATE(/obj/effect/decal/writing/proc/can_engrave)), \
-)
-
 /// Requirement: persistent graffiti is refused to the jobbanned; other items fall through in the effect.
 /obj/effect/decal/writing/proc/can_engrave(mob/user, atom/target, obj/item/held)
 	if(held?.sharp && jobban_isbanned(user, JOB_GRAFFITI))
@@ -54,18 +51,25 @@ EXTEND_INTERACTIONS(/obj/effect/decal/writing, \
 	return TRUE
 
 /// Old attackby: a sharp item carves more into the graffiti.
-/obj/effect/decal/writing/proc/interaction_engrave_graffiti(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/decal/writing/proc/interaction_engrave_graffiti(datum/act/op/A)
+	var/refusal = can_engrave(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	var/obj/item/thing = held
 	if(!thing.sharp)
-		return FALSE
+		return OP_DECLINE
 
 	var/_message = rerun_ask(user, "k49", PROC_REF(interaction_engrave_graffiti), args, /datum/prompt/text, question = "Enter an additional message to engrave.", title = "Graffiti", max_len = MAX_MESSAGE_LEN, name_text = ((MAX_MESSAGE_LEN) <= MAX_NAME_LEN))
 	if(isnull(_message))
-		return TRUE
+		return OP_OK
 	if(_message && loc && user && !user.incapacitated() && user.Adjacent(loc) && thing.loc == user)
 		act_message(user, null, others = span_warning("%U% begins carving something into \the [loc]."))
 		task_timed(user, max(2 SECONDS, length(_message)), src, src, PROC_REF(carve_done), list(user, _message))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/effect/decal/writing/proc/carve_done(mob/user, _message)
 	if(!loc)

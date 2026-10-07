@@ -90,20 +90,21 @@ TRACKED(/obj/item/gun/launcher/crossbow, tension)
 	..()
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/crossbow/gun_self(mob/living/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/launcher/crossbow/gun_operate(datum/act/op/A, callback)
+	var/mob/living/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(is_bow)
-		return FALSE
+		return OP_DECLINE
 	if(tension)
 		if(bolt)
 			act_message(user, src, MSG_SELF("You relax the tension on %T%'s string and remove [bolt]."), \
 				MSG_OTHERS("%U% relaxes the tension on %T%'s string and removes [bolt]."))
 			bolt.forceMove(get_turf(src))
-			var/obj/item/arrow/A = bolt
+			var/obj/item/arrow/removed_arrow = bolt
 			rel_take(src, nameof(bolt))
-			A.removed(user)
+			removed_arrow.removed(user)
 		else
 			act_message(user, src, MSG_SELF("You relax the tension on %T%'s string."), MSG_OTHERS("%U% relaxes the tension on %T%'s string."))
 		set_tension(0)
@@ -169,8 +170,10 @@ TRACKED(/obj/item/gun/launcher/crossbow, tension)
 	return ITEM_INTERACT_SUCCESS
 
 /// Old attackby.
-/obj/item/gun/launcher/crossbow/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/gun/launcher/crossbow/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	if(!bolt)
 		if (istype(W,/obj/item/arrow))
 			if(!move_into(src, nameof(src.bolt), W, user))
@@ -270,10 +273,13 @@ TRACKED(/obj/item/gun/launcher/crossbow, tension)
 		changed(src)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/crossbowframe)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/crossbowframe/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/crossbowframe/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/stack/rods))
 		if(buildstate == 0)
 			var/obj/item/stack/rods/R = W
@@ -283,7 +289,7 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 				changed(src)
 			else
 				to_chat(user, span_notice("You need at least three rods to complete this task."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	else if(istype(W, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/C = W
 		if(buildstate == 2)
@@ -293,7 +299,7 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 				changed(src)
 			else
 				to_chat(user, span_notice("You need at least five segments of cable coil to complete this task."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else if(buildstate == 4)
 			if(C.use(5))
 				to_chat(user, span_notice("You string a steel cable across the crossbow's lath."))
@@ -301,7 +307,7 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 				changed(src)
 			else
 				to_chat(user, span_notice("You need at least five segments of cable coil to complete this task."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	else if(istype(W,/obj/item/stack/material) && W.get_material_name() == MAT_PLASTIC)
 		if(buildstate == 3)
 			var/obj/item/stack/material/P = W
@@ -311,10 +317,10 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 				changed(src)
 			else
 				to_chat(user, span_notice("You need at least three plastic sheets to complete this task."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /// Used for firing superheated rods. (a relation view: null once it is deleted).
 /obj/item/gun/launcher/crossbow/proc/cell() as /obj/item/cell

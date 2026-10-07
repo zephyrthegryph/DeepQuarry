@@ -1,0 +1,654 @@
+human|none menu: Block drag
+human|none menu: Control decals & animations (refused: you don't have that ability)
+human|none menu: Create shade (refused: you don't have that ability)
+human|none menu: Customize appearance (refused: you don't have that ability)
+human|none menu: Dark maw (refused: you don't have that ability)
+human|none menu: Dark respite (refused: you don't have that ability)
+human|none menu: Dark tunneling (refused: you don't have that ability)
+human|none menu: Disarm
+human|none menu: Dispel dark maws (refused: you don't have that ability)
+human|none menu: Eject cargo (refused: you don't have that ability)
+human|none menu: Emag (refused: needs a cryptographic sequencer)
+human|none menu: Emit sparks (refused: you don't have that ability)
+human|none menu: Grab
+human|none menu: Help
+human|none menu: Hit (refused: combat mode is off)
+human|none menu: Hold with (refused: hold Grab)
+human|none menu: Module 1 (refused: you don't have that ability)
+human|none menu: Module 2 (refused: you don't have that ability)
+human|none menu: Module 3 (refused: you don't have that ability)
+human|none menu: Pet
+human|none menu: Pick name (refused: you don't have that ability)
+human|none menu: Platform hand
+human|none menu: Pry the cover or a part (refused: hold Disarm)
+human|none menu: Pry the cover or a part (refused: hold Grab)
+human|none menu: Pry the cover or a part (refused: needs a crowbar)
+human|none menu: Punch (refused: combat mode is off)
+human|none menu: Purge nutrition (refused: you don't have that ability)
+human|none menu: Recolour module (refused: you don't have that ability)
+human|none menu: Regenerate other (refused: you don't have that ability)
+human|none menu: Robot mount/dismount (refused: you don't have that ability)
+human|none menu: Robot nom (refused: you don't have that ability)
+human|none menu: Shove (refused: hold Disarm)
+human|none menu: Shove with (refused: hold Disarm)
+human|none menu: Take hold (refused: hold Grab)
+human|none menu: Tap (refused: hold Disarm)
+human|none menu: Toggle glowing stomach & accents (refused: you don't have that ability)
+human|none menu: Toggle lights (refused: you don't have that ability)
+human|none menu: Toggle pickup (refused: you don't have that ability)
+human|none menu: Toggle sensor augmentation (refused: you don't have that ability)
+human|none menu: Toggle VTEC (refused: you don't have that ability)
+human|none menu: Use
+human|none menu: Use on
+human|none menu: Weld the dents (refused: hold Disarm)
+human|none menu: Weld the dents (refused: hold Grab)
+human|none menu: Weld the dents (refused: needs a welder)
+human|none click: Click: Platform hand
+robot|none menu: Block drag
+robot|none menu: Control decals & animations (refused: can only be done to yourself)
+robot|none menu: Create shade (refused: you don't have that ability)
+robot|none menu: Customize appearance (refused: can only be done to yourself)
+robot|none menu: Dark maw (refused: you don't have that ability)
+robot|none menu: Dark respite (refused: you don't have that ability)
+robot|none menu: Dark tunneling (refused: you don't have that ability)
+robot|none menu: Deploy to shell
+robot|none menu: Disarm
+robot|none menu: Dispel dark maws (refused: you don't have that ability)
+robot|none menu: Drop hat
+robot|none menu: Eject cargo (refused: you don't have that ability)
+robot|none menu: Emag (refused: needs a cryptographic sequencer)
+robot|none menu: Emit sparks (refused: can only be done to yourself)
+robot|none menu: Grab
+robot|none menu: Help
+robot|none menu: Hit (refused: combat mode is off)
+robot|none menu: Hold with (refused: hold Grab)
+robot|none menu: Module 1 (refused: can only be done to yourself)
+robot|none menu: Module 2 (refused: can only be done to yourself)
+robot|none menu: Module 3 (refused: can only be done to yourself)
+robot|none menu: Pet
+robot|none menu: Pick name (refused: can only be done to yourself)
+robot|none menu: Platform hand
+robot|none menu: Pry the cover or a part (refused: hold Disarm)
+robot|none menu: Pry the cover or a part (refused: hold Grab)
+robot|none menu: Pry the cover or a part (refused: needs a crowbar)
+robot|none menu: Punch (refused: combat mode is off)
+robot|none menu: Purge nutrition (refused: can only be done to yourself)
+robot|none menu: Recolour module (refused: you don't have that ability)
+robot|none menu: Regenerate other (refused: you don't have that ability)
+robot|none menu: Robot mount/dismount (refused: you can't carry riders)
+robot|none menu: Robot nom
+robot|none menu: Shove (refused: hold Disarm)
+robot|none menu: Shove with (refused: hold Disarm)
+robot|none menu: Take hold (refused: hold Grab)
+robot|none menu: Tap (refused: hold Disarm)
+robot|none menu: Toggle glowing stomach & accents (refused: can only be done to yourself)
+robot|none menu: Toggle lights (refused: can only be done to yourself)
+robot|none menu: Toggle pickup (refused: can only be done to yourself)
+robot|none menu: Toggle sensor augmentation (refused: can only be done to yourself)
+robot|none menu: Toggle VTEC (refused: you don't have that ability)
+robot|none menu: Unload cargo
+robot|none menu: Use
+robot|none menu: Use on
+robot|none menu: Weld the dents (refused: hold Disarm)
+robot|none menu: Weld the dents (refused: hold Grab)
+robot|none menu: Weld the dents (refused: needs a welder)
+robot|none click: Click: Platform hand
+ai|none menu: Deploy to shell
+ai|none click: nothing
+ghost|none menu: Take control
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Block drag
+human|/obj/item/tool/screwdriver menu: Control decals & animations (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Create shade (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Customize appearance (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Dark maw (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Dark respite (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Dark tunneling (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Disarm
+human|/obj/item/tool/screwdriver menu: Dispel dark maws (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Eject cargo (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/screwdriver menu: Emit sparks (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Grab
+human|/obj/item/tool/screwdriver menu: Help
+human|/obj/item/tool/screwdriver menu: Hit (refused: combat mode is off)
+human|/obj/item/tool/screwdriver menu: Hold with (refused: hold Grab)
+human|/obj/item/tool/screwdriver menu: Load into cargo
+human|/obj/item/tool/screwdriver menu: Module 1 (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Module 2 (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Module 3 (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Pet
+human|/obj/item/tool/screwdriver menu: Pick name (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Platform hand
+human|/obj/item/tool/screwdriver menu: Platform item
+human|/obj/item/tool/screwdriver menu: Pry the cover or a part (refused: hold Disarm)
+human|/obj/item/tool/screwdriver menu: Pry the cover or a part (refused: hold Grab)
+human|/obj/item/tool/screwdriver menu: Pry the cover or a part (refused: needs a crowbar)
+human|/obj/item/tool/screwdriver menu: Punch (refused: combat mode is off)
+human|/obj/item/tool/screwdriver menu: Purge nutrition (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Recolour module (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Regenerate other (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Robot mount/dismount (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Robot nom (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Shove (refused: hold Disarm)
+human|/obj/item/tool/screwdriver menu: Shove with (refused: hold Disarm)
+human|/obj/item/tool/screwdriver menu: Take hold (refused: hold Grab)
+human|/obj/item/tool/screwdriver menu: Tap (refused: hold Disarm)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle glowing stomach & accents (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Toggle lights (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Toggle pickup (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Toggle sensor augmentation (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Toggle VTEC (refused: you don't have that ability)
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver menu: Use on
+human|/obj/item/tool/screwdriver menu: Weld the dents (refused: hold Disarm)
+human|/obj/item/tool/screwdriver menu: Weld the dents (refused: hold Grab)
+human|/obj/item/tool/screwdriver menu: Weld the dents (refused: needs a welder)
+human|/obj/item/tool/screwdriver click: Click: Platform item
+human|/obj/item/tool/crowbar menu: Block drag
+human|/obj/item/tool/crowbar menu: Control decals & animations (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Create shade (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Customize appearance (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Dark maw (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Dark respite (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Dark tunneling (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Disarm
+human|/obj/item/tool/crowbar menu: Dispel dark maws (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Eject cargo (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/crowbar menu: Emit sparks (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Grab
+human|/obj/item/tool/crowbar menu: Help
+human|/obj/item/tool/crowbar menu: Hit (refused: combat mode is off)
+human|/obj/item/tool/crowbar menu: Hold with (refused: hold Grab)
+human|/obj/item/tool/crowbar menu: Load into cargo
+human|/obj/item/tool/crowbar menu: Module 1 (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Module 2 (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Module 3 (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Pet
+human|/obj/item/tool/crowbar menu: Pick name (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Platform hand
+human|/obj/item/tool/crowbar menu: Platform item
+human|/obj/item/tool/crowbar menu: Pry the cover or a part
+human|/obj/item/tool/crowbar menu: Pry the cover or a part (refused: hold Disarm)
+human|/obj/item/tool/crowbar menu: Pry the cover or a part (refused: hold Grab)
+human|/obj/item/tool/crowbar menu: Punch (refused: combat mode is off)
+human|/obj/item/tool/crowbar menu: Purge nutrition (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Recolour module (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Regenerate other (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Robot mount/dismount (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Robot nom (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Shove (refused: hold Disarm)
+human|/obj/item/tool/crowbar menu: Shove with (refused: hold Disarm)
+human|/obj/item/tool/crowbar menu: Take hold (refused: hold Grab)
+human|/obj/item/tool/crowbar menu: Tap (refused: hold Disarm)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Toggle glowing stomach & accents (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Toggle lights (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Toggle pickup (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Toggle sensor augmentation (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Toggle VTEC (refused: you don't have that ability)
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar menu: Use on
+human|/obj/item/tool/crowbar menu: Weld the dents (refused: hold Disarm)
+human|/obj/item/tool/crowbar menu: Weld the dents (refused: hold Grab)
+human|/obj/item/tool/crowbar menu: Weld the dents (refused: needs a welder)
+human|/obj/item/tool/crowbar click: Click: Platform item
+human|/obj/item/tool/wrench menu: Block drag
+human|/obj/item/tool/wrench menu: Control decals & animations (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Create shade (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Customize appearance (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Dark maw (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Dark respite (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Dark tunneling (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Disarm
+human|/obj/item/tool/wrench menu: Dispel dark maws (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Eject cargo (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/wrench menu: Emit sparks (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Grab
+human|/obj/item/tool/wrench menu: Help
+human|/obj/item/tool/wrench menu: Hit (refused: combat mode is off)
+human|/obj/item/tool/wrench menu: Hold with (refused: hold Grab)
+human|/obj/item/tool/wrench menu: Load into cargo
+human|/obj/item/tool/wrench menu: Module 1 (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Module 2 (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Module 3 (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Pet
+human|/obj/item/tool/wrench menu: Pick name (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Platform hand
+human|/obj/item/tool/wrench menu: Platform item
+human|/obj/item/tool/wrench menu: Pry the cover or a part (refused: hold Disarm)
+human|/obj/item/tool/wrench menu: Pry the cover or a part (refused: hold Grab)
+human|/obj/item/tool/wrench menu: Pry the cover or a part (refused: needs a crowbar)
+human|/obj/item/tool/wrench menu: Punch (refused: combat mode is off)
+human|/obj/item/tool/wrench menu: Purge nutrition (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Recolour module (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Regenerate other (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Robot mount/dismount (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Robot nom (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Shove (refused: hold Disarm)
+human|/obj/item/tool/wrench menu: Shove with (refused: hold Disarm)
+human|/obj/item/tool/wrench menu: Take hold (refused: hold Grab)
+human|/obj/item/tool/wrench menu: Tap (refused: hold Disarm)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Toggle glowing stomach & accents (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Toggle lights (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Toggle pickup (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Toggle sensor augmentation (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Toggle VTEC (refused: you don't have that ability)
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench menu: Use on
+human|/obj/item/tool/wrench menu: Weld the dents (refused: hold Disarm)
+human|/obj/item/tool/wrench menu: Weld the dents (refused: hold Grab)
+human|/obj/item/tool/wrench menu: Weld the dents (refused: needs a welder)
+human|/obj/item/tool/wrench click: Click: Platform item
+human|/obj/item/tool/wirecutters menu: Block drag
+human|/obj/item/tool/wirecutters menu: Control decals & animations (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Create shade (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Customize appearance (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Dark maw (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Dark respite (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Dark tunneling (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Disarm
+human|/obj/item/tool/wirecutters menu: Dispel dark maws (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Eject cargo (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/wirecutters menu: Emit sparks (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Grab
+human|/obj/item/tool/wirecutters menu: Help
+human|/obj/item/tool/wirecutters menu: Hit (refused: combat mode is off)
+human|/obj/item/tool/wirecutters menu: Hold with (refused: hold Grab)
+human|/obj/item/tool/wirecutters menu: Load into cargo
+human|/obj/item/tool/wirecutters menu: Module 1 (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Module 2 (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Module 3 (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Pet
+human|/obj/item/tool/wirecutters menu: Pick name (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Platform hand
+human|/obj/item/tool/wirecutters menu: Platform item
+human|/obj/item/tool/wirecutters menu: Pry the cover or a part (refused: hold Disarm)
+human|/obj/item/tool/wirecutters menu: Pry the cover or a part (refused: hold Grab)
+human|/obj/item/tool/wirecutters menu: Pry the cover or a part (refused: needs a crowbar)
+human|/obj/item/tool/wirecutters menu: Punch (refused: combat mode is off)
+human|/obj/item/tool/wirecutters menu: Purge nutrition (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Recolour module (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Regenerate other (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Robot mount/dismount (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Robot nom (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Shove (refused: hold Disarm)
+human|/obj/item/tool/wirecutters menu: Shove with (refused: hold Disarm)
+human|/obj/item/tool/wirecutters menu: Take hold (refused: hold Grab)
+human|/obj/item/tool/wirecutters menu: Tap (refused: hold Disarm)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle glowing stomach & accents (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Toggle lights (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Toggle pickup (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Toggle sensor augmentation (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Toggle VTEC (refused: you don't have that ability)
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters menu: Use on
+human|/obj/item/tool/wirecutters menu: Weld the dents (refused: hold Disarm)
+human|/obj/item/tool/wirecutters menu: Weld the dents (refused: hold Grab)
+human|/obj/item/tool/wirecutters menu: Weld the dents (refused: needs a welder)
+human|/obj/item/tool/wirecutters click: Click: Platform item
+human|/obj/item/multitool menu: Block drag
+human|/obj/item/multitool menu: Control decals & animations (refused: you don't have that ability)
+human|/obj/item/multitool menu: Create shade (refused: you don't have that ability)
+human|/obj/item/multitool menu: Customize appearance (refused: you don't have that ability)
+human|/obj/item/multitool menu: Dark maw (refused: you don't have that ability)
+human|/obj/item/multitool menu: Dark respite (refused: you don't have that ability)
+human|/obj/item/multitool menu: Dark tunneling (refused: you don't have that ability)
+human|/obj/item/multitool menu: Disarm
+human|/obj/item/multitool menu: Dispel dark maws (refused: you don't have that ability)
+human|/obj/item/multitool menu: Eject cargo (refused: you don't have that ability)
+human|/obj/item/multitool menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/multitool menu: Emit sparks (refused: you don't have that ability)
+human|/obj/item/multitool menu: Grab
+human|/obj/item/multitool menu: Help
+human|/obj/item/multitool menu: Hit (refused: combat mode is off)
+human|/obj/item/multitool menu: Hold with (refused: hold Grab)
+human|/obj/item/multitool menu: Load into cargo
+human|/obj/item/multitool menu: Module 1 (refused: you don't have that ability)
+human|/obj/item/multitool menu: Module 2 (refused: you don't have that ability)
+human|/obj/item/multitool menu: Module 3 (refused: you don't have that ability)
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Pet
+human|/obj/item/multitool menu: Pick name (refused: you don't have that ability)
+human|/obj/item/multitool menu: Platform hand
+human|/obj/item/multitool menu: Platform item
+human|/obj/item/multitool menu: Pry the cover or a part (refused: hold Disarm)
+human|/obj/item/multitool menu: Pry the cover or a part (refused: hold Grab)
+human|/obj/item/multitool menu: Pry the cover or a part (refused: needs a crowbar)
+human|/obj/item/multitool menu: Punch (refused: combat mode is off)
+human|/obj/item/multitool menu: Purge nutrition (refused: you don't have that ability)
+human|/obj/item/multitool menu: Recolour module (refused: you don't have that ability)
+human|/obj/item/multitool menu: Regenerate other (refused: you don't have that ability)
+human|/obj/item/multitool menu: Robot mount/dismount (refused: you don't have that ability)
+human|/obj/item/multitool menu: Robot nom (refused: you don't have that ability)
+human|/obj/item/multitool menu: Shove (refused: hold Disarm)
+human|/obj/item/multitool menu: Shove with (refused: hold Disarm)
+human|/obj/item/multitool menu: Take hold (refused: hold Grab)
+human|/obj/item/multitool menu: Tap (refused: hold Disarm)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Toggle glowing stomach & accents (refused: you don't have that ability)
+human|/obj/item/multitool menu: Toggle lights (refused: you don't have that ability)
+human|/obj/item/multitool menu: Toggle pickup (refused: you don't have that ability)
+human|/obj/item/multitool menu: Toggle sensor augmentation (refused: you don't have that ability)
+human|/obj/item/multitool menu: Toggle VTEC (refused: you don't have that ability)
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool menu: Use on
+human|/obj/item/multitool menu: Weld the dents (refused: hold Disarm)
+human|/obj/item/multitool menu: Weld the dents (refused: hold Grab)
+human|/obj/item/multitool menu: Weld the dents (refused: needs a welder)
+human|/obj/item/multitool click: Click: Platform item
+human|/obj/item/weldingtool menu: Block drag
+human|/obj/item/weldingtool menu: Control decals & animations (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Create shade (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Customize appearance (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Dark maw (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Dark respite (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Dark tunneling (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Disarm
+human|/obj/item/weldingtool menu: Dispel dark maws (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Eject cargo (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/weldingtool menu: Emit sparks (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Grab
+human|/obj/item/weldingtool menu: Help
+human|/obj/item/weldingtool menu: Hit (refused: combat mode is off)
+human|/obj/item/weldingtool menu: Hold with (refused: hold Grab)
+human|/obj/item/weldingtool menu: Load into cargo
+human|/obj/item/weldingtool menu: Module 1 (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Module 2 (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Module 3 (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Pet
+human|/obj/item/weldingtool menu: Pick name (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Platform hand
+human|/obj/item/weldingtool menu: Platform item
+human|/obj/item/weldingtool menu: Pry the cover or a part (refused: hold Disarm)
+human|/obj/item/weldingtool menu: Pry the cover or a part (refused: hold Grab)
+human|/obj/item/weldingtool menu: Pry the cover or a part (refused: needs a crowbar)
+human|/obj/item/weldingtool menu: Punch (refused: combat mode is off)
+human|/obj/item/weldingtool menu: Purge nutrition (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Recolour module (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Regenerate other (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Robot mount/dismount (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Robot nom (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Shove (refused: hold Disarm)
+human|/obj/item/weldingtool menu: Shove with (refused: hold Disarm)
+human|/obj/item/weldingtool menu: Take hold (refused: hold Grab)
+human|/obj/item/weldingtool menu: Tap (refused: hold Disarm)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Toggle glowing stomach & accents (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Toggle lights (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Toggle pickup (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Toggle sensor augmentation (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Toggle VTEC (refused: you don't have that ability)
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool menu: Use on
+human|/obj/item/weldingtool menu: Weld the dents (refused: hold Disarm)
+human|/obj/item/weldingtool menu: Weld the dents (refused: hold Grab)
+human|/obj/item/weldingtool menu: Weld the dents (refused: nothing to fix here)
+human|/obj/item/weldingtool click: Click: Platform item
+human|/obj/item/stack/cable_coil menu: Block drag
+human|/obj/item/stack/cable_coil menu: Control decals & animations (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Create shade (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Customize appearance (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Dark maw (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Dark respite (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Dark tunneling (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Disarm
+human|/obj/item/stack/cable_coil menu: Dispel dark maws (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Eject cargo (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/stack/cable_coil menu: Emit sparks (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Grab
+human|/obj/item/stack/cable_coil menu: Help
+human|/obj/item/stack/cable_coil menu: Hit (refused: combat mode is off)
+human|/obj/item/stack/cable_coil menu: Hold with (refused: hold Grab)
+human|/obj/item/stack/cable_coil menu: Load into cargo
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Module 1 (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Module 2 (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Module 3 (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Pet
+human|/obj/item/stack/cable_coil menu: Pick name (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Platform hand
+human|/obj/item/stack/cable_coil menu: Platform item
+human|/obj/item/stack/cable_coil menu: Pry the cover or a part (refused: hold Disarm)
+human|/obj/item/stack/cable_coil menu: Pry the cover or a part (refused: hold Grab)
+human|/obj/item/stack/cable_coil menu: Pry the cover or a part (refused: needs a crowbar)
+human|/obj/item/stack/cable_coil menu: Punch (refused: combat mode is off)
+human|/obj/item/stack/cable_coil menu: Purge nutrition (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Recolour module (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Regenerate other (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Robot mount/dismount (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Robot nom (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Shove (refused: hold Disarm)
+human|/obj/item/stack/cable_coil menu: Shove with (refused: hold Disarm)
+human|/obj/item/stack/cable_coil menu: Take hold (refused: hold Grab)
+human|/obj/item/stack/cable_coil menu: Tap (refused: hold Disarm)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle glowing stomach & accents (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Toggle lights (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Toggle pickup (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Toggle sensor augmentation (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Toggle VTEC (refused: you don't have that ability)
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil menu: Use on
+human|/obj/item/stack/cable_coil menu: Weld the dents (refused: hold Disarm)
+human|/obj/item/stack/cable_coil menu: Weld the dents (refused: hold Grab)
+human|/obj/item/stack/cable_coil menu: Weld the dents (refused: needs a welder)
+human|/obj/item/stack/cable_coil click: Click: Platform item
+human|/obj/item/stack/material/steel menu: Block drag
+human|/obj/item/stack/material/steel menu: Control decals & animations (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Create shade (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Customize appearance (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Dark maw (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Dark respite (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Dark tunneling (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Disarm
+human|/obj/item/stack/material/steel menu: Dispel dark maws (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Eject cargo (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/stack/material/steel menu: Emit sparks (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Grab
+human|/obj/item/stack/material/steel menu: Help
+human|/obj/item/stack/material/steel menu: Hit (refused: combat mode is off)
+human|/obj/item/stack/material/steel menu: Hold with (refused: hold Grab)
+human|/obj/item/stack/material/steel menu: Load into cargo
+human|/obj/item/stack/material/steel menu: Module 1 (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Module 2 (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Module 3 (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Pet
+human|/obj/item/stack/material/steel menu: Pick name (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Platform hand
+human|/obj/item/stack/material/steel menu: Platform item
+human|/obj/item/stack/material/steel menu: Pry the cover or a part (refused: hold Disarm)
+human|/obj/item/stack/material/steel menu: Pry the cover or a part (refused: hold Grab)
+human|/obj/item/stack/material/steel menu: Pry the cover or a part (refused: needs a crowbar)
+human|/obj/item/stack/material/steel menu: Punch (refused: combat mode is off)
+human|/obj/item/stack/material/steel menu: Purge nutrition (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Recolour module (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Regenerate other (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Robot mount/dismount (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Robot nom (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Shove (refused: hold Disarm)
+human|/obj/item/stack/material/steel menu: Shove with (refused: hold Disarm)
+human|/obj/item/stack/material/steel menu: Take hold (refused: hold Grab)
+human|/obj/item/stack/material/steel menu: Tap (refused: hold Disarm)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Toggle glowing stomach & accents (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Toggle lights (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Toggle pickup (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Toggle sensor augmentation (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Toggle VTEC (refused: you don't have that ability)
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel menu: Use on
+human|/obj/item/stack/material/steel menu: Weld the dents (refused: hold Disarm)
+human|/obj/item/stack/material/steel menu: Weld the dents (refused: hold Grab)
+human|/obj/item/stack/material/steel menu: Weld the dents (refused: needs a welder)
+human|/obj/item/stack/material/steel click: Click: Platform item
+human|/obj/item/card/id menu: Block drag
+human|/obj/item/card/id menu: Control decals & animations (refused: you don't have that ability)
+human|/obj/item/card/id menu: Create shade (refused: you don't have that ability)
+human|/obj/item/card/id menu: Customize appearance (refused: you don't have that ability)
+human|/obj/item/card/id menu: Dark maw (refused: you don't have that ability)
+human|/obj/item/card/id menu: Dark respite (refused: you don't have that ability)
+human|/obj/item/card/id menu: Dark tunneling (refused: you don't have that ability)
+human|/obj/item/card/id menu: Disarm
+human|/obj/item/card/id menu: Dispel dark maws (refused: you don't have that ability)
+human|/obj/item/card/id menu: Eject cargo (refused: you don't have that ability)
+human|/obj/item/card/id menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/card/id menu: Emit sparks (refused: you don't have that ability)
+human|/obj/item/card/id menu: Grab
+human|/obj/item/card/id menu: Help
+human|/obj/item/card/id menu: Hit (refused: combat mode is off)
+human|/obj/item/card/id menu: Hold with (refused: hold Grab)
+human|/obj/item/card/id menu: Load into cargo
+human|/obj/item/card/id menu: Module 1 (refused: you don't have that ability)
+human|/obj/item/card/id menu: Module 2 (refused: you don't have that ability)
+human|/obj/item/card/id menu: Module 3 (refused: you don't have that ability)
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Pet
+human|/obj/item/card/id menu: Pick name (refused: you don't have that ability)
+human|/obj/item/card/id menu: Platform hand
+human|/obj/item/card/id menu: Platform item
+human|/obj/item/card/id menu: Pry the cover or a part (refused: hold Disarm)
+human|/obj/item/card/id menu: Pry the cover or a part (refused: hold Grab)
+human|/obj/item/card/id menu: Pry the cover or a part (refused: needs a crowbar)
+human|/obj/item/card/id menu: Punch (refused: combat mode is off)
+human|/obj/item/card/id menu: Purge nutrition (refused: you don't have that ability)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Recolour module (refused: you don't have that ability)
+human|/obj/item/card/id menu: Regenerate other (refused: you don't have that ability)
+human|/obj/item/card/id menu: Robot mount/dismount (refused: you don't have that ability)
+human|/obj/item/card/id menu: Robot nom (refused: you don't have that ability)
+human|/obj/item/card/id menu: Shove (refused: hold Disarm)
+human|/obj/item/card/id menu: Shove with (refused: hold Disarm)
+human|/obj/item/card/id menu: Take hold (refused: hold Grab)
+human|/obj/item/card/id menu: Tap (refused: hold Disarm)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle glowing stomach & accents (refused: you don't have that ability)
+human|/obj/item/card/id menu: Toggle lights (refused: you don't have that ability)
+human|/obj/item/card/id menu: Toggle pickup (refused: you don't have that ability)
+human|/obj/item/card/id menu: Toggle sensor augmentation (refused: you don't have that ability)
+human|/obj/item/card/id menu: Toggle VTEC (refused: you don't have that ability)
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id menu: Use on
+human|/obj/item/card/id menu: Weld the dents (refused: hold Disarm)
+human|/obj/item/card/id menu: Weld the dents (refused: hold Grab)
+human|/obj/item/card/id menu: Weld the dents (refused: needs a welder)
+human|/obj/item/card/id click: Click: Platform item
+human|/obj/item/card/emag menu: Block drag
+human|/obj/item/card/emag menu: Control decals & animations (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Create shade (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Customize appearance (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Dark maw (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Dark respite (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Dark tunneling (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Disarm
+human|/obj/item/card/emag menu: Dispel dark maws (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Eject cargo (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Emag
+human|/obj/item/card/emag menu: Emit sparks (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Grab
+human|/obj/item/card/emag menu: Help
+human|/obj/item/card/emag menu: Hit (refused: combat mode is off)
+human|/obj/item/card/emag menu: Hold with (refused: hold Grab)
+human|/obj/item/card/emag menu: Load into cargo
+human|/obj/item/card/emag menu: Module 1 (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Module 2 (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Module 3 (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Pet
+human|/obj/item/card/emag menu: Pick name (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Platform hand
+human|/obj/item/card/emag menu: Platform item
+human|/obj/item/card/emag menu: Pry the cover or a part (refused: hold Disarm)
+human|/obj/item/card/emag menu: Pry the cover or a part (refused: hold Grab)
+human|/obj/item/card/emag menu: Pry the cover or a part (refused: needs a crowbar)
+human|/obj/item/card/emag menu: Punch (refused: combat mode is off)
+human|/obj/item/card/emag menu: Purge nutrition (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Recolour module (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Regenerate other (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Robot mount/dismount (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Robot nom (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Shove (refused: hold Disarm)
+human|/obj/item/card/emag menu: Shove with (refused: hold Disarm)
+human|/obj/item/card/emag menu: Take hold (refused: hold Grab)
+human|/obj/item/card/emag menu: Tap (refused: hold Disarm)
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle glowing stomach & accents (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Toggle lights (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Toggle pickup (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Toggle sensor augmentation (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Toggle VTEC (refused: you don't have that ability)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use on
+human|/obj/item/card/emag menu: Weld the dents (refused: hold Disarm)
+human|/obj/item/card/emag menu: Weld the dents (refused: hold Grab)
+human|/obj/item/card/emag menu: Weld the dents (refused: needs a welder)
+human|/obj/item/card/emag click: Click: Platform item
+human|/obj/item menu: Block drag
+human|/obj/item menu: Control decals & animations (refused: you don't have that ability)
+human|/obj/item menu: Create shade (refused: you don't have that ability)
+human|/obj/item menu: Customize appearance (refused: you don't have that ability)
+human|/obj/item menu: Dark maw (refused: you don't have that ability)
+human|/obj/item menu: Dark respite (refused: you don't have that ability)
+human|/obj/item menu: Dark tunneling (refused: you don't have that ability)
+human|/obj/item menu: Disarm
+human|/obj/item menu: Dispel dark maws (refused: you don't have that ability)
+human|/obj/item menu: Eject cargo (refused: you don't have that ability)
+human|/obj/item menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item menu: Emit sparks (refused: you don't have that ability)
+human|/obj/item menu: Grab
+human|/obj/item menu: Help
+human|/obj/item menu: Hit (refused: combat mode is off)
+human|/obj/item menu: Hold with (refused: hold Grab)
+human|/obj/item menu: Load into cargo
+human|/obj/item menu: Module 1 (refused: you don't have that ability)
+human|/obj/item menu: Module 2 (refused: you don't have that ability)
+human|/obj/item menu: Module 3 (refused: you don't have that ability)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Pet
+human|/obj/item menu: Pick name (refused: you don't have that ability)
+human|/obj/item menu: Platform hand
+human|/obj/item menu: Platform item
+human|/obj/item menu: Pry the cover or a part (refused: hold Disarm)
+human|/obj/item menu: Pry the cover or a part (refused: hold Grab)
+human|/obj/item menu: Pry the cover or a part (refused: needs a crowbar)
+human|/obj/item menu: Punch (refused: combat mode is off)
+human|/obj/item menu: Purge nutrition (refused: you don't have that ability)
+human|/obj/item menu: Recolour module (refused: you don't have that ability)
+human|/obj/item menu: Regenerate other (refused: you don't have that ability)
+human|/obj/item menu: Robot mount/dismount (refused: you don't have that ability)
+human|/obj/item menu: Robot nom (refused: you don't have that ability)
+human|/obj/item menu: Shove (refused: hold Disarm)
+human|/obj/item menu: Shove with (refused: hold Disarm)
+human|/obj/item menu: Take hold (refused: hold Grab)
+human|/obj/item menu: Tap (refused: hold Disarm)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Toggle glowing stomach & accents (refused: you don't have that ability)
+human|/obj/item menu: Toggle lights (refused: you don't have that ability)
+human|/obj/item menu: Toggle pickup (refused: you don't have that ability)
+human|/obj/item menu: Toggle sensor augmentation (refused: you don't have that ability)
+human|/obj/item menu: Toggle VTEC (refused: you don't have that ability)
+human|/obj/item menu: Use
+human|/obj/item menu: Use on
+human|/obj/item menu: Weld the dents (refused: hold Disarm)
+human|/obj/item menu: Weld the dents (refused: hold Grab)
+human|/obj/item menu: Weld the dents (refused: needs a welder)
+human|/obj/item click: Click: Platform item
+wires: AI Control, Camera, Law Check, Lockdown
+keys: disarm, drag_buckle, emag, gen_drag_interaction_swallow, gen_hand_interaction_touch, gen_hand_ungated_robot_interaction_hand, gen_item_interaction_hit, gen_item_robot_interaction_item, gen_observer_platform_ghost_take_control, gen_robot_robot_drop_own_hat, gen_silicon_robot_ai_deploy_shell, grab, platform_drag, platform_hand, platform_item, platform_silicon_unload, robot_customize_appearance, robot_eject_cargo, robot_mount, robot_nom, robot_pick_name, robot_pick_shell, robot_pry_disarm, robot_pry_grab, robot_pry_help, robot_purge_nutrition, robot_recolour, robot_sensor_mode, robot_set_mail_tag, robot_spark_plug, robot_toggle_decals, robot_toggle_glowy_stomach, robot_toggle_grabbability, robot_toggle_lights, robot_toggle_module_1, robot_toggle_module_2, robot_toggle_module_3, robot_toggle_vtec, robot_weld_repair_disarm, robot_weld_repair_grab, robot_weld_repair_help, shadekin_clear_dark_maws, shadekin_create_shade, shadekin_dark_maw, shadekin_dark_respite, shadekin_dark_tunneling, shadekin_phase_shift, shadekin_regenerate_other, take_power_part
+

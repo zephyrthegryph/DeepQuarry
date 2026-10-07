@@ -285,10 +285,10 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 	return TRUE
 
 /// Old subtype attackby: part replacement first, then the appliance's own item handling.
-/obj/machinery/appliance/proc/appliance_interaction_part_replace(mob/user, obj/item/O, datum/interaction/interaction)
-	if(default_part_replacement(user, O))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/machinery/appliance/proc/appliance_interaction_part_replace(datum/act/op/A)
+	if(default_part_replacement(A.actor, A.held))
+		return OP_PASS
+	return OP_DECLINE
 
 /// Old attackby.
 /obj/machinery/appliance/proc/appliance_interaction_item(datum/act/op/A)

@@ -54,6 +54,11 @@ CAPABILITIES(/obj/machinery/disposal)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("disposal_insert", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_disposal_insert)))
+	op("disposal_drag_insert", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Insert"), then(PROC_REF(interaction_disposal_drag_insert)))
+	op("disposal_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_disposal_use)))
+	op("disposal_flush", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle flush"), then(PROC_REF(interaction_disposal_flush)))
+	op("disposal_force_eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Force Eject"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_disposal_force_eject)))
 
 // C11: one slot, accepting anything (any movable dropped, thrown or grabbed
 // into the bin before a flush). Drop policy is left to this type's own
@@ -171,22 +176,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	if(current_size >= STAGE_FIVE)
 		atom_deconstruct(TRUE)
 
-/obj/machinery/disposal/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/disposal_insert,
-		/datum/interaction/machine_drag/disposal_insert,
-		/datum/interaction/machine_hand/ungated/disposal_use,
-		/datum/interaction/machine_alt/disposal_flush,
-		/datum/interaction/machine_verb/disposal_force_eject,
-	)
-	..()
-
 // attack by item places it in to disposal
-/datum/interaction/machine_item/disposal_insert
-	id = "disposal_insert"
-	name = "Insert"
-	effect = /obj/machinery/disposal/proc/interaction_disposal_insert
-
 /datum/task/timed/disposal_dunk
 	duration = 2 SECONDS
 	complete_proc = /obj/machinery/disposal/proc/dunk_done
@@ -204,10 +194,15 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 	add_attack_logs(user,GM,"Disposals dunked")
 
-/obj/machinery/disposal/proc/interaction_disposal_insert(mob/user, obj/item/I, datum/interaction/interaction, drag_dropped = FALSE)
+/obj/machinery/disposal/proc/interaction_disposal_insert(datum/act/op/A)
+	disposal_insert(A.actor, A.held)
+	return OP_OK
+
+/// An item placed in the bin, by hand or dragged onto it (borgs may only drag).
+/obj/machinery/disposal/proc/disposal_insert(mob/user, obj/item/I, drag_dropped = FALSE)
 	wake_for_state_change()
 	if(broken_now() || !I || !user || !istype(I))
-		return TRUE
+		return
 
 	add_fingerprint(user)
 
@@ -217,7 +212,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		for(var/obj/item/O in T.slot_contents())
 			T.remove_from_storage(O,src)
 		update_icon()
-		return TRUE
+		return
 
 	if(istype(I, /obj/item/material/ashtray))
 		var/obj/item/material/ashtray/A = I
@@ -227,7 +222,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 				O.forceMove(src)
 			A.sync_butts()
 			update_icon()
-			return TRUE
+			return
 
 	var/obj/item/grab/G = I
 	if(istype(G))	// handle grabbed mob
@@ -236,12 +231,12 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 			for (var/mob/V in viewers(user))
 				act_message(V, user, MSG_SELF(3), MSG_OTHERS("%T% starts putting [GM.name] into the disposal."))
 			task_start(/datum/task/timed/disposal_dunk, user, src, receiver = src, GM = GM, G = G)
-		return TRUE
+		return
 
 	if(isrobot(user) && !drag_dropped) //Borgs are allowed to drag-drop items into the disposal unit.
-		return TRUE
+		return
 	if(!I || I.anchored || !I.canremove)
-		return TRUE
+		return
 
 	if(!drag_dropped)
 		user.drop_item()
@@ -258,13 +253,13 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 				MSG_OTHERS(span_danger("%U% tosses %T% into \the [src].")), \
 				MSG_BLIND(span_warning("Pr-Thunk")))
 			update_icon()
-			return TRUE
+			return
 
 		I.forceMove(src)
 
 	act_message(user, src, MSG_SELF("You place %I% into %T%."), MSG_OTHERS("%U% places %I% into %T%."), MSG_BLIND("Ca-Clunk"), item = I)
 	update_icon()
-	return TRUE
+	return
 
 /obj/machinery/disposal/proc/multitool_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -388,17 +383,14 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 // mouse drop another mob or self
 //
-/datum/interaction/machine_drag/disposal_insert
-	id = "disposal_drag_insert"
-	name = "Insert"
-	effect = /obj/machinery/disposal/proc/interaction_disposal_drag_insert
-
-/obj/machinery/disposal/proc/interaction_disposal_drag_insert(mob/user, atom/movable/dropping, datum/interaction/interaction)
+/obj/machinery/disposal/proc/interaction_disposal_drag_insert(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/dropping = A.held
 	if(isliving(dropping))
 		stuff_mob_in(dropping, user)
 	else if(Adjacent(user) && Adjacent(dropping) && isobj(dropping) && isturf(dropping.loc))
-		interaction_disposal_insert(user, dropping, null, drag_dropped = TRUE)
-	return TRUE
+		disposal_insert(user, dropping, drag_dropped = TRUE)
+	return OP_OK
 
 /obj/machinery/disposal/proc/stuff_mob_in(mob/living/target, mob/living/user)
 	//animals cannot put mobs other than themselves into disposal
@@ -458,19 +450,13 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	update_icon()
 */
 // human interact with machine
-/datum/interaction/machine_hand/ungated/disposal_use
-	id = "disposal_use"
-	name = "Use"
-	effect = /obj/machinery/disposal/proc/interaction_disposal_use
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/disposal/proc/controls_reachable))
-
-/// Requirement: the controls can't be worked from inside the bin.
-/obj/machinery/disposal/proc/controls_reachable(mob/user, atom/target, obj/item/held)
-	return user?.loc == src ? "you cannot reach the controls from inside" : TRUE
-
-/obj/machinery/disposal/proc/interaction_disposal_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/disposal/proc/interaction_disposal_use(datum/act/op/A)
+	var/mob/user = A.actor
+	if(user.loc == src) // the controls can't be worked from inside the bin
+		to_chat(user, span_warning("You cannot reach the controls from inside."))
+		return OP_DECLINE
 	if(broken_now())
-		return TRUE
+		return OP_OK
 
 	// Clumsy folks can only flush it.
 	if(user.IsAdvancedToolUser(1))
@@ -479,25 +465,21 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		flush = !flush
 		wake_for_state_change()
 		update_icon()
-	return TRUE
+	return OP_OK
 
 /// The old click_alt toggled flush, then (returning NONE) fell through to the alt-click loot panel either way.
-/datum/interaction/machine_alt/disposal_flush
-	id = "disposal_flush"
-	name = "Toggle flush"
-	consumes_input = FALSE
-	effect = /obj/machinery/disposal/proc/interaction_disposal_flush
-
-/obj/machinery/disposal/proc/interaction_disposal_flush(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/disposal/proc/interaction_disposal_flush(datum/act/op/A)
+	var/mob/user = A.actor
 	/*
 	if(user.canUseTopic) //Later...
 		return
 	*/
 	if(get_dist(user, src) > 1 || user.loc == src || user.stat) //Until the above exists...
-		return FALSE
+		return OP_DECLINE
 	flush = !flush
 	wake_for_state_change()
 	update_icon()
+	return OP_PASS
 
 // user interaction
 
@@ -575,17 +557,11 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 // eject the contents of the disposal unit
 
-/datum/interaction/machine_verb/disposal_force_eject
-	id = "disposal_force_eject"
-	name = "Force Eject"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/disposal/proc/interaction_disposal_force_eject
-
-/obj/machinery/disposal/proc/interaction_disposal_force_eject(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/disposal/proc/interaction_disposal_force_eject(datum/act/op/A)
 	if(flushing)
-		return TRUE
+		return OP_OK
 	eject()
-	return TRUE
+	return OP_OK
 
 /obj/machinery/disposal/proc/eject()
 	for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_DISPOSAL))

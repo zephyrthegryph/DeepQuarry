@@ -55,14 +55,25 @@
 /obj/item/clothing/mask/gas/sechailer/ui_action_click(mob/user, actiontype)
 	sechailer_halt_verb(user)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/sechailer, \
-	INTERACT_ALT("Select phrase", PROC_REF(sechailer_phrase_alt)), \
-	INTERACT_VERB("Select gas mask phrase", PROC_REF(sechailer_selectphrase_verb), REQ_IN_INVENTORY), \
-	INTERACT_VERB("HALT!", PROC_REF(sechailer_halt_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
+	op("sechailer_phrase_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Select phrase"), then(PROC_REF(sechailer_phrase_alt)))
+	op("sechailer_selectphrase_verb", menu(), label("Select gas mask phrase"), needs(carried()), then(PROC_REF(sechailer_selectphrase_verb_op)))
+	op("sechailer_halt_verb", menu(), label("HALT!"), needs(carried()), then(PROC_REF(sechailer_halt_verb_op)))
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+
+/// The sechailer_selectphrase_verb op: the verb's effect, as the old resolver ran it.
+/obj/item/clothing/mask/gas/sechailer/proc/sechailer_selectphrase_verb_op(datum/act/op/A)
+	sechailer_selectphrase_verb(A.actor, A.held, null)
+	return OP_OK
+
+/// The sechailer_halt_verb op: the verb's effect, as the old resolver ran it.
+/obj/item/clothing/mask/gas/sechailer/proc/sechailer_halt_verb_op(datum/act/op/A)
+	sechailer_halt_verb(A.actor, A.held, null)
+	return OP_OK
 
 /// Old click_alt. It never reached the clothing alt-click.
-/obj/item/clothing/mask/gas/sechailer/proc/sechailer_phrase_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/mask/gas/sechailer/proc/sechailer_phrase_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	sechailer_selectphrase_verb(user)
 	return TRUE
 
@@ -98,13 +109,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/sechailer, \
 			else
 				to_chat(user, span_notice("It's broken."))
 
-DECLARE_EMAG_REPEATABLE(/obj/item/clothing/mask/gas/sechailer, PROC_REF(on_emag), null)
-/obj/item/clothing/mask/gas/sechailer/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/item/clothing/mask/gas/sechailer/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(safety)
 		safety = 0
 		to_chat(user, span_warning("You silently fry [src]'s vocal circuit with the cryptographic sequencer."))
 	else
-		return
+		return OP_DECLINE
+	return OP_OK
 
 /obj/item/clothing/mask/gas/sechailer/screwdriver_act(mob/user, obj/item/tool)
 	switch(aggressiveness)

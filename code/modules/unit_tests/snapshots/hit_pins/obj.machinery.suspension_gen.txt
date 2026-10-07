@@ -1,0 +1,18 @@
+blob | survives
+emag | locked: 1 -> 0
+emp 1 | refresh_bits: 1 -> 0
+emp 1 | refresh_queued: 131071 -> 0
+emp 1 | turf: +/obj/effect/overlay x1
+emp 2 | turf: +/obj/effect/overlay x1
+explosion 1 | deleted
+explosion 1 | turf: +/obj/item/cell/high x1
+explosion 2 | atom_integrity: down
+explosion 2 | cap_data: null -> list(1)
+explosion 2 | ledger: null -> /datum/ledger
+explosion 3 | atom_integrity: down
+explosion 3 | ledger: null -> /datum/ledger
+projectile | atom_integrity: down
+projectile | ledger: null -> /datum/ledger
+thrown | atom_integrity: down
+thrown | ledger: null -> /datum/ledger
+
