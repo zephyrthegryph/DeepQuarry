@@ -161,6 +161,7 @@ impl StringIndex {
         };
         for (index, string) in dmb.strings.iter().enumerate() {
             let id = u32::try_from(index).map_err(|_| unsupported("string count overflow"))?;
+            if dm_link::is_reserved_string_index(id) { continue; }
             result
                 .buckets
                 .entry(xxhash_rust::xxh3::xxh3_128(&string.data))
@@ -177,6 +178,9 @@ impl StringIndex {
                     return Ok(id);
                 }
             }
+        }
+        while dm_link::is_reserved_string_index(u32::try_from(dmb.strings.len()).map_err(|_| unsupported("string count overflow"))?) {
+            dmb.strings.push(DmString { data:Vec::new(), long_chunks:0 });
         }
         let id =
             u32::try_from(dmb.strings.len()).map_err(|_| unsupported("string count overflow"))?;
@@ -479,6 +483,9 @@ fn compose_records(
         }
     }
     for (index, data) in strings {
+        while dmb.strings.len() < index as usize && dm_link::is_reserved_string_index(dmb.strings.len() as u32) {
+            dmb.strings.push(DmString { data:Vec::new(), long_chunks:0 });
+        }
         if index as usize != dmb.strings.len() {
             return Err(CompositionError::NonContiguous(
                 "string table indexes".into(),
@@ -776,7 +783,14 @@ fn compose_records(
             .proc_code_words(index)
             .ok_or_else(|| unsupported("missing procedure code"))?;
         let instructions = byond_dmb::bytecode::decode(words)
-            .map_err(|e| unsupported(format!("invalid composed bytecode {e:?}")))?;
+            .map_err(|e| {
+                let proc_record=&dmb.procs[index];
+                let path=dmb.string(proc_record.strings[0]).map(String::from_utf8_lossy);
+                let name=dmb.string(proc_record.strings[1]).map(String::from_utf8_lossy);
+                let start=e.offset.saturating_sub(4).min(words.len());
+                let end=e.offset.saturating_add(8).min(words.len());
+                unsupported(format!("invalid composed bytecode: proc={index}, path={path:?}, name={name:?}, error={e:?}, words[{start}..{end}]={:?}",&words[start..end]))
+            })?;
         for instruction in instructions {
             external |= matches!(instruction.name, "LoadExt" | "CallExt");
             debug |= matches!(instruction.name, "DbgFile" | "DbgLine");
@@ -845,6 +859,23 @@ fn emit_anonymous(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn writer_string_interning_preserves_reserved_holes_and_safe_field_decoding() {
+        let mut image=Dmb::from_bytes(include_bytes!("../../../fixtures/native_template.bin")).unwrap();
+        image.strings.resize(0xffcd, DmString {data:Vec::new(),long_chunks:0});
+        let mut pool=StringIndex::build(&image).unwrap();
+        let first=pool.intern(&mut image,b"field_after_modifiers").unwrap();
+        assert_eq!(first,0xfff2);
+        assert!(image.strings[0xffcd..=0xfff1].iter().all(|row| row.data.is_empty()));
+        assert_eq!(byond_dmb::operands::Variable::decode(&[first]).unwrap(),(byond_dmb::operands::Variable::Field(first),1));
+        image.strings.resize(0xffff,DmString {data:Vec::new(),long_chunks:0});
+        let second=pool.intern(&mut image,b"field_after_absent").unwrap();
+        assert_eq!(second,0x10000);
+        assert!(image.strings[0xffff].data.is_empty());
+        assert_eq!(byond_dmb::operands::Variable::decode(&[second]).unwrap(),(byond_dmb::operands::Variable::Field(second),1));
+        let rebuilt=StringIndex::build(&image).unwrap();
+        assert!(!rebuilt.buckets.values().flatten().any(|id|dm_link::is_reserved_string_index(*id)));
+    }
     #[test]
     fn map_initializer_attachment_coverage_uses_exact_index_and_domain() {
         let mut image = Dmb::from_bytes(include_bytes!("../../../fixtures/native_template.bin")).unwrap();

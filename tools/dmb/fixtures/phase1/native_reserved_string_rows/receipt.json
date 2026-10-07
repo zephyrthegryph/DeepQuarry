@@ -1,0 +1,237 @@
+{
+  "string_count": 312082,
+  "dmb_sha256": "8ff8911a26547da3e2cb49daa185b45cc723b4fc2f73d4cbc48efa43f20e5775",
+  "schema": "native-reserved-string-row-observations-v1",
+  "limitation": "Inspector stdout is presented text, not an exact raw string-byte dump; no blank-gap proof inferred. Reserved selector allocation and literal physical-string storage are distinct.",
+  "inspector_sha256": "ae3659b4697f970e8d92a0d8556df3db1247fa4501851a833885de3e35608f45",
+  "rows": [
+    {
+      "exit_code": 0,
+      "hex": "0xffcd",
+      "inspector_stdout": "hair_afropuffleft",
+      "id": 65485
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffce",
+      "inspector_stdout": "Angelique",
+      "id": 65486
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffcf",
+      "inspector_stdout": "hair_angelique",
+      "id": 65487
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffd0",
+      "inspector_stdout": "Antonio",
+      "id": 65488
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffd1",
+      "inspector_stdout": "hair_antonio",
+      "id": 65489
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffd2",
+      "inspector_stdout": "All Up",
+      "id": 65490
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffd3",
+      "inspector_stdout": "hair_messyhair",
+      "id": 65491
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffd4",
+      "inspector_stdout": "hair_amazon",
+      "id": 65492
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffd5",
+      "inspector_stdout": "Astolfo",
+      "id": 65493
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffd6",
+      "inspector_stdout": "hair_astolfo",
+      "id": 65494
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffd7",
+      "inspector_stdout": "Average Joe",
+      "id": 65495
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffd8",
+      "inspector_stdout": "hair_averagejoe",
+      "id": 65496
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffd9",
+      "inspector_stdout": "bald",
+      "id": 65497
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffda",
+      "inspector_stdout": "Balding Fade",
+      "id": 65498
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffdb",
+      "inspector_stdout": "hair_baldfade",
+      "id": 65499
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffdc",
+      "inspector_stdout": "hair_e",
+      "id": 65500
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffdd",
+      "inspector_stdout": "Beach Waves",
+      "id": 65501
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffde",
+      "inspector_stdout": "hair_beachwave",
+      "id": 65502
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffdf",
+      "inspector_stdout": "Bedhead",
+      "id": 65503
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffe0",
+      "inspector_stdout": "hair_bedhead",
+      "id": 65504
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffe1",
+      "inspector_stdout": "Bedhead 2",
+      "id": 65505
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffe2",
+      "inspector_stdout": "hair_bedheadv2",
+      "id": 65506
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffe3",
+      "inspector_stdout": "Bedhead 3",
+      "id": 65507
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffe4",
+      "inspector_stdout": "hair_bedheadv3",
+      "id": 65508
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffe5",
+      "inspector_stdout": "Beehive 2",
+      "id": 65509
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffe6",
+      "inspector_stdout": "hair_beehive2",
+      "id": 65510
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffe7",
+      "inspector_stdout": "Bob",
+      "id": 65511
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffe8",
+      "inspector_stdout": "hair_bobcut",
+      "id": 65512
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffe9",
+      "inspector_stdout": "Bob Chin Length",
+      "id": 65513
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffea",
+      "inspector_stdout": "hair_bobcutalt",
+      "id": 65514
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffeb",
+      "inspector_stdout": "Bobcurl",
+      "id": 65515
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffec",
+      "inspector_stdout": "hair_bobcurl",
+      "id": 65516
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffed",
+      "inspector_stdout": "Bobcut Over Eye",
+      "id": 65517
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffee",
+      "inspector_stdout": "hair_bobcutovereye1",
+      "id": 65518
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffef",
+      "inspector_stdout": "Bobcut Over Eye 2",
+      "id": 65519
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xfff0",
+      "inspector_stdout": "hair_bobcutovereye2",
+      "id": 65520
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xfff1",
+      "inspector_stdout": "Bobcut Over Eye 3",
+      "id": 65521
+    },
+    {
+      "exit_code": 0,
+      "hex": "0xffff",
+      "inspector_stdout": "",
+      "id": 65535
+    }
+  ]
+}

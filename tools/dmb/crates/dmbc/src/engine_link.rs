@@ -39,6 +39,7 @@ pub fn capture(bytes: &[u8], engine: &EngineSnapshot) -> Result<EngineLinkFacts,
     let mut indexes = BTreeMap::new();
     let mut references = ReferenceBindings::default();
     for (index, string) in dmb.strings.iter().enumerate() {
+        if dm_link::is_reserved_string_index(index as u32) { continue; }
         let bytes = string.data.as_slice();
         let id = SymbolId::of_bytes(bytes);
         inventory.spellings.push((id, Arc::from(bytes)));

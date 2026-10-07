@@ -11,6 +11,11 @@ allocator can assign a field selector to reserved VM modifier IDs, unlike the
 reference writer. The allocator/materializer correction is under implementation;
 decoder validation remains strict. External time was 31.628 s, sampled private
 memory 3,116,548,096 bytes. No output pair was produced.
+The canonical allocator and writer now reserve the modifier/sentinel IDs for
+new strings, using the reference writer's conservative policy. Allocation across
+65,540 entries and writer/field-decoder boundary checks pass. Captured native
+rows are nonempty ordinary text, so these padding holes describe our safe
+allocation policy, not native table occupancy or exact allocation parity.
 Release probe 36 names the remaining parent-ABI blocker: the authored root type
 `/procpath`, canonical index 28, has semantic parent `/`. External time was
 29.691 s, sampled private memory 3,069,820,928 bytes. Initializers, all bodies and

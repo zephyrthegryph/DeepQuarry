@@ -5,6 +5,11 @@ use std::{
     sync::Arc,
 };
 
+/// String slots sharing the native variable-modifier/sentinel word space.
+pub fn is_reserved_string_index(index: u32) -> bool {
+    (0xffcd..=0xfff1).contains(&index) || index == 0xffff
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Table {
     String,
@@ -202,6 +207,9 @@ impl LinkTables {
         let mut indexes = BTreeMap::new();
         let mut occupied: BTreeMap<Table, BTreeSet<u32>> = BTreeMap::new();
         for (key, index) in inventory.fixed {
+            if key.table() == Table::String && is_reserved_string_index(index) {
+                return Err(LinkError::ReservedIndex(Table::String, index));
+            }
             if !content.contains_key(&key) {
                 return Err(LinkError::UnknownKey(key));
             }
@@ -253,8 +261,15 @@ impl LinkTables {
                 if seen.len() != keys.len() {
                     return Err(LinkError::IncompleteOrder(table));
                 }
-                for (i, key) in order.iter().enumerate() {
-                    let index = u32::try_from(i).map_err(|_| LinkError::IndexOverflow(table))?;
+                let mut next = 0u64;
+                for key in order {
+                    while table == Table::String
+                        && u32::try_from(next).is_ok_and(is_reserved_string_index)
+                    {
+                        next += 1;
+                    }
+                    let index = u32::try_from(next).map_err(|_| LinkError::IndexOverflow(table))?;
+                    next += 1;
                     if indexes.get(key).is_some_and(|fixed| *fixed != index) {
                         return Err(LinkError::OrderConflictsFixed(*key));
                     }
@@ -304,6 +319,11 @@ impl LinkTables {
                     fresh.as_slice()
                 };
                 for &key in allocation {
+                    while table == Table::String
+                        && u32::try_from(next).is_ok_and(is_reserved_string_index)
+                    {
+                        next += 1;
+                    }
                     let index = u32::try_from(next).map_err(|_| LinkError::IndexOverflow(table))?;
                     indexes.insert(key, index);
                     next += 1;
@@ -606,6 +626,52 @@ mod tests {
                 name: SymbolId::of("vars")
             }
             .table()
+        );
+    }
+
+    #[test]
+    fn string_allocation_skips_modifier_and_absent_slots_in_both_order_modes() {
+        let count = 65540usize;
+        let mut inventory = LinkInventory::default();
+        let mut order = Vec::new();
+        for ordinal in 0..count {
+            let text = format!("field_{ordinal}");
+            let id = SymbolId::of(&text);
+            let bytes: Arc<[u8]> = Arc::from(text.as_bytes());
+            inventory.spellings.push((id, Arc::clone(&bytes)));
+            inventory.entries.push(Entry {
+                key: Key::String(id),
+                content: bytes,
+            });
+            order.push(Key::String(id));
+        }
+        for explicit in [false, true] {
+            let mut input = inventory.clone();
+            if explicit {
+                input.orders.insert(Table::String, order.clone());
+            } else {
+                input.append_orders.insert(Table::String, order.clone());
+            }
+            let tables = LinkTables::build(input).unwrap();
+            let mut next = 0u32;
+            for key in &order {
+                while is_reserved_string_index(next) {
+                    next += 1;
+                }
+                assert_eq!(tables.index(*key), Some(next));
+                assert!(!is_reserved_string_index(next));
+                next += 1;
+            }
+            assert!(next > 0x10000);
+        }
+        let mut invalid = LinkInventory::default();
+        let entry = inventory.entries[0].clone();
+        invalid.spellings.push(inventory.spellings[0].clone());
+        invalid.fixed.push((entry.key, 0xffe9));
+        invalid.entries.push(entry);
+        assert_eq!(
+            LinkTables::build(invalid).unwrap_err(),
+            LinkError::ReservedIndex(Table::String, 0xffe9)
         );
     }
 
