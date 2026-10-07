@@ -112,6 +112,6 @@ CAPABILITIES(/obj/item/modular_computer)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(computer_emp_damage)))
 
 
-/// Whether the computer is turned on. periodic_step() runs its programs while it is (DECLARE_PERIODIC_WHILE).
+/// Whether the computer is turned on. its every() runs its programs while it is.
 /obj/item/modular_computer/var/enabled = FALSE
 TRACKED(/obj/item/modular_computer, enabled)

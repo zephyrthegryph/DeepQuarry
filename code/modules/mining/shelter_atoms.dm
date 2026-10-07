@@ -410,17 +410,14 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	if(length(temp_info))
 		. += temp_info
 
-MSG_DEF_SELF(survivalcapsule/vr, "it doesn't work in VR")
-
 CAPABILITIES(/obj/item/survivalcapsule)
-	op("deploy", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Deploy"), needs(req(PROC_REF(not_in_vr), because = MSG(survivalcapsule/vr))), then(PROC_REF(survivalcapsule_deploy)))
+	op("deploy", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Deploy"), then(PROC_REF(survivalcapsule_deploy)))
 
-/// Requirement: the actor is not in a VR simulation.
-/obj/item/survivalcapsule/proc/not_in_vr(datum/act/op/A)
-	return !istype(get_area(A.actor), /area/vr)
-
-/// Old attack_self: deploy the shelter (survivalcapsule_self() asks its questions by re-running itself with the same arguments).
+/// Old attack_self: deploy the shelter (survivalcapsule_self() asks its questions by re-running itself with the same arguments). It does not work in VR.
 /obj/item/survivalcapsule/proc/survivalcapsule_deploy(datum/act/op/A)
+	if(istype(get_area(A.actor), /area/vr))
+		to_chat(A.actor, span_warning("It doesn't work in VR."))
+		return OP_OK
 	survivalcapsule_self(A.actor, A.held)
 	return OP_OK
 
