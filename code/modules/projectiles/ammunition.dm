@@ -181,7 +181,7 @@ CAPABILITIES(/obj/item/ammo_magazine)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
 	op("load", item(/obj/item), label("Load"), then(PROC_REF(magazine_interaction_item)))
 	op("empty", in_hand(), label("Empty"), then(PROC_REF(magazine_interaction_self)))
-	op("hand", hand(), ungated(), then(PROC_REF(magazine_interaction_hand)))
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(magazine_interaction_hand)))
 
 /// The construction material a lathe forged the magazine from (its constructor param), or null.
 /obj/item/ammo_magazine/var/forge_material

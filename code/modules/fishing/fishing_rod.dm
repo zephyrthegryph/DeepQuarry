@@ -52,7 +52,7 @@ TRACKED(/obj/item/material/fishing_rod, strung)
 	to_chat(user, span_notice("You string \the [src]!"))
 
 CAPABILITIES(/obj/item/material/fishing_rod)
-	op("fishing_rod_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Fishing rod item"), then(PROC_REF(fishing_rod_item)))
+	op("fishing_rod_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(fishing_rod_item)))
 
 /// Old attackby: string the rod or swap its bait; bait falls through as its ..() did.
 /obj/item/material/fishing_rod/proc/fishing_rod_item(datum/act/op/A)

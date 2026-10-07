@@ -574,6 +574,6 @@ CAPABILITIES(/obj/structure/hyperball_goal)
 
 CAPABILITIES(/obj/structure/redgate)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
-	op("hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), label("Use"), ungated(), then(PROC_REF(interaction_hand)))
 	op("redgate_ghost_travel", observer(), label("Travel"), then(PROC_REF(redgate_ghost_travel)))
 	links(/obj/structure/redgate::target, /obj/structure/redgate::target)

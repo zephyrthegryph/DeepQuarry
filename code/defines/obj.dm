@@ -6,7 +6,7 @@
 
 /// A hand or an item (the old attackby sent it to attack_hand) asks whether to travel back.
 CAPABILITIES(/obj/structure/signpost)
-	op("hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "Travel back to ss13?", "title" = "Return?", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "k11"), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), label("Use"), ungated(), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "Travel back to ss13?", "title" = "Return?", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "k11"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), asks(/datum/prompt/choice, fields = list("question" = "Travel back to ss13?", "title" = "Return?", "choices" = list("Yes", "No"), "buttons" = TRUE, "timeout" = 0), step = "k11"), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand (and attackby, which forwarded to it).

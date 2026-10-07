@@ -34,7 +34,7 @@ TRACKED(/obj/structure/panic_button, launched)
 
 CAPABILITIES(/obj/structure/panic_button)
 	op("smash", hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Smash the glass"), then(PROC_REF(interaction_smash)))
-	op("hand", hand(), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), label("Use"), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand with a harmful stance.
 /obj/structure/panic_button/proc/interaction_smash(datum/act/op/A)

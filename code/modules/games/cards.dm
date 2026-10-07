@@ -12,7 +12,7 @@
 CAPABILITIES(/obj/item/deck)
 	owns_many(nameof(cards))
 	drag_onto(PROC_REF(mousedrop_input))
-	op("hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), label("Use"), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_hand)))
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_alt)))
