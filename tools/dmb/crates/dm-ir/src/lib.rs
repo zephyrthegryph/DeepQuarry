@@ -25,6 +25,8 @@ pub use procedure_static::{ProcedureIdentity, ProcedureStaticDeclaration, Proced
 
 mod resolver;
 pub use resolver::{ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};
+mod memo_resolver;
+pub use memo_resolver::{MemoResolver, MemoStats};
 
 mod symbolic;
 pub use symbolic::{

@@ -287,9 +287,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("native cold {:?}: {:.3}s success={:?}", measurement.stage,
                 measurement.elapsed.as_secs_f64(), measurement.succeeded);
         };
+        // One immutable captured host for this compile. Consumer read recording
+        // remains outside this optimization, including on memo hits.
+        let compilation_resolver = dm_ir::MemoResolver::new(&nontext.resolver, 65_536);
         let compile_result = dmbc::compile_driver::compile_observed(
             &frontend,
-            &nontext.resolver,
+            &compilation_resolver,
             engine,
             bytes,
             links,
@@ -300,6 +303,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             workers,
             progress_enabled.then_some(&cold_observer),
         );
+        if progress_enabled {
+            eprintln!("native resolver memo: {:?}", compilation_resolver.stats());
+        }
         if progress_enabled && compile_result.is_err() {
             eprintln!("native failed stages: input_preparation={:.3}s frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s total={:.3}s",
                 input_preparation_seconds, frontend.timings.total.as_secs_f64(), facts_seconds, nontext_seconds,

@@ -8,6 +8,7 @@ use dm_tree::{
     frontend::ColdFrontend,
     initializers::{InitializerOriginKind, InitializerPlan},
 };
+use std::{collections::HashMap, path::Path};
 
 #[derive(Debug)]
 pub enum InitializerLoweringError {
@@ -47,6 +48,33 @@ pub fn map_captured_lower_errors(
     plan: &InitializerPlan,
     write_ordinals: &[usize],
 ) -> Result<Vec<LoweringDiagnostic>, InitializerLoweringError> {
+    // One borrowed reverse index per batch. Buckets retain expansion encounter
+    // order, including multiple macro projections of the same physical span.
+    type ProjectionKey<'a> = (&'a Path, usize, usize, usize);
+    let mut projections: HashMap<ProjectionKey<'_>, (_, Vec<_>)> = HashMap::new();
+    let mut definition_files = HashMap::new();
+    if !errors.is_empty() {
+        for expanded in &frontend.expanded.origins {
+            let key = (
+                expanded.origin.path.as_path(),
+                frontend.plan.regions[expanded.region].occurrence,
+                expanded.source_span.start,
+                expanded.source_span.end,
+            );
+            match projections.entry(key) {
+                std::collections::hash_map::Entry::Vacant(entry) => {
+                    entry.insert((expanded, Vec::new()));
+                }
+                std::collections::hash_map::Entry::Occupied(mut entry) => {
+                    entry.get_mut().1.push(expanded);
+                }
+            }
+        }
+        for file in frontend.files.iter() {
+            // Match the former linear lookup's first-file behavior exactly.
+            definition_files.entry(file.path.as_path()).or_insert(file.id);
+        }
+    }
     errors
         .into_iter()
         .map(|error| {
@@ -81,27 +109,21 @@ pub fn map_captured_lower_errors(
                                 "initializer source file absent".into(),
                             )
                         })?;
-                    frontend.expanded.origins.iter().find_map(|expanded| {
-                        if expanded.source_span.start != origin.provenance.span.start as usize
-                            || expanded.source_span.end != origin.provenance.span.end as usize
-                            || expanded.origin.path.as_ref() != source.path.as_ref()
-                            || frontend.plan.regions[expanded.region].occurrence
-                                != origin.provenance.include_occurrence as usize
-                        {
-                            return None;
-                        }
+                    projections.get(&(
+                        source.path.as_path(),
+                        origin.provenance.include_occurrence as usize,
+                        origin.provenance.span.start as usize,
+                        origin.provenance.span.end as usize,
+                    )).into_iter().flat_map(|(first, rest)| std::iter::once(*first).chain(rest.iter().copied())).find_map(|expanded| {
                         let location = frontend.location(expanded.output_span.start)?;
                         let definitions = location
                             .macro_expansions
                             .iter()
                             .filter_map(|expansion| expansion.definition.as_ref())
                             .filter_map(|definition| {
-                                let file = frontend
-                                    .files
-                                    .iter()
-                                    .find(|file| file.path.as_ref() == definition.path.as_ref())?;
+                                let file = *definition_files.get(definition.path.as_path())?;
                                 dm_ir::Span::new(
-                                    file.id,
+                                    file,
                                     u32::try_from(definition.source_span.start).ok()?,
                                     u32::try_from(definition.source_span.end).ok()?,
                                 )
@@ -256,5 +278,41 @@ mod tests {
             ),
             Err(InitializerLoweringError::Invariant(_))
         ));
+    }
+    #[test]
+    fn large_captured_error_batch_preserves_two_file_order_and_macro_frames() {
+        struct Sources;
+        impl dm_preprocess::SourceProvider for Sources {
+            fn read(&self, path: &std::path::Path) -> Result<String, String> {
+                match path.file_name().and_then(|name| name.to_str()) {
+                    Some("project.dme") => Ok("#include \"first.dm\"\n#include \"second.dm\"\n".into()),
+                    Some(name @ ("first.dm" | "second.dm")) => {
+                        let prefix = if name == "first.dm" { "first" } else { "second" };
+                        let mut text = "#define VALUE 7\n".to_owned();
+                        for index in 0..64 { text.push_str(&format!("var/{prefix}_{index} = VALUE\n")); }
+                        Ok(text)
+                    }
+                    _ => Err("unexpected fixture source".into()),
+                }
+            }
+        }
+        let frontend = dm_tree::frontend::build(std::path::Path::new("project.dme"), &Sources, &Default::default(), 2).unwrap();
+        let startup = crate::startup::capture(&frontend).unwrap();
+        assert_eq!(startup.plan().writes.len(), 128);
+        let ordinals = (0..128).collect::<Vec<_>>();
+        let errors = (0..16384).map(|index| LowerError {
+            reason: format!("boundary {index}"),
+            span: Some(LowerSpan { start: 127 - index % 128, end: 127 - index % 128 }),
+            ..Default::default()
+        }).collect();
+        let diagnostics = map_captured_lower_errors(errors, &frontend, startup.plan(), &ordinals).unwrap();
+        assert_eq!(diagnostics.len(), 16384);
+        for (index, diagnostic) in diagnostics.iter().enumerate() {
+            let ordinal = 127 - index % 128;
+            assert!(diagnostic.origin.semantic_path.ends_with(if ordinal < 64 { "first.dm" } else { "second.dm" }));
+            assert_eq!(diagnostic.origin.line, ordinal % 64 + 2);
+            assert_eq!(diagnostic.message, format!("boundary {index}"));
+            assert!(!diagnostic.origin.macro_expansions.is_empty());
+        }
     }
 }

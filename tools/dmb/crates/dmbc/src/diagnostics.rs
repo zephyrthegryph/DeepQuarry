@@ -8,15 +8,16 @@ use std::io::{self, Write};
 /// Unsupported native semantics and compiler faults remain visibly distinct
 /// from errors in the user's source, even when they carry a source location.
 pub fn write_diagnostics(output: &mut impl Write, diagnostics: &[Diagnostic]) -> io::Result<()> {
+    let mut output = io::BufWriter::with_capacity(64 * 1024, output);
     for diagnostic in diagnostics {
         write_one(
-            output,
+            &mut output,
             diagnostic.kind,
             diagnostic.location.as_ref(),
             &diagnostic.message,
         )?;
     }
-    Ok(())
+    output.flush()
 }
 
 /// Lowering already returns diagnostics in authored encounter order. Present
@@ -25,15 +26,16 @@ pub fn write_lowering_diagnostics(
     output: &mut impl Write,
     diagnostics: &[crate::lowering::LoweringDiagnostic],
 ) -> io::Result<()> {
+    let mut output = io::BufWriter::with_capacity(64 * 1024, output);
     for diagnostic in diagnostics {
         write_one(
-            output,
+            &mut output,
             diagnostic.kind,
             Some(&diagnostic.origin),
             &diagnostic.message,
         )?;
     }
-    Ok(())
+    output.flush()
 }
 
 fn write_one(
