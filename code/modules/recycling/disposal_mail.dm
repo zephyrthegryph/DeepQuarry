@@ -34,6 +34,10 @@ CAPABILITIES(/obj/structure/bigDelivery)
 	if(loc?.release_refusal(src))
 		return
 	play_sfx(src, SFX_ITEMS_PACKAGE_UNWRAP)
+	// Teardown spills the wrapped object onto the turf before on_destroy() runs (the relation is gone by then), so unseal it first.
+	var/obj/structure/closet/sealed = wrapped()
+	if(istype(sealed))
+		set_welded(sealed, FALSE)
 	// Teardown drops our wrapped object on the turf, so let it.
 	consume(src)
 
