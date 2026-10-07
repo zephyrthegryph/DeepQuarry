@@ -10,6 +10,7 @@ pub struct CapturedNonText {
     pub maps: Arc<[MapPlan]>,
     pub skins: Arc<[CapturedSkin]>,
     pub assets: crate::assets::ExtraAssets,
+    pub skin: crate::skin::Plan,
 }
 #[derive(Debug)]
 pub enum Error {
@@ -20,6 +21,7 @@ pub enum Error {
         diagnostic: dm_tree::maps::MapDiagnostic,
     },
     Assets(dm_resources::capture::CaptureError),
+    Skin(String),
 }
 /// Map/skin files are read once by dm-tree capture. Repeated same-path includes
 /// reuse their exact parsed model and source Arc while retaining include IDs.
@@ -66,11 +68,13 @@ pub fn capture<P: dm_preprocess::SourceProvider>(
     }
     let assets = crate::assets::discover_extra(&frontend.plan.project_dir, &maps, &skins)
         .map_err(Error::Assets)?;
+    let skin = crate::skin::plan(frontend, &skins).map_err(Error::Skin)?;
     Ok(CapturedNonText {
         inputs,
         maps: maps.into(),
         skins: skins.into(),
         assets,
+        skin,
     })
 }
 

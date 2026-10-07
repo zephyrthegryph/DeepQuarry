@@ -1,0 +1,10 @@
+{
+  "compiler": "D:/Program Files (x86)/BYOND516/bin/dm.exe",
+  "pid": 40084,
+  "compiler_sha256": "8CAC7E8BD48219F8A7FB622535A1CE1A914D0A9A3E909BC9CEB84B3074709DC0",
+  "input_sha256": "0D4AD10ED1045158CBBD63E0806A5E0F65C64EE9A46601CF39351300D9F6F044",
+  "args": [
+    "control.dme"
+  ],
+  "exit_code": 0
+}

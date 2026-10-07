@@ -14,6 +14,7 @@ pub struct CapturedOutputStage<'a> {
     pub map: Option<&'a Projection>,
     pub descriptors: Option<&'a DescriptorPlan>,
     pub resources: &'a ResourceProjection,
+    pub skin: Option<&'a crate::skin::Plan>,
 }
 impl crate::composition::NonTextOutputStage for CapturedOutputStage<'_> {
     fn validate_source(&self, frontend: &ColdFrontend) -> Result<(), String> {
@@ -28,11 +29,25 @@ impl crate::composition::NonTextOutputStage for CapturedOutputStage<'_> {
             if let dm_preprocess::regions::OrderedItem::NonText { occurrence, kind } = *item {
                 match kind {
                     dm_preprocess::regions::NonTextKind::Map => included.push(occurrence),
-                    dm_preprocess::regions::NonTextKind::Skin => {
-                        return Err("skin header/script projection is not implemented".into())
-                    }
+                    dm_preprocess::regions::NonTextKind::Skin => {}
                 }
             }
+        }
+        let expected_skin_count = frontend
+            .plan
+            .non_text(dm_preprocess::regions::NonTextKind::Skin)
+            .count();
+        match self.skin {
+            Some(skin) => {
+                let expected = crate::skin::plan(frontend, &skin.sources)?;
+                if expected.model != skin.model {
+                    return Err("skin projection source identity mismatch".into());
+                }
+            }
+            None if expected_skin_count != 0 => {
+                return Err("included skin output projection absent".into())
+            }
+            None => (),
         }
         if included.len() != self.maps.len() {
             return Err("nontext map occurrence coverage mismatch".into());
@@ -71,6 +86,9 @@ impl crate::composition::NonTextOutputStage for CapturedOutputStage<'_> {
     ) -> Result<BTreeSet<Key>, String> {
         assets::attach_resources(dmb, self.resources, &batch.tables)
             .map_err(|error| format!("resource composition: {error:?}"))?;
+        if let Some(skin) = self.skin {
+            crate::skin::attach(dmb, skin, self.resources, &batch.tables)?;
+        }
         let mut covered = self
             .resources
             .inventory

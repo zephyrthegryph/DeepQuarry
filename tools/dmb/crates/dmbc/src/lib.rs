@@ -44,3 +44,6 @@ pub mod non_text;
 pub mod non_text_output;
 
 pub mod resource_order;
+
+pub mod skin;
+pub mod captured_non_text_driver;

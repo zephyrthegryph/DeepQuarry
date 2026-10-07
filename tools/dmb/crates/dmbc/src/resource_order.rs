@@ -1,7 +1,7 @@
 //! Native import-phase ordering over pre-normalization grammar facts.
 //! Draft: must pass the distinguishing native corpus before production admission.
 use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver, SymbolId, SymbolTable};
-use dm_tree::allocation_ledger::{AllocationKind, AllocationLedger};
+use dm_tree::allocation_ledger::{AllocationKind, AllocationLedger, NamespaceKind};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 #[derive(Clone, Debug)]
@@ -154,6 +154,18 @@ pub fn collect<R: Resolver>(
             &mut roots,
         )?;
         let phase = match event.kind {
+            AllocationKind::Namespace {
+                kind: NamespaceKind::Var,
+                ..
+            } => Some(GroupKey::Vars(owner)),
+            AllocationKind::Namespace {
+                kind: NamespaceKind::Proc,
+                ..
+            } => Some(GroupKey::Procs(owner)),
+            AllocationKind::Namespace {
+                kind: NamespaceKind::Verb,
+                ..
+            } => Some(GroupKey::Verbs(owner)),
             AllocationKind::Field {
                 formal: true,
                 var_namespace: true,
@@ -279,6 +291,185 @@ pub fn collect<R: Resolver>(
     Ok(result)
 }
 
+/// Derive code literal phases from the captured expanded grammar, resolving
+/// aliases only through the already captured lookup ledger. Non-code imports
+/// remain explicit until their DMS/skin/map phase contracts are admitted.
+pub fn captured_archive_order<R: Resolver>(
+    frontend: &dm_tree::frontend::ColdFrontend,
+    captured: &dm_resources::capture::CapturedResources,
+    resolver: &R,
+    known_roots: &BTreeSet<SymbolId>,
+    prefix_imports: &[Arc<str>],
+    suffix_imports: &[Arc<str>],
+) -> Result<Vec<usize>, String> {
+    use dm_resources::native_resolver::CapturedResourceOutcome;
+    let mut lookups = BTreeMap::new();
+    for lookup in &captured.lookups {
+        if lookups
+            .insert(lookup.path.as_str(), lookup.outcome)
+            .is_some()
+        {
+            return Err("duplicate captured resource lookup path".into());
+        }
+    }
+    let mut uses = Vec::new();
+    for (event, allocation) in frontend.allocation_ledger.events.iter().enumerate() {
+        let span = match allocation.kind {
+            AllocationKind::Field { initializer, .. } => initializer,
+            AllocationKind::Procedure { body, .. } => Some(body),
+            _ => None,
+        };
+        let Some(span) = span else { continue };
+        let source = frontend
+            .expanded
+            .text
+            .get(span.range())
+            .ok_or("allocation resource span outside captured expanded source")?;
+        for literal in
+            dm_resources::capture::discover_literals(source).map_err(|error| error.to_string())?
+        {
+            match lookups.get(literal.path.as_str()) {
+                Some(CapturedResourceOutcome::Found(ordinal)) => {
+                    let input = captured
+                        .resources
+                        .inputs
+                        .get(*ordinal)
+                        .ok_or("captured resource lookup ordinal outside resources")?;
+                    uses.push(ResourceUse {
+                        event,
+                        alias: input.archive_name.clone().into(),
+                    });
+                }
+                Some(CapturedResourceOutcome::Missing) => {}
+                Some(CapturedResourceOutcome::Unsupported) => {
+                    return Err("resource phase requires unsupported captured literal".into())
+                }
+                None => {
+                    return Err(format!(
+                        "resource phase literal has no captured lookup: {}",
+                        literal.path
+                    ))
+                }
+            }
+        }
+    }
+    let aliases = collect(
+        &frontend.allocation_ledger,
+        &uses,
+        frontend.snapshot.tree.symbols(),
+        resolver,
+        known_roots,
+        prefix_imports,
+        suffix_imports,
+    )?;
+    let mut ordinals = BTreeMap::new();
+    for (ordinal, input) in captured.resources.inputs.iter().enumerate() {
+        if ordinals
+            .insert(input.archive_name.as_str(), ordinal)
+            .is_some()
+        {
+            return Err("duplicate archive alias in captured resource inputs".into());
+        }
+    }
+    let result = aliases
+        .iter()
+        .map(|alias| {
+            ordinals
+                .get(alias.as_ref())
+                .copied()
+                .ok_or_else(|| format!("resource phase alias absent from captured input: {alias}"))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    if result.len() != captured.resources.inputs.len() {
+        return Err("resource phase grammar does not cover every captured archive input".into());
+    }
+    Ok(result)
+}
+
+/// Certified single-DMF imports precede code, with skin assets before the raw
+/// DMF. Map literals follow code in captured template/atom/assignment order.
+/// Multiple skin import phasing remains unsupported; selection itself is known.
+pub fn nontext_imports(
+    nontext: &crate::non_text::CapturedNonText,
+    captured: &dm_resources::capture::CapturedResources,
+) -> Result<(Vec<Arc<str>>, Vec<Arc<str>>), String> {
+    use dm_resources::native_resolver::CapturedResourceOutcome;
+    if nontext.skin.model.interfaces.len() > 1 {
+        return Err("multiple DMF resource import phases require a distinguishing contract".into());
+    }
+    let lookup = |path: &str| -> Result<Option<Arc<str>>, String> {
+        let found = captured
+            .lookups
+            .iter()
+            .find(|entry| entry.path == path)
+            .ok_or_else(|| format!("nontext resource has no captured lookup: {path}"))?;
+        match found.outcome {
+            CapturedResourceOutcome::Found(ordinal) => Ok(Some(
+                captured
+                    .resources
+                    .inputs
+                    .get(ordinal)
+                    .ok_or("nontext resource lookup ordinal outside captured inputs")?
+                    .archive_name
+                    .clone()
+                    .into(),
+            )),
+            CapturedResourceOutcome::Missing => Ok(None),
+            CapturedResourceOutcome::Unsupported => {
+                Err("nontext resource import is unsupported".into())
+            }
+        }
+    };
+    let mut prefix = Vec::new();
+    if let Some(skin) = nontext.skin.model.selected() {
+        for dependency in skin.resource_dependencies.iter() {
+            // Lookups retain authored spelling; normalized dependency spellings
+            // are equivalent only when the exact captured request agrees.
+            let alias = captured
+                .lookups
+                .iter()
+                .find(|entry| entry.path.replace('\\', "/") == dependency.as_ref())
+                .ok_or_else(|| {
+                    format!("skin dependency absent from captured lookup: {dependency}")
+                })?;
+            if let Some(alias) = lookup(&alias.path)? {
+                prefix.push(alias);
+            }
+        }
+        if !captured
+            .resources
+            .inputs
+            .iter()
+            .any(|input| input.archive_name == skin.archive_alias.as_ref())
+        {
+            return Err("selected skin raw resource absent from capture".into());
+        }
+        prefix.push(skin.archive_alias.clone());
+    }
+    let mut suffix = Vec::new();
+    for map in nontext.maps.iter() {
+        for template in map.template_origins.iter() {
+            for atom in template.atoms.iter() {
+                for assignment in atom.assignments.iter() {
+                    let source = map
+                        .captured
+                        .source
+                        .get(assignment.value_span.range())
+                        .ok_or("map import source span outside capture")?;
+                    for literal in dm_resources::capture::discover_literals(source)
+                        .map_err(|error| error.to_string())?
+                    {
+                        if let Some(alias) = lookup(&literal.path)? {
+                            suffix.push(alias);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Ok((prefix, suffix))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -372,6 +563,21 @@ mod tests {
             "ancestor_subtrees",
             "const_static_procstatic",
             "siblings_reopen",
+            "explicit_lexical_parent",
+            "explicit_root",
+            "late_explicit_root",
+            "global_new_forward",
+            "global_proc_after_class",
+            "implicit_parent_middle",
+            "parent_early_siblings",
+            "parent_late_siblings",
+            "parent_late",
+            "reparent_parent_late",
+            "reparented_procedure_group",
+            "empty_block_var",
+            "empty_decl_var",
+            "empty_block_proc",
+            "empty_decl_proc",
         ] {
             let (ledger, symbols, uses, parents) = fixture(name);
             let actual = collect(&ledger, &uses, &symbols, &parents, &known, &[], &[]).unwrap();

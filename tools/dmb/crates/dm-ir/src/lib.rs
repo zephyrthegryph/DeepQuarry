@@ -19,6 +19,7 @@ pub use initializer::{
     InitializerScope, InitializerTarget, InitializerUnit, InitializerValue, InitializerWrite,
 };
 pub mod map;
+pub mod skin;
 
 mod resolver;
 pub use resolver::{ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};
