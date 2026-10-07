@@ -30,7 +30,7 @@
 				C.delete_me = TRUE
 			else
 				consume(C)
-	update_icon()
+	update_connections()
 
 // neighbouring catwalks redraw and things on it may fall.
 /obj/structure/catwalk/on_destroy(force)
@@ -40,21 +40,18 @@
 /obj/structure/catwalk/proc/update_falling()
 	if(istype(loc, /turf/simulated/open)) after(loc, 0.1 SECONDS, TYPE_PROC_REF(/turf/simulated/open, update)) //We get called in Destroy() and things: the open turf, not us, owns the update.
 
-DECLARE_APPEARANCE_PROC(/obj/structure/catwalk, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/catwalk/appearance_overlays()
-	. = list()
-	update_connections()
-	icon_state = ""
-	var/image/I
+TRACKED(/obj/structure/catwalk, hatch_open)
+TRACKED(/obj/structure/catwalk, plating_color)
+
+/obj/structure/catwalk/draw(datum/look/look)
+	..()
+	look.state("")
 	if(!hatch_open)
 		for(var/i = 1 to 4)
 			var/connect = connections?[i] || 0
-			I = image(icon, "catwalk[connect]", dir = 1<<(i-1))
-			. += I
+			look.overlay(look_overlay_image(icon, "catwalk[connect]", dir = 1<<(i-1)))
 	if(plating_color)
-		I = image(icon, "plated")
-		I.color = plating_color
-		. += I
+		look.overlay(look_overlay_image(icon, "plated", color = plating_color))
 
 /obj/structure/catwalk
 	silicon_use = ROBOT_USE_HAND_ADJACENT
@@ -99,8 +96,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/catwalk, TYPE_PROC_REF(/atom, appearance_
 	add_fingerprint(user)
 	for(var/tiletype in plating_colors)
 		if(istype(ST, tiletype))
-			plating_color = plating_colors[tiletype]
-	update_icon()
+			set_plating_color(plating_colors[tiletype])
 
 TRACKED(/obj/structure/catwalk, plated_tile)
 
@@ -114,7 +110,7 @@ CAPABILITIES(/obj/structure/catwalk)
 /obj/structure/catwalk/proc/crowbar_used(datum/act/op/A)
 	var/mob/user = A.actor
 	if(plated_tile)
-		hatch_open = !hatch_open
+		set_hatch_open(!hatch_open)
 		if(hatch_open)
 			play_sfx(src, SFX_ITEMS_CROWBAR, 2)
 			to_chat(user, span_notice("You pry open \the [src]'s maintenance hatch."))
@@ -122,7 +118,6 @@ CAPABILITIES(/obj/structure/catwalk)
 		else
 			play_sfx(src, SFX_ITEMS_DECONSTRUCT, 2)
 			to_chat(user, span_notice("You shut \the [src]'s maintenance hatch."))
-		update_icon()
 	return OP_OK
 
 /obj/structure/catwalk/refresh_neighbors()
@@ -168,9 +163,8 @@ MAP_RESOLVER_VARS(/obj/effect/catwalk_plated, "platecolor;tile")
 		return
 	var/obj/structure/catwalk/C = new /obj/structure/catwalk(T)
 	C.set_plated_tile(MAP_VAR(P, varedits, tile))
-	C.plating_color = MAP_VAR(P, varedits, platecolor)
+	C.set_plating_color(MAP_VAR(P, varedits, platecolor))
 	C.name = "plated catwalk"
-	C.update_icon()
 
 /obj/effect/catwalk_plated/dark
 	icon_state = "catwalk_plateddark"

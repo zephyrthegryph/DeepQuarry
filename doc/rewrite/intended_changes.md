@@ -2669,3 +2669,10 @@ Each changed pin row is one of these classes; nothing else was blessed. `dq_inte
   `add_overlay()` merges them only when the atom has no overlays left, `cut_overlay()` never takes the blocker with a layer, and `cut_overlays()` keeps it.
   Every pin row that changes is that class: a `blocker x2` becoming the one blocker, or a probe row that only gained and lost the blocker.
 * The lightpost is a plain draw over tracked `lit` and `festive`; its light follows the look (`look.light()`, `look.light_off()`).
+
+## Draw sweep 3, worker B (structures)
+
+* **Catwalk: a bare write of `smooth_mask` no longer redraws different connections.** The legacy appearance proc called `update_connections()` while drawing,
+  so a look-state pin that wrote `smooth_mask` by hand saw the connection overlays change. The draw only reads `connections`; they are recomputed where the
+  adjacency index reports a change (`smooth_changed()`, which also requests the redraw) and at init. The eight `smooth_mask=1/2` rows of
+  `look_states/obj.structure.catwalk.txt` are gone for that cause; the made look is unchanged.

@@ -1,0 +1,17 @@
+/obj/structure/windoor_assembly icon: icons/obj/doors/windoor.dmi
+/obj/structure/windoor_assembly state: l_windoor_assembly01
+/obj/structure/windoor_assembly dir: 1
+/obj/structure/windoor_assembly overlay: icons/obj/doors/windoor.dmi:l_windoor_assembly01:8:#000000
+/obj/structure/windoor_assembly/secure icon: icons/obj/doors/windoor.dmi
+/obj/structure/windoor_assembly/secure state: l_secure_windoor_assembly01
+/obj/structure/windoor_assembly/secure dir: 1
+/obj/structure/windoor_assembly/secure overlay: icons/obj/doors/windoor.dmi:l_secure_windoor_assembly01:8:#000000
+/obj/structure/windoor_assembly/secure/interim_completion_trace icon: icons/obj/doors/windoor.dmi
+/obj/structure/windoor_assembly/secure/interim_completion_trace state: l_secure_windoor_assembly01
+/obj/structure/windoor_assembly/secure/interim_completion_trace dir: 1
+/obj/structure/windoor_assembly/secure/interim_completion_trace overlay: icons/obj/doors/windoor.dmi:l_secure_windoor_assembly01:8:#000000
+/obj/structure/windoor_assembly/interim_completion_trace icon: icons/obj/doors/windoor.dmi
+/obj/structure/windoor_assembly/interim_completion_trace state: l_windoor_assembly01
+/obj/structure/windoor_assembly/interim_completion_trace dir: 1
+/obj/structure/windoor_assembly/interim_completion_trace overlay: icons/obj/doors/windoor.dmi:l_windoor_assembly01:8:#000000
+
