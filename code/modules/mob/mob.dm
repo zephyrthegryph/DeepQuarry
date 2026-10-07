@@ -37,8 +37,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(src?.pulling_target())
 		stop_pulling() //TG does this on atom/movable but our stop_pulling proc is here so whatever
 
-	// our bellies go with us (the mob owns them)
-	own_clear(src, nameof(vore_organs), OWN_DELETE)
+	// Our bellies go with us through the declared ownership policy.
 	for(var/mob/observer/dead/M in src?.follower_list())
 		M.stop_following()
 	motiontracker_unsubscribe(TRUE) // Force unsubscribe
@@ -1424,14 +1423,14 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	var/verb = A.step_value("verb")
 	if(verb != "Cancel")
 		// An admin's hand edit: lifts that admin hand's hide, grants from the admin source.
-		om_revoke(src, GRANT_VERB_HIDE, verb, verb_source(VERB_SOURCE_ADMIN))
+		revoke(src, granted_verb(verb, hidden = TRUE), verb_source(VERB_SOURCE_ADMIN))
 		grant(src, granted_verb(verb), verb_source(VERB_SOURCE_ADMIN))
 
 /mob/proc/vv_verb_removed_apply(datum/act/op/A)
 	var/verb_name = A.step_value("verb")
 	// Hidden, not revoked: the verb goes whatever grants it (the type, other sources).
 	revoke(src, granted_verb(verb_name), verb_source(VERB_SOURCE_ADMIN))
-	om_grant(src, GRANT_VERB_HIDE, verb_name, verb_source(VERB_SOURCE_ADMIN))
+	grant(src, granted_verb(verb_name, hidden = TRUE), verb_source(VERB_SOURCE_ADMIN))
 
 /mob/proc/vv_organ_added_apply(datum/act/op/A)
 	var/mob/user = A.actor

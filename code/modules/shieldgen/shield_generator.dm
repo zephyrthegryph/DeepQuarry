@@ -127,7 +127,7 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 	. = ..()
 	default_apply_parts()
 
-	own_take_all(src, nameof(mode_list))
+	rel_take_all(src, nameof(mode_list))
 	for(var/st in subtypesof(/datum/shield_mode))
 		var/datum/shield_mode/SM = new st()
 		rel_add(src, nameof(mode_list), SM)

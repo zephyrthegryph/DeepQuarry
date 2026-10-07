@@ -81,9 +81,9 @@ CAPABILITIES(/datum/system/contracts)
 	report.integrity = source.get_integrity()
 
 /datum/system/contracts/proc/flush_damage_reports()
-	// own_take_all() empties the owned list in place and hands back its values (the reports),
+	// rel_take_all() empties the owned list in place and hands back its values (the reports),
 	// so iterate what it returns, not the var.
-	var/list/reports = own_take_all(src, nameof(pending_damage_reports))
+	var/list/reports = rel_take_all(src, nameof(pending_damage_reports))
 	// Publishing here must not re-queue: the batch is closed by now, but keep
 	// the broker batched so every window is evaluated once for all reports.
 	contract_batch_depth++

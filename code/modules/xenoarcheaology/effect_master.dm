@@ -79,7 +79,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	rel_set(src, nameof(holder), new_holder)
 	rel_set(new_holder, nameof(/atom::artifact_master), src) // the anomalous atom owns its artifact state
 
-	own_take_all(src, nameof(my_effects))
+	rel_take_all(src, nameof(my_effects))
 	lifecycle_decls_init(src) // a non-atom: starts the holder declaration
 
 	do_setup()

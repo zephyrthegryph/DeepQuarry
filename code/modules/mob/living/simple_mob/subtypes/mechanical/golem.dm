@@ -70,7 +70,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/technomancer_golem)
 /mob/living/simple_mob/mechanical/technomancer_golem/place_spell_in_hand(path)
 	if(!path || !ispath(path))
 		return FALSE
-	own_clear(src, nameof(active_spell), OWN_DELETE)
+	rel_clear(src, nameof(active_spell), OWN_DELETE)
 
 	rel_set(src, nameof(active_spell), new path(src))
 
@@ -85,7 +85,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/technomancer_golem)
 		return
 	if(!A.answer)
 		if(R.outcome == REQ_CANCELLED && isnull(R.value))
-			own_clear(src, nameof(active_spell), OWN_DELETE)
+			rel_clear(src, nameof(active_spell), OWN_DELETE)
 		return
 	place_spell_in_hand(known_spells[A.answer.value])
 

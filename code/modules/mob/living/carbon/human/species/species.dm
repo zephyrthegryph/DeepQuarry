@@ -411,7 +411,7 @@
 	if(!vision_organ && has_organ[O_EYES])
 		vision_organ = O_EYES
 
-	own_take_all(src, nameof(unarmed_attacks))
+	rel_take_all(src, nameof(unarmed_attacks))
 	for(var/u_type in unarmed_types)
 		rel_add(src, nameof(unarmed_attacks), new u_type())
 

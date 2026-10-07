@@ -225,9 +225,9 @@ CAPABILITIES(/datum/station_faction_relations)
 		REPUTATION_FACTION_SYNDICATE = REPUTATION_HATED,
 	)
 	. = ..(defaults)
-	own_take_all(src, nameof(department_ledgers))
-	own_take_all(src, nameof(personal_ledgers))
-	own_take_all(src, nameof(agent_records))
+	rel_take_all(src, nameof(department_ledgers))
+	rel_take_all(src, nameof(personal_ledgers))
+	rel_take_all(src, nameof(agent_records))
 	for(var/department in TYPE_TABLE_GET(src, get_reputation_departments))
 		rel_add(src, nameof(department_ledgers), new /datum/faction_reputation_ledger(reputations), department)
 

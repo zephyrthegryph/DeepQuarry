@@ -398,7 +398,7 @@ ADMIN_VERB(toggle_antagHUD_use, R_ADMIN, "Toggle antagHUD usage", "Toggles antag
 	if(CONFIG_GET(flag/antag_hud_allowed))
 		for(var/mob/observer/dead/dead_mob in user.get_ghosts())
 			if(!check_rights_for(dead_mob.client, R_HOLDER))						//Remove the verb from non-admin ghosts
-				om_grant(dead_mob, GRANT_VERB_HIDE, /mob/observer/dead/verb/toggle_antagHUD, verb_source(VERB_SOURCE_CONFIG))
+				grant(dead_mob, granted_verb(/mob/observer/dead/verb/toggle_antagHUD, hidden = TRUE), verb_source(VERB_SOURCE_CONFIG))
 			if(dead_mob.antagHUD)
 				dead_mob.antagHUD = 0						// Disable it on those that have it enabled
 				dead_mob.has_enabled_antagHUD = 2				// We'll allow them to respawn
@@ -409,7 +409,7 @@ ADMIN_VERB(toggle_antagHUD_use, R_ADMIN, "Toggle antagHUD usage", "Toggles antag
 	else
 		for(var/mob/observer/dead/dead_mob in user.get_ghosts())
 			if(!check_rights_for(dead_mob.client, R_HOLDER))						// Add the verb back for all non-admin ghosts
-				om_revoke(dead_mob, GRANT_VERB_HIDE, /mob/observer/dead/verb/toggle_antagHUD, verb_source(VERB_SOURCE_CONFIG))
+				revoke(dead_mob, granted_verb(/mob/observer/dead/verb/toggle_antagHUD, hidden = TRUE), verb_source(VERB_SOURCE_CONFIG))
 			to_chat(dead_mob, span_boldnotice("The Administrator has enabled AntagHUD"))	// Notify all observers they can now use AntagHUD
 		CONFIG_SET(flag/antag_hud_allowed, TRUE)
 		action = "enabled"

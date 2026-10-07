@@ -47,7 +47,6 @@
 	..()
 	clear_every_clients_images()
 	qdel_all_images()
-	rel_clear(src, nameof(clients))
 
 /obj/effect/fake_attacker/proc/create_images_from(atom/clone)
 	SHOULD_NOT_OVERRIDE(TRUE)

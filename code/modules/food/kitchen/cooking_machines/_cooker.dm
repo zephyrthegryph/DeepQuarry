@@ -87,7 +87,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker)
 
 /obj/machinery/appliance/cooker/Initialize(mapload)
 	. = ..()
-	own_take_all(src, nameof(cooking_objs))
+	rel_take_all(src, nameof(cooking_objs))
 	for (var/i = 0, i < max_contents, i++)
 		rel_add(src, nameof(cooking_objs), new /datum/cooking_item/(new container_type(src)))
 	set_cooking(FALSE)

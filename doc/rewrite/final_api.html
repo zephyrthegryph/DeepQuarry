@@ -553,6 +553,7 @@ request(bot, /datum/io/path, then(PROC_REF(have_path)), from = start, to = goal)
     <thead><tr><th>Need</th><th>Form</th><th>Notes</th></tr></thead>
     <tbody>
       <tr><td>Do something once, later</td><td><code>after(owner, delay, then(PROC_REF(x)), key =, clock =, with =)</code>; <code>cancel_after(owner, key)</code>, <code>after_pending(owner, key)</code>, <code>after_left(owner, key)</code></td><td>Stored as a timer relation: dies with the owner. <code>x(datum/act/A)</code> runs with <code>A.holder</code> = the owner. A keyed timer replaces an earlier one with the same key. Keys are literals, and a <code>cancel_after</code> on a key no <code>after</code> declares is a build error. <code>with = list(...)</code> arrives as <code>A.args</code>; it is for scalars and flyweights only, a datum in it is a lint error (reach entities through a relation), and the default is null, so nothing is allocated.</td></tr>
+      <tr><td>Do something later, owned by the current state</td><td><code>after_in_state(delay, go(/datum/capability/x))</code> or <code>after_in_state(delay, then(CAP_PROC(x)))</code></td><td>An entry of a state capability (<a href="#modes">section 11, Modes</a>). A timer the activation owns: armed when the state starts, cancelled when it ends, by any route (a <code>go()</code>, a revoke, the deletion of the holder). <code>delay</code> is a number or a <code>PROC_REF</code>, on the holder clock.</td></tr>
       <tr><td>Do something later, inside an op</td><td><code>delayed(t, parts...)</code></td><td><code>after()</code> on the holder's clock, owned by the holder, so it dies with the holder (<a href="#parts">section 9</a>).</td></tr>
       <tr><td>Do something repeatedly while a condition holds</td><td><code>every(interval, parts..., when =, lane =, key =)</code>, ordered with <code>runs_after =</code></td><td><code>interval</code> is a number or a <code>PROC_REF</code> (computed per run). <code>when</code> is a condition: its reads are generated, and the work parks and wakes by itself. The handler gets <code>A.dt</code>, the time since its last run, so scale work by it. An entity's <code>every()</code> runs on its own clock (<code>CLOCK_OWN</code>). <code>key =</code> lets a subtype retune or drop it with <code>extend("scan", ...)</code> or <code>without("scan")</code>. Inside a system, <code>members = CAP_X</code> runs it once per member, with the member as <code>A.target</code>.</td></tr>
       <tr><td>State that lasts a while</td><td><code>hold(E, STAT_X, value, source, lasts =)</code></td><td><a href="#stats">Section 5</a>. Re-applying follows the stat's <code>reapply</code> rule. A timed hold outlives its source by default; an untimed one dies with it.</td></tr>
@@ -563,6 +564,7 @@ request(bot, /datum/io/path, then(PROC_REF(have_path)), from = start, to = goal)
       <tr><td>The time on an entity's clock</td><td><code>clock_now(E, clock)</code></td><td>Replaces <code>om_clock_now</code>.</td></tr>
       <tr><td>A long job that must yield</td><td><code>job(owner, PROC_REF(step), budget =, then =)</code></td><td>Section 2.</td></tr>
       <tr><td>An answer from a player or a service</td><td><code>asks()</code> / <code>request()</code>, with their timeout</td><td>Section 2.</td></tr>
+      <tr><td>Many triggers, one run</td><td><code>on_notice(/datum/notice/x, coalesce(interval), then(...))</code>; <code>on_change(nameof(v), ANY, coalesce(interval), then(...))</code></td><td>A part of an after hook (<a href="#hooks">section 10</a>). The first trigger of a quiet period opens one window of <code>interval</code> (deciseconds of the holder clock, or a <code>PROC_REF</code> answering them); triggers inside it are absorbed; the parts after <code>coalesce()</code> run once when it closes. At most one run per interval, nothing scheduled while nothing triggers, cancelled with the holder or the capability that brought the hook. Built on <code>om_after_unique()</code>, keyed by holder and hook.</td></tr>
       <tr><td>Coalesce a noisy output</td><td><code>outputs(..., at_most = t)</code></td><td>At most one run per <code>t</code> per entity; held changes arrive together.</td></tr>
       <tr><td>Must run before the next tick</td><td><code>kernel_urgent(member, work, deadline)</code>; <code>on_cross(..., urgent = TRUE)</code></td><td>Reserved slice, kernel and systems only; a breach is a metric.</td></tr>
       <tr><td>Per-entity ordered frames (Life)</td><td>A <code>/datum/sequence</code> with <code>seq_step()</code> entries</td><td>Below.</td></tr>
@@ -991,6 +993,19 @@ hold(M, STAT_SLOWDOWN, 0.5, source = src, lasts = 4 SECONDS)   <span class="c">/
     </ul>
   </div>
 
+  <h3 id="standings">Standings: standing() and standing_toward()</h3>
+  <pre><code>standing(E, toward = target, value = STANDING_HOSTILE, source = grudge, lasts = 5 MINUTES, priority = 60)
+standing_toward(E, target)                       <span class="c">// a number; lower is more hostile; STANDING_NEUTRAL when no row applies</span>
+unstanding(E, target, source)</code></pre>
+  <div class="prose">
+    <ul>
+      <li><strong>Hold semantics, on the hold rows.</strong> A standing is a row in the hold store of E (the <code>H_KEY</code> column carries the subject, <code>H_STAT</code> is the pseudo-stat <code>HOLD_STANDING</code>). It is source-attributed, bound to its source (released when the source is deleted, timed or not), expires after <code>lasts</code>, and one source holds one row per subject: stancing again replaces its value, priority and deadline. It uses the existing expiry timer and teardown, and the stat recompute never sees it.</li>
+      <li><strong>Subjects.</strong> A datum, a faction key (text), <code>STANDING_PLAYERS</code> (any mob a player controls) or <code>STANDING_ANY</code>. The faction of a datum is <code>standing_faction()</code> (its <code>faction</code> var by default); whether a player controls it is <code>standing_player()</code> (the client of a mob). Player reputation content is not built; the form supports player subjects and faction-toward-player rows.</li>
+      <li><strong>Composition.</strong> The rows that apply to a subject are the ones toward it, toward its faction, toward <code>STANDING_PLAYERS</code> when a player controls it, and toward <code>STANDING_ANY</code>, in that order of specificity. They compete in one pool: the highest priority wins; on equal priority the lowest value wins (the most hostile); on equal value the more specific row wins. Values: <code>STANDING_HOSTILE</code> -100, <code>STANDING_WARY</code> -50, <code>STANDING_NEUTRAL</code> 0, <code>STANDING_FRIENDLY</code> 50, <code>STANDING_ALLY</code> 100.</li>
+      <li><strong>Cache and notice.</strong> Answers are cached per (E, subject) and read back while the faction and player state of the subject are unchanged. Any change to a stance row of E (placed, replaced, released, expired, source deleted) drops the cache of E and publishes <code>/datum/notice/standing_changed</code> on E. <code>GLOB.forms_trace</code> logs the drops.</li>
+      <li><strong>Cost.</strong> An entity with a standing has a hold list, so its stats take the general recompute path rather than the no-holds fast path. Put standings on a holder that has no stats of its own: an AI keeps them on its <code>/datum/ai_brain</code>, never on the mob, so mobs keep the fast path.</li>
+    </ul>
+  </div>
   <h3>Statuses</h3>
   <div class="sig">status_at_least(M, STATUS_X, units, intensity = 1, source = SRC_STATUS)   <span class="c">// at least this long; never shortens or weakens</span>
 status_set(M, STATUS_X, units, intensity = 1, source = SRC_STATUS)        <span class="c">// exact: hold_until; 0 units ends it</span>
@@ -2243,6 +2258,7 @@ on_notice(/datum/notice/hit/projectile, then(PROC_REF(deflected)), outcome = ACT
     <ul>
       <li><strong>Hook parts.</strong> The parts inside a hook are the Do parts of <a href="#parts">section 9</a> (<code>then</code>, <code>sets</code>, <code>toggles</code>, <code>holds</code>, <code>says</code>, ...). A hook has no input, Match or Wait. Its handler takes <code>(datum/act/A)</code>, with <code>A.holder</code> set.</li>
       <li><strong>Two shapes.</strong> <code>on_change(cond, ENTER | EXIT, ...)</code> takes a condition (<a href="#parts">section 9</a>, a boolean, including a hop through a relation): <code>ENTER</code> fires when it becomes true, <code>EXIT</code> when it becomes false. <code>on_change(key, ANY, ...)</code> takes a key (a tracked var or stat, through a relation hop if needed) and fires when its value changed. A numeric key is allowed only with <code>ANY</code>; <code>ENTER</code> or <code>EXIT</code> on one is a build error, because a number is not a condition. A key with no edge argument means <code>ANY</code>. It runs once per drain.</li>
+      <li><strong>Coalescing.</strong> <code>coalesce(interval)</code> is a part of <code>on_notice()</code> and <code>on_change()</code>: parts before it gate each trigger, parts after it run once per window. Triggers inside a window are absorbed, so a perception hook that fires for every chunk change and every hurt member runs once per second. The context of the run carries <code>A.holder</code> and <code>A.activation</code> but not the fields of the trigger (a pooled notice is gone by then): read the state that changed. A window is cancelled with its holder or its activation: the pending run of a revoked capability never happens. Rules: <a href="#time">section 3</a>.</li>
       <li><strong>Notices</strong> are named in the past tense and generated by <code>ACTION()</code> (<a href="#actions">section 8</a>). A notice is delivered at <code>act_done()</code>, to a listener on the target's type table or an activation on it, and by default only for a committed action: <code>outcome = ACT_REPLACED</code> or <code>ACT_ANY</code> opts in to the others.</li>
     </ul>
   </div>
@@ -2382,6 +2398,27 @@ CAPABILITY_TYPE(powered, CAP_POWERED, /datum/capability/powered, key = NONE, cha
     </ul>
   </div>
 
+  <h3 id="modes">Modes: exclusive state capabilities</h3>
+  <pre><code>CAPABILITIES(/obj/machinery/press)
+	modes(nameof(mode))                                   <span class="c">// `mode` is a TRACKED var holding a capability type</span>
+	on_notice(/datum/notice/mode_changed, then(PROC_REF(heard_mode)))
+
+CAPABILITY_TYPE(press_working, CAP_PRESS_WORKING, /datum/capability/press_working, key = NONE)
+/datum/capability/press_working/entries()
+	return list(
+		every(2 SECONDS, then(CAP_PROC(stamp))),
+		on_notice(/datum/notice/jammed, then(CAP_PROC(note_jam)), go(/datum/capability/press_jammed)),
+		after_in_state(10 MINUTES, go(/datum/capability/press_idle)))     <span class="c">// a timer the state owns</span></code></pre>
+  <div class="prose">
+    <ul>
+      <li><strong>One var, one active state.</strong> The var holds the type of the active capability. The engine grants it with the holder as the source, revokes the previous one, and publishes <code>/datum/notice/mode_changed</code> (<code>old_mode</code>, <code>new_mode</code>, <code>mode_var</code>) on the holder. The initial value of the var is granted when the holder initializes. A state is an ordinary capability: its <code>every()</code>, <code>on_notice()</code>, <code>on_change()</code>, <code>coalesce()</code> and <code>contributes()</code> entries run exactly while it is the mode and stop when it ends, by the one teardown path (<a href="#activations">above</a>).</li>
+      <li><strong><code>go(/datum/capability/x, var =)</code></strong> is a part that sets the mode through the setter of the var and follows it at once. The state that ran it ends immediately: the handler finishes, nothing of the state runs again, and the parts after <code>go()</code> in that entry do not run. Inside a state <code>var</code> defaults to the var that state is the mode of; a holder with several <code>modes()</code> names it.</li>
+      <li><strong><code>after_in_state(delay, parts...)</code></strong> belongs to a state, never to the own list of a type (build error). It is armed on entry and cancelled on exit however the exit came.</li>
+      <li><strong>Writing the var</strong> through its setter also works; the mode follows at the next drain. A value that is not a declared capability type is reported and put back; <code>go()</code>, <code>modes()</code> and <code>after_in_state()</code> refuse bad arguments when the declaration is built.</li>
+      <li><strong>Transitions are sequential.</strong> A state whose activation goes straight on to another runs as a chain of transitions after the first has finished (at most <code>MODES_MAX_CHAIN</code>), never nested. <code>mode_now(E, var)</code> reads the current mode; <code>mode_enter(E, var, type)</code> sets one from code. <code>GLOB.forms_trace</code> logs every transition.</li>
+      <li><strong>Uses.</strong> Machine idle, working and broken; the phases of a door; reactor modes; the calm, alert and engaged states of a mob (<code>doc/rewrite/ai_packs.md</code>).</li>
+    </ul>
+  </div>
   <h3>The library</h3>
   <div class="prose"><p>Every shared behaviour on master, plus the planned pieces from B2/B3 and this design, all on parts:</p></div>
   <div class="tbl"><table>

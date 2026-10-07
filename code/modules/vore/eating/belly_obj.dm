@@ -740,7 +740,7 @@ CAPABILITIES(/obj/belly)
 				var/datum/mind_host/mmi_host = get_mind_host(hasMMI)
 				var/mob/living/carbon/brain/view = mmi_host.receive_mind(M.mind, "cyborg [R] digested")
 				view.remove_language(LANGUAGE_ROBOT_TALK)
-				own_take(R, nameof(R.mmi))
+				rel_take(R, nameof(R.mmi))
 		else if(!R.shell) // Shells don't have brainmobs in their MMIs.
 			to_chat(R, span_danger("Oops! Something went very wrong, your MMI was unable to receive your mind. You have been ghosted. Please make a bug report so we can fix this bug."))
 		if(R.shell) // Let the standard procedure for shells handle this.
@@ -1176,14 +1176,14 @@ CAPABILITIES(/obj/belly)
 				for(var/mob/living/voice/V in O.possessed_voice)
 					D.inhabit_item(V, null, V.tf_mob_holder)
 					replaced_by(V)
-				own_take_all(O, nameof(O.possessed_voice))
+				rel_take_all(O, nameof(O.possessed_voice))
 			return TRUE
 		var/obj/item/debris_pack/digested/D = new /obj/item/debris_pack/digested(src, modified_mats)
 		if(O.possessed_voice && O.possessed_voice.len)
 			for(var/mob/living/voice/V in O.possessed_voice)
 				D.inhabit_item(V, null, V.tf_mob_holder)
 				replaced_by(V)
-			own_take_all(O, nameof(O.possessed_voice))
+			rel_take_all(O, nameof(O.possessed_voice))
 	return TRUE
 
 /obj/belly/proc/owner_adjust_nutrition(amount = 0)

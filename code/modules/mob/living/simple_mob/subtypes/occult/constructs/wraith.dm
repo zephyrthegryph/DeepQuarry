@@ -61,15 +61,21 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 
 
 /mob/living/simple_mob/construct/wraith/proc/do_special_attack_1(atom/A, turf/destination, turf/starting_turf)
+	if(!destination || !starting_turf)
+		ai_busy_end()
+		icon_state = "phase_shift2"
+		return FALSE
 
 	// Do the dig!
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% vanishes into thin air %T%!")))
-	flick("phase_shift",A)
+	if(A)
+		flick("phase_shift",A)
 	icon_state = "phase_shift"
 
 	if(handle_jaunt(destination) == FALSE)
 		ai_busy_end()
-		flick("phase_shift2",A)
+		if(A)
+			flick("phase_shift2",A)
 		icon_state = "phase_shift2"
 		return FALSE
 
@@ -77,7 +83,8 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 	if(!(src in destination))
 		ai_busy_end()
 		icon_state = "phase_shift2"
-		flick("phase_shift2",A)
+		if(A)
+			flick("phase_shift2",A)
 		return FALSE
 
 	var/overshoot = TRUE
@@ -95,7 +102,8 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 	if(!overshoot) // We hit the target, or something, at destination, so we're done.
 		ai_busy_end()
 		icon_state = "phase_shift2"
-		flick("phase_shift2",A)
+		if(A)
+			flick("phase_shift2",A)
 		return TRUE
 
 	// Otherwise we need to keep going.
@@ -108,12 +116,14 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 	if(handle_jaunt(destination) == FALSE)
 		ai_busy_end()
 		icon_state = "phase_shift2"
-		flick("phase_shift2",A)
+		if(A)
+			flick("phase_shift2",A)
 		return FALSE
 
 	ai_busy_end()
 	icon_state = "phase_shift2"
-	flick("phase_shift2",A)
+	if(A)
+		flick("phase_shift2",A)
 	return FALSE
 
 // Does the jaunt movement

@@ -116,7 +116,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 
 	if(!CONFIG_GET(flag/aliens_allowed))
 		to_chat(src, "You begin to lay an egg, but hesitate. You suspect it isn't allowed.")
-		om_grant(src, GRANT_VERB_HIDE, /mob/living/carbon/human/proc/lay_egg, verb_source(VERB_SOURCE_CONFIG))
+		grant(src, granted_verb(/mob/living/carbon/human/proc/lay_egg, hidden = TRUE), verb_source(VERB_SOURCE_CONFIG))
 		return
 
 	if(locate_within(get_turf(src), /obj/structure/ghost_pod/automatic/xenomorph_egg))
@@ -357,7 +357,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 
 	if(status_flags & LEAPING) set_status_flags(status_flags & ~LEAPING)
 
-	if(!src.Adjacent(T))
+	if(!T || !src.Adjacent(T))
 		to_chat(src, span_warning("You miss!"))
 		return
 

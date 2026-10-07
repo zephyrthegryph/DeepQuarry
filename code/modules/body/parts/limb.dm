@@ -176,7 +176,7 @@
 			continue
 		add_affliction(A, O)
 		A.last_reroll_band = -1
-	own_take_all(O, nameof(O.detached_afflictions))
+	rel_take_all(O, nameof(O.detached_afflictions))
 	O.recalc_integrity() // lesions / wounds moved: one recompute from the index
 
 /// Offline tick for afflictions riding a detached organ.

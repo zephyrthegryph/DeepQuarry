@@ -183,7 +183,7 @@ CAPABILITIES(/datum/parsed_map)
 	newfriend.key_len = key_len
 	newfriend.line_len = line_len
 	newfriend.grid_models = grid_models.Copy()
-	own_take_all(newfriend, nameof(newfriend.gridSets))
+	rel_take_all(newfriend, nameof(newfriend.gridSets))
 	for(var/datum/grid_set/source_set as anything in gridSets) // each map owns its own grid sets
 		var/datum/grid_set/set_copy = new
 		set_copy.xcrd = source_set.xcrd
@@ -1285,10 +1285,9 @@ GLOBAL_LIST_EMPTY(map_model_default)
 	SSatoms.map_loader_stop(REF(src)) // Just in case, I don't want to double up here
 	if(turf_blacklist)
 		turf_blacklist.Cut()
-	parsed_bounds.Cut()
-	bounds.Cut()
+	parsed_bounds?.Cut()
+	bounds?.Cut()
 	grid_models.Cut()
-	own_take_all(src, nameof(gridSets))
 	..()
 
 #undef MAP_DMM

@@ -116,9 +116,9 @@
 		var/mob/living/M = piece.loc
 		if(istype(M))
 			M.drop_from_inventory(piece)
-		own_clear(R, slot, OWN_DELETE)
+		rel_clear(R, slot)
 
-	own_clear(R, nameof(R.installed_modules), OWN_DELETE)
+	rel_clear(R, nameof(R.installed_modules))
 
 /*
  * proc/get_equippable_pieces()

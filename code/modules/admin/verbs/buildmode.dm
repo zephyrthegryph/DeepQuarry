@@ -214,6 +214,7 @@ CAPABILITIES(/obj/effect/bmode/buildhelp)
 	var/warned = 0
 
 CAPABILITIES(/obj/effect/bmode/buildholder)
+	ref_many(nameof(selected_mobs), /mob/living)
 	owns_one(nameof(builddir), /obj/effect/bmode/builddir)
 	owns_one(nameof(buildhelp), /obj/effect/bmode/buildhelp)
 	owns_one(nameof(buildmode), /obj/effect/bmode/buildmode)
@@ -226,7 +227,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 /obj/effect/bmode/buildholder/on_destroy(force)
 	for(var/mob/living/unit in selected_mobs?.Copy())
 		deselect_AI_mob(cl(), unit)
-	rel_clear(src, nameof(selected_mobs))
 	..()
 
 /// The first base-turf deletion asks once; the answer does that deletion.

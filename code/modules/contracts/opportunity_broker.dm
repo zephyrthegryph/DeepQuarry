@@ -241,7 +241,7 @@ CAPABILITIES(/datum/contract_opportunity_rule)
 
 /datum/contract_opportunity_rule/New()
 	. = ..()
-	own_take_all(src, nameof(signals))
+	rel_take_all(src, nameof(signals))
 	context_fields = list()
 	configure()
 

@@ -381,7 +381,7 @@ CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
 
 	if(emagged)
 		set_emagged(FALSE)
-	if(greet && user && !user.stat) // in case we got destroyed while we slept
+	if(greet && S && user && !user.stat) // in case we got destroyed while we slept
 		to_chat(user,span_notice("[S.name] dispensing processed. Have a good day."))
 
 /obj/machinery/gear_dispenser/suit_fancy/dispense_anim_time = 60.5

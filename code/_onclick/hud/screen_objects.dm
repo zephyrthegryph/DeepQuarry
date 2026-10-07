@@ -1136,7 +1136,8 @@ CAPABILITIES(/atom/movable/screen/mapper/mapbutton)
 		add_overlay(object_overlays)
 
 /atom/movable/screen/ammo/proc/end_empty_flash(mob/user, atom/movable/screen/ammo/F, image/empty)
-	user.client?.screen -= F
+	if(user?.client)
+		user.client.screen -= F
 	spent(F, user)
 	overlays += empty
 

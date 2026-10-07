@@ -67,7 +67,7 @@ CAPABILITIES(/datum/contract_negotiation_clause)
 	id = _id
 	title = _title
 	description = _description
-	own_take_all(src, nameof(options))
+	rel_take_all(src, nameof(options))
 
 
 /datum/contract_negotiation_clause/proc/add_option(datum/contract_clause_option/option, make_default = FALSE)
@@ -250,8 +250,8 @@ CAPABILITIES(/datum/contract)
 	. = ..()
 	contributions = list()
 	contributor_names = list()
-	own_take_all(src, nameof(audit_log))
-	own_take_all(src, nameof(negotiation_clauses))
+	rel_take_all(src, nameof(audit_log))
+	rel_take_all(src, nameof(negotiation_clauses))
 	negotiation_selections = list()
 	negotiated_effects = list()
 	secondary_faction_reputation_rewards = list()

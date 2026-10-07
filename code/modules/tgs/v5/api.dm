@@ -95,7 +95,7 @@ CAPABILITIES(/datum/tgs_api/v5)
 	else
 		TGS_ERROR_LOG("Failed to decode [DMAPI5_RUNTIME_INFORMATION_REVISION] from runtime information!")
 
-	own_take_all(src, nameof(test_merges))
+	rel_take_all(src, nameof(test_merges))
 	var/list/test_merge_json = runtime_information[DMAPI5_RUNTIME_INFORMATION_TEST_MERGES]
 	if(istype(test_merge_json))
 		for(var/entry in test_merge_json)
@@ -124,7 +124,7 @@ CAPABILITIES(/datum/tgs_api/v5)
 	else
 		TGS_WARNING_LOG("Failed to decode [DMAPI5_RUNTIME_INFORMATION_TEST_MERGES] from runtime information!")
 
-	own_take_all(src, nameof(chat_channels))
+	rel_take_all(src, nameof(chat_channels))
 	DecodeChannels(runtime_information)
 
 	initialized = TRUE
@@ -320,7 +320,7 @@ CAPABILITIES(/datum/tgs_api/v5)
 	TGS_DEBUG_LOG("DecodeChannels()")
 	var/list/chat_channels_json = chat_update_json[DMAPI5_CHAT_UPDATE_CHANNELS]
 	if(istype(chat_channels_json))
-		own_take_all(src, nameof(chat_channels))
+		rel_take_all(src, nameof(chat_channels))
 		for(var/channel_json in chat_channels_json)
 			var/datum/tgs_chat_channel/channel = DecodeChannel(channel_json)
 			if(channel)

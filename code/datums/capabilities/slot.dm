@@ -171,7 +171,7 @@
 		return FALSE
 	var/obj/item/current = holder.vars[slot_var]
 	if(isdatum(current) && QDELETED(current))
-		own_take(holder, slot_var)
+		rel_take(holder, slot_var)
 		current = null
 	if(current && when_full != SLOT_FULL_SWAP)
 		if(when_full == SLOT_FULL_PASS)
@@ -208,7 +208,7 @@
 			to_chat(user, span_warning(refusal))
 		return null
 	slot_ejecting(holder, slot_var, item, user)
-	own_take(holder, slot_var)
+	rel_take(holder, slot_var)
 	if(item.loc == holder || isnull(item.loc)) // a holder may keep it out of its contents (in nullspace)
 		if(user && !eject_drop && !drop)
 			user.put_in_hands(item)

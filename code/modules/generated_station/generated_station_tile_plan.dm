@@ -80,7 +80,7 @@ CAPABILITIES(/datum/generated_station_tile_plan)
 	..()
 	grid_width = new_width
 	grid_height = new_height
-	own_take_all(src, nameof(tiles))
+	rel_take_all(src, nameof(tiles))
 	errors = list()
 	wall_fixture_edges = list()
 	utility_floors_by_owner = list()

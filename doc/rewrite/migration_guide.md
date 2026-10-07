@@ -937,7 +937,9 @@ TRACKED(/obj/machinery/computer/general_air_control/fuel_injection, automation, 
 
 ## B11. Verb declarations → native, `type_verbs()` or `hidden_verbs()`
 
-```dm
+Current declarations use `verb_entry()` in the existing `CAPABILITIES` block; conditional entries use a tracked field and its setter. Runtime verbs use `grant(holder, granted_verb(path), source)` and the matching `revoke()`. The before/after example below records the earlier framework branch; its declaration macros and replacement table are historical.
+
+```dm before
 // BEFORE: health.dm:154-157
 DECLARE_VERB(/obj/item/healthanalyzer/improved, /obj/item/healthanalyzer/proc/toggle_adv)
 DECLARE_VERB(/obj/item/healthanalyzer/advanced, /obj/item/healthanalyzer/proc/toggle_adv)

@@ -152,7 +152,8 @@ CAPABILITIES(/obj/machinery/hyperpad/centre)
 		speed += teleport_speed/8
 
 /obj/machinery/hyperpad/centre/proc/animate_discharge(obj/machinery/hyperpad/Pad)
-	Pad.cut_overlays()
+	if(Pad)
+		Pad.cut_overlays()
 
 /obj/machinery/hyperpad/centre/proc/doteleport(mob/user)
 	if(!src || QDELETED(src))
@@ -212,7 +213,8 @@ CAPABILITIES(/obj/machinery/hyperpad/centre)
 		timer += teleport_cooldown/8
 
 /obj/machinery/hyperpad/centre/proc/animate_charge(obj/machinery/hyperpad/Pad, mutable_appearance/color)
-	Pad.add_overlay(color)
+	if(Pad && color)
+		Pad.add_overlay(color)
 
 /// the primary this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/hyperpad/proc/primary() as /obj/machinery/hyperpad/centre

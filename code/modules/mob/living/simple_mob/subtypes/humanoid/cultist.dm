@@ -103,16 +103,22 @@
 
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/proc/do_special_attack_1(atom/A, turf/destination, turf/starting_turf)
+	if(!destination || !starting_turf)
+		ai_busy_end()
+		icon_state = "bloodin"
+		return FALSE
 
 	// Do the dig!
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% sinks into a puddle of blood %T%!")))
 	new /obj/effect/decal/cleanable/blood (src.loc)
-	flick("blood_out",A)
+	if(A)
+		flick("blood_out",A)
 	icon_state = "bloodout"
 
 	if(handle_jaunt(destination) == FALSE)
 		ai_busy_end()
-		flick("bloodin",A)
+		if(A)
+			flick("bloodin",A)
 		icon_state = "bloodin"
 		return FALSE
 
@@ -120,7 +126,8 @@
 	if(!(src in destination))
 		ai_busy_end()
 		icon_state = "bloodin"
-		flick("bloodin",A)
+		if(A)
+			flick("bloodin",A)
 		return FALSE
 
 	var/overshoot = TRUE
@@ -139,7 +146,8 @@
 	if(!overshoot) // We hit the target, or something, at destination, so we're done.
 		ai_busy_end()
 		icon_state = "bloodin"
-		flick("bloodin",A)
+		if(A)
+			flick("bloodin",A)
 		return TRUE
 
 	// Otherwise we need to keep going.
@@ -152,12 +160,14 @@
 	if(handle_jaunt(destination) == FALSE)
 		ai_busy_end()
 		icon_state = "bloodin"
-		flick("bloodin",A)
+		if(A)
+			flick("bloodin",A)
 		return FALSE
 
 	ai_busy_end()
 	icon_state = "bloodin"
-	flick("bloodin",A)
+	if(A)
+		flick("bloodin",A)
 	return FALSE
 
 // Does the jaunt movement

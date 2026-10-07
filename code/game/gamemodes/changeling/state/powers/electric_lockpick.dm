@@ -47,6 +47,8 @@
 
 /// The pulse lands, 0.6 s after the spark.
 /obj/item/finger_lockpick/proc/pulse_door(obj/machinery/door/door, mob/living/user)
+	if(QDELETED(door))
+		return
 	//More typechecks, because windoors can't be locked.  Fun.
 	if(istype(door,/obj/machinery/door/airlock))
 		var/obj/machinery/door/airlock/airlock = door

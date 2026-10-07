@@ -9,9 +9,9 @@
 	rel_set(research, nameof(research.owner), src)
 	recalc_cpu()
 
-	om_grant(src, GRANT_VERB, /datum/game_mode/malfunction/verb/ai_select_hardware, src)
-	om_grant(src, GRANT_VERB, /datum/game_mode/malfunction/verb/ai_select_research, src)
-	om_grant(src, GRANT_VERB, /datum/game_mode/malfunction/verb/ai_help, src)
+	grant(src, granted_verb(/datum/game_mode/malfunction/verb/ai_select_hardware), src)
+	grant(src, granted_verb(/datum/game_mode/malfunction/verb/ai_select_research), src)
+	grant(src, granted_verb(/datum/game_mode/malfunction/verb/ai_help), src)
 
 	// And greet user with some OOC info.
 	to_chat(user, "You are malfunctioning, you do not have to follow any laws.")
@@ -26,13 +26,20 @@
 /mob/living/silicon/ai/proc/stop_malf_finish()
 	var/mob/living/silicon/ai/user = src
 	// Every malf verb goes: the research, its unlocked abilities and the hardware granted them.
+	var/list/verb_sources = list()
 	if(research)
-		for(var/datum/ability as anything in research.unlocked_abilities)
-			om_revoke_all_of(src, GRANT_VERB, ability)
-		om_revoke_all_of(src, GRANT_VERB, research)
+		verb_sources |= research.unlocked_abilities
+		verb_sources |= research
 	if(hardware)
-		om_revoke_all_of(src, GRANT_VERB, hardware)
-	om_revoke_each(src, GRANT_VERB, list(/datum/game_mode/malfunction/verb/ai_select_hardware, /datum/game_mode/malfunction/verb/ai_select_research, /datum/game_mode/malfunction/verb/ai_help, /datum/game_mode/malfunction/verb/ai_destroy_station), src)
+		verb_sources |= hardware
+	for(var/datum/activation/active as anything in activations_of_cap(src, CAP_GRANTED_VERB))
+		if(!(active.source in verb_sources))
+			continue
+		var/datum/capability/def/granted_verb/verb = active.def
+		if(!verb.hidden)
+			revoke(src, verb, active.source)
+	for(var/granted_path in list(/datum/game_mode/malfunction/verb/ai_select_hardware, /datum/game_mode/malfunction/verb/ai_select_research, /datum/game_mode/malfunction/verb/ai_help, /datum/game_mode/malfunction/verb/ai_destroy_station))
+		revoke(src, granted_verb(granted_path), src)
 	rel_clear(src, nameof(research))
 	// Fix hacked APCs (a pair: clearing our side clears each APC's hacker)
 	rel_clear(src, nameof(hacked_apcs))

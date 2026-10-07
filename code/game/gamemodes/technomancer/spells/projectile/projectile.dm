@@ -45,6 +45,8 @@
 
 /obj/item/spell/projectile/proc/delayed_shot(atom/hit_atom, mob/living/user, image/target_image)
 	spent(target_image, user)
+	if(QDELETED(user) || QDELETED(core))
+		return
 	if(!owner_ref())
 		return // We got dropped before the firing occured.
 	shot_ready = TRUE

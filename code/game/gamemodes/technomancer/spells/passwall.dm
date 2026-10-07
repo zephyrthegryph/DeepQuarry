@@ -60,6 +60,8 @@
 	return 1
 
 /obj/item/spell/passwall/proc/passwall_found(mob/living/user, atom/hit_atom, turf/our_turf, turf/found_turf, total_cost)
+	if(QDELETED(user))
+		return
 	if(found_turf)
 		if(user.loc != our_turf)
 			to_chat(user, span_warning("You need to stand still in order to phase through \the [hit_atom]."))
