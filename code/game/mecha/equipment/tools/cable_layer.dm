@@ -29,31 +29,27 @@
 	occupant_message(message)
 	return
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "toggle", PROC_REF(topic_toggle))
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "cut", PROC_REF(topic_cut))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer)
+	op("toggle", topic("toggle"), then(PROC_REF(topic_toggle)))
+	op("cut", topic("cut"), asks(/datum/prompt/number/mecha_cable_cut, fields = list("default" = computed(PROC_REF(cable_cut_default)), "subject" = computed(PROC_REF(cable_cut_subject))), step = "length"), then(PROC_REF(topic_cut)))
 
-/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/topic_toggle(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/topic_toggle(datum/act/op/op_act)
 	set_ready_state(!equip_ready)
 	occupant_message("[src] [equip_ready?"dea":"a"]ctivated.")
 	src.mecha_log_message("[equip_ready?"Dea":"A"]ctivated.")
 
-/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/topic_cut(mob/user, list/args)
-	if(cable && cable.get_amount())
-		var/mob/pilot = chassis?.slot_item(MECHA_SLOT_PILOT)
-		if(!istype(pilot) || QDELETED(pilot))
-			return
-		open_request(src, /datum/prompt/number/mecha_cable_cut, PROC_REF(cable_length_entered), answerer = pilot, default = min(cable.get_amount(), 30), subject = chassis)
-	else
-		occupant_message("There's no more cable on the reel.")
-	return
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/cable_cut_default(datum/act/op/A)
+	return cable ? min(cable.get_amount(), 30) : 0
 
-/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/cable_length_entered(datum/act/request/context)
-	if(!context.answer)
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/cable_cut_subject(datum/act/op/A)
+	return chassis
+
+/// The pilot's answer: that much cable comes off the reel.
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/topic_cut(datum/act/op/A)
+	if(!cable || !cable.get_amount())
+		occupant_message("There's no more cable on the reel.")
 		return
-	var/datum/prompt/number/mecha_cable_cut/ask = context.answer
-	if(!cable)
-		return
-	var/m = min(ask.value, cable.get_amount())
+	var/m = min(A.step_value("length"), cable.get_amount())
 	if(m)
 		use_cable(m)
 		new /obj/item/stack/cable_coil(get_turf(chassis), m)

@@ -16,9 +16,10 @@
 	. = ..()
 	rel_set(src, nameof(my_deployer), my_tool)
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables, "toggle_deployable_mode", PROC_REF(topic_toggle_deployable_mode))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables)
+	op("toggle_deployable_mode", topic("toggle_deployable_mode"), then(PROC_REF(topic_toggle_deployable_mode)))
 
-/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/proc/topic_toggle_deployable_mode(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/proc/topic_toggle_deployable_mode(datum/act/op/A)
 	my_deployer().attack_self()
 	update_chassis_page()
 	return

@@ -130,6 +130,11 @@ CAPABILITIES(/datum/game_mode_panel)
 
 CAPABILITIES(/datum/game_mode)
 	owns_one(nameof(tgui_game_mode_panel), /datum/game_mode_panel)
+	op("toggle", topic("toggle", arg("toggle", schema_text(), optional = TRUE)), needs(req_rights(R_ADMIN|R_EVENT)), then(PROC_REF(topic_toggle)))
+	op("set", topic("set", arg("set", schema_text(), optional = TRUE)), needs(req_rights(R_ADMIN|R_EVENT)), asks(/datum/prompt/number/game_mode_option, fields = list("question" = computed(PROC_REF(game_mode_option_question)), "window_max" = computed(PROC_REF(game_mode_option_max))), step = "value"), then(PROC_REF(topic_set)))
+	op("debug_antag", topic("debug_antag", arg("debug_antag", schema_text(), optional = TRUE)), needs(req_rights(R_ADMIN|R_EVENT)), then(PROC_REF(topic_debug_antag)))
+	op("remove_antag_type", topic("remove_antag_type", arg("remove_antag_type", schema_text(), optional = TRUE)), needs(req_rights(R_ADMIN|R_EVENT)), then(PROC_REF(topic_remove_antag_type)))
+	op("add_antag_type", topic("add_antag_type"), needs(req_rights(R_ADMIN|R_EVENT)), asks(/datum/prompt/choice, fields = list("title" = "Select Antag Type", "question" = "Which type do you wish to add?", "choices" = computed(PROC_REF(antag_type_choices)), "rights" = R_ADMIN|R_SERVER, "timeout" = 0), step = "type"), then(PROC_REF(topic_add_antag_type)))
 
 /proc/open_game_mode_panel(mob/user)
 	if(!SSticker || !SSticker.mode)

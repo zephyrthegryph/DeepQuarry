@@ -39,7 +39,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		- If so, is there any protection against somebody spam-clicking a link?
 	If you have any  questions about this stuff feel free to ask. ~Carn
 	*/
-// ALLOW(sys_topic_override): BYOND's href entry point: rate limits, tgui middleware and logging, then the TOPIC_ACTION dispatcher.
+// ALLOW(sys_topic_override): BYOND's href entry point: rate limits, tgui middleware and logging, then the link goes to the input inbox (a datum's link is an op, code/engine/parts/inputs.dm).
 /client/Topic(href, href_list, hsrc)
 	// asset_cache: the ack needs no mob, so it is handled before the usr gate (a body swap
 	// between the send and the ack must not drop it)
@@ -117,8 +117,8 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		to_chat(src, span_danger("An error has been detected in how your client is receiving resources. Attempting to correct.... (If you keep seeing these messages you might want to close byond and reconnect)"))
 		src << browse("...", "window=asset_cache_browser")
 		return
-	// The client's own href actions (TOPIC_ACTION rows on /client, below).
-	if(!hsrc && topic_dispatch(src, user, href_list))
+	// The client's own href actions: ops of its session (code/modules/client/client_session.dm).
+	if(!hsrc && session && op_topic_href(user, session, href_list))
 		return
 
 	// ALLOW(sys_topic_raw_dispatch): client/Topic is BYOND's href entry: transport-level keys (asset cache, rate limiter, statbrowser) are read before any datum dispatch.
@@ -140,15 +140,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	..() //redirect to hsrc.Topic()
 
 // ---------------------------------------------------------------- the client's href actions
-
-//Admin PM
-TOPIC_ACTION(/client, "priv_msg", PROC_REF(topic_priv_msg), TOPIC_TEXT("priv_msg", 64))
-TOPIC_ACTION(/client, "mentorhelp_msg", PROC_REF(topic_mentorhelp_msg), TOPIC_TEXT("mentorhelp_msg", 64))
-TOPIC_ACTION(/client, "discord_reg", PROC_REF(topic_discord_reg), TOPIC_TEXT("discord_reg", 128))
-TOPIC_ACTION(/client, "reload_statbrowser", PROC_REF(topic_reload_statbrowser))
-TOPIC_ACTION(/client, "asset_cache_preload_data", PROC_REF(topic_asset_cache_preload_data), TOPIC_TEXT("asset_cache_preload_data"))
-TOPIC_ACTION(/client, "commandbar_typing", PROC_REF(topic_commandbar_typing), TOPIC_TEXT("verb", 64), TOPIC_NUM("argument_length"))
-TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("link", 1024))
+// Their ops are on the session (code/modules/client/client_session.dm); these are what each one does for the client.
 
 /// A client passed in an href as a client ref, a mob ref (older links) or a ckey.
 /client/proc/topic_client_or_ckey(raw)
@@ -158,20 +150,19 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		C = M?.client
 	return C
 
-/client/proc/topic_priv_msg(mob/user, list/args)
-	var/passed_key = args["priv_msg"]
+/client/proc/topic_priv_msg(mob/user, passed_key)
 	var/C = topic_client_or_ckey(passed_key)
 	if(!C && istext(passed_key))
 		C = passed_key
 	cmd_admin_pm(C, null)
 	return TRUE
 
-/client/proc/topic_mentorhelp_msg(mob/user, list/args)
-	cmd_mentor_pm(topic_client_or_ckey(args["mentorhelp_msg"]), null)
+/client/proc/topic_mentorhelp_msg(mob/user, target_key)
+	cmd_mentor_pm(topic_client_or_ckey(target_key), null)
 	return TRUE
 
-/client/proc/topic_discord_reg(mob/user, list/args)
-	var/their_id = html_decode(args["discord_reg"])
+/client/proc/topic_discord_reg(mob/user, registration_id)
+	var/their_id = html_decode(registration_id)
 	var/sane = FALSE
 	for(var/list/L as anything in GLOB.pending_discord_registrations)
 		if(!islist(L))
@@ -194,20 +185,20 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	io_job(null, /datum/io_backend/sql, "UPDATE erro_player SET discord_id = :discord_id WHERE ckey = :ckey", list("discord_id" = their_id, "ckey" = ckey), GLOBAL_PROC_REF(discord_registration_done), ckey, their_id)
 	return TRUE
 
-/client/proc/topic_reload_statbrowser(mob/user, list/args)
+/client/proc/topic_reload_statbrowser(mob/user)
 	stat_panel.reinitialize()
 	return TRUE
 
-/client/proc/topic_asset_cache_preload_data(mob/user, list/args)
-	asset_cache_preload_data(args["asset_cache_preload_data"])
+/client/proc/topic_asset_cache_preload_data(mob/user, preload_data)
+	asset_cache_preload_data(preload_data)
 	return TRUE
 
-/client/proc/topic_commandbar_typing(mob/user, list/args)
-	handle_commandbar_typing(args["verb"], args["argument_length"])
+/client/proc/topic_commandbar_typing(mob/user, typed_verb, argument_length)
+	handle_commandbar_typing(typed_verb, argument_length)
 	return TRUE
 
-/client/proc/topic_open_link(mob/user, list/args)
-	src << link(args["link"])
+/client/proc/topic_open_link(mob/user, url)
+	src << link(url)
 	return TRUE
 
 ///dumb workaround because byond doesnt seem to recognize the Topic() typepath for /datum/proc/Topic() from the client Topic,

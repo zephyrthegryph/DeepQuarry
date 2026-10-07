@@ -369,9 +369,9 @@ DECLARE_APPEARANCE_PROC(/area, TYPE_PROC_REF(/atom, appearance_overlays), list()
 	. = ..()
 	VV_DROPDOWN_OPTION("check_static_power", "Check Static Power")
 
-VV_TOPIC_ACTION(/area, "check_static_power", PROC_REF(vv_topic_check_static_power), TOPIC_RIGHTS(R_DEBUG))
 
-/area/proc/vv_topic_check_static_power(mob/user, list/args)
+/area/proc/vv_topic_check_static_power(datum/act/op/A)
+	var/mob/user = A.actor
 	check_static_power(user)
 	user.client?.debug_variables(src)
 	return TRUE
@@ -689,6 +689,7 @@ CAPABILITIES(/area)
 	after_init(0, then(PROC_REF(area_after_init)))
 	ref_one(nameof(main_air_alarm), /obj/machinery/alarm)
 	on_change(nameof(apc), ANY, then(PROC_REF(apc_changed)))
+	op("vv_check_static_power", topic_in(VV_TOPIC, "check_static_power"), needs(req_rights(R_DEBUG)), then(PROC_REF(vv_topic_check_static_power)))
 
 /area/proc/apc_changed(datum/act/A)
 	power_loads_changed()

@@ -111,34 +111,29 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 	// structured TGUI AdminReport.
 	dq_admin_report_html(my_client().mob, "[author]'s Feedback", dat, src)
 
-TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "close", PROC_REF(topic_close))
-TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "show_full_feedback", PROC_REF(topic_show_full_feedback), TOPIC_TEXT("feedback_author"), TOPIC_TEXT("feedback_content"))
-TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_id", PROC_REF(topic_filter_id))
-TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_author", PROC_REF(topic_filter_author))
-TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_topic", PROC_REF(topic_filter_topic))
-TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_content", PROC_REF(topic_filter_content))
-TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF(topic_filter_datetime))
+CAPABILITIES(/datum/managed_browser/feedback_viewer)
+	op("close", topic("close"), then(PROC_REF(topic_close)))
+	op("show_full_feedback", topic("show_full_feedback", arg("feedback_author", schema_text(), optional = TRUE), arg("feedback_content", schema_text(), optional = TRUE)), then(PROC_REF(topic_show_full_feedback)))
+	op("filter_id", topic("filter_id"), asks(/datum/prompt/number/feedback_filter, fields = list("question" = "Write feedback ID here.", "title" = "Filter by ID"), step = "value"), then(PROC_REF(topic_filter_id)))
+	op("filter_author", topic("filter_author"), asks(/datum/prompt/text/feedback_filter, fields = list("question" = "Write desired key or hash here. Partial keys/hashes are allowed.", "title" = "Filter by Author"), step = "value"), then(PROC_REF(topic_filter_author)))
+	op("filter_topic", topic("filter_topic"), asks(/datum/prompt/text/feedback_filter, fields = list("question" = computed(PROC_REF(filter_topic_question)), "title" = "Filter by Topic"), step = "value"), then(PROC_REF(topic_filter_topic)))
+	op("filter_content", topic("filter_content"), asks(/datum/prompt/text/feedback_filter, fields = list("question" = "Write desired content to find here. Partial matches are allowed.", "title" = "Filter by Content", "multiline" = TRUE, "max_len" = MAX_TGUI_INPUT), step = "value"), then(PROC_REF(topic_filter_content)))
+	op("filter_datetime", topic("filter_datetime"), asks(/datum/prompt/text/feedback_filter, fields = list("question" = "Write desired datetime. Partial matches are allowed.\nFormat is 'YYYY-MM-DD HH:MM:SS'.", "title" = "Filter by Datetime"), step = "value"), then(PROC_REF(topic_filter_datetime)))
 
 // Only the viewer's own client drives it.
 /datum/managed_browser/feedback_viewer/topic_allowed(mob/user, list/href_list)
 	var/client/C = my_client()
 	return C && user?.client == C
 
-/datum/managed_browser/feedback_viewer/proc/topic_close(mob/user, list/args)
+/datum/managed_browser/feedback_viewer/proc/topic_close(datum/act/op/A)
 	return TRUE // To avoid refreshing.
 
-/datum/managed_browser/feedback_viewer/proc/topic_show_full_feedback(mob/user, list/args)
-	display_big_feedback(args["feedback_author"], args["feedback_content"])
+/datum/managed_browser/feedback_viewer/proc/topic_show_full_feedback(datum/act/op/A, href_feedback_author, href_feedback_content)
+	display_big_feedback(href_feedback_author, href_feedback_content)
 	return TRUE
 
-/datum/managed_browser/feedback_viewer/proc/topic_filter_id(mob/user, list/args)
-	var/question = "Write feedback ID here."
-	var/datum/request/replayed = feedback_filter_request(user, args, "k130")
-	if(!replayed)
-		var/list/original_href = args[TOPIC_HREF]
-		open_request(src, /datum/prompt/number/feedback_filter, PROC_REF(feedback_filter_answered), answerer = my_client()?.mob, question = question, title = "Filter by ID", captured = list("href" = feedback_scalar_href(original_href), "feedback_key" = "k130"))
-		return
-	var/id_to_search = replayed.value
+/datum/managed_browser/feedback_viewer/proc/topic_filter_id(datum/act/op/A)
+	var/id_to_search = A.step_value("value")
 	if(isnull(id_to_search))
 		return
 	if(id_to_search)
@@ -146,14 +141,8 @@ TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF
 	display()
 	return TRUE
 
-/datum/managed_browser/feedback_viewer/proc/topic_filter_author(mob/user, list/args)
-	var/question = "Write desired key or hash here. Partial keys/hashes are allowed."
-	var/datum/request/replayed = feedback_filter_request(user, args, "k135")
-	if(!replayed)
-		var/list/original_href = args[TOPIC_HREF]
-		open_request(src, /datum/prompt/text/feedback_filter, PROC_REF(feedback_filter_answered), answerer = my_client()?.mob, question = question, title = "Filter by Author", captured = list("href" = feedback_scalar_href(original_href), "feedback_key" = "k135"))
-		return
-	var/author_to_search = replayed.value
+/datum/managed_browser/feedback_viewer/proc/topic_filter_author(datum/act/op/A)
+	var/author_to_search = A.step_value("value")
 	if(isnull(author_to_search))
 		return
 	if(author_to_search)
@@ -161,14 +150,12 @@ TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF
 	display()
 	return TRUE
 
-/datum/managed_browser/feedback_viewer/proc/topic_filter_topic(mob/user, list/args)
-	var/question = "Write desired topic here. Partial topics are allowed. \nThe current topics in the config are [english_list(CONFIG_GET(str_list/sqlite_feedback_topics))]."
-	var/datum/request/replayed = feedback_filter_request(user, args, "k140")
-	if(!replayed)
-		var/list/original_href = args[TOPIC_HREF]
-		open_request(src, /datum/prompt/text/feedback_filter, PROC_REF(feedback_filter_answered), answerer = my_client()?.mob, question = question, title = "Filter by Topic", captured = list("href" = feedback_scalar_href(original_href), "feedback_key" = "k140"))
-		return
-	var/topic_to_search = replayed.value
+/// The question of the topic filter lists the topics the config knows.
+/datum/managed_browser/feedback_viewer/proc/filter_topic_question(datum/act/op/A)
+	return "Write desired topic here. Partial topics are allowed. \nThe current topics in the config are [english_list(CONFIG_GET(str_list/sqlite_feedback_topics))]."
+
+/datum/managed_browser/feedback_viewer/proc/topic_filter_topic(datum/act/op/A)
+	var/topic_to_search = A.step_value("value")
 	if(isnull(topic_to_search))
 		return
 	if(topic_to_search)
@@ -176,14 +163,8 @@ TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF
 	display()
 	return TRUE
 
-/datum/managed_browser/feedback_viewer/proc/topic_filter_content(mob/user, list/args)
-	var/question = "Write desired content to find here. Partial matches are allowed."
-	var/datum/request/replayed = feedback_filter_request(user, args, "k145")
-	if(!replayed)
-		var/list/original_href = args[TOPIC_HREF]
-		open_request(src, /datum/prompt/text/feedback_filter, PROC_REF(feedback_filter_answered), answerer = my_client()?.mob, question = question, title = "Filter by Content", multiline = TRUE, max_len = MAX_TGUI_INPUT, captured = list("href" = feedback_scalar_href(original_href), "feedback_key" = "k145"))
-		return
-	var/content_to_search = replayed.value
+/datum/managed_browser/feedback_viewer/proc/topic_filter_content(datum/act/op/A)
+	var/content_to_search = A.step_value("value")
 	if(isnull(content_to_search))
 		return
 	if(content_to_search)
@@ -191,14 +172,8 @@ TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF
 	display()
 	return TRUE
 
-/datum/managed_browser/feedback_viewer/proc/topic_filter_datetime(mob/user, list/args)
-	var/question = "Write desired datetime. Partial matches are allowed.\nFormat is 'YYYY-MM-DD HH:MM:SS'."
-	var/datum/request/replayed = feedback_filter_request(user, args, "k150")
-	if(!replayed)
-		var/list/original_href = args[TOPIC_HREF]
-		open_request(src, /datum/prompt/text/feedback_filter, PROC_REF(feedback_filter_answered), answerer = my_client()?.mob, question = question, title = "Filter by Datetime", captured = list("href" = feedback_scalar_href(original_href), "feedback_key" = "k150"))
-		return
-	var/datetime_to_search = replayed.value
+/datum/managed_browser/feedback_viewer/proc/topic_filter_datetime(datum/act/op/A)
+	var/datetime_to_search = A.step_value("value")
 	if(isnull(datetime_to_search))
 		return
 	if(datetime_to_search)
@@ -208,30 +183,6 @@ TOPIC_ACTION(/datum/managed_browser/feedback_viewer, "filter_datetime", PROC_REF
 
 
 
-
-/// A new question keeps the original URL scalars, never a preceding ended request.
-/datum/managed_browser/feedback_viewer/proc/feedback_scalar_href(list/original_href)
-	var/list/scalars = original_href.Copy()
-	scalars -= "feedback_request"
-	return scalars
-
-/// Only an actual ended native filter request supplies server-side answers.
-/datum/managed_browser/feedback_viewer/proc/feedback_filter_request(mob/user, list/args, key)
-	var/list/original_href = args[TOPIC_HREF]
-	var/datum/request/resumed
-	if(original_href)
-		resumed = original_href["feedback_request"]
-	if((istype(resumed, /datum/prompt/text/feedback_filter) || istype(resumed, /datum/prompt/number/feedback_filter)) && resumed.owner == src && resumed.answerer == user && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(feedback_filter_answered) && resumed.captured?["feedback_key"] == key)
-		return resumed
-	return null
-
-/datum/managed_browser/feedback_viewer/proc/feedback_filter_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/list/captured_href = A.answer.captured["href"]
-	var/list/replayed_href = captured_href.Copy()
-	replayed_href["feedback_request"] = A.answer
-	world.push_usr(A.request.answerer, new /datum/callback(GLOBAL_PROC, GLOBAL_PROC_REF(topic_dispatch)), src, A.request.answerer, replayed_href)
 
 /datum/prompt/text/feedback_filter
 	timeout = 0

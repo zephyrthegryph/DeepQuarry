@@ -71,6 +71,8 @@ CAPABILITIES(/obj/item/areaeditor)
 	op("room_colors", menu(), label("Show Room Colors"), needs(carried()), then(PROC_REF(verb_room_colors)))
 	op("area_colors", menu(), label("Show Area Colors"), needs(carried()), then(PROC_REF(verb_area_colors)))
 	op("remove_colors", menu(), label("Remove Area Colors"), needs(carried()), then(PROC_REF(verb_remove_colors)))
+	op("create_area", topic("create_area"), then(PROC_REF(topic_create_area)))
+	op("create_area_whole", topic("create_area_whole"), then(PROC_REF(topic_create_area_whole)))
 
 /obj/item/areaeditor/proc/verb_room_colors(datum/act/op/A)
 	seeRoomColors_effect(A.actor)
@@ -154,8 +156,6 @@ CAPABILITIES(/obj/item/areaeditor)
 		else
 			. += "Your [src.name] seems like it has enough room for [charges] more edits!"
 
-TOPIC_ACTION(/obj/item/areaeditor, "create_area", PROC_REF(topic_create_area))
-TOPIC_ACTION(/obj/item/areaeditor, "create_area_whole", PROC_REF(topic_create_area_whole))
 
 // The editor works only in the active hand of someone able to use it.
 /obj/item/areaeditor/topic_allowed(mob/user, list/href_list)
@@ -165,7 +165,8 @@ TOPIC_ACTION(/obj/item/areaeditor, "create_area_whole", PROC_REF(topic_create_ar
 	if(user.restrained() || user.stat || user.get_active_hand() != src)
 		return FALSE
 
-/obj/item/areaeditor/proc/topic_create_area(mob/user, list/args)
+/obj/item/areaeditor/proc/topic_create_area(datum/act/op/op_act)
+	var/mob/user = op_act.actor
 	if(in_use)
 		return
 	var/area/A = get_area(user)
@@ -178,7 +179,8 @@ TOPIC_ACTION(/obj/item/areaeditor, "create_area_whole", PROC_REF(topic_create_ar
 	updateUsrDialog(user)
 	return TRUE
 
-/obj/item/areaeditor/proc/topic_create_area_whole(mob/user, list/args)
+/obj/item/areaeditor/proc/topic_create_area_whole(datum/act/op/A)
+	var/mob/user = A.actor
 	if(in_use)
 		return
 	in_use = TRUE
@@ -199,6 +201,8 @@ TOPIC_ACTION(/obj/item/areaeditor, "create_area_whole", PROC_REF(topic_create_ar
 
 CAPABILITIES(/obj/item/wire_reader)
 	op("read_wires", in_hand(), label("Read"), then(PROC_REF(interaction_read_wires)))
+	op("view_wireset", topic("view_wireset", arg("view_wireset", schema_text(MAX_NAME_LEN), optional = TRUE)), then(PROC_REF(topic_view_wireset)))
+	op("view_legend", topic("view_legend"), then(PROC_REF(topic_view_legend)))
 
 /// Old attack_self. Convert this to TGUI some time.
 /obj/item/wire_reader/proc/interaction_read_wires(datum/act/op/A)
@@ -216,15 +220,15 @@ CAPABILITIES(/obj/item/wire_reader)
 	// structured TGUI AdminReport; byond:// links forwarded to host.
 	dq_admin_report_html(user, "[src]", ., src)
 
-TOPIC_ACTION(/obj/item/wire_reader, "view_wireset", PROC_REF(topic_view_wireset), TOPIC_TEXT("view_wireset", MAX_NAME_LEN))
-TOPIC_ACTION(/obj/item/wire_reader, "view_legend", PROC_REF(topic_view_legend))
 
-/obj/item/wire_reader/proc/topic_view_wireset(mob/user, list/args)
-	legend = args["view_wireset"]
+/obj/item/wire_reader/proc/topic_view_wireset(datum/act/op/A, href_view_wireset)
+	var/mob/user = A.actor
+	legend = href_view_wireset
 	attack_self(user)
 	return TRUE
 
-/obj/item/wire_reader/proc/topic_view_legend(mob/user, list/args)
+/obj/item/wire_reader/proc/topic_view_legend(datum/act/op/A)
+	var/mob/user = A.actor
 	legend = TRUE
 	attack_self(user)
 	return TRUE
@@ -291,12 +295,14 @@ TOPIC_ACTION(/obj/item/wire_reader, "view_legend", PROC_REF(topic_view_legend))
 	// structured TGUI AdminReport; byond:// links forwarded to host.
 	dq_admin_report_html(user, "[src]", ., src)
 
-TOPIC_ACTION(/obj/item/areaeditor/blueprints, "edit_area", PROC_REF(topic_edit_area))
-TOPIC_ACTION(/obj/item/areaeditor/blueprints, "exit_legend", PROC_REF(topic_exit_legend))
-TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_legend", PROC_REF(topic_view_legend))
-TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_view_wireset), TOPIC_TEXT("view_wireset", MAX_NAME_LEN))
+CAPABILITIES(/obj/item/areaeditor/blueprints)
+	op("edit_area", topic("edit_area"), then(PROC_REF(topic_edit_area)))
+	op("exit_legend", topic("exit_legend"), then(PROC_REF(topic_exit_legend)))
+	op("view_legend", topic("view_legend"), then(PROC_REF(topic_view_legend)))
+	op("view_wireset", topic("view_wireset", arg("view_wireset", schema_text(MAX_NAME_LEN), optional = TRUE)), then(PROC_REF(topic_view_wireset)))
 
-/obj/item/areaeditor/blueprints/proc/topic_edit_area(mob/user, list/args)
+/obj/item/areaeditor/blueprints/proc/topic_edit_area(datum/act/op/A)
+	var/mob/user = A.actor
 	if(get_area_type(get_area(user))!=AREA_STATION)
 		return
 	if(in_use)
@@ -307,20 +313,23 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	attack_self(user)
 	return TRUE
 
-/obj/item/areaeditor/blueprints/proc/topic_exit_legend(mob/user, list/args)
+/obj/item/areaeditor/blueprints/proc/topic_exit_legend(datum/act/op/A)
+	var/mob/user = A.actor
 	legend = FALSE
 	attack_self(user)
 	return TRUE
 
-/obj/item/areaeditor/blueprints/proc/topic_view_legend(mob/user, list/args)
+/obj/item/areaeditor/blueprints/proc/topic_view_legend(datum/act/op/A)
+	var/mob/user = A.actor
 	if(wire_schematics) //No href hacks allow for you, my friend!
 		legend = TRUE
 	attack_self(user)
 	return TRUE
 
-/obj/item/areaeditor/blueprints/proc/topic_view_wireset(mob/user, list/args)
+/obj/item/areaeditor/blueprints/proc/topic_view_wireset(datum/act/op/A, href_view_wireset)
+	var/mob/user = A.actor
 	if(wire_schematics) //No href hacks allow for you, my friend!
-		legend = args["view_wireset"]
+		legend = href_view_wireset
 	attack_self(user)
 	return TRUE
 

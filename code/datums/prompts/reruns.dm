@@ -132,11 +132,11 @@
 
 // ---------------------------------------------------------------- Topic() handlers
 //
-// The answer re-enters the TOPIC_ACTION dispatcher with the same href_list plus the answer; `key` names it. A handler passes its args
+// The answer re-enters the topic dispatcher (topic_dispatch(), which tries the holder's topic op first) with the same href_list plus the answer; `key` names it. A handler passes its args
 // list (the raw href_list is args[TOPIC_HREF]).
 
 /datum/proc/topic_rerun_ask(mob/user, list/href_list, key, prompt_type, list/fields)
-	// A TOPIC_ACTION handler passes its args list: the raw href_list rides in it.
+	// A topic handler passes the raw href list (A.topic_href()); a legacy row's args list carries it under TOPIC_HREF.
 	if(islist(href_list[TOPIC_HREF]))
 		href_list = href_list[TOPIC_HREF]
 	var/answer_key = "rerun_answer_[key]"

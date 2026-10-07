@@ -74,9 +74,7 @@
 	return
 
 
-TOPIC_ACTION(/obj/mecha/micro, "close", PROC_REF(topic_close))
-
-/obj/mecha/micro/topic_close(mob/user, list/args)
+/obj/mecha/micro/topic_close(datum/act/op/A)
 	am = null
 
 // override move_inside() so only micro crew can use them

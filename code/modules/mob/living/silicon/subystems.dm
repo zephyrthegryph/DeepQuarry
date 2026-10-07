@@ -56,6 +56,10 @@
 
 	alarm_monitor.tgui_interact(src)
 
+/// The "show alerts" link of a silicon's own chat (the op is declared on /mob, code/modules/mob/mob_defines.dm).
+/mob/living/silicon/proc/topic_showalerts(datum/act/op/A)
+	subsystem_alarm_monitor()
+
 /********************
 *	Atmos Control	*
 ********************/

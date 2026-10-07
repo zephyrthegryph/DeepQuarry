@@ -433,6 +433,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	param(nameof(dir), pos = 1)
 	param(nameof(building), pos = 2)
+	op("vv_removepainting", topic_in(VV_TOPIC, "removepainting"), then(PROC_REF(vv_topic_remove_painting)))
 
 /obj/structure/sign/painting/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
@@ -719,9 +720,9 @@ CAPABILITIES(/obj/structure/sign/painting)
 	. = ..()
 	VV_DROPDOWN_OPTION("removepainting", "Remove Persistent Painting")
 
-VV_TOPIC_ACTION(/obj/structure/sign/painting, "removepainting", PROC_REF(vv_topic_remove_painting))
 
-/obj/structure/sign/painting/proc/vv_topic_remove_painting(mob/user, list/args)
+/obj/structure/sign/painting/proc/vv_topic_remove_painting(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!persistence_id || !current_canvas)
 		to_chat(user,span_warning("This is not a persistent painting."))
 		return

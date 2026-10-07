@@ -112,9 +112,10 @@
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
 	return "[..()] <br />[occupant? "\[Occupant: [occupant]\]|" : ""]Exterior Hatch: <a href='byond://?src=\ref[src];toggle_lock=1'>Toggle Lock</a>"
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/passenger, "toggle_lock", PROC_REF(topic_toggle_lock))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/passenger)
+	op("toggle_lock", topic("toggle_lock"), then(PROC_REF(topic_toggle_lock)))
 
-/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/topic_toggle_lock(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/topic_toggle_lock(datum/act/op/A)
 	door_locked = !door_locked
 	occupant_message("Passenger compartment hatch [door_locked? "locked" : "unlocked"].")
 	if (chassis)

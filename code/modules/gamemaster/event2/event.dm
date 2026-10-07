@@ -176,9 +176,11 @@ This allows for events that have their announcement happen after the end itself.
 	if(ended && announced)
 		finish()
 
-TOPIC_ACTION(/datum/event2/event, "abort", PROC_REF(topic_abort), TOPIC_RIGHTS(R_ADMIN|R_EVENT|R_DEBUG))
+CAPABILITIES(/datum/event2/event)
+	op("abort", topic("abort"), needs(req_rights(R_ADMIN|R_EVENT|R_DEBUG)), then(PROC_REF(topic_abort)))
 
-/datum/event2/event/proc/topic_abort(mob/user, list/args)
+/datum/event2/event/proc/topic_abort(datum/act/op/A)
+	var/mob/user = A.actor
 	abort()
 	message_admins("Event '[type]' was aborted by [user.key].")
 	return TRUE

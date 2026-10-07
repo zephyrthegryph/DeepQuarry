@@ -11,6 +11,8 @@ CAPABILITIES(/mob/observer/dead)
 	op("observer_tome_manifest", item(/obj/item/book/tome), label("Manifest"), then(PROC_REF(observer_tome_manifest)))
 	drag_onto(PROC_REF(drop_input))
 	param(nameof(admin_ghosted), pos = 1)
+	op("track", topic("track", arg("track", schema_ref(/mob), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_track)))
+	op("reenter", topic("reenter"), then(PROC_REF(topic_reenter)))
 
 /datum/exonet_log_panel
 	var/tmp/mob/observer/dead/host

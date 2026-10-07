@@ -54,9 +54,9 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 	if(!QDELETED(src))
 		SStgui.update_uis(src)
 
-TOPIC_ACTION(/obj/machinery/computer/ship, "sync", PROC_REF(topic_sync))
 
-/obj/machinery/computer/ship/proc/topic_sync(mob/user, list/args)
+/obj/machinery/computer/ship/proc/topic_sync(datum/act/op/A)
+	var/mob/user = A.actor
 	if(sync_linked(user))
 		interface_interact(user)
 	return TRUE

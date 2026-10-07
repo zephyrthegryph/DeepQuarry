@@ -39,9 +39,10 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/mecha_parts/mecha_equipment/repair_droid, P
 	return (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[src.name] - <a href='byond://?src=\ref[src];toggle_repairs=1'>[repairing?"Dea":"A"]ctivate</a>"
 
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/repair_droid, "toggle_repairs", PROC_REF(topic_toggle_repairs))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/repair_droid)
+	op("toggle_repairs", topic("toggle_repairs"), then(PROC_REF(topic_toggle_repairs)))
 
-/obj/item/mecha_parts/mecha_equipment/repair_droid/proc/topic_toggle_repairs(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/repair_droid/proc/topic_toggle_repairs(datum/act/op/A)
 	chassis.cut_overlay(droid_overlay)
 	if(repairing)
 		droid_overlay = new(src.icon, icon_state = "repair_droid")

@@ -40,18 +40,14 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 /datum/game_mode/New()
 	..()
 
-TOPIC_ACTION(/datum/game_mode, "toggle", PROC_REF(topic_toggle), TOPIC_RIGHTS(R_ADMIN|R_EVENT), TOPIC_TEXT("toggle"))
-TOPIC_ACTION(/datum/game_mode, "set", PROC_REF(topic_set), TOPIC_RIGHTS(R_ADMIN|R_EVENT), TOPIC_TEXT("set"))
-TOPIC_ACTION(/datum/game_mode, "debug_antag", PROC_REF(topic_debug_antag), TOPIC_RIGHTS(R_ADMIN|R_EVENT), TOPIC_TEXT("debug_antag"))
-TOPIC_ACTION(/datum/game_mode, "remove_antag_type", PROC_REF(topic_remove_antag_type), TOPIC_RIGHTS(R_ADMIN|R_EVENT), TOPIC_TEXT("remove_antag_type"))
-TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type), TOPIC_RIGHTS(R_ADMIN|R_EVENT))
 
 /// Re-opens the game mode panel after a game mode href action.
 /datum/game_mode/proc/refresh_game_mode_panel(mob/user)
 	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_game_mode)
 
-/datum/game_mode/proc/topic_toggle(mob/user, list/args)
-	var/option = args["toggle"]
+/datum/game_mode/proc/topic_toggle(datum/act/op/A, href_toggle)
+	var/mob/user = A.actor
+	var/option = href_toggle
 	switch(option)
 		if("respawn")
 			deny_respawn = !deny_respawn
@@ -65,61 +61,18 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 	message_admins("Admin [key_name_admin(user)] toggled game mode option '[option]'.")
 	refresh_game_mode_panel(user)
 
-/datum/game_mode/proc/topic_set(mob/user, list/args)
-	var/option = args["set"]
-	open_request(src, /datum/prompt/number/game_mode_option, PROC_REF(game_mode_option_entered), answerer = user, question = game_mode_option_prompt(option), window_max = option == "shuttle_delay" ? 20 : 100, option = option)
-	refresh_game_mode_panel(user)
+/datum/game_mode/proc/game_mode_option_question(datum/act/op/A)
+	return game_mode_option_prompt(A.args["set"])
 
-/datum/game_mode/proc/topic_debug_antag(mob/user, list/args)
-	var/id = args["debug_antag"]
-	if(id == "self")
-		user.client.debug_variables(src)
-		return
-	var/datum/antagonist/antag = SSantag.all_antag_types[id]
-	if(antag)
-		user.client.debug_variables(antag)
-		message_admins("Admin [key_name_admin(user)] is debugging the [antag.role_text] template.")
-	refresh_game_mode_panel(user)
+/datum/game_mode/proc/game_mode_option_max(datum/act/op/A)
+	return A.args["set"] == "shuttle_delay" ? 20 : 100
 
-/datum/game_mode/proc/topic_remove_antag_type(mob/user, list/args)
-	var/id = args["remove_antag_type"]
-	if(antag_tags && (id in antag_tags))
-		to_chat(user, "Cannot remove core mode antag type.")
-		return
-	var/datum/antagonist/antag = SSantag.all_antag_types[id]
-	if(antag_templates && antag_templates.len && antag && (antag in antag_templates) && (antag.id in GLOB.additional_antag_types))
-		rel_remove(src, nameof(antag_templates), antag)
-		GLOB.additional_antag_types -= antag.id
-		message_admins("Admin [key_name_admin(user)] removed [antag.role_text] template from game mode.")
-	refresh_game_mode_panel(user)
-
-/datum/game_mode/proc/topic_add_antag_type(mob/user, list/args)
-	open_request(src, /datum/prompt/choice, PROC_REF(antag_type_added), answerer = user, title = "Select Antag Type", question = "Which type do you wish to add?", choices = SSantag.all_antag_types, rights = R_ADMIN|R_SERVER, timeout = 0)
-
-/datum/game_mode/proc/game_mode_option_prompt(option)
+/// An admin sets a numeric game mode option (`href_set` names it).
+/datum/game_mode/proc/topic_set(datum/act/op/A, href_set)
+	var/mob/user = A.actor
+	var/option = href_set
+	var/choice = A.step_value("value")
 	switch(option)
-		if("shuttle_delay")
-			return "Enter a new shuttle delay multiplier"
-		if("antag_scaling")
-			return "Enter a new antagonist cap scaling coefficient."
-		if("event_modifier_moderate", "event_modifier_severe")
-			return "Enter a new moderate event time modifier."
-
-/// An admin sets a numeric game mode option (`option`).
-/datum/prompt/number/game_mode_option
-	timeout = 0
-	recheck_on_open = TRUE
-	rights = R_ADMIN|R_SERVER
-	var/option
-	var/window_max = INFINITY
-
-/datum/game_mode/proc/game_mode_option_entered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/datum/prompt/number/game_mode_option/ask = context.answer
-	var/mob/user = context.request.answerer
-	var/choice = ask.value
-	switch(ask.option)
 		if("shuttle_delay")
 			if(!choice || choice < 1 || choice > 20)
 				return
@@ -138,17 +91,61 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 				return
 			event_delay_mod_major = choice
 			refresh_event_modifiers()
-	message_admins("Admin [key_name_admin(user)] set game mode option '[ask.option]' to [choice].")
+	message_admins("Admin [key_name_admin(user)] set game mode option '[option]' to [choice].")
+	refresh_game_mode_panel(user)
 
-/datum/game_mode/proc/antag_type_added(datum/act/request/A)
-	if(!A.answer)
+/datum/game_mode/proc/topic_debug_antag(datum/act/op/A, href_debug_antag)
+	var/mob/user = A.actor
+	var/id = href_debug_antag
+	if(id == "self")
+		user.client.debug_variables(src)
 		return
-	var/mob/user = A.request.answerer
-	var/datum/antagonist/antag = SSantag.all_antag_types[A.answer.value]
+	var/datum/antagonist/antag = SSantag.all_antag_types[id]
+	if(antag)
+		user.client.debug_variables(antag)
+		message_admins("Admin [key_name_admin(user)] is debugging the [antag.role_text] template.")
+	refresh_game_mode_panel(user)
+
+/datum/game_mode/proc/topic_remove_antag_type(datum/act/op/A, href_remove_antag_type)
+	var/mob/user = A.actor
+	var/id = href_remove_antag_type
+	if(antag_tags && (id in antag_tags))
+		to_chat(user, "Cannot remove core mode antag type.")
+		return
+	var/datum/antagonist/antag = SSantag.all_antag_types[id]
+	if(antag_templates && antag_templates.len && antag && (antag in antag_templates) && (antag.id in GLOB.additional_antag_types))
+		rel_remove(src, nameof(antag_templates), antag)
+		GLOB.additional_antag_types -= antag.id
+		message_admins("Admin [key_name_admin(user)] removed [antag.role_text] template from game mode.")
+	refresh_game_mode_panel(user)
+
+/datum/game_mode/proc/antag_type_choices(datum/act/op/A)
+	return SSantag.all_antag_types
+
+/datum/game_mode/proc/topic_add_antag_type(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/antagonist/antag = SSantag.all_antag_types[A.step_value("type")]
 	if(antag)
 		if(!(antag in SSticker.mode.antag_templates))
 			rel_add(SSticker.mode, nameof(/datum/game_mode::antag_templates), antag)
 		message_admins("Admin [key_name_admin(user)] added [antag.role_text] template to game mode.")
+
+/datum/game_mode/proc/game_mode_option_prompt(option)
+	switch(option)
+		if("shuttle_delay")
+			return "Enter a new shuttle delay multiplier"
+		if("antag_scaling")
+			return "Enter a new antagonist cap scaling coefficient."
+		if("event_modifier_moderate", "event_modifier_severe")
+			return "Enter a new moderate event time modifier."
+
+/// An admin sets a numeric game mode option (`option`).
+/datum/prompt/number/game_mode_option
+	timeout = 0
+	recheck_on_open = TRUE
+	rights = R_ADMIN|R_SERVER
+	var/option
+	var/window_max = INFINITY
 
 /datum/game_mode/proc/announce() //to be called when round starts
 	to_chat(world, span_world("The current game mode is [capitalize(name)]!"))

@@ -572,10 +572,9 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	set category = VERB_CAT_OOC_GAME
 	reset_perspective()
 
-TOPIC_ACTION(/mob, "flavor_more", PROC_REF(topic_flavor_more))
-TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 
-/mob/proc/topic_flavor_more(mob/user, list/args)
+/mob/proc/topic_flavor_more(datum/act/op/A)
+	var/mob/user = A.actor
 	var/examine_text = splittext(flavor_text, "||")
 	var/index = 0
 	var/rendered_text = ""
@@ -590,9 +589,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 	dq_admin_report_html(user, "[name]", examine_text)
 	return TRUE
 
-/mob/proc/topic_flavor_change(mob/user, list/args)
-	if(user != src) // only your own flavor text
-		return
+/mob/proc/topic_flavor_change(datum/act/op/A, href_flavor_change)
 	update_flavor_text()
 	return TRUE
 
@@ -1396,7 +1393,6 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	choices = list(I_HURT, I_HELP)
 	timeout = 0
 	rights = R_HOLDER
-	var/faction
 	recheck_on_open = TRUE
 
 /datum/prompt/choice/vv_ai_wake
@@ -1406,86 +1402,49 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	buttons = TRUE
 	timeout = 0
 	rights = R_HOLDER
-	var/faction
-	var/stance
 	recheck_on_open = TRUE
 
-/mob/proc/vv_language_added(datum/act/request/A)
-	if(!A.answer)
-		return
-	return vv_language_added_apply(A)
-
-/mob/proc/vv_language_added_apply(datum/act/request/A)
-	var/datum/prompt/choice/vv_spawn/ask = A.answer
-	var/mob/user = ask.answerer
-	var/new_language = ask.value
+/mob/proc/vv_language_added_apply(datum/act/op/A)
+	var/mob/user = A.actor
+	var/new_language = A.step_value("language")
 	if(add_language(new_language))
 		to_chat(user, "Added [new_language] to [src].")
 		return
 	to_chat(user, "Mob already knows that language.")
 
-/mob/proc/vv_language_removed(datum/act/request/A)
-	if(!A.answer)
-		return
-	return vv_language_removed_apply(A)
-
-/mob/proc/vv_language_removed_apply(datum/act/request/A)
-	var/datum/prompt/choice/vv_spawn/ask = A.answer
-	var/mob/user = ask.answerer
-	var/datum/language/rem_language = ask.value
+/mob/proc/vv_language_removed_apply(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/language/rem_language = A.step_value("language")
 	if(remove_language(rem_language.name))
 		to_chat(user, "Removed [rem_language] from [src].")
 		return
 	to_chat(user, "Mob doesn't know that language.")
 
-/mob/proc/vv_verb_added(datum/act/request/A)
-	if(!A.answer)
-		return
-	return vv_verb_added_apply(A)
-
-/mob/proc/vv_verb_added_apply(datum/act/request/A)
-	var/datum/prompt/choice/vv_debug/ask = A.answer
-	var/verb = ask.value
+/mob/proc/vv_verb_added_apply(datum/act/op/A)
+	var/verb = A.step_value("verb")
 	if(verb != "Cancel")
 		// An admin's hand edit: lifts that admin hand's hide, grants from the admin source.
 		om_revoke(src, GRANT_VERB_HIDE, verb, verb_source(VERB_SOURCE_ADMIN))
 		grant(src, granted_verb(verb), verb_source(VERB_SOURCE_ADMIN))
 
-/mob/proc/vv_verb_removed(datum/act/request/A)
-	if(!A.answer)
-		return
-	return vv_verb_removed_apply(A)
-
-/mob/proc/vv_verb_removed_apply(datum/act/request/A)
-	var/datum/prompt/choice/vv_debug/ask = A.answer
+/mob/proc/vv_verb_removed_apply(datum/act/op/A)
+	var/verb_name = A.step_value("verb")
 	// Hidden, not revoked: the verb goes whatever grants it (the type, other sources).
-	revoke(src, granted_verb(ask.value), verb_source(VERB_SOURCE_ADMIN))
-	om_grant(src, GRANT_VERB_HIDE, ask.value, verb_source(VERB_SOURCE_ADMIN))
+	revoke(src, granted_verb(verb_name), verb_source(VERB_SOURCE_ADMIN))
+	om_grant(src, GRANT_VERB_HIDE, verb_name, verb_source(VERB_SOURCE_ADMIN))
 
-/mob/proc/vv_organ_added(datum/act/request/A)
-	if(!A.answer)
-		return
-	return vv_organ_added_apply(A)
-
-/mob/proc/vv_organ_added_apply(datum/act/request/A)
-	var/datum/prompt/choice/vv_spawn/ask = A.answer
-	var/mob/user = ask.answerer
-	var/new_organ = ask.value
+/mob/proc/vv_organ_added_apply(datum/act/op/A)
+	var/mob/user = A.actor
+	var/new_organ = A.step_value("organ")
 	var/mob/living/carbon/M = src
 	if(locate_in_list(M.internal_organ_list(), new_organ))
 		to_chat(user, "Mob already has that organ.")
 		return
 	new new_organ(M)
 
-/mob/proc/vv_organ_removed(datum/act/request/A)
-	if(!A.answer)
-		return
-	return vv_organ_removed_apply(A)
-
-/mob/proc/vv_organ_removed_apply(datum/act/request/A)
-	var/datum/prompt/choice/vv_spawn/ask = A.answer
-	var/mob/user = ask.answerer
-	var/obj/item/organ/rem_organ = ask.value
+/mob/proc/vv_organ_removed_apply(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/organ/rem_organ = A.step_value("organ")
 	var/mob/living/carbon/M = src
 	if(!(locate_in_list(M.internal_organ_list(), rem_organ)))
 		to_chat(user, "Mob does not have that organ.")
@@ -1494,89 +1453,41 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	rem_organ.removed()
 	spent(rem_organ, src)
 
-/// A VV AI brain setup: captured scalar answers advance only after each live admin re-check.
-/mob/proc/vv_ai_faction_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	return vv_ai_faction_apply(A)
 
-/mob/proc/vv_ai_faction_apply(datum/act/request/A)
-	open_request(src, /datum/prompt/choice/vv_ai_stance, PROC_REF(vv_ai_stance_chosen), answerer = A.answer.answerer, faction = A.answer.value)
-
-/mob/proc/vv_ai_stance_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	return vv_ai_stance_apply(A)
-
-/mob/proc/vv_ai_stance_apply(datum/act/request/A)
-	var/datum/prompt/choice/vv_ai_stance/ask = A.answer
-	open_request(src, /datum/prompt/choice/vv_ai_wake, PROC_REF(vv_ai_configured), answerer = ask.answerer, faction = ask.faction, stance = ask.value)
-
-/mob/proc/vv_ai_configured(datum/act/request/A)
-	if(!A.answer)
-		return
-	return vv_ai_configure_apply(A)
-
-/mob/proc/vv_ai_configure_apply(datum/act/request/A)
-	var/datum/prompt/choice/vv_ai_wake/ask = A.answer
-	var/mob/living/L = src
-	if(!istype(L) || !L.ai_brain)
-		return
-	L.faction = ask.faction
-	if(ask.stance)
-		L.set_use_stance(ask.stance)
-	if(ask.value == "Yes")
-		L.status_adjust(STAT_SLEEPING, -100)
-
-VV_TOPIC_ACTION(/mob, VV_HK_REGEN_ICONS, PROC_REF(vv_topic_regen_icons))
-VV_TOPIC_ACTION(/mob, VV_HK_REGEN_ICONS_FULL, PROC_REF(vv_topic_regen_icons_full))
-VV_TOPIC_ACTION(/mob, VV_HK_PLAYER_PANEL, PROC_REF(vv_topic_player_panel))
-VV_TOPIC_ACTION(/mob, VV_HK_GODMODE, PROC_REF(vv_topic_godmode), TOPIC_RIGHTS(R_ADMIN))
-VV_TOPIC_ACTION(/mob, VV_HK_ADDLANGUAGE, PROC_REF(vv_topic_add_language), TOPIC_RIGHTS(R_SPAWN))
-VV_TOPIC_ACTION(/mob, VV_HK_REMOVELANGUAGE, PROC_REF(vv_topic_remove_language), TOPIC_RIGHTS(R_SPAWN))
-VV_TOPIC_ACTION(/mob, VV_HK_ADDVERB, PROC_REF(vv_topic_add_verb), TOPIC_RIGHTS(R_DEBUG))
-VV_TOPIC_ACTION(/mob, VV_HK_REMOVEVERB, PROC_REF(vv_topic_remove_verb), TOPIC_RIGHTS(R_DEBUG))
-VV_TOPIC_ACTION(/mob/living/carbon, VV_HK_ADDORGAN, PROC_REF(vv_topic_add_organ), TOPIC_RIGHTS(R_SPAWN))
-VV_TOPIC_ACTION(/mob/living/carbon, VV_HK_REMOVEORGAN, PROC_REF(vv_topic_remove_organ), TOPIC_RIGHTS(R_SPAWN))
-VV_TOPIC_ACTION(/mob/living, VV_HK_GIVE_AI, PROC_REF(vv_topic_give_ai), TOPIC_RIGHTS(R_HOLDER))
-VV_TOPIC_ACTION(/mob, VV_HK_GIVE_SPELL, PROC_REF(vv_topic_give_spell))
-VV_TOPIC_ACTION(/mob, VV_HK_REMOVE_SPELL, PROC_REF(vv_topic_remove_spell))
-VV_TOPIC_ACTION(/mob, VV_HK_GIVE_MODIFIER, PROC_REF(vv_topic_give_modifier))
-VV_TOPIC_ACTION(/mob, VV_HK_GIB, PROC_REF(vv_topic_gib))
-VV_TOPIC_ACTION(/mob, VV_HK_BUILDMODE, PROC_REF(vv_topic_buildmode), TOPIC_RIGHTS(R_BUILDMODE))
-VV_TOPIC_ACTION(/mob, VV_HK_DROP_ALL, PROC_REF(vv_topic_drop_all))
-VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
-
-/mob/proc/vv_topic_regen_icons(mob/user, list/args)
+/mob/proc/vv_topic_regen_icons(datum/act/op/A)
 	regenerate_icons()
 	return TRUE
 
-/mob/proc/vv_topic_regen_icons_full(mob/user, list/args)
+/mob/proc/vv_topic_regen_icons_full(datum/act/op/A)
 	cut_overlays()
 	regenerate_icons()
 	return TRUE
 
-/mob/proc/vv_topic_player_panel(mob/user, list/args)
-	return SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_player_panel, src)
+/mob/proc/vv_topic_player_panel(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_player_panel, src)
+	return TRUE
 
-/mob/proc/vv_topic_godmode(mob/user, list/args)
+/mob/proc/vv_topic_godmode(datum/act/op/A)
+	var/mob/user = A.actor
 	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/cmd_admin_godmode, src)
 	return TRUE
 
-/mob/proc/vv_topic_add_language(mob/user, list/args)
-	open_request(src, /datum/prompt/choice/vv_spawn, PROC_REF(vv_language_added), answerer = user, title = "Language", question = "Please choose a language to add.", choices = GLOB.all_languages)
-	return TRUE
+/// The choices of the VV language questions.
+/mob/proc/vv_language_choices(datum/act/op/A)
+	return GLOB.all_languages
 
-/mob/proc/vv_topic_remove_language(mob/user, list/args)
-	if(!languages.len)
-		to_chat(user, "This mob knows no languages.")
-		return
-	open_request(src, /datum/prompt/choice/vv_spawn, PROC_REF(vv_language_removed), answerer = user, title = "Language", question = "Please choose a language to remove.", choices = languages)
-	return TRUE
+/mob/proc/vv_known_language_choices(datum/act/op/A)
+	return languages
 
-/mob/proc/vv_topic_add_verb(mob/user, list/args)
-	open_request(src, /datum/prompt/choice/vv_debug, PROC_REF(vv_verb_added), answerer = user, title = "Verbs", question = "Select a verb!", choices = vv_addable_verbs(src))
-	return TRUE
+
+
+/// The choices of the VV verb questions.
+/mob/proc/vv_verb_choices(datum/act/op/A)
+	return vv_addable_verbs(src)
+
+/mob/proc/vv_current_verb_choices(datum/act/op/A)
+	return verbs
 
 /// The verbs VV can add to `H` (a global proc: typesof(/mob/proc) inside a /mob proc is a cross-reference loop).
 /proc/vv_addable_verbs(mob/H)
@@ -1600,50 +1511,68 @@ VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
 
 	return possibleverbs
 
-/mob/proc/vv_topic_remove_verb(mob/user, list/args)
-	open_request(src, /datum/prompt/choice/vv_debug, PROC_REF(vv_verb_removed), answerer = user, title = "Verbs", question = "Please choose a verb to remove.", choices = verbs)
-	return TRUE
+/// The choices of the VV organ questions.
+/mob/living/carbon/proc/vv_organ_type_choices(datum/act/op/A)
+	return subtypesof(/obj/item/organ)
 
-/mob/living/carbon/proc/vv_topic_add_organ(mob/user, list/args)
-	open_request(src, /datum/prompt/choice/vv_spawn, PROC_REF(vv_organ_added), answerer = user, title = "Organ", question = "Please choose an organ to add.", choices = subtypesof(/obj/item/organ))
-	return TRUE
+/mob/living/carbon/proc/vv_organ_choices(datum/act/op/A)
+	return internal_organ_list()
 
-/mob/living/carbon/proc/vv_topic_remove_organ(mob/user, list/args)
-	open_request(src, /datum/prompt/choice/vv_spawn, PROC_REF(vv_organ_removed), answerer = user, title = "Organ", question = "Please choose an organ to remove.", choices = internal_organ_list())
-	return TRUE
+/// The first VV AI question says so when the mob is a player's (the later answers are then refused).
+/mob/living/proc/vv_ai_faction_question(datum/act/op/A)
+	return (client || teleop) ? "This cannot be used on player mobs! Please close this window." : "Please input AI faction"
 
-/mob/living/proc/vv_topic_give_ai(mob/user, list/args)
+/// A VV AI brain setup, after the faction, the combat mode and the wake question have all been answered.
+/mob/living/proc/vv_topic_give_ai(datum/act/op/A)
+	var/mob/user = A.actor
 	if(client || teleop)
 		to_chat(user, span_warning("This cannot be used on player mobs!"))
 		return
-
 	if(ai_brain)	//Cleaning up the original ai
 		rel_clear(src, nameof(ai_brain))
 	initialize_ai_brain()
-	open_request(src, /datum/prompt/text/vv_ai_faction, PROC_REF(vv_ai_faction_chosen), answerer = user)
+	if(!ai_brain)
+		return
+	faction = A.step_value("faction")
+	var/stance = A.step_value("stance")
+	if(stance)
+		set_use_stance(stance)
+	if(A.step_value("wake") == "Yes")
+		status_adjust(STAT_SLEEPING, -100)
+
+/mob/proc/vv_topic_give_spell(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/give_spell, src)
 	return TRUE
 
-/mob/proc/vv_topic_give_spell(mob/user, list/args)
-	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/give_spell, src)
+/mob/proc/vv_topic_remove_spell(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/remove_spell, src)
+	return TRUE
 
-/mob/proc/vv_topic_remove_spell(mob/user, list/args)
-	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/remove_spell, src)
+/mob/proc/vv_topic_give_modifier(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/admin_give_modifier, src)
+	return TRUE
 
-/mob/proc/vv_topic_give_modifier(mob/user, list/args)
-	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/admin_give_modifier, src)
+/mob/proc/vv_topic_gib(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/gib_them, src)
+	return TRUE
 
-/mob/proc/vv_topic_gib(mob/user, list/args)
-	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/gib_them, src)
-
-/mob/proc/vv_topic_buildmode(mob/user, list/args)
+/mob/proc/vv_topic_buildmode(datum/act/op/A)
 	togglebuildmode(src)
 	return TRUE
 
-/mob/proc/vv_topic_drop_all(mob/user, list/args)
-	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/drop_everything, src)
+/mob/proc/vv_topic_drop_all(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/drop_everything, src)
+	return TRUE
 
-/mob/proc/vv_topic_direct_control(mob/user, list/args)
-	return SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/cmd_assume_direct_control, src)
+/mob/proc/vv_topic_direct_control(datum/act/op/A)
+	var/mob/user = A.actor
+	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/cmd_assume_direct_control, src)
+	return TRUE
 
 
 /**

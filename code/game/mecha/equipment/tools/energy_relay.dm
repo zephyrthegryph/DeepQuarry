@@ -76,9 +76,10 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/mecha_parts/mecha_equipment/tesla_energy_re
 				break
 	return pow_chan
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay, "toggle_relay", PROC_REF(topic_toggle_relay))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay)
+	op("toggle_relay", topic("toggle_relay"), then(PROC_REF(topic_toggle_relay)))
 
-/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/proc/topic_toggle_relay(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/proc/topic_toggle_relay(datum/act/op/A)
 	if(relaying)
 		set_relaying(FALSE)
 		set_ready_state(TRUE)
