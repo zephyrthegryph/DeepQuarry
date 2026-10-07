@@ -173,6 +173,7 @@
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // Note, this should be refactored to drop priority overlays
 
 CAPABILITIES(/mob/living/simple_mob)
+	op("reload", ai(), wait(PROC_REF(reload_wait)), then(PROC_REF(reload_done)))
 	mob_attacks()
 	ref_many(nameof(tamers))
 	owns_one(nameof(myid), /obj/item/card/id)

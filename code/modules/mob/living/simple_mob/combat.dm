@@ -160,10 +160,19 @@
 		reload_count++
 
 
-/mob/living/simple_mob/proc/try_reload()
-	task_timed(src, reload_time, target = src, receiver = src, on_done = PROC_REF(reload_done), busy = src)
+/// TRUE while the mob is at some timed work of its own (an op waiting on it): its AI stays still and it takes no second job.
+/mob/living/simple_mob/proc/is_working()
+	return length(op_pendings_of(src)) > 0
 
-/mob/living/simple_mob/proc/reload_done()
+/mob/living/simple_mob/proc/try_reload()
+	if(is_working())
+		return
+	perform_op(src, src, "reload", origin = ORIGIN_SYSTEM)
+
+/mob/living/simple_mob/proc/reload_wait(datum/act/op/A)
+	return reload_time
+
+/mob/living/simple_mob/proc/reload_done(datum/act/op/A)
 	if(reload_sound)
 		playsound(src, reload_sound, 70, 1)
 	reload_count = 0

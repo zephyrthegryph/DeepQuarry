@@ -63,11 +63,20 @@
 				eggs.faction = faction
 				to_chat(H, span_critical("\The [src] injects something into your [O.name]!") ) // Oh god its laying eggs in me!
 
+MSG_DEF(spider/webbing, null, span_notice("%U% begins to secrete a sticky substance."))
+MSG_DEF(spider/laying, null, span_notice("%U% begins to lay a cluster of eggs."))
+MSG_DEF(spider/cocooning, null, span_notice("%U% begins to secrete a sticky substance around %T%."))
+
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/nurse)
+	op("spin_web", ai(), reach(REACH_RANGE(1)), claims(), begins(MSG(spider/webbing)), wait(5 SECONDS), then(PROC_REF(web_done)), on_interrupt(PROC_REF(work_interrupted)))
+	op("lay_eggs", ai(), reach(REACH_RANGE(1)), claims(), begins(MSG(spider/laying)), wait(5 SECONDS), then(PROC_REF(eggs_done)), on_interrupt(PROC_REF(work_interrupted)))
+	op("spin_cocoon", ai(), reach(REACH_RANGE(1)), begins(MSG(spider/cocooning)), wait(5 SECONDS), then(PROC_REF(spin_cocoon_nurse_done)), on_interrupt(PROC_REF(spin_cocoon_nurse_failed)))
+
 // Webs target in a web if able to.
 /mob/living/simple_mob/animal/giant_spider/nurse/attack_target(atom/A)
 	if(isturf(A))
 		if(fed && can_lay_eggs)
-			if(!task_busy(src))
+			if(!is_working())
 				return lay_eggs(A)
 		return web_tile(A)
 
@@ -97,13 +106,12 @@
 		return FALSE // We can't cocoon walls sadly.
 	if(istype(AM, /mob/living/simple_mob/animal/giant_spider))
 		return FALSE
-	act_message(src, AM, null, MSG_OTHERS(span_notice("%U% begins to secrete a sticky substance around %T%.")))
+	// The work holds the spider: its AI stays still.
+	var/datum/op_result/R = perform_op(src, AM, "spin_cocoon", origin = ORIGIN_SYSTEM)
+	return !!R && R.outcome != ACT_REFUSED
 
-	// The work claims the spider: its AI stays still.
-	task_timed(src, 5 SECONDS, target = AM, receiver = src, on_done = PROC_REF(spin_cocoon_nurse_done), done_args = list(AM), on_fail = PROC_REF(spin_cocoon_nurse_failed), fail_args = list(AM), busy = src)
-	return TRUE
-
-/mob/living/simple_mob/animal/giant_spider/nurse/proc/spin_cocoon_nurse_done(atom/movable/AM)
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/spin_cocoon_nurse_done(datum/act/op/A)
+	var/atom/movable/AM = A.target
 	if(!AM) // Make sure it didn't get deleted for whatever reason.
 		to_chat(src, span_warning("Whatever you were spinning a web for, its no longer there..."))
 		return FALSE
@@ -142,7 +150,8 @@
 
 	return TRUE
 
-/mob/living/simple_mob/animal/giant_spider/nurse/proc/spin_cocoon_nurse_failed(atom/movable/AM)
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/spin_cocoon_nurse_failed(datum/act/op/A)
+	var/atom/movable/AM = A.target
 	to_chat(src, span_warning("You need to stay still to spin a web around \the [AM]."))
 	return FALSE
 
@@ -150,43 +159,41 @@
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/nurse/life_special(datum/seq_frame/life/F)
-	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !task_busy(src) && isturf(src.loc))
+	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !is_working() && isturf(src.loc))
 		if(src.fed && src.can_lay_eggs)
 			src.lay_eggs(src.loc)
 		else
 			src.web_tile(src.loc)
 
-/// Starts spinning a web on `T`: a 5 s task that holds its claim on the turf and ends when the
+/// Starts spinning a web on `T`: a 5 s op that holds its claim on the turf and ends when the
 /// spider moves off, stops being conscious, or dies. TRUE when it started.
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/web_tile(turf/T)
 	if(!istype(T) || (locate_within(T, /obj/effect/spider/stickyweb)))
 		return FALSE
-	if(istext(task_start(/datum/task/mob_work/spider_web, src, T)))
+	if(is_working())
 		return FALSE
-	act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to secrete a sticky substance.")))
-	return TRUE
+	var/datum/op_result/R = perform_op(src, T, "spin_web", origin = ORIGIN_SYSTEM)
+	return !!R && R.outcome != ACT_REFUSED
 
-/mob/living/simple_mob/animal/giant_spider/nurse/proc/web_done(datum/task/task)
-	var/turf/T = task.target
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/web_done(datum/act/op/A)
+	var/turf/T = A.target
 	if(!(locate_within(T, /obj/effect/spider/stickyweb)))
 		new web_type(T)
 
-/mob/living/simple_mob/animal/giant_spider/nurse/proc/work_interrupted(datum/task/task)
-	to_chat(src, span_warning("You need to stay still to finish that on \the [task.target]."))
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/work_interrupted(datum/act/op/A)
+	to_chat(src, span_warning("You need to stay still to finish that on \the [A.target]."))
 
-/// Starts laying a cluster of eggs on `T` (a 5 s task, as web_tile()). TRUE when it started.
+/// Starts laying a cluster of eggs on `T` (a 5 s op, as web_tile()). TRUE when it started.
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/lay_eggs(turf/T)
-	if(!istype(T) || !fed || !can_lay_eggs || task_busy(src))
+	if(!istype(T) || !fed || !can_lay_eggs || is_working())
 		return FALSE
 	if(locate_on(T, /obj/effect/spider/eggcluster))
 		return FALSE // Already got eggs here.
-	if(istext(task_start(/datum/task/mob_work/spider_eggs, src, T)))
-		return FALSE
-	act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to lay a cluster of eggs."))) // the task claims the spider: no egg spam
-	return TRUE
+	var/datum/op_result/R = perform_op(src, T, "lay_eggs", origin = ORIGIN_SYSTEM) // the op holds the spider: no egg spam
+	return !!R && R.outcome != ACT_REFUSED
 
-/mob/living/simple_mob/animal/giant_spider/nurse/proc/eggs_done(datum/task/task)
-	var/turf/T = task.target
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/eggs_done(datum/act/op/A)
+	var/turf/T = A.target
 	if(locate_within(T, /obj/effect/spider/eggcluster))
 		return // Spamclick protection.
 	var/obj/effect/spider/eggcluster/eggs = new egg_type(T)
