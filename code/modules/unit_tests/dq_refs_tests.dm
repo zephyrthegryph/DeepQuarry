@@ -119,13 +119,12 @@
 	var/obj/item/gripper/G = allocate(/obj/item/gripper/dq_test) // the accessor is declared on the gripper
 	var/obj/item/A = allocate(/obj/item/tape_roll)
 	var/obj/item/B = allocate(/obj/item/tape_roll)
-	om_link(G, A, /datum/om/relation/gripper_holding)
-	TEST_ASSERT_EQUAL(G?.gripper_held(), A, "GRIPPER_HELD is the wrapped item")
-	om_link(G, B, /datum/om/relation/gripper_holding)
-	TEST_ASSERT_EQUAL(G?.gripper_held(), B, "wrapping another item replaces the first")
-	TEST_ASSERT_NULL(dq_test_find_edge(G, A, /datum/om/relation/gripper_holding), "no edge is left to the first item")
+	rel_set(G, nameof(/obj/item/gripper::held_item), A)
+	TEST_ASSERT_EQUAL(G.get_wrapped_item(), A, "the wrapped item is held")
+	rel_set(G, nameof(/obj/item/gripper::held_item), B)
+	TEST_ASSERT_EQUAL(G.get_wrapped_item(), B, "wrapping another item replaces the first")
 	qdel(B)
-	TEST_ASSERT_NULL(G?.gripper_held(), "the wrapped item being deleted clears the hold")
+	TEST_ASSERT_NULL(G.get_wrapped_item(), "the wrapped item being deleted clears the hold")
 
 // ---------------------------------------------------------------- UAV
 
@@ -139,15 +138,15 @@
 	var/mob/living/carbon/human/H2 = allocate(/mob/living/carbon/human)
 	U.add_master(H)
 	U.add_master(H2)
-	TEST_ASSERT(H in U?.uav_masters(), "add_master() makes the mob a master")
-	TEST_ASSERT_EQUAL(length(U?.uav_masters()), 2, "a UAV can have several masters")
+	TEST_ASSERT(H in U.masters, "add_master() makes the mob a master")
+	TEST_ASSERT_EQUAL(length(U.masters), 2, "a UAV can have several masters")
 	U.set_state(1) // UAV_ON (undefined outside uav.dm)
 	TEST_ASSERT(U.relaymove(H, NORTH), "a master's movement is taken by the UAV")
 	TEST_ASSERT(!U.relaymove(allocate(/mob/living/carbon/human), NORTH), "a stranger's is not")
 	qdel(H)
-	TEST_ASSERT_EQUAL(length(U?.uav_masters()), 1, "a deleted master is dropped")
+	TEST_ASSERT_EQUAL(length(U.masters), 1, "a deleted master is dropped")
 	U.clear_masters()
-	TEST_ASSERT_EQUAL(length(U?.uav_masters()), 0, "clear_masters() drops every master")
+	TEST_ASSERT_EQUAL(length(U.masters), 0, "clear_masters() drops every master")
 	U.set_state(0) // UAV_OFF
 
 // ---------------------------------------------------------------- stasis source

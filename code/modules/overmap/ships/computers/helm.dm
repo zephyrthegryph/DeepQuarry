@@ -51,8 +51,10 @@ CAPABILITIES(/obj/machinery/computer/ship/helm)
 	op("apilot_lock", ui_act("apilot_lock"), then(PROC_REF(ui_act_apilot_lock)))
 	op("manual", ui_act("manual"), then(PROC_REF(ui_act_manual)))
 
-OM_FIELD(/obj/machinery/computer/ship/helm, autopilot, FALSE, CHANGE_MACHINE_SETTINGS)
-OM_FIELD(/obj/machinery/computer/ship/helm, autopilot_disabled, TRUE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/computer/ship/helm/var/autopilot = FALSE
+TRACKED(/obj/machinery/computer/ship/helm, autopilot)
+/obj/machinery/computer/ship/helm/var/autopilot_disabled = TRUE
+TRACKED(/obj/machinery/computer/ship/helm, autopilot_disabled)
 // fancy sprite
 /obj/machinery/computer/ship/helm/adv
 	icon_keyboard = null

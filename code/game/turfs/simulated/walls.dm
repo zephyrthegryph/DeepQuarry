@@ -65,7 +65,8 @@ CAPABILITIES(/turf/simulated/wall)
 /// TRUE while one of its materials is radioactive.
 OM_FIELD(/turf/simulated/wall, radioactive, FALSE, CHANGE_EXPLICIT)
 /// TRUE while the wall carries a thermite coating (draws it; lighting it melts the wall).
-OM_FIELD(/turf/simulated/wall, thermite, FALSE, CHANGE_EXPLICIT)
+/turf/simulated/wall/var/thermite = FALSE
+TRACKED(/turf/simulated/wall, thermite)
 /// A wall radiates on the slow lane only while one of its materials is radioactive; any other wall
 /// never joins it (walls are numerous).
 DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")

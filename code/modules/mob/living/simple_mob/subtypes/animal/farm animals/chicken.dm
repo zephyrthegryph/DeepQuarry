@@ -81,20 +81,23 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/chicken, INTERACT_ITEM
 		E.pixel_x = rand(-6,6)
 		E.pixel_y = rand(-6,6)
 		if(GLOB.chicken_count < GLOB.MAX_CHICKENS && prob(10))
-			om_task_periodic(E, PERIODIC_SLOW)
+			E.set_growing(TRUE)
 
 /obj/item/reagent_containers/food/snacks/egg/var/amount_grown = 0
+/// TRUE while the egg grows toward hatching (a laid egg that may become a chick starts it); picked up, it stops.
+/obj/item/reagent_containers/food/snacks/egg/var/tmp/growing = FALSE
+TRACKED(/obj/item/reagent_containers/food/snacks/egg, growing)
 
 // This only starts normally if there are less than MAX_CHICKENS chickens
-/obj/item/reagent_containers/food/snacks/egg/periodic_step()
+/obj/item/reagent_containers/food/snacks/egg/proc/grow_step(datum/act/A)
 	if(isturf(loc))
 		amount_grown += rand(1,2)
 		if(amount_grown >= 100)
 			visible_message("[src] hatches with a quiet cracking sound.")
-			om_task_periodic_stop(src)
+			set_growing(FALSE)
 			replace_with(src, /mob/living/simple_mob/animal/passive/chick)
 	else
-		om_task_periodic_stop(src)
+		set_growing(FALSE)
 
 /mob/living/simple_mob/animal/passive/chick
 	name = "chick"

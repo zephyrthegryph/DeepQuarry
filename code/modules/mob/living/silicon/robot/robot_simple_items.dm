@@ -560,7 +560,8 @@ CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 
 	//Has a list of items that it can hold.
 
-	// The item it is wrapping is GRIPPER_HELD(src) (the gripper_holding relation). Use get_wrapped_item when possible.
+	/// The item it is wrapping (ref_one: the item being deleted lets go of it). Use get_wrapped_item when possible.
+	var/tmp/obj/item/held_item
 
 	var/total_pockets = 5 //How many total inventory slots we want to have in the gripper
 
@@ -589,6 +590,7 @@ CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 /// held item of the cyborg's ops (/mob/living/silicon/robot/held_for_ops()), so it puts a cell into an APC through the APC's own insert op and takes
 /// one out through its take op (into a free pocket: carry()). What it may hold is its CONSTRAINT_HOLD.
 CAPABILITIES(/obj/item/gripper)
+	ref_one(nameof(held_item), /obj/item)
 	provides(AFF_MANIPULATE | AFF_HOLD_SMALL, reach = 1)
 	owns_many(nameof(pockets))
 

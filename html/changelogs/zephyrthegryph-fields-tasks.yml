@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Slow periodic work (alarm handlers, loot panel icons, shield projectors, borg hypos and wrap, eggs, extracts, lava, several worn items) runs as every() with a tracked state var instead of om_task_periodic"
+  - refactor: "UAV masters and cyborg gripper holds are declared references instead of object-model relations"
+  - bugfix: "A spiderling in a glass jar stops growing again"

@@ -164,18 +164,6 @@
 	name = "bluespace receiver link"
 	source_single = TRUE
 
-/// A cyborg gripper -> the item it is wrapping (held out of one of its pockets).
-/// GRIPPER_HELD(gripper). The item leaving (deleted) lets go of it.
-/datum/om/relation/gripper_holding
-	name = "gripper hold"
-	source_single = TRUE
-	target_single = TRUE
-
-/// A mob -> the UAV it is flying through a UAV control program. UAV_MASTERS(uav)
-/// hear what the UAV hears and can move it.
-/datum/om/relation/uav_master
-	name = "UAV control"
-
 /// A ghost -> the movable it is following. FOLLOWING(ghost) and
 /// FOLLOWERS(target) (om.dm) read the edge; the ghost also orbits the target
 /// (code/game/orbit.dm), which is what moves it along.

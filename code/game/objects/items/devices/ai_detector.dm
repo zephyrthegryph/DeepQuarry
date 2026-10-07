@@ -20,21 +20,28 @@
 	FLASHING ORANGE AND BLUE: The AI has attempted to track you but has failed to do so due to being outside camera range."
 TRACKED(/obj/item/multitool/ai_detector, detect_state)
 
+/// TRUE while it is carried by a mob: the slow sensing step runs only then.
+/obj/item/multitool/ai_detector/var/tmp/sensing = FALSE
+TRACKED(/obj/item/multitool/ai_detector, sensing)
+
+CAPABILITIES(/obj/item/multitool/ai_detector)
+	every(2 SECONDS, then(PROC_REF(sense_step)), when = nameof(sensing))
+
 /obj/item/multitool/ai_detector/Initialize(mapload)
 	. = ..()
 	// It's really really unlikely for the view range to change.  But why not be futureproof anyways?
 	range_alert = world.view
 	range_warning = world.view * 2
 
-/obj/item/multitool/ai_detector/periodic_step()
+/obj/item/multitool/ai_detector/proc/sense_step(datum/act/A)
 	if(!ismob(loc))
-		return PROCESS_KILL
+		set_sensing(FALSE)
+		return
 	var/old_detect_state = detect_state
 	var/new_detect_state = detect_ai()
 	set_detect_state(new_detect_state)
 	changed(src)
 	update_warning(old_detect_state, new_detect_state)
-	return
 
 // This also detects security using cameras.
 /obj/item/multitool/ai_detector/proc/detect_ai()
@@ -117,4 +124,4 @@ TRACKED(/obj/item/multitool/ai_detector, detect_state)
 /// Senses while carried (picking it up starts it); set down, it sleeps.
 /obj/item/multitool/ai_detector/equipped(mob/user, slot)
 	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_sensing(TRUE)
