@@ -46,6 +46,7 @@
 	var/datum/om/registry/reg = om_registry()
 	var/adapted = 0
 	var/with_reads = 0
+	var/declared_reads = 0
 	var/list/items = list()
 	var/list/deps = list()
 	var/list/missing = list()
@@ -57,13 +58,15 @@
 		var/datum/work_item/stage/W = stage_work_item(stage_type, null, 1 SECONDS)
 		TEST_ASSERT(istype(W), "[stage_type] adapts")
 		adapted++
+		if(length(T.declared_reads()))
+			declared_reads++
 		if(length(W.reads))
 			with_reads++
 		TEST_ASSERT(W.phase == KERNEL_PHASE_P, "[stage_type] lands in phase P")
 		items += W
 		by_family["[T.pipeline]:[T.family]"] = W
 	TEST_ASSERT(adapted > 0, "the registry still holds the stages not yet off the engine (retired pipelines left it, intended_changes.md): [adapted]")
-	TEST_ASSERT(with_reads > 0, "declared reads carry over to the adapters")
+	TEST_ASSERT_EQUAL(with_reads, declared_reads, "declared reads carry over to the adapters (no stage left in the registry declares any once the AI stages are gone)")
 	// The stage after-edges, within a pipeline, as work-item edges.
 	for(var/datum/work_item/stage/W as anything in items)
 		var/datum/om/stage/T = reg.stage_by_type[W.stage_type]

@@ -249,14 +249,30 @@
 	var/obj/e2_box/B = allocate(/obj/e2_box)
 	var/obj/item/tool/crowbar/crowbar = allocate(/obj/item/tool/crowbar)
 	var/text = explain_click(M, B, crowbar, GESTURE_CLICK)
-	var/list/lines = splittext(text, "\n")
+	// Every type's topic links (View Variables, the stat panel) are candidates too, dropped by origin on a click: the golden is the fixture's,
+	// the engine's and the mob's own, so those lines are left out, the rest renumbered, and the winner's declared index (a count of all) ignored.
+	var/regex/numbered = regex(@"^(\s+)\d+\. ")
+	var/regex/declared = regex(@"declared \d+\)")
+	var/list/lines = list()
+	var/kept = 0
+	for(var/line in splittext(text, "\n"))
+		if(findtext(line, " topic(") && !findtext(line, "code/tests/engine/e2_fixtures.dm"))
+			continue
+		if(numbered.Find(line))
+			kept++
+			line = numbered.Replace(line, "$1[kept]. ")
+		line = declared.Replace(line, "declared N)")
+		lines += line
+	for(var/i in 1 to length(lines))
+		if(findtext(lines[i], "candidates ("))
+			lines[i] = "  candidates ([kept]):"
 	var/list/golden = list(
 		"explain: actor /mob/living/simple_mob/e0_fixture target /obj/e2_box held /obj/item/tool/crowbar origin click gesture click",
 		"  intents: use",
-		"  candidates (12):",
+		"  candidates (22):",
 		"    1. drag_buckle item(/mob/living) tier=default side=target @ code/modules/lighting/lighting_atom.dm:41 -> dropped by match",
 		"    2. open hand tier=normal side=target @ code/tests/engine/e2_fixtures.dm:46 -> survives, after the winner",
-		"    3. pry tool(crowbar) tier=part side=target @ code/tests/engine/e2_fixtures.dm:47 -> WINNER (placed: intent rank 1, tier part, side target, declared 3)",
+		"    3. pry tool(crowbar) tier=part side=target @ code/tests/engine/e2_fixtures.dm:47 -> WINNER (placed: intent rank 1, tier part, side target, declared N)",
 		"    4. insert_key item(/obj/item/e2_key) tier=part side=target @ code/tests/engine/e2_fixtures.dm:48 -> dropped by match",
 		"    5. slide_in item(/obj/item/e2_cloth) tier=part side=target @ code/tests/engine/e2_fixtures.dm:49 -> dropped by match",
 		"    6. peek menu tier=normal side=target @ code/tests/engine/e2_fixtures.dm:50 -> dropped by origin (You can't do that that way.)",
@@ -265,9 +281,19 @@
 		"    9. escape inside tier=normal side=target @ code/tests/engine/e2_fixtures.dm:53 -> dropped by reach (You can't reach that.)",
 		"    10. drag_buckle item(/mob/living) tier=default side=held @ code/modules/lighting/lighting_atom.dm:41 -> dropped by match",
 		"    11. drag_buckle item(/mob/living) tier=default side=actor @ code/modules/lighting/lighting_atom.dm:41 -> dropped by match",
-		"    12. ghost_join observe tier=normal side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:193 -> dropped by match",
+		"    12. mob_attacks.melee ai tier=normal side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:176 -> dropped by origin (You can't do that that way.)",
+		"    13. mob_attacks.shoot ai tier=normal side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:176 -> dropped by origin (You can't do that that way.)",
+		"    14. mob_attacks.step ai tier=normal side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:176 -> dropped by origin (You can't do that that way.)",
+		"    15. mob_attacks.special ai tier=normal side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:176 -> dropped by origin (You can't do that that way.)",
+		"    16. mob_attacks.fire ai tier=normal side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:176 -> dropped by origin (You can't do that that way.)",
+		"    17. mob_attacks.throw ai tier=normal side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:176 -> dropped by origin (You can't do that that way.)",
+		"    18. mob_attacks.pickup ai tier=normal side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:176 -> dropped by origin (You can't do that that way.)",
+		"    19. mob_attacks.alarm ai tier=normal side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:176 -> dropped by origin (You can't do that that way.)",
+		"    20. mob_attacks.charge ai tier=normal side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:176 -> dropped by origin (You can't do that that way.)",
+		"    21. mob_attacks.slam ai tier=normal side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:176 -> dropped by origin (You can't do that that way.)",
+		"    22. ghost_join observe tier=normal side=actor @ code/modules/mob/living/simple_mob/simple_mob.dm:194 -> dropped by match",
 		"  winner: pry (tier part)")
-	TEST_ASSERT_EQUAL(length(lines), length(golden), "the explanation has the golden's lines:\n[text]")
+	TEST_ASSERT_EQUAL(length(lines), length(golden), "the explanation has the golden's lines (other types' topic links left out):\n[jointext(lines, "\n")]")
 	for(var/i in 1 to min(length(lines), length(golden)))
 		TEST_ASSERT_EQUAL(lines[i], golden[i], "line [i] of the explanation differs from the golden, whole text follows:\n[text]")
 
