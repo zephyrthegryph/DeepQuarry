@@ -583,6 +583,7 @@
 #include "dq_timed_pin_w1_behaviour.dm"
 #include "dq_timed_pin_w3_behaviour.dm"
 #include "dq_timed_pin_w4_behaviour.dm"
+#include "dq_timed_pin_w6_behaviour.dm"
 #include "dq_timed_pin_w2_behaviour.dm"
 #include "dq_proximity_tests.dm"
 #include "dq_fwg3_inputs.dm"
