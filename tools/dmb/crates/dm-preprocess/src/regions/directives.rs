@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
-    directive_identifier, eval_condition, logical_lines, macro_defined, macro_dependencies,
-    parse_define, parse_include, split_word, strip_source_comments, Conditional, DiagnosticKind,
+    directive_identifier, eval_condition, logical_lines, macro_defined, parse_define,
+    parse_include, split_word, strip_source_comments, Conditional, DiagnosticKind,
 };
 
 pub(super) fn plan<P: SourceProvider>(
@@ -17,7 +17,7 @@ pub(super) fn plan<P: SourceProvider>(
         },
         visited: BTreeSet::new(),
         file_dir_definitions: Vec::new(),
-        definition_origins: BTreeMap::new(),
+        environment: MacroEnvironment::default(),
         file_dir_origins: Vec::new(),
     };
     for (name, replacement) in [
@@ -46,6 +46,9 @@ pub(super) fn plan<P: SourceProvider>(
         }
         pass.plan.final_macros.insert(name.clone(), definition);
     }
+    for (name, definition) in &pass.plan.final_macros {
+        pass.environment.insert(name, definition.clone(), None);
+    }
     let occurrence = pass.occurrence(project, None, Span::default(), 1);
     pass.visit(occurrence);
     pass.plan
@@ -56,7 +59,7 @@ struct DirectivePass<'a, P> {
     plan: DirectivePlan,
     visited: BTreeSet<PathBuf>,
     file_dir_definitions: Vec<Macro>,
-    definition_origins: BTreeMap<String, DefinitionOrigin>,
+    environment: MacroEnvironment,
     file_dir_origins: Vec<Option<DefinitionOrigin>>,
 }
 
@@ -130,36 +133,12 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         if pending.is_empty() {
             return;
         }
-        let text: String = pending.iter().map(|line| line.text.as_str()).collect();
-        // This is an exact transitive expansion environment projection, not a
-        // memo read set. Pasting conservatively retains the complete table.
-        let macros: BTreeMap<String, Macro> =
-            match macro_dependencies(&text, &self.plan.final_macros) {
-                Some(names) => names
-                    .into_iter()
-                    .filter_map(|name| {
-                        self.plan
-                            .final_macros
-                            .get(&name)
-                            .cloned()
-                            .map(|definition| (name, definition))
-                    })
-                    .collect(),
-                None => self.plan.final_macros.clone(),
-            };
-        let definition_origins = macros
-            .keys()
-            .filter_map(|name| {
-                self.definition_origins
-                    .get(name)
-                    .cloned()
-                    .map(|origin| (name.clone(), origin))
-            })
-            .collect();
+        // Every segment sees its exact full incoming environment. Persistent
+        // roots and Arc bindings share unchanged entries across define epochs;
+        // token-pasted names require no pruning guess and no full-table clone.
         self.plan.regions[region].segments.push(ExpansionSegment {
             lines: std::mem::take(pending),
-            macros: Arc::new(macros),
-            definition_origins: Arc::new(definition_origins),
+            macros: self.environment.clone(),
         });
     }
 
@@ -265,13 +244,9 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                                 name: name.clone(),
                                 definition: definition.clone(),
                             });
+                            self.environment
+                                .insert(&name, definition.clone(), Some(origin));
                             self.plan.final_macros.insert(name, definition);
-                            // The final effect supplies the exact definition name.
-                            if let Some(MacroEffect::Define { name, .. }) =
-                                self.plan.regions[region].effects.last()
-                            {
-                                self.definition_origins.insert(name.clone(), origin);
-                            }
                         }
                         Err(error) => {
                             self.error(occurrence, source_line, DiagnosticKind::Macro, error)
@@ -286,7 +261,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                                 name: name.to_owned(),
                             });
                             self.plan.final_macros.remove(name);
-                            self.definition_origins.remove(name);
+                            self.environment.remove(name);
                             if name == "FILE_DIR" {
                                 self.plan.file_dirs.pop();
                                 self.file_dir_definitions.pop();
@@ -299,9 +274,9 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                                         .final_macros
                                         .insert(name.to_owned(), restored.clone());
                                 }
-                                if let Some(Some(origin)) = self.file_dir_origins.last() {
-                                    self.definition_origins
-                                        .insert(name.to_owned(), origin.clone());
+                                if let Some(restored) = self.file_dir_definitions.last() {
+                                    let origin = self.file_dir_origins.last().cloned().flatten();
+                                    self.environment.insert(name, restored.clone(), origin);
                                 }
                             }
                         }

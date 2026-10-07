@@ -264,3 +264,28 @@ fn captured_deferred_probe_retains_encounter_values_and_emission_projection() {
         vec!["/world/proc/late()", "/proc/second()", "/proc/early()"]
     );
 }
+
+#[test]
+fn persistent_full_environments_keep_token_paste_and_definition_epochs_exact() {
+    let plan=fixture(&[("project.dme","#define CAT(a,b) a##b\n#define VALUE1 11\nvar/a = CAT(VALUE,1)\n#define VALUE1 22\nvar/b = CAT(VALUE,1)\n#undef VALUE1\nvar/c = CAT(VALUE,1)\n")]);
+    let result = expand_regions(&plan, 2);
+    assert!(result.diagnostics.is_empty(), "{:?}", result.diagnostics);
+    assert_eq!(result.text, "var/a = 11\nvar/b = 22\nvar/c = VALUE1\n");
+    let origins = result
+        .origins
+        .iter()
+        .take(2)
+        .map(|origin| {
+            origin
+                .macro_expansions
+                .iter()
+                .find(|expansion| expansion.name == "VALUE1")
+                .unwrap()
+                .definition
+                .as_ref()
+                .unwrap()
+                .source_line
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(origins, vec![2, 4]);
+}

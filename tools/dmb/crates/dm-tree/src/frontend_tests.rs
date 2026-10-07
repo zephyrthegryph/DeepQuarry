@@ -276,12 +276,14 @@ fn explicit_engine_seed_keeps_intrinsic_metadata_and_source_origins_separate() {
                 name: SymbolId::of("engine_call"),
                 kind: MemberKind::Proc,
                 shared_owner: None,
+            instance_storage_proven: false,
             },
             crate::IntrinsicMember {
                 owner: SymbolId::of("/engine/base"),
                 name: SymbolId::of("native_value"),
                 kind: MemberKind::Var,
                 shared_owner: None,
+            instance_storage_proven: false,
             },
         ]
         .into(),
@@ -295,6 +297,7 @@ fn explicit_engine_seed_keeps_intrinsic_metadata_and_source_origins_separate() {
         FrontendConfig {
             workers: 2,
             engine: Some(&seed),
+            observer: None,
         },
     )
     .unwrap();
@@ -357,6 +360,7 @@ fn explicit_engine_seed_keeps_intrinsic_metadata_and_source_origins_separate() {
         FrontendConfig {
             workers: 1,
             engine: Some(&seed),
+            observer: None,
         },
     ) {
         Err(errors) => errors,
@@ -394,6 +398,7 @@ fn opaque_intrinsic_field_bases_preserve_authored_values_without_inventing_metad
             name: base.name,
             kind: MemberKind::Var,
             shared_owner: None,
+        instance_storage_proven: false,
         }]
         .into(),
         fields: vec![base.clone()].into(),
@@ -407,6 +412,7 @@ fn opaque_intrinsic_field_bases_preserve_authored_values_without_inventing_metad
         FrontendConfig {
             workers: 1,
             engine: Some(&seed),
+            observer: None,
         },
     )
     .unwrap();
@@ -455,4 +461,57 @@ fn opaque_intrinsic_field_bases_preserve_authored_values_without_inventing_metad
         model.snapshot.occurrences.source_order().len(),
         model.snapshot.tree.declarations().len()
     );
+}
+
+#[test]
+fn progress_observer_reports_actual_uncached_stage_order() {
+    let events = std::cell::RefCell::new(Vec::new());
+    let observer = |event: FrontendProgress| events.borrow_mut().push(event);
+    let source = Memory(BTreeMap::from([(
+        PathBuf::from("project.dme"),
+        "/datum/probe\n    var/value = 3\n".into(),
+    )]));
+    let model = build_with_config(
+        Path::new("project.dme"),
+        &source,
+        &BTreeMap::new(),
+        FrontendConfig {
+            workers: 1,
+            engine: None,
+            observer: Some(&observer),
+        },
+    )
+    .unwrap();
+    assert!(model.engine.is_none());
+    let stages = events
+        .borrow()
+        .iter()
+        .filter(|event| event.kind == ProgressKind::Started)
+        .map(|event| event.stage)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        stages,
+        vec![
+            FrontendStage::DirectivePlanning,
+            FrontendStage::Expansion,
+            FrontendStage::SourceIndexing,
+            FrontendStage::DeclarationParsing,
+            FrontendStage::DeclarationOrigins,
+            FrontendStage::TreeResolution,
+            FrontendStage::BodyIndexing
+        ]
+    );
+    assert_eq!(
+        events
+            .borrow()
+            .iter()
+            .filter(|event| event.kind == ProgressKind::Completed)
+            .count(),
+        stages.len()
+    );
+    assert!(events
+        .borrow()
+        .iter()
+        .any(|event| event.stage == FrontendStage::DeclarationParsing
+            && event.kind == ProgressKind::Advanced));
 }

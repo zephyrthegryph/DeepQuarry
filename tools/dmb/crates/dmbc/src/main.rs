@@ -15,7 +15,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = std::env::args().skip(1);
     let command = args.next().unwrap_or_else(|| "--help".into());
     if command == "--help" || command == "-h" {
-        println!("dmbc analyze [--no-daemon] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog]");
+        println!("dmbc analyze [--no-daemon] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress]");
         println!("Streams source-declaration JSON-lines; engine and executable resolution remain incomplete.");
         return Ok(());
     }
@@ -27,10 +27,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut workers = 2usize;
     let mut engine_template = None;
     let mut bootstrap_catalog = false;
+    let mut progress_enabled = false;
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--no-daemon" => {}
             "--bootstrap-catalog" => bootstrap_catalog = true,
+            "--progress" => progress_enabled = true,
             "--engine-template" => {
                 if engine_template
                     .replace(PathBuf::from(args.next().ok_or("--engine-template requires a path")?))
@@ -78,12 +80,20 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         })
         .transpose()?;
     let seed = engine.as_ref().map(dmbc::engine::EngineSnapshot::frontend_seed);
+    let progress = |event: dm_tree::frontend::FrontendProgress| {
+        eprintln!("frontend {:?} {:?}: {:.3}s {}/{}", event.stage, event.kind,
+            event.elapsed.as_secs_f64(), event.completed_items, event.total_items);
+    };
     let frontend =
         match dm_tree::frontend::build_with_config(
             &project,
             &dm_preprocess::FileSystem,
             &defines,
-            dm_tree::frontend::FrontendConfig { workers, engine: seed.as_ref() },
+            dm_tree::frontend::FrontendConfig {
+                workers,
+                engine: seed.as_ref(),
+                observer: progress_enabled.then_some(&progress),
+            },
         ) {
             Ok(frontend) => frontend,
             Err(diagnostics) => {

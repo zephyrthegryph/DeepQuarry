@@ -1,8 +1,8 @@
 //! Phase 1 directive planning and parallel expansion, without persistent caches.
 //!
 //! Source regions preserve directive encounter order separately from DME text
-//! emission order. Macro snapshots contain the transitive names a text segment
-//! can inspect, rather than a clone of every definition in the project.
+//! emission order. Macro snapshots share persistent ordered-map roots and Arc replacement bodies.
+//! Even token-pasting retains the complete environment without duplicating it.
 
 use crate::{Diagnostic, Macro, Origin, SourceProvider};
 use dm_syntax::Span;
@@ -11,6 +11,8 @@ use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
 mod directives;
+mod environment;
+pub use environment::MacroEnvironment;
 mod expansion;
 #[cfg(test)]
 mod tests;
@@ -42,8 +44,7 @@ pub struct RegionLine {
 #[derive(Clone, Debug)]
 pub struct ExpansionSegment {
     pub lines: Vec<RegionLine>,
-    pub macros: Arc<BTreeMap<String, Macro>>,
-    pub definition_origins: Arc<BTreeMap<String, DefinitionOrigin>>,
+    pub macros: MacroEnvironment,
 }
 
 #[derive(Clone, Debug)]

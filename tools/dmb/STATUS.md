@@ -140,12 +140,23 @@ The production compiler has not switched to the new pipeline.
   and the legacy compiler library check passed. These are focused checks, not
   the Phase 1 full-workspace/oracle gates. The engine-seeded CLI fixture passed.
 - A real DeepQuarry source-only integration probe was stopped for PC headroom
-  after 158.403 s at about 11.5 GiB private memory. It produced no completed
+  after 158.403 s at about 12.0 GiB private memory. It produced no completed
   model; it is neither a successful frontend timing nor a compiler benchmark.
   Evidence: `E:/dmb-native-v2-phase0/source-analysis-probe-20261006/receipt.json`.
   Static investigation found full macro-table deep clones per text segment when
-  conservative token-pasting dependencies are encountered. The shared-binding
-  fix and a fresh bounded rerun are in progress.
+  conservative token-pasting dependencies are encountered. Persistent macro
+  bindings now share immutable snapshots and expansion borrows them directly.
+  The bounded rerun reached declaration diagnostics in 37.305 s (exit 1):
+  directive planning 19.152 s, expansion 2.264 s, source indexing 1.533 s,
+  declaration parsing 12.401 s. A sampled private footprint was 0.626 GiB;
+  this is not a peak measurement. Qualified field assignments were rejected;
+  their owner-path adapter fix is awaiting its combined focused gate.
+  Evidence: `E:/dmb-native-v2-phase0/source-analysis-probe-20261006-2/receipt.json`.
+  This failed source-only probe is not an end-to-end compiler benchmark.
+- The bounded lazy-body lowering driver accepts an explicit ABI policy and
+  preserves current source diagnostics. Three focused tests passed, including
+  actual tree global storage and worker-count equivalence. Full production ABI
+  policy, symbolic composition and output emission remain incomplete.
 
 ## In progress / remaining gates
 

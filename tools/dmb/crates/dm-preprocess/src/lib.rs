@@ -83,6 +83,19 @@ pub struct Macro {
     pub replacement: String,
 }
 
+/// Borrowed lookup keeps expansion independent of a concrete snapshot storage.
+pub(crate) trait MacroLookup {
+    fn get_key_value(&self, name: &str) -> Option<(&str, &Macro)>;
+    fn get(&self, name: &str) -> Option<&Macro> {
+        self.get_key_value(name).map(|(_, definition)| definition)
+    }
+}
+impl MacroLookup for BTreeMap<String, Macro> {
+    fn get_key_value(&self, name: &str) -> Option<(&str, &Macro)> {
+        BTreeMap::get_key_value(self, name).map(|(name, definition)| (name.as_str(), definition))
+    }
+}
+
 pub trait SourceProvider {
     fn read(&self, path: &Path) -> Result<String, String>;
 
@@ -1896,7 +1909,7 @@ type MacroTrace<'a> = dyn FnMut(&str, Span, &[&str]) + 'a;
 
 pub(crate) fn expand_traced(
     source: &str,
-    macros: &BTreeMap<String, Macro>,
+    macros: &dyn MacroLookup,
     location: ExpandLocation<'_>,
     trace: &mut MacroTrace<'_>,
 ) -> Result<String, String> {
@@ -1934,7 +1947,7 @@ fn expand_mode_disabled<'a>(
 #[allow(clippy::sliced_string_as_bytes)]
 fn expand_mode_disabled_traced<'a>(
     source: &str,
-    macros: &'a BTreeMap<String, Macro>,
+    macros: &'a dyn MacroLookup,
     depth: usize,
     location: ExpandLocation<'_>,
     substitute_only: bool,
@@ -2256,7 +2269,7 @@ fn expand_mode_disabled_traced<'a>(
 
 fn expand_interpolations<'a>(
     literal: &str,
-    macros: &'a BTreeMap<String, Macro>,
+    macros: &'a dyn MacroLookup,
     depth: usize,
     location: ExpandLocation<'_>,
     substitute_only: bool,
@@ -2360,7 +2373,7 @@ fn expand_interpolations<'a>(
 /// forwarding macros such as WRAP(x) -> STRINGIFY(x) or CHECK(x) -> defined(x).
 fn raw_macro_parameters(
     definition: &Macro,
-    macros: &BTreeMap<String, Macro>,
+    macros: &dyn MacroLookup,
     visiting: &mut BTreeSet<String>,
 ) -> BTreeSet<String> {
     let scanned = lex_spans(&definition.replacement);

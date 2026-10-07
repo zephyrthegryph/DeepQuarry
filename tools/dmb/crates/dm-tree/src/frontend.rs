@@ -102,10 +102,63 @@ pub struct EngineSeed {
     pub fields: Arc<[dm_ir::OpaqueFieldBase]>,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct FrontendConfig<'a> {
     pub workers: usize,
     pub engine: Option<&'a EngineSeed>,
+    pub observer: Option<&'a dyn Fn(FrontendProgress)>,
+}
+impl std::fmt::Debug for FrontendConfig<'_> {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("FrontendConfig")
+            .field("workers", &self.workers)
+            .field("engine", &self.engine.map(|seed| seed.identity))
+            .field("observer", &self.observer.is_some())
+            .finish()
+    }
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FrontendStage {
+    DirectivePlanning,
+    Expansion,
+    SourceIndexing,
+    DeclarationParsing,
+    DeclarationOrigins,
+    TreeResolution,
+    BodyIndexing,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ProgressKind {
+    Started,
+    Advanced,
+    Completed,
+}
+#[derive(Clone, Copy, Debug)]
+pub struct FrontendProgress {
+    pub stage: FrontendStage,
+    pub kind: ProgressKind,
+    pub elapsed: Duration,
+    pub completed_items: usize,
+    pub total_items: usize,
+}
+fn observe(
+    config: FrontendConfig<'_>,
+    stage: FrontendStage,
+    kind: ProgressKind,
+    elapsed: Duration,
+    completed_items: usize,
+    total_items: usize,
+) {
+    if let Some(observer) = config.observer {
+        observer(FrontendProgress {
+            stage,
+            kind,
+            elapsed,
+            completed_items,
+            total_items,
+        });
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -204,6 +257,7 @@ pub fn build<P: SourceProvider>(
         FrontendConfig {
             workers,
             engine: None,
+            observer: None,
         },
     )
 }
@@ -224,12 +278,52 @@ pub fn build_with_config<P: SourceProvider>(
         sources: RefCell::new(BTreeMap::new()),
     };
     let stage_start = Instant::now();
+    observe(
+        config,
+        FrontendStage::DirectivePlanning,
+        ProgressKind::Started,
+        Duration::ZERO,
+        0,
+        0,
+    );
     let plan = plan_regions(project, &captured, defines);
     timings.directive_planning = stage_start.elapsed();
+    observe(
+        config,
+        FrontendStage::DirectivePlanning,
+        ProgressKind::Completed,
+        timings.directive_planning,
+        plan.regions.len(),
+        plan.regions.len(),
+    );
     let stage_start = Instant::now();
+    observe(
+        config,
+        FrontendStage::Expansion,
+        ProgressKind::Started,
+        Duration::ZERO,
+        0,
+        plan.regions.len(),
+    );
     let expanded = expand_regions_text(&plan, workers);
     timings.expansion = stage_start.elapsed();
+    observe(
+        config,
+        FrontendStage::Expansion,
+        ProgressKind::Completed,
+        timings.expansion,
+        plan.regions.len(),
+        plan.regions.len(),
+    );
     let provenance_start = Instant::now();
+    observe(
+        config,
+        FrontendStage::SourceIndexing,
+        ProgressKind::Started,
+        Duration::ZERO,
+        0,
+        plan.occurrences.len(),
+    );
     let sources = captured.sources.into_inner();
     let mut files = Vec::new();
     let mut by_path = HashMap::new();
@@ -283,11 +377,27 @@ pub fn build_with_config<P: SourceProvider>(
     // not include boundaries. Every declaration is accepted regardless of size;
     // a large declaration consumes its own chunk rather than changing algorithms.
     timings.provenance_and_body_indexing += provenance_start.elapsed();
+    observe(
+        config,
+        FrontendStage::SourceIndexing,
+        ProgressKind::Completed,
+        provenance_start.elapsed(),
+        files.len(),
+        files.len(),
+    );
     let parse_start = Instant::now();
+    observe(
+        config,
+        FrontendStage::DeclarationParsing,
+        ProgressKind::Started,
+        Duration::ZERO,
+        0,
+        0,
+    );
     let ParsedDeclarations {
         items: compact_items,
         diagnostics: syntax_diagnostics,
-    } = parse_declarations(&expanded.text, workers)?;
+    } = parse_declarations(&expanded.text, config)?;
     diagnostics.extend(
         syntax_diagnostics
             .into_iter()
@@ -334,6 +444,22 @@ pub fn build_with_config<P: SourceProvider>(
             .collect::<Vec<_>>()
     })?;
     timings.declaration_parsing = parse_start.elapsed();
+    observe(
+        config,
+        FrontendStage::DeclarationParsing,
+        ProgressKind::Completed,
+        timings.declaration_parsing,
+        adapted.skeletons.len(),
+        adapted.skeletons.len(),
+    );
+    observe(
+        config,
+        FrontendStage::DeclarationOrigins,
+        ProgressKind::Started,
+        Duration::ZERO,
+        0,
+        adapted.origins.len(),
+    );
     let provenance_start = Instant::now();
     let expanded_spans: Vec<_> = adapted.origins.iter().map(|origin| origin.span).collect();
     // Hash each original region once, not once for every declaration in it.
@@ -382,7 +508,23 @@ pub fn build_with_config<P: SourceProvider>(
     let error_origins = adapted.origins.clone();
     let skeletons = adapted.skeletons.clone();
     timings.provenance_and_body_indexing += provenance_start.elapsed();
+    observe(
+        config,
+        FrontendStage::DeclarationOrigins,
+        ProgressKind::Completed,
+        provenance_start.elapsed(),
+        adapted.origins.len(),
+        adapted.origins.len(),
+    );
     let resolution_start = Instant::now();
+    observe(
+        config,
+        FrontendStage::TreeResolution,
+        ProgressKind::Started,
+        Duration::ZERO,
+        0,
+        adapted.skeletons.len(),
+    );
     let snapshot = adapted.finish_with_engine(config.engine).map_err(|error| {
         vec![resolution_error(
             error,
@@ -393,6 +535,22 @@ pub fn build_with_config<P: SourceProvider>(
         )]
     })?;
     timings.tree_resolution = resolution_start.elapsed();
+    observe(
+        config,
+        FrontendStage::TreeResolution,
+        ProgressKind::Completed,
+        timings.tree_resolution,
+        snapshot.tree.declarations().len(),
+        snapshot.tree.declarations().len(),
+    );
+    observe(
+        config,
+        FrontendStage::BodyIndexing,
+        ProgressKind::Started,
+        Duration::ZERO,
+        0,
+        snapshot.tree.declarations().len(),
+    );
     let provenance_start = Instant::now();
     let declarations_by_start: HashMap<_, _> = expanded_spans
         .iter()
@@ -426,6 +584,14 @@ pub fn build_with_config<P: SourceProvider>(
         .collect();
     emission_order.sort_by_key(|id| (ranks[declaration_regions[id.0 as usize]], id.0));
     timings.provenance_and_body_indexing += provenance_start.elapsed();
+    observe(
+        config,
+        FrontendStage::BodyIndexing,
+        ProgressKind::Completed,
+        provenance_start.elapsed(),
+        bodies.len(),
+        bodies.len(),
+    );
     timings.total = total_start.elapsed();
     Ok(ColdFrontend {
         timings,
@@ -456,7 +622,12 @@ struct ParsedDeclarations {
 /// Grammar-safe descriptor discovery is serial; lexing/parsing is bounded by
 /// worker count and two descriptors per worker in each joined batch. Workers
 /// discard executable AST children before returning their compact declarations.
-fn parse_declarations(source: &str, workers: usize) -> Result<ParsedDeclarations, Vec<Diagnostic>> {
+fn parse_declarations(
+    source: &str,
+    config: FrontendConfig<'_>,
+) -> Result<ParsedDeclarations, Vec<Diagnostic>> {
+    let workers = config.workers;
+    let parse_start = Instant::now();
     let mut chunks = Vec::new();
     let report = dm_syntax::for_each_source_chunk_with_limits(
         source,
@@ -475,6 +646,7 @@ fn parse_declarations(source: &str, workers: usize) -> Result<ParsedDeclarations
     let batch_size = worker_count.saturating_mul(2);
     let mut items = Vec::new();
     let mut diagnostics = Vec::new();
+    let mut completed = 0;
     for batch in chunks.chunks(batch_size) {
         // Divide descriptors, rather than source bytes: an entire top-level
         // declaration always stays together, including namespace/include scope.
@@ -518,6 +690,15 @@ fn parse_declarations(source: &str, workers: usize) -> Result<ParsedDeclarations
             items.extend(parsed);
             diagnostics.extend(errors.into_iter().map(|error| (offset, error)));
         }
+        completed += batch.len();
+        observe(
+            config,
+            FrontendStage::DeclarationParsing,
+            ProgressKind::Advanced,
+            parse_start.elapsed(),
+            completed,
+            chunks.len(),
+        );
     }
     Ok(ParsedDeclarations { items, diagnostics })
 }

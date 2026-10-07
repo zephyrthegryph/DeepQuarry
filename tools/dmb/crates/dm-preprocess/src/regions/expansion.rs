@@ -143,7 +143,7 @@ fn expand_region(plan: &DirectivePlan, index: usize) -> RegionOutput {
                     name: name.to_owned(),
                     invocation_span,
                     replacement_chain: chain.iter().map(|name| (*name).to_owned()).collect(),
-                    definition: segment.definition_origins.get(name).cloned(),
+                    definition: segment.macros.definition_origin(name).cloned(),
                 });
             };
             let text = match expand_traced(
