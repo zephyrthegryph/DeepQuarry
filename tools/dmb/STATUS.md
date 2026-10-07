@@ -10,6 +10,11 @@ composition gate: an admitted source type has no physical parent ABI binding.
 All bodies and symbolic linking passed again. External time was 30.657 s,
 sampled private memory 3,056,427,008 bytes; no pair was produced. The precise
 type/prototype is under investigation, rather than substituting a root prototype.
+The exact savefile header assignment now avoids demanding a physical class;
+ordinary primitive fields/callables still fail explicit admission. Its focused
+gate passes. Native-backed `/callee` tag 89 classification also passes. A proposed
+supplemental callee prototype was rejected by its focused check because the
+pinned template already retains class 13 `/callee`; that duplicate path is removed.
 Release probe 34 passed initializer codegen, all 64,964 procedure bodies and
 symbolic linking (4.726 s). Composition stopped on retained engine inheritance
 projection. External time was 28.639 s, sampled private memory 3,053,125,632

@@ -520,7 +520,9 @@ pub fn materialize_types(
                 .parent
                 .and_then(|symbol| type_ids.get(&symbol).copied())
                 .ok_or_else(|| {
-                    ProjectionError::Unsupported("unproven source class parent ABI".into())
+                    ProjectionError::Unsupported(format!("unproven source class parent ABI: class={}, index={index}, semantic_parent={:?}",
+                        spelling(ty.path).unwrap_or("<unknown>"),
+                        ty.parent.and_then(|parent| symbols.text(parent))))
                 })?;
         Ok((index, parent))
     }).collect::<Result<BTreeMap<_, _>, ProjectionError>>()?;

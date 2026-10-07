@@ -40,6 +40,9 @@ impl TypeValuePolicy for CapturedTypeValues<'_> {
             ("/file", 39),
             ("/client", 59),
             ("/alist", 89),
+            // Native frame type is class-indexed with tag89, independently
+            // certified from associative-list encoding of the same tag.
+            ("/callee", 89),
             ("/mob", 8),
             ("/obj", 9),
             ("/atom/movable", 9),
@@ -49,7 +52,7 @@ impl TypeValuePolicy for CapturedTypeValues<'_> {
             ("/mutable_appearance", 63),
             ("/atom", 10),
         ];
-        let mut found = [false; 13];
+        let mut found = [false; 14];
         let mut known_root = false;
         while let Some(id) = cursor {
             let node = tree.type_node(id).ok_or_else(|| {
@@ -77,6 +80,56 @@ mod tests {
     use super::*;
     use std::path::Path;
     struct Source;
+    #[test]
+    fn native_callee_type_receipt_preserves_exact_tag_and_positive_admission() {
+        use sha2::{Digest, Sha256};
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/phase1/native_probe31_fields");
+        let receipt: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(root.join("receipt.json")).unwrap()).unwrap();
+        let path = "callee_caller_type/probe.native.bin";
+        let expected = receipt["files"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|file| file["path"] == path)
+            .unwrap()["sha256"]
+            .as_str()
+            .unwrap();
+        let bytes = std::fs::read(root.join(path)).unwrap();
+        assert_eq!(format!("{:x}", Sha256::digest(&bytes)), expected);
+        let image = byond_dmb::dmb::Dmb::from_bytes(&bytes).unwrap();
+        assert_eq!(
+            image.proc_code_words(0).unwrap(),
+            vec![0x33, 65500, 65521, 361, 0x60, 89, 13, 0x7d, 0x12, 0]
+        );
+        assert_eq!(
+            image.string(image.classes[13].path_string_id()),
+            Some(b"/callee".as_slice())
+        );
+        let engine =
+            EngineSnapshot::from_bytes(include_bytes!("../../../fixtures/native_template.bin"), 1)
+                .unwrap()
+                .with_bootstrap_catalog()
+                .unwrap();
+        let seed = engine.frontend_seed();
+        let frontend = dm_tree::frontend::build_with_config(
+            Path::new("fixture.dme"),
+            &Source,
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(&seed),
+                observer: None,
+            },
+        )
+        .unwrap();
+        let policy = CapturedTypeValues::pinned(&frontend, &engine).unwrap();
+        assert_eq!(policy.tag(SymbolId::of("/callee")).unwrap(), 89);
+        assert_eq!(policy.tag(SymbolId::of("/alist")).unwrap(), 89);
+        assert_eq!(policy.tag(SymbolId::of("/datum")).unwrap(), 32);
+        assert!(policy.tag(SymbolId::of("/callee/unissued")).is_err());
+    }
     impl dm_preprocess::SourceProvider for Source {
         fn read(&self, _: &Path) -> Result<String, String> {
             Ok("/datum/mobile\n    parent_type = /mob\n/mob/not_mobile\n    parent_type = /datum\n".into())

@@ -52,6 +52,11 @@ pub fn admit(
         order: &mut Vec<SymbolId>,
         active: &mut HashSet<SymbolId>,
     ) -> Result<(), String> {
+        if dm_codegen_byond::NativePrimitiveType::from_symbol(path).is_some() {
+            return Err(format!(
+                "native primitive requires explicit physical class ABI: {path:?}"
+            ));
+        }
         if needed.contains(&path) {
             return Ok(());
         }
@@ -75,6 +80,11 @@ pub fn admit(
         if !source_seen.insert(path) {
             return Err("duplicate explicit source class order".into());
         }
+        if dm_codegen_byond::NativePrimitiveType::from_symbol(path).is_some() {
+            // Semantic declarations remain in the projection. Any actual
+            // callable/instance dependency below still requires an explicit ABI.
+            continue;
+        }
         if !needed.contains(&path) {
             if !parents.contains_key(&path) {
                 return Err("source allocation class absent from semantic skeleton".into());
@@ -88,6 +98,9 @@ pub fn admit(
     // closure can append unseen parents; it must not reorder a forward parent
     // assignment that was encountered after the child's allocation.
     for &path in source_order {
+        if dm_codegen_byond::NativePrimitiveType::from_symbol(path).is_some() {
+            continue;
+        }
         if let Some(Some(parent)) = parents.get(&path) {
             require(
                 *parent,
@@ -100,7 +113,11 @@ pub fn admit(
     }
     fn values(value: &SemanticValue, requests: &mut Vec<SymbolId>) {
         match value {
-            SemanticValue::Type(path) if dm_codegen_byond::NativePrimitiveType::from_symbol(*path).is_some() => (),
+            SemanticValue::Type(path)
+                if dm_codegen_byond::NativePrimitiveType::from_symbol(*path).is_some() =>
+            {
+                ()
+            }
             SemanticValue::Type(path) => requests.push(*path),
             SemanticValue::Procedure(identity) => requests.push(identity.owner),
             SemanticValue::ModifiedInstance(instance) => requests.push(instance.runtime_type()),
@@ -116,8 +133,16 @@ pub fn admit(
         }
     }
     for field in projection.fields.iter() {
-        requests.push(field.owner);
-        requests.push(field.declaring_owner);
+        let savefile_header = field.owner == SymbolId::of("/savefile")
+            && field.declaring_owner == SymbolId::of("/savefile")
+            && field.name == SymbolId::of("byond_version")
+            && field.role == crate::class_projection::FieldRole::Assignment
+            && field.intrinsic
+            && !field.shared;
+        if !savefile_header {
+            requests.push(field.owner);
+            requests.push(field.declaring_owner);
+        }
         if let crate::initializer_policy::DefaultValue::Scalar(value) = &field.value {
             values(value, &mut requests);
         }
@@ -175,7 +200,9 @@ pub fn admit(
     if let Some(types) = inventory.append_orders.get(&dm_link::Table::Type) {
         for key in types {
             if let Key::Type(path) = key {
-                requests.push(*path);
+                if dm_codegen_byond::NativePrimitiveType::from_symbol(*path).is_none() {
+                    requests.push(*path);
+                }
             }
         }
     }
@@ -191,4 +218,82 @@ pub fn admit(
         .collect::<Vec<_>>()
         .into();
     Ok((projection, order))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn projection() -> ClassProjection {
+        ClassProjection {
+            tree_identity: 0,
+            occurrence_count: 1,
+            types: vec![
+                crate::class_projection::TypeProjection {
+                    path: SymbolId::of("/"),
+                    parent: None,
+                },
+                crate::class_projection::TypeProjection {
+                    path: SymbolId::of("/savefile"),
+                    parent: Some(SymbolId::of("/")),
+                },
+            ]
+            .into(),
+            fields: vec![crate::class_projection::FieldProjection {
+                owner: SymbolId::of("/savefile"),
+                declaring_owner: SymbolId::of("/savefile"),
+                name: SymbolId::of("byond_version"),
+                role: crate::class_projection::FieldRole::Assignment,
+                wire_flags: None,
+                intrinsic: true,
+                shared: false,
+                value: crate::initializer_policy::DefaultValue::Scalar(SemanticValue::NumberBits(
+                    516f32.to_bits(),
+                )),
+            }]
+            .into(),
+            shared_slot_order: Vec::new().into(),
+            procedure_statics: Vec::new().into(),
+            runtime_writes: Vec::new().into(),
+            chains: Vec::new().into(),
+        }
+    }
+    #[test]
+    fn savefile_header_stays_semantic_without_fabricated_physical_class() {
+        let bodies = LoweringBatch::default();
+        let inventory = LinkInventory::default();
+        let symbols = SymbolTable::default();
+        let order = [SymbolId::of("/savefile")];
+        let inputs = || Inputs {
+            source_order: &order,
+            bodies: &bodies,
+            initializers: &[],
+            maps: &[],
+            inventory: &inventory,
+            symbols: &symbols,
+            non_text_types: &[],
+        };
+        let (output, allocation) = admit(projection(), inputs()).unwrap();
+        assert!(allocation.is_empty());
+        assert_eq!(output.fields.len(), 1);
+        assert!(!output
+            .types
+            .iter()
+            .any(|ty| ty.path == SymbolId::of("/savefile")));
+        let mut callable = projection();
+        callable.chains = vec![crate::class_projection::ProcedureChain {
+            owner: SymbolId::of("/savefile"),
+            name: SymbolId::of("unsupported"),
+            verb: false,
+            entries: Vec::new().into(),
+        }]
+        .into();
+        assert!(admit(callable, inputs())
+            .unwrap_err()
+            .contains("native primitive requires explicit physical class ABI"));
+        let mut field = projection();
+        std::sync::Arc::make_mut(&mut field.fields)[0].name = SymbolId::of("eof");
+        assert!(admit(field, inputs())
+            .unwrap_err()
+            .contains("native primitive requires explicit physical class ABI"));
+    }
 }
