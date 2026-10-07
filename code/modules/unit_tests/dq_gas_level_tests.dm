@@ -2,12 +2,17 @@
 // state, an object that breaks when its air gets too hot, a material service woken by its surroundings. The tests state what the holder does
 // when the gas changes, not how it is told, so they hold through the move from the old watch helpers to the gas_level() capability.
 
-/// Delivers what a gas change published, however the holder listens: the native gas frame, the machine service's gas wakes (the observation
-/// stream), the world's crossings on their lane, and the marked drain that runs the holder's reactions.
+/// Delivers what a gas change published, however the holder listens, without letting time pass: the native gas frame, the machine service's
+/// gas wakes (the observation stream), the world's crossings on every lane, and the marked drain that runs the holder's reactions. The live
+/// kernel never runs in between (nothing sleeps), so no deadline, retire or lane budget of its own can race the test: a wait of a few ticks
+/// for the live loop to deliver the wake was the flake (the loop skips ticks under load, and runs unrelated work on the holder meanwhile).
 /proc/dq_gas_level_test_deliver()
 	SSair.run_gas_frames(2)
 	SSmachines.wake_dirty_gas_subscribers()
-	sleep(world.tick_lag * 6)
+	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	if(sched)
+		for(var/lane in 1 to OM_LANE_COUNT)
+			sched.run_world_wakes(lane)
 	SSmachines.wake_dirty_gas_subscribers()
 	kernel_drain_now()
 
@@ -106,6 +111,10 @@
 	var/obj/machinery/portable_atmospherics/canister/air/C = allocate(/obj/machinery/portable_atmospherics/canister/air, T)
 	var/datum/material_service/service = C.enable_material_service()
 	TEST_ASSERT_NOTNULL(service, "the canister has a material service")
+	dq_gas_level_test_deliver()
+	// The exposure work queued at creation is dropped and the service re-bound to the room's mixture: nothing runs it meanwhile, so it cannot
+	// retire the service (spent() clears its gas watches) before the heat arrives.
+	cancel_after(service, "material_service")
 	service.rebind()
 	dq_gas_level_test_deliver()
 	cancel_after(service, "material_service")
