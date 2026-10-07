@@ -68,10 +68,22 @@ impl SnapshotProvider for FileSystemInputs {
                 "candidate is not a regular file",
             ));
         }
-        stamp_handle(&std::fs::File::open(path)?)
+        // Identity validation needs attributes, not permission to read payloads.
+        // Avoid opening every unchanged asset with GENERIC_READ on Windows.
+        #[cfg(windows)]
+        let file = {
+            use std::os::windows::fs::OpenOptionsExt;
+            std::fs::OpenOptions::new().access_mode(0x80).open(path)?
+        };
+        #[cfg(not(windows))]
+        let file = std::fs::File::open(path)?;
+        stamp_handle(&file)
     }
     fn read(&self, path: &Path) -> io::Result<(Stamp, Vec<u8>)> {
         use std::io::Read;
+        if !std::fs::metadata(path)?.is_file() {
+            return Err(io::Error::new(io::ErrorKind::NotFound, "candidate is not a regular file"));
+        }
         let mut file = std::fs::File::open(path)?;
         let before = stamp_handle(&file)?;
         let mut bytes = Vec::new();
@@ -238,8 +250,8 @@ impl<P: SnapshotProvider> dm_resources::capture::CaptureProvider for RecordingIn
             .parent()
             .ok_or_else(|| invalid("resource candidate has no parent"))?;
         self.record_search_folder(parent)?;
-        match self.provider.stamp(path) {
-            Ok(_) => self.read_recorded(path).map(|bytes| Some(Arc::from(bytes))),
+        match self.read_recorded(path) {
+            Ok(bytes) => Ok(Some(Arc::from(bytes))),
             Err(error) if error.kind() == io::ErrorKind::NotFound => {
                 self.snapshot
                     .lock()
@@ -284,6 +296,34 @@ impl InputSnapshot {
 
     pub fn files(&self) -> impl Iterator<Item = &FileInput> {
         self.files.values()
+    }
+    /// Select a payload-free asset proof domain. Search membership and negative
+    /// candidates are retained because they qualify source-path shadowing.
+    pub fn select_files(&self, selected: &BTreeSet<PathBuf>) -> io::Result<Self> {
+        let mut next = Self::new(self.scanned_ns);
+        for path in selected {
+            let path = canonical_path(path);
+            let fact = self.files.get(&path).ok_or_else(|| invalid("selected input was not captured"))?;
+            next.files.insert(path, fact.clone());
+        }
+        next.folders = self.folders.clone();
+        next.negative_files = self.negative_files.clone();
+        Ok(next)
+    }
+    /// Merge a freshly validated retained domain into this capture. Conflicting
+    /// reads reject the build instead of silently selecting one observation.
+    pub fn merge(&mut self, other: &Self) -> io::Result<()> {
+        other.check_structure()?;
+        for (path, file) in &other.files {
+            if self.negative_files.contains(path) { return Err(invalid("retained input conflicts with absence")); }
+            if let Some(current) = self.files.get(path) {
+                if current != file { return Err(invalid("retained input differs from current capture")); }
+            } else { self.files.insert(path.clone(), file.clone()); }
+        }
+        for path in &other.negative_files { self.record_negative(path)?; }
+        for (path, listing) in &other.folders { self.record_folder(path, listing.clone())?; }
+        self.scanned_ns = self.scanned_ns.min(other.scanned_ns);
+        Ok(())
     }
     pub fn contains_file(&self, path: &Path) -> bool {
         self.files.contains_key(&canonical_path(path))

@@ -3,7 +3,37 @@
 Phase 2 is in progress, not accepted. Phase 1's corrected full compile results
 remain the uncached baseline: test 33.139 s and server 35.014 s externally at
 two workers, with a warm OS file cache. No new DeepQuarry incremental timing is
-claimed here.
+claimed here. The first Phase 2 prototype uncached run completed but regressed;
+see the measurement below. Newer integration changes have not been benchmarked.
+
+## New integration checkpoint
+
+Parser fragments now replay compact declaration/settings/body-range records with
+current provenance. Declaration executable groups use the same recorded-read
+disk memo as procedures. Resource-only manifests validate current demands,
+positive/negative asset facts and archive identity; source-only changes can retain
+the RSC without loading asset payloads. Cold resource capture releases original
+payload ownership after projection. CLI/session wiring passes `cargo check -j1`.
+Fourteen focused checks passed for the connected cohort: four nontext pipeline
+checks (including retained source-only resources with a failing asset reader),
+three input facts, two sessions, one manifest proof, one anonymous executable
+memo, one resource projection, one metadata resolver, and one parser-fragment replay. Phase 2 remains
+incomplete. No full test suite was run.
+
+## First prototype measurement
+
+Release `fccb1b2e35`, two workers, uncached full DeepQuarry plus one trivial probe
+proc: **246.202 s external / 241.099 s driver**, exit 0. Peak sampled private
+memory: 3,449,393,152 bytes. Frontend 41.535 s; nontext 69.617 s (asset capture
+64.319 s); compilation 121.945 s (procedure lowering 86.251 s, linking 9.157 s,
+composition 14.397 s); publication 3.931 s. RSC is 217,623,051 bytes and matches
+the Phase 1 archive hash; DMB is 64,190,292 bytes with the added probe.
+
+Evidence: `E:/dmb-native-v2-phase0/phase2-20261007-a-cold`. Other unrelated
+Cargo/rustc builds were active. Contention is observed, but has not been proved
+to explain this regression. No speedup is claimed; attribution and a controlled
+repeat are required before comparing iteration performance. The run stayed under
+the 285-second watchdog. No DreamDaemon or runtime tests were run.
 
 ## Implemented foundation
 
@@ -45,14 +75,14 @@ DreamDaemon, DM runtime suite or administrative profiler was run.
 
 ## Still required
 
-- Declaration-fragment reuse within the expansion memo. Directive
+- Broader declaration-fragment coverage within the expansion memo. Directive
   planning must remain authoritative until incoming conditional/include/FILE_DIR
   state and ordered effects have complete replay semantics.
 - Relative procedure debug/diagnostic rebasing. Current provenance-shift misses
-  are safe but over-invalidate; arena-offset moves alone now reuse. Initializer artifacts and error diagnostics still
-  recompute; helper/modified descriptor results currently miss on disk.
-- Resource metadata/unchanged archive reuse on source-only edits; current full
-  asset capture still owns payload bytes and reconstructs the RSC.
+  are safe but over-invalidate; arena-offset moves alone now reuse. Error diagnostics
+  still recompute; helper/modified descriptor results currently miss on disk.
+- Benchmark resource metadata/unchanged archive reuse on source-only edits and
+  prove cold/incremental output equivalence for the connected paths.
 - Same-snapshot cold verification, explain/stats, eviction reachability and
   six-worktree acceptance, then real DeepQuarry unchanged/body/structural timings.
 

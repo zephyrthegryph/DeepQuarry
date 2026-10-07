@@ -12,7 +12,10 @@ use dm_ir::{InitializerScope, Resolver};
 use dm_tree::{frontend::ColdFrontend, initializers::InitializerPlan};
 
 #[derive(Clone, Copy, Debug)]
-pub enum InitializerStage { Classification, Codegen }
+pub enum InitializerStage {
+    Classification,
+    Codegen,
+}
 pub type InitializerMeasurement = crate::stage_measurements::Measurement<InitializerStage>;
 pub type InitializerObserver<'a> = crate::stage_measurements::Observer<'a, InitializerStage>;
 
@@ -88,6 +91,7 @@ pub fn lower<R: Resolver>(
         resource_search_context,
         true,
         None,
+        None,
     )
 }
 
@@ -98,15 +102,23 @@ pub fn lower_captured<R: Resolver>(
     host: &R,
     resource_search_context: Option<u128>,
 ) -> Result<LoweredInitializers, InitializerLoweringError> {
-    lower_captured_observed(frontend, startup, evaluator, host, resource_search_context, None)
+    lower_captured_observed(
+        frontend,
+        startup,
+        evaluator,
+        host,
+        resource_search_context,
+        None,
+    )
 }
-pub fn lower_captured_observed<R: Resolver>(
+pub fn lower_captured_observed_memo<R: Resolver>(
     frontend: &ColdFrontend,
     startup: &crate::startup::CapturedStartup<'_>,
     evaluator: &dyn CapturedInitializerEvaluator,
     host: &R,
     resource_search_context: Option<u128>,
     observer: Option<&InitializerObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
 ) -> Result<LoweredInitializers, InitializerLoweringError> {
     startup.validate_for(frontend)?;
     lower_plan(
@@ -117,6 +129,25 @@ pub fn lower_captured_observed<R: Resolver>(
         resource_search_context,
         false,
         observer,
+        memo,
+    )
+}
+pub fn lower_captured_observed<R: Resolver>(
+    frontend: &ColdFrontend,
+    startup: &crate::startup::CapturedStartup<'_>,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    host: &R,
+    resource_search_context: Option<u128>,
+    observer: Option<&InitializerObserver<'_>>,
+) -> Result<LoweredInitializers, InitializerLoweringError> {
+    lower_captured_observed_memo(
+        frontend,
+        startup,
+        evaluator,
+        host,
+        resource_search_context,
+        observer,
+        None,
     )
 }
 
@@ -128,6 +159,7 @@ fn lower_plan<R: Resolver>(
     resource_search_context: Option<u128>,
     validate_statics: bool,
     observer: Option<&InitializerObserver<'_>>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
 ) -> Result<LoweredInitializers, InitializerLoweringError> {
     if frontend.snapshot.tree.identity() != plan.source.tree.identity()
         || frontend.snapshot.occurrences.tree_identity() != plan.source.occurrences.tree_identity()
@@ -146,35 +178,40 @@ fn lower_plan<R: Resolver>(
         crate::startup::validate(frontend, plan)?;
     }
     let symbols = plan.symbols.as_ref();
-    let measurement = crate::stage_measurements::Scope::new(observer, InitializerStage::Classification);
-    let classified =
-        match initializer_policy::classify_with_token_mode(&plan.writes, symbols, evaluator, frontend.plan.final_macros.contains_key("DEBUG")) {
-            Ok(classified) => classified,
-            Err(error) => {
-                let ordinals = error
-                    .issues
-                    .iter()
-                    .map(|issue| issue.source_ordinal)
-                    .collect::<Vec<_>>();
-                let errors = error
-                    .issues
-                    .into_iter()
-                    .enumerate()
-                    .map(|(local, issue)| dm_codegen_byond::LowerError {
-                        statement: "initializer classification".into(),
-                        reason: issue.reason,
-                        kind: dm_codegen_byond::LowerErrorKind::UnsupportedModel,
-                        span: Some(dm_codegen_byond::LowerSpan {
-                            start: local,
-                            end: local,
-                        }),
-                    })
-                    .collect();
-                return Err(InitializerLoweringError::Diagnostics(
-                    map_captured_lower_errors(errors, frontend, plan, &ordinals)?,
-                ));
-            }
-        };
+    let measurement =
+        crate::stage_measurements::Scope::new(observer, InitializerStage::Classification);
+    let classified = match initializer_policy::classify_with_token_mode(
+        &plan.writes,
+        symbols,
+        evaluator,
+        frontend.plan.final_macros.contains_key("DEBUG"),
+    ) {
+        Ok(classified) => classified,
+        Err(error) => {
+            let ordinals = error
+                .issues
+                .iter()
+                .map(|issue| issue.source_ordinal)
+                .collect::<Vec<_>>();
+            let errors = error
+                .issues
+                .into_iter()
+                .enumerate()
+                .map(|(local, issue)| dm_codegen_byond::LowerError {
+                    statement: "initializer classification".into(),
+                    reason: issue.reason,
+                    kind: dm_codegen_byond::LowerErrorKind::UnsupportedModel,
+                    span: Some(dm_codegen_byond::LowerSpan {
+                        start: local,
+                        end: local,
+                    }),
+                })
+                .collect();
+            return Err(InitializerLoweringError::Diagnostics(
+                map_captured_lower_errors(errors, frontend, plan, &ordinals)?,
+            ));
+        }
+    };
     measurement.complete();
     let measurement = crate::stage_measurements::Scope::new(observer, InitializerStage::Codegen);
     let mut units = Vec::with_capacity(classified.groups.len());
@@ -274,16 +311,15 @@ fn lower_plan<R: Resolver>(
         let debug = CapturedOrigins {
             origins: DebugOrigins { entries },
         };
-        let code = dm_codegen_byond::initializer::lower_scoped_assignments(
-            &assignments,
-            InitializerContext {
-                symbols,
-                resource_search_context,
-                debug: Some(&debug),
-            },
-            host,
-        )
-        .map_err(|error| match error {
+        // Current classification and provenance are always validated above.
+        // Exact authored values and policy-issued array dimensions describe the
+        // executable inputs; local debug ordinals are reconstructed every build.
+        let context = || InitializerContext {
+            symbols,
+            resource_search_context,
+            debug: Some(&debug),
+        };
+        let map_error = |error| match error {
             dm_codegen_byond::initializer::InitializerError::Unsupported(message) => {
                 InitializerLoweringError::Unsupported(message)
             }
@@ -296,7 +332,62 @@ fn lower_plan<R: Resolver>(
                     Err(error) => error,
                 }
             }
-        })?;
+        };
+        let code = if let Some(memo) = memo {
+            let mut key = b"dmbc-anonymous-declaration-v1\0".to_vec();
+            key.extend_from_slice(&memo.policy.to_le_bytes());
+            key.extend_from_slice(
+                &serde_json::to_vec(&resource_search_context).map_err(|error| error.to_string())?,
+            );
+            for write in &group.writes {
+                let bytes = write.write.canonical_bytes();
+                key.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
+                key.extend_from_slice(&bytes);
+                match write
+                    .runtime_value
+                    .as_ref()
+                    .ok_or("initializer runtime value missing")?
+                {
+                    RuntimeValue::Expression(_) => key.push(0),
+                    RuntimeValue::SizedArray(dimensions) => {
+                        key.push(1);
+                        key.extend_from_slice(&(dimensions.len() as u64).to_le_bytes());
+                        for dimension in dimensions.iter() {
+                            key.extend_from_slice(&dimension.to_le_bytes());
+                        }
+                    }
+                }
+            }
+            for origin in &debug.origins.entries {
+                key.extend_from_slice(&(origin.semantic_path.len() as u64).to_le_bytes());
+                key.extend_from_slice(origin.semantic_path.as_bytes());
+                key.extend_from_slice(&origin.line.to_le_bytes());
+            }
+            let recorder = crate::lowering_memo::RecordingResolver::new(host);
+            for write in &group.writes {
+                recorder.resolve(dm_ir::ResolveQuery::Ancestry(write.write.lexical_owner));
+                if let Some(identity) = write.write.lexical_procedure {
+                    recorder.record_occurrence(identity);
+                }
+            }
+            if let Some(code) = memo.executable(&key, &recorder) {
+                code
+            } else {
+                let code = dm_codegen_byond::initializer::lower_scoped_assignments(
+                    &assignments,
+                    context(),
+                    &recorder,
+                )
+                .map_err(&map_error)?;
+                memo.remember_executable(&key, &recorder.reads(), &code);
+                code
+            }
+        } else {
+            // Cold oracle path performs no cache key, serialization, extra
+            // ancestry reads or recording allocation.
+            dm_codegen_byond::initializer::lower_scoped_assignments(&assignments, context(), host)
+                .map_err(map_error)?
+        };
         units.push(LoweredInitializerUnit {
             scope: group
                 .receiver

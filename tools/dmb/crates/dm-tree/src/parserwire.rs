@@ -1,0 +1,133 @@
+//! Versioned compact grammar-descriptor payloads. No file IDs or executable ASTs.
+use dm_syntax::{Diagnostic, DiagnosticKind, Item, ItemKind, Span};
+use serde::{Deserialize, Serialize};
+pub(super) const VERSION: u32 = 1;
+#[derive(Serialize, Deserialize)]
+struct Node {
+    kind: u8,
+    header: String,
+    span: [usize; 2],
+    header_span: [usize; 2],
+    indent: usize,
+    children: Vec<Node>,
+}
+#[derive(Serialize, Deserialize)]
+struct Error {
+    kind: u8,
+    span: [usize; 2],
+    message: String,
+}
+#[derive(Serialize, Deserialize)]
+struct Payload {
+    version: u32,
+    items: Vec<Node>,
+    errors: Vec<Error>,
+}
+fn bounds(span: Span) -> [usize; 2] {
+    [span.start, span.end]
+}
+fn span(value: [usize; 2], source: &str) -> Option<Span> {
+    source.get(value[0]..value[1])?;
+    Some(Span::new(value[0], value[1]))
+}
+fn encode_item(item: &Item) -> Node {
+    Node {
+        kind: match item.kind {
+            ItemKind::Type => 0,
+            ItemKind::Proc => 1,
+            ItemKind::Verb => 2,
+            ItemKind::Var => 3,
+            ItemKind::Statement => 4,
+            ItemKind::Unknown => 5,
+        },
+        header: item.header.clone(),
+        span: bounds(item.span),
+        header_span: bounds(item.header_span),
+        indent: item.indent,
+        children: item.children.iter().map(encode_item).collect(),
+    }
+}
+fn decode_item(node: Node, source: &str, depth: usize) -> Option<Item> {
+    if depth > 256 {
+        return None;
+    }
+    let item_span = span(node.span, source)?;
+    let header_span = span(node.header_span, source)?;
+    if header_span.start < item_span.start
+        || header_span.end > item_span.end
+        || source.get(header_span.range())? != node.header
+    {
+        return None;
+    }
+    Some(Item {
+        kind: match node.kind {
+            0 => ItemKind::Type,
+            1 => ItemKind::Proc,
+            2 => ItemKind::Verb,
+            3 => ItemKind::Var,
+            4 => ItemKind::Statement,
+            5 => ItemKind::Unknown,
+            _ => return None,
+        },
+        header: node.header,
+        span: item_span,
+        header_span,
+        indent: node.indent,
+        children: node
+            .children
+            .into_iter()
+            .map(|child| decode_item(child, source, depth + 1))
+            .collect::<Option<_>>()?,
+    })
+}
+pub(super) fn encode(items: &[Item], errors: &[Diagnostic]) -> Option<Vec<u8>> {
+    serde_json::to_vec(&Payload {
+        version: VERSION,
+        items: items.iter().map(encode_item).collect(),
+        errors: errors
+            .iter()
+            .map(|error| Error {
+                kind: match error.kind {
+                    DiagnosticKind::Lexical => 0,
+                    DiagnosticKind::Expression => 1,
+                    DiagnosticKind::Statement => 2,
+                    DiagnosticKind::Indentation => 3,
+                    DiagnosticKind::Unsupported => 4,
+                },
+                span: bounds(error.span),
+                message: error.message.clone(),
+            })
+            .collect(),
+    })
+    .ok()
+}
+pub(super) fn decode(bytes: &[u8], source: &str) -> Option<(Vec<Item>, Vec<Diagnostic>)> {
+    let payload: Payload = serde_json::from_slice(bytes).ok()?;
+    if payload.version != VERSION {
+        return None;
+    }
+    let items = payload
+        .items
+        .into_iter()
+        .map(|node| decode_item(node, source, 0))
+        .collect::<Option<Vec<_>>>()?;
+    let errors = payload
+        .errors
+        .into_iter()
+        .map(|error| {
+            Some(Diagnostic {
+                span: span(error.span, source)?,
+                kind: match error.kind {
+                    0 => DiagnosticKind::Lexical,
+                    1 => DiagnosticKind::Expression,
+                    2 => DiagnosticKind::Statement,
+                    3 => DiagnosticKind::Indentation,
+                    4 => DiagnosticKind::Unsupported,
+                    _ => return None,
+                },
+                message: error.message,
+            })
+        })
+        .collect::<Option<Vec<_>>>()?;
+    Some((items, errors))
+}

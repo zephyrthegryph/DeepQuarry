@@ -62,6 +62,8 @@ pub struct Record {
     /// Exact hashes of conventional output bytes after verified copy/link.
     /// None means repair/materialize even when the immutable pair is reusable.
     pub outputs: Option<InputSnapshot>,
+    #[serde(default)]
+    pub resource_manifest: Option<crate::resource_manifest::ResourceManifest>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -219,15 +221,9 @@ impl Session {
         Ok(id)
     }
 
-    /// A missing, malformed, mismatched or stale record is a cold-build miss.
-    /// Provider IO errors remain errors; permission failures are not absence.
-    pub fn validate(
-        &self,
-        id: u128,
-        provider: &impl SnapshotProvider,
-        exact: bool,
-        now_ns: u128,
-    ) -> io::Result<Option<ValidatedRecord>> {
+    /// Authenticate record/configuration only. This does NOT authorize output or
+    /// memo reuse: the caller must validate the relevant captured input domain.
+    pub fn prior(&self, id: u128) -> io::Result<Option<Record>> {
         let path = self.directory.join(format!("{id:032x}.json"));
         let bytes = match self.read_bytes(&path) {
             Ok(bytes) => bytes,
@@ -258,10 +254,6 @@ impl Session {
         {
             return Ok(None);
         }
-        let (validation, inputs) = envelope.record.inputs.validate(provider, exact, now_ns)?;
-        if !validation.unchanged() {
-            return Ok(None);
-        }
         if envelope
             .record
             .outputs
@@ -270,14 +262,18 @@ impl Session {
         {
             return Ok(None);
         }
-        Ok(Some(ValidatedRecord {
-            record: Record {
-                inputs,
-                pair: envelope.record.pair,
-                outputs: envelope.record.outputs,
-            },
-            validation,
-        }))
+        Ok(Some(envelope.record))
+    }
+
+    /// A stale whole-input record is a cold-build miss. Permission failures
+    /// remain errors; they are never interpreted as absence.
+    pub fn validate(&self, id: u128, provider: &impl SnapshotProvider, exact: bool, now_ns: u128)
+        -> io::Result<Option<ValidatedRecord>> {
+        let Some(mut record) = self.prior(id)? else { return Ok(None); };
+        let (validation, inputs) = record.inputs.validate(provider, exact, now_ns)?;
+        if !validation.unchanged() { return Ok(None); }
+        record.inputs = inputs;
+        Ok(Some(ValidatedRecord { record, validation }))
     }
 
     fn read_bytes(&self, path: &Path) -> io::Result<Vec<u8>> {
@@ -354,6 +350,7 @@ mod tests {
                 inputs,
                 pair: 7,
                 outputs: None,
+                resource_manifest: None,
             })
             .unwrap();
         let valid = session

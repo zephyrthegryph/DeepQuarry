@@ -2,6 +2,9 @@
 //! participates in this path. Directive planning freezes expansion environments;
 //! the combined encounter AST supplies scope before the resolved tree is built.
 
+#[path = "parserwire.rs"]
+mod parserwire;
+
 use crate::{MemberId, MemberKind, OccurrenceId, Skeleton, SnapshotError, Target, TreeSnapshot};
 use dm_ir::{FileId, Span, SymbolTable};
 use dm_preprocess::regions::{
@@ -208,13 +211,19 @@ impl ColdFrontend {
             message: "body occurrence differs from compact frontend capture".into(),
         };
         if !Arc::ptr_eq(&self.syntax, &self.issued_syntax)
-            || !Arc::ptr_eq(&self.expanded.text, &self.issued_arena) {
+            || !Arc::ptr_eq(&self.expanded.text, &self.issued_arena)
+        {
             return Err(reject());
         }
-        let issued = self.body_by_declaration.get(&occurrence.declaration)
-            .and_then(|index| self.issued_bodies.get(*index)).ok_or_else(reject)?;
-        if issued.member != occurrence.member || issued.ast_path != occurrence.ast_path
-            || issued.expanded_span != occurrence.expanded_span {
+        let issued = self
+            .body_by_declaration
+            .get(&occurrence.declaration)
+            .and_then(|index| self.issued_bodies.get(*index))
+            .ok_or_else(reject)?;
+        if issued.member != occurrence.member
+            || issued.ast_path != occurrence.ast_path
+            || issued.expanded_span != occurrence.expanded_span
+        {
             return Err(reject());
         }
         let mut items = self.syntax.items.as_slice();
@@ -226,31 +235,43 @@ impl ColdFrontend {
         }
         let item = selected.ok_or_else(reject)?;
         if item.span != occurrence.expanded_span
-            || !matches!(item.kind, ItemKind::Proc | ItemKind::Verb) {
+            || !matches!(item.kind, ItemKind::Proc | ItemKind::Verb)
+        {
             return Err(reject());
         }
         Ok(item)
     }
-    pub fn parse_body<'a>(&'a self, occurrence: &BodyOccurrence) -> Result<ParsedBody<'a>, Diagnostic> {
+    pub fn parse_body<'a>(
+        &'a self,
+        occurrence: &BodyOccurrence,
+    ) -> Result<ParsedBody<'a>, Diagnostic> {
         self.compact_body(occurrence)?;
         let issued = &self.issued_bodies[self.body_by_declaration[&occurrence.declaration]];
-        let item = dm_syntax::parse_proc_at_span(&self.issued_arena, issued.expanded_span).map_err(
-            |error| Diagnostic {
+        let item = dm_syntax::parse_proc_at_span(&self.issued_arena, issued.expanded_span)
+            .map_err(|error| Diagnostic {
                 kind: syntax_kind(error.kind),
                 stage: DiagnosticStage::Syntax,
                 location: self
                     .location(error.span.start)
                     .or_else(|| Some(occurrence.source.clone())),
                 message: error.message,
-            },
-        )?;
-        Ok(ParsedBody { item, issuer: self, occurrence: issued })
+            })?;
+        Ok(ParsedBody {
+            item,
+            issuer: self,
+            occurrence: issued,
+        })
     }
-    pub fn validate_parsed_body(&self, parsed: &ParsedBody<'_>, occurrence: &BodyOccurrence) -> Result<(), Diagnostic> {
+    pub fn validate_parsed_body(
+        &self,
+        parsed: &ParsedBody<'_>,
+        occurrence: &BodyOccurrence,
+    ) -> Result<(), Diagnostic> {
         self.compact_body(occurrence)?;
-        if !std::ptr::eq(self, parsed.issuer)
-            || !std::ptr::eq(parsed.occurrence, occurrence) {
-            return Err(internal("parsed body was issued by a different frontend occurrence"));
+        if !std::ptr::eq(self, parsed.issuer) || !std::ptr::eq(parsed.occurrence, occurrence) {
+            return Err(internal(
+                "parsed body was issued by a different frontend occurrence",
+            ));
         }
         Ok(())
     }
@@ -292,8 +313,12 @@ pub struct ParsedBody<'a> {
     occurrence: &'a BodyOccurrence,
 }
 impl ParsedBody<'_> {
-    pub fn item(&self) -> &Item { &self.item }
-    pub fn occurrence(&self) -> &BodyOccurrence { self.occurrence }
+    pub fn item(&self) -> &Item {
+        &self.item
+    }
+    pub fn occurrence(&self) -> &BodyOccurrence {
+        self.occurrence
+    }
 }
 
 struct Captured<'a, P> {
@@ -302,9 +327,14 @@ struct Captured<'a, P> {
 }
 
 impl<P: SourceProvider> SourceProvider for Captured<'_, P> {
-    fn prepared_source(&self, path: &Path) -> Option<Arc<dm_preprocess::regions::prepared_source::PreparedSource>> {
+    fn prepared_source(
+        &self,
+        path: &Path,
+    ) -> Option<Arc<dm_preprocess::regions::prepared_source::PreparedSource>> {
         let prepared = self.provider.prepared_source(path)?;
-        self.sources.borrow_mut().insert(path.to_owned(), Arc::clone(prepared.original()));
+        self.sources
+            .borrow_mut()
+            .insert(path.to_owned(), Arc::clone(prepared.original()));
         Some(prepared)
     }
     fn read(&self, path: &Path) -> Result<String, String> {
@@ -427,7 +457,10 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
             .get(occurrence.path.as_ref())
             .cloned()
             .unwrap_or_else(|| Arc::from(""));
-        let starts = plan.source_line_starts.get(occurrence.path.as_ref()).cloned()
+        let starts = plan
+            .source_line_starts
+            .get(occurrence.path.as_ref())
+            .cloned()
             .unwrap_or_else(|| Arc::from([0_usize]));
         by_path.insert(occurrence.path.as_ref().clone(), id);
         files.push(SourceFile {
@@ -486,7 +519,7 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
     let ParsedDeclarations {
         items: compact_items,
         diagnostics: syntax_diagnostics,
-    } = parse_declarations(&expanded.text, config)?;
+    } = parse_declarations(&expanded, config, memo)?;
     diagnostics.extend(
         syntax_diagnostics
             .into_iter()
@@ -590,7 +623,8 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
         // Declaration provenance needs the source span and occurrence, not a
         // complete diagnostic location (which also allocates an include chain).
         // Reuse the expansion lookup above instead of building that temporary.
-        let file = *by_path.get(expanded_origin.origin.path.as_ref())
+        let file = *by_path
+            .get(expanded_origin.origin.path.as_ref())
             .ok_or_else(|| vec![internal("declaration has no captured source file")])?;
         declaration_regions.push(expanded_origin.region);
         origin.span = source_span(file, expanded_origin.source_span)?;
@@ -629,11 +663,19 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
         adapted.skeletons.len(),
     );
     let mut resolution_diagnostic = None;
-    let snapshot = adapted.finish_with_engine_observed(config.engine, |error, skeletons, origins| {
-        resolution_diagnostic = Some(resolution_error(
-            error, skeletons, origins, &mapping, config.engine.is_some(),
-        ));
-    }).map_err(|_| vec![resolution_diagnostic.expect("resolution failure must notify observer")])?;
+    let snapshot = adapted
+        .finish_with_engine_observed(config.engine, |error, skeletons, origins| {
+            resolution_diagnostic = Some(resolution_error(
+                error,
+                skeletons,
+                origins,
+                &mapping,
+                config.engine.is_some(),
+            ));
+        })
+        .map_err(|_| {
+            vec![resolution_diagnostic.expect("resolution failure must notify observer")]
+        })?;
     timings.tree_resolution = resolution_start.elapsed();
     observe(
         config,
@@ -713,7 +755,13 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
         snapshot,
         files: files.into(),
         source_by_path: Arc::new(by_path),
-        body_by_declaration: Arc::new(bodies.iter().enumerate().map(|(index, body)| (body.declaration, index)).collect()),
+        body_by_declaration: Arc::new(
+            bodies
+                .iter()
+                .enumerate()
+                .map(|(index, body)| (body.declaration, index))
+                .collect(),
+        ),
         issued_bodies: Arc::clone(&bodies),
         bodies,
         emission_order: emission_order.into(),
@@ -729,9 +777,11 @@ struct ParsedDeclarations {
 /// worker count and two descriptors per worker in each joined batch. Workers
 /// discard executable AST children before returning their compact declarations.
 fn parse_declarations(
-    source: &str,
+    expanded: &ExpandedRegions,
     config: FrontendConfig<'_>,
+    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
 ) -> Result<ParsedDeclarations, Vec<Diagnostic>> {
+    let source = expanded.text.as_ref();
     let workers = config.workers;
     let parse_start = Instant::now();
     let mut chunks = Vec::new();
@@ -761,15 +811,56 @@ fn parse_declarations(
                 let sender = sender.clone();
                 let chunks = &chunks;
                 let next = &next;
-                scope.spawn(move || {
-                    loop {
-                        let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                        let Some(&(offset, len)) = chunks.get(index) else { break };
-                        let ast = dm_syntax::parse_declaration_skeleton(&source[offset..offset + len]);
-                        let parsed = compact_declarations(ast.items, offset);
-                        if sender.send((index, offset, parsed, ast.diagnostics)).is_err() {
-                            break;
+                scope.spawn(move || loop {
+                    let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    let Some(&(offset, len)) = chunks.get(index) else {
+                        break;
+                    };
+                    let text = &source[offset..offset + len];
+                    let receipt_index = expanded
+                        .receipts
+                        .partition_point(|receipt| receipt.output_span().end <= offset);
+                    let receipt = expanded.receipts.get(receipt_index).filter(|receipt| {
+                        receipt.output_span().start <= offset
+                            && offset + len <= receipt.output_span().end
+                    });
+                    let relative = receipt.map(|receipt| {
+                        dm_syntax::Span::new(
+                            offset - receipt.output_span().start,
+                            offset + len - receipt.output_span().start,
+                        )
+                    });
+                    let cached = receipt
+                        .zip(relative)
+                        .and_then(|(receipt, span)| {
+                            receipt.record().fragment(parserwire::VERSION, span)
+                        })
+                        .and_then(|bytes| parserwire::decode(bytes, text));
+                    let (mut parsed, errors, fragment) = match cached {
+                        Some((items, errors)) => (items, errors, None),
+                        None => {
+                            let ast = dm_syntax::parse_declaration_skeleton(text);
+                            // Without an issued contained-region receipt, preserve
+                            // the original one-pass cold compaction/rebase path.
+                            let items = compact_declarations(
+                                ast.items,
+                                if receipt.is_some() { 0 } else { offset },
+                            );
+                            let fragment = receipt.zip(relative).and_then(|(_, span)| {
+                                parserwire::encode(&items, &ast.diagnostics)
+                                    .map(|bytes| (receipt_index, span, bytes))
+                            });
+                            (items, ast.diagnostics, fragment)
                         }
+                    };
+                    if receipt.is_some() {
+                        shift_items(&mut parsed, offset);
+                    }
+                    if sender
+                        .send((index, offset, parsed, errors, fragment))
+                        .is_err()
+                    {
+                        break;
                     }
                 })
             })
@@ -779,20 +870,45 @@ fn parse_declarations(
         for result in receiver {
             ordered.push(result);
             if ordered.len() % (worker_count * 2) == 0 || ordered.len() == chunks.len() {
-                observe(config, FrontendStage::DeclarationParsing, ProgressKind::Advanced,
-                    parse_start.elapsed(), ordered.len(), chunks.len());
+                observe(
+                    config,
+                    FrontendStage::DeclarationParsing,
+                    ProgressKind::Advanced,
+                    parse_start.elapsed(),
+                    ordered.len(),
+                    chunks.len(),
+                );
             }
         }
         // Consume every join, including after a panic, before releasing source.
-        let failed = handles.into_iter().map(|handle| handle.join()).fold(false,
-            |failed, result| failed | result.is_err());
-        if failed { Err(vec![internal("declaration parsing worker panicked")]) }
-        else { Ok(ordered) }
+        let failed = handles
+            .into_iter()
+            .map(|handle| handle.join())
+            .fold(false, |failed, result| failed | result.is_err());
+        if failed {
+            Err(vec![internal("declaration parsing worker panicked")])
+        } else {
+            Ok(ordered)
+        }
     })?;
-    ordered.sort_by_key(|(index, _, _, _)| *index);
-    for (_, offset, parsed, errors) in ordered {
+    ordered.sort_by_key(|(index, _, _, _, _)| *index);
+    let mut updated = std::collections::BTreeMap::new();
+    for (_, offset, parsed, errors, fragment) in ordered {
+        if let Some((index, span, bytes)) = fragment {
+            let record = updated
+                .entry(index)
+                .or_insert_with(|| expanded.receipts[index].record().as_ref().clone());
+            if let Some(next) = record.with_fragment(parserwire::VERSION, span, bytes.into()) {
+                *record = next;
+            }
+        }
         items.extend(parsed);
         diagnostics.extend(errors.into_iter().map(|error| (offset, error)));
+    }
+    if let Some(memo) = memo {
+        for record in updated.into_values() {
+            memo.insert(Arc::new(record));
+        }
     }
     Ok(ParsedDeclarations { items, diagnostics })
 }
@@ -811,6 +927,16 @@ fn internal(message: &str) -> Diagnostic {
         stage: DiagnosticStage::Internal,
         message: message.into(),
         location: None,
+    }
+}
+
+fn shift_items(items: &mut [Item], offset: usize) {
+    for item in items {
+        item.span.start += offset;
+        item.span.end += offset;
+        item.header_span.start += offset;
+        item.header_span.end += offset;
+        shift_items(&mut item.children, offset);
     }
 }
 

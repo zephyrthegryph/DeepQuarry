@@ -80,6 +80,48 @@ pub struct CapturedResources {
     pub source_literal_count: usize,
     pub unsupported: Vec<UnsupportedResource>,
 }
+/// Current grammar demands and terminal search policy, without resource reads.
+pub struct ResourceDemand {
+    pub context: CapturedSearchContext,
+    pub literals: Vec<LiteralRequest>,
+    pub source_literal_count: usize,
+    pub additional: Vec<ResourceRequest>,
+    root: PathBuf,
+    directories: Vec<PathBuf>,
+}
+pub fn discover_demand(
+    plan: &DirectivePlan,
+    expanded: &ExpandedRegions,
+    extra: &[LiteralRequest],
+    additional: &[ResourceRequest],
+) -> Result<ResourceDemand, CaptureError> {
+    if !plan.diagnostics.is_empty()
+        || !expanded.diagnostics.is_empty()
+        || !expanded.lexical_diagnostics.is_empty()
+    {
+        return Err(CaptureError::Invalid(
+            "resource capture requires successful directive/expansion output".into(),
+        ));
+    }
+    let mut literals = discover_literals(&expanded.text)?;
+    let source_literal_count = literals.len();
+    literals.extend_from_slice(extra);
+    let root = normalize(&plan.project_dir);
+    let directories = plan
+        .file_dirs
+        .iter()
+        .map(|directory| normalize(&root.join(directory)))
+        .collect::<Vec<_>>();
+    let context = search_context(&root, &directories)?;
+    Ok(ResourceDemand {
+        context,
+        literals,
+        source_literal_count,
+        additional: additional.to_vec(),
+        root,
+        directories,
+    })
+}
 impl CapturedResources {
     /// Output assembly must require completeness even for extra map/skin assets
     /// that are not demanded through a source ResourceIn query.
@@ -108,9 +150,17 @@ impl CapturedResources {
         )
     }
     pub fn into_resolver_shared<R: dm_ir::Resolver>(
-        self, tree: R, symbols: Arc<dm_ir::SymbolTable>,
+        self,
+        tree: R,
+        symbols: Arc<dm_ir::SymbolTable>,
     ) -> io::Result<NativeResourceResolver<R>> {
-        NativeResourceResolver::from_shared_symbols(tree, symbols, self.resources, [self.context], self.lookups)
+        NativeResourceResolver::from_shared_symbols(
+            tree,
+            symbols,
+            self.resources,
+            [self.context],
+            self.lookups,
+        )
     }
 }
 #[derive(Debug)]
@@ -164,24 +214,15 @@ pub fn capture_expanded_with_literals<P: CaptureProvider>(
     extra_literals: &[LiteralRequest],
     provider: &P,
 ) -> Result<CapturedResources, CaptureError> {
-    if !plan.diagnostics.is_empty()
-        || !expanded.diagnostics.is_empty()
-        || !expanded.lexical_diagnostics.is_empty()
-    {
-        return Err(CaptureError::Invalid(
-            "resource capture requires successful directive/expansion output".into(),
-        ));
-    }
-    let mut literals = discover_literals(&expanded.text)?;
-    let source_literal_count = literals.len();
-    literals.extend_from_slice(extra_literals);
-    let root = normalize(&plan.project_dir);
-    let directories = plan
-        .file_dirs
-        .iter()
-        .map(|directory| normalize(&root.join(directory)))
-        .collect::<Vec<_>>();
-    let context = search_context(&root, &directories)?;
+    let demand = discover_demand(plan, expanded, extra_literals, config.additional)?;
+    let ResourceDemand {
+        context,
+        literals,
+        source_literal_count,
+        root,
+        directories,
+        ..
+    } = demand;
     let mut capture = Capture {
         provider,
         config,
@@ -524,7 +565,11 @@ fn collect_string(
                 // complete expression grammar. Lowering owns semantic parsing.
                 // Reuse the existing lexical scan up to this interpolation's
                 // closing bracket; nested strings recurse through collect_string.
-                let count = lexed.tokens.iter().take_while(|token| token.span.end <= end - start).count();
+                let count = lexed
+                    .tokens
+                    .iter()
+                    .take_while(|token| token.span.end <= end - start)
+                    .count();
                 collect_tokens(&text[start..], &lexed.tokens[..count], base + start, found)?;
                 at = end + 1;
             }
@@ -632,8 +677,13 @@ mod tests {
     fn interpolation_resource_discovery_is_independent_of_expression_grammar() {
         let source = "/proc/p()\n    return \"[pick(1;'asset.txt',1;null)] [\"nested [pick(1;'deep.txt',1;null)]\"] plain 'ignored.txt'\"\n";
         let found = discover_literals(source).unwrap();
-        assert_eq!(found.iter().map(|literal| literal.path.as_str()).collect::<Vec<_>>(),
-            ["asset.txt", "deep.txt"]);
+        assert_eq!(
+            found
+                .iter()
+                .map(|literal| literal.path.as_str())
+                .collect::<Vec<_>>(),
+            ["asset.txt", "deep.txt"]
+        );
         for literal in found {
             assert_eq!(&source[literal.span.range()], format!("'{}'", literal.path));
         }
@@ -771,9 +821,19 @@ mod tests {
         ));
         encoded[0].source_digest = Sha256::digest(b"source").into();
         encoded[0].input.named.id ^= 1;
-        assert!(matches!(capture_expanded(&plan(), &source, CaptureConfig {
-            policy: &policy, encoded: &encoded, additional: &[],
-        }, &provider), Err(CaptureError::Invalid(_))));
+        assert!(matches!(
+            capture_expanded(
+                &plan(),
+                &source,
+                CaptureConfig {
+                    policy: &policy,
+                    encoded: &encoded,
+                    additional: &[],
+                },
+                &provider
+            ),
+            Err(CaptureError::Invalid(_))
+        ));
     }
     #[test]
     fn candidate_io_failure_never_becomes_a_negative_lookup() {

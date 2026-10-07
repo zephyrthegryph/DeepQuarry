@@ -14,12 +14,14 @@ pub struct ExpandedRegions {
     /// Declaration ordering projection; grammar is always parsed in encounter order.
     pub emission_regions: Vec<usize>,
     pub diagnostics: Vec<Diagnostic>,
+    pub receipts: Vec<region_memo::RegionReceipt>,
     pub lexical_diagnostics: Vec<dm_syntax::Diagnostic>,
 }
 
 #[derive(Default)]
 pub(super) struct RegionOutput {
     pub(super) text: String,
+    pub(super) receipt: Option<Arc<region_memo::ExpansionRecord>>,
     pub(super) lines: Vec<(Span, usize, Span, Arc<Vec<MacroExpansion>>)>,
     pub(super) diagnostics: Vec<Diagnostic>,
 }
@@ -129,6 +131,13 @@ fn expand_regions_inner(
         let path = plan.occurrences[region.occurrence].path.clone();
         let output_start = text.len();
         text.push_str(&output.text);
+        if let Some(record) = output.receipt {
+            result.receipts.push(region_memo::RegionReceipt {
+                region: *index,
+                output: Span::new(output_start, text.len()),
+                record,
+            });
+        }
         for (relative_span, source_line, source_span, macro_expansions) in output.lines {
             result.origins.push(ExpandedOrigin {
                 origin: Origin {

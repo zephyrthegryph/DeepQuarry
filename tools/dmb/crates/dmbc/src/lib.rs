@@ -11,6 +11,7 @@ pub mod input_snapshot;
 pub mod session;
 pub mod expansion_memo;
 pub mod map_memo;
+pub mod resource_manifest;
 
 pub mod engine;
 pub mod engine_abi_coverage;

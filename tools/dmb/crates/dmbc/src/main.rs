@@ -136,6 +136,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         dmbc::input_snapshot::FileSystemInputs, now_ns());
     let mut session = None;
     let mut pair_store = None;
+    let mut resource_prior = None;
     let mut memo_policy = 0;
     if command == "compile" && !no_cache {
         let compiler = file_hash(&std::env::current_exe()?)?;
@@ -152,6 +153,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         let store = dmbc::publish::PairStore::open(output_store.clone()
             .map(Ok).unwrap_or_else(|| dmbc::publish::default_store_path(&project))?)?;
         for id in configured.latest(4)? {
+            if resource_prior.is_none() {
+                resource_prior = configured.prior(id)?
+                    .filter(|record| record.resource_manifest.is_some());
+            }
             if let Some(validated) = configured.validate(id, &dmbc::input_snapshot::FileSystemInputs,
                 exact_inputs, now_ns())? {
                 if let Ok(pair) = store.verify(validated.record().pair, exact_inputs) {
@@ -313,7 +318,17 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 );
             }
         };
-        let mut nontext = dmbc::captured_non_text_driver::capture_with_map_memo(
+        let admit_resources = |demand: &dm_resources::capture::ResourceDemand| {
+            let Some(record) = resource_prior.as_ref() else { return Ok(None); };
+            let Some(manifest) = record.resource_manifest.as_ref() else { return Ok(None); };
+            let Some(store) = pair_store.as_ref() else { return Ok(None); };
+            manifest.validate(memo_policy, demand, &dmbc::input_snapshot::FileSystemInputs,
+                exact_inputs, now_ns(), |identity| {
+                    Ok(store.verify(record.pair, exact_inputs).is_ok_and(|pair|
+                        pair.rsc_bytes == identity.bytes && pair.rsc_hash == identity.hash))
+                }).map_err(|error| error.to_string())
+        };
+        let mut nontext = dmbc::captured_non_text_driver::capture_with_resource_reuse(
             &frontend,
             &inputs_capture,
             &inputs_capture,
@@ -323,6 +338,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             &defaults,
             Some(&capture_observer),
             map_memo.as_ref(),
+            Some(&admit_resources),
         )?;
         let nontext_seconds = nontext_started.elapsed().as_secs_f64();
         let linking_inputs_started = Instant::now();
@@ -419,7 +435,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             Some(session) => session.identity()?,
             None => xxhash_rust::xxh3::xxh3_128(project.to_string_lossy().as_bytes()),
         };
-        let pair = store.publish(session_id, &output.dmb, &nontext.resources.rsc)?;
+        let pair = match &nontext.resources.archive {
+            dmbc::assets::ResourceArchive::Captured(bytes) => store.publish(session_id, &output.dmb, bytes)?,
+            dmbc::assets::ResourceArchive::Retained(identity) => store.publish_with_resource(session_id, &output.dmb, *identity)?,
+        };
         store.install(
             pair.id,
             &project.with_extension("dmb"),
@@ -427,15 +446,23 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             &project.with_extension("dmb-pair.json"),
         )?;
         if let Some(session) = &session {
-            let inputs = inputs_capture.snapshot()?;
+            let mut inputs = inputs_capture.snapshot()?;
+            if let Some(retained) = &nontext.retained_resource_inputs {
+                inputs.merge(retained)?;
+            }
             if inputs.restat(&dmbc::input_snapshot::FileSystemInputs)?.unchanged() {
                 let mut outputs = dmbc::input_snapshot::InputSnapshot::new(now_ns());
                 for extension in ["dmb", "rsc", "dmb-pair.json"] {
                     let path = project.with_extension(extension);
                     capture_output_digest(&mut outputs, &path)?;
                 }
+                let asset_paths = nontext.resource_catalog.record().aliases.iter()
+                    .map(|alias| alias.disk_path.clone()).collect();
+                let resource_manifest = dmbc::resource_manifest::ResourceManifest::capture(
+                    memo_policy, &nontext.resource_catalog, inputs.select_files(&asset_paths)?,
+                    nontext.resource_archive_order.clone(), nontext.resources.archive.identity())?;
                 session.store(dmbc::session::Record { inputs, pair: pair.id,
-                    outputs: Some(outputs) })?;
+                    outputs: Some(outputs), resource_manifest: Some(resource_manifest) })?;
             } else {
                 eprintln!("native session not saved: inputs changed during compilation");
             }

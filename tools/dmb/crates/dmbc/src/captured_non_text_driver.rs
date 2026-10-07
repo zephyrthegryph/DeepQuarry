@@ -12,8 +12,14 @@ use dm_tree::frontend::ColdFrontend;
 use std::collections::BTreeSet;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CaptureStage {
-    NonTextParsing, AssetCapture, ResourceOrder, ResourceProjection,
-    SymbolBinding, MapProjection, MapDescriptors, MapInitializers,
+    NonTextParsing,
+    AssetCapture,
+    ResourceOrder,
+    ResourceProjection,
+    SymbolBinding,
+    MapProjection,
+    MapDescriptors,
+    MapInitializers,
 }
 #[derive(Clone, Copy, Debug)]
 pub struct CaptureMeasurement {
@@ -22,12 +28,19 @@ pub struct CaptureMeasurement {
     pub succeeded: bool,
 }
 pub type CaptureObserver<'a> = &'a dyn Fn(CaptureMeasurement);
-fn timed<T>(observer: Option<CaptureObserver<'_>>, stage: CaptureStage,
-    run: impl FnOnce() -> Result<T, String>) -> Result<T, String> {
+fn timed<T>(
+    observer: Option<CaptureObserver<'_>>,
+    stage: CaptureStage,
+    run: impl FnOnce() -> Result<T, String>,
+) -> Result<T, String> {
     let start = std::time::Instant::now();
     let result = run();
     if let Some(observer) = observer {
-        observer(CaptureMeasurement { stage, seconds: start.elapsed().as_secs_f64(), succeeded: result.is_ok() });
+        observer(CaptureMeasurement {
+            stage,
+            seconds: start.elapsed().as_secs_f64(),
+            succeeded: result.is_ok(),
+        });
     }
     result
 }
@@ -40,6 +53,9 @@ pub struct CapturedNonTextOutput<R> {
     pub descriptors: Option<DescriptorPlan>,
     pub artifacts: Vec<InitializationArtifact>,
     pub resource_search_context: u128,
+    pub resource_catalog: dm_resources::catalog::ResourceCatalog,
+    pub resource_archive_order: Vec<usize>,
+    pub retained_resource_inputs: Option<crate::input_snapshot::InputSnapshot>,
 }
 impl<R> CapturedNonTextOutput<R> {
     pub fn stage<'a>(
@@ -126,69 +142,205 @@ pub fn capture<
     known_roots: &BTreeSet<SymbolId>,
     world_directives: &[Directive],
 ) -> Result<CapturedNonTextOutput<R>, String> {
-    capture_with_observer(frontend, provider, resource_provider, host, engine,
-        known_roots, world_directives, None)
+    capture_with_observer(
+        frontend,
+        provider,
+        resource_provider,
+        host,
+        engine,
+        known_roots,
+        world_directives,
+        None,
+    )
 }
 #[allow(clippy::too_many_arguments)] // Explicit immutable captured domains and optional observation.
-pub fn capture_with_observer<R: Resolver, P: dm_preprocess::SourceProvider,
-    C: dm_resources::capture::CaptureProvider>(
-    frontend: &ColdFrontend, provider: &P, resource_provider: &C, host: R,
-    engine: &byond_dmb::dmb::Dmb, known_roots: &BTreeSet<SymbolId>,
-    world_directives: &[Directive], observer: Option<CaptureObserver<'_>>,
+pub fn capture_with_observer<
+    R: Resolver,
+    P: dm_preprocess::SourceProvider,
+    C: dm_resources::capture::CaptureProvider,
+>(
+    frontend: &ColdFrontend,
+    provider: &P,
+    resource_provider: &C,
+    host: R,
+    engine: &byond_dmb::dmb::Dmb,
+    known_roots: &BTreeSet<SymbolId>,
+    world_directives: &[Directive],
+    observer: Option<CaptureObserver<'_>>,
 ) -> Result<CapturedNonTextOutput<R>, String> {
-    capture_with_map_memo(frontend, provider, resource_provider, host, engine,
-        known_roots, world_directives, observer, None)
+    capture_with_map_memo(
+        frontend,
+        provider,
+        resource_provider,
+        host,
+        engine,
+        known_roots,
+        world_directives,
+        observer,
+        None,
+    )
 }
 #[allow(clippy::too_many_arguments)] // Existing capture boundary plus optional request-owned S5 memo.
-pub fn capture_with_map_memo<R: Resolver, P: dm_preprocess::SourceProvider,
-    C: dm_resources::capture::CaptureProvider>(
-    frontend: &ColdFrontend, provider: &P, resource_provider: &C, host: R,
-    engine: &byond_dmb::dmb::Dmb, known_roots: &BTreeSet<SymbolId>,
-    world_directives: &[Directive], observer: Option<CaptureObserver<'_>>,
+pub fn capture_with_map_memo<
+    R: Resolver,
+    P: dm_preprocess::SourceProvider,
+    C: dm_resources::capture::CaptureProvider,
+>(
+    frontend: &ColdFrontend,
+    provider: &P,
+    resource_provider: &C,
+    host: R,
+    engine: &byond_dmb::dmb::Dmb,
+    known_roots: &BTreeSet<SymbolId>,
+    world_directives: &[Directive],
+    observer: Option<CaptureObserver<'_>>,
     map_memo: Option<&crate::map_memo::MapMemo>,
 ) -> Result<CapturedNonTextOutput<R>, String> {
-    let captured = timed(observer, CaptureStage::NonTextParsing, ||
-        crate::non_text::capture_with_map_memo(frontend, provider, map_memo).map_err(|error| format!("nontext capture: {error:?}")))?;
-    let resources = timed(observer, CaptureStage::AssetCapture, || {
-    let resources = crate::assets::capture(frontend, &captured.assets, resource_provider).map_err(|error| error.to_string())?;
-    reject_missing_literals(frontend, &captured, &resources)?;
-    resources
-        .require_complete()
-        .map_err(|error| error.to_string())?;
-    Ok(resources)
-    })?;
-    let order = timed(observer, CaptureStage::ResourceOrder, || {
-    let (prefix, suffix) = crate::resource_order::nontext_imports(&captured, &resources)?;
-    crate::resource_order::captured_archive_order(
+    capture_with_resource_reuse(
         frontend,
-        &resources,
-        &host,
+        provider,
+        resource_provider,
+        host,
+        engine,
         known_roots,
-        &prefix,
-        &suffix,
+        world_directives,
+        observer,
+        map_memo,
+        None,
     )
+}
+/// Caller validates the authenticated session manifest and archive against the
+/// current grammar demand. Returning None requests ordinary full asset capture.
+pub type ResourceAdmission<'a> =
+    &'a dyn Fn(
+        &dm_resources::capture::ResourceDemand,
+    ) -> Result<Option<crate::resource_manifest::ValidatedResources>, String>;
+#[allow(clippy::too_many_arguments)] // Existing explicit capture inputs plus independently validated archive admission.
+pub fn capture_with_resource_reuse<
+    R: Resolver,
+    P: dm_preprocess::SourceProvider,
+    C: dm_resources::capture::CaptureProvider,
+>(
+    frontend: &ColdFrontend,
+    provider: &P,
+    resource_provider: &C,
+    host: R,
+    engine: &byond_dmb::dmb::Dmb,
+    known_roots: &BTreeSet<SymbolId>,
+    world_directives: &[Directive],
+    observer: Option<CaptureObserver<'_>>,
+    map_memo: Option<&crate::map_memo::MapMemo>,
+    admission: Option<ResourceAdmission<'_>>,
+) -> Result<CapturedNonTextOutput<R>, String> {
+    let captured = timed(observer, CaptureStage::NonTextParsing, || {
+        crate::non_text::capture_with_map_memo(frontend, provider, map_memo)
+            .map_err(|error| format!("nontext capture: {error:?}"))
     })?;
-    let context = resources.context.identity();
-    let (symbols, resolver) = timed(observer, CaptureStage::SymbolBinding, || {
-    let mut symbols = SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
-    for map in captured.maps.iter() {
-        for (_, text) in map.symbols.ordered() {
-            symbols.intern(text).map_err(|error| error.to_string())?;
+    let demand = dm_resources::capture::discover_demand(
+        &frontend.plan,
+        &frontend.expanded,
+        &captured.assets.literals,
+        &captured.assets.skins,
+    )
+    .map_err(|error| error.to_string())?;
+    let context = demand.context.identity();
+    let retained = match admission {
+        Some(admit) => timed(observer, CaptureStage::AssetCapture, || admit(&demand))?,
+        None => None,
+    };
+    let retained = if let Some(retained) = retained {
+        let candidate = (|| {
+            reject_missing_demands(
+                frontend,
+                &captured,
+                &demand.literals,
+                &retained.catalog.record().lookups,
+            )?;
+            let (prefix, suffix) =
+                crate::resource_order::metadata_nontext_imports(&captured, &retained.catalog)?;
+            crate::resource_order::metadata_archive_order(
+                frontend,
+                &retained.catalog,
+                &demand,
+                &host,
+                known_roots,
+                &prefix,
+                &suffix,
+            )
+        })();
+        match candidate {
+            Ok(order) if order == retained.order => Some(retained),
+            _ => None,
         }
-    }
-    for lookup in &resources.lookups {
-        symbols
-            .intern(&lookup.path)
-            .map_err(|error| error.to_string())?;
-    }
-    let resolver = resources
-        .into_resolver_shared(host, std::sync::Arc::new(symbols))
+    } else {
+        None
+    };
+    let (resolver, projection, order, retained_inputs) = if let Some(retained) = retained {
+        let mut symbols = SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
+        for map in captured.maps.iter() {
+            for (_, text) in map.symbols.ordered() {
+                symbols.intern(text).map_err(|error| error.to_string())?;
+            }
+        }
+        let resolver = NativeResourceResolver::from_catalog(
+            host,
+            std::sync::Arc::new(symbols),
+            &retained.catalog,
+        )
         .map_err(|error| error.to_string())?;
+        let projection = crate::assets::project_retained_resources(
+            &retained.catalog,
+            &retained.order,
+            retained.archive,
+        )
+        .map_err(|error| format!("retained resource projection: {error:?}"))?;
+        (resolver, projection, retained.order, Some(retained.inputs))
+    } else {
+        let resources = timed(observer, CaptureStage::AssetCapture, || {
+            let resources = crate::assets::capture(frontend, &captured.assets, resource_provider)
+                .map_err(|error| error.to_string())?;
+            reject_missing_literals(frontend, &captured, &resources)?;
+            resources
+                .require_complete()
+                .map_err(|error| error.to_string())?;
+            Ok(resources)
+        })?;
+        let order = timed(observer, CaptureStage::ResourceOrder, || {
+            let (prefix, suffix) = crate::resource_order::nontext_imports(&captured, &resources)?;
+            crate::resource_order::captured_archive_order(
+                frontend,
+                &resources,
+                &host,
+                known_roots,
+                &prefix,
+                &suffix,
+            )
+        })?;
+        let resolver = timed(observer, CaptureStage::SymbolBinding, || {
+            let mut symbols = SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
+            for map in captured.maps.iter() {
+                for (_, text) in map.symbols.ordered() {
+                    symbols.intern(text).map_err(|error| error.to_string())?;
+                }
+            }
+            for lookup in &resources.lookups {
+                symbols
+                    .intern(&lookup.path)
+                    .map_err(|error| error.to_string())?;
+            }
+            resources
+                .into_resolver_shared(host, std::sync::Arc::new(symbols))
+                .map_err(|error| error.to_string())
+        })?;
+        let projection = timed(observer, CaptureStage::ResourceProjection, || {
+            crate::assets::project_captured_resources(&resolver, &order)
+                .map_err(|error| format!("resource projection: {error:?}"))
+        })?;
+        (resolver, projection, order, None)
+    };
+    let resolver = resolver.into_metadata();
+    let catalog = resolver.catalog();
     let symbols = SymbolTable::overlay(resolver.shared_symbols());
-    Ok((symbols, resolver))
-    })?;
-    let projection = timed(observer, CaptureStage::ResourceProjection, ||
-        crate::assets::project_captured_resources(&resolver, &order).map_err(|error| format!("resource projection: {error:?}")))?;
     let (map, descriptors, artifacts) = if captured.maps.is_empty() {
         (None, None, Vec::new())
     } else {
@@ -196,21 +348,29 @@ pub fn capture_with_map_memo<R: Resolver, P: dm_preprocess::SourceProvider,
             let defaults = defaults(engine, world_directives)?;
             match map_memo {
                 Some(memo) => memo.project(&captured.maps, defaults, &resolver),
-                None => crate::map_projection::project(&captured.maps, defaults,
-                    &crate::map_projection::ResolverClassifier(&resolver)),
-            }.map_err(|error| format!("map projection: {error:?}"))
+                None => crate::map_projection::project(
+                    &captured.maps,
+                    defaults,
+                    &crate::map_projection::ResolverClassifier(&resolver),
+                ),
+            }
+            .map_err(|error| format!("map projection: {error:?}"))
         })?;
-        let descriptors = timed(observer, CaptureStage::MapDescriptors, || crate::map_output::descriptors(frontend, &map, &captured.maps)
-            .map_err(|error| format!("map descriptors: {error:?}")))?;
-        let artifacts = timed(observer, CaptureStage::MapInitializers, || crate::map_artifacts::lower(
-            frontend,
-            &captured.maps,
-            &map,
-            &descriptors,
-            &symbols,
-            &resolver,
-            Some(context),
-        ))?;
+        let descriptors = timed(observer, CaptureStage::MapDescriptors, || {
+            crate::map_output::descriptors(frontend, &map, &captured.maps)
+                .map_err(|error| format!("map descriptors: {error:?}"))
+        })?;
+        let artifacts = timed(observer, CaptureStage::MapInitializers, || {
+            crate::map_artifacts::lower(
+                frontend,
+                &captured.maps,
+                &map,
+                &descriptors,
+                &symbols,
+                &resolver,
+                Some(context),
+            )
+        })?;
         (Some(map), Some(descriptors), artifacts)
     };
     Ok(CapturedNonTextOutput {
@@ -222,6 +382,9 @@ pub fn capture_with_map_memo<R: Resolver, P: dm_preprocess::SourceProvider,
         descriptors,
         artifacts,
         resource_search_context: context,
+        resource_catalog: catalog,
+        resource_archive_order: order,
+        retained_resource_inputs: retained_inputs,
     })
 }
 /// Missing DM/map literals are proven source errors; a missing DMF-only icon
@@ -231,14 +394,22 @@ fn reject_missing_literals(
     nontext: &crate::non_text::CapturedNonText,
     captured: &dm_resources::capture::CapturedResources,
 ) -> Result<(), String> {
+    reject_missing_demands(frontend, nontext, &captured.literals, &captured.lookups)
+}
+fn reject_missing_demands(
+    frontend: &ColdFrontend,
+    nontext: &crate::non_text::CapturedNonText,
+    literals: &[dm_resources::capture::LiteralRequest],
+    lookups: &[dm_resources::native_resolver::CapturedResourceLookup],
+) -> Result<(), String> {
     use dm_resources::native_resolver::CapturedResourceOutcome;
     let extra_count = nontext.assets.literals.len();
-    if extra_count != nontext.assets.origins.len() || captured.literals.len() < extra_count {
+    if extra_count != nontext.assets.origins.len() || literals.len() < extra_count {
         return Err("internal compiler error: resource literal origin coverage mismatch".into());
     }
-    let code_count = captured.literals.len() - extra_count;
-    for (index, literal) in captured.literals.iter().enumerate() {
-        let missing = captured.lookups.iter().any(|entry| {
+    let code_count = literals.len() - extra_count;
+    for (index, literal) in literals.iter().enumerate() {
+        let missing = lookups.iter().any(|entry| {
             entry.path == literal.path && entry.outcome == CapturedResourceOutcome::Missing
         });
         if !missing {
@@ -394,7 +565,9 @@ mod tests {
                 Some(&observer),
             );
             let stages = measurements.borrow();
-            assert!(stages.iter().all(|stage: &CaptureMeasurement| stage.seconds >= 0.0));
+            assert!(stages
+                .iter()
+                .all(|stage: &CaptureMeasurement| stage.seconds >= 0.0));
             if !matches!(domain, MissingDomain::Skin) {
                 assert_eq!(stages.last().unwrap().stage, CaptureStage::AssetCapture);
                 assert!(!stages.last().unwrap().succeeded);
@@ -497,7 +670,9 @@ mod tests {
             SymbolId::of("/turf/tile")
         );
         assert_eq!(output.artifacts.len(), 1);
-        let records = byond_dmb::rsc::read_all(&mut output.resources.rsc.as_slice()).unwrap();
+        let records =
+            byond_dmb::rsc::read_all(&mut output.resources.archive.captured_bytes().unwrap())
+                .unwrap();
         let aliases = records
             .iter()
             .map(|entry| match entry {
@@ -527,41 +702,235 @@ mod tests {
         );
     }
     #[test]
+    fn retained_source_only_capture_preserves_rows_and_skips_asset_reads() {
+        struct Changed;
+        impl dm_preprocess::SourceProvider for Changed {
+            fn read(&self, path: &Path) -> Result<String, String> {
+                let mut text = dm_preprocess::SourceProvider::read(&Source, path)?;
+                if path.file_name().and_then(|name| name.to_str()) == Some("source.dm") {
+                    text.push_str("// source-only edit\n");
+                }
+                Ok(text)
+            }
+        }
+        struct NoAssets;
+        impl dm_resources::capture::CaptureProvider for NoAssets {
+            fn read_candidate(&self, _: &Path) -> std::io::Result<Option<Arc<[u8]>>> {
+                panic!("retained capture reread asset payload")
+            }
+        }
+        struct Facts;
+        impl crate::input_snapshot::SnapshotProvider for Facts {
+            fn stamp(&self, path: &Path) -> std::io::Result<crate::input_snapshot::Stamp> {
+                let bytes =
+                    dm_resources::capture::CaptureProvider::read_candidate(&Source, path)?.unwrap();
+                Ok(crate::input_snapshot::Stamp {
+                    size: bytes.len() as u64,
+                    modified_ns: 1,
+                    file_id: Some(1),
+                })
+            }
+            fn read(
+                &self,
+                path: &Path,
+            ) -> std::io::Result<(crate::input_snapshot::Stamp, Vec<u8>)> {
+                Ok((
+                    self.stamp(path)?,
+                    dm_resources::capture::CaptureProvider::read_candidate(&Source, path)?
+                        .unwrap()
+                        .to_vec(),
+                ))
+            }
+            fn list(&self, _: &Path) -> std::io::Result<crate::input_snapshot::FolderListing> {
+                Ok(crate::input_snapshot::FolderListing::Missing)
+            }
+        }
+        use crate::input_snapshot::SnapshotProvider;
+        let bytes = include_bytes!("../../../fixtures/native_template.bin");
+        let engine = crate::engine::EngineSnapshot::from_bytes(bytes, 1).unwrap();
+        let seed = engine.frontend_seed();
+        let config = dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+            observer: None,
+        };
+        let frontend = dm_tree::frontend::build_with_config(
+            Path::new("game/project.dme"),
+            &Source,
+            &Default::default(),
+            config,
+        )
+        .unwrap();
+        let decoded = byond_dmb::dmb::Dmb::from_bytes(bytes).unwrap();
+        let roots = [
+            "/",
+            "/datum",
+            "/obj",
+            "/mob",
+            "/turf",
+            "/area",
+            "/client",
+            "/atom",
+            "/image",
+            "/mutable_appearance",
+        ]
+        .into_iter()
+        .map(SymbolId::of)
+        .collect();
+        let directives = [Directive::DefaultType {
+            kind: DefaultKind::Turf,
+            path: Some(SymbolId::of("/turf/tile")),
+        }];
+        let cold = capture(
+            &frontend,
+            &Source,
+            &Source,
+            Tree(frontend.snapshot.tree.clone()),
+            &decoded,
+            &roots,
+            &directives,
+        )
+        .unwrap();
+        let mut inputs = crate::input_snapshot::InputSnapshot::new(10_000_000_000);
+        for alias in &cold.resource_catalog.record().aliases {
+            let (stamp, bytes) = Facts.read(&alias.disk_path).unwrap();
+            inputs.record_file(&alias.disk_path, stamp, &bytes).unwrap();
+        }
+        let archive = cold.resources.archive.identity();
+        let manifest = crate::resource_manifest::ResourceManifest::capture(
+            7,
+            &cold.resource_catalog,
+            inputs,
+            cold.resource_archive_order.clone(),
+            archive,
+        )
+        .unwrap();
+        let changed = dm_tree::frontend::build_with_config(
+            Path::new("game/project.dme"),
+            &Changed,
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(&seed),
+                observer: None,
+            },
+        )
+        .unwrap();
+        assert_ne!(changed.expanded.text, frontend.expanded.text);
+        let authenticated = std::cell::Cell::new(0);
+        let admission = |demand: &dm_resources::capture::ResourceDemand| {
+            manifest
+                .validate(7, demand, &Facts, false, 20_000_000_000, |identity| {
+                    authenticated.set(authenticated.get() + 1);
+                    Ok(identity == archive)
+                })
+                .map_err(|error| error.to_string())
+        };
+        let retained = capture_with_resource_reuse(
+            &changed,
+            &Changed,
+            &NoAssets,
+            Tree(changed.snapshot.tree.clone()),
+            &decoded,
+            &roots,
+            &directives,
+            None,
+            None,
+            Some(&admission),
+        )
+        .unwrap();
+        assert_eq!(authenticated.get(), 1);
+        assert!(
+            matches!(retained.resources.archive,crate::assets::ResourceArchive::Retained(identity) if identity==archive)
+        );
+        assert!(retained.resolver.resources().is_none());
+        assert_eq!(cold.resources.records, retained.resources.records);
+        assert_eq!(cold.resource_archive_order, retained.resource_archive_order);
+        assert_eq!(
+            cold.resources
+                .inventory
+                .iter()
+                .map(|entry| (entry.key, entry.content.as_ref()))
+                .collect::<Vec<_>>(),
+            retained
+                .resources
+                .inventory
+                .iter()
+                .map(|entry| (entry.key, entry.content.as_ref()))
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(retained.artifacts.len(), cold.artifacts.len());
+    }
+    #[test]
     fn unsupported_map_type_reports_current_origin_and_query_spellings() {
         struct ContextualSource;
         impl dm_preprocess::SourceProvider for ContextualSource {
             fn read(&self, path: &Path) -> Result<String, String> {
                 if path.file_name().and_then(|name| name.to_str()) == Some("map.dmm") {
-                    Ok("\"a\"=(/obj/plain,/turf/tile{\nasset=new()\n},/area)\n(1,1,1)={\"a\"}\n".into())
-                } else { dm_preprocess::SourceProvider::read(&Source, path) }
+                    Ok(
+                        "\"a\"=(/obj/plain,/turf/tile{\nasset=new()\n},/area)\n(1,1,1)={\"a\"}\n"
+                            .into(),
+                    )
+                } else {
+                    dm_preprocess::SourceProvider::read(&Source, path)
+                }
             }
         }
         struct OpaqueType(Tree);
         impl Resolver for OpaqueType {
             fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
                 if matches!(query, dm_ir::ResolveQuery::DeclaredVarType { owner, name }
-                    if owner == SymbolId::of("/turf/tile") && name == SymbolId::of("asset")) {
+                    if owner == SymbolId::of("/turf/tile") && name == SymbolId::of("asset"))
+                {
                     dm_ir::ResolvedMeaning::Unsupported(query)
-                } else { self.0.resolve(query) }
+                } else {
+                    self.0.resolve(query)
+                }
             }
         }
         let bytes = include_bytes!("../../../fixtures/native_template.bin");
         let engine = crate::engine::EngineSnapshot::from_bytes(bytes, 1).unwrap();
         let seed = engine.frontend_seed();
-        let frontend = dm_tree::frontend::build_with_config(Path::new("game/project.dme"),
-            &ContextualSource, &Default::default(), dm_tree::frontend::FrontendConfig {
-                workers: 1, engine: Some(&seed), observer: None,
-            }).unwrap();
+        let frontend = dm_tree::frontend::build_with_config(
+            Path::new("game/project.dme"),
+            &ContextualSource,
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(&seed),
+                observer: None,
+            },
+        )
+        .unwrap();
         let measurements = std::cell::RefCell::new(Vec::new());
         let observer = |measurement| measurements.borrow_mut().push(measurement);
-        let result = capture_with_observer(&frontend, &ContextualSource, &Source,
+        let result = capture_with_observer(
+            &frontend,
+            &ContextualSource,
+            &Source,
             OpaqueType(Tree(frontend.snapshot.tree.clone())),
-            &byond_dmb::dmb::Dmb::from_bytes(bytes).unwrap(), &BTreeSet::new(), &[], Some(&observer));
-        let message = match result { Err(message) => message, Ok(_) => panic!("opaque contextual map type was accepted") };
-        assert!(message.contains("map.dmm:1: unsupported map initializer for /turf/tile"), "{message}");
-        assert!(message.contains("owner=/turf/tile, field=asset"), "{message}");
+            &byond_dmb::dmb::Dmb::from_bytes(bytes).unwrap(),
+            &BTreeSet::new(),
+            &[],
+            Some(&observer),
+        );
+        let message = match result {
+            Err(message) => message,
+            Ok(_) => panic!("opaque contextual map type was accepted"),
+        };
+        assert!(
+            message.contains("map.dmm:1: unsupported map initializer for /turf/tile"),
+            "{message}"
+        );
+        assert!(
+            message.contains("owner=/turf/tile, field=asset"),
+            "{message}"
+        );
         let measurements = measurements.borrow();
-        assert_eq!(measurements.last().unwrap().stage, CaptureStage::MapInitializers);
+        assert_eq!(
+            measurements.last().unwrap().stage,
+            CaptureStage::MapInitializers
+        );
         assert!(!measurements.last().unwrap().succeeded);
     }
 }

@@ -11,34 +11,71 @@ use std::{
     sync::Arc,
 };
 use xxhash_rust::xxh3::xxh3_128;
-pub const EXPANSION_VERSION: u32 = 1;
+pub const EXPANSION_VERSION: u32 = 2;
 /// A caller-owned memo, optionally backed by validated disk records. No hidden
 /// process cache or filesystem access exists in the preprocessor.
 pub trait ExpansionMemo: Sync {
     fn candidates(&self, key: u128) -> Vec<Arc<ExpansionRecord>>;
     fn insert(&self, record: Arc<ExpansionRecord>);
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+/// Neutral, versioned compact parser payload. The parser owns validation.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ParseFragment {
+    schema: u32,
+    #[serde(with = "span_wire")]
+    span: Span,
+    payload: Arc<[u8]>,
+}
+impl ParseFragment {
+    pub fn schema(&self) -> u32 {
+        self.schema
+    }
+    pub fn span(&self) -> Span {
+        self.span
+    }
+    pub fn payload(&self) -> &[u8] {
+        &self.payload
+    }
+}
+/// Receipt issued by this expansion, with current joined-arena coordinates.
+#[derive(Clone, Debug)]
+pub struct RegionReceipt {
+    pub(super) region: usize,
+    pub(super) output: Span,
+    pub(super) record: Arc<ExpansionRecord>,
+}
+impl RegionReceipt {
+    pub fn region(&self) -> usize {
+        self.region
+    }
+    pub fn output_span(&self) -> Span {
+        self.output
+    }
+    pub fn record(&self) -> &Arc<ExpansionRecord> {
+        &self.record
+    }
+}
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct MacroRead {
     pub segment: usize,
     pub name: Arc<str>,
     pub definition: Option<Arc<Macro>>,
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct Trace {
     name: String,
     #[serde(with = "span_wire")]
     invocation_span: Span,
     replacement_chain: Vec<String>,
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct Line {
     #[serde(with = "span_wire")]
     output: Span,
     input: usize,
     traces: Vec<Trace>,
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct Error {
     input: usize,
     kind: DiagnosticKind,
@@ -46,7 +83,7 @@ struct Error {
 }
 /// Private fields keep records issued from actual expansion; accessors support
 /// analysis and storage adapters without exposing mutable reusable output.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ExpansionRecord {
     key: u128,
     source: Arc<str>,
@@ -56,8 +93,53 @@ pub struct ExpansionRecord {
     locations: Vec<(usize, bool, String)>,
     lines: Vec<Line>,
     diagnostics: Vec<Error>,
+    #[serde(default)]
+    fragments: Vec<ParseFragment>,
 }
 impl ExpansionRecord {
+    /// Same expansion authority; parser enrichment is not another macro variant.
+    pub fn same_expansion(&self, other: &Self) -> bool {
+        self.key == other.key
+            && self.source == other.source
+            && self.control == other.control
+            && self.text == other.text
+            && self.reads == other.reads
+            && self.locations == other.locations
+            && self.lines == other.lines
+            && self.diagnostics == other.diagnostics
+    }
+
+    pub fn fragment(&self, schema: u32, span: Span) -> Option<&[u8]> {
+        self.fragments
+            .iter()
+            .rev()
+            .find(|fragment| fragment.schema == schema && fragment.span == span)
+            .map(|fragment| fragment.payload())
+    }
+    pub fn with_fragment(&self, schema: u32, span: Span, payload: Arc<[u8]>) -> Option<Self> {
+        self.text.get(span.range())?;
+        let total = self
+            .fragments
+            .iter()
+            .filter(|fragment| fragment.schema != schema || fragment.span != span)
+            .try_fold(payload.len(), |total, fragment| {
+                total.checked_add(fragment.payload.len())
+            })?;
+        if payload.len() > 4 * 1024 * 1024 || self.fragments.len() >= 256 || total > 8 * 1024 * 1024
+        {
+            return None;
+        }
+        let mut result = self.clone();
+        result
+            .fragments
+            .retain(|fragment| fragment.schema != schema || fragment.span != span);
+        result.fragments.push(ParseFragment {
+            schema,
+            span,
+            payload,
+        });
+        Some(result)
+    }
     pub fn to_bytes(&self) -> Result<Vec<u8>, String> {
         serde_json::to_vec(self).map_err(|error| error.to_string())
     }
@@ -79,6 +161,21 @@ impl ExpansionRecord {
                 || !record.text.is_char_boundary(line.output.end)
         }) {
             return Err("expansion record output span invalid".into());
+        }
+        if record.fragments.len() > 256
+            || record
+                .fragments
+                .iter()
+                .try_fold(0usize, |total, fragment| {
+                    total.checked_add(fragment.payload.len())
+                })
+                .is_none_or(|total| total > 8 * 1024 * 1024)
+            || record.fragments.iter().any(|fragment| {
+                fragment.payload.len() > 4 * 1024 * 1024
+                    || record.text.get(fragment.span.range()).is_none()
+            })
+        {
+            return Err("invalid parser fragment bounds".into());
         }
         Ok(record)
     }
@@ -164,7 +261,7 @@ pub(super) fn expand(
         return super::expansion::expand_region(plan, index, None);
     };
     let input = inputs(plan, index);
-    for record in memo.candidates(key) {
+    for record in memo.candidates(key).into_iter().rev() {
         if record.key != key || record.source != source || record.control != control {
             continue;
         }
@@ -276,7 +373,7 @@ pub(super) fn expand(
             definition,
         })
         .collect();
-    memo.insert(Arc::new(ExpansionRecord {
+    let record = Arc::new(ExpansionRecord {
         key,
         source,
         control,
@@ -285,19 +382,24 @@ pub(super) fn expand(
         locations,
         lines,
         diagnostics,
-    }));
+        fragments: Vec::new(),
+    });
+    memo.insert(Arc::clone(&record));
+    let mut output = output;
+    output.receipt = Some(record);
     output
 }
 fn hydrate(
     plan: &DirectivePlan,
     index: usize,
     input: &[(usize, &super::RegionLine)],
-    record: &ExpansionRecord,
+    record: &Arc<ExpansionRecord>,
 ) -> super::expansion::RegionOutput {
     let region = &plan.regions[index];
     let path = plan.occurrences[region.occurrence].path.as_ref();
     let mut output = super::expansion::RegionOutput {
         text: record.text.to_string(),
+        receipt: Some(Arc::clone(record)),
         ..Default::default()
     };
     for line in &record.lines {

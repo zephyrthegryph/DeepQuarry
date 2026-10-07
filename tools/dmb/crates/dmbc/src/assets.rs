@@ -1,10 +1,10 @@
 //! Production asset capture orchestration over authored sources and map sidecars.
 //! Capture is explicit I/O; lowering subsequently uses only the frozen resolver.
+use dm_ir::SymbolId;
 use dm_resources::capture::{
     CaptureConfig, CaptureError, CaptureProvider, CapturedResources, LiteralRequest,
 };
 use dm_resources::ResourceRequest;
-use dm_ir::SymbolId;
 use dm_syntax::Span;
 use dm_tree::frontend::ColdFrontend;
 use dm_tree::maps::MapPlan;
@@ -164,9 +164,32 @@ mod tests {
 /// Immutable resource output projection from a caller-certified archive order.
 /// The order determines first-kind behavior for equal runtime content IDs.
 pub struct ResourceProjection {
-    pub rsc: Vec<u8>,
+    pub archive: ResourceArchive,
     pub records: Vec<(u128, byond_dmb::dmb::ResourceRef)>,
     pub inventory: Vec<dm_link::Entry>,
+}
+#[derive(Debug, PartialEq, Eq)]
+pub enum ResourceArchive {
+    Captured(Vec<u8>),
+    /// Authenticated immutable archive, never a synthetic empty payload.
+    Retained(crate::publish::ResourceIdentity),
+}
+impl ResourceArchive {
+    pub fn captured_bytes(&self) -> Option<&[u8]> {
+        match self {
+            Self::Captured(bytes) => Some(bytes),
+            Self::Retained(_) => None,
+        }
+    }
+    pub fn identity(&self) -> crate::publish::ResourceIdentity {
+        match self {
+            Self::Captured(bytes) => crate::publish::ResourceIdentity {
+                bytes: bytes.len() as u64,
+                hash: xxhash_rust::xxh3::xxh3_128(bytes),
+            },
+            Self::Retained(identity) => *identity,
+        }
+    }
 }
 #[derive(Debug)]
 pub enum ResourceOutputError {
@@ -190,7 +213,13 @@ pub fn project_captured_resources<R: dm_ir::Resolver>(
     resolver: &dm_resources::native_resolver::NativeResourceResolver<R>,
     archive_order: &[usize],
 ) -> Result<ResourceProjection, ResourceOutputError> {
-    project_resource_rows(resolver.resources(), archive_order, Some(resolver.ordered_resources()))
+    project_resource_rows(
+        resolver
+            .resources()
+            .ok_or(ResourceOutputError::InvalidOrder)?,
+        archive_order,
+        Some(resolver.ordered_resources()),
+    )
 }
 fn project_resource_rows(
     resources: &dm_resources::ResourceSet,
@@ -220,11 +249,12 @@ fn project_resource_rows(
             .asset_bytes()
             .map_err(ResourceOutputError::InvalidPayload)?;
         if input.named.name != input.archive_name.as_bytes()
-            || (validated.is_none() && input
-                .named
-                .content_id()
-                .map_err(ResourceOutputError::InvalidPayload)?
-                != input.named.id)
+            || (validated.is_none()
+                && input
+                    .named
+                    .content_id()
+                    .map_err(ResourceOutputError::InvalidPayload)?
+                    != input.named.id)
         {
             return Err(ResourceOutputError::InvalidPayload(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
@@ -233,14 +263,20 @@ fn project_resource_rows(
         }
         named.push(&input.named);
         let content = if let Some(rows) = validated {
-            let row = rows.get(*ordinal).ok_or(ResourceOutputError::InvalidOrder)?;
+            let row = rows
+                .get(*ordinal)
+                .ok_or(ResourceOutputError::InvalidOrder)?;
             if row.alias != SymbolId::of(&input.archive_name)
-                || row.payload_len != payload.len() || row.runtime_content_id != input.named.id
-                || row.kind != input.named.kind {
+                || row.payload_len != payload.len()
+                || row.runtime_content_id != input.named.id
+                || row.kind != input.named.kind
+            {
                 return Err(ResourceOutputError::ContentCollision);
             }
             row.content
-        } else { xxhash_rust::xxh3::xxh3_128(payload) };
+        } else {
+            xxhash_rust::xxh3::xxh3_128(payload)
+        };
         if hashes
             .insert(content, payload)
             .is_some_and(|previous| previous != payload)
@@ -263,13 +299,71 @@ fn project_resource_rows(
         ));
         inventory.push(dm_link::Entry {
             key: dm_link::Key::Resource(content),
-            content: Arc::from(payload),
+            content: dm_resources::catalog::binding_bytes(
+                &dm_resources::native_resolver::NativeResourceRecord {
+                    alias: SymbolId::of(&input.archive_name),
+                    content,
+                    runtime_content_id: input.named.id,
+                    kind: input.named.kind,
+                    payload_len: payload.len(),
+                },
+            )
+            .into(),
         });
     }
     let rsc =
         byond_dmb::rsc::named_archive_bytes(&named).map_err(ResourceOutputError::InvalidPayload)?;
     Ok(ResourceProjection {
-        rsc,
+        archive: ResourceArchive::Captured(rsc),
+        records,
+        inventory,
+    })
+}
+/// The catalog was issued from validated bytes; archive authentication and input
+/// freshness must be established by the resource-manifest admission boundary.
+pub fn project_retained_resources(
+    catalog: &dm_resources::catalog::ResourceCatalog,
+    archive_order: &[usize],
+    archive: crate::publish::ResourceIdentity,
+) -> Result<ResourceProjection, ResourceOutputError> {
+    use std::collections::{BTreeMap, BTreeSet};
+    if archive_order.len() != catalog.record().aliases.len() {
+        return Err(ResourceOutputError::InvalidOrder);
+    }
+    let mut seen = BTreeSet::new();
+    let mut ids = BTreeMap::new();
+    let mut records = Vec::new();
+    let mut inventory = Vec::new();
+    for ordinal in archive_order {
+        if !seen.insert(*ordinal) {
+            return Err(ResourceOutputError::InvalidOrder);
+        }
+        let row = &catalog
+            .record()
+            .aliases
+            .get(*ordinal)
+            .ok_or(ResourceOutputError::InvalidOrder)?
+            .facts;
+        if let Some(previous) = ids.insert(row.runtime_content_id, (row.content, row.payload_len)) {
+            if previous != (row.content, row.payload_len) {
+                return Err(ResourceOutputError::RuntimeIdCollision);
+            }
+            continue;
+        }
+        records.push((
+            row.content,
+            byond_dmb::dmb::ResourceRef {
+                id: row.runtime_content_id,
+                kind: row.kind,
+            },
+        ));
+        inventory.push(dm_link::Entry {
+            key: dm_link::Key::Resource(row.content),
+            content: dm_resources::catalog::binding_bytes(row).into(),
+        });
+    }
+    Ok(ResourceProjection {
+        archive: ResourceArchive::Retained(archive),
         records,
         inventory,
     })
@@ -370,7 +464,7 @@ mod resource_output_tests {
         let projection = project_resources(&resources, &[1, 0, 2]).unwrap();
         assert_eq!(projection.records.len(), 2);
         assert_eq!(projection.records[0].1.kind, 6);
-        let mut cursor = std::io::Cursor::new(&projection.rsc);
+        let mut cursor = std::io::Cursor::new(projection.archive.captured_bytes().unwrap());
         let mut names = Vec::new();
         while let Some(entry) = byond_dmb::rsc::read_entry(&mut cursor).unwrap() {
             if let byond_dmb::rsc::Entry::Named(named) = entry {
@@ -415,19 +509,59 @@ mod resource_output_tests {
         let expected = project_resources(&inputs, &[1, 0, 2]).unwrap();
         let backing = Arc::new(dm_ir::SymbolTable::default());
         let host = dm_resources::native_resolver::NativeResourceResolver::from_shared_symbols(
-            Host, backing.clone(), inputs, [], [],
-        ).unwrap();
+            Host,
+            backing.clone(),
+            inputs,
+            [],
+            [],
+        )
+        .unwrap();
         assert!(host.symbols().is_extension_of(&backing));
         let actual = project_captured_resources(&host, &[1, 0, 2]).unwrap();
-        assert_eq!(actual.rsc, expected.rsc);
+        assert_eq!(actual.archive, expected.archive);
+        let catalog = host.catalog();
+        let retained =
+            project_retained_resources(&catalog, &[1, 0, 2], actual.archive.identity()).unwrap();
+        assert_eq!(retained.records, actual.records);
+        assert_eq!(
+            retained
+                .inventory
+                .iter()
+                .map(|entry| (entry.key, entry.content.as_ref()))
+                .collect::<Vec<_>>(),
+            actual
+                .inventory
+                .iter()
+                .map(|entry| (entry.key, entry.content.as_ref()))
+                .collect::<Vec<_>>()
+        );
+        assert!(retained.archive.captured_bytes().is_none());
+
         assert_eq!(actual.records, expected.records);
-        assert_eq!(actual.inventory.iter().map(|entry| (entry.key, entry.content.as_ref())).collect::<Vec<_>>(),
-            expected.inventory.iter().map(|entry| (entry.key, entry.content.as_ref())).collect::<Vec<_>>());
+        assert_eq!(
+            actual
+                .inventory
+                .iter()
+                .map(|entry| (entry.key, entry.content.as_ref()))
+                .collect::<Vec<_>>(),
+            expected
+                .inventory
+                .iter()
+                .map(|entry| (entry.key, entry.content.as_ref()))
+                .collect::<Vec<_>>()
+        );
         assert!(project_captured_resources(&host, &[0, 0, 2]).is_err());
         let mut forged = resources();
         forged.inputs[0].content_digest = [0; 32];
-        assert!(dm_resources::native_resolver::NativeResourceResolver::from_shared_symbols(
-            Host, backing, forged, [], [],
-        ).is_err());
+        assert!(
+            dm_resources::native_resolver::NativeResourceResolver::from_shared_symbols(
+                Host,
+                backing,
+                forged,
+                [],
+                [],
+            )
+            .is_err()
+        );
     }
 }

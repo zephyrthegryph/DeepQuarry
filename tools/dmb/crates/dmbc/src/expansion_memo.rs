@@ -35,7 +35,7 @@ impl ExpansionMemo for DiskExpansionMemo {
         let pending = self.pending.lock().unwrap_or_else(|e| e.into_inner()).1.get(&record_key)
             .map(|record| record.payload.clone());
         let decode = |bytes: &[u8]| -> Vec<Arc<ExpansionRecord>> {
-            dm_cache::decode_variants(bytes).unwrap_or_default().into_iter()
+            dm_cache::decode_variants(bytes).unwrap_or_default().into_iter().rev()
                 .filter_map(|bytes| ExpansionRecord::from_bytes(bytes).ok())
                 .filter(|record| record.key() == key).map(Arc::new).collect()
         };
@@ -54,13 +54,17 @@ impl ExpansionMemo for DiskExpansionMemo {
     fn insert(&self, record: Arc<ExpansionRecord>) {
         let Ok(bytes) = record.to_bytes() else { self.dropped.fetch_add(1, Ordering::Relaxed); return; };
         let key = self.key(record.key());
-        let disk_variants = self.candidates(record.key()).into_iter()
+        let disk_variants = self.candidates(record.key()).into_iter().rev()
             .filter_map(|record| record.to_bytes().ok()).collect::<Vec<_>>();
         let mut pending = self.pending.lock().unwrap_or_else(|e| e.into_inner());
         let mut variants = pending.1.get(&key)
             .and_then(|record| dm_cache::decode_variants(&record.payload).ok())
             .map(|values| values.into_iter().map(Vec::from).collect::<Vec<_>>()).unwrap_or(disk_variants);
-        if !variants.contains(&bytes) { variants.push(bytes); }
+        // A parser-enriched receipt supersedes the same expansion without
+        // fragments. Keep independent macro-read variants, newest first on read.
+        variants.retain(|bytes| ExpansionRecord::from_bytes(bytes)
+            .is_ok_and(|previous| !previous.same_expansion(&record)));
+        variants.push(bytes);
         if variants.len() > 4 { variants.remove(0); }
         let Ok(bytes) = dm_cache::encode_variants(&variants) else { self.dropped.fetch_add(1, Ordering::Relaxed); return; };
         let previous = pending.1.get(&key).map_or(0, |value| value.payload.len());

@@ -41,7 +41,7 @@ impl CapturedSearchContext {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum CapturedResourceOutcome {
     /// Ordinal in the captured ResourceSet, not a BYOND table ID.
     Found(usize),
@@ -50,7 +50,7 @@ pub enum CapturedResourceOutcome {
     /// Discovery cannot answer this request with its captured data.
     Unsupported,
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct CapturedResourceLookup {
     pub path: String,
     pub search_context: u128,
@@ -59,7 +59,7 @@ pub struct CapturedResourceLookup {
 
 /// Ordered aliases retain archive insertion and first-kind decisions separately
 /// from search lookup. Equal content never merges distinct authored aliases.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct NativeResourceRecord {
     pub alias: SymbolId,
     pub content: u128,
@@ -71,7 +71,8 @@ pub struct NativeResourceRecord {
 pub struct NativeResourceResolver<R> {
     tree: R,
     symbols: Arc<SymbolTable>,
-    resources: ResourceSet,
+    resources: Option<ResourceSet>,
+    aliases: Vec<(String, std::path::PathBuf)>,
     ordered: Vec<NativeResourceRecord>,
     contexts: HashMap<u128, Arc<[u8]>>,
     lookups: HashMap<(SymbolId, u128), CapturedResourceOutcome>,
@@ -91,7 +92,13 @@ impl<R: Resolver> NativeResourceResolver<R> {
         contexts: impl IntoIterator<Item = CapturedSearchContext>,
         lookups: impl IntoIterator<Item = CapturedResourceLookup>,
     ) -> io::Result<Self> {
-        Self::from_shared_symbols(tree, Arc::new(tree_symbols.clone()), resources, contexts, lookups)
+        Self::from_shared_symbols(
+            tree,
+            Arc::new(tree_symbols.clone()),
+            resources,
+            contexts,
+            lookups,
+        )
     }
     /// Immutable source dictionary plus a collision-checked resource delta.
     /// Resource metadata remains private and is validated before publication.
@@ -181,7 +188,12 @@ impl<R: Resolver> NativeResourceResolver<R> {
         Ok(Self {
             tree,
             symbols: Arc::new(symbols),
-            resources,
+            aliases: resources
+                .inputs
+                .iter()
+                .map(|input| (input.archive_name.clone(), input.disk_path.clone()))
+                .collect(),
+            resources: Some(resources),
             ordered,
             contexts: captured_contexts,
             lookups: captured_lookups,
@@ -190,13 +202,100 @@ impl<R: Resolver> NativeResourceResolver<R> {
     pub fn ordered_resources(&self) -> &[NativeResourceRecord] {
         &self.ordered
     }
-    pub fn resources(&self) -> &ResourceSet {
-        &self.resources
+    /// Release capture payloads after archive projection. All already-validated
+    /// qualified answers and ordered alias facts remain unchanged.
+    pub fn into_metadata(mut self) -> Self {
+        self.resources = None;
+        self
+    }
+    pub fn resources(&self) -> Option<&ResourceSet> {
+        self.resources.as_ref()
+    }
+    /// Issue payload-free facts only after the normal constructor validated
+    /// actual asset bytes. Metadata hosts retain the same already-issued facts.
+    pub fn catalog(&self) -> crate::catalog::ResourceCatalog {
+        let mut contexts = self
+            .contexts
+            .iter()
+            .map(|(_, bytes)| bytes.to_vec())
+            .collect::<Vec<_>>();
+        contexts.sort();
+        let mut lookups = self
+            .lookups
+            .iter()
+            .map(|((path, context), outcome)| CapturedResourceLookup {
+                path: self
+                    .symbols
+                    .text(*path)
+                    .expect("validated resource spelling")
+                    .to_owned(),
+                search_context: *context,
+                outcome: *outcome,
+            })
+            .collect::<Vec<_>>();
+        lookups.sort_by(|left, right| {
+            (&left.path, left.search_context).cmp(&(&right.path, right.search_context))
+        });
+        crate::catalog::ResourceCatalog::issued(
+            self.aliases
+                .iter()
+                .zip(&self.ordered)
+                .map(|((name, path), facts)| crate::catalog::AliasRecord {
+                    name: name.clone(),
+                    disk_path: path.clone(),
+                    facts: facts.clone(),
+                })
+                .collect(),
+            contexts,
+            lookups,
+        )
+    }
+    /// No asset bytes or filesystem access are required. The caller must use a
+    /// catalog restored from authenticated session and validated asset facts.
+    pub fn from_catalog(
+        tree: R,
+        tree_symbols: Arc<SymbolTable>,
+        catalog: &crate::catalog::ResourceCatalog,
+    ) -> io::Result<Self> {
+        let record = catalog.record();
+        let mut symbols = SymbolTable::overlay(tree_symbols);
+        let mut contexts = HashMap::new();
+        for bytes in &record.contexts {
+            let context = CapturedSearchContext::new(bytes.clone());
+            contexts.insert(context.identity(), Arc::from(bytes.as_slice()));
+        }
+        let mut ordered = Vec::new();
+        let mut aliases = Vec::new();
+        for alias in &record.aliases {
+            symbols
+                .intern(&alias.name)
+                .map_err(|error| invalid(error.to_string()))?;
+            ordered.push(alias.facts.clone());
+            aliases.push((alias.name.clone(), alias.disk_path.clone()));
+        }
+        let mut lookups = HashMap::new();
+        for lookup in &record.lookups {
+            let path = symbols
+                .intern(&lookup.path)
+                .map_err(|error| invalid(error.to_string()))?;
+            lookups.insert((path, lookup.search_context), lookup.outcome);
+        }
+        Ok(Self {
+            tree,
+            symbols: Arc::new(symbols),
+            resources: None,
+            aliases,
+            ordered,
+            contexts,
+            lookups,
+        })
     }
     pub fn symbols(&self) -> &SymbolTable {
         &self.symbols
     }
-    pub fn shared_symbols(&self) -> Arc<SymbolTable> { Arc::clone(&self.symbols) }
+    pub fn shared_symbols(&self) -> Arc<SymbolTable> {
+        Arc::clone(&self.symbols)
+    }
     pub fn tree(&self) -> &R {
         &self.tree
     }
@@ -306,6 +405,34 @@ mod tests {
                 content: xxh3_128(b"same exact bytes")
             }
         );
+        let catalog = host.catalog();
+        let restored =
+            crate::catalog::ResourceCatalog::restore(catalog.record().clone(), catalog.identity())
+                .unwrap();
+        let metadata =
+            NativeResourceResolver::from_catalog(Tree, Arc::new(SymbolTable::default()), &restored)
+                .unwrap();
+        assert!(metadata.resources().is_none());
+        for context in [a, b, 0] {
+            assert_eq!(
+                metadata.resolve(query(context)),
+                host.resolve(query(context))
+            );
+        }
+        assert_eq!(metadata.ordered_resources(), host.ordered_resources());
+        assert_eq!(metadata.catalog().identity(), catalog.identity());
+        let host = host.into_metadata();
+        assert!(host.resources().is_none());
+        for context in [a, b, 0] {
+            assert_eq!(
+                host.resolve(query(context)),
+                metadata.resolve(query(context))
+            );
+        }
+
+        let mut tampered = catalog.record().clone();
+        tampered.aliases[0].facts.payload_len += 1;
+        assert!(crate::catalog::ResourceCatalog::restore(tampered, catalog.identity()).is_err());
         assert_eq!(host.resolve(query(b)), ResolvedMeaning::Missing);
         assert_eq!(
             host.resolve(query(0)),

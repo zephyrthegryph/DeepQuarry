@@ -9,92 +9,365 @@ use dm_ir::{ProcedureIdentity, ProcedureStaticIdentity, ResolveQuery, Resolver, 
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, sync::Arc};
 
-#[derive(Serialize,Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct Abi {
-    display:Option<Vec<u8>>, description:Option<Vec<u8>>, category:u8, category_text:Vec<u8>,
-    source_kind:u8, source_parameter:u8, flags:u32, invisibility:Option<u8>,
-    arguments:Vec<(u8,u8)>,
-}
-#[derive(Serialize,Deserialize)]
-struct Payload {
-    version:u32, key:Vec<u8>, identity:ProcedureIdentity, effective:bool,
-    reads:Vec<(ResolveQuery,Vec<u8>)>,
-    code:dm_codegen_byond::SimpleProc,
-    slots:Vec<(dm_codegen_byond::Symbol,SymbolId,SymbolId,SymbolId)>,
-    resources:BTreeMap<String,u128>,
-    instances:Vec<(String,SymbolId,SymbolId)>,
-    procedure_values:BTreeMap<dm_codegen_byond::Symbol,ProcedureIdentity>,
-    procedure_statics:BTreeMap<dm_codegen_byond::Symbol,ProcedureStaticIdentity>,
-    debug:Vec<(String,u32)>, abi:Option<Abi>,
-}
-pub(crate) fn encode(key:&[u8],reads:&[ResolverRead],unit:&LoweredUnit)->Option<Vec<u8>> {
-    if !unit.code.modified_instances.is_empty() || !unit.source_helpers.is_empty() {return None;}
-    let abi=match unit.abi.as_ref() {
-        None=>None,
-        Some(abi)=>{
-            if !abi.source_helpers.is_empty() {return None;}
-            let arguments=abi.argument_sources.iter().map(|source|match source {
-                ArgumentSource::Builtin{kind,parameter}=>Some((*kind,*parameter)),
-                ArgumentSource::Helper{..}=>None,
-            }).collect::<Option<Vec<_>>>()?;
-            let (category,category_text)=match &abi.layout.category {
-                Category::Default=>(0,Vec::new()),Category::Null=>(1,Vec::new()),
-                Category::Text(bytes)=>(2,bytes.clone()),
-            };
-            Some(Abi { display:abi.layout.display_name.clone(),description:abi.layout.description.clone(),
-                category,category_text,source_kind:abi.layout.source_kind,source_parameter:abi.layout.source_parameter,
-                flags:abi.layout.flags,invisibility:abi.layout.invisibility,arguments })
-        }
-    };
-    let payload=Payload {version:1,key:key.to_vec(),
-        identity:ProcedureIdentity {owner:unit.identity.owner,name:unit.identity.name,
-            verb:unit.identity.namespace==Namespace::Verb,occurrence:unit.identity.occurrence},
-        effective:unit.effective,reads:reads.iter().map(|read|(read.query,read.answer.canonical_bytes())).collect(),
-        code:unit.code.procedure.clone(),
-        slots:unit.code.slots.iter().map(|(key,slot)|(key.clone(),slot.symbol,slot.owner,slot.name)).collect(),
-        resources:unit.code.resources.clone(),instances:unit.code.instances.iter().map(|(key,value)|
-            (key.clone(),value.alias,value.runtime_type)).collect(),
-        procedure_values:unit.code.procedure_values.clone(),procedure_statics:unit.code.procedure_statics.clone(),
-        debug:unit.debug_origins.entries.iter().map(|origin|(origin.semantic_path.clone(),origin.line)).collect(),abi};
-    serde_json::to_vec(&payload).ok()
-}
-pub(crate) fn validate(bytes:&[u8])->Result<(),String> {
-    let payload:Payload=serde_json::from_slice(bytes).map_err(|error|error.to_string())?;
-    if payload.version!=1 {return Err("unsupported lowering payload version".into());}
-    if payload.abi.as_ref().is_some_and(|abi|abi.category>2) {return Err("invalid ABI category".into());}
-    Ok(())
-}
-pub(crate) fn decode<R:Resolver>(bytes:&[u8],key:&[u8],frontend:&dm_tree::frontend::ColdFrontend,
-    body:&dm_tree::frontend::BodyOccurrence,host:&R)->Option<LoweredUnit> {
-    validate(bytes).ok()?;
-    let payload:Payload=serde_json::from_slice(bytes).ok()?;
-    if payload.key!=key || !payload.reads.iter().all(|(query,answer)|host.resolve(*query).canonical_bytes()==*answer) {return None;}
-    let tree=&frontend.snapshot.tree;
-    let member=tree.member(body.member)?;
-    let owner=tree.type_node(member.owner)?.path;
-    if payload.identity.owner!=owner || payload.identity.name!=member.name
-        || payload.identity.verb!=(member.kind==dm_tree::MemberKind::Verb) {return None;}
-    let abi=payload.abi.map(|abi|Arc::new(crate::procedure_policy::PreparedAbi {
-        layout:ProcLayout {display_name:abi.display,description:abi.description,
-            category:match abi.category {0=>Category::Default,1=>Category::Null,_=>Category::Text(abi.category_text)},
-            source_kind:abi.source_kind,source_parameter:abi.source_parameter,flags:abi.flags,invisibility:abi.invisibility},
-        argument_sources:abi.arguments.into_iter().map(|(kind,parameter)|ArgumentSource::Builtin{kind,parameter}).collect(),
-        source_helpers:Vec::new(),
-    }));
-    let mut slots=BTreeMap::new();
-    for (key,symbol,owner,name) in payload.slots {
-        if slots.insert(key,ResolvedSlot {symbol,owner,name}).is_some() {return None;}
-    }
-    let mut instances=BTreeMap::new();
-    for (key,alias,runtime_type) in payload.instances {
-        if instances.insert(key,ResolvedInstance {alias,runtime_type}).is_some() {return None;}
-    }
-    Some(LoweredUnit {identity:UnitIdentity {owner:payload.identity.owner,name:payload.identity.name,
-        namespace:if payload.identity.verb {Namespace::Verb}else{Namespace::Proc},occurrence:payload.identity.occurrence},
-        effective:tree.resolve(member.owner,member.name,member.kind)==Some(body.member),origin:body.clone(),metadata:Arc::clone(member.metadata.procedure.as_ref()?),abi,
-        code:ResolverProc {modified_instances:BTreeMap::new(),procedure_values:payload.procedure_values,
-            procedure_statics:payload.procedure_statics,procedure:payload.code,slots,resources:payload.resources,instances},
-        debug_origins:crate::debug_sources::DebugOrigins {entries:payload.debug.into_iter().map(|(semantic_path,line)|
-            crate::debug_sources::DebugOrigin{semantic_path,line}).collect()},source_helpers:Vec::new() })
+    display: Option<Vec<u8>>,
+    description: Option<Vec<u8>>,
+    category: u8,
+    category_text: Vec<u8>,
+    source_kind: u8,
+    source_parameter: u8,
+    flags: u32,
+    invisibility: Option<u8>,
+    arguments: Vec<(u8, u8)>,
 }
 
+#[derive(Serialize, Deserialize)]
+struct Payload {
+    version: u32,
+    key: Vec<u8>,
+    identity: Option<ProcedureIdentity>,
+    effective: bool,
+    reads: Vec<(ResolveQuery, Vec<u8>)>,
+    code: dm_codegen_byond::SimpleProc,
+    slots: Vec<(dm_codegen_byond::Symbol, SymbolId, SymbolId, SymbolId)>,
+    resources: BTreeMap<String, u128>,
+    instances: Vec<(String, SymbolId, SymbolId)>,
+    procedure_values: BTreeMap<dm_codegen_byond::Symbol, ProcedureIdentity>,
+    procedure_statics: BTreeMap<dm_codegen_byond::Symbol, ProcedureStaticIdentity>,
+    debug: Vec<(String, u32)>,
+    abi: Option<Abi>,
+}
+pub(crate) fn encode(key: &[u8], reads: &[ResolverRead], unit: &LoweredUnit) -> Option<Vec<u8>> {
+    if !unit.code.modified_instances.is_empty() || !unit.source_helpers.is_empty() {
+        return None;
+    }
+    let abi = match unit.abi.as_ref() {
+        None => None,
+        Some(abi) => {
+            if !abi.source_helpers.is_empty() {
+                return None;
+            }
+            let arguments = abi
+                .argument_sources
+                .iter()
+                .map(|source| match source {
+                    ArgumentSource::Builtin { kind, parameter } => Some((*kind, *parameter)),
+                    ArgumentSource::Helper { .. } => None,
+                })
+                .collect::<Option<Vec<_>>>()?;
+            let (category, category_text) = match &abi.layout.category {
+                Category::Default => (0, Vec::new()),
+                Category::Null => (1, Vec::new()),
+                Category::Text(bytes) => (2, bytes.clone()),
+            };
+            Some(Abi {
+                display: abi.layout.display_name.clone(),
+                description: abi.layout.description.clone(),
+                category,
+                category_text,
+                source_kind: abi.layout.source_kind,
+                source_parameter: abi.layout.source_parameter,
+                flags: abi.layout.flags,
+                invisibility: abi.layout.invisibility,
+                arguments,
+            })
+        }
+    };
+    let payload = Payload {
+        version: 1,
+        key: key.to_vec(),
+        identity: Some(ProcedureIdentity {
+            owner: unit.identity.owner,
+            name: unit.identity.name,
+            verb: unit.identity.namespace == Namespace::Verb,
+            occurrence: unit.identity.occurrence,
+        }),
+        effective: unit.effective,
+        reads: reads
+            .iter()
+            .map(|read| (read.query, read.answer.canonical_bytes()))
+            .collect(),
+        code: unit.code.procedure.clone(),
+        slots: unit
+            .code
+            .slots
+            .iter()
+            .map(|(key, slot)| (key.clone(), slot.symbol, slot.owner, slot.name))
+            .collect(),
+        resources: unit.code.resources.clone(),
+        instances: unit
+            .code
+            .instances
+            .iter()
+            .map(|(key, value)| (key.clone(), value.alias, value.runtime_type))
+            .collect(),
+        procedure_values: unit.code.procedure_values.clone(),
+        procedure_statics: unit.code.procedure_statics.clone(),
+        debug: unit
+            .debug_origins
+            .entries
+            .iter()
+            .map(|origin| (origin.semantic_path.clone(), origin.line))
+            .collect(),
+        abi,
+    };
+    serde_json::to_vec(&payload).ok()
+}
+pub(crate) fn validate(bytes: &[u8]) -> Result<(), String> {
+    let payload: Payload = serde_json::from_slice(bytes).map_err(|error| error.to_string())?;
+    if payload.version != 1 {
+        return Err("unsupported lowering payload version".into());
+    }
+    if payload.abi.as_ref().is_some_and(|abi| abi.category > 2) {
+        return Err("invalid ABI category".into());
+    }
+    Ok(())
+}
+pub(crate) fn encode_executable(
+    key: &[u8],
+    reads: &[ResolverRead],
+    code: &ResolverProc,
+) -> Option<Vec<u8>> {
+    if !code.modified_instances.is_empty() {
+        return None;
+    }
+    let payload = Payload {
+        version: 1,
+        key: key.to_vec(),
+        identity: None,
+        effective: false,
+        abi: None,
+        debug: Vec::new(),
+        reads: reads
+            .iter()
+            .map(|read| (read.query, read.answer.canonical_bytes()))
+            .collect(),
+        code: code.procedure.clone(),
+        slots: code
+            .slots
+            .iter()
+            .map(|(key, slot)| (key.clone(), slot.symbol, slot.owner, slot.name))
+            .collect(),
+        resources: code.resources.clone(),
+        instances: code
+            .instances
+            .iter()
+            .map(|(key, value)| (key.clone(), value.alias, value.runtime_type))
+            .collect(),
+        procedure_values: code.procedure_values.clone(),
+        procedure_statics: code.procedure_statics.clone(),
+    };
+    serde_json::to_vec(&payload).ok()
+}
+pub(crate) fn decode_executable<R: Resolver>(
+    bytes: &[u8],
+    key: &[u8],
+    host: &R,
+) -> Option<ResolverProc> {
+    validate(bytes).ok()?;
+    let payload: Payload = serde_json::from_slice(bytes).ok()?;
+    if payload.identity.is_some()
+        || payload.abi.is_some()
+        || payload.key != key
+        || !payload
+            .reads
+            .iter()
+            .all(|(query, answer)| host.resolve(*query).canonical_bytes() == *answer)
+    {
+        return None;
+    }
+    let mut slots = BTreeMap::new();
+    for (key, symbol, owner, name) in payload.slots {
+        if slots
+            .insert(
+                key,
+                ResolvedSlot {
+                    symbol,
+                    owner,
+                    name,
+                },
+            )
+            .is_some()
+        {
+            return None;
+        }
+    }
+    let mut instances = BTreeMap::new();
+    for (key, alias, runtime_type) in payload.instances {
+        if instances
+            .insert(
+                key,
+                ResolvedInstance {
+                    alias,
+                    runtime_type,
+                },
+            )
+            .is_some()
+        {
+            return None;
+        }
+    }
+    Some(ResolverProc {
+        procedure: payload.code,
+        slots,
+        resources: payload.resources,
+        instances,
+        procedure_values: payload.procedure_values,
+        procedure_statics: payload.procedure_statics,
+        modified_instances: BTreeMap::new(),
+    })
+}
+pub(crate) fn decode<R: Resolver>(
+    bytes: &[u8],
+    key: &[u8],
+    frontend: &dm_tree::frontend::ColdFrontend,
+    body: &dm_tree::frontend::BodyOccurrence,
+    host: &R,
+) -> Option<LoweredUnit> {
+    validate(bytes).ok()?;
+    let payload: Payload = serde_json::from_slice(bytes).ok()?;
+    let identity = payload.identity?;
+    if payload.key != key
+        || !payload
+            .reads
+            .iter()
+            .all(|(query, answer)| host.resolve(*query).canonical_bytes() == *answer)
+    {
+        return None;
+    }
+    let tree = &frontend.snapshot.tree;
+    let member = tree.member(body.member)?;
+    let owner = tree.type_node(member.owner)?.path;
+    if identity.owner != owner
+        || identity.name != member.name
+        || identity.verb != (member.kind == dm_tree::MemberKind::Verb)
+    {
+        return None;
+    }
+    let abi = payload.abi.map(|abi| {
+        Arc::new(crate::procedure_policy::PreparedAbi {
+            layout: ProcLayout {
+                display_name: abi.display,
+                description: abi.description,
+                category: match abi.category {
+                    0 => Category::Default,
+                    1 => Category::Null,
+                    _ => Category::Text(abi.category_text),
+                },
+                source_kind: abi.source_kind,
+                source_parameter: abi.source_parameter,
+                flags: abi.flags,
+                invisibility: abi.invisibility,
+            },
+            argument_sources: abi
+                .arguments
+                .into_iter()
+                .map(|(kind, parameter)| ArgumentSource::Builtin { kind, parameter })
+                .collect(),
+            source_helpers: Vec::new(),
+        })
+    });
+    let mut slots = BTreeMap::new();
+    for (key, symbol, owner, name) in payload.slots {
+        if slots
+            .insert(
+                key,
+                ResolvedSlot {
+                    symbol,
+                    owner,
+                    name,
+                },
+            )
+            .is_some()
+        {
+            return None;
+        }
+    }
+    let mut instances = BTreeMap::new();
+    for (key, alias, runtime_type) in payload.instances {
+        if instances
+            .insert(
+                key,
+                ResolvedInstance {
+                    alias,
+                    runtime_type,
+                },
+            )
+            .is_some()
+        {
+            return None;
+        }
+    }
+    Some(LoweredUnit {
+        identity: UnitIdentity {
+            owner: identity.owner,
+            name: identity.name,
+            namespace: if identity.verb {
+                Namespace::Verb
+            } else {
+                Namespace::Proc
+            },
+            occurrence: identity.occurrence,
+        },
+        effective: tree.resolve(member.owner, member.name, member.kind) == Some(body.member),
+        origin: body.clone(),
+        metadata: Arc::clone(member.metadata.procedure.as_ref()?),
+        abi,
+        code: ResolverProc {
+            modified_instances: BTreeMap::new(),
+            procedure_values: payload.procedure_values,
+            procedure_statics: payload.procedure_statics,
+            procedure: payload.code,
+            slots,
+            resources: payload.resources,
+            instances,
+        },
+        debug_origins: crate::debug_sources::DebugOrigins {
+            entries: payload
+                .debug
+                .into_iter()
+                .map(|(semantic_path, line)| crate::debug_sources::DebugOrigin {
+                    semantic_path,
+                    line,
+                })
+                .collect(),
+        },
+        source_helpers: Vec::new(),
+    })
+}
+
+#[cfg(test)]
+mod executable_tests {
+    use super::*;
+    struct Host(bool);
+    impl Resolver for Host {
+        fn resolve(&self, _: ResolveQuery) -> dm_ir::ResolvedMeaning {
+            if self.0 {
+                dm_ir::ResolvedMeaning::Symbol(SymbolId::of("/datum"))
+            } else {
+                dm_ir::ResolvedMeaning::Missing
+            }
+        }
+    }
+    #[test]
+    fn anonymous_executable_roundtrips_and_rechecks_negative_reads() {
+        let ast = dm_syntax::parse("/proc/p()\n    return 7\n");
+        let body = &ast.items[0].children;
+        let recorder = crate::lowering_memo::RecordingResolver::new(&Host(false));
+        recorder.resolve(ResolveQuery::GlobalVar(SymbolId::of("absent")));
+        let code = dm_codegen_byond::compile_simple_proc_with_resolver(
+            body,
+            &Default::default(),
+            &Default::default(),
+            &recorder,
+        )
+        .unwrap();
+        let bytes =
+            encode_executable(b"exact typed initializer", &recorder.reads(), &code).unwrap();
+        let restored = decode_executable(&bytes, b"exact typed initializer", &Host(false)).unwrap();
+        assert_eq!(code.procedure, restored.procedure);
+        assert!(decode_executable(&bytes, b"exact typed initializer", &Host(true)).is_none());
+        assert!(decode_executable(&bytes, b"different initializer", &Host(false)).is_none());
+    }
+}

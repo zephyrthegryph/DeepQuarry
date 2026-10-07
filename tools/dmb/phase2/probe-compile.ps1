@@ -29,6 +29,8 @@ $taskReceipt=[ordered]@{
     watchdog_seconds=$TimeoutSeconds
     memory_sample_interval_seconds=1
     sampled_max_private_bytes=[long]0
+    sampled_cpu_seconds=0.0
+    competing_cargo_rustc_count_at_start=@(Get-Process -Name cargo,rustc -ErrorAction SilentlyContinue).Count
     status='running'
 }
 $taskWatch=[Diagnostics.Stopwatch]::StartNew()
@@ -42,6 +44,7 @@ try {
         if ($taskWatch.Elapsed.TotalSeconds -ge $taskNextSample) {
             $taskProcess.Refresh()
             $taskReceipt.sampled_max_private_bytes=[Math]::Max($taskReceipt.sampled_max_private_bytes,$taskProcess.PrivateMemorySize64)
+            $taskReceipt.sampled_cpu_seconds=$taskProcess.TotalProcessorTime.TotalSeconds
             $taskNextSample=$taskWatch.Elapsed.TotalSeconds+1
         }
         if ($taskWatch.Elapsed.TotalSeconds -ge $TimeoutSeconds) {
@@ -53,6 +56,7 @@ try {
     $taskProcess.WaitForExit()
     $taskWatch.Stop()
     $taskReceipt.process_seconds=$taskWatch.Elapsed.TotalSeconds
+    $taskReceipt.competing_cargo_rustc_count_at_end=@(Get-Process -Name cargo,rustc -ErrorAction SilentlyContinue).Count
     $taskReceipt.exit_code=$taskProcess.ExitCode
     $taskReceipt.session_hit=[IO.File]::ReadAllText((Join-Path $taskOutput 'diagnostics.log')).Contains('native session hit:')
     if ($taskReceipt.status -eq 'running') {

@@ -377,3 +377,14 @@ serialization validates identity and output spans; invalid records are misses. S
 and admission budgets belong to the caller, with no hidden process cache or disk access
 inside the preprocessor. Declaration parsing and the directive replay remain fresh in
 this prototype; no claim of whole-include-region minimal recomputation is made.
+
+
+Parser fragments are now optional neutral payloads within the same expansion record
+(version 2). The frontend still discovers joined-stream grammar-safe descriptors.
+Only descriptors wholly contained in an issued region can reuse compact relative
+headers/settings and diagnostics; descriptors crossing includes parse fresh. Procedure
+body ranges remain current-arena ranges, with no executable AST persisted. Normalization,
+allocation facts, source-origin mapping and tree resolution remain fresh. Malformed
+fragment payloads fall back to parsing that descriptor. A parser/settings schema change
+must bump the fragment version. This prototype does not skip the boundary scan or reuse
+cross-region parser contexts.

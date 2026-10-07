@@ -3,6 +3,7 @@
 
 pub mod native_resolver;
 pub mod capture;
+pub mod catalog;
 
 use byond_dmb::rsc::{NamedResource, ResourceKind};
 #[cfg(test)]

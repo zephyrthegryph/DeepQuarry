@@ -344,13 +344,14 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
             });
         }
     };
-    let initialization = crate::initializer_lowering::lower_captured_observed(
+    let initialization = crate::initializer_lowering::lower_captured_observed_memo(
         frontend,
         startup,
         &evaluator,
         resolver,
         declarations.resource_search_context,
         observer.map(|_| &initializer_observer as &crate::initializer_lowering::InitializerObserver<'_>),
+        memo,
     )
     .map_err(initializer_lowering_error)?;
     let projection = crate::class_projection::project_classified(

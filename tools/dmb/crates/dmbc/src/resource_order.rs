@@ -313,9 +313,72 @@ pub fn captured_archive_order<R: Resolver>(
     prefix_imports: &[Arc<str>],
     suffix_imports: &[Arc<str>],
 ) -> Result<Vec<usize>, String> {
+    let aliases = captured
+        .resources
+        .inputs
+        .iter()
+        .map(|input| input.archive_name.as_str())
+        .collect::<Vec<_>>();
+    let source_literals = captured
+        .literals
+        .get(..captured.source_literal_count)
+        .ok_or("resource source literal prefix outside capture")?;
+    archive_order(
+        frontend,
+        &aliases,
+        &captured.lookups,
+        source_literals,
+        resolver,
+        known_roots,
+        prefix_imports,
+        suffix_imports,
+    )
+}
+#[allow(clippy::too_many_arguments)] // Existing resource-order boundary over payload-free facts.
+pub fn metadata_archive_order<R: Resolver>(
+    frontend: &dm_tree::frontend::ColdFrontend,
+    catalog: &dm_resources::catalog::ResourceCatalog,
+    demand: &dm_resources::capture::ResourceDemand,
+    resolver: &R,
+    known_roots: &BTreeSet<SymbolId>,
+    prefix: &[Arc<str>],
+    suffix: &[Arc<str>],
+) -> Result<Vec<usize>, String> {
+    let aliases = catalog
+        .record()
+        .aliases
+        .iter()
+        .map(|alias| alias.name.as_str())
+        .collect::<Vec<_>>();
+    let literals = demand
+        .literals
+        .get(..demand.source_literal_count)
+        .ok_or("resource literal prefix outside demand")?;
+    archive_order(
+        frontend,
+        &aliases,
+        &catalog.record().lookups,
+        literals,
+        resolver,
+        known_roots,
+        prefix,
+        suffix,
+    )
+}
+#[allow(clippy::too_many_arguments)] // Same shared grammar traversal for cold and retained archives.
+fn archive_order<R: Resolver>(
+    frontend: &dm_tree::frontend::ColdFrontend,
+    aliases: &[&str],
+    captured_lookups: &[dm_resources::native_resolver::CapturedResourceLookup],
+    source_literals: &[dm_resources::capture::LiteralRequest],
+    resolver: &R,
+    known_roots: &BTreeSet<SymbolId>,
+    prefix_imports: &[Arc<str>],
+    suffix_imports: &[Arc<str>],
+) -> Result<Vec<usize>, String> {
     use dm_resources::native_resolver::CapturedResourceOutcome;
     let mut lookups = BTreeMap::new();
-    for lookup in &captured.lookups {
+    for lookup in captured_lookups {
         if lookups
             .insert(lookup.path.as_str(), lookup.outcome)
             .is_some()
@@ -324,10 +387,6 @@ pub fn captured_archive_order<R: Resolver>(
         }
     }
     let mut uses = Vec::new();
-    let source_literals = captured
-        .literals
-        .get(..captured.source_literal_count)
-        .ok_or("resource source literal prefix outside capture")?;
     for (event, literal) in indexed_event_literals(
         &frontend.allocation_ledger,
         &frontend.expanded.text,
@@ -335,14 +394,12 @@ pub fn captured_archive_order<R: Resolver>(
     )? {
         match lookups.get(literal.path.as_str()) {
             Some(CapturedResourceOutcome::Found(ordinal)) => {
-                let input = captured
-                    .resources
-                    .inputs
+                let alias = aliases
                     .get(*ordinal)
                     .ok_or("captured resource lookup ordinal outside resources")?;
                 uses.push(ResourceUse {
                     event,
-                    alias: input.archive_name.clone().into(),
+                    alias: (*alias).into(),
                 });
             }
             Some(CapturedResourceOutcome::Missing) => {}
@@ -357,7 +414,7 @@ pub fn captured_archive_order<R: Resolver>(
             }
         }
     }
-    let aliases = collect(
+    let ordered_aliases = collect(
         &frontend.allocation_ledger,
         &uses,
         frontend.snapshot.tree.symbols(),
@@ -367,15 +424,12 @@ pub fn captured_archive_order<R: Resolver>(
         suffix_imports,
     )?;
     let mut ordinals = BTreeMap::new();
-    for (ordinal, input) in captured.resources.inputs.iter().enumerate() {
-        if ordinals
-            .insert(input.archive_name.as_str(), ordinal)
-            .is_some()
-        {
+    for (ordinal, alias) in aliases.iter().enumerate() {
+        if ordinals.insert(*alias, ordinal).is_some() {
             return Err("duplicate archive alias in captured resource inputs".into());
         }
     }
-    let result = aliases
+    let result = ordered_aliases
         .iter()
         .map(|alias| {
             ordinals
@@ -384,7 +438,7 @@ pub fn captured_archive_order<R: Resolver>(
                 .ok_or_else(|| format!("resource phase alias absent from captured input: {alias}"))
         })
         .collect::<Result<Vec<_>, _>>()?;
-    if result.len() != captured.resources.inputs.len() {
+    if result.len() != aliases.len() {
         return Err("resource phase grammar does not cover every captured archive input".into());
     }
     Ok(result)
@@ -438,13 +492,38 @@ pub fn nontext_imports(
     nontext: &crate::non_text::CapturedNonText,
     captured: &dm_resources::capture::CapturedResources,
 ) -> Result<(Vec<Arc<str>>, Vec<Arc<str>>), String> {
+    let aliases: Vec<&str> = captured
+        .resources
+        .inputs
+        .iter()
+        .map(|input| input.archive_name.as_str())
+        .collect();
+    import_order(nontext, &aliases, &captured.lookups)
+}
+pub fn metadata_nontext_imports(
+    nontext: &crate::non_text::CapturedNonText,
+    catalog: &dm_resources::catalog::ResourceCatalog,
+) -> Result<(Vec<Arc<str>>, Vec<Arc<str>>), String> {
+    let aliases: Vec<&str> = catalog
+        .record()
+        .aliases
+        .iter()
+        .map(|input| input.name.as_str())
+        .collect();
+    import_order(nontext, &aliases, &catalog.record().lookups)
+}
+fn import_order(
+    nontext: &crate::non_text::CapturedNonText,
+    aliases: &[&str],
+    lookups: &[dm_resources::native_resolver::CapturedResourceLookup],
+) -> Result<(Vec<Arc<str>>, Vec<Arc<str>>), String> {
     use dm_resources::native_resolver::CapturedResourceOutcome;
     if nontext.skin.model.interfaces.len() > 1 {
         return Err("multiple DMF resource import phases require a distinguishing contract".into());
     }
     let mut lookup_outcomes = BTreeMap::new();
     let mut normalized_paths = BTreeMap::new();
-    for lookup in &captured.lookups {
+    for lookup in lookups {
         // Preserve the previous first-encountered spelling for normalized aliases.
         lookup_outcomes
             .entry(lookup.path.as_str())
@@ -459,14 +538,10 @@ pub fn nontext_imports(
             .ok_or_else(|| format!("nontext resource has no captured lookup: {path}"))?;
         match *found {
             CapturedResourceOutcome::Found(ordinal) => Ok(Some(
-                captured
-                    .resources
-                    .inputs
+                (*aliases
                     .get(ordinal)
-                    .ok_or("nontext resource lookup ordinal outside captured inputs")?
-                    .archive_name
-                    .clone()
-                    .into(),
+                    .ok_or("nontext resource lookup ordinal outside captured aliases")?)
+                .into(),
             )),
             CapturedResourceOutcome::Missing => Ok(None),
             CapturedResourceOutcome::Unsupported => {
@@ -486,11 +561,9 @@ pub fn nontext_imports(
                 prefix.push(alias);
             }
         }
-        if !captured
-            .resources
-            .inputs
+        if !aliases
             .iter()
-            .any(|input| input.archive_name == skin.archive_alias.as_ref())
+            .any(|input| *input == skin.archive_alias.as_ref())
         {
             return Err("selected skin raw resource absent from capture".into());
         }

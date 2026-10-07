@@ -10,15 +10,26 @@ struct Memory(BTreeMap<PathBuf, String>);
 fn prepared_sources_share_capture_and_line_indexes_with_frontend() {
     use dm_preprocess::regions::prepared_source::PreparedSources;
     use std::sync::Arc;
-    let text: Arc<str> = Arc::from("/datum/probe\n    var/a = 2\n    proc/read()\n        return a\n");
+    let text: Arc<str> =
+        Arc::from("/datum/probe\n    var/a = 2\n    proc/read()\n        return a\n");
     let prepared = PreparedSources::prepare([(PathBuf::from("project.dme"), text)], 2).unwrap();
     let source = prepared.get(Path::new("project.dme")).unwrap();
     let frontend = build(Path::new("project.dme"), &prepared, &BTreeMap::new(), 2).unwrap();
-    let file = frontend.files.iter().find(|file| file.path.as_path() == Path::new("project.dme")).unwrap();
+    let file = frontend
+        .files
+        .iter()
+        .find(|file| file.path.as_path() == Path::new("project.dme"))
+        .unwrap();
     assert!(file.captured);
     assert!(Arc::ptr_eq(&file.text, source.original()));
     assert!(Arc::ptr_eq(&file.line_starts, source.line_starts()));
-    assert_eq!(frontend.location(frontend.bodies[0].expanded_span.start).unwrap().line, 3);
+    assert_eq!(
+        frontend
+            .location(frontend.bodies[0].expanded_span.start)
+            .unwrap()
+            .line,
+        3
+    );
 }
 impl dm_preprocess::SourceProvider for Memory {
     fn read(&self, path: &Path) -> Result<String, String> {
@@ -46,14 +57,26 @@ fn preprocessing_diagnostic_kind_is_independent_of_user_message_prefix() {
         Err(errors) => errors,
     };
     assert_eq!(errors.len(), 4);
-    assert_eq!(errors.iter().map(|error| error.kind).collect::<Vec<_>>(),
-        vec![DiagnosticKind::SourceError, DiagnosticKind::UnsupportedModel,
-             DiagnosticKind::UnsupportedModel, DiagnosticKind::SourceError]);
+    assert_eq!(
+        errors.iter().map(|error| error.kind).collect::<Vec<_>>(),
+        vec![
+            DiagnosticKind::SourceError,
+            DiagnosticKind::UnsupportedModel,
+            DiagnosticKind::UnsupportedModel,
+            DiagnosticKind::SourceError
+        ]
+    );
     assert_eq!(errors[0].message.trim_end(), "unsupported authored message");
     assert_eq!(errors[1].message, "unverified include extension");
-    assert_eq!(errors[2].message, "unsupported preprocessor directive #unimplemented_probe");
+    assert_eq!(
+        errors[2].message,
+        "unsupported preprocessor directive #unimplemented_probe"
+    );
     for (index, error) in errors.iter().enumerate() {
-        let origin = error.location.as_ref().expect("actual directive source location");
+        let origin = error
+            .location
+            .as_ref()
+            .expect("actual directive source location");
         assert_eq!(origin.line, index + 1);
         assert_eq!(origin.semantic_path.as_ref(), "project.dme");
     }
@@ -695,20 +718,28 @@ fn parsed_body_receipts_reject_other_issuers_and_public_capture_replacement() {
     let frontend = make();
     let parsed = frontend.parse_body(&frontend.bodies[0]).unwrap();
     assert_eq!(parsed.item(), &frontend.body(&frontend.bodies[0]).unwrap());
-    frontend.validate_parsed_body(&parsed, &frontend.bodies[0]).unwrap();
+    frontend
+        .validate_parsed_body(&parsed, &frontend.bodies[0])
+        .unwrap();
     let foreign = make();
-    assert!(foreign.validate_parsed_body(&parsed, &foreign.bodies[0]).is_err());
+    assert!(foreign
+        .validate_parsed_body(&parsed, &foreign.bodies[0])
+        .is_err());
     let mut changed_arena = frontend.clone();
     changed_arena.expanded.text = Arc::from("/proc/probe()\n    return 9\n");
     assert!(changed_arena.parse_body(&changed_arena.bodies[0]).is_err());
     let mut changed_syntax = frontend.clone();
     changed_syntax.syntax = Arc::new((*frontend.syntax).clone());
-    assert!(changed_syntax.compact_body(&changed_syntax.bodies[0]).is_err());
+    assert!(changed_syntax
+        .compact_body(&changed_syntax.bodies[0])
+        .is_err());
 }
 
 #[test]
 fn procedure_literals_issue_exact_formal_and_effective_occurrences() {
-    use dm_ir::{ResolveQuery as Q, ResolvedMeaning as M, Resolver, SemanticValue, ProcedureIdentity};
+    use dm_ir::{
+        ProcedureIdentity, ResolveQuery as Q, ResolvedMeaning as M, Resolver, SemanticValue,
+    };
     let provider = Memory(BTreeMap::from([(PathBuf::from("project.dme"),
         "/proc/callback()\n    return 1\nvar/const/cb = /proc/callback\n/datum/base/proc/callback()\n    return 1\n/datum/base/callback()\n    return 2\n/datum/child\n    parent_type = /datum/base\n".into())]));
     let frontend = build(Path::new("project.dme"), &provider, &BTreeMap::new(), 2).unwrap();
@@ -716,16 +747,143 @@ fn procedure_literals_issue_exact_formal_and_effective_occurrences() {
     let name = SymbolId::of("callback");
     let owner = SymbolId::of("/datum/base");
     for (formal, occurrence) in [(true, 0), (false, 1)] {
-        assert_eq!(Resolver::resolve(tree, Q::ProcedureValue {owner,name,verb:false,formal}),
-            M::Value(SemanticValue::Procedure(ProcedureIdentity {owner,name,verb:false,occurrence})));
+        assert_eq!(
+            Resolver::resolve(
+                tree,
+                Q::ProcedureValue {
+                    owner,
+                    name,
+                    verb: false,
+                    formal
+                }
+            ),
+            M::Value(SemanticValue::Procedure(ProcedureIdentity {
+                owner,
+                name,
+                verb: false,
+                occurrence
+            }))
+        );
     }
     // Native controls reject child/proc/callback even with an own implicit override.
-    let query = Q::ProcedureValue {owner:SymbolId::of("/datum/child"),name,verb:false,formal:true};
-    assert!(!matches!(Resolver::resolve(tree,query), M::Value(_)));
-    let scalar = crate::constant_resolution::resolve(&frontend.snapshot,
-        &[crate::constant_resolution::ScalarQuery::Const {owner:SymbolId::of("/"),name:SymbolId::of("cb")}],
-        &crate::constant_resolution::ScalarBackend {identity:1,decode_string:&|_|None,nameof:&|_|None});
-    assert_eq!(scalar.outcome(crate::constant_resolution::ScalarQuery::Const {owner:SymbolId::of("/"),name:SymbolId::of("cb")}),
-        Some(&crate::constant_resolution::ScalarOutcome::Value(SemanticValue::Procedure(ProcedureIdentity {
-            owner:SymbolId::of("/"),name,verb:false,occurrence:0}))));
+    let query = Q::ProcedureValue {
+        owner: SymbolId::of("/datum/child"),
+        name,
+        verb: false,
+        formal: true,
+    };
+    assert!(!matches!(Resolver::resolve(tree, query), M::Value(_)));
+    let scalar = crate::constant_resolution::resolve(
+        &frontend.snapshot,
+        &[crate::constant_resolution::ScalarQuery::Const {
+            owner: SymbolId::of("/"),
+            name: SymbolId::of("cb"),
+        }],
+        &crate::constant_resolution::ScalarBackend {
+            identity: 1,
+            decode_string: &|_| None,
+            nameof: &|_| None,
+        },
+    );
+    assert_eq!(
+        scalar.outcome(crate::constant_resolution::ScalarQuery::Const {
+            owner: SymbolId::of("/"),
+            name: SymbolId::of("cb")
+        }),
+        Some(&crate::constant_resolution::ScalarOutcome::Value(
+            SemanticValue::Procedure(ProcedureIdentity {
+                owner: SymbolId::of("/"),
+                name,
+                verb: false,
+                occurrence: 0
+            })
+        ))
+    );
+}
+
+#[test]
+fn issued_parser_fragments_replay_compact_settings_ranges_and_cross_include_grammar() {
+    use dm_preprocess::regions::{
+        expand_regions_text_with_memo, plan_regions, ExpansionMemo, ExpansionRecord,
+    };
+    use std::sync::{Arc, Mutex};
+    #[derive(Default)]
+    struct Memo(Mutex<BTreeMap<u128, Vec<Arc<ExpansionRecord>>>>);
+    impl ExpansionMemo for Memo {
+        fn candidates(&self, key: u128) -> Vec<Arc<ExpansionRecord>> {
+            self.0
+                .lock()
+                .unwrap()
+                .get(&key)
+                .cloned()
+                .unwrap_or_default()
+        }
+        fn insert(&self, record: Arc<ExpansionRecord>) {
+            self.0
+                .lock()
+                .unwrap()
+                .entry(record.key())
+                .or_default()
+                .push(record);
+        }
+    }
+    let memo = Memo::default();
+    let source=Memory(BTreeMap::from([(PathBuf::from("project.dme"),"/datum/probe\n    var/value = 3\n    proc/read(a)\n        if(1)\n            set waitfor = 0\n        return value + a\n".into())]));
+    let plan = plan_regions(Path::new("project.dme"), &source, &BTreeMap::new());
+    let expanded = expand_regions_text_with_memo(&plan, 2, &memo);
+    let config = FrontendConfig {
+        workers: 2,
+        engine: None,
+        observer: None,
+    };
+    let first = parse_declarations(&expanded, config, Some(&memo)).unwrap();
+    let reused = expand_regions_text_with_memo(&plan, 1, &memo);
+    let receipt = &reused.receipts[0];
+    assert!(receipt
+        .record()
+        .fragment(
+            parserwire::VERSION,
+            dm_syntax::Span::new(0, reused.text.len())
+        )
+        .is_some());
+    let hit = parse_declarations(&reused, config, Some(&memo)).unwrap();
+    assert_eq!(hit.items, first.items);
+    assert_eq!(hit.diagnostics, first.diagnostics);
+    assert_eq!(hit.items[0].children[1].children[0].header, "if(1)");
+    // Invalid typed parser payload is a parse miss, without changing diagnostics.
+    let poisoned = receipt
+        .record()
+        .with_fragment(
+            parserwire::VERSION,
+            dm_syntax::Span::new(0, reused.text.len()),
+            Arc::from(b"{}".as_slice()),
+        )
+        .unwrap();
+    memo.insert(Arc::new(poisoned));
+    let repaired = expand_regions_text_with_memo(&plan, 2, &memo);
+    let parsed = parse_declarations(&repaired, config, Some(&memo)).unwrap();
+    assert_eq!(parsed.items, first.items);
+    // The type block crosses the include boundary: only the joined grammar-safe
+    // descriptor is parsed, never the included indented member as a root program.
+    let cross = Memory(BTreeMap::from([
+        (
+            PathBuf::from("project.dme"),
+            "/datum/probe\n#include \"member.dm\"\n".into(),
+        ),
+        (PathBuf::from("member.dm"), "    var/value = 7\n".into()),
+    ]));
+    let crossplan = plan_regions(Path::new("project.dme"), &cross, &BTreeMap::new());
+    let expanded = expand_regions_text_with_memo(&crossplan, 2, &memo);
+    let parsed = parse_declarations(&expanded, config, Some(&memo)).unwrap();
+    assert_eq!(parsed.items.len(), 1);
+    assert_eq!(parsed.items[0].children[0].header, "var/value = 7");
+    for receipt in &expanded.receipts {
+        assert!(receipt
+            .record()
+            .fragment(
+                parserwire::VERSION,
+                dm_syntax::Span::new(0, receipt.record().text().len())
+            )
+            .is_none());
+    }
 }
