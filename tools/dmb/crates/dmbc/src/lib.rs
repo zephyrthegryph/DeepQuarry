@@ -62,3 +62,7 @@ pub mod compile_driver;
 pub mod required_types;
 
 pub mod startup;
+#[cfg(test)]
+mod native_macro_receipts;
+#[cfg(test)]
+mod static_storage_receipts;

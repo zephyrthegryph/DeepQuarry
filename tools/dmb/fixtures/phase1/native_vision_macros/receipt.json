@@ -1,0 +1,154 @@
+{
+  "schema": 1,
+  "compiler": {
+    "version": "516.1687",
+    "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+  },
+  "files": [],
+  "initial_macros": [
+    {
+      "name": "SEE_BLACKNESS",
+      "replacement": "1024",
+      "kind": "integer",
+      "value": 1024,
+      "root_words": [
+        80,
+        1024,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        1024,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SEE_INFRA",
+      "replacement": "64",
+      "kind": "integer",
+      "value": 64,
+      "root_words": [
+        80,
+        64,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        64,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SEE_MOBS",
+      "replacement": "4",
+      "kind": "integer",
+      "value": 4,
+      "root_words": [
+        80,
+        4,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        4,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SEE_OBJS",
+      "replacement": "8",
+      "kind": "integer",
+      "value": 8,
+      "root_words": [
+        80,
+        8,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        8,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SEE_PIXELS",
+      "replacement": "256",
+      "kind": "integer",
+      "value": 256,
+      "root_words": [
+        80,
+        256,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        256,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SEE_SELF",
+      "replacement": "32",
+      "kind": "integer",
+      "value": 32,
+      "root_words": [
+        80,
+        32,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        32,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SEE_THRU",
+      "replacement": "512",
+      "kind": "integer",
+      "value": 512,
+      "root_words": [
+        80,
+        512,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        512,
+        18,
+        0
+      ]
+    },
+    {
+      "name": "SEE_TURFS",
+      "replacement": "16",
+      "kind": "integer",
+      "value": 16,
+      "root_words": [
+        80,
+        16,
+        18,
+        0
+      ],
+      "datum_words": [
+        80,
+        16,
+        18,
+        0
+      ]
+    }
+  ]
+}

@@ -954,7 +954,7 @@ impl ExprParser {
                     })
                 {
                     self.take();
-                    let value = self.expression(24)?;
+                    let value = self.expression(26)?;
                     return Some(Expr {
                         span: Span::new(span.start, value.span.end),
                         kind: ExprKind::Unary {
@@ -967,7 +967,7 @@ impl ExprParser {
                         },
                     });
                 }
-                let value = self.expression(24)?;
+                let value = self.expression(26)?;
                 Some(Expr {
                     span: Span::new(span.start, value.span.end),
                     kind: ExprKind::Unary {
@@ -1113,7 +1113,7 @@ impl ExprParser {
             ("*", 21, 22),
             ("/", 21, 22),
             ("%", 21, 22),
-            ("**", 25, 25),
+            ("**", 25, 26),
         ];
         let first = self.peek()?;
         if !matches!(
@@ -2211,18 +2211,32 @@ mod tests {
     }
 
     #[test]
-    fn exponent_is_right_associative_and_binds_tighter_than_multiply() {
+    fn exponent_is_left_associative_and_binds_tighter_than_multiply() {
         let parsed = parse_expression("2 * 3 ** 2 ** 1");
         assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
         let ExprKind::Binary { op, rhs, .. } = parsed.expr.unwrap().kind else {
             panic!("expected multiplication")
         };
         assert_eq!(op, "*");
-        let ExprKind::Binary { op, rhs, .. } = rhs.kind else {
+        let ExprKind::Binary { op, lhs, .. } = rhs.kind else {
             panic!("expected exponent")
         };
         assert_eq!(op, "**");
-        assert!(matches!(rhs.kind, ExprKind::Binary { op, .. } if op == "**"));
+        assert!(matches!(lhs.kind, ExprKind::Binary { op, .. } if op == "**"));
+    }
+
+    #[test]
+    fn native_prefix_operators_bind_before_exponentiation() {
+        // BYOND516.1687 native_sdk_macros precedence receipt: -2**2=4, !0**0=1.
+        for source in ["-2**2", "!0**0", "~2**2"] {
+            let parsed = parse_expression(source);
+            assert!(parsed.diagnostics.is_empty());
+            let ExprKind::Binary { op, lhs, .. } = parsed.expr.unwrap().kind else {
+                panic!("expected outer exponent: {source}")
+            };
+            assert_eq!(op, "**");
+            assert!(matches!(lhs.kind, ExprKind::Unary { .. }), "{source}");
+        }
     }
 
     #[test]

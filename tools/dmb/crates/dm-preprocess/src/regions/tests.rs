@@ -323,3 +323,32 @@ fn persistent_full_environments_keep_token_paste_and_definition_epochs_exact() {
         .collect::<Vec<_>>();
     assert_eq!(origins, vec![2, 4]);
 }
+
+#[test]
+fn native_sdk_macro_receipts_bind_sources_and_seed_exact_literals() {
+    use sha2::{Digest, Sha256};
+    let base = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/phase1");
+    for directory in ["native_sdk_macros", "native_vision_macros"] {
+        let root = base.join(directory);
+        let receipt: serde_json::Value = serde_json::from_slice(
+            &std::fs::read(root.join("receipt.json")).unwrap(),
+        ).unwrap();
+        assert_eq!(receipt["compiler"]["version"], "516.1687");
+        for file in receipt["files"].as_array().unwrap() {
+            let path = root.join(file["path"].as_str().unwrap());
+            let hash = format!("{:x}", Sha256::digest(std::fs::read(&path).unwrap()));
+            assert_eq!(hash, file["sha256"].as_str().unwrap(), "{}", path.display());
+        }
+        for entry in receipt["initial_macros"].as_array().unwrap() {
+            let name = entry["name"].as_str().unwrap();
+            let replacement = entry["replacement"].as_str().unwrap();
+            let source = format!("var/a = {name}\n#undef {name}\nvar/b = {name}\n#define {name} 73\nvar/c = {name}\n");
+            let plan = fixture(&[("project.dme", &source)]);
+            let expanded = expand_regions(&plan, 2);
+            assert!(expanded.diagnostics.is_empty(), "{name}: {:?}", expanded.diagnostics);
+            assert_eq!(expanded.text.as_ref(), format!("var/a = {replacement}\nvar/b = {name}\nvar/c = 73\n"), "{name}");
+        }
+    }
+    let plan = fixture(&[("project.dme", "var/a = DM_VERSION\n")]);
+    assert_eq!(expand_regions(&plan, 1).text.as_ref(), "var/a = DM_VERSION\n");
+}

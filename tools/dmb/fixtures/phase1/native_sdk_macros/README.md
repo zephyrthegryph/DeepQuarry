@@ -1,0 +1,10 @@
+# Pinned initial SDK macros
+
+Native BYOND 516.1687 compile-only controls, worker1, timeout60 seconds; no runtime execution. `receipt.json` binds exact source, manifest, native binary and logs by SHA256 and records the compiler executable hash.
+
+The finite candidate inventory is the existing numeric/string SDK catalog. The positive control tests both root and datum references plus a per-name `#ifdef` marker. 148 names are initial object macros. `DM_VERSION` is not a macro and is excluded from the initial environment. Values are decoded from the native binary, including six exact strings and two negative floating values; no catalog value is used as proof.
+
+The direction-family controls cover all ten cardinal/diagonal/vertical names: undef removes substitution, authored fields shadow the remaining identifiers, a new define supplies73, and `global.NAME` before undef is rejected because macro substitution produces literal member syntax. Remaining runtime meanings after undef belong to the captured resolver and are not created by this fixture.
+
+`dm-preprocess::regions::tests::native_sdk_macro_receipts_bind_sources_and_seed_exact_literals` verifies every bound file SHA and the initial/undef/redefine expansion. `dmbc::native_macro_receipts::native_sdk_macro_values_match_hash_bound_binary_receipts` verifies actual native procedure words and string payloads. Native binaries are immutable evidence (`.native.bin`), not compiler outputs regenerated during ordinary tests.
+`precedence.dm` additionally certifies 21 expressions covering negative FLOAT_LAYER/FLOAT_PLANE values and native unary/exponent rules. Native controls establish that prefix operators bind before exponentiation and exponentiation associates left to right. Parenthesized negative replacements avoid accidental decrement token formation. The fresh preprocessing/AST scalar regression compares exact f32 bits to the decoded native binary. All positive integer replacements are at most32768 and therefore exactly representable in f32; no unsigned32 flag conversion is inferred.

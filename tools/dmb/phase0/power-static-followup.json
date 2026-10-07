@@ -176,6 +176,26 @@
       "path": "E:/dmb-native-v2-phase0/power-new-native.log",
       "bytes": 580,
       "sha256": "38ed3d2d0046a3ad06bfe78ed65dbf36c97c77d54de4e95fc110ba38fdf0914a"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-master-new-byond.log",
+      "bytes": 3315,
+      "sha256": "2f3e0c82efed8ba1918fa66c6fb8a99e6374df950c9be1be902c88b934ccb60e"
+    },
+    {
+      "path": "E:/dmb-native-v2-phase0/power-master-new-native.log",
+      "bytes": 2650,
+      "sha256": "1999e5898404605969fe2e8b618cabe8459cb13d9352e2eca4dd188fc27f903d"
+    },
+    {
+      "path": "D:/dmb-native-v2-phase0/frozen/source/code/controllers/master.dm",
+      "bytes": 45403,
+      "sha256": "5f6e901c373d5f1c99d88ae7054e7532adb6a0bb041ec4f9920495a9fe2aebbf"
+    },
+    {
+      "path": "D:/dmb-native-v2-phase0/frozen/source/code/__defines/MC.dm",
+      "bytes": 7898,
+      "sha256": "41e3a80a1c5267bc93ff56f89664b628b19d14bf66e5d491acd589c3454dc666"
     }
   ],
   "retired_branch": {
@@ -366,5 +386,14 @@
     "sequence": "Both compare global SSmachines to src; istype previous with exact machines class40/697; Recover(), qdel(previous); global SSmachines=src; PreInit(); END.",
     "difference": "BYOND calls Recover/PreInit with opcode0x2a CallStatement, native0x29 Call; both followed POP. Debug absent native. Global slot32998/23349 and qdel proc-ref894/2615 not yet independently table-renamed.",
     "limit": "No explicit initializer call appears in own New. VM scheduling of bound class/parent initializers before New remains engine behavior not proved here. Master New dynamic allocation bytecode has not yet been decoded."
+  },
+  "master_allocation": {
+    "byond_proc": 4843,
+    "native_proc": 2269,
+    "dispatch": "Both /datum/controller/master own proc lists contain New; flags4/source0,255.",
+    "dynamic_new": "Missing subsystem loop: local4(I) then New[0], then append result to local0(_subsystems), BYOND0x105/0x108/0x10a versus native0xd7/0xda/0xdc.",
+    "source": "master.dm127 builds subsystem_types;142 constructs new I. Both code paths iterate local1, Find(I) in local2 existing list, reuse existing or new I.",
+    "concrete_difference": "master.dm74 declares var/static/random_seed. BYOND reads/writes Global slot5948 at0x1d/0x2a/0x2f. Native reads/writes Src field69807(random_seed) at0x14/0x20/0x24. Shared-versus-instance semantics diverge; power causality unproved.",
+    "limit": "Dynamic type values/iteration order and existing-subsystem runtime contents unobserved. New opcode present does not prove VM class/parent initializer timing. No runtime launched."
   }
 }
