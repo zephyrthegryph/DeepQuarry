@@ -249,7 +249,7 @@ GLOBAL_VAR_INIT(link_sparse_seen, 0)
 		var/datum/rx_state/state = rx_of(end)
 		if(!state.link_watches)
 			state.link_watches = list()
-			observe(end, /datum/notice/moved, GLOB.link_watcher, then(TYPE_PROC_REF(/datum/link_watcher, ends_moved)))
+			observe(end, GLOB.link_watcher.notice_type, GLOB.link_watcher, then(TYPE_PROC_REF(/datum/link_watcher, ends_moved)))
 		state.link_watches += list(row)
 
 /proc/link_watch_stop(datum/entry/E, datum/a, datum/b)
@@ -263,11 +263,13 @@ GLOBAL_VAR_INIT(link_sparse_seen, 0)
 			state.link_watches.Remove(list(row))
 			if(!length(state.link_watches))
 				state.link_watches = null
-				unobserve(end, /datum/notice/moved, GLOB.link_watcher)
+				unobserve(end, GLOB.link_watcher.notice_type, GLOB.link_watcher)
 
 /// The one listener of the move notices of every end of a holds_while link (observe(), as orbiting does): `D` moved, so each holds_while link it is an end of
 /// is looked at again once the move, and what follows it (a rider carried with its seat, a pulled thing following), has settled.
 /datum/link_watcher
+	/// The notice type that says an end moved; the content layer sets it (code/datums/links/link_watch.dm), the engine names no content type.
+	var/notice_type
 
 GLOBAL_DATUM_INIT(link_watcher, /datum/link_watcher, new)
 

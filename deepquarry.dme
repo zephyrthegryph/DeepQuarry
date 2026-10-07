@@ -982,6 +982,8 @@
 #include "code\engine\change\lifecycle_notices.dm"
 #include "code\engine\refs\containment\notices.dm"
 #include "code\datums\reactions\legacy_notices.dm"
+#include "code\datums\links\link_watch.dm"
+#include "code\datums\capabilities\look_mob_parts.dm"
 #include "code\datums\reactions\notices.dm"
 #include "code\engine\actions\reactions.dm"
 #include "code\library\reactions\capability_reactions.dm"
