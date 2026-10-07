@@ -72,19 +72,19 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	op("auth", ui_act("auth", arg("key", schema_text(4096))), then(PROC_REF(ui_act_auth)))
 	op("deauth", ui_act("deauth"), then(PROC_REF(ui_act_deauth)))
-	op("find", ui_act("find"), then(PROC_REF(ui_act_find)))
+	op("find", ui_act("find"), asks(/datum/prompt/choice, fields = list("title" = "Select a server.", "question" = "Please select a server.", "choices" = computed(PROC_REF(available_server_choices)), "timeout" = 0), when = PROC_REF(has_multiple_servers)), then(PROC_REF(ui_act_find)))
 	op("hack", ui_act("hack"), then(PROC_REF(ui_act_hack)))
 	op("active", ui_act("active"), then(PROC_REF(ui_act_active)))
 	op("del_pda", ui_act("del_pda"), then(PROC_REF(ui_act_del_pda)))
 	op("del_rc", ui_act("del_rc"), then(PROC_REF(ui_act_del_rc)))
-	op("pass", ui_act("pass"), then(PROC_REF(ui_act_pass)))
+	op("pass", ui_act("pass"), when(PROC_REF(authenticated_server)), captures(nameof(linkedServer), resume = CANCEL_IF_CHANGED), asks(/datum/prompt/text, fields = list("question" = "Please enter the current decryption key.", "timeout" = 0), step = "current_key"), asks(/datum/prompt/text, fields = list("question" = "Please enter the new key (3 - 16 characters max):", "max_len" = 16, "timeout" = 0), step = "new_key", when = PROC_REF(current_key_matches)), then(PROC_REF(ui_act_pass)))
 	op("delete", ui_act("delete", arg("id"), arg("type", schema_text(4096))), then(PROC_REF(ui_act_delete)))
 	op("set_sender", ui_act("set_sender", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_sender)))
 	op("set_sender_job", ui_act("set_sender_job", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_sender_job)))
 	op("set_recipient", ui_act("set_recipient", arg("val")), then(PROC_REF(ui_act_set_recipient)))
 	op("set_message", ui_act("set_message", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_message)))
 	op("send_message", ui_act("send_message"), then(PROC_REF(ui_act_send_message)))
-	op("addtoken", ui_act("addtoken"), then(PROC_REF(ui_act_addtoken)))
+	op("addtoken", ui_act("addtoken"), when(PROC_REF(authenticated_server)), captures(nameof(linkedServer), resume = CANCEL_IF_CHANGED), asks(/datum/prompt/text, fields = list("title" = "Token creation", "question" = "Enter text you want to be filtered out", "timeout" = 0)), then(PROC_REF(token_entered)))
 	op("deltoken", ui_act("deltoken", arg("deltoken", num())), then(PROC_REF(ui_act_deltoken)))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
@@ -204,7 +204,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 
 /obj/machinery/computer/message_monitor/proc/ui_act_find(datum/act/op/A)
 	if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 1)
-		open_request(src, /datum/prompt/choice, PROC_REF(server_selected), valid = PROC_REF(request_usable), answerer = A.actor, title = "Select a server.", question = "Please select a server.", choices = server_choices(), timeout = 0)
+		server_selected(A)
 	else if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
 		rel_set(src, nameof(/obj/machinery/computer/message_monitor::linkedServer), REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 		set_temp("NOTICE: Only Single Server Detected - Server selected.", "average")
@@ -254,13 +254,26 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 //Change the password - KEY REQUIRED
 
 /obj/machinery/computer/message_monitor/proc/ui_act_pass(datum/act/op/A)
-	if(!auth)
-		return
-	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
-		temp = noserver
-		return TRUE
-	open_request(src, /datum/prompt/text, PROC_REF(current_key_entered), valid = PROC_REF(request_usable), answerer = A.actor, question = "Please enter the current decryption key.", timeout = 0)
-	. = TRUE
+	if(!current_key_matches(A))
+		temp = incorrectkey
+		return OP_OK
+	if(A.step_answer("new_key"))
+		new_key_entered(A)
+	return OP_OK
+
+/obj/machinery/computer/message_monitor/proc/authenticated_server(datum/act/op/A)
+	return auth && linkedServer() && !linkedServer().power_lost() && !linkedServer().broken_now()
+
+/obj/machinery/computer/message_monitor/proc/current_key_matches(datum/act/op/A)
+	var/obj/machinery/message_server/server = A.captured(nameof(linkedServer))
+	return server && A.step_answer("current_key") && trim(A.step_value("current_key")) == server.decryptkey
+
+/obj/machinery/computer/message_monitor/proc/has_multiple_servers(datum/act/op/A)
+	return REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 1
+
+/obj/machinery/computer/message_monitor/proc/available_server_choices(datum/act/op/A)
+	return server_choices()
+
 //Delete the log.
 
 /obj/machinery/computer/message_monitor/proc/ui_act_delete(datum/act/op/A, id, kind)
@@ -367,14 +380,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	ResetMessage()
 	. = TRUE
 
-/obj/machinery/computer/message_monitor/proc/ui_act_addtoken(datum/act/op/A)
-	if(!auth)
-		return
-	if(!linkedServer() || (linkedServer().power_lost() || linkedServer().broken_now()))
-		temp = noserver
-		return TRUE
-	open_request(src, /datum/prompt/text, PROC_REF(token_entered), valid = PROC_REF(request_usable), answerer = A.actor, title = "Token creation", question = "Enter text you want to be filtered out", timeout = 0)
-	. = TRUE
+
 
 /obj/machinery/computer/message_monitor/proc/ui_act_deltoken(datum/act/op/A, deltoken)
 	if(!auth)
@@ -396,7 +402,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 		choices[label] = server
 	return choices
 
-/obj/machinery/computer/message_monitor/proc/server_selected(datum/act/request/A)
+/obj/machinery/computer/message_monitor/proc/server_selected(datum/act/op/A)
 	if(!A.answer)
 		return
 	var/obj/machinery/message_server/server = server_choices()[A.answer.value]
@@ -405,34 +411,27 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	rel_set(src, nameof(linkedServer), server)
 	set_temp("NOTICE: Server selected.", "alert")
 
-/obj/machinery/computer/message_monitor/proc/current_key_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/dkey = trim(A.answer.value)
-	if(!dkey || !linkedServer())
-		return
-	if(linkedServer().decryptkey != dkey)
-		temp = incorrectkey
-		return
-	open_request(src, /datum/prompt/text, PROC_REF(new_key_entered), valid = PROC_REF(request_usable), answerer = A.request.answerer, question = "Please enter the new key (3 - 16 characters max):", max_len = 16, timeout = 0)
 
-/obj/machinery/computer/message_monitor/proc/new_key_entered(datum/act/request/A)
+
+/obj/machinery/computer/message_monitor/proc/new_key_entered(datum/act/op/A)
 	if(!A.answer)
 		return
-	var/newkey = trim(A.answer.value)
-	if(!linkedServer())
+	var/newkey = trim(A.step_value("new_key"))
+	var/obj/machinery/message_server/server = A.captured(nameof(linkedServer))
+	if(!server)
 		return
 	if(length(newkey) <= 3)
 		set_temp("NOTICE: Decryption key too short!", "average")
 	else if(length(newkey) > 16)
 		set_temp("NOTICE: Decryption key too long!", "average")
 	else if(newkey && newkey != "")
-		linkedServer().decryptkey = newkey
+		server.decryptkey = newkey
 	set_temp("NOTICE: Decryption key set.", "average")
 
-/obj/machinery/computer/message_monitor/proc/token_entered(datum/act/request/A)
-	if(A.answer && linkedServer())
-		linkedServer().spamfilter += A.answer.value
+/obj/machinery/computer/message_monitor/proc/token_entered(datum/act/op/A)
+	var/obj/machinery/message_server/server = A.captured(nameof(linkedServer))
+	if(A.answer && server)
+		server.spamfilter += A.answer.value
 
 /obj/machinery/computer/message_monitor/proc/set_temp(text = "", style = "info", update_now = FALSE)
 	temp = list(text = text, style = style)

@@ -1204,6 +1204,10 @@
 #include "interim_camera_doppler_menu_parity.dm"
 #include "dq_round2_menu_refusal_restore_tests.dm"
 
+#include "dq_round3_petrification_asks.dm"
+#include "round3_construction_asks.dm"
+#include "round3_machinery_asks_a.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

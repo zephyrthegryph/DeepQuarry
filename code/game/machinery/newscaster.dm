@@ -163,15 +163,15 @@ CAPABILITIES(/obj/machinery/newscaster)
 	owns_one(nameof(photo_data), /datum/news_photo)
 	interface("Newscaster")
 	op("set_channel_name", ui_act("set_channel_name", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_channel_name)))
-	op("submit_new_channel", ui_act("submit_new_channel"), then(PROC_REF(ui_act_submit_new_channel)))
-	op("set_channel_receiving", ui_act("set_channel_receiving"), then(PROC_REF(ui_act_set_channel_receiving)))
-	op("set_new_message", ui_act("set_new_message"), then(PROC_REF(ui_act_set_new_message)))
-	op("set_new_title", ui_act("set_new_title"), then(PROC_REF(ui_act_set_new_title)))
+	op("submit_new_channel", ui_act("submit_new_channel"), asks(/datum/prompt/yes_no/news_channel_create, fields = list("title" = "Network Channel Handler", "question" = "Please confirm Feed channel creation", "author" = computed(PROC_REF(channel_author)), "channel" = nameof(channel_name), "locked" = nameof(c_locked), "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0), when = PROC_REF(new_channel_ready)), then(PROC_REF(ui_act_submit_new_channel)))
+	op("set_channel_receiving", ui_act("set_channel_receiving"), asks(/datum/prompt/choice, fields = list("title" = "Network Channel Handler", "question" = "Choose receiving Feed Channel", "choices" = computed(PROC_REF(receivable_channels)), "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0)), then(PROC_REF(ui_act_set_channel_receiving)))
+	op("set_new_message", ui_act("set_new_message"), asks(/datum/prompt/text, fields = list("title" = "Network Channel Handler", "question" = "Write your Feed story", "default" = "", "max_len" = MAX_MESSAGE_LEN, "multiline" = TRUE, "encode" = FALSE, "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0)), then(PROC_REF(ui_act_set_new_message)))
+	op("set_new_title", ui_act("set_new_title"), asks(/datum/prompt/text, fields = list("title" = "Network Channel Handler", "question" = "Enter your Feed title", "default" = "", "max_len" = MAX_KEYPAD_INPUT_LEN, "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0)), then(PROC_REF(ui_act_set_new_title)))
 	op("submit_new_message", ui_act("submit_new_message"), then(PROC_REF(ui_act_submit_new_message)))
 	op("print_paper", ui_act("print_paper"), then(PROC_REF(ui_act_print_paper)))
 	op("set_wanted_desc", ui_act("set_wanted_desc", arg("val", schema_text(4096))), then(PROC_REF(ui_act_set_wanted_desc)))
-	op("submit_wanted", ui_act("submit_wanted"), then(PROC_REF(ui_act_submit_wanted)))
-	op("cancel_wanted", ui_act("cancel_wanted"), then(PROC_REF(ui_act_cancel_wanted)))
+	op("submit_wanted", ui_act("submit_wanted"), asks(/datum/prompt/yes_no, fields = list("title" = "Network Security Handler", "question" = "Please confirm Wanted Issue change.", "yes_text" = "Confirm", "no_text" = "Cancel", "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0), when = PROC_REF(wanted_ready)), then(PROC_REF(ui_act_submit_wanted)))
+	op("cancel_wanted", ui_act("cancel_wanted"), asks(/datum/prompt/yes_no, fields = list("title" = "Network Security Handler", "question" = "Please confirm Wanted Issue removal", "yes_text" = "Confirm", "no_text" = "Cancel", "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0), when = PROC_REF(wanted_removable)), then(PROC_REF(ui_act_cancel_wanted)))
 	op("censor_channel_author", ui_act("censor_channel_author", arg("ref")), then(PROC_REF(ui_act_censor_channel_author)))
 	op("censor_channel_story_author", ui_act("censor_channel_story_author", arg("ref")), then(PROC_REF(ui_act_censor_channel_story_author)))
 	op("censor_channel_story_body", ui_act("censor_channel_story_body", arg("ref")), then(PROC_REF(ui_act_censor_channel_story_body)))
@@ -390,6 +390,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 
 /obj/machinery/newscaster/proc/ui_act_submit_new_channel(datum/act/op/A)
 	var/mob/user = A.actor
+	var/proposed_name = A.captured(nameof(channel_name))
 	var/list/existing_authors = list()
 	for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
 		if(FC.author == "\[REDACTED\]")
@@ -398,11 +399,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 			existing_authors  +=FC.author
 	var/check = 0
 	for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
-		if(FC.channel_name == channel_name)
+		if(FC.channel_name == proposed_name)
 			check = 1
 			break
 	var/our_user = tgui_user_name(user)
-	if(channel_name == "" || channel_name == "\[REDACTED\]")
+	if(proposed_name == "" || proposed_name == "\[REDACTED\]")
 		set_temp("Error: Could not submit feed channel to network: Invalid Channel Name.", "danger", FALSE)
 		return TRUE
 	if(our_user == "Unknown")
@@ -415,26 +416,21 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 		set_temp("Error: Could not submit feed channel to network: A feed channel already exists under your name.", "danger", FALSE)
 		return TRUE
 
-	open_request(src, /datum/prompt/yes_no/news_channel_create, PROC_REF(channel_creation_confirmed), valid = PROC_REF(caster_valid), answerer = user, title = "Network Channel Handler", question = "Please confirm Feed channel creation", author = our_user, channel = channel_name, locked = c_locked, timeout = 0)
+	channel_creation_confirmed(A)
 	return TRUE
 
 /obj/machinery/newscaster/proc/ui_act_set_channel_receiving(datum/act/op/A)
-	var/mob/user = A.actor
-	var/list/available_channels = list()
-	for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
-		if((!F.locked || F.author == scanned_user) && !F.censored)
-			available_channels += F.channel_name
-	open_request(src, /datum/prompt/choice, PROC_REF(receiving_channel_chosen), valid = PROC_REF(caster_valid), answerer = user, title = "Network Channel Handler", question = "Choose receiving Feed Channel", choices = available_channels, timeout = 0)
-	return TRUE
+	receiving_channel_chosen(A)
+	return OP_OK
 
 /obj/machinery/newscaster/proc/ui_act_set_new_message(datum/act/op/A)
 	var/mob/user = A.actor
-	open_request(src, /datum/prompt/text, PROC_REF(story_written), valid = PROC_REF(caster_valid), answerer = user, title = "Network Channel Handler", question = "Write your Feed story", default = "", max_len = MAX_MESSAGE_LEN, multiline = TRUE, encode = FALSE, timeout = 0)
+	story_written(A)
 	return TRUE
 
 /obj/machinery/newscaster/proc/ui_act_set_new_title(datum/act/op/A)
 	var/mob/user = A.actor
-	open_request(src, /datum/prompt/text, PROC_REF(title_written), valid = PROC_REF(caster_valid), answerer = user, title = "Network Channel Handler", question = "Enter your Feed title", default = "", max_len = MAX_KEYPAD_INPUT_LEN, timeout = 0)
+	title_written(A)
 	return TRUE
 
 /obj/machinery/newscaster/proc/ui_act_set_attachment(datum/act/op/A)
@@ -491,7 +487,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 		set_temp("Error: Could not submit wanted issue to network: Author unverified.", "danger", FALSE)
 		return TRUE
 
-	open_request(src, /datum/prompt/yes_no, PROC_REF(wanted_change_confirmed), valid = PROC_REF(caster_valid), answerer = user, title = "Network Security Handler", question = "Please confirm Wanted Issue change.", yes_text = "Confirm", no_text = "Cancel", timeout = 0)
+	wanted_change_confirmed(A)
 	return TRUE
 
 /obj/machinery/newscaster/proc/ui_act_cancel_wanted(datum/act/op/A)
@@ -501,7 +497,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 	if(GLOB.news_network.wanted_issue().is_admin_message)
 		tgui_alert_async(user, "The wanted issue has been distributed by a [using_map.company_name] higherup. You cannot take it down.")
 		return
-	open_request(src, /datum/prompt/yes_no, PROC_REF(wanted_removal_confirmed), valid = PROC_REF(caster_valid), answerer = user, title = "Network Security Handler", question = "Please confirm Wanted Issue removal", yes_text = "Confirm", no_text = "Cancel", timeout = 0)
+	wanted_removal_confirmed(A)
 	return TRUE
 
 /obj/machinery/newscaster/proc/ui_act_censor_channel_author(datum/act/op/A, raw_ref)
@@ -595,37 +591,37 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 /obj/machinery/newscaster/proc/caster_valid(datum/request/R)
 	return answerer_holds(R, ANSWER_NEAR_SUBJECT | ANSWER_CAPABLE, src)
 
-/obj/machinery/newscaster/proc/channel_creation_confirmed(datum/act/request/A)
+/obj/machinery/newscaster/proc/channel_creation_confirmed(datum/act/op/A)
 	if(!A.answer || !A.answer.value)
 		return
-	var/datum/prompt/yes_no/news_channel_create/R = A.request
+	var/datum/prompt/yes_no/news_channel_create/R = A.answer
 	GLOB.news_network.CreateFeedChannel(R.channel, R.author, R.locked)
 	set_temp("Feed channel [R.channel] created successfully.", "success", FALSE)
 	SStgui.update_uis(src)
 
-/obj/machinery/newscaster/proc/receiving_channel_chosen(datum/act/request/A)
+/obj/machinery/newscaster/proc/receiving_channel_chosen(datum/act/op/A)
 	if(!A.answer)
 		return
 	var/new_channel_name = A.answer.value
 	channel_name = new_channel_name
 	SStgui.update_uis(src)
 
-/obj/machinery/newscaster/proc/story_written(datum/act/request/A)
+/obj/machinery/newscaster/proc/story_written(datum/act/op/A)
 	if(!A.answer)
 		return
 	msg = sanitize(A.answer.value, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
 	SStgui.update_uis(src)
 
-/obj/machinery/newscaster/proc/title_written(datum/act/request/A)
+/obj/machinery/newscaster/proc/title_written(datum/act/op/A)
 	if(!A.answer)
 		return
 	title = A.answer.value
 	SStgui.update_uis(src)
 
-/obj/machinery/newscaster/proc/wanted_change_confirmed(datum/act/request/A)
+/obj/machinery/newscaster/proc/wanted_change_confirmed(datum/act/op/A)
 	if(!A.answer || !A.answer.value)
 		return
-	var/mob/user = A.request.answerer
+	var/mob/user = A.actor
 	if(GLOB.news_network.wanted_issue())
 		if(GLOB.news_network.wanted_issue() && GLOB.news_network.wanted_issue().is_admin_message)
 			tgui_alert_async(user, "The wanted issue has been distributed by a [using_map.company_name] higherup. You cannot edit it.")
@@ -650,7 +646,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 	set_temp("Wanted issue for [channel_name] is now in Network Circulation.", "success", FALSE)
 	SStgui.update_uis(src)
 
-/obj/machinery/newscaster/proc/wanted_removal_confirmed(datum/act/request/A)
+/obj/machinery/newscaster/proc/wanted_removal_confirmed(datum/act/op/A)
 	if(!A.answer || !A.answer.value)
 		return
 	if(GLOB.news_network.wanted_issue() && !GLOB.news_network.wanted_issue().is_admin_message)
@@ -772,3 +768,28 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 /// photo (a relation view: it reads null once the target is deleted).
 /datum/news_photo/proc/photo() as /obj/item/photo
 	return photo
+
+/obj/machinery/newscaster/proc/channel_author(datum/act/op/A)
+	return tgui_user_name(A.actor)
+
+/obj/machinery/newscaster/proc/new_channel_ready(datum/act/op/A)
+	var/author = channel_author(A)
+	if(channel_name == "" || channel_name == "\[REDACTED\]" || author == "Unknown")
+		return FALSE
+	for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
+		if(F.channel_name == channel_name || (F.author == "\[REDACTED\]" ? F.backup_author : F.author) == author)
+			return FALSE
+	return TRUE
+
+/obj/machinery/newscaster/proc/receivable_channels(datum/act/op/A)
+	var/list/channels = list()
+	for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
+		if((!F.locked || F.author == scanned_user) && !F.censored)
+			channels += F.channel_name
+	return channels
+
+/obj/machinery/newscaster/proc/wanted_ready(datum/act/op/A)
+	return securityCaster && channel_name != "" && msg != "" && tgui_user_name(A.actor) != "Unknown"
+
+/obj/machinery/newscaster/proc/wanted_removable(datum/act/op/A)
+	return securityCaster && !GLOB.news_network.wanted_issue().is_admin_message

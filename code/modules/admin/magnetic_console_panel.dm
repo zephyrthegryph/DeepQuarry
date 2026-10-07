@@ -28,7 +28,7 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	op("mag_plus", ui_act("mag_plus"), then(PROC_REF(ui_act_mag_plus)))
 	op("speed_minus", ui_act("speed_minus"), then(PROC_REF(ui_act_speed_minus)))
 	op("speed_plus", ui_act("speed_plus"), then(PROC_REF(ui_act_speed_plus)))
-	op("set_path", ui_act("set_path"), then(PROC_REF(ui_act_set_path)))
+	op("set_path", ui_act("set_path"), when(PROC_REF(path_editable)), asks(/datum/prompt/text, fields = list("question" = "Please define a new path!", "default" = computed(PROC_REF(path_default)), "max_len" = MAX_MESSAGE_LEN, "ask_flags" = ASK_CAPABLE, "timeout" = 0)), then(PROC_REF(ui_act_set_path)))
 	op("toggle_moving", ui_act("toggle_moving"), then(PROC_REF(ui_act_toggle_moving)))
 	op("open", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open)))
 
@@ -159,7 +159,7 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	var/mob/user = A.actor
 	if(!ui_gate(A))
 		return FALSE
-	magnet_operation(user, "setpath")
+	magnet_path_entered(A)
 	SStgui.update_uis(src)
 	return TRUE
 
@@ -170,3 +170,9 @@ CAPABILITIES(/obj/machinery/magnetic_controller)
 	magnet_operation(user, "togglemoving")
 	SStgui.update_uis(src)
 	return TRUE
+
+/obj/machinery/magnetic_controller/proc/path_editable(datum/act/op/A)
+	return operable() && A.actor
+
+/obj/machinery/magnetic_controller/proc/path_default(datum/act/op/A)
+	return path

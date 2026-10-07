@@ -22,7 +22,10 @@
 CAPABILITIES(/obj/machinery/petrification)
 	owns_many(nameof(remotes))
 	interface("PetrificationInterface")
-	op("set_option", ui_act("set_option", arg("option", schema_text(4096))), then(PROC_REF(ui_act_set_option)))
+	op("set_option", ui_act("set_option", arg("option", schema_text(4096))),
+		asks(/datum/prompt/color/statue_tint, step = "tint", when = PROC_REF(setting_tint)),
+		asks(/datum/prompt/text/statue_option, step = "text", when = PROC_REF(setting_text)),
+		then(PROC_REF(ui_act_set_option)))
 	op("petrify", ui_act("petrify"), then(PROC_REF(ui_act_petrify)))
 	op("remote", ui_act("remote"), then(PROC_REF(ui_act_remote)))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
@@ -174,10 +177,6 @@ CAPABILITIES(/obj/machinery/petrification)
 	if (!(option in only_these))
 		return
 	switch(option)
-		if("tint")
-			open_request(src, /datum/prompt/color/statue_tint, PROC_REF(tint_chosen), answerer = user, title = "Statue color", question = "Choose the color for the [identifier] to be:", default = tint)
-		if("material","identifier","adjective")
-			open_request(src, /datum/prompt/text/statue_option, PROC_REF(statue_text_entered), answerer = user, title = "Statue [option]", question = "What should the [option] be?", default = vars[option], option = option)
 		if("able_to_unpetrify", "discard_clothes")
 			vars[option] = !vars[option] // ALLOW(api): TGUI settings keyed by option name
 		if("target")
@@ -187,9 +186,16 @@ CAPABILITIES(/obj/machinery/petrification)
 				return
 			open_request(src, /datum/prompt/choice/statue_target, PROC_REF(petrify_target_chosen), answerer = user, title = "Petrification Target", question = "Choose the target.", choices = targets)
 
-/obj/machinery/petrification/proc/tint_chosen(datum/act/request/A)
-	if(A.answer?.value)
-		tint = A.answer.value
+/obj/machinery/petrification/proc/setting_tint(datum/act/op/A)
+	return A.args?["option"] == "tint"
+
+/obj/machinery/petrification/proc/setting_text(datum/act/op/A)
+	return A.args?["option"] in list("material", "identifier", "adjective")
+
+/obj/machinery/petrification/proc/tint_chosen(datum/act/op/A)
+	var/value = A.step_value("tint")
+	if(value)
+		tint = value
 
 /datum/prompt/text/statue_option
 	max_len = MAX_NAME_LEN
@@ -199,10 +205,29 @@ CAPABILITIES(/obj/machinery/petrification)
 	/// "material", "identifier" or "adjective".
 	var/option
 
-/obj/machinery/petrification/proc/statue_text_entered(datum/act/request/A)
-	if(!A.answer)
+/datum/prompt/text/statue_option/prepare(datum/act/A)
+	..()
+	if(!istype(A, /datum/act/op))
 		return
-	var/datum/prompt/text/statue_option/ask = A.answer
+	var/datum/act/op/OA = A
+	var/obj/machinery/petrification/machine = OA.holder
+	option = OA.args?["option"]
+	if(!istype(machine) || !(option in list("material", "identifier", "adjective")))
+		return
+	title = "Statue [option]"
+	question = "What should the [option] be?"
+	switch(option)
+		if("material")
+			default = machine.material
+		if("identifier")
+			default = machine.identifier
+		if("adjective")
+			default = machine.adjective
+
+/obj/machinery/petrification/proc/statue_text_entered(datum/act/op/A)
+	var/datum/prompt/text/statue_option/ask = A.step_answer("text")
+	if(!ask)
+		return
 	var/option = ask.option
 	var/input = sanitizeSafe(ask.value, 25)
 	if (length(input) <= 0)
@@ -280,7 +305,12 @@ CAPABILITIES(/datum/prompt/choice/petrify_consent)
 /obj/machinery/petrification/proc/ui_act_set_option(datum/act/op/A, option)
 	var/mob/user = A.actor
 	if (option)
-		set_input(option, user)
+		if(option == "tint")
+			tint_chosen(A)
+		else if(option in list("material", "identifier", "adjective"))
+			statue_text_entered(A)
+		else
+			set_input(option, user)
 		SStgui.update_uis(src)
 	return TRUE
 
@@ -320,6 +350,18 @@ CAPABILITIES(/datum/prompt/choice/petrify_consent)
 	timeout = 0
 	usable_state = "default"
 	recheck_on_open = TRUE
+
+/datum/prompt/color/statue_tint/prepare(datum/act/A)
+	..()
+	if(!istype(A, /datum/act/op))
+		return
+	var/datum/act/op/OA = A
+	var/obj/machinery/petrification/machine = OA.holder
+	if(!istype(machine))
+		return
+	title = "Statue color"
+	question = "Choose the color for the [machine.identifier] to be:"
+	default = machine.tint
 
 /datum/prompt/color/statue_tint/normalize(given)
 	return istext(given) ? given : null

@@ -265,18 +265,16 @@ TRACKED(/obj/machinery/magnetic_controller, path_stopped)
 			speed --
 			if(speed <= 0)
 				speed = 1
-		if("setpath")
-			open_request(src, /datum/prompt/text, PROC_REF(magnet_path_entered), answerer = user, question = "Please define a new path!", default = path, max_len = MAX_MESSAGE_LEN, ask_flags = ASK_CAPABLE, timeout = 0)
 
 		if("togglemoving")
 			set_path_moving(!path_moving)
 
 	updateUsrDialog(user)
 
-/obj/machinery/magnetic_controller/proc/magnet_path_entered(datum/act/request/A)
+/obj/machinery/magnetic_controller/proc/magnet_path_entered(datum/act/op/A)
 	if(!A.answer)
 		return
-	var/mob/user = A.request.answerer
+	var/mob/user = A.actor
 	var/newpath = A.answer.value
 	updateUsrDialog(user)
 	if(newpath && newpath != "")

@@ -408,11 +408,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 /obj/machinery/media/jukebox/ghost/getTracksList()
 	return (custom_tracks + ..())
 
-/obj/machinery/media/jukebox/ghost/proc/manual_track_add(mob/user)
-	if(!admin_require(user?.client, R_FUN|R_ADMIN, "check_rights in [callee?.proc]"))
-		return
 
-	open_request(src, /datum/prompt/text/jukebox_track, PROC_REF(url_entered), answerer = user, title = "Track URL", question = "REQUIRED: Provide URL for track", rights = R_FUN|R_ADMIN, timeout = 0)
 
 /// A custom track being added: what the admin has answered so far is kept on the question.
 /datum/prompt/text/jukebox_track
@@ -424,42 +420,17 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 	var/track_url
 	var/track_title
 
-/obj/machinery/media/jukebox/ghost/proc/url_entered(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	open_request(src, /datum/prompt/text/jukebox_track, PROC_REF(title_entered), answerer = A.request.answerer, title = "Track Title", question = "REQUIRED: Provide title for track", rights = R_FUN|R_ADMIN, track_url = A.answer.value, timeout = 0)
 
-/obj/machinery/media/jukebox/ghost/proc/title_entered(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/datum/prompt/text/jukebox_track/R = A.request
-	open_request(src, /datum/prompt/number/jukebox_track, PROC_REF(duration_entered), answerer = R.answerer, title = "Track Duration", question = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", rights = R_FUN|R_ADMIN, track_url = R.track_url, track_title = A.answer.value, timeout = 0)
 
-/obj/machinery/media/jukebox/ghost/proc/duration_entered(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/datum/prompt/number/jukebox_track/R = A.request
-	open_request(src, /datum/prompt/text/jukebox_track, PROC_REF(artist_entered), answerer = R.answerer, title = "Track Artist", question = "Optional: Provide artist for track", rights = R_FUN|R_ADMIN, track_url = R.track_url, track_title = R.track_title, track_duration = A.answer.value, timeout = 0)
 
-/obj/machinery/media/jukebox/ghost/proc/artist_entered(datum/act/request/A)
-	var/datum/prompt/text/jukebox_track/R = A.request
-	var/artist = A.answer ? A.answer.value : ""
-	// So they're obvious and grouped
-	var/genre = "! Admin Loaded !"
-	rel_add(src, nameof(custom_tracks), new /datum/track(R.track_url, R.track_title, R.track_duration, artist, genre))
 
-/obj/machinery/media/jukebox/ghost/proc/manual_track_remove(mob/user)
-	if(!admin_require(user?.client, R_FUN|R_ADMIN, "check_rights in [callee?.proc]"))
-		return
 
-	open_request(src, /datum/prompt/text, PROC_REF(manual_track_removal_entered), answerer = user, title = "Remove Track", question = "Input track title or URL to remove (must be exact)", rights = R_FUN|R_ADMIN, timeout = 0)
 
-/obj/machinery/media/jukebox/ghost/proc/manual_track_removal_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/track = A.answer.value
-	remove_custom_track(user, track)
+
+
+
+
+
 
 /obj/machinery/media/jukebox/ghost/proc/remove_custom_track(mob/user, track)
 	var/client/C = user?.client

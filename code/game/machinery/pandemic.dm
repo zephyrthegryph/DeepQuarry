@@ -68,22 +68,7 @@
 	rename_disease(index, raw_name)
 	return TRUE
 
-/obj/machinery/computer/pandemic/proc/ui_act_print_release_form(datum/act/op/A, index)
-	var/mob/user = A.actor
-	var/strain_index = index
-	if(isnull(strain_index))
-		atom_say("Unable to respond to command.")
-		return FALSE
-	var/type = get_virus_id_by_index(strain_index)
-	if(!type)
-		atom_say("Unable to find requested strain.")
-		return FALSE
-	var/datum/affliction/contagion/engineered/strain = GLOB.archive_diseases[type]
-	if(!strain)
-		atom_say("Unable to find requested strain.")
-		return FALSE
-	print_form(strain, user)
-	return TRUE
+
 
 MSG_DEF_SELF(pandemic/beaker_loaded, "a beaker is already loaded")
 MSG_DEF_SELF(pandemic/not_beaker, "not possible right now")
@@ -97,7 +82,7 @@ CAPABILITIES(/obj/machinery/computer/pandemic)
 	op("destroy_eject_beaker", ui_act("destroy_eject_beaker"), then(PROC_REF(ui_act_destroy_eject_beaker)))
 	op("empty_beaker", ui_act("empty_beaker"), then(PROC_REF(ui_act_empty_beaker)))
 	op("rename_disease", ui_act("rename_disease", arg("index"), arg("name", schema_text(4096))), then(PROC_REF(ui_act_rename_disease)))
-	op("print_release_form", ui_act("print_release_form", arg("index", num())), then(PROC_REF(ui_act_print_release_form)))
+	op("print_release_form", ui_act("print_release_form", arg("index", num())), when(PROC_REF(release_print_ready)), asks(/datum/prompt/text/pandemic_release_reason, fields = list("title" = "Write", "question" = "Enter a reason for the release", "multiline" = TRUE, "affliction" = computed(PROC_REF(release_strain)), "timeout" = 0), step = "reason"), asks(/datum/prompt/yes_no/pandemic_release_sign, fields = list("title" = "Signature", "question" = "Would you like to add your signature?", "disease" = computed(PROC_REF(release_strain)), "reason" = computed(PROC_REF(release_reason)), "timeout" = 0), step = "signature", when = PROC_REF(release_has_reason)), then(PROC_REF(release_form_written)))
 	extend(TAG_UI, needs(req(PROC_REF(console_works), because = MSG(pandemic/not_working))))
 
 CAPABILITIES(/datum/prompt/text/pandemic_release_reason)
@@ -152,24 +137,27 @@ MSG_DEF_SELF(pandemic/not_working, "It isn't working.")
 	rel_take(src, nameof(beaker))
 	icon_state = "pandemic0"
 
-/obj/machinery/computer/pandemic/proc/print_form(datum/affliction/contagion/engineered/D, mob/living/user)
-	D = GLOB.archive_diseases[D.GetDiseaseID()]
-	if(!istype(D))
-		visible_message(span_warning("ERROR: Unable to print form."))
-		play_sfx(loc, SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
-		return
-	if(!(printing) && D)
-		open_request(src, /datum/prompt/text/pandemic_release_reason, PROC_REF(release_reason_written), valid = PROC_REF(request_usable), answerer = user, title = "Write", question = "Enter a reason for the release", multiline = TRUE, affliction = D, timeout = 0)
+/obj/machinery/computer/pandemic/proc/release_strain(datum/act/op/A)
+	var/datum/prompt/text/pandemic_release_reason/R = A.step_answer("reason")
+	if(R)
+		return R.affliction
+	var/id = get_virus_id_by_index(A.args["index"])
+	return GLOB.archive_diseases[id]
+
+/obj/machinery/computer/pandemic/proc/release_print_ready(datum/act/op/A)
+	return !printing && operable() && istype(release_strain(A), /datum/affliction/contagion/engineered)
+
+/obj/machinery/computer/pandemic/proc/release_has_reason(datum/act/op/A)
+	return !!A.step_value("reason")
+
+/obj/machinery/computer/pandemic/proc/release_reason(datum/act/op/A)
+	return A.step_value("reason")
 
 /// The release reason's question: the strain it is for is kept on it.
 /datum/prompt/text/pandemic_release_reason
 	var/datum/affliction/contagion/engineered/affliction
 
-/obj/machinery/computer/pandemic/proc/release_reason_written(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/datum/prompt/text/pandemic_release_reason/R = A.request
-	open_request(src, /datum/prompt/yes_no/pandemic_release_sign, PROC_REF(release_form_written), valid = PROC_REF(sign_usable), answerer = R.answerer, title = "Signature", question = "Would you like to add your signature?", disease = R.affliction, reason = A.answer.value, timeout = 0)
+
 
 /// The signature question: the strain and the reason are kept on it.
 /datum/prompt/yes_no/pandemic_release_sign
@@ -180,11 +168,13 @@ MSG_DEF_SELF(pandemic/not_working, "It isn't working.")
 /obj/machinery/computer/pandemic/proc/sign_usable(datum/request/R)
 	return !printing && request_usable(R)
 
-/obj/machinery/computer/pandemic/proc/release_form_written(datum/act/request/A)
+/obj/machinery/computer/pandemic/proc/release_form_written(datum/act/op/A)
 	if(!A.answer)
 		return
-	var/datum/prompt/yes_no/pandemic_release_sign/R = A.request
-	var/mob/living/user = R.answerer
+	var/datum/prompt/yes_no/pandemic_release_sign/R = A.step_answer("signature")
+	if(!R)
+		return
+	var/mob/living/user = A.actor
 	var/datum/affliction/contagion/engineered/D = R.disease
 	var/reason = R.reason
 	reason += "<span class=\"paper_field\"></span>"

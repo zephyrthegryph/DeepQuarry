@@ -40,6 +40,24 @@ SOURCE_DEF(disability_blind)
 SOURCE_DEF(disability_deaf)
 SOURCE_DEF(mutation_hulk)
 
+MSG_DEF_SELF(status/stunned, "You are too stunned to act.")
+MSG_DEF_SELF(status/knocked_down, "You cannot act while knocked down.")
+MSG_DEF_SELF(status/paralyzed, "You cannot act while paralyzed.")
+MSG_DEF_SELF(status/sleeping, "You cannot act while asleep.")
+MSG_DEF_SELF(status/unconscious, "You cannot act while unconscious.")
+
+/// The living actor gate composes the effective statuses, including their
+/// immunities, and consciousness. Releasing one cause never clears another.
+/// These same-entity inputs settle before a status or consciousness setter returns.
+/proc/incapacitation_permissions()
+	return list(
+		contributes(STAT_CAN_ACT, cond_not(STAT_STUNNED), reason = MSG(status/stunned)),
+		contributes(STAT_CAN_ACT, cond_not(STAT_WEAKENED), reason = MSG(status/knocked_down)),
+		contributes(STAT_CAN_ACT, cond_not(STAT_PARALYZED), reason = MSG(status/paralyzed)),
+		contributes(STAT_CAN_ACT, cond_not(STAT_SLEEPING), reason = MSG(status/sleeping)),
+		contributes(STAT_CAN_ACT, cond_not(nameof(stat)), reason = MSG(status/unconscious)),
+	)
+
 /// Godmode's incapacitation immunities, for /mob's CAPABILITIES block (mob_defines.dm).
 /proc/godmode_immunities()
 	return list(immune_to(STAT_STUNNED, when = STAT_GODMODE), immune_to(STAT_WEAKENED, when = STAT_GODMODE), immune_to(STAT_PARALYZED, when = STAT_GODMODE))

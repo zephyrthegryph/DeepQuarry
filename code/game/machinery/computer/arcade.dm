@@ -1099,7 +1099,7 @@ TRACKED(/obj/machinery/computer/arcade/clawmachine, gamepaid)
 	var/paid = 0
 	var/obj/item/card/id/W = I.GetID()
 	if(W) //for IDs and PDAs and wallets with IDs
-		paid = pay_with_card(W, I, user)
+		paid = pay_with_card(W, I, user, A.step_value("pin"), A.step_answer("pin"))
 	else if(istype(I, /obj/item/spacecash/ewallet))
 		var/obj/item/spacecash/ewallet/C = I
 		paid = pay_with_ewallet(C, user)
@@ -1155,7 +1155,7 @@ TRACKED(/obj/machinery/computer/arcade/clawmachine, gamepaid)
 		to_chat(user, span_info("It doesn't seem to accept that! Seem you'll need to swipe a valid ID."))
 
 ///// ID
-/obj/machinery/computer/arcade/clawmachine/proc/pay_with_card(obj/item/card/id/I, obj/item/ID_container, mob/user)
+/obj/machinery/computer/arcade/clawmachine/proc/pay_with_card(obj/item/card/id/I, obj/item/ID_container, mob/user, pin = null, datum/prompt/number/claw_pin/confirmed = null)
 	if(I==ID_container || ID_container == null)
 		act_message(user, src, others = span_info("%U% swipes %I% through %T%."), item = I)
 	else
@@ -1173,8 +1173,12 @@ TRACKED(/obj/machinery/computer/arcade/clawmachine, gamepaid)
 	// Have the customer punch in the PIN before checking if there's enough money. Prevents people from figuring out acct is
 	// empty at high security levels
 	if(customer_account.security_level != 0) //If card requires pin authentication (ie seclevel 1 or 2)
-		open_request(src, /datum/prompt/number/claw_pin, PROC_REF(card_pin_entered), valid = PROC_REF(request_usable), answerer = user, account = I.associated_account_number, timeout = 0)
-		return 0
+		if(!confirmed || confirmed.account != I.associated_account_number)
+			return 0
+		customer_account = attempt_account_access(confirmed.account, pin, 2)
+		if(!customer_account)
+			visible_message(span_info("Unable to access account: incorrect credentials."))
+			return 0
 	return charge_account(customer_account)
 
 /// The PIN arrived: the play is paid once the account accepts it.
@@ -1184,17 +1188,14 @@ TRACKED(/obj/machinery/computer/arcade/clawmachine, gamepaid)
 	min_value = null
 	var/account
 
-/obj/machinery/computer/arcade/clawmachine/proc/card_pin_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/number/claw_pin/R = A.request
-	var/datum/money_account/customer_account = attempt_account_access(R.account, A.answer.value, 2)
-	if(!customer_account)
-		visible_message(span_info("Unable to access account: incorrect credentials."))
-		return
-	if(!gamepaid && charge_account(customer_account))
-		set_gamepaid(1)
-		instructions = "Hit start to play!"
+/obj/machinery/computer/arcade/clawmachine/proc/payment_account_number(datum/act/op/A)
+	var/obj/item/card/id/card = A.held?.GetID()
+	return card?.associated_account_number
+
+/obj/machinery/computer/arcade/clawmachine/proc/payment_needs_pin(datum/act/op/A)
+	var/account_number = payment_account_number(A)
+	var/datum/money_account/account = get_account(account_number)
+	return account && !account.suspended && account.security_level != 0
 
 /obj/machinery/computer/arcade/clawmachine/proc/charge_account(datum/money_account/customer_account)
 	if(gameprice > customer_account.money)
@@ -1227,7 +1228,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 	op("newgame", ui_act("newgame"), then(PROC_REF(ui_act_newgame)))
 	op("return", ui_act("return"), then(PROC_REF(ui_act_return)))
 	op("pointless", ui_act("pointless"), then(PROC_REF(ui_act_pointless)))
-	op("clawmachine_pay", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Pay"), when(req(PROC_REF(wants_payment_holds))), then(PROC_REF(interaction_pay)))
+	op("clawmachine_pay", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Pay"), when(req(PROC_REF(wants_payment_holds))), asks(/datum/prompt/number/claw_pin, fields = list("account" = computed(PROC_REF(payment_account_number)), "timeout" = 0), step = "pin", when = PROC_REF(payment_needs_pin)), then(PROC_REF(interaction_pay)))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /obj/machinery/computer/arcade/clawmachine/ui_data(datum/act/eval/A)

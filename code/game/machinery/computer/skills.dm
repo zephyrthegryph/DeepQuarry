@@ -266,7 +266,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
 	op("del_all", ui_act("del_all"), then(PROC_REF(ui_act_del_all)))
 	op("sync_r", ui_act("sync_r"), then(PROC_REF(ui_act_sync_r)))
-	op("edit_notes", ui_act("edit_notes"), needs(req(PROC_REF(records_authenticated), because = MSG(records/not_authenticated))), asks(/datum/prompt/text, fields = list("title" = "Character Preference", "question" = "Enter new information here.", "max_len" = MAX_RECORD_LENGTH, "multiline" = TRUE, "default" = computed(PROC_REF(notes_default)))), then(PROC_REF(ui_act_edit_notes)))
+	op("edit_notes", ui_act("edit_notes"), needs(req(PROC_REF(records_authenticated), because = MSG(records/not_authenticated))), captures(nameof(active1), resume = CANCEL_IF_CHANGED), asks(/datum/prompt/text, fields = list("title" = "Character Preference", "question" = "Enter new information here.", "max_len" = MAX_RECORD_LENGTH, "multiline" = TRUE, "default" = computed(PROC_REF(notes_default))), step = "notes"), asks(/datum/prompt/yes_no/record_notes_delete, fields = list("timeout" = 0, "ask_flags" = ASK_ADJACENT), step = "delete", when = PROC_REF(notes_are_empty)), then(PROC_REF(ui_act_edit_notes)))
 	op("del_r", ui_act("del_r"), then(PROC_REF(ui_act_del_r)))
 	op("d_rec", ui_act("d_rec", arg("d_rec")), then(PROC_REF(ui_act_d_rec)))
 	op("new", ui_act("new"), then(PROC_REF(ui_act_new)))
@@ -736,20 +736,23 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		set_temp(client_update_record(src,A.actor))
 
 /obj/machinery/computer/skills/proc/ui_act_edit_notes(datum/act/op/A)
-	var/datum/data/record/target = active1()
-	var/datum/prompt/R = A.answer
+	var/datum/data/record/target = A.captured(nameof(active1))
+	var/datum/prompt/R = A.step_answer("notes")
 	if(!target || !R)
 		return OP_OK
 	var/new_notes = strip_html_simple(R.value, MAX_RECORD_LENGTH)
-	if(new_notes != "")
+	if(new_notes != "" || A.step_value("delete"))
 		set_record_notes(target, new_notes)
-		return OP_OK
-	open_request(src, /datum/prompt/yes_no/record_notes_delete, PROC_REF(record_notes_confirmed), valid = PROC_REF(record_notes_valid), answerer = A.actor, record = target, timeout = 0)
 	return OP_OK
 
+/obj/machinery/computer/skills/proc/notes_are_empty(datum/act/op/A)
+	var/datum/prompt/R = A.step_answer("notes")
+	return R && strip_html_simple(R.value, MAX_RECORD_LENGTH) == ""
+
 /// The notes the editor starts with.
-/obj/machinery/computer/skills/proc/notes_default(datum/act/A)
-	return html_decode(active1()?.fields["notes"])
+/obj/machinery/computer/skills/proc/notes_default(datum/act/op/A)
+	var/datum/data/record/record = A.captured(nameof(active1))
+	return html_decode(record?.fields["notes"])
 
 /// The operator is logged in (the old handlers each refused without it).
 /obj/machinery/computer/skills/proc/records_authenticated(datum/act/op/A)
@@ -819,16 +822,10 @@ CAPABILITIES(/obj/machinery/computer/skills)
 		SStgui.update_uis(src)
 		after(src, 5 SECONDS, PROC_REF(print_finish))
 
-/obj/machinery/computer/skills/proc/record_notes_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/datum/prompt/yes_no/record_notes_delete/R = A.request
-	set_record_notes(R.record, "")
+
 
 /// The operator is still next to the console when the answer arrives.
-/obj/machinery/computer/skills/proc/record_notes_valid(datum/request/R)
-	var/mob/M = R.answerer
-	return istype(M) && in_range(src, M)
+
 
 /obj/machinery/computer/skills/proc/set_record_notes(datum/data/record/R, notes)
 	if(R == active1())

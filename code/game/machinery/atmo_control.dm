@@ -221,7 +221,14 @@ CAPABILITIES(/obj/machinery/air_sensor)
 CAPABILITIES(/obj/machinery/computer/general_air_control)
 	interface("GeneralAtmoControl")
 	op("configure", tool(TOOL_MULTITOOL), wait(0), label("Configure"),
+		needs(req(PROC_REF(sensor_buffer_valid), because = MSG(air_control/bad_sensor)), req(PROC_REF(port_buffer_valid), because = MSG(air_control/bad_port)), req(PROC_REF(sensor_name_valid), because = MSG(air_control/no_name))),
 		asks(/datum/prompt/choice, fields = list("title" = "Configuration", "question" = computed(PROC_REF(control_question)), "choices" = computed(PROC_REF(control_options)), "timeout" = 0), step = "option"),
+		asks(/datum/prompt/choice, fields = list("title" = "Configuration", "question" = computed(PROC_REF(port_question)), "choices" = list("Set", "Clear", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "port", when = PROC_REF(configuring_port)),
+		asks(/datum/prompt/number, fields = list("title" = computed(PROC_REF(frequency_title)), "question" = computed(PROC_REF(frequency_question)), "default" = computed(PROC_REF(frequency_default)), "min_value" = RADIO_LOW_FREQ, "max_value" = RADIO_HIGH_FREQ, "timeout" = 0), step = "frequency", when = PROC_REF(configuring_frequency)),
+		asks(/datum/prompt/choice, fields = list("title" = "Configuration", "question" = "Would you like to add or remove a sensor/meter?", "choices" = list("Add", "Remove", "Cancel"), "timeout" = 0), step = "sensor_action", when = PROC_REF(configuring_sensors)),
+		asks(/datum/prompt/text/air_control_sensor_name, fields = list("title" = "Name", "question" = "Enter a name for the Sensor/Meter.", "name_text" = TRUE, "device" = computed(PROC_REF(buffered_sensor)), "timeout" = 0), step = "sensor_name", when = PROC_REF(adding_sensor)),
+		asks(/datum/prompt/choice, fields = list("title" = "Sensor/Meter Removal", "question" = "Select a sensor/meter to remove", "choices" = computed(PROC_REF(sensor_removal_choices)), "timeout" = 0), step = "sensor_remove", when = PROC_REF(removing_sensor)),
+		asks(/datum/prompt/yes_no, fields = list("title" = "Warning", "question" = computed(PROC_REF(sensor_removal_question)), "timeout" = 0), step = "sensor_confirm", when = PROC_REF(removing_sensor)),
 		then(PROC_REF(control_option_op)))
 	ui_shape(sensors = list_of(row()))
 
@@ -257,115 +264,116 @@ TYPE_TABLE(/obj/machinery/computer/general_air_control/supermatter_core, air_con
 /obj/machinery/computer/general_air_control/proc/control_question(datum/act/op/A)
 	return "[src] has a frequency of [frequency]. What would you like to change?"
 
-/obj/machinery/computer/general_air_control/proc/control_option_op(datum/act/op/A)
-	control_option_apply(A.actor, A.held, A.step_value("option"))
+MSG_DEF_SELF(air_control/bad_sensor, "Error: No device in multitool buffer, or incompatible device is not a sensor or meter.")
+MSG_DEF_SELF(air_control/bad_port, "Error: The multitool buffer does not contain the required vent or injector.")
+MSG_DEF_SELF(air_control/no_name, "Error: No name was given for the sensor/meter.")
 
-/// Asks whether to set or clear the console's inlet or outlet.
-/obj/machinery/computer/general_air_control/proc/ask_control_port(mob/user, obj/item/tool, port_name, handler)
-	open_request(src, /datum/prompt/choice/air_control_port, handler, answerer = user, title = "Configuration", question = "Would you like to set an [port_name] or clear it?", choices = list("Set", "Clear", "Cancel"), buttons = TRUE, tool = tool, port_name = port_name, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
+/obj/machinery/computer/general_air_control/proc/configuring_port(datum/act/op/A)
+	return A.step_value("option") in list("Inlet", "Outlet")
 
-/// Set or clear one of the console's ports from the multitool buffer.
-/datum/prompt/choice/air_control_port
-	var/obj/item/multitool/tool
-	/// "inlet" or "outlet".
-	var/port_name
+/obj/machinery/computer/general_air_control/proc/configuring_frequency(datum/act/op/A)
+	return A.step_value("option") == "Frequency"
 
-CAPABILITIES(/datum/prompt/choice/air_control_port)
-	ref_one(nameof(tool), /obj/item/multitool)
+/obj/machinery/computer/general_air_control/proc/configuring_sensors(datum/act/op/A)
+	return A.step_value("option") == "Sensors"
 
-/// Add or remove a sensor/meter.
-/datum/prompt/choice/air_control_sensors
-	var/obj/item/multitool/tool
+/obj/machinery/computer/general_air_control/proc/adding_sensor(datum/act/op/A)
+	return configuring_sensors(A) && A.step_value("sensor_action") == "Add"
 
-CAPABILITIES(/datum/prompt/choice/air_control_sensors)
-	ref_one(nameof(tool), /obj/item/multitool)
+/obj/machinery/computer/general_air_control/proc/removing_sensor(datum/act/op/A)
+	return configuring_sensors(A) && A.step_value("sensor_action") == "Remove"
 
-/// Naming the sensor/meter being added.
+/obj/machinery/computer/general_air_control/proc/port_question(datum/act/op/A)
+	return "Would you like to set an [lowertext(A.step_value("option"))] or clear it?"
+
+/obj/machinery/computer/general_air_control/proc/frequency_question(datum/act/op/A)
+	return "[src] has a frequency of [frequency]. What would you like it to be?"
+
+/obj/machinery/computer/general_air_control/proc/frequency_title(datum/act/op/A)
+	return "[src] frequency"
+
+/obj/machinery/computer/general_air_control/proc/frequency_default(datum/act/op/A)
+	return frequency
+
+/obj/machinery/computer/general_air_control/proc/buffered_sensor(datum/act/op/A)
+	var/obj/item/multitool/tool = A.held
+	return tool?.connectable()
+
+/obj/machinery/computer/general_air_control/proc/sensor_buffer_valid(datum/act/op/A)
+	if(!adding_sensor(A))
+		return TRUE
+	var/datum/prompt/text/air_control_sensor_name/R = A.step_answer("sensor_name")
+	if(R && !R.device)
+		return FALSE
+	var/obj/machinery/device = buffered_sensor(A)
+	return istype(device, /obj/machinery/meter) || istype(device, /obj/machinery/air_sensor)
+
+/obj/machinery/computer/general_air_control/proc/port_buffer_valid(datum/act/op/A)
+	if(!configuring_port(A) || A.step_value("port") != "Set")
+		return TRUE
+	var/obj/machinery/device = buffered_sensor(A)
+	if(A.step_value("option") == "Inlet")
+		return istype(device, /obj/machinery/atmospherics/unary/outlet_injector)
+	return istype(device, /obj/machinery/atmospherics/unary/vent_pump)
+
+/obj/machinery/computer/general_air_control/proc/sensor_name_valid(datum/act/op/A)
+	return !A.step_answer("sensor_name") || !!A.step_value("sensor_name")
+
+/// Naming the sensor/meter being added keeps the captured device alive by relation.
 /datum/prompt/text/air_control_sensor_name
 	var/obj/machinery/device
 
 CAPABILITIES(/datum/prompt/text/air_control_sensor_name)
 	ref_one(nameof(device), /obj/machinery)
 
-/// Confirming the removal.
-/datum/prompt/yes_no/air_control_sensor_remove
-	var/list/sensor_names
-	var/to_remove
+/obj/machinery/computer/general_air_control/proc/sensor_removal_choices(datum/act/op/A)
+	var/list/options = list()
+	for(var/tag in sensors)
+		options[LAZYACCESS(sensors, tag)] = tag
+	return options
 
-/// The multitool menu's answer: Inlet, Outlet, Sensors or Frequency.
-/obj/machinery/computer/general_air_control/proc/control_option_apply(mob/user, obj/item/multitool/tool, choice)
-	switch(choice)
+/obj/machinery/computer/general_air_control/proc/sensor_removal_question(datum/act/op/A)
+	return "Are you sure you want to remove the sensor/meter '[A.step_value("sensor_remove")]'?"
+
+/obj/machinery/computer/general_air_control/proc/control_option_op(datum/act/op/A)
+	switch(A.step_value("option"))
 		if("Inlet")
-			configure_inlet(user, tool)
+			configure_inlet(A)
 		if("Outlet")
-			configure_outlet(user, tool)
+			configure_outlet(A)
 		if("Sensors")
-			configure_sensors(user, tool)
+			configure_sensors(A)
 		if("Frequency")
-			ask_frequency(user, frequency)
+			set_frequency(sanitize_frequency(A.step_value("frequency"), RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
 
-/obj/machinery/computer/general_air_control/proc/configure_inlet(mob/living/user, obj/item/multitool/tool)
+/obj/machinery/computer/general_air_control/proc/configure_inlet(datum/act/op/A)
 	return
 
-/obj/machinery/computer/general_air_control/proc/configure_outlet(mob/living/user, obj/item/multitool/tool)
+/obj/machinery/computer/general_air_control/proc/configure_outlet(datum/act/op/A)
 	return
 
-/obj/machinery/computer/general_air_control/proc/configure_sensors(mob/living/user, obj/item/multitool/tool)
+/obj/machinery/computer/general_air_control/proc/configure_sensors(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, "CONFIGURE SENSOR FUNC")
-	open_request(src, /datum/prompt/choice/air_control_sensors, PROC_REF(sensor_config_chosen), answerer = user, title = "Configuration", question = "Would you like to add or remove a sensor/meter?", choices = list("Add", "Remove", "Cancel"), tool = tool, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-
-/obj/machinery/computer/general_air_control/proc/sensor_config_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/air_control_sensors/R = A.request
-	var/mob/living/user = R.answerer
-	var/obj/item/multitool/tool = R.tool
-	switch(A.answer.value)
-		if("Add")
-			// Device must be a meter or gas sensor.
-			var/obj/machinery/device = tool.connectable()
-			if(!device || !(istype(device, /obj/machinery/meter)) && !(istype(device, /obj/machinery/air_sensor)))
-				to_chat(user, span_warning("Error: No device in multitool buffer, or incompatible device is not a sensor or meter."))
-				return
-			open_request(src, /datum/prompt/text/air_control_sensor_name, PROC_REF(sensor_named), answerer = user, title = "Name", question = "Enter a name for the Sensor/Meter.", name_text = TRUE, device = device, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-		if("Remove")
-			// Creates an associative mapping of Names to Tags, from Tags to Names.
-			var/list/sensor_names = list()
-			for(var/tag in sensors)
-				sensor_names[LAZYACCESS(sensors, tag)] = tag
-			open_request(src, /datum/prompt/choice, PROC_REF(sensor_removal_chosen), answerer = user, title = "Sensor/Meter Removal", question = "Select a sensor/meter to remove", choices = sensor_names, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-
-/obj/machinery/computer/general_air_control/proc/sensor_named(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/text/air_control_sensor_name/R = A.request
-	var/mob/living/user = R.answerer
-	var/obj/machinery/device = R.device
-	var/device_name = A.answer.value
-	if(!device_name)
-		to_chat(user, span_warning("Error: No name was given for [device]."))
-		return
-	if(istype(device, /obj/machinery/air_sensor))
-		var/obj/machinery/air_sensor/AS = device
-		LAZYSET(sensors, AS.id_tag, device_name)
-	else
-		var/obj/machinery/meter/M = device
-		LAZYSET(sensors, M.id, device_name)
-	to_chat(user, span_notice("You have added the [device] to the [src] under the name [device_name]!"))
-
-/obj/machinery/computer/general_air_control/proc/sensor_removal_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/R = A.request
-	open_request(src, /datum/prompt/yes_no/air_control_sensor_remove, PROC_REF(sensor_removal_confirmed), answerer = R.answerer, title = "Warning", question = "Are you sure you want to remove the sensor/meter '[A.answer.value]'?", sensor_names = R.choices, to_remove = A.answer.value, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-
-/obj/machinery/computer/general_air_control/proc/sensor_removal_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/datum/prompt/yes_no/air_control_sensor_remove/R = A.request
-	var/mob/living/user = R.answerer
-	LAZYREMOVE(sensors, R.sensor_names[R.to_remove])
-	to_chat(user, span_notice("Successfully removed sensor/meter with name [R.to_remove]"))
+	if(adding_sensor(A))
+		var/datum/prompt/text/air_control_sensor_name/R = A.step_answer("sensor_name")
+		var/obj/machinery/device = R.device
+		var/device_name = A.step_value("sensor_name")
+		if(!device_name)
+			to_chat(user, span_warning("Error: No name was given for [device]."))
+			return
+		if(istype(device, /obj/machinery/air_sensor))
+			var/obj/machinery/air_sensor/AS = device
+			LAZYSET(sensors, AS.id_tag, device_name)
+		else
+			var/obj/machinery/meter/M = device
+			LAZYSET(sensors, M.id, device_name)
+		to_chat(user, span_notice("You have added the [device] to the [src] under the name [device_name]!"))
+	else if(removing_sensor(A) && A.step_value("sensor_confirm"))
+		var/datum/prompt/choice/R = A.step_answer("sensor_remove")
+		var/to_remove = A.step_value("sensor_remove")
+		LAZYREMOVE(sensors, R.choices[to_remove])
+		to_chat(user, span_notice("Successfully removed sensor/meter with name [to_remove]"))
 
 /obj/machinery/computer/general_air_control/Initialize(mapload)
 	. = ..()
@@ -472,16 +480,10 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/large_tank_control)
 	return TRUE
 
 
-/obj/machinery/computer/general_air_control/large_tank_control/configure_outlet(mob/living/user, obj/item/multitool/tool)
-	ask_control_port(user, tool, "outlet", PROC_REF(outlet_choice_made))
-
-/obj/machinery/computer/general_air_control/large_tank_control/proc/outlet_choice_made(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/air_control_port/R = A.request
-	var/mob/living/user = R.answerer
-	var/obj/item/multitool/tool = R.tool
-	switch(A.answer.value)
+/obj/machinery/computer/general_air_control/large_tank_control/configure_outlet(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/multitool/tool = A.held
+	switch(A.step_value("port"))
 		if ("Set")
 			to_chat(user, span_notice("The buffer is [tool.connectable()]"))
 			if (!istype(tool.connectable(), /obj/machinery/atmospherics/unary/vent_pump))
@@ -500,16 +502,10 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/large_tank_control)
 			to_chat(user, span_notice("You have cleared the outlet!"))
 			return
 
-/obj/machinery/computer/general_air_control/large_tank_control/configure_inlet(mob/living/user, obj/item/multitool/tool)
-	ask_control_port(user, tool, "inlet", PROC_REF(inlet_choice_made))
-
-/obj/machinery/computer/general_air_control/large_tank_control/proc/inlet_choice_made(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/air_control_port/R = A.request
-	var/mob/living/user = R.answerer
-	var/obj/item/multitool/tool = R.tool
-	switch(A.answer.value)
+/obj/machinery/computer/general_air_control/large_tank_control/configure_inlet(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/multitool/tool = A.held
+	switch(A.step_value("port"))
 		if ("Set")
 			if (!istype(tool.connectable(), /obj/machinery/atmospherics/unary/outlet_injector))
 				to_chat(user, span_notice("Error: Buffer is either empty, or object in buffer is invalid. Device should be Injector"))
@@ -625,16 +621,10 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/supermatter_core)
 	return TRUE
 
 
-/obj/machinery/computer/general_air_control/supermatter_core/configure_outlet(mob/living/user, obj/item/multitool/tool)
-	ask_control_port(user, tool, "outlet", PROC_REF(outlet_choice_made))
-
-/obj/machinery/computer/general_air_control/supermatter_core/proc/outlet_choice_made(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/air_control_port/R = A.request
-	var/mob/living/user = R.answerer
-	var/obj/item/multitool/tool = R.tool
-	switch(A.answer.value)
+/obj/machinery/computer/general_air_control/supermatter_core/configure_outlet(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/multitool/tool = A.held
+	switch(A.step_value("port"))
 		if ("Set")
 			if (!istype(tool.connectable(), /obj/machinery/atmospherics/unary/vent_pump))
 				to_chat(user, span_warning("Error: Buffer is either empty, or object in buffer is invalid. Device should be Air Vent"))
@@ -652,16 +642,10 @@ CAPABILITIES(/obj/machinery/computer/general_air_control/supermatter_core)
 			to_chat(user, span_notice("You have cleared the outlet!"))
 			return
 
-/obj/machinery/computer/general_air_control/supermatter_core/configure_inlet(mob/living/user, obj/item/multitool/tool)
-	ask_control_port(user, tool, "inlet", PROC_REF(inlet_choice_made))
-
-/obj/machinery/computer/general_air_control/supermatter_core/proc/inlet_choice_made(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/air_control_port/R = A.request
-	var/mob/living/user = R.answerer
-	var/obj/item/multitool/tool = R.tool
-	switch(A.answer.value)
+/obj/machinery/computer/general_air_control/supermatter_core/configure_inlet(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/multitool/tool = A.held
+	switch(A.step_value("port"))
 		if ("Set")
 			to_chat(user, span_notice("The buffer is [tool.connectable()]"))
 			if (!istype(tool.connectable(), /obj/machinery/atmospherics/unary/outlet_injector))

@@ -96,11 +96,11 @@
 			break
 	updateUsrDialog(user)
 
-/obj/machinery/computer/telecomms/traffic/proc/traffic_set_network(mob/user)
-	if(!traffic_access(user))
-		return
-	open_request(src, /datum/prompt/text, PROC_REF(network_entered), answerer = user, title = "Comm Monitor", question = "Which network do you want to view?", default = network, max_len = 15, ask_flags = ASK_CAPABLE, timeout = 0)
-	updateUsrDialog(user)
+/obj/machinery/computer/telecomms/traffic/proc/network_accessible(datum/act/op/A)
+	return A.actor && (allowed(A.actor) || emagged())
+
+/obj/machinery/computer/telecomms/traffic/proc/network_default(datum/act/op/A)
+	return network
 
 /obj/machinery/computer/telecomms/traffic/proc/traffic_operation(mob/user, op)
 	if(!traffic_access(user))
@@ -157,10 +157,10 @@
 
 	updateUsrDialog(user)
 
-/obj/machinery/computer/telecomms/traffic/proc/network_entered(datum/act/request/A)
+/obj/machinery/computer/telecomms/traffic/proc/network_entered(datum/act/op/A)
 	if(!A.answer)
 		return
-	var/mob/user = A.request.answerer
+	var/mob/user = A.actor
 	var/newnet = A.answer.value
 	if(newnet && ((user in range(1, src)) || issilicon(user)))
 		if(length(newnet) > 15)
@@ -179,7 +179,7 @@ CAPABILITIES(/obj/machinery/computer/telecomms/traffic)
 	op("clear_temp", ui_act(), then(PROC_REF(ui_act_clear_temp)))
 	interface("TrafficControl", title = "Telecommunications Traffic Control", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")
-	op("set_network", ui_act("set_network"), then(PROC_REF(ui_act_set_network)))
+	op("set_network", ui_act("set_network"), asks(/datum/prompt/text, fields = list("title" = "Comm Monitor", "question" = "Which network do you want to view?", "default" = computed(PROC_REF(network_default)), "max_len" = 15, "ask_flags" = ASK_CAPABLE, "timeout" = 0), when = PROC_REF(network_accessible)), then(PROC_REF(ui_act_set_network)))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("flush_buffer", ui_act("flush_buffer"), then(PROC_REF(ui_act_flush_buffer)))
 	op("view_server", ui_act("view_server", arg("id", schema_text(4096))), then(PROC_REF(ui_act_view_server)))

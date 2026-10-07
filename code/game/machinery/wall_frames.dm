@@ -26,30 +26,51 @@
 MSG_DEF_SELF(frame/bad_spot, "It cannot be placed on this spot.")
 MSG_DEF_SELF(frame/bad_area, "It cannot be placed in this area.")
 MSG_DEF_SELF(frame/wall_taken, "There's already an item on this wall!")
+MSG_DEF_SELF(frame/type_changed, "This frame has already been given a type.")
 
 /// A frame held to a wall (or an anchored window) from the floor beside it becomes what it frames, there (op frame.mount); the type
 /// decides what that is (mount_on()): a fixture or cabinet, or a machine at the first stage of its build graph (the APC frame).
 CAPABILITIES(/obj/item/frame)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), needs(req(PROC_REF(frame_type_unchanged), because = MSG(frame/type_changed))),
+		asks(/datum/prompt/choice, fields = list("title" = "Frame type request", "question" = "What kind of frame would you like to make?", "choices" = computed(PROC_REF(floor_choices)), "timeout" = 0), step = "frame", when = PROC_REF(needs_floor_choice)),
+		then(PROC_REF(interaction_self)))
 	op("refund", tool(TOOL_WRENCH), label("Take apart"), then(PROC_REF(refund_materials)))
 	op("mount", at_target(/turf/simulated/wall), at_target(/obj/structure/window), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK),
 		label("Mount on the wall"), wait(0),
-		needs(req(PROC_REF(mount_facing), silent = TRUE), req_frame_mount()),
+		needs(req(PROC_REF(mount_facing), silent = TRUE), req_frame_mount(), req(PROC_REF(frame_type_unchanged), because = MSG(frame/type_changed))),
+		asks(/datum/prompt/choice/frame_type_wall, fields = list("title" = "Frame type request", "question" = "What kind of frame would you like to make?", "choices" = computed(PROC_REF(wall_choices)), "wall_turf" = computed(PROC_REF(wall_spot)), "wall_dir" = computed(PROC_REF(wall_direction)), "timeout" = 0), step = "frame", when = cond_not(nameof(build_machine_type))),
 		then(PROC_REF(mount_on)))
 
 /// Old attack_self.
 /obj/item/frame/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
-	update_type_list()
-	if(!build_machine_type && !build_wall_only)
-		open_request(src, /datum/prompt/choice, PROC_REF(floor_frame_chosen), valid = PROC_REF(frame_type_open), answerer = user, title = "Frame type request", question = "What kind of frame would you like to make?", choices = frame_types_floor, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-		return TRUE
-	build_on_floor(user, null)
+	var/datum/frame/frame_types/frame_type = A.step_value("frame")
+	if(frame_type)
+		build_machine_type = /obj/structure/frame
+		if(frame_type.frame_size != 5)
+			new /obj/item/stack/material/steel(user.loc, (5 - frame_type.frame_size))
+	build_on_floor(user, frame_type)
 	return TRUE
 
-/// Re-checked on the answer: the frame hasn't been given a type meanwhile.
-/obj/item/frame/proc/frame_type_open(datum/request/R)
-	return !build_machine_type
+/obj/item/frame/proc/needs_floor_choice(datum/act/op/A)
+	return !build_machine_type && !build_wall_only
+
+/// A selected answer may build only a frame that is still untyped. The
+/// preassigned forms skip the question and retain their own live build type.
+/obj/item/frame/proc/frame_type_unchanged(datum/act/op/A)
+	return !A.step_answer("frame") || !build_machine_type
+
+/obj/item/frame/proc/floor_choices(datum/act/op/A)
+	return frame_types_floor || GLOB.construction_frame_floor
+
+/obj/item/frame/proc/wall_choices(datum/act/op/A)
+	return frame_types_wall || GLOB.construction_frame_wall
+
+/obj/item/frame/proc/wall_spot(datum/act/op/A)
+	return get_turf(A.actor)
+
+/obj/item/frame/proc/wall_direction(datum/act/op/A)
+	return mount_dir(A.target, A.actor)
 
 /// The wall version also remembers where it goes.
 /datum/prompt/choice/frame_type_wall
@@ -58,16 +79,6 @@ CAPABILITIES(/obj/item/frame)
 
 CAPABILITIES(/datum/prompt/choice/frame_type_wall)
 	ref_one(nameof(wall_turf), /turf)
-
-/obj/item/frame/proc/floor_frame_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/datum/frame/frame_types/frame_type = A.answer.value
-	build_machine_type = /obj/structure/frame
-	if(frame_type.frame_size != 5)
-		new /obj/item/stack/material/steel(user.loc, (5 - frame_type.frame_size))
-	build_on_floor(user, frame_type)
 
 /obj/item/frame/proc/build_on_floor(mob/user, datum/frame/frame_types/frame_type)
 	var/ndir
@@ -129,25 +140,18 @@ CAPABILITIES(/datum/prompt/choice/frame_type_wall)
 /// The mount: a frame of no set kind asks which kind first; one that knows builds there.
 /obj/item/frame/proc/mount_on(datum/act/op/A)
 	var/mob/user = A.actor
-	update_type_list()
 	var/turf/spot = get_turf(user)
 	var/ndir = mount_dir(A.target, user)
-	if(!build_machine_type)
-		open_request(src, /datum/prompt/choice/frame_type_wall, PROC_REF(wall_frame_chosen), valid = PROC_REF(frame_type_open), answerer = user, title = "Frame type request", question = "What kind of frame would you like to make?", choices = frame_types_wall, wall_turf = spot, wall_dir = ndir, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-		return OP_OK
-	build_on_wall(user, spot, ndir, null)
+	var/datum/frame/frame_types/frame_type = A.step_value("frame")
+	if(frame_type)
+		var/datum/prompt/choice/frame_type_wall/R = A.step_answer("frame")
+		spot = R.wall_turf
+		ndir = R.wall_dir
+		build_machine_type = /obj/structure/frame
+		if(frame_type.frame_size != 5)
+			new /obj/item/stack/material/steel(user.loc, (5 - frame_type.frame_size))
+	build_on_wall(user, spot, ndir, frame_type)
 	return OP_OK
-
-/obj/item/frame/proc/wall_frame_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/frame_type_wall/R = A.request
-	var/mob/user = R.answerer
-	var/datum/frame/frame_types/frame_type = A.answer.value
-	build_machine_type = /obj/structure/frame
-	if(frame_type.frame_size != 5)
-		new /obj/item/stack/material/steel(user.loc, (5 - frame_type.frame_size))
-	build_on_wall(user, R.wall_turf, R.wall_dir, frame_type)
 
 /obj/item/frame/proc/build_on_wall(mob/user, turf/loc, ndir, datum/frame/frame_types/frame_type)
 	var/obj/machinery/M = new build_machine_type(loc, ndir, 1, frame_type)

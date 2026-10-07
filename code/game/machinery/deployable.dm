@@ -212,28 +212,22 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 CAPABILITIES(/obj/structure/barricade/cutout)
 	op("cutout_interaction_hand", hand(), label("Stand up"), then(PROC_REF(cutout_interaction_hand)))
 	// a painter paints it (anything else is the barricade's repair or hit)
-	op("cutout_interaction_item", item(/obj/item/reagent_containers/glass/paint), label("Paint"), then(PROC_REF(cutout_interaction_item)))
-	op("cutout_paint_painter", item(/obj/item/floor_painter), label("Paint"), then(PROC_REF(cutout_interaction_item)))
+	op("cutout_interaction_item", item(/obj/item/reagent_containers/glass/paint), label("Paint"), cutout_paint_steps())
+	op("cutout_paint_painter", item(/obj/item/floor_painter), label("Paint"), cutout_paint_steps())
 
-/// Old attackby.
-/obj/structure/barricade/cutout/proc/cutout_interaction_item(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/I = A.held
-	open_request(src, /datum/prompt/choice, PROC_REF(cutout_type_chosen), answerer = user, question = "What would you like to paint the cutout as?", title = "Cutout Painting", choices = cutout_types, subject = I, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
-	return TRUE
+/// The two paint providers share one declarative choice and timed workflow.
+/proc/cutout_paint_steps()
+	return list(
+		asks(/datum/prompt/choice, fields = list("question" = "What would you like to paint the cutout as?", "title" = "Cutout Painting", "choices" = computed(TYPE_PROC_REF(/obj/structure/barricade/cutout, paint_choices)), "timeout" = 0), step = "paint"),
+		wait(10 SECONDS),
+		then(TYPE_PROC_REF(/obj/structure/barricade/cutout, cutout_paint_done)),
+	)
 
-/obj/structure/barricade/cutout/proc/cutout_type_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/choice = A.answer.value
-	if(!Adjacent(user))
-		return
-	task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(cutout_paint_done), done_args = list(choice))
-	return TRUE
+/obj/structure/barricade/cutout/proc/paint_choices(datum/act/op/A)
+	return cutout_types
 
-/obj/structure/barricade/cutout/proc/cutout_paint_done(choice)
-	var/picked_type = cutout_types[choice]
+/obj/structure/barricade/cutout/proc/cutout_paint_done(datum/act/op/A)
+	var/picked_type = cutout_types[A.step_value("paint")]
 	replace_with(src, picked_type) // Technically heals it too: the new cutout is a fresh one.
 
 //Variants

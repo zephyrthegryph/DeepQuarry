@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Living actor permissions now reflect stun, knockdown, paralysis, sleep and unconsciousness."
+  - refactor: "Migrated supported machinery questions into native operation workflows."

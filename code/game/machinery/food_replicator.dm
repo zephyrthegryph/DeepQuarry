@@ -55,24 +55,27 @@
 		to_chat(user, span_warning("\The [src] is busy!"))
 		return TRUE
 
-	interact(user)
+	if(!LAZYLEN(A.captured(nameof(products))))
+		to_chat(user, span_warning("There is no food to replicate!"))
+	else
+		dish_chosen(A)
 	return TRUE
 
-/obj/machinery/food_replicator/interact(mob/user)
-	if(!isemptylist(products))
-		open_request(src, /datum/prompt/choice, PROC_REF(dish_chosen), answerer = user, question = "What would you like to print?", title = "Print a dish", choices = products, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	else
-		to_chat(user, span_warning("There is no food to replicate!"))
+/obj/machinery/food_replicator/proc/print_menu_ready(datum/act/op/A)
+	return operable() && !panel_open && !printing && LAZYLEN(products)
 
-/obj/machinery/food_replicator/proc/dish_chosen(datum/act/request/A)
+/obj/machinery/food_replicator/proc/dish_chosen(datum/act/op/A)
 	if(!A.answer)
 		return
-	var/mob/user = A.request.answerer
+	var/mob/user = A.actor
 	var/choice = A.answer.value
 	if(printing || (!operable()))
 		return
 
-	var/product_path = products[choice]
+	var/list/offered = A.captured(nameof(products))
+	var/product_path = offered?[choice]
+	if(!product_path)
+		return
 	var/obj/item/reagent_containers/foodItem = new product_path
 
 	var/total = foodItem.reagents.total_volume
@@ -173,7 +176,7 @@ CAPABILITIES(/obj/machinery/food_replicator)
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	op("scan", item(/obj/item/reagent_containers/food), priority(OP_PRIORITY_DEFAULT - 1), label("Scan food"), then(PROC_REF(interaction_scan)))
 	op("insert_container", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_DEFAULT - 1), label("Insert container"), needs(req_is(nameof(container), FALSE, because = MSG(food_replicator/container))), then(PROC_REF(interaction_insert_container)))
-	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), asks(/datum/prompt/choice, fields = list("question" = "What would you like to print?", "title" = "Print a dish", "choices" = nameof(products), "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0), when = PROC_REF(print_menu_ready)), then(PROC_REF(interaction_use)))
 	op("eject_beaker", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Beaker"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act_holds), because = PROC_REF(dq_actor_can_act_refusal))), then(PROC_REF(interaction_eject_beaker)))
 	default_parts()
 

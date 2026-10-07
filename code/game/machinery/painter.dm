@@ -57,7 +57,7 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	owns_one(nameof(inserted), on_destroy = ON_DESTROY_SPILL)
 	interface("ColorMate")
 	op("switch_modes", ui_act("switch_modes", arg("mode", num())), then(PROC_REF(ui_act_switch_modes)))
-	op("choose_color", ui_act("choose_color"), then(PROC_REF(ui_act_choose_color)))
+	op("choose_color", ui_act("choose_color"), when(PROC_REF(has_paint_item)), asks(/datum/prompt/color, fields = list("default" = nameof(activecolor), "title" = "ColorMate colour picking", "question" = "Choose a color: ", "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0)), then(PROC_REF(ui_act_choose_color)))
 	op("paint", ui_act("paint"), then(PROC_REF(ui_act_paint)))
 	op("drop", ui_act("drop"), then(PROC_REF(ui_act_drop)))
 	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
@@ -185,11 +185,13 @@ CAPABILITIES(/obj/machinery/gear_painter)
 	return TRUE
 
 /obj/machinery/gear_painter/proc/ui_act_choose_color(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!(inserted))
-		return
-	open_request(src, /datum/prompt/color, PROC_REF(color_chosen), valid = PROC_REF(colour_valid), answerer = user, default = activecolor, title = "ColorMate colour picking", question = "Choose a color: ", timeout = 0)
-	return TRUE
+	if(A.answer && A.answer.value)
+		activecolor = A.answer.value
+		SStgui.update_uis(src)
+	return OP_OK
+
+/obj/machinery/gear_painter/proc/has_paint_item(datum/act/op/A)
+	return !isnull(inserted)
 
 /obj/machinery/gear_painter/proc/ui_act_paint(datum/act/op/A)
 	var/mob/user = A.actor

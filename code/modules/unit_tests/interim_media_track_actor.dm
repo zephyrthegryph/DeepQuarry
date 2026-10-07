@@ -16,22 +16,6 @@
 	remove_calls++
 	return ..()
 
-/obj/machinery/media/jukebox/ghost/interim_actor_probe
-	var/tmp/mob/add_actor
-	var/tmp/mob/remove_actor
-	var/add_calls = 0
-	var/remove_calls = 0
-
-/obj/machinery/media/jukebox/ghost/interim_actor_probe/manual_track_add(mob/user)
-	rel_set(src, nameof(add_actor), user)
-	add_calls++
-	return ..()
-
-/obj/machinery/media/jukebox/ghost/interim_actor_probe/manual_track_remove(mob/user)
-	rel_set(src, nameof(remove_actor), user)
-	remove_calls++
-	return ..()
-
 /datum/unit_test/om/interim_media_track_actor_refusal/run_om(list/made)
 	test_prompts_reset()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
@@ -63,25 +47,19 @@
 /datum/unit_test/om/interim_ghost_jukebox_track_actor_refusal/run_om(list/made)
 	test_prompts_reset()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
-	TEST_ASSERT_NULL(actor.client, "the actual jukebox fixture cannot claim native admin rights")
-	var/obj/machinery/media/jukebox/ghost/interim_actor_probe/jukebox = allocate(/obj/machinery/media/jukebox/ghost/interim_actor_probe, run_loc_floor_bottom_left)
+	TEST_ASSERT_NULL(actor.client, "the actual jukebox actor cannot claim native admin rights")
+	var/obj/machinery/media/jukebox/ghost/jukebox = allocate(/obj/machinery/media/jukebox/ghost, run_loc_floor_bottom_left)
 	var/datum/track/retained = allocate(/datum/track, "interim://local", "Retained test track", 30 SECONDS)
 	rel_add(jukebox, nameof(jukebox.custom_tracks), retained)
-	TEST_ASSERT_EQUAL(jukebox.custom_tracks[1], retained, "the actual jukebox owns its exact custom track before denial")
-	TEST_ASSERT_EQUAL(jukebox.vv_topic_add_track(actor, list()), TRUE, "the actual jukebox VV add wrapper preserves its handled return")
-	TEST_ASSERT_EQUAL(jukebox.add_actor, actor, "the actual jukebox add wrapper forwards its explicit actor")
-	TEST_ASSERT_EQUAL(jukebox.add_calls, 1, "the actual jukebox add wrapper invokes its guarded helper once")
-	TEST_ASSERT_EQUAL(jukebox.vv_topic_remove_track(actor, list()), TRUE, "the actual jukebox VV remove wrapper preserves its handled return")
-	TEST_ASSERT_EQUAL(jukebox.remove_actor, actor, "the actual jukebox remove wrapper forwards its explicit actor")
-	TEST_ASSERT_EQUAL(jukebox.remove_calls, 1, "the actual jukebox remove wrapper invokes its guarded helper once")
-	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 0, "actual jukebox rights refusal opens no track prompt")
-	TEST_ASSERT_EQUAL(length(jukebox.custom_tracks), 1, "actual jukebox rights refusal preserves catalog size")
-	TEST_ASSERT_EQUAL(jukebox.custom_tracks[1], retained, "actual jukebox refusal preserves exact owned track identity")
-	TEST_ASSERT(!QDELETED(retained), "actual jukebox refusal does not dispose its track")
-	TEST_ASSERT_EQUAL(jukebox.playing, FALSE, "actual refused track controls start no audio playback")
-	jukebox.manual_track_add(null)
-	jukebox.manual_track_remove(null)
-	TEST_ASSERT_NULL(jukebox.add_actor, "the actual jukebox add helper receives its absent actor")
-	TEST_ASSERT_NULL(jukebox.remove_actor, "the actual jukebox remove helper receives its absent actor")
-	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 0, "an absent jukebox actor opens no prompt")
-	TEST_ASSERT_EQUAL(jukebox.custom_tracks[1], retained, "absent actor refusal preserves actual jukebox ownership")
+	TEST_ASSERT_EQUAL(jukebox.custom_tracks[1], retained, "the jukebox owns its exact custom track before denial")
+	var/datum/op_result/add = op_perform_by_key(actor, jukebox, null, "vv_add_track", ORIGIN_UI, AUTH_ADMIN, FALSE)
+	TEST_ASSERT_EQUAL(add?.outcome, ACT_REFUSED, "the declared add workflow refuses missing rights")
+	TEST_ASSERT_EQUAL(add?.reason, /datum/msg/req_no_rights, "admin origin does not invent actor rights")
+	var/datum/op_result/remove = op_perform_by_key(actor, jukebox, null, "vv_remove_track", ORIGIN_UI, AUTH_ADMIN, FALSE)
+	TEST_ASSERT_EQUAL(remove?.outcome, ACT_REFUSED, "the declared removal workflow refuses missing rights")
+	TEST_ASSERT_EQUAL(remove?.reason, /datum/msg/req_no_rights, "the removal also checks actual actor rights")
+	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 0, "rights refusals open no track prompts")
+	TEST_ASSERT_EQUAL(length(jukebox.custom_tracks), 1, "refusal preserves catalog size")
+	TEST_ASSERT_EQUAL(jukebox.custom_tracks[1], retained, "refusal preserves exact owned track identity")
+	TEST_ASSERT(!QDELETED(retained), "refusal does not dispose the track")
+	TEST_ASSERT_EQUAL(jukebox.playing, FALSE, "refused track controls start no audio playback")
