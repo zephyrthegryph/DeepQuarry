@@ -249,7 +249,11 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
             && bs == be
             && ranges.iter().any(|&(oidx, s, e)| HOOK_FORMS[oidx].kw == "asks" && s != e && start >= s && start < e);
         // A then() or when() inside a hook that carries its own context (instead, adjusts, on_notice, on_op, on_change, after_init) runs in that context.
-        let mut ctx = if in_asks_when { Ctx::Op } else { f.ctx };
+        let in_op_when = f.kw == "when" && enclosing_op_start(body, start).is_some_and(|op_start| {
+            !ranges.iter().any(|&(oidx, s, e)| s > op_start && s != e && start >= s && start < e
+                && matches!(HOOK_FORMS[oidx].kw, "every" | "after" | "delayed" | "contributes" | "contributes_to" | "outputs" | "look_layer"))
+        });
+        let mut ctx = if in_asks_when || in_op_when { Ctx::Op } else { f.ctx };
         let mut notice = String::new();
         if matches!(f.kw, "then" | "when") {
             let mut outer: Option<&(usize, usize, usize)> = None;
@@ -274,6 +278,25 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
         let ui_args = if f.kw == "then" && ctx == Ctx::Op { op_ui_args(body, start) } else { None };
         out.push(HandlerRef { owner: ty, cap_proc, cap_type: cap_type.clone(), proc, form: f.kw, ctx, role: f.role, rel: m.rel.clone(), line: m.line_at(start), notice, ui_args });
     }
+}
+
+/// The innermost operation containing this reference; ordinary op when() is evaluated by op_cond with the full operation context.
+fn enclosing_op_start(body: &str, pos: usize) -> Option<usize> {
+    let bytes = body.as_bytes();
+    let mut found = None;
+    let mut i = 0;
+    while i < pos {
+        if bytes[i].is_ascii_alphabetic() || bytes[i] == b'_' {
+            let begin = i;
+            while i < bytes.len() && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_') { i += 1; }
+            if &body[begin..i] == "op" {
+                let mut open = i;
+                while open < bytes.len() && bytes[open].is_ascii_whitespace() { open += 1; }
+                if bytes.get(open) == Some(&b'(') && matching_paren(body, open).is_some_and(|close| pos > open && pos < close) { found = Some(open); }
+            }
+        } else { i += 1; }
+    }
+    found
 }
 
 /// The `arg("name", ...)` names of the `ui_act(...)` / `topic(...)` bindings of the innermost `op(...)` call around `pos` of `body`; `None` when
@@ -381,6 +404,15 @@ mod context_tests {
         }
         assert!(!found.is_empty(), "the fixture must discover its declarations");
         found
+    }
+
+    #[test]
+    fn operation_when_receives_full_op_but_periodic_when_does_not() {
+        let found = handlers("CAPABILITIES(/datum/probe)\n\top(\"use\", item(/obj), when(PROC_REF(offered)), then(PROC_REF(use)))\n\top(\"nested\", every(10, when = PROC_REF(ready), then(PROC_REF(tick))))\n\tevery(10, when = PROC_REF(standalone_ready), then(PROC_REF(standalone_tick)))\n");
+        assert_eq!(found.iter().find(|h| h.proc == "offered").unwrap().ctx, Ctx::Op);
+        assert_eq!(found.iter().find(|h| h.proc == "ready").unwrap().ctx, Ctx::Eval);
+        assert_eq!(found.iter().find(|h| h.proc == "standalone_ready").unwrap().ctx, Ctx::Eval);
+        assert_eq!(found.iter().find(|h| h.proc == "tick").unwrap().ctx, Ctx::Timer);
     }
 
     #[test]
