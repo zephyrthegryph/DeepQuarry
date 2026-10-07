@@ -6,6 +6,14 @@ The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
 
+Release probe 28 stopped during initializer classification at `basic.dm:3`:
+the token builder rejected string association keys in `new/list(...)` as ordinary
+named arguments. External time was 18.569 s (16.989 s driver), sampled private
+memory 1,923,665,920 bytes. No pair was produced; this is failed-attempt latency.
+The primitive list and previous modified-object gaps pass their focused cold gate.
+The fresh release rejects both native-invalid bare returns, with one diagnostic
+each; diagnostic severity/wording still differs from DreamMaker.
+
 Release probe 27 passed initializer classification and cleared the modified-literal
 failure from probe 26. It stopped at `message_server.dm:301`, where a declaration
 `var/list/datum/feedback_variable/feedback = new()` was incorrectly treated as
@@ -39,7 +47,7 @@ and runtime global list null defaults. Execution phase remains independent of
 token identity. This is not established as the cause of power-bridge errors.
 Three publication fault-boundary gates pass authenticated-generation recovery.
 Cross-file conditional support passes all seven pinned native controls.
-Phase 0 and Phase 1 remain open; release probe 28 is pending.
+Phase 0 and Phase 1 remain open; complete DeepQuarry output is not yet certified.
 Release probe 26 cleared the builtin-world receiver and RGB scalar classification.
 It stopped in initializer code generation on a modified object literal at
 `code/datums/outfits/horror_killers.dm:45`, with no output pair. External time
