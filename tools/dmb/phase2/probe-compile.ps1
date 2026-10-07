@@ -63,6 +63,11 @@ try {
         $taskReceipt.status=if ($taskProcess.ExitCode -eq 0) {'completed'} else {'failed'}
     }
     if ($taskProcess.ExitCode -eq 0) {
+        $taskStem=[IO.Path]::GetFileNameWithoutExtension($taskProject)
+        $taskStats=Join-Path (Join-Path (Split-Path -Parent $taskProject) '.dmbc') ($taskStem+'.stats.json')
+        if (Test-Path -LiteralPath $taskStats) {
+            [IO.File]::Copy($taskStats,(Join-Path $taskOutput 'compiler-stats.json'),$false)
+        }
         foreach ($taskExtension in @('dmb','rsc','dmb-pair.json')) {
             $taskPath=[IO.Path]::ChangeExtension($taskProject,$taskExtension)
             $taskReceipt[($taskExtension+'_sha256')]=(Get-FileHash -LiteralPath $taskPath -Algorithm SHA256).Hash

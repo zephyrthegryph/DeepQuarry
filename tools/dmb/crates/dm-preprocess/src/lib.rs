@@ -90,6 +90,7 @@ pub struct Macro {
 pub(crate) trait MacroLookup {
     fn get_key_value(&self, name: &str) -> Option<(&str, &Macro)>;
     fn location_read(&self, _file: bool) {}
+    fn contains_key(&self,name:&str)->bool{self.get_key_value(name).is_some()}
     fn get(&self, name: &str) -> Option<&Macro> {
         self.get_key_value(name).map(|(_, definition)| definition)
     }
@@ -904,7 +905,7 @@ fn preprocess_project_inner<P: SourceProvider>(
     ctx.output
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct Conditional {
     parent_active: bool,
     branch_taken: bool,
@@ -912,7 +913,7 @@ struct Conditional {
     else_seen: bool,
 }
 
-fn macro_defined(name: &str, macros: &BTreeMap<String, Macro>) -> bool {
+fn macro_defined(name: &str, macros: &dyn MacroLookup) -> bool {
     matches!(name, "__FILE__" | "__LINE__") || macros.contains_key(name)
 }
 
@@ -1901,7 +1902,7 @@ fn strip_macro_comments(replacement: &str) -> String {
 
 fn expand(
     source: &str,
-    macros: &BTreeMap<String, Macro>,
+    macros: &dyn MacroLookup,
     depth: usize,
     location: ExpandLocation<'_>,
 ) -> Result<String, String> {
@@ -1910,7 +1911,7 @@ fn expand(
 
 fn expand_mode(
     source: &str,
-    macros: &BTreeMap<String, Macro>,
+    macros: &dyn MacroLookup,
     depth: usize,
     location: ExpandLocation<'_>,
     substitute_only: bool,
@@ -1946,7 +1947,7 @@ pub(crate) fn expand_traced(
 
 fn expand_mode_disabled<'a>(
     source: &str,
-    macros: &'a BTreeMap<String, Macro>,
+    macros: &'a dyn MacroLookup,
     depth: usize,
     location: ExpandLocation<'_>,
     substitute_only: bool,
@@ -2500,7 +2501,7 @@ fn parse_arguments(
     Err("unterminated macro invocation".into())
 }
 
-fn eval_condition(expr: &str, macros: &BTreeMap<String, Macro>) -> Result<bool, String> {
+fn eval_condition(expr: &str, macros: &dyn MacroLookup) -> Result<bool, String> {
     // Evaluate defined() before expansion: its operand is a macro name, not its value.
     let tokens = lex_spans(expr)
         .tokens
@@ -2583,7 +2584,7 @@ fn eval_condition(expr: &str, macros: &BTreeMap<String, Macro>) -> Result<bool, 
 struct ConditionParser<'a> {
     tokens: Vec<dm_syntax::Token>,
     index: usize,
-    macros: &'a BTreeMap<String, Macro>,
+    macros: &'a dyn MacroLookup,
     expansion_depth: usize,
 }
 

@@ -13,9 +13,9 @@ pub mod maps;
 pub mod non_text;
 mod normalize;
 mod procedure;
+pub mod procedure_statics;
 mod resolver;
 pub mod settings;
-pub mod procedure_statics;
 mod variable_facts;
 pub use adapter::{
     from_ast, from_ast_in_scope, AdaptedDeclarations, AdapterError, SnapshotError, TreeSnapshot,
@@ -152,7 +152,9 @@ impl SemanticTree {
     pub fn symbols(&self) -> &SymbolTable {
         &self.symbols
     }
-    pub fn shared_symbols(&self) -> Arc<SymbolTable> { Arc::clone(&self.symbols) }
+    pub fn shared_symbols(&self) -> Arc<SymbolTable> {
+        Arc::clone(&self.symbols)
+    }
     pub fn identity(&self) -> u128 {
         self.identity
     }
@@ -743,7 +745,11 @@ fn metadata_fingerprint(metadata: &MemberMetadata) -> u128 {
     if let Some(base) = &metadata.inherited_opaque {
         bytes.extend_from_slice(&base.canonical_bytes());
     }
-    for symbol in [metadata.declared_type, metadata.list_element_type, metadata.display_name] {
+    for symbol in [
+        metadata.declared_type,
+        metadata.list_element_type,
+        metadata.display_name,
+    ] {
         bytes.push(u8::from(symbol.is_some()));
         bytes.extend_from_slice(&symbol.map(SymbolId::bits).unwrap_or(0).to_le_bytes());
     }
@@ -782,6 +788,16 @@ fn metadata_fingerprint(metadata: &MemberMetadata) -> u128 {
     xxhash_rust::xxh3::xxh3_128(&bytes)
 }
 impl dm_ir::Resolver for SemanticTree {
+    fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
+        if domain != dm_ir::ReadDomain::Tree {
+            return None;
+        }
+        let mut hash = xxhash_rust::xxh3::Xxh3::new();
+        hash.update(b"dm-tree-answer-domain-v1\0");
+        hash.update(&self.identity.to_le_bytes());
+        Some(hash.digest128())
+    }
+
     fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
         use dm_ir::{ResolveQuery as Q, ResolvedMeaning as M};
         let root = SymbolId::of("/");
@@ -838,29 +854,57 @@ impl dm_ir::Resolver for SemanticTree {
                     MemberKind::Proc
                 },
             ),
-            Q::ProcedureValue { owner, name, verb, formal } => {
-                let kind = if verb { MemberKind::Verb } else { MemberKind::Proc };
-                let selected = self.lookup_type(owner).and_then(|id| self.resolve(id, name, kind)).and_then(|head| {
-                    if !formal { return Some(head); }
-                    self.override_chain(head).into_iter().find(|id| {
-                        self.member(*id).is_some_and(|node| {
-                            self.types[node.owner.index()].path == owner
-                                && node.definition == DefinitionMode::Declare
+            Q::ProcedureValue {
+                owner,
+                name,
+                verb,
+                formal,
+            } => {
+                let kind = if verb {
+                    MemberKind::Verb
+                } else {
+                    MemberKind::Proc
+                };
+                let selected = self
+                    .lookup_type(owner)
+                    .and_then(|id| self.resolve(id, name, kind))
+                    .and_then(|head| {
+                        if !formal {
+                            return Some(head);
+                        }
+                        self.override_chain(head).into_iter().find(|id| {
+                            self.member(*id).is_some_and(|node| {
+                                self.types[node.owner.index()].path == owner
+                                    && node.definition == DefinitionMode::Declare
+                            })
                         })
+                    });
+                selected
+                    .and_then(|id| {
+                        let node = self.member(id)?;
+                        node.metadata.procedure.as_ref()?;
+                        let occurrence = self
+                            .override_chain(id)
+                            .into_iter()
+                            .filter(|previous| {
+                                self.member(*previous).is_some_and(|other| {
+                                    other.owner == node.owner
+                                        && other.name == node.name
+                                        && other.kind == node.kind
+                                })
+                            })
+                            .count()
+                            .checked_sub(1)?;
+                        Some(M::Value(dm_ir::SemanticValue::Procedure(
+                            dm_ir::ProcedureIdentity {
+                                owner: self.types[node.owner.index()].path,
+                                name,
+                                verb,
+                                occurrence: u32::try_from(occurrence).ok()?,
+                            },
+                        )))
                     })
-                });
-                selected.and_then(|id| {
-                    let node = self.member(id)?;
-                    node.metadata.procedure.as_ref()?;
-                    let occurrence = self.override_chain(id).into_iter().filter(|previous| {
-                        self.member(*previous).is_some_and(|other|
-                            other.owner == node.owner && other.name == node.name && other.kind == node.kind)
-                    }).count().checked_sub(1)?;
-                    Some(M::Value(dm_ir::SemanticValue::Procedure(dm_ir::ProcedureIdentity {
-                        owner: self.types[node.owner.index()].path,
-                        name, verb, occurrence: u32::try_from(occurrence).ok()?,
-                    })))
-                }).unwrap_or(M::Missing)
+                    .unwrap_or(M::Missing)
             }
             Q::GlobalVar(name) => member(root, name, MemberKind::Var),
             Q::GlobalProc(name) => member(root, name, MemberKind::Proc),
@@ -986,21 +1030,58 @@ mod native_root_parent_tests {
         let root = symbols.intern("/").unwrap();
         let datum = symbols.intern("/datum").unwrap();
         let paths = ["/procpath", "/standalone", "/appearance", "/hook/startup"];
-        let mut skeletons = vec![Skeleton::Type {path:datum, explicit_parent:Some(root)}];
-        for path in paths { skeletons.push(Skeleton::Type {path:symbols.intern(path).unwrap(), explicit_parent:None}); }
+        let mut skeletons = vec![Skeleton::Type {
+            path: datum,
+            explicit_parent: Some(root),
+        }];
+        for path in paths {
+            skeletons.push(Skeleton::Type {
+                path: symbols.intern(path).unwrap(),
+                explicit_parent: None,
+            });
+        }
         let engine = symbols.intern("/client").unwrap();
-        skeletons.push(Skeleton::Type {path:engine, explicit_parent:Some(root)});
+        skeletons.push(Skeleton::Type {
+            path: engine,
+            explicit_parent: Some(root),
+        });
         let redirected = symbols.intern("/redirected").unwrap();
-        skeletons.push(Skeleton::Type {path:redirected, explicit_parent:Some(engine)});
+        skeletons.push(Skeleton::Type {
+            path: redirected,
+            explicit_parent: Some(engine),
+        });
         let tree = build(symbols, &skeletons).unwrap();
-        let parent_path = |path| {let id=tree.lookup_type(SymbolId::of(path)).unwrap(); tree.type_node(tree.parent(id).unwrap()).unwrap().path};
-        for path in ["/procpath","/standalone","/appearance","/hook"] { assert_eq!(parent_path(path),datum); }
+        let parent_path = |path| {
+            let id = tree.lookup_type(SymbolId::of(path)).unwrap();
+            tree.type_node(tree.parent(id).unwrap()).unwrap().path
+        };
+        for path in ["/procpath", "/standalone", "/appearance", "/hook"] {
+            assert_eq!(parent_path(path), datum);
+        }
         assert_eq!(parent_path("/hook/startup"), SymbolId::of("/hook"));
-        assert_eq!(parent_path("/client"),root);
-        assert_eq!(parent_path("/redirected"),engine);
-        assert_eq!(parent_path("/datum"),root);
-        let mut symbols = SymbolTable::default(); let ordinary=symbols.intern("/ordinary").unwrap();
-        let unseeded=build(symbols,&[Skeleton::Type{path:ordinary,explicit_parent:None}]).unwrap();
-        assert_eq!(unseeded.type_node(unseeded.parent(unseeded.lookup_type(ordinary).unwrap()).unwrap()).unwrap().path,root);
+        assert_eq!(parent_path("/client"), root);
+        assert_eq!(parent_path("/redirected"), engine);
+        assert_eq!(parent_path("/datum"), root);
+        let mut symbols = SymbolTable::default();
+        let ordinary = symbols.intern("/ordinary").unwrap();
+        let unseeded = build(
+            symbols,
+            &[Skeleton::Type {
+                path: ordinary,
+                explicit_parent: None,
+            }],
+        )
+        .unwrap();
+        assert_eq!(
+            unseeded
+                .type_node(
+                    unseeded
+                        .parent(unseeded.lookup_type(ordinary).unwrap())
+                        .unwrap()
+                )
+                .unwrap()
+                .path,
+            root
+        );
     }
 }

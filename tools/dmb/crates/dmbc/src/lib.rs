@@ -12,6 +12,11 @@ pub mod session;
 pub mod expansion_memo;
 pub mod map_memo;
 pub mod resource_manifest;
+pub mod frozen_inputs;
+pub mod verification;
+pub mod filesystem_proofs;
+pub mod telemetry;
+pub mod cache_maintenance;
 
 pub mod engine;
 pub mod engine_abi_coverage;

@@ -9,11 +9,11 @@ use dm_tree::maps::{AssignmentOrigin, BlockOrigin, TemplateOrigin};
 use serde::{Deserialize, Serialize};
 
 type Bounds = [usize; 2];
-const MAGIC: &[u8; 8] = b"DMBCMAP1";
+const MAGIC: &[u8; 8] = b"DMBCMAP2";
 /// The exact binary key is framed once, rather than serialized as JSON numbers.
 /// Both syntax and geometry DTOs use this envelope; stage/version chooses type.
 fn encode(key: &[u8], payload: &impl Serialize) -> Option<Vec<u8>> {
-    let json = serde_json::to_vec(payload).ok()?;
+    let json = dm_wire::encode(1, payload).ok()?;
     let capacity = 16usize.checked_add(key.len())?.checked_add(json.len())?;
     let mut bytes = Vec::with_capacity(capacity);
     bytes.extend_from_slice(MAGIC);
@@ -334,7 +334,7 @@ fn parsed(payload: Parse, captured: CapturedMap) -> Option<MapPlan> {
 }
 pub(super) fn validate_parse(bytes: &[u8]) -> Result<(), String> {
     let (_, json) = envelope(bytes).ok_or_else(invalid)?;
-    let payload: Parse = serde_json::from_slice(json).map_err(|error| error.to_string())?;
+    let payload: Parse = dm_wire::decode(1, json, 32 * 1024 * 1024)?;
     let captured = CapturedMap {
         path: Arc::new(std::path::PathBuf::new()),
         include_occurrence: 0,
@@ -342,15 +342,25 @@ pub(super) fn validate_parse(bytes: &[u8]) -> Result<(), String> {
     };
     parsed(payload, captured).ok_or_else(invalid).map(|_| ())
 }
-pub(super) fn decode_parse(bytes: &[u8], key: &[u8], captured: CapturedMap) -> Option<MapPlan> {
-    let (stored, json) = envelope(bytes)?;
-    if stored != key {
-        return None;
+pub(super) fn admit_parse(
+    bytes: &[u8],
+    key: &[u8],
+    captured: CapturedMap,
+) -> Result<Option<MapPlan>, String> {
+    let (stored, json) = envelope(bytes).ok_or_else(invalid)?;
+    let payload: Parse = dm_wire::decode(1, json, 32 * 1024 * 1024)?;
+    if stored == key && payload.source.as_str() == captured.source.as_ref() {
+        return parsed(payload, captured).ok_or_else(invalid).map(Some);
     }
-    let payload: Parse = serde_json::from_slice(json).ok()?;
-    parsed(payload, captured)
+    // A hash collision/current-source mismatch is a miss, but the old record
+    // still needs structural validation before cache.get can admit its segment.
+    let original = CapturedMap {
+        path: Arc::new(std::path::PathBuf::new()),
+        include_occurrence: 0,
+        source: Arc::from(payload.source.as_str()),
+    };
+    parsed(payload, original).ok_or_else(invalid).map(|_| None)
 }
-
 #[derive(Serialize, Deserialize)]
 struct Geometry {
     version: u32,
@@ -460,24 +470,30 @@ fn check_geometry(payload: &Geometry) -> Result<(), String> {
 }
 pub(super) fn validate_geometry(bytes: &[u8]) -> Result<(), String> {
     let (_, json) = envelope(bytes).ok_or_else(invalid)?;
-    let payload: Geometry = serde_json::from_slice(json).map_err(|error| error.to_string())?;
+    let payload: Geometry = dm_wire::decode(1, json, 32 * 1024 * 1024)?;
     check_geometry(&payload)
 }
-pub(super) fn decode_geometry<R: Resolver>(
+pub(super) fn admit_geometry<R: Resolver>(
     bytes: &[u8],
     key: &[u8],
     maps: &[MapPlan],
     defaults: WorldDefaults,
     host: &R,
-) -> Option<(Projection, Vec<ResolverRead>)> {
-    let (stored, json) = envelope(bytes)?;
+) -> Result<Option<(Projection, Vec<ResolverRead>)>, String> {
+    let (stored, json) = envelope(bytes).ok_or_else(invalid)?;
+    let payload: Geometry = dm_wire::decode(1, json, 32 * 1024 * 1024)?;
+    check_geometry(&payload)?;
     if stored != key {
-        return None;
+        return Ok(None);
     }
-    let payload: Geometry = serde_json::from_slice(json).ok()?;
-    if check_geometry(&payload).is_err() {
-        return None;
-    }
+    Ok(replay_geometry(payload, maps, defaults, host))
+}
+fn replay_geometry<R: Resolver>(
+    payload: Geometry,
+    maps: &[MapPlan],
+    defaults: WorldDefaults,
+    host: &R,
+) -> Option<(Projection, Vec<ResolverRead>)> {
     let mut reads = Vec::new();
     for (query, expected) in payload.reads {
         // Only the geometry classifier domain is admitted to this schema.

@@ -35,6 +35,41 @@ to explain this regression. No speedup is claimed; attribution and a controlled
 repeat are required before comparing iteration performance. The run stayed under
 the 285-second watchdog. No DreamDaemon or runtime tests were run.
 
+## Regression investigation and next cohort
+
+Release `a54bdbea0a` measurements on the same probe manifest:
+
+| Run | External seconds | Sampled process CPU seconds | Private bytes |
+| --- | ---: | ---: | ---: |
+| Uncached | 80.663 | 64.422 | 2,969,776,128 |
+| Initial cache population | 133.180 | 101.531 | 3,467,124,736 |
+| Unchanged fresh process | 12.745 | 4.953 | 50,917,376 |
+| One probe body edit | 173.260 | 104.484 | 3,365,142,528 |
+
+All exited 0. The uncached and initial-cache artifacts match the earlier cold
+hashes exactly. Body edit changes DMB to SHA256
+`89360DA06712447115C3F4BCC5C7874FB8EC74A5A38400D282D07D42806848F1`;
+RSC stays identical. Evidence directories use the `phase2-20261007-b-` prefix
+under `E:/dmb-native-v2-phase0`. The machine was heavily loaded: a sample
+observed 100% total CPU across 16 logical processors with a game, existing
+DreamDaemon processes, and unrelated builds. None were stopped by this work.
+
+The body-edit run had only 11,601 disk hits and 65,963 recomputed groups. This
+exposed the pending-budget admission problem: an initial build persisted only
+part of its results. The next cohort connects bounded streaming publication,
+shares one mapped snapshot across consumers, removes duplicate procedure parse/
+ABI preparation and per-token origin key traversal, replays relative debug and
+backend diagnostics, and adds directive-interval replay. It also skips decoded
+engine construction on session hits, refreshes racy output proofs, and uses bulk
+NTFS directory proofs. This cohort passes `cargo check -j1`; its focused gates
+are in progress and it has not been benchmarked. No target is claimed met.
+
+The snapshot-fed `--verify` oracle journals consumed bytes and folder membership
+to disk, runs a fresh child against that journal, and compares output bytes and
+diagnostics. `stats`, `explain`, `gc`, configured cache leases, bounded multi-
+segment compaction, and locked output eviction are now connected prototypes;
+their acceptance gates remain open.
+
 ## Implemented foundation
 
 - `dm-cache`: immutable mapped segments, independent indexes, checksums, bounded
@@ -87,3 +122,101 @@ DreamDaemon, DM runtime suite or administrative profiler was run.
   six-worktree acceptance, then real DeepQuarry unchanged/body/structural timings.
 
 The Phase 2 speed and correctness gates in DESIGN.md have not passed yet.
+
+## Current regression-fix cohort (not yet benchmarked)
+
+Procedure population now flushes bounded batches rather than discarding the
+majority of a full project's lowered results. Expansion and map publication are
+being migrated to the same path. Executable, preprocessing, parser and map DTOs
+use the shared bounded `dm-wire` binary framing, with new cache schema versions;
+old records safely miss. Private helper and modified-instance issuers reconstruct
+against current semantic proofs. Verification now explicitly rejects crashes and
+compares streaming reads without assuming equal read chunk boundaries.
+
+The previous body-edit regression is still the latest measured result. These
+changes must pass focused replay checks and a complete build measurement before
+claiming it is fixed. Phase 2's targets and history/concurrency gates remain open.
+### Focused checks on the regression-fix cohort
+
+The unified procedure disk admission passed five procedure memo tests and four
+private/executable wire tests. Captured policy preparation, seven map memo tests,
+two streaming expansion tests, two verification comparison/filter tests, and the
+Windows alternate-name negative-proof fixture passed. Eight preprocessing memo
+checks passed, including exact streaming-key equivalence, directive effects,
+macro-read invalidation and current-origin replay. No full suite or DM runtime
+was launched. Session/used-root checks after their newest edits and real complete
+CLI benchmarks remain pending. One Cargo process, `-j1`, is building the release
+snapshot; unrelated system processes are left running.
+
+Added binary session schema 2 (`.bin` receipts): old sessions safely miss. An
+observed validation path reads an authenticated receipt once rather than twice.
+Cache leases now retain accessed records plus newly published keys, with bounded
+used-key accounting; corruption-driven supersedes sets refresh only when a new
+segment rejection occurs. Production hit paths admit typed records once,
+retaining decoded candidates instead of repeated deserialization and byte copies.
+## Regression-fix release measurements, 2026-10-07 C cohort
+
+Executable SHA-256 `175C5583516DAE770F8B82C6385647CFF52D0D6ABA09276C4A7AEB59FEE97DAB`.
+Same owned DeepQuarry probe manifest, workers 2, fresh CLI processes, warm OS
+filesystem cache, 285-second per-run watchdog. External times through conventional
+output installation (artifact hashing outside timer):
+
+| Scope | Seconds | Sampled CPU s | Peak private bytes |
+|---|---:|---:|---:|
+| Populate compiler caches | 106.474 | 87.438 | 3,364,589,568 |
+| Unchanged session hit | 5.168 | 3.313 | 37,994,496 |
+| One procedure body edit | 84.243 | 67.266 | 3,104,772,096 |
+
+Population recomputed 77,564 groups, unsupported_disk=0. Body edit reused 77,563
+and recomputed one; pending_dropped=0 and publication_failed=0. The incomplete
+population defect is repaired. Relative to B-cohort observations, population
+133.180→106.474, unchanged12.745→5.168, body173.260→84.243. Competing Cargo/rustc
+process count was 10–11; they were left untouched. These are whole CLI timings,
+not isolated causal speedups or met design targets.
+
+Body stage seconds: frontend12.347, resources/maps7.148, ABI3.144,
+initialization4.772, lowering10.656, link8.784, composition4.883,
+publication11.683; driver total78.928. Aggregate key preparation3.183 and
+lookup7.387 (worker-scope times). Body DMB SHA-256
+`3D257867FF0A759E117FA32C35E12DA54E2D97EB39DC8A6E46B4F3193F825CE3`,
+RSC `BD29B5132EDFDB697B53C4666733A99A1D3A7F49083576E6023926B041AB3585`.
+Receipts under `E:/dmb-native-v2-phase0/phase2-20261007-c-*`.
+
+Next cohort adds single linked-image reuse, bulk publication freshness proofs,
+and session validation breakdown counters. It is not included in these numbers.
+Cold same-input comparison is running. Phase2 remains incomplete.
+C cold (`--no-cache`, fresh CLI, warm OS cache) completed in53.267s external,
+51.508s driver,56.531 CPU s,2,995,015,680 peak private bytes. Its DMB and RSC
+hashes match the body-edit run exactly. This is one controlled same-input cold
+comparison, not the required300-commit oracle or BYOND runtime parity.
+
+Actual CLI `--verify` passed a tiny source fixture against its disk-journal cold
+oracle; six actual compiler processes passed cold/warm/body-edit/cold-oracle and
+same-session serialization on tiny independent projects. `stats` and `explain`
+were exercised: the normal tiny compile reported one disk hit and its exact
+procedure path. Tiny concurrency establishes contract plumbing only, not six
+DeepQuarry worktrees' performance/memory acceptance.
+## E cohort regression investigation
+
+Release SHA256 90D8190DA5592A9E350F1AB194F944422F5F685B5CEA3E7CCB1F197583F94ABB.
+Population110.444s, unchanged4.521s, bodyedit122.407s external, workers2,
+watchdog285s, warm OS cache. Competing Cargo/rustc13-21, left alone.
+Unchanged receipt1.200s, bulk capture0.918s, input validation1.859s,
+pair verification0.144s, output validation0.000s; rehashed0.
+Body disk46291/recomputed31273, all recorded misses NoExactVariant;
+Body-run publication had no failures or pending drops; population failures
+were found afterward as documented below. No end-to-end target met.
+Artifacts E:/dmb-native-v2-phase0/phase2-20261007-e-*.
+
+Following source cohort adds bounded worker declaration adaptation, certified
+opcode feature reuse, private structural-validation receipts, exact path proof
+indexes and parent-membership missing-directory proofs. Boot-scoped output
+verification receipts implement D22 and require strong identities/stamps;
+exact mode remains hashing. These changes are not in E measurements.
+Root cause of E partial reuse: population reported publication_failed31272,
+published45728, eight bounded StorageFull OS112 errors. Missing records account
+for all31273 body recomputations (31272 lost records plus changed probe).
+Earlier body-run publication_failed0 does NOT prove population completed.
+DMB_CACHE_DIR now permits explicitly selecting a spacious cache drive; errors
+are surfaced in CLI diagnostics. Isolated follow-up cache must be on D:, not
+crowded C: or E:. No measured speed claim for this unbuilt cohort.

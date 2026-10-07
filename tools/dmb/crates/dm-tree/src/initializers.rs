@@ -41,15 +41,23 @@ pub struct DeclarationPlan<'a> {
     plan: InitializerPlan,
 }
 impl DeclarationPlan<'_> {
-    pub fn source(&self) -> &TreeSnapshot { self.source }
-    pub fn plan(&self) -> &InitializerPlan { &self.plan }
+    pub fn source(&self) -> &TreeSnapshot {
+        self.source
+    }
+    pub fn plan(&self) -> &InitializerPlan {
+        &self.plan
+    }
 }
 pub fn capture_declaration_plan<'a>(
     source: &'a TreeSnapshot,
     order: &'a [OccurrenceId],
 ) -> Result<DeclarationPlan<'a>, Vec<PlanError>> {
     let plan = plan(source, order)?;
-    Ok(DeclarationPlan { source, order, plan })
+    Ok(DeclarationPlan {
+        source,
+        order,
+        plan,
+    })
 }
 /// Join against the issuer's exact private ledger without replaying declarations.
 pub fn with_captured_procedure_statics(
@@ -221,7 +229,8 @@ pub fn with_procedure_statics(
         .map_err(|error| format!("startup declaration order: {error:?}"))?;
     if current.identity != base.identity
         || current.writes.as_ref() != base.writes.as_ref()
-        || current.origins.as_ref() != base.origins.as_ref() {
+        || current.origins.as_ref() != base.origins.as_ref()
+    {
         return Err("startup base ledger differs from current declarations".into());
     }
     assemble_procedure_statics(base, order, captures)
@@ -393,8 +402,15 @@ mod tests {
         let unchanged = with_procedure_statics(&base, &order, &[(occurrence, empty)]).unwrap();
         assert_eq!(unchanged.origins, base.origins);
         assert_eq!(
-            unchanged.writes.iter().map(InitializerWrite::canonical_bytes).collect::<Vec<_>>(),
-            base.writes.iter().map(InitializerWrite::canonical_bytes).collect::<Vec<_>>()
+            unchanged
+                .writes
+                .iter()
+                .map(InitializerWrite::canonical_bytes)
+                .collect::<Vec<_>>(),
+            base.writes
+                .iter()
+                .map(InitializerWrite::canonical_bytes)
+                .collect::<Vec<_>>()
         );
         let startup = with_procedure_statics(&base, &order, &[(occurrence, capture)]).unwrap();
         assert_eq!(startup.writes.len(), 3);
@@ -502,7 +518,9 @@ mod tests {
         assert_eq!(forged_write.identity, issued.plan().identity);
         assert!(with_procedure_statics(&forged_write, &order, &[]).is_err());
         let mut forged_origin = issued.plan().clone();
-        Arc::make_mut(&mut forged_origin.origins)[0].provenance.include_occurrence += 1;
+        Arc::make_mut(&mut forged_origin.origins)[0]
+            .provenance
+            .include_occurrence += 1;
         assert_eq!(forged_origin.identity, issued.plan().identity);
         assert!(with_procedure_statics(&forged_origin, &order, &[]).is_err());
         // Detached copies cannot alter the issuer's read-only ledger.

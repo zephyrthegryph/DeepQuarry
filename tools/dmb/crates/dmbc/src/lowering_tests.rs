@@ -1,4 +1,3 @@
-
 use super::*;
 use dm_ir::{ResolveQuery, ResolvedMeaning};
 use std::{collections::BTreeMap, path::Path};
@@ -39,96 +38,397 @@ fn frontend(source: &'static str) -> ColdFrontend {
     .unwrap()
 }
 #[test]
-fn procedure_memo_reuses_resident_and_disk_and_misses_shifted_origins() {
-    let source="/proc/first()\n    return 1\n/proc/second()\n    return 2\n";
-    let frontend=frontend(source);
-    let startup=crate::startup::capture(&frontend).unwrap();
-    let host=startup.resolver(&frontend,frontend.snapshot.tree.as_ref()).unwrap();
-    let root=std::env::temp_dir().join(format!("dmbc-lowering-memo-{}-{}",std::process::id(),
-        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
-    let cache=dm_cache::Cache::open(&root,dm_cache::Limits::default()).unwrap();
-    let memo=crate::lowering_memo::ProcedureMemo::with_disk(11,cache.snapshot().unwrap());
-    let cold=lower_frontend_with_memo(&frontend,&host,&NoParameters,LoweringConfig::default(),&startup,&memo);
-    assert!(cold.diagnostics.is_empty(),"{:?}",cold.diagnostics);
-    let warm=lower_frontend_with_memo(&frontend,&host,&NoParameters,LoweringConfig::default(),&startup,&memo);
-    assert_eq!(memo.counts.resident_hits.load(std::sync::atomic::Ordering::Relaxed),2);
-    assert_eq!(cold.units[0].code.procedure,warm.units[0].code.procedure);
-    let records=memo.take_pending();
-    assert_eq!(records.len(),2);
+fn procedure_memo_reuses_resident_and_disk_and_rebases_shifted_origins() {
+    let source = "/proc/first()\n    return 1\n/proc/second()\n    return 2\n";
+    let frontend = frontend(source);
+    let startup = crate::startup::capture(&frontend).unwrap();
+    let host = startup
+        .resolver(&frontend, frontend.snapshot.tree.as_ref())
+        .unwrap();
+    let root = std::env::temp_dir().join(format!(
+        "dmbc-lowering-memo-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    let cache = dm_cache::Cache::open(&root, dm_cache::Limits::default()).unwrap();
+    let memo = crate::lowering_memo::ProcedureMemo::with_disk(11, cache.snapshot().unwrap());
+    let cold = lower_frontend_with_memo(
+        &frontend,
+        &host,
+        &NoParameters,
+        LoweringConfig::default(),
+        &startup,
+        &memo,
+    );
+    assert!(cold.diagnostics.is_empty(), "{:?}", cold.diagnostics);
+    let warm = lower_frontend_with_memo(
+        &frontend,
+        &host,
+        &NoParameters,
+        LoweringConfig::default(),
+        &startup,
+        &memo,
+    );
+    assert_eq!(
+        memo.counts
+            .resident_hits
+            .load(std::sync::atomic::Ordering::Relaxed),
+        2
+    );
+    assert_eq!(cold.units[0].code.procedure, warm.units[0].code.procedure);
+    let records = memo.take_pending();
+    assert_eq!(records.len(), 2);
     cache.publish(&records).unwrap();
-    let restarted=crate::lowering_memo::ProcedureMemo::with_disk(11,cache.snapshot().unwrap());
-    let disk=lower_frontend_with_memo(&frontend,&host,&NoParameters,LoweringConfig::default(),&startup,&restarted);
+    let restarted = crate::lowering_memo::ProcedureMemo::with_disk(11, cache.snapshot().unwrap());
+    let disk = lower_frontend_with_memo(
+        &frontend,
+        &host,
+        &NoParameters,
+        LoweringConfig::default(),
+        &startup,
+        &restarted,
+    );
     assert!(disk.diagnostics.is_empty());
-    assert_eq!(restarted.counts.disk_hits.load(std::sync::atomic::Ordering::Relaxed),2);
-    assert_eq!(cold.units[0].code.procedure,disk.units[0].code.procedure);
-    assert_eq!(cold.units[0].debug_origins,disk.units[0].debug_origins);
-    let moved=super::tests::frontend("\n/proc/first()\n    return 1\n/proc/second()\n    return 2\n");
-    let moved_startup=crate::startup::capture(&moved).unwrap();
-    let moved_host=moved_startup.resolver(&moved,moved.snapshot.tree.as_ref()).unwrap();
-    let moved_batch=lower_frontend_with_memo(&moved,&moved_host,&NoParameters,LoweringConfig::default(),&moved_startup,&restarted);
+    assert_eq!(
+        restarted
+            .counts
+            .disk_hits
+            .load(std::sync::atomic::Ordering::Relaxed),
+        2
+    );
+    assert_eq!(cold.units[0].code.procedure, disk.units[0].code.procedure);
+    assert_eq!(cold.units[0].debug_origins, disk.units[0].debug_origins);
+    let moved =
+        super::tests::frontend("\n/proc/first()\n    return 1\n/proc/second()\n    return 2\n");
+    let moved_startup = crate::startup::capture(&moved).unwrap();
+    let moved_host = moved_startup
+        .resolver(&moved, moved.snapshot.tree.as_ref())
+        .unwrap();
+    let moved_batch = lower_frontend_with_memo(
+        &moved,
+        &moved_host,
+        &NoParameters,
+        LoweringConfig::default(),
+        &moved_startup,
+        &restarted,
+    );
     assert!(moved_batch.diagnostics.is_empty());
-    assert_eq!(restarted.counts.recomputed.load(std::sync::atomic::Ordering::Relaxed),2);
+    assert_eq!(
+        restarted
+            .counts
+            .recomputed
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
+    assert_eq!(
+        restarted
+            .counts
+            .disk_hits
+            .load(std::sync::atomic::Ordering::Relaxed),
+        4
+    );
+    assert_eq!(
+        cold.units[0].code.procedure,
+        moved_batch.units[0].code.procedure
+    );
+    for (old, new) in cold.units[0]
+        .debug_origins
+        .entries
+        .iter()
+        .zip(&moved_batch.units[0].debug_origins.entries)
+    {
+        assert_eq!(old.semantic_path, new.semantic_path);
+        assert_eq!(old.line + 1, new.line);
+    }
     // Cleanup only the freshly-created absolute task directory.
-    let bounded_cache=dm_cache::Cache::open(root.join("bounded"),dm_cache::Limits::default()).unwrap();
-    let bounded=crate::lowering_memo::ProcedureMemo::with_disk_limits(11,bounded_cache.snapshot().unwrap(),
-        crate::lowering_memo::MemoLimits {pending_bytes:1,resident_bytes:1});
-    let bounded_batch=lower_frontend_with_memo(&frontend,&host,&NoParameters,LoweringConfig::default(),&startup,&bounded);
+    let bounded_cache =
+        dm_cache::Cache::open(root.join("bounded"), dm_cache::Limits::default()).unwrap();
+    let bounded = crate::lowering_memo::ProcedureMemo::with_disk_limits(
+        11,
+        bounded_cache.snapshot().unwrap(),
+        crate::lowering_memo::MemoLimits {
+            pending_bytes: 1,
+            resident_bytes: 1,
+        },
+    );
+    let bounded_batch = lower_frontend_with_memo(
+        &frontend,
+        &host,
+        &NoParameters,
+        LoweringConfig::default(),
+        &startup,
+        &bounded,
+    );
     assert!(bounded_batch.diagnostics.is_empty());
-    assert_eq!(bounded.pending_bytes(),0);
-    assert_eq!(bounded.values.admitted_bytes(),0);
-    assert_eq!(bounded.counts.pending_dropped.load(std::sync::atomic::Ordering::Relaxed),2);
-    assert_eq!(bounded.counts.resident_dropped.load(std::sync::atomic::Ordering::Relaxed),2);
+    assert_eq!(bounded.pending_bytes(), 0);
+    assert_eq!(bounded.values.admitted_bytes(), 0);
+    assert_eq!(
+        bounded
+            .counts
+            .pending_dropped
+            .load(std::sync::atomic::Ordering::Relaxed),
+        2
+    );
+    assert_eq!(
+        bounded
+            .counts
+            .resident_dropped
+            .load(std::sync::atomic::Ordering::Relaxed),
+        2
+    );
     std::fs::remove_dir_all(root).unwrap();
-}    #[test]
+}
+#[test]
 fn procedure_memo_reuses_when_another_include_moves_only_expanded_arena_offsets() {
-    struct Files {before:&'static str}
+    struct Files {
+        before: &'static str,
+    }
     impl dm_preprocess::SourceProvider for Files {
-        fn read(&self,path:&Path)->Result<String,String> {
+        fn read(&self, path: &Path) -> Result<String, String> {
             Ok(match path.file_name().unwrap().to_str().unwrap() {
-                "project.dme"=>"#include \"before.dm\"\n#include \"body.dm\"\n",
-                "before.dm"=>self.before,"body.dm"=>"/proc/first()\n    return 1\n",_=>return Err("unknown input".into()),
-            }.into())
+                "project.dme" => "#include \"before.dm\"\n#include \"body.dm\"\n",
+                "before.dm" => self.before,
+                "body.dm" => "/proc/first()\n    return 1\n",
+                _ => return Err("unknown input".into()),
+            }
+            .into())
         }
     }
-    let original=dm_tree::frontend::build(Path::new("project.dme"),&Files{before:""},&BTreeMap::new(),1).unwrap();
-    let shifted=dm_tree::frontend::build(Path::new("project.dme"),&Files{before:"/proc/earlier()\n    return 2\n"},&BTreeMap::new(),1).unwrap();
-    let first_startup=crate::startup::capture(&original).unwrap();
-    let first_host=first_startup.resolver(&original,original.snapshot.tree.as_ref()).unwrap();
-    let memo=crate::lowering_memo::ProcedureMemo::new(14);
-    let first=lower_frontend_with_memo(&original,&first_host,&NoParameters,LoweringConfig::default(),&first_startup,&memo);
+    let original = dm_tree::frontend::build(
+        Path::new("project.dme"),
+        &Files { before: "" },
+        &BTreeMap::new(),
+        1,
+    )
+    .unwrap();
+    let shifted = dm_tree::frontend::build(
+        Path::new("project.dme"),
+        &Files {
+            before: "/proc/earlier()\n    return 2\n",
+        },
+        &BTreeMap::new(),
+        1,
+    )
+    .unwrap();
+    let first_startup = crate::startup::capture(&original).unwrap();
+    let first_host = first_startup
+        .resolver(&original, original.snapshot.tree.as_ref())
+        .unwrap();
+    let memo = crate::lowering_memo::ProcedureMemo::new(14);
+    let first = lower_frontend_with_memo(
+        &original,
+        &first_host,
+        &NoParameters,
+        LoweringConfig::default(),
+        &first_startup,
+        &memo,
+    );
     assert!(first.diagnostics.is_empty());
-    let shifted_startup=crate::startup::capture(&shifted).unwrap();
-    let shifted_host=shifted_startup.resolver(&shifted,shifted.snapshot.tree.as_ref()).unwrap();
-    let second=lower_frontend_with_memo(&shifted,&shifted_host,&NoParameters,LoweringConfig::default(),&shifted_startup,&memo);
+    let shifted_startup = crate::startup::capture(&shifted).unwrap();
+    let shifted_host = shifted_startup
+        .resolver(&shifted, shifted.snapshot.tree.as_ref())
+        .unwrap();
+    let second = lower_frontend_with_memo(
+        &shifted,
+        &shifted_host,
+        &NoParameters,
+        LoweringConfig::default(),
+        &shifted_startup,
+        &memo,
+    );
     assert!(second.diagnostics.is_empty());
-    assert_eq!(memo.counts.resident_hits.load(std::sync::atomic::Ordering::Relaxed),1);
-    let reused=second.units.iter().find(|unit|unit.identity.name==SymbolId::of("first")).unwrap();
-    assert_ne!(first.units[0].origin.expanded_span,reused.origin.expanded_span);
-    assert_eq!(reused.code.procedure,first.units[0].code.procedure);
-    assert_eq!(reused.debug_origins,first.units[0].debug_origins);
-    assert_eq!(reused.origin.expanded_span,shifted.bodies.iter().find(|body|
-        shifted.snapshot.tree.member(body.member).is_some_and(|member|member.name==SymbolId::of("first"))).unwrap().expanded_span);
+    assert_eq!(
+        memo.counts
+            .resident_hits
+            .load(std::sync::atomic::Ordering::Relaxed),
+        1
+    );
+    let reused = second
+        .units
+        .iter()
+        .find(|unit| unit.identity.name == SymbolId::of("first"))
+        .unwrap();
+    assert_ne!(
+        first.units[0].origin.expanded_span,
+        reused.origin.expanded_span
+    );
+    assert_eq!(reused.code.procedure, first.units[0].code.procedure);
+    assert_eq!(reused.debug_origins, first.units[0].debug_origins);
+    assert_eq!(
+        reused.origin.expanded_span,
+        shifted
+            .bodies
+            .iter()
+            .find(|body| shifted
+                .snapshot
+                .tree
+                .member(body.member)
+                .is_some_and(|member| member.name == SymbolId::of("first")))
+            .unwrap()
+            .expanded_span
+    );
 }
-#[test]    fn procedure_memo_keys_current_folded_default_inputs() {
+#[test]
+fn procedure_memo_replays_macro_diagnostics_at_current_origins_in_worker_order() {
+    struct Included(bool);
+    impl dm_preprocess::SourceProvider for Included {
+        fn read(&self, path: &Path) -> Result<String, String> {
+            match path.file_name().and_then(|name|name.to_str()) {
+                Some("project.dme")=>Ok("#include \"body.dm\"\n".into()),
+                Some("body.dm")=>Ok(format!("{}#define BAD missing_call()\n/proc/first()\n    if(1)\n        return BAD\n/proc/second()\n    return BAD\n",if self.0{"\n"}else{""})),
+                _=>Err("unexpected source".into()),
+            }
+        }
+    }
+    let build = |shifted| {
+        dm_tree::frontend::build(
+            Path::new("project.dme"),
+            &Included(shifted),
+            &BTreeMap::new(),
+            1,
+        )
+        .unwrap()
+    };
+    let first = build(false);
+    let moved = build(true);
+    let root = std::env::temp_dir().join(format!(
+        "dmbc-diagnostic-memo-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    let cache = dm_cache::Cache::open(&root, dm_cache::Limits::default()).unwrap();
+    let memo = crate::lowering_memo::ProcedureMemo::with_disk(41, cache.snapshot().unwrap());
+    let startup = crate::startup::capture(&first).unwrap();
+    let host = startup.resolver(&first, &Host).unwrap();
+    let cold = lower_frontend_with_memo(
+        &first,
+        &host,
+        &NoParameters,
+        LoweringConfig::default(),
+        &startup,
+        &memo,
+    );
+    assert_eq!(cold.diagnostics.len(), 2);
+    let pending = memo.take_pending();
+    assert_eq!(pending.len(), 2);
+    cache.publish(&pending).unwrap();
+    let restarted = crate::lowering_memo::ProcedureMemo::with_disk(41, cache.snapshot().unwrap());
+    let startup = crate::startup::capture(&moved).unwrap();
+    let host = startup.resolver(&moved, &Host).unwrap();
+    let replay = lower_frontend_with_memo(
+        &moved,
+        &host,
+        &NoParameters,
+        LoweringConfig {
+            workers: 2,
+            max_chunk: 1,
+        },
+        &startup,
+        &restarted,
+    );
+    let oracle = lower_frontend_with_statics(
+        &moved,
+        &host,
+        &NoParameters,
+        LoweringConfig::default(),
+        &startup,
+    );
+    assert_eq!(
+        restarted
+            .counts
+            .disk_hits
+            .load(std::sync::atomic::Ordering::Relaxed),
+        2
+    );
+    for ((old, new), expected) in cold
+        .diagnostics
+        .iter()
+        .zip(&replay.diagnostics)
+        .zip(&oracle.diagnostics)
+    {
+        assert_eq!(old.message, new.message);
+        assert_eq!(old.origin.line + 1, new.origin.line);
+        assert_eq!(new.kind, expected.kind);
+        assert_eq!(new.origin.span, expected.origin.span);
+        assert_eq!(
+            new.origin.macro_expansions.len(),
+            expected.origin.macro_expansions.len()
+        );
+        assert_eq!(new.origin.include_chain, expected.origin.include_chain);
+    }
+    assert!(restarted
+        .explain()
+        .iter()
+        .all(|record| record.outcome == crate::lowering_memo::MemoOutcome::DiskHit));
+    std::fs::remove_dir_all(root).unwrap();
+}
+#[test]
+fn procedure_memo_keys_current_folded_default_inputs() {
     struct Defaults(u32);
     impl AbiPolicy for Defaults {
-        fn inputs(&self,_:UnitIdentity,_:&ProcedureMetadata,_:&SymbolTable,_:&SourceLocation)->Result<ProcedureInputs,String> {
-            Ok(ProcedureInputs {parameters:vec!["value".into()],parameter_defaults:vec![Some(self.0.to_string())],..Default::default()})
+        fn inputs(
+            &self,
+            _: UnitIdentity,
+            _: &ProcedureMetadata,
+            _: &SymbolTable,
+            _: &SourceLocation,
+        ) -> Result<ProcedureInputs, String> {
+            Ok(ProcedureInputs {
+                parameters: vec!["value".into()],
+                parameter_defaults: vec![Some(self.0.to_string())],
+                ..Default::default()
+            })
         }
     }
-    let frontend=frontend("/proc/read(value = 1)\n    return value\n");
-    let startup=crate::startup::capture(&frontend).unwrap();
-    let host=startup.resolver(&frontend,frontend.snapshot.tree.as_ref()).unwrap();
-    let memo=crate::lowering_memo::ProcedureMemo::new(19);
-    let first=lower_frontend_with_memo(&frontend,&host,&Defaults(1),LoweringConfig::default(),&startup,&memo);
-    let changed=lower_frontend_with_memo(&frontend,&host,&Defaults(2),LoweringConfig::default(),&startup,&memo);
-    assert!(first.diagnostics.is_empty(),"{:?}",first.diagnostics);
-    assert!(changed.diagnostics.is_empty(),"{:?}",changed.diagnostics);
-    assert_eq!(memo.counts.resident_hits.load(std::sync::atomic::Ordering::Relaxed),0);
-    assert_eq!(memo.counts.recomputed.load(std::sync::atomic::Ordering::Relaxed),2);
-    assert_ne!(first.units[0].code.procedure,changed.units[0].code.procedure);
+    let frontend = frontend("/proc/read(value = 1)\n    return value\n");
+    let startup = crate::startup::capture(&frontend).unwrap();
+    let host = startup
+        .resolver(&frontend, frontend.snapshot.tree.as_ref())
+        .unwrap();
+    let memo = crate::lowering_memo::ProcedureMemo::new(19);
+    let first = lower_frontend_with_memo(
+        &frontend,
+        &host,
+        &Defaults(1),
+        LoweringConfig::default(),
+        &startup,
+        &memo,
+    );
+    let changed = lower_frontend_with_memo(
+        &frontend,
+        &host,
+        &Defaults(2),
+        LoweringConfig::default(),
+        &startup,
+        &memo,
+    );
+    assert!(first.diagnostics.is_empty(), "{:?}", first.diagnostics);
+    assert!(changed.diagnostics.is_empty(), "{:?}", changed.diagnostics);
+    assert_eq!(
+        memo.counts
+            .resident_hits
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
+    assert_eq!(
+        memo.counts
+            .recomputed
+            .load(std::sync::atomic::Ordering::Relaxed),
+        2
+    );
+    assert_ne!(
+        first.units[0].code.procedure,
+        changed.units[0].code.procedure
+    );
 }
-#[test]    fn actual_lazy_frontend_units_are_equal_with_one_or_two_workers() {
+#[test]
+fn actual_lazy_frontend_units_are_equal_with_one_or_two_workers() {
     let frontend = frontend("/proc/first()\n    return 1\n/proc/second()\n    return 2\n");
     let one = lower_frontend(
         &frontend,
@@ -259,8 +559,7 @@ fn included_macro_failures_report_statement_lines_in_worker_order() {
         }
     }
     let frontend =
-        dm_tree::frontend::build(Path::new("project.dme"), &Included, &BTreeMap::new(), 1)
-            .unwrap();
+        dm_tree::frontend::build(Path::new("project.dme"), &Included, &BTreeMap::new(), 1).unwrap();
     let one = lower_frontend(
         &frontend,
         &Host,
@@ -316,8 +615,7 @@ fn included_macro_and_loop_bodies_keep_actual_source_debug_origins() {
         }
     }
     let frontend =
-        dm_tree::frontend::build(Path::new("project.dme"), &Included, &BTreeMap::new(), 1)
-            .unwrap();
+        dm_tree::frontend::build(Path::new("project.dme"), &Included, &BTreeMap::new(), 1).unwrap();
     let batch = lower_frontend(&frontend, &Host, &NoParameters, LoweringConfig::default());
     assert!(batch.diagnostics.is_empty(), "{:?}", batch.diagnostics);
     assert_eq!(batch.units.len(), 1);
@@ -333,8 +631,7 @@ fn included_macro_and_loop_bodies_keep_actual_source_debug_origins() {
 #[test]
 fn captured_policy_prepares_guarded_settings_and_authoritative_layout() {
     use crate::procedure_policy::{
-        CapturedConstantEvaluator, CapturedInheritedFacts, CapturedProcedurePolicy,
-        InheritedLayout,
+        CapturedConstantEvaluator, CapturedInheritedFacts, CapturedProcedurePolicy, InheritedLayout,
     };
     use dm_codegen_byond::procedure_abi::{AbiError, Category};
     struct Facts;
@@ -371,8 +668,7 @@ fn captured_policy_prepares_guarded_settings_and_authoritative_layout() {
     assert_eq!(abi.layout.category, Category::Null);
     assert_eq!(abi.layout.flags, 0x24);
     assert_eq!(batch.units[0].code.procedure.argument_type_flags, [136]);
-    let helper_frontend =
-        self::frontend("/proc/source(value in list(value))\n    return value\n");
+    let helper_frontend = self::frontend("/proc/source(value in list(value))\n    return value\n");
     let helpers = lower_frontend(&helper_frontend, &Host, &policy, LoweringConfig::default());
     assert!(helpers.diagnostics.is_empty(), "{:?}", helpers.diagnostics);
     helpers.require_production_abi().unwrap();
@@ -382,6 +678,67 @@ fn captured_policy_prepares_guarded_settings_and_authoritative_layout() {
     assert_eq!(helper.argument, 0);
     assert!(helper.code.procedure.argument_names.is_empty());
     assert_eq!(helper.debug_origins.entries[0].line, 1);
+    // The wire retains executable helpers but obtains today's header/frame and origin.
+    let startup = crate::startup::capture(&helper_frontend).unwrap();
+    let host = startup.resolver(&helper_frontend, &Host).unwrap();
+    let root = std::env::temp_dir().join(format!(
+        "dmbc-private-helper-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    let cache = dm_cache::Cache::open(&root, dm_cache::Limits::default()).unwrap();
+    let memo = crate::lowering_memo::ProcedureMemo::with_disk(11, cache.snapshot().unwrap());
+    let cold = lower_frontend_with_memo(
+        &helper_frontend,
+        &host,
+        &policy,
+        LoweringConfig::default(),
+        &startup,
+        &memo,
+    );
+    assert!(cold.diagnostics.is_empty(), "{:?}", cold.diagnostics);
+    assert_eq!(
+        memo.counts
+            .unsupported_disk
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
+    cache.publish(&memo.take_pending()).unwrap();
+    let moved = self::frontend("\n/proc/source(value in list(value))\n    return value\n");
+    let moved_startup = crate::startup::capture(&moved).unwrap();
+    let moved_host = moved_startup.resolver(&moved, &Host).unwrap();
+    let disk = crate::lowering_memo::ProcedureMemo::with_disk(11, cache.snapshot().unwrap());
+    let warm = lower_frontend_with_memo(
+        &moved,
+        &moved_host,
+        &policy,
+        LoweringConfig::default(),
+        &moved_startup,
+        &disk,
+    );
+    assert!(warm.diagnostics.is_empty(), "{:?}", warm.diagnostics);
+    assert_eq!(
+        disk.counts
+            .disk_hits
+            .load(std::sync::atomic::Ordering::Relaxed),
+        1
+    );
+    assert_eq!(
+        warm.units[0].source_helpers[0].code.procedure,
+        cold.units[0].source_helpers[0].code.procedure
+    );
+    assert_eq!(
+        warm.units[0].source_helpers[0].debug_origins.entries[0].line,
+        2
+    );
+    drop(disk);
+    drop(memo);
+    drop(cache);
+    std::fs::remove_dir_all(root).unwrap();
+
     assert!(helper.code.procedure.code.items.iter().any(|item| matches!(item,dm_codegen_byond::Item::Instruction(instruction) if instruction.operands.iter().any(|word|matches!(word,dm_codegen_byond::Word::Variable(dm_codegen_byond::VariableWord::Arg(0)))))));
 }
 #[test]
@@ -443,4 +800,102 @@ fn empty_static_inventory_skips_only_actual_body_without_stored_qualifiers() {
     assert!(injected.diagnostics[0]
         .message
         .contains("startup inventory differs"));
+}
+#[test]
+fn procedure_memo_publisher_flushes_small_bounded_batches_without_dropping_population() {
+    struct Many(String);
+    impl dm_preprocess::SourceProvider for Many {
+        fn read(&self, _: &Path) -> Result<String, String> {
+            Ok(self.0.clone())
+        }
+    }
+    let source = (0..64)
+        .map(|index| format!("/proc/p{index}()\n    return {index}\n"))
+        .collect::<String>();
+    let frontend =
+        dm_tree::frontend::build(Path::new("project.dme"), &Many(source), &BTreeMap::new(), 1)
+            .unwrap();
+    let startup = crate::startup::capture(&frontend).unwrap();
+    let host = startup
+        .resolver(&frontend, frontend.snapshot.tree.as_ref())
+        .unwrap();
+    let root = std::env::temp_dir().join(format!(
+        "dmbc-publisher-memo-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    let cache = Arc::new(dm_cache::Cache::open(&root, dm_cache::Limits::default()).unwrap());
+    let publisher = Arc::clone(&cache);
+    let memo = crate::lowering_memo::ProcedureMemo::with_disk_limits(
+        71,
+        cache.snapshot().unwrap(),
+        crate::lowering_memo::MemoLimits {
+            pending_bytes: 2048,
+            resident_bytes: 1,
+        },
+    )
+    .with_publisher(Arc::new(move |records| {
+        publisher
+            .publish(&records)
+            .map(|_| ())
+            .map_err(|error| error.to_string())
+    }));
+    let cold = lower_frontend_with_memo(
+        &frontend,
+        &host,
+        &NoParameters,
+        LoweringConfig {
+            workers: 2,
+            max_chunk: 1,
+        },
+        &startup,
+        &memo,
+    );
+    assert_eq!(cold.units.len(), 64);
+    assert!(cold.diagnostics.is_empty());
+    let pending = memo.take_pending();
+    if !pending.is_empty() {
+        cache.publish(&pending).unwrap();
+    }
+    assert_eq!(
+        memo.counts
+            .pending_dropped
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
+    assert_eq!(
+        memo.counts
+            .publication_failed
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
+    assert!(
+        memo.counts
+            .published_records
+            .load(std::sync::atomic::Ordering::Relaxed)
+            > 0
+    );
+    let restarted = crate::lowering_memo::ProcedureMemo::with_disk(71, cache.snapshot().unwrap());
+    let disk = lower_frontend_with_memo(
+        &frontend,
+        &host,
+        &NoParameters,
+        LoweringConfig::default(),
+        &startup,
+        &restarted,
+    );
+    assert_eq!(
+        restarted
+            .counts
+            .disk_hits
+            .load(std::sync::atomic::Ordering::Relaxed),
+        64
+    );
+    for (cold, disk) in cold.units.iter().zip(&disk.units) {
+        assert_eq!(cold.code.procedure, disk.code.procedure);
+    }
+    std::fs::remove_dir_all(root).unwrap();
 }

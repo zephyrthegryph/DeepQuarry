@@ -184,7 +184,11 @@ impl SemanticTree {
             Q::Var { owner, name } | Q::Constant { owner, name } => {
                 Some((owner, name, MemberKind::Var))
             }
-            Q::Proc { owner, name, verb } | Q::ProcedureValue { owner, name, verb, .. } | Q::OverrideChain { owner, name, verb } => Some((
+            Q::Proc { owner, name, verb }
+            | Q::ProcedureValue {
+                owner, name, verb, ..
+            }
+            | Q::OverrideChain { owner, name, verb } => Some((
                 owner,
                 name,
                 if verb {
@@ -231,9 +235,14 @@ impl SemanticTree {
         for (id, member) in self.members.iter().enumerate() {
             if member.kind == MemberKind::Var {
                 match self.variable_storage_for_member(MemberId(id as u32)) {
-                    M::InstanceField { .. } => { non_unique.insert(member.name); }
+                    M::InstanceField { .. } => {
+                        non_unique.insert(member.name);
+                    }
                     M::Slot { owner, name, .. } => {
-                        if shared.insert(name, owner).is_some_and(|previous| previous != owner) {
+                        if shared
+                            .insert(name, owner)
+                            .is_some_and(|previous| previous != owner)
+                        {
                             non_unique.insert(name);
                         }
                     }
@@ -254,7 +263,10 @@ impl SemanticTree {
                         non_unique.insert(e.name);
                     }
                     if let Some(owner) = e.shared_owner {
-                        if shared.insert(e.name, owner).is_some_and(|previous| previous != owner) {
+                        if shared
+                            .insert(e.name, owner)
+                            .is_some_and(|previous| previous != owner)
+                        {
                             non_unique.insert(e.name);
                         }
                     }
@@ -293,7 +305,11 @@ impl SemanticTree {
     /// Inherited assignments share the exact formal owner/name slot; an
     /// instance field or a second distinct slot makes the name ambiguous.
     pub fn captured_variable_uniqueness(&self, name: SymbolId) -> M {
-        self.inventory.unique.get(&name).copied().flatten()
+        self.inventory
+            .unique
+            .get(&name)
+            .copied()
+            .flatten()
             .map(|(owner, name)| Self::slot(owner, name))
             .unwrap_or(M::Missing)
     }
@@ -425,22 +441,38 @@ mod tests {
     fn positive_storage_counterexamples_disprove_uniqueness_in_partial_inventory() {
         let base = tree("/datum/a\n    var/static/one\n    var/instance\n/datum/b\n    var/static/two\n/datum/c\n    var/static/two\n");
         for name in ["instance", "two"] {
-            assert_eq!(Resolver::resolve(&base, Q::UniqueStaticVar(SymbolId::of(name))), M::Missing);
+            assert_eq!(
+                Resolver::resolve(&base, Q::UniqueStaticVar(SymbolId::of(name))),
+                M::Missing
+            );
         }
         let one = Q::UniqueStaticVar(SymbolId::of("one"));
         assert_eq!(Resolver::resolve(&base, one), M::Unsupported(one));
         let unknown = Q::UniqueStaticVar(SymbolId::of("uncaptured"));
         assert_eq!(Resolver::resolve(&base, unknown), M::Unsupported(unknown));
         let opaque = IntrinsicMember {
-            owner: SymbolId::of("/datum/a"), name: SymbolId::of("native"),
-            kind: MemberKind::Var, shared_owner: None, instance_storage_proven: false,
+            owner: SymbolId::of("/datum/a"),
+            name: SymbolId::of("native"),
+            kind: MemberKind::Var,
+            shared_owner: None,
+            instance_storage_proven: false,
         };
         let query = Q::UniqueStaticVar(opaque.name);
-        let partial = base.clone().with_engine_intrinsics(hierarchy(&base), vec![opaque.clone()]).unwrap();
+        let partial = base
+            .clone()
+            .with_engine_intrinsics(hierarchy(&base), vec![opaque.clone()])
+            .unwrap();
         assert_eq!(Resolver::resolve(&partial, query), M::Unsupported(query));
-        let proven = base.clone().with_engine_intrinsics(hierarchy(&base), vec![IntrinsicMember {
-            instance_storage_proven: true, ..opaque
-        }]).unwrap();
+        let proven = base
+            .clone()
+            .with_engine_intrinsics(
+                hierarchy(&base),
+                vec![IntrinsicMember {
+                    instance_storage_proven: true,
+                    ..opaque
+                }],
+            )
+            .unwrap();
         assert_eq!(Resolver::resolve(&proven, query), M::Missing);
     }
     #[test]

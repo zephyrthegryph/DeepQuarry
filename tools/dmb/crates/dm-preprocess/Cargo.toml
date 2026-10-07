@@ -12,3 +12,5 @@ sha2 = "0.10"
 im = "15.1"
 
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
+
+dm-wire = { path = "../dm-wire" }

@@ -200,3 +200,48 @@ pub fn lower_helpers<R: Resolver>(
     }
     Ok(result)
 }
+
+/// Rebind executable-only cache data to today's issued signature and argument frame.
+pub(crate) fn rebase_cached_helper(
+    context: HelperInputs<'_>,
+    argument: u32,
+    code: ResolverProc,
+) -> Result<LoweredHelper, String> {
+    let helper = context
+        .helpers
+        .iter()
+        .find(|helper| helper.argument == argument as usize)
+        .ok_or("cached helper argument not prepared")?;
+    if helper.frame_parameters != context.inputs.parameters
+        || !code.procedure.argument_names.is_empty()
+        || !code.procedure.argument_type_flags.is_empty()
+        || !code.procedure.argument_value_sources.is_empty()
+    {
+        return Err("cached helper frame differs from current preparation".into());
+    }
+    let absolute = source_offset(context.parsed, context.metadata, helper.argument)?;
+    if context
+        .frontend
+        .expanded
+        .text
+        .get(context.parsed.header_span.start..context.parsed.header_span.end)
+        != Some(context.parsed.header.as_str())
+    {
+        return Err("cached helper header mapping differs".into());
+    }
+    let origin = context
+        .frontend
+        .location(absolute)
+        .ok_or("cached helper origin unavailable")?;
+    Ok(LoweredHelper {
+        owner: context.owner,
+        argument,
+        code,
+        debug_origins: DebugOrigins {
+            entries: vec![DebugOrigin {
+                semantic_path: origin.semantic_path.to_string(),
+                line: u32::try_from(origin.line).map_err(|_| "helper line exceeds u32")?,
+            }],
+        },
+    })
+}

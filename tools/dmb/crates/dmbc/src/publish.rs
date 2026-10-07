@@ -14,6 +14,10 @@ use std::collections::HashMap;
 use std::time::SystemTime;
 use xxhash_rust::xxh3::{xxh3_128, Xxh3};
 
+#[path = "publish_eviction.rs"]
+mod eviction;
+pub use eviction::EvictionResult;
+
 static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 #[cfg(test)]
@@ -121,7 +125,7 @@ impl OutputPair {
 
 pub struct PairStore {
     root: PathBuf,
-    verified: Mutex<HashMap<u128, (OutputPair, Vec<(u64, SystemTime)>)>>,
+    verified: Mutex<HashMap<u128, (OutputPair, Vec<crate::input_snapshot::Stamp>)>>,
 }
 
 /// Content identity of an archive already owned by this store. A cold linker
@@ -132,20 +136,62 @@ pub struct ResourceIdentity {
     pub hash: u128,
 }
 
+#[derive(Serialize, Deserialize)]
+struct BootVerification {
+    schema: u32,
+    boot: [u8; 16],
+    pair: OutputPair,
+    stamps: Vec<crate::input_snapshot::Stamp>,
+}
+
+// Failure to obtain a kernel-issued boot identity disables persistent trust.
+#[cfg(windows)]
+fn boot_identity() -> Option<[u8; 16]> {
+    #[link(name = "ntdll")]
+    unsafe extern "system" {
+        fn NtQuerySystemInformation(class: u32, buffer: *mut std::ffi::c_void, length: u32, returned: *mut u32) -> i32;
+    }
+    // SYSTEM_BOOT_ENVIRONMENT_INFORMATION (phnt/ntexapi.h, class 90) starts
+    // with the boot GUID. Use an
+    // aligned buffer large enough for the firmware type and boot flags too.
+    let mut buffer = [0u64; 8];
+    let mut returned = 0;
+    let status = unsafe { NtQuerySystemInformation(90, buffer.as_mut_ptr().cast(), 64, &mut returned) };
+    if status < 0 || returned < 16 { return None; }
+    let mut id = [0u8; 16];
+    id[..8].copy_from_slice(&buffer[0].to_ne_bytes());
+    id[8..].copy_from_slice(&buffer[1].to_ne_bytes());
+    (id != [0; 16]).then_some(id)
+}
+
+#[cfg(not(windows))]
+fn boot_identity() -> Option<[u8; 16]> {
+    let bytes = fs::read("/proc/sys/kernel/random/boot_id").ok()?;
+    Some(xxh3_128(&bytes).to_le_bytes())
+}
+
+fn stable_pair_stamps(path: &Path) -> io::Result<Vec<crate::input_snapshot::Stamp>> {
+    use crate::input_snapshot::SnapshotProvider;
+    ["pair.json", "deepquarry.dmb", "deepquarry.rsc"].iter()
+        .map(|name| crate::input_snapshot::FileSystemInputs.stamp(&path.join(name)))
+        .collect()
+}
+
 impl PairStore {
     /// The caller selects a store on the output volume; no drive-root permission
     /// or junction behavior is assumed here.
     pub fn open(root: impl AsRef<Path>) -> io::Result<Self> {
         fs::create_dir_all(root.as_ref())?;
         let root = fs::canonicalize(root)?;
-        for name in ["pairs", "resources", "sessions", "temporary", "quarantine"] {
+        for name in ["pairs", "resources", "sessions", "temporary", "quarantine", "verified"] {
             fs::create_dir_all(root.join(name))?;
         }
         Ok(Self { root, verified: Mutex::new(HashMap::new()) })
     }
 
-    /// First use always hashes the immutable pair. Later uses in this process
-    /// may trust unchanged stamps; exact mode deliberately hashes every use.
+    /// First use after a boot hashes the pair. Later processes may reuse an
+    /// authenticated boot receipt with unchanged file identities and stamps.
+    /// Exact mode deliberately hashes every use.
     /// The store lock covers validation and use, including future eviction.
     pub fn verify(&self, id: u128, exact: bool) -> io::Result<OutputPair> {
         let _lock = self.lock()?;
@@ -155,18 +201,55 @@ impl PairStore {
     fn verify_locked(&self, id: u128, exact: bool) -> io::Result<OutputPair> {
         let source = self.root.join("pairs").join(format!("{id:032x}"));
         let stamps = pair_stamps(&source)?;
+        let boot = boot_identity();
+        let stable = stable_pair_stamps(&source)?;
+        let receipt_path = self.root.join("verified").join(format!("{id:032x}.json"));
         if !exact {
             let memo = self.verified.lock().map_err(|_| invalid("pair verification lock poisoned"))?;
             if let Some((pair, old)) = memo.get(&id) {
-                if *old == stamps { return Ok(pair.clone()); }
+                if *old == stable && stable.iter().all(|stamp| stamp.file_id.is_some()) { return Ok(pair.clone()); }
+            }
+            if let Some(boot) = boot {
+                if stable.iter().all(|stamp| stamp.file_id.is_some()) {
+                    if let Ok(file) = File::open(&receipt_path) {
+                        let mut bytes = Vec::new();
+                        let read = file.take(65537).read_to_end(&mut bytes);
+                        if read.is_ok() && bytes.len() <= 65536 {
+                            if let Ok(receipt) = serde_json::from_slice::<BootVerification>(&bytes) {
+                                let canonical = OutputPair::from_hashes(receipt.pair.dmb_bytes, receipt.pair.dmb_hash, receipt.pair.rsc_bytes, receipt.pair.rsc_hash);
+                                if receipt.schema == 1 && receipt.boot == boot && receipt.pair.id == id && receipt.pair == canonical && receipt.stamps == stable && stable[1].size == receipt.pair.dmb_bytes && stable[2].size == receipt.pair.rsc_bytes {
+                                    let manifest: OutputPair = serde_json::from_slice(&fs::read(source.join("pair.json"))?).map_err(invalid)?;
+                                    if manifest == receipt.pair && stable_pair_stamps(&source)? == stable {
+                                        drop(memo);
+                                        self.verified.lock().map_err(|_| invalid("pair verification lock poisoned"))?.insert(id, (manifest.clone(), stable));
+                                        return Ok(manifest);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         let pair = validate_directory(&source, id)?;
-        if pair_stamps(&source)? != stamps {
+        if pair_stamps(&source)? != stamps || stable_pair_stamps(&source)? != stable {
             return Err(invalid("immutable pair changed during verification"));
         }
         self.verified.lock().map_err(|_| invalid("pair verification lock poisoned"))?
-            .insert(id, (pair.clone(), stamps));
+            .insert(id, (pair.clone(), stable.clone()));
+        if let Some(boot) = boot {
+            if stable.iter().all(|stamp| stamp.file_id.is_some()) {
+                let receipt = BootVerification { schema: 1, boot, pair: pair.clone(), stamps: stable };
+                // A cache receipt failure must not turn a validated pair into a
+                // failed compilation. The next acquisition hashes it again.
+                if let Ok(directory) = self.temporary("verification") {
+                    let temp = directory.join("receipt.json");
+                    if write_json(&temp, &receipt).is_ok() { let _ = atomic_replace(&temp, &receipt_path); }
+                    let _ = fs::remove_file(&temp);
+                    let _ = fs::remove_dir(&directory);
+                }
+            }
+        }
         Ok(pair)
     }
 
@@ -744,6 +827,23 @@ mod tests {
         assert_eq!(fs::read(&rsc).unwrap(), b"assets-two");
         let actual: OutputPair = serde_json::from_slice(&fs::read(marker).unwrap()).unwrap();
         assert_eq!(actual, second);
+    }
+
+    #[test]
+    fn boot_receipt_reuses_across_stores_and_rejects_replaced_identity() {
+        let store = store();
+        let pair = store.publish(1, b"original", b"resource").unwrap();
+        assert_eq!(store.verify(pair.id, false).unwrap(), pair);
+        let next = PairStore::open(&store.root).unwrap();
+        assert_eq!(next.verify(pair.id, false).unwrap(), pair);
+        assert_eq!(next.verify(pair.id, true).unwrap(), pair);
+        let path = store.root.join("pairs").join(pair.name()).join("deepquarry.dmb");
+        let replaced = path.with_extension("replacement");
+        fs::write(&replaced, b"corrupt!").unwrap();
+        fs::rename(&path, path.with_extension("old")).unwrap();
+        fs::rename(&replaced, &path).unwrap();
+        assert!(next.verify(pair.id, false).is_err());
+        assert!(PairStore::open(&store.root).unwrap().verify(pair.id, false).is_err());
     }
 
     #[test]

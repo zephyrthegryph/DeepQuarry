@@ -6,7 +6,7 @@ use std::{
     io::Write,
     path::{Path, PathBuf},
     sync::{
-        atomic::{AtomicBool, AtomicU64, Ordering},
+        atomic::{AtomicU64, Ordering},
         Arc, Mutex,
     },
 };
@@ -17,19 +17,22 @@ pub struct RejectedSegment {
     pub reason: String,
 }
 pub struct Cache {
-    root: PathBuf,
-    limits: Limits,
+    pub(crate) root: PathBuf,
+    pub(crate) limits: Limits,
 }
 pub struct CacheSnapshot {
-    segments: Vec<(PathBuf, Arc<Segment>)>,
+    pub(crate) segments: Vec<(PathBuf, Arc<Segment>)>,
     rejected: Mutex<Vec<RejectedSegment>>,
     index: BTreeMap<RecordKey, Vec<usize>>,
-    superseded: BTreeSet<u128>,
-    record_rejected: AtomicBool,
+    superseded: Arc<BTreeSet<u128>>,
+    rejection_generation: AtomicU64,
+    revised_superseded: Mutex<(u64, Arc<BTreeSet<u128>>)>,
+    used_keys: Mutex<BTreeSet<RecordKey>>,
 }
 #[derive(Debug)]
 pub struct CompactResult {
     pub segment: Option<u128>,
+    pub segments: Vec<u128>,
     pub records: usize,
     pub deleted: usize,
     pub deferred_deletes: Vec<PathBuf>,
@@ -41,6 +44,10 @@ impl Cache {
         Ok(Self { root, limits })
     }
     pub fn user_default(limits: Limits) -> Result<Self, CacheError> {
+        if let Some(root) = std::env::var_os("DMB_CACHE_DIR") {
+            if root.is_empty() { return Err(CacheError::Invalid("DMB_CACHE_DIR is empty".into())); }
+            return Self::open(PathBuf::from(root), limits);
+        }
         let root = if cfg!(windows) {
             std::env::var_os("LOCALAPPDATA")
                 .map(PathBuf::from)
@@ -101,7 +108,7 @@ impl Cache {
                 index.entry(key).or_default().push(ordinal);
             }
         }
-        let superseded = segments
+        let superseded: BTreeSet<u128> = segments
             .iter()
             .flat_map(|(_, segment)| segment.supersedes().iter().copied())
             .collect();
@@ -109,8 +116,10 @@ impl Cache {
             segments,
             rejected: Mutex::new(rejected),
             index,
-            superseded,
-            record_rejected: AtomicBool::new(false),
+            superseded: Arc::new(superseded),
+            rejection_generation: AtomicU64::new(0),
+            revised_superseded: Mutex::new((0, Arc::new(BTreeSet::new()))),
+            used_keys: Mutex::new(BTreeSet::new()),
         })
     }
     pub fn publish(&self, records: &[Record]) -> Result<u128, CacheError> {
@@ -172,80 +181,119 @@ impl Cache {
         live: &BTreeSet<RecordKey>,
         validate: impl Fn(RecordKey, &[u8], &[(u64, &[u8])]) -> Result<(), String>,
     ) -> Result<CompactResult, CacheError> {
+        let _lock = self.compact_lock(false)?;
+        self.compact_locked(live, &validate)
+    }
+    pub(crate) fn compact_lock(&self, wait: bool) -> Result<std::fs::File, CacheError> {
         let lock = OpenOptions::new()
             .create(true)
             .truncate(false)
             .read(true)
             .write(true)
             .open(self.root.join("compact.lock"))?;
-        match lock.try_lock_exclusive() {
-            Ok(()) => (),
-            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                return Err(CacheError::Busy)
-            }
-            Err(error) => return Err(error.into()),
+        let result = if wait {
+            lock.lock_exclusive()
+        } else {
+            lock.try_lock_exclusive()
+        };
+        match result {
+            Ok(()) => Ok(lock),
+            Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => Err(CacheError::Busy),
+            Err(error) => Err(error.into()),
         }
+    }
+    pub(crate) fn compact_locked(
+        &self,
+        live: &BTreeSet<RecordKey>,
+        validate: &impl Fn(RecordKey, &[u8], &[(u64, &[u8])]) -> Result<(), String>,
+    ) -> Result<CompactResult, CacheError> {
         let snapshot = self.snapshot()?;
-        let mut retained = BTreeMap::new();
+        // Complete admission before publishing any base: a late rejection must
+        // exclude every record of that segment, including earlier valid records.
         loop {
-            let admitted_segments = snapshot.segment_count();
-            retained.clear();
+            let before = snapshot.segment_count();
             for key in live {
-                if let Some(view) =
-                    snapshot.get(*key, |payload, symbols| validate(*key, payload, symbols))
-                {
-                    retained.insert(
-                        *key,
-                        Record {
-                            key: *key,
-                            symbols: view
-                                .symbols
-                                .iter()
-                                .map(|(id, text)| crate::SymbolText {
-                                    id: *id,
-                                    text: Arc::from(*text),
-                                })
-                                .collect(),
-                            payload: Arc::from(view.payload),
-                        },
-                    );
-                }
+                let _ = snapshot.get(*key, |payload, symbols| validate(*key, payload, symbols));
             }
-            if snapshot.segment_count() == admitted_segments {
+            if snapshot.segment_count() == before {
                 break;
             }
-            // A late failure rejects its entire segment, including earlier keys.
-            // Restart against the remaining immutable segments; each restart
-            // removes at least one segment, so this cannot loop indefinitely.
         }
         let supersedes = snapshot
             .segments
             .iter()
-            .filter(|(_, s)| !s.is_rejected())
-            .map(|(_, s)| s.id())
+            .filter(|(_, segment)| !segment.is_rejected())
+            .map(|(_, segment)| segment.id())
             .collect::<Vec<_>>();
         if supersedes.is_empty() {
             return Ok(CompactResult {
                 segment: None,
+                segments: Vec::new(),
                 records: 0,
                 deleted: 0,
                 deferred_deletes: Vec::new(),
             });
         }
-        let id =
-            self.publish_superseding(&retained.values().cloned().collect::<Vec<_>>(), &supersedes)?;
-        // Release this process's maps before deleting; other readers retain their
-        // immutable maps. Windows sharing failures are reported for the next pass.
+        let overhead = 72u64
+            .checked_add(
+                (supersedes.len() as u64)
+                    .checked_mul(16)
+                    .ok_or_else(|| CacheError::Invalid("compaction framing overflow".into()))?,
+            )
+            .ok_or_else(|| CacheError::Invalid("compaction framing overflow".into()))?;
+        let mut chunks = Vec::new();
+        let mut pending = Vec::new();
+        let mut charge = overhead;
+        let mut count = 0;
+        for key in live {
+            let Some(view) =
+                snapshot.get(*key, |payload, symbols| validate(*key, payload, symbols))
+            else {
+                continue;
+            };
+            let record = Record {
+                key: *key,
+                symbols: view
+                    .symbols
+                    .iter()
+                    .map(|(id, text)| crate::SymbolText {
+                        id: *id,
+                        text: Arc::from(*text),
+                    })
+                    .collect(),
+                payload: Arc::from(view.payload),
+            };
+            let bytes = crate::sink::record_charge(&record)?;
+            if !pending.is_empty()
+                && (charge.saturating_add(bytes) > self.limits.segment_bytes
+                    || pending.len() >= self.limits.records as usize)
+            {
+                chunks.push(self.publish_superseding(&pending, &supersedes)?);
+                pending.clear();
+                charge = overhead;
+            }
+            if charge.saturating_add(bytes) > self.limits.segment_bytes {
+                return Err(CacheError::Invalid(
+                    "compaction record cannot fit segment".into(),
+                ));
+            }
+            charge += bytes;
+            pending.push(record);
+            count += 1;
+        }
+        if !pending.is_empty() || chunks.is_empty() {
+            chunks.push(self.publish_superseding(&pending, &supersedes)?);
+        }
         let old = snapshot
             .segments
             .iter()
-            .map(|(path, s)| (path.clone(), s.id()))
+            .map(|(path, segment)| (path.clone(), segment.id()))
             .collect::<Vec<_>>();
         drop(snapshot);
         let mut deleted = 0;
         let mut deferred_deletes = Vec::new();
-        for (path, old_id) in old {
-            if supersedes.contains(&old_id) && old_id != id {
+        for (path, id) in old {
+            if supersedes.contains(&id) && !chunks.contains(&id) {
                 match fs::remove_file(&path) {
                     Ok(()) => deleted += 1,
                     Err(error) if error.kind() == std::io::ErrorKind::NotFound => (),
@@ -254,14 +302,39 @@ impl Cache {
             }
         }
         Ok(CompactResult {
-            segment: Some(id),
-            records: retained.len(),
+            segment: chunks.first().copied(),
+            segments: chunks,
+            records: count,
             deleted,
             deferred_deletes,
         })
     }
 }
 impl CacheSnapshot {
+    /// Successful returned views only, including records whose consumer later
+    /// rejects semantic replay. Missing/corrupt lookups never become roots.
+    /// Storage is bounded by this snapshot's immutable indexed key inventory.
+    pub fn record_used_keys(&self) -> BTreeSet<RecordKey> {
+        self.used_keys
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
+    }
+    /// Conservative roots for configured-session leases. Superseded or rejected
+    /// segments contribute no roots; keys are immutable symbolic record identities.
+    pub fn record_keys(&self) -> BTreeSet<RecordKey> {
+        let superseded = self
+            .segments
+            .iter()
+            .filter(|(_, segment)| !segment.is_rejected())
+            .flat_map(|(_, segment)| segment.supersedes().iter().copied())
+            .collect::<BTreeSet<_>>();
+        self.segments
+            .iter()
+            .filter(|(_, segment)| !segment.is_rejected() && !superseded.contains(&segment.id()))
+            .flat_map(|(_, segment)| segment.keys())
+            .collect()
+    }
     pub fn segment_count(&self) -> usize {
         self.segments
             .iter()
@@ -288,14 +361,26 @@ impl CacheSnapshot {
         validate: impl Fn(&[u8], &[(u64, &[u8])]) -> Result<(), String>,
     ) -> Option<RecordView<'a>> {
         loop {
-            let revised = self.record_rejected.load(Ordering::Acquire).then(|| {
-                self.segments
-                    .iter()
-                    .filter(|(_, segment)| !segment.is_rejected())
-                    .flat_map(|(_, segment)| segment.supersedes().iter().copied())
-                    .collect::<BTreeSet<_>>()
-            });
-            let superseded = revised.as_ref().unwrap_or(&self.superseded);
+            let generation = self.rejection_generation.load(Ordering::Acquire);
+            let superseded = if generation == 0 {
+                self.superseded.clone()
+            } else {
+                let mut revised = self
+                    .revised_superseded
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
+                if revised.0 != generation {
+                    revised.1 = Arc::new(
+                        self.segments
+                            .iter()
+                            .filter(|(_, segment)| !segment.is_rejected())
+                            .flat_map(|(_, segment)| segment.supersedes().iter().copied())
+                            .collect(),
+                    );
+                    revised.0 = generation;
+                }
+                revised.1.clone()
+            };
             let mut retry = false;
             for &ordinal in self.index.get(&key)? {
                 let (path, segment) = &self.segments[ordinal];
@@ -303,10 +388,18 @@ impl CacheSnapshot {
                     continue;
                 }
                 match segment.get(key, &validate) {
-                    Ok(Some(view)) => return Some(view),
+                    Ok(Some(view)) => {
+                        // At most index.len() keys: every successful lookup is
+                        // already present in this immutable snapshot's index.
+                        self.used_keys
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner())
+                            .insert(key);
+                        return Some(view);
+                    }
                     Ok(None) => (),
                     Err(error) => {
-                        self.record_rejected.store(true, Ordering::Release);
+                        self.rejection_generation.fetch_add(1, Ordering::AcqRel);
                         self.rejected
                             .lock()
                             .unwrap_or_else(|p| p.into_inner())

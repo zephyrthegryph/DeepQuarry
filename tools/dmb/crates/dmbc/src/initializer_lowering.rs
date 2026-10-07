@@ -334,7 +334,7 @@ fn lower_plan<R: Resolver>(
             }
         };
         let code = if let Some(memo) = memo {
-            let mut key = b"dmbc-anonymous-declaration-v1\0".to_vec();
+            let mut key = b"dmbc-anonymous-declaration-v2-relative-debug\0".to_vec();
             key.extend_from_slice(&memo.policy.to_le_bytes());
             key.extend_from_slice(
                 &serde_json::to_vec(&resource_search_context).map_err(|error| error.to_string())?,
@@ -361,7 +361,6 @@ fn lower_plan<R: Resolver>(
             for origin in &debug.origins.entries {
                 key.extend_from_slice(&(origin.semantic_path.len() as u64).to_le_bytes());
                 key.extend_from_slice(origin.semantic_path.as_bytes());
-                key.extend_from_slice(&origin.line.to_le_bytes());
             }
             let recorder = crate::lowering_memo::RecordingResolver::new(host);
             for write in &group.writes {
@@ -370,7 +369,18 @@ fn lower_plan<R: Resolver>(
                     recorder.record_occurrence(identity);
                 }
             }
-            if let Some(code) = memo.executable(&key, &recorder) {
+            if let Some(errors) = memo.failure(&key, None, &recorder) {
+                if errors.iter().all(|error| {
+                    error.span.is_none_or(|span| {
+                        span.start <= span.end && span.end < write_ordinals.len()
+                    })
+                }) {
+                    return Err(map_error(
+                        dm_codegen_byond::initializer::InitializerError::Lowering(errors),
+                    ));
+                }
+            }
+            if let Some(code) = memo.executable(&key, &recorder, debug.origins.entries.len()) {
                 code
             } else {
                 let code = dm_codegen_byond::initializer::lower_scoped_assignments(
@@ -378,8 +388,32 @@ fn lower_plan<R: Resolver>(
                     context(),
                     &recorder,
                 )
-                .map_err(&map_error)?;
-                memo.remember_executable(&key, &recorder.reads(), &code);
+                .map_err(|error| {
+                    if let dm_codegen_byond::initializer::InitializerError::Lowering(errors) =
+                        &error
+                    {
+                        if errors.iter().all(|error| {
+                            error.span.is_none_or(|span| {
+                                span.start <= span.end && span.end < write_ordinals.len()
+                            })
+                        }) {
+                            memo.remember_failure(
+                                &key,
+                                None,
+                                &recorder.reads(),
+                                errors,
+                                &recorder.domain_receipts(),
+                            );
+                        }
+                    }
+                    map_error(error)
+                })?;
+                memo.remember_executable(
+                    &key,
+                    &recorder.reads(),
+                    &code,
+                    &recorder.domain_receipts(),
+                );
                 code
             }
         } else {

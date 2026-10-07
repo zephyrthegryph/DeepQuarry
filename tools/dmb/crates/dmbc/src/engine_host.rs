@@ -163,6 +163,8 @@ struct VariableAbsence {
 }
 #[derive(Clone, Debug)]
 pub struct EngineResolverHost<R> {
+    answer_domain: std::sync::OnceLock<Option<u128>>,
+    source_versions: Vec<u128>,
     tree: Arc<R>,
     constants: ConstantCatalog,
     runtime: RuntimeAliasCatalog,
@@ -174,6 +176,8 @@ pub struct EngineResolverHost<R> {
 impl<R: Resolver> EngineResolverHost<R> {
     pub fn new(tree: Arc<R>, constants: ConstantCatalog, runtime: RuntimeAliasCatalog) -> Self {
         Self {
+            answer_domain: std::sync::OnceLock::new(),
+            source_versions: Vec::new(),
             tree,
             constants,
             runtime,
@@ -195,6 +199,8 @@ impl<R: Resolver> EngineResolverHost<R> {
         if frontend.engine.as_ref().map(|status| status.identity) != Some(engine.identity()) {
             return Err("callable coverage belongs to another engine capture".into());
         }
+        self.answer_domain = std::sync::OnceLock::new();
+        self.source_versions.push(frontend.snapshot.tree.identity());
         self.retained_methods = Some(Arc::new(
             crate::engine::procedure_abi::RetainedMethods::capture(
                 engine,
@@ -336,6 +342,8 @@ impl<R: Resolver> EngineResolverHost<R> {
         for name in &intrinsic {
             bytes.extend_from_slice(&name.bits().to_le_bytes());
         }
+        self.answer_domain = std::sync::OnceLock::new();
+        self.source_versions.push(frontend.snapshot.tree.identity());
         self.variable_absence = Some(Arc::new(VariableAbsence {
             names,
             positive_constants,
@@ -366,6 +374,36 @@ impl<R: Resolver> EngineResolverHost<R> {
     }
 }
 impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
+    fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
+        if domain != dm_ir::ReadDomain::Tree {
+            return self.tree.domain_version(domain);
+        }
+        *self.answer_domain.get_or_init(|| {
+            let base = self.tree.domain_version(domain)?;
+            let mut hash = xxhash_rust::xxh3::Xxh3::new();
+            hash.update(b"dm-engine-answer-domain-v1\0");
+            for value in [base, self.configuration_identity(), self.runtime.identity()] {
+                hash.update(&value.to_le_bytes());
+            }
+            hash.update(&(self.source_versions.len() as u64).to_le_bytes());
+            for value in &self.source_versions {
+                hash.update(&value.to_le_bytes());
+            }
+            let mut names: Vec<_> = self
+                .callable_absence
+                .iter()
+                .flat_map(|names| names.iter())
+                .copied()
+                .collect();
+            names.sort();
+            hash.update(&(names.len() as u64).to_le_bytes());
+            for name in names {
+                hash.update(&name.bits().to_le_bytes());
+            }
+            Some(hash.digest128())
+        })
+    }
+
     fn resolve(&self, query: Q) -> M {
         match query {
             Q::PredefinedConstant(name) => self

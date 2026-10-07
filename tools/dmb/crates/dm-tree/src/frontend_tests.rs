@@ -887,3 +887,120 @@ fn issued_parser_fragments_replay_compact_settings_ranges_and_cross_include_gram
             .is_none());
     }
 }
+
+#[test]
+fn cached_parser_errors_rebind_current_include_path_and_source_origin() {
+    use dm_preprocess::regions::{ExpansionMemo, ExpansionRecord};
+    use std::sync::{Arc, Mutex};
+    #[derive(Default)]
+    struct Memo(Mutex<BTreeMap<u128, Vec<Arc<ExpansionRecord>>>>);
+    impl ExpansionMemo for Memo {
+        fn candidates(&self, key: u128) -> Vec<Arc<ExpansionRecord>> {
+            self.0
+                .lock()
+                .unwrap()
+                .get(&key)
+                .cloned()
+                .unwrap_or_default()
+        }
+        fn insert(&self, record: Arc<ExpansionRecord>) {
+            let mut records = self.0.lock().unwrap();
+            let bucket = records.entry(record.key()).or_default();
+            bucket.retain(|previous| !previous.same_expansion(&record));
+            bucket.push(record);
+        }
+    }
+    let memo = Memo::default();
+    let config = FrontendConfig {
+        workers: 2,
+        engine: None,
+        observer: None,
+    };
+    let old = Memory(BTreeMap::from([
+        (PathBuf::from("project.dme"), "#include \"old.dm\"\n".into()),
+        (PathBuf::from("old.dm"), "    datum/probe\n".into()),
+    ]));
+    let first = match build_with_expansion_memo(
+        Path::new("project.dme"),
+        &old,
+        &BTreeMap::new(),
+        config,
+        Some(&memo),
+    ) {
+        Err(errors) => errors,
+        Ok(_) => panic!("unexpected indentation must remain a source error"),
+    };
+    assert!(first
+        .iter()
+        .any(|error| error.stage == DiagnosticStage::Syntax
+            && error.message == "unexpected indentation"));
+    // Persist/reload the issued compact payload before moving its source path.
+    {
+        let mut records = memo.0.lock().unwrap();
+        assert!(records.values().flatten().any(|record| record
+            .fragment(
+                parserwire::VERSION,
+                dm_syntax::Span::new(0, record.text().len())
+            )
+            .is_some()));
+        for bucket in records.values_mut() {
+            for record in bucket {
+                *record =
+                    Arc::new(ExpansionRecord::from_bytes(&record.to_bytes().unwrap()).unwrap());
+            }
+        }
+    }
+    let moved = Memory(BTreeMap::from([
+        (PathBuf::from("project.dme"), "#include \"new.dm\"\n".into()),
+        (PathBuf::from("new.dm"), "    datum/probe\n".into()),
+    ]));
+    let reused = match build_with_expansion_memo(
+        Path::new("project.dme"),
+        &moved,
+        &BTreeMap::new(),
+        config,
+        Some(&memo),
+    ) {
+        Err(errors) => errors,
+        Ok(_) => panic!("cached diagnostics cannot admit malformed source"),
+    };
+    let cold = match build_with_config(Path::new("project.dme"), &moved, &BTreeMap::new(), config) {
+        Err(errors) => errors,
+        Ok(_) => panic!("cold diagnostics cannot admit malformed source"),
+    };
+    let projection = |errors: &[Diagnostic]| {
+        errors
+            .iter()
+            .map(|error| {
+                let origin = error
+                    .location
+                    .as_ref()
+                    .expect("current syntax error origin");
+                (
+                    error.kind,
+                    error.stage,
+                    error.message.clone(),
+                    origin.path.clone(),
+                    origin.semantic_path.clone(),
+                    origin.line,
+                    origin.span.start,
+                    origin.span.end,
+                    origin.include_occurrence,
+                    origin.include_chain.clone(),
+                    format!("{:?}", origin.macro_expansions),
+                )
+            })
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(projection(&reused), projection(&cold));
+    let origin = reused
+        .iter()
+        .find(|error| error.message == "unexpected indentation")
+        .unwrap()
+        .location
+        .as_ref()
+        .unwrap();
+    assert_eq!(origin.path.as_path(), Path::new("new.dm"));
+    assert_eq!(origin.line, 1);
+    assert_ne!(origin.path.as_path(), Path::new("old.dm"));
+}

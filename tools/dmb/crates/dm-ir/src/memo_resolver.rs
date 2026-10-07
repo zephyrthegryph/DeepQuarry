@@ -72,6 +72,9 @@ fn retainable(meaning: &ResolvedMeaning) -> bool {
     )
 }
 impl<R: Resolver + ?Sized> Resolver for MemoResolver<'_, R> {
+    fn domain_version(&self, domain: crate::ReadDomain) -> Option<u128> {
+        self.host.domain_version(domain)
+    }
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         if self.entry_budget == 0 {
             self.misses.fetch_add(1, Ordering::Relaxed);
@@ -106,6 +109,27 @@ impl<R: Resolver + ?Sized> Resolver for MemoResolver<'_, R> {
 mod tests {
     use super::*;
     use crate::{ProcedureIdentity, SymbolId};
+    #[test]
+    fn memo_forwards_domain_issuer_without_certifying_custom_hosts() {
+        struct Issued;
+        impl Resolver for Issued {
+            fn resolve(&self, q: ResolveQuery) -> ResolvedMeaning {
+                ResolvedMeaning::Unsupported(q)
+            }
+            fn domain_version(&self, d: crate::ReadDomain) -> Option<u128> {
+                (d == crate::ReadDomain::Tree).then_some(42)
+            }
+        }
+        let host = Issued;
+        let memo = MemoResolver::new(&host, 0);
+        assert_eq!(memo.domain_version(crate::ReadDomain::Tree), Some(42));
+        assert_eq!(memo.domain_version(crate::ReadDomain::ResourceSearch), None);
+        let custom = Host(Mutex::new(Vec::new()));
+        assert_eq!(
+            MemoResolver::new(&custom, 1).domain_version(crate::ReadDomain::Tree),
+            None
+        );
+    }
     struct Host(Mutex<Vec<ResolveQuery>>);
     impl Resolver for Host {
         fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {

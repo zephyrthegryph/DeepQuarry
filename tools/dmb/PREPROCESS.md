@@ -380,7 +380,7 @@ this prototype; no claim of whole-include-region minimal recomputation is made.
 
 
 Parser fragments are now optional neutral payloads within the same expansion record
-(version 2). The frontend still discovers joined-stream grammar-safe descriptors.
+(version 3, bounded binary codec). The frontend still discovers joined-stream grammar-safe descriptors.
 Only descriptors wholly contained in an issued region can reuse compact relative
 headers/settings and diagnostics; descriptors crossing includes parse fresh. Procedure
 body ranges remain current-arena ranges, with no executable AST persisted. Normalization,
@@ -388,3 +388,25 @@ allocation facts, source-origin mapping and tree resolution remain fresh. Malfor
 fragment payloads fall back to parsing that descriptor. A parser/settings schema change
 must bump the fragment version. This prototype does not skip the boundary scan or reuse
 cross-region parser contexts.
+
+
+Directive replay now extends that initial expansion-only milestone. With the optional
+memo, prepared source is partitioned at every include directive, including inactive or
+invalid includes. An interval receipt validates exact source and logical-line topology,
+its incoming conditional stack, and actual incoming macro reads. Presence checks
+(`#ifdef`, `defined`) depend on presence, while expansion reads depend on exact macro
+meaning; locally defined/undefined bindings are issued by the interval and do not add
+false incoming dependencies. FILE_DIR pops additionally validate the entry directory
+and definition stack. Ordered text, freeze, define, undef and diagnostic instructions
+replay against current environments and reissue current source/definition origins.
+Outgoing conditional frames are restored only after admission. Includes still perform
+fresh recursion, first-visit suppression and source demand; root EOF conditional checks
+remain fresh. Directive record format is version 2 in the caller's stage-4 namespace.
+The same caller-owned memo carries these receipts; no separate hidden cache exists.
+
+
+Current memo DTOs use the shared `dm-wire` bounded binary codec rather than JSON byte
+arrays: expansion version 3, directive version 2 and compact parser schema 2. These
+versions deliberately expire previous formats. Record key/source/topology checks,
+relative span admission and fragment count/byte limits remain unchanged. Expansion
+and directive decoding cap encoded input at 16 MiB, and parser fragments at 4 MiB.

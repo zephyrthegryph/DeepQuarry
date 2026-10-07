@@ -3,13 +3,17 @@
 use crate::{DeclarationMeaning, SemanticValue, SymbolId};
 use std::sync::Arc;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub enum ReadDomain {
     Tree,
     ResourceSearch,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub enum ResolveQuery {
     ProcedureStatic {
         procedure: crate::ProcedureIdentity,
@@ -43,7 +47,12 @@ pub enum ResolveQuery {
         verb: bool,
     },
     /// A callable literal selects an exact source formal or effective body.
-    ProcedureValue { owner: SymbolId, name: SymbolId, verb: bool, formal: bool },
+    ProcedureValue {
+        owner: SymbolId,
+        name: SymbolId,
+        verb: bool,
+        formal: bool,
+    },
     OverrideChain {
         owner: SymbolId,
         name: SymbolId,
@@ -159,46 +168,100 @@ impl ResolvedMeaning {
             Self::Missing => out.push(0),
             Self::Unsupported(query) => {
                 out.push(1);
-                frame(&mut out, &serde_json::to_vec(query).expect("query serialization is infallible"));
+                frame(
+                    &mut out,
+                    &serde_json::to_vec(query).expect("query serialization is infallible"),
+                );
             }
-            Self::Presence(value) => { out.extend_from_slice(&[2, u8::from(*value)]); }
+            Self::Presence(value) => {
+                out.extend_from_slice(&[2, u8::from(*value)]);
+            }
             Self::DeclaredType(value) => {
                 out.extend_from_slice(&[3, u8::from(value.is_some())]);
-                if let Some(value) = value { symbol(&mut out, *value); }
+                if let Some(value) = value {
+                    symbol(&mut out, *value);
+                }
             }
-            Self::InstanceField { declaring_owner, name } => {
-                out.push(4); symbol(&mut out, *declaring_owner); symbol(&mut out, *name);
+            Self::InstanceField {
+                declaring_owner,
+                name,
+            } => {
+                out.push(4);
+                symbol(&mut out, *declaring_owner);
+                symbol(&mut out, *name);
             }
-            Self::Value(value) => { out.push(5); frame(&mut out, &value.canonical_bytes()); }
-            Self::Slot { symbol: slot, owner, name } => {
-                out.push(6); symbol(&mut out, *slot); symbol(&mut out, *owner); symbol(&mut out, *name);
+            Self::Value(value) => {
+                out.push(5);
+                frame(&mut out, &value.canonical_bytes());
             }
-            Self::Symbol(value) => { out.push(7); symbol(&mut out, *value); }
+            Self::Slot {
+                symbol: slot,
+                owner,
+                name,
+            } => {
+                out.push(6);
+                symbol(&mut out, *slot);
+                symbol(&mut out, *owner);
+                symbol(&mut out, *name);
+            }
+            Self::Symbol(value) => {
+                out.push(7);
+                symbol(&mut out, *value);
+            }
             Self::Symbols(values) => {
-                out.push(8); out.extend_from_slice(&(values.len() as u64).to_le_bytes());
-                for value in values { symbol(&mut out, *value); }
+                out.push(8);
+                out.extend_from_slice(&(values.len() as u64).to_le_bytes());
+                for value in values {
+                    symbol(&mut out, *value);
+                }
             }
             Self::Members(values) => {
-                out.push(9); out.extend_from_slice(&(values.len() as u64).to_le_bytes());
-                for value in values { frame(&mut out, &value.canonical_bytes()); }
+                out.push(9);
+                out.extend_from_slice(&(values.len() as u64).to_le_bytes());
+                for value in values {
+                    frame(&mut out, &value.canonical_bytes());
+                }
             }
-            Self::IntrinsicProc { declaring_owner, name } => {
-                out.push(10); symbol(&mut out, *declaring_owner); symbol(&mut out, *name);
+            Self::IntrinsicProc {
+                declaring_owner,
+                name,
+            } => {
+                out.push(10);
+                symbol(&mut out, *declaring_owner);
+                symbol(&mut out, *name);
             }
-            Self::RetainedProc { declaring_owner, name, verb, engine_identity, .. } => {
-                out.push(11); symbol(&mut out, *declaring_owner); symbol(&mut out, *name);
-                out.push(u8::from(*verb)); out.extend_from_slice(&engine_identity.to_le_bytes());
+            Self::RetainedProc {
+                declaring_owner,
+                name,
+                verb,
+                engine_identity,
+                ..
+            } => {
+                out.push(11);
+                symbol(&mut out, *declaring_owner);
+                symbol(&mut out, *name);
+                out.push(u8::from(*verb));
+                out.extend_from_slice(&engine_identity.to_le_bytes());
                 // The immutable engine identity qualifies its named callable;
                 // its physical procedure-table index is not semantic evidence.
             }
-            Self::Member { owner, name, data, .. } => {
-                out.push(12); symbol(&mut out, *owner); symbol(&mut out, *name);
+            Self::Member {
+                owner, name, data, ..
+            } => {
+                out.push(12);
+                symbol(&mut out, *owner);
+                symbol(&mut out, *name);
                 frame(&mut out, &data.canonical_bytes());
             }
             Self::Resource { path, content } => {
-                out.push(13); symbol(&mut out, *path); out.extend_from_slice(&content.to_le_bytes());
+                out.push(13);
+                symbol(&mut out, *path);
+                out.extend_from_slice(&content.to_le_bytes());
             }
-            Self::ProcedureStatic(value) => { out.push(14); frame(&mut out, &value.canonical_bytes()); }
+            Self::ProcedureStatic(value) => {
+                out.push(14);
+                frame(&mut out, &value.canonical_bytes());
+            }
         }
         out
     }
@@ -210,17 +273,30 @@ pub fn procedure_value_query(path: &str) -> Option<ResolveQuery> {
         (owner, name, false)
     } else if let Some((owner, name)) = path.rsplit_once("/verb/") {
         (owner, name, true)
-    } else { return None; };
-    if name.is_empty() || name.contains('/') { return None; }
+    } else {
+        return None;
+    };
+    if name.is_empty() || name.contains('/') {
+        return None;
+    }
     Some(ResolveQuery::ProcedureValue {
         owner: SymbolId::of(if owner.is_empty() { "/" } else { owner }),
-        name: SymbolId::of(name), verb, formal: true,
+        name: SymbolId::of(name),
+        verb,
+        formal: true,
     })
 }
 
 /// The sole view of other declarations and resource search available to lowering.
 /// Implementations must answer from one immutable build snapshot.
 pub trait Resolver: Sync {
+    /// Certifies every answer (including negatives and Unsupported) in this
+    /// domain for this immutable issuer. Custom/mutable hosts remain uncertified.
+    /// Include resolver schema and every precedence/overlay input; compute once.
+    fn domain_version(&self, _domain: ReadDomain) -> Option<u128> {
+        None
+    }
+
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning;
 }
 
@@ -231,17 +307,43 @@ mod tests {
     fn dependency_wire_preserves_negative_and_ordered_meaning() {
         let owner = SymbolId::of("/obj/probe");
         let name = SymbolId::of("work");
-        let query = ResolveQuery::ProcedureValue { owner, name, verb: false, formal: true };
-        assert_eq!(serde_json::from_slice::<ResolveQuery>(&serde_json::to_vec(&query).unwrap()).unwrap(), query);
-        assert_ne!(ResolvedMeaning::Missing.canonical_bytes(), ResolvedMeaning::Presence(false).canonical_bytes());
-        assert_ne!(ResolvedMeaning::DeclaredType(None).canonical_bytes(), ResolvedMeaning::Unsupported(query).canonical_bytes());
-        assert_ne!(ResolvedMeaning::Symbols(vec![owner,name]).canonical_bytes(),
-            ResolvedMeaning::Symbols(vec![name,owner]).canonical_bytes());
-        let retained = |wire_proc, engine_identity| ResolvedMeaning::RetainedProc {
-            declaring_owner: owner, name, verb: false, engine_identity, wire_proc,
+        let query = ResolveQuery::ProcedureValue {
+            owner,
+            name,
+            verb: false,
+            formal: true,
         };
-        assert_eq!(retained(1,9).canonical_bytes(),retained(8,9).canonical_bytes());
-        assert_ne!(retained(1,9).canonical_bytes(),retained(1,10).canonical_bytes());
+        assert_eq!(
+            serde_json::from_slice::<ResolveQuery>(&serde_json::to_vec(&query).unwrap()).unwrap(),
+            query
+        );
+        assert_ne!(
+            ResolvedMeaning::Missing.canonical_bytes(),
+            ResolvedMeaning::Presence(false).canonical_bytes()
+        );
+        assert_ne!(
+            ResolvedMeaning::DeclaredType(None).canonical_bytes(),
+            ResolvedMeaning::Unsupported(query).canonical_bytes()
+        );
+        assert_ne!(
+            ResolvedMeaning::Symbols(vec![owner, name]).canonical_bytes(),
+            ResolvedMeaning::Symbols(vec![name, owner]).canonical_bytes()
+        );
+        let retained = |wire_proc, engine_identity| ResolvedMeaning::RetainedProc {
+            declaring_owner: owner,
+            name,
+            verb: false,
+            engine_identity,
+            wire_proc,
+        };
+        assert_eq!(
+            retained(1, 9).canonical_bytes(),
+            retained(8, 9).canonical_bytes()
+        );
+        assert_ne!(
+            retained(1, 9).canonical_bytes(),
+            retained(1, 10).canonical_bytes()
+        );
     }
     #[test]
     fn filesystem_search_context_is_in_resource_domain() {

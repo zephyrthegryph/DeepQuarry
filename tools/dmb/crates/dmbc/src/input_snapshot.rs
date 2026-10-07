@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::io;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Stamp {
@@ -41,6 +41,20 @@ pub trait SnapshotProvider {
         Ok((stamp, xxhash_rust::xxh3::xxh3_128(&bytes)))
     }
 }
+impl<T: SnapshotProvider + ?Sized> SnapshotProvider for &T {
+    fn stamp(&self, path: &Path) -> io::Result<Stamp> {
+        (**self).stamp(path)
+    }
+    fn read(&self, path: &Path) -> io::Result<(Stamp, Vec<u8>)> {
+        (**self).read(path)
+    }
+    fn list(&self, path: &Path) -> io::Result<FolderListing> {
+        (**self).list(path)
+    }
+    fn digest(&self, path: &Path) -> io::Result<(Stamp, u128)> {
+        (**self).digest(path)
+    }
+}
 
 pub struct FileSystemInputs;
 impl SnapshotProvider for FileSystemInputs {
@@ -53,15 +67,22 @@ impl SnapshotProvider for FileSystemInputs {
         let mut size = 0u64;
         loop {
             let count = file.read(&mut buffer)?;
-            if count == 0 { break; }
-            size += count as u64; hash.update(&buffer[..count]);
+            if count == 0 {
+                break;
+            }
+            size += count as u64;
+            hash.update(&buffer[..count]);
         }
         if stamp_handle(&file)? != before || self.stamp(path)? != before || size != before.size {
-            return Err(io::Error::new(io::ErrorKind::Interrupted, "input changed during digest"));
+            return Err(io::Error::new(
+                io::ErrorKind::Interrupted,
+                "input changed during digest",
+            ));
         }
         Ok((before, hash.digest128()))
     }
     fn stamp(&self, path: &Path) -> io::Result<Stamp> {
+        #[cfg(not(windows))]
         if !std::fs::metadata(path)?.is_file() {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
@@ -73,7 +94,10 @@ impl SnapshotProvider for FileSystemInputs {
         #[cfg(windows)]
         let file = {
             use std::os::windows::fs::OpenOptionsExt;
-            std::fs::OpenOptions::new().access_mode(0x80).open(path)?
+            std::fs::OpenOptions::new()
+                .access_mode(0x80)
+                .custom_flags(0x02000000)
+                .open(path)?
         };
         #[cfg(not(windows))]
         let file = std::fs::File::open(path)?;
@@ -82,7 +106,10 @@ impl SnapshotProvider for FileSystemInputs {
     fn read(&self, path: &Path) -> io::Result<(Stamp, Vec<u8>)> {
         use std::io::Read;
         if !std::fs::metadata(path)?.is_file() {
-            return Err(io::Error::new(io::ErrorKind::NotFound, "candidate is not a regular file"));
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "candidate is not a regular file",
+            ));
         }
         let mut file = std::fs::File::open(path)?;
         let before = stamp_handle(&file)?;
@@ -118,6 +145,7 @@ impl SnapshotProvider for FileSystemInputs {
     }
 }
 
+#[cfg(not(windows))]
 fn stamp_handle(file: &std::fs::File) -> io::Result<Stamp> {
     let metadata = file.metadata()?;
     if !metadata.is_file() {
@@ -146,7 +174,7 @@ fn platform_file_id(file: &std::fs::File) -> io::Result<Option<u128>> {
     ))
 }
 #[cfg(windows)]
-fn platform_file_id(file: &std::fs::File) -> io::Result<Option<u128>> {
+fn stamp_handle(file: &std::fs::File) -> io::Result<Stamp> {
     use std::os::windows::io::AsRawHandle;
     #[repr(C)]
     struct Information {
@@ -173,11 +201,26 @@ fn platform_file_id(file: &std::fs::File) -> io::Result<Option<u128>> {
         return Err(io::Error::last_os_error());
     }
     let information = unsafe { information.assume_init() };
-    Ok(Some(
-        (u128::from(information.volume) << 64)
-            | (u128::from(information.index_high) << 32)
-            | u128::from(information.index_low),
-    ))
+    if information.attributes & 0x10 != 0 {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "candidate is not a regular file",
+        ));
+    }
+    let write_ticks = (u128::from(information.write[1]) << 32) | u128::from(information.write[0]);
+    let modified_ns = write_ticks
+        .checked_sub(116_444_736_000_000_000)
+        .ok_or_else(|| invalid("input modification time predates epoch"))?
+        * 100;
+    Ok(Stamp {
+        size: (u64::from(information.size_high) << 32) | u64::from(information.size_low),
+        modified_ns,
+        file_id: Some(
+            (u128::from(information.volume) << 64)
+                | (u128::from(information.index_high) << 32)
+                | u128::from(information.index_low),
+        ),
+    })
 }
 #[cfg(not(any(unix, windows)))]
 fn platform_file_id(_: &std::fs::File) -> io::Result<Option<u128>> {
@@ -264,12 +307,26 @@ impl<P: SnapshotProvider> dm_resources::capture::CaptureProvider for RecordingIn
     }
 }
 
+/// Private structural admission, copied only with the exact private maps.
+/// It is absent from the wire and from semantic equality. Deserialization must
+/// validate afresh; successful public mutation methods preserve the invariants.
+#[derive(Clone, Debug, Default)]
+struct StructureProof(OnceLock<()>);
+impl PartialEq for StructureProof {
+    fn eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+impl Eq for StructureProof {}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct InputSnapshot {
     pub scanned_ns: u128,
     files: BTreeMap<PathBuf, FileInput>,
     folders: BTreeMap<PathBuf, FolderListing>,
     negative_files: BTreeSet<PathBuf>,
+    #[serde(skip)]
+    structure_proof: StructureProof,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -285,12 +342,20 @@ impl Validation {
 }
 
 impl InputSnapshot {
+    pub fn proof_paths(&self) -> impl Iterator<Item = PathBuf> + '_ {
+        self.files.keys().chain(self.negative_files.iter()).cloned()
+    }
+    pub fn proof_folders(&self) -> impl Iterator<Item = PathBuf> + '_ {
+        self.folders.keys().cloned()
+    }
     pub fn new(scanned_ns: u128) -> Self {
         Self {
             scanned_ns,
             files: BTreeMap::new(),
             folders: BTreeMap::new(),
             negative_files: BTreeSet::new(),
+            // All later insertion methods validate their individual facts.
+            structure_proof: StructureProof(OnceLock::from(())),
         }
     }
 
@@ -303,7 +368,10 @@ impl InputSnapshot {
         let mut next = Self::new(self.scanned_ns);
         for path in selected {
             let path = canonical_path(path);
-            let fact = self.files.get(&path).ok_or_else(|| invalid("selected input was not captured"))?;
+            let fact = self
+                .files
+                .get(&path)
+                .ok_or_else(|| invalid("selected input was not captured"))?;
             next.files.insert(path, fact.clone());
         }
         next.folders = self.folders.clone();
@@ -315,13 +383,23 @@ impl InputSnapshot {
     pub fn merge(&mut self, other: &Self) -> io::Result<()> {
         other.check_structure()?;
         for (path, file) in &other.files {
-            if self.negative_files.contains(path) { return Err(invalid("retained input conflicts with absence")); }
+            if self.negative_files.contains(path) {
+                return Err(invalid("retained input conflicts with absence"));
+            }
             if let Some(current) = self.files.get(path) {
-                if current != file { return Err(invalid("retained input differs from current capture")); }
-            } else { self.files.insert(path.clone(), file.clone()); }
+                if current != file {
+                    return Err(invalid("retained input differs from current capture"));
+                }
+            } else {
+                self.files.insert(path.clone(), file.clone());
+            }
         }
-        for path in &other.negative_files { self.record_negative(path)?; }
-        for (path, listing) in &other.folders { self.record_folder(path, listing.clone())?; }
+        for path in &other.negative_files {
+            self.record_negative(path)?;
+        }
+        for (path, listing) in &other.folders {
+            self.record_folder(path, listing.clone())?;
+        }
         self.scanned_ns = self.scanned_ns.min(other.scanned_ns);
         Ok(())
     }
@@ -343,7 +421,12 @@ impl InputSnapshot {
 
     /// Streaming capture boundary. Caller must hash the consumed bytes
     /// and prove an unchanged file identity/stamp around that read.
-    pub fn record_verified_digest(&mut self, path: &Path, stamp: Stamp, content: u128) -> io::Result<()> {
+    pub fn record_verified_digest(
+        &mut self,
+        path: &Path,
+        stamp: Stamp,
+        content: u128,
+    ) -> io::Result<()> {
         let path = canonical_path(path);
         if self.negative_files.contains(&path) {
             return Err(invalid("negative input became present during capture"));
@@ -386,7 +469,12 @@ impl InputSnapshot {
         Ok(())
     }
 
+    /// Check untrusted decoded snapshots once. A privately issued receipt
+    /// avoids repeating the same path/listing traversal during input validation.
     pub fn check_structure(&self) -> io::Result<()> {
+        if self.structure_proof.0.get().is_some() {
+            return Ok(());
+        }
         for (path, file) in &self.files {
             if path != &file.path || canonical_path(path) != *path {
                 return Err(invalid("noncanonical input record"));
@@ -403,6 +491,7 @@ impl InputSnapshot {
                 return Err(invalid("invalid negative input record"));
             }
         }
+        let _ = self.structure_proof.0.set(());
         Ok(())
     }
 
@@ -629,5 +718,53 @@ mod tests {
         let snapshot = recording.snapshot().unwrap();
         assert!(snapshot.restat(&recording.provider).unwrap().unchanged());
         assert_eq!(recording.provider.listings.get(), 2);
+    }
+    #[test]
+    fn structural_receipt_is_private_nonsemantic_and_never_deserialized() {
+        let mut snapshot = InputSnapshot::new(0);
+        let stamp = Stamp {
+            size: 3,
+            modified_ns: 1,
+            file_id: None,
+        };
+        snapshot
+            .record_file(Path::new("a.dm"), stamp, b"one")
+            .unwrap();
+        let bytes = dm_wire::encode(0x5350_0001, &snapshot).unwrap();
+        let restored: InputSnapshot =
+            dm_wire::decode(0x5350_0001, &bytes, dm_wire::MAX_BYTES).unwrap();
+        assert!(restored.structure_proof.0.get().is_none());
+        assert_eq!(snapshot, restored);
+        restored.check_structure().unwrap();
+        assert!(restored.structure_proof.0.get().is_some());
+        assert_eq!(bytes, dm_wire::encode(0x5350_0001, &restored).unwrap());
+        assert!(restored.clone().structure_proof.0.get().is_some());
+        snapshot
+            .record_folder(
+                Path::new("assets"),
+                FolderListing::Present(vec!["a".into()]),
+            )
+            .unwrap();
+        assert!(snapshot
+            .record_folder(
+                Path::new("bad"),
+                FolderListing::Present(vec!["z".into(), "a".into()])
+            )
+            .is_err());
+        assert!(snapshot.record_negative(Path::new("a.dm")).is_err());
+        snapshot.check_structure().unwrap();
+
+        // Simulate a malformed untrusted wire record; admission must not inherit
+        // the valid in-memory issuer receipt from this deliberately forged copy.
+        let mut malformed = snapshot.clone();
+        malformed.folders.insert(
+            PathBuf::from("bad"),
+            FolderListing::Present(vec!["z".into(), "a".into()]),
+        );
+        let bytes = dm_wire::encode(0x5350_0001, &malformed).unwrap();
+        let malformed: InputSnapshot =
+            dm_wire::decode(0x5350_0001, &bytes, dm_wire::MAX_BYTES).unwrap();
+        assert!(malformed.check_structure().is_err());
+        assert!(malformed.structure_proof.0.get().is_none());
     }
 }

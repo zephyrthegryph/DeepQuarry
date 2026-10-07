@@ -10,13 +10,17 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     sync::Arc,
 };
-use xxhash_rust::xxh3::xxh3_128;
-pub const EXPANSION_VERSION: u32 = 2;
+use xxhash_rust::xxh3::Xxh3;
+pub const EXPANSION_VERSION: u32 = 3;
 /// A caller-owned memo, optionally backed by validated disk records. No hidden
 /// process cache or filesystem access exists in the preprocessor.
 pub trait ExpansionMemo: Sync {
     fn candidates(&self, key: u128) -> Vec<Arc<ExpansionRecord>>;
     fn insert(&self, record: Arc<ExpansionRecord>);
+    fn directive_candidates(&self, _key: u128) -> Vec<Arc<super::DirectiveRecord>> {
+        Vec::new()
+    }
+    fn insert_directive(&self, _record: Arc<super::DirectiveRecord>) {}
 }
 /// Neutral, versioned compact parser payload. The parser owns validation.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -141,17 +145,14 @@ impl ExpansionRecord {
         Some(result)
     }
     pub fn to_bytes(&self) -> Result<Vec<u8>, String> {
-        serde_json::to_vec(self).map_err(|error| error.to_string())
+        dm_wire::encode(EXPANSION_VERSION, self)
     }
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, String> {
-        let record: Self = serde_json::from_slice(bytes).map_err(|error| error.to_string())?;
+        let record: Self = dm_wire::decode(EXPANSION_VERSION, bytes, 16 * 1024 * 1024)?;
         if record.control.get(..4) != Some(EXPANSION_VERSION.to_le_bytes().as_slice()) {
             return Err("expansion record version mismatch".into());
         }
-        let mut keybytes = (record.source.len() as u64).to_le_bytes().to_vec();
-        keybytes.extend_from_slice(record.source.as_bytes());
-        keybytes.extend_from_slice(&record.control);
-        if xxh3_128(&keybytes) != record.key {
+        if framed_key(&record.source, &record.control) != record.key {
             return Err("expansion record key mismatch".into());
         }
         if record.lines.iter().any(|line| {
@@ -227,7 +228,14 @@ fn inputs(plan: &DirectivePlan, index: usize) -> Vec<(usize, &super::RegionLine)
         .flat_map(|(segment, value)| value.lines.iter().map(move |line| (segment, line)))
         .collect()
 }
-fn context(plan: &DirectivePlan, index: usize) -> Option<(Arc<str>, Arc<[u8]>, u128)> {
+fn framed_key(source: &str, control: &[u8]) -> u128 {
+    let mut hash = Xxh3::new();
+    hash.update(&(source.len() as u64).to_le_bytes());
+    hash.update(source.as_bytes());
+    hash.update(control);
+    hash.digest128()
+}
+fn context(plan: &DirectivePlan, index: usize) -> Option<(&str, Arc<[u8]>, u128)> {
     let region = &plan.regions[index];
     let path = &plan.occurrences[region.occurrence].path;
     let source = plan
@@ -235,7 +243,12 @@ fn context(plan: &DirectivePlan, index: usize) -> Option<(Arc<str>, Arc<[u8]>, u
         .get(path.as_ref())?
         .get(region.source_span.start..region.source_span.end)?;
     let mut control = EXPANSION_VERSION.to_le_bytes().to_vec();
-    for (segment, line) in inputs(plan, index) {
+    for (segment, line) in plan.regions[index]
+        .segments
+        .iter()
+        .enumerate()
+        .flat_map(|(segment, value)| value.lines.iter().map(move |line| (segment, line)))
+    {
         control.extend_from_slice(&(segment as u64).to_le_bytes());
         control.extend_from_slice(
             &(line
@@ -247,10 +260,8 @@ fn context(plan: &DirectivePlan, index: usize) -> Option<(Arc<str>, Arc<[u8]>, u
         control.extend_from_slice(&(line.text.len() as u64).to_le_bytes());
         control.extend_from_slice(line.text.as_bytes());
     }
-    let mut bytes = (source.len() as u64).to_le_bytes().to_vec();
-    bytes.extend_from_slice(source.as_bytes());
-    bytes.extend_from_slice(&control);
-    Some((Arc::from(source), control.into(), xxh3_128(&bytes)))
+    let identity = framed_key(source, &control);
+    Some((source, control.into(), identity))
 }
 pub(super) fn expand(
     plan: &DirectivePlan,
@@ -262,7 +273,7 @@ pub(super) fn expand(
     };
     let input = inputs(plan, index);
     for record in memo.candidates(key).into_iter().rev() {
-        if record.key != key || record.source != source || record.control != control {
+        if record.key != key || record.source.as_ref() != source || record.control != control {
             continue;
         }
         if record.reads.iter().any(|read| {
@@ -375,7 +386,7 @@ pub(super) fn expand(
         .collect();
     let record = Arc::new(ExpansionRecord {
         key,
-        source,
+        source: Arc::from(source),
         control,
         text: Arc::from(output.text.as_str()),
         reads,
@@ -456,6 +467,21 @@ mod tests {
         expand_regions_text, expand_regions_text_with_memo, plan_regions, SourceProvider,
     };
     use super::*;
+    #[test]
+    fn streamed_region_memo_key_preserves_exact_previous_framing() {
+        for length in [0, 1, 16, 127, 128, 239, 240, 241, 1024, 32768] {
+            let source = "x".repeat(length);
+            let control = "line\n\u{b5}\0".repeat(length / 7 + 1).into_bytes();
+            let mut previous = (source.len() as u64).to_le_bytes().to_vec();
+            previous.extend_from_slice(source.as_bytes());
+            previous.extend_from_slice(&control);
+            assert_eq!(
+                framed_key(&source, &control),
+                xxhash_rust::xxh3::xxh3_128(&previous)
+            );
+        }
+    }
+
     use std::{
         path::{Path, PathBuf},
         sync::{
@@ -562,10 +588,16 @@ mod tests {
         );
         let mut records = memo.records.lock().unwrap();
         let record = records.values_mut().next().unwrap().first().unwrap();
-        let mut json: serde_json::Value =
-            serde_json::from_slice(&record.to_bytes().unwrap()).unwrap();
-        json["key"] = serde_json::json!(0);
-        assert!(ExpansionRecord::from_bytes(&serde_json::to_vec(&json).unwrap()).is_err());
+        assert!(
+            record.to_bytes().unwrap().len() < serde_json::to_vec(record.as_ref()).unwrap().len()
+        );
+        let mut wrong_key = record.as_ref().clone();
+        wrong_key.key = 0;
+        assert!(ExpansionRecord::from_bytes(&wrong_key.to_bytes().unwrap()).is_err());
+        let mut corrupt = record.to_bytes().unwrap();
+        let end = corrupt.len() - 1;
+        corrupt[end] ^= 1;
+        assert!(ExpansionRecord::from_bytes(&corrupt).is_err());
     }
     #[test]
     fn expansion_memo_preserves_directive_effects_and_executed_location_reads() {

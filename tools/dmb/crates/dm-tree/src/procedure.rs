@@ -117,8 +117,10 @@ fn parameter(text: &str, start: usize, symbols: &mut SymbolTable) -> Result<Para
     )?;
     let authored_type = format!("/{}", type_parts.join("/"));
     let projection = dm_syntax::project_declaration_type(&authored_type);
-    let list_element_type = projection.list_element_path
-        .map(|path| intern(symbols, &format!("/{path}"))).transpose()?;
+    let list_element_type = projection
+        .list_element_path
+        .map(|path| intern(symbols, &format!("/{path}")))
+        .transpose()?;
     let declared_type = if array.is_some() {
         Some(intern(symbols, "/list")?)
     } else if type_parts.is_empty() {
@@ -346,14 +348,27 @@ mod tests {
     #[test]
     fn typed_list_formals_retain_distinct_hints_in_signature_identity() {
         let mut symbols = SymbolTable::default();
-        let first = parse_signature("list/datum/item/values, list/plain", "", &mut symbols).unwrap();
-        let equivalent = parse_signature(" list / datum / item / values , list / plain ", "", &mut symbols).unwrap();
+        let first =
+            parse_signature("list/datum/item/values, list/plain", "", &mut symbols).unwrap();
+        let equivalent = parse_signature(
+            " list / datum / item / values , list / plain ",
+            "",
+            &mut symbols,
+        )
+        .unwrap();
         assert_eq!(first.canonical_bytes(), equivalent.canonical_bytes());
-        assert_eq!(first.parameters[0].declared_type, Some(SymbolId::of("/list")));
-        assert_eq!(first.parameters[0].list_element_type, Some(SymbolId::of("/datum/item")));
+        assert_eq!(
+            first.parameters[0].declared_type,
+            Some(SymbolId::of("/list"))
+        );
+        assert_eq!(
+            first.parameters[0].list_element_type,
+            Some(SymbolId::of("/datum/item"))
+        );
         assert!(first.parameters[0].array.is_none());
         assert_eq!(first.parameters[1].list_element_type, None);
-        let other = parse_signature("list/datum/other/values, list/plain", "", &mut symbols).unwrap();
+        let other =
+            parse_signature("list/datum/other/values, list/plain", "", &mut symbols).unwrap();
         assert_ne!(first.canonical_bytes(), other.canonical_bytes());
     }
     #[test]

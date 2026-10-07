@@ -8,7 +8,99 @@ use dm_tree::{
     frontend::{BodyOccurrence, ColdFrontend, DiagnosticKind, SourceLocation},
     MemberKind,
 };
+use std::cell::RefCell;
 use std::{collections::BTreeMap, sync::Arc, thread};
+#[derive(Default)]
+struct MemoCapture {
+    debug: Vec<usize>,
+    errors: Option<Vec<dm_codegen_byond::LowerError>>,
+}
+fn replay_errors(
+    frontend: &ColdFrontend,
+    body: &BodyOccurrence,
+    identity: dm_ir::ProcedureIdentity,
+    errors: Vec<dm_codegen_byond::LowerError>,
+) -> Option<Vec<LoweringDiagnostic>> {
+    errors
+        .into_iter()
+        .map(|error| {
+            let origin = match error.span {
+                None => body.source.clone(),
+                Some(span) => {
+                    if span.end
+                        > body
+                            .expanded_span
+                            .end
+                            .checked_sub(body.expanded_span.start)?
+                        || span.start > span.end
+                    {
+                        return None;
+                    }
+                    frontend.location(body.expanded_span.start.checked_add(span.start)?)?
+                }
+            };
+            Some(LoweringDiagnostic {
+                kind: match error.kind {
+                    dm_codegen_byond::LowerErrorKind::SourceError => DiagnosticKind::SourceError,
+                    dm_codegen_byond::LowerErrorKind::UnsupportedModel => {
+                        DiagnosticKind::UnsupportedModel
+                    }
+                    dm_codegen_byond::LowerErrorKind::Internal => return None,
+                },
+                identity: Some(UnitIdentity {
+                    owner: identity.owner,
+                    name: identity.name,
+                    namespace: if identity.verb {
+                        Namespace::Verb
+                    } else {
+                        Namespace::Proc
+                    },
+                    occurrence: identity.occurrence,
+                }),
+                origin,
+                message: if error.statement.is_empty() {
+                    error.reason
+                } else {
+                    format!("{}: {}", error.statement, error.reason)
+                },
+            })
+        })
+        .collect()
+}
+struct MemoDebugProvider<'a> {
+    original: FrontendDebugProvider<'a>,
+    base: usize,
+    entry: usize,
+    capture: Option<&'a RefCell<MemoCapture>>,
+}
+impl dm_codegen_byond::DebugSourceProvider for MemoDebugProvider<'_> {
+    fn entry_ordinal(&self) -> Result<u32, String> {
+        let ordinal = self.original.entry_ordinal()?;
+        if let Some(capture) = self.capture {
+            let mut capture = capture.borrow_mut();
+            if capture.debug.len() <= ordinal as usize {
+                capture.debug.resize(ordinal as usize + 1, usize::MAX);
+            }
+            capture.debug[ordinal as usize] =
+                self.entry.checked_sub(self.base).unwrap_or(usize::MAX);
+        }
+        Ok(ordinal)
+    }
+    fn ordinal(&self, offset: usize) -> Result<u32, String> {
+        let ordinal = self.original.ordinal(offset)?;
+        if let Some(capture) = self.capture {
+            // An unrebased legacy/default expression is uncacheable; recording
+            // it must never introduce a new compiler failure.
+            let relative = offset.checked_sub(self.base).unwrap_or(usize::MAX);
+            let mut capture = capture.borrow_mut();
+            if capture.debug.len() <= ordinal as usize {
+                capture.debug.resize(ordinal as usize + 1, usize::MAX);
+            }
+            capture.debug[ordinal as usize] = relative;
+        }
+        Ok(ordinal)
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Namespace {
@@ -110,8 +202,12 @@ pub fn lower_frontend_with_statics<R: Resolver, P: AbiPolicy>(
 /// Memo admission retains the cold startup/ABI guards. The caller supplies a
 /// compiler policy identity; it must not substitute a whole-program tree hash.
 pub fn lower_frontend_with_memo<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend, host: &R, policy: &P, config: LoweringConfig,
-    startup: &crate::startup::CapturedStartup, memo: &crate::lowering_memo::ProcedureMemo,
+    frontend: &ColdFrontend,
+    host: &R,
+    policy: &P,
+    config: LoweringConfig,
+    startup: &crate::startup::CapturedStartup,
+    memo: &crate::lowering_memo::ProcedureMemo,
 ) -> LoweringBatch {
     lower_frontend_impl(frontend, host, policy, config, Some(startup), Some(memo))
 }
@@ -178,70 +274,209 @@ fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
     batch
 }
 fn lower_one_memo<R: Resolver, P: AbiPolicy>(
-    frontend:&ColdFrontend, body:&BodyOccurrence, host:&R, policy:&P,
-    startup:Option<&crate::startup::CapturedStartup>, memo:Option<&crate::lowering_memo::ProcedureMemo>,
-) -> Result<LoweredUnit,Vec<LoweringDiagnostic>> {
-    let Some(memo)=memo else { return lower_one(frontend,body,host,policy,startup); };
-    if startup.is_some_and(|capture|capture.validate_for(frontend).is_err()) {
-        return lower_one(frontend,body,host,policy,startup);
+    frontend: &ColdFrontend,
+    body: &BodyOccurrence,
+    host: &R,
+    policy: &P,
+    startup: Option<&crate::startup::CapturedStartup>,
+    memo: Option<&crate::lowering_memo::ProcedureMemo>,
+) -> Result<LoweredUnit, Vec<LoweringDiagnostic>> {
+    let Some(memo) = memo else {
+        return lower_one(frontend, body, host, policy, startup);
+    };
+    let key_start = std::time::Instant::now();
+    if startup.is_some_and(|capture| capture.validate_for(frontend).is_err()) {
+        return lower_one(frontend, body, host, policy, startup);
     }
-    let Some(mut key)=crate::lowering_memo::key(frontend,body,memo.policy) else {
-        return lower_one(frontend,body,host,policy,startup);
+    let Some(mut key) = crate::lowering_memo::key(frontend, body, memo.policy) else {
+        return lower_one(frontend, body, host, policy, startup);
     };
     // Frozen ABI policies are prepared before this stage. Their actual folded
     // outputs must enter the key because no resolver call happens on replay.
-    let tree=&frontend.snapshot.tree;
-    let prepared_key=(|| {
-        let node=tree.member(body.member)?;
-        let owner=tree.type_node(node.owner)?.path;
-        let occurrence=tree.override_chain(body.member).iter().filter(|id|tree.member(**id)
-            .is_some_and(|entry|entry.owner==node.owner && entry.kind==node.kind && entry.name==node.name)).count().checked_sub(1)?;
-        let identity=UnitIdentity {owner,name:node.name,namespace:if node.kind==MemberKind::Verb {Namespace::Verb}else{Namespace::Proc},
-            occurrence:u32::try_from(occurrence).ok()?};
-        let parsed=frontend.parse_body(body).ok()?;
-        let context=AbiContext {identity,origin:&body.source,resolver:host,
-            symbols:startup.map_or(tree.symbols(),|startup|startup.plan().symbols.as_ref())};
-        let prepared=policy.prepare_captured(node.metadata.procedure.as_ref()?,&parsed,&context).ok()?;
-        crate::lowering_memo::prepared_key(&mut key,&prepared,body.expanded_span.start)
+    let tree = &frontend.snapshot.tree;
+    let recording = crate::lowering_memo::RecordingResolver::new(host);
+    let ready = (|| {
+        let node = tree.member(body.member)?;
+        let owner = tree.type_node(node.owner)?.path;
+        let occurrence = tree
+            .override_chain(body.member)
+            .iter()
+            .filter(|id| {
+                tree.member(**id).is_some_and(|entry| {
+                    entry.owner == node.owner && entry.kind == node.kind && entry.name == node.name
+                })
+            })
+            .count()
+            .checked_sub(1)?;
+        let identity = UnitIdentity {
+            owner,
+            name: node.name,
+            namespace: if node.kind == MemberKind::Verb {
+                Namespace::Verb
+            } else {
+                Namespace::Proc
+            },
+            occurrence: u32::try_from(occurrence).ok()?,
+        };
+        let parsed = frontend.parse_body(body).ok()?;
+        let context = AbiContext {
+            identity,
+            origin: &body.source,
+            resolver: &recording,
+            symbols: startup.map_or(tree.symbols(), |startup| startup.plan().symbols.as_ref()),
+        };
+        let prepared = policy
+            .prepare_captured(node.metadata.procedure.as_ref()?, &parsed, &context)
+            .ok()?;
+        crate::lowering_memo::prepared_key(&mut key, &prepared, body.expanded_span.start)?;
+        Some((
+            parsed,
+            prepared,
+            dm_ir::ProcedureIdentity {
+                owner: identity.owner,
+                name: identity.name,
+                verb: identity.namespace == Namespace::Verb,
+                occurrence: identity.occurrence,
+            },
+        ))
     })();
-    if prepared_key.is_none() {return lower_one(frontend,body,host,policy,startup);}
-    if let Some(value)=memo.values.lookup(&key,host) {
+    let Some((parsed, prepared, identity)) = ready else {
+        return lower_one(frontend, body, host, policy, startup);
+    };
+    memo.counts.key_preparation_ns.fetch_add(
+        key_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+        std::sync::atomic::Ordering::Relaxed,
+    );
+    recording.record_occurrence(identity);
+    let lookup_start = std::time::Instant::now();
+    let note = |outcome, reason, changed_query| {
+        memo.counts.lookup_ns.fetch_add(
+            lookup_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        memo.note(crate::lowering_memo::MemoExplanation {
+            identity,
+            outcome,
+            reason,
+            changed_query,
+        });
+    };
+    use crate::lowering_memo::{MemoMissReason, MemoOutcome};
+    let (value, changed_query) = memo.values.lookup_explained(&key, host);
+    let mut miss = changed_query.map_or(MemoMissReason::NoExactVariant, |_| {
+        MemoMissReason::ReadMeaningChanged
+    });
+    if let Some(value) = value {
         // AST-bearing private sidecars still contain expanded spans. Ordinary
         // code contains only symbolic operands/debug ordinals and can move.
-        let absolute_sidecars=!value.code.modified_instances.is_empty() || !value.source_helpers.is_empty();
-        if !absolute_sidecars || value.origin.expanded_span==body.expanded_span {
-            memo.counts.resident_hits.fetch_add(1,std::sync::atomic::Ordering::Relaxed);
-            let mut unit=(*value).clone();
-            unit.origin=body.clone();
-            if let Some(member)=frontend.snapshot.tree.member(body.member) {
-                if let Some(metadata)=&member.metadata.procedure {unit.metadata=Arc::clone(metadata);}
-                unit.effective=frontend.snapshot.tree.resolve(member.owner,member.name,member.kind)==Some(body.member);
+        let previous = &value.unit;
+        let rebased = crate::lowering_memo::rebase_debug(frontend, body, &value.relative_debug);
+        let absolute_sidecars =
+            !previous.code.modified_instances.is_empty() || !previous.source_helpers.is_empty();
+        if rebased.as_ref().is_some_and(|origins| {
+            !absolute_sidecars
+                || (previous.origin.expanded_span == body.expanded_span
+                    && *origins == previous.debug_origins)
+        }) {
+            memo.counts
+                .resident_hits
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            let mut unit = previous.clone();
+            unit.debug_origins = rebased.expect("checked relative origins");
+            unit.origin = body.clone();
+            if let Some(member) = frontend.snapshot.tree.member(body.member) {
+                if let Some(metadata) = &member.metadata.procedure {
+                    unit.metadata = Arc::clone(metadata);
+                }
+                unit.effective =
+                    frontend
+                        .snapshot
+                        .tree
+                        .resolve(member.owner, member.name, member.kind)
+                        == Some(body.member);
             }
+            note(MemoOutcome::ResidentHit, None, None);
             return Ok(unit);
         }
+        miss = MemoMissReason::UnrebasablePrivateSidecar;
     }
-    if let Some(unit)=memo.lookup_disk(&key,frontend,body,host) {
-        memo.counts.disk_hits.fetch_add(1,std::sync::atomic::Ordering::Relaxed);
+    let disk = memo.lookup_procedure(
+        &key,
+        identity,
+        frontend,
+        body,
+        host,
+        &prepared,
+        parsed.item(),
+    );
+    if let Some(errors) = disk
+        .errors
+        .and_then(|errors| replay_errors(frontend, body, identity, errors))
+    {
+        memo.counts
+            .disk_hits
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        note(MemoOutcome::DiskHit, None, None);
+        return Err(errors);
+    }
+    if let Some(unit) = disk.unit {
+        memo.counts
+            .disk_hits
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        note(MemoOutcome::DiskHit, None, None);
         return Ok(unit);
     }
-    memo.counts.recomputed.fetch_add(1,std::sync::atomic::Ordering::Relaxed);
-    let recording=crate::lowering_memo::RecordingResolver::new(host);
-    let tree=&frontend.snapshot.tree;
-    if let Some(node)=tree.member(body.member) {
-        if let Some(owner)=tree.type_node(node.owner) {
-            recording.record_occurrence(dm_ir::ProcedureIdentity {
-                owner:owner.path,name:node.name,verb:node.kind==MemberKind::Verb,
-                occurrence:u32::try_from(tree.override_chain(body.member).iter().filter(|id|
-                    tree.member(**id).is_some_and(|entry|entry.owner==node.owner && entry.kind==node.kind && entry.name==node.name))
-                    .count().saturating_sub(1)).unwrap_or(u32::MAX),
-            });
-        }
+    if let Some(reason) = disk.miss {
+        miss = reason;
     }
-    let result=lower_one(frontend,body,&recording,policy,startup);
-    if let Ok(unit)=&result {
-        let reads=recording.reads();
-        memo.queue_disk(&key,&reads,unit);
-        memo.remember(key,reads,unit);
+    let changed_query = changed_query.or(disk.changed_query);
+    if changed_query.is_some() {
+        miss = MemoMissReason::ReadMeaningChanged;
+    }
+    note(MemoOutcome::Recomputed, Some(miss), changed_query);
+    memo.counts
+        .recomputed
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let capture = RefCell::new(MemoCapture::default());
+    let result = lower_one_captured(
+        frontend,
+        body,
+        &recording,
+        policy,
+        startup,
+        Some(&capture),
+        Some((parsed, prepared)),
+    );
+    if let Ok(unit) = &result {
+        let reads = recording.reads();
+        let relative_debug = capture.borrow().debug.clone();
+        if relative_debug.len() == unit.debug_origins.entries.len()
+            && crate::lowering_memo::rebase_debug(frontend, body, &relative_debug).as_ref()
+                == Some(&unit.debug_origins)
+        {
+            memo.queue_disk(
+                &key,
+                &reads,
+                unit,
+                &relative_debug,
+                &recording.domain_receipts(),
+            );
+            memo.remember(
+                key,
+                reads,
+                unit,
+                relative_debug,
+                recording.domain_receipts(),
+            );
+        }
+    } else if let Some(errors) = &capture.borrow().errors {
+        memo.remember_failure(
+            &key,
+            Some(identity),
+            &recording.reads(),
+            errors,
+            &recording.domain_receipts(),
+        );
     }
     result
 }
@@ -251,6 +486,17 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
     host: &R,
     policy: &P,
     startup: Option<&crate::startup::CapturedStartup>,
+) -> Result<LoweredUnit, Vec<LoweringDiagnostic>> {
+    lower_one_captured(frontend, body, host, policy, startup, None, None)
+}
+fn lower_one_captured<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    body: &BodyOccurrence,
+    host: &R,
+    policy: &P,
+    startup: Option<&crate::startup::CapturedStartup>,
+    capture: Option<&RefCell<MemoCapture>>,
+    ready: Option<(dm_tree::frontend::ParsedBody<'_>, PreparedUnit)>,
 ) -> Result<LoweredUnit, Vec<LoweringDiagnostic>> {
     let tree = &frontend.snapshot.tree;
     let error = |identity, message| {
@@ -312,23 +558,28 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
         .as_ref()
         .ok_or_else(|| unsupported("procedure signature metadata unsupported".into()))?;
     let symbols = startup.map_or(tree.symbols(), |captured| captured.plan().symbols.as_ref());
-    let parsed = frontend.parse_body(body).map_err(|diagnostic| {
-        vec![LoweringDiagnostic {
-            kind: diagnostic.kind,
-            identity: Some(identity),
-            origin: diagnostic.location.unwrap_or_else(|| body.source.clone()),
-            message: diagnostic.message,
-        }]
-    })?;
-    let context = AbiContext {
-        identity,
-        symbols,
-        origin: &body.source,
-        resolver: host,
+    let (parsed, prepared) = if let Some(ready) = ready {
+        ready
+    } else {
+        let parsed = frontend.parse_body(body).map_err(|diagnostic| {
+            vec![LoweringDiagnostic {
+                kind: diagnostic.kind,
+                identity: Some(identity),
+                origin: diagnostic.location.unwrap_or_else(|| body.source.clone()),
+                message: diagnostic.message,
+            }]
+        })?;
+        let context = AbiContext {
+            identity,
+            symbols,
+            origin: &body.source,
+            resolver: host,
+        };
+        let prepared = policy
+            .prepare_captured(metadata, &parsed, &context)
+            .map_err(unsupported)?;
+        (parsed, prepared)
     };
-    let prepared = policy
-        .prepare_captured(metadata, &parsed, &context)
-        .map_err(unsupported)?;
     let parsed = parsed.item();
     let procedure_identity = dm_ir::ProcedureIdentity {
         owner: identity.owner,
@@ -337,8 +588,13 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
         occurrence: identity.occurrence,
     };
     let mut inputs = prepared.inputs;
-    if inputs.procedure_identity.is_some_and(|supplied| supplied != procedure_identity) {
-        return Err(unsupported("procedure ABI identity differs from current body".into()));
+    if inputs
+        .procedure_identity
+        .is_some_and(|supplied| supplied != procedure_identity)
+    {
+        return Err(unsupported(
+            "procedure ABI identity differs from current body".into(),
+        ));
     }
     inputs.procedure_identity = Some(procedure_identity);
     let executable_body = if let Some(startup) = startup {
@@ -404,7 +660,12 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
         },
         name
     ));
-    let debug = FrontendDebugProvider::new(frontend, parsed.header_span.start);
+    let debug = MemoDebugProvider {
+        original: FrontendDebugProvider::new(frontend, parsed.header_span.start),
+        base: body.expanded_span.start,
+        entry: parsed.header_span.start,
+        capture,
+    };
     let code = compile_simple_proc_with_resolver_and_debug(
         &executable_body,
         &inputs,
@@ -413,6 +674,26 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
         Some(&debug),
     )
     .map_err(|errors| {
+        if let Some(capture) = capture {
+            let relative = errors
+                .iter()
+                .map(|error| {
+                    if error.kind == dm_codegen_byond::LowerErrorKind::Internal {
+                        return None;
+                    }
+                    let mut error = error.clone();
+                    if let Some(span) = &mut error.span {
+                        span.start = span.start.checked_sub(body.expanded_span.start)?;
+                        span.end = span.end.checked_sub(body.expanded_span.start)?;
+                        if span.end > body.expanded_span.end - body.expanded_span.start {
+                            return None;
+                        }
+                    }
+                    Some(error)
+                })
+                .collect::<Option<Vec<_>>>();
+            capture.borrow_mut().errors = relative;
+        }
         errors
             .into_iter()
             .map(|e| LoweringDiagnostic {
@@ -459,7 +740,7 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
         code,
         metadata: Arc::clone(metadata),
         abi: prepared.abi,
-        debug_origins: debug.finish(),
+        debug_origins: debug.original.finish(),
         source_helpers,
     })
 }

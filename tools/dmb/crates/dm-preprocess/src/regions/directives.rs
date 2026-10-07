@@ -9,8 +9,18 @@ pub(super) fn plan<P: SourceProvider>(
     provider: &P,
     defines: &BTreeMap<String, String>,
 ) -> DirectivePlan {
+    plan_with_memo(project, provider, defines, None)
+}
+pub(super) fn plan_with_memo<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+    memo: Option<&dyn ExpansionMemo>,
+) -> DirectivePlan {
     let mut pass = DirectivePass {
         provider,
+        memo,
+        recording: None,
         plan: DirectivePlan {
             project_dir: canonical_path(project.parent().unwrap_or(Path::new(""))),
             ..DirectivePlan::default()
@@ -221,6 +231,8 @@ pub(super) fn plan<P: SourceProvider>(
 
 struct DirectivePass<'a, P> {
     provider: &'a P,
+    memo: Option<&'a dyn ExpansionMemo>,
+    recording: Option<directive_memo::Recording>,
     plan: DirectivePlan,
     visited: BTreeSet<PathBuf>,
     file_dir_definitions: Vec<Macro>,
@@ -231,6 +243,155 @@ struct DirectivePass<'a, P> {
 }
 
 impl<P: SourceProvider> DirectivePass<'_, P> {
+    fn evaluate(&self, word: &str, rest: &str) -> Result<bool, String> {
+        if let Some(recording) = self.recording.as_ref() {
+            evaluate(
+                word,
+                rest,
+                &directive_memo::Lookup {
+                    environment: &self.environment,
+                    recording,
+                },
+            )
+        } else {
+            evaluate(word, rest, &self.environment)
+        }
+    }
+    fn finish_recording(&mut self, region: usize, pending: &mut Vec<RegionLine>) {
+        self.freeze_lines(region, pending);
+        if let Some(recording) = self.recording.take() {
+            if let Some(memo) = self.memo {
+                memo.insert_directive(Arc::new(recording.finish(&self.conditionals)));
+            }
+        }
+    }
+    fn replay_directives(
+        &mut self,
+        occurrence: usize,
+        region: usize,
+        lines: &[prepared_source::PreparedLine],
+        record: &DirectiveRecord,
+        pending: &mut Vec<RegionLine>,
+    ) {
+        for action in record.actions() {
+            match action {
+                directive_memo::Action::Text(input) => {
+                    let line = &lines[*input];
+                    pending.push(RegionLine {
+                        source_span: line.source_span,
+                        source_line: line.source_line,
+                        text: line.text.clone(),
+                    });
+                }
+                directive_memo::Action::Freeze => self.freeze_lines(region, pending),
+                directive_memo::Action::Define {
+                    input,
+                    name,
+                    definition,
+                } => {
+                    let line = &lines[*input];
+                    self.apply_define(
+                        occurrence,
+                        region,
+                        line.source_span,
+                        line.source_line,
+                        name.clone(),
+                        definition.clone(),
+                    );
+                }
+                directive_memo::Action::Undef { name, .. } => self.apply_undef(region, name),
+                directive_memo::Action::Error {
+                    input,
+                    kind,
+                    message,
+                } => self.error(
+                    occurrence,
+                    lines[*input].source_line,
+                    *kind,
+                    message.clone(),
+                ),
+            }
+        }
+        self.conditionals = record.outgoing().to_vec();
+    }
+    fn apply_define(
+        &mut self,
+        occurrence: usize,
+        region: usize,
+        span: Span,
+        source_line: usize,
+        name: String,
+        definition: Macro,
+    ) {
+        let path = self.plan.occurrences[occurrence].path.clone();
+        if let Some(recording) = self.recording.as_mut() {
+            recording.actions.push(directive_memo::Action::Define {
+                input: recording.current,
+                name: name.clone(),
+                definition: definition.clone(),
+            });
+            recording.local.insert(name.clone());
+        }
+        let origin = DefinitionOrigin {
+            path: path.clone(),
+            source_span: span,
+            source_line,
+        };
+        if name == "FILE_DIR"
+            && definition.parameters.is_none()
+            && !definition.replacement.trim().is_empty()
+        {
+            let path = self.push_file_dir(&definition);
+            self.file_dir_origins.push(Some(origin.clone()));
+            self.plan.regions[region]
+                .effects
+                .push(MacroEffect::PushFileDir {
+                    path,
+                    definition: definition.clone(),
+                });
+        }
+        self.plan.regions[region].effects.push(MacroEffect::Define {
+            name: name.clone(),
+            definition: definition.clone(),
+        });
+        self.environment
+            .insert(&name, definition.clone(), Some(origin));
+        self.plan.final_macros.insert(name, definition);
+    }
+    fn apply_undef(&mut self, region: usize, name: &str) {
+        if let Some(recording) = self.recording.as_mut() {
+            recording.actions.push(directive_memo::Action::Undef {
+                input: recording.current,
+                name: name.to_owned(),
+            });
+            recording.local.insert(name.to_owned());
+            if name == "FILE_DIR" {
+                recording.directory_read();
+            }
+        }
+        self.plan.regions[region].effects.push(MacroEffect::Undef {
+            name: name.to_owned(),
+        });
+        self.plan.final_macros.remove(name);
+        self.environment.remove(name);
+        if name == "FILE_DIR" {
+            self.plan.file_dirs.pop();
+            self.file_dir_definitions.pop();
+            self.file_dir_origins.pop();
+            self.plan.regions[region]
+                .effects
+                .push(MacroEffect::PopFileDir);
+            if let Some(restored) = self.file_dir_definitions.last() {
+                self.plan
+                    .final_macros
+                    .insert(name.to_owned(), restored.clone());
+            }
+            if let Some(restored) = self.file_dir_definitions.last() {
+                let origin = self.file_dir_origins.last().cloned().flatten();
+                self.environment.insert(name, restored.clone(), origin);
+            }
+        }
+    }
     fn occurrence(
         &mut self,
         path: &Path,
@@ -270,6 +431,13 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             .rev()
             .find(|region| region.occurrence == occurrence)
             .map_or(self.plan.items.len(), |region| region.encounter_ordinal);
+        if let Some(recording) = self.recording.as_mut() {
+            recording.actions.push(directive_memo::Action::Error {
+                input: recording.current,
+                kind,
+                message: message.clone(),
+            });
+        }
         self.plan.diagnostic_ordinals.push(ordinal);
         self.plan.diagnostics.push(Diagnostic {
             path: self.plan.occurrences[occurrence].path.as_ref().clone(),
@@ -299,6 +467,9 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
     fn freeze_lines(&mut self, region: usize, pending: &mut Vec<RegionLine>) {
         if pending.is_empty() {
             return;
+        }
+        if let Some(recording) = self.recording.as_mut() {
+            recording.actions.push(directive_memo::Action::Freeze);
         }
         // Every segment sees its exact full incoming environment. Persistent
         // roots and Arc bindings share unchanged entries across define epochs;
@@ -344,11 +515,77 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         self.plan
             .source_line_starts
             .insert(path.as_ref().clone(), prepared.line_starts().clone());
-        self.plan.source_texts.insert(path.as_ref().clone(),Arc::clone(prepared.original()));
+        self.plan
+            .source_texts
+            .insert(path.as_ref().clone(), Arc::clone(prepared.original()));
         let mut line_number = 0;
         let mut region = self.begin_region(occurrence, 0);
         let mut pending = Vec::new();
-        for logical in prepared.lines() {
+        let lines = prepared.lines();
+        let mut cursor = 0;
+        while cursor < lines.len() {
+            if self
+                .recording
+                .as_ref()
+                .is_some_and(|recording| recording.end == cursor)
+            {
+                self.finish_recording(region, &mut pending);
+            }
+            if self.recording.is_none() && !directive_memo::is_include(&lines[cursor]) {
+                if let Some(memo) = self.memo {
+                    let end = lines[cursor..]
+                        .iter()
+                        .position(directive_memo::is_include)
+                        .map_or(lines.len(), |index| cursor + index);
+                    if let Some(context) =
+                        directive_memo::context(prepared.original(), &lines[cursor..end])
+                    {
+                        let hit =
+                            memo.directive_candidates(context.2)
+                                .into_iter()
+                                .rev()
+                                .find(|record| {
+                                    record.matches(
+                                        &context.0,
+                                        &context.1,
+                                        end - cursor,
+                                        &self.environment,
+                                        &self.conditionals,
+                                        &self.plan.file_dirs,
+                                        &self.file_dir_definitions,
+                                    )
+                                });
+                        if let Some(record) = hit {
+                            self.replay_directives(
+                                occurrence,
+                                region,
+                                &lines[cursor..end],
+                                &record,
+                                &mut pending,
+                            );
+                            line_number += lines[cursor..end]
+                                .iter()
+                                .map(|line| line.source_lines)
+                                .sum::<usize>();
+                            cursor = end;
+                            continue;
+                        }
+                        self.recording = Some(directive_memo::Recording::new(
+                            cursor,
+                            end,
+                            context,
+                            &self.conditionals,
+                            &self.plan.file_dirs,
+                            &self.file_dir_definitions,
+                        ));
+                    }
+                }
+            }
+            if let Some(recording) = self.recording.as_mut() {
+                recording.current = cursor - recording.start;
+            }
+            let logical = &lines[cursor];
+            cursor += 1;
             let source_line = logical.source_line;
             line_number += logical.source_lines;
             let span = logical.source_span;
@@ -357,6 +594,11 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             let active = self.conditionals.last().is_none_or(|frame| frame.active);
             let Some(directive) = logical.text.trim_start().strip_prefix('#') else {
                 if active {
+                    if let Some(recording) = self.recording.as_mut() {
+                        recording
+                            .actions
+                            .push(directive_memo::Action::Text(recording.current));
+                    }
                     pending.push(RegionLine {
                         source_span: span,
                         source_line,
@@ -387,31 +629,14 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     self.freeze_lines(region, &mut pending);
                     match parse_define(rest) {
                         Ok((name, definition)) => {
-                            let origin = DefinitionOrigin {
-                                path: path.clone(),
-                                source_span: span,
+                            self.apply_define(
+                                occurrence,
+                                region,
+                                span,
                                 source_line,
-                            };
-                            if name == "FILE_DIR"
-                                && definition.parameters.is_none()
-                                && !definition.replacement.trim().is_empty()
-                            {
-                                let path = self.push_file_dir(&definition);
-                                self.file_dir_origins.push(Some(origin.clone()));
-                                self.plan.regions[region]
-                                    .effects
-                                    .push(MacroEffect::PushFileDir {
-                                        path,
-                                        definition: definition.clone(),
-                                    });
-                            }
-                            self.plan.regions[region].effects.push(MacroEffect::Define {
-                                name: name.clone(),
-                                definition: definition.clone(),
-                            });
-                            self.environment
-                                .insert(&name, definition.clone(), Some(origin));
-                            self.plan.final_macros.insert(name, definition);
+                                name,
+                                definition,
+                            );
                         }
                         Err(error) => {
                             self.error(occurrence, source_line, DiagnosticKind::Macro, error)
@@ -422,28 +647,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     self.freeze_lines(region, &mut pending);
                     match directive_identifier(rest) {
                         Ok(name) => {
-                            self.plan.regions[region].effects.push(MacroEffect::Undef {
-                                name: name.to_owned(),
-                            });
-                            self.plan.final_macros.remove(name);
-                            self.environment.remove(name);
-                            if name == "FILE_DIR" {
-                                self.plan.file_dirs.pop();
-                                self.file_dir_definitions.pop();
-                                self.file_dir_origins.pop();
-                                self.plan.regions[region]
-                                    .effects
-                                    .push(MacroEffect::PopFileDir);
-                                if let Some(restored) = self.file_dir_definitions.last() {
-                                    self.plan
-                                        .final_macros
-                                        .insert(name.to_owned(), restored.clone());
-                                }
-                                if let Some(restored) = self.file_dir_definitions.last() {
-                                    let origin = self.file_dir_origins.last().cloned().flatten();
-                                    self.environment.insert(name, restored.clone(), origin);
-                                }
-                            }
+                            self.apply_undef(region, name);
                         }
                         Err(error) => {
                             self.error(occurrence, source_line, DiagnosticKind::Macro, error)
@@ -466,6 +670,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             }
         }
         self.freeze_lines(region, &mut pending);
+        self.finish_recording(region, &mut pending);
         self.plan.regions[region].source_span.end = prepared.original().len();
         // Native accepts an active unfinished conditional at root EOF, but an
         // inactive root EOF is an error. A child EOF never closes the stack.
@@ -532,7 +737,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         match word {
             "if" | "ifdef" | "ifndef" => {
                 let result = if active {
-                    evaluate(word, rest, &self.plan.final_macros)
+                    self.evaluate(word, rest)
                 } else {
                     Ok(false)
                 };
@@ -570,7 +775,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 } else if word == "else" {
                     Ok(true)
                 } else {
-                    evaluate("if", rest, &self.plan.final_macros)
+                    self.evaluate("if", rest)
                 };
                 let yes = result.unwrap_or_else(|error| {
                     self.error(occurrence, line, DiagnosticKind::Conditional, error);
@@ -596,11 +801,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
     }
 }
 
-fn evaluate(
-    word: &str,
-    expression: &str,
-    macros: &BTreeMap<String, Macro>,
-) -> Result<bool, String> {
+fn evaluate(word: &str, expression: &str, macros: &dyn crate::MacroLookup) -> Result<bool, String> {
     match word {
         "ifdef" | "ifndef" => directive_identifier(expression)
             .map(|name| macro_defined(name, macros) == (word == "ifdef")),

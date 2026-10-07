@@ -10,6 +10,8 @@ use std::{collections::HashSet, sync::Arc};
 /// Immutable lexical overlay. A miss is authoritative only for the exact
 /// captured procedure inventory; other procedure contexts stay unsupported.
 pub struct StaticResolver<'a, R: dm_ir::Resolver> {
+    domain_version: Option<u128>,
+    underlying_version: Option<u128>,
     pub underlying: &'a R,
     procedures: HashSet<ProcedureIdentity>,
     declarations:
@@ -50,7 +52,32 @@ impl<'a, R: dm_ir::Resolver> StaticResolver<'a, R> {
                 }
             }
         }
+        let domain_version = underlying
+            .domain_version(dm_ir::ReadDomain::Tree)
+            .map(|base| {
+                let mut hash = xxhash_rust::xxh3::Xxh3::new();
+                hash.update(b"dm-procedure-static-domain-v1\0");
+                hash.update(&base.to_le_bytes());
+                let mut captured: Vec<_> = procedures.iter().collect();
+                captured.sort();
+                hash.update(&(captured.len() as u64).to_le_bytes());
+                for procedure in captured {
+                    hash.update(&procedure.owner.bits().to_le_bytes());
+                    hash.update(&procedure.name.bits().to_le_bytes());
+                    hash.update(&[u8::from(procedure.verb)]);
+                    hash.update(&procedure.occurrence.to_le_bytes());
+                }
+                hash.update(&(declarations.len() as u64).to_le_bytes());
+                for declaration in declarations.values() {
+                    let bytes = declaration.canonical_bytes();
+                    hash.update(&(bytes.len() as u64).to_le_bytes());
+                    hash.update(&bytes);
+                }
+                hash.digest128()
+            });
         Ok(Self {
+            domain_version,
+            underlying_version: underlying.domain_version(dm_ir::ReadDomain::Tree),
             underlying,
             procedures,
             declarations,
@@ -58,6 +85,18 @@ impl<'a, R: dm_ir::Resolver> StaticResolver<'a, R> {
     }
 }
 impl<R: dm_ir::Resolver> dm_ir::Resolver for StaticResolver<'_, R> {
+    fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
+        match domain {
+            dm_ir::ReadDomain::Tree => {
+                if self.underlying.domain_version(domain) == self.underlying_version {
+                    self.domain_version
+                } else {
+                    None
+                }
+            }
+            other => self.underlying.domain_version(other),
+        }
+    }
     fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
         match query {
             dm_ir::ResolveQuery::ProcedureStatic { procedure, name }
@@ -341,6 +380,39 @@ fn walk(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn domain_version_certifies_empty_static_inventory_and_invalidates_new_declarations() {
+        use dm_ir::{ReadDomain, Resolver};
+        struct Base;
+        impl Resolver for Base {
+            fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
+                dm_ir::ResolvedMeaning::Unsupported(query)
+            }
+            fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
+                (domain == ReadDomain::Tree).then_some(9)
+            }
+        }
+        let id = identity();
+        let base = Base;
+        let empty = capture(id, &[]).unwrap();
+        let old = StaticResolver::new(&base, &[(id, empty)]).unwrap();
+        let parsed = dm_syntax::parse("var/static/value = 1\n");
+        let changed = capture(id, &parsed.items).unwrap();
+        let new = StaticResolver::new(&base, &[(id, changed)]).unwrap();
+        assert_ne!(
+            old.domain_version(ReadDomain::Tree),
+            new.domain_version(ReadDomain::Tree)
+        );
+        let query = dm_ir::ResolveQuery::ProcedureStatic {
+            procedure: id,
+            name: dm_ir::SymbolId::of("value"),
+        };
+        assert_eq!(old.resolve(query), dm_ir::ResolvedMeaning::Missing);
+        assert!(matches!(
+            new.resolve(query),
+            dm_ir::ResolvedMeaning::ProcedureStatic(_)
+        ));
+    }
     fn identity() -> ProcedureIdentity {
         ProcedureIdentity {
             owner: dm_ir::SymbolId::of("/datum/x"),

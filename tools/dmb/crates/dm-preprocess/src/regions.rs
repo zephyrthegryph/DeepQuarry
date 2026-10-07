@@ -11,6 +11,8 @@ use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
 mod directives;
+mod directive_memo;
+pub use directive_memo::{DirectiveRecord,DIRECTIVE_VERSION};
 mod environment;
 pub mod prepared_source;
 pub use environment::MacroEnvironment;
@@ -131,6 +133,8 @@ pub fn plan_regions<P: SourceProvider>(
 ) -> DirectivePlan {
     directives::plan(project, provider, defines)
 }
+
+pub fn plan_regions_with_memo<P:SourceProvider>(project:&Path,provider:&P,defines:&BTreeMap<String,String>,memo:&dyn ExpansionMemo)->DirectivePlan{directives::plan_with_memo(project,provider,defines,Some(memo))}
 
 impl DirectivePlan {
     /// Source declaration projection follows directive encounter order.

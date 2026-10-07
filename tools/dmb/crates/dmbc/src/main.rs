@@ -6,6 +6,14 @@ use std::sync::Arc;
 use std::time::Instant;
 
 fn main() {
+    let arguments: Vec<String> = std::env::args().skip(1).collect();
+    if arguments.iter().any(|arg| arg == "--verify") {
+        if let Err(error) = dmbc::verification::run_cli(&arguments) {
+            eprintln!("{error}");
+            std::process::exit(1);
+        }
+        return;
+    }
     if let Err(error) = run() {
         eprintln!("{error}");
         std::process::exit(1);
@@ -15,8 +23,20 @@ fn main() {
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = std::env::args().skip(1);
     let command = args.next().unwrap_or_else(|| "--help".into());
+    if command == "gc" {
+        let project = std::fs::canonicalize(args.next().unwrap_or_else(|| "deepquarry.dme".into()))?;
+        println!("{}", serde_json::to_string_pretty(&dmbc::cache_maintenance::run(&project)?)?);
+        return Ok(());
+    }
+    if command == "stats" || command == "explain" {
+        let target = if command == "explain" { Some(args.next().ok_or("explain requires an absolute procedure path")?) } else { None };
+        let project = std::fs::canonicalize(args.next().unwrap_or_else(|| "deepquarry.dme".into()))?;
+        println!("{}", serde_json::to_string_pretty(&dmbc::telemetry::inspect(&project, target.as_deref())?)?);
+        return Ok(());
+    }
     if command == "--help" || command == "-h" {
-        println!("dmbc analyze|compile [--no-daemon] [--no-cache] [--exact-inputs] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH]");
+        println!("dmbc analyze|compile [--no-daemon] [--no-cache] [--exact-inputs] [--verify] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH]");
+        println!("dmbc stats [PROJECT] | explain PROCEDURE [PROJECT] | gc [PROJECT]");
         println!("compile publishes a new immutable output pair and installs PROJECT.dmb/.rsc; unsupported semantics fail before publication.");
         return Ok(());
     }
@@ -32,11 +52,17 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut output_store = None;
     let mut exact_inputs = false;
     let mut no_cache = false;
+    let mut record_inputs = None;
+    let mut replay_inputs = None;
+    let mut artifact_directory = None;
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--no-daemon" => {}
             "--exact-inputs" => exact_inputs = true,
             "--no-cache" => no_cache = true,
+            "--record-inputs" => record_inputs = Some(PathBuf::from(args.next().ok_or("--record-inputs requires a directory")?)),
+            "--replay-inputs" => replay_inputs = Some(PathBuf::from(args.next().ok_or("--replay-inputs requires a directory")?)),
+            "--artifact-directory" => artifact_directory = Some(PathBuf::from(args.next().ok_or("--artifact-directory requires a directory")?)),
             "--bootstrap-catalog" => bootstrap_catalog = true,
             "--progress" => progress_enabled = true,
             "--output-store" => {
@@ -78,6 +104,15 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     let project = std::fs::canonicalize(project.ok_or("a project manifest is required")?)?;
+    if record_inputs.is_some() && replay_inputs.is_some() { return Err("record and replay inputs are mutually exclusive".into()); }
+    let verification_capture = record_inputs.is_some() || replay_inputs.is_some();
+    let output_project = match &artifact_directory {
+        Some(directory) => {
+            std::fs::create_dir_all(directory)?;
+            directory.join(project.file_name().ok_or("manifest filename missing")?)
+        }
+        None => project.clone(),
+    };
     let total = Instant::now();
     let mut build_lock = if command == "compile" {
         Some(dmbc::compile_driver::acquire_build_lock(&project)?)
@@ -95,27 +130,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         );
         bootstrap_catalog = true;
     }
-    let engine_capture = engine_template
-        .map(|path| {
-            let bytes = std::fs::read(&path)
-                .map_err(|error| format!("engine template {}: {error}", path.display()))?;
-            let snapshot = dmbc::engine::EngineSnapshot::from_bytes(&bytes, 1)
-                .map_err(|error| format!("engine template {}: {error:?}", path.display()))?;
-            if bootstrap_catalog {
-                snapshot
-                    .with_bootstrap_catalog()
-                    .map(|snapshot| (bytes, snapshot))
-                    .map_err(|error| format!("engine catalog {}: {error:?}", path.display()))
-            } else {
-                Ok((bytes, snapshot))
-            }
-        })
-        .transpose()?;
-    let engine = engine_capture.as_ref().map(|(_, engine)| engine);
+    let engine_bytes = engine_template.as_ref().map(|path| std::fs::read(path)
+        .map_err(|error| format!("engine template {}: {error}", path.display()))).transpose()?;
+    let engine_identity = engine_bytes.as_ref().map_or(0, |bytes| xxhash_rust::xxh3::xxh3_128(bytes));
     if command == "compile" {
-        if !engine.is_some_and(|engine| {
-            engine.matches_template(include_bytes!("../../../fixtures/native_template.bin"), 1)
-        }) {
+        if engine_bytes.as_deref() != Some(include_bytes!("../../../fixtures/native_template.bin").as_slice()) {
             return Err(
                 "native unsupported: compile requires the pinned BYOND 516.1687 engine template"
                     .into(),
@@ -132,8 +151,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
     let now_ns = || std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
         .expect("clock is after epoch").as_nanos();
-    let inputs_capture = dmbc::input_snapshot::RecordingInputs::new(
-        dmbc::input_snapshot::FileSystemInputs, now_ns());
+    let input_provider = match (&record_inputs, &replay_inputs) {
+        (Some(directory), _) => dmbc::frozen_inputs::Inputs::record(directory)?,
+        (_, Some(directory)) => dmbc::frozen_inputs::Inputs::replay(directory)?,
+        _ => dmbc::frozen_inputs::Inputs::Live,
+    };
+    let inputs_capture = dmbc::input_snapshot::RecordingInputs::new(&input_provider, now_ns());
     let mut session = None;
     let mut pair_store = None;
     let mut resource_prior = None;
@@ -142,30 +165,53 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         let compiler = file_hash(&std::env::current_exe()?)?;
         let mut policy_bytes = b"native-lowering-policy-v1\0".to_vec();
         policy_bytes.extend_from_slice(&compiler.to_le_bytes());
-        policy_bytes.extend_from_slice(&engine.expect("compile engine captured").identity().to_le_bytes());
+        policy_bytes.extend_from_slice(&engine_identity.to_le_bytes());
+        policy_bytes.push(u8::from(bootstrap_catalog));
         memo_policy = xxhash_rust::xxh3::xxh3_128(&policy_bytes);
         let configuration = dmbc::session::Configuration::new(
             project.parent().ok_or("manifest parent missing")?, &project, defines.clone(),
-            compiler, engine.expect("compile engine captured").identity(),
+            compiler, engine_identity,
             xxhash_rust::xxh3::xxh3_128(if bootstrap_catalog { b"native-session-v1-bootstrap" } else { b"native-session-v1-template" }))?;
         let configured = dmbc::session::Session::from_locked(configuration,
             build_lock.take().expect("compile lock held"))?;
         let store = dmbc::publish::PairStore::open(output_store.clone()
             .map(Ok).unwrap_or_else(|| dmbc::publish::default_store_path(&project))?)?;
-        for id in configured.latest(4)? {
-            if resource_prior.is_none() {
-                resource_prior = configured.prior(id)?
-                    .filter(|record| record.resource_manifest.is_some());
-            }
-            if let Some(validated) = configured.validate(id, &dmbc::input_snapshot::FileSystemInputs,
-                exact_inputs, now_ns())? {
+        for id in configured.latest(if verification_capture { 0 } else { 4 })? {
+            if let Some(mut validated) = configured.validate_filesystem_observed(id, exact_inputs, now_ns(), |record| {
+                if resource_prior.is_none() {
+                    if let Some(manifest) = &record.resource_manifest {
+                        resource_prior = Some((record.pair, manifest.clone()));
+                    }
+                }
+            })? {
+                let pair_verification_started = Instant::now();
                 if let Ok(pair) = store.verify(validated.record().pair, exact_inputs) {
-                    if !validated.outputs_match(&dmbc::input_snapshot::FileSystemInputs, exact_inputs, now_ns())? {
-                        store.install(pair.id, &project.with_extension("dmb"), &project.with_extension("rsc"),
-                            &project.with_extension("dmb-pair.json"))?;
+                    let pair_verification_seconds = pair_verification_started.elapsed().as_secs_f64();
+                    let output_validation_started = Instant::now();
+                    let (outputs_match, output_rehashes) = validated.refresh_outputs(&dmbc::input_snapshot::FileSystemInputs, exact_inputs, now_ns())?;
+                    if !outputs_match {
+                        store.install(pair.id, &output_project.with_extension("dmb"), &output_project.with_extension("rsc"),
+                            &output_project.with_extension("dmb-pair.json"))?;
+                    }
+                    if progress_enabled {
+                        let timing = &validated.timings;
+                        eprintln!("native session validation: record={:.3}s bulk_capture={:.3}s input_validate={:.3}s pair={:.3}s outputs={:.3}s proofs={:?}", timing.record_decode.as_secs_f64(), timing.bulk_capture.as_secs_f64(), timing.input_validate.as_secs_f64(), pair_verification_seconds, output_validation_started.elapsed().as_secs_f64(), timing.proofs);
+                    }
+                    let rehashed = validated.validation.rehashed;
+                    if validated.validation.rehashed > 0 || output_rehashes > 0 || !outputs_match {
+                        let mut record = validated.into_record();
+                        if !outputs_match {
+                            let mut outputs = dmbc::input_snapshot::InputSnapshot::new(now_ns());
+                            for extension in ["dmb", "rsc", "dmb-pair.json"] {
+                                capture_output_digest(&mut outputs, &output_project.with_extension(extension))?;
+                            }
+                            record.outputs = Some(outputs);
+                        }
+                        configured.store(record)?;
                     }
                     eprintln!("native session hit: total={:.3}s rehashed={} pair={}",
-                        total.elapsed().as_secs_f64(), validated.validation.rehashed, pair.name());
+                        total.elapsed().as_secs_f64(), rehashed, pair.name());
+                    let _ = dmbc::telemetry::save(&project, "last-run", &serde_json::json!({"session_hit":true,"seconds":total.elapsed().as_secs_f64(),"rehashed":rehashed,"pair":pair.name()}));
                     return Ok(());
                 }
             }
@@ -173,20 +219,51 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         session = Some(configured);
         pair_store = Some(store);
     }
+    // An authenticated unchanged session needs no decoded engine or bootstrap
+    // catalog. The key above pins exact engine bytes and this compiler/policy.
+    let engine_capture = engine_bytes.map(|bytes| {
+        let snapshot = dmbc::engine::EngineSnapshot::from_bytes(&bytes, 1)
+            .map_err(|error| format!("engine template: {error:?}"))?;
+        let snapshot = if bootstrap_catalog { snapshot.with_bootstrap_catalog()
+            .map_err(|error| format!("engine catalog: {error:?}"))? } else { snapshot };
+        Ok::<_, String>((bytes, snapshot))
+    }).transpose()?;
+    let engine = engine_capture.as_ref().map(|(_, engine)| engine);
     let memo_cache = if command == "compile" && !no_cache {
         match dm_cache::Cache::user_default(dm_cache::Limits::default()) {
-            Ok(cache) => Some(cache),
+            Ok(cache) => Some(Arc::new(cache)),
             Err(error) => { eprintln!("native cache unavailable: {error}; compiling fresh"); None }
         }
     } else { None };
-    let procedure_memo = memo_cache.as_ref().and_then(|cache| match cache.snapshot() {
-        Ok(snapshot) => Some(dmbc::lowering_memo::ProcedureMemo::with_disk(memo_policy, snapshot)),
+    let cache_snapshot = memo_cache.as_ref().and_then(|cache| match cache.snapshot() {
+        Ok(snapshot) => Some(Arc::new(snapshot)),
         Err(error) => { eprintln!("native cache snapshot rejected: {error}; compiling fresh"); None }
     });
-    let expansion_memo = memo_cache.as_ref().and_then(|cache| cache.snapshot().ok())
-        .map(|snapshot| dmbc::expansion_memo::DiskExpansionMemo::new(memo_policy, snapshot));
-    let map_memo = memo_cache.as_ref().and_then(|cache| cache.snapshot().ok())
-        .map(|snapshot| dmbc::map_memo::MapMemo::with_disk(memo_policy, 64 * 1024 * 1024, snapshot));
+    let published_keys = Arc::new(std::sync::Mutex::new(std::collections::BTreeSet::new()));
+    let cache_publisher: Option<Arc<dmbc::lowering_memo::CachePublisher>> = memo_cache.as_ref().map(|cache| {
+        let cache = Arc::clone(cache);
+        let published_keys = Arc::clone(&published_keys);
+        Arc::new(move |records: Vec<dm_cache::Record>| {
+            let mut sink = cache.publish_sink(8 * 1024 * 1024);
+            for record in records { sink.push(record).map_err(|error| error.to_string())?; }
+            let report = sink.finish().map_err(|error| error.to_string())?;
+            published_keys.lock().unwrap_or_else(|error| error.into_inner()).extend(report.keys);
+            Ok(())
+        }) as Arc<dmbc::lowering_memo::CachePublisher>
+    });
+    let procedure_memo = cache_snapshot.clone().map(|snapshot| {
+        dmbc::lowering_memo::ProcedureMemo::with_disk(memo_policy, snapshot)
+            .with_explanation_limit(131072)
+            .with_publisher(cache_publisher.as_ref().expect("snapshot publisher").clone())
+    });
+    let expansion_memo = cache_snapshot.clone().map(|snapshot| {
+        dmbc::expansion_memo::DiskExpansionMemo::new(memo_policy, snapshot)
+            .with_publisher(cache_publisher.as_ref().expect("snapshot publisher").clone())
+    });
+    let map_memo = cache_snapshot.clone().map(|snapshot| {
+        dmbc::map_memo::MapMemo::with_disk(memo_policy, 64 * 1024 * 1024, snapshot)
+            .with_publisher(cache_publisher.as_ref().expect("snapshot publisher").clone())
+    });
     let seed = engine.map(dmbc::engine::EngineSnapshot::frontend_seed);
     let progress = |event: dm_tree::frontend::FrontendProgress| {
         eprintln!(
@@ -319,12 +396,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
         };
         let admit_resources = |demand: &dm_resources::capture::ResourceDemand| {
-            let Some(record) = resource_prior.as_ref() else { return Ok(None); };
-            let Some(manifest) = record.resource_manifest.as_ref() else { return Ok(None); };
+            let Some((prior_pair, manifest)) = resource_prior.as_ref() else { return Ok(None); };
             let Some(store) = pair_store.as_ref() else { return Ok(None); };
-            manifest.validate(memo_policy, demand, &dmbc::input_snapshot::FileSystemInputs,
+            let proofs = manifest.filesystem_proofs();
+            manifest.validate(memo_policy, demand, &proofs,
                 exact_inputs, now_ns(), |identity| {
-                    Ok(store.verify(record.pair, exact_inputs).is_ok_and(|pair|
+                    Ok(store.verify(*prior_pair, exact_inputs).is_ok_and(|pair|
                         pair.rsc_bytes == identity.bytes && pair.rsc_hash == identity.hash))
                 }).map_err(|error| error.to_string())
         };
@@ -407,17 +484,22 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         let compilation_seconds = compilation_started.elapsed().as_secs_f64();
         if let (Some(cache), Some(memo)) = (&memo_cache, &procedure_memo) {
             let records = memo.take_pending();
-            publish_cache_records(cache, records);
+            published_keys.lock().unwrap_or_else(|error| error.into_inner()).extend(publish_cache_records(cache, records));
             use std::sync::atomic::Ordering::Relaxed;
             eprintln!("native lowering memo: disk_hits={} resident_hits={} recomputed={} unsupported_disk={}",
                 memo.counts.disk_hits.load(Relaxed), memo.counts.resident_hits.load(Relaxed),
                 memo.counts.recomputed.load(Relaxed), memo.counts.unsupported_disk.load(Relaxed));
+            for error in memo.publication_errors() {
+                eprintln!("native cache population incomplete: {error}; set DMB_CACHE_DIR to a directory with available space");
+            }
         }
         if let (Some(cache), Some(memo)) = (&memo_cache, &expansion_memo) {
-            publish_cache_records(cache, memo.take_pending());
+            published_keys.lock().unwrap_or_else(|error| error.into_inner()).extend(publish_cache_records(cache, memo.take_pending()));
+            for error in memo.publication_errors() { eprintln!("native expansion cache population incomplete: {error}"); }
         }
         if let (Some(cache), Some(memo)) = (&memo_cache, &map_memo) {
-            publish_cache_records(cache, memo.take_pending());
+            published_keys.lock().unwrap_or_else(|error| error.into_inner()).extend(publish_cache_records(cache, memo.take_pending()));
+            for error in memo.publication_errors() { eprintln!("native map cache population incomplete: {error}"); }
         }
         let publication_started = Instant::now();
         if progress_enabled {
@@ -441,16 +523,25 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         };
         store.install(
             pair.id,
-            &project.with_extension("dmb"),
-            &project.with_extension("rsc"),
-            &project.with_extension("dmb-pair.json"),
+            &output_project.with_extension("dmb"),
+            &output_project.with_extension("rsc"),
+            &output_project.with_extension("dmb-pair.json"),
         )?;
-        if let Some(session) = &session {
+        input_provider.finish()?;
+        if let (Some(cache), Some(snapshot), Some(session)) = (&memo_cache, &cache_snapshot, &session) {
+            let mut roots = snapshot.record_used_keys();
+            roots.extend(published_keys.lock().unwrap_or_else(|error| error.into_inner()).iter().copied());
+            if let Err(error) = cache.record_lease(session.identity()?, std::time::SystemTime::now(), &roots) {
+                eprintln!("native cache lease skipped: {error}");
+            }
+        }
+        if let Some(session) = &session.filter(|_| !verification_capture) {
             let mut inputs = inputs_capture.snapshot()?;
             if let Some(retained) = &nontext.retained_resource_inputs {
                 inputs.merge(retained)?;
             }
-            if inputs.restat(&dmbc::input_snapshot::FileSystemInputs)?.unchanged() {
+            let publication_proofs = dmbc::filesystem_proofs::BulkFileSystemProofs::capture(inputs.proof_paths(), inputs.proof_folders());
+            if inputs.restat(&publication_proofs)?.unchanged() {
                 let mut outputs = dmbc::input_snapshot::InputSnapshot::new(now_ns());
                 for extension in ["dmb", "rsc", "dmb-pair.json"] {
                     let path = project.with_extension(extension);
@@ -468,6 +559,29 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         let publication_seconds = publication_started.elapsed().as_secs_f64();
+        let explanations: Vec<_> = procedure_memo.as_ref().map(|memo| memo.explain()).unwrap_or_default().into_iter().map(|entry| {
+            let symbols = frontend.snapshot.tree.symbols();
+            let owner = symbols.text(entry.identity.owner).unwrap_or("<unknown>");
+            let name = symbols.text(entry.identity.name).unwrap_or("<unknown>");
+            let namespace = if entry.identity.verb { "verb" } else { "proc" };
+            let path = format!("{}/{namespace}/{name}", owner.trim_end_matches('/'));
+            serde_json::json!({"path":path,"occurrence":entry.identity.occurrence,"outcome":format!("{:?}",entry.outcome),"reason":entry.reason.map(|reason|format!("{reason:?}")),"changed_query":entry.changed_query})
+        }).collect();
+        let memo_stats = procedure_memo.as_ref().map(|memo| {
+            use std::sync::atomic::Ordering::Relaxed;
+            serde_json::json!({"disk_hits":memo.counts.disk_hits.load(Relaxed),"recomputed":memo.counts.recomputed.load(Relaxed),"pending_dropped":memo.counts.pending_dropped.load(Relaxed),"published_records":memo.counts.published_records.load(Relaxed),"publication_failed":memo.counts.publication_failed.load(Relaxed),"key_preparation_seconds":memo.counts.key_preparation_ns.load(Relaxed) as f64 / 1e9,"lookup_seconds":memo.counts.lookup_ns.load(Relaxed) as f64 / 1e9,"encode_seconds":memo.counts.encode_ns.load(Relaxed) as f64 / 1e9,"publication_cpu_scope_seconds":memo.counts.publication_ns.load(Relaxed) as f64 / 1e9,"errors":memo.publication_errors()})
+        });
+        let expansion_stats = expansion_memo.as_ref().map(|memo| {
+            use std::sync::atomic::Ordering::Relaxed;
+            serde_json::json!({"candidates":memo.candidates.load(Relaxed),"stored":memo.stored.load(Relaxed),"dropped":memo.dropped.load(Relaxed),"published_records":memo.published_records.load(Relaxed),"publication_failed":memo.publication_failed.load(Relaxed),"publication_seconds":memo.publication_ns.load(Relaxed) as f64 / 1e9,"errors":memo.publication_errors()})
+        });
+        let map_stats = map_memo.as_ref().map(|memo| {
+            use std::sync::atomic::Ordering::Relaxed;
+            serde_json::json!({"parse_hits":memo.counts.parse_hits.load(Relaxed),"geometry_hits":memo.counts.geometry_hits.load(Relaxed),"parsed":memo.counts.parsed.load(Relaxed),"projected":memo.counts.projected.load(Relaxed),"disk_admitted":memo.counts.disk_admitted.load(Relaxed),"skipped_disk_budget":memo.counts.skipped_disk_budget.load(Relaxed),"published_records":memo.counts.published_records.load(Relaxed),"publication_failed":memo.counts.publication_failed.load(Relaxed),"errors":memo.publication_errors()})
+        });
+        let stats = serde_json::json!({"project":project,"workers":workers,"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"input_preparation_seconds":input_preparation_seconds,"frontend_seconds":frontend.timings.total.as_secs_f64(),"nontext_seconds":nontext_seconds,"compilation_seconds":compilation_seconds,"publication_seconds":publication_seconds,"dmb_bytes":pair.dmb_bytes,"rsc_bytes":pair.rsc_bytes,"memo":memo_stats,"expansion_memo":expansion_stats,"map_memo":map_stats,"explanations":explanations});
+        if let Err(error) = dmbc::telemetry::save(&project, "stats", &stats) { eprintln!("native telemetry skipped: {error}"); }
+        let _ = dmbc::telemetry::save(&project, "last-run", &serde_json::json!({"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"pair":pair.name()}));
         eprintln!("native stages: input_preparation={:.3}s frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s publication={:.3}s",
             input_preparation_seconds, frontend.timings.total.as_secs_f64(), facts_seconds, nontext_seconds,
             linking_inputs_seconds, compilation_seconds, publication_seconds);
@@ -515,20 +629,14 @@ fn capture_output_digest(snapshot: &mut dmbc::input_snapshot::InputSnapshot, pat
     snapshot.record_verified_digest(path, stamp, content)
 }
 
-fn publish_cache_records(cache: &dm_cache::Cache, records: Vec<dm_cache::Record>) {
-    let mut start = 0;
-    while start < records.len() {
-        let mut end = start;
-        let mut bytes = 0usize;
-        while end < records.len() {
-            let size = records[end].payload.len() + 4096;
-            if end > start && bytes.saturating_add(size) > 48 * 1024 * 1024 { break; }
-            bytes = bytes.saturating_add(size); end += 1;
-        }
-        if let Err(error) = cache.publish(&records[start..end]) {
-            eprintln!("native cache publication skipped: {error}");
-        }
-        start = end;
+fn publish_cache_records(cache: &dm_cache::Cache, records: Vec<dm_cache::Record>) -> std::collections::BTreeSet<dm_cache::RecordKey> {
+    let mut sink = cache.publish_sink(8 * 1024 * 1024);
+    for record in records {
+        if let Err(error) = sink.push(record) { eprintln!("native cache publication skipped: {error}"); }
+    }
+    match sink.finish() {
+        Ok(report) => report.keys,
+        Err(error) => { eprintln!("native cache publication skipped: {error}"); Default::default() }
     }
 }
 

@@ -1,7 +1,7 @@
 //! Versioned compact grammar-descriptor payloads. No file IDs or executable ASTs.
 use dm_syntax::{Diagnostic, DiagnosticKind, Item, ItemKind, Span};
 use serde::{Deserialize, Serialize};
-pub(super) const VERSION: u32 = 1;
+pub(super) const VERSION: u32 = 2;
 #[derive(Serialize, Deserialize)]
 struct Node {
     kind: u8,
@@ -81,28 +81,31 @@ fn decode_item(node: Node, source: &str, depth: usize) -> Option<Item> {
     })
 }
 pub(super) fn encode(items: &[Item], errors: &[Diagnostic]) -> Option<Vec<u8>> {
-    serde_json::to_vec(&Payload {
-        version: VERSION,
-        items: items.iter().map(encode_item).collect(),
-        errors: errors
-            .iter()
-            .map(|error| Error {
-                kind: match error.kind {
-                    DiagnosticKind::Lexical => 0,
-                    DiagnosticKind::Expression => 1,
-                    DiagnosticKind::Statement => 2,
-                    DiagnosticKind::Indentation => 3,
-                    DiagnosticKind::Unsupported => 4,
-                },
-                span: bounds(error.span),
-                message: error.message.clone(),
-            })
-            .collect(),
-    })
+    dm_wire::encode(
+        VERSION,
+        &Payload {
+            version: VERSION,
+            items: items.iter().map(encode_item).collect(),
+            errors: errors
+                .iter()
+                .map(|error| Error {
+                    kind: match error.kind {
+                        DiagnosticKind::Lexical => 0,
+                        DiagnosticKind::Expression => 1,
+                        DiagnosticKind::Statement => 2,
+                        DiagnosticKind::Indentation => 3,
+                        DiagnosticKind::Unsupported => 4,
+                    },
+                    span: bounds(error.span),
+                    message: error.message.clone(),
+                })
+                .collect(),
+        },
+    )
     .ok()
 }
 pub(super) fn decode(bytes: &[u8], source: &str) -> Option<(Vec<Item>, Vec<Diagnostic>)> {
-    let payload: Payload = serde_json::from_slice(bytes).ok()?;
+    let payload: Payload = dm_wire::decode(VERSION, bytes, 4 * 1024 * 1024).ok()?;
     if payload.version != VERSION {
         return None;
     }

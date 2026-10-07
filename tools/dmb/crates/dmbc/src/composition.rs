@@ -1,6 +1,7 @@
-//! Bounded real DMB composition: pinned engine records plus fresh global procs.
-//! This intentionally rejects classes, arguments, shared-slot allocation, maps,
-//! resources and helper procedures until their semantic writer contracts exist.
+//! Deterministic DMB composition from pinned engine records, resolved native
+//! declarations, initializers and linked procedure images. Current-image
+//! certificates share linker validation with feature discovery; custom and
+//! changed images retain the independent decoder path.
 use crate::{lowering::Namespace, symbolic::FrozenBatch};
 use byond_dmb::{
     dmb::{DmString, Dmb, Proc, Variable},
@@ -165,7 +166,9 @@ impl StringIndex {
         };
         for (index, string) in dmb.strings.iter().enumerate() {
             let id = u32::try_from(index).map_err(|_| unsupported("string count overflow"))?;
-            if dm_link::is_reserved_string_index(id) { continue; }
+            if dm_link::is_reserved_string_index(id) {
+                continue;
+            }
             result
                 .buckets
                 .entry(xxhash_rust::xxh3::xxh3_128(&string.data))
@@ -183,8 +186,13 @@ impl StringIndex {
                 }
             }
         }
-        while dm_link::is_reserved_string_index(u32::try_from(dmb.strings.len()).map_err(|_| unsupported("string count overflow"))?) {
-            dmb.strings.push(DmString { data:Vec::new(), long_chunks:0 });
+        while dm_link::is_reserved_string_index(
+            u32::try_from(dmb.strings.len()).map_err(|_| unsupported("string count overflow"))?,
+        ) {
+            dmb.strings.push(DmString {
+                data: Vec::new(),
+                long_chunks: 0,
+            });
         }
         let id =
             u32::try_from(dmb.strings.len()).map_err(|_| unsupported("string count overflow"))?;
@@ -467,7 +475,11 @@ fn compose_records(
                 helpers.insert(index, key);
             }
             Key::Initializer(identity) if (index as usize) >= engine_procs => {
-                if matches!(identity, dm_link::InitializerIdentity::Map { .. } | dm_link::InitializerIdentity::Modified(_)) {
+                if matches!(
+                    identity,
+                    dm_link::InitializerIdentity::Map { .. }
+                        | dm_link::InitializerIdentity::Modified(_)
+                ) {
                     if stage.is_none() {
                         return Err(unsupported("map initializer attachment stage absent"));
                     }
@@ -487,8 +499,13 @@ fn compose_records(
         }
     }
     for (index, data) in strings {
-        while dmb.strings.len() < index as usize && dm_link::is_reserved_string_index(dmb.strings.len() as u32) {
-            dmb.strings.push(DmString { data:Vec::new(), long_chunks:0 });
+        while dmb.strings.len() < index as usize
+            && dm_link::is_reserved_string_index(dmb.strings.len() as u32)
+        {
+            dmb.strings.push(DmString {
+                data: Vec::new(),
+                long_chunks: 0,
+            });
         }
         if index as usize != dmb.strings.len() {
             return Err(CompositionError::NonContiguous(
@@ -684,13 +701,7 @@ fn compose_records(
         let helper = by_key
             .get(&key)
             .ok_or_else(|| unsupported("missing helper artifact"))?;
-        let image = batch
-            .tables
-            .link(
-                helper.frozen.code(),
-                &helper.debug_origins.source_bindings(),
-            )
-            .map_err(|e| unsupported(format!("helper link {e:?}")))?;
+        let image = batch.link_helper(helper).map_err(CompositionError::Link)?;
         emit_anonymous(
             &mut dmb,
             &mut string_index,
@@ -720,9 +731,8 @@ fn compose_records(
             .get(&identity)
             .ok_or_else(|| unsupported("initializer artifact absent"))?;
         let image = batch
-            .tables
-            .link(unit.frozen.code(), &unit.debug_origins.source_bindings())
-            .map_err(|e| unsupported(format!("initializer link {e:?}")))?;
+            .link_initializer(unit)
+            .map_err(CompositionError::Link)?;
         emit_anonymous(&mut dmb, &mut string_index, &image.words, &unit.local_names)?;
         match identity {
             dm_link::InitializerIdentity::Global => {
@@ -749,7 +759,8 @@ fn compose_records(
                 }
                 record.lists_and_procs[2] = index;
             }
-            dm_link::InitializerIdentity::Map { .. } | dm_link::InitializerIdentity::Modified(_) => (),
+            dm_link::InitializerIdentity::Map { .. }
+            | dm_link::InitializerIdentity::Modified(_) => (),
         }
     }
     if let Some((plan, values)) = projection {
@@ -767,8 +778,11 @@ fn compose_records(
         if attached != stage_keys {
             return Err(unsupported("non-text output stage linker coverage differs"));
         }
-        let map_initializers: HashSet<u32> = dmb.instances.iter()
-            .map(|instance| instance.initializer).collect();
+        let map_initializers: HashSet<u32> = dmb
+            .instances
+            .iter()
+            .map(|instance| instance.initializer)
+            .collect();
         for key in stage_keys {
             let index = batch
                 .tables
@@ -780,6 +794,7 @@ fn compose_records(
             }
         }
     }
+    let feature_images = batch.feature_images();
     let mut external = false;
     let mut debug = false;
     for index in 0..dmb.procs.len() {
@@ -789,6 +804,13 @@ fn compose_records(
         let words = dmb
             .proc_code_words(index)
             .ok_or_else(|| unsupported("missing procedure code"))?;
+        if let Some(&(certified_words, features)) = feature_images.get(&(index as u32)) {
+            if certified_words == words {
+                external |= features.external;
+                debug |= features.debug;
+                continue;
+            }
+        }
         let instructions = byond_dmb::bytecode::decode(words)
             .map_err(|e| {
                 let proc_record=&dmb.procs[index];
@@ -822,11 +844,16 @@ fn compose_records(
 }
 fn attached_key_present(dmb: &Dmb, key: Key, index: u32, map_initializers: &HashSet<u32>) -> bool {
     match key {
-        Key::Instance(_) | Key::MapInstance { .. } | Key::DefaultMapInstance { .. } =>
-            dmb.instances.get(index as usize).is_some(),
+        Key::Instance(_) | Key::MapInstance { .. } | Key::DefaultMapInstance { .. } => {
+            dmb.instances.get(index as usize).is_some()
+        }
         Key::Resource(_) => dmb.resources.get(index as usize).is_some(),
-        Key::Initializer(dm_link::InitializerIdentity::Map { .. }) => map_initializers.contains(&index),
-        Key::Initializer(dm_link::InitializerIdentity::Modified(_)) => map_initializers.contains(&index),
+        Key::Initializer(dm_link::InitializerIdentity::Map { .. }) => {
+            map_initializers.contains(&index)
+        }
+        Key::Initializer(dm_link::InitializerIdentity::Modified(_)) => {
+            map_initializers.contains(&index)
+        }
         _ => false,
     }
 }
@@ -881,67 +908,126 @@ mod tests {
     use super::*;
     #[test]
     fn native_reserved_list_padding_preserves_code_and_argument_links_roundtrip() {
-        let mut dmb=Dmb::from_bytes(include_bytes!("../../../fixtures/native_template.bin")).unwrap();
-        dmb.lists.resize(byond_dmb::ids::NONE as usize,Vec::new());
-        let code=append_list(&mut dmb,vec![0]).unwrap();
-        let locals=append_list(&mut dmb,Vec::new()).unwrap();
-        let args=append_list(&mut dmb,Vec::new()).unwrap();
-        assert_eq!([code,locals,args],[0x10000,0x10001,0x10002]);
+        let mut dmb =
+            Dmb::from_bytes(include_bytes!("../../../fixtures/native_template.bin")).unwrap();
+        dmb.lists.resize(byond_dmb::ids::NONE as usize, Vec::new());
+        let code = append_list(&mut dmb, vec![0]).unwrap();
+        let locals = append_list(&mut dmb, Vec::new()).unwrap();
+        let args = append_list(&mut dmb, Vec::new()).unwrap();
+        assert_eq!([code, locals, args], [0x10000, 0x10001, 0x10002]);
         assert!(dmb.lists[0xffff].is_empty());
-        dmb.procs[0].code_locals_args=[code,locals,args];
+        dmb.procs[0].code_locals_args = [code, locals, args];
         dmb.header.flags |= 0x4000_0000;
         dmb.validate_references().unwrap();
-        let decoded=Dmb::from_bytes(&dmb.to_bytes().unwrap()).unwrap();
+        let decoded = Dmb::from_bytes(&dmb.to_bytes().unwrap()).unwrap();
         decoded.validate_references().unwrap();
-        assert_eq!(decoded.procs[0].code_locals_args,[code,locals,args]);
-        assert_eq!(decoded.proc_code_words(0),Some([0].as_slice()));
+        assert_eq!(decoded.procs[0].code_locals_args, [code, locals, args]);
+        assert_eq!(decoded.proc_code_words(0), Some([0].as_slice()));
         assert!(decoded.lists[0xffff].is_empty());
-    }    #[test]
+    }
+    #[test]
     fn native_reserved_procedure_padding_roundtrips_and_preserves_next_proc() {
-        let mut dmb=Dmb::from_bytes(include_bytes!("../../../fixtures/native_template.bin")).unwrap();
-        let template=dmb.procs[0].clone();
-        dmb.procs.resize(byond_dmb::ids::NONE as usize,template.clone());
+        let mut dmb =
+            Dmb::from_bytes(include_bytes!("../../../fixtures/native_template.bin")).unwrap();
+        let template = dmb.procs[0].clone();
+        dmb.procs
+            .resize(byond_dmb::ids::NONE as usize, template.clone());
         reserve_procedure_sentinel(&mut dmb);
         assert!(dmb.is_reserved_proc_slot(byond_dmb::ids::NONE as usize));
-        let count=dmb.procs.len();
+        let count = dmb.procs.len();
         reserve_procedure_sentinel(&mut dmb);
-        assert_eq!(dmb.procs.len(),count);
+        assert_eq!(dmb.procs.len(), count);
         dmb.procs.push(template.clone());
         dmb.header.flags |= 0x4000_0000;
         dmb.validate_references().unwrap();
-        let decoded=Dmb::from_bytes(&dmb.to_bytes().unwrap()).unwrap();
+        let decoded = Dmb::from_bytes(&dmb.to_bytes().unwrap()).unwrap();
         decoded.validate_references().unwrap();
         assert!(decoded.is_reserved_proc_slot(byond_dmb::ids::NONE as usize));
-        assert_eq!(decoded.procs[0x10000],template);
-    }    #[test]
+        assert_eq!(decoded.procs[0x10000], template);
+    }
+    #[test]
     fn writer_string_interning_preserves_reserved_holes_and_safe_field_decoding() {
-        let mut image=Dmb::from_bytes(include_bytes!("../../../fixtures/native_template.bin")).unwrap();
-        image.strings.resize(0xffcd, DmString {data:Vec::new(),long_chunks:0});
-        let mut pool=StringIndex::build(&image).unwrap();
-        let first=pool.intern(&mut image,b"field_after_modifiers").unwrap();
-        assert_eq!(first,0xfff2);
-        assert!(image.strings[0xffcd..=0xfff1].iter().all(|row| row.data.is_empty()));
-        assert_eq!(byond_dmb::operands::Variable::decode(&[first]).unwrap(),(byond_dmb::operands::Variable::Field(first),1));
-        image.strings.resize(0xffff,DmString {data:Vec::new(),long_chunks:0});
-        let second=pool.intern(&mut image,b"field_after_absent").unwrap();
-        assert_eq!(second,0x10000);
+        let mut image =
+            Dmb::from_bytes(include_bytes!("../../../fixtures/native_template.bin")).unwrap();
+        image.strings.resize(
+            0xffcd,
+            DmString {
+                data: Vec::new(),
+                long_chunks: 0,
+            },
+        );
+        let mut pool = StringIndex::build(&image).unwrap();
+        let first = pool.intern(&mut image, b"field_after_modifiers").unwrap();
+        assert_eq!(first, 0xfff2);
+        assert!(image.strings[0xffcd..=0xfff1]
+            .iter()
+            .all(|row| row.data.is_empty()));
+        assert_eq!(
+            byond_dmb::operands::Variable::decode(&[first]).unwrap(),
+            (byond_dmb::operands::Variable::Field(first), 1)
+        );
+        image.strings.resize(
+            0xffff,
+            DmString {
+                data: Vec::new(),
+                long_chunks: 0,
+            },
+        );
+        let second = pool.intern(&mut image, b"field_after_absent").unwrap();
+        assert_eq!(second, 0x10000);
         assert!(image.strings[0xffff].data.is_empty());
-        assert_eq!(byond_dmb::operands::Variable::decode(&[second]).unwrap(),(byond_dmb::operands::Variable::Field(second),1));
-        let rebuilt=StringIndex::build(&image).unwrap();
-        assert!(!rebuilt.buckets.values().flatten().any(|id|dm_link::is_reserved_string_index(*id)));
+        assert_eq!(
+            byond_dmb::operands::Variable::decode(&[second]).unwrap(),
+            (byond_dmb::operands::Variable::Field(second), 1)
+        );
+        let rebuilt = StringIndex::build(&image).unwrap();
+        assert!(!rebuilt
+            .buckets
+            .values()
+            .flatten()
+            .any(|id| dm_link::is_reserved_string_index(*id)));
     }
     #[test]
     fn map_initializer_attachment_coverage_uses_exact_index_and_domain() {
-        let mut image = Dmb::from_bytes(include_bytes!("../../../fixtures/native_template.bin")).unwrap();
+        let mut image =
+            Dmb::from_bytes(include_bytes!("../../../fixtures/native_template.bin")).unwrap();
         assert!(!image.instances.is_empty());
         image.instances[0].initializer = 17;
-        let index: HashSet<u32> = image.instances.iter().map(|instance| instance.initializer).collect();
-        let key = Key::Initializer(dm_link::InitializerIdentity::Map { source: 1, descriptor: 2 });
+        let index: HashSet<u32> = image
+            .instances
+            .iter()
+            .map(|instance| instance.initializer)
+            .collect();
+        let key = Key::Initializer(dm_link::InitializerIdentity::Map {
+            source: 1,
+            descriptor: 2,
+        });
         assert!(attached_key_present(&image, key, 17, &index));
         assert!(!attached_key_present(&image, key, 999_999, &index));
-        assert!(!attached_key_present(&image, Key::Initializer(dm_link::InitializerIdentity::Global), 17, &index));
-        assert!(attached_key_present(&image, Key::MapInstance { source: 1, descriptor: 2 }, 0, &index));
-        assert!(!attached_key_present(&image, Key::MapInstance { source: 1, descriptor: 2 }, image.instances.len() as u32, &index));
+        assert!(!attached_key_present(
+            &image,
+            Key::Initializer(dm_link::InitializerIdentity::Global),
+            17,
+            &index
+        ));
+        assert!(attached_key_present(
+            &image,
+            Key::MapInstance {
+                source: 1,
+                descriptor: 2
+            },
+            0,
+            &index
+        ));
+        assert!(!attached_key_present(
+            &image,
+            Key::MapInstance {
+                source: 1,
+                descriptor: 2
+            },
+            image.instances.len() as u32,
+            &index
+        ));
     }
     #[test]
     fn every_captured_engine_named_procedure_binding_is_validated() {

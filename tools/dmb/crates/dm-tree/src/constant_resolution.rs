@@ -71,6 +71,8 @@ pub struct ScalarBackend<'a> {
 
 #[derive(Clone, Debug)]
 pub struct ScalarSnapshot {
+    issued_domain: ScalarDomain,
+
     pub source: TreeSnapshot,
     pub identity: u128,
     pub backend_identity: u128,
@@ -80,6 +82,14 @@ pub struct ScalarSnapshot {
     /// Separate engine-domain reads: a missing source declaration can resolve
     /// a predefined constant, but a nonconstant source declaration shadows it.
     pub predefined_reads: Arc<BTreeMap<SymbolId, PredefinedOutcome>>,
+}
+#[derive(Clone, Debug)]
+struct ScalarDomain {
+    source: Arc<crate::SemanticTree>,
+    outcomes: Arc<BTreeMap<ScalarQuery, ScalarOutcome>>,
+    identity: u128,
+    backend: u128,
+    version: u128,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PredefinedOutcome {
@@ -429,18 +439,49 @@ pub fn resolve_with_predefined_and_calls(
             PredefinedOutcome::Unsupported => bytes.push(2),
         }
     }
+    let identity = xxhash_rust::xxh3::xxh3_128(&bytes);
+    let outcomes = Arc::new(memo.values);
+    let mut domain_hash = xxhash_rust::xxh3::Xxh3::new();
+    domain_hash.update(b"dm-scalar-answer-domain-v1\0");
+    domain_hash.update(&identity.to_le_bytes());
+    domain_hash.update(&backend_identity.to_le_bytes());
     ScalarSnapshot {
+        issued_domain: ScalarDomain {
+            source: Arc::clone(&snapshot.tree),
+            outcomes: Arc::clone(&outcomes),
+            identity,
+            backend: backend_identity,
+            version: domain_hash.digest128(),
+        },
         source: snapshot.clone(),
-        identity: xxhash_rust::xxh3::xxh3_128(&bytes),
+        identity,
         backend_identity,
         requested: requested.into_iter().collect::<Vec<_>>().into(),
-        outcomes: Arc::new(memo.values),
+        outcomes,
         dependencies: Arc::new(dependencies),
         predefined_reads: Arc::new(memo.predefined),
     }
 }
 
 impl Resolver for ScalarSnapshot {
+    fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
+        if domain != dm_ir::ReadDomain::Tree {
+            return self.source.tree.domain_version(domain);
+        }
+        let issued = &self.issued_domain;
+        // Public analysis projections can be replaced. Only the originally
+        // issued immutable tables retain authority for replay shortcuts.
+        if Arc::ptr_eq(&issued.source, &self.source.tree)
+            && Arc::ptr_eq(&issued.outcomes, &self.outcomes)
+            && issued.identity == self.identity
+            && issued.backend == self.backend_identity
+        {
+            Some(issued.version)
+        } else {
+            None
+        }
+    }
+
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         let (owner, name, constant_query) = match query {
             ResolveQuery::Constant { owner, name } => (owner, name, true),
@@ -496,6 +537,22 @@ impl Resolver for ScalarSnapshot {
 mod tests {
     use super::*;
     use dm_ir::{FileId, SymbolTable};
+    #[test]
+    fn scalar_domain_rejects_replaced_public_outcomes() {
+        let source = snapshot("/datum/x\n    var/const/value = 1\n");
+        let mut resolved = resolve(
+            &source,
+            &[],
+            &ScalarBackend {
+                identity: 1,
+                decode_string: &|text| Some(text.as_bytes().to_vec()),
+                nameof: &|_| None,
+            },
+        );
+        assert!(resolved.domain_version(dm_ir::ReadDomain::Tree).is_some());
+        resolved.outcomes = Arc::new(BTreeMap::new());
+        assert_eq!(resolved.domain_version(dm_ir::ReadDomain::Tree), None);
+    }
     fn snapshot(source: &str) -> TreeSnapshot {
         crate::from_ast(
             &dm_syntax::parse(source),

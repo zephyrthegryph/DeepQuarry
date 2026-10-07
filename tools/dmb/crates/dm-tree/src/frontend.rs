@@ -402,7 +402,12 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
         0,
         0,
     );
-    let plan = plan_regions(project, &captured, defines);
+    let plan = match memo {
+        Some(memo) => {
+            dm_preprocess::regions::plan_regions_with_memo(project, &captured, defines, memo)
+        }
+        None => plan_regions(project, &captured, defines),
+    };
     timings.directive_planning = stage_start.elapsed();
     observe(
         config,
@@ -519,6 +524,9 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
     let ParsedDeclarations {
         items: compact_items,
         diagnostics: syntax_diagnostics,
+        mut adapted,
+        allocation_ledger,
+        declaration_errors,
     } = parse_declarations(&expanded, config, memo)?;
     diagnostics.extend(
         syntax_diagnostics
@@ -545,17 +553,8 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
     if !diagnostics.is_empty() {
         return Err(diagnostics);
     }
-    let mut adapted = crate::from_ast(
-        &syntax,
-        config
-            .engine
-            .map_or_else(SymbolTable::default, |engine| engine.symbols.clone()),
-        FileId(0),
-        0,
-        0,
-    )
-    .map_err(|errors| {
-        errors
+    if !declaration_errors.is_empty() {
+        return Err(declaration_errors
             .into_iter()
             .map(|error| Diagnostic {
                 kind: DiagnosticKind::UnsupportedModel,
@@ -563,22 +562,8 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
                 message: error.message,
                 location: mapping.output(error.span.start as usize),
             })
-            .collect::<Vec<_>>()
-    })?;
-    // Normalization clones syntax rather than mutating it. Capture grammar
-    // allocation facts from these original compact headers and retained body
-    // byte ranges; no executable AST needs to be retained or reparsed here.
-    let allocation_ledger =
-        crate::allocation_ledger::capture(&syntax.items, "/", &mut adapted.symbols).map_err(
-            |error| {
-                vec![Diagnostic {
-                    kind: DiagnosticKind::UnsupportedModel,
-                    stage: DiagnosticStage::Declaration,
-                    message: error.message,
-                    location: mapping.output(error.span.start),
-                }]
-            },
-        )?;
+            .collect());
+    }
     timings.declaration_parsing = parse_start.elapsed();
     observe(
         config,
@@ -771,6 +756,9 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
 struct ParsedDeclarations {
     items: Vec<Item>,
     diagnostics: Vec<(usize, dm_syntax::Diagnostic)>,
+    adapted: crate::AdaptedDeclarations,
+    allocation_ledger: crate::allocation_ledger::AllocationLedger,
+    declaration_errors: Vec<crate::AdapterError>,
 }
 
 /// Grammar-safe descriptor discovery is serial; lexing/parsing is bounded by
@@ -856,8 +844,40 @@ fn parse_declarations(
                     if receipt.is_some() {
                         shift_items(&mut parsed, offset);
                     }
+                    // Grammar-safe chunks are complete root-context units,
+                    // including any declaration continued across include regions.
+                    // Facts use a small local spelling table, never a cloned tree.
+                    let ast = AstFile {
+                        items: parsed,
+                        ..AstFile::default()
+                    };
+                    let facts = if errors.is_empty() {
+                        crate::from_ast(&ast, SymbolTable::default(), FileId(0), 0, 0).and_then(
+                            |mut adapted| {
+                                crate::allocation_ledger::capture(
+                                    &ast.items,
+                                    "/",
+                                    &mut adapted.symbols,
+                                )
+                                .map(|ledger| (adapted, ledger))
+                                .map_err(|error| {
+                                    vec![crate::AdapterError {
+                                        span: dm_ir::Span {
+                                            file: FileId(0),
+                                            start: error.span.start as u32,
+                                            end: error.span.end as u32,
+                                        },
+                                        message: error.message,
+                                    }]
+                                })
+                            },
+                        )
+                    } else {
+                        Err(Vec::new())
+                    };
+                    let parsed = ast.items;
                     if sender
-                        .send((index, offset, parsed, errors, fragment))
+                        .send((index, offset, parsed, errors, fragment, facts))
                         .is_err()
                     {
                         break;
@@ -891,9 +911,40 @@ fn parse_declarations(
             Ok(ordered)
         }
     })?;
-    ordered.sort_by_key(|(index, _, _, _, _)| *index);
+    ordered.sort_by_key(|(index, _, _, _, _, _)| *index);
     let mut updated = std::collections::BTreeMap::new();
-    for (_, offset, parsed, errors, fragment) in ordered {
+    let mut adapted = crate::AdaptedDeclarations {
+        symbols: config
+            .engine
+            .map_or_else(SymbolTable::default, |engine| engine.symbols.clone()),
+        skeletons: Vec::new(),
+        origins: Vec::new(),
+    };
+    let mut allocation_events = Vec::new();
+    let mut declaration_errors = Vec::new();
+    for (_, offset, parsed, errors, fragment, facts) in ordered {
+        match facts {
+            Ok((facts, ledger)) => {
+                for (expected, spelling) in facts.symbols.ordered() {
+                    let actual = adapted
+                        .symbols
+                        .intern(spelling)
+                        .map_err(|error| vec![internal(&error.to_string())])?;
+                    if actual != expected {
+                        return Err(vec![internal(
+                            "worker declaration symbol identity mismatch",
+                        )]);
+                    }
+                }
+                adapted.skeletons.extend(facts.skeletons);
+                adapted.origins.extend(facts.origins);
+                for mut event in ledger.events.iter().cloned() {
+                    event.encounter_order = allocation_events.len();
+                    allocation_events.push(event);
+                }
+            }
+            Err(errors) => declaration_errors.extend(errors),
+        }
         if let Some((index, span, bytes)) = fragment {
             let record = updated
                 .entry(index)
@@ -910,7 +961,15 @@ fn parse_declarations(
             memo.insert(Arc::new(record));
         }
     }
-    Ok(ParsedDeclarations { items, diagnostics })
+    Ok(ParsedDeclarations {
+        items,
+        diagnostics,
+        adapted,
+        allocation_ledger: crate::allocation_ledger::AllocationLedger {
+            events: allocation_events.into(),
+        },
+        declaration_errors,
+    })
 }
 
 fn syntax_kind(kind: dm_syntax::DiagnosticKind) -> DiagnosticKind {
@@ -1130,4 +1189,70 @@ fn collect_bodies(
         path.pop();
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod worker_facts_tests {
+    use super::*;
+    #[test]
+    fn worker_declaration_facts_equal_complete_ast_adapter_and_allocation_order() {
+        struct Source(String);
+        impl dm_preprocess::SourceProvider for Source {
+            fn read(&self, _: &std::path::Path) -> Result<String, String> {
+                Ok(self.0.clone())
+            }
+        }
+        let mut text = String::new();
+        for index in 0..750 {
+            text.push_str(&format!("/datum/unit{index}\n    var\n        list/obj/items\n        value = {index}\n    proc\n        read(arg = 2)\n            if(1)\n                set waitfor = 0\n            return value\n"));
+        }
+        text.push_str(
+            "/datum/unit0/child\n    parent_type = /datum/unit1\n/datum/unit0/value = 7\n",
+        );
+        let source = Source(text);
+        let plan = dm_preprocess::regions::plan_regions(
+            std::path::Path::new("project.dme"),
+            &source,
+            &std::collections::BTreeMap::new(),
+        );
+        let expanded = dm_preprocess::regions::expand_regions_text(&plan, 1);
+        for workers in [1, 2] {
+            let parsed = parse_declarations(
+                &expanded,
+                FrontendConfig {
+                    workers,
+                    engine: None,
+                    observer: None,
+                },
+                None,
+            )
+            .unwrap();
+            assert!(parsed.diagnostics.is_empty());
+            assert!(parsed.declaration_errors.is_empty());
+            let ast = AstFile {
+                items: parsed.items,
+                ..AstFile::default()
+            };
+            let mut expected =
+                crate::from_ast(&ast, SymbolTable::default(), FileId(0), 0, 0).unwrap();
+            let ledger =
+                crate::allocation_ledger::capture(&ast.items, "/", &mut expected.symbols).unwrap();
+            assert!(
+                parsed.adapted.skeletons == expected.skeletons,
+                "worker skeleton order differs"
+            );
+            assert!(
+                parsed.adapted.origins == expected.origins,
+                "worker origins differ"
+            );
+            assert!(
+                parsed.adapted.symbols.ordered() == expected.symbols.ordered(),
+                "worker spelling dictionary differs"
+            );
+            assert!(
+                parsed.allocation_ledger.events == ledger.events,
+                "worker allocation order differs"
+            );
+        }
+    }
 }

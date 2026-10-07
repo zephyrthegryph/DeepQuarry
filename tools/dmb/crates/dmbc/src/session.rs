@@ -8,7 +8,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 
-const SCHEMA: u32 = 1;
+const SCHEMA: u32 = 2;
 const MAX_RECORD_BYTES: u64 = 32 * 1024 * 1024;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -81,9 +81,18 @@ pub struct Session {
     _build_lock: File,
 }
 
+/// Request measurements only; absent from immutable session serialization.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct ValidationTimings {
+    pub record_decode: std::time::Duration,
+    pub bulk_capture: std::time::Duration,
+    pub input_validate: std::time::Duration,
+    pub proofs: crate::filesystem_proofs::ProofCounts,
+}
 pub struct ValidatedRecord {
     record: Record,
     pub validation: Validation,
+    pub timings: ValidationTimings,
 }
 impl ValidatedRecord {
     pub fn record(&self) -> &Record {
@@ -101,6 +110,24 @@ impl ValidatedRecord {
             Some(outputs) => Ok(outputs.validate(provider, exact, now_ns)?.0.unchanged()),
             None => Ok(false),
         }
+    }
+    pub fn refresh_outputs(
+        &mut self,
+        provider: &impl SnapshotProvider,
+        exact: bool,
+        now_ns: u128,
+    ) -> io::Result<(bool, usize)> {
+        let Some(outputs) = &self.record.outputs else {
+            return Ok((false, 0));
+        };
+        let (validation, refreshed) = outputs.validate(provider, exact, now_ns)?;
+        if validation.unchanged() {
+            self.record.outputs = Some(refreshed);
+        }
+        Ok((validation.unchanged(), validation.rehashed))
+    }
+    pub fn into_record(self) -> Record {
+        self.record
     }
 }
 
@@ -157,7 +184,7 @@ impl Session {
                 continue;
             }
             let name = entry.file_name();
-            let Some(name) = name.to_str().and_then(|name| name.strip_suffix(".json")) else {
+            let Some(name) = name.to_str().and_then(|name| name.strip_suffix(".bin")) else {
                 continue;
             };
             if name.len() != 32 {
@@ -190,12 +217,12 @@ impl Session {
             configuration: self.configuration.clone(),
             record,
         };
-        let bytes = serde_json::to_vec(&envelope).map_err(invalid)?;
+        let bytes = dm_wire::encode(SCHEMA, &envelope).map_err(invalid)?;
         if bytes.len() as u64 > MAX_RECORD_BYTES {
             return Err(invalid("session record exceeds budget"));
         }
         let id = xxhash_rust::xxh3::xxh3_128(&bytes);
-        let destination = self.directory.join(format!("{id:032x}.json"));
+        let destination = self.directory.join(format!("{id:032x}.bin"));
         if destination.exists() {
             if self.read_bytes(&destination)? != bytes {
                 return Err(invalid("session content ID collision"));
@@ -221,10 +248,12 @@ impl Session {
         Ok(id)
     }
 
-    /// Authenticate record/configuration only. This does NOT authorize output or
-    /// memo reuse: the caller must validate the relevant captured input domain.
+    /// Authenticate record/configuration only and issue private structural
+    /// receipts for its decoded snapshots. Subsequent validation reuses only
+    /// these structural checks; it still checks all current file/folder facts.
+    /// This does NOT authorize output or memo reuse by itself.
     pub fn prior(&self, id: u128) -> io::Result<Option<Record>> {
-        let path = self.directory.join(format!("{id:032x}.json"));
+        let path = self.directory.join(format!("{id:032x}.bin"));
         let bytes = match self.read_bytes(&path) {
             Ok(bytes) => bytes,
             Err(error)
@@ -240,7 +269,7 @@ impl Session {
         if xxhash_rust::xxh3::xxh3_128(&bytes) != id {
             return Ok(None);
         }
-        let envelope: Envelope = match serde_json::from_slice(&bytes) {
+        let envelope: Envelope = match dm_wire::decode(SCHEMA, &bytes, MAX_RECORD_BYTES as usize) {
             Ok(value) => value,
             Err(_) => return Ok(None),
         };
@@ -267,13 +296,33 @@ impl Session {
 
     /// A stale whole-input record is a cold-build miss. Permission failures
     /// remain errors; they are never interpreted as absence.
-    pub fn validate(&self, id: u128, provider: &impl SnapshotProvider, exact: bool, now_ns: u128)
-        -> io::Result<Option<ValidatedRecord>> {
-        let Some(mut record) = self.prior(id)? else { return Ok(None); };
+    pub fn validate(
+        &self,
+        id: u128,
+        provider: &impl SnapshotProvider,
+        exact: bool,
+        now_ns: u128,
+    ) -> io::Result<Option<ValidatedRecord>> {
+        let started = std::time::Instant::now();
+        let Some(mut record) = self.prior(id)? else {
+            return Ok(None);
+        };
+        let mut timings = ValidationTimings {
+            record_decode: started.elapsed(),
+            ..ValidationTimings::default()
+        };
+        let started = std::time::Instant::now();
         let (validation, inputs) = record.inputs.validate(provider, exact, now_ns)?;
-        if !validation.unchanged() { return Ok(None); }
+        timings.input_validate = started.elapsed();
+        if !validation.unchanged() {
+            return Ok(None);
+        }
         record.inputs = inputs;
-        Ok(Some(ValidatedRecord { record, validation }))
+        Ok(Some(ValidatedRecord {
+            record,
+            validation,
+            timings,
+        }))
     }
 
     fn read_bytes(&self, path: &Path) -> io::Result<Vec<u8>> {
@@ -289,6 +338,52 @@ impl Session {
             return Err(invalid("session record exceeds budget"));
         }
         Ok(bytes)
+    }
+    pub fn validate_filesystem(
+        &self,
+        id: u128,
+        exact: bool,
+        now_ns: u128,
+    ) -> io::Result<Option<ValidatedRecord>> {
+        self.validate_filesystem_observed(id, exact, now_ns, |_| {})
+    }
+    /// Inspect an authenticated receipt without reading/deserializing it twice.
+    /// Observation does not authorize reuse; the whole input proof still follows.
+    pub fn validate_filesystem_observed(
+        &self,
+        id: u128,
+        exact: bool,
+        now_ns: u128,
+        observer: impl FnOnce(&Record),
+    ) -> io::Result<Option<ValidatedRecord>> {
+        let started = std::time::Instant::now();
+        let Some(mut record) = self.prior(id)? else {
+            return Ok(None);
+        };
+        let mut timings = ValidationTimings {
+            record_decode: started.elapsed(),
+            ..ValidationTimings::default()
+        };
+        observer(&record);
+        let started = std::time::Instant::now();
+        let proofs = crate::filesystem_proofs::BulkFileSystemProofs::capture(
+            record.inputs.proof_paths(),
+            record.inputs.proof_folders(),
+        );
+        timings.bulk_capture = started.elapsed();
+        let started = std::time::Instant::now();
+        let (validation, inputs) = record.inputs.validate(&proofs, exact, now_ns)?;
+        timings.input_validate = started.elapsed();
+        timings.proofs = proofs.counts();
+        if !validation.unchanged() {
+            return Ok(None);
+        }
+        record.inputs = inputs;
+        Ok(Some(ValidatedRecord {
+            record,
+            validation,
+            timings,
+        }))
     }
 }
 
@@ -366,7 +461,7 @@ mod tests {
             .validate(id, &changed, true, 20_000_000_000)
             .unwrap()
             .is_none());
-        fs::write(session.directory.join(format!("{id:032x}.json")), b"broken").unwrap();
+        fs::write(session.directory.join(format!("{id:032x}.bin")), b"broken").unwrap();
         assert!(session
             .validate(id, &host, true, 20_000_000_000)
             .unwrap()

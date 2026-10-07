@@ -177,7 +177,8 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         .map_or((header, None), |index| {
                             (header[..index].trim(), Some(header[index + 1..].trim()))
                         });
-                    let separator = declaration.match_indices("var/")
+                    let separator = declaration
+                        .match_indices("var/")
                         .find(|(index, _)| *index == 0 || declaration.as_bytes()[index - 1] == b'/')
                         .map(|(index, _)| index)
                         .ok_or("var namespace block requires normalization")?;
@@ -222,8 +223,10 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         .collect();
                     let authored_type = format!("/{}", type_parts.join("/"));
                     let projection = dm_syntax::project_declaration_type(&authored_type);
-                    let list_element_type = projection.list_element_path
-                        .map(|path| symbol(context.symbols, &format!("/{path}"))).transpose()?;
+                    let list_element_type = projection
+                        .list_element_path
+                        .map(|path| symbol(context.symbols, &format!("/{path}")))
+                        .transpose()?;
                     let declared_type = if declaration.contains('[') {
                         Some(symbol(context.symbols, "/list")?)
                     } else if type_parts.is_empty() {
@@ -622,19 +625,34 @@ mod tests {
     fn var_namespace_separator_does_not_split_owner_component_suffix() {
         let result = adapt("/datum/property_provider/type_var/var/variant_var = 1\n/datum/property_provider/type_var\n    var/var/obj/reference\n");
         let tree = build(result.symbols, &result.skeletons).unwrap();
-        let owner = tree.lookup_type(SymbolId::of("/datum/property_provider/type_var")).unwrap();
+        let owner = tree
+            .lookup_type(SymbolId::of("/datum/property_provider/type_var"))
+            .unwrap();
         for name in ["variant_var", "reference"] {
-            let field = tree.members().iter().find(|member| member.name == SymbolId::of(name)).unwrap();
+            let field = tree
+                .members()
+                .iter()
+                .find(|member| member.name == SymbolId::of(name))
+                .unwrap();
             assert_eq!(field.owner, owner);
         }
-        assert!(tree.lookup_type(SymbolId::of("/datum/property_provider/type_")).is_none());
+        assert!(tree
+            .lookup_type(SymbolId::of("/datum/property_provider/type_"))
+            .is_none());
     }
     #[test]
     fn repeated_var_namespace_keeps_declaring_owner_and_runtime_type() {
         let result = adapt("/datum/base\n    var/var/obj/reference\n");
         let tree = build(result.symbols, &result.skeletons).unwrap();
-        let field = tree.members().iter().find(|member| member.name == SymbolId::of("reference")).unwrap();
-        assert_eq!(Some(field.owner), tree.lookup_type(SymbolId::of("/datum/base")));
+        let field = tree
+            .members()
+            .iter()
+            .find(|member| member.name == SymbolId::of("reference"))
+            .unwrap();
+        assert_eq!(
+            Some(field.owner),
+            tree.lookup_type(SymbolId::of("/datum/base"))
+        );
         assert_eq!(field.metadata.declared_type, Some(SymbolId::of("/obj")));
     }
     #[test]
@@ -718,9 +736,17 @@ mod tests {
         let tree = build(result.symbols, &result.skeletons).unwrap();
         for path in ["/datum/base", "/datum/child"] {
             let owner = tree.lookup_type(SymbolId::of(path)).unwrap();
-            let field = tree.member(tree.resolve(owner, SymbolId::of("values"), MemberKind::Var).unwrap()).unwrap();
+            let field = tree
+                .member(
+                    tree.resolve(owner, SymbolId::of("values"), MemberKind::Var)
+                        .unwrap(),
+                )
+                .unwrap();
             assert_eq!(field.metadata.declared_type, Some(SymbolId::of("/list")));
-            assert_eq!(field.metadata.list_element_type, Some(SymbolId::of("/datum/item")));
+            assert_eq!(
+                field.metadata.list_element_type,
+                Some(SymbolId::of("/datum/item"))
+            );
             assert!(field.metadata.array.is_none());
         }
     }
