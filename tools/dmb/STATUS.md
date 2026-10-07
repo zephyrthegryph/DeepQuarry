@@ -13,7 +13,34 @@ sampled 1,988,460,544 private bytes and published no pair. Most diagnostics were
 368 missing boolean constant queries, 12 parameter-modifier cases, four source
 radius settings and one parameter type. These are failed debug-attempt figures,
 not completed cold compiler benchmarks. Resource ordering took 3.230 s; full
-frontend capture took 34.852 s. The subsequent fixes remain under development.
+frontend capture took 34.852 s.
+
+Probes 17 and 18 cleared procedure ABI preparation and stopped during initializer
+classification. They took 59.776 s and 67.830 s respectively, sampled about
+1.90 GB private memory, and published no pair. Probe 18 located the first failure
+at `/savefile::byond_version`, which is encoded in the DMB header. Its finite
+projection and complete ordered modifier diagnostics are now implemented; focused
+initializer (7), savefile (1), and world-header (3) checks and the CLI build passed.
+The next full compile attempt is pending. These figures are incomplete debug
+attempts, not successful cold compiler benchmarks.
+
+The production CLI now uses bounded parallel preparation of literal manifest
+include candidates. Only files actually requested by the ordered directive pass
+enter the semantic model; speculative preparations are released before resources
+and lowering. Required-read errors preserve ordinary source diagnostics, while
+worker failures remain internal errors. Three input-preparation and four shared
+preparation checks passed. ABI preparation still reparses full bodies despite
+retained settings; removing that duplicate pass is in progress.
+
+Probe 19 passed resources/maps but expired at the 285 s watchdog while compiling
+and published no pair (285.403 s externally; 1,915,981,824 sampled private bytes).
+It used the binary before the subsequent initializer indexing fixes. Two
+quadratic source paths were identified: receiver-group lookup per runtime write,
+and full shared initializer reference scanning per target slot. Both now use
+request-local indexes while retaining source order and exact slot conflict checks;
+focused gates are pending. Compact settings reuse also removes the ABI-preparation
+body parse and retained executable ASTs. More granular cold-stage reporting is
+being added before the next attempt. No performance improvement is claimed yet.
 
 The entries below describe the new uncached path. Older measurements later in
 this document belong to the preserved original compiler unless explicitly labeled.
