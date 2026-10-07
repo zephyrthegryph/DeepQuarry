@@ -382,6 +382,29 @@ impl ProjectResolver<'_> {
             _ => Err(self.error(query, "procedure declaration metadata unavailable")),
         }
     }
+    /// Only an authored exact path annotation supplies a receiver type. Return
+    /// value inference never examines executable bodies or invents engine ABI.
+    pub fn procedure_return_type(&self, query: Q) -> Result<Option<String>, LowerError> {
+        let answer = self.answer(query)?;
+        let M::Member { data, .. } = answer else {
+            return match answer {
+                M::Missing | M::IntrinsicProc { .. } | M::RetainedProc { .. } => Ok(None),
+                _ => Err(self.error(query, "procedure return metadata unavailable")),
+            };
+        };
+        let Some(annotation) = data.procedure.as_ref()
+            .and_then(|metadata| metadata.signature.return_annotation.as_ref()) else {
+            return Ok(None);
+        };
+        let text = annotation.source_text(self.symbols)
+            .ok_or_else(|| self.error(query, "return annotation spelling unavailable"))?;
+        let text = text.trim();
+        // Unions and scalar annotations do not establish one class receiver.
+        if !text.starts_with('/') || text.contains('|') { return Ok(None); }
+        let Some(expression) = dm_syntax::parse_expression(text).expr else { return Ok(None); };
+        let dm_syntax::ExprKind::TypePath(path) = expression.kind else { return Ok(None); };
+        self.runtime_type(&path).map(Some)
+    }
     pub fn constant(&self, name: &str) -> Result<Option<SemanticValue>, LowerError> {
         let query = Q::PredefinedConstant(SymbolId::of(name));
         match self.answer(query)? {

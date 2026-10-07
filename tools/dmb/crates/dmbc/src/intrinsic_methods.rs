@@ -24,13 +24,6 @@ impl IntrinsicMethods {
         let mut methods = BTreeMap::new();
         let mut spellings = SymbolTable::overlay(source.shared_symbols());
         for record in procs {
-            if record["Bytecode"].as_str() != Some("")
-                || !record["SourceInfo"]
-                    .as_array()
-                    .is_some_and(|source| source.is_empty())
-            {
-                continue;
-            }
             let Some(owner_index) = record["OwningTypeId"].as_u64() else {
                 // No explicit receiver owner is positive method evidence.
                 // Free/anonymous catalog records remain outside this domain.
@@ -47,6 +40,21 @@ impl IntrinsicMethods {
                 continue;
             }
             let name = record["Name"].as_str().ok_or("native method name absent")?;
+            // These exact native receiver-call controls certify procedure
+            // presence even though the catalog retains opaque implementation
+            // bytes. Those bytes are never lowered or used as an ABI signature.
+            let observed_receiver = matches!(
+                (owner, name),
+                ("/client", "MeasureText") | ("/atom", "Enter" | "Uncross")
+            );
+            if !observed_receiver
+                && (record["Bytecode"].as_str() != Some("")
+                    || !record["SourceInfo"]
+                        .as_array()
+                        .is_some_and(|source| source.is_empty()))
+            {
+                continue;
+            }
             // A catalog verb label is not a native namespace certificate.
             // The finite native controls positively certify directional
             // callbacks as Proc; retain the existing decline for other verbs.
@@ -115,6 +123,64 @@ impl IntrinsicMethods {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn native_receiver_calls_admit_only_exact_opaque_catalog_methods() {
+        use sha2::{Digest, Sha256};
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/phase1/native_receiver_methods");
+        let receipt: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(root.join("receipt.json")).unwrap()).unwrap();
+        assert_eq!(
+            receipt["compiler_sha256"],
+            "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+        );
+        assert_eq!(receipt["exit_code"], 0);
+        for (path, hash) in receipt["files"].as_object().unwrap() {
+            assert_eq!(
+                format!(
+                    "{:x}",
+                    Sha256::digest(std::fs::read(root.join(path)).unwrap())
+                ),
+                hash.as_str().unwrap()
+            );
+        }
+        let engine = crate::engine::EngineSnapshot::from_bytes(
+            include_bytes!("../../../fixtures/native_template.bin"),
+            1,
+        )
+        .unwrap()
+        .with_bootstrap_catalog()
+        .unwrap();
+        let source = Arc::new(engine.build_tree(engine.symbols().clone(), &[]).unwrap());
+        let catalog = serde_json::from_slice(include_bytes!(
+            "../../../fixtures/native_template_nativebuiltins_5161687.json"
+        ))
+        .unwrap();
+        let methods = IntrinsicMethods::capture(source, &catalog).unwrap();
+        let image =
+            byond_dmb::dmb::Dmb::from_bytes(&std::fs::read(root.join("probe.native.bin")).unwrap())
+                .unwrap();
+        for (index, owner, name, selector) in [
+            (0, "/client", "MeasureText", 293),
+            (1, "/atom", "Enter", 2),
+            (2, "/atom/movable", "Uncross", 232),
+        ] {
+            assert_eq!(image.string(selector), Some(name.as_bytes()));
+            let words = image.proc_code_words(index).unwrap();
+            assert_eq!(
+                &words[3..],
+                &[0x29, 65500, 65486, 65501, selector, 1, 0x12, 0]
+            );
+            assert!(matches!(
+                methods.resolve(ResolveQuery::Proc {
+                    owner: SymbolId::of(owner),
+                    name: SymbolId::of(name),
+                    verb: false
+                }),
+                Some(ResolvedMeaning::IntrinsicProc { .. })
+            ));
+        }
+    }
     #[test]
     fn only_observed_proc_receipts_override_catalog_verb_annotation() {
         let mut symbols = SymbolTable::default();

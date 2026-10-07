@@ -935,6 +935,25 @@ impl Compiler<'_> {
             None => Ok(self.bindings.unique_member_global(name).map(str::to_owned)),
         }
     }
+    fn fallback_member_global(&self, object: &Expr, name: &str, via_colon: bool)
+        -> Result<Option<String>, LowerError>
+    {
+        if via_colon { return Ok(None); }
+        if let Some(lookup) = self.lookup {
+            if let Some(owner) = self.inferred_expression_type(object)? {
+                let query = dm_ir::ResolveQuery::VarStorage {
+                    owner: dm_ir::SymbolId::of(&owner), name: dm_ir::SymbolId::of(name),
+                };
+                match self.semantic(lookup.answer(query))? {
+                    dm_ir::ResolvedMeaning::InstanceField { .. } => return Ok(None),
+                    dm_ir::ResolvedMeaning::Slot { .. } => return self.semantic(lookup.slot(query)),
+                    dm_ir::ResolvedMeaning::Missing => (),
+                    _ => return Err(error("member selector", "invalid variable storage answer")),
+                }
+            }
+        }
+        self.unique_member_global(name)
+    }
     fn member_proc(&self, owner: &str, name: &str) -> Result<Option<String>, LowerError> {
         match self.lookup {
             Some(lookup) => self.semantic(lookup.member_proc(owner, name)),
@@ -3040,7 +3059,8 @@ impl Compiler<'_> {
                 };
                 self.expression(object, statement)?;
                 self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
-                if let Some(symbol) = self.unique_member_global(selector)? {
+                if let Some(symbol) = self.fallback_member_global(object, selector,
+                    matches!(&target.kind, ExprKind::Member { via_colon: true, .. }))? {
                     return Ok(VariableWord::Global(symbol.to_owned()));
                 }
                 self.intern_string(selector);
@@ -3427,6 +3447,32 @@ impl Compiler<'_> {
                 match self.inferred_expression_type(object)? {
                     Some(owner) => self.member_type(&owner, selector)?,
                     None => None,
+                }
+            }
+            ExprKind::Call { callee, .. } if self.lookup.is_some() => {
+                let lookup = self.lookup.unwrap();
+                match &callee.kind {
+                    ExprKind::Ident(name) => {
+                        if crate::builtin_catalog::lookup(name).is_some() { return Ok(None); }
+                        if let Some(owner) = self.bindings.current_type_path.as_deref() {
+                            if self.has_declared_member_proc(owner, name)? {
+                                return self.semantic(lookup.procedure_return_type(dm_ir::ResolveQuery::Proc {
+                                    owner:dm_ir::SymbolId::of(owner), name:dm_ir::SymbolId::of(name), verb:false,
+                                }));
+                            }
+                        }
+                        self.semantic(lookup.procedure_return_type(dm_ir::ResolveQuery::GlobalProc(dm_ir::SymbolId::of(name))))?
+                    }
+                    ExprKind::Member { object, selector, via_colon:false }
+                    | ExprKind::SafeMember { object, selector } => {
+                        match self.inferred_expression_type(object)? {
+                            Some(owner) => self.semantic(lookup.procedure_return_type(dm_ir::ResolveQuery::Proc {
+                                owner:dm_ir::SymbolId::of(&owner), name:dm_ir::SymbolId::of(selector), verb:false,
+                            }))?,
+                            None => None,
+                        }
+                    }
+                    _ => None,
                 }
             }
             _ => None,
@@ -3884,6 +3930,21 @@ impl Compiler<'_> {
                 );
             }
             ExprKind::Ident(name) => {
+                if name == "__PROC__" && !self.local_slots.contains_key(name)
+                    && !self.bindings.parameters.iter().any(|parameter| parameter == name)
+                {
+                    if let Some(lookup) = self.lookup {
+                        if self.semantic(lookup.procedure_static_slot(self.bindings.procedure_identity, name))?.is_some() {
+                            let variable = self.variable(name, statement)?;
+                            self.emit(opcode::GET_VAR, vec![Word::Variable(variable)]);
+                            return Ok(());
+                        }
+                    }
+                    let path = self.bindings.current_proc_path.clone()
+                        .ok_or_else(|| error(statement, "__PROC__ requires current procedure context"))?;
+                    self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::ProcPath(path))]);
+                    return Ok(());
+                }
                 if name == "null" || name == "FALSE" || name == "TRUE" {
                     let literal = Expr {
                         kind: ExprKind::Literal(name.clone()),
@@ -3969,7 +4030,8 @@ impl Compiler<'_> {
                         self.expression(object, statement)?;
                         safe_labels = self.defer_safe_postfix_labels(object);
                         self.emit(opcode::SET_VAR, vec![Word::Variable(VariableWord::Cache)]);
-                        if let Some(symbol) = self.unique_member_global(selector)? {
+                        if let Some(symbol) = self.fallback_member_global(object, selector,
+                            matches!(&expr.kind, ExprKind::Member { via_colon: true, .. }))? {
                             VariableWord::Global(symbol.to_owned())
                         } else {
                             self.intern_string(selector);

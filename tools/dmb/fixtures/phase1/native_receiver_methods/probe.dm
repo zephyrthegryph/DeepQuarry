@@ -1,0 +1,6 @@
+/client/proc/probe_measure()
+    return MeasureText("text")
+/atom/proc/probe_enter(atom/value)
+    return Enter(value)
+/atom/movable/proc/probe_uncross(atom/value)
+    return Uncross(value)

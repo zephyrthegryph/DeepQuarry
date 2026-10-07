@@ -5,6 +5,14 @@ Phase 1 foundation work is now underway alongside the remaining baseline evidenc
 The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
+Release probe 31 reached complete source analysis and attempted all procedure
+bodies, reducing diagnostics from 2,195 to 522. Of those, 497 are intrinsic-name
+`UniqueStaticVar` queries; the other groups are 18 storage, 3 declared-type,
+3 procedure and 1 contextual `istype` failures. External time was 25.581 s;
+sampled private memory 2,548,772,864 bytes. No pair was produced. This is a
+failed attempt, not a completed cold benchmark. A positive-counterexample
+uniqueness index now passes its focused partial-inventory gate; computed receiver,
+return-annotation and additional native field fixes are being integrated.
 Release probe 30 stopped in tree resolution after 8.356 s (sampled private
 memory 1,021,616,128 bytes). A declaration namespace match split the owner
 component `type_var` into `type_`; the component-boundary correction now has

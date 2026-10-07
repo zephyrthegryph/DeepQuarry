@@ -17,7 +17,7 @@ pub struct CatalogField {
 }
 /// Mirrors the pinned native bootstrap inventory. It is not a claim that all
 /// BYOND versions expose exactly this catalog or that source defaults are known.
-pub const CATALOG_SCHEMA: &str = "dm-bootstrap-builtin-fields-v7-native-type-knowledge";
+pub const CATALOG_SCHEMA: &str = "dm-bootstrap-builtin-fields-v8-native-list-field-knowledge";
 pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::SymbolCollision> {
     let mut fields = Vec::new();
     for owner in [
@@ -30,6 +30,7 @@ pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::Sym
         "/client",
         "/world",
         "/list",
+        "/alist",
         "/turf",
         "/particles",
         "/savefile",
@@ -39,7 +40,7 @@ pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::Sym
         // Native /image has its own visibility collection; do not infer that
         // field for /atom or /mutable_appearance from their shared field list.
         let extra: &[&str] = if owner == "/image" {
-            &["vis_contents"]
+            &["vis_contents", "override"]
         } else {
             &[]
         };
@@ -52,6 +53,8 @@ pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::Sym
                 "locs" if owner == "/atom/movable" => Some("/list"),
                 "particles" if owner == "/atom/movable" => Some("/particles"),
                 "vis_contents" if matches!(owner, "/atom/movable" | "/image") => Some("/list"),
+                "vis_contents" if owner == "/turf" => Some("/list"),
+                "caller" if owner == "/callee" => Some("/callee"),
                 "loc" => Some("/atom"),
                 "contents" | "overlays" | "underlays" | "filters" | "verbs" => Some("/list"),
                 "dir" if owner == "/savefile" => Some("/list"),
@@ -66,7 +69,10 @@ pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::Sym
                     (owner, *name),
                     ("/world", "sleep_offline" | "visibility")
                         | ("/client", "fps" | "mouse_pointer_icon")
-                        | ("/callee", "proc")
+                        | ("/callee", "proc" | "name")
+                        | ("/image", "override")
+                        | ("/list", "type" | "parent_type" | "len")
+                        | ("/alist", "type" | "len")
                 ) =>
                 {
                     FieldTypeMeaning::KnownUntyped
@@ -100,7 +106,7 @@ pub fn names(path: &str) -> &'static [&'static str] {
         // defaults. Header emission is a separate ABI policy, not a field slot.
         // https://www.byond.com/docs/ref/info.html#savefile/var/byond_version
         "/savefile" => &["byond_version", "byond_build", "cd", "dir", "eof", "name"],
-        "/callee" => &["proc"],
+        "/callee" => &["proc", "name", "caller"],
         "/datum" => &["type", "parent_type", "vars", "tag"],
         "/atom" | "/image" | "/mutable_appearance" => &[
             "name",
@@ -256,7 +262,8 @@ pub fn names(path: &str) -> &'static [&'static str] {
             "turf",
             "area",
         ],
-        "/list" => &["len"],
+        "/list" => &["type", "parent_type", "len"],
+        "/alist" => &["type", "len"],
         "/turf" => &["vis_contents", "vis_locs", "vis_flags"],
         "/particles" => &[
             "width",
@@ -289,6 +296,119 @@ pub fn names(path: &str) -> &'static [&'static str] {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn native_probe31_field_receipts_bind_exact_type_knowledge() {
+        use sha2::{Digest, Sha256};
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/phase1/native_probe31_fields");
+        let receipt: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(root.join("receipt.json")).unwrap()).unwrap();
+        assert_eq!(
+            receipt["compiler_sha256"],
+            "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+        );
+        for file in receipt["files"].as_array().unwrap() {
+            assert_eq!(
+                format!(
+                    "{:x}",
+                    Sha256::digest(
+                        std::fs::read(root.join(file["path"].as_str().unwrap())).unwrap()
+                    )
+                ),
+                file["sha256"].as_str().unwrap()
+            );
+        }
+        let fields = super::fields(&mut super::SymbolTable::default()).unwrap();
+        for (owner, name, expected) in [
+            (
+                "/turf",
+                "vis_contents",
+                super::FieldTypeMeaning::Known(super::SymbolId::of("/list")),
+            ),
+            (
+                "/callee",
+                "caller",
+                super::FieldTypeMeaning::Known(super::SymbolId::of("/callee")),
+            ),
+            ("/callee", "name", super::FieldTypeMeaning::KnownUntyped),
+            ("/image", "override", super::FieldTypeMeaning::KnownUntyped),
+        ] {
+            let field = fields
+                .iter()
+                .find(|field| {
+                    field.owner == super::SymbolId::of(owner)
+                        && field.name == super::SymbolId::of(name)
+                })
+                .unwrap();
+            assert_eq!(field.declared_type, expected);
+            assert!(field.presence().instance_storage_proven);
+        }
+    }
+    #[test]
+    fn native_list_field_receipts_bind_known_untyped_instance_reads() {
+        use sha2::{Digest, Sha256};
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/phase1/native_list_fields");
+        let receipt: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(root.join("receipt.json")).unwrap()).unwrap();
+        assert_eq!(
+            receipt["compiler_sha256"],
+            "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+        );
+        for file in receipt["files"].as_array().unwrap() {
+            let bytes = std::fs::read(root.join(file["path"].as_str().unwrap())).unwrap();
+            assert_eq!(
+                format!("{:x}", Sha256::digest(bytes)),
+                file["sha256"].as_str().unwrap()
+            );
+        }
+        let mut symbols = super::SymbolTable::default();
+        let fields = super::fields(&mut symbols).unwrap();
+        for (family, name, selector) in [
+            ("list", "type", 37),
+            ("list", "parent_type", 130),
+            ("list", "len", 57),
+            ("alist", "type", 37),
+            ("alist", "len", 57),
+        ] {
+            let case = format!("{family}_{name}");
+            let image = byond_dmb::dmb::Dmb::from_bytes(
+                &std::fs::read(root.join(format!("{case}_read/probe.native.bin"))).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(image.string(selector), Some(name.as_bytes()));
+            assert_eq!(
+                image.proc_code_words(0).unwrap(),
+                vec![0x33, 65500, 65497, 0, selector, 0x12, 0]
+            );
+            let log =
+                std::fs::read_to_string(root.join(format!("{case}_infer/compile.log"))).unwrap();
+            assert!(log.contains(&format!(
+                "probe.dm:2:error: value.{name}: unknown variable type"
+            )));
+            let field = fields
+                .iter()
+                .find(|field| {
+                    field.owner == super::SymbolId::of(&format!("/{family}"))
+                        && field.name == super::SymbolId::of(name)
+                })
+                .unwrap();
+            assert_eq!(field.declared_type, super::FieldTypeMeaning::KnownUntyped);
+            assert!(field.presence().instance_storage_proven);
+        }
+        let engine = crate::engine::EngineSnapshot::from_bytes(
+            include_bytes!("../../../fixtures/native_template.bin"),
+            1,
+        )
+        .unwrap()
+        .with_bootstrap_catalog()
+        .unwrap();
+        assert!(engine
+            .hierarchy()
+            .parents
+            .iter()
+            .any(|row| row.0 == super::SymbolId::of("/alist")));
+    }
     use super::*;
     #[test]
     fn catalog_exposes_known_types_without_inventing_default_metadata() {

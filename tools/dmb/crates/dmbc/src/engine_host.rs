@@ -354,7 +354,7 @@ impl<R: Resolver> EngineResolverHost<R> {
             bytes.extend_from_slice(&retained.identity().to_le_bytes());
         }
         if self.callable_absence.is_some() {
-            bytes.extend_from_slice(b"pinned-callable-policy-v2;explicit-runtime-receiver-methods");
+            bytes.extend_from_slice(b"pinned-callable-policy-v3;explicit-runtime-receiver-methods;receiver-proof-sha256:5b09e0c80aeecb5b864a556a18f038313158f240adefd6d5503e8daf5961a8d9");
             bytes.extend_from_slice(include_bytes!(
                 "../../../fixtures/native_template_nativebuiltins_5161687.json"
             ));

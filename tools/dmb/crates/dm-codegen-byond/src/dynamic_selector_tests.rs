@@ -65,3 +65,98 @@ fn frame_references_use_native_words_and_lexical_parameters_shadow_them() {
                     matches!(word, crate::Word::Variable(crate::VariableWord::Arg(0)))))));
     }
 }
+
+#[test]
+fn computed_receiver_with_proven_instance_storage_skips_global_uniqueness() {
+    struct InstanceField(Mutex<Vec<Q>>);
+    impl Resolver for InstanceField {
+        fn resolve(&self, query: Q) -> M {
+            self.0.lock().unwrap().push(query);
+            match query {
+                Q::RuntimeType(path) => M::Symbol(path),
+                Q::Ancestry(path) => M::Symbols(vec![path, dm_ir::SymbolId::of("/obj")]),
+                Q::VarStorage { owner, name } => M::InstanceField { declaring_owner:owner, name },
+                _ => M::Unsupported(query),
+            }
+        }
+    }
+    let mut symbols = SymbolTable::default();
+    symbols.intern("/obj/item").unwrap();
+    symbols.intern("/obj").unwrap();
+    symbols.intern("status").unwrap();
+    let host = InstanceField(Mutex::new(vec![]));
+    let parsed = dm_syntax::parse("/proc/probe()\n    return (/obj/item).status\n");
+    let code = compile_simple_proc_with_resolver(&parsed.items[0].children,
+        &Default::default(), &symbols, &host).unwrap();
+    assert!(code.procedure.strings.iter().any(|name| name == "status"));
+    assert!(host.0.lock().unwrap().iter().any(|query| matches!(query, Q::VarStorage { .. })));
+    assert!(!host.0.lock().unwrap().iter().any(|query| matches!(query, Q::UniqueStaticVar(_))));
+}
+
+#[test]
+fn authored_call_return_annotation_types_nested_field_context() {
+    use dm_ir::{DeclarationMeaning, ExpressionToken, ProcedureMetadata, ProcedureSignature,
+        SymbolId, SymbolicExpression};
+    use std::sync::Arc;
+    let mut symbols = SymbolTable::default();
+    for text in ["/datum/client", "/datum/message", "/datum/file", "/datum", "current_message", "attachment"] {
+        symbols.intern(text).unwrap();
+    }
+    let annotation = SymbolicExpression { tokens: dm_syntax::lex("/datum/message").tokens
+        .into_iter().map(|token| ExpressionToken { kind:token.kind,
+            text:symbols.intern(&token.text).unwrap(), relative_span:token.span }).collect() };
+    struct Host { metadata:Arc<DeclarationMeaning>, reads:Mutex<Vec<Q>> }
+    impl Resolver for Host {
+        fn resolve(&self, query:Q)->M {
+            self.reads.lock().unwrap().push(query);
+            match query {
+                Q::RuntimeType(path) => M::Symbol(path),
+                Q::Ancestry(path) => M::Symbols(vec![path, SymbolId::of("/datum")]),
+                Q::HasMemberProc { name, .. } if name==SymbolId::of("current_message") => M::Presence(true),
+                Q::Proc { owner, name, verb:false } if name==SymbolId::of("current_message") =>
+                    M::Member {owner,name,fingerprint:1,data:self.metadata.clone()},
+                Q::VarStorage { owner, name } if name==SymbolId::of("attachment") =>
+                    M::InstanceField {declaring_owner:owner,name},
+                Q::DeclaredVarType {name,..} if name==SymbolId::of("attachment") =>
+                    M::DeclaredType(Some(SymbolId::of("/datum/file"))),
+                _ => M::Unsupported(query),
+            }
+        }
+    }
+    let host=Host {metadata:Arc::new(DeclarationMeaning { procedure:Some(Arc::new(ProcedureMetadata {
+        signature:ProcedureSignature {parameters:Arc::from([]),variadic:false,return_annotation:Some(annotation)},
+        settings:Arc::from([]),
+    })), ..Default::default() }), reads:Mutex::new(vec![]) };
+    let parsed=dm_syntax::parse("/proc/probe()\n    return istype(current_message().attachment)\n");
+    let code=compile_simple_proc_with_resolver(&parsed.items[0].children,
+        &ProcedureInputs {current_type_path:Some("/datum/client".into()),..Default::default()},
+        &symbols,&host).unwrap();
+    assert!(code.procedure.class_paths.iter().any(|path| path=="/datum/file"));
+    assert!(host.reads.lock().unwrap().iter().any(|query|
+        matches!(query,Q::DeclaredVarType {owner,..} if *owner==SymbolId::of("/datum/message"))));
+}
+
+#[test]
+fn current_proc_builtin_precedes_unrelated_member_queries_and_keeps_relocation() {
+    let mut symbols=SymbolTable::default();
+    let owner=symbols.intern("/datum/log_entry").unwrap();
+    let name=symbols.intern("read").unwrap();
+    let host=UnknownFields::default();
+    let parsed=dm_syntax::parse("/proc/probe()\n    return __PROC__\n");
+    let inputs=ProcedureInputs {current_type_path:Some("/datum/log_entry".into()),
+        current_proc_path:Some("/datum/log_entry/proc/read".into()),..Default::default()};
+    let code=compile_simple_proc_with_resolver(&parsed.items[0].children,&inputs,&symbols,&host).unwrap();
+    assert!(host.0.lock().unwrap().is_empty());
+    let frozen=crate::encoder::freeze_proc(&code.procedure.code, |symbol| {
+        assert_eq!(symbol.key,"/datum/log_entry/proc/read");
+        Ok(dm_ir::SymRef::Proc {owner,name,occurrence:0})
+    }).unwrap();
+    assert_eq!(frozen.code().relocations().len(),1);
+    let linked=frozen.code().link(|_| Some(13)).unwrap();
+    assert!(linked.windows(2).any(|words| words==[38,13]));
+    let inputs=ProcedureInputs {parameters:vec!["__PROC__".into()],..inputs};
+    let code=compile_simple_proc_with_resolver(&parsed.items[0].children,&inputs,&symbols,&host).unwrap();
+    assert!(code.procedure.code.items.iter().any(|item|
+        matches!(item,crate::Item::Instruction(instruction) if instruction.operands.iter()
+            .any(|word| matches!(word,crate::Word::Variable(crate::VariableWord::Arg(0)))))));
+}
