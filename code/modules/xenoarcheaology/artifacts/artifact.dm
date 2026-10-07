@@ -17,32 +17,25 @@
 
 	/// The artifact master type created at Initialize (the instance lives in /atom/var/artifact_master).
 	var/artifact_master_type = /datum/artifact_master
+	/// The air of its tile is at or past ARTIFACT_HEAT_BREAK (gas_level()).
+	var/overheated = FALSE
 TRACKED(/obj/machinery/artifact, icon_num)
+TRACKED(/obj/machinery/artifact, overheated)
 
-/// Air too hot: it breaks. Otherwise it sleeps on a watch of its tile's air crossing
-/// ARTIFACT_HEAT_BREAK (and re-arms when moved).
-// Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+/// Air too hot: it breaks. Its tile's air crossing ARTIFACT_HEAT_BREAK turns `overheated` (gas_level(), code/domains/atmos/gas_level.dm), and a
+/// move re-points the level at the new tile's air.
 CAPABILITIES(/obj/machinery/artifact)
-	started_work(step = PROC_REF(work_step))
+	gas_level(into = nameof(overheated), reading = CH_GAS_TEMPERATURE, above = ARTIFACT_HEAT_BREAK, hysteresis = 50)
+	on_change(nameof(overheated), ENTER, then(PROC_REF(burst_in_heat)))
 
-/obj/machinery/artifact/proc/work_step(datum/act/timer/A)
-	var/turf/T = get_turf(src)
-	var/datum/gas_mixture/env = T?.return_air()
-	if(env && env.return_temperature() > ARTIFACT_HEAT_BREAK)
-		destroyed(src)
-		return PROCESS_KILL
-	var/datum/om_watch/W = om_watch_arm_bands(src, "heat", env?.arena_id(), list(new /datum/om_watch_band("temperature", TRUE, ARTIFACT_HEAT_BREAK)), null, om_callable(src, PROC_REF(heat_wake)))
-	if(W)
-		LAZYSET(W.last_side, "temperature:[TRUE]:[ARTIFACT_HEAT_BREAK]", FALSE) // below it now: the first reading above fires
-	return PROCESS_KILL
-
-/obj/machinery/artifact/proc/heat_wake()
-	work_start(src)
+/obj/machinery/artifact/proc/burst_in_heat(datum/act/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	destroyed(src)
 
 /obj/machinery/artifact/Moved(atom/old_loc)
 	. = ..()
 	if(isturf(loc) && !QDELETED(src))
-		work_start(src)
+		gas_level_rearm_all(src)
 
 
 // ALLOW(init/INSTANCE_STATE): rolls its look and the trigger of its effect

@@ -4765,7 +4765,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/gas_mixture/saved_disposal_environment = disposal_environment.copy()
 	disposal_environment.clear()
 	TEST_ASSERT(test_machine_idle(disposal), "airless disposal kept retrying pressurization")
-	TEST_ASSERT(om_watch_armed(disposal), "airless disposal did not subscribe before sleeping")
+	TEST_ASSERT(length(disposal.intake_watches), "airless disposal did not subscribe before sleeping")
 	disposal.set_grid_power(FALSE)
 	disposal_environment.copy_from(saved_disposal_environment)
 	var/obj/machinery/atmospherics/unary/freezer/freezer = new(T)
@@ -5763,50 +5763,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!length(P.leak_watches) && (N in SSair.networks), "changed turf gas did not wake an open pipe leak")
 	qdel(P)
 	qdel(P2)
-
-/// Bare test double for dq_om_watch_derived_fires_on_band_crossing: a plain machine with one
-/// exposed numeric field and a wake counter, standing in for "an arbitrary vg/pipeline component
-/// field or any other DM-side computed value" that om_watch_arm_derived() can watch.
-/obj/machinery/dq_om_watch_test_probe
-	var/probe = 0
-	var/wakes = 0
-
-/obj/machinery/dq_om_watch_test_probe/proc/read_probe()
-	return probe
-
-/obj/machinery/dq_om_watch_test_probe/proc/count_wake()
-	wakes++
-
-/// om_watch_arm_derived()/om_watch_recheck() (code/datums/om/watch.dm) is the generic hook for
-/// watching an arbitrary vg/pipeline component field or any other DM-side computed value: no
-/// Rust watch backs it, so the caller re-evaluates it explicitly (the same way a producer raises
-/// a CHANGE_MACHINE_* channel elsewhere). This exercises that mechanism directly, proving a
-/// crossing fires exactly once (with hysteresis holding off a re-fire until the value clears back
-/// past the margin) and a non-crossing change does not fire at all.
-/datum/unit_test/dq_om_watch_derived_fires_on_band_crossing
-
-/datum/unit_test/dq_om_watch_derived_fires_on_band_crossing/Run()
-	var/obj/machinery/dq_om_watch_test_probe/M = allocate(/obj/machinery/dq_om_watch_test_probe)
-	var/list/datum/om_watch_band/bands = list(new /datum/om_watch_band("value", TRUE, 10, 2))
-	om_watch_arm_derived(M, "probe", bands, channel = null, getter = om_callable(M, TYPE_PROC_REF(/obj/machinery/dq_om_watch_test_probe, read_probe)), wake_callback = om_callable(M, TYPE_PROC_REF(/obj/machinery/dq_om_watch_test_probe, count_wake)))
-	M.probe = 5
-	om_watch_recheck(M, "probe")
-	TEST_ASSERT_EQUAL(M.wakes, 0, "a non-crossing change fired a derived watch")
-	M.probe = 12
-	om_watch_recheck(M, "probe")
-	TEST_ASSERT_EQUAL(M.wakes, 1, "a band crossing did not fire the derived watch")
-	M.probe = 9
-	om_watch_recheck(M, "probe")
-	TEST_ASSERT_EQUAL(M.wakes, 1, "dropping below the edge but still inside the hysteresis margin re-fired the derived watch")
-	M.probe = 8
-	om_watch_recheck(M, "probe")
-	TEST_ASSERT_EQUAL(M.wakes, 2, "clearing the hysteresis margin did not fire the derived watch to report the settle")
-	M.probe = 15
-	om_watch_recheck(M, "probe")
-	TEST_ASSERT_EQUAL(M.wakes, 3, "re-crossing the band after settling did not fire the derived watch again")
-	om_watch_disarm(M, "probe")
-	qdel(M)
-
 
 // =====================================================================
 // Round 6: filter routing, mixer ratios, thruster fuel, pressure pushes,

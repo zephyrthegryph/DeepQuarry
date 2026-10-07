@@ -94,9 +94,10 @@
 	var/datum/material_service/service = C.enable_material_service()
 	TEST_ASSERT(service, "the canister has a material service")
 	service.rebind()
-	var/key = om_watch_entity_key(service)
-	TEST_ASSERT(GLOB.om_watch_registry[key], "which watches its gas")
+	TEST_ASSERT(length(service.gas_watches), "which watches its gas")
+	var/list/watches = service.gas_watches.Copy()
 	qdel_batch(list(C))
 	TEST_ASSERT(QDELETED(service), "the batch destroys the service with its owner")
-	TEST_ASSERT(isnull(GLOB.om_watch_registry[key]), "and its gas watches are disarmed by the batch's one pass")
+	for(var/datum/native_watch/gas/W as anything in watches)
+		TEST_ASSERT(QDELETED(W) || !W.handle, "and its gas watches are cancelled with it")
 

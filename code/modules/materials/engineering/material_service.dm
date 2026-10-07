@@ -177,6 +177,8 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 /datum/material_service
 	var/tmp/obj/owner
 	var/list/mixture_ids
+	/// One native gas watch per watched mixture (code/domains/atmos/gas_watch.dm): Rust reports each change of the gas the assembly sits in or holds.
+	var/list/datum/native_watch/gas/gas_watches
 	/// Last pressure published for each watched mixture. Stable, harmless
 	/// pressure jitter updates this cache without waking the physical model.
 	var/list/mixture_pressures
@@ -245,12 +247,10 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		heat_store = null
 	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
 	if(batch && (batch.doomed[src] || batch.doomed[owner()]))
-		// Batched destroy (doc/rewrite/init_and_turfs.md sec 4.4 step 6): the whole set's gas
-		// watches disarm in one pass when the batch flushes, and no hook is unhooked one by one --
+		// Batched destroy (doc/rewrite/init_and_turfs.md sec 4.4 step 6): no hook is unhooked one by one --
 		// this service's own teardown (its activations end with it) drops every observe()
 		// it holds, on the doomed owner and on its turf and holders alike.
-		var/watch_key = om_watch_entity_key(src) // handle text: plain data, not an entity
-		batch.material_service_watch_keys += watch_key
+		gas_watch_many_clear(src, nameof(gas_watches))
 		last_reading = null
 		mixture_ids = null
 		mixture_pressures = null
@@ -279,10 +279,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	if(watched_turf())
 		unobserve(watched_turf(), /datum/notice/turf_change, src)
 		rel_clear(src, nameof(watched_turf))
-	// om_watch_disarm() keys off this datum's handle as om_handle_of() reads it, which still names it
-	// while it is being deleted (code/datums/om/watch.dm), so there's no QDELETED race to work around.
-	for(var/id in mixture_ids)
-		om_watch_disarm(src, "gas[id]")
+	gas_watch_many_clear(src, nameof(gas_watches))
 	mixture_ids = null
 	mixture_pressures = null
 	mixture_corrosion = null
@@ -323,11 +320,11 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		mask |= GAS_DEPENDENCY_PRESSURE
 	return mask
 
-/// Raw forwarder (om_watch_arm_raw(), code/datums/om/watch.dm) for one watched mixture: filters
+/// The handler of the assembly's gas watches (gas_watch_ids()), one per watched mixture: filters
 /// Rust's compact gas publication before entering the exposure queue. This is deliberately a
 /// semantic threshold, not a timer: cumulative changes are compared with the cached latest state
 /// and a dangerous pressure crossing wakes immediately.
-/datum/material_service/proc/on_gas_notify(mixture_id, change_mask, list/observation, observation_index)
+/datum/material_service/proc/on_gas_notify(datum/native_watch/gas/watch, mixture_id, change_mask, list/observation, observation_index)
 	if(gas_notify_actionable(mixture_id, change_mask, observation, observation_index) && !timer)
 		environment_changed(FALSE)
 
@@ -387,13 +384,9 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		next_ids |= air_id
 		next_pressures["[air_id]"] = air.return_pressure()
 		next_corrosion["[air_id]"] = material_gas_corrosion_load(air)
-	var/interest_mask = gas_dependency_interest_mask()
-	for(var/id in mixture_ids)
-		if(!(id in next_ids))
-			om_watch_disarm(src, "gas[id]")
-	for(var/id in next_ids)
-		if(!(id in mixture_ids))
-			om_watch_arm_raw(src, "gas[id]", id, interest_mask, om_callable(src, PROC_REF(on_gas_notify)))
+	var/list/watched_ids = mixture_ids || list()
+	if(length(next_ids ^ watched_ids))
+		gas_watch_ids(src, nameof(gas_watches), next_ids, gas_dependency_interest_mask(), PROC_REF(on_gas_notify))
 	mixture_ids = next_ids
 	mixture_pressures = next_pressures
 	mixture_corrosion = next_corrosion

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Gas watches: gas_level() turns a tracked var when a reading crosses a level (Rust finds the edge); artifacts, disposal bins and material services sleep on engine gas watches; the old band/revision/raw/derived watch family is gone"
