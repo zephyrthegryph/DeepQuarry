@@ -65,7 +65,7 @@
 	if (timeout)
 		src.timeout = timeout
 		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
-		om_qdel_after(src, timeout)
+		expire(timeout)
 	if(user)
 		src.preset_colors = user.read_preference(/datum/preference/text/preset_colors)
 

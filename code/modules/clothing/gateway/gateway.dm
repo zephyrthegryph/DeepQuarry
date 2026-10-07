@@ -81,7 +81,8 @@ TYPE_TABLE(/obj/item/clothing/suit/darkvrwizard, suit_storage_spec, list(HOLD_ON
 
 /// Worn in the gloves slot (equipped()/dropped()). With the wearer view (a field, so its automatic
 /// clear when the wearer is destroyed counts too) it declares the feeding work.
-OM_FIELD(/obj/item/clothing/gloves/stamina, worn_on_hands, FALSE, CHANGE_EXPLICIT)
+/obj/item/clothing/gloves/stamina/var/worn_on_hands = FALSE
+TRACKED(/obj/item/clothing/gloves/stamina, worn_on_hands)
 OM_FIELD_VIEW_OF(/obj/item/clothing/gloves/stamina, wearer, CHANGE_EXPLICIT)
 
 CAPABILITIES(/obj/item/clothing/gloves/stamina)

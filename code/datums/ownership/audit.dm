@@ -79,12 +79,10 @@
 			return FALSE
 	if(istype(O, /datum/controller) || istype(O, /datum/om))
 		return FALSE
-	// An entity fading out on its own (om_qdel_after(): a pending self-delete) is on its way out,
+	// An entity fading out on its own (expire(): a pending self-delete) is on its way out,
 	// not dropped.
-	var/list/timers = rec.timers
-	for(var/i in 1 to length(timers) step OM_TIMER_STRIDE)
-		if(timers[i + 2] == /datum/proc/om_qdel_self)
-			return FALSE
+	if(after_pending(O, "lifecycle_lifetime_timer"))
+		return FALSE
 	var/internal = 1 // rec.owner
 	for(var/name in rec.vars)
 		if(name == "owner" || name == "vars")

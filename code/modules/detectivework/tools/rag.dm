@@ -27,7 +27,8 @@
 
 	var/burn_time = 20 //if the rag burns for too long it turns to ashes
 
-OM_FIELD(/obj/item/reagent_containers/glass/rag, rag_lit, FALSE, CHANGE_EXPLICIT)
+/obj/item/reagent_containers/glass/rag/var/rag_lit = FALSE
+TRACKED(/obj/item/reagent_containers/glass/rag, rag_lit)
 
 // A rag is not a container that is poured and drunk from: it soaks up from a tank or a bucket, wrings out into an open container (or onto the floor), wipes
 // things and people, smothers somebody whose mouth is aimed at, and is set alight by a flame when it is soaked in spirits or fuel (wiper(), and the ops

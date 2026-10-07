@@ -42,9 +42,11 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	tool_qualities = list(TOOL_WELDER)
 
 //Whether or not the welding tool is off(0), on(1) or currently welding(2)
-OM_FIELD(/obj/item/weldingtool, welding, 0, CHANGE_EXPLICIT)
+/obj/item/weldingtool/var/welding = 0
+TRACKED(/obj/item/weldingtool, welding)
 /// If true, keeps the welder processing even while off (fuel regeneration).
-OM_FIELD(/obj/item/weldingtool, always_process, FALSE, CHANGE_EXPLICIT)
+/obj/item/weldingtool/var/always_process = FALSE
+TRACKED(/obj/item/weldingtool, always_process)
 
 /// Whether the periodic burn/regeneration runs: lit, or a welder that always processes (the every() gate, polled; a subtype overrides it).
 /obj/item/weldingtool/proc/burner_active(datum/act/A)

@@ -19,18 +19,15 @@
 /// cleared lazily.
 /atom/var/heat_body
 
-/// A declared field (set_heat_body() is the one writer). A machine hears CHANGE_MACHINE_SETTINGS
-/// (a cooker steps while it holds a heat body: cooker_needs_step()).
-OM_FIELD_SETTER(/atom, heat_body, 0)
-OM_FIELD_SETTER(/obj/machinery, heat_body, CHANGE_MACHINE_SETTINGS)
+/// set_heat_body() is the one writer.
 
 /atom/proc/set_heat_body(value)
 	if(heat_body == value)
 		return FALSE
 	heat_body = value
-	if(istype(src, /obj/machinery))
-		changed(src, CHANGE_MACHINE_SETTINGS) // the declared field's machine channel
+	tracked_changed(src, nameof(heat_body))
 	return TRUE
+SETTER(/atom, heat_body)
 
 // ---------------------------------------------------------------- the API
 

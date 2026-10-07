@@ -15,7 +15,8 @@
 	EXPIRY_DECLARE(last_process_worldtime)
 	var/report_num = 0
 
-OM_FIELD(/obj/machinery/dnaforensics, scanning, FALSE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/dnaforensics/var/scanning = FALSE
+TRACKED_BRIDGED(/obj/machinery/dnaforensics, scanning, CHANGE_MACHINE_SETTINGS)
 
 /// A used forensic swab must be releasable before the analyzer accepts it.
 /obj/machinery/dnaforensics/proc/can_insert_swab(mob/user, atom/target, obj/item/held)

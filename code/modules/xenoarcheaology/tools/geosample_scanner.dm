@@ -175,7 +175,8 @@ CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
 	radiation = CLAMP(radiation + RADIATION_INJECTION_AMT, 0, RADIATION_MAX)
 	return TRUE
 
-OM_FIELD(/obj/machinery/radiocarbon_spectrometer, scanning, FALSE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/radiocarbon_spectrometer/var/scanning = FALSE
+TRACKED_BRIDGED(/obj/machinery/radiocarbon_spectrometer, scanning, CHANGE_MACHINE_SETTINGS)
 /// Runs the scan while scanning (start_scanning() .. stop_scanning()).
 /obj/machinery/radiocarbon_spectrometer/proc/work_step(datum/act/timer/A)
 	if(!scanned_item() || scanned_item().loc != src)

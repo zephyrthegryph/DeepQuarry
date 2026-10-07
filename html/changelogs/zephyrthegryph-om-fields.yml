@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Remaining OM_FIELD declarations outside machinery and power are plain vars with TRACKED setters; OM_DERIVE_FIELD lines for gate-only derived procs are gone"
+  - refactor: "om_qdel_after is replaced by expire() (now on every datum); the pathfinder mutex and failure cache live on SSpathing"

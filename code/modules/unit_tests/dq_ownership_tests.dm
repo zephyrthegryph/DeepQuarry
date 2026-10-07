@@ -366,7 +366,7 @@ CAPABILITIES(/datum/own_test_child)
 	after(A, 10 MINUTES, TYPE_PROC_REF(/datum/own_test_child, test_label))
 
 /datum/own_test_field_holder
-OM_FIELD_TYPED(/datum/own_test_field_holder, tmp/datum/own_test_child, watched, null, CHANGE_MACHINE_SETTINGS)
+OM_FIELD_VIEW(/datum/own_test_field_holder, tmp/datum/own_test_child, watched, CHANGE_MACHINE_SETTINGS)
 
 /datum/unit_test/ownership_framework_writes_raise_fields
 

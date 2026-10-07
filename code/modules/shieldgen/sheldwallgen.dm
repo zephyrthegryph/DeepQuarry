@@ -27,7 +27,6 @@
 TRACKED(/obj/machinery/shieldwallgen, power)
 
 /// Runs while switched on, or while bolted down to charge its store (it parks once full).
-OM_DERIVE_FIELD(/obj/machinery/shieldwallgen, wallgen_has_work, list("active", "anchored"))
 /obj/machinery/shieldwallgen/proc/wallgen_has_work()
 	return active || anchored
 CAPABILITIES(/obj/machinery/shieldwallgen)

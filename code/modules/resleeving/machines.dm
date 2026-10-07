@@ -142,7 +142,8 @@
 // here instead of read off the board (roadmap C6): still resolved lazily
 // into latent entries in CONTAINER_SLOT_INTERNALS, not eager objects.
 /// Print progress (percent); 0 while idle.
-OM_FIELD(/obj/machinery/transhuman/synthprinter, busy, 0, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/transhuman/synthprinter/var/busy = 0
+TRACKED_BRIDGED(/obj/machinery/transhuman/synthprinter, busy, CHANGE_MACHINE_SETTINGS)
 /obj/machinery/transhuman/synthprinter/latent_generator()
 	// `list(circuit = 1, ...)` would use the literal identifier "circuit" as
 	// the key (DM's named-argument list syntax), not circuit's value -- the

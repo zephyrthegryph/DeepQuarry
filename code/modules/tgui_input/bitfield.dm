@@ -23,7 +23,7 @@
 	if(timeout)
 		src.timeout = timeout
 		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
-		om_qdel_after(src, timeout)
+		expire(timeout)
 
 /datum/tgui_bitfield_input/proc/wait()
 	while(!submitted && !closed && !QDELETED(src))

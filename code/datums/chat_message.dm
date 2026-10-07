@@ -107,7 +107,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	// Register client who owns this message
 	rel_set(src, nameof(owned_by), owner.client)
 	// Clients cannot be hooked: a vanished client leaves owned_by() null and the
-	// message is dropped by its om_qdel_after() lifespan timer.
+	// message is dropped by its expire() lifespan timer.
 
 	var/extra_length = owned_by().prefs?.read_preference(/datum/preference/toggle/runechat_long_messages)
 	var/maxlen = extra_length ? CHAT_MESSAGE_EXT_LENGTH : CHAT_MESSAGE_LENGTH
@@ -297,7 +297,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	animate(alpha = 0, time = CHAT_MESSAGE_EOL_FADE)
 
 	// Register with the runechat SS to handle destruction
-	om_qdel_after(src, lifespan + CHAT_MESSAGE_GRACE_PERIOD)
+	expire(lifespan + CHAT_MESSAGE_GRACE_PERIOD)
 
 /datum/chatmessage/proc/get_current_alpha(time_spent)
 	if(time_spent < CHAT_MESSAGE_SPAWN_TIME)
@@ -317,7 +317,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 		return
 	ending_life = TRUE
 	animate(message, alpha = 0, time = fadetime, flags = ANIMATION_PARALLEL)
-	om_qdel_after(src, fadetime)
+	expire(fadetime)
 
 /**
  * Creates a message overlay at a defined location for a given speaker

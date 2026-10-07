@@ -21,7 +21,7 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 	controller_vars["vars"] = null
 	gvars_datum_in_built_vars = controller_vars + list(NAMEOF(src, gvars_datum_protected_varlist), NAMEOF(src, gvars_datum_in_built_vars), NAMEOF(src, gvars_datum_init_order))
 
-	om_qdel_after(exclude_these, 0) //signal logging isn't ready
+	after(exclude_these, 0, TYPE_PROC_REF(/datum, om_qdel_batch_self)) //signal logging isn't ready
 
 	Initialize()
 

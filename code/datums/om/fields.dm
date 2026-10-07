@@ -7,7 +7,7 @@
 //
 // which declares the var, generates the typed setter E.set_on(value) (raises the channel, only
 // when the value changed) and registers the field (a /datum/om/field_def subtype). Every write
-// goes through the setter, or om_set(E, "on", TRUE) where the name is data. A stage names what it
+// goes through the setter. A stage names what it
 // reads (`reads = list("on")`) and the registry ORs the read fields' channels into its wake_on at
 // boot, so the two can't drift; wake_on keeps only the channels that aren't field reads. The boot
 // check fails on a read of an undeclared field, and tools/ci/field_write_lint.py (api_lints.py
@@ -96,20 +96,6 @@
 	var/list/F = om_registry().fields_of(E.type)
 	return F[name] || 0
 
-/// The one write path for a declared field: sets `E.name` to `value` and raises the field's
-/// declared channel. Nothing is raised when the value is unchanged. Returns TRUE on a change.
-/proc/om_set(datum/E, name, value)
-	if(!(name in E.vars))
-		CRASH("om_set: [E.type].[name] is not a writable field (derived fields have no var)")
-	if(E.vars[name] == value)
-		return FALSE
-	var/channel = om_field_channel(E, name)
-	if(!channel)
-		CRASH("om_set: [E.type].[name] is not a declared field")
-	E.vars[name] = value
-	changed(E, channel)
-	return TRUE
-
 /// Raises the declared channel of `E`'s field `name` after an in-place change the setter can't
 /// see (a list or datum field edited in place). Setters call it for you.
 /proc/om_field_changed(datum/E, name)
@@ -117,18 +103,6 @@
 	if(!channel)
 		CRASH("om_field_changed: [E.type].[name] is not a declared field")
 	changed(E, channel)
-
-/// OM_FLAG_FIELD_BITS() helper: the union of the channels of the `changed` bits in `table`
-/// ("[bit]" = channel); a changed bit with no row adds `fallback`.
-/proc/om_flag_channels(list/table, changed, fallback)
-	. = 0
-	var/bit = 1
-	while(changed && bit <= 0x800000)
-		if(changed & bit)
-			changed &= ~bit
-			var/channel = table["[bit]"]
-			. |= channel ? channel : fallback
-		bit <<= 1
 
 /// Declared fields of `path` (and its ancestors), field name -> channel, with derived fields
 /// resolved to the union of their inputs' channels. Usable before the registry exists (the

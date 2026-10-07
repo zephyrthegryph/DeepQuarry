@@ -37,7 +37,8 @@ MSG_DEF_SELF(medical_stand/cannot, "You can't do that.")
 	return isliving(A.actor)
 
 OM_FIELD_VIEW(/obj/structure/medical_stand, mob/living/carbon/human, breather, CHANGE_EXPLICIT)
-OM_FIELD(/obj/structure/medical_stand, valve_opened, FALSE, CHANGE_EXPLICIT)
+/obj/structure/medical_stand/var/valve_opened = FALSE
+TRACKED(/obj/structure/medical_stand, valve_opened)
 OM_FIELD_VIEW(/obj/structure/medical_stand, mob/living/carbon, attached, CHANGE_EXPLICIT)
 
 /obj/structure/medical_stand/Initialize(mapload)

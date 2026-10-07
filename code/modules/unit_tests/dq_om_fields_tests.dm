@@ -15,8 +15,7 @@ OM_FIELD(/datum/om_field_test_entity, level, 0, CHANGE_DATUM_A)
 	var/list/pump_fields = reg.fields_of(/obj/machinery/portable_atmospherics/powered/pump)
 	TEST_ASSERT_EQUAL(pump_fields["on"], CHANGE_MACHINE_SETTINGS, "the pump's on field channel")
 
-/// A setter writes and raises the declared channel, once per change and never when unchanged;
-/// om_set() does the same by name.
+/// A setter writes and raises the declared channel, once per change and never when unchanged.
 /datum/unit_test/dq_om_field_setter_raises
 
 /datum/unit_test/dq_om_field_setter_raises/Run()
@@ -27,7 +26,7 @@ OM_FIELD(/datum/om_field_test_entity, level, 0, CHANGE_DATUM_A)
 	sched.test_raises = list()
 	TEST_ASSERT(E.set_level(5), "a change returned FALSE")
 	TEST_ASSERT(!E.set_level(5), "an unchanged value returned TRUE")
-	TEST_ASSERT(om_set(E, "level", 6), "om_set() of a change returned FALSE")
+	TEST_ASSERT(E.set_level(6), "a second change returned FALSE")
 	TEST_ASSERT_EQUAL(E.level, 6, "the field was not written")
 	var/raised = 0
 	for(var/list/raise as anything in sched.test_raises)

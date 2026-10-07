@@ -17,7 +17,7 @@
 /datum/spell/aoe_turf/conjure/swarmer/conjure_animation(atom/movable/overlay/animation, turf/target)
 	animation.icon_state = "deflect_static"
 	flick("shield2",animation)
-	om_qdel_after(animation, 1 SECOND)
+	animation.expire(1 SECOND)
 
 /datum/spell/aoe_turf/conjure/forcewall/swarm
 	name = "Null-Field"

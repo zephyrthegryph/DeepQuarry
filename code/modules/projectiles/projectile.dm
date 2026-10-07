@@ -550,7 +550,7 @@ CAPABILITIES(/obj/item/projectile)
 		thing.color = color
 		thing.set_light(impact_light_range, impact_light_intensity, impact_light_color_override? impact_light_color_override : color)
 		rel_add(drawn, nameof(drawn.beam_components), thing)
-	om_qdel_after(drawn, duration)
+	drawn.expire(duration)
 
 //Returns true if the target atom is on our current turf and above the right layer
 //If direct target is true it's the originally clicked target.

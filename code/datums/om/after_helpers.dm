@@ -12,10 +12,6 @@
 /proc/om_after_realtime(delay, proc_ref, ...)
 	return timer_schedule_realtime(arglist(args))
 
-/// om_after() target: deletes the owner.
-/datum/proc/om_qdel_self()
-	spent(src)
-
 /// om_after() target: deletes the owner as one batched destroy
 /// (code/datums/lifecycle/batch.dm), with `extra` in the same set.
 /datum/proc/om_qdel_batch_self(list/extra)
@@ -23,14 +19,6 @@
 	if(extra)
 		doomed += extra
 	qdel_batch(doomed)
-
-/// Deletes `D` after `delay` deciseconds of its own clock. Null-safe.
-/proc/om_qdel_after(datum/D, delay)
-	if(!D || QDELETED(D))
-		return
-	if(!isdatum(D)) // an image or a list: nothing owns it, so the global owner does
-		return om_after(null, delay, /proc/qdel, D)
-	return om_after(D, delay, /datum/proc/om_qdel_self)
 
 /// Knocks the thing about: `steps` random steps, a few deciseconds apart.
 /atom/movable/proc/scatter_steps(steps)

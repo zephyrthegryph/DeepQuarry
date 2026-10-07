@@ -57,7 +57,7 @@ CAPABILITIES(/obj/item/integrated_circuit/smart/advanced_pathfinder)
 	var/turf/a_loc = get_turf(assembly())
 
 	var/turf/target_turf = locate(get_pin_data(IC_INPUT, 1), get_pin_data(IC_INPUT, 2), a_loc.z)
-	var/list/P = om_pathfinder().default_circuit_pathfinding(src, target_turf, 0, 200)
+	var/list/P = path_for_circuit(src, target_turf, 0, 200)
 
 	if(!P)
 		activate_pin(3)

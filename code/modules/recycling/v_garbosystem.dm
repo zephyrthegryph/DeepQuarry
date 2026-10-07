@@ -15,7 +15,8 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	var/list/affecting
 	var/voracity = 5 //How much stuff is swallowed at once.
 
-OM_FIELD(/obj/machinery/v_garbosystem, operating, FALSE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/v_garbosystem/var/operating = FALSE
+TRACKED_BRIDGED(/obj/machinery/v_garbosystem, operating, CHANGE_MACHINE_SETTINGS)
 /// Grinds what sits on it every frame while operating and operable.
 /obj/machinery/v_garbosystem/Initialize(mapload)
 	. = ..()

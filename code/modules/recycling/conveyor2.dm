@@ -25,8 +25,8 @@
 	var/list/affecting	// the list of all items that will be moved this ptick
 	var/id = ""			// the control ID	- must match controller ID
 
-/// set_operating() below is the hand setter; it raises CHANGE_MACHINE_SETTINGS on a real change.
-OM_FIELD_SETTER(/obj/machinery/conveyor, operating, CHANGE_MACHINE_SETTINGS)
+/// set_operating() below is the hand setter.
+SETTER(/obj/machinery/conveyor, operating)
 /// Moves what sits on it while running and operable (the declaration also picks the machine
 /// pipeline or the fast lane on speed_process); with nothing to move it sleeps until cargo arrives.
 /obj/machinery/conveyor/centcom_auto
@@ -93,7 +93,7 @@ CAPABILITIES(/obj/machinery/conveyor)
 	if(new_operating == operating)
 		return // No change
 	operating = new_operating
-	changed(src, CHANGE_MACHINE_SETTINGS)
+	tracked_changed(src, nameof(operating))
 	if(operating == FORWARDS)
 		movedir = forwards
 	else if(operating == BACKWARDS)
