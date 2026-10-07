@@ -2663,15 +2663,9 @@ Each changed pin row is one of these classes; nothing else was blessed. `dq_inte
   `i7_bulk` still fails alone and combined on master for another reason (a gravity generator part's break during its own destroy, `hold(...): the holder is deleted`), which is in
   `code/game/machinery`.
 
-## Lightpost (draw framework, KD22)
+## The duplicate emissive blocker (draw framework, KD22)
 
-Pinned by `code/modules/unit_tests/snapshots/look_states/obj.structure.lightpost.txt` (recorded on the legacy code with its duplicate rows), and
-`look_trees/obj.structure.lightpost.txt`.
-
-* **The look owns one emissive blocker.** The old `add_overlay()` stacked a second emissive blocker on every redraw; the pin recorded the duplicate. The look now owns one
-  blocker (`look.one_blocker()`: its layers are added and cut without the generic blocker `add_overlay()` merges in). Ten look-state rows go: `lit=0`
-  no longer drops the blocker with the glow (1 row), and `unlit lit=1/2`, `unlit festive=1/2` no longer gain `blocker x2` and lose `blocker` (4 x 2 rows), and
-  `festive/unlit festive=0` no longer drops it (1 row). The look-tree rows are unchanged (the made look had one blocker).
-* `add_overlay()` keeps merging the priority overlays for every other atom (`merge_priority` defaults to TRUE), so the other x2 rows in the look pins stay; they
-  re-bless with the types that move to `one_blocker()`.
-* The lightpost's `lit` and `festive` are tracked (they redraw by themselves) and its light follows the look (`look.light()`, `look.light_off()`).
+* The old `add_overlay()` merged the priority overlays into every add, so pins recorded a duplicate emissive blocker after each redraw; one blocker is drawn now.
+  `add_overlay()` merges them only when the atom has no overlays left, `cut_overlay()` never takes the blocker with a layer, and `cut_overlays()` keeps it.
+  Every pin row that changes is that class: a `blocker x2` becoming the one blocker, or a probe row that only gained and lost the blocker.
+* The lightpost is a plain draw over tracked `lit` and `festive`; its light follows the look (`look.light()`, `look.light_off()`).

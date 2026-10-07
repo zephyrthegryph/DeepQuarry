@@ -802,7 +802,7 @@ CAPABILITIES(/atom/movable/storage_slot)
 	name += item.name
 
 /// Has to be this way. The fact that the overlays will be constantly mutated by other storage means we can't wait.
-/atom/movable/storage_slot/add_overlay(list/somethings, priority, merge_priority = TRUE)
+/atom/movable/storage_slot/add_overlay(list/somethings)
 	ASSERT(islist(somethings))
 	overlays = somethings
 

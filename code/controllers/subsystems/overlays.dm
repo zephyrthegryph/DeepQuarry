@@ -35,8 +35,8 @@ SYSTEM_DEF(overlays)
 	iconbro.icon = icon
 	return iconbro.appearance
 
-/// `merge_priority` FALSE builds the list without the atom's priority overlays (the generic emissive blocker): a look that owns its one
-/// blocker (look.one_blocker()) adds and cuts its layers without stacking or taking a copy of it.
+/// `merge_priority` puts the atom's priority overlays (the generic emissive blocker) in the list: an add does it only when the atom has no
+/// overlays left (a wipe took the blocker), so the blocker is drawn once, not once more after every redraw.
 /atom/proc/build_appearance_list(list/build_overlays, merge_priority = TRUE)
 	if (!islist(build_overlays))
 		build_overlays = list(build_overlays)
@@ -68,10 +68,12 @@ SYSTEM_DEF(overlays)
 	if(priority)
 		priority_overlays = null
 	overlays = null
+	if(!priority && priority_overlays) // a wipe keeps the generic blocker: it is drawn once, here, and adds no longer bring it back
+		overlays += build_appearance_list(islist(priority_overlays) ? priority_overlays.Copy() : list(priority_overlays), FALSE)
 	STAT_STOP_STOPWATCH
 	STAT_LOG_ENTRY(SSoverlays.stats, type)
 
-/atom/proc/cut_overlay(list/remove_overlays, priority, merge_priority = TRUE)
+/atom/proc/cut_overlay(list/remove_overlays, priority)
 	if(!overlays)
 		return
 	STAT_START_STOPWATCH
@@ -82,11 +84,11 @@ SYSTEM_DEF(overlays)
 			priority_overlays = null
 	if(islist(remove_overlays))
 		remove_overlays = remove_overlays.Copy() //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
-	overlays -= build_appearance_list(remove_overlays, merge_priority)
+	overlays -= build_appearance_list(remove_overlays, FALSE) // cutting a layer never takes the generic blocker with it
 	STAT_STOP_STOPWATCH
 	STAT_LOG_ENTRY(SSoverlays.stats, type)
 
-/atom/proc/add_overlay(list/add_overlays, priority, merge_priority = TRUE)
+/atom/proc/add_overlay(list/add_overlays, priority)
 	if(!overlays)
 		return
 	STAT_START_STOPWATCH
@@ -102,7 +104,7 @@ SYSTEM_DEF(overlays)
 			else
 				priority_overlays = list(priority_overlays) + add_overlays
 		add_overlays = add_overlays.Copy() //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
-	overlays += build_appearance_list(add_overlays, merge_priority) //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
+	overlays += build_appearance_list(add_overlays, !length(overlays)) //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
 	VALIDATE_OVERLAY_LIMIT(src)
 	STAT_STOP_STOPWATCH
 	STAT_LOG_ENTRY(SSoverlays.stats, type)

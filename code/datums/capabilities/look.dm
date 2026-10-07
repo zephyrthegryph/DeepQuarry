@@ -34,8 +34,6 @@
 	var/list/effects
 	/// look.watch(): own keys of the other entities this draw read (a hat's sprite, a container's contents): a change on any of them redraws the holder.
 	var/list/watched
-	/// look.one_blocker(): the look owns a single emissive blocker, so applying it never stacks the generic blocker again.
-	var/one_blocker = FALSE
 	/// Anything was set: a type that draws nothing keeps its mapped appearance.
 	var/touched = FALSE
 
@@ -62,7 +60,6 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	identity_desc = null
 	effects = null
 	watched = null
-	one_blocker = FALSE
 	touched = FALSE
 
 /// The base icon_state. The last call wins (a capability's broken state is overridden by a type
@@ -183,12 +180,6 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	if(!isdatum(thing) || QDELETED(thing))
 		return
 	LAZYOR(watched, OWN_KEY(thing))
-
-/// The look owns a single emissive blocker: it is added without the generic blocker the atom already carries, so applying and redrawing
-/// the look keeps one blocker (add_overlay() merges the movable's priority overlays into every add, which stacked a second on the first draw).
-/datum/look/proc/one_blocker()
-	one_blocker = TRUE
-	touched = TRUE
 
 /// A hat on a small mob: `hat`'s worn sprite (item_state, else icon_state, from the head icon) raised by `pixel_y`, keeping its own colour. Reads the
 /// hat's own state, so the mob hears a change of it; the mob's hat var is a relation or a changed() request.
@@ -421,8 +412,6 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		for(var/bit in entry)
 			bits += "[bit]"
 		parts += "fx:[jointext(bits, ":")]"
-	if(one_blocker)
-		parts += "one_blocker"
 	if(vis)
 		for(var/atom/movable/thing as anything in vis)
 			parts += "vis:[SHARED_CACHE_UID(thing)]"
@@ -448,7 +437,6 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 #define LOOK_SET_PLANE (1<<6)
 #define LOOK_SET_LAYER (1<<7)
 #define LOOK_SET_LIGHT (1<<8)
-#define LOOK_SET_ONE_BLOCKER (1<<9)
 
 /atom
 	/// LOOK_SET_* for the base properties the last applied look set (taken back when a look stops
@@ -530,8 +518,6 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		now |= LOOK_SET_LIGHT
 	else if(was & LOOK_SET_LIGHT)
 		A.set_light(0)
-	if(one_blocker)
-		now |= LOOK_SET_ONE_BLOCKER
 	A.look_set_bits = now
 	if(!isnull(identity_name))
 		A.name = identity_name
@@ -543,7 +529,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 			held_item.item_state = held_state
 			look_redraw_worn(held_item)
 	if(A.look_overlays)
-		A.cut_overlay(A.look_overlays, merge_priority = !(was & LOOK_SET_ONE_BLOCKER))
+		A.cut_overlay(A.look_overlays)
 		A.look_overlays = null
 	var/list/added
 	for(var/name in overlays)
@@ -560,7 +546,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		if(entry[3])
 			LAZYADD(added, emissive_appearance(A.icon, state))
 	if(added)
-		A.add_overlay(added, merge_priority = !one_blocker)
+		A.add_overlay(added)
 		A.look_overlays = added
 	for(var/name in A.look_filters)
 		if(!filters || !(name in filters))
@@ -590,7 +576,6 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 #undef LOOK_SET_PLANE
 #undef LOOK_SET_LAYER
 #undef LOOK_SET_LIGHT
-#undef LOOK_SET_ONE_BLOCKER
 
 
 // ---- transient visuals: look_flash() ----

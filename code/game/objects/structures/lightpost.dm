@@ -15,11 +15,9 @@
 TRACKED(/obj/structure/lightpost, lit)
 TRACKED(/obj/structure/lightpost, festive)
 
-/// The glow and the light while it is lit, the bow when it is festive. The look owns its one emissive blocker: the old add_overlay() stacked a
-/// second generic blocker on the first redraw (doc/rewrite/intended_changes.md, "Lightpost").
+/// The glow and the light while it is lit, the bow when it is festive. The one emissive blocker is the atom's own (doc/rewrite/intended_changes.md).
 /obj/structure/lightpost/draw(datum/look/look)
 	..()
-	look.one_blocker()
 	var/base = look.state_so_far(src)
 	if(lit)
 		look.light(5, 1, "#E9E4AF")
