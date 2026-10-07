@@ -12,12 +12,12 @@
 /obj/structure/bonfire/permanent state: bonfire
 /obj/structure/bonfire/permanent dir: 2
 /obj/structure/bonfire/permanent color: #9c5930
-/obj/structure/bonfire/permanent overlay: icons/obj/structures.dmi:bonfire:8:#000000 x2
+/obj/structure/bonfire/permanent overlay: icons/obj/structures.dmi:bonfire:8:#000000
 /obj/structure/bonfire/permanent overlay: icons/obj/structures.dmi:bonfire_hot:-32767
 /obj/structure/bonfire/permanent/sifwood icon: icons/obj/structures.dmi
 /obj/structure/bonfire/permanent/sifwood state: bonfire
 /obj/structure/bonfire/permanent/sifwood dir: 2
 /obj/structure/bonfire/permanent/sifwood color: #0099cc
-/obj/structure/bonfire/permanent/sifwood overlay: icons/obj/structures.dmi:bonfire:8:#000000 x2
+/obj/structure/bonfire/permanent/sifwood overlay: icons/obj/structures.dmi:bonfire:8:#000000
 /obj/structure/bonfire/permanent/sifwood overlay: icons/obj/structures.dmi:bonfire_hot:-32767
 

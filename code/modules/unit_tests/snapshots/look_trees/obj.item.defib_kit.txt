@@ -3,51 +3,51 @@
 /obj/item/defib_kit dir: 2
 /obj/item/defib_kit overlay: icons/obj/defibrillator.dmi:defibunit-nocell:-32767
 /obj/item/defib_kit overlay: icons/obj/defibrillator.dmi:defibunit-paddles:-32767
-/obj/item/defib_kit overlay: icons/obj/defibrillator.dmi:defibunit:8:#000000 x2
+/obj/item/defib_kit overlay: icons/obj/defibrillator.dmi:defibunit:8:#000000
 /obj/item/defib_kit/loaded icon: icons/obj/defibrillator.dmi
 /obj/item/defib_kit/loaded state: defibunit
 /obj/item/defib_kit/loaded dir: 2
 /obj/item/defib_kit/loaded overlay: icons/obj/defibrillator.dmi:defibunit-charge100:-32767
 /obj/item/defib_kit/loaded overlay: icons/obj/defibrillator.dmi:defibunit-paddles:-32767
 /obj/item/defib_kit/loaded overlay: icons/obj/defibrillator.dmi:defibunit-powered:-32767
-/obj/item/defib_kit/loaded overlay: icons/obj/defibrillator.dmi:defibunit:8:#000000 x2
+/obj/item/defib_kit/loaded overlay: icons/obj/defibrillator.dmi:defibunit:8:#000000
 /obj/item/defib_kit/compact icon: icons/obj/defibrillator.dmi
 /obj/item/defib_kit/compact state: defibcompact
 /obj/item/defib_kit/compact dir: 2
 /obj/item/defib_kit/compact overlay: icons/obj/defibrillator.dmi:defibcompact-nocell:-32767
 /obj/item/defib_kit/compact overlay: icons/obj/defibrillator.dmi:defibcompact-paddles:-32767
-/obj/item/defib_kit/compact overlay: icons/obj/defibrillator.dmi:defibcompact:8:#000000 x2
+/obj/item/defib_kit/compact overlay: icons/obj/defibrillator.dmi:defibcompact:8:#000000
 /obj/item/defib_kit/compact/loaded icon: icons/obj/defibrillator.dmi
 /obj/item/defib_kit/compact/loaded state: defibcompact
 /obj/item/defib_kit/compact/loaded dir: 2
 /obj/item/defib_kit/compact/loaded overlay: icons/obj/defibrillator.dmi:defibcompact-charge100:-32767
 /obj/item/defib_kit/compact/loaded overlay: icons/obj/defibrillator.dmi:defibcompact-paddles:-32767
 /obj/item/defib_kit/compact/loaded overlay: icons/obj/defibrillator.dmi:defibcompact-powered:-32767
-/obj/item/defib_kit/compact/loaded overlay: icons/obj/defibrillator.dmi:defibcompact:8:#000000 x2
+/obj/item/defib_kit/compact/loaded overlay: icons/obj/defibrillator.dmi:defibcompact:8:#000000
 /obj/item/defib_kit/compact/combat icon: icons/obj/defibrillator.dmi
 /obj/item/defib_kit/compact/combat state: defibcompact
 /obj/item/defib_kit/compact/combat dir: 2
 /obj/item/defib_kit/compact/combat overlay: icons/obj/defibrillator.dmi:defibcompact-nocell:-32767
 /obj/item/defib_kit/compact/combat overlay: icons/obj/defibrillator.dmi:defibcompact-paddles:-32767
-/obj/item/defib_kit/compact/combat overlay: icons/obj/defibrillator.dmi:defibcompact:8:#000000 x2
+/obj/item/defib_kit/compact/combat overlay: icons/obj/defibrillator.dmi:defibcompact:8:#000000
 /obj/item/defib_kit/compact/combat/loaded icon: icons/obj/defibrillator.dmi
 /obj/item/defib_kit/compact/combat/loaded state: defibcompact
 /obj/item/defib_kit/compact/combat/loaded dir: 2
 /obj/item/defib_kit/compact/combat/loaded overlay: icons/obj/defibrillator.dmi:defibcompact-charge100:-32767
 /obj/item/defib_kit/compact/combat/loaded overlay: icons/obj/defibrillator.dmi:defibcompact-combat:-32767
 /obj/item/defib_kit/compact/combat/loaded overlay: icons/obj/defibrillator.dmi:defibcompact-paddles:-32767
-/obj/item/defib_kit/compact/combat/loaded overlay: icons/obj/defibrillator.dmi:defibcompact:8:#000000 x2
+/obj/item/defib_kit/compact/combat/loaded overlay: icons/obj/defibrillator.dmi:defibcompact:8:#000000
 /obj/item/defib_kit/jumper_kit icon: icons/obj/defibrillator.dmi
 /obj/item/defib_kit/jumper_kit state: jumperunit
 /obj/item/defib_kit/jumper_kit dir: 2
 /obj/item/defib_kit/jumper_kit overlay: icons/obj/defibrillator.dmi:jumperunit-nocell:-32767
 /obj/item/defib_kit/jumper_kit overlay: icons/obj/defibrillator.dmi:jumperunit-paddles:-32767
-/obj/item/defib_kit/jumper_kit overlay: icons/obj/defibrillator.dmi:jumperunit:8:#000000 x2
+/obj/item/defib_kit/jumper_kit overlay: icons/obj/defibrillator.dmi:jumperunit:8:#000000
 /obj/item/defib_kit/jumper_kit/loaded icon: icons/obj/defibrillator.dmi
 /obj/item/defib_kit/jumper_kit/loaded state: jumperunit
 /obj/item/defib_kit/jumper_kit/loaded dir: 2
 /obj/item/defib_kit/jumper_kit/loaded overlay: icons/obj/defibrillator.dmi:jumperunit-charge100:-32767
 /obj/item/defib_kit/jumper_kit/loaded overlay: icons/obj/defibrillator.dmi:jumperunit-paddles:-32767
 /obj/item/defib_kit/jumper_kit/loaded overlay: icons/obj/defibrillator.dmi:jumperunit-powered:-32767
-/obj/item/defib_kit/jumper_kit/loaded overlay: icons/obj/defibrillator.dmi:jumperunit:8:#000000 x2
+/obj/item/defib_kit/jumper_kit/loaded overlay: icons/obj/defibrillator.dmi:jumperunit:8:#000000
 

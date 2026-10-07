@@ -3,5 +3,5 @@
 /obj/machinery/reagent_refinery/grinder dir: 2
 /obj/machinery/reagent_refinery/grinder overlay: icons/obj/machines/refinery_machines.dmi:grinder_cons:-32767
 /obj/machinery/reagent_refinery/grinder overlay: icons/obj/machines/refinery_machines.dmi:grinder_dot_off:-32767
-/obj/machinery/reagent_refinery/grinder overlay: icons/obj/machines/refinery_machines.dmi:grinder_on:8:#000000 x2
+/obj/machinery/reagent_refinery/grinder overlay: icons/obj/machines/refinery_machines.dmi:grinder_on:8:#000000
 

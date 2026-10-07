@@ -2,15 +2,15 @@
 /obj/machinery/portable_atmospherics/powered/reagent_distillery state: distiller
 /obj/machinery/portable_atmospherics/powered/reagent_distillery dir: 2
 /obj/machinery/portable_atmospherics/powered/reagent_distillery overlay: icons/obj/machines/reagent.dmi:distiller-bad:-32767
-/obj/machinery/portable_atmospherics/powered/reagent_distillery overlay: icons/obj/machines/reagent.dmi:distiller:8:#000000 x2
+/obj/machinery/portable_atmospherics/powered/reagent_distillery overlay: icons/obj/machines/reagent.dmi:distiller:8:#000000
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/unit_test icon: icons/obj/machines/reagent.dmi
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/unit_test state: distiller
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/unit_test dir: 2
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/unit_test overlay: icons/obj/machines/reagent.dmi:distiller-bad:-32767
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/unit_test overlay: icons/obj/machines/reagent.dmi:distiller:8:#000000 x2
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/unit_test overlay: icons/obj/machines/reagent.dmi:distiller:8:#000000
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/industrial icon: icons/obj/machines/reagent.dmi
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/industrial state: distiller
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/industrial dir: 2
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/industrial overlay: icons/obj/machines/reagent.dmi:distiller-bad:-32767
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/industrial overlay: icons/obj/machines/reagent.dmi:distiller:8:#000000 x2
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/industrial overlay: icons/obj/machines/reagent.dmi:distiller:8:#000000
 

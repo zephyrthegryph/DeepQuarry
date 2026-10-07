@@ -1,13 +1,5 @@
-/obj/machinery/shower on=1 +overlay: icons/obj/watercloset.dmi:shower:8:#000000 x2
 /obj/machinery/shower on=1 +overlay: icons/obj/watercloset.dmi:water:-32767
-/obj/machinery/shower on=1 -overlay: icons/obj/watercloset.dmi:shower:8:#000000
-/obj/machinery/shower on=2 +overlay: icons/obj/watercloset.dmi:shower:8:#000000 x2
 /obj/machinery/shower on=2 +overlay: icons/obj/watercloset.dmi:water:-32767
-/obj/machinery/shower on=2 -overlay: icons/obj/watercloset.dmi:shower:8:#000000
-/obj/machinery/shower/dq_decl_probe on=1 +overlay: icons/obj/watercloset.dmi:shower:8:#000000 x2
 /obj/machinery/shower/dq_decl_probe on=1 +overlay: icons/obj/watercloset.dmi:water:-32767:#404030
-/obj/machinery/shower/dq_decl_probe on=1 -overlay: icons/obj/watercloset.dmi:shower:8:#000000
-/obj/machinery/shower/dq_decl_probe on=2 +overlay: icons/obj/watercloset.dmi:shower:8:#000000 x2
 /obj/machinery/shower/dq_decl_probe on=2 +overlay: icons/obj/watercloset.dmi:water:-32767:#404030
-/obj/machinery/shower/dq_decl_probe on=2 -overlay: icons/obj/watercloset.dmi:shower:8:#000000
 
