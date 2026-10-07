@@ -65,7 +65,7 @@
 	if(hat)
 		var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
 		old_hat.forceMove(get_turf(user))
-		update_icon()
+		redraw(src)
 		if(user == src)
 			to_chat(user, span_notice("You removed your hat."))
 			return
@@ -97,7 +97,7 @@
 				if(!move_into(src, nameof(src.hat), new_hat, user, ledger_slot = SLOT_ID_BODY)) // out of the paw, onto the head
 					return
 				to_chat(user, span_notice("You put on the hat."))
-				update_icon()
+				redraw(src)
 			return
 		else if(ishuman(user))
 			var/mob/living/carbon/human/H = user
@@ -124,16 +124,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/sif/sakimm, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/sif/sakimm/appearance_overlays()
-	. = list()
-	. += ..()
-	if(hat)
-		var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
-		var/image/I = image('icons/inventory/head/mob.dmi', src, hat_state)
-		I.pixel_y = -15 // Sakimm are tiny!
-		I.appearance_flags = RESET_COLOR
-		. += I
+/// The hat it wears, drawn over the legacy provider's state (look.hat() reads the hat's own sprite and hears it change).
+/mob/living/simple_mob/animal/sif/sakimm/draw(datum/look/look)
+	..()
+	look.hat(hat, -15) // Sakimm are tiny!
 
 // ALLOW(init/INSTANCE_STATE): rolls its size when its type says to
 /mob/living/simple_mob/animal/sif/sakimm/Initialize(mapload)

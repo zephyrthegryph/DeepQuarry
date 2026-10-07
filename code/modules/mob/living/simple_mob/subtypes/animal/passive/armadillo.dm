@@ -57,18 +57,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo)
 /mob/living/simple_mob/animal/passive/armadillo/proc/armadillo_interaction_hand_grab(datum/act/op/A)
 	return armadillo_interaction_hand(A, I_GRAB)
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/armadillo, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/passive/armadillo/appearance_overlays()
-	. = list()
-	. += ..()
-
-	// Hat simulator.
-	if(hat)
-		var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
-		var/image/I = image('icons/inventory/head/mob.dmi', src, hat_state)
-		I.pixel_y = -7 // Smol
-		I.appearance_flags = RESET_COLOR
-		. += I
+/// The hat it wears, drawn over the legacy provider's state (look.hat() reads the hat's own sprite and hears it change).
+/mob/living/simple_mob/animal/passive/armadillo/draw(datum/look/look)
+	..()
+	look.hat(hat, -7) // Smol
 
 // Clicked on by empty hand.
 
@@ -103,7 +95,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/armadillo, TYPE_PR
 		if(!move_into(src, nameof(src.hat), new_hat, user))
 			return
 		to_chat(user, span_notice("You place \a [new_hat] on \the [src].  How adorable!"))
-		update_icon()
+		redraw(src)
 		return
 
 /mob/living/simple_mob/animal/passive/armadillo/proc/remove_hat(mob/living/user)
@@ -114,14 +106,14 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/armadillo, TYPE_PR
 		old_hat.forceMove(get_turf(src))
 		user.put_in_hands(old_hat)
 		to_chat(user, span_warning("You take away \the [src]'s [old_hat.name].  How mean."))
-		update_icon()
+		redraw(src)
 
 /mob/living/simple_mob/animal/passive/armadillo/proc/drop_hat()
 	if(!hat)
 		return
 	var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
 	old_hat.forceMove(get_turf(src))
-	update_icon()
+	redraw(src)
 
 /obj/item/holder/armadillo
 	default_worn_icon = 'icons/mob/head.dmi'
@@ -133,8 +125,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/armadillo, TYPE_PR
 
 /mob/living/simple_mob/animal/passive/armadillo/torta/Initialize(mapload)
 	. = ..()
-	if(hat)
-		update_icon()
 
 /datum/say_list/armadillo
 	emote_hear = list("churrs","rumbles","chirrs")

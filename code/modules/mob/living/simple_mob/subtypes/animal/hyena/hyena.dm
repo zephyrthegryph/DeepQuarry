@@ -95,7 +95,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	if(hat)
 		var/obj/item/clothing/head/old_hat = rel_take(src, nameof(hat))
 		old_hat.forceMove(get_turf(user))
-		update_icon()
+		redraw(src)
 		if(user == src)
 			to_chat(user, span_notice("You removed your hat."))
 			return
@@ -127,7 +127,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 				if(!move_into(src, nameof(src.hat), new_hat, user, ledger_slot = SLOT_ID_BODY)) // out of the paw, onto the head
 					return
 				to_chat(user, span_notice("You put on the hat."))
-				update_icon()
+				redraw(src)
 			return
 		else if(ishuman(user))
 			var/mob/living/carbon/human/H = user
@@ -152,13 +152,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 CAPABILITIES(/mob/living/simple_mob/animal/hyena)
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 
-DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/hyena, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/mob/living/simple_mob/animal/hyena/appearance_overlays()
-	. = list()
-	. += ..()
-	if(hat)
-		var/hat_state = hat.item_state ? hat.item_state : hat.icon_state
-		var/image/I = image('icons/inventory/head/mob.dmi', src, hat_state)
-		I.pixel_y = -15 // Hyenas are smol! - TODO: Test this.
-		I.appearance_flags = RESET_COLOR
-		. += I
+/// The hat it wears, drawn over the legacy provider's state (look.hat() reads the hat's own sprite and hears it change).
+/mob/living/simple_mob/animal/hyena/draw(datum/look/look)
+	..()
+	look.hat(hat, -15) // Hyenas are smol! - TODO: Test this.
