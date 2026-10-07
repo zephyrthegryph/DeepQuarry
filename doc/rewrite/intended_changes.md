@@ -3021,7 +3021,7 @@ For `/obj/machinery/computer/borgupload` and `/obj/machinery/computer/aiupload`,
 - Pandemic compatible-container clicks now choose Insert beaker above the generic computer Use item fallback. Its existing appropriate-container predicate still passes invalid items to the generic route. Beaker and syringe regressions assert actual public-click selection, slot contents, physical location and hand custody; occupied-slot refusals preserve both containers.
 ## Final native admission and shared-pin review
 
-The AI status-display touch and Pandemic insert-beaker menu bindings explicitly require adjacency and action capability, matching their physical binding gates. Focused regressions use a distant actor and a real stun and assert refusal and unchanged hand/slot custody before successful adjacent use.
+The AI status-display touch and Pandemic insert-beaker menu bindings explicitly require adjacency and action capability, matching their physical binding gates. Focused regressions use a distant actor and a real STAT_CAN_ACT veto and assert refusal and unchanged hand/slot custody before successful adjacent use. The native capability contract reads that stat; it is not a test-specific handler override.
 
 Camera Attack also corrects a legacy receiver bug: the old PRED_HELD requirement attempted to call the camera's held_is_bashing predicate on the held item. Native admission invokes the camera predicate with the actual actor and held item, so twelve ordinary blunt-item probes that were incorrectly gray now enable. The injury-kind regression checks both rejected and accepted real damage. Show-to-camera remains limited to its actual paper/PDA input domain; unrelated held-item gray rows are intentionally absent.
 
