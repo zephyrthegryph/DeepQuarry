@@ -432,7 +432,7 @@
 	TEST_ASSERT_EQUAL(mech.projectile_damage(P, null), 0, "rounds go through the mech body plan, not the generic adapter")
 	clear_debris(T)
 
-/// A casual click with a held item must not flatten a smole building; harm intent still does.
+/// A casual click with a held item must not flatten a smole building; harm intent still hurts it.
 /datum/unit_test/dq_integrity_pool/smolebuilding_item_gate
 
 /datum/unit_test/dq_integrity_pool/smolebuilding_item_gate/Run()
@@ -440,10 +440,12 @@
 	var/obj/structure/smolebuilding/building = allocate(/obj/structure/smolebuilding, T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/card/id/card = allocate(/obj/item/card/id)
-	H.a_intent = I_HELP
+	H.put_in_hands(card)
+	H.set_use_stance(I_HELP)
 	test_click(H, building, card)
 	TEST_ASSERT(!QDELETED(building), "a help-intent click with a card leaves the building standing")
-	H.a_intent = I_HURT
+	H.set_use_stance(I_HURT)
+	var/before = building.get_integrity()
 	test_click(H, building, card)
-	TEST_ASSERT(QDELETED(building), "a harm-intent hit with an item still flattens it")
+	TEST_ASSERT(building.get_integrity() < before, "a harm-intent click still hurts the building")
 	clear_debris(T)
