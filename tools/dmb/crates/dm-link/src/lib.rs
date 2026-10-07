@@ -14,7 +14,7 @@ pub fn is_reserved_string_index(index: u32) -> bool {
 pub fn is_reserved_table_index(table: Table, index: u32) -> bool {
     match table {
         Table::String => is_reserved_string_index(index),
-        Table::Procedure => index == 0xffff,
+        Table::Procedure | Table::List => index == 0xffff,
         _ => false,
     }
 }
@@ -538,6 +538,19 @@ impl ArgumentSourceReferences {
 #[cfg(test)]
 mod tests {
     #[test]
+    fn list_allocation_skips_nullable_slot_without_changing_other_domains() {
+        let mut inventory=LinkInventory::default();
+        let keys=[Key::List(1),Key::List(2),Key::List(3)];
+        for key in keys { inventory.entries.push(Entry{key,content:Arc::from([])}); }
+        inventory.reserved_prefixes.insert(Table::List,0xfffe);
+        inventory.append_orders.insert(Table::List,keys.to_vec());
+        let tables=LinkTables::build(inventory.clone()).unwrap();
+        assert_eq!(keys.map(|key|tables.index(key).unwrap()),[0xfffe,0x10000,0x10001]);
+        inventory.fixed.push((keys[0],0xffff));
+        assert_eq!(LinkTables::build(inventory).unwrap_err(),LinkError::ReservedIndex(Table::List,0xffff));
+        assert!(!is_reserved_table_index(Table::Variable,0xffff));
+        assert!(!is_reserved_table_index(Table::Resource,0xffff));
+    }    #[test]
     fn initialization_domains_do_not_alias_callable_or_map_occurrences() {
         use super::*;
         let owner = SymbolId::of("/obj/a");

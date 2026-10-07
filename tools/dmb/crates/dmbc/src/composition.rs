@@ -146,7 +146,11 @@ fn retained_named_procedure(
             || actual == Some(qualified.as_bytes())
             || actual == Some(implicit_path.as_bytes())))
 }
-fn append_list(dmb: &mut Dmb, words: Vec<u32>) -> Result<u32, CompositionError> {
+pub(crate) fn append_list(dmb: &mut Dmb, words: Vec<u32>) -> Result<u32, CompositionError> {
+    let next = u32::try_from(dmb.lists.len()).map_err(|_| unsupported("list count overflow"))?;
+    if dm_link::is_reserved_table_index(dm_link::Table::List, next) {
+        dmb.lists.push(Vec::new());
+    }
     let id = u32::try_from(dmb.lists.len()).map_err(|_| unsupported("list count overflow"))?;
     dmb.lists.push(words);
     Ok(id)
@@ -876,6 +880,23 @@ fn emit_anonymous(
 mod tests {
     use super::*;
     #[test]
+    fn native_reserved_list_padding_preserves_code_and_argument_links_roundtrip() {
+        let mut dmb=Dmb::from_bytes(include_bytes!("../../../fixtures/native_template.bin")).unwrap();
+        dmb.lists.resize(byond_dmb::ids::NONE as usize,Vec::new());
+        let code=append_list(&mut dmb,vec![0]).unwrap();
+        let locals=append_list(&mut dmb,Vec::new()).unwrap();
+        let args=append_list(&mut dmb,Vec::new()).unwrap();
+        assert_eq!([code,locals,args],[0x10000,0x10001,0x10002]);
+        assert!(dmb.lists[0xffff].is_empty());
+        dmb.procs[0].code_locals_args=[code,locals,args];
+        dmb.header.flags |= 0x4000_0000;
+        dmb.validate_references().unwrap();
+        let decoded=Dmb::from_bytes(&dmb.to_bytes().unwrap()).unwrap();
+        decoded.validate_references().unwrap();
+        assert_eq!(decoded.procs[0].code_locals_args,[code,locals,args]);
+        assert_eq!(decoded.proc_code_words(0),Some([0].as_slice()));
+        assert!(decoded.lists[0xffff].is_empty());
+    }    #[test]
     fn native_reserved_procedure_padding_roundtrips_and_preserves_next_proc() {
         let mut dmb=Dmb::from_bytes(include_bytes!("../../../fixtures/native_template.bin")).unwrap();
         let template=dmb.procs[0].clone();

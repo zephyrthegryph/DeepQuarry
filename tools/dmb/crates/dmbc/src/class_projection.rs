@@ -756,10 +756,8 @@ pub fn materialize_members(
     let mut pool = crate::composition::StringIndex::build(dmb)
         .map_err(|e| ProjectionError::Unsupported(format!("string writer {e:?}")))?;
     fn list(dmb: &mut byond_dmb::dmb::Dmb, words: Vec<u32>) -> Result<u32, ProjectionError> {
-        let id = u32::try_from(dmb.lists.len())
-            .map_err(|_| ProjectionError::Unsupported("list overflow".into()))?;
-        dmb.lists.push(words);
-        Ok(id)
+        crate::composition::append_list(dmb, words)
+            .map_err(|error| ProjectionError::Unsupported(format!("list writer {error:?}")))
     }
     fn extend(
         dmb: &mut byond_dmb::dmb::Dmb,

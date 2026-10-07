@@ -5,6 +5,14 @@ Phase 1 foundation work is now underway alongside the remaining baseline evidenc
 The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
+Release probe 39 completed the full uncached compiler CLI and published a pair:
+34.105 s externally, 31.713 s driver, sampled private memory 3,211,108,352 bytes.
+DMB size is 59,472,625 bytes; RSC size is 223,589,427 bytes. All bodies, linking,
+composition, binary validation and publication completed. This does not close
+Phase 1: a follow-up audit found nullable-list allocation at `0xffff` in two
+writers. The shared allocator now fixes both and passes list-allocation plus
+code/locals/arguments binary round-trip boundary gates. A corrected full build,
+server defines, worker determinism and runtime parity remain pending.
 Release probe 38 cleared bytecode validation but stopped during encoded-DMB
 round-trip validation on an invalid reserved procedure record. Canonical
 procedure allocation must leave the nullable `0xffff` slot as its exact empty
