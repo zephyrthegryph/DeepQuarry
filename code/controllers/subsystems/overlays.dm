@@ -69,7 +69,8 @@ SYSTEM_DEF(overlays)
 		priority_overlays = null
 	overlays = null
 	if(!priority && priority_overlays) // a wipe keeps the generic blocker: it is drawn once, here, and adds no longer bring it back
-		overlays += build_appearance_list(islist(priority_overlays) ? priority_overlays.Copy() : list(priority_overlays), FALSE)
+		var/list/kept = islist(priority_overlays) ? priority_overlays : list(priority_overlays)
+		overlays += build_appearance_list(kept.Copy(), FALSE)
 	STAT_STOP_STOPWATCH
 	STAT_LOG_ENTRY(SSoverlays.stats, type)
 
