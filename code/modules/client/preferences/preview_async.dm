@@ -325,7 +325,7 @@
 	return generation
 
 /// Waits for a render's iconforge jobs, then applies them unless the render went stale.
-/// Polls once a tick on its declared DECLARE_REPEAT (S10b: was a stoplag() loop). The character setup
+/// Polls once a tick on its declared every() (S10b: was a stoplag() loop). The character setup
 /// service owns each poll and the poll names the preferences through a relation view, so the
 /// job PNGs are still cleaned up when the preferences are deleted mid-render.
 /datum/preferences/proc/dq_poll_preview_jobs(generation, list/jobs, list/ready, scale_x, scale_y, had_client)
@@ -347,17 +347,17 @@
 
 /// Jobs still outstanding: poll_step() runs once a tick while set.
 OM_FIELD(/datum/dq_preview_poll, polling, FALSE, CHANGE_DATUM_A)
-DECLARE_REPEAT(/datum/dq_preview_poll, "poll_delay", poll_step, "polling")
+
+/datum/dq_preview_poll/reactions()
+	. = ..()
+	. += every(WORK_EVERY_TICK, PROC_REF(poll_step), when = nameof(polling))
 
 /datum/dq_preview_poll/New()
 	..()
 	lifecycle_decls_init(src) // a non-atom has no materialize
 
-/datum/dq_preview_poll/proc/poll_delay()
-	return world.tick_lag
-
 /// One poll of a render's iconforge jobs.
-/datum/dq_preview_poll/proc/poll_step()
+/datum/dq_preview_poll/proc/poll_step(dt)
 	var/list/jobs = state[2]
 	var/list/outputs = state[7]
 	for(var/dir_key in jobs)

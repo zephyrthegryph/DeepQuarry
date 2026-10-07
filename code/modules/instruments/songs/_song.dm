@@ -106,9 +106,12 @@
 	/// Exponential sustain dropoff rate per decisecond
 	var/sustain_exponential_dropoff = 1.4
 
-/// Are we currently playing? periodic_step() plays the song while set (DECLARE_PERIODIC_WHILE).
+/// Are we currently playing? song_step() plays the song while set (the every() below).
 OM_FIELD(/datum/song, playing, FALSE, CHANGE_DATUM_A)
-DECLARE_PERIODIC_WHILE(/datum/song, PERIODIC_INSTRUMENTS, "playing")
+
+/datum/song/reactions()
+	. = ..()
+	. += every(WORK_EVERY_TICK, PROC_REF(song_step), when = nameof(playing))
 
 /datum/song/New(atom/parent, list/instrument_ids, new_range)
 	..()
@@ -330,7 +333,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 /datum/song/proc/set_bpm(bpm)
 	tempo = sanitize_tempo(600 / bpm)
 
-/datum/song/periodic_step(wait)
+/datum/song/proc/song_step(dt)
 	// it's expected this ticks at every world.tick_lag. if it lags, do not attempt to catch up.
 	process_song(world.tick_lag)
 	process_decay(world.tick_lag)

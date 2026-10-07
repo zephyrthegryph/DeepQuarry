@@ -446,10 +446,10 @@ TRACKED(/obj/item/organ, robotic)
 /obj/item/organ/proc/digitize() //Used to make the circuit-brain. On this level in the event more circuit-organs are added/tweaks are wanted.
 	robotize()
 
-DAMAGE_REACTION(/obj/item/organ, DAMAGE_EMP, PROC_REF(organ_emp))
-
 /// A pulse reaches what the organ holds, and damages assisted/robotic organs by severity.
-/obj/item/organ/proc/organ_emp(datum/damage_packet/packet)
+/obj/item/organ/proc/organ_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	for(var/obj/O as anything in contents_of(src))
 		O.emp_act(packet.severity)
 
@@ -575,6 +575,7 @@ CAPABILITIES(/obj/item/organ)
 	loose_organ_clock()
 	owns_many(nameof(detached_afflictions))
 	owns_many(nameof(autopsy_data))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(organ_emp)))
 	op("bite", in_hand(), stance(I_HELP), label("Bite"), when(req(PROC_REF(bite_offered))), then(PROC_REF(bite_op)))
 	op("butcher", item(/obj/item), label("Butcher"), when(req(PROC_REF(butcher_offered))), begins(MSG(organ/butcher_begin)), wait(PROC_REF(butcher_wait)), on_interrupt(PROC_REF(butcher_failed)), then(PROC_REF(butcher_op_done)))
 	op("revive", item(/obj/item/reagent_containers), label("Revive"), then(PROC_REF(revive_op)))

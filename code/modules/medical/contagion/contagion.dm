@@ -142,8 +142,8 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 /datum/affliction/contagion/on_added()
 	..()
 	rel_set(src, nameof(host), owner)
-	// Starts its DECLARE_PERIODIC_WHILE (a non-atom has no materialize) once it has a host, and
-	// again on each body it is handed on to (starting re-evaluates; it doesn't stack).
+	// Its spread every() is gated on spread_lane_wanted, which re-evaluates once it has a host, and
+	// again on each body it is handed on to.
 	lifecycle_decls_init(src)
 	sync_severity()
 	registry_join(REGISTRY_ACTIVE_DISEASES, src)

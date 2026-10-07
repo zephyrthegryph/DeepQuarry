@@ -7,6 +7,8 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	extend("machine_anchor", then(PROC_REF(rewrenched)))
 	extend("machine_unanchor", then(PROC_REF(rewrenched)))
 	default_parts()
+	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(PROC_REF(interaction_part_replacement_impl)))
+	op("attach_scanner", item(/obj/item/anomaly_scanner), priority(OP_PRIORITY_DEFAULT - 2), label("Attach anomaly"), then(PROC_REF(interaction_attach_scanner)))
 
 /obj/machinery/anomaly_harvester
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
@@ -65,23 +67,20 @@ CAPABILITIES(/obj/machinery/anomaly_harvester)
 	else if (stats.stability == ANOMALY_GROWING)
 		play_sfx(src, SFX_MACHINES_BUZZBEEP, 1.5)
 
-EXTEND_INTERACTIONS(/obj/machinery/anomaly_harvester, \
-	INTERACT_INSERT(/obj/item/storage/part_replacer, PROC_REF(interaction_part_replacement_impl), "Replace parts"), \
-	INTERACT_INSERT(/obj/item/anomaly_scanner, PROC_REF(interaction_attach_scanner), "Attach anomaly"), \
-)
+/obj/machinery/anomaly_harvester/proc/interaction_part_replacement_impl(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return default_part_replacement(A.actor, A.held) ? OP_OK : OP_DECLINE
 
-/obj/machinery/anomaly_harvester/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
-	return default_part_replacement(user, held) ? TRUE : FALSE
-
-/obj/machinery/anomaly_harvester/proc/interaction_attach_scanner(mob/user, obj/item/anomaly_scanner/scanner, datum/interaction/interaction)
+/obj/machinery/anomaly_harvester/proc/interaction_attach_scanner(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/anomaly_scanner/scanner = A.held
 	add_fingerprint(user)
 	if(!anchored)
 		to_chat(user, span_danger("The [src] is not anchored!"))
-		return TRUE
+		return OP_OK
 	if(scanner.buffered_anomaly)
 		task_timed(user, 2 SECONDS, src, src, PROC_REF(attach_scanned_anomaly), list(scanner))
-	return TRUE
+	return OP_OK
 
 /obj/machinery/anomaly_harvester/proc/attach_scanned_anomaly(obj/item/anomaly_scanner/scanner)
 	if(scanner.buffered_anomaly)

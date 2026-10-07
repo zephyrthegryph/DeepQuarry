@@ -44,6 +44,7 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 CAPABILITIES(/obj/item/mapping_unit)
+	every(2 SECONDS, then(PROC_REF(mapping_unit_step)), when = nameof(updating))
 	owns_one(nameof(cell), /obj/item/cell)
 	owns_one(nameof(extras_holder), /atom/movable/screen/mapper/extras_holder)
 	owns_one(nameof(hud_datum), /datum/mini_hud/mapper)
@@ -201,13 +202,13 @@ CAPABILITIES(/obj/item/mapping_unit)
 REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 
 /// Showing and refreshing its map (start_updates()/stop_updates()).
-OM_FIELD(/obj/item/mapping_unit, updating, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
+/obj/item/mapping_unit/var/updating = FALSE
+TRACKED(/obj/item/mapping_unit, updating)
 
 /obj/item/mapping_unit/proc/start_updates()
 	registry_join(REGISTRY_MAPPING_UNITS, src)
 	set_updating(TRUE)
-	periodic_step()
+	refresh_map()
 
 /obj/item/mapping_unit/proc/stop_updates()
 	registry_leave(REGISTRY_MAPPING_UNITS, src)
@@ -223,7 +224,11 @@ DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
 	rel_clear(src, nameof(hud_item))
 	rel_clear(src, nameof(hud_datum)) // its holder screen object goes with it
 
-/obj/item/mapping_unit/periodic_step()
+/obj/item/mapping_unit/proc/mapping_unit_step(datum/act/timer/A)
+	refresh_map()
+
+/// One refresh of the map: power, the hud's parts, then the map itself.
+/obj/item/mapping_unit/proc/refresh_map()
 	if(uses_power && !cell)
 		stop_updates()
 		return

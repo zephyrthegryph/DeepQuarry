@@ -173,9 +173,10 @@ CAPABILITIES(/obj/effect/blob)
 	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
 	look.state(null)
 
-DECLARE_PERIODIC(/obj/effect/blob/core, PERIODIC_SLOW)
+CAPABILITIES(/obj/effect/blob/core)
+	every(2 SECONDS, then(PROC_REF(blob_core_step)))
 
-/obj/effect/blob/core/periodic_step()
+/obj/effect/blob/core/proc/blob_core_step(datum/act/timer/A)
 	pulse(20, list(NORTH, EAST))
 	pulse(20, list(NORTH, WEST))
 	pulse(20, list(SOUTH, EAST))

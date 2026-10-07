@@ -194,7 +194,10 @@
 /// (set_body/set_host), the host dying or reviving ("host.stat"), a strain refresh
 /// (set_spread_flags/set_virus_modifiers/set_infectivity).
 OM_DERIVE_FIELD(/datum/affliction/contagion, spread_lane_wanted, list("host", "body", "spread_flags", "infectivity", "virus_modifiers", "host.stat"))
-DECLARE_PERIODIC_WHILE(/datum/affliction/contagion, PERIODIC_SLOW, "spread_lane_wanted")
+
+/datum/affliction/contagion/reactions()
+	. = ..()
+	. += every(2 SECONDS, PROC_REF(contagion_step), when = PROC_REF(spread_lane_wanted))
 
 /datum/affliction/contagion/proc/spread_lane_wanted()
 	return !QDELETED(src) && host && body && (can_shed_airborne() || acts_in_dead_host())
@@ -202,13 +205,13 @@ DECLARE_PERIODIC_WHILE(/datum/affliction/contagion, PERIODIC_SLOW, "spread_lane_
 /// One lane step (every 2 s): a SPREAD_DEAD strain in a corpse keeps its
 /// course, and an airborne strain rolls infectivity and sheds (the declaration
 /// parks it once neither applies).
-/datum/affliction/contagion/periodic_step(delta)
+/datum/affliction/contagion/proc/contagion_step(dt)
 	var/dead_course = acts_in_dead_host()
 	var/airborne = can_shed_airborne()
 	if(dead_course)
 		progress()
 		if(QDELETED(src) || !host)
-			return PROCESS_KILL
+			return
 	if(airborne && prob(infectivity))
 		spread()
 

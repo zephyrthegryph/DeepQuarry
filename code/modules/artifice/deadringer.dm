@@ -16,7 +16,7 @@ TRACKED(/obj/item/deadringer, activated)
 /// Cooldown steps left after triggering.
 /obj/item/deadringer/var/timer = 0
 TRACKED(/obj/item/deadringer, timer)
-/// Armed or cooling down: periodic_step() runs (DECLARE_PERIODIC_WHILE).
+/// Armed or cooling down: periodic_step() runs (its every()).
 CAPABILITIES(/obj/item/deadringer)
 	every(2 SECONDS, then(PROC_REF(deadringer_step)), when = cond_any(nameof(activated), nameof(timer)))
 	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_use_ringer_holds), because = PROC_REF(can_use_ringer_refusal))), then(PROC_REF(interaction_self)))
