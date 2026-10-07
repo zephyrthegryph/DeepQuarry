@@ -91,8 +91,6 @@ CAPABILITIES(/obj/machinery/hyperpad/centre)
 	startteleport(user)
 	return OP_OK
 
-/obj/machinery/hyperpad/proc/interaction_delegate
-
 /obj/machinery/hyperpad/proc/interaction_delegate(datum/act/op/A)
 	if(primary())
 		primary().attack_hand(A.actor)

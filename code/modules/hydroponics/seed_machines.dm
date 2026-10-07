@@ -106,11 +106,6 @@ CAPABILITIES(/obj/machinery/botany)
 			visible_message(span_filter_notice("[icon2html(src,viewers(src))] [src] beeps and spits out [loaded_disk]."))
 			rel_take(src, nameof(loaded_disk))
 
-/obj/machinery/botany/proc/botany_no_seed_loaded, "there is already a seed loaded")), \
-	INTERACT_INSERT(/obj/item/storage/part_replacer, PROC_REF(interaction_part_replacement_impl), "Replace parts", OFFERED_WHEN(REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_not_active, null))), \
-	INTERACT_INSERT(/obj/item/disk/botany, PROC_REF(interaction_load_disk), "Load disk", REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_disk_slot_reason, null)), \
-)
-
 /// Requirement: no seed is loaded.
 /obj/machinery/botany/proc/botany_no_seed_holds(datum/act/op/A)
 	return !seed

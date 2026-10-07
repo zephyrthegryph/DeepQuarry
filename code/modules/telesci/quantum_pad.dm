@@ -51,8 +51,6 @@
 	teleport_cooldown = initial(teleport_cooldown)
 	teleport_cooldown = max(50, (teleport_cooldown - (E * 100)))
 
-/// Old attackby: install a particle booster.
-/obj/machinery/power/quantumpad/proc/interaction_boost
 
 /obj/machinery/power/quantumpad/proc/interaction_boost(datum/act/op/A)
 	var/mob/user = A.actor
