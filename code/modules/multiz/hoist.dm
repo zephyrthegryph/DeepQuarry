@@ -138,8 +138,8 @@ CAPABILITIES(/obj/structure/hoist)
 	owns_one(nameof(source_hook), /obj/effect/hoist_hook)
 	param(nameof(dir), pos = 1, apply = PROC_REF(hang_hook))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(hoist_blast_break)))
-	op("hand", hand(), ungated(), label("Use"), needs(req(PROC_REF(can_work_hoist_holds), because = PROC_REF(can_work_hoist_refusal))), then(PROC_REF(interaction_hand)))
-	op("hoist_verb_collapse", menu(), label("Collapse Hoist"), needs(req_adjacent(), req_capable(), req(PROC_REF(can_collapse_holds), because = PROC_REF(can_collapse_refusal))), then(PROC_REF(hoist_verb_collapse)))
+	op("hand", hand(), ungated(), label("Use"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), needs(req(PROC_REF(can_work_hoist_holds), because = PROC_REF(can_work_hoist_refusal))), then(PROC_REF(interaction_hand)))
+	op("hoist_verb_collapse", menu(), label("Collapse Hoist"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), needs(req_adjacent(), req_capable(), req(PROC_REF(can_collapse_holds), because = PROC_REF(can_collapse_refusal))), then(PROC_REF(hoist_verb_collapse)))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The hoist hangs its hook on the side it faces.
 /obj/structure/hoist/proc/hang_hook(ndir)
@@ -229,8 +229,6 @@ CAPABILITIES(/obj/structure/hoist)
 
 /obj/structure/hoist/proc/interaction_hand(datum/act/op/A)
 	var/mob/living/user = A.actor
-	if (!(ishuman(user) || issilicon(user)))
-		return TRUE
 
 	var/can = can_move_dir(movedir)
 	var/movtext = movedir == UP ? "raise" : "lower"
@@ -278,9 +276,6 @@ CAPABILITIES(/obj/structure/hoist)
 
 /obj/structure/hoist/proc/hoist_verb_collapse(datum/act/op/A)
 	var/mob/user = A.actor
-	if (!(ishuman(user) || issilicon(user)))
-		return
-
 	if (isobserver(user) || user.incapacitated())
 		return
 	collapse_kit()

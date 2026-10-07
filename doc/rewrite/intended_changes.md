@@ -2412,3 +2412,18 @@ underlays of every creatable subtype of each converted chain, recorded from the 
 * **A deferred `dx_*` callback finds its owner again**: the wrapper key is the one `rerun_unwrap()` reads (`rerun_h`).
 * **Open prompts are pinned, not changed.** An op paused at a prompt was already cancelled on losing its actor, target, held item, reach (adjacent bindings, the window) or what its requirements read, and re-ran its requirements on the answer; `dq_prompt_interrupt/*` now pins it (walk away, drop, delete, power loss, answer after a requirement changed, `keeps = 0`, chains). No behaviour changed.
 - **Ambient effects run only while a player is near** (client-proximity relevance, `code/controllers/subsystems/proximity.dm`): map-effect intervals (smoke, sparks and steam emitters, sound emitters, screen shakers) and timed beam points park while no client eye is in their 8-turf cell or the eight around it, and resume when one arrives, instead of polling for a player within 12 turfs. The range is now cell-based (between 8 and 24 turfs), the eye counts wherever it is (an AI camera, an observer) rather than the mob, and AFK players count (the old check ignored them after five minutes). A beam point that is parked with its beams up keeps them up. `always_run` holds the effect relevant everywhere.
+
+## Legacy-form sweep, misc1 (shieldgen, telesci, mining, overmap, multiz, games, casino, awaymissions, samples, pda, modular_computers, media, library, hydroponics, entrepreneur, resleeving, maintenance_panels, turbolift, blob2, generated_station)
+
+* **A question comes before the effect.** Where an effect asked after doing something, the op asks first: the bookcase-style `asks()` steps replace `rerun_ask` in the
+  book (pen), the horoscope, the spirit board, the botany disk, the rift and the ladder. The portal's staff flow shows its guidance text in the first question (it was a chat
+  line before the question); a cancel creates nothing (the old flow had already made the portals when the later question was cancelled). The resize portal's own question is
+  an op that passes the click on to the bind flow, so it is asked first instead of beside it.
+* **A ladder with both ends asks which way** whenever it has both ends; an incomplete ladder or an out-of-reach actor is now told after the question (reach and capability
+  are the op's requirements, so a far or incapable actor is refused before it).
+* **Actors an effect turned away silently are not offered the op**: silicons on the PDA alt-click and verbs, non-humanoids on the hoist, a cyborg on the research sample
+  (its own ops pick up and use it unharmed), a ghost on a portal or modular computer it may not use (a swallow op takes the click, as before).
+* **Refusal texts**: a silicon on a ship console without AI control is refused with "Access Denied." (a chat line before); the wheel of fortune's ticket check of an
+  existing ticket and the SPASM collar ownership check are told by the handler; the survival capsule's VR refusal is a handler line.
+* **Datum periodics stay legacy**: `/datum/shuttle` (two), `/datum/turbolift` and `/datum/generated_station_planner` are non-atoms; an every() is armed only by
+  `engine_holder_init()` for atoms, and the `om_after_rearm` lint bans a timer chain. They convert when `lifeform_datum_new()` arms type-level every() for non-atoms.

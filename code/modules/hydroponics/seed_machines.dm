@@ -137,7 +137,7 @@ CAPABILITIES(/obj/machinery/botany)
 /obj/machinery/botany/proc/botany_disk_slot_reason(obj/item/disk/botany/B)
 	if(loaded_disk)
 		return "there is already a data disk loaded"
-	if(B.genes && B.genes.len)
+	if(length(B.genes))
 		if(!disk_needs_genes)
 			return "that disk already has gene data loaded"
 	else
