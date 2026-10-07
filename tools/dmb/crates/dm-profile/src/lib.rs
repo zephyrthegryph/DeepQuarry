@@ -32,6 +32,10 @@ pub struct StageReport {
     pub read_bytes: Option<u64>,
     pub write_bytes: Option<u64>,
     pub io_blocked_s: Option<f64>,
+    /// Wall time inside annotated synchronous I/O calls, not blocked time.
+    pub io_call_elapsed_s: Option<f64>,
+    pub io_calls: u64,
+    pub io_failed_calls: u64,
     pub io_scope: &'static str,
     pub attributed_read_bytes: u64,
     pub attributed_write_bytes: u64,
@@ -268,6 +272,37 @@ pub fn record_io(
         }
     });
 }
+/// Measure one synchronous I/O operation and its successfully returned byte count.
+/// Elapsed time includes kernel work, copying and scheduling; it is not evidence
+/// of time blocked on storage. Failed operations may have transferred partial
+/// bytes that their error does not expose, so those bytes are not fabricated.
+pub fn io_call<T>(
+    operation: impl FnOnce() -> std::io::Result<T>,
+    byte_counts: impl FnOnce(&T) -> (u64, u64),
+) -> std::io::Result<T> {
+    let Some(state) = ACTIVE.get() else {
+        return operation();
+    };
+    let start = Instant::now();
+    let result = operation();
+    let elapsed = start.elapsed().as_secs_f64();
+    if let Ok(value) = &result {
+        let (read, written) = byte_counts(value);
+        record_io(read, written, None);
+    }
+    STACK.with(|stack| {
+        if let Some(frame) = stack.borrow().last() {
+            let mut entries = state.entries.lock().unwrap_or_else(|e| e.into_inner());
+            let report = &mut entries.entry(frame.name).or_default().report;
+            report.io_call_elapsed_s = Some(report.io_call_elapsed_s.unwrap_or(0.0) + elapsed);
+            report.io_calls = report.io_calls.saturating_add(1);
+            report.io_failed_calls = report
+                .io_failed_calls
+                .saturating_add(u64::from(result.is_err()));
+        }
+    });
+    result
+}
 impl Drop for StageGuard {
     fn drop(&mut self) {
         let Some(state) = &self.state else {
@@ -456,7 +491,7 @@ impl ProfileGuard {
             coverage_notes: vec![
                 "CPU folded stacks use exclusive entered stage segments; uninstrumented threads/work are excluded. Chrome/flame wall traces come from tracing spans.".into(),
                 "Allocator numbers include profiler overhead and nested scopes; peak_live is observed process allocator live bytes on current-thread allocations, not OS private memory attribution. Allocation counting requires the executable to install CountingAllocator.".into(),
-                "Stage I/O uses process-wide overlapping windows and includes profiling writes; it is not additive. Explicit attributed bytes/block durations cover only annotated operations. Windows peak_private is process lifetime peak committed private/pagefile usage; Linux private peak unavailable.".into(),
+                "Stage I/O uses process-wide overlapping windows and includes profiling writes; it is not additive. Explicit attributed bytes/call elapsed/block durations cover only annotated operations; call elapsed includes scheduling and copying and is not blocked I/O. Failed calls can leave partial byte counts unknown. Windows peak_private is process lifetime peak committed private/pagefile usage; Linux private peak unavailable.".into(),
             ],
         };
         self.chrome.take();

@@ -376,8 +376,10 @@ impl PairStore {
             return Ok(pair);
         }
         let temp = self.temporary("pair")?;
-        fs::write(temp.join("deepquarry.dmb"), dmb)?;
-        dm_profile::record_io(0, dmb.len() as u64, None);
+        dm_profile::io_call(
+            || fs::write(temp.join("deepquarry.dmb"), dmb),
+            |_| (0, dmb.len() as u64),
+        )?;
         #[cfg(test)]
         publication_fault("pair_dmb_written")?;
         let resource = self
@@ -392,8 +394,7 @@ impl PairStore {
             let rsc =
                 rsc.ok_or_else(|| invalid("shared RSC identity is absent from this store"))?;
             let staged = self.temporary("resource")?.join("archive.rsc");
-            fs::write(&staged, rsc)?;
-            dm_profile::record_io(0, rsc.len() as u64, None);
+            dm_profile::io_call(|| fs::write(&staged, rsc), |_| (0, rsc.len() as u64))?;
             #[cfg(test)]
             publication_fault("resource_written")?;
             if file_identity(&staged)? != (pair.rsc_bytes, pair.rsc_hash) {
@@ -407,8 +408,10 @@ impl PairStore {
             publication_fault("resource_renamed")?;
         }
         if fs::hard_link(&resource, temp.join("deepquarry.rsc")).is_err() {
-            let copied = fs::copy(&resource, temp.join("deepquarry.rsc"))?;
-            dm_profile::record_io(copied, copied, None);
+            dm_profile::io_call(
+                || fs::copy(&resource, temp.join("deepquarry.rsc")),
+                |copied| (*copied, *copied),
+            )?;
         }
         write_json(&temp.join("pair.json"), &pair)?;
         #[cfg(test)]
@@ -563,8 +566,10 @@ fn replace_copy(source: &Path, destination: &Path, expected: (u64, u128)) -> io:
             .write(true)
             .truncate(true)
             .open(&staged)?;
-        let copied = io::copy(&mut input, &mut output)?;
-        dm_profile::record_io(copied, copied, None);
+        dm_profile::io_call(
+            || io::copy(&mut input, &mut output),
+            |copied| (*copied, *copied),
+        )?;
         #[cfg(test)]
         publication_fault("install_copy_staged")?;
     }
@@ -607,7 +612,8 @@ fn atomic_replace(source: &Path, destination: &Path) -> io::Result<()> {
 }
 
 fn write_json(path: &Path, value: &impl Serialize) -> io::Result<()> {
-    fs::write(path, serde_json::to_vec(value).map_err(invalid)?)
+    let bytes = serde_json::to_vec(value).map_err(invalid)?;
+    dm_profile::io_call(|| fs::write(path, &bytes), |_| (0, bytes.len() as u64))
 }
 
 fn invalid(error: impl std::fmt::Display) -> io::Error {
@@ -621,12 +627,11 @@ fn file_identity(path: &Path) -> io::Result<(u64, u128)> {
     let mut bytes = 0u64;
     let mut buffer = [0u8; 65536];
     loop {
-        let count = file.read(&mut buffer)?;
+        let count = dm_profile::io_call(|| file.read(&mut buffer), |count| (*count as u64, 0))?;
         if count == 0 {
             break;
         }
         bytes += count as u64;
-        dm_profile::record_io(count as u64, 0, None);
         hasher.update(&buffer[..count]);
     }
     Ok((bytes, hasher.digest128()))

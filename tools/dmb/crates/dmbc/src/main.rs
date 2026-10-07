@@ -226,13 +226,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let engine_bytes = engine_template
         .as_ref()
         .map(|path| {
-            std::fs::read(path)
+            dm_profile::io_call(|| std::fs::read(path), |bytes| (bytes.len() as u64, 0))
                 .map_err(|error| format!("engine template {}: {error}", path.display()))
         })
         .transpose()?;
-    if let Some(bytes) = &engine_bytes {
-        dm_profile::record_io(bytes.len() as u64, 0, None);
-    }
     let engine_identity = engine_bytes
         .as_ref()
         .map_or(0, |bytes| xxhash_rust::xxh3::xxh3_128(bytes));
@@ -904,11 +901,10 @@ fn file_hash(path: &std::path::Path) -> io::Result<u128> {
     let mut buffer = [0u8; 65536];
     let mut hash = xxhash_rust::xxh3::Xxh3::new();
     loop {
-        let count = file.read(&mut buffer)?;
+        let count = dm_profile::io_call(|| file.read(&mut buffer), |count| (*count as u64, 0))?;
         if count == 0 {
             return Ok(hash.digest128());
         }
-        dm_profile::record_io(count as u64, 0, None);
         hash.update(&buffer[..count]);
     }
 }

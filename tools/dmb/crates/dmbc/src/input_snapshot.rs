@@ -115,8 +115,7 @@ impl SnapshotProvider for FileSystemInputs {
         let mut file = std::fs::File::open(path)?;
         let before = stamp_handle(&file)?;
         let mut bytes = Vec::new();
-        file.read_to_end(&mut bytes)?;
-        dm_profile::record_io(bytes.len() as u64, 0, None);
+        dm_profile::io_call(|| file.read_to_end(&mut bytes), |count| (*count as u64, 0))?;
         let after = stamp_handle(&file)?;
         if before != after || after != self.stamp(path)? || bytes.len() as u64 != after.size {
             return Err(io::Error::new(

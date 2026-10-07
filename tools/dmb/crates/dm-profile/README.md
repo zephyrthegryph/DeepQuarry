@@ -95,3 +95,21 @@ including trace writes: they are not additive or exact stage attribution.
 annotated leaf-stage bytes and an optional supplied blocked duration. These are
 partial coverage. Unmeasured blocked duration stays null; a byte count does not
 prove blocking time. Inspect `io_scope` and coverage notes alongside all totals.
+
+`io_call(operation, byte_counts)` measures the wall duration of an actual
+synchronous operation and records successfully returned bytes on the active leaf
+stage. `io_call_elapsed_s`, `io_calls` and `io_failed_calls` describe only these
+annotated calls. Elapsed time includes scheduling, kernel CPU and copying; it is
+**not** storage-blocked time, and never populates `io_blocked_s`. Calls returning
+errors can transfer partial bytes that their error does not expose; those bytes
+are unknown, not recorded as successful transfers. With profiling disabled the
+operation executes directly without clock sampling or byte-count evaluation.
+
+Compiler coverage currently includes engine-template reads, captured filesystem
+payload reads, file-hash/authentication reads, DMB/RSC writes, JSON publication
+writes, and publication/install copies. Metadata/open/close/sync operations,
+hardlink/rename calls, non-text asset reads and cache-store operations are not
+completely covered. No complete-I/O acceptance claim follows from these samples.
+Exact blocked-I/O accounting would require an OS event or scheduler wait source;
+subtracting thread CPU from call wall time also includes unrelated preemption and
+is insufficient. The current compiler leaves blocked duration null.

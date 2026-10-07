@@ -17,6 +17,12 @@ fn trace_cpu_flame_and_summary_artifacts_are_written() {
         }
         std::hint::black_box(bytes);
         dm_profile::record_io(123, 456, std::time::Duration::from_millis(1));
+        dm_profile::io_call(|| Ok(7u64), |count| (*count, 0)).unwrap();
+        let failed: std::io::Result<()> = dm_profile::io_call(
+            || Err(std::io::Error::other("scripted I/O failure")),
+            |_| (0, 0),
+        );
+        assert!(failed.is_err());
     }
     assert!(profile.has_stage("fixture"));
     assert!(profile.has_stage("fixture.work"));
@@ -29,9 +35,12 @@ fn trace_cpu_flame_and_summary_artifacts_are_written() {
         .iter()
         .find(|stage| stage.name == "fixture.work")
         .unwrap();
-    assert_eq!(leaf.attributed_read_bytes, 123);
+    assert_eq!(leaf.attributed_read_bytes, 130);
     assert_eq!(leaf.attributed_write_bytes, 456);
     assert_eq!(leaf.io_blocked_s, Some(0.001));
+    assert_eq!(leaf.io_calls, 2);
+    assert_eq!(leaf.io_failed_calls, 1);
+    assert!(leaf.io_call_elapsed_s.is_some_and(|value| value >= 0.0));
     assert!(report.total_cpu_s.is_some());
     for stage in &report.stages {
         if let (Some(exclusive), Some(inclusive)) = (stage.exclusive_cpu_s, stage.cpu_s) {
