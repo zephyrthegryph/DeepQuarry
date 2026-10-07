@@ -81,6 +81,20 @@ structured events as if the two channels were disjoint or complete.
 
 ## Stage 0 acceptance correction
 
+### Current source inspection after review cleanup
+
+The frozen `var/static/random_seed` storage mismatch is a definite historical
+semantic divergence: two Master constructions can repeat initialization with
+instance storage, whereas BYOND retains one shared seed. Its connection to the
+power bounds errors is still unproved. The current compiler's source carries
+the static declaration flag through `adapter.rs` and `variable_facts.rs` into
+a shared slot; `simple.rs` resolves that slot before the instance-field fallback,
+and `lower_resolver.rs` records the global dependency. This inspection does not
+prove the newly emitted binary is repaired; a controlled output comparison is
+still required. Current nested indexing emits ordinary consecutive `LIST_GET`
+operations and does not suppress bounds errors. No current power-error cause
+was established by this inspection.
+
 Every unlocated runtime error remains comparison evidence. It is an unresolved
 coverage/ownership gap, never a false pass or proof of improved correctness.
 Preserve raw and structured channels separately, report unmatched/unlocated
