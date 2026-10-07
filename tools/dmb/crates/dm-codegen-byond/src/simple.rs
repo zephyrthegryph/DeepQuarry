@@ -116,6 +116,8 @@ pub struct LowerBindings {
     pub parameter_defaults: Vec<Option<String>>,
     /// Declared parameter paths for type-inferred built-ins such as `istype(x)`.
     pub parameter_types: HashMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+    pub readonly_parameters: BTreeSet<u32>,
     pub fields: BTreeSet<String>,
     pub globals: BTreeSet<String>,
     /// Declared type paths used to resolve `new(args)` without an explicit path.
@@ -1386,6 +1388,7 @@ impl Compiler<'_> {
                     } else {
                         self.variable(binding, &statement.raw_header)?
                     };
+                    self.ensure_writable(&binding_variable, &statement.raw_header)?;
                     self.expression(iterable, &statement.raw_header)?;
                     if self.iterator_depth > 0 {
                         self.emit(opcode::ITER_PUSH, vec![]);
@@ -1488,6 +1491,7 @@ impl Compiler<'_> {
                         } else {
                             self.variable(name, &statement.raw_header)?
                         };
+                        self.ensure_writable(&variable, &statement.raw_header)?;
                         pair.push(variable);
                     }
                     self.expression(iterable, &statement.raw_header)?;
@@ -1559,6 +1563,7 @@ impl Compiler<'_> {
                         binding.as_str()
                     };
                     let binding_variable = self.variable(binding_name, &statement.raw_header)?;
+                    self.ensure_writable(&binding_variable, &statement.raw_header)?;
                     self.expression(start, &statement.raw_header)?;
                     self.expression(end, &statement.raw_header)?;
                     if let Some(step) = step {
@@ -2156,6 +2161,7 @@ impl Compiler<'_> {
                         binding
                     };
                     let binding_variable = self.variable(name, text)?;
+                    self.ensure_writable(&binding_variable, text)?;
                     self.expression_text(start_value.trim(), text)?;
                     self.expression_text(end_value, text)?;
                     let has_step = remainder.contains(" step ");
@@ -2514,6 +2520,7 @@ impl Compiler<'_> {
                     VariableWord::Field(selector.clone())
                 }
             };
+            self.ensure_writable(&variable, statement)?;
             self.emit(opcode::SET_VAR, vec![Word::Variable(variable)]);
             return Ok(true);
         }
@@ -2775,6 +2782,7 @@ impl Compiler<'_> {
                 }
             }
             let var = self.variable_expr(target, statement)?;
+            self.ensure_writable(&var, statement)?;
             if Self::assignment_needs_target_type(value) {
                 if let Some(path) = self.inferred_expression_type(target)? {
                     let declaration = format!("var{path}/__value");
@@ -2819,6 +2827,7 @@ impl Compiler<'_> {
                 VariableWord::Field(selector.clone())
             }
         };
+        self.ensure_writable(&variable, statement)?;
         self.emit(opcode, vec![Word::Variable(variable)]);
         Ok(())
     }
@@ -2954,7 +2963,10 @@ impl Compiler<'_> {
             return Ok(VariableWord::CacheIndex);
         }
         match self.variable_expr(target, statement) {
-            Ok(variable) => Ok(variable),
+            Ok(variable) => {
+                self.ensure_writable(&variable, statement)?;
+                Ok(variable)
+            }
             Err(_) => {
                 let ExprKind::Member {
                     object, selector, ..
@@ -3013,7 +3025,18 @@ impl Compiler<'_> {
                 VariableWord::Field(selector.clone())
             }
         };
+        self.ensure_writable(&variable, statement)?;
         self.emit(opcode, vec![Word::Variable(variable)]);
+        Ok(())
+    }
+
+    fn ensure_writable(&self, variable: &VariableWord, statement: &str) -> Result<(), LowerError> {
+        if matches!(variable, VariableWord::Arg(slot) if self.bindings.readonly_parameters.contains(slot)) {
+            let mut failure = error(statement, "cannot change constant parameter binding");
+            failure.kind = LowerErrorKind::SourceError;
+            // Keep this semantic failure sticky across legacy syntax fallbacks.
+            return self.semantic(Err(failure));
+        }
         Ok(())
     }
 
@@ -7472,6 +7495,32 @@ mod tests {
         let serialized = serde_json::to_string(&bindings).unwrap();
         assert!(!serialized.contains("project_value"));
         assert!(!serialized.contains("project-digest"));
+    }
+    #[test]
+    fn const_formal_guards_binding_writes_without_freezing_payloads() {
+        let bindings = LowerBindings {
+            parameters: vec!["value".into()],
+            readonly_parameters: [0].into(),
+            current_type_path: Some("/datum/probe".into()),
+            fields: ["value".into()].into(),
+            ..LowerBindings::default()
+        };
+        for body in [
+            "value = 3", "value += 3", "value++", "--value",
+            "for(value in list(1))\n        return",
+            "for(value = 1 to 3)\n        return",
+        ] {
+            let ast = dm_syntax::parse(&format!("/proc/test(value)\n    {body}\n"));
+            let result = compile_simple_proc_with_bindings(&ast.items[0].children, &bindings);
+            let errors = result.err().expect("const binding mutation must fail");
+            assert!(errors.iter().any(|error| error.kind == LowerErrorKind::SourceError
+                && error.reason.contains("constant parameter")), "{errors:?}");
+        }
+        for body in ["value[1] = 7", "src.value = 3", "return value", "var/other = 3\n    other = 4"] {
+            let ast = dm_syntax::parse(&format!("/proc/test(value)\n    {body}\n"));
+            let result = compile_simple_proc_with_bindings(&ast.items[0].children, &bindings);
+            assert!(result.is_ok(), "{:?}", result.err());
+        }
     }
 
     #[test]

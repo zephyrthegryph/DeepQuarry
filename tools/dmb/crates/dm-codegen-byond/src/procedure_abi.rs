@@ -175,7 +175,7 @@ fn type_flags(path: Option<&str>) -> Result<u32, AbiError> {
     Ok(match path.split('/').next().unwrap_or("") {
         "" | "datum" | "client" | "list" | "image" | "matrix" | "regex" | "savefile"
         | "mutable_appearance" | "appearance" | "generator" | "alist" | "database"
-        | "exception" | "icon" | "sound" => 0,
+        | "exception" | "icon" | "sound" | "callee" => 0,
         "atom" if path == "atom/movable" || path.starts_with("atom/movable/") => 3,
         "atom" => 0x123,
         "mob" => 1,
@@ -212,7 +212,20 @@ fn source_mode(text: &str, argument: bool) -> Result<Option<(u8, u8)>, AbiError>
         ("range", 5, None),
     ] {
         if let Some(value) = radius(text, name, default) {
-            return Ok(Some((kind, value?)));
+            return match value {
+                Ok(radius) => Ok(Some((kind, radius))),
+                // Dynamic argument sources have a real expression helper.
+                // Invalid numeric radii and non-argument settings stay strict.
+                Err(_) if argument => {
+                    let inner = &text[name.len() + 1..text.len() - 1];
+                    if !inner.is_empty() && inner.parse::<f64>().is_err() {
+                        Ok(None)
+                    } else {
+                        Err(fail("unsupported source radius"))
+                    }
+                }
+                Err(error) => Err(error),
+            };
         }
     }
     Ok(None)
@@ -367,6 +380,7 @@ pub fn prepare_verified_procedure(
     };
     inputs.parameters.clear();
     inputs.parameter_types.clear();
+    inputs.readonly_parameters.clear();
     inputs.parameter_defaults.clear();
     inputs.parameter_type_flags.clear();
     inputs.parameter_value_sources.clear();
@@ -386,6 +400,9 @@ pub fn prepare_verified_procedure(
             return Err(fail("duplicate parameter name"));
         }
         inputs.parameters.push(name.to_owned());
+        if param.flags & 2 != 0 {
+            inputs.readonly_parameters.insert(index as u32);
+        }
         let declared = param
             .declared_type
             .map(|id| {
@@ -756,6 +773,43 @@ mod tests {
             )
             .is_err());
         }
+    }
+    #[test]
+    fn dynamic_radius_uses_helper_and_const_callee_formals_keep_lexical_facts() {
+        assert_eq!(source_mode("oview(src)", true).unwrap(), None);
+        assert!(source_mode("oview(src)", false).is_err());
+        assert!(source_mode("view(256)", true).is_err());
+        assert_eq!(source_mode("view(7)", true).unwrap(), Some((1, 7)));
+        let mut symbols = SymbolTable::default();
+        let mut metadata = metadata(&[], &mut symbols);
+        metadata.signature.parameters = vec![Parameter {
+            name: symbols.intern("caller").unwrap(),
+            declared_type: Some(symbols.intern("/callee").unwrap()),
+            flags: 2,
+            array: None,
+            default: None,
+            input_annotation: None,
+            source_expression: Some(expression("oview(src)", &mut symbols)),
+            relative_span: Span::new(0, 1),
+        }]
+        .into();
+        let result = prepare_procedure(
+            &metadata,
+            &symbols,
+            &[],
+            ProcedureInputs::default(),
+            InheritedAbi::Fresh,
+            |_| Err(fail("unused")),
+        )
+        .unwrap();
+        assert_eq!(result.inputs.parameter_type_flags, [0]);
+        assert_eq!(result.inputs.parameter_types["caller"], "/callee");
+        assert_eq!(result.inputs.readonly_parameters, [0].into());
+        assert_eq!(
+            result.argument_sources,
+            [ArgumentSource::Helper { argument: 0 }]
+        );
+        assert_eq!(result.source_helpers.len(), 1);
     }
     #[test]
     fn later_category_restores_text_and_unknown_inherited_facts_fail() {

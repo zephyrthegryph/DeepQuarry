@@ -9,9 +9,9 @@ pub enum FormalShape {
     UnsizedList { element_type: Option<SymbolId> },
 }
 pub fn formal_shape(parameter: &Parameter) -> Result<FormalShape, AbiError> {
-    if parameter.flags != 0 {
-        // Const formal write constraints are not equivalent to verb argument
-        // type bits. Retaining an explicit refusal avoids silently dropping it.
+    if parameter.flags & !2 != 0 {
+        // Const is a lexical binding write constraint, not an argument type
+        // bit. Other modifiers still need a separately certified policy.
         return Err(AbiError(
             "parameter declaration modifiers require lexical write-constraint policy".into(),
         ));
@@ -62,6 +62,8 @@ mod tests {
             }
         );
         parameter.flags = 2;
+        assert!(formal_shape(&parameter).is_ok());
+        parameter.flags = 1;
         assert!(formal_shape(&parameter).is_err());
         parameter.flags = 0;
         parameter.declared_type = None;

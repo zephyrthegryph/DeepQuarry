@@ -31,6 +31,7 @@ pub(crate) fn prepare<'a>(
             || !input.parameter_value_sources.is_empty()
             || !input.parameter_defaults.is_empty()
             || !input.parameter_types.is_empty()
+            || !input.readonly_parameters.is_empty()
         {
             return Err(vec![LowerError { statement:"initializer scopes".into(),
                 reason:"initializer lexical slices cannot supply procedure frames or parameter metadata".into(), ..LowerError::default() }]);

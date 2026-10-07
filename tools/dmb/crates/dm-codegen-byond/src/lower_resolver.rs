@@ -5,7 +5,7 @@ use dm_ir::{
     ResolveQuery as Q, ResolvedMeaning as M, Resolver, SemanticValue, SymbolId, SymbolTable,
 };
 use std::cell::RefCell;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Arc;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -40,6 +40,8 @@ pub struct ProcedureInputs {
     pub parameter_value_sources: Vec<u32>,
     pub parameter_defaults: Vec<Option<String>>,
     pub parameter_types: HashMap<String, String>,
+    /// Const formal bindings, identified by their exact argument slot.
+    pub readonly_parameters: BTreeSet<u32>,
     /// Explicit captured FILE_DIR/source-directory context, never inferred here.
     pub resource_search_context: Option<u128>,
 }
@@ -54,6 +56,7 @@ impl ProcedureInputs {
             parameter_value_sources: self.parameter_value_sources.clone(),
             parameter_defaults: self.parameter_defaults.clone(),
             parameter_types: self.parameter_types.clone(),
+            readonly_parameters: self.readonly_parameters.clone(),
             ..LowerBindings::default()
         }
     }
