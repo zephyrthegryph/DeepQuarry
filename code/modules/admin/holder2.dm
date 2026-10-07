@@ -28,6 +28,9 @@ GLOBAL_PROTECT(href_token)
 	var/tmp/datum/feed_channel/admincaster_feed_channel
 	var/datum/feed_channel/admincaster_scratch_channel = new /datum/feed_channel
 	var/admincaster_signature	//What you'll sign the newsfeeds as
+	/// Tracked mirrors of whether the channel and the Wanted draft can be sent (a requirement cannot read the draft or the network); admincaster_resync() sets them after every change.
+	var/admincaster_channel_ready = FALSE
+	var/admincaster_wanted_ready = FALSE
 
 	/// Code security critcal token used for authorizing href topic calls
 	var/href_token
@@ -51,6 +54,9 @@ GLOBAL_PROTECT(href_token)
 	var/list/tagged_datums
 
 	var/given_profiling = FALSE
+
+TRACKED(/datum/admins, admincaster_channel_ready)
+TRACKED(/datum/admins, admincaster_wanted_ready)
 
 CAPABILITIES(/datum/admins)
 	owns_one(nameof(access_view_menu), /datum/access_viewer)
@@ -118,7 +124,7 @@ CAPABILITIES(/datum/admins)
 	op("ac_view_wanted", topic("ac_view_wanted"), then(PROC_REF(topic_ac_view_wanted)))
 	op("ac_set_channel_name", topic("ac_set_channel_name"), asks(/datum/prompt/text/admincaster_topic, fields = list("question" = "Provide a Feed Channel Name", "title" = "Network Channel Handler", "encode" = FALSE), step = "answer"), then(PROC_REF(topic_ac_set_channel_name)))
 	op("ac_set_channel_lock", topic("ac_set_channel_lock"), then(PROC_REF(topic_ac_set_channel_lock)))
-	op("ac_submit_new_channel", topic("ac_submit_new_channel"), asks(/datum/prompt/choice/admincaster_topic, fields = list("question" = computed(PROC_REF(ac_channel_question)), "title" = "Network Channel Handler", "choices" = computed(PROC_REF(ac_channel_buttons)), "buttons" = TRUE), step = "confirm"), then(PROC_REF(topic_ac_submit_new_channel)))
+	op("ac_submit_new_channel", topic("ac_submit_new_channel"), needs(req(PROC_REF(ac_channel_ready), because = MSG(admin_topic/channel_unsubmittable))), asks(/datum/prompt/choice/admincaster_topic, fields = list("question" = "Please confirm Feed channel creation", "title" = "Network Channel Handler", "choices" = list("Confirm", "Cancel"), "buttons" = TRUE), step = "confirm"), then(PROC_REF(topic_ac_submit_new_channel)))
 	op("ac_set_channel_receiving", topic("ac_set_channel_receiving"), asks(/datum/prompt/choice/admincaster_topic, fields = list("question" = "Choose receiving Feed Channel", "title" = "Network Channel Handler", "choices" = computed(PROC_REF(ac_channel_names))), step = "answer"), then(PROC_REF(topic_ac_set_channel_receiving)))
 	op("ac_set_new_title", topic("ac_set_new_title"), asks(/datum/prompt/text/admincaster_topic, fields = list("question" = "Enter the Feed title", "title" = "Network Channel Handler"), step = "answer"), then(PROC_REF(topic_ac_set_new_title)))
 	op("ac_set_new_message", topic("ac_set_new_message"), asks(/datum/prompt/text/admincaster_topic, fields = list("question" = "Write your Feed story", "title" = "Network Channel Handler", "multiline" = TRUE), step = "answer"), then(PROC_REF(topic_ac_set_new_message)))
@@ -130,7 +136,7 @@ CAPABILITIES(/datum/admins)
 	op("ac_menu_wanted", topic("ac_menu_wanted"), then(PROC_REF(topic_ac_menu_wanted)))
 	op("ac_set_wanted_name", topic("ac_set_wanted_name"), asks(/datum/prompt/text/admincaster_topic, fields = list("question" = "Provide the name of the Wanted person", "title" = "Network Security Handler"), step = "answer"), then(PROC_REF(topic_ac_set_wanted_name)))
 	op("ac_set_wanted_desc", topic("ac_set_wanted_desc"), asks(/datum/prompt/text/admincaster_topic, fields = list("question" = "Provide the a description of the Wanted person and any other details you deem important", "title" = "Network Security Handler"), step = "answer"), then(PROC_REF(topic_ac_set_wanted_desc)))
-	op("ac_submit_wanted", topic("ac_submit_wanted", arg("ac_submit_wanted", num(), optional = TRUE)), asks(/datum/prompt/choice/admincaster_topic, fields = list("question" = computed(PROC_REF(ac_wanted_question)), "title" = "Network Security Handler", "choices" = computed(PROC_REF(ac_wanted_buttons)), "buttons" = TRUE), step = "confirm"), then(PROC_REF(topic_ac_submit_wanted)))
+	op("ac_submit_wanted", topic("ac_submit_wanted", arg("ac_submit_wanted", num(), optional = TRUE)), needs(req(PROC_REF(ac_wanted_ready), because = MSG(admin_topic/wanted_unsubmittable))), asks(/datum/prompt/choice/admincaster_topic, fields = list("question" = computed(PROC_REF(ac_wanted_question)), "title" = "Network Security Handler", "choices" = list("Confirm", "Cancel"), "buttons" = TRUE), step = "confirm"), then(PROC_REF(topic_ac_submit_wanted)))
 	op("ac_cancel_wanted", topic("ac_cancel_wanted"), asks(/datum/prompt/choice/admincaster_topic, fields = list("question" = "Please confirm Wanted Issue removal", "title" = "Network Security Handler", "choices" = list("Confirm", "Cancel"), "buttons" = TRUE), step = "confirm"), then(PROC_REF(topic_ac_cancel_wanted)))
 	op("ac_censor_channel_author", topic("ac_censor_channel_author", arg("ac_censor_channel_author", schema_ref(/datum/feed_channel), optional = TRUE)), then(PROC_REF(topic_ac_censor_channel_author)))
 	op("ac_censor_channel_story_author", topic("ac_censor_channel_story_author", arg("ac_censor_channel_story_author", schema_ref(/datum/feed_message), optional = TRUE)), then(PROC_REF(topic_ac_censor_channel_story_author)))

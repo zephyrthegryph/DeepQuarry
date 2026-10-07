@@ -29,16 +29,17 @@
 	TEST_ASSERT_NULL(test_prompt_answer(ask, "Breaking news"), "the answer is accepted")
 	TEST_ASSERT_EQUAL(holder.admincaster_feed_message.title, "Breaking news", "the answer reached the op's effect")
 	TEST_ASSERT_EQUAL(holder.refreshes, 1, "and the panel refreshed once")
-	// a link that confirms: an unnamed channel cannot be created, so the question says so and only offers OK
-	holder.admincaster_feed_channel().channel_name = ""
+	// a link that confirms: a named channel can be created, so its confirmation opens
+	holder.admincaster_feed_channel().channel_name = "Dq Test Channel"
+	holder.admincaster_resync()
 	test_prompts_reset()
 	op_perform_by_key(actor, holder, null, "ac_submit_new_channel", ORIGIN_UI, AUTH_ADMIN, FALSE)
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 1, "the channel link opens its confirmation")
 	var/datum/prompt/choice/confirm = GLOB.test_prompts[1]
 	made += confirm
-	TEST_ASSERT_EQUAL(length(confirm.choices), 1, "an unnamed channel is offered only OK")
-	TEST_ASSERT_NULL(test_prompt_answer(confirm, "OK"), "which is accepted")
-	TEST_ASSERT_EQUAL(holder.admincaster_screen, 7, "and shows the error screen, as it did")
+	TEST_ASSERT_EQUAL(length(confirm.choices), 2, "a channel that can be created is offered Confirm and Cancel")
+	TEST_ASSERT_NULL(test_prompt_answer(confirm, "Cancel"), "which is accepted")
+	TEST_ASSERT_EQUAL(holder.admincaster_screen, 0, "and a cancelled channel changes nothing")
 	// the same link without the admin authority is refused for rights and opens nothing
 	test_prompts_reset()
 	op_perform_by_key(actor, holder, null, "ac_set_new_title", ORIGIN_UI, AUTH_PHYSICAL, FALSE)

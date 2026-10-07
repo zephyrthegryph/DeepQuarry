@@ -31,6 +31,7 @@
 	if(!client)
 		return FALSE
 
+	mob_state_set_played(TRUE)
 	client.persistent_client.set_mob(src)
 
 	registry_join(REGISTRY_PLAYERS, src)

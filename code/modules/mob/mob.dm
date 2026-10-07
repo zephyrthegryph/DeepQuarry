@@ -1517,16 +1517,15 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/living/carbon/proc/vv_organ_choices(datum/act/op/A)
 	return internal_organ_list()
 
-/// The first VV AI question says so when the mob is a player's (the later answers are then refused).
-/mob/living/proc/vv_ai_faction_question(datum/act/op/A)
-	return (client || teleop) ? "This cannot be used on player mobs! Please close this window." : "Please input AI faction"
+MSG_DEF_SELF(vv/player_mob, "This cannot be used on player mobs!")
+MSG_DEF_SELF(vv/no_languages, "This mob knows no languages.")
+
+/// Requirement: nobody drives the mob by remote control (its teleop is a relation view: null once that is gone).
+/mob/proc/vv_not_remote_driven(datum/act/op/A)
+	return !teleop
 
 /// A VV AI brain setup, after the faction, the combat mode and the wake question have all been answered.
 /mob/living/proc/vv_topic_give_ai(datum/act/op/A)
-	var/mob/user = A.actor
-	if(client || teleop)
-		to_chat(user, span_warning("This cannot be used on player mobs!"))
-		return
 	if(ai_brain)	//Cleaning up the original ai
 		rel_clear(src, nameof(ai_brain))
 	initialize_ai_brain()

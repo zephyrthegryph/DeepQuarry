@@ -1,4 +1,5 @@
 /mob/Logout()
+	mob_state_set_played(!!client)
 	PUBLISH_LEGACY(src, /datum/notice/mob_logout)
 	SStgui.on_logout(src) // Cleanup any TGUIs the user has open
 	registry_leave(REGISTRY_PLAYERS, src)
