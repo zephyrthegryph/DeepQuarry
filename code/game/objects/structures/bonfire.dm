@@ -100,7 +100,6 @@ TRACKED(/obj/structure/bonfire, grill)
 			R.use(1)
 			set_grill(TRUE)
 			to_chat(user, span_notice("You add a grill to \the [src]."))
-			update_icon()
 	return OP_OK
 
 /// Old attack_hand: take out fuel, or dismantle it when it is empty.
@@ -142,7 +141,7 @@ TRACKED(/obj/structure/bonfire, grill)
 		var/atom/movable/AM = pop(contents)
 		AM.forceMove(get_turf(src))
 		to_chat(user, span_notice("You take \the [AM] out of \the [src] before it has a chance to burn away."))
-		update_icon()
+		changed(src)
 
 /obj/structure/bonfire/permanent/remove_fuel(mob/user)
 	dismantle(user)
@@ -157,7 +156,7 @@ TRACKED(/obj/structure/bonfire, grill)
 		if(S)
 			S.forceMove(src)
 			to_chat(user, span_warning("You add \the [new_fuel] to \the [src]."))
-			update_icon()
+			changed(src)
 			return TRUE
 		return FALSE
 	else
@@ -175,13 +174,13 @@ TRACKED(/obj/structure/bonfire, grill)
 	if(istype(consumed_fuel, /obj/item/stack/material/log))
 		EXPIRY_SET(src, next_fuel_consumption, 6 MINUTES, CLOCK_WORLD)
 		consume(consumed_fuel)
-		update_icon()
+		changed(src)
 		return TRUE
 
 	else if(istype(consumed_fuel, /obj/item/stack/material/wood)) // One log makes two planks of wood.
 		EXPIRY_SET(src, next_fuel_consumption, 3 MINUTE, CLOCK_WORLD)
 		consume(consumed_fuel)
-		update_icon()
+		changed(src)
 		return TRUE
 	return FALSE
 
@@ -199,13 +198,11 @@ TRACKED(/obj/structure/bonfire, grill)
 	. = ..()
 	if(burning)
 		set_burning(FALSE)
-		update_icon()
 		visible_message(span_infoplain(span_bold("\The [src]") + " stops burning."))
 
 /obj/structure/bonfire/proc/ignite()
 	if(!burning && get_fuel_amount())
 		set_burning(TRUE)
-		update_icon()
 		visible_message(span_warning("\The [src] starts burning!"))
 
 /obj/structure/bonfire/proc/burn_bonfire()
@@ -223,37 +220,25 @@ TRACKED(/obj/structure/bonfire, grill)
 				L.adjust_fire_stacks(get_fuel_amount() / 4)
 				L.ignite_mob()
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/bonfire/appearance_overlays()
-	. = list()
+/obj/structure/bonfire/draw(datum/look/look)
+	..()
 	if(burning)
+		var/fuel = get_fuel_amount()
 		var/state
-		switch(get_fuel_amount())
+		switch(fuel)
 			if(0 to 4.5)
 				state = "bonfire_warm"
 			if(4.6 to 10)
 				state = "bonfire_hot"
-		var/image/I = image(icon, state)
-		I.appearance_flags = RESET_COLOR
-		. += I
-
-		if(has_buckled_mobs() && get_fuel_amount() >= 5)
-			I = image(icon, "bonfire_intense")
-			I.pixel_y = 13
-			I.layer = MOB_LAYER + 0.1
-			I.appearance_flags = RESET_COLOR
-			. += I
-
-		var/light_strength = max(get_fuel_amount() / 2, 2)
-		set_light(light_strength, light_strength, "#FF9933")
+		look.overlay(look_appearance(icon, state, appearance_flags = RESET_COLOR))
+		if(has_buckled_mobs() && fuel >= 5)
+			look.overlay(look_overlay_image(icon, "bonfire_intense", layer = MOB_LAYER + 0.1, pixel_y = 13, appearance_flags = RESET_COLOR))
+		var/light_strength = max(fuel / 2, 2)
+		look.light(light_strength, light_strength, "#FF9933")
 	else
-		set_light(0)
-
+		look.light_off()
 	if(grill)
-		var/image/grille_image = image(icon, "bonfire_grill")
-		grille_image.appearance_flags = RESET_COLOR
-		. += grille_image
-
+		look.overlay(look_appearance(icon, "bonfire_grill", appearance_flags = RESET_COLOR))
 
 /obj/structure/bonfire/proc/bonfire_step(datum/act/timer/A)
 	if(!check_oxygen())
@@ -306,7 +291,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_
 		M.pixel_y += 13
 	else // Just unbuckled someone
 		M.pixel_y -= 13
-	update_icon()
+	changed(src)
 
 /obj/structure/fireplace //more like a space heater than a bonfire. A cozier alternative to both.
 	name = "fireplace"
