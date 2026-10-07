@@ -41,7 +41,6 @@ explosion 2 | look_set_bits: 0 -> 258
 explosion 2 | refresh_bits: 9 -> 0
 explosion 2 | refresh_queued: 131071 -> 0
 explosion 2 | refresh_swept: 0 -> 1
-explosion 2 | stat: 0 -> 1
 explosion 3 | atom_integrity: down
 explosion 3 | light_on: 0 -> 1
 explosion 3 | light_range: 0 -> 2

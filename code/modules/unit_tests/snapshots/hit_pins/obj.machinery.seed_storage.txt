@@ -3,11 +3,13 @@ emag | emagged: 0 -> 1
 emag | refresh_queued: 131071 -> 0
 emp 1 | electrified: 0 -> 1
 emp 1 | hacked: 0 -> 1
+emp 1 | om_rec: null -> /datum/om/rec
 emp 1 | refresh_queued: 131071 -> 0
 emp 1 | smart: 0 -> 1
 emp 1 | turf: +/obj/effect/overlay x1
 emp 2 | electrified: 0 -> 1
 emp 2 | hacked: 0 -> 1
+emp 2 | om_rec: null -> /datum/om/rec
 emp 2 | refresh_queued: 131071 -> 0
 emp 2 | smart: 0 -> 1
 emp 2 | turf: +/obj/effect/overlay x1

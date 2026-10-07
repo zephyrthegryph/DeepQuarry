@@ -2617,3 +2617,13 @@ these classes, each systematic. No row was blessed that is not one of them.
 * **The `/obj/item` and `/turf` default ops sit at the lowest tier** (`OP_PRIORITY_DEFAULT - 10`): the old defaults ran after every type's own interaction.
 * **Cosmetic and ambient periodics opt into proximity** (`proximity_tracked`, `when = STAT_RELEVANCE`): they stop when no client is near. Simulation periodics keep running everywhere.
 * **`analyze gen reads` emits its table in chunks**: BYOND does not compile one list literal of about 760 assoc entries.
+
+## Integration batch 6 (rewrite/integ-6): pins re-blessed after merging the sweeps with master
+
+Each changed pin row is one of these classes; nothing else was blessed. `dq_interaction_domain_snapshot/i7_bulk` is not re-blessed (a stardog left by an earlier test in the same run poisons it, framework_gaps.md J9).
+
+* **Every simple mob's `keys:` row gains `mob_attacks.*`** (alarm, charge, fire, melee, pickup, shoot, slam, special, step, throw): the AI ops of rewrite/ai-packs, which the sweep's pins predate.
+* **A rights refusal reads "You do not have sufficient rights to do that."** (`req_rights`'s own message from rewrite/op-topic) on the ghost-only rows of the bluespace rift, modular computers and the event portal.
+* **A SMES's crowbar click is "Deconstruct"** (hatch tools answer before the window, integ-4): the sweep's "Ui open" row is gone.
+* **The shield projector's regeneration is one `every()` with a tracked `regenerating`** (the master conversion replaced the sweep's periodic): hit rows read `regenerating: 0 -> 1` where the legacy `periodic_pipe` row was.
+* **A machine's break and EMP are stat holds, not a write to `stat`** (machine-stats): the `stat: 0 -> 1` rows of four computers and the shield generator are gone. An EMP's timed hold (and a shield's `after()` flash) owns a timer on the machine, so the machine's `om_rec` appears after the hit (seed storage emp, shield emag, projectile and thrown rows).

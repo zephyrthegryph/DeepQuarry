@@ -27,7 +27,6 @@ emp 2 | malfunction: 0 -> 1
 emp 2 | refresh_bits: 9 -> 0
 emp 2 | refresh_queued: 131071 -> 0
 emp 2 | refresh_swept: 0 -> 1
-emp 2 | stat: 0 -> 1
 explosion 1 | deleted
 explosion 2 | atom_integrity: down
 explosion 2 | cap_data: null -> list(1)

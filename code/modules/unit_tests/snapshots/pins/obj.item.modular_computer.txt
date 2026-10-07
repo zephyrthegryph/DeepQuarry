@@ -17,7 +17,7 @@ ghost|none menu: Forced Shutdown (refused: You can't reach that.)
 ghost|none menu: Modular computer ghost nothing
 ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Toggle Digestable (refused: You can't reach that.)
-ghost|none menu: View (refused: Not while things are as they are.)
+ghost|none menu: View (refused: You do not have sufficient rights to do that.)
 ghost|none click: Click: View
 human|/obj/item/tool/screwdriver menu: Forced Shutdown
 human|/obj/item/tool/screwdriver menu: Interaction item

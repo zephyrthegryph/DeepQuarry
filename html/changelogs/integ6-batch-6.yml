@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Legacy interaction, emag, hit, periodic and repeat forms converted to ops, hooks and every() across the tree; holds release with their source; read_once(); slot occupancy"
+  - bugfix: "Rip poster and translocator beacon warning questions answer again; e-cig toggle keeps its clothing fallthrough; chem canister refill messages"

@@ -3,7 +3,7 @@ human|none click: Click: Portal hand
 robot|none menu: Portal hand
 robot|none click: Click: Portal hand
 ai|none click: nothing
-ghost|none menu: Portal (refused: Not while things are as they are.)
+ghost|none menu: Portal (refused: You do not have sufficient rights to do that.)
 ghost|none menu: Portal ghost nothing
 ghost|none menu: Portal staff use (refused: It isn't in the right state for that.)
 ghost|none click: Click: Portal

@@ -16,7 +16,6 @@ human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Ui open
 human|/obj/item/tool/crowbar click: Click: Deconstruct
-human|/obj/item/tool/crowbar click: Click: Ui open
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Ui open
