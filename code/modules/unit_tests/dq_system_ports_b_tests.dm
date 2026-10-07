@@ -192,13 +192,12 @@
 	TEST_ASSERT_EQUAL(SSrunechat.periodic_runlevels, RUNLEVEL_GAME | RUNLEVEL_POSTGAME, "runechat delivers outside the game")
 	TEST_ASSERT_EQUAL(SSrunechat.deliver_messages(0), STEP_PARK, "an empty runechat queue must park")
 	var/datum/dq_runechat_probe/probe = new
-	var/list/message = om_callable(probe, TYPE_PROC_REF(/datum/dq_runechat_probe, finish))
 	W.parked = TRUE
-	SSrunechat.enqueue(message)
+	var/list/message = SSrunechat.enqueue(probe, TYPE_PROC_REF(/datum/dq_runechat_probe, finish))
 	TEST_ASSERT(!W.parked, "enqueue() did not wake the parked item")
 	SSrunechat.dequeue(message)
 	TEST_ASSERT_EQUAL(length(SSrunechat.vars["message_queue"]), 0, "dequeue() left the message queued")
-	SSrunechat.enqueue(message)
+	SSrunechat.enqueue(message[1], message[2], message[3])
 	var/result = SSrunechat.deliver_messages(0)
 	for(var/i in 1 to 20)
 		if(result != STEP_YIELD)

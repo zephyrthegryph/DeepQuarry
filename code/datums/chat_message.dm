@@ -53,8 +53,8 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	var/animate_start = 0
 	/// Our animation lifespan, how long this message will last
 	var/animate_lifespan = 0
-	/// Callback to finish_image_generation passed to SSrunechat
-	var/list/finish_callback // om_callable() spec queued on the runechat service
+	/// The row finish_image_generation() has on the runechat queue (SSrunechat.enqueue()), or null.
+	var/list/finish_queued
 
 /**
  * Constructs a chat message overlay
@@ -84,8 +84,8 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 		if(owner.seen_messages)
 			LAZYREMOVEASSOC(owner.seen_messages, message_loc, src)
 		owner.images.Remove(message)
-	if (finish_callback)
-		SSrunechat.dequeue(finish_callback)
+	if (finish_queued)
+		SSrunechat.dequeue(finish_queued)
 
 
 /**
@@ -194,11 +194,10 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	if(!VERB_SHOULD_YIELD)
 		return finish_image_generation(msgwidth, mheight, target, owner, complete_text, lifespan)
 
-	finish_callback = om_callable(src, PROC_REF(finish_image_generation), msgwidth, mheight, target, owner, complete_text, lifespan)
-	SSrunechat.enqueue(finish_callback)
+	finish_queued = SSrunechat.enqueue(src, PROC_REF(finish_image_generation), list(msgwidth, mheight, target, owner, complete_text, lifespan))
 
 /datum/chatmessage/proc/finish_image_generation(msgwidth, mheight, atom/target, mob/owner, complete_text, lifespan)
-	finish_callback = null
+	finish_queued = null
 	var/rough_time = REALTIMEOFDAY
 
 	approx_lines = max(1, mheight / CHAT_MESSAGE_APPROX_LHEIGHT)

@@ -182,26 +182,22 @@
 
 /// Can this strain shed into the air from its host right now?
 /datum/affliction/contagion/proc/can_shed_airborne()
-	return host && is_spreadable() && (spread_flags & DISEASE_SPREAD_AIRBORNE) && infectivity > 0 && !global_flag_check(virus_modifiers, DORMANT)
+	return host && is_spreadable() && (spread_flags & DISEASE_SPREAD_AIRBORNE) && infectivity > 0 && !(virus_modifiers & DORMANT)
 
 /// Does this strain keep its course in a dead host (the body stops ticking
 /// the dead, so the lane carries it)?
 /datum/affliction/contagion/proc/acts_in_dead_host()
 	return host?.stat == DEAD && global_flag_check(virus_modifiers, SPREAD_DEAD) && !global_flag_check(virus_modifiers, DORMANT)
 
-/// The spread lane runs while the strain is in a body and either sheds airborne or keeps its
-/// course in a dead host; the every() below polls this gate (a proc gate, so the lane never parks).
-/datum/affliction/contagion/reactions()
-	. = ..()
-	. += every(2 SECONDS, PROC_REF(contagion_step), when = PROC_REF(spread_lane_wanted))
-
-/datum/affliction/contagion/proc/spread_lane_wanted()
-	return !QDELETED(src) && host && body && (can_shed_airborne() || acts_in_dead_host())
+/// The spread lane runs while the strain is in a body and either sheds airborne or can keep its course in a dead host (the gate reads only
+/// this strain's tracked state, so the every() in CAPABILITIES parks and wakes on it; whether the host is dead now is the step's check).
+/datum/affliction/contagion/proc/spread_lane_wanted(datum/act/eval/A)
+	return host && body && (can_shed_airborne() || ((virus_modifiers & SPREAD_DEAD) && !(virus_modifiers & DORMANT)))
 
 /// One lane step (every 2 s): a SPREAD_DEAD strain in a corpse keeps its
 /// course, and an airborne strain rolls infectivity and sheds (the declaration
 /// parks it once neither applies).
-/datum/affliction/contagion/proc/contagion_step(dt)
+/datum/affliction/contagion/proc/contagion_step(datum/act/timer/A)
 	var/dead_course = acts_in_dead_host()
 	var/airborne = can_shed_airborne()
 	if(dead_course)

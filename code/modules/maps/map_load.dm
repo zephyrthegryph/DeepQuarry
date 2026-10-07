@@ -2,7 +2,7 @@
 //
 // Loading a template (or a whole z-level) is long work that must give the tick back, so it is one
 // /datum/map_load: a job whose steps each do a bounded chunk of one phase and return JOB_MORE until the
-// load is finished, and whose then() reports the result to the caller's om_callable. The phases, in order:
+// load is finished, and whose then() schedules the caller's then(). The phases, in order:
 //
 //   PREPARE  work out where it goes, annihilate what is in the way, allocate the z-level (new_z loads)
 //   PARSE    parse the map text, a few regex matches per step (skipped when a parsed map is cached)
@@ -52,8 +52,10 @@ GLOBAL_VAR(map_load_active)
 	var/origin_x = 0
 	var/origin_y = 0
 	var/origin_z = 0
-	/// om_callable run with the result (the new z, TRUE, or FALSE) once the load is over, or null.
-	var/list/on_done
+	/// Run as after(then_owner, 0, then, with = then_with + result) once the load is over (the result is the new z, TRUE, or FALSE); null: nothing.
+	var/then
+	var/datum/then_owner
+	var/list/then_with
 
 	var/phase = MAP_LOAD_PREPARE
 	var/result = FALSE
@@ -76,11 +78,17 @@ GLOBAL_VAR(map_load_active)
 	var/init_job
 	var/list/init_ctx
 
-/datum/map_load/New(datum/map_template/template, mode, centered, turf/at, list/on_done)
+CAPABILITIES(/datum/map_load)
+	ref_one(nameof(then_owner))
+
+/datum/map_load/New(datum/map_template/template, mode, centered, turf/at, then, datum/then_owner, list/then_with)
 	src.template = template
 	src.mode = mode
 	src.centered = centered
-	src.on_done = on_done
+	src.then = then
+	if(then_owner)
+		rel_set(src, nameof(then_owner), then_owner)
+	src.then_with = then_with
 	if(at)
 		origin_x = at.x
 		origin_y = at.y
@@ -112,8 +120,10 @@ GLOBAL_VAR(map_load_active)
 /datum/map_load/proc/finished(datum/act/timer/A)
 	if(GLOB.map_load_active == src)
 		GLOB.map_load_active = null
-	om_run(on_done, result)
-	on_done = null
+	after_done(then_owner, then, then_with, result)
+	then = null
+	rel_clear(src, nameof(then_owner))
+	then_with = null
 	release()
 	if(!GLOB.map_load_active && length(GLOB.map_load_queue))
 		var/datum/map_load/next = GLOB.map_load_queue[1]

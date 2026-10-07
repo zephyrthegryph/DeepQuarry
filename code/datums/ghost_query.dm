@@ -58,11 +58,7 @@
 	if(query_sound)
 		SEND_SOUND(C, sound(query_sound))
 
-	tgui_alert_async(D, question, "[role_name] request", list("Yes", "No", "Never for this round"), reply_callback(D), wait_time)
-
-/// Bind the queried observer weakly; the async alert appends its response after this argument.
-/datum/ghost_query/proc/reply_callback(mob/observer/dead/D)
-	return om_callable(src, PROC_REF(get_reply), D)
+	tgui_alert_async(D, question, "[role_name] request", list("Yes", "No", "Never for this round"), wait_time, then = PROC_REF(get_reply), owner = src, with = list(D))
 
 /// Process an async alert response from the observer that received the question.
 /datum/ghost_query/proc/get_reply(mob/observer/dead/D, response)
@@ -87,7 +83,7 @@
 			else if(finished) // Already finished candidate list
 				to_chat(D, span_warning("Unfortunately, you were not fast enough, and there are no more available roles. Sorry."))
 			else // Prompt a second time
-				tgui_alert_async(D, "Are you sure you want to play as a [role_name]?", "[role_name] request", list("I'm Sure", "Nevermind"), reply_callback(D), wait_time)
+				tgui_alert_async(D, "Are you sure you want to play as a [role_name]?", "[role_name] request", list("I'm Sure", "Nevermind"), wait_time, then = PROC_REF(get_reply), owner = src, with = list(D))
 
 		if("I'm Sure")
 			if(!evaluate_candidate(D)) // Failed revalidation

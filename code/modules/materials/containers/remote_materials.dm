@@ -58,7 +58,7 @@ CAPABILITIES(/datum/remote_materials)
 	observe(owner, /datum/act/attackby, src, instead(then(PROC_REF(on_item_insert))))
 
 	if(mapload) // wait for silo to initialize during mapload
-		SSticker.OnRoundstart(om_callable(src, PROC_REF(_PrepareStorage), connect_to_silo))
+		SSticker.OnRoundstart(src, PROC_REF(_PrepareStorage), list(connect_to_silo))
 	else //directly register in round
 		_PrepareStorage(connect_to_silo)
 

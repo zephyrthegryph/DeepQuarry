@@ -209,8 +209,8 @@ SYSTEM_DEF(ticker)
 	equip_characters()
 
 
-	for(var/list/spec as anything in round_start_events)
-		om_run_async(spec)
+	for(var/list/row as anything in round_start_events)
+		round_start_fire(row)
 	LAZYCLEARLIST(round_start_events)
 
 	//otherwise round_start_time would be 0 for the signals
@@ -279,12 +279,20 @@ SYSTEM_DEF(ticker)
 		statistic_cycle() // Polls population totals regularly and stores them in an SQL DB -- TLE
 
 //These callbacks will fire after roundstart key transfer
-/// `spec` is an om_callable() spec.
-/datum/system/ticker/proc/OnRoundstart(list/spec)
+/// Runs `handler` at the start of the round, as after(owner, delay, handler, with = with) does from then on: a PROC_REF on `owner`, or a
+/// GLOBAL_PROC_REF (owner null) called with `with`. Already started: it is scheduled at once.
+/datum/system/ticker/proc/OnRoundstart(datum/owner, handler, list/with = null, delay = 0)
+	var/list/row = list("owner" = owner, "handler" = handler, "with" = with, "delay" = delay)
 	if(!HasRoundStarted())
-		LAZYADD(round_start_events, list(spec))
+		LAZYADD(round_start_events, list(row))
 	else
-		om_run_async(spec)
+		round_start_fire(row)
+
+/datum/system/ticker/proc/round_start_fire(list/row)
+	var/datum/owner = row["owner"]
+	if(owner && QDELETED(owner))
+		return
+	after(owner, row["delay"], row["handler"], with = row["with"])
 
 //These callbacks will fire before roundend report
 /datum/system/ticker/proc/OnRoundend(datum/callback/cb)

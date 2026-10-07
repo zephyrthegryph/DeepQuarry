@@ -95,16 +95,22 @@
 	TEST_ASSERT(E.ticks >= 2, "running from creation (ran [E.ticks])")
 	TEST_ASSERT(!length(E.rx?.every_parked), "never parked")
 
-/// A proc gate cannot be trusted to announce every change, so the every() polls (never parks) and still follows the condition.
-/datum/unit_test/dq_gap/every_with_a_proc_gate_polls
-/datum/unit_test/dq_gap/every_with_a_proc_gate_polls/run_gap()
+/// A proc gate parks on the generated reads of its body (tracked vars of the holder): no timer while it is false, it wakes when a read publishes.
+/datum/unit_test/dq_gap/every_with_a_proc_gate_parks
+/datum/unit_test/dq_gap/every_with_a_proc_gate_parks/run_gap()
 	var/obj/gap_every_proc/E = allocate(/obj/gap_every_proc, run_loc_floor_bottom_left)
 	test_time(5 SECONDS)
 	TEST_ASSERT_EQUAL(E.ticks, 0, "false: it did not run")
-	TEST_ASSERT(!length(E.rx?.every_parked), "and it is polling, not parked")
+	TEST_ASSERT(length(E.rx?.every_parked), "and it is parked, holding no timer")
 	E.set_on(TRUE)
 	test_time(3 SECONDS)
 	TEST_ASSERT(E.ticks >= 2, "true: it runs (ran [E.ticks])")
+	TEST_ASSERT(!length(E.rx?.every_parked), "no longer parked")
+	E.set_on(FALSE)
+	var/seen = E.ticks
+	test_time(3 SECONDS)
+	TEST_ASSERT(E.ticks <= seen + 1, "false again: it stopped")
+	TEST_ASSERT(length(E.rx?.every_parked), "and parked again")
 
 /// Converted periodic (a tracked var plus every()): a pinpointer steps (and shows what it found) only while active.
 /datum/unit_test/dq_gap/periodic_pinpointer_steps_while_active

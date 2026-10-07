@@ -134,12 +134,12 @@ CAPABILITIES(/datum/map_template)
 /// the boot, nested and test drive of the map load (map_load.dm). A load that runs while players are on is
 /// load_new_z_async().
 /datum/map_template/proc/load_new_z(centered = FALSE)
-	var/datum/map_load/M = new(src, MAP_LOAD_NEW_Z, centered, null, null)
+	var/datum/map_load/M = new(src, MAP_LOAD_NEW_Z, centered)
 	return M.run_sync()
 
-/// load_new_z() as a job: `on_done` (an om_callable) is run with the new z, or FALSE, once it has loaded.
-/datum/map_template/proc/load_new_z_async(centered = FALSE, list/on_done = null)
-	var/datum/map_load/M = new(src, MAP_LOAD_NEW_Z, centered, null, on_done)
+/// load_new_z() as a job: once it has loaded, after(owner, 0, then, with = with + new z (or FALSE)) runs.
+/datum/map_template/proc/load_new_z_async(centered = FALSE, then = null, datum/owner = null, list/with = null)
+	var/datum/map_load/M = new(src, MAP_LOAD_NEW_Z, centered, null, then, owner, with)
 	return M.submit()
 
 /// Loads this template at `T`, to completion without yielding (boot, nested and test loads; see load_new_z()).
@@ -147,15 +147,15 @@ CAPABILITIES(/datum/map_template)
 /datum/map_template/proc/load(turf/T, centered = FALSE)
 	if(!T)
 		return FALSE
-	var/datum/map_load/M = new(src, MAP_LOAD_AT, centered, T, null)
+	var/datum/map_load/M = new(src, MAP_LOAD_AT, centered, T)
 	return M.run_sync()
 
-/// load() as a job: `on_done` (an om_callable) is run with TRUE or FALSE once the template has loaded.
-/datum/map_template/proc/load_async(turf/T, centered = FALSE, list/on_done = null)
+/// load() as a job: once the template has loaded, after(owner, 0, then, with = with + TRUE or FALSE) runs.
+/datum/map_template/proc/load_async(turf/T, centered = FALSE, then = null, datum/owner = null, list/with = null)
 	if(!T)
-		om_run(on_done, FALSE)
+		after_done(owner, then, with, FALSE)
 		return null
-	var/datum/map_load/M = new(src, MAP_LOAD_AT, centered, T, on_done)
+	var/datum/map_load/M = new(src, MAP_LOAD_AT, centered, T, then, owner, with)
 	return M.submit()
 
 /// An admin-placed template finished loading (load_async()'s completion).

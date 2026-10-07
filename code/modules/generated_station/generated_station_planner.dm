@@ -88,14 +88,14 @@ CAPABILITIES(/datum/generated_station_planner)
 	return state["spec"]
 
 /// plan() for the live game: the Rust job is polled on a timer and its result read back as lane
-/// work (object_model_core.md §4.11), so nothing sleeps. `on_done` is invoked with the spec, or
-/// null (error_message says why).
-/datum/generated_station_planner/proc/plan_async(seed, width = 160, height = 160, list/on_done)
+/// work (object_model_core.md §4.11), so nothing sleeps. When it ends, after(owner, 0, then, with = with + the spec, or
+/// null: error_message says why) runs.
+/datum/generated_station_planner/proc/plan_async(seed, width = 160, height = 160, then = null, datum/owner = null, list/with = null)
 	error_message = null
 	seed = generated_station_plan_seed(seed)
 	var/request_json = plan_request(seed, width, height)
 	var/job_id = vg_verdigris_submit_station_layout(request_json)
-	var/list/state = list("job" = job_id, "request" = request_json, "seed" = seed, "done" = on_done)
+	var/list/state = list("job" = job_id, "request" = request_json, "seed" = seed, "then" = then, "owner" = owner, "with" = with)
 	if(!job_id)
 		return plan_async_end(state, plan_failed(null, request_json, seed, "Rust planner did not return a job handle"))
 	// The worker owns only immutable Rust data; the game keeps its ticks until the result is ready.
@@ -162,8 +162,7 @@ CAPABILITIES(/datum/generated_station_planner)
 
 /datum/generated_station_planner/proc/plan_async_end(list/state, datum/generated_station_spec/spec)
 	state["spec"] = spec
-	var/list/on_done = state["done"]
-	om_run(on_done, spec)
+	after_done(state["owner"], state["then"], state["with"], spec)
 
 /// The plan's array sections, read a page at a time by plan_fetch_slice().
 GLOBAL_LIST_INIT(generated_station_plan_sections, list("departments", "nodes", "rooms", "doors", "edges", "tile_rows", "content_rooms", "fixtures", "networks"))

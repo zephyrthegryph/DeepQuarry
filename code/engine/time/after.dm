@@ -102,6 +102,16 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 /proc/after(datum/owner, delay, handler, key = null, clock = CLOCK_OWN, list/with = null, keeps_dead = FALSE)
 	return rx_after(owner, delay, handler, key, clock, with, keeps_dead)
 
+/// The completion of an async API that took `then =`, `owner =` and `with =` (the same shape as after()): schedules
+/// after(owner, 0, then, with = with + the results). Nothing happens without a `then`; an owner that died meanwhile drops the call, as after() does.
+/proc/after_done(datum/owner, then, list/with, ...)
+	if(!then)
+		return null
+	var/list/call_with = with ? with.Copy() : list()
+	for(var/i in 4 to length(args))
+		call_with += list(args[i])
+	return after(owner, 0, then, with = call_with)
+
 /// after() with the default (drop on a deleted datum argument) spelled out; kept for callers that name it.
 /proc/after_if_alive(datum/owner, delay, handler, list/with = null)
 	return timer_schedule_list(owner, delay, handler, with, nulls_for_gone = FALSE)

@@ -59,11 +59,16 @@
 
 /// Does the `when =` condition `cond` of an every() on `holder` hold? A runtime in it is logged and counts as "does not hold" this run (the next run is
 /// still armed by the caller).
+/// every_gate_faulted() says whether the last call hit a runtime: a gate that threw keeps polling instead of parking (nothing would wake it).
+GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
+
 /proc/every_gate_holds(datum/holder, cond, what)
 	var/held = FALSE
+	GLOB.every_gate_faulted = FALSE
 	try
 		held = !!change_condition(holder, cond)
 	catch(var/exception/fault)
+		GLOB.every_gate_faulted = TRUE
 		dq_report_caught(fault, "every() gate of [what] on [holder.type]; skipped this run")
 	return held
 
@@ -151,7 +156,7 @@
 		known[id] = type_every_cond_tracked(holder, cond) ? TRUE : FALSE
 	return known[id]
 
-/// Is `cond` a tracked var or a declared relation var (ref_one/ref_many/owns/link: rel_set() and the framework's clears publish its key) of `holder`, or a stat id (STAT_RELEVANCE), or a cond_not/cond_all/cond_any tree of them?
+/// Is `cond` a tracked var, a proc whose generated reads are all of the holder's own tracked vars, or a declared relation var (ref_one/ref_many/owns/link: rel_set() and the framework's clears publish its key) of `holder`, or a stat id (STAT_RELEVANCE), or a cond_not/cond_all/cond_any tree of them?
 /proc/type_every_cond_tracked(datum/holder, cond)
 	if(islist(cond))
 		var/list/tree = cond
@@ -163,7 +168,19 @@
 		return TRUE
 	if(isnum(cond))
 		return cond >= STAT_ID_BASE && cond < CAPKEY_ID_BASE // a stat: every write of it publishes to a reader (the wake hook is one)
-	return istext(cond) && (cond in holder.vars) && (hascall(holder, "__setter_[cond]") || rel_kind(holder, cond))
+	if(!istext(cond))
+		return FALSE
+	if(cond in holder.vars)
+		return hascall(holder, "__setter_[cond]") || rel_kind(holder, cond)
+	// A gate proc of the holder: it parks on the generated reads of its body (the reads lint, sem/reads unknown_read, rejects an untracked read).
+	// A read through a relation hop ("host.stat") is not subscribed by the wake, so a gate with one keeps polling.
+	var/list/reads = stat_generated_reads(holder, cond)
+	if(!length(reads))
+		return FALSE
+	for(var/read in reads)
+		if(findtext(read, ".") || findtext(read, ":"))
+			return FALSE
+	return TRUE
 
 /// Does the `when =` of the every() `C` hold on the holder now?
 /proc/type_every_gate(datum/holder, datum/centry/C)
@@ -218,10 +235,11 @@
 		gated = op_whens_hold(holder, C.whens)
 	catch(var/exception/when_fault)
 		dq_report_caught(when_fault, "every() when() block on [holder.type]; skipped this run")
+	GLOB.every_gate_faulted = FALSE
 	var/cond = E.args["when"]
 	if(gated && !isnull(cond))
 		gated = every_gate_holds(holder, cond, "type every()")
-	if(!gated && type_every_parkable(holder, C))
+	if(!gated && !GLOB.every_gate_faulted && type_every_parkable(holder, C))
 		type_every_park(holder, index)
 		return
 	if(gated)

@@ -28,9 +28,13 @@
 	var/list/phases
 	var/phase_index = 1
 	var/phase_cursor
-	/// materialize_async(): list(callback) invoked with the materialization (or null) at the end.
-	/// Invoked with the materialization when the run ends; the caller made it.
-	var/list/on_done
+	/// materialize_async(): at the end, after(then_owner, 0, then, with = then_with + the materialization (or null)) runs; the caller made it.
+	var/then
+	var/datum/then_owner
+	var/list/then_with
+
+CAPABILITIES(/datum/generated_station_materialization_job)
+	ref_one(nameof(then_owner))
 
 /datum/generated_station_materialization_job/New(datum/generated_station_materializer/new_materializer, datum/flight_plan/new_flight_plan, fast_mode = FALSE)
 	..()
@@ -78,10 +82,13 @@
 		job_cursor(src, PROC_REF(run_slice), 1, null, TRUE)
 	return end_run()
 
-/// Materializes as lane work; `new_on_done` is invoked with the materialization (or null).
-/datum/generated_station_materialization_job/proc/execute_async(datum/generated_station_spec/spec, z_level, origin_x, origin_y, list/new_on_done)
+/// Materializes as lane work; then, owner and with are run with the materialization (or null) as after() does.
+/datum/generated_station_materialization_job/proc/execute_async(datum/generated_station_spec/spec, z_level, origin_x, origin_y, new_then, datum/new_then_owner, list/new_then_with)
 	now = FALSE
-	on_done = new_on_done
+	then = new_then
+	if(new_then_owner)
+		rel_set(src, nameof(then_owner), new_then_owner)
+	then_with = new_then_with
 	if(!start(spec, z_level, origin_x, origin_y))
 		finish_async()
 		return
@@ -137,9 +144,11 @@
 /datum/generated_station_materialization_job/proc/finish_async()
 	var/datum/generated_station_materialization/result = end_run()
 	materializer().record_job_telemetry(src)
-	var/list/callback = on_done
+	var/callback = then
+	var/datum/callback_owner = then_owner
+	var/list/callback_with = then_with
 	spent(src)
-	om_run(callback, result)
+	after_done(callback_owner, callback, callback_with, result)
 
 #undef GENERATED_STATION_TICK_BUDGET_NORMAL
 #undef GENERATED_STATION_TICK_BUDGET_FAST

@@ -4,7 +4,7 @@
 #if defined(AUTOWIKI) || defined(UNIT_TESTS)
 /proc/setup_autowiki()
 	Kernel.sleep_offline_after_initializations = FALSE
-	SSticker.OnRoundstart(om_callable(null, GLOBAL_PROC_REF(generate_autowiki)))
+	SSticker.OnRoundstart(null, GLOBAL_PROC_REF(generate_autowiki))
 	SSticker.start_immediately = TRUE
 	CONFIG_SET(number/round_end_countdown, 0)
 

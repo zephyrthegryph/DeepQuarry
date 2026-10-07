@@ -40,38 +40,38 @@
 	return J
 
 /// A cursor job (what the OM's lane slices were): `slice`, a PROC_REF on the owner called as slice(cursor), does one bounded slice and
-/// returns the next cursor (lists pass as they are), or null when the work is done; then `on_done` (a PROC_REF on the owner, or a stored
-/// call) runs. Slices run back to back while the job's budget lasts. Before the kernel runs (world init), or with `now`, every slice runs
+/// returns the next cursor (lists pass as they are), or null when the work is done; then `on_done` (a PROC_REF on the owner, called with `done_with`)
+/// runs. Slices run back to back while the job's budget lasts. Before the kernel runs (world init), or with `now`, every slice runs
 /// at once. Deleting the owner drops the rest.
 /datum/kernel_job/cursor
 	var/cursor
 	var/slice
 	var/on_done
+	var/list/done_with
 
-/proc/job_cursor(datum/owner, slice, cursor, on_done = null, now = FALSE)
+/proc/job_cursor(datum/owner, slice, cursor, on_done = null, now = FALSE, list/done_with = null)
 	if(!owner || QDELETED(owner))
 		return null
 	if(now || !Kernel?.processing)
 		while(!isnull(cursor) && !QDELETED(owner))
 			cursor = call(owner, slice)(cursor)
 		if(!QDELETED(owner))
-			job_cursor_done(owner, on_done)
+			job_cursor_done(owner, on_done, done_with)
 		return null
 	var/datum/kernel_job/cursor/J = new
 	J.owner = owner // ALLOW(ownership): a transient reference: the job is dropped when its owner is deleted, and the act is pooled and reset on release
 	J.slice = slice
 	J.cursor = cursor
 	J.on_done = on_done
+	J.done_with = done_with
 	J.last_step = world.time // ALLOW(sys_world_time_write): the job's own step stamp, read for dt, not an entity expiry
 	SSkernel_jobs.start(J)
 	return J
 
-/// A cursor job's work is done: `on_done` is a proc on the owner, or a stored call (callable()).
-/proc/job_cursor_done(datum/owner, on_done)
-	if(islist(on_done))
-		om_run(on_done)
-	else if(on_done)
-		call(owner, on_done)()
+/// A cursor job's work is done: `on_done` is a proc on the owner, called with `done_with`.
+/proc/job_cursor_done(datum/owner, on_done, list/done_with = null)
+	if(on_done)
+		call(owner, on_done)(arglist(done_with || list()))
 
 SYSTEM_DEF(kernel_jobs)
 	name = "Jobs"
@@ -157,7 +157,7 @@ SYSTEM_DEF(kernel_jobs)
 		if(istype(J, /datum/kernel_job/cursor))
 			var/datum/kernel_job/cursor/C = J
 			if(!QDELETED(owner))
-				job_cursor_done(owner, C.on_done)
+				job_cursor_done(owner, C.on_done, C.done_with)
 			return
 		if(J.then && !QDELETED(owner))
 			var/datum/act/timer/D = take(/datum/act/timer)

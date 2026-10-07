@@ -464,4 +464,5 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 			return 9
 
 CAPABILITIES(/datum/affliction/contagion)
+	every(2 SECONDS, then(PROC_REF(contagion_step)), when = PROC_REF(spread_lane_wanted))
 	ref_one(nameof(host))

@@ -71,7 +71,7 @@ CAPABILITIES(/datum/gap_every_datum)
 /datum/gap_every_datum/proc/gated_tick(datum/act/timer/A)
 	gated_ticks++
 
-/// A gate that is a proc (its reads may be incomplete): the every() keeps polling instead of parking.
+/// A gate that is a proc: the every() parks on the tracked reads of its body.
 /obj/gap_every_proc
 	name = "gap every proc target"
 	var/on = FALSE

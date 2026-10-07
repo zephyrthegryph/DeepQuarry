@@ -139,10 +139,10 @@ CAPABILITIES(/datum/tgui_alert)
  * * message - The content of the alert, shown in the body of the TGUI window.
  * * title - The of the alert modal, shown on the top of the TGUI window.
  * * buttons - The options that can be chosen by the user, each string is assigned a button on the UI.
- * * callback - The callback to be invoked when a choice is made.
+ * * then, owner, with - Once a choice is made, after(owner, 0, then, with = with + choice) runs (the shape of after()); a deleted owner or datum argument drops the call.
  * * timeout - The timeout of the alert, after which the modal will close and qdel itself. Disabled by default, can be set to seconds otherwise.
  */
-/proc/tgui_alert_async(mob/user, message = "", title, list/buttons = list("Ok"), list/callback, timeout = 0, autofocus = TRUE, ui_state = GLOB.tgui_always_state)
+/proc/tgui_alert_async(mob/user, message = "", title, list/buttons = list("Ok"), timeout = 0, autofocus = TRUE, ui_state = GLOB.tgui_always_state, then = null, datum/owner = null, list/with = null)
 	if (istext(buttons))
 		stack_trace("tgui_alert() received text for buttons instead of list")
 		return
@@ -159,7 +159,7 @@ CAPABILITIES(/datum/tgui_alert)
 	if(isnull(user.client))
 		return null
 
-	var/datum/tgui_alert/async/alert = new(user, message, title, buttons, callback, timeout, autofocus, ui_state)
+	var/datum/tgui_alert/async/alert = new(user, message, title, buttons, timeout, autofocus, ui_state, then, owner, with)
 	alert.tgui_interact(user)
 
 /**
@@ -168,19 +168,26 @@ CAPABILITIES(/datum/tgui_alert)
  * An asynchronous version of tgui_modal to be used with callbacks instead of waiting on user responses.
  */
 /datum/tgui_alert/async
-	/// The om_callable() spec run with the choice once one is made.
-	var/list/callback
+	/// Run as after(then_owner, 0, then, with = then_with + choice) once a choice is made.
+	var/then
+	var/datum/then_owner
+	var/list/then_with
 
-/datum/tgui_alert/async/New(mob/user, message, title, list/buttons, callback, timeout, autofocus, ui_state)
+CAPABILITIES(/datum/tgui_alert/async)
+	ref_one(nameof(then_owner))
+
+/datum/tgui_alert/async/New(mob/user, message, title, list/buttons, timeout, autofocus, ui_state, then, datum/then_owner, list/then_with)
 	..(user, message, title, buttons, timeout, autofocus, ui_state)
-	src.callback = callback
+	src.then = then
+	if(then_owner)
+		rel_set(src, nameof(then_owner), then_owner)
+	src.then_with = then_with
 
 
 /datum/tgui_alert/async/set_choice(choice)
 	. = ..()
 	if(!isnull(src.choice))
-		if(callback)
-			om_run_async(callback, src.choice)
+		after_done(then_owner, then, then_with, src.choice)
 
 /datum/tgui_alert/async/wait()
 	return

@@ -151,4 +151,4 @@ GLOBAL_VAR(trader_loaded)
 		if(!istype(MT))
 			log_mapping("Trader is not a valid map template!")
 		else
-			MT.load_new_z_async(TRUE, om_callable(null, GLOBAL_PROC_REF(trader_load_finished)))
+			MT.load_new_z_async(TRUE, GLOBAL_PROC_REF(trader_load_finished))
