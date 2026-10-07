@@ -451,6 +451,7 @@
 #include "dq_om_core_fix_tests.dm"
 #include "dq_om_pipeline_tests.dm"
 #include "dq_om_relations_tests.dm"
+#include "dq_rel_lifecycle_pins.dm"
 #include "dq_om_scheduler_tests.dm"
 #include "dq_om_lane_isolation_tests.dm"
 #include "dq_om_io_tests.dm"
