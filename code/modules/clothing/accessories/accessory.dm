@@ -487,7 +487,7 @@ TYPE_TABLE(/obj/item/clothing/accessory/scarf/teshari/neckscarf, fit_spec, list(
 		if(!own_bring_in(src, nameof(breathmask), I, null, user, TRUE, null, FALSE))
 			return OP_DECLINE
 		if(breathmask())
-			gaiter_remove_mask_alt(user, null, null)
+			gaiter_remove_mask_alt(A)
 		to_chat(user, span_notice("You tuck [I] behind [src]."))
 		rel_set(src, nameof(breathmask), I)
 		breath_masked = TRUE

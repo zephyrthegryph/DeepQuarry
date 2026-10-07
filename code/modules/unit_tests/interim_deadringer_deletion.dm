@@ -4,7 +4,7 @@
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/item/deadringer/watch = allocate(/obj/item/deadringer, T)
 	TEST_ASSERT(actor.put_in_active_hand(watch), "The actual wearer must hold the watch")
-	watch.interaction_self(actor, watch, null)
+	test_op_handler(watch, "interaction_self", actor, watch)
 	TEST_ASSERT(watch.activated, "The actual self interaction must arm the watch")
 	actor.injure(INJURY_BLUNT, 10, BP_TORSO, null)
 	watch.deadringer_step(null)

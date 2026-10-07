@@ -187,6 +187,9 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	var/list/modifiers = params2list(params)
 
 	if(istype(equipped_item))
+		// The converted ops of the worn item (its pick-up/removal default, an item used on it) answer first; what no op answers goes on to the legacy chain.
+		if(op_resolve_click(src, equipped_item, active_item, GESTURE_CLICK, ORIGIN_CLICK, TRUE))
+			return TRUE
 		if(active_item)
 			equipped_item.attackby(active_item, src) //Wearing an item and item in hand.
 			return TRUE

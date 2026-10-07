@@ -9,14 +9,14 @@
 			rod.throwforce = 15
 		TEST_ASSERT(user.put_in_inactive_hand(bow), "the actual crossbow occupies the actor's inactive hand")
 		TEST_ASSERT(user.put_in_active_hand(rod), "the actual loading rod occupies the actor's active hand")
-		bow.gun_item(user, rod, null)
+		test_op_handler(bow, "gun_item", user, rod)
 		TEST_ASSERT_EQUAL(bow.bolt, rod, "actual loading installs the supplied rod as the owned bolt")
 		TEST_ASSERT_EQUAL(rod.loc, bow, "actual loading transfers the held rod into the crossbow")
 		TEST_ASSERT_NULL(user.get_active_hand(), "actual loading releases the rod's original hand slot")
 		user.swap_hand()
 		TEST_ASSERT_EQUAL(user.get_active_hand(), bow, "the actual loaded crossbow becomes the actor's active item")
 		bow.tension = 1
-		bow.gun_self(user, bow, null, null)
+		test_op_handler(bow, "gun_self", user, bow)
 		own_turf_contents(T)
 		TEST_ASSERT_NULL(bow.bolt, "actual unloading clears the crossbow's owned bolt")
 		TEST_ASSERT_EQUAL(bow.tension, 0, "actual unloading releases the crossbow's tension")

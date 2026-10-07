@@ -20,7 +20,7 @@
 	TEST_ASSERT_EQUAL(request.subject, pen, "the request rechecks the actual original pen")
 	TEST_ASSERT_EQUAL(request.owner, case, "the request belongs to the actual case")
 	TEST_ASSERT_EQUAL(request.ask_flags, ASK_HELD | ASK_CAPABLE, "both original actor gates remain")
-	TEST_ASSERT_EQUAL(request.timeout, 0, "the label question retains its indefinite timeout")
+	TEST_ASSERT_EQUAL(request.timeout, REQUEST_DEFAULT_TIMEOUT, "the label question gets the engine default timeout (it declares none)")
 	var/datum/prompt/text/prompt = request
 	TEST_ASSERT_EQUAL(prompt.max_len, MAX_NAME_LEN, "label length remains capped")
 	TEST_ASSERT(prompt.name_text, "label names retain original name-token normalization")
