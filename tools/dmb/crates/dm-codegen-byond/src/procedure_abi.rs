@@ -130,6 +130,46 @@ fn restriction(name: &str) -> Option<u32> {
         _ => return None,
     })
 }
+/// Pinned native return annotations carry source type information without a
+/// procedure-header field or return-value coercion. Keep their source metadata
+/// intact and admit only the observed atomic/path union grammar.
+fn validate_return_annotation(
+    annotation: &SymbolicExpression,
+    symbols: &SymbolTable,
+    evaluate: &mut impl FnMut(&SymbolicExpression) -> Result<SemanticValue, AbiError>,
+) -> Result<(), AbiError> {
+    for tokens in annotation
+        .tokens
+        .split(|token| symbols.text(token.text) == Some("|"))
+    {
+        let fragment = SymbolicExpression {
+            tokens: tokens.to_vec().into(),
+        };
+        let part = compact(&expression_text(&fragment, symbols)?)?;
+        let part = part.as_str();
+        let path = part.strip_prefix('/').is_some_and(|tail| {
+            !tail.is_empty()
+                && tail.split('/').all(|segment| {
+                    let mut bytes = segment.bytes();
+                    bytes
+                        .next()
+                        .is_some_and(|b| b.is_ascii_alphabetic() || b == b'_')
+                        && bytes.all(|b| b.is_ascii_alphanumeric() || b == b'_')
+                })
+        });
+        if !path && restriction(part).is_none() && !matches!(part, "atom" | "list") {
+            return Err(fail(format!(
+                "unsupported procedure return annotation: {part}"
+            )));
+        }
+        if path && evaluate(&fragment)? != SemanticValue::Type(dm_ir::SymbolId::of(part)) {
+            return Err(fail(format!(
+                "procedure return type is not positively captured: {part}"
+            )));
+        }
+    }
+    Ok(())
+}
 fn type_flags(path: Option<&str>) -> Result<u32, AbiError> {
     let path = path.unwrap_or("").trim_start_matches('/');
     Ok(match path.split('/').next().unwrap_or("") {
@@ -315,8 +355,8 @@ pub fn prepare_verified_procedure(
     }
     let mut selected = Vec::new();
     select(&metadata.settings, &mut selected, &mut evaluate)?;
-    if metadata.signature.return_annotation.is_some() {
-        return Err(fail("procedure return annotation ABI is unsupported"));
+    if let Some(annotation) = &metadata.signature.return_annotation {
+        validate_return_annotation(annotation, symbols, &mut evaluate)?;
     }
     let mut layout = match inherited {
         InheritedAbi::Fresh => ProcLayout::default(),
@@ -333,17 +373,12 @@ pub fn prepare_verified_procedure(
     let mut helpers = Vec::new();
     let mut argument_sources = Vec::new();
     for (index, param) in metadata.signature.parameters.iter().enumerate() {
-        match crate::parameter_abi::formal_shape(param)? {
-            crate::parameter_abi::FormalShape::Scalar { .. } => {}
-            crate::parameter_abi::FormalShape::UnsizedList { element_type: None } => {}
-            crate::parameter_abi::FormalShape::UnsizedList {
-                element_type: Some(_),
-            } => {
-                return Err(fail(
-                    "typed parameter array element inference is unsupported",
-                ));
-            }
-        }
+        let restriction_type = match crate::parameter_abi::formal_shape(param)? {
+            crate::parameter_abi::FormalShape::Scalar { declared_type } => declared_type,
+            // Native unsized formals are lexical lists, but their argument
+            // restriction bits retain the authored element family.
+            crate::parameter_abi::FormalShape::UnsizedList { element_type } => element_type,
+        };
         let name = symbols
             .text(param.name)
             .ok_or_else(|| fail("parameter name spelling unavailable"))?;
@@ -359,7 +394,14 @@ pub fn prepare_verified_procedure(
                     .ok_or_else(|| fail("parameter type spelling unavailable"))
             })
             .transpose()?;
-        let mut flags = type_flags(declared)?;
+        let restriction_path = restriction_type
+            .map(|id| {
+                symbols
+                    .text(id)
+                    .ok_or_else(|| fail("parameter restriction spelling unavailable"))
+            })
+            .transpose()?;
+        let mut flags = type_flags(restriction_path)?;
         if let Some(annotation) = &param.input_annotation {
             flags = 0;
             for part in compact(&expression_text(annotation, symbols)?)?.split('|') {
@@ -640,6 +682,80 @@ mod tests {
         assert_eq!(result.inputs.parameter_defaults, [Some("1".into())]);
         assert_eq!(result.source_helpers[0].argument, 0);
         assert_eq!(result.source_helpers[0].frame_parameters, ["count"]);
+    }
+    #[test]
+    fn typed_unsized_formals_keep_list_lexical_type_and_element_restrictions() {
+        let mut symbols = SymbolTable::default();
+        let mut metadata = metadata(&[], &mut symbols);
+        let list = symbols.intern("/list").unwrap();
+        metadata.signature.parameters = ["/obj", "/mob", "/datum/item"]
+            .into_iter()
+            .enumerate()
+            .map(|(index, element)| Parameter {
+                name: symbols.intern(&format!("values{index}")).unwrap(),
+                declared_type: Some(list),
+                flags: 0,
+                array: Some(std::sync::Arc::new(dm_ir::ArrayDeclaration {
+                    dimensions: [None].into(),
+                    element_type: Some(symbols.intern(element).unwrap()),
+                })),
+                default: None,
+                input_annotation: None,
+                source_expression: None,
+                relative_span: Span::new(0, 1),
+            })
+            .collect::<Vec<_>>()
+            .into();
+        let result = prepare_procedure(
+            &metadata,
+            &symbols,
+            &[],
+            ProcedureInputs::default(),
+            InheritedAbi::Fresh,
+            |_| Err(fail("unused")),
+        )
+        .unwrap();
+        assert_eq!(result.inputs.parameter_type_flags, [2, 1, 0]);
+        for name in &result.inputs.parameters {
+            assert_eq!(
+                result.inputs.parameter_types.get(name).map(String::as_str),
+                Some("/list")
+            );
+        }
+    }
+    #[test]
+    fn return_annotations_preserve_header_without_return_coercion() {
+        let mut symbols = SymbolTable::default();
+        for annotation in ["num", "/datum/item", "anything", "num|null"] {
+            let mut metadata = metadata(&[], &mut symbols);
+            metadata.signature.return_annotation = Some(expression(annotation, &mut symbols));
+            let result = prepare_procedure(
+                &metadata,
+                &symbols,
+                &[],
+                ProcedureInputs::default(),
+                InheritedAbi::Fresh,
+                |value| {
+                    assert_eq!(expression_text(value, &symbols)?, "/datum/item");
+                    Ok(SemanticValue::Type(dm_ir::SymbolId::of("/datum/item")))
+                },
+            )
+            .unwrap();
+            assert_eq!(result.layout, ProcLayout::default());
+        }
+        for annotation in ["mystery", "(num|text)", "num|", "void", "/datum/missing"] {
+            let mut metadata = metadata(&[], &mut symbols);
+            metadata.signature.return_annotation = Some(expression(annotation, &mut symbols));
+            assert!(prepare_procedure(
+                &metadata,
+                &symbols,
+                &[],
+                ProcedureInputs::default(),
+                InheritedAbi::Fresh,
+                |_| Err(fail("unused"))
+            )
+            .is_err());
+        }
     }
     #[test]
     fn later_category_restores_text_and_unknown_inherited_facts_fail() {
