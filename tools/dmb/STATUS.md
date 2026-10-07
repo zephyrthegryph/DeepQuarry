@@ -38,9 +38,22 @@ It used the binary before the subsequent initializer indexing fixes. Two
 quadratic source paths were identified: receiver-group lookup per runtime write,
 and full shared initializer reference scanning per target slot. Both now use
 request-local indexes while retaining source order and exact slot conflict checks;
-focused gates are pending. Compact settings reuse also removes the ABI-preparation
+both focused gates passed. Compact settings reuse also removes the ABI-preparation
 body parse and retained executable ASTs. More granular cold-stage reporting is
-being added before the next attempt. No performance improvement is claimed yet.
+now records entry, success and failure durations. Compact settings/foreign
+occurrence rejection, untyped lexical shadowing and predecessor ABI ordering
+checks passed, and the CLI build passed. Probe 20 is running with these changes.
+Probe 20 also expired during initializer processing (286.025 s external;
+1,873,899,520 sampled private bytes; no pair). Startup capture completed in
+6.286 s and ABI preparation in 1.610 s; neither explains the remaining delay.
+Initializer classification/codegen reporting is now separated for the next run.
+The subsequent immutable expanded arena and private parsed-body receipt removes
+the last duplicate production body parse while retaining strict arbitrary-AST
+validation and custom policy behavior. Thirteen preprocessing checks, receipt
+rejection, two scalar AST equivalence checks, client-header behavior and inherited
+ABI ordering all passed, along with the CLI build. A serial release build is
+underway to establish target-relevant timings. No completed full build or cold
+performance improvement is claimed yet.
 
 The entries below describe the new uncached path. Older measurements later in
 this document belong to the preserved original compiler unless explicitly labeled.
