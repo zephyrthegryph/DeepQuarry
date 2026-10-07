@@ -3240,13 +3240,29 @@ impl Compiler<'_> {
                 if name == "usr" {
                     return self.normalize_inferred_type("/mob").map(Some);
                 }
-                if let Some(path) = self
-                    .local_types
-                    .get(name)
-                    .or_else(|| self.bindings.parameter_types.get(name))
+                // Match variable() binding precedence. A nearer lexical binding
+                // with no declared type is proven untyped, not an outer lookup.
+                if self.local_slots.contains_key(name) {
+                    return self
+                        .local_types
+                        .get(name)
+                        .map(|path| self.normalize_inferred_type(path))
+                        .transpose();
+                }
+                if self
+                    .bindings
+                    .parameters
+                    .iter()
+                    .any(|parameter| parameter == name)
                 {
-                    Some(path.clone())
-                } else {
+                    return self
+                        .bindings
+                        .parameter_types
+                        .get(name)
+                        .map(|path| self.normalize_inferred_type(path))
+                        .transpose();
+                }
+                {
                     if let Some(lookup) = self.lookup {
                         if let Some(declaration) = self.semantic(
                             lookup.procedure_static(self.bindings.procedure_identity, name),
@@ -7132,6 +7148,72 @@ mod tests {
             .position(|proc| native.string(proc.strings[0]) == Some(b"/proc/test".as_slice()))
             .unwrap();
         assert_eq!(linked.words, native.proc_code_words(id).unwrap());
+    }
+
+    #[test]
+    fn untyped_lexical_bindings_do_not_inherit_outer_type_queries() {
+        use dm_ir::{ResolveQuery as Q, ResolvedMeaning as M, Resolver, SymbolId, SymbolTable};
+        use std::sync::Mutex;
+        struct OuterField(Mutex<Vec<Q>>);
+        impl Resolver for OuterField {
+            fn resolve(&self, query: Q) -> M {
+                self.0.lock().unwrap().push(query);
+                match query {
+                    Q::HasMemberVar { .. } => M::Presence(true),
+                    Q::DeclaredVarType { .. } => {
+                        M::DeclaredType(Some(SymbolId::of("/datum/outer")))
+                    }
+                    Q::RuntimeType(id) => M::Symbol(id),
+                    _ => M::Unsupported(query),
+                }
+            }
+        }
+        for formal in [false, true] {
+            for contextual in [false, true] {
+                let source = format!(
+                    "/datum/owner/proc/test({})\n{}    {}\n",
+                    if formal { "value" } else { "" },
+                    if formal { "" } else { "    var/value\n" },
+                    if contextual {
+                        "value = new()"
+                    } else {
+                        "return value.member"
+                    },
+                );
+                let ast = dm_syntax::parse(&source);
+                assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
+                let host = OuterField(Mutex::new(Vec::new()));
+                let mut symbols = SymbolTable::default();
+                symbols.intern("/datum/owner").unwrap();
+                symbols.intern("/datum/outer").unwrap();
+                let inputs = crate::lower_resolver::ProcedureInputs {
+                    current_type_path: Some("/datum/owner".into()),
+                    parameters: if formal { vec!["value".into()] } else { vec![] },
+                    ..Default::default()
+                };
+                let result = compile_simple_proc_with_resolver(
+                    &ast.items[0].children,
+                    &inputs,
+                    &symbols,
+                    &host,
+                );
+                if contextual {
+                    let errors = result.err().expect("untyped new requires a type");
+                    assert!(
+                        errors.iter().any(|error| error
+                            .reason
+                            .contains("inferred new requires a typed declaration")),
+                        "{errors:?}"
+                    );
+                } else {
+                    assert!(result.is_ok(), "{:?}", result.as_ref().err());
+                }
+                assert!(
+                    host.0.lock().unwrap().is_empty(),
+                    "outer queries for lexical binding"
+                );
+            }
+        }
     }
 
     #[test]

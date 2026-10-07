@@ -182,14 +182,22 @@ pub fn lower_scoped_assignments<R: Resolver>(
         crate::compile_typed_scopes_with_resolver(&scopes, context.symbols, host, context.debug)
             .map_err(InitializerError::Lowering)?;
     finish_initializer(&mut code, instance == Some(true))?;
+    attach_target_slots(&mut code, slots)?;
+    Ok(code)
+}
+
+fn attach_target_slots(
+    code: &mut ResolverProc,
+    slots: Vec<(Symbol, ResolvedSlot)>,
+) -> Result<(), InitializerError> {
+    // One scan per unit, rather than rescanning the common global initializer
+    // for every write. Exact table/key identity remains the membership domain.
+    let mut references = std::collections::HashSet::new();
+    code.procedure.code.for_each_reference(|table, name| {
+        references.insert(Symbol::new(table, name));
+    });
     for (symbol, slot) in slots {
-        let mut referenced = false;
-        code.procedure.code.for_each_reference(|table, name| {
-            if table == symbol.table && name == symbol.key {
-                referenced = true;
-            }
-        });
-        if !referenced {
+        if !references.contains(&symbol) {
             return Err(InitializerError::Invalid(
                 "initializer did not emit its exact shared target".into(),
             ));
@@ -204,7 +212,7 @@ pub fn lower_scoped_assignments<R: Resolver>(
             ));
         }
     }
-    Ok(code)
+    Ok(())
 }
 
 type PreparedAssignment = (dm_syntax::Statement, Option<(Symbol, ResolvedSlot)>);
@@ -572,6 +580,21 @@ mod tests {
         assert!(!result.code.procedure.code.items.iter().any(
             |item| matches!(item, crate::Item::Instruction(ins) if ins.opcode == opcode::RET)
         ));
+        let mut code = result.code;
+        let before = code.procedure.code.clone();
+        let symbol = Symbol::new(Table::Variable, "counter");
+        let slot = code.slots[&symbol].clone();
+        attach_target_slots(&mut code, vec![(symbol.clone(), slot.clone()),
+            (symbol.clone(), slot.clone())]).unwrap();
+        assert_eq!(code.procedure.code, before);
+        assert_eq!(code.slots.len(), 1);
+        let mut conflicting = slot.clone();
+        conflicting.name = dm_ir::SymbolId::of("different-name");
+        assert!(matches!(attach_target_slots(&mut code, vec![(symbol, conflicting)]),
+            Err(InitializerError::Invalid(message)) if message.contains("conflicts")));
+        assert!(matches!(attach_target_slots(&mut code,
+            vec![(Symbol::new(Table::String, "counter"), slot)]),
+            Err(InitializerError::Invalid(message)) if message.contains("exact shared target")));
     }
     #[test]
     fn instance_initializer_uses_initializer_receiver_and_end_only() {

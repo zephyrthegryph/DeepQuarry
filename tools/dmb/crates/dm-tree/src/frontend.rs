@@ -187,12 +187,44 @@ pub struct ColdFrontend {
     pub files: Arc<[SourceFile]>,
     source_by_path: Arc<HashMap<PathBuf, FileId>>,
     pub bodies: Arc<[BodyOccurrence]>,
+    body_by_declaration: Arc<HashMap<OccurrenceId, usize>>,
+    issued_bodies: Arc<[BodyOccurrence]>,
     /// Explicit linker projection. It never changes semantic override priority
     /// or reorders origins independently from their declaration targets.
     pub emission_order: Arc<[OccurrenceId]>,
 }
 
 impl ColdFrontend {
+    /// Borrow the issuer's declaration/settings projection without parsing an
+    /// executable body. Occurrence and syntax addresses are checked together;
+    /// unsupported setting ancestors and their original spans remain intact.
+    pub fn compact_body(&self, occurrence: &BodyOccurrence) -> Result<&Item, Diagnostic> {
+        let reject = || Diagnostic {
+            kind: DiagnosticKind::Internal,
+            stage: DiagnosticStage::Internal,
+            location: Some(occurrence.source.clone()),
+            message: "body occurrence differs from compact frontend capture".into(),
+        };
+        let issued = self.body_by_declaration.get(&occurrence.declaration)
+            .and_then(|index| self.issued_bodies.get(*index)).ok_or_else(reject)?;
+        if issued.member != occurrence.member || issued.ast_path != occurrence.ast_path
+            || issued.expanded_span != occurrence.expanded_span {
+            return Err(reject());
+        }
+        let mut items = self.syntax.items.as_slice();
+        let mut selected = None;
+        for index in occurrence.ast_path.iter() {
+            let item = items.get(*index).ok_or_else(reject)?;
+            selected = Some(item);
+            items = &item.children;
+        }
+        let item = selected.ok_or_else(reject)?;
+        if item.span != occurrence.expanded_span
+            || !matches!(item.kind, ItemKind::Proc | ItemKind::Verb) {
+            return Err(reject());
+        }
+        Ok(item)
+    }
     pub fn body(&self, occurrence: &BodyOccurrence) -> Result<Item, Diagnostic> {
         dm_syntax::parse_proc_at_span(&self.expanded.text, occurrence.expanded_span).map_err(
             |error| Diagnostic {
@@ -615,6 +647,7 @@ pub fn build_with_config<P: SourceProvider>(
         bodies.len(),
     );
     timings.total = total_start.elapsed();
+    let bodies: Arc<[BodyOccurrence]> = bodies.into();
     Ok(ColdFrontend {
         timings,
         engine: config.engine.map(|seed| EngineModelStatus {
@@ -632,7 +665,9 @@ pub fn build_with_config<P: SourceProvider>(
         snapshot,
         files: files.into(),
         source_by_path: Arc::new(by_path),
-        bodies: bodies.into(),
+        body_by_declaration: Arc::new(bodies.iter().enumerate().map(|(index, body)| (body.declaration, index)).collect()),
+        issued_bodies: Arc::clone(&bodies),
+        bodies,
         emission_order: emission_order.into(),
     })
 }

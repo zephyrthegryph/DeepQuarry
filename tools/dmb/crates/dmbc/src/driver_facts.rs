@@ -798,7 +798,7 @@ fn prepare_source_abi_mode(
                                         node.metadata.procedure.as_ref().ok_or_else(|| {
                                             AbiError("procedure metadata unsupported".into())
                                         })?;
-                                    let parsed = frontend.body(body).map_err(|error| {
+                                    let parsed = frontend.compact_body(body).map_err(|error| {
                                         AbiError(format!("body parse: {error:?}"))
                                     })?;
                                     let context = AbiContext {
@@ -807,7 +807,7 @@ fn prepare_source_abi_mode(
                                         origin: &body.source,
                                         resolver: evaluator.resolver,
                                     };
-                                    policy.prepare(metadata, &parsed, &context)
+                                    policy.prepare(metadata, parsed, &context)
                                 })();
                                 (*ordinal, result)
                             })
@@ -1012,7 +1012,7 @@ impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
         let unit = self.unit(context.identity)?;
         Ok(crate::procedure_policy::PreparedUnit {
             inputs: unit.inputs.clone(),
-            executable_body: unit.executable_body.clone(),
+            executable_body: dm_tree::settings::strip_setting_items(parsed.children.clone()),
             abi: unit.abi.clone(),
         })
     }

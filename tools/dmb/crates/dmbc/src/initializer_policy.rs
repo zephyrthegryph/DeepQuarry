@@ -566,22 +566,23 @@ fn classify_from_facts(
         });
     }
     let mut groups: Vec<RuntimeGroup> = Vec::new();
+    let mut receiver_groups = std::collections::HashMap::new();
     for write in classified.iter().filter(|write| write.phase.is_some()) {
         let receiver = match write.write.target {
             InitializerTarget::Shared { .. } => None,
             InitializerTarget::ProcedureStatic(_) => None,
             InitializerTarget::Instance { receiver_owner, .. } => Some(receiver_owner),
         };
-        let index = match groups.iter().position(|group| group.receiver == receiver) {
-            Some(index) => index,
-            None => {
-                groups.push(RuntimeGroup {
-                    receiver,
-                    writes: Vec::new(),
-                });
-                groups.len() - 1
-            }
-        };
+        // The index accelerates lookup only; first encounter still determines
+        // group order, and each group's writes retain their original order.
+        let index = *receiver_groups.entry(receiver).or_insert_with(|| {
+            let index = groups.len();
+            groups.push(RuntimeGroup {
+                receiver,
+                writes: Vec::new(),
+            });
+            index
+        });
         groups[index].writes.push(write.clone());
     }
     for group in &mut groups {
@@ -628,6 +629,39 @@ mod tests {
             declaration_flags: Some(8),
         }
     }
+    #[test]
+    fn indexed_receiver_groups_preserve_interleaved_owner_and_global_order() {
+        let mut symbols = SymbolTable::default();
+        let root = symbols.intern("/").unwrap();
+        let first = symbols.intern("/datum/first").unwrap();
+        let second = symbols.intern("/datum/second").unwrap();
+        let name = symbols.intern("value").unwrap();
+        let runtime = InitializerValue::Expression(expression("run()", &mut symbols).unwrap());
+        let literal = InitializerValue::Expression(expression("list(2)", &mut symbols).unwrap());
+        let instance = |owner, value| InitializerWrite {
+            target: InitializerTarget::Instance { declaring_owner: owner, receiver_owner: owner, name },
+            lexical_owner: owner,
+            lexical_procedure: None,
+            value,
+            declared_array: None,
+            declaration_flags: Some(0),
+        };
+        let writes = [
+            instance(first, runtime.clone()),
+            write(root, name, runtime.clone()),
+            instance(second, runtime.clone()),
+            instance(first, literal.clone()),
+            write(root, name, literal),
+            instance(second, runtime.clone()),
+            write(root, name, runtime),
+        ];
+        let classified = classify(&writes, &symbols, &Evaluator).unwrap();
+        assert_eq!(classified.groups.iter().map(|group| group.receiver).collect::<Vec<_>>(), [Some(first), None, Some(second)]);
+        let ordinals = classified.groups.iter().map(|group| group.writes.iter().map(|write| write.source_ordinal).collect::<Vec<_>>()).collect::<Vec<_>>();
+        assert_eq!(ordinals, [vec![0, 3], vec![4, 1, 6], vec![2, 5]]);
+        assert_eq!(classified.writes.iter().map(|write| write.source_ordinal).collect::<Vec<_>>(), (0..writes.len()).collect::<Vec<_>>());
+    }
+
     #[test]
     fn client_header_assignment_preserves_unknown_modifiers_without_runtime_code() {
         let mut symbols = SymbolTable::default();

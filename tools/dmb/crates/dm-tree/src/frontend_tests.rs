@@ -647,3 +647,23 @@ fn declaration_skeleton_matches_full_grammar_and_setting_compaction() {
         );
     }
 }
+
+#[test]
+fn compact_body_preserves_setting_inputs_and_rejects_foreign_occurrences() {
+    let frontend = fixture(&[("project.dme", "/proc/probe()\n    if(1)\n        set name = \"display\"\n        return 7\n    else\n        set desc = \"fallback\"\n    return 9\n")]).unwrap();
+    let occurrence = &frontend.bodies[0];
+    let compact = frontend.compact_body(occurrence).unwrap();
+    let full = frontend.body(occurrence).unwrap();
+    let mut compact_symbols = dm_ir::SymbolTable::default();
+    let mut full_symbols = dm_ir::SymbolTable::default();
+    assert_eq!(
+        crate::settings::extract_settings(&compact.children, &mut compact_symbols).unwrap(),
+        crate::settings::extract_settings(&full.children, &mut full_symbols).unwrap(),
+    );
+    assert!(crate::settings::strip_setting_items(compact.children.clone()).is_empty());
+    assert!(!crate::settings::strip_setting_items(full.children).is_empty());
+    assert!(!occurrence.setting_context_origins.is_empty());
+    let mut forged = occurrence.clone();
+    forged.expanded_span.end -= 1;
+    assert!(frontend.compact_body(&forged).is_err());
+}
