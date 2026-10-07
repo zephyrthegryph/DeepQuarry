@@ -168,3 +168,14 @@ What converting every `TOPIC_ACTION` row outside the machinery folder to an op s
 | J7 | `/obj/item/rig` EMP | `electrocute_mob(null)` runs on EMP when the rig has no wearer. | Guard the call on a wearer. |
 | J8 | `chem_canister` refill text | The refill strings held a literal tab where `	he` was written ("You fill <tab>he ..."). Fixed in rewrite/integ-6. | DONE. |
 | J9 (DONE, rewrite/gaps-j) | tests | The pin's stardog left its ship in `GLOB.map_sectors` (`unregister_z_levels()` removed numbers from a text-keyed list); fixed, with `dq_gap/overmap_sector_unregisters_its_levels`. `i7_bulk` still fails, alone too, on a gravity generator part's break during its destroy (code/game/machinery). | Fix the gravity generator part (Codex's). |
+
+## K. Draw sweep
+
+| # | Where | Gap | Wanted |
+|---|---|---|---|
+| KD100 | `/obj/effect/decal/cleanable` (and 9 subtypes) | The janitor-hud overlay is an `image('icons/mob/hud.dmi', src, "janhud[rand(1,9)]")` with plane, layer and flags set on the image, and the subtype appearance procs write `color = basecolor` (`writes_state:basecolor`). A draw cannot roll random state or build a located image. | A look part that takes a rolled value kept in tracked state (`rolls()`), and a `look.hud_image()` that carries plane, layer and the janitor flags. |
+| KD101 | `/obj/item/melee/energy`, `/obj/item/shield/energy`, `/obj/item/toy/sword` | The appearance proc writes `color`, `item_state` and `set_light()` and calls `update_inv_l_hand()` / `update_inv_r_hand()` on the holder (`side_effect`); `interim_energy_melee_holder_appearance` calls `appearance_overlays()` directly. | `look.color()` and `look.held_state()` cover the writes, and `look_redraw_worn()` the holder redraw. The test then moves to the new API in the same commit. |
+| KD102 | `/obj/item/rms`, `/obj/item/radio_jammer`, `/obj/item/radio/intercom` | The appearance proc writes a cache var (`charge_stage`, `last_overlay_percent`, `on`) that it also reads (`writes_state`). | A look-level diff key (`look.gauge()` already exists) so the cache is not needed. |
+| KD103 | `/obj/item/defib_kit`, `/obj/item/glass_jar`, `/obj/item/transfer_valve` | The draw reads through another object (`hop_read`) or the holder's `overlays` (`reads_layers`). | Tracked mirrors published by the contained object (`on_change`), or a `look.part()` per contained thing. |
+| KD104 | `/obj/item/material/gravemarker`, `/obj/item/perfect_tele` | The provider calls `..()` late (`super_late`). | `look.after_parent()` ordering, or move the late work before `..()`. |
+| KD105 | `/obj/item/rcd` | `APPEARANCE_LEVEL` has no codemod form. | Hand conversion with `look.gauge()` once the level layer is defined. |

@@ -30,14 +30,13 @@ CAPABILITIES(/obj/item/material/kitchen/utensil)
 /obj/item/material/kitchen/utensil/proc/roll_pixel_y(datum/roller/R)
 	return R.chance(60) ? R.number(0, 4) : pixel_y
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/material/kitchen/utensil/appearance_overlays()
-	. = list()
-	. += ..()
+TRACKED(/obj/item/material/kitchen/utensil, loaded)
+TRACKED(/obj/item/material/kitchen/utensil, loaded_color)
+
+/obj/item/material/kitchen/utensil/draw(datum/look/look)
+	..()
 	if(loaded)
-		var/image/I = new(icon, "loadedfood")
-		I.color = loaded_color
-		. += I
+		look.overlay(look_appearance(icon, "loadedfood", color = loaded_color))
 
 /obj/item/material/kitchen/utensil/proc/load_food(mob/user, obj/item/reagent_containers/food/snacks/loading)
 	if (reagents.total_volume > 0)
@@ -47,12 +46,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 		to_chat(user, span_notice("Nothing to scoop up in \the [loading]!"))
 		return
 
-	loaded = "\the [loading]"
+	set_loaded("\the [loading]")
 	act_message(user, src, MSG_SELF(span_notice("You scoop up some of [loaded] with %T%!")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " scoops up some of [loaded] with %T%!")))
 	loading.bitecount++
 	loading.reagents.trans_to_obj(src, min(loading.reagents.total_volume, scoop_volume))
-	loaded_color = loading.filling_color
+	set_loaded_color(loading.filling_color)
 
 	if(loading.food_inserted_micros && loading.food_inserted_micros.len)
 		if(!food_inserted_micros)
@@ -73,15 +72,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 
 	if (loading.reagents.total_volume <= 0)
 		consume(loading, user)
-	update_icon()
 
 /obj/item/material/kitchen/utensil/proc/force_feed_done(mob/living/carbon/M, mob/living/user)
 	if(!loaded)
 		return
 	act_message(user, M, others = span_bold("%U%") + " feeds some of [loaded] to %T% with \the [src].")
 	play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,40))
-	loaded = null
-	update_icon()
+	set_loaded(null)
 
 /obj/item/material/kitchen/utensil/attack(mob/living/carbon/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(!istype(M))
@@ -115,8 +112,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 			task_timed(user, 5 SECONDS, target = M, receiver = src, on_done = PROC_REF(force_feed_done), done_args = list(M, user))
 			return ITEM_INTERACT_SUCCESS
 		play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,40))
-		loaded = null
-		update_icon()
+		set_loaded(null)
 		return ITEM_INTERACT_SUCCESS
 	else
 		to_chat(user, span_warning("You don't have anything on \the [src]."))	//if we have help intent and no food scooped up DON'T STAB OURSELVES WITH THE FORK
