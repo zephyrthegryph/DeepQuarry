@@ -313,6 +313,9 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 	var/active = 0 //Off by default.
 	var/lcolor = "#38e541"
 
+TRACKED(/obj/item/melee/robotic/blade, active)
+TRACKED(/obj/item/melee/robotic/blade, lcolor)
+
 CAPABILITIES(/obj/item/melee/robotic/blade)
 	op("use", in_hand(), then(PROC_REF(interaction_self)))
 	op("recolor", hand(), ungated(), gesture(GESTURE_ALT), needs(req_capable()),
@@ -329,19 +332,18 @@ CAPABILITIES(/obj/item/melee/robotic/blade)
 	else //turning on
 		play_sfx(src, SFX_WEAPONS_SABERON)
 		force = active_force
-	active = !active
+	set_active(!active)
 	to_chat(user, span_notice("[src] is now [active ? "on" : "off"]."))
-	update_icon()
 	return OP_OK
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/robotic/blade/appearance_overlays()
-	. = list()
+/// The look: the lit blade in its colour and the light it casts.
+/obj/item/melee/robotic/blade/draw(datum/look/look)
+	..()
 	if(active)
-		var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
-		blade_overlay.color = lcolor
-		. += blade_overlay
-	refresh_light()
+		look.overlay(look_appearance(icon, "[look.state_so_far(src)]_blade", color = lcolor))
+		look.light(2, 2, lcolor)
+	else
+		look.light_off()
 
 /obj/item/melee/robotic/blade/refresh_light(clear)
 	if(active)
@@ -360,8 +362,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appe
 	if(A.step_value("confirm") == "Yes")
 		var/picked = A.step_value("color")
 		if(picked)
-			lcolor = sanitize_hexcolor(picked)
-		update_icon()
+			set_lcolor(sanitize_hexcolor(picked))
 	return OP_OK
 
 /// The recolor was confirmed: the colour is asked.
@@ -449,14 +450,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appe
 	var/lightcolor = "#FF6A00"
 	borg_flags = COUNTS_AS_ROBOTIC_MELEE
 
-DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/baton, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/melee/robotic/baton/appearance_overlays()
-	. = list()
+/// The look: its state by whether it is on, and the light it casts while on.
+/obj/item/melee/robotic/baton/draw(datum/look/look)
+	..()
+	var/off_state = look_icon_has_state(icon, initial(name)) ? initial(name) : initial(icon_state)
+	var/on_state = "[initial(name)]_active"
 	if(status)
-		icon_state = "[initial(name)]_active"
+		look.state(look_icon_has_state(icon, on_state) ? on_state : initial(icon_state))
+		look.light(2, 1, lightcolor)
 	else
-		icon_state = "[initial(name)]"
-	refresh_light()
+		look.state(off_state)
+		look.light_off()
 
 /obj/item/melee/robotic/baton/refresh_light(clear)
 	if(icon_state == "[initial(name)]_active")
@@ -481,7 +485,6 @@ CAPABILITIES(/obj/item/melee/robotic/baton)
 	set_status(!status)
 	to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
 	play_sfx(src, SFX_SPARKS, 1.5, extrarange = -1)
-	update_icon()
 	return OP_OK
 
 /obj/item/melee/robotic/baton/proc/baton_used_by_other_item(datum/act/op/A)
