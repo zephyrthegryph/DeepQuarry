@@ -256,7 +256,7 @@ CAPABILITIES(/obj/mecha)
 	op("mecha_phasing", menu(), label("Toggle phasing"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_phasing_op)))
 	op("mecha_cloak", menu(), label("Toggle cloaking"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_cloak_op)))
 	op("mecha_weapons_cycle", menu(), label("Toggle weapons only cycling"), needs(req(PROC_REF(pilot_only), because = MSG(mecha/not_pilot))), then(PROC_REF(mecha_weapons_cycle_op)))
-	on_notice(/datum/notice/hit/explosion, then(PROC_REF(mecha_blast)))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(mecha_blast))))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(mecha_blast_afflictions)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(mecha_emp)))
 
@@ -1280,15 +1280,15 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 
 //This refer to whenever you are caught in an explosion.
 /// The armour may soften a blast by a severity step: the packet is rescaled to the new severity.
-/obj/mecha/proc/mecha_blast(datum/act/A)
-	var/datum/notice/hit/explosion/N = A
-	var/datum/damage_packet/packet = N.packet
+/obj/mecha/proc/mecha_blast(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	src.mecha_log_message("Affected by explosion of severity: [packet.severity].",1)
 	var/severity = mech_body_plan().blast_severity(src, packet.severity)
 	if(severity != packet.severity)
 		var/old_fraction = explosion_blast_fraction(packet.severity)
 		packet.scale(old_fraction ? explosion_blast_fraction(severity) / old_fraction : 0)
 		packet.severity = severity
+	return HOOK_DECLINE
 
 /// A blast that got through the armour risks internal damage.
 /obj/mecha/proc/mecha_blast_afflictions(datum/act/A)

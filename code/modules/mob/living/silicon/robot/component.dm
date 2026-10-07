@@ -384,7 +384,7 @@ CAPABILITIES(/obj/item)
 	op("kit_customize_last", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_DEFAULT - 1), when(req(PROC_REF(kit_goes_last))), then(PROC_REF(interaction_kit_customize)))
 	op("move_to_top", menu(), label("Move To Top"), needs(req_adjacent(), req_capable()), then(PROC_REF(move_to_top_effect)))
 	op("toggle_digestable", menu(), label("Toggle Digestable"), needs(req_adjacent(), req_capable(), carried()), then(PROC_REF(toggle_digestable_effect)))
-	op("pick_up_item", hand(), label("Pick up"), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(interaction_pick_up_item)))
+	op("pick_up_item", hand(), label("Pick up"), needs(req_empty_hand()), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(interaction_pick_up_item)))
 	op("collect_item", item(/obj/item/storage), label("Collect"), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(interaction_collected)))
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 
