@@ -56,6 +56,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	owns_many(nameof(piles), /datum/seed_pile)
 	owns_many(nameof(piles_contra), /datum/seed_pile)
 	interface("SeedStorage")
+	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 3))
 	op("vend", ui_act("vend", arg("id", num())), then(PROC_REF(ui_act_vend)))
 	op("purge", ui_act("purge", arg("id", num())), then(PROC_REF(ui_act_purge)))
 	space(SPACE_PANEL, door = nameof(panel_open))
@@ -68,14 +69,14 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("insert_seeds", item(/obj/item/seeds), priority(OP_PRIORITY_DEFAULT - 1), label("Insert seeds"), needs(req(PROC_REF(not_locked_down_holds), because = PROC_REF(not_locked_down_refusal))), then(PROC_REF(interaction_insert_seeds)))
 	op("insert_bag", item(/obj/item/storage/bag/plants), priority(OP_PRIORITY_DEFAULT - 1), label("Empty seed bag"), needs(req(PROC_REF(not_locked_down_holds), because = PROC_REF(not_locked_down_refusal))), then(PROC_REF(interaction_insert_bag)))
-	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))
+	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 2), ungated(), label("Use"), then(PROC_REF(interaction_use)))
 	op("use_wire_tools", any_of_tools(TOOL_WIRECUTTER, TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Wires"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)), then(PROC_REF(wire_tool_used)))
 
 /obj/machinery/seed_storage/proc/wire_lights()
 	return list(
 		"The orange light is [shock_live(src) ? "off." : "on."]",
 		"The red light is [smart ? "off." : "blinking."]",
-		"The green light is [(hacked || emagged) ? "on." : "off."]",
+		"The green light is [(hacked || emagged()) ? "on." : "off."]",
 		"The keypad lock light is [lockdown ? "deployed." : "retracted."]")
 
 /// The smart wire cut turns smart mode off (mending does not turn it back on).
@@ -351,7 +352,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 	data["scanner"] = (scanner || list())
 
 	var/list/piles_to_check = piles
-	if(hacked || emagged)
+	if(hacked || emagged())
 		piles_to_check = piles + piles_contra
 
 	var/list/seeds = list()
@@ -454,7 +455,7 @@ CAPABILITIES(/obj/machinery/seed_storage)
 /// The pile the UI's id names, among those this storage shows.
 /obj/machinery/seed_storage/proc/pile_by_id(id)
 	var/list/piles_to_check = piles
-	if(hacked || emagged)
+	if(hacked || emagged())
 		piles_to_check = piles + piles_contra
 	for(var/datum/seed_pile/N in piles_to_check)
 		if(N.ID == id)

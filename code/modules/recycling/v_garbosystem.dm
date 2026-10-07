@@ -90,7 +90,7 @@ CAPABILITIES(/obj/machinery/v_garbosystem)
 
 DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 /obj/machinery/v_garbosystem/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	set_emagged(!emagged)
+	set_emagged(!emagged())
 	update()
 
 /datum/interaction/machine_item/v_garbosystem_crowbar_open
@@ -142,7 +142,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 	var/tmp/obj/machinery/v_garbosystem/grinder
 
 CAPABILITIES(/obj/machinery/button/garbosystem)
-	op("press_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Press"), then(PROC_REF(interaction_press_impl)))
+	op("press_impl", hand(), priority(OP_PRIORITY_DEFAULT), ungated(), label("Press"), then(PROC_REF(interaction_press_impl)))
 
 /obj/machinery/button/garbosystem/proc/interaction_press_impl(datum/act/op/A)
 	var/mob/user = A.actor
@@ -161,7 +161,7 @@ CAPABILITIES(/obj/machinery/button/garbosystem)
 			if(A.loc == src.loc)
 				if(isliving(A))
 					var/mob/living/L = A
-					if(!emagged && ishuman(L) && L.mind)
+					if(!emagged() && ishuman(L) && L.mind)
 						play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
 						visible_message(span_warning("POSSIBLE CREW MEMBER DETECTED! EMERGENCY STOP ENGAGED!"))
 						GLOB.global_announcer.autosay("Possible crew member detected in grinder feed. Emergency Stop Protocols engaged!", "Recycling Grinder Alert", "Supply")

@@ -313,7 +313,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 /// /obj/machinery/librarycomp's window data.
 /obj/machinery/librarycomp/proc/ui_data_obj_machinery_librarycomp(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["emagged"] = !!emagged
+	data["emagged"] = !!emagged()
 	data["is_admin"] = !!is_admin_view
 	data["buffer_book"] = buffer_book || ""
 	data["buffer_mob"] = buffer_mob || ""
@@ -384,7 +384,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 
 /obj/machinery/librarycomp/proc/ui_act_arccheckout(datum/act/op/A)
 	var/mob/user = A.actor
-	if(emagged)
+	if(emagged())
 		arcanecheckout = 1
 		if(arcanecheckout)
 			new /obj/item/book/tome(src.loc)
@@ -565,7 +565,7 @@ CAPABILITIES(/obj/machinery/librarycomp)
 
 DECLARE_EMAG_REPEATABLE(/obj/machinery/librarycomp, PROC_REF(on_emag), null)
 /obj/machinery/librarycomp/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if (src.density && !src.emagged)
+	if (src.density && !src.emagged())
 		set_emagged(1)
 		return 1
 
@@ -598,11 +598,12 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/librarycomp, PROC_REF(on_emag), null)
 
 CAPABILITIES(/obj/machinery/libraryscanner)
 	interface("LibraryScanner", title = "Scanner")
+	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 3))
 	op("scan", ui_act("scan"), then(PROC_REF(ui_act_scan)))
 	op("clear", ui_act("clear"), then(PROC_REF(ui_act_clear)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("insert_book", item(/obj/item/book), priority(OP_PRIORITY_DEFAULT - 1), label("Insert book"), then(PROC_REF(interaction_insert_book)))
-	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 2), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
 /// /obj/machinery/libraryscanner's window data.
 /obj/machinery/libraryscanner/ui_data(datum/act/eval/A)

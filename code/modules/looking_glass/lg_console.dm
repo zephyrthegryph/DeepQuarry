@@ -71,7 +71,7 @@ CAPABILITIES(/obj/machinery/computer/looking_glass)
 	for(var/P in supported_programs)
 		program_list.Add(P)
 
-	if(emagged)
+	if(emagged())
 		for(var/P in secret_programs)
 			program_list.Add(P)
 
@@ -89,7 +89,7 @@ CAPABILITIES(/obj/machinery/computer/looking_glass)
 		if(prog == "Off")
 			current_program = "Off"
 			unload_program()
-		else if((prog in supported_programs) || (emagged && (prog in secret_programs)))
+		else if((prog in supported_programs) || (emagged() && (prog in secret_programs)))
 			current_program = prog
 			load_program(prog)
 	else

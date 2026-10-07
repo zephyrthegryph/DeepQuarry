@@ -9,7 +9,7 @@
 		req_access = list(ACCESS_ENGINE_EQUIP)
 		active = 0
 		var/power = 0
-		state = 0
+		var/state = 0
 		var/steps = 0
 		var/last_check = 0
 		var/check_delay = 10
@@ -36,7 +36,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("id_swipe", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_id_swipe)))
 	op("hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), then(PROC_REF(interaction_hit)))
-	op("toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(can_toggle_holds), because = PROC_REF(can_toggle_refusal))), then(PROC_REF(interaction_toggle)))
+	op("toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Toggle"), needs(req(PROC_REF(can_toggle_holds), because = PROC_REF(can_toggle_refusal))), then(PROC_REF(interaction_toggle)))
 
 /// Requirement (was REQ_* can_toggle): the legacy check answers TRUE to pass.
 /obj/machinery/shieldwallgen/proc/can_toggle_holds(datum/act/op/A)
@@ -323,3 +323,5 @@ DAMAGE_REACTION(/obj/machinery/shieldwall, DAMAGE_EXPLOSION, PROC_REF(shieldwall
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/shieldwall/step_start_condition()
 	return needs_power
+
+TRACKED_BRIDGED(/obj/machinery/shieldwallgen, state, CHANGE_MACHINE_SETTINGS)

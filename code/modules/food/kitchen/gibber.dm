@@ -88,7 +88,7 @@ CAPABILITIES(/obj/machinery/gibber/autogibber)
 	return
 
 CAPABILITIES(/obj/machinery/gibber)
-	op("gibber_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Start gibbing"), needs(req(PROC_REF(can_start_gibbing_holds), because = PROC_REF(can_start_gibbing_refusal))), then(PROC_REF(gibber_interaction_hand)))
+	op("gibber_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 2), ungated(), label("Start gibbing"), needs(req(PROC_REF(can_start_gibbing_holds), because = PROC_REF(can_start_gibbing_refusal))), then(PROC_REF(gibber_interaction_hand)))
 	op("gibber_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_feed_grab_holds), because = PROC_REF(can_feed_grab_refusal))), then(PROC_REF(gibber_interaction_item)))
 	op("gibber_interaction_drag", item(/mob), priority(OP_PRIORITY_DEFAULT - 1), gesture(GESTURE_DRAG), label("Put inside"), then(PROC_REF(gibber_interaction_drag)))
 	op("gibber_verb_eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Empty Gibber"), needs(req_adjacent(), req_capable()), then(PROC_REF(gibber_verb_eject)))
@@ -126,12 +126,12 @@ CAPABILITIES(/obj/machinery/gibber)
 
 /obj/machinery/gibber/examine()
 	. = ..()
-	. += "The safety guard is [emagged ? span_danger("disabled") : "enabled"]."
+	. += "The safety guard is [emagged() ? span_danger("disabled") : "enabled"]."
 
 DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 /obj/machinery/gibber/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	set_emagged(!emagged)
-	to_chat(user, span_danger("You [emagged ? "disable" : "enable"] the gibber safety guard."))
+	set_emagged(!emagged())
+	to_chat(user, span_danger("You [emagged() ? "disable" : "enable"] the gibber safety guard."))
 	return 1
 
 /// Old attackby.
@@ -183,7 +183,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 		to_chat(user, span_danger("This is not suitable for the gibber!"))
 		return
 
-	if(ishuman(victim) && !emagged)
+	if(ishuman(victim) && !emagged())
 		to_chat(user, span_danger("The gibber safety guard is engaged!"))
 		return
 
@@ -297,7 +297,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 				consume(thing)
 			continue
 		thing.forceMove(get_turf(thing)) // Drop it onto the turf for throwing.
-		thing.throw_at(get_edge_target_turf(src,gib_throw_dir),rand(0,3),emagged ? 100 : 50) // Being pelted with bits of meat and bone would hurt.
+		thing.throw_at(get_edge_target_turf(src,gib_throw_dir),rand(0,3),emagged() ? 100 : 50) // Being pelted with bits of meat and bone would hurt.
 
 	changed(src)
 

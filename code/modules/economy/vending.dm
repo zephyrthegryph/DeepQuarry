@@ -304,7 +304,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 /// The held item is a thing this vendor stocks: it matches a record by type and name.
 /obj/machinery/vending/proc/stockable(datum/act/op/A)
-	return !isnull(stock_record_for(A.held)) // ALLOW(handlers): a matching condition of an op is asked in the op's own context (held item, arguments), which the engine passes
+	return !isnull(stock_record_for(A.held))
 
 /obj/machinery/vending/proc/stock_record_for(obj/item/held)
 	if(!istype(held))
@@ -374,7 +374,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 
 /// An ID or cash held to the machine opens it (anything else it is given is for stocking).
 /obj/machinery/vending/proc/item_opens_window(datum/act/op/A)
-	var/obj/item/held = A.held // ALLOW(handlers): a matching condition of an op is asked in the op's own context (held item, arguments), which the engine passes
+	var/obj/item/held = A.held
 	return !!(held.GetID() || istype(held, /obj/item/spacecash))
 
 /// The customer can use a window (awake, not restrained).

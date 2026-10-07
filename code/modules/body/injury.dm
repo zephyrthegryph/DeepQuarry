@@ -323,6 +323,7 @@
 /// objects and structures, or null when it can't harm them (pain, toxins,
 /// electricity, radiation...). The one place object damage is derived.
 /proc/injury_kind_obj_damage_type(kind)
+	READS_FROM() // a scalar enum mapping; it reads no entity state
 	switch(kind)
 		if(INJURY_BLUNT, INJURY_CUT, INJURY_PIERCE)
 			return BRUTE

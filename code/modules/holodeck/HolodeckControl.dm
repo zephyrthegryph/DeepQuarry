@@ -110,7 +110,7 @@
 	if(issilicon(user))
 		data["isSilicon"] = TRUE
 
-	data["emagged"] = emagged
+	data["emagged"] = emagged()
 	data["gravity"] = FALSE
 	if(linkedholodeck().get_gravity())
 		data["gravity"] = TRUE
@@ -129,7 +129,7 @@
 	if(!(A.authority & AUTH_REMOTE_ACCESS))
 		return
 
-	if(safety_disabled && emagged)
+	if(safety_disabled && emagged())
 		return //if a traitor has gone through the trouble to emag the thing, let them keep it.
 
 	safety_disabled = !safety_disabled
@@ -150,7 +150,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/HolodeckControl, PROC_REF(on_ema
 /obj/machinery/computer/HolodeckControl/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	play_sfx(src, SFX_EFFECTS_SPARKS4)
 	rel_set(src, nameof(last_to_emag), user) //emag again to change the owner
-	if (!emagged)
+	if (!emagged())
 		set_emagged(1)
 		safety_disabled = 1
 		update_projections()
