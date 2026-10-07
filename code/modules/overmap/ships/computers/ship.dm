@@ -68,50 +68,32 @@ TOPIC_ACTION(/obj/machinery/computer/ship, "sync", PROC_REF(topic_sync))
 	return TRUE
 
 /// Old attack_ai: open the interface if silicon control is allowed. Never fell through.
-/obj/machinery/computer/ship/proc/ship_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!ai_control && issilicon(user))
-		to_chat(user, span_warning("Access Denied."))
-		return TRUE
+/obj/machinery/computer/ship/proc/ship_silicon_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(tgui_status(user, tgui_state()) > STATUS_CLOSE)
 		interface_interact(user)
-	return TRUE
+	return OP_OK
 
 /// Old attack_ghost: open the interface.
-/obj/machinery/computer/ship/proc/ship_ghost_view(mob/user, obj/item/held, datum/interaction/interaction)
-	interface_interact(user)
-	return TRUE
+/obj/machinery/computer/ship/proc/ship_ghost_view(datum/act/op/A)
+	interface_interact(A.actor)
+	return OP_OK
 
-/obj/machinery/computer/ship/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_SILICON("Use", PROC_REF(ship_silicon_use)),
-		INTERACT_OBSERVER("View", PROC_REF(ship_ghost_view)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_hand/ship_use,
-	)
-	..()
+MSG_DEF_SELF(ship/ai_denied, "Access Denied.")
+MSG_DEF_SELF(ship/access_denied, "access denied")
 
-/// Old attack_hand: access checks, then open the interface if it isn't already.
-/datum/interaction/machine_hand/ship_use
-	id = "ship_console_use"
-	name = "Use"
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/proc/can_operate_by_hand, null), REQ_ON(PRED_TARGET, /obj/machinery/computer/ship/proc/ship_access_allowed, "access denied"))
-	effect = /obj/machinery/computer/ship/proc/interaction_use
+TRACKED(/obj/machinery/computer/ship, ai_control)
 
-/// Whether `actor` is allowed to use this console: AI/silicon control, then ID access.
-/obj/machinery/computer/ship/proc/ship_access_allowed(mob/actor, atom/target, obj/item/held)
-	if(!ai_control && issilicon(actor))
-		return FALSE
-	if(!allowed(actor))
-		return FALSE
-	return TRUE
+/// Requirement (old attack_hand): ID access.
+/obj/machinery/computer/ship/proc/ship_access_holds(datum/act/op/A)
+	return !!allowed(A.actor)
 
-/obj/machinery/computer/ship/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: opens the interface if it isn't already.
+/obj/machinery/computer/ship/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(tgui_status(user, tgui_state()) > STATUS_CLOSE)
 		interface_interact(user)
-	return TRUE
+	return OP_OK
 
 // The buttons every ship console's window has (declared in its CAPABILITIES, code/modules/flight_operations/flight_console.dm).
 /// The guard every button of a ship console asks first (a console type overrides it).

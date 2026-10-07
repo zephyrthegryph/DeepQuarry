@@ -36,32 +36,25 @@
 	if(captured)
 		. += span_notice("Control authority has been captured by [captured_by || "an expedition team"].")
 
-/obj/machinery/generated_station_department_control/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/department_control_override,
-	)
-	..()
+CAPABILITIES(/obj/machinery/generated_station_department_control)
+	op("department_control_override", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Override"), when(req_is(nameof(captured), FALSE), req(PROC_REF(has_integrity))), then(PROC_REF(interaction_override)))
 
-/datum/interaction/machine_hand/department_control_override
-	id = "department_control_override"
-	name = "Override"
-	behind_gate = FALSE
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/generated_station_department_control/proc/capturable, null))
-	requires = list(REQ_INTERACTION_REACH)
-	effect = /obj/machinery/generated_station_department_control/proc/interaction_override
+TRACKED(/obj/machinery/generated_station_department_control, captured)
 
-/obj/machinery/generated_station_department_control/proc/capturable(mob/actor, atom/target, obj/item/held)
-	return !captured && get_integrity() > 0
+/// The control is not wrecked.
+/obj/machinery/generated_station_department_control/proc/has_integrity(datum/act/op/A)
+	return get_integrity() > 0
 
-/obj/machinery/generated_station_department_control/proc/interaction_override(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/generated_station_department_control/proc/interaction_override(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You begin overriding %T%.")), MSG_OTHERS(span_notice("%U% begins overriding %T%.")))
 	task_timed(user, 3 SECONDS, src, src, PROC_REF(override_done), list(user))
-	return TRUE
+	return OP_OK
 
 /obj/machinery/generated_station_department_control/proc/override_done(mob/user)
 	if(get_integrity() <= 0)
 		return
-	captured = TRUE
+	set_captured(TRUE)
 	captured_by = user.ckey || user.name
 	visible_message(span_notice("[src] accepts the new control authority."))
 

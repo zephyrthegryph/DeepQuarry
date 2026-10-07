@@ -11,28 +11,26 @@
 CAPABILITIES(/obj/item/disk/botany)
 	owns_many(nameof(genes))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "Are you sure you want to wipe the disk?", "title" = "Xenobotany Data", "choices" = list("No", "Yes"), "buttons" = TRUE, "timeout" = 0), step = "wipe", when = PROC_REF(has_genes)), then(PROC_REF(interaction_self)))
 
-DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interaction_self)))
+/// A disk with gene data asks before it is wiped.
+/obj/item/disk/botany/proc/has_genes(datum/act/op/A)
+	return LAZYLEN(genes) > 0
 
 /// Old attack_self.
-/obj/item/disk/botany/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	return botany_disk_wipe_stage(user, held, interaction)
-
-/obj/item/disk/botany/proc/botany_disk_wipe_stage(mob/user, obj/item/held, datum/interaction/interaction, botany_answer, botany_answer_ready = FALSE)
+/obj/item/disk/botany/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(LAZYLEN(genes))
-		if(!botany_answer_ready)
-			open_request(src, /datum/prompt/choice/botany_disk_wipe, PROC_REF(botany_disk_wipe_answered), answerer = user, botany_operator = user, botany_held = held, botany_interaction = interaction, question = "Are you sure you want to wipe the disk?", title = "Xenobotany Data", choices = list("No", "Yes"), buttons = TRUE)
-			return TRUE
-		var/choice = botany_answer
+		var/choice = A.step_value("wipe")
 		if(isnull(choice))
-			return TRUE
+			return OP_OK
 		if(src && user && genes && choice && choice == "Yes" && user.Adjacent(get_turf(src)))
 			to_chat(user, span_filter_notice("You wipe the disk data."))
 			name = initial(name)
 			desc = initial(name)
 			rel_clear(src, nameof(genes))
 			genesource = "unknown"
-	return TRUE
+	return OP_OK
 
 /obj/item/storage/box/botanydisk
 	name = "flora disk box"
@@ -76,6 +74,10 @@ CAPABILITIES(/obj/machinery/botany)
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("open_ui_impl", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
+	op("load_seed", item(/obj/item/seeds), priority(OP_PRIORITY_DEFAULT - 1), label("Load seed"), needs(req(PROC_REF(botany_no_seed_holds), because = PROC_REF(botany_seed_refusal))), then(PROC_REF(interaction_load_seed)))
+	op("part_replacement_impl", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), when(req(PROC_REF(botany_not_active_holds))), then(PROC_REF(interaction_part_replacement_impl)))
+	op("load_disk", item(/obj/item/disk/botany), priority(OP_PRIORITY_DEFAULT - 1), label("Load disk"), needs(req(PROC_REF(botany_disk_slot_holds), because = PROC_REF(botany_disk_slot_refusal))), then(PROC_REF(interaction_load_disk)))
 	default_parts()
 
 /obj/machinery/botany/proc/work_step(datum/act/timer/A)
@@ -85,9 +87,9 @@ CAPABILITIES(/obj/machinery/botany)
 	if(COOLDOWN_FINISHED(src, action_cooldown))
 		finished_task()
 
-/obj/machinery/botany/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	tgui_interact(user)
-	return TRUE
+/obj/machinery/botany/proc/interaction_open_ui_impl(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_OK
 
 /obj/machinery/botany/proc/finished_task()
 	set_active(0)
@@ -104,49 +106,62 @@ CAPABILITIES(/obj/machinery/botany)
 			visible_message(span_filter_notice("[icon2html(src,viewers(src))] [src] beeps and spits out [loaded_disk]."))
 			rel_take(src, nameof(loaded_disk))
 
-EXTEND_INTERACTIONS(/obj/machinery/botany, \
-	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_open_ui_impl)), \
-	INTERACT_INSERT(/obj/item/seeds, PROC_REF(interaction_load_seed), "Load seed", REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_no_seed_loaded, "there is already a seed loaded")), \
-	INTERACT_INSERT(/obj/item/storage/part_replacer, PROC_REF(interaction_part_replacement_impl), "Replace parts", OFFERED_WHEN(REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_not_active, null))), \
-	INTERACT_INSERT(/obj/item/disk/botany, PROC_REF(interaction_load_disk), "Load disk", REQ_ON(PRED_TARGET, /obj/machinery/botany/proc/botany_disk_slot_reason, null)), \
-)
-
-/obj/machinery/botany/proc/botany_no_seed_loaded(mob/actor, atom/target, obj/item/held)
+/// Requirement: no seed is loaded.
+/obj/machinery/botany/proc/botany_no_seed_holds(datum/act/op/A)
 	return !seed
 
-/obj/machinery/botany/proc/interaction_load_seed(mob/user, obj/item/W, datum/interaction/interaction)
+/// Why botany_no_seed_holds refuses.
+/obj/machinery/botany/proc/botany_seed_refusal(datum/act/op/A)
+	return "there is already a seed loaded"
+
+/obj/machinery/botany/proc/interaction_load_seed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	var/obj/item/seeds/S = W
 	if(S.seed() && S.seed().get_trait(TRAIT_IMMUTABLE) > 0)
 		to_chat(user, span_filter_notice("That seed is not compatible with our genetics technology."))
 	else
 		if(!move_into(src, nameof(src.seed), W, user))
-			return TRUE
+			return OP_OK
 		to_chat(user, span_filter_notice("You load [W] into [src]."))
-	return TRUE
+	return OP_OK
 
-/obj/machinery/botany/proc/botany_not_active(mob/actor, atom/target, obj/item/held)
+/// Requirement (offered only while true): the machine is not working.
+/obj/machinery/botany/proc/botany_not_active_holds(datum/act/op/A)
 	return !active
 
-/obj/machinery/botany/proc/interaction_part_replacement_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	return default_part_replacement(user, held) ? TRUE : FALSE
+/obj/machinery/botany/proc/interaction_part_replacement_impl(datum/act/op/A)
+	return default_part_replacement(A.actor, A.held) ? OP_OK : OP_DECLINE
 
-/obj/machinery/botany/proc/botany_disk_slot_reason(mob/actor, atom/target, obj/item/held)
+/// The reason the disk cannot go in the slot, or null.
+/obj/machinery/botany/proc/botany_disk_slot_reason(obj/item/disk/botany/B)
 	if(loaded_disk)
 		return "there is already a data disk loaded"
-	var/obj/item/disk/botany/B = held
-	if(B.genes && B.genes.len)
+	if(length(B.genes))
 		if(!disk_needs_genes)
 			return "that disk already has gene data loaded"
 	else
 		if(disk_needs_genes)
 			return "that disk does not have any gene data loaded"
-	return TRUE
+	return null
 
-/obj/machinery/botany/proc/interaction_load_disk(mob/user, obj/item/W, datum/interaction/interaction)
+/// Requirement: the held disk fits the slot.
+/obj/machinery/botany/proc/botany_disk_slot_holds(datum/act/op/A)
+	var/obj/item/disk/botany/B = A.held
+	return isnull(botany_disk_slot_reason(B))
+
+/// Why botany_disk_slot_holds refuses.
+/obj/machinery/botany/proc/botany_disk_slot_refusal(datum/act/op/A)
+	var/obj/item/disk/botany/B = A.held
+	return botany_disk_slot_reason(B)
+
+/obj/machinery/botany/proc/interaction_load_disk(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!move_into(src, nameof(src.loaded_disk), W, user))
-		return TRUE
+		return OP_OK
 	to_chat(user, span_filter_notice("You load [W] into [src]."))
-	return TRUE
+	return OP_OK
 
 /obj/machinery/botany/proc/screwdriver_used(datum/act/op/A)
 	return OP_DECLINE
@@ -385,48 +400,3 @@ CAPABILITIES(/obj/machinery/botany/extractor)
 	op("scan_genome", ui_act("scan_genome"), then(PROC_REF(ui_act_scan_genome)))
 	op("get_gene", ui_act("get_gene", arg("get_gene", schema_text(4096))), then(PROC_REF(ui_act_get_gene)))
 	op("clear_buffer", ui_act("clear_buffer"), then(PROC_REF(ui_act_clear_buffer)))
-/obj/item/disk/botany/proc/botany_disk_wipe_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	. = botany_disk_wipe_apply(A)
-	SStgui.update_uis(src)
-
-/obj/item/disk/botany/proc/botany_disk_wipe_apply(datum/act/request/A)
-	var/datum/prompt/choice/botany_disk_wipe/ask = A.answer
-	return botany_disk_wipe_stage(ask.botany_operator, ask.botany_held, ask.botany_interaction, ask.value, TRUE)
-
-/datum/prompt/choice/botany_disk_wipe
-	timeout = 0
-	var/mob/botany_operator
-	var/obj/item/botany_held
-	var/datum/interaction/botany_interaction
-	var/botany_operator_expected = FALSE
-	var/botany_held_expected = FALSE
-	var/botany_interaction_expected = FALSE
-
-CAPABILITIES(/datum/prompt/choice/botany_disk_wipe)
-	ref_one(nameof(botany_operator), /mob)
-	ref_one(nameof(botany_held), /obj/item)
-	ref_one(nameof(botany_interaction), /datum/interaction)
-
-/datum/prompt/choice/botany_disk_wipe/prepare(datum/act/A)
-	. = ..()
-	var/mob/captured_operator = botany_operator
-	var/obj/item/captured_held = botany_held
-	var/datum/interaction/captured_interaction = botany_interaction
-	botany_operator_expected = !isnull(captured_operator)
-	botany_held_expected = !isnull(captured_held)
-	botany_interaction_expected = !isnull(captured_interaction)
-	rel_clear(src, nameof(botany_operator))
-	rel_clear(src, nameof(botany_held))
-	rel_clear(src, nameof(botany_interaction))
-	if(captured_operator && !QDELETED(captured_operator))
-		rel_set(src, nameof(botany_operator), captured_operator)
-	if(captured_held && !QDELETED(captured_held))
-		rel_set(src, nameof(botany_held), captured_held)
-	if(captured_interaction && !QDELETED(captured_interaction))
-		rel_set(src, nameof(botany_interaction), captured_interaction)
-
-/datum/prompt/choice/botany_disk_wipe/recheck_extra()
-	if((botany_operator_expected && QDELETED(botany_operator)) || (botany_held_expected && QDELETED(botany_held)) || (botany_interaction_expected && QDELETED(botany_interaction)))
-		return "gone"

@@ -108,13 +108,13 @@
 	src.teleport(M)
 	return
 
-DECLARE_INTERACTIONS(/obj/structure/redgate, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_OBSERVER("Travel", PROC_REF(redgate_ghost_travel)), \
-)
-
 /// Old attack_hand.
-/obj/structure/redgate/proc/interaction_hand(mob/M, obj/item/held, datum/interaction/interaction)
+/obj/structure/redgate/proc/interaction_hand(datum/act/op/A)
+	redgate_use(A.actor)
+	return OP_OK
+
+/// The hand use of a gate; it asks who to admit by re-running itself with the same arguments.
+/obj/structure/redgate/proc/redgate_use(mob/M)
 	if(density)
 		if(ishuman(M))
 			var/mob/living/carbon/human/O = M
@@ -126,11 +126,11 @@ DECLARE_INTERACTIONS(/obj/structure/redgate, \
 			if(!nearby_restricted.len)
 				teleport(M) //teleport functionality remains if no restricted people are nearby.
 			else
-				var/mob/living/carbon/human/restricted_human = rerun_ask(M, "k121", PROC_REF(interaction_hand), args, /datum/prompt/choice, question = "Who do you wish to give access through the redgate?", title = "Nearby Redgate Inhabitants", choices = nearby_restricted)
+				var/mob/living/carbon/human/restricted_human = rerun_ask(M, "k121", PROC_REF(redgate_use), args, /datum/prompt/choice, question = "Who do you wish to give access through the redgate?", title = "Nearby Redgate Inhabitants", choices = nearby_restricted)
 				if(isnull(restricted_human))
-					return TRUE
+					return
 				if(!restricted_human)
-					return TRUE
+					return
 				restricted_human.redgate_restricted = FALSE
 				to_chat(M, span_notice("You have given [restricted_human] permission to use the redgate."))
 				to_chat(restricted_human, span_notice("[M] has given you permission to use the redgate."))
@@ -140,15 +140,15 @@ DECLARE_INTERACTIONS(/obj/structure/redgate, \
 	else
 		if(!find_partner())
 			to_chat(M, span_warning("The [src] remains off... seems like it doesn't have a destination."))
-	return TRUE
 
 /// Old attack_ghost: follow the gate to its target; with no target, the ghost default.
-/obj/structure/redgate/proc/redgate_ghost_travel(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/redgate/proc/redgate_ghost_travel(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
 	if(!target())
-		return FALSE
+		return OP_DECLINE
 	if(!(secret || target().secret) || check_rights_for(user?.client, R_HOLDER))
 		user.forceMove(get_turf(target()))
-	return TRUE
+	return OP_OK
 
 /obj/structure/redgate/away/Initialize(mapload)
 	. = ..()
@@ -236,12 +236,14 @@ DECLARE_INTERACTIONS(/obj/structure/redgate, \
 	src.forceMove(src.start_pos)
 	GLOB.global_announcer.autosay("[capitalize(laser_team)] flag returned by [user]!","Laserdome Announcer","Entertainment")
 
-EXTEND_INTERACTIONS(/obj/item/laserdome_flag, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(flag_pick_up)))
+CAPABILITIES(/obj/item/laserdome_flag)
+	op("pick_up", hand(), label("Pick up"), then(PROC_REF(flag_pick_up)))
 
 /// Picking the flag up: the other team is told who has it.
-/obj/item/laserdome_flag/proc/flag_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
+/obj/item/laserdome_flag/proc/flag_pick_up(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
+	pick_up_by_hand(user)
 	var/mob/living/carbon/human/M = loc
 	var/grabbing_team
 
@@ -372,12 +374,14 @@ CAPABILITIES(/obj/structure/flag_base)
 	. = ..()
 	start_pos = src.loc	//save our starting location for later
 
-EXTEND_INTERACTIONS(/obj/item/laserdome_hyperball, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(hyperball_pick_up)))
+CAPABILITIES(/obj/item/laserdome_hyperball)
+	op("pick_up", hand(), label("Pick up"), then(PROC_REF(hyperball_pick_up)))
 
 /// Picking the ball up: the teams are told who has it.
-/obj/item/laserdome_hyperball/proc/hyperball_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
+/obj/item/laserdome_hyperball/proc/hyperball_pick_up(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
+	pick_up_by_hand(user)
 	var/mob/living/carbon/human/M = loc
 	var/grabbing_team
 
@@ -570,4 +574,6 @@ CAPABILITIES(/obj/structure/hyperball_goal)
 
 CAPABILITIES(/obj/structure/redgate)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	op("hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
+	op("redgate_ghost_travel", observer(), label("Travel"), then(PROC_REF(redgate_ghost_travel)))
 	links(/obj/structure/redgate::target, /obj/structure/redgate::target)

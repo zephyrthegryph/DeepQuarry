@@ -36,6 +36,8 @@
 CAPABILITIES(/obj/structure/lift)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	param(nameof(lift), pos = 1)
+	op("hammer", hand(), ungated(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Hammer on it"), then(PROC_REF(interaction_hammer)))
+	op("hand", hand(), ungated(), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(interaction_hand)))
 
 /// A simple mob's (or a xeno's) generic hit on it, taken over (the hit/generic action): HOOK_DECLINE lets the default generic attack land.
 /obj/structure/lift/proc/smashed_by(datum/act/hit/generic/A)
@@ -43,11 +45,15 @@ CAPABILITIES(/obj/structure/lift)
 	attack_hand(user)
 	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/structure/lift, INTERACT_HAND_UNGATED_AS(I_HURT, "Hammer on it", PROC_REF(interaction_hand)), INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+/// Old attack_hand with a harmful stance.
+/obj/structure/lift/proc/interaction_hammer(datum/act/op/A)
+	interact(A.actor, I_HURT)
+	return OP_OK
 
-/// Old attack_hand.
-/obj/structure/lift/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	return interact(user, interaction.stance)
+/// Old attack_hand with any other stance.
+/obj/structure/lift/proc/interaction_hand(datum/act/op/A)
+	interact(A.actor, I_HELP)
+	return OP_OK
 
 /// `stance`: the touch's stance, passed on to pressed().
 /obj/structure/lift/interact(mob/user, stance = I_HELP)
@@ -138,26 +144,22 @@ CAPABILITIES(/obj/structure/lift/button)
 	req_one_access = list(ACCESS_HEADS, ACCESS_ATMOSPHERICS, ACCESS_MEDICAL)
 
 // Hit it with a PDA or ID to enable priority call mode
-EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_interact)), \
-)
-
 /// Old attackby.
-/obj/structure/lift/panel/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/lift/panel/proc/interaction_item(datum/act/op/A)
+	var/obj/item/W = A.held
 	var/obj/item/card/id/id = W.GetID()
 	if(istype(id))
 		if(!check_access(id))
 			play_sfx(src, SFX_MACHINES_BUZZ_TWO)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		lift().update_fire_mode(!lift().fire_mode)
 		if(lift().fire_mode)
 			audible_message(span_danger("Firefighter Mode Activated.  Door safeties disabled.  Manual control engaged."), runemessage = "SCREECH")
 			play_sfx(src, SFX_MACHINES_AIRALARM, volume_channel = VOLUME_CHANNEL_ALARMS)
 		else
 			audible_message(span_warning("Firefighter Mode Deactivated. Door safeties enabled.  Automatic control engaged."), runemessage = "ding")
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/structure/lift/panel/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -169,6 +171,8 @@ EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
 	tgui_interact(user)
 
 CAPABILITIES(/obj/structure/lift/panel)
+	op("interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
+	op("interact", observer(), label("View"), then(TYPE_PROC_REF(/atom, op_interact)))
 	interface("Turbolift")
 	without("ui_open")
 	op("move_to_floor", ui_act("move_to_floor", arg("ref", schema_ref())), then(PROC_REF(ui_act_move_to_floor)))

@@ -58,12 +58,23 @@ TYPE_TABLE_DECLARE(/obj/item/research_sample, research_sample_resources, list(/o
 		name = "[name_prefix] [name_suffix]"
 	make_sellable(/datum/sellable/research_sample)
 
-EXTEND_INTERACTIONS(/obj/item/research_sample, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(sample_pick_up)))
+CAPABILITIES(/obj/item/research_sample)
+	op("pick_up", hand(), label("Pick up"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(sample_pick_up)))
+	op("pick_up_robot", hand(), label("Pick up"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(sample_pick_up_robot)))
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_self)))
+	op("self_robot", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon/robot)), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
+
+/// A cyborg picks a sample up unharmed.
+/obj/item/research_sample/proc/sample_pick_up_robot(datum/act/op/A)
+	pick_up_by_hand(A.actor)
+	return OP_OK
 
 /// Picking a sample up may burn an unprotected holder.
-/obj/item/research_sample/proc/sample_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
+/obj/item/research_sample/proc/sample_pick_up(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
+	pick_up_by_hand(user)
 	var/mob/living/M = user
 	if(!istype(M))
 		return
@@ -112,9 +123,6 @@ EXTEND_INTERACTIONS(/obj/item/research_sample, INTERACT_HAND_DEFAULT("Pick up", 
 			H.drop_from_inventory(src, get_turf(H))
 			return
 
-	if(isrobot(user))
-		burn_user = FALSE
-
 	if(burn_user)
 		M.injure(INJURY_BURN, rand(min_damage,max_damage), null, src)
 
@@ -128,16 +136,12 @@ EXTEND_INTERACTIONS(/obj/item/research_sample, INTERACT_HAND_DEFAULT("Pick up", 
 	H.drop_from_inventory(src,get_turf(H))
 	consume(src, H)
 
-DECLARE_INTERACTIONS(/obj/item/research_sample, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 /// Old attack_self.
-/obj/item/research_sample/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/research_sample/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/mob/living/M = user
 	if(!istype(M))
-		return TRUE
+		return OP_OK
 
 	var/burn_user = TRUE
 	if(ishuman(M))
@@ -181,31 +185,30 @@ DECLARE_INTERACTIONS(/obj/item/research_sample, \
 				else
 					H.visible_message(span_notice("\The [src] flickers with kaleidoscopic light. You should report this to someone immediately."))
 			H.drop_from_inventory(src, get_turf(H))
-			return TRUE
+			return OP_OK
 
 		else	//short delay, so you can abort/cancel if you misclick
 			task_timed(user, 3 SECONDS, src, src, PROC_REF(crush_done), list(H))
-			return TRUE
-
-	if(isrobot(user))
-		burn_user = FALSE
+			return OP_OK
 
 	if(burn_user)
 		M.injure(INJURY_BURN, rand(min_damage,max_damage), null, src)
-	return TRUE
+	return OP_OK
 
 /// Old attackby.
-/obj/item/research_sample/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
+/obj/item/research_sample/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/P = A.held
 
 	if(istype(P, /obj/item/storage/sample_container))
 		var/obj/item/storage/sample_container/SC = P
 		if(contents_count(SC) >= SC.max_storage_space)
 			to_chat(user, span_notice("\The [SC] is full!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			src.forceMove(SC)
 			to_chat(user, span_notice("You store \the [src] in \the [SC]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/research_sample/common
 	catalogue_data = list(/datum/category_item/catalogue/information/research_sample/common)

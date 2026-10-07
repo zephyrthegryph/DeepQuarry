@@ -20,6 +20,8 @@
 CAPABILITIES(/obj/effect/overmap/bluespace_rift)
 	links(/obj/effect/overmap/bluespace_rift::partner, /obj/effect/overmap/bluespace_rift::partner)
 	param(nameof(pair_at_make), pos = 1, apply = PROC_REF(pair_made), keep = FALSE)
+	op("bluespace_rift_staff", observer(), priority(OP_PRIORITY_NORMAL + 1), label("Travel"), when(req_empty(nameof(partner)), req_rights(R_HOLDER)), asks(/datum/prompt/choice, fields = list("question" = "You appear to be staff. This rift has no exit point. If you want to make one, move to where you want it to go, and click 'Make Here', otherwise click 'Cancel'", "title" = "Bluespace Rift", "choices" = list("Cancel", "Make Here"), "buttons" = TRUE, "timeout" = 0), step = "k42"), then(PROC_REF(bluespace_rift_staff)))
+	op("bluespace_rift_ghost_use", observer(), label("Travel"), when(req_full(nameof(partner))), then(PROC_REF(bluespace_rift_ghost_use)))
 
 /obj/effect/overmap/bluespace_rift/proc/pair(obj/effect/overmap/bluespace_rift/new_partner)
 	if(istype(new_partner))
@@ -36,19 +38,17 @@ CAPABILITIES(/obj/effect/overmap/bluespace_rift)
 	else
 		return ..()
 
-EXTEND_INTERACTIONS(/obj/effect/overmap/bluespace_rift, INTERACT_OBSERVER("Travel", PROC_REF(bluespace_rift_ghost_use)))
+/// Old attack_ghost: staff make a partner rift.
+/obj/effect/overmap/bluespace_rift/proc/bluespace_rift_staff(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
+	var/response = A.step_value("k42")
+	if(response == "Make Here")
+		new type(get_turf(user), src)
+	return OP_OK
 
-/// Old attack_ghost: staff make a partner rift, or the ghost travels through; else the default.
-/obj/effect/overmap/bluespace_rift/proc/bluespace_rift_ghost_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	if(!partner && check_rights_for(user?.client, R_HOLDER))
-		var/response = rerun_ask(user, "k42", PROC_REF(bluespace_rift_ghost_use), args, /datum/prompt/choice, question = "You appear to be staff. This rift has no exit point. If you want to make one, move to where you want it to go, and click 'Make Here', otherwise click 'Cancel'", title = "Bluespace Rift", choices = list("Cancel","Make Here"), buttons = TRUE)
-		if(isnull(response))
-			return TRUE
-		if(response == "Make Here")
-			new type(get_turf(user), src)
-		return TRUE
-	else if(partner)
-		user.forceMove(get_turf(partner))
-		to_chat(user, span_notice("Your ghostly form is pulled through the rift!"))
-		return TRUE
-	return FALSE
+/// Old attack_ghost: the ghost travels through the rift.
+/obj/effect/overmap/bluespace_rift/proc/bluespace_rift_ghost_use(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
+	user.forceMove(get_turf(partner))
+	to_chat(user, span_notice("Your ghostly form is pulled through the rift!"))
+	return OP_OK

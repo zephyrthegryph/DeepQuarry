@@ -186,19 +186,15 @@
 	advice = pick(advice_list)
 	pisces = "[stars] [prediction] [advice]"
 
-DECLARE_INTERACTIONS(/obj/item/entrepreneur/horoscope, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/entrepreneur/horoscope)
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "Which of todays zodiacs do you want to read?", "title" = "Zodiac", "choices" = nameof(zodiacs), "timeout" = 0), step = "zodiac"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/entrepreneur/horoscope/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	return horoscope_stage(user, held, interaction)
-
-/obj/item/entrepreneur/horoscope/proc/horoscope_stage(mob/user, obj/item/held, datum/interaction/interaction, selected, answered = FALSE)
-	if(!answered)
-		open_request(src, /datum/prompt/choice/entrepreneur_review, PROC_REF(horoscope_answered), answerer = user, entrepreneur_operator = user, entrepreneur_held = held, entrepreneur_interaction = interaction, question = "Which of todays zodiacs do you want to read?", title = "Zodiac", choices = zodiacs)
-		return TRUE
-	var/zodiac = selected
+/obj/item/entrepreneur/horoscope/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	var/zodiac = A.step_value("zodiac")
 	if(isnull(zodiac))
-		return TRUE
+		return OP_OK
 	if(zodiac)
 		switch(zodiac)
 			if("aries")
@@ -225,7 +221,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/horoscope, INTERACT_USE(null, PROC_R
 				to_chat(user, span_notice("Today's reading for Aquarius: [aquarius]"))
 			if("pisces")
 				to_chat(user, span_notice("Today's reading for Pisces: [pisces]"))
-	return TRUE
+	return OP_OK
 
 ///////Dentist tools, basically just fluff for RP
 
@@ -458,34 +454,39 @@ CAPABILITIES(/obj/item/entrepreneur/emf)
 	///If the board will always display what ghosts put
 	var/accurate = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/item/entrepreneur/spirit_board/proc/can_slide)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-	INTERACT_OBSERVER("Guide", PROC_REF(spirit_board_ghost_guide), REQ_TARGET_STATE(/obj/item/entrepreneur/spirit_board/proc/can_ghost_guide)), \
-)
+CAPABILITIES(/obj/item/entrepreneur/spirit_board)
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(can_slide_holds), because = PROC_REF(can_slide_refusal))), then(PROC_REF(interaction_item)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "What should it land on next?", "title" = "Next result", "choices" = nameof(possible_results), "timeout" = 0), step = "k451", when = PROC_REF(alt_asks)), then(PROC_REF(interaction_alt)))
+	op("spirit_board_ghost_guide", observer(), label("Guide"), needs(req(PROC_REF(can_ghost_guide_holds), because = PROC_REF(can_ghost_guide_refusal))), asks(/datum/prompt/choice, fields = list("question" = "What should it land on next?", "title" = "Next result", "choices" = nameof(possible_results), "timeout" = 0), step = "k459", when = PROC_REF(ghost_asks)), then(PROC_REF(spirit_board_ghost_guide)))
 
 /// Requirement: a drink container to slide across the board (a non-living user is ignored silently by the effect).
-/obj/item/entrepreneur/spirit_board/proc/can_slide(mob/user, atom/target, obj/item/held)
-	if(!isliving(user))
+/obj/item/entrepreneur/spirit_board/proc/can_slide_holds(datum/act/op/A)
+	if(!isliving(A.actor))
 		return TRUE
-	if(!istype(held, /obj/item/reagent_containers/food/drinks))
-		return "you need some sort of glass, bottle or cup to contact the spirit world"
-	return TRUE
+	return istype(A.held, /obj/item/reagent_containers/food/drinks)
+
+/// Why can_slide_holds refuses.
+/obj/item/entrepreneur/spirit_board/proc/can_slide_refusal(datum/act/op/A)
+	return "you need some sort of glass, bottle or cup to contact the spirit world"
 
 /// Requirement: the guiding ghost isn't ghost-role banned (a board with ghosts disabled ignores them silently).
-/obj/item/entrepreneur/spirit_board/proc/can_ghost_guide(mob/user, atom/target, obj/item/held)
+/obj/item/entrepreneur/spirit_board/proc/can_ghost_guide_holds(datum/act/op/A)
 	if(!ghost_enabled)
 		return TRUE
-	if(jobban_isbanned(user, JOB_GHOSTROLES))
-		return "you cannot interact with this board because you are banned from playing ghost roles"
-	return TRUE
+	return !jobban_isbanned(A.actor, JOB_GHOSTROLES)
+
+/// Why can_ghost_guide_holds refuses.
+/obj/item/entrepreneur/spirit_board/proc/can_ghost_guide_refusal(datum/act/op/A)
+	return "you cannot interact with this board because you are banned from playing ghost roles"
 
 /// Old attackby.
-/obj/item/entrepreneur/spirit_board/proc/interaction_item(mob/living/user, obj/item/reagent_containers/food/drinks/W, datum/interaction/interaction)
+/obj/item/entrepreneur/spirit_board/proc/interaction_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/reagent_containers/food/drinks/W = A.held
 	if(!istype(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	task_timed(user, 3 SECONDS, src, src, PROC_REF(spirit_slide_done), list(W, user))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/entrepreneur/spirit_board/proc/spirit_slide_done(obj/item/reagent_containers/food/drinks/W, mob/living/user)
 	var/result = 0
@@ -496,40 +497,37 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 	act_message(user, src, others = span_notice("%U% slides the [W] over to [result]!"))
 	next_result = 0
 
-/// Old click_alt.
-/obj/item/entrepreneur/spirit_board/proc/interaction_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
-	return spirit_alt_stage(user, held, interaction)
+/// The question is asked only of a carbon (admins can be cheeky).
+/obj/item/entrepreneur/spirit_board/proc/alt_asks(datum/act/op/A)
+	return istype(A.actor, /mob/living/carbon)
 
-/obj/item/entrepreneur/spirit_board/proc/spirit_alt_stage(mob/living/carbon/user, obj/item/held, datum/interaction/interaction, selected, answered = FALSE)
-	if(!istype(user)) //admins can be cheeky
-		return TRUE
-	if(!answered)
-		open_request(src, /datum/prompt/choice/entrepreneur_review, PROC_REF(spirit_alt_answered), answerer = user, entrepreneur_operator = user, entrepreneur_held = held, entrepreneur_interaction = interaction, question = "What should it land on next?", title = "Next result", choices = possible_results)
-		return TRUE
-	var/_answer_k451 = selected
+/// Old click_alt.
+/obj/item/entrepreneur/spirit_board/proc/interaction_alt(datum/act/op/A)
+	if(!istype(A.actor, /mob/living/carbon)) //admins can be cheeky
+		return OP_OK
+	var/_answer_k451 = A.step_value("k451")
 	if(isnull(_answer_k451))
-		return TRUE
+		return OP_OK
 	next_result = _answer_k451
-	return TRUE
+	return OP_OK
+
+/// A board with ghosts disabled asks nothing.
+/obj/item/entrepreneur/spirit_board/proc/ghost_asks(datum/act/op/A)
+	return ghost_enabled
 
 /// Old attack_ghost: choose the board's next result. Never fell through to the default.
-/obj/item/entrepreneur/spirit_board/proc/spirit_board_ghost_guide(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	return spirit_ghost_stage(user, held, interaction)
-
-/obj/item/entrepreneur/spirit_board/proc/spirit_ghost_stage(mob/observer/dead/user, obj/item/held, datum/interaction/interaction, selected, answered = FALSE)
+/obj/item/entrepreneur/spirit_board/proc/spirit_board_ghost_guide(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
 	if(!ghost_enabled)
-		return TRUE
-	if(!answered)
-		open_request(src, /datum/prompt/choice/entrepreneur_review, PROC_REF(spirit_ghost_answered), answerer = user, entrepreneur_operator = user, entrepreneur_held = held, entrepreneur_interaction = interaction, question = "What should it land on next?", title = "Next result", choices = possible_results)
-		return TRUE
-	var/_answer_k459 = selected
+		return OP_OK
+	var/_answer_k459 = A.step_value("k459")
 	if(isnull(_answer_k459))
-		return TRUE
+		return OP_OK
 	next_result = _answer_k459
 	if(!is_admin(user) || !accurate) //admins can bypass this for event stuff
 		if(prob(25))
 			next_result = 0 //25% chance for the ghost to fail to manipulate the board
-	return TRUE
+	return OP_OK
 
 // Spirit Healer stuff
 
@@ -682,62 +680,3 @@ CAPABILITIES(/obj/structure/bed/roller/massage)
 	. = ..()
 	om_task_periodic(src, PERIODIC_SLOW)
 
-/obj/item/entrepreneur/horoscope/proc/horoscope_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/datum/prompt/choice/entrepreneur_review/ask = context.answer
-	// Recovery: the old kept callback refreshed its UI even when replay failed.
-	. = horoscope_stage(ask.entrepreneur_operator, ask.entrepreneur_held, ask.entrepreneur_interaction, ask.value, TRUE)
-	SStgui.update_uis(src)
-
-/obj/item/entrepreneur/spirit_board/proc/spirit_alt_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/datum/prompt/choice/entrepreneur_review/ask = context.answer
-	// Recovery: the old kept callback refreshed its UI even when replay failed.
-	. = spirit_alt_stage(ask.entrepreneur_operator, ask.entrepreneur_held, ask.entrepreneur_interaction, ask.value, TRUE)
-	SStgui.update_uis(src)
-
-/obj/item/entrepreneur/spirit_board/proc/spirit_ghost_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	var/datum/prompt/choice/entrepreneur_review/ask = context.answer
-	// Recovery: the old kept callback refreshed its UI even when replay failed.
-	. = spirit_ghost_stage(ask.entrepreneur_operator, ask.entrepreneur_held, ask.entrepreneur_interaction, ask.value, TRUE)
-	SStgui.update_uis(src)
-
-/datum/prompt/choice/entrepreneur_review
-	timeout = 0
-	var/mob/entrepreneur_operator
-	var/entrepreneur_operator_expected = FALSE
-	var/obj/item/entrepreneur_held
-	var/entrepreneur_held_expected = FALSE
-	var/datum/interaction/entrepreneur_interaction
-	var/entrepreneur_interaction_expected = FALSE
-
-CAPABILITIES(/datum/prompt/choice/entrepreneur_review)
-	ref_one(nameof(entrepreneur_operator), /mob)
-	ref_one(nameof(entrepreneur_held), /obj/item)
-	ref_one(nameof(entrepreneur_interaction), /datum/interaction)
-
-/datum/prompt/choice/entrepreneur_review/prepare(datum/act/context)
-	. = ..()
-	var/mob/captured_operator = entrepreneur_operator
-	entrepreneur_operator_expected = !isnull(captured_operator)
-	rel_clear(src, nameof(entrepreneur_operator))
-	if(captured_operator && !QDELETED(captured_operator))
-		rel_set(src, nameof(entrepreneur_operator), captured_operator)
-	var/obj/item/captured_held = entrepreneur_held
-	entrepreneur_held_expected = !isnull(captured_held)
-	rel_clear(src, nameof(entrepreneur_held))
-	if(captured_held && !QDELETED(captured_held))
-		rel_set(src, nameof(entrepreneur_held), captured_held)
-	var/datum/interaction/captured_interaction = entrepreneur_interaction
-	entrepreneur_interaction_expected = !isnull(captured_interaction)
-	rel_clear(src, nameof(entrepreneur_interaction))
-	if(captured_interaction && !QDELETED(captured_interaction))
-		rel_set(src, nameof(entrepreneur_interaction), captured_interaction)
-
-/datum/prompt/choice/entrepreneur_review/recheck_extra()
-	if((entrepreneur_operator_expected && QDELETED(entrepreneur_operator)) || (entrepreneur_held_expected && QDELETED(entrepreneur_held)) || (entrepreneur_interaction_expected && QDELETED(entrepreneur_interaction)))
-		return "gone"

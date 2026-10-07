@@ -197,20 +197,21 @@ CAPABILITIES(/obj/structure/bookcase/manuals/research_and_development)
 	resistance_flags = FLAMMABLE
 
 /// Old attack_self: read the book. Occult and specially handled books leave it to their own self-use.
-/obj/item/book/proc/interaction_read(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/book/proc/interaction_read(datum/act/op/A)
+	var/mob/user = A.actor
 	if(occult_tier)
-		return FALSE
+		return OP_DECLINE
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	if(carved)
 		if(store())
 			to_chat(user, span_notice("[store()] falls out of [title]!"))
 			store().forceMove(get_turf(src.loc))
 			rel_clear(src, nameof(store))
-			return TRUE
+			return OP_OK
 		else
 			to_chat(user, span_notice("The pages of [title] have been cut out!"))
-			return TRUE
+			return OP_OK
 	if(dat)
 		display_content(user)
 		act_message(user, null, others = "%U% opens a book titled \"[src.title]\" and begins reading intently.")
@@ -220,7 +221,7 @@ CAPABILITIES(/obj/structure/bookcase/manuals/research_and_development)
 		play_sfx(src, SFX_BUREAUCRACY_BOOKCLOSE)
 	else
 		to_chat(user, "This book is completely blank!")
-	return TRUE
+	return OP_OK
 
 // TGUI migration. display_content now opens Book.tsx,
 // which renders the book's HTML content with a "Penned by [author]"
@@ -232,6 +233,23 @@ CAPABILITIES(/obj/item/book)
 	interface("Book")
 	without("ui_open")
 	ui_shape(title = bool(), author = bool(), content = bool())
+	op("read", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Read"), then(PROC_REF(interaction_read)))
+	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), when(req_is(nameof(carved))), then(PROC_REF(interaction_store)))
+	op("edit", item(/obj/item/pen), priority(OP_PRIORITY_DEFAULT - 2), when(req_is(nameof(carved), FALSE)), asks(/datum/prompt/choice, fields = list("question" = "What would you like to change?", "title" = "Change What?", "choices" = list("Title", "Contents", "Author", "Cancel"), "timeout" = 0), step = "k248", when = req_is(nameof(unique), FALSE)), asks(/datum/prompt/text, fields = list("question" = "Write a new title:", "encode" = FALSE, "timeout" = 0), step = "k251", when = PROC_REF(editing_title)), asks(/datum/prompt/text, fields = list("question" = "Write your book's contents (HTML NOT allowed):", "max_len" = MAX_BOOK_MESSAGE_LEN, "multiline" = TRUE, "name_text" = ((MAX_BOOK_MESSAGE_LEN) <= MAX_NAME_LEN), "timeout" = 0), step = "k259", when = PROC_REF(editing_contents)), asks(/datum/prompt/text, fields = list("question" = "Write the author's name:", "max_len" = MAX_LNAME_LEN, "name_text" = ((MAX_LNAME_LEN) <= MAX_NAME_LEN), "timeout" = 0), step = "k266", when = PROC_REF(editing_author)), then(PROC_REF(interaction_edit)))
+	op("scan", item(/obj/item/barcodescanner), priority(OP_PRIORITY_DEFAULT - 3), when(req_is(nameof(carved), FALSE)), then(PROC_REF(interaction_scan)))
+	op("carve", item(/obj/item/material/knife), priority(OP_PRIORITY_DEFAULT - 4), when(req_is(nameof(carved), FALSE)), then(PROC_REF(interaction_carve)))
+
+TRACKED(/obj/item/book, carved)
+TRACKED(/obj/item/book, unique)
+
+/obj/item/book/proc/editing_title(datum/act/op/A)
+	return A.step_value("k248") == "Title"
+
+/obj/item/book/proc/editing_contents(datum/act/op/A)
+	return A.step_value("k248") == "Contents"
+
+/obj/item/book/proc/editing_author(datum/act/op/A)
+	return A.step_value("k248") == "Author"
 
 /// The guard every window button of the family asks first (a subtype overrides it).
 /obj/item/book/proc/ui_gate(datum/act/op/A)
@@ -248,100 +266,104 @@ CAPABILITIES(/obj/item/book)
 	data["content"] = dat || ""
 	return data
 
-DECLARE_INTERACTIONS(/obj/item/book, \
-	INTERACT_SELF("Read", PROC_REF(interaction_read)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
-/// Old attackby.
-/obj/item/book/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(carved)
-		if(!store())
-			if(W.w_class < ITEMSIZE_LARGE)
-				user.drop_item()
-				W.forceMove(src)
-				rel_set(src, nameof(store), W)
-				to_chat(user, span_notice("You put [W] in [title]."))
-				return INTERACTION_HANDLED_PASS
-			else
-				to_chat(user, span_notice("[W] won't fit in [title]."))
-				return INTERACTION_HANDLED_PASS
+/// Old attackby on a hollowed-out book: put the item in.
+/obj/item/book/proc/interaction_store(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	if(!store())
+		if(W.w_class < ITEMSIZE_LARGE)
+			user.drop_item()
+			W.forceMove(src)
+			rel_set(src, nameof(store), W)
+			to_chat(user, span_notice("You put [W] in [title]."))
+			return OP_PASS
 		else
-			to_chat(user, span_notice("There's already something in [title]!"))
-			return INTERACTION_HANDLED_PASS
-	if(istype(W, /obj/item/pen))
-		if(unique)
-			to_chat(user, "These pages don't seem to take the ink well. Looks like you can't modify it.")
-			return INTERACTION_HANDLED_PASS
-		var/choice = rerun_ask(user, "k248", PROC_REF(interaction_item), args, /datum/prompt/choice, question = "What would you like to change?", title = "Change What?", choices = list("Title", "Contents", "Author", "Cancel"))
-		if(isnull(choice))
-			return TRUE
-		switch(choice)
-			if("Title")
-				var/_answer_k251 = rerun_ask(user, "k251", PROC_REF(interaction_item), args, /datum/prompt/text, question = "Write a new title:", encode = FALSE)
-				if(isnull(_answer_k251))
-					return TRUE
-				var/newtitle = reject_bad_text(sanitizeSafe(_answer_k251))
-				if(!newtitle)
-					to_chat(user, "The title is invalid.")
-					return INTERACTION_HANDLED_PASS
-				else
-					src.name = newtitle
-					src.title = newtitle
-			if("Contents")
-				var/content = rerun_ask(user, "k259", PROC_REF(interaction_item), args, /datum/prompt/text, question = "Write your book's contents (HTML NOT allowed):", max_len = MAX_BOOK_MESSAGE_LEN, multiline = TRUE, name_text = ((MAX_BOOK_MESSAGE_LEN) <= MAX_NAME_LEN))
-				if(isnull(content))
-					return TRUE
-				if(!content)
-					to_chat(user, "The content is invalid.")
-					return INTERACTION_HANDLED_PASS
-				else
-					src.dat += content
-			if("Author")
-				var/newauthor = rerun_ask(user, "k266", PROC_REF(interaction_item), args, /datum/prompt/text, question = "Write the author's name:", max_len = MAX_LNAME_LEN, name_text = ((MAX_LNAME_LEN) <= MAX_NAME_LEN))
-				if(isnull(newauthor))
-					return TRUE
-				if(!newauthor)
-					to_chat(user, "The name is invalid.")
-					return INTERACTION_HANDLED_PASS
-				else
-					src.author = newauthor
-			else
-				return INTERACTION_HANDLED_PASS
-	else if(istype(W, /obj/item/barcodescanner))
-		var/obj/item/barcodescanner/scanner = W
-		if(!scanner.computer())
-			to_chat(user, "[W]'s screen flashes: 'No associated computer found!'")
-		else
-			switch(scanner.mode)
-				if(0)
-					rel_set(scanner, nameof(scanner.book), src)
-					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer.'")
-				if(1)
-					rel_set(scanner, nameof(scanner.book), src)
-					scanner.computer().buffer_book = src.name
-					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Book title stored in associated computer buffer.'")
-				if(2)
-					rel_set(scanner, nameof(scanner.book), src)
-					for(var/datum/borrowbook/b in scanner.computer().checkouts)
-						if(b.bookname == src.name)
-							own_remove(scanner.computer(), nameof(/obj/machinery/librarycomp::checkouts), b)
-							to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Book has been checked in.'")
-							return INTERACTION_HANDLED_PASS
-					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. No active check-out record found for current title.'")
-				if(3)
-					rel_set(scanner, nameof(scanner.book), src)
-					for(var/obj/item/book in scanner.computer().inventory)
-						if(book == src)
-							to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title already present in inventory, aborting to avoid duplicate entry.'")
-							return INTERACTION_HANDLED_PASS
-					rel_add(scanner.computer(), nameof(/obj/machinery/librarycomp::inventory), src)
-					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title added to general inventory.'")
-	else if(istype(W, /obj/item/material/knife))
-		return carve_pages(user)
+			to_chat(user, span_notice("[W] won't fit in [title]."))
+			return OP_PASS
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		to_chat(user, span_notice("There's already something in [title]!"))
+		return OP_PASS
+
+/// Old attackby with a pen.
+/obj/item/book/proc/interaction_edit(datum/act/op/A)
+	var/mob/user = A.actor
+	if(unique)
+		to_chat(user, "These pages don't seem to take the ink well. Looks like you can't modify it.")
+		return OP_PASS
+	var/choice = A.step_value("k248")
+	if(isnull(choice))
+		return OP_OK
+	switch(choice)
+		if("Title")
+			var/_answer_k251 = A.step_value("k251")
+			if(isnull(_answer_k251))
+				return OP_OK
+			var/newtitle = reject_bad_text(sanitizeSafe(_answer_k251))
+			if(!newtitle)
+				to_chat(user, "The title is invalid.")
+				return OP_PASS
+			else
+				src.name = newtitle
+				src.title = newtitle
+		if("Contents")
+			var/content = A.step_value("k259")
+			if(isnull(content))
+				return OP_OK
+			if(!content)
+				to_chat(user, "The content is invalid.")
+				return OP_PASS
+			else
+				src.dat += content
+		if("Author")
+			var/newauthor = A.step_value("k266")
+			if(isnull(newauthor))
+				return OP_OK
+			if(!newauthor)
+				to_chat(user, "The name is invalid.")
+				return OP_PASS
+			else
+				src.author = newauthor
+		else
+			return OP_PASS
+	return OP_PASS
+
+/// Old attackby with a barcode scanner.
+/obj/item/book/proc/interaction_scan(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	var/obj/item/barcodescanner/scanner = W
+	if(!scanner.computer())
+		to_chat(user, "[W]'s screen flashes: 'No associated computer found!'")
+	else
+		switch(scanner.mode)
+			if(0)
+				rel_set(scanner, nameof(scanner.book), src)
+				to_chat(user, "[W]'s screen flashes: 'Book stored in buffer.'")
+			if(1)
+				rel_set(scanner, nameof(scanner.book), src)
+				scanner.computer().buffer_book = src.name
+				to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Book title stored in associated computer buffer.'")
+			if(2)
+				rel_set(scanner, nameof(scanner.book), src)
+				for(var/datum/borrowbook/b in scanner.computer().checkouts)
+					if(b.bookname == src.name)
+						own_remove(scanner.computer(), nameof(/obj/machinery/librarycomp::checkouts), b)
+						to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Book has been checked in.'")
+						return OP_PASS
+				to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. No active check-out record found for current title.'")
+			if(3)
+				rel_set(scanner, nameof(scanner.book), src)
+				for(var/obj/item/book in scanner.computer().inventory)
+					if(book == src)
+						to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title already present in inventory, aborting to avoid duplicate entry.'")
+						return OP_PASS
+				rel_add(scanner.computer(), nameof(/obj/machinery/librarycomp::inventory), src)
+				to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title added to general inventory.'")
+	return OP_PASS
+
+/// Old attackby with a knife.
+/obj/item/book/proc/interaction_carve(datum/act/op/A)
+	return carve_pages(A.actor) ? OP_OK : OP_DECLINE
 
 /obj/item/book/wirecutter_act(mob/user, obj/item/tool)
 	return carve_pages(user) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
@@ -359,7 +381,7 @@ DECLARE_INTERACTIONS(/obj/item/book, \
 	to_chat(user, span_notice("You carve out the pages from [title]! You didn't want to read it anyway."))
 	play_sfx(src, SFX_BUREAUCRACY_PAPERCRUMPLE)
 	new /obj/item/shreddedp(get_turf(src))
-	carved = TRUE
+	set_carved(TRUE)
 
 /obj/item/book/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(user.zone_sel.selecting == O_EYES)
