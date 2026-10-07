@@ -157,6 +157,9 @@ fn is_measurement(line: &str) -> bool {
         "native cache unavailable:",
         "native cache snapshot rejected:",
         "native cache publication skipped:",
+        "native cache population incomplete:",
+        "native expansion cache population incomplete:",
+        "native map cache population incomplete:",
         "native cache lease skipped:",
         "native telemetry skipped:",
     ]

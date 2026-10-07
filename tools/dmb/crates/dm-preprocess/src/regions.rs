@@ -18,7 +18,7 @@ pub mod prepared_source;
 pub use environment::MacroEnvironment;
 mod expansion;
 pub mod region_memo;
-pub use region_memo::{ExpansionMemo, ExpansionRecord, EXPANSION_VERSION};
+pub use region_memo::{ExpansionMemo, ExpansionRecord, FragmentRecord, EXPANSION_VERSION, FRAGMENT_VERSION};
 #[cfg(test)]
 mod tests;
 

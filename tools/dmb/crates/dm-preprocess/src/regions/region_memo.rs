@@ -12,6 +12,73 @@ use std::{
 };
 use xxhash_rust::xxh3::Xxh3;
 pub const EXPANSION_VERSION: u32 = 3;
+pub const FRAGMENT_VERSION: u32 = 1;
+#[cfg(test)]
+mod fragment_tests {
+    use super::*;
+    #[test]
+    fn independent_fragment_requires_exact_source_and_schema() {
+        let record = FragmentRecord::new(3, "/datum/probe\n", Arc::from([1u8, 2, 3])).unwrap();
+        let restored = FragmentRecord::from_bytes(&record.to_bytes().unwrap()).unwrap();
+        assert_eq!(restored, record);
+        assert!(restored.matches(3, "/datum/probe\n"));
+        assert!(!restored.matches(4, "/datum/probe\n"));
+        assert!(!restored.matches(3, "/datum/other\n"));
+        assert_ne!(
+            record.key(),
+            FragmentRecord::lookup_key(3, "/datum/other\n")
+        );
+        assert!(FragmentRecord::from_bytes(&[0; 8]).is_err());
+        assert!(FragmentRecord::new(3, "x", vec![0; 4 * 1024 * 1024 + 1].into()).is_none());
+    }
+}
+/// Root-context grammar chunks are looked up independently of region offsets.
+/// The parser must still validate its payload and freshly bind all provenance.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct FragmentRecord {
+    schema: u32,
+    source: Arc<str>,
+    payload: Arc<[u8]>,
+}
+impl FragmentRecord {
+    pub fn lookup_key(schema: u32, source: &str) -> u128 {
+        let mut hash = Xxh3::new();
+        hash.update(b"root-grammar-fragment-v1\0");
+        hash.update(&schema.to_le_bytes());
+        hash.update(&(source.len() as u64).to_le_bytes());
+        hash.update(source.as_bytes());
+        hash.digest128()
+    }
+    pub fn new(schema: u32, source: &str, payload: Arc<[u8]>) -> Option<Self> {
+        if source.len() > 4 * 1024 * 1024 || payload.len() > 4 * 1024 * 1024 {
+            return None;
+        }
+        Some(Self {
+            schema,
+            source: source.into(),
+            payload,
+        })
+    }
+    pub fn key(&self) -> u128 {
+        Self::lookup_key(self.schema, &self.source)
+    }
+    pub fn matches(&self, schema: u32, source: &str) -> bool {
+        self.schema == schema && self.source.as_ref() == source
+    }
+    pub fn payload(&self) -> &[u8] {
+        &self.payload
+    }
+    pub fn to_bytes(&self) -> Result<Vec<u8>, String> {
+        dm_wire::encode(FRAGMENT_VERSION, self)
+    }
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, String> {
+        let record: Self = dm_wire::decode(FRAGMENT_VERSION, bytes, 8 * 1024 * 1024 + 1024)?;
+        if record.source.len() > 4 * 1024 * 1024 || record.payload.len() > 4 * 1024 * 1024 {
+            return Err("fragment bounds exceeded".into());
+        }
+        Ok(record)
+    }
+}
 /// A caller-owned memo, optionally backed by validated disk records. No hidden
 /// process cache or filesystem access exists in the preprocessor.
 pub trait ExpansionMemo: Sync {
@@ -21,6 +88,10 @@ pub trait ExpansionMemo: Sync {
         Vec::new()
     }
     fn insert_directive(&self, _record: Arc<super::DirectiveRecord>) {}
+    fn fragment_candidates(&self, _key: u128) -> Vec<Arc<FragmentRecord>> {
+        Vec::new()
+    }
+    fn insert_fragment(&self, _record: Arc<FragmentRecord>) {}
 }
 /// Neutral, versioned compact parser payload. The parser owns validation.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]

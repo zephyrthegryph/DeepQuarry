@@ -241,6 +241,43 @@ impl ColdFrontend {
         }
         Ok(item)
     }
+    /// Borrow exact captured procedure bytes without parsing executable syntax.
+    /// This certifies source identity only; consumers still need their own
+    /// immutable ABI/compiler receipt before skipping semantic preparation.
+    pub fn body_input<'a>(
+        &'a self,
+        occurrence: &BodyOccurrence,
+    ) -> Result<IssuedBodyInput<'a>, Diagnostic> {
+        let compact = self.compact_body(occurrence)?;
+        let issued = &self.issued_bodies[self.body_by_declaration[&occurrence.declaration]];
+        let source = self
+            .issued_arena
+            .get(issued.expanded_span.range())
+            .ok_or_else(|| internal("issued body lies outside captured arena"))?;
+        Ok(IssuedBodyInput {
+            issuer: self,
+            occurrence: issued,
+            compact,
+            source,
+        })
+    }
+    pub fn validate_body_input(
+        &self,
+        input: &IssuedBodyInput<'_>,
+        occurrence: &BodyOccurrence,
+    ) -> Result<(), Diagnostic> {
+        let compact = self.compact_body(occurrence)?;
+        let issued = &self.issued_bodies[self.body_by_declaration[&occurrence.declaration]];
+        if !std::ptr::eq(self, input.issuer)
+            || !std::ptr::eq(issued, input.occurrence)
+            || !std::ptr::eq(compact, input.compact)
+        {
+            return Err(internal(
+                "body input was issued by a different frontend occurrence",
+            ));
+        }
+        Ok(())
+    }
     pub fn parse_body<'a>(
         &'a self,
         occurrence: &BodyOccurrence,
@@ -307,6 +344,24 @@ impl ColdFrontend {
 
 /// A bounded executable parse tied to an immutable source capture. Callers may
 /// inspect its AST, but cannot replace it or manufacture its source authority.
+pub struct IssuedBodyInput<'a> {
+    issuer: &'a ColdFrontend,
+    occurrence: &'a BodyOccurrence,
+    compact: &'a Item,
+    source: &'a str,
+}
+impl IssuedBodyInput<'_> {
+    pub fn source(&self) -> &str {
+        self.source
+    }
+    pub fn compact(&self) -> &Item {
+        self.compact
+    }
+    pub fn occurrence(&self) -> &BodyOccurrence {
+        self.occurrence
+    }
+}
+
 pub struct ParsedBody<'a> {
     item: Item,
     issuer: &'a ColdFrontend,
@@ -385,6 +440,19 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
     defines: &BTreeMap<String, String>,
     config: FrontendConfig<'_>,
     memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
+) -> Result<ColdFrontend, Vec<Diagnostic>> {
+    build_with_memos(project, provider, defines, config, memo, None)
+}
+
+/// Reuse only a tree certified against current ordered declaration facts;
+/// source occurrence provenance is rebuilt for every captured input.
+pub fn build_with_memos<P: SourceProvider>(
+    project: &Path,
+    provider: &P,
+    defines: &BTreeMap<String, String>,
+    config: FrontendConfig<'_>,
+    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
+    tree_reuse: Option<&crate::tree_reuse::TreeReuse>,
 ) -> Result<ColdFrontend, Vec<Diagnostic>> {
     let workers = config.workers;
     let total_start = Instant::now();
@@ -649,15 +717,19 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
     );
     let mut resolution_diagnostic = None;
     let snapshot = adapted
-        .finish_with_engine_observed(config.engine, |error, skeletons, origins| {
-            resolution_diagnostic = Some(resolution_error(
-                error,
-                skeletons,
-                origins,
-                &mapping,
-                config.engine.is_some(),
-            ));
-        })
+        .finish_with_engine_reuse_observed(
+            config.engine,
+            tree_reuse,
+            |error, skeletons, origins| {
+                resolution_diagnostic = Some(resolution_error(
+                    error,
+                    skeletons,
+                    origins,
+                    &mapping,
+                    config.engine.is_some(),
+                ));
+            },
+        )
         .map_err(|_| {
             vec![resolution_diagnostic.expect("resolution failure must notify observer")]
         })?;
@@ -753,6 +825,9 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
     })
 }
 
+#[path = "chunkfacts.rs"]
+mod chunkfacts;
+
 struct ParsedDeclarations {
     items: Vec<Item>,
     diagnostics: Vec<(usize, dm_syntax::Diagnostic)>,
@@ -823,25 +898,49 @@ fn parse_declarations(
                         .and_then(|(receipt, span)| {
                             receipt.record().fragment(parserwire::VERSION, span)
                         })
-                        .and_then(|bytes| parserwire::decode(bytes, text));
-                    let (mut parsed, errors, fragment) = match cached {
-                        Some((items, errors)) => (items, errors, None),
+                        .and_then(|bytes| parserwire::decode_with_facts(bytes, text));
+                    let independent = if cached.is_none() {
+                        memo.and_then(|memo| {
+                            let key = dm_preprocess::regions::FragmentRecord::lookup_key(
+                                parserwire::VERSION,
+                                text,
+                            );
+                            memo.fragment_candidates(key)
+                                .into_iter()
+                                .rev()
+                                .find_map(|record| {
+                                    record
+                                        .matches(parserwire::VERSION, text)
+                                        .then(|| {
+                                            parserwire::decode_with_facts(record.payload(), text)
+                                        })
+                                        .flatten()
+                                })
+                        })
+                    } else {
+                        None
+                    };
+                    let independent_hit = independent.is_some();
+                    let cached = cached.or(independent);
+                    let cached_fragment_hit = cached.is_some();
+                    let (mut parsed, errors, cached_facts) = match cached {
+                        Some((items, errors, facts)) => (items, errors, facts),
                         None => {
                             let ast = dm_syntax::parse_declaration_skeleton(text);
                             // Without an issued contained-region receipt, preserve
                             // the original one-pass cold compaction/rebase path.
                             let items = compact_declarations(
                                 ast.items,
-                                if receipt.is_some() { 0 } else { offset },
+                                if receipt.is_some() || independent_hit {
+                                    0
+                                } else {
+                                    offset
+                                },
                             );
-                            let fragment = receipt.zip(relative).and_then(|(_, span)| {
-                                parserwire::encode(&items, &ast.diagnostics)
-                                    .map(|bytes| (receipt_index, span, bytes))
-                            });
-                            (items, ast.diagnostics, fragment)
+                            (items, ast.diagnostics, None)
                         }
                     };
-                    if receipt.is_some() {
+                    if receipt.is_some() || independent_hit {
                         shift_items(&mut parsed, offset);
                     }
                     // Grammar-safe chunks are complete root-context units,
@@ -851,7 +950,13 @@ fn parse_declarations(
                         items: parsed,
                         ..AstFile::default()
                     };
-                    let facts = if errors.is_empty() {
+                    let admitted_facts = cached_facts
+                        .as_deref()
+                        .and_then(|bytes| chunkfacts::decode(bytes, text, offset));
+                    let has_cached_facts = admitted_facts.is_some();
+                    let facts = if let Some(facts) = admitted_facts {
+                        Ok(facts)
+                    } else if errors.is_empty() {
                         crate::from_ast(&ast, SymbolTable::default(), FileId(0), 0, 0).and_then(
                             |mut adapted| {
                                 crate::allocation_ledger::capture(
@@ -876,6 +981,35 @@ fn parse_declarations(
                         Err(Vec::new())
                     };
                     let parsed = ast.items;
+                    if !cached_fragment_hit {
+                        if let Some(memo) = memo {
+                            let facts_bytes = facts.as_ref().ok().and_then(|(facts, ledger)| {
+                                chunkfacts::encode(facts, ledger, offset)
+                            });
+                            if let Some(bytes) =
+                                parserwire::encode_with_facts(&parsed, &errors, offset, facts_bytes)
+                            {
+                                if let Some(record) = dm_preprocess::regions::FragmentRecord::new(
+                                    parserwire::VERSION,
+                                    text,
+                                    bytes.into(),
+                                ) {
+                                    memo.insert_fragment(Arc::new(record));
+                                }
+                            }
+                        }
+                    }
+                    let fragment = if has_cached_facts {
+                        None
+                    } else {
+                        receipt.zip(relative).and_then(|(_, span)| {
+                            let bytes = facts.as_ref().ok().and_then(|(facts, ledger)| {
+                                chunkfacts::encode(facts, ledger, offset)
+                            });
+                            parserwire::encode_with_facts(&parsed, &errors, offset, bytes)
+                                .map(|bytes| (receipt_index, span, bytes))
+                        })
+                    };
                     if sender
                         .send((index, offset, parsed, errors, fragment, facts))
                         .is_err()

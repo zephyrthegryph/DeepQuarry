@@ -402,8 +402,8 @@ impl PairStore {
         atomic_replace(&temp, &path)
     }
 
-    /// Authenticate on every acquisition for now. Later boot/stamp memoization
-    /// may avoid repeated hashing without weakening first-use validation.
+    /// Authenticate acquisition through the same boot/stamp proof as compile
+    /// reuse, then create a writable independent runtime slot.
     pub fn acquire(&self, id: u128, slots: impl AsRef<Path>) -> io::Result<PathBuf> {
         let _lock = self.lock()?;
         let source = self.root.join("pairs").join(format!("{id:032x}"));

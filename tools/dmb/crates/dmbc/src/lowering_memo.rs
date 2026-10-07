@@ -20,6 +20,8 @@ pub struct MemoCounts {
     pub publication_failed: AtomicU64,
     /// Key preparation includes current parse and ABI input preparation.
     pub key_preparation_ns: AtomicU64,
+    pub issued_preparations: AtomicU64,
+    pub parsed_preparations: AtomicU64,
     /// Resident/disk lookup, typed decoding, and current meaning verification.
     pub lookup_ns: AtomicU64,
     /// Supported result wire creation, excluding publication IO.
@@ -259,7 +261,7 @@ impl ProcedureMemo {
         body: &dm_tree::frontend::BodyOccurrence,
         host: &R,
         prepared: &crate::procedure_policy::PreparedUnit,
-        parsed: &dm_syntax::Item,
+        parsed: Option<&dm_syntax::Item>,
     ) -> crate::lowering_memo_wire::ProcedureLookup {
         let Some(snapshot) = &self.disk else {
             return crate::lowering_memo_wire::ProcedureLookup {
@@ -317,6 +319,33 @@ impl ProcedureMemo {
             return;
         };
         self.queue_payload(key, payload);
+    }
+    pub(crate) fn lookup_anonymous<R: Resolver>(
+        &self,
+        key: &[u8],
+        host: &R,
+        debug_count: usize,
+    ) -> crate::lowering_memo_wire::AnonymousLookup {
+        let Some(snapshot) = &self.disk else {
+            return Default::default();
+        };
+        let decoded = std::cell::RefCell::new(None);
+        let view = snapshot.get(Self::record_key(key), |bytes, _symbols| {
+            let candidates = crate::lowering_memo_wire::candidates(bytes)?;
+            *decoded.borrow_mut() = Some(candidates);
+            Ok(())
+        });
+        if view.is_none() {
+            return Default::default();
+        }
+        let Some(candidates) = decoded.into_inner() else {
+            return Default::default();
+        };
+        let outcome = candidates.anonymous(key, host, debug_count);
+        if outcome.code.is_some() || outcome.errors.is_some() {
+            self.counts.disk_hits.fetch_add(1, Ordering::Relaxed);
+        }
+        outcome
     }
     pub(crate) fn executable<R: Resolver>(
         &self,
@@ -516,10 +545,9 @@ impl ProcedureMemo {
     }
 }
 
-pub(crate) fn prepared_key(
+fn prepared_metadata_key(
     key: &mut Vec<u8>,
     prepared: &crate::procedure_policy::PreparedUnit,
-    base: usize,
 ) -> Option<()> {
     let inputs = &prepared.inputs;
     let types = inputs.parameter_types.iter().collect::<BTreeMap<_, _>>();
@@ -550,6 +578,28 @@ pub(crate) fn prepared_key(
             key.extend_from_slice(&bytes);
         }
     }
+    Some(())
+}
+
+pub(crate) fn prepared_replay_key(
+    key: &mut Vec<u8>,
+    prepared: &crate::procedure_policy::PreparedUnit,
+) -> Option<()> {
+    prepared_metadata_key(key, prepared)?;
+    key.push(1);
+    let transform = crate::procedure_policy::PreparedReplay::TRANSFORM;
+    key.extend_from_slice(&(transform.len() as u64).to_le_bytes());
+    key.extend_from_slice(transform);
+    Some(())
+}
+
+pub(crate) fn prepared_key(
+    key: &mut Vec<u8>,
+    prepared: &crate::procedure_policy::PreparedUnit,
+    base: usize,
+) -> Option<()> {
+    prepared_metadata_key(key, prepared)?;
+    key.push(0);
     fn items(key: &mut Vec<u8>, values: &[dm_syntax::Item], base: usize) -> Option<()> {
         key.extend_from_slice(&(values.len() as u64).to_le_bytes());
         for item in values {
@@ -589,7 +639,7 @@ pub(crate) fn key(
     let member = tree.member(body.member)?;
     let owner = tree.type_node(member.owner)?.path;
     let source = frontend.expanded.text.get(body.expanded_span.range())?;
-    let mut key = b"dmbc-procedure-memo-v3-relative-debug\0".to_vec();
+    let mut key = b"dmbc-procedure-memo-v4-issued-body\0".to_vec();
     key.extend_from_slice(&policy.to_le_bytes());
     key.extend_from_slice(&owner.bits().to_le_bytes());
     key.extend_from_slice(&member.name.bits().to_le_bytes());

@@ -436,3 +436,29 @@ fn feature_facts_inspect_instruction_boundaries_not_immediate_operands() {
         }
     );
 }
+
+#[test]
+fn request_string_inventory_reuses_exact_bytes_and_preserves_conflicts() {
+    let id = SymbolId::of("shared spelling");
+    let mut inventory = LinkInventory::default();
+    let mut strings = StringInventory::new(&inventory);
+    for _ in 0..4096 {
+        strings.append(&mut inventory, id, b"shared spelling");
+    }
+    assert_eq!(inventory.spellings.len(), 1);
+    assert_eq!(inventory.entries.len(), 1);
+    assert!(Arc::ptr_eq(
+        &inventory.spellings[0].1,
+        &inventory.entries[0].content
+    ));
+    let tables = LinkTables::build(inventory.clone()).unwrap();
+    assert_eq!(tables.index(Key::String(id)), Some(0));
+    // Physical engine content conflicts remain errors even when the spelling
+    // already existed before this request's exact-string index was created.
+    inventory.entries[0].content = Arc::from(b"different physical content".as_slice());
+    let mut strings = StringInventory::new(&inventory);
+    strings.append(&mut inventory, id, b"shared spelling");
+    assert!(
+        matches!(LinkTables::build(inventory), Err(dm_link::LinkError::ContentCollision(key)) if key == Key::String(id))
+    );
+}

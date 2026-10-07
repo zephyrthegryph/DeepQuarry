@@ -303,6 +303,7 @@ pub fn freeze_artifact_tables(
     let mut units = Vec::with_capacity(batch.units.len());
     let mut helpers = Vec::new();
     let mut source_bindings = BTreeMap::new();
+    let mut string_inventory = StringInventory::new(&inventory);
     for entry in &inventory.entries {
         if let Key::Type(id) = entry.key {
             let path = symbols
@@ -353,19 +354,23 @@ pub fn freeze_artifact_tables(
             &source_bindings,
             external,
             &mut inventory,
+            &mut string_inventory,
         )?;
         for id in [lowered.identity.owner, lowered.identity.name] {
-            inventory.spellings.push((
+            string_inventory.append_spelling(
+                &mut inventory,
                 id,
-                Arc::from(
-                    symbols
-                        .text(id)
-                        .ok_or(IntegrationError::MissingSpelling(id))?
-                        .as_bytes(),
-                ),
-            ));
+                symbols
+                    .text(id)
+                    .ok_or(IntegrationError::MissingSpelling(id))?
+                    .as_bytes(),
+            );
         }
-        append_debug_inventory(&lowered.debug_origins, &mut inventory);
+        append_debug_inventory(
+            &lowered.debug_origins,
+            &mut inventory,
+            &mut string_inventory,
+        );
         // Exact frozen code content is known. Remaining proc metadata belongs
         // to explicit emitter policy, separately retained in LoweredUnit.
         inventory.entries.push(Entry {
@@ -386,8 +391,9 @@ pub fn freeze_artifact_tables(
                 &source_bindings,
                 external,
                 &mut inventory,
+                &mut string_inventory,
             )?;
-            append_debug_inventory(&helper.debug_origins, &mut inventory);
+            append_debug_inventory(&helper.debug_origins, &mut inventory, &mut string_inventory);
             let key = helper_key(helper.owner, helper.argument);
             let mut content = b"dm-argument-source-v1\0".to_vec();
             let code = frozen_helper.code().canonical_bytes();
@@ -431,15 +437,14 @@ pub fn freeze_artifact_tables(
             ));
         }
         if let dm_link::InitializerIdentity::Class(owner) = identity {
-            inventory.spellings.push((
+            string_inventory.append_spelling(
+                &mut inventory,
                 owner,
-                Arc::from(
-                    symbols
-                        .text(owner)
-                        .ok_or(IntegrationError::MissingSpelling(owner))?
-                        .as_bytes(),
-                ),
-            ));
+                symbols
+                    .text(owner)
+                    .ok_or(IntegrationError::MissingSpelling(owner))?
+                    .as_bytes(),
+            );
         }
         // This context labels diagnostics only; no callable identity is issued.
         let context = UnitIdentity {
@@ -457,8 +462,9 @@ pub fn freeze_artifact_tables(
             &source_bindings,
             external,
             &mut inventory,
+            &mut string_inventory,
         )?;
-        append_debug_inventory(&unit.debug_origins, &mut inventory);
+        append_debug_inventory(&unit.debug_origins, &mut inventory, &mut string_inventory);
         let mut content = b"dm-initializer-code-v1\0".to_vec();
         match &unit.coverage {
             crate::initialization_artifact::InitializationCoverage::DeclarationWrites(_) => {
@@ -615,9 +621,76 @@ fn unit_key(identity: UnitIdentity) -> Key {
     }
 }
 
+/// Request-local exact byte interning. Conflicting hash identities are retained
+/// for the linker's existing collision diagnostics, never silently coalesced.
+struct StringInventory {
+    spellings: std::collections::HashMap<SymbolId, Arc<[u8]>>,
+    content: std::collections::HashMap<SymbolId, Arc<[u8]>>,
+}
+impl StringInventory {
+    fn new(inventory: &LinkInventory) -> Self {
+        Self {
+            spellings: inventory
+                .spellings
+                .iter()
+                .map(|(id, bytes)| (*id, Arc::clone(bytes)))
+                .collect(),
+            content: inventory
+                .entries
+                .iter()
+                .filter_map(|entry| match entry.key {
+                    Key::String(id) => Some((id, Arc::clone(&entry.content))),
+                    _ => None,
+                })
+                .collect(),
+        }
+    }
+    fn append_spelling(&mut self, inventory: &mut LinkInventory, id: SymbolId, bytes: &[u8]) {
+        if self
+            .spellings
+            .get(&id)
+            .is_some_and(|old| old.as_ref() == bytes)
+        {
+            return;
+        }
+        let bytes: Arc<[u8]> = Arc::from(bytes);
+        self.spellings
+            .entry(id)
+            .or_insert_with(|| Arc::clone(&bytes));
+        inventory.spellings.push((id, bytes));
+    }
+    fn append(&mut self, inventory: &mut LinkInventory, id: SymbolId, bytes: &[u8]) {
+        let spelling_needed = self
+            .spellings
+            .get(&id)
+            .is_none_or(|old| old.as_ref() != bytes);
+        let content_needed = self
+            .content
+            .get(&id)
+            .is_none_or(|old| old.as_ref() != bytes);
+        if !spelling_needed && !content_needed {
+            return;
+        }
+        let bytes: Arc<[u8]> = Arc::from(bytes);
+        if spelling_needed {
+            self.spellings
+                .entry(id)
+                .or_insert_with(|| Arc::clone(&bytes));
+            inventory.spellings.push((id, Arc::clone(&bytes)));
+        }
+        if content_needed {
+            self.content.entry(id).or_insert_with(|| Arc::clone(&bytes));
+            inventory.entries.push(Entry {
+                key: Key::String(id),
+                content: bytes,
+            });
+        }
+    }
+}
 fn append_debug_inventory(
     origins: &crate::debug_sources::DebugOrigins,
     inventory: &mut LinkInventory,
+    strings: &mut StringInventory,
 ) {
     // Lines retain separate debug origins, but identical path spellings need
     // only one inventory entry. Compare the full spelling, never just its hash.
@@ -626,13 +699,8 @@ fn append_debug_inventory(
         if !paths.insert(origin.semantic_path.as_str()) {
             continue;
         }
-        let bytes: Arc<[u8]> = Arc::from(origin.semantic_path.as_bytes());
         let symbol = SymbolId::of(&origin.semantic_path);
-        inventory.spellings.push((symbol, bytes.clone()));
-        inventory.entries.push(Entry {
-            key: Key::String(symbol),
-            content: bytes,
-        });
+        strings.append(inventory, symbol, origin.semantic_path.as_bytes());
     }
 }
 pub fn helper_key(owner: UnitIdentity, argument: u32) -> Key {
@@ -650,6 +718,7 @@ fn freeze_artifact(
     source_bindings: &BTreeMap<Symbol, SymRef>,
     external: &ReferenceBindings,
     inventory: &mut LinkInventory,
+    strings: &mut StringInventory,
 ) -> Result<FrozenProc, IntegrationError> {
     let mut bindings = BTreeMap::new();
     for spelling in &code.procedure.strings {
@@ -665,11 +734,7 @@ fn freeze_artifact(
             Symbol::new(Table::String, spelling),
             SymRef::String(id),
         )?;
-        inventory.spellings.push((id, Arc::from(bytes)));
-        inventory.entries.push(Entry {
-            key: Key::String(id),
-            content: Arc::from(bytes),
-        });
+        strings.append(inventory, id, bytes);
     }
     for (symbol, identity) in &code.procedure_statics {
         insert(

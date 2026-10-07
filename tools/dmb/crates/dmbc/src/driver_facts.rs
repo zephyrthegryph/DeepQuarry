@@ -110,10 +110,16 @@ impl DriverEvaluator<'_> {
         procedure: Option<dm_ir::ProcedureIdentity>,
         active: &RefCell<std::collections::HashSet<ActiveConstant>>,
     ) -> Result<Option<SemanticValue>, String> {
-        let text = expression.source_text(self.symbols).ok_or("expression spelling is not captured")?;
+        let text = expression
+            .source_text(self.symbols)
+            .ok_or("expression spelling is not captured")?;
         let parsed = dm_syntax::parse_expression(&text);
-        if !parsed.diagnostics.is_empty() { return Err("captured scalar expression failed parsing".into()); }
-        let Some(ast) = parsed.expr.as_ref() else { return Ok(None); };
+        if !parsed.diagnostics.is_empty() {
+            return Err("captured scalar expression failed parsing".into());
+        }
+        let Some(ast) = parsed.expr.as_ref() else {
+            return Ok(None);
+        };
         self.scalar_ast_in(owner, ast, procedure, active)
     }
     fn scalar_ast_in(
@@ -124,22 +130,44 @@ impl DriverEvaluator<'_> {
         active: &RefCell<std::collections::HashSet<ActiveConstant>>,
     ) -> Result<Option<SemanticValue>, String> {
         if let dm_syntax::ExprKind::ObjectInitializer { object, fields } = &ast.kind {
-            let dm_syntax::ExprKind::TypePath(path) = &object.kind else { return Err("modified default requires an explicit type path".into()); };
+            let dm_syntax::ExprKind::TypePath(path) = &object.kind else {
+                return Err("modified default requires an explicit type path".into());
+            };
             let id = SymbolId::of(path.trim_end_matches('/'));
             match self.resolver.resolve(ResolveQuery::RuntimeType(id)) {
                 ResolvedMeaning::Symbol(actual) if actual == id => (),
                 _ => return Err("modified default runtime type is not positively captured".into()),
             }
-            let descriptor = dm_ir::ModifiedInstance::capture_with_resources(id, owner, self.resource_search_context, fields,
-                |raw| dm_codegen_byond::decode_constant_string_literal(raw).ok().flatten(), self.pure_calls,
+            let descriptor = dm_ir::ModifiedInstance::capture_with_resources(
+                id,
+                owner,
+                self.resource_search_context,
+                fields,
+                |raw| {
+                    dm_codegen_byond::decode_constant_string_literal(raw)
+                        .ok()
+                        .flatten()
+                },
+                self.pure_calls,
                 |path| {
-                    let search_context = self.resource_search_context.ok_or("modified resource scalar has no captured search context")?;
-                    let query = ResolveQuery::ResourceIn { path: SymbolId::of(path), search_context };
+                    let search_context = self
+                        .resource_search_context
+                        .ok_or("modified resource scalar has no captured search context")?;
+                    let query = ResolveQuery::ResourceIn {
+                        path: SymbolId::of(path),
+                        search_context,
+                    };
                     match self.resolver.resolve(query) {
-                        ResolvedMeaning::Resource { path, content } => Ok(dm_ir::CapturedModifiedResource { path, content }),
-                        _ => Err("modified resource scalar has no positive captured payload identity".into()),
+                        ResolvedMeaning::Resource { path, content } => {
+                            Ok(dm_ir::CapturedModifiedResource { path, content })
+                        }
+                        _ => Err(
+                            "modified resource scalar has no positive captured payload identity"
+                                .into(),
+                        ),
                     }
-                })?;
+                },
+            )?;
             return Ok(Some(SemanticValue::ModifiedInstance(Arc::new(descriptor))));
         }
         let failure = RefCell::new(None);
@@ -202,8 +230,12 @@ impl DriverEvaluator<'_> {
                                 Ok(Some(SemanticValue::Text(bytes))) => {
                                     Some(Constant::EncodedText(bytes.to_vec()))
                                 }
-                                Ok(Some(SemanticValue::Procedure(procedure))) => Some(Constant::Procedure(procedure)),
-                                Ok(Some(SemanticValue::ModifiedInstance(descriptor))) => Some(Constant::ModifiedInstance(descriptor)),
+                                Ok(Some(SemanticValue::Procedure(procedure))) => {
+                                    Some(Constant::Procedure(procedure))
+                                }
+                                Ok(Some(SemanticValue::ModifiedInstance(descriptor))) => {
+                                    Some(Constant::ModifiedInstance(descriptor))
+                                }
                                 Ok(Some(SemanticValue::Type(path))) => self
                                     .symbols
                                     .text(path)
@@ -328,7 +360,9 @@ impl DriverEvaluator<'_> {
                     SemanticValue::NumberBits(bits) => Some(Constant::Number(f32::from_bits(bits))),
                     SemanticValue::Text(bytes) => Some(Constant::EncodedText(bytes.to_vec())),
                     SemanticValue::Procedure(procedure) => Some(Constant::Procedure(procedure)),
-                    SemanticValue::ModifiedInstance(descriptor) => Some(Constant::ModifiedInstance(descriptor)),
+                    SemanticValue::ModifiedInstance(descriptor) => {
+                        Some(Constant::ModifiedInstance(descriptor))
+                    }
                     SemanticValue::Type(path) => self
                         .symbols
                         .text(path)
@@ -383,21 +417,28 @@ impl DriverEvaluator<'_> {
         if let Some(error) = failure.into_inner() {
             return Err(error);
         }
-        let value = result.map_err(|error| format!("pure call {} rejected: {}", error.name, error.reason))?;
+        let value = result
+            .map_err(|error| format!("pure call {} rejected: {}", error.name, error.reason))?;
         Ok(match value {
             None => None,
             Some(Constant::Null) => Some(SemanticValue::Null),
             Some(Constant::Resource(path)) => Some(SemanticValue::Resource(path)),
             Some(Constant::Procedure(procedure)) => Some(SemanticValue::Procedure(procedure)),
-            Some(Constant::ModifiedInstance(descriptor)) => Some(SemanticValue::ModifiedInstance(descriptor)),
+            Some(Constant::ModifiedInstance(descriptor)) => {
+                Some(SemanticValue::ModifiedInstance(descriptor))
+            }
             Some(Constant::Number(number)) => Some(SemanticValue::NumberBits(number.to_bits())),
             Some(Constant::Text(text)) => Some(SemanticValue::Text(text.into_bytes().into())),
             Some(Constant::EncodedText(bytes)) => Some(SemanticValue::Text(bytes.into())),
             Some(Constant::TypePath(path)) => {
                 if let Some(query) = dm_tree::constants::procedure_literal_query(&path) {
                     return match self.resolver.resolve(query) {
-                        ResolvedMeaning::Value(value @ SemanticValue::Procedure(_)) => Ok(Some(value)),
-                        answer => Err(format!("procedure literal {path} is not positively captured: {answer:?}")),
+                        ResolvedMeaning::Value(value @ SemanticValue::Procedure(_)) => {
+                            Ok(Some(value))
+                        }
+                        answer => Err(format!(
+                            "procedure literal {path} is not positively captured: {answer:?}"
+                        )),
                     };
                 }
                 let id = SymbolId::of(&path);
@@ -450,48 +491,96 @@ impl CapturedConstantEvaluator for LexicalAbiEvaluator<'_> {
 }
 impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
     fn initializer_token_scalar(&self, value: &SemanticValue) -> Result<Vec<u8>, String> {
-        let SemanticValue::Resource(path) = value else { return Ok(value.canonical_bytes()); };
-        let search_context = self.resource_search_context.ok_or("initializer resource identity lacks captured context")?;
-        match self.resolver.resolve(ResolveQuery::ResourceIn { path: *path, search_context }) {
-            ResolvedMeaning::Resource { path: found, content, .. } if found == *path => {
+        let SemanticValue::Resource(path) = value else {
+            return Ok(value.canonical_bytes());
+        };
+        let search_context = self
+            .resource_search_context
+            .ok_or("initializer resource identity lacks captured context")?;
+        match self.resolver.resolve(ResolveQuery::ResourceIn {
+            path: *path,
+            search_context,
+        }) {
+            ResolvedMeaning::Resource {
+                path: found,
+                content,
+                ..
+            } if found == *path => {
                 let mut key = b"dm-initializer-resource-content-v1\0".to_vec();
-                key.extend_from_slice(&content.to_le_bytes()); Ok(key)
+                key.extend_from_slice(&content.to_le_bytes());
+                Ok(key)
             }
             _ => Err("initializer resource token requires positive captured content".into()),
         }
     }
-    fn initializer_constructor_type(&self, write: &dm_ir::InitializerWrite) -> Result<Option<SymbolId>, String> {
+    fn initializer_constructor_type(
+        &self,
+        write: &dm_ir::InitializerWrite,
+    ) -> Result<Option<SymbolId>, String> {
         let query = match write.target {
-            dm_ir::InitializerTarget::Shared { owner, name, .. } if owner == SymbolId::of("/") => ResolveQuery::GlobalVar(name),
-            dm_ir::InitializerTarget::Shared { owner, name, .. } => ResolveQuery::DeclaredVarType {owner, name},
-            dm_ir::InitializerTarget::Instance {receiver_owner: owner, name, ..} => ResolveQuery::DeclaredVarType {owner, name},
-            dm_ir::InitializerTarget::ProcedureStatic(identity) => ResolveQuery::ProcedureStatic {procedure:identity.procedure, name:identity.name},
+            dm_ir::InitializerTarget::Shared { owner, name, .. } if owner == SymbolId::of("/") => {
+                ResolveQuery::GlobalVar(name)
+            }
+            dm_ir::InitializerTarget::Shared { owner, name, .. } => {
+                ResolveQuery::DeclaredVarType { owner, name }
+            }
+            dm_ir::InitializerTarget::Instance {
+                receiver_owner: owner,
+                name,
+                ..
+            } => ResolveQuery::DeclaredVarType { owner, name },
+            dm_ir::InitializerTarget::ProcedureStatic(identity) => ResolveQuery::ProcedureStatic {
+                procedure: identity.procedure,
+                name: identity.name,
+            },
         };
         let declared = match self.resolver.resolve(query) {
             ResolvedMeaning::DeclaredType(value) => value,
-            ResolvedMeaning::Member {data, ..} if data.inherited_opaque.is_none() => data.declared_type,
+            ResolvedMeaning::Member { data, .. } if data.inherited_opaque.is_none() => {
+                data.declared_type
+            }
             ResolvedMeaning::ProcedureStatic(declaration) => declaration.declared_type,
             _ => return Err("initializer constructor declared type is not captured".into()),
         };
-        declared.map(|path| match self.resolver.resolve(ResolveQuery::RuntimeType(path)) {
-            ResolvedMeaning::Symbol(actual) => Ok(actual),
-            _ => Err("initializer constructor runtime type is not captured".into()),
-        }).transpose()
+        declared
+            .map(
+                |path| match self.resolver.resolve(ResolveQuery::RuntimeType(path)) {
+                    ResolvedMeaning::Symbol(actual) => Ok(actual),
+                    _ => Err("initializer constructor runtime type is not captured".into()),
+                },
+            )
+            .transpose()
     }
-    fn pure_calls(&self) -> Option<&dyn dm_tree::constants::PureCalls> { self.pure_calls }
+    fn pure_calls(&self) -> Option<&dyn dm_tree::constants::PureCalls> {
+        self.pure_calls
+    }
     fn instance_storage(
         &self,
         write: &dm_ir::InitializerWrite,
     ) -> Result<Option<(SymbolId, SymbolId)>, String> {
-        let dm_ir::InitializerTarget::Instance { declaring_owner, receiver_owner, name } = write.target else {
+        let dm_ir::InitializerTarget::Instance {
+            declaring_owner,
+            receiver_owner,
+            name,
+        } = write.target
+        else {
             return Ok(None);
         };
-        let query = ResolveQuery::VarStorage { owner: receiver_owner, name };
+        let query = ResolveQuery::VarStorage {
+            owner: receiver_owner,
+            name,
+        };
         match self.resolver.resolve(query) {
-            ResolvedMeaning::InstanceField { declaring_owner: actual_owner, name: actual_name }
-                if actual_owner == declaring_owner && actual_name == name => Ok(Some((actual_owner, actual_name))),
+            ResolvedMeaning::InstanceField {
+                declaring_owner: actual_owner,
+                name: actual_name,
+            } if actual_owner == declaring_owner && actual_name == name => {
+                Ok(Some((actual_owner, actual_name)))
+            }
             ResolvedMeaning::Missing | ResolvedMeaning::Slot { .. } => Ok(None),
-            answer => Err(format!("initializer instance storage differs or is unavailable: {query:?}: {answer:?}")),
+            answer => Err(format!(
+                "initializer instance storage differs or is unavailable: {query:?}: {answer:?}"
+            )),
         }
     }
     fn evaluate_write(
@@ -508,9 +597,20 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
             )?
             .map_or(Evaluation::Runtime, Evaluation::Scalar))
     }
-    fn evaluate_ast_write(&self, write: &dm_ir::InitializerWrite, ast: &dm_syntax::Expr, _source: &str, _symbols: &dm_ir::SymbolTable) -> Result<Evaluation, String> {
-        Ok(self.scalar_ast_in(write.lexical_owner, ast, write.lexical_procedure,
-            &RefCell::new(std::collections::HashSet::new()))?
+    fn evaluate_ast_write(
+        &self,
+        write: &dm_ir::InitializerWrite,
+        ast: &dm_syntax::Expr,
+        _source: &str,
+        _symbols: &dm_ir::SymbolTable,
+    ) -> Result<Evaluation, String> {
+        Ok(self
+            .scalar_ast_in(
+                write.lexical_owner,
+                ast,
+                write.lexical_procedure,
+                &RefCell::new(std::collections::HashSet::new()),
+            )?
             .map_or(Evaluation::Runtime, Evaluation::Scalar))
     }
     fn evaluate(
@@ -745,7 +845,8 @@ pub fn prepare_pinned_source_abi(
         crate::engine_abi_coverage::NamedEngineCoverage::pinned(engine).map_err(AbiError)?;
     let policy_identity = coverage.policy_identity();
     let boundaries = coverage.boundaries(frontend).map_err(AbiError)?;
-    let evaluator = DriverEvaluator { pure_calls: None,
+    let evaluator = DriverEvaluator {
+        pure_calls: None,
         resource_search_context,
         resolver,
         symbols: frontend.snapshot.tree.symbols(),
@@ -780,7 +881,8 @@ pub fn prepare_pinned_source_abi_with_startup<R: Resolver>(
         crate::engine_abi_coverage::NamedEngineCoverage::pinned(engine).map_err(AbiError)?;
     let policy_identity = coverage.policy_identity();
     let boundaries = coverage.boundaries(frontend).map_err(AbiError)?;
-    let evaluator = DriverEvaluator { pure_calls: None,
+    let evaluator = DriverEvaluator {
+        pure_calls: None,
         resource_search_context,
         resolver,
         symbols: startup.plan().symbols.as_ref(),
@@ -1083,6 +1185,22 @@ impl<'a> FrozenPreparedPolicy<'a> {
     }
 }
 impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
+    fn prepare_issued(
+        &self,
+        metadata: &dm_ir::ProcedureMetadata,
+        input: &dm_tree::frontend::IssuedBodyInput<'_>,
+        context: &AbiContext<'_>,
+    ) -> Result<Option<crate::procedure_policy::PreparedReplay>, String> {
+        let body = self.validate(context.identity, metadata, context.symbols, context.origin)?;
+        self.frontend
+            .validate_body_input(input, body)
+            .map_err(|error| error.message)?;
+        let unit = self.unit(context.identity)?;
+        Ok(crate::procedure_policy::PreparedReplay::from_frozen(
+            unit.inputs.clone(),
+            Arc::clone(unit.abi.as_ref().ok_or("prepared production ABI missing")?),
+        ))
+    }
     fn prepare_captured(
         &self,
         metadata: &dm_ir::ProcedureMetadata,
@@ -1090,7 +1208,8 @@ impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
         context: &AbiContext<'_>,
     ) -> Result<crate::procedure_policy::PreparedUnit, String> {
         let body = self.validate(context.identity, metadata, context.symbols, context.origin)?;
-        self.frontend.validate_parsed_body(parsed, body)
+        self.frontend
+            .validate_parsed_body(parsed, body)
             .map_err(|error| error.message)?;
         let unit = self.unit(context.identity)?;
         Ok(crate::procedure_policy::PreparedUnit {
@@ -1150,29 +1269,79 @@ mod tests {
         let receiver = SymbolId::of("/obj/subtype");
         let name = SymbolId::of("density");
         let write = dm_ir::InitializerWrite {
-            target: dm_ir::InitializerTarget::Instance { declaring_owner:owner, receiver_owner:receiver, name },
-            lexical_owner:receiver, lexical_procedure:None,
-            value:dm_ir::InitializerValue::NoAuthoredValue,
-            declared_array:None, declaration_flags:None,
+            target: dm_ir::InitializerTarget::Instance {
+                declaring_owner: owner,
+                receiver_owner: receiver,
+                name,
+            },
+            lexical_owner: receiver,
+            lexical_procedure: None,
+            value: dm_ir::InitializerValue::NoAuthoredValue,
+            declared_array: None,
+            declaration_flags: None,
         };
-        let query = ResolveQuery::VarStorage {owner:receiver,name};
+        let query = ResolveQuery::VarStorage {
+            owner: receiver,
+            name,
+        };
         let symbols = dm_ir::SymbolTable::default();
         for (answer, expected) in [
-            (ResolvedMeaning::InstanceField {declaring_owner:owner,name}, Some(Some((owner,name)))),
-            (ResolvedMeaning::InstanceField {declaring_owner:receiver,name}, None),
-            (ResolvedMeaning::InstanceField {declaring_owner:owner,name:SymbolId::of("other")}, None),
+            (
+                ResolvedMeaning::InstanceField {
+                    declaring_owner: owner,
+                    name,
+                },
+                Some(Some((owner, name))),
+            ),
+            (
+                ResolvedMeaning::InstanceField {
+                    declaring_owner: receiver,
+                    name,
+                },
+                None,
+            ),
+            (
+                ResolvedMeaning::InstanceField {
+                    declaring_owner: owner,
+                    name: SymbolId::of("other"),
+                },
+                None,
+            ),
             (ResolvedMeaning::Missing, Some(None)),
-            (ResolvedMeaning::Slot {symbol:name,owner,name}, Some(None)),
+            (
+                ResolvedMeaning::Slot {
+                    symbol: name,
+                    owner,
+                    name,
+                },
+                Some(None),
+            ),
             (ResolvedMeaning::Unsupported(query), None),
         ] {
-            let host = Storage {answer,reads:std::sync::Mutex::new(Vec::new())};
-            let evaluator = DriverEvaluator { pure_calls: None,resolver:&host,symbols:&symbols,resource_search_context:None};
+            let host = Storage {
+                answer,
+                reads: std::sync::Mutex::new(Vec::new()),
+            };
+            let evaluator = DriverEvaluator {
+                pure_calls: None,
+                resolver: &host,
+                symbols: &symbols,
+                resource_search_context: None,
+            };
             let result = evaluator.instance_storage(&write);
-            match expected { Some(value) => assert_eq!(result.as_ref().unwrap(), &value), None => assert!(result.is_err()) }
+            match expected {
+                Some(value) => assert_eq!(result.as_ref().unwrap(), &value),
+                None => assert!(result.is_err()),
+            }
             assert_eq!(*host.reads.lock().unwrap(), [query]);
-            assert_eq!(write.declaration_flags,None);
-            let startup = crate::startup::StartupEvaluator { ordinary:&evaluator, resolver:&host, symbols:&symbols, resource_search_context:None };
-            assert_eq!(startup.instance_storage(&write),result);
+            assert_eq!(write.declaration_flags, None);
+            let startup = crate::startup::StartupEvaluator {
+                ordinary: &evaluator,
+                resolver: &host,
+                symbols: &symbols,
+                resource_search_context: None,
+            };
+            assert_eq!(startup.instance_storage(&write), result);
         }
     }
     use super::*;
@@ -1229,7 +1398,8 @@ mod tests {
                 [(procedure, &captured)],
             )
             .unwrap();
-            let evaluator = DriverEvaluator { pure_calls: None,
+            let evaluator = DriverEvaluator {
+                pure_calls: None,
                 resource_search_context: None,
                 resolver: &resolver,
                 symbols: &captured.symbols,
@@ -1278,7 +1448,8 @@ mod tests {
             [(procedure, &captured)],
         )
         .unwrap();
-        let evaluator = DriverEvaluator { pure_calls: None,
+        let evaluator = DriverEvaluator {
+            pure_calls: None,
             resource_search_context: None,
             resolver: &resolver,
             symbols: &captured.symbols,
@@ -1363,7 +1534,8 @@ mod tests {
             [(procedure, &plan)],
         )
         .unwrap();
-        let evaluator = DriverEvaluator { pure_calls: None,
+        let evaluator = DriverEvaluator {
+            pure_calls: None,
             resolver: &resolver,
             symbols: &plan.symbols,
             resource_search_context: Some(17),
@@ -1394,7 +1566,8 @@ mod tests {
             constant: Some(literal.clone()),
             runtime_field: false,
         };
-        let ordinary = DriverEvaluator { pure_calls: None,
+        let ordinary = DriverEvaluator {
+            pure_calls: None,
             resolver: &assets,
             symbols: &plan.symbols,
             resource_search_context: Some(17),
@@ -1409,7 +1582,8 @@ mod tests {
             constant: Some(literal.clone()),
             runtime_field: true,
         };
-        let shadow = DriverEvaluator { pure_calls: None,
+        let shadow = DriverEvaluator {
+            pure_calls: None,
             resolver: &shadow_assets,
             symbols: &plan.symbols,
             resource_search_context: Some(17),
@@ -1537,7 +1711,8 @@ mod tests {
             .keys()
             .find(|identity| identity.owner == SymbolId::of("/base"))
             .unwrap();
-        let evaluator = DriverEvaluator { pure_calls: None,
+        let evaluator = DriverEvaluator {
+            pure_calls: None,
             resource_search_context: None,
             resolver: frontend.snapshot.tree.as_ref(),
             symbols: frontend.snapshot.tree.symbols(),
@@ -1582,7 +1757,8 @@ mod tests {
         let engine =
             EngineSnapshot::from_bytes(include_bytes!("../../../fixtures/native_template.bin"), 1)
                 .unwrap();
-        let evaluator = DriverEvaluator { pure_calls: None,
+        let evaluator = DriverEvaluator {
+            pure_calls: None,
             resource_search_context: None,
             resolver: frontend.snapshot.tree.as_ref(),
             symbols: frontend.snapshot.tree.symbols(),
@@ -1599,32 +1775,71 @@ mod tests {
     }
     #[test]
     fn procedure_scalar_literals_preserve_exact_identity_and_constant_aliases() {
-        struct Host { identity: dm_ir::ProcedureIdentity }
+        struct Host {
+            identity: dm_ir::ProcedureIdentity,
+        }
         impl Resolver for Host {
             fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
                 match query {
-                    ResolveQuery::ProcedureValue {owner,name,verb:false,formal:true}
-                        if owner==self.identity.owner && name==self.identity.name =>
-                        ResolvedMeaning::Value(SemanticValue::Procedure(self.identity)),
-                    ResolveQuery::Constant {name,..} if name==SymbolId::of("alias") =>
-                        ResolvedMeaning::Value(SemanticValue::Procedure(self.identity)),
+                    ResolveQuery::ProcedureValue {
+                        owner,
+                        name,
+                        verb: false,
+                        formal: true,
+                    } if owner == self.identity.owner && name == self.identity.name => {
+                        ResolvedMeaning::Value(SemanticValue::Procedure(self.identity))
+                    }
+                    ResolveQuery::Constant { name, .. } if name == SymbolId::of("alias") => {
+                        ResolvedMeaning::Value(SemanticValue::Procedure(self.identity))
+                    }
                     _ => ResolvedMeaning::Unsupported(query),
                 }
             }
         }
-        let host=Host {identity:dm_ir::ProcedureIdentity {owner:SymbolId::of("/"),name:SymbolId::of("callback"),verb:false,occurrence:2}};
-        let mut symbols=dm_ir::SymbolTable::default();
-        for source in ["/proc/callback","alias","/proc/unknown"] {
-            let lexed=dm_syntax::lex_spans(source);
+        let host = Host {
+            identity: dm_ir::ProcedureIdentity {
+                owner: SymbolId::of("/"),
+                name: SymbolId::of("callback"),
+                verb: false,
+                occurrence: 2,
+            },
+        };
+        let mut symbols = dm_ir::SymbolTable::default();
+        for source in ["/proc/callback", "alias", "/proc/unknown"] {
+            let lexed = dm_syntax::lex_spans(source);
             assert!(lexed.diagnostics.is_empty());
-            let expression=dm_ir::SymbolicExpression {tokens:lexed.tokens.iter().map(|token| dm_ir::ExpressionToken {
-                kind:token.kind,text:symbols.intern(token.text(source)).unwrap(),relative_span:token.span,
-            }).collect::<Vec<_>>().into()};
-            let evaluator=DriverEvaluator { pure_calls: None,resolver:&host,symbols:&symbols,resource_search_context:None};
-            let result=evaluator.scalar_in(SymbolId::of("/"),&expression,None,&RefCell::new(std::collections::HashSet::new()));
-            if source=="/proc/unknown" {assert!(result.is_err());}
-            else {assert_eq!(result.unwrap(),Some(SemanticValue::Procedure(host.identity)));}
+            let expression = dm_ir::SymbolicExpression {
+                tokens: lexed
+                    .tokens
+                    .iter()
+                    .map(|token| dm_ir::ExpressionToken {
+                        kind: token.kind,
+                        text: symbols.intern(token.text(source)).unwrap(),
+                        relative_span: token.span,
+                    })
+                    .collect::<Vec<_>>()
+                    .into(),
+            };
+            let evaluator = DriverEvaluator {
+                pure_calls: None,
+                resolver: &host,
+                symbols: &symbols,
+                resource_search_context: None,
+            };
+            let result = evaluator.scalar_in(
+                SymbolId::of("/"),
+                &expression,
+                None,
+                &RefCell::new(std::collections::HashSet::new()),
+            );
+            if source == "/proc/unknown" {
+                assert!(result.is_err());
+            } else {
+                assert_eq!(
+                    result.unwrap(),
+                    Some(SemanticValue::Procedure(host.identity))
+                );
+            }
         }
     }
-
 }

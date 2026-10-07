@@ -504,6 +504,26 @@ impl InputSnapshot {
         exact: bool,
         now_ns: u128,
     ) -> io::Result<(Validation, Self)> {
+        self.validate_impl(provider, exact, now_ns, false)
+    }
+    /// Session candidates need a complete proof only on success. A partial
+    /// refreshed snapshot is never exposed when any captured input differs.
+    pub(crate) fn validate_for_reuse(
+        &self,
+        provider: &impl SnapshotProvider,
+        exact: bool,
+        now_ns: u128,
+    ) -> io::Result<Option<(Validation, Self)>> {
+        let (report, next) = self.validate_impl(provider, exact, now_ns, true)?;
+        Ok(report.unchanged().then_some((report, next)))
+    }
+    fn validate_impl(
+        &self,
+        provider: &impl SnapshotProvider,
+        exact: bool,
+        now_ns: u128,
+        stop_on_change: bool,
+    ) -> io::Result<(Validation, Self)> {
         self.check_structure()?;
         let mut report = Validation::default();
         let mut next = Self::new(now_ns);
@@ -512,6 +532,9 @@ impl InputSnapshot {
                 Ok(stamp) => stamp,
                 Err(error) if error.kind() == io::ErrorKind::NotFound => {
                     report.changed.push(path.clone());
+                    if stop_on_change {
+                        return Ok((report, next));
+                    }
                     continue;
                 }
                 Err(error) => return Err(error),
@@ -523,6 +546,9 @@ impl InputSnapshot {
                 next.record_verified_digest(path, read_stamp, content)?;
                 if next.files[path].content != old.content {
                     report.changed.push(path.clone());
+                    if stop_on_change {
+                        return Ok((report, next));
+                    }
                 }
             } else {
                 next.files.insert(path.clone(), old.clone());
@@ -533,9 +559,25 @@ impl InputSnapshot {
             next.record_folder(path, listing.clone())?;
             if &listing != old {
                 report.changed.push(path.clone());
+                if stop_on_change {
+                    return Ok((report, next));
+                }
             }
         }
-        self.validate_negatives(provider, &mut report)?;
+        if stop_on_change {
+            for path in &self.negative_files {
+                match provider.stamp(path) {
+                    Ok(_) => {
+                        report.changed.push(path.clone());
+                        return Ok((report, next));
+                    }
+                    Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+                    Err(error) => return Err(error),
+                }
+            }
+        } else {
+            self.validate_negatives(provider, &mut report)?;
+        }
         next.negative_files = self.negative_files.clone();
         Ok((report, next))
     }
@@ -766,5 +808,145 @@ mod tests {
             dm_wire::decode(0x5350_0001, &bytes, dm_wire::MAX_BYTES).unwrap();
         assert!(malformed.check_structure().is_err());
         assert!(malformed.structure_proof.0.get().is_none());
+    }
+    #[test]
+    fn reuse_validation_stops_on_changes_but_success_refreshes_every_file() {
+        let mut host = Host {
+            bytes: b"old".to_vec(),
+            stamp: Stamp {
+                size: 3,
+                modified_ns: 1,
+                file_id: Some(9),
+            },
+            listing: FolderListing::Missing,
+            reads: Cell::new(0),
+            listings: Cell::new(0),
+        };
+        let mut snapshot = InputSnapshot::new(10_000_000_000);
+        for name in ["a.dm", "b.dm", "c.dm", "d.dm"] {
+            snapshot
+                .record_file(Path::new(name), host.stamp.clone(), &host.bytes)
+                .unwrap();
+        }
+        snapshot
+            .record_folder(Path::new("assets"), FolderListing::Missing)
+            .unwrap();
+        host.bytes = b"new".to_vec();
+        assert!(snapshot
+            .validate_for_reuse(&host, true, 20_000_000_000)
+            .unwrap()
+            .is_none());
+        assert_eq!(host.reads.get(), 1);
+        assert_eq!(host.listings.get(), 0);
+        let full = snapshot.validate(&host, true, 20_000_000_000).unwrap();
+        assert_eq!(
+            full.0.changed.len(),
+            4,
+            "public API still reports all changes"
+        );
+        host.bytes = b"old".to_vec();
+        host.stamp.modified_ns = 3;
+        host.reads.set(0);
+        let (report, refreshed) = snapshot
+            .validate_for_reuse(&host, false, 20_000_000_000)
+            .unwrap()
+            .unwrap();
+        assert!(report.unchanged());
+        assert_eq!(report.rehashed, 4);
+        assert_eq!(host.reads.get(), 4);
+        assert!(refreshed.files().all(|file| file.stamp.modified_ns == 3));
+        assert_eq!(refreshed.scanned_ns, 20_000_000_000);
+        host.listing = FolderListing::Present(vec!["new.asset".into()]);
+        assert!(refreshed
+            .validate_for_reuse(&host, false, 30_000_000_000)
+            .unwrap()
+            .is_none());
+    }
+    #[test]
+    fn reuse_validation_missing_negative_and_io_boundaries_fail_closed() {
+        struct Probe {
+            result: io::ErrorKind,
+            present: bool,
+            calls: Cell<usize>,
+        }
+        impl SnapshotProvider for Probe {
+            fn stamp(&self, _: &Path) -> io::Result<Stamp> {
+                self.calls.set(self.calls.get() + 1);
+                if self.present {
+                    Ok(Stamp {
+                        size: 1,
+                        modified_ns: 1,
+                        file_id: Some(1),
+                    })
+                } else {
+                    Err(io::Error::from(self.result))
+                }
+            }
+            fn read(&self, _: &Path) -> io::Result<(Stamp, Vec<u8>)> {
+                panic!("early rejection must not read payload")
+            }
+            fn list(&self, _: &Path) -> io::Result<FolderListing> {
+                panic!("early rejection must not list folders")
+            }
+        }
+        let mut files = InputSnapshot::new(10_000_000_000);
+        for path in ["a.dm", "b.dm"] {
+            files
+                .record_file(
+                    Path::new(path),
+                    Stamp {
+                        size: 1,
+                        modified_ns: 1,
+                        file_id: Some(1),
+                    },
+                    b"x",
+                )
+                .unwrap();
+        }
+        let missing = Probe {
+            result: io::ErrorKind::NotFound,
+            present: false,
+            calls: Cell::new(0),
+        };
+        assert!(files
+            .validate_for_reuse(&missing, false, 20_000_000_000)
+            .unwrap()
+            .is_none());
+        assert_eq!(missing.calls.get(), 1);
+        let denied = Probe {
+            result: io::ErrorKind::PermissionDenied,
+            present: false,
+            calls: Cell::new(0),
+        };
+        assert_eq!(
+            files
+                .validate_for_reuse(&denied, false, 20_000_000_000)
+                .unwrap_err()
+                .kind(),
+            io::ErrorKind::PermissionDenied
+        );
+        let mut absent = InputSnapshot::new(10_000_000_000);
+        for path in ["a.dm", "b.dm"] {
+            absent.record_negative(Path::new(path)).unwrap();
+        }
+        let found = Probe {
+            result: io::ErrorKind::NotFound,
+            present: true,
+            calls: Cell::new(0),
+        };
+        assert!(absent
+            .validate_for_reuse(&found, false, 20_000_000_000)
+            .unwrap()
+            .is_none());
+        assert_eq!(found.calls.get(), 1);
+        assert_eq!(
+            absent
+                .validate(&found, false, 20_000_000_000)
+                .unwrap()
+                .0
+                .changed
+                .len(),
+            2
+        );
     }
 }

@@ -50,6 +50,34 @@ pub struct PreparedUnit {
     /// None supports existing local-only lowering tests, not a production DMB.
     pub abi: Option<Arc<PreparedAbi>>,
 }
+/// Privately issued production preparation for an exact captured body. Its
+/// executable transform is fixed, not supplied by a custom ABI policy. The
+/// body's complete authored bytes remain in the memo key. On a miss the real
+/// parser and setting-strip transform still run before lowering.
+pub struct PreparedReplay {
+    inputs: ProcedureInputs,
+    abi: Arc<PreparedAbi>,
+}
+impl PreparedReplay {
+    /// Only the frozen captured policy may issue this after validating its
+    /// current body, metadata, symbol lineage and source occurrence.
+    pub(crate) fn from_frozen(inputs: ProcedureInputs, abi: Arc<PreparedAbi>) -> Option<Self> {
+        // Helpers require actual parsed header expressions for current issuance.
+        // Keep their existing full preparation path until a header issuer exists.
+        if !abi.source_helpers.is_empty() {
+            return None;
+        }
+        Some(Self { inputs, abi })
+    }
+    pub(crate) fn into_view(self) -> PreparedUnit {
+        PreparedUnit {
+            inputs: self.inputs,
+            executable_body: Vec::new(),
+            abi: Some(self.abi),
+        }
+    }
+    pub(crate) const TRANSFORM: &'static [u8] = b"captured-setting-strip-v1";
+}
 impl PreparedUnit {
     pub fn local_only(inputs: ProcedureInputs, parsed: &Item) -> Self {
         Self {

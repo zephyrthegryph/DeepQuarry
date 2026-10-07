@@ -218,5 +218,64 @@ published45728, eight bounded StorageFull OS112 errors. Missing records account
 for all31273 body recomputations (31272 lost records plus changed probe).
 Earlier body-run publication_failed0 does NOT prove population completed.
 DMB_CACHE_DIR now permits explicitly selecting a spacious cache drive; errors
-are surfaced in CLI diagnostics. Isolated follow-up cache must be on D:, not
-crowded C: or E:. No measured speed claim for this unbuilt cohort.
+are surfaced in CLI diagnostics. Subsequent user instruction requires new
+build artifacts and benchmark caches on E:. Historical D: receipts remain
+evidence, not the location for new runs. No measured claim for this cohort.
+
+## F cohort, complete population on explicit D: cache
+
+Release SHA2568ADD9EC4285B8D0EAA0454AFCC60B1658E90CE96A4BBC9B60FE96558C24B6B42.
+DMB_CACHE_DIR=D:/dmb-native-v2-phase2/cache-f avoids crowded default volume.
+Population113.157s external, published76989 records, recomputed77564 groups,
+publication_failed0/pending_dropped0/unsupported_disk0.
+Unchanged3.397s external/3.164s driver, receipt1.228/bulk1.299/input0.529/
+pair0.003/outputs0.000s. Complete missing-parent proof reduced live stamp
+fallbacks12125->2808 and folder fallback1148->651; exact positive hits9472.
+Bodyedit73.277s external/68.415s driver, disk77563/recomputed1, unsupported0.
+Stage secs frontend13.474, resources/maps6.870, ABI4.811, init4.224,
+lowering13.200, link8.063, composition2.819, publication4.361.
+Body peakprivate3165863936 bytes, sampledCPU60.781s. Competing Cargo/rustc8->7.
+DMB12835B136DB34720D2A018F437680AD6C83DFC654596872BB9048DBFFA917971,
+RSCBD29B5132EDFDB697B53C4666733A99A1D3A7F49083576E6023926B041AB3585.
+Receipts E:/dmb-native-v2-phase0/phase2-20261007-f-*.
+Targets remain unmet. F excludes the new issued-preparation shortcut, which
+passes Cargo check but is not release-measured yet. Cold comparison pending.
+F cold completeCLI59.096s (driver56.700), sampledCPU58.641s,
+peakprivate3043704832bytes, competingCargo/rustc7->6. DMB/RSC match Fbody
+exactly; cold remains slower than historical Phase1 baseline, so that broader
+performance regression is still open. G issued-preparation check passed and
+six focused procedure-memo tests passed (custom policy, macro diagnostics,
+shifted origins, include offsets, bounded publication, production fast prep).
+Worker declaration-fact equivalence and parser error relocation checks passed.
+Tree reuse and faster full-link inventory algorithms are in progress; no measured
+claims for either. Shared cache placement override does not modify default paths.
+## G cohort: issued preparation, completed real CLI measurements
+
+Release AE6397E97DFD5EBA845A93E244D778C9DD8B0873BB8E5E7507BC37FED722EDB0.
+Population 79.190 s; unchanged 3.421 s; body edit 64.104 s; cold 77.176 s.
+Body edit reused 77563 disk procedure records and recompiled one procedure.
+64902 issued preparations bypassed body parsing; 100 used parsed preparation.
+Body driver 59.912 s: frontend 18.443, resources/maps 6.960, ABI 1.862,
+lowering 3.354, initializers 3.474, link 6.977, composition 2.642,
+publication 3.928 s. Edited and fresh DMB/RSC were byte-identical.
+Cold performance is still a regression. Concurrent external Cargo jobs mean
+these runs are not an isolated causal comparison. Phase 2 targets remain unmet.
+The subsequent tree reuse, typed chunk facts, link inventory and early-stop
+validation changes have not yet received complete CLI benchmark measurements.
+Receipts: E:/dmb-native-v2-phase0/phase2-20261007-g-*.
+## I cohort: complete CLI measurements and rejected tree admission
+
+Release 8CBD61418B69153DE7ADD5373D6DFBF56144DEAA402DD6197E8C3C4E09A7149D.
+Explicit cache E:/dmb-native-v2-phase0/cache-i; workers2; watchdog285s.
+Population109.444s, unchanged3.568s, body71.863s, cold56.177s.
+Body frontend9.099s, resources/maps15.255s, compilation33.387s,
+publication4.434s. Procedure disk77563/recomputed1/publication_failed0.
+Tree exact key112800639 bytes exceeds32MiB; key_oversize1/skipped_budget1;
+no tree disk/resident hits. This is a confirmed incomplete reuse path.
+Cold and edited DMB/RSC match exactly. Incremental remains slower than fresh.
+Concurrent external Cargo/rustc7-12 means no isolated causal speed claim.
+Receipts E:/dmb-native-v2-phase0/phase2-20261007-i-*.
+Next saved cohort adds separately bounded chunked key/tree disk streams,
+independent exact-source parser fragments, unified anonymous initializer replay,
+and retained resource catalog reuse. These changes require a new release and
+full CLI measurements before any improvement claim. No DM/runtime tests run.

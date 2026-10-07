@@ -312,11 +312,11 @@ impl Session {
             ..ValidationTimings::default()
         };
         let started = std::time::Instant::now();
-        let (validation, inputs) = record.inputs.validate(provider, exact, now_ns)?;
+        let validated = record.inputs.validate_for_reuse(provider, exact, now_ns)?;
         timings.input_validate = started.elapsed();
-        if !validation.unchanged() {
+        let Some((validation, inputs)) = validated else {
             return Ok(None);
-        }
+        };
         record.inputs = inputs;
         Ok(Some(ValidatedRecord {
             record,
@@ -372,12 +372,12 @@ impl Session {
         );
         timings.bulk_capture = started.elapsed();
         let started = std::time::Instant::now();
-        let (validation, inputs) = record.inputs.validate(&proofs, exact, now_ns)?;
+        let validated = record.inputs.validate_for_reuse(&proofs, exact, now_ns)?;
         timings.input_validate = started.elapsed();
         timings.proofs = proofs.counts();
-        if !validation.unchanged() {
+        let Some((validation, inputs)) = validated else {
             return Ok(None);
-        }
+        };
         record.inputs = inputs;
         Ok(Some(ValidatedRecord {
             record,

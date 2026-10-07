@@ -275,7 +275,9 @@ pub fn capture_with_resource_reuse<
     } else {
         None
     };
-    let (resolver, projection, order, retained_inputs) = if let Some(retained) = retained {
+    let (resolver, projection, order, retained_inputs, retained_catalog) = if let Some(retained) =
+        retained
+    {
         let mut symbols = SymbolTable::overlay(frontend.snapshot.tree.shared_symbols());
         for map in captured.maps.iter() {
             for (_, text) in map.symbols.ordered() {
@@ -294,7 +296,13 @@ pub fn capture_with_resource_reuse<
             retained.archive,
         )
         .map_err(|error| format!("retained resource projection: {error:?}"))?;
-        (resolver, projection, retained.order, Some(retained.inputs))
+        (
+            resolver,
+            projection,
+            retained.order,
+            Some(retained.inputs),
+            Some(retained.catalog),
+        )
     } else {
         let resources = timed(observer, CaptureStage::AssetCapture, || {
             let resources = crate::assets::capture(frontend, &captured.assets, resource_provider)
@@ -336,10 +344,12 @@ pub fn capture_with_resource_reuse<
             crate::assets::project_captured_resources(&resolver, &order)
                 .map_err(|error| format!("resource projection: {error:?}"))
         })?;
-        (resolver, projection, order, None)
+        (resolver, projection, order, None, None)
     };
     let resolver = resolver.into_metadata();
-    let catalog = resolver.catalog();
+    // This is the same immutable catalog used to construct the metadata host.
+    // Reissuing it would clone/sort every lookup and reserialize its identity.
+    let catalog = retained_catalog.unwrap_or_else(|| resolver.catalog());
     let symbols = SymbolTable::overlay(resolver.shared_symbols());
     let (map, descriptors, artifacts) = if captured.maps.is_empty() {
         (None, None, Vec::new())
@@ -846,6 +856,14 @@ mod tests {
         assert!(retained.resolver.resources().is_none());
         assert_eq!(cold.resources.records, retained.resources.records);
         assert_eq!(cold.resource_archive_order, retained.resource_archive_order);
+        assert_eq!(
+            cold.resource_catalog.identity(),
+            retained.resource_catalog.identity()
+        );
+        assert_eq!(
+            cold.resource_catalog.record(),
+            retained.resource_catalog.record()
+        );
         assert_eq!(
             cold.resources
                 .inventory

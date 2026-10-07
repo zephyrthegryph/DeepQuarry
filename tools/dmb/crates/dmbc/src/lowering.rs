@@ -1,6 +1,6 @@
 //! Bounded cold procedure driver. ABI interpretation remains an explicit policy.
 use crate::debug_sources::{DebugOrigins, FrontendDebugProvider};
-use crate::procedure_policy::{AbiContext, PreparedAbi, PreparedUnit};
+use crate::procedure_policy::{AbiContext, PreparedAbi, PreparedReplay, PreparedUnit};
 use dm_codegen_byond::lower_resolver::ResolverProc;
 use dm_codegen_byond::{compile_simple_proc_with_resolver_and_debug, ProcedureInputs};
 use dm_ir::{ProcedureMetadata, Resolver, SymbolId, SymbolTable};
@@ -117,6 +117,16 @@ pub struct UnitIdentity {
 /// Converts signature/default/annotation semantics using one pinned compiler ABI.
 /// Reject unsupported flags/value-source/default decoding rather than guessing.
 pub trait AbiPolicy: Sync {
+    /// Custom policies retain full parsing. Only an authoritative captured policy
+    /// can issue a fixed-transform replay preparation for the current body.
+    fn prepare_issued(
+        &self,
+        _metadata: &ProcedureMetadata,
+        _input: &dm_tree::frontend::IssuedBodyInput<'_>,
+        _context: &AbiContext<'_>,
+    ) -> Result<Option<PreparedReplay>, String> {
+        Ok(None)
+    }
     /// Issued production parses retain the existing behavior for custom policies.
     fn prepare_captured(
         &self,
@@ -318,17 +328,33 @@ fn lower_one_memo<R: Resolver, P: AbiPolicy>(
             },
             occurrence: u32::try_from(occurrence).ok()?,
         };
-        let parsed = frontend.parse_body(body).ok()?;
+        let issued = frontend.body_input(body).ok()?;
         let context = AbiContext {
             identity,
             origin: &body.source,
             resolver: &recording,
             symbols: startup.map_or(tree.symbols(), |startup| startup.plan().symbols.as_ref()),
         };
-        let prepared = policy
-            .prepare_captured(node.metadata.procedure.as_ref()?, &parsed, &context)
-            .ok()?;
-        crate::lowering_memo::prepared_key(&mut key, &prepared, body.expanded_span.start)?;
+        let metadata = node.metadata.procedure.as_ref()?;
+        let (parsed, prepared) = match policy.prepare_issued(metadata, &issued, &context).ok()? {
+            Some(replay) => {
+                memo.counts
+                    .issued_preparations
+                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                let prepared = replay.into_view();
+                crate::lowering_memo::prepared_replay_key(&mut key, &prepared)?;
+                (None, prepared)
+            }
+            None => {
+                memo.counts
+                    .parsed_preparations
+                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                let parsed = frontend.parse_body(body).ok()?;
+                let prepared = policy.prepare_captured(metadata, &parsed, &context).ok()?;
+                crate::lowering_memo::prepared_key(&mut key, &prepared, body.expanded_span.start)?;
+                (Some(parsed), prepared)
+            }
+        };
         Some((
             parsed,
             prepared,
@@ -407,7 +433,7 @@ fn lower_one_memo<R: Resolver, P: AbiPolicy>(
         body,
         host,
         &prepared,
-        parsed.item(),
+        parsed.as_ref().map(|parsed| parsed.item()),
     );
     if let Some(errors) = disk
         .errors
@@ -445,7 +471,7 @@ fn lower_one_memo<R: Resolver, P: AbiPolicy>(
         policy,
         startup,
         Some(&capture),
-        Some((parsed, prepared)),
+        parsed.map(|parsed| (parsed, prepared)),
     );
     if let Ok(unit) = &result {
         let reads = recording.reads();

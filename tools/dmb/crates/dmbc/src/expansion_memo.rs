@@ -1,6 +1,7 @@
 //! Client storage adapter. The preprocessor owns semantic read validation.
 use dm_preprocess::regions::{
-    DirectiveRecord, ExpansionMemo, ExpansionRecord, DIRECTIVE_VERSION, EXPANSION_VERSION,
+    DirectiveRecord, ExpansionMemo, ExpansionRecord, FragmentRecord, DIRECTIVE_VERSION,
+    EXPANSION_VERSION, FRAGMENT_VERSION,
 };
 use std::collections::BTreeMap;
 use std::sync::{
@@ -187,6 +188,15 @@ impl DiskExpansionMemo {
             content: xxhash_rust::xxh3::xxh3_128(&bytes),
         }
     }
+    fn fragment_key(&self, key: u128) -> dm_cache::RecordKey {
+        let mut bytes = self.policy.to_le_bytes().to_vec();
+        bytes.extend_from_slice(&key.to_le_bytes());
+        dm_cache::RecordKey {
+            stage: 8,
+            version: FRAGMENT_VERSION,
+            content: xxhash_rust::xxh3::xxh3_128(&bytes),
+        }
+    }
     pub fn take_pending(&self) -> Vec<dm_cache::Record> {
         let mut pending = self.pending.lock().unwrap_or_else(|e| e.into_inner());
         pending.0 = 0;
@@ -213,6 +223,61 @@ impl ExpansionMemo for DiskExpansionMemo {
         let mut variants = previous_variants
             .into_iter()
             .filter(|(_, previous)| previous.key() == record.key() && !previous.same_plan(&record))
+            .map(|(bytes, _)| bytes)
+            .collect::<Vec<_>>();
+        let mut pending = self.pending.lock().unwrap_or_else(|e| e.into_inner());
+        variants.push(bytes);
+        if variants.len() > 4 {
+            variants.remove(0);
+        }
+        let Ok(bytes) = dm_cache::encode_variants(&variants) else {
+            self.dropped.fetch_add(1, Ordering::Relaxed);
+            return;
+        };
+        let previous = pending.1.get(&key).map_or(0, |value| value.payload.len());
+        let total = pending
+            .0
+            .saturating_sub(previous)
+            .saturating_add(bytes.len());
+        if bytes.len() > 16 * 1024 * 1024 || (self.publisher.is_none() && total > 64 * 1024 * 1024)
+        {
+            self.dropped.fetch_add(1, Ordering::Relaxed);
+            return;
+        }
+        pending.0 = total;
+        pending.1.insert(
+            key,
+            dm_cache::Record {
+                key,
+                symbols: Vec::new(),
+                payload: bytes.into(),
+            },
+        );
+        self.stored.fetch_add(1, Ordering::Relaxed);
+        drop(pending);
+        drop(insert_guard);
+        self.flush_if_needed();
+    }
+    fn fragment_candidates(&self, key: u128) -> Vec<Arc<FragmentRecord>> {
+        self.validated_variants(self.fragment_key(key), FragmentRecord::from_bytes, false)
+            .into_iter()
+            .filter(|(_, record)| record.key() == key)
+            .map(|(_, record)| record)
+            .collect()
+    }
+    fn insert_fragment(&self, record: Arc<FragmentRecord>) {
+        let Ok(bytes) = record.to_bytes() else {
+            self.dropped.fetch_add(1, Ordering::Relaxed);
+            return;
+        };
+        let key = self.fragment_key(record.key());
+        let insert_guard = self.insert_guard.lock().unwrap_or_else(|e| e.into_inner());
+        let previous_variants = self.validated_variants(key, FragmentRecord::from_bytes, true);
+        let mut variants = previous_variants
+            .into_iter()
+            .filter(|(_, previous)| {
+                previous.key() == record.key() && previous.as_ref() != record.as_ref()
+            })
             .map(|(bytes, _)| bytes)
             .collect::<Vec<_>>();
         let mut pending = self.pending.lock().unwrap_or_else(|e| e.into_inner());

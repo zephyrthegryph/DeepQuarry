@@ -394,7 +394,7 @@ fn rebind<R: Resolver>(
     body: &dm_tree::frontend::BodyOccurrence,
     host: &R,
     prepared: &crate::procedure_policy::PreparedUnit,
-    parsed: &dm_syntax::Item,
+    parsed: Option<&dm_syntax::Item>,
 ) -> Result<LoweredUnit, crate::lowering_memo::ReplayDecline> {
     use crate::lowering_memo::ReplayDecline as Decline;
     let identity = payload.identity.ok_or(Decline::BodyIdentity)?;
@@ -509,7 +509,7 @@ fn rebind<R: Resolver>(
             crate::argument_sources::rebase_cached_helper(
                 crate::argument_sources::HelperInputs {
                     frontend,
-                    parsed,
+                    parsed: parsed.ok_or(Decline::HelperIssuer)?,
                     metadata: &metadata,
                     owner: unit_identity,
                     inputs: &prepared.inputs,
@@ -569,7 +569,58 @@ pub(crate) fn candidates(bytes: &[u8]) -> Result<Candidates, String> {
     }
     Ok(Candidates(values))
 }
+#[derive(Default)]
+pub(crate) struct AnonymousLookup {
+    pub code: Option<ResolverProc>,
+    pub errors: Option<Vec<dm_codegen_byond::LowerError>>,
+}
 impl Candidates {
+    pub(crate) fn anonymous<R: Resolver>(
+        self,
+        key: &[u8],
+        host: &R,
+        debug_count: usize,
+    ) -> AnonymousLookup {
+        // Preserve the existing failure-first semantics across variants. Typed
+        // payload admission happens once before either outcome is inspected.
+        let mut executables = Vec::new();
+        for candidate in self.0.into_iter().rev() {
+            match candidate {
+                Candidate::Failure(value) => {
+                    if value.identity.is_none()
+                        && value.key == key
+                        && read_mismatch(&value.reads, &value.versions, host).is_none()
+                    {
+                        return AnonymousLookup {
+                            errors: Some(
+                                value.errors.into_iter().map(ErrorWire::rehydrate).collect(),
+                            ),
+                            code: None,
+                        };
+                    }
+                }
+                Candidate::Executable(value) => executables.push(value),
+            }
+        }
+        for value in executables {
+            if value.identity.is_some()
+                || value.abi.is_some()
+                || !value.helpers.is_empty()
+                || value.key != key
+                || read_mismatch(&value.reads, &value.versions, host).is_some()
+            {
+                continue;
+            }
+            if let Some(code) = value.body.rehydrate(host, debug_count) {
+                return AnonymousLookup {
+                    code: Some(code),
+                    errors: None,
+                };
+            }
+        }
+        AnonymousLookup::default()
+    }
+
     pub(crate) fn procedure<R: Resolver>(
         self,
         key: &[u8],
@@ -578,7 +629,7 @@ impl Candidates {
         body: &dm_tree::frontend::BodyOccurrence,
         host: &R,
         prepared: &crate::procedure_policy::PreparedUnit,
-        parsed: &dm_syntax::Item,
+        parsed: Option<&dm_syntax::Item>,
     ) -> ProcedureLookup {
         let mut result = ProcedureLookup {
             miss: Some(crate::lowering_memo::MemoMissReason::FullKeyMismatch),
@@ -805,5 +856,61 @@ mod executable_tests {
             validate_versions(&[(dm_ir::ReadDomain::Tree, 1), (dm_ir::ReadDomain::Tree, 2)])
                 .is_err()
         );
+    }
+    #[test]
+    fn unified_anonymous_lookup_preserves_failure_priority_and_exact_read_invalidation() {
+        let ast = dm_syntax::parse("/proc/p()\n    return 7\n");
+        let recorder = crate::lowering_memo::RecordingResolver::new(&Host(false));
+        recorder.resolve(ResolveQuery::GlobalVar(SymbolId::of("absent")));
+        let code = dm_codegen_byond::compile_simple_proc_with_resolver(
+            &ast.items[0].children,
+            &Default::default(),
+            &Default::default(),
+            &recorder,
+        )
+        .unwrap();
+        let success = encode_executable(
+            b"anonymous",
+            &recorder.reads(),
+            &recorder.domain_receipts(),
+            &code,
+        )
+        .unwrap();
+        let errors = vec![dm_codegen_byond::LowerError {
+            statement: "unsupported".into(),
+            reason: "captured failure".into(),
+            span: None,
+            kind: dm_codegen_byond::LowerErrorKind::UnsupportedModel,
+        }];
+        let failure = encode_failure(
+            b"anonymous",
+            None,
+            &recorder.reads(),
+            &recorder.domain_receipts(),
+            &errors,
+        )
+        .unwrap();
+        let success_only = dm_cache::encode_variants(&[success.clone()]).unwrap();
+        let replay = candidates(&success_only)
+            .unwrap()
+            .anonymous(b"anonymous", &Host(false), 0);
+        assert_eq!(replay.code.unwrap().procedure, code.procedure);
+        let mixed = dm_cache::encode_variants(&[failure, success]).unwrap();
+        let replay = candidates(&mixed)
+            .unwrap()
+            .anonymous(b"anonymous", &Host(false), 0);
+        assert_eq!(replay.errors, Some(errors));
+        assert!(
+            replay.code.is_none(),
+            "failure priority preserved even when success is newer"
+        );
+        let changed = candidates(&mixed)
+            .unwrap()
+            .anonymous(b"anonymous", &Host(true), 0);
+        assert!(changed.code.is_none() && changed.errors.is_none());
+        let other = candidates(&mixed)
+            .unwrap()
+            .anonymous(b"other", &Host(false), 0);
+        assert!(other.code.is_none() && other.errors.is_none());
     }
 }

@@ -88,3 +88,5 @@ pub mod modified_output;
 mod modified_output_tests;
 
 pub mod modified_initializers;
+
+pub mod tree_memo;

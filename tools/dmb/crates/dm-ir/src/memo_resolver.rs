@@ -3,8 +3,10 @@ use crate::{ResolveQuery, ResolvedMeaning, Resolver, SemanticValue};
 use std::collections::HashMap;
 use std::sync::{
     atomic::{AtomicU64, AtomicUsize, Ordering},
-    Mutex,
+    RwLock,
 };
+#[cfg(test)]
+use std::sync::Mutex;
 
 /// Aggregate request-local observations; concurrent snapshots are approximate.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -25,7 +27,7 @@ pub struct MemoResolver<'a, R: Resolver + ?Sized> {
     hits: AtomicU64,
     misses: AtomicU64,
     retained_entries: AtomicUsize,
-    entries: Mutex<HashMap<ResolveQuery, ResolvedMeaning>>,
+    entries: RwLock<HashMap<ResolveQuery, ResolvedMeaning>>,
 }
 impl<'a, R: Resolver + ?Sized> MemoResolver<'a, R> {
     /// The budget is fixed for this request. At capacity, existing hits remain
@@ -37,7 +39,7 @@ impl<'a, R: Resolver + ?Sized> MemoResolver<'a, R> {
             hits: AtomicU64::new(0),
             misses: AtomicU64::new(0),
             retained_entries: AtomicUsize::new(0),
-            entries: Mutex::new(HashMap::new()),
+            entries: RwLock::new(HashMap::new()),
         }
     }
     pub fn stats(&self) -> MemoStats {
@@ -80,7 +82,7 @@ impl<R: Resolver + ?Sized> Resolver for MemoResolver<'_, R> {
             self.misses.fetch_add(1, Ordering::Relaxed);
             return self.host.resolve(query);
         }
-        if let Ok(entries) = self.entries.lock() {
+        if let Ok(entries) = self.entries.read() {
             if let Some(meaning) = entries.get(&query) {
                 self.hits.fetch_add(1, Ordering::Relaxed);
                 return meaning.clone();
@@ -90,8 +92,10 @@ impl<R: Resolver + ?Sized> Resolver for MemoResolver<'_, R> {
         // queries. Concurrent misses may duplicate work; recursion stays free.
         self.misses.fetch_add(1, Ordering::Relaxed);
         let meaning = self.host.resolve(query);
-        if retainable(&meaning) {
-            if let Ok(mut entries) = self.entries.lock() {
+        // Admission is monotonic. Once full, avoid millions of exclusive-lock
+        // attempts for uncached queries while preserving all existing hits.
+        if self.retained_entries.load(Ordering::Relaxed) < self.entry_budget && retainable(&meaning) {
+            if let Ok(mut entries) = self.entries.write() {
                 if entries.len() < self.entry_budget
                     && !entries.contains_key(&query)
                     && entries.try_reserve(1).is_ok()
@@ -217,7 +221,7 @@ mod tests {
         }
         assert_eq!(&reads[..queries.len()], &reads[queries.len()..]);
         assert_eq!(*host.0.lock().unwrap(), queries);
-        assert_eq!(memo.entries.lock().unwrap().len(), queries.len());
+        assert_eq!(memo.entries.read().unwrap().len(), queries.len());
         assert_eq!(
             memo.stats(),
             MemoStats {
@@ -242,12 +246,12 @@ mod tests {
         ] {
             assert_eq!(memo.resolve(query), memo.resolve(query));
         }
-        assert_eq!(memo.entries.lock().unwrap().len(), 1);
+        assert_eq!(memo.entries.read().unwrap().len(), 1);
         assert_eq!(host.0.lock().unwrap().len(), 9);
         let disabled = MemoResolver::new(&host, 0);
         disabled.resolve(first);
         disabled.resolve(first);
-        assert!(disabled.entries.lock().unwrap().is_empty());
+        assert!(disabled.entries.read().unwrap().is_empty());
     }
     #[test]
     fn memo_excluded_answers_are_not_retained_with_room_available() {
@@ -269,7 +273,7 @@ mod tests {
                 retained_entries: 0
             }
         );
-        assert!(memo.entries.lock().unwrap().is_empty());
+        assert!(memo.entries.read().unwrap().is_empty());
     }
 
     #[test]
@@ -294,7 +298,7 @@ mod tests {
                 handle.join().unwrap();
             }
         });
-        assert_eq!(memo.entries.lock().unwrap().len(), 1);
+        assert_eq!(memo.entries.read().unwrap().len(), 1);
         assert!((1..=8).contains(&host.0.lock().unwrap().len()));
     }
 }

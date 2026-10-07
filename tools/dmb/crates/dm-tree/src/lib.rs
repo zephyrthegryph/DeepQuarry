@@ -16,6 +16,8 @@ mod procedure;
 pub mod procedure_statics;
 mod resolver;
 pub mod settings;
+pub mod tree_reuse;
+mod tree_wire;
 mod variable_facts;
 pub use adapter::{
     from_ast, from_ast_in_scope, AdaptedDeclarations, AdapterError, SnapshotError, TreeSnapshot,
@@ -39,7 +41,7 @@ impl MemberId {
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub struct OccurrenceId(pub u32);
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum MemberKind {
     Var,
     Proc,
@@ -48,7 +50,7 @@ pub enum MemberKind {
 
 pub use dm_ir::DeclarationMeaning as MemberMetadata;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum DefinitionMode {
     /// A fresh declaration; repeating it on the same owner is an error.
     Declare,
@@ -691,7 +693,13 @@ pub(crate) fn build_with_intrinsic_members(
     tree.members = members.into();
     tree.rebuild_inventory();
     tree.declaration_targets = targets.into();
-    // Hash an explicit versioned encoding; never Debug formatting or arena IDs.
+    tree.identity = declaration_identity(skeletons, fields);
+    Ok(tree)
+}
+pub(crate) fn declaration_identity(
+    skeletons: &[Skeleton],
+    fields: &[dm_ir::OpaqueFieldBase],
+) -> u128 {
     let mut bytes = Vec::new();
     bytes.extend_from_slice(b"dm-tree-v3\0");
     for skeleton in skeletons {
@@ -736,8 +744,7 @@ pub(crate) fn build_with_intrinsic_members(
         bytes.extend_from_slice(&(data.len() as u64).to_le_bytes());
         bytes.extend_from_slice(&data);
     }
-    tree.identity = xxhash_rust::xxh3::xxh3_128(&bytes);
-    Ok(tree)
+    xxhash_rust::xxh3::xxh3_128(&bytes)
 }
 fn metadata_fingerprint(metadata: &MemberMetadata) -> u128 {
     let mut bytes = Vec::new();

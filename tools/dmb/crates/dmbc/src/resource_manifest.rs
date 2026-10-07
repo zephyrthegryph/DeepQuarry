@@ -60,7 +60,10 @@ impl ResourceManifest {
         self.archive
     }
     pub fn filesystem_proofs(&self) -> crate::filesystem_proofs::BulkFileSystemProofs {
-        crate::filesystem_proofs::BulkFileSystemProofs::capture(self.inputs.proof_paths(), self.inputs.proof_folders())
+        crate::filesystem_proofs::BulkFileSystemProofs::capture(
+            self.inputs.proof_paths(),
+            self.inputs.proof_folders(),
+        )
     }
     /// Returns None for an ordinary changed-input/archive miss. Provider errors
     /// propagate; neither a read failure nor unsupported lookup proves absence.
@@ -124,8 +127,10 @@ impl ResourceManifest {
                 return Ok(None);
             }
         }
-        let (report, inputs) = self.inputs.validate(provider, exact, now)?;
-        if !report.unchanged() || !authenticate(self.archive)? {
+        let Some((_, inputs)) = self.inputs.validate_for_reuse(provider, exact, now)? else {
+            return Ok(None);
+        };
+        if !authenticate(self.archive)? {
             return Ok(None);
         }
         Ok(Some(ValidatedResources {

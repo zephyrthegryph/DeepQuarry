@@ -1,7 +1,7 @@
 //! Versioned compact grammar-descriptor payloads. No file IDs or executable ASTs.
 use dm_syntax::{Diagnostic, DiagnosticKind, Item, ItemKind, Span};
 use serde::{Deserialize, Serialize};
-pub(super) const VERSION: u32 = 2;
+pub(super) const VERSION: u32 = 3;
 #[derive(Serialize, Deserialize)]
 struct Node {
     kind: u8,
@@ -22,6 +22,31 @@ struct Payload {
     version: u32,
     items: Vec<Node>,
     errors: Vec<Error>,
+    facts: Option<Vec<u8>>,
+}
+// Serde encodes borrowed strings/slices identically to their owned counterparts.
+// The write projection avoids duplicating every compact declaration header.
+#[derive(Serialize)]
+struct BorrowedNode<'a> {
+    kind: u8,
+    header: &'a str,
+    span: [usize; 2],
+    header_span: [usize; 2],
+    indent: usize,
+    children: Vec<BorrowedNode<'a>>,
+}
+#[derive(Serialize)]
+struct BorrowedError<'a> {
+    kind: u8,
+    span: [usize; 2],
+    message: &'a str,
+}
+#[derive(Serialize)]
+struct BorrowedPayload<'a> {
+    version: u32,
+    items: Vec<BorrowedNode<'a>>,
+    errors: Vec<BorrowedError<'a>>,
+    facts: Option<&'a [u8]>,
 }
 fn bounds(span: Span) -> [usize; 2] {
     [span.start, span.end]
@@ -30,8 +55,8 @@ fn span(value: [usize; 2], source: &str) -> Option<Span> {
     source.get(value[0]..value[1])?;
     Some(Span::new(value[0], value[1]))
 }
-fn encode_item(item: &Item) -> Node {
-    Node {
+fn encode_item(item: &Item, offset: usize) -> BorrowedNode<'_> {
+    BorrowedNode {
         kind: match item.kind {
             ItemKind::Type => 0,
             ItemKind::Proc => 1,
@@ -40,11 +65,18 @@ fn encode_item(item: &Item) -> Node {
             ItemKind::Statement => 4,
             ItemKind::Unknown => 5,
         },
-        header: item.header.clone(),
-        span: bounds(item.span),
-        header_span: bounds(item.header_span),
+        header: &item.header,
+        span: [item.span.start - offset, item.span.end - offset],
+        header_span: [
+            item.header_span.start - offset,
+            item.header_span.end - offset,
+        ],
         indent: item.indent,
-        children: item.children.iter().map(encode_item).collect(),
+        children: item
+            .children
+            .iter()
+            .map(|child| encode_item(child, offset))
+            .collect(),
     }
 }
 fn decode_item(node: Node, source: &str, depth: usize) -> Option<Item> {
@@ -80,15 +112,21 @@ fn decode_item(node: Node, source: &str, depth: usize) -> Option<Item> {
             .collect::<Option<_>>()?,
     })
 }
-pub(super) fn encode(items: &[Item], errors: &[Diagnostic]) -> Option<Vec<u8>> {
+pub(super) fn encode_with_facts(
+    items: &[Item],
+    errors: &[Diagnostic],
+    offset: usize,
+    facts: Option<Vec<u8>>,
+) -> Option<Vec<u8>> {
     dm_wire::encode(
         VERSION,
-        &Payload {
+        &BorrowedPayload {
             version: VERSION,
-            items: items.iter().map(encode_item).collect(),
+            items: items.iter().map(|item| encode_item(item, offset)).collect(),
+            facts: facts.as_deref(),
             errors: errors
                 .iter()
-                .map(|error| Error {
+                .map(|error| BorrowedError {
                     kind: match error.kind {
                         DiagnosticKind::Lexical => 0,
                         DiagnosticKind::Expression => 1,
@@ -97,14 +135,17 @@ pub(super) fn encode(items: &[Item], errors: &[Diagnostic]) -> Option<Vec<u8>> {
                         DiagnosticKind::Unsupported => 4,
                     },
                     span: bounds(error.span),
-                    message: error.message.clone(),
+                    message: &error.message,
                 })
                 .collect(),
         },
     )
     .ok()
 }
-pub(super) fn decode(bytes: &[u8], source: &str) -> Option<(Vec<Item>, Vec<Diagnostic>)> {
+pub(super) fn decode_with_facts(
+    bytes: &[u8],
+    source: &str,
+) -> Option<(Vec<Item>, Vec<Diagnostic>, Option<Vec<u8>>)> {
     let payload: Payload = dm_wire::decode(VERSION, bytes, 4 * 1024 * 1024).ok()?;
     if payload.version != VERSION {
         return None;
@@ -132,5 +173,29 @@ pub(super) fn decode(bytes: &[u8], source: &str) -> Option<(Vec<Item>, Vec<Diagn
             })
         })
         .collect::<Option<Vec<_>>>()?;
-    Some((items, errors))
+    Some((items, errors, payload.facts))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn borrowed_fragment_projection_preserves_owned_wire_bytes() {
+        let source = "/datum/probe\n    var/value = 1\n    proc/check()\n        set waitfor = 0\n        return value\n";
+        let ast = dm_syntax::parse_declaration_skeleton(source);
+        let items = super::super::compact_declarations(ast.items, 0);
+        let errors = vec![Diagnostic {
+            kind: DiagnosticKind::Unsupported,
+            span: Span::new(0, 6),
+            message: "preserved diagnostic".into(),
+        }];
+        let bytes = encode_with_facts(&items, &errors, 0, Some(vec![1, 2, 3])).unwrap();
+        let owned: Payload = dm_wire::decode(VERSION, &bytes, 4 * 1024 * 1024).unwrap();
+        assert_eq!(bytes, dm_wire::encode(VERSION, &owned).unwrap());
+        let (decoded, diagnostics, facts) = decode_with_facts(&bytes, source).unwrap();
+        assert_eq!(decoded, items);
+        assert_eq!(diagnostics, errors);
+        assert_eq!(facts, Some(vec![1, 2, 3]));
+    }
 }

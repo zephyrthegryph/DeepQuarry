@@ -716,6 +716,15 @@ fn compact_body_preserves_setting_inputs_and_rejects_foreign_occurrences() {
 fn parsed_body_receipts_reject_other_issuers_and_public_capture_replacement() {
     let make = || fixture(&[("project.dme", "/proc/probe()\n    return 7\n")]).unwrap();
     let frontend = make();
+    let input = frontend.body_input(&frontend.bodies[0]).unwrap();
+    assert_eq!(input.source(), "/proc/probe()\n    return 7");
+    assert_eq!(
+        input.compact(),
+        frontend.compact_body(&frontend.bodies[0]).unwrap()
+    );
+    frontend
+        .validate_body_input(&input, &frontend.bodies[0])
+        .unwrap();
     let parsed = frontend.parse_body(&frontend.bodies[0]).unwrap();
     assert_eq!(parsed.item(), &frontend.body(&frontend.bodies[0]).unwrap());
     frontend
@@ -723,13 +732,20 @@ fn parsed_body_receipts_reject_other_issuers_and_public_capture_replacement() {
         .unwrap();
     let foreign = make();
     assert!(foreign
+        .validate_body_input(&input, &foreign.bodies[0])
+        .is_err());
+    assert!(foreign
         .validate_parsed_body(&parsed, &foreign.bodies[0])
         .is_err());
     let mut changed_arena = frontend.clone();
     changed_arena.expanded.text = Arc::from("/proc/probe()\n    return 9\n");
     assert!(changed_arena.parse_body(&changed_arena.bodies[0]).is_err());
+    assert!(changed_arena.body_input(&changed_arena.bodies[0]).is_err());
     let mut changed_syntax = frontend.clone();
     changed_syntax.syntax = Arc::new((*frontend.syntax).clone());
+    assert!(changed_syntax
+        .body_input(&changed_syntax.bodies[0])
+        .is_err());
     assert!(changed_syntax
         .compact_body(&changed_syntax.bodies[0])
         .is_err());
@@ -808,8 +824,30 @@ fn issued_parser_fragments_replay_compact_settings_ranges_and_cross_include_gram
     };
     use std::sync::{Arc, Mutex};
     #[derive(Default)]
-    struct Memo(Mutex<BTreeMap<u128, Vec<Arc<ExpansionRecord>>>>);
+    struct Memo(
+        Mutex<BTreeMap<u128, Vec<Arc<ExpansionRecord>>>>,
+        Mutex<BTreeMap<u128, Vec<Arc<dm_preprocess::regions::FragmentRecord>>>>,
+    );
     impl ExpansionMemo for Memo {
+        fn fragment_candidates(
+            &self,
+            key: u128,
+        ) -> Vec<Arc<dm_preprocess::regions::FragmentRecord>> {
+            self.1
+                .lock()
+                .unwrap()
+                .get(&key)
+                .cloned()
+                .unwrap_or_default()
+        }
+        fn insert_fragment(&self, record: Arc<dm_preprocess::regions::FragmentRecord>) {
+            self.1
+                .lock()
+                .unwrap()
+                .entry(record.key())
+                .or_default()
+                .push(record);
+        }
         fn candidates(&self, key: u128) -> Vec<Arc<ExpansionRecord>> {
             self.0
                 .lock()
@@ -837,6 +875,34 @@ fn issued_parser_fragments_replay_compact_settings_ranges_and_cross_include_gram
         observer: None,
     };
     let first = parse_declarations(&expanded, config, Some(&memo)).unwrap();
+    assert!(!memo.1.lock().unwrap().is_empty());
+    // A fresh expansion with no matching region memo still consumes the exact
+    // chunk's independent facts. Its current global offset/provenance are fresh.
+    memo.0.lock().unwrap().clear();
+    let independent_expanded = expand_regions_text_with_memo(&plan, 1, &memo);
+    let independent = parse_declarations(&independent_expanded, config, Some(&memo)).unwrap();
+    assert_eq!(independent.items, first.items);
+    assert!(independent.adapted.skeletons == first.adapted.skeletons);
+    assert_eq!(
+        independent.allocation_ledger.events,
+        first.allocation_ledger.events
+    );
+    // Independent hits do not enrich exact-region records: no reserialization.
+    assert!(memo
+        .0
+        .lock()
+        .unwrap()
+        .values()
+        .flatten()
+        .all(|record| record
+            .fragment(
+                parserwire::VERSION,
+                dm_syntax::Span::new(0, record.text().len())
+            )
+            .is_none()));
+    // Restore exact-region enrichment for the remainder of this fixture.
+    memo.1.lock().unwrap().clear();
+    parse_declarations(&independent_expanded, config, Some(&memo)).unwrap();
     let reused = expand_regions_text_with_memo(&plan, 1, &memo);
     let receipt = &reused.receipts[0];
     assert!(receipt
@@ -848,6 +914,9 @@ fn issued_parser_fragments_replay_compact_settings_ranges_and_cross_include_gram
         .is_some());
     let hit = parse_declarations(&reused, config, Some(&memo)).unwrap();
     assert_eq!(hit.items, first.items);
+    assert!(hit.adapted.skeletons == first.adapted.skeletons);
+    assert_eq!(hit.adapted.origins, first.adapted.origins);
+    assert_eq!(hit.allocation_ledger.events, first.allocation_ledger.events);
     assert_eq!(hit.diagnostics, first.diagnostics);
     assert_eq!(hit.items[0].children[1].children[0].header, "if(1)");
     // Invalid typed parser payload is a parse miss, without changing diagnostics.

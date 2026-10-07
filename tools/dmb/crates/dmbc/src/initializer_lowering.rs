@@ -362,14 +362,10 @@ fn lower_plan<R: Resolver>(
                 key.extend_from_slice(&(origin.semantic_path.len() as u64).to_le_bytes());
                 key.extend_from_slice(origin.semantic_path.as_bytes());
             }
-            let recorder = crate::lowering_memo::RecordingResolver::new(host);
-            for write in &group.writes {
-                recorder.resolve(dm_ir::ResolveQuery::Ancestry(write.write.lexical_owner));
-                if let Some(identity) = write.write.lexical_procedure {
-                    recorder.record_occurrence(identity);
-                }
-            }
-            if let Some(errors) = memo.failure(&key, None, &recorder) {
+            // Stored reads (including mandatory ancestry/override facts) are
+            // validated by the lookup. A hit does not build a second recorder.
+            let replay = memo.lookup_anonymous(&key, host, debug.origins.entries.len());
+            if let Some(errors) = replay.errors {
                 if errors.iter().all(|error| {
                     error.span.is_none_or(|span| {
                         span.start <= span.end && span.end < write_ordinals.len()
@@ -380,9 +376,16 @@ fn lower_plan<R: Resolver>(
                     ));
                 }
             }
-            if let Some(code) = memo.executable(&key, &recorder, debug.origins.entries.len()) {
+            if let Some(code) = replay.code {
                 code
             } else {
+                let recorder = crate::lowering_memo::RecordingResolver::new(host);
+                for write in &group.writes {
+                    recorder.resolve(dm_ir::ResolveQuery::Ancestry(write.write.lexical_owner));
+                    if let Some(identity) = write.write.lexical_procedure {
+                        recorder.record_occurrence(identity);
+                    }
+                }
                 let code = dm_codegen_byond::initializer::lower_scoped_assignments(
                     &assignments,
                     context(),

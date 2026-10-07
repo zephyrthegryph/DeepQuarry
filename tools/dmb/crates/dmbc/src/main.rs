@@ -264,6 +264,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         dmbc::map_memo::MapMemo::with_disk(memo_policy, 64 * 1024 * 1024, snapshot)
             .with_publisher(cache_publisher.as_ref().expect("snapshot publisher").clone())
     });
+    let tree_reuse = cache_snapshot.clone().map(|snapshot| {
+        dm_tree::tree_reuse::TreeReuse::new(memo_policy, 32 * 1024 * 1024)
+            .with_storage(Arc::new(dmbc::tree_memo::DiskTreeMemo::new(
+                memo_policy, snapshot, cache_publisher.as_ref().expect("snapshot publisher").clone(),
+            )))
+    });
     let seed = engine.map(dmbc::engine::EngineSnapshot::frontend_seed);
     let progress = |event: dm_tree::frontend::FrontendProgress| {
         eprintln!(
@@ -307,7 +313,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         };
         // Only requested captures enter the semantic model. Release unused
         // speculative preparations before maps, resources and lowering begin.
-        dm_tree::frontend::build_with_expansion_memo(
+        dm_tree::frontend::build_with_memos(
             &project,
             &provider,
             &defines,
@@ -317,6 +323,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 observer: progress_enabled.then_some(&progress),
             },
             expansion_memo.as_ref().map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
+            tree_reuse.as_ref(),
         )
     };
     let frontend = match frontend_result {
@@ -569,7 +576,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }).collect();
         let memo_stats = procedure_memo.as_ref().map(|memo| {
             use std::sync::atomic::Ordering::Relaxed;
-            serde_json::json!({"disk_hits":memo.counts.disk_hits.load(Relaxed),"recomputed":memo.counts.recomputed.load(Relaxed),"pending_dropped":memo.counts.pending_dropped.load(Relaxed),"published_records":memo.counts.published_records.load(Relaxed),"publication_failed":memo.counts.publication_failed.load(Relaxed),"key_preparation_seconds":memo.counts.key_preparation_ns.load(Relaxed) as f64 / 1e9,"lookup_seconds":memo.counts.lookup_ns.load(Relaxed) as f64 / 1e9,"encode_seconds":memo.counts.encode_ns.load(Relaxed) as f64 / 1e9,"publication_cpu_scope_seconds":memo.counts.publication_ns.load(Relaxed) as f64 / 1e9,"errors":memo.publication_errors()})
+            serde_json::json!({"disk_hits":memo.counts.disk_hits.load(Relaxed),"issued_preparations":memo.counts.issued_preparations.load(Relaxed),"parsed_preparations":memo.counts.parsed_preparations.load(Relaxed),"recomputed":memo.counts.recomputed.load(Relaxed),"pending_dropped":memo.counts.pending_dropped.load(Relaxed),"published_records":memo.counts.published_records.load(Relaxed),"publication_failed":memo.counts.publication_failed.load(Relaxed),"key_preparation_seconds":memo.counts.key_preparation_ns.load(Relaxed) as f64 / 1e9,"lookup_seconds":memo.counts.lookup_ns.load(Relaxed) as f64 / 1e9,"encode_seconds":memo.counts.encode_ns.load(Relaxed) as f64 / 1e9,"publication_cpu_scope_seconds":memo.counts.publication_ns.load(Relaxed) as f64 / 1e9,"errors":memo.publication_errors()})
         });
         let expansion_stats = expansion_memo.as_ref().map(|memo| {
             use std::sync::atomic::Ordering::Relaxed;
@@ -579,7 +586,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             use std::sync::atomic::Ordering::Relaxed;
             serde_json::json!({"parse_hits":memo.counts.parse_hits.load(Relaxed),"geometry_hits":memo.counts.geometry_hits.load(Relaxed),"parsed":memo.counts.parsed.load(Relaxed),"projected":memo.counts.projected.load(Relaxed),"disk_admitted":memo.counts.disk_admitted.load(Relaxed),"skipped_disk_budget":memo.counts.skipped_disk_budget.load(Relaxed),"published_records":memo.counts.published_records.load(Relaxed),"publication_failed":memo.counts.publication_failed.load(Relaxed),"errors":memo.publication_errors()})
         });
-        let stats = serde_json::json!({"project":project,"workers":workers,"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"input_preparation_seconds":input_preparation_seconds,"frontend_seconds":frontend.timings.total.as_secs_f64(),"nontext_seconds":nontext_seconds,"compilation_seconds":compilation_seconds,"publication_seconds":publication_seconds,"dmb_bytes":pair.dmb_bytes,"rsc_bytes":pair.rsc_bytes,"memo":memo_stats,"expansion_memo":expansion_stats,"map_memo":map_stats,"explanations":explanations});
+        let tree_stats = tree_reuse.as_ref().map(|memo| {
+            use std::sync::atomic::Ordering::Relaxed;
+            let c = &memo.counts;
+            serde_json::json!({"resident_hits":c.resident_hits.load(Relaxed),"disk_hits":c.disk_hits.load(Relaxed),"resolved":c.resolved.load(Relaxed),"rejected":c.rejected.load(Relaxed),"skipped_budget":c.skipped_budget.load(Relaxed),"publication_failed":c.publication_failed.load(Relaxed),"key_bytes":c.key_bytes.load(Relaxed),"payload_bytes":c.payload_bytes.load(Relaxed),"key_oversize":c.key_oversize.load(Relaxed),"payload_oversize":c.payload_oversize.load(Relaxed),"envelope_bytes":c.envelope_bytes.load(Relaxed),"envelope_oversize":c.envelope_oversize.load(Relaxed)})
+        });
+        let stats = serde_json::json!({"project":project,"workers":workers,"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"input_preparation_seconds":input_preparation_seconds,"frontend_seconds":frontend.timings.total.as_secs_f64(),"nontext_seconds":nontext_seconds,"compilation_seconds":compilation_seconds,"publication_seconds":publication_seconds,"dmb_bytes":pair.dmb_bytes,"rsc_bytes":pair.rsc_bytes,"memo":memo_stats,"expansion_memo":expansion_stats,"map_memo":map_stats,"tree_reuse":tree_stats,"explanations":explanations});
         if let Err(error) = dmbc::telemetry::save(&project, "stats", &stats) { eprintln!("native telemetry skipped: {error}"); }
         let _ = dmbc::telemetry::save(&project, "last-run", &serde_json::json!({"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"pair":pair.name()}));
         eprintln!("native stages: input_preparation={:.3}s frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s publication={:.3}s",

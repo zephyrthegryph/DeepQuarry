@@ -229,6 +229,12 @@ impl LinkTables {
                 return Err(LinkError::FixedIndexCollision(key.table(), index));
             }
         }
+        // Partition once in canonical Key order. Each domain retains the exact
+        // previous sorted fallback order without scanning all keys eight times.
+        let mut domain_keys: BTreeMap<Table, Vec<Key>> = BTreeMap::new();
+        for &key in content.keys() {
+            domain_keys.entry(key.table()).or_default().push(key);
+        }
         for table in [
             Table::String,
             Table::Type,
@@ -239,11 +245,7 @@ impl LinkTables {
             Table::List,
             Table::Resource,
         ] {
-            let keys: Vec<_> = content
-                .keys()
-                .copied()
-                .filter(|key| key.table() == table)
-                .collect();
+            let keys = domain_keys.remove(&table).unwrap_or_default();
             let ordered = inventory.orders.get(&table);
             let append_order = inventory.append_orders.get(&table);
             let prefix = inventory
@@ -387,23 +389,24 @@ impl LinkTables {
         })
     }
 }
-fn symbols(key: Key) -> Vec<SymbolId> {
-    match key {
-        Key::ProcedureStatic(identity) => vec![
-            identity.procedure.owner,
-            identity.procedure.name,
-            identity.name,
+fn symbols(key: Key) -> impl Iterator<Item = SymbolId> {
+    let values = match key {
+        Key::ProcedureStatic(identity) => [
+            Some(identity.procedure.owner),
+            Some(identity.procedure.name),
+            Some(identity.name),
         ],
-        Key::Initializer(InitializerIdentity::Class(owner)) => vec![owner],
-        Key::Initializer(InitializerIdentity::Modified(alias)) => vec![alias],
-        Key::DefaultMapInstance { owner, .. } => vec![owner],
-        Key::String(id) | Key::Type(id) | Key::Instance(id) => vec![id],
+        Key::Initializer(InitializerIdentity::Class(owner))
+        | Key::DefaultMapInstance { owner, .. } => [Some(owner), None, None],
+        Key::Initializer(InitializerIdentity::Modified(alias)) => [Some(alias), None, None],
+        Key::String(id) | Key::Type(id) | Key::Instance(id) => [Some(id), None, None],
         Key::Proc { owner, name, .. }
         | Key::Verb { owner, name, .. }
         | Key::ArgumentSource { owner, name, .. }
-        | Key::Variable { owner, name } => vec![owner, name],
-        _ => vec![],
-    }
+        | Key::Variable { owner, name } => [Some(owner), Some(name), None],
+        _ => [None; 3],
+    };
+    values.into_iter().flatten()
 }
 fn reference_key(
     reference: SymRef,
@@ -539,18 +542,30 @@ impl ArgumentSourceReferences {
 mod tests {
     #[test]
     fn list_allocation_skips_nullable_slot_without_changing_other_domains() {
-        let mut inventory=LinkInventory::default();
-        let keys=[Key::List(1),Key::List(2),Key::List(3)];
-        for key in keys { inventory.entries.push(Entry{key,content:Arc::from([])}); }
-        inventory.reserved_prefixes.insert(Table::List,0xfffe);
-        inventory.append_orders.insert(Table::List,keys.to_vec());
-        let tables=LinkTables::build(inventory.clone()).unwrap();
-        assert_eq!(keys.map(|key|tables.index(key).unwrap()),[0xfffe,0x10000,0x10001]);
-        inventory.fixed.push((keys[0],0xffff));
-        assert_eq!(LinkTables::build(inventory).unwrap_err(),LinkError::ReservedIndex(Table::List,0xffff));
-        assert!(!is_reserved_table_index(Table::Variable,0xffff));
-        assert!(!is_reserved_table_index(Table::Resource,0xffff));
-    }    #[test]
+        let mut inventory = LinkInventory::default();
+        let keys = [Key::List(1), Key::List(2), Key::List(3)];
+        for key in keys {
+            inventory.entries.push(Entry {
+                key,
+                content: Arc::from([]),
+            });
+        }
+        inventory.reserved_prefixes.insert(Table::List, 0xfffe);
+        inventory.append_orders.insert(Table::List, keys.to_vec());
+        let tables = LinkTables::build(inventory.clone()).unwrap();
+        assert_eq!(
+            keys.map(|key| tables.index(key).unwrap()),
+            [0xfffe, 0x10000, 0x10001]
+        );
+        inventory.fixed.push((keys[0], 0xffff));
+        assert_eq!(
+            LinkTables::build(inventory).unwrap_err(),
+            LinkError::ReservedIndex(Table::List, 0xffff)
+        );
+        assert!(!is_reserved_table_index(Table::Variable, 0xffff));
+        assert!(!is_reserved_table_index(Table::Resource, 0xffff));
+    }
+    #[test]
     fn initialization_domains_do_not_alias_callable_or_map_occurrences() {
         use super::*;
         let owner = SymbolId::of("/obj/a");

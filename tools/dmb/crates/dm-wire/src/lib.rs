@@ -19,6 +19,28 @@ impl Write for Bounded {
         Ok(())
     }
 }
+/// Measure the exact existing wire encoding without allocating its payload.
+/// This does not raise the encoder's admission cap or authorize large records.
+pub fn encoded_len<T: Serialize>(schema: u32, value: &T) -> Result<usize, String> {
+    struct Counting(usize);
+    impl Write for Counting {
+        fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+            self.0 = self
+                .0
+                .checked_add(bytes.len())
+                .ok_or_else(|| io::Error::other("wire length overflow"))?;
+            Ok(bytes.len())
+        }
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+    let _ = schema; // Schema changes framing contents, not its fixed extent.
+    let mut output = Counting(HEADER);
+    bincode::serde::encode_into_std_write(value, &mut output, bincode::config::standard())
+        .map_err(|error| error.to_string())?;
+    Ok(output.0)
+}
 /// Encode standard little-endian varint serde data within the fixed payload cap.
 pub fn encode<T: Serialize>(schema: u32, value: &T) -> Result<Vec<u8>, String> {
     let mut payload = Bounded(Vec::new());
@@ -84,6 +106,8 @@ mod tests {
             kind: Some((7, "exact".into())),
         };
         let bytes = encode(91, &dto).unwrap();
+        assert_eq!(encoded_len(91, &dto).unwrap(), bytes.len());
+        assert_eq!(encoded_len(92, &dto).unwrap(), bytes.len());
         assert!(bytes.len() < 4200);
         assert_eq!(decode::<Dto>(91, &bytes, MAX_BYTES).unwrap(), dto);
         assert!(decode::<Dto>(92, &bytes, MAX_BYTES).is_err());
@@ -100,7 +124,9 @@ mod tests {
     }
     #[test]
     fn encoded_payload_cap_and_decode_claim_are_bounded() {
-        assert!(encode(1, &vec![0u8; MAX_BYTES + 1]).is_err());
+        let oversized = vec![0u8; MAX_BYTES + 1];
+        assert!(encoded_len(1, &oversized).unwrap() > MAX_BYTES + HEADER);
+        assert!(encode(1, &oversized).is_err());
         let mut bytes = encode(1, &1u32).unwrap();
         bytes[12..16].copy_from_slice(&u32::MAX.to_le_bytes());
         assert!(decode::<u32>(1, &bytes, usize::MAX).is_err());

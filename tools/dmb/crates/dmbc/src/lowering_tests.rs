@@ -899,3 +899,154 @@ fn procedure_memo_publisher_flushes_small_bounded_batches_without_dropping_popul
     }
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn procedure_memo_frozen_preparation_hits_without_prelookup_body_parse() {
+    use crate::driver_facts::{prepare_pinned_source_abi, FrozenPreparedPolicy};
+    let engine = crate::engine::EngineSnapshot::from_bytes(
+        include_bytes!("../../../fixtures/native_template.bin"),
+        1,
+    )
+    .unwrap();
+    let seed = engine.frontend_seed();
+    let frontend = dm_tree::frontend::build_with_config(
+        Path::new("project.dme"),
+        &Source("/proc/p()\n    set name = \"Display\"\n    var/local = 7\n    return local\n"),
+        &Default::default(),
+        dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+            observer: None,
+        },
+    )
+    .unwrap();
+    let startup = crate::startup::capture(&frontend).unwrap();
+    let host = startup
+        .resolver(&frontend, frontend.snapshot.tree.as_ref())
+        .unwrap();
+    let abi = prepare_pinned_source_abi(&frontend, &engine, &host, None, 1).unwrap();
+    assert!(
+        abi.prepared.diagnostics.is_empty(),
+        "{:?}",
+        abi.prepared.diagnostics
+    );
+    let policy = FrozenPreparedPolicy::new(&frontend, &abi.prepared).unwrap();
+    let root = std::env::temp_dir().join(format!(
+        "dmbc-issued-preparation-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    let cache = dm_cache::Cache::open(&root, dm_cache::Limits::default()).unwrap();
+    let memo = crate::lowering_memo::ProcedureMemo::with_disk(
+        abi.policy_identity,
+        cache.snapshot().unwrap(),
+    );
+    let cold = lower_frontend_with_memo(
+        &frontend,
+        &host,
+        &policy,
+        LoweringConfig::default(),
+        &startup,
+        &memo,
+    );
+    assert!(cold.diagnostics.is_empty(), "{:?}", cold.diagnostics);
+    let warm = lower_frontend_with_memo(
+        &frontend,
+        &host,
+        &policy,
+        LoweringConfig::default(),
+        &startup,
+        &memo,
+    );
+    assert!(warm.diagnostics.is_empty(), "{:?}", warm.diagnostics);
+    assert_eq!(cold.units[0].code.procedure, warm.units[0].code.procedure);
+    assert_eq!(cold.units[0].debug_origins, warm.units[0].debug_origins);
+    assert_eq!(
+        memo.counts
+            .issued_preparations
+            .load(std::sync::atomic::Ordering::Relaxed),
+        2
+    );
+    assert_eq!(
+        memo.counts
+            .parsed_preparations
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
+    assert_eq!(
+        memo.counts
+            .resident_hits
+            .load(std::sync::atomic::Ordering::Relaxed),
+        1
+    );
+    cache.publish(&memo.take_pending()).unwrap();
+    let disk = crate::lowering_memo::ProcedureMemo::with_disk(
+        abi.policy_identity,
+        cache.snapshot().unwrap(),
+    );
+    let disk_warm = lower_frontend_with_memo(
+        &frontend,
+        &host,
+        &policy,
+        LoweringConfig::default(),
+        &startup,
+        &disk,
+    );
+    assert!(
+        disk_warm.diagnostics.is_empty(),
+        "{:?}",
+        disk_warm.diagnostics
+    );
+    assert_eq!(
+        disk_warm.units[0].code.procedure,
+        cold.units[0].code.procedure
+    );
+    assert_eq!(
+        disk.counts
+            .disk_hits
+            .load(std::sync::atomic::Ordering::Relaxed),
+        1
+    );
+    assert_eq!(
+        disk.counts
+            .parsed_preparations
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
+    drop(disk);
+    drop(memo);
+    drop(cache);
+    std::fs::remove_dir_all(root).unwrap();
+    let custom_frontend = self::frontend("/proc/custom()\n    return 7\n");
+    let custom_startup = crate::startup::capture(&custom_frontend).unwrap();
+    let custom_host = custom_startup
+        .resolver(&custom_frontend, custom_frontend.snapshot.tree.as_ref())
+        .unwrap();
+    let custom = crate::lowering_memo::ProcedureMemo::new(abi.policy_identity);
+    let custom_cold = lower_frontend_with_memo(
+        &custom_frontend,
+        &custom_host,
+        &NoParameters,
+        LoweringConfig::default(),
+        &custom_startup,
+        &custom,
+    );
+    assert!(custom_cold.diagnostics.is_empty());
+    assert_eq!(
+        custom
+            .counts
+            .issued_preparations
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
+    assert_eq!(
+        custom
+            .counts
+            .parsed_preparations
+            .load(std::sync::atomic::Ordering::Relaxed),
+        1
+    );
+}
