@@ -55,7 +55,7 @@ MSG_DEF_SELF(status/unconscious, "You cannot act while unconscious.")
 		contributes(STAT_CAN_ACT, cond_not(STAT_WEAKENED), reason = MSG(status/knocked_down)),
 		contributes(STAT_CAN_ACT, cond_not(STAT_PARALYZED), reason = MSG(status/paralyzed)),
 		contributes(STAT_CAN_ACT, cond_not(STAT_SLEEPING), reason = MSG(status/sleeping)),
-		contributes(STAT_CAN_ACT, cond_not(nameof(stat)), reason = MSG(status/unconscious)),
+		contributes(STAT_CAN_ACT, cond_not(nameof(/mob::stat)), reason = MSG(status/unconscious)),
 	)
 
 /// Godmode's incapacitation immunities, for /mob's CAPABILITIES block (mob_defines.dm).
