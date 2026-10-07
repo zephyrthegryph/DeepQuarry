@@ -158,7 +158,10 @@ pub fn quoted_end(rest: &str, block: bool, raw: bool) -> Option<usize> {
             }
             continue;
         }
-        if ch == '[' {
+        // Raw DM strings preserve regex brackets/backslashes as text. They
+        // cannot enter interpolation: otherwise an escaped regex closing
+        // bracket may leave a fabricated expression open across declarations.
+        if ch == '[' && !raw {
             interpolation_depth = 1;
         } else if ch == '"' {
             if !block {
@@ -2036,6 +2039,32 @@ mod tests {
         assert_eq!(literals, [r#"@"\""#]);
         let parsed = parse_expression(source);
         assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
+    }
+
+    #[test]
+    fn raw_regex_brackets_do_not_consume_following_declarations() {
+        let literal = r#"@"^(\d+:\d+|\[0x[0-9a-fA-F]+\](#\d+)?|@\w+)$""#;
+        let source = format!("/proc/om_is_handle(h)\n    var/static/regex/shape = regex({literal})\n    return shape\n/mob/dview\n    anchored = 1\n/atom/movable\n    var/anchored = 0\n");
+        let tokens = lex_spans(&source);
+        assert!(tokens.diagnostics.is_empty(), "{:?}", tokens.diagnostics);
+        let strings = tokens
+            .tokens
+            .iter()
+            .filter(|token| token.kind == TokenKind::String)
+            .map(|token| token.text(&source))
+            .collect::<Vec<_>>();
+        assert_eq!(strings, [literal]);
+        let ast = parse(&source);
+        assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
+        assert_eq!(ast.items.len(), 3);
+        assert_eq!(ast.items[1].header, "/mob/dview");
+        assert_eq!(ast.items[2].children[0].header, "var/anchored = 0");
+        let unmatched = parse_expression(r#"@"[unclosed""#);
+        assert!(
+            unmatched.diagnostics.is_empty(),
+            "{:?}",
+            unmatched.diagnostics
+        );
     }
 
     #[test]

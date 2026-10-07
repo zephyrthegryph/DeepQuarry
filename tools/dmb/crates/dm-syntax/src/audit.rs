@@ -532,6 +532,29 @@ mod tests {
     }
 
     #[test]
+    fn raw_inline_regex_preserves_following_chunk_boundaries() {
+        let source = r#"/proc/om_is_handle(h)
+    var/static/regex/shape = regex(@"^(\d+:\d+|\[0x[0-9a-fA-F]+\](#\d+)?|@\w+)$")
+    return shape
+/mob/dview
+    anchored = 1
+/atom/movable
+    var/anchored = 0
+"#;
+        let mut headers = Vec::new();
+        let report = for_each_source_chunk_with_limits(source, 64, source.len(), |chunk, _| {
+            let ast = parse(chunk);
+            assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
+            headers.extend(ast.items.into_iter().map(|item| item.header));
+        });
+        assert_eq!(report.skipped_declarations, 0);
+        assert_eq!(
+            headers,
+            ["/proc/om_is_handle(h)", "/mob/dview", "/atom/movable"]
+        );
+    }
+
+    #[test]
     fn column_zero_lines_inside_macro_proc_and_call_do_not_split_chunks() {
         let source = "/datum/globals/var/list/x; /datum/globals/proc/InitX(){x =list(\nNORTHEAST,\nNORTHWEST\n); order += \"x\";}\n/proc/next()\n    return 2\n";
         let mut starts = Vec::new();
