@@ -5,6 +5,11 @@ Phase 1 foundation work is now underway alongside the remaining baseline evidenc
 The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
+Release probe 35 cleared retained-client projection and reached the next class
+composition gate: an admitted source type has no physical parent ABI binding.
+All bodies and symbolic linking passed again. External time was 30.657 s,
+sampled private memory 3,056,427,008 bytes; no pair was produced. The precise
+type/prototype is under investigation, rather than substituting a root prototype.
 Release probe 34 passed initializer codegen, all 64,964 procedure bodies and
 symbolic linking (4.726 s). Composition stopped on retained engine inheritance
 projection. External time was 28.639 s, sampled private memory 3,053,125,632
