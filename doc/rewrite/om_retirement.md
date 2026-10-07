@@ -148,7 +148,7 @@ on October 6 2026, game code only (no framework, tests or generated files):
 | `DECLARE_PERIODIC*`, `DECLARE_REPEAT` | 126 / 107 | `periodic_while.py` residue: items and structures |
 | `om_io`, `io_request` | 82 / 24 | native requests (`/datum/io/*`) |
 | `om_grant*`, `om_revoke*` | 73 / 29 | verbs: `granted_verb()` (`verb_decl.py`) |
-| `om_watch`, gas watches | 67 / 22 | pipenet |
+| `om_watch`, gas watches | 67 / 22 | F5 done: `gas_level()` / `gas_watch_many()`; the remainder (value and condition watches) is machine-pipeline code (F7) |
 
 The framework's own internals follow their last caller: the timer store and scheduler (`after()` is built on them), the
 OM record's own clock (CLOCK_OWN), the contribution store (now only `EFFECT_BUCKLED`, `EFFECT_BODY_EFFECTS` and the

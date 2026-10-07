@@ -5,9 +5,9 @@
 /// Delivers what a gas change published, however the holder listens: the native gas frame, the machine service's gas wakes (the observation
 /// stream), the world's crossings on their lane, and the marked drain that runs the holder's reactions.
 /proc/dq_gas_level_test_deliver()
-	SSair.run_gas_frames(1)
+	SSair.run_gas_frames(2)
 	SSmachines.wake_dirty_gas_subscribers()
-	sleep(world.tick_lag * 4)
+	sleep(world.tick_lag * 6)
 	SSmachines.wake_dirty_gas_subscribers()
 	kernel_drain_now()
 
@@ -119,3 +119,162 @@
 	TEST_ASSERT(after_pending(service, "material_service"), "a large change in its surroundings did not queue exposure work")
 	qdel(C)
 	dq_gas_level_test_deliver()
+
+// ---------------------------------------------------------------- gas_level()
+
+/// A holder with two levels on the mixture a test hands it: hot (temperature at or over T20C + 30) and thin (total moles at or under 5).
+/obj/test_gas_level_holder
+	var/datum/gas_mixture/watched_air
+	var/hot = FALSE
+	var/thin = FALSE
+	var/hot_runs = 0
+	var/thin_runs = 0
+
+TRACKED(/obj/test_gas_level_holder, hot)
+TRACKED(/obj/test_gas_level_holder, thin)
+
+CAPABILITIES(/obj/test_gas_level_holder)
+	gas_level(into = nameof(hot), reading = CH_GAS_TEMPERATURE, above = T20C + 30, hysteresis = 5, air = nameof(watched_air))
+	gas_level(into = nameof(thin), reading = CH_GAS_MOLES, below = 5, hysteresis = 1, air = nameof(watched_air))
+	on_change(nameof(hot), ANY, then(PROC_REF(hot_changed)))
+	on_change(nameof(thin), ANY, then(PROC_REF(thin_changed)))
+
+/obj/test_gas_level_holder/proc/hot_changed(datum/act/A)
+	hot_runs++
+
+/obj/test_gas_level_holder/proc/thin_changed(datum/act/A)
+	thin_runs++
+
+/// A holder over `air`, armed.
+/datum/unit_test/proc/gas_level_test_holder(datum/gas_mixture/air)
+	var/obj/test_gas_level_holder/holder = allocate(/obj/test_gas_level_holder)
+	holder.watched_air = air
+	gas_level_rearm_all(holder)
+	dq_gas_level_test_deliver()
+	return holder
+
+/datum/unit_test/proc/gas_level_test_warm(datum/gas_mixture/air)
+	heat_set(air, T20C + 60, HEAT_SOURCE_OTHER)
+
+/datum/unit_test/proc/gas_level_test_cool(datum/gas_mixture/air)
+	heat_set(air, T20C, HEAT_SOURCE_OTHER)
+
+/// A level on a mixture a machine owns turns its var at the crossing in each direction, and not for a move that stays on one side.
+/datum/unit_test/dq_gas_level_crosses_a_private_mixture
+
+/datum/unit_test/dq_gas_level_crosses_a_private_mixture/Run()
+	var/datum/gas_mixture/tank = allocate(/datum/gas_mixture, 70)
+	tank.adjust_gas(/datum/gas/nitrogen, 10)
+	heat_set(tank, T20C, HEAT_SOURCE_OTHER)
+	var/obj/test_gas_level_holder/holder = gas_level_test_holder(tank)
+	TEST_ASSERT(!holder.hot, "a mixture under the level started hot")
+	TEST_ASSERT(!holder.thin, "a mixture over the level started thin")
+	heat_set(tank, T20C + 10, HEAT_SOURCE_OTHER)
+	dq_gas_level_test_deliver()
+	TEST_ASSERT(!holder.hot, "a rise that stays under the level turned the var")
+	gas_level_test_warm(tank)
+	dq_gas_level_test_deliver()
+	TEST_ASSERT(holder.hot, "a rise past the level did not turn the var")
+	TEST_ASSERT_EQUAL(holder.hot_runs, 1, "the holder's on_change did not run once for the crossing")
+	gas_level_test_cool(tank)
+	dq_gas_level_test_deliver()
+	TEST_ASSERT(!holder.hot, "a fall back past the level did not turn the var off")
+	TEST_ASSERT_EQUAL(holder.hot_runs, 2, "the holder's on_change did not run for the fall")
+	// The second level of the same holder is its own: moles under 5 turns thin, nothing else.
+	tank.adjust_gas(/datum/gas/nitrogen, -7)
+	dq_gas_level_test_deliver()
+	TEST_ASSERT(holder.thin, "total moles under its level did not turn the thin var")
+	TEST_ASSERT(!holder.hot, "the thin level turned the hot var")
+	tank.adjust_gas(/datum/gas/nitrogen, 20)
+	dq_gas_level_test_deliver()
+	TEST_ASSERT(!holder.thin, "moles back over the level did not turn the thin var off")
+
+/// The var holds inside the hysteresis band: it turns on at the level and off only once the reading is the hysteresis back from it.
+/datum/unit_test/dq_gas_level_hysteresis
+
+/datum/unit_test/dq_gas_level_hysteresis/Run()
+	var/datum/gas_mixture/tank = allocate(/datum/gas_mixture, 70)
+	tank.adjust_gas(/datum/gas/nitrogen, 10)
+	heat_set(tank, T20C, HEAT_SOURCE_OTHER)
+	var/obj/test_gas_level_holder/holder = gas_level_test_holder(tank)
+	heat_set(tank, T20C + 31, HEAT_SOURCE_OTHER)
+	dq_gas_level_test_deliver()
+	TEST_ASSERT(holder.hot, "just past the level did not turn the var")
+	heat_set(tank, T20C + 28, HEAT_SOURCE_OTHER)
+	dq_gas_level_test_deliver()
+	TEST_ASSERT(holder.hot, "a fall inside the hysteresis band turned the var off")
+	heat_set(tank, T20C + 20, HEAT_SOURCE_OTHER)
+	dq_gas_level_test_deliver()
+	TEST_ASSERT(!holder.hot, "a fall past the hysteresis band did not turn the var off ([tank.return_temperature()] K, level [T20C + 30])")
+	TEST_ASSERT_EQUAL(holder.hot_runs, 2, "the var turned more than once for one rise and one fall")
+
+/// A burst of writes inside one tick runs the holder's reaction once, with the var where the last write left it.
+/datum/unit_test/dq_gas_level_burst_coalesces
+
+/datum/unit_test/dq_gas_level_burst_coalesces/Run()
+	var/datum/gas_mixture/tank = allocate(/datum/gas_mixture, 70)
+	tank.adjust_gas(/datum/gas/nitrogen, 10)
+	heat_set(tank, T20C, HEAT_SOURCE_OTHER)
+	var/obj/test_gas_level_holder/holder = gas_level_test_holder(tank)
+	for(var/i in 1 to 5)
+		gas_level_test_warm(tank)
+		gas_level_test_cool(tank)
+	gas_level_test_warm(tank)
+	dq_gas_level_test_deliver()
+	TEST_ASSERT(holder.hot, "the last write left it hot")
+	TEST_ASSERT(holder.hot_runs <= 1, "a burst of writes ran the holder's reaction [holder.hot_runs] times")
+
+/// The guarantee the watches keep: a heat write to a pipe network's region, which reaches Rust without any DM write to the mixture, still turns the
+/// level, in both directions.
+/datum/unit_test/dq_gas_level_hears_pipe_region_heat
+
+/datum/unit_test/dq_gas_level_hears_pipe_region_heat/Run()
+	var/list/run = dq_atmos_test_find_clear_pipe_run(2)
+	TEST_ASSERT_NOTNULL(run, "no clear two-tile pipe run")
+	var/turf/A = run[1]
+	var/turf/B = run[2]
+	var/direction = get_dir(A, B)
+	var/obj/machinery/atmospherics/pipe/simple/P1 = allocate(/obj/machinery/atmospherics/pipe/simple, A)
+	var/obj/machinery/atmospherics/pipe/simple/P2 = allocate(/obj/machinery/atmospherics/pipe/simple, B)
+	for(var/obj/machinery/atmospherics/pipe/simple/P as anything in list(P1, P2))
+		P.dir = direction | REVERSE_DIR(direction)
+		P.initialize_directions = P.dir
+	P1.atmos_init()
+	P2.atmos_init()
+	dq_atmos_test_publish_rust_pipenets(list(P1, P2))
+	var/datum/gas_mixture/pipe_air = P1.parent?.air
+	TEST_ASSERT_NOTNULL(pipe_air, "the pipes have no pipeline air")
+	pipe_air.adjust_gas(/datum/gas/nitrogen, 10)
+	heat_set(pipe_air, T20C, HEAT_SOURCE_OTHER)
+	var/obj/test_gas_level_holder/holder = gas_level_test_holder(pipe_air)
+	TEST_ASSERT(!holder.hot, "a cool pipe region started hot")
+	heat_add(pipe_air, pipe_air.heat_capacity() * 60, HEAT_SOURCE_OTHER)
+	dq_gas_level_test_deliver()
+	TEST_ASSERT(holder.hot, "heat_add() on a pipe region did not turn the level ([pipe_air.return_temperature()] K)")
+	gas_level_test_cool(pipe_air)
+	dq_gas_level_test_deliver()
+	TEST_ASSERT(!holder.hot, "cooling a pipe region did not turn the level off ([pipe_air.return_temperature()] K)")
+
+/// A turf's air: a level on the air a holder stands in turns with the room.
+/datum/unit_test/dq_gas_level_hears_a_turfs_air
+
+/datum/unit_test/dq_gas_level_hears_a_turfs_air/Run()
+	var/turf/simulated/floor/T = gas_level_test_room()
+	var/obj/test_gas_level_holder/holder = gas_level_test_holder(T.air)
+	TEST_ASSERT(!holder.hot, "a room at 20 C started hot")
+	heat_set(T.air, T20C + 60, HEAT_SOURCE_OTHER)
+	dq_gas_level_test_deliver()
+	TEST_ASSERT(holder.hot, "heating a turf's air did not turn the level")
+
+/// A level that starts past its limit is told at arming, and a holder with no air reads under it.
+/datum/unit_test/dq_gas_level_settles_at_arming
+
+/datum/unit_test/dq_gas_level_settles_at_arming/Run()
+	var/datum/gas_mixture/tank = allocate(/datum/gas_mixture, 70)
+	tank.adjust_gas(/datum/gas/nitrogen, 10)
+	heat_set(tank, T20C + 100, HEAT_SOURCE_OTHER)
+	var/obj/test_gas_level_holder/holder = gas_level_test_holder(tank)
+	TEST_ASSERT(holder.hot, "a mixture already past the level did not turn the var at arming")
+	holder.watched_air = null
+	gas_level_rearm_all(holder)
+	TEST_ASSERT(!holder.hot, "a holder with no mixture stayed hot")

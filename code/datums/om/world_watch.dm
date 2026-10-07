@@ -110,17 +110,6 @@
 		throw e
 	return W
 
-/// Threshold watch on a gas mixture's pressure or temperature: `callback` runs on `owner`
-/// at the exact crossing of `level` (`cmp` WORLD_CMP_ABOVE or WORLD_CMP_BELOW) and again only
-/// after the value has left the band `hysteresis` wide (-1: the channel's own), so a sensor
-/// needs no polling. `channel` is a CH_GAS_* id. Cancel with qdel(watch). For a mixture with no
-/// arena handle (a deleted one) the watch is not created and null is returned.
-/proc/om_watch_gas(datum/owner, datum/gas_mixture/mixture, channel, cmp, level, callback, hysteresis = -1, lane)
-	if(!mixture)
-		return null
-	var/list/condition = list(WORLD_COND_THRESHOLD, WORLD_GAS_HANDLE(mixture), channel, cmp, level, hysteresis, FALSE)
-	return om_world_when(owner, condition, callback, lane)
-
 /// `proc` runs at the exact tick rate model `model` enters `cmp level` (at once if it holds).
 /proc/om_world_on_rate(datum/owner, model, cmp, level, callback, lane)
 	var/datum/native_watch/world/W = om_world_new_watch(owner, callback, lane)

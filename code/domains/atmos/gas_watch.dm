@@ -47,8 +47,13 @@ CAPABILITY_TYPE(gas_watch, CAP_GAS_WATCH, /datum/capability/lib/gas_watch, key =
 
 /// The mixture the holder's watch is on now.
 /datum/capability/lib/gas_watch/proc/mixture_of(atom/holder)
-	if(air)
-		return holder.vars[air]
+	return gas_air_of(holder, air)
+
+/// The mixture a gas watch or level on `holder` follows: the one in its var `air_var`, or (no var) the air of the turf it stands on.
+/proc/gas_air_of(atom/holder, air_var)
+	RETURN_TYPE(/datum/gas_mixture)
+	if(air_var)
+		return holder.vars[air_var]
 	var/turf/T = get_turf(holder)
 	return T?.return_air()
 
@@ -88,12 +93,16 @@ CAPABILITY_TYPE(gas_watch, CAP_GAS_WATCH, /datum/capability/lib/gas_watch, key =
 
 /// Arms `holder`'s watches (its list var `watches_var`) on each of `mixtures`, replacing the ones it had.
 /proc/gas_watch_many(datum/holder, watches_var, list/mixtures, mask, callback)
-	gas_watch_many_clear(holder, watches_var)
 	var/list/ids = list()
 	for(var/datum/gas_mixture/air as anything in mixtures)
 		var/id = air?.arena_id()
 		if(!isnull(id))
 			ids |= id
+	gas_watch_ids(holder, watches_var, ids, mask, callback)
+
+/// gas_watch_many() over arena ids (a holder that keeps the ids it watches, not the mixtures).
+/proc/gas_watch_ids(datum/holder, watches_var, list/ids, mask, callback)
+	gas_watch_many_clear(holder, watches_var)
 	for(var/id in ids)
 		var/datum/native_watch/gas/W = gas_dependency_watch(holder, id, mask, callback)
 		if(W)

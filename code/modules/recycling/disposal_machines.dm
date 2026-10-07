@@ -27,6 +27,8 @@
 	anchored = TRUE
 	density = TRUE
 	var/datum/gas_mixture/air_contents	// internal reservoir
+	/// While a charging bin sleeps: a gas watch on the air of its turf, which it draws from (gas_watch_many()).
+	var/list/datum/native_watch/gas/intake_watches
 	mode = DISPOSALMODE_CHARGING
 	var/flush = FALSE	// true if flush handle is pulled
 	var/flushing = FALSE	// true if flushing in progress
@@ -40,6 +42,7 @@
 CAPABILITIES(/obj/machinery/disposal)
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(air_contents), /datum/gas_mixture)
+	owns_many(nameof(intake_watches), /datum/native_watch/gas)
 	interface("DisposalBin")
 	without("ui_open")
 	op("pumpOn", ui_act("pumpOn"), then(PROC_REF(ui_act_pumpon)))
@@ -134,7 +137,12 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 /obj/machinery/disposal/proc/hibernate_until_intake_changes()
 	var/datum/gas_mixture/environment = loc.return_air()
 	// Callers stop it themselves: work_step() returns PROCESS_KILL right after.
-	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
+	gas_watch_many(src, nameof(intake_watches), list(environment), GAS_DEPENDENCY_PRESSURE, PROC_REF(intake_heard))
+
+/// The turf's air changed: the bin wakes when it can draw from it now (its own eligibility rule, not every change).
+/obj/machinery/disposal/proc/intake_heard(datum/native_watch/gas/W, mixture_id, change_mask, list/observation, observation_index)
+	if(gas_wake_condition())
+		wake_from_gas()
 
 /obj/machinery/disposal/proc/gas_wake_condition()
 	if(mode != DISPOSALMODE_CHARGING || (!operable()))
@@ -143,7 +151,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	return environment && can_pressurize_from(environment)
 
 /obj/machinery/disposal/proc/clear_gas_dependency()
-	om_watch_disarm(src, "gas")
+	gas_watch_many_clear(src, nameof(intake_watches))
 
 /obj/machinery/disposal/proc/wake_from_gas()
 	clear_gas_dependency()
