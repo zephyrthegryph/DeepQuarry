@@ -108,11 +108,11 @@ impl Generator for Reads {
         for r in ["holder", "actor", "held", "target"] {
             roots.id(r);
         }
-        let mut table = String::new();
+        let mut entries: Vec<String> = Vec::new();
         for (id, reads) in &rows {
             // A handler runs after every derived value it reads: one more than the deepest.
             let rank = reads.iter().filter(|r| r.1 == ReadKind::Var).filter_map(|r| ranks.get(&format!("{}::{}", r.4, r.2)).map(|k| k + 1)).max().unwrap_or(0);
-            table.push_str(&format!("\t\"{}\" = list({}", id, rank));
+            let mut entry = format!("\t\t\"{}\" = list({}", id, rank);
             for (root, kind, var, hops, _owner) in reads {
                 let kind_id = match kind {
                     ReadKind::Var => 0,
@@ -124,9 +124,10 @@ impl Generator for Reads {
                 for h in hops {
                     parts.push(names.id(h).to_string());
                 }
-                table.push_str(&format!(",\n\t\tlist({})", parts.join(", ")));
+                entry.push_str(&format!(",\n\t\tlist({})", parts.join(", ")));
             }
-            table.push_str("),\n");
+            entry.push(')');
+            entries.push(entry);
         }
         out.line("#define READ_ROOT_HOLDER 1");
         out.line("#define READ_ROOT_ACTOR 2");
@@ -151,13 +152,30 @@ impl Generator for Reads {
         }
         out.line("))");
         out.blank();
-        out.doc("\"<type>::<proc>\" = list(rank, list(root id, kind, name id, hop name ids...), ...). Never edited by hand.");
-        out.line("GLOBAL_LIST_INIT(generated_reads_table, list(");
-        let trimmed = table.trim_end_matches(",\n").to_string();
-        if !trimmed.is_empty() {
-            out.line(trimmed);
+        // BYOND refuses one list literal of about 760 assoc entries here ("missing comma or right-paren"), so the table is built from chunks.
+        const CHUNK: usize = 300;
+        out.doc("\"<type>::<proc>\" = list(rank, list(root id, kind, name id, hop name ids...), ...), in chunks of at most 300 entries (a single list literal this large does not compile). Never edited by hand.");
+        let chunks: Vec<&[String]> = entries.chunks(CHUNK).collect();
+        for (i, chunk) in chunks.iter().enumerate() {
+            out.line(format!("/proc/generated_reads_chunk_{}()", i));
+            out.line("\treturn list(");
+            out.line(chunk.join(",\n"));
+            out.line("\t)");
+            out.blank();
         }
-        out.line("))");
+        out.doc("The whole reads table, assembled from its chunks.");
+        out.line("/proc/generated_reads_assemble()");
+        out.line("\t. = list()");
+        out.line("\tvar/list/chunks = list(");
+        for i in 0..chunks.len() {
+            out.line(format!("\t\tgenerated_reads_chunk_{}(){}", i, if i + 1 < chunks.len() { "," } else { "" }));
+        }
+        out.line("\t)");
+        out.line("\tfor(var/list/chunk as anything in chunks)");
+        out.line("\t\tfor(var/key in chunk)");
+        out.line("\t\t\t.[key] = chunk[key]");
+        out.blank();
+        out.line("GLOBAL_LIST_INIT(generated_reads_table, generated_reads_assemble())");
     }
 }
 
