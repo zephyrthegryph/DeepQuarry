@@ -371,7 +371,7 @@
 			if(isnull(P.topic_key) || P.topic_namespace != namespace)
 				continue
 			made[P.topic_key] = P
-		LAZYSET(index.topic_plans, slot, made) // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+		LAZYSET(index.topic_plans, slot, made)
 	return made
 
 /// The plan of `holder` whose topic("key") names this href: a key "action=foo" matches href action=foo and is tried before a bare "action" key, as a

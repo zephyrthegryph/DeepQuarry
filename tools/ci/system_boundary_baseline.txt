@@ -111,7 +111,7 @@ B1:code/modules/admin/round_status_panel.dm:SSemergency_shuttle 6
 B1:code/modules/admin/round_status_panel.dm:SSticker 4
 B1:code/modules/admin/topic/admin_topic_mobs.dm:SSticker 1
 B1:code/modules/admin/topic/admin_topic_panels.dm:SSemergency_shuttle 3
-B1:code/modules/admin/topic/admin_topic_panels.dm:SSticker 7
+B1:code/modules/admin/topic/admin_topic_panels.dm:SSticker 6
 B1:code/modules/admin/verbs/atmosdebug.dm:SSmachines 1
 B1:code/modules/admin/verbs/debug.dm:SSgarbage 3
 B1:code/modules/admin/verbs/debug.dm:SSoverlays 1
