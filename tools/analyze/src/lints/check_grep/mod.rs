@@ -560,17 +560,48 @@ mod tests {
     fn converted_folder_ban_is_scoped_and_not_waivable() {
         let lint = CheckGrep::new();
         assert!(lint.meta.lists.contains(&"legacy_forms_converted"));
+        assert!(lint.meta.lists.contains(&"legacy_fields_converted"));
         let tree = Tree::from_files(vec![]);
         let mut scope = LintScope::default();
-        scope.lists.insert("legacy_forms_converted".into(), vec!["code/modules/power/".into()]);
+        scope.lists.insert("legacy_forms_converted".into(), vec!["code/modules/power/".into(), "code/modules/medical/".into()]);
+        scope.lists.insert("legacy_fields_converted".into(), vec!["code/modules/power/".into()]);
         let cx = Cx { tree: &tree, meta: lint.meta, scope: &scope };
-        let text = "DECLARE_EMAG(/obj/example, PROC_REF(x)) // ALLOW(check_grep): deliberate test of nonwaivable migration ban\nOM_FIELD_VIEW(/obj/example, cell, /datum, 0)\n/obj/example/declare_interactions(list/into)\n// DECLARE_REPEAT(/obj/example, 1, x)\n";
-        for (path, expected) in [("code/modules/power/example.dm", 3), ("code/modules/powerful/example.dm", 0), ("code/modules/medical/example.dm", 0)] {
-            let file = SourceFile::from_text(path, text);
-            let mut sink = Sink::new();
-            sink.cur = file.rel.clone();
-            lint.scan_file(&cx, &file, &mut sink);
-            assert_eq!(sink.sites.iter().filter(|s| s.rule == "legacy_declaration_forms_banned_in_converted_folders").count(), expected, "{path}");
+        let declarations = [
+            "DECLARE_INTERACTIONS(/obj/example, INTERACT_HAND(PROC_REF(x)))",
+            "EXTEND_INTERACTIONS(/obj/example, INTERACT_HAND(PROC_REF(x)))",
+            "/obj/example/declare_interactions(list/into)",
+            "DAMAGE_REACTION(/obj/example, PROC_REF(x))",
+            "DAMAGE_REACTION_AFTER(/obj/example, PROC_REF(x))",
+            "DECLARE_EMAG(/obj/example, PROC_REF(x))",
+            "DECLARE_EMAG_REPEATABLE(/obj/example, PROC_REF(x))",
+            "DECLARE_PERIODIC(/obj/example, 1, x)",
+            "DECLARE_PERIODIC_WHILE(/obj/example, 1, x)",
+            "DECLARE_PERIODIC_WHILE_ALL(/obj/example, 1, x)",
+            "DECLARE_REPEAT(/obj/example, 1, x)",
+        ];
+        let fields = [
+            "OM_FIELD(/obj/example, cell, 0)",
+            "OM_FIELD_VIEW(/obj/example, cell, /datum, 0)",
+            "OM_DERIVE_FIELD(/obj/example, cell, PROC_REF(x))",
+            "OM_FLAG_FIELD(/obj/example, cell, 0)",
+        ];
+        for (folder, declarations_banned, fields_banned) in [
+            ("power", true, true), ("medical", true, false), ("powerful", false, false),
+        ] {
+            for (forms, field) in [(&declarations[..], false), (&fields[..], true)] {
+                for (i, form) in forms.iter().enumerate() {
+                    let path = format!("code/modules/{folder}/example_{field}_{i}.dm");
+                    let text = format!("{form} // ALLOW(check_grep): deliberate test of nonwaivable migration ban\n");
+                    let file = SourceFile::from_text(&path, &text);
+                    let mut sink = Sink::new();
+                    sink.cur = file.rel.clone();
+                    lint.scan_file(&cx, &file, &mut sink);
+                    let declarations = sink.sites.iter().filter(|s| s.rule == "legacy_declaration_forms_banned_in_converted_folders").count();
+                    let fields = sink.sites.iter().filter(|s| s.rule == "legacy_field_forms_banned_in_converted_folders").count();
+                    assert_eq!(declarations, usize::from(!field && declarations_banned), "{path}: {form}");
+                    assert_eq!(fields, usize::from(field && fields_banned), "{path}: {form}");
+                }
+            }
         }
     }
 

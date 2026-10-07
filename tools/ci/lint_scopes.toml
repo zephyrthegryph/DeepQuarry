@@ -255,6 +255,8 @@ core = [
 # check_grep.sh: the path allowlists of its `grep -v` stages. An entry is an exact file, or a
 # directory when it ends in `/`. The key is read by the part's DropPaths("<key>").
 [lint.check_grep.lists]
+# Field declarations reached zero independently of the wider interaction/hit sweeps.
+legacy_fields_converted = ["code/game/machinery/", "code/modules/power/"]
 # The folders (a directory ends in `/`, else an exact file) where the legacy declaration forms of the sweeps (DECLARE_INTERACTIONS and EXTEND_INTERACTIONS,
 # DAMAGE_REACTION, DECLARE_EMAG, DECLARE_PERIODIC, DECLARE_REPEAT) reached zero: a hard ban there. Folders are only ever added.
 legacy_forms_converted = [
