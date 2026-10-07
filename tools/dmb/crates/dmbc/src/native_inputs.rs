@@ -33,6 +33,12 @@ pub struct NativeInputs {
     sources: PreparedSources,
     stats: PreparationStats,
 }
+fn prepare_source<P: SourceProvider>(provider: &P, path: &Path) -> Result<Arc<PreparedSource>, String> {
+    if let Some(prepared) = provider.prepared_source(path) {
+        return Ok(prepared);
+    }
+    provider.read(path).map(|text| Arc::new(PreparedSource::new(Arc::from(text))))
+}
 
 impl NativeInputs {
     /// Capture the required manifest once. Only its direct literal source paths
@@ -44,14 +50,12 @@ impl NativeInputs {
         workers: usize,
     ) -> Result<Self, NativeInputError> {
         let project = canonical_path(project);
-        let manifest_text =
-            provider
-                .read(&project)
+        let manifest =
+            prepare_source(provider, &project)
                 .map_err(|message| NativeInputError::RequiredSourceRead {
                     path: project.clone(),
                     message,
                 })?;
-        let manifest = Arc::new(PreparedSource::new(Arc::from(manifest_text)));
         let parent = project.parent().unwrap_or(Path::new(""));
         let mut seen = BTreeSet::from([project.clone()]);
         let candidates = manifest
@@ -92,10 +96,9 @@ impl NativeInputs {
                         }
                         // A speculative failure is not an input diagnostic and
                         // is never cached as absence or a required-read error.
-                        let Ok(source) = provider.read(&candidates[index]) else {
+                        let Ok(prepared) = prepare_source(provider, &candidates[index]) else {
                             continue;
                         };
-                        let prepared = Arc::new(PreparedSource::new(Arc::from(source)));
                         let Ok(mut outputs) = outputs.lock() else {
                             break;
                         };
@@ -333,5 +336,38 @@ mod tests {
             NativeInputs::prepare(Path::new("project.dme"), &Panicking, 2),
             Err(NativeInputError::InternalPreparation { .. })
         ));
+    }
+    #[test]
+    fn issued_preparations_are_reused_without_reads_or_repreparation() {
+        struct Issued {
+            sources: PreparedSources,
+            reads: AtomicUsize,
+        }
+        impl SourceProvider for Issued {
+            fn prepared_source(&self, path: &Path) -> Option<Arc<PreparedSource>> { self.sources.get(path) }
+            fn read(&self, _: &Path) -> Result<String, String> {
+                self.reads.fetch_add(1, Ordering::Relaxed);
+                Err("prepared authority must avoid fallback reads".into())
+            }
+        }
+        let manifest = Arc::new(PreparedSource::new(Arc::from("#include \"body.dm\"\n")));
+        let body = Arc::new(PreparedSource::new(Arc::from("/proc/p()\n    return 1\n")));
+        let provider = Issued {
+            sources: PreparedSources::from_prepared([
+                (PathBuf::from("project.dme"), Arc::clone(&manifest)),
+                (PathBuf::from("body.dm"), Arc::clone(&body)),
+            ]).unwrap(),
+            reads: AtomicUsize::new(0),
+        };
+        for workers in [1, 2] {
+            let inputs = NativeInputs::prepare(Path::new("project.dme"), &provider, workers).unwrap();
+            assert!(Arc::ptr_eq(&inputs.sources.get(Path::new("project.dme")).unwrap(), &manifest));
+            assert!(Arc::ptr_eq(&inputs.sources.get(Path::new("body.dm")).unwrap(), &body));
+            let prepared_provider = inputs.provider(&provider);
+            let actual = plan_regions(Path::new("project.dme"), &prepared_provider, &BTreeMap::new());
+            let expected = plan_regions(Path::new("project.dme"), &provider, &BTreeMap::new());
+            assert_eq!(expand_regions(&actual, workers).text, expand_regions(&expected, workers).text);
+        }
+        assert_eq!(provider.reads.load(Ordering::Relaxed), 0);
     }
 }

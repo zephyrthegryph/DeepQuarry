@@ -19,6 +19,13 @@ pub fn capture_with_workers(
     frontend: &ColdFrontend,
     workers: usize,
 ) -> Result<CapturedStartup<'_>, String> {
+    capture_impl(frontend, workers, true)
+}
+fn capture_impl(
+    frontend: &ColdFrontend,
+    workers: usize,
+    prefilter: bool,
+) -> Result<CapturedStartup<'_>, String> {
     let units = crate::driver_facts::unit_members(frontend).map_err(|e| e.to_string())?;
     let identities = units
         .into_iter()
@@ -38,6 +45,12 @@ pub fn capture_with_workers(
         let identity = *identities
             .get(&body.member)
             .ok_or("startup procedure identity missing")?;
+        frontend.compact_body(body).map_err(|e| format!("startup body: {e:?}"))?;
+        let source = frontend.expanded.text.get(body.expanded_span.range())
+            .ok_or("startup body source span outside capture")?;
+        if prefilter && !dm_tree::procedure_statics::may_contain_stored_declarations(source) {
+            return Ok((body.declaration, dm_tree::procedure_statics::capture_declarations(identity, &[])?));
+        }
         let parsed = frontend
             .body(body)
             .map_err(|e| format!("startup body: {e:?}"))?;
@@ -307,5 +320,35 @@ mod spelling_tests {
             capture_with_spellings(&frontend, &[(alias, Arc::from(b"other.txt".as_slice()))])
                 .is_err()
         );
+    }
+    #[test]
+    fn stored_local_prefilter_matches_full_capture_for_expanded_and_nested_declarations() {
+        struct Mixed;
+        impl dm_preprocess::SourceProvider for Mixed {
+            fn read(&self, _: &Path) -> Result<String, String> {
+                Ok("#define CACHE var/static/list/cache = list(1)\n/proc/plain()\n    var/local = 1\n    return local\n/proc/substrings()\n    var/globalish = \"static const global\"\n    return globalish\n/proc/expanded()\n    CACHE\n    if(1)\n        var/const/alias = 3\n        var/static/next = alias\n    return cache\n/proc/global_local()\n    var/global/count = 2\n    return count\n".into())
+            }
+        }
+        let frontend = dm_tree::frontend::build(Path::new("probe.dme"), &Mixed, &Default::default(), 2).unwrap();
+        let full = capture_impl(&frontend, 1, false).unwrap();
+        for workers in [1, 2] {
+            let filtered = capture_impl(&frontend, workers, true).unwrap();
+            assert_eq!(filtered.plan.identity, full.plan.identity);
+            assert_eq!(filtered.plan.writes.as_ref(), full.plan.writes.as_ref());
+            assert_eq!(filtered.plan.origins.as_ref(), full.plan.origins.as_ref());
+            for ((left_id, left), (right_id, right)) in filtered.procedures.iter().zip(&full.procedures) {
+                assert_eq!(left_id, right_id);
+                assert_eq!(left.procedure, right.procedure);
+                assert_eq!(left.declarations, right.declarations);
+                assert_eq!(left.origins, right.origins);
+                assert!(left.executable_body.is_empty());
+                for declaration in &right.declarations {
+                    assert_eq!(left.symbols.text(declaration.identity.name), right.symbols.text(declaration.identity.name));
+                }
+            }
+        }
+        assert!(!dm_tree::procedure_statics::may_contain_stored_declarations("/proc/plain()\n    var/local = 1\n    return local\n"));
+        assert!(dm_tree::procedure_statics::may_contain_stored_declarations("return \"static\""));
+        assert!(dm_tree::procedure_statics::may_contain_stored_declarations("// global comment"));
     }
 }

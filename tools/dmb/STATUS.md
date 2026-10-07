@@ -6,7 +6,15 @@ The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
 
-Latest release probe 22 reached a single missing `SEE_BLACKNESS` initializer fact
+Latest release probe 23 cleared the vision macros and reached a missing `NORTH`
+initializer at `code/_helpers/game.dm:621`. It failed in 20.579 s externally
+(18.752 s driver clock), sampled 2,038,902,784 private bytes, and produced no pair.
+Native compile-only controls now bind 148 initial SDK macros to decoded binary
+receipts. Their value gate passed, but the new unary-minus/exponentiation
+precedence gate exposed a parser mismatch; that correction is in progress.
+These remain failed compile attempts, not successful cold-build measurements.
+
+Release probe 22 reached a single missing `SEE_BLACKNESS` initializer fact
 and failed in 20.527 s externally (18.838 s driver clock), with no pair. This
 cleared the 47 intrinsic-field errors: classification/error mapping took 1.229 s
 instead of the previous 70.272 s. Stop points differ, so this is diagnostic-path

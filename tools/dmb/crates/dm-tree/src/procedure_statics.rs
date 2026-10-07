@@ -92,6 +92,17 @@ pub struct StaticPlan {
     pub symbols: SymbolTable,
     pub executable_body: Vec<Item>,
 }
+const STORED_LOCAL_QUALIFIERS: &[(&str, u32)] = &[("static", 1), ("const", 2), ("global", 8)];
+fn stored_local_modifier(component: &str) -> u32 {
+    STORED_LOCAL_QUALIFIERS.iter().find_map(|(name, bit)| (*name == component).then_some(*bit)).unwrap_or(0)
+}
+/// Negative-only eligibility check over already expanded source. The producer
+/// requires one of these literal path components. Substrings in comments,
+/// strings or longer identifiers deliberately remain candidates; no grammar or
+/// syntax admission is performed here. Final executable parsing is mandatory.
+pub fn may_contain_stored_declarations(expanded_source: &str) -> bool {
+    STORED_LOCAL_QUALIFIERS.iter().any(|(name, _)| expanded_source.contains(name))
+}
 pub fn capture(procedure: ProcedureIdentity, body: &[Item]) -> Result<StaticPlan, String> {
     let mut plan = capture_declarations(procedure, body)?;
     let removed: HashSet<_> = plan
@@ -186,11 +197,12 @@ fn walk(
                 let mut types = Vec::new();
                 for component in prefix {
                     match *component {
-                        "static" => modifiers |= 1,
-                        "const" => modifiers |= 2,
                         "tmp" => modifiers |= 4,
-                        "global" => modifiers |= 8,
-                        other => types.push(other),
+                        other => {
+                            let storage = stored_local_modifier(other);
+                            if storage != 0 { modifiers |= storage; }
+                            else { types.push(other); }
+                        }
                     }
                 }
                 if modifiers & 11 == 0 {
@@ -284,7 +296,7 @@ fn walk(
                 if declarations.iter().any(|declaration| {
                     declaration
                         .split('/')
-                        .any(|part| matches!(part, "static" | "const" | "global"))
+                        .any(|part| stored_local_modifier(part) != 0)
                 }) {
                     return Err("shared for-control declaration is not supported".into());
                 }
