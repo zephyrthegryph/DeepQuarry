@@ -62,6 +62,19 @@ GLOBAL_VAR_INIT(link_sparse_seen, 0)
 		return other in value
 	return !isnull(other) && value == other
 
+/// Data the link at holder's end `key` carries (read by the end's on_unlink hook, which runs before it is cleared).
+/proc/link_data_set(datum/holder, key, name, value)
+	var/datum/rx_state/state = rx_of(holder)
+	var/list/data = state.link_data?[key]
+	if(!data)
+		data = list()
+		LAZYSET(state.link_data, key, data)
+	data[name] = value
+
+/proc/link_data_get(datum/holder, key, name)
+	var/list/data = holder?.rx?.link_data?[key]
+	return data?[name]
+
 /// Writes one end.
 /proc/link_store(datum/holder, key, datum/other, many)
 	var/datum/rx_state/state = rx_of(holder)
@@ -182,6 +195,7 @@ GLOBAL_VAR_INIT(link_sparse_seen, 0)
 		var/hook = E.args["[side]_on_unlink"]
 		if(hook && mine != deleting && !QDELETED(mine))
 			call(mine, hook)(theirs)
+	link_data_clear(holder, key, far_key, other)
 	if(deleting)
 		var/datum/survivor = deleting == holder ? other : holder
 		var/survivor_end = deleting == holder ? far : end
@@ -222,6 +236,8 @@ GLOBAL_VAR_INIT(link_sparse_seen, 0)
 // ---- holds_while ----
 
 /datum/rx_state
+	/// Data a link carries for one of its ends (the orbiter's saved transform): end key -> list(name = value), gone with the link.
+	var/list/link_data
 	/// The holds_while links this datum is an end of, as list(entry, A end, B end) rows (both ends keep the same row).
 	var/list/link_watches
 	/// Sparse link ends (links(sparse = TRUE)): end key -> the one linked datum, or a list of them (code/engine/declare/link_state.dm).
@@ -233,6 +249,7 @@ GLOBAL_VAR_INIT(link_sparse_seen, 0)
 		var/datum/rx_state/state = rx_of(end)
 		if(!state.link_watches)
 			state.link_watches = list()
+			observe(end, /datum/notice/moved, GLOB.link_watcher, then(TYPE_PROC_REF(/datum/link_watcher, ends_moved)))
 		state.link_watches += list(row)
 
 /proc/link_watch_stop(datum/entry/E, datum/a, datum/b)
@@ -244,10 +261,20 @@ GLOBAL_VAR_INIT(link_sparse_seen, 0)
 			if(!state?.link_watches)
 				continue
 			state.link_watches.Remove(list(row))
-			UNSETEMPTY(state.link_watches)
+			if(!length(state.link_watches))
+				state.link_watches = null
+				unobserve(end, /datum/notice/moved, GLOB.link_watcher)
 
-/// `D` moved (atom/movable/Moved(), the move notice of every movable): each holds_while link it is an end of is looked at again once the move, and what follows
-/// it (a rider carried with its seat, a pulled thing following), has settled.
+/// The one listener of the move notices of every end of a holds_while link (observe(), as orbiting does): `D` moved, so each holds_while link it is an end of
+/// is looked at again once the move, and what follows it (a rider carried with its seat, a pulled thing following), has settled.
+/datum/link_watcher
+
+GLOBAL_DATUM_INIT(link_watcher, /datum/link_watcher, new)
+
+/datum/link_watcher/proc/ends_moved(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	link_ends_moved(A.target)
+
 /proc/link_ends_moved(datum/D)
 	after_unique(D, 0.1 SECONDS, TYPE_PROC_REF(/datum, link_recheck))
 
@@ -261,3 +288,14 @@ GLOBAL_VAR_INIT(link_sparse_seen, 0)
 			continue
 		log_world("LINK: [entry.args["a_var"]] [end_a.type] -> [end_b.type] no longer holds: broken")
 		link_unmake(entry, "a", end_a, end_b, null, RELATION_BROKEN)
+
+/// A link's data goes with it (a many end keeps the data of its other links: it is kept per end key, so a many end carries none).
+/proc/link_data_clear(datum/holder, key, far_key, datum/other)
+	var/datum/rx_state/state = holder.rx
+	if(state?.link_data)
+		state.link_data -= key
+		UNSETEMPTY(state.link_data)
+	state = other.rx
+	if(state?.link_data)
+		state.link_data -= far_key
+		UNSETEMPTY(state.link_data)

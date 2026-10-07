@@ -1399,6 +1399,8 @@ CAPABILITIES(/obj/item/light)
 
 /// A wall torch is no socket to smash or fill.
 CAPABILITIES(/obj/machinery/light/small/torch)
+	// a wall torch is no socket to smash
+	without("melee_hit")
 	without("insert")
 	without("hit")
 

@@ -10,64 +10,70 @@ ai|none click: Click: Ui open
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Strike
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Ui open
 human|/obj/item/tool/screwdriver click: Click: Ui open
 human|/obj/item/tool/crowbar menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Strike
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Ui open
 human|/obj/item/tool/crowbar click: Click: Ui open
 human|/obj/item/tool/wrench menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tool/wrench menu: Connect to the port (refused: Nothing happens.)
+human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Strike
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Ui open
 human|/obj/item/tool/wrench click: Click: Connect to the port
 human|/obj/item/tool/wirecutters menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Strike
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Ui open
 human|/obj/item/tool/wirecutters click: Click: Ui open
 human|/obj/item/multitool menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Strike
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Ui open
 human|/obj/item/multitool click: Click: Ui open
 human|/obj/item/weldingtool menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/weldingtool menu: Deconstruct
+human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Strike
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Ui open
 human|/obj/item/weldingtool click: Click: Deconstruct
 human|/obj/item/stack/cable_coil menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Strike
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Ui open
 human|/obj/item/stack/cable_coil click: Click: Ui open
 human|/obj/item/stack/material/steel menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Install pressure liner (refused: You don't have enough for that.)
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Strike
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Ui open
 human|/obj/item/stack/material/steel click: Click: Install pressure liner
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Strike
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item menu: Hit
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item click: Click: Ui open
 human|/obj/item/tank menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tank menu: Insert tank
 human|/obj/item/tank menu: Move To Top
@@ -75,9 +81,9 @@ human|/obj/item/tank menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tank menu: Ui open
 human|/obj/item/tank click: Click: Insert tank
 human|/obj/item/stack/material menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/stack/material menu: Hit
 human|/obj/item/stack/material menu: Install pressure liner (refused: You don't have enough for that.)
 human|/obj/item/stack/material menu: Move To Top
-human|/obj/item/stack/material menu: Strike
 human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material menu: Ui open
 human|/obj/item/stack/material click: Click: Install pressure liner
@@ -89,11 +95,5 @@ human|/obj/item/tank/jetpack menu: Toggle Jetpack (refused: You can't do that.)
 human|/obj/item/tank/jetpack menu: Toggle Jetpack Stabilization (refused: You can't do that.)
 human|/obj/item/tank/jetpack menu: Ui open
 human|/obj/item/tank/jetpack click: Click: Insert tank
-human|/obj/item menu: Climb (refused: There's a material processor in the way.)
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Strike
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item menu: Ui open
-human|/obj/item click: Click: Ui open
-keys: climb.climb, climb.climb_menu, drag_buckle, eject, gen_robot_interaction_swallow, liner, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, port, pressure, refill_jetpack, relabel, strike, tank_bay.holding.insert, ui_open, valve, weld_apart
+keys: climb.climb, climb.climb_menu, drag_buckle, eject, gen_robot_interaction_swallow, liner, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, port, pressure, refill_jetpack, relabel, tank_bay.holding.insert, ui_open, valve, weld_apart
 

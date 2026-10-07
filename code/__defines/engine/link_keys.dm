@@ -10,3 +10,7 @@
 /// A grab item and the mob it holds: LK_GRABBING on the grab, LK_GRABBED_BY on the mob (many: a mob can be held by several).
 #define LK_GRABBING "grabbing"
 #define LK_GRABBED_BY "grabbed_by"
+/// An orbiter and what it orbits (the centre is any /atom, a turf included): LK_ORBITING on the orbiter (a movable), LK_ORBITERS on the centre (many). The
+/// orbiter's saved transform rides on the link (link_data_set(orbiter, LK_ORBITING, "transform", ...)).
+#define LK_ORBITING "orbiting"
+#define LK_ORBITERS "orbiters"

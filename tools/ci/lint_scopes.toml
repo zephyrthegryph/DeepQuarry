@@ -619,8 +619,8 @@ exempt_prefixes = ["code/engine/", "code/datums/ownership/"]
 [lint.legacy_forms.lists]
 # Names that are gone except under the listed path prefixes (the folders still calling them): `name @ prefix;prefix = hint`.
 banned_outside = [
-  "om_link @ code/datums/om/;code/modules/unit_tests/;code/tests/;code/game/orbit.dm = declare the pair with links() in CAPABILITIES and write it with rel_set() (a base-type end: sparse = TRUE and link_make()); only orbiting (KR3) and the ledger's slots (KR5) still use it",
-  "om_unlink @ code/datums/om/;code/modules/unit_tests/;code/tests/;code/game/orbit.dm;code/modules/food/kitchen/gibber.dm  = rel_set(holder, nameof(var), null) on the declared link, or link_break() on a sparse one",
+  "om_link @ code/datums/om/;code/modules/unit_tests/;code/tests/ = declare the pair with links() in CAPABILITIES and write it with rel_set() (a base-type end: sparse = TRUE and link_make()); only the OM core and its tests still call it",
+  "om_unlink @ code/datums/om/;code/modules/unit_tests/;code/tests/;code/modules/food/kitchen/gibber.dm  = rel_set(holder, nameof(var), null) on the declared link, or link_break() on a sparse one (the gibber's ledger slot is KR5)",
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [

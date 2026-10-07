@@ -417,13 +417,13 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 /obj/item/grab/proc/grab_target() as /mob/living
 	return link_get(src, LK_GRABBING)
 
-/// Was ORBIT_TARGET().
-/atom/movable/proc/orbit_target() as /atom/movable
-	return link_of(src, /datum/om/relation/orbiting)
+/// What the atom orbits, or null (LK_ORBITING). Was ORBIT_TARGET().
+/atom/movable/proc/orbit_target() as /atom
+	return link_get(src, LK_ORBITING)
 
-/// Was ORBITERS().
-/atom/movable/proc/orbiter_list() as /list
-	return linked_to(src, /datum/om/relation/orbiting)
+/// The atoms orbiting it: a fresh list, never null (LK_ORBITERS). Was ORBITERS().
+/atom/proc/orbiter_list() as /list
+	return link_list(src, LK_ORBITERS)
 
 /// The mob holding grab item src (the grab lives in the assailant's hand), or null. Was GRAB_ASSAILANT().
 /obj/item/grab/proc/grab_assailant() as /mob/living/carbon/human

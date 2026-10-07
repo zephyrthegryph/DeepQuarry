@@ -226,7 +226,7 @@
 		for(var/turf/near in block(run_loc_floor_bottom_left, run_loc_floor_top_right))
 			own_turf_contents(near)
 
-/// damageable(): the closet takes a crowbar in combat mode through the capability's op, and no swallow op stands between a held item and the targets that
+/// melee_hit: the closet takes a crowbar in combat mode through the /obj op, and no swallow op stands between a held item and the targets that
 /// had one: a crowbar leaves a shower alone and a spray bottle's own op reaches it.
 /datum/unit_test/dq_hit_damageable_closet
 
@@ -241,9 +241,47 @@
 	var/before = C.get_integrity()
 	var/datum/op_result/hit = test_click(H, C, bar)
 	test_drain()
-	TEST_ASSERT_EQUAL(hit?.key, "damageable.hit", "a crowbar in combat mode hits the closet through the capability's op")
+	TEST_ASSERT_EQUAL(hit?.key, "melee_hit", "a crowbar in combat mode hits the closet through the capability's op")
 	TEST_ASSERT(C.get_integrity() < before, "the closet took the blow")
 	H.set_combat_mode(FALSE)
 	var/obj/machinery/shower/S = allocate(/obj/machinery/shower, T)
 	var/datum/op_result/none = test_click(H, S, bar)
 	TEST_ASSERT(isnull(none) || none.key != "swallow", "no swallow op answers a crowbar on a shower")
+
+/// Every /obj is hittable: a vending machine has no op for a crowbar, and in combat it takes the blow through damageable.hit. An item on the floor opted out.
+/datum/unit_test/dq_hit_damageable_default
+
+/datum/unit_test/dq_hit_damageable_default/Run()
+	var/turf/T = get_turf(run_loc_floor_bottom_left)
+	var/turf/side = locate(T.x + 1, T.y, T.z)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, side)
+	var/obj/machinery/vending/cola/V = allocate(/obj/machinery/vending/cola, T)
+	var/obj/item/tool/crowbar/bar = allocate(/obj/item/tool/crowbar, side)
+	H.put_in_hands(bar)
+	H.set_combat_mode(TRUE)
+	var/before = V.get_integrity()
+	var/datum/op_result/hit = test_click(H, V, bar)
+	test_drain()
+	TEST_ASSERT_EQUAL(hit?.key, "melee_hit", "a plain object takes a held item in combat")
+	TEST_ASSERT(V.get_integrity() < before, "the vending machine took the blow")
+	var/obj/item/tool/screwdriver/driver = allocate(/obj/item/tool/screwdriver, T)
+	var/datum/op_result/none = test_click(H, driver, bar)
+	TEST_ASSERT(isnull(none) || none.key != "melee_hit", "an item on the floor opted out of being hit")
+
+/// A blast door answers an ID card with its access refusal, not with silence: the door stays shut and the click is refused.
+/datum/unit_test/dq_hit_blast_door_card
+
+/datum/unit_test/dq_hit_blast_door_card/Run()
+	var/turf/T = get_turf(run_loc_floor_bottom_left)
+	var/turf/side = locate(T.x + 1, T.y, T.z)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, side)
+	var/obj/machinery/door/blast/regular/D = allocate(/obj/machinery/door/blast/regular, T)
+	D.set_grid_power(TRUE)
+	var/obj/item/card/id/card = allocate(/obj/item/card/id, side)
+	H.put_in_hands(card)
+	var/was_dense = D.density
+	var/datum/op_result/result = test_click(H, D, card)
+	test_drain()
+	TEST_ASSERT_NOTNULL(result, "an ID card on a blast door is answered")
+	TEST_ASSERT_EQUAL(result.outcome, ACT_REFUSED, "by the access refusal")
+	TEST_ASSERT_EQUAL(D.density, was_dense, "the door did not move")

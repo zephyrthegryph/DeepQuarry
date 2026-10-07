@@ -325,8 +325,6 @@
 	if(blocks_light)
 		light_blocking_moved(old_loc)
 	om_emit_moved(src, old_loc, direction, forced)
-	if(rx?.link_watches)
-		link_ends_moved(src) // a holds_while link this is an end of is re-evaluated (code/engine/declare/link_state.dm)
 	// Mobs raise CHANGE_MOB_LOC themselves (living_movement.dm).
 	if(om_listen && !ismob(src))
 		changed(src, isitem(src) ? CHANGE_ITEM_LOC : CHANGE_EXPLICIT)

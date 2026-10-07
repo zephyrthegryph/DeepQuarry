@@ -11,6 +11,7 @@ ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none menu: Unlatch (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Interaction train hand
 human|/obj/item/tool/screwdriver menu: Interaction trolley tank drag
 human|/obj/item/tool/screwdriver menu: Load
@@ -20,6 +21,7 @@ human|/obj/item/tool/screwdriver menu: Unlatch
 human|/obj/item/tool/screwdriver menu: Vehicle item
 human|/obj/item/tool/screwdriver click: Click: Vehicle item
 human|/obj/item/tool/crowbar menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Interaction train hand
 human|/obj/item/tool/crowbar menu: Interaction trolley tank drag
 human|/obj/item/tool/crowbar menu: Load
@@ -29,6 +31,7 @@ human|/obj/item/tool/crowbar menu: Unlatch
 human|/obj/item/tool/crowbar menu: Vehicle item
 human|/obj/item/tool/crowbar click: Click: Vehicle item
 human|/obj/item/tool/wrench menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Interaction train hand
 human|/obj/item/tool/wrench menu: Interaction trolley tank drag
 human|/obj/item/tool/wrench menu: Load
@@ -38,6 +41,7 @@ human|/obj/item/tool/wrench menu: Unlatch
 human|/obj/item/tool/wrench menu: Vehicle item
 human|/obj/item/tool/wrench click: Click: Vehicle item
 human|/obj/item/tool/wirecutters menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Interaction train hand
 human|/obj/item/tool/wirecutters menu: Interaction trolley tank drag
 human|/obj/item/tool/wirecutters menu: Load
@@ -47,6 +51,7 @@ human|/obj/item/tool/wirecutters menu: Unlatch
 human|/obj/item/tool/wirecutters menu: Vehicle item
 human|/obj/item/tool/wirecutters click: Click: Vehicle item
 human|/obj/item/multitool menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Interaction train hand
 human|/obj/item/multitool menu: Interaction trolley tank drag
 human|/obj/item/multitool menu: Load
@@ -57,6 +62,7 @@ human|/obj/item/multitool menu: Unlatch
 human|/obj/item/multitool menu: Vehicle item
 human|/obj/item/multitool click: Click: Repaint
 human|/obj/item/weldingtool menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Interaction train hand
 human|/obj/item/weldingtool menu: Interaction trolley tank drag
 human|/obj/item/weldingtool menu: Load
@@ -66,6 +72,7 @@ human|/obj/item/weldingtool menu: Unlatch
 human|/obj/item/weldingtool menu: Vehicle item
 human|/obj/item/weldingtool click: Click: Vehicle item
 human|/obj/item/stack/cable_coil menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Interaction train hand
 human|/obj/item/stack/cable_coil menu: Interaction trolley tank drag
 human|/obj/item/stack/cable_coil menu: Load
@@ -76,6 +83,7 @@ human|/obj/item/stack/cable_coil menu: Unlatch
 human|/obj/item/stack/cable_coil menu: Vehicle item
 human|/obj/item/stack/cable_coil click: Click: Vehicle item
 human|/obj/item/stack/material/steel menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Interaction train hand
 human|/obj/item/stack/material/steel menu: Interaction trolley tank drag
 human|/obj/item/stack/material/steel menu: Load
@@ -85,6 +93,7 @@ human|/obj/item/stack/material/steel menu: Unlatch
 human|/obj/item/stack/material/steel menu: Vehicle item
 human|/obj/item/stack/material/steel click: Click: Vehicle item
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Interaction train hand
 human|/obj/item/card/id menu: Interaction trolley tank drag
 human|/obj/item/card/id menu: Load
@@ -95,6 +104,7 @@ human|/obj/item/card/id menu: Unlatch
 human|/obj/item/card/id menu: Vehicle item
 human|/obj/item/card/id click: Click: Vehicle item
 human|/obj/item menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item menu: Hit
 human|/obj/item menu: Interaction train hand
 human|/obj/item menu: Interaction trolley tank drag
 human|/obj/item menu: Load
@@ -104,6 +114,7 @@ human|/obj/item menu: Unlatch
 human|/obj/item menu: Vehicle item
 human|/obj/item click: Click: Vehicle item
 human|/obj/item/card/emag menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/card/emag menu: Hit
 human|/obj/item/card/emag menu: Interaction train hand
 human|/obj/item/card/emag menu: Interaction trolley tank drag
 human|/obj/item/card/emag menu: Load
@@ -115,6 +126,7 @@ human|/obj/item/card/emag menu: Vehicle item
 human|/obj/item/card/emag click: Click: Use
 human|/obj/item/reagent_containers/glass menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/reagent_containers/glass menu: Fill container
+human|/obj/item/reagent_containers/glass menu: Hit
 human|/obj/item/reagent_containers/glass menu: Interaction train hand
 human|/obj/item/reagent_containers/glass menu: Interaction trolley tank drag
 human|/obj/item/reagent_containers/glass menu: Load
@@ -126,6 +138,7 @@ human|/obj/item/reagent_containers/glass menu: Unlatch
 human|/obj/item/reagent_containers/glass menu: Vehicle item
 human|/obj/item/reagent_containers/glass click: Click: Fill container
 human|/obj/item/pen menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/pen menu: Hit
 human|/obj/item/pen menu: Interaction train hand
 human|/obj/item/pen menu: Interaction trolley tank drag
 human|/obj/item/pen menu: Load
@@ -135,5 +148,5 @@ human|/obj/item/pen menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pen menu: Unlatch
 human|/obj/item/pen menu: Vehicle item
 human|/obj/item/pen click: Click: Relabel
-keys: climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, fill_container, relabel, repaint, train_drag, train_hand, train_unlatch, trolley_tank_drag, vehicle_item
+keys: climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, fill_container, melee_hit, relabel, repaint, train_drag, train_hand, train_unlatch, trolley_tank_drag, vehicle_item
 

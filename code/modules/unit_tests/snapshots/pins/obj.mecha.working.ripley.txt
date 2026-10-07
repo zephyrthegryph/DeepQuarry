@@ -82,6 +82,7 @@ human|/obj/item/tool/screwdriver menu: Eject (refused: Only the pilot can do tha
 human|/obj/item/tool/screwdriver menu: Enter Exosuit
 human|/obj/item/tool/screwdriver menu: Enter exosuit
 human|/obj/item/tool/screwdriver menu: Enter Passenger Compartment
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Repair components with nanopaste (refused: needs a nanopaste)
 human|/obj/item/tool/screwdriver menu: Strike (refused: combat mode is off)
@@ -113,6 +114,7 @@ human|/obj/item/tool/crowbar menu: Eject (refused: Only the pilot can do that.)
 human|/obj/item/tool/crowbar menu: Enter Exosuit
 human|/obj/item/tool/crowbar menu: Enter exosuit
 human|/obj/item/tool/crowbar menu: Enter Passenger Compartment
+human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Repair components with nanopaste (refused: needs a nanopaste)
 human|/obj/item/tool/crowbar menu: Strike (refused: combat mode is off)
@@ -144,6 +146,7 @@ human|/obj/item/tool/wrench menu: Eject (refused: Only the pilot can do that.)
 human|/obj/item/tool/wrench menu: Enter Exosuit
 human|/obj/item/tool/wrench menu: Enter exosuit
 human|/obj/item/tool/wrench menu: Enter Passenger Compartment
+human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Repair components with nanopaste (refused: needs a nanopaste)
 human|/obj/item/tool/wrench menu: Strike (refused: combat mode is off)
@@ -175,6 +178,7 @@ human|/obj/item/tool/wirecutters menu: Eject (refused: Only the pilot can do tha
 human|/obj/item/tool/wirecutters menu: Enter Exosuit
 human|/obj/item/tool/wirecutters menu: Enter exosuit
 human|/obj/item/tool/wirecutters menu: Enter Passenger Compartment
+human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Repair components with nanopaste (refused: needs a nanopaste)
 human|/obj/item/tool/wirecutters menu: Strike (refused: combat mode is off)
@@ -206,6 +210,7 @@ human|/obj/item/multitool menu: Eject (refused: Only the pilot can do that.)
 human|/obj/item/multitool menu: Enter Exosuit
 human|/obj/item/multitool menu: Enter exosuit
 human|/obj/item/multitool menu: Enter Passenger Compartment
+human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Repair components with nanopaste (refused: needs a nanopaste)
 human|/obj/item/multitool menu: Strike (refused: combat mode is off)
@@ -237,6 +242,7 @@ human|/obj/item/weldingtool menu: Eject (refused: Only the pilot can do that.)
 human|/obj/item/weldingtool menu: Enter Exosuit
 human|/obj/item/weldingtool menu: Enter exosuit
 human|/obj/item/weldingtool menu: Enter Passenger Compartment
+human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Repair components with nanopaste (refused: needs a nanopaste)
 human|/obj/item/weldingtool menu: Strike (refused: combat mode is off)
@@ -267,6 +273,7 @@ human|/obj/item/stack/cable_coil menu: Eject (refused: Only the pilot can do tha
 human|/obj/item/stack/cable_coil menu: Enter Exosuit
 human|/obj/item/stack/cable_coil menu: Enter exosuit
 human|/obj/item/stack/cable_coil menu: Enter Passenger Compartment
+human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Repair components with nanopaste (refused: needs a nanopaste)
@@ -299,6 +306,7 @@ human|/obj/item/stack/material/steel menu: Eject (refused: Only the pilot can do
 human|/obj/item/stack/material/steel menu: Enter Exosuit
 human|/obj/item/stack/material/steel menu: Enter exosuit
 human|/obj/item/stack/material/steel menu: Enter Passenger Compartment
+human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Repair components with nanopaste (refused: needs a nanopaste)
 human|/obj/item/stack/material/steel menu: Strike (refused: combat mode is off)
@@ -330,6 +338,7 @@ human|/obj/item/card/id menu: Eject (refused: Only the pilot can do that.)
 human|/obj/item/card/id menu: Enter Exosuit
 human|/obj/item/card/id menu: Enter exosuit
 human|/obj/item/card/id menu: Enter Passenger Compartment
+human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Repair components with nanopaste (refused: needs a nanopaste)
@@ -362,6 +371,7 @@ human|/obj/item/extinguisher menu: Eject (refused: Only the pilot can do that.)
 human|/obj/item/extinguisher menu: Enter Exosuit
 human|/obj/item/extinguisher menu: Enter exosuit
 human|/obj/item/extinguisher menu: Enter Passenger Compartment
+human|/obj/item/extinguisher menu: Hit
 human|/obj/item/extinguisher menu: Move To Top
 human|/obj/item/extinguisher menu: Repair components with nanopaste (refused: needs a nanopaste)
 human|/obj/item/extinguisher menu: Strike (refused: combat mode is off)
@@ -393,6 +403,7 @@ human|/obj/item/stack/nanopaste menu: Eject (refused: Only the pilot can do that
 human|/obj/item/stack/nanopaste menu: Enter Exosuit
 human|/obj/item/stack/nanopaste menu: Enter exosuit
 human|/obj/item/stack/nanopaste menu: Enter Passenger Compartment
+human|/obj/item/stack/nanopaste menu: Hit
 human|/obj/item/stack/nanopaste menu: Move To Top
 human|/obj/item/stack/nanopaste menu: Repair components with nanopaste (refused: you can't reach the internal components)
 human|/obj/item/stack/nanopaste menu: Strike (refused: combat mode is off)
@@ -415,37 +426,6 @@ human|/obj/item/stack/nanopaste menu: Weld repairs (refused: hold Grab)
 human|/obj/item/stack/nanopaste menu: Weld repairs (refused: needs a welder)
 human|/obj/item/stack/nanopaste menu: Zoom (refused: Only the pilot can do that.)
 human|/obj/item/stack/nanopaste click: Click: Weld repairs
-human|/obj/item/kit/paint menu: Activate Smoke (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint menu: Change melee damage type (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint menu: Connect to port (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint menu: Detect Ores (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint menu: Disconnect from port (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint menu: Eject (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint menu: Enter Exosuit
-human|/obj/item/kit/paint menu: Enter exosuit
-human|/obj/item/kit/paint menu: Enter Passenger Compartment
-human|/obj/item/kit/paint menu: Move To Top
-human|/obj/item/kit/paint menu: Repair components with nanopaste (refused: needs a nanopaste)
-human|/obj/item/kit/paint menu: Strike (refused: combat mode is off)
-human|/obj/item/kit/paint menu: Toggle cloaking (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint menu: Toggle defence mode (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/kit/paint menu: Toggle internal airtank usage (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint menu: Toggle leg actuators overload (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint menu: Toggle Lights (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint menu: Toggle phasing (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint menu: Toggle strafing
-human|/obj/item/kit/paint menu: Toggle strafing (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint menu: Toggle thrusters (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint menu: Toggle weapons only cycling (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint menu: Use
-human|/obj/item/kit/paint menu: View Stats (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint menu: Weld repairs
-human|/obj/item/kit/paint menu: Weld repairs (refused: hold Disarm)
-human|/obj/item/kit/paint menu: Weld repairs (refused: hold Grab)
-human|/obj/item/kit/paint menu: Weld repairs (refused: needs a welder)
-human|/obj/item/kit/paint menu: Zoom (refused: Only the pilot can do that.)
-human|/obj/item/kit/paint click: Click: Use
 human|/obj/item menu: Activate Smoke (refused: Only the pilot can do that.)
 human|/obj/item menu: Change melee damage type (refused: Only the pilot can do that.)
 human|/obj/item menu: Connect to port (refused: Only the pilot can do that.)
@@ -455,6 +435,7 @@ human|/obj/item menu: Eject (refused: Only the pilot can do that.)
 human|/obj/item menu: Enter Exosuit
 human|/obj/item menu: Enter exosuit
 human|/obj/item menu: Enter Passenger Compartment
+human|/obj/item menu: Hit
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Repair components with nanopaste (refused: needs a nanopaste)
 human|/obj/item menu: Strike (refused: combat mode is off)
@@ -477,5 +458,37 @@ human|/obj/item menu: Weld repairs (refused: hold Grab)
 human|/obj/item menu: Weld repairs (refused: needs a welder)
 human|/obj/item menu: Zoom (refused: Only the pilot can do that.)
 human|/obj/item click: Click: Weld repairs
-keys: access_add, access_del, access_finish, ai_use_equipment, detach_equipment, drag_buckle, drop_from_cargo, equip_interact, maint_protocol, maint_remove_passenger, maint_req_access, maint_set_air, mecha_airtank, mecha_alt, mecha_cloak, mecha_connect, mecha_damtype, mecha_defence, mecha_disconnect, mecha_drag, mecha_eject, mecha_enter, mecha_enter_passenger, mecha_extinguish, mecha_fix_temperature, mecha_fix_wiring, mecha_hand, mecha_item, mecha_lights, mecha_overload, mecha_paint_kit, mecha_paste_repair, mecha_phasing, mecha_recalibrate, mecha_seal_tank, mecha_smoke, mecha_stats, mecha_strafing, mecha_thrusters, mecha_weapons_cycle, mecha_weld_disarm, mecha_weld_grab, mecha_weld_help, mecha_weld_repair, mecha_weld_repair_disarm, mecha_weld_repair_grab, mecha_weld_strike, mecha_zoom, rfreq, ripley_detect_ore, view_main
+human|/obj/item/kit/paint menu: Activate Smoke (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint menu: Change melee damage type (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint menu: Connect to port (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint menu: Detect Ores (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint menu: Disconnect from port (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint menu: Eject (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint menu: Enter Exosuit
+human|/obj/item/kit/paint menu: Enter exosuit
+human|/obj/item/kit/paint menu: Enter Passenger Compartment
+human|/obj/item/kit/paint menu: Hit
+human|/obj/item/kit/paint menu: Move To Top
+human|/obj/item/kit/paint menu: Repair components with nanopaste (refused: needs a nanopaste)
+human|/obj/item/kit/paint menu: Strike (refused: combat mode is off)
+human|/obj/item/kit/paint menu: Toggle cloaking (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint menu: Toggle defence mode (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit/paint menu: Toggle internal airtank usage (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint menu: Toggle leg actuators overload (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint menu: Toggle Lights (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint menu: Toggle phasing (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint menu: Toggle strafing
+human|/obj/item/kit/paint menu: Toggle strafing (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint menu: Toggle thrusters (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint menu: Toggle weapons only cycling (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint menu: Use
+human|/obj/item/kit/paint menu: View Stats (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint menu: Weld repairs
+human|/obj/item/kit/paint menu: Weld repairs (refused: hold Disarm)
+human|/obj/item/kit/paint menu: Weld repairs (refused: hold Grab)
+human|/obj/item/kit/paint menu: Weld repairs (refused: needs a welder)
+human|/obj/item/kit/paint menu: Zoom (refused: Only the pilot can do that.)
+human|/obj/item/kit/paint click: Click: Use
+keys: access_add, access_del, access_finish, ai_use_equipment, detach_equipment, drag_buckle, drop_from_cargo, equip_interact, maint_protocol, maint_remove_passenger, maint_req_access, maint_set_air, mecha_airtank, mecha_alt, mecha_cloak, mecha_connect, mecha_damtype, mecha_defence, mecha_disconnect, mecha_drag, mecha_eject, mecha_enter, mecha_enter_passenger, mecha_extinguish, mecha_fix_temperature, mecha_fix_wiring, mecha_hand, mecha_item, mecha_lights, mecha_overload, mecha_paint_kit, mecha_paste_repair, mecha_phasing, mecha_recalibrate, mecha_seal_tank, mecha_smoke, mecha_stats, mecha_strafing, mecha_thrusters, mecha_weapons_cycle, mecha_weld_disarm, mecha_weld_grab, mecha_weld_help, mecha_weld_repair, mecha_weld_repair_disarm, mecha_weld_repair_grab, mecha_weld_strike, mecha_zoom, melee_hit, rfreq, ripley_detect_ore, view_main
 

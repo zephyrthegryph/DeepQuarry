@@ -65,7 +65,6 @@ MSG_DEF(closet/break_begin, "You lean on the back of %T% and start pushing the d
 // lands on its tile; an open one is cut apart with a welder; somebody shut in a sealed one breaks out after breakout_time minutes (a player-facing wait,
 // started by the Resist verb through container_resist()).
 CAPABILITIES(/obj/structure/closet)
-	damageable()
 	blast_contents(shield = 1) // a closet shields its contents a step
 	after_init(0, then(PROC_REF(closet_after_init)))
 	space(SPACE_INTERIOR, door = nameof(opened))

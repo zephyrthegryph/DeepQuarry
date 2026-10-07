@@ -118,7 +118,7 @@ CAPABILITIES(/obj/structure/closet/statue)
 	without("stuff_grab")
 	without("set_down")
 	without("empty_basket")
-	without("damageable.hit")
+	without("melee_hit")
 	op("statue_strike", item(/obj/item), label("Strike"), priority(OP_PRIORITY_PART + 20), then(PROC_REF(statue_struck)))
 	param(nameof(statue_of), pos = 1, keep = FALSE)
 

@@ -64,7 +64,7 @@
 
 // ---- what a blast door is, declared ----
 //
-// A door that answers a button, not a hand or a card: the base door's touch ops are refused for want of access (a held thing is swallowed, a hand
+// A door that answers a button, not a hand or a card: the base door's touch ops are refused for want of access (an ID card is refused by its access, a hand
 // flashes the denial), and the plasteel fitting is not offered (it is plasteel already). What is the blast door's own: a crowbar or an axe forcing
 // one that has lost its power or broke, a weapon's blow (a slow one: it takes a while to dent), plasteel to mend it, a claw forcing it, an
 // emag that doubles how far it throws whoever it shuts on.
@@ -82,7 +82,6 @@ CAPABILITIES(/obj/machinery/door/blast)
 	without("weld_plasteel")
 	without("unreinforce")
 	emag(then(PROC_REF(blast_emag)), say = MSG(blast_door/emagged))
-	op("swallow", item(/obj/item), priority(OP_PRIORITY_NORMAL + 1), wait(0), then(PROC_REF(item_swallowed)))
 	op("force_xeno", hand(), label("Force"), when(req(PROC_REF(claws_force))), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(claws_wait)),
 		needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(claws_forced)))
 	op("force_generic", ai(), wait(PROC_REF(generic_wait)), then(PROC_REF(generic_forced)))
@@ -98,10 +97,6 @@ CAPABILITIES(/obj/machinery/door/blast)
 /obj/machinery/door/blast/proc/blast_emag(datum/act/op/A)
 	set_emagged(1)
 	multiplier = 2 // Haha emag go yeet
-	return OP_OK
-
-/// A held thing does nothing to a blast door (it is not for hands or cards).
-/obj/machinery/door/blast/proc/item_swallowed(datum/act/op/A)
 	return OP_OK
 
 /// A xeno's claws are on the hand.

@@ -10,77 +10,96 @@ ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Climb
 human|/obj/item/tool/screwdriver menu: Harvest honeycombs
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Climb
 human|/obj/item/tool/crowbar menu: Harvest honeycombs
+human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use crowbar
 human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Climb
 human|/obj/item/tool/wrench menu: Harvest honeycombs
+human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use wrench
 human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Climb
 human|/obj/item/tool/wirecutters menu: Harvest honeycombs
+human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters click: Click: Harvest honeycombs
 human|/obj/item/multitool menu: Climb
 human|/obj/item/multitool menu: Harvest honeycombs
+human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: Click: Harvest honeycombs
 human|/obj/item/weldingtool menu: Climb
 human|/obj/item/weldingtool menu: Harvest honeycombs
+human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: Click: Harvest honeycombs
 human|/obj/item/stack/cable_coil menu: Climb
 human|/obj/item/stack/cable_coil menu: Harvest honeycombs
+human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: Click: Harvest honeycombs
 human|/obj/item/stack/material/steel menu: Climb
 human|/obj/item/stack/material/steel menu: Harvest honeycombs
+human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: Click: Harvest honeycombs
 human|/obj/item/card/id menu: Climb
 human|/obj/item/card/id menu: Harvest honeycombs
+human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Harvest honeycombs
+human|/obj/item menu: Climb
+human|/obj/item menu: Harvest honeycombs
+human|/obj/item menu: Hit
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Harvest honeycombs
 human|/obj/item/bee_smoker menu: Climb
 human|/obj/item/bee_smoker menu: Harvest honeycombs
+human|/obj/item/bee_smoker menu: Hit
 human|/obj/item/bee_smoker menu: Move To Top
 human|/obj/item/bee_smoker menu: Smoke bees
 human|/obj/item/bee_smoker menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/bee_smoker click: Click: Smoke bees
 human|/obj/item/honey_frame menu: Climb
 human|/obj/item/honey_frame menu: Harvest honeycombs
+human|/obj/item/honey_frame menu: Hit
 human|/obj/item/honey_frame menu: Load frame
 human|/obj/item/honey_frame menu: Move To Top
 human|/obj/item/honey_frame menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/honey_frame click: Click: Load frame
 human|/obj/item/bee_pack menu: Climb
 human|/obj/item/bee_pack menu: Harvest honeycombs
+human|/obj/item/bee_pack menu: Hit
 human|/obj/item/bee_pack menu: Move bees
 human|/obj/item/bee_pack menu: Move To Top
 human|/obj/item/bee_pack menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/bee_pack click: Click: Move bees
 human|/obj/item/analyzer/plant_analyzer menu: Climb
 human|/obj/item/analyzer/plant_analyzer menu: Harvest honeycombs
+human|/obj/item/analyzer/plant_analyzer menu: Hit
 human|/obj/item/analyzer/plant_analyzer menu: Move To Top
 human|/obj/item/analyzer/plant_analyzer menu: Scan
 human|/obj/item/analyzer/plant_analyzer menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/analyzer/plant_analyzer click: Click: Scan
-keys: beehive_bee_pack, beehive_harvest, beehive_load_frame, beehive_scan, beehive_smoke, climb.climb, climb.climb_menu, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, use_crowbar, use_screwdriver, use_wrench
+keys: beehive_bee_pack, beehive_harvest, beehive_load_frame, beehive_scan, beehive_smoke, climb.climb, climb.climb_menu, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, use_crowbar, use_screwdriver, use_wrench
 

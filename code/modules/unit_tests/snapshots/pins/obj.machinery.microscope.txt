@@ -8,42 +8,49 @@ robot|none click: Click: Examine sample
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Examine sample (refused: the microscope has no sample to examine)
+human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Insert sample
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Remove sample
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver click: Click: Insert sample
 human|/obj/item/tool/crowbar menu: Examine sample (refused: the microscope has no sample to examine)
+human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Insert sample
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Remove sample
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Insert sample
 human|/obj/item/tool/wrench menu: Examine sample (refused: the microscope has no sample to examine)
+human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Insert sample
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Remove sample
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench click: Click: Insert sample
 human|/obj/item/tool/wirecutters menu: Examine sample (refused: the microscope has no sample to examine)
+human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Insert sample
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Remove sample
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters click: Click: Insert sample
 human|/obj/item/multitool menu: Examine sample (refused: the microscope has no sample to examine)
+human|/obj/item/multitool menu: Hit
 human|/obj/item/multitool menu: Insert sample
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Remove sample
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: Click: Insert sample
 human|/obj/item/weldingtool menu: Examine sample (refused: the microscope has no sample to examine)
+human|/obj/item/weldingtool menu: Hit
 human|/obj/item/weldingtool menu: Insert sample
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Remove sample
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: Click: Insert sample
 human|/obj/item/stack/cable_coil menu: Examine sample (refused: the microscope has no sample to examine)
+human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Insert sample
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
@@ -51,12 +58,14 @@ human|/obj/item/stack/cable_coil menu: Remove sample
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: Click: Insert sample
 human|/obj/item/stack/material/steel menu: Examine sample (refused: the microscope has no sample to examine)
+human|/obj/item/stack/material/steel menu: Hit
 human|/obj/item/stack/material/steel menu: Insert sample
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Remove sample
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: Click: Insert sample
 human|/obj/item/card/id menu: Examine sample (refused: the microscope has no sample to examine)
+human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id menu: Insert sample
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
@@ -64,10 +73,11 @@ human|/obj/item/card/id menu: Remove sample
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Insert sample
 human|/obj/item menu: Examine sample (refused: the microscope has no sample to examine)
+human|/obj/item menu: Hit
 human|/obj/item menu: Insert sample
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Remove sample
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Insert sample
-keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, microscope_examine, microscope_insert_sample, microscope_remove_sample
+keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, microscope_examine, microscope_insert_sample, microscope_remove_sample
 

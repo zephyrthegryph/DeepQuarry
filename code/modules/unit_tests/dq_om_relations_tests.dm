@@ -469,6 +469,22 @@
 	qdel(center)
 	TEST_ASSERT_NULL(orbiter?.orbit_target(), "deleting the center should end the orbit")
 
+/// The centre can be a turf, and the orbiter's transform comes back when the orbit ends (it was saved on the link).
+/datum/unit_test/dq_om_relation_orbiting_turf_centre
+
+/datum/unit_test/dq_om_relation_orbiting_turf_centre/Run()
+	var/turf/centre = get_turf(run_loc_floor_bottom_left)
+	var/obj/item/dq_containment_test/orbiter = allocate(/obj/item/dq_containment_test, centre)
+	var/matrix/before = matrix(orbiter.transform)
+	orbiter.orbit(centre, 16)
+	TEST_ASSERT_EQUAL(orbiter?.orbit_target(), centre, "a turf can be the centre")
+	TEST_ASSERT(orbiter in centre.orbiter_list(), "the turf lists its orbiter")
+	TEST_ASSERT(orbiter.transform.f != before.f || orbiter.transform.b != before.b, "the orbit shifts the orbiter")
+	orbiter.stop_orbit()
+	TEST_ASSERT_NULL(orbiter?.orbit_target(), "stop_orbit() ends it")
+	var/matrix/now = orbiter.transform
+	TEST_ASSERT(now.a == before.a && now.b == before.b && now.c == before.c && now.d == before.d && now.e == before.e && now.f == before.f, "the saved transform is back")
+
 // ---------------------------------------------------------------- leash
 
 /// A leash is two edges (pet -> leash, leash -> holder). Deleting the holder
