@@ -1,5 +1,15 @@
 # Machinery follow-up, 7 October 2026
 
+## Round 2 merge checkpoint
+
+Master `eac3bc655d` is merged in `4e247bcd36`. The sole conflict was lifecycle setup: the engine-owned compatibility hook and master's plain-datum repeat arming are both retained. Timer deleted-argument handling, source-owned holds, read-once/slot APIs and ghost windows came from master unchanged. The focused runner now uses the pinned shell entry point on Windows.
+
+Generation passes. DreamChecker reports zero diagnostics. Enabled engine layering remains zero. Ratchets still report ten unknown admission reads and one custody relation hop; none were exempted or baselined. The merged 66-test run compiles with zero errors, passes boot, and passes 64 tests. The two failures are the pin comparison (4,765 rows) and menu-order golden (282 scenarios); no state leaks were reported. These are not clean overall gates.
+
+All six targeted declaration/field families and the 19 topic actions remain at zero in machinery/power. Old gas watches and their hub are absent; machine power and conditions already use stat contributions. The seven requested player prompt paths use asks. Sixty-five other direct requests remain in 29 files, chiefly separate UI/callback/consent paths; the obsolete gear admin helper accounts for one and will be removed on the final branch. The atmospheric retention field still needs its explicitly requested Use label.
+
+The only accepted snapshot changes in this branch remain the 36 airlock/vending/APC scenarios adding master's documented default menu ops and 87 missing-card Emag row removals. Causes are the integrator classes in intended_changes.md; no further captures were blessed at this merge. The checkpoint is pushed as requested; unresolved gates and the gravity/stage follow-up are carried into codex/machinery-final-1007.
+
 This batch retires the remaining targeted legacy declaration families in `code/game/machinery/` and `code/modules/power/`, preserving the current master operation, request and topic APIs. Eleven semantic findings and unapproved snapshot differences prevent a clean handoff; the branch is not ready to land.
 
 Latest completed runtime verification before the final master merge: twelve focused tests passed, followed by eight focused tests with a clean boot gate and no state leaks. Fixture setup warms the persistent `dview_mob` cache before global snapshots. The eight-test run's restored missing-card Emag expectations have since been superseded by master's explicit integrator policy; the final 66-test run checks that policy. Snapshot review remains pending; no broad blessing has been performed.
