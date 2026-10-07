@@ -29,7 +29,7 @@ human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Slam
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench menu: Use wrench (refused: )
 human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tool/wirecutters menu: Flip Railing

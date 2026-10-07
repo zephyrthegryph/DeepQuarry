@@ -212,14 +212,17 @@ TRACKED(/mob/living/bot/medbot, is_tipped)
 /mob/living/bot/medbot/proc/can_right(datum/act/op/A)
 	return is_tipped
 
-/// The shove has run its three seconds: the bot says its piece (the plea used to come as the shove began) and goes over.
-/mob/living/bot/medbot/proc/tipped_over(datum/act/op/A)
+/// The shove begins: the bot says its piece.
+/mob/living/bot/medbot/proc/pleads(datum/act/op/A)
 	if(COOLDOWN_FINISHED(src, tipping_voice_cooldown))
 		COOLDOWN_START(src, tipping_voice_cooldown, 15 SECONDS)// message for tipping happens when we start interacting, message for righting comes after finishing
 		var/list/messagevoice = list("Hey, wait..." = SFX_VOICE_MEDBOT_HEY_WAIT,"Please don't..." = SFX_VOICE_MEDBOT_PLEASE_DONT,"I trusted you..." = SFX_VOICE_MEDBOT_I_TRUSTED_YOU, "Nooo..." = SFX_VOICE_MEDBOT_NOOO, "Oh fuck-" = SFX_VOICE_MEDBOT_OH_FUCK)
 		var/message = pick(messagevoice)
 		say(message)
 		playsound(src, messagevoice[message], 70, FALSE)
+
+/// The shove has run its three seconds: the bot goes over.
+/mob/living/bot/medbot/proc/tipped_over(datum/act/op/A)
 	tip_over(A.actor)
 
 /mob/living/bot/medbot/proc/righted(datum/act/op/A)
@@ -244,7 +247,7 @@ CAPABILITIES(/mob/living/bot/medbot)
 	op("togglevoice", ui_act("togglevoice"), then(PROC_REF(ui_act_togglevoice)))
 	op("declaretreatment", ui_act("declaretreatment"), then(PROC_REF(ui_act_declaretreatment)))
 	op("medbot_item", item(/obj/item/reagent_containers/glass), label("Insert beaker"), needs(req_is(nameof(locked), FALSE, because = MSG(medbot/panel_locked)), req_is(nameof(reagent_glass), FALSE, because = MSG(medbot/has_beaker))), then(PROC_REF(medbot_interaction_item)))
-	op("medbot_tip", hand(), ungated(), stance(I_DISARM), label("Tip over"), when(PROC_REF(can_tip)), priority(OP_PRIORITY_TAKE_OUT), begins(MSG(medbot/tipping)), wait(3 SECONDS), then(PROC_REF(tipped_over)))
+	op("medbot_tip", hand(), ungated(), stance(I_DISARM), label("Tip over"), when(PROC_REF(can_tip)), priority(OP_PRIORITY_TAKE_OUT), begins(MSG(medbot/tipping)), starts(PROC_REF(pleads)), wait(3 SECONDS), then(PROC_REF(tipped_over)))
 	op("medbot_right", hand(), ungated(), stance(I_HELP), label("Set right"), when(PROC_REF(can_right)), priority(OP_PRIORITY_TAKE_OUT), begins(MSG(medbot/righting)), wait(3 SECONDS), then(PROC_REF(righted)))
 	op("medbot_hand_help", hand(), ungated(), stance(I_HELP), label("Open controls"), then(PROC_REF(open_controls)))
 	op("medbot_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Open controls"), then(PROC_REF(open_controls)))

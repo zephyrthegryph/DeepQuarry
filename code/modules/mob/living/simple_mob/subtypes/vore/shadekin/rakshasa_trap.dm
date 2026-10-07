@@ -19,11 +19,17 @@
 	..()
 	look.set_color(basecolor)
 
-MSG_DEF(gootrap/freeing, "You carefully begin to free the one caught in %T%.", "%U% begins freeing the one caught in %T%.")
-MSG_DEF(gootrap/freed, "You free the one caught in %T%.", "%U% frees the one caught in %T%.")
 
 CAPABILITIES(/obj/structure/gootrap)
-	op("free", hand(), label("Free the victim"), when(PROC_REF(can_free)), begins(MSG(gootrap/freeing)), wait(0.5 SECONDS), then(PROC_REF(free_victims)), says(MSG(gootrap/freed)))
+	op("free", hand(), label("Free the victim"), when(PROC_REF(can_free)), begins(PROC_REF(freeing_text)), wait(0.5 SECONDS), then(PROC_REF(free_victims)), says(PROC_REF(freed_text)))
+
+/// The lines of the freeing name the one who is caught.
+/obj/structure/gootrap/proc/freeing_text(datum/act/op/A)
+	var/victims = english_list(buckled_mob_list())
+	return msg_text(span_notice("You carefully begin to free [victims] from %T%."), span_notice("%U% begins freeing [victims] from %T%."))
+
+/obj/structure/gootrap/proc/freed_text(datum/act/op/A)
+	return msg_text(null, span_notice("The one caught has been freed from %T% by %U%."))
 
 /obj/structure/gootrap/proc/can_free(datum/act/op/A)
 	return has_buckled_mobs() && can_use(A.actor)

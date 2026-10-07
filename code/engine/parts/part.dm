@@ -390,8 +390,10 @@
 /// proc, so the request's fields go in `fields` as a list(name = value) the call names (asks(/datum/prompt/text/rename, fields = list("a" = 1))).
 /// `when` (a condition: a var, a stat, a tree, or a PROC_REF x(datum/act/op/A)) is read when the step is reached: the step is skipped, with no
 /// prompt, while it does not hold (a PIN is asked only of a card that has one). A skipped step leaves A.answer as it was.
-/proc/asks(request_type, list/fields = null, step = null, resume = CAPTURE, keeps = WAIT_KEEPS_DEFAULT, when = null)
-	return part_make(/datum/entry/part/asks, list("type" = request_type, "fields" = fields, "step" = step, "resume" = resume, "keeps" = keeps, "when" = when))
+/// `ends_on_no`: a falsy answer (a yes_no prompt answered "no") ends the op and nothing is spent, as confirms() does, for a prompt that has its own
+/// title, timeout or fields.
+/proc/asks(request_type, list/fields = null, step = null, resume = CAPTURE, keeps = WAIT_KEEPS_DEFAULT, when = null, ends_on_no = FALSE)
+	return part_make(/datum/entry/part/asks, list("type" = request_type, "fields" = fields, "step" = step, "resume" = resume, "keeps" = keeps, "when" = when, "ends_on_no" = ends_on_no))
 
 /datum/entry/part/asks
 	part_name = "asks"
@@ -406,7 +408,8 @@
 /proc/confirms(text, keeps = WAIT_KEEPS_DEFAULT)
 	return part_make(/datum/entry/part/asks, list("type" = /datum/prompt/yes_no, "fields" = list("question" = text), "step" = "confirm", "resume" = CAPTURE, "keeps" = keeps, "confirms" = TRUE))
 
-/// captures(nameof(v), ..., resume = CAPTURE): the fields snapshotted when the op first suspends at an asks() or confirms().
+/// captures(nameof(v), ..., resume = CAPTURE): the fields snapshotted when the op first suspends at a workflow step: an asks(), a confirms() or a timed wait(),
+/// and read back (A.captured(nameof(v))) after it. After a wait, resume = LATEST refreshes them and CANCEL_IF_CHANGED ends the op if one changed.
 /proc/captures(p1, p2, p3, p4, p5, p6, p7, p8, resume = CAPTURE)
 	var/list/names = list()
 	for(var/field in list(p1, p2, p3, p4, p5, p6, p7, p8))
@@ -579,6 +582,11 @@
 	part_name = "says"
 	stages = PART_STAGE_DO
 
+/// msg_text(self, others, blind): a message built at run time, for a begins()/says() handler to return (begins(PROC_REF(x)), x(datum/act/op/A)): the lines
+/// may name the held item, the victims or a material. Tokens (%U%, %T%, %I%) are filled as in a /datum/msg.
+/proc/msg_text(self = null, others = null, blind = null)
+	return list("msg_text", self, others, blind)
+
 /// begins(msg_type | PROC_REF(x), others =, blind =): the message the actor and onlookers get when the op starts its first wait (the one who begins to
 /// inject someone is seen to), where says() is what they get when it commits. Like says(), the msg may be a proc that answers the message type.
 /proc/begins(msg_type, others = null, blind = null)
@@ -588,9 +596,19 @@
 	part_name = "begins"
 	stages = PART_STAGE_WAIT
 
-/// plays(SFX): the sound on commit.
-/proc/plays(sfx)
-	return part_make(/datum/entry/part/plays, list("sfx" = sfx))
+/// starts(PROC_REF(x)): x(datum/act/op/A) runs when the op's first wait starts, with the begins() message: the effects that belong to the moment the work
+/// begins (a flick, facing the target, an admin log line, warning a hidden mob). It runs once, only for a wait that lasts, and changes nothing the
+/// op's cost or refusal depend on.
+/proc/starts(handler)
+	return part_make(/datum/entry/part/starts, list("handler" = handler))
+
+/datum/entry/part/starts
+	part_name = "starts"
+	stages = PART_STAGE_WAIT
+
+/// plays(SFX): the sound on commit; plays(SFX, at_start = TRUE) plays it when the op's first wait starts, with the begins() message.
+/proc/plays(sfx, at_start = FALSE)
+	return part_make(/datum/entry/part/plays, list("sfx" = sfx, "at_start" = at_start))
 
 /datum/entry/part/plays
 	part_name = "plays"
@@ -659,8 +677,8 @@
 ///   - CLAIM_TARGET: a second claiming op on the same target is refused (/datum/msg/op/claimed) instead of starting, and op_claimed(target) answers
 ///     TRUE so the target can draw the work (a door being pried shows its prying sprite). It lasts as long as the op is pending.
 ///   - CLAIM_HANDS and CLAIM_BODY: while a wait() step runs, the actor's next input that needs those (any physical click needs the hands) stops the
-///     wait ("You stop what you were doing."), and an AI's is refused as busy. An op with no claims() of its own that has a timed wait on a physical
-///     binding holds hands and body; a question (asks(), confirms()) holds nothing, so any number of questions are open at once.
+///     wait ("You stop what you were doing."), and an AI's is refused as busy. An op with no claims() of its own holds nothing, a timed wait included:
+///     any number of such waits and questions are pending at once, and a second input never stops them.
 /// Every claim ends with the wait, however it ends.
 /proc/claims(mask = null)
 	return part_make(/datum/entry/part/claims, isnull(mask) ? null : list("mask" = mask))

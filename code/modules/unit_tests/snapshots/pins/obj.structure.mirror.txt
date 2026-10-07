@@ -48,5 +48,9 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: drag_buckle, item, silicon_use, use, use_wrench
+human|/obj/item/stack/material/glass menu: Move To Top
+human|/obj/item/stack/material/glass menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/glass menu: Use
+human|/obj/item/stack/material/glass click: Click: Use
+keys: add_glass, drag_buckle, item, silicon_use, use, use_wrench
 

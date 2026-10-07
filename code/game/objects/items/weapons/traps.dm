@@ -32,8 +32,6 @@ TRACKED(/obj/item/beartrap, deployed)
 
 MSG_DEF(beartrap/deploying, "You begin deploying %T%!", "%U% starts to deploy %T%.")
 MSG_DEF(beartrap/deployed, "You have deployed %T%!", "%U% has deployed %T%.")
-MSG_DEF(beartrap/freeing, "You carefully begin to free the one caught in %T%.", "%U% begins freeing the one caught in %T%.")
-MSG_DEF(beartrap/freed, "You free the one caught in %T%.", "%U% frees the one caught in %T%.")
 MSG_DEF(beartrap/disarming, "You begin disarming %T%!", "%U% starts to disarm %T%.")
 MSG_DEF(beartrap/disarmed, "You have disarmed %T%!", "%U% has disarmed %T%.")
 
@@ -41,10 +39,10 @@ CAPABILITIES(/obj/item/beartrap)
 	op("deploy", in_hand(), label("Deploy trap"), needs(req(PROC_REF(can_deploy), silent = TRUE)),
 		begins(MSG(beartrap/deploying), blind = "You hear the slow creaking of a spring."), wait(6 SECONDS),
 		then(PROC_REF(deploy_trap)), says(MSG(beartrap/deployed), blind = "You hear a latch click loudly."))
-	op("free", hand(), label("Free the victim"), when(PROC_REF(can_free)), priority(OP_PRIORITY_TAKE_OUT), begins(MSG(beartrap/freeing)), wait(6 SECONDS),
-		then(PROC_REF(free_victim)), says(MSG(beartrap/freed)))
+	op("free", hand(), label("Free the victim"), when(PROC_REF(can_free)), priority(OP_PRIORITY_TAKE_OUT), begins(PROC_REF(freeing_text)), wait(6 SECONDS),
+		then(PROC_REF(free_victim)), says(PROC_REF(freed_text)))
 	op("disarm", hand(), label("Disarm"), when(PROC_REF(can_disarm)),
-		begins(MSG(beartrap/disarming), blind = "You hear a latch click followed by the slow creaking of a spring."), plays(SFX_MACHINES_CLICK), wait(6 SECONDS),
+		begins(MSG(beartrap/disarming), blind = "You hear a latch click followed by the slow creaking of a spring."), plays(SFX_MACHINES_CLICK, at_start = TRUE), wait(6 SECONDS),
 		then(PROC_REF(disarm_trap)), says(MSG(beartrap/disarmed)))
 
 /obj/item/beartrap/proc/can_deploy(datum/act/op/A)
@@ -65,6 +63,14 @@ CAPABILITIES(/obj/item/beartrap)
 	changed(src)
 	set_anchored(TRUE)
 	log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
+
+/// The lines of the freeing name the one who is caught.
+/obj/item/beartrap/proc/freeing_text(datum/act/op/A)
+	var/victims = english_list(buckled_mob_list())
+	return msg_text(span_notice("You carefully begin to free [victims] from %T%."), span_notice("%U% begins freeing [victims] from %T%."))
+
+/obj/item/beartrap/proc/freed_text(datum/act/op/A)
+	return msg_text(null, span_notice("The one caught has been freed from %T% by %U%."))
 
 /obj/item/beartrap/proc/free_victim(datum/act/op/A)
 	for(var/mob/victim in src?.buckled_mob_list())
@@ -196,7 +202,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 		then(PROC_REF(deploy_wire)), says(MSG(barbedwire/deployed), blind = "You hear the rustling of wire."))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	op("collect", hand(), label("Collect"), when(PROC_REF(can_collect)),
-		begins(MSG(barbedwire/collecting), blind = "You hear the sound of rustling wire."), plays(SFX_MACHINES_CLICK), wait(PROC_REF(collect_time)),
+		begins(MSG(barbedwire/collecting), blind = "You hear the sound of rustling wire."), plays(SFX_MACHINES_CLICK, at_start = TRUE), wait(PROC_REF(collect_time)),
 		then(PROC_REF(collect_wire)), says(MSG(barbedwire/collected)))
 	// a hit wears the coil, then the material's own repair still has its turn
 	op("barbedwire_hit", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(barbedwire_interaction_item)))

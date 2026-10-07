@@ -33,7 +33,10 @@
 	var/list/L = timed_tasks_of(user)
 	if(length(L))
 		return L[1]
-	return op_pending_of(user)
+	var/datum/pending = op_pending_of(user)
+	if(pending)
+		return pending
+	return task_claiming(user) // a worker's task that is not a player's timed action (a spider's web)
 
 /// How many timed actions `user` has running.
 /datum/unit_test/dq_timed_pin/proc/running_count(mob/user)
@@ -46,7 +49,7 @@
 
 /// TRUE when the action ended without finishing: a cancelled task, or a pending op that is no longer pending.
 /datum/unit_test/dq_timed_pin/proc/was_cancelled(datum/D, mob/user)
-	var/datum/task/timed/T = D
+	var/datum/task/T = D
 	if(istype(T))
 		return T.state == TASK_CANCELLED
 	return isnull(op_pending_of(user))
@@ -227,9 +230,15 @@
 	var/datum/first = running(user)
 	TEST_ASSERT(!isnull(first), "the first click starts")
 	test_click(user, B, null)
-	TEST_ASSERT_EQUAL(running_count(user), 1, "a second click on the same target leaves one action running")
 	if(istype(first, /datum/task))
+		TEST_ASSERT_EQUAL(running_count(user), 1, "a second click on the same target leaves one action running")
 		TEST_ASSERT_EQUAL(running(user), first, "the first is still the one running (the second click was refused)")
+	else
+		// An actor has any number of pending ops; only overlapping claims() conflict, and this op claims nothing: the second wait does not stop the first.
+		TEST_ASSERT_EQUAL(running_count(user), 2, "a second click starts a second wait")
+		TEST_ASSERT(first in op_pendings_of(user), "and the first is still pending")
+		test_time(8 SECONDS)
+		TEST_ASSERT(!B.deployed, "the trap is disarmed once, whichever wait ended first")
 
 // ---- The shapes the codemod (tools/dx/codemods/timed_task.py) converts: an op handler that only starts the action ----
 

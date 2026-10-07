@@ -201,6 +201,6 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 	return PROCESS_KILL
 
 /atom/movable/sleep_violation()
-	if(proximity_chunks && om_task_periodic_running(src))
+	if(proximity_chunks && every_running(src))
 		return "watching for mobs while already running"
 	return ..()

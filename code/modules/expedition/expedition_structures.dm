@@ -41,9 +41,9 @@ MSG_DEF_SELF(survey_beacon/logged, span_warning("%T% has already been logged."))
 CAPABILITIES(/obj/structure/expedition_survey_beacon)
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("survey_scanner", item(/obj/item/survey_scanner), label("Use"), needs(req(PROC_REF(not_logged), because = MSG(survey_beacon/logged))),
-		begins(MSG(survey_beacon/logging)), wait(3 SECONDS), then(PROC_REF(log_readings_done)))
+		begins(MSG(survey_beacon/logging)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(3 SECONDS), then(PROC_REF(log_readings_done)))
 	op("analyzer", item(/obj/item/analyzer), label("Use"), needs(req(PROC_REF(not_logged), because = MSG(survey_beacon/logged))),
-		begins(MSG(survey_beacon/logging)), wait(3 SECONDS), then(PROC_REF(log_readings_done)))
+		begins(MSG(survey_beacon/logging)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(3 SECONDS), then(PROC_REF(log_readings_done)))
 
 /// Requirement: the marker hasn't been logged yet.
 /obj/structure/expedition_survey_beacon/proc/not_logged(datum/act/op/A)
@@ -61,7 +61,6 @@ CAPABILITIES(/obj/structure/expedition_survey_beacon)
 	var/obj/item/W = A.held
 	if(scanned)
 		return
-	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 0.6)
 	set_scanned(TRUE)
 	to_chat(user, span_notice("Survey data logged to [W]."))
 

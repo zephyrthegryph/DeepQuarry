@@ -58,7 +58,7 @@ CAPABILITIES(/obj/structure/casino_table/roulette_table)
 
 /// Requirement: TRUE, or why the wheel can't be spun.
 /obj/structure/casino_table/roulette_table/proc/can_spin(mob/user, atom/target, obj/item/held)
-	if(task_busy(src))
+	if(work_busy(src))
 		return "you cannot spin now, the roulette is already spinning"
 	if(!ball)
 		return "this roulette wheel has no ball"
@@ -70,7 +70,7 @@ CAPABILITIES(/obj/structure/casino_table/roulette_table)
 		return TRUE
 	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || isobserver(user))
 		return TRUE
-	if(task_busy(src))
+	if(work_busy(src))
 		return "you cannot remove \the [ball] while [src] is spinning"
 	return TRUE
 
@@ -89,7 +89,7 @@ CAPABILITIES(/obj/structure/casino_table/roulette_table)
 	var/mob/user = A.actor
 	act_message(user, null, others = span_notice("%U% spins the roulette and throws [ball.get_ball_desc()] into it."))
 	play_sfx(src.loc, SFX_MACHINES_ROULETTE)
-	task_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
+	hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 	ball.on_spin()
 	icon_state = spin_state
 	var/result = rand(0,36)
@@ -428,7 +428,7 @@ MSG_DEF_SELF(casino/access_denied, "access denied")
 
 /// Requirement: the wheel isn't mid-spin.
 /obj/machinery/wheel_of_fortune/proc/not_spinning(datum/act/op/A)
-	return !task_busy(src)
+	return !work_busy(src)
 
 /obj/machinery/wheel_of_fortune/proc/interaction_use(datum/act/op/A)
 	wheel_use_stage(A.actor, A.held, list())
@@ -462,11 +462,11 @@ MSG_DEF_SELF(casino/access_denied, "access denied")
 	return !!check_access(A.held)
 
 /obj/machinery/wheel_of_fortune/proc/not_busy_and_actor_able(datum/act/op/A)
-	return !task_busy(src) && !A.actor.incapacitated()
+	return !work_busy(src) && !A.actor.incapacitated()
 
 /// Why not_busy_and_actor_able refuses.
 /obj/machinery/wheel_of_fortune/proc/not_busy_refusal(datum/act/op/A)
-	if(task_busy(src))
+	if(work_busy(src))
 		return "the wheel of fortune is already spinning!"
 	return "you can't do that right now"
 
@@ -538,7 +538,7 @@ TRACKED(/obj/machinery/wheel_of_fortune, lottery_sale)
 /obj/machinery/wheel_of_fortune/proc/insert_chip(obj/item/spacecasinocash/cashmoney, mob/user)
 	if(!user.client)
 		return
-	if (task_busy(src))
+	if (work_busy(src))
 		to_chat(user,span_notice("The Wheel of Fortune is busy, wait for it to be done to buy a lottery ticket."))
 		return
 	if(cashmoney.worth < lottery_price)
@@ -560,7 +560,7 @@ TRACKED(/obj/machinery/wheel_of_fortune, lottery_sale)
 	var/result = 0
 
 	if(mode == "not_lottery")
-		task_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
+		hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 		icon_state = "wheel_of_fortune_spinning"
 		result = rand(1,interval)
 
@@ -571,7 +571,7 @@ TRACKED(/obj/machinery/wheel_of_fortune, lottery_sale)
 			visible_message(span_notice("There are no tickets in the system!"))
 			return
 
-		task_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
+		hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 		icon_state = "wheel_of_fortune_spinning"
 		result = pick(lottery_tickets)
 

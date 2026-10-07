@@ -579,20 +579,18 @@ CAPABILITIES(/datum/ai_brain)
 /datum/ai_brain/proc/is_busy()
 	if(waits_on_op())
 		return TRUE
-	return holder ? task_busy(holder) : FALSE
+	return holder ? (work_busy(holder) || task_busy(holder)) : FALSE
 
 /// An AI mob starts an ability whose later steps are timers: a hold task claims the mob, so its
 /// brain stops choosing, until ai_busy_end() or `cap` runs out. No-op without an AI.
 /mob/living/proc/ai_busy_begin(cap = 1 MINUTE)
 	if(!ai_brain)
 		return
-	return task_hold_busy(src, cap)
+	return hold_busy(src, cap)
 
 /// Ends the hold ai_busy_begin() started (a timed action's own claim ends with its task).
 /mob/living/proc/ai_busy_end()
-	var/datum/task/T = task_claiming(src)
-	if(istype(T, /datum/task/hold))
-		task_cancel(T, "done")
+	release_busy(src)
 
 /// the active_target this refers to (a relation view: null once it is deleted).
 /datum/ai_brain/proc/active_target() as /atom

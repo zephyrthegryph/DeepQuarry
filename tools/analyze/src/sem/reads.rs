@@ -937,7 +937,8 @@ impl<'a, 'e> Walk<'a, 'e> {
         if sig.is_object() || sig.is_list() {
             let mut hops = v.hops.clone();
             hops.push(name.to_string());
-            if !is_rel && sig.is_object() {
+            if !is_rel && sig.is_object() && self.mute == 0 {
+                // (Inside read_once() nothing is subscribed, so a hop that does not subscribe is not a finding.)
                 // Followed anyway (the reads stay complete); flagged so classification can say why a hop does not subscribe.
                 let msg = format!("hop through `{}` ({}) which is not a declared relation", name, owner);
                 self.diag("hop_not_relation", &rel, line, msg);

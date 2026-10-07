@@ -380,9 +380,19 @@ whose body ends in `task_timed(...)`) or inside a legacy `attack*()` override. T
 | a legacy `attack()` / `attack_hand()` / `attackby()` that starts the task | an `op("key", hand() / item(T) / in_hand() / tool(Q) / menu(), ...)` in the type's `CAPABILITIES`; the override is deleted |
 | a bot or script starting the action | `op("key", ai(), wait(...), then(...))` and `perform_op(user, target, "key", origin = ORIGIN_SYSTEM)` |
 
-**What changes by itself (documented once, `intended_changes.md`, "Timed actions as ops"):** a second input by the same player stops the first wait ("You stop what you
-were doing.") and starts the new one, where the task refused the second on the same target; a wait on a physical binding holds the actor's hands and body; a
-short `stack()` is no candidate (the click falls through) where the handler said "You need N"; a sound played at the start plays at the end (`plays()`).
+**What does not change.** Exclusivity is `claims()` and nothing else: an op that declares none holds nothing, and a second input from the same player does not
+stop the first (the old task refused a second action on the same target; an op that must not be run twice says `claims()`). The start message, the start sound and
+a start-time effect (`begins()`, `plays(SFX, at_start = TRUE)`, `starts(PROC_REF(x))`) happen when the wait starts, not at the end. A bot or mob doing a job is an
+`ai()` op (`perform_op(actor, target, key, null, ORIGIN_AI, AUTH_AI)` or `ORIGIN_SYSTEM`): the wait registers a pending op of its actor and keeps the default
+keeps (`TARGET_PRESENT`, `STAY`), so a target carried off or a mob that moves ends the work. A tool act that refused a state and ended the click
+(`ITEM_INTERACT_BLOCKING`) is an op of the same tool with a `when()` for that state and `needs(req(PROC_REF(never), silent = TRUE))`: the tool does not fall through to a hit.
+A line that names the held item, the victims or a material is `begins(PROC_REF(x))` with `x` returning `msg_text(self, others, blind)`. A "no" to a
+prompt that ends the op is `asks(..., ends_on_no = TRUE)`. A field that must not change during a wait is `captures(nameof(v), resume = CANCEL_IF_CHANGED)`.
+A thing that is busy but is not an actor is `hold_busy()` / `work_busy()` / `release_busy()` (code/library/jobs/busy.dm); "is its `every()` armed" is `every_running()`.
+
+**What a `when()` or `req()` may read.** A tracked var (make a plain var `TRACKED` and write it through its setter when it changes in play), a stat, a relation, or
+an accessor with `READS_AS`. A value that is effectively fixed while a click is being decided (where an item lies, a player's key, the config, what stands on a
+tile) is wrapped in `read_once(x)`. Do not move a read into a global proc with a blanket `READS_FROM()`, and do not rename a var to get past the lint.
 
 **Recipe, per file.** (1) Read the type's `CAPABILITIES`, every proc named in it, and every caller of the legacy proc. (2) Write the pin first if `dq_timed_pin`
 has no assertion for the shape: drive `test_click(user, target, held)`, `test_time()`, read `test_chat_of(user)`; run it on the legacy form. (3) Convert; delete the

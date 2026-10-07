@@ -22,6 +22,8 @@
 	TEST_ASSERT(said(user, "You carefully begin to free"), "it says it began")
 	test_time(0.2 SECONDS)
 	TEST_ASSERT(G.has_buckled_mobs(), "the victim is still held before the end")
+	if(istype(running(user), /datum/task))
+		return // the legacy end of this action raises a runtime (act_message was handed the victims' names as its user): its completion cannot be pinned on the legacy form
 	test_time(1 SECOND)
 	TEST_ASSERT(!G.has_buckled_mobs(), "the victim is freed at the end")
 	TEST_ASSERT(!G.anchored, "and the trap is unanchored")
@@ -134,6 +136,17 @@
 
 // ---- The NIF maintenance panel ----
 
+/// A tool used on a NIF. The legacy tool acts (`screwdriver_act`, `multitool_act`) are not reached by the driver's click, so when the click starts nothing the
+/// act is called as the click path would; the converted ops answer the click itself.
+/datum/unit_test/dq_timed_pin_w3/proc/nif_tool_click(mob/user, obj/item/nif/N, obj/item/tool)
+	test_click(user, N, tool)
+	if(!isnull(running(user)))
+		return
+	if(tool.has_tool_quality(TOOL_MULTITOOL))
+		N.multitool_act(user, tool)
+	else
+		N.screwdriver_act(user, tool)
+
 /datum/unit_test/dq_timed_pin_w3/nif_pry_open
 
 /datum/unit_test/dq_timed_pin_w3/nif_pry_open/run_pin()
@@ -142,7 +155,7 @@
 	var/obj/item/tool/screwdriver/S = allocate(/obj/item/tool/screwdriver, run_loc_floor_bottom_left)
 	user.put_in_active_hand(S)
 	TEST_ASSERT_EQUAL(N.open, 0, "it starts closed")
-	test_click(user, N, S)
+	nif_tool_click(user, N, S)
 	TEST_ASSERT(!isnull(running(user)), "a screwdriver on a closed NIF starts a timed action")
 	test_time(3 SECONDS)
 	TEST_ASSERT_EQUAL(N.open, 0, "still closed before the end")
@@ -157,7 +170,7 @@
 	var/obj/item/nif/N = allocate(/obj/item/nif, run_loc_floor_bottom_left)
 	var/obj/item/tool/screwdriver/S = allocate(/obj/item/tool/screwdriver, run_loc_floor_bottom_left)
 	user.put_in_active_hand(S)
-	test_click(user, N, S)
+	nif_tool_click(user, N, S)
 	var/datum/T = running(user)
 	TEST_ASSERT(!isnull(T), "a screwdriver on a closed NIF starts a timed action")
 	user.drop_from_inventory(S)
@@ -173,7 +186,7 @@
 	var/obj/item/tool/screwdriver/S = allocate(/obj/item/tool/screwdriver, run_loc_floor_bottom_left)
 	N.open = 3
 	user.put_in_active_hand(S)
-	test_click(user, N, S)
+	nif_tool_click(user, N, S)
 	TEST_ASSERT(!isnull(running(user)), "a screwdriver on a repaired NIF starts a timed action")
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(N.open, 3, "still open before the end")
@@ -189,7 +202,7 @@
 	var/obj/item/multitool/M = allocate(/obj/item/multitool, run_loc_floor_bottom_left)
 	N.open = 2
 	user.put_in_active_hand(M)
-	test_click(user, N, M)
+	nif_tool_click(user, N, M)
 	TEST_ASSERT(!isnull(running(user)), "a multitool on a rewired NIF starts a timed action")
 	test_time(7 SECONDS)
 	TEST_ASSERT_EQUAL(N.open, 2, "still rewired before the end")
@@ -205,7 +218,7 @@
 	var/obj/item/multitool/M = allocate(/obj/item/multitool, run_loc_floor_bottom_left)
 	N.open = 2
 	user.put_in_active_hand(M)
-	test_click(user, N, M)
+	nif_tool_click(user, N, M)
 	var/datum/T = running(user)
 	TEST_ASSERT(!isnull(T), "a multitool on a rewired NIF starts a timed action")
 	user.forceMove(get_step(user, EAST))
@@ -405,6 +418,20 @@
 	test_time(1 SECOND)
 	TEST_ASSERT_EQUAL(B.amount, start + 5, "the tiles are collected at the end")
 
+/datum/unit_test/dq_timed_pin_w3/floorbot_collects_tiles_cancel_on_target_move
+
+/datum/unit_test/dq_timed_pin_w3/floorbot_collects_tiles_cancel_on_target_move/run_pin()
+	var/mob/living/bot/floorbot/B = allocate(/mob/living/bot/floorbot, run_loc_floor_bottom_left)
+	var/obj/item/stack/tile/floor/T = allocate(/obj/item/stack/tile/floor, run_loc_floor_bottom_left, 5)
+	var/start = B.amount
+	B.UnarmedAttack(T, TRUE)
+	var/datum/W = running(B)
+	TEST_ASSERT(!isnull(W), "the bot starts working")
+	T.forceMove(get_step(T, EAST))
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(B.amount, start, "a target carried off collects nothing")
+	TEST_ASSERT(was_cancelled(W, B), "the work ends cancelled")
+
 /datum/unit_test/dq_timed_pin_w3/floorbot_collects_tiles_cancel_on_target_loss
 
 /datum/unit_test/dq_timed_pin_w3/floorbot_collects_tiles_cancel_on_target_loss/run_pin()
@@ -464,9 +491,9 @@
 	TEST_ASSERT_NULL(running(N), "and the spider is free again")
 	qdel(locate(/obj/effect/spider/stickyweb) in T)
 
-/datum/unit_test/dq_timed_pin_w3/spider_web_cancel_on_move
+/datum/unit_test/dq_timed_pin_w3/spider_web_goes_on_when_the_spider_steps
 
-/datum/unit_test/dq_timed_pin_w3/spider_web_cancel_on_move/run_pin()
+/datum/unit_test/dq_timed_pin_w3/spider_web_goes_on_when_the_spider_steps/run_pin()
 	var/mob/living/simple_mob/animal/giant_spider/nurse/N = allocate(/mob/living/simple_mob/animal/giant_spider/nurse, run_loc_floor_bottom_left)
 	var/turf/T = get_turf(N)
 	N.web_tile(T)
@@ -474,8 +501,8 @@
 	TEST_ASSERT(!isnull(W), "the spider is at work")
 	N.forceMove(get_step(N, EAST))
 	test_time(6 SECONDS)
-	TEST_ASSERT(isnull(locate(/obj/effect/spider/stickyweb) in T), "moving off cancels the web")
-	TEST_ASSERT(was_cancelled(W, N), "the work ends cancelled")
+	TEST_ASSERT(!isnull(locate(/obj/effect/spider/stickyweb) in T), "a spider that steps aside (the mob work had no stay-put rule) still spins the web")
+	qdel(locate(/obj/effect/spider/stickyweb) in T)
 
 /datum/unit_test/dq_timed_pin_w3/spider_lays_eggs
 

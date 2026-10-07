@@ -198,12 +198,11 @@ CAPABILITIES(/obj/structure/flora/tree/pine/xmas/presents)
 
 /// Requirement: one present per player.
 /obj/structure/flora/tree/pine/xmas/presents/proc/can_take_present(datum/act/op/A)
-	return !present_taken(ckeys_that_took, A.actor)
+	return !read_once(present_taken(A.actor)) // a player's key is fixed while it plays
 
-/// Has `user`'s player already taken a present from the tree whose takers are `takers`?
-/proc/present_taken(list/takers, mob/user)
-	READS_FROM() // the actor's key is fixed while it plays; the takers come in as the argument
-	return user.ckey && LAZYACCESS(takers, user.ckey)
+/// Has `user`'s player already taken a present from this tree?
+/obj/structure/flora/tree/pine/xmas/presents/proc/present_taken(mob/user)
+	return user.ckey && LAZYACCESS(ckeys_that_took, user.ckey)
 
 MSG_DEF_SELF(xmas_presents/none_left, "There are no presents with your name on.")
 

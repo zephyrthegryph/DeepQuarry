@@ -55,5 +55,11 @@ human|/obj/item/card/id menu: Tear at
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
-keys: drag_buckle, resin_hand, silicon_open, tear, use_welder
+human|/obj/item/pickaxe menu: Dig
+human|/obj/item/pickaxe menu: Move To Top
+human|/obj/item/pickaxe menu: Tear at
+human|/obj/item/pickaxe menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pickaxe menu: Use
+human|/obj/item/pickaxe click: Click: Dig
+keys: dig, drag_buckle, resin_hand, silicon_open, tear, use_welder
 

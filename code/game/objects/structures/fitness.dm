@@ -52,15 +52,15 @@ CAPABILITIES(/obj/structure/fitness/weightlifter)
 
 /// Requirement: the person can lift right now.
 /obj/structure/fitness/weightlifter/proc/can_lift(datum/act/op/A)
-	return isnull(weightlift_refusal(A.actor, src))
+	return read_once(isnull(weightlift_refusal(A.actor))) // nutrition and weight are asked when the lift starts
 
 /obj/structure/fitness/weightlifter/proc/lift_refusal(datum/act/op/A)
-	return weightlift_refusal(A.actor, src)
+	return weightlift_refusal(A.actor)
 
-/// Why `user` can't use the weight machine `machine` now, or null: on it, fed, heavy enough, and nobody else on it.
-/proc/weightlift_refusal(mob/living/carbon/human/user, obj/structure/fitness/weightlifter/machine)
-	READS_FROM() // a body's place, nutrition and weight are asked when the lift starts; the lift itself claims the machine
-	if(user.loc != machine.loc)
+/// Why `user` can't use the weight machine now, or null: on it, fed, heavy enough, and nobody else on it.
+/obj/structure/fitness/weightlifter/proc/weightlift_refusal(mob/lifter)
+	var/mob/living/carbon/human/user = lifter
+	if(user.loc != loc)
 		return "You must be on the weight machine to use it."
 	if(user.nutrition < 70) // Set minimum nutrition to be the same as in fitness_machines_vr.dm
 		return "You need more energy to lift weights, go eat something."

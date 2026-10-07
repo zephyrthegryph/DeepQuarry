@@ -68,8 +68,8 @@ MSG_DEF(spider/laying, null, span_notice("%U% begins to lay a cluster of eggs.")
 MSG_DEF(spider/cocooning, null, span_notice("%U% begins to secrete a sticky substance around %T%."))
 
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/nurse)
-	op("spin_web", ai(), reach(REACH_RANGE(1)), claims(), begins(MSG(spider/webbing)), wait(5 SECONDS), then(PROC_REF(web_done)), on_interrupt(PROC_REF(work_interrupted)))
-	op("lay_eggs", ai(), reach(REACH_RANGE(1)), claims(), begins(MSG(spider/laying)), wait(5 SECONDS), then(PROC_REF(eggs_done)), on_interrupt(PROC_REF(work_interrupted)))
+	op("spin_web", ai(), reach(REACH_RANGE(1)), claims(), begins(MSG(spider/webbing)), wait(5 SECONDS, keeps = WAIT_KEEPS_DEFAULT & ~STAY), then(PROC_REF(web_done)), on_interrupt(PROC_REF(work_interrupted)))
+	op("lay_eggs", ai(), reach(REACH_RANGE(1)), claims(), begins(MSG(spider/laying)), wait(5 SECONDS, keeps = WAIT_KEEPS_DEFAULT & ~STAY), then(PROC_REF(eggs_done)), on_interrupt(PROC_REF(work_interrupted)))
 	op("spin_cocoon", ai(), reach(REACH_RANGE(1)), begins(MSG(spider/cocooning)), wait(5 SECONDS), then(PROC_REF(spin_cocoon_nurse_done)), on_interrupt(PROC_REF(spin_cocoon_nurse_failed)))
 
 // Webs target in a web if able to.

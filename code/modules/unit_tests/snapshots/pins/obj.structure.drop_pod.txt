@@ -15,7 +15,7 @@ human|/obj/item/tool/crowbar click: Click: Open
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Open
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench menu: Use wrench (refused: <span class='warning'>%T% hasn't been opened yet. Do that first.</span>)
 human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Open

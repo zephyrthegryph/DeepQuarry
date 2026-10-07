@@ -87,7 +87,7 @@ MSG_DEF_SELF(keycard_auth/unpowered, "this device is not powered")
 /obj/machinery/keycard_auth/proc/can_open_panel(mob/user, atom/target, obj/item/held)
 	if(user.stat || !operable())
 		return "this device is not powered"
-	if(user.IsAdvancedToolUser() && task_busy(src))
+	if(user.IsAdvancedToolUser() && work_busy(src))
 		return "this device is busy"
 	return TRUE
 
@@ -140,7 +140,7 @@ CAPABILITIES(/obj/machinery/keycard_auth)
 
 /obj/machinery/keycard_auth/proc/ui_gate(datum/act/op/A)
 	var/mob/user = A.actor
-	if(task_busy(src))
+	if(work_busy(src))
 		to_chat(user, "This device is busy.")
 		return FALSE
 	if(user.stat || !operable())
@@ -198,10 +198,10 @@ CAPABILITIES(/obj/machinery/keycard_auth)
 		return
 	rel_set(src, nameof(event_source), source)
 	// Busy for the confirmation window: a hold claims the device and closes the window when it ends.
-	task_release_busy(src, "new request")
+	release_busy(src, PROC_REF(receive_window_closed))
 	set_active(1)
 	icon_state = "auth_on"
-	task_hold_busy(src, confirm_delay, PROC_REF(receive_window_closed))
+	hold_busy(src, confirm_delay, PROC_REF(receive_window_closed))
 
 /obj/machinery/keycard_auth/proc/receive_window_closed()
 	rel_clear(src, nameof(event_source))

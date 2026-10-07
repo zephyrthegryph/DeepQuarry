@@ -5686,6 +5686,7 @@
 #include "code\engine\kernel\requests.dm"
 #include "code\engine\kernel\safe.dm"
 #include "code\engine\kernel\tasks.dm"
+#include "code\library\jobs\busy.dm"
 #include "code\library\jobs\mob_work.dm"
 #include "code\content\jobs\mob_work.dm"
 #include "code\engine\kernel\timed_task.dm"

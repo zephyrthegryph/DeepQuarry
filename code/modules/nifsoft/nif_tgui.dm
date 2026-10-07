@@ -35,6 +35,9 @@ CAPABILITIES(/obj/item/nif)
 	op("rewire_intact", stack(/obj/item/stack/cable_coil, 3), when(PROC_REF(wiring_intact)), priority(OP_PRIORITY_PART + 1), wait(0), then(PROC_REF(wiring_checked)), says(MSG(nif/wiring_intact)))
 	op("pry_open", tool(TOOL_SCREWDRIVER), label("Pry open"), when(req_is(nameof(open), 0)), wait(4 SECONDS), then(PROC_REF(pry_open_done)), says(MSG(nif/pried_open)))
 	op("reseal", tool(TOOL_SCREWDRIVER), label("Re-seal"), when(req_is(nameof(open), 3)), priority(OP_PRIORITY_PART + 1), wait(3 SECONDS), then(PROC_REF(reseal_done)), says(MSG(nif/resealed)))
+	// the legacy screwdriver_act / multitool_act refused every other state and ended the click: so do these (a screwdriver does not fall through to a hit)
+	op("screwdriver_blocked", tool(TOOL_SCREWDRIVER), when(PROC_REF(screwdriver_blocked)), priority(OP_PRIORITY_PART + 2), needs(req(PROC_REF(never), silent = TRUE)))
+	op("multitool_blocked", tool(TOOL_MULTITOOL), when(PROC_REF(multitool_blocked)), priority(OP_PRIORITY_PART + 1), needs(req(PROC_REF(never), silent = TRUE)))
 	op("reset_circuits", tool(TOOL_MULTITOOL), label("Reset the circuits"), when(req_is(nameof(open), 2)), wait(8 SECONDS), then(PROC_REF(reset_circuits_done)), says(MSG(nif/reset)))
 
 /**
@@ -220,3 +223,15 @@ CAPABILITIES(/obj/item/nif)
 /// The NIF's HUD menu helper, owned by the NIF (created on implant, deleted on unimplant or with the NIF).
 /obj/item/nif/proc/menu() as /datum/nif_menu
 	return QDELETED(menu_ref) ? null : menu_ref
+
+/// The NIF's case is neither sealed nor sealed-and-repaired: the screwdriver has nothing to do (and does nothing else).
+/obj/item/nif/proc/screwdriver_blocked(datum/act/op/A)
+	return open != 0 && open != 3
+
+/// The circuits are not open for a reset: the multitool has nothing to do.
+/obj/item/nif/proc/multitool_blocked(datum/act/op/A)
+	return open != 2
+
+/// A requirement that never holds: the blocked click is refused without a word, as the legacy tool act ended it.
+/obj/item/nif/proc/never(datum/act/op/A)
+	return FALSE

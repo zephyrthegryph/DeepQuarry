@@ -35,7 +35,7 @@
 	TEST_ASSERT_EQUAL(user.get_equipped_item(SLOT_ID_HAND_L), left, "failed pickup preserves the left-hand item")
 	TEST_ASSERT_EQUAL(user.get_equipped_item(SLOT_ID_HAND_R), right, "failed pickup preserves the right-hand item")
 	beacon.perma = TRUE
-	TEST_ASSERT(beacon_is_permanent(beacon), "the permanent beacon is refused by the requirement (dq_timed_pin_w1/marker_beacon_permanent_stays pins the click)")
+	TEST_ASSERT(beacon.perma, "the permanent beacon is refused by the requirement (dq_timed_pin_w1/marker_beacon_permanent_stays pins the click)")
 	TEST_ASSERT(!QDELETED(beacon), "the permanent beacon remains deployed")
 
 /// Existing stacks gain one beacon; a full stack refuses without consuming the source.

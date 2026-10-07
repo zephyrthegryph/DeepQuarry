@@ -364,7 +364,7 @@ CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
 	op("bottle", item(/obj/item/reagent_containers/glass/cooler_bottle), needs(req(PROC_REF(cooler_bolted), because = MSG(water_cooler/unbolted)), req(PROC_REF(cooler_no_bottle), because = MSG(water_cooler/has_bottle))),
 		begins(MSG(water_cooler/screwing)), wait(2 SECONDS), then(PROC_REF(bottle_done)))
 	op("cupholder", stack(/obj/item/stack/material/plastic, 1), needs(req(PROC_REF(cooler_bolted), because = MSG(water_cooler/unbolted)), req(PROC_REF(cooler_no_cupholder), because = MSG(water_cooler/has_cupholder))),
-		begins(MSG(water_cooler/attaching)), wait(2 SECONDS), then(PROC_REF(cupholder_done)))
+		begins(MSG(water_cooler/attaching)), plays(SFX_ITEMS_DECONSTRUCT, at_start = TRUE), wait(2 SECONDS), then(PROC_REF(cupholder_done)))
 
 /obj/structure/reagent_dispensers/water_cooler/Initialize(mapload)
 	. = ..()
@@ -413,7 +413,6 @@ MSG_DEF_SELF(water_cooler/has_cupholder, span_warning("There is already a cup di
 	if(cupholder || !anchored)
 		return
 	add_fingerprint(user)
-	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	to_chat(user, span_notice("You attach a cup dispenser onto the water-cooler."))
 	set_cupholder(1)
 

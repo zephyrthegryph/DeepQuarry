@@ -59,13 +59,17 @@
 	var/datum/entry/part/says/says
 	var/datum/entry/part/begins/begins
 	var/datum/entry/part/plays/plays
+	/// plays(SFX, at_start = TRUE): played when the first wait starts.
+	var/datum/entry/part/plays/start_plays
+	/// starts(): the handlers that run when the first wait starts.
+	var/list/starts
 	var/datum/entry/part/verbs/verb_pair
 	var/datum/entry/part/flash/flash
 	var/log_type
 	var/list/delayed
 	var/quiet = FALSE
-	/// claims(mask): what the op holds while it waits (CLAIM_*); null when it declares none (a timed wait then holds the actor's hands and body,
-	/// a question holds nothing). claims() alone is CLAIM_ALL, claims(0) opts out.
+	/// claims(mask): what the op holds while it waits (CLAIM_*); null when it declares none (it holds nothing: any number of ops may wait at once,
+	/// and only overlapping claims conflict). claims() alone is CLAIM_ALL.
 	var/claim_mask
 	var/passes = FALSE
 	/// silent_wait(): the wait draws no progress bar.
@@ -402,7 +406,7 @@
 			tier = max(tier, F.yielded_tier())
 		P.tier = tier
 	if(length(P.captured) && !length(P.steps))
-		op_problem(T, P, report, RULE_OP_PART, "captures() on an op with no asks() or confirms()", "captures() snapshots fields when the op first suspends at a workflow step: an op without one has nothing to capture")
+		op_problem(T, P, report, RULE_OP_PART, "captures() on an op with no wait(), asks() or confirms()", "captures() snapshots fields when the op first suspends at a workflow step: an op without one has nothing to capture")
 	for(var/requirement in P.needs)
 		var/datum/entry/part/req/R = requirement
 		if(istype(R))
@@ -526,7 +530,13 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 	P.begins = src // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 
 /datum/entry/part/plays/compile(datum/op_plan/P, level)
+	if(src.args["at_start"])
+		P.start_plays = src // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+		return
 	P.plays = src // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+
+/datum/entry/part/starts/compile(datum/op_plan/P, level)
+	LAZYADD(P.starts, src.args["handler"])
 
 /datum/entry/part/verbs/compile(datum/op_plan/P, level)
 	P.verb_pair = src // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)

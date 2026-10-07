@@ -86,16 +86,11 @@ MSG_DEF_SELF(gravemarker/occupied, "There's already something there.")
 
 /// Requirement: the actor stands on a turf.
 /obj/item/material/gravemarker/proc/on_turf(datum/act/op/A)
-	return atom_on_turf(A.actor)
-
-/// The grave marker where `A` stands, or null.
-/proc/grave_marker_at(atom/A)
-	READS_FROM() // what stands where an atom does is asked when the op starts
-	return locate(/obj/structure/gravemarker, A.loc)
+	return read_once(isturf(A.actor.loc)) // where the actor stands is asked when the click is made
 
 /// Requirement: no marker stands where the actor does.
 /obj/item/material/gravemarker/proc/spot_free(datum/act/op/A)
-	return !grave_marker_at(A.actor)
+	return !read_once(locate(/obj/structure/gravemarker, A.actor.loc)) // what stands where the actor does is asked when the click is made
 
 /obj/item/material/gravemarker/proc/place_done(datum/act/op/A)
 	var/mob/user = A.actor

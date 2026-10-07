@@ -155,18 +155,12 @@ CAPABILITIES(/obj/structure/marker_beacon)
 
 MSG_DEF_SELF(marker_beacon/picking_up, span_notice("You start picking %T% up..."))
 
-/// TRUE when the beacon is a permanent one (asked when it is picked up).
-/proc/beacon_is_permanent(obj/structure/marker_beacon/B)
-	READS_FROM() // whether a beacon is permanent is asked when it is picked up
-	return B.perma
-
 /// Requirement: a permanent beacon stays.
 /obj/structure/marker_beacon/proc/removable(datum/act/op/A)
-	return !beacon_is_permanent(src)
+	return !read_once(perma) // a beacon is permanent from the day it is made
 
 /// How long picking the beacon up takes.
 /obj/structure/marker_beacon/proc/remove_wait(datum/act/op/A)
-	READS_FROM() // the pick-up time is read when the wait starts
 	return remove_speed
 
 /// An empty hand takes the beacon up after a wait (a permanent one stays).

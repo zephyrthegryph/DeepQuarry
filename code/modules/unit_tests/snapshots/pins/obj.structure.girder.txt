@@ -80,5 +80,13 @@ human|/obj/item menu: Prepare for reinforcing (refused: needs a screwdriver)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: drag_buckle, hulk_smash, item
+human|/obj/item/pickaxe/plasmacutter menu: Disassemble the girder (refused: needs a wrench)
+human|/obj/item/pickaxe/plasmacutter menu: Dislodge the girder (refused: needs a crowbar)
+human|/obj/item/pickaxe/plasmacutter menu: Move To Top
+human|/obj/item/pickaxe/plasmacutter menu: Prepare for reinforcing (refused: needs a screwdriver)
+human|/obj/item/pickaxe/plasmacutter menu: Slice apart
+human|/obj/item/pickaxe/plasmacutter menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pickaxe/plasmacutter menu: Use
+human|/obj/item/pickaxe/plasmacutter click: Click: Slice apart
+keys: drag_buckle, hulk_smash, item, slice
 

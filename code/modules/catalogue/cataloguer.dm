@@ -56,7 +56,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
 /// Appearance reader: TRUE while a scan task holds the cataloguer.
 /obj/item/cataloguer/proc/appearance_busy()
-	return task_busy(src) ? TRUE : FALSE
+	return work_busy(src) ? TRUE : FALSE
 
 /// The look (the draw sweep: from its template).
 /obj/item/cataloguer/draw(datum/look/look)
@@ -65,7 +65,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
 /obj/item/cataloguer/afterattack(atom/target, mob/user, proximity_flag)
 	// Things that invalidate the scan immediately.
-	if(task_busy(src))
+	if(work_busy(src))
 		to_chat(user, span_warning("\The [src] is already scanning something."))
 		return
 
@@ -147,7 +147,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	if(target)
 		rel_set(src, nameof(partial_scanned), target)
 	partial_scan_time += world.time - scan_start_time // This is added to the existing value so two partial scans will add up correctly.
-	task_hold_busy(src, 0.3 SECONDS, TYPE_PROC_REF(/atom, update_icon)) // still busy while the box flashes red
+	hold_busy(src, 0.3 SECONDS, TYPE_PROC_REF(/atom, update_icon)) // still busy while the box flashes red
 	after(src, 0.3 SECONDS, PROC_REF(scan_cleanup_late), with = list(effects, target ? REF(target) : null, user ? REF(user) : null))
 
 /obj/item/cataloguer/proc/scan_cleanup_late(list/effects, target_ref, user_ref)
@@ -215,12 +215,12 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 // Gives everything capable of being scanned an outline for a brief moment.
 // Helps to avoid having to click a hundred things in a room for things that have an entry.
 /obj/item/cataloguer/proc/pulse_scan(mob/user)
-	if(task_busy(src))
+	if(work_busy(src))
 		to_chat(user, span_warning("\The [src] is busy doing something else."))
 		return
 
 	// Busy (a hold claims it) while the highlights are up.
-	if(istext(task_hold_busy(src, 2 SECONDS, TYPE_PROC_REF(/atom, update_icon))))
+	if(istext(hold_busy(src, 2 SECONDS, TYPE_PROC_REF(/atom, update_icon))))
 		return
 	play_sfx(src, SFX_MACHINES_BEEP)
 
@@ -272,7 +272,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 /obj/item/cataloguer/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	if(istype(W, /obj/item/card/id) && !task_busy(src))
+	if(istype(W, /obj/item/card/id) && !work_busy(src))
 		var/obj/item/card/id/ID = W
 		if(points_stored)
 			var/datum/money_account/account = get_account(ID.associated_account_number)
@@ -317,7 +317,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
 /// Requirement: TRUE, or why the cataloguer can't be folded or deployed.
 /obj/item/cataloguer/compact/proc/can_toggle_compact(mob/user, atom/target, obj/item/held)
-	if(task_busy(src))
+	if(work_busy(src))
 		return "\The [src] is currently scanning something"
 	return TRUE
 

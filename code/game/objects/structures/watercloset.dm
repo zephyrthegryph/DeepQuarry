@@ -49,7 +49,7 @@ CAPABILITIES(/obj/structure/toilet)
 	ref_one(nameof(swirlie_mob), /mob/living)
 	ref_one(nameof(teleplumb_dest))
 	op("use_wrench", tool(TOOL_WRENCH), wait(5 SECONDS), needs(req(PROC_REF(cistern_open), silent = TRUE), req(PROC_REF(not_refilling), because = MSG(toilet/refilling))), begins(MSG(toilet/dismantling)), then(PROC_REF(wrench_act_done)))
-	op("use_crowbar", tool(TOOL_CROWBAR), wait(3 SECONDS), begins(PROC_REF(crowbar_begins)), plays(SFX_EFFECTS_STONEDOOR_OPENCLOSE), then(PROC_REF(crowbar_act_done)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(3 SECONDS), begins(PROC_REF(crowbar_begins)), plays(SFX_EFFECTS_STONEDOOR_OPENCLOSE, at_start = TRUE), then(PROC_REF(crowbar_act_done)))
 	rolls(nameof(open), range_of(0, 1))   // the lid starts up or down
 	// the old attack_hand: slam the swirlie victim, loot the cistern (a person may take the teleplumbing crystal from an empty one, after a yes), or the lid
 	op("use", hand(), label("Use"),
@@ -133,11 +133,10 @@ READS_AS(/obj/structure/toilet/proc/cistern_loot_count, TOILET_CISTERN_KEY)
 
 /// A silicon's hand is its own: a cyborg uses the toilet only from its body, with a player in it.
 /obj/structure/toilet/proc/silicon_at_hand(datum/act/op/A)
-	return silicon_in_body(A.actor)
+	return read_once(silicon_in_body(A.actor)) // a player's presence is asked when the click is made
 
 /// Is `user` a silicon acting from its own body (not a cyborg remote viewing, or one with no player)?
-/proc/silicon_in_body(mob/user)
-	READS_FROM() // a player's presence and its remote view are not round state an op could watch
+/obj/structure/toilet/proc/silicon_in_body(mob/user)
 	return !(isrobot(user) && (!user.client || user.is_remote_viewing()))
 
 MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
@@ -1085,14 +1084,13 @@ MSG_DEF_SELF(sink/busy, "Someone's already washing here.")
 
 /// Requirement for washing: the hand the actor would wash with works.
 /obj/structure/sink/proc/hand_usable(datum/act/op/A)
-	return isnull(unusable_hand_name(A.actor))
+	return read_once(isnull(unusable_hand_name(A.actor))) // the limbs answer when asked
 
 /obj/structure/sink/proc/hand_refusal(datum/act/op/A)
 	return "You try to move your [unusable_hand_name(A.actor)], but cannot."
 
 /// The name of `user`'s active hand when it cannot be used, or null.
-/proc/unusable_hand_name(mob/user)
-	READS_FROM() // the body's limbs answer when asked; a wash that waits re-asks when it ends
+/obj/structure/sink/proc/unusable_hand_name(mob/user)
 	if(!ishuman(user))
 		return null
 	var/mob/living/carbon/human/H = user

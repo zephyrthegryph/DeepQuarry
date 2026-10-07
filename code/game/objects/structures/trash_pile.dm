@@ -80,11 +80,12 @@ CAPABILITIES(/obj/structure/trash_pile)
 
 /// Why a ghost may not become a mouse here, or null.
 /obj/structure/trash_pile/proc/mouse_refusal(datum/act/op/A)
-	return mouse_spawn_refusal(A.actor, get_turf(src))
+	return read_once(mouse_spawn_refusal(A.actor, get_turf(src))) // the config, the bans and the death time are asked when the click is made
 
 /// Why `user` may not spawn as a mouse at `T`, or null: the config, the ghost-role ban, respawn rules, the admin levels and the mouse respawn time.
+/// None of it is round state an op could watch (config, bans, a client's death time): it reads nothing the graph follows, and a requirement calls it inside read_once().
 /proc/mouse_spawn_refusal(mob/observer/user, turf/T)
-	READS_FROM() // the config, the bans and the client's death time are not round state an op could watch
+	READS_FROM()
 	if(CONFIG_GET(flag/disable_player_mice))
 		return "Spawning as a mouse is currently disabled."
 	if(jobban_isbanned(user, JOB_GHOSTROLES))

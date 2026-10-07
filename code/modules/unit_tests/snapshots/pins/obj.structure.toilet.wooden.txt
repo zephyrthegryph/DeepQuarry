@@ -28,7 +28,7 @@ human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Flush
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench menu: Use wrench (refused: )
 human|/obj/item/tool/wrench menu: Wooden item
 human|/obj/item/tool/wrench menu: Wooden touch
 human|/obj/item/tool/wrench menu: Yank the flush lever
