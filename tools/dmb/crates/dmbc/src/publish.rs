@@ -5,12 +5,12 @@
 
 use fs2::FileExt;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
-use std::collections::HashMap;
 use std::time::SystemTime;
 use xxhash_rust::xxh3::{xxh3_128, Xxh3};
 
@@ -149,15 +149,23 @@ struct BootVerification {
 fn boot_identity() -> Option<[u8; 16]> {
     #[link(name = "ntdll")]
     unsafe extern "system" {
-        fn NtQuerySystemInformation(class: u32, buffer: *mut std::ffi::c_void, length: u32, returned: *mut u32) -> i32;
+        fn NtQuerySystemInformation(
+            class: u32,
+            buffer: *mut std::ffi::c_void,
+            length: u32,
+            returned: *mut u32,
+        ) -> i32;
     }
     // SYSTEM_BOOT_ENVIRONMENT_INFORMATION (phnt/ntexapi.h, class 90) starts
     // with the boot GUID. Use an
     // aligned buffer large enough for the firmware type and boot flags too.
     let mut buffer = [0u64; 8];
     let mut returned = 0;
-    let status = unsafe { NtQuerySystemInformation(90, buffer.as_mut_ptr().cast(), 64, &mut returned) };
-    if status < 0 || returned < 16 { return None; }
+    let status =
+        unsafe { NtQuerySystemInformation(90, buffer.as_mut_ptr().cast(), 64, &mut returned) };
+    if status < 0 || returned < 16 {
+        return None;
+    }
     let mut id = [0u8; 16];
     id[..8].copy_from_slice(&buffer[0].to_ne_bytes());
     id[8..].copy_from_slice(&buffer[1].to_ne_bytes());
@@ -172,7 +180,8 @@ fn boot_identity() -> Option<[u8; 16]> {
 
 fn stable_pair_stamps(path: &Path) -> io::Result<Vec<crate::input_snapshot::Stamp>> {
     use crate::input_snapshot::SnapshotProvider;
-    ["pair.json", "deepquarry.dmb", "deepquarry.rsc"].iter()
+    ["pair.json", "deepquarry.dmb", "deepquarry.rsc"]
+        .iter()
         .map(|name| crate::input_snapshot::FileSystemInputs.stamp(&path.join(name)))
         .collect()
 }
@@ -183,10 +192,20 @@ impl PairStore {
     pub fn open(root: impl AsRef<Path>) -> io::Result<Self> {
         fs::create_dir_all(root.as_ref())?;
         let root = fs::canonicalize(root)?;
-        for name in ["pairs", "resources", "sessions", "temporary", "quarantine", "verified"] {
+        for name in [
+            "pairs",
+            "resources",
+            "sessions",
+            "temporary",
+            "quarantine",
+            "verified",
+        ] {
             fs::create_dir_all(root.join(name))?;
         }
-        Ok(Self { root, verified: Mutex::new(HashMap::new()) })
+        Ok(Self {
+            root,
+            verified: Mutex::new(HashMap::new()),
+        })
     }
 
     /// First use after a boot hashes the pair. Later processes may reuse an
@@ -205,9 +224,14 @@ impl PairStore {
         let stable = stable_pair_stamps(&source)?;
         let receipt_path = self.root.join("verified").join(format!("{id:032x}.json"));
         if !exact {
-            let memo = self.verified.lock().map_err(|_| invalid("pair verification lock poisoned"))?;
+            let memo = self
+                .verified
+                .lock()
+                .map_err(|_| invalid("pair verification lock poisoned"))?;
             if let Some((pair, old)) = memo.get(&id) {
-                if *old == stable && stable.iter().all(|stamp| stamp.file_id.is_some()) { return Ok(pair.clone()); }
+                if *old == stable && stable.iter().all(|stamp| stamp.file_id.is_some()) {
+                    return Ok(pair.clone());
+                }
             }
             if let Some(boot) = boot {
                 if stable.iter().all(|stamp| stamp.file_id.is_some()) {
@@ -215,13 +239,36 @@ impl PairStore {
                         let mut bytes = Vec::new();
                         let read = file.take(65537).read_to_end(&mut bytes);
                         if read.is_ok() && bytes.len() <= 65536 {
-                            if let Ok(receipt) = serde_json::from_slice::<BootVerification>(&bytes) {
-                                let canonical = OutputPair::from_hashes(receipt.pair.dmb_bytes, receipt.pair.dmb_hash, receipt.pair.rsc_bytes, receipt.pair.rsc_hash);
-                                if receipt.schema == 1 && receipt.boot == boot && receipt.pair.id == id && receipt.pair == canonical && receipt.stamps == stable && stable[1].size == receipt.pair.dmb_bytes && stable[2].size == receipt.pair.rsc_bytes {
-                                    let manifest: OutputPair = serde_json::from_slice(&fs::read(source.join("pair.json"))?).map_err(invalid)?;
-                                    if manifest == receipt.pair && stable_pair_stamps(&source)? == stable {
+                            if let Ok(receipt) = serde_json::from_slice::<BootVerification>(&bytes)
+                            {
+                                let canonical = OutputPair::from_hashes(
+                                    receipt.pair.dmb_bytes,
+                                    receipt.pair.dmb_hash,
+                                    receipt.pair.rsc_bytes,
+                                    receipt.pair.rsc_hash,
+                                );
+                                if receipt.schema == 1
+                                    && receipt.boot == boot
+                                    && receipt.pair.id == id
+                                    && receipt.pair == canonical
+                                    && receipt.stamps == stable
+                                    && stable[1].size == receipt.pair.dmb_bytes
+                                    && stable[2].size == receipt.pair.rsc_bytes
+                                {
+                                    let manifest: OutputPair = serde_json::from_slice(&fs::read(
+                                        source.join("pair.json"),
+                                    )?)
+                                    .map_err(invalid)?;
+                                    if manifest == receipt.pair
+                                        && stable_pair_stamps(&source)? == stable
+                                    {
                                         drop(memo);
-                                        self.verified.lock().map_err(|_| invalid("pair verification lock poisoned"))?.insert(id, (manifest.clone(), stable));
+                                        self.verified
+                                            .lock()
+                                            .map_err(|_| {
+                                                invalid("pair verification lock poisoned")
+                                            })?
+                                            .insert(id, (manifest.clone(), stable));
                                         return Ok(manifest);
                                     }
                                 }
@@ -235,16 +282,25 @@ impl PairStore {
         if pair_stamps(&source)? != stamps || stable_pair_stamps(&source)? != stable {
             return Err(invalid("immutable pair changed during verification"));
         }
-        self.verified.lock().map_err(|_| invalid("pair verification lock poisoned"))?
+        self.verified
+            .lock()
+            .map_err(|_| invalid("pair verification lock poisoned"))?
             .insert(id, (pair.clone(), stable.clone()));
         if let Some(boot) = boot {
             if stable.iter().all(|stamp| stamp.file_id.is_some()) {
-                let receipt = BootVerification { schema: 1, boot, pair: pair.clone(), stamps: stable };
+                let receipt = BootVerification {
+                    schema: 1,
+                    boot,
+                    pair: pair.clone(),
+                    stamps: stable,
+                };
                 // A cache receipt failure must not turn a validated pair into a
                 // failed compilation. The next acquisition hashes it again.
                 if let Ok(directory) = self.temporary("verification") {
                     let temp = directory.join("receipt.json");
-                    if write_json(&temp, &receipt).is_ok() { let _ = atomic_replace(&temp, &receipt_path); }
+                    if write_json(&temp, &receipt).is_ok() {
+                        let _ = atomic_replace(&temp, &receipt_path);
+                    }
                     let _ = fs::remove_file(&temp);
                     let _ = fs::remove_dir(&directory);
                 }
@@ -321,6 +377,7 @@ impl PairStore {
         }
         let temp = self.temporary("pair")?;
         fs::write(temp.join("deepquarry.dmb"), dmb)?;
+        dm_profile::record_io(0, dmb.len() as u64, None);
         #[cfg(test)]
         publication_fault("pair_dmb_written")?;
         let resource = self
@@ -336,6 +393,7 @@ impl PairStore {
                 rsc.ok_or_else(|| invalid("shared RSC identity is absent from this store"))?;
             let staged = self.temporary("resource")?.join("archive.rsc");
             fs::write(&staged, rsc)?;
+            dm_profile::record_io(0, rsc.len() as u64, None);
             #[cfg(test)]
             publication_fault("resource_written")?;
             if file_identity(&staged)? != (pair.rsc_bytes, pair.rsc_hash) {
@@ -349,7 +407,8 @@ impl PairStore {
             publication_fault("resource_renamed")?;
         }
         if fs::hard_link(&resource, temp.join("deepquarry.rsc")).is_err() {
-            fs::copy(&resource, temp.join("deepquarry.rsc"))?;
+            let copied = fs::copy(&resource, temp.join("deepquarry.rsc"))?;
+            dm_profile::record_io(copied, copied, None);
         }
         write_json(&temp.join("pair.json"), &pair)?;
         #[cfg(test)]
@@ -453,10 +512,18 @@ impl PairStore {
         let _lock = self.lock()?;
         let source = self.root.join("pairs").join(format!("{id:032x}"));
         let pair = self.verify_locked(id, false)?;
-        replace_copy(&source.join("deepquarry.rsc"), rsc, (pair.rsc_bytes, pair.rsc_hash))?;
+        replace_copy(
+            &source.join("deepquarry.rsc"),
+            rsc,
+            (pair.rsc_bytes, pair.rsc_hash),
+        )?;
         #[cfg(test)]
         publication_fault("install_rsc_replaced")?;
-        replace_copy(&source.join("deepquarry.dmb"), dmb, (pair.dmb_bytes, pair.dmb_hash))?;
+        replace_copy(
+            &source.join("deepquarry.dmb"),
+            dmb,
+            (pair.dmb_bytes, pair.dmb_hash),
+        )?;
         #[cfg(test)]
         publication_fault("install_dmb_replaced")?;
         let staged = temporary_file(marker)?;
@@ -488,6 +555,7 @@ fn temporary_file(destination: &Path) -> io::Result<PathBuf> {
 }
 
 fn replace_copy(source: &Path, destination: &Path, expected: (u64, u128)) -> io::Result<()> {
+    let _profile = dm_profile::stage("publication.install_copy");
     let staged = temporary_file(destination)?;
     {
         let mut input = File::open(source)?;
@@ -495,7 +563,8 @@ fn replace_copy(source: &Path, destination: &Path, expected: (u64, u128)) -> io:
             .write(true)
             .truncate(true)
             .open(&staged)?;
-        io::copy(&mut input, &mut output)?;
+        let copied = io::copy(&mut input, &mut output)?;
+        dm_profile::record_io(copied, copied, None);
         #[cfg(test)]
         publication_fault("install_copy_staged")?;
     }
@@ -546,6 +615,7 @@ fn invalid(error: impl std::fmt::Display) -> io::Error {
 }
 
 fn file_identity(path: &Path) -> io::Result<(u64, u128)> {
+    let _profile = dm_profile::stage("publication.authenticate_file");
     let mut file = File::open(path)?;
     let mut hasher = Xxh3::new();
     let mut bytes = 0u64;
@@ -556,16 +626,20 @@ fn file_identity(path: &Path) -> io::Result<(u64, u128)> {
             break;
         }
         bytes += count as u64;
+        dm_profile::record_io(count as u64, 0, None);
         hasher.update(&buffer[..count]);
     }
     Ok((bytes, hasher.digest128()))
 }
 
 fn pair_stamps(path: &Path) -> io::Result<Vec<(u64, SystemTime)>> {
-    ["pair.json", "deepquarry.dmb", "deepquarry.rsc"].iter().map(|name| {
-        let metadata = fs::metadata(path.join(name))?;
-        Ok((metadata.len(), metadata.modified()?))
-    }).collect()
+    ["pair.json", "deepquarry.dmb", "deepquarry.rsc"]
+        .iter()
+        .map(|name| {
+            let metadata = fs::metadata(path.join(name))?;
+            Ok((metadata.len(), metadata.modified()?))
+        })
+        .collect()
 }
 
 fn validate_directory(path: &Path, id: u128) -> io::Result<OutputPair> {
@@ -593,7 +667,11 @@ mod tests {
         let pair = store.publish(1, b"program", b"assets").unwrap();
         assert_eq!(store.verify(pair.id, false).unwrap(), pair);
         assert_eq!(store.verify(pair.id, false).unwrap(), pair);
-        let path = store.root.join("pairs").join(pair.name()).join("deepquarry.dmb");
+        let path = store
+            .root
+            .join("pairs")
+            .join(pair.name())
+            .join("deepquarry.dmb");
         let mut permissions = fs::metadata(&path).unwrap().permissions();
         permissions.set_readonly(false);
         fs::set_permissions(&path, permissions).unwrap();
@@ -837,13 +915,20 @@ mod tests {
         let next = PairStore::open(&store.root).unwrap();
         assert_eq!(next.verify(pair.id, false).unwrap(), pair);
         assert_eq!(next.verify(pair.id, true).unwrap(), pair);
-        let path = store.root.join("pairs").join(pair.name()).join("deepquarry.dmb");
+        let path = store
+            .root
+            .join("pairs")
+            .join(pair.name())
+            .join("deepquarry.dmb");
         let replaced = path.with_extension("replacement");
         fs::write(&replaced, b"corrupt!").unwrap();
         fs::rename(&path, path.with_extension("old")).unwrap();
         fs::rename(&replaced, &path).unwrap();
         assert!(next.verify(pair.id, false).is_err());
-        assert!(PairStore::open(&store.root).unwrap().verify(pair.id, false).is_err());
+        assert!(PairStore::open(&store.root)
+            .unwrap()
+            .verify(pair.id, false)
+            .is_err());
     }
 
     #[test]

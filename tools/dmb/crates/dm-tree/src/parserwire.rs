@@ -146,7 +146,7 @@ pub(super) fn decode_with_facts(
     bytes: &[u8],
     source: &str,
 ) -> Option<(Vec<Item>, Vec<Diagnostic>, Option<Vec<u8>>)> {
-    let payload: Payload = dm_wire::decode(VERSION, bytes, 4 * 1024 * 1024).ok()?;
+    let payload: Payload = dm_wire::decode(VERSION, bytes, bytes.len()).ok()?;
     if payload.version != VERSION {
         return None;
     }
@@ -191,7 +191,7 @@ mod tests {
             message: "preserved diagnostic".into(),
         }];
         let bytes = encode_with_facts(&items, &errors, 0, Some(vec![1, 2, 3])).unwrap();
-        let owned: Payload = dm_wire::decode(VERSION, &bytes, 4 * 1024 * 1024).unwrap();
+        let owned: Payload = dm_wire::decode(VERSION, &bytes, bytes.len()).unwrap();
         assert_eq!(bytes, dm_wire::encode(VERSION, &owned).unwrap());
         let (decoded, diagnostics, facts) = decode_with_facts(&bytes, source).unwrap();
         assert_eq!(decoded, items);

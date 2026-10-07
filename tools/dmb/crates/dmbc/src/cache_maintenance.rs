@@ -1,23 +1,31 @@
 //! Explicit maintenance uses the same typed admission boundaries as reuse.
-use std::{path::Path, time::{Duration, SystemTime}};
+use std::{
+    path::Path,
+    time::{Duration, SystemTime},
+};
 fn validate(key: dm_cache::RecordKey, bytes: &[u8], _: &[(u64, &[u8])]) -> Result<(), String> {
-    use dm_preprocess::regions::{DirectiveRecord, ExpansionRecord, DIRECTIVE_VERSION, EXPANSION_VERSION};
+    use dm_preprocess::regions::{
+        DirectiveRecord, ExpansionRecord, DIRECTIVE_VERSION, EXPANSION_VERSION,
+    };
     match key.stage {
         1 if key.version == EXPANSION_VERSION => {
-            for entry in dm_cache::decode_variants(bytes)? { ExpansionRecord::from_bytes(entry)?; }
+            for entry in dm_cache::decode_variants(bytes)? {
+                ExpansionRecord::from_bytes(entry)?;
+            }
             Ok(())
         }
         2 if key.version == crate::lowering_memo::PROCEDURE_VERSION => {
-            for entry in dm_cache::decode_variants(bytes)? { crate::lowering_memo_wire::validate(entry)?; }
+            for entry in dm_cache::decode_variants(bytes)? {
+                crate::lowering_memo_wire::validate(entry)?;
+            }
             Ok(())
         }
         3 => crate::map_memo::MapMemo::validate_cache_payload(key.version, bytes),
         4 if key.version == DIRECTIVE_VERSION => {
-            for entry in dm_cache::decode_variants(bytes)? { DirectiveRecord::from_bytes(entry)?; }
+            for entry in dm_cache::decode_variants(bytes)? {
+                DirectiveRecord::from_bytes(entry)?;
+            }
             Ok(())
-        }
-        7 if matches!(key.version, 4 | 5) => {
-            crate::tree_memo::DiskTreeMemo::validate_cache_payload(key.version, bytes)
         }
         8 if key.version == dm_preprocess::regions::FRAGMENT_VERSION => {
             for entry in dm_cache::decode_variants(bytes)? {

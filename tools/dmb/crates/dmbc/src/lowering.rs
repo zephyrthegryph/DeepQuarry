@@ -254,6 +254,7 @@ fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
             let results = &results;
             let next = &next;
             handles.push(scope.spawn(move || loop {
+                let _profile = dm_profile::stage("cold.procedure_lowering");
                 let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 let Some(slice) = slices.get(index) else {
                     break;

@@ -84,7 +84,11 @@ impl PairStore {
             if old && !protected {
                 if unlink_pair(&path).is_ok() {
                     result.pairs += 1;
-                    let _ = fs::remove_file(self.root.join("verified").join(format!("{:032x}.json", pair.id)));
+                    let _ = fs::remove_file(
+                        self.root
+                            .join("verified")
+                            .join(format!("{:032x}.json", pair.id)),
+                    );
                     self.verified
                         .lock()
                         .map_err(|_| invalid("pair verification lock poisoned"))?

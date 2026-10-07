@@ -138,6 +138,19 @@ impl ProcedureMemo {
         self.publisher = Some(publisher);
         self
     }
+    fn wire_error(&self, message: &str) {
+        self.counts.unsupported_disk.fetch_add(1, Ordering::Relaxed);
+        self.counts
+            .publication_failed
+            .fetch_add(1, Ordering::Relaxed);
+        let mut errors = self
+            .publication_errors
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        if errors.len() < 8 {
+            errors.push(message.to_owned());
+        }
+    }
     pub fn publication_errors(&self) -> Vec<String> {
         self.publication_errors
             .lock()
@@ -145,12 +158,21 @@ impl ProcedureMemo {
             .clone()
     }
     fn publish(&self, records: Vec<dm_cache::Record>) {
-        let Some(publisher) = &self.publisher else {
-            return;
-        };
         let count = records.len();
         let start = std::time::Instant::now();
-        match publisher(records) {
+        let outcome = match &self.publisher {
+            Some(publisher) => publisher(records),
+            None => self
+                .disk
+                .as_ref()
+                .ok_or_else(|| "cache publication has no captured writer".to_owned())
+                .and_then(|disk| {
+                    disk.publish(&records)
+                        .map(|_| ())
+                        .map_err(|error| error.to_string())
+                }),
+        };
+        match outcome {
             Ok(()) => {
                 self.counts
                     .published_records
@@ -304,17 +326,6 @@ impl ProcedureMemo {
         if self.disk.is_none() {
             return;
         }
-        if self.publisher.is_none()
-            && self
-                .pending
-                .lock()
-                .unwrap_or_else(|error| error.into_inner())
-                .bytes
-                >= self.limits.pending_bytes
-        {
-            self.counts.pending_dropped.fetch_add(1, Ordering::Relaxed);
-            return;
-        }
         let start = std::time::Instant::now();
         let payload = crate::lowering_memo_wire::encode(key, reads, versions, unit, relative_debug);
         self.counts.encode_ns.fetch_add(
@@ -322,7 +333,7 @@ impl ProcedureMemo {
             Ordering::Relaxed,
         );
         let Some(payload) = payload else {
-            self.counts.unsupported_disk.fetch_add(1, Ordering::Relaxed);
+            self.wire_error("procedure record cannot be represented by the cache wire format");
             return;
         };
         self.queue_payload(key, payload);
@@ -365,14 +376,14 @@ impl ProcedureMemo {
         if self.disk.is_none() {
             return;
         }
-        if self.publisher.is_none() && self.pending_bytes() >= self.limits.pending_bytes {
-            self.counts.pending_dropped.fetch_add(1, Ordering::Relaxed);
-            return;
-        }
         if let Some(payload) =
             crate::lowering_memo_wire::encode_failure(key, identity, reads, versions, errors)
         {
             self.queue_payload(key, payload);
+        } else {
+            self.wire_error(
+                "procedure diagnostic record cannot be represented by the cache wire format",
+            );
         }
     }
     pub(crate) fn remember_executable(
@@ -386,10 +397,6 @@ impl ProcedureMemo {
         if self.disk.is_none() {
             return;
         }
-        if self.publisher.is_none() && self.pending_bytes() >= self.limits.pending_bytes {
-            self.counts.pending_dropped.fetch_add(1, Ordering::Relaxed);
-            return;
-        }
         let start = std::time::Instant::now();
         let payload = crate::lowering_memo_wire::encode_executable(key, reads, versions, code);
         self.counts.encode_ns.fetch_add(
@@ -399,7 +406,9 @@ impl ProcedureMemo {
         match payload {
             Some(payload) => self.queue_payload(key, payload),
             None => {
-                self.counts.unsupported_disk.fetch_add(1, Ordering::Relaxed);
+                self.wire_error(
+                    "anonymous procedure record cannot be represented by the cache wire format",
+                );
             }
         }
     }
@@ -425,9 +434,21 @@ impl ProcedureMemo {
         if variants.len() > 4 {
             variants.remove(0);
         }
-        let Ok(bytes) = dm_cache::encode_variants(&variants) else {
-            self.counts.pending_dropped.fetch_add(1, Ordering::Relaxed);
-            return;
+        let bytes = match dm_cache::encode_variants(&variants) {
+            Ok(bytes) => bytes,
+            Err(error) => {
+                self.counts
+                    .publication_failed
+                    .fetch_add(1, Ordering::Relaxed);
+                let mut errors = self
+                    .publication_errors
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner());
+                if errors.len() < 8 {
+                    errors.push(format!("cache variant encoding failed: {error}"));
+                }
+                return;
+            }
         };
         let old = pending
             .records
@@ -435,10 +456,6 @@ impl ProcedureMemo {
             .map_or(0, |record| record.payload.len() + 128);
         // Include descriptor/framing/alignment headroom so the default 64MiB segment fits.
         let total = pending.bytes - old + bytes.len() + 128;
-        if self.publisher.is_none() && total.saturating_add(256) > self.limits.pending_bytes {
-            self.counts.pending_dropped.fetch_add(1, Ordering::Relaxed);
-            return;
-        }
         pending.bytes = total;
         pending.records.insert(
             record_key,
@@ -448,9 +465,7 @@ impl ProcedureMemo {
                 payload: bytes.into(),
             },
         );
-        if self.publisher.is_some()
-            && pending.bytes >= self.limits.pending_bytes.min(8 * 1024 * 1024).max(1)
-        {
+        if pending.bytes >= self.limits.pending_bytes.min(8 * 1024 * 1024).max(1) {
             let records = std::mem::take(&mut *pending)
                 .records
                 .into_values()
@@ -485,10 +500,6 @@ impl ProcedureMemo {
         relative_debug: Vec<usize>,
         versions: Vec<(ReadDomain, u128)>,
     ) {
-        if self.values.available_bytes() < 8192 {
-            self.counts.resident_dropped.fetch_add(1, Ordering::Relaxed);
-            return;
-        }
         // Unsupported AST-bearing sidecars need their absolute occurrence until
         // a dedicated rebasing wire is implemented. Resident reuse checks it.
         let mut code_bytes = dm_wire::encode(0x0204_0003, &unit.code.procedure)
@@ -844,26 +855,22 @@ impl<T: Send + Sync> LoweringMemo<T> {
     ) -> bool {
         let hash = xxhash_rust::xxh3::xxh3_128(&key);
         let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
-        let removed_weight = state
-            .buckets
-            .get(&hash)
-            .and_then(|bucket| {
-                (bucket.iter().filter(|entry| entry.key == key).count() >= 4).then(|| {
-                    bucket
-                        .iter()
-                        .find(|entry| entry.key == key)
-                        .map_or(0, |entry| entry.weight)
-                })
-            })
-            .unwrap_or(0);
-        if weight > self.limit
-            || state
-                .bytes
-                .saturating_sub(removed_weight)
-                .saturating_add(weight)
-                > self.limit
-        {
+        // Resident storage evicts before admitting a new value. Results are
+        // independently published; an oversized value needs no resident copy.
+        if weight > self.limit {
             return false;
+        }
+        while state.bytes.saturating_add(weight) > self.limit {
+            let Some(oldest_bucket) = state.buckets.keys().next().copied() else {
+                break;
+            };
+            let bucket = state.buckets.get_mut(&oldest_bucket).unwrap();
+            let removed = bucket.remove(0);
+            let empty = bucket.is_empty();
+            state.bytes -= removed.weight;
+            if empty {
+                state.buckets.remove(&oldest_bucket);
+            }
         }
         let bucket = state.buckets.entry(hash).or_default();
         // A hash collision must not evict another exact key's independent variants.
@@ -898,6 +905,16 @@ impl<T: Send + Sync> LoweringMemo<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn resident_budget_evicts_before_retaining_new_results() {
+        let memo = LoweringMemo::with_limit(10);
+        assert!(memo.insert_with(Arc::from(b"a".as_slice()), vec![], vec![], 6, || 1u32));
+        assert!(memo.insert_with(Arc::from(b"b".as_slice()), vec![], vec![], 6, || 2u32));
+        assert!(memo.lookup(b"a", &Host(false)).is_none());
+        assert_eq!(memo.lookup(b"b", &Host(false)).as_deref(), Some(&2));
+        assert_eq!(memo.admitted_bytes(), 6);
+    }
+
     struct Host(bool);
     impl Resolver for Host {
         fn resolve(&self, _query: ResolveQuery) -> ResolvedMeaning {

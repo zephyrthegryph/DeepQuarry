@@ -21,20 +21,29 @@ impl<R: Resolver> Resolver for DiagnosticResolver<'_, R> {
         let result = self.host.resolve(query);
         if matches!(&result, ResolvedMeaning::Unsupported(_)) {
             if let Ok(mut queries) = self.unsupported.lock() {
-                if queries.len() < 8 { queries.push(query); }
+                if queries.len() < 8 {
+                    queries.push(query);
+                }
             }
         }
         result
     }
 }
 fn query_description(query: ResolveQuery, symbols: &SymbolTable) -> String {
-    let spelling = |symbol| symbols.text(symbol).map(str::to_owned)
-        .unwrap_or_else(|| format!("{symbol:?} (spelling unavailable)"));
+    let spelling = |symbol| {
+        symbols
+            .text(symbol)
+            .map(str::to_owned)
+            .unwrap_or_else(|| format!("{symbol:?} (spelling unavailable)"))
+    };
     match query {
         ResolveQuery::DeclaredVarType { owner, name }
         | ResolveQuery::HasMemberVar { owner, name }
-        | ResolveQuery::VarStorage { owner, name } =>
-            format!("{query:?}: owner={}, field={}", spelling(owner), spelling(name)),
+        | ResolveQuery::VarStorage { owner, name } => format!(
+            "{query:?}: owner={}, field={}",
+            spelling(owner),
+            spelling(name)
+        ),
         _ => format!("{query:?}"),
     }
 }
@@ -136,7 +145,10 @@ pub fn lower<R: Resolver>(
             entry,
             collector: RefCell::new(DebugOriginCollector::default()),
         };
-        let diagnostics = DiagnosticResolver { host, unsupported: std::sync::Mutex::new(Vec::new()) };
+        let diagnostics = DiagnosticResolver {
+            host,
+            unsupported: std::sync::Mutex::new(Vec::new()),
+        };
         let code = map_initializers::lower_unit(
             unit,
             maps,

@@ -44,6 +44,12 @@ fn measured<T>(
     stage: ResourceValidationStage,
     run: impl FnOnce() -> T,
 ) -> T {
+    let _profile = dm_profile::stage(match stage {
+        ResourceValidationStage::CatalogRestore => "resources.catalog_restore",
+        ResourceValidationStage::DemandAdmission => "resources.demand_validation",
+        ResourceValidationStage::InputValidation => "resources.input_validation",
+        ResourceValidationStage::ArchiveAuthentication => "resources.archive_authentication",
+    });
     let start = std::time::Instant::now();
     let result = run();
     if let Some(observer) = observer {

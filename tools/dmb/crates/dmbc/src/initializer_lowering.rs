@@ -17,6 +17,14 @@ pub enum InitializerStage {
     Codegen,
 }
 pub type InitializerMeasurement = crate::stage_measurements::Measurement<InitializerStage>;
+impl crate::stage_measurements::StageName for InitializerStage {
+    fn profile_name(self) -> &'static str {
+        match self {
+            Self::Classification => "initializer.classification",
+            Self::Codegen => "initializer.codegen",
+        }
+    }
+}
 pub type InitializerObserver<'a> = crate::stage_measurements::Observer<'a, InitializerStage>;
 
 pub struct LoweredInitializerUnit {

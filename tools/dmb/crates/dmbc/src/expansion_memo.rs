@@ -48,6 +48,16 @@ impl DiskExpansionMemo {
         self.publisher = Some(publisher);
         self
     }
+    fn record_error(&self, message: String) {
+        self.publication_failed.fetch_add(1, Ordering::Relaxed);
+        let mut errors = self
+            .publication_errors
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        if errors.len() < 8 {
+            errors.push(message.chars().take(512).collect());
+        }
+    }
     pub fn publication_errors(&self) -> Vec<String> {
         self.publication_errors
             .lock()
@@ -66,9 +76,6 @@ impl DiskExpansionMemo {
             .map(|r| Arc::clone(&r.payload))
     }
     fn flush_if_needed(&self) {
-        let Some(publisher) = &self.publisher else {
-            return;
-        };
         let records = {
             let mut pending = self.pending.lock().unwrap_or_else(|e| e.into_inner());
             if pending.0 < 8 * 1024 * 1024 {
@@ -101,7 +108,15 @@ impl DiskExpansionMemo {
         }
         let count = records.len() as u64;
         let started = std::time::Instant::now();
-        match publisher(records) {
+        let outcome = match &self.publisher {
+            Some(publisher) => publisher(records),
+            None => self
+                .disk
+                .publish(&records)
+                .map(|_| ())
+                .map_err(|error| error.to_string()),
+        };
+        match outcome {
             Ok(()) => {
                 self.published_records.fetch_add(count, Ordering::Relaxed);
             }
@@ -213,9 +228,12 @@ impl ExpansionMemo for DiskExpansionMemo {
             .collect()
     }
     fn insert_directive(&self, record: Arc<DirectiveRecord>) {
-        let Ok(bytes) = record.to_bytes() else {
-            self.dropped.fetch_add(1, Ordering::Relaxed);
-            return;
+        let bytes = match record.to_bytes() {
+            Ok(bytes) => bytes,
+            Err(error) => {
+                self.record_error(format!("cache record encoding failed: {error}"));
+                return;
+            }
         };
         let key = self.directive_key(record.key());
         let insert_guard = self.insert_guard.lock().unwrap_or_else(|e| e.into_inner());
@@ -230,20 +248,18 @@ impl ExpansionMemo for DiskExpansionMemo {
         if variants.len() > 4 {
             variants.remove(0);
         }
-        let Ok(bytes) = dm_cache::encode_variants(&variants) else {
-            self.dropped.fetch_add(1, Ordering::Relaxed);
-            return;
+        let bytes = match dm_cache::encode_variants(&variants) {
+            Ok(bytes) => bytes,
+            Err(error) => {
+                self.record_error(format!("cache variant encoding failed: {error}"));
+                return;
+            }
         };
         let previous = pending.1.get(&key).map_or(0, |value| value.payload.len());
         let total = pending
             .0
             .saturating_sub(previous)
             .saturating_add(bytes.len());
-        if bytes.len() > 16 * 1024 * 1024 || (self.publisher.is_none() && total > 64 * 1024 * 1024)
-        {
-            self.dropped.fetch_add(1, Ordering::Relaxed);
-            return;
-        }
         pending.0 = total;
         pending.1.insert(
             key,
@@ -266,9 +282,12 @@ impl ExpansionMemo for DiskExpansionMemo {
             .collect()
     }
     fn insert_fragment(&self, record: Arc<FragmentRecord>) {
-        let Ok(bytes) = record.to_bytes() else {
-            self.dropped.fetch_add(1, Ordering::Relaxed);
-            return;
+        let bytes = match record.to_bytes() {
+            Ok(bytes) => bytes,
+            Err(error) => {
+                self.record_error(format!("cache record encoding failed: {error}"));
+                return;
+            }
         };
         let key = self.fragment_key(record.key());
         let insert_guard = self.insert_guard.lock().unwrap_or_else(|e| e.into_inner());
@@ -285,20 +304,18 @@ impl ExpansionMemo for DiskExpansionMemo {
         if variants.len() > 4 {
             variants.remove(0);
         }
-        let Ok(bytes) = dm_cache::encode_variants(&variants) else {
-            self.dropped.fetch_add(1, Ordering::Relaxed);
-            return;
+        let bytes = match dm_cache::encode_variants(&variants) {
+            Ok(bytes) => bytes,
+            Err(error) => {
+                self.record_error(format!("cache variant encoding failed: {error}"));
+                return;
+            }
         };
         let previous = pending.1.get(&key).map_or(0, |value| value.payload.len());
         let total = pending
             .0
             .saturating_sub(previous)
             .saturating_add(bytes.len());
-        if bytes.len() > 16 * 1024 * 1024 || (self.publisher.is_none() && total > 64 * 1024 * 1024)
-        {
-            self.dropped.fetch_add(1, Ordering::Relaxed);
-            return;
-        }
         pending.0 = total;
         pending.1.insert(
             key,
@@ -325,9 +342,12 @@ impl ExpansionMemo for DiskExpansionMemo {
         records
     }
     fn insert(&self, record: Arc<ExpansionRecord>) {
-        let Ok(bytes) = record.to_bytes() else {
-            self.dropped.fetch_add(1, Ordering::Relaxed);
-            return;
+        let bytes = match record.to_bytes() {
+            Ok(bytes) => bytes,
+            Err(error) => {
+                self.record_error(format!("cache record encoding failed: {error}"));
+                return;
+            }
         };
         let key = self.key(record.key());
         let insert_guard = self.insert_guard.lock().unwrap_or_else(|e| e.into_inner());
@@ -344,20 +364,18 @@ impl ExpansionMemo for DiskExpansionMemo {
         if variants.len() > 4 {
             variants.remove(0);
         }
-        let Ok(bytes) = dm_cache::encode_variants(&variants) else {
-            self.dropped.fetch_add(1, Ordering::Relaxed);
-            return;
+        let bytes = match dm_cache::encode_variants(&variants) {
+            Ok(bytes) => bytes,
+            Err(error) => {
+                self.record_error(format!("cache variant encoding failed: {error}"));
+                return;
+            }
         };
         let previous = pending.1.get(&key).map_or(0, |value| value.payload.len());
         let total = pending
             .0
             .saturating_sub(previous)
             .saturating_add(bytes.len());
-        if bytes.len() > 16 * 1024 * 1024 || (self.publisher.is_none() && total > 64 * 1024 * 1024)
-        {
-            self.dropped.fetch_add(1, Ordering::Relaxed);
-            return;
-        }
         pending.0 = total;
         pending.1.insert(
             key,

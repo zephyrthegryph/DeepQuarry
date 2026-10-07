@@ -12,7 +12,6 @@ use std::sync::{
 #[path = "map_memo_wire.rs"]
 mod wire;
 
-const MAX_PAYLOAD: usize = 32 * 1024 * 1024;
 const MAX_ENTRIES: usize = 1024;
 #[derive(Default)]
 pub struct Counts {
@@ -29,11 +28,13 @@ pub struct Counts {
 struct ParseEntry {
     key: Arc<[u8]>,
     plan: MapPlan,
+    charge: usize,
 }
 struct GeometryEntry {
     key: Arc<[u8]>,
     reads: Arc<[ResolverRead]>,
     value: Projection,
+    charge: usize,
 }
 #[derive(Default)]
 struct Resident {
@@ -87,6 +88,18 @@ impl MapMemo {
         self.publisher = Some(publisher);
         self
     }
+    fn record_error(&self, message: String) {
+        self.counts
+            .publication_failed
+            .fetch_add(1, Ordering::Relaxed);
+        let mut errors = self
+            .publication_errors
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        if errors.len() < 8 {
+            errors.push(message.chars().take(512).collect());
+        }
+    }
     pub fn publication_errors(&self) -> Vec<String> {
         self.publication_errors
             .lock()
@@ -112,18 +125,14 @@ impl MapMemo {
             .as_ref()?
             .get(Self::record_key(key, geometry), |bytes, _| {
                 *issued.borrow_mut() = None;
-                if bytes.len() > MAX_PAYLOAD {
-                    return Err("map payload exceeds limit".into());
-                }
                 *issued.borrow_mut() = admit(bytes)?;
                 Ok(())
             })?;
         issued.into_inner().map(|value| (value, view.payload.len()))
     }
     /// Charge an intentionally conservative multiple of serialized bytes for
-    /// typed Arc/vector backing. Disk admission has an independent byte budget.
-    /// No unbounded admission:
-    /// after the fixed budget/count is exhausted, entries recompute normally.
+    /// typed Arc/vector backing. Disk publication flushes bounded queues independently.
+    /// Evict existing resident entries to make room; oversized entries remain disk-only.
     fn reserve(&self, state: &mut Resident, payload: usize, key: usize) -> bool {
         let Some(cost) = payload
             .checked_mul(16)
@@ -131,24 +140,27 @@ impl MapMemo {
         else {
             return false;
         };
-        if payload > MAX_PAYLOAD
-            || state.parse.len() + state.geometry.len() >= MAX_ENTRIES
+        // Oversized values are published without retaining another typed copy.
+        if cost > self.budget {
+            return false;
+        }
+        while state.parse.len() + state.geometry.len() >= MAX_ENTRIES
             || cost > self.budget.saturating_sub(state.charged)
         {
-            self.counts.skipped_budget.fetch_add(1, Ordering::Relaxed);
-            return false;
+            let removed = if !state.parse.is_empty() {
+                state.parse.remove(0).charge
+            } else if !state.geometry.is_empty() {
+                state.geometry.remove(0).charge
+            } else {
+                break;
+            };
+            state.charged -= removed;
         }
         state.charged += cost;
         true
     }
     fn queue(&self, key: &[u8], geometry: bool, bytes: Vec<u8>) {
         if let Some(publisher) = &self.publisher {
-            if bytes.len() > MAX_PAYLOAD {
-                self.counts
-                    .skipped_disk_budget
-                    .fetch_add(1, Ordering::Relaxed);
-                return;
-            }
             let record = dm_cache::Record {
                 key: Self::record_key(key, geometry),
                 symbols: Vec::new(),
@@ -184,15 +196,6 @@ impl MapMemo {
                 .get(&record_key)
                 .map_or(0, |record| record.payload.len());
             let retained = state.pending_bytes.saturating_sub(previous);
-            if bytes.len() > MAX_PAYLOAD
-                || bytes.len() > self.budget.saturating_sub(retained)
-                || (!state.pending.contains_key(&record_key) && state.pending.len() >= MAX_ENTRIES)
-            {
-                self.counts
-                    .skipped_disk_budget
-                    .fetch_add(1, Ordering::Relaxed);
-                return;
-            }
             state.pending_bytes = retained + bytes.len();
             state.pending.insert(
                 record_key,
@@ -203,6 +206,32 @@ impl MapMemo {
                 },
             );
             self.counts.disk_admitted.fetch_add(1, Ordering::Relaxed);
+            if state.pending_bytes >= 8 * 1024 * 1024 {
+                state.pending_bytes = 0;
+                let records: Vec<_> = std::mem::take(&mut state.pending).into_values().collect();
+                drop(state);
+                let count = records.len() as u64;
+                let result = self.disk.as_ref().unwrap().publish(&records);
+                match result {
+                    Ok(_) => {
+                        self.counts
+                            .published_records
+                            .fetch_add(count, Ordering::Relaxed);
+                    }
+                    Err(error) => {
+                        self.counts
+                            .publication_failed
+                            .fetch_add(count, Ordering::Relaxed);
+                        let mut errors = self
+                            .publication_errors
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner());
+                        if errors.len() < 8 {
+                            errors.push(error.to_string());
+                        }
+                    }
+                }
+            }
         }
     }
     pub fn parse(&self, captured: CapturedMap) -> Result<MapPlan, MapDiagnostic> {
@@ -235,6 +264,7 @@ impl MapMemo {
                 .unwrap_or_else(|error| error.into_inner());
             if self.reserve(&mut state, payload_len, key.len()) {
                 state.parse.push(ParseEntry {
+                    charge: payload_len * 16 + key.len(),
                     key: key.into(),
                     plan: plan.clone(),
                 });
@@ -251,12 +281,17 @@ impl MapMemo {
                 .unwrap_or_else(|error| error.into_inner());
             if self.reserve(&mut state, bytes.len(), key.len()) {
                 state.parse.push(ParseEntry {
+                    charge: bytes.len() * 16 + key.len(),
                     key: key.clone().into(),
                     plan: plan.clone(),
                 });
             }
             drop(state);
             self.queue(&key, false, bytes);
+        } else if self.disk.is_some() || self.publisher.is_some() {
+            self.record_error(
+                "map syntax record cannot be represented by the cache wire format".into(),
+            );
         }
         Ok(plan)
     }
@@ -298,6 +333,7 @@ impl MapMemo {
                 .unwrap_or_else(|error| error.into_inner());
             if self.reserve(&mut state, payload_len, key.len()) {
                 state.geometry.push(GeometryEntry {
+                    charge: payload_len * 16 + key.len(),
                     key: key.into(),
                     reads: reads.into(),
                     value: value.clone(),
@@ -321,6 +357,7 @@ impl MapMemo {
                 .unwrap_or_else(|error| error.into_inner());
             if self.reserve(&mut state, bytes.len(), key.len()) {
                 state.geometry.push(GeometryEntry {
+                    charge: bytes.len() * 16 + key.len(),
                     key: key.clone().into(),
                     reads: reads.into(),
                     value: value.clone(),
@@ -328,6 +365,10 @@ impl MapMemo {
             }
             drop(state);
             self.queue(&key, true, bytes);
+        } else if self.disk.is_some() || self.publisher.is_some() {
+            self.record_error(
+                "map geometry record cannot be represented by the cache wire format".into(),
+            );
         }
         Ok(value)
     }
@@ -419,6 +460,24 @@ mod tests {
             minimum_dimensions: [1; 3],
         }
     }
+    #[test]
+    fn map_resident_budget_evicts_before_retaining_new_results() {
+        let memo = MapMemo::new(1, 64);
+        let mut resident = Resident::default();
+        assert!(memo.reserve(&mut resident, 3, 1));
+        resident.parse.push(ParseEntry {
+            key: Arc::from(b"old".as_slice()),
+            plan: dm_tree::maps::plan(input(1)).unwrap(),
+            charge: 49,
+        });
+        assert!(memo.reserve(&mut resident, 3, 1));
+        assert!(resident.parse.is_empty());
+        assert_eq!(resident.charged, 49);
+        assert!(!memo.reserve(&mut resident, 5, 1));
+        assert_eq!(resident.charged, 49);
+        assert_eq!(memo.counts.skipped_budget.load(Ordering::Relaxed), 0);
+    }
+
     #[test]
     fn map_streaming_publisher_preserves_records_beyond_budget_without_resident_lock() {
         let weak = Arc::new(Mutex::new(std::sync::Weak::<MapMemo>::new()));

@@ -1,4 +1,4 @@
-//! Request-local stage reporting, including early returns. No global profiler.
+//! Request-local stage reporting and opt-in profile spans, including early returns.
 use std::time::{Duration, Instant};
 
 #[derive(Clone, Copy, Debug)]
@@ -9,26 +9,44 @@ pub struct Measurement<S> {
     pub succeeded: Option<bool>,
 }
 pub type Observer<'a, S> = dyn Fn(Measurement<S>) + 'a;
-pub(crate) struct Scope<'a, S: Copy> {
+pub(crate) trait StageName {
+    fn profile_name(self) -> &'static str;
+}
+pub(crate) struct Scope<'a, S: Copy + StageName> {
     observer: Option<&'a Observer<'a, S>>,
     stage: S,
     started: Instant,
     succeeded: bool,
+    _profile: dm_profile::StageGuard,
 }
-impl<'a, S: Copy> Scope<'a, S> {
+impl<'a, S: Copy + StageName> Scope<'a, S> {
     pub(crate) fn new(observer: Option<&'a Observer<'a, S>>, stage: S) -> Self {
         if let Some(observer) = observer {
-            observer(Measurement { stage, elapsed: Duration::ZERO, succeeded: None });
+            observer(Measurement {
+                stage,
+                elapsed: Duration::ZERO,
+                succeeded: None,
+            });
         }
-        Self { observer, stage, started: Instant::now(), succeeded: false }
+        Self {
+            observer,
+            stage,
+            started: Instant::now(),
+            succeeded: false,
+            _profile: dm_profile::stage(stage.profile_name()),
+        }
     }
-    pub(crate) fn complete(mut self) { self.succeeded = true; }
+    pub(crate) fn complete(mut self) {
+        self.succeeded = true;
+    }
 }
-impl<S: Copy> Drop for Scope<'_, S> {
+impl<S: Copy + StageName> Drop for Scope<'_, S> {
     fn drop(&mut self) {
         if let Some(observer) = self.observer {
             observer(Measurement {
-                stage: self.stage, elapsed: self.started.elapsed(), succeeded: Some(self.succeeded),
+                stage: self.stage,
+                elapsed: self.started.elapsed(),
+                succeeded: Some(self.succeeded),
             });
         }
     }

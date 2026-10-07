@@ -29,7 +29,7 @@ mod fragment_tests {
             FragmentRecord::lookup_key(3, "/datum/other\n")
         );
         assert!(FragmentRecord::from_bytes(&[0; 8]).is_err());
-        assert!(FragmentRecord::new(3, "x", vec![0; 4 * 1024 * 1024 + 1].into()).is_none());
+        assert!(FragmentRecord::new(3, "x", vec![0; 4 * 1024 * 1024 + 1].into()).is_some());
     }
 }
 /// Root-context grammar chunks are looked up independently of region offsets.
@@ -50,9 +50,6 @@ impl FragmentRecord {
         hash.digest128()
     }
     pub fn new(schema: u32, source: &str, payload: Arc<[u8]>) -> Option<Self> {
-        if source.len() > 4 * 1024 * 1024 || payload.len() > 4 * 1024 * 1024 {
-            return None;
-        }
         Some(Self {
             schema,
             source: source.into(),
@@ -72,10 +69,7 @@ impl FragmentRecord {
         dm_wire::encode(FRAGMENT_VERSION, self)
     }
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, String> {
-        let record: Self = dm_wire::decode(FRAGMENT_VERSION, bytes, 8 * 1024 * 1024 + 1024)?;
-        if record.source.len() > 4 * 1024 * 1024 || record.payload.len() > 4 * 1024 * 1024 {
-            return Err("fragment bounds exceeded".into());
-        }
+        let record: Self = dm_wire::decode(FRAGMENT_VERSION, bytes, bytes.len())?;
         Ok(record)
     }
 }
@@ -193,17 +187,6 @@ impl ExpansionRecord {
     }
     pub fn with_fragment(&self, schema: u32, span: Span, payload: Arc<[u8]>) -> Option<Self> {
         self.text.get(span.range())?;
-        let total = self
-            .fragments
-            .iter()
-            .filter(|fragment| fragment.schema != schema || fragment.span != span)
-            .try_fold(payload.len(), |total, fragment| {
-                total.checked_add(fragment.payload.len())
-            })?;
-        if payload.len() > 4 * 1024 * 1024 || self.fragments.len() >= 256 || total > 8 * 1024 * 1024
-        {
-            return None;
-        }
         let mut result = self.clone();
         result
             .fragments
@@ -219,7 +202,7 @@ impl ExpansionRecord {
         dm_wire::encode(EXPANSION_VERSION, self)
     }
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, String> {
-        let record: Self = dm_wire::decode(EXPANSION_VERSION, bytes, 16 * 1024 * 1024)?;
+        let record: Self = dm_wire::decode(EXPANSION_VERSION, bytes, bytes.len())?;
         if record.control.get(..4) != Some(EXPANSION_VERSION.to_le_bytes().as_slice()) {
             return Err("expansion record version mismatch".into());
         }
@@ -234,20 +217,12 @@ impl ExpansionRecord {
         }) {
             return Err("expansion record output span invalid".into());
         }
-        if record.fragments.len() > 256
-            || record
-                .fragments
-                .iter()
-                .try_fold(0usize, |total, fragment| {
-                    total.checked_add(fragment.payload.len())
-                })
-                .is_none_or(|total| total > 8 * 1024 * 1024)
-            || record.fragments.iter().any(|fragment| {
-                fragment.payload.len() > 4 * 1024 * 1024
-                    || record.text.get(fragment.span.range()).is_none()
-            })
+        if record
+            .fragments
+            .iter()
+            .any(|fragment| record.text.get(fragment.span.range()).is_none())
         {
-            return Err("invalid parser fragment bounds".into());
+            return Err("invalid parser fragment span".into());
         }
         Ok(record)
     }

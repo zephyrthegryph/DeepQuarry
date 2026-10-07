@@ -15,20 +15,39 @@ pub enum BindingKnowledge {
     Modifiers(u32),
     /// Positive native mutable binding + exact resolved instance storage.
     /// This says nothing about persistence/tmp or unknown wire modifiers.
-    MutableInstance { owner: SymbolId, name: SymbolId, receipt: u128 },
+    MutableInstance {
+        owner: SymbolId,
+        name: SymbolId,
+        receipt: u128,
+    },
 }
 pub trait CapturedInitializerEvaluator {
     /// Borrow an already parsed subtree. Compatibility evaluators retain their
     /// existing captured-token path and lexical context checks.
-    fn evaluate_ast_write(&self, write: &InitializerWrite, ast: &dm_syntax::Expr, source: &str, symbols: &SymbolTable) -> Result<Evaluation, String> {
+    fn evaluate_ast_write(
+        &self,
+        write: &InitializerWrite,
+        ast: &dm_syntax::Expr,
+        source: &str,
+        symbols: &SymbolTable,
+    ) -> Result<Evaluation, String> {
         self.evaluate_write(write, &captured_scalar_subexpression(ast, source, symbols)?)
     }
     fn initializer_token_scalar(&self, value: &SemanticValue) -> Result<Vec<u8>, String> {
-        if matches!(value, SemanticValue::Resource(_)) { return Err("initializer resource token requires captured content identity".into()); }
+        if matches!(value, SemanticValue::Resource(_)) {
+            return Err("initializer resource token requires captured content identity".into());
+        }
         Ok(value.canonical_bytes())
     }
-    fn initializer_constructor_type(&self, _write: &InitializerWrite) -> Result<Option<SymbolId>, String> { Ok(None) }
-    fn pure_calls(&self) -> Option<&dyn dm_tree::constants::PureCalls> { None }
+    fn initializer_constructor_type(
+        &self,
+        _write: &InitializerWrite,
+    ) -> Result<Option<SymbolId>, String> {
+        Ok(None)
+    }
+    fn pure_calls(&self) -> Option<&dyn dm_tree::constants::PureCalls> {
+        None
+    }
     fn evaluate(&self, owner: SymbolId, value: &SymbolicExpression) -> Result<Evaluation, String>;
     fn evaluate_write(
         &self,
@@ -45,11 +64,19 @@ pub trait CapturedInitializerEvaluator {
     fn declaration_modifiers(&self, write: &InitializerWrite) -> Result<Option<u32>, String> {
         Ok(write.declaration_flags)
     }
-    fn instance_storage(&self, _write: &InitializerWrite) -> Result<Option<(SymbolId, SymbolId)>, String> {
+    fn instance_storage(
+        &self,
+        _write: &InitializerWrite,
+    ) -> Result<Option<(SymbolId, SymbolId)>, String> {
         Ok(None)
     }
-    fn binding_knowledge(&self, write: &InitializerWrite) -> Result<Option<BindingKnowledge>, String> {
-        Ok(self.declaration_modifiers(write)?.map(BindingKnowledge::Modifiers))
+    fn binding_knowledge(
+        &self,
+        write: &InitializerWrite,
+    ) -> Result<Option<BindingKnowledge>, String> {
+        Ok(self
+            .declaration_modifiers(write)?
+            .map(BindingKnowledge::Modifiers))
     }
 }
 /// Borrow the same captured engine used by the frontend and cold writer. Only
@@ -59,27 +86,54 @@ pub struct EngineCapturedEvaluator<'a> {
     pub evaluator: &'a dyn CapturedInitializerEvaluator,
 }
 impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
-    fn evaluate_ast_write(&self, write: &InitializerWrite, ast: &dm_syntax::Expr, source: &str, symbols: &SymbolTable) -> Result<Evaluation, String> {
-        self.evaluator.evaluate_ast_write(write, ast, source, symbols)
+    fn evaluate_ast_write(
+        &self,
+        write: &InitializerWrite,
+        ast: &dm_syntax::Expr,
+        source: &str,
+        symbols: &SymbolTable,
+    ) -> Result<Evaluation, String> {
+        self.evaluator
+            .evaluate_ast_write(write, ast, source, symbols)
     }
-    fn initializer_token_scalar(&self, value: &SemanticValue) -> Result<Vec<u8>, String> { self.evaluator.initializer_token_scalar(value) }
-    fn initializer_constructor_type(&self, write: &InitializerWrite) -> Result<Option<SymbolId>, String> { self.evaluator.initializer_constructor_type(write) }
-    fn pure_calls(&self) -> Option<&dyn dm_tree::constants::PureCalls> { self.evaluator.pure_calls() }
-    fn binding_knowledge(&self, write: &InitializerWrite) -> Result<Option<BindingKnowledge>, String> {
+    fn initializer_token_scalar(&self, value: &SemanticValue) -> Result<Vec<u8>, String> {
+        self.evaluator.initializer_token_scalar(value)
+    }
+    fn initializer_constructor_type(
+        &self,
+        write: &InitializerWrite,
+    ) -> Result<Option<SymbolId>, String> {
+        self.evaluator.initializer_constructor_type(write)
+    }
+    fn pure_calls(&self) -> Option<&dyn dm_tree::constants::PureCalls> {
+        self.evaluator.pure_calls()
+    }
+    fn binding_knowledge(
+        &self,
+        write: &InitializerWrite,
+    ) -> Result<Option<BindingKnowledge>, String> {
         if let Some(flags) = self.declaration_modifiers(write)? {
             return Ok(Some(BindingKnowledge::Modifiers(flags)));
         }
-        let InitializerTarget::Instance { declaring_owner, name, .. } = write.target else {
+        let InitializerTarget::Instance {
+            declaring_owner,
+            name,
+            ..
+        } = write.target
+        else {
             return Ok(None);
         };
-        if self.engine.template_identity() != crate::intrinsic_initializer_facts::template_identity()
+        if self.engine.template_identity()
+            != crate::intrinsic_initializer_facts::template_identity()
             || !crate::intrinsic_initializer_facts::certified(declaring_owner, name)
             || self.evaluator.instance_storage(write)? != Some((declaring_owner, name))
         {
             return Ok(None);
         }
         Ok(Some(BindingKnowledge::MutableInstance {
-            owner: declaring_owner, name, receipt: crate::intrinsic_initializer_facts::identity(),
+            owner: declaring_owner,
+            name,
+            receipt: crate::intrinsic_initializer_facts::identity(),
         }))
     }
     fn evaluate_write(
@@ -181,20 +235,39 @@ pub(crate) fn captured_scalar_subexpression(
     source: &str,
     symbols: &SymbolTable,
 ) -> Result<SymbolicExpression, String> {
-    let source = source.get(expression.span.start..expression.span.end)
+    let source = source
+        .get(expression.span.start..expression.span.end)
         .ok_or("initializer subtree span is outside captured expression")?;
     let parsed = dm_syntax::lex(source);
-    if !parsed.diagnostics.is_empty() { return Err("initializer subtree tokenization failed".into()); }
-    let tokens = parsed.tokens.into_iter().filter(|token| !matches!(token.kind,
-        dm_syntax::TokenKind::Whitespace | dm_syntax::TokenKind::Newline | dm_syntax::TokenKind::Comment))
+    if !parsed.diagnostics.is_empty() {
+        return Err("initializer subtree tokenization failed".into());
+    }
+    let tokens = parsed
+        .tokens
+        .into_iter()
+        .filter(|token| {
+            !matches!(
+                token.kind,
+                dm_syntax::TokenKind::Whitespace
+                    | dm_syntax::TokenKind::Newline
+                    | dm_syntax::TokenKind::Comment
+            )
+        })
         .map(|token| {
             let text = SymbolId::of(&token.text);
             if symbols.text(text) != Some(token.text.as_str()) {
                 return Err("initializer subtree token spelling is not captured".into());
             }
-            Ok(ExpressionToken {kind:token.kind,text,relative_span:token.span})
-        }).collect::<Result<Vec<_>, String>>()?;
-    Ok(SymbolicExpression {tokens:tokens.into()})
+            Ok(ExpressionToken {
+                kind: token.kind,
+                text,
+                relative_span: token.span,
+            })
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    Ok(SymbolicExpression {
+        tokens: tokens.into(),
+    })
 }
 fn scalar_literal(
     expr: &dm_syntax::Expr,
@@ -270,8 +343,12 @@ fn scalar_literal(
         ExprKind::Call { callee, args } if matches!(&callee.kind, ExprKind::Ident(name) if name == "nameof") => {
             args.len() == 1 && dm_codegen_byond::nameof_reference(&args[0]).is_some()
         }
-        ExprKind::Call { callee, .. } if matches!(&callee.kind, ExprKind::Ident(name) if evaluator.pure_calls().is_some_and(|calls| calls.accepts(name))) => {
-            matches!(evaluator.evaluate_ast_write(write, expr, source, symbols)?, Evaluation::Scalar(_))
+        ExprKind::Call { callee, .. } if matches!(&callee.kind, ExprKind::Ident(name) if evaluator.pure_calls().is_some_and(|calls| calls.accepts(name))) =>
+        {
+            matches!(
+                evaluator.evaluate_ast_write(write, expr, source, symbols)?,
+                Evaluation::Scalar(_)
+            )
         }
         _ => false,
     })
@@ -398,8 +475,13 @@ fn modifier_facts(
             })?;
             let flags = match knowledge {
                 BindingKnowledge::Modifiers(flags) => flags,
-                BindingKnowledge::MutableInstance { owner, name, receipt } => {
-                    if write.declaration_flags.is_some() || receipt == 0
+                BindingKnowledge::MutableInstance {
+                    owner,
+                    name,
+                    receipt,
+                } => {
+                    if write.declaration_flags.is_some()
+                        || receipt == 0
                         || !matches!(write.target, InitializerTarget::Instance { declaring_owner, name: target_name, .. }
                             if owner == declaring_owner && name == target_name)
                     {
@@ -443,18 +525,26 @@ pub fn classify_with_diagnostics(
     classify_with_token_mode(writes, symbols, evaluator, false)
 }
 pub fn classify_with_token_mode(
-    writes: &[InitializerWrite], symbols: &SymbolTable,
-    evaluator: &dyn CapturedInitializerEvaluator, debug_defined: bool,
+    writes: &[InitializerWrite],
+    symbols: &SymbolTable,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    debug_defined: bool,
 ) -> Result<ClassifiedInitializers, ClassificationError> {
     let facts = modifier_facts(writes, symbols, evaluator)?;
     let mut source_ordinal = 0;
-    classify_from_facts(writes, symbols, evaluator, &facts, &mut source_ordinal, debug_defined).map_err(|reason| {
-        ClassificationError {
-            issues: vec![ClassificationIssue {
-                source_ordinal,
-                reason,
-            }],
-        }
+    classify_from_facts(
+        writes,
+        symbols,
+        evaluator,
+        &facts,
+        &mut source_ordinal,
+        debug_defined,
+    )
+    .map_err(|reason| ClassificationError {
+        issues: vec![ClassificationIssue {
+            source_ordinal,
+            reason,
+        }],
     })
 }
 /// Compatibility caller retains string diagnostics; production uses ordinals.
@@ -524,7 +614,9 @@ fn classify_from_facts(
         let constant_binding = match facts[ordinal] {
             ModifierFact::Known(flags) => flags & 2 != 0,
             ModifierFact::MutableInstance => false,
-            ModifierFact::Header(_) => return Err("header classification fact was not consumed".into()),
+            ModifierFact::Header(_) => {
+                return Err("header classification fact was not consumed".into())
+            }
         };
         let write = original.clone();
         if let Some(array) = &original.declared_array {
@@ -596,10 +688,15 @@ fn classify_from_facts(
                         let literal =
                             matches!(evaluation, Evaluation::Scalar(SemanticValue::List(_)))
                                 || scalar_literal(expr, &write, symbols, &text, evaluator)?;
-                        let default = if let Some(key) = crate::initializer_tokens::construction_key(expr, &text, &write, symbols, evaluator)? {
+                        let default = if let Some(key) =
+                            crate::initializer_tokens::construction_key(
+                                expr, &text, &write, symbols, evaluator,
+                            )? {
                             let (token, canonical) = tokens.issue(key)?;
                             DefaultValue::InitializerExpression { token, canonical }
-                        } else { DefaultValue::Scalar(SemanticValue::Null) };
+                        } else {
+                            DefaultValue::Scalar(SemanticValue::Null)
+                        };
                         (
                             default,
                             Some(if literal {
@@ -669,21 +766,43 @@ mod tests {
     fn nested_pure_calls_keep_literal_allocation_and_reject_unavailable_components() {
         use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};
         struct Empty;
-        impl Resolver for Empty { fn resolve(&self, _:ResolveQuery)->ResolvedMeaning { ResolvedMeaning::Missing } }
-        let engine = crate::engine::EngineSnapshot::from_bytes(include_bytes!("../../../fixtures/native_template.bin"),1).unwrap();
+        impl Resolver for Empty {
+            fn resolve(&self, _: ResolveQuery) -> ResolvedMeaning {
+                ResolvedMeaning::Missing
+            }
+        }
+        let engine = crate::engine::EngineSnapshot::from_bytes(
+            include_bytes!("../../../fixtures/native_template.bin"),
+            1,
+        )
+        .unwrap();
         let calls = crate::pure_calls::PinnedPureCalls::new(&engine).unwrap();
         let mut symbols = SymbolTable::default();
         let root = symbols.intern("/").unwrap();
         let name = symbols.intern("colors").unwrap();
-        let value = expression("list(rgb(255,201,49), list(rgb(1,2,3,128)))", &mut symbols).unwrap();
-        let captured = write(root,name,InitializerValue::Expression(value));
-        let evaluator = crate::driver_facts::DriverEvaluator {pure_calls:Some(&calls),resource_search_context:None,resolver:&Empty,symbols:&symbols};
+        let value =
+            expression("list(rgb(255,201,49), list(rgb(1,2,3,128)))", &mut symbols).unwrap();
+        let captured = write(root, name, InitializerValue::Expression(value));
+        let evaluator = crate::driver_facts::DriverEvaluator {
+            pure_calls: Some(&calls),
+            resource_search_context: None,
+            resolver: &Empty,
+            symbols: &symbols,
+        };
         let result = classify(&[captured], &symbols, &evaluator).unwrap();
         assert_eq!(result.writes[0].phase, Some(Phase::LiteralAllocation));
         let invalid = expression("list(rgb(rand(0,255),2,3))", &mut symbols).unwrap();
-        let invalid = write(root,name,InitializerValue::Expression(invalid));
-        let evaluator = crate::driver_facts::DriverEvaluator {pure_calls:Some(&calls),resource_search_context:None,resolver:&Empty,symbols:&symbols};
-        assert!(classify(&[invalid], &symbols, &evaluator).unwrap_err().to_string().contains("rgb components must be captured constant numbers"));
+        let invalid = write(root, name, InitializerValue::Expression(invalid));
+        let evaluator = crate::driver_facts::DriverEvaluator {
+            pure_calls: Some(&calls),
+            resource_search_context: None,
+            resolver: &Empty,
+            symbols: &symbols,
+        };
+        assert!(classify(&[invalid], &symbols, &evaluator)
+            .unwrap_err()
+            .to_string()
+            .contains("rgb components must be captured constant numbers"));
     }
     #[test]
     fn mutable_instance_knowledge_retains_opaque_modifiers() {
@@ -692,9 +811,23 @@ mod tests {
             fn evaluate(&self, _: SymbolId, _: &SymbolicExpression) -> Result<Evaluation, String> {
                 Ok(Evaluation::Runtime)
             }
-            fn binding_knowledge(&self, write: &InitializerWrite) -> Result<Option<BindingKnowledge>, String> {
-                let InitializerTarget::Instance { declaring_owner, name, .. } = write.target else { return Ok(None) };
-                Ok(Some(BindingKnowledge::MutableInstance { owner: declaring_owner, name, receipt: 1 }))
+            fn binding_knowledge(
+                &self,
+                write: &InitializerWrite,
+            ) -> Result<Option<BindingKnowledge>, String> {
+                let InitializerTarget::Instance {
+                    declaring_owner,
+                    name,
+                    ..
+                } = write.target
+                else {
+                    return Ok(None);
+                };
+                Ok(Some(BindingKnowledge::MutableInstance {
+                    owner: declaring_owner,
+                    name,
+                    receipt: 1,
+                }))
             }
         }
         let mut symbols = SymbolTable::default();
@@ -702,10 +835,16 @@ mod tests {
         let child = symbols.intern("/obj/example").unwrap();
         let name = symbols.intern("name").unwrap();
         let write = InitializerWrite {
-            target: InitializerTarget::Instance { declaring_owner: atom, receiver_owner: child, name },
-            lexical_owner: child, lexical_procedure: None,
+            target: InitializerTarget::Instance {
+                declaring_owner: atom,
+                receiver_owner: child,
+                name,
+            },
+            lexical_owner: child,
+            lexical_procedure: None,
             value: InitializerValue::Expression(expression("run()", &mut symbols).unwrap()),
-            declared_array: None, declaration_flags: None,
+            declared_array: None,
+            declaration_flags: None,
         };
         let classified = classify(&[write.clone()], &symbols, &Mutable).unwrap();
         assert_eq!(classified.writes[0].write, write);
@@ -751,7 +890,11 @@ mod tests {
         let runtime = InitializerValue::Expression(expression("run()", &mut symbols).unwrap());
         let literal = InitializerValue::Expression(expression("list(2)", &mut symbols).unwrap());
         let instance = |owner, value| InitializerWrite {
-            target: InitializerTarget::Instance { declaring_owner: owner, receiver_owner: owner, name },
+            target: InitializerTarget::Instance {
+                declaring_owner: owner,
+                receiver_owner: owner,
+                name,
+            },
             lexical_owner: owner,
             lexical_procedure: None,
             value,
@@ -768,10 +911,34 @@ mod tests {
             write(root, name, runtime),
         ];
         let classified = classify(&writes, &symbols, &Evaluator).unwrap();
-        assert_eq!(classified.groups.iter().map(|group| group.receiver).collect::<Vec<_>>(), [Some(first), None, Some(second)]);
-        let ordinals = classified.groups.iter().map(|group| group.writes.iter().map(|write| write.source_ordinal).collect::<Vec<_>>()).collect::<Vec<_>>();
+        assert_eq!(
+            classified
+                .groups
+                .iter()
+                .map(|group| group.receiver)
+                .collect::<Vec<_>>(),
+            [Some(first), None, Some(second)]
+        );
+        let ordinals = classified
+            .groups
+            .iter()
+            .map(|group| {
+                group
+                    .writes
+                    .iter()
+                    .map(|write| write.source_ordinal)
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
         assert_eq!(ordinals, [vec![0, 3], vec![4, 1, 6], vec![2, 5]]);
-        assert_eq!(classified.writes.iter().map(|write| write.source_ordinal).collect::<Vec<_>>(), (0..writes.len()).collect::<Vec<_>>());
+        assert_eq!(
+            classified
+                .writes
+                .iter()
+                .map(|write| write.source_ordinal)
+                .collect::<Vec<_>>(),
+            (0..writes.len()).collect::<Vec<_>>()
+        );
     }
 
     #[test]

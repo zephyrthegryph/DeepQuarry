@@ -75,7 +75,9 @@ pub fn scalars(
             nameof: &nameof,
         },
         Some(predefined),
-        calls.as_ref().map(|calls| calls as &dyn dm_tree::constants::PureCalls),
+        calls
+            .as_ref()
+            .map(|calls| calls as &dyn dm_tree::constants::PureCalls),
     )
 }
 
@@ -144,8 +146,19 @@ pub fn compile<R: Resolver>(
     stage: Option<&dyn crate::composition::NonTextOutputStage>,
     workers: usize,
 ) -> Result<cold::ColdOutput, cold::ColdError> {
-    compile_observed(frontend, resolver, engine, engine_bytes, links, values,
-        resource_context, maps, stage, workers, None)
+    compile_observed(
+        frontend,
+        resolver,
+        engine,
+        engine_bytes,
+        links,
+        values,
+        resource_context,
+        maps,
+        stage,
+        workers,
+        None,
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -162,10 +175,24 @@ pub fn compile_observed<R: Resolver>(
     workers: usize,
     observer: Option<&cold::ColdObserver<'_>>,
 ) -> Result<cold::ColdOutput, cold::ColdError> {
-    compile_observed_with_memo(frontend,resolver,engine,engine_bytes,links,values,resource_context,maps,stage,workers,observer,None)
+    compile_observed_with_memo(
+        frontend,
+        resolver,
+        engine,
+        engine_bytes,
+        links,
+        values,
+        resource_context,
+        maps,
+        stage,
+        workers,
+        observer,
+        None,
+    )
 }
 
-#[allow(clippy::too_many_arguments)]pub fn compile_observed_with_memo<R: Resolver>(
+#[allow(clippy::too_many_arguments)]
+pub fn compile_observed_with_memo<R: Resolver>(
     frontend: &ColdFrontend,
     resolver: &R,
     engine: &EngineSnapshot,
@@ -186,8 +213,10 @@ pub fn compile_observed<R: Resolver>(
         &links.inventory,
     )
     .map_err(cold::ColdError::Initializer)?;
-    let calls = crate::pure_calls::PinnedPureCalls::new(engine).map_err(cold::ColdError::Initializer)?;
-    let evaluator = driver_facts::DriverEvaluator { pure_calls: Some(&calls),
+    let calls =
+        crate::pure_calls::PinnedPureCalls::new(engine).map_err(cold::ColdError::Initializer)?;
+    let evaluator = driver_facts::DriverEvaluator {
+        pure_calls: Some(&calls),
         resolver,
         symbols: frontend.snapshot.tree.symbols(),
         resource_search_context: resource_context,

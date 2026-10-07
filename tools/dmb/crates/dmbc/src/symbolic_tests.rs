@@ -11,7 +11,8 @@ fn debug_inventory_retains_first_path_encounter_without_duplicate_lines() {
             .collect(),
     };
     let mut inventory = dm_link::LinkInventory::default();
-    super::append_debug_inventory(&origins, &mut inventory);
+    let mut strings = StringInventory::new(&inventory);
+    super::append_debug_inventory(&origins, &mut inventory, &mut strings);
     assert_eq!(inventory.entries.len(), 2);
     assert_eq!(inventory.spellings.len(), 2);
     assert_eq!(inventory.entries[0].content.as_ref(), b"code/a.dm");

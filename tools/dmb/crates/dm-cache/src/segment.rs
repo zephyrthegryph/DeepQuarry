@@ -107,7 +107,6 @@ pub struct Segment {
     supersedes: Vec<u128>,
     index: BTreeMap<RecordKey, Entry>,
     rejected: AtomicBool,
-    limits: Limits,
 }
 pub struct RecordView<'a> {
     pub key: RecordKey,
@@ -115,10 +114,10 @@ pub struct RecordView<'a> {
     pub payload: &'a [u8],
 }
 impl Segment {
-    pub fn open(path: &Path, limits: Limits) -> Result<Self, CacheError> {
+    pub fn open(path: &Path, _limits: Limits) -> Result<Self, CacheError> {
         let file = File::open(path)?;
         let length = file.metadata()?.len();
-        if length < HEADER as u64 || length > limits.segment_bytes {
+        if length < HEADER as u64 {
             return Err(invalid("segment size outside limits"));
         }
         // Published segments are immutable. The cache never modifies a mapped file;
@@ -137,9 +136,6 @@ impl Segment {
         let superseded = cursor.u32()?;
         let id = cursor.u128()?;
         let checksum = cursor.u128()?;
-        if count > limits.records || superseded > limits.records {
-            return Err(invalid("record count outside limits"));
-        }
         let expected = (count as usize)
             .checked_mul(DESCRIPTOR)
             .and_then(|n| n.checked_add(superseded as usize * 16))
@@ -210,7 +206,6 @@ impl Segment {
             supersedes,
             index,
             rejected: AtomicBool::new(false),
-            limits,
         })
     }
     pub fn id(&self) -> u128 {
@@ -248,8 +243,9 @@ impl Segment {
             }
             let mut cursor = Cursor { data: bytes, at: 0 };
             let count = cursor.u32()?;
-            if count > self.limits.symbols_per_record {
-                return Err(invalid("symbol count outside limits"));
+            // Each symbol needs its ID and length before any text bytes.
+            if count as usize > bytes.len().saturating_sub(cursor.at) / 12 {
+                return Err(invalid("symbol count exceeds record extent"));
             }
             let mut symbols = Vec::new();
             let mut seen = BTreeSet::new();
@@ -263,9 +259,6 @@ impl Segment {
                 symbols.push((id, text));
             }
             let length = cursor.u64()?;
-            if length > self.limits.payload_bytes {
-                return Err(invalid("payload outside limits"));
-            }
             let padding = (16 - (entry.offset + cursor.at) % 16) % 16;
             if cursor.take(padding)?.iter().any(|byte| *byte != 0) {
                 return Err(invalid("payload alignment padding invalid"));
@@ -291,11 +284,12 @@ impl Segment {
 pub(crate) fn encode(
     records: &[Record],
     supersedes: &[u128],
-    limits: Limits,
+    _limits: Limits,
 ) -> Result<(u128, Vec<u8>), CacheError> {
-    if records.len() > limits.records as usize || supersedes.len() > limits.records as usize {
-        return Err(invalid("segment count outside limits"));
-    }
+    let record_count =
+        u32::try_from(records.len()).map_err(|_| invalid("record count overflow"))?;
+    let superseded_count =
+        u32::try_from(supersedes.len()).map_err(|_| invalid("supersedes count overflow"))?;
     let metadata_len = records
         .len()
         .checked_mul(DESCRIPTOR)
@@ -312,14 +306,11 @@ pub(crate) fn encode(
         if !keys.insert(record.key) {
             return Err(invalid("duplicate record key"));
         }
-        if record.payload.len() as u64 > limits.payload_bytes
-            || record.symbols.len() > limits.symbols_per_record as usize
-        {
-            return Err(invalid("record outside limits"));
-        }
+        let symbol_count =
+            u32::try_from(record.symbols.len()).map_err(|_| invalid("symbol count overflow"))?;
         let offset = HEADER + metadata_len + body.len();
         let start = body.len();
-        body.extend_from_slice(&(record.symbols.len() as u32).to_le_bytes());
+        body.extend_from_slice(&symbol_count.to_le_bytes());
         let mut local = BTreeSet::new();
         for symbol in &record.symbols {
             if !local.insert(symbol.id) {
@@ -333,11 +324,6 @@ pub(crate) fn encode(
             }
             let len =
                 u32::try_from(symbol.text.len()).map_err(|_| invalid("symbol text overflow"))?;
-            if (HEADER + metadata_len + body.len()) as u64 + 12 + u64::from(len)
-                > limits.segment_bytes
-            {
-                return Err(invalid("segment exceeds byte limit"));
-            }
             body.extend_from_slice(&symbol.id.to_le_bytes());
             body.extend_from_slice(&len.to_le_bytes());
             body.extend_from_slice(&symbol.text);
@@ -352,9 +338,6 @@ pub(crate) fn encode(
         metadata.extend_from_slice(&(offset as u64).to_le_bytes());
         metadata.extend_from_slice(&((body.len() - start) as u64).to_le_bytes());
         metadata.extend_from_slice(&xxh3_128(&body[start..]).to_le_bytes());
-        if (HEADER + metadata_len + body.len()) as u64 > limits.segment_bytes {
-            return Err(invalid("segment exceeds byte limit"));
-        }
     }
     let mut identity = Xxh3::new();
     identity.update(&metadata);
@@ -366,8 +349,8 @@ pub(crate) fn encode(
     result.extend_from_slice(&0u32.to_le_bytes());
     result.extend_from_slice(&((HEADER + metadata.len() + body.len()) as u64).to_le_bytes());
     result.extend_from_slice(&(metadata.len() as u64).to_le_bytes());
-    result.extend_from_slice(&(records.len() as u32).to_le_bytes());
-    result.extend_from_slice(&(supersedes.len() as u32).to_le_bytes());
+    result.extend_from_slice(&record_count.to_le_bytes());
+    result.extend_from_slice(&superseded_count.to_le_bytes());
     result.extend_from_slice(&id.to_le_bytes());
     let mut framing = Xxh3::new();
     framing.update(&result);

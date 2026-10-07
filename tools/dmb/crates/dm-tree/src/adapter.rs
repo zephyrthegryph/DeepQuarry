@@ -980,32 +980,8 @@ impl AdaptedDeclarations {
     pub fn finish_with_engine_observed(
         self,
         seed: Option<&crate::frontend::EngineSeed>,
-        on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
-    ) -> Result<TreeSnapshot, SnapshotError> {
-        self.finish_with_engine_reuse_observed(seed, None, on_error)
-    }
-
-    /// Reuse semantic declarations only. Current origins always issue a new
-    /// occurrence table; storage failures are ordinary cold-resolution misses.
-    pub fn finish_with_engine_reuse_observed(
-        self,
-        seed: Option<&crate::frontend::EngineSeed>,
-        reuse: Option<&crate::tree_reuse::TreeReuse>,
         mut on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
     ) -> Result<TreeSnapshot, SnapshotError> {
-        let reuse_key = reuse.and_then(|reuse| reuse.key(&self, seed));
-        if let (Some(reuse), Some(key)) = (reuse, reuse_key.as_deref()) {
-            if let Some(tree) = reuse.lookup(key, &self, seed) {
-                let occurrences = Arc::new(
-                    crate::OccurrenceTable::build(&tree, self.origins).map_err(|error| {
-                        let error = SnapshotError::Origins(error);
-                        on_error(&error, &self.skeletons, &[]);
-                        error
-                    })?,
-                );
-                return Ok(TreeSnapshot { tree, occurrences });
-            }
-        }
         let mut skeletons = Vec::new();
         // Engine parents seed defaults; authored parent_type has language
         // precedence. Keep conflicts between two authored explicit parents an
@@ -1078,9 +1054,6 @@ impl AdaptedDeclarations {
                 error
             },
         )?);
-        if let (Some(reuse), Some(key)) = (reuse, reuse_key.as_deref()) {
-            reuse.remember(key, &tree, &skeletons[engine_count..], seed);
-        }
         Ok(TreeSnapshot { tree, occurrences })
     }
 }

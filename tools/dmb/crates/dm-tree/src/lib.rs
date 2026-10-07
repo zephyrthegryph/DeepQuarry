@@ -16,8 +16,6 @@ mod procedure;
 pub mod procedure_statics;
 mod resolver;
 pub mod settings;
-pub mod tree_reuse;
-mod tree_wire;
 mod variable_facts;
 pub use adapter::{
     from_ast, from_ast_in_scope, AdaptedDeclarations, AdapterError, SnapshotError, TreeSnapshot,

@@ -302,3 +302,50 @@ fn recently_published_unleased_segments_survive_lease_compaction() {
     assert_eq!(result.compact.records, 1);
     assert!(cache.snapshot().unwrap().get(input.key, validate).is_some());
 }
+
+#[test]
+fn oversized_singleton_population_and_compaction_preserve_the_record() {
+    let root = Temp::new();
+    let limits = Limits {
+        segment_bytes: 256,
+        payload_bytes: 64,
+        symbols_per_record: 0,
+        ..Limits::default()
+    };
+    let cache = Cache::open(&root.0, limits).unwrap();
+    let mut entry = record(9001, 1);
+    entry.payload = vec![42u8; 4096].into();
+    let mut sink = cache.publish_sink(128);
+    sink.push(entry.clone()).unwrap();
+    assert_eq!(sink.pending_bytes(), 0);
+    assert_eq!(sink.finish().unwrap().records, 1);
+    let snapshot = cache.snapshot().unwrap();
+    let check = |bytes: &[u8], _: &[(u64, &[u8])]| {
+        if bytes == entry.payload.as_ref() {
+            Ok(())
+        } else {
+            Err("payload changed".into())
+        }
+    };
+    assert!(snapshot.get(entry.key, check).is_some());
+    cache
+        .compact(&BTreeSet::from([entry.key]), |_, bytes, symbols| {
+            check(bytes, symbols)
+        })
+        .unwrap();
+    assert!(cache.snapshot().unwrap().get(entry.key, check).is_some());
+    // Publication through a captured writer does not mutate this reader snapshot.
+    let extra = record(9002, 1);
+    snapshot.publish(&[extra.clone()]).unwrap();
+    assert!(snapshot.get(extra.key, validate).is_none());
+    assert!(cache.snapshot().unwrap().get(extra.key, validate).is_some());
+}
+
+#[cfg(windows)]
+#[test]
+fn population_space_shortage_is_an_error() {
+    let root = Temp::new();
+    let cache = Cache::open(&root.0, Limits::default()).unwrap();
+    cache.check_population_space(0).unwrap();
+    assert!(cache.check_population_space(u64::MAX).is_err());
+}

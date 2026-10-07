@@ -455,19 +455,6 @@ pub fn build_with_expansion_memo<P: SourceProvider>(
     config: FrontendConfig<'_>,
     memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
 ) -> Result<ColdFrontend, Vec<Diagnostic>> {
-    build_with_memos(project, provider, defines, config, memo, None)
-}
-
-/// Reuse only a tree certified against current ordered declaration facts;
-/// source occurrence provenance is rebuilt for every captured input.
-pub fn build_with_memos<P: SourceProvider>(
-    project: &Path,
-    provider: &P,
-    defines: &BTreeMap<String, String>,
-    config: FrontendConfig<'_>,
-    memo: Option<&dyn dm_preprocess::regions::ExpansionMemo>,
-    tree_reuse: Option<&crate::tree_reuse::TreeReuse>,
-) -> Result<ColdFrontend, Vec<Diagnostic>> {
     let workers = config.workers;
     let total_start = Instant::now();
     let mut timings = FrontendTimings::default();
@@ -484,6 +471,7 @@ pub fn build_with_memos<P: SourceProvider>(
         0,
         0,
     );
+    let profile_stage = dm_profile::stage("frontend.directive_planning");
     let plan = match memo {
         Some(memo) => {
             dm_preprocess::regions::plan_regions_with_memo(project, &captured, defines, memo)
@@ -499,6 +487,7 @@ pub fn build_with_memos<P: SourceProvider>(
         plan.regions.len(),
         plan.regions.len(),
     );
+    drop(profile_stage);
     let stage_start = Instant::now();
     observe(
         config,
@@ -508,6 +497,7 @@ pub fn build_with_memos<P: SourceProvider>(
         0,
         plan.regions.len(),
     );
+    let profile_stage = dm_profile::stage("frontend.expansion");
     let expanded = match memo {
         Some(memo) => dm_preprocess::regions::expand_regions_text_with_memo(&plan, workers, memo),
         None => expand_regions_text(&plan, workers),
@@ -521,6 +511,7 @@ pub fn build_with_memos<P: SourceProvider>(
         plan.regions.len(),
         plan.regions.len(),
     );
+    drop(profile_stage);
     let provenance_start = Instant::now();
     observe(
         config,
@@ -530,6 +521,7 @@ pub fn build_with_memos<P: SourceProvider>(
         0,
         plan.occurrences.len(),
     );
+    let profile_stage = dm_profile::stage("frontend.source_indexing");
     let sources = captured.sources.into_inner();
     let mut files = Vec::new();
     let mut by_path = HashMap::new();
@@ -594,6 +586,7 @@ pub fn build_with_memos<P: SourceProvider>(
         files.len(),
         files.len(),
     );
+    drop(profile_stage);
     let parse_start = Instant::now();
     observe(
         config,
@@ -603,6 +596,7 @@ pub fn build_with_memos<P: SourceProvider>(
         0,
         0,
     );
+    let profile_stage = dm_profile::stage("frontend.declaration_parsing");
     let ParsedDeclarations {
         items: compact_items,
         diagnostics: syntax_diagnostics,
@@ -657,6 +651,7 @@ pub fn build_with_memos<P: SourceProvider>(
         adapted.skeletons.len(),
         adapted.skeletons.len(),
     );
+    drop(profile_stage);
     observe(
         config,
         FrontendStage::DeclarationOrigins,
@@ -665,6 +660,7 @@ pub fn build_with_memos<P: SourceProvider>(
         0,
         adapted.origins.len(),
     );
+    let profile_stage = dm_profile::stage("frontend.declaration_origins");
     let provenance_start = Instant::now();
     let expanded_spans: Vec<_> = adapted.origins.iter().map(|origin| origin.span).collect();
     // Hash each original region once, not once for every declaration in it.
@@ -722,6 +718,7 @@ pub fn build_with_memos<P: SourceProvider>(
         adapted.origins.len(),
         adapted.origins.len(),
     );
+    drop(profile_stage);
     let resolution_start = Instant::now();
     observe(
         config,
@@ -731,21 +728,18 @@ pub fn build_with_memos<P: SourceProvider>(
         0,
         adapted.skeletons.len(),
     );
+    let profile_stage = dm_profile::stage("frontend.tree_resolution");
     let mut resolution_diagnostic = None;
     let snapshot = adapted
-        .finish_with_engine_reuse_observed(
-            config.engine,
-            tree_reuse,
-            |error, skeletons, origins| {
-                resolution_diagnostic = Some(resolution_error(
-                    error,
-                    skeletons,
-                    origins,
-                    &mapping,
-                    config.engine.is_some(),
-                ));
-            },
-        )
+        .finish_with_engine_observed(config.engine, |error, skeletons, origins| {
+            resolution_diagnostic = Some(resolution_error(
+                error,
+                skeletons,
+                origins,
+                &mapping,
+                config.engine.is_some(),
+            ));
+        })
         .map_err(|_| {
             vec![resolution_diagnostic.expect("resolution failure must notify observer")]
         })?;
@@ -758,6 +752,7 @@ pub fn build_with_memos<P: SourceProvider>(
         snapshot.tree.declarations().len(),
         snapshot.tree.declarations().len(),
     );
+    drop(profile_stage);
     observe(
         config,
         FrontendStage::BodyIndexing,
@@ -766,6 +761,7 @@ pub fn build_with_memos<P: SourceProvider>(
         0,
         snapshot.tree.declarations().len(),
     );
+    let profile_stage = dm_profile::stage("frontend.body_indexing");
     let provenance_start = Instant::now();
     let declarations_by_start: HashMap<_, _> = expanded_spans
         .iter()
@@ -807,6 +803,7 @@ pub fn build_with_memos<P: SourceProvider>(
         bodies.len(),
         bodies.len(),
     );
+    drop(profile_stage);
     timings.total = total_start.elapsed();
     let bodies: Arc<[BodyOccurrence]> = bodies.into();
     Ok(ColdFrontend {
@@ -865,6 +862,7 @@ fn parse_declarations(
     let workers = config.workers;
     let parse_start = Instant::now();
     let mut chunks = Vec::new();
+    let profile_scan = dm_profile::stage("frontend.grammar_scan");
     let report =
         dm_syntax::for_each_stable_source_chunk(source, source.len().max(1), 32, |text, offset| {
             chunks.push((offset, text.len()))
@@ -873,6 +871,7 @@ fn parse_declarations(
         return Err(vec![internal("grammar chunker omitted a declaration")]);
     }
     let descriptor_scan = parse_start.elapsed();
+    drop(profile_scan);
     let region_hits = std::sync::atomic::AtomicUsize::new(0);
     let independent_hits = std::sync::atomic::AtomicUsize::new(0);
     let facts_hits = std::sync::atomic::AtomicUsize::new(0);
@@ -912,173 +911,182 @@ fn parse_declarations(
                         &lookup_ns,
                         &facts_ns,
                     );
-                    scope.spawn(move || loop {
-                        let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                        let Some(&(offset, len)) = chunks.get(index) else {
-                            break;
-                        };
-                        let text = &source[offset..offset + len];
-                        let lookup_start = Instant::now();
-                        let receipt_index = expanded
-                            .receipts
-                            .partition_point(|receipt| receipt.output_span().end <= offset);
-                        let receipt = expanded.receipts.get(receipt_index).filter(|receipt| {
-                            receipt.output_span().start <= offset
-                                && offset + len <= receipt.output_span().end
-                        });
-                        let relative = receipt.map(|receipt| {
-                            dm_syntax::Span::new(
-                                offset - receipt.output_span().start,
-                                offset + len - receipt.output_span().start,
-                            )
-                        });
-                        let cached = receipt
-                            .zip(relative)
-                            .and_then(|(receipt, span)| {
-                                receipt.record().fragment(parserwire::VERSION, span)
-                            })
-                            .and_then(|bytes| parserwire::decode_with_facts(bytes, text));
-                        if cached.is_some() {
-                            region_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                        }
-                        let independent = if cached.is_none() {
-                            memo.and_then(|memo| {
-                                let key = dm_preprocess::regions::FragmentRecord::lookup_key(
-                                    parserwire::VERSION,
-                                    text,
-                                );
-                                memo.fragment_candidates(key)
-                                    .into_iter()
-                                    .rev()
-                                    .find_map(|record| {
-                                        record
-                                            .matches(parserwire::VERSION, text)
-                                            .then(|| {
-                                                parserwire::decode_with_facts(
-                                                    record.payload(),
-                                                    text,
-                                                )
-                                            })
-                                            .flatten()
-                                    })
-                            })
-                        } else {
-                            None
-                        };
-                        let independent_hit = independent.is_some();
-                        if independent_hit {
-                            independent_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                        }
-                        let cached = cached.or(independent);
-                        let cached_fragment_hit = cached.is_some();
-                        let (mut parsed, errors, cached_facts) = match cached {
-                            Some((items, errors, facts)) => (items, errors, facts),
-                            None => {
-                                parsed_chunks.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                                let ast = dm_syntax::parse_declaration_skeleton(text);
-                                // Without an issued contained-region receipt, preserve
-                                // the original one-pass cold compaction/rebase path.
-                                let items = compact_declarations(
-                                    ast.items,
-                                    if receipt.is_some() || independent_hit {
-                                        0
-                                    } else {
-                                        offset
-                                    },
-                                );
-                                (items, ast.diagnostics, None)
-                            }
-                        };
-                        if receipt.is_some() || independent_hit {
-                            shift_items(&mut parsed, offset);
-                        }
-                        // Grammar-safe chunks are complete root-context units,
-                        // including any declaration continued across include regions.
-                        // Facts use a small local spelling table, never a cloned tree.
-                        let ast = AstFile {
-                            items: parsed,
-                            ..AstFile::default()
-                        };
-                        let admitted_facts = cached_facts
-                            .as_deref()
-                            .and_then(|bytes| chunkfacts::decode(bytes, text, offset));
-                        let has_cached_facts = admitted_facts.is_some();
-                        lookup_ns.fetch_add(
-                            lookup_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
-                            std::sync::atomic::Ordering::Relaxed,
-                        );
-                        if has_cached_facts {
-                            facts_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                        }
-                        let facts_start = Instant::now();
-                        let facts = if let Some(facts) = admitted_facts {
-                            Ok(facts)
-                        } else if errors.is_empty() {
-                            crate::from_ast(&ast, SymbolTable::default(), FileId(0), 0, 0).and_then(
-                                |mut adapted| {
-                                    crate::allocation_ledger::capture(
-                                        &ast.items,
-                                        "/",
-                                        &mut adapted.symbols,
-                                    )
-                                    .map(|ledger| (adapted, ledger))
-                                    .map_err(|error| {
-                                        vec![crate::AdapterError {
-                                            span: dm_ir::Span {
-                                                file: FileId(0),
-                                                start: error.span.start as u32,
-                                                end: error.span.end as u32,
-                                            },
-                                            message: error.message,
-                                        }]
-                                    })
-                                },
-                            )
-                        } else {
-                            Err(Vec::new())
-                        };
-                        let parsed = ast.items;
-                        facts_ns.fetch_add(
-                            facts_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
-                            std::sync::atomic::Ordering::Relaxed,
-                        );
-                        let produced_payload = if memo.is_some()
-                            && (!cached_fragment_hit || !has_cached_facts)
-                        {
-                            let facts_bytes = facts.as_ref().ok().and_then(|(facts, ledger)| {
-                                chunkfacts::encode(facts, ledger, offset)
+                    scope.spawn(move || {
+                        let _profile_worker = dm_profile::stage("frontend.declaration_parsing");
+                        loop {
+                            let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            let Some(&(offset, len)) = chunks.get(index) else {
+                                break;
+                            };
+                            let text = &source[offset..offset + len];
+                            let lookup_start = Instant::now();
+                            let profile_lookup =
+                                dm_profile::stage("frontend.fragment_lookup_decode_parse");
+                            let receipt_index = expanded
+                                .receipts
+                                .partition_point(|receipt| receipt.output_span().end <= offset);
+                            let receipt = expanded.receipts.get(receipt_index).filter(|receipt| {
+                                receipt.output_span().start <= offset
+                                    && offset + len <= receipt.output_span().end
                             });
-                            parserwire::encode_with_facts(&parsed, &errors, offset, facts_bytes)
-                        } else {
-                            None
-                        };
-                        if !cached_fragment_hit {
-                            if let Some(memo) = memo {
-                                if let Some(bytes) = &produced_payload {
-                                    if let Some(record) =
-                                        dm_preprocess::regions::FragmentRecord::new(
-                                            parserwire::VERSION,
-                                            text,
-                                            Arc::from(bytes.as_slice()),
+                            let relative = receipt.map(|receipt| {
+                                dm_syntax::Span::new(
+                                    offset - receipt.output_span().start,
+                                    offset + len - receipt.output_span().start,
+                                )
+                            });
+                            let cached = receipt
+                                .zip(relative)
+                                .and_then(|(receipt, span)| {
+                                    receipt.record().fragment(parserwire::VERSION, span)
+                                })
+                                .and_then(|bytes| parserwire::decode_with_facts(bytes, text));
+                            if cached.is_some() {
+                                region_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            }
+                            let independent = if cached.is_none() {
+                                memo.and_then(|memo| {
+                                    let key = dm_preprocess::regions::FragmentRecord::lookup_key(
+                                        parserwire::VERSION,
+                                        text,
+                                    );
+                                    memo.fragment_candidates(key).into_iter().rev().find_map(
+                                        |record| {
+                                            record
+                                                .matches(parserwire::VERSION, text)
+                                                .then(|| {
+                                                    parserwire::decode_with_facts(
+                                                        record.payload(),
+                                                        text,
+                                                    )
+                                                })
+                                                .flatten()
+                                        },
+                                    )
+                                })
+                            } else {
+                                None
+                            };
+                            let independent_hit = independent.is_some();
+                            if independent_hit {
+                                independent_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            }
+                            let cached = cached.or(independent);
+                            let cached_fragment_hit = cached.is_some();
+                            let (mut parsed, errors, cached_facts) = match cached {
+                                Some((items, errors, facts)) => (items, errors, facts),
+                                None => {
+                                    parsed_chunks
+                                        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                                    let ast = dm_syntax::parse_declaration_skeleton(text);
+                                    // Without an issued contained-region receipt, preserve
+                                    // the original one-pass cold compaction/rebase path.
+                                    let items = compact_declarations(
+                                        ast.items,
+                                        if receipt.is_some() || independent_hit {
+                                            0
+                                        } else {
+                                            offset
+                                        },
+                                    );
+                                    (items, ast.diagnostics, None)
+                                }
+                            };
+                            if receipt.is_some() || independent_hit {
+                                shift_items(&mut parsed, offset);
+                            }
+                            // Grammar-safe chunks are complete root-context units,
+                            // including any declaration continued across include regions.
+                            // Facts use a small local spelling table, never a cloned tree.
+                            let ast = AstFile {
+                                items: parsed,
+                                ..AstFile::default()
+                            };
+                            let admitted_facts = cached_facts
+                                .as_deref()
+                                .and_then(|bytes| chunkfacts::decode(bytes, text, offset));
+                            let has_cached_facts = admitted_facts.is_some();
+                            drop(profile_lookup);
+                            lookup_ns.fetch_add(
+                                lookup_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+                                std::sync::atomic::Ordering::Relaxed,
+                            );
+                            if has_cached_facts {
+                                facts_hits.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            }
+                            let facts_start = Instant::now();
+                            let profile_facts =
+                                dm_profile::stage("frontend.fresh_declaration_facts");
+                            let facts = if let Some(facts) = admitted_facts {
+                                Ok(facts)
+                            } else if errors.is_empty() {
+                                crate::from_ast(&ast, SymbolTable::default(), FileId(0), 0, 0)
+                                    .and_then(|mut adapted| {
+                                        crate::allocation_ledger::capture(
+                                            &ast.items,
+                                            "/",
+                                            &mut adapted.symbols,
                                         )
-                                    {
-                                        memo.insert_fragment(Arc::new(record));
+                                        .map(|ledger| (adapted, ledger))
+                                        .map_err(|error| {
+                                            vec![crate::AdapterError {
+                                                span: dm_ir::Span {
+                                                    file: FileId(0),
+                                                    start: error.span.start as u32,
+                                                    end: error.span.end as u32,
+                                                },
+                                                message: error.message,
+                                            }]
+                                        })
+                                    })
+                            } else {
+                                Err(Vec::new())
+                            };
+                            let parsed = ast.items;
+                            drop(profile_facts);
+                            facts_ns.fetch_add(
+                                facts_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+                                std::sync::atomic::Ordering::Relaxed,
+                            );
+                            let produced_payload = if memo.is_some()
+                                && (!cached_fragment_hit || !has_cached_facts)
+                            {
+                                let facts_bytes =
+                                    facts.as_ref().ok().and_then(|(facts, ledger)| {
+                                        chunkfacts::encode(facts, ledger, offset)
+                                    });
+                                parserwire::encode_with_facts(&parsed, &errors, offset, facts_bytes)
+                            } else {
+                                None
+                            };
+                            if !cached_fragment_hit {
+                                if let Some(memo) = memo {
+                                    if let Some(bytes) = &produced_payload {
+                                        if let Some(record) =
+                                            dm_preprocess::regions::FragmentRecord::new(
+                                                parserwire::VERSION,
+                                                text,
+                                                Arc::from(bytes.as_slice()),
+                                            )
+                                        {
+                                            memo.insert_fragment(Arc::new(record));
+                                        }
                                     }
                                 }
                             }
-                        }
-                        let fragment = if has_cached_facts {
-                            None
-                        } else {
-                            receipt.zip(relative).and_then(|(_, span)| {
-                                produced_payload.map(|bytes| (receipt_index, span, bytes))
-                            })
-                        };
-                        if sender
-                            .send((index, offset, parsed, errors, fragment, facts))
-                            .is_err()
-                        {
-                            break;
+                            let fragment = if has_cached_facts {
+                                None
+                            } else {
+                                receipt.zip(relative).and_then(|(_, span)| {
+                                    produced_payload.map(|bytes| (receipt_index, span, bytes))
+                                })
+                            };
+                            if sender
+                                .send((index, offset, parsed, errors, fragment, facts))
+                                .is_err()
+                            {
+                                break;
+                            }
                         }
                     })
                 })
@@ -1111,6 +1119,7 @@ fn parse_declarations(
     })?;
     ordered.sort_by_key(|(index, _, _, _, _, _)| *index);
     let merge_start = Instant::now();
+    let _profile_merge = dm_profile::stage("frontend.ordered_declaration_merge");
     let mut updated = std::collections::BTreeMap::new();
     let mut adapted = crate::AdaptedDeclarations {
         symbols: config

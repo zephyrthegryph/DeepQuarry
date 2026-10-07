@@ -334,7 +334,7 @@ fn parsed(payload: Parse, captured: CapturedMap) -> Option<MapPlan> {
 }
 pub(super) fn validate_parse(bytes: &[u8]) -> Result<(), String> {
     let (_, json) = envelope(bytes).ok_or_else(invalid)?;
-    let payload: Parse = dm_wire::decode(1, json, 32 * 1024 * 1024)?;
+    let payload: Parse = dm_wire::decode(1, json, json.len())?;
     let captured = CapturedMap {
         path: Arc::new(std::path::PathBuf::new()),
         include_occurrence: 0,
@@ -348,7 +348,7 @@ pub(super) fn admit_parse(
     captured: CapturedMap,
 ) -> Result<Option<MapPlan>, String> {
     let (stored, json) = envelope(bytes).ok_or_else(invalid)?;
-    let payload: Parse = dm_wire::decode(1, json, 32 * 1024 * 1024)?;
+    let payload: Parse = dm_wire::decode(1, json, json.len())?;
     if stored == key && payload.source.as_str() == captured.source.as_ref() {
         return parsed(payload, captured).ok_or_else(invalid).map(Some);
     }
@@ -470,7 +470,7 @@ fn check_geometry(payload: &Geometry) -> Result<(), String> {
 }
 pub(super) fn validate_geometry(bytes: &[u8]) -> Result<(), String> {
     let (_, json) = envelope(bytes).ok_or_else(invalid)?;
-    let payload: Geometry = dm_wire::decode(1, json, 32 * 1024 * 1024)?;
+    let payload: Geometry = dm_wire::decode(1, json, json.len())?;
     check_geometry(&payload)
 }
 pub(super) fn admit_geometry<R: Resolver>(
@@ -481,7 +481,7 @@ pub(super) fn admit_geometry<R: Resolver>(
     host: &R,
 ) -> Result<Option<(Projection, Vec<ResolverRead>)>, String> {
     let (stored, json) = envelope(bytes).ok_or_else(invalid)?;
-    let payload: Geometry = dm_wire::decode(1, json, 32 * 1024 * 1024)?;
+    let payload: Geometry = dm_wire::decode(1, json, json.len())?;
     check_geometry(&payload)?;
     if stored != key {
         return Ok(None);

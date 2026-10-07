@@ -9,40 +9,6 @@ license = "GPL-3.0-only"
 members = [".", "crates/*"]
 resolver = "2"
 
-# Asset and source hashing are hot even in prototype builds. Keep the compiler
-# debuggable without paying the unoptimized SHA-256 cost for large archives.
-[profile.dev.package.sha2]
-opt-level = 3
-
-# Expansion and persisted cache decoding dominate prototype cold starts.
-[profile.dev.package.dm-preprocess]
-opt-level = 2
-
-[profile.dev.package.serde_json]
-opt-level = 2
-
-# Full projects parse and lower tens of thousands of procedure bodies.
-[profile.dev.package.dm-syntax]
-opt-level = 2
-
-[profile.dev.package.dm-codegen-byond]
-opt-level = 2
-
-# Binary decoding, table linking and serialization also run on every body edit.
-[profile.dev.package.byond-dmb]
-opt-level = 2
-
-[profile.dev.package.dm-resources]
-opt-level = 2
-
-[profile.dev.package.dm-ir]
-opt-level = 2
-
-# Optimizing the large fixture test harness costs gigabytes and minutes in LLVM.
-# Production compiler binaries keep the optimized binary-format dependency.
-[profile.test.package.byond-dmb]
-opt-level = 0
-
 [dependencies]
 md5 = "0.7"
 serde = { version = "1", features = ["derive"] }

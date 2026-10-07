@@ -17,7 +17,10 @@ pub enum Error {
 }
 
 pub fn is_header_field(name: &str) -> bool {
-    matches!(name, "control_freak" | "show_verb_panel" | "preload_rsc" | "script")
+    matches!(
+        name,
+        "control_freak" | "show_verb_panel" | "preload_rsc" | "script"
+    )
 }
 
 /// Only authored values enter this projection. Omitted fields retain the
@@ -27,7 +30,8 @@ pub fn project(name: &str, value: &SemanticValue) -> Result<Option<Directive>, E
         return Ok(None);
     }
     if name == "script" {
-        return crate::client_script::project(value).map(|script| Some(Directive::Script(script)))
+        return crate::client_script::project(value)
+            .map(|script| Some(Directive::Script(script)))
             .map_err(Error::Unsupported);
     }
     if name == "preload_rsc" && matches!(value, SemanticValue::Text(_)) {
@@ -41,17 +45,21 @@ pub fn project(name: &str, value: &SemanticValue) -> Result<Option<Directive>, E
         return Err(Error::Invalid(format!("invalid client.{name}")));
     }
     let directive = match name {
-        "control_freak" if (0.0..=7.0).contains(&number) => {
-            Directive::Control(number as u16)
-        }
-        "show_verb_panel" if number == 0.0 || number == 1.0 => {
-            Directive::Flag { mask: 0x400, enabled: number == 0.0 }
-        }
+        "control_freak" if (0.0..=7.0).contains(&number) => Directive::Control(number as u16),
+        "show_verb_panel" if number == 0.0 || number == 1.0 => Directive::Flag {
+            mask: 0x400,
+            enabled: number == 0.0,
+        },
         "preload_rsc" if (0.0..=2.0).contains(&number) => {
             // Native 0.5 and 1.5 fixtures select the ordinary mode. This is
             // equality against the scalar value, not truncation to an integer.
-            Directive::PreloadMode(if number == 0.0 { 0x800 }
-                else if number == 2.0 { 0x1000 } else { 0 })
+            Directive::PreloadMode(if number == 0.0 {
+                0x800
+            } else if number == 2.0 {
+                0x1000
+            } else {
+                0
+            })
         }
         _ => return Err(Error::Invalid(format!("invalid client.{name}"))),
     };
@@ -63,8 +71,11 @@ pub fn apply(dmb: &mut byond_dmb::dmb::Dmb, directives: &[Directive]) {
         match directive {
             Directive::Control(value) => dmb.world.control = *value,
             Directive::Flag { mask, enabled } => {
-                if *enabled { dmb.header.flags |= *mask; }
-                else { dmb.header.flags &= !*mask; }
+                if *enabled {
+                    dmb.header.flags |= *mask;
+                } else {
+                    dmb.header.flags &= !*mask;
+                }
             }
             Directive::PreloadMode(bits) => {
                 dmb.header.flags = (dmb.header.flags & !0x1800) | *bits;
@@ -90,21 +101,33 @@ pub fn configuration_order(
     let mut present = HashSet::new();
     for &(path, parent, ordinal) in types {
         if !present.insert(path) {
-            return Err(Error::Unsupported("duplicate client configuration type".into()));
+            return Err(Error::Unsupported(
+                "duplicate client configuration type".into(),
+            ));
         }
-        if let Some(parent) = parent { children.entry(parent).or_default().push((ordinal, path)); }
+        if let Some(parent) = parent {
+            children.entry(parent).or_default().push((ordinal, path));
+        }
     }
-    if !present.contains(&root) { return Ok(Vec::new()); }
-    for children in children.values_mut() { children.sort_by_key(|&(ordinal, _)| ordinal); }
+    if !present.contains(&root) {
+        return Ok(Vec::new());
+    }
+    for children in children.values_mut() {
+        children.sort_by_key(|&(ordinal, _)| ordinal);
+    }
     fn visit(
         path: dm_ir::SymbolId,
         children: &HashMap<dm_ir::SymbolId, Vec<(u32, dm_ir::SymbolId)>>,
         seen: &mut HashSet<dm_ir::SymbolId>,
         output: &mut Vec<dm_ir::SymbolId>,
     ) -> Result<(), Error> {
-        if !seen.insert(path) { return Err(Error::Unsupported("client hierarchy cycle".into())); }
+        if !seen.insert(path) {
+            return Err(Error::Unsupported("client hierarchy cycle".into()));
+        }
         if let Some(children_here) = children.get(&path) {
-            for &(_, child) in children_here { visit(child, children, seen, output)?; }
+            for &(_, child) in children_here {
+                visit(child, children, seen, output)?;
+            }
         }
         output.push(path);
         Ok(())
@@ -117,14 +140,30 @@ pub fn configuration_order(
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn number(value: f32) -> SemanticValue { SemanticValue::NumberBits(value.to_bits()) }
+    fn number(value: f32) -> SemanticValue {
+        SemanticValue::NumberBits(value.to_bits())
+    }
     #[test]
     fn native_fraction_and_disabled_panel_facts() {
-        assert_eq!(project("control_freak", &number(3.5)), Ok(Some(Directive::Control(3))));
-        assert_eq!(project("preload_rsc", &number(0.5)), Ok(Some(Directive::PreloadMode(0))));
-        assert_eq!(project("preload_rsc", &number(2.0)), Ok(Some(Directive::PreloadMode(0x1000))));
-        assert_eq!(project("show_verb_panel", &number(0.0)),
-            Ok(Some(Directive::Flag { mask: 0x400, enabled: true })));
+        assert_eq!(
+            project("control_freak", &number(3.5)),
+            Ok(Some(Directive::Control(3)))
+        );
+        assert_eq!(
+            project("preload_rsc", &number(0.5)),
+            Ok(Some(Directive::PreloadMode(0)))
+        );
+        assert_eq!(
+            project("preload_rsc", &number(2.0)),
+            Ok(Some(Directive::PreloadMode(0x1000)))
+        );
+        assert_eq!(
+            project("show_verb_panel", &number(0.0)),
+            Ok(Some(Directive::Flag {
+                mask: 0x400,
+                enabled: true
+            }))
+        );
         assert!(project("control_freak", &number(8.0)).is_err());
         assert_eq!(project("unrecognized", &SemanticValue::Null), Ok(None));
     }
@@ -143,7 +182,10 @@ mod tests {
             let expected = Dmb::from_bytes(bytes).unwrap();
             let mut actual = expected.clone();
             actual.header.flags ^= 0x1800;
-            apply(&mut actual, &[project("preload_rsc", value).unwrap().unwrap()]);
+            apply(
+                &mut actual,
+                &[project("preload_rsc", value).unwrap().unwrap()],
+            );
             assert_eq!(actual.header.flags, expected.header.flags);
         }
     }
@@ -154,9 +196,18 @@ mod tests {
         let first = SymbolId::of("/client/z");
         let second = SymbolId::of("/client/a");
         let nested = SymbolId::of("/client/z/nested");
-        assert_eq!(configuration_order(root, &[
-            (root, None, 9), (second, Some(root), 8),
-            (nested, Some(first), 5), (first, Some(root), 6),
-        ]).unwrap(), vec![nested, first, second, root]);
+        assert_eq!(
+            configuration_order(
+                root,
+                &[
+                    (root, None, 9),
+                    (second, Some(root), 8),
+                    (nested, Some(first), 5),
+                    (first, Some(root), 6),
+                ]
+            )
+            .unwrap(),
+            vec![nested, first, second, root]
+        );
     }
 }

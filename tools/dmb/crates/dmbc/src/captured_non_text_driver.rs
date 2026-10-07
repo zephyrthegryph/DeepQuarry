@@ -37,6 +37,20 @@ fn timed<T>(
     stage: CaptureStage,
     run: impl FnOnce() -> Result<T, String>,
 ) -> Result<T, String> {
+    let _profile = dm_profile::stage(match stage {
+        CaptureStage::NonTextParsing => "resources.parse_nontext",
+        CaptureStage::ResourceDemand => "resources.demand",
+        CaptureStage::ResourceAdmission => "resources.reuse_validation",
+        CaptureStage::RetainedResourceOrder => "resources.retained_order",
+        CaptureStage::ResourceCatalog => "resources.catalog",
+        CaptureStage::AssetCapture => "resources.asset_capture",
+        CaptureStage::ResourceOrder => "resources.order",
+        CaptureStage::ResourceProjection => "resources.projection",
+        CaptureStage::SymbolBinding => "resources.symbol_binding",
+        CaptureStage::MapProjection => "maps.projection",
+        CaptureStage::MapDescriptors => "maps.descriptors",
+        CaptureStage::MapInitializers => "maps.initializers",
+    });
     let start = std::time::Instant::now();
     let result = run();
     if let Some(observer) = observer {

@@ -72,7 +72,9 @@ pub fn map_captured_lower_errors(
         }
         for file in frontend.files.iter() {
             // Match the former linear lookup's first-file behavior exactly.
-            definition_files.entry(file.path.as_path()).or_insert(file.id);
+            definition_files
+                .entry(file.path.as_path())
+                .or_insert(file.id);
         }
     }
     errors
@@ -109,30 +111,36 @@ pub fn map_captured_lower_errors(
                                 "initializer source file absent".into(),
                             )
                         })?;
-                    projections.get(&(
-                        source.path.as_path(),
-                        origin.provenance.include_occurrence as usize,
-                        origin.provenance.span.start as usize,
-                        origin.provenance.span.end as usize,
-                    )).into_iter().flat_map(|(first, rest)| std::iter::once(*first).chain(rest.iter().copied())).find_map(|expanded| {
-                        let location = frontend.location(expanded.output_span.start)?;
-                        let definitions = location
-                            .macro_expansions
-                            .iter()
-                            .filter_map(|expansion| expansion.definition.as_ref())
-                            .filter_map(|definition| {
-                                let file = *definition_files.get(definition.path.as_path())?;
-                                dm_ir::Span::new(
-                                    file,
-                                    u32::try_from(definition.source_span.start).ok()?,
-                                    u32::try_from(definition.source_span.end).ok()?,
-                                )
-                                .ok()
-                            })
-                            .collect::<Vec<_>>();
-                        (definitions.as_slice() == origin.provenance.expansion_stack.as_ref())
-                            .then_some(location)
-                    })
+                    projections
+                        .get(&(
+                            source.path.as_path(),
+                            origin.provenance.include_occurrence as usize,
+                            origin.provenance.span.start as usize,
+                            origin.provenance.span.end as usize,
+                        ))
+                        .into_iter()
+                        .flat_map(|(first, rest)| {
+                            std::iter::once(*first).chain(rest.iter().copied())
+                        })
+                        .find_map(|expanded| {
+                            let location = frontend.location(expanded.output_span.start)?;
+                            let definitions = location
+                                .macro_expansions
+                                .iter()
+                                .filter_map(|expansion| expansion.definition.as_ref())
+                                .filter_map(|definition| {
+                                    let file = *definition_files.get(definition.path.as_path())?;
+                                    dm_ir::Span::new(
+                                        file,
+                                        u32::try_from(definition.source_span.start).ok()?,
+                                        u32::try_from(definition.source_span.end).ok()?,
+                                    )
+                                    .ok()
+                                })
+                                .collect::<Vec<_>>();
+                            (definitions.as_slice() == origin.provenance.expansion_stack.as_ref())
+                                .then_some(location)
+                        })
                 }
             }
             .ok_or_else(|| {
@@ -285,31 +293,55 @@ mod tests {
         impl dm_preprocess::SourceProvider for Sources {
             fn read(&self, path: &std::path::Path) -> Result<String, String> {
                 match path.file_name().and_then(|name| name.to_str()) {
-                    Some("project.dme") => Ok("#include \"first.dm\"\n#include \"second.dm\"\n".into()),
+                    Some("project.dme") => {
+                        Ok("#include \"first.dm\"\n#include \"second.dm\"\n".into())
+                    }
                     Some(name @ ("first.dm" | "second.dm")) => {
-                        let prefix = if name == "first.dm" { "first" } else { "second" };
+                        let prefix = if name == "first.dm" {
+                            "first"
+                        } else {
+                            "second"
+                        };
                         let mut text = "#define VALUE 7\n".to_owned();
-                        for index in 0..64 { text.push_str(&format!("var/{prefix}_{index} = VALUE\n")); }
+                        for index in 0..64 {
+                            text.push_str(&format!("var/{prefix}_{index} = VALUE\n"));
+                        }
                         Ok(text)
                     }
                     _ => Err("unexpected fixture source".into()),
                 }
             }
         }
-        let frontend = dm_tree::frontend::build(std::path::Path::new("project.dme"), &Sources, &Default::default(), 2).unwrap();
+        let frontend = dm_tree::frontend::build(
+            std::path::Path::new("project.dme"),
+            &Sources,
+            &Default::default(),
+            2,
+        )
+        .unwrap();
         let startup = crate::startup::capture(&frontend).unwrap();
         assert_eq!(startup.plan().writes.len(), 128);
         let ordinals = (0..128).collect::<Vec<_>>();
-        let errors = (0..16384).map(|index| LowerError {
-            reason: format!("boundary {index}"),
-            span: Some(LowerSpan { start: 127 - index % 128, end: 127 - index % 128 }),
-            ..Default::default()
-        }).collect();
-        let diagnostics = map_captured_lower_errors(errors, &frontend, startup.plan(), &ordinals).unwrap();
+        let errors = (0..16384)
+            .map(|index| LowerError {
+                reason: format!("boundary {index}"),
+                span: Some(LowerSpan {
+                    start: 127 - index % 128,
+                    end: 127 - index % 128,
+                }),
+                ..Default::default()
+            })
+            .collect();
+        let diagnostics =
+            map_captured_lower_errors(errors, &frontend, startup.plan(), &ordinals).unwrap();
         assert_eq!(diagnostics.len(), 16384);
         for (index, diagnostic) in diagnostics.iter().enumerate() {
             let ordinal = 127 - index % 128;
-            assert!(diagnostic.origin.semantic_path.ends_with(if ordinal < 64 { "first.dm" } else { "second.dm" }));
+            assert!(diagnostic.origin.semantic_path.ends_with(if ordinal < 64 {
+                "first.dm"
+            } else {
+                "second.dm"
+            }));
             assert_eq!(diagnostic.origin.line, ordinal % 64 + 2);
             assert_eq!(diagnostic.message, format!("boundary {index}"));
             assert!(!diagnostic.origin.macro_expansions.is_empty());

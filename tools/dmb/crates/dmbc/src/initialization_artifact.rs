@@ -6,7 +6,10 @@ use dm_link::InitializerIdentity;
 use std::sync::Arc;
 
 pub enum InitializationCoverage {
-    ModifiedAssignments { count: u32, canonical_body: Arc<[u8]> },
+    ModifiedAssignments {
+        count: u32,
+        canonical_body: Arc<[u8]>,
+    },
     DeclarationWrites(Vec<usize>),
     /// Canonical authored atom block, including empty-block presence and
     /// ordered repeated assignments. Absolute source spans stay outside it.
@@ -37,8 +40,10 @@ impl From<LoweredInitializerUnit> for InitializationArtifact {
 impl InitializationArtifact {
     pub fn validate(&self) -> Result<(), String> {
         match (&self.identity, &self.coverage) {
-            (InitializerIdentity::Modified(_), InitializationCoverage::ModifiedAssignments { canonical_body, .. })
-                if !canonical_body.is_empty() => (),
+            (
+                InitializerIdentity::Modified(_),
+                InitializationCoverage::ModifiedAssignments { canonical_body, .. },
+            ) if !canonical_body.is_empty() => (),
             (
                 InitializerIdentity::Map { .. },
                 InitializationCoverage::MapAssignments { canonical_body, .. },

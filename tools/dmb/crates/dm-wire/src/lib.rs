@@ -5,7 +5,8 @@ use serde::{de::DeserializeOwned, Serialize};
 use std::io::{self, Write};
 const MAGIC: &[u8; 8] = b"DMWIRE01";
 const HEADER: usize = 32;
-pub const MAX_BYTES: usize = 32 * 1024 * 1024;
+// The fixed framing represents its payload length as u32, not a cache budget.
+pub const MAX_BYTES: usize = u32::MAX as usize;
 struct Bounded(Vec<u8>, usize);
 impl Write for Bounded {
     fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
@@ -137,9 +138,9 @@ mod tests {
     }
     #[test]
     fn encoded_payload_cap_and_decode_claim_are_bounded() {
-        let oversized = vec![0u8; MAX_BYTES + 1];
-        assert!(encoded_len(1, &oversized).unwrap() > MAX_BYTES + HEADER);
-        assert!(encode(1, &oversized).is_err());
+        let oversized = vec![0u8; 1025];
+        assert!(encoded_len(1, &oversized).unwrap() > 1024 + HEADER);
+        assert!(encode_bounded(1, &oversized, 1024 + HEADER).is_err());
         let mut bytes = encode(1, &1u32).unwrap();
         bytes[12..16].copy_from_slice(&u32::MAX.to_le_bytes());
         assert!(decode::<u32>(1, &bytes, usize::MAX).is_err());

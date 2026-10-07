@@ -534,7 +534,9 @@ pub fn materialize_types(
                 .classes
                 .get(parent as usize)
                 .or_else(|| constructed.get(&parent))
-                .ok_or_else(|| ProjectionError::Unsupported("unavailable parent class record".into()))?
+                .ok_or_else(|| {
+                    ProjectionError::Unsupported("unavailable parent class record".into())
+                })?
                 .clone();
             let path = spelling(ty.path)?;
             let display = path.rsplit('/').next().unwrap_or(path).replace('_', " ");
@@ -608,11 +610,15 @@ pub fn materialize_members(
         fn resource_index(&self, path: SymbolId) -> Result<u32, ProjectionError> {
             let key = self.underlying.resource_key(path)?;
             if !matches!(key, Key::Resource(_)) {
-                return Err(ProjectionError::Unsupported("resource policy returned a non-resource key".into()));
+                return Err(ProjectionError::Unsupported(
+                    "resource policy returned a non-resource key".into(),
+                ));
             }
-            self.tables.index(key).ok_or_else(|| ProjectionError::Unsupported(
-                "resource content absent from frozen link inventory".into(),
-            ))
+            self.tables.index(key).ok_or_else(|| {
+                ProjectionError::Unsupported(
+                    "resource content absent from frozen link inventory".into(),
+                )
+            })
         }
         fn mob_index(&self, path: SymbolId) -> Result<u32, ProjectionError> {
             self.mobs.get(&path).copied().ok_or_else(|| {
@@ -635,14 +641,23 @@ pub fn materialize_members(
     };
     let world = SymbolId::of("/world");
     let savefile = SymbolId::of("/savefile");
-    let savefile_values = projection.fields.iter()
-        .filter(|field| field.owner == savefile && field.intrinsic
-            && field.name == SymbolId::of("byond_version"))
+    let savefile_values = projection
+        .fields
+        .iter()
+        .filter(|field| {
+            field.owner == savefile
+                && field.intrinsic
+                && field.name == SymbolId::of("byond_version")
+        })
         .map(|field| match &field.value {
-            DefaultValue::Scalar(value) => crate::savefile_projection::project(value)
-                .map_err(ProjectionError::Unsupported),
-            _ => Err(ProjectionError::Unsupported("savefile header requires scalar default".into())),
-        }).collect::<Result<Vec<_>, _>>()?;
+            DefaultValue::Scalar(value) => {
+                crate::savefile_projection::project(value).map_err(ProjectionError::Unsupported)
+            }
+            _ => Err(ProjectionError::Unsupported(
+                "savefile header requires scalar default".into(),
+            )),
+        })
+        .collect::<Result<Vec<_>, _>>()?;
     crate::savefile_projection::apply(dmb, &savefile_values)
         .map_err(ProjectionError::Unsupported)?;
     let world_values = projection
@@ -659,9 +674,15 @@ pub fn materialize_members(
     let directives = crate::world_projection::project(world_values)
         .map_err(|error| ProjectionError::Unsupported(format!("world policy {error:?}")))?;
     let client = SymbolId::of("/client");
-    let client_types = projection.types.iter().filter_map(|typ| {
-        tables.index(Key::Type(typ.path)).map(|ordinal| (typ.path, typ.parent, ordinal))
-    }).collect::<Vec<_>>();
+    let client_types = projection
+        .types
+        .iter()
+        .filter_map(|typ| {
+            tables
+                .index(Key::Type(typ.path))
+                .map(|ordinal| (typ.path, typ.parent, ordinal))
+        })
+        .collect::<Vec<_>>();
     let client_order = crate::client_projection::configuration_order(client, &client_types)
         .map_err(|error| ProjectionError::Unsupported(format!("client order {error:?}")))?;
     let client_owners: HashSet<_> = client_order.iter().copied().collect();
@@ -700,28 +721,43 @@ pub fn materialize_members(
         },
     )
     .map_err(ProjectionError::Unsupported)?;
-    if let Some(script) = client_directives.iter().rev().find_map(|directive| {
-        match directive {
+    if let Some(script) = client_directives
+        .iter()
+        .rev()
+        .find_map(|directive| match directive {
             crate::client_projection::Directive::Script(script) => Some(script),
             _ => None,
-        }
-    }) {
+        })
+    {
         struct ScriptBindings<'a> {
             strings: &'a mut crate::composition::StringIndex,
             resources: &'a dyn TypeValuePolicy,
         }
         impl crate::client_script::Bindings for ScriptBindings<'_> {
-            fn string(&mut self, dmb: &mut byond_dmb::dmb::Dmb, bytes: &[u8]) -> Result<u32, String> {
-                self.strings.intern(dmb, bytes).map_err(|error| format!("{error:?}"))
+            fn string(
+                &mut self,
+                dmb: &mut byond_dmb::dmb::Dmb,
+                bytes: &[u8],
+            ) -> Result<u32, String> {
+                self.strings
+                    .intern(dmb, bytes)
+                    .map_err(|error| format!("{error:?}"))
             }
             fn resource(&self, symbol: SymbolId) -> Result<u32, String> {
-                self.resources.resource_index(symbol).map_err(|error| format!("{error:?}"))
+                self.resources
+                    .resource_index(symbol)
+                    .map_err(|error| format!("{error:?}"))
             }
         }
-        crate::client_script::apply(dmb, script, &mut ScriptBindings {
-            strings: &mut world_strings,
-            resources: value_types,
-        }).map_err(ProjectionError::Unsupported)?;
+        crate::client_script::apply(
+            dmb,
+            script,
+            &mut ScriptBindings {
+                strings: &mut world_strings,
+                resources: value_types,
+            },
+        )
+        .map_err(ProjectionError::Unsupported)?;
     }
     let mut classes = HashMap::new();
     let mut declarations = HashMap::new();
@@ -797,7 +833,9 @@ pub fn materialize_members(
                 let tag = types.tag(*path)?;
                 if let Some(primitive) = dm_codegen_byond::NativePrimitiveType::from_symbol(*path) {
                     if tag != primitive.tag() {
-                        return Err(ProjectionError::Unsupported("primitive family policy disagrees with captured native tag".into()));
+                        return Err(ProjectionError::Unsupported(
+                            "primitive family policy disagrees with captured native tag".into(),
+                        ));
                     }
                     return Ok((tag, 0));
                 }
@@ -813,19 +851,36 @@ pub fn materialize_members(
             SemanticValue::Resource(path) => Ok((12, types.resource_index(*path)?)),
             SemanticValue::Procedure(identity) => {
                 let key = if identity.verb {
-                    Key::Verb { owner: identity.owner, name: identity.name, occurrence: identity.occurrence }
+                    Key::Verb {
+                        owner: identity.owner,
+                        name: identity.name,
+                        occurrence: identity.occurrence,
+                    }
                 } else {
-                    Key::Proc { owner: identity.owner, name: identity.name, occurrence: identity.occurrence }
+                    Key::Proc {
+                        owner: identity.owner,
+                        name: identity.name,
+                        occurrence: identity.occurrence,
+                    }
                 };
-                let index = tables.index(key).ok_or_else(|| ProjectionError::Unsupported(
-                    "procedure literal absent from frozen link inventory".into()))?;
+                let index = tables.index(key).ok_or_else(|| {
+                    ProjectionError::Unsupported(
+                        "procedure literal absent from frozen link inventory".into(),
+                    )
+                })?;
                 Ok((38, index))
             }
             SemanticValue::ModifiedInstance(instance) => {
                 let key = Key::Instance(SymbolId::of(&instance.alias()));
-                let index = tables.index(key).ok_or_else(|| ProjectionError::Unsupported("modified default descriptor absent from frozen inventory".into()))?;
+                let index = tables.index(key).ok_or_else(|| {
+                    ProjectionError::Unsupported(
+                        "modified default descriptor absent from frozen inventory".into(),
+                    )
+                })?;
                 if tables.content(key) != Some(instance.canonical_bytes()) {
-                    return Err(ProjectionError::Unsupported("modified default descriptor content differs from frozen inventory".into()));
+                    return Err(ProjectionError::Unsupported(
+                        "modified default descriptor content differs from frozen inventory".into(),
+                    ));
                 }
                 Ok((41, index))
             }
@@ -935,12 +990,12 @@ pub fn materialize_members(
         if field.owner == world && field.intrinsic {
             continue;
         }
-        if field.owner == savefile && field.intrinsic
-            && field.name == SymbolId::of("byond_version")
+        if field.owner == savefile && field.intrinsic && field.name == SymbolId::of("byond_version")
         {
             continue;
         }
-        if client_owners.contains(&field.owner) && field.intrinsic
+        if client_owners.contains(&field.owner)
+            && field.intrinsic
             && crate::client_projection::is_header_field(text(field.name)?)
             && !(text(field.name)? == "preload_rsc"
                 && matches!(&field.value, DefaultValue::Scalar(SemanticValue::Text(_))))
@@ -1149,7 +1204,9 @@ pub trait TypeValuePolicy {
     /// Captured semantic content key; a dense resource ID is allocated later by
     /// the shared linker. Runtime CRC and class IDs are different namespaces.
     fn resource_key(&self, _path: SymbolId) -> Result<Key, ProjectionError> {
-        Err(ProjectionError::Unsupported("resource content domain was not captured".into()))
+        Err(ProjectionError::Unsupported(
+            "resource content domain was not captured".into(),
+        ))
     }
     /// Mob-table identity is a separate domain from class-table identity.
     fn mob_index(&self, _path: SymbolId) -> Result<u32, ProjectionError> {
@@ -1177,11 +1234,16 @@ fn client_header_directives(
     let mut directives = Vec::new();
     for owner in owner_order {
         for field in by_owner.get(owner).into_iter().flatten() {
-            let name = symbols.text(field.name).ok_or_else(||
-                ProjectionError::Unsupported("client field spelling missing".into()))?;
-            if !crate::client_projection::is_header_field(name) { continue; }
+            let name = symbols.text(field.name).ok_or_else(|| {
+                ProjectionError::Unsupported("client field spelling missing".into())
+            })?;
+            if !crate::client_projection::is_header_field(name) {
+                continue;
+            }
             let DefaultValue::Scalar(value) = &field.value else {
-                return Err(ProjectionError::Unsupported("client header requires scalar default".into()));
+                return Err(ProjectionError::Unsupported(
+                    "client header requires scalar default".into(),
+                ));
             };
             if let Some(directive) = crate::client_projection::project(name, value)
                 .map_err(|error| ProjectionError::Unsupported(format!("client policy {error:?}")))?
@@ -1195,9 +1257,10 @@ fn client_header_directives(
 
 /// Preserve the old sorted readiness waves, including string-intern order,
 /// without rescanning every pending class at each inheritance depth.
-fn class_construction_waves(parents: &BTreeMap<u32, u32>, retained: usize)
-    -> Result<Vec<Vec<u32>>, ProjectionError>
-{
+fn class_construction_waves(
+    parents: &BTreeMap<u32, u32>,
+    retained: usize,
+) -> Result<Vec<Vec<u32>>, ProjectionError> {
     let mut children: BTreeMap<u32, Vec<u32>> = BTreeMap::new();
     let mut ready = Vec::new();
     for (&index, &parent) in parents {
@@ -1206,7 +1269,9 @@ fn class_construction_waves(parents: &BTreeMap<u32, u32>, retained: usize)
         } else if parents.contains_key(&parent) {
             children.entry(parent).or_default().push(index);
         } else {
-            return Err(ProjectionError::Unsupported("cyclic/unavailable parent class records".into()));
+            return Err(ProjectionError::Unsupported(
+                "cyclic/unavailable parent class records".into(),
+            ));
         }
     }
     let mut waves = Vec::new();
@@ -1225,7 +1290,9 @@ fn class_construction_waves(parents: &BTreeMap<u32, u32>, retained: usize)
         ready = next;
     }
     if count != parents.len() {
-        return Err(ProjectionError::Unsupported("cyclic/unavailable parent class records".into()));
+        return Err(ProjectionError::Unsupported(
+            "cyclic/unavailable parent class records".into(),
+        ));
     }
     Ok(waves)
 }
@@ -1239,8 +1306,10 @@ mod construction_order_tests {
         // Allocation index order differs from dependency order; children of
         // separate parents interleave in the second wave.
         let parents = BTreeMap::from([(2, 6), (3, 5), (4, 6), (5, 0), (6, 1), (7, 2)]);
-        assert_eq!(class_construction_waves(&parents, 2).unwrap(),
-            vec![vec![5, 6], vec![2, 3, 4], vec![7]]);
+        assert_eq!(
+            class_construction_waves(&parents, 2).unwrap(),
+            vec![vec![5, 6], vec![2, 3, 4], vec![7]]
+        );
     }
 
     #[test]
@@ -1248,7 +1317,10 @@ mod construction_order_tests {
         let parents = (1..=4096).map(|index| (index, index - 1)).collect();
         let waves = class_construction_waves(&parents, 1).unwrap();
         assert_eq!(waves.len(), 4096);
-        assert!(waves.iter().enumerate().all(|(i, wave)| wave == &vec![i as u32 + 1]));
+        assert!(waves
+            .iter()
+            .enumerate()
+            .all(|(i, wave)| wave == &vec![i as u32 + 1]));
         assert!(class_construction_waves(&BTreeMap::from([(1, 2), (2, 1)]), 1).is_err());
         assert!(class_construction_waves(&BTreeMap::from([(1, 8)]), 1).is_err());
     }

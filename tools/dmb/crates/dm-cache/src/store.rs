@@ -21,6 +21,7 @@ pub struct Cache {
     pub(crate) limits: Limits,
 }
 pub struct CacheSnapshot {
+    writer: Cache,
     pub(crate) segments: Vec<(PathBuf, Arc<Segment>)>,
     rejected: Mutex<Vec<RejectedSegment>>,
     index: BTreeMap<RecordKey, Vec<usize>>,
@@ -45,14 +46,13 @@ impl Cache {
     }
     pub fn user_default(limits: Limits) -> Result<Self, CacheError> {
         if let Some(root) = std::env::var_os("DMB_CACHE_DIR") {
-            if root.is_empty() { return Err(CacheError::Invalid("DMB_CACHE_DIR is empty".into())); }
+            if root.is_empty() {
+                return Err(CacheError::Invalid("DMB_CACHE_DIR is empty".into()));
+            }
             return Self::open(PathBuf::from(root), limits);
         }
         let root = if cfg!(windows) {
-            std::env::var_os("LOCALAPPDATA")
-                .map(PathBuf::from)
-                .ok_or_else(|| CacheError::Invalid("LOCALAPPDATA unavailable".into()))?
-                .join("dmbd/cache")
+            PathBuf::from("E:/.dmbd/cache")
         } else if let Some(root) = std::env::var_os("XDG_CACHE_HOME") {
             PathBuf::from(root).join("dmbd")
         } else {
@@ -63,6 +63,11 @@ impl Cache {
             .join(".cache/dmbd")
         };
         Self::open(root, limits)
+    }
+    /// Check quota-aware available space before appending a segment. This never
+    /// skips a record; shortages are explicit publication errors.
+    pub fn check_population_space(&self, required: u64) -> Result<(), CacheError> {
+        check_available_space(&self.root, required)
     }
     pub fn root(&self) -> &Path {
         &self.root
@@ -113,6 +118,10 @@ impl Cache {
             .flat_map(|(_, segment)| segment.supersedes().iter().copied())
             .collect();
         Ok(CacheSnapshot {
+            writer: Cache {
+                root: self.root.clone(),
+                limits: self.limits,
+            },
             segments,
             rejected: Mutex::new(rejected),
             index,
@@ -140,6 +149,7 @@ impl Cache {
                 "segment content identity collision".into(),
             ));
         }
+        self.check_population_space(bytes.len() as u64)?;
         let nonce = NEXT.fetch_add(1, Ordering::Relaxed);
         let stamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -273,9 +283,9 @@ impl Cache {
                 charge = overhead;
             }
             if charge.saturating_add(bytes) > self.limits.segment_bytes {
-                return Err(CacheError::Invalid(
-                    "compaction record cannot fit segment".into(),
-                ));
+                chunks.push(self.publish_superseding(&[record], &supersedes)?);
+                count += 1;
+                continue;
             }
             charge += bytes;
             pending.push(record);
@@ -311,6 +321,12 @@ impl Cache {
     }
 }
 impl CacheSnapshot {
+    /// Append through the captured writer without mutating this mapped snapshot.
+    /// Used only to flush bounded population queues when no callback was supplied.
+    pub fn publish(&self, records: &[Record]) -> Result<u128, CacheError> {
+        self.writer.publish(records)
+    }
+
     /// Successful returned views only, including records whose consumer later
     /// rejects semantic replay. Missing/corrupt lookups never become roots.
     /// Storage is bounded by this snapshot's immutable indexed key inventory.
@@ -417,4 +433,50 @@ impl CacheSnapshot {
             }
         }
     }
+}
+
+#[cfg(windows)]
+fn check_available_space(root: &Path, required: u64) -> Result<(), CacheError> {
+    use std::os::windows::ffi::OsStrExt;
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn GetDiskFreeSpaceExW(
+            directory: *const u16,
+            available: *mut u64,
+            total: *mut u64,
+            free: *mut u64,
+        ) -> i32;
+    }
+    let mut path: Vec<u16> = root.as_os_str().encode_wide().collect();
+    if path.contains(&0) {
+        return Err(CacheError::Invalid("cache path contains NUL".into()));
+    }
+    path.push(0);
+    let mut available = 0u64;
+    // Microsoft GetDiskFreeSpaceExW documents quota-aware u64 available bytes.
+    // The terminated path and output remain live for this synchronous call.
+    if unsafe {
+        GetDiskFreeSpaceExW(
+            path.as_ptr(),
+            &mut available,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+        )
+    } == 0
+    {
+        return Err(std::io::Error::last_os_error().into());
+    }
+    if available < required {
+        return Err(CacheError::Invalid(format!(
+            "cache population requires {required} bytes; only {available} available at {}",
+            root.display()
+        )));
+    }
+    Ok(())
+}
+#[cfg(not(windows))]
+fn check_available_space(_root: &Path, _required: u64) -> Result<(), CacheError> {
+    // Portable std exposes no quota-aware free-space API. Writes still propagate
+    // StorageFull as errors; the Windows-supported population path checks above.
+    Ok(())
 }

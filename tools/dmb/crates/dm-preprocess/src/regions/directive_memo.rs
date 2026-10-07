@@ -61,7 +61,7 @@ impl DirectiveRecord {
         dm_wire::encode(DIRECTIVE_VERSION, self)
     }
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, String> {
-        let value: Self = dm_wire::decode(DIRECTIVE_VERSION, bytes, 16 * 1024 * 1024)?;
+        let value: Self = dm_wire::decode(DIRECTIVE_VERSION, bytes, bytes.len())?;
         if value.control.get(..4) != Some(DIRECTIVE_VERSION.to_le_bytes().as_slice())
             || key(&value.source, &value.control) != value.key
             || value.actions.iter().any(|action| match action {

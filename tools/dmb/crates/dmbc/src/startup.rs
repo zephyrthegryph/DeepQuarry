@@ -45,11 +45,19 @@ fn capture_impl(
         let identity = *identities
             .get(&body.member)
             .ok_or("startup procedure identity missing")?;
-        frontend.compact_body(body).map_err(|e| format!("startup body: {e:?}"))?;
-        let source = frontend.expanded.text.get(body.expanded_span.range())
+        frontend
+            .compact_body(body)
+            .map_err(|e| format!("startup body: {e:?}"))?;
+        let source = frontend
+            .expanded
+            .text
+            .get(body.expanded_span.range())
             .ok_or("startup body source span outside capture")?;
         if prefilter && !dm_tree::procedure_statics::may_contain_stored_declarations(source) {
-            return Ok((body.declaration, dm_tree::procedure_statics::capture_declarations(identity, &[])?));
+            return Ok((
+                body.declaration,
+                dm_tree::procedure_statics::capture_declarations(identity, &[])?,
+            ));
         }
         let parsed = frontend
             .body(body)
@@ -87,12 +95,12 @@ fn capture_impl(
     for result in chunks {
         procedures.extend(result?);
     }
-    let base = dm_tree::initializers::capture_declaration_plan(&frontend.snapshot, &frontend.emission_order)
-        .map_err(|e| format!("startup declarations: {e:?}"))?;
-    let plan = dm_tree::initializers::with_captured_procedure_statics(
-        &base,
-        &procedures,
-    )?;
+    let base = dm_tree::initializers::capture_declaration_plan(
+        &frontend.snapshot,
+        &frontend.emission_order,
+    )
+    .map_err(|e| format!("startup declarations: {e:?}"))?;
+    let plan = dm_tree::initializers::with_captured_procedure_statics(&base, &procedures)?;
     let procedure_index = procedures
         .iter()
         .enumerate()
@@ -155,26 +163,58 @@ pub struct StartupEvaluator<'a> {
     pub symbols: &'a dm_ir::SymbolTable,
 }
 impl crate::initializer_policy::CapturedInitializerEvaluator for StartupEvaluator<'_> {
-    fn evaluate_ast_write(&self, write: &dm_ir::InitializerWrite, ast: &dm_syntax::Expr, source: &str, symbols: &dm_ir::SymbolTable) -> Result<crate::initializer_policy::Evaluation, String> {
+    fn evaluate_ast_write(
+        &self,
+        write: &dm_ir::InitializerWrite,
+        ast: &dm_syntax::Expr,
+        source: &str,
+        symbols: &dm_ir::SymbolTable,
+    ) -> Result<crate::initializer_policy::Evaluation, String> {
         if write.lexical_procedure.is_some() {
             crate::initializer_policy::CapturedInitializerEvaluator::evaluate_ast_write(
-                &crate::driver_facts::DriverEvaluator {pure_calls:self.ordinary.pure_calls(), resource_search_context:self.resource_search_context, resolver:self.resolver, symbols:self.symbols}, write, ast, source, symbols)
-        } else { self.ordinary.evaluate_ast_write(write, ast, source, symbols) }
+                &crate::driver_facts::DriverEvaluator {
+                    pure_calls: self.ordinary.pure_calls(),
+                    resource_search_context: self.resource_search_context,
+                    resolver: self.resolver,
+                    symbols: self.symbols,
+                },
+                write,
+                ast,
+                source,
+                symbols,
+            )
+        } else {
+            self.ordinary
+                .evaluate_ast_write(write, ast, source, symbols)
+        }
     }
     fn initializer_token_scalar(&self, value: &dm_ir::SemanticValue) -> Result<Vec<u8>, String> {
         self.ordinary.initializer_token_scalar(value)
     }
-    fn initializer_constructor_type(&self, write: &dm_ir::InitializerWrite) -> Result<Option<dm_ir::SymbolId>, String> {
+    fn initializer_constructor_type(
+        &self,
+        write: &dm_ir::InitializerWrite,
+    ) -> Result<Option<dm_ir::SymbolId>, String> {
         crate::initializer_policy::CapturedInitializerEvaluator::initializer_constructor_type(
-            &crate::driver_facts::DriverEvaluator {pure_calls:self.ordinary.pure_calls(), resource_search_context:self.resource_search_context, resolver:self.resolver, symbols:self.symbols}, write)
+            &crate::driver_facts::DriverEvaluator {
+                pure_calls: self.ordinary.pure_calls(),
+                resource_search_context: self.resource_search_context,
+                resolver: self.resolver,
+                symbols: self.symbols,
+            },
+            write,
+        )
     }
-    fn pure_calls(&self) -> Option<&dyn dm_tree::constants::PureCalls> { self.ordinary.pure_calls() }
+    fn pure_calls(&self) -> Option<&dyn dm_tree::constants::PureCalls> {
+        self.ordinary.pure_calls()
+    }
     fn instance_storage(
         &self,
         write: &dm_ir::InitializerWrite,
     ) -> Result<Option<(dm_ir::SymbolId, dm_ir::SymbolId)>, String> {
         crate::initializer_policy::CapturedInitializerEvaluator::instance_storage(
-            &crate::driver_facts::DriverEvaluator { pure_calls: self.ordinary.pure_calls(),
+            &crate::driver_facts::DriverEvaluator {
+                pure_calls: self.ordinary.pure_calls(),
                 resource_search_context: self.resource_search_context,
                 resolver: self.resolver,
                 symbols: self.symbols,
@@ -196,7 +236,8 @@ impl crate::initializer_policy::CapturedInitializerEvaluator for StartupEvaluato
     ) -> Result<crate::initializer_policy::Evaluation, String> {
         if write.lexical_procedure.is_some() {
             crate::initializer_policy::CapturedInitializerEvaluator::evaluate_write(
-                &crate::driver_facts::DriverEvaluator { pure_calls: self.ordinary.pure_calls(),
+                &crate::driver_facts::DriverEvaluator {
+                    pure_calls: self.ordinary.pure_calls(),
                     resource_search_context: self.resource_search_context,
                     resolver: self.resolver,
                     symbols: self.symbols,
@@ -342,26 +383,41 @@ mod spelling_tests {
                 Ok("#define CACHE var/static/list/cache = list(1)\n/proc/plain()\n    var/local = 1\n    return local\n/proc/substrings()\n    var/globalish = \"static const global\"\n    return globalish\n/proc/expanded()\n    CACHE\n    if(1)\n        var/const/alias = 3\n        var/static/next = alias\n    return cache\n/proc/global_local()\n    var/global/count = 2\n    return count\n".into())
             }
         }
-        let frontend = dm_tree::frontend::build(Path::new("probe.dme"), &Mixed, &Default::default(), 2).unwrap();
+        let frontend =
+            dm_tree::frontend::build(Path::new("probe.dme"), &Mixed, &Default::default(), 2)
+                .unwrap();
         let full = capture_impl(&frontend, 1, false).unwrap();
         for workers in [1, 2] {
             let filtered = capture_impl(&frontend, workers, true).unwrap();
             assert_eq!(filtered.plan.identity, full.plan.identity);
             assert_eq!(filtered.plan.writes.as_ref(), full.plan.writes.as_ref());
             assert_eq!(filtered.plan.origins.as_ref(), full.plan.origins.as_ref());
-            for ((left_id, left), (right_id, right)) in filtered.procedures.iter().zip(&full.procedures) {
+            for ((left_id, left), (right_id, right)) in
+                filtered.procedures.iter().zip(&full.procedures)
+            {
                 assert_eq!(left_id, right_id);
                 assert_eq!(left.procedure, right.procedure);
                 assert_eq!(left.declarations, right.declarations);
                 assert_eq!(left.origins, right.origins);
                 assert!(left.executable_body.is_empty());
                 for declaration in &right.declarations {
-                    assert_eq!(left.symbols.text(declaration.identity.name), right.symbols.text(declaration.identity.name));
+                    assert_eq!(
+                        left.symbols.text(declaration.identity.name),
+                        right.symbols.text(declaration.identity.name)
+                    );
                 }
             }
         }
-        assert!(!dm_tree::procedure_statics::may_contain_stored_declarations("/proc/plain()\n    var/local = 1\n    return local\n"));
-        assert!(dm_tree::procedure_statics::may_contain_stored_declarations("return \"static\""));
-        assert!(dm_tree::procedure_statics::may_contain_stored_declarations("// global comment"));
+        assert!(
+            !dm_tree::procedure_statics::may_contain_stored_declarations(
+                "/proc/plain()\n    var/local = 1\n    return local\n"
+            )
+        );
+        assert!(dm_tree::procedure_statics::may_contain_stored_declarations(
+            "return \"static\""
+        ));
+        assert!(dm_tree::procedure_statics::may_contain_stored_declarations(
+            "// global comment"
+        ));
     }
 }

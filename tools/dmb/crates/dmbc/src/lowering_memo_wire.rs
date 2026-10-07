@@ -212,7 +212,7 @@ pub(crate) fn encode(
     dm_wire::encode(EXECUTABLE_SCHEMA, &payload).ok()
 }
 fn payload(bytes: &[u8]) -> Result<Payload, String> {
-    let payload: Payload = dm_wire::decode(EXECUTABLE_SCHEMA, bytes, dm_wire::MAX_BYTES)?;
+    let payload: Payload = dm_wire::decode(EXECUTABLE_SCHEMA, bytes, bytes.len())?;
     validate_versions(&payload.versions)?;
     if payload.version != 1 || payload.abi.as_ref().is_some_and(|abi| abi.category > 2) {
         return Err("unsupported lowering schema/ABI".into());
@@ -244,8 +244,7 @@ fn read_mismatch<R: Resolver>(
     })
 }
 pub(crate) fn validate(bytes: &[u8]) -> Result<(), String> {
-    if let Ok(value) = dm_wire::decode::<FailurePayload>(FAILURE_SCHEMA, bytes, dm_wire::MAX_BYTES)
-    {
+    if let Ok(value) = dm_wire::decode::<FailurePayload>(FAILURE_SCHEMA, bytes, bytes.len()) {
         validate_versions(&value.versions)?;
         if value.errors.is_empty()
             || value
@@ -325,8 +324,7 @@ pub(crate) fn decode_failure<R: Resolver>(
     identity: Option<ProcedureIdentity>,
     host: &R,
 ) -> Option<Vec<dm_codegen_byond::LowerError>> {
-    let payload: FailurePayload =
-        dm_wire::decode(FAILURE_SCHEMA, bytes, dm_wire::MAX_BYTES).ok()?;
+    let payload: FailurePayload = dm_wire::decode(FAILURE_SCHEMA, bytes, bytes.len()).ok()?;
     if validate_versions(&payload.versions).is_err()
         || payload.errors.is_empty()
         || payload
@@ -552,9 +550,7 @@ pub(crate) struct ProcedureLookup {
 pub(crate) fn candidates(bytes: &[u8]) -> Result<Candidates, String> {
     let mut values = Vec::new();
     for bytes in dm_cache::decode_variants(bytes)? {
-        if let Ok(value) =
-            dm_wire::decode::<FailurePayload>(FAILURE_SCHEMA, bytes, dm_wire::MAX_BYTES)
-        {
+        if let Ok(value) = dm_wire::decode::<FailurePayload>(FAILURE_SCHEMA, bytes, bytes.len()) {
             validate_versions(&value.versions)?;
             if value.errors.is_empty()
                 || value

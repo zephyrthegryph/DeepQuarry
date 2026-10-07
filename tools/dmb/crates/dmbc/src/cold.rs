@@ -24,6 +24,21 @@ pub enum ColdStage {
     Composition,
 }
 pub type ColdMeasurement = crate::stage_measurements::Measurement<ColdStage>;
+impl crate::stage_measurements::StageName for ColdStage {
+    fn profile_name(self) -> &'static str {
+        match self {
+            Self::StartupCapture => "cold.startup_capture",
+            Self::AbiPreparation => "cold.abi_preparation",
+            Self::Initializers => "cold.initializers",
+            Self::InitializerClassification => "initializer.classification",
+            Self::InitializerCodegen => "initializer.codegen",
+            Self::ProcedureLowering => "cold.procedure_lowering",
+            Self::RequiredTypeAdmission => "cold.required_type_admission",
+            Self::SymbolicLinking => "cold.symbolic_linking",
+            Self::Composition => "cold.composition",
+        }
+    }
+}
 pub type ColdObserver<'a> = crate::stage_measurements::Observer<'a, ColdStage>;
 type StageMeasurement<'a> = crate::stage_measurements::Scope<'a, ColdStage>;
 
@@ -53,7 +68,9 @@ pub enum ColdError {
     InitializerInvariant(String),
     Projection(crate::class_projection::ProjectionError),
 }
-fn initializer_lowering_error(error: crate::initializer_diagnostics::InitializerLoweringError) -> ColdError {
+fn initializer_lowering_error(
+    error: crate::initializer_diagnostics::InitializerLoweringError,
+) -> ColdError {
     use crate::initializer_diagnostics::InitializerLoweringError as E;
     match error {
         E::Diagnostics(diagnostics) => ColdError::Lowering(diagnostics),
@@ -171,7 +188,14 @@ pub fn compile_captured_classified_with_pinned_abi<R: Resolver>(
     non_text: Option<&dyn crate::composition::NonTextOutputStage>,
 ) -> Result<ColdOutput, ColdError> {
     compile_captured_classified_with_pinned_abi_observed(
-        frontend, resolver, links, declarations, config, map_initializers, non_text, None,
+        frontend,
+        resolver,
+        links,
+        declarations,
+        config,
+        map_initializers,
+        non_text,
+        None,
     )
 }
 
@@ -186,10 +210,21 @@ pub fn compile_captured_classified_with_pinned_abi_observed<R: Resolver>(
     non_text: Option<&dyn crate::composition::NonTextOutputStage>,
     observer: Option<&ColdObserver<'_>>,
 ) -> Result<ColdOutput, ColdError> {
-    compile_captured_classified_with_pinned_abi_memo(frontend,resolver,links,declarations,config,map_initializers,non_text,observer,None)
+    compile_captured_classified_with_pinned_abi_memo(
+        frontend,
+        resolver,
+        links,
+        declarations,
+        config,
+        map_initializers,
+        non_text,
+        observer,
+        None,
+    )
 }
 
-#[allow(clippy::too_many_arguments)]pub fn compile_captured_classified_with_pinned_abi_memo<R: Resolver>(
+#[allow(clippy::too_many_arguments)]
+pub fn compile_captured_classified_with_pinned_abi_memo<R: Resolver>(
     frontend: &ColdFrontend,
     resolver: &R,
     links: CapturedLinkInputs<'_>,
@@ -336,8 +371,12 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         if let Some(observer) = observer {
             observer(ColdMeasurement {
                 stage: match event.stage {
-                    crate::initializer_lowering::InitializerStage::Classification => ColdStage::InitializerClassification,
-                    crate::initializer_lowering::InitializerStage::Codegen => ColdStage::InitializerCodegen,
+                    crate::initializer_lowering::InitializerStage::Classification => {
+                        ColdStage::InitializerClassification
+                    }
+                    crate::initializer_lowering::InitializerStage::Codegen => {
+                        ColdStage::InitializerCodegen
+                    }
                 },
                 elapsed: event.elapsed,
                 succeeded: event.succeeded,
@@ -350,7 +389,9 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         &evaluator,
         resolver,
         declarations.resource_search_context,
-        observer.map(|_| &initializer_observer as &crate::initializer_lowering::InitializerObserver<'_>),
+        observer.map(|_| {
+            &initializer_observer as &crate::initializer_lowering::InitializerObserver<'_>
+        }),
         memo,
     )
     .map_err(initializer_lowering_error)?;
@@ -368,8 +409,12 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::ProcedureLowering);
     let batch = match memo {
-        Some(memo)=>crate::lowering::lower_frontend_with_memo(frontend,resolver,policy,config,startup,memo),
-        None=>crate::lowering::lower_frontend_with_statics(frontend,resolver,policy,config,startup),
+        Some(memo) => crate::lowering::lower_frontend_with_memo(
+            frontend, resolver, policy, config, startup, memo,
+        ),
+        None => crate::lowering::lower_frontend_with_statics(
+            frontend, resolver, policy, config, startup,
+        ),
     };
     let lowering = stage.elapsed();
     if !batch.diagnostics.is_empty() {
@@ -381,20 +426,52 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
     measurement.complete();
     // Discover anonymous descriptors only from actual emitted operand sites.
     // Recursive descriptor initializers append to one request-local graph.
-    let seeds = batch.units.iter().flat_map(|unit| std::iter::once((&unit.code, &unit.debug_origins))
-        .chain(unit.source_helpers.iter().map(|helper| (&helper.code, &helper.debug_origins))))
-        .chain(initialization.units.iter().map(|unit| (&unit.code, &unit.debug_origins)))
-        .chain(map_initializers.iter().map(|unit| (&unit.code, &unit.debug_origins)));
-    let modified_defaults = crate::modified_initializers::default_seeds(frontend, &plan, &initialization.classified)
+    let seeds = batch
+        .units
+        .iter()
+        .flat_map(|unit| {
+            std::iter::once((&unit.code, &unit.debug_origins)).chain(
+                unit.source_helpers
+                    .iter()
+                    .map(|helper| (&helper.code, &helper.debug_origins)),
+            )
+        })
+        .chain(
+            initialization
+                .units
+                .iter()
+                .map(|unit| (&unit.code, &unit.debug_origins)),
+        )
+        .chain(
+            map_initializers
+                .iter()
+                .map(|unit| (&unit.code, &unit.debug_origins)),
+        );
+    let modified_defaults =
+        crate::modified_initializers::default_seeds(frontend, &plan, &initialization.classified)
+            .map_err(ColdError::Initializer)?;
+    let modified = crate::modified_initializers::collect_with_defaults(
+        seeds,
+        &modified_defaults,
+        plan.symbols.as_ref(),
+        resolver,
+        declarations.initializers.pure_calls(),
+    )
+    .map_err(ColdError::Initializer)?;
+    crate::modified_output::contribute(&modified.descriptors, &mut inventory)
         .map_err(ColdError::Initializer)?;
-    let modified = crate::modified_initializers::collect_with_defaults(seeds, &modified_defaults, plan.symbols.as_ref(), resolver, declarations.initializers.pure_calls())
-        .map_err(ColdError::Initializer)?;
-    crate::modified_output::contribute(&modified.descriptors, &mut inventory).map_err(ColdError::Initializer)?;
-    let modified_stage = crate::modified_initializers::Stage { descriptors:&modified.descriptors, types:declarations.type_values, next:non_text };
+    let modified_stage = crate::modified_initializers::Stage {
+        descriptors: &modified.descriptors,
+        types: declarations.type_values,
+        next: non_text,
+    };
     let non_text = Some(&modified_stage as &dyn crate::composition::NonTextOutputStage);
     // Every anonymous initializer uses the same operand reachability pass and
     // freezer, including type operands used only inside descriptor field values.
-    let initialization_artifacts: Vec<_> = map_initializers.into_iter().chain(modified.artifacts).collect();
+    let initialization_artifacts: Vec<_> = map_initializers
+        .into_iter()
+        .chain(modified.artifacts)
+        .collect();
     let measurement = StageMeasurement::new(observer, ColdStage::RequiredTypeAdmission);
     let non_text_types = non_text
         .map(|stage| stage.required_types())
@@ -497,7 +574,9 @@ mod tests {
                 &self,
                 path: dm_ir::SymbolId,
             ) -> Result<u8, crate::class_projection::ProjectionError> {
-                if path == dm_ir::SymbolId::of("/datum/demo") { return Ok(32); }
+                if path == dm_ir::SymbolId::of("/datum/demo") {
+                    return Ok(32);
+                }
                 Err(crate::class_projection::ProjectionError::Unsupported(
                     "fixture has no type defaults".into(),
                 ))
@@ -523,14 +602,29 @@ mod tests {
         // Runtime type interpretation is a captured host policy, not a tree
         // declaration query. Use the same host boundary as production.
         let mut host_symbols = frontend.snapshot.tree.symbols().clone();
-        let constants = crate::engine_host::ConstantCatalog::native_516_1687(&mut host_symbols).unwrap();
+        let constants =
+            crate::engine_host::ConstantCatalog::native_516_1687(&mut host_symbols).unwrap();
         let runtime = crate::engine_host::RuntimeAliasCatalog::new(
-            engine.identity(), &host_symbols, Vec::new(),
-            frontend.snapshot.tree.types().iter().map(|node| node.path).collect(),
+            engine.identity(),
+            &host_symbols,
+            Vec::new(),
+            frontend
+                .snapshot
+                .tree
+                .types()
+                .iter()
+                .map(|node| node.path)
+                .collect(),
             crate::engine_host::Completeness::Partial,
-        ).unwrap();
-        let host = crate::engine_host::EngineResolverHost::new(frontend.snapshot.tree.clone(), constants, runtime);
-        let evaluator = DriverEvaluator { pure_calls: None,
+        )
+        .unwrap();
+        let host = crate::engine_host::EngineResolverHost::new(
+            frontend.snapshot.tree.clone(),
+            constants,
+            runtime,
+        );
+        let evaluator = DriverEvaluator {
+            pure_calls: None,
             resource_search_context: None,
             resolver: &host,
             symbols: frontend.snapshot.tree.symbols(),
@@ -600,14 +694,23 @@ mod tests {
                 && record.kind == 42
                 && record.value == 7f32.to_bits()
         }));
-        let preset = declarations.iter().find_map(|(id, _)| {
-            let record = &image.variables[*id as usize];
-            (image.string(record.name) == Some(b"preset".as_slice())).then_some(record)
-        }).unwrap();
-        assert_eq!(preset.kind, 41, "modified default must remain a stored descriptor");
+        let preset = declarations
+            .iter()
+            .find_map(|(id, _)| {
+                let record = &image.variables[*id as usize];
+                (image.string(record.name) == Some(b"preset".as_slice())).then_some(record)
+            })
+            .unwrap();
+        assert_eq!(
+            preset.kind, 41,
+            "modified default must remain a stored descriptor"
+        );
         assert!((preset.value as usize) < image.instances.len());
-        assert_eq!(image.classes[class].lists_and_procs[2], u32::from(u16::MAX),
-            "stored modified defaults must not add a class runtime assignment");
+        assert_eq!(
+            image.classes[class].lists_and_procs[2],
+            u32::from(u16::MAX),
+            "stored modified defaults must not add a class runtime assignment"
+        );
         assert!(
             image
                 .procs
@@ -729,7 +832,8 @@ mod tests {
         };
         assert_eq!(host.resolve(query), M::Unsupported(query));
 
-        let evaluator = crate::driver_facts::DriverEvaluator { pure_calls: None,
+        let evaluator = crate::driver_facts::DriverEvaluator {
+            pure_calls: None,
             resource_search_context: None,
             resolver: &host,
             symbols: frontend.snapshot.tree.symbols(),

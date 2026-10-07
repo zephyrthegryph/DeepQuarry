@@ -33,7 +33,9 @@ pub fn apply(
         Script::Text(bytes) => dmb.world.client_script = bindings.string(dmb, bytes)?,
         Script::Resource(symbol) => {
             dmb.world.client_script = byond_dmb::ids::NONE;
-            dmb.world.client_script_files.push(bindings.resource(*symbol)?);
+            dmb.world
+                .client_script_files
+                .push(bindings.resource(*symbol)?);
         }
     }
     Ok(())
@@ -49,35 +51,58 @@ mod tests {
     }
     impl Bindings for CapturedBindings {
         fn string(&mut self, dmb: &mut Dmb, bytes: &[u8]) -> Result<u32, String> {
-            self.strings.intern(dmb, bytes).map_err(|error| format!("{error:?}"))
+            self.strings
+                .intern(dmb, bytes)
+                .map_err(|error| format!("{error:?}"))
         }
-        fn resource(&self, _: SymbolId) -> Result<u32, String> { Ok(self.resource) }
+        fn resource(&self, _: SymbolId) -> Result<u32, String> {
+            Ok(self.resource)
+        }
     }
     #[test]
     fn native_inline_and_resource_script_use_separate_wire_domains() {
         let expected = Dmb::from_bytes(include_bytes!(
             "../../../fixtures/translation/client_header_probe/script_inline.native.bin"
-        )).unwrap();
+        ))
+        .unwrap();
         let mut actual = expected.clone();
         actual.world.client_script = byond_dmb::ids::NONE;
         let mut bindings = CapturedBindings {
-            strings: crate::composition::StringIndex::build(&actual).unwrap(), resource: 0,
+            strings: crate::composition::StringIndex::build(&actual).unwrap(),
+            resource: 0,
         };
-        apply(&mut actual, &Script::Text(Arc::from(
-            b"<STYLE>BODY {font: monospace}</STYLE>".as_slice()
-        )), &mut bindings).unwrap();
+        apply(
+            &mut actual,
+            &Script::Text(Arc::from(
+                b"<STYLE>BODY {font: monospace}</STYLE>".as_slice(),
+            )),
+            &mut bindings,
+        )
+        .unwrap();
         assert_eq!(actual.world.client_script, expected.world.client_script);
-        assert_eq!(actual.world.client_script_files, expected.world.client_script_files);
+        assert_eq!(
+            actual.world.client_script_files,
+            expected.world.client_script_files
+        );
 
         let expected = Dmb::from_bytes(include_bytes!(
             "../../../fixtures/translation/client_header_probe/script_file.native.bin"
-        )).unwrap();
+        ))
+        .unwrap();
         let mut actual = expected.clone();
         actual.world.client_script_files.clear();
         bindings.resource = expected.world.client_script_files[0];
-        apply(&mut actual, &Script::Resource(SymbolId::of("example.dms")), &mut bindings).unwrap();
+        apply(
+            &mut actual,
+            &Script::Resource(SymbolId::of("example.dms")),
+            &mut bindings,
+        )
+        .unwrap();
         assert_eq!(actual.world.client_script, expected.world.client_script);
-        assert_eq!(actual.world.client_script_files, expected.world.client_script_files);
+        assert_eq!(
+            actual.world.client_script_files,
+            expected.world.client_script_files
+        );
         assert!(project(&SemanticValue::Null).is_err());
     }
 }

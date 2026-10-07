@@ -29,7 +29,7 @@ pub fn run_cli(arguments: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         }
         if matches!(
             arg.as_str(),
-            "--workers" | "--output-store" | "--engine-template" | "-D"
+            "--workers" | "--output-store" | "--engine-template" | "--trace" | "-D"
         ) {
             skip = true;
             continue;
@@ -52,7 +52,7 @@ pub fn run_cli(arguments: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     let deadline = Instant::now() + Duration::from_secs(285);
     let mut base: Vec<String> = arguments
         .iter()
-        .filter(|arg| !matches!(arg.as_str(), "--verify" | "--progress" | "--no-cache"))
+        .filter(|arg| !matches!(arg.as_str(), "--verify" | "--progress"))
         .cloned()
         .collect();
     base.extend([
@@ -67,6 +67,10 @@ pub fn run_cli(arguments: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         .filter(|arg| !matches!(arg.as_str(), "--verify" | "--progress" | "--no-cache"))
         .cloned()
         .collect();
+    if let Some(index) = fresh.iter().position(|argument| argument == "--trace") {
+        let path = fresh.get_mut(index + 1).ok_or("--trace requires a file")?;
+        *path = format!("{path}.cold.json");
+    }
     fresh.extend([
         "--no-cache".into(),
         "--replay-inputs".into(),
@@ -148,11 +152,66 @@ pub fn run_cli(arguments: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 fn is_measurement(line: &str) -> bool {
+    for (prefix, names) in [
+        (
+            "native cold ",
+            &[
+                "StartupCapture",
+                "AbiPreparation",
+                "Initializers",
+                "InitializerClassification",
+                "InitializerCodegen",
+                "ProcedureLowering",
+                "RequiredTypeAdmission",
+                "SymbolicLinking",
+                "Composition",
+            ][..],
+        ),
+        (
+            "native nontext ",
+            &[
+                "NonTextParsing",
+                "ResourceDemand",
+                "ResourceAdmission",
+                "RetainedResourceOrder",
+                "ResourceCatalog",
+                "AssetCapture",
+                "ResourceOrder",
+                "ResourceProjection",
+                "SymbolBinding",
+                "MapProjection",
+                "MapDescriptors",
+                "MapInitializers",
+            ][..],
+        ),
+        (
+            "native resource ",
+            &[
+                "FilesystemProofCapture",
+                "CatalogRestore",
+                "DemandAdmission",
+                "InputValidation",
+                "ArchiveAuthentication",
+            ][..],
+        ),
+    ] {
+        if line
+            .strip_prefix(prefix)
+            .and_then(|tail| tail.split_once(':'))
+            .is_some_and(|(name, _)| names.contains(&name))
+        {
+            return true;
+        }
+    }
     [
         "native stages:",
         "native compile:",
         "native resolver memo:",
         "native lowering memo:",
+        "native declaration reuse:",
+        "native session validation:",
+        "native session hit:",
+        "native input preparation:",
         "native failed stages:",
         "native cache unavailable:",
         "native cache snapshot rejected:",
@@ -299,6 +358,14 @@ mod tests {
             "native cache lease skipped: sharing violation"
         ));
         assert!(is_measurement("native telemetry skipped: access denied"));
+        assert!(is_measurement(
+            "native cold ProcedureLowering: 1.2s success=Some(true)"
+        ));
+        assert!(is_measurement("native resource InputValidation: 0.3s"));
+        assert!(!is_measurement(
+            "native cold unsupported: missing implementation"
+        ));
+        assert!(!is_measurement("native resource missing: icon.dmi"));
         assert!(!is_measurement("native unsupported: unknown initializer"));
         assert!(!is_measurement("native internal: poisoned semantic state"));
         assert!(!is_measurement(

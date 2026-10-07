@@ -5,7 +5,7 @@ param(
     [Parameter(Mandatory=$true)][string]$OutputDirectory,
     [ValidateSet('analyze','compile')][string]$Mode = 'analyze',
     [string[]]$Defines = @('DM_VERSION=516', 'DM_BUILD=1687', 'CITESTING=1'),
-    [ValidateRange(1,2)][int]$Workers = 2,
+    [ValidateRange(1,8)][int]$Workers = 8,
     [ValidateRange(1,285)][int]$TimeoutSeconds = 285
 )
 $ErrorActionPreference = 'Stop'

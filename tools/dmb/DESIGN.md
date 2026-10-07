@@ -1,7 +1,8 @@
 # Native DM Compiler Design
 
-Revision 4, 6 October 2026. Status: **proposed**; reviewed twice by Astra, who recommends starting
-Phase 0. Supersedes `ARCHITECTURE.md` and
+Revision 5, 7 October 2026. Status: **in implementation** on `codex/native-v2`. The plan in §9 was
+revised after the review in `REVIEW_20261007.md`, and that plan is binding. Supersedes
+`ARCHITECTURE.md` and
 `REVISED_ARCHITECTURE.md` for the incremental layer, persistence, output publication and process
 model. The format notes (`FORMAT.md`, `BYTECODE_ISSUES.md`, `OPENDREAM_OPCODE_MATRIX.md`,
 `CLIENT_HEADER_PROBES.md`, `TRANSLATION_GAPS.md`) remain authoritative for the BYOND format.
@@ -20,8 +21,15 @@ build, and builds of one worktree are serialized. The baseline is compared throu
 error identities, and every budget includes validation and publication costs. Appendix B lists the
 changes.
 
-Implementing agent: read §5 (correctness contracts), §8 (engineering rules) and §9 (plan) before
-writing code. Work starts at Phase 0.
+Revision 5 reacts to the first measurements. Phase 1 produced a full deterministic compile in 33 s.
+The stages meant to rerun cheaply on every build cost about 55 s, 10–50× the §6 hypotheses, and
+the disk cache work built on top of them made incremental builds slower than cold ones. Revision 5
+makes stage throughput the next phase, requires a profiler that needs no elevation, judges
+performance by CPU time rather than wall time, moves the daemon ahead of further disk-cache work,
+and freezes the cache code until then.
+
+Implementing agent: read `REVIEW_20261007.md`, then §5 (correctness contracts), §8 (engineering
+rules) and §9 (plan) before writing code. Work resumes at the Phase 0 close-out in §9.
 
 ## Acceptance targets
 
@@ -139,7 +147,9 @@ record is decoded, locked or transacted.
 
 ### 2.2 Memory footprint
 
-Estimates from the project's sizes. Phase 1 replaces them with measurements.
+Estimates from the project's sizes. The first measurement (probe 40, 2 workers) was 3.0–3.5 GB
+peak private memory per build, about six times this estimate. Phase 1 must bring it to 1.5 GB or
+less (§6.0) and explain where it goes.
 
 | Component | Scope | Estimate |
 | --- | --- | ---: |
@@ -328,9 +338,11 @@ shows a stage dominating and the memo paying back 10×.
 
 ### 3.4 The disk cache
 
-- **Location.** One directory per user, `%LOCALAPPDATA%\dmbd\cache\` (the XDG cache directory on
-  Linux), shared by every worktree, define set and process. Memory maps work across drives, so one
-  cache serves worktrees on every drive.
+- **Location.** One directory per user on the configured cache drive, shared by every worktree,
+  define set and process. On this machine the default is `E:\.dmbd\cache\` (decided 7 October;
+  C: ran out of space during population). `DMB_CACHE_DIR` overrides it; on Linux the default is the
+  XDG cache directory. Memory maps work across drives, so one cache serves worktrees on every drive.
+  Population checks free space first and reports a shortage as an error, never by skipping records.
 - **Segments.** Each build that computed something new writes one segment to a temporary name, then
   renames it to `<segment-id>.seg`. A segment exists for readers only once renamed. The set of live
   segments is the directory listing; there is no manifest.
@@ -424,7 +436,7 @@ The reusable analysis model is part of the initial crate layout, not a later ext
 | `dm-analysis` | The analysis export | `dm-tree` read-only API |
 
 - Phase 1 delivers these boundaries with provenance and resolved declarations in place.
-- Phase 3 adds a read-only query API over a session's trees: declarations, overrides, occurrences,
+- Phase 2 (the daemon) adds a read-only query API over a session's trees: declarations, overrides, occurrences,
   provenance, and the references lowering recorded.
 - Hosting lints and generators in the daemon stays in Phase 6.
 - `dm-lower` must not depend on `dm-tree`; it sees only the `Resolver` trait. A lint enforces this.
@@ -692,10 +704,59 @@ oracle; normalization applies only to runtime comparisons with DreamMaker.
 
 ## 6. Performance framework
 
-Every number in this section is a hypothesis derived from first principles. Phases 0–2 measure
-each stage separately (tree, occurrences, lowering, link, encode, publication, validation) and end
-to end. The targets are acceptance criteria. All reported times are end to end: they include
-cache validation, pair hashing, store writes and worktree copies wherever a build does them.
+The targets are acceptance criteria. All reported times are end to end: they include cache
+validation, pair hashing, store writes and worktree copies wherever a build does them. The first
+measurements (§6.0) showed the stage hypotheses in r4 were 10–50× too optimistic for the stages
+that rerun on every build. The incremental targets now depend on the stage budgets in §6.0, not
+on more caching.
+
+### 6.0 Measured so far, and binding stage budgets
+
+Measurements from 7 October: 2 workers, a contended machine (7–21 competing Cargo/rustc
+processes), warm OS file cache. They are a direction, not acceptance numbers.
+
+| Build | Result |
+| --- | --- |
+| Phase 1 cold, test defines (probe 40) | 33.1 s, 3.25 GB peak private memory |
+| Phase 1 cold, server defines | 35.0 s |
+| Phase 2 cohorts G–K, populate cache | 79–197 s |
+| Phase 2 cohorts G–K, unchanged | 3.4–4.4 s |
+| Phase 2 cohorts G–K, body edit | 64–110 s (one procedure recompiled) |
+| Phase 2 cohorts G–K, cold | 56–83 s |
+
+Cohort F body edit by stage: frontend 13.5 s, resources and maps 6.9 s, ABI 4.8 s, initializers
+4.2 s, lowering 13.2 s (one miss), link 8.1 s, composition 2.8 s, publication 4.4 s.
+
+Binding cold budgets per stage, at 8 workers, judged by CPU time as defined in §6.5. A stage over
+budget is Phase 1 work, never a reason to add a cache. "Critical path" is the slowest thread's CPU
+time in the stage; "total" is the CPU time of all threads together. The measured column is wall
+time from the contended runs and is shown for direction only.
+
+| Stage | Critical-path CPU | Total CPU | Latest measured (wall, 2 workers, contended) |
+| --- | ---: | ---: | ---: |
+| Input scan and hashing | ≤ 0.5 s | ≤ 1 s | not separately measured |
+| Frontend: directives, expansion, parse | ≤ 3 s | ≤ 12 s | 7.4–21.9 s |
+| Semantic tree and occurrence table | ≤ 1 s | ≤ 2 s | not separately measured |
+| Resources and maps, cold hashing | ≤ 2 s | ≤ 6 s | 4.7–15.3 s |
+| ABI preparation and initializers | ≤ 1.5 s | ≤ 4 s | 5–9 s |
+| Lowering, all bodies | ≤ 3 s | ≤ 16 s | 6.3 s |
+| Link | ≤ 1 s | ≤ 2 s | 4.7–9.2 s |
+| Composition, encode, publication | ≤ 1.5 s | ≤ 3 s | 7–19 s |
+| **Total cold** | **≤ 15 s** | **≤ 40 s** | **33 s** |
+| **Peak private memory** | | | **3.0–3.5 GB; budget ≤ 1.5 GB** |
+
+I/O budgets per build, since CPU time does not include waiting on the disk:
+
+| Build | Read | Written |
+| --- | ---: | ---: |
+| Cold, empty cache | ≤ 400 MB plus cache population | ≤ 600 MB plus cache segments |
+| Body edit (RSC unchanged) | ≤ 50 MB | ≤ 120 MB |
+| Unchanged | ≤ 5 MB | ≤ 1 MB |
+
+When a stage reruns in an incremental build, its incremental cost may not exceed its cold budget
+(the whole-program stages: input, tree and occurrences, link, composition and publication).
+Memoized stages (expansion, lowering, maps) must cost at most one tenth of their cold budget on a
+full hit.
 
 ### 6.1 Targets (daemon running)
 
@@ -710,8 +771,10 @@ cache validation, pair hashing, store writes and worktree copies wherever a buil
 | Cold build, empty cache | ≤ 20 s | 10–15 s | Lowering and resource hashing |
 | Six worktrees editing at once | ≤ 1.5 s each | about 1 s | Shared worker pool, 3-build limit |
 
-If these hold, the compiler stops being the slow part of the edit loop: a focused test spends
-about 25 s booting the world after the compile.
+Each target is a critical-path CPU figure (§6.5): the time the build would take on an otherwise
+idle machine with enough cores. Total CPU and I/O are reported beside it. Total CPU budgets: body
+edit ≤ 2 s, new var or proc ≤ 5 s, unchanged ≤ 0.2 s. If these hold, the compiler stops being the
+slow part of the edit loop: a focused test spends about 25 s booting the world after the compile.
 
 ### 6.2 Without a daemon
 
@@ -739,8 +802,10 @@ semantic tree, and checking every recorded read against it.
 | New var or proc | 0.85–1.6 s | 1.2–1.9 s |
 | First build after a reboot | add pair hashing (~0.1 s) | add 0.3–0.6 s to read the cache, plus pair hashing |
 
-The no-daemon body edit sits close to its 1.5 s target. If Phase 2 measures it over, the first
-remedy is the session tree option in §6.4.
+This table is a hypothesis that assumes the §6.0 budgets are met. Measured no-daemon body edits
+were 64–110 s because the whole-program stages had not been made fast. The no-daemon body edit can
+only approach 1.5 s once the frontend, tree, link, composition and publication fit their budgets;
+until then, the daemon (new Phase 2) is the route to fast edits.
 
 ### 6.3 The slowest changes
 
@@ -784,9 +849,9 @@ are rejected (D10).
 
 ### 6.5 Measurement rules
 
-- **Baseline first.** Phase 0 profiles the preserved 1 October compiler on the frozen inputs. Each
-  stage of the new compiler is then measured separately on the same inputs, and every scenario is
-  also reported end to end.
+- **Baseline first.** The Phase 0 close-out traces the current compiler on the frozen inputs.
+  Each stage is then measured separately on the same inputs, and every scenario is also reported
+  end to end.
 - **Release profile.** Every measured build uses `lto = "thin"`, `debug = "line-tables-only"`,
   `codegen-units = 16`. Development builds use incremental compilation. No per-package `opt-level`
   overrides.
@@ -797,8 +862,35 @@ are rejected (D10).
 - **Watchdog.** Each run executes under an external watchdog (default 10 minutes). A run that hits
   it is recorded as a failed measurement, never as a timing. Nothing inside the compiler changes
   behavior because of the watchdog.
-- **Profiles.** Profiling uses `samply` (Windows and Linux; output opens in the Firefox Profiler). A
-  performance commit cites the profile that motivated it and its before and after rows.
+- **Profiler without elevation.** Every stage and its main sub-stages carry `tracing` spans with
+  per-thread CPU time. `--trace <file>` writes a Chrome trace (viewable in Perfetto) and a
+  folded-stack flamegraph from the same spans. A counting allocator behind a feature flag reports
+  allocations and peak memory per stage. This is the profiler (decided 7 October); samply and
+  other tools that need elevation are not used.
+- **Profile-backed changes.** A performance commit cites the trace that motivated it and its before
+  and after rows. Stage timers alone do not justify a change.
+- **Acceptance is judged by CPU time** (decided 7 October). The machine is shared with other
+  agents' builds, a game and DreamDaemon, so wall time cannot be controlled. Each run reports:
+  - **Critical-path CPU:** for each stage, the largest CPU time of any single thread that worked
+    on it, summed over the stages in pipeline order (overlapping stages count once, along the
+    longest chain the trace shows). This approximates wall time on an idle machine with enough
+    cores, and it is the figure compared with every time target and budget.
+  - **Total CPU:** CPU time summed over all threads, compared with the total-CPU budgets. It catches
+    wasted parallel work.
+  - **I/O:** bytes read and written per stage, and time blocked on I/O, compared with the I/O
+    budgets (§6.0), because CPU time does not include disk waits.
+  - **Context:** wall time, peak private memory and the count of competing processes. Wall time is
+    recorded for information only.
+- **Thread CPU precision.** On Windows, `GetThreadTimes` advances in 15.6 ms ticks, too coarse for
+  short spans. Spans use `QueryThreadCycleTime`, converted with a cycles-per-second rate calibrated
+  at startup; totals are cross-checked against `GetProcessTimes`. On Linux, `CLOCK_THREAD_CPUTIME_ID`.
+- **Contention bias.** Shared caches and hyperthread siblings inflate CPU time somewhat on a busy
+  machine. A result within 10% over its budget is rerun; it fails if the median of three is still
+  over. Nothing is ever stopped to make a run quieter.
+- **Workers.** Acceptance runs use 8 workers (the physical core count) and report the median of
+  three runs. Runs at 2 workers continue as a regression series only.
+- **Cache drive.** Benchmarks use the E: cache (§3.4) or an explicit `DMB_CACHE_DIR`, and check free
+  space before populating.
 - **Gate.** A CI performance gate on a fixed corpus fails when a scenario exceeds its target or
   regresses more than 20% from the trailing median.
 
@@ -846,95 +938,146 @@ are rejected (D10).
 - **Stop-loss.** If a phase misses its exit criteria after two rounds of fixes on the same stage,
   stop and report to the human with the profile.
 - **One phase open at a time.** Each phase gets its own branch and merges when its exit criteria
-  pass.
+  pass. Code from a frozen phase must keep compiling and passing its tests, but receives no new
+  features until its phase reopens.
+- **Memo payoff.** A memo kind stays enabled only while a trace shows its full-hit cost at or below
+  one tenth of recomputing the same items cold. A memo that fails is disabled, never tuned with
+  budgets or admission rules.
+- **No admission machinery.** Cache population writes every computed record. Space problems are
+  solved by compaction and an explicit cache drive, never by skipping records.
 
 ---
 
 ## 9. Plan
 
 Durations are rough estimates of focused agent work. Phases run in order; each ends at measurable
-exit criteria.
+exit criteria. Only one phase is open at a time (§8).
 
-### Phase 0: Freeze, baseline and contracts (≈ 2–3 days)
+### Where things stand (7 October)
 
-Work:
-- Stop committing to `codex/compiler-architecture`; keep it for reference.
-- Branch `native-v2` from `ac1af55d1a`, build it in release, run `cargo test`.
-- Freeze the parity baseline (§5.3): raw records, normalized identities, fixed seeds, three runs
-  per output, nondeterminism classified.
-- Profile a cold build and a body edit of the preserved compiler on the frozen inputs under
-  `samply`, with per-stage and end-to-end times.
-- Confirm whether DreamDaemon ever opens the `.dmb` or `.rsc` for writing.
-- Write `PREPROCESS.md`, `LINK.md` and `PUBLISH.md`, each with fixtures:
-  - `PREPROCESS.md`: include regions, non-text items, repeated and conditional includes, includes
-    inside expressions, `FILE_DIR`, incoming versus internal reads, canonical paths.
-  - `LINK.md`: the inventory of observable orders with DreamMaker's rule for each, the canonical
-    rules for the rest, and the metadata `set` statements.
-  - `PUBLISH.md`: pair stores per drive, acquisition and eviction locks, conventional paths,
-    verification per boot, crash cases.
+- **Phase 0:** mostly done. The contract documents, baseline harness and DreamDaemon write-access
+  check exist. Still open:
+  - the profile of where cold-build time goes (sampling was stopped at the user's request);
+  - reproduction of the frozen baseline.
+- **Phase 1 (original):** produced a full, deterministic compile and publication in 33 s at 2
+  workers. It did not meet its 30 s target or the parity gate.
+- **Phase 2 (original, disk cache):** was started early. Its code works and its incremental output
+  is byte-identical to cold output, but body edits take 64–110 s and cold builds regressed to
+  56–83 s. It is now frozen (see the review).
+
+The phases below replace the original Phases 1–3. Phases 4–6 are unchanged.
+
+### Phase 0 close-out (≈ 2–3 days)
+
+**Step 0: Freeze and clean up**
+- Freeze disk-cache work. The code stays and must keep compiling and passing its tests, but gets no
+  new features until Phase 3. Bug fixes needed by the oracle are allowed.
+- Remove the tree disk admission (the tree key and payload path) and every byte limit that causes
+  a skip rather than an eviction. Output must be unchanged with and without `--no-cache`.
+- Fold `PHASE2_PROGRESS.md` into `STATUS.md` (current state only). Move per-cohort numbers into
+  `results.jsonl` and the narrative to `archive/`.
+- Run the full `cargo test --workspace` once in release mode and record the counts in `STATUS.md`.
+  Fix or list every failure.
+
+**Step 1: A profiler that needs no elevation (§6.5)**
+- Add `tracing` spans to every stage and main sub-stage, with per-thread CPU time.
+- Write the Chrome trace and the flamegraph.
+- Add a counting allocator with per-stage peak memory.
+
+**Step 2: Benchmark protocol (§6.5)**
+- `dmb-bench` runs at 8 workers, median of three, and reports critical-path CPU, total CPU and I/O
+  per stage, with wall time, memory and the competing-process count for context.
+- Move the default cache to `E:\.dmbd\cache\` and check free space before population.
+
+**Step 3: Remaining Phase 0 evidence**
+- Reproduce the frozen baseline under normalized comparison (§5.3).
 
 Exit criteria:
-- Tests green at the base commit.
-- The baseline reproduces under normalized comparison, with nondeterministic identities classified.
-- A written profile of where the 100–130 s cold build goes, with the top ten hot frames.
-- The DreamDaemon write-access answer recorded.
-- The three contract documents reviewed by the human.
+- The frozen state compiles; the tree-on-disk and skip-on-limit paths are gone.
+- Full `cargo test` results are recorded.
+- One cold trace and one body-edit trace of the full project, with per-stage wall time, CPU time,
+  allocations and memory, and the ten heaviest spans written up in `STATUS.md`. This replaces the
+  deferred "ten sampled frames" gate.
+- A CPU-time baseline of the current cold build at 8 workers (critical path, total, I/O) in
+  `results.jsonl`.
+- The baseline reproduces, with nondeterministic identities classified.
 
-### Phase 1: Fast cold compiler, no caching (≈ 4–6 days)
+### Phase 1: Stage throughput (≈ 4–7 days)
 
-Work:
-- Delete `dm-store`, `dm-work`, `dm-compiled`, and the receipt, proof and graph layers.
-- The crate boundaries of §3.8: semantic tree, occurrence table, provenance and resolved
-  declarations in place.
-- Hashed symbol IDs, arenas and canonical paths throughout.
-- Parallel lexing, the directive pass to items, parallel expansion and parallel lowering.
-- Semantic tree and occurrence table construction, `LINK.md` orders, full encode, pair
-  publication with per-drive stores; `--no-daemon` CLI.
-- Complete diagnostics in DreamMaker's format and order.
-- Determinism tests and order fixtures; measure each stage end to end, and the memory figures in
-  §2.2.
+Work strictly from the traces, one stage at a time, worst first. Each change cites its trace
+before and after.
+
+- Bring every stage within its §6.0 budget, and peak memory to 1.5 GB or less.
+- Split `dm-codegen-byond/src/simple.rs` (12,028 lines) along the boundaries the traces expose
+  while working in it.
+- Keep the Phase 1 parity gates: order fixtures match DreamMaker, no new divergence against the
+  frozen baseline, `cargo test` green.
 
 Exit criteria:
-- Cold build ≤ 30 s (stretch 20 s) for both test and server defines, end to end.
+- Every stage within its §6.0 critical-path and total CPU budgets at 8 workers.
+- Cold build ≤ 15 s critical-path CPU and ≤ 40 s total CPU. Up to 20 s critical path is acceptable
+  if one stage carries a written, trace-backed reason.
+- Cold build within its I/O budget.
+- Peak private memory ≤ 1.5 GB.
 - Identical bytes across worker counts.
-- Order fixtures match DreamMaker.
-- No new divergence against the frozen baseline.
+- Order fixtures match DreamMaker, and no new divergence appears against the frozen baseline.
 - `cargo test` green.
-- Stage measurements recorded and the hypotheses in §6 updated.
 
-### Phase 2: Incremental engine and disk cache, no daemon (≈ 5–7 days)
+If a stage misses its budget after two trace-guided rounds, stop and report the trace to the human.
 
-Work:
-- Input snapshot, resource-folder scan, session records, the session lock and `--exact-inputs`.
-- The cache: self-contained segments, per-record validation, per-stage versions, compaction.
-- Expansion memo over include regions; lowering memo with complete keys and domain-tagged reads;
-  diagnostics replay; relative positions.
-- Pair verification per boot; acquisition and eviction under the store lock.
-- Verify mode, the snapshot-fed oracle, the edit corpus, cache, pair and session lock tests,
-  `explain` and `stats`.
+### Phase 2: Daemon with in-memory sessions (≈ 3–5 days)
 
-Exit criteria:
-- No-daemon targets met end to end: unchanged ≤ 250 ms, body edit ≤ 1.5 s, new var or proc ≤ 2 s.
-- Oracle (DMB, RSC and diagnostics) and verify mode clean on the corpus and a 300-commit replay.
-- Cache, pair and session lock contract tests pass, including six concurrent one-shot builds and
-  compaction under load.
+The daemon keeps everything the whole-program stages need resident between builds:
 
-### Phase 3: Daemon and analysis API (≈ 3–4 days)
+- expanded regions and fragments;
+- the semantic tree and occurrence table;
+- lowered symbolic code;
+- the previous linked image.
+
+A body edit then costs re-expanding one region, lowering one body, relinking, encoding and
+publishing.
+
+The disk cache stays off the hot path in this phase. A new session may read the existing cache to
+warm up, or simply cold-build.
 
 Work:
-- `dmbd` and the `dmbc` client; sessions kept warm with the Δ filter; coarse controls; idle
-  trimming and exit.
-- The draining version handshake, cancellation before publication, crash recovery, a pipe limited
+- `dmbd` and `dmbc`; the session lock shared with no-daemon runs.
+- The draining version handshake; cancellation before publication; crash recovery; a pipe limited
   to the current user.
-- The read-only query API over a session's trees; the analysis export served from it.
+- Idle trimming and coarse controls (§2.5); the in-memory Δ filter for regions.
+- After the edit targets are met: the read-only query API over a session's trees, with the analysis
+  export served from it (D16).
 
 Exit criteria:
-- Daemon targets (§6.1) met end to end for unchanged, body, structural, `#define`, map and icon
-  edits.
-- Six worktrees editing at once within target; private memory ≤ 1.5 GB working and ≤ 0.25 GB idle.
+- With the daemon, in critical-path CPU (§6.5): body edit ≤ 1 s, new var or proc ≤ 2.5 s,
+  unchanged ≤ 100 ms, each within its total CPU and I/O budget. The other §6.1 scenarios are
+  measured and reported.
+- The oracle (DMB, RSC, diagnostics) is clean on the edit corpus and a 300-commit replay.
+- Six worktrees editing at once within target; daemon private memory ≤ 1.5 GB working and
+  ≤ 0.25 GB idle.
 - Killing the daemon mid-build loses nothing beyond that build; rebuilding the compiler mid-build
   lets other builds finish.
 - The analysis export produces the same facts as before, from the API.
+
+### Phase 3: Disk cache and no-daemon mode (≈ 4–6 days)
+
+Resume the frozen cache code under these rules:
+
+- **Zero-copy hits.** Hits are read in place from mapped segments, and only the records used are
+  validated.
+- **Measured payoff (§8).** Each memo kind must show, in a trace, a full-hit cost at or below one
+  tenth of recomputing the same items cold. A memo kind that fails is disabled.
+- **No tree on disk** unless a trace shows tree rebuild dominating no-daemon builds after Phase 1.
+  Even then, its key is the ordered skeleton hash (§4.4), not the tree's contents.
+- **No admission budgets.** Population writes every record.
+
+Exit criteria:
+- Without a daemon, in critical-path CPU (§6.5): unchanged ≤ 250 ms, body edit ≤ 1.5 s, new var
+  or proc ≤ 2 s.
+- Populating the cache costs at most 20% more total CPU than a cold build.
+- The oracle is clean on the corpus and the replay with the cache in use.
+- Cache, pair and session contract tests pass, including six concurrent one-shot builds and
+  compaction under load.
 
 ### Phase 4: Build integration (≈ 2–3 days)
 
@@ -961,16 +1104,22 @@ Work: serve `tools/analyze` lints and generators from the daemon's tree API, rem
 
 Exit criteria: lints and generators produce the same results from the API.
 
-Through Phase 4 this is roughly three to four weeks of focused agent work. Most of the risk sits in
-Phases 0 and 1: the preprocessing and ordering contracts must be right before later code depends on
-them, and the profile has to explain why the 1 October code spent 100–130 s on a cold build.
+From today, Phases 0–4 are roughly three to four weeks of focused agent work. The risk now sits in
+Phase 1: the traces have to show where 33 s of cold build goes, and each stage has to come within
+its budget.
 
 ---
 
 ## 10. Risks and open questions
 
-- **Lowering speed is unknown until profiled.** Even at 1 ms per procedure, 8 cores lower 65,000
-  procedures in about 8 s, so the cold target holds. The incremental targets do not depend on it.
+- **The whole-program stages are the main risk.** They measured 10–50× over the r4 hypotheses
+  (§6.0), and the incremental targets depend on them coming within budget. Phase 1 attacks them
+  with traces before any further caching. If a stage cannot reach its budget, the targets that
+  depend on it are revised with the human, not worked around with caches.
+- **Measurement noise.** The machine is shared with other agents' builds, a game and DreamDaemon,
+  so acceptance uses CPU time (§6.5). Critical-path CPU assumes free cores; on this machine a
+  build may still take longer in wall time when other work is running, and that is expected.
+- **Lowering speed.** Cold lowering measured 6.3 s at 2 workers; the budget is 3 s at 8 workers.
 - **The include-region representation is the most subtle new code.** Phase 0 writes it down with
   fixtures before the incremental walk depends on it, and verify mode samples expansion hits as
   well as lowering hits.
@@ -979,15 +1128,16 @@ them, and the profile has to explain why the 1 October code spent 100–130 s on
 - **Canonical order renumbers on most edits.** One added string shifts every later ID, so every
   procedure is repatched on every build. This is deliberate: it keeps output independent of
   history. Its cost (hypothesized ~200 ms) is measured in Phase 1.
-- **The no-daemon body edit sits close to its target** once validation and publication are counted.
-  The session tree option (§6.4) is the planned remedy.
+- **The no-daemon body edit depends on Phase 1.** It reruns every whole-program stage, so it can
+  approach 1.5 s only once those stages fit their budgets. The session tree option (§6.4) is a
+  later remedy, used only if a trace shows tree rebuild dominating.
 - **Widely used `#define` changes approach a cold build** (2–6 s hypothesized). They are rare.
-- **Memory and timing figures are estimates.** Phases 0–2 replace them with measurements, and the
-  plan changes if they are badly wrong.
+- **Memory.** Measured at 3.0–3.5 GB per build against a 1.5 GB budget. The counting allocator
+  (§6.5) has to show where it goes before the daemon holds six sessions at once.
 - **DreamDaemon write access.** If DreamDaemon opens the `.dmb` or `.rsc` for writing, read-only
   hardlinked run slots fail; run slots then copy, as today.
 - **Pair store disk use.** Each distinct pair can cost up to 267 MB per drive; RSC sharing by hash
-  inside a store and 7-day eviction keep it bounded. Phase 2 measures actual use.
+  inside a store and 7-day eviction keep it bounded. Phase 3 measures actual use.
 - **Windows will not delete a file another process has mapped.** Compaction supersedes by header
   first and deletes old segments later, retrying until no process holds them.
 - **A running DreamDaemon may lock a conventional output path.** Run slots acquire from the pair
@@ -1018,7 +1168,7 @@ them, and the profile has to explain why the 1 October code spent 100–130 s on
 | D13 | The lowering key is the full procedure occurrence; outside context is recorded reads, some mandatory | A body-only key: renaming a parameter with an unchanged body would reuse stale code. |
 | D14 | The expansion unit is the include region; reads split into incoming and internal; non-text includes are items | Whole files: an included child can change macros its parent uses later, and reads after an internal `#define` don't depend on incoming state. |
 | D15 | Semantic tree reuse requires the same ordered skeleton sequence | A set of skeleton hashes: moving an unchanged file in the `.dme` changes override order without changing any hash. |
-| D16 | Analysis boundaries (syntax, provenance, resolved declarations) from Phase 1; query API in Phase 3 | Extracting them in Phase 6: it would repeat the `bootstrap.rs` extraction problem. |
+| D16 | Analysis boundaries (syntax, provenance, resolved declarations) from Phase 1; query API with the daemon in Phase 2 | Extracting them in Phase 6: it would repeat the `bootstrap.rs` extraction problem. |
 | D17 | Coarse limits that only evict or queue; an external benchmark watchdog | Per-component budgets that trigger fallbacks; no limits at all; deadlines inside the compiler. |
 | D18 | Reads are tagged by domain (tree, resource search) and rechecked when that domain's version changes | Checking reads only after a tree change: a `FILE_DIR` change or a new file in a search folder would leave stale resource references. |
 | D19 | A reusable semantic tree plus an occurrence table rebuilt every build; metadata `set` statements in skeletons | Reusing one combined tree: stale body references, locations and provenance. Excluding all body content from skeletons: verb metadata changes would be missed. |
@@ -1027,6 +1177,12 @@ them, and the profile has to explain why the 1 October code spent 100–130 s on
 | D22 | Stored pairs trusted by stamp within one boot, hashed on first use after a boot and in exact mode | Hashing before every reuse: breaks the unchanged-build target. Never re-hashing: a power loss after rename could leave a torn pair in use. |
 | D23 | Diagnostics stored with memo entries and replayed every build; failed builds publish nothing | Reporting only recomputed items: an error would vanish on the next build. |
 | D24 | One OS lock per session shared by daemon and no-daemon builds; publication not cancellable; draining version handshake | Queuing inside the daemon only: two one-shot runs could interleave their publication. Killing builds on upgrade: rebuilding the compiler would break other worktrees' builds. |
+| D25 | Stage throughput (Phase 1), then the daemon (Phase 2), then the disk cache (Phase 3) | Disk cache before the daemon: a no-daemon build reruns every whole-program stage, so caching cannot reach the targets while those stages are slow (measured: 64–110 s body edits). |
+| D26 | `tracing` spans with Chrome-trace and flamegraph output are the profiler; nothing requiring elevation is used (user decision, 7 Oct) | Stage timers alone: they cannot explain where time goes inside a stage. samply: it needs administrator prompts. |
+| D27 | Acceptance by CPU time at 8 workers, median of three: critical-path CPU against time targets, total CPU and I/O against their budgets (user decision, 7 Oct) | Wall time on a contended machine: identical scenarios varied 2.5× and could not be attributed. Quiet benchmark windows: not available on a shared machine. |
+| D30 | The shared cache defaults to `E:\.dmbd\cache\` (user decision, 7 Oct) | `%LOCALAPPDATA%` on C:: population filled the drive. |
+| D28 | A memo kind stays enabled only while its measured full-hit cost is at most one tenth of cold recomputation; hits are read in place | Decoding and copying records on hit: measured 3–44 s to reuse procedures that lower cold in 6.3 s. |
+| D29 | No admission budgets or skip-on-limit paths in the cache; no tree persistence without a trace | Admission budgets and a 32 MiB key limit: population lost 31,272 records, and the tree cache silently skipped itself. |
 
 ## Appendix B: Revision history
 
@@ -1052,3 +1208,13 @@ them, and the profile has to explain why the 1 October code spent 100–130 s on
   - Non-text includes and canonical paths (§3.3, §4.1).
   - A normalized baseline with a nondeterminism policy (§5.3).
   - End-to-end budgets including validation and publication (§3.2, §6).
+- **r5, 7 Oct 2026.** After the first measurements and `REVIEW_20261007.md`:
+  - Measured results and binding per-stage cold budgets (§6.0). The r4 stage hypotheses were
+    10–50× too optimistic for the whole-program stages.
+  - Memory measured at 3.0–3.5 GB against a 0.45–0.6 GB estimate; budget 1.5 GB (§2.2).
+  - A profiler without elevation; acceptance by critical-path CPU, total CPU and I/O at 8 workers;
+    the cache on E: (§3.4, §6.5, D26, D27, D30). These three follow the user's decisions of
+    7 October.
+  - Plan reordered: Phase 0 close-out, stage throughput, the daemon, then the disk cache (§9, D25).
+    Disk-cache work is frozen; the analysis API moves with the daemon.
+  - The memo payoff rule and no admission machinery (§8, D28, D29).

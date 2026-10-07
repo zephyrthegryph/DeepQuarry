@@ -39,7 +39,9 @@ pub fn capture(bytes: &[u8], engine: &EngineSnapshot) -> Result<EngineLinkFacts,
     let mut indexes = BTreeMap::new();
     let mut references = ReferenceBindings::default();
     for (index, string) in dmb.strings.iter().enumerate() {
-        if dm_link::is_reserved_string_index(index as u32) { continue; }
+        if dm_link::is_reserved_string_index(index as u32) {
+            continue;
+        }
         let bytes = string.data.as_slice();
         let id = SymbolId::of_bytes(bytes);
         inventory.spellings.push((id, Arc::from(bytes)));
@@ -249,8 +251,14 @@ mod tests {
         let facts = capture(bytes, &engine).unwrap();
         let original = Dmb::from_bytes(bytes).unwrap();
         let linked = dm_link::LinkTables::build(facts.inventory.clone()).unwrap();
-        assert_eq!(facts.inventory.reserved_prefixes[&Table::Procedure], original.procs.len() as u32);
-        assert_eq!(facts.inventory.reserved_prefixes[&Table::VariableRecord], original.variables.len() as u32);
+        assert_eq!(
+            facts.inventory.reserved_prefixes[&Table::Procedure],
+            original.procs.len() as u32
+        );
+        assert_eq!(
+            facts.inventory.reserved_prefixes[&Table::VariableRecord],
+            original.variables.len() as u32
+        );
         for (index, class) in original.classes.iter().enumerate() {
             let symbol = SymbolId::of_bytes(original.string(class.path_string_id()).unwrap());
             assert_eq!(linked.index(Key::Type(symbol)), Some(index as u32));
