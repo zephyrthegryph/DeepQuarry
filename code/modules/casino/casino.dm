@@ -624,9 +624,9 @@ CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	ref_many(nameof(collar_list), /obj/item/clothing/accessory/collar/casinosentientprize)
 	ref_one(nameof(selected_collar), /obj/item/clothing/accessory/collar/casinosentientprize)
 	op("spasm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(casinosentientprize_sale), "enabled", because = MSG(casino/spasm_disabled))), then(PROC_REF(interaction_use)))
-	op("spasm_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy prize"), needs(req(PROC_REF(actor_not_incapacitated)), req_is(nameof(casinosentientprize_sale), "enabled", because = MSG(casino/prizes_disabled)), req_full(nameof(selected_collar), because = MSG(casino/select_prize_first))), then(PROC_REF(interaction_cash)))
-	op("spasm_collar", item(/obj/item/clothing/accessory/collar/casinosentientprize), priority(OP_PRIORITY_DEFAULT - 1), label("Release prize"), needs(req(PROC_REF(actor_not_incapacitated))), then(PROC_REF(interaction_collar)))
-	op("spasm_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req(PROC_REF(actor_not_incapacitated)), req(PROC_REF(can_manage), because = MSG(casino/access_denied))), then(PROC_REF(interaction_id)))
+	op("spasm_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy prize"), needs(req(PROC_REF(actor_not_incapacitated), because = MSG(casino/incapacitated)), req_is(nameof(casinosentientprize_sale), "enabled", because = MSG(casino/prizes_disabled)), req_full(nameof(selected_collar), because = MSG(casino/select_prize_first))), then(PROC_REF(interaction_cash)))
+	op("spasm_collar", item(/obj/item/clothing/accessory/collar/casinosentientprize), priority(OP_PRIORITY_DEFAULT - 1), label("Release prize"), needs(req(PROC_REF(actor_not_incapacitated), because = MSG(casino/incapacitated))), then(PROC_REF(interaction_collar)))
+	op("spasm_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req(PROC_REF(actor_not_incapacitated), because = MSG(casino/incapacitated)), req(PROC_REF(can_manage), because = MSG(casino/access_denied))), then(PROC_REF(interaction_id)))
 
 MSG_DEF_SELF(casino/spasm_disabled, "the SPASM is disabled")
 
@@ -719,6 +719,7 @@ TRACKED(/obj/machinery/casinosentientprize_handler, casinosentientprize_sale)
 
 MSG_DEF_SELF(casino/prizes_disabled, "sentient prize sales are currently disabled")
 MSG_DEF_SELF(casino/select_prize_first, "select a prize first")
+MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 
 /obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated(datum/act/op/A)
 	return !A.actor.incapacitated()
