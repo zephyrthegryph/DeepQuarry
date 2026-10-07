@@ -142,11 +142,13 @@
 		consume(L, 5)
 
 //Code to remove metroid from someone
-EXTEND_INTERACTIONS(/mob/living/simple_mob/metroid/juvenile, INTERACT_HAND_UNGATED(null, PROC_REF(metroid_juvenile_interaction_hand)))
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile)
+	op("metroid_juvenile_hand", hand(), ungated(), then(PROC_REF(metroid_juvenile_interaction_hand)))
 
 /// Old attack_hand: wrestle it off its victim.
-/mob/living/simple_mob/metroid/juvenile/proc/metroid_juvenile_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/metroid/juvenile/proc/metroid_juvenile_interaction_hand(datum/act/op/A)
+	var/mob/living/L = A.actor
+	. = OP_OK
 	if(victim) // Are we eating someone?
 		var/fail_odds = 30
 		if(victim == L) // Harder to get the metroid off if it's you that is being eatten.
@@ -163,7 +165,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/metroid/juvenile, INTERACT_HAND_UNGAT
 			step_away(src, L)
 
 	else
-		return FALSE
+		return OP_DECLINE
 
 /mob/living/simple_mob/metroid/juvenile/proc/lay_egg()
 	new /obj/effect/metroid/egg(loc, src)

@@ -591,6 +591,28 @@ CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 CAPABILITIES(/obj/item/gripper)
 	provides(AFF_MANIPULATE | AFF_HOLD_SMALL, reach = 1)
 	owns_many(nameof(pockets))
+	op("item_help", item(/obj/item), stance(I_HELP), then(PROC_REF(interaction_item_help)))
+	op("item_disarm", item(/obj/item), stance(I_DISARM), then(PROC_REF(interaction_item_disarm)))
+	op("item_grab", item(/obj/item), stance(I_GRAB), then(PROC_REF(interaction_item_grab)))
+	op("item_hurt", item(/obj/item), stance(I_HURT), then(PROC_REF(interaction_item_hurt)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), then(PROC_REF(interaction_alt)))
+	op("gripper_drop", menu(), label("Drop Item"), needs(carried()), then(PROC_REF(gripper_verb_drop)))
+
+/// The help-stance item use of the gripper: the shared handler with its stance.
+/obj/item/gripper/proc/interaction_item_help(datum/act/op/A)
+	return interaction_item(A, I_HELP)
+
+/// The disarm-stance item use of the gripper: the shared handler with its stance.
+/obj/item/gripper/proc/interaction_item_disarm(datum/act/op/A)
+	return interaction_item(A, I_DISARM)
+
+/// The grab-stance item use of the gripper: the shared handler with its stance.
+/obj/item/gripper/proc/interaction_item_grab(datum/act/op/A)
+	return interaction_item(A, I_GRAB)
+
+/// The hurt-stance item use of the gripper: the shared handler with its stance.
+/obj/item/gripper/proc/interaction_item_hurt(datum/act/op/A)
+	return interaction_item(A, I_HURT)
 
 /// The selected pocket (one of `pockets`) or item.
 /obj/item/gripper/relations()
@@ -638,15 +660,14 @@ CAPABILITIES(/obj/item/storage/internal/gripper)
 		wrapped.attack_self(user)
 
 /// Old click_alt.
-/obj/item/gripper/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gripper/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!is_in_use(user, FALSE))
 		drop_item(user)
-	return TRUE
-
-EXTEND_INTERACTIONS(/obj/item/gripper, INTERACT_VERB("Drop Item", PROC_REF(gripper_verb_drop), REQ_IN_INVENTORY))
+	return OP_OK
 
 /// Old Drop Item verb: Release an item from your magnetic gripper.
-/obj/item/gripper/proc/gripper_verb_drop(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gripper/proc/gripper_verb_drop(datum/act/op/A)
 	drop_item(src.loc)
 
 //Different types of grippers!

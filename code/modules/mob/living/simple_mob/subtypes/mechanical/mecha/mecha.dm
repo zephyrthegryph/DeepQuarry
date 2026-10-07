@@ -112,17 +112,20 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/mechanical/mecha, TYPE_PROC_REF(/
 	add_overlay(deflect_image)
 	after(src, 1 SECOND, TYPE_PROC_REF(/atom, cut_overlay), with = list(deflect_image))
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha, INTERACT_ITEM(null, PROC_REF(mecha_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha)
+	op("mecha_item", item(/obj/item), then(PROC_REF(mecha_interaction_item)))
 
 /// Old attackby: armour deflection.
-/mob/living/simple_mob/mechanical/mecha/proc/mecha_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/mechanical/mecha/proc/mecha_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	. = OP_OK
 	if(prob(deflect_chance))
 		act_message(user, src, null, MSG_OTHERS(span_warning("%U%'s %I% bounces off %T%'s armor!")), item = I)
 		deflect_sprite()
 		user.setClickCooldown(user.get_attack_speed(I))
 		return
-	return FALSE
+	return OP_DECLINE
 
 /mob/living/simple_mob/mechanical/mecha/ex_act(severity)
 	if(prob(deflect_chance))

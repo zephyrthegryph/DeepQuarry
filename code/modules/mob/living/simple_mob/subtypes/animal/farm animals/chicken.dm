@@ -47,11 +47,14 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 	GLOB.chicken_count -= 1
 	..()
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/chicken, INTERACT_ITEM(null, PROC_REF(chicken_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/animal/passive/chicken)
+	op("chicken_item", item(/obj/item), then(PROC_REF(chicken_interaction_item)))
 
 /// Old attackby: feeding wheat.
-/mob/living/simple_mob/animal/passive/chicken/proc/chicken_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/animal/passive/chicken/proc/chicken_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(istype(O, /obj/item/reagent_containers/food/snacks/grown)) //feedin' dem chickens
 		var/obj/item/reagent_containers/food/snacks/grown/G = O
 		if(G.seed() && G.seed().kitchen_tag == PLANT_WHEAT)
@@ -65,7 +68,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/chicken, INTERACT_ITEM
 		else
 			to_chat(user, "[name] doesn't seem interested in that.")
 	else
-		return FALSE
+		return OP_DECLINE
 
 /mob/living/simple_mob/animal/passive/chicken/life_type_post_due()
 	return TRUE

@@ -55,26 +55,26 @@
 
 	name = "Mulebot #[suffix]"
 
-// DECLARE, not EXTEND: the item effect calls the bot's own effect first (old `..()` then update_icons()),
-// so the inherited bot spec must not run a second time.
-DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
-	INTERACT_ITEM(null, PROC_REF(mulebot_interaction_item)), \
-	INTERACT_HAND_UNGATED("Open controls", TYPE_PROC_REF(/atom, interaction_open_ui)), \
-	INTERACT_DRAG("Load", PROC_REF(mulebot_interaction_drag)))
-
 /// Old MouseDrop_T: load the dropped thing. Takes every drop (the old override never reached the drag-buckle).
-/mob/living/bot/mulebot/proc/mulebot_interaction_drag(mob/user, atom/movable/C, datum/interaction/interaction)
+/mob/living/bot/mulebot/proc/mulebot_interaction_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/C = A.held
 	if(user.stat)
-		return TRUE
+		return OP_OK
 
 	if(!istype(C) || C.anchored || get_dist(user, src) > 1 || get_dist(src, C) > 1 )
-		return TRUE
+		return OP_OK
 
 	load(C)
-	return TRUE
+	return OP_OK
 
 // The hand entry above opens the controls, so the window's own open op answers the menu and a remote user only.
 CAPABILITIES(/mob/living/bot/mulebot)
+	// the item effect calls the bot's own effect first (old `..()` then update_icons()), so the inherited bot op must not run a second time
+	without("bot_item")
+	op("mulebot_item", item(/obj/item), then(PROC_REF(mulebot_interaction_item)))
+	op("open_ui", hand(), ungated(), label("Open controls"), then(TYPE_PROC_REF(/atom, op_open_ui)))
+	op("mulebot_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Load"), then(PROC_REF(mulebot_interaction_drag)))
 	interface("MuleBot", input = menu())
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("stop", ui_act("stop"), then(PROC_REF(ui_act_stop)))
@@ -175,8 +175,8 @@ CAPABILITIES(/mob/living/bot/mulebot)
 	homeName = A.answer.value
 
 /// Old attackby: the bot's item handling (old ..()), then an icon refresh. A FALSE result still reaches the attack.
-/mob/living/bot/mulebot/proc/mulebot_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = bot_interaction_item(user, O, interaction)
+/mob/living/bot/mulebot/proc/mulebot_interaction_item(datum/act/op/A)
+	. = bot_interaction_item(A)
 	update_icons()
 
 /mob/living/bot/mulebot/proc/obeyCommand(mob/user, command)

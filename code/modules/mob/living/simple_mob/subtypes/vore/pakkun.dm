@@ -215,15 +215,15 @@ CAPABILITIES(/mob/living/simple_mob/vore/pakkun)
 
 CAPABILITIES(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy)
 	ref_many(nameof(petters))
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy, INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(snappy_interaction_hand)))
+	op("snappy_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(snappy_interaction_hand)))
 
 /// Old attack_hand: remember help-touchers, then carry on to the pakkun touch (FALSE).
-/mob/living/simple_mob/vore/pakkun/snapdragon/snappy/proc/snappy_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
+/mob/living/simple_mob/vore/pakkun/snapdragon/snappy/proc/snappy_interaction_hand(datum/act/op/A)
+	var/mob/living/carbon/human/M = A.actor
 	if(!(M in petters))
 		to_chat(M, span_notice("\The [src] gets a mischievous glint in her eye!!"))
 		rel_add(src, nameof(petters), M) //YOU HAVE OFFERED YOURSELF TO THE LIZARD
-	return FALSE
+	return OP_DECLINE
 
 /mob/living/simple_mob/vore/pakkun/snapdragon/snappy/lay_down()
 	if(LAZYLEN(petters) && prob(50) && !resting) //50% chance she'll forgive a random person when she takes a nap

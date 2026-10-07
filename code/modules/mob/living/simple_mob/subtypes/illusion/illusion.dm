@@ -55,21 +55,39 @@ APPEARANCE_NONE(/mob/living/simple_mob/illusion)
 
 	return PROJECTILE_FORCE_MISS
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Hug", PROC_REF(illusion_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Shove", PROC_REF(illusion_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Grab", PROC_REF(illusion_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_HURT, "Hit", PROC_REF(illusion_interaction_hand)))
+CAPABILITIES(/mob/living/simple_mob/illusion)
+	op("illusion_hand_help", hand(), ungated(), stance(I_HELP), label("Hug"), then(PROC_REF(illusion_interaction_hand_help)))
+	op("illusion_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Shove"), then(PROC_REF(illusion_interaction_hand_disarm)))
+	op("illusion_hand_grab", hand(), ungated(), stance(I_GRAB), label("Grab"), then(PROC_REF(illusion_interaction_hand_grab)))
+	op("illusion_hand_hurt", hand(), ungated(), stance(I_HURT), label("Hit"), then(PROC_REF(illusion_interaction_hand_hurt)))
+	extend(/datum/act/hit/explosion, instead())
+
+/// The help-stance input of illusion_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/illusion/proc/illusion_interaction_hand_help(datum/act/op/A)
+	return illusion_interaction_hand(A, I_HELP)
+
+/// The disarm-stance input of illusion_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/illusion/proc/illusion_interaction_hand_disarm(datum/act/op/A)
+	return illusion_interaction_hand(A, I_DISARM)
+
+/// The grab-stance input of illusion_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/illusion/proc/illusion_interaction_hand_grab(datum/act/op/A)
+	return illusion_interaction_hand(A, I_GRAB)
+
+/// The hurt-stance input of illusion_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/illusion/proc/illusion_interaction_hand_hurt(datum/act/op/A)
+	return illusion_interaction_hand(A, I_HURT)
 
 /// Old attack_hand: unrealistic illusions can't be touched; realistic ones fake the reactions.
-/mob/living/simple_mob/illusion/proc/illusion_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/illusion/proc/illusion_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/carbon/human/M = A.actor
+	. = OP_OK
 	if(!realistic)
 		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 		act_message(M, src, null, MSG_OTHERS(span_warning("%U%'s hand goes through %T%!")))
 		return
 	else
-		switch(interaction.stance)
+		switch(stance)
 			if(I_HELP)
 				act_message(M, src, \
 					MSG_SELF(span_notice("You hug %T% to make [p_them()] feel better!")), \
@@ -82,7 +100,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, \
 				M.do_attack_animation(src)
 
 			if(I_GRAB)
-				return FALSE
+				return OP_DECLINE
 
 			if(I_HURT)
 				injure(INJURY_BLUNT, harm_intent_damage, source = M)
@@ -96,9 +114,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, \
 	play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 	act_message(user, src, null, MSG_OTHERS(span_warning("%U%'s %I% goes through %T%!")), item = I)
 	return FALSE
-
-CAPABILITIES(/mob/living/simple_mob/illusion)
-	extend(/datum/act/hit/explosion, instead())
 
 // Try to have the same tooltip, or else it becomes really obvious which one is fake.
 /mob/living/simple_mob/illusion/get_nametag_name(mob/user)

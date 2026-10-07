@@ -204,20 +204,37 @@ CAPABILITIES(/mob/living/simple_mob/vore/woof)
 	projectiletype = /obj/item/projectile/forcebolt/harmless/awoobolt
 	projectilesound = SFX_VOICE_LONG_AWOO
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/woof/cass, \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(cass_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Shove", PROC_REF(cass_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Grab", PROC_REF(cass_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_HURT, "Hit", PROC_REF(cass_interaction_hand)))
+CAPABILITIES(/mob/living/simple_mob/vore/woof/cass)
+	op("cass_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(cass_interaction_hand_help)))
+	op("cass_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Shove"), then(PROC_REF(cass_interaction_hand_disarm)))
+	op("cass_hand_grab", hand(), ungated(), stance(I_GRAB), label("Grab"), then(PROC_REF(cass_interaction_hand_grab)))
+	op("cass_hand_hurt", hand(), ungated(), stance(I_HURT), label("Hit"), then(PROC_REF(cass_interaction_hand_hurt)))
+
+/// The help-stance input of cass_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/woof/cass/proc/cass_interaction_hand_help(datum/act/op/A)
+	return cass_interaction_hand(A, I_HELP)
+
+/// The disarm-stance input of cass_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/woof/cass/proc/cass_interaction_hand_disarm(datum/act/op/A)
+	return cass_interaction_hand(A, I_DISARM)
+
+/// The grab-stance input of cass_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/woof/cass/proc/cass_interaction_hand_grab(datum/act/op/A)
+	return cass_interaction_hand(A, I_GRAB)
+
+/// The hurt-stance input of cass_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/woof/cass/proc/cass_interaction_hand_hurt(datum/act/op/A)
+	return cass_interaction_hand(A, I_HURT)
 
 /// Old attack_hand: while playing dead, only a long help-pet revives her; alive, the normal touch.
-/mob/living/simple_mob/vore/woof/cass/proc/cass_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
+/mob/living/simple_mob/vore/woof/cass/proc/cass_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/carbon/human/M = A.actor
 	if(stat != DEAD)
-		return FALSE
-	if(interaction.stance == I_HELP)
+		return OP_DECLINE
+	if(stance == I_HELP)
 		act_message(M, src, null, MSG_OTHERS("%U% pets %T%."), runemessage = "pets %T%")
 		task_timed(M, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_cass_done), done_args = list(M), on_fail = PROC_REF(attack_hand_cass_failed), fail_args = list(M))
-	return TRUE
+	return OP_OK
 
 /mob/living/simple_mob/vore/woof/cass/proc/attack_hand_cass_done(mob/living/carbon/human/M)
 	faction = M.faction
