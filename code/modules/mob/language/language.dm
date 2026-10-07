@@ -203,6 +203,7 @@
 		return 0
 
 	languages.Add(new_language)
+	sync_language_state()
 	if(new_language.flags & HIVEMIND)
 		grant(src, granted_verb(/mob/proc/adjust_hive_range), new_language)
 
@@ -215,6 +216,13 @@
 	if(prefix)
 		language_keys.Remove(prefix)
 	languages.Remove(L)
+	sync_language_state()
+
+/// Brings the MOB_STATE_KNOWS_LANGUAGE key in line with the languages list (call after any write to the list).
+/mob/proc/sync_language_state()
+	var/knows = length(languages) > 0
+	if(mob_state_knows_language(src) != knows)
+		key_set(src, MOB_STATE_KNOWS_LANGUAGE, knows)
 
 /mob/living/remove_language(rem_language)
 	var/datum/language/L = GLOB.all_languages[rem_language]

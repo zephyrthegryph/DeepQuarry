@@ -2,8 +2,25 @@
 // the admin news network panel when it is done.
 
 
+MSG_DEF_SELF(admin_topic/channel_unsubmittable, "A Feed channel needs a name that no other channel has.")
+MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and a description.")
+
+/// Requirement: the channel being drafted can be created.
+/datum/admins/proc/ac_channel_ready(datum/act/op/A)
+	return admincaster_channel_ready
+
+/// Requirement: the Wanted draft can be issued.
+/datum/admins/proc/ac_wanted_ready(datum/act/op/A)
+	return admincaster_wanted_ready
+
+/// Brings the tracked readiness of the channel and the Wanted draft in line with the drafts and the network.
+/datum/admins/proc/admincaster_resync()
+	set_admincaster_channel_ready(ac_channel_submittable())
+	set_admincaster_wanted_ready(ac_wanted_submittable())
+
 /// Re-opens the admin news network panel after an admincaster action.
 /datum/admins/proc/admincaster_refresh(mob/user)
+	admincaster_resync()
 	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/access_news_network)
 
 /// Switches the admincaster to `screen` and refreshes.
@@ -34,13 +51,6 @@
 		if(FC.channel_name == channel_name)
 			return FALSE
 	return TRUE
-
-/// The question of the channel confirmation: it says so when the channel cannot be created, and then only has an OK button (the old error screen).
-/datum/admins/proc/ac_channel_question(datum/act/op/A)
-	return ac_channel_submittable() ? "Please confirm Feed channel creation" : "A Feed channel needs a name that no other channel has."
-
-/datum/admins/proc/ac_channel_buttons(datum/act/op/A)
-	return ac_channel_submittable() ? list("Confirm", "Cancel") : list("OK")
 
 /datum/admins/proc/topic_ac_submit_new_channel(datum/act/op/A)
 	var/mob/user = A.actor
@@ -126,12 +136,7 @@
 	return !(admincaster_feed_message.author == "" || admincaster_feed_message.body == "")
 
 /datum/admins/proc/ac_wanted_question(datum/act/op/A)
-	if(!ac_wanted_submittable())
-		return "A Wanted issue needs a name and a description."
 	return "Please confirm Wanted Issue [(A.args["ac_submit_wanted"] == 1) ? ("creation.") : ("edit.")]"
-
-/datum/admins/proc/ac_wanted_buttons(datum/act/op/A)
-	return ac_wanted_submittable() ? list("Confirm", "Cancel") : list("OK")
 
 /datum/admins/proc/topic_ac_submit_wanted(datum/act/op/A, href_ac_submit_wanted)
 	var/mob/user = A.actor

@@ -51,6 +51,7 @@
 		languages = identity().languages
 	else
 		identity().languages = languages
+	sync_language_state()
 
 /// The brain tissue this view shows, if any.
 /mob/living/carbon/brain/proc/host_tissue()

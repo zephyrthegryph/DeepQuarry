@@ -93,6 +93,7 @@
 		languages = identity().languages
 	else
 		identity().languages = languages
+	sync_language_state()
 	if(!HAS_SYNTHETIC_BIOLOGY(src))
 		var/list/traits = identity().genetic_effects?.Copy()
 		for(var/effect_type in traits)

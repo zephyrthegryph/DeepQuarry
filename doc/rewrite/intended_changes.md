@@ -2444,15 +2444,23 @@ the input inbox with the requirements and refusals of a click. Every `TOPIC_ACTI
   languages, verbs, organs, species, AI brain, mass delete). The old answer-callback procs and the href re-run plumbing of those links are deleted.
   * An actor has one waiting op, so a second link clicked while a question is open cancels it (a re-run left both open).
   * A question the actor no longer may answer (the rights or reach its prompt class checks) is refused when the answer comes, as before.
-  * **A guard that read untracked state before asking now runs after the answer**, because a requirement may only read tracked state: a mech's tank valve
-    and passenger links ask first and then check the bolts and reach again; the cable reel, the communicator reply and the mind steal ask first and
-    then check what they check; "Give AI" on a player's mob says so in its first question and refuses after the last answer; removing a language from a
-    mob that knows none opens no question and says nothing (it said "This mob knows no languages."); removing a passenger when there is none says
-    "There are no passengers to remove." after the question.
-  * **Newscaster and Wanted confirmations of a draft that cannot be sent** (no name, a name another channel has, no description) now ask once with only an
-    OK button and the reason as the question; they showed the error screen at once.
+  * **A guard that reads state is a requirement, so it runs before the question.** The state it reads is tracked: the `mob_state()` capability keys
+    `MOB_STATE_PLAYED` (set in `/mob/Login()` and `/mob/Logout()`, which every key transfer and `ghostize()` runs; a requirement cannot read the builtin
+    `client`) and `MOB_STATE_KNOWS_LANGUAGE` (`sync_language_state()` after every write to `languages`) on every mob (capability keys, because the
+    `base_vars` ratchet refuses a new var on `/mob`), a mech's `state` (the maintenance graph writes it through `set_state()`), the
+    mech cable layer's `cable_length` (`sync_cable_length()`), and the admin caster's `admincaster_channel_ready` / `admincaster_wanted_ready`
+    (`admincaster_resync()`, run when the panel refreshes). So a mech's tank valve and passenger links refuse silently while the bolts are hidden (a passenger link still says "There are no passengers to remove." after the question: who is
+    in a compartment lives in the slot ledger, which nothing tracks); the cable reel refuses with "There's no more cable on the reel."; "Give AI" on a player's mob
+    refuses up front ("This cannot be used on player mobs!") instead of asking three questions; removing a language from a mob that knows none opens no
+    question and says "This mob knows no languages." (`dq_topic_guards`, `dq_mob_state_keys`). A mech link's reach is `req_adjacent()`.
+  * The communicator reply and the sleevemate's mind steal still ask first and then check what they check (their guards read state nothing tracks yet).
+  * **Fix:** the mech's "remove passenger" link looked for the passenger in the pilot slot of the compartment, not its passenger slot, so it never found
+    anyone; it reads `OCCUPANT_SLOT_MECHA_PASSENGER` now. (`passenger.dm`'s "compartment occupied" check has the same wrong slot; left as it was.)
+  * **Newscaster and Wanted confirmations of a draft that cannot be sent** (no name, a name another channel has, no description) are refused up front with
+    the reason as a chat line, and no confirmation opens; they showed the error screen at once. The readiness is re-derived on each panel refresh, so a
+    channel another admin creates in between is still caught by the handler's own check.
   * **Round mode picks and CentCom/syndicate replies refuse with a chat line** where they raised a pop-up ("The game has already started.", "The game mode has to
-    be secret!", no functional radio / no headset); the unban "already lifted" notice is a TGUI alert, as the other admin alerts are.
+    be secret!", no functional radio / no headset), as requirements; the unban "already lifted" notice is a TGUI alert, as the other admin alerts are.
   * **A VV "Give AI" no longer rebuilds the brain when its questions are cancelled**: the brain is made when the last answer is in.
 * **A link whose handler asked through `open_request()` and re-ran itself with `topic_ask()` or a replay token** (the ban panel's questions) still
   re-enters through `topic_dispatch()`; those are the remaining `topic_ask()` sites (admin_topic_bans, admin_topic_mobs, admin_topic_panels, player_notes).

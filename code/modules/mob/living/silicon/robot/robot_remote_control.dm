@@ -179,6 +179,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 
 	// Languages and comms.
 	languages = AI.languages.Copy()
+	sync_language_state()
 	speech_synthesizer_langs = AI.speech_synthesizer_langs.Copy()
 	if(radio && AI.aiRadio) //AI keeps all channels, including Syndie if it is an Infiltrator.
 		radio.subspace_transmission = TRUE

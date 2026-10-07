@@ -180,6 +180,7 @@
 #define MECHA_CABIN_REGULATOR_WATTS 1000
 
 TRACKED(/obj/mecha, cabin_regulating)
+TRACKED(/obj/mecha, state)
 
 CAPABILITIES(/obj/mecha)
 	// Temperature control: a heat pump between the cabin air and the air outside, toward 20 C, paid from the cell (process_preserve_temp()).
@@ -251,8 +252,8 @@ CAPABILITIES(/obj/mecha)
 	op("toggle_id_upload", topic("toggle_id_upload"), then(PROC_REF(topic_toggle_id_upload)))
 	op("toggle_maint_access", topic("toggle_maint_access"), then(PROC_REF(topic_toggle_maint_access)))
 	op("maint_access", topic("maint_access"), then(PROC_REF(topic_maint_access)))
-	op("set_internal_tank_valve", topic("set_internal_tank_valve"), asks(/datum/prompt/number/mecha_tank_valve, fields = list("subject" = computed(PROC_REF(valve_subject)), "default" = computed(PROC_REF(valve_default))), step = "pressure"), then(PROC_REF(topic_set_internal_tank_valve)))
-	op("remove_passenger", topic("remove_passenger"), asks(/datum/prompt/choice/mecha_remove_passenger, fields = list("choices" = computed(PROC_REF(passenger_choices))), step = "passenger"), then(PROC_REF(topic_remove_passenger)))
+	op("set_internal_tank_valve", topic("set_internal_tank_valve"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent()), asks(/datum/prompt/number/mecha_tank_valve, fields = list("subject" = computed(PROC_REF(valve_subject)), "default" = computed(PROC_REF(valve_default))), step = "pressure"), then(PROC_REF(topic_set_internal_tank_valve)))
+	op("remove_passenger", topic("remove_passenger"), needs(req(PROC_REF(bolts_exposed), silent = TRUE), req_adjacent()), asks(/datum/prompt/choice/mecha_remove_passenger, fields = list("choices" = computed(PROC_REF(passenger_choices))), step = "passenger"), then(PROC_REF(topic_remove_passenger)))
 	op("finish_req_access", topic("finish_req_access"), then(PROC_REF(topic_finish_req_access)))
 	op("dna_lock", topic("dna_lock"), then(PROC_REF(topic_dna_lock)))
 	op("reset_dna", topic("reset_dna"), then(PROC_REF(topic_reset_dna)))
@@ -2497,12 +2498,16 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	if(!maint_access || !in_range(src, user))
 		return
 	if(state == MECHA_OPERATING)
-		state = MECHA_BOLTS_SECURED
+		set_state(MECHA_BOLTS_SECURED)
 		to_chat(user, "The securing bolts are now exposed.")
 	else if(state == MECHA_BOLTS_SECURED)
-		state = MECHA_OPERATING
+		set_state(MECHA_OPERATING)
 		to_chat(user, "The securing bolts are now hidden.")
 	output_maintenance_dialog(active_id_card, user)
+
+/// Requirement: the maintenance protocols are on and the securing bolts are exposed.
+/obj/mecha/proc/bolts_exposed(datum/act/op/A)
+	return state >= MECHA_BOLTS_SECURED
 
 /obj/mecha/proc/valve_subject(datum/act/op/A)
 	return src
@@ -2512,8 +2517,6 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 
 /obj/mecha/proc/topic_set_internal_tank_valve(datum/act/op/A)
 	var/mob/user = A.actor
-	if(state < MECHA_BOLTS_SECURED || !in_range(src, user))
-		return
 	var/pressure = A.step_value("pressure")
 	if(pressure)
 		internal_tank_valve = pressure
@@ -2523,20 +2526,18 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 /obj/mecha/proc/passenger_choices(datum/act/op/A)
 	var/list/passengers = list()
 	for(var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P in contents)
-		if(P?.slot_item(MECHA_SLOT_PILOT))
-			passengers["[P?.slot_item(MECHA_SLOT_PILOT)]"] = P
+		if(P?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER))
+			passengers["[P?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)]"] = P
 	return passengers
 
 /obj/mecha/proc/topic_remove_passenger(datum/act/op/A)
 	var/mob/user = A.actor
-	if(state < MECHA_BOLTS_SECURED || !in_range(src, user))
-		return
 	var/list/passengers = passenger_choices(A)
 	var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P = passengers[A.step_value("passenger")]
 	if(!P)
 		to_chat(user, span_warning("There are no passengers to remove."))
 		return
-	var/mob/passenger_occupant = P.slot_item(MECHA_SLOT_PILOT)
+	var/mob/passenger_occupant = P.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
 	act_message(user, null, MSG_SELF(span_notice("You begin opening the hatch on %I%...")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins opening the hatch on %I%...")), \
 		item = P)

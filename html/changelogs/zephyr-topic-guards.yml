@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Mech tank valve and passenger links, the mech cable reel, VV remove language and Give AI, newscaster confirmations refuse before they ask"
+  - bugfix: "Removing a passenger from an exosuit's compartment works again"
