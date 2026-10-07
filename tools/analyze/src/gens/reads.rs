@@ -180,7 +180,7 @@ fn canonical_read_key(kind: &ReadKind, name: &str, capability_keys: &BTreeSet<St
 fn read_table_initializer(table: &str) -> String {
     let rows = table.trim_end_matches(",\n");
     format!(
-        "GLOBAL_LIST(generated_reads_table)\n/datum/controller/global_vars/InitGlobalgenerated_reads_table()\n\tgenerated_reads_table = list(\n{}\n\t)\n\tgvars_datum_init_order += \"generated_reads_table\"",
+        "GLOBAL_RAW(/list/generated_reads_table)\n/datum/controller/global_vars/proc/InitGlobalgenerated_reads_table()\n\tgenerated_reads_table = list(\n{}\n\t)\n\tgvars_datum_init_order += \"generated_reads_table\"",
         rows,
     )
 }
@@ -208,8 +208,10 @@ mod tests {
         assert!(rows.len() > 65536);
         let text = read_table_initializer(&rows);
         assert!(!text.contains("GLOBAL_LIST_INIT("));
-        assert!(text.contains("GLOBAL_LIST(generated_reads_table)"));
-        assert!(text.contains("/datum/controller/global_vars/InitGlobalgenerated_reads_table()"));
+        assert!(text.contains("GLOBAL_RAW(/list/generated_reads_table)"));
+        assert!(!text.contains("GLOBAL_LIST("));
+        assert_eq!(text.matches("InitGlobalgenerated_reads_table()").count(), 1);
+        assert!(text.contains("/datum/controller/global_vars/proc/InitGlobalgenerated_reads_table()"));
         assert!(text.contains("gvars_datum_init_order += \"generated_reads_table\""));
         assert!(text.contains("\"/datum/fixture::read_2999\" = list(0, list(1, 0, 2999))\n\t)"));
         assert_eq!(text.matches(" = list(0, list(1, 0,").count(), 3000);
