@@ -147,11 +147,13 @@ CAPABILITIES(/obj/machinery/botany)
 
 /// Requirement: the held disk fits the slot.
 /obj/machinery/botany/proc/botany_disk_slot_holds(datum/act/op/A)
-	return isnull(botany_disk_slot_reason(A.held))
+	var/obj/item/disk/botany/B = A.held
+	return isnull(botany_disk_slot_reason(B))
 
 /// Why botany_disk_slot_holds refuses.
 /obj/machinery/botany/proc/botany_disk_slot_refusal(datum/act/op/A)
-	return botany_disk_slot_reason(A.held)
+	var/obj/item/disk/botany/B = A.held
+	return botany_disk_slot_reason(B)
 
 /obj/machinery/botany/proc/interaction_load_disk(datum/act/op/A)
 	var/mob/user = A.actor

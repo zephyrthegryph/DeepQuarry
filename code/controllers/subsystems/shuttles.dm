@@ -17,7 +17,7 @@ SYSTEM_DEF(shuttles)
 		/datum/system/air,
 		/datum/system/atoms
 	)
-	// Shuttles with work run their shuttle_step() on the slow periodic lane (a timer chain, shuttle.dm).
+	// Shuttles with work run their shuttle_step() on the slow periodic lane (DECLARE_PERIODIC_WHILE, shuttle.dm).
 
 	var/overmap_halted = FALSE                     // Whether ships can move on the overmap; used for adminbus.
 	var/list/ships = list()                        // List of all ships.
@@ -63,11 +63,9 @@ SYSTEM_DEF(shuttles)
 	process_init_queues()
 
 /// A shuttle with work: one shuttle_step() every 2 s while it is launching, moving or always
-/// processing (arm_work(), code/modules/shuttles/shuttle.dm); idle, nothing is scheduled until
-/// set_process_state() gives it work again.
-/datum/shuttle/proc/work_tick()
-	if(!shuttle_working())
-		return
+/// processing (DECLARE_PERIODIC_WHILE on shuttle_working, code/modules/shuttles/shuttle.dm); idle,
+/// it parks until set_process_state() gives it work again.
+/datum/shuttle/periodic_step(delta)
 	var/profile_start = TICK_USAGE
 	var/result = shuttle_step()
 	var/type_key = "[type]"
@@ -77,7 +75,6 @@ SYSTEM_DEF(shuttles)
 	if(result == PROCESS_KILL)
 		SSshuttles.profile_kills++
 		set_process_state(IDLE_STATE)
-	arm_work()
 
 /// One step of this shuttle's launch/move state machine.
 /datum/shuttle/proc/shuttle_step()

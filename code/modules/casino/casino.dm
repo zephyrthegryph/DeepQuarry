@@ -425,7 +425,7 @@ CAPABILITIES(/obj/machinery/wheel_of_fortune)
 	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
 	op("wheel_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(not_spinning), because = MSG(casino/wheel_spinning))), then(PROC_REF(interaction_use)))
 	op("wheel_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req(PROC_REF(not_busy_and_actor_able), because = PROC_REF(not_busy_refusal)), req(PROC_REF(can_manage), because = MSG(casino/access_denied))), then(PROC_REF(interaction_id)))
-	op("wheel_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy lottery ticket"), needs(req(PROC_REF(not_busy_and_actor_able), because = PROC_REF(not_busy_refusal)), req(PROC_REF(can_buy_ticket), because = PROC_REF(can_buy_ticket_refusal))), then(PROC_REF(interaction_cash)))
+	op("wheel_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy lottery ticket"), needs(req(PROC_REF(not_busy_and_actor_able), because = PROC_REF(not_busy_refusal)), req_is(nameof(lottery_sale), "enabled", because = MSG(casino/lottery_disabled))), then(PROC_REF(interaction_cash)))
 	op("wheel_setinterval", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Change interval"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_setinterval_verb)))
 
 MSG_DEF_SELF(casino/wheel_spinning, "the wheel of fortune is already spinning")
@@ -497,10 +497,10 @@ MSG_DEF_SELF(casino/access_denied, "access denied")
 
 			if("Toggle Lottery Sales")
 				if(lottery_sale == "disabled")
-					lottery_sale = "enabled"
+					set_lottery_sale("enabled")
 					to_chat(user,span_notice("Public Lottery sale has been enabled."))
 					return TRUE
-				lottery_sale = "disabled"
+				set_lottery_sale("disabled")
 				to_chat(user,span_notice("Public Lottery sale has been disabled."))
 
 			if("Toggle Public Spins")
@@ -525,26 +525,16 @@ MSG_DEF_SELF(casino/access_denied, "access denied")
 					lottery_tickets_ckeys = null
 	return TRUE
 
-/// The reason no ticket can be bought, or null.
-/obj/machinery/wheel_of_fortune/proc/ticket_refusal_text(mob/user)
-	if(lottery_sale == "disabled")
-		return "lottery sales are currently disabled"
-	if(user.client && (user.client.ckey in lottery_tickets_ckeys))
-		return "the scanner beeps in an upset manner, you already have a ticket"
-	return null
-
-/// Requirement: a ticket can be bought.
-/obj/machinery/wheel_of_fortune/proc/can_buy_ticket(datum/act/op/A)
-	return isnull(ticket_refusal_text(A.actor))
-
-/// Why can_buy_ticket refuses.
-/obj/machinery/wheel_of_fortune/proc/can_buy_ticket_refusal(datum/act/op/A)
-	return ticket_refusal_text(A.actor)
+MSG_DEF_SELF(casino/lottery_disabled, "lottery sales are currently disabled")
+TRACKED(/obj/machinery/wheel_of_fortune, lottery_sale)
 
 /obj/machinery/wheel_of_fortune/proc/interaction_cash(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/spacecasinocash/C = A.held
 	if(!user.client)
+		return OP_OK
+	if(user.client.ckey in lottery_tickets_ckeys)
+		to_chat(user, span_warning("The scanner beeps in an upset manner, you already have a ticket."))
 		return OP_OK
 
 	insert_chip(C, user)
@@ -637,16 +627,15 @@ MSG_DEF_SELF(casino/access_denied, "access denied")
 
 CAPABILITIES(/obj/machinery/casinosentientprize_handler)
 	ref_many(nameof(collar_list), /obj/item/clothing/accessory/collar/casinosentientprize)
-	op("spasm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_use_spasm), because = MSG(casino/spasm_disabled))), then(PROC_REF(interaction_use)))
-	op("spasm_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy prize"), needs(req(PROC_REF(actor_not_incapacitated)), req(PROC_REF(can_buy_prize), because = PROC_REF(can_buy_prize_refusal))), then(PROC_REF(interaction_cash)))
-	op("spasm_collar", item(/obj/item/clothing/accessory/collar/casinosentientprize), priority(OP_PRIORITY_DEFAULT - 1), label("Release prize"), needs(req(PROC_REF(actor_not_incapacitated)), req(PROC_REF(can_release_collar), because = MSG(casino/collar_not_yours))), then(PROC_REF(interaction_collar)))
+	ref_one(nameof(selected_collar), /obj/item/clothing/accessory/collar/casinosentientprize)
+	op("spasm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_is(nameof(casinosentientprize_sale), "enabled", because = MSG(casino/spasm_disabled))), then(PROC_REF(interaction_use)))
+	op("spasm_cash", item(/obj/item/spacecasinocash), priority(OP_PRIORITY_DEFAULT - 1), label("Buy prize"), needs(req(PROC_REF(actor_not_incapacitated)), req_is(nameof(casinosentientprize_sale), "enabled", because = MSG(casino/prizes_disabled)), req_full(nameof(selected_collar), because = MSG(casino/select_prize_first))), then(PROC_REF(interaction_cash)))
+	op("spasm_collar", item(/obj/item/clothing/accessory/collar/casinosentientprize), priority(OP_PRIORITY_DEFAULT - 1), label("Release prize"), needs(req(PROC_REF(actor_not_incapacitated))), then(PROC_REF(interaction_collar)))
 	op("spasm_id", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Management controls"), needs(req(PROC_REF(actor_not_incapacitated)), req(PROC_REF(can_manage), because = MSG(casino/access_denied))), then(PROC_REF(interaction_id)))
 
 MSG_DEF_SELF(casino/spasm_disabled, "the SPASM is disabled")
 
-/// Requirement: the SPASM can be used (an incapacitated user is refused silently by the effect).
-/obj/machinery/casinosentientprize_handler/proc/can_use_spasm(datum/act/op/A)
-	return A.actor.incapacitated() || casinosentientprize_sale != "disabled"
+TRACKED(/obj/machinery/casinosentientprize_handler, casinosentientprize_sale)
 
 /obj/machinery/casinosentientprize_handler/proc/interaction_use(datum/act/op/A)
 	spasm_use(A.actor, A.held)
@@ -733,21 +722,8 @@ MSG_DEF_SELF(casino/spasm_disabled, "the SPASM is disabled")
 				spawn_casinochips(casinosentientprize_price, src.loc)
 	return TRUE
 
-/// The reason no prize can be bought, or null.
-/obj/machinery/casinosentientprize_handler/proc/buy_prize_refusal_text()
-	if(casinosentientprize_sale == "disabled")
-		return "sentient prize sales are currently disabled"
-	if(!selected_collar)
-		return "select a prize first"
-	return null
-
-/// Requirement: a prize can be bought.
-/obj/machinery/casinosentientprize_handler/proc/can_buy_prize(datum/act/op/A)
-	return isnull(buy_prize_refusal_text())
-
-/// Why can_buy_prize refuses.
-/obj/machinery/casinosentientprize_handler/proc/can_buy_prize_refusal(datum/act/op/A)
-	return buy_prize_refusal_text()
+MSG_DEF_SELF(casino/prizes_disabled, "sentient prize sales are currently disabled")
+MSG_DEF_SELF(casino/select_prize_first, "select a prize first")
 
 /obj/machinery/casinosentientprize_handler/proc/actor_not_incapacitated(datum/act/op/A)
 	return !A.actor.incapacitated()
@@ -766,16 +742,13 @@ MSG_DEF_SELF(casino/spasm_disabled, "the SPASM is disabled")
 	to_chat(user, span_warning("This Sentient Prize is already owned! If you are the owner you can release the prize by swiping the collar on the SPASM!"))
 	return OP_OK
 
-MSG_DEF_SELF(casino/collar_not_yours, "this sentient prize collar isn't yours, please give it to the one it tagged for, belongs to, or a casino staff member")
-
-/// Requirement: the collar belongs to the user (as prize or owner).
-/obj/machinery/casinosentientprize_handler/proc/can_release_collar(datum/act/op/A)
+/obj/machinery/casinosentientprize_handler/proc/interaction_collar(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/clothing/accessory/collar/casinosentientprize/held = A.held
-	return user.name == held.sentientprizename || user.name == held.ownername
-
-/obj/machinery/casinosentientprize_handler/proc/interaction_collar(datum/act/op/A)
-	spasm_collar(A.actor, A.held)
+	if(user.name != held.sentientprizename && user.name != held.ownername)
+		to_chat(user, span_warning("This sentient prize collar isn't yours, please give it to the one it tagged for, belongs to, or a casino staff member."))
+		return OP_OK
+	spasm_collar(user, held)
 	return OP_OK
 
 /// Releasing a prize collar; it asks its question by re-running itself with the same arguments.
@@ -823,11 +796,11 @@ MSG_DEF_SELF(casino/collar_not_yours, "this sentient prize collar isn't yours, p
 
 			if("Toggle Sentient Prize Sales")
 				if(casinosentientprize_sale == "disabled")
-					casinosentientprize_sale = "enabled"
+					set_casinosentientprize_sale("enabled")
 					icon_state = "casinoslave_hub_on"
 					to_chat(user,span_notice("Prize sale has been enabled."))
 				else
-					casinosentientprize_sale = "disabled"
+					set_casinosentientprize_sale("disabled")
 					icon_state = "casinoslave_hub_off"
 					to_chat(user,span_notice("Prize sale has been disabled."))
 

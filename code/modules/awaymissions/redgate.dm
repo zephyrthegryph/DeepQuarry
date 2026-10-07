@@ -108,37 +108,29 @@
 	src.teleport(M)
 	return
 
-/// The restricted humans near any redgate that the human may vouch for (none when the human is restricted themselves).
-/obj/structure/redgate/proc/nearby_restricted_humans(mob/living/carbon/human/O)
-	var/list/nearby_restricted = list()
-	for(var/obj/structure/redgate/g in world)
-		for(var/mob/living/carbon/human/H in oview(7,g))
-			if(H.redgate_restricted && !O.redgate_restricted) //For every restricted human near the redgate, if you aren't restricted yourself, put them in a list.
-				nearby_restricted |= H
-	return nearby_restricted
-
-/// The question is asked only to a human at a lit gate with restricted people nearby.
-/obj/structure/redgate/proc/asks_who_to_admit(datum/act/op/A)
-	if(!density || !ishuman(A.actor))
-		return FALSE
-	return length(nearby_restricted_humans(A.actor)) > 0
-
-/// The people the question offers.
-/obj/structure/redgate/proc/restricted_choices(datum/act/op/A)
-	return nearby_restricted_humans(A.actor)
-
 /// Old attack_hand.
 /obj/structure/redgate/proc/interaction_hand(datum/act/op/A)
-	var/mob/M = A.actor
+	redgate_use(A.actor)
+	return OP_OK
+
+/// The hand use of a gate; it asks who to admit by re-running itself with the same arguments.
+/obj/structure/redgate/proc/redgate_use(mob/M)
 	if(density)
 		if(ishuman(M))
-			var/list/nearby_restricted = nearby_restricted_humans(M)
+			var/mob/living/carbon/human/O = M
+			var/list/nearby_restricted = list()
+			for(var/obj/structure/redgate/g in world)
+				for(var/mob/living/carbon/human/H in oview(7,g))
+					if(H.redgate_restricted && !O.redgate_restricted) //For every restricted human near the redgate, if you aren't restricted yourself, put them in a list.
+						nearby_restricted |= H
 			if(!nearby_restricted.len)
 				teleport(M) //teleport functionality remains if no restricted people are nearby.
 			else
-				var/mob/living/carbon/human/restricted_human = A.step_value("k121")
+				var/mob/living/carbon/human/restricted_human = rerun_ask(M, "k121", PROC_REF(redgate_use), args, /datum/prompt/choice, question = "Who do you wish to give access through the redgate?", title = "Nearby Redgate Inhabitants", choices = nearby_restricted)
+				if(isnull(restricted_human))
+					return
 				if(!restricted_human)
-					return OP_OK
+					return
 				restricted_human.redgate_restricted = FALSE
 				to_chat(M, span_notice("You have given [restricted_human] permission to use the redgate."))
 				to_chat(restricted_human, span_notice("[M] has given you permission to use the redgate."))
@@ -148,7 +140,6 @@
 	else
 		if(!find_partner())
 			to_chat(M, span_warning("The [src] remains off... seems like it doesn't have a destination."))
-	return OP_OK
 
 /// Old attack_ghost: follow the gate to its target; with no target, the ghost default.
 /obj/structure/redgate/proc/redgate_ghost_travel(datum/act/op/A)
@@ -583,6 +574,6 @@ CAPABILITIES(/obj/structure/hyperball_goal)
 
 CAPABILITIES(/obj/structure/redgate)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
-	op("hand", hand(), ungated(), asks(/datum/prompt/choice, fields = list("question" = "Who do you wish to give access through the redgate?", "title" = "Nearby Redgate Inhabitants", "choices" = computed(PROC_REF(restricted_choices)), "timeout" = 0), step = "k121", when = PROC_REF(asks_who_to_admit)), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), ungated(), then(PROC_REF(interaction_hand)))
 	op("redgate_ghost_travel", observer(), label("Travel"), then(PROC_REF(redgate_ghost_travel)))
 	links(/obj/structure/redgate::target, /obj/structure/redgate::target)
