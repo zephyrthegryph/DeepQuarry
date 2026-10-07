@@ -15,6 +15,10 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
+/// Uncached include-region pipeline for the native-v2 compiler. The legacy
+/// entrypoints below remain available solely for preserved baseline callers.
+pub mod regions;
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Diagnostic {
     pub path: PathBuf,
@@ -1888,8 +1892,25 @@ fn expand_mode(
     )
 }
 
-// Preserve original UTF-8 boundary checks before hashing frozen source slices.
-#[allow(clippy::sliced_string_as_bytes)]
+type MacroTrace<'a> = dyn FnMut(&str, Span, &[&str]) + 'a;
+
+pub(crate) fn expand_traced(
+    source: &str,
+    macros: &BTreeMap<String, Macro>,
+    location: ExpandLocation<'_>,
+    trace: &mut MacroTrace<'_>,
+) -> Result<String, String> {
+    expand_mode_disabled_traced(
+        source,
+        macros,
+        0,
+        location,
+        false,
+        &mut Vec::new(),
+        &mut Some(trace),
+    )
+}
+
 fn expand_mode_disabled<'a>(
     source: &str,
     macros: &'a BTreeMap<String, Macro>,
@@ -1897,6 +1918,28 @@ fn expand_mode_disabled<'a>(
     location: ExpandLocation<'_>,
     substitute_only: bool,
     disabled: &mut Vec<&'a str>,
+) -> Result<String, String> {
+    expand_mode_disabled_traced(
+        source,
+        macros,
+        depth,
+        location,
+        substitute_only,
+        disabled,
+        &mut None,
+    )
+}
+
+// Preserve original UTF-8 boundary checks in the shared expansion implementation.
+#[allow(clippy::sliced_string_as_bytes)]
+fn expand_mode_disabled_traced<'a>(
+    source: &str,
+    macros: &'a BTreeMap<String, Macro>,
+    depth: usize,
+    location: ExpandLocation<'_>,
+    substitute_only: bool,
+    disabled: &mut Vec<&'a str>,
+    trace: &mut Option<&mut MacroTrace<'_>>,
 ) -> Result<String, String> {
     if depth > 32 {
         return Err("macro expansion exceeded depth 32".into());
@@ -1927,6 +1970,7 @@ fn expand_mode_disabled<'a>(
                 location,
                 substitute_only,
                 disabled,
+                trace,
             )?);
             i += 1;
             continue;
@@ -1994,6 +2038,11 @@ fn expand_mode_disabled<'a>(
                     } else {
                         args
                     };
+                    if !substitute_only {
+                        if let Some(callback) = trace.as_deref_mut() {
+                            callback(name, token.span, disabled);
+                        }
+                    }
                     // Expand arguments before disabling this invocation. A
                     // nested F(F(x)) is valid; only F inside F's replacement
                     // is recursive. Paste/stringification consume raw spelling.
@@ -2005,13 +2054,14 @@ fn expand_mode_disabled<'a>(
                             if substitute_only || raw_parameters.contains(parameter.as_str()) {
                                 Ok(argument)
                             } else {
-                                expand_mode_disabled(
+                                expand_mode_disabled_traced(
                                     &argument,
                                     macros,
                                     depth + 1,
                                     location,
                                     false,
                                     disabled,
+                                    trace,
                                 )
                             }
                         })
@@ -2034,18 +2084,24 @@ fn expand_mode_disabled<'a>(
                     let substituted =
                         expand_mode(&def.replacement, &replacements, depth + 1, location, true)?;
                     disabled.push(name);
-                    let expanded = expand_mode_disabled(
+                    let expanded = expand_mode_disabled_traced(
                         &substituted,
                         macros,
                         depth + 1,
                         location,
                         false,
                         disabled,
+                        trace,
                     );
                     disabled.pop();
                     out.push_str(&expanded?);
                     i = after;
                     continue;
+                }
+                if !substitute_only {
+                    if let Some(callback) = trace.as_deref_mut() {
+                        callback(name, token.span, disabled);
+                    }
                 }
                 if substitute_only {
                     out.push_str(&def.replacement);
@@ -2078,13 +2134,14 @@ fn expand_mode_disabled<'a>(
                             &source[tokens[i + 1].span.start..tokens[after - 1].span.end]
                         );
                         disabled.push(name);
-                        let expanded = expand_mode_disabled(
+                        let expanded = expand_mode_disabled_traced(
                             &call,
                             macros,
                             depth + 1,
                             location,
                             false,
                             disabled,
+                            trace,
                         );
                         disabled.pop();
                         out.push_str(&expanded?);
@@ -2092,13 +2149,14 @@ fn expand_mode_disabled<'a>(
                         continue;
                     }
                     disabled.push(name);
-                    let expanded = expand_mode_disabled(
+                    let expanded = expand_mode_disabled_traced(
                         &def.replacement,
                         macros,
                         depth + 1,
                         location,
                         false,
                         disabled,
+                        trace,
                     );
                     disabled.pop();
                     out.push_str(&expanded?);
@@ -2203,6 +2261,7 @@ fn expand_interpolations<'a>(
     location: ExpandLocation<'_>,
     substitute_only: bool,
     disabled: &mut Vec<&'a str>,
+    trace: &mut Option<&mut MacroTrace<'_>>,
 ) -> Result<String, String> {
     let mut result = String::with_capacity(literal.len());
     let mut cursor = 0;
@@ -2282,13 +2341,14 @@ fn expand_interpolations<'a>(
             return Err("unclosed string interpolation".into());
         };
         result.push_str(&literal[cursor..start]);
-        result.push_str(&expand_mode_disabled(
+        result.push_str(&expand_mode_disabled_traced(
             &literal[start..end],
             macros,
             depth + 1,
             location,
             substitute_only,
             disabled,
+            trace,
         )?);
         cursor = end;
     }

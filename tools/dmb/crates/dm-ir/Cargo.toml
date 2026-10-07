@@ -7,3 +7,7 @@ description = "Compiler-owned identifiers, HIR, and control-flow MIR for DM"
 
 [lib]
 path = "src/lib.rs"
+
+[dependencies]
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+dm-syntax = { path = "../dm-syntax" }

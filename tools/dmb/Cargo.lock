@@ -108,6 +108,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "dm-analysis"
+version = "0.1.0"
+dependencies = [
+ "dm-ir",
+ "dm-preprocess",
+ "dm-syntax",
+ "dm-tree",
+ "serde_json",
+]
+
+[[package]]
 name = "dm-codegen-byond"
 version = "0.1.0"
 dependencies = [
@@ -158,6 +169,7 @@ dependencies = [
  "dm-resources",
  "dm-semantics",
  "dm-syntax",
+ "dm-tree",
  "salsa",
  "serde",
  "serde_json",
@@ -174,6 +186,10 @@ dependencies = [
 [[package]]
 name = "dm-ir"
 version = "0.1.0"
+dependencies = [
+ "dm-syntax",
+ "xxhash-rust",
+]
 
 [[package]]
 name = "dm-output"
@@ -201,7 +217,9 @@ name = "dm-resources"
 version = "0.1.0"
 dependencies = [
  "byond-dmb",
+ "dm-ir",
  "sha2",
+ "xxhash-rust",
 ]
 
 [[package]]
@@ -214,6 +232,29 @@ dependencies = [
 [[package]]
 name = "dm-syntax"
 version = "0.1.0"
+
+[[package]]
+name = "dm-tree"
+version = "0.1.0"
+dependencies = [
+ "dm-ir",
+ "dm-preprocess",
+ "dm-syntax",
+ "xxhash-rust",
+]
+
+[[package]]
+name = "dmbc"
+version = "0.1.0"
+dependencies = [
+ "dm-analysis",
+ "dm-preprocess",
+ "dm-tree",
+ "fs2",
+ "serde",
+ "serde_json",
+ "xxhash-rust",
+]
 
 [[package]]
 name = "either"
@@ -232,6 +273,16 @@ name = "foldhash"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
+
+[[package]]
+name = "fs2"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9564fc758e15025b46aa6643b1b77d047d1a56a1aea6e01002ac0c7026876213"
+dependencies = [
+ "libc",
+ "winapi",
+]
 
 [[package]]
 name = "generic-array"
@@ -591,10 +642,38 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
+name = "winapi"
+version = "0.3.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c839a674fcd7a98952e593242ea400abe93992746761e38641405d28b00f419"
+dependencies = [
+ "winapi-i686-pc-windows-gnu",
+ "winapi-x86_64-pc-windows-gnu",
+]
+
+[[package]]
+name = "winapi-i686-pc-windows-gnu"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"
+
+[[package]]
+name = "winapi-x86_64-pc-windows-gnu"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
+
+[[package]]
 name = "windows-link"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
+
+[[package]]
+name = "xxhash-rust"
+version = "0.8.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "550a2b930b62486a393c52d5c3b84bff264b28aa437ed64694d31e93b1757af7"
 
 [[package]]
 name = "zmij"

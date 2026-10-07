@@ -1,0 +1,15 @@
+[package]
+name = "dm-analysis"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Read-only exports of the shared resolved DM source model"
+
+[dependencies]
+dm-ir = { path = "../dm-ir" }
+dm-tree = { path = "../dm-tree" }
+dm-syntax = { path = "../dm-syntax" }
+serde_json = "1"
+
+[dev-dependencies]
+dm-preprocess = { path = "../dm-preprocess" }

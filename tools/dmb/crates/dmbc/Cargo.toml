@@ -1,0 +1,15 @@
+[package]
+name = "dmbc"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Native compiler client and immutable output pair publication"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+fs2 = "0.4"
+dm-tree = { path = "../dm-tree" }
+dm-analysis = { path = "../dm-analysis" }
+dm-preprocess = { path = "../dm-preprocess" }

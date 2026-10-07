@@ -11,6 +11,7 @@ dm-syntax = { path = "../dm-syntax" }
 dm-preprocess = { path = "../dm-preprocess" }
 dm-semantics = { path = "../dm-semantics" }
 dm-ir = { path = "../dm-ir" }
+dm-tree = { path = "../dm-tree" }
 dm-codegen-byond = { path = "../dm-codegen-byond" }
 dm-resources = { path = "../dm-resources" }
 byond-dmb = { path = "../.." }

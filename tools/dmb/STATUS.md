@@ -1,6 +1,8 @@
 # Native v2 status
 
-Phase 0 is open. Phase 1 implementation has not started.
+Phase 0 is open. The user authorized progressing through Phases 0 and 1;
+Phase 1 foundation work is now underway alongside the remaining baseline evidence.
+The production compiler has not switched to the new pipeline.
 
 ## Implemented
 
@@ -47,12 +49,74 @@ Phase 0 is open. Phase 1 implementation has not started.
   58 skipped. After suite/shutdown completion it exited with an access violation.
   Complete observations and abnormal exit are both retained; the normal-exit gate
   fails. The original receipt is preserved beside its proof-backed classification.
+- Preserved daemon baseline completed in 244.960 s; the single-procedure edit
+  completed in 6.523 s. The first independent fresh comparison timed out at the
+  285-second watchdog while lowering procedures, without producing comparable
+  output. A second isolated comparison passed in 220.448 s: exact DMB, RSC and
+  ordered diagnostic equality. The original 6.523-second edit is now qualified.
+  Receipt: `E:/dmb-native-v2-phase0/oracles/body-built-in-2/oracle.json`.
+- Corrected distinguishing preprocessing captures establish same-file include
+  suppression (macro effects included), distinct-file expansion, and terminal
+  FILE_DIR resolution for the tested cases. Three additional linker worlds
+  capture map startup, explicit/reopened inheritance and procedure metadata.
+  The map startup observations match; ordering and metadata divergences remain.
+
+## Phase 1 foundations (not production migration completion)
+
+- `dm-ir` now exposes content-derived xxh3 symbol IDs and a collision-checking
+  text table, plus a resolver boundary without output-table or tree-arena IDs.
+- `dm-tree` is being built as an independent immutable declaration model with a
+  separate current-source occurrence table. Unsupported resolver queries are
+  explicit errors/unsupported answers, never invented negative lookups.
+- `dm-preprocess` is gaining a directive/region pass and parallel expansion,
+  following the captured include and resource-search semantics, without caching.
+- `dmbc::publish` implements an OS store lock, authenticated immutable pairs,
+  shared RSC identity, last-three session records, writable acquired run copies
+  and conventional installation with the pair marker written last. An identity-only
+  composition API lets a new DMB reuse a stored archive without an RSC-sized input
+  allocation or rewrite. Eviction, orphan cleanup and the complete crash matrix
+  remain pending; publication is not wired into the production compiler yet.
+- The scalar constant evaluator has moved from `dm-compiler` to `dm-tree`, with
+  the compiler supplying the existing string decoder and `nameof` interpretation.
+  Lists and runtime expressions are still explicit unresolved results; this is
+  one extracted semantic rule, not a migrated initializer pipeline.
+- An uncached frontend connects directive planning, bounded parallel expansion,
+  declaration parsing and the semantic tree. Procedure bodies are parsed on
+  demand from retained expansion ranges, with current include/macro provenance.
+  It does not invoke the historical session, graph or cache machinery. Production
+  lowering, linking and the command-line compiler still await migration.
+- The frontend now lexes/parses grammar-safe chunks with bounded parallel workers,
+  discarding executable AST children before the source-order merge. Include
+  context remains joined; chunk sizes never select another semantic algorithm.
+- The captured resource host answers qualified resource queries from validated
+  payloads and explicit lookup outcomes, forwarding declaration queries to the
+  tree. It performs no filesystem reads during resolution. Resource discovery
+  and cold-driver integration remain unfinished.
+- Procedure presence and structural shared-slot queries now have tree providers.
+  Unknown intrinsic-dependent negatives remain unsupported. Explicit engine
+  hierarchy/inventory attachment validates parent agreement and owner presence,
+  indexes intrinsic names and includes the configuration in tree identity. The
+  actual engine snapshot extraction/merge remains unfinished.
+- Shared DMM parsing now lives in `dm-syntax::map`: one-pass ordered records and
+  borrowed source spans. Existing compiler helpers delegate there; semantic map
+  resolution and dense-ID emission have not migrated.
+- `dm-analysis` streams source-only declarations and separate current occurrences
+  using structural hexadecimal IDs and canonical metadata. `dmbc analyze
+  --no-daemon` consumes this actual frontend/export path without the old compiler.
+  Complete executable references and general lint-engine replacement remain open.
+- Foundation checks passed: analysis (2), IR (9), syntax/maps (75), tree/frontend
+  (31), preprocessing (64), resources (4) and publication (5), totaling 190.
+  Strict Clippy passed across these seven crates; the legacy compiler library
+  integration check passed after the scalar/map extraction and frontend reexport.
+  The CLI exported the captured three-implementation procedure fixture successfully.
+  This is a focused integration gate, not a fresh full-workspace test suite or a
+  full cold-build oracle for Phase 1. Check log:
+  `E:/dmb-native-v2-phase0/foundation-tests.log`.
 
 ## In progress / remaining gates
 
 - Three selected full runtime replays per original output and normalization of all
   six, including stable versus variable differences and per-test runtime counts.
-- Real release cold/body builds with built-in stage/end-to-end timing rows.
 - External sampling and ten named hot frames are deferred: the user stopped the
   profiler because it repeatedly requested administrator permission. The harness
   now defaults to built-in timing and does not launch a sampler or xperf.

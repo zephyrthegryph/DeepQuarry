@@ -11,6 +11,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 pub mod frontend;
+pub mod cold_frontend;
 pub mod lower_cache;
 pub mod maps;
 mod proc_parse_cache;

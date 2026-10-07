@@ -7,6 +7,7 @@
 use std::ops::Range;
 
 mod audit;
+pub mod map;
 mod statements;
 pub use audit::{
     audit_source_streaming, for_each_parsed_chunk, for_each_source_chunk,
@@ -1660,7 +1661,7 @@ mod tests {
                 .collect::<String>(),
             src
         );
-        assert!(result.tokens.iter().all(|t| &src[t.span.range()] == t.text));
+        assert!(result.tokens.iter().all(|t| src[t.span.range()] == t.text));
         assert!(result.tokens.iter().any(|t| t.kind == TokenKind::Resource));
     }
 

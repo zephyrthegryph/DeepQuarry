@@ -1,6 +1,8 @@
 //! Resource inputs shared by the direct compiler, its cache key, and RSC writer.
 //! Callers resolve DM file literals to an authored archive name and a disk path.
 
+pub mod native_resolver;
+
 use byond_dmb::rsc::{NamedResource, ResourceKind};
 #[cfg(test)]
 use byond_dmb::rsc::Entry;

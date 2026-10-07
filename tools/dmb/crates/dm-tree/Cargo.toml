@@ -1,0 +1,13 @@
+[package]
+name = "dm-tree"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-only"
+description = "Immutable resolved DM declarations with separate source occurrences"
+
+[dependencies]
+dm-ir = { path = "../dm-ir" }
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+dm-syntax = { path = "../dm-syntax" }
+
+dm-preprocess = { path = "../dm-preprocess" }

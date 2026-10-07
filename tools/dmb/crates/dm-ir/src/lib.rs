@@ -5,6 +5,21 @@
 use std::collections::BTreeSet;
 use std::fmt;
 
+mod symbols;
+pub use symbols::{SymbolCollision, SymbolId, SymbolTable};
+
+mod declarations;
+pub use declarations::{
+    ArrayDeclaration, DeclarationMeaning, ExpressionToken, Parameter, ProcedureMetadata,
+    ProcedureSetting, ProcedureSignature, SemanticValue, SettingOperation, SymbolicExpression,
+};
+
+mod resolver;
+pub use resolver::{ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};
+
+mod symbolic;
+pub use symbolic::{Relocation, RelocationError, RelocationKind, SymRef, SymbolicCode};
+
 macro_rules! id {
     ($name:ident) => {
         #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
