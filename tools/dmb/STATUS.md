@@ -4,6 +4,54 @@ Phase 0 is open. The user authorized progressing through Phases 0 and 1;
 Phase 1 foundation work is now underway alongside the remaining baseline evidence.
 The production compiler has not switched to the new pipeline.
 
+## Current integration checkpoint (7 October 2026)
+
+The entries below describe the new uncached path. Older measurements later in
+this document belong to the preserved original compiler unless explicitly labeled.
+
+- `dmbc compile` now connects source capture, scalar resolution, pinned ABI
+  preparation, ordinary/class/helper initialization, symbolic linking, map and
+  resource composition, full DMB encoding, immutable pair publication and
+  conventional `.dmb`/`.rsc` installation. Unsupported stages fail before publication.
+  A tiny class/field/procedure project completed through this command with the
+  default pinned template and bootstrap catalog (0.334 s in the latest smoke).
+  This is a smoke result, not a DeepQuarry benchmark.
+- Shared retained-engine validation exposed and fixed implicit constructor paths
+  and qualified `operator/=` name extraction. The actual class/field/procedure
+  composition fixture passed before the subsequent reachability/static additions.
+- Skin attachment passed two source-bound checks. Resource encounter collection
+  passed 31 native archive control cases. Additional raw formats have fresh
+  compile-only controls; their new Rust comparison gate is still pending.
+- Raw regex strings no longer treat `[` as DM interpolation. The actual project
+  now parses 1,370 chunks and 326,543 declarations instead of swallowing the final
+  39 MB inside one statement. The latest actual compile-command probe failed
+  before completing its model: 43.746 s, sampled maximum private memory
+  1,216,749,568 bytes, missing captured `/client.script`. This is an incomplete
+  compile attempt, not a successful cold-build latency.
+- Authored `/client parent_type = /datum` now overrides the captured engine's
+  default parent. A regression proves authored parent conflicts and cycles still
+  fail. Source error locations and ABI failure details are being tightened.
+- Procedure-local statics have exact structural identities, typed producer and
+  resolver, and shared variable-slot relocation. Two producer tests and the
+  codegen tuple/parameter-shadowing test passed. Their startup and final footer
+  integration are in progress; production admission remains guarded until complete.
+- Absolute root proc/var declarations no longer inherit the preceding type owner.
+  Global procedures are separate from the instance inheritance namespace. The
+  focused adapter gate passed 14 checks. The combined cold gate passed its class
+  fixture but still fails a procedure-static storage query; repair is in progress.
+- Six frozen runtime observations are finalized in `phase0/BASELINE_REPLAY_REPORT.md`:
+  40 stable test differences, 79 variable test observations, no missing tests.
+  BYOND crashed after complete results in two repetitions; native exited normally
+  in all three. Source/ownership coverage remains incomplete and parity is not claimed.
+- Full encoding of the preserved 47,843,708-byte DMB took 0.161 s and reproduced
+  the input exactly in the recorded sample. That measurement excludes linking,
+  resource output and publication; it supports keeping full encoding in this design.
+
+Phase 0 and Phase 1 remain open. No successful complete DeepQuarry build, new
+runtime parity result, cold-build acceptance timing, incremental cache or daemon
+completion is claimed by this checkpoint. No new DreamDaemon or external profiler
+was launched for these integration checks.
+
 ## Implemented
 
 - Reference checkout `codex/native-v2` starts at `ac1af55d1a`.

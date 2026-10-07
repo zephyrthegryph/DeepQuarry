@@ -1,6 +1,31 @@
 # BYOND compiled format tooling
 
-## Incremental compiler prototype
+## Native v2 (Phase 0/1 integration)
+
+[DESIGN.md](DESIGN.md) defines the replacement architecture;
+[STATUS.md](STATUS.md) records current evidence and unfinished gates.
+The new uncached command uses captured semantic inputs and publishes an
+immutable DMB/RSC pair before installing the conventional manifest output paths:
+
+```powershell
+cargo run -j1 --manifest-path tools/dmb/Cargo.toml -p dmbc -- compile deepquarry.dme --workers 2 -DCITESTING=1 --progress
+```
+
+This path is experimental and does not yet admit the complete project. Unsupported
+semantics fail before output publication. No daemon or incremental reuse is
+implemented in this path yet. The pinned target is BYOND 516.1687; the driver
+supplies its default version macros and accepts explicit source defines.
+
+Pairs live under `.dmbc/outputs` by default. `--output-store PATH` lets worktrees
+share a caller-selected pair store. One worktree's complete capture/compile/install
+sequence holds an OS lock; different worktrees have independent build locks.
+Conventional output files are compatibility copies; run consumers should acquire
+the authenticated pair through `publish::PairStore`.
+
+## Preserved original incremental prototype
+
+The following commands and performance documents describe the older compiler
+retained for baseline comparison, rather than completion of the native v2 design.
 
 See [implementation status](IMPLEMENTATION_STATUS.md) for verified native
 frontend coverage, measured cache performance, and remaining integration work.

@@ -1,8 +1,9 @@
-//! Uncached source-analysis entry point. Full bytecode compilation is not yet
-//! exposed here: lowering and linking still require migration.
+//! Uncached analysis and native compilation over the shared captured pipeline.
 use std::collections::BTreeMap;
 use std::io::{self, Write};
 use std::path::PathBuf;
+use std::sync::Arc;
+use std::time::Instant;
 
 fn main() {
     if let Err(error) = run() {
@@ -15,12 +16,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut args = std::env::args().skip(1);
     let command = args.next().unwrap_or_else(|| "--help".into());
     if command == "--help" || command == "-h" {
-        println!("dmbc analyze [--no-daemon] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress]");
-        println!("Streams source-declaration JSON-lines; engine and executable resolution remain incomplete.");
+        println!("dmbc analyze|compile [--no-daemon] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH]");
+        println!("compile publishes a new immutable output pair and installs PROJECT.dmb/.rsc; unsupported semantics fail before publication.");
         return Ok(());
     }
-    if command != "analyze" {
-        return Err("expected analyze; bytecode compilation is not yet wired into dmbc".into());
+    if command != "analyze" && command != "compile" {
+        return Err("expected analyze or compile".into());
     }
     let mut project = None;
     let mut defines = BTreeMap::new();
@@ -28,14 +29,27 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut engine_template = None;
     let mut bootstrap_catalog = false;
     let mut progress_enabled = false;
+    let mut output_store = None;
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--no-daemon" => {}
             "--bootstrap-catalog" => bootstrap_catalog = true,
             "--progress" => progress_enabled = true,
+            "--output-store" => {
+                if output_store
+                    .replace(PathBuf::from(
+                        args.next().ok_or("--output-store requires a path")?,
+                    ))
+                    .is_some()
+                {
+                    return Err("--output-store accepts one directory".into());
+                }
+            }
             "--engine-template" => {
                 if engine_template
-                    .replace(PathBuf::from(args.next().ok_or("--engine-template requires a path")?))
+                    .replace(PathBuf::from(
+                        args.next().ok_or("--engine-template requires a path")?,
+                    ))
                     .is_some()
                 {
                     return Err("--engine-template accepts one template".into());
@@ -59,48 +73,218 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    let project = project.ok_or("analyze requires a project manifest")?;
+    let project = std::fs::canonicalize(project.ok_or("a project manifest is required")?)?;
+    let total = Instant::now();
+    let _build_lock = if command == "compile" {
+        Some(dmbc::compile_driver::acquire_build_lock(&project)?)
+    } else {
+        None
+    };
     if bootstrap_catalog && engine_template.is_none() {
         return Err("--bootstrap-catalog requires --engine-template".into());
     }
     // These are caller-supplied source defines. No target ABI is inferred by the
     // reusable frontend; supply DM_VERSION/DM_BUILD explicitly when needed.
-    let engine = engine_template
+    if command == "compile" && engine_template.is_none() {
+        engine_template = Some(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/native_template.bin"),
+        );
+        bootstrap_catalog = true;
+    }
+    let engine_capture = engine_template
         .map(|path| {
             let bytes = std::fs::read(&path)
                 .map_err(|error| format!("engine template {}: {error}", path.display()))?;
             let snapshot = dmbc::engine::EngineSnapshot::from_bytes(&bytes, 1)
                 .map_err(|error| format!("engine template {}: {error:?}", path.display()))?;
             if bootstrap_catalog {
-                snapshot.with_bootstrap_catalog()
+                snapshot
+                    .with_bootstrap_catalog()
+                    .map(|snapshot| (bytes, snapshot))
                     .map_err(|error| format!("engine catalog {}: {error:?}", path.display()))
             } else {
-                Ok(snapshot)
+                Ok((bytes, snapshot))
             }
         })
         .transpose()?;
-    let seed = engine.as_ref().map(dmbc::engine::EngineSnapshot::frontend_seed);
+    let engine = engine_capture.as_ref().map(|(_, engine)| engine);
+    if command == "compile" {
+        if !engine.is_some_and(|engine| {
+            engine.matches_template(include_bytes!("../../../fixtures/native_template.bin"), 1)
+        }) {
+            return Err(
+                "native unsupported: compile requires the pinned BYOND 516.1687 engine template"
+                    .into(),
+            );
+        }
+        // This driver supports the pinned 516.1687 ABI. The reusable frontend
+        // still receives explicit configuration rather than inferring a target.
+        defines
+            .entry("DM_VERSION".into())
+            .or_insert_with(|| "516".into());
+        defines
+            .entry("DM_BUILD".into())
+            .or_insert_with(|| "1687".into());
+    }
+    let seed = engine.map(dmbc::engine::EngineSnapshot::frontend_seed);
     let progress = |event: dm_tree::frontend::FrontendProgress| {
-        eprintln!("frontend {:?} {:?}: {:.3}s {}/{}", event.stage, event.kind,
-            event.elapsed.as_secs_f64(), event.completed_items, event.total_items);
+        eprintln!(
+            "frontend {:?} {:?}: {:.3}s {}/{}",
+            event.stage,
+            event.kind,
+            event.elapsed.as_secs_f64(),
+            event.completed_items,
+            event.total_items
+        );
     };
-    let frontend =
-        match dm_tree::frontend::build_with_config(
-            &project,
+    let frontend = match dm_tree::frontend::build_with_config(
+        &project,
+        &dm_preprocess::FileSystem,
+        &defines,
+        dm_tree::frontend::FrontendConfig {
+            workers,
+            engine: seed.as_ref(),
+            observer: progress_enabled.then_some(&progress),
+        },
+    ) {
+        Ok(frontend) => frontend,
+        Err(diagnostics) => {
+            dmbc::diagnostics::write_diagnostics(&mut io::stderr().lock(), &diagnostics)?;
+            return Err("source analysis did not produce a complete declaration model".into());
+        }
+    };
+    if command == "compile" {
+        let (bytes, engine) = engine_capture
+            .as_ref()
+            .ok_or("compile requires captured engine")?;
+        if progress_enabled {
+            eprintln!(
+                "native captured facts started: {} types, {} members, {} bodies",
+                frontend.snapshot.tree.types().len(),
+                frontend.snapshot.tree.members().len(),
+                frontend.bodies.len()
+            );
+        }
+        let facts_started = Instant::now();
+        let mut symbols = frontend.snapshot.tree.symbols().clone();
+        let constants = dmbc::engine_host::ConstantCatalog::native_516_1687(&mut symbols)
+            .map_err(|error| format!("engine constants: {error:?}"))?;
+        let ordinary = frontend
+            .snapshot
+            .tree
+            .types()
+            .iter()
+            .map(|node| node.path)
+            .collect();
+        let runtime = dmbc::engine_host::RuntimeAliasCatalog::new(
+            engine.identity(),
+            &symbols,
+            Vec::new(),
+            ordinary,
+            dmbc::engine_host::Completeness::Partial,
+        )
+        .map_err(|error| format!("runtime type catalog: {error:?}"))?;
+        let source_host = dmbc::engine_host::EngineResolverHost::new(
+            frontend.snapshot.tree.clone(),
+            constants.clone(),
+            runtime.clone(),
+        )
+        .with_pinned_callables(engine, &frontend)?;
+        let scalar = dmbc::compile_driver::scalars(
+            &frontend,
+            engine,
+            &source_host,
+            source_host.configuration_identity(),
+        );
+        let defaults = dmbc::compile_driver::map_defaults(&scalar)?;
+        let host = dmbc::engine_host::EngineResolverHost::new(Arc::new(scalar), constants, runtime)
+            .with_pinned_callables(engine, &frontend)?;
+        let facts_seconds = facts_started.elapsed().as_secs_f64();
+        let nontext_started = Instant::now();
+        if progress_enabled {
+            eprintln!("native resources and maps started");
+        }
+        let captured_engine = byond_dmb::dmb::Dmb::from_bytes(bytes)?;
+        let roots = engine
+            .frontend_seed()
+            .hierarchy
+            .parents
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        let mut nontext = dmbc::captured_non_text_driver::capture(
+            &frontend,
             &dm_preprocess::FileSystem,
-            &defines,
-            dm_tree::frontend::FrontendConfig {
-                workers,
-                engine: seed.as_ref(),
-                observer: progress_enabled.then_some(&progress),
-            },
+            &dm_resources::capture::FileSystemCapture,
+            host,
+            &captured_engine,
+            &roots,
+            &defaults,
+        )?;
+        let nontext_seconds = nontext_started.elapsed().as_secs_f64();
+        let linking_inputs_started = Instant::now();
+        let mut links = dmbc::engine_link::capture(bytes, engine)?;
+        nontext.extend_inventory(&mut links.inventory)?;
+        let values = dmbc::type_values::CapturedTypeValues::pinned(&frontend, engine)
+            .map_err(|error| format!("runtime type values: {error:?}"))?;
+        let artifacts = std::mem::take(&mut nontext.artifacts);
+        let linking_inputs_seconds = linking_inputs_started.elapsed().as_secs_f64();
+        let compilation_started = Instant::now();
+        if progress_enabled {
+            eprintln!("native compilation started");
+        }
+        let output = match dmbc::compile_driver::compile(
+            &frontend,
+            &nontext.resolver,
+            engine,
+            bytes,
+            links,
+            &values,
+            Some(nontext.resource_search_context),
+            artifacts,
+            Some(&nontext.stage(&frontend)),
+            workers,
         ) {
-            Ok(frontend) => frontend,
-            Err(diagnostics) => {
-                dmbc::diagnostics::write_diagnostics(&mut io::stderr().lock(), &diagnostics)?;
-                return Err("source analysis did not produce a complete declaration model".into());
+            Ok(output) => output,
+            Err(dmbc::cold::ColdError::Lowering(diagnostics)) => {
+                dmbc::diagnostics::write_lowering_diagnostics(
+                    &mut io::stderr().lock(),
+                    &diagnostics,
+                )?;
+                return Err("native lowering did not produce a complete executable".into());
             }
+            Err(error) => return Err(format!("native compilation: {error:?}").into()),
         };
+        let compilation_seconds = compilation_started.elapsed().as_secs_f64();
+        let publication_started = Instant::now();
+        if progress_enabled {
+            eprintln!("native publication started");
+        }
+        let store = dmbc::publish::PairStore::open(output_store.unwrap_or_else(|| {
+            project
+                .parent()
+                .expect("canonical manifest has a parent")
+                .join(".dmbc/outputs")
+        }))?;
+        let session = xxhash_rust::xxh3::xxh3_128(project.to_string_lossy().as_bytes());
+        let pair = store.publish(session, &output.dmb, &nontext.resources.rsc)?;
+        store.install(
+            pair.id,
+            &project.with_extension("dmb"),
+            &project.with_extension("rsc"),
+            &project.with_extension("dmb-pair.json"),
+        )?;
+        let publication_seconds = publication_started.elapsed().as_secs_f64();
+        eprintln!("native stages: frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s publication={:.3}s",
+            frontend.timings.total.as_secs_f64(), facts_seconds, nontext_seconds,
+            linking_inputs_seconds, compilation_seconds, publication_seconds);
+        eprintln!("native compile: total={:.3}s ABI={:.3}s lowering={:.3}s initialization={:.3}s linking={:.3}s composition={:.3}s DMB={} RSC={} pair={}",
+            total.elapsed().as_secs_f64(), output.timings.abi_preparation.as_secs_f64(),
+            output.timings.lowering.as_secs_f64(), output.timings.initializers.as_secs_f64(),
+            output.timings.symbolic_linking.as_secs_f64(), output.timings.composition.as_secs_f64(),
+            pair.dmb_bytes, pair.rsc_bytes, pair.name());
+        return Ok(());
+    }
     let mut output = io::BufWriter::new(io::stdout().lock());
     let counts = dm_analysis::tree_export::write_jsonl(&frontend, &mut output)?;
     output.flush()?;

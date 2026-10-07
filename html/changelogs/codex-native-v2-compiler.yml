@@ -1,0 +1,4 @@
+author: "codex"
+delete-after: true
+changes:
+  - code_imp: "Added an experimental native Rust compiler command with captured output pair publication."

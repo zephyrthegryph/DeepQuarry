@@ -93,3 +93,6 @@ define_sanity_output.txt
 
 # tools/ci/doc_snippets.py --write: the doc/rewrite dm blocks, compiled only with -DDOC_SNIPPETS
 /tools/ci/generated/
+# Native compiler immutable output pairs and compatibility installation receipt.
+.dmbc/
+*.dmb-pair.json

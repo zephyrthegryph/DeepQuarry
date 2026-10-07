@@ -26,6 +26,8 @@ pub mod mob_writer;
 pub mod argument_sources;
 pub mod cold;
 pub mod world_projection;
+pub mod client_projection;
+pub mod client_script;
 pub mod world_writer;
 pub mod initializer_policy;
 pub mod initializer_lowering;
@@ -49,11 +51,7 @@ pub mod resource_order;
 
 pub mod skin;
 pub mod captured_non_text_driver;
-
+pub mod compile_driver;
 pub mod required_types;
 
 pub mod startup;
-
-pub mod client_projection;
-
-pub mod client_script;
