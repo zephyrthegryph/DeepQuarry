@@ -1243,6 +1243,17 @@ fn classify(header: &str, has_children: bool) -> ItemKind {
 /// Parse indentation and declaration nesting, preserving all tokens for later expression parsing.
 /// A malformed indentation transition produces a diagnostic and parsing continues.
 pub fn parse(source: &str) -> AstFile {
+    parse_with_body_mode(source, false)
+}
+
+/// Parse declarations and exact procedure envelopes while retaining only
+/// setting leaves and their structural context inside executable bodies.
+/// Lexical and indentation diagnostics use the same grammar as [`parse`].
+pub fn parse_declaration_skeleton(source: &str) -> AstFile {
+    parse_with_body_mode(source, true)
+}
+
+fn parse_with_body_mode(source: &str, skeleton: bool) -> AstFile {
     let lexed = lex(source);
     // Comments remain in `tokens`, but cannot introduce declarations or alter indentation.
     // A byte-for-byte mask keeps the original source spans valid, including UTF-8 offsets.
@@ -1281,7 +1292,17 @@ pub fn parse(source: &str) -> AstFile {
         &delimiters,
     );
     let mut diagnostics = lexed.diagnostics;
-    let (items, _) = parse_level(source, &lines, 0, 0, false, &mut diagnostics);
+    let (items, _) = parse_level(
+        source,
+        &lines,
+        0,
+        0,
+        ParseContext {
+            in_body: false,
+            skeleton,
+        },
+        &mut diagnostics,
+    );
     AstFile {
         items,
         tokens: lexed.tokens,
@@ -1534,21 +1555,62 @@ fn push_inline_segment(
     });
 }
 
+#[derive(Clone, Copy)]
+struct ParseContext {
+    in_body: bool,
+    skeleton: bool,
+}
+
+fn body_keyword(header: &str, keyword: &str) -> bool {
+    header
+        .trim_start()
+        .strip_prefix(keyword)
+        .is_some_and(|tail| {
+            tail.is_empty() || tail.starts_with(char::is_whitespace) || tail.starts_with('(')
+        })
+}
+
+fn retain_setting_chains(items: Vec<Item>) -> Vec<Item> {
+    fn has_setting(item: &Item) -> bool {
+        body_keyword(&item.header, "set") || item.children.iter().any(has_setting)
+    }
+    let mut input = items.into_iter().peekable();
+    let mut result = Vec::new();
+    while let Some(item) = input.next() {
+        if body_keyword(&item.header, "if") {
+            let mut chain = vec![item];
+            while input
+                .peek()
+                .is_some_and(|item| body_keyword(&item.header, "else"))
+            {
+                chain.push(input.next().unwrap());
+            }
+            if chain.iter().any(has_setting) {
+                result.extend(chain);
+            }
+        } else if has_setting(&item) {
+            result.push(item);
+        }
+    }
+    result
+}
+
 fn parse_level(
     source: &str,
     lines: &[Line],
     mut index: usize,
     indent: usize,
-    in_body: bool,
+    context: ParseContext,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> (Vec<Item>, usize) {
     let mut items = Vec::new();
+    let mut saw_item = false;
     while index < lines.len() {
         let line = &lines[index];
         if line.indent < indent {
             break;
         }
-        if line.indent > indent && !items.is_empty() {
+        if line.indent > indent && saw_item {
             break;
         }
         if line.indent > indent {
@@ -1561,11 +1623,11 @@ fn parse_level(
         let mut end = line.end;
         let mut children = Vec::new();
         let has_children = index + 1 < lines.len() && lines[index + 1].indent > line.indent;
-        let header = source[line.header_start..line.header_end].to_owned();
-        let kind = if in_body {
+        let header = &source[line.header_start..line.header_end];
+        let kind = if context.in_body {
             ItemKind::Statement
         } else {
-            classify(&header, has_children)
+            classify(header, has_children)
         };
         if has_children {
             let (parsed, next) = parse_level(
@@ -1573,25 +1635,63 @@ fn parse_level(
                 lines,
                 index + 1,
                 lines[index + 1].indent,
-                in_body || matches!(kind, ItemKind::Proc | ItemKind::Verb | ItemKind::Statement),
+                ParseContext {
+                    in_body: context.in_body
+                        || matches!(kind, ItemKind::Proc | ItemKind::Verb | ItemKind::Statement),
+                    skeleton: context.skeleton
+                        && (context.in_body || !matches!(kind, ItemKind::Statement)),
+                },
                 diagnostics,
             );
             children = parsed;
             index = next;
-            end = children.last().map_or(end, |child| child.span.end);
+            end = if context.skeleton {
+                lines[next - 1].end
+            } else {
+                children.last().map_or(end, |child| child.span.end)
+            };
         } else {
             index += 1;
         }
+        saw_item = true;
+        if context.skeleton
+            && context.in_body
+            && children.is_empty()
+            && !["set", "if", "else"]
+                .iter()
+                .any(|keyword| body_keyword(header, keyword))
+        {
+            // A discarded executable sibling still separates conditional
+            // chains. Retain a zero-allocation delimiter until compaction so
+            // a later `else` cannot attach across that original sibling.
+            if items.last().is_some_and(|item: &Item| {
+                body_keyword(&item.header, "if") || body_keyword(&item.header, "else")
+            }) {
+                items.push(Item {
+                    kind,
+                    header: String::new(),
+                    span: Span::new(line.header_start, end),
+                    header_span: Span::new(line.header_start, line.header_end),
+                    indent: line.indent,
+                    children,
+                });
+            }
+            continue;
+        }
         items.push(Item {
             kind,
-            header,
+            header: header.to_owned(),
             span: Span::new(line.header_start, end),
             header_span: Span::new(line.header_start, line.header_end),
             indent: line.indent,
             children,
         });
     }
-    (items, index)
+    if context.skeleton && context.in_body {
+        (retain_setting_chains(items), index)
+    } else {
+        (items, index)
+    }
 }
 
 #[cfg(test)]

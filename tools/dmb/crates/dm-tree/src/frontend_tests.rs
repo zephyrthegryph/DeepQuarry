@@ -602,3 +602,24 @@ fn progress_observer_reports_actual_uncached_stage_order() {
         .any(|event| event.stage == FrontendStage::DeclarationParsing
             && event.kind == ProgressKind::Advanced));
 }
+#[test]
+fn declaration_skeleton_matches_full_grammar_and_setting_compaction() {
+    for source in [
+        "/datum/x\n    var/list/a = list(1, 2)\n    proc/read(a = 1)\n        if(a)\n            return 1\n        else if(2)\n            set name = \"Other\"\n        else\n            return 3\n        while(a)\n            set hidden = 1\n        return a\n/datum/y\n    parent_type = /datum/x\n",
+        "/proc/p() { if(1) { return 2; } else { set name = \"A\"; } return 3; }\n",
+        "/proc/p()\n    // set name = fake\n    var/text = {\"multi\nset name = fake\n\"}\n    if(1)\n        if(2)\n            set desc = \"real\"\n        else\n            return 3\n    else\n        return 4\n    return 5\n",
+        "/datum/x { var/list/x = list(/datum/y {name = \"Y\"}); proc/read() {return 1;} }\n",
+        "/datum/x\n    proc/read()\n        for(var/x in list(1, 2))\n            x++\n        try\n            return 1\n        catch(var/exception/e)\n            set name = \"Error\"\n",
+        "/proc/p()\n    if(1)\n        return 1\n    return 2\n    else\n        set name = \"Unattached\"\n",
+    ] {
+        let full = dm_syntax::parse(source);
+        let skeleton = dm_syntax::parse_declaration_skeleton(source);
+        assert_eq!(skeleton.diagnostics, full.diagnostics, "{source}");
+        assert_eq!(skeleton.tokens, full.tokens, "{source}");
+        assert_eq!(
+            super::compact_declarations(skeleton.items, 0),
+            super::compact_declarations(full.items, 0),
+            "{source}"
+        );
+    }
+}

@@ -681,7 +681,9 @@ fn parse_declarations(
                             .iter()
                             .enumerate()
                             .map(|(index, &(offset, len))| {
-                                let ast = dm_syntax::parse(&source[offset..offset + len]);
+                                let ast = dm_syntax::parse_declaration_skeleton(
+                                    &source[offset..offset + len],
+                                );
                                 let diagnostics = ast.diagnostics;
                                 let items = compact_declarations(ast.items, offset);
                                 (worker * per_worker + index, offset, items, diagnostics)
