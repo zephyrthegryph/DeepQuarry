@@ -42,10 +42,51 @@ impl DriverFacts<'_> {
 /// One immutable resolver must include the selected scalar constant overlay,
 /// engine constants and captured resources. No filesystem access occurs here.
 pub struct DriverEvaluator<'a> {
+    pub resource_search_context: Option<u128>,
     pub resolver: &'a dyn Resolver,
     pub symbols: &'a dm_ir::SymbolTable,
 }
+#[derive(Clone, Copy, Eq, PartialEq, Hash)]
+enum ActiveConstant {
+    ProcedureStatic(dm_ir::ProcedureStaticIdentity),
+    Declaration { owner: SymbolId, name: SymbolId },
+}
+fn scalar_constant(value: SemanticValue, symbols: &dm_ir::SymbolTable) -> Option<Constant> {
+    Some(match value {
+        SemanticValue::Null => Constant::Null,
+        SemanticValue::NumberBits(bits) => Constant::Number(f32::from_bits(bits)),
+        SemanticValue::Text(bytes) => Constant::EncodedText(bytes.to_vec()),
+        SemanticValue::Type(path) => Constant::TypePath(symbols.text(path)?.into()),
+        SemanticValue::Resource(path) => Constant::Resource(path),
+        SemanticValue::List(_) => return None,
+    })
+}
 impl DriverEvaluator<'_> {
+    fn declaration_scalar(
+        &self,
+        owner: SymbolId,
+        name: SymbolId,
+        data: &dm_ir::DeclarationMeaning,
+        active: &RefCell<std::collections::HashSet<ActiveConstant>>,
+    ) -> Result<Option<SemanticValue>, String> {
+        if data.inherited_opaque.is_some() || data.flags & 2 == 0 {
+            return Err("declaration constant metadata is not certified".into());
+        }
+        if let Some(value) = &data.resolved_constant {
+            return Ok(Some(value.clone()));
+        }
+        let expression = data
+            .initializer
+            .as_ref()
+            .ok_or("constant declaration has no captured initializer")?;
+        let key = ActiveConstant::Declaration { owner, name };
+        if !active.borrow_mut().insert(key) {
+            return Err(format!("declaration constant cycle at {owner:?}/{name:?}"));
+        }
+        let result = self.scalar_in(owner, expression, None, active);
+        active.borrow_mut().remove(&key);
+        result
+    }
     fn scalar(
         &self,
         owner: SymbolId,
@@ -63,10 +104,10 @@ impl DriverEvaluator<'_> {
         owner: SymbolId,
         expression: &SymbolicExpression,
         procedure: Option<dm_ir::ProcedureIdentity>,
-        active: &RefCell<std::collections::HashSet<dm_ir::ProcedureStaticIdentity>>,
+        active: &RefCell<std::collections::HashSet<ActiveConstant>>,
     ) -> Result<Option<SemanticValue>, String> {
         let failure = RefCell::new(None);
-        let value = dm_tree::constants::evaluate_with(
+        let value = dm_tree::constants::evaluate_with_resources(
             &expression
                 .source_text(self.symbols)
                 .ok_or("expression spelling is not captured")?,
@@ -102,7 +143,9 @@ impl DriverEvaluator<'_> {
                                     Some("static constant has no scalar expression".into());
                                 return None;
                             };
-                            let inserted = active.borrow_mut().insert(declaration.identity);
+                            let inserted = active
+                                .borrow_mut()
+                                .insert(ActiveConstant::ProcedureStatic(declaration.identity));
                             if !inserted {
                                 *failure.borrow_mut() = Some(format!(
                                     "procedure static constant cycle at {:?}",
@@ -111,9 +154,14 @@ impl DriverEvaluator<'_> {
                                 return None;
                             }
                             let result = self.scalar_in(owner, value, Some(procedure), active);
-                            active.borrow_mut().remove(&declaration.identity);
+                            active
+                                .borrow_mut()
+                                .remove(&ActiveConstant::ProcedureStatic(declaration.identity));
                             return match result {
                                 Ok(Some(SemanticValue::Null)) => Some(Constant::Null),
+                                Ok(Some(SemanticValue::Resource(path))) => {
+                                    Some(Constant::Resource(path))
+                                }
                                 Ok(Some(SemanticValue::NumberBits(bits))) => {
                                     Some(Constant::Number(f32::from_bits(bits)))
                                 }
@@ -153,29 +201,81 @@ impl DriverEvaluator<'_> {
                     ResolvedMeaning::Member { data, .. } if data.resolved_constant.is_some() => {
                         data.resolved_constant.as_ref().unwrap().clone()
                     }
-                    // A positive, non-opaque nonconst variable is a runtime
-                    // dependency, rather than an unknown constant spelling.
+                    // Exact lexical positives shadow globals. Only certified
+                    // lexical absence permits unqualified global fallback.
                     other @ (ResolvedMeaning::Unsupported(_) | ResolvedMeaning::Missing) => {
-                        let runtime = |meaning| matches!(meaning, ResolvedMeaning::Member { data, .. } if data.inherited_opaque.is_none() && data.flags & 2 == 0);
-                        if runtime(self.resolver.resolve(ResolveQuery::Var {
+                        let lexical = self.resolver.resolve(ResolveQuery::Var {
                             owner: scope,
                             name: SymbolId::of(name),
-                        })) || (scope == owner
-                            && runtime(
-                                self.resolver
-                                    .resolve(ResolveQuery::GlobalVar(SymbolId::of(name))),
-                            ))
-                        {
-                            return None;
-                        }
-                        match self
-                            .resolver
-                            .resolve(ResolveQuery::PredefinedConstant(SymbolId::of(name)))
-                        {
+                        });
+                        let fallback = match lexical {
+                            ResolvedMeaning::Member {
+                                owner, name, data, ..
+                            } => {
+                                if data.inherited_opaque.is_none() && data.flags & 2 == 0 {
+                                    return None;
+                                }
+                                return match self.declaration_scalar(owner, name, &data, active) {
+                                    Ok(Some(value)) => scalar_constant(value, self.symbols),
+                                    Ok(None) => {
+                                        *failure.borrow_mut() =
+                                            Some("constant initializer is not scalar".into());
+                                        None
+                                    }
+                                    Err(error) => {
+                                        *failure.borrow_mut() = Some(error);
+                                        None
+                                    }
+                                };
+                            }
+                            ResolvedMeaning::Missing if unqualified => self
+                                .resolver
+                                .resolve(ResolveQuery::GlobalVar(SymbolId::of(name))),
+                            ResolvedMeaning::Missing => ResolvedMeaning::Missing,
+                            lexical => {
+                                *failure.borrow_mut() = Some(format!(
+                                    "lexical constant {name} is unavailable: {lexical:?}"
+                                ));
+                                return None;
+                            }
+                        };
+                        match fallback {
+                            ResolvedMeaning::Member {
+                                owner, name, data, ..
+                            } => {
+                                if data.inherited_opaque.is_none() && data.flags & 2 == 0 {
+                                    return None;
+                                }
+                                return match self.declaration_scalar(owner, name, &data, active) {
+                                    Ok(Some(value)) => scalar_constant(value, self.symbols),
+                                    Ok(None) => {
+                                        *failure.borrow_mut() = Some(
+                                            "global constant initializer is not scalar".into(),
+                                        );
+                                        None
+                                    }
+                                    Err(error) => {
+                                        *failure.borrow_mut() = Some(error);
+                                        None
+                                    }
+                                };
+                            }
                             ResolvedMeaning::Value(value) => value,
-                            _ => {
-                                *failure.borrow_mut() =
-                                    Some(format!("constant {name} is not captured: {other:?}"));
+                            ResolvedMeaning::Missing if unqualified => match self
+                                .resolver
+                                .resolve(ResolveQuery::PredefinedConstant(SymbolId::of(name)))
+                            {
+                                ResolvedMeaning::Value(value) => value,
+                                _ => {
+                                    *failure.borrow_mut() =
+                                        Some(format!("constant {name} is not captured: {other:?}"));
+                                    return None;
+                                }
+                            },
+                            fallback => {
+                                *failure.borrow_mut() = Some(format!(
+                                    "constant {name} fallback is unavailable: {fallback:?}"
+                                ));
                                 return None;
                             }
                         }
@@ -188,6 +288,7 @@ impl DriverEvaluator<'_> {
                 };
                 match value {
                     SemanticValue::Null => Some(Constant::Null),
+                    SemanticValue::Resource(path) => Some(Constant::Resource(path)),
                     SemanticValue::NumberBits(bits) => Some(Constant::Number(f32::from_bits(bits))),
                     SemanticValue::Text(bytes) => Some(Constant::EncodedText(bytes.to_vec())),
                     SemanticValue::Type(path) => self
@@ -208,6 +309,37 @@ impl DriverEvaluator<'_> {
                 }
             },
             |expr| dm_codegen_byond::nameof_reference(expr).map(str::to_owned),
+            |raw| {
+                let Some(path) = raw
+                    .strip_prefix('\'')
+                    .and_then(|path| path.strip_suffix('\''))
+                else {
+                    return None;
+                };
+                if path.contains(['\0', '\'', '[', ']']) {
+                    *failure.borrow_mut() =
+                        Some("resource literal requires captured decoder".into());
+                    return None;
+                }
+                let Some(search_context) = self.resource_search_context else {
+                    *failure.borrow_mut() =
+                        Some("resource scalar has no captured search context".into());
+                    return None;
+                };
+                let path = SymbolId::of(path);
+                let query = ResolveQuery::ResourceIn {
+                    path,
+                    search_context,
+                };
+                match self.resolver.resolve(query) {
+                    ResolvedMeaning::Resource { path: found, .. } if found == path => Some(path),
+                    other => {
+                        *failure.borrow_mut() =
+                            Some(format!("resource scalar is not captured: {other:?}"));
+                        None
+                    }
+                }
+            },
         );
         if let Some(error) = failure.into_inner() {
             return Err(error);
@@ -215,6 +347,7 @@ impl DriverEvaluator<'_> {
         Ok(match value {
             None => None,
             Some(Constant::Null) => Some(SemanticValue::Null),
+            Some(Constant::Resource(path)) => Some(SemanticValue::Resource(path)),
             Some(Constant::Number(number)) => Some(SemanticValue::NumberBits(number.to_bits())),
             Some(Constant::Text(text)) => Some(SemanticValue::Text(text.into_bytes().into())),
             Some(Constant::EncodedText(bytes)) => Some(SemanticValue::Text(bytes.into())),
@@ -518,6 +651,7 @@ pub fn prepare_pinned_source_abi(
     let policy_identity = coverage.policy_identity();
     let boundaries = coverage.boundaries(frontend).map_err(AbiError)?;
     let evaluator = DriverEvaluator {
+        resource_search_context,
         resolver,
         symbols: frontend.snapshot.tree.symbols(),
     };
@@ -552,6 +686,7 @@ pub fn prepare_pinned_source_abi_with_startup<R: Resolver>(
     let policy_identity = coverage.policy_identity();
     let boundaries = coverage.boundaries(frontend).map_err(AbiError)?;
     let evaluator = DriverEvaluator {
+        resource_search_context,
         resolver,
         symbols: startup.plan.symbols.as_ref(),
     };
@@ -943,6 +1078,7 @@ mod tests {
             )
             .unwrap();
             let evaluator = DriverEvaluator {
+                resource_search_context: None,
                 resolver: &resolver,
                 symbols: &captured.symbols,
             };
@@ -991,6 +1127,7 @@ mod tests {
         )
         .unwrap();
         let evaluator = DriverEvaluator {
+            resource_search_context: None,
             resolver: &resolver,
             symbols: &captured.symbols,
         };
@@ -1013,6 +1150,134 @@ mod tests {
         assert!(
             matches!(evaluator.evaluate_write(&write,expression).unwrap(),Evaluation::Scalar(SemanticValue::NumberBits(bits)) if f32::from_bits(bits)==8.0)
         );
+    }
+    #[test]
+    fn captured_resource_literal_and_static_alias_keep_symbolic_path() {
+        struct Assets {
+            constant: Option<SymbolicExpression>,
+            runtime_field: bool,
+        }
+        impl Resolver for Assets {
+            fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
+                match query {
+                    ResolveQuery::Var { owner, name } if self.runtime_field => {
+                        ResolvedMeaning::Member {
+                            owner,
+                            name,
+                            fingerprint: 4,
+                            data: std::sync::Arc::new(dm_ir::DeclarationMeaning::default()),
+                        }
+                    }
+                    ResolveQuery::Var { .. } => ResolvedMeaning::Missing,
+                    ResolveQuery::GlobalVar(name)
+                        if name == SymbolId::of("asset") && self.constant.is_some() =>
+                    {
+                        ResolvedMeaning::Member {
+                            owner: SymbolId::of("/"),
+                            name,
+                            fingerprint: 3,
+                            data: std::sync::Arc::new(dm_ir::DeclarationMeaning {
+                                flags: 2,
+                                initializer: self.constant.clone(),
+                                ..Default::default()
+                            }),
+                        }
+                    }
+                    ResolveQuery::ResourceIn {
+                        path,
+                        search_context: 17,
+                    } if path == SymbolId::of("asset.txt") => {
+                        ResolvedMeaning::Resource { path, content: 123 }
+                    }
+                    _ => ResolvedMeaning::Unsupported(query),
+                }
+            }
+        }
+        let procedure = dm_ir::ProcedureIdentity {
+            owner: SymbolId::of("/"),
+            name: SymbolId::of("p"),
+            verb: false,
+            occurrence: 0,
+        };
+        let body = dm_syntax::parse(
+            "/proc/p()\n    var/static/const/asset = 'asset.txt'\n    var/static/value = asset\n",
+        );
+        let plan = dm_tree::procedure_statics::capture(procedure, &body.items[0].children).unwrap();
+        let resolver = dm_tree::procedure_statics::StaticResolver::from_plans(
+            &Assets {
+                constant: None,
+                runtime_field: false,
+            },
+            [(procedure, &plan)],
+        )
+        .unwrap();
+        let evaluator = DriverEvaluator {
+            resolver: &resolver,
+            symbols: &plan.symbols,
+            resource_search_context: Some(17),
+        };
+        for declaration in &plan.declarations {
+            let dm_ir::InitializerValue::Expression(expression) = &declaration.initializer else {
+                panic!("expression")
+            };
+            assert_eq!(
+                evaluator
+                    .scalar_in(
+                        procedure.owner,
+                        expression,
+                        Some(procedure),
+                        &RefCell::new(Default::default())
+                    )
+                    .unwrap(),
+                Some(SemanticValue::Resource(SymbolId::of("asset.txt")))
+            );
+        }
+        let dm_ir::InitializerValue::Expression(literal) = &plan.declarations[0].initializer else {
+            panic!("expression")
+        };
+        let dm_ir::InitializerValue::Expression(alias) = &plan.declarations[1].initializer else {
+            panic!("expression")
+        };
+        let assets = Assets {
+            constant: Some(literal.clone()),
+            runtime_field: false,
+        };
+        let ordinary = DriverEvaluator {
+            resolver: &assets,
+            symbols: &plan.symbols,
+            resource_search_context: Some(17),
+        };
+        assert_eq!(
+            ordinary
+                .scalar(SymbolId::of("/datum/probe"), alias)
+                .unwrap(),
+            Some(SemanticValue::Resource(SymbolId::of("asset.txt")))
+        );
+        let shadow_assets = Assets {
+            constant: Some(literal.clone()),
+            runtime_field: true,
+        };
+        let shadow = DriverEvaluator {
+            resolver: &shadow_assets,
+            symbols: &plan.symbols,
+            resource_search_context: Some(17),
+        };
+        assert_eq!(
+            shadow.scalar(SymbolId::of("/datum/probe"), alias).unwrap(),
+            None
+        );
+        let no_context = DriverEvaluator {
+            resource_search_context: None,
+            ..evaluator
+        };
+        let dm_ir::InitializerValue::Expression(expression) = &plan.declarations[0].initializer
+        else {
+            panic!("expression")
+        };
+        assert!(no_context
+            .scalar(procedure.owner, expression)
+            .unwrap_err()
+            .contains("search context"));
     }
     struct MissingHost;
     impl Resolver for MissingHost {
@@ -1121,6 +1386,7 @@ mod tests {
             .find(|identity| identity.owner == SymbolId::of("/base"))
             .unwrap();
         let evaluator = DriverEvaluator {
+            resource_search_context: None,
             resolver: frontend.snapshot.tree.as_ref(),
             symbols: frontend.snapshot.tree.symbols(),
         };
@@ -1165,6 +1431,7 @@ mod tests {
             EngineSnapshot::from_bytes(include_bytes!("../../../fixtures/native_template.bin"), 1)
                 .unwrap();
         let evaluator = DriverEvaluator {
+            resource_search_context: None,
             resolver: frontend.snapshot.tree.as_ref(),
             symbols: frontend.snapshot.tree.symbols(),
         };

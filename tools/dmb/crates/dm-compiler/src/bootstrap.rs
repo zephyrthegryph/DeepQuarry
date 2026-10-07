@@ -6011,6 +6011,7 @@ fn encode_constant(
 ) -> Result<(u8, u32), String> {
     Ok(match value {
         const_eval::Constant::Null => (0, 0),
+        const_eval::Constant::Resource(_) => return Err("captured resource requires symbolic linking".into()),
         const_eval::Constant::Number(n) => (42, n.to_bits()),
         const_eval::Constant::Text(text) => (6, strings.intern(dmb, &text)),
         const_eval::Constant::EncodedText(text) => (6, strings.intern_bytes(dmb, &text)),

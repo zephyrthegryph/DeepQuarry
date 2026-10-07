@@ -146,7 +146,8 @@ pub fn compile_captured_classified_with_pinned_abi<R: Resolver>(
     non_text: Option<&dyn crate::composition::NonTextOutputStage>,
 ) -> Result<ColdOutput, ColdError> {
     let total = Instant::now();
-    let startup = crate::startup::capture(frontend).map_err(ColdError::Initializer)?;
+    let startup = crate::startup::capture_with_spellings(frontend, &links.inventory.spellings)
+        .map_err(ColdError::Initializer)?;
     let prepared = crate::driver_facts::prepare_pinned_source_abi_with_startup(
         frontend,
         links.engine,
@@ -211,13 +212,15 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
         return Err(ColdError::EngineMismatch);
     }
     let stage = Instant::now();
-    let startup = crate::startup::capture(frontend).map_err(ColdError::Initializer)?;
+    let startup = crate::startup::capture_with_spellings(frontend, &links.inventory.spellings)
+        .map_err(ColdError::Initializer)?;
     let static_resolver = startup
         .resolver(frontend, resolver)
         .map_err(ColdError::Initializer)?;
     let resolver = &static_resolver;
     let plan = &startup.plan;
     let startup_evaluator = crate::startup::StartupEvaluator {
+        resource_search_context: declarations.resource_search_context,
         ordinary: declarations.initializers,
         resolver,
         symbols: plan.symbols.as_ref(),
@@ -373,6 +376,7 @@ mod tests {
         )
         .unwrap();
         let evaluator = DriverEvaluator {
+            resource_search_context: None,
             resolver: frontend.snapshot.tree.as_ref(),
             symbols: frontend.snapshot.tree.symbols(),
         };
@@ -555,6 +559,7 @@ mod tests {
         }
 
         let evaluator = crate::driver_facts::DriverEvaluator {
+            resource_search_context: None,
             resolver: &host,
             symbols: frontend.snapshot.tree.symbols(),
         };

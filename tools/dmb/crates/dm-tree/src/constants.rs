@@ -12,6 +12,7 @@ pub enum Constant {
     Text(String),
     EncodedText(Vec<u8>),
     TypePath(String),
+    Resource(dm_ir::SymbolId),
 }
 impl Constant {
     fn truth(&self) -> bool {
@@ -20,7 +21,7 @@ impl Constant {
             Self::Number(n) => *n != 0.0,
             Self::Text(s) => !s.is_empty(),
             Self::EncodedText(s) => !s.is_empty(),
-            Self::TypePath(_) => true,
+            Self::TypePath(_) | Self::Resource(_) => true,
         }
     }
     fn number(&self) -> Option<f32> {
@@ -37,17 +38,29 @@ pub fn evaluate_with(
     decode: impl Fn(&str) -> Option<Vec<u8>>,
     nameof: impl Fn(&Expr) -> Option<String>,
 ) -> Option<Constant> {
+    evaluate_with_resources(source, resolve, decode, nameof, |_| None)
+}
+/// Resource literals are admitted only by an explicit captured search callback.
+/// The compatibility evaluator above continues to decline resource literals.
+pub fn evaluate_with_resources(
+    source: &str,
+    resolve: impl Fn(&str) -> Option<Constant>,
+    decode: impl Fn(&str) -> Option<Vec<u8>>,
+    nameof: impl Fn(&Expr) -> Option<String>,
+    resource: impl Fn(&str) -> Option<dm_ir::SymbolId>,
+) -> Option<Constant> {
     let parsed = parse_expression(source);
     if !parsed.diagnostics.is_empty() {
         return None;
     }
-    eval(parsed.expr.as_ref()?, &resolve, &decode, &nameof)
+    eval(parsed.expr.as_ref()?, &resolve, &decode, &nameof, &resource)
 }
 fn eval(
     expr: &Expr,
     resolve: &impl Fn(&str) -> Option<Constant>,
     decode: &impl Fn(&str) -> Option<Vec<u8>>,
     nameof: &impl Fn(&Expr) -> Option<String>,
+    resource: &impl Fn(&str) -> Option<dm_ir::SymbolId>,
 ) -> Option<Constant> {
     use Constant::*;
     let boolean = |value| Number(if value { 1.0 } else { 0.0 });
@@ -56,7 +69,7 @@ fn eval(
         ExprKind::Ident(name) => resolve(name)?,
         ExprKind::TypePath(path) => TypePath(path.clone()),
         ExprKind::StaticMember { object, selector } => {
-            let TypePath(path) = eval(object, resolve, decode, nameof)? else {
+            let TypePath(path) = eval(object, resolve, decode, nameof, resource)? else {
                 return None;
             };
             resolve(&format!("{path}::{selector}"))?
@@ -67,6 +80,9 @@ fn eval(
                 return None;
             };
             Text(nameof(argument)?)
+        }
+        ExprKind::Literal(raw) if raw.starts_with('\'') && raw.ends_with('\'') => {
+            Resource(resource(raw)?)
         }
         ExprKind::Literal(raw) if raw == "null" => Null,
         ExprKind::Literal(raw) if raw == "1.#INF" => Number(f32::INFINITY),
@@ -90,9 +106,9 @@ fn eval(
                 Number(n)
             }
         }
-        ExprKind::Group(inner) => eval(inner, resolve, decode, nameof)?,
+        ExprKind::Group(inner) => eval(inner, resolve, decode, nameof, resource)?,
         ExprKind::Unary { op, value } => {
-            let value = eval(value, resolve, decode, nameof)?;
+            let value = eval(value, resolve, decode, nameof, resource)?;
             match op.as_str() {
                 "!" => boolean(!value.truth()),
                 "+" => Number(value.number()?),
@@ -102,10 +118,10 @@ fn eval(
             }
         }
         ExprKind::Binary { op, lhs, rhs } => {
-            let left = eval(lhs, resolve, decode, nameof)?;
+            let left = eval(lhs, resolve, decode, nameof, resource)?;
             if op == "&&" {
                 return if left.truth() {
-                    eval(rhs, resolve, decode, nameof)
+                    eval(rhs, resolve, decode, nameof, resource)
                 } else {
                     Some(left)
                 };
@@ -114,10 +130,15 @@ fn eval(
                 return if left.truth() {
                     Some(left)
                 } else {
-                    eval(rhs, resolve, decode, nameof)
+                    eval(rhs, resolve, decode, nameof, resource)
                 };
             }
-            let right = eval(rhs, resolve, decode, nameof)?;
+            let right = eval(rhs, resolve, decode, nameof, resource)?;
+            // Authored lookup paths are not runtime content identities. Do not
+            // fold resource comparisons/arithmetic from path equality.
+            if matches!(left, Resource(_)) || matches!(right, Resource(_)) {
+                return None;
+            }
             if op == "+" {
                 if let (Text(a), Text(b)) = (&left, &right) {
                     return Some(Text(format!("{a}{b}")));
@@ -176,7 +197,7 @@ fn eval(
             then_value,
             else_value,
         } => eval(
-            if eval(condition, resolve, decode, nameof)?.truth() {
+            if eval(condition, resolve, decode, nameof, resource)?.truth() {
                 then_value
             } else {
                 else_value
@@ -184,6 +205,7 @@ fn eval(
             resolve,
             decode,
             nameof,
+            resource,
         )?,
         _ => return None,
     };
@@ -214,6 +236,10 @@ impl Constant {
                 result.push(2);
                 result.extend_from_slice(text);
             }
+            Self::Resource(content) => {
+                result.push(4);
+                result.extend_from_slice(&content.bits().to_le_bytes());
+            }
             Self::TypePath(path) => {
                 result.push(3);
                 result.extend_from_slice(path.as_bytes());
@@ -237,10 +263,39 @@ impl Constant {
                 dm_ir::SemanticValue::Text(std::sync::Arc::from(text.as_slice()))
             }
             Self::TypePath(path) => dm_ir::SemanticValue::Type(symbols.intern(path)?),
+            Self::Resource(content) => dm_ir::SemanticValue::Resource(*content),
         })
     }
 }
 
+#[cfg(test)]
+mod resource_tests {
+    use super::*;
+    #[test]
+    fn resource_is_typed_and_requires_explicit_capture() {
+        let path = dm_ir::SymbolId::of("asset.txt");
+        assert_eq!(
+            evaluate_with("'asset.txt'", |_| None, |_| None, |_| None),
+            None
+        );
+        assert_eq!(
+            evaluate_with_resources(
+                "'asset.txt'",
+                |_| None,
+                |_| None,
+                |_| None,
+                |raw| (raw == "'asset.txt'").then_some(path)
+            ),
+            Some(Constant::Resource(path))
+        );
+        assert_eq!(
+            Constant::Resource(path)
+                .to_semantic(&mut dm_ir::SymbolTable::default())
+                .unwrap(),
+            dm_ir::SemanticValue::Resource(path)
+        );
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

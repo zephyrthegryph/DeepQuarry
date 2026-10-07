@@ -275,12 +275,14 @@ fn to_constant(value: &SemanticValue, tree: &SemanticTree) -> Option<Constant> {
             Err(error) => Constant::EncodedText(error.into_bytes()),
         },
         SemanticValue::Type(path) => Constant::TypePath(tree.symbols().text(*path)?.into()),
-        SemanticValue::Resource(_) | SemanticValue::List(_) => return None,
+        SemanticValue::Resource(path) => Constant::Resource(*path),
+        SemanticValue::List(_) => return None,
     })
 }
 fn to_semantic(value: Constant, tree: &SemanticTree) -> Option<SemanticValue> {
     Some(match value {
         Constant::Null => SemanticValue::Null,
+        Constant::Resource(path) => SemanticValue::Resource(path),
         Constant::Number(value) => SemanticValue::NumberBits(value.to_bits()),
         Constant::Text(text) => SemanticValue::Text(Arc::from(text.as_bytes())),
         Constant::EncodedText(bytes) => SemanticValue::Text(bytes.into()),

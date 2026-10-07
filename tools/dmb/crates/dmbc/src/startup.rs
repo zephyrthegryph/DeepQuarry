@@ -49,6 +49,22 @@ pub fn capture(frontend: &ColdFrontend) -> Result<CapturedStartup, String> {
     )?;
     Ok(CapturedStartup { plan, procedures })
 }
+/// Extend only the compilation spelling dictionary. Captured declarations,
+/// source provenance and semantic identity remain the original source model.
+pub fn capture_with_spellings(
+    frontend: &ColdFrontend,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+) -> Result<CapturedStartup, String> {
+    let mut startup = capture(frontend)?;
+    let mut symbols = dm_ir::SymbolTable::overlay(startup.plan.symbols.clone());
+    for (expected, bytes) in spellings {
+        let text = std::str::from_utf8(bytes).map_err(|_| "captured symbol spelling is not UTF-8")?;
+        let actual = symbols.intern(text).map_err(|error| format!("captured symbol collision: {error:?}"))?;
+        if actual != *expected { return Err("captured spelling does not match symbolic identity".into()); }
+    }
+    startup.plan.symbols = std::sync::Arc::new(symbols);
+    Ok(startup)
+}
 /// Re-capture all current body facts before accepting an escaping generic plan.
 /// This rejects stale same-tree plans after an executable static declaration edit.
 pub fn validate(frontend: &ColdFrontend, plan: &InitializerPlan) -> Result<(), String> {
@@ -65,6 +81,7 @@ pub fn validate(frontend: &ColdFrontend, plan: &InitializerPlan) -> Result<(), S
 /// Ordinary field evaluation keeps the caller's captured policy. Static lexical
 /// names use the same immutable resolver plus the captured body's symbol delta.
 pub struct StartupEvaluator<'a> {
+    pub resource_search_context: Option<u128>,
     pub ordinary: &'a dyn crate::initializer_policy::CapturedInitializerEvaluator,
     pub resolver: &'a dyn dm_ir::Resolver,
     pub symbols: &'a dm_ir::SymbolTable,
@@ -85,6 +102,7 @@ impl crate::initializer_policy::CapturedInitializerEvaluator for StartupEvaluato
         if write.lexical_procedure.is_some() {
             crate::initializer_policy::CapturedInitializerEvaluator::evaluate_write(
                 &crate::driver_facts::DriverEvaluator {
+                    resource_search_context: self.resource_search_context,
                     resolver: self.resolver,
                     symbols: self.symbols,
                 },
@@ -120,5 +138,31 @@ impl CapturedStartup {
                 .iter()
                 .map(|(_, plan)| (plan.procedure, plan)),
         )
+    }
+}
+
+#[cfg(test)]
+mod spelling_tests {
+    use super::*;
+    use std::{path::Path, sync::Arc};
+    struct Source;
+    impl dm_preprocess::SourceProvider for Source {
+        fn read(&self, _: &Path) -> Result<String, String> {
+            Ok("/proc/p()\n    return 1\n".into())
+        }
+    }
+    #[test]
+    fn captured_alias_overlay_preserves_source_and_ledger_identity() {
+        let frontend = dm_tree::frontend::build(Path::new("probe.dme"), &Source, &Default::default(), 1).unwrap();
+        let original = capture(&frontend).unwrap();
+        let alias = dm_ir::SymbolId::of("asset.txt");
+        assert!(frontend.snapshot.tree.symbols().text(alias).is_none());
+        let issued = capture_with_spellings(&frontend, &[(alias, Arc::from(b"asset.txt".as_slice()))]).unwrap();
+        assert_eq!(issued.plan.symbols.text(alias), Some("asset.txt"));
+        assert!(frontend.snapshot.tree.symbols().text(alias).is_none());
+        assert_eq!(issued.plan.identity, original.plan.identity);
+        assert_eq!(issued.plan.writes.as_ref(), original.plan.writes.as_ref());
+        validate(&frontend, &issued.plan).unwrap();
+        assert!(capture_with_spellings(&frontend, &[(alias, Arc::from(b"other.txt".as_slice()))]).is_err());
     }
 }
