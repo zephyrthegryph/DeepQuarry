@@ -34,7 +34,16 @@ pub enum ColdError {
     Linking(IntegrationError),
     Composition(CompositionError),
     Initializer(String),
+    InitializerInvariant(String),
     Projection(crate::class_projection::ProjectionError),
+}
+fn initializer_lowering_error(error: crate::initializer_diagnostics::InitializerLoweringError) -> ColdError {
+    use crate::initializer_diagnostics::InitializerLoweringError as E;
+    match error {
+        E::Diagnostics(diagnostics) => ColdError::Lowering(diagnostics),
+        E::Invariant(message) => ColdError::InitializerInvariant(message),
+        E::Unsupported(message) => ColdError::Initializer(message),
+    }
 }
 /// Captured declaration/initializer policy for the production class path.
 /// Link inventory remains explicit; no observable table order is guessed here.
@@ -273,7 +282,7 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         resolver,
         declarations.resource_search_context,
     )
-    .map_err(ColdError::Initializer)?;
+    .map_err(initializer_lowering_error)?;
     let projection = crate::class_projection::project_classified(
         &frontend.snapshot,
         &frontend.emission_order,

@@ -416,10 +416,12 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                         }
                         if matches!(query, Q::Constant { .. } | Q::GlobalVar(_))
                             && coverage.source.lookup_type(owner).is_some()
+                            && !matches!(dm_ir::Resolver::resolve(coverage.source.as_ref(),
+                                Q::Var { owner, name }), M::Member { .. })
                         {
                             if let Some(value) = coverage.positive_constants.get(&name) {
-                                // Authored declarations, including unresolved scalar
-                                // outcomes, were handled above and always shadow this.
+                                // Even a mutable authored field without a scalar
+                                // Constant answer shadows the native constant.
                                 return M::Value(value.clone());
                             }
                         }
@@ -801,7 +803,7 @@ mod tests {
         struct Source;
         impl dm_preprocess::SourceProvider for Source {
             fn read(&self, _: &Path) -> Result<String, String> {
-                Ok("var/global_only = 4\nvar/shared_name = 1\n/datum/probe\n    var/shared_name = 2\n/datum/probe/proc/read()\n    return shared_name + global_only\n/proc/root_read()\n    return shared_name\n".into())
+                Ok("var/global_only = 4\nvar/shared_name = 1\n/datum/probe\n    var/shared_name = 2\n/datum/probe/proc/read()\n    return shared_name + global_only\n/proc/root_read()\n    return shared_name\n#undef FALSE\n/datum/shadow\n    var/FALSE = 5\n".into())
             }
         }
         let bytes = include_bytes!("../../../fixtures/native_template.bin");
@@ -850,6 +852,8 @@ mod tests {
             assert_eq!(host.resolve(Q::GlobalVar(name)), M::Value(SemanticValue::NumberBits(value.to_bits())));
             assert_eq!(host.resolve(Q::Constant { owner, name }), M::Value(SemanticValue::NumberBits(value.to_bits())));
         }
+        let shadow_query = Q::Constant { owner: SymbolId::of("/datum/shadow"), name: SymbolId::of("FALSE") };
+        assert_eq!(host.resolve(shadow_query.clone()), M::Unsupported(shadow_query));
         assert!(
             matches!(host.resolve(Q::GlobalVar(global)),M::Member{owner:actual,..} if actual==root)
         );

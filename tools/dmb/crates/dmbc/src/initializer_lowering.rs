@@ -1,6 +1,7 @@
 //! Cold initializer artifacts from captured authored writes and explicit ABI
 //! classification. No mutable DMB, filesystem reads or project binding copies.
 use crate::debug_sources::{DebugOrigin, DebugOriginProvider, DebugOrigins};
+use crate::initializer_diagnostics::{map_captured_lower_errors, InitializerLoweringError};
 use crate::initializer_policy::{
     self, CapturedInitializerEvaluator, ClassifiedInitializers, RuntimeValue,
 };
@@ -73,8 +74,15 @@ pub fn lower<R: Resolver>(
     evaluator: &dyn CapturedInitializerEvaluator,
     host: &R,
     resource_search_context: Option<u128>,
-) -> Result<LoweredInitializers, String> {
-    lower_plan(frontend, plan, evaluator, host, resource_search_context, true)
+) -> Result<LoweredInitializers, InitializerLoweringError> {
+    lower_plan(
+        frontend,
+        plan,
+        evaluator,
+        host,
+        resource_search_context,
+        true,
+    )
 }
 
 pub fn lower_captured<R: Resolver>(
@@ -83,9 +91,16 @@ pub fn lower_captured<R: Resolver>(
     evaluator: &dyn CapturedInitializerEvaluator,
     host: &R,
     resource_search_context: Option<u128>,
-) -> Result<LoweredInitializers, String> {
+) -> Result<LoweredInitializers, InitializerLoweringError> {
     startup.validate_for(frontend)?;
-    lower_plan(frontend, startup.plan(), evaluator, host, resource_search_context, false)
+    lower_plan(
+        frontend,
+        startup.plan(),
+        evaluator,
+        host,
+        resource_search_context,
+        false,
+    )
 }
 
 fn lower_plan<R: Resolver>(
@@ -95,19 +110,21 @@ fn lower_plan<R: Resolver>(
     host: &R,
     resource_search_context: Option<u128>,
     validate_statics: bool,
-) -> Result<LoweredInitializers, String> {
+) -> Result<LoweredInitializers, InitializerLoweringError> {
     if frontend.snapshot.tree.identity() != plan.source.tree.identity()
         || frontend.snapshot.occurrences.tree_identity() != plan.source.occurrences.tree_identity()
         || plan.writes.len() != plan.origins.len()
     {
         return Err("initializer plan differs from captured frontend".into());
     }
-    if validate_statics && plan.origins.iter().any(|origin| {
-        matches!(
-            origin.kind,
-            dm_tree::initializers::InitializerOriginKind::ProcedureStatic { .. }
-        )
-    }) {
+    if validate_statics
+        && plan.origins.iter().any(|origin| {
+            matches!(
+                origin.kind,
+                dm_tree::initializers::InitializerOriginKind::ProcedureStatic { .. }
+            )
+        })
+    {
         crate::startup::validate(frontend, plan)?;
     }
     let symbols = plan.symbols.as_ref();
@@ -218,7 +235,20 @@ fn lower_plan<R: Resolver>(
             },
             host,
         )
-        .map_err(|error| format!("initializer lowering: {error:?}"))?;
+        .map_err(|error| match error {
+            dm_codegen_byond::initializer::InitializerError::Unsupported(message) => {
+                InitializerLoweringError::Unsupported(message)
+            }
+            dm_codegen_byond::initializer::InitializerError::Invalid(message) => {
+                InitializerLoweringError::Invariant(message)
+            }
+            dm_codegen_byond::initializer::InitializerError::Lowering(errors) => {
+                match map_captured_lower_errors(errors, frontend, plan, &write_ordinals) {
+                    Ok(diagnostics) => InitializerLoweringError::Diagnostics(diagnostics),
+                    Err(error) => error,
+                }
+            }
+        })?;
         units.push(LoweredInitializerUnit {
             scope: group
                 .receiver

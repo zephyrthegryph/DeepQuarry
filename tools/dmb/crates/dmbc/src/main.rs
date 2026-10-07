@@ -274,6 +274,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 )?;
                 return Err("native lowering did not produce a complete executable".into());
             }
+            Err(dmbc::cold::ColdError::InitializerInvariant(message)) =>
+                return Err(format!("native internal: {message}").into()),
+            Err(dmbc::cold::ColdError::Initializer(message)) =>
+                return Err(format!("native unsupported: {message}").into()),
             Err(error) => return Err(format!("native compilation: {error:?}").into()),
         };
         let compilation_seconds = compilation_started.elapsed().as_secs_f64();

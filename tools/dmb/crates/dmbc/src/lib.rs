@@ -33,6 +33,7 @@ pub mod resource_values;
 pub mod world_writer;
 pub mod initializer_policy;
 pub mod initializer_lowering;
+pub mod initializer_diagnostics;
 pub mod initialization_artifact;
 
 pub mod map_projection;
