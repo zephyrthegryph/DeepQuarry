@@ -78,20 +78,19 @@ CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 /obj/structure/flora/tree
 	var/sticks = TRUE
 
-/obj/structure/flora/tree/proc/sticks_found(mob/user)
+TRACKED(/obj/structure/flora/tree, sticks)
+
+/obj/structure/flora/tree/proc/sticks_found(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!sticks)
 		return
 	var/obj/item/stack/material/stick/S = new(get_turf(user), rand(1,3))
 	S.pixel_x = rand(-6,6)
 	S.pixel_y = rand(-6,6)
-	sticks = FALSE
+	set_sticks(FALSE)
 
-/// Old attack_hand: search for loose sticks (tree_hand, trees.dm).
-/obj/structure/flora/tree/proc/interaction_search_sticks(datum/act/op/A)
-	var/mob/user = A.actor
-	if(sticks)
-		act_message(user, src, MSG_SELF("You search %T% for loose sticks..."), MSG_OTHERS("%U% searches %T% for loose sticks..."))
-		task_timed(user, 5 SECONDS, src, src, PROC_REF(sticks_found), list(user))
-	else
-		to_chat(user, span_notice("You don't see any loose sticks..."))
-	return OP_OK
+MSG_DEF(tree/searching_sticks, "You search %T% for loose sticks...", "%U% searches %T% for loose sticks...")
+MSG_DEF_SELF(tree/no_sticks, span_notice("You don't see any loose sticks..."))
+
+/obj/structure/flora/tree/proc/has_sticks(datum/act/op/A)
+	return sticks

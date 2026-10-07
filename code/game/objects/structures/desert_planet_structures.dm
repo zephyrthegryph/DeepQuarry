@@ -10,20 +10,18 @@
 	name = "desert rock"
 
 CAPABILITIES(/obj/structure/prop/desert_rock/rock)
-	op("push", hand(), label("Push"), then(PROC_REF(interaction_push)))
+	op("push", hand(), label("Push"), needs(req(PROC_REF(can_push), silent = TRUE)), begins(MSG(desert_rock/push)), wait(3 SECONDS), then(PROC_REF(pushed)))
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
-/obj/structure/prop/desert_rock/rock/proc/interaction_push(datum/act/op/A)
-	var/mob/living/user = A.actor
-	if(user.is_incorporeal())
-		return TRUE
-	to_chat(user, "You push on the [src].")
-	var/movedir = user.dir
-	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(movedir))
-	return TRUE
+MSG_DEF_SELF(desert_rock/push, "You push on %T%.")
 
-/obj/structure/prop/desert_rock/rock/proc/attack_hand_timed_done(movedir)
-	step(src, movedir)
+/obj/structure/prop/desert_rock/rock/proc/can_push(datum/act/op/A)
+	var/mob/living/user = A.actor
+	return istype(user) && !user.is_incorporeal()
+
+/obj/structure/prop/desert_rock/rock/proc/pushed(datum/act/op/A)
+	var/mob/user = A.actor
+	step(src, user.dir)
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/prop/desert_rock/rock/proc/roll_icon_state(datum/roller/R)

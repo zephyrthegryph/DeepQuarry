@@ -2671,3 +2671,10 @@ Pinned by `code/modules/unit_tests/dq_timed_pin_behaviour.dm` (written and green
 * **Class: the refusal only the old handler wrote.** `whetstone` with fewer than five sheets said "You need 5 [whetstone] to refine it ..."; the binding is `stack(/obj/item/stack/material, 5)` now, so a short stack is not a candidate and the click falls through unanswered. Pin: `whetstone_short_of_sheets` keeps "starts nothing" and "spends nothing" and drops the message line.
 * **Class: a sound played when the action starts plays when it ends.** The bear trap's disarm clicked at the start; `plays()` is a commit-stage part.
 * **Class: a message that named the victims.** The bear trap's free-the-victim lines named them (`[victim]`); the template says "the one caught in %T%".
+
+## Timed actions as ops, W2 additions
+
+* **Class: a tool wait is scaled by the tool speed.** The railing wrench and screwdriver, the low wall, drop pod and toilet wrenches and the toilet crowbar waited a fixed time; `tool(Q)` scales `wait()` by the held tool's speed. Pins: `railing_wrench`, `railing_screwdriver`, `droppod_wrench`, `toilet_wrench`, `toilet_crowbar` (run at the default speed, so unchanged).
+* **Class: a refusal says the claim message.** A second searcher of a loot or trash pile, and a second lifter on a weight machine, used to get "already being searched" / "already in use"; a claimed target says the engine's claimed message. Pins: `loot_pile_search`, `trash_pile_search`, `weightlifter_lift` (they assert the refusal and that something is said, not the text).
+* **Class: a direction read at the end.** A pushed desert rock moves the way its pusher faces when the push ends, not when it began (a turn in place is not a move). Pin: `desert_rock_push`.
+* **Class: a refusal the old handler left silent now says why, and a fur tree says it has no sticks.** A fur tree used to swallow "search for sticks" without a word; its `sticks` is now false and the tree's refusal says "You don't see any loose sticks...". Pin: `tree_sticks` (the empty-tree refusal).

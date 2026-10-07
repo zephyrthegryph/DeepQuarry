@@ -25,6 +25,8 @@
 	var/drop_cancels = FALSE
 	/// TRUE when deleting the target must be checked (its loss cancels).
 	var/loss_cancels = TRUE
+	/// The actors given a ckey, which tidy() takes back.
+	var/list/named
 	/// FALSE for an action whose failure has a consequence a test world cannot take (a mine that goes off): only the finish is pinned.
 	var/cancel_tests = TRUE
 
@@ -36,8 +38,18 @@
 /datum/unit_test/dq_timed_pin_w2/proc/is_done()
 	return FALSE
 
+/// What an action leaves on the floor (its products) belongs to the test, so the leak check does not count it.
+/datum/unit_test/dq_timed_pin_w2/proc/tidy()
+	for(var/turf/T in block(run_loc_floor_bottom_left, run_loc_floor_top_right))
+		own_turf_contents(T)
+	for(var/mob/M as anything in named)
+		if(!QDELETED(M))
+			M.ckey = null // a mob that still has a ckey leaves a ghost behind when it is deleted
+	named = null
+
 /// Takes the scene down so the next one starts clean.
 /datum/unit_test/dq_timed_pin_w2/proc/clear_scene()
+	tidy()
 	if(target && !QDELETED(target))
 		qdel(target)
 	target = null
@@ -74,7 +86,7 @@
 	start_click()
 	T = running(user)
 	TEST_ASSERT(!isnull(T), "the click starts a timed action again")
-	test_time(1 SECOND)
+	test_time(round(duration / 2))
 	user.forceMove(get_step(user, EAST))
 	test_time(duration + 2 SECONDS)
 	TEST_ASSERT(!is_done(), "moving cancels: nothing is done")
@@ -102,6 +114,7 @@
 		TEST_ASSERT(was_cancelled(T, user), "deleting the target cancels the action")
 		clear_scene()
 	extra_pin()
+	tidy()
 
 /// Pins of one type's own (a refusal, a second worker).
 /datum/unit_test/dq_timed_pin_w2/proc/extra_pin()
@@ -111,6 +124,7 @@
 /datum/unit_test/dq_timed_pin_w2/proc/worker(name = "pinuser")
 	var/mob/living/carbon/human/H = person()
 	H.ckey = name
+	LAZYADD(named, H)
 	return H
 
 /// A wrench / screwdriver / crowbar of the default speed in the actor's hand.
@@ -227,7 +241,7 @@
 	var/obj/structure/railing/R = allocate(/obj/structure/railing, run_loc_floor_bottom_left)
 	R.set_anchored(FALSE)
 	target = R
-	held = hold(/obj/item/wrench)
+	held = hold(/obj/item/tool/wrench)
 
 /datum/unit_test/dq_timed_pin_w2/railing_wrench/is_done()
 	return QDELETED(target)
@@ -250,7 +264,7 @@
 /datum/unit_test/dq_timed_pin_w2/railing_screwdriver/setup_scene()
 	user = person()
 	target = allocate(/obj/structure/railing, run_loc_floor_bottom_left)
-	held = hold(/obj/item/screwdriver)
+	held = hold(/obj/item/tool/screwdriver)
 
 /datum/unit_test/dq_timed_pin_w2/railing_screwdriver/is_done()
 	var/obj/structure/railing/R = target
@@ -296,7 +310,7 @@
 /datum/unit_test/dq_timed_pin_w2/low_wall_wrench/setup_scene()
 	user = person()
 	target = allocate(/obj/structure/low_wall, run_loc_floor_bottom_left)
-	held = hold(/obj/item/wrench)
+	held = hold(/obj/item/tool/wrench)
 
 /datum/unit_test/dq_timed_pin_w2/low_wall_wrench/is_done()
 	return QDELETED(target)
@@ -322,7 +336,7 @@
 	var/obj/structure/janitorialcart/C = allocate(/obj/structure/janitorialcart, run_loc_floor_bottom_left)
 	C.dismantled = FALSE
 	target = C
-	held = hold(/obj/item/wrench)
+	held = hold(/obj/item/tool/wrench)
 
 /datum/unit_test/dq_timed_pin_w2/janicart_wrench/is_done()
 	return QDELETED(target)
@@ -347,7 +361,7 @@
 	var/obj/structure/drop_pod/P = allocate(/obj/structure/drop_pod, run_loc_floor_bottom_left)
 	P.finished = TRUE
 	target = P
-	held = hold(/obj/item/wrench)
+	held = hold(/obj/item/tool/wrench)
 
 /datum/unit_test/dq_timed_pin_w2/droppod_wrench/is_done()
 	return QDELETED(target)
@@ -374,7 +388,7 @@
 	var/obj/structure/toilet/T = allocate(/obj/structure/toilet, run_loc_floor_bottom_left)
 	T.set_cistern(FALSE)
 	target = T
-	held = hold(/obj/item/crowbar)
+	held = hold(/obj/item/tool/crowbar)
 
 /datum/unit_test/dq_timed_pin_w2/toilet_crowbar/is_done()
 	var/obj/structure/toilet/T = target
@@ -391,7 +405,7 @@
 	var/obj/structure/toilet/T = allocate(/obj/structure/toilet, run_loc_floor_bottom_left)
 	T.set_cistern(TRUE)
 	target = T
-	held = hold(/obj/item/wrench)
+	held = hold(/obj/item/tool/wrench)
 
 /datum/unit_test/dq_timed_pin_w2/toilet_wrench/is_done()
 	return QDELETED(target)
@@ -518,19 +532,19 @@
 
 /datum/unit_test/dq_timed_pin_w2/weightlifter_lift/setup_scene()
 	user = person()
-	user.nutrition = start_nutrition
+	user.set_nutrition(start_nutrition)
 	user.weight = 150
 	var/obj/structure/fitness/weightlifter/W = allocate(/obj/structure/fitness/weightlifter, run_loc_floor_bottom_left)
 	target = W
 	duration = 3 SECONDS + (W.weight * 10)
 
 /datum/unit_test/dq_timed_pin_w2/weightlifter_lift/is_done()
-	return user.nutrition < start_nutrition
+	return said(user, "You lift the weights")
 
 /datum/unit_test/dq_timed_pin_w2/weightlifter_lift/extra_pin()
 	setup_scene()
 	var/mob/living/carbon/human/two = person()
-	two.nutrition = 300
+	two.set_nutrition(300)
 	two.weight = 150
 	test_click(user, target, null)
 	TEST_ASSERT(!isnull(running(user)), "the first lifter runs")
@@ -651,7 +665,7 @@
 	var/obj/item/assembly/signaler/S = allocate(/obj/item/assembly/signaler, run_loc_floor_bottom_left)
 	rel_set(M, nameof(M.trap), S)
 	target = M
-	held = hold(/obj/item/screwdriver)
+	held = hold(/obj/item/tool/screwdriver)
 
 /datum/unit_test/dq_timed_pin_w2/mine_untrap/is_done()
 	var/obj/item/mine/M = target
@@ -674,6 +688,7 @@
 /datum/unit_test/dq_timed_pin_w2/anomaly_buffered/setup_scene()
 	user = person()
 	var/obj/effect/anomaly/A = allocate(/obj/effect/anomaly/bioscrambler, run_loc_floor_bottom_left)
+	A.stabilize(FALSE, TRUE, TRUE)
 	target = A
 	held = hold(/obj/item/anomaly_scanner)
 

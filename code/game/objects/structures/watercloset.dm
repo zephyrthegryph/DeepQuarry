@@ -41,13 +41,15 @@ TRACKED(/obj/structure/toilet, open)
 
 TRACKED(/obj/structure/toilet, cistern)
 
+TRACKED(/obj/structure/toilet, refilling)
+
 CAPABILITIES(/obj/structure/toilet)
 	owns_one(nameof(bin), /obj/item/stock_parts/matter_bin, starts = nameof(bin))
 	owns_one(nameof(teleplumb_crystal), /obj/item)
 	ref_one(nameof(swirlie_mob), /mob/living)
 	ref_one(nameof(teleplumb_dest))
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
-	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(5 SECONDS), needs(req(PROC_REF(cistern_open), silent = TRUE), req(PROC_REF(not_refilling), because = MSG(toilet/refilling))), begins(MSG(toilet/dismantling)), then(PROC_REF(wrench_act_done)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(3 SECONDS), begins(PROC_REF(crowbar_begins)), plays(SFX_EFFECTS_STONEDOOR_OPENCLOSE), then(PROC_REF(crowbar_act_done)))
 	rolls(nameof(open), range_of(0, 1))   // the lid starts up or down
 	// the old attack_hand: slam the swirlie victim, loot the cistern (a person may take the teleplumbing crystal from an empty one, after a yes), or the lid
 	op("use", hand(), label("Use"),
@@ -313,7 +315,7 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 	return OP_OK
 
 /obj/structure/toilet/proc/flush()
-	refilling = TRUE
+	set_refilling(TRUE)
 	play_sfx(src, SFX_VORE_DEATH7) //Got lazy about getting new sound files. Have a sick remix lmao.
 	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	play_sfx(src, SFX_MECHA_POWERUP)
@@ -340,7 +342,7 @@ MSG_DEF_SELF(toilet/lid_closed, "You need to open the lid before flushing it.")
 
 /// after() target: the tank has refilled (and a dry flush also calms the panic lever).
 /obj/structure/toilet/proc/refill_done(reset_panic)
-	refilling = FALSE
+	set_refilling(FALSE)
 	if(reset_panic)
 		panic_mult = initial(panic_mult)
 
@@ -550,32 +552,30 @@ CAPABILITIES(/obj/machinery/shower)
 
 
 /// Washes its tile every machine step while running.
-/obj/structure/toilet/proc/crowbar_used(datum/act/op/A)
-	var/mob/user = A.actor
-	to_chat(user, span_notice("You start to [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]."))
-	play_sfx(src, SFX_EFFECTS_STONEDOOR_OPENCLOSE)
-	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user))
-	return OP_OK
+MSG_DEF_SELF(toilet/replacing_lid, span_notice("You start to replace the lid on the cistern."))
+MSG_DEF_SELF(toilet/lifting_lid, span_notice("You start to lift the lid off the cistern."))
+MSG_DEF_SELF(toilet/dismantling, span_notice("You begin to dismantle %T%..."))
+MSG_DEF_SELF(toilet/refilling, span_notice("Wait for %T% to finish refilling..."))
 
-/obj/structure/toilet/proc/crowbar_act_timed_done(mob/user)
+/obj/structure/toilet/proc/crowbar_begins(datum/act/op/A)
+	return cistern ? /datum/msg/toilet/replacing_lid : /datum/msg/toilet/lifting_lid
+
+/obj/structure/toilet/proc/crowbar_act_done(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, null, MSG_SELF(span_notice("You [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]!")), \
 		MSG_OTHERS(span_notice("%U% [cistern ? "replaces the lid on the cistern" : "lifts the lid off the cistern"]!")), \
 		MSG_BLIND("You hear grinding porcelain."))
 	set_cistern(!cistern)
 	changed(src)
 
-/obj/structure/toilet/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!cistern)
-		return OP_OK
-	if(refilling)
-		to_chat(user, span_notice("Wait for \the [src] to finish refilling..."))
-		return OP_OK
-	to_chat(user, span_notice("You begin to dismantle \the [src]..."))
-	task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
-	return OP_OK
+/obj/structure/toilet/proc/cistern_open(datum/act/op/A)
+	return cistern
 
-/obj/structure/toilet/proc/wrench_act_timed_done(mob/user)
+/obj/structure/toilet/proc/not_refilling(datum/act/op/A)
+	return !refilling
+
+/obj/structure/toilet/proc/wrench_act_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You dismantle \the [src]."))
 	deconstruct()
 
