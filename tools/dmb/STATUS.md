@@ -6,6 +6,17 @@ The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
 
+Latest release probe 22 reached a single missing `SEE_BLACKNESS` initializer fact
+and failed in 20.527 s externally (18.838 s driver clock), with no pair. This
+cleared the 47 intrinsic-field errors: classification/error mapping took 1.229 s
+instead of the previous 70.272 s. Stop points differ, so this is diagnostic-path
+progress, not a completed cold-build comparison. Native controls subsequently
+proved eight initial vision macros, including `SEE_BLACKNESS=1024`; undef leaves
+a runtime global read. The macro precedence/undef/shadow focused gate passed and
+the release rebuild is underway. Completed full-project output remains pending.
+
+Earlier admission checkpoints follow:
+
 Probe 16 cleared the native callback ABI boundary and reached the complete
 ordered procedure-admission diagnostics batch. It stopped after 64.171 s,
 sampled 1,988,460,544 private bytes and published no pair. Most diagnostics were
