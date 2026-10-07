@@ -348,3 +348,101 @@
 	test_time(5 SECONDS)
 	TEST_ASSERT(B.is_tipped, "moving cancels: it stays tipped")
 	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
+
+// ---- Service bots work for a time and are busy meanwhile (bot_work) ----
+
+/datum/unit_test/dq_timed_pin_w3/cleanbot_cleans_dirt
+
+/datum/unit_test/dq_timed_pin_w3/cleanbot_cleans_dirt/run_pin()
+	var/mob/living/bot/cleanbot/B = allocate(/mob/living/bot/cleanbot, run_loc_floor_bottom_left)
+	var/obj/effect/decal/cleanable/dirt/D = allocate(/obj/effect/decal/cleanable/dirt, run_loc_floor_bottom_left)
+	B.UnarmedAttack(D, TRUE)
+	TEST_ASSERT(!isnull(running(B)), "the bot starts working")
+	TEST_ASSERT(B.icon_state == "cleanbot-c", "and shows it is busy")
+	test_time(0.5 SECONDS)
+	TEST_ASSERT(!QDELETED(D), "the dirt is there before the end")
+	test_time(1 SECOND)
+	TEST_ASSERT(QDELETED(D), "the dirt is gone at the end")
+	TEST_ASSERT(B.icon_state != "cleanbot-c", "and the bot is idle again")
+
+/datum/unit_test/dq_timed_pin_w3/cleanbot_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w3/cleanbot_cancel_on_move/run_pin()
+	var/mob/living/bot/cleanbot/B = allocate(/mob/living/bot/cleanbot, run_loc_floor_bottom_left)
+	var/obj/effect/decal/cleanable/dirt/D = allocate(/obj/effect/decal/cleanable/dirt, run_loc_floor_bottom_left)
+	B.UnarmedAttack(D, TRUE)
+	var/datum/T = running(B)
+	TEST_ASSERT(!isnull(T), "the bot starts working")
+	B.forceMove(get_step(B, EAST))
+	test_time(3 SECONDS)
+	TEST_ASSERT(!QDELETED(D), "moving the bot cancels the work")
+	TEST_ASSERT(was_cancelled(T, B), "the work ends cancelled")
+	TEST_ASSERT(B.icon_state != "cleanbot-c", "and the bot is idle again")
+
+/datum/unit_test/dq_timed_pin_w3/cleanbot_cancel_on_target_loss
+
+/datum/unit_test/dq_timed_pin_w3/cleanbot_cancel_on_target_loss/run_pin()
+	var/mob/living/bot/cleanbot/B = allocate(/mob/living/bot/cleanbot, run_loc_floor_bottom_left)
+	var/obj/effect/decal/cleanable/dirt/D = allocate(/obj/effect/decal/cleanable/dirt, run_loc_floor_bottom_left)
+	B.UnarmedAttack(D, TRUE)
+	var/datum/T = running(B)
+	TEST_ASSERT(!isnull(T), "the bot starts working")
+	qdel(D)
+	test_time(3 SECONDS)
+	TEST_ASSERT(was_cancelled(T, B), "deleting the target ends the work")
+	TEST_ASSERT(B.icon_state != "cleanbot-c", "and the bot is idle again")
+
+/datum/unit_test/dq_timed_pin_w3/floorbot_collects_tiles
+
+/datum/unit_test/dq_timed_pin_w3/floorbot_collects_tiles/run_pin()
+	var/mob/living/bot/floorbot/B = allocate(/mob/living/bot/floorbot, run_loc_floor_bottom_left)
+	var/obj/item/stack/tile/floor/T = allocate(/obj/item/stack/tile/floor, run_loc_floor_bottom_left, 5)
+	var/start = B.amount
+	B.UnarmedAttack(T, TRUE)
+	TEST_ASSERT(!isnull(running(B)), "the bot starts working")
+	test_time(1.5 SECONDS)
+	TEST_ASSERT_EQUAL(B.amount, start, "nothing is collected before the end")
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(B.amount, start + 5, "the tiles are collected at the end")
+
+/datum/unit_test/dq_timed_pin_w3/floorbot_collects_tiles_cancel_on_target_loss
+
+/datum/unit_test/dq_timed_pin_w3/floorbot_collects_tiles_cancel_on_target_loss/run_pin()
+	var/mob/living/bot/floorbot/B = allocate(/mob/living/bot/floorbot, run_loc_floor_bottom_left)
+	var/obj/item/stack/tile/floor/T = allocate(/obj/item/stack/tile/floor, run_loc_floor_bottom_left, 5)
+	var/start = B.amount
+	B.UnarmedAttack(T, TRUE)
+	var/datum/W = running(B)
+	TEST_ASSERT(!isnull(W), "the bot starts working")
+	qdel(T)
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(B.amount, start, "a lost target collects nothing")
+	TEST_ASSERT(was_cancelled(W, B), "the work ends cancelled")
+
+/datum/unit_test/dq_timed_pin_w3/floorbot_makes_tiles
+
+/datum/unit_test/dq_timed_pin_w3/floorbot_makes_tiles/run_pin()
+	var/mob/living/bot/floorbot/B = allocate(/mob/living/bot/floorbot, run_loc_floor_bottom_left)
+	B.maketiles = TRUE
+	var/obj/item/stack/material/steel/S = allocate(/obj/item/stack/material/steel, run_loc_floor_bottom_left, 5)
+	var/start = B.amount
+	B.UnarmedAttack(S, TRUE)
+	TEST_ASSERT(!isnull(running(B)), "the bot starts working")
+	test_time(4 SECONDS)
+	TEST_ASSERT_EQUAL(S.get_amount(), 5, "no steel is used before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(S.get_amount(), 4, "one sheet is used at the end")
+	TEST_ASSERT_EQUAL(B.amount, start + 4, "and four tiles are made")
+
+/// A bot that is working is busy: it takes no second job.
+/datum/unit_test/dq_timed_pin_w3/floorbot_takes_one_job_at_a_time
+
+/datum/unit_test/dq_timed_pin_w3/floorbot_takes_one_job_at_a_time/run_pin()
+	var/mob/living/bot/floorbot/B = allocate(/mob/living/bot/floorbot, run_loc_floor_bottom_left)
+	var/obj/item/stack/tile/floor/T = allocate(/obj/item/stack/tile/floor, run_loc_floor_bottom_left, 5)
+	var/obj/item/stack/tile/floor/T2 = allocate(/obj/item/stack/tile/floor, run_loc_floor_bottom_left, 5)
+	var/start = B.amount
+	B.UnarmedAttack(T, TRUE)
+	B.UnarmedAttack(T2, TRUE)
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(B.amount, start + 5, "only the first job is done")
