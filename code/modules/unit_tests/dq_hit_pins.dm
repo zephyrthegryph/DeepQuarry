@@ -167,6 +167,9 @@
 	if(!QDELETED(target))
 		qdel(target)
 	own_turf_contents(T)
+	// a blast that vents smoke leaves its smoke system alive: the ownership audit flags it at the end of the run
+	for(var/datum/effect/effect/system/smoke_spread/leftover)
+		qdel(leftover)
 
 /datum/unit_test/dq_hit_pin/Run()
 	var/list/bad = list()
