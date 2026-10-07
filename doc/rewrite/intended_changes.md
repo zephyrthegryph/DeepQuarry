@@ -3243,6 +3243,7 @@ The final capture differs in 40 hit classes / 468 rows. All 62 master `emp 1 / r
 | `/obj/structure/grille` | 21 / 0 | Appearance-cache bookkeeping is now in rx_state, which the producer already excludes; these raw bookkeeping transitions no longer appear. Existing physical hit, integrity, product and deletion rows remain recorded. |
 | `/obj/structure/noticeboard` | 15 / 0 | Appearance-cache bookkeeping is now in rx_state, which the producer already excludes; these raw bookkeeping transitions no longer appear. Existing physical hit, integrity, product and deletion rows remain recorded. |
 | `/obj/vehicle` | 2 / 3 | The scheduler record is engine-owned /datum/scheduler_record instead of /datum/om/rec; the recorded lazy scheduler allocation remains visible under its new type. The added public is_emagged 0 -> 1 row directly observes actual subversion; it adds coverage of the existing effect rather than a new gameplay effect. |
+
 ## Relations conversion (rewrite/relations)
 
 Pinned by `code/modules/unit_tests/dq_rel_lifecycle_pins.dm` and the `dq_om_relation_*` tests, written green on the legacy relations first.
