@@ -10,9 +10,14 @@
 	mouse_drag_pointer = MOUSE_ACTIVE_POINTER
 	var/examtext = null
 	var/nameset = 0
-	var/label_y
-	var/label_x
-	var/tag_x
+
+/// A fixed offset from low to high for this parcel and a purpose: the same every redraw, different between parcels, so a draw never rolls.
+/proc/parcel_offset(atom/parcel, purpose, low, high)
+	return low + (hex2num(copytext(md5("[ref(parcel)][purpose]"), 1, 5)) % (high - low + 1))
+
+TRACKED(/obj/structure/bigDelivery, sortTag)
+TRACKED(/obj/structure/bigDelivery, examtext)
+TRACKED(/obj/structure/bigDelivery, nameset)
 
 CAPABILITIES(/obj/structure/bigDelivery)
 	op("hand", hand(), label("Use"), ungated(), then(PROC_REF(interaction_hand)))
@@ -52,11 +57,7 @@ CAPABILITIES(/obj/structure/bigDelivery)
 	if(O.currTag)
 		if(src.sortTag != O.currTag)
 			to_chat(user, span_notice("You have labeled the destination as [O.currTag]."))
-			if(!src.sortTag)
-				src.sortTag = O.currTag
-				update_icon()
-			else
-				src.sortTag = O.currTag
+			set_sortTag(O.currTag)
 			play_sfx(src, SFX_MACHINES_TWOBEEP)
 		else
 			to_chat(user, span_warning("The package is already labeled for [O.currTag]."))
@@ -87,21 +88,13 @@ CAPABILITIES(/obj/structure/bigDelivery)
 				MSG_BLIND("You hear someone scribbling a note."))
 			play_sfx(src, SFX_BUREAUCRACY_PEN)
 			name = "[name] ([str])"
-			if(!examtext && !nameset)
-				nameset = 1
-				update_icon()
-			else
-				nameset = 1
+			set_nameset(1)
 		if("Description")
 			var/str = A.step_value("description")
 			if(!str || !length(str))
 				to_chat(user, span_red("Invalid text."))
 				return OP_PASS
-			if(!examtext && !nameset)
-				examtext = str
-				update_icon()
-			else
-				examtext = str
+			set_examtext(str)
 			act_message(user, src, MSG_SELF(span_notice("You label %T%: \"[MSG_LITERAL(examtext)]\"")), \
 				MSG_OTHERS("%U% labels %T% with \a [W], scribbling down: \"[MSG_LITERAL(examtext)]\""), \
 				MSG_BLIND("You hear someone scribbling a note."))
@@ -117,35 +110,24 @@ CAPABILITIES(/obj/structure/bigDelivery)
 	unwrap()
 	return OP_OK
 
-DECLARE_APPEARANCE_PROC(/obj/structure/bigDelivery, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/bigDelivery/appearance_overlays()
-	. = list()
+/// The wrapping with its label and tag, set where the wrapping's kind puts them.
+/obj/structure/bigDelivery/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(nameset || examtext)
-		var/image/I = new/image('icons/obj/storage.dmi',"delivery_label")
-		if(icon_state == "deliverycloset")
-			I.pixel_x = 2
-			if(label_y == null)
-				label_y = rand(-6, 11)
-			I.pixel_y = label_y
-		else if(icon_state == "deliverycrate")
-			if(label_x == null)
-				label_x = rand(-8, 6)
-			I.pixel_x = label_x
-			I.pixel_y = -3
-		. += I
-	if(src.sortTag)
-		var/image/I = new/image('icons/obj/storage.dmi',"delivery_tag")
-		if(icon_state == "deliverycloset")
-			if(tag_x == null)
-				tag_x = rand(-2, 3)
-			I.pixel_x = tag_x
-			I.pixel_y = 9
-		else if(icon_state == "deliverycrate")
-			if(tag_x == null)
-				tag_x = rand(-8, 6)
-			I.pixel_x = tag_x
-			I.pixel_y = -3
-		. += I
+		if(drawn_state == "deliverycloset")
+			look.overlay(look_overlay_image('icons/obj/storage.dmi', "delivery_label", pixel_x = 2, pixel_y = parcel_offset(src, "label_y", -6, 11)))
+		else if(drawn_state == "deliverycrate")
+			look.overlay(look_overlay_image('icons/obj/storage.dmi', "delivery_label", pixel_x = parcel_offset(src, "label_x", -8, 6), pixel_y = -3))
+		else
+			look.overlay(look_overlay_image('icons/obj/storage.dmi', "delivery_label"))
+	if(sortTag)
+		if(drawn_state == "deliverycloset")
+			look.overlay(look_overlay_image('icons/obj/storage.dmi', "delivery_tag", pixel_x = parcel_offset(src, "tag_closet", -2, 3), pixel_y = 9))
+		else if(drawn_state == "deliverycrate")
+			look.overlay(look_overlay_image('icons/obj/storage.dmi', "delivery_tag", pixel_x = parcel_offset(src, "tag_crate", -8, 6), pixel_y = -3))
+		else
+			look.overlay(look_overlay_image('icons/obj/storage.dmi', "delivery_tag"))
 
 /obj/structure/bigDelivery/examine(mob/user)
 	. = ..()
@@ -181,7 +163,10 @@ DESTROY_EFFECTS(/obj/structure/bigDelivery, new /datum/destroy_effects_data(drop
 	var/sortTag = null
 	var/examtext = null
 	var/nameset = 0
-	var/tag_x
+
+TRACKED(/obj/item/smallDelivery, sortTag)
+TRACKED(/obj/item/smallDelivery, examtext)
+TRACKED(/obj/item/smallDelivery, nameset)
 
 CAPABILITIES(/obj/item/smallDelivery)
 	op("use", in_hand(), then(PROC_REF(interaction_self)))
@@ -218,11 +203,7 @@ CAPABILITIES(/obj/item/smallDelivery)
 	if(O.currTag)
 		if(src.sortTag != O.currTag)
 			to_chat(user, span_notice("You have labeled the destination as [O.currTag]."))
-			if(!src.sortTag)
-				src.sortTag = O.currTag
-				update_icon()
-			else
-				src.sortTag = O.currTag
+			set_sortTag(O.currTag)
 			play_sfx(src, SFX_MACHINES_TWOBEEP)
 		else
 			to_chat(user, span_warning("The package is already labeled for [O.currTag]."))
@@ -253,21 +234,13 @@ CAPABILITIES(/obj/item/smallDelivery)
 				MSG_BLIND("You hear someone scribbling a note."))
 			play_sfx(src, SFX_BUREAUCRACY_PEN)
 			name = "[name] ([str])"
-			if(!examtext && !nameset)
-				nameset = 1
-				update_icon()
-			else
-				nameset = 1
+			set_nameset(1)
 		if("Description")
 			var/str = A.step_value("description")
 			if(!str || !length(str))
 				to_chat(user, span_red("Invalid text."))
 				return OP_PASS
-			if(!examtext && !nameset)
-				examtext = str
-				update_icon()
-			else
-				examtext = str
+			set_examtext(str)
 			act_message(user, src, MSG_SELF(span_notice("You label %T%: \"[MSG_LITERAL(examtext)]\"")), \
 				MSG_OTHERS("%U% labels %T% with \a [W], scribbling down: \"[MSG_LITERAL(examtext)]\""), \
 				MSG_BLIND("You hear someone scribbling a note."))
@@ -283,31 +256,26 @@ CAPABILITIES(/obj/item/smallDelivery)
 	attack_self(user)
 	return OP_OK
 
-DECLARE_APPEARANCE_PROC(/obj/item/smallDelivery, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/smallDelivery/appearance_overlays()
-	. = list()
-	if((nameset || examtext) && icon_state != "deliverycrate1")
-		var/image/I = new/image('icons/obj/storage.dmi',"delivery_label")
-		if(icon_state == "deliverycrate5")
-			I.pixel_y = -1
-		. += I
-	if(src.sortTag)
-		var/image/I = new/image('icons/obj/storage.dmi',"delivery_tag")
-		switch(icon_state)
+/// The wrapping with its label and tag, set where the wrapping's kind puts them.
+/obj/item/smallDelivery/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
+	if((nameset || examtext) && drawn_state != "deliverycrate1")
+		look.overlay(look_overlay_image('icons/obj/storage.dmi', "delivery_label", pixel_y = drawn_state == "deliverycrate5" ? -1 : 0))
+	if(sortTag)
+		switch(drawn_state)
 			if("deliverycrate1")
-				I.pixel_y = -5
+				look.overlay(look_overlay_image('icons/obj/storage.dmi', "delivery_tag", pixel_y = -5))
 			if("deliverycrate2")
-				I.pixel_y = -2
+				look.overlay(look_overlay_image('icons/obj/storage.dmi', "delivery_tag", pixel_y = -2))
 			if("deliverycrate3")
-				I.pixel_y = 0
+				look.overlay(look_overlay_image('icons/obj/storage.dmi', "delivery_tag"))
 			if("deliverycrate4")
-				if(tag_x == null)
-					tag_x = rand(0,5)
-				I.pixel_x = tag_x
-				I.pixel_y = 3
+				look.overlay(look_overlay_image('icons/obj/storage.dmi', "delivery_tag", pixel_x = parcel_offset(src, "tag_small", 0, 5), pixel_y = 3))
 			if("deliverycrate5")
-				I.pixel_y = -3
-		. += I
+				look.overlay(look_overlay_image('icons/obj/storage.dmi', "delivery_tag", pixel_y = -3))
+			else
+				look.overlay(look_overlay_image('icons/obj/storage.dmi', "delivery_tag"))
 
 /obj/item/smallDelivery/examine(mob/user)
 	. = ..()

@@ -24,6 +24,23 @@ go; uncovered -> each becomes changed(src) (changed(X) for X.update_icon()), so 
 Initialize() always go: the first refresh draws every atom after its init. Calls whose receiver is above the component (a proc of
 an ancestor that still serves unconverted types) stay; for an uncovered component a changed(src) is added beside them.
 
+Forms for what a provider does besides drawing (the framework side is look.effect(), look.watch() and look_overlay_image()):
+
+    side_effect     a call of a proc of the type (`add_eyes()`, `update_charge(x)`) is `look.effect(PROC_REF(add_eyes))`: it runs when the look is
+                    applied, outside the draw. `soundloop.start()` on a var of the holder gets a one-line helper proc (look_effect_<var>_<proc>) and
+                    the same effect; a call on a holder or a parameter, a macro, and update_icon()/changed() stay residue (hand work).
+    writes_state    `x = v` (plain `=`, a var of the holder, never read elsewhere in the body) is `look.effect(PROC_REF(look_effect_set_x), v)`: the
+                    write moves out of the draw into a generated setter run after the look is applied. A write the draw also reads (a cache) or an
+                    operator assignment (`x += v`) stays residue: the cache goes by hand, or the state becomes a TRACKED var with its own setter.
+    hop_read        `root.var` where root is a var of the holder is `look.watch(root)` (the holder redraws when the other end publishes a change);
+                    a local, a parameter or a global stays residue.
+    member_write    `var/image/I = image(...)` followed by `I.pixel_y = ...` / `.plane` / `.alpha` / `.color` / `.layer` / `.dir` / `.appearance_flags`
+                    and one `look.overlay(I)` folds into `look.overlay(look_overlay_image(icon, state, pixel_y = ...))`; any other member write stays.
+    super_late      one `..()` (or `. = ..()` / `. += ..()`) in the middle of the provider keeps its place in the draw: the statements before it run
+                    first, as they did (a later look.state() still wins). Two, or one under a condition, stays residue. A type that already has a
+                    draw() keeps super_late residue.
+    reads_layers    hand work: draw from the tracked contents, not from the composed overlays (KD84).
+
 Residue (the component stays as it is), by code: level / emissive / slot (APPEARANCE_LEVEL, _EMISSIVE, _SLOT: by hand),
 none (APPEARANCE_NONE below a type that draws), override (an update_icon() override), layer_override (a subtype layers a var an
 ancestor layers), order (a keyed state below a provider or layer that sets the state: the legacy order differs), template_parse,
@@ -60,6 +77,13 @@ class Residue(Exception):
 
 # id(locals set of a provider body) -> the locals that body builds itself (provider_lines() fills it for translate_stmt())
 BUILT_LOCALS = {}
+
+# The provider being translated: its body text, and the helper procs its effects need (translate_stmt() fills them, plan_component() takes them).
+CTX = {"body": "", "extras": {}, "t": None}
+IMAGE_ATTRS = ("pixel_x", "pixel_y", "layer", "plane", "alpha", "color", "dir", "appearance_flags")
+IMAGE_STATEMENT = re.compile(r"^var/(?:image|mutable_appearance)/(\w+)\s*=\s*image\((.*)\)$")
+IMAGE_ATTR_STATEMENT = re.compile(r"^(\w+)\.(pixel_x|pixel_y|layer|plane|alpha|color|dir|appearance_flags)\s*=(?!=)\s*(.+)$")
+EFFECT_SKIP = {"update_icon", "update_icons", "regenerate_icons", "changed", "set_light", "flick"}
 
 
 def code_and_comment(raw):
@@ -410,6 +434,8 @@ def provider_lines(ix, t, rel, start, end, has_parent_provider):
     raw = f.lines[start + 1 : end]
     codes = [strip_code(x) for x in raw]
     text = "\n".join(codes)
+    CTX["body"] = text
+    CTX["t"] = t
     if has_word(text, "look") or has_word(text, "drawn_state"):
         raise Residue("name_clash")
     if re.search(r"(?<![\w.])(overlays|underlays)(?!\w)", text):
@@ -448,9 +474,15 @@ def provider_lines(ix, t, rel, start, end, has_parent_provider):
         if scode == ". = list()" and not seen_code:
             continue
         if scode in ("..()", ". = ..()", ". += ..()"):
-            if saw_super or seen_code:
+            if saw_super:
                 raise Residue("super_late")
             saw_super = True
+            if seen_code:
+                # a late ..(): the statements before it ran first and the parent's draw runs here (look.state() last call wins, as the legacy
+                # chain did); a type with its own draw() keeps the residue (the generated lines would call the parent twice)
+                if ix.draws.get(t) or re.match(r"^[ \t]{2,}", line):
+                    raise Residue("super_late")
+                out.append(ind + "..()")
             continue
         if re.search(r"(?<![\w.])\.\.\(", scode):
             raise Residue("super_late")
@@ -468,6 +500,7 @@ def provider_lines(ix, t, rel, start, end, has_parent_provider):
         out.append(ind + translate_stmt(ix, t, stmt, locals_, state_reads) + comment)
     if has_parent_provider and not saw_super:
         raise Residue("replaces_parent")
+    out = fold_images(out)
     # trailing blank lines, and a bare return that ends the body, go
     while out and (not out[-1].strip() or (strip_code(out[-1]).strip() == "return" and re.match(r"^\t\S", out[-1]))):
         out.pop()
@@ -477,7 +510,96 @@ def provider_lines(ix, t, rel, start, end, has_parent_provider):
     return out
 
 
+def fold_images(lines):
+    """`var/image/I = image(...)`, its member writes and one `look.overlay(I)` become `look.overlay(look_overlay_image(...))` (a draw writes
+    nothing, not even the members of an image it made). Lines that do not fit the shape are left as they are."""
+    out = list(lines)
+    i = 0
+    while i < len(out):
+        code = code_and_comment(out[i])[0].strip()
+        m = IMAGE_STATEMENT.match(code)
+        if not m:
+            i += 1
+            continue
+        name = m.group(1)
+        ind = len(out[i]) - len(out[i].lstrip())
+        args = [a.strip() for a in split_args(code[code.index("image(") + 6 : code.rindex(")")]) if a.strip()]
+        named = {}
+        pos = []
+        for a in args:
+            nm = re.match(r"^(icon|icon_state|loc|layer|dir)\s*=(?!=)\s*(.*)$", a)
+            if nm:
+                named[nm.group(1)] = nm.group(2)
+            elif re.match(r"^\w+\s*=(?!=)", a):
+                named = None
+                break
+            else:
+                pos.append(a)
+        if named is None or len(pos) > 3:
+            i += 1
+            continue
+        if len(pos) == 3:
+            named.update({"icon": pos[0], "loc": pos[1], "icon_state": pos[2]})
+        elif len(pos) == 2:
+            named.update({"icon": pos[0], "icon_state": pos[1]})
+        elif len(pos) == 1:
+            named["icon"] = pos[0]
+        if named.get("loc") not in (None, "src", "loc"):  # an image's loc means nothing in an overlay
+            i += 1
+            continue
+        attrs = {}
+        j = i + 1
+        while j < len(out):
+            am = IMAGE_ATTR_STATEMENT.match(code_and_comment(out[j])[0].strip())
+            if not am or am.group(1) != name or len(out[j]) - len(out[j].lstrip()) != ind:
+                break
+            attrs[am.group(2)] = am.group(3).strip()
+            j += 1
+        # the one use: look.overlay(NAME) in the same block
+        use = None
+        for k in range(j, len(out)):
+            if out[k].strip() and len(out[k]) - len(out[k].lstrip()) < ind:
+                break
+            if re.search(r"(?<![\w.])" + re.escape(name) + r"(?!\w)", strip_code(out[k])):
+                if use is not None or strip_code(out[k]).strip() != "look.overlay(%s)" % name:
+                    use = -1
+                    break
+                use = k
+        if use is None or use == -1:
+            i += 1
+            continue
+        parts = []
+        icon = named.get("icon", "null")
+        state = named.get("icon_state", "null")
+        if icon == "null" and state == "null":
+            i += 1
+            continue
+        parts.append(icon)
+        parts.append(state)
+        for key in ("layer", "dir"):
+            if key in named and key not in attrs:
+                attrs[key] = named[key]
+        parts += ["%s = %s" % (k, attrs[k]) for k in IMAGE_ATTRS if k in attrs]
+        tail = out[use][: len(out[use]) - len(out[use].lstrip())]
+        out[use] = tail + "look.overlay(look_overlay_image(%s))" % ", ".join(parts)
+        del out[i:j]
+    return out
+
+
 CONTROL_HEAD = re.compile(r"^(if|else if|while|for|switch)\s*\(")
+
+
+def call_closes_at_end(code):
+    """TRUE when the first parenthesis of `code` closes at its last character (one call, not a chain of them)."""
+    depth = 0
+    for k, ch in enumerate(code):
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+            if depth == 0:
+                return k == len(code) - 1
+    return False
 
 
 def split_control(stmt):
@@ -549,6 +671,18 @@ def translate_stmt(ix, t, stmt, locals_, state_reads):
             return "look.identity(%s = %s)" % (lhs, fix_expr(rhs, state_reads))
         if root in locals_:
             return fix_expr(stmt, state_reads)
+        # a plain write to a var of the holder that the draw never reads: it moves out of the draw, to a setter run after the look is applied
+        if op == "=" and ix.is_var(t, root) and root not in KEYWORDS and lhs.count(".") <= 1 and root != "icon_state":
+            body = CTX["body"]
+            seen = len(re.findall(r"(?<![\w.])" + re.escape(root) + r"(?!\w)", body))
+            written = len(re.findall(r"(?m)^[ \t]*(?:(?:else[ \t]+)?if[ \t]*\(.*\)[ \t]*|else[ \t]+)?(?:src\.)?" + re.escape(root) + r"\b[\w.]*[ \t]*=(?!=)", body))
+            if seen <= written:
+                helper = "look_effect_set_" + lhs.replace(".", "_")
+                if "." in lhs:
+                    CTX["extras"][helper] = ["%s/proc/%s(value)" % (t, helper), "\tif(%s)" % root, "\t\t%s = value" % lhs]
+                else:
+                    CTX["extras"][helper] = ["%s/proc/%s(value)" % (t, helper), "\t%s = value" % lhs]
+                return "look.effect(PROC_REF(%s), %s)" % (helper, fix_expr(rhs, state_reads))
         raise Residue("writes_state:" + lhs)
     im = re.match(r"^([A-Za-z_]\w*)\s*(\+\+|--)$", code) or re.match(r"^(\+\+|--)\s*([A-Za-z_]\w*)$", code)
     if im:
@@ -566,6 +700,8 @@ def translate_stmt(ix, t, stmt, locals_, state_reads):
     if re.match(r"^GLOB\.\w*cache\w*\[[^\]]*\]\s*=(?!=)", code):
         return fix_expr(stmt, state_reads)
     cm = re.match(r"^([A-Za-z_][\w]*)\s*\((.*)\)$", code)
+    if cm and not call_closes_at_end(code):
+        cm = None  # `holder().update_icon()`: a chain, not one call
     if cm:
         name = cm.group(1)
         args_raw = stmt[stmt.index("(") + 1 : stmt.rindex(")")]
@@ -582,7 +718,23 @@ def translate_stmt(ix, t, stmt, locals_, state_reads):
             args = [a.strip() for a in split_args(args_raw)]
             if len(args) == 2 and args[1] == "src":
                 return "look.play_flick(%s)" % fix_expr(args[0], state_reads)
+        # a proc of the holder's type: it runs when the look is applied (look.effect), outside the draw
+        if ix.is_proc(t, name) and name not in EFFECT_SKIP and not name.isupper() and name not in locals_:
+            args = [fix_expr(a.strip(), state_reads) for a in split_args(args_raw) if a.strip()]
+            return "look.effect(PROC_REF(%s)%s)" % (name, "".join(", " + a for a in args))
         raise Residue("side_effect:" + name)
+    # a call on a var of the holder (a sound loop, a datum it holds): a one-line helper proc names it, and the draw names the effect
+    mm = re.match(r"^([A-Za-z_]\w*)\s*\??\.\s*([A-Za-z_]\w*)\s*\((.*)\)$", code)
+    if mm and ix.is_var(t, mm.group(1)) and mm.group(1) not in ATOM_BUILTINS and mm.group(1) not in locals_ and mm.group(1) not in KEYWORDS and mm.group(2) not in EFFECT_SKIP:
+        root, method = mm.group(1), mm.group(2)
+        args_raw = stmt[stmt.index("(", stmt.index(method)) + 1 : stmt.rindex(")")]
+        args = [fix_expr(a.strip(), state_reads) for a in split_args(args_raw) if a.strip()]
+        helper = "look_effect_%s_%s" % (root, method)
+        params = ["p%d" % (k + 1) for k in range(len(args))]
+        CTX["extras"][helper] = ["%s/proc/%s(%s)" % (t, helper, ", ".join(params)), "\t%s?.%s(%s)" % (root, method, ", ".join(params))]
+        return "look.effect(PROC_REF(%s)%s)" % (helper, "".join(", " + a for a in args))
+    if re.match(r"^[A-Za-z_]\w*\s*\??\.\s*update_inv_\w+\(\)$", code):
+        return "// the hands that hold it redraw when the look changes its sprite (look.apply_to())"
     raise Residue("side_effect:" + code.split("(")[0][:30])
 
 
@@ -595,7 +747,7 @@ def body_reads(ix, t, lines):
     reads, calls, hops = set(), set(), set()
     for m in re.finditer(r"(?<![\w./\"'])([A-Za-z_]\w*)", text):
         name = m.group(1)
-        if name in KEYWORDS or name in locals_:
+        if name in KEYWORDS or name in locals_ or name.startswith("look_effect_"):
             continue
         before = text[: m.start()]
         if re.search(r"\binitial\(\s*$", before):
@@ -734,26 +886,35 @@ def plan_component(ix, comp):
         prov = ix.providers.get(t)
         if prov and parts_mode:
             rel, s, e = prov[0]
+            CTX["extras"] = {}
             body = provider_lines(ix, t, rel, s, e, False)
             root = not any(ix.providers.get(a) for a in anc)
             if root:
                 lines.append("\tlook_parts(look)")
-            plans[t] = {"lines": lines, "parts": body, "parts_root": root, "parts_super": has_super(t)}
+            plans[t] = {"lines": lines, "parts": body, "parts_root": root, "parts_super": has_super(t), "extras": list(CTX["extras"].values())}
             continue
         if prov:
             rel, s, e = prov[0]
             has_parent_provider = any(ix.providers.get(a) for a in anc)
+            CTX["extras"] = {}
             body = provider_lines(ix, t, rel, s, e, has_parent_provider)
             if any(re.search(r"\blook\.state\(", x) for x in body):
                 provider_sets_state[t] = True
             lines += body
-        plans[t] = {"lines": lines}
+        plans[t] = {"lines": lines, "extras": list(CTX["extras"].values()) if prov else []}
     for t in comp:
-        lint_shape(plans[t]["lines"] + plans[t].get("parts", []))
+        watch = []
+        lint_shape(plans[t]["lines"] + plans[t].get("parts", []), ix, t, watch)
+        if watch:
+            wl = ["	look.watch(%s)" % w for w in watch]
+            if "parts" in plans[t]:
+                plans[t]["parts"] = wl + plans[t]["parts"]
+            else:
+                plans[t]["lines"] = wl + plans[t]["lines"]
     return plans
 
 
-def lint_shape(lines):
+def lint_shape(lines, ix=None, t=None, watch=None):
     """Residue for generated lines a draw may not hold (sys/dx_reactive): a write to a member of anything, or a read through another object
     (anything but src, look, GLOB, the reagents relation, or a local the body built: an image, a matrix, a list)."""
     text = "\n".join(strip_code(x) for x in lines)
@@ -762,14 +923,22 @@ def lint_shape(lines):
         c = code.strip()
         c = re.sub(r"^(?:else\s+)?if\s*\((?:[^()]|\([^()]*\))*\)\s*", "", c)
         if re.match(r"^[A-Za-z_]\w*(?:\s*\??\.\s*[A-Za-z_]\w*)+\s*(?:=(?!=)|\+=|-=|\|=|\*=)", c) and not c.startswith("look."):
-            raise Residue("member_write")
+            raise Residue("member_write:" + c.split("=")[0].strip()[:40])
         for m in re.finditer(r"(?<![\w.\]\)\"'/:])([A-Za-z_]\w*)\s*\??\.\s*([A-Za-z_]\w*)", code):
             root, seg = m.group(1), m.group(2)
             if root in ("look", "src", "GLOB", "reagents", "world") or root in built or seg in ("len", "type", "parent_type"):
                 continue
             if re.match(r"^[A-Z][A-Z0-9_]+$", root) or root.startswith("SS"):
                 continue
-            raise Residue("hop_read")
+            if watch is not None and ix is not None and ix.is_var(t, root) and root not in KEYWORDS and root not in locals_of(text):
+                if root not in watch:
+                    watch.append(root)  # a var of the holder: the draw subscribes to it (look.watch)
+                continue
+            raise Residue("hop_read:" + root)
+
+
+def locals_of(text):
+    return set(re.findall(r"\bvar/(?:[\w/]+/)?(\w+)", text))
 
 
 def none_lines(t, ancestor_lines):
@@ -863,6 +1032,19 @@ def draw_coverage(ix, t):
     return _coverage_cache[key]
 
 
+def super_inline(lines):
+    """The generated lines call ..() themselves (a late super): the draw does not open with it."""
+    return any(x.strip() == "..()" for x in lines)
+
+
+def extras_text(plan):
+    """The helper procs of the effects (blank-line separated), after the draw."""
+    out = []
+    for helper in plan.get("extras") or []:
+        out += [""] + ["/// An effect of the look (the draw sweep): run once the look is applied, not while it is drawn."] + helper
+    return out
+
+
 def draw_text(t, lines, note):
     head = "/// The look%s (converted from the legacy appearance declarations by the draw sweep)." % note
     body = ["\t..()"] + [x for x in lines]
@@ -882,14 +1064,14 @@ def apply_component(ix, comp, plans, covered, untracked, edits):
             rel, s, e = prov[0]
             body = plans[t]["parts"] or []
             if plans[t]["parts_root"]:
-                text = ["%s/draw(datum/look/look)" % t, "\t..()"] + lines + [""]
+                text = ["%s/draw(datum/look/look)" % t] + ([] if super_inline(lines) else ["\t..()"]) + lines + [""]
                 text += ["/// What this chain's providers drew: each type's own part of the look, a subtype replacing or extending it (..())."]
                 text += ["%s/proc/look_parts(datum/look/look)" % t]
             else:
                 text = ["%s/look_parts(datum/look/look)" % t] + (["\t..()"] if plans[t]["parts_super"] else [])
             if not [x for x in body if strip_code(x).strip()] and not plans[t]["parts_super"]:
                 body = ["\treturn"]
-            edits[rel].append((s, e - 1, text + body))
+            edits[rel].append((s, e - 1, text + body + extras_text(plans[t])))
             for kind, drel, first, last, raw in decls:
                 edits[drel].append((first, last, None))
             continue
@@ -903,7 +1085,7 @@ def apply_component(ix, comp, plans, covered, untracked, edits):
             if k is None or strip_code(L[k]).strip() not in ("..()", ". = ..()"):
                 raise Residue("own_draw_late")
             if drawn:
-                edits[rel].append((k + 1, k, [x for x in lines]))
+                edits[rel].append((k + 1, k, [x for x in lines] + extras_text(plans[t])))
             placed = True
         if prov:
             rel, s, e = prov[0]
@@ -912,12 +1094,12 @@ def apply_component(ix, comp, plans, covered, untracked, edits):
             else:
                 L = ix.files[rel].lines
                 doc = []
-                edits[rel].append((s, e - 1, ["%s/draw(datum/look/look)" % t, "\t..()"] + lines))
+                edits[rel].append((s, e - 1, ["%s/draw(datum/look/look)" % t] + ([] if super_inline(lines) else ["\t..()"]) + lines + extras_text(plans[t])))
                 placed = True
         for kind, rel, first, last, raw in decls:
             if kind in ("APPEARANCE_TEMPLATE", "DECLARE_APPEARANCE", "DECLARE_APPEARANCE_PROC", "APPEARANCE_NONE"):
                 if not placed and drawn:
-                    edits[rel].append((first, last, ["/// The look (the draw sweep: from %s)." % kind_names(decls), "%s/draw(datum/look/look)" % t, "\t..()"] + lines))
+                    edits[rel].append((first, last, ["/// The look (the draw sweep: from %s)." % kind_names(decls), "%s/draw(datum/look/look)" % t] + ([] if super_inline(lines) else ["\t..()"]) + lines + extras_text(plans[t])))
                     placed = True
                 else:
                     edits[rel].append((first, last, None))

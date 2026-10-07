@@ -372,6 +372,8 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		GLOB.derive_side_probing = FALSE
 		throw e
 	GLOB.refresh_running = outer
+	if(!outer && length(GLOB.look_effects_due))
+		look_effects_run()
 #if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	// A full pass re-derived everything: the ignored changes it may have hidden are answered for.
 	if(mask == DEP_ALL && length(GLOB.derived_ignored))
@@ -485,14 +487,23 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			// last look set (overlays, filters, vis_contents, base properties).
 			L.apply_to(A)
 			rx_of(A).look_key = null
+		if(apply && A.cap_data?[/datum/cap_engine_state])
+			look_watch_sync(A, null)
 		return null
 	var/key = L.change_key()
-	if(apply && key != A.rx?.look_key)
-		var/atom/outer = GLOB.refresh_applying
-		GLOB.refresh_applying = A
-		L.apply_to(A)
-		GLOB.refresh_applying = outer
-		rx_of(A).look_key = key
+	if(apply)
+		// What the draw read of other entities: a change on any of them redraws A (kept in line with every draw, applied or not).
+		if(L.watched || A.cap_data?[/datum/cap_engine_state])
+			look_watch_sync(A, L.watched)
+		if(key != A.rx?.look_key)
+			var/atom/outer = GLOB.refresh_applying
+			GLOB.refresh_applying = A
+			L.apply_to(A)
+			GLOB.refresh_applying = outer
+			rx_of(A).look_key = key
+			// The effects the draw named run once the refresh is over (look_effects_run()): they may write state.
+			if(L.effects)
+				GLOB.look_effects_due += list(list(A, L.effects))
 	return key
 
 /// Brings A's derived verb hides in line with hidden_verbs(). The verb store stays the only writer of a
@@ -652,3 +663,47 @@ GLOBAL_VAR_INIT(refresh_drift_expected, FALSE)
 
 /datum/proc/presentation_refresh_windows()
 	return 0
+
+
+// ---- what a look does besides drawing: effects and watches (doc/rewrite/final_api.html section 13) ----
+
+/// Effects named by applied looks that have not run yet: list(atom, list(list(proc_ref, args...), ...)).
+GLOBAL_LIST_EMPTY(look_effects_due)
+/// Effects run so far (the draw framework tests read it).
+GLOBAL_VAR_INIT(look_effects_ran, 0)
+
+/// Runs the effects applied looks named (look.effect()), each as `proc_ref(args...)` on the holder, outside any output: they may write
+/// state, start a sound loop or call another entity, and what they write raises its own marks (a redraw waits for the next pass).
+/proc/look_effects_run()
+	var/list/due = GLOB.look_effects_due
+	GLOB.look_effects_due = list()
+	for(var/list/entry in due)
+		var/atom/holder = entry[1]
+		if(QDELETED(holder))
+			continue
+		for(var/list/effect in entry[2])
+			var/list/call_args = effect.Copy(2)
+			GLOB.look_effects_ran++
+			try
+				call(holder, effect[1])(arglist(call_args))
+			catch(var/exception/e)
+				stack_trace("look effect [effect[1]] of [holder.type]: [e] ([e.file]:[e.line])")
+
+/// Brings `A`'s subscriptions to other entities in line with what its draw reads now (`keys`: own keys, null for none). The record is kept
+/// in the atom's engine state, which only an atom that has watched something (or kept a cooldown or a flash) owns.
+/proc/look_watch_sync(atom/A, list/keys)
+	var/datum/cap_engine_state/engine = keys ? cap_engine_state_make(A) : cap_engine_state_of(A)
+	if(!engine)
+		return
+	var/list/was = engine.look_watching
+	for(var/key in was)
+		if(!(key in keys))
+			var/datum/gone = own_locate(key)
+			if(gone)
+				rel_unobserve(gone, A)
+	for(var/key in keys)
+		if(!(key in was))
+			var/datum/seen = own_locate(key)
+			if(seen)
+				rel_observe(seen, A)
+	engine.look_watching = keys

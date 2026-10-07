@@ -210,7 +210,6 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 	if(!move_into(src, nameof(src.mytape), I, user))
 		return OP_OK
 	to_chat(user, span_notice("You insert [I] into [src]."))
-	update_icon()
 	return OP_OK
 
 /// Heat behaviour rule: fire ruins the tape inside.
@@ -342,7 +341,6 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 		return
 	else if(playing)
 		set_playing(0)
-		update_icon()
 		to_chat(user, span_notice("Playback stopped."))
 		return
 	else
@@ -362,7 +360,6 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 	if(user.incapacitated())
 		return
 	set_playing(1)
-	update_icon()
 	to_chat(user, span_notice("Playing started."))
 	play_step(1)
 
@@ -402,7 +399,6 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 
 /obj/item/taperecorder/proc/play_end()
 	set_playing(0)
-	update_icon()
 
 	if(emagged)
 		var/turf/T = get_turf(src)
@@ -497,11 +493,9 @@ CAPABILITIES(/obj/item/rectape)
 
 /obj/item/rectape/proc/ruin()
 	set_ruined(1)
-	update_icon()
 
 /obj/item/rectape/proc/fix()
 	set_ruined(0)
-	update_icon()
 
 /obj/item/rectape/proc/record_speech(text)
 	timestamp += used_capacity

@@ -119,7 +119,11 @@ CAPABILITIES(/obj/vehicle/train/rover/engine)
 	..()
 
 /// The rover has no open sprite: it keeps its initial icon_state.
-APPEARANCE_NONE(/obj/vehicle/train/rover)
+/// The look (the draw sweep: from APPEARANCE_NONE).
+/obj/vehicle/train/rover/draw(datum/look/look)
+	..()
+	// APPEARANCE_NONE: the mapped sprite, without the parent's declared states and layers
+	look.state(null)
 
 /obj/vehicle/train/rover/trolley/insert_cell(obj/item/cell/C, mob/living/carbon/human/H)
 	return

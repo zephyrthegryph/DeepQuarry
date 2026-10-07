@@ -414,6 +414,21 @@ other state (`writes_state:<var>`), reads `overlays`/`underlays` (`reads_layers`
 `APPEARANCE_LEVEL` / `_EMISSIVE` / `_SLOT` (by hand). A `draw()` and its `look_parts()` read only tracked state and write nothing
 (`sys/dx_reactive`); they change no atom either (`sys/dx_review` `output_side_effect`).
 
+**The residue that now converts** (`convert`; `look_convert.py` documents each):
+
+| Shape in the provider | Becomes |
+|---|---|
+| `add_eyes()` / `update_charge(x)`: a call of a proc of the type | `look.effect(PROC_REF(add_eyes))` / `look.effect(PROC_REF(update_charge), x)`: runs when the look is applied, outside the draw |
+| `soundloop.start()` on a var of the holder | `look.effect(PROC_REF(look_effect_soundloop_start))` and a one-line helper proc `look_effect_soundloop_start()` after the draw |
+| `x = v` on a var of the holder that the draw never reads | `look.effect(PROC_REF(look_effect_set_x), v)` and a generated setter; a cache the draw reads, `x += v` and a write through a local stay residue |
+| `root.var` where root is a var of the holder | `look.watch(root)`: the holder redraws when the other end publishes a change |
+| `var/image/I = image(...)`, `I.pixel_y = ...` (plane, layer, alpha, color, dir, appearance_flags), `. += I` | `look.overlay(look_overlay_image(icon, state, pixel_y = ...))` |
+| one `..()` in the middle of the body | stays where it is in the draw |
+| `H.update_inv_l_hand()` on the holder | a comment: the look redraws the worn slot when it changes the sprite |
+
+Still hand work: `reads_layers`, an `update_icon()` or `changed()` call inside the provider, a late `..()` under a condition or in a type that has its
+own `draw()`, an image rebuilt in a branch, a cached image (`GLOB.x_cache`), `multi_def`, `look_var_read`, `layer_override`, `APPEARANCE_LEVEL`.
+
 **The look's additions** (`code/datums/capabilities/look.dm`): `look.state()` returns the state; `look.state_so_far(A)`; `look.light_off()` (an
 explicit `set_light(0)`); `look.held_state(state)` and `look.identity(name =, desc =)` (left as they are when a draw does not set them);
 `look_appearance()`; when a look changes an atom's sprite its generic emissive blocker follows (`look_resync_emissive_blocker()`) and the

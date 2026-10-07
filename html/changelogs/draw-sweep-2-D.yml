@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Vehicles (trains, bikes, quads, janicart) draw through the look builder"

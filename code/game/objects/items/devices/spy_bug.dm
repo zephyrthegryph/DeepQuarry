@@ -137,7 +137,6 @@ MSG_DEF_SELF(camerabug/not_on_floor, "It must be on the floor.")
 /obj/item/camerabug/proc/interaction_wrench(datum/act/op/A)
 	set_anchored(!anchored)
 	to_chat(A.actor, span_notice("You [anchored ? "" : "un"]secure \the [src]."))
-	update_icon()
 	return OP_OK
 
 /// Requirement: it lies on the floor.

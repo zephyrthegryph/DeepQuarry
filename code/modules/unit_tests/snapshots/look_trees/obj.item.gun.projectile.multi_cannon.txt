@@ -1,6 +1,6 @@
 /obj/item/gun/projectile/multi_cannon icon: icons/vore/custom_guns_vr.dmi
 /obj/item/gun/projectile/multi_cannon state: healcannon
 /obj/item/gun/projectile/multi_cannon dir: 2
-/obj/item/gun/projectile/multi_cannon overlay: icons/vore/custom_guns_vr.dmi:healcannon:8:#000000 x2
+/obj/item/gun/projectile/multi_cannon overlay: icons/vore/custom_guns_vr.dmi:healcannon:8:#000000
 /obj/item/gun/projectile/multi_cannon overlay: icons/vore/custom_guns_vr.dmi:healcannon_0:-32767
 

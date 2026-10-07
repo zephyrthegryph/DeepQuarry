@@ -1,17 +1,17 @@
 /obj/structure/dispenser icon: icons/obj/objects_vr.dmi
 /obj/structure/dispenser state: dispenser
 /obj/structure/dispenser dir: 2
-/obj/structure/dispenser overlay: icons/obj/objects_vr.dmi:dispenser:8:#000000 x2
+/obj/structure/dispenser overlay: icons/obj/objects_vr.dmi:dispenser:8:#000000
 /obj/structure/dispenser overlay: icons/obj/objects_vr.dmi:oxygen-4:-32767
 /obj/structure/dispenser overlay: icons/obj/objects_vr.dmi:phoron-5:-32767
 /obj/structure/dispenser/oxygen icon: icons/obj/objects_vr.dmi
 /obj/structure/dispenser/oxygen state: dispenser
 /obj/structure/dispenser/oxygen dir: 2
-/obj/structure/dispenser/oxygen overlay: icons/obj/objects_vr.dmi:dispenser:8:#000000 x2
+/obj/structure/dispenser/oxygen overlay: icons/obj/objects_vr.dmi:dispenser:8:#000000
 /obj/structure/dispenser/oxygen overlay: icons/obj/objects_vr.dmi:oxygen-4:-32767
 /obj/structure/dispenser/phoron icon: icons/obj/objects_vr.dmi
 /obj/structure/dispenser/phoron state: dispenser
 /obj/structure/dispenser/phoron dir: 2
-/obj/structure/dispenser/phoron overlay: icons/obj/objects_vr.dmi:dispenser:8:#000000 x2
+/obj/structure/dispenser/phoron overlay: icons/obj/objects_vr.dmi:dispenser:8:#000000
 /obj/structure/dispenser/phoron overlay: icons/obj/objects_vr.dmi:phoron-5:-32767
 

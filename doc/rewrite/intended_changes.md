@@ -3260,3 +3260,10 @@ Pinned by `code/modules/unit_tests/dq_rel_lifecycle_pins.dm` and the `dq_om_rela
 * **A blast door answers an ID card with the access refusal**, no longer with the silent swallow (its `allowed()` has always been FALSE).
 * **Orbits can circle a turf** and keep the orbiter's saved transform on the link; `holds_while` listens to move notices (observe) again.
 * **Pin classes of the `melee_hit` bless** (about 500 pin files): `menu: Hit` for a held item on every object type (the new op; refused with the stance reason outside combat), `keys:` gains `melee_hit`, `menu: Move To Top` / `Toggle Digestable` appear on rows whose menu was empty (any listed op brings them), `click:` rows that were `nothing` become `Hit` where combat is the best answer; the web and weeds hit only in combat mode now (it was any stance), so a spiderling or a weed's click label shows its touch (`Stomp`, `Touch weeds`) where `Hit web` / `Hit weeds` was; `Strike` menu rows (closet, canister, solar) are `Hit`; rows of the 12 swallow targets lose `Use`. Moved lines of unchanged text (sorting) are not changes.
+
+## The duplicate emissive blocker (draw framework, KD22)
+
+* The old `add_overlay()` merged the priority overlays into every add, so pins recorded a duplicate emissive blocker after each redraw; one blocker is drawn now.
+  `add_overlay()` merges them only when the atom has no overlays left, `cut_overlay()` never takes the blocker with a layer, and `cut_overlays()` keeps it.
+  Every pin row that changes is that class: a `blocker x2` becoming the one blocker, or a probe row that only gained and lost the blocker.
+* The lightpost is a plain draw over tracked `lit` and `festive`; its light follows the look (`look.light()`, `look.light_off()`).
