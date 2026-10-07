@@ -35,10 +35,12 @@ SYSTEM_DEF(overlays)
 	iconbro.icon = icon
 	return iconbro.appearance
 
-/atom/proc/build_appearance_list(list/build_overlays)
+/// `merge_priority` FALSE builds the list without the atom's priority overlays (the generic emissive blocker): a look that owns its one
+/// blocker (look.one_blocker()) adds and cuts its layers without stacking or taking a copy of it.
+/atom/proc/build_appearance_list(list/build_overlays, merge_priority = TRUE)
 	if (!islist(build_overlays))
 		build_overlays = list(build_overlays)
-	if(priority_overlays)
+	if(priority_overlays && merge_priority)
 		var/list/prio_overlay_temp
 		if(!islist(priority_overlays))
 			prio_overlay_temp = list(priority_overlays)
@@ -69,7 +71,7 @@ SYSTEM_DEF(overlays)
 	STAT_STOP_STOPWATCH
 	STAT_LOG_ENTRY(SSoverlays.stats, type)
 
-/atom/proc/cut_overlay(list/remove_overlays, priority)
+/atom/proc/cut_overlay(list/remove_overlays, priority, merge_priority = TRUE)
 	if(!overlays)
 		return
 	STAT_START_STOPWATCH
@@ -80,11 +82,11 @@ SYSTEM_DEF(overlays)
 			priority_overlays = null
 	if(islist(remove_overlays))
 		remove_overlays = remove_overlays.Copy() //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
-	overlays -= build_appearance_list(remove_overlays)
+	overlays -= build_appearance_list(remove_overlays, merge_priority)
 	STAT_STOP_STOPWATCH
 	STAT_LOG_ENTRY(SSoverlays.stats, type)
 
-/atom/proc/add_overlay(list/add_overlays, priority)
+/atom/proc/add_overlay(list/add_overlays, priority, merge_priority = TRUE)
 	if(!overlays)
 		return
 	STAT_START_STOPWATCH
@@ -100,7 +102,7 @@ SYSTEM_DEF(overlays)
 			else
 				priority_overlays = list(priority_overlays) + add_overlays
 		add_overlays = add_overlays.Copy() //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
-	overlays += build_appearance_list(add_overlays) //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
+	overlays += build_appearance_list(add_overlays, merge_priority) //May not be ideal to copy, but as build_appearance_list modifies lists in place which breaks certain things
 	VALIDATE_OVERLAY_LIMIT(src)
 	STAT_STOP_STOPWATCH
 	STAT_LOG_ENTRY(SSoverlays.stats, type)

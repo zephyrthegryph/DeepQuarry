@@ -379,6 +379,14 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		target.rel_watchers -= key
 		UNSETEMPTY(target.rel_watchers)
 
+/// `watcher` reads `target` in an output (look.watch()): changed(target) marks `watcher` too, until rel_unobserve() takes it back. One call, one
+/// count, like a watched view; the caller pairs them (the look's subscription follows the draw).
+/proc/rel_observe(datum/target, datum/watcher)
+	_rel_watch(target, watcher)
+
+/proc/rel_unobserve(datum/target, datum/watcher)
+	_rel_unwatch(target, watcher)
+
 /// changed() raised on `target`: marks every live source that watches it through a relation view.
 /proc/rel_notify_watchers(datum/target)
 	for(var/key in target.rel_watchers)

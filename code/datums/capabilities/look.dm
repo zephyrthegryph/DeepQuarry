@@ -30,6 +30,12 @@
 	/// look.identity(): the name and description shown, or null (unchanged).
 	var/identity_name
 	var/identity_desc
+	/// look.effect(): list(proc_ref, args...) entries run on the holder, after the look is applied, outside the output.
+	var/list/effects
+	/// look.watch(): own keys of the other entities this draw read (a hat's sprite, a container's contents): a change on any of them redraws the holder.
+	var/list/watched
+	/// look.one_blocker(): the look owns a single emissive blocker, so applying it never stacks the generic blocker again.
+	var/one_blocker = FALSE
 	/// Anything was set: a type that draws nothing keeps its mapped appearance.
 	var/touched = FALSE
 
@@ -54,6 +60,9 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	held_state = null
 	identity_name = null
 	identity_desc = null
+	effects = null
+	watched = null
+	one_blocker = FALSE
 	touched = FALSE
 
 /// The base icon_state. The last call wins (a capability's broken state is overridden by a type
@@ -144,6 +153,78 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 			entry[3] = TRUE
 			return
 	LAZYADD(parts, list(list("[name]", wanted, TRUE)))
+
+/**
+ * An effect of this look that is not drawing: `proc_ref(args...)` runs on the holder once the look has been applied (the look changed), outside
+ * the output, so it may write state, start a sound loop or call another entity. Draw stays pure (it only names the effect); a
+ * state-bound effect (a value that must follow a var even when the look does not change) is on_change(). Effects are part of the change
+ * key, so a draw that stops naming one does not leave it behind, and one that names a different value runs again. Only `when` is true.
+ *	look.effect(PROC_REF(add_eyes), has_eye_glow)
+ */
+/datum/look/proc/effect(proc_ref, ...)
+	touched = TRUE
+	if(isnull(proc_ref))
+		return
+	LAZYADD(effects, list(args.Copy()))
+
+/// effect() only `when` is true: the condition first, so `look.effect_if(vore_eyes, PROC_REF(add_eyes))` reads like the legacy `if(vore_eyes) add_eyes()`.
+/datum/look/proc/effect_if(when, proc_ref, ...)
+	touched = TRUE
+	if(!when || isnull(proc_ref))
+		return
+	LAZYADD(effects, list(args.Copy(2)))
+
+/**
+ * This draw read `thing` (a hat's item_state, a container's contents, a part's look): a change published on `thing` redraws the holder, as a
+ * change of the holder's own state does. The subscription follows the draw, so a draw that stops reading `thing` stops hearing it. The thing
+ * publishes through its tracked vars or changed(); a plain var it writes is not heard. Null reads nothing.
+ */
+/datum/look/proc/watch(datum/thing)
+	if(!isdatum(thing) || QDELETED(thing))
+		return
+	LAZYOR(watched, OWN_KEY(thing))
+
+/// The look owns a single emissive blocker: it is added without the generic blocker the atom already carries, so applying and redrawing
+/// the look keeps one blocker (add_overlay() merges the movable's priority overlays into every add, which stacked a second on the first draw).
+/datum/look/proc/one_blocker()
+	one_blocker = TRUE
+	touched = TRUE
+
+/// A hat on a small mob: `hat`'s worn sprite (item_state, else icon_state, from the head icon) raised by `pixel_y`, keeping its own colour. Reads the
+/// hat's own state, so the mob hears a change of it; the mob's hat var is a relation or a changed() request.
+/datum/look/proc/hat(obj/item/hat, pixel_y = 0, icon = 'icons/inventory/head/mob.dmi')
+	touched = TRUE
+	if(!hat)
+		return
+	watch(hat)
+	LAZYADD(overlays, look_overlay_image(icon, hat.item_state ? hat.item_state : hat.icon_state, pixel_y = pixel_y, appearance_flags = RESET_COLOR))
+
+/**
+ * The base state of a living mob by what it is doing: `living` while awake and well (or while resting with no resting sprite), `dead` when dead,
+ * `rest` while unconscious, resting or disabled and a resting sprite exists, else the type's own sprite. What every simple mob's legacy
+ * provider wrote into icon_state; read from stat, resting and incapacitation. Returns the state chosen.
+ *	look.life_state(src, icon_living, icon_rest, icon_dead)
+ */
+/datum/look/proc/life_state(mob/living/M, living, rest, dead)
+	var/chosen
+	var/disabled = M.incapacitated(INCAPACITATION_DISABLED)
+	if((M.stat == CONSCIOUS) && (!rest || !M.resting || !disabled))
+		chosen = living
+	else if(M.stat >= DEAD)
+		chosen = dead
+	else if(((M.stat == UNCONSCIOUS) || M.resting || disabled) && rest)
+		chosen = rest
+	else
+		chosen = initial(M.icon_state)
+	return state(chosen)
+
+/// A mob's glowing eyes: the "<state>-eyes" sprite of its icon, above the lighting plane (so it glows in the dark), tinted `color` when given.
+/// What add_eyes()/remove_eyes() hung on the mob; the draw only says whether they show.
+/datum/look/proc/eyes(atom/holder, state, color, when = TRUE)
+	touched = TRUE
+	if(!when || isnull(state))
+		return
+	LAZYADD(overlays, look_overlay_image(holder.icon, "[state]-eyes", plane = PLANE_LIGHTING_ABOVE, color = color, appearance_flags = holder.appearance_flags))
 
 /// Another icon file for the base state.
 /datum/look/proc/set_icon(file)
@@ -335,6 +416,13 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	if(filters)
 		for(var/name in filters)
 			parts += "[name]=[json_encode(filters[name])]"
+	for(var/list/entry in effects)
+		var/list/bits = list()
+		for(var/bit in entry)
+			bits += "[bit]"
+		parts += "fx:[jointext(bits, ":")]"
+	if(one_blocker)
+		parts += "one_blocker"
 	if(vis)
 		for(var/atom/movable/thing as anything in vis)
 			parts += "vis:[SHARED_CACHE_UID(thing)]"
@@ -360,6 +448,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 #define LOOK_SET_PLANE (1<<6)
 #define LOOK_SET_LAYER (1<<7)
 #define LOOK_SET_LIGHT (1<<8)
+#define LOOK_SET_ONE_BLOCKER (1<<9)
 
 /atom
 	/// LOOK_SET_* for the base properties the last applied look set (taken back when a look stops
@@ -441,6 +530,8 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		now |= LOOK_SET_LIGHT
 	else if(was & LOOK_SET_LIGHT)
 		A.set_light(0)
+	if(one_blocker)
+		now |= LOOK_SET_ONE_BLOCKER
 	A.look_set_bits = now
 	if(!isnull(identity_name))
 		A.name = identity_name
@@ -452,7 +543,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 			held_item.item_state = held_state
 			look_redraw_worn(held_item)
 	if(A.look_overlays)
-		A.cut_overlay(A.look_overlays)
+		A.cut_overlay(A.look_overlays, merge_priority = !(was & LOOK_SET_ONE_BLOCKER))
 		A.look_overlays = null
 	var/list/added
 	for(var/name in overlays)
@@ -469,7 +560,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		if(entry[3])
 			LAZYADD(added, emissive_appearance(A.icon, state))
 	if(added)
-		A.add_overlay(added)
+		A.add_overlay(added, merge_priority = !one_blocker)
 		A.look_overlays = added
 	for(var/name in A.look_filters)
 		if(!filters || !(name in filters))
@@ -499,6 +590,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 #undef LOOK_SET_PLANE
 #undef LOOK_SET_LAYER
 #undef LOOK_SET_LIGHT
+#undef LOOK_SET_ONE_BLOCKER
 
 
 // ---- transient visuals: look_flash() ----

@@ -382,6 +382,8 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 		GLOB.derive_side_probing = FALSE
 		throw e
 	GLOB.refresh_running = outer
+	if(!outer && length(GLOB.look_effects_due))
+		look_effects_run()
 #if defined(UNIT_TESTS) && !defined(BENCHMARK)
 	// A full pass re-derived everything: the ignored changes it may have hidden are answered for.
 	if(mask == DEP_ALL && length(GLOB.derived_ignored))
@@ -495,14 +497,23 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			// last look set (overlays, filters, vis_contents, base properties).
 			L.apply_to(A)
 			A.look_key = null
+		if(apply && A.cap_data?[/datum/cap_engine_state])
+			look_watch_sync(A, null)
 		return null
 	var/key = L.change_key()
-	if(apply && key != A.look_key)
-		var/atom/outer = GLOB.refresh_applying
-		GLOB.refresh_applying = A
-		L.apply_to(A)
-		GLOB.refresh_applying = outer
-		A.look_key = key
+	if(apply)
+		// What the draw read of other entities: a change on any of them redraws A (kept in line with every draw, applied or not).
+		if(L.watched || A.cap_data?[/datum/cap_engine_state])
+			look_watch_sync(A, L.watched)
+		if(key != A.look_key)
+			var/atom/outer = GLOB.refresh_applying
+			GLOB.refresh_applying = A
+			L.apply_to(A)
+			GLOB.refresh_applying = outer
+			A.look_key = key
+			// The effects the draw named run once the refresh is over (look_effects_run()): they may write state.
+			if(L.effects)
+				GLOB.look_effects_due += list(list(A, L.effects))
 	return key
 
 /// Brings A's derived verb hides in line with hidden_verbs(). The verb store stays the only writer of a
@@ -656,3 +667,111 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	return TRUE
 
 GLOBAL_VAR_INIT(refresh_drift_expected, FALSE)
+
+
+// ---- what a look does besides drawing: effects, watches and legacy redraws (doc/rewrite/final_api.html section 13) ----
+
+/// Effects named by applied looks that have not run yet: list(atom, list(list(proc_ref, args...), ...)).
+GLOBAL_LIST_EMPTY(look_effects_due)
+/// Effects run so far (the draw framework tests read it).
+GLOBAL_VAR_INIT(look_effects_ran, 0)
+
+/// Runs the effects applied looks named (look.effect()), each as `proc_ref(args...)` on the holder, outside any output: they may write
+/// state, start a sound loop or call another entity, and what they write raises its own marks (a redraw waits for the next pass).
+/proc/look_effects_run()
+	var/list/due = GLOB.look_effects_due
+	GLOB.look_effects_due = list()
+	for(var/list/entry in due)
+		var/atom/holder = entry[1]
+		if(QDELETED(holder))
+			continue
+		for(var/list/effect in entry[2])
+			var/list/call_args = effect.Copy(2)
+			GLOB.look_effects_ran++
+			try
+				call(holder, effect[1])(arglist(call_args))
+			catch(var/exception/e)
+				stack_trace("look effect [effect[1]] of [holder.type]: [e] ([e.file]:[e.line])")
+
+/// Brings `A`'s subscriptions to other entities in line with what its draw reads now (`keys`: own keys, null for none). The record is kept
+/// in the atom's engine state, which only an atom that has watched something (or kept a cooldown or a flash) owns.
+/proc/look_watch_sync(atom/A, list/keys)
+	var/datum/cap_engine_state/engine = keys ? cap_engine_state_make(A) : cap_engine_state_of(A)
+	if(!engine)
+		return
+	var/list/was = engine.look_watching
+	for(var/key in was)
+		if(!(key in keys))
+			var/datum/gone = own_locate(key)
+			if(gone)
+				rel_unobserve(gone, A)
+	for(var/key in keys)
+		if(!(key in was))
+			var/datum/seen = own_locate(key)
+			if(seen)
+				rel_observe(seen, A)
+	engine.look_watching = keys
+
+/// Atoms whose type draws through update_icon() (a declared appearance or an override), by type: 1 yes, 0 no; unknown until its first redraw.
+GLOBAL_LIST_EMPTY(type_legacy_draw)
+/// Set while the first redraw of a type runs, to see whether the base update_icon() was reached by an override.
+GLOBAL_VAR_INIT(update_icon_probing, FALSE)
+GLOBAL_DATUM(update_icon_probe_target, /atom)
+/// What the probe saw of the target's base update_icon(): reached with no override in between, or through an override's ..().
+GLOBAL_VAR_INIT(update_icon_base_direct, FALSE)
+GLOBAL_VAR_INIT(update_icon_base_via_override, FALSE)
+/// The atom whose update_icon() runs on the presentation lane now: a redraw request it raises meanwhile is its own.
+GLOBAL_DATUM(legacy_redrawing, /atom)
+
+/**
+ * A redraw request from code that does not know whether the type draws: `redraw(A)` is the spelling of `A.update_icon()` for every atom. A drawn
+ * type is redrawn by the look refresh the request marks; a type that still draws through update_icon() (a declared appearance or an
+ * override) also gets its update_icon() on the spot, as the call it replaces; a type that draws nothing costs a list read after its first
+ * request. changed(A) is a state mark: it never runs a legacy update_icon() (the declared appearance watches do).
+ */
+/proc/redraw(atom/A)
+	if(!A || QDELETED(A))
+		return
+	var/known = GLOB.type_legacy_draw[A.type]
+	if((isnull(known) || known) && A != GLOB.legacy_redrawing) // null == 0 in DM: an unprobed type must not be taken for a probed one
+		legacy_redraw(A)
+	// The look only: no OM channel is raised, so the machine pipelines that wake on CHANGE_EXPLICIT stay asleep, as they did for update_icon().
+	if(refresh_wanted(A))
+		refresh_mark(A, DEP_DRAW)
+	else
+		refresh_mark_owner(A, DEP_DRAW, 0)
+
+/// update_icon() of one atom through redraw(): the first of a type also learns whether it draws that way (the base update_icon() reached
+/// directly, with no declared appearance, means it never did).
+/proc/legacy_redraw(atom/A)
+	var/atom/outer = GLOB.legacy_redrawing
+	GLOB.legacy_redrawing = A
+	var/probe = isnull(GLOB.type_legacy_draw[A.type])
+	if(probe)
+		GLOB.update_icon_probing = TRUE
+		GLOB.update_icon_probe_target = A
+		GLOB.update_icon_base_direct = FALSE
+		GLOB.update_icon_base_via_override = FALSE
+	try
+		A.update_icon()
+	catch(var/exception/e)
+		GLOB.update_icon_probing = FALSE
+		GLOB.update_icon_probe_target = null
+		GLOB.legacy_redrawing = outer
+		throw e
+	if(probe)
+		GLOB.update_icon_probing = FALSE
+		GLOB.update_icon_probe_target = null
+		var/datum/lifecycle_decls/decls = lifecycle_decls_of(A)
+		// An override (its ..() reached the base, or the base was never reached) or a declared appearance: update_icon() draws.
+		GLOB.type_legacy_draw[A.type] = (GLOB.update_icon_base_via_override || !GLOB.update_icon_base_direct || decls?.appearance_draws) ? 1 : 0
+	GLOB.legacy_redrawing = outer
+
+/// The base update_icon() was reached while a type is probed: directly (not through an override's ..()) means the type has no override.
+/proc/legacy_probe_note(atom/who, callee/caller)
+	if(who != GLOB.update_icon_probe_target)
+		return // another atom's update_icon() reached from the target's
+	if(derive_called_by_override(caller, "update_icon"))
+		GLOB.update_icon_base_via_override = TRUE
+	else
+		GLOB.update_icon_base_direct = TRUE
