@@ -81,7 +81,7 @@ impl CheckGrep {
         let mut keys: Vec<&'static str> = Vec::new();
         for p in &parts {
             for f in &p.flt {
-                if let Flt::DropPaths(k) = f {
+                if let Flt::DropPaths(k) | Flt::KeepPaths(k) = f {
                     if !keys.contains(k) {
                         keys.push(k);
                     }

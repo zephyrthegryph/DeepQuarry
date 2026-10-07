@@ -163,6 +163,17 @@ pub fn parts() -> Vec<Part> {
             line(r"^DECLARE_PERIODIC(_WHILE|_WHILE_ALL)?\(|^/[A-Za-z0-9_/]*/machine_step\("),
         )
         .flt(vec![Flt::Keep(r"^code/game/(objects|turfs)/".into())]),
+        // The legacy declaration forms of the sweeps (interactions, damage reactions, emag, periodics, repeats): a hard ban in the folders that reached
+        // zero (`legacy_forms_converted` in tools/ci/lint_scopes.toml). A folder is added when its last site is converted, never taken off.
+        Part::new(
+            "legacy_declaration_forms_banned_in_converted_folders",
+            "legacy declaration forms: banned in the converted folders",
+            "DECLARE_INTERACTIONS/EXTEND_INTERACTIONS/declare_interactions(), DAMAGE_REACTION(_AFTER), DECLARE_EMAG(_REPEATABLE), DECLARE_PERIODIC* or DECLARE_REPEAT in a folder listed under legacy_forms_converted. Declare op(...) entries, extend(/datum/act/hit/x, ...) or on_notice(/datum/notice/hit/x, ...), emag(then(...)) and every(interval, then(...), when =) in the type's CAPABILITIES block.",
+            Files::Code,
+            line(r"^(DECLARE_INTERACTIONS|EXTEND_INTERACTIONS)\(|^/[A-Za-z0-9_/]+/declare_interactions\(|^DAMAGE_REACTION(_AFTER)?\(|^DECLARE_EMAG(_REPEATABLE)?\(|^DECLARE_PERIODIC(_WHILE|_WHILE_ALL)?\(|^DECLARE_REPEAT\("),
+        )
+        .flt(vec![Flt::KeepPaths("legacy_forms_converted")])
+        .allow(Allow::Strict),
         Part::new(
             "bump_ratchet_on_bumped_overrides",
             "bump: ratchet on Bumped() overrides",

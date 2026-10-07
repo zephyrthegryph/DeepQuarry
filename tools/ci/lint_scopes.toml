@@ -253,6 +253,9 @@ core = [
 # check_grep.sh: the path allowlists of its `grep -v` stages. An entry is an exact file, or a
 # directory when it ends in `/`. The key is read by the part's DropPaths("<key>").
 [lint.check_grep.lists]
+# The folders (a directory ends in `/`, else an exact file) where the legacy declaration forms of the sweeps (DECLARE_INTERACTIONS and EXTEND_INTERACTIONS,
+# DAMAGE_REACTION, DECLARE_EMAG, DECLARE_PERIODIC, DECLARE_REPEAT) reached zero: a hard ban there. Folders are only ever added.
+legacy_forms_converted = []
 call_ext_allow = [
   "code/__defines/verdigris/_bindings.dm", "code/__defines/rust_g.dm", "code/__defines/vchatlog.dm",
   "code/__byond_version_compat.dm", "code/modules/debugging/tracy.dm", "code/modules/debugging/debugger.dm",
