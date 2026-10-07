@@ -371,7 +371,7 @@
 /datum/unit_test/dq_om_events_on_lanes/Run()
 	var/datum/event_meta/EM = new(EVENT_LEVEL_MUNDANE, "Lane test", /datum/event/nothing, 0, add_to_queue = FALSE)
 	var/datum/event/E = new /datum/event/nothing(EM)
-	TEST_ASSERT(E.periodic_pipe == PERIODIC_SLOW, "a new event is not on the slow lane")
+	TEST_ASSERT(isnull(E.periodic_pipe), "a new event steps from its every(), not from a legacy lane")
 	E.kill()
 	TEST_ASSERT(!om_task_periodic_running(E), "a killed event kept its lane")
 	own_remove(SSevents, nameof(/datum/system/events::finished_events), E) // the service owns finished events
