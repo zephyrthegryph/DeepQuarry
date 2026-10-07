@@ -1,5 +1,35 @@
 use super::*;
 #[test]
+fn retained_parent_projection_preserves_native_header_and_physical_identity() {
+    let mut dmb=byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_template.bin")).unwrap();
+    let mut symbols=crate::engine::EngineSnapshot::from_bytes(include_bytes!("../../../fixtures/native_template.bin"),1).unwrap().symbols().clone();
+    let mut inventory=dm_link::LinkInventory::default();
+    let mut ids=BTreeMap::new();
+    for path in ["/client","/datum"] {
+        let index=dmb.classes.iter().position(|class|dmb.string(class.path_string_id())==Some(path.as_bytes())).unwrap() as u32;
+        let symbol=symbols.intern(path).unwrap();
+        ids.insert(path,(symbol,index));
+        inventory.spellings.push((symbol,Arc::from(path.as_bytes())));
+        inventory.entries.push(dm_link::Entry {key:Key::Type(symbol),content:Arc::from([])});
+        inventory.fixed.push((Key::Type(symbol),index));
+    }
+    let (client,client_index)=ids["/client"];
+    let (datum,datum_index)=ids["/datum"];
+    let original=dmb.classes[client_index as usize].clone();
+    let count=dmb.classes.len();
+    let projection=ClassProjection {
+        shared_slot_order:Arc::from([]),procedure_statics:Arc::from([]),runtime_writes:Arc::from([]),
+        tree_identity:0,occurrence_count:0,fields:Arc::from([]),chains:Arc::from([]),
+        types:Arc::from([TypeProjection {path:client,parent:Some(datum)}]),
+    };
+    let tables=dm_link::LinkTables::build(inventory).unwrap();
+    materialize_types(&mut dmb,&projection,&tables,&symbols).unwrap();
+    let mut expected=original;
+    expected.initial_ids[1]=datum_index;
+    assert_eq!(dmb.classes[client_index as usize],expected);
+    assert_eq!(dmb.classes.len(),count);
+}
+#[test]
 fn procedure_literal_default_uses_exact_frozen_procedure_table_index() {
     let bytes = include_bytes!("../../../fixtures/native_template.bin");
     let engine = crate::engine::EngineSnapshot::from_bytes(bytes, 1).unwrap();

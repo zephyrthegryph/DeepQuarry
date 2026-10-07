@@ -1,0 +1,32 @@
+{
+  "template_sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "observation": "Normalized /client differs only parent None to /datum and authored example declaration flags0 Null; no other /client prototype/default metadata differences reported",
+  "limits": "Finite /client direct engine-parent change only; no arbitrary builtin reparenting or inherited-default projection rule proven",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "sha256": "2b4a36b3152af89c2af116c71c13e3d20ee2acb0c8cbc4b468d8e2d388727ae0"
+    },
+    {
+      "path": "compile.log",
+      "sha256": "4f4731ffce41b370ca74b972ec956145fb4b38ffc9fd2a4d12872e2d6ab5b144"
+    },
+    {
+      "path": "compile.stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "normalized-class-diff.log",
+      "sha256": "62d340a94e9eba11dcae34c7360c8b7c934ba4799f8b66297d078bccd5866f74"
+    },
+    {
+      "path": "probe.dme",
+      "sha256": "5c8e33b3f560b187fb844aac2b09d21e092cae42fefec82402d4e4643d9ee5b8"
+    },
+    {
+      "path": "probe.native.bin",
+      "sha256": "0875b6ee8f38711f164b08c0d0b84ca9445388932d1c04e8b080c1ed31fef6fb"
+    }
+  ]
+}

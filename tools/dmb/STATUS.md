@@ -11,6 +11,10 @@ projection. External time was 28.639 s, sampled private memory 3,053,125,632
 bytes; no DMB/RSC pair was produced. This is failed-attempt latency, not a cold
 build benchmark. The next integration task is identifying and projecting the
 retained class whose captured parent differs from its source-model parent.
+The source explicitly reparents `/client` to `/datum`; a captured native control
+shows only that edge change and its authored test field. The writer now projects
+the parent edge while preserving the complete native class payload and physical
+identity; its focused preservation gate passes. The next release probe is pending.
 Release probe 33 stopped during initializer codegen after 16.460 s, with sampled
 private memory 1,887,870,976 bytes. The exact-global correction exposed an old
 initializer target check that still expected a raw root variable name. Both paths

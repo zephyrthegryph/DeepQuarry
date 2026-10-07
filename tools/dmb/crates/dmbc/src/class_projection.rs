@@ -489,11 +489,10 @@ pub fn materialize_types(
                         ProjectionError::Unsupported("unbound retained class parent".into())
                     })?,
             };
-            if dmb.classes[retained_index as usize].initial_ids[1] != expected_parent {
-                return Err(ProjectionError::Unsupported(
-                    "retained engine inheritance change requires explicit record projection".into(),
-                ));
-            }
+            // Authored parent_type changes the parent edge, not the retained
+            // engine class identity or its opaque native header metadata.
+            // Apply before cloning retained prototypes for fresh descendants.
+            dmb.classes[retained_index as usize].initial_ids[1] = expected_parent;
             continue;
         }
         if (index as usize) < dmb.classes.len()
