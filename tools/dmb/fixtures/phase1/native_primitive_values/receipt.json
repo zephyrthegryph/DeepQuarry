@@ -1,0 +1,153 @@
+{
+  "schema": 1,
+  "version": "516.1687",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "inspector_sha256": "3a16ad445c13c74a7126a0742f8d95561bc79a6b0cc22a83e2868ba53f4dc197",
+  "runtime_executed": false,
+  "cases": [
+    {
+      "name": "alist-new",
+      "accepted": true,
+      "files": [
+        {
+          "sha256": "b38cd73af59e48faacd7a8e5f5fe91d0a898ed35488e160ccc354cbcd711f719",
+          "path": "compile.log"
+        },
+        {
+          "sha256": "0f80243f163bebdb46ac51825398510a3d458b127820196c28ce9a4bdec6452c",
+          "path": "proc0.txt"
+        },
+        {
+          "sha256": "f25fbacdd3089a0f567a7ffbbbdcc405b44537e83cf3d8b311cc113eda002c1b",
+          "path": "project.dme"
+        },
+        {
+          "sha256": "e1007bf88782b4c7dc27934efb701ad09538d6f4c916f086d0be8e31347f5d3f",
+          "path": "project.native.bin"
+        }
+      ]
+    },
+    {
+      "name": "alist-path",
+      "accepted": true,
+      "files": [
+        {
+          "sha256": "b38cd73af59e48faacd7a8e5f5fe91d0a898ed35488e160ccc354cbcd711f719",
+          "path": "compile.log"
+        },
+        {
+          "sha256": "4aa176b7f4409ea986c6065911738dc5d8a6eeb1176f742d2b56cac487906f13",
+          "path": "proc0.txt"
+        },
+        {
+          "sha256": "c567387feb44e600b85c2c340ecf6ac6e0facb3c980b6d59c41582ff27b03401",
+          "path": "project.dme"
+        },
+        {
+          "sha256": "4912aa82adcaefb16b1349984ee6fb6b3ef8b0b73da3ea7d03c1fd50e482c0af",
+          "path": "project.native.bin"
+        }
+      ]
+    },
+    {
+      "name": "file-new",
+      "accepted": false,
+      "files": [
+        {
+          "sha256": "98f18c4fde8b6e9021e33aa2a945c7d66614d7d954c8182a1973647dace69df1",
+          "path": "compile.log"
+        },
+        {
+          "sha256": "796bb1dd2f71c5af9b1b994c46f5009a0982e577b278dfcde868be43a071c3da",
+          "path": "project.dme"
+        }
+      ]
+    },
+    {
+      "name": "file-path",
+      "accepted": false,
+      "files": [
+        {
+          "sha256": "d9299f78e9d746843a9d2e845495f295a916db71725b979886265bd15223eba3",
+          "path": "compile.log"
+        },
+        {
+          "sha256": "e2facee9f0755b9e9ee6cd9d30d28f3cba73f4f4d527fe5b29a2afd573873187",
+          "path": "project.dme"
+        }
+      ]
+    },
+    {
+      "name": "savefile-new",
+      "accepted": true,
+      "files": [
+        {
+          "sha256": "b38cd73af59e48faacd7a8e5f5fe91d0a898ed35488e160ccc354cbcd711f719",
+          "path": "compile.log"
+        },
+        {
+          "sha256": "59e3bf9d7ed33a8a5e9c264d5103e4204e1ea586def0ad1afdd85ba34030852c",
+          "path": "proc0.txt"
+        },
+        {
+          "sha256": "f2fa34ae4717eb9bac9f1d2d0e5ebd4628d0dfb7aa1028989fd830a8589ed5ff",
+          "path": "project.dme"
+        },
+        {
+          "sha256": "5ae0ad84fffb27e3c2658fa96c597922b4d471a0d9090b03110e9e3f788f0521",
+          "path": "project.native.bin"
+        }
+      ]
+    },
+    {
+      "name": "savefile-path",
+      "accepted": true,
+      "files": [
+        {
+          "sha256": "b38cd73af59e48faacd7a8e5f5fe91d0a898ed35488e160ccc354cbcd711f719",
+          "path": "compile.log"
+        },
+        {
+          "sha256": "ad83c78edc68f5e3d938823c1da0595506f0cce53b08be78659cfbcf6c8dac18",
+          "path": "proc0.txt"
+        },
+        {
+          "sha256": "b3fbfc5a6001f355e70e8cb03f7eed094edf86d4ecadf10d793fe45511703dbf",
+          "path": "project.dme"
+        },
+        {
+          "sha256": "1c788edfca3d69e0d29a0434b05dc8fd6322e5393e1b9acfec277777f01dacba",
+          "path": "project.native.bin"
+        }
+      ]
+    },
+    {
+      "name": "world-new",
+      "accepted": false,
+      "files": [
+        {
+          "sha256": "3b4b56e25ccd1819841783475201f3262a381607424e502167594214afe95ace",
+          "path": "compile.log"
+        },
+        {
+          "sha256": "7d30afd907cf24ac4216a9fdddc30455328f9c5f600dd8e800bfdf2ffa1f3afb",
+          "path": "project.dme"
+        }
+      ]
+    },
+    {
+      "name": "world-path",
+      "accepted": false,
+      "files": [
+        {
+          "sha256": "d39274ad1a2c42dc198612183168b8f002e459c2cb33d92bacf3257326bcf2a9",
+          "path": "compile.log"
+        },
+        {
+          "sha256": "6afad05fd1292b32ea812e50b32d508bc0198185568847aaf0fec191d77fcd44",
+          "path": "project.dme"
+        }
+      ]
+    }
+  ]
+}
