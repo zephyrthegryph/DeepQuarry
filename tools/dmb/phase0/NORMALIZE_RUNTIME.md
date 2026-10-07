@@ -14,6 +14,12 @@ Baseline format inspected read-only: E:/projects/CHOMPStation2/tools/dmb/target/
 
 ## Finalization eligibility and provenance
 
+When a replay mirror contains both an inherited top-level raw log and a fresh
+run-specific raw log, finalization selects only the sibling of the unique
+structured log. `evidence.json` records the excluded log paths, sizes, hashes and
+selection reason. Ambiguous structured channels or a raw channel outside that
+selected directory are rejected rather than combined with this run's events.
+
 Use `finalize_baseline.py` after all six corrected receipts prove normal completion.
 It checks pinned external-fixture identity and rejects an explicitly ineligible
 runtime overlay. Earlier complete-but-missing-fixture observations stay separate

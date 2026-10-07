@@ -140,6 +140,7 @@ def main():
         raise ValueError('Frozen snapshot receipt required')
     out.mkdir(parents=True)
     evidence = []
+    excluded_logs = []
     command = [sys.executable, str(Path(__file__).with_name('normalize_runtime.py'))]
     for label, source in sorted(selected.items()):
         target = out / 'inputs' / label.replace(':', '-')
@@ -155,8 +156,21 @@ def main():
         if structured:
             files.append((structured[0], 'runtime.log.json'))
         raw = list(source.rglob('runtime-errors.log'))
-        if len(raw) == 1:
+        # Runtime mirrors can contain a historical top-level log. Only the
+        # sibling of this run's unique structured channel is attributable to
+        # the current invocation; never combine inherited events with it.
+        selected_raw = [path for path in raw if structured and path.parent == structured[0].parent]
+        if structured and len(selected_raw) == 1:
+            files.append((selected_raw[0], 'runtime-errors.log'))
+            for path in raw:
+                if path != selected_raw[0]:
+                    excluded_logs.append({'label': label, 'path': str(path),
+                                          'bytes': path.stat().st_size, 'sha256': sha256(path),
+                                          'reason': 'Not a sibling of the selected run-specific structured log.'})
+        elif len(raw) == 1 and not structured:
             files.append((raw[0], 'runtime-errors.log'))
+        elif raw and structured:
+            raise ValueError(f'No attributable sibling raw runtime log for {label}')
         elif len(raw) > 1:
             raise ValueError(f'Multiple raw runtime logs for {label}')
         for name in ('stdout.log', 'stderr.log'):
@@ -198,7 +212,7 @@ def main():
                                    'variable': len(set(values)) > 1,
                                    'normal_exit_gate_passed': all(value == 0 for value in values)}
     normal_exit_gate = all(value['normal_exit_gate_passed'] for value in exit_outcomes.values())
-    manifest = {'normal_exit_gate_passed': normal_exit_gate, 'exit_outcomes': exit_outcomes, 'engine_closure_coverage': closure_coverage, 'pinned_engine_manifest_sha256': sha256(engine_manifest), 'evidence': evidence, 'snapshot_receipt': str(snapshot),
+    manifest = {'normal_exit_gate_passed': normal_exit_gate, 'exit_outcomes': exit_outcomes, 'engine_closure_coverage': closure_coverage, 'pinned_engine_manifest_sha256': sha256(engine_manifest), 'evidence': evidence, 'excluded_logs': excluded_logs, 'snapshot_receipt': str(snapshot),
                 'snapshot_sha256': sha256(snapshot), 'normalizer_command': command,
                 'receipts': {label: value for label, (_, value) in receipts.items()},
                 'seed_policy': 'Preserved compiled seeds; receipt/log observations only, no inferred override.'}
