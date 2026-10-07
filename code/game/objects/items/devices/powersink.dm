@@ -26,12 +26,11 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /// 0 = off, 1 = clamped (off), 2 = operating
-OM_FIELD(/obj/item/powersink, mode, 0, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/item/powersink, operating, list("mode"))
-// Drains the attached powernet while operating.
-DECLARE_PERIODIC_WHILE(/obj/item/powersink, PERIODIC_SLOW, "operating")
+/obj/item/powersink/var/mode = 0
+TRACKED(/obj/item/powersink, mode)
 
-/obj/item/powersink/proc/operating()
+/// Whether the sink drains (its every() gate, polled).
+/obj/item/powersink/proc/operating(datum/act/A)
 	return mode == 2
 
 /obj/item/powersink/proc/screwdriver_used(datum/act/op/A)
@@ -62,6 +61,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/powersink, PERIODIC_SLOW, "operating")
 
 
 CAPABILITIES(/obj/item/powersink)
+	// Drains the attached powernet while operating.
+	every(2 SECONDS, then(PROC_REF(powersink_step)), when = PROC_REF(operating))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
@@ -116,7 +117,7 @@ CAPABILITIES(/obj/item/powersink)
 	return 1
 
 /// Every 2 s while operating: drain the attached powernet (and its APCs), then dissipate.
-/obj/item/powersink/periodic_step()
+/obj/item/powersink/proc/powersink_step(datum/act/timer/A)
 	drained_this_tick = 0
 	PN = attached()?.get_power_region() || 0
 	pwr_drain()

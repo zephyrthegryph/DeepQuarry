@@ -49,31 +49,33 @@
 		use(1, user)
 
 /**
- * Generic use: a customisation kit on any item. It goes ahead of every other item
+ * Generic use: a customisation kit on any item (the kit_customize ops of CAPABILITIES(/obj/item)). It goes ahead of every other item
  * interaction, as the old /obj/item/attackby override ran before the converted ones,
  * except on suits whose own handling ran first and could refuse it (a worn voidsuit,
  * a protean rig): there it goes last.
  */
-/obj/item/declare_interactions(list/into)
-	..()
-	var/static/list/kit_spec = INTERACT_INSERT(/obj/item/kit, PROC_REF(interaction_kit_customize), "Customise")
+/obj/item/proc/kit_goes_last(datum/act/A)
 	var/static/list/kit_last_types = list(
 		/obj/item/clothing/head/helmet/space/void,
 		/obj/item/clothing/suit/space/void,
 		/obj/item/clothing/suit/storage/hooded,
 		/obj/item/rig,
 	)
-	var/datum/interaction/kit = dq_interaction_from_spec(/obj/item, kit_spec)
 	for(var/kit_last_type in kit_last_types)
 		if(ispath(type, kit_last_type))
-			into += kit
-			return
-	into.Insert(1, kit)
+			return TRUE
+	return FALSE
+
+/// Requirement: the kit goes ahead of the item's other uses (everything but the suits above).
+/obj/item/proc/kit_goes_first(datum/act/A)
+	return !kit_goes_last(A)
 
 /// Old attackby: a kit customises the item if it can. Either way nothing else handles the kit.
-/obj/item/proc/interaction_kit_customize(mob/user, obj/item/kit/K, datum/interaction/interaction)
+/obj/item/proc/interaction_kit_customize(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/kit/K = A.held
 	K.customize(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 // Root hardsuit kit defines.
 // Icons for modified hardsuits need to be in the proper .dmis because suit cyclers may cock them up.

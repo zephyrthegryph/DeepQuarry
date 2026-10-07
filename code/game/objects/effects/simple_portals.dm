@@ -22,6 +22,7 @@ CAPABILITIES(/obj/effect/simple_portal/linked)
 
 CAPABILITIES(/obj/effect/simple_portal)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	op("enter", observer(), label("Enter"), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(simple_portal_observer_use)))
 
 /// Something walked into it (the bump action's notice).
 /obj/effect/simple_portal/proc/bumped_into(datum/act/A)
@@ -40,13 +41,12 @@ CAPABILITIES(/obj/effect/simple_portal)
 			playsound(get_turf(src),teleport_sound,60,1)
 			playsound(get_turf(destination()),teleport_sound,60,1)
 
-EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_REF(simple_portal_observer_use)))
-
 /// Old attack_ghost: the ghost's default (examine), then through the portal.
-/obj/effect/simple_portal/proc/simple_portal_observer_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/simple_portal/proc/simple_portal_observer_use(datum/act/op/A)
+	var/mob/observer/dead/user = A.actor
 	actor_use_default(/datum/input_adapter/ghost, user, src)
 	handle_teleport(user)
-	return TRUE
+	return OP_OK
 
 /obj/effect/simple_portal/coords
 	var/tele_x

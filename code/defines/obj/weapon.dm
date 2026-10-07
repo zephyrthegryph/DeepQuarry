@@ -206,42 +206,45 @@ CAPABILITIES(/obj/item/bikehorn)
 	throw_speed = 4
 	throw_range = 20
 
-DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interaction_self)))
+MSG_DEF_SELF(camera_bug/none, "No bugged functioning cameras found.")
 
-/// Old attack_self.
-/obj/item/camera_bug/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(in_use)
-		return TRUE
+/// Using it asks which bugged camera to watch (the old attack_self).
+CAPABILITIES(/obj/item/camera_bug)
+	op("use", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(has_bugged_cameras), because = MSG(camera_bug/none))), asks(/datum/prompt/choice, fields = list("question" = "Select the camera to observe", "title" = "Select Camera", "choices" = computed(PROC_REF(camera_choices)), "timeout" = 0), step = "k232"), then(PROC_REF(interaction_self)))
 
-	var/list/cameras = new/list()
+/// The functioning bugged cameras.
+/obj/item/camera_bug/proc/bugged_cameras()
+	var/list/cameras = list()
 	for (var/obj/machinery/camera/C in REGISTRY_MEMBERS(REGISTRY_CAMERAS))
 		if (C.bugged && C.status)
 			cameras.Add(C)
-	if (length(cameras) == 0)
-		to_chat(user, span_warning("No bugged functioning cameras found."))
-		return TRUE
+	return cameras
 
-	var/list/friendly_cameras = new/list()
+/// Requirement: some bugged camera works.
+/obj/item/camera_bug/proc/has_bugged_cameras(datum/act/op/A)
+	return length(bugged_cameras()) > 0
 
-	for (var/obj/machinery/camera/C in cameras)
+/// The question's choices: the c_tags of the bugged cameras.
+/obj/item/camera_bug/proc/camera_choices(datum/act/op/A)
+	var/list/friendly_cameras = list()
+	for (var/obj/machinery/camera/C in bugged_cameras())
 		friendly_cameras.Add(C.c_tag)
+	return friendly_cameras
 
-	in_use = TRUE
-	var/target = rerun_ask(user, "k232", PROC_REF(interaction_self), args, /datum/prompt/choice, question = "Select the camera to observe", title = "Select Camera", choices = friendly_cameras)
-	if(isnull(target))
-		return TRUE
-	in_use = FALSE
-
+/// Old attack_self, after the camera is chosen.
+/obj/item/camera_bug/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
+	var/target = A.step_value("k232")
 	if (!target)
-		return TRUE
-	for (var/obj/machinery/camera/C in cameras)
+		return OP_OK
+	for (var/obj/machinery/camera/C in bugged_cameras())
 		if (C.c_tag == target)
 			target = C
 			break
-	if (user.stat == 2) return TRUE
+	if (user.stat == 2) return OP_OK
 
 	user.begin_remote_view(/datum/remote_view/item_zoom, target, null, /datum/remote_view_config/camera_standard, src, 0, FALSE)
-	return TRUE
+	return OP_OK
 
 /obj/item/pai_cable
 	desc = "A flexible coated cable with a universal jack on one end."

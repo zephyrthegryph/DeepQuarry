@@ -23,21 +23,20 @@ TYPE_TABLE_DECLARE(/obj/structure/mob_spawner, mob_spawner_types, list( \
 	/mob/living/simple_mob/animal/passive/cat = 25 \
 	))
 
+/obj/structure/mob_spawner/proximity_tracked = TRUE
+
 /obj/structure/mob_spawner/Initialize(mapload)
 	. = ..()
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay + rand(0, spawn_delay))
 
-DECLARE_PERIODIC(/obj/structure/mob_spawner, PERIODIC_SLOW)
-
 // Spawned mobs leave the list when they die (one-sided: the mob's own `nest` var is its side).
 CAPABILITIES(/obj/structure/mob_spawner)
+	every(2 SECONDS, then(PROC_REF(mob_spawner_step)), when = STAT_RELEVANCE)
 	ref_many(nameof(spawned_mobs))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
-/// Acts only while a player is near; otherwise it sleeps until one comes near.
-/obj/structure/mob_spawner/periodic_step()
-	if(!mob_near(world.view * 2, TRUE))
-		return sleep_until_mob_near(world.view * 2, TRUE)
+/// Acts only while a player is near (STAT_RELEVANCE); otherwise the every() parks until one comes near.
+/obj/structure/mob_spawner/proc/mob_spawner_step(datum/act/timer/A)
 	if(!can_spawn())
 		return
 	var/chosen_mob = choose_spawn()
@@ -131,6 +130,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	var/list/mobs_in_range
 
 CAPABILITIES(/obj/structure/mob_spawner/scanner)
+	every(2 SECONDS, then(PROC_REF(scanner_spawn_step)))
 	owns_one(nameof(prox), /datum/proximity_monitor/mobspawner)
 
 /obj/structure/mob_spawner/scanner/Initialize(mapload)
@@ -178,7 +178,11 @@ CAPABILITIES(/obj/structure/mob_spawner/scanner)
 	if((AM in mobs_in_range) && (!AM || get_dist(src,new_loc) > range))
 		rel_remove(src, nameof(mobs_in_range), AM)
 
-/obj/structure/mob_spawner/scanner/periodic_step()
+/// The scanner spawner is not gated on a player being near: it spawns on those its proximity monitor sees (its own every(); the base step does nothing here).
+/obj/structure/mob_spawner/scanner/mob_spawner_step(datum/act/timer/A)
+	return
+
+/obj/structure/mob_spawner/scanner/proc/scanner_spawn_step(datum/act/timer/timer)
 	if(!can_spawn())
 		return
 	if(COOLDOWN_FINISHED(src, spawn_cooldown))

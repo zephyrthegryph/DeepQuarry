@@ -15,6 +15,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 
 CAPABILITIES(/obj/effect/portal)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	op("enter_portal", hand(), label("Enter"), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_enter_portal)))
+	op("ghost_follow", observer(), label("Go through"), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(portal_ghost_follow)))
 
 /// Something walked into it (the bump action's notice).
 /obj/effect/portal/proc/bumped_into(datum/act/A)
@@ -39,17 +41,13 @@ CAPABILITIES(/obj/effect/portal)
 	teleport(AM)
 	return
 
-EXTEND_INTERACTIONS(/obj/effect/portal, \
-	INTERACT_HAND("Enter", PROC_REF(interaction_enter_portal)), \
-	INTERACT_OBSERVER("Go through", PROC_REF(portal_ghost_follow)), \
-)
-
 /// Old attack_hand: step through the portal.
-/obj/effect/portal/proc/interaction_enter_portal(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/portal/proc/interaction_enter_portal(datum/act/op/A)
+	var/mob/user = A.actor
 	if(istype(user) && !(isliving(user)))
-		return TRUE	//do not send ghosts, zshadows, ai eyes, etc
+		return OP_OK	//do not send ghosts, zshadows, ai eyes, etc
 	teleport(user)
-	return TRUE
+	return OP_OK
 
 /obj/effect/portal/Initialize(mapload)
 	. = ..()

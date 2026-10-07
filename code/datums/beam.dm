@@ -19,10 +19,6 @@
 CAPABILITIES(/datum/beam)
 	owns_many(nameof(elements))
 
-/// Set by Start(): beam_tick() runs every `sleep_time` while set (DECLARE_REPEAT).
-OM_FIELD_TYPED(/datum/beam, tmp, beam_running, FALSE, CHANGE_DATUM_A)
-DECLARE_REPEAT(/datum/beam, "sleep_time", beam_tick, "beam_running")
-
 /datum/beam/New(beam_origin,beam_target,beam_icon='icons/effects/beam.dmi',beam_icon_state="b_beam",time=5 SECONDS,maxdistance=10,btype = /obj/effect/ebeam,beam_sleep_time=0.3 SECONDS,new_beam_color = null)
 	..()
 	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
@@ -46,13 +42,17 @@ DECLARE_REPEAT(/datum/beam, "sleep_time", beam_tick, "beam_running")
 	Draw()
 	if(QDELETED(src))
 		return
-	set_beam_running(TRUE)
+	arm_tick()
 
-/// Every `sleep_time`: redraw if an end moved; ends the beam when it runs out or breaks.
+/// Arms the next beam_tick() a sleep_time from now.
+/datum/beam/proc/arm_tick()
+	after(src, sleep_time, PROC_REF(beam_tick), key = "beam_tick")
+
+/// Every `sleep_time` (it re-arms itself from Start()): redraw if an end moved; ends the beam when it runs out or breaks.
 /datum/beam/proc/beam_tick()
 	if(finished || !origin() || !target() || EXPIRY_EXPIRED(src, endtime, CLOCK_WORLD) || get_dist(origin(),target()) >= max_distance || origin().z != target().z)
 		lapsed(src)
-		return REPEAT_STOP
+		return
 	var/origin_turf = get_turf(origin())
 	var/target_turf = get_turf(target())
 	if(!static_beam && (origin_turf != origin_oldloc || target_turf != target_oldloc))
@@ -61,8 +61,8 @@ DECLARE_REPEAT(/datum/beam, "sleep_time", beam_tick, "beam_running")
 		Reset()
 		Draw()
 		if(QDELETED(src))
-			return REPEAT_STOP
-	set_beam_running(TRUE)
+			return
+	arm_tick()
 
 /datum/beam/proc/End()
 	finished = TRUE
@@ -162,7 +162,8 @@ DECLARE_REPEAT(/datum/beam, "sleep_time", beam_tick, "beam_running")
 // 'Reactive' beam parts do something when touched or stood in.
 /obj/effect/ebeam/reactive
 
-DECLARE_PERIODIC(/obj/effect/ebeam/reactive, PERIODIC_SLOW)
+CAPABILITIES(/obj/effect/ebeam/reactive)
+	every(2 SECONDS, then(PROC_REF(reactive_beam_step)))
 
 /obj/effect/ebeam/reactive/on_drawn()
 	for(var/A in contents_of(loc))
@@ -174,7 +175,7 @@ DECLARE_PERIODIC(/obj/effect/ebeam/reactive, PERIODIC_SLOW)
 	..()
 	on_contact(A)
 
-/obj/effect/ebeam/reactive/periodic_step()
+/obj/effect/ebeam/reactive/proc/reactive_beam_step(datum/act/timer/timer)
 	for(var/A in contents_of(loc))
 		on_contact(A)
 

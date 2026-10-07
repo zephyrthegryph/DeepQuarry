@@ -10,35 +10,41 @@
 			color = S.color
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.6)
 
-EXTEND_INTERACTIONS(/turf/simulated/floor, \
-	INTERACT_ITEM_AS(I_HELP, null, PROC_REF(floor_item)), \
-	INTERACT_ITEM_AS(I_DISARM, "Hit the floor", PROC_REF(floor_item)), \
-	INTERACT_ITEM_AS(I_GRAB, "Draw graffiti", PROC_REF(floor_item)), \
-	INTERACT_ITEM_AS(I_HURT, "Hit the floor", PROC_REF(floor_item)), \
-	INTERACT_ALT("Graffiti", PROC_REF(floor_graffiti_alt)), \
-)
+/turf/simulated/floor/proc/floor_item_help(datum/act/op/act)
+	return floor_item(act, I_HELP)
+
+/turf/simulated/floor/proc/floor_item_disarm(datum/act/op/act)
+	return floor_item(act, I_DISARM)
+
+/turf/simulated/floor/proc/floor_item_grab(datum/act/op/act)
+	return floor_item(act, I_GRAB)
+
+/turf/simulated/floor/proc/floor_item_hurt(datum/act/op/act)
+	return floor_item(act, I_HURT)
 
 /// Old attackby: the turf's own handling and signal listeners first, then graffiti, hitting the tile, roofing, and laying or replacing floor.
-/turf/simulated/floor/proc/floor_item(mob/user, obj/item/C, datum/interaction/interaction)
+/turf/simulated/floor/proc/floor_item(datum/act/op/act, stance)
+	var/mob/user = act.actor
+	var/obj/item/C = act.held
 
 	if(!C || !user)
-		return FALSE
+		return OP_DECLINE
 	var/click_parameters = dq_interaction_click_params(user)
 
 	// The turf's own handling (dig, bag pickup) and signal listeners, as the old ..() ran them first.
-	if(turf_item(user, C, interaction))
-		return TRUE
+	if(turf_item(user, C))
+		return OP_OK
 	if(attackby_stopped(src, C, user, click_parameters))
-		return TRUE
+		return OP_OK
 
 	if(isliving(user) && istype(C, /obj/item))
 		var/mob/living/L = user
-		if(interaction.stance != I_HELP)
-			if(interaction.stance == I_GRAB)
+		if(stance != I_HELP)
+			if(stance == I_GRAB)
 				try_graffiti(L, C, click_parameters) // back by unpopular demand - Add - Click parameters
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			attack_tile(C, L) // Keep combat mode off if you want to decon something.
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 	// Multi-z roof building
 	if(istype(C, /obj/item/stack/tile/roofing))
@@ -61,7 +67,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor, \
 					A = locate_in_list(cardinalTurfs, /turf/simulated/wall)
 				if(!A)
 					to_chat(user, span_warning("There's nothing to attach the ceiling to!"))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(R.use(1)) // Cost of roofing tiles is 1:1 with cost to place lattice and plating
 					T.ReplaceWithLattice()
@@ -72,7 +78,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor, \
 					expended_tile = TRUE
 			else
 				to_chat(user, span_warning("There aren't any holes in the ceiling to patch here."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 		// Create a ceiling to shield from the weather
 		if(src.is_outdoors())
@@ -85,34 +91,34 @@ EXTEND_INTERACTIONS(/turf/simulated/floor, \
 						act_message(user, null, MSG_SELF(span_notice("You roof this tile, shielding it from the elements.")), \
 							MSG_OTHERS(span_notice("%U% roofs a tile, shielding it from the elements.")))
 					break
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	// Floor has flooring set
 	if(!is_plating())
 		if(istype(C, /obj/item/stack/cable_coil))
 			to_chat(user, span_warning("You must remove the [flooring.descriptor] first."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else if(istype(C, /obj/item/stack/tile))
 			if(try_replace_tile(C, user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			else if(istype(C, /obj/item/stack/tile/floor)) // While we're at it, let's see if this is a raw patch of natural sand, dirt, or whatever that you're trying to put a plating on.
 				if(!flooring.build_type && can_be_plated && !((flooring.flags & TURF_REMOVE_WRENCH) || (flooring.flags & TURF_REMOVE_CROWBAR) || (flooring.flags & TURF_REMOVE_SCREWDRIVER) || (flooring.flags & TURF_REMOVE_SHOVEL)))
 					for(var/obj/structure/P in contents)
 						if(istype(P, /obj/structure/flora))
 							to_chat(user, span_warning("The [P.name] is in the way, you'll have to get rid of it first."))
-							return INTERACTION_HANDLED_PASS
+							return OP_PASS
 					var/obj/item/stack/tile/floor/S = C
 					if (S.get_amount() < 1)
-						return INTERACTION_HANDLED_PASS
+						return OP_PASS
 					S.use(1)
 					play_sfx(src, SFX_WEAPONS_GENHIT)
 					ChangeTurf(/turf/simulated/floor, preserve_outdoors = TRUE)
 					if(S.color)
 						color = S.color
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 		else if(istype(C, /obj/item))
 			try_deconstruct_tile(C, user)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 	// Floor is plating (or no flooring)
 	else
@@ -120,15 +126,15 @@ EXTEND_INTERACTIONS(/turf/simulated/floor, \
 		if(istype(C, /obj/item/stack/cable_coil))
 			if(broken || burnt)
 				to_chat(user, span_warning("This section is too damaged to support anything. Use a welder to fix the damage."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			var/obj/item/stack/cable_coil/coil = C
 			coil.turf_place(src, user)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		// Placing flooring on plating
 		else if(istype(C, /obj/item/stack))
 			if(broken || burnt)
 				to_chat(user, span_warning("This section is too damaged to support anything. Use a welder to fix the damage."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			var/obj/item/stack/S = C
 			var/datum/decl/flooring/use_flooring
 			for(var/flooring_type in GLOB.flooring_types)
@@ -139,15 +145,15 @@ EXTEND_INTERACTIONS(/turf/simulated/floor, \
 					use_flooring = F
 					break
 			if(!use_flooring)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			// Do we have enough?
 			if(use_flooring.build_cost && S.get_amount() < use_flooring.build_cost)
 				to_chat(user, span_warning("You require at least [use_flooring.build_cost] [S.name] to complete the [use_flooring.descriptor]."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			// Stay still and focus...
 			task_timed(user, use_flooring.build_time || 0, src, src, PROC_REF(lay_flooring), list(S, use_flooring))
-			return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+			return OP_PASS
+	return OP_PASS
 
 /turf/simulated/floor/proc/try_deconstruct_tile(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/stack/tile) && isliving(user)) //If we're hitting it with a tile, try to check our offhand

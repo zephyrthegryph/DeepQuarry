@@ -11,9 +11,19 @@
 	/// Deciseconds between steps.
 	var/step_delay = 0.5 SECONDS
 
-/// Where the spray is heading; while set, step_process() runs every step_delay.
-OM_FIELD_VIEW(/obj/effect/effect/water, turf, spray_target, CHANGE_EXPLICIT)
-DECLARE_REPEAT(/obj/effect/effect/water, "step_delay", step_process, "spray_target")
+/// Where the spray is heading (a relation, set with spraying).
+/obj/effect/effect/water/var/turf/spray_target
+/// TRUE while the spray travels towards spray_target: step_process() runs every step_delay.
+/obj/effect/effect/water/var/spraying = FALSE
+TRACKED(/obj/effect/effect/water, spraying)
+
+CAPABILITIES(/obj/effect/effect/water)
+	ref_one(nameof(spray_target), /turf)
+	every(PROC_REF(spray_delay), then(PROC_REF(step_process)), when = nameof(spraying))
+
+/// The deciseconds between steps.
+/obj/effect/effect/water/proc/spray_delay(datum/act/A)
+	return step_delay
 
 /obj/effect/effect/water/Initialize(mapload)
 	. = ..()
@@ -29,21 +39,22 @@ DECLARE_REPEAT(/obj/effect/effect/water, "step_delay", step_process, "spray_targ
 	steps_left = step_count
 	step_delay = delay
 	rel_set(src, nameof(spray_target), target)
+	set_spraying(TRUE)
 	step_process()
 
-/// Ends the spray's travel (the declared repeat stops with spray_target).
+/// Ends the spray's travel (the every() parks with spraying).
 /obj/effect/effect/water/proc/stop_spray()
 	rel_clear(src, nameof(spray_target))
-	return REPEAT_STOP
+	set_spraying(FALSE)
 
-/obj/effect/effect/water/proc/step_process()
+/obj/effect/effect/water/proc/step_process(datum/act/timer/timer)
 	var/turf/target = spray_target
 	if(!target)
-		return REPEAT_STOP
+		return
 	steps_left--
 	if(!loc)
 		consume(src)
-		return REPEAT_STOP
+		return
 	step_towards(src, target)
 	var/turf/T = get_turf(src)
 	if(T && reagents)
@@ -57,15 +68,17 @@ DECLARE_REPEAT(/obj/effect/effect/water, "step_delay", step_process, "spray_targ
 		if(M)
 			reagents.splash(M, reagents.total_volume, user = spray_actor)
 			expire(1 SECOND)
-			return stop_spray()
+			stop_spray()
+			return
 		if(T == get_turf(target))
 			expire(1 SECOND)
-			return stop_spray()
+			stop_spray()
+			return
 
 	if(steps_left > 0)
 		return
 	expire(1 SECOND)
-	return stop_spray()
+	stop_spray()
 
 /obj/effect/effect/water/Move(turf/newloc)
 	if(newloc.density)

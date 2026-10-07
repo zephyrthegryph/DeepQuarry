@@ -171,13 +171,20 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 /turf/proc/is_solid_structure()
 	return 1
 
-DECLARE_INTERACTIONS(/turf, \
-	INTERACT_ITEM(null, PROC_REF(turf_item)), \
-	INTERACT_HAND_UNGATED("Touch", PROC_REF(turf_hand)), \
-	INTERACT_DRAG("Crawl", PROC_REF(turf_drag)), \
-)
+CAPABILITIES(/turf)
+	op("turf_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(turf_item_op)))
+	op("turf_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), then(PROC_REF(turf_touch_op)))
+	op("turf_crawl", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Crawl"), then(PROC_REF(turf_drag)))
 
-/// Old attack_hand: toggle a door on the tile, or pull what you're pulling onto it. FALSE when neither.
+/// The touch op: the old attack_hand.
+/turf/proc/turf_touch_op(datum/act/op/A)
+	return turf_hand(A.actor, null, null) ? OP_OK : OP_DECLINE
+
+/// The item op: the old attackby.
+/turf/proc/turf_item_op(datum/act/op/A)
+	return turf_item(A.actor, A.held) ? OP_OK : OP_DECLINE
+
+/// Old attack_hand: toggle a door on the tile, or pull what you're pulling onto it. FALSE when neither. (Also called by name by what touches a tile for another.)
 /turf/proc/turf_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	//QOL feature, clicking on turf can toggle doors, unless pulling something
 	if(!user?.pulling_target())
@@ -208,7 +215,7 @@ DECLARE_INTERACTIONS(/turf, \
 	return 1
 
 /// Old attackby: dig the tile with a shovel; a pickup-mode bag collects the tile. Otherwise falls through.
-/turf/proc/turf_item(mob/user, obj/item/W, datum/interaction/interaction)
+/turf/proc/turf_item(mob/user, obj/item/W)
 	// Check if this turf can be dug up, check initial because we remove the flag when we've exhausted all loot, but still want to keep dig functionality
 	if((flags & TURF_CAN_DIG_SHOVEL) && !density && istype(W, /obj/item/shovel))
 		handle_turf_dig(user, W)
@@ -252,23 +259,25 @@ DECLARE_INTERACTIONS(/turf, \
 	return success
 
 /// Old MouseDrop_T: a lying mob crawls, dragging something along onto the tile.
-/turf/proc/turf_drag(mob/user, atom/movable/O, datum/interaction/interaction)
+/turf/proc/turf_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/O = A.held
 	var/turf/T = get_turf(user)
-	var/area/A = T.loc
-	if((istype(A) && !(A.get_gravity())) || (istype(T,/turf/space)))
-		return FALSE
+	var/area/area = T.loc
+	if((istype(area) && !(area.get_gravity())) || (istype(T,/turf/space)))
+		return OP_DECLINE
 	if(istype(O, /atom/movable/screen))
-		return FALSE
-	if(user.restrained() || user.stat || user.has_status(STAT_STUNNED) || user.has_status(STAT_PARALYZED) || (!user.lying && !isrobot(user)) || LAZYLEN(user?.grabbed_by_list()) || user.is_paralyzed())
-		return FALSE
+		return OP_DECLINE
+	if(user.restrained() || user.stat || user.has_status(STAT_STUNNED) || user.has_status(STAT_PARALYZED) || (!user.lying && !istype(user, /mob/living/silicon/robot)) || LAZYLEN(user?.grabbed_by_list()) || user.is_paralyzed())
+		return OP_DECLINE
 	if((!(istype(O, /atom/movable)) || O.anchored || !Adjacent(user) || !Adjacent(O) || !user.Adjacent(O)))
-		return FALSE
+		return OP_DECLINE
 	if(!isturf(O.loc) || !isturf(user.loc))
-		return FALSE
+		return OP_DECLINE
 	if(isanimal(user) && O != user)
-		return FALSE
+		return OP_DECLINE
 	task_timed(user, 25 + (5 * user.status_units(STAT_WEAKENED)), O, src, PROC_REF(crawl_drag_done), list(O, user))
-	return TRUE
+	return OP_OK
 
 /turf/proc/crawl_drag_done(atom/movable/O, mob/user)
 	if(user.stat)

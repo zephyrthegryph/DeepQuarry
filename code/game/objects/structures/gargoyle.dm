@@ -27,9 +27,9 @@
 
 /// The petrified mob (a relation view); the statue watches it every second while it holds one.
 OM_FIELD_VIEW(/obj/structure/gargoyle, mob/living/carbon/human, WR_gargoyle, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 
 CAPABILITIES(/obj/structure/gargoyle)
+	every(1 SECOND, then(PROC_REF(gargoyle_step)), when = nameof(WR_gargoyle))
 	param(nameof(petrified), pos = 1, keep = FALSE)
 	param(nameof(ident_ovr), pos = 2)
 	param(nameof(mat_ovr), pos = 3)
@@ -165,7 +165,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		visible_message(span_warning("The [identifier] loses shape and crumbles into a pile of [material]!"))
 	..()
 
-/obj/structure/gargoyle/periodic_step()
+/obj/structure/gargoyle/proc/gargoyle_step(datum/act/timer/A)
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle
 	if(!gargoyle)
 		consume(src)

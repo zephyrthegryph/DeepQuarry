@@ -104,34 +104,37 @@
 	else
 		set_light(0)
 
-EXTEND_INTERACTIONS(/turf/space, INTERACT_ITEM("Build", PROC_REF(space_build)))
+CAPABILITIES(/turf/space)
+	op("space_build", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Build"), then(PROC_REF(space_build)))
 
 /// Old attackby: rods build a lattice, tiles plate it, roofing patches the ceiling.
-/turf/space/proc/space_build(mob/user, obj/item/C, datum/interaction/interaction)
+/turf/space/proc/space_build(datum/act/op/act)
+	var/mob/user = act.actor
+	var/obj/item/C = act.held
 
 	if(istype(C, /obj/item/stack/rods))
 		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 		if(L)
 			L.upgrade(C, user)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/obj/item/stack/rods/R = C
 		if (R.use(1))
 			to_chat(user, span_notice("Constructing support lattice ..."))
 			play_sfx(src, SFX_WEAPONS_GENHIT)
 			ReplaceWithLattice()
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(C, /obj/item/stack/tile/floor))
 		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 		if(L)
 			var/obj/item/stack/tile/floor/S = C
 			if (S.get_amount() < 1)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			spent(L, user)
 			play_sfx(src, SFX_WEAPONS_GENHIT)
 			S.use(1)
 			ChangeTurf(/turf/simulated/floor/airless)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			to_chat(user, span_warning("The plating is going to need some support."))
 
@@ -148,7 +151,7 @@ EXTEND_INTERACTIONS(/turf/space, INTERACT_ITEM("Build", PROC_REF(space_build)))
 					A = locate_in_list(T.CardinalTurfs(), /turf/simulated/wall)
 				if(!A)
 					to_chat(user, span_warning("There's nothing to attach the ceiling to!"))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 
 				if(R.use(1)) // Cost of roofing tiles is 1:1 with cost to place lattice and plating
 					T.ReplaceWithLattice()
@@ -157,10 +160,10 @@ EXTEND_INTERACTIONS(/turf/space, INTERACT_ITEM("Build", PROC_REF(space_build)))
 					act_message(user, null, MSG_SELF(span_notice("You expand the ceiling.")), MSG_OTHERS(span_notice("%U% expands the ceiling.")))
 			else
 				to_chat(user, span_warning("There aren't any holes in the ceiling to patch here."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 		// Space shouldn't have weather of the sort planets with atmospheres do.
 		// If that's changed, then you'll want to swipe the rest of the roofing code from code/game/turfs/simulated/floor_attackby.dm
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /turf/space/Entered(atom/movable/A)
 	. = ..()
