@@ -68,9 +68,11 @@
 	var/log_type
 	var/list/delayed
 	var/quiet = FALSE
-	/// claims(mask): what the op holds while it waits (CLAIM_*); null when it declares none (it holds nothing: any number of ops may wait at once,
-	/// and only overlapping claims conflict). claims() alone is CLAIM_ALL.
+	/// claims(mask): what the op holds while it waits (CLAIM_*); null when it declares none (op_derive_claims fills it from the parts at table build:
+	/// hands for a wait with an item/tool/stack binding, body for a wait that keeps STAY). claims() alone is CLAIM_ALL; claims(NONE) holds nothing.
 	var/claim_mask
+	/// TRUE when claim_mask was derived from the parts (op_derive_claims), not written with claims().
+	var/claims_derived = FALSE
 	var/passes = FALSE
 	/// silent_wait(): the wait draws no progress bar.
 	var/silent_wait = FALSE
@@ -405,6 +407,7 @@
 		for(var/datum/entry/part/effect/F as anything in P.effects)
 			tier = max(tier, F.yielded_tier())
 		P.tier = tier
+	op_derive_claims(P)
 	if(length(P.captured) && !length(P.steps))
 		op_problem(T, P, report, RULE_OP_PART, "captures() on an op with no wait(), asks() or confirms()", "captures() snapshots fields when the op first suspends at a workflow step: an op without one has nothing to capture")
 	for(var/requirement in P.needs)
@@ -714,3 +717,19 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 	var/list/la = islist(a) ? a : list()
 	var/list/lb = islist(b) ? b : list()
 	return length(la) == length(lb) && !length(la ^ lb)
+
+/// The claims of an op that writes no claims(), derived once when the table is built: CLAIM_HANDS when it has a wait() and works with a held item or tool
+/// (an item(), tool() or stack() binding), CLAIM_BODY when a wait() keeps the actor in place (STAY), nothing for an op without a wait. An explicit
+/// claims() (claims(NONE) included) is never touched.
+/proc/op_derive_claims(datum/op_plan/P)
+	if(!isnull(P.claim_mask))
+		return
+	var/mask = NONE
+	for(var/datum/entry/part/wait/W in P.steps)
+		if(W.args["keeps"] & STAY)
+			mask |= CLAIM_BODY
+		for(var/datum/entry/part/bind/B as anything in P.bindings)
+			if(B.bind_kind in list(BIND_ITEM, BIND_TOOL, BIND_STACK))
+				mask |= CLAIM_HANDS
+	P.claim_mask = mask
+	P.claims_derived = TRUE

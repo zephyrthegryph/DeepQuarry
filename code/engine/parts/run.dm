@@ -457,7 +457,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			return P
 	return null
 
-/// What an op holds while it waits (CLAIM_*): exactly its claims(). An actor has any number of pending ops; only ops whose claims overlap conflict.
+/// What an op holds while it waits (CLAIM_*): its claims(), else the mask op_derive_claims() computed from its parts when the table was built. An actor has any number
+/// of pending ops; only ops whose claims overlap conflict.
 /proc/op_claim_hold(datum/op_plan/P, datum/entry/part/bind/B)
 	return isnull(P.claim_mask) ? 0 : P.claim_mask
 
@@ -1203,7 +1204,10 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 /datum/entry/part/plays/proc/feedback(datum/act/op/A)
 	var/atom/where = istype(A.target, /atom) ? A.target : A.actor
 	if(where && src.args["sfx"])
-		play_sfx(where, src.args["sfx"])
+		if(isnull(src.args["volume"]))
+			play_sfx(where, src.args["sfx"])
+		else
+			play_sfx(where, src.args["sfx"], src.args["volume"])
 
 /// The op's log line: committed ops that declared logs(), and every refusal after the op started or declared logs().
 /proc/op_log(datum/act/op/A, mob/actor, outcome, reason)

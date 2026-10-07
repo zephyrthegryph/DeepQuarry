@@ -607,8 +607,9 @@
 	stages = PART_STAGE_WAIT
 
 /// plays(SFX): the sound on commit; plays(SFX, at_start = TRUE) plays it when the op's first wait starts, with the begins() message.
-/proc/plays(sfx, at_start = FALSE)
-	return part_make(/datum/entry/part/plays, list("sfx" = sfx, "at_start" = at_start))
+/// `volume` is play_sfx()'s volume factor (plays(SFX_X, volume = 0.6)).
+/proc/plays(sfx, at_start = FALSE, volume = null)
+	return part_make(/datum/entry/part/plays, list("sfx" = sfx, "at_start" = at_start, "volume" = volume))
 
 /datum/entry/part/plays
 	part_name = "plays"
@@ -677,8 +678,8 @@
 ///   - CLAIM_TARGET: a second claiming op on the same target is refused (/datum/msg/op/claimed) instead of starting, and op_claimed(target) answers
 ///     TRUE so the target can draw the work (a door being pried shows its prying sprite). It lasts as long as the op is pending.
 ///   - CLAIM_HANDS and CLAIM_BODY: while a wait() step runs, the actor's next input that needs those (any physical click needs the hands) stops the
-///     wait ("You stop what you were doing."), and an AI's is refused as busy. An op with no claims() of its own holds nothing, a timed wait included:
-///     any number of such waits and questions are pending at once, and a second input never stops them.
+///     wait ("You stop what you were doing."), and an AI's is refused as busy. An op with no claims() of its own gets them derived from its parts
+///     (op_derive_claims: hands for a wait with an item/tool/stack binding, body for a wait that keeps STAY, nothing without a wait); claims(NONE) opts out.
 /// Every claim ends with the wait, however it ends.
 /proc/claims(mask = null)
 	return part_make(/datum/entry/part/claims, isnull(mask) ? null : list("mask" = mask))

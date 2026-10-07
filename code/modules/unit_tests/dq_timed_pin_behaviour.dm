@@ -234,9 +234,9 @@
 		TEST_ASSERT_EQUAL(running_count(user), 1, "a second click on the same target leaves one action running")
 		TEST_ASSERT_EQUAL(running(user), first, "the first is still the one running (the second click was refused)")
 	else
-		// An actor has any number of pending ops; only overlapping claims() conflict, and this op claims nothing: the second wait does not stop the first.
-		TEST_ASSERT_EQUAL(running_count(user), 2, "a second click starts a second wait")
-		TEST_ASSERT(first in op_pendings_of(user), "and the first is still pending")
+		// The bare-hand wait keeps the actor in place, so it derives CLAIM_BODY: the second click needs the body and stops the first wait.
+		TEST_ASSERT_EQUAL(running_count(user), 1, "a second click leaves one wait")
+		TEST_ASSERT(!(first in op_pendings_of(user)), "the first was stopped by the second")
 		test_time(8 SECONDS)
 		TEST_ASSERT(!B.deployed, "the trap is disarmed once, whichever wait ended first")
 
