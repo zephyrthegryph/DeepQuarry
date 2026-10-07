@@ -16,43 +16,16 @@ pub enum ColdStage {
     StartupCapture,
     AbiPreparation,
     Initializers,
+    InitializerClassification,
+    InitializerCodegen,
     ProcedureLowering,
     RequiredTypeAdmission,
     SymbolicLinking,
     Composition,
 }
-#[derive(Clone, Copy, Debug)]
-pub struct ColdMeasurement {
-    pub stage: ColdStage,
-    pub elapsed: Duration,
-    /// None marks entry; Some(false) marks an early failure.
-    pub succeeded: Option<bool>,
-}
-pub type ColdObserver<'a> = dyn Fn(ColdMeasurement) + 'a;
-struct StageMeasurement<'a> {
-    observer: Option<&'a ColdObserver<'a>>,
-    stage: ColdStage,
-    started: Instant,
-    succeeded: bool,
-}
-impl<'a> StageMeasurement<'a> {
-    fn new(observer: Option<&'a ColdObserver<'a>>, stage: ColdStage) -> Self {
-        if let Some(observer) = observer {
-            observer(ColdMeasurement { stage, elapsed: Duration::ZERO, succeeded: None });
-        }
-        Self { observer, stage, started: Instant::now(), succeeded: false }
-    }
-    fn complete(mut self) { self.succeeded = true; }
-}
-impl Drop for StageMeasurement<'_> {
-    fn drop(&mut self) {
-        if let Some(observer) = self.observer {
-            observer(ColdMeasurement {
-                stage: self.stage, elapsed: self.started.elapsed(), succeeded: Some(self.succeeded),
-            });
-        }
-    }
-}
+pub type ColdMeasurement = crate::stage_measurements::Measurement<ColdStage>;
+pub type ColdObserver<'a> = crate::stage_measurements::Observer<'a, ColdStage>;
+type StageMeasurement<'a> = crate::stage_measurements::Scope<'a, ColdStage>;
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct ColdTimings {
@@ -342,12 +315,25 @@ fn compile_with_startup<R: Resolver, P: AbiPolicy>(
         engine: links.engine,
         evaluator: &startup_evaluator,
     };
-    let initialization = crate::initializer_lowering::lower_captured(
+    let initializer_observer = |event: crate::initializer_lowering::InitializerMeasurement| {
+        if let Some(observer) = observer {
+            observer(ColdMeasurement {
+                stage: match event.stage {
+                    crate::initializer_lowering::InitializerStage::Classification => ColdStage::InitializerClassification,
+                    crate::initializer_lowering::InitializerStage::Codegen => ColdStage::InitializerCodegen,
+                },
+                elapsed: event.elapsed,
+                succeeded: event.succeeded,
+            });
+        }
+    };
+    let initialization = crate::initializer_lowering::lower_captured_observed(
         frontend,
         startup,
         &evaluator,
         resolver,
         declarations.resource_search_context,
+        observer.map(|_| &initializer_observer as &crate::initializer_lowering::InitializerObserver<'_>),
     )
     .map_err(initializer_lowering_error)?;
     let projection = crate::class_projection::project_classified(

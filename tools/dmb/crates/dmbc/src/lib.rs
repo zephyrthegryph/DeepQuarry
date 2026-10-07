@@ -26,6 +26,7 @@ pub mod type_creation_order;
 pub mod mob_writer;
 pub mod argument_sources;
 pub mod cold;
+pub mod stage_measurements;
 pub mod world_projection;
 pub mod client_projection;
 pub mod savefile_projection;

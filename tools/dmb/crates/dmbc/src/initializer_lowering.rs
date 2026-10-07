@@ -11,6 +11,11 @@ use dm_codegen_byond::{
 use dm_ir::{InitializerScope, Resolver};
 use dm_tree::{frontend::ColdFrontend, initializers::InitializerPlan};
 
+#[derive(Clone, Copy, Debug)]
+pub enum InitializerStage { Classification, Codegen }
+pub type InitializerMeasurement = crate::stage_measurements::Measurement<InitializerStage>;
+pub type InitializerObserver<'a> = crate::stage_measurements::Observer<'a, InitializerStage>;
+
 pub struct LoweredInitializerUnit {
     pub scope: InitializerScope,
     /// Exact selected source writes, in executable order after ABI phasing.
@@ -82,6 +87,7 @@ pub fn lower<R: Resolver>(
         host,
         resource_search_context,
         true,
+        None,
     )
 }
 
@@ -92,6 +98,16 @@ pub fn lower_captured<R: Resolver>(
     host: &R,
     resource_search_context: Option<u128>,
 ) -> Result<LoweredInitializers, InitializerLoweringError> {
+    lower_captured_observed(frontend, startup, evaluator, host, resource_search_context, None)
+}
+pub fn lower_captured_observed<R: Resolver>(
+    frontend: &ColdFrontend,
+    startup: &crate::startup::CapturedStartup<'_>,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    host: &R,
+    resource_search_context: Option<u128>,
+    observer: Option<&InitializerObserver<'_>>,
+) -> Result<LoweredInitializers, InitializerLoweringError> {
     startup.validate_for(frontend)?;
     lower_plan(
         frontend,
@@ -100,6 +116,7 @@ pub fn lower_captured<R: Resolver>(
         host,
         resource_search_context,
         false,
+        observer,
     )
 }
 
@@ -110,6 +127,7 @@ fn lower_plan<R: Resolver>(
     host: &R,
     resource_search_context: Option<u128>,
     validate_statics: bool,
+    observer: Option<&InitializerObserver<'_>>,
 ) -> Result<LoweredInitializers, InitializerLoweringError> {
     if frontend.snapshot.tree.identity() != plan.source.tree.identity()
         || frontend.snapshot.occurrences.tree_identity() != plan.source.occurrences.tree_identity()
@@ -128,6 +146,7 @@ fn lower_plan<R: Resolver>(
         crate::startup::validate(frontend, plan)?;
     }
     let symbols = plan.symbols.as_ref();
+    let measurement = crate::stage_measurements::Scope::new(observer, InitializerStage::Classification);
     let classified =
         match initializer_policy::classify_with_diagnostics(&plan.writes, symbols, evaluator) {
             Ok(classified) => classified,
@@ -156,6 +175,8 @@ fn lower_plan<R: Resolver>(
                 ));
             }
         };
+    measurement.complete();
+    let measurement = crate::stage_measurements::Scope::new(observer, InitializerStage::Codegen);
     let mut units = Vec::with_capacity(classified.groups.len());
     for group in &classified.groups {
         let mut assignments = Vec::with_capacity(group.writes.len());
@@ -286,5 +307,6 @@ fn lower_plan<R: Resolver>(
             debug_origins: debug.origins,
         });
     }
+    measurement.complete();
     Ok(LoweredInitializers { classified, units })
 }
