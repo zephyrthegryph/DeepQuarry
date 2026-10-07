@@ -235,6 +235,7 @@
 #include "code\__defines\shields.dm"
 #include "code\__defines\shock.dm"
 #include "code\__defines\shuttle.dm"
+#include "code\__defines\turbolift.dm"
 #include "code\__defines\simple_mob.dm"
 #include "code\__defines\size.dm"
 #include "code\__defines\slosh.dm"

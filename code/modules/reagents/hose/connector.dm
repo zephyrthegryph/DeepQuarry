@@ -12,16 +12,11 @@
 	var/datum/reagents/reagents = null
 	var/makes_gurgles = TRUE
 
+/// The hose plugged into this socket (a relation view). It pumps every 2 s while one is: the gate is the relation var, so the every() polls.
+OM_FIELD_VIEW_OF(/datum/hose_connector, my_hose, CHANGE_DATUM_A)
 CAPABILITIES(/datum/hose_connector)
 	owns_one(nameof(reagents), /datum/reagents)
-
-/// The hose plugged into this socket. It pumps every 2 s while one is (DECLARE_PERIODIC_WHILE).
-OM_FIELD_VIEW_OF(/datum/hose_connector, my_hose, CHANGE_DATUM_A)
-DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
-
-/datum/hose_connector/New()
-	..()
-	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
+	every(2 SECONDS, then(PROC_REF(connector_step)), when = nameof(my_hose))
 
 /// Carrier's hose sockets (/datum/hose_connector), owned: deleted with the carrier.
 /atom/movable/var/list/hose_connectors
@@ -95,7 +90,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 /datum/hose_connector/proc/connected_reagents()
 	return carrier.reagents
 
-/datum/hose_connector/periodic_step()
+/datum/hose_connector/proc/connector_step(datum/act/timer/A)
 	var/datum/reagents/connected_to = connected_reagents()
 	if(!connected_to) // Emergency. the vorebelly was deleted or something. Lets just hard lock that out from maintaining state by disconnecting the tube.
 		reagents.clear_reagents()
@@ -117,7 +112,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 /datum/hose_connector/proc/force_pump()
 	if(!my_hose)
 		return
-	periodic_step()
+	connector_step()
 	if(makes_gurgles && prob(5))
 		carrier.visible_message(span_infoplain(span_bold("\The [carrier]") + " gurgles as it pumps fluid."))
 

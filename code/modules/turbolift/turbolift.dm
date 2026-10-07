@@ -17,17 +17,14 @@
 	var/tmp/moving_upwards
 	EXPIRY_TMP_DECLARE(next_process) // world.time process() should next do something
 
+/// Used for controller processing: lift_step() drives the lift while set (every()).
+/datum/turbolift/var/tmp/busy_state
+TRACKED(/datum/turbolift, busy_state)
+
 CAPABILITIES(/datum/turbolift)
 	owns_one(nameof(control_panel_interior), /obj/structure/lift/panel)
 	owns_many(nameof(floors))
-
-/// Used for controller processing: periodic_step() drives the lift while set (DECLARE_PERIODIC_WHILE).
-OM_FIELD_TYPED(/datum/turbolift, tmp, busy_state, null, CHANGE_DATUM_A)
-DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
-
-/datum/turbolift/New()
-	..()
-	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
+	every(1 SECOND, then(PROC_REF(lift_step)), when = nameof(busy_state))
 
 /datum/turbolift/proc/emergency_stop()
 	cancel_pending_floors()
@@ -116,11 +113,8 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 		door.close()
 	return
 
-#define LIFT_MOVING    1	// Lift will try moving.
-#define LIFT_WAITING_A 2	// Waiting 15ds after arrival to announce, then goto LIFT_WAITING_B
-#define LIFT_WAITING_B 3	// Waiting floor_wait_delay after announcement before potentially moving again.
 
-/datum/turbolift/periodic_step()
+/datum/turbolift/proc/lift_step(datum/act/timer/A)
 	if(EXPIRY_ACTIVE(src, next_process, CLOCK_WORLD))
 		return
 	switch(busy_state)
@@ -238,9 +232,6 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 /datum/turbolift/proc/is_functional()
 	return 1
 
-#undef LIFT_MOVING
-#undef LIFT_WAITING_A
-#undef LIFT_WAITING_B
 
 /datum/turbolift/proc/end_priority_mode()
 	priority_mode = FALSE

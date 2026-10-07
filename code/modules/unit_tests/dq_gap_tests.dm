@@ -68,6 +68,25 @@
 	test_time(3 SECONDS)
 	TEST_ASSERT(E.ticks > seen, "woken again")
 
+/// A plain datum's type-level every() is armed by being made, parks on its tracked gate, and ends with the datum.
+/datum/unit_test/dq_gap/every_runs_on_a_plain_datum
+/datum/unit_test/dq_gap/every_runs_on_a_plain_datum/run_gap()
+	var/datum/gap_every_datum/D = new
+	test_time(5 SECONDS)
+	TEST_ASSERT(D.ticks >= 4 && D.ticks <= 5, "the ungated every() ran from creation (ran [D.ticks])")
+	TEST_ASSERT_EQUAL(D.gated_ticks, 0, "the gated one has not run")
+	D.set_active(TRUE)
+	test_time(3 SECONDS)
+	TEST_ASSERT(D.gated_ticks >= 2, "gate true: the gated one runs (ran [D.gated_ticks])")
+	D.set_active(FALSE)
+	var/gated = D.gated_ticks
+	test_time(3 SECONDS)
+	TEST_ASSERT(D.gated_ticks <= gated + 1, "gate false: it stopped")
+	var/ticks = D.ticks
+	qdel(D)
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(D.ticks, ticks, "a deleted datum's every() no longer runs")
+
 /// An instance that starts true arms at once.
 /datum/unit_test/dq_gap/every_starts_when_true
 /datum/unit_test/dq_gap/every_starts_when_true/run_gap()
@@ -581,3 +600,26 @@
 	rel_set(mindless, nameof(mindless.mmi), lost)
 	qdel(mindless)
 	TEST_ASSERT(QDELETED(lost), "a mindless borg's MMI goes with it")
+
+/// Converted datum periodics (J1): a turbolift parks while it has no busy state, steps once a second while it has one, and parks again.
+/datum/unit_test/dq_gap/datum_periodic_turbolift_steps_while_busy
+/datum/unit_test/dq_gap/datum_periodic_turbolift_steps_while_busy/run_gap()
+	var/datum/turbolift/lift = new
+	test_time(3 SECONDS)
+	TEST_ASSERT(length(lift.rx?.every_parked), "idle lift: its step is parked, holding no timer")
+	lift.set_busy_state(LIFT_WAITING_B)
+	test_time(3 SECONDS)
+	TEST_ASSERT_NULL(lift.busy_state, "its step ran and settled the state (nothing was queued)")
+	TEST_ASSERT(length(lift.rx?.every_parked), "settled: parked again")
+	qdel(lift)
+
+/// Converted datum periodic: a changeling's camouflage drain runs on its 4 s step while camo_draining is set and ends it when the owner cannot hold it.
+/datum/unit_test/dq_gap/datum_periodic_changeling_drain_follows_its_flag
+/datum/unit_test/dq_gap/datum_periodic_changeling_drain_follows_its_flag/run_gap()
+	var/datum/changeling/ling = new
+	test_time(5 SECONDS)
+	TEST_ASSERT(length(ling.rx?.every_parked), "not draining: both drains are parked")
+	ling.set_camo_draining(TRUE)
+	test_time(5 SECONDS)
+	TEST_ASSERT(!ling.camo_draining, "the drain ran and found no human owner, so it ended the camouflage")
+	qdel(ling)

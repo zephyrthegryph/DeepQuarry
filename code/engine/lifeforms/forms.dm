@@ -288,4 +288,5 @@ GLOBAL_REAL_VAR(list/lifeform_watch_keys)
 		lifeform_init(D, FALSE)
 		if(param_drop_pending?[D])
 			params_drop(D)
-		hooks_change_baseline(D)
+	hooks_change_baseline(D) // the baseline of an on_change hook, and of the wake hook of an every() below
+	type_every_arm(D, T) // a type-level every() of a plain datum: armed when it is made, on its own clock; its timers go with it (qdel)

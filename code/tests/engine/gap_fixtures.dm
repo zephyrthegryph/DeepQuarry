@@ -53,6 +53,24 @@ CAPABILITIES(/obj/gap_every)
 /obj/gap_every/running
 	active = TRUE
 
+/// A plain datum with type-level every(): one runs always, one while a tracked var is set (J1: armed when the datum is made, ends with it).
+/datum/gap_every_datum
+	var/ticks = 0
+	var/gated_ticks = 0
+	var/active = FALSE
+
+TRACKED(/datum/gap_every_datum, active)
+
+CAPABILITIES(/datum/gap_every_datum)
+	every(1 SECOND, then(PROC_REF(tick)))
+	every(1 SECOND, then(PROC_REF(gated_tick)), when = nameof(active))
+
+/datum/gap_every_datum/proc/tick(datum/act/timer/A)
+	ticks++
+
+/datum/gap_every_datum/proc/gated_tick(datum/act/timer/A)
+	gated_ticks++
+
 /// A gate that is a proc (its reads may be incomplete): the every() keeps polling instead of parking.
 /obj/gap_every_proc
 	name = "gap every proc target"

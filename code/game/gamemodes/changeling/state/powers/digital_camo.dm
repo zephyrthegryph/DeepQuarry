@@ -28,11 +28,9 @@
 	feedback_add_details("changeling_powers","CAM")
 	return 1
 
-DECLARE_REPEAT(/datum/changeling, 4 SECONDS, camo_drain, "camo_draining")
-
-/// Digital camouflage costs a chemical every 4 seconds while it lasts (DECLARE_REPEAT while camo_draining).
-/datum/changeling/proc/camo_drain()
+/// Digital camouflage costs a chemical every 4 seconds while it lasts (every() while camo_draining).
+/datum/changeling/proc/camo_drain(datum/act/timer/A)
 	if(!ishuman(owner) || !owner.digitalcamo || !owner.mind)
 		set_camo_draining(FALSE)
-		return REPEAT_STOP
+		return
 	chem_charges = max(chem_charges - 1, 0)
