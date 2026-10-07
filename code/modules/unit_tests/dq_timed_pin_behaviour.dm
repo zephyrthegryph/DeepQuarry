@@ -347,3 +347,71 @@
 	TEST_ASSERT_EQUAL(get_turf(user), dest, "carried to the destination at the end")
 	for(var/obj/effect/effect/sparks/S in range(3, dest))
 		qdel(S) // the teleport's sparks
+
+// ---- Barbed wire: deploy in hand, collect with a bare hand (the wait follows the coil's wear) ----
+
+/datum/unit_test/dq_timed_pin/barbedwire_deploy
+
+/datum/unit_test/dq_timed_pin/barbedwire_deploy/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/item/material/barbedwire/W = allocate(/obj/item/material/barbedwire, run_loc_floor_bottom_left)
+	user.put_in_active_hand(W)
+	test_chat_clear()
+	test_click(user, W, W)
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "using it in hand starts a timed action")
+	TEST_ASSERT(isnull(declared_duration(T)) || declared_duration(T) == 6 SECONDS, "it lasts six seconds")
+	TEST_ASSERT(said(user, "You begin deploying"), "it says it began")
+	test_time(5 SECONDS)
+	TEST_ASSERT(!W.anchored, "not deployed before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT(W.anchored, "deployed at the end")
+	TEST_ASSERT(said(user, "You have deployed"), "it says it finished")
+	TEST_ASSERT(!(W in user.get_all_held_items()), "and it left the hand")
+
+/datum/unit_test/dq_timed_pin/barbedwire_deploy_cancel_on_move
+
+/datum/unit_test/dq_timed_pin/barbedwire_deploy_cancel_on_move/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/item/material/barbedwire/W = allocate(/obj/item/material/barbedwire, run_loc_floor_bottom_left)
+	user.put_in_active_hand(W)
+	test_click(user, W, W)
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "using it in hand starts a timed action")
+	user.forceMove(get_step(user, EAST))
+	test_time(8 SECONDS)
+	TEST_ASSERT(!W.anchored, "moving cancels the deploy")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
+
+/datum/unit_test/dq_timed_pin/barbedwire_collect
+
+/datum/unit_test/dq_timed_pin/barbedwire_collect/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/item/material/barbedwire/W = allocate(/obj/item/material/barbedwire, run_loc_floor_bottom_left)
+	W.set_anchored(TRUE)
+	var/wait_time = W.get_integrity() / MATERIAL_WEAR_UNIT
+	test_chat_clear()
+	test_click(user, W, null)
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "a bare hand on deployed wire starts a timed action")
+	TEST_ASSERT(isnull(declared_duration(T)) || declared_duration(T) == wait_time, "it lasts as long as the coil's wear says")
+	TEST_ASSERT(said(user, "You begin collecting"), "it says it began")
+	test_time(wait_time - 10)
+	TEST_ASSERT(W.anchored, "still deployed before the end")
+	test_time(20)
+	TEST_ASSERT(!W.anchored, "collected at the end")
+	TEST_ASSERT(said(user, "You have collected"), "it says it finished")
+
+/datum/unit_test/dq_timed_pin/barbedwire_collect_cancel_on_move
+
+/datum/unit_test/dq_timed_pin/barbedwire_collect_cancel_on_move/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/item/material/barbedwire/W = allocate(/obj/item/material/barbedwire, run_loc_floor_bottom_left)
+	W.set_anchored(TRUE)
+	test_click(user, W, null)
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "a bare hand on deployed wire starts a timed action")
+	user.forceMove(get_step(user, EAST))
+	test_time(30 SECONDS)
+	TEST_ASSERT(W.anchored, "moving cancels: it stays deployed")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
