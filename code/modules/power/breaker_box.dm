@@ -28,6 +28,9 @@
 	..()
 
 CAPABILITIES(/obj/machinery/power/breakerbox)
+	op("breakerbox_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(breakerbox_unlocked), because = "system locked. please try again later"), req(PROC_REF(breakerbox_idle), because = "system is busy. please wait until current operation is finished before changing power settings")), then(PROC_REF(interaction_toggle)))
+	op("breakerbox_silicon_toggle", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(breakerbox_silicon_toggle)))
+	op("breakerbox_use", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/text, fields = list("question" = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", "title" = "SMES RCON system", "max_len" = MAX_NAME_LEN, "name_text" = TRUE), when = PROC_REF(breakerbox_multitool)), then(PROC_REF(interaction_use)))
 	default_parts()
 
 /obj/machinery/power/breakerbox/activated
@@ -49,18 +52,19 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 		. += span_warning("It seems to be offline.")
 
 /// Old attack_ai: toggle the breaker remotely.
-/obj/machinery/power/breakerbox/proc/breakerbox_silicon_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/power/breakerbox/proc/breakerbox_silicon_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	if(update_locked)
 		to_chat(user, span_red("System locked. Please try again later."))
-		return TRUE
+		return OP_OK
 
 	if(task_busy(src))
 		to_chat(user, span_red("System is busy. Please wait until current operation is finished before changing power settings."))
-		return TRUE
+		return OP_OK
 
 	to_chat(user, span_green("Updating power settings..."))
 	task_timed(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, FALSE), claims = TRUE)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/power/breakerbox/proc/unlock_updates()
 	update_locked = 0
@@ -75,55 +79,31 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 	update_locked = 1
 	after(src, 60 SECONDS, PROC_REF(unlock_updates))
 
-/obj/machinery/power/breakerbox/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_SILICON("Toggle", PROC_REF(breakerbox_silicon_toggle)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_hand/ungated/breakerbox_toggle,
-		/datum/interaction/machine_item/breakerbox_use,
-	)
-	..()
-
-/// Old attack_hand (never called ..()): reprogram the breaker box, gated on lock/busy state.
-/datum/interaction/machine_hand/ungated/breakerbox_toggle
-	id = "breakerbox_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	requires = list(REQ_INTERACTION_REACH, \
-		REQ_ON(PRED_TARGET, /obj/machinery/power/breakerbox/proc/breakerbox_not_locked, "system locked. please try again later"), \
-		REQ_ON(PRED_TARGET, /obj/machinery/power/breakerbox/proc/breakerbox_not_busy, "system is busy. please wait until current operation is finished before changing power settings"))
-	effect = /obj/machinery/power/breakerbox/proc/interaction_toggle
-
 /obj/machinery/power/breakerbox/proc/breakerbox_not_locked(mob/actor, atom/target, obj/item/held)
 	return !update_locked
 
 /obj/machinery/power/breakerbox/proc/breakerbox_not_busy(mob/actor, atom/target, obj/item/held)
 	return !task_busy(src)
 
-/obj/machinery/power/breakerbox/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/power/breakerbox/proc/interaction_toggle(datum/act/op/A)
+	var/mob/user = A.actor
 	for(var/mob/O in viewers(user))
 		O.show_message(span_red(text("[user] started reprogramming [src]!")), 1)
 
 	task_timed(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, TRUE), claims = TRUE)
-	return TRUE
+	return OP_OK
 
 /**
  * Old attackby: a multitool renames the RCON tag, then regardless of item type the box
  * refuses maintenance while on, else tries a part replacement. Kept as one interaction
  * with the whole old body since the multitool branch isn't exclusive of the rest.
  */
-/datum/interaction/machine_item/breakerbox_use
-	id = "breakerbox_use"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/power/breakerbox/proc/interaction_use
 
-/obj/machinery/power/breakerbox/proc/interaction_use(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/power/breakerbox/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(W.has_tool_quality(TOOL_MULTITOOL))
-		var/newtag = rerun_ask(user, "k125", PROC_REF(interaction_use), args, /datum/prompt/text, question = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", title = "SMES RCON system", max_len = MAX_NAME_LEN, name_text = ((MAX_NAME_LEN) <= MAX_NAME_LEN))
+		var/newtag = A.answer?.value
 		if(isnull(newtag))
 			return
 		if(newtag)
@@ -131,9 +111,9 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 			to_chat(user, span_notice("You changed the RCON tag to: [newtag]"))
 	if(on)
 		to_chat(user, span_red("Disable the breaker before performing maintenance."))
-		return TRUE
+		return OP_OK
 	default_part_replacement(user, W)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/power/breakerbox/proc/set_breaker_on(state)
 	set_on(state)
@@ -167,3 +147,12 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 		update_locked = 1
 		after(src, 1 MINUTE, PROC_REF(unlock_updates))
 
+
+/obj/machinery/power/breakerbox/proc/breakerbox_unlocked(datum/act/op/A)
+	return !update_locked
+
+/obj/machinery/power/breakerbox/proc/breakerbox_idle(datum/act/op/A)
+	return !task_busy(src)
+
+/obj/machinery/power/breakerbox/proc/breakerbox_multitool(datum/act/op/A)
+	return A.held?.has_tool_quality(TOOL_MULTITOOL)

@@ -14,6 +14,10 @@
 	var/datum/tgui_module/teleport_control/teleport_control
 
 CAPABILITIES(/obj/machinery/computer/teleporter)
+	op("teleporter_computer_insert_card", item(/obj/item/card/data), priority(OP_PRIORITY_DEFAULT - 1), label("Insert data card"), then(PROC_REF(interaction_insert_card)))
+	op("teleporter_computer_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
+	op("teleporter_silicon_use", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(teleporter_computer_silicon_use)))
+	op("teleporter_computer_set_id", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Set teleporter ID"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/text, fields = list("title" = "Set teleporter ID", "question" = "ID Tag:", "timeout" = 0), when = PROC_REF(teleporter_can_set_id)), then(PROC_REF(teleporter_id_entered)))
 	owns_one(nameof(teleport_control), /datum/tgui_module/teleport_control, starts = /datum/tgui_module/teleport_control)
 
 /obj/machinery/computer/teleporter/Initialize(mapload)
@@ -43,22 +47,10 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 		rel_set(teleport_control, nameof(teleport_control.station), station)
 
 
-/obj/machinery/computer/teleporter/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/teleporter_computer_insert_card,
-		/datum/interaction/machine_hand/ungated/teleporter_computer_use,
-		/datum/interaction/machine_verb/teleporter_computer_set_id,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Use", PROC_REF(teleporter_computer_silicon_use)))
-	..()
 
-/datum/interaction/machine_item/teleporter_computer_insert_card
-	id = "teleporter_computer_insert_card"
-	name = "Insert data card"
-	held_type = /obj/item/card/data
-	effect = /obj/machinery/computer/teleporter/proc/interaction_insert_card
-
-/obj/machinery/computer/teleporter/proc/interaction_insert_card(mob/user, obj/item/card/data/C, datum/interaction/interaction)
+/obj/machinery/computer/teleporter/proc/interaction_insert_card(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/card/data/C = A.held
 	if(!operable() && C.function != "teleporter")
 		attack_hand()
 
@@ -76,7 +68,7 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 	if(istype(L, /obj/effect/landmark/) && istype(L.loc, /turf))
 		var/destination_name = C.data
 		if(!consume(C, user))
-			return TRUE
+			return OP_OK
 		to_chat(user, "You insert the coordinates into the machine.")
 		to_chat(user, "A message flashes across the screen, reminding the user that the nuclear authentication disk is not transportable via insecure means.")
 
@@ -97,37 +89,25 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 			one_time_use = 1
 
 		add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 /// Old attack_ai: open the teleporter control UI.
-/obj/machinery/computer/teleporter/proc/teleporter_computer_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/teleporter/proc/teleporter_computer_silicon_use(datum/act/op/A)
+	var/mob/user = A.actor
 	teleport_control.tgui_interact(user)
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_hand/ungated/teleporter_computer_use
-	id = "teleporter_computer_use"
-	name = "Use"
-	effect = /obj/machinery/computer/teleporter/proc/interaction_use
 
-/obj/machinery/computer/teleporter/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/computer/teleporter/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	if(!operable())
-		return TRUE
+		return OP_OK
 	teleport_control.tgui_interact(user)
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_verb/teleporter_computer_set_id
-	id = "teleporter_computer_set_id"
-	name = "Set teleporter ID"
-	effect = /obj/machinery/computer/teleporter/proc/interaction_set_id
 
-/obj/machinery/computer/teleporter/proc/interaction_set_id(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!operable() || !isliving(user))
-		return TRUE
-	open_request(src, /datum/prompt/text, PROC_REF(teleporter_id_entered), answerer = user, title = "Set teleporter ID", question = "ID Tag:", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	return TRUE
-
-/obj/machinery/computer/teleporter/proc/teleporter_id_entered(datum/act/request/A)
+/obj/machinery/computer/teleporter/proc/teleporter_id_entered(datum/act/op/A)
 	if(!A.answer)
 		return
 	if(A.answer.value)
@@ -307,3 +287,6 @@ CAPABILITIES(/obj/machinery/teleport/hub)
 /// com (a relation view: it reads null once the target is deleted).
 /obj/machinery/teleport/station/proc/com() as /obj/machinery/teleport/hub
 	return com
+
+/obj/machinery/computer/teleporter/proc/teleporter_can_set_id(datum/act/op/A)
+	return operable() && isliving(A.actor)

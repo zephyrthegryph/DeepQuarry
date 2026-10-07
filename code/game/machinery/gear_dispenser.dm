@@ -157,7 +157,10 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	var/needs_power = 0
 	//req_one_access = list(whatever) // Note that each gear datum can have access, too.
 
+TRACKED(/obj/machinery/gear_dispenser, dispenser_flags)
+
 CAPABILITIES(/obj/machinery/gear_dispenser)
+	op("gear_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice/gear_dispenser, fields = list("title" = "Equipment Dispenser", "question" = "Select equipment to dispense.", "timeout" = 0), when = PROC_REF(gear_has_selection)), then(PROC_REF(interaction_use)))
 	owns_one(nameof(one_setting), /datum/gear_disp)
 	emag(then(PROC_REF(on_emag)))
 
@@ -177,37 +180,24 @@ CAPABILITIES(/obj/machinery/gear_dispenser)
 		rel_set(src, nameof(one_setting), new one_setting)
 	dispenses = real_gear_list
 
-EXTEND_INTERACTIONS(/obj/machinery/gear_dispenser, \
-	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_use)), \
-)
 
-/obj/machinery/gear_dispenser/proc/interaction_use(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
-	if(!can_use(user))
-		return TRUE
-	dispenser_flags |= GD_BUSY
-	if(!(dispenser_flags & GD_ONEITEM))
-		var/list/gear_list = get_gear_list(user)
 
-		if(!LAZYLEN(gear_list))
-			to_chat(user, span_warning("\The [src] doesn't have anything to dispense for you!"))
-			dispenser_flags &= ~GD_BUSY
-			return TRUE
-
-		open_request(src, /datum/prompt/choice, PROC_REF(gear_chosen), answerer = user, title = "Equipment Dispenser", question = "Select equipment to dispense.", choices = gear_list, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	else
-		dispense(one_setting,user)
-	return TRUE
+/obj/machinery/gear_dispenser/proc/interaction_use(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
+	if(dispenser_flags & GD_ONEITEM)
+		if(can_use(user))
+			set_dispenser_flags(dispenser_flags | GD_BUSY)
+			dispense(one_setting, user)
+	else if(A.answer)
+		var/datum/prompt/choice/gear_dispenser/R = A.answer
+		set_dispenser_flags(dispenser_flags | GD_BUSY)
+		dispense(R.choices[R.value], user)
+	return OP_OK
 
 /// The dispenser is busy while the list is open; a cancel or a failed re-check frees it.
 /obj/machinery/gear_dispenser/proc/dispense_cancelled()
-	dispenser_flags &= ~GD_BUSY
+	set_dispenser_flags(dispenser_flags & ~GD_BUSY)
 
-/obj/machinery/gear_dispenser/proc/gear_chosen(datum/act/request/A)
-	if(!A.answer)
-		dispense_cancelled()
-		return
-	var/datum/prompt/choice/R = A.request
-	dispense(R.choices[A.answer.value], R.answerer)
 
 /obj/machinery/gear_dispenser/proc/can_use(mob/living/carbon/human/user)
 	var/list/used_by = GLOB.gear_distributed_to["[type]"]
@@ -258,7 +248,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gear_dispenser, \
 /obj/machinery/gear_dispenser/proc/dispense(datum/gear_disp/S,mob/living/carbon/human/user,greet=TRUE)
 	if(!S.amount && !(dispenser_flags & GD_UNLIMITED))
 		to_chat(user,span_warning("There are no more [S.name]s left!"))
-		dispenser_flags &= ~GD_BUSY
+		set_dispenser_flags(dispenser_flags & ~GD_BUSY)
 		return 1
 	else if(!(dispenser_flags & GD_UNLIMITED))
 		S.amount--
@@ -272,7 +262,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gear_dispenser, \
 
 /// The dispensing animation is over: hand the gear out.
 /obj/machinery/gear_dispenser/proc/dispense_finish(datum/gear_disp/S, mob/living/carbon/human/user, greet)
-	dispenser_flags &= ~GD_BUSY
+	set_dispenser_flags(dispenser_flags & ~GD_BUSY)
 	var/turf/T = get_turf(src)
 	if(!(S && T)) // in case we got destroyed while we slept
 		return 1
@@ -294,7 +284,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gear_dispenser, \
 
 /obj/machinery/gear_dispenser/proc/animate_dispensing_flick()
 	flick("[icon_state]-dispense",src)
-	dispenser_flags |= GD_BUSY
+	set_dispenser_flags(dispenser_flags | GD_BUSY)
 
 /obj/machinery/gear_dispenser/proc/on_emag(datum/act/op/A)
 	set_emagged(TRUE)
@@ -362,7 +352,7 @@ CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
 /obj/machinery/gear_dispenser/suit_fancy/dispense(datum/gear_disp/S,mob/living/carbon/human/user,greet=TRUE)
 	if(!S.amount && !(dispenser_flags & GD_UNLIMITED))
 		to_chat(user,span_warning("There are no more [S.name]s left!"))
-		dispenser_flags &= ~GD_BUSY
+		set_dispenser_flags(dispenser_flags & ~GD_BUSY)
 		return 1
 	else if(!(dispenser_flags & GD_UNLIMITED))
 		S.amount--
@@ -377,7 +367,7 @@ CAPABILITIES(/obj/machinery/gear_dispenser/suit_fancy)
 	after(src, dispense_anim_time, PROC_REF(dispense_finish), with = list(S, user, greet))
 
 /obj/machinery/gear_dispenser/suit_fancy/dispense_finish(datum/gear_disp/S, mob/living/carbon/human/user, greet)
-	dispenser_flags &= ~GD_BUSY
+	set_dispenser_flags(dispenser_flags & ~GD_BUSY)
 
 	if(emagged)
 		set_emagged(FALSE)
@@ -957,6 +947,37 @@ CAPABILITIES(/obj/machinery/gear_dispenser/adventure_box)
 		/datum/gear_disp/adventure_box/light,
 		/datum/gear_disp/adventure_box/weapon
 		)
+
+/obj/machinery/gear_dispenser/proc/gear_has_selection(datum/act/op/A)
+	return !(dispenser_flags & GD_ONEITEM)
+
+/// The prompt owns the dispenser's temporary busy state; every end path dismisses it.
+/datum/prompt/choice/gear_dispenser
+	var/selection_ready = FALSE
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/gear_dispenser/prepare(datum/act/A)
+	..()
+	var/obj/machinery/gear_dispenser/D = owner
+	if(!istype(D) || !D.can_use(answerer))
+		return
+	choices = D.get_gear_list(answerer)
+	if(!length(choices))
+		to_chat(answerer, span_warning("\The [D] doesn't have anything to dispense for you!"))
+		return
+	D.set_dispenser_flags(D.dispenser_flags | GD_BUSY)
+	selection_ready = TRUE
+
+/datum/prompt/choice/gear_dispenser/recheck_extra()
+	if(!selection_ready)
+		return "no equipment selection is available"
+	return null
+
+/datum/prompt/choice/gear_dispenser/dismiss()
+	var/obj/machinery/gear_dispenser/D = owner
+	if(selection_ready && istype(D))
+		D.dispense_cancelled()
+	..()
 
 #undef GD_BUSY
 #undef GD_ONEITEM

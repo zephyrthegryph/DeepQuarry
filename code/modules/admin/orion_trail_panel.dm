@@ -85,6 +85,7 @@
 	return data
 
 CAPABILITIES(/obj/machinery/computer/arcade/orion_trail)
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 	op("menu", ui_act(), then(PROC_REF(native_orion_ui_menu)))
 	op("new_game", ui_act(), then(PROC_REF(native_orion_ui_new_game)))
 	op("continue", ui_act(), then(PROC_REF(native_orion_ui_continue)))

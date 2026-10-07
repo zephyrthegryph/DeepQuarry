@@ -246,6 +246,8 @@ pub enum Flt {
     /// A path allowlist (`grep -v '^code/a|^code/b/'`): drop a hit whose file is in the named
     /// `[lint.check_grep.lists]` list: an exact file, or a directory written with a trailing `/`.
     DropPaths(&'static str),
+    /// Keep only findings in the folders that completed a migration.
+    KeepPaths(&'static str),
 }
 
 /// How a hit line is excused by an annotation.
@@ -331,6 +333,7 @@ impl Part {
                 Flt::DropLit(s) => CFlt::DropLit(s),
                 Flt::Strip => CFlt::Strip,
                 Flt::DropPaths(k) => CFlt::DropPaths(k),
+                Flt::KeepPaths(k) => CFlt::KeepPaths(k),
             })
             .collect();
         Compiled { rule: self.rule, files: self.files, find, allow: self.allow, flt, needle: self.needle }
@@ -351,6 +354,7 @@ enum CFlt {
     DropLit(&'static str),
     Strip,
     DropPaths(&'static str),
+    KeepPaths(&'static str),
 }
 
 pub struct Compiled {
@@ -503,6 +507,11 @@ impl Compiled {
                     }
                     CFlt::DropPaths(key) => {
                         if in_list(&f.rel, cx.list(key)) {
+                            keep = false;
+                        }
+                    }
+                    CFlt::KeepPaths(key) => {
+                        if !in_list(&f.rel, cx.list(key)) {
                             keep = false;
                         }
                     }

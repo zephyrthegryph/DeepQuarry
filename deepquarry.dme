@@ -962,7 +962,6 @@
 #include "code\datums\om\scheduler.dm"
 #include "code\datums\om\dx_exec.dm"
 #include "code\datums\om\ui.dm"
-#include "code\datums\om\watch.dm"
 #include "code\engine\time\native_wakes.dm"
 #include "code\datums\om\world_watch.dm"
 #include "code\datums\ownership\audit.dm"

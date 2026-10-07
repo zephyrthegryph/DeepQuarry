@@ -30,6 +30,7 @@
 	var/list/hc_records
 
 /datum/unit_test/dq_hc_computers/Run()
+	set_global("test_prompts", GLOB.test_prompts)
 	test_driver_begin()
 	test_rng(1)
 	p2cl_capture_prompts()

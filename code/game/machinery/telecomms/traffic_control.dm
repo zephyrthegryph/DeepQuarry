@@ -19,12 +19,12 @@
 	var/storedcode = ""			// code stored
 
 /// The mob typing in the IDE (a relation view), or null.
-OM_FIELD_VIEW(/obj/machinery/computer/telecomms/traffic, mob, editingcode, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/computer/telecomms/traffic/var/mob/editingcode
 /// Refreshes the IDE every half second while someone is typing in it.
-DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_ide_tick, "editingcode")
+
 
 /// One half-second refresh of the IDE while someone is manning the keyboard.
-/obj/machinery/computer/telecomms/traffic/proc/update_ide_tick()
+/obj/machinery/computer/telecomms/traffic/proc/update_ide_tick(datum/act/timer/A)
 	if(!editingcode() || !editingcode().client)
 		pass_editor()
 		return
@@ -174,6 +174,7 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 			set_temp(span_blue("- NEW NETWORK TAG SET IN ADDRESS \[[network]\] -"))
 
 CAPABILITIES(/obj/machinery/computer/telecomms/traffic)
+	every(0.5 SECONDS, then(PROC_REF(update_ide_tick)), when = nameof(editingcode))
 	emag(then(PROC_REF(on_emag)))
 	op("clear_temp", ui_act(), then(PROC_REF(ui_act_clear_temp)))
 	interface("TrafficControl", title = "Telecommunications Traffic Control", state = nameof(GLOB.tgui_default_state))

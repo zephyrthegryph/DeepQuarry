@@ -1,0 +1,6 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Airlock electrification wire actions retain the responsible actor in administrative history."
+  - bugfix: "Operation menus retain named actions on equipment using both legacy and native declarations."
+  - code_imp: "Migrated machinery and power interactions, reactions, timers and state declarations to the current framework."

@@ -247,10 +247,12 @@ APPEARANCE_NONE(/obj/item/cell/emergency_light)
 	var/swaps_to = /obj/item/cell/device/weapon/recharge/alien
 	robot_durability = 100
 
-EXTEND_INTERACTIONS(/obj/item/cell/void, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/cell/void)
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/cell/void/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/cell/void/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	var/cell_name = "[src]"
 	var/percentage = charge/maxcharge
 	var/original_persist_storable = persist_storable

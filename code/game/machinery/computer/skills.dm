@@ -280,6 +280,7 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	op("add_c", ui_act("modal:add_c", arg("arguments")), asks(/datum/prompt/text, fields = list("question" = "Please enter your message:", "inline" = TRUE, "timeout" = 0), step = "comment"), then(PROC_REF(modal_add_comment)))
 	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(within_contact_range_holds), because = PROC_REF(within_contact_range_refusal))), then(PROC_REF(interaction_open_ui_impl)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(skills_emp)))
 
 /obj/machinery/computer/skills/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -936,9 +937,10 @@ CAPABILITIES(/obj/machinery/computer/skills)
 	if(update_now)
 		SStgui.update_uis(src)
 
-DAMAGE_REACTION(/obj/machinery/computer/skills, DAMAGE_EMP, PROC_REF(skills_emp))
 /// An EMP scrambles or wipes some of the records.
-/obj/machinery/computer/skills/proc/skills_emp(datum/damage_packet/packet)
+/obj/machinery/computer/skills/proc/skills_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(!operable())
 		return
 

@@ -44,6 +44,7 @@ CAPABILITIES(/datum/rx_state)
 /// phase 0 has marked the holder QDELETED and must still resolve a holder whose
 /// latent contents were never built (an unmaterialized probe, a sealed kit).
 /proc/dq_ledger(atom/holder, destroying = FALSE)
+	READS_FROM(holder) // the ledger reflects this holder's containment state
 	RETURN_TYPE(/datum/ledger)
 	if(!holder)
 		return null

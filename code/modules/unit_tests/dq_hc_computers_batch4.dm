@@ -135,3 +135,30 @@
 	p2cl_answer(H, "opensesame")
 	test_time(1 SECONDS)
 	TEST_ASSERT_EQUAL(C.linkedServer().decryptkey, "opensesame", "which is set")
+
+/datum/unit_test/dq_hc_computers/monitor_emag_reboot
+/datum/unit_test/dq_hc_computers/monitor_emag_reboot/run_gate()
+	var/mob/living/carbon/human/H = hc_actor()
+	var/obj/item/card/emag/E = hc_emag(H)
+	var/obj/machinery/computer/message_monitor/C = hc_monitor()
+	C.linkedServer().decryptkey = "x"
+	test_click(H, C, E)
+	TEST_ASSERT(C.emag, "a linked working console enters its reboot state")
+	TEST_ASSERT_EQUAL(E.uses, 7, "a successful reboot spends one use")
+	TEST_ASSERT_EQUAL(C.temp, C.rebootmsg, "the viewer is sent the reboot message")
+	var/printouts = 0
+	for(var/obj/item/paper/monitorkey/P in hc_spot())
+		printouts++
+	TEST_ASSERT_EQUAL(printouts, 1, "the successful swipe prints the server key")
+	test_click(H, C, E)
+	TEST_ASSERT_EQUAL(E.uses, 7, "a console still rebooting declines another swipe")
+	test_time(10 SECONDS)
+	TEST_ASSERT(!C.emag, "the key-length timer restores the console")
+	test_click(H, C, E)
+	TEST_ASSERT(C.emag, "the repeatable console can be hacked again after reboot")
+	TEST_ASSERT_EQUAL(E.uses, 6, "a new reboot spends a new use")
+	rel_clear(C, nameof(/obj/machinery/computer/message_monitor::linkedServer))
+	C.set_emag(FALSE)
+	test_click(H, C, E)
+	TEST_ASSERT_EQUAL(E.uses, 6, "an unlinked console declines without spending a use")
+	TEST_ASSERT(!C.emag, "an unlinked console cannot start a reboot")

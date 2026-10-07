@@ -81,7 +81,7 @@ impl CheckGrep {
         let mut keys: Vec<&'static str> = Vec::new();
         for p in &parts {
             for f in &p.flt {
-                if let Flt::DropPaths(k) = f {
+                if let Flt::DropPaths(k) | Flt::KeepPaths(k) = f {
                     if !keys.contains(k) {
                         keys.push(k);
                     }
@@ -554,6 +554,24 @@ mod tests {
         let sites = vec![site("apc__2"), site("apc"), site("other")];
         let kept: Vec<String> = first_hit_only(&groups, &sites).into_iter().map(|s| s.rule).collect();
         assert_eq!(kept, vec!["apc".to_string(), "other".to_string()]);
+    }
+
+    #[test]
+    fn converted_folder_ban_is_scoped_and_not_waivable() {
+        let lint = CheckGrep::new();
+        assert!(lint.meta.lists.contains(&"legacy_forms_converted"));
+        let tree = Tree::from_files(vec![]);
+        let mut scope = LintScope::default();
+        scope.lists.insert("legacy_forms_converted".into(), vec!["code/modules/power/".into()]);
+        let cx = Cx { tree: &tree, meta: lint.meta, scope: &scope };
+        let text = "DECLARE_EMAG(/obj/example, PROC_REF(x)) // ALLOW(check_grep): deliberate test of nonwaivable migration ban\nOM_FIELD_VIEW(/obj/example, cell, /datum, 0)\n/obj/example/declare_interactions(list/into)\n// DECLARE_REPEAT(/obj/example, 1, x)\n";
+        for (path, expected) in [("code/modules/power/example.dm", 3), ("code/modules/powerful/example.dm", 0), ("code/modules/medical/example.dm", 0)] {
+            let file = SourceFile::from_text(path, text);
+            let mut sink = Sink::new();
+            sink.cur = file.rel.clone();
+            lint.scan_file(&cx, &file, &mut sink);
+            assert_eq!(sink.sites.iter().filter(|s| s.rule == "legacy_declaration_forms_banned_in_converted_folders").count(), expected, "{path}");
+        }
     }
 
     fn sites_of(rule: &str, rel: &str, text: &str) -> Vec<usize> {

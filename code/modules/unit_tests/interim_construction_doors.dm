@@ -143,12 +143,15 @@
 		if(findtext(entry, actor.name))
 			attributed = TRUE
 	TEST_ASSERT(attributed, "Electrification history must credit the explicit wire operator")
+	var/pulse_entries = length(door.shockedby)
 	wires.cut(WIRE_ELECTRIFY, actor)
 	TEST_ASSERT(wires.is_cut(WIRE_ELECTRIFY), "Cutting must sever the electrify wire")
 	TEST_ASSERT(door.electrified && wire_is_cut(door, WIRE_ELECTRIFY), "Cut wire must leave the door electrified")
+	TEST_ASSERT_EQUAL(length(door.shockedby), pulse_entries + 1, "Cutting the shock wire records the supplied operator once")
 	wires.cut(WIRE_ELECTRIFY, actor)
 	TEST_ASSERT(!wires.is_cut(WIRE_ELECTRIFY), "Second cut action must mend the wire")
 	TEST_ASSERT(!door.electrified, "Mending the electrify wire must remove electrification")
+	TEST_ASSERT_EQUAL(length(door.shockedby), pulse_entries + 1, "Mending the wire does not add an electrification entry")
 
 /// Exercise declared requirements as well as completion: wrong boards and short cable stacks refuse.
 /datum/unit_test/interim_machine_frame_requirements/Run()

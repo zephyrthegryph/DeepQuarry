@@ -24,7 +24,7 @@ GLOBAL_DATUM(input_compatibility, /datum/input_adapter)
 /datum/input_adapter/proc/compatibility_candidates(datum/op_resolution/R)
 	return
 
-/datum/input_adapter/proc/compatibility_menu(mob/actor, atom/target, route = null)
+/datum/input_adapter/proc/compatibility_menu(mob/actor, atom/target, route = null, operations_only = FALSE)
 	return list()
 
 /datum/input_adapter/proc/compatibility_screentip(mob/actor, atom/target, gesture)

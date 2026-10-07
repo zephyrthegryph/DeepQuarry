@@ -16,32 +16,14 @@ TRACKED(/obj/machinery/button, id)
 /obj/machinery/button/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 
-/obj/machinery/button/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/button_press,
-		/datum/interaction/machine_item/button_press_item,
-	)
-	..()
+CAPABILITIES(/obj/machinery/button)
+	op("button_press", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Press"), then(PROC_REF(interaction_press)))
+	op("button_press_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Press"), when(PROC_REF(local_item_press)), then(TYPE_PROC_REF(/atom, op_as_touch)))
 
-/// Old attack_hand: `if(..()) return 1; playsound(...)`.
-/datum/interaction/machine_hand/button_press
-	id = "button_press"
-	name = "Press"
-	effect = /obj/machinery/button/proc/interaction_press
+/obj/machinery/button/proc/local_item_press(datum/act/op/A)
+	return !istype(src, /obj/machinery/button/remote)
 
-/// Old attackby: any item presses the button (`return attack_hand(user)`).
-/datum/interaction/machine_item/button_press_item
-	id = "button_press_item"
-	name = "Press"
-	category = INTERACTION_CAT_TOGGLE
-	held_type = /obj/item
-	effect = /atom/proc/interaction_as_touch
-
-/// Remote buttons declare their own item interactions.
-/datum/interaction/machine_item/button_press_item/applies_to(atom/target)
-	return !istype(target, /obj/machinery/button/remote)
-
-/obj/machinery/button/proc/interaction_press(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/proc/interaction_press(datum/act/op/A)
 	play_sfx(src, SFX_MACHINES_BUTTON, volume = 100)
 	return TRUE
 
@@ -69,32 +51,19 @@ TRACKED(/obj/machinery/button, id)
 	///What spawner is linked with this spawner
 	var/link = "MOBSPAWN"
 
-EXTEND_INTERACTIONS(/obj/machinery/button/mob_spawner_button, \
-	INTERACT_HAND_UNGATED("Spawn mob", PROC_REF(interaction_spawn)), \
-)
+CAPABILITIES(/obj/machinery/button/mob_spawner_button)
+	op("spawn_mob", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Spawn mob"),
+		asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(spawn_options)), "title" = "Mob spawn", "question" = "Which Mob do you want to spawn?", "timeout" = 0), step = "mob"),
+		asks(/datum/prompt/choice, fields = list("title" = "Faction", "question" = "Do you want the mob's faction to remain the same or be passive?", "choices" = list("Normal", "Neutral"), "buttons" = TRUE), step = "faction"), then(PROC_REF(spawn_choices_made)))
 
-/obj/machinery/button/mob_spawner_button/proc/interaction_spawn(mob/living/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/choice, PROC_REF(spawn_mob_chosen), answerer = user, choices = GLOB.vr_mob_spawner_options, title = "Mob spawn", question = "Which Mob do you want to spawn?", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	return TRUE
+/obj/machinery/button/mob_spawner_button/proc/spawn_options(datum/act/op/A)
+	return GLOB.vr_mob_spawner_options
 
-/obj/machinery/button/mob_spawner_button/proc/spawn_mob_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mobtype = GLOB.vr_mob_spawner_options[A.answer.value]
-	if(!mobtype)
-		return
-	open_request(src, /datum/prompt/choice/mob_spawner_faction, PROC_REF(spawn_choices_made), answerer = A.request.answerer, title = "Faction", question = "Do you want the mob's faction to remain the same or be passive?", choices = list("Normal", "Neutral"), buttons = TRUE, mobtype = mobtype, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-
-/// The mob to spawn is kept on the faction question.
-/datum/prompt/choice/mob_spawner_faction
-	var/mobtype
-
-/obj/machinery/button/mob_spawner_button/proc/spawn_choices_made(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/mob_spawner_faction/R = A.request
-	var/neutral = (A.answer.value == "Neutral")
-	var/mobtype = R.mobtype
+/obj/machinery/button/mob_spawner_button/proc/spawn_choices_made(datum/act/op/A)
+	var/mobtype = GLOB.vr_mob_spawner_options[A.step_value("mob")]
+	if(!mobtype || isnull(A.step_value("faction")))
+		return OP_OK
+	var/neutral = A.step_value("faction") == "Neutral"
 	var/mob/living/simple_mob/old_mob = mobspawned()
 	rel_clear(src, nameof(mobspawned))
 	QDEL_NULL(old_mob)

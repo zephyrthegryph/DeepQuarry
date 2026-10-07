@@ -182,13 +182,13 @@ CAPABILITIES(/obj/vehicle)
 /// Down: sparks and the engine dies. Back: it restarts if it was running.
 /obj/vehicle/proc/emp_state_changed(datum/act/A)
 	if(!emp_disabled(src))
-		stat_remove(EMPED)
+		set_stat(stat & ~EMPED)
 		if(emp_was_on)
 			turn_on()
 		emp_was_on = FALSE
 		return
 	emp_was_on = on
-	stat_add(EMPED)
+	set_stat(stat | EMPED)
 	var/obj/effect/overlay/pulse2 = new /obj/effect/overlay(src.loc)
 	pulse2.icon = 'icons/effects/effects.dmi'
 	pulse2.icon_state = "empdisable"
@@ -208,7 +208,7 @@ CAPABILITIES(/obj/vehicle)
 // Vehicle procs
 //-------------------------------------------
 /obj/vehicle/proc/turn_on()
-	if(!mechanical || has_stat(MACHINE_STAT_ANY))
+	if(!mechanical || (stat & MACHINE_STAT_ANY))
 		return FALSE
 	if(!cell)
 		return FALSE

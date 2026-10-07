@@ -355,6 +355,7 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 	var/list/custom_tracks
 
 CAPABILITIES(/obj/machinery/media/jukebox/ghost)
+	op("ghost_use", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(ghost_jukebox_observer_use)))
 	owns_many(nameof(custom_tracks))
 	// its legacy interactions replaced the jukebox's (no ..()): a ghost jukebox takes no touch or item
 	without("fingerprint")
@@ -368,8 +369,7 @@ CAPABILITIES(/obj/machinery/media/jukebox/ghost)
 /obj/machinery/media/jukebox/ghost/visible_message(message, blind_message, list/exclude_mobs, range, runemessage)
 	return
 /// Untouchable: no interactions at all (the old attackby/attack_hand returned); only ghosts use it.
-/obj/machinery/media/jukebox/ghost/declare_interactions(list/into)
-	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("Use", PROC_REF(ghost_jukebox_observer_use)))
+
 /obj/machinery/media/jukebox/ghost/set_use_power(new_use_power)
 	return
 /obj/machinery/media/jukebox/ghost/power_change()
@@ -390,7 +390,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 // End junk
 
 /// Old attack_ghost: staff get the controls, other ghosts hear what's playing.
-/obj/machinery/media/jukebox/ghost/proc/ghost_jukebox_observer_use(mob/observer/dead/M, obj/item/held, datum/interaction/interaction)
+/obj/machinery/media/jukebox/ghost/proc/ghost_jukebox_observer_use(datum/act/op/A)
+	var/mob/observer/dead/M = A.actor
 	if(!istype(M))
 		return TRUE
 

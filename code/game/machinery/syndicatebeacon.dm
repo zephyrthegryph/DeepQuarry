@@ -16,36 +16,40 @@
 	var/selfdestructing = 0
 	var/charges = 1
 
-EXTEND_INTERACTIONS(/obj/machinery/syndicate_beacon, \
-	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_talk)), \
-)
 
-/obj/machinery/syndicate_beacon/proc/interaction_talk(mob/user, obj/item/held, datum/interaction/interaction)
-	user.set_machine(src)
+
+CAPABILITIES(/obj/machinery/syndicate_beacon)
+	op("beacon_talk", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice/syndicate_beacon, fields = list("title" = "Ominous Beacon", "buttons" = TRUE, "timeout" = 0)), then(PROC_REF(beacon_offer_answered)))
+
+/datum/prompt/choice/syndicate_beacon/prepare(datum/act/A)
+	..()
+	var/obj/machinery/syndicate_beacon/B = owner
+	var/mob/user = answerer
+	user.set_machine(B)
 	var/message = "Scanning [pick("retina pattern", "voice print", "fingerprints", "dna sequence")]... Identity confirmed.\n"
 	var/can_traitor = FALSE
 	if(ishuman(user) || isAI(user))
 		if(is_special_character(user))
 			message += "Operative record found. Greetings, Agent [user.name]."
-		else if(charges < 1)
+		else if(B.charges < 1)
 			message += "Connection severed."
 		else
 			var/honorific = (user.gender == FEMALE) ? "Ms." : "Mr."
 			message += "Identity not found in operative database. What can the Syndicate do for you today, [honorific] [user.name]?"
-			can_traitor = !selfdestructing
-	if(length(temptext))
-		message += "\n\n[temptext]"
+			can_traitor = !B.selfdestructing
+	if(length(B.temptext))
+		message += "\n\n[B.temptext]"
 	if(can_traitor)
 		var/offer = pick("I want to switch teams.", "I want to work for you.", "Let me join you.", "I can be of use to you.", "You want me working for you, and here's why...", "Give me an objective.", "How's the 401k over at the Syndicate?")
-		open_request(src, /datum/prompt/choice, PROC_REF(beacon_offer_answered), answerer = user, title = "Ominous Beacon", question = message, choices = list(offer, "Hang up"), buttons = TRUE, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
+		choices = list(offer, "Hang up")
 	else
-		open_request(src, /datum/prompt/choice, PROC_REF(beacon_hung_up), answerer = user, title = "Ominous Beacon", question = message, choices = list("Hang up"), buttons = TRUE, timeout = 0)
-	return TRUE
+		choices = list("Hang up")
+	question = message
 
-/obj/machinery/syndicate_beacon/proc/beacon_offer_answered(datum/act/request/A)
+/obj/machinery/syndicate_beacon/proc/beacon_offer_answered(datum/act/op/A)
 	if(!A.answer || A.answer.value == "Hang up")
 		return
-	var/mob/user = A.request.answerer
+	var/mob/user = A.actor
 	betraitor(user, user)
 
 /// The only button of the second window ends the call.

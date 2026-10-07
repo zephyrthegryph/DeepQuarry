@@ -86,6 +86,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/pandemic)
+	op("insert_beaker", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert beaker"), when(PROC_REF(beaker_item_holds)), needs(req(PROC_REF(empty_slot_holds), because = "a beaker is already loaded")), then(PROC_REF(interaction_insert_beaker)))
 	interface("Pandemic", state = nameof(GLOB.tgui_default_state))
 	op("create_culture_bottle", ui_act("create_culture_bottle", arg("index", num())), then(PROC_REF(ui_act_create_culture_bottle)))
 	op("create_vaccine_bottle", ui_act("create_vaccine_bottle", arg("index", schema_text(4096))), then(PROC_REF(ui_act_create_vaccine_bottle)))
@@ -217,9 +218,6 @@ MSG_DEF_SELF(pandemic/not_working, "It isn't working.")
 	P.name = "Releasing Virus - [D.name]"
 	printing = FALSE
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/pandemic, \
-	INTERACT_ITEM("Insert beaker", PROC_REF(interaction_insert_beaker), REQ_ON(PRED_TARGET, /obj/machinery/computer/pandemic/proc/beaker_slot_empty, "a beaker is already loaded"), OFFERED_WHEN(REQ_ON(PRED_HELD, /obj/machinery/computer/pandemic/proc/is_beaker_or_syringe, null))), \
-)
 
 /obj/machinery/computer/pandemic/proc/is_beaker_or_syringe(mob/actor, atom/target, obj/item/held)
 	return (istype(held, /obj/item/reagent_containers/glass) && held.is_open_container()) || istype(held, /obj/item/reagent_containers/syringe)
@@ -228,7 +226,9 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/pandemic, \
 	return !beaker
 
 /// The old stat check was silent (no message), so it stays in the effect.
-/obj/machinery/computer/pandemic/proc/interaction_insert_beaker(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/machinery/computer/pandemic/proc/interaction_insert_beaker(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(!operable())
 		return TRUE
 	if(!move_into(src, nameof(src.beaker), I, user))
@@ -387,3 +387,9 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/pandemic, \
 /obj/machinery/computer/pandemic/ownership()
 	. = ..()
 	. += owns(nameof(beaker), policy = OWN_CONTAINED)
+
+/obj/machinery/computer/pandemic/proc/beaker_item_holds(datum/act/op/A)
+	return is_beaker_or_syringe(A.actor, src, A.held)
+
+/obj/machinery/computer/pandemic/proc/empty_slot_holds(datum/act/op/A)
+	return !beaker

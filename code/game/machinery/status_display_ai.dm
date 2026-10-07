@@ -80,35 +80,12 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 
 	var/emotion = "Neutral"
 
-/obj/machinery/ai_status_display/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/ai_status_display_touch,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Set status", PROC_REF(ai_status_display_silicon_use)))
-	..()
+/obj/machinery/ai_status_display/proc/emotion_options(datum/act/op/A)
+	return get_ai_emotions(A.actor.ckey)
 
-/// Old attackby: dispatched straight to attack_hand for any item.
-/datum/interaction/machine_item/ai_status_display_touch
-	id = "ai_status_display_touch"
-	name = "Use"
-	held_type = /obj/item
-	effect = /obj/machinery/ai_status_display/proc/interaction_touch
-
-/obj/machinery/ai_status_display/proc/interaction_touch(mob/user, obj/item/held, datum/interaction/interaction)
-	attack_hand(user)
-	return TRUE
-
-/// Old attack_ai: pick the displayed emotion.
-/obj/machinery/ai_status_display/proc/ai_status_display_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	var/list/ai_emotions = get_ai_emotions(user.ckey)
-	open_request(src, /datum/prompt/choice, PROC_REF(emotion_chosen), answerer = user, title = "AI Status", question = "Please, select a status:", choices = ai_emotions, timeout = 0)
-	return TRUE
-
-/obj/machinery/ai_status_display/proc/emotion_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/emote = A.answer.value
-	emotion = emote
+/obj/machinery/ai_status_display/proc/emotion_selected(datum/act/op/A)
+	emotion = A.step_value("emotion")
+	return OP_OK
 
 /obj/machinery/ai_status_display/proc/update()
 	if(mode==0) //Blank
@@ -137,4 +114,6 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 		update()
 
 CAPABILITIES(/obj/machinery/ai_status_display)
+	op("touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_as_touch)))
+	op("set_status", remote(), label("Set status"), wait(0), asks(/datum/prompt/choice, fields = list("title" = "AI Status", "question" = "Please, select a status:", "choices" = computed(PROC_REF(emotion_options)), "timeout" = 0), step = "emotion"), then(PROC_REF(emotion_selected)))
 	display_disconnect_op()

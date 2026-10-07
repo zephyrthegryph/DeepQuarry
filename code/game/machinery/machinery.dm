@@ -146,6 +146,7 @@ TRACKED(/obj/machinery, power_forced)
 SETTER(/obj/machinery, use_power)
 
 CAPABILITIES(/obj/machinery)
+	op("robot_remote_blocked", inputs(hand(), item(/obj/item), remote()), ungated(), priority(OP_PRIORITY_SUBVERT + 1), label("Blocked"), when(req(PROC_REF(robot_remote_blocked))), then(TYPE_PROC_REF(/atom, op_swallow)))
 	contributes(STAT_OPERABLE, STAT_INTACT, key = "intact_operable", reason = MSG(machine/inoperable))
 	contributes(STAT_OPERABLE, cond_not(STAT_IN_MAINTENANCE), key = "maint_operable", reason = MSG(machine/inoperable))
 	// The grid's reading: the machine has power while its area's channel is energized (the area's tracked channel vars, one hop through power_area).
@@ -217,7 +218,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 // the base machine: board and parts deleted, occupants put out.
 /obj/machinery/on_destroy(force)
-	om_watch_disarm_all(src)
 	// The installed board is DECLARE_REF(..., OWNED) (phase 4 deletes it); every other leftover in the
 	// internals slot (SLOT_DROP_HOLDER) is deleted by the core /atom/movable Destroy().
 	// Only a human stuck in the internals slot is put out by hand: it needs its view
@@ -380,10 +380,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// through a camera can't remotely control them (old /obj/machinery/attack_ai). Offered
 /// only while that holds, so it doesn't compete with a machine's own silicon interactions.
 /// machinery_maintenance.dm declares the machine's other interactions.
-EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/atom, interaction_swallow), REQ_TARGET_STATE(/obj/machinery/proc/machinery_robot_remote_locked)))
 
-/obj/machinery/proc/machinery_robot_remote_locked(mob/actor, atom/target, obj/item/held)
-	return isrobot(actor) && actor.is_remote_viewing()
+/obj/machinery/proc/robot_remote_blocked(datum/act/op/A)
+	return isrobot(A.actor) && A.actor.is_remote_viewing()
 
 /// The checks every machine's hand interactions pass behind (see machine_use_blocker() for the Menu's version).
 /obj/machinery/hand_gate(mob/user as mob)

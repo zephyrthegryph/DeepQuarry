@@ -786,3 +786,136 @@
 	hci_click(H, P, T)
 	settle()
 	TEST_ASSERT_EQUAL(P.tank, T, "the same tank goes back in")
+
+/datum/unit_test/dq_hc_struct/ai_slipper_repeat_parks
+/datum/unit_test/dq_hc_struct/ai_slipper_repeat_parks/run_gate()
+	var/obj/machinery/ai_slipper/S = mach(/obj/machinery/ai_slipper, tile(3, 2))
+	S.uses = 0
+	S.cooldown_time = world.timeofday
+	S.set_cooldown_on(TRUE)
+	test_time(0.5 SECONDS)
+	TEST_ASSERT(S.cooldown_on, "exhaustion retains the original gameplay cooldown flag")
+	TEST_ASSERT(S.cooldown_stopped, "the exhausted repeat is stopped")
+	S.uses = 1
+	test_time(1 SECOND)
+	TEST_ASSERT(S.cooldown_on, "adding uses alone does not restart a stopped repeat")
+	S.set_cooldown_on(FALSE)
+	S.set_cooldown_on(TRUE)
+	test_time(0.5 SECONDS)
+	TEST_ASSERT(!S.cooldown_on, "a new gate transition restarts and finishes the cooldown")
+
+/datum/unit_test/dq_hc_struct/magnet_repeat_stops_until_gate_changes
+/datum/unit_test/dq_hc_struct/magnet_repeat_stops_until_gate_changes/run_gate()
+	var/obj/machinery/magnetic_controller/C = mach(/obj/machinery/magnetic_controller, tile(3, 2))
+	C.rpath = list("invalid")
+	C.speed = 10
+	C.set_path_moving(TRUE)
+	test_time(0.1 SECONDS)
+	TEST_ASSERT(C.path_stopped, "an invalid path stops the actual controller step")
+	TEST_ASSERT(C.path_moving, "stopping retains the player's movement setting")
+	C.pathpos = 55
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(C.pathpos, 55, "stopped work cannot keep revisiting and resetting the path")
+	C.set_path_moving(FALSE)
+	C.set_path_moving(TRUE)
+	test_time(0.1 SECONDS)
+	TEST_ASSERT_EQUAL(C.pathpos, 1, "a fresh gate transition runs the invalid path once again")
+	TEST_ASSERT(C.path_stopped, "that new invalid step stops again")
+
+/datum/unit_test/dq_hc_struct/camera_bug_click_round_trip
+/datum/unit_test/dq_hc_struct/camera_bug_click_round_trip/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/camera/C = mach(/obj/machinery/camera, tile(3, 2))
+	var/obj/item/camera_bug/B = allocate(/obj/item/camera_bug, H.loc)
+	TEST_ASSERT(H.put_in_active_hand(B), "the operator holds the bug")
+	TEST_ASSERT(C.can_use(), "the test starts with a usable camera")
+	test_click(H, C, B)
+	TEST_ASSERT(C.bugged, "the actual item click bugs the camera")
+	test_click(H, C, B)
+	TEST_ASSERT(!C.bugged, "a second item click removes its bug")
+	C.set_status(FALSE)
+	test_click(H, C, B)
+	TEST_ASSERT(!C.bugged, "a nonfunctional camera refuses bug insertion")
+
+/datum/unit_test/dq_hc_struct/power_hit_declarations
+/datum/unit_test/dq_hc_struct/power_hit_declarations/run_gate()
+	var/obj/item/cell/C = allocate(/obj/item/cell, tile(3, 2))
+	C.material_emp_resistance = 0
+	C.charge = 1000
+	C.emp_act(2)
+	TEST_ASSERT_EQUAL(C.charge, 500, "the real EMP entry drains half an unprotected cell")
+	var/obj/item/am_containment/J = allocate(/obj/item/am_containment, tile(4, 2))
+	J.ex_act(3)
+	TEST_ASSERT(!QDELETED(J), "a minor blast preserves the containment jar")
+	TEST_ASSERT_EQUAL(J.stability, 80, "the hit replacement destabilizes the jar by its severity")
+
+/datum/unit_test/dq_hc_struct/repeat_restarts_on_shared_settings
+/datum/unit_test/dq_hc_struct/repeat_restarts_on_shared_settings/run_gate()
+	var/obj/machinery/ai_slipper/S = mach(/obj/machinery/ai_slipper, tile(3, 2))
+	S.uses = 0
+	S.cooldown_time = world.timeofday
+	S.set_cooldown_on(TRUE)
+	test_time(0.5 SECONDS)
+	TEST_ASSERT(S.cooldown_stopped, "the exhausted repeat first stops")
+	S.uses = 1
+	S.set_active(!S.active)
+	test_time(0.5 SECONDS)
+	TEST_ASSERT(!S.cooldown_on, "a real inherited SETTINGS field restarts stopped legacy work")
+
+/datum/unit_test/dq_hc_struct/doorbell_cancel_keeps_fingerprint
+/datum/unit_test/dq_hc_struct/doorbell_cancel_keeps_fingerprint/run_gate()
+	var/mob/living/carbon/human/H = person()
+	H.key = "dq_doorbell_cancel_actor"
+	TEST_ASSERT(H.key, "the forensic actor has an actual key")
+	var/obj/machinery/button/doorbell/B = mach(/obj/machinery/button/doorbell, tile(3, 2))
+	B.set_panel_open(TRUE)
+	var/obj/item/pen/P = allocate(/obj/item/pen, H.loc)
+	TEST_ASSERT(H.put_in_active_hand(P), "the operator holds the naming pen")
+	var/original_name = B.name
+	TEST_ASSERT_NULL(B.forensic_data, "the untouched bell has no forensic record")
+	test_click(H, B, P)
+	TEST_ASSERT(asked(H), "the actual touch opens its rename question")
+	TEST_ASSERT(length(B.forensic_data?.get_prints()), "opening the question already records real fingerprints")
+	request_answer(H, null, REQ_CANCELLED)
+	TEST_ASSERT(!asked(H), "cancelling closes the actual question")
+	TEST_ASSERT_EQUAL(B.name, original_name, "cancellation keeps the original name")
+	TEST_ASSERT(length(B.forensic_data?.get_prints()), "cancellation cannot erase the touch fingerprint")
+	H.key = null
+
+/datum/unit_test/dq_hc_struct/gear_prompt_cancel_releases_busy
+/datum/unit_test/dq_hc_struct/gear_prompt_cancel_releases_busy/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/gear_dispenser/D = mach(/obj/machinery/gear_dispenser, tile(3, 2))
+	D.set_emagged(TRUE)
+	for(var/key in D.dispenses)
+		own(D.dispenses[key])
+	TEST_ASSERT(length(D.dispenses), "the actual constructor supplies a nonempty gear catalog")
+	var/flags_before = D.dispenser_flags
+	test_click(H, D)
+	TEST_ASSERT(asked(H), "the real dispenser opens its gear question")
+	TEST_ASSERT(D.dispenser_flags != flags_before, "the open question acquires its busy flag")
+	request_answer(H, null, REQ_CANCELLED)
+	TEST_ASSERT(!asked(H), "cancellation closes the question")
+	TEST_ASSERT_EQUAL(D.dispenser_flags, flags_before, "cancellation releases exactly the temporary busy flag")
+	test_click(H, D)
+	TEST_ASSERT(asked(H), "the dispenser can be opened again after cancellation")
+	request_answer(H, null, REQ_CANCELLED)
+
+/datum/unit_test/dq_hc_struct/gear_answer_stays_busy_through_animation
+/datum/unit_test/dq_hc_struct/gear_answer_stays_busy_through_animation/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/machinery/gear_dispenser/D = mach(/obj/machinery/gear_dispenser, tile(3, 2))
+	D.set_emagged(TRUE)
+	for(var/key in D.dispenses)
+		own(D.dispenses[key])
+	var/flags_before = D.dispenser_flags
+	test_click(H, D)
+	var/datum/prompt/choice/R = SSrequests.open_for(H)
+	TEST_ASSERT(istype(R) && length(R.choices), "the actual dispenser offers a real gear choice")
+	request_answer(H, R.choices[1])
+	TEST_ASSERT(!asked(H), "the successful answer closes the question")
+	TEST_ASSERT(D.dispenser_flags != flags_before, "answering retains the busy flag throughout dispensing")
+	test_time(1 SECOND)
+	TEST_ASSERT(D.dispenser_flags != flags_before, "the machine is still busy during the scan animation")
+	test_time(4 SECONDS)
+	TEST_ASSERT_EQUAL(D.dispenser_flags, flags_before, "the native completion timer releases busy only when the gear emerges")

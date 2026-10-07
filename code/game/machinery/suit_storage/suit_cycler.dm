@@ -1,11 +1,15 @@
 GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 /// If this is > 0, the cycler is decontaminating whatever is inside it (steps left).
-OM_FIELD(/obj/machinery/suit_cycler, irradiating, 0, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/suit_cycler/var/irradiating = 0
+TRACKED_BRIDGED(/obj/machinery/suit_cycler, irradiating, CHANGE_MACHINE_SETTINGS)
+/datum/scheduler_field_definition/obj/machinery/suit_cycler/irradiating
+	of = /obj/machinery/suit_cycler
+	field = "irradiating"
+	channel = CHANGE_MACHINE_SETTINGS
 /// Shocks the hand at it: the shock wire cut (until mended) or pulsed (30 s); live only while operable (shock_live()).
 STAT(/obj/machinery/suit_cycler, electrified, TOP, base = 0)
 /// Derived field: a UV cycle is running.
-OM_DERIVE_FIELD(/obj/machinery/suit_cycler, cycler_has_work, list("active", "irradiating"))
 /obj/machinery/suit_cycler/proc/cycler_has_work()
 	return active && irradiating > 0
 
@@ -136,13 +140,7 @@ OM_DERIVE_FIELD(/obj/machinery/suit_cycler, cycler_has_work, list("active", "irr
 
 	return loaded
 
-EXTEND_INTERACTIONS(/obj/machinery/suit_cycler, \
-	INTERACT_INSERT(/obj/item/grab, PROC_REF(interaction_insert_grab), "Put in cycler", REQ_TARGET_STATE(/obj/machinery/suit_cycler/proc/can_insert_grabbed)), \
-	INTERACT_INSERT(/obj/item/clothing/head/helmet/space/void, PROC_REF(interaction_insert_helmet), "Fit helmet", REQ_TARGET_STATE(/obj/machinery/suit_cycler/proc/can_insert_helmet), OFFERED_WHEN(REQ_NOT(REQ_TYPE(PRED_HELD, list(/obj/item/clothing/head/helmet/space/rig))))), \
-	INTERACT_INSERT(/obj/item/clothing/suit/space/void, PROC_REF(interaction_insert_suit), "Fit voidsuit", REQ_TARGET_STATE(/obj/machinery/suit_cycler/proc/can_insert_suit)), \
-	INTERACT_HAND("Use", PROC_REF(interaction_use)), \
-	INTERACT_VERB("Eject Cycler", PROC_REF(interaction_leave), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now")), \
-)
+
 
 /// Requirement for putting a grabbed mob in: TRUE, or why not.
 /obj/machinery/suit_cycler/proc/can_insert_grabbed(mob/user, atom/target, obj/item/grab/G)
@@ -197,20 +195,22 @@ EXTEND_INTERACTIONS(/obj/machinery/suit_cycler, \
 		return "the Mark VII Emergency Response Suit is not compatible with the refitting system"
 	return TRUE
 
-/obj/machinery/suit_cycler/proc/interaction_insert_grab(mob/user, obj/item/grab/G, datum/interaction/interaction)
+/obj/machinery/suit_cycler/proc/interaction_insert_grab(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/grab/G = A.held
 	if(shock_live(src))
 		if(shock(user, 100))
-			return TRUE
+			return OP_OK
 
 	var/mob/grabbed = G?.grab_target()
 	if(!(ismob(grabbed)))
-		return TRUE
+		return OP_OK
 
 	act_message(user, null, others = span_notice("%U% starts putting [grabbed.name] into the suit cycler."))
 
 	task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_insert_grab_timed_done), done_args = list(user, G))
 
-	return TRUE
+	return OP_OK
 
 /obj/machinery/suit_cycler/proc/interaction_insert_grab_timed_done(mob/user, obj/item/grab/G)
 	if(!G || !G?.grab_target())
@@ -222,27 +222,31 @@ EXTEND_INTERACTIONS(/obj/machinery/suit_cycler, \
 	add_fingerprint(user)
 	consume(G, user)
 
-/obj/machinery/suit_cycler/proc/interaction_insert_helmet(mob/user, obj/item/clothing/head/helmet/space/void/IH, datum/interaction/interaction)
+/obj/machinery/suit_cycler/proc/interaction_insert_helmet(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/clothing/head/helmet/space/void/IH = A.held
 	if(shock_live(src))
 		if(shock(user, 100))
-			return TRUE
+			return OP_OK
 
 	to_chat(user, "You fit \the [IH] into the suit cycler.")
 	if(!move_into(src, nameof(src.helmet), IH, user))
-		return TRUE
+		return OP_OK
 
-	return TRUE
+	return OP_OK
 
-/obj/machinery/suit_cycler/proc/interaction_insert_suit(mob/user, obj/item/clothing/suit/space/void/IS, datum/interaction/interaction)
+/obj/machinery/suit_cycler/proc/interaction_insert_suit(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/clothing/suit/space/void/IS = A.held
 	if(shock_live(src))
 		if(shock(user, 100))
-			return TRUE
+			return OP_OK
 
 	to_chat(user, "You fit \the [IS] into the suit cycler.")
 	if(!move_into(src, nameof(src.suit), IS, user))
-		return TRUE
+		return OP_OK
 
-	return TRUE
+	return OP_OK
 
 /// The multitool or wirecutters: a live cycler shocks; behind the open panel its window opens.
 /obj/machinery/suit_cycler/proc/hacking_tool_used(datum/act/op/A)
@@ -271,24 +275,30 @@ EXTEND_INTERACTIONS(/obj/machinery/suit_cycler, \
 	req_access = list()
 	return OP_OK
 
-/obj/machinery/suit_cycler/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/suit_cycler/proc/interaction_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operable())
-		return TRUE
+		return OP_OK
 
 	if(!user.IsAdvancedToolUser())
-		return TRUE
+		return OP_OK
 
 	if(shock_live(src))
 		if(shock(user, 100))
-			return TRUE
+			return OP_OK
 
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /// The cycler won't start with a living thing inside it unless the safeties are off: the safety wire cut or pulsed, or an emag (safety_wire()).
 STAT(/obj/machinery/suit_cycler, safeties, ALL)
 
 CAPABILITIES(/obj/machinery/suit_cycler)
+	op("cycler_insert_grab", item(/obj/item/grab), priority(OP_PRIORITY_DEFAULT - 1), label("Put in cycler"), needs(req(PROC_REF(can_insert_grabbed_holds), because = PROC_REF(can_insert_grabbed_refusal))), then(PROC_REF(interaction_insert_grab)))
+	op("cycler_insert_helmet", item(/obj/item/clothing/head/helmet/space/void), priority(OP_PRIORITY_DEFAULT - 1), label("Fit helmet"), when(PROC_REF(cycler_helmet_offered)), needs(req(PROC_REF(can_insert_helmet_holds), because = PROC_REF(can_insert_helmet_refusal))), then(PROC_REF(interaction_insert_helmet)))
+	op("cycler_insert_suit", item(/obj/item/clothing/suit/space/void), priority(OP_PRIORITY_DEFAULT - 1), label("Fit voidsuit"), needs(req(PROC_REF(can_insert_suit_holds), because = PROC_REF(can_insert_suit_refusal))), then(PROC_REF(interaction_insert_suit)))
+	op("cycler_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
+	op("cycler_leave", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Cycler"), needs(req_adjacent(), req_capable(), req(PROC_REF(cycler_actor_can_act), because = "you can't do that right now")), then(PROC_REF(interaction_leave)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(cycler_has_work), wakes_on = list(nameof(active), nameof(irradiating)))
 	interface("SuitCycler", state = nameof(GLOB.tgui_notcontained_state))
 	space(SPACE_PANEL, door = nameof(panel_open))
@@ -499,9 +509,10 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 
 	return
 
-/obj/machinery/suit_cycler/proc/interaction_leave(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/suit_cycler/proc/interaction_leave(datum/act/op/A)
+	var/mob/user = A.actor
 	eject_occupant(user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/suit_cycler/proc/eject_occupant(mob/user)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SUIT_CYCLER)
@@ -583,3 +594,28 @@ CAPABILITIES(/obj/machinery/suit_cycler)
 
 /obj/machinery/suit_cycler/proc/idscan_wire_pulsed(datum/act/A)
 	set_locked(!locked)
+
+
+/obj/machinery/suit_cycler/proc/can_insert_grabbed_holds(datum/act/op/A)
+	return can_insert_grabbed(A.actor, src, A.held) == TRUE
+
+/obj/machinery/suit_cycler/proc/can_insert_grabbed_refusal(datum/act/op/A)
+	return can_insert_grabbed(A.actor, src, A.held)
+
+/obj/machinery/suit_cycler/proc/can_insert_helmet_holds(datum/act/op/A)
+	return can_insert_helmet(A.actor, src, A.held) == TRUE
+
+/obj/machinery/suit_cycler/proc/can_insert_helmet_refusal(datum/act/op/A)
+	return can_insert_helmet(A.actor, src, A.held)
+
+/obj/machinery/suit_cycler/proc/can_insert_suit_holds(datum/act/op/A)
+	return can_insert_suit(A.actor, src, A.held) == TRUE
+
+/obj/machinery/suit_cycler/proc/can_insert_suit_refusal(datum/act/op/A)
+	return can_insert_suit(A.actor, src, A.held)
+
+/obj/machinery/suit_cycler/proc/cycler_helmet_offered(datum/act/op/A)
+	return !istype(A.held, /obj/item/clothing/head/helmet/space/rig)
+
+/obj/machinery/suit_cycler/proc/cycler_actor_can_act(datum/act/op/A)
+	return dq_actor_can_act(A.actor, src, A.held) == TRUE

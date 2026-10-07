@@ -227,7 +227,7 @@ SYSTEM_DEF(machines)
 /// Hands this batch of gas dependency observations (from the frame's outbox) to their native watches
 /// (/datum/native_watch/gas, code/datums/om/native.dm). The OM watch layer owns one
 /// native watch per watched mixture (code/datums/om/watch.dm), which fans the record
-/// out to every om_watch armed on that mixture (om_watch_dispatch_gas()).
+/// directly to each surviving native gas subscription.
 /datum/system/machines/proc/wake_dirty_gas_subscribers(budgeted = FALSE)
 	var/scan_started = TICK_USAGE
 	if(!pending_dirty_gas_mixtures)
@@ -260,9 +260,3 @@ SYSTEM_DEF(machines)
 	gas_wake_scan_last_ms = current_gas_wake_scan_ms
 	gas_wake_subscribers_last = current_gas_wake_subscribers
 	return TRUE
-
-/// Wakes any /obj/machinery hibernating on a gas watch (an atom-agnostic force-wake, used by
-/// invalidate_gas_dependencies()-style callers whose device might not even be asleep, and by
-/// tests): if it has no watch armed it's already running and this is a no-op.
-/proc/om_watch_invalidate(datum/entity)
-	om_watch_fire_all(entity)

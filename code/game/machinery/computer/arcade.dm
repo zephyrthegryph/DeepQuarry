@@ -29,6 +29,7 @@ CAPABILITIES(/obj/machinery/computer/arcade)
 	rolls(nameof(rolled_board), PROC_REF(roll_board), when = cond_not(nameof(circuit)))
 	after_init(0, then(PROC_REF(become_rolled_board)))
 	op("redeem_tickets", stack(/obj/item/stack/arcadeticket, ARCADE_TICKETS_PER_PRIZE), priority(OP_PRIORITY_DEFAULT - 1), label("Redeem tickets"), then(PROC_REF(interaction_redeem_tickets)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(arcade_emp)))
 
 /// A generic cabinet (no circuit) rolls which arcade it is, then becomes that machine once its init is over.
 /obj/machinery/computer/arcade/var/rolled_board
@@ -66,9 +67,10 @@ CAPABILITIES(/obj/machinery/computer/arcade)
 	to_chat(user, span_notice("You turn in 2 tickets to the [src] and claim a prize!"))
 	return TRUE
 
-DAMAGE_REACTION(/obj/machinery/computer/arcade, DAMAGE_EMP, PROC_REF(arcade_emp))
 /// An EMP makes a working arcade machine spit out prizes.
-/obj/machinery/computer/arcade/proc/arcade_emp(datum/damage_packet/packet)
+/obj/machinery/computer/arcade/proc/arcade_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(!operable())
 		return
 	var/empprize = null
@@ -131,6 +133,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 	op("attack", ui_act("attack"), then(PROC_REF(ui_act_attack)))
 	op(XENO_CHEM_HEAL, ui_act(XENO_CHEM_HEAL), then(PROC_REF(ui_act_heal)))
 	op("charge", ui_act("charge"), then(PROC_REF(ui_act_charge)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /obj/machinery/computer/arcade/battle/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -273,8 +276,8 @@ CAPABILITIES(/obj/machinery/computer/arcade/battle)
 	blocked = 0
 	return
 
-DECLARE_EMAG(/obj/machinery/computer/arcade/battle, PROC_REF(on_emag), null, null)
-/obj/machinery/computer/arcade/battle/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/arcade/battle/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You override the cheat code menu and skip to Cheat #[rand(1, 50)]: Hyper-Lethal Mode."))
 
 	temp = "If you die in the game, you die for real!"
@@ -289,7 +292,7 @@ DECLARE_EMAG(/obj/machinery/computer/arcade/battle, PROC_REF(on_emag), null, nul
 	enemy_name = "Cuban Pete"
 	name = "Outbomb Cuban Pete"
 
-	return 1
+	return OP_OK
 
 //////////////////////////
 //   ORION TRAIL HERE   //
@@ -996,14 +999,14 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 	name = "The Orion Trail"
 	desc = "Learn how our ancestors got to Orion, and have fun in the process!"
 
-DECLARE_EMAG(/obj/machinery/computer/arcade/orion_trail, PROC_REF(on_emag), null, null)
-/obj/machinery/computer/arcade/orion_trail/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/arcade/orion_trail/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You override the cheat code menu and skip to Cheat #[rand(1, 50)]: Realism Mode."))
 	name = "The Orion Trail: Realism Edition"
 	desc = "Learn how our ancestors got to Orion, and try not to die in the process!"
 	newgame(user)
 	set_emagged(1)
-	return 1
+	return OP_OK
 
 /obj/item/orion_ship
 	name = "model settler ship"
@@ -1241,6 +1244,7 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 	op("return", ui_act("return"), then(PROC_REF(ui_act_return)))
 	op("pointless", ui_act("pointless"), then(PROC_REF(ui_act_pointless)))
 	op("clawmachine_pay", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Pay"), when(req(PROC_REF(wants_payment_holds))), then(PROC_REF(interaction_pay)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /obj/machinery/computer/arcade/clawmachine/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -1301,8 +1305,8 @@ CAPABILITIES(/obj/machinery/computer/arcade/clawmachine)
 	icon_state = "clawmachine_new"
 	gameStatus = "CLAWMACHINE_END"
 
-DECLARE_EMAG(/obj/machinery/computer/arcade/clawmachine, PROC_REF(on_emag), null, null)
-/obj/machinery/computer/arcade/clawmachine/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/arcade/clawmachine/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_info("You modify the claw of the machine. The next one is sure to win! You just have to pay..."))
 	name = "AlliCo Snag-A-Prize"
 	desc = "Get some goodies, all for you!"
@@ -1312,7 +1316,7 @@ DECLARE_EMAG(/obj/machinery/computer/arcade/clawmachine, PROC_REF(on_emag), null
 	wintick = 0
 	gameStatus = "CLAWMACHINE_NEW"
 	set_emagged(1)
-	return 1
+	return OP_OK
 
 // === merged from arcade_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/computer/arcade

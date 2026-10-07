@@ -71,7 +71,7 @@
 	TEST_ASSERT(actor.put_in_active_hand(gloves), "the actor holds the laundry")
 	TEST_ASSERT(washer.interaction_washing_machine_use_item(actor, gloves, null), "loading the laundry is handled")
 	TEST_ASSERT(gloves in washer.washing, "the washing machine records the laundry")
-	TEST_ASSERT(washer.interaction_washing_machine_use(actor, null, null), "closing the loaded machine is handled")
+	TEST_ASSERT(test_click(actor, washer, null), "closing the loaded machine is handled")
 	var/closed_state = washer.state
 	washer.interaction_washing_machine_start(ghost, null, null)
 	TEST_ASSERT_EQUAL(washer.state, closed_state, "a nonliving actor cannot start a cycle")

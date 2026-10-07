@@ -92,8 +92,8 @@ GLOBAL_LIST_EMPTY(op_legacy_plans) // interaction type -> /datum/op_plan
 /datum/input_adapter/compatibility_candidates(datum/op_resolution/R)
 	return op_legacy_candidates(R)
 
-/datum/input_adapter/compatibility_menu(mob/actor, atom/target, route = null)
-	return legacy_action_options(actor, target, route)
+/datum/input_adapter/compatibility_menu(mob/actor, atom/target, route = null, operations_only = FALSE)
+	return legacy_action_options(actor, target, route, operations_only)
 
 /datum/input_adapter/compatibility_screentip(mob/actor, atom/target, gesture)
 	return legacy_screentip_for(actor, target, gesture)

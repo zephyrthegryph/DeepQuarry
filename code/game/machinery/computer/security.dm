@@ -102,6 +102,7 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 	op("secure_data_eject_id", menu(), label("Eject ID Card"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_secure_data_eject_id)))
 	op("secure_data_insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), when(req_empty(nameof(scan))), then(PROC_REF(interaction_secure_data_insert_id)))
 	op("open_ui_fingerprint", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_open_ui_fingerprint)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(secure_data_emp)))
 
 /obj/machinery/computer/secure_data/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor
@@ -622,9 +623,10 @@ CAPABILITIES(/obj/machinery/computer/secure_data)
 		if (selection)
 			return selection.img
 
-DAMAGE_REACTION(/obj/machinery/computer/secure_data, DAMAGE_EMP, PROC_REF(secure_data_emp))
 /// An EMP scrambles or wipes some of the records.
-/obj/machinery/computer/secure_data/proc/secure_data_emp(datum/damage_packet/packet)
+/obj/machinery/computer/secure_data/proc/secure_data_emp(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(!operable())
 		return
 

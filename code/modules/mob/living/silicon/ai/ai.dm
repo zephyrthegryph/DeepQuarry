@@ -104,6 +104,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	can_be_antagged = TRUE
 
 CAPABILITIES(/mob/living/silicon/ai)
+	op("ai_silicon_camera_list", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Camera list"), then(PROC_REF(ai_silicon_camera_list)))
 	every(PROC_REF(track_interval), then(PROC_REF(ai_track_step)), when = nameof(cameraFollow))
 	immune_to(STAT_WEAKENED)
 	owns_one(nameof(selected_sprite), on_destroy = ON_DESTROY_PRIVATE_COPY)

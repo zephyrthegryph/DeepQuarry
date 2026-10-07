@@ -111,6 +111,7 @@
 
 /// How many things `A` directly contains. Equivalent to `A.contents.len`.
 /proc/contents_count(atom/A)
+	READS_FROM(A) // the count follows this holder's direct contents
 	return A ? length(A.contents) : 0
 
 /// `locate(what) in L` over a plain list (a registry, a view() result, a

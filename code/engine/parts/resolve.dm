@@ -761,6 +761,21 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 			enabled = FALSE
 			reason = reason_text(why)
 		rows += list(list("key" = C.oplan.key, "label" = op_label(C.oplan), "enabled" = enabled, "reason" = reason, "id" = C.oplan.key, "name" = op_label(C.oplan)))
+	// A modern actor can inspect an unconverted target: retain that target's legacy radial
+	// rows (and their route/state refusals) beside the actual engine candidates.
+	var/list/legacy_rows = input_compatibility().compatibility_menu(actor, target, ROUTE_PHYSICAL, operations_only = TRUE)
+	for(var/list/legacy_row as anything in legacy_rows)
+		var/key = legacy_row["id"]
+		if(seen[key])
+			continue
+		seen[key] = TRUE
+		var/list/row = legacy_row.Copy()
+		row["key"] = key
+		row["label"] = legacy_row["name"]
+		rows += list(row)
+	// Legacy requirements can read uncached data: evaluate their current refusals each tick.
+	if(length(legacy_rows))
+		timed = TRUE
 	if(length(GLOB.op_menu_cache) >= OP_MENU_CACHE_MAX)
 		GLOB.op_menu_cache.Cut()
 	GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null)

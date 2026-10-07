@@ -30,7 +30,8 @@ CAPABILITIES(/obj/structure/event/present)
 	density = 1
 
 /// Old verb "Bind/unbind sack".
-/obj/structure/event/santa_sack/proc/santa_sack_setanchor(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/event/santa_sack/proc/santa_sack_setanchor(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.incapacitated())
 		return
 	if(user.ckey == santa_ckey)
@@ -44,10 +45,11 @@ CAPABILITIES(/obj/structure/event/present)
 		to_chat(user, span_warning("Only Santa can bind and unbind his sack!"))
 	return
 
-DECLARE_INTERACTIONS(/obj/structure/event/santa_sack, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/structure/event/santa_sack/proc/can_give_present)), \
-	INTERACT_VERB("Bind/unbind sack", PROC_REF(santa_sack_setanchor)), \
-)
+
+
+CAPABILITIES(/obj/structure/event/santa_sack)
+	op("give_present", hand(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(santa_present_allowed), because = "only Santa can give presents (be nice or you might end up in Santa's sack)")), asks(/datum/prompt/choice, fields = list("title" = "Give Present", "question" = "Choose who to give a present to.", "choices" = computed(PROC_REF(santa_present_receivers)), "timeout" = 0)), then(PROC_REF(present_receiver_chosen)))
+	op("bind_sack", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Bind/unbind sack"), needs(req_adjacent(), req_capable()), then(PROC_REF(santa_sack_setanchor)))
 
 /// Requirement: only Santa hands out presents.
 /obj/structure/event/santa_sack/proc/can_give_present(mob/user, atom/target, obj/item/held)
@@ -56,20 +58,12 @@ DECLARE_INTERACTIONS(/obj/structure/event/santa_sack, \
 	return TRUE
 
 /// Old attack_hand.
-/obj/structure/event/santa_sack/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	var/list/receivers = list()
-	for(var/mob/living/R in oview(user.loc,1))
-		receivers += R
-
-	open_request(src, /datum/prompt/choice, PROC_REF(present_receiver_chosen), answerer = user, question = "Choose who to give a present to.", title = "Give Present", choices = mobs_in_view(1, user), ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
-	return TRUE
-
-/obj/structure/event/santa_sack/proc/present_receiver_chosen(datum/act/request/A)
+/obj/structure/event/santa_sack/proc/present_receiver_chosen(datum/act/op/A)
 	if(!A.answer)
 		return
-	var/mob/user = A.request.answerer
+	var/mob/user = A.actor
 	var/mob/living/T = A.answer.value
-	if(!T.ckey)
+	if(!T?.ckey)
 		return
 
 	if(LAZYACCESS(ckey_log, T.ckey))
@@ -84,3 +78,9 @@ DECLARE_INTERACTIONS(/obj/structure/event/santa_sack, \
 	LAZYSET(nice_list_log, ++length(nice_list_log), santa_log)
 	LAZYSET(ckey_log, T.ckey, TRUE)
 	//Currently doesnt have an ingame way to show. Can only be viewed through View-Variables, to ensure theres no chance of players ckeys exposed - Jack
+
+/obj/structure/event/santa_sack/proc/santa_present_allowed(datum/act/op/A)
+	return A.actor?.ckey == santa_ckey
+
+/obj/structure/event/santa_sack/proc/santa_present_receivers(datum/act/op/A)
+	return mobs_in_view(1, A.actor)

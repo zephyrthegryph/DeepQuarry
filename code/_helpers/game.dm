@@ -18,6 +18,7 @@
 	return max_z
 
 /proc/get_area(atom/A)
+	READS_FROM(A) // area lookup follows the supplied atom location
 	RETURN_TYPE(/area)
 	if(isarea(A))
 		return A

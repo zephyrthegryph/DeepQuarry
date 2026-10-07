@@ -40,11 +40,12 @@
 
 	replace_with(src, CC)
 
-EXTEND_INTERACTIONS(/obj/structure/cable/heavyduty, INTERACT_INSERT(/obj/item/stack/cable_coil, PROC_REF(heavyduty_interaction_item), "Connect cable", REQ_BECAUSE(REQ_TYPE(PRED_HELD, list(/obj/item/stack/cable_coil/heavyduty)), "you will need heavier cables to connect to these")))
+CAPABILITIES(/obj/structure/cable/heavyduty)
+	op("heavy_coil", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Connect cable"), needs(req(PROC_REF(heavy_coil_holds), because = "you will need heavier cables to connect to these")), then(PROC_REF(heavyduty_interaction_item)))
 
 /// Old attackby: only heavy-duty coil connects (the requirement); it then falls through to the cable's own coil handling.
-/obj/structure/cable/heavyduty/proc/heavyduty_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	return FALSE
+/obj/structure/cable/heavyduty/proc/heavyduty_interaction_item(datum/act/op/A)
+	return OP_DECLINE
 
 /obj/item/stack/cable_coil/heavyduty/turf_place(turf/simulated/F, mob/user)
 	if(istype(F, /turf/simulated/open))
@@ -54,3 +55,6 @@ EXTEND_INTERACTIONS(/obj/structure/cable/heavyduty, INTERACT_INSERT(/obj/item/st
 
 /obj/structure/cable/heavyduty/cableColor(colorC)
 	return
+
+/obj/structure/cable/heavyduty/proc/heavy_coil_holds(datum/act/op/A)
+	return istype(A.held, /obj/item/stack/cable_coil/heavyduty)

@@ -181,6 +181,7 @@ TRACKED_BRIDGED(/obj/machinery/door/airlock, cur_command, CHANGE_MACHINE_SETTING
 // watch (woken only when the reading would differ) and never polls. A hand on it asks the controller to cycle the airlock (the master tag and the command it is set to). A multitool sets its tags, its frequency and its command.
 
 CAPABILITIES(/obj/machinery/airlock_sensor)
+	gas_watch(mask = GAS_DEPENDENCY_PRESSURE, changed = PROC_REF(pressure_heard))
 	multitool_settings(list(
 		list("Master Tag", "master_tag", "text", 30),
 		list("ID Tag", "id_tag", "text", 30),
@@ -202,15 +203,23 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 /// Waits for the air: one gas watch on the mixture here, woken only when the reading (to a tenth of a kilopascal) would be new, so a change that leaves
 /// it identical cannot affect a controller or the icon.
 /obj/machinery/airlock_sensor/proc/register_gas_dependencies()
-	var/datum/gas_mixture/environment = return_air()
-	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
+	gas_watch_arm(src)
+
+/obj/machinery/airlock_sensor/proc/pressure_heard(list/observation, observation_index)
+	if(gas_wake_condition())
+		SSmachines.gas_woken_last++
+		gas_dependency_wake_count++
+		wake_from_gas()
 
 /obj/machinery/airlock_sensor/proc/gas_wake_condition()
 	var/datum/gas_mixture/environment = return_air()
 	return on && environment && round(environment.return_pressure(), 0.1) != previousPressure
 
 /obj/machinery/airlock_sensor/proc/unregister_gas_dependencies()
-	om_watch_disarm(src, "gas")
+	var/datum/cap_data/gas_watch/data = gas_watch_data(src)
+	if(data)
+		rel_clear(data, nameof(data.watch))
+		data.armed_id = null
 
 /// The reading changed: it is read and sent, and the sensor waits again.
 /obj/machinery/airlock_sensor/proc/wake_from_gas()

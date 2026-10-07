@@ -97,3 +97,70 @@
 	press(H, C, "start_stop")
 	TEST_ASSERT(!C.timing, "and stop stops it")
 	press(H, C, "adjust_power", list("value" = 4))
+
+// Public sequencer swipes pin the legacy declarations before replacement.
+/datum/unit_test/dq_hc_computers/proc/hc_emag(mob/living/carbon/human/H)
+	var/obj/item/card/emag/E = allocate(/obj/item/card/emag, hc_side())
+	E.uses = 8
+	TEST_ASSERT(H.put_in_active_hand(E), "the sequencer is held for an actual click")
+	return E
+
+/datum/unit_test/dq_hc_computers/arcade_emag_modes
+/datum/unit_test/dq_hc_computers/arcade_emag_modes/run_gate()
+	var/mob/living/carbon/human/H = hc_actor()
+	var/obj/item/card/emag/E = hc_emag(H)
+	var/obj/machinery/computer/arcade/battle/B = hc_console(/obj/machinery/computer/arcade/battle)
+	test_click(H, B, E)
+	TEST_ASSERT_EQUAL(B.enemy_name, "Cuban Pete", "battle sequencer starts lethal enemy mode")
+	TEST_ASSERT_EQUAL(B.player_hp, 30, "battle mode resets the player's health")
+	TEST_ASSERT(B.emagged, "battle cheat mode sets its own gameplay state")
+	TEST_ASSERT_EQUAL(E.uses, 7, "battle mode spends one sequencer use")
+	B.player_hp = 7
+	test_click(H, B, E)
+	TEST_ASSERT_EQUAL(B.player_hp, 7, "a second swipe cannot reset a one-shot battle mode")
+	TEST_ASSERT_EQUAL(E.uses, 7, "a refused repeat does not spend a use")
+	var/obj/machinery/computer/arcade/orion_trail/O = hc_console(/obj/machinery/computer/arcade/orion_trail)
+	test_click(H, O, E)
+	TEST_ASSERT_EQUAL(O.name, "The Orion Trail: Realism Edition", "orion sequencer selects realism mode")
+	TEST_ASSERT(O.emagged, "orion realism mode sets its own gameplay state")
+	TEST_ASSERT_EQUAL(E.uses, 6, "orion mode spends one use")
+	var/obj/machinery/computer/arcade/clawmachine/C = hc_console(/obj/machinery/computer/arcade/clawmachine)
+	C.set_gamepaid(TRUE)
+	test_click(H, C, E)
+	TEST_ASSERT_EQUAL(C.winprob, 100, "claw sequencer guarantees a win")
+	TEST_ASSERT_EQUAL(C.gamepaid, 0, "claw mode still requires a new payment")
+	TEST_ASSERT_EQUAL(C.gameStatus, "CLAWMACHINE_NEW", "claw mode resets the actual game state")
+	TEST_ASSERT_EQUAL(E.uses, 5, "claw mode spends one use")
+
+/datum/unit_test/dq_hc_computers/prison_emag_once_effect
+/datum/unit_test/dq_hc_computers/prison_emag_once_effect/run_gate()
+	var/mob/living/carbon/human/H = hc_actor()
+	var/obj/item/card/emag/E = hc_emag(H)
+	var/obj/machinery/computer/prison_shuttle/C = hc_console(/obj/machinery/computer/prison_shuttle)
+	test_click(H, C, E)
+	TEST_ASSERT(C.hacked, "the sequencer disables the prison shuttle lock")
+	TEST_ASSERT_EQUAL(E.uses, 7, "unlocking spends one use")
+	test_click(H, C, E)
+	TEST_ASSERT_EQUAL(E.uses, 7, "an already unlocked repeat does not spend another use")
+
+/datum/unit_test/dq_hc_computers/supply_emag_contraband
+/datum/unit_test/dq_hc_computers/supply_emag_contraband/run_gate()
+	var/mob/living/carbon/human/H = hc_actor()
+	var/obj/item/card/emag/E = hc_emag(H)
+	var/obj/machinery/computer/supplycomp/C = hc_console(/obj/machinery/computer/supplycomp)
+	test_click(H, C, E)
+	TEST_ASSERT(C.can_order_contraband, "the sequencer enables contraband ordering")
+	TEST_ASSERT(C.authorization & SUP_CONTRABAND, "the actual authorization bit is enabled")
+	TEST_ASSERT_EQUAL(length(C.req_access), 0, "the sequencer removes the access requirement")
+	TEST_ASSERT_EQUAL(E.uses, 7, "contraband unlock spends one use")
+	test_click(H, C, E)
+	TEST_ASSERT_EQUAL(E.uses, 7, "an already unlocked repeat does not spend another use")
+
+/datum/unit_test/dq_hc_computers/specops_emag_declines
+/datum/unit_test/dq_hc_computers/specops_emag_declines/run_gate()
+	var/mob/living/carbon/human/H = hc_actor()
+	var/obj/item/card/emag/E = hc_emag(H)
+	var/obj/machinery/computer/specops_shuttle/C = hc_console(/obj/machinery/computer/specops_shuttle)
+	test_click(H, C, E)
+	TEST_ASSERT_EQUAL(E.uses, 8, "advanced specops systems reject the sequencer without payment")
+	TEST_ASSERT(!is_emagged(C), "a declined swipe does not mark the console subverted")

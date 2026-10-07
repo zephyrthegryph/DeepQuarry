@@ -164,6 +164,14 @@ pub fn parts() -> Vec<Part> {
         )
         .flt(vec![Flt::Keep(r"^code/game/(objects|turfs)/".into())]),
         Part::new(
+            "legacy_declaration_forms_banned_in_converted_folders",
+            "legacy declaration forms: banned in the converted folders",
+            "Use CAPABILITIES op(), emag(), hit notices and every(); use TRACKED/TRACKED_BRIDGED for fields. These folders completed their declaration migration.",
+            Files::Code,
+            line(r"^(DECLARE_INTERACTIONS|EXTEND_INTERACTIONS|DAMAGE_REACTION(_AFTER)?|DECLARE_EMAG(_REPEATABLE)?|DECLARE_PERIODIC(_WHILE|_WHILE_ALL)?|DECLARE_REPEAT|OM_FIELD(_[A-Z_]+)?|OM_DERIVE_FIELD|OM_FLAG_FIELD)\(|^/[A-Za-z0-9_/]+/declare_interactions\("),
+        )
+        .flt(vec![Flt::KeepPaths("legacy_forms_converted")]),
+        Part::new(
             "bump_ratchet_on_bumped_overrides",
             "bump: ratchet on Bumped() overrides",
             "Bumped() overrides over the ratchet. Answer the bump action: on_notice(/datum/notice/bumped, then(PROC_REF(x))) or extend(/datum/act/bump, ...) in the type's CAPABILITIES.",

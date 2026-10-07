@@ -36,9 +36,16 @@ FIRE ALARM
 	var/causalitywarn = FALSE // Looping Alarms
 
 /// TRUE while the fire alarm's lockdown countdown runs.
-OM_FIELD(/obj/machinery/firealarm, timing, 0, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/firealarm/var/timing = 0
+TRACKED_BRIDGED(/obj/machinery/firealarm, timing, CHANGE_MACHINE_SETTINGS)
+/datum/scheduler_field_definition/obj/machinery/firealarm/timing
+	of = /obj/machinery/firealarm
+	field = "timing"
+	channel = CHANGE_MACHINE_SETTINGS
 
 CAPABILITIES(/obj/machinery/firealarm)
+	op("firealarm_trigger", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Trigger"), then(PROC_REF(interaction_firealarm_trigger)))
+	op("firealarm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(firealarm_use_ready), silent = TRUE)), then(PROC_REF(interaction_firealarm_use)))
 	started_work(step = PROC_REF(work_step), when = nameof(timing), gate = PROC_REF(operable), wakes_on = list(nameof(timing), STAT_OPERABLE))
 	owns_one(nameof(causality), /datum/looping_sound/alarm/sm_causality_alarm)
 	owns_one(nameof(critalarm), /datum/looping_sound/alarm/sm_critical_alarm)
@@ -148,22 +155,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 		alarm(rand(30 / severity, 60 / severity))
 	return HOOK_DECLINE
 
-/obj/machinery/firealarm/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/firealarm_trigger,
-		/datum/interaction/machine_hand/ungated/firealarm_use,
-	)
-	..()
-
-/datum/interaction/machine_item/firealarm_trigger
-	id = "firealarm_trigger"
-	name = "Trigger"
-	effect = /obj/machinery/firealarm/proc/interaction_firealarm_trigger
-
-/obj/machinery/firealarm/proc/interaction_firealarm_trigger(mob/user, obj/item/held, datum/interaction/interaction)
-	add_fingerprint(user)
+/obj/machinery/firealarm/proc/interaction_firealarm_trigger(datum/act/op/A)
+	add_fingerprint(A.actor)
 	alarm()
-	return TRUE
+	return OP_OK
 
 /obj/machinery/firealarm/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
@@ -212,15 +207,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 	if(!after_pending(src, "power_settle"))
 		after(src, rand(0 SECONDS,1.5 SECONDS), PROC_REF(power_change_settle), key = "power_settle")
 
-/datum/interaction/machine_hand/ungated/firealarm_use
-	id = "firealarm_use"
-	name = "Use"
-	requires = list()
-	effect = /obj/machinery/firealarm/proc/interaction_firealarm_use
+/obj/machinery/firealarm/proc/firealarm_use_ready(datum/act/op/A)
+	return !A.actor.stat && operable()
 
-/obj/machinery/firealarm/proc/interaction_firealarm_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.stat || !operable())
-		return TRUE
+
+/obj/machinery/firealarm/proc/interaction_firealarm_use(datum/act/op/A)
+	var/mob/user = A.actor
 
 	add_fingerprint(user)
 	var/area/A = get_area(src)
@@ -228,7 +220,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 		reset(user)
 	else
 		alarm(0, user)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/firealarm/proc/reset(mob/user)
 	if(!(working))

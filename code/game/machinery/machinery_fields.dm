@@ -1,15 +1,37 @@
 // Core machine state as declared fields (doc/rewrite/systems.md §2).
 //
-// Every write goes through the generated setter (set_on(), set_locked(), stat_add(), ...), which
+// Every write goes through the generated setter (set_on(), set_locked(), set_stat(), ...), which
 // raises the channel only on a real change; tools/ci/sys_rules/fields.py and field_write_lint.py
 // reject direct writes. operable() is the one reader for "powered and working".
 
-OM_FIELD(/obj/machinery, on, FALSE, CHANGE_MACHINE_SETTINGS)
-OM_FIELD(/obj/machinery, active, FALSE, CHANGE_MACHINE_SETTINGS)
-OM_FIELD(/obj/machinery, state, 0, CHANGE_MACHINE_SETTINGS)
-OM_FIELD(/obj/machinery, mode, 0, CHANGE_MACHINE_SETTINGS)
-OM_FIELD(/obj/machinery, locked, FALSE, CHANGE_MACHINE_MODE)
-OM_FIELD(/obj/machinery, emagged, FALSE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/var/on = FALSE
+TRACKED_BRIDGED(/obj/machinery, on, CHANGE_MACHINE_SETTINGS)
+/datum/scheduler_field_definition/obj/machinery/on
+	of = /obj/machinery
+	field = "on"
+	channel = CHANGE_MACHINE_SETTINGS
+/obj/machinery/var/active = FALSE
+TRACKED_BRIDGED(/obj/machinery, active, CHANGE_MACHINE_SETTINGS)
+/datum/scheduler_field_definition/obj/machinery/active
+	of = /obj/machinery
+	field = "active"
+	channel = CHANGE_MACHINE_SETTINGS
+/obj/machinery/var/state = 0
+TRACKED_BRIDGED(/obj/machinery, state, CHANGE_MACHINE_SETTINGS)
+/datum/scheduler_field_definition/obj/machinery/state
+	of = /obj/machinery
+	field = "state"
+	channel = CHANGE_MACHINE_SETTINGS
+/obj/machinery/var/mode = 0
+TRACKED_BRIDGED(/obj/machinery, mode, CHANGE_MACHINE_SETTINGS)
+/datum/scheduler_field_definition/obj/machinery/mode
+	of = /obj/machinery
+	field = "mode"
+	channel = CHANGE_MACHINE_SETTINGS
+/obj/machinery/var/locked = FALSE
+TRACKED_BRIDGED(/obj/machinery, locked, CHANGE_MACHINE_MODE)
+/obj/machinery/var/emagged = FALSE
+TRACKED_BRIDGED(/obj/machinery, emagged, CHANGE_MACHINE_SETTINGS)
 
 /// Machine conditions are stats held by sources (code/contracts/ids/stats.dm):
 ///   has_power      false while the area's channel is dark (area_gives_power(): the grid's reading) or SRC_GRID holds it (set_grid_power(), a shim)
@@ -20,7 +42,7 @@ OM_FIELD(/obj/machinery, emagged, FALSE, CHANGE_MACHINE_SETTINGS)
 /// one word. There is no `stat` var on a machine: watchers use on_change(STAT_OPERABLE) and the "stat" key is only what the conditions publish.
 /// The channels the conditions raise, as the look's watch list names them ("stat"). The machine has no var of that name any more: the field is only the
 /// channel mask the conditions' announcements raise.
-/datum/om/field_def/obj/machinery/stat
+/datum/scheduler_field_definition/obj/machinery/stat
 	of = /obj/machinery
 	field = "stat"
 	channel = CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER
@@ -112,21 +134,44 @@ READS_AS(/obj/machinery/proc/operable, MACHINE_KEY_STAT)
 	return !!stat_value(src, STAT_OPERABLE)
 
 /// Anchoring: set_anchored() (atoms_movable.dm) is the setter and raises the family channel.
-OM_FIELD_SETTER(/atom/movable, anchored, 0)
-OM_FIELD_SETTER(/obj/machinery, anchored, CHANGE_MACHINE_ANCHORED)
-OM_FIELD_SETTER(/mob, anchored, CHANGE_MOB_CAN_MOVE)
+/datum/scheduler_field_definition/atom/movable/anchored
+	of = /atom/movable
+	field = "anchored"
+	channel = 0
+/datum/scheduler_field_definition/obj/machinery/anchored
+	of = /obj/machinery
+	field = "anchored"
+	channel = CHANGE_MACHINE_ANCHORED
+/datum/scheduler_field_definition/mob/anchored
+	of = /mob
+	field = "anchored"
+	channel = CHANGE_MOB_CAN_MOVE
 
 /// Density: set_density() (_atom.dm) is the setter; a machine hears CHANGE_MACHINE_SETTINGS.
-OM_FIELD_SETTER(/atom, density, 0)
-OM_FIELD_SETTER(/obj/machinery, density, CHANGE_MACHINE_SETTINGS)
+/datum/scheduler_field_definition/atom/density
+	of = /atom
+	field = "density"
+	channel = 0
+/datum/scheduler_field_definition/obj/machinery/density
+	of = /obj/machinery
+	field = "density"
+	channel = CHANGE_MACHINE_SETTINGS
 
 /// Vehicles keep their own condition bits (BROKEN, ...), same API as machines.
-OM_FLAG_FIELD(/obj/vehicle, stat, 0, CHANGE_EXPLICIT)
+/obj/vehicle/var/stat = 0
+TRACKED_BRIDGED(/obj/vehicle, stat, CHANGE_EXPLICIT)
+/datum/scheduler_field_definition/obj/vehicle/stat
+	of = /obj/vehicle
+	field = "stat"
+	channel = CHANGE_EXPLICIT
 
 /// Power mode (USE_POWER_OFF/IDLE/ACTIVE): set_use_power() (machinery_power.dm) is the setter and
 /// moves the area's tally between the type's idle_power_usage and active_power_usage rows, so the
 /// draw always follows the field.
-OM_FIELD_SETTER(/obj/machinery, use_power, CHANGE_MACHINE_SETTINGS)
+/datum/scheduler_field_definition/obj/machinery/use_power
+	of = /obj/machinery
+	field = "use_power"
+	channel = CHANGE_MACHINE_SETTINGS
 
 /// Appearance (doc/rewrite/systems.md section 1): a machine's look follows its core fields, so a
 /// change to any of them re-runs update_icon() on the presentation lane (once per frame) and no
@@ -137,7 +182,27 @@ APPEARANCE_WATCH(/obj/vehicle, list("stat"))
 
 /// Integrity (atom_defense.dm): update_integrity() is the only writer and raises CHANGE_INTEGRITY, so
 /// sprites drawn from damage declare "get_integrity" and redraw on hits and repairs by themselves.
-OM_DERIVE_FIELD(/atom, get_integrity, list(CHANGE_INTEGRITY))
+/datum/scheduler_field_definition/atom/get_integrity
+	of = /atom
+	field = "get_integrity"
+	derived = TRUE
+	inputs = list(CHANGE_INTEGRITY)
 
 /// TRUE: a machine in high gear (the mining and conveyor lines read it; their work runs at the same interval either way).
-OM_FIELD(/obj/machinery, speed_process, FALSE, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/var/speed_process = FALSE
+TRACKED_BRIDGED(/obj/machinery, speed_process, CHANGE_MACHINE_SETTINGS)
+
+/datum/scheduler_field_definition/obj/machinery/locked
+	of = /obj/machinery
+	field = "locked"
+	channel = CHANGE_MACHINE_MODE
+
+/datum/scheduler_field_definition/obj/machinery/emagged
+	of = /obj/machinery
+	field = "emagged"
+	channel = CHANGE_MACHINE_SETTINGS
+
+/datum/scheduler_field_definition/obj/machinery/speed_process
+	of = /obj/machinery
+	field = "speed_process"
+	channel = CHANGE_MACHINE_SETTINGS

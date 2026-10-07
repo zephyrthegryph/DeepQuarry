@@ -96,8 +96,10 @@ TRACKED(/obj/machinery/clonepod, mess)
 		target.set_occupant(null)
 
 /// The occupant slot view is a field: rel_set/rel_clear (and the framework clearing it) raise CHANGE_MACHINE_OCCUPANT.
-OM_FIELD_VIEW_OF(/obj/machinery/clonepod, occupant_mob, CHANGE_MACHINE_OCCUPANT)
-OM_DERIVE_FIELD(/obj/machinery/clonepod, clonepod_occupied, list("occupant_mob"))
+/datum/scheduler_field_definition/obj/machinery/clonepod/occupant_mob
+	of = /obj/machinery/clonepod
+	field = "occupant_mob"
+	channel = CHANGE_MACHINE_OCCUPANT
 /// Derived field: the pod holds a clone (writing occupant_mob raises CHANGE_MACHINE_OCCUPANT).
 /obj/machinery/clonepod/proc/clonepod_occupied()
 	return occupant_mob ? TRUE : FALSE

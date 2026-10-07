@@ -207,23 +207,24 @@
 	eyeobj.setLoc(get_turf(target), 0)
 
 // camera.dm declares the camera's other interactions.
-EXTEND_INTERACTIONS(/obj/machinery/camera, INTERACT_SILICON("Look through", PROC_REF(camera_silicon_look)))
+
 
 /// Old attack_ai: the AI moves its eye to the camera. Nothing for cyborgs.
-/obj/machinery/camera/proc/camera_silicon_look(mob/living/silicon/ai/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/camera/proc/camera_silicon_look(datum/act/op/A)
+	var/mob/living/silicon/ai/user = A.actor
 	if(!istype(user))
-		return TRUE
+		return OP_OK
 	if(!can_use())
-		return TRUE
+		return OP_OK
 	var/mob/observer/eye/eyeobj = user.active_eye()
 	eyeobj?.setLoc(get_turf(src))
-	return TRUE
+	return OP_OK
 
 // ai.dm declares the AI's other interactions.
-EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_SILICON("Camera list", PROC_REF(ai_silicon_camera_list)))
+
 
 /// Old attack_ai: an AI clicking an AI gets the camera list.
-/mob/living/silicon/ai/proc/ai_silicon_camera_list(mob/user, obj/item/held, datum/interaction/interaction)
+/mob/living/silicon/ai/proc/ai_silicon_camera_list(datum/act/op/A)
 	ai_camera_list()
 	return TRUE
 
