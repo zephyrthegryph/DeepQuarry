@@ -29,7 +29,6 @@
 		if(R) // Sanity check the reagent
 			set_canister(R.name,R.id)
 			reagents.add_reagent(R.id, volume)
-	update_icon()
 
 /obj/item/reagent_containers/chem_canister/examine(mob/user)
 	. = ..()
@@ -67,7 +66,7 @@
 
 		var/trans = src.reagents.trans_to_obj(target, amount_per_transfer_from_this)
 		to_chat(user, span_notice("You transfer [trans] units of the solution to \the [target]."))
-		update_icon()
+		changed(src)
 
 	else
 		return ..()
@@ -86,7 +85,7 @@
 			if(C.reagents.total_volume >= C.reagents.maximum_volume)
 				continue
 			reagents.trans_to_obj(C, amount_per_transfer_from_this)
-			update_icon()
+			changed(src)
 			SStgui.update_uis(DISP)
 			to_chat(user, span_notice("You fill \the [DISP] with '\the [src]."))
 			return TRUE
@@ -97,7 +96,7 @@
 	return FALSE
 
 /obj/item/reagent_containers/chem_canister/on_reagent_change(changetype)
-	update_icon()
+	changed(src)
 
 /obj/item/reagent_containers/chem_canister/draw(datum/look/look)
 	..()

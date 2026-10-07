@@ -23,7 +23,7 @@ CAPABILITIES(/obj/machinery/pump_relay)
 
 /obj/machinery/pump_relay/on_reagent_change(changetype)
 	. = ..()
-	update_icon()
+	changed(src)
 	if(prob(2))
 		visible_message(span_infoplain("\The [src] gurgles as it pumps fluid."))
 

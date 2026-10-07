@@ -75,7 +75,6 @@
 	// Drain it!
 	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
 	act_message(user, C, others = "%U% drains %T% into \the [src].")
-	update_icon()
 	return OP_OK
 
 /obj/machinery/reagent_refinery/vat/proc/interaction_drain_container(datum/act/op/A)
@@ -87,7 +86,6 @@
 	// Drain it!
 	C.reagents.trans_to_holder( src.reagents, src.reagents.maximum_volume)
 	act_message(user, C, others = "%U% dumps %T% into \the [src].")
-	update_icon()
 	return OP_OK
 
 /// Busy while someone is buckled in to soak.

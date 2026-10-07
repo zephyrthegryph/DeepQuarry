@@ -19,7 +19,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/pump)
 	default_apply_parts()
 	// Update neighbours and self for state
 	update_neighbours()
-	update_icon()
 
 	add_hose_connector(/datum/hose_connector/input)
 	add_hose_connector(/datum/hose_connector/input)

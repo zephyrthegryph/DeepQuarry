@@ -29,7 +29,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/filter)
 	default_apply_parts()
 	// Update neighbours and self for state
 	update_neighbours()
-	update_icon()
 
 /obj/machinery/reagent_refinery/filter/refinery_step()
 	if(!anchored)
@@ -147,7 +146,7 @@ CAPABILITIES(/obj/machinery/reagent_refinery/filter)
 		return
 
 	filter_side *= -1
-	update_icon()
+	changed(src)
 
 /obj/machinery/reagent_refinery/filter/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// pumps, furnaces, splitters and filters can only be FED in a straight line

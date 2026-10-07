@@ -144,7 +144,7 @@ CAPABILITIES(/obj/item/perfect_tele)
 		to_chat(user,span_notice("You eject \the [power_source] from \the [src]."))
 		user.put_in_hands(power_source)
 		rel_take(src, nameof(power_source))
-		update_icon()
+		changed(src)
 	else
 		to_chat(user,span_notice("[src] does not have a power cell."))
 
@@ -208,7 +208,6 @@ This device records all warnings given and teleport events for admin review in c
 			return OP_OK
 		power_source.update_icon() //Why doesn't a cell do this already? :|
 		to_chat(user,span_notice("You insert \the [power_source] into \the [src]."))
-		update_icon()
 
 	else if(istype(W,/obj/item/perfect_tele_beacon))
 		var/obj/item/perfect_tele_beacon/tb = W
@@ -386,14 +385,14 @@ This device records all warnings given and teleport events for admin review in c
 			//Phase-in effect for grabbed person
 			phase_in(grabbed,get_turf(grabbed))
 
-	update_icon()
+	changed(src)
 	after(src, 30 SECONDS, PROC_REF(translocator_ready))
 
 	LAZYSET(logged_events, "[world.time]", "[user] teleported [target] to [real_dest] [televored ? "(Belly: [lowertext(real_dest.name)])" : null]")
 
 /obj/item/perfect_tele/proc/translocator_ready()
 	ready = 1
-	update_icon()
+	changed(src)
 
 /obj/item/perfect_tele/proc/phase_out(mob/M,turf/T)
 
@@ -539,7 +538,7 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	if(recharging)
 		return
 	recharging = 1
-	update_icon()
+	changed(src)
 	act_message(user, src, MSG_SELF(span_notice("You open %T% and start pumping the handle.")), \
 		MSG_OTHERS(span_notice("%U% opens %T% and starts pumping the handle.")))
 	pump_handle(user)
@@ -557,7 +556,7 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 
 /obj/item/perfect_tele/frontier/proc/pump_done()
 	recharging = 0
-	update_icon()
+	changed(src)
 
 /obj/item/perfect_tele/frontier/draw(datum/look/look)
 	if(recharging)

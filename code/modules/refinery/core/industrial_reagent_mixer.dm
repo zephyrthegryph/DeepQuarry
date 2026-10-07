@@ -34,7 +34,7 @@ TRACKED(/obj/machinery/reagent_refinery/mixer, mixer_angle)
 		if(reagents.total_volume <= 0)
 			set_mixer_angle(mixer_angle + (mixer_rotation_rate))
 			set_mixer_angle((360 + mixer_angle) % 360)
-			update_icon()
+			changed(src)
 		set_got_input(FALSE)
 		return
 
@@ -48,7 +48,7 @@ TRACKED(/obj/machinery/reagent_refinery/mixer, mixer_angle)
 		return
 	set_mixer_angle(mixer_angle + (mixer_rotation_rate))
 	set_mixer_angle((360 + mixer_angle) % 360)
-	update_icon()
+	changed(src)
 	set_got_input(FALSE)
 
 /obj/machinery/reagent_refinery/mixer/draw(datum/look/look)
@@ -103,7 +103,7 @@ TRACKED(/obj/machinery/reagent_refinery/mixer, mixer_angle)
 	// If we transfered anything, then inform process() of it!
 	if(.)
 		set_got_input(TRUE)
-		update_icon()
+		changed(src)
 
 /// Busy while it turns between inputs; it waits (asleep) facing an input until reagents arrive.
 /obj/machinery/reagent_refinery/mixer/refinery_busy()
