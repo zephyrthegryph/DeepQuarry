@@ -1,0 +1,53 @@
+{
+  "observations": {
+    "class_errors": 1,
+    "global_errors": 0,
+    "class_diagnostic": "expected a constant expression",
+    "global_call_kind": 0,
+    "global_call_value": 0
+  },
+  "files": [
+    {
+      "bytes": 7,
+      "path": ".gitattributes",
+      "sha256": "2b4a36b3152af89c2af116c71c13e3d20ee2acb0c8cbc4b468d8e2d388727ae0"
+    },
+    {
+      "bytes": 171,
+      "path": "class-rejected/compile.log",
+      "sha256": "12c6e03c5fbf5293dc5f2425f58f92533c75d8bbe36e083f6022ea40887b8256"
+    },
+    {
+      "bytes": 145,
+      "path": "class-rejected/probe.dm",
+      "sha256": "9e2b6cbc3eb04c235ec825efebd295042b247954faa37fac3d282966855f5e0d"
+    },
+    {
+      "bytes": 19,
+      "path": "class-rejected/probe.dme",
+      "sha256": "d526d2155a298fca3a107bda960eb1d5787f0e9030b0a6d827ab15fb59decf7d"
+    },
+    {
+      "bytes": 137,
+      "path": "global/compile.log",
+      "sha256": "b3db8cb62431108a16b101b79072d5e4f06fd760132028035d20bf42fa7f2bb6"
+    },
+    {
+      "bytes": 82,
+      "path": "global/probe.dm",
+      "sha256": "a59551e0c291352cbd05669b3f0704402d00f17e77f95e92707f12b083ad1ecb"
+    },
+    {
+      "bytes": 19,
+      "path": "global/probe.dme",
+      "sha256": "d526d2155a298fca3a107bda960eb1d5787f0e9030b0a6d827ab15fb59decf7d"
+    },
+    {
+      "bytes": 15215,
+      "path": "global/probe.native.bin",
+      "sha256": "5442b56cb884f56a37095323fba77e53f14ea20d7082cadddf49be0bd05d74fe"
+    }
+  ],
+  "compiler": "BYOND 516.1687",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+}
