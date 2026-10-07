@@ -6,7 +6,7 @@ use std::sync::Mutex;
 
 #[derive(Clone, Debug, Default)]
 pub struct ExpandedRegions {
-    pub text: String,
+    pub text: Arc<str>,
     /// Lex the joined stream once: declarations and expressions may cross
     /// include boundaries and cannot be parsed as independent file programs.
     pub tokens: Vec<SpanToken>,
@@ -89,8 +89,8 @@ fn expand_regions_inner(
     diagnostics.sort_by_key(|(ordinal, line, _)| (*ordinal, *line));
     let text_capacity = outputs.iter().map(|output| output.text.len()).sum();
     let origin_capacity = outputs.iter().map(|output| output.lines.len()).sum();
+    let mut text = String::with_capacity(text_capacity);
     let mut result = ExpandedRegions {
-        text: String::with_capacity(text_capacity),
         origins: Vec::with_capacity(origin_capacity),
         diagnostics: diagnostics
             .into_iter()
@@ -111,8 +111,8 @@ fn expand_regions_inner(
             .take()
             .expect("a text region is emitted once");
         let path = plan.occurrences[region.occurrence].path.clone();
-        let output_start = result.text.len();
-        result.text.push_str(&output.text);
+        let output_start = text.len();
+        text.push_str(&output.text);
         for (relative_span, source_line, source_span, macro_expansions) in output.lines {
             result.origins.push(ExpandedOrigin {
                 origin: Origin {
@@ -130,6 +130,7 @@ fn expand_regions_inner(
             });
         }
     }
+    result.text = text.into();
     if retain_tokens {
         let lexed = lex_spans(&result.text);
         result.tokens = lexed.tokens;
@@ -222,7 +223,7 @@ mod tests {
         let serial = expand_regions_text(&plan, 1);
         assert!(serial.diagnostics.is_empty());
         assert_eq!(
-            serial.text,
+            serial.text.as_ref(),
             "var/root = 1\nvar/text = {\"alpha\nomega\"}\nvar/child = 7\nvar/tail = 7\n"
         );
         assert_eq!(
@@ -253,7 +254,7 @@ mod tests {
             Path::new("child.dm")
         );
         let parallel = expand_regions_text(&plan, 4);
-        assert_eq!(serial.text, parallel.text);
+        assert_eq!(serial.text.as_ref(), parallel.text.as_ref());
         assert_eq!(
             serial
                 .origins
@@ -291,7 +292,7 @@ mod tests {
         for workers in [1, 4] {
             let expanded = expand_regions_text(&plan, workers);
             assert!(expanded.diagnostics.is_empty());
-            assert_eq!(expanded.text, provider.0[Path::new("project.dme")]);
+            assert_eq!(expanded.text.as_ref(), provider.0[Path::new("project.dme")].as_str());
             assert_eq!(expanded.origins.len(), 6);
             assert_eq!(
                 &expanded.text[expanded.origins[1].output_span.range()],

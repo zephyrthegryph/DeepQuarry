@@ -1,4 +1,29 @@
 use super::*;
+#[test]
+fn indexed_client_headers_preserve_owner_and_repeated_write_effects() {
+    let mut symbols = dm_ir::SymbolTable::default();
+    let parent = symbols.intern("/client").unwrap();
+    let child = symbols.intern("/client/child").unwrap();
+    let unrelated = symbols.intern("/datum/unrelated").unwrap();
+    let name = symbols.intern("control_freak").unwrap();
+    let field = |owner, value, intrinsic| FieldProjection {
+        owner, declaring_owner: parent, name, role: FieldRole::Assignment,
+        wire_flags: None, intrinsic, shared: false,
+        value: DefaultValue::Scalar(SemanticValue::NumberBits((value as f32).to_bits())),
+    };
+    let fields = [field(child, 1, true), field(parent, 2, true),
+        field(unrelated, 7, true), field(child, 3, true),
+        field(parent, 4, true), field(child, 6, false)];
+    let mut dmb = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+        "../../../fixtures/translation/client_header_probe/feature_load_ext.native.bin"
+    )).unwrap();
+    let directives = client_header_directives(&fields, &[parent, child], &symbols).unwrap();
+    crate::client_projection::apply(&mut dmb, &directives);
+    assert_eq!(dmb.world.control, 3);
+    let directives = client_header_directives(&fields, &[child, parent], &symbols).unwrap();
+    crate::client_projection::apply(&mut dmb, &directives);
+    assert_eq!(dmb.world.control, 4);
+}
 struct NoTypes;
 impl TypeValuePolicy for NoTypes {
     fn tag(&self, _: SymbolId) -> Result<u8, ProjectionError> {

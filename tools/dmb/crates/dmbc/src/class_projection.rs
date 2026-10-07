@@ -670,23 +670,7 @@ pub fn materialize_members(
     let client_order = crate::client_projection::configuration_order(client, &client_types)
         .map_err(|error| ProjectionError::Unsupported(format!("client order {error:?}")))?;
     let client_owners: HashSet<_> = client_order.iter().copied().collect();
-    let mut client_directives = Vec::new();
-    for owner in client_order {
-    for field in projection.fields.iter().filter(|field| field.intrinsic && field.owner == owner) {
-        let name = text(field.name)?;
-        if !crate::client_projection::is_header_field(name) {
-            continue;
-        }
-        let DefaultValue::Scalar(value) = &field.value else {
-            return Err(ProjectionError::Unsupported("client header requires scalar default".into()));
-        };
-        if let Some(directive) = crate::client_projection::project(name, value)
-            .map_err(|error| ProjectionError::Unsupported(format!("client policy {error:?}")))?
-        {
-            client_directives.push(directive);
-        }
-    }
-    }
+    let client_directives = client_header_directives(&projection.fields, &client_order, symbols)?;
     crate::client_projection::apply(dmb, &client_directives);
     struct Defaults<'a> {
         tables: &'a dm_link::LinkTables,
@@ -1162,6 +1146,34 @@ pub trait TypeValuePolicy {
         ))
     }
     fn tag(&self, path: SymbolId) -> Result<u8, ProjectionError>;
+}
+
+fn client_header_directives(
+    fields: &[FieldProjection],
+    owner_order: &[SymbolId],
+    symbols: &dm_ir::SymbolTable,
+) -> Result<Vec<crate::client_projection::Directive>, ProjectionError> {
+    let mut by_owner: HashMap<SymbolId, Vec<&FieldProjection>> = HashMap::new();
+    for field in fields.iter().filter(|field| field.intrinsic) {
+        by_owner.entry(field.owner).or_default().push(field);
+    }
+    let mut directives = Vec::new();
+    for owner in owner_order {
+        for field in by_owner.get(owner).into_iter().flatten() {
+            let name = symbols.text(field.name).ok_or_else(||
+                ProjectionError::Unsupported("client field spelling missing".into()))?;
+            if !crate::client_projection::is_header_field(name) { continue; }
+            let DefaultValue::Scalar(value) = &field.value else {
+                return Err(ProjectionError::Unsupported("client header requires scalar default".into()));
+            };
+            if let Some(directive) = crate::client_projection::project(name, value)
+                .map_err(|error| ProjectionError::Unsupported(format!("client policy {error:?}")))?
+            {
+                directives.push(directive);
+            }
+        }
+    }
+    Ok(directives)
 }
 
 #[cfg(test)]

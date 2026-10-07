@@ -667,3 +667,20 @@ fn compact_body_preserves_setting_inputs_and_rejects_foreign_occurrences() {
     forged.expanded_span.end -= 1;
     assert!(frontend.compact_body(&forged).is_err());
 }
+
+#[test]
+fn parsed_body_receipts_reject_other_issuers_and_public_capture_replacement() {
+    let make = || fixture(&[("project.dme", "/proc/probe()\n    return 7\n")]).unwrap();
+    let frontend = make();
+    let parsed = frontend.parse_body(&frontend.bodies[0]).unwrap();
+    assert_eq!(parsed.item(), &frontend.body(&frontend.bodies[0]).unwrap());
+    frontend.validate_parsed_body(&parsed, &frontend.bodies[0]).unwrap();
+    let foreign = make();
+    assert!(foreign.validate_parsed_body(&parsed, &foreign.bodies[0]).is_err());
+    let mut changed_arena = frontend.clone();
+    changed_arena.expanded.text = Arc::from("/proc/probe()\n    return 9\n");
+    assert!(changed_arena.parse_body(&changed_arena.bodies[0]).is_err());
+    let mut changed_syntax = frontend.clone();
+    changed_syntax.syntax = Arc::new((*frontend.syntax).clone());
+    assert!(changed_syntax.compact_body(&changed_syntax.bodies[0]).is_err());
+}

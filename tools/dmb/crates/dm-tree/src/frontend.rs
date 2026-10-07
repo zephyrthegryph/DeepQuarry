@@ -189,6 +189,8 @@ pub struct ColdFrontend {
     pub bodies: Arc<[BodyOccurrence]>,
     body_by_declaration: Arc<HashMap<OccurrenceId, usize>>,
     issued_bodies: Arc<[BodyOccurrence]>,
+    issued_syntax: Arc<AstFile>,
+    issued_arena: Arc<str>,
     /// Explicit linker projection. It never changes semantic override priority
     /// or reorders origins independently from their declaration targets.
     pub emission_order: Arc<[OccurrenceId]>,
@@ -205,6 +207,10 @@ impl ColdFrontend {
             location: Some(occurrence.source.clone()),
             message: "body occurrence differs from compact frontend capture".into(),
         };
+        if !Arc::ptr_eq(&self.syntax, &self.issued_syntax)
+            || !Arc::ptr_eq(&self.expanded.text, &self.issued_arena) {
+            return Err(reject());
+        }
         let issued = self.body_by_declaration.get(&occurrence.declaration)
             .and_then(|index| self.issued_bodies.get(*index)).ok_or_else(reject)?;
         if issued.member != occurrence.member || issued.ast_path != occurrence.ast_path
@@ -225,8 +231,10 @@ impl ColdFrontend {
         }
         Ok(item)
     }
-    pub fn body(&self, occurrence: &BodyOccurrence) -> Result<Item, Diagnostic> {
-        dm_syntax::parse_proc_at_span(&self.expanded.text, occurrence.expanded_span).map_err(
+    pub fn parse_body<'a>(&'a self, occurrence: &BodyOccurrence) -> Result<ParsedBody<'a>, Diagnostic> {
+        self.compact_body(occurrence)?;
+        let issued = &self.issued_bodies[self.body_by_declaration[&occurrence.declaration]];
+        let item = dm_syntax::parse_proc_at_span(&self.issued_arena, issued.expanded_span).map_err(
             |error| Diagnostic {
                 kind: syntax_kind(error.kind),
                 stage: DiagnosticStage::Syntax,
@@ -235,7 +243,19 @@ impl ColdFrontend {
                     .or_else(|| Some(occurrence.source.clone())),
                 message: error.message,
             },
-        )
+        )?;
+        Ok(ParsedBody { item, issuer: self, occurrence: issued })
+    }
+    pub fn validate_parsed_body(&self, parsed: &ParsedBody<'_>, occurrence: &BodyOccurrence) -> Result<(), Diagnostic> {
+        self.compact_body(occurrence)?;
+        if !std::ptr::eq(self, parsed.issuer)
+            || !std::ptr::eq(parsed.occurrence, occurrence) {
+            return Err(internal("parsed body was issued by a different frontend occurrence"));
+        }
+        Ok(())
+    }
+    pub fn body(&self, occurrence: &BodyOccurrence) -> Result<Item, Diagnostic> {
+        self.parse_body(occurrence).map(|parsed| parsed.item)
     }
 
     /// Current logical source span for a token in the joined expanded stream.
@@ -262,6 +282,18 @@ impl ColdFrontend {
     pub fn skins(&self) -> impl Iterator<Item = &Path> {
         self.plan.non_text(NonTextKind::Skin)
     }
+}
+
+/// A bounded executable parse tied to an immutable source capture. Callers may
+/// inspect its AST, but cannot replace it or manufacture its source authority.
+pub struct ParsedBody<'a> {
+    item: Item,
+    issuer: &'a ColdFrontend,
+    occurrence: &'a BodyOccurrence,
+}
+impl ParsedBody<'_> {
+    pub fn item(&self) -> &Item { &self.item }
+    pub fn occurrence(&self) -> &BodyOccurrence { self.occurrence }
 }
 
 struct Captured<'a, P> {
@@ -659,7 +691,9 @@ pub fn build_with_config<P: SourceProvider>(
             typed_member_metadata_decoded: false,
         }),
         plan,
+        issued_arena: Arc::clone(&expanded.text),
         expanded,
+        issued_syntax: Arc::clone(&syntax),
         syntax,
         allocation_ledger: Arc::new(allocation_ledger),
         snapshot,

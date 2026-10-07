@@ -985,6 +985,22 @@ impl<'a> FrozenPreparedPolicy<'a> {
     }
 }
 impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
+    fn prepare_captured(
+        &self,
+        metadata: &dm_ir::ProcedureMetadata,
+        parsed: &dm_tree::frontend::ParsedBody<'_>,
+        context: &AbiContext<'_>,
+    ) -> Result<crate::procedure_policy::PreparedUnit, String> {
+        let body = self.validate(context.identity, metadata, context.symbols, context.origin)?;
+        self.frontend.validate_parsed_body(parsed, body)
+            .map_err(|error| error.message)?;
+        let unit = self.unit(context.identity)?;
+        Ok(crate::procedure_policy::PreparedUnit {
+            inputs: unit.inputs.clone(),
+            executable_body: dm_tree::settings::strip_setting_items(parsed.item().children.clone()),
+            abi: unit.abi.clone(),
+        })
+    }
     fn inputs(
         &self,
         identity: UnitIdentity,

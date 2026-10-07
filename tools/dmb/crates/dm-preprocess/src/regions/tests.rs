@@ -26,7 +26,7 @@ fn native_boolean_macros_follow_define_undef_and_caller_precedence() {
     let expanded = expand_regions_text(&plan, 2);
     assert!(expanded.diagnostics.is_empty());
     assert_eq!(
-        expanded.text,
+        expanded.text.as_ref(),
         "var/a = 1 + 0\nvar/b = TRUE\nvar/c = 7\nvar/d = 9\n"
     );
     let caller = BTreeMap::from([("TRUE".into(), "3".into()), ("FALSE".into(), "4".into())]);
@@ -50,10 +50,10 @@ fn child_effects_split_parent_and_parallel_schedule_preserves_output() {
     let parallel = expand_regions(&plan, 4);
     assert!(serial.diagnostics.is_empty());
     assert_eq!(
-        serial.text,
+        serial.text.as_ref(),
         "var/before = 1\nvar/child = 2\nvar/after = 2\n"
     );
-    assert_eq!(serial.text, parallel.text);
+    assert_eq!(serial.text.as_ref(), parallel.text.as_ref());
     assert_eq!(serial.tokens, parallel.tokens);
     assert_eq!(serial.origins[2].origin.source_line, 4);
     assert_eq!(
@@ -77,7 +77,7 @@ fn repeated_text_file_suppresses_both_tokens_and_directive_effects() {
     assert!(plan.occurrences[2].suppressed);
     assert!(plan.final_macros.contains_key("SAW_ONE"));
     assert!(!plan.final_macros.contains_key("SAW_TWO"));
-    assert_eq!(expand_regions(&plan, 2).text, "var/first = 1\n");
+    assert_eq!(expand_regions(&plan, 2).text.as_ref(), "var/first = 1\n");
 }
 
 #[test]
@@ -90,7 +90,7 @@ fn manifest_grammar_encounter_and_declaration_emission_orders_are_separate() {
         ("body.dm", "#define VALUE 2\nvar/body = VALUE\n"),
     ]);
     assert_eq!(
-        expand_regions(&plan, 2).text,
+        expand_regions(&plan, 2).text.as_ref(),
         "var/manifest = 1\nvar/body = 2\nvar/manifest_after = 2\n"
     );
     let order: Vec<_> = plan.emission_regions().collect();
@@ -184,7 +184,7 @@ fn terminal_file_dir_and_nontext_items_are_separate_from_text() {
         vec![Path::new("skin.dmf")]
     );
     assert!(!plan.dependencies.contains(Path::new("missing.dm")));
-    assert_eq!(expand_regions(&plan, 2).text, "var/asset = 'asset.txt'\n");
+    assert_eq!(expand_regions(&plan, 2).text.as_ref(), "var/asset = 'asset.txt'\n");
 }
 
 #[test]
@@ -200,7 +200,7 @@ fn conditions_remain_in_the_parent_and_joined_tokens_keep_indentation() {
     let output = expand_regions(&plan, 2);
     assert!(output.diagnostics.is_empty());
     assert_eq!(
-        output.text,
+        output.text.as_ref(),
         "/datum/sample\n    var/value = 2\nvar/after = 2\n"
     );
 }
@@ -288,7 +288,7 @@ fn persistent_full_environments_keep_token_paste_and_definition_epochs_exact() {
     let plan=fixture(&[("project.dme","#define CAT(a,b) a##b\n#define VALUE1 11\nvar/a = CAT(VALUE,1)\n#define VALUE1 22\nvar/b = CAT(VALUE,1)\n#undef VALUE1\nvar/c = CAT(VALUE,1)\n")]);
     let result = expand_regions(&plan, 2);
     assert!(result.diagnostics.is_empty(), "{:?}", result.diagnostics);
-    assert_eq!(result.text, "var/a = 11\nvar/b = 22\nvar/c = VALUE1\n");
+    assert_eq!(result.text.as_ref(), "var/a = 11\nvar/b = 22\nvar/c = VALUE1\n");
     let origins = result
         .origins
         .iter()

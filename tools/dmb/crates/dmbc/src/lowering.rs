@@ -25,6 +25,15 @@ pub struct UnitIdentity {
 /// Converts signature/default/annotation semantics using one pinned compiler ABI.
 /// Reject unsupported flags/value-source/default decoding rather than guessing.
 pub trait AbiPolicy: Sync {
+    /// Issued production parses retain the existing behavior for custom policies.
+    fn prepare_captured(
+        &self,
+        metadata: &ProcedureMetadata,
+        parsed: &dm_tree::frontend::ParsedBody<'_>,
+        context: &AbiContext<'_>,
+    ) -> Result<PreparedUnit, String> {
+        self.prepare(metadata, parsed.item(), context)
+    }
     fn inputs(
         &self,
         identity: UnitIdentity,
@@ -225,7 +234,7 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
         .as_ref()
         .ok_or_else(|| unsupported("procedure signature metadata unsupported".into()))?;
     let symbols = startup.map_or(tree.symbols(), |captured| captured.plan().symbols.as_ref());
-    let parsed = frontend.body(body).map_err(|diagnostic| {
+    let parsed = frontend.parse_body(body).map_err(|diagnostic| {
         vec![LoweringDiagnostic {
             kind: diagnostic.kind,
             identity: Some(identity),
@@ -240,8 +249,9 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
         resolver: host,
     };
     let prepared = policy
-        .prepare(metadata, &parsed, &context)
+        .prepare_captured(metadata, &parsed, &context)
         .map_err(unsupported)?;
+    let parsed = parsed.item();
     let procedure_identity = dm_ir::ProcedureIdentity {
         owner: identity.owner,
         name: identity.name,

@@ -53,7 +53,19 @@ pub fn evaluate_with_resources(
     if !parsed.diagnostics.is_empty() {
         return None;
     }
-    eval(parsed.expr.as_ref()?, &resolve, &decode, &nameof, &resource)
+    evaluate_expr_with_resources(parsed.expr.as_ref()?, resolve, decode, nameof, resource)
+}
+/// Evaluate an already parsed expression through the same scalar interpreter.
+/// The caller owns syntax diagnostics and supplies the same captured callbacks
+/// as the string entry; this API neither reparses nor infers resource authority.
+pub fn evaluate_expr_with_resources(
+    expression: &Expr,
+    resolve: impl Fn(&str) -> Option<Constant>,
+    decode: impl Fn(&str) -> Option<Vec<u8>>,
+    nameof: impl Fn(&Expr) -> Option<String>,
+    resource: impl Fn(&str) -> Option<dm_ir::SymbolId>,
+) -> Option<Constant> {
+    eval(expression, &resolve, &decode, &nameof, &resource)
 }
 fn eval(
     expr: &Expr,
@@ -310,6 +322,100 @@ mod tests {
             |_| None,
         )
     }
+    #[test]
+    fn parsed_scalar_api_matches_string_values_and_callback_reads() {
+        use std::cell::RefCell;
+        let path = dm_ir::SymbolId::of("asset.txt");
+        for source in [
+            "seed * 2 + 3",
+            "/datum::seed",
+            "/datum",
+            "null",
+            "1 / 0",
+            "\"encoded\"",
+            "nameof(seed)",
+            "'asset.txt'",
+            "'asset.txt' == 'asset.txt'",
+            "1 || missing",
+            "0 && missing",
+            "0 ? missing : seed",
+            "list(seed)",
+        ] {
+            let parsed = parse_expression(source);
+            assert!(
+                parsed.diagnostics.is_empty(),
+                "{source}: {:?}",
+                parsed.diagnostics
+            );
+            let expression = parsed.expr.as_ref().unwrap();
+            let run = |from_ast| {
+                let reads = RefCell::new(Vec::new());
+                let resolve = |name: &str| {
+                    reads.borrow_mut().push(format!("resolve:{name}"));
+                    matches!(name, "seed" | "/datum::seed").then_some(Constant::Number(5.0))
+                };
+                let decode = |raw: &str| {
+                    reads.borrow_mut().push(format!("decode:{raw}"));
+                    Some(vec![0xff, 0x80])
+                };
+                let nameof = |_: &Expr| {
+                    reads.borrow_mut().push("nameof".into());
+                    Some("seed".into())
+                };
+                let resource = |raw: &str| {
+                    reads.borrow_mut().push(format!("resource:{raw}"));
+                    (raw == "'asset.txt'").then_some(path)
+                };
+                let value = if from_ast {
+                    evaluate_expr_with_resources(expression, resolve, decode, nameof, resource)
+                } else {
+                    evaluate_with_resources(source, resolve, decode, nameof, resource)
+                };
+                (
+                    value.map(|value| value.canonical_bytes()),
+                    reads.into_inner(),
+                )
+            };
+            assert_eq!(run(true), run(false), "{source}");
+        }
+        assert_eq!(
+            evaluate_with_resources("1 +", |_| None, |_| None, |_| None, |_| None),
+            None
+        );
+    }
+
+    #[test]
+    fn parsed_scalar_api_preserves_short_circuit_and_resource_admission() {
+        for source in ["1 || missing", "0 && missing", "1 ? 7 : 'uncaptured'"] {
+            let parsed = parse_expression(source);
+            let result = evaluate_expr_with_resources(
+                parsed.expr.as_ref().unwrap(),
+                |_| panic!("unreachable name"),
+                |_| panic!("unreachable string"),
+                |_| panic!("unreachable nameof"),
+                |_| panic!("unreachable resource"),
+            );
+            assert!(result.is_some(), "{source}");
+        }
+        let parsed = parse_expression("'asset.txt'");
+        let expression = parsed.expr.as_ref().unwrap();
+        assert_eq!(
+            evaluate_expr_with_resources(expression, |_| None, |_| None, |_| None, |_| None),
+            None
+        );
+        let path = dm_ir::SymbolId::of("asset.txt");
+        assert_eq!(
+            evaluate_expr_with_resources(
+                expression,
+                |_| None,
+                |_| None,
+                |_| None,
+                |raw| (raw == "'asset.txt'").then_some(path)
+            ),
+            Some(Constant::Resource(path))
+        );
+    }
+
     #[test]
     fn arithmetic_and_scoped_dependency_preserve_scalar_semantics() {
         assert_eq!(evaluate("seed * 2 + 3"), Some(Constant::Number(13.0)));
