@@ -534,3 +534,35 @@
 	test_time(6 SECONDS)
 	TEST_ASSERT_EQUAL(M.reload_count, 3, "moving cancels the reload")
 	TEST_ASSERT(was_cancelled(T, M), "the reload ends cancelled")
+
+// ---- Cass plays dead until she is petted for a long time ----
+
+/datum/unit_test/dq_timed_pin_w3/cass_revived_by_long_pet
+
+/datum/unit_test/dq_timed_pin_w3/cass_revived_by_long_pet/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/mob/living/simple_mob/vore/woof/cass/C = allocate(/mob/living/simple_mob/vore/woof/cass, get_step(run_loc_floor_bottom_left, EAST))
+	C.stat = DEAD
+	user.set_use_stance(I_HELP)
+	test_click(user, C, null)
+	TEST_ASSERT(!isnull(running(user)), "a help touch on a dead Cass starts a timed action")
+	test_time(29 SECONDS)
+	TEST_ASSERT_EQUAL(C.stat, DEAD, "she is still down before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT(C.stat != DEAD, "she is up at the end")
+
+/datum/unit_test/dq_timed_pin_w3/cass_pet_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w3/cass_pet_cancel_on_move/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/mob/living/simple_mob/vore/woof/cass/C = allocate(/mob/living/simple_mob/vore/woof/cass, get_step(run_loc_floor_bottom_left, EAST))
+	C.stat = DEAD
+	user.set_use_stance(I_HELP)
+	test_chat_clear()
+	test_click(user, C, null)
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "a help touch on a dead Cass starts a timed action")
+	user.forceMove(get_step(user, NORTH))
+	test_time(31 SECONDS)
+	TEST_ASSERT_EQUAL(C.stat, DEAD, "moving cancels: she stays down")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
