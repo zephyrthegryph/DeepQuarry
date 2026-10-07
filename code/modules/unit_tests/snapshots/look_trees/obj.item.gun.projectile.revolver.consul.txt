@@ -1,0 +1,6 @@
+/obj/item/gun/projectile/revolver/consul icon: icons/obj/gun.dmi
+/obj/item/gun/projectile/revolver/consul state: inspector
+/obj/item/gun/projectile/revolver/consul dir: 2
+/obj/item/gun/projectile/revolver/consul overlay: icons/obj/gun.dmi:inspector:8:#000000
+/obj/item/gun/projectile/revolver/consul overlay: icons/obj/gun.dmi:inspector_on:-32767
+

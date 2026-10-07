@@ -1,0 +1,5 @@
+/obj/item/gun/projectile/automatic/mg42 cover_open=1 +state: mg42open
+/obj/item/gun/projectile/automatic/mg42 cover_open=1 -state: mg42closed
+/obj/item/gun/projectile/automatic/mg42 cover_open=2 +state: mg42open
+/obj/item/gun/projectile/automatic/mg42 cover_open=2 -state: mg42closed
+
