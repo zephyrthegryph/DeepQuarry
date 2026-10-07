@@ -294,3 +294,18 @@ Cold and edited DMB/RSC byte-identical. These runs DO NOT meet Phase2 targets.
 Next source cohort removes duplicate tree metadata payload/serialization/hash
 passes, adds stable grammar groups and finer nontext timing. No runtime tests.
 Receipts E:/dmb-native-v2-phase0/phase2-20261007-j-*.
+## K cohort: smaller tree payload and miss-only occurrence recording
+
+Commit950f2dc3ff; release96898C530C6CF1F79F5CEF119141FE9CDC71B873FCF201E9BA1BE2FA83D7C4B7.
+Population196.699s; unchanged3.892s; body84.064s; cold72.556s.
+Tree key112820342/payload23912339/envelope29679 bytes, no publication failures;
+body disk_hits1/resolved0. Payload shrank122.2->23.9MB.
+Body lower14.855s (J43.806), frontend21.861, nontext7.164,
+compilation36.281, publication4.719s. Worker occurrence_reads0.0000131s,
+explanations0.128, lookup6.168, keyprep1.158s. CPUwhole58.938s;
+competingexternalCargo/rustc10 throughout. Cold CPU60.828s.
+Edited and fresh DMB/RSC byte-identical. Relative J wall gains do not prove
+isolated algorithm speed because competing load differs. Incremental is still
+slower than fresh; phase2 targets remain unmet. Frontend replay/key construction
+and all-procedure composition remain substantive work, not verification-only.
+Receipts E:/dmb-native-v2-phase0/phase2-20261007-k-*.
