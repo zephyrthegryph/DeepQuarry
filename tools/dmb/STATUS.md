@@ -167,6 +167,26 @@ The production compiler has not switched to the new pipeline.
 
 ## In progress / remaining gates
 
+- Phase 0 raw-log investigation found 3,068,028 native bounds errors and
+  3,087,060 reference bounds errors. Native origins are blank and the decoded
+  output has no DbgFile/DbgLine instructions. The error handler's file+line
+  cooldown merges blank-origin failures, so per-test failure counts cannot
+  establish runtime parity. Exact attribution of native power events remains
+  unproven. Pinned FFI wrapper/static initialization sequences match; the
+  preserved DLL interface differs from the Rust source previously cited.
+  Evidence and hashes: `phase0/power-rootcause.json`. Source-aware debug
+  emission is now a required backend migration slice.
+- Corrected reference repetition 2 completed normally: 984 passed, 47 failed,
+  58 skipped, 2,586.222 s runtime, 1,994,874,880 peak private bytes. These match
+  repetition 1's counts; its abnormal exit remains separately recorded.
+- The next source-only probe reached tree construction in 24.737 s, then
+  rejected `/savefile/byond_version` because its intrinsic base was absent.
+  Sampled maximum private memory was 1,568,952,320 bytes (one-second samples).
+  Input/OS cache state was uncontrolled; this is a failed frontend probe,
+  not a cold compiler build. Savefile presence and all observed opaque engine
+  variable bases are now awaiting the focused gate.
+  Receipt: `E:/dmb-native-v2-phase0/source-analysis-probe-20261006-3/receipt.json`.
+
 - Corrected native repetition 1 completed all 1,089 selected results, suite and
   shutdown markers, and exited normally: 996 passed, 35 failed, 58 skipped.
   Runtime elapsed was 3,081.973 s, with 1,991,770,112 peak private bytes. This

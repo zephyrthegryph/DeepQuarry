@@ -16,7 +16,7 @@ pub struct CatalogField {
 }
 /// Mirrors the pinned native bootstrap inventory. It is not a claim that all
 /// BYOND versions expose exactly this catalog or that source defaults are known.
-pub const CATALOG_SCHEMA: &str = "dm-bootstrap-builtin-fields-v1";
+pub const CATALOG_SCHEMA: &str = "dm-bootstrap-builtin-fields-v2-savefile";
 pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::SymbolCollision> {
     let mut fields = Vec::new();
     for owner in [
@@ -31,6 +31,7 @@ pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::Sym
         "/list",
         "/turf",
         "/particles",
+        "/savefile",
     ] {
         let owner_symbol = symbols.intern(owner)?;
         for name in names(owner) {
@@ -38,6 +39,7 @@ pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::Sym
             let declared_type = match *name {
                 "loc" => Some("/atom"),
                 "contents" | "overlays" | "underlays" | "filters" | "verbs" => Some("/list"),
+                "dir" if owner == "/savefile" => Some("/list"),
                 "client" => Some("/client"),
                 "mob" => Some("/mob"),
                 "transform" => Some("/matrix"),
@@ -70,6 +72,10 @@ impl CatalogField {
 }
 pub fn names(path: &str) -> &'static [&'static str] {
     match path {
+        // BYOND reference: /savefile/var, including compile-time compatibility
+        // defaults. Header emission is a separate ABI policy, not a field slot.
+        // https://www.byond.com/docs/ref/info.html#savefile/var/byond_version
+        "/savefile" => &["byond_version", "byond_build", "cd", "dir", "eof", "name"],
         "/datum" => &["type", "parent_type", "vars", "tag"],
         "/atom" | "/image" | "/mutable_appearance" => &[
             "name",

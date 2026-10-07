@@ -1689,30 +1689,32 @@ fn logical_lines(source: &str) -> Vec<LogicalLine> {
     let mut lines = Vec::new();
     let mut joined = String::new();
     let mut source_lines = 0;
+    let mut state = LogicalState::default();
     for physical in source.split_inclusive('\n') {
         if physical.trim_start().starts_with('#')
             && !joined.trim_start().starts_with("#define ")
             && !joined.is_empty()
-            && !has_open_literal(&joined)
+            && !state.open_literal
         {
             lines.push(LogicalLine {
                 text: std::mem::take(&mut joined),
                 source_lines,
             });
             source_lines = 0;
+            state = LogicalState::default();
         }
         source_lines += 1;
         let content = physical.trim_end_matches(['\r', '\n']);
-        if !has_open_block_string(&joined) {
+        if !state.open_block_string {
             if let Some(prefix) = content.trim_end().strip_suffix('\\') {
                 joined.push_str(prefix);
+                state = logical_state(&joined);
                 continue;
             }
         }
         joined.push_str(physical);
-        if has_open_literal(&joined)
-            || (!joined.trim_start().starts_with('#') && has_open_expression(&joined))
-        {
+        state = logical_state(&joined);
+        if state.open_literal || (!joined.trim_start().starts_with('#') && state.open_expression) {
             continue;
         }
         lines.push(LogicalLine {
@@ -1720,6 +1722,7 @@ fn logical_lines(source: &str) -> Vec<LogicalLine> {
             source_lines,
         });
         source_lines = 0;
+        state = LogicalState::default();
     }
     if !joined.is_empty() {
         lines.push(LogicalLine {
@@ -1753,37 +1756,47 @@ fn strip_source_comments(source: &str) -> Cow<'_, str> {
     Cow::Owned(String::from_utf8(bytes).expect("comment removal preserves UTF-8"))
 }
 
-fn has_open_literal(source: &str) -> bool {
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+struct LogicalState {
+    open_literal: bool,
+    open_block_string: bool,
+    open_expression: bool,
+}
+
+/// One borrowed tokenization answers all continuation questions. The caller
+/// retains this state until the joined text changes; token spans are temporary.
+fn logical_state(source: &str) -> LogicalState {
+    if source.is_empty() {
+        return LogicalState::default();
+    }
     let lexed = lex_spans(source);
-    lexed.tokens.last().is_some_and(|token| {
+    let last = lexed.tokens.last();
+    let open_literal = last.is_some_and(|token| {
         token.kind == TokenKind::String
             && lexed
                 .diagnostics
                 .iter()
                 .any(|diagnostic| diagnostic.span.start == token.span.start)
-    })
-}
-
-fn has_open_expression(source: &str) -> bool {
+    });
+    let open_block_string = last.is_some_and(|token| {
+        token.kind == TokenKind::String
+            && token.text(source).starts_with("{\"")
+            && token.span.end == source.len()
+            && !token.text(source).ends_with("\"}")
+    });
     let mut depth = 0isize;
-    for token in lex_spans(source).tokens {
+    for token in &lexed.tokens {
         match token.text(source) {
             "(" | "[" => depth += 1,
             ")" | "]" => depth -= 1,
             _ => {}
         }
     }
-    depth > 0
-}
-
-fn has_open_block_string(source: &str) -> bool {
-    let lexed = lex_spans(source);
-    lexed.tokens.last().is_some_and(|token| {
-        token.kind == TokenKind::String
-            && token.text(source).starts_with("{\"")
-            && token.span.end == source.len()
-            && !token.text(source).ends_with("\"}")
-    })
+    LogicalState {
+        open_literal,
+        open_block_string,
+        open_expression: depth > 0,
+    }
 }
 
 fn split_word(input: &str) -> (&str, &str) {
@@ -3912,5 +3925,83 @@ mod tests {
         let replay =
             preprocess_project_cached(Path::new("game.dme"), &files, &BTreeMap::new(), &mut cache);
         assert_eq!(output, replay);
+    }
+}
+
+#[cfg(test)]
+mod logical_state_tests {
+    use super::*;
+    fn old_state(source: &str) -> LogicalState {
+        let literal = lex_spans(source);
+        let open_literal = literal.tokens.last().is_some_and(|token| {
+            token.kind == TokenKind::String
+                && literal
+                    .diagnostics
+                    .iter()
+                    .any(|diagnostic| diagnostic.span.start == token.span.start)
+        });
+        let block = lex_spans(source);
+        let open_block_string = block.tokens.last().is_some_and(|token| {
+            token.kind == TokenKind::String
+                && token.text(source).starts_with("{\"")
+                && token.span.end == source.len()
+                && !token.text(source).ends_with("\"}")
+        });
+        let mut depth = 0isize;
+        for token in lex_spans(source).tokens {
+            match token.text(source) {
+                "(" | "[" => depth += 1,
+                ")" | "]" => depth -= 1,
+                _ => {}
+            }
+        }
+        LogicalState {
+            open_literal,
+            open_block_string,
+            open_expression: depth > 0,
+        }
+    }
+    #[test]
+    fn consolidated_state_matches_separate_scans_at_every_utf8_prefix() {
+        for source in [
+            "call(\n list(1, 2)\n)\n",
+            "{\"block\n#literal \\\ntext\"}",
+            "\"outer [call(\"nested [1]\")] end\"",
+            "@{\"raw \\\n\"}",
+            "'icons/日本.dmi'",
+            "call(/* ( */ 1) // [\n",
+            "#define X(a) a \\\n + 1\n",
+            "\"unterminated",
+        ] {
+            for end in (0..=source.len()).filter(|end| source.is_char_boundary(*end)) {
+                assert_eq!(
+                    logical_state(&source[..end]),
+                    old_state(&source[..end]),
+                    "{source:?} at {end}"
+                );
+            }
+        }
+    }
+    #[test]
+    fn cached_join_state_preserves_directive_and_block_continuations() {
+        let lines = logical_lines(
+            "call(\n#warning marker\n)\n#define X a \\\n b\n{\"text \\\n#not_directive\n\"}\n",
+        );
+        let actual: Vec<_> = lines
+            .iter()
+            .map(|line| (line.text.as_str(), line.source_lines))
+            .collect();
+        assert_eq!(
+            actual,
+            vec![
+                ("call(\n", 1),
+                ("#warning marker\n", 1),
+                (")\n", 1),
+                ("#define X a  b\n", 2),
+                // The original joiner tests the incoming state before adding
+                // the block opener, so its opening-line continuation is spliced.
+                ("{\"text #not_directive\n\"}\n", 3)
+            ]
+        );
     }
 }

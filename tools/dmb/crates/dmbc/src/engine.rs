@@ -228,9 +228,9 @@ impl EngineSnapshot {
         // The DMB world header is a singleton, outside the regular class table.
         // The pinned bootstrap treats /world as a root-owned semantic type;
         // its settings and defaults still remain opaque here.
-        // /list is a native value type, likewise absent from class records.
+        // /list and /savefile are native value types, absent from class records.
         // These semantic roots do not assert an output class-table identity.
-        for path in ["/world", "/list"] {
+        for path in ["/world", "/list", "/savefile"] {
             let special = self.symbols.intern(path)?;
             if !self.hierarchy.parents.iter().any(|row| row.0 == special) {
                 let root = self.symbols.intern("/")?;
@@ -303,9 +303,17 @@ impl EngineSnapshot {
         &self.opaque
     }
     pub fn field_bases(&self) -> Vec<dm_ir::OpaqueFieldBase> {
-        self.catalog_fields
-            .iter()
-            .map(|field| dm_ir::OpaqueFieldBase {
+        // Every observed variable licenses an opaque declaration base, even
+        // when its typed source metadata is absent from the narrow catalog.
+        let mut bases: std::collections::BTreeMap<_, _> = self.members.iter()
+            .filter(|member| member.kind == MemberKind::Var)
+            .map(|member| ((member.owner, member.name), dm_ir::OpaqueFieldBase {
+                owner: member.owner,
+                name: member.name,
+                declared_type: dm_ir::DeclaredTypeKnowledge::Unsupported,
+            })).collect();
+        for field in self.catalog_fields.iter() {
+            bases.insert((field.owner, field.name), dm_ir::OpaqueFieldBase {
                 owner: field.owner,
                 name: field.name,
                 declared_type: match field.declared_type {
@@ -316,8 +324,9 @@ impl EngineSnapshot {
                         dm_ir::DeclaredTypeKnowledge::Unsupported
                     }
                 },
-            })
-            .collect()
+            });
+        }
+        bases.into_values().collect()
     }
     pub fn frontend_seed(&self) -> dm_tree::frontend::EngineSeed {
         dm_tree::frontend::EngineSeed {
@@ -474,6 +483,31 @@ mod tests {
             engine.identity(),
             engine.clone().with_bootstrap_catalog().unwrap().identity()
         );
+    }
+    #[test]
+    fn savefile_compatibility_default_keeps_opaque_intrinsic_base() {
+        struct Source;
+        impl dm_preprocess::SourceProvider for Source {
+            fn read(&self, _: &std::path::Path) -> Result<String, String> {
+                Ok("/savefile/byond_version = 516\n".into())
+            }
+        }
+        let engine = EngineSnapshot::from_bytes(TEMPLATE, 1).unwrap()
+            .with_bootstrap_catalog().unwrap();
+        let seed = engine.frontend_seed();
+        let frontend = dm_tree::frontend::build_with_config(
+            std::path::Path::new("world.dme"), &Source,
+            &std::collections::BTreeMap::new(),
+            dm_tree::frontend::FrontendConfig {workers: 1, engine: Some(&seed), observer: None},
+        ).unwrap();
+        let tree = &frontend.snapshot.tree;
+        let owner = tree.lookup_type(SymbolId::of("/savefile")).unwrap();
+        let member = tree.resolve(owner, SymbolId::of("byond_version"), MemberKind::Var).unwrap();
+        let metadata = &tree.member(member).unwrap().metadata;
+        assert!(metadata.inherited_opaque.is_some());
+        assert!(metadata.initializer.is_some());
+        let query = ResolveQuery::Var { owner: SymbolId::of("/savefile"), name: SymbolId::of("byond_version") };
+        assert_eq!(Resolver::resolve(tree.as_ref(), query), ResolvedMeaning::Unsupported(query));
     }
     #[test]
     fn invalid_template_is_an_explicit_decode_error() {

@@ -350,11 +350,12 @@ fn for_each_top_level_boundary(source: &str, mut visit: impl FnMut(usize)) {
     let mut pos = 0usize;
     while pos < source.len() {
         let rest = &source[pos..];
-        if rest.starts_with("//") {
+        let first = rest.as_bytes()[0];
+        if first == b'/' && rest.starts_with("//") {
             pos += rest.find('\n').unwrap_or(rest.len());
             continue;
         }
-        if rest.starts_with("/*") {
+        if first == b'/' && rest.starts_with("/*") {
             let mut depth = 1usize;
             let mut cursor = 2usize;
             while depth > 0 && cursor + 1 < rest.len() {
@@ -374,13 +375,13 @@ fn for_each_top_level_boundary(source: &str, mut visit: impl FnMut(usize)) {
             pos += end;
             continue;
         }
-        let string = if rest.starts_with("@{\"") {
+        let string = if first == b'@' && rest.starts_with("@{\"") {
             quoted_end(&rest[1..], true, true).map(|end| end + 1)
-        } else if rest.starts_with("{\"") {
+        } else if first == b'{' && rest.starts_with("{\"") {
             quoted_end(rest, true, false)
-        } else if rest.starts_with("@\"") {
+        } else if first == b'@' && rest.starts_with("@\"") {
             quoted_end(&rest[1..], false, true).map(|end| end + 1)
-        } else if rest.starts_with('"') {
+        } else if first == b'"' {
             quoted_end(rest, false, false)
         } else {
             None
@@ -391,7 +392,7 @@ fn for_each_top_level_boundary(source: &str, mut visit: impl FnMut(usize)) {
             pos += end;
             continue;
         }
-        if rest.starts_with('\'') {
+        if first == b'\'' {
             let mut escaped = false;
             let mut end = rest.len();
             for (at, ch) in rest.char_indices().skip(1) {
@@ -409,7 +410,11 @@ fn for_each_top_level_boundary(source: &str, mut visit: impl FnMut(usize)) {
             pos += end;
             continue;
         }
-        let ch = rest.chars().next().unwrap();
+        let ch = if first.is_ascii() {
+            char::from(first)
+        } else {
+            rest.chars().next().unwrap()
+        };
         if ch == '\n' {
             at_line_start = true;
             indented = false;
@@ -577,5 +582,119 @@ mod tests {
                 .start,
             0
         );
+    }
+}
+
+#[cfg(test)]
+mod ascii_scan_tests {
+    use super::*;
+    fn reference_boundaries(source: &str, mut visit: impl FnMut(usize)) {
+        let mut at_line_start = true;
+        let mut indented = false;
+        let mut delimiter_depth = 0usize;
+        let mut pos = 0usize;
+        while pos < source.len() {
+            let rest = &source[pos..];
+            if rest.starts_with("//") {
+                pos += rest.find('\n').unwrap_or(rest.len());
+                continue;
+            }
+            if rest.starts_with("/*") {
+                let mut depth = 1usize;
+                let mut cursor = 2usize;
+                while depth > 0 && cursor + 1 < rest.len() {
+                    if rest[cursor..].starts_with("/*") {
+                        depth += 1;
+                        cursor += 2;
+                    } else if rest[cursor..].starts_with("*/") {
+                        depth -= 1;
+                        cursor += 2;
+                    } else {
+                        cursor += rest[cursor..].chars().next().unwrap().len_utf8();
+                    }
+                }
+                let end = if depth == 0 { cursor } else { rest.len() };
+                (at_line_start, indented) =
+                    after_token_line_start(&rest[..end], at_line_start, indented, true);
+                pos += end;
+                continue;
+            }
+            let string = if rest.starts_with("@{\"") {
+                quoted_end(&rest[1..], true, true).map(|end| end + 1)
+            } else if rest.starts_with("{\"") {
+                quoted_end(rest, true, false)
+            } else if rest.starts_with("@\"") {
+                quoted_end(&rest[1..], false, true).map(|end| end + 1)
+            } else if rest.starts_with('"') {
+                quoted_end(rest, false, false)
+            } else {
+                None
+            };
+            if let Some(end) = string {
+                (at_line_start, indented) =
+                    after_token_line_start(&rest[..end], at_line_start, indented, false);
+                pos += end;
+                continue;
+            }
+            if rest.starts_with('\'') {
+                let mut escaped = false;
+                let mut end = rest.len();
+                for (at, ch) in rest.char_indices().skip(1) {
+                    if escaped {
+                        escaped = false;
+                    } else if ch == '\\' {
+                        escaped = true;
+                    } else if ch == '\'' {
+                        end = at + 1;
+                        break;
+                    }
+                }
+                (at_line_start, indented) =
+                    after_token_line_start(&rest[..end], at_line_start, indented, false);
+                pos += end;
+                continue;
+            }
+            let ch = rest.chars().next().unwrap();
+            if ch == '\n' {
+                at_line_start = true;
+                indented = false;
+            } else if matches!(ch, ' ' | '\t') && at_line_start {
+                indented = true;
+            } else if !matches!(ch, ' ' | '\t' | '\r') {
+                // Expanded #include directives can leave spaces before the first
+                // absolute declaration path of an included file.
+                if at_line_start && delimiter_depth == 0 && (!indented || ch == '/') {
+                    visit(pos);
+                }
+                at_line_start = false;
+            }
+            match ch {
+                '(' | '[' | '{' => delimiter_depth += 1,
+                ')' | ']' | '}' => delimiter_depth = delimiter_depth.saturating_sub(1),
+                _ => {}
+            }
+            pos += ch.len_utf8();
+        }
+    }
+
+    #[test]
+    fn ascii_boundary_scan_matches_character_reference() {
+        for source in [
+        "/datum/a\n    proc/f()\n        return call(\n/datum/not_boundary,\n        1)\n/datum/b\n",
+        "/datum/日本\n    var/text = {\"line\n/obj/not_boundary\n\"}\n /obj/next\n",
+        "/* outer\n/* inner */\n*/ /obj/a\n// /obj/comment\n/obj/b\n",
+        "/datum/a\n    var/x = \"outer [call(\"nested [1]\")]\"\n/obj/b\n",
+        "/datum/a\n    var/x = 'icons/日本.dmi'\n/obj/b\n",
+        "/datum/a\n    var/x = @{\"raw \\text\n/obj/inside\"}\n/obj/b\n",
+    ] {
+        for end in (0..=source.len()).filter(|end| source.is_char_boundary(*end)) {
+            let prefix = &source[..end];
+            let mut expected = Vec::new();
+            reference_boundaries(prefix, |offset| expected.push(offset));
+            let mut actual = Vec::new();
+            for_each_top_level_boundary(prefix, |offset| actual.push(offset));
+            assert_eq!(actual, expected, "{prefix:?}");
+        }
+    }
     }
 }
