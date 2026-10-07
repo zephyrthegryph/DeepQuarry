@@ -2592,8 +2592,8 @@ Spec: `doc/rewrite/ai_packs.md` ("Implementation status" lists what is not in ye
   (its own ops pick up and use it unharmed), a ghost on a portal or modular computer it may not use (a swallow op takes the click, as before).
 * **Refusal texts**: a silicon on a ship console without AI control is refused with "Access Denied." (a chat line before); the wheel of fortune's ticket check of an
   existing ticket and the SPASM collar ownership check are told by the handler; the survival capsule's VR refusal is a handler line.
-* **Datum periodics stay legacy**: `/datum/shuttle` (two), `/datum/turbolift` and `/datum/generated_station_planner` are non-atoms; an every() is armed only by
-  `engine_holder_init()` for atoms, and the `om_after_rearm` lint bans a timer chain. They convert when `lifeform_datum_new()` arms type-level every() for non-atoms.
+* **Datum periodics are every() since rewrite/gaps-j** (framework_gaps.md J1): `/datum/shuttle`, `/datum/turbolift`, `/datum/generated_station_planner`, `/datum/hose`, `/datum/hose_connector`,
+  `/datum/artifact_master`, `/datum/changeling` and the meteor mode declare a type-level `every()` in their `CAPABILITIES` block; `lifeform_datum_new()` arms it when the datum is made.
 
 ## Legacy-form sweep (DECLARE_INTERACTIONS, DAMAGE_REACTION, DECLARE_EMAG, DECLARE_PERIODIC, DECLARE_REPEAT), integrator notes
 
@@ -2627,3 +2627,38 @@ Each changed pin row is one of these classes; nothing else was blessed. `dq_inte
 * **A SMES's crowbar click is "Deconstruct"** (hatch tools answer before the window, integ-4): the sweep's "Ui open" row is gone.
 * **The shield projector's regeneration is one `every()` with a tracked `regenerating`** (the master conversion replaced the sweep's periodic): hit rows read `regenerating: 0 -> 1` where the legacy `periodic_pipe` row was.
 * **A machine's break and EMP are stat holds, not a write to `stat`** (machine-stats): the `stat: 0 -> 1` rows of four computers and the shield generator are gone. An EMP's timed hold (and a shield's `after()` flash) owns a timer on the machine, so the machine's `om_rec` appears after the hit (seed storage emp, shield emag, projectile and thrown rows).
+
+## Gaps batch J (rewrite/gaps-j): datum periodics, questions asked from handlers, void suits, labels, sector registry
+
+* **Datum periodics (J1).** A type-level `every()` of a plain datum is armed when the datum is made and parks on a tracked `when =` var like an atom's; a relation view as the gate
+  (hose connector, artifact master) polls every interval instead. A shuttle's 2 s step is gated on a tracked `working` that only a shuttle `New()` registered can set, so an idle or
+  unregistered shuttle holds no timer (an unregistered one is dropped by its creator, and a polling timer would have kept it alive: the ownership audit's "dropped with a rec").
+  A hose, a hose connector and a turbolift step on `0.2 SECONDS`, `2 SECONDS` and `1 SECOND` as their cadences did. Supply payroll is checked on the 20 s supply step
+  (`next_payroll` passed) instead of a self-timed repeat: it may run up to 20 s after its time. A changeling's drains, the meteor waves and the station planner's poll keep their intervals;
+  a drain that finds no owner now skips (it cannot end its own every()) and the camouflage ends itself through its flag.
+* **Questions asked from handlers (J2)** are `asks()` steps of ops: the cat naming (pen and penlight), the sticky pad (a pen), the multibelt's radial and the cyborg coil's colour, the
+  stardog's fur pick and Emote Beyond, the nanite goop (two chained steps, the second `when =` the first answered On), a pAI's ID swipe, a think-tank's ghost take-over (`observer()`),
+  the face of glamour (create, recall, speak) and the glamour ring.
+  * Guards the old handler answered with `return FALSE` (fall through to the next candidate) are `when(req(...))`; a `needs(req(..., silent = TRUE))` would end the click instead.
+  * The pAI's item interaction is three ops: an ID swipe while it accepts access changes (asks add/remove, the answer checked again when it arrives), an ID swipe while it does not
+    (told so), and the hit or bonk at the lowest tier. A pin row `human|<ID> click: Click: Pat` is now `Click: Use`: the legacy item interaction was shadowed by the help-stance Pat in
+    the legacy resolver, so an ID swipe patted the pAI; the hand-written pAI tests drove the handler directly and never saw it. Other held items still pat.
+  * A think-tank ghost's click is `Click: Take control` (the pin harness never reached the old observer interaction); the nanite goop's rows say `Interface (refused: )` for actors who may
+    not use it, and an AI's click is `Click: Interface`.
+  * `get_area()`, `locate_in_list()` and `dq_actor_not_ic_muted()` carry `READS_FROM()` so a requirement may call them. The nanite goop's holder links are declared `ref_one()`.
+  * Not converted (the form they need does not exist yet): the mecha pry-component step (a legacy construction ladder), the replicator's consent questions (the answerer is the inserted
+    mob, not the op's actor: `op_request_fields()` always sets `answerer = A.actor`), the cyborg gripper's radial (a cancel must go on to use the wrapped item, and its `in_radial_menu`
+    state is set while the ring is open), and `code/game/machinery` types (Codex's). `item_attack.dm`, `observer.dm`, `interaction.dm`, `items.dm` and `wall_construction.dm` hold no
+    `open_request()` at all.
+* **Void suits (J3).** The screwdriver on a suit (void, AutoLok, response team) is `voidsuit_remove_component`: `req_not_worn(SLOT_ID_SUIT)` (the ledger read is the library requirement),
+  one `asks()` for the component, and per-type `has_removable_component()` / `removable_components()` (the AutoLok and the response suit never offer a helmet). The pin rows for a
+  screwdriver gain `Remove component` and its refusal; a screwdriver click on a suit that holds something is `Click: Remove component` where it was `Voidsuit install item`.
+  Ripley's ore detection already reads the pilot slot through `pilot_of()` (OCCUPANT_KEY); a fingerprint card's gloves requirement is `req_actor_slot_empty()`; the card's `attack()` that takes a
+  print from another person is a melee override with several different refusals and stays.
+* **Labels (menu pins).** An unlabelled `op("hand", hand())` showed as `Hand` (from its key); its legacy form was null-named, so it is `Use` (the class above). The fishing rod's item op is
+  `Use` (it was `Fishing rod item`). `Help` (the help-stance touch of `INTERACT_HAND_DEFAULT_AS(I_HELP, "Help", ...)` in item_attack.dm) and `Robot nom (refused: you don't have that ability)`
+  are rows of the original recorded pins (ff6247c6f1), not changes: every ability picker is offered to an actor without the ability as a refused entry. Left as they are.
+* **Sector registry (J9).** `unregister_z_levels()` removed numbers from `GLOB.map_sectors`, which is keyed by the level as text, so a deleted sector (the stardog's ship) stayed
+  registered and the next `get_overmap_sector()` handed out a dying one (`rel_set` refused "is being destroyed" in `i7_bulk` after `dq_conversion_pin`). It removes the text keys it owns.
+  `i7_bulk` still fails alone and combined on master for another reason (a gravity generator part's break during its own destroy, `hold(...): the holder is deleted`), which is in
+  `code/game/machinery`.
