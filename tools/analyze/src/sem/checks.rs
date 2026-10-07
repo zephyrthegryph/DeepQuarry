@@ -460,3 +460,37 @@ pub fn act_idents(params: &[dreammaker::ast::Parameter], code: &Block, try_calls
 fn unused(e: &Expression) {
     walk_expr(e, &mut |_| {});
 }
+
+/// Exact source positions of bare names used as named call arguments, not entity assignments.
+/// The parser represents both as AssignOp; the enclosing call argument is the distinction.
+pub fn named_argument_positions(sem: &super::Sem, file: &str) -> BTreeSet<(usize, usize)> {
+    let mut positions = BTreeSet::new();
+    for (_, owner, name) in sem.defs_in(file) {
+        let Some(proc) = sem.proc_ref(owner, name) else { continue };
+        let body = sem.proc_body(proc);
+        if body.file != file { continue; }
+        let Some(code) = body.code else { continue };
+        walk_block(code, &mut |expression, _| {
+            let Expression::Base { term, follow } = expression else { return };
+            let mut collect = |args: &[Expression]| {
+                for arg in args {
+                    let Expression::AssignOp { op: AssignOp::Assign, lhs, .. } = arg else { continue };
+                    // Dotted lhs arguments are actual assignments, not argument names.
+                    let Expression::Base { term: lhs_term, follow: lhs_follow } = strip_parens(lhs) else { continue };
+                    if !lhs_follow.is_empty() || as_ident(strip_parens(lhs)).is_none() { continue; }
+                    if sem.rel(lhs_term.location) == file {
+                        positions.insert((lhs_term.location.line as usize, lhs_term.location.column as usize));
+                    }
+                }
+            };
+            match &term.elem {
+                Term::Call(_, args) | Term::NewPrefab { args: Some(args), .. } | Term::NewImplicit { args: Some(args) } => collect(args),
+                _ => {}
+            }
+            for item in follow.iter() {
+                if let Follow::Call(_, _, args) = &item.elem { collect(args); }
+            }
+        });
+    }
+    positions
+}

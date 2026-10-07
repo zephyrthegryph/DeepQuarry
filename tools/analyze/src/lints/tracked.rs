@@ -186,13 +186,13 @@ struct Hit {
 }
 
 /// `scan` for one file: its hits (in order) and the setters it defines `(owner, proc name)`.
-fn scan_one(tracked: &Tracked, pats: &Pats, f: &SourceFile, sink: &mut Sink) -> (Vec<Hit>, Vec<(String, String)>) {
+fn scan_one(tracked: &Tracked, pats: &Pats, f: &SourceFile, sink: &mut Sink, named_args: &BTreeSet<(usize, usize)>) -> (Vec<Hit>, Vec<(String, String)>) {
     let mut hits = Vec::new();
     let mut setters = Vec::new();
     if !pats.any.is_match(f.text()) {
         return (hits, setters);
     }
-    for p in parse_procs(f.code()) {
+    for p in parse_procs(f.clean()) {
         let owner = if p.owner != "/" { normalize_type(p.owner) } else { "/".to_string() };
         let mut is_setter_of: Option<String> = None;
         if let Some(var) = p.name.strip_prefix("set_") {
@@ -219,6 +219,9 @@ fn scan_one(tracked: &Tracked, pats: &Pats, f: &SourceFile, sink: &mut Sink) -> 
                 typed.insert(m.s(2).to_string(), normalize_type(m.s(1)));
             }
             for m in pats.bare.captures_iter(line) {
+                if named_args.contains(&(*number, m.start(0) + 1)) {
+                    continue; // this exact AST expression names a call argument, not storage
+                }
                 let var = if m.s(1).is_empty() { m.s(2) } else { m.s(1) };
                 if is_setter_of.as_deref() == Some(var) {
                     continue;
@@ -280,10 +283,11 @@ impl Lint for Tracker {
         if let Some(pats) = build_pats(&tracked) {
             let files = cx.files();
             // Judge: each file's hits, cached while the merged index is unchanged.
+            let semantic = cx.sem();
             let results: Vec<Vec<(u32, String)>> = incr::keyed("tracked-judge", incr::ctx_key(&tracked), &files, |f| {
                 let mut sink = Sink::new();
                 sink.cur = f.rel.clone();
-                let (hits, _setters) = scan_one(&tracked, &pats, f, &mut sink);
+                let (hits, _setters) = scan_one(&tracked, &pats, f, &mut sink, &semantic.as_ref().map(|sem| crate::sem::checks::named_argument_positions(sem, &f.rel)).unwrap_or_default());
                 for u in sink.allow_used {
                     crate::dm::sys::replay_recorded(vec![u]);
                 }
@@ -316,7 +320,7 @@ impl Lint for Tracker {
         for f in &files {
             let mut sink = Sink::new();
             sink.cur = f.rel.clone();
-            let (hits, s) = scan_one(&tracked, &pats, f, &mut sink);
+            let (hits, s) = scan_one(&tracked, &pats, f, &mut sink, &BTreeSet::new());
             setters += s.len();
             for h in hits {
                 got.push((f.rel.clone(), h.line, h.msg.split(' ').next().unwrap_or("").to_string()));
@@ -442,4 +446,47 @@ const SELFTEST_EXPECT: &[(&str, usize, &str)] = &[
 
 pub fn register(reg: &mut Registry) {
     reg.add(Tracker);
+}
+
+#[cfg(test)]
+mod named_argument_tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    static NEXT: AtomicUsize = AtomicUsize::new(0);
+
+    fn hits(body: &str) -> Vec<usize> {
+        let root = std::env::temp_dir().join(format!("dq-tracked-args-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+        std::fs::create_dir_all(root.join("code")).unwrap();
+        let source = format!("/obj/machinery\n\tvar/state = 0\n\tvar/emagged = FALSE\n/obj/machinery/proc/probe()\n{body}\n");
+        std::fs::write(root.join("code/fixture.dm"), &source).unwrap();
+        let file = SourceFile::from_text("code/fixture.dm", &source);
+        let mut tree = crate::tree::Tree::from_files(vec![SourceFile::from_text("code/fixture.dm", &source)]);
+        tree.root = root.clone();
+        let semantic = crate::sem::Sem::build(&root, &tree).unwrap();
+        let named = crate::sem::checks::named_argument_positions(&semantic, "code/fixture.dm");
+        let mut tracked = Tracked::new();
+        tracked.insert("state".into(), BTreeSet::from(["/obj/machinery".into()]));
+        tracked.insert("emagged".into(), BTreeSet::from(["/obj/machinery".into()]));
+        let pats = build_pats(&tracked).unwrap();
+        let (got, _) = scan_one(&tracked, &pats, &file, &mut Sink::new(), &named);
+        std::fs::remove_dir_all(root).unwrap();
+        got.into_iter().map(|hit| hit.line).collect()
+    }
+
+    #[test]
+    fn schema_state_option_is_a_named_argument() {
+        assert!(hits("\tinterface(\"SpaceHeater\", state = 1)").is_empty());
+    }
+    #[test]
+    fn multiline_row_constructor_key_is_not_entity_storage() {
+        assert!(hits("\tvar/row = new /datum/row(\n\t\temagged = TRUE,\n\t\tstate = 1\n\t)").is_empty());
+    }
+    #[test]
+    fn bare_state_assignment_remains_a_violation() {
+        assert_eq!(hits("\tstate = 1"), vec![5]);
+    }
+    #[test]
+    fn named_argument_does_not_hide_real_assignment_on_same_line() {
+        assert_eq!(hits("\tstate = 2; interface(\"SpaceHeater\", state = 1)"), vec![5]);
+    }
 }
