@@ -657,3 +657,263 @@
 	test_answer(user, "Reach in...")
 	TEST_ASSERT(!isnull(user.get_active_held_item()) || !B.has_candy, "reaching in takes a sweet or empties the bowl")
 	forget_ghosts()
+
+// ---- Round two: resuscitation kit (bag-valve mask, airway kit, decompression needle), trail light planting, the stardog's fur ----
+
+/datum/unit_test/dq_timed_pin_w6/proc/patient_beside(mob/living/carbon/human/user)
+	var/mob/living/carbon/human/patient = person(get_step(user, EAST))
+	return patient
+
+/datum/unit_test/dq_timed_pin_w6/bvm_squeeze
+
+/datum/unit_test/dq_timed_pin_w6/bvm_squeeze/run_pin()
+	var/mob/living/carbon/human/user = person()
+	dq_give_zone_sel(user)
+	var/mob/living/carbon/human/patient = patient_beside(user)
+	var/obj/item/bag_valve_mask/B = allocate(/obj/item/bag_valve_mask, run_loc_floor_bottom_left)
+	hold(user, B)
+	begin(user, patient, B, 2 SECONDS, "start squeezing")
+	test_time(1 SECOND)
+	TEST_ASSERT(!said(user, "won't empty"), "nothing is said before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT(!said(user, "won't empty"), "an open airway takes the breaths")
+	TEST_ASSERT_NULL(running(user), "nothing is left running")
+
+/datum/unit_test/dq_timed_pin_w6/bvm_squeeze_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w6/bvm_squeeze_cancel_on_move/run_pin()
+	var/mob/living/carbon/human/user = person()
+	dq_give_zone_sel(user)
+	var/mob/living/carbon/human/patient = patient_beside(user)
+	var/obj/item/bag_valve_mask/B = allocate(/obj/item/bag_valve_mask, run_loc_floor_bottom_left)
+	hold(user, B)
+	var/datum/T = begin(user, patient, B, 2 SECONDS)
+	user.forceMove(get_step(user, SOUTH))
+	test_time(4 SECONDS)
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
+
+/datum/unit_test/dq_timed_pin_w6/bvm_squeeze_masked
+
+/datum/unit_test/dq_timed_pin_w6/bvm_squeeze_masked/run_pin()
+	var/mob/living/carbon/human/user = person()
+	dq_give_zone_sel(user)
+	var/mob/living/carbon/human/patient = patient_beside(user)
+	var/obj/item/clothing/mask/gas/M = allocate(/obj/item/clothing/mask/gas, run_loc_floor_bottom_left)
+	TEST_ASSERT(patient.equip_to_slot_if_possible(M, SLOT_ID_MASK, disable_warning = TRUE), "the mask goes on")
+	var/obj/item/bag_valve_mask/B = allocate(/obj/item/bag_valve_mask, run_loc_floor_bottom_left)
+	hold(user, B)
+	test_chat_clear()
+	test_click(user, patient, B)
+	TEST_ASSERT_NULL(running(user), "a masked patient starts nothing")
+	TEST_ASSERT(said(user, "can't get a seal"), "and the user is told why")
+
+/datum/unit_test/dq_timed_pin_w6/airway_kit_clear
+
+/datum/unit_test/dq_timed_pin_w6/airway_kit_clear/run_pin()
+	var/mob/living/carbon/human/user = person()
+	dq_give_zone_sel(user)
+	user.zone_sel.selecting = O_MOUTH
+	var/mob/living/carbon/human/patient = patient_beside(user)
+	var/obj/item/airway_kit/K = allocate(/obj/item/airway_kit, run_loc_floor_bottom_left)
+	hold(user, K)
+	begin(user, patient, K, 4 SECONDS, "start working")
+	test_time(3 SECONDS)
+	TEST_ASSERT(!said(user, "already clear"), "nothing is said before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT(said(user, "already clear"), "it says it finished")
+
+/datum/unit_test/dq_timed_pin_w6/airway_kit_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w6/airway_kit_cancel_on_move/run_pin()
+	var/mob/living/carbon/human/user = person()
+	dq_give_zone_sel(user)
+	user.zone_sel.selecting = O_MOUTH
+	var/mob/living/carbon/human/patient = patient_beside(user)
+	var/obj/item/airway_kit/K = allocate(/obj/item/airway_kit, run_loc_floor_bottom_left)
+	hold(user, K)
+	var/datum/T = begin(user, patient, K, 4 SECONDS)
+	user.forceMove(get_step(user, SOUTH))
+	test_time(6 SECONDS)
+	TEST_ASSERT(!said(user, "already clear"), "moving cancels: nothing is said")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
+
+/datum/unit_test/dq_timed_pin_w6/airway_kit_wrong_zone
+
+/datum/unit_test/dq_timed_pin_w6/airway_kit_wrong_zone/run_pin()
+	var/mob/living/carbon/human/user = person()
+	dq_give_zone_sel(user)
+	user.zone_sel.selecting = BP_TORSO
+	var/mob/living/carbon/human/patient = patient_beside(user)
+	var/obj/item/airway_kit/K = allocate(/obj/item/airway_kit, run_loc_floor_bottom_left)
+	hold(user, K)
+	test_chat_clear()
+	test_click(user, patient, K)
+	TEST_ASSERT_NULL(running(user), "aiming at the chest starts nothing")
+	TEST_ASSERT(said(user, "Aim for"), "and the user is told where to aim")
+
+/datum/unit_test/dq_timed_pin_w6/decompression_needle
+
+/datum/unit_test/dq_timed_pin_w6/decompression_needle/run_pin()
+	var/mob/living/carbon/human/user = person()
+	dq_give_zone_sel(user)
+	user.zone_sel.selecting = BP_TORSO
+	var/mob/living/carbon/human/patient = patient_beside(user)
+	var/obj/item/decompression_needle/N = allocate(/obj/item/decompression_needle, run_loc_floor_bottom_left)
+	hold(user, N)
+	begin(user, patient, N, 3 SECONDS, "You line")
+	test_time(2 SECONDS)
+	TEST_ASSERT(!N.used, "the needle is unused before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT(N.used, "the needle is used at the end")
+	TEST_ASSERT(said(user, "Nothing comes out"), "it says nothing was trapped")
+	test_chat_clear()
+	test_click(user, patient, N)
+	TEST_ASSERT_NULL(running(user), "a used needle starts nothing")
+	TEST_ASSERT(said(user, "already been used"), "and says why")
+
+/datum/unit_test/dq_timed_pin_w6/decompression_needle_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w6/decompression_needle_cancel_on_move/run_pin()
+	var/mob/living/carbon/human/user = person()
+	dq_give_zone_sel(user)
+	user.zone_sel.selecting = BP_TORSO
+	var/mob/living/carbon/human/patient = patient_beside(user)
+	var/obj/item/decompression_needle/N = allocate(/obj/item/decompression_needle, run_loc_floor_bottom_left)
+	hold(user, N)
+	var/datum/T = begin(user, patient, N, 3 SECONDS)
+	user.forceMove(get_step(user, SOUTH))
+	test_time(5 SECONDS)
+	TEST_ASSERT(!N.used, "moving cancels: the needle is not used")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
+
+/datum/unit_test/dq_timed_pin_w6/decompression_needle_wrong_zone
+
+/datum/unit_test/dq_timed_pin_w6/decompression_needle_wrong_zone/run_pin()
+	var/mob/living/carbon/human/user = person()
+	dq_give_zone_sel(user)
+	user.zone_sel.selecting = BP_HEAD
+	var/mob/living/carbon/human/patient = patient_beside(user)
+	var/obj/item/decompression_needle/N = allocate(/obj/item/decompression_needle, run_loc_floor_bottom_left)
+	hold(user, N)
+	test_chat_clear()
+	test_click(user, patient, N)
+	TEST_ASSERT_NULL(running(user), "aiming at the head starts nothing")
+	TEST_ASSERT(said(user, "Aim for"), "and the user is told where to aim")
+
+// ---- Trail lights: planted in hand on snow ----
+
+/datum/unit_test/dq_timed_pin_w6/lightpole_plant
+
+/datum/unit_test/dq_timed_pin_w6/lightpole_plant/run_pin()
+	var/turf/base = run_loc_floor_bottom_left
+	var/turf/snow = get_step(base, NORTH)
+	var/old_type = snow.type
+	snow.ChangeTurf(/turf/simulated/floor/snow)
+	snow = get_step(base, NORTH)
+	var/mob/living/carbon/human/user = person(snow)
+	var/obj/item/stack/lightpole/P = allocate(/obj/item/stack/lightpole, snow, 5)
+	hold(user, P)
+	begin(user, P, P, 8 SECONDS)
+	test_time(7 SECONDS)
+	TEST_ASSERT_EQUAL(P.get_amount(), 5, "nothing is spent before the end")
+	TEST_ASSERT(isnull(locate(/obj/structure/trailblazer) in snow), "nothing is planted before the end")
+	test_time(2 SECONDS)
+	var/obj/structure/trailblazer/B = locate(/obj/structure/trailblazer) in snow
+	TEST_ASSERT(!isnull(B), "a trail light stands at the end")
+	TEST_ASSERT_EQUAL(P.get_amount(), 4, "one light is used")
+	if(B)
+		qdel(B)
+	snow.ChangeTurf(old_type)
+
+/datum/unit_test/dq_timed_pin_w6/lightpole_plant_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w6/lightpole_plant_cancel_on_move/run_pin()
+	var/turf/base = run_loc_floor_bottom_left
+	var/turf/snow = get_step(base, NORTH)
+	var/old_type = snow.type
+	snow.ChangeTurf(/turf/simulated/floor/snow)
+	snow = get_step(base, NORTH)
+	var/mob/living/carbon/human/user = person(snow)
+	var/obj/item/stack/lightpole/P = allocate(/obj/item/stack/lightpole, snow, 5)
+	hold(user, P)
+	var/datum/T = begin(user, P, P, 8 SECONDS)
+	user.forceMove(get_step(user, EAST))
+	test_time(10 SECONDS)
+	TEST_ASSERT_EQUAL(P.get_amount(), 5, "moving cancels: nothing is spent")
+	TEST_ASSERT(isnull(locate(/obj/structure/trailblazer) in snow), "and nothing is planted")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
+	snow.ChangeTurf(old_type)
+
+/datum/unit_test/dq_timed_pin_w6/lightpole_plant_on_floor
+
+/datum/unit_test/dq_timed_pin_w6/lightpole_plant_on_floor/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/item/stack/lightpole/P = allocate(/obj/item/stack/lightpole, run_loc_floor_bottom_left, 5)
+	hold(user, P)
+	test_click(user, P, P)
+	TEST_ASSERT_NULL(running(user), "a plain floor starts nothing")
+
+// ---- The stardog's fur: pick someone out of it ----
+
+/datum/unit_test/dq_timed_pin_w6/stardog_fur_pick
+
+/datum/unit_test/dq_timed_pin_w6/stardog_fur_pick/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/turf/fur_turf = get_step(T, NORTH)
+	var/old_type = fur_turf.type
+	fur_turf.ChangeTurf(/turf/simulated/floor/outdoors/fur)
+	fur_turf = get_step(T, NORTH)
+	var/mob/living/carbon/human/H = person(T)
+	H.pickup_pref = TRUE
+	H.pickup_active = TRUE
+	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human, fur_turf)
+	victim.enable_godmode()
+	var/had_overmap = using_map.use_overmap
+	using_map.use_overmap = FALSE
+	var/mob/living/simple_mob/vore/overmap/stardog/test_fur/dog = allocate(/mob/living/simple_mob/vore/overmap/stardog/test_fur, get_step(T, EAST))
+	using_map.use_overmap = had_overmap
+	dog.invisibility = INVISIBILITY_NONE
+	dog.in_fur += victim
+	test_chat_clear()
+	hci_click(H, dog, null)
+	test_time(1 SECOND)
+	hci_answer(H, victim)
+	var/datum/R = running(H)
+	TEST_ASSERT(!isnull(R), "the answer starts a timed action")
+	TEST_ASSERT(isnull(declared_duration(R)) || declared_duration(R) == 3 SECONDS, "it lasts three seconds")
+	TEST_ASSERT(said(victim, "reaches toward you"), "the one picked is told a hand is coming")
+	test_time(2 SECONDS)
+	TEST_ASSERT(victim.loc == fur_turf, "the one picked is still in the fur before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT(victim.loc != fur_turf, "the one picked was lifted out of the fur")
+	fur_turf.ChangeTurf(old_type)
+
+/datum/unit_test/dq_timed_pin_w6/stardog_fur_pick_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w6/stardog_fur_pick_cancel_on_move/run_pin()
+	var/turf/T = run_loc_floor_bottom_left
+	var/turf/fur_turf = get_step(T, NORTH)
+	var/old_type = fur_turf.type
+	fur_turf.ChangeTurf(/turf/simulated/floor/outdoors/fur)
+	fur_turf = get_step(T, NORTH)
+	var/mob/living/carbon/human/H = person(T)
+	H.pickup_pref = TRUE
+	H.pickup_active = TRUE
+	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human, fur_turf)
+	victim.enable_godmode()
+	var/had_overmap = using_map.use_overmap
+	using_map.use_overmap = FALSE
+	var/mob/living/simple_mob/vore/overmap/stardog/test_fur/dog = allocate(/mob/living/simple_mob/vore/overmap/stardog/test_fur, get_step(T, EAST))
+	using_map.use_overmap = had_overmap
+	dog.invisibility = INVISIBILITY_NONE
+	dog.in_fur += victim
+	hci_click(H, dog, null)
+	test_time(1 SECOND)
+	hci_answer(H, victim)
+	var/datum/R = running(H)
+	TEST_ASSERT(!isnull(R), "the answer starts a timed action")
+	H.forceMove(get_step(H, SOUTH))
+	test_time(5 SECONDS)
+	TEST_ASSERT(victim.loc == fur_turf, "moving cancels: the one picked stays in the fur")
+	TEST_ASSERT(was_cancelled(R, H), "the action ends cancelled")
+	fur_turf.ChangeTurf(old_type)
