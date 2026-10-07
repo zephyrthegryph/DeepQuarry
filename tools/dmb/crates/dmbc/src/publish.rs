@@ -13,6 +13,41 @@ use xxhash_rust::xxh3::{xxh3_128, Xxh3};
 
 static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
+/// Select the shared output store on the destination drive. Callers may override
+/// this for network volumes or installations without a writable drive root.
+pub fn default_store_path(project: &Path) -> io::Result<PathBuf> {
+    #[cfg(windows)]
+    {
+        let local = std::env::var_os("LOCALAPPDATA")
+            .ok_or_else(|| io::Error::other("LOCALAPPDATA is absent; specify --output-store"))?;
+        windows_store_path(project, Path::new(&local))
+    }
+    #[cfg(not(windows))]
+    {
+        Ok(project.parent().ok_or_else(|| io::Error::other("manifest has no parent"))?
+            .join(".dmbc/outputs"))
+    }
+}
+
+#[cfg(windows)]
+fn windows_store_path(project: &Path, local: &Path) -> io::Result<PathBuf> {
+    use std::path::{Component, Prefix};
+    let drive = |path: &Path| match path.components().next() {
+        Some(Component::Prefix(prefix)) => match prefix.kind() {
+            Prefix::Disk(letter) | Prefix::VerbatimDisk(letter) => Some(letter.to_ascii_uppercase()),
+            _ => None,
+        },
+        _ => None,
+    };
+    let destination = drive(project).ok_or_else(||
+        io::Error::other("network output volume requires --output-store"))?;
+    if drive(local) == Some(destination) {
+        Ok(local.join("dmbd/pairs"))
+    } else {
+        Ok(PathBuf::from(format!("{}:\\", destination as char)).join(".dmbd/pairs"))
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OutputPair {
     pub version: u32,
@@ -376,6 +411,19 @@ fn validate_directory(path: &Path, id: u128) -> io::Result<OutputPair> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(windows)]
+    #[test]
+    fn output_store_is_shared_by_destination_drive() {
+        let local = Path::new("C:/Users/demo/AppData/Local");
+        assert_eq!(windows_store_path(Path::new("C:/work/a/project.dme"), local).unwrap(),
+            local.join("dmbd/pairs"));
+        let first = windows_store_path(Path::new("E:/work/a/project.dme"), local).unwrap();
+        let second = windows_store_path(Path::new("E:/work/b/project.dme"), local).unwrap();
+        assert_eq!(first, second);
+        assert_eq!(first, Path::new("E:/").join(".dmbd/pairs"));
+        assert!(windows_store_path(Path::new("//server/share/project.dme"), local).is_err());
+    }
 
     fn store() -> PairStore {
         let sequence = TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed);

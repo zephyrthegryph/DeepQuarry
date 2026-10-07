@@ -1,0 +1,46 @@
+{
+  "scope": "static-debug-coverage-only",
+  "report_sha256": "07e312ad4fe1b25474d1bafc56f3ce500ca547642840dc6ac44005d312683904",
+  "runtime_ownership_certified": false,
+  "branch_domination_certified": false,
+  "inputs": [
+    {
+      "path": "D:/dmb-native-v2-phase0/frozen/pairs/byond/world.dmb",
+      "procedures": 61379,
+      "decode_errors": 0,
+      "totals": {
+        "branch_instructions": 241922,
+        "code_words": 6818200,
+        "debug_files": 73108,
+        "debug_lines": 467499,
+        "decoded_instructions": 2867880,
+        "invalid_debug_file_refs": 0,
+        "ordinary_instructions": 2327273,
+        "sequentially_located_instructions": 2164634,
+        "zero_debug_lines": 0
+      }
+    },
+    {
+      "path": "D:/dmb-native-v2-phase0/frozen/pairs/native/world.dmb",
+      "procedures": 62101,
+      "decode_errors": 0,
+      "totals": {
+        "branch_instructions": 278005,
+        "code_words": 6253397,
+        "debug_files": 0,
+        "debug_lines": 0,
+        "decoded_instructions": 2484120,
+        "invalid_debug_file_refs": 0,
+        "ordinary_instructions": 2484120,
+        "sequentially_located_instructions": 0,
+        "zero_debug_lines": 0
+      }
+    }
+  ],
+  "comparison_status_counts": {
+    "ambiguous-name-not-matched": 162,
+    "unique-exact-name-match": 48399,
+    "left-only": 4,
+    "right-only": 4
+  }
+}

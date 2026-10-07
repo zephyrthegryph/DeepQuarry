@@ -62,6 +62,21 @@ try {
     $taskReceipt.exit_code = $taskProcess.ExitCode
     $taskReceipt.process_completed = $taskProcess.HasExited
     $taskReceipt.model_completed = $Mode -eq 'analyze' -and $taskProcess.ExitCode -eq 0
+    if ($Mode -eq 'compile') {
+        # This progress marker is emitted only after build_with_config returned
+        # the complete frontend. Later capture/lowering failure is independent.
+        $taskFacts = [regex]::Match(
+            [IO.File]::ReadAllText((Join-Path $taskOutput 'diagnostics.log')),
+            '(?m)^native captured facts started: (\d+) types, (\d+) members, (\d+) bodies\r?$')
+        $taskReceipt.model_completed = $taskFacts.Success
+        if ($taskFacts.Success) {
+            $taskReceipt.model_counts = @{
+                types = [int]$taskFacts.Groups[1].Value
+                members = [int]$taskFacts.Groups[2].Value
+                bodies = [int]$taskFacts.Groups[3].Value
+            }
+        }
+    }
     if ($Mode -eq 'compile' -and $taskProcess.ExitCode -eq 0) {
         $taskMarker = [IO.Path]::ChangeExtension($taskProject, 'dmb-pair.json')
         $taskDmb = [IO.Path]::ChangeExtension($taskProject, 'dmb')
@@ -76,7 +91,8 @@ try {
         }
     }
     if ($taskReceipt.status -eq 'running') {
-        $taskReceipt.status = if ($taskReceipt.model_completed -or $taskReceipt.artifact_completed) { 'completed' } else { 'failed' }
+        $taskSucceeded = if ($Mode -eq 'compile') { $taskReceipt.artifact_completed } else { $taskReceipt.model_completed }
+        $taskReceipt.status = if ($taskProcess.ExitCode -eq 0 -and $taskSucceeded) { 'completed' } else { 'failed' }
     }
 } finally {
     if (-not $taskProcess.HasExited) { $taskProcess.Kill(); $taskProcess.WaitForExit() }

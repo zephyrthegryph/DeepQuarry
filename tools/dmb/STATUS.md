@@ -21,28 +21,56 @@ this document belong to the preserved original compiler unless explicitly labele
   composition fixture passed before the subsequent reachability/static additions.
 - Skin attachment passed two source-bound checks. Resource encounter collection
   passed 31 native archive control cases. Additional raw formats have fresh
-  compile-only controls; their new Rust comparison gate is still pending.
+  compile-only controls; the nine-format comparison and interpolation-discovery
+  focused gates passed. Qualified resource aliases also passed frozen-table binding.
 - Raw regex strings no longer treat `[` as DM interpolation. The actual project
   now parses 1,370 chunks and 326,543 declarations instead of swallowing the final
-  39 MB inside one statement. The latest actual compile-command probe failed
-  before completing its model: 43.746 s, sampled maximum private memory
-  1,216,749,568 bytes, missing captured `/client.script`. This is an incomplete
-  compile attempt, not a successful cold-build latency.
+  39 MB inside one statement. Probe 12 completed the frontend model: 43,921
+  types, 281,789 members and 64,964 procedure bodies. It failed later in resource
+  discovery on an interpolation expression. Total failed attempt: 46.198 s,
+  sampled maximum private memory 1,216,241,664 bytes. This is an incomplete
+  compile attempt, not a successful cold-build latency. The frontend-completion
+  audit preserves the original receipt and corrects its old analyze-only flag.
+- Probe 13 passed frontend capture and resource discovery, then failed during map
+  initializer lowering on an unsupported declared-variable-type query. The failed
+  end-to-end attempt took 91.858 s with sampled maximum private memory
+  1,775,841,280 bytes. No complete output pair was published. Semantic repair and
+  map-origin diagnostics are in progress; this is not a cold-build benchmark.
+- Probe 14 completed resource capture, map projection, descriptors and common
+  map-initializer lowering. It then stopped on an uncertified procedure ABI.
+  The failed attempt took 109.756 s and sampled 2,041,708,544 private bytes.
+  Nontext parsing took 0.080 s, asset capture 6.937 s, resource order 6.435 s,
+  resource projection 4.450 s, symbol binding 4.119 s, map projection 0.216 s,
+  descriptors 0.085 s and map initializer lowering 0.187 s. These debug timings
+  locate current work; no executable pair or acceptance benchmark is claimed.
+- A tiny source containing a resource-valued field and inline client stylesheet
+  completed actual CLI composition and publication in 0.718 s. Its DMB was
+  21,969 bytes and RSC 64 bytes; this is only an integration smoke.
 - Authored `/client parent_type = /datum` now overrides the captured engine's
   default parent. A regression proves authored parent conflicts and cycles still
   fail. Source error locations and ABI failure details are being tightened.
 - Procedure-local statics have exact structural identities, typed producer and
   resolver, and shared variable-slot relocation. Two producer tests and the
   codegen tuple/parameter-shadowing test passed. Their startup and final footer
-  integration are in progress; production admission remains guarded until complete.
+  integration passed focused cold and admitted-lowering checks with one and two
+  workers. Full-project admission remains guarded until complete.
 - Absolute root proc/var declarations no longer inherit the preceding type owner.
   Global procedures are separate from the instance inheritance namespace. The
   focused adapter gate passed 14 checks. The combined cold gate passed its class
-  fixture but still fails a procedure-static storage query; repair is in progress.
+  fixture and procedure-static checks passed after separating root globals from
+  instance inheritance. Full-project lowering coverage is still being established.
 - Six frozen runtime observations are finalized in `phase0/BASELINE_REPLAY_REPORT.md`:
   40 stable test differences, 79 variable test observations, no missing tests.
   BYOND crashed after complete results in two repetitions; native exited normally
   in all three. Source/ownership coverage remains incomplete and parity is not claimed.
+- The static frozen-output debug inspector decoded both images without errors.
+  BYOND has 73,108 file and 467,499 line instructions; the preserved native image
+  has zero of either. `phase0/DEBUG_COVERAGE.md` records this attribution limit;
+  it does not certify runtime ownership or explain behavioral divergence.
+- Four orphan prototype crates (`dm-compile`, `dm-compiled`, `dm-output`, `dm-host`)
+  were removed in `ca5011d813`. Their command documentation and runtime smoke
+  script are archived for the original checkout. The new CLI uses shared per-drive
+  output stores; the focused store-selection gate passed.
 - Full encoding of the preserved 47,843,708-byte DMB took 0.161 s and reproduced
   the input exactly in the recorded sample. That measurement excludes linking,
   resource output and publication; it supports keeping full encoding in this design.

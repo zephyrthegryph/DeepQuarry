@@ -139,36 +139,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dm-compile"
-version = "0.1.0"
-dependencies = [
- "byond-dmb",
- "dm-compiled",
- "dm-compiler",
- "dm-host",
- "dm-output",
- "dm-preprocess",
- "dm-syntax",
- "serde_json",
-]
-
-[[package]]
-name = "dm-compiled"
-version = "0.1.0"
-dependencies = [
- "byond-dmb",
- "dm-compiler",
- "dm-host",
- "dm-output",
- "dm-preprocess",
- "dm-resources",
- "dm-syntax",
- "serde",
- "serde_json",
- "sha2",
-]
-
-[[package]]
 name = "dm-compiler"
 version = "0.1.0"
 dependencies = [
@@ -187,13 +157,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dm-host"
-version = "0.1.0"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "dm-ir"
 version = "0.1.0"
 dependencies = [
@@ -206,17 +169,6 @@ name = "dm-link"
 version = "0.1.0"
 dependencies = [
  "dm-ir",
-]
-
-[[package]]
-name = "dm-output"
-version = "0.1.0"
-dependencies = [
- "byond-dmb",
- "dm-host",
- "serde",
- "serde_json",
- "sha2",
 ]
 
 [[package]]
