@@ -236,7 +236,8 @@
 		var/shape = RELS_PAIR
 		if(is_list && E.args["a_type"] == E.args["b_type"] && E.args["a_var"] == E.args["b_var"])
 			shape = RELS_SYMMETRIC
-		var/list/entry = list(OWNK_REL, shape, back, null, is_list, null, CLEAR, null, E.args["[other]_type"])
+		var/on_deleted = E.args["[end]_on_other_deleted"] == OTHER_DELETE_ME ? DELETE_ME : CLEAR
+		var/list/entry = list(OWNK_REL, shape, back, null, is_list, null, on_deleted, E.args["[end]_on_unlink"], E.args["[other]_type"])
 		T.entries[var_name] = entry
 		LAZYADD(T.ref_vars, var_name)
 		T.empty = FALSE

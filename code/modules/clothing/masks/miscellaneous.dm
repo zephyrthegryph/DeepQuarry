@@ -251,7 +251,7 @@ CAPABILITIES(/obj/item/clothing/mask/ai)
 		for(var/datum/chunk/c in eye.visibleChunks)
 			c.remove(eye)
 
-		om_unlink(eye, user, /datum/om/relation/eye_of)
+		rel_set(eye, nameof(eye.eye_looker), null)
 
 /obj/item/clothing/mask/bandana
 	name = "black bandana"

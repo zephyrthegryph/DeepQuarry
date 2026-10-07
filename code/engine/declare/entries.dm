@@ -136,20 +136,21 @@
 
 /// link_pair(/type::var, /type::var): the macro of code/__defines/engine/declare.dm passes each end as the text it was written as.
 /// `a_many` / `b_many` say an end is a list var (DM has no way to read a var's declared type; the generator will derive it).
-/proc/entry_link(a_text, b_text, hot = FALSE, a_many = FALSE, b_many = FALSE, key = null)
+/proc/entry_link(a_text, b_text, hot = FALSE, a_many = FALSE, b_many = FALSE, key = null, a_on_other_deleted = OTHER_CLEAR, b_on_other_deleted = OTHER_CLEAR, a_on_unlink = null, b_on_unlink = null)
 	var/list/a = link_end(a_text)
 	var/list/b = link_end(b_text)
-	return entry_make(ENTRY_LINK, key, list("a_type" = a[1], "a_var" = a[2], "b_type" = b[1], "b_var" = b[2], "hot" = hot, "a_many" = a_many, "b_many" = b_many))
+	return entry_make(ENTRY_LINK, key, list("a_type" = a[1], "a_var" = a[2], "b_type" = b[1], "b_var" = b[2], "hot" = hot, "a_many" = a_many, "b_many" = b_many, "a_on_other_deleted" = a_on_other_deleted, "b_on_other_deleted" = b_on_other_deleted, "a_on_unlink" = a_on_unlink, "b_on_unlink" = b_on_unlink))
 
 /// The base of the CAPABILITIES(T) block header (code/__defines/engine/markers.dm): each block is an override of this on T, so a subtype's block
 /// does not clash with its parent's. Nothing calls it; the statements of a block are read by `analyze` and compiled for their names and arguments.
 /datum/proc/__capabilities()
 	return
 
-/// links(/type::var, /type::var, hot = FALSE, a_many = FALSE, b_many = FALSE, key = null): the block-form spelling of a paired relation (`link` is a
+/// links(/type::var, /type::var, hot = FALSE, a_many = FALSE, b_many = FALSE, key = null, a_on_other_deleted =, b_on_other_deleted =, a_on_unlink =, b_on_unlink =):
+/// the block-form spelling of a paired relation (`link` is a
 /// BYOND reserved word). Only a declaration: `analyze gen declare` rewrites it to entry_link() with each end as text, so this proc is never
 /// called; it exists so the compiler and DreamChecker check the entry's name and named arguments inside a CAPABILITIES block.
-/proc/links(a_end, b_end, hot = FALSE, a_many = FALSE, b_many = FALSE, key = null)
+/proc/links(a_end, b_end, hot = FALSE, a_many = FALSE, b_many = FALSE, key = null, a_on_other_deleted = OTHER_CLEAR, b_on_other_deleted = OTHER_CLEAR, a_on_unlink = null, b_on_unlink = null)
 	CRASH("links() is a declaration entry read by analyze gen declare; it is never called")
 
 /// "/obj/machinery/power/apc::hacker" -> list(path, "hacker"). The one place a type path is parsed from text: the macro cannot

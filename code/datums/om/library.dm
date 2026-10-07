@@ -148,50 +148,5 @@
 		if(M.pullin)
 			M.pullin.icon_state = "pull0"
 
-// ---- Live links that used to be weak-reference vars (migration track 1c) ----
-
-/// A bluespace radio -> the telecomms receiver (or all-in-one) it transmits
-/// to. BS_TX_TARGET(radio) / BS_TX_RADIOS(machine). The receiver only accepts
-/// bluespace signals from its BS_TX_RADIOS.
-/datum/om/relation/bluespace_tx_to
-	name = "bluespace transmitter link"
-	source_single = TRUE
-
-/// A bluespace radio -> the telecomms broadcaster (or all-in-one) it receives
-/// from. BS_RX_SOURCE(radio) / BS_RX_RADIOS(machine): the machine forces its
-/// broadcasts onto those radios.
-/datum/om/relation/bluespace_rx_from
-	name = "bluespace receiver link"
-	source_single = TRUE
-
-/// A ghost -> the movable it is following. FOLLOWING(ghost) and
-/// FOLLOWERS(target) (om.dm) read the edge; the ghost also orbits the target
-/// (code/game/orbit.dm), which is what moves it along.
-/datum/om/relation/following
-	name = "following"
-	source_single = TRUE
-
-/// A cortical borer -> the human host it has infested. BORER_HOST(borer) and
-/// BORER_OF(human) (om.dm) read the edge. The hooks keep the borer in the
-/// head organ's implants list, so every teardown path (detatch(),
-/// leave_host(), the organ being removed, either end deleted) agrees.
-/datum/om/relation/host_of
-	name = "borer host"
-	source_single = TRUE
-	target_single = TRUE
-
-/datum/om/relation/host_of/on_link(mob/living/simple_mob/animal/borer/source, mob/living/carbon/human/target, datum/om/edge/edge)
-	if(!istype(source) || !istype(target))
-		return
-	var/obj/item/organ/external/head = target.get_organ(BP_HEAD)
-	if(head)
-		LAZYADD(head.implants, source)
-
-/datum/om/relation/host_of/on_unlink(mob/living/simple_mob/animal/borer/source, mob/living/carbon/human/target, datum/om/edge/edge)
-	if(istype(target))
-		var/obj/item/organ/external/head = target.get_organ(BP_HEAD)
-		if(head)
-			LAZYREMOVE(head.implants, source)
-
 // ---------------------------------------------------------------- bundles
 

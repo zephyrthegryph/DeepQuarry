@@ -126,3 +126,22 @@
 	TEST_ASSERT_NULL(pet2.leash_item(), "deleting the leash should free the pet")
 	TEST_ASSERT(!(pet2.alerts && pet2.alerts["leashed"]), "the freed pet should lose the alert")
 	TEST_ASSERT(!(master.alerts && master.alerts["leash"]), "the holder should lose the alert")
+
+/// The LeMat's cylinder swap names its vars by text (swap_cylinder(incoming_var, stash_var)): the rounds move between the declared owned lists and
+/// none is deleted.
+/datum/unit_test/dq_rel_pin_lemat_swap
+
+/datum/unit_test/dq_rel_pin_lemat_swap/Run()
+	var/obj/item/gun/projectile/revolver/lemat/G = allocate(/obj/item/gun/projectile/revolver/lemat)
+	var/list/secondary = G.secondary_loaded?.Copy()
+	var/list/primary = G.loaded?.Copy()
+	TEST_ASSERT(length(secondary), "setup: the secondary cylinder starts loaded")
+	G.swap_cylinder("secondary_loaded", "tertiary_loaded")
+	for(var/obj/item/ammo_casing/C as anything in secondary)
+		TEST_ASSERT(!QDELETED(C) && (C in G.loaded), "a secondary round should be loaded after the swap")
+	for(var/obj/item/ammo_casing/C as anything in primary)
+		TEST_ASSERT(!QDELETED(C) && (C in G.tertiary_loaded), "a primary round should be stashed, not deleted")
+	TEST_ASSERT(!length(G.secondary_loaded), "the secondary cylinder is empty after it was taken")
+	G.swap_cylinder("tertiary_loaded", "secondary_loaded")
+	for(var/obj/item/ammo_casing/C as anything in primary)
+		TEST_ASSERT(!QDELETED(C) && (C in G.loaded), "the primary rounds come back on the second swap")

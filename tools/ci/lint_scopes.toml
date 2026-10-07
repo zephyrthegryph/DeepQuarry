@@ -617,6 +617,11 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/tests/"]
 exempt_prefixes = ["code/engine/", "code/datums/ownership/"]
 
 [lint.legacy_forms.lists]
+# Names that are gone except under the listed path prefixes (the folders still calling them): `name @ prefix;prefix = hint`.
+banned_outside = [
+  "om_link @ code/datums/om/;code/modules/unit_tests/;code/tests/;code/game/objects/buckling.dm;code/library/structures/buckle.dm;code/modules/mob/mob.dm;code/modules/mob/mob_grab.dm;code/game/orbit.dm;code/game/objects/structures/stool_bed_chair_nest/wheelchair.dm = declare the pair with links() in CAPABILITIES and write it with rel_set(); only buckling, pulling, grabbing and orbiting (holds_while, edge data) still use it",
+  "om_unlink @ code/datums/om/;code/modules/unit_tests/;code/tests/;code/game/objects/buckling.dm;code/library/structures/buckle.dm;code/modules/mob/mob.dm;code/modules/mob/mob_grab.dm;code/game/orbit.dm;code/game/objects/structures/stool_bed_chair_nest/wheelchair.dm;code/modules/food/kitchen/gibber.dm  = rel_set(holder, nameof(var), null) on the declared link",
+]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
   "DECLARE_VERB = verb_entry(path) in the type CAPABILITIES block",

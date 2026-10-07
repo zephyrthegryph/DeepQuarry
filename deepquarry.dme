@@ -912,7 +912,6 @@
 #include "code\datums\om\native_adapter.dm"
 #include "code\datums\native\system.dm"
 #include "code\datums\native\entities.dm"
-#include "code\datums\om\ref_relations.dm"
 #include "code\datums\om\registry.dm"
 #include "code\datums\om\relation.dm"
 #include "code\datums\om\scheduler.dm"

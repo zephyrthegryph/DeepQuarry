@@ -2662,3 +2662,11 @@ Each changed pin row is one of these classes; nothing else was blessed. `dq_inte
   registered and the next `get_overmap_sector()` handed out a dying one (`rel_set` refused "is being destroyed" in `i7_bulk` after `dq_conversion_pin`). It removes the text keys it owns.
   `i7_bulk` still fails alone and combined on master for another reason (a gravity generator part's break during its own destroy, `hold(...): the holder is deleted`), which is in
   `code/game/machinery`.
+
+## Relations conversion (rewrite/relations)
+
+Pinned by `code/modules/unit_tests/dq_rel_lifecycle_pins.dm` and the `dq_om_relation_*` tests, written green on the legacy relations first.
+
+* **A leash that outlives its pet's step stops on the next slow step** instead of stopping its periodic work in the unlink: `periodic_step()` returns `PROCESS_KILL` when it clears the leash. A leash on nobody does nothing in between.
+* **An overmap mob's marker deleting on its own expires the mob** through the marker's `on_destroy` (its `parent`) instead of the relation hook; a marker supplied to a mob without setting its own `parent` no longer takes the mob with it.
+* **A throw's `subject` stays set after the throw lands** (until the throw is deleted a tick later); the old edge did the same.
