@@ -45,13 +45,10 @@ CAPABILITIES(/obj/machinery/reagent_refinery/pump)
 		return amount_per_transfer_from_this
 	return 0
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/pump/appearance_overlays()
-	. = list()
+/obj/machinery/reagent_refinery/pump/draw(datum/look/look)
+	..()
 	if(reagents && reagents.total_volume >= 5)
-		var/image/filling = image(icon, loc, "pump_r",dir = dir)
-		filling.color = reagents.get_color()
-		. += filling
+		look.overlay(look_overlay_image(icon, "pump_r", color = reagents.get_color(), dir = dir))
 
 /obj/machinery/reagent_refinery/pump/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// pumps, furnaces, splitters and filters can only be FED in a straight line

@@ -57,20 +57,18 @@
 	if(epitaph && get_dist(src, user) < 2)
 		. += epitaph
 
-DECLARE_APPEARANCE_PROC(/obj/item/material/gravemarker, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/material/gravemarker/appearance_overlays()
-	. = list()
+/obj/item/material/gravemarker/draw(datum/look/look)
 	if(icon_changes)
 		if(grave_name && epitaph)
-			icon_state = "[initial(icon_state)]_3"
+			look.state("[initial(icon_state)]_3")
 		else if(grave_name)
-			icon_state = "[initial(icon_state)]_1"
+			look.state("[initial(icon_state)]_1")
 		else if(epitaph)
-			icon_state = "[initial(icon_state)]_2"
+			look.state("[initial(icon_state)]_2")
 		else
-			icon_state = initial(icon_state)
+			look.state(initial(icon_state))
 
-	. += ..()
+	..()
 
 CAPABILITIES(/obj/item/material/gravemarker)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))

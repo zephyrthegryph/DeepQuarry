@@ -81,17 +81,16 @@ CAPABILITIES(/obj/item/perfect_tele)
 			rel_add(src, nameof(beacons), nb)
 	loc_network = null //Consumed
 
-DECLARE_APPEARANCE_PROC(/obj/item/perfect_tele, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/perfect_tele/appearance_overlays()
-	. = list()
+/obj/item/perfect_tele/draw(datum/look/look)
+	look.watch(power_source)
 	if(!power_source)
-		icon_state = "[initial(icon_state)]_o"
+		look.state("[initial(icon_state)]_o")
 	else if(ready && (power_source.check_charge(charge_cost) || power_source.fully_charged()))
-		icon_state = "[initial(icon_state)]"
+		look.state("[initial(icon_state)]")
 	else
-		icon_state = "[initial(icon_state)]_w"
+		look.state("[initial(icon_state)]_w")
 
-	. += ..()
+	..()
 
 /obj/item/perfect_tele/proc/rebuild_radial_images()
 	LAZYCLEARLIST(radial_images)
@@ -560,14 +559,12 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	recharging = 0
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/perfect_tele/frontier, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/perfect_tele/frontier/appearance_overlays()
-	. = list()
+/obj/item/perfect_tele/frontier/draw(datum/look/look)
 	if(recharging)
-		icon_state = "[initial(icon_state)]_o"
-		update_held_icon()
-		return .
-	. += ..()
+		look.state("[initial(icon_state)]_o")
+		// the hands that hold it redraw when the look changes its sprite (look.apply_to())
+		return
+	..()
 
 /obj/item/perfect_tele/frontier/staff
 	name = "centcom translocator"

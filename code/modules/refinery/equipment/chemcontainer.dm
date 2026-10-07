@@ -99,20 +99,17 @@
 /obj/item/reagent_containers/chem_canister/on_reagent_change(changetype)
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/chem_canister, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/chem_canister/appearance_overlays()
-	. = list()
-	. += ..()
+/obj/item/reagent_containers/chem_canister/draw(datum/look/look)
+	..()
+	var/drawn_state = look.state_so_far(src)
 	if(reagents && reagents.total_volume > 0)
 		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
 		switch(percent)
-			if(0 to 25)			percent = 25
-			if(25 to 50)		percent = 50
-			if(50 to 75)		percent = 75
-			if(75 to INFINITY)	percent = 100
-		var/image/chems = image(icon, icon_state = "[icon_state]_c[percent]", dir = NORTH)
-		chems.color = reagents.get_color()
-		. += chems
+			if(0 to 25) percent = 25
+			if(25 to 50) percent = 50
+			if(50 to 75) percent = 75
+			if(75 to INFINITY) percent = 100
+		look.overlay(look_overlay_image(icon, "[drawn_state]_c[percent]", color = reagents.get_color(), dir = NORTH))
 
 
 // Preloads

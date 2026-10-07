@@ -32,29 +32,24 @@
 
 	refinery_transfer()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/vat, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/vat/appearance_overlays()
-	. = list()
+/obj/machinery/reagent_refinery/vat/draw(datum/look/look)
+	..()
 	// GOOBY!
 	if(reagents && reagents.total_volume >= 5)
 		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
 		switch(percent)
-			if(5 to 20)			percent = 2
-			if(20 to 40) 		percent = 4
-			if(40 to 60)		percent = 6
-			if(60 to 80)		percent = 8
-			if(80 to INFINITY)	percent = 10
-		var/image/filling = image(icon, loc, "vat_r_[percent]",dir = dir)
-		filling.color = reagents.get_color()
-		. += filling
+			if(5 to 20) percent = 2
+			if(20 to 40) percent = 4
+			if(40 to 60) percent = 6
+			if(60 to 80) percent = 8
+			if(80 to INFINITY) percent = 10
+		look.overlay(look_overlay_image(icon, "vat_r_[percent]", color = reagents.get_color(), dir = dir))
 	// Get main dir pipe
-	var/image/pipe = image(icon, icon_state = "vat_cons", dir = dir)
-	. += pipe
+	look.overlay(look_overlay_image(icon, "vat_cons", dir = dir))
 	if(anchored)
 		if(operable())
-			var/image/dot = image(icon, icon_state = "vat_dot_[ amount_per_transfer_from_this > 0 ? "on" : "off" ]")
-			. += dot
-		. += update_input_connection_overlays("vat_intakes")
+			look.overlay(look_overlay_image(icon, "vat_dot_[ amount_per_transfer_from_this > 0 ? "on" : "off" ]"))
+		look.overlay(update_input_connection_overlays("vat_intakes"))
 
 /obj/machinery/reagent_refinery/vat/examine(mob/user, infix, suffix)
 	. = ..()

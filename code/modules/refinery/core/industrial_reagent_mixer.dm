@@ -51,32 +51,26 @@ TRACKED(/obj/machinery/reagent_refinery/mixer, mixer_angle)
 	update_icon()
 	set_got_input(FALSE)
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/reagent_refinery/mixer/appearance_overlays()
-	. = list()
+/obj/machinery/reagent_refinery/mixer/draw(datum/look/look)
+	..()
 	// GOOBY!
 	if(reagents && reagents.total_volume >= 5)
 		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
 		switch(percent)
-			if(5 to 20)			percent = 2
-			if(20 to 40) 		percent = 4
-			if(40 to 60)		percent = 6
-			if(60 to 80)		percent = 8
-			if(80 to INFINITY)	percent = 10
-		var/image/filling = image(icon, loc, "mixer_r_[percent]",dir = dir)
-		filling.color = reagents.get_color()
-		. += filling
+			if(5 to 20) percent = 2
+			if(20 to 40) percent = 4
+			if(40 to 60) percent = 6
+			if(60 to 80) percent = 8
+			if(80 to INFINITY) percent = 10
+		look.overlay(look_overlay_image(icon, "mixer_r_[percent]", color = reagents.get_color(), dir = dir))
 	// Get main dir pipe
-	var/image/pipe = image(icon, icon_state = "mixer_cons", dir = dir)
-	. += pipe
+	look.overlay(look_overlay_image(icon, "mixer_cons", dir = dir))
 	if(anchored)
 		if(operable())
-			var/image/dot = image(icon, icon_state = "mixer_dot_[ got_input ? "on" : "off" ]")
-			. += dot
-		. += update_input_connection_overlays("mixer_intakes")
+			look.overlay(look_overlay_image(icon, "mixer_dot_[ got_input ? "on" : "off" ]"))
+		look.overlay(update_input_connection_overlays("mixer_intakes"))
 	// Get mixer overlay
-	var/image/arm = image(icon, icon_state = "mixer_arm", dir = angle2dir(mixer_angle))
-	. += arm
+	look.overlay(look_overlay_image(icon, "mixer_arm", dir = angle2dir(mixer_angle)))
 
 /obj/machinery/reagent_refinery/mixer/proc/interaction_set_rotation(datum/act/op/A)
 	var/mob/user = A.actor

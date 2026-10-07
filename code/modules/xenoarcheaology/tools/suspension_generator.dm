@@ -232,12 +232,10 @@ CAPABILITIES(/obj/machinery/suspension_gen)
 	deactivate()
 	..()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/suspension_gen, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/suspension_gen/appearance_overlays()
-	. = list()
+/obj/machinery/suspension_gen/draw(datum/look/look)
 	if(panel_open)
-		. += "suspension_panel"
-	. += ..()
+		look.overlay("suspension_panel")
+	..()
 
 /obj/effect/suspension_field
 	name = "energy field"

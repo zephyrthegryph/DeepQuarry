@@ -952,11 +952,9 @@ CAPABILITIES(/obj/structure/control_pod)
 CAPABILITIES(/obj/machinery/computer/ship/navigation/telescreen/dog_eye)
 	op("swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen/dog_eye, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye/appearance_overlays()
-	. = list()
-	. += ..()
-	icon_state = "screen_eye"
+/obj/machinery/computer/ship/navigation/telescreen/dog_eye/draw(datum/look/look)
+	..()
+	look.state("screen_eye")
 
 /obj/machinery/computer/ship/navigation/declare_interactions(list/into)
 	into += list(
