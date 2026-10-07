@@ -2669,3 +2669,12 @@ Each changed pin row is one of these classes; nothing else was blessed. `dq_inte
   `add_overlay()` merges them only when the atom has no overlays left, `cut_overlay()` never takes the blocker with a layer, and `cut_overlays()` keeps it.
   Every pin row that changes is that class: a `blocker x2` becoming the one blocker, or a probe row that only gained and lost the blocker.
 * The lightpost is a plain draw over tracked `lit` and `festive`; its light follows the look (`look.light()`, `look.light_off()`).
+
+## The emissive blocker follows a drawn sprite (draw sweep 3 C)
+
+* A look that changes an atom's sprite re-syncs the atom's generic emissive blocker (`look_resync_emissive_blocker()`); the legacy providers wrote `icon_state` and left the blocker
+  at the sprite the atom was made with. The look-state pins of the NTNet relay (`enabled`), the shield generator family (`active`) and the fuel port (`opened`) gain, beside each `+state` /
+  `-state` row, a `+overlay` / `-overlay` row of the blocker (`icons/...:<state>:8:#000000`): the same sprite change, now shown on the blocker too. No state, colour or other layer row changes.
+* The folder, paper plane, blob family, glass roulette ball and disposal bin family keep their look-tree and look-state rows exactly (the disposal bin's `mode` and `flush` rows, the folder and
+  plane rows, the blob's tree rows); the disposal bin's broken sprite is the one thing not pinned: the legacy provider left `disposal-broken` on the bin after a repair, the look restores the
+  type's own state.
