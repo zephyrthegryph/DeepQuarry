@@ -91,7 +91,7 @@
 /datum/interaction/construction/mecha/remove_cell/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/mecha/mech = target
 	mech.cell.forceMove(mech.loc)
-	own_take(mech, nameof(mech.cell))
+	rel_take(mech, nameof(mech.cell))
 	mech.mecha_log_message("Powercell removed")
 	return TRUE
 

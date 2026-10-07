@@ -26,7 +26,7 @@
 	. = ..()
 
 /obj/belly/special/teleporter/proc/try_tele(atom/movable/thing)
-	if(!istype(target(), /atom/movable))
+	if(!thing || !istype(target(), /atom/movable))
 		return
 	if(isturf(target())) // if it's a turf, we dont need to do anything else, just teleport to it
 		thing.forceMove(target())

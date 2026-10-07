@@ -234,6 +234,8 @@
 					held_lights.set_on(0)
 					held_lights.update_brightness()
 
+	if(!SK)
+		return
 	SK.doing_phase = FALSE
 	if(SK.flicker_time < 5 || SK.flicker_distance < 5 || SK.flicker_break_chance < 5)
 		status_at_least(STAT_STUNNED, SK.calculate_stun())
@@ -321,7 +323,8 @@
 	canmove = original_canmove
 	incorporeal_move = TRUE
 	set_density(FALSE)
-	SK.doing_phase = FALSE
+	if(SK)
+		SK.doing_phase = FALSE
 
 /datum/body_effect/shadekin_phase_vision
 	stacks = MODIFIER_STACK_FORBID

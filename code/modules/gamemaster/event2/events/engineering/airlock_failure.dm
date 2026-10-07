@@ -98,6 +98,8 @@
 	emag_target(door, 1)
 
 /datum/event2/event/airlock_failure/door_crush/break_door(obj/machinery/door/airlock/door)
+	if(QDELETED(door))
+		return
 	door.set_normalspeed(FALSE)
 	hold(door, STAT_SAFE, null, SRC_ROUND_EVENT)
 

@@ -28,13 +28,13 @@
 	fx_sparks(target.loc, 10)
 
 	if(target.hard_drive)
-		own_clear(target, nameof(target.hard_drive), OWN_DELETE)
+		rel_clear(target, nameof(target.hard_drive))
 
 	if(target.battery_module && prob(25))
-		own_clear(target, nameof(target.battery_module), OWN_DELETE)
+		rel_clear(target, nameof(target.battery_module))
 
 	if(target.tesla_link && prob(50))
-		own_clear(target, nameof(target.tesla_link), OWN_DELETE)
+		rel_clear(target, nameof(target.tesla_link))
 
 CAPABILITIES(/datum/computer_file/program/revelation)
 	op("PRG_arm", ui_act(), then(PROC_REF(ui_act_prg_arm)))

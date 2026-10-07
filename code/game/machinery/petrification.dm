@@ -146,7 +146,8 @@ CAPABILITIES(/obj/machinery/petrification)
 		comp?.cooldown = 0
 	else
 		// A permanent statue: the structure hides the gargoyle verbs for as long as it stands, whoever grants them.
-		om_grant_each(statue, GRANT_VERB_HIDE, list(/mob/living/carbon/human/proc/gargoyle_transformation, /mob/living/carbon/human/proc/gargoyle_pause, /mob/living/carbon/human/proc/gargoyle_checkenergy), G)
+		for(var/granted_path in list(/mob/living/carbon/human/proc/gargoyle_transformation, /mob/living/carbon/human/proc/gargoyle_pause, /mob/living/carbon/human/proc/gargoyle_checkenergy))
+			grant(statue, granted_verb(granted_path, hidden = TRUE), G)
 		comp?.cooldown = INFINITY
 
 	if (!petrifier)

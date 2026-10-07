@@ -315,7 +315,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(!source)
 		return FALSE
 	var/mod_type = source.modtype
-	own_clear(source, nameof(/mob/living/silicon/robot::module), OWN_DELETE)
+	rel_clear(source, nameof(/mob/living/silicon/robot::module))
 	var/module_type = GLOB.robot_modules[target().modtype]
 	source.modtype = target().modtype
 	new module_type(source)
@@ -327,7 +327,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	// Target
 	target().uneq_all()
 	target().hud_used?.update_robot_modules_display(TRUE)
-	own_clear(target(), nameof(/mob/living/silicon/robot::module), OWN_DELETE)
+	rel_clear(target(), nameof(/mob/living/silicon/robot::module))
 	target().modtype = mod_type
 	module_type = GLOB.robot_modules[mod_type]
 	target().transform_with_anim()
@@ -453,11 +453,11 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(selected_radio_channel == CHANNEL_SPECIAL_OPS || selected_radio_channel == CHANNEL_RESPONSE_TEAM)
 		target().radio.centComm = 1
 	if(selected_radio_channel == CHANNEL_RAIDER)
-		own_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
+		rel_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = new /obj/item/encryptionkey/raider(target())
 		target().radio.syndie = 1
 	if(selected_radio_channel == CHANNEL_MERCENARY)
-		own_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
+		rel_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = new /obj/item/encryptionkey/syndicate(target())
 		target().radio.syndie = 1
 	target().module.channels += list("[selected_radio_channel]" = 1)
@@ -472,7 +472,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 	if(target().module.channels)
 		target().module.channels -= selected_radio_channel
 	if((selected_radio_channel == CHANNEL_MERCENARY || selected_radio_channel == CHANNEL_RAIDER) && !(LAZYACCESS(target().module.channels, CHANNEL_RAIDER) || LAZYACCESS(target().module.channels, CHANNEL_MERCENARY)))
-		own_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
+		rel_clear(target().radio, nameof(/obj/item/radio/borg::keyslot), OWN_DELETE)
 		target().radio.keyslot = null
 		target().radio.syndie = 0
 	target().radio.channels = list()

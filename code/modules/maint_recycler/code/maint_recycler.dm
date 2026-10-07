@@ -305,6 +305,8 @@ MSG_DEF_SELF(maint_recycler/door_open, "its door isn't open")
 		after(src, (0.3 * i SECONDS), PROC_REF(shoot), with = list(victim))
 
 /obj/machinery/maint_recycler/proc/shoot(mob/victim)
+	if(!victim)
+		return
 	var/projectile = /obj/item/projectile/beam/stun
 	var/obj/item/projectile/P = new projectile(loc)
 	play_sfx(src, SFX_WEAPONS_TASER)

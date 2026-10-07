@@ -51,11 +51,13 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	// Move the shuttle
-	if (!attempt_move(target))
+	if (!target || !attempt_move(target))
 		return // Lucky!
 
 	// Hide people
 	for(var/mob/living/L as anything in victims)
+		if(!L)
+			continue
 		victims[L] = get_turf(L)
 		L.status_at_least(STAT_SLEEPING, rand(10,20))
 		seq_run_frame_now(L, /datum/sequence/life)
@@ -73,6 +75,8 @@
 
 	// Put people back
 	for(var/mob/living/L as anything in victims)
+		if(!L)
+			continue
 		L.forceMove(victims[L])
 		L.injure(INJURY_BLUNT, 5, ran_zone())
 		L.injure(INJURY_BLUNT, 10, ran_zone())

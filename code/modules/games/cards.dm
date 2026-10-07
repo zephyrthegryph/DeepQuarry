@@ -373,7 +373,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 
 /obj/item/deck/proc/shuffle(mob/user)
 	if (COOLDOWN_FINISHED(src, shuffle_cooldown))
-		var/list/unshuffled = own_take_all(src, nameof(cards))
+		var/list/unshuffled = rel_take_all(src, nameof(cards))
 		while(length(unshuffled))
 			var/datum/playingcard/P = pick(unshuffled)
 			unshuffled -= P

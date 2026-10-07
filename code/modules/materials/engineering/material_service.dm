@@ -232,6 +232,12 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	// entry per service (about 1,400 at boot, one per power cell and admitted pipe).
 
 // unregisters diagnostics and its service timer; its owner forgets it.
+/datum/material_service/ownership()
+	. = ..()
+	. += rel_one(nameof(monitor_tool))
+	. += rel_one(nameof(monitor_user))
+	. += rel_one(nameof(watched_turf))
+
 /datum/material_service/on_destroy(force)
 	drop_heat_links()
 	if(heat_store)
@@ -245,10 +251,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		// it holds, on the doomed owner and on its turf and holders alike.
 		var/watch_key = om_watch_entity_key(src) // handle text: plain data, not an entity
 		batch.material_service_watch_keys += watch_key
-		rel_clear(src, nameof(monitor_tool))
-		rel_clear(src, nameof(monitor_user))
 		last_reading = null
-		rel_clear(src, nameof(watched_turf))
 		mixture_ids = null
 		mixture_pressures = null
 		mixture_corrosion = null

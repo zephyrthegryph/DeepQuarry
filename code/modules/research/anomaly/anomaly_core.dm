@@ -239,6 +239,8 @@ CAPABILITIES(/obj/item/assembly/signaler/anomaly)
 			after(src, 3 SECONDS, PROC_REF(extraCough), with = list(person))
 
 /obj/item/assembly/signaler/anomaly/dust/proc/extraCough(mob/living/coughing)
+	if(QDELETED(coughing))
+		return
 	coughing.emote("cough")
 	after(coughing, 3 SECONDS, TYPE_PROC_REF(/mob, emote), with = list("cough"))
 /*

@@ -498,6 +498,7 @@
 #include "dq_e3_stats_tests.dm"
 #include "dq_e4_actions_tests.dm"
 #include "dq_lane_a_tests.dm"
+#include "dq_engine_forms_tests.dm"
 #include "dq_veto_tests.dm"
 #include "dq_veto_sites_tests.dm"
 #include "dq_dying_observers_tests.dm"
@@ -1155,6 +1156,13 @@
 #include "round2_circuit_arithmetic_first_input_pull.dm"
 
 #include "round2_telescience_crystal_ejection.dm"
+
+#include "dq_timer_argument_core_tests.dm"
+#include "dq_timer_argument_mob_tests.dm"
+#include "dq_timer_argument_transport_tests.dm"
+#include "dq_ownership_accessor_retirement_tests.dm"
+#include "dq_ownership_policy_retirement_tests.dm"
+#include "dq_ownership_teardown_retirement_tests.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

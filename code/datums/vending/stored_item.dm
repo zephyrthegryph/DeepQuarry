@@ -28,6 +28,9 @@
 	/// and only items identical to a pristine one collapse (vending).
 	var/adopt_state = TRUE
 
+CAPABILITIES(/datum/stored_item)
+	ref_many(nameof(instances)) // the stock ledger holds the actual products
+
 /datum/stored_item/New(stored, path, name = null, amount = 0)
 	src.item_path = path
 
@@ -47,7 +50,6 @@
 	for(var/atom/movable/product as anything in instances)
 		if(product.loc == stored)
 			ended_with(product, src)
-	rel_clear(src, nameof(instances))
 	stored = null
 	..()
 

@@ -448,7 +448,7 @@ CAPABILITIES(/obj/item/dogborg/pounce)
 /mob/living/silicon/robot/proc/leap_land(mob/living/T)
 	if(status_flags & LEAPING) set_status_flags(status_flags & ~LEAPING)
 
-	if(!src.Adjacent(T))
+	if(!T || !src.Adjacent(T))
 		to_chat(src, span_warning("You miss!"))
 		return
 

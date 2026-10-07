@@ -190,7 +190,7 @@ CAPABILITIES(/datum/capability/deconstruct)
 
 /// The board is coming back out (the undo then moves it to the floor).
 /obj/structure/frame/proc/frame_ladder_board_out(mob/user, obj/item/held, destination)
-	own_take(src, nameof(src.circuit))
+	rel_take(src, nameof(src.circuit))
 	if(frame_type.frame_class == FRAME_CLASS_MACHINE)
 		req_components = null
 	update_desc()

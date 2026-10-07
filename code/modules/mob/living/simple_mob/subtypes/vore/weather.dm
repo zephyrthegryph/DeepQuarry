@@ -222,6 +222,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 /mob/living/simple_mob/vore/boss_jellyfish/proc/dash_attack(atom/A) //spider dash attack
 	ai_busy_begin()
 	if(!A)
+		ai_busy_end()
 		return
 
 	set_status_flags(status_flags | LEAPING)

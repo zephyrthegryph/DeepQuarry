@@ -54,7 +54,7 @@
 			after(src, 1 SECOND, PROC_REF(finish_apportation_grab), with = list(user, L))
 
 /obj/item/spell/apportation/proc/finish_apportation_grab(mob/living/user, mob/living/L)
-	if(!user.Adjacent(L))
+	if(QDELETED(user) || QDELETED(L) || !user.Adjacent(L))
 		to_chat(user, span_warning("\The [L] is out of your reach."))
 		consume(src, user)
 		return

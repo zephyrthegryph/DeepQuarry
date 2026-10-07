@@ -334,6 +334,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	playsound(src, "sound/weapons/punchmiss.ogg", 50, 1)
 
 /mob/living/simple_mob/proc/speen_throw(atom/movable/AM, gentle = 0, damage = 10)
+	if(!AM)
+		return
 	var/maxthrow = 7
 	var/atom/throwtarget
 	throwtarget = get_edge_target_turf(src, get_dir(src, get_step_away(AM, src)))

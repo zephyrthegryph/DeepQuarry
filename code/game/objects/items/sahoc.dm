@@ -102,22 +102,23 @@ CAPABILITIES(/obj/item/daredevice)
 	return TRUE
 
 /obj/item/daredevice/proc/capsule_result(mob/living/capsuleowner, item)
-	switch(luckynumber7)
-		if(1)	capsuleowner.resize(RESIZE_TINY) //Loss Shrinking!
-		if(2)	capsuleowner.injure(INJURY_BLUNT, 5, source = src) //Loss Damaging!
-		if(3)	capsuleowner.status_at_least(STAT_WEAKENED, 5) //Loss Knee spaghetti!
-		if(4)	capsuleowner.status_adjust(STAT_HALLUCINATING, 66) //loss woah, dude.
-		if(5)	new	item(capsuleowner.loc) //Win!
-		if(7)
-			new	/obj/item/material/butterfly/switchblade(capsuleowner.loc)
-			capsuleowner.injure(INJURY_CUT, 10, source = src) //Loss Damaging! WIN KNIVE!
-		if(9)
-			var/atom/product_location = capsuleowner.loc
-			if(consume(src, capsuleowner))
-				new /obj/item/gun/energy/sizegun/not_advanced(product_location)
-			return
-		if(777)	new	/obj/item/spacecash/c1000(capsuleowner.loc) //for rigging
-		else luckynumber7 = (rand(0,10))
+	if(capsuleowner)
+		switch(luckynumber7)
+			if(1)	capsuleowner.resize(RESIZE_TINY) //Loss Shrinking!
+			if(2)	capsuleowner.injure(INJURY_BLUNT, 5, source = src) //Loss Damaging!
+			if(3)	capsuleowner.status_at_least(STAT_WEAKENED, 5) //Loss Knee spaghetti!
+			if(4)	capsuleowner.status_adjust(STAT_HALLUCINATING, 66) //loss woah, dude.
+			if(5)	new	item(capsuleowner.loc) //Win!
+			if(7)
+				new	/obj/item/material/butterfly/switchblade(capsuleowner.loc)
+				capsuleowner.injure(INJURY_CUT, 10, source = src) //Loss Damaging! WIN KNIVE!
+			if(9)
+				var/atom/product_location = capsuleowner.loc
+				if(consume(src, capsuleowner))
+					new /obj/item/gun/energy/sizegun/not_advanced(product_location)
+				return
+			if(777)	new	/obj/item/spacecash/c1000(capsuleowner.loc) //for rigging
+			else luckynumber7 = (rand(0,10))
 	luckynumber7 = rand(0,10)
 	after(src, 10 SECONDS, PROC_REF(capsule_reset))
 
