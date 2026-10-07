@@ -1,5 +1,28 @@
 # Linking and observable order contract — Phase 0
 
+## Modified-instance descriptor contract (7 October controls)
+
+`fixtures/phase1/native_modified_instances/receipt.json` pins eight compile-only
+controls and their native output or diagnostics. A modified type literal is a
+tag-41 value referring to an instance descriptor, with the original class and
+an anonymous initializer procedure. It does not introduce a source class.
+The instance kind distinguishes obj (9) from datum (32).
+
+Identical modifiers share a descriptor across global, class and procedure
+contexts. Distinct fields are ordered canonically by field spelling; repeated
+writes to one field retain their order and are not collapsed. Outer lexical
+owner and source spans are provenance, not semantic descriptor identity.
+Resource lookup context must be resolved to the captured resource identity
+before descriptors containing resources can be merged across contexts.
+
+Modifier writes use Src-field operands even for static or const targets.
+Ordinary assignment storage policy therefore does not apply. The controls
+reject outer-only names and bare receiver or surrounding constants; they do
+not establish a general RHS lookup rule. Unsupported RHS cases must produce
+a diagnostic rather than silently borrowing a surrounding scope. This finite
+compile-only evidence does not establish runtime effects of modifying static
+or const fields, or general side-effect ordering between distinct fields.
+
 Status: inventory and source probes, 6 October 2026. Four source probes were compiled and run by the coordinator under DreamMaker/DreamDaemon516.1687; paired preserved Build50 comparison now recorded below. Baseline: `ac1af55d1a`; format evidence is from that commit. This document distinguishes existing evidence from rules still requiring paired DreamMaker/native receipts. A cold-versus-incremental native oracle cannot prove DreamMaker order parity.
 
 ## Authority and acceptance

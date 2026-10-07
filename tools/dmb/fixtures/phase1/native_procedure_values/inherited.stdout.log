@@ -1,0 +1,6 @@
+DM compiler version 516.1687
+loading inherited.dme
+inherited.dm:15:error: /datum/child/proc/callback: undefined type path
+inherited.dm:15:error: =: expected a constant expression
+inherited.dmb - 2 errors, 0 warnings (10/7/26 2:52 am)
+Total time: 0:00

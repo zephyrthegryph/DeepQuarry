@@ -1,0 +1,11 @@
+{
+  "compiler": "BYOND 516.1687",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "source_sha256": "d188d5b288af9ad6309de49fd907854e6cc896c14423cde425ebe293cadf49e0",
+  "binary_sha256": "5e74c3b01600cd922488dfb016ebf1cb0f49750741cc653b432829f7d414f38f",
+  "evidence": "E:/dmb-native-v2-phase0/grouped-call-control",
+  "exit_code": 0,
+  "errors": 0,
+  "warnings": 0,
+  "note": "Parenthesized statement calls retain Call 0x29; parentheses are not transparent to discard mode."
+}

@@ -6,6 +6,30 @@ The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
 
+Release probe 26 cleared the builtin-world receiver and RGB scalar classification.
+It stopped in initializer code generation on a modified object literal at
+`code/datums/outfits/horror_killers.dm:45`, with no output pair. External time
+was 17.422 s (15.880 s driver), sampled private memory 2,047,799,296 bytes.
+Initializer classification completed in 1.657 s; initializer codegen failed
+in 1.008 s. These are failed-attempt timings, not completed cold benchmarks.
+The missing descriptor producer, initializer lowering and symbolic linking
+contract is being implemented together. Native compile-only controls establish
+modified-instance tag 41, descriptor deduplication, canonical distinct-field
+ordering and preserved repeated writes. They also establish that modifier writes
+to static/const fields use Src field operands, and bare scoped constants are
+rejected; ordinary source assignment policy cannot be reused indiscriminately.
+Full-project output, worker determinism and Phase 0/1 exit gates remain open.
+Release probe 25 passed initializer classification (1.586 s), then stopped in
+initializer codegen on the builtin `world` receiver in `world.Genesis()` at
+`code/genesis_call.dme:52`. It failed in 17.512 s externally (15.928 s driver),
+sampled 2,007,588,864 private bytes, and produced no pair. Startup capture was
+0.968 s; ABI preparation was 0.326 s. Exact procedure-value defaults, runtime
+callback lists, constant aliases, and 21 native call ownership cases passed
+focused gates before this run. The next cohort fixes builtin-world inference
+without inventing host absence answers, folds positively certified RGB defaults
+through one shared pure-call policy, and removes success-path diagnostic copies.
+Completed full-project cold timing and Phase 0/1 exit gates remain open.
+
 Latest release probe 24 cleared initial SDK macros and reached the procedure-path
 initializer `/proc/default_pathfinding_adjacency` at
 `code/_helpers/pathfinding/common.dm:53`. It failed in 16.457 s externally
@@ -16,6 +40,16 @@ initializer classification 1.094 s. The stop points differ; no completed cold
 compiler benchmark or Phase 1 exit is claimed. Native macro values, 21 native
 expression-precedence cases, and emitted inherited-static shared-slot operands
 passed focused gates. The procedure-path initializer fix is in progress.
+
+Additional semantic investigation found a frozen old-output mismatch in
+`Master.random_seed`: BYOND accesses the declared static through shared storage,
+while the old native output uses an instance selector. The current v2 emitted-code
+regression passes shared reads/writes for inherited static declarations; this
+does not establish the cause of the power-bridge runtime errors. Current v2
+discarded direct calls also need native managed-result lifetime handling, which
+is being implemented with the preserved call ownership controls. Explicit
+procedure literals must distinguish formal declarations from effective overrides
+in both scalar defaults and runtime list expressions; both paths are under repair.
 
 Release probe 23 cleared the vision macros and reached a missing `NORTH`
 initializer at `code/_helpers/game.dm:621`. It failed in 20.579 s externally

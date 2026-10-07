@@ -1,0 +1,5 @@
+DM compiler version 516.1687
+loading runtime_global.dme
+runtime_global.dm:4:error: =: expected a constant expression
+runtime_global.dmb - 1 error, 0 warnings (10/7/26 3:05 am)
+Total time: 0:00
