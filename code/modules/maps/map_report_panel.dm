@@ -3,6 +3,7 @@
 CAPABILITIES(/datum/map_report)
 	interface("MapReport", rights = R_ADMIN|R_DEBUG)
 	ui_shape(original_path = any, crashed = bool(), loadable = bool(), bad_paths = list_of(), bad_keys = list_of())
+	op("show", topic("show"), needs(req_rights(R_ADMIN)), then(PROC_REF(topic_show)))
 
 /datum/map_report/ui_title(mob/user)
 	return "Report for map file [original_path]"

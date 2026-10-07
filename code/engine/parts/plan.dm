@@ -64,8 +64,9 @@
 	var/log_type
 	var/list/delayed
 	var/quiet = FALSE
-	/// claims(): the target is claimed while the op waits.
-	var/claims = FALSE
+	/// claims(mask): what the op holds while it waits (CLAIM_*); null when it declares none (a timed wait then holds the actor's hands and body,
+	/// a question holds nothing). claims() alone is CLAIM_ALL, claims(0) opts out.
+	var/claim_mask
 	var/passes = FALSE
 	/// silent_wait(): the wait draws no progress bar.
 	var/silent_wait = FALSE
@@ -83,6 +84,8 @@
 	var/ui_action
 	var/list/ui_args
 	var/topic_key
+	/// The href namespace of the topic() binding (null: plain hrefs).
+	var/topic_namespace
 	var/list/topic_args
 	var/toggles = FALSE
 	var/hostile = FALSE
@@ -100,6 +103,8 @@
 	var/list/ordered
 	/// TRUE when one of the ops has a clicks() binding: its holder, as an actor, has ops its own clicks can reach.
 	var/has_clicks = FALSE
+	/// Topic namespace ("" for plain hrefs) -> topic key -> plan, made on first use (op_topic_table()).
+	var/list/topic_plans
 
 /datum/type_table
 	/// The compiled ops of the table (made on first use), and the ones each granted capability definition would bring to a holder of it, by definition key.
@@ -383,6 +388,7 @@
 			P.ui_action = P.ui_action || B.args["action"] || P.key
 		if(B.bind_kind == BIND_TOPIC)
 			P.topic_key = B.args["key"]
+			P.topic_namespace = B.args["namespace"]
 	// Tier: an explicit priority, else the highest tier the parts yield.
 	if(!isnull(P.priority_tier))
 		P.tier = P.priority_tier
@@ -534,7 +540,7 @@
 	P.quiet = TRUE
 
 /datum/entry/part/claims/compile(datum/op_plan/P, level)
-	P.claims = TRUE
+	P.claim_mask = isnull(src.args?["mask"]) ? CLAIM_ALL : src.args["mask"]
 
 /datum/entry/part/label/compile(datum/op_plan/P, level)
 	P.label = src.args["text"]

@@ -110,15 +110,15 @@
 	var/mob/living/simple_mob/SM = brain.get_owner()
 	if(!istype(SM) || SM.client)
 		return null
-	if(!brain.model)
+	if(!brain.perceives())
 		return null
 	// Don't go patient-hunting while we have something to fight.
-	if(brain.primary_threat)
+	if(brain.primary_target())
 		return null
 	// Pick the most-wounded valid ally we can see.
 	var/mob/living/best_patient = null
 	var/best_frac = INFINITY
-	for(var/mob/living/ally as anything in brain.model.visible_friendlies)
+	for(var/mob/living/ally as anything in brain.known_friendlies())
 		if(!SM.dq_confirm_patient(ally))
 			continue
 		var/frac = ally.vitality()
@@ -146,7 +146,7 @@
 		return DQ_BEHAVIOR_DONE
 	if(!SM.Adjacent(patient))
 		if(!brain.smart_step_toward(patient))
-			step_to(SM, patient)
+			brain.act_step(patient)
 		return DQ_BEHAVIOR_CONTINUE
 	// Adjacent: ensure the right (healing) belly is selected, then swallow.
 	dq_healbelly_select_heal_gut(SM)
@@ -235,7 +235,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/bigdragon/friendly, get_ai_behaviors, lis
 	var/mob/living/simple_mob/vore/bigdragon/D = brain.get_owner()
 	if(!istype(D) || D.stat || D.noenrage || D.enraged)
 		return null
-	var/atom/attacker = brain.model?.get_last_attacker()
+	var/atom/attacker = brain.last_attacker()
 	if(!ismob(attacker))
 		return null
 	// Only allies (faction-mates / ALLY disposition) get the warning treatment;

@@ -24,7 +24,7 @@
 	source.add_reagent(REAGENT_ID_WATER, 300)
 	rel_set(mech, nameof(mech.active_caller), dispenser)
 	TEST_ASSERT_NULL(mech.slot_item(MECHA_SLOT_PILOT), "the controller fixture is not the mech's seated pilot")
-	TEST_ASSERT(mech.ui_act_ai_use_equipment(actor, list("ref" = extinguisher), null, null, "ai_use_equipment"), "the equipment UI action is handled")
+	TEST_ASSERT(test_op_handler(mech, "ui_act_ai_use_equipment", actor, null, extinguisher), "the equipment UI action is handled")
 	TEST_ASSERT_EQUAL(source.last_actor_ref, REF(actor), "the UI actor reaches the extinguisher's real chemical refill")
 	TEST_ASSERT_EQUAL(extinguisher.reagents.get_reagent_amount(REAGENT_ID_WATER), 200, "the mounted extinguisher receives its refill dose")
 	TEST_ASSERT_EQUAL(source.get_reagent_amount(REAGENT_ID_WATER), 100, "refilling debits the dispenser by exactly the same dose")

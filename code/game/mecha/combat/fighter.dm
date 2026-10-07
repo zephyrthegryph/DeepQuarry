@@ -59,6 +59,7 @@ TYPE_TABLE(/obj/mecha/combat/fighter, mecha_starting_components, list( \
 
 CAPABILITIES(/obj/mecha/combat/fighter)
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
+	op("toggle_landing_gear", topic("toggle_landing_gear"), then(PROC_REF(topic_toggle_landing_gear)))
 
 TYPE_TABLE_DECLARE(/obj/mecha/combat/fighter, fighter_init_loadout, null)
 
@@ -218,9 +219,8 @@ TYPE_TABLE_DECLARE(/obj/mecha/combat/fighter, fighter_init_loadout, null)
 		forceMove(destination)
 
 //Modified phazon code
-TOPIC_ACTION(/obj/mecha/combat/fighter, "toggle_landing_gear", PROC_REF(topic_toggle_landing_gear))
 
-/obj/mecha/combat/fighter/proc/topic_toggle_landing_gear(mob/user, list/args)
+/obj/mecha/combat/fighter/proc/topic_toggle_landing_gear(datum/act/op/A)
 	landing_gear_raised = !landing_gear_raised
 	send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","landing_gear_command","[landing_gear_raised?"Lower":"Raise"] landing gear")
 	src.occupant_message(span_notice("Landing gear [landing_gear_raised? "raised" : "lowered"]."))

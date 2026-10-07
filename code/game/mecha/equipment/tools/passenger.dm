@@ -45,13 +45,13 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded(datum/task/timed/passenger_boarded/task)
 	var/mob/user = task.actor
-	if(!src?.slot_item(MECHA_SLOT_PILOT))
+	if(!src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER))
 		if(!move_into(src, OCCUPANT_SLOT_MECHA_PASSENGER, user))
 			return
 		src.mecha_log_message("[user] boarded.")
 		occupant_message("[user] boarded.")
-	else if(src?.slot_item(MECHA_SLOT_PILOT) != user)
-		to_chat(user, span_warning("[src?.slot_item(MECHA_SLOT_PILOT)] was faster. Try harder next time, loser."))
+	else if(src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER) != user)
+		to_chat(user, span_warning("[src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)] was faster. Try harder next time, loser."))
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/container_resist(mob/living)
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
@@ -112,9 +112,10 @@
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
 	return "[..()] <br />[occupant? "\[Occupant: [occupant]\]|" : ""]Exterior Hatch: <a href='byond://?src=\ref[src];toggle_lock=1'>Toggle Lock</a>"
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/passenger, "toggle_lock", PROC_REF(topic_toggle_lock))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/passenger)
+	op("toggle_lock", topic("toggle_lock"), then(PROC_REF(topic_toggle_lock)))
 
-/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/topic_toggle_lock(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/topic_toggle_lock(datum/act/op/A)
 	door_locked = !door_locked
 	occupant_message("Passenger compartment hatch [door_locked? "locked" : "unlocked"].")
 	if (chassis)
@@ -157,7 +158,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/passenger, "toggle_lock"
 	//search for a valid passenger compartment
 	var/feedback = 0 //for nicer user feedback
 	for(var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P in contents_of(src))
-		if (P?.slot_item(MECHA_SLOT_PILOT))
+		if (P?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER))
 			feedback |= OCCUPIED
 			continue
 		if (P.door_locked)

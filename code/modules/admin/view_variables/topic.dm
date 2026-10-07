@@ -1,6 +1,7 @@
-// The View Variables href entry (doc/rewrite/systems.md §20, macros in code/__defines/vv.dm).
-// Per-type actions are VV_TOPIC_ACTION rows beside their type's vv_get_dropdown(); the admin
-// client's own VV actions are VV_ADMIN_TOPIC_ACTION rows (here, topic_basic.dm, topic_list.dm).
+// The View Variables href entry (doc/rewrite/final_api.html section 13, namespaces in code/__defines/vv.dm).
+// Per-type actions are ops of the VV'd datum in the VV_TOPIC namespace (topic_in(VV_TOPIC, key)), beside the type's vv_get_dropdown(); the admin
+// client's own VV actions (here, topic_basic.dm, topic_list.dm) are ops of the admin holder in VV_ADMIN_TOPIC, whose handler is a /datum/admins proc
+// that calls the /client proc of the same name, which takes the link's values as typed parameters.
 
 /// Every `_src_=vars` href, and server-side callers opening VV (`trusted`: a tgui panel's own
 /// act, which carries no href token). Its questions re-run it (prompt_flow(), prompt_helpers.dm).
@@ -13,35 +14,100 @@
 		return
 	return topic_dispatch_vv(src, href_list)
 
-/// Dispatches a VV href for admin client `C`: the VV_TOPIC rows of the `target` datum's type
-/// first, then the client's VV_ADMIN_TOPIC rows. Neither runs the target's topic_allowed(): VV
-/// is gated by vv_topic() (R_VAREDIT + href token) and each row's TOPIC_RIGHTS.
+/// Dispatches a VV href for admin client `C`: the VV_TOPIC ops of the `target` datum first, then the admin holder's VV_ADMIN_TOPIC ops. Neither runs the
+/// target's topic_allowed(): VV is gated by vv_topic() (R_VAREDIT + href token) and each op's req_rights().
 /proc/topic_dispatch_vv(client/C, list/href_list)
 	var/mob/user = C.mob
-	var/list/row
 	var/raw_target = href_list[VV_HK_TARGET]
 	if(!isnull(raw_target))
 		var/datum/target = topic_resolve_ref(C, raw_target, /datum, TOPIC_ANY)
 		if(target?.vv_topic_allowed(user))
-			row = topic_find_row(target, href_list, VV_TOPIC)
-			if(row)
-				return topic_run(target, user, href_list, row, FALSE)
-	row = topic_find_row(C, href_list, VV_ADMIN_TOPIC)
-	if(row)
-		return topic_run(C, user, href_list, row, FALSE)
-	return null
+			var/datum/op_result/on_target = op_topic_href(user, target, href_list, namespace = VV_TOPIC, gated = FALSE)
+			if(on_target)
+				return on_target
+	return op_topic_href(user, admin_holder_of(C), href_list, namespace = VV_ADMIN_TOPIC, gated = FALSE)
 
-/// Whether this datum's VV_TOPIC rows may run for `user` (the admin client's rows always may).
+/// The handlers of the VV_ADMIN_TOPIC ops: the admin's own client does the work, in the /client proc of the same name (topic.dm, topic_basic.dm,
+/// topic_list.dm), with the link's values as parameters.
+/datum/admins/proc/vv_topic_vars(datum/act/op/A, href_vars, href_special_varname)
+	owner()?.vv_topic_vars(A.actor, href_vars, href_special_varname)
+
+/datum/admins/proc/vv_topic_rotate_left(datum/act/op/A, href_rotatedatum)
+	owner()?.vv_topic_rotate_left(A.actor, href_rotatedatum)
+
+/datum/admins/proc/vv_topic_rotate_right(datum/act/op/A, href_rotatedatum)
+	owner()?.vv_topic_rotate_right(A.actor, href_rotatedatum)
+
+/datum/admins/proc/vv_topic_adjust_body(datum/act/op/A, href_mobtodamage, href_adjustbody)
+	owner()?.vv_topic_adjust_body(A.actor, href_mobtodamage, href_adjustbody)
+
+/datum/admins/proc/vv_topic_basic_edit(datum/act/op/A, href_target, href_targetvar)
+	owner()?.vv_topic_basic_edit(A.actor, href_target, href_targetvar)
+
+/datum/admins/proc/vv_topic_basic_change(datum/act/op/A, href_target, href_targetvar)
+	owner()?.vv_topic_basic_change(A.actor, href_target, href_targetvar)
+
+/datum/admins/proc/vv_topic_basic_massedit(datum/act/op/A, href_target, href_targetvar)
+	owner()?.vv_topic_basic_massedit(A.actor, href_target, href_targetvar)
+
+/datum/admins/proc/vv_topic_expose(datum/act/op/A, href_target)
+	owner()?.vv_topic_expose(A.actor, href_target)
+
+/datum/admins/proc/vv_topic_delete(datum/act/op/A, href_target)
+	owner()?.vv_topic_delete(A.actor, href_target)
+
+/datum/admins/proc/vv_topic_mark(datum/act/op/A, href_target)
+	owner()?.vv_topic_mark(A.actor, href_target)
+
+/datum/admins/proc/vv_topic_tag(datum/act/op/A, href_target)
+	owner()?.vv_topic_tag(A.actor, href_target)
+
+/datum/admins/proc/vv_topic_add_behaviour(datum/act/op/A, href_target)
+	owner()?.vv_topic_add_behaviour(A.actor, href_target)
+
+/datum/admins/proc/vv_topic_remove_behaviour(datum/act/op/A, href_target)
+	owner()?.vv_topic_remove_behaviour(A.actor, href_target)
+
+/datum/admins/proc/vv_topic_mass_remove_behaviour(datum/act/op/A, href_target)
+	owner()?.vv_topic_mass_remove_behaviour(A.actor, href_target)
+
+/datum/admins/proc/vv_topic_call_proc(datum/act/op/A, href_target)
+	owner()?.vv_topic_call_proc(A.actor, href_target)
+
+/datum/admins/proc/vv_topic_list_edit(datum/act/op/A, href_target, href_targetvar)
+	owner()?.vv_topic_list_edit(A.actor, href_target, href_targetvar)
+
+/datum/admins/proc/vv_topic_list_change(datum/act/op/A, href_target, href_targetvar)
+	owner()?.vv_topic_list_change(A.actor, href_target, href_targetvar)
+
+/datum/admins/proc/vv_topic_list_remove(datum/act/op/A, href_target, href_targetvar)
+	owner()?.vv_topic_list_remove(A.actor, href_target, href_targetvar)
+
+/datum/admins/proc/vv_topic_list_add(datum/act/op/A, href_target)
+	owner()?.vv_topic_list_add(A.actor, href_target)
+
+/datum/admins/proc/vv_topic_list_dupes(datum/act/op/A, href_target)
+	owner()?.vv_topic_list_dupes(A.actor, href_target)
+
+/datum/admins/proc/vv_topic_list_nulls(datum/act/op/A, href_target)
+	owner()?.vv_topic_list_nulls(A.actor, href_target)
+
+/datum/admins/proc/vv_topic_list_length(datum/act/op/A, href_target)
+	owner()?.vv_topic_list_length(A.actor, href_target)
+
+/datum/admins/proc/vv_topic_list_shuffle(datum/act/op/A, href_target)
+	owner()?.vv_topic_list_shuffle(A.actor, href_target)
+
+/// Whether this datum's VV_TOPIC ops may run for `user` (the admin holder's ops always may).
 /datum/proc/vv_topic_allowed(mob/user)
 	return TRUE
 
 // Opens VV on a ref. Some special vars can't be located even with their ref: those links name
 // the owner and the var instead.
-VV_ADMIN_TOPIC_ACTION("Vars", PROC_REF(vv_topic_vars), TOPIC_REF("Vars", null, TOPIC_ANY), TOPIC_TEXT("special_varname"))
 
-/client/proc/vv_topic_vars(mob/user, list/args)
-	var/vars_target = args["Vars"]
-	var/special = args["special_varname"]
+/client/proc/vv_topic_vars(mob/user, href_vars, href_special_varname)
+	var/vars_target = href_vars
+	var/special = href_special_varname
 	if(special)
 		var/datum/owner = vars_target
 		if(!isdatum(owner) || !(special in owner.vars))
@@ -50,14 +116,12 @@ VV_ADMIN_TOPIC_ACTION("Vars", PROC_REF(vv_topic_vars), TOPIC_REF("Vars", null, T
 	debug_variables(vars_target)
 	return TRUE
 
-VV_ADMIN_TOPIC_ACTION("rotatedir=left", PROC_REF(vv_topic_rotate_left), TOPIC_REF("rotatedatum", /atom, TOPIC_ANY))
-VV_ADMIN_TOPIC_ACTION("rotatedir=right", PROC_REF(vv_topic_rotate_right), TOPIC_REF("rotatedatum", /atom, TOPIC_ANY))
 
-/client/proc/vv_topic_rotate_left(mob/user, list/args)
-	return vv_rotate(args["rotatedatum"], 45)
+/client/proc/vv_topic_rotate_left(mob/user, href_rotatedatum)
+	return vv_rotate(href_rotatedatum, 45)
 
-/client/proc/vv_topic_rotate_right(mob/user, list/args)
-	return vv_rotate(args["rotatedatum"], -45)
+/client/proc/vv_topic_rotate_right(mob/user, href_rotatedatum)
+	return vv_rotate(href_rotatedatum, -45)
 
 /client/proc/vv_rotate(atom/A, angle)
 	if(!A)
@@ -67,13 +131,12 @@ VV_ADMIN_TOPIC_ACTION("rotatedir=right", PROC_REF(vv_topic_rotate_right), TOPIC_
 	return TRUE
 
 // The VV body editor (/mob/living/vv_get_header(), vv_adjust_body()).
-VV_ADMIN_TOPIC_ACTION("adjustBody", PROC_REF(vv_topic_adjust_body), TOPIC_REF("mobToDamage", /mob/living, TOPIC_IN_MOBS), TOPIC_TEXT("adjustBody", 16))
 
-/client/proc/vv_topic_adjust_body(mob/user, list/args)
-	var/mob/living/L = args["mobToDamage"]
+/client/proc/vv_topic_adjust_body(mob/user, href_mobtodamage, href_adjustbody)
+	var/mob/living/L = href_mobtodamage
 	if(!L?.body)
 		return
-	var/log_msg = L.vv_adjust_body(src, args["adjustBody"])
+	var/log_msg = L.vv_adjust_body(src, href_adjustbody)
 	if(!log_msg)
 		return
 	if(QDELETED(L))

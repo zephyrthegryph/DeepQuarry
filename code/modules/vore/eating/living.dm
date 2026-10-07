@@ -1222,19 +1222,19 @@
 	. += "<a href='byond://?src=\ref[src];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
 
 
-TOPIC_ACTION(/mob/living, "vore_prefs", PROC_REF(topic_vore_prefs))
-TOPIC_ACTION(/mob/living, "ooc_notes", PROC_REF(topic_ooc_notes))
-TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes_chat))
 
-/mob/living/proc/topic_vore_prefs(mob/user, list/args)
+/mob/living/proc/topic_vore_prefs(datum/act/op/A)
+	var/mob/user = A.actor
 	display_voreprefs(user)
 	return TRUE
 
-/mob/living/proc/topic_ooc_notes(mob/user, list/args)
+/mob/living/proc/topic_ooc_notes(datum/act/op/A)
+	var/mob/user = A.actor
 	do_examine_ooc(user)
 	return TRUE
 
-/mob/living/proc/topic_print_ooc_notes_chat(mob/user, list/args)
+/mob/living/proc/topic_print_ooc_notes_chat(datum/act/op/A)
+	var/mob/user = A.actor
 	print_ooc_notes_chat(user)
 	return TRUE
 

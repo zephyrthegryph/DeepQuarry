@@ -241,6 +241,7 @@ CAPABILITIES(/obj/machinery/computer/ship)
 	// The buttons every ship console's window has (code/modules/overmap/ships/computers/ship.dm).
 	op("sync", ui_act("sync"), then(PROC_REF(ui_act_sync)))
 	op("close", ui_act("close"), then(PROC_REF(ui_act_close)))
+	op("topic_sync", topic("sync"), then(PROC_REF(topic_sync)))
 
 /// Helm and navigation consoles show the Flight Operations UI.
 /obj/machinery/computer/ship/proc/flight_operations()

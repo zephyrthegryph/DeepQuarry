@@ -43,6 +43,10 @@
 /datum/act/op/proc/captured(name)
 	return LAZYACCESS(captured_values, name)
 
+/// The raw href list a topic op was reached by, or null for any other input.
+/datum/act/op/proc/topic_href()
+	return LAZYACCESS(src.args, OP_TOPIC_HREF)
+
 /// The window action that reached the op (a ui_act("*") op answers many: the embedded controller's program command), or null for any other input.
 /datum/act/op/proc/window_action()
 	return LAZYACCESS(src.args, OP_UI_WINDOW_ACTION)
@@ -183,17 +187,33 @@
 	result.origin = R.origin
 	if(C.legacy)
 		return op_run_compatibility(C, R, result)
-	// A second input while busy: the actor's policy decides. The game acting for itself (ORIGIN_SYSTEM) neither waits on the actor's own wait nor
-	// ends it: it is not the actor deciding something else.
+	// An actor has any number of pending ops: a question never keeps another input out. What conflicts is claims: the pending ops of the actor that
+	// hold hands or body while they wait (CLAIM_*) against what this op needs. The actor's policy decides: a player's input stops the older op
+	// (and tells them), an AI's is refused as busy. The game acting for itself (ORIGIN_SYSTEM) neither waits on the actor's pending ops nor ends
+	// them: it is not the actor deciding something else.
 	if(actor && R.origin != ORIGIN_SYSTEM)
-		var/datum/pending_op/busy = op_pending_of(actor)
-		if(busy)
-			if(R.origin in list(ORIGIN_AI, ORIGIN_SYSTEM))
-				result.outcome = ACT_REFUSED
-				result.reason = /datum/msg/op/busy
-				TEST_REC_OUTCOME(C.oplan.key, ACT_REFUSED, result.reason, actor)
-				return result
-			busy.cancel(/datum/msg/op/stopped)
+		var/list/mine = op_pendings_of(actor)
+		// the same op on the same target whose question is open: its window is shown again, nothing starts
+		if(!(R.origin in list(ORIGIN_AI, ORIGIN_SYSTEM)))
+			for(var/datum/pending_op/same as anything in mine)
+				if(same.key == C.oplan.key && same.target == R.target && same.request?.is_open())
+					same.focus_prompt()
+					log_game("op: [C.oplan.key] by [key_name(actor)] focused its open prompt instead of opening another")
+					return same.result
+		var/needs_claims = op_claim_check(C.oplan, C.binding)
+		if(needs_claims)
+			var/list/blocking = list()
+			for(var/datum/pending_op/held as anything in mine)
+				if(held.claims_live() & needs_claims)
+					blocking += held
+			if(length(blocking))
+				if(R.origin in list(ORIGIN_AI, ORIGIN_SYSTEM))
+					result.outcome = ACT_REFUSED
+					result.reason = /datum/msg/op/busy
+					TEST_REC_OUTCOME(C.oplan.key, ACT_REFUSED, result.reason, actor)
+					return result
+				for(var/datum/pending_op/stopped as anything in blocking)
+					stopped.cancel(/datum/msg/op/stopped)
 	var/datum/act/op/A = op_act_for(C, actor, R.target, R.held, R.origin, R.authority)
 	A.oplan = C.oplan // ALLOW(ownership): a pooled transient: reset on release
 	A.binding = C.binding // ALLOW(ownership): a pooled transient: reset on release
@@ -212,8 +232,11 @@
 	var/why = op_require_reason(A, C.oplan, C.binding)
 	if(why)
 		return op_end(A, ACT_REFUSED, why)
-	if(C.oplan.claims && length(C.oplan.steps) && op_claimed(A.target))
+	if((op_claim_hold(C.oplan, C.binding) & CLAIM_TARGET) && length(C.oplan.steps) && op_claimed(A.target))
 		return op_end(A, ACT_REFUSED, /datum/msg/op/claimed)
+	if(actor && R.origin != ORIGIN_SYSTEM && length(C.oplan.steps) && length(op_pendings_of(actor)) >= OP_PENDING_CAP)
+		log_game("op: [C.oplan.key] by [key_name(actor)] refused: [OP_PENDING_CAP] pending ops are open already")
+		return op_end(A, ACT_REFUSED, /datum/msg/op/too_many_pending)
 	A.started = TRUE
 	if(length(C.oplan.steps))
 		return op_wait_begin(A, C)
@@ -343,6 +366,14 @@
 	var/started_at = 0
 	/// REF text of the target a claims() op holds while it waits.
 	var/claim_ref
+	/// What the op holds while it waits (CLAIM_*), and whether a timed wait() step is running now (the actor's hands and body are held only then:
+	/// an open question holds nothing).
+	var/claim_mask = 0
+	var/timed_wait = FALSE
+	/// TRUE while the op is in its actor's pending list.
+	var/registered = FALSE
+	/// The actor's ref text when it registered (the relation may be cleared before the op leaves the list).
+	var/registered_ref
 	/// TRUE once the begins() message has been told (it is told at the first wait only).
 	var/began = FALSE
 	/// The first suspension happened: captured fields are snapshotted.
@@ -368,10 +399,34 @@ CAPABILITIES(/datum/pending_op)
 	var/mob/actor
 	var/atom/movable/held
 
-/// actor ref text -> its pending op: an actor has one wait at a time.
+/// actor ref text -> the list of its pending ops, oldest first: an actor has any number at once (OP_PENDING_CAP), exclusive only where their claims overlap.
 GLOBAL_LIST_EMPTY(op_pending_by_actor)
 /// REF(pending op) -> every pending op that is waiting, the system-origin ones too ("List Pending Ops").
 GLOBAL_LIST_EMPTY(op_pending_all)
+
+/// What this pending op holds against the actor's other input right now: hands and body while a timed wait runs.
+/datum/pending_op/proc/claims_live()
+	if(!active || !timed_wait)
+		return 0
+	return claim_mask & (CLAIM_HANDS | CLAIM_BODY)
+
+/// The op leaves its actor's pending list (it ended).
+/datum/pending_op/proc/unregister()
+	if(!registered)
+		return
+	registered = FALSE
+	var/list/mine = GLOB.op_pending_by_actor[registered_ref]
+	if(mine)
+		mine -= src
+		if(!length(mine))
+			GLOB.op_pending_by_actor -= registered_ref
+	registered_ref = null
+
+/// The open question is shown again to its answerer (they clicked the same thing a second time): its window comes to the front instead of a second one opening.
+/datum/pending_op/proc/focus_prompt()
+	var/datum/prompt/asked = request
+	if(istype(asked))
+		asked.focus()
 
 /// Is `target` claimed by an op that is waiting on it (claims())?
 /proc/op_claimed(datum/target)
@@ -380,12 +435,45 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/datum/pending_op/P = target.rx?.claimed_by
 	return !!P && P.active && !QDELETED(P)
 
+/// The live pending ops of `actor`, oldest first (a new list).
+/proc/op_pendings_of(mob/actor)
+	. = list()
+	var/list/registered_ops = GLOB.op_pending_by_actor["[REF(actor)]"]
+	for(var/datum/pending_op/P as anything in registered_ops)
+		if(P.active && !QDELETED(P))
+			. += P
+
+/// The oldest live pending op of `actor`, or null (op_pendings_of() has them all).
 /proc/op_pending_of(mob/actor)
 	RETURN_TYPE(/datum/pending_op)
-	var/datum/pending_op/P = GLOB.op_pending_by_actor["[REF(actor)]"]
-	if(P && P.active && !QDELETED(P))
-		return P
+	var/list/all_ops = op_pendings_of(actor)
+	return length(all_ops) ? all_ops[1] : null
+
+/// The live pending op of `actor` for op `key`, or null.
+/proc/op_pending_for(mob/actor, key)
+	RETURN_TYPE(/datum/pending_op)
+	for(var/datum/pending_op/P as anything in op_pendings_of(actor))
+		if(P.key == key)
+			return P
 	return null
+
+/// What an op holds while it waits (CLAIM_*): its claims() when it declares them, else the actor's hands and body for a timed wait on a physical
+/// binding (a tool in use, a movement-locked action). A question or a window button's wait holds nothing.
+/proc/op_claim_hold(datum/op_plan/P, datum/entry/part/bind/B)
+	if(!isnull(P.claim_mask))
+		return P.claim_mask
+	if(!B?.physical())
+		return 0
+	for(var/step_part in P.steps)
+		if(istype(step_part, /datum/entry/part/wait))
+			return CLAIM_HANDS | CLAIM_BODY
+	return 0
+
+/// What an op needs free when it starts: what it holds, and the hands for any physical input (a click works with them).
+/proc/op_claim_check(datum/op_plan/P, datum/entry/part/bind/B)
+	. = op_claim_hold(P, B) & (CLAIM_HANDS | CLAIM_BODY)
+	if(B?.physical())
+		. |= CLAIM_HANDS
 
 /// Starts the workflow of an op that has wait()/asks()/confirms() steps. The act's references go into the pending op's relations.
 /proc/op_wait_begin(datum/act/op/A, datum/op_cand/C)
@@ -411,10 +499,13 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	rel_set(P, nameof(P.held), A.held_provider())
 	P.act = A // ALLOW(handlers, ownership): the pending op carries its act across a wait on purpose, and the act is released when the op ends (end_pending)
 	A.pending = P // ALLOW(ownership): a pooled transient: reset on release
+	P.claim_mask = op_claim_hold(A.oplan, A.binding)
 	if(A.actor && A.origin != ORIGIN_SYSTEM)
-		GLOB.op_pending_by_actor["[REF(A.actor)]"] = P
+		P.registered = TRUE
+		P.registered_ref = "[REF(A.actor)]"
+		LAZYADD(GLOB.op_pending_by_actor[P.registered_ref], P)
 	GLOB.op_pending_all["[REF(P)]"] = P
-	if(A.oplan.claims && A.target)
+	if((P.claim_mask & CLAIM_TARGET) && A.target)
 		P.claim_target(A.target)
 	P.watch_begin(A)
 	P.suspend_act()
@@ -492,6 +583,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			keeps = W.args["keeps"] & op_default_keeps(A, binding)
 			suspend_act()
 			if(delay > 0)
+				timed_wait = TRUE
 				progress_begin(delay)
 				after(src, delay, TYPE_PROC_REF(/datum/pending_op, step_done), key = "op_wait")
 				return
@@ -532,6 +624,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 /datum/pending_op/proc/step_done()
 	if(!active)
 		return
+	timed_wait = FALSE
 	progress_end(TRUE)
 	if(!resume_act())
 		return cancel(/datum/msg/op/target_gone)
@@ -800,8 +893,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/datum/act/op/A = act
 	if(A)
 		A.pending = null // ALLOW(ownership): a pooled transient: reset on release
-	if(actor && GLOB.op_pending_by_actor["[REF(actor)]"] == src)
-		GLOB.op_pending_by_actor -= "[REF(actor)]"
+	timed_wait = FALSE
+	unregister()
 	GLOB.op_pending_all -= "[REF(src)]"
 	watch_end()
 	// what the act carried across the wait is the act's own again (or gone with it): the pending op keeps nothing of it
@@ -847,8 +940,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		var/datum/act/op/A = act
 		active = FALSE
 		release_claim()
-		if(actor && GLOB.op_pending_by_actor["[REF(actor)]"] == src)
-			GLOB.op_pending_by_actor -= "[REF(actor)]"
+		timed_wait = FALSE
+		unregister()
 		GLOB.op_pending_all -= "[REF(src)]"
 		watch_end()
 		if(request)

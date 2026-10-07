@@ -100,3 +100,6 @@ GLOBAL_LIST_EMPTY(op_legacy_plans) // interaction type -> /datum/op_plan
 
 /datum/input_adapter/compatibility_run(datum/op_cand/C, datum/op_resolution/R, datum/op_result/result)
 	return op_run_legacy(C, R, result)
+
+/datum/input_adapter/compatibility_topic(datum/holder, mob/actor, list/href_list)
+	return topic_dispatch(holder, actor, href_list)

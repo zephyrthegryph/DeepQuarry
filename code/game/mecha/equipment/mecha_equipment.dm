@@ -251,7 +251,8 @@ OM_FIELD_VIEW(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, CHANGE_
 	enable_special = FALSE
 	return
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment, "detach", PROC_REF(topic_detach))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment)
+	op("detach", topic("detach"), then(PROC_REF(topic_detach)))
 
 // Equipment hrefs come from the exosuit's control panel: only its conscious pilot uses them.
 /obj/item/mecha_parts/mecha_equipment/topic_allowed(mob/user, list/href_list)
@@ -259,7 +260,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment, "detach", PROC_REF(topic_det
 		return FALSE
 	return user == chassis.slot_item(MECHA_SLOT_PILOT)
 
-/obj/item/mecha_parts/mecha_equipment/proc/topic_detach(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/proc/topic_detach(datum/act/op/A)
 	detach()
 
 /obj/item/mecha_parts/mecha_equipment/proc/set_ready_state(state)

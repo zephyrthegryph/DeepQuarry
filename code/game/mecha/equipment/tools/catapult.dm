@@ -71,11 +71,12 @@
 /obj/item/mecha_parts/mecha_equipment/gravcatapult/get_equip_info()
 	return "[..()] [mode==1?"([locked()||"Nothing"])":null] \[<a href='byond://?src=\ref[src];mode=1'>S</a>|<a href='byond://?src=\ref[src];mode=2'>P</a>\]"
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/gravcatapult, "mode", PROC_REF(topic_mode), TOPIC_NUM("mode"))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/gravcatapult)
+	op("mode", topic("mode", arg("mode", num(), optional = TRUE)), then(PROC_REF(topic_mode)))
 
-/obj/item/mecha_parts/mecha_equipment/gravcatapult/proc/topic_mode(mob/user, list/args)
-	if(isnum(args["mode"]))
-		mode = args["mode"]
+/obj/item/mecha_parts/mecha_equipment/gravcatapult/proc/topic_mode(datum/act/op/A, href_mode)
+	if(isnum(href_mode))
+		mode = href_mode
 		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 	return
 

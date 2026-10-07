@@ -125,6 +125,11 @@ CAPABILITIES(/mob/living/silicon/ai)
 	param(nameof(laws), /datum/ai_laws, pos = 2)
 	param(nameof(brain_at_make), pos = 3, keep = FALSE)
 	param(nameof(spawn_safety), pos = 4)
+	op("switchcamera", topic("switchcamera", arg("switchcamera", schema_ref(/obj/machinery/camera), optional = TRUE, among = PROC_REF(topic_cameras))), needs(req_self()), then(PROC_REF(topic_switchcamera)))
+	op("jumptoholopad", topic("jumptoholopad", arg("jumptoholopad", schema_ref(/obj/machinery/hologram/holopad), optional = TRUE, among = TOPIC_IN_WORLD)), needs(req_self()), then(PROC_REF(topic_jumptoholopad)))
+	op("track", topic("track", arg("track", schema_ref(/mob), optional = TRUE, among = TOPIC_IN_MOBS), arg("trackname", schema_text(MAX_NAME_LEN * 2), optional = TRUE)), needs(req_self()), then(PROC_REF(topic_track)))
+	op("trackbot", topic("trackbot", arg("trackbot", schema_ref(/mob/living/bot), optional = TRUE, among = TOPIC_IN_MOBS)), needs(req_self()), then(PROC_REF(topic_trackbot)))
+	op("open", topic("open", arg("open", schema_ref(/mob), optional = TRUE, among = TOPIC_IN_MOBS)), needs(req_self()), then(PROC_REF(topic_open_door)))
 
 /mob/living/silicon/ai/proc/add_ai_verbs()
 	for(var/granted_path in GLOB.ai_verbs_default)
@@ -506,34 +511,18 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 	if (prob(30))
 		view_core()
 
-TOPIC_ACTION(/mob/living/silicon/ai, "switchcamera", PROC_REF(topic_switchcamera), TOPIC_REF("switchcamera", /obj/machinery/camera, PROC_REF(topic_cameras)))
-TOPIC_ACTION(/mob/living/silicon/ai, "showalerts", PROC_REF(topic_showalerts))
-TOPIC_ACTION(/mob/living/silicon/ai, "jumptoholopad", PROC_REF(topic_jumptoholopad), TOPIC_REF("jumptoholopad", /obj/machinery/hologram/holopad, TOPIC_IN_WORLD)) //Carn: holopad requests
-TOPIC_ACTION(/mob/living/silicon/ai, "track", PROC_REF(topic_track), TOPIC_REF("track", /mob, TOPIC_IN_MOBS), TOPIC_TEXT("trackname", MAX_NAME_LEN * 2))
-TOPIC_ACTION(/mob/living/silicon/ai, "trackbot", PROC_REF(topic_trackbot), TOPIC_REF("trackbot", /mob/living/bot, TOPIC_IN_MOBS))
-TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_REF("open", /mob, TOPIC_IN_MOBS))
 
 /// TOPIC_REF source: the camera network.
 /mob/living/silicon/ai/proc/topic_cameras()
 	return REGISTRY_MEMBERS(REGISTRY_CAMERAS)
 
 // These links work only for the AI itself (others still reach the rows every mob has).
-/mob/living/silicon/ai/proc/topic_switchcamera(mob/user, list/args)
-	if(user != src)
-		return
-	switchCamera(args["switchcamera"])
+/mob/living/silicon/ai/proc/topic_switchcamera(datum/act/op/A, href_switchcamera)
+	switchCamera(href_switchcamera)
 	return TRUE
 
-/mob/living/silicon/ai/proc/topic_showalerts(mob/user, list/args)
-	if(user != src)
-		return
-	subsystem_alarm_monitor()
-	return TRUE
-
-/mob/living/silicon/ai/proc/topic_jumptoholopad(mob/user, list/args)
-	if(user != src)
-		return
-	var/obj/machinery/hologram/holopad/H = args["jumptoholopad"]
+/mob/living/silicon/ai/proc/topic_jumptoholopad(datum/act/op/A, href_jumptoholopad)
+	var/obj/machinery/hologram/holopad/H = href_jumptoholopad
 	if(stat == CONSCIOUS)
 		if(H)
 			actor_use(/datum/input_adapter/ai, src, H) //may as well recycle
@@ -541,11 +530,9 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 			to_chat(src, span_notice("Unable to locate the holopad."))
 	return TRUE
 
-/mob/living/silicon/ai/proc/topic_track(mob/user, list/args)
-	if(user != src)
-		return
-	var/mob/target = args["track"]
-	var/trackname = html_decode(args["trackname"])
+/mob/living/silicon/ai/proc/topic_track(datum/act/op/A, href_track, href_trackname)
+	var/mob/target = href_track
+	var/trackname = html_decode(href_trackname)
 	var/mob/living/carbon/human/H = target
 	if(target && (!istype(H) || trackname == H.get_face_name()))
 		ai_actual_track(target)
@@ -553,20 +540,16 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 		to_chat(src, span_filter_warning("[span_red("System error. Cannot locate [trackname].")]"))
 	return TRUE
 
-/mob/living/silicon/ai/proc/topic_trackbot(mob/user, list/args)
-	if(user != src)
-		return
-	var/mob/living/bot/target = args["trackbot"]
+/mob/living/silicon/ai/proc/topic_trackbot(datum/act/op/A, href_trackbot)
+	var/mob/living/bot/target = href_trackbot
 	if(target)
 		ai_actual_track(target)
 	else
 		to_chat(src, span_warning("Target is not on or near any active cameras on the station."))
 	return TRUE
 
-/mob/living/silicon/ai/proc/topic_open_door(mob/user, list/args)
-	if(user != src)
-		return
-	var/mob/target = args["open"]
+/mob/living/silicon/ai/proc/topic_open_door(datum/act/op/A, href_open)
+	var/mob/target = href_open
 	if(target)
 		open_nearest_door(target)
 	return TRUE

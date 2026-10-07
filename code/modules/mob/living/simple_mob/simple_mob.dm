@@ -173,6 +173,7 @@
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // Note, this should be refactored to drop priority overlays
 
 CAPABILITIES(/mob/living/simple_mob)
+	mob_attacks()
 	ref_many(nameof(tamers))
 	owns_one(nameof(myid), /obj/item/card/id)
 	owns_one(nameof(mob_radio), /obj/item/radio/headset)

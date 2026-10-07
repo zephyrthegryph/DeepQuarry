@@ -23,6 +23,10 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
 	op("select_reagents", ui_act("select_reagents", arg("reagents")), then(PROC_REF(ui_act_select_reagents)))
 	op("purge_reagent", ui_act("purge_reagent", arg("id", schema_text(4096))), then(PROC_REF(ui_act_purge_reagent)))
 	op("purge_all", ui_act("purge_all"), then(PROC_REF(ui_act_purge_all)))
+	op("toggle_mode", topic("toggle_mode"), then(PROC_REF(topic_toggle_mode)))
+	op("show_reagents", topic("show_reagents"), then(PROC_REF(topic_show_reagents)))
+	op("topic_purge_reagent", topic("purge_reagent", arg("purge_reagent", schema_text(64), optional = TRUE)), then(PROC_REF(topic_purge_reagent)))
+	op("topic_purge_all", topic("purge_all"), then(PROC_REF(topic_purge_all)))
 
 /// Reagent ids selected for synthesis. Replaced whole (never mutated in place) so the setter raises.
 OM_FIELD_TYPED(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, list, processed_reagents, null, CHANGE_EXPLICIT)
@@ -86,25 +90,22 @@ DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, P
 
 
 // The legacy reagent-selection form is gone (MechaSyringeGun.tsx selects via tgui_act).
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "toggle_mode", PROC_REF(topic_toggle_mode))
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "show_reagents", PROC_REF(topic_show_reagents))
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_reagent", PROC_REF(topic_purge_reagent), TOPIC_TEXT("purge_reagent", 64))
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all", PROC_REF(topic_purge_all))
 
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_toggle_mode(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_toggle_mode(datum/act/op/A)
 	mode = !mode
 	update_equip_info()
 
 // TGUI: structured reagent management UI (MechaSyringeGun.tsx).
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_show_reagents(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_show_reagents(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_purge_reagent(mob/user, list/args)
-	var/reagent = args["purge_reagent"]
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_purge_reagent(datum/act/op/A, href_purge_reagent)
+	var/reagent = href_purge_reagent
 	if(reagent)
 		reagents.del_reagent(reagent)
 
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_purge_all(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/topic_purge_all(datum/act/op/A)
 	reagents.clear_reagents()
 
 // structured TGUI for syringe-gun reagent management.
@@ -340,6 +341,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all"
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/crisis_drone)
 	owns_one(nameof(MyBeam), /datum/beam)
+	op("toggle_drone", topic("toggle_drone"), then(PROC_REF(topic_toggle_drone)))
 
 /// Jammed by a critical failure: the drone stays down until it is detached (and so reset).
 OM_FIELD(/obj/item/mecha_parts/mecha_equipment/crisis_drone, jammed, FALSE, CHANGE_EXPLICIT)
@@ -486,9 +488,8 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 		M.add_overlay(drone_overlay)
 	return
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/crisis_drone, "toggle_drone", PROC_REF(topic_toggle_drone))
 
-/obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/topic_toggle_drone(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/topic_toggle_drone(datum/act/op/A)
 	toggle_drone()
 	return
 

@@ -48,8 +48,8 @@
 	VV_DROPDOWN_OPTION(VV_HK_REMOVECOMPONENT, "Detach OM Behaviour")
 	VV_DROPDOWN_OPTION(VV_HK_MASS_REMOVECOMPONENT, "Mass Detach OM Behaviour")
 
-// The dropdown's "high level" actions (admin heal, set species, ...) are VV_TOPIC_ACTION rows on
-// the type (code/__defines/vv.dm); the low level ones are the admin client's rows in
+// The dropdown's "high level" actions (admin heal, set species, ...) are topic_in(VV_TOPIC, key) ops on
+// the type (code/__defines/vv.dm); the low level ones are the admin holder's ops in
 // admin/view_variables/topic_basic.dm, in case the type's own code runtimes.
 
 /datum/proc/vv_get_header()

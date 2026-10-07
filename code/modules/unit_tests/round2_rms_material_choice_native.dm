@@ -26,7 +26,7 @@
 		TEST_ASSERT(istype(request), "actual held click opens native RMS choice")
 		TEST_ASSERT(request.radial && request.tooltips, "actual request preserves radial tooltips")
 		TEST_ASSERT_EQUAL(request.anchor, synthesizer, "actual menu anchor is original synthesizer")
-		TEST_ASSERT_EQUAL(request.timeout, 0, "actual choice retains unlimited timeout")
+		TEST_ASSERT_EQUAL(request.timeout, REQUEST_DEFAULT_TIMEOUT, "actual choice retains unlimited timeout (a request given no timeout gets the default, framework_gaps.md E2)")
 		TEST_ASSERT_EQUAL(length(request.choices), 6, "actual menu offers exactly six material choices")
 		TEST_ASSERT(material in request.choices, "actual native request offers the canonical material")
 		if(material == "Random")

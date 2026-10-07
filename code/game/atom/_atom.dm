@@ -622,13 +622,13 @@ SETTER(/atom, density)
 			return
 
 ///Passes Stat Browser Panel clicks to the game and calls client click on an atom
-TOPIC_ACTION(/atom, "statpanel_item_click", PROC_REF(topic_statpanel_click), TOPIC_TEXT("statpanel_item_click", 8), TOPIC_TEXT("statpanel_item_shiftclick", 8), TOPIC_TEXT("statpanel_item_ctrlclick", 8), TOPIC_TEXT("statpanel_item_altclick", 8))
 
-/atom/proc/topic_statpanel_click(mob/user, list/args)
+/atom/proc/topic_statpanel_click(datum/act/op/A, href_statpanel_item_click, href_statpanel_item_shiftclick, href_statpanel_item_ctrlclick, href_statpanel_item_altclick)
+	var/mob/user = A.actor
 	if(!user?.client)
 		return
 	var/list/paramslist = list()
-	switch(args["statpanel_item_click"])
+	switch(href_statpanel_item_click)
 		if("left")
 			paramslist["left"] = "1"
 		if("right")
@@ -637,11 +637,11 @@ TOPIC_ACTION(/atom, "statpanel_item_click", PROC_REF(topic_statpanel_click), TOP
 			paramslist["middle"] = "1"
 		else
 			return
-	if(args["statpanel_item_shiftclick"])
+	if(href_statpanel_item_shiftclick)
 		paramslist["shift"] = "1"
-	if(args["statpanel_item_ctrlclick"])
+	if(href_statpanel_item_ctrlclick)
 		paramslist["ctrl"] = "1"
-	if(args["statpanel_item_altclick"])
+	if(href_statpanel_item_altclick)
 		paramslist["alt"] = "1"
 	user.client.Click(src, loc, null, list2params(paramslist))
 	return TRUE

@@ -71,6 +71,7 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 	op("Message", ui_act("Message", arg("target", schema_ref(/obj/item/pda))), then(PROC_REF(ui_act_message)))
 	op("Select Conversation", ui_act("Select Conversation", arg("target")), then(PROC_REF(ui_act_select_conversation)))
 	op("Messenger Plugin", ui_act("Messenger Plugin", arg("plugin", schema_ref(/datum/data/pda/messenger_plugin)), arg("target", schema_ref(/obj/item/pda))), then(PROC_REF(ui_act_messenger_plugin)))
+	op("choice_Message", topic("choice=Message", arg("target", schema_ref(/obj/item/pda), optional = TRUE)), then(PROC_REF(topic_message)))
 
 /datum/data/pda/app/messenger/proc/ui_act_toggle_messenger(datum/act/op/A)
 	unnotify()
@@ -143,14 +144,14 @@ CAPABILITIES(/datum/data/pda/app/messenger)
 	return OP_OK
 
 // Specifically here for the chat message.
-TOPIC_ACTION(/datum/data/pda/app/messenger, "choice=Message", PROC_REF(topic_message), TOPIC_REF("target", /obj/item/pda))
 
 /datum/data/pda/app/messenger/topic_allowed(mob/user, list/href_list)
 	return pda()?.can_use(user)
 
-/datum/data/pda/app/messenger/proc/topic_message(mob/user, list/args)
+/datum/data/pda/app/messenger/proc/topic_message(datum/act/op/A, href_target)
+	var/mob/user = A.actor
 	unnotify()
-	var/obj/item/pda/P = args["target"]
+	var/obj/item/pda/P = href_target
 	create_message(user, P)
 	var/target_ref = "\ref[P]"
 	if(target_ref in conversations)            // Need to make sure the message went through, if not welp.

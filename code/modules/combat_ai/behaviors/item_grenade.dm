@@ -20,7 +20,7 @@
 	if(G.active)  // already primed; don't double-throw
 		return null
 	var/mob/living/owner = brain.get_owner()
-	if(!owner || !brain.model)
+	if(!owner)
 		return null
 	if(!owner.checkClickCooldown())
 		return null
@@ -28,7 +28,7 @@
 	// Find the turf with the densest hostile cluster.
 	var/turf/best_turf
 	var/best_count = 0
-	for(var/mob/living/M as anything in brain.model.visible_hostiles)
+	for(var/mob/living/M as anything in brain.known_hostiles())
 		var/turf/T = get_turf(M)
 		if(!T)
 			continue
@@ -37,7 +37,7 @@
 			continue
 		var/count = 0
 		for(var/mob/living/N in range(1, T))
-			if(N in brain.model.visible_hostiles)
+			if(N in brain.known_hostiles())
 				count++
 		if(count > best_count)
 			best_count = count
@@ -58,10 +58,8 @@
 		return DQ_BEHAVIOR_FAILED
 	act_message(owner, null, others = span_warning("%U% hurls [G]!"))
 	// Use the grenade's own activate/throw pipeline. Drop from hand first.
-	owner.drop_from_inventory(G)
-	G.activate(owner)
-	G.throw_at(target, max_range, 2, owner)
-	owner.setClickCooldown(8)
+	if(!brain.perform_attack_op(owner, target, "mob_attacks.throw", G))
+		return DQ_BEHAVIOR_FAILED
 	return DQ_BEHAVIOR_DONE
 
 // auto_target = TRUE: re-uses evaluate()'s cluster-finder so the player

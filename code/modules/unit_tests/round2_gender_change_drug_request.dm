@@ -20,7 +20,7 @@
 	TEST_ASSERT(istype(request), "Actual drug helper opens its native confirmation")
 	TEST_ASSERT_EQUAL(request.owner, actor, "The original human owns the question")
 	TEST_ASSERT_EQUAL(request.answerer, actor, "The original human answers the question")
-	TEST_ASSERT_EQUAL(request.timeout, 0, "Drug confirmation retains no expiry")
+	TEST_ASSERT_EQUAL(request.timeout, REQUEST_DEFAULT_TIMEOUT, "Drug confirmation retains no expiry (a request given no timeout gets the default, framework_gaps.md E2)")
 	TEST_ASSERT_EQUAL(actor.gender_change_cooldown, 0, "Public helper resets the real cooldown before asking")
 	test_answer(actor, FALSE)
 	test_time(0.1 SECONDS)

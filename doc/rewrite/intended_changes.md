@@ -2484,3 +2484,89 @@ Design and migration: `doc/rewrite/power_grid.md`.
   `machine_deconstruct` run one priority step above the window). Pin rows: the buildable SMES's screwdriver and crowbar clicks.
 * **An unwired SMES and the battery rack still open their window.** `ui_open` is ungated on both (the hand gate reads `operable()`, which now includes
   "has an input terminal"); the window's buttons were never behind that gate and are unchanged (pinned by `dq_p2_smes/unwired_window_opens_buttons_keep_working`).
+
+## Topic links as ops (rewrite/op-topic)
+
+Pinned by `code/modules/unit_tests/dq_topic_*_tests.dm` and `dq_e2/topic_*` (the behaviour tests were written and green on the `TOPIC_ACTION` rows first;
+the converted code passes the same tests). A browser or chat link (an `href`) is the op whose `topic("key", args...)` binding names its key, run through
+the input inbox with the requirements and refusals of a click. Every `TOPIC_ACTION` row outside the machinery folder is an op now.
+
+* **A value the schema cannot read refuses the link and tells the clicker** ("That isn't something you can enter."). A `TOPIC_NUM` that was not a number
+  reached its handler as null, and a `TOPIC_REF` that named nothing of its type or source was dropped without a word; both now refuse with the message. A
+  number past its range is clamped and logged, as for a window button.
+* **Text longer than the field's length is refused, not cut.** `TOPIC_TEXT(name, n)` truncated to n characters; `arg(name, schema_text(n))` refuses. The
+  links the game writes never exceed their field.
+* **A rights refusal on a link reads "You do not have sufficient rights to do that."** (`req_rights` now has its own message; it said "Not while things are
+  as they are.", which was the generic forbid). The admins are still told of the attempt (log, `log_href`, `message_admins`); the `ADMIN DENIED` private
+  log line now carries the rights the link asked for.
+* **A link holder's `topic_allowed()` gate still runs first** and says why itself; it is not yet a `needs()` requirement for the types that use it (an
+  exosuit's pilot check, the held-item check of the blueprints and the sleevemate, the admin token check). Their refusal is a silent "You cannot use that
+  link right now." beside what the gate itself said.
+* **A link that only its own mob may use** (`if(user != src) return`) is `needs(req_self())`, refused silently as before.
+* **The client's own hrefs** (private message, mentor message, Discord registration, stat browser reload and preload, the command bar's typing flag, the
+  `action=openLink` link) are ops of the client's session. The typing flag is one op resolution per keystroke now instead of one table lookup.
+* **The language, flavour text, vore, record-HUD and cyborg alert links of mobs** are declared on `/mob` guarded by the holder's type: their own
+  `CAPABILITIES` blocks (`code/library/mob/hands.dm`, `code/modules/combat_ai/integration/mob_living.dm`) are another worker's, and move there when it is free.
+  Behaviour is unchanged. A cyborg's and an AI's "show alerts" link is one op.
+* **A nested `topic_ask()` answer still re-enters through `topic_dispatch()`**, which tries the holder's op first, so the admin panels' multi-step
+  questions work as before until their handlers become `asks()` steps.
+* **Links that ask are `asks()` steps of their op** (the exosuit's rename, pressure and passenger questions, the cable reel, the communicator reply, the
+  sleevemate's mind steal, the traitor panel's telecrystals, the game mode panel's option and antag-type questions, the feedback viewer's filters, the
+  admin newscaster, CentCom and syndicate replies, round mode picks and force speech, and the View Variables questions: rename, stop animations,
+  languages, verbs, organs, species, AI brain, mass delete). The old answer-callback procs and the href re-run plumbing of those links are deleted.
+  * A second link clicked while a question is open no longer cancels it: an actor has any number of pending ops (see "Several pending ops per actor" below), so two panels' questions are open at once, and the same link clicked again focuses its open window.
+  * A question the actor no longer may answer (the rights or reach its prompt class checks) is refused when the answer comes, as before.
+  * **A guard that reads state is a requirement, so it runs before the question.** The state it reads is tracked: the `mob_state()` capability keys
+    `MOB_STATE_PLAYED` (set in `/mob/Login()` and `/mob/Logout()`, which every key transfer and `ghostize()` runs; a requirement cannot read the builtin
+    `client`) and `MOB_STATE_KNOWS_LANGUAGE` (`sync_language_state()` after every write to `languages`) on every mob (capability keys, because the
+    `base_vars` ratchet refuses a new var on `/mob`), a mech's `state` (the maintenance graph writes it through `set_state()`), the
+    mech cable layer's `cable_length` (`sync_cable_length()`), and the admin caster's `admincaster_channel_ready` / `admincaster_wanted_ready`
+    (`admincaster_resync()`, run when the panel refreshes). So a mech's tank valve and passenger links refuse silently while the bolts are hidden (a passenger link still says "There are no passengers to remove." after the question: who is
+    in a compartment lives in the slot ledger, which nothing tracks); the cable reel refuses with "There's no more cable on the reel."; "Give AI" on a player's mob
+    refuses up front ("This cannot be used on player mobs!") instead of asking three questions; removing a language from a mob that knows none opens no
+    question and says "This mob knows no languages." (`dq_topic_guards`, `dq_mob_state_keys`). A mech link's reach is `req_adjacent()`.
+  * The communicator reply and the sleevemate's mind steal still ask first and then check what they check (their guards read state nothing tracks yet).
+  * **Fix:** the mech's "remove passenger" link looked for the passenger in the pilot slot of the compartment, not its passenger slot, so it never found
+    anyone; it reads `OCCUPANT_SLOT_MECHA_PASSENGER` now. (`passenger.dm`'s "compartment occupied" check has the same wrong slot; left as it was.)
+  * **Newscaster and Wanted confirmations of a draft that cannot be sent** (no name, a name another channel has, no description) are refused up front with
+    the reason as a chat line, and no confirmation opens; they showed the error screen at once. The readiness is re-derived on each panel refresh, so a
+    channel another admin creates in between is still caught by the handler's own check.
+  * **Round mode picks and CentCom/syndicate replies refuse with a chat line** where they raised a pop-up ("The game has already started.", "The game mode has to
+    be secret!", no functional radio / no headset), as requirements; the unban "already lifted" notice is a TGUI alert, as the other admin alerts are.
+  * **A VV "Give AI" no longer rebuilds the brain when its questions are cancelled**: the brain is made when the last answer is in.
+* **A link whose handler asked through `open_request()` and re-ran itself with `topic_ask()` or a replay token** (the ban panel's questions) still
+  re-enters through `topic_dispatch()`; those are the remaining `topic_ask()` sites (admin_topic_bans, admin_topic_mobs, admin_topic_panels, player_notes).
+
+## Several pending ops per actor
+
+* **The one-waiting-op-per-actor rule is gone.** An actor may have any number of pending ops (waits and open questions), up to `OP_PENDING_CAP` (10); one more is refused with "You have too many things going on at once: finish or cancel one first." and nothing is cancelled to make room. Before, any new input stopped the actor's one pending op, a question included (so opening a second panel link, or clicking anything while a window question was open, dropped the first question).
+* **What conflicts is `claims(mask)`** (`CLAIM_HANDS`, `CLAIM_BODY`, `CLAIM_TARGET`; `claims()` alone is all three, `claims(0)` none). A timed `wait()` on a physical binding that declares no `claims()` holds hands and body while the wait runs (what the single slot gave it implicitly); a question holds nothing, and neither does a timed wait started from a window button or a topic link. A physical input needs the hands, so it still stops a physical wait ("You stop what you were doing."; an AI's is refused as busy), but it no longer stops a question, and a window button or link no longer stops a wait (it needs no hands). The target claim is unchanged: a second claimant is refused and it lasts the whole pending op.
+* **Clicking the same op on the same target while its question is open focuses that window** instead of opening a second (the old rule cancelled the open question and asked again).
+* **Each question closes on its own loss.** The subscription was already per pending op; with several open, a lost requirement, target, held item or reach closes only the questions that depended on it, each with its reason.
+* **The Resist verb's "already breaking out" check** is unchanged (the break-out op is system-origin and never in the actor's list).
+
+- **A simple mob's melee swing and innate shot are ops** (`mob_attacks()` in `CAPABILITIES(/mob/living/simple_mob)`, `code/library/mob/attacks.dm`): the combat AI's `melee_attack` and `ranged_attack` tactics call `mob_attacks.melee` / `mob_attacks.shoot` with the mob as actor (`ORIGIN_AI`), so they meet the op requirements: capable (not stunned, restrained or dead), the target adjacent (melee) or a projectile to shoot, and off the attack cooldown. A refusal fails the tactic (the brain's one-second fail cooldown applies) instead of attacking anyway, and is traced. The ops are AI-only (`inputs(ai())`): a player's click on a simple mob is unchanged.
+- **The AI loops park on `when = STAT_RELEVANCE`** (the strategic and tactical `every()` of the brain's capabilities): no behaviour change (the same z-occupancy relevance as before), the check moved from the handler to the entry. AI mobs deliberately do not use `proximity_tracked`: they change simulation state, so they keep running anywhere a player is on their z-level.
+- **AI decisions can be traced**: `datum/ai_brain/traced` (one brain) or `GLOB.ai_trace_all` writes each behaviour start, stop and op outcome to the game log. Off by default.
+- **Every AI tactic's action is an AI-only op of `mob_attacks()`** (`step`, `special`, `fire`, `throw`, `pickup`, `alarm`, `slam`, beside `melee` and `shoot`), including the `ports/*` creatures' steps, special attacks and melee. All need a capable, conscious actor; melee, shoot, fire and throw also need the attack cooldown over, so a port that used to attack through its cooldown is now refused and fails its tactic for a second. A charge's slam and a thrown grenade keep their numbers (slam 2.5x melee damage, throw range 6).
+
+## AI packs, states, standings, roles (rewrite/ai-packs)
+
+Spec: `doc/rewrite/ai_packs.md` ("Implementation status" lists what is not in yet). Pinned by `dq_ai_cadence_*`, `dq_ai_pack_*`, `dq_ai_standing_*`, `dq_ai_state_*`, `dq_ai_roles_*`, `dq_ai_port_*` and `dq_ai_cost_*`; the 23 tactic tests and `dq_ai_tactic_shared_ops` pass unchanged.
+
+* **Mobs in a calm area can take up to five seconds to notice something new.** Perception is the pack's and runs on chunk activity, a member hurt or a member heard, coalesced to one pass per window: calm 5 s, alert or fleeing 1 s, engaged 1 s while a player can see the pack and 2 s off screen. A calm brain used to wake on the first mob that moved near it and look within two seconds.
+* **Friendlies and neutrals in range are noted without line of sight.** Only hostiles are checked for sight (the old pass saw only what `view()` showed). A friendly behind a wall now counts as a visible ally for call-for-help, healing and rally. Hostile sightings still equal what `view()` shows the spotter (darkness, invisibility, opaque objects), pinned by `dq_ai_pack_perception_parity`.
+* **Pack mates share sightings.** One member spots a hostile; the others learn after the faction's alert delay (0.75 s) if they are within 12 tiles. A pack of one behaves as before.
+* **Packs spread over their targets.** Members of a pack choose from the hostiles that hold fewer than two members each (SPREAD), so a pack fans out instead of all biting the nearest. FOCUS (follow the leader's target) is available per faction.
+* **Wolves, giant spiders and xenomorphs hunt in packs** (join within 5 tiles of a pack leader, leave beyond 9). Wolves have their own faction (`FACTION_WOLF`; they used to be `FACTION_NEUTRAL`, and the station dogs and guard wolves keep that); they still treat neutral-faction animals as allies. Spiders and xenomorphs now regard their own faction as allies (it used to be neutral because the faction had no data). A player taking over a mob takes it out of its pack.
+* **Grudges last five minutes** (a hit used to be remembered for thirty seconds) and are held as standing rows, one per subject. `add_personal()` keeps its name; the brain's `personal` list, `personal_entry()` and `expire_personal()` are gone. `NEMESIS` is standing -150, `HOSTILE` -100, `WARY` -50, `NEUTRAL` 0, `FRIENDLY` 50, `ALLY` 100. AI mobs now carry stat holds, so their stat recompute takes the general path. A grudge given a negative duration holds nothing.
+* **A running tactic no longer blocks re-selection.** An event (damage, a new target, perception changed) or one second engaged re-picks while a tactic is running; before, a tactic that kept returning CONTINUE was never replaced until it finished. IDLE and BACKGROUND tactics tick three times slower below `RELEVANCE_VISIBLE`.
+* **A retreat is the pack's.** One member's `pack_retreat` puts a retreat order on the pack (eight seconds, ends with the issuer); packmates' `pack_retreat` then scores 110. `call_for_help` rallies the whole pack (a grudge for each packmate) and still forwards the attacker to allies seen outside the pack.
+* **Followers serve.** `set_leader()`/`set_follow()` on a mob that has a brain makes the follower sworn: it joins the leader's pack, never splits off, takes the leader as an ally and the leader's hostile standings as its own, and is freed when the leader dies. A broodmother is a lord and the broodlings it births are sworn to it (they follow it when calm). The kururak ace is the pack's alpha (+30 authority).
+* **A brain's state gates its tactics.** Calm and alert brains run what a brain with no target ran before; engaged brains everything; a fleeing brain only fleeing or interrupting tactics (so a retreating mob keeps retreating); a regrouping one the idle follow and home tactics.
+* **A ysbryd hunting a mob nobody controls no longer runtime-errors** (its victim's plane holder is null-safe).
+* **Cost.** `dq_ai_cost_packs_of_1_5_20` counts exactly: line-of-sight `view()` builds fall from one per brain per pass to one per pack per pass (engaged x20: 100 builds to 5), and an idle pack builds none. Wall time of a pack pass is within the old per-brain pass for idle packs of 5 and 20 and about twice it for engaged packs (a pack pass also re-targets and re-assesses every member, which the old measured loop did not). A pack of one costs more per pass than the old per-brain loop (the pack machinery) and the same number of `view()` builds.
+* **A calm mob parks until its pack perceives something** (it used to wake on any mob moving in its chunks): a mob that wanders never parks, as before. The strategic loop is gone; the one loop runs the slow work every two seconds while a mob is awake.
+* **A charging mob's wind-up is an op:** it cannot do anything else while it winds up (other ops are refused as busy), and the charge is cancelled if the target is gone or it dies; it dashes up to six tiles and slams only if it arrived.
+* **Control spell and capture crystal followers** hold their ally standing under the spell or crystal as source; carrier swarmlings and glitch-boss illusions follow and serve their parent like broodlings do.
+* **Cost (re-run).** Steady-state perception passes: pack of 5 or 20 strictly cheaper than the same mobs alone (engaged x20: 18 ms against 85 ms; idle x20: 15 against 66); idle solo packs at or below the old pass (x20: 51 against 72 ms); engaged solo packs 1.1 to 1.7 times the old pass.

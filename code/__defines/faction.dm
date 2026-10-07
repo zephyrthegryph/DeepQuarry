@@ -108,6 +108,7 @@
 #define FACTION_TUNNELCLOWN "tunnelclown"
 #define FACTION_TURKEY "turkey"
 #define FACTION_WILD_ANIMAL "wild animal"
+#define FACTION_WOLF "wolf"
 #define FACTION_WOLFGIRL "wolfgirl"
 #define FACTION_WOLFTAUR "wolftaur"
 #define FACTION_WORM "worm"

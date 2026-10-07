@@ -94,7 +94,7 @@
 	if(client || !speaker || !speaker.client)
 		return
 	var/message = multilingual_to_message(message_pieces)
-	if(findtext(message, "psps") && ai_brain && !ai_brain.primary_threat)
+	if(findtext(message, "psps") && ai_brain && !ai_brain.primary_target())
 		ai_brain.set_follow(speaker)
 	if(stat || !say_list || !message || speaker == src)
 		return
@@ -106,7 +106,7 @@
 	if(client || !speaker || !speaker.client)
 		return
 	var/message = multilingual_to_message(message_pieces)
-	if((findtext(message, "psps") || (ai_brain && !ai_brain.primary_threat)) && ai_brain)
+	if((findtext(message, "psps") || (ai_brain && !ai_brain.primary_target())) && ai_brain)
 		ai_brain.set_follow(speaker)
 	if(stat || !say_list || !message || speaker == src)
 		return

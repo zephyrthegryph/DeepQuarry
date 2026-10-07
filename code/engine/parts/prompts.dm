@@ -26,6 +26,8 @@
 	var/title
 	/// The tgui window or radial ring showing it, while it is open. Closing it is a cancellation.
 	var/datum/window
+	/// How many times the answerer asked it again while it was open (the window was focused, not duplicated).
+	var/focused = 0
 
 CAPABILITIES(/datum/prompt)
 	ref_one(nameof(window), /datum)
@@ -84,6 +86,30 @@ CAPABILITIES(/datum/prompt)
 	var/datum/shown = present(user)
 	if(!isnull(shown))
 		rel_set(src, nameof(window), shown)
+
+/// The answerer asked the same question again while it is open: its window comes to the front and is refreshed, and no second one opens. A prompt
+/// nobody can see (a test driver, an AI) has nothing to focus.
+/datum/prompt/proc/focus()
+	var/mob/user = answerer
+	focused++
+	if(!is_open() || !istype(user) || !user.client)
+		return
+	var/datum/shown = window
+	if(isnull(shown) || QDELETED(shown))
+		return
+	if(istype(shown, /datum/tgui_modal/prompt))
+		// an inline question is shown in the window of the holder that asked
+		var/datum/tgui_modal/prompt/modal = shown
+		shown = modal.owning_source()
+		if(isnull(shown) || QDELETED(shown))
+			return
+	var/datum/tgui/ui = SStgui.get_open_ui(user, shown)
+	if(!ui)
+		return
+	ui.send_full_update()
+	var/datum/tgui_window/shown_window = ui.window()
+	if(shown_window)
+		winset(user, shown_window.id, "focus=true")
 
 // ---- the inline form: a modal of the asking holder's window (code/engine/present/prompt_modals.dm) ----
 

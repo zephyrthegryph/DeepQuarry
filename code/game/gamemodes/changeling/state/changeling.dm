@@ -254,6 +254,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 	languages = list()
 	for(var/language in updated_languages)
 		languages += language
+	sync_language_state()
 
 	//This isn't strictly necessary but just to be safe...
 	add_language("Changeling")

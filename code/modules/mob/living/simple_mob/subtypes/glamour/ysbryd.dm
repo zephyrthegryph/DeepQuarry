@@ -117,14 +117,14 @@
 		return
 	rel_set(src, nameof(chosen_target), M)
 	if(!(VIS_EVENT_INVIS in chosen_target.vis_enabled))
-		chosen_target.plane_holder.set_vis(VIS_EVENT_INVIS,TRUE)
+		chosen_target.plane_holder?.set_vis(VIS_EVENT_INVIS,TRUE)
 		chosen_target.vis_enabled += VIS_EVENT_INVIS
 
 /mob/living/simple_mob/ysbryd/proc/disconnect_target()
 	if(!chosen_target)
 		return
 	if((VIS_EVENT_INVIS in chosen_target.vis_enabled))
-		chosen_target.plane_holder.set_vis(VIS_EVENT_INVIS,FALSE)
+		chosen_target.plane_holder?.set_vis(VIS_EVENT_INVIS,FALSE)
 		chosen_target.vis_enabled -= VIS_EVENT_INVIS
 	rel_clear(src, nameof(chosen_target))
 

@@ -1,38 +1,32 @@
 // Admin panel href actions: bans, job bans, kicks, warnings and mutes.
 
-TOPIC_ACTION(/datum/admins, "unbanf", PROC_REF(topic_unbanf), TOPIC_RIGHTS(R_BAN), TOPIC_TEXT("unbanf"))
-TOPIC_ACTION(/datum/admins, "warn", PROC_REF(topic_warn), TOPIC_RIGHTS(R_MOD|R_ADMIN), TOPIC_TEXT("warn"))
-TOPIC_ACTION(/datum/admins, "unbane", PROC_REF(topic_unbane), TOPIC_RIGHTS(R_BAN), TOPIC_TEXT("unbane"))
-TOPIC_ACTION(/datum/admins, "jobban2", PROC_REF(topic_jobban2), TOPIC_RIGHTS(R_BAN), TOPIC_REF("jobban2", /mob, PROC_REF(topic_registered_mobs)))
-TOPIC_ACTION(/datum/admins, "jobban3", PROC_REF(topic_jobban3), TOPIC_TEXT("jobban3"), TOPIC_REF("jobban4", /mob))
-TOPIC_ACTION(/datum/admins, "boot2", PROC_REF(topic_boot2), TOPIC_REF("boot2", /mob))
-TOPIC_ACTION(/datum/admins, "removejobban", PROC_REF(topic_removejobban), TOPIC_RIGHTS(R_BAN), TOPIC_TEXT("removejobban"))
-TOPIC_ACTION(/datum/admins, "newban", PROC_REF(topic_newban), TOPIC_REF("newban", /mob))
-TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_ADMIN), TOPIC_REF("mute", /mob), TOPIC_NUM("mute_type"))
 
 /// Where job-ban panel links look up their mob.
 /datum/admins/proc/topic_registered_mobs()
 	return REGISTRY_MEMBERS(REGISTRY_MOBS)
 
-/datum/admins/proc/topic_unbanf(mob/user, list/args)
-	var/banfolder = args["unbanf"]
+/datum/admins/proc/topic_unbanf(datum/act/op/A, href_unbanf)
+	var/mob/user = A.actor
+	var/banfolder = href_unbanf
 	GLOB.banlist.cd = "/base/[banfolder]"
 	var/key = GLOB.banlist["key"]
-	var/answer = ban_topic_ask(user, args, "a4", /datum/prompt/choice/admin_ban_topic, question = "Are you sure you want to unban [key]?", title = "Confirmation", choices = list("Yes", "No"))
+	var/answer = ban_topic_ask(user, A.topic_href(), "a4", /datum/prompt/choice/admin_ban_topic, question = "Are you sure you want to unban [key]?", title = "Confirmation", choices = list("Yes", "No"))
 	if(answer != "Yes")
 		return
 	if(!RemoveBan(banfolder, user))
-		open_request(user, /datum/prompt/choice/unban_error_notification, null, answerer = user, question = "This ban has already been lifted / does not exist.", title = "Error", choices = list("Ok"))
+		tgui_alert_async(user, "This ban has already been lifted / does not exist.", "Error")
 	unbanpanel()
 
-/datum/admins/proc/topic_warn(mob/user, list/args)
-	user.client.warn(args["warn"])
+/datum/admins/proc/topic_warn(datum/act/op/A, href_warn)
+	var/mob/user = A.actor
+	user.client.warn(href_warn)
 
-/datum/admins/proc/topic_unbane(mob/user, list/args)
+/datum/admins/proc/topic_unbane(datum/act/op/A, href_unbane)
+	var/mob/user = A.actor
 	UpdateTime()
 	var/reason
 
-	var/banfolder = args["unbane"]
+	var/banfolder = href_unbane
 	GLOB.banlist.cd = "/base/[banfolder]"
 	var/reason2 = GLOB.banlist["reason"]
 	var/temp = GLOB.banlist["temp"]
@@ -44,26 +38,26 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 
 	var/duration
 
-	var/answer = ban_topic_ask(user, args, "a5", /datum/prompt/choice/admin_ban_topic, question = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No"))
+	var/answer = ban_topic_ask(user, A.topic_href(), "a5", /datum/prompt/choice/admin_ban_topic, question = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No"))
 	switch(answer)
 		if("Yes")
 			temp = 1
 			var/mins = 0
 			if(minutes > GLOB.c_minutes)
 				mins = minutes - GLOB.c_minutes
-			mins = ban_topic_ask(user, args, "a6", /datum/prompt/number/admin_ban_topic, question = "How long (in minutes)? (Default: 1440)", title = "Ban time", default = mins ? mins : 1440)
+			mins = ban_topic_ask(user, A.topic_href(), "a6", /datum/prompt/number/admin_ban_topic, question = "How long (in minutes)? (Default: 1440)", title = "Ban time", default = mins ? mins : 1440)
 			if(!mins)
 				return
 			mins = min(525599, mins)
 			minutes = GLOB.c_minutes + mins
 			duration = GetExp(minutes)
-			reason = ban_topic_ask(user, args, "a7", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "reason", default = reason2)
+			reason = ban_topic_ask(user, A.topic_href(), "a7", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "reason", default = reason2)
 			if(!reason)
 				return
 		if("No")
 			temp = 0
 			duration = "Perma"
-			reason = ban_topic_ask(user, args, "a8", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "reason", default = reason2)
+			reason = ban_topic_ask(user, A.topic_href(), "a8", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "reason", default = reason2)
 			if(!reason)
 				return
 		else
@@ -81,8 +75,9 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 	feedback_inc("ban_edit",1)
 	unbanpanel()
 
-/datum/admins/proc/topic_jobban2(mob/user, list/args)
-	var/mob/M = args["jobban2"]
+/datum/admins/proc/topic_jobban2(datum/act/op/A, href_jobban2)
+	var/mob/user = A.actor
+	var/mob/M = href_jobban2
 	if(!M.ckey)	//sanity
 		to_chat(user, span_filter_adminlog("This mob has no ckey"))
 		return
@@ -132,7 +127,8 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 			joblist += temp.title
 	return joblist
 
-/datum/admins/proc/topic_jobban3(mob/user, list/args)
+/datum/admins/proc/topic_jobban3(datum/act/op/A, href_jobban3, href_jobban4)
+	var/mob/user = A.actor
 	if(!check_rights_for(user.client, R_MOD) && !check_rights_for(user.client, R_ADMIN))
 		to_chat(user, span_filter_adminlog(span_warning("You do not have the appropriate permissions to add job bans!")))
 		return
@@ -141,7 +137,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 		to_chat(user, span_filter_adminlog(span_warning("Mod jobbanning is disabled!")))
 		return
 
-	var/mob/M = args["jobban4"]
+	var/mob/M = href_jobban4
 	if(!M)
 		to_chat(user, span_filter_adminlog("This can only be used on instances of type /mob"))
 		return
@@ -155,7 +151,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 		to_chat(user, span_filter_adminlog("Job Master has not been setup!"))
 		return
 
-	var/list/joblist = jobban_job_list(args["jobban3"])
+	var/list/joblist = jobban_job_list(href_jobban3)
 
 	//Create a list of unbanned jobs within joblist
 	var/list/notbannedlist = list()
@@ -165,7 +161,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 
 	//Banning comes first
 	if(notbannedlist.len) //at least 1 unbanned job exists in joblist so we have stuff to ban.
-		var/answer = ban_topic_ask(user, args, "a9", /datum/prompt/choice/admin_ban_topic, question = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No","Cancel"))
+		var/answer = ban_topic_ask(user, A.topic_href(), "a9", /datum/prompt/choice/admin_ban_topic, question = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No","Cancel"))
 		switch(answer)
 			if("Yes")
 				if(!check_rights_for(user.client, R_MOD) && !check_rights_for(user.client, R_BAN))
@@ -174,13 +170,13 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 				if(CONFIG_GET(flag/ban_legacy_system))
 					to_chat(user, span_filter_adminlog(span_warning("Your server is using the legacy banning system, which does not support temporary job bans. Consider upgrading. Aborting ban.")))
 					return
-				var/mins = ban_topic_ask(user, args, "a10", /datum/prompt/number/admin_ban_topic, question = "How long (in minutes)?", title = "Ban time", default = 1440)
+				var/mins = ban_topic_ask(user, A.topic_href(), "a10", /datum/prompt/number/admin_ban_topic, question = "How long (in minutes)?", title = "Ban time", default = 1440)
 				if(!mins)
 					return
 				if(check_rights_for(user.client, R_MOD) && !check_rights_for(user.client, R_BAN) && mins > CONFIG_GET(number/mod_job_tempban_max))
 					to_chat(user, span_filter_adminlog(span_warning("Moderators can only job tempban up to [CONFIG_GET(number/mod_job_tempban_max)] minutes!")))
 					return
-				var/reason = ban_topic_ask(user, args, "a11", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "Please State Reason")
+				var/reason = ban_topic_ask(user, A.topic_href(), "a11", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "Please State Reason")
 				if(!reason)
 					return
 
@@ -205,7 +201,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 			if("No")
 				if(!admin_require(user.client, R_BAN, "topic_jobban3", TRUE))
 					return
-				var/reason = ban_topic_ask(user, args, "a12", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "Please State Reason")
+				var/reason = ban_topic_ask(user, A.topic_href(), "a12", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "Please State Reason")
 				if(reason)
 					var/msg
 					for(var/job in notbannedlist)
@@ -241,7 +237,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 			var/reason = jobban_isbanned(M, job)
 			if(!reason)
 				continue //skip if it isn't jobbanned anyway
-			var/answer = ban_topic_ask(user, args, "unjob_[job]", /datum/prompt/choice/admin_ban_topic, question = "Job: '[job]' Reason: '[reason]' Un-jobban?", title = "Please Confirm", choices = list("Yes","No"))
+			var/answer = ban_topic_ask(user, A.topic_href(), "unjob_[job]", /datum/prompt/choice/admin_ban_topic, question = "Job: '[job]' Reason: '[reason]' Un-jobban?", title = "Please Confirm", choices = list("Yes","No"))
 			if(isnull(answer))
 				return
 			if(answer != "Yes")
@@ -262,11 +258,12 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 		return 1
 	return 0 //we didn't do anything!
 
-/datum/admins/proc/topic_boot2(mob/user, list/args)
-	var/mob/M = args["boot2"]
+/datum/admins/proc/topic_boot2(datum/act/op/A, href_boot2)
+	var/mob/user = A.actor
+	var/mob/M = href_boot2
 	if(!check_if_greater_rights_than(M.client))
 		return
-	var/reason = ban_topic_ask(user, args, "a14", /datum/prompt/text/admin_ban_topic, question = "Please enter reason.", multiline = TRUE)
+	var/reason = ban_topic_ask(user, A.topic_href(), "a14", /datum/prompt/text/admin_ban_topic, question = "Please enter reason.", multiline = TRUE)
 	if(!reason)
 		return
 
@@ -276,11 +273,12 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 	admin_action_message(user.key, M.key, "kicked", reason, 0)
 	spent(M.client, user)
 
-/datum/admins/proc/topic_removejobban(mob/user, list/args)
-	var/t = args["removejobban"]
+/datum/admins/proc/topic_removejobban(datum/act/op/A, href_removejobban)
+	var/mob/user = A.actor
+	var/t = href_removejobban
 	if(!t)
 		return
-	var/answer = ban_topic_ask(user, args, "a15", /datum/prompt/choice/admin_ban_topic, question = "Do you want to unjobban [t]?", title = "Unjobban confirmation", choices = list("Yes", "No"))
+	var/answer = ban_topic_ask(user, A.topic_href(), "a15", /datum/prompt/choice/admin_ban_topic, question = "Do you want to unjobban [t]?", title = "Unjobban confirmation", choices = list("Yes", "No"))
 	if(answer != "Yes") //No more misclicks! Unless you do it twice.
 		return
 	log_admin("[key_name(user)] removed [t]")
@@ -291,7 +289,8 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 	var/job = t_split[2]
 	DB_ban_unban(ckey(key), BANTYPE_JOB_PERMA, job, user)
 
-/datum/admins/proc/topic_newban(mob/user, list/args)
+/datum/admins/proc/topic_newban(datum/act/op/A, href_newban)
+	var/mob/user = A.actor
 	if(!check_rights_for(user.client, R_MOD) && !check_rights_for(user.client, R_BAN))
 		to_chat(user, span_warning("You do not have the appropriate permissions to add bans!"))
 		return
@@ -300,15 +299,15 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 		to_chat(user, span_warning("Mod jobbanning is disabled!"))
 		return
 
-	var/mob/M = args["newban"]
+	var/mob/M = href_newban
 
 	if(M.client && check_rights_for(M.client, R_HOLDER))
 		return	//admins cannot be banned. Even if they could, the ban doesn't affect them anyway
 
-	var/answer = ban_topic_ask(user, args, "a16", /datum/prompt/choice/admin_ban_topic, question = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No","Cancel"))
+	var/answer = ban_topic_ask(user, A.topic_href(), "a16", /datum/prompt/choice/admin_ban_topic, question = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No","Cancel"))
 	switch(answer)
 		if("Yes")
-			var/mins = ban_topic_ask(user, args, "a17", /datum/prompt/number/admin_ban_topic, question = "How long (in minutes)?", title = "Ban time", default = 1440)
+			var/mins = ban_topic_ask(user, A.topic_href(), "a17", /datum/prompt/number/admin_ban_topic, question = "How long (in minutes)?", title = "Ban time", default = 1440)
 			if(!mins)
 				return
 			if(check_rights_for(user.client, R_MOD) && !check_rights_for(user.client, R_BAN) && mins > CONFIG_GET(number/mod_tempban_max))
@@ -316,7 +315,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 				return
 			if(mins >= 525600)
 				mins = 525599
-			var/reason = ban_topic_ask(user, args, "a18", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "reason", default = "Griefer")
+			var/reason = ban_topic_ask(user, A.topic_href(), "a18", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "reason", default = "Griefer")
 			if(!reason)
 				return
 			AddBan(M.ckey, M.computer_id, reason, user.ckey, 1, mins, user = user)
@@ -340,10 +339,10 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 		if("No")
 			if(!admin_require(user.client, R_BAN, "topic_newban", TRUE))
 				return
-			var/reason = ban_topic_ask(user, args, "a19", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "reason", default = "Griefer")
+			var/reason = ban_topic_ask(user, A.topic_href(), "a19", /datum/prompt/text/admin_ban_topic, question = "Reason?", title = "reason", default = "Griefer")
 			if(!reason)
 				return
-			var/ip_answer = ban_topic_ask(user, args, "a20", /datum/prompt/choice/admin_ban_topic, question = "IP ban?", title = "IP Ban", choices = list("Yes","No","Cancel"))
+			var/ip_answer = ban_topic_ask(user, A.topic_href(), "a20", /datum/prompt/choice/admin_ban_topic, question = "IP ban?", title = "IP Ban", choices = list("Yes","No","Cancel"))
 			switch(ip_answer)
 				if("Yes")
 					AddBan(M.ckey, M.computer_id, reason, user.ckey, 0, 0, M.lastKnownIP, user)
@@ -368,18 +367,18 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 				T.Resolve(user)
 			spent(M.client, user)
 
-/datum/admins/proc/topic_mute(mob/user, list/args)
-	var/mob/M = args["mute"]
+/datum/admins/proc/topic_mute(datum/act/op/A, href_mute, href_mute_type)
+	var/mob/user = A.actor
+	var/mob/M = href_mute
 	if(!M.client)
 		return
-	var/mute_type = args["mute_type"]
+	var/mute_type = href_mute_type
 	if(!isnum(mute_type))
 		return
 	cmd_admin_mute(M, mute_type, FALSE, user)
 
 /// Native answers replay the original raw href through the full public admin gate.
-/datum/admins/proc/ban_topic_ask(mob/user, list/args, key, kind, question, title, default, list/choices, multiline = FALSE)
-	var/list/href = args[TOPIC_HREF]
+/datum/admins/proc/ban_topic_ask(mob/user, list/href, key, kind, question, title, default, list/choices, multiline = FALSE)
 	var/list/answers = list()
 	var/datum/request/replayed = href["ban_topic_request"]
 	if((istype(replayed, /datum/prompt/choice/admin_ban_topic) || istype(replayed, /datum/prompt/number/admin_ban_topic) || istype(replayed, /datum/prompt/text/admin_ban_topic)) && replayed.owner == src && replayed.answerer == user && replayed.outcome == REQ_ANSWERED && !replayed.is_open() && !QDELETED(replayed) && replayed.handler == PROC_REF(ban_topic_answered))

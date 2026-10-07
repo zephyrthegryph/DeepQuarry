@@ -5,11 +5,14 @@
 	var/obj/structure/cable/last_piece
 	var/obj/item/stack/cable_coil/cable
 	var/max_cable = 1000
+	/// Lengths on the reel: a tracked mirror of the cable stack's amount (a requirement cannot read the stack), kept by sync_cable_length().
+	var/cable_length = 0
 	required_type = list(/obj/mecha/working)
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, 0))
+	sync_cable_length()
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/MoveAction()
 	layCable()
@@ -29,31 +32,38 @@
 	occupant_message(message)
 	return
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "toggle", PROC_REF(topic_toggle))
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "cut", PROC_REF(topic_cut))
+TRACKED(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, cable_length)
 
-/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/topic_toggle(mob/user, list/args)
+MSG_DEF_SELF(mecha_cable/no_cable, "There's no more cable on the reel.")
+
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer)
+	op("toggle", topic("toggle"), then(PROC_REF(topic_toggle)))
+	op("cut", topic("cut"), needs(req(PROC_REF(reel_has_cable), because = MSG(mecha_cable/no_cable))), asks(/datum/prompt/number/mecha_cable_cut, fields = list("default" = computed(PROC_REF(cable_cut_default)), "subject" = computed(PROC_REF(cable_cut_subject))), step = "length"), then(PROC_REF(topic_cut)))
+
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/topic_toggle(datum/act/op/op_act)
 	set_ready_state(!equip_ready)
 	occupant_message("[src] [equip_ready?"dea":"a"]ctivated.")
 	src.mecha_log_message("[equip_ready?"Dea":"A"]ctivated.")
 
-/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/topic_cut(mob/user, list/args)
-	if(cable && cable.get_amount())
-		var/mob/pilot = chassis?.slot_item(MECHA_SLOT_PILOT)
-		if(!istype(pilot) || QDELETED(pilot))
-			return
-		open_request(src, /datum/prompt/number/mecha_cable_cut, PROC_REF(cable_length_entered), answerer = pilot, default = min(cable.get_amount(), 30), subject = chassis)
-	else
-		occupant_message("There's no more cable on the reel.")
-	return
+/// Requirement: there is cable on the reel to cut.
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/reel_has_cable(datum/act/op/A)
+	return cable_length > 0
 
-/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/cable_length_entered(datum/act/request/context)
-	if(!context.answer)
+/// Brings the tracked cable_length in line with the stack on the reel (call after any change to it).
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/sync_cable_length()
+	set_cable_length(cable ? cable.get_amount() : 0)
+
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/cable_cut_default(datum/act/op/A)
+	return cable ? min(cable.get_amount(), 30) : 0
+
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/cable_cut_subject(datum/act/op/A)
+	return chassis
+
+/// The pilot's answer: that much cable comes off the reel.
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/topic_cut(datum/act/op/A)
+	if(!cable || !cable.get_amount())
 		return
-	var/datum/prompt/number/mecha_cable_cut/ask = context.answer
-	if(!cable)
-		return
-	var/m = min(ask.value, cable.get_amount())
+	var/m = min(A.step_value("length"), cable.get_amount())
 	if(m)
 		use_cable(m)
 		new /obj/item/stack/cable_coil(get_turf(chassis), m)
@@ -75,6 +85,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "cut", PROC
 			else
 				cable.add(to_load)
 			CC.use(to_load)
+			sync_cable_length()
 			return to_load
 		else
 			return 0
@@ -90,6 +101,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "cut", PROC
 		occupant_message("No enough cable to finish the task.")
 		return
 	cable.use(amount)
+	sync_cable_length()
 	update_equip_info()
 	return 1
 

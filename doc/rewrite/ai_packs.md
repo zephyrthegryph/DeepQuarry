@@ -1,6 +1,6 @@
 # AI packs, states and standings (approved 2026-10-06)
 
-Status: approved by the user; implementation in progress. Engine forms first (part A), then AI (part B).
+Status: approved by the user. Part A (engine forms) landed on `rewrite/engine-forms`; part B (AI) landed on `rewrite/ai-packs` through the steps in "Implementation status" below.
 
 ## Principles
 - The **pack** is the unit of thinking; the **brain** is the unit of acting; **tactics** read only brain accessors and never know which one answers.
@@ -114,3 +114,26 @@ Each `/datum/ai_behavior` has a `tick_interval`, defaulting to the current rates
   - a calm pack schedules zero timers;
   - flow field vs individual path.
 - **Cost:** a focused cost test with packs of 1, 5 and 20, idle and engaged, before and after. No benchmarks.
+
+## Implementation status (rewrite/ai-packs)
+
+Landed, with focused tests (`dq_ai_cadence_*`, `dq_ai_pack_*`, `dq_ai_standing_*`, `dq_ai_state_*`, `dq_ai_roles_*`, `dq_ai_port_*`, `dq_ai_cost_*`; the 23 tactic tests and `dq_ai_tactic_shared_ops` stay green):
+
+- **B1 accessor seam.** Tactics read only `known_hostiles()`, `known_friendlies()`, `last_attacker()`, `primary_target()`, `path_to()`, `active_intents()`, `act()`, `act_waiting()` (`brain/actions.dm`). `set_primary_target()` is the one write.
+- **B2 cadence (partly).** `tick_interval` on every behaviour (default `DQ_ACTION_TICK`, 0.25 s), IDLE and BACKGROUND x3 below `RELEVANCE_VISIBLE`; the tactical loop is the action loop, armed `every(ai_action_interval)` from the active behaviour; events re-arm a stretched loop; a running behaviour no longer blocks re-selection (an event, or one second engaged, re-picks).
+- **B3 packs.** `/datum/ai_pack` (`code/modules/combat_ai/pack/`): two-way link with brains, every brain in a pack (of one unless its faction sets `pack_join_radius`), formation by leader distance with join/leave hysteresis, merge, split, empty pack deletes itself; perception once per pack (`coalesce` on chunk activity, member hurt, member heard; candidates from a per-chunk living-mob index in `mob_chunks.dm`; line of sight is a lookup in the nearest member's `view()`, one per hostile; knowledge records who was seen, members classify with their own `disposition_to()`; alert delay and communication radius per faction; differences only); targeting once per pack (SPREAD cap 2, FOCUS); a shared flow field per goal for packs of more than one member (`pack/flowfield.dm`), keyed by goal and `GLOB.ai_navigation_revision`. Traced throughout (`pack.trace()`, `brain.trace()`).
+- **B4 states.** `ai_state` is a TRACKED var with `modes()`: calm, alert, engaged, fleeing, regroup (`states/states.dm`); each state declares what it allows, its pack perception window and its own timers; a faction may supply its set (`faction_data.states`). State gates tactic eligibility (replacing the `primary_threat` check in `pick_and_run()`).
+- **B5 standings.** `disposition_to()` is `standing_toward()`; providers: faction relations (the tables, priorities -1/0/1), pack_member (50, only while the pack has more than one member), serves(lord) (55), grudges (60, 5 minutes), effects (80), admin (100) (`standings/standings.dm`). The brain's `personal` list is gone.
+- **B6 authority, roles, intents.** `STAT_AI_AUTHORITY` (lord +100, alpha +30 holds; health 0-20 and seniority 0-10 added); roles `lord`, `sworn`, `sentinel` as capabilities; `intend()` orders with a source and lifetime read through `active_intents()`; `set_leader()`/follow join the leader's pack as sworn; broodmother is a lord and its broodlings sworn; `call_for_help` rallies the pack; `pack_retreat` is pack-level (`roles/`).
+- **B7.** `pack_join_radius` 5 for spiders, xenomorphs and wolves (wolves get their own `FACTION_WOLF`; the station dogs stay `FACTION_NEUTRAL`).
+
+Also landed in the follow-up pass:
+
+- **One loop.** The strategic capability is gone: the action loop (`every(ai_action_interval)`) is the brain's only loop. Its interval is the active tactic's, `DQ_ACTION_TICK` with a target and `DQ_CALM_TICK` (2 s) without; the slow work (re-reading what the mob holds, the backstop perception pass, idle selection, grace timers) runs inside it on its own cadence (`strategic_tick()`), and a calm brain with nothing to do parks (`park_calm()`, replacing the chunk hibernation) until its pack perceives something, it is hit or it is given a target (`wake_loops()`). The pack, not the brain, watches the mob chunks and perceives on activity.
+- **Charge slam is an op with `wait()`** (`mob_attacks.charge`: a 1.2 s wait that cancels with its actor or target, then the dash and the slam). The brain waits on the op (`begin_waiting_op()`, busy until it ends) and the tactic ends with its outcome; replacing the tactic cancels the op. Aimed shot and grenade were already single-step ops (no wait to convert).
+- **Members hold their mob's relevance on the pack** (`sync_relevance()`, a hold with the brain as source; a mob's `on_change(STAT_RELEVANCE)` re-syncs it).
+- **Sentinels.** A member that sees through darkness, invisibility or walls (a sight flag, long night vision) is granted the sentinel role when asked; line of sight for a dark or invisible target is checked from sentinels first.
+- **Effects use `place_effect_standing()`**: the technomancer control spell and the capture crystal's follow place their ally standing with the spell or crystal as source (it goes with them). **Lords and sworn**: `serve()` makes the lord a lord; carrier swarmlings and glitch-boss illusions are sworn to their parents, as broodlings are.
+- **Engine:** `modes()` grants the initial state to a plain datum when it is made (the generator marks a datum type with `modes()` as `lifeform_declared`; `lifeform_datum_new` runs `modes_init`); no manual `modes_sync()` remains.
+
+Perception cost, measured by `dq_ai_cost_packs_of_1_5_20` (steady-state passes, the old per-brain loop includes its list publishing): a pack of 5 or 20 is strictly cheaper than its members alone (engaged x20: 18 ms against 85 ms, view builds 5 against 100); an idle solo pack is at or below the old pass; an engaged solo pack is about 1.1 to 1.7 times the old pass (the cost of the pack machinery around one `view()`).

@@ -116,16 +116,14 @@ CAPABILITIES(/mob/observer)
 	if(visualnet && checkStatic())
 		visualnet.visibility(src, client)
 
-TOPIC_ACTION(/mob/observer/dead, "track", PROC_REF(topic_track), TOPIC_REF("track", /mob, TOPIC_IN_MOBS))
-TOPIC_ACTION(/mob/observer/dead, "reenter", PROC_REF(topic_reenter))
 
-/mob/observer/dead/proc/topic_track(mob/user, list/args)
-	var/mob/target = args["track"]
+/mob/observer/dead/proc/topic_track(datum/act/op/A, href_track)
+	var/mob/target = href_track
 	if(target)
 		ManualFollow(target)
 	return TRUE
 
-/mob/observer/dead/proc/topic_reenter(mob/user, list/args)
+/mob/observer/dead/proc/topic_reenter(datum/act/op/A)
 	reenter_corpse()
 	return TRUE
 

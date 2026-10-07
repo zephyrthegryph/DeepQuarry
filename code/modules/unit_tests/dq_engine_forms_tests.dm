@@ -113,6 +113,27 @@ CAPABILITY_TYPE(forms_jammed, CAP_FORMS_JAMMED, /datum/capability/forms_jammed, 
 	M.jam_ticks++
 	GLOB.forms_ticks++
 
+CAPABILITY_TYPE(forms_plain_state, CAP_FORMS_PLAIN_STATE, /datum/capability/forms_plain_state, key = NONE)
+/datum/capability/forms_plain_state/entries()
+	return list()
+
+/// A plain datum (not an atom) with modes(): it starts in the state its var names.
+/datum/forms_plain_machine
+	var/mode = /datum/capability/forms_plain_state
+
+TRACKED(/datum/forms_plain_machine, mode)
+
+CAPABILITIES(/datum/forms_plain_machine)
+	modes(nameof(mode))
+
+/datum/unit_test/forms_modes_plain_datum_initial_state
+
+/datum/unit_test/forms_modes_plain_datum_initial_state/Run()
+	var/datum/forms_plain_machine/M = new
+	TEST_ASSERT(granted(M, /datum/capability/forms_plain_state), "a plain datum with modes() was not granted the state its var names when it was made")
+	TEST_ASSERT_EQUAL(mode_now(M, "mode"), /datum/capability/forms_plain_state, "mode_now() does not report the initial state of a plain datum")
+	qdel(M)
+
 /// A capability type nothing declared with CAPABILITY_TYPE: not a valid mode.
 /datum/capability/forms_undeclared
 

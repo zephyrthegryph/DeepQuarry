@@ -11,6 +11,7 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/rcd)
 	owns_one(nameof(my_rcd), starts = /obj/item/rcd/electric/mounted/mecha)
+	op("mode", topic("mode", arg("mode", num(), optional = TRUE)), then(PROC_REF(topic_mode)))
 
 
 /obj/item/mecha_parts/mecha_equipment/tool/rcd/action(atom/target)
@@ -19,11 +20,10 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/rcd)
 
 	my_rcd.use_rcd(target, chassis?.slot_item(MECHA_SLOT_PILOT))
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/rcd, "mode", PROC_REF(topic_mode), TOPIC_NUM("mode"))
 
-/obj/item/mecha_parts/mecha_equipment/tool/rcd/proc/topic_mode(mob/user, list/args)
-	if(isnum(args["mode"]))
-		my_rcd.mode_index = args["mode"]
+/obj/item/mecha_parts/mecha_equipment/tool/rcd/proc/topic_mode(datum/act/op/A, href_mode)
+	if(isnum(href_mode))
+		my_rcd.mode_index = href_mode
 		occupant_message("RCD reconfigured to '[LAZYACCESS(TYPE_TABLE_GET(my_rcd, rcd_modes), my_rcd.mode_index)]'.")
 /*
 /obj/item/mecha_parts/mecha_equipment/tool/rcd/get_equip_info()

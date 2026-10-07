@@ -136,9 +136,10 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 
 /// Answers the actor's open request with a value, or ends it with an outcome (REQ_CANCELLED, REQ_TIMED_OUT) when
 /// `outcome` is given: a REQ_* constant is a small number a value could equal, so the outcome has its own argument.
-/// Returns the /datum/op_result of the op that was waiting, now advanced.
-/proc/test_answer(mob/actor, value, outcome = REQ_ANSWERED)
-	return request_answer(actor, value, outcome)
+/// Returns the /datum/op_result of the op that was waiting, now advanced. An actor with several questions open answers the oldest, or the one of the op
+/// named `op_key`.
+/proc/test_answer(mob/actor, value, outcome = REQ_ANSWERED, op_key = null)
+	return request_answer(actor, value, outcome, op_key)
 
 /// Every prompt request opened since test_prompts_reset(), in order (null: not recording).
 GLOBAL_VAR(test_prompts)
@@ -280,11 +281,21 @@ GLOBAL_VAR(test_prompts)
 	. = call(holder, proc_name)(arglist(call_args))
 	A.release()
 
-/// Calls a request handler directly: x(datum/act/request/A) for a request that `answerer` answered with `value` (a prompt of `kind`, answered as given).
-/proc/test_request_handler(datum/holder, proc_name, mob/answerer, value, kind = /datum/prompt/choice)
+/// Calls a request handler directly (`as_op`: an op handler that reads A.answer and A.actor): x(datum/act/request/A) for a request that `answerer` answered with `value` (a prompt of `kind`, answered as given).
+/proc/test_request_handler(datum/holder, proc_name, mob/answerer, value, kind = /datum/prompt/choice, as_op = FALSE)
 	var/datum/request/R = new kind
 	R.answerer = answerer // ALLOW(ownership): a throwaway request record for one direct handler call, discarded at the end of the proc
 	R.value = value
+	if(as_op) // an op's asks() step answered: the handler gets the op's context (actor, answer) as then() gives it
+		var/datum/act/op/O = take(/datum/act/op)
+		O.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		O.target = holder
+		O.actor = answerer
+		O.answer = R // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		. = call(holder, proc_name)(O)
+		O.release()
+		qdel(R) // ALLOW(lifecycle): the throwaway request record of this test call was never owned by anything
+		return
 	var/datum/act/request/A = take(/datum/act/request)
 	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	A.request = R // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release

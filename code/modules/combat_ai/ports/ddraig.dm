@@ -52,7 +52,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/ddraig, get_ai_target_selectors, list( \
 	var/mob/living/simple_mob/vore/ddraig/D = brain.holder
 	if(!istype(D) || D.client)
 		return null
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!threat)
 		return null
 	var/dist = get_dist(D, threat)
@@ -187,7 +187,7 @@ TYPE_TABLE(/datum/ai_behavior/ddraig_tfbeam, get_player_verb_info, list( \
 		return null
 	if(D.vitality() >= 0.25)
 		return null
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!threat)
 		return null
 	return DQAI_RESULT(150, threat)
@@ -201,7 +201,7 @@ TYPE_TABLE(/datum/ai_behavior/ddraig_tfbeam, get_player_verb_info, list( \
 	// Several big steps away, like the legacy stacked step_away calls.
 	if(target)
 		for(var/i in 1 to 5)
-			step_away(D, target, bolt_distance)
+			brain.act_step_away(target, bolt_distance)
 	after(D, cloak_duration, TYPE_PROC_REF(/atom/movable, uncloak))
 	return DQ_BEHAVIOR_DONE
 
@@ -222,7 +222,7 @@ TYPE_TABLE(/datum/ai_behavior/ddraig_tfbeam, get_player_verb_info, list( \
 	var/mob/living/simple_mob/vore/ddraig/D = brain.holder
 	if(!istype(D) || !dq_get_cloaked(D))
 		return null
-	var/mob/threat = brain.primary_threat
+	var/mob/threat = brain.primary_target()
 	if(!threat)
 		return null
 	// Below the panic-cloak score so the cloak itself wins on the trigger tick.
@@ -234,5 +234,5 @@ TYPE_TABLE(/datum/ai_behavior/ddraig_tfbeam, get_player_verb_info, list( \
 		return DQ_BEHAVIOR_FAILED
 	if(!dq_get_cloaked(D) || get_dist(D, target) >= 10)
 		return DQ_BEHAVIOR_DONE
-	step_away(D, target, 8)
+	brain.act_step_away(target, 8)
 	return DQ_BEHAVIOR_CONTINUE

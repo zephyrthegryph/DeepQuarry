@@ -94,6 +94,11 @@
 //Dies with a variety of messages, a disgusting sound, then drops the control module, bones, blood, gibs, and a cloud of miasma.
 // the possessed suit collapses into remains and miasma.
 /mob/living/simple_mob/humanoid/possessed/on_destroy(force)
+	collapse()
+	..()
+
+/// The collapse: a message, a sound, gibs, remains and a miasma grenade where the suit stood.
+/mob/living/simple_mob/humanoid/possessed/proc/collapse()
 	var/droploc = get_turf(src)
 	play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
 	act_message(src, null, null, MSG_OTHERS(span_critical(pick("The horrid screech of metal grating metal cuts through the air as the suit's interlocking joints grind and fold inwards upon itself. A putrid wash of decayed flesh spills forwards, staining the ground dark with the contents of the collapsing RIG's long expired pilot.",
@@ -114,7 +119,6 @@
 	*/
 	new /obj/effect/decal/remains/human(droploc)
 	new /obj/item/grenade/chem_grenade/miasma(droploc)
-	..()
 
 //What about if someone's in it? Well here you go.
 /mob/living/simple_mob/humanoid/possessed/Login()

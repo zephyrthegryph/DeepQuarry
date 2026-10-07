@@ -38,6 +38,15 @@ CAPABILITIES(/atom)
 	owns_one(nameof(reagents), /datum/reagents)
 	owns_one(nameof(rx_node), /datum/dq_rx_node)
 	owns_many(nameof(alt_appearances_owned))
+	op("statpanel_item_click", topic("statpanel_item_click", arg("statpanel_item_click", schema_text(8), optional = TRUE), arg("statpanel_item_shiftclick", schema_text(8), optional = TRUE), arg("statpanel_item_ctrlclick", schema_text(8), optional = TRUE), arg("statpanel_item_altclick", schema_text(8), optional = TRUE)), then(PROC_REF(topic_statpanel_click)))
+	op("vv_explode", topic_in(VV_TOPIC, VV_HK_TRIGGER_EXPLOSION), then(PROC_REF(vv_topic_explosion)))
+	op("vv_empulse", topic_in(VV_TOPIC, VV_HK_TRIGGER_EMP), then(PROC_REF(vv_topic_emp)))
+	op("vv_atom_transform", topic_in(VV_TOPIC, VV_HK_MODIFY_TRANSFORM), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_modify_transform)))
+	op("vv_atom_spin", topic_in(VV_TOPIC, VV_HK_SPIN_ANIMATION), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_spin_animation)))
+	op("vv_stop_animations", topic_in(VV_TOPIC, VV_HK_STOP_ALL_ANIMATIONS), needs(req_rights(R_VAREDIT)), asks(/datum/prompt/yes_no, fields = list("title" = "Stop Animating", "question" = "Are you sure?", "rights" = R_VAREDIT, "timeout" = 0), step = "sure"), then(PROC_REF(vv_topic_stop_animations)))
+	op("vv_auto_rename", topic_in(VV_TOPIC, VV_HK_AUTO_RENAME), needs(req_rights(R_VAREDIT)), asks(/datum/prompt/text, fields = list("title" = "Automatic Rename", "question" = "What do you want to rename this to?", "rights" = R_VAREDIT, "timeout" = 0), step = "name"), then(PROC_REF(vv_topic_auto_rename)))
+	op("vv_edit_filters", topic_in(VV_TOPIC, VV_HK_EDIT_FILTERS), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_edit_filters)))
+	op("vv_test_matrixes", topic_in(VV_TOPIC, VV_HK_TEST_MATRIXES), needs(req_rights(R_VAREDIT)), then(PROC_REF(vv_topic_test_matrixes)))
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 
 /datum/artifact_master

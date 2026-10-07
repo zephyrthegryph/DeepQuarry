@@ -27,7 +27,7 @@
 		TEST_ASSERT(istype(request), "actual self click opens native department request")
 		TEST_ASSERT(request.radial && request.tooltips, "real request retains radial tooltips")
 		TEST_ASSERT_EQUAL(request.anchor, manager, "actual ring is anchored to original device")
-		TEST_ASSERT_EQUAL(request.timeout, 0, "department choice keeps original unlimited timeout")
+		TEST_ASSERT_EQUAL(request.timeout, REQUEST_DEFAULT_TIMEOUT, "department choice keeps original unlimited timeout (a request given no timeout gets the default, framework_gaps.md E2)")
 		TEST_ASSERT_EQUAL(length(request.choices), 6, "actual choice offers all six original departments")
 		TEST_ASSERT(department in request.choices, "actual offered department is a canonical accepted choice")
 		if(department == ROUND2_TASK_ENGINEERING)

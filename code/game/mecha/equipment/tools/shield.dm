@@ -16,6 +16,7 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/combat_shield)
 	owns_one(nameof(my_shield), /obj/item/shield_projector/line/exosuit)
+	op("toggle_shield", topic("toggle_shield"), then(PROC_REF(topic_toggle_shield)))
 
 /obj/item/mecha_parts/mecha_equipment/combat_shield/Initialize(mapload)
 	. = ..()
@@ -75,9 +76,8 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/combat_shield)
 			step_delay = 1
 			src.mecha_log_message("Deactivated.")
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/combat_shield, "toggle_shield", PROC_REF(topic_toggle_shield))
 
-/obj/item/mecha_parts/mecha_equipment/combat_shield/proc/topic_toggle_shield(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/combat_shield/proc/topic_toggle_shield(datum/act/op/A)
 	toggle_shield()
 	return
 

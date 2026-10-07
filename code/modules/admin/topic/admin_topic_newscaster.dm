@@ -1,37 +1,26 @@
 // Admin newscaster href actions. The ac_ prefix stands for AdminCaster; every action re-opens
 // the admin news network panel when it is done.
 
-TOPIC_ACTION(/datum/admins, "ac_view_wanted", PROC_REF(topic_ac_view_wanted))
-TOPIC_ACTION(/datum/admins, "ac_set_channel_name", PROC_REF(topic_ac_set_channel_name))
-TOPIC_ACTION(/datum/admins, "ac_set_channel_lock", PROC_REF(topic_ac_set_channel_lock))
-TOPIC_ACTION(/datum/admins, "ac_submit_new_channel", PROC_REF(topic_ac_submit_new_channel))
-TOPIC_ACTION(/datum/admins, "ac_set_channel_receiving", PROC_REF(topic_ac_set_channel_receiving))
-TOPIC_ACTION(/datum/admins, "ac_set_new_title", PROC_REF(topic_ac_set_new_title))
-TOPIC_ACTION(/datum/admins, "ac_set_new_message", PROC_REF(topic_ac_set_new_message))
-TOPIC_ACTION(/datum/admins, "ac_submit_new_message", PROC_REF(topic_ac_submit_new_message))
-TOPIC_ACTION(/datum/admins, "ac_create_channel", PROC_REF(topic_ac_create_channel))
-TOPIC_ACTION(/datum/admins, "ac_create_feed_story", PROC_REF(topic_ac_create_feed_story))
-TOPIC_ACTION(/datum/admins, "ac_menu_censor_story", PROC_REF(topic_ac_menu_censor_story))
-TOPIC_ACTION(/datum/admins, "ac_menu_censor_channel", PROC_REF(topic_ac_menu_censor_channel))
-TOPIC_ACTION(/datum/admins, "ac_menu_wanted", PROC_REF(topic_ac_menu_wanted))
-TOPIC_ACTION(/datum/admins, "ac_set_wanted_name", PROC_REF(topic_ac_set_wanted_name))
-TOPIC_ACTION(/datum/admins, "ac_set_wanted_desc", PROC_REF(topic_ac_set_wanted_desc))
-TOPIC_ACTION(/datum/admins, "ac_submit_wanted", PROC_REF(topic_ac_submit_wanted), TOPIC_NUM("ac_submit_wanted"))
-TOPIC_ACTION(/datum/admins, "ac_cancel_wanted", PROC_REF(topic_ac_cancel_wanted))
-TOPIC_ACTION(/datum/admins, "ac_censor_channel_author", PROC_REF(topic_ac_censor_channel_author), TOPIC_REF("ac_censor_channel_author", /datum/feed_channel))
-TOPIC_ACTION(/datum/admins, "ac_censor_channel_story_author", PROC_REF(topic_ac_censor_channel_story_author), TOPIC_REF("ac_censor_channel_story_author", /datum/feed_message))
-TOPIC_ACTION(/datum/admins, "ac_censor_channel_story_body", PROC_REF(topic_ac_censor_channel_story_body), TOPIC_REF("ac_censor_channel_story_body", /datum/feed_message))
-TOPIC_ACTION(/datum/admins, "ac_pick_d_notice", PROC_REF(topic_ac_pick_d_notice), TOPIC_REF("ac_pick_d_notice", /datum/feed_channel))
-TOPIC_ACTION(/datum/admins, "ac_toggle_d_notice", PROC_REF(topic_ac_toggle_d_notice), TOPIC_REF("ac_toggle_d_notice", /datum/feed_channel))
-TOPIC_ACTION(/datum/admins, "ac_view", PROC_REF(topic_ac_view))
-TOPIC_ACTION(/datum/admins, "ac_setScreen", PROC_REF(topic_ac_setscreen), TOPIC_NUM("ac_setScreen"))
-TOPIC_ACTION(/datum/admins, "ac_show_channel", PROC_REF(topic_ac_show_channel), TOPIC_REF("ac_show_channel", /datum/feed_channel))
-TOPIC_ACTION(/datum/admins, "ac_pick_censor_channel", PROC_REF(topic_ac_pick_censor_channel), TOPIC_REF("ac_pick_censor_channel", /datum/feed_channel))
-TOPIC_ACTION(/datum/admins, "ac_refresh", PROC_REF(topic_ac_refresh))
-TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature))
+
+MSG_DEF_SELF(admin_topic/channel_unsubmittable, "A Feed channel needs a name that no other channel has.")
+MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and a description.")
+
+/// Requirement: the channel being drafted can be created.
+/datum/admins/proc/ac_channel_ready(datum/act/op/A)
+	return admincaster_channel_ready
+
+/// Requirement: the Wanted draft can be issued.
+/datum/admins/proc/ac_wanted_ready(datum/act/op/A)
+	return admincaster_wanted_ready
+
+/// Brings the tracked readiness of the channel and the Wanted draft in line with the drafts and the network.
+/datum/admins/proc/admincaster_resync()
+	set_admincaster_channel_ready(ac_channel_submittable())
+	set_admincaster_wanted_ready(ac_wanted_submittable())
 
 /// Re-opens the admin news network panel after an admincaster action.
 /datum/admins/proc/admincaster_refresh(mob/user)
+	admincaster_resync()
 	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/access_news_network)
 
 /// Switches the admincaster to `screen` and refreshes.
@@ -39,89 +28,65 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 	admincaster_screen = screen
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_view_wanted(mob/user, list/args)
+/datum/admins/proc/topic_ac_view_wanted(datum/act/op/A)
+	var/mob/user = A.actor
 	admincaster_goto(user, 18)
 
-/datum/admins/proc/topic_ac_set_channel_name(mob/user, list/args)
-	var/datum/request/replayed = admincaster_prompt_request(user, args, "a35")
-	if(!replayed)
-		var/list/original_href = admincaster_scalar_href(args)
-		open_request(src, /datum/prompt/text/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, question = "Provide a Feed Channel Name", title = "Network Channel Handler", encode = FALSE, captured = list("href" = original_href, "ac_key" = "a35"))
-		return
-	var/answer = replayed.value
-	if(isnull(answer))
-		return
-	admincaster_feed_channel().channel_name = sanitizeSafe(answer)
+/datum/admins/proc/topic_ac_set_channel_name(datum/act/op/A)
+	var/mob/user = A.actor
+	admincaster_feed_channel().channel_name = sanitizeSafe(A.step_value("answer"))
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_set_channel_lock(mob/user, list/args)
+/datum/admins/proc/topic_ac_set_channel_lock(datum/act/op/A)
+	var/mob/user = A.actor
 	admincaster_feed_channel().locked = !admincaster_feed_channel().locked
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_submit_new_channel(mob/user, list/args)
-	var/check = 0
+/// A new channel can be created when it has a name no other channel has.
+/datum/admins/proc/ac_channel_submittable()
+	var/channel_name = admincaster_feed_channel().channel_name
+	if(channel_name == "" || channel_name == "\[REDACTED\]")
+		return FALSE
 	for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
-		if(FC.channel_name == admincaster_feed_channel().channel_name)
-			check = 1
-			break
-	if(admincaster_feed_channel().channel_name == "" || admincaster_feed_channel().channel_name == "\[REDACTED\]" || check)
+		if(FC.channel_name == channel_name)
+			return FALSE
+	return TRUE
+
+/datum/admins/proc/topic_ac_submit_new_channel(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!ac_channel_submittable())
 		admincaster_screen = 7
-	else
-		var/datum/request/replayed = admincaster_prompt_request(user, args, "a36")
-		if(!replayed)
-			var/list/original_href = admincaster_scalar_href(args)
-			open_request(src, /datum/prompt/choice/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, buttons = TRUE, question = "Please confirm Feed channel creation", title = "Network Channel Handler", choices = list("Confirm","Cancel"), captured = list("href" = original_href, "ac_key" = "a36"))
-			return
-		var/choice = replayed.value
-		if(isnull(choice))
-			return
-		if(choice == "Confirm")
-			GLOB.news_network.CreateFeedChannel(admincaster_feed_channel().channel_name, admincaster_signature, admincaster_feed_channel().locked, 1)
-			feedback_inc("newscaster_channels",1)                  //Adding channel to the global network
-			log_admin("[key_name_admin(user)] created command feed channel: [admincaster_feed_channel().channel_name]!")
-			admincaster_screen = 5
+	else if(A.step_value("confirm") == "Confirm")
+		GLOB.news_network.CreateFeedChannel(admincaster_feed_channel().channel_name, admincaster_signature, admincaster_feed_channel().locked, 1)
+		feedback_inc("newscaster_channels",1)                  //Adding channel to the global network
+		log_admin("[key_name_admin(user)] created command feed channel: [admincaster_feed_channel().channel_name]!")
+		admincaster_screen = 5
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_set_channel_receiving(mob/user, list/args)
+/// The names of the channels on the network (the choices of the receiving-channel question).
+/datum/admins/proc/ac_channel_names(datum/act/op/A)
 	var/list/available_channels = list()
 	for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
 		available_channels += F.channel_name
-	var/datum/request/replayed = admincaster_prompt_request(user, args, "a37")
-	if(!replayed)
-		var/list/original_href = admincaster_scalar_href(args)
-		open_request(src, /datum/prompt/choice/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, question = "Choose receiving Feed Channel", title = "Network Channel Handler", choices = available_channels, captured = list("href" = original_href, "ac_key" = "a37"))
-		return
-	var/answer = replayed.value
-	if(isnull(answer))
-		return
-	admincaster_feed_channel().channel_name = answer
+	return available_channels
+
+/datum/admins/proc/topic_ac_set_channel_receiving(datum/act/op/A)
+	var/mob/user = A.actor
+	admincaster_feed_channel().channel_name = A.step_value("answer")
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_set_new_title(mob/user, list/args)
-	var/datum/request/replayed = admincaster_prompt_request(user, args, "a38")
-	if(!replayed)
-		var/list/original_href = admincaster_scalar_href(args)
-		open_request(src, /datum/prompt/text/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, question = "Enter the Feed title", title = "Network Channel Handler", captured = list("href" = original_href, "ac_key" = "a38"))
-		return
-	var/answer = replayed.value
-	if(isnull(answer))
-		return
-	admincaster_feed_message.title = answer
+/datum/admins/proc/topic_ac_set_new_title(datum/act/op/A)
+	var/mob/user = A.actor
+	admincaster_feed_message.title = A.step_value("answer")
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_set_new_message(mob/user, list/args)
-	var/datum/request/replayed = admincaster_prompt_request(user, args, "a39")
-	if(!replayed)
-		var/list/original_href = admincaster_scalar_href(args)
-		open_request(src, /datum/prompt/text/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, question = "Write your Feed story", title = "Network Channel Handler", multiline = TRUE, captured = list("href" = original_href, "ac_key" = "a39"))
-		return
-	var/answer = replayed.value
-	if(isnull(answer))
-		return
-	admincaster_feed_message.body = answer
+/datum/admins/proc/topic_ac_set_new_message(datum/act/op/A)
+	var/mob/user = A.actor
+	admincaster_feed_message.body = A.step_value("answer")
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_submit_new_message(mob/user, list/args)
+/datum/admins/proc/topic_ac_submit_new_message(datum/act/op/A)
+	var/mob/user = A.actor
 	if(admincaster_feed_message.body == "" || admincaster_feed_message.title == "" || admincaster_feed_message.body == "\[REDACTED\]" || admincaster_feed_channel().channel_name == "")
 		admincaster_screen = 6
 	else
@@ -132,102 +97,86 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 	log_admin("[key_name_admin(user)] submitted a feed story to channel: [admincaster_feed_channel().channel_name]!")
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_create_channel(mob/user, list/args)
+/datum/admins/proc/topic_ac_create_channel(datum/act/op/A)
+	var/mob/user = A.actor
 	admincaster_goto(user, 2)
 
-/datum/admins/proc/topic_ac_create_feed_story(mob/user, list/args)
+/datum/admins/proc/topic_ac_create_feed_story(datum/act/op/A)
+	var/mob/user = A.actor
 	admincaster_goto(user, 3)
 
-/datum/admins/proc/topic_ac_menu_censor_story(mob/user, list/args)
+/datum/admins/proc/topic_ac_menu_censor_story(datum/act/op/A)
+	var/mob/user = A.actor
 	admincaster_goto(user, 10)
 
-/datum/admins/proc/topic_ac_menu_censor_channel(mob/user, list/args)
+/datum/admins/proc/topic_ac_menu_censor_channel(datum/act/op/A)
+	var/mob/user = A.actor
 	admincaster_goto(user, 11)
 
-/datum/admins/proc/topic_ac_menu_wanted(mob/user, list/args)
+/datum/admins/proc/topic_ac_menu_wanted(datum/act/op/A)
+	var/mob/user = A.actor
 	var/datum/feed_message/wanted = GLOB.news_network.wanted_issue()
 	if(wanted)
 		admincaster_feed_message.author = wanted.author
 		admincaster_feed_message.body = wanted.body
 	admincaster_goto(user, 14)
 
-/datum/admins/proc/topic_ac_set_wanted_name(mob/user, list/args)
-	var/datum/request/replayed = admincaster_prompt_request(user, args, "a40")
-	if(!replayed)
-		var/list/original_href = admincaster_scalar_href(args)
-		open_request(src, /datum/prompt/text/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, question = "Provide the name of the Wanted person", title = "Network Security Handler", captured = list("href" = original_href, "ac_key" = "a40"))
-		return
-	var/answer = replayed.value
-	if(isnull(answer))
-		return
-	admincaster_feed_message.author = answer
+/datum/admins/proc/topic_ac_set_wanted_name(datum/act/op/A)
+	var/mob/user = A.actor
+	admincaster_feed_message.author = A.step_value("answer")
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_set_wanted_desc(mob/user, list/args)
-	var/datum/request/replayed = admincaster_prompt_request(user, args, "a41")
-	if(!replayed)
-		var/list/original_href = admincaster_scalar_href(args)
-		open_request(src, /datum/prompt/text/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, question = "Provide the a description of the Wanted person and any other details you deem important", title = "Network Security Handler", captured = list("href" = original_href, "ac_key" = "a41"))
-		return
-	var/answer = replayed.value
-	if(isnull(answer))
-		return
-	admincaster_feed_message.body = answer
+/datum/admins/proc/topic_ac_set_wanted_desc(datum/act/op/A)
+	var/mob/user = A.actor
+	admincaster_feed_message.body = A.step_value("answer")
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_submit_wanted(mob/user, list/args)
-	var/input_param = args["ac_submit_wanted"]
-	if(admincaster_feed_message.author == "" || admincaster_feed_message.body == "")
+/// A Wanted issue can be issued when it has a name and a description.
+/datum/admins/proc/ac_wanted_submittable()
+	return !(admincaster_feed_message.author == "" || admincaster_feed_message.body == "")
+
+/datum/admins/proc/ac_wanted_question(datum/act/op/A)
+	return "Please confirm Wanted Issue [(A.args["ac_submit_wanted"] == 1) ? ("creation.") : ("edit.")]"
+
+/datum/admins/proc/topic_ac_submit_wanted(datum/act/op/A, href_ac_submit_wanted)
+	var/mob/user = A.actor
+	var/input_param = href_ac_submit_wanted
+	if(!ac_wanted_submittable())
 		admincaster_screen = 16
-	else
-		var/datum/request/replayed = admincaster_prompt_request(user, args, "a42")
-		if(!replayed)
-			var/list/original_href = admincaster_scalar_href(args)
-			open_request(src, /datum/prompt/choice/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, buttons = TRUE, question = "Please confirm Wanted Issue [(input_param==1) ? ("creation.") : ("edit.")]", title = "Network Security Handler", choices = list("Confirm","Cancel"), captured = list("href" = original_href, "ac_key" = "a42"))
-			return
-		var/choice = replayed.value
-		if(isnull(choice))
-			return
-		if(choice == "Confirm")
-			if(input_param == 1)          //If input_param == 1 we're submitting a new wanted issue. At 2 we're just editing an existing one. See the else below
-				var/datum/feed_message/WANTED = new /datum/feed_message
-				WANTED.author = admincaster_feed_message.author               //Wanted name
-				WANTED.body = admincaster_feed_message.body                   //Wanted desc
-				WANTED.backup_author = admincaster_signature                  //Submitted by
-				WANTED.is_admin_message = 1
-				rel_set(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), WANTED)
-				for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
-					NEWSCASTER.newsAlert()
-					NEWSCASTER.update_icon()
-				admincaster_screen = 15
-			else
-				var/datum/feed_message/wanted = GLOB.news_network.wanted_issue()
-				if(wanted)
-					wanted.author = admincaster_feed_message.author
-					wanted.body = admincaster_feed_message.body
-					wanted.backup_author = admincaster_feed_message.backup_author
-				admincaster_screen = 19
-			log_admin("[key_name_admin(user)] issued a Station-wide Wanted Notification for [admincaster_feed_message.author]!")
+	else if(A.step_value("confirm") == "Confirm")
+		if(input_param == 1)          //If input_param == 1 we're submitting a new wanted issue. At 2 we're just editing an existing one. See the else below
+			var/datum/feed_message/WANTED = new /datum/feed_message
+			WANTED.author = admincaster_feed_message.author               //Wanted name
+			WANTED.body = admincaster_feed_message.body                   //Wanted desc
+			WANTED.backup_author = admincaster_signature                  //Submitted by
+			WANTED.is_admin_message = 1
+			rel_set(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), WANTED)
+			for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
+				NEWSCASTER.newsAlert()
+				NEWSCASTER.update_icon()
+			admincaster_screen = 15
+		else
+			var/datum/feed_message/wanted = GLOB.news_network.wanted_issue()
+			if(wanted)
+				wanted.author = admincaster_feed_message.author
+				wanted.body = admincaster_feed_message.body
+				wanted.backup_author = admincaster_feed_message.backup_author
+			admincaster_screen = 19
+		log_admin("[key_name_admin(user)] issued a Station-wide Wanted Notification for [admincaster_feed_message.author]!")
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_cancel_wanted(mob/user, list/args)
-	var/datum/request/replayed = admincaster_prompt_request(user, args, "a43")
-	if(!replayed)
-		var/list/original_href = admincaster_scalar_href(args)
-		open_request(src, /datum/prompt/choice/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, buttons = TRUE, question = "Please confirm Wanted Issue removal", title = "Network Security Handler", choices = list("Confirm","Cancel"), captured = list("href" = original_href, "ac_key" = "a43"))
-		return
-	var/choice = replayed.value
-	if(isnull(choice))
-		return
-	if(choice == "Confirm")
+/datum/admins/proc/topic_ac_cancel_wanted(datum/act/op/A)
+	var/mob/user = A.actor
+	if(A.step_value("confirm") == "Confirm")
 		own_clear(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), OWN_DELETE)
 		for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 			NEWSCASTER.update_icon()
 		admincaster_screen = 17
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_censor_channel_author(mob/user, list/args)
-	var/datum/feed_channel/FC = args["ac_censor_channel_author"]
+/datum/admins/proc/topic_ac_censor_channel_author(datum/act/op/A, href_ac_censor_channel_author)
+	var/mob/user = A.actor
+	var/datum/feed_channel/FC = href_ac_censor_channel_author
 	if(FC.author != span_bold("\[REDACTED\]"))
 		FC.backup_author = FC.author
 		FC.author = span_bold("\[REDACTED\]")
@@ -235,8 +184,9 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 		FC.author = FC.backup_author
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_censor_channel_story_author(mob/user, list/args)
-	var/datum/feed_message/MSG = args["ac_censor_channel_story_author"]
+/datum/admins/proc/topic_ac_censor_channel_story_author(datum/act/op/A, href_ac_censor_channel_story_author)
+	var/mob/user = A.actor
+	var/datum/feed_message/MSG = href_ac_censor_channel_story_author
 	if(MSG.author != span_bold("\[REDACTED\]"))
 		MSG.backup_author = MSG.author
 		MSG.author = span_bold("\[REDACTED\]")
@@ -244,8 +194,9 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 		MSG.author = MSG.backup_author
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_censor_channel_story_body(mob/user, list/args)
-	var/datum/feed_message/MSG = args["ac_censor_channel_story_body"]
+/datum/admins/proc/topic_ac_censor_channel_story_body(datum/act/op/A, href_ac_censor_channel_story_body)
+	var/mob/user = A.actor
+	var/datum/feed_message/MSG = href_ac_censor_channel_story_body
 	if(MSG.body != span_bold("\[REDACTED\]"))
 		MSG.backup_body = MSG.body
 		MSG.body = span_bold("\[REDACTED\]")
@@ -253,21 +204,25 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 		MSG.body = MSG.backup_body
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_pick_d_notice(mob/user, list/args)
-	rel_set(src, nameof(admincaster_feed_channel), args["ac_pick_d_notice"])
+/datum/admins/proc/topic_ac_pick_d_notice(datum/act/op/A, href_ac_pick_d_notice)
+	var/mob/user = A.actor
+	rel_set(src, nameof(admincaster_feed_channel), href_ac_pick_d_notice)
 	admincaster_goto(user, 13)
 
-/datum/admins/proc/topic_ac_toggle_d_notice(mob/user, list/args)
-	var/datum/feed_channel/FC = args["ac_toggle_d_notice"]
+/datum/admins/proc/topic_ac_toggle_d_notice(datum/act/op/A, href_ac_toggle_d_notice)
+	var/mob/user = A.actor
+	var/datum/feed_channel/FC = href_ac_toggle_d_notice
 	FC.censored = !FC.censored
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_view(mob/user, list/args)
+/datum/admins/proc/topic_ac_view(datum/act/op/A)
+	var/mob/user = A.actor
 	admincaster_goto(user, 1)
 
 /// Brings us to the main menu and resets all fields.
-/datum/admins/proc/topic_ac_setscreen(mob/user, list/args)
-	admincaster_screen = args["ac_setScreen"]
+/datum/admins/proc/topic_ac_setscreen(datum/act/op/A, href_ac_setscreen)
+	var/mob/user = A.actor
+	admincaster_screen = href_ac_setscreen
 	if(admincaster_screen == 0)
 		if(admincaster_feed_channel())
 			rel_clear(src, nameof(admincaster_feed_channel))
@@ -276,53 +231,24 @@ TOPIC_ACTION(/datum/admins, "ac_set_signature", PROC_REF(topic_ac_set_signature)
 			rel_set(src, nameof(admincaster_feed_message), new /datum/feed_message)
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_show_channel(mob/user, list/args)
-	rel_set(src, nameof(admincaster_feed_channel), args["ac_show_channel"])
+/datum/admins/proc/topic_ac_show_channel(datum/act/op/A, href_ac_show_channel)
+	var/mob/user = A.actor
+	rel_set(src, nameof(admincaster_feed_channel), href_ac_show_channel)
 	admincaster_goto(user, 9)
 
-/datum/admins/proc/topic_ac_pick_censor_channel(mob/user, list/args)
-	rel_set(src, nameof(admincaster_feed_channel), args["ac_pick_censor_channel"])
+/datum/admins/proc/topic_ac_pick_censor_channel(datum/act/op/A, href_ac_pick_censor_channel)
+	var/mob/user = A.actor
+	rel_set(src, nameof(admincaster_feed_channel), href_ac_pick_censor_channel)
 	admincaster_goto(user, 12)
 
-/datum/admins/proc/topic_ac_refresh(mob/user, list/args)
+/datum/admins/proc/topic_ac_refresh(datum/act/op/A)
+	var/mob/user = A.actor
 	admincaster_refresh(user)
 
-/datum/admins/proc/topic_ac_set_signature(mob/user, list/args)
-	var/datum/request/replayed = admincaster_prompt_request(user, args, "a44")
-	if(!replayed)
-		var/list/original_href = admincaster_scalar_href(args)
-		open_request(src, /datum/prompt/text/admincaster_topic, PROC_REF(admincaster_prompt_answered), answerer = user, question = "Provide your desired signature", title = "Network Identity Handler", captured = list("href" = original_href, "ac_key" = "a44"))
-		return
-	var/answer = replayed.value
-	if(isnull(answer))
-		return
-	admincaster_signature = answer
+/datum/admins/proc/topic_ac_set_signature(datum/act/op/A)
+	var/mob/user = A.actor
+	admincaster_signature = A.step_value("answer")
 	admincaster_refresh(user)
-
-/// Keep only the original href: an ended replay token never parks in a later request.
-/datum/admins/proc/admincaster_scalar_href(list/args)
-	var/list/original_href = args[TOPIC_HREF]
-	var/list/scalar_href = original_href.Copy()
-	scalar_href -= "ac_request"
-	return scalar_href
-
-/// Only an actual ended question supplies an admincaster answer.
-/datum/admins/proc/admincaster_prompt_request(mob/user, list/args, key)
-	var/list/original_href = args[TOPIC_HREF]
-	var/datum/request/resumed
-	if(original_href)
-		resumed = original_href["ac_request"]
-	if((istype(resumed, /datum/prompt/text/admincaster_topic) || istype(resumed, /datum/prompt/choice/admincaster_topic)) && resumed.owner == src && resumed.answerer == user && resumed.outcome == REQ_ANSWERED && !resumed.is_open() && !QDELETED(resumed) && resumed.handler == PROC_REF(admincaster_prompt_answered) && resumed.captured?["ac_key"] == key)
-		return resumed
-	return null
-
-/datum/admins/proc/admincaster_prompt_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/list/captured_href = A.answer.captured["href"]
-	var/list/replayed_href = captured_href.Copy()
-	replayed_href["ac_request"] = A.answer
-	world.push_usr(A.request.answerer, new /datum/callback(GLOBAL_PROC, GLOBAL_PROC_REF(topic_dispatch)), src, A.request.answerer, replayed_href)
 
 /datum/prompt/text/admincaster_topic
 	timeout = 0

@@ -56,7 +56,7 @@ TYPE_TABLE(/mob/living/simple_mob/ysbryd, get_ai_behaviors, list( \
 	var/mob/living/simple_mob/ysbryd/Y = brain.holder
 	if(!istype(Y))
 		return DQ_BEHAVIOR_DONE
-	var/mob/living/threat = brain.primary_threat
+	var/mob/living/threat = brain.primary_target()
 
 	if(threat)
 		// Honor the legacy 1-minute re-acquire gate: don't abandon a live victim

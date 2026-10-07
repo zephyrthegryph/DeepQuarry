@@ -20,6 +20,7 @@
 	response_harm = "hits"
 
 	movement_cooldown = 1.5
+	faction = FACTION_WOLF // wolves hunt in packs (combat_ai/factions/factions.dm); the dogs below stay with the station's pets
 
 	harm_intent_damage = 5
 	melee_damage_lower = 5
@@ -125,6 +126,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf)
 	name = "large dog"
 	desc = "The biggest and goodest dog around."
 	tt_desc = "Canis maxdirus familiaris"
+	faction = FACTION_NEUTRAL
 	icon_dead = "diredog-dead"
 	icon_living = "diredog"
 	icon_state = "diredog"
@@ -141,6 +143,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/wolf/direwolf)
 /mob/living/simple_mob/vore/wolf/direwolf/sec
 	name = "dire guard wolf"
 	desc = "The biggest and baddest guard wolf around."
+	faction = FACTION_NEUTRAL
 	icon_dead = "direwolfs-dead"
 	icon_living = "direwolfs"
 	icon_state = "direwolfs"

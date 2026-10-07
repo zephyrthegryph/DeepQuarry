@@ -60,11 +60,12 @@
 	equip_type = EQUIP_MICRO_WEAPON
 	required_type = list(/obj/mecha/micro/sec)
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun, "mode", PROC_REF(topic_mode), TOPIC_NUM("mode"))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun)
+	op("mode", topic("mode", arg("mode", num(), optional = TRUE)), then(PROC_REF(topic_mode)))
 
-/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun/proc/topic_mode(mob/user, list/args)
-	if(isnum(args["mode"]))
-		mode = args["mode"]
+/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun/proc/topic_mode(datum/act/op/A, href_mode)
+	if(isnum(href_mode))
+		mode = href_mode
 		switch(mode)
 			if(0)
 				occupant_message("Now firing buckshot.")
@@ -183,9 +184,10 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun
 						ore.Move(src)
 	return 1
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop, "empty_box", PROC_REF(topic_empty_box))
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop)
+	op("empty_box", topic("empty_box"), then(PROC_REF(topic_empty_box)))
 
-/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/proc/topic_empty_box(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/micro/orescoop/proc/topic_empty_box(datum/act/op/A)
 	if(contents_count(src) < 1)
 		occupant_message("The ore compartment is empty.")
 		return

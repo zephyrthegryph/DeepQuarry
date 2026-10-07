@@ -410,81 +410,87 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	if(. > 30 && prob(. - 20))
 		induce_arrhythmia(CARDIAC_RHYTHM_VF)
 
-TOPIC_ACTION(/mob/living/carbon/human, "lookitem", PROC_REF(topic_lookitem), TOPIC_REF("lookitem", /obj/item))
-TOPIC_ACTION(/mob/living/carbon/human, "lookitem_desc_only", PROC_REF(topic_lookitem_desc_only), TOPIC_REF("lookitem_desc_only", /obj/item, PROC_REF(topic_worn_items)))
-TOPIC_ACTION(/mob/living/carbon/human, "flavor_change", PROC_REF(topic_flavor_change_part), TOPIC_TEXT("flavor_change", 32))
 // HUD record links (examine): see TYPE_TABLE_GET(src, hud_record_kinds).
-TOPIC_ACTION(/mob/living/carbon/human, "criminal", PROC_REF(topic_hud_criminal))
-TOPIC_ACTION(/mob/living/carbon/human, "medical", PROC_REF(topic_hud_medical))
-TOPIC_ACTION(/mob/living/carbon/human, "secrecord", PROC_REF(topic_hud_secrecord))
-TOPIC_ACTION(/mob/living/carbon/human, "medrecord", PROC_REF(topic_hud_medrecord))
-TOPIC_ACTION(/mob/living/carbon/human, "emprecord", PROC_REF(topic_hud_emprecord))
-TOPIC_ACTION(/mob/living/carbon/human, "secrecordComment", PROC_REF(topic_hud_seccomments))
-TOPIC_ACTION(/mob/living/carbon/human, "medrecordComment", PROC_REF(topic_hud_medcomments))
-TOPIC_ACTION(/mob/living/carbon/human, "emprecordComment", PROC_REF(topic_hud_empcomments))
-TOPIC_ACTION(/mob/living/carbon/human, "secrecordadd", PROC_REF(topic_hud_secadd))
-TOPIC_ACTION(/mob/living/carbon/human, "medrecordadd", PROC_REF(topic_hud_medadd))
-TOPIC_ACTION(/mob/living/carbon/human, "emprecordadd", PROC_REF(topic_hud_empadd))
 
 /// TOPIC_REF source: everything this human wears or carries (accessories included).
 /mob/living/carbon/human/proc/topic_worn_items()
 	return get_all_contents()
 
-/mob/living/carbon/human/proc/topic_lookitem(mob/user, list/args)
-	var/obj/item/I = args["lookitem"]
+/mob/living/carbon/human/proc/topic_lookitem(datum/act/op/A, href_lookitem)
+	var/obj/item/I = href_lookitem
 	src.examinate(I)
 	return TRUE
 
-/mob/living/carbon/human/proc/topic_lookitem_desc_only(mob/user, list/args)
-	var/obj/item/I = args["lookitem_desc_only"]
+/mob/living/carbon/human/proc/topic_lookitem_desc_only(datum/act/op/A, href_lookitem_desc_only)
+	var/mob/user = A.actor
+	var/obj/item/I = href_lookitem_desc_only
 	if(istype(I,/obj/item/hand))
 		to_chat(user,span_warning("You can't see the card faces from here."))
 		return
 	user.examinate(I, 1)
 	return TRUE
 
-/mob/living/carbon/human/proc/topic_flavor_change_part(mob/user, list/args)
-	if(user != src) // only your own flavor text
-		return
-	flavor_change_topic(user, args["flavor_change"])
+/mob/living/carbon/human/topic_flavor_change(datum/act/op/A, href_flavor_change)
+	var/mob/user = A.actor
+	flavor_change_topic(user, href_flavor_change)
 	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_criminal(mob/user, list/args)
+/mob/living/carbon/human/proc/topic_hud_criminal(datum/act/op/A)
+	var/mob/user = A.actor
 	if(hasHUD(user, "security"))
 		hud_topic_status(user, "security")
 	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_medical(mob/user, list/args)
+/mob/living/carbon/human/proc/topic_hud_medical(datum/act/op/A)
+	var/mob/user = A.actor
 	if(hasHUD(user, "medical"))
 		hud_topic_status(user, "medical")
 	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_secrecord(mob/user, list/args)
-	return hud_record_link(user, "security", "show")
+/mob/living/carbon/human/proc/topic_hud_secrecord(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "security", "show")
+	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_medrecord(mob/user, list/args)
-	return hud_record_link(user, "medical", "show")
+/mob/living/carbon/human/proc/topic_hud_medrecord(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "medical", "show")
+	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_emprecord(mob/user, list/args)
-	return hud_record_link(user, "best", "show")
+/mob/living/carbon/human/proc/topic_hud_emprecord(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "best", "show")
+	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_seccomments(mob/user, list/args)
-	return hud_record_link(user, "security", "comments")
+/mob/living/carbon/human/proc/topic_hud_seccomments(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "security", "comments")
+	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_medcomments(mob/user, list/args)
-	return hud_record_link(user, "medical", "comments")
+/mob/living/carbon/human/proc/topic_hud_medcomments(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "medical", "comments")
+	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_empcomments(mob/user, list/args)
-	return hud_record_link(user, "best", "comments")
+/mob/living/carbon/human/proc/topic_hud_empcomments(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "best", "comments")
+	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_secadd(mob/user, list/args)
-	return hud_record_link(user, "security", "add")
+/mob/living/carbon/human/proc/topic_hud_secadd(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "security", "add")
+	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_medadd(mob/user, list/args)
-	return hud_record_link(user, "medical", "add")
+/mob/living/carbon/human/proc/topic_hud_medadd(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "medical", "add")
+	return TRUE
 
-/mob/living/carbon/human/proc/topic_hud_empadd(mob/user, list/args)
-	return hud_record_link(user, "best", "add")
+/mob/living/carbon/human/proc/topic_hud_empadd(datum/act/op/A)
+	var/mob/user = A.actor
+	hud_record_link(user, "best", "add")
+	return TRUE
 
 /// The flavor text editor's links: close it, or edit one part.
 /mob/living/carbon/human/proc/flavor_change_topic(mob/user, part)
@@ -2182,46 +2188,42 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 	VV_DROPDOWN_OPTION(VK_HK_TURN_AI, "Make AI")
 	VV_DROPDOWN_OPTION(VK_HK_TURN_ROBOT, "Make Robot")
 
-VV_TOPIC_ACTION(/mob/living/carbon/human, VV_HK_SET_SPECIES, PROC_REF(vv_topic_set_species), TOPIC_RIGHTS(R_SPAWN))
-VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_SKELETON, PROC_REF(vv_topic_turn_skeleton), TOPIC_RIGHTS(R_FUN))
-VV_TOPIC_ACTION(/mob/living/carbon/human, VV_HK_TURN_MONKEY, PROC_REF(vv_topic_turn_monkey), TOPIC_RIGHTS(R_SPAWN))
-VV_TOPIC_ACTION(/mob/living/carbon/human, VV_HK_TURN_ALIEN, PROC_REF(vv_topic_turn_alien), TOPIC_RIGHTS(R_SPAWN))
-VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_AI, PROC_REF(vv_topic_turn_ai), TOPIC_RIGHTS(R_SPAWN))
-VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_turn_robot), TOPIC_RIGHTS(R_SPAWN))
 
-/mob/living/carbon/human/proc/vv_topic_set_species(mob/user, list/args)
-	open_request(src, /datum/prompt/choice, PROC_REF(vv_species_chosen), answerer = user, title = "Species", question = "Please choose a new species", choices = sortTim(GLOB.all_species, GLOBAL_PROC_REF(cmp_text_asc)), rights = R_SPAWN, timeout = 0)
-	return TRUE
+/mob/living/carbon/human/proc/vv_species_choices(datum/act/op/A)
+	return sortTim(GLOB.all_species, GLOBAL_PROC_REF(cmp_text_asc))
 
-/mob/living/carbon/human/proc/vv_topic_turn_skeleton(mob/user, list/args)
+/mob/living/carbon/human/proc/vv_topic_set_species(datum/act/op/A)
+	var/mob/user = A.actor
+	var/result = A.step_value("species")
+	var/newtype = GLOB.all_species[result]
+	admin_ticket_log("[key_name_admin(user)] has modified the bodyparts of [src] to [result]")
+	set_species(newtype)
+
+/mob/living/carbon/human/proc/vv_topic_turn_skeleton(datum/act/op/A)
+	var/mob/user = A.actor
 	ChangeToSkeleton()
 	user.client?.debug_variables(src)
 	return TRUE
 
-/mob/living/carbon/human/proc/vv_topic_turn_monkey(mob/user, list/args)
+/mob/living/carbon/human/proc/vv_topic_turn_monkey(datum/act/op/A)
+	var/mob/user = A.actor
 	vv_confirm_transform(user, "monkey")
 	return TRUE
 
-/mob/living/carbon/human/proc/vv_topic_turn_alien(mob/user, list/args)
+/mob/living/carbon/human/proc/vv_topic_turn_alien(datum/act/op/A)
+	var/mob/user = A.actor
 	vv_confirm_transform(user, "alien")
 	return TRUE
 
-/mob/living/carbon/human/proc/vv_topic_turn_ai(mob/user, list/args)
+/mob/living/carbon/human/proc/vv_topic_turn_ai(datum/act/op/A)
+	var/mob/user = A.actor
 	vv_confirm_transform(user, "ai")
 	return TRUE
 
-/mob/living/carbon/human/proc/vv_topic_turn_robot(mob/user, list/args)
+/mob/living/carbon/human/proc/vv_topic_turn_robot(datum/act/op/A)
+	var/mob/user = A.actor
 	vv_confirm_transform(user, "robot")
 	return TRUE
-
-/mob/living/carbon/human/proc/vv_species_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/result = A.answer.value
-	var/newtype = GLOB.all_species[result]
-	admin_ticket_log("[key_name_admin(user)] has modified the bodyparts of [src] to [result]")
-	set_species(newtype)
 
 /// Asks the admin to confirm turning us into `into` ("monkey", "alien", "ai" or "robot").
 /mob/living/carbon/human/proc/vv_confirm_transform(mob/user, into)

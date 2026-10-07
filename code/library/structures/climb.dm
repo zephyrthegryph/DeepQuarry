@@ -182,9 +182,9 @@ CAPABILITY_TYPE(climb, CAP_CLIMB, /datum/capability/lib/climb, key = NONE, delay
 		if(!climb_topple(M, holder))
 			continue
 		log_world("CLIMB: [M] shaken off [holder] by [shaker || "nobody"]")
-		var/datum/pending_op/P = op_pending_of(M)
-		if(P && P.holder == holder)
-			P.cancel(null)
+		for(var/datum/pending_op/P as anything in op_pendings_of(M))
+			if(P.holder == holder && istype(P.cap, /datum/capability/lib/climb))
+				P.cancel(null)
 
 /// `M` falls off `holder`: knocked down, and a quarter of the time they land hard. FALSE when they are left alone (not solid, already down, pulling it).
 /proc/climb_topple(mob/living/M, atom/movable/holder)

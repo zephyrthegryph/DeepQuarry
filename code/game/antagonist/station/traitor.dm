@@ -21,10 +21,11 @@ GLOBAL_DATUM(traitors, /datum/antagonist/traitor)
 /datum/antagonist/traitor/get_extra_panel_options(datum/mind/player)
 	return "<a href='byond://?src=\ref[player];[HrefToken()];common=crystals'>\[set crystals\]</a><a href='byond://?src=\ref[src];[HrefToken()];spawn_uplink=\ref[player.current]'>\[spawn uplink\]</a>"
 
-TOPIC_ACTION(/datum/antagonist/traitor, "spawn_uplink", PROC_REF(topic_spawn_uplink), TOPIC_RIGHTS(R_ADMIN|R_EVENT), TOPIC_REF("spawn_uplink", /mob/living/carbon/human))
+CAPABILITIES(/datum/antagonist/traitor)
+	op("spawn_uplink", topic("spawn_uplink", arg("spawn_uplink", schema_ref(/mob/living/carbon/human), optional = TRUE)), needs(req_rights(R_ADMIN|R_EVENT)), then(PROC_REF(topic_spawn_uplink)))
 
-/datum/antagonist/traitor/proc/topic_spawn_uplink(mob/user, list/args)
-	spawn_uplink(args["spawn_uplink"])
+/datum/antagonist/traitor/proc/topic_spawn_uplink(datum/act/op/A, href_spawn_uplink)
+	spawn_uplink(href_spawn_uplink)
 
 /datum/antagonist/traitor/create_objectives(datum/mind/traitor)
 	if(!..())

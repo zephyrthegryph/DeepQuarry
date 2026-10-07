@@ -19,6 +19,11 @@ SOURCE_DEF(damage)
 SOURCE_DEF(maintenance)
 /// A machine's own on/off switch.
 SOURCE_DEF(switch)
+/// The faction tables as AI base standings (code/modules/combat_ai/standings/standings.dm), and an admin's word on what a brain thinks of someone.
+SOURCE_DEF(ai_faction)
+SOURCE_DEF(ai_lord)
+SOURCE_DEF(ai_alpha)
+SOURCE_DEF(ai_admin)
 
 /// Tags and capability ids share the numbers a bare id can be, so tags start at TAG_BASE and extend() tells the two apart.
 #define TAG_BASE 1000

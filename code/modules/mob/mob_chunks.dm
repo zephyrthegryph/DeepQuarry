@@ -19,6 +19,9 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 	var/id
 	/// REF(watcher) -> list(mask, handler).
 	var/list/watchers
+	/// REF(mob) -> TRUE for every living mob standing in this chunk, kept by publish_mob_move() and the mob's init and destroy. Held by REF text like the
+	/// watchers, so a deleted mob never lingers; the AI packs read it to find who is near (living_in_chunk()). Filled by a scan when the chunk is made.
+	var/list/living_refs
 
 /// The chunk id for a location, or null off-map.
 /proc/mob_chunk_id(atom/location)
@@ -34,7 +37,45 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 		C = new
 		C.id = id
 		GLOB.mob_chunks["[id]"] = C
+		mob_chunk_scan(C)
 	return C
+
+/// Fills a new chunk's living_refs from the turfs it covers (the ids are MOB_CHUNK_NUMERIC_KEY(z, chunk_x, chunk_y)).
+/proc/mob_chunk_scan(datum/mob_chunk/C)
+	var/chunk_x = C.id % 256
+	var/rest = (C.id - chunk_x) / 256
+	var/chunk_y = rest % 256
+	var/z = (rest - chunk_y) / 256
+	if(z < 1 || z > world.maxz)
+		return
+	for(var/x in (chunk_x * CHUNK_SIZE + 1) to min(chunk_x * CHUNK_SIZE + CHUNK_SIZE, world.maxx))
+		for(var/y in (chunk_y * CHUNK_SIZE + 1) to min(chunk_y * CHUNK_SIZE + CHUNK_SIZE, world.maxy))
+			var/turf/T = locate(x, y, z)
+			if(!T)
+				continue
+			for(var/mob/living/L as anything in turf_contents_of_type(T, /mob/living))
+				LAZYSET(C.living_refs, REF(L), TRUE)
+
+/// The living mobs standing in the chunk with id `id` (a fresh list; callers filter stat and deletion).
+/proc/living_in_chunk(id)
+	. = list()
+	var/datum/mob_chunk/C = GLOB.mob_chunks["[id]"] || mob_chunk(id)
+	for(var/key in C.living_refs)
+		var/mob/living/L = locate(key)
+		if(L && !QDELETED(L) && REF(L) == key)
+			. += L
+
+/// A living mob came into (`entered` TRUE) or left the chunk with id `id`: kept only for chunks that exist (a new chunk scans).
+/proc/living_chunk_note(mob/living/L, id, entered)
+	if(isnull(id))
+		return
+	var/datum/mob_chunk/C = GLOB.mob_chunks["[id]"]
+	if(!C)
+		return
+	if(entered)
+		LAZYSET(C.living_refs, REF(L), TRUE)
+	else
+		LAZYREMOVE(C.living_refs, REF(L))
 
 /// Raises `bits` on chunk `id` if anything watches it.
 /proc/mob_chunk_changed(id, bits)
@@ -89,7 +130,9 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 	return null
 
 /// A mob appeared in or vanished from `location`'s chunk (Initialize, Destroy).
-/proc/publish_mob_chunk(atom/location)
+/proc/publish_mob_chunk(atom/location, entered = null)
+	if(isliving(location) && !isnull(entered))
+		living_chunk_note(location, mob_chunk_id(location), entered)
 	if(GLOB.mob_chunk_watches)
 		mob_chunk_changed(mob_chunk_id(location), CHANGE_CHUNK_ANY_MOB)
 
@@ -105,6 +148,12 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
  * counters first.
  */
 /proc/publish_mob_move(atom/old_loc, atom/movable/mover, player)
+	if(isliving(mover) && length(GLOB.mob_chunks)) // the living-mob index of every chunk that exists follows the mob, watched or not
+		var/living_new_id = mob_chunk_id(mover)
+		var/living_old_id = mob_chunk_id(old_loc)
+		if(living_old_id != living_new_id)
+			living_chunk_note(mover, living_old_id, FALSE)
+			living_chunk_note(mover, living_new_id, TRUE)
 	var/bits = GLOB.mob_chunk_watches ? CHANGE_CHUNK_ANY_MOB : 0
 	if(player && GLOB.player_chunk_watches)
 		bits |= CHANGE_CHUNK_PLAYER

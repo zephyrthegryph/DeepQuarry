@@ -142,11 +142,16 @@ SYSTEM_DEF(requests)
 			request_end(R, REQ_CANCELLED, null)
 	return STEP_DONE
 
-/// The oldest open request `answerer` is to answer, or null.
-/datum/system/requests/proc/open_for(datum/answerer)
+/// The oldest open request `answerer` is to answer, or null. `op_key` narrows it to the question of the pending op of that key (an actor may have several open).
+/datum/system/requests/proc/open_for(datum/answerer, op_key = null)
 	for(var/datum/request/R as anything in open)
-		if(R.answerer == answerer && R.is_open())
-			return R
+		if(R.answerer != answerer || !R.is_open())
+			continue
+		if(!isnull(op_key))
+			var/datum/pending_op/asking = R.owner
+			if(!istype(asking) || asking.key != op_key)
+				continue
+		return R
 	return null
 
 /datum/system/requests/metrics()
@@ -389,12 +394,12 @@ SYSTEM_DEF(requests)
 /proc/request_op_resume(datum/request/R)
 	return
 
-/// Answers `actor`'s oldest open request with `value`, or ends it with `outcome` (REQ_CANCELLED, REQ_TIMED_OUT). Returns the
+/// Answers `actor`'s oldest open request (the one of the op named `op_key`, when given) with `value`, or ends it with `outcome` (REQ_CANCELLED, REQ_TIMED_OUT). Returns the
 /// /datum/op_result of the op that was waiting (the record an earlier call handed out, now advanced), or null when the request
 /// had no op waiting or `actor` has nothing open.
-/proc/request_answer(datum/actor, value, outcome = REQ_ANSWERED)
+/proc/request_answer(datum/actor, value, outcome = REQ_ANSWERED, op_key = null)
 	RETURN_TYPE(/datum/op_result)
-	var/datum/request/R = SSrequests.open_for(actor)
+	var/datum/request/R = SSrequests.open_for(actor, op_key)
 	if(!R)
 		return null
 	var/datum/op_result/waiting = R.waiting

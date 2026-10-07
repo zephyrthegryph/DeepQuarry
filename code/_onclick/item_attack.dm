@@ -37,6 +37,9 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	// Converted handlers (I7): interactions with entry = INTERACTION_ENTRY_SELF.
 	if(run_interaction_entry(user, src, src, INTERACTION_ENTRY_SELF))
 		return TRUE
+	// The item's in_hand() ops: the Z key and an item's action button reach them here (a click on the held item resolves them in the inbox first).
+	if(op_resolve_click(user, src, src, GESTURE_SELF, ORIGIN_CLICK))
+		return TRUE
 	return
 
 /**

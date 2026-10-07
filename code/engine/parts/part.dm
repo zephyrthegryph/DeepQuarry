@@ -236,6 +236,12 @@
 	var/list/rest = args.Copy(2)
 	return part_make(/datum/entry/part/bind/topic, list("key" = key), entry_flatten(rest))
 
+/// topic_in(NAMESPACE, "key", args...): a Topic link in a separate href namespace (the View Variables dropdown, VV_TOPIC). A plain href never reaches it:
+/// only a dispatch that names the namespace does (op_topic_href(..., namespace)), and that dispatch brings its own gate.
+/proc/topic_in(namespace, key, ...)
+	var/list/rest = args.Copy(3)
+	return part_make(/datum/entry/part/bind/topic, list("key" = key, "namespace" = namespace), entry_flatten(rest))
+
 /// inputs(bindings...): the whole set of an op's bindings; in an extend it replaces them.
 /proc/inputs(...)
 	return part_make(/datum/entry/part/inputs, null, entry_flatten(args))
@@ -257,8 +263,11 @@
 /datum/entry/part/ui_arg
 	part_name = "arg"
 
-/proc/arg(name, datum/schema/schema = null, from = null)
-	return part_make(/datum/entry/part/ui_arg, list("name" = name, "schema" = schema, "from" = from))
+/// optional = TRUE: a link or button may leave the value out, and the handler gets null (a present value still crosses the schema).
+/// among = SOURCE: a ref arg names its thing by the text of its ref, and is looked up only in SOURCE (TOPIC_IN_MOBS, TOPIC_IN_WORLD, TOPIC_IN_CONTENTS, a
+/// proc on the holder that returns the list to search, ...: topic_resolve_ref()) instead of anywhere locate() reaches.
+/proc/arg(name, datum/schema/schema = null, from = null, optional = FALSE, among = null)
+	return part_make(/datum/entry/part/ui_arg, list("name" = name, "schema" = schema, "from" = from, "optional" = optional, "among" = among))
 
 // ---- select parts (each replaces one column of what the binding implies) ----
 
@@ -645,11 +654,16 @@
 	part_name = "quiet"
 	stages = PART_STAGE_DO
 
-/// claims(): while the op waits (a wait() step), its target is claimed: a second claiming op on the same target is refused (/datum/msg/op/claimed)
-/// instead of starting, and op_claimed(target) answers TRUE so the target can draw the work (a door being pried shows its prying sprite).
-/// The claim ends with the wait, however it ends.
-/proc/claims()
-	return part_make(/datum/entry/part/claims)
+/// claims(mask): what the op holds while it waits, as CLAIM_HANDS, CLAIM_BODY and CLAIM_TARGET ored together (claims() alone is all three, claims(0)
+/// holds nothing). Ops whose claims overlap conflict, and ops that share none coexist, however many an actor has pending:
+///   - CLAIM_TARGET: a second claiming op on the same target is refused (/datum/msg/op/claimed) instead of starting, and op_claimed(target) answers
+///     TRUE so the target can draw the work (a door being pried shows its prying sprite). It lasts as long as the op is pending.
+///   - CLAIM_HANDS and CLAIM_BODY: while a wait() step runs, the actor's next input that needs those (any physical click needs the hands) stops the
+///     wait ("You stop what you were doing."), and an AI's is refused as busy. An op with no claims() of its own that has a timed wait on a physical
+///     binding holds hands and body; a question (asks(), confirms()) holds nothing, so any number of questions are open at once.
+/// Every claim ends with the wait, however it ends.
+/proc/claims(mask = null)
+	return part_make(/datum/entry/part/claims, isnull(mask) ? null : list("mask" = mask))
 
 /datum/entry/part/claims
 	part_name = "claims"

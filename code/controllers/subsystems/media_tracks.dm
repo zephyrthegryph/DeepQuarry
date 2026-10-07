@@ -271,15 +271,18 @@ SYSTEM_DEF(media_tracks)
 	VV_DROPDOWN_OPTION("add_track", "Add New Track")
 	VV_DROPDOWN_OPTION("remove_track", "Remove Track")
 
-VV_TOPIC_ACTION(/datum/system/media_tracks, "add_track", PROC_REF(vv_topic_add_track))
-VV_TOPIC_ACTION(/datum/system/media_tracks, "remove_track", PROC_REF(vv_topic_remove_track))
+CAPABILITIES(/datum/system/media_tracks)
+	op("vv_add_track", topic_in(VV_TOPIC, "add_track"), then(PROC_REF(vv_topic_add_track)))
+	op("vv_remove_track", topic_in(VV_TOPIC, "remove_track"), then(PROC_REF(vv_topic_remove_track)))
 
-/datum/system/media_tracks/proc/vv_topic_add_track(mob/user, list/args)
+/datum/system/media_tracks/proc/vv_topic_add_track(datum/act/op/A)
+	var/mob/user = A.actor
 	manual_track_add(user)
 	user.client?.debug_variables(src)
 	return TRUE
 
-/datum/system/media_tracks/proc/vv_topic_remove_track(mob/user, list/args)
+/datum/system/media_tracks/proc/vv_topic_remove_track(datum/act/op/A)
+	var/mob/user = A.actor
 	manual_track_remove(user)
 	user.client?.debug_variables(src)
 	return TRUE

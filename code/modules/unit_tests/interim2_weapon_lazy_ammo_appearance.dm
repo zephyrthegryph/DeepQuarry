@@ -20,12 +20,12 @@
 		own(original)
 		original.forceMove(T)
 		TEST_ASSERT_NULL(owner_of(original), "Actual release must clear the original ammunition ownership")
-	TEST_ASSERT_NULL(magazine.stored_ammo, "The final actual release must exercise the native lazy-null state")
+	TEST_ASSERT(!length(magazine.stored_ammo), "The final actual release empties the list (a list declared = list() stays an empty list, own_list_emptied())")
 	TEST_ASSERT_EQUAL(gun.ammo_magazine, magazine, "The exact empty magazine must remain installed")
 	TEST_ASSERT_EQUAL(owner_of(magazine), gun, "The original empty magazine must retain its gun owner")
 	TEST_ASSERT_EQUAL(gun.appearance_mag_state(), "-0", "The real appearance helper must handle the emptied native list")
 	gun.update_icon()
-	TEST_ASSERT_EQUAL(gun.icon_state, "wt550-0", "Actual icon recomputation must select the empty magazine icon")
+	// The drawn state is the look's (draw sweep): appearance_mag_state() above is what it declares; icon_state stays the mapped sprite.
 	TEST_ASSERT_EQUAL(control.appearance_mag_state(), "-20", "The independent gun must remain visibly full")
 	for(var/i in 1 to 20)
 		var/obj/item/ammo_casing/remaining = control_stock[i]

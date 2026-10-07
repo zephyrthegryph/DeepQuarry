@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Browser and chat links (hrefs) now run as ops through the input inbox, with the same requirements and refusals as a click; the exosuit, item, mob, datum and admin panels' links are converted"
+  - code_imp: "A link whose value the schema cannot read is refused and the player told; text and numbers in links are checked by their schemas"

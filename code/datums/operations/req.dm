@@ -13,6 +13,7 @@
 
 // ---- reasons ----
 
+
 /// The player-facing text of reason `reason_type`, with ctx.detail filled where the template asks.
 /proc/req_reason_text(reason_type, datum/op_ctx/ctx)
 	if(!reason_type)

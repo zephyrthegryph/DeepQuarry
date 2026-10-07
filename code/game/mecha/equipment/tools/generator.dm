@@ -18,6 +18,7 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/generator)
 	owns_one(nameof(fuel), starts = nameof(fuel_type))
+	op("toggle", topic("toggle"), then(PROC_REF(topic_toggle)))
 
 
 OM_FIELD(/obj/item/mecha_parts/mecha_equipment/generator, generating, FALSE, CHANGE_EXPLICIT)
@@ -48,9 +49,8 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/mecha_parts/mecha_equipment/generator, PERI
 	..()
 	return
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/generator, "toggle", PROC_REF(topic_toggle))
 
-/obj/item/mecha_parts/mecha_equipment/generator/proc/topic_toggle(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/generator/proc/topic_toggle(datum/act/op/A)
 	if(generating)
 		set_generating(FALSE)
 		set_ready_state(TRUE)

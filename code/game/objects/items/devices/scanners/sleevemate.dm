@@ -106,6 +106,12 @@ CAPABILITIES(/obj/item/sleevemate)
 		asks(/datum/prompt/choice, fields = list("title" = computed(PROC_REF(stored_title)), "question" = "What would you like to do?", "choices" = list("Delete", "Backup", "Cancel"), "buttons" = TRUE, "timeout" = 0)),
 		then(PROC_REF(stored_mind_action)))
 	emag(list(asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(hack_question)), "choices" = list("Body Snatcher", "Mind Binder"), "timeout" = 0)), then(PROC_REF(hack_chosen))), repeatable = TRUE, powered = FALSE)
+	op("mindscan", topic("mindscan", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_mindscan)))
+	op("bodyscan", topic("bodyscan", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_bodyscan)))
+	op("mindsteal", topic("mindsteal", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS)), asks(/datum/prompt/choice/sleevemate_mindsteal, fields = list("victim" = computed(PROC_REF(mindsteal_victim))), step = "confirm"), then(PROC_REF(topic_mindsteal)))
+	op("mindput", topic("mindput", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_mindput)))
+	op("mindupload", topic("mindupload", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_mindupload)))
+	op("mindrelease", topic("mindrelease", arg("target", schema_ref(/mob/living), optional = TRUE, among = TOPIC_IN_MOBS), arg("mindrelease", schema_text(MAX_NAME_LEN), optional = TRUE)), then(PROC_REF(topic_mindrelease)))
 
 /// Requirement: there has to be a stored mind to manage.
 /obj/item/sleevemate/proc/can_manage_mind(datum/act/op/A)
@@ -209,12 +215,6 @@ MSG_DEF_SELF(sleevemate/empty, "There is no stored mind in it.")
 
 	to_chat(user,output)
 
-TOPIC_ACTION(/obj/item/sleevemate, "mindscan", PROC_REF(topic_mindscan), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS))
-TOPIC_ACTION(/obj/item/sleevemate, "bodyscan", PROC_REF(topic_bodyscan), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS))
-TOPIC_ACTION(/obj/item/sleevemate, "mindsteal", PROC_REF(topic_mindsteal), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS))
-TOPIC_ACTION(/obj/item/sleevemate, "mindput", PROC_REF(topic_mindput), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS))
-TOPIC_ACTION(/obj/item/sleevemate, "mindupload", PROC_REF(topic_mindupload), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS))
-TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), TOPIC_REF("target", /mob/living, TOPIC_IN_MOBS), TOPIC_TEXT("mindrelease", MAX_NAME_LEN))
 
 // Every scan link works only from the active hand.
 /obj/item/sleevemate/topic_allowed(mob/user, list/href_list)
@@ -227,8 +227,7 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 		return FALSE
 
 /// The link's target, if it is there and next to `user` (says why not otherwise).
-/obj/item/sleevemate/proc/topic_target(mob/user, list/args)
-	var/mob/living/target = args["target"]
+/obj/item/sleevemate/proc/topic_target(mob/user, mob/living/target)
 	if(!target)
 		to_chat(user,span_warning("Unable to operate on that target."))
 		return null
@@ -237,8 +236,9 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 		return null
 	return target
 
-/obj/item/sleevemate/proc/topic_mindscan(mob/user, list/args)
-	var/mob/living/target = topic_target(user, args)
+/obj/item/sleevemate/proc/topic_mindscan(datum/act/op/A, href_target)
+	var/mob/user = A.actor
+	var/mob/living/target = topic_target(user, href_target)
 	if(!target)
 		return
 	if(!target.mind || (target.mind.name in GLOB.prevent_respawns))
@@ -254,8 +254,9 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 	act_message(user, null, MSG_SELF(span_notice("You begin scanning [target]'s mind.")), MSG_OTHERS("%U% begins scanning [target]'s mind."))
 	task_start(/datum/task/timed/sleevemate_topic, user, target, receiver = src, nif = nif)
 
-/obj/item/sleevemate/proc/topic_bodyscan(mob/user, list/args)
-	var/mob/living/target = topic_target(user, args)
+/obj/item/sleevemate/proc/topic_bodyscan(datum/act/op/A, href_target)
+	var/mob/user = A.actor
+	var/mob/living/target = topic_target(user, href_target)
 	if(!target)
 		return
 	if(!ishuman(target))
@@ -267,22 +268,29 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 	act_message(user, target, MSG_SELF(span_notice("You begin scanning %T%'s body.")), MSG_OTHERS("%U% begins scanning %T%'s body."))
 	task_start(/datum/task/timed/sleevemate_topic2, user, target, receiver = src, H = H)
 
-/obj/item/sleevemate/proc/topic_mindsteal(mob/user, list/args)
-	var/mob/living/target = topic_target(user, args)
+/obj/item/sleevemate/proc/mindsteal_victim(datum/act/op/A)
+	return A.args["target"]
+
+/// The mind steal link, after "Continue": the target is looked at again, as the scan buttons do.
+/obj/item/sleevemate/proc/topic_mindsteal(datum/act/op/A, href_target)
+	var/mob/living/user = A.actor
+	var/mob/living/target = topic_target(user, href_target)
 	if(!target)
 		return
 	if(!target.mind || (target.mind.name in GLOB.prevent_respawns))
 		to_chat(user,span_warning("Target seems totally braindead."))
 		return
-
 	if(stored_mind())
 		to_chat(user,span_warning("There is already someone's mind stored inside"))
 		return
+	if(A.step_value("confirm") != "Continue")
+		return
+	act_message(user, null, MSG_SELF(span_notice("You begin downloading [target]'s mind!")), MSG_OTHERS(span_warning("%U% begins downloading [target]'s mind!")))
+	task_timed(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done3), done_args = list(target, user))
 
-	open_request(src, /datum/prompt/choice/sleevemate_mindsteal, PROC_REF(mindsteal_confirmed), answerer = user, victim = target)
-
-/obj/item/sleevemate/proc/topic_mindput(mob/user, list/args)
-	var/mob/living/target = topic_target(user, args)
+/obj/item/sleevemate/proc/topic_mindput(datum/act/op/A, href_target)
+	var/mob/user = A.actor
+	var/mob/living/target = topic_target(user, href_target)
 	if(!target)
 		return
 	if(!stored_mind())
@@ -313,8 +321,9 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 	SC.catch_mob(GLOB.sleevemate_mob)
 	to_chat(user,span_notice("Mind transferred into Soulcatcher!"))
 
-/obj/item/sleevemate/proc/topic_mindupload(mob/user, list/args)
-	var/mob/living/target = topic_target(user, args)
+/obj/item/sleevemate/proc/topic_mindupload(datum/act/op/A, href_target)
+	var/mob/user = A.actor
+	var/mob/living/target = topic_target(user, href_target)
 	if(!target)
 		return
 	if(!stored_mind())
@@ -338,8 +347,9 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 		MSG_OTHERS(span_warning("%U% begins uploading someone's mind into %T%!")))
 	task_timed(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done4), done_args = list(target, user))
 
-/obj/item/sleevemate/proc/topic_mindrelease(mob/user, list/args)
-	var/mob/living/target = topic_target(user, args)
+/obj/item/sleevemate/proc/topic_mindrelease(datum/act/op/A, href_target, href_mindrelease)
+	var/mob/user = A.actor
+	var/mob/living/target = topic_target(user, href_target)
 	if(!target)
 		return
 	if(stored_mind())
@@ -352,7 +362,7 @@ TOPIC_ACTION(/obj/item/sleevemate, "mindrelease", PROC_REF(topic_mindrelease), T
 	if(!SC)
 		return
 	for(var/mob/living/carbon/brain/caught_soul/soul in SC.brainmobs)
-		if(soul.name == args["mindrelease"])
+		if(soul.name == href_mindrelease)
 			get_mind(soul)
 			rel_remove(SC, nameof(SC.brainmobs), soul)
 			to_chat(user,span_notice("Mind downloaded!"))
@@ -438,15 +448,6 @@ CAPABILITIES(/datum/prompt/choice/sleevemate_mindsteal)
 	if(!answerer.Adjacent(victim))
 		return "too far away"
 	return null
-
-/obj/item/sleevemate/proc/mindsteal_confirmed(datum/act/request/A)
-	if(!A.answer || A.answer.value != "Continue")
-		return
-	var/datum/prompt/choice/sleevemate_mindsteal/ask = A.answer
-	var/mob/living/user = ask.answerer
-	var/mob/living/target = ask.victim
-	act_message(user, null, MSG_SELF(span_notice("You begin downloading [target]'s mind!")), MSG_OTHERS(span_warning("%U% begins downloading [target]'s mind!")))
-	task_timed(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done3), done_args = list(target, user))
 
 /obj/item/sleevemate/proc/hack_question(datum/act/A)
 	return "How would you like to modify the [src]?"

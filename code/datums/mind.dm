@@ -74,6 +74,7 @@ CAPABILITIES(/datum/mind)
 	owns_one(nameof(my_religion), /datum/religion)
 	owns_one(nameof(tgui_edit_memory_panel), /datum/edit_memory_panel)
 	owns_many(nameof(objectives), /datum/objective)
+	op("common_crystals", topic("common=crystals"), needs(req_rights(R_FUN)), asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(crystals_question)), "default" = computed(PROC_REF(crystals_default)), "rights" = R_FUN, "timeout" = 0), step = "amount"), then(PROC_REF(topic_set_crystals)))
 
 /datum/mind/New(key)
 	src.key = key
@@ -150,12 +151,17 @@ CAPABILITIES(/datum/mind)
 	tgui_edit_memory_panel.tgui_interact(user)
 
 // The traitor antag panel's "set crystals" link (/datum/antagonist/traitor/get_extra_panel_options()).
-TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC_RIGHTS(R_FUN))
 
-/datum/mind/proc/topic_set_crystals(mob/user, list/args)
-	open_request(src, /datum/prompt/number, PROC_REF(telecrystals_set), answerer = user, question = "Amount of telecrystals for [key]", default = tcrystals, rights = R_FUN, timeout = 0)
+/datum/mind/proc/crystals_question(datum/act/op/A)
+	return "Amount of telecrystals for [key]"
+
+/datum/mind/proc/crystals_default(datum/act/op/A)
+	return tcrystals
+
+/datum/mind/proc/topic_set_crystals(datum/act/op/A)
+	var/mob/user = A.actor
+	tcrystals = A.step_value("amount")
 	edit_memory(user)
-	return TRUE
 
 /// Starts the admin add-objective questions for this mind.
 /datum/mind/proc/begin_objective_add(mob/user)
@@ -345,12 +351,6 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 	if (objective)
 		rel_remove(src, nameof(objectives), objective)
 	rel_add(src, nameof(objectives), new_objective)
-
-/datum/mind/proc/telecrystals_set(datum/act/request/A)
-	if(!A.answer)
-		return
-	tcrystals = A.answer.value
-	edit_memory(A.request.answerer)
 
 /datum/mind/proc/find_syndicate_uplink()
 	var/list/L = current.get_contents()

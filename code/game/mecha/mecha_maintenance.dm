@@ -31,6 +31,12 @@
 		return null
 	return mech.state
 
+/// The state is a tracked var: written through its setter so the guards that read it see the change.
+/datum/construction_graph/mecha_maintenance/set_state(atom/target, state)
+	var/obj/mecha/mech = target
+	if(istype(mech) && state != CONSTRUCTION_DONE)
+		mech.set_state(state)
+
 /datum/construction_graph/mecha_maintenance/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
 	return
 

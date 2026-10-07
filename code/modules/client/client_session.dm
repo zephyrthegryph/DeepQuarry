@@ -20,6 +20,38 @@
 	/// job id text -> list(target, proc_ref, args): who continues when the ack arrives.
 	var/tmp/list/asset_waiters
 
+// The client's own hrefs (the stat panel, the Discord link, the command bar): ops of its session, so they run as every other link does. Each does
+// what the matching /client/proc/topic_* proc says.
+CAPABILITIES(/datum/client_session)
+	op("priv_msg", topic("priv_msg", arg("priv_msg", schema_text(64), optional = TRUE)), then(PROC_REF(topic_priv_msg)))
+	op("mentorhelp_msg", topic("mentorhelp_msg", arg("mentorhelp_msg", schema_text(64), optional = TRUE)), then(PROC_REF(topic_mentorhelp_msg)))
+	op("discord_reg", topic("discord_reg", arg("discord_reg", schema_text(128), optional = TRUE)), then(PROC_REF(topic_discord_reg)))
+	op("reload_statbrowser", topic("reload_statbrowser"), then(PROC_REF(topic_reload_statbrowser)))
+	op("asset_cache_preload_data", topic("asset_cache_preload_data", arg("asset_cache_preload_data", schema_text(), optional = TRUE)), then(PROC_REF(topic_asset_cache_preload_data)))
+	op("commandbar_typing", topic("commandbar_typing", arg("verb", schema_text(64), optional = TRUE), arg("argument_length", num(), optional = TRUE)), then(PROC_REF(topic_commandbar_typing)))
+	op("open_link", topic("action=openLink", arg("link", schema_text(1024), optional = TRUE)), then(PROC_REF(topic_open_link)))
+
+/datum/client_session/proc/topic_priv_msg(datum/act/op/A, href_priv_msg)
+	client?.topic_priv_msg(A.actor, href_priv_msg)
+
+/datum/client_session/proc/topic_mentorhelp_msg(datum/act/op/A, href_mentorhelp_msg)
+	client?.topic_mentorhelp_msg(A.actor, href_mentorhelp_msg)
+
+/datum/client_session/proc/topic_discord_reg(datum/act/op/A, href_discord_reg)
+	client?.topic_discord_reg(A.actor, href_discord_reg)
+
+/datum/client_session/proc/topic_reload_statbrowser(datum/act/op/A)
+	client?.topic_reload_statbrowser(A.actor)
+
+/datum/client_session/proc/topic_asset_cache_preload_data(datum/act/op/A, href_asset_cache_preload_data)
+	client?.topic_asset_cache_preload_data(A.actor, href_asset_cache_preload_data)
+
+/datum/client_session/proc/topic_commandbar_typing(datum/act/op/A, href_verb, href_argument_length)
+	client?.topic_commandbar_typing(A.actor, href_verb, href_argument_length)
+
+/datum/client_session/proc/topic_open_link(datum/act/op/A, href_link)
+	client?.topic_open_link(A.actor, href_link)
+
 /datum/client_session/New(client/C)
 	..()
 	client = C

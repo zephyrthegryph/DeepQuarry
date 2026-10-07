@@ -15,6 +15,7 @@ MSG_DEF_SELF(op/no_binding, "You can't do that that way.")
 MSG_DEF_SELF(op/busy, "You're already busy doing something.")
 MSG_DEF_SELF(op/claimed, "Someone is already working on that.")
 MSG_DEF_SELF(op/stopped, "You stop what you were doing.")
+MSG_DEF_SELF(op/too_many_pending, "You have too many things going on at once: finish or cancel one first.")
 MSG_DEF_SELF(op/cancelled, "You stop.")
 MSG_DEF_SELF(op/target_gone, "It's gone.")
 MSG_DEF_SELF(op/changed, "It changed while you were deciding.")
@@ -24,6 +25,7 @@ MSG_DEF_SELF(op/unreachable, "You can't reach that.")
 MSG_DEF_SELF(op/failed, "That didn't work.")
 MSG_DEF_SELF(op/unknown, "There is no such thing to do.")
 MSG_DEF_SELF(op/bad_args, "That isn't something you can enter.")
+MSG_DEF_SELF(op/topic_gate, "You cannot use that link right now.")
 MSG_DEF_SELF(op/too_deep, "That is nested too deeply.")
 MSG_DEF_SELF(op/no_resource, "You don't have enough for that.")
 MSG_DEF_SELF(op/cooling_down, "It isn't ready yet.")
@@ -334,6 +336,20 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	var/mob/M = A.actor
 	return !istype(M) || M.stat != DEAD
 
+/// req_self(): the actor is the holder itself (a window or a link only its own mob uses).
+/proc/req_self()
+	return part_make(/datum/entry/part/req/self)
+
+/datum/entry/part/req/self
+	part_name = "req_self"
+	default_reason = /datum/msg/req_silent
+
+/datum/entry/part/req/self/read_keys(datum/act/op/A)
+	return list()
+
+/datum/entry/part/req/self/holds(datum/act/op/A)
+	return !A.actor || A.actor == A.holder
+
 /// req_actor_kind(types, because =, not = FALSE): the actor is one of the given kinds (a type or a list of types: /mob/living/silicon, /mob/observer).
 /// With not = TRUE it refuses those kinds instead ("a cyborg can't do this"). In a when() it picks the op by who is acting; in needs() it
 /// refuses everyone else with `because` (default: "That isn't something you can do."). The actor is the clicking mob, so it is never read from a var.
@@ -442,7 +458,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 
 /datum/entry/part/req/rights
 	part_name = "req_rights"
-	default_reason = /datum/msg/req_forbidden
+	default_reason = /datum/msg/req_no_rights
 
 /datum/entry/part/req/rights/holds(datum/act/op/A)
 	if(A.authority & AUTH_ADMIN)

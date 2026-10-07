@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Boarding a mech's passenger compartment reads the compartment's own slot, so an occupied compartment is skipped"

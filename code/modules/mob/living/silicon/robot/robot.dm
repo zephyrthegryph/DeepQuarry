@@ -1456,14 +1456,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, TYPE_PROC_REF(/atom, appearan
 /mob/living/silicon/robot/proc/installed_modules()
 	robotact.tgui_interact(src)
 
-TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts))
-
-/mob/living/silicon/robot/proc/topic_showalerts(mob/user, list/args)
-	//Only for the Cyborg
-	if(user != src)
-		return
-	subsystem_alarm_monitor()
-	return TRUE
 
 /mob/living/silicon/robot/proc/radio_menu()
 	radio.interact(src)//Just use the radio's Topic() instead of bullshit special-snowflake code

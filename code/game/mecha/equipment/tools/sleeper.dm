@@ -92,9 +92,6 @@ DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, PERIO
 
 // TGUI migration. The view_stats sub-window (formerly
 // browse()) now opens MechaSleeper.tsx; inject/eject move to tgui_act.
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "eject", PROC_REF(topic_eject))
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "view_stats", PROC_REF(topic_view_stats))
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "inject", PROC_REF(topic_inject), TOPIC_REF("inject", /datum/reagent, PROC_REF(topic_injectable_pool)), TOPIC_REF("source", /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, PROC_REF(topic_chassis_equipment)))
 
 /// TOPIC_REF source: the equipment on the same exosuit.
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_chassis_equipment()
@@ -108,15 +105,16 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "inject", PROC_
 			pool += SG.reagents.reagent_list
 	return pool
 
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_eject(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_eject(datum/act/op/A)
 	go_out()
 
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_view_stats(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_view_stats(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_inject(mob/user, list/args)
-	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = args["source"]
-	var/datum/reagent/R = args["inject"]
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/topic_inject(datum/act/op/A, href_inject, href_source)
+	var/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/SG = href_source
+	var/datum/reagent/R = href_inject
 	if(!SG || !R || !(R in SG.reagents?.reagent_list))
 		return
 	inject_reagent(R, SG)
@@ -126,6 +124,9 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/sleeper)
 	without("ui_open")
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("inject", ui_act("inject", arg("ref", schema_ref(/datum/reagent)), arg("source", schema_ref(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun))), then(PROC_REF(ui_act_inject)))
+	op("topic_eject", topic("eject"), then(PROC_REF(topic_eject)))
+	op("view_stats", topic("view_stats"), then(PROC_REF(topic_view_stats)))
+	op("topic_inject", topic("inject", arg("inject", schema_ref(/datum/reagent), optional = TRUE, among = PROC_REF(topic_injectable_pool)), arg("source", schema_ref(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun), optional = TRUE, among = PROC_REF(topic_chassis_equipment))), then(PROC_REF(topic_inject)))
 
 /// /obj/item/mecha_parts/mecha_equipment/tool/sleeper's window data.
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/ui_data(datum/act/eval/A)
