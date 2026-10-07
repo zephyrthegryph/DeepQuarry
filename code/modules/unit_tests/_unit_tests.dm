@@ -356,6 +356,7 @@
 #include "dq_om_world_watch_tests.dm"
 #include "dq_live_sim_tests.dm"
 #include "dq_om_fields_tests.dm"
+#include "dq_fields_tasks_tests.dm"
 #include "dx_ui_validators_tests.dm"
 #include "dq_om_key_tests.dm"
 #include "dq_om_periodic_tests.dm"

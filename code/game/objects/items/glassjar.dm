@@ -58,7 +58,6 @@ TYPE_TABLE_DECLARE(/obj/item/glass_jar, glass_jar_mobs, list(/mob/living/simple_
 		var/obj/effect/spider/spiderling/S = A
 		act_message(user, src, MSG_SELF(span_notice("You scoop [S] into %T%.")), MSG_OTHERS(span_notice("%U% scoops [S] into %T%.")))
 		S.forceMove(src)
-		om_task_periodic_stop(S) // No growing inside jars
 		contains = JAR_SPIDER
 		update_icon()
 		return
@@ -117,7 +116,6 @@ CAPABILITIES(/obj/item/glass_jar)
 			for(var/obj/effect/spider/spiderling/S in contents_of(src))
 				S.forceMove(user.loc)
 				act_message(user, src, MSG_SELF(span_notice("You release [S] from %T%.")), MSG_OTHERS(span_notice("%U% releases [S] from %T%.")))
-				om_task_periodic(S, PERIODIC_SLOW) // They can grow after being let out though
 			contains = JAR_NOTHING
 			update_icon()
 			return OP_OK

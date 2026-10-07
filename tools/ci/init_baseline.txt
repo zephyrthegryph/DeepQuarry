@@ -1034,7 +1034,6 @@ initialize	code/modules/telesci/hyper_pad.dm	/obj/machinery/hyperpad/centre/Init
 initialize	code/modules/telesci/telesci_computer.dm	/obj/machinery/computer/telescience/Initialize(mapload)
 initialize	code/modules/vehicles/Securitrain.dm	/obj/vehicle/train/security/engine/Initialize(mapload)
 initialize	code/modules/vehicles/bike.dm	/obj/vehicle/bike/Initialize(mapload)
-initialize	code/modules/vehicles/bike.dm	/obj/vehicle/bike/built/Initialize(mapload)
 initialize	code/modules/vehicles/cargo_train.dm	/obj/vehicle/train/engine/Initialize(mapload)
 initialize	code/modules/vehicles/cargo_train.dm	/obj/vehicle/train/trolley_tank/Initialize(mapload)
 initialize	code/modules/vehicles/construction.dm	/obj/item/vehicle_assembly/Initialize(mapload)

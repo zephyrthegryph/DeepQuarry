@@ -298,12 +298,13 @@
 	var/datum/alarm_handler/AH = GLOB.power_alarm
 	var/obj/item/origin = allocate(/obj/item, test_floor())
 	if(!length(AH.alarms))
-		om_task_periodic_stop(AH)
+		AH.set_expiring(FALSE)
 	AH.triggerAlarm(origin, origin, duration = 1)
-	TEST_ASSERT(AH.periodic_pipe == PERIODIC_SLOW, "raising an alarm did not start its handler")
+	TEST_ASSERT(AH.expiring, "raising an alarm did not start its handler")
 	AH.clearAlarm(origin, origin)
 	if(!length(AH.alarms))
-		TEST_ASSERT_EQUAL(AH.periodic_step(20), PROCESS_KILL, "a handler with no alarms kept stepping")
+		AH.expire_step(null)
+		TEST_ASSERT(!AH.expiring, "a handler with no alarms kept stepping")
 
 #endif
 

@@ -77,7 +77,7 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, lis
 	var/amount_to_add = min(amount, reagent_volumes[reagent_id])
 	target_reagents.add_reagent(reagent_id, amount_to_add)
 	reagent_volumes[reagent_id] -= amount_to_add
-	om_task_periodic(src, PERIODIC_SLOW) // refill what was used
+	set_refilling(TRUE) // refill what was used
 	return BORGHYPO_STATUS_SUCCESS
 
 /// Attempts to add one reagent or multiple reagents, depending on if this hypo is currently set to dispense a recipe, (see `is_dispensing_recipe`.) Returns its success (or error) status at doing so.
@@ -112,9 +112,12 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, lis
 		var/datum/reagent/hypo_reagent = SSchemistry.ready().chemical_reagents[T]
 		LAZYADD(reagent_names, hypo_reagent.name)
 
-/// Every [recharge_time] steps, recharges some reagents from its cyborg while any is short (a
-/// dose starts it); full, it sleeps.
-/obj/item/reagent_containers/borghypo/periodic_step()
+/// TRUE while a reagent is short (a dose sets it): the slow step recharges from the cyborg; full, it parks.
+/obj/item/reagent_containers/borghypo/var/tmp/refilling = FALSE
+TRACKED(/obj/item/reagent_containers/borghypo, refilling)
+
+/// Every [recharge_time] steps, recharges some reagents from its cyborg while any is short.
+/obj/item/reagent_containers/borghypo/proc/refill_step(datum/act/A)
 	var/short = FALSE
 	for(var/T in TYPE_TABLE_GET(src, borghypo_reagent_ids))
 		if(reagent_volumes[T] < volume)
@@ -122,24 +125,25 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, lis
 			break
 	if(!short)
 		charge_tick = 0
-		return PROCESS_KILL
+		set_refilling(FALSE)
+		return
 	if(++charge_tick < recharge_time)
-		return 0
+		return
 	charge_tick = 0
 
-	if(isrobot(loc))
-		var/mob/living/silicon/robot/robot_user = loc
-		if(robot_user && robot_user.cell)
+	var/mob/living/silicon/robot/robot_user = loc
+	if(istype(robot_user))
+		if(robot_user.cell)
 			for(var/T in TYPE_TABLE_GET(src, borghypo_reagent_ids))
 				if(reagent_volumes[T] < volume)
 					if(!robot_user.draw_power(ROBOT_CELL_JOULES(charge_cost), src, ROBOT_CELL_JOULES(800)))
-						return 0
+						return
 					reagent_volumes[T] = min(reagent_volumes[T] + 5, volume)
-	return 1
 
 // A cyborg hypospray makes the chosen reagent (or recipe) from its store and puts it into a person by a click (synthesizer(), code/library/reagents/synthesizer.dm);
 // a limb that is not there, or thick material over it, refuses it (unless it bypasses protection). Its store is filled again from its cyborg's cell.
 CAPABILITIES(/obj/item/reagent_containers/borghypo)
+	every(2 SECONDS, then(PROC_REF(refill_step)), when = nameof(refilling))
 	reagent_container(
 		volume = nameof(volume),
 		needle = TRUE,

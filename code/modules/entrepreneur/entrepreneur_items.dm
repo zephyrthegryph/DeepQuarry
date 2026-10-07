@@ -345,6 +345,10 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_RE
 	COOLDOWN_DECLARE(scan_cooldown)
 TRACKED(/obj/item/entrepreneur/emf, emf)
 
+/// TRUE while it is carried by a mob: the slow reading step runs only then.
+/obj/item/entrepreneur/emf/var/tmp/reading = FALSE
+TRACKED(/obj/item/entrepreneur/emf, reading)
+
 /obj/item/entrepreneur/emf/examine(mob/user)
 	. = ..()
 	switch(emf)
@@ -359,12 +363,15 @@ TRACKED(/obj/item/entrepreneur/emf, emf)
 		if(80 to 1000)
 			. += span_info(span_red("The EMF reader is reading extremely high interference, reading [emf]mG."))
 
-/obj/item/entrepreneur/emf/periodic_step()
+/// Senses every 2 s while carried; set down, the work stops.
+/obj/item/entrepreneur/emf/proc/emf_step(datum/act/A)
 	if(!ismob(loc))
-		return PROCESS_KILL
+		set_reading(FALSE)
+		return
 	search_for_ghosts()
 
 CAPABILITIES(/obj/item/entrepreneur/emf)
+	every(2 SECONDS, then(PROC_REF(emf_step)), when = nameof(reading))
 	op("scan", in_hand(), label("Read EMF scanner"), then(PROC_REF(emf_scan_requested)))
 	rolls(nameof(emf), range_of(1, 100))
 
@@ -666,7 +673,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/roller/massage, INTERACT_ALT(null, PROC_R
 /// Senses while carried (picking it up starts it); set down, it sleeps.
 /obj/item/entrepreneur/emf/equipped(mob/user, slot)
 	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_reading(TRUE)
 
 /obj/item/entrepreneur/horoscope/proc/horoscope_answered(datum/act/request/context)
 	if(!context.answer)

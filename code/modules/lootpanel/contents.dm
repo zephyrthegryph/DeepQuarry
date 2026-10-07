@@ -37,7 +37,7 @@
 	window?.send_update()
 
 	if(length(to_image))
-		om_task_periodic(src, PERIODIC_LOOT_ICONS) // icon generation (was SSlooting): misc.dm process_images()
+		set_imaging(TRUE) // icon generation (was SSlooting): misc.dm process_images()
 
 
 /// For: Resetting to empty. Ignores the searchable qdel event

@@ -16,6 +16,15 @@
 
 CAPABILITIES(/obj/item/slime_extract)
 	reagents(60)
+	every(2 SECONDS, then(PROC_REF(emit_step)), when = nameof(emitting))
+
+/// TRUE while the extract emits (slime_extract_start_emitting() starts it).
+/obj/item/slime_extract/var/tmp/emitting = FALSE
+TRACKED(/obj/item/slime_extract, emitting)
+
+/// One slow step of an emitting extract; a kind with nothing to emit stops.
+/obj/item/slime_extract/proc/emit_step(datum/act/A)
+	set_emitting(FALSE)
 
 DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
@@ -865,9 +874,8 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-/obj/item/slime_extract/green/periodic_step()
+/obj/item/slime_extract/green/emit_step(datum/act/A)
 	radiate()
-	..()
 
 /obj/item/slime_extract/green/proc/radiate()
 	if(active)
@@ -1620,7 +1628,9 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	play_sfx(extract, SFX_EFFECTS_PHASEIN, 0.75)
 
 /proc/slime_extract_start_emitting(atom/extract)
-	om_task_periodic(extract, PERIODIC_SLOW)
+	var/obj/item/slime_extract/X = extract
+	if(istype(X))
+		X.set_emitting(TRUE)
 
 /proc/slime_extract_explode(atom/extract, power)
 	explosion(get_turf(extract), 1 * power, 3 * power, 6 * power)

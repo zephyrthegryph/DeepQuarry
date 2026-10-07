@@ -42,11 +42,19 @@
 		to_chat(H, span_danger("You feel the hypodermic needles as you slide \the [src] off!"))
 		H.custom_pain("Your hands hurt like hell!",1)
 
-/// Works every 2 s while worn (equipped() starts it); taken off, it sleeps.
-/obj/item/clothing/gloves/regen/periodic_step()
+/// TRUE while worn (equipped() sets it): the slow step treats the wearer; taken off, it parks.
+/obj/item/clothing/gloves/regen/var/tmp/regenerating = FALSE
+TRACKED(/obj/item/clothing/gloves/regen, regenerating)
+
+CAPABILITIES(/obj/item/clothing/gloves/regen)
+	every(2 SECONDS, then(PROC_REF(regen_step)), when = nameof(regenerating))
+
+/// Works every 2 s while worn.
+/obj/item/clothing/gloves/regen/proc/regen_step(datum/act/A)
 	var/mob/living/carbon/human/H = ishuman(wearer) ? wearer : null
 	if(!H || H.get_equipped_item(SLOT_ID_GLOVES) != src)
-		return PROCESS_KILL
+		set_regenerating(FALSE)
+		return
 	if(!ishuman(H) || H.stat == DEAD || H.nutrition <= 10)
 		return // Dead people don't have a metabolism.
 
@@ -65,4 +73,4 @@
 /obj/item/clothing/gloves/regen/equipped(mob/user, slot)
 	. = ..()
 	if(ismob(wearer))
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_regenerating(TRUE)

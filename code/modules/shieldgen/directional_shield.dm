@@ -102,6 +102,11 @@ CAPABILITIES(/obj/effect/directional_shield)
 
 CAPABILITIES(/obj/item/shield_projector)
 	owns_many(nameof(active_shields))
+	every(2 SECONDS, then(PROC_REF(regen_step)), when = nameof(regenerating))
+
+/// TRUE while the projector regenerates (damage starts it); whole, it parks.
+/obj/item/shield_projector/var/tmp/regenerating = FALSE
+TRACKED(/obj/item/shield_projector, regenerating)
 
 /obj/item/shield_projector/Initialize(mapload)
 	max_integrity = max_integrity
@@ -154,7 +159,7 @@ CAPABILITIES(/obj/item/shield_projector)
 	. = ..()
 	if(new_value < old_value)
 		COOLDOWN_START(src, regen_cooldown, shield_regen_delay)
-		om_task_periodic(src, PERIODIC_SLOW) // regenerates after its delay
+		set_regenerating(TRUE) // regenerates after its delay
 		if(new_value > 0)
 			if(new_value < max_integrity / 4) // Play a more urgent sounding beep if it's at 25% health.
 				play_sfx(src, SFX_MACHINES_DEFIB_SUCCESS, 1.5)
@@ -222,9 +227,10 @@ DECLARE_INTERACTIONS(/obj/item/shield_projector, INTERACT_SELF("Toggle", PROC_RE
 	on ? create_shields() : destroy_shields() // Harmless if called when in the wrong state.
 
 /// Regenerates every 2 s while damaged (damage starts it); whole, it sleeps.
-/obj/item/shield_projector/periodic_step()
+/obj/item/shield_projector/proc/regen_step(datum/act/A)
 	if(get_integrity() >= max_integrity && (active || !always_on))
-		return PROCESS_KILL
+		set_regenerating(FALSE)
+		return
 	if(get_integrity() < max_integrity && ( COOLDOWN_FINISHED(src, regen_cooldown)) )
 		adjust_health(shield_regen_amount)
 		if(always_on && !active) // Make shields as soon as possible if this is set.
@@ -390,8 +396,9 @@ DAMAGE_REACTION(/obj/item/shield_projector, DAMAGE_EMP, PROC_REF(projector_emp_d
 	var/tmp/obj/item/mecha_parts/mecha_equipment/combat_shield/my_tool
 	special_handling = TRUE
 
-/obj/item/shield_projector/line/exosuit/periodic_step()
+/obj/item/shield_projector/line/exosuit/regen_step(datum/act/A)
 	..()
+	set_regenerating(TRUE) // the exosuit's shield draws the mech's power every step for as long as it lives
 	if((my_tool() && loc != my_tool()) && (my_mecha() && loc != my_mecha()))
 		forceMove(my_tool())
 	if(active)

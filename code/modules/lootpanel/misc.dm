@@ -21,13 +21,14 @@
 	tgui_interact(owner().mob)
 
 
-/// One step of icon generation on the loot icon lane (PERIODIC_LOOT_ICONS, 0.5 s; was SSlooting).
+/// One step of icon generation, every 0.5 s while `imaging` (was SSlooting).
 /// Parks when the queue is empty or the window has closed.
-/datum/lootpanel/periodic_step(delta)
+/datum/lootpanel/proc/image_step(datum/act/A)
 	if(QDELETED(src) || !length(to_image))
-		return PROCESS_KILL
+		set_imaging(FALSE)
+		return
 	if(process_images())
-		return PROCESS_KILL
+		set_imaging(FALSE)
 
 /**
  * Called on the loot icon lane while this panel has icons left to generate.

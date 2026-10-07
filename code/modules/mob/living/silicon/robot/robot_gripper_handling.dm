@@ -16,9 +16,9 @@
 /obj/item/gripper/proc/update_ref(obj/item/new_item)
 	var/had_item = get_wrapped_item()
 	if(new_item)
-		om_link(src, new_item, /datum/om/relation/gripper_holding)
+		rel_set(src, nameof(held_item), new_item)
 	else if(had_item)
-		om_unlink(src, had_item, /datum/om/relation/gripper_holding)
+		rel_clear(src, nameof(held_item))
 	var/holding_item = get_wrapped_item()
 	// Feedback
 	update_icon()
@@ -401,8 +401,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gripper, TYPE_PROC_REF(/atom, appearance_overl
 //HELPER PROCS
 ///Use this to get what the current pocket is. Returns NULL if no
 /obj/item/gripper/proc/get_wrapped_item() //done as a proc so snowflake code can be found later down the line and consolidated.
-	var/obj/item/wrapped = src?.gripper_held()
-	return wrapped
+	return held_item
 
 /// Consolidates material stacks by searching our pockets to see if we currently have any stacks. Done in /obj/item/stack/attackby
 /obj/item/gripper/proc/consolidate_stacks(obj/item/stack/stack_to_consolidate)

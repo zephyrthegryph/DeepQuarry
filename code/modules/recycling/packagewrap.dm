@@ -109,12 +109,19 @@
 	name = "packaging dispenser"
 	desc = "Wraps various items so they can be tagged and shipped through disposals. Refills over time."
 	var/recharge_ticker = 0
+	/// TRUE while the dispenser is short (wrap_used() sets it): the slow step refills it; full, it parks.
+	var/tmp/refilling = FALSE
+TRACKED(/obj/item/packageWrap/borg, refilling)
 
-/// Refills one sheet per 12 s while short (wrap_used() starts it); full, it sleeps.
-/obj/item/packageWrap/borg/periodic_step()
+CAPABILITIES(/obj/item/packageWrap/borg)
+	every(2 SECONDS, then(PROC_REF(refill_step)), when = nameof(refilling))
+
+/// Refills one sheet per 12 s while short.
+/obj/item/packageWrap/borg/proc/refill_step(datum/act/A)
 	if(amount >= initial(amount))
 		recharge_ticker = 0
-		return PROCESS_KILL
+		set_refilling(FALSE)
+		return
 	if(recharge_ticker < 5)
 		recharge_ticker ++
 		return
@@ -128,4 +135,4 @@
 	return
 
 /obj/item/packageWrap/borg/wrap_used()
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_refilling(TRUE)

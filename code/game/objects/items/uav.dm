@@ -25,7 +25,8 @@
 
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail
 
-	// The mobs flying it are UAV_MASTERS(src) (the uav_master relation).
+	/// The mobs flying it (ref_many): they hear what the UAV hears and can move it. A deleted mob drops out.
+	var/tmp/list/masters
 
 	// So you know which is which
 	var/nickname = "Unnamed UAV"
@@ -43,6 +44,7 @@
 	var/no_masters_time = 0
 
 CAPABILITIES(/obj/item/uav)
+	ref_many(nameof(masters), /mob)
 	owns_one(nameof(cell), /obj/item/cell)
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
@@ -240,7 +242,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
 		power_down()
 		take_damage(max_integrity*0.25, sound_effect = FALSE) //Lose 25% of your original health
 
-	if(length(src?.uav_masters()))
+	if(length(masters))
 		no_masters_time = 0
 	else if(no_masters_time++ > 50)
 		power_down()
@@ -311,7 +313,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
 	return cell
 
 /obj/item/uav/relaymove(mob/user, direction, signal = 1)
-	if(signal && state == UAV_ON && (user in src?.uav_masters()))
+	if(signal && state == UAV_ON && (user in masters))
 		if(COOLDOWN_FINISHED(src, next_move))
 			EXPIRY_SET(src, next_move, (1 SECOND/signal), CLOCK_WORLD)
 			step(src, direction)
@@ -322,13 +324,13 @@ DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
 	return "[nickname] - [get_x(src)],[get_y(src)],[get_z(src)] - I:[get_integrity()]/[max_integrity] - C:[cell ? "[cell.charge]/[cell.maxcharge]" : "Not Installed"]"
 
 /obj/item/uav/proc/add_master(mob/living/M)
-	om_link(M, src, /datum/om/relation/uav_master)
+	rel_add(src, nameof(masters), M)
 
 /obj/item/uav/proc/remove_master(mob/living/M)
-	om_unlink(M, src, /datum/om/relation/uav_master)
+	rel_remove(src, nameof(masters), M)
 
 /obj/item/uav/proc/clear_masters()
-	for(var/mob/living/M as anything in src?.uav_masters())
+	for(var/mob/living/M as anything in masters?.Copy())
 		remove_master(M)
 
 /obj/item/uav/proc/start_hover()
@@ -353,19 +355,19 @@ DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
 
 /obj/item/uav/hear_talk(mob/M, list/message_pieces, verb)
 	var/name_used = M.GetVoice()
-	for(var/mob/master as anything in src?.uav_masters())
+	for(var/mob/master as anything in masters)
 		var/list/combined = master.combine_message(message_pieces, verb, M)
 		var/message = combined["formatted"]
 		var/rendered = span_game(span_say(span_italics("UAV received: " + span_name("[name_used]") + " [message]")))
 		master.show_message(rendered, 2)
 
 /obj/item/uav/see_emote(mob/living/M, text)
-	for(var/mob/master as anything in src?.uav_masters())
+	for(var/mob/master as anything in masters)
 		var/rendered = span_game(span_say(span_italics("UAV received, " + span_message("[text]"))))
 		master.show_message(rendered, 2)
 
 /obj/item/uav/show_message(msg, type, alt, alt_type)
-	for(var/mob/master as anything in src?.uav_masters())
+	for(var/mob/master as anything in masters)
 		var/rendered = span_game(span_say(span_italics("UAV received, " + span_message("[msg]"))))
 		master.show_message(rendered, type)
 

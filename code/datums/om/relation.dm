@@ -481,14 +481,6 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 /obj/machinery/telecomms/proc/bs_rx_radios() as /list
 	return linked_to(src, /datum/om/relation/bluespace_rx_from)
 
-/// Was GRIPPER_HELD().
-/obj/item/gripper/proc/gripper_held() as /obj/item
-	return link_of(src, /datum/om/relation/gripper_holding)
-
-/// Was UAV_MASTERS().
-/obj/item/uav/proc/uav_masters() as /list
-	return linked_to(src, /datum/om/relation/uav_master)
-
 /// The mob holding grab item src (the grab lives in the assailant's hand), or null. Was GRAB_ASSAILANT().
 /obj/item/grab/proc/grab_assailant() as /mob/living/carbon/human
 	return ishuman(loc) ? loc : null
