@@ -57,9 +57,20 @@
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
 	verb_entry(/mob/living/simple_mob/proc/set_name, hidden = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/set_desc, hidden = TRUE)
-	op("fur_pick", hand(), ungated(), label("Use"), when(req(PROC_REF(fur_pick_possible))), begins(MSG(stardog/fur_look)), asks(/datum/prompt/choice/stardog_fur_pick, fields = list("choices" = computed(PROC_REF(fur_pick_choices))), step = "pick"), then(PROC_REF(fur_pick_chosen)))
+	op("fur_pick", hand(), ungated(), label("Use"), when(req(PROC_REF(fur_pick_possible))), begins(MSG(stardog/fur_look)), asks(/datum/prompt/choice/stardog_fur_pick, fields = list("choices" = computed(PROC_REF(fur_pick_choices))), step = "pick"), starts(PROC_REF(fur_pick_reaches)), wait(3 SECONDS), then(PROC_REF(fur_pick_done)))
 
-/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_done(mob/living/user, mob/living/that_one)
+/// The one picked is told a hand is coming, as the wait starts.
+/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_reaches(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/that_one = A.step_value("pick")
+	if(istype(that_one))
+		to_chat(that_one, span_danger("\The [user]'s hand reaches toward you!!!"))
+
+/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_done(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/that_one = A.step_value("pick")
+	if(!istype(that_one))
+		return
 	if(!istype(that_one.loc,/turf/simulated/floor/outdoors/fur))
 		to_chat(user, span_warning("\The [that_one] got away..."))
 		to_chat(that_one, span_notice("You got away!"))
@@ -107,15 +118,6 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 	if(QDELETED(that_one))
 		return "gone"
 	return istype(that_one.loc, /turf/simulated/floor/outdoors/fur) ? null : "not in the fur"
-
-/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_chosen(datum/act/op/A)
-	var/mob/living/user = A.actor
-	var/mob/living/that_one = A.step_value("pick")
-	if(!istype(that_one))
-		return OP_OK
-	to_chat(that_one, span_danger("\The [user]'s hand reaches toward you!!!"))
-	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(fur_pick_done), done_args = list(user, that_one))
-	return OP_OK
 
 /mob/living/simple_mob/vore/overmap/stardog/life_type_post_due()
 	return TRUE
