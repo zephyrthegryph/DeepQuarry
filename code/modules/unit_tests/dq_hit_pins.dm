@@ -122,7 +122,8 @@
 		return list("[trigger] | deleted itself on creation")
 	if(ismachinery(target))
 		var/obj/machinery/M = target
-		M.stat_remove(NOPOWER|BROKEN)
+		M.set_grid_power(TRUE)
+		M.set_broken_condition(FALSE)
 	var/list/before = dq_hit_state(target)
 	var/list/turf_before = dq_hit_turf_rows(T, target)
 	rand_seed(dq_test_seed_for("[type][trigger]applied"))
