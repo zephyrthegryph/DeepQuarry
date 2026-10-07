@@ -83,7 +83,10 @@
 		if(QDELETED(target))
 			actual_by_type[type] = list("deleted itself on creation")
 			continue
-		actual_by_type[type] = dq_pin_lines(target, T, actors)
+		try
+			actual_by_type[type] = dq_pin_lines(target, T, actors)
+		catch(var/exception/read)
+			actual_by_type[type] = list("runtime while reading it: [read.name]")
 		qdel(target)
 	if(sweep_room.has_gravity != sweep_gravity)
 		sweep_room.gravitychange(sweep_gravity)

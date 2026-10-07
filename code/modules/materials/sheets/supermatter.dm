@@ -12,7 +12,7 @@
 CAPABILITIES(/obj/item/stack/material/supermatter)
 	every(2 SECONDS, then(PROC_REF(supermatter_step)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(supermatter_blast_detonate))))
-	op("pick_up", hand(), priority(OP_PRIORITY_DEFAULT), label("Pick up"), then(PROC_REF(supermatter_pick_up)))
+	op("pick_up", hand(), priority(above("pick_up_item")), label("Pick up"), then(PROC_REF(supermatter_pick_up)))
 
 /// Radiates only while a mob is close enough to be affected.
 /obj/item/stack/material/supermatter/proc/supermatter_step(datum/act/timer/A)

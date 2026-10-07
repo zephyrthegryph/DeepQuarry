@@ -184,7 +184,10 @@
 			continue
 		var/list/rows = list()
 		for(var/trigger in triggers)
-			rows += dq_hit_capture(type, trigger, T, actor)
+			try
+				rows += dq_hit_capture(type, trigger, T, actor)
+			catch(var/exception/captured)
+				rows += "[trigger] | runtime while capturing: [captured.name]"
 		sortTim(rows, GLOBAL_PROC_REF(cmp_text_asc))
 		actual_by_type[type] = rows
 	if(room.has_gravity != room_gravity)
