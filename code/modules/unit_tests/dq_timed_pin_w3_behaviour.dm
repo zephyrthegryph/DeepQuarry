@@ -446,3 +446,91 @@
 	B.UnarmedAttack(T2, TRUE)
 	test_time(3 SECONDS)
 	TEST_ASSERT_EQUAL(B.amount, start + 5, "only the first job is done")
+
+// ---- Simple mobs at timed work of their own (AI-started) ----
+
+/datum/unit_test/dq_timed_pin_w3/spider_spins_web
+
+/datum/unit_test/dq_timed_pin_w3/spider_spins_web/run_pin()
+	var/mob/living/simple_mob/animal/giant_spider/nurse/N = allocate(/mob/living/simple_mob/animal/giant_spider/nurse, run_loc_floor_bottom_left)
+	var/turf/T = get_turf(N)
+	TEST_ASSERT(N.web_tile(T), "the spider starts a web")
+	TEST_ASSERT(!isnull(running(N)), "and is at work")
+	TEST_ASSERT(!N.web_tile(T), "a spider at work takes no second job")
+	test_time(4 SECONDS)
+	TEST_ASSERT(isnull(locate(/obj/effect/spider/stickyweb) in T), "no web before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT(!isnull(locate(/obj/effect/spider/stickyweb) in T), "the web is there at the end")
+	TEST_ASSERT_NULL(running(N), "and the spider is free again")
+
+/datum/unit_test/dq_timed_pin_w3/spider_web_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w3/spider_web_cancel_on_move/run_pin()
+	var/mob/living/simple_mob/animal/giant_spider/nurse/N = allocate(/mob/living/simple_mob/animal/giant_spider/nurse, run_loc_floor_bottom_left)
+	var/turf/T = get_turf(N)
+	N.web_tile(T)
+	var/datum/W = running(N)
+	TEST_ASSERT(!isnull(W), "the spider is at work")
+	N.forceMove(get_step(N, EAST))
+	test_time(6 SECONDS)
+	TEST_ASSERT(isnull(locate(/obj/effect/spider/stickyweb) in T), "moving off cancels the web")
+	TEST_ASSERT(was_cancelled(W, N), "the work ends cancelled")
+
+/datum/unit_test/dq_timed_pin_w3/spider_lays_eggs
+
+/datum/unit_test/dq_timed_pin_w3/spider_lays_eggs/run_pin()
+	var/mob/living/simple_mob/animal/giant_spider/nurse/N = allocate(/mob/living/simple_mob/animal/giant_spider/nurse, run_loc_floor_bottom_left)
+	var/turf/T = get_turf(N)
+	N.fed = 2
+	N.can_lay_eggs = TRUE
+	TEST_ASSERT(N.lay_eggs(T), "the spider starts laying")
+	test_time(4 SECONDS)
+	TEST_ASSERT(isnull(locate(/obj/effect/spider/eggcluster) in T), "no eggs before the end")
+	TEST_ASSERT_EQUAL(N.fed, 2, "and nothing is spent")
+	test_time(2 SECONDS)
+	TEST_ASSERT(!isnull(locate(/obj/effect/spider/eggcluster) in T), "the eggs are there at the end")
+	TEST_ASSERT_EQUAL(N.fed, 1, "and one feeding is spent")
+
+/datum/unit_test/dq_timed_pin_w3/spider_spins_cocoon
+
+/datum/unit_test/dq_timed_pin_w3/spider_spins_cocoon/run_pin()
+	var/mob/living/simple_mob/animal/giant_spider/nurse/N = allocate(/mob/living/simple_mob/animal/giant_spider/nurse, run_loc_floor_bottom_left)
+	var/obj/item/pen/P = allocate(/obj/item/pen, get_step(run_loc_floor_bottom_left, EAST))
+	TEST_ASSERT(N.spin_cocoon(P), "the spider starts a cocoon")
+	test_time(4 SECONDS)
+	TEST_ASSERT(isnull(locate(/obj/effect/spider/cocoon) in get_turf(P)), "no cocoon before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT(!isnull(locate(/obj/effect/spider/cocoon) in get_turf(P)), "the cocoon is there at the end")
+
+/datum/unit_test/dq_timed_pin_w3/simple_mob_reloads
+
+/datum/unit_test/dq_timed_pin_w3/simple_mob_reloads/run_pin()
+	var/mob/living/simple_mob/M = allocate(/mob/living/simple_mob, run_loc_floor_bottom_left)
+	M.needs_reload = TRUE
+	M.reload_max = 3
+	M.reload_count = 3
+	M.reload_time = 4 SECONDS
+	M.try_reload()
+	TEST_ASSERT(!isnull(running(M)), "the mob starts reloading")
+	M.try_reload()
+	TEST_ASSERT_EQUAL(running_count(M), 1, "a second call leaves one reload running")
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(M.reload_count, 3, "not reloaded before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(M.reload_count, 0, "reloaded at the end")
+
+/datum/unit_test/dq_timed_pin_w3/simple_mob_reload_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w3/simple_mob_reload_cancel_on_move/run_pin()
+	var/mob/living/simple_mob/M = allocate(/mob/living/simple_mob, run_loc_floor_bottom_left)
+	M.needs_reload = TRUE
+	M.reload_max = 3
+	M.reload_count = 3
+	M.reload_time = 4 SECONDS
+	M.try_reload()
+	var/datum/T = running(M)
+	TEST_ASSERT(!isnull(T), "the mob starts reloading")
+	M.forceMove(get_step(M, EAST))
+	test_time(6 SECONDS)
+	TEST_ASSERT_EQUAL(M.reload_count, 3, "moving cancels the reload")
+	TEST_ASSERT(was_cancelled(T, M), "the reload ends cancelled")
