@@ -623,3 +623,53 @@
 	test_time(5 SECONDS)
 	TEST_ASSERT(!ling.camo_draining, "the drain ran and found no human owner, so it ended the camouflage")
 	qdel(ling)
+
+/// J9: a sector that goes away takes its levels out of map_sectors (keyed by the level as text), so the next get_overmap_sector() cannot hand out a dying one.
+/datum/unit_test/dq_gap/overmap_sector_unregisters_its_levels
+/datum/unit_test/dq_gap/overmap_sector_unregisters_its_levels/run_gap()
+	var/obj/effect/overmap/visitable/V = new /obj/effect/overmap/visitable(null)
+	V.map_z = list(901, 902)
+	V.register_z_levels()
+	TEST_ASSERT_EQUAL(GLOB.map_sectors["901"], V, "registered by level text")
+	TEST_ASSERT_EQUAL(GLOB.map_sectors["902"], V, "every level of the sector")
+	var/obj/effect/overmap/visitable/other = new /obj/effect/overmap/visitable(null)
+	GLOB.map_sectors["902"] = other
+	V.unregister_z_levels()
+	TEST_ASSERT_NULL(GLOB.map_sectors["901"], "the sector's own level is gone")
+	TEST_ASSERT_EQUAL(GLOB.map_sectors["902"], other, "a level another sector took over stays")
+	GLOB.map_sectors -= "902"
+	qdel(other)
+	qdel(V)
+
+/// J2: a question an old handler opened by hand is an asks() step of its op. A cat is named with a pen: the pen click asks, the answer names it, and a named cat refuses.
+/datum/unit_test/dq_gap/ask_op_names_a_cat_with_a_pen
+/datum/unit_test/dq_gap/ask_op_names_a_cat_with_a_pen/run_gap()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.enable_godmode()
+	var/mob/living/simple_mob/animal/passive/cat/C = allocate(/mob/living/simple_mob/animal/passive/cat, get_step(T, EAST))
+	var/obj/item/pen/P = allocate(/obj/item/pen, T)
+	hci_click(H, C, P)
+	test_time(1 SECOND)
+	hci_answer(H, "Tom")
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(C.name, "Tom", "the answer named the cat")
+	TEST_ASSERT(C.named, "and it is marked named")
+	hci_click(H, C, P)
+	test_time(1 SECOND)
+	TEST_ASSERT_NULL(test_answer(H, "Felix")?.key, "a named cat is not asked again (nothing open to answer)")
+	TEST_ASSERT_EQUAL(C.name, "Tom", "so the name stays")
+
+/// A sticky pad asks what to write when a pen is used on it, and writes the answer.
+/datum/unit_test/dq_gap/ask_op_writes_on_a_sticky_pad
+/datum/unit_test/dq_gap/ask_op_writes_on_a_sticky_pad/run_gap()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.enable_godmode()
+	var/obj/item/sticky_pad/pad = allocate(/obj/item/sticky_pad, get_step(T, EAST))
+	var/obj/item/pen/P = allocate(/obj/item/pen, T)
+	hci_click(H, pad, P)
+	test_time(1 SECOND)
+	hci_answer(H, "remember the milk")
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(pad.written_text, "remember the milk", "the answer is written on the pad")

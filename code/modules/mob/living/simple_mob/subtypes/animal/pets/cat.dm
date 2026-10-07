@@ -252,33 +252,28 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/kitten)
 	say_maybe_target = list("Meow?","Mew?","Mao?")
 	say_got_target = list("MEOW!","HSSSS!","REEER!")
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cat, INTERACT_ITEM(null, PROC_REF(cat_interaction_item)))
+MSG_DEF_SELF(cat/named, "%T% already has a name!")
 
-/// Old attackby: naming with a pen.
-/mob/living/simple_mob/animal/passive/cat/proc/cat_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = TRUE
-	if(istype(W, /obj/item/pen) || istype(W, /obj/item/flashlight/pen))
-		if(named)
-			to_chat(user, span_notice("\The [name] already has a name!"))
-		else
-			open_request(src, /datum/prompt/text, PROC_REF(cat_name_entered), answerer = user, title = "Name", question = "Give \the [name] a name", max_len = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_ADJACENT | ASK_CAPABLE, name_text = TRUE, timeout = 0)
-	else
-		return FALSE
+/// Naming with a pen: asked, then written by cat_name_entered(). The one question is an asks() step of each op (a pen and a penlight).
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat)
+	op("name_with_pen", item(/obj/item/pen), label("Use"), needs(req_is(nameof(named), FALSE, because = MSG(cat/named))), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"), then(PROC_REF(cat_name_entered)))
+	op("name_with_penlight", item(/obj/item/flashlight/pen), label("Use"), needs(req_is(nameof(named), FALSE, because = MSG(cat/named))), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"), then(PROC_REF(cat_name_entered)))
 
-/mob/living/simple_mob/animal/passive/cat/proc/cat_name_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/tmp_name = A.answer.value
-	tmp_name = sanitizeSafe(tmp_name, MAX_NAME_LEN)
+/mob/living/simple_mob/animal/passive/cat/proc/name_question(datum/act/A)
+	return "Give 	he [name] a name"
+
+/mob/living/simple_mob/animal/passive/cat/proc/cat_name_entered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/tmp_name = sanitizeSafe(A.step_value("name"), MAX_NAME_LEN)
 	if(named || !length(tmp_name))
-		return
+		return OP_OK
 	if(length(tmp_name) > 50)
 		to_chat(user, span_notice("The name can be at most 50 characters long."))
 	else
-		to_chat(user, span_notice("You name \the [name]. Meow!"))
+		to_chat(user, span_notice("You name 	he [name]. Meow!"))
 		name = tmp_name
 		named = TRUE
+	return OP_OK
 
 /obj/item/cat_box
 	name = "faintly purring box"

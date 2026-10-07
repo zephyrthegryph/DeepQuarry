@@ -114,7 +114,6 @@ legacy_entry	code/game/objects/structures/medical_stand.dm	silicon_use = ROBOT_U
 legacy_entry	code/game/objects/structures/morgue.dm	silicon_use = ROBOT_USE_HAND_ADJACENT
 legacy_entry	code/game/objects/structures/morgue.dm	silicon_use = ROBOT_USE_HAND_ADJACENT
 legacy_entry	code/game/objects/structures/tank_dispenser.dm	silicon_use = ROBOT_USE_HAND_ADJACENT
-legacy_entry	code/game/turfs/simulated/nanogoop.dm	INTERACT_SILICON("Interface", PROC_REF(nanites_silicon_interface)), \
 legacy_entry	code/game/turfs/turf.dm	silicon_use = ROBOT_USE_HAND
 legacy_entry	code/modules/detectivework/microscope/dnascanner.dm	silicon_use = SILICON_USE_UI
 legacy_entry	code/modules/holomap/station_holomap.dm	silicon_use = NONE // Silicons can't use it yet (TODO: implement for AI).

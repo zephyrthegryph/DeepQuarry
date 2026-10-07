@@ -27,8 +27,11 @@
 
 	var/list/integrated_tool_images
 
+MSG_DEF_SELF(multibelt/cyborg_integrated_tools, "Your multibelt is empty.")
+
 CAPABILITIES(/obj/item/robotic_multibelt)
 	owns_many(nameof(cyborg_integrated_tools))
+	op("multibelt_self", in_hand(), label("Use"), needs(req_is(nameof(cyborg_integrated_tools), TRUE, because = MSG(multibelt/cyborg_integrated_tools))), asks(/datum/prompt/choice, fields = list("radial" = TRUE, "choices" = computed(PROC_REF(tool_options)), "anchor" = computed(PROC_REF(tool_anchor)), "radius" = 40, "require_near" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "tool"), then(PROC_REF(tool_chosen)))
 
 /// The selected tool: one of cyborg_integrated_tools, which owns it.
 /obj/item/robotic_multibelt/relations()
@@ -99,25 +102,21 @@ CAPABILITIES(/obj/item/robotic_multibelt)
 
 // The selection and the by-name index point into cyborg_integrated_tools.
 
-DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(interaction_self), REQ_FIELD("cyborg_integrated_tools", "your multibelt is empty")))
-
-/// Old attack_self.
-/obj/item/robotic_multibelt/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The radial ring's choices: each integrated tool by name, with its picture. A single tool is picked at once (autopick_single_option).
+/obj/item/robotic_multibelt/proc/tool_options(datum/act/A)
 	var/list/options = list()
-
 	for(var/Iname in integrated_tools_by_name)
 		options[Iname] = integrated_tool_images[Iname]
+	return options
 
-	// A single tool is picked at once (autopick_single_option).
-	open_request(src, /datum/prompt/choice, PROC_REF(tool_chosen), answerer = user, radial = TRUE, choices = options, anchor = src, radius = 40, require_near = TRUE, autopick_single_option = TRUE, timeout = 0)
-	return TRUE
+/obj/item/robotic_multibelt/proc/tool_anchor(datum/act/A)
+	return src
 
-/// Tool radial answer.
-/obj/item/robotic_multibelt/proc/tool_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
+/// Old attack_self, answered: the chosen tool is assumed.
+/obj/item/robotic_multibelt/proc/tool_chosen(datum/act/op/A)
 	cut_overlays()
-	assume_selected_item(integrated_tool_named(A.answer.value))
+	assume_selected_item(integrated_tool_named(A.step_value("tool")))
+	return OP_OK
 
 /obj/item/robotic_multibelt/proc/assume_selected_item(obj/item/chosen_item)
 	if(!chosen_item)
@@ -239,12 +238,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/electric/mounted/cyborg, TYPE_PROC
 
 CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 	without("ui_open")
-	op("cyborg_coil_self", in_hand(), label("Change colour"), then(PROC_REF(cyborg_coil_self)))
+	op("cyborg_coil_self", in_hand(), label("Change colour"), asks(/datum/prompt/choice, fields = list("ask_flags" = ASK_CARRIED | ASK_CAPABLE, "title" = "Cable Colour", "question" = "Pick new colour.", "choices" = computed(PROC_REF(cable_colour_options)), "timeout" = 0), step = "colour"), then(PROC_REF(cyborg_coil_self)))
 
-/// Old attack_self.
+/// Old attack_self: ask the colour, then apply it.
 /obj/item/stack/cable_coil/cyborg/proc/cyborg_coil_self(datum/act/op/A)
-	var/mob/user = A.actor
-	set_colour(user)
+	apply_cable_colour(A.step_value("colour"), A.actor)
+	return OP_OK
+
+/obj/item/stack/cable_coil/cyborg/proc/cable_colour_options(datum/act/A)
+	return GLOB.possible_cable_coil_colours
 
 /obj/item/stack/cable_coil/cyborg/proc/set_colour(mob/user)
 	set name = "Change Colour"
@@ -255,7 +257,10 @@ CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 /obj/item/stack/cable_coil/cyborg/proc/cable_colour_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	set_cable_color(A.answer.value, A.request.answerer)
+	apply_cable_colour(A.answer.value, A.request.answerer)
+
+/obj/item/stack/cable_coil/cyborg/proc/apply_cable_colour(colour, mob/user)
+	set_cable_color(colour, user)
 	if(isrobotmultibelt(loc))
 		var/obj/item/robotic_multibelt/our_belt = loc
 		var/image/cable_image = our_belt.integrated_tool_images[name]

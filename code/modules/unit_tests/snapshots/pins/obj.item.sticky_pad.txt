@@ -62,9 +62,9 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage menu: Use
 human|/obj/item/storage click: Click: Use
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item menu: Use
-human|/obj/item click: Click: Use
+human|/obj/item/pen menu: Move To Top
+human|/obj/item/pen menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pen menu: Use
+human|/obj/item/pen click: Click: Use
 keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, sticky_pad_hand, sticky_pad_item, toggle_digestable
 

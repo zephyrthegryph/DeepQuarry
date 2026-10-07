@@ -57,6 +57,7 @@
 CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
 	verb_entry(/mob/living/simple_mob/proc/set_name, hidden = TRUE)
 	verb_entry(/mob/living/simple_mob/proc/set_desc, hidden = TRUE)
+	op("fur_pick", hand(), ungated(), label("Use"), when(req(PROC_REF(fur_pick_possible))), begins(MSG(stardog/fur_look)), asks(/datum/prompt/choice/stardog_fur_pick, fields = list("choices" = computed(PROC_REF(fur_pick_choices))), step = "pick"), then(PROC_REF(fur_pick_chosen)))
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_done(mob/living/user, mob/living/that_one)
 	if(!istype(that_one.loc,/turf/simulated/floor/outdoors/fur))
@@ -69,15 +70,16 @@ CAPABILITIES(/mob/living/simple_mob/vore/overmap/stardog)
 		that_one.resize(prev_size, ignore_prefs = TRUE)
 		return
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_UNGATED(null, PROC_REF(stardog_interaction_hand)))
+MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_warning("%U% reaches for something in %T%'s fur..."))
 
-/// Old attack_hand: pick someone out of the fur.
-/mob/living/simple_mob/vore/overmap/stardog/proc/stardog_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	if(!(user.pickup_pref && user.pickup_active))
-		return FALSE
+/// Old attack_hand: pick someone out of the fur. Offered while there is someone to pick (the target list is the asks() step's choices).
+/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_possible(datum/act/op/A)
+	var/mob/living/user = A.actor
+	return read_once(istype(user) && user.pickup_pref && user.pickup_active && length(fur_pick_targets())) // preferences and who stands in the fur are asked when the click is made
+
+/// The players standing in the fur who may be picked up.
+/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_targets()
 	var/list/possible_targets = list()
-
 	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!(player.z in child_om_marker.map_z))
 			continue
@@ -85,12 +87,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 			continue
 		if(player.resizable && player.pickup_pref)
 			possible_targets |= player
+	return possible_targets
 
-	if(!possible_targets.len)
-		return FALSE
-	act_message(user, src, MSG_SELF(span_notice("You look through %T%'s fur...")), MSG_OTHERS(span_warning("%U% reaches for something in %T%'s fur...")))
-	open_request(src, /datum/prompt/choice/stardog_fur_pick, PROC_REF(fur_pick_chosen), answerer = user, choices = possible_targets)
-	return TRUE
+/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_choices(datum/act/A)
+	return fur_pick_targets()
 
 /// Re-checked on the answer: next to the stardog and able, and the one picked is still in its fur.
 /datum/prompt/choice/stardog_fur_pick
@@ -108,14 +108,14 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 		return "gone"
 	return istype(that_one.loc, /turf/simulated/floor/outdoors/fur) ? null : "not in the fur"
 
-/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/user = A.request.answerer
-	var/mob/living/that_one = A.answer.value
+/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_chosen(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/mob/living/that_one = A.step_value("pick")
+	if(!istype(that_one))
+		return OP_OK
 	to_chat(that_one, span_danger("\The [user]'s hand reaches toward you!!!"))
 	task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(fur_pick_done), done_args = list(user, that_one))
-	return TRUE
+	return OP_OK
 
 /mob/living/simple_mob/vore/overmap/stardog/life_type_post_due()
 	return TRUE
@@ -429,8 +429,16 @@ CAPABILITIES(/turf/simulated/floor/outdoors/fur)
 	op("fur_item", item(/obj/item), label("Nothing"), passes(), then(PROC_REF(fur_item_passes)))
 	op("fur_pet", hand(), ungated(), label("Pet"), then(PROC_REF(fur_pet)))
 	op("fur_pet_verb", menu(), label("Pet Fur"), then(PROC_REF(fur_verb_pet)))
+	op("fur_emote_beyond", menu(), label("Emote Beyond"), needs(req_adjacent(), req_capable(), req(PROC_REF(emoter_is_living), silent = TRUE), req(PROC_REF(emoter_not_muted), because = MSG(fur/ic_muted))), asks(/datum/prompt/text, fields = list("title" = "Emote Beyond", "question" = "Type a message to emote.", "encode" = FALSE, "timeout" = 0), step = "message"), then(PROC_REF(fur_verb_emote_beyond)))
 
-EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, INTERACT_VERB("Emote Beyond", PROC_REF(fur_verb_emote_beyond), REQ_PROC(/proc/dq_actor_not_ic_muted, "you cannot speak in IC (muted)")))
+MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
+
+/// Old Emote Beyond verb: Emote to those beyond the fur!
+/turf/simulated/floor/outdoors/fur/proc/emoter_is_living(datum/act/op/A)
+	return isliving(A.actor)
+
+/turf/simulated/floor/outdoors/fur/proc/emoter_not_muted(datum/act/op/A)
+	return dq_actor_not_ic_muted(A.actor)
 
 /// An item used on the fur does nothing to it: the click goes on (the old interaction_pass).
 /turf/simulated/floor/outdoors/fur/proc/fur_item_passes(datum/act/op/A)
@@ -495,19 +503,13 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, INTERACT_VERB("Emote Bey
 
 /// Requirement: the actor isn't muted from IC speech.
 /proc/dq_actor_not_ic_muted(mob/actor, atom/target, obj/item/held)
+	READS_FROM() // a player's mute preference is asked when the verb is chosen
 	return !(actor?.client?.prefs?.muted & MUTE_IC)
 
-/// Old Emote Beyond verb: Emote to those beyond the fur!
-/turf/simulated/floor/outdoors/fur/proc/fur_verb_emote_beyond(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!isliving(user))
-		return
-	var/mob/living/L = user
-	open_request(src, /datum/prompt/text, PROC_REF(emote_beyond_answered), answerer = L, title = "Emote Beyond", question = "Type a message to emote.", encode = FALSE, timeout = 0)
-
-/turf/simulated/floor/outdoors/fur/proc/emote_beyond_answered(datum/act/request/A)
-	if(!A.answer)
-		return
-	emote_beyond_entered(A.request.answerer, A.answer.value)
+/turf/simulated/floor/outdoors/fur/proc/fur_verb_emote_beyond(datum/act/op/A)
+	var/mob/living/L = A.actor
+	emote_beyond_entered(L, A.step_value("message"))
+	return OP_OK
 
 /turf/simulated/floor/outdoors/fur/proc/emote_beyond_entered(mob/living/L, message)
 	message = sanitize_or_reflect(message,L)
@@ -868,7 +870,7 @@ CAPABILITIES(/obj/structure/flora/tree/fur/wall)
 	. += rel_one(nameof(host), back = nameof(/mob/living/simple_mob/vore/overmap/stardog::control_node))
 
 CAPABILITIES(/obj/structure/control_pod)
-	op("hand", hand(), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
 /obj/structure/control_pod/proc/interaction_hand(datum/act/op/A)

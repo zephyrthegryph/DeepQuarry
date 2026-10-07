@@ -19,6 +19,7 @@
 
 /proc/get_area(atom/A)
 	RETURN_TYPE(/area)
+	READS_FROM() // where a thing stands is asked when a choice is made, never cached
 	if(isarea(A))
 		return A
 	var/turf/T = get_turf(A)

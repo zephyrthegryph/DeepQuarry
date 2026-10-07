@@ -40,24 +40,44 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 		if(get_area(tolink) == get_area(src))
 			rel_set(src, nameof(linkedsmes), tolink)
 
-EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
-	INTERACT_HAND_UNGATED("Interface", PROC_REF(nanites_hand)), \
-	INTERACT_SILICON("Interface", PROC_REF(nanites_silicon_interface)), \
-)
+CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes/nanites)
+	ref_one(nameof(moblink), /mob/living)
+	ref_one(nameof(linkedsmes), /obj/machinery/power/smes)
+	op("nanites_hand", hand(), ungated(), label("Interface"), when(req(PROC_REF(hand_interface_ok))), asks(/datum/prompt/choice/nanite_state, fields = list("ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE), step = "state"), asks(/datum/prompt/choice/nanite_targets, fields = list("ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE), step = "targets", when = PROC_REF(state_is_on)), then(PROC_REF(nanites_hand_chosen)))
+	op("nanites_ai", remote(), label("Interface"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), when(req(PROC_REF(ai_interface_ok))), asks(/datum/prompt/choice/nanite_state, fields = list("from_ai" = TRUE), step = "state"), asks(/datum/prompt/choice/nanite_targets, fields = list("from_ai" = TRUE), step = "targets", when = PROC_REF(state_is_on)), then(PROC_REF(nanites_ai_chosen)))
 
-/// Old attack_hand: a protean may interface with the pool; the turf's own touch always follows.
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand: a protean (a human with a NIF) may interface with the pool while nobody else holds it.
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/hand_interface_ok(datum/act/op/A)
+	return read_once(hand_interface_open(A.actor)) // who holds the goop and who stands where is asked when the click is made
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/hand_interface_open(mob/living/user)
 	var/mob/living/nutrienttarget = moblink
 	var/obj/machinery/power/smes/smes = linkedsmes
-	if(check_target() && (user != nutrienttarget))//prioritize this here, so mobs can turn the turf off
+	if(target_present() && (user != nutrienttarget))//prioritize this here, so mobs can turn the turf off
 		return FALSE
-	if(ishuman(user))
-		if(smes || isAI(nutrienttarget))
-			return FALSE
-		var/mob/living/carbon/human/checker = user
-		if(checker.nif)//Proteans have NIFS
-			open_request(src, /datum/prompt/choice/nanite_state, PROC_REF(nanite_state_chosen), answerer = user, subject = src, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-	return FALSE
+	if(!ishuman(user))
+		return FALSE
+	if(smes || istype(nutrienttarget, /mob/living/silicon/ai)) // the goop's holder, not who asks
+		return FALSE
+	var/mob/living/carbon/human/checker = user
+	return !!checker.nif //Proteans have NIFS
+
+/// Old attack_ai. Cyborgs (shells included) never reached it: turfs send their Use to
+/// attack_hand (ROBOT_USE_HAND), so they fall through to the hand op.
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/ai_interface_ok(datum/act/op/A)
+	return read_once(ai_interface_open(A.actor)) // who holds the goop and who stands near it is asked when the click is made
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/ai_interface_open(mob/user)
+	var/mob/living/nutrienttarget = moblink
+	if(target_present())
+		if(istype(nutrienttarget, /mob/living/silicon/ai) && user != nutrienttarget)//first come first serve, for AI
+			if(!locate_in_list(range(1, src), user))// AI can always control adjacent nanite tiles
+				return FALSE
+	return TRUE
+
+/// The second question is asked only when the first answer was On.
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/state_is_on(datum/act/op/A)
+	return A.step_value("state") == "On"
 
 /// Interfacing with nanite goop: on or off, then (on) what it recycles. A person must stay next
 /// to it (ask_flags set at the call); an AI answers from anywhere (`from_ai`).
@@ -93,32 +113,15 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 		return
 	return QDELETED(answerer) ? "gone" : null
 
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_state_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	return apply_nanite_state_chosen(A)
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_hand_chosen(datum/act/op/A)
+	check_target() // a goop whose holder is gone turns itself off before it is taken over
+	nanite_interface_chosen(A.actor, A.step_value("state"), A.step_value("targets"))
+	return OP_OK
 
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/apply_nanite_state_chosen(datum/act/request/A)
-	var/datum/prompt/choice/nanite_state/ask = A.request
-	if(A.answer.value == "On")
-		open_request(src, /datum/prompt/choice/nanite_targets, PROC_REF(nanite_targets_chosen), answerer = ask.answerer, subject = src, ask_flags = ask.ask_flags, from_ai = ask.from_ai)
-		return
-	if(ask.from_ai)
-		nanite_ai_interface_chosen(ask.answerer, A.answer.value)
-	else
-		nanite_interface_chosen(ask.answerer, A.answer.value)
-
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_targets_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	return apply_nanite_targets_chosen(A)
-
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/apply_nanite_targets_chosen(datum/act/request/A)
-	var/datum/prompt/choice/nanite_targets/ask = A.request
-	if(ask.from_ai)
-		nanite_ai_interface_chosen(ask.answerer, "On", A.answer.value)
-	else
-		nanite_interface_chosen(ask.answerer, "On", A.answer.value)
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_ai_chosen(datum/act/op/A)
+	check_target()
+	nanite_ai_interface_chosen(A.actor, A.step_value("state"), A.step_value("targets"))
+	return OP_OK
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_interface_chosen(mob/living/carbon/human/checker, state, targets)
 	switch(state)
@@ -154,19 +157,6 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 		if("Only Organics")
 			rel_set(src, nameof(moblink), user)
 			toggle_all(TRUE, TRUE)
-
-/// Old attack_ai. Cyborgs (shells included) never reached it: turfs send their Use to
-/// attack_hand (ROBOT_USE_HAND), so they fall through to that default here too.
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_silicon_interface(mob/user, obj/item/held, datum/interaction/interaction)
-	if(isrobot(user))
-		return FALSE
-	var/mob/living/nutrienttarget = moblink
-	if(check_target())
-		if(isAI(nutrienttarget) && user != nutrienttarget)//first come first serve, for AI
-			if(!locate_in_list(range(1, src), user))// AI can always control adjacent nanite tiles
-				return FALSE
-	open_request(src, /datum/prompt/choice/nanite_state, PROC_REF(nanite_state_chosen), answerer = user, subject = src, from_ai = TRUE)
-	return TRUE
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_ai_interface_chosen(mob/user, state, choice2)
 	switch(state)
@@ -246,7 +236,9 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 				return TRUE
 		return TRUE
 
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/check_target()//check if the target is in the area, or if this is a
+/// The one who holds the goop while still in the area (or an AI on its SMES), or FALSE. Pure: the requirements ask it.
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/target_present()
+	READS_FROM() // where the owner and the goop stand now
 	var/mob/living/nutrienttarget = moblink
 	var/obj/machinery/power/smes/smes = linkedsmes
 	if(nutrienttarget)
@@ -256,8 +248,13 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 			if(get_area(nutrienttarget))
 				if(get_area(nutrienttarget) == get_area(src))
 					return nutrienttarget
-	toggle_all(FALSE)
 	return FALSE
+
+/// target_present(); a goop whose holder is gone turns itself off.
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/check_target()//check if the target is in the area, or if this is a
+	. = target_present()
+	if(!.)
+		toggle_all(FALSE)
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/digest_stuff(atom/movable/AM)	//copypasting the entire proc because we use an SMES instead of a linked mob
 	. = FALSE

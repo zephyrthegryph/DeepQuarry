@@ -1,10 +1,17 @@
 CAPABILITIES(/mob/living/silicon/robot/platform)
 	op("platform_item", item(/obj/item), then(PROC_REF(platform_interaction_item)))
 	op("platform_hand", hand(), ungated(), then(PROC_REF(platform_interaction_hand)))
+	op("platform_take_control", observer(), label("Take control"), when(req(PROC_REF(ghost_control_possible))), asks(/datum/prompt/yes_no, fields = list("title" = "Platform Control", "question" = computed(PROC_REF(ghost_control_question)), "timeout" = 0), step = "take", keeps = TARGET_PRESENT), then(PROC_REF(ghost_control_answered)))
 	op("platform_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Load into cargo"), then(PROC_REF(platform_interaction_drag)))
 	op("platform_silicon_unload", remote(), when(req_actor_kind(/mob/living/silicon/robot)), label("Unload cargo"), then(PROC_REF(platform_silicon_unload)))
 
-EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, INTERACT_OBSERVER("Take control", PROC_REF(platform_ghost_take_control)))
+/// Old attack_ghost: an unoccupied platform offers itself to the ghost; otherwise the default. The question is the op's asks() step; the requirement is read
+/// again when the answer arrives (still a ghost, the platform still empty and alive, the round running).
+/mob/living/silicon/robot/platform/proc/ghost_control_possible(datum/act/op/A)
+	return read_once(!(client || key || stat == DEAD || !SSticker || !SSticker.mode)) // whether anyone is in it is asked when the click is made
+
+/mob/living/silicon/robot/platform/proc/ghost_control_question(datum/act/A)
+	return "Do you wish to take control of 	he [src]?"
 
 /// Old attack_hand: pop out the recharging item or cargo; otherwise the cyborg touch follows.
 /mob/living/silicon/robot/platform/proc/platform_interaction_hand(datum/act/op/A)
@@ -46,26 +53,17 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, INTERACT_OBSERVER("Take 
 
 	return OP_DECLINE
 
-/// Old attack_ghost: an unoccupied platform offers itself to the ghost; otherwise the default.
-/mob/living/silicon/robot/platform/proc/platform_ghost_take_control(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	if(client || key || stat == DEAD || !SSticker || !SSticker.mode)
-		return FALSE
-
-	. = TRUE
-	open_request(src, /datum/prompt/yes_no, PROC_REF(ghost_control_answered), answerer = user, valid = PROC_REF(ghost_control_askable), title = "Platform Control", question = "Do you wish to take control of \the [src]?", timeout = 0)
-
-/// A ghost takes a platform. Re-checked on the answer: still a ghost, and the platform is still empty, alive, and the round is running.
-/mob/living/silicon/robot/platform/proc/ghost_control_askable(datum/request/R)
-	return isobserver(R.answerer) && !client && !key && stat != DEAD && SSticker && SSticker.mode
-
-/mob/living/silicon/robot/platform/proc/ghost_control_answered(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/mob/observer/dead/user = A.request.answerer
+/// A ghost takes a platform (the answer was yes).
+/mob/living/silicon/robot/platform/proc/ghost_control_answered(datum/act/op/A)
+	if(!A.step_value("take"))
+		return OP_OK
+	var/mob/observer/dead/user = A.actor
+	if(!istype(user))
+		return OP_OK
 
 	if(jobban_isbanned(user, "Robot"))
 		to_chat(user, span_warning("You are banned from synthetic roles and cannot take control of \the [src]."))
-		return
+		return OP_OK
 
 	// Boilerplate from drone fabs, unsure if there's a shared proc to use instead.
 	var/deathtime = ELAPSED(user, timeofdeath, CLOCK_WORLD)
@@ -79,7 +77,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, INTERACT_OBSERVER("Take 
 	if (deathtime < platform_respawn_time)
 		to_chat(user, "You have been dead for[pluralcheck] [deathtimeseconds] seconds.")
 		to_chat(user, "You must wait [platform_respawn_time/600] minute\s to take control of \the [src]!")
-		return
+		return OP_OK
 	// End boilerplate.
 
 	if(user.mind)
@@ -89,6 +87,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, INTERACT_OBSERVER("Take 
 	SetName("[modtype] [braintype]-[rand(100,999)]")
 	after(src, 0.1 SECONDS, PROC_REF(welcome_client))
 	spent(user)
+	return OP_OK
 
 /mob/living/silicon/robot/platform/proc/welcome_client()
 	if(client)

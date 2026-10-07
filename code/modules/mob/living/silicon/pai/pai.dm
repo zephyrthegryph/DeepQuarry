@@ -112,6 +112,9 @@ CAPABILITIES(/mob/living/silicon/pai)
 	owns_one(nameof(communicator), starts = /obj/item/communicator/integrated)
 	owns_one(nameof(pai_ui_chassis), starts = /datum/tgui_module/pai_chassis)
 	owns_one(nameof(pda), starts = /obj/item/pda/ai/pai)
+	op("pai_access", item(/obj/item), label("Use"), when(req(PROC_REF(swipe_modifies_access))), asks(/datum/prompt/choice, fields = list("title" = "Access Modify", "question" = computed(PROC_REF(access_question)), "choices" = list("Add Access", "Remove Access", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "access"), then(PROC_REF(access_modify_chosen)))
+	op("pai_access_closed", item(/obj/item/card/id), label("Use"), when(req(PROC_REF(swipe_refused))), then(PROC_REF(access_closed)))
+	op("pai_hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT), label("Use"), then(PROC_REF(pai_item_hit)))
 	interface("pAIInterface", title = "pAI Software Interface", state = nameof(GLOB.tgui_self_state))
 	op("software", ui_act("software", arg("software", schema_text(4096))), then(PROC_REF(ui_act_software)))
 	op("purchase", ui_act("purchase", arg("purchase", schema_text(4096))), then(PROC_REF(ui_act_purchase)))
@@ -313,54 +316,46 @@ CAPABILITIES(/mob/living/silicon/pai)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-/// Old attackby (never reached the default attack): ID access edits, else its own hit or bonk.
-EXTEND_INTERACTIONS(/mob/living/silicon/pai, INTERACT_ITEM(null, PROC_REF(pai_interaction_item)))
+/// Old attackby (never reached the default attack): ID access edits, else its own hit or bonk. An ID swiped over a pAI that accepts access changes asks add or
+/// remove (the answer is checked again when it arrives); one it does not accept is told so; any other item hits.
+MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifcations at this time."))
 
-/mob/living/silicon/pai/proc/pai_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	var/obj/item/card/id/ID = W.GetID()
-	if(ID)
-		if (idaccessible == 1)
-			var/datum/prompt/choice/pai_access/access_question = open_request(src, /datum/prompt/choice/pai_access, PROC_REF(access_modify_chosen), answerer = user, valid = PROC_REF(access_modify_askable), title = "Access Modify", question = "Do you wish to add access to [src] or remove access from [src]?", choices = list("Add Access", "Remove Access", "Cancel"), buttons = TRUE, timeout = 0)
-			if(access_question)
-				rel_set(access_question, nameof(access_question.card), W)
-			return TRUE
-		else if (istype(W, /obj/item/card/id) && idaccessible == 0)
-			to_chat(user, span_notice("[src] is not accepting access modifcations at this time."))
-			return TRUE
+/// The held item is, or holds, an ID and this pAI accepts access changes.
+/mob/living/silicon/pai/proc/swipe_modifies_access(datum/act/op/A)
+	var/obj/item/W = A.held
+	return W?.GetID() && idaccessible == 1
+
+/// An ID card swiped over a pAI that does not accept access changes.
+/mob/living/silicon/pai/proc/swipe_refused(datum/act/op/A)
+	var/obj/item/W = A.held
+	return W?.GetID() && idaccessible == 0
+
+/mob/living/silicon/pai/proc/access_question(datum/act/A)
+	return "Do you wish to add access to [src] or remove access from [src]?"
+
+/mob/living/silicon/pai/proc/access_closed(datum/act/op/A)
+	to_chat(A.actor, span_notice("[src] is not accepting access modifcations at this time."))
+	return OP_OK
+
+/// Anything else used on a pAI: a hit with a weapon, else a harmless bonk.
+/mob/living/silicon/pai/proc/pai_item_hit(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(W.force)
 		act_message(src, null, others = span_danger("[user.name] attacks %U% with [W]!"))
 		receive_weapon_hit(W, user, silent = FALSE)
 	else
 		act_message(src, null, others = span_warning("[user.name] bonks %U% harmlessly with [W]."))
 	after(src, 0.1 SECONDS, PROC_REF(close_up_unless_dead))
-	return TRUE
+	return OP_OK
 
-/// Swiping an ID over a pAI: the card whose access is copied or cleared.
-/datum/prompt/choice/pai_access
-	var/obj/item/card
-
-CAPABILITIES(/datum/prompt/choice/pai_access)
-	ref_one(nameof(card), /obj/item)
-
-/// Re-checked on the answer: next to the pAI and able, it still accepts access changes, and the card (still an ID) is still held.
-/mob/living/silicon/pai/proc/access_modify_askable(datum/request/R)
-	var/datum/prompt/choice/pai_access/access_question = R
-	var/obj/item/W = access_question.card
-	if(!W || !answerer_holds(R, ANSWER_NEAR_SUBJECT | ANSWER_CAPABLE, src))
-		return FALSE
-	var/mob/user = R.answerer
-	return W.GetID() && idaccessible == 1 && (W in user.get_all_held_items())
-
-/mob/living/silicon/pai/proc/access_modify_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/pai_access/access_question = A.request
-	var/mob/user = A.request.answerer
-	var/obj/item/W = access_question.card
-	if(!W)
-		return
-	var/obj/item/card/id/ID = W.GetID()
-	switch(A.answer.value)
+/mob/living/silicon/pai/proc/access_modify_chosen(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	var/obj/item/card/id/ID = W?.GetID()
+	if(!ID || idaccessible != 1)
+		return OP_OK
+	switch(A.step_value("access"))
 		if("Add Access")
 			idcard.access |= ID.GetAccess()
 			to_chat(user, span_notice("You add the access from the [W] to [src]."))
@@ -370,7 +365,7 @@ CAPABILITIES(/datum/prompt/choice/pai_access)
 			to_chat(user, span_notice("You remove the access from [src]."))
 			to_chat(src, span_warning("\The [user] swipes the [W] over you, removing access codes from you."))
 		else
-			return
+			return OP_OK
 	if(radio)
 		radio.recalculateChannels()
 

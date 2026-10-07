@@ -18,7 +18,6 @@ human|none menu: Shove (refused: hold Disarm)
 human|none menu: Shove with (refused: hold Disarm)
 human|none menu: Take hold (refused: hold Grab)
 human|none menu: Ui open
-human|none menu: Use
 human|none menu: Use on
 human|none click: Click: Pat
 robot|none menu: Boop shut
@@ -41,7 +40,6 @@ robot|none menu: Shove (refused: hold Disarm)
 robot|none menu: Shove with (refused: hold Disarm)
 robot|none menu: Take hold (refused: hold Grab)
 robot|none menu: Ui open
-robot|none menu: Use
 robot|none menu: Use on
 robot|none click: Click: Pat
 ai|none menu: Ui open
@@ -273,6 +271,31 @@ human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id menu: Use on
-human|/obj/item/card/id click: Click: Pat
-keys: disarm, drag_buckle, gen_hand_interaction_touch, gen_item_interaction_hit, gen_item_pai_interaction_item, grab, image, pai_boop_disarm, pai_pat_help, purchase, robot_customize_appearance, robot_eject_cargo, robot_mount, robot_nom, robot_pick_name, robot_pick_shell, robot_purge_nutrition, robot_recolour, robot_sensor_mode, robot_set_mail_tag, robot_spark_plug, robot_toggle_decals, robot_toggle_glowy_stomach, robot_toggle_grabbability, robot_toggle_lights, robot_toggle_module_1, robot_toggle_module_2, robot_toggle_module_3, robot_toggle_vtec, shadekin_clear_dark_maws, shadekin_create_shade, shadekin_dark_maw, shadekin_dark_respite, shadekin_dark_tunneling, shadekin_phase_shift, shadekin_regenerate_other, software, ui_open
+human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Boop shut
+human|/obj/item menu: Create shade (refused: you don't have that ability)
+human|/obj/item menu: Dark maw (refused: you don't have that ability)
+human|/obj/item menu: Dark respite (refused: you don't have that ability)
+human|/obj/item menu: Dark tunneling (refused: you don't have that ability)
+human|/obj/item menu: Disarm
+human|/obj/item menu: Dispel dark maws (refused: you don't have that ability)
+human|/obj/item menu: Grab
+human|/obj/item menu: Help
+human|/obj/item menu: Hit (refused: combat mode is off)
+human|/obj/item menu: Hold with (refused: hold Grab)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Pat
+human|/obj/item menu: Punch (refused: combat mode is off)
+human|/obj/item menu: Regenerate other (refused: you don't have that ability)
+human|/obj/item menu: Robot mount/dismount (refused: you don't have that ability)
+human|/obj/item menu: Robot nom (refused: you don't have that ability)
+human|/obj/item menu: Shove (refused: hold Disarm)
+human|/obj/item menu: Shove with (refused: hold Disarm)
+human|/obj/item menu: Take hold (refused: hold Grab)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item menu: Use
+human|/obj/item menu: Use on
+human|/obj/item click: Click: Pat
+keys: disarm, drag_buckle, gen_hand_interaction_touch, gen_item_interaction_hit, grab, image, pai_access, pai_access_closed, pai_boop_disarm, pai_hit, pai_pat_help, purchase, robot_customize_appearance, robot_eject_cargo, robot_mount, robot_nom, robot_pick_name, robot_pick_shell, robot_purge_nutrition, robot_recolour, robot_sensor_mode, robot_set_mail_tag, robot_spark_plug, robot_toggle_decals, robot_toggle_glowy_stomach, robot_toggle_grabbability, robot_toggle_lights, robot_toggle_module_1, robot_toggle_module_2, robot_toggle_module_3, robot_toggle_vtec, shadekin_clear_dark_maws, shadekin_create_shade, shadekin_dark_maw, shadekin_dark_respite, shadekin_dark_tunneling, shadekin_phase_shift, shadekin_regenerate_other, software, ui_open
 

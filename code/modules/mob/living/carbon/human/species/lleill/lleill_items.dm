@@ -128,38 +128,38 @@
 	icon_state = "face"
 	var/mob/living/homunculus // relation: the homunculus we summoned
 
+MSG_DEF_SELF(glamour_face/no_targets, span_warning("There are no appropriate targets in range."))
+
+/// Old attack_self, as two ops by whether a homunculus exists: none yet, ask whose likeness; one summoned, ask what to do with it (and, to speak, what it says).
 CAPABILITIES(/obj/item/glamour_face)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), label("Use"), when(req_is(nameof(homunculus), FALSE)), needs(req(PROC_REF(has_homunculus_targets), because = MSG(glamour_face/no_targets))), asks(/datum/prompt/choice, fields = list("title" = "homunculus", "question" = "Which target do you wish to create a homunculus of?", "choices" = computed(PROC_REF(homunculus_targets_now)), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "target"), then(PROC_REF(homunculus_target_chosen)))
+	op("homunculus", in_hand(), label("Use"), when(req_is(nameof(homunculus), TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Actions", "question" = "What would you like to do with your homunculus?", "choices" = list("Recall", "Speak Through", "Cancel"), "buttons" = TRUE, "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "action"), asks(/datum/prompt/text, fields = list("title" = "Speak Through", "question" = "What should the homunculus say:", "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "words", when = PROC_REF(speaking_through)), then(PROC_REF(homunculus_action_chosen)))
 
-/// Old attack_self.
-/obj/item/glamour_face/proc/interaction_self(datum/act/op/A)
+/// The humans near the user who allow mimicry.
+/obj/item/glamour_face/proc/homunculus_targets(mob/user)
+	var/list/targets = list()
+	for(var/mob/living/carbon/human/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
+		if(M.z != user.z || get_dist(user,M) > 10)
+			continue
+		if(!M.allow_mimicry)
+			continue
+		targets |= M
+	return targets
+
+/obj/item/glamour_face/proc/has_homunculus_targets(datum/act/op/A)
+	return read_once(length(homunculus_targets(A.actor)) > 0) // who stands in range is asked when the question opens
+
+/obj/item/glamour_face/proc/homunculus_targets_now(datum/act/op/A)
+	return homunculus_targets(A.actor)
+
+/obj/item/glamour_face/proc/speaking_through(datum/act/op/A)
+	return A.step_value("action") == "Speak Through"
+
+/obj/item/glamour_face/proc/homunculus_target_chosen(datum/act/op/A)
 	var/mob/user = A.actor
-	if(!homunculus)
-		var/list/targets = list()
-		for(var/mob/living/carbon/human/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
-			if(M.z != user.z || get_dist(user,M) > 10)
-				continue
-			if(!M.allow_mimicry)
-				continue
-			targets |= M
-
-		if(!targets.len)
-			to_chat(user, span_warning("There are no appropriate targets in range."))
-			return TRUE
-
-		open_request(src, /datum/prompt/choice, PROC_REF(homunculus_target_chosen), answerer = user, title = "homunculus", question = "Which target do you wish to create a homunculus of?", choices = targets, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
-		return TRUE
+	var/mob/living/carbon/human/chosen_target = A.step_value("target")
 	if(homunculus)
-		open_request(src, /datum/prompt/choice, PROC_REF(homunculus_action_chosen), answerer = user, title = "Actions", question = "What would you like to do with your homunculus?", choices = list("Recall", "Speak Through", "Cancel"), buttons = TRUE, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
-	return TRUE
-
-/obj/item/glamour_face/proc/homunculus_target_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/mob/living/carbon/human/chosen_target = A.answer.value
-	if(homunculus)
-		return
+		return OP_OK
 	if(chosen_target)
 		var/spawnloc = get_turf(user)
 		var/mob/living/simple_mob/homunculus/H = new(spawnloc)
@@ -171,27 +171,20 @@ CAPABILITIES(/obj/item/glamour_face)
 		H.resize(chosen_target.size_multiplier, ignore_prefs = TRUE)
 		rel_set(src, nameof(homunculus), H)
 		rel_set(H, nameof(H.owner), src)
+	return OP_OK
 
-/obj/item/glamour_face/proc/homunculus_action_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/user = A.request.answerer
-	var/h_action = A.answer.value
+/obj/item/glamour_face/proc/homunculus_action_chosen(datum/act/op/A)
+	var/h_action = A.step_value("action")
 	var/mob/living/simple_mob/homunculus/H = homunculus
 	if(!H)
-		return
+		return OP_OK
 	if(h_action == "Recall")
 		act_message(H, null, others = span_infoplain(span_bold("%U%") + " returns to the face."))
 		spent(H) // the framework clears our homunculus view
-		return
+		return OP_OK
 	if(h_action == "Speak Through")
-		open_request(src, /datum/prompt/text, PROC_REF(homunculus_words_entered), answerer = user, title = "Speak Through", question = "What should the homunculus say:", ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
-
-/obj/item/glamour_face/proc/homunculus_words_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/simple_mob/homunculus/H = homunculus
-	H?.say(A.answer.value)
+		H.say(A.step_value("words"))
+	return OP_OK
 
 
 //Speaking Glamour (universal translator)
@@ -274,42 +267,45 @@ CAPABILITIES(/obj/item/glamour_face)
 		own_take_member(L, nameof(L.teleporters), src)
 	consume(src, M)
 
-DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+/// Old attack_hand: the ring's connected lleill (or anyone) is asked whether to break it, and its owner whether to restore energy instead.
+CAPABILITIES(/obj/structure/glamour_ring)
+	op("ring_hand", hand(), ungated(), label("Use"), needs(req(PROC_REF(ring_connected), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Destroy ring", "question" = computed(PROC_REF(ring_question)), "choices" = computed(PROC_REF(ring_choices)), "buttons" = TRUE, "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "action"), then(PROC_REF(ring_action_chosen)))
 
-/// Old attack_hand.
-/obj/structure/glamour_ring/proc/interaction_hand(mob/living/M, obj/item/held, datum/interaction/interaction)
+/obj/structure/glamour_ring/proc/ring_connected(datum/act/op/A)
+	return read_once(istype(connected_mob, /mob/living/carbon/human))
 
+/obj/structure/glamour_ring/proc/ring_question(datum/act/op/A)
+	if(A.actor == connected_mob)
+		return "Do you want to destroy the ring, or restore energy?"
+	return "Do you want to destroy the ring, the owner of it may be aware that you have done this?"
+
+TYPE_TABLE_DECLARE(/obj/structure/glamour_ring, owner_choices, list("Yes", "No", "Restore Energy"))
+TYPE_TABLE_DECLARE(/obj/structure/glamour_ring, other_choices, list("Yes", "No"))
+
+/obj/structure/glamour_ring/proc/ring_choices(datum/act/op/A)
+	if(A.actor == connected_mob)
+		return TYPE_TABLE_GET(src, owner_choices)
+	return TYPE_TABLE_GET(src, other_choices)
+
+/obj/structure/glamour_ring/proc/ring_action_chosen(datum/act/op/A)
+	var/mob/living/M = A.actor
+	var/m_action = A.step_value("action")
 	var/mob/living/carbon/human/L = connected_mob
-	if(!istype(L))
-		return TRUE
-
-	if(M == L)
-		open_request(src, /datum/prompt/choice, PROC_REF(ring_action_chosen), answerer = M, title = "Destroy ring", question = "Do you want to destroy the ring, or restore energy?", choices = list("Yes", "No", "Restore Energy"), buttons = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
-	else
-		open_request(src, /datum/prompt/choice, PROC_REF(ring_action_chosen), answerer = M, title = "Destroy ring", question = "Do you want to destroy the ring, the owner of it may be aware that you have done this?", choices = list("Yes", "No"), buttons = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
-	return TRUE
-
-/obj/structure/glamour_ring/proc/ring_action_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/living/M = A.request.answerer
-	var/m_action = A.answer.value
-	var/mob/living/carbon/human/L = connected_mob
-	if(!istype(L) || m_action == "No")
-		return
+	if(!istype(L) || !istype(M) || m_action == "No" || isnull(m_action))
+		return OP_OK
 	var/datum/species/lleill/LL = L.species
 
 	if(m_action == "Yes")
 		to_chat(M, span_warning("You begin to break the lines of the glamour ring."))
 		task_timed(M, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(ring_broken), done_args = list(M), on_fail = PROC_REF(ring_left_alone), fail_args = list(M))
-		return
+		return OP_OK
 
 	if(m_action == "Restore Energy")
 		if(!COOLDOWN_FINISHED(LL, ring_cooldown))
 			to_chat(M, span_warning("You must wait a while before drawing energy from the glamour again."))
-			return
+			return OP_OK
 		task_start(/datum/task/timed/glamour_ring_attack_hand_glamour_ring, M, src, receiver = src, lleill_mob = L)
-		return
+	return OP_OK
 
 /datum/task/timed/glamour_ring_attack_hand_glamour_ring
 	duration = 10 SECONDS
