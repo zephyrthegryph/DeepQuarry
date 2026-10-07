@@ -5,6 +5,25 @@ Phase 1 foundation work is now underway alongside the remaining baseline evidenc
 The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
+Corrected release probes 40–42 complete full compilation and pair publication.
+
+| Defines / workers | External seconds | Driver seconds | Sampled private bytes |
+| --- | ---: | ---: | ---: |
+| Test / 2 | 33.139 | 30.515 | 3,254,403,072 |
+| Test / 1 | 39.087 | 36.630 | 3,122,036,736 |
+| Server / 2 | 35.014 | 32.142 | 3,339,509,760 |
+
+These are uncached compiler CLI runs with warm OS file caching, not runtime
+tests. Test DMB, RSC and pair-marker SHA256 hashes match across worker counts.
+The server build omits CITESTING and publishes a 64,190,128-byte DMB and
+217,623,051-byte RSC. Test outputs are 59,472,627 and 223,589,427 bytes.
+The 30-second end-to-end Phase 1 target is not yet met.
+Server static debug coverage reports 105,003 procedure records (one reserved),
+zero missing code, zero decode errors, zero invalid debug file references and
+zero zero-valued debug lines. 2,573,925 of 2,574,628 ordinary instructions have
+sequential locations. 67 procedures remain without debug boundaries; this is
+not CFG domination or runtime error attribution. Runtime parity, full-suite
+gates, and the remaining Phase 0 evidence remain open.
 Release probe 39 completed the full uncached compiler CLI and published a pair:
 34.105 s externally, 31.713 s driver, sampled private memory 3,211,108,352 bytes.
 DMB size is 59,472,625 bytes; RSC size is 223,589,427 bytes. All bodies, linking,
