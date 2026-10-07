@@ -17,6 +17,7 @@
 CAPABILITIES(/obj/item/slime_extract)
 	reagents(60)
 	every(2 SECONDS, then(PROC_REF(emit_step)), when = nameof(emitting))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// TRUE while the extract emits (slime_extract_start_emitting() starts it).
 /obj/item/slime_extract/var/tmp/emitting = FALSE
@@ -25,8 +26,6 @@ TRACKED(/obj/item/slime_extract, emitting)
 /// One slow step of an emitting extract; a kind with nothing to emit stops.
 /obj/item/slime_extract/proc/emit_step(datum/act/A)
 	set_emitting(FALSE)
-
-	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
 /obj/item/slime_extract/proc/interaction_item(datum/act/op/A)

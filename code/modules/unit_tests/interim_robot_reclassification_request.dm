@@ -20,7 +20,7 @@
 	TEST_ASSERT_EQUAL(prompt.max_len, MAX_NAME_LEN, "the name length limit is retained")
 	TEST_ASSERT(prompt.name_text, "robot names retain name token normalization")
 	TEST_ASSERT_EQUAL(request.ask_flags, ASK_CARRIED | ASK_CAPABLE, "carried and capable rechecks are retained")
-	TEST_ASSERT_EQUAL(request.timeout, REQUEST_DEFAULT_TIMEOUT, "the prompt retains its indefinite lifetime (a request given no timeout gets the default, framework_gaps.md E2)")
+	TEST_ASSERT_EQUAL(request.timeout, REQUEST_NO_TIMEOUT, "the prompt retains its indefinite lifetime (the board opts out with REQUEST_NO_TIMEOUT)")
 	TEST_ASSERT(test_op_committed(test_answer(actor, "Surveyor")), "the accepted answer commits the op")
 	TEST_ASSERT_EQUAL(board.heldname, "Surveyor", "an actual accepted answer changes the board's name")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "the accepted request closes")

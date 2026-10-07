@@ -181,7 +181,7 @@ CAPABILITIES(/obj/structure/sign/poster)
 	timeout = 0
 
 /datum/prompt/yes_no/rip_poster/recheck_extra()
-	var/obj/structure/sign/poster/P = owner
+	var/obj/structure/sign/poster/P = subject
 	return P.is_ruined() ? "already ripped" : null
 
 /// Consumes the wall poster before returning its matching rolled item.

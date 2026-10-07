@@ -170,7 +170,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig/util)
 		set_active(TRUE)
 		to_chat(user, span_notice("You turn on \the [src]. "))
 		update_icon()
-	return OP_OK
+	return OP_DECLINE
 
 /// An empty hand on the held e-cig ejects the cartridge.
 /obj/item/clothing/mask/smokable/ecig/proc/cartridge_ejected(datum/act/op/A)
