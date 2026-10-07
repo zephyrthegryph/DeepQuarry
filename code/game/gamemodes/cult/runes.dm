@@ -397,6 +397,8 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	after(src, 10 SECONDS, PROC_REF(raise_finish), with = list(user, corpse_to_raise, body_to_sacrifice))
 
 /obj/effect/rune/proc/raise_finish(mob/living/user, mob/living/carbon/human/corpse_to_raise, mob/living/carbon/human/body_to_sacrifice)
+	if(QDELETED(user) || QDELETED(corpse_to_raise) || QDELETED(body_to_sacrifice))
+		return
 	if(corpse_to_raise.client)
 
 		GLOB.cult.add_antagonist(corpse_to_raise.mind)

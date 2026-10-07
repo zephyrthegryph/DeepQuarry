@@ -29,7 +29,7 @@ CAPABILITIES(/datum/stack_end_detector)
 	if (!_canary)
 		CRASH("Prime_canary called twice")
 	. = _canary
-	own_take(src, nameof(_canary))
+	rel_take(src, nameof(_canary))
 
 /// Returns true if the stack is still going. Calling before the canary has been primed also returns true
 /datum/stack_end_detector/proc/check()

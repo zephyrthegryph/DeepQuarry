@@ -200,6 +200,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 	after(src, 0.5 SECONDS, PROC_REF(fade_back_in), with = list(AM, T, announce))
 
 /obj/item/telecube/proc/fade_back_in(atom/movable/AM, turf/T, announce)
+	if(QDELETED(AM))
+		return
 	AM.filters -= filter(type="blur", size = 2)
 	if(T)
 		AM.forceMove(T)
@@ -208,7 +210,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 		AM.visible_message(span_alien("\The [AM] fades into existence."))
 
 /obj/item/telecube/proc/clear_blur(atom/movable/AM)
-	AM.filters -= filter(type="blur", size = 0)
+	if(AM)
+		AM.filters -= filter(type="blur", size = 0)
 
 /obj/item/telecube/proc/animate_out(atom/movable/AM)
 	//See atom cloak/uncloak animations for comments

@@ -827,7 +827,7 @@ APPEARANCE_NONE(/obj/item/paper/crumpled)
 	info = "I told them over and over! Stop digging. But no, of course not. They kept digging, and digging and digging on down, and now their dead. now we're all dead."
 
 /obj/item/paper/proc/burn_through(mob/user, obj/item/flame/P, class)
-	if(get_dist(src, user) < 2 && user.get_active_hand() == P && P.lit)
+	if(user && P && get_dist(src, user) < 2 && user.get_active_hand() == P && P.lit)
 		act_message(user, src, MSG_SELF("<span class='[class]'>You burn right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.</span>"), \
 			MSG_OTHERS("<span class='[class]'>%U% burns right through %T%, turning it to ash. It flutters through the air before settling on the floor in a heap.</span>"))
 

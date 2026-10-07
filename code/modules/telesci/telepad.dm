@@ -31,7 +31,7 @@
 // ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
 /obj/machinery/telepad/Initialize(mapload)
 	. = ..()
-	own_take_all(src, nameof(component_parts))
+	rel_take_all(src, nameof(component_parts))
 	RefreshParts()
 
 /obj/machinery/telepad/RefreshParts()

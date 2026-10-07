@@ -573,7 +573,7 @@ CAPABILITIES(/datum/prompt/choice/pai_access)
 
 	cableturf.visible_message("The data cable rapidly retracts back into its spool.", "You hear a click and the sound of wire spooling rapidly.")
 	play_sfx(src, SFX_MACHINES_CLICK)
-	own_clear(src, nameof(cable), OWN_DELETE)
+	rel_clear(src, nameof(cable))
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Update icons

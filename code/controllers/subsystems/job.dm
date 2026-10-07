@@ -1074,7 +1074,7 @@ SYSTEM_DEF(job)
 		to_chat(spawn_client, span_notice("[refuser] message : [message]"))
 
 /datum/system/job/proc/m_backup_client(client/target_client)	//Same as m_backup, but takes a client entry. Used for vore late joining.
-	if(!ishuman(target_client.mob))
+	if(!target_client || !ishuman(target_client.mob))
 		return
 	var/mob/living/carbon/human/target_human = target_client.mob
 	SStranscore.m_backup(target_human.mind, target_human.nif, TRUE)

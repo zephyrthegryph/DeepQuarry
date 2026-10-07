@@ -64,7 +64,7 @@ CAPABILITIES(/obj/soulgem)
 
 // Allows to transfer the soulgem to the given mob
 /obj/soulgem/proc/transfer_self(mob/target)
-	own_clear(target, nameof(/mob::soulgem), OWN_DELETE)
+	rel_clear(target, nameof(/mob::soulgem), OWN_DELETE)
 	var/mob/living/old_owner = owner()
 	forceMove(target)
 	rel_set(src, nameof(owner), target)
@@ -160,7 +160,7 @@ CAPABILITIES(/obj/soulgem)
 		brainmob.ext_blind = FALSE
 		brainmob.parent_mob = TRUE
 		rel_set(src, nameof(own_mind), brainmob.mind)
-		om_grant(brainmob, GRANT_VERB_HIDE, /mob/proc/enter_soulcatcher, brainmob) //No recursive self capturing...
+		grant(brainmob, granted_verb(/mob/proc/enter_soulcatcher, hidden = TRUE), brainmob) //No recursive self capturing...
 		grant(brainmob, granted_verb(/mob/living/carbon/brain/caught_soul/vore/proc/transfer_self), brainmob)
 		grant(brainmob, granted_verb(/mob/living/carbon/brain/caught_soul/vore/proc/reenter_body), brainmob)
 

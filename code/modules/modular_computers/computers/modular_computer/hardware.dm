@@ -47,7 +47,7 @@
 /obj/item/modular_computer/proc/uninstall_component(mob/living/user, obj/item/computer_hardware/H, found = 0, critical = 0)
 	var/slot = H.get_slot_var()
 	if(slot && (vars[slot] == H))
-		own_take(src, slot) // moved out below
+		rel_take(src, slot) // moved out below
 		found = 1
 		// Processor and hard drive removal shuts down the computer.
 		// is_critical_slot() lets new hardware types declare themselves critical

@@ -57,7 +57,7 @@
 	return alert
 
 /mob/proc/alert_timeout(atom/movable/screen/alert/alert, category)
-	if(alert.timeout && LAZYACCESS(alerts, category) == alert && EXPIRY_EXPIRED(alert, timeout, CLOCK_WORLD))
+	if(alert && alert.timeout && LAZYACCESS(alerts, category) == alert && EXPIRY_EXPIRED(alert, timeout, CLOCK_WORLD))
 		clear_alert(category)
 
 // Proc to clear an existing alert.

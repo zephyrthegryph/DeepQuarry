@@ -81,6 +81,7 @@
 
 /mob/living/simple_mob/vore/otie/syndicate/blackhole/proc/doLeap(mob/living/L)
 	if(!L)
+		ai_busy_end()
 		return FALSE
 	if(L.z != z)
 		ai_busy_end()

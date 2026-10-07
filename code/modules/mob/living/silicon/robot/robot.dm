@@ -430,7 +430,7 @@
 	var/datum/source = A.target
 	var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
 	if(mount?.wrapped == source)
-		own_take(mount, nameof(mount.wrapped))
+		rel_take(mount, nameof(mount.wrapped))
 		mount.installed = ROBOT_PART_MISSING
 	set_cell(null)
 
@@ -581,13 +581,13 @@
 	if (!rbPDA)
 		rel_set(src, nameof(rbPDA), new/obj/item/pda/ai(src))
 	rbPDA.set_name_and_job(name,"[modtype] [braintype]")
-	om_grant(src, GRANT_VERB, /obj/item/pda/ai/verb/cmd_pda_open_ui, src)
+	grant(src, granted_verb(/obj/item/pda/ai/verb/cmd_pda_open_ui), src)
 
 /mob/living/silicon/robot/proc/setup_communicator()
 	if (!communicator)
 		rel_set(src, nameof(communicator), new/obj/item/communicator/integrated(src))
 	communicator.register_device(name, "[modtype] [braintype]")
-	om_grant(src, GRANT_VERB, /obj/item/communicator/integrated/verb/activate, src)
+	grant(src, granted_verb(/obj/item/communicator/integrated/verb/activate), src)
 
 /mob/living/silicon/robot/drop_from_inventory(obj/item/W, atom/target = null)
 	if(module_active && istype(module_active,/obj/item/gripper))
@@ -1090,7 +1090,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 
 /mob/living/silicon/robot/proc/wrench_act_robot_done(mob/user)
 	bolt.forceMove(get_turf(src))
-	own_take(src, nameof(bolt))
+	rel_take(src, nameof(bolt))
 	to_chat(user, span_filter_notice("You remove the restraining bolt."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -1402,7 +1402,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, TYPE_PROC_REF(/atom, appearan
 	var/obj/item/old_hat = hat
 	if(!old_hat)
 		return null
-	own_take(src, nameof(hat))
+	rel_take(src, nameof(hat))
 	old_hat.forceMove(drop_loc)
 	update_icon()
 	return old_hat
@@ -1524,8 +1524,10 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 	return
 
 /mob/living/silicon/robot/proc/add_robot_verbs()
-	om_grant_each(src, GRANT_VERB, robot_verbs_default, src)
-	om_grant_each(src, GRANT_VERB, silicon_subsystems, src)
+	for(var/granted_path in robot_verbs_default)
+		grant(src, granted_verb(granted_path), src)
+	for(var/granted_path in silicon_subsystems)
+		grant(src, granted_verb(granted_path), src)
 	grant_ability(ABILITY_ID_ROBOT_SENSOR_MODE, src)
 	grant_ability(ABILITY_ID_ROBOT_MOUNT, src)
 	grant_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_1, src)
@@ -1535,8 +1537,10 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 		grant_ability(ABILITY_ID_ROBOT_RECOLOUR, src)
 
 /mob/living/silicon/robot/proc/remove_robot_verbs()
-	om_revoke_each(src, GRANT_VERB, robot_verbs_default, src)
-	om_revoke_each(src, GRANT_VERB, silicon_subsystems, src)
+	for(var/granted_path in robot_verbs_default)
+		revoke(src, granted_verb(granted_path), src)
+	for(var/granted_path in silicon_subsystems)
+		revoke(src, granted_verb(granted_path), src)
 	revoke_ability(ABILITY_ID_ROBOT_SENSOR_MODE, src)
 	revoke_ability(ABILITY_ID_ROBOT_MOUNT, src)
 	revoke_ability(ABILITY_ID_ROBOT_TOGGLE_MODULE_1, src)

@@ -1,0 +1,6 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Delayed actions safely finish when their target is deleted."
+  - bugfix: "Database callbacks correctly recover their weak owner references."
+  - bugfix: "Interrupted toy battles, transit, drilling and spell travel preserve completion cleanup when participants disappear."

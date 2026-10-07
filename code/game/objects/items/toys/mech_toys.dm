@@ -251,12 +251,15 @@ CAPABILITIES(/obj/item/toy/mecha)
 /// Checks the fighters, then half a second later the next exchange lands.
 /obj/item/toy/mecha/proc/brawl_round(obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent, battle_length)
 	//--THE BATTLE BEGINS--
-	if(combat_health > 0 && attacker.combat_health > 0 && battle_length < MAX_BATTLE_LENGTH && combat_can_continue(attacker, attacker_controller, opponent))
+	if(!QDELETED(attacker) && combat_health > 0 && attacker.combat_health > 0 && battle_length < MAX_BATTLE_LENGTH && combat_can_continue(attacker, attacker_controller, opponent))
 		after(src, 0.5 SECONDS, PROC_REF(brawl_exchange), with = list(attacker, attacker_controller, opponent, battle_length))
 		return
 	brawl_end(attacker, attacker_controller, opponent)
 
 /obj/item/toy/mecha/proc/brawl_exchange(obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent, battle_length)
+	if(QDELETED(attacker))
+		brawl_end(attacker, attacker_controller, opponent)
+		return
 	var/mob/living/carbon/src_controller = (opponent)? opponent : attacker_controller
 
 	//before we do anything - deal with charged attacks
@@ -349,6 +352,10 @@ CAPABILITIES(/obj/item/toy/mecha)
 	after(src, 0.5 SECONDS, PROC_REF(brawl_round), with = list(attacker, attacker_controller, opponent, battle_length + 1))
 
 /obj/item/toy/mecha/proc/brawl_end(obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent)
+	if(QDELETED(attacker))
+		in_combat = FALSE
+		combat_health = max_combat_health
+		return
 	var/mob/living/carbon/src_controller = (opponent)? opponent : attacker_controller
 
 	/// Lines chosen for the winning mech

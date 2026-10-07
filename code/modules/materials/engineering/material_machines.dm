@@ -265,11 +265,11 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 				break
 		if(!QDELETED(stock) && stock.get_amount())
 			stock.forceMove(get_turf(src))
-	own_take_all(src, nameof(feedstock))
+	rel_take_all(src, nameof(feedstock))
 	for(var/obj/item/ore/coal in carbon_feed)
 		batch.add_additive("carbon", 4, 0.5, MATERIAL_COST_CHEMICALS)
 		consumed(coal, src)
-	own_take_all(src, nameof(carbon_feed))
+	rel_take_all(src, nameof(carbon_feed))
 	if(!batch.amount)
 		spent(batch)
 		return
@@ -348,10 +348,10 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 		return FALSE
 	for(var/obj/item/stack/material/stock as anything in feedstock)
 		stock.forceMove(user.drop_location())
-	own_take_all(src, nameof(feedstock))
+	rel_take_all(src, nameof(feedstock))
 	for(var/obj/item/ore/coal as anything in carbon_feed)
 		coal.forceMove(user.drop_location())
-	own_take_all(src, nameof(carbon_feed))
+	rel_take_all(src, nameof(carbon_feed))
 	act_message(user, src, others = span_notice("%U% unloads the unfired charge from %T%."))
 	return TRUE
 

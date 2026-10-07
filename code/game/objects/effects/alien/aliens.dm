@@ -62,7 +62,6 @@
 	for (var/obj/effect/alien/weeds/W in range(1,T))
 		W.updateWeedOverlays()
 
-	rel_clear(src, nameof(linked_node))
 	..()
 
 /obj/effect/alien/weeds/node
@@ -188,6 +187,7 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 	return INTERACTION_HANDLED_PASS
 
 CAPABILITIES(/obj/effect/alien/weeds)
+	ref_one(nameof(linked_node), /obj/effect/alien/weeds/node)
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 	param(nameof(linked_node), pos = 1)
 

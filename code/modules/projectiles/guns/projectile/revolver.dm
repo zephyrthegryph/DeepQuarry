@@ -311,8 +311,8 @@ CAPABILITIES(/obj/item/gun/projectile/revolver/lemat)
 
 /// The rounds in `incoming_var` become loaded; the rounds loaded now move to `stash_var`.
 /obj/item/gun/projectile/revolver/lemat/proc/swap_cylinder(incoming_var, stash_var)
-	var/list/current = own_take_all(src, nameof(loaded))
-	var/list/incoming = own_take_all(src, incoming_var)
+	var/list/current = rel_take_all(src, nameof(loaded))
+	var/list/incoming = rel_take_all(src, incoming_var)
 	for(var/obj/item/ammo_casing/casing as anything in current)
 		rel_add(src, stash_var, casing)
 	for(var/obj/item/ammo_casing/casing as anything in incoming)

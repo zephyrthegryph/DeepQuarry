@@ -417,7 +417,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 		return //we're done here
 	if(!ismob(loc) && !mounted_gun) //We've been dropped and we are NOT a mounted gun.
 		return
-	if(user.stat) //We've been KO'd or have died. No shooting while dead.
+	if(QDELETED(user) || user.stat) //We've been KO'd or have died. No shooting while dead.
 		return
 	if(ticker >= 250) //If you go too far above this, your game will kick you and force you to reconnect. This is already EXTREMELY leninent.
 		return //In testing, I reached 937 bullets out of 1000 being fired with a delay  of 0.1 before being kicked.

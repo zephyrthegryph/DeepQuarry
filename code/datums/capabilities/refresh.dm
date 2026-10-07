@@ -311,6 +311,8 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 	while(i < length(Q))
 		i++
 		var/datum/D = Q[i]
+		if(isnull(D))
+			continue // a hard-deleted queued entity leaves a null entry
 		if(done[D])
 			LAZYADD(deferred, D)
 			continue

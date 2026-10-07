@@ -148,8 +148,12 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
 	desc = "An energy bow, capable of producing arrows from an internal power supply."
 	hardlight = TRUE
 
+/obj/item/gun/launcher/crossbow/bow/hardlight/ownership()
+	. = ..()
+	. += owns(nameof(bolt), policy = OWN_DELETE)
+
 /obj/item/gun/launcher/crossbow/bow/hardlight/unload(mob/user)
-	own_clear(src, nameof(bolt), OWN_DELETE)
+	rel_clear(src, nameof(bolt))
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
 /obj/item/gun/launcher/crossbow/bow/hardlight/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)

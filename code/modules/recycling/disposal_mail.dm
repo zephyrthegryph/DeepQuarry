@@ -148,6 +148,10 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bigDelivery, TYPE_PROC_REF(/atom, appeara
 		if(examtext)
 			. += span_notice("It has a note attached which reads, \"[examtext]\"")
 
+/obj/structure/bigDelivery/ownership()
+	. = ..()
+	. += owns(nameof(wrapped), policy = OWN_SPILL)
+
 // the wrapped thing is unwrapped onto the floor.
 DESTROY_EFFECTS(/obj/structure/bigDelivery, new /datum/destroy_effects_data(drop_contents = TRUE))
 
@@ -157,7 +161,6 @@ DESTROY_EFFECTS(/obj/structure/bigDelivery, new /datum/destroy_effects_data(drop
 		if(istype(wrapped(), /obj/structure/closet))
 			var/obj/structure/closet/O = wrapped()
 			set_welded(O, FALSE)
-		rel_clear(src, nameof(wrapped))
 	..()
 
 /obj/item/smallDelivery

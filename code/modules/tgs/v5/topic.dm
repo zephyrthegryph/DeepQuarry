@@ -87,7 +87,7 @@
 
 			if (event_type == TGS_EVENT_WATCHDOG_DETACH)
 				detached = TRUE
-				own_take_all(src, nameof(chat_channels)) // https://github.com/tgstation/tgstation-server/issues/1490
+				rel_take_all(src, nameof(chat_channels)) // https://github.com/tgstation/tgstation-server/issues/1490
 
 			return
 

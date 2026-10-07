@@ -190,6 +190,8 @@ GLOBAL_VAR(declare_report_capture)
 				. |= ENGINE_HOOK_INIT
 			else if(istype(E) && E.kind == ENTRY_ON_CHANGE)
 				. |= ENGINE_HOOK_INIT // the baseline of an on_change hook is taken when the holder initializes
+			else if(istype(E) && E.kind == ENTRY_MODES)
+				. |= ENGINE_HOOK_INIT | ENGINE_HOOK_MODES // the mode its var names is granted when the holder initializes
 			else if(istype(E) && E.kind == ENTRY_VERB)
 				. |= ENGINE_HOOK_INIT // a type's verb entries are put on the instance when it initializes
 			else if(istype(E) && E.kind == ENTRY_EVERY && isnull(C.owner))
@@ -481,6 +483,7 @@ GLOBAL_VAR(declare_report_capture)
 		if(istype(def))
 			def.validate_in(T, C.origin)
 	op_validate_table(T)
+	modes_validate_table(T)
 
 /// Table-level checks a capability definition makes of its own params (a construction graph's start and via).
 /datum/capability/proc/validate_in(datum/type_table/T, origin)

@@ -232,7 +232,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/operative/agent_cheese, p
 	desc = "A small [new_mouse_colour] rodent, often seen hiding in maintenance areas and making a nuisance of itself."
 	holder_type = text2path("/obj/item/holder/mouse/[new_mouse_colour]")
 	to_chat(src, span_notice("You are now a [new_mouse_colour] mouse!"))
-	om_grant(src, GRANT_VERB_HIDE, /mob/living/simple_mob/animal/passive/mouse/verb/set_mouse_colour, src) // one colour change only
+	grant(src, granted_verb(/mob/living/simple_mob/animal/passive/mouse/verb/set_mouse_colour, hidden = TRUE), src) // one colour change only
 
 /mob/living/simple_mob/animal/passive/mouse/white/virology
 	name = "Fleming"

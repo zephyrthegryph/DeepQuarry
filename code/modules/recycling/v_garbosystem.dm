@@ -212,7 +212,7 @@ CAPABILITIES(/obj/machinery/button/garbosystem)
 		play_sfx(src, SFX_EFFECTS_METALSCRAPE2)
 
 /obj/machinery/v_garbosystem/proc/crunch_item(atom/movable/A)
-	if(A.loc == loc)
+	if(A && A.loc == loc)
 		if(A.reagents)
 			transfer_reagent_to_tank(A.reagents,1)
 		if(istype(A,/obj/item/ore))

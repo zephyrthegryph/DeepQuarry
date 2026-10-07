@@ -79,7 +79,6 @@
 	for(var/obj/item/computer_hardware/CH in src.get_all_components())
 		uninstall_component(null, CH)
 		ended_with(CH, src)
-	rel_clear(src, nameof(paired_uavs))
 	..()
 
 /obj/item/modular_computer/proc/on_emag(datum/act/op/A)

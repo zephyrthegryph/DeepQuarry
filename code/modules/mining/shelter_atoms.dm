@@ -341,7 +341,8 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 		delete_preview_render(user, preview_render)
 
 /obj/item/survivalcapsule/proc/delete_preview_render(mob/user, list/preview_render)
-	user.client.images -= preview_render
+	if(user?.client)
+		user.client.images -= preview_render
 
 /obj/item/survivalcapsule/proc/can_deploy(turf/deploy_location, turf/above_location)
 	var/status = template().check_deploy(deploy_location, is_ship)

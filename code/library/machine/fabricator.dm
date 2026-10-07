@@ -255,7 +255,7 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 	cap_key_set(M, FABRICATOR_PRINTING, FALSE, null)
 	var/datum/looping_sound/loop = run?.sound ? M.vars[run.sound] : null
 	loop?.stop()
-	own_clear(M, run_var)
+	rel_clear(M, run_var)
 
 /// The material container behind a fabricator's store var (its own, or its silo link's).
 /proc/fabricator_store(datum/holder, materials) as /datum/material_container

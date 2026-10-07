@@ -273,6 +273,8 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 
 /// Restores a resleeved body's backed-up NIF, then (a moment later, once a new NIF is in) its software.
 /proc/resleeve_restore_nif(mob/living/carbon/human/new_character, datum/transhuman/mind_record/record)
+	if(!new_character || !record)
+		return
 	var/obj/item/nif/nif = new_character.nif
 	if(!nif)
 		nif = new record.nif_path(new_character,null,record.nif_savedata)

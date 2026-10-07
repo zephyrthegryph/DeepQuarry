@@ -193,13 +193,15 @@ CAPABILITIES(/datum/prompt/choice/extraction_beacon)
 
 /obj/effect/extraction_holder/proc/fulton_land(atom/movable/A)
 	cut_overlays()
-	A.set_anchored(FALSE) // An item has to be unanchored to be extracted in the first place.
-	A.set_density(initial(A.density))
+	if(A)
+		A.set_anchored(FALSE) // An item has to be unanchored to be extracted in the first place.
+		A.set_density(initial(A.density))
 	animate(src, pixel_z = 0, time = 0.5 SECONDS)
 	after(src, 0.5 SECONDS, PROC_REF(fulton_release), with = list(A))
 
 /obj/effect/extraction_holder/proc/fulton_release(atom/movable/A)
-	A.forceMove(loc)
+	if(A)
+		A.forceMove(loc)
 	consume(src)
 
 // Makes fultons work pretty much anywhere.

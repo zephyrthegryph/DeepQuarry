@@ -57,4 +57,6 @@
 
 /// The second shove of a hulk punch.
 /mob/living/carbon/alien/proc/knocked_away_from(mob/M)
+	if(!M)
+		return
 	step_away(src, M, 15)

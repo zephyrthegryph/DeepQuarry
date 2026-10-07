@@ -200,7 +200,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 		init_vore()
 	if(is_pet)
 		// A pet synx keeps to the owner: none of the wild synx verbs.
-		om_grant_each(src, GRANT_VERB_HIDE, list(
+		for(var/granted_path in list(
 			/mob/living/proc/ventcrawl,
 			/mob/living/simple_mob/animal/synx/proc/distend_stomach,
 			/mob/living/simple_mob/proc/contort,
@@ -208,7 +208,8 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 			/mob/living/proc/shred_limb,
 			/mob/living/simple_mob/animal/synx/proc/disguise,
 			/mob/living/simple_mob/animal/synx/proc/randomspeech,
-			/mob/living/simple_mob/animal/synx/proc/set_style), src)
+			/mob/living/simple_mob/animal/synx/proc/set_style))
+			grant(src, granted_verb(granted_path, hidden = TRUE), src)
 		return
 	realname = name
 	voices += "Garbled voice"

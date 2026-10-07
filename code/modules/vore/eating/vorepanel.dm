@@ -1211,7 +1211,7 @@ CAPABILITIES(/datum/vore_look)
 
 /// A mob inside this belly ate `M` into its own belly `TB` (vore panel), after the wait.
 /obj/belly/proc/inner_devour_done(mob/user, mob/living/M, mob/living/host, obj/belly/TB)
-	if((host?.loc == src) && (M?.loc == src)) //Make sure they're still here.
+	if(TB && (host?.loc == src) && (M?.loc == src)) //Make sure they're still here.
 		to_chat(user,span_vwarning("You manage to [lowertext(TB.vore_verb)] [M] into your [lowertext(TB.name)]!"))
 		to_chat(M,span_vwarning("[host] manages to [lowertext(TB.vore_verb)] you into their [lowertext(TB.name)]!"))
 		to_chat(owner,span_vwarning("Someone inside you has eaten someone else!"))

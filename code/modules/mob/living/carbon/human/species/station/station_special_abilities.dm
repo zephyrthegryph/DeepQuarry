@@ -1284,7 +1284,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	after(src, leap_warmup, PROC_REF(target_lunge_leap), with = list(target, ask.leap_sound)) // For the telegraphing.
 
 /mob/living/proc/target_lunge_leap(mob/living/target, leap_sound)
-	if(target.z != z)	//Make sure you haven't disappeared to somewhere we can't go
+	if(!target || target.z != z)	//Make sure you haven't disappeared to somewhere we can't go
 		return FALSE
 
 	// Do the actual leap.
@@ -1298,7 +1298,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	if(status_flags & LEAPING)
 		set_status_flags(status_flags & ~LEAPING) // Revert special passage ability.
 
-	if(Adjacent(target))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
+	if(target && Adjacent(target))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
 		target.status_at_least(STAT_WEAKENED, 2)	//get knocked down, idiot
 
 

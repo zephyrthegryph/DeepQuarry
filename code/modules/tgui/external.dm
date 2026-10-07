@@ -17,7 +17,7 @@
  */
 
 /datum/proc/tgui_interact(mob/user, datum/tgui/ui = null, datum/tgui/parent_ui = null, custom_state = null)
-	// The declared UI model (doc/rewrite/systems.md section 3): DECLARE_UI rows open the window.
+	// The type's declared interface entries open the window.
 	return ui_open(src, user, ui, parent_ui, custom_state)
 
 /**

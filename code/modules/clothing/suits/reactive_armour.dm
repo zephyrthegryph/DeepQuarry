@@ -389,9 +389,12 @@ CAPABILITIES(/obj/item/clothing/suit/armor/reactive)
 
 /obj/item/clothing/suit/armor/reactive/stealth/proc/end_stealth(mob/living/carbon/human/owner)
 	in_stealth = FALSE
-	animate(owner, alpha = initial(owner.alpha), time = animation_time)
+	if(owner)
+		animate(owner, alpha = initial(owner.alpha), time = animation_time)
 
 /obj/item/clothing/suit/armor/reactive/stealth/proc/destroy_illusion(mob/illusion)
+	if(QDELETED(illusion))
+		return
 	fx_sparks(illusion, 3, 3)
 	illusion.expire(animation_time)
 
