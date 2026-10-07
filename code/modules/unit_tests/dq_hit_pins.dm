@@ -19,6 +19,8 @@
  * timer that runs seconds on: a hand-written test covers those.
  */
 #define DQ_HIT_PIN_DIR "code/modules/unit_tests/snapshots/hit_pins/"
+/// The trigger every type meets first (the head of the triggers list in Run()).
+#define DQ_HIT_FIRST_TRIGGER "emp 1"
 
 /datum/unit_test/dq_hit_pin
 
@@ -117,6 +119,12 @@
 /// The rows one trigger produced on a fresh `type`.
 /datum/unit_test/proc/dq_hit_capture(type, trigger, turf/T, mob/living/carbon/human/actor)
 	rand_seed(dq_test_seed_for("[type][trigger]"))
+	if(trigger == DQ_HIT_FIRST_TRIGGER)
+		// The first instance of a type is made before the world knows what the type derives: its init queues a refresh (refresh_queued,
+		// refresh_bits) that every later instance skips. Whether a type had a first instance already depended on which tests ran before this
+		// one in the world, so the pin forgets the verdict: the first trigger always meets a type seen for the first time, and the rest meet
+		// it after that trigger's own drain.
+		GLOB.type_derives_cache -= type
 	var/atom/target = dq_snapshot_allocate(type, T)
 	if(QDELETED(target))
 		return list("[trigger] | deleted itself on creation")
@@ -180,7 +188,7 @@
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	actor.enable_godmode()
-	var/list/triggers = list("emp 1", "emp 2", "explosion 1", "explosion 2", "explosion 3", "projectile", "blob", "thrown", "emag")
+	var/list/triggers = list(DQ_HIT_FIRST_TRIGGER, "emp 2", "explosion 1", "explosion 2", "explosion 3", "projectile", "blob", "thrown", "emag")
 	var/area/room = get_area(T)
 	var/room_gravity = room.has_gravity
 	var/list/actual_by_type = list()
@@ -202,4 +210,5 @@
 	var/report = dq_snapshot_compare(DQ_HIT_PIN_DIR, "hit_pins", actual_by_type, expected_by_type, bad)
 	TEST_ASSERT(isnull(report), report)
 
+#undef DQ_HIT_FIRST_TRIGGER
 #undef DQ_HIT_PIN_DIR

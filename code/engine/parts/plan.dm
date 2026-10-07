@@ -604,7 +604,7 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 	var/key = src.args["key"]
 	if(src.args["because"])
 		return null
-	if(isnum(key) && key > 255 && GLOB.cap_key_reasons["[key]"] && src.args["value"] == TRUE)
+	if(isnum(key) && key > 255 && cap_key_reason(key) && src.args["value"] == TRUE)
 		return null
 	return "req_is([isnum(key) ? key : "\"[key]\""], [src.args["value"]]) has no reason"
 

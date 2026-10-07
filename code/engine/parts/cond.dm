@@ -236,7 +236,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	// A capability key's declared reason, for the test the capability usually makes.
 	var/key = src.args["key"]
 	if(isnum(key) && key > 255 && src.args["value"] == TRUE)
-		return GLOB.cap_key_reasons["[key]"] || /datum/msg/req_wrong_state
+		return cap_key_reason(key) || /datum/msg/req_wrong_state
 	return /datum/msg/req_wrong_state
 
 /// req_at_least(KEY, n, because =): the key's number is at least n.
