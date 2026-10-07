@@ -147,7 +147,6 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	extend(/datum/act/touch_wires, instead(then(PROC_REF(wire_touch_shocks))))
 	on_notice(/datum/notice/wire_cut, then(PROC_REF(wire_changed_look)))
 	on_notice(/datum/notice/wire_pulsed, then(PROC_REF(wire_changed_look)))
-	on_wire(WIRE_ELECTRIFY, cut = PROC_REF(shock_wire_moved), pulse = PROC_REF(shock_wire_moved)) // and the admins' history names who did it
 	on_wire(WIRE_IDSCAN, pulse = PROC_REF(idscan_wire_pulsed)) // and the deny light flashes
 	on_wire(WIRE_MAIN_POWER1, cut = PROC_REF(main_power_wire_cut), pulse = PROC_REF(main_power_wire_pulsed))
 	on_wire(WIRE_MAIN_POWER2, cut = PROC_REF(main_power_wire_cut), pulse = PROC_REF(main_power_wire_pulsed))
@@ -294,7 +293,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 /obj/machinery/door/airlock/power_change() //putting this is obj/machinery/door itself makes non-airlock doors turn invisible for some reason
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		release(src, STAT_ELECTRIFIED, SRC_ALL) // the door lights run on an internal battery; the current does not
 	resume_autoclose_if_possible()
 
@@ -671,7 +670,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	return OP_OK
 
 /obj/machinery/door/airlock/proc/panel_closable(datum/act/A)
-	return !(panel_open(src) && has_stat(BROKEN))
+	return !(panel_open(src) && broken_now())
 
 /// The panel was moved: an open one shows its wires.
 /obj/machinery/door/airlock/proc/panel_toggled(datum/act/op/A)
@@ -941,7 +940,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	da.created_name = name
 	da.update_state()
 
-	if(operating == -1 || (has_stat(BROKEN)))
+	if(operating == -1 || (broken_now()))
 		new /obj/item/circuitboard/broken(get_turf(src))
 		set_operating(0)
 	else
@@ -952,7 +951,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	replace_with(src, da)
 
 /obj/machinery/door/airlock/proc/can_remove_electronics(datum/act/A)
-	return !frozen && panel_open(src) && (operating < 0 || (!operating && weld_shut_welded(src) && !power_systems_on() && density && (!bolted || (has_stat(BROKEN)))))
+	return !frozen && panel_open(src) && (operating < 0 || (!operating && weld_shut_welded(src) && !power_systems_on() && density && (!bolted || (broken_now()))))
 
 /obj/machinery/door/airlock/on_broken()
 	key_set(src, PANEL_OPEN, TRUE)
@@ -1144,13 +1143,13 @@ GLOBAL_LIST_EMPTY(airlock_close_groups) // closeOtherId -> the airlocks sharing 
 	look.hide(LOOK_DARK)
 	look.hide(LOOK_BOLTS)
 	look.hide(LOOK_EMERGENCY)
-	var/powered = !has_stat(NOPOWER)
+	var/powered = !power_lost()
 	var/damaged = get_integrity() < max_integrity * 3/4
 	if(density)
 		look.state((bolted && lights && power_systems_on()) ? "door_locked" : "door_closed")
 		if(panel_open(src) || weld_shut_welded(src))
 			if(powered)
-				if(has_stat(BROKEN))
+				if(broken_now())
 					look.overlay("sparks_broken")
 				else if(damaged)
 					look.overlay("sparks_damaged")
@@ -1160,7 +1159,7 @@ GLOBAL_LIST_EMPTY(airlock_close_groups) // closeOtherId -> the airlocks sharing 
 		look.hide(LOOK_PANEL_OPEN)
 		look.hide("welded")
 		look.state(open_state())
-		look.overlay("sparks_open", when = has_stat(BROKEN) && powered)
+		look.overlay("sparks_open", when = broken_now() && powered)
 	look.overlay("snowairlock", when = frozen, icon = 'icons/turf/overlays.dmi')
 
 /// The icon_state of the open door (a subtype shows its bolts on an open door).
@@ -1309,18 +1308,6 @@ CAPABILITIES(/datum/cap_data/wires/airlock)
 	if(!issilicon(T.user) && electrified && shock(T.user, 100)) // ALLOW(silicon_entry): moved from the deleted airlock wire datum unchanged: a silicon reaches the wires window with no hand on a live wire
 		return OP_REFUSED
 	return HOOK_DECLINE
-
-/// The shock wire was cut or pulsed and the door is live: the admins' history names whoever did it (a mended wire releases and names no one).
-/obj/machinery/door/airlock/proc/shock_wire_moved(datum/act/A)
-	var/datum/notice/wire_cut/cut = A
-	if(istype(cut) && cut.mended)
-		return
-	var/datum/notice/wire_pulsed/pulse = A
-	var/mob/user = istype(cut) ? cut.user : (istype(pulse) ? pulse.user : null)
-	if(!user || !electrified)
-		return
-	LAZYADD(shockedby, "\[[time_stamp()]\] - [user](ckey:[user.ckey])")
-	add_attack_logs(user, src, "Electrified a door")
 
 /// Any wire moved: the door's look and panel follow it.
 /obj/machinery/door/airlock/proc/wire_changed_look(datum/act/A)
