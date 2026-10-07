@@ -4,6 +4,7 @@ emp 1 | deleted
 emp 2 | deleted
 explosion 1 | deleted
 explosion 2 | atom_integrity: down
+explosion 2 | refresh_queued: 131071 -> 0
 explosion 3 | atom_integrity: down
 projectile | atom_integrity: down
 thrown | atom_integrity: down
