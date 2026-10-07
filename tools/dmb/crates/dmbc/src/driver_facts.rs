@@ -456,16 +456,13 @@ impl CertifiedIntrinsicAbi {
                 "unsupported intrinsic ABI receipt template".into(),
             ));
         }
-        let spelling = crate::engine_abi_coverage::callback_spelling(owner, name)
+        let fact = crate::native_callbacks::lookup(owner, name)
             .ok_or_else(|| AbiError("unsupported intrinsic ABI receipt callback".into()))?;
         Ok(Self {
             engine_identity: engine.identity(),
             owner,
             name,
-            layout: ProcLayout {
-                display_name: Some(spelling.as_bytes().to_vec()),
-                ..ProcLayout::default()
-            },
+            layout: fact.layout(),
         })
     }
 }

@@ -326,6 +326,35 @@ impl EngineSnapshot {
                 members.push(field.presence());
             }
         }
+        // Only observed native namespace receipts supplement physical members.
+        // OD IsVerb annotations are not native namespace evidence. No signature
+        // or default metadata is minted by these positive presence records.
+        crate::native_callbacks::append_fingerprint(&mut bytes);
+        for fact in crate::native_callbacks::facts() {
+            let owner = self.symbols.intern(fact.owner)?;
+            let name = self.symbols.intern(fact.name)?;
+            if !known.contains(&owner) {
+                return Err(EngineError::Invalid(format!(
+                    "certified callback owner {} missing from pinned hierarchy",
+                    fact.owner
+                )));
+            }
+            if keys.contains(&(owner, name, MemberKind::Verb)) {
+                return Err(EngineError::Invalid(format!(
+                    "certified Proc namespace conflicts with physical Verb {}/{}",
+                    fact.owner, fact.name
+                )));
+            }
+            if keys.insert((owner, name, fact.kind)) {
+                members.push(IntrinsicMember {
+                    owner,
+                    name,
+                    kind: fact.kind,
+                    shared_owner: None,
+                    instance_storage_proven: false,
+                });
+            }
+        }
         self.identity = xxhash_rust::xxh3::xxh3_128(&bytes);
         self.hierarchy.schema = self.identity;
         self.members = members.into();

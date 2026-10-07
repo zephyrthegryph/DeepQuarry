@@ -9,6 +9,7 @@ pub(super) struct IntrinsicMethods {
     source: Arc<dm_tree::SemanticTree>,
     methods: BTreeMap<(SymbolId, SymbolId), Arc<[u8]>>,
 }
+
 impl IntrinsicMethods {
     pub(super) fn capture(
         source: Arc<dm_tree::SemanticTree>,
@@ -23,11 +24,7 @@ impl IntrinsicMethods {
         let mut methods = BTreeMap::new();
         let mut spellings = SymbolTable::overlay(source.shared_symbols());
         for record in procs {
-            if record
-                .get("IsVerb")
-                .and_then(|value| value.as_bool())
-                .unwrap_or(false)
-                || record["Bytecode"].as_str() != Some("")
+            if record["Bytecode"].as_str() != Some("")
                 || !record["SourceInfo"]
                     .as_array()
                     .is_some_and(|source| source.is_empty())
@@ -50,6 +47,18 @@ impl IntrinsicMethods {
                 continue;
             }
             let name = record["Name"].as_str().ok_or("native method name absent")?;
+            // A catalog verb label is not a native namespace certificate.
+            // The finite native controls positively certify directional
+            // callbacks as Proc; retain the existing decline for other verbs.
+            if record
+                .get("IsVerb")
+                .and_then(|value| value.as_bool())
+                .unwrap_or(false)
+                && !crate::native_callbacks::lookup(SymbolId::of(owner), SymbolId::of(name))
+                    .is_some_and(|fact| fact.kind == dm_tree::MemberKind::Proc)
+            {
+                continue;
+            }
             let owner = spellings
                 .intern(owner)
                 .map_err(|error| format!("native owner symbol {error:?}"))?;
@@ -100,5 +109,55 @@ impl IntrinsicMethods {
             }
             current = self.source.parent(current)?;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn only_observed_proc_receipts_override_catalog_verb_annotation() {
+        let mut symbols = SymbolTable::default();
+        let owner = symbols.intern("/client").unwrap();
+        let known = symbols.intern("Northeast").unwrap();
+        let unknown = symbols.intern("UnobservedVerb").unwrap();
+        let source = Arc::new(
+            dm_tree::build(
+                symbols,
+                &[dm_tree::Skeleton::Type {
+                    path: owner,
+                    explicit_parent: None,
+                }],
+            )
+            .unwrap(),
+        );
+        let catalog = serde_json::json!({"Types": [{"Path": "/client"}], "Procs": [
+            {"Name": "Northeast", "OwningTypeId": 0, "IsVerb": true, "Bytecode": "", "SourceInfo": []},
+            {"Name": "UnobservedVerb", "OwningTypeId": 0, "IsVerb": true, "Bytecode": "", "SourceInfo": []}
+        ]});
+        let methods = IntrinsicMethods::capture(source, &catalog).unwrap();
+        assert!(matches!(
+            methods.resolve(ResolveQuery::Proc {
+                owner,
+                name: known,
+                verb: false
+            }),
+            Some(ResolvedMeaning::IntrinsicProc { .. })
+        ));
+        assert!(matches!(
+            methods.resolve(ResolveQuery::Proc {
+                owner,
+                name: known,
+                verb: true
+            }),
+            Some(ResolvedMeaning::Missing)
+        ));
+        assert!(methods
+            .resolve(ResolveQuery::Proc {
+                owner,
+                name: unknown,
+                verb: false
+            })
+            .is_none());
     }
 }

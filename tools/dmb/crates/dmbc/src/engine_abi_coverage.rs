@@ -4,57 +4,9 @@ use crate::{driver_facts::unit_members, engine::EngineSnapshot, lowering::UnitId
 use dm_ir::SymbolId;
 use dm_tree::{frontend::ColdFrontend, DefinitionMode, MemberId, MemberKind};
 use std::collections::{BTreeMap, HashSet};
-/// Finite positive native 516.1687 controls, not a name-absence catalog.
-/// Each callback record has flags4/source0,255 and no desc/category/extended flags.
+/// Shared finite native receipts; unknown names remain uncertified.
 pub(crate) fn callback_spelling(owner: SymbolId, name: SymbolId) -> Option<&'static str> {
-    let callbacks: &[&str] = if owner == SymbolId::of("/client") {
-        &[
-            "New",
-            "Del",
-            "Topic",
-            "Stat",
-            "AllowUpload",
-            "Move",
-            "Click",
-            "DblClick",
-            "MouseDown",
-            "MouseDrag",
-            "MouseDrop",
-            "MouseEntered",
-            "MouseExited",
-            "MouseUp",
-        ]
-    } else if owner == SymbolId::of("/datum") {
-        &["New", "Del", "Topic"]
-    } else if owner == SymbolId::of("/world") {
-        &["New", "Del", "Error", "Reboot", "Topic"]
-    } else if owner == SymbolId::of("/atom") {
-        &[
-            "New",
-            "Del",
-            "Entered",
-            "Exited",
-            "Enter",
-            "Exit",
-            "Click",
-            "DblClick",
-            "MouseDrop",
-            "MouseEntered",
-            "MouseExited",
-            "MouseDown",
-            "MouseDrag",
-            "MouseUp",
-            "Stat",
-        ]
-    } else if owner == SymbolId::of("/mob") {
-        &["New", "Del", "Login", "Logout"]
-    } else {
-        &[]
-    };
-    callbacks
-        .iter()
-        .copied()
-        .find(|spelling| SymbolId::of(spelling) == name)
+    crate::native_callbacks::lookup(owner, name).map(|fact| fact.name)
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -97,7 +49,8 @@ impl<'a> NamedEngineCoverage<'a> {
     /// Captured host configuration must include this value. It binds the finite
     /// native language policy and exact exclusion inventory, not just DMB bytes.
     pub fn policy_identity(&self) -> u128 {
-        let mut bytes = b"named-engine-abi-policy-v2;formal-default;observed-callbacks-5161687;conservative-cross-namespace-exclusions".to_vec();
+        let mut bytes = b"named-engine-abi-policy-v3;formal-default;observed-callbacks-5161687;conservative-cross-namespace-exclusions".to_vec();
+        crate::native_callbacks::append_fingerprint(&mut bytes);
         bytes.extend_from_slice(&self.engine.identity().to_le_bytes());
         bytes.extend_from_slice(&self.engine.interpretation_schema().to_le_bytes());
         bytes.extend_from_slice(include_bytes!(
@@ -450,6 +403,59 @@ mod tests {
 #[cfg(test)]
 mod callback_control_tests {
     use super::*;
+    struct Source;
+    impl dm_preprocess::SourceProvider for Source {
+        fn read(&self, _: &std::path::Path) -> Result<String, String> {
+            Ok(
+                "/turf/callback_probe/Crossed()\n    return\n/client/Northeast()\n    return\n"
+                    .into(),
+            )
+        }
+    }
+    #[test]
+    fn certified_seed_and_abi_share_native_proc_namespace() {
+        let engine =
+            EngineSnapshot::from_bytes(include_bytes!("../../../fixtures/native_template.bin"), 1)
+                .unwrap()
+                .with_bootstrap_catalog()
+                .unwrap();
+        let seed = engine.frontend_seed();
+        assert!(seed
+            .intrinsics
+            .iter()
+            .any(|member| member.owner == SymbolId::of("/client")
+                && member.name == SymbolId::of("Northeast")
+                && member.kind == MemberKind::Proc));
+        assert!(!seed
+            .intrinsics
+            .iter()
+            .any(|member| member.owner == SymbolId::of("/client")
+                && member.name == SymbolId::of("Northeast")
+                && member.kind == MemberKind::Verb));
+        let frontend = dm_tree::frontend::build_with_config(
+            std::path::Path::new("callbacks.dme"),
+            &Source,
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(&seed),
+                observer: None,
+            },
+        )
+        .unwrap();
+        let coverage = NamedEngineCoverage::pinned(&engine).unwrap();
+        let boundaries = coverage.boundaries(&frontend).unwrap();
+        assert_eq!(boundaries.len(), 2);
+        assert!(boundaries.values().all(|boundary| matches!(
+            boundary,
+            crate::driver_facts::BoundaryAbi::CertifiedIntrinsic(_)
+                | crate::driver_facts::BoundaryAbi::Engine { .. }
+        )));
+        assert!(unit_members(&frontend)
+            .unwrap()
+            .keys()
+            .all(|unit| unit.namespace == crate::lowering::Namespace::Proc));
+    }
     #[test]
     fn finite_callbacks_do_not_certify_other_owner_or_name() {
         assert_eq!(
