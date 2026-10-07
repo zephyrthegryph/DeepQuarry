@@ -13,10 +13,37 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashMap};
 use std::sync::Arc;
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+pub enum LowerErrorKind {
+    SourceError,
+    #[default]
+    UnsupportedModel,
+    Internal,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct LowerSpan {
+    pub start: usize,
+    pub end: usize,
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct LowerError {
     pub statement: String,
     pub reason: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub span: Option<LowerSpan>,
+    #[serde(default)]
+    pub kind: LowerErrorKind,
+}
+
+impl LowerError {
+    fn at(mut self, span: Option<LowerSpan>) -> Self {
+        if self.span.is_none() {
+            self.span = span;
+        }
+        self
+    }
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
@@ -420,6 +447,7 @@ fn compile_with_lookup(
         debug,
         debug_current: None,
         debug_last: None,
+        statement_span: None,
         resolver_failure: std::cell::RefCell::new(None),
         locals: Vec::new(),
         local_slots: HashMap::new(),
@@ -478,9 +506,9 @@ fn compile_with_lookup(
         }
     };
     if let Some(error) = compiler.resolver_failure.take() {
-        return Err(vec![error]);
+        return Err(vec![error.at(compiler.statement_span)]);
     }
-    lowered.map_err(|error| vec![error])?;
+    lowered.map_err(|error| vec![error.at(compiler.statement_span)])?;
     if compiler.debug_current.is_none() {
         compiler.debug_current = compiler.debug_last;
     }
@@ -686,6 +714,7 @@ struct Compiler<'a> {
     debug: Option<&'a dyn DebugSourceProvider>,
     debug_current: Option<u32>,
     debug_last: Option<u32>,
+    statement_span: Option<LowerSpan>,
     // Some legacy syntax fallbacks catch LowerError. Semantic query failures
     // survive those fallbacks and prevent any successful lowered result.
     resolver_failure: std::cell::RefCell<Option<LowerError>>,
@@ -711,6 +740,10 @@ struct Compiler<'a> {
 
 impl Compiler<'_> {
     fn debug_at(&mut self, offset: usize, raw: &str) -> Result<(), LowerError> {
+        self.statement_span = Some(LowerSpan {
+            start: offset,
+            end: offset + raw.len(),
+        });
         if let Some(provider) = self.debug {
             let ordinal = provider
                 .ordinal(offset)
@@ -743,6 +776,7 @@ impl Compiler<'_> {
         }
     }
     fn semantic<T>(&self, result: Result<T, LowerError>) -> Result<T, LowerError> {
+        let result = result.map_err(|error| error.at(self.statement_span));
         if let Err(error) = &result {
             self.resolver_failure
                 .borrow_mut()
@@ -929,7 +963,13 @@ impl Compiler<'_> {
                     || !name.chars().all(|ch| ch.is_alphanumeric() || ch == '_')
                     || !seen.insert(name.clone())
                 {
-                    return Err(error(&statement.raw_header, "invalid or duplicate label"));
+                    let mut failure = error(&statement.raw_header, "invalid or duplicate label")
+                        .at(Some(LowerSpan {
+                            start: statement.header_span.start,
+                            end: statement.header_span.end,
+                        }));
+                    failure.kind = LowerErrorKind::SourceError;
+                    return Err(failure);
                 }
                 let label = self.label();
                 self.label_try_depths.insert(label.clone(), depth);
@@ -943,6 +983,7 @@ impl Compiler<'_> {
 
     fn typed_statements(&mut self, statements: &[Statement]) -> Result<(), LowerError> {
         let saved_debug = self.debug_current;
+        let saved_span = self.statement_span;
         let saved_slots = self.local_slots.clone();
         let saved_types = self.local_types.clone();
         let saved_labels = self.user_labels.clone();
@@ -952,8 +993,10 @@ impl Compiler<'_> {
         let saved_iterator_depths = self.label_iterator_depths.clone();
         let result = self
             .prepare_user_labels(statements, self.try_depth)
-            .and_then(|()| self.typed_statements_inner(statements));
+            .and_then(|()| self.typed_statements_inner(statements))
+            .map_err(|error| error.at(self.statement_span));
         self.debug_current = saved_debug;
+        self.statement_span = saved_span;
         self.local_slots = saved_slots;
         self.local_types = saved_types;
         self.user_labels = saved_labels;
@@ -1945,8 +1988,12 @@ impl Compiler<'_> {
     // Clause ordinals drive the frozen branch construction and labels.
     fn statements(&mut self, body: &[Item]) -> Result<(), LowerError> {
         let saved_debug = self.debug_current;
-        let result = self.statements_inner(body);
+        let saved_span = self.statement_span;
+        let result = self
+            .statements_inner(body)
+            .map_err(|error| error.at(self.statement_span));
         self.debug_current = saved_debug;
+        self.statement_span = saved_span;
         result
     }
     #[allow(clippy::needless_range_loop)]
@@ -5297,6 +5344,7 @@ fn error(statement: &str, reason: &str) -> LowerError {
     LowerError {
         statement: statement.into(),
         reason: reason.into(),
+        ..LowerError::default()
     }
 }
 
@@ -5584,6 +5632,29 @@ fn fold_number(expr: &Expr) -> Option<f32> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn lower_error_old_serialization_defaults_to_unsupported_without_span() {
+        let error: super::LowerError =
+            serde_json::from_str(r#"{"statement":"return x","reason":"unknown meaning"}"#).unwrap();
+        assert_eq!(error.kind, super::LowerErrorKind::UnsupportedModel);
+        assert_eq!(error.span, None);
+        let encoded = serde_json::to_string(&error).unwrap();
+        assert!(!encoded.contains("span"));
+    }
+    #[test]
+    fn duplicate_label_is_source_error_at_exact_header_span() {
+        let parsed = dm_syntax::parse(
+            "/proc/p()\n    repeat:\n        return\n    repeat:\n        return\n",
+        );
+        let error = super::compile_simple_proc(&parsed.items[0].children)
+            .unwrap_err()
+            .remove(0);
+        assert_eq!(error.kind, super::LowerErrorKind::SourceError);
+        assert_eq!(
+            error.span.unwrap().start,
+            parsed.items[0].children[1].header_span.start
+        );
+    }
     use super::*;
     use crate::{link_proc, Ledger, Table};
 

@@ -90,6 +90,8 @@ pub(crate) fn with_lowering_pool<R>(
                                 Err(vec![LowerError {
                                     statement: "<procedure lowering worker>".into(),
                                     reason: "procedure lowering panicked".into(),
+                                    kind: dm_codegen_byond::LowerErrorKind::Internal,
+                                    ..LowerError::default()
                                 }])
                             });
                         if completed

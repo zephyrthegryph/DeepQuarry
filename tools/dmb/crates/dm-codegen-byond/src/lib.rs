@@ -26,7 +26,7 @@ pub use simple::{
     compile_simple_proc_with_resolver, compile_simple_proc_with_resolver_and_debug,
     compile_typed_scopes_with_resolver, compile_typed_statements_with_resolver,
     decode_constant_string_literal, nameof_reference, ArgumentMetadata, DebugSourceProvider,
-    LowerBindings, LowerError, SharedLowerBindings, SimpleProc,
+    LowerBindings, LowerError, LowerErrorKind, LowerSpan, SharedLowerBindings, SimpleProc,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]

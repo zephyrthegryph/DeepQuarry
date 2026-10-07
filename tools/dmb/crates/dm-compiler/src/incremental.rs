@@ -299,6 +299,7 @@ pub fn try_emit_outline(
                                 vec![dm_codegen_byond::LowerError {
                                     statement: path.clone(),
                                     reason,
+                                    ..dm_codegen_byond::LowerError::default()
                                 }]
                             }),
                         bindings,

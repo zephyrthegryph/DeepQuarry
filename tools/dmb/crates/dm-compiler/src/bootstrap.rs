@@ -2411,6 +2411,7 @@ pub fn audit_lowering(
                 vec![dm_codegen_byond::LowerError {
                     statement: name.clone(),
                     reason,
+                    ..dm_codegen_byond::LowerError::default()
                 }]
             };
             let mut item = dm_syntax::parse_proc_at_span(source, span)

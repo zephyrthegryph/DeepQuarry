@@ -33,13 +33,14 @@ pub(crate) fn prepare<'a>(
             || !input.parameter_types.is_empty()
         {
             return Err(vec![LowerError { statement:"initializer scopes".into(),
-                reason:"initializer lexical slices cannot supply procedure frames or parameter metadata".into() }]);
+                reason:"initializer lexical slices cannot supply procedure frames or parameter metadata".into(), ..LowerError::default() }]);
         }
         if input.resource_search_context != resource_search_context {
             return Err(vec![LowerError {
                 statement: "initializer scopes".into(),
                 reason: "initializer slices require one explicit captured resource search context"
                     .into(),
+                ..LowerError::default()
             }]);
         }
         prepared.push(PreparedScope {

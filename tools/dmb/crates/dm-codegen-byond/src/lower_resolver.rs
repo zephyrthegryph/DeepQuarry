@@ -173,6 +173,7 @@ impl ProjectResolver<'_> {
         LowerError {
             statement: String::new(),
             reason: format!("{reason}: {query:?}"),
+            ..LowerError::default()
         }
     }
     pub fn text(&self, query: Q, symbol: SymbolId) -> Result<String, LowerError> {

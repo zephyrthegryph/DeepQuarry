@@ -175,7 +175,9 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
         }]
     };
     if let Some(captured) = startup {
-        captured.validate_for(frontend).map_err(|message| error(None, message))?;
+        captured
+            .validate_for(frontend)
+            .map_err(|message| error(None, message))?;
     }
     let node = tree
         .member(body.member)
@@ -260,7 +262,8 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
     }
     let mut inputs = prepared.inputs;
     let executable_body = if let Some(startup) = startup {
-        let captured = startup.procedure(body.declaration)
+        let captured = startup
+            .procedure(body.declaration)
             .ok_or_else(|| unsupported("procedure startup inventory missing".into()))?;
         let current =
             dm_tree::procedure_statics::capture(procedure_identity, &prepared.executable_body)
@@ -318,12 +321,18 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
         errors
             .into_iter()
             .map(|e| LoweringDiagnostic {
-                // Legacy lower errors do not yet carry a typed source/model
-                // distinction. Do not misreport an unimplemented opcode or
-                // resolver meaning as an invalid user program.
-                kind: DiagnosticKind::UnsupportedModel,
+                kind: match e.kind {
+                    dm_codegen_byond::LowerErrorKind::SourceError => DiagnosticKind::SourceError,
+                    dm_codegen_byond::LowerErrorKind::UnsupportedModel => {
+                        DiagnosticKind::UnsupportedModel
+                    }
+                    dm_codegen_byond::LowerErrorKind::Internal => DiagnosticKind::Internal,
+                },
                 identity: Some(identity),
-                origin: body.source.clone(),
+                origin: e
+                    .span
+                    .and_then(|span| frontend.location(span.start))
+                    .unwrap_or_else(|| body.source.clone()),
                 message: if e.statement.is_empty() {
                     e.reason
                 } else {
@@ -560,6 +569,63 @@ mod tests {
             .diagnostics
             .iter()
             .all(|error| error.kind == DiagnosticKind::UnsupportedModel));
+    }
+    #[test]
+    fn included_macro_failures_report_statement_lines_in_worker_order() {
+        struct Included;
+        impl dm_preprocess::SourceProvider for Included {
+            fn read(&self, path: &Path) -> Result<String, String> {
+                match path.file_name().and_then(|name| name.to_str()) {
+                    Some("project.dme") => Ok("#include \"body.dm\"\n".into()),
+                    Some("body.dm") => Ok("#define BAD missing_call()\n/proc/first()\n    if(1)\n        return BAD\n/proc/second()\n    return BAD\n".into()),
+                    _ => Err("unexpected source".into()),
+                }
+            }
+        }
+        let frontend =
+            dm_tree::frontend::build(Path::new("project.dme"), &Included, &BTreeMap::new(), 1)
+                .unwrap();
+        let one = lower_frontend(
+            &frontend,
+            &Host,
+            &NoParameters,
+            LoweringConfig {
+                workers: 1,
+                ..Default::default()
+            },
+        );
+        let two = lower_frontend(
+            &frontend,
+            &Host,
+            &NoParameters,
+            LoweringConfig {
+                workers: 2,
+                max_chunk: 1,
+            },
+        );
+        assert!(one.units.is_empty());
+        assert_eq!(one.diagnostics.len(), 2);
+        assert_eq!(
+            one.diagnostics
+                .iter()
+                .map(|diagnostic| diagnostic.origin.line)
+                .collect::<Vec<_>>(),
+            vec![4, 6]
+        );
+        for (left, right) in one.diagnostics.iter().zip(&two.diagnostics) {
+            assert!(left.origin.semantic_path.ends_with("body.dm"));
+            assert_eq!(left.kind, DiagnosticKind::UnsupportedModel);
+            assert_eq!(left.kind, right.kind);
+            assert_eq!(left.origin.span, right.origin.span);
+            assert_eq!(left.origin.semantic_path, right.origin.semantic_path);
+            assert_eq!(left.origin.line, right.origin.line);
+            assert_eq!(
+                left.origin.encounter_ordinal,
+                right.origin.encounter_ordinal
+            );
+            assert_eq!(left.origin.include_chain, right.origin.include_chain);
+            assert_eq!(left.message, right.message);
+        }
     }
     #[test]
     fn included_macro_and_loop_bodies_keep_actual_source_debug_origins() {
