@@ -73,16 +73,24 @@ struct Key<'a> {
     symbol_count: usize,
 }
 #[derive(Serialize)]
-enum SkeletonKey {
+enum SkeletonKey<'a> {
     Type(SymbolId, Option<SymbolId>),
     Member(
         SymbolId,
         SymbolId,
         crate::MemberKind,
         crate::DefinitionMode,
-        Vec<u8>,
+        #[serde(serialize_with = "encode_metadata")] &'a crate::MemberMetadata,
         u128,
     ),
+}
+fn encode_metadata<S: serde::Serializer>(
+    metadata: &crate::MemberMetadata,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    // Bincode's byte sequence representation is unchanged; serialize_bytes
+    // writes one immutable block instead of invoking the writer per u8.
+    serializer.serialize_bytes(&metadata.canonical_bytes())
 }
 impl TreeReuse {
     pub fn new(policy: u128, byte_budget: usize) -> Self {
@@ -154,14 +162,7 @@ impl TreeReuse {
                             mode,
                             metadata,
                             content,
-                        } => SkeletonKey::Member(
-                            *owner,
-                            *name,
-                            *kind,
-                            *mode,
-                            metadata.canonical_bytes(),
-                            *content,
-                        ),
+                        } => SkeletonKey::Member(*owner, *name, *kind, *mode, metadata, *content),
                     })
                     .collect();
                 key_chunk(&rows, &mut chunks, &mut bytes)?;
@@ -332,6 +333,53 @@ mod tests {
             1,
         )
         .unwrap()
+    }
+    #[test]
+    fn borrowed_metadata_bytes_preserve_exact_skeleton_key_encoding() {
+        #[derive(Serialize)]
+        enum PreviousKey {
+            Type(SymbolId, Option<SymbolId>),
+            Member(
+                SymbolId,
+                SymbolId,
+                MemberKind,
+                crate::DefinitionMode,
+                Vec<u8>,
+                u128,
+            ),
+        }
+        let metadata = crate::MemberMetadata {
+            canonical: Arc::from([0u8, 1, 127, 128, 254, 255]),
+            ..Default::default()
+        };
+        let owner = SymbolId::of("/datum/demo");
+        let name = SymbolId::of("value");
+        let old = vec![
+            PreviousKey::Type(owner, None),
+            PreviousKey::Member(
+                owner,
+                name,
+                MemberKind::Var,
+                crate::DefinitionMode::Declare,
+                metadata.canonical_bytes(),
+                17,
+            ),
+        ];
+        let borrowed = vec![
+            SkeletonKey::Type(owner, None),
+            SkeletonKey::Member(
+                owner,
+                name,
+                MemberKind::Var,
+                crate::DefinitionMode::Declare,
+                &metadata,
+                17,
+            ),
+        ];
+        assert_eq!(
+            dm_wire::encode(4, &old).unwrap(),
+            dm_wire::encode(4, &borrowed).unwrap()
+        );
     }
     fn finish(source: AdaptedDeclarations, reuse: &TreeReuse) -> crate::TreeSnapshot {
         source

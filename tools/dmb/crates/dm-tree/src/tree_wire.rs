@@ -383,12 +383,15 @@ pub(super) fn replay(
     {
         return Err(invalid());
     }
-    let spellings: Vec<_> = symbols
-        .ordered()
-        .into_iter()
-        .map(|(id, text)| (id, text.to_owned()))
-        .collect();
-    if spellings != record.symbols {
+    let spellings = symbols.ordered();
+    if spellings.len() != record.symbols.len()
+        || spellings
+            .iter()
+            .zip(&record.symbols)
+            .any(|((id, text), (stored_id, stored_text))| {
+                id != stored_id || *text != stored_text.as_str()
+            })
+    {
         return Err(invalid());
     }
     let mut explicit = HashMap::new();
@@ -469,6 +472,7 @@ pub(super) fn replay(
     let mut targets = Vec::new();
     let mut members = Vec::new();
     let mut originals = Vec::new();
+    let placeholder = Arc::new(MemberMetadata::default());
     let mut groups: HashMap<_, Vec<MemberId>> = HashMap::new();
     let mut owned = vec![Vec::new(); tree.types.len()];
     for source in &adapted.skeletons {
@@ -503,11 +507,11 @@ pub(super) fn replay(
                     owner,
                     name: *name,
                     kind,
-                    metadata: Arc::new(metadata.clone()),
+                    metadata: placeholder.clone(),
                     content: *content,
                     previous: row.previous.map(MemberId),
                 });
-                originals.push(metadata.clone());
+                originals.push(metadata);
                 groups.entry((owner, *name, kind)).or_default().push(id);
                 owned[owner.index()].push(id);
                 targets.push(Target::Member(id));
@@ -558,8 +562,9 @@ pub(super) fn replay(
             .map_err(|_| invalid())?;
     }
     let mut complete = vec![false; members.len()];
+    let mut pending = Vec::new();
     for start in 0..members.len() {
-        let mut pending = Vec::new();
+        pending.clear();
         let mut current = Some(start);
         while let Some(i) = current {
             if complete[i] {
@@ -568,9 +573,9 @@ pub(super) fn replay(
             pending.push(i);
             current = members[i].previous.map(MemberId::index);
         }
-        for i in pending.into_iter().rev() {
+        for i in pending.iter().rev().copied() {
             let node = &members[i];
-            let mut expected = originals[i].clone();
+            let mut expected = (*originals[i]).clone();
             if node.kind == MemberKind::Var && node.definition == DefinitionMode::Override {
                 if let Some(previous) = node.previous {
                     let inherited = &members[previous.index()].metadata;

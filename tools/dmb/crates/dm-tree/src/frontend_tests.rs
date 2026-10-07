@@ -881,6 +881,10 @@ fn issued_parser_fragments_replay_compact_settings_ranges_and_cross_include_gram
     memo.0.lock().unwrap().clear();
     let independent_expanded = expand_regions_text_with_memo(&plan, 1, &memo);
     let independent = parse_declarations(&independent_expanded, config, Some(&memo)).unwrap();
+    assert_eq!(independent.reuse_stats.region_hits, 0);
+    assert_eq!(independent.reuse_stats.independent_hits, 1);
+    assert_eq!(independent.reuse_stats.facts_hits, 1);
+    assert_eq!(independent.reuse_stats.parsed_chunks, 0);
     assert_eq!(independent.items, first.items);
     assert!(independent.adapted.skeletons == first.adapted.skeletons);
     assert_eq!(
@@ -913,6 +917,8 @@ fn issued_parser_fragments_replay_compact_settings_ranges_and_cross_include_gram
         )
         .is_some());
     let hit = parse_declarations(&reused, config, Some(&memo)).unwrap();
+    assert_eq!(hit.reuse_stats.region_hits, 1);
+    assert_eq!(hit.reuse_stats.facts_hits, 1);
     assert_eq!(hit.items, first.items);
     assert!(hit.adapted.skeletons == first.adapted.skeletons);
     assert_eq!(hit.adapted.origins, first.adapted.origins);

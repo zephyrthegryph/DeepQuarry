@@ -240,41 +240,60 @@ fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
             body.declaration.0,
         )
     });
+    // Only final outputs occupy indexed slots. Each worker holds at most one
+    // bounded chunk; publication remains inside the existing memo producer.
+    let slices: Vec<_> = bodies.chunks(chunk).collect();
+    let results: Vec<_> = (0..slices.len())
+        .map(|_| std::sync::Mutex::new(None))
+        .collect();
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    thread::scope(|scope| {
+        let mut handles = Vec::new();
+        for _ in 0..workers.min(slices.len()) {
+            let slices = &slices;
+            let results = &results;
+            let next = &next;
+            handles.push(scope.spawn(move || loop {
+                let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                let Some(slice) = slices.get(index) else {
+                    break;
+                };
+                let outcomes = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    slice
+                        .iter()
+                        .map(|body| lower_one_memo(frontend, body, host, policy, startup, memo))
+                        .collect::<Vec<_>>()
+                }))
+                .unwrap_or_else(|_| {
+                    slice
+                        .iter()
+                        .map(|body| {
+                            Err(vec![LoweringDiagnostic {
+                                kind: DiagnosticKind::Internal,
+                                identity: None,
+                                origin: body.source.clone(),
+                                message: "procedure lowering worker panicked".into(),
+                            }])
+                        })
+                        .collect()
+                });
+                *results[index]
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner()) = Some(outcomes);
+            }));
+        }
+        for handle in handles {
+            // A lowering panic is caught at the claimed chunk boundary above.
+            handle.join().expect("procedure scheduling worker panicked");
+        }
+    });
     let mut batch = LoweringBatch::default();
-    for wave in bodies.chunks(workers * chunk) {
-        let outcomes = thread::scope(|scope| {
-            let mut handles = Vec::new();
-            for slice in wave.chunks(chunk) {
-                handles.push((
-                    slice,
-                    scope.spawn(move || {
-                        slice
-                            .iter()
-                            .map(|body| lower_one_memo(frontend, body, host, policy, startup, memo))
-                            .collect::<Vec<_>>()
-                    }),
-                ));
-            }
-            handles
-                .into_iter()
-                .flat_map(|(slice, handle)| {
-                    handle.join().unwrap_or_else(|_| {
-                        slice
-                            .iter()
-                            .map(|body| {
-                                Err(vec![LoweringDiagnostic {
-                                    kind: DiagnosticKind::Internal,
-                                    identity: None,
-                                    origin: body.source.clone(),
-                                    message: "procedure lowering worker panicked".into(),
-                                }])
-                            })
-                            .collect()
-                    })
-                })
-                .collect::<Vec<_>>()
-        });
-        for outcome in outcomes {
+    for slot in results {
+        for outcome in slot
+            .into_inner()
+            .unwrap_or_else(|error| error.into_inner())
+            .expect("every procedure chunk completed")
+        {
             match outcome {
                 Ok(unit) => batch.units.push(unit),
                 Err(errors) => batch.diagnostics.extend(errors),
