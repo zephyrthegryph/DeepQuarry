@@ -1,11 +1,3 @@
 /obj/structure/catwalk hatch_open=1 -overlay: icons/turf/catwalks.dmi:catwalk0:-32767 x4
 /obj/structure/catwalk hatch_open=2 -overlay: icons/turf/catwalks.dmi:catwalk0:-32767 x4
-/obj/structure/catwalk smooth_mask=1 +overlay: icons/turf/catwalks.dmi:catwalk0:-32767 x2
-/obj/structure/catwalk smooth_mask=1 +overlay: icons/turf/catwalks.dmi:catwalk1:-32767
-/obj/structure/catwalk smooth_mask=1 +overlay: icons/turf/catwalks.dmi:catwalk4:-32767
-/obj/structure/catwalk smooth_mask=1 -overlay: icons/turf/catwalks.dmi:catwalk0:-32767 x4
-/obj/structure/catwalk smooth_mask=2 +overlay: icons/turf/catwalks.dmi:catwalk0:-32767 x2
-/obj/structure/catwalk smooth_mask=2 +overlay: icons/turf/catwalks.dmi:catwalk1:-32767
-/obj/structure/catwalk smooth_mask=2 +overlay: icons/turf/catwalks.dmi:catwalk4:-32767
-/obj/structure/catwalk smooth_mask=2 -overlay: icons/turf/catwalks.dmi:catwalk0:-32767 x4
 

@@ -8,20 +8,25 @@
 	density = TRUE
 	max_integrity = 100
 	var/datum/material/material
+	var/material_colour // the material's icon colour, kept beside it for the look
 
 CAPABILITIES(/obj/structure/barricade)
 	param(nameof(barricade_material), pos = 1, apply = PROC_REF(build_of))
 	op("repair_or_hit", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+TRACKED(/obj/structure/barricade, material)
+TRACKED(/obj/structure/barricade, material_colour)
 
 /// The barricade's material (its constructor param; a subtype's default).
 /obj/structure/barricade/var/barricade_material = MAT_WOOD
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
 /obj/structure/barricade/proc/build_of(material_name)
-	material = get_material_by_name("[material_name || MAT_WOOD]")
+	set_material(get_material_by_name("[material_name || MAT_WOOD]"))
 	if(!material)
 		spent(src)
 		return
+	set_material_colour(material.icon_colour)
 	name = "[material.display_name] barricade"
 	desc = "This space is blocked off by a barricade made of [material.display_name]."
 	color = material.icon_colour
@@ -140,21 +145,13 @@ DESTROY_EFFECTS(/obj/structure/barricade/sandbag, new /datum/destroy_effects_dat
 	consume(src)
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/structure/barricade/sandbag, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/barricade/sandbag/appearance_overlays()
-	. = list()
+/obj/structure/barricade/sandbag/draw(datum/look/look)
+	..()
 	if(!material)
-		return .
-
-	var/image/I
-
+		return
 	for(var/i = 1 to 4)
 		var/connect = connections?[i] || 0
-		I = image('icons/obj/sandbags.dmi', "sandbags[connect]", dir = 1<<(i-1))
-		I.color = material.icon_colour
-		. += I
-
-	return .
+		look.overlay(look_overlay_image('icons/obj/sandbags.dmi', "sandbags[connect]", color = material_colour, dir = 1<<(i-1)))
 
 /obj/structure/barricade/sandbag/update_connections(propagate = 0, obj/structure/barricade/sandbag/ignore = null)
 	if(!material)
@@ -172,7 +169,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/barricade/sandbag, TYPE_PROC_REF(/atom, a
 
 	connections = string_list(dirs_to_corner_states(dirs))
 
-	update_icon()
+	changed(src)
 
 /obj/structure/barricade/sandbag/proc/can_join_with(obj/structure/barricade/sandbag/S)
 	if(material == S.material)
