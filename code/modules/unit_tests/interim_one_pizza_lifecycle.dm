@@ -8,7 +8,7 @@
 	TEST_ASSERT_EQUAL(length(expected), 5, "the actual giant pizza configures five slice varieties")
 	for(var/slice_path in expected)
 		TEST_ASSERT_EQUAL(length(contents_of(T, slice_path)), 0, "the original turf contains no slice of the configured variety")
-	pizza.slice_done(user)
+	test_op_handler(pizza, "slice_done", user)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(pizza), "actual cutting completion immediately consumes the original floor pizza")
 	TEST_ASSERT_NULL(locate_within(T, /obj/structure/theonepizza), "the cut pizza leaves no duplicate source structure")
