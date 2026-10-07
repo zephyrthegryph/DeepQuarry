@@ -280,7 +280,7 @@ CAPABILITIES(/obj/machinery/teleport/hub)
 
 /obj/machinery/teleport/station/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		icon_state = "controller-p"
 
 		if(com())

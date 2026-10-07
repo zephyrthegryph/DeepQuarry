@@ -72,7 +72,7 @@
 
 /// The rack is broken.
 /proc/p2_rack_broken(obj/machinery/power/smes/batteryrack/R)
-	return !!R.has_stat(BROKEN)
+	return !!R.broken_now()
 
 /// The test rack: a real one, except that a test mob has no client and the type records who opened its window.
 /obj/machinery/power/smes/batteryrack/p2_test

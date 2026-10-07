@@ -38,7 +38,7 @@ CAPABILITIES(/obj/machinery/flasher/portable)
 
 /obj/machinery/flasher/power_change()
 	. = ..()
-	if(!has_stat(NOPOWER))
+	if(!power_lost())
 		icon_state = "[base_state]1"
 	else
 		icon_state = "[base_state]1-p"

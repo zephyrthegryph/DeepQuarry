@@ -118,7 +118,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 /obj/machinery/requests_console/appearance_overlays()
 	. = list()
 
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		set_light(0)
 		set_light_on(FALSE)
 		icon_state = "req_comp_off"
@@ -257,7 +257,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 /obj/machinery/requests_console/proc/interaction_id(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/held = A.held
-	if(!operable(MAINT))
+	if(!operable())
 		return OP_OK
 	if(screen == RCS_MESSAUTH)
 		var/obj/item/card/id/T = held
@@ -276,7 +276,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, TYPE_PROC_REF(/atom, ap
 
 /obj/machinery/requests_console/proc/interaction_stamp(datum/act/op/A)
 	var/obj/item/held = A.held
-	if(!operable(MAINT))
+	if(!operable())
 		return OP_OK
 	if(screen == RCS_MESSAUTH)
 		var/obj/item/stamp/T = held

@@ -46,7 +46,7 @@ CAPABILITIES(/obj/machinery/cell_charger)
 	examine_line(PROC_REF(examine_contents))
 	on_change(nameof(charging), ANY, then(PROC_REF(charging_changed)))
 	on_change(nameof(anchored), ANY, then(PROC_REF(condition_changed)))
-	on_change(nameof(stat), ANY, then(PROC_REF(condition_changed)))
+	on_change(STAT_OPERABLE, ANY, then(PROC_REF(condition_changed)))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(charge_frame)), when = nameof(charging))
 
 /obj/machinery/cell_charger/Initialize(mapload)
@@ -65,7 +65,7 @@ CAPABILITIES(/obj/machinery/cell_charger)
 /// charger cheat power where no APC serves).
 /obj/machinery/cell_charger/proc/insert_refusal(datum/act/op/A)
 	var/obj/item/held = A.held
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return /datum/msg/machine/inoperable
 	if(istype(held, /obj/item/cell/device))
 		return /datum/msg/charger/wrong_cell

@@ -35,10 +35,10 @@
 	if(panel_open)
 		look.overlay("[icon_base]-panel")
 
-	if(has_stat(BROKEN))
+	if(broken_now())
 		look.state("[icon_base]-broken")
 
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		look.state("[icon_base]-off")
 	else
 		look.state(icon_base)

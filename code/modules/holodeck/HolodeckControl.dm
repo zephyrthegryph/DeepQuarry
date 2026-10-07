@@ -207,7 +207,7 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 
 /obj/machinery/computer/HolodeckControl/power_change()
 	. = ..()
-	if (. && active && (has_stat(NOPOWER)))
+	if (. && active && (power_lost()))
 		emergencyShutdown()
 
 /// Watches its holograms (and draws power for them) while a program runs or holograms exist;
@@ -342,9 +342,9 @@ DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_
 	linkedholodeck().sound_env = A.sound_env
 
 	if(prog == powerdown_program)
-		linkedholodeck().requires_power = TRUE
+		linkedholodeck().set_requires_power(TRUE)
 	else
-		linkedholodeck().requires_power = FALSE
+		linkedholodeck().set_requires_power(FALSE)
 	linkedholodeck().power_change()
 
 	for(var/obj/effect/landmark/L in linkedholodeck())

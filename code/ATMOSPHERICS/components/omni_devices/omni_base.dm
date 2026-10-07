@@ -57,7 +57,7 @@ CAPABILITIES(/obj/machinery/atmospherics/omni)
 	..()
 	look.state("base")
 	var/list/shown
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		shown = overlays_off // ALLOW(derived_reads): update_ports() and power_change() redraw it whenever the port icons or its power change
 	else if(error_check())
 		shown = overlays_error // ALLOW(derived_reads): update_ports() and power_change() redraw it whenever the port icons or its power change

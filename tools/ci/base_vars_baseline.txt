@@ -194,10 +194,6 @@ base_var	code/game/machinery/machinery.dm	var/maintenance_weld_time = 2 SECONDS
 base_var	code/game/machinery/machinery.dm	var/list/material_component_manifest
 base_var	code/game/machinery/machinery.dm	var/material_emp_resistance = 0
 base_var	code/game/machinery/machinery.dm	var/tmp/gas_dependency_wake_count = 0
-base_var	code/game/machinery/machinery.dm	var/tmp/machine_wake_count = 0
-base_var	code/game/machinery/machinery.dm	var/tmp/materialize_directed = FALSE
-base_var	code/game/machinery/machinery.dm	var/step_on_power_change = FALSE
-base_var	code/game/machinery/machinery.dm	var/tmp/list/react_sleep_tokens
 base_var	code/game/machinery/machinery_power.dm	var/tmp/recursive_set = FALSE // bool to indicate if recursive movement detection ever got set. If it did, don't try to set it again!
 base_var	code/game/objects/buckling.dm	var/can_buckle = FALSE
 base_var	code/game/objects/buckling.dm	var/buckle_movable = 0

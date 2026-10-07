@@ -60,7 +60,7 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 /obj/machinery/floor_light/proc/welder_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	if(!(damaged || (has_stat(BROKEN))))
+	if(!(damaged || (broken_now())))
 		return OP_OK
 	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return OP_OK
@@ -97,7 +97,7 @@ MSG_DEF_SELF(floor_light/unanchored, "it must be screwed down first")
 	var/mob/user = A.actor
 	if(issmall(user))
 		return OP_DECLINE
-	if(!isnull(damaged) && !has_stat(BROKEN))
+	if(!isnull(damaged) && !broken_now())
 		act_message(user, src, others = span_danger("%U% smashes %T%!"))
 		play_sfx(src, SFX_SHATTER)
 		atom_break()
@@ -110,9 +110,9 @@ MSG_DEF_SELF(floor_light/unanchored, "it must be screwed down first")
 
 /// Requirement: TRUE, or why the light can't be switched.
 /obj/machinery/floor_light/proc/can_switch(mob/user, atom/target, obj/item/held)
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return "it's too damaged to be functional"
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return "it's unpowered"
 	return TRUE
 

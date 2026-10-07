@@ -426,8 +426,7 @@ CAPABILITIES(/datum/secrets_menu)
 
 	affected_mobs |= holder()
 	for(var/area/AffectedArea in affected_areas)
-		AffectedArea.power_light = 0
-		AffectedArea.power_change()
+		AffectedArea.set_channels(AffectedArea.power_equip, FALSE, AffectedArea.power_environ)
 		after(AffectedArea, rand(2.5 SECONDS, 5 SECONDS), GLOBAL_PROC_REF(chilling_wind_relight), with = list(AffectedArea))
 
 	after(null, 10 SECONDS, GLOBAL_PROC_REF(chilling_wind_stops), with = list(affected_mobs.Copy()))
@@ -688,8 +687,7 @@ CAPABILITIES(/datum/secrets_menu)
 #undef HIGHLANDER_DELAY_TEXT
 
 /proc/chilling_wind_relight(area/A)
-	A.power_light = 1
-	A.power_change()
+	A.set_channels(A.power_equip, TRUE, A.power_environ)
 
 /proc/chilling_wind_stops(list/affected_mobs)
 	for(var/mob/M in affected_mobs)

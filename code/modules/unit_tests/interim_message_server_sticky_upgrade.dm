@@ -4,7 +4,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/message_server/server = allocate(/obj/machinery/message_server, T)
 	var/obj/item/circuitboard/message_monitor/board = allocate(/obj/item/circuitboard/message_monitor, T)
-	server.set_stat(0)
+	dq_machine_clear(server)
 	TEST_ASSERT(server.can_upgrade(user, server, board), "the real initialized active server can accept its actual upgrade board")
 	var/original_limit = server.spamfilter_limit
 	TEST_ASSERT_EQUAL(original_limit, initial(server.spamfilter_limit), "the initialized server has its declared baseline filtering capacity")

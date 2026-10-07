@@ -36,9 +36,9 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/aiupload, \
 
 /// Requirement: TRUE, or why no AI can be selected.
 /obj/machinery/computer/aiupload/proc/can_select_ai(mob/user, atom/target, obj/item/held)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return "the upload computer has no power"
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return "the upload computer is broken"
 	if(!length(active_ais()))
 		return "no active AIs detected"
@@ -53,7 +53,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/aiupload, \
 
 /obj/machinery/computer/aiupload/proc/interaction_select_ai(mob/user, obj/item/held, datum/interaction/interaction)
 	// Also the selection prompt's callback: re-check quietly (can_select_ai() told the user up front).
-	if(has_stat(NOPOWER) || has_stat(BROKEN) || !length(active_ais()))
+	if(power_lost() || broken_now() || !length(active_ais()))
 		return TRUE
 	var/mob/living/silicon/ai/picked = select_active_ai(user, src, PROC_REF(interaction_select_ai), args)
 	if(picked)
@@ -82,9 +82,9 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/borgupload, \
 
 /// Requirement: TRUE, or why no cyborg can be selected.
 /obj/machinery/computer/borgupload/proc/can_select_borg(mob/user, atom/target, obj/item/held)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return "the upload computer has no power"
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return "the upload computer is broken"
 	if(!length(free_borg_choices()))
 		return "no free cyborgs detected"
@@ -92,7 +92,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/borgupload, \
 
 /obj/machinery/computer/borgupload/proc/interaction_select_borg(mob/user, obj/item/held, datum/interaction/interaction)
 	// Also the selection prompt's callback: re-check quietly (can_select_borg() told the user up front).
-	if(has_stat(NOPOWER) || has_stat(BROKEN) || !length(free_borg_choices()))
+	if(power_lost() || broken_now() || !length(free_borg_choices()))
 		return TRUE
 	var/mob/living/silicon/robot/picked = freeborg(user, src, PROC_REF(interaction_select_borg), args)
 	if(picked)

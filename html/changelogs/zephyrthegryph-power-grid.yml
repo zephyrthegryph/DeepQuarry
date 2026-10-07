@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "An area's power demand is now the sum of its machines' draws (no running tally to drift); the area's channel state has one writer"
+  - bugfix: "Power sinks, solar grubs, shocks from an APC and APC lighting overloads now take charge from the APC's real cell instead of having it handed back at the next power step"
+  - bugfix: "The SMES and the battery rack open their hatch to a screwdriver again instead of opening their window"

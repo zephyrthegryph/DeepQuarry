@@ -104,7 +104,7 @@
 	for(var/i in 1 to 40)
 		var/obj/machinery/computer/mfc_probe/C = probe()
 		C.emp_act(1)
-		if(C.has_stat(BROKEN))
+		if(C.broken_now())
 			broken++
 		qdel(C)
 	TEST_ASSERT(broken >= 1 && broken < 40, "some consoles broke, not all ([broken] of 40)")
@@ -116,7 +116,7 @@
 /datum/unit_test/dq_hc_computers/mfc/a_blob_hits_like_a_blast/run_gate()
 	var/obj/machinery/computer/mfc_probe/C = probe()
 	C.blob_act(null)
-	TEST_ASSERT(QDELETED(C) || C.has_stat(BROKEN) || C.get_integrity() < C.max_integrity, "the blob damaged it")
+	TEST_ASSERT(QDELETED(C) || C.broken_now() || C.get_integrity() < C.max_integrity, "the blob damaged it")
 
 /// The area lists its consoles for an APC's overload, and the list follows a console that moves.
 /datum/unit_test/dq_hc_computers/mfc/the_area_lists_its_consoles

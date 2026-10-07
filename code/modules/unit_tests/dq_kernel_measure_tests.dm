@@ -42,7 +42,6 @@
 	// Rule 2: a code folder's row.
 	var/list/known = km_system_prefixes()
 	TEST_ASSERT(length(known) >= 2, "the prefix table is built (it has [length(known)] rows)")
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/pipeline/machine), "machines", "the machine pipeline")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/internal/timers), "om_core", "the scheduler's own behaviours")
 	// Rule 3: the family fallback.
 	TEST_ASSERT_EQUAL(km_system_key_for_path("/datum/om/behaviour/world/statpanels"), "statpanels", "world/<x> is <x> (as text: the lane is gone)")

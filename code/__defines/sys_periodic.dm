@@ -4,7 +4,7 @@
 // stopped by hand around every write of that state:
 //
 //   DECLARE_PERIODIC_WHILE(/obj/item/pinpointer, PERIODIC_SLOW, "active")
-//   DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/floodlight, MACHINE_PIPELINE, list("on", "operable"))
+//   DECLARE_PERIODIC_WHILE_ALL(/obj/item/pinpointer, PERIODIC_SLOW, list("active", "powered"))
 //   DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_step, "moving")
 //
 // A FIELD is a declared field of the type (OM_FIELD, OM_FLAG_FIELD, OM_FIELD_SETTER or a derived
@@ -13,11 +13,10 @@
 // work stops. At materialize it starts when they hold; at dematerialize it stops.
 //
 // DECLARE_PERIODIC_WHILE: CADENCE is a periodic pipeline (PERIODIC_SLOW, PERIODIC_SECOND, ...),
-// whose body is periodic_step(), or MACHINE_PIPELINE, whose body is machine_step(). The body never
+// whose body is periodic_step(). The body never
 // guards on the declared fields and never returns PROCESS_KILL for them (it may still return
 // PROCESS_KILL for work of its own that ran out; the next raise of a field channel re-evaluates).
-// While the fields don't hold, nothing else can start the work either: om_task_periodic() and
-// MACHINE_WAKE() refuse it and the machine stages don't run machine_step(). One per type; a
+// While the fields don't hold, nothing else can start the work either: om_task_periodic() refuses it. One per type; a
 // subtype's declaration replaces its parent's.
 //
 // DECLARE_REPEAT(TYPE, DELAY, PROC, FIELD): TYPE/proc/PROC runs every DELAY while FIELD holds
@@ -30,10 +29,6 @@
 // Non-atom datums have no materialize: a non-atom type with a declaration calls
 // lifecycle_decls_init(src) from its New() (the declarative-lifecycle rule for every non-atom
 // declaration), which starts the declaration.
-
-/// The cadence value for machine_step() work on the machine pipeline (start MACHINE_WAKE, stop
-/// MACHINE_SLEEP).
-#define MACHINE_PIPELINE /datum/om/pipeline/machine
 
 /// Returned by a DECLARE_REPEAT proc: stop repeating until the field changes to holding again.
 #define REPEAT_STOP "__repeat_stop"

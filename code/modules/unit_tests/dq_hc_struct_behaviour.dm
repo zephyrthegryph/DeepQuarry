@@ -32,7 +32,8 @@
 /// A machine of `type` with power and in one piece.
 /datum/unit_test/dq_hc_struct/proc/mach(type, turf/T)
 	var/obj/machinery/M = allocate(type, T)
-	M.stat_remove(NOPOWER | BROKEN)
+	M.set_grid_power(TRUE)
+	M.set_broken_condition(FALSE)
 	return M
 
 /// A question is open for `actor`: an engine request, or a legacy prompt not yet answered.
@@ -398,7 +399,8 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/door/blast/puzzle/tyrdoor/keypad/D = allocate(/obj/machinery/door/blast/puzzle/tyrdoor/keypad, tile(3, 2))
 	D.code = list("1", "2", "3", "4", "5", "6")
-	D.stat_remove(NOPOWER | BROKEN)
+	D.set_grid_power(TRUE)
+	D.set_broken_condition(FALSE)
 	var/obj/item/multitool/M = allocate(/obj/item/multitool, tile(2, 2))
 	// The multitool's code entry is an op above the puzzle door's catch-all for held items.
 	hci_click(H, D, M)

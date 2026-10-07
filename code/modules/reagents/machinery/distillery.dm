@@ -58,6 +58,7 @@
 	var/efficiency = 1
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
+	started_work(step = PROC_REF(work_step), starts = TRUE, wakes_on = list(nameof(on), STAT_OPERABLE), unpowered = TRUE)
 	op("distillery_toggle_power", menu(), when(req_actor_kind(/mob/living)), needs(req_capable()), label("Toggle Distillery Heating"), then(PROC_REF(interaction_distillery_toggle_power)))
 	op("distillery_toggle_mixing", menu(), when(req_actor_kind(/mob/living)), needs(req_capable()), label("Start Distillery Mixing"), then(PROC_REF(interaction_distillery_toggle_mixing)))
 	op("distillery_install_beaker", item(/obj/item/reagent_containers/glass), label("Install beaker"), when(PROC_REF(has_free_beaker_slot)),
@@ -130,7 +131,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/toggle_power(mob/user)
 	if(powered())
-		// set_on() raises CHANGE_MACHINE_SETTINGS, which wakes the distillery's power/step stage.
+		// set_on() starts its work again (started_work wakes_on).
 		set_on(!on)
 		to_chat(user, span_notice("You turn \the [src] [on ? "on" : "off"]."))
 	else
@@ -259,7 +260,8 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 		chan = power_channel
 	A.use_power_oneoff(amount, chan)
 
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/machine_step()
+/// One step of its work (started_work, code/library/machine/started_work.dm): PROCESS_KILL parks it until it is switched on again.
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/work_step(datum/act/timer/A)
 	react_or_update()
 
 	var/run_pump = FALSE
@@ -398,6 +400,3 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/reagent_dis
 	if(reagents)
 		.[THERMAL_CAPACITY] += reagents.heat_capacity()
 
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/step_start_condition()
-	return on

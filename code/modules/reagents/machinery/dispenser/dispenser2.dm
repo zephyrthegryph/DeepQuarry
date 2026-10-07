@@ -32,7 +32,7 @@
 
 CAPABILITIES(/obj/machinery/chemical_dispenser)
 	owns_one(nameof(container), /obj/item/reagent_containers)
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(_recharge_reagents), gate = PROC_REF(operable), wakes_on = list(nameof(_recharge_reagents), nameof(stat)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(_recharge_reagents), gate = PROC_REF(operable), wakes_on = list(nameof(_recharge_reagents), STAT_OPERABLE))
 	interface("ChemDispenser", observe = TRUE)
 	extend("ui_observe", needs(req(PROC_REF(not_broken), silent = TRUE)))
 	op("amount", ui_act("amount", arg("amount", num())), then(PROC_REF(ui_act_amount)))
@@ -189,7 +189,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 
 /// Requirement: a broken dispenser ignores its buttons (silently, as the old ui_act_allowed() did).
 /obj/machinery/chemical_dispenser/proc/not_broken(datum/act/op/A)
-	return !has_stat(BROKEN)
+	return !broken_now()
 
 /// The save question's second step: a recipe of that name exists already.
 /obj/machinery/chemical_dispenser/proc/recipe_name_taken(datum/act/op/A)
@@ -214,7 +214,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 		var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
 		play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 		C.reagents.trans_to(container, amount)
-		MACHINE_WAKE(src)
+		work_start(src)
 	. = TRUE
 
 /obj/machinery/chemical_dispenser/proc/ui_act_remove(datum/act/op/A, amount_out, reagent)
@@ -320,7 +320,7 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 			// Allows copying recipes
 			play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 			var/amount_actually_dispensed = C.reagents.trans_to(container, dispense_amount)
-			MACHINE_WAKE(src)
+			work_start(src)
 			if(dispense_amount != amount_actually_dispensed)
 				visible_message(span_warning("[src] buzzes."), span_warning("You hear a faint buzz."))
 				to_chat(user, span_warning("[src] was only able to dispense [amount_actually_dispensed ? amount_actually_dispensed : 0]u out of [dispense_amount]u requested of <b>[label]</b>!"))

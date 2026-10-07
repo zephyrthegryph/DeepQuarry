@@ -2412,3 +2412,67 @@ underlays of every creatable subtype of each converted chain, recorded from the 
 * **A deferred `dx_*` callback finds its owner again**: the wrapper key is the one `rerun_unwrap()` reads (`rerun_h`).
 * **Open prompts are pinned, not changed.** An op paused at a prompt was already cancelled on losing its actor, target, held item, reach (adjacent bindings, the window) or what its requirements read, and re-ran its requirements on the answer; `dq_prompt_interrupt/*` now pins it (walk away, drop, delete, power loss, answer after a requirement changed, `keeps = 0`, chains). No behaviour changed.
 - **Ambient effects run only while a player is near** (client-proximity relevance, `code/controllers/subsystems/proximity.dm`): map-effect intervals (smoke, sparks and steam emitters, sound emitters, screen shakers) and timed beam points park while no client eye is in their 8-turf cell or the eight around it, and resume when one arrives, instead of polling for a player within 12 turfs. The range is now cell-based (between 8 and 24 turfs), the eye counts wherever it is (an AI camera, an observer) rather than the mob, and AFK players count (the old check ignored them after five minutes). A beam point that is parked with its beams up keeps them up. `always_run` holds the effect relevant everywhere.
+
+## Machines: the machine pipeline is deleted (rewrite/machine-stats)
+
+* **A fire alarm's lockdown countdown ticks as started work.** It is the same count (one service interval a step, the alarm trips at zero), now an
+  `every()` that runs only while `timing` and the alarm is operable; nothing in the game starts it on a plain fire alarm. The old stage also
+  looked for a hotspot once at spawn; the hotspot check now runs only inside the countdown (a hotspot reaches an alarm through its heat rule).
+* **The distillery runs as started work.** It starts when switched on and parks when it has nothing left, and a power or breakage change gives it
+  one more step (it used to wake on the same changes through channels). The gas watch it never armed is not replaced.
+* **A machine's high gear (`speed_process`) no longer moves its work to a faster lane.** The fast-lane step it ran called the machine's
+  `machine_step()`, which no converted machine defines, so the gear already did nothing to the work; the field stays for the mining and
+  conveyor interfaces that show it.
+* **`MACHINE_WAKE` on a machine with no started work does nothing**, as it already did for every machine that had left the pipeline (hydroponics
+  trays woken by chem smoke, for one).
+
+## Machines: started work parks while the machine is not operable (rewrite/machine-stats)
+
+* **A machine's started work runs only while `STAT_OPERABLE` holds.** Unpowered, broken, panel-open (maintenance) and EMP'd machines no longer step;
+  their work resumes by itself when they work again. Before, each step ran and refused (or ended its work and waited for power). The 13 machines
+  whose step reads power itself (the distillery, exonet node, magnet, ATM, recharge station, cooking appliances and others) declare `unpowered = TRUE`
+  and run as before. `STAT_OPERABLE` is now contributed by every machine (the stat bits, `stat_bits_allow()`), not only machine_basics machines.
+
+## The power grid: an area's demand is its machines' contributions (rewrite/power-grid)
+
+Design and migration: `doc/rewrite/power_grid.md`.
+
+* **No tallies.** An area's standing power demand per channel (`demand_equip`, `demand_light`, `demand_environ`) is the sum of what its machines
+  contribute (`contributes_to` the machine's `power_area`), settled when a machine's `use_power`, idle or active draw, channel or area changes. The
+  `static_equip/light/environ` vars, `power_use_change()`, `use_power_static()`, `retally_power()` and `check_static_power()` are gone (the admin
+  "Check Static Power" VV option with them): there is nothing that can drift, so there is nothing to recount.
+* **Every machine joins its area.** `area.power_machines` holds every machine standing in the area (it held only the ones that wanted power-change
+  calls); `area.lights` is `lights_here()`. A machine moved between areas takes its draw and its power state with it in one step.
+* **Rarely, a load shows that the tallies had lost.** A subclass that wrote its draw outside the setters, or a machine moved while it was still
+  initialising, used to leave the area's load wrong until someone retallied; the APC now carries exactly what the machines in the area ask.
+## Machines: NOPOWER and BROKEN are stats (rewrite/machine-stats)
+
+* `NOPOWER` is the `has_power` stat held false by `SRC_GRID` (set_powered() is the one writer); `BROKEN` is the `intact` stat held false by `SRC_DAMAGE`.
+  `has_stat()`, `stat_add()`, `stat_remove()`, `set_stat()` and `stat_bits_now()` are shims over them (and over the `stat` bits POWEROFF, MAINT and EMPED, which
+  are still bits), so every existing caller keeps its behaviour. A type's default `stat = BROKEN` or `NOPOWER` moves into the stat layer at Initialize.
+* The self-powered turret (`/obj/machinery/porta_turret/rcd`) declares that area power never stops it. Fixed in rewrite/power-grid: its power is its own, BROKEN and EMPED still stop it.
+
+## The power grid: a machine's power is a read of its area (rewrite/power-grid, stage 2)
+
+* **Power is a stat, not a push.** A machine has power while its area's channel for its `power_channel` is energized; there is no per-machine write when a channel
+  flips (`doc/rewrite/power_grid.md` section 7). A machine created or moved into a dark area is dark at once; a moved machine takes the new area's reading in the
+  same step. A machine with no area has power.
+* **Self-powered machines are not darkened by their area**: the APC and the SMES (as before, now declared), and the RCD turret (a fix: it was stopped by area power
+  though declared self-powered).
+* **A turret's power loss is still a moment late** (its capacitors, 0 to 1.5 s); restoration is immediate. A jukebox that is not bolted down has no power.
+* The self-powered turret (`/obj/machinery/porta_turret/rcd`) declares that area power never stops it; it does today (not changed here). Left to the grid work.
+
+## Machines: maintenance, switch and EMP are stats (rewrite/machine-stats)
+
+* **MAINT, POWEROFF and EMPED left the bit field.** Under-maintenance is the `in_maintenance` stat (held by `SRC_MAINTENANCE`; written by the oxygen pump's
+  hatch and the pipe dispenser's unwrench), the machine's own switch is `switched_on` (held off by `SRC_SWITCH`; the cookers' on/off), and a pulse is a timed
+  `SRC_EMP` hold on `STAT_OPERABLE`. `operable()` is unchanged in meaning: powered, whole, not in maintenance, not pulsed. The switch alone never stopped a
+  machine working and still doesn't.
+* **Cookers and a wrecked turret start in their state through hooks.** A fryer, grill, oven or mixer starts switched off (`starts_off`), as before; the
+  destroyed alien turret starts broken (`starts_broken()`), as before. Both are applied at the end of the machine's Initialize.
+* **A camera's EMP outage is a timed hold.** It lasts 90 seconds over the pulse's severity, as before; the hold ends by itself and the camera's own
+  timer clears its alarm. A camera that was already pulsed keeps its first deadline (as before).
+* **Watchers moved off `stat`.** The machines that woke on any change of the condition bits (pipe turbine, air alarm, chargers, the started-work machines) now
+  wake on `STAT_OPERABLE` (cookers also on `STAT_SWITCHED_ON`). A machine whose switch alone changed used to wake those watchers; now only the cookers hear it.
+* **`panel_open` is a tracked var.** Same writers (each machine's panel op), same channel; no behaviour change.
+* The vehicle's own condition bits (`/obj/vehicle`, `stat` with EMPED) are a separate field and are not machine conditions; they are unchanged.

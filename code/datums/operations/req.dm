@@ -382,7 +382,7 @@ MSG_DEF_SELF(req_no_claws, "You can't tear into that.")
 		return reason
 	if(istype(A, /obj/machinery))
 		var/obj/machinery/M = A
-		return M.has_stat(BROKEN | MAINT) ? reason : null
+		return (M.broken_now() || M.under_maintenance()) ? reason : null
 	return is_broken(A) ? reason : null
 
 /// The target works (req_working()): shared by every op that needs a working machine.

@@ -104,65 +104,48 @@
 	for(var/datum/dq_periodic_probe/D as anything in probes)
 		om_task_periodic_stop(D)
 
-/// A machine with explicitly started work (the old START_MACHINE_PROCESSING contract).
+/// A machine with explicitly started work (started_work(), code/library/machine/started_work.dm).
 /obj/machinery/dq_step_probe
 	var/work = 0
 	var/steps = 0
 
-/obj/machinery/dq_step_probe/machine_step()
+CAPABILITIES(/obj/machinery/dq_step_probe)
+	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
+
+/obj/machinery/dq_step_probe/proc/work_step(datum/act/timer/A)
 	steps++
 	if(--work <= 0)
 		return PROCESS_KILL
 
-/// MACHINE_WAKE runs machine_step() every machine frame until it returns PROCESS_KILL; the machine
-/// then parks, channels alone don't restart it, and MACHINE_WAKE/MACHINE_SLEEP start and end it.
+/// work_start() runs the step every interval until it returns PROCESS_KILL; the machine then parks, a power change alone doesn't restart it,
+/// and work_start()/work_stop() start and end it.
 /datum/unit_test/dq_om_machine_step_park_wake
 
 /datum/unit_test/dq_om_machine_step_park_wake/Run()
+	test_driver_begin()
 	var/obj/machinery/dq_step_probe/M = allocate(/obj/machinery/dq_step_probe, test_floor())
-	var/P = /datum/om/pipeline/machine
-	TEST_ASSERT(!om_attached(M, P), "a machine with no work joined the pipeline at Initialize")
+	M.set_powered(TRUE)
+	TEST_ASSERT(!work_started(M), "a machine with no work started none at Initialize")
 	M.work = 2
-	MACHINE_WAKE(M)
-	TEST_ASSERT(machine_stepping(M), "MACHINE_WAKE gave it no step work")
-	for(var/i in 1 to 2)
-		om_run_frame_now(M, P)
-	TEST_ASSERT_EQUAL(M.steps, 2, "it did not step once per frame while it had work")
-	TEST_ASSERT(!machine_stepping(M), "PROCESS_KILL did not end its step work")
-	for(var/i in 1 to 3)
-		om_run_frame_now(M, P)
+	work_start(M)
+	TEST_ASSERT(work_started(M), "work_start() started its work")
+	test_time(MACHINE_SERVICE_INTERVAL * 2 + 1)
+	TEST_ASSERT_EQUAL(M.steps, 2, "it did not step once per interval while it had work")
+	TEST_ASSERT(!work_started(M), "PROCESS_KILL ended its work")
+	test_time(MACHINE_SERVICE_INTERVAL * 3)
 	TEST_ASSERT_EQUAL(M.steps, 2, "it stepped with no work")
-	TEST_ASSERT(om_pipe_parked(M, P), "a machine with no work did not park")
 	M.work = 5
-	changed(M, CHANGE_MACHINE_POWER)
-	M.om_rec.sched.run_pass(1e9)
-	for(var/i in 1 to 2)
-		om_run_frame_now(M, P)
+	M.set_powered(FALSE)
+	M.set_powered(TRUE)
+	test_time(MACHINE_SERVICE_INTERVAL * 2)
 	TEST_ASSERT_EQUAL(M.steps, 2, "a power change restarted work nothing started")
-	MACHINE_WAKE(M)
-	M.om_rec.sched.run_pass(1e9)
-	om_run_frame_now(M, P)
-	TEST_ASSERT_EQUAL(M.steps, 3, "MACHINE_WAKE did not restart it")
-	MACHINE_SLEEP(M)
-	om_run_frame_now(M, P)
-	TEST_ASSERT_EQUAL(M.steps, 3, "MACHINE_SLEEP did not end its work")
-	TEST_ASSERT(!length(om_pipeline_audit(null, 400, 100, TRUE)), "the audit reported a missed wake")
-
-/// A machine in fast mode steps on the fast lane, not the machine pipeline.
-/datum/unit_test/dq_om_machine_fast_lane
-
-/datum/unit_test/dq_om_machine_fast_lane/Run()
-	var/obj/machinery/dq_step_probe/M = allocate(/obj/machinery/dq_step_probe, test_floor())
-	M.work = 10
-	MACHINE_WAKE(M)
-	M.set_speed_process(TRUE)
-	om_task_periodic(M, PERIODIC_FAST)
-	om_run_frame_now(M, /datum/om/pipeline/machine)
-	TEST_ASSERT_EQUAL(M.steps, 0, "a fast machine stepped on the machine pipeline")
-	TEST_ASSERT(periodic_run_now(M, PERIODIC_FAST), "a fast machine was not on the fast lane")
-	TEST_ASSERT_EQUAL(M.steps, 1, "a fast machine did not step on the fast lane")
-	M.set_speed_process(FALSE)
-	om_task_periodic_stop(M)
+	work_start(M)
+	test_time(MACHINE_SERVICE_INTERVAL + 1)
+	TEST_ASSERT_EQUAL(M.steps, 3, "work_start() restarted it")
+	work_stop(M)
+	test_time(MACHINE_SERVICE_INTERVAL * 2)
+	TEST_ASSERT_EQUAL(M.steps, 3, "work_stop() ended its work")
+	test_driver_end()
 
 /// Change channels and timers for sleepers: a watcher wakes on a watched channel and not on
 /// another; unwatching stops it; an after() timer fires once.
@@ -210,7 +193,7 @@
 	var/obj/machinery/igniter/igniter = allocate(/obj/machinery/igniter, T)
 	igniter.set_on(FALSE)
 	TEST_ASSERT(!test_work_allowed(igniter), "a switched-off igniter may still step")
-	MACHINE_SLEEP(igniter)
+	work_stop(igniter)
 	test_op_handler(igniter, "interaction_toggle", null)
 	kernel_drain_now() // the switch's change reaches its work at the drain
 	TEST_ASSERT(igniter.on && test_work_allowed(igniter), "switching an igniter on did not wake it")
@@ -250,40 +233,41 @@
 	// A refinery pipe steps only while reagents move through it.
 	var/obj/machinery/reagent_refinery/pipe/pipe = allocate(/obj/machinery/reagent_refinery/pipe, T)
 	TEST_ASSERT(test_machine_idle(pipe), "an empty refinery pipe kept stepping")
-	MACHINE_SLEEP(pipe)
+	work_stop(pipe)
 	pipe.reagents.add_reagent(REAGENT_ID_WATER, 10)
 	TEST_ASSERT(test_work_allowed(pipe), "reagents arriving did not wake a refinery pipe")
 	TEST_ASSERT(test_machine_idle(pipe), "a refinery pipe with nowhere to send its reagents kept stepping")
 
 	// A door timer counts down only while timing, and wakes when started.
-	MACHINE_SLEEP(brig)
-	brig.stat_remove(NOPOWER|BROKEN)
+	work_stop(brig)
+	brig.set_grid_power(TRUE)
+	brig.set_broken_condition(FALSE)
 	brig.set_timer(1 MINUTE)
 	brig.timer_start()
 	TEST_ASSERT(brig.timing && after_pending(brig, "end"), "starting a brig timer did not arm its end")
 	brig.timer_end()
 	TEST_ASSERT(!brig.timing && !after_pending(brig, "end"), "a finished brig timer kept a timer pending")
 
-/// Started work (code/library/machine/started_work.dm): a machine whose step finds it unpowered stops its work and waits for power, and its
-/// work starts again by itself when power returns.
+/// Started work (code/library/machine/started_work.dm): the work of a machine that is not operable parks (no step runs) and runs again by
+/// itself when power returns.
 /datum/unit_test/dq_started_work_waits_for_power
 
 /datum/unit_test/dq_started_work_waits_for_power/Run()
 	test_driver_begin()
-	var/obj/machinery/igniter/igniter = allocate(/obj/machinery/igniter, test_floor())
-	igniter.set_on(TRUE)
-	igniter.stat_add(NOPOWER)
-	work_start(igniter)
-	test_time(MACHINE_SERVICE_INTERVAL + 1)
-	TEST_ASSERT(!work_started(igniter), "an unpowered igniter's step stopped its work")
-	TEST_ASSERT(cap_key_get(igniter, STARTED_WORK_WAITING_POWER), "and it waits for power")
-	igniter.stat_remove(NOPOWER)
-	test_time(1)
-	TEST_ASSERT(work_started(igniter), "power returning restarted its work")
-	TEST_ASSERT(!cap_key_get(igniter, STARTED_WORK_WAITING_POWER), "and it no longer waits")
-	work_stop(igniter)
-	TEST_ASSERT(!work_started(igniter), "work_stop() stops it")
-	igniter.set_on(FALSE)
+	var/obj/machinery/dq_step_probe/M = allocate(/obj/machinery/dq_step_probe, test_floor())
+	M.work = 100
+	M.set_powered(FALSE)
+	work_start(M)
+	test_time(MACHINE_SERVICE_INTERVAL * 3)
+	TEST_ASSERT_EQUAL(M.steps, 0, "an unpowered machine's work parked")
+	M.set_powered(TRUE)
+	test_time(MACHINE_SERVICE_INTERVAL * 2)
+	TEST_ASSERT(M.steps > 0, "power returning un-parked it")
+	var/ran = M.steps
+	M.set_broken_condition(TRUE)
+	test_time(MACHINE_SERVICE_INTERVAL * 3)
+	TEST_ASSERT_EQUAL(M.steps, ran, "a broken machine's work parked")
+	work_stop(M)
 	test_driver_end()
 
 #endif
@@ -420,7 +404,7 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/// A machine type on the machine pipeline from Initialize, like the mapped ones.
+/// A machine type whose work may start at Initialize, like the mapped ones.
 /obj/machinery/dq_step_probe/mapped
 
 /obj/machinery/dq_step_probe/mapped/started
@@ -429,30 +413,23 @@
 /obj/machinery/dq_step_probe/mapped/started/step_start_condition()
 	return start_now
 
-/datum/om/decl/dq_test_step_probe
-	of = /obj/machinery/dq_step_probe/mapped
-	behaviours = list(/datum/om/pipeline/machine)
-
-/// Machines never start by default: a freshly materialized machine with no work is never stepped
-/// and parks; one whose declared start condition holds is woken once the world is up.
+/// Machines never start work by default: a freshly materialized machine with no work is never stepped; one whose declared start condition
+/// holds starts once the world is up.
 /datum/unit_test/dq_om_fresh_machine_never_steps
 
 /datum/unit_test/dq_om_fresh_machine_never_steps/Run()
+	test_driver_begin()
 	var/obj/machinery/dq_step_probe/mapped/idle = allocate(/obj/machinery/dq_step_probe/mapped, test_floor())
 	idle.work = 5
 	var/obj/machinery/dq_step_probe/mapped/started/busy = allocate(/obj/machinery/dq_step_probe/mapped/started, test_floor())
 	busy.work = 5
-	TEST_ASSERT(om_attached(idle, /datum/om/pipeline/machine), "a decl-listed machine did not join the pipeline")
-	for(var/i in 1 to 40)
-		om_test_ticks(1)
-		if(busy.steps)
-			break
-	// Two intervals after the busy machine first steps: the idle one would have
-	// been stepped by then (was three, ~2 s of extra real-time wait).
-	om_test_ticks(MACHINE_PIPELINE_INTERVAL * 2 / world.tick_lag)
+	idle.set_powered(TRUE)
+	busy.set_powered(TRUE)
+	test_time(MACHINE_SERVICE_INTERVAL * 3)
 	TEST_ASSERT_EQUAL(idle.steps, 0, "a fresh machine with no work was stepped")
-	TEST_ASSERT(om_pipe_parked(idle, /datum/om/pipeline/machine), "a fresh machine with no work did not park")
-	TEST_ASSERT(busy.steps > 0, "a machine whose start condition holds was not woken")
+	TEST_ASSERT(!work_started(idle), "a fresh machine with no work started none")
+	TEST_ASSERT(busy.steps > 0, "a machine whose start condition holds started")
+	test_driver_end()
 
 #endif
 

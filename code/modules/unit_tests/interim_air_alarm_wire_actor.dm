@@ -14,7 +14,8 @@
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/machinery/alarm/interim_wire_actor_probe/alarm = allocate(/obj/machinery/alarm/interim_wire_actor_probe, T)
 	// The real shock implementation refuses broken machinery before RNG or sparks.
-	alarm.set_stat(BROKEN)
+	dq_machine_clear(alarm)
+	alarm.set_broken_condition(TRUE)
 	var/datum/wires_test_adapter/wires = wires_test(alarm)
 	TEST_ASSERT(istype(wires), "the actual air alarm initializes its wire controller")
 	TEST_ASSERT(!alarm.shorted, "the alarm starts without a wiring short")

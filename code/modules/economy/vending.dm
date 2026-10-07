@@ -630,7 +630,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 		throw_item()
 
 /obj/machinery/vending/proc/speak(message)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
 
 	if(!message)
@@ -649,9 +649,9 @@ GLOBAL_LIST_EMPTY(vending_products)
 	look.hide(LOOK_BROKEN)
 	look.hide(LOOK_DARK)
 	var/base = initial(icon_state)
-	if(has_stat(BROKEN))
+	if(broken_now())
 		look.state("[base]-broken")
-	else if(has_stat(NOPOWER))
+	else if(power_lost())
 		look.state("[base]-off")
 	look.overlay("[base]-panel", when = panel_open(src))
 

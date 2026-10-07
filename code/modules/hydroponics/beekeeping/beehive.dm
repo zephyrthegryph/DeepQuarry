@@ -269,7 +269,7 @@ TRACKED(/obj/machinery/honey_extractor, processing)
 		. += "It has [honey] units of honey in its storage tank."
 
 /obj/machinery/honey_extractor/proc/appearance_state()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return "[initial(icon_state)]_off"
 	if(processing)
 		return "[initial(icon_state)]_moving"
@@ -310,7 +310,7 @@ MSG_DEF_SELF(honey_extractor/honey, "there is no honey in it")
 /obj/machinery/honey_extractor/proc/ready_for_item(mob/actor, atom/target, obj/item/held)
 	if(processing)
 		return "it's currently spinning, wait until it's finished"
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return "it's powerless and can't grant your wishes"
 	if(panel_open)
 		return "its maintenance panel is open, it would not be safe to turn it on"

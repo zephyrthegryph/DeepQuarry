@@ -17,7 +17,7 @@ OM_FIELD(/obj/machinery/ai_slipper, cooldown_on, 0, CHANGE_MACHINE_SETTINGS)
 DECLARE_REPEAT(/obj/machinery/ai_slipper, 0.5 SECONDS, slip_process, "cooldown_on")
 
 /obj/machinery/ai_slipper/proc/appearance_on()
-	return (!has_stat(NOPOWER) && !has_stat(BROKEN) && !disabled) ? 1 : 0
+	return (!power_lost() && !broken_now() && !disabled) ? 1 : 0
 
 /// The look (the draw sweep: from its template).
 /obj/machinery/ai_slipper/draw(datum/look/look)

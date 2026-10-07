@@ -46,7 +46,6 @@
 				priority = "Undetermined"
 
 /obj/machinery/message_server
-	step_on_power_change = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	icon = 'icons/obj/machines/research.dmi'
 	icon_state = "server"
@@ -76,7 +75,7 @@
 	var/noisy = FALSE
 
 CAPABILITIES(/obj/machinery/message_server)
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active), nameof(stat)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), wakes_on = list(nameof(active), STAT_OPERABLE), unpowered = TRUE)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
 	owns_many(nameof(pda_msgs), /datum/data_pda_msg)
 	owns_many(nameof(rc_msgs), /datum/data_rc_msg)

@@ -149,7 +149,7 @@ TRACKED(/obj/machinery/power/turbine, generating_shown)
 
 /// Started and whole (BROKEN also marks "no partner connected"; see locate_machinery()).
 /obj/machinery/compressor/proc/running(datum/act/A)
-	return starter && !has_stat(BROKEN)
+	return starter && !broken_now()
 
 /// One step while started: it spins toward its target and draws in gas.
 /obj/machinery/compressor/proc/compressor_step(datum/act/timer/A)
@@ -170,7 +170,7 @@ TRACKED(/obj/machinery/power/turbine, generating_shown)
 	// RPM function to include compression friction - be advised that too low/high of a compfriction value can make things screwy
 	rpm = max(0, rpm - (rpm*rpm)/(COMPFRICTION*efficiency))
 
-	if(starter && !has_stat(NOPOWER))
+	if(starter && !power_lost())
 		use_power(2800)
 		if(rpm<1000)
 			rpmtarget = 1000
@@ -228,7 +228,7 @@ TRACKED(/obj/machinery/power/turbine, generating_shown)
 
 /// Its compressor is started and it is whole.
 /obj/machinery/power/turbine/proc/running(datum/act/A)
-	return compressor?.starter && !has_stat(BROKEN)
+	return compressor?.starter && !broken_now()
 
 /// One step while its compressor runs: power from the rpm, the rpm from the gas, and the gas vented behind it.
 /obj/machinery/power/turbine/proc/turbine_step(datum/act/timer/A)
@@ -338,8 +338,8 @@ CAPABILITIES(/obj/machinery/computer/turbine_computer)
 /obj/machinery/computer/turbine_computer/ui_data(datum/act/eval/A)
 	var/list/data = list()
 	data["connected"] = (compressor() && compressor().turbine()) ? TRUE : FALSE
-	data["compressor_broke"] = (!compressor() || compressor().has_stat(BROKEN)) ? TRUE : FALSE
-	data["turbine_broke"] = (!compressor() || !compressor().turbine() || compressor().turbine().has_stat(BROKEN)) ? TRUE : FALSE
+	data["compressor_broke"] = (!compressor() || compressor().broken_now()) ? TRUE : FALSE
+	data["turbine_broke"] = (!compressor() || !compressor().turbine() || compressor().turbine().broken_now()) ? TRUE : FALSE
 	data["broken"] = (data["compressor_broke"] || data["turbine_broke"])
 	data["door_status"] = door_status ? TRUE : FALSE
 

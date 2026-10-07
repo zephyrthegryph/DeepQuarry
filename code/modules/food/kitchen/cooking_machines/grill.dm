@@ -16,7 +16,7 @@
 
 	optimal_power = 1.2 // Things on the grill cook .6 faster - this is now the fastest appliance to heat and to cook on. BURGERS GO SIZZLE.
 
-	stat = POWEROFF // Starts turned off.
+	starts_off = TRUE
 
 	// Grill is faster to heat and setup than the rest.
 	optimal_temp = 120 + T0C
@@ -39,7 +39,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker/grill)
 DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/grill, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/appliance/cooker/grill/appearance_overlays() // TODO: Cooking icon
 	. = list()
-	if(!has_stat(MACHINE_STAT_ANY))
+	if(!has_condition())
 		icon_state = on_icon
 		if(cooking == TRUE)
 			if(grill_loop)

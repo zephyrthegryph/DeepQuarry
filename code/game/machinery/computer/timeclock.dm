@@ -38,7 +38,7 @@
 
 /obj/machinery/computer/timeclock/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		set_light(0)
 	else
 		set_light(light_range_on, light_power_on)

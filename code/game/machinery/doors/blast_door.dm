@@ -158,7 +158,7 @@ CAPABILITIES(/obj/machinery/door/blast)
 
 /// Broken (a hostile hand with a prying tool still pries a broken door).
 /obj/machinery/door/blast/proc/wrecked(datum/act/A)
-	return has_stat(BROKEN)
+	return broken_now()
 
 /// A fireaxe must be held in both hands to pry; anything else does not care.
 /obj/machinery/door/blast/proc/wielded_if_axe(datum/act/op/A)
@@ -167,7 +167,7 @@ CAPABILITIES(/obj/machinery/door/blast)
 
 /// The motors have given out (no power or broken) and the door is still.
 /obj/machinery/door/blast/proc/pry_free(datum/act/A)
-	return (has_stat(NOPOWER) || has_stat(BROKEN)) && !operating
+	return (power_lost() || broken_now()) && !operating
 
 /obj/machinery/door/blast/proc/pry_forced(datum/act/op/A)
 	add_fingerprint(A.actor)
@@ -275,11 +275,11 @@ CAPABILITIES(/obj/machinery/door/blast)
 		force_open()
 		return 1
 	else
-		if (src.operating || (has_stat(BROKEN) || has_stat(NOPOWER)))
+		if (src.operating || (broken_now() || power_lost()))
 			return 1
 		force_open()
 
-	if(autoclose && src.operating && !(has_stat(BROKEN) || has_stat(NOPOWER)))
+	if(autoclose && src.operating && !(broken_now() || power_lost()))
 		after(src, 15 SECONDS, PROC_REF(close), key = "autoclose", clock = CLOCK_WORLD)
 	return 1
 
@@ -287,7 +287,7 @@ CAPABILITIES(/obj/machinery/door/blast)
 /// Description: Closes the door. Does necessary checks.
 /obj/machinery/door/blast/close()
 
-	if (src.operating || (has_stat(BROKEN) || has_stat(NOPOWER)))
+	if (src.operating || (broken_now() || power_lost()))
 		return
 
 	force_close()

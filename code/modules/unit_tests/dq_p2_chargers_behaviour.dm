@@ -197,10 +197,10 @@
 	var/obj/machinery/cell_charger/C = p2c_cell_charger()
 	var/mob/living/carbon/human/H = p2c_actor()
 	var/obj/item/cell/cell = p2c_cell()
-	C.stat_add(BROKEN)
+	C.set_broken_condition(TRUE)
 	touch(H, C, cell)
 	TEST_ASSERT_NULL(p2c_held(C), "refused")
-	C.stat_remove(BROKEN)
+	C.set_broken_condition(FALSE)
 	touch(H, C, cell)
 	TEST_ASSERT_EQUAL(p2c_held(C), cell, "accepted once whole")
 
@@ -306,18 +306,18 @@
 	TEST_ASSERT_EQUAL(C.use_power, USE_POWER_IDLE, "idle while full")
 	cell.maxcharge = 1e7
 	cell.charge = 0
-	C.stat_add(NOPOWER)
+	C.set_grid_power(FALSE)
 	p2c_settle()
 	TEST_ASSERT_EQUAL(cell.charge, 0, "no power, no charge")
 	TEST_ASSERT_EQUAL(C.use_power, USE_POWER_OFF, "off")
-	C.stat_remove(NOPOWER)
+	C.set_grid_power(TRUE)
 	p2c_settle()
 	TEST_ASSERT(cell.charge > 0, "power back, charging again")
 	var/held = cell.charge
-	C.stat_add(BROKEN)
+	C.set_broken_condition(TRUE)
 	p2c_settle()
 	TEST_ASSERT_EQUAL(cell.charge, held, "broken, no charge")
-	C.stat_remove(BROKEN)
+	C.set_broken_condition(FALSE)
 
 /// The examine line names the cell and its charge.
 /datum/unit_test/dq_p2_chargers/cell_charger_examine_names_the_cell
@@ -439,14 +439,14 @@
 	var/obj/machinery/recharger/R = p2c_recharger()
 	var/mob/living/carbon/human/H = p2c_actor()
 	var/obj/item/G = p2c_gun()
-	R.stat_add(NOPOWER)
+	R.set_grid_power(FALSE)
 	p2_area.requires_power = TRUE
 	p2_area.power_equip = FALSE
 	touch(H, R, G)
 	TEST_ASSERT_NULL(p2c_held(R), "unpowered: refused")
 	p2_area.requires_power = FALSE
 	p2_area.power_equip = TRUE
-	R.stat_remove(NOPOWER)
+	R.set_grid_power(TRUE)
 	var/obj/item/gun/energy/selfish = allocate(/obj/item/gun/energy/taser, run_loc_floor_bottom_left)
 	selfish.set_self_recharge(TRUE)
 	touch(H, R, selfish)
@@ -503,11 +503,11 @@
 	TEST_ASSERT_EQUAL(R.use_power, USE_POWER_IDLE, "idle while full")
 	C.maxcharge = 1e7
 	C.charge = 0
-	R.stat_add(NOPOWER)
+	R.set_grid_power(FALSE)
 	p2c_settle()
 	TEST_ASSERT_EQUAL(C.charge, 0, "unpowered: no charge")
 	TEST_ASSERT_EQUAL(R.use_power, USE_POWER_OFF, "off")
-	R.stat_remove(NOPOWER)
+	R.set_grid_power(TRUE)
 	p2c_settle()
 	TEST_ASSERT(C.charge > 0, "powered: charging")
 

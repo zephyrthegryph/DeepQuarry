@@ -1323,7 +1323,6 @@
 #include "code\game\machinery\iv_drip.dm"
 #include "code\game\machinery\jukebox.dm"
 #include "code\game\machinery\lightswitch.dm"
-#include "code\game\machinery\machine_pipeline.dm"
 #include "code\game\machinery\machine_service.dm"
 #include "code\game\machinery\machine_api.dm"
 #include "code\game\machinery\machinery.dm"

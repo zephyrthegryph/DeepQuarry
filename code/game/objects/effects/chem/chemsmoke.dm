@@ -23,7 +23,7 @@ CAPABILITIES(/obj/effect/effect/smoke/chem)
 
 /obj/effect/effect/smoke/chem/proc/wake_nearby_hydroponics()
 	for(var/obj/machinery/portable_atmospherics/hydroponics/tray in view(1, src))
-		MACHINE_WAKE(tray)
+		work_start(tray)
 
 /obj/effect/effect/smoke/chem/transparent
 	opacity = FALSE

@@ -30,7 +30,7 @@
 	TEST_ASSERT_NULL(pod.get_occupant(), "Ejection must clear the recorded occupant")
 	TEST_ASSERT_NULL(pod.slot_item(OCCUPANT_SLOT_RESLEEVER), "Ejection must clear the actual occupant slot")
 	TEST_ASSERT_EQUAL(patient.loc, T, "Ejection must return the patient to the floor")
-	pod.set_stat(0)
+	dq_machine_clear(pod)
 	TEST_ASSERT(pod.operable(), "The self-entry fixture must be operable")
 	test_op_handler(pod, "resleever_verb_move_inside", actor)
 	TEST_ASSERT_EQUAL(probe.last_actor_ref, REF(actor), "Self-entry must forward its actor to the insertion boundary")

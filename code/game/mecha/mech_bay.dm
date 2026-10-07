@@ -45,7 +45,7 @@ OM_FIELD_VIEW(/obj/machinery/mech_recharger, atom/movable, charging, CHANGE_MACH
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/mech_recharger)
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(charging), gate = PROC_REF(operable), wakes_on = list(nameof(charging), nameof(stat)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(charging), gate = PROC_REF(operable), wakes_on = list(nameof(charging), STAT_OPERABLE))
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	default_parts()
 

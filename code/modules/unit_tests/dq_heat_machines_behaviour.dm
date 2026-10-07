@@ -54,7 +54,7 @@
 	var/obj/machinery/space_heater/heater = allocate(/obj/machinery/space_heater, room[1])
 	heater.set_temperature = 303
 	heater.set_state(1)
-	MACHINE_WAKE(heater)
+	work_start(heater)
 	var/charge0 = heater.cell.charge
 	var/e0 = heat_bt_air_energy(room)
 	heat_bt_run(20)
@@ -77,7 +77,7 @@
 	var/obj/machinery/space_heater/heater = allocate(/obj/machinery/space_heater, room[1])
 	heater.set_temperature = 293
 	heater.set_state(1)
-	MACHINE_WAKE(heater)
+	work_start(heater)
 	var/charge0 = heater.cell.charge
 	var/e0 = heat_bt_air_energy(room)
 	heat_bt_run(20)
@@ -112,7 +112,8 @@
 	heat_set(F.air_contents, T20C)
 	F.set_set_temperature(200)
 	F.set_power_level(100)
-	F.stat_remove(NOPOWER | BROKEN)
+	F.set_grid_power(TRUE)
+	F.set_broken_condition(FALSE)
 	F.set_use_power(USE_POWER_ACTIVE)
 	var/room0 = heat_bt_air_energy(room)
 	heat_bt_run(20)
@@ -145,7 +146,8 @@
 	heat_set(H.air_contents, T20C)
 	H.set_set_temperature(400)
 	H.set_power_level(100)
-	H.stat_remove(NOPOWER | BROKEN)
+	H.set_grid_power(TRUE)
+	H.set_broken_condition(FALSE)
 	H.set_use_power(USE_POWER_ACTIVE)
 	heat_bt_run(20)
 	var/loop_t = H.air_contents.return_temperature()

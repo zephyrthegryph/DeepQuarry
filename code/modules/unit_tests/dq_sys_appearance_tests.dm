@@ -52,12 +52,13 @@ DECLARE_APPEARANCE_PROC(/obj/structure/dq_appearance_provider, TYPE_PROC_REF(/at
 
 /datum/unit_test/dq_sys_appearance_draws/Run()
 	var/obj/machinery/dq_appearance_probe/P = allocate(/obj/machinery/dq_appearance_probe)
-	P.set_stat(0)
+	dq_machine_clear(P)
 	P.set_on(FALSE)
 	P.update_icon()
 	TEST_ASSERT_EQUAL(P.icon_state, "probe01aprobe", "template reads on, operable(), a ternary @var and initial()")
 	P.label = null
-	P.set_stat(NOPOWER)
+	dq_machine_clear(P)
+	P.set_grid_power(FALSE)
 	P.update_icon()
 	TEST_ASSERT_EQUAL(P.icon_state, "probe00probe", "template follows operable() and the ternary's false branch")
 	P.charge = 60
@@ -105,7 +106,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/dq_appearance_provider, TYPE_PROC_REF(/at
 /datum/unit_test/dq_sys_appearance_auto_refresh/Run()
 	appearance_flush()
 	var/obj/machinery/dq_appearance_probe/P = allocate(/obj/machinery/dq_appearance_probe)
-	P.set_stat(0)
+	dq_machine_clear(P)
 	P.set_on(FALSE)
 	P.label = "a"
 	appearance_flush()
@@ -154,8 +155,9 @@ DECLARE_APPEARANCE_PROC(/obj/structure/dq_appearance_provider, TYPE_PROC_REF(/at
 	var/obj/machinery/computer/C = allocate(/obj/machinery/computer)
 	appearance_flush()
 	var/before = C.icon_state
-	C.set_stat(0)
-	C.set_stat(BROKEN)
+	dq_machine_clear(C)
+	dq_machine_clear(C)
+	C.set_broken_condition(TRUE)
 	TEST_ASSERT(C.appearance_queued, "a machine's stat change queues its procedural update_icon()")
 	appearance_flush()
 	TEST_ASSERT(!C.appearance_queued, "drained")
@@ -171,7 +173,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/dq_appearance_provider, TYPE_PROC_REF(/at
 
 /datum/unit_test/dq_sys_appearance_initial_per_subtype/Run()
 	var/obj/machinery/dq_appearance_probe/other/O = allocate(/obj/machinery/dq_appearance_probe/other)
-	O.set_stat(0)
+	dq_machine_clear(O)
 	O.set_on(FALSE)
 	O.label = null
 	O.update_icon()

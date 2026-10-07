@@ -66,11 +66,11 @@ CAPABILITIES(/obj/machinery/computer)
 	..()
 	if(initial(icon_state) == "computer")
 		look.state("computer[desk_joins()]")
-	if(icon_keyboard && has_stat(NOPOWER))
+	if(icon_keyboard && power_lost())
 		look.overlay("[icon_keyboard]_off")
 		return
 	look.overlay(icon_keyboard)
-	look.glow(has_stat(BROKEN) ? "[initial(icon_state)]_broken" : screen_state())
+	look.glow(broken_now() ? "[initial(icon_state)]_broken" : screen_state())
 	look.light(light_range_on, light_power_on)
 
 /// The screen the console shows now (a type with screens of its own overrides it).
@@ -108,7 +108,7 @@ CAPABILITIES(/obj/machinery/computer)
 
 /// The monitor disconnected: the console becomes a frame with its board (a broken one drops its glass).
 /obj/machinery/computer/proc/disconnected(datum/act/op/A)
-	if(has_stat(BROKEN))
+	if(broken_now())
 		to_chat(A.actor, span_notice("The broken glass falls out."))
 		new /obj/item/material/shard(loc)
 	else

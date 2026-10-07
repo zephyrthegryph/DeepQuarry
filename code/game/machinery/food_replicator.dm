@@ -1,5 +1,4 @@
 /obj/machinery/food_replicator
-	step_on_power_change = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	name = "Food Replicator"
 	icon = 'icons/obj/machines/food_replicator.dmi'
@@ -148,10 +147,10 @@ MSG_DEF_SELF(food_replicator/container, "There is already a reagent container in
 	return
 
 /obj/machinery/food_replicator/proc/appearance_broken()
-	return has_stat(BROKEN) ? 1 : 0
+	return broken_now() ? 1 : 0
 
 /obj/machinery/food_replicator/proc/appearance_nopower()
-	return has_stat(NOPOWER | EMPED) ? 1 : 0
+	return (power_lost() || emp_held()) ? 1 : 0
 
 /// The look (the draw sweep: from its template and its layers).
 /obj/machinery/food_replicator/draw(datum/look/look)
@@ -170,7 +169,7 @@ MSG_DEF_SELF(food_replicator/container, "There is already a reagent container in
 /// own draw while it runs.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/food_replicator)
-	started_work(step = PROC_REF(work_step), wakes_on = list(nameof(stat)))
+	started_work(step = PROC_REF(work_step), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	op("scan", item(/obj/item/reagent_containers/food), priority(OP_PRIORITY_DEFAULT - 1), label("Scan food"), then(PROC_REF(interaction_scan)))
 	op("insert_container", item(/obj/item/reagent_containers/glass), priority(OP_PRIORITY_DEFAULT - 1), label("Insert container"), needs(req_is(nameof(container), FALSE, because = MSG(food_replicator/container))), then(PROC_REF(interaction_insert_container)))

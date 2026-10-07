@@ -58,7 +58,7 @@
 
 /// Why the device can't be unfastened now (running, or too much internal pressure), else TRUE.
 /obj/machinery/atmospherics/proc/unwrench_refusal(mob/user, obj/item/held)
-	if(use_power && !has_stat(NOPOWER))
+	if(use_power && !power_lost())
 		return "turn it off first"
 	if(!can_unwrench())
 		return "it's too exerted due to internal pressure"

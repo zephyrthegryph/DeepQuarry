@@ -134,11 +134,11 @@
 	TEST_ASSERT_NULL(C.sleep_violation(), "an idle camera is not asleep")
 	var/failure = om_wake_test(C, om_callable(src, PROC_REF(emp_camera_briefly), C), 20)
 	TEST_ASSERT(!failure, failure)
-	OM_TEST_WAIT_UNTIL(!C.has_stat(EMPED), 80)
-	TEST_ASSERT(!C.has_stat(EMPED), "the camera did not recover at the end of its EMP")
+	OM_TEST_WAIT_UNTIL(!C.emp_held(), 80)
+	TEST_ASSERT(!C.emp_held(), "the camera did not recover at the end of its EMP")
 
 	C.upgradeMotion()
-	C.stat_remove(NOPOWER)
+	C.set_grid_power(TRUE)
 	C.status = TRUE
 	C.alarm_delay = 1
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, get_turf(C))
@@ -152,7 +152,7 @@
 	TEST_ASSERT_EQUAL(C.detectTime, 0, "the alarm was not cancelled after losing its last target")
 
 /datum/unit_test/dq_om_wake_camera_timers/proc/emp_camera_briefly(obj/machinery/camera/C)
-	C.stat_add(EMPED)
+	hold(C, STAT_OPERABLE, FALSE, SRC_EMP, 30 SECONDS)
 	C.affected_by_emp_until = world.time + 1
 	C.schedule_camera_timer()
 
@@ -161,7 +161,7 @@
 
 /datum/unit_test/dq_om_wake_status_display/Run()
 	var/obj/machinery/status_display/D = allocate(/obj/machinery/status_display, test_floor())
-	D.stat_remove(NOPOWER)
+	D.set_grid_power(TRUE)
 	var/datum/signal/S = new
 	S.data["command"] = "blank"
 	D.receive_signal(S)

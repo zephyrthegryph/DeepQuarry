@@ -67,7 +67,7 @@
 	. += drawn_from(nameof(use_power))
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/inject()
-	if(injecting || (has_stat(NOPOWER)))
+	if(injecting || (power_lost()))
 		return 0
 
 	var/datum/gas_mixture/environment = loc.return_air()

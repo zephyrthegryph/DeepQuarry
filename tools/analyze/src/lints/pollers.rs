@@ -7,22 +7,17 @@
 //!     `process(` / `proc/process(` under a type block);
 //!   * `start`: a `START_PROCESSING(` / `START_MACHINE_PROCESSING(` call.
 //! Core files (the MC, the OM core, the defines, the external-I/O datums) are exempt by
-//! `lint_scopes.toml`. It also checks (`step_coverage`, a whole-tree scan) that every type defining
-//! `machine_step()` is covered by the machine pipeline's decl in
-//! `code/game/machinery/machine_pipeline.dm`.
+//! `lint_scopes.toml`. It also checks (`step_coverage`, a whole-tree scan) that no machine defines
+//! `machine_step()`: the machine pipeline is gone, a machine's work is `started_work()`.
 //!
 //! Quirks kept: no `exempt_path()` here (benchmarks and the TGS DMAPI are counted); the scan reads
 //! the raw text with its own `//` stripper (strings are not stripped, only a `//` outside quotes, with
 //! `\"` not toggling) and its own `/*` block tracking (a block comment line is skipped outright, type
 //! state included); `in_type` survives every indented or blank line; the ALLOW question is asked once
 //! per line that would count, and the one answer covers both a process and a start on that line;
-//! the step-coverage check reads every file, exempt ones included, except the unit-test probes, and
-//! its roots from the `of` list are NOT comment-stripped while the `lazy` list is (so a commented
-//! type in `of` still counts as covered); a missing pipeline file crashes the script, here it reports
-//! the "could not find" error.
+//! the step-coverage check reads every file, exempt ones included, except the unit-test probes.
 
 use std::borrow::Cow;
-use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
 
@@ -34,8 +29,6 @@ use crate::pat;
 use crate::pat_match;
 use crate::tree::{SourceFile, CODE_MAPS_DM};
 use crate::util::{is_py_space, py_lstrip, starts_with_any};
-
-const PIPELINE_FILE: &str = "code/game/machinery/machine_pipeline.dm";
 
 static META: Meta = Meta {
     name: "pollers",
@@ -85,20 +78,6 @@ fn strip_comment(line: &str) -> Cow<'_, str> {
     Cow::Owned(out)
 }
 
-/// `machine_pipeline_roots`: the types the machine pipeline decl covers, or None when the decl is
-/// missing from the file text.
-fn machine_pipeline_roots(text: &str) -> Option<HashSet<String>> {
-    let decl = pat!(r"(?s)/datum/om/decl/pipeline_machines\s*\n\tof = list\((.*?)\n\t\)").captures(text)?;
-    let machinery = pat!(r"(/obj/machinery[\w/]*)");
-    let mut roots: HashSet<String> = machinery.captures_iter(decl.s(1)).iter().map(|c| c.s(1).to_string()).collect();
-    // Lazily joined types (the decl's `lazy` list): covered, they join on MACHINE_WAKE().
-    if let Some(lazy) = pat!(r"(?s)var/list/lazy = list\((.*?)\n\t\)").captures(text) {
-        let bare = pat!(r"//[^\n]*").replace_all(lazy.s(1), "");
-        roots.extend(machinery.captures_iter(&bare).iter().map(|c| c.s(1).to_string()));
-    }
-    Some(roots)
-}
-
 impl Lint for Pollers {
     fn meta(&self) -> &Meta {
         &META
@@ -139,15 +118,9 @@ impl Lint for Pollers {
         }
     }
 
-    /// `check_step_coverage`: every `machine_step()` type is under a type of the pipeline decl. The
-    /// `machine_step()` heads of a file are cached by content; the check against the decl's roots is
-    /// a cheap merge.
+    /// `check_step_coverage`: no machine defines `machine_step()` (the machine pipeline was deleted; its work is
+    /// `started_work()`). The heads of a file are cached by content.
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
-        let roots = cx.tree.get(PIPELINE_FILE).and_then(|f| machine_pipeline_roots(f.text()));
-        let Some(roots) = roots else {
-            out.site_in_msg("step_coverage", PIPELINE_FILE, 1, "could not find /datum/om/decl/pipeline_machines in machine_pipeline.dm");
-            return;
-        };
         let all = cx.all_files();
         let heads = incr::facts("pollers-steps", &all, |f| {
             let mut steps = Vec::new();
@@ -166,19 +139,7 @@ impl Lint for Pollers {
                 continue;
             }
             for (n, t) in &fa.steps {
-                // The defaults, not work.
-                if matches!(t.as_str(), "/obj/machinery" | "/obj/machinery/atmospherics" | "/obj/machinery/proc") {
-                    continue;
-                }
-                let parts: Vec<&str> = t.split('/').collect();
-                if !(3..=parts.len()).any(|i| roots.contains(&parts[..i].join("/"))) {
-                    out.site_in_msg(
-                        "step_coverage",
-                        &f.rel,
-                        *n as usize,
-                        format!("{} defines machine_step() but is not under any type in /datum/om/decl/pipeline_machines", t),
-                    );
-                }
+                out.site_in_msg("step_coverage", &f.rel, *n as usize, format!("{} defines machine_step(): machine work is started_work()", t));
             }
         }
     }
@@ -232,15 +193,5 @@ mod tests {
         let out = scan("/obj/a\n\tprocess() START_PROCESSING(SSobj, src)\n");
         let rules: Vec<&str> = out.sites.iter().map(|s| s.rule.as_str()).collect();
         assert_eq!(rules, vec!["process", "start"]);
-    }
-
-    #[test]
-    fn pipeline_roots_keep_commented_types_of_the_of_list() {
-        let text = "/datum/om/decl/pipeline_machines\n\tof = list(\n\t\t/obj/machinery/a,\n\t\t// /obj/machinery/b,\n\t)\n\tvar/list/lazy = list(\n\t\t/obj/machinery/c,\n\t\t// /obj/machinery/d,\n\t)\n";
-        let roots = machine_pipeline_roots(text).unwrap();
-        let mut got: Vec<&str> = roots.iter().map(|s| s.as_str()).collect();
-        got.sort();
-        assert_eq!(got, vec!["/obj/machinery/a", "/obj/machinery/b", "/obj/machinery/c"]);
-        assert!(machine_pipeline_roots("nothing").is_none());
     }
 }

@@ -50,7 +50,7 @@
 
 /obj/machinery/holoplant/power_change()
 	. = ..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		deactivate()
 	else
 		activate()

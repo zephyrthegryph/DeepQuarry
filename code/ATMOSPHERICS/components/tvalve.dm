@@ -181,7 +181,7 @@ CAPABILITIES(/obj/machinery/atmospherics/tvalve)
 
 /obj/machinery/atmospherics/tvalve/digital/draw(datum/look/look)
 	..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		look.state("tvalve[mirrored ? "m" : ""]nopower")
 
 /// A digital three-way valve turns for someone its access lets in, while it has power.
@@ -189,7 +189,7 @@ CAPABILITIES(/obj/machinery/atmospherics/tvalve/digital)
 	extend("toggle", needs(req(PROC_REF(actor_allowed), because = MSG(lock/denied)), req(PROC_REF(has_power), because = MSG(valve/unpowered))))
 
 /obj/machinery/atmospherics/tvalve/digital/proc/has_power(datum/act/A)
-	return !has_stat(NOPOWER)
+	return !power_lost()
 
 //Radio remote control
 

@@ -212,11 +212,11 @@ CAPABILITIES(/obj/machinery/door_timer)
 DECLARE_APPEARANCE_PROC(/obj/machinery/door_timer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/door_timer/appearance_overlays()
 	. = list()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		icon_state = "frame"
 		return .
 
-	if(has_stat(BROKEN))
+	if(broken_now())
 		set_picture("ai_bsod")
 		return .
 

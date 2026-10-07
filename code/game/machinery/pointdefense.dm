@@ -203,7 +203,7 @@ CAPABILITIES(/obj/machinery/pointdefense_control)
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/pointdefense)
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), gate = PROC_REF(operable), wakes_on = list(nameof(active), nameof(stat)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(active), gate = PROC_REF(operable), wakes_on = list(nameof(active), STAT_OPERABLE))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ident tag"),
 		asks(/datum/prompt/text, fields = list("title" = computed(PROC_REF(ident_title)), "question" = "Enter a new ident tag.", "default" = nameof(id_tag), "max_len" = MAX_NAME_LEN, "timeout" = 0)),
 		then(PROC_REF(ident_entered)))

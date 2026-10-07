@@ -29,7 +29,7 @@ OM_FIELD_VIEW(/obj/machinery/recharge_station, obj/item/cell, cell, CHANGE_MACHI
 /// Not BROKEN (an unpowered station still runs off its cell, so operable() is too strict).
 OM_DERIVE_FIELD(/obj/machinery/recharge_station, unbroken, list("stat"))
 /obj/machinery/recharge_station/proc/unbroken()
-	return !has_stat(BROKEN)
+	return !broken_now()
 
 // ALLOW(init/INSTANCE_STATE): takes its built parts and the high-capacity cell among them
 /obj/machinery/recharge_station/Initialize(mapload)
@@ -51,7 +51,7 @@ OM_DERIVE_FIELD(/obj/machinery/recharge_station, unbroken, list("stat"))
 
 /obj/machinery/recharge_station/proc/work_step(datum/act/timer/A)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
-	if((has_stat(NOPOWER)) && !has_cell_power()) // No power and cell is dead.
+	if((power_lost()) && !has_cell_power()) // No power and cell is dead.
 		if(icon_update_tick)
 			icon_update_tick = 0 //just rebuild the overlay once more only
 			update_icon()
@@ -68,7 +68,7 @@ OM_DERIVE_FIELD(/obj/machinery/recharge_station, unbroken, list("stat"))
 
 	//Then, if external power is available, recharge the internal cell
 	var/recharge_amount = 0
-	if(!has_stat(NOPOWER))
+	if(!power_lost())
 		// Calculating amount of power to draw
 		recharge_amount = (occupant ? restore_power_active : restore_power_passive) * CELLRATE
 
@@ -292,12 +292,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station, TYPE_PROC_REF(/atom, ap
 	. = list()
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 	. += ..()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		icon_state = "borgcharger0"
 		return .
 
 	if(occupant)
-		if((has_stat(NOPOWER)) && !has_cell_power())
+		if((power_lost()) && !has_cell_power())
 			icon_state = "borgcharger2"
 		else
 			icon_state = "borgcharger1"
@@ -307,7 +307,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station, TYPE_PROC_REF(/atom, ap
 	. += build_overlays()
 
 CAPABILITIES(/obj/machinery/recharge_station)
-	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(cell), gate = PROC_REF(unbroken), wakes_on = list(nameof(stat), nameof(cell)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(cell), gate = PROC_REF(unbroken), wakes_on = list(STAT_OPERABLE, nameof(cell)), unpowered = TRUE)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	extend("machine_panel", needs(req(PROC_REF(station_empty), silent = TRUE)))
 	extend("machine_panel_close", needs(req(PROC_REF(station_empty), silent = TRUE)))
@@ -392,13 +392,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station/ghost_pod_recharger, TYP
 	. = list()
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
 	. += ..()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		icon_state = "borg_pod_closed"
 		desc = "It appears broken..."
 		return .
 
 	if(occupant)
-		if((has_stat(NOPOWER)) && !has_cell_power())
+		if((power_lost()) && !has_cell_power())
 			icon_state = "borg_pod_closed"
 			desc = "It appears to be unpowered..."
 		else

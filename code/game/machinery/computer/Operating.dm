@@ -42,7 +42,6 @@ TRACKED(/obj/machinery/computer/operating, spo2)
 
 CAPABILITIES(/obj/machinery/computer/operating)
 	started_work(step = PROC_REF(work_step))
-	contributes(STAT_OPERABLE, TYPE_PROC_REF(/obj/machinery, stat_bits_allow), reads = list("stat"))
 	interface("OperatingComputer", title = "Patient Monitor")
 	extend("ui_open", needs(req_operable()), then(PROC_REF(control_fingerprinted)))
 	op("verboseOn", ui_act(), then(PROC_REF(control_used)), then(PROC_REF(verboseOn)))

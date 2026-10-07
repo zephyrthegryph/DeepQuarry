@@ -76,7 +76,7 @@ CAPABILITIES(/obj/machinery/optable)
 	if(!check_victim())
 		return // check_victim() cleared the victim, which ends the declared work
 	if(computer)
-		MACHINE_WAKE(computer)
+		work_start(computer)
 
 /obj/machinery/optable/proc/take_victim(mob/living/carbon/C, mob/living/carbon/user as mob)
 	if(C == user)
@@ -97,7 +97,7 @@ CAPABILITIES(/obj/machinery/optable)
 		var/mob/living/carbon/human/H = C
 		rel_set(src, nameof(victim), H)
 		if(computer)
-			MACHINE_WAKE(computer)
+			work_start(computer)
 		icon_state = H.pulse ? "table2-active" : "table2-idle"
 	else
 		icon_state = "table2-idle"

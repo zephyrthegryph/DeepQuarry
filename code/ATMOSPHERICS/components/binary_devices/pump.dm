@@ -101,7 +101,7 @@ Thus, the two variables affect pump operation are set in New():
 /// 3-5) through the generated wiring: the atom_break()/atom_fix() hook pushes
 /// it whenever integrity changes, and the reconciler covers anchored.
 /obj/machinery/atmospherics/binary/pump/pump_input_operable()
-	return anchored && !has_stat(BROKEN)
+	return anchored && !broken_now()
 
 //Radio remote control
 

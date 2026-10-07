@@ -59,7 +59,7 @@
 /// Grows its clone while it has one (set_occupant() wakes it); empty, it sleeps.
 /obj/machinery/clonepod/transhuman/work_step(datum/act/timer/A)
 	var/mob/living/occupant = get_occupant()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		if(occupant)
 			set_locked(0)
 			go_out()
@@ -190,7 +190,7 @@ CAPABILITIES(/obj/machinery/transhuman/synthprinter)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(busy), wakes_on = list(nameof(busy)))
 
 /obj/machinery/transhuman/synthprinter/proc/work_step(datum/act/timer/A)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		set_busy(0)
 		rel_clear(src, nameof(current_br))
 		return
@@ -247,7 +247,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
 
 /// Old attack_hand.
 /obj/machinery/transhuman/synthprinter/proc/synthprinter_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if((busy == 0) || (has_stat(NOPOWER)))
+	if((busy == 0) || (power_lost()))
 		return TRUE
 	to_chat(user, "Current print cycle is [busy]% complete.")
 	return TRUE
@@ -293,7 +293,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
 	look.state("pod_[appearance_mode()]")
 
 /obj/machinery/transhuman/synthprinter/proc/appearance_mode()
-	if(busy && !has_stat(NOPOWER))
+	if(busy && !power_lost())
 		return "1"
 	return broken ? "g" : "0"
 

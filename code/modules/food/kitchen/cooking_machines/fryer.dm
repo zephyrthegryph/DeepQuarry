@@ -29,7 +29,7 @@
 	max_contents = 2
 	container_type = /obj/item/reagent_containers/cooking_container/fryer
 
-	stat = POWEROFF // Starts turned off
+	starts_off = TRUE
 
 	tgui_id = "CookingFryer"
 
@@ -120,7 +120,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/fryer, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/appliance/cooker/fryer/appearance_overlays() // We add our own version of the proc to use the special fryer double-lights.
 	. = list()
-	if(!has_stat(MACHINE_STAT_ANY))
+	if(!has_condition())
 		. += ..()
 		if(cooking == TRUE)
 			icon_state = on_icon
@@ -137,9 +137,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/fryer, TYPE_PROC_REF(/at
 
 	// Special fryer double-lights overlay.
 	var/image/light
-	if(use_power == 1 && !has_stat(MACHINE_STAT_ANY))
+	if(use_power == 1 && !has_condition())
 		light = image(icon, "fryer_light_idle")
-	else if(use_power == 2 && !has_stat(MACHINE_STAT_ANY))
+	else if(use_power == 2 && !has_condition())
 		light = image(icon, "fryer_light_preheating")
 	else
 		light = image(icon, "fryer_light_off")

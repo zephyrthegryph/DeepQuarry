@@ -114,14 +114,14 @@
 
 /// Redraws now and schedules the next redraw.
 /obj/machinery/status_display/proc/refresh()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		remove_display()
 	else
 		update()
 	schedule_refresh()
 
 /obj/machinery/status_display/proc/schedule_refresh()
-	var/powered = !has_stat(NOPOWER)
+	var/powered = !power_lost()
 	var/want_shuttle = powered ? watched_shuttle() : 0
 	if(want_shuttle != shuttle_key_id)
 		if(!isnull(shuttle_key_token))
@@ -149,7 +149,7 @@
 	refresh()
 
 /obj/machinery/status_display/sleep_violation()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return null
 	if(next_refresh_delay() && !after_pending(src, "refresh_token"))
 		return "mode [mode] needs redrawing but has no timer"

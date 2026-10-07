@@ -98,6 +98,9 @@
 	var/power_event_count = 0
 	/// The reference text of the cell whose charge became Rust's Apc.charge last (push_to_rust() reconciles a newly seated cell once).
 	var/tmp/pushed_cell_ref
+	/// The standing load (equipment, lighting, environment watts) Rust was last sent for this APC's area, or null when it must be sent again (a new
+	/// node, a rebind): power_flush_areas() compares it with the area's demand every step.
+	var/tmp/list/pushed_demand
 
 	// ── channel state ────────────────────────────────────────────────────────
 	// Rust reports these after every power step; push_to_rust() sends edits.
@@ -162,7 +165,7 @@ MSG_DEF(apc/reset_done, "You finish resetting the APC.", "%U% resets the APC wit
 CAPABILITIES(/obj/machinery/power/apc)
 	blast_contents()
 	after_init(0, then(PROC_REF(apply_power_after_init)))
-	wall_machine(/obj/item/module/power_control, repair = NONE, frame = apc_frame(), powered = FALSE)
+	wall_machine(/obj/item/module/power_control, repair = NONE, frame = apc_frame(), powered = FALSE, area_power = FALSE)
 	configure(construction_graph(start = STAGE_APC_SECURED))
 	maintenance_hatch(
 		cover = cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), then(PROC_REF(cover_replaced))), broken = PROC_REF(stat_is_broken)),
@@ -262,7 +265,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 /// Why the latch holds the cover shut, or null: broken, or the cover lock over a charged cell.
 /obj/machinery/power/apc/proc/cover_latch_reason(datum/act/A)
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return /datum/msg/apc/cover_broken
 	if(coverlocked && built(src, STAGE_APC_SECURED) && cell_charge_percent(src) > CELL_BAY_LOW_PERCENT)
 		return /datum/msg/apc/cover_locked
@@ -277,7 +280,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 /// A ruined frame (broken, emagged, its cover gone) comes apart into scrap, not a reusable frame.
 /obj/machinery/power/apc/proc/frame_ruined(datum/act/A)
-	return emag_emagged(src) || has_stat(BROKEN) || cover_removed(src)
+	return emag_emagged(src) || broken_now() || cover_removed(src)
 
 /// needs: the floor plating in front of the frame is off.
 /obj/machinery/power/apc/proc/floor_exposed(datum/act/A)
@@ -315,8 +318,6 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 /// STAT_OPERABLE's reading of the machine core's bits, for the APC: only BROKEN. The APC is its area's supply, so the area going dark (NOPOWER)
 /// does not stop it; its unfinished frame is the build graph's (electronics_fastened()), its outages are holds (emp_disable(), energy_fail()).
-/obj/machinery/power/apc/stat_bits_allow(datum/act/A)
-	return !has_stat(BROKEN)
 
 // ---- the controls ----
 
@@ -383,7 +384,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	var/obj/item/held = N.item
 	if(!istype(held) || !user || issilicon(user))
 		return
-	if(has_stat(BROKEN) && !cover_open(src) && held.force >= 5 && held.w_class >= ITEMSIZE_SMALL)
+	if(broken_now() && !cover_open(src) && held.force >= 5 && held.w_class >= ITEMSIZE_SMALL)
 		act_message(user, src, self = span_danger("You hit %T% with %I%!"), others = span_danger("%T% has been hit with %I% by %U%!"), blind = "You hear a bang!", item = held)
 		if(prob(20))
 			key_set(src, COVER_OPEN, TRUE)
@@ -440,7 +441,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 				power_bind_now()
 	push_to_rust() // the first push after the bind: the frame's refresh may not have run yet
 	seat_cell_charge(TRUE)
-	area?.power_loads_changed() // the new node takes the area's static loads
+	pushed_demand = null // the new node takes the area's standing load at the next power step
 	return !!power_region
 
 /obj/machinery/power/apc/drain_power(drain_check, surge, amount = 0)
@@ -505,10 +506,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	var/area/served = area
 	if(served)
 		rel_set(src, nameof(area), null) // paired: the area no longer names this APC
-		served.power_light  = 0
-		served.power_equip  = 0
-		served.power_environ = 0
-		served.power_change()
+		served.set_channels(FALSE, FALSE, FALSE)
 	if(terminal)
 		terminal.expire(0) // the terminal goes with the APC it serves
 	..()
@@ -638,7 +636,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /// Not supplying for its own build: broken, or its electronics not fastened (the maintenance lights behind an open cover). Read through
 /// `supplying`, which the build stage settles, so the look is marked when it changes.
 /obj/machinery/power/apc/proc/out_of_order()
-	return has_stat(BROKEN) || (!supplying && !power_failing())
+	return broken_now() || (!supplying && !power_failing())
 
 /// STAT_SUPPLYING or the breaker changed (a failure began or ended, it broke, its build was finished or undone, the breaker went over): the area
 /// follows.
@@ -670,7 +668,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /// lock, broken, cell; the build graph how far the frame is built): unresponsive when hacked or locked while emagged, else an error while emagged.
 /obj/machinery/power/apc/proc/fault_lights_text(datum/act/eval/A)
 	var/mob/viewer = A.actor
-	if(!viewer || !Adjacent(viewer) || has_stat(BROKEN) || cover_open(src) || panel_open(src))
+	if(!viewer || !Adjacent(viewer) || broken_now() || cover_open(src) || panel_open(src))
 		return null
 	if((lock_locked(src) && emag_emagged(src)) || hacker)
 		return reason_text(/datum/msg/apc/unresponsive)
@@ -787,12 +785,8 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		new_power_light = (lighting >= POWERCHAN_ON)
 		new_power_equip = (equipment >= POWERCHAN_ON)
 		new_power_environ = (environ >= POWERCHAN_ON)
-	if(area.power_light == new_power_light && area.power_equip == new_power_equip && area.power_environ == new_power_environ)
+	if(!area.set_channels(new_power_equip, new_power_light, new_power_environ))
 		return
-	area.power_light = new_power_light
-	area.power_equip = new_power_equip
-	area.power_environ = new_power_environ
-	area.power_change()
 	contract_power_revision++
 	var/powered_channels = new_power_light + new_power_equip + new_power_environ
 	if(SScontracts)
@@ -880,7 +874,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	if(!operating || shorted || grid_check)
 		return
 	if(cell && cell.charge >= 20)
-		cell.use(20)
+		set_cell_charge(cell.charge - 20) // the cell and the power domain's charge together
 		// One light a tick, each on its own clock.
 		var/delay = 0
 		for(var/obj/machinery/light/L as anything in area_lights())
@@ -989,6 +983,5 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 /// The lights of the area this APC powers (a copy, the loops yield).
 /obj/machinery/power/apc/proc/area_lights()
-	var/list/found = area?.lights
-	return found ? found.Copy() : list()
+	return area ? area.lights_here() : list()
 

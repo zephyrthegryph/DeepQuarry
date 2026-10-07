@@ -54,7 +54,7 @@
 	COOLDOWN_START(src, feedback_cooldown, 5 SECONDS)
 
 /obj/machinery/mech_sensor/proc/enabled()
-	return on && !has_stat(NOPOWER)
+	return on && !power_lost()
 
 /// The look (the draw sweep: from its template).
 /obj/machinery/mech_sensor/draw(datum/look/look)
@@ -73,7 +73,7 @@
 		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency))
 
 /obj/machinery/mech_sensor/receive_signal(datum/signal/signal)
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		return
 
 	if(!signal.data["tag"] || (signal.data["tag"] != id_tag))

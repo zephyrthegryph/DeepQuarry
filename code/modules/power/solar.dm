@@ -112,7 +112,7 @@ CAPABILITIES(/obj/machinery/power/solar)
 
 /obj/machinery/power/solar/draw(datum/look/look)
 	..()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		look.overlay("solar_panel-b")
 	else
 		look.overlay("solar_panel")
@@ -137,7 +137,7 @@ CAPABILITIES(/obj/machinery/power/solar)
 	//isn't the power recieved from the incoming light proportionnal to cos(p_angle) (Lambert's cosine law) rather than cos(p_angle)^2 ?
 
 /obj/machinery/power/solar/proc/get_power_supplied()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		return 0
 	if(!GLOB.sun || !control())
 		return 0  //if there's no sun or the panel is not linked to a solar control computer, no need to proceed
@@ -409,10 +409,10 @@ TRACKED(/obj/machinery/power/solar_control, cdir)
 
 /obj/machinery/power/solar_control/draw(datum/look/look)
 	..()
-	if(has_stat(BROKEN))
+	if(broken_now())
 		look.state("broken")
 		return
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		look.state("c_unpowered")
 		return
 	look.state("solar")
@@ -456,7 +456,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 /obj/machinery/power/solar_control/proc/disassemble_done(datum/act/op/A)
 	var/mob/user = A.actor
 	. = OP_OK
-	if (src.has_stat(BROKEN))
+	if (src.broken_now())
 		to_chat(user, span_blue("The broken glass falls out."))
 		var/obj/structure/frame/F = new /obj/structure/frame/computer(src.loc)
 		new /obj/item/material/shard(src.loc)

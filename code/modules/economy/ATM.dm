@@ -44,7 +44,7 @@ log transactions
 /// Has mains power (NOPOWER clear); the timers and cash dispensing only run while it does.
 OM_DERIVE_FIELD(/obj/machinery/atm, has_mains_power, list("stat"))
 /obj/machinery/atm/proc/has_mains_power()
-	return !has_stat(NOPOWER)
+	return !power_lost()
 
 /obj/machinery/atm/proc/work_step(datum/act/timer/A)
 	if(ticks_left_timeout > 0)
@@ -204,7 +204,7 @@ DECLARE_EMAG(/obj/machinery/atm, PROC_REF(on_emag), null, null)
 	return data
 
 CAPABILITIES(/obj/machinery/atm)
-	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(has_mains_power), wakes_on = list(nameof(stat)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(has_mains_power), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 	op("insert_card", ui_act(), then(PROC_REF(ui_act_insert_card)))
 	op("logout", ui_act(), then(PROC_REF(ui_act_logout)))
 	interface("AutomatedTellerMachine")

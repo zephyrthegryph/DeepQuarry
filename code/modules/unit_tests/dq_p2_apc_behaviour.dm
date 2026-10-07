@@ -94,7 +94,7 @@
 
 /// The area takes `watts` more static load on the equipment channel (negative: gives it back).
 /proc/p2_apc_load(obj/machinery/power/apc/A, watts)
-	A.area.use_power_static(watts, EQUIP)
+	dq_area_load(get_turf(A), watts, EQUIP)
 
 /// One power step as the game runs it.
 /proc/p2_apc_power_step()
@@ -292,7 +292,7 @@
 	TEST_ASSERT_EQUAL(A.lighting, POWERCHAN_ON_AUTO, "lighting on auto")
 	TEST_ASSERT_EQUAL(A.environ, POWERCHAN_ON_AUTO, "environment on auto")
 	TEST_ASSERT(!A.shorted && !p2_apc_failed(A), "neither shorted nor failed")
-	TEST_ASSERT(!A.has_stat(BROKEN) && !p2_apc_unfinished(A), "neither broken nor under maintenance")
+	TEST_ASSERT(!A.broken_now() && !p2_apc_unfinished(A), "neither broken nor under maintenance")
 	TEST_ASSERT(A.operable(), "it works")
 	TEST_ASSERT_EQUAL(A.get_integrity(), A.max_integrity, "undamaged")
 	for(var/index in 0 to 2)
@@ -449,7 +449,7 @@
 	A.coverlocked = FALSE
 	A.take_damage(A.max_integrity * 0.75)
 	p2_settle()
-	TEST_ASSERT(A.has_stat(BROKEN), "three quarters of its integrity gone: broken")
+	TEST_ASSERT(A.broken_now(), "three quarters of its integrity gone: broken")
 	touch(H, A, tool(/obj/item/tool/crowbar))
 	TEST_ASSERT(!p2_apc_cover_open(A), "a broken APC's cover can't be pried open")
 
@@ -470,7 +470,7 @@
 	TEST_ASSERT(!p2_apc_cover_removed(A), "a whole APC keeps its cover")
 	A.take_damage(A.max_integrity * 0.75)
 	p2_settle()
-	TEST_ASSERT(A.has_stat(BROKEN), "broken")
+	TEST_ASSERT(A.broken_now(), "broken")
 	for(var/i in 1 to 40)
 		A.attackby(twig, H)
 	TEST_ASSERT(!p2_apc_cover_removed(A), "a light tap never knocks the cover off")
@@ -500,7 +500,7 @@
 	TEST_ASSERT(!p2_apc_cover_open(A), "the cover is shut over the empty bay")
 	A.take_damage(A.max_integrity * 0.75)
 	p2_settle()
-	TEST_ASSERT(A.has_stat(BROKEN), "broken")
+	TEST_ASSERT(A.broken_now(), "broken")
 	for(var/i in 1 to 200)
 		if(p2_apc_cover_removed(A))
 			break
@@ -508,7 +508,7 @@
 	TEST_ASSERT(p2_apc_cover_removed(A), "the cover is off")
 	touch(H, A, frame)
 	TEST_ASSERT(!p2_apc_cover_removed(A), "a new cover goes on")
-	TEST_ASSERT(!A.has_stat(BROKEN), "the APC is whole again")
+	TEST_ASSERT(!A.broken_now(), "the APC is whole again")
 	TEST_ASSERT(QDELETED(frame), "the frame was used up")
 
 /// With the cell still in, a new frame does not replace the knocked-off cover and is not used up.
@@ -529,7 +529,7 @@
 	TEST_ASSERT(p2_apc_cover_removed(A), "the cover is off")
 	touch(H, A, frame)
 	TEST_ASSERT(p2_apc_cover_removed(A), "the cover is still off")
-	TEST_ASSERT(A.has_stat(BROKEN), "and the APC still broken")
+	TEST_ASSERT(A.broken_now(), "and the APC still broken")
 	TEST_ASSERT(!QDELETED(frame), "the frame is not used up")
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -960,11 +960,11 @@
 	var/obj/machinery/power/apc/A = p2_apc()
 	A.take_damage(A.max_integrity * 0.3)
 	p2_settle()
-	TEST_ASSERT(!A.has_stat(BROKEN), "a third of its integrity: still working")
+	TEST_ASSERT(!A.broken_now(), "a third of its integrity: still working")
 	TEST_ASSERT(A.operating, "breaker on")
 	A.take_damage(A.max_integrity * 0.4)
 	p2_settle()
-	TEST_ASSERT(A.has_stat(BROKEN), "past half: broken")
+	TEST_ASSERT(A.broken_now(), "past half: broken")
 	TEST_ASSERT(!A.operating, "the breaker is off")
 	TEST_ASSERT(!A.operable(), "it does not work")
 	TEST_ASSERT(!p2_apc_area_powered(A, 0) && !p2_apc_area_powered(A, 1) && !p2_apc_area_powered(A, 2), "the area is dark")
@@ -1289,7 +1289,7 @@
 	var/mob/living/carbon/human/H = p2_actor()
 	A.take_damage(A.max_integrity * 0.9)
 	p2_settle()
-	TEST_ASSERT(A.has_stat(BROKEN), "broken")
+	TEST_ASSERT(A.broken_now(), "broken")
 	touch(H, A, dq_fueled_welder(run_loc_floor_bottom_left))
 	TEST_ASSERT(QDELETED(A), "the APC is gone")
 	var/obj/item/stack/material/steel/scrap = locate() in run_loc_floor_bottom_left
@@ -1438,7 +1438,7 @@
 	TEST_ASSERT(!p2_apc_failed(C), "a critical APC is not failed")
 	TEST_ASSERT(!p2_apc_emagged(C) && p2_apc_locked(C), "nor subverted")
 	TEST_ASSERT_EQUAL(C.cell.charge, charge, "nor its cell touched")
-	TEST_ASSERT(!C.has_stat(BROKEN), "nor broken")
+	TEST_ASSERT(!C.broken_now(), "nor broken")
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Signallers and silicons (pinned before they became their own bindings)

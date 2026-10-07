@@ -9,6 +9,8 @@
 	var/appliancetype = 0
 	density = TRUE
 	anchored = TRUE
+	/// Starts with its switch off.
+	var/starts_off = FALSE
 
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 5			// Power used when turned on, but not processing anything
@@ -44,7 +46,7 @@
 	var/static/radial_output = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_change_output")
 
 CAPABILITIES(/obj/machinery/appliance)
-	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(needs_step), wakes_on = list(nameof(cooking), nameof(stat)))
+	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(needs_step), wakes_on = list(nameof(cooking), STAT_OPERABLE, STAT_SWITCHED_ON), unpowered = TRUE)
 	owns_many(nameof(cooking_objs))
 	// the AI's ctrl-click switches it on or off over its link
 	op("remote_power", remote(), gesture(GESTURE_CTRL), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle power"),
@@ -65,6 +67,10 @@ CAPABILITIES(/obj/machinery/appliance)
 OM_FIELD(/obj/machinery/appliance, cooking, FALSE, CHANGE_MACHINE_SETTINGS)
 
 // cooking food and its containers go with the machine.
+/// A cooker that starts with its switch off is made so at initialization (machinery Initialize()).
+/obj/machinery/appliance/starts_switched_off()
+	return starts_off
+
 /obj/machinery/appliance/on_destroy(force)
 	for(var/datum/cooking_item/CI as anything in cooking_objs?.Copy())
 		destroyed(CI.container(), src)//Food is fragile, it probably doesnt survive the destruction of the machine
@@ -139,7 +145,7 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 
 /// Appearance reader: powered and holding something to cook.
 /obj/machinery/appliance/proc/appearance_cooking()
-	return !has_stat(MACHINE_STAT_ANY) && length(cooking_objs)
+	return !has_condition() && length(cooking_objs)
 
 APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off_icon}")
 
@@ -163,13 +169,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 		to_chat(user, span_warning("You can't reach [src] from here!"))
 		return
 
-	if (has_stat(POWEROFF))//Its turned off
-		stat_remove(POWEROFF)
+	if (switched_off())//Its turned off
+		set_switched_on(TRUE)
 		set_use_power(1)
 		act_message(user, src, MSG_SELF(span_filter_notice("You turn on %T%.")), MSG_OTHERS(span_filter_notice("%U% turns %T% on.")))
 
 	else //Its on, turn it off
-		stat_add(POWEROFF)
+		set_switched_on(FALSE)
 		set_use_power(0)
 		act_message(user, src, MSG_SELF(span_filter_notice("You turn off %T%.")), MSG_OTHERS(span_filter_notice("%U% turns %T% off.")))
 		set_cooking(FALSE) // Stop cooking here, too, just in case.
@@ -270,7 +276,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 
 /// Requirement: the appliance works.
 /obj/machinery/appliance/proc/can_take_item(mob/user, atom/target, obj/item/held)
-	if(!cook_type || has_stat(BROKEN))
+	if(!cook_type || broken_now())
 		return "\The [src] is not working"
 	return TRUE
 
@@ -699,7 +705,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/appliance, "{appearance_cooking?@on_icon:@off
 /obj/machinery/appliance/proc/ui_data_obj_machinery_appliance(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["on"] = !has_stat(POWEROFF)
+	data["on"] = !switched_off()
 	data["containersRemovable"] = can_remove_items(user, show_warning = FALSE)
 	data["output_options"] = (output_options || list())
 

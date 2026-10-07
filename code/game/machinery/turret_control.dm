@@ -168,7 +168,7 @@ CAPABILITIES(/obj/machinery/turretid)
 /// The look: off without power, else the mode it sets (standby, stun, kill), with its light.
 /obj/machinery/turretid/draw(datum/look/look)
 	..()
-	if(has_stat(NOPOWER))
+	if(power_lost())
 		look.state("control_off")
 	else if(enabled)
 		look.state(lethal ? "control_kill" : "control_stun")

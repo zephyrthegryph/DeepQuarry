@@ -80,7 +80,7 @@ CAPABILITIES(/obj/machinery/door/blast/puzzle)
 /obj/machinery/door/blast/puzzle/proc/puzzle_item_used(datum/act/op/A, harming)
 	var/mob/user = A.actor
 	var/obj/item/C = A.held
-	if(C.pry == 1 && (!harming || (has_stat(BROKEN))))
+	if(C.pry == 1 && (!harming || (broken_now())))
 		if(istype(C,/obj/item/material/twohanded/fireaxe))
 			var/obj/item/material/twohanded/fireaxe/F = C
 			if(!F.wielded)

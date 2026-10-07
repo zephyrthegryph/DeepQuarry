@@ -986,21 +986,7 @@ GLOBAL_DATUM_INIT(machine_service, /datum/system/machines, new)
 	behaviours = list(/datum/om/pipeline/machine)
 ```
 
-```dm
-// game/machinery/machine_pipeline.dm:300-315 — "step" stage: start/stop via MACHINE_WAKE, step_active
-/datum/om/stage/machine/step/perform(obj/machinery/M, datum/om/frame/machine/F)
-	if(M.speed_process)
-		return STAGE_IDLE
-	if(!M.step_active)
-		...
-		if(!sys_periodic_allows(M, MACHINE_PIPELINE))
-			M.set_step_waiting_power(FALSE)
-			return STAGE_IDLE
-		M.set_step_active(TRUE)
-	M.set_step_waiting_power(FALSE)
-	if(M.machine_step() == PROCESS_KILL)
-		M.set_step_active(FALSE)
-```
+The machine pipeline's "step" stage (deleted; a machine's work is `started_work()` now) started and stopped a machine's `machine_step()` through `MACHINE_WAKE()` and a `step_active` field.
 
 ```dm
 // game/machinery/floodlight.dm:17, 29-32 — a fourth start/stop vocabulary on top

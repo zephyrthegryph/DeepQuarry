@@ -184,7 +184,7 @@
 			for(var/obj/cam in view(world.view, my_turf))
 				if(istype(cam, /obj/machinery/camera))
 					var/obj/machinery/camera/mycam = cam
-					if(!mycam.has_stat(MACHINE_STAT_ANY))
+					if(!mycam.has_condition())
 						foundcam = TRUE
 			if(!foundcam)
 				continue
