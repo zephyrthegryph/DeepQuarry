@@ -36,13 +36,13 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
 # cap_bits_lint.py: REGISTRY, WRITERS and the unit-test prefix. These files are still scanned for bit
 # definitions; the lists only decide where a cap_state write is legal.
 registry = ["code/__defines/cap_bits.dm"]
-writers = ["code/datums/capabilities/capabilities.dm"]
+writers = ["code/datums/capabilities/capabilities.dm", "code/engine/declare/capability_tables.dm"]
 write_exempt_prefixes = ["code/modules/unit_tests/"]
 
 [lint.pool.lists]
 # pool_lint.py EXEMPT_PREFIX: `new` and unreleased take() are not counted here (the files still
 # declare pooled types and release).
-exempt_prefixes = ["code/modules/unit_tests/", "code/datums/lifecycle/pool.dm"]
+exempt_prefixes = ["code/modules/unit_tests/", "code/engine/state/pool.dm"]
 
 [lint.om_internal]
 # om_internal_lint.py SKIP: the scheduler core and the macros that map the public API onto it.
@@ -56,6 +56,8 @@ input_stance_readers = [
     "code/datums/interactions/",
     "code/datums/operations/actions.dm",
     "code/datums/operations/req.dm",
+    "code/datums/operations/native_requirement_adapter.dm",
+    "code/library/operations/actor_policy.dm",
     "code/engine/parts/",
     "code/modules/keybindings/",
     "code/modules/mob/living/living_movement.dm",
@@ -185,7 +187,7 @@ exempt_files = ["code/__defines/tgs.dm"]
 [lint.spatial.lists]
 # spatial_lint.py API_DIRS / API_FILES: the files that implement the ledger and spatial API. They are scanned
 # (an ALLOW there still records as used) but their sites are not counted.
-api_prefixes = ["code/datums/containment/"]
+api_prefixes = ["code/datums/containment/", "code/engine/refs/containment/"]
 api_files = ["code/__defines/containment.dm"]
 
 [lint.pollers]
@@ -193,7 +195,7 @@ api_files = ["code/__defines/containment.dm"]
 # defines, the unit tests, and the external-I/O datums whose process() is not gameplay polling (tgui, dbcore).
 # This script does not call exempt_path(): benchmarks and the TGS DMAPI are counted.
 exempt_prefixes = ["code/controllers/", "code/datums/om/", "code/__defines/", "code/modules/unit_tests/"]
-exempt_files = ["code/modules/tgui/tgui.dm", "code/controllers/subsystems/dbcore.dm"]
+exempt_files = ["code/modules/tgui/tgui.dm", "code/controllers/subsystems/dbcore.dm", "code/engine/kernel/cadences.dm"]
 [lint.pollers.lists]
 # check_step_coverage(): unit-test probes join the machine pipeline lazily through MACHINE_WAKE(); every other
 # file (the exempt ones above included) is checked.
@@ -262,9 +264,9 @@ call_ext_allow = [
 verdigris_defines_allow = ["code/__defines/verdigris/"]
 bindings_file_allow = ["code/__defines/verdigris/_bindings.dm"]
 # only the core pipeline runner and the kernel work engine change idle/park state
-pipelines_allow = ["code/datums/om/", "code/controllers/kernel/", "code/modules/unit_tests/"]
-relation_fields_allow = ["code/datums/om/", "code/engine/_generated/actions.dm"]
-timer_handles_allow = ["code/datums/om/"]
+pipelines_allow = ["code/datums/om/", "code/controllers/kernel/", "code/engine/kernel/sequence.dm", "code/engine/time/pipelines.dm", "code/modules/unit_tests/"]
+relation_fields_allow = ["code/datums/om/", "code/engine/refs/edges.dm", "code/engine/_generated/actions.dm"]
+timer_handles_allow = ["code/datums/om/", "code/engine/time/handles.dm", "code/engine/time/timers.dm"]
 # creation/deletion bookkeeping for the one revive path
 revive_allow = [
   "code/modules/unit_tests/", "code/modules/body/revival.dm", "code/modules/mob/death.dm", "code/modules/mob/mob.dm",
@@ -276,7 +278,7 @@ input_ladder_allow = ["code/modules/keybindings/router.dm", "code/engine/parts/i
 # `.holder` in the engine is the part/action holder entity (act.holder, notice.holder), never an admin holder:
 # these files are not about admin rights, so the raw-.holder ratchet does not count them.
 # the act context's .holder is the entity an op runs on, not an admin holder: engine and library code read it by design
-admin_holder_allow = ["code/engine/", "code/tests/engine/", "code/library/", "code/tests/library/", "code/domains/power/powered.dm"]
+admin_holder_allow = ["code/engine/", "code/datums/interactions/native_resolution_adapter.dm", "code/tests/engine/", "code/library/", "code/tests/library/", "code/domains/power/powered.dm"]
 # the compiled-table golden is a raw string whose lines are indented two spaces by explain_type()
 space_indent_allow = ["code/modules/unit_tests/dq_e1_declare_tests.dm"]
 # type-specific tool checks and domains converted later (mecha: I5; surgery and medical machines)
@@ -448,3 +450,7 @@ folders = [
   "code/modules/xenoarcheaology/artifacts/",
   "code/modules/xenobio/",
 ]
+
+# Generated scaffolding is derived build output; source dependencies remain checked.
+[lint.engine_layering]
+exempt_prefixes = ["code/engine/_generated/"]

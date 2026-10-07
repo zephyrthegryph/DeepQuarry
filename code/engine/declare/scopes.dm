@@ -198,7 +198,7 @@ GLOBAL_LIST_INIT(relation_scope_kinds, list(ENTRY_PROVIDES, "contributes", ENTRY
 		if(!A.dead && A.scope == SCOPE_SLOT && A.scope_data == slot_id && A.source == source && (A.def in defs))
 			activation_end(A)
 
-/// A watched input of a gated or reading while_slotted entry of `declarer`'s type changed (the on_change hooks of table_slot_gates()): each such
+/// A watched input of a gated or reading while_slotted entry of `declarer`'s type state_changed (the on_change hooks of table_slot_gates()): each such
 /// entry's scope is re-applied to what it covers now, so the condition and the read value are the current ones. Ending and re-attaching inside
 /// one trigger leaves a stat that did not move where it was.
 /proc/activations_slot_regate(datum/declarer)
@@ -304,15 +304,14 @@ GLOBAL_LIST_INIT(relation_scope_kinds, list(ENTRY_PROVIDES, "contributes", ENTRY
 	if(islist(entry_slot))
 		return slot_id in entry_slot
 	if(entry_slot == SLOT_ANY_WORN || entry_slot == SLOT_ANY_HELD || entry_slot == SLOT_ANY_CARRIED)
-		var/datum/om/relation/slot/def = holder?.ledger?.def_by_id(slot_id)
+		var/datum/relation_definition/slot/def = holder?.ledger?.def_by_id(slot_id)
 		if(!def)
 			return FALSE
 		if(entry_slot == SLOT_ANY_HELD)
-			return istype(def, /datum/om/relation/slot/body/hand)
+			return def.is_hand_provider_slot()
 		if(entry_slot == SLOT_ANY_CARRIED)
-			return istype(def, /datum/om/relation/slot/body)
-		var/datum/om/relation/slot/body/body_def = def
-		return istype(body_def) && !!(body_def.roles & BODY_SLOT_WORN)
+			return def.is_carried_provider_slot()
+		return def.is_worn_provider_slot()
 	return entry_slot == slot_id
 
 /// The capabilities a while_slotted entry applies: each capability child as it is, and every other entry (a hook, a contribution) together in one
@@ -327,3 +326,13 @@ GLOBAL_LIST_INIT(relation_scope_kinds, list(ENTRY_PROVIDES, "contributes", ENTRY
 			loose += child
 	if(length(loose))
 		. += hook_capability_of(loose, FALSE)
+
+/// Slot families expose provider scopes without importing a gameplay body model.
+/datum/relation_definition/slot/proc/is_hand_provider_slot()
+	return FALSE
+
+/datum/relation_definition/slot/proc/is_carried_provider_slot()
+	return FALSE
+
+/datum/relation_definition/slot/proc/is_worn_provider_slot()
+	return FALSE

@@ -374,7 +374,7 @@
 	var/t = src.args["t"]
 	if(istext(t)) // wait(PROC_REF(x)) / wait(CAP_PROC(x)): x(datum/act/A) returns the time in deciseconds, read when the op starts (a repair that takes as long as the damage)
 		t = op_call(A, t) || 0
-	var/speed = op_var(A.held, "tool_speed")
+	var/speed = op_var(A.held_provider(), "tool_speed")
 	return (isnum(speed) && speed > 0 && A.binding?.bind_kind == BIND_TOOL) ? t / speed : t
 
 /// asks(/datum/request/x, field = v..., step =, resume =, keeps =, when =): a workflow step. DM cannot carry free named arguments through one

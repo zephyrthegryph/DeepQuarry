@@ -324,7 +324,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 /proc/cap_of(datum/E, key, selector)
 	READS_FROM() // the type's compiled table, not an entity's state
 	if(!isnum(key))
-		return legacy_cap_of(E, key)
+		return capability_lookup(E, key)
 	var/datum/type_table/T = table_of(E)
 	var/list/found = table_cap_defs(T, key, selector)
 	if(length(found))
@@ -447,7 +447,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 /proc/cap_data(datum/A, datum/capability/C)
 	RETURN_TYPE(/datum)
 	if(!istype(A, /datum/activation))
-		return legacy_cap_data(A, C)
+		return capability_instance_data(A, C)
 	var/datum/activation/act = A
 	return activation_data(act)
 
@@ -527,7 +527,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 /proc/capability_key_changed(datum/holder, key_id)
 	engine_key_changed(holder, "capkey:[key_id]")
 	// A capability's state is drawn, examined and shown in windows: every output of the holder re-derives (the legacy cap_set() raised the same channel).
-	changed(holder, CHANGE_CAPABILITY)
+	state_changed(holder, CHANGE_CAPABILITY)
 
 /// Something an engine may depend on changed on `holder` under `key` (a tracked var name, "capkey:<id>", a stat id): published to the
 /// readers of the key. E3 extends this with the inline recompute of the stats that read it.

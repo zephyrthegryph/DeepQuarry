@@ -69,12 +69,7 @@ CAPABILITIES(/datum/prompt)
 
 /// The window goes away: the request ended (answered, cancelled, timed out). A kind with another window overrides it.
 /datum/prompt/proc/dismiss()
-	var/datum/shown = window
-	if(istype(shown, /datum/tgui_modal/prompt))
-		return dismiss_inline()
 	rel_clear(src, nameof(window))
-	if(shown && !QDELETED(shown))
-		SStgui.close_uis(shown)
 
 /// A window's answer was refused: the question stays open, so it is shown again (a prompt with no client to show it to just waits).
 /datum/prompt/proc/reopen()
@@ -153,11 +148,6 @@ CAPABILITIES(/datum/prompt)
 /datum/prompt/yes_no/answer_of_button(button)
 	return button == yes_text
 
-/datum/prompt/yes_no/present(mob/user)
-	var/datum/tgui_alert/prompt/alert = new(user, question, title || "Confirm", no_first ? list(no_text, yes_text) : list(yes_text, no_text), timeout, TRUE, GLOB.tgui_always_state)
-	rel_set(alert, nameof(alert.prompt), src)
-	alert.tgui_interact(user)
-	return alert
 
 /// A line of text.
 /datum/prompt/text
@@ -189,11 +179,6 @@ CAPABILITIES(/datum/prompt)
 /datum/prompt/text/inline_data(list/data)
 	data["value"] = default
 
-/datum/prompt/text/present(mob/user)
-	var/datum/tgui_input_text/prompt/box = new(user, question, title || "Text Input", default, max_len, multiline, encode, timeout, GLOB.tgui_always_state)
-	rel_set(box, nameof(box.prompt), src)
-	box.tgui_interact(user)
-	return box
 
 /// A number.
 /datum/prompt/number
@@ -233,11 +218,6 @@ CAPABILITIES(/datum/prompt)
 /datum/prompt/number/inline_data(list/data)
 	data["value"] = "[default]"
 
-/datum/prompt/number/present(mob/user)
-	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, round_entry && isnull(step), GLOB.tgui_always_state)
-	rel_set(box, nameof(box.prompt), src)
-	box.tgui_interact(user)
-	return box
 
 /datum/request
 	/// The workflow step name an asks() gave this request (A.step("name")).

@@ -256,7 +256,9 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
             for r in &ranges {
                 let (oidx, s, e) = *r;
                 let kw = HOOK_FORMS[oidx].kw;
-                if matches!(kw, "instead" | "adjusts" | "on_notice" | "on_op" | "on_change" | "after_init") && s != e && start >= s && start < e && outer.map(|o| s <= o.1).unwrap_or(true) {
+                let carries_context = matches!(kw, "instead" | "adjusts" | "on_notice" | "on_op" | "on_change" | "after_init")
+                    || (f.kw == "then" && matches!(kw, "every" | "after" | "delayed"));
+                if carries_context && s != e && start >= s && start < e && outer.map(|o| s >= o.1).unwrap_or(true) {
                     outer = Some(r);
                 }
             }
@@ -269,7 +271,7 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
                 }
             }
         }
-        let ui_args = if f.kw == "then" { op_ui_args(body, start) } else { None };
+        let ui_args = if f.kw == "then" && ctx == Ctx::Op { op_ui_args(body, start) } else { None };
         out.push(HandlerRef { owner: ty, cap_proc, cap_type: cap_type.clone(), proc, form: f.kw, ctx, role: f.role, rel: m.rel.clone(), line: m.line_at(start), notice, ui_args });
     }
 }
@@ -362,4 +364,40 @@ fn holder_arg(m: &Marker) -> String {
         }
     }
     String::new()
+}
+
+#[cfg(test)]
+mod context_tests {
+    use super::*;
+    use crate::tree::{SourceFile, Tree};
+
+    fn handlers(source: &str) -> Vec<HandlerRef> {
+        let file = SourceFile::from_text("code/content/probe.dm", source);
+        let tree = Tree::from_files(vec![file]);
+        let decls = Decls::get(&tree);
+        let mut found = Vec::new();
+        for marker in &decls.markers {
+            marker_handlers(marker, &mut found);
+        }
+        assert!(!found.is_empty(), "the fixture must discover its declarations");
+        found
+    }
+
+    #[test]
+    fn nested_every_members_effect_uses_timer_context() {
+        let found = handlers("CAPABILITIES(/datum/system/probe)\n\tevery(10, then(PROC_REF(visit)), members = /datum/member, when = PROC_REF(ready))\n\top(\"ordinary\", then(PROC_REF(ordinary)))\n");
+        let visit = found.iter().find(|h| h.proc == "visit").unwrap();
+        assert_eq!(visit.ctx, Ctx::Timer);
+        assert_eq!(visit.form, "then");
+        assert_eq!(found.iter().find(|h| h.proc == "ready").unwrap().ctx, Ctx::Eval, "every admission conditions remain evaluation contexts");
+        assert_eq!(found.iter().find(|h| h.proc == "ordinary").unwrap().ctx, Ctx::Op, "ordinary effects retain operation contexts");
+    }
+
+    #[test]
+    fn nearest_timer_carrier_wins_and_does_not_take_ui_args() {
+        let found = handlers("CAPABILITIES(/datum/probe)\n\top(\"press\", ui_act(\"press\", arg(\"value\")), on_notice(/datum/notice/probe, delayed(10, then(PROC_REF(later)))))\n");
+        let later = found.iter().find(|h| h.proc == "later").unwrap();
+        assert_eq!(later.ctx, Ctx::Timer, "a delayed effect receives a timer rather than its enclosing notice");
+        assert!(later.ui_args.is_none(), "timer callbacks do not inherit UI invocation parameters");
+    }
 }

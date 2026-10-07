@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Separated engine scheduling, state, ownership and operation machinery from content adapters."
+  - code_imp: "Added phase and lane options and member sweeps to declared periodics."

@@ -19,7 +19,7 @@ GLOBAL_VAR_INIT(stat_settle_depth, 0)
 GLOBAL_LIST_EMPTY(stat_marked) // list(entity, stat def, contribution or null) rows waiting for a marked drain
 GLOBAL_LIST_EMPTY(stat_hop_index) // remote var name -> list(list(reader type, /datum/stat_hop))
 GLOBAL_LIST_EMPTY(stat_sys_index) // "system.var" -> assoc: entity -> TRUE (readers through a SYSTEM_ACCESSOR)
-GLOBAL_VAR(stat_writing) // the stat var the engine is publishing: changed() does not feed it back to the stat layer
+GLOBAL_VAR(stat_writing) // the stat var the engine is publishing: state_changed() does not feed it back to the stat layer
 GLOBAL_VAR(stat_force_settle) // SETTLE_INLINE / SETTLE_MARKED: the apc_flip_50 spike forces every hop one way; null in play
 GLOBAL_VAR_INIT(stat_spills, 0)
 GLOBAL_VAR_INIT(stat_tick_spent, 0) // what this kernel pass's marked drains have charged to the lane so far
@@ -206,7 +206,7 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 #endif
 	if(has_var)
 		GLOB.stat_writing = def.name
-		changed(E, 0, def.name)
+		state_changed(E, 0, def.name)
 		GLOB.stat_writing = null
 	else
 		op_changed(E)
@@ -214,7 +214,7 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 			publish_change(E, def.stat_key)
 	// A status started or ended: its holder's hooks and presentation follow at once (code/library/mob/statuses.dm).
 	if(def.units && ((isnum(old) && old > 0) != (isnum(new_value) && new_value > 0)))
-		E.status_flipped(def.id, isnum(new_value) && new_value > 0)
+		E.stat_status_changed(def.id, isnum(new_value) && new_value > 0)
 	// Relevance moved: the sequences sweeping E and the OM cadences that read it follow (code/datums/om/contribution.dm).
 	else if(def.id == STAT_RELEVANCE)
 		relevance_changed(E, new_value || RELEVANCE_NONE)
@@ -676,7 +676,7 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 /// when nothing is marked. While a map loads (a load frame is open, even one suspended between chunks) it does nothing: initial evaluation is
 /// silent until the load completes, and the load's own settling drain (SSatoms.initialize_atoms_finish()) then runs what is owed, once.
 /proc/stat_drain_point()
-	if(SSatoms?.map_loading())
+	if(materialization_host().map_loading())
 		return
 	act_drain_point() // the notices queued past the depth cap and the marked on_change hooks (code/engine/actions)
 	if(length(GLOB.stat_marked))

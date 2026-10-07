@@ -233,7 +233,7 @@ CAPABILITIES(/datum/input_event/ui_act)
 	return "input.topic"
 
 /datum/input_event/topic/resolve()
-	sender?._Topic(hsrc, href, href_list)
+	sender?.input_topic(hsrc, href, href_list)
 	return null
 
 /// say: the message is processed by the mob's say(). Never dropped.
@@ -248,7 +248,7 @@ CAPABILITIES(/datum/input_event/ui_act)
 	return "input.say"
 
 /datum/input_event/say/resolve()
-	actor.say(message)
+	actor.input_say(message)
 	return null
 
 /// Point To: a repeated point keeps only the latest.
@@ -270,7 +270,7 @@ CAPABILITIES(/datum/input_event/ui_act)
 	return "input.point"
 
 /datum/input_event/point/resolve()
-	actor._pointed(pointing_at)
+	actor.input_point(pointing_at)
 	return null
 
 // ---------------------------------------------------------------- the system
@@ -496,7 +496,7 @@ SYSTEM_DEF(input)
 		return STEP_PARK
 	for(var/i in 1 to length(clients))
 		var/client/C = clients[i]
-		C?.keyLoop()
+		C?.input_key_loop()
 	return STEP_DONE
 
 /// The events waiting for `source` (a client, or a mob with none), oldest first. The store's own list: read it only.

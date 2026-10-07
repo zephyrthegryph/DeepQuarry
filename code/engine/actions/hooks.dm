@@ -91,7 +91,7 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 /// on_notice(/datum/notice/x, PROC_REF(y)).
 /proc/on_notice(type, ENTRY_SLOTS, outcome = ACT_COMMITTED, op = null)
 	if(!istype(p1, /datum/entry) && !islist(p1))
-		return legacy_on_notice(type, p1)
+		return reaction_on_notice(type, p1)
 	return entry_make(ENTRY_ON_NOTICE, null, list("notice" = type, "outcome" = outcome, "op" = op), entry_flatten(ENTRY_SLOT_LIST))
 
 /// on_op("cover.open", parts..., outcome =): sugar for on_notice(/datum/notice/op_done, parts..., op = key).
@@ -494,7 +494,7 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 /// req_* constructors, or a legacy requirement with a form in the new engine), asked in the action's own context.
 /proc/act_needs_refusal(datum/act/A, datum/hook/H)
 	for(var/child in H.entry.children)
-		if(istype(child, /datum/entry/part/req) || istype(child, /datum/req))
+		if(istype(child, /datum/entry/part/req) || istype(child, /datum/requirement))
 			if(!op_req_holds(A, child))
 				return op_req_refusal(A, child)
 	return null

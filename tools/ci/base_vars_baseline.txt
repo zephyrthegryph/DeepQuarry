@@ -50,31 +50,11 @@ base_var	code/datums/behaviours/swarming.dm	var/swarm_offset_y = 0
 base_var	code/datums/behaviours/swarming.dm	var/is_swarming = FALSE
 base_var	code/datums/behaviours/swarming.dm	var/list/atom/movable/swarm_members
 base_var	code/datums/behaviours/tethered_item.dm	var/tether_path
-base_var	code/datums/capabilities/capabilities.dm	var/cap_state = 0
-base_var	code/datums/capabilities/capabilities.dm	var/tmp/list/cap_data
-base_var	code/datums/capabilities/capability_ext.dm	var/tmp/list/cap_extras
 base_var	code/datums/capabilities/library/assembly.dm	var/obj/item/assembly/attached_assembly
 base_var	code/datums/capabilities/library/signaler.dm	var/cap_signal_frequency
 base_var	code/datums/capabilities/library/signaler.dm	var/cap_signal_code
-base_var	code/datums/capabilities/look.dm	var/tmp/look_set_bits = 0
-base_var	code/datums/capabilities/look.dm	var/tmp/list/look_filters
-base_var	code/datums/capabilities/look.dm	var/tmp/list/look_vis
-base_var	code/datums/capabilities/refresh.dm	var/tmp/look_key
-base_var	code/datums/capabilities/refresh.dm	var/tmp/list/look_overlays
-base_var	code/datums/capabilities/refresh.dm	var/tmp/list/refresh_hidden_verbs
-base_var	code/datums/capabilities/refresh.dm	/atom/var/tmp/refresh_swept = FALSE
 base_var	code/datums/character_identity.dm	var/datum/character_identity/own_identity = new
 base_var	code/datums/character_identity.dm	var/datum/character_identity/identity
-base_var	code/datums/containment/latency_policy.dm	/atom/movable/var/tmp/latent_refused_until = 0
-base_var	code/datums/containment/latency_policy.dm	/atom/var/latent_idle_delay = 2 MINUTES
-base_var	code/datums/containment/latency_policy.dm	/atom/var/latency_policy_disabled = FALSE
-base_var	code/datums/containment/latent.dm	/atom/var/tmp/latent_contents = FALSE
-base_var	code/datums/containment/latent.dm	/atom/var/tmp/latent_declared = FALSE
-base_var	code/datums/containment/ledger.dm	/atom/var/tmp/datum/ledger/ledger
-base_var	code/datums/containment/ledger.dm	/atom/movable/var/tmp/has_slot_hooks = FALSE
-base_var	code/datums/containment/ledger.dm	/atom/movable/var/tmp/move_hooks = 0
-base_var	code/datums/containment/lifecycle.dm	/atom/movable/var/tmp/atom/movable/lifecycle_successor
-base_var	code/datums/containment/pin.dm	/atom/movable/var/tmp/list/latent_pins
 base_var	code/datums/interactions/construction.dm	/atom/var/construction_graph
 base_var	code/datums/lifecycle/verbs.dm	/atom/movable/var/lifecycle_lifetime = 0
 base_var	code/datums/lifecycle/verbs.dm	/atom/movable/var/tmp/lifecycle_lifetime_timer
@@ -109,7 +89,6 @@ base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/hovering_is_set = FALSE
 base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/hovering_value = FALSE
 base_var	code/datums/sparse_vars/observer_events.dm	var/tmp/list/observer_event_listeners
 base_var	code/datums/sparse_vars/update_on_z.dm	var/tmp/list/image/z_update_images
-base_var	code/datums/state/schema.dm	var/tmp/latent_safe = FALSE
 base_var	code/datums/sys/appearance.dm	var/tmp/decl_appearance_key
 base_var	code/datums/sys/appearance.dm	var/tmp/list/appearance_proc_overlays
 base_var	code/datums/sys/appearance.dm	var/tmp/appearance_queued = FALSE
@@ -934,54 +913,6 @@ base_var	code/modules/vore/resizing/resize.dm	var/holder_default
 base_var	code/modules/vore/resizing/resize.dm	var/pickup_active = TRUE // Toggle whether your help (combat mode off) touch picks up micros or pets them
 base_var	code/modules/xenoarcheaology/effect_master.dm	/atom/var/datum/artifact_master/artifact_master
 base_var	code/modules/xenoarcheaology/finds/talking.dm	/obj/var/datum/talking_atom/talking_atom // owned: xenoarch speech state
-list_init	code/datums/om/bundle.dm	var/list/behaviours = list()
-list_init	code/datums/om/bundle.dm	var/list/stages = list()
-list_init	code/datums/om/bundle.dm	var/list/ui = list()
-list_init	code/datums/om/bundle.dm	var/list/self_effects = list()
-list_init	code/datums/om/bundle.dm	var/list/self_grants = list()
-list_init	code/datums/om/entity.dm	var/list/att = list()
-list_init	code/datums/om/entity.dm	var/list/att_pend = list()
-list_init	code/datums/om/entity.dm	var/list/att_ring = list()
-list_init	code/datums/om/entity.dm	var/list/att_state = list()
-list_init	code/datums/om/registry.dm	var/list/errors = list()
-list_init	code/datums/om/registry.dm	var/list/behaviours = list()
-list_init	code/datums/om/registry.dm	var/list/behaviour_by_type = list()
-list_init	code/datums/om/registry.dm	var/list/effects = list()
-list_init	code/datums/om/registry.dm	var/list/effect_by_id = list()
-list_init	code/datums/om/registry.dm	var/list/clocks = list()
-list_init	code/datums/om/registry.dm	var/list/clock_by_id = list()
-list_init	code/datums/om/registry.dm	var/list/relations = list()
-list_init	code/datums/om/registry.dm	var/list/relation_by_type = list()
-list_init	code/datums/om/registry.dm	var/list/slot_groups_by_holder = list()
-list_init	code/datums/om/registry.dm	var/list/slot_holder_types = list()
-list_init	code/datums/om/registry.dm	var/list/event_types = list()
-list_init	code/datums/om/registry.dm	var/list/event_idx = list()
-list_init	code/datums/om/registry.dm	var/list/event_handlers = list()
-list_init	code/datums/om/registry.dm	var/list/derived = list()
-list_init	code/datums/om/registry.dm	var/list/derived_by_name = list()
-list_init	code/datums/om/registry.dm	var/list/checks_cache = list()
-list_init	code/datums/om/registry.dm	var/list/named_checks = list()
-list_init	code/datums/om/registry.dm	var/list/services = list()
-list_init	code/datums/om/registry.dm	var/list/stage_by_type = list()
-list_init	code/datums/om/registry.dm	var/list/pipelines = list()
-list_init	code/datums/om/registry.dm	var/list/bundles = list()
-list_init	code/datums/om/registry.dm	var/list/bundle_by_type = list()
-list_init	code/datums/om/registry.dm	var/list/decls = list()
-list_init	code/datums/om/registry.dm	var/list/decl_typecache = list()
-list_init	code/datums/om/registry.dm	var/list/expansions = list()
-list_init	code/datums/om/registry.dm	var/list/type_tables = list()
-list_init	code/datums/om/scheduler.dm	var/list/rings = list()
-list_init	code/datums/om/scheduler.dm	var/list/service_queue = list()
-list_init	code/datums/om/scheduler.dm	var/list/derived_queue = list()
-list_init	code/datums/om/scheduler.dm	var/list/bulk_list = list()
-list_init	code/datums/om/scheduler.dm	var/list/event_queue = list()
-list_init	code/datums/om/scheduler.dm	var/list/free_frames = list()
-list_init	code/datums/om/scheduler.dm	var/list/parked = list()
-list_init	code/datums/om/scheduler.dm	var/list/audit_cursor = list()
-list_init	code/datums/om/scheduler.dm	var/list/stage_cost = list()
-list_init	code/datums/om/scheduler.dm	var/list/stage_calls = list()
-list_init	code/datums/om/scheduler.dm	var/list/stats = list()
-list_init	code/datums/om/scheduler.dm	var/list/errors = list()
 list_init	code/game/skincmd.dm	/mob/var/skincmds = list()
 list_init	code/modules/projectiles/targeting/targeting_mob.dm	/mob/living/var/list/aimed = list()
 list_init	code/modules/tgui/external.dm	/mob/var/list/tgui_open_uis = list()

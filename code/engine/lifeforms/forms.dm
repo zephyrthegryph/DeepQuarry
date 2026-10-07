@@ -238,7 +238,7 @@
 /// (not GLOB): plans are built while the globals are still being made, and rx_readers() reads it on every tracked write.
 GLOBAL_REAL_VAR(list/lifeform_watch_keys)
 
-/// TRUE when a form of E's type follows `key` (rx_readers() asks, so changed() publishes the write).
+/// TRUE when a form of E's type follows `key` (rx_readers() asks, so state_changed() publishes the write).
 /proc/lifeform_watching(datum/E, key)
 	if(!lifeform_watch_keys?[key])
 		return FALSE
@@ -280,10 +280,17 @@ GLOBAL_REAL_VAR(list/lifeform_watch_keys)
 /proc/lifeform_datum_new(datum/D)
 	if(length(GLOB?.make_pending))
 		make_pending_for(D) // a make() of this type: its params, before anything else
-	lifecycle_decls_init(D) // preinit (rolls, params) and owns_one/owns_many starts =
+	lifecycle_initialize(D) // preinit (rolls, params) and owns_one/owns_many starts =
 	var/datum/type_table/T = table_of(D)
 	if(T.hook_flags & ENGINE_HOOK_LIFEFORMS)
 		lifeform_init(D, FALSE)
 		if(param_drop_pending?[D])
 			params_drop(D)
 		hooks_change_baseline(D)
+
+/// Legacy declaration policy is outside the lifecycle kernel.
+/proc/lifecycle_initialize(datum/D, mapload = FALSE)
+	return D.initialize_compatibility(mapload)
+
+/datum/proc/initialize_compatibility(mapload)
+	return

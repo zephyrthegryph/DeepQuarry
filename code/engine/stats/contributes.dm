@@ -214,7 +214,7 @@
 		contrib.reads = stat_generated_reads(E, spec)
 	return contrib
 
-GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read it (changed() asks before it calls the stat layer)
+GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read it (state_changed() asks before it calls the stat layer)
 
 /// The reads E5's generator recorded for holder proc `proc_name` of E's type (or an ancestor), as input keys: "var", "rel.var", "a.b.var",
 /// "sys:system.var". A read through an actor, held item or target is not an input of the holder and is left out.

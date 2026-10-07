@@ -88,7 +88,7 @@ GLOBAL_LIST_EMPTY(derives_running)
 	for(var/datum/centry/C as anything in P.derives)
 		derives_compute(holder, C, TRUE)
 
-/// Recomputes one derives() target; publishes it when it changed (not during init, when nothing reads it yet).
+/// Recomputes one derives() target; publishes it when it state_changed (not during init, when nothing reads it yet).
 /proc/derives_compute(datum/holder, datum/centry/C, init = FALSE)
 	var/datum/entry/E = C.item
 	var/target = E.args["target"]

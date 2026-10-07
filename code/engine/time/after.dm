@@ -17,13 +17,13 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 /proc/rx_after(datum/owner, delay, handler, key, clock = CLOCK_OWN, list/handler_args, nulls_for_gone = TRUE)
 	if(isnull(key) && clock == CLOCK_OWN)
 		return timer_schedule_list(owner, delay, handler, handler_args, nulls_for_gone)
-	var/datum/holder = owner || om_global_owner()
+	var/datum/holder = owner || timer_global_owner()
 	if(!isnull(key))
 		cancel_after(holder, key)
 	var/token = ++GLOB.rx_timer_seq
 	var/id
 	if(clock == CLOCK_WORLD)
-		var/holder_handle = om_handle(holder)
+		var/holder_handle = entity_handle(holder)
 		if(isnull(holder_handle))
 			return 0 // the owner is already gone
 		id = timer_schedule_list(null, delay, GLOBAL_PROC_REF(rx_timer_fire_ref), list(holder_handle, handler, key, token, handler_args), FALSE)
@@ -41,7 +41,7 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 
 /// Cancels the pending timer of `key` on `owner`. Returns TRUE if one was pending.
 /proc/cancel_after(datum/owner, key)
-	var/datum/holder = owner || om_global_owner()
+	var/datum/holder = owner || timer_global_owner()
 	var/list/pending = holder.rx?.timer_ids?[key]
 	if(!pending)
 		return FALSE
@@ -49,16 +49,16 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 	if(!length(holder.rx.timer_ids))
 		holder.rx.timer_ids = null
 	rx_ledger_remove(holder, RELK_TIMER, key, pending[2]) // the key is the timer's one `what`: no scan of the ledger
-	return om_cancel_timer(pending[3] == CLOCK_WORLD ? om_global_owner() : holder, pending[1])
+	return timer_cancel(pending[3] == CLOCK_WORLD ? timer_global_owner() : holder, pending[1])
 
 /// TRUE while a timer of `key` is pending on `owner`.
 /proc/after_pending(datum/owner, key)
-	var/datum/holder = owner || om_global_owner()
+	var/datum/holder = owner || timer_global_owner()
 	return !!holder.rx?.timer_ids?[key]
 
 /// A world-clock timer went off: its owner is resolved from its handle, so a datum that was deleted (or whose ref was reused) never receives it.
 /proc/rx_timer_fire_ref(holder_handle, handler, key, token, list/handler_args)
-	var/datum/holder = om_resolve(holder_handle)
+	var/datum/holder = resolve_handle(holder_handle)
 	if(!isdatum(holder))
 		log_qdel("OM: world timer [handler] dropped: its owner [holder_handle] no longer exists")
 		return
@@ -77,7 +77,7 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 		if(!length(holder.rx.timer_ids))
 			holder.rx.timer_ids = null
 		rx_ledger_remove(holder, RELK_TIMER, key, token)
-	if(om_proc_is_global(handler))
+	if(deferred_proc_is_global(handler))
 		call(handler)(arglist(handler_args || list()))
 	else
 		call(holder, handler)(arglist(handler_args || list()))
@@ -106,33 +106,33 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 
 /// Deciseconds left on the pending timer of `key` on `owner` (on the clock it was armed on), or 0 when none is.
 /proc/after_left(datum/owner, key)
-	var/datum/holder = owner || om_global_owner()
+	var/datum/holder = owner || timer_global_owner()
 	var/list/pending = holder.rx?.timer_ids?[key]
 	if(!pending)
 		return 0
-	return om_timer_left(pending[3] == CLOCK_WORLD ? om_global_owner() : holder, pending[1]) || 0
+	return timer_left(pending[3] == CLOCK_WORLD ? timer_global_owner() : holder, pending[1]) || 0
 
 // ---- unique calls: one pending timer per (owner, handler, arguments) ----
 
 /// after(), unless the same call (owner, handler, `with`) is already pending: then nothing, and the pending timer's id is returned. Keyed by the call itself, not
 /// by a name: for work that many triggers ask for and one run answers (coalesce()). `handler` is a PROC_REF on the owner or a TYPE_PROC_REF.
 /proc/after_unique(datum/owner, delay, handler, list/with = null)
-	var/datum/holder = owner || om_global_owner()
-	return om_scheduler().after_unique(arglist(list(holder, delay, handler) + (with || list())))
+	var/datum/holder = owner || timer_global_owner()
+	return time_scheduler().after_unique(arglist(list(holder, delay, handler) + (with || list())))
 
 /// TRUE while a call made by after_unique(owner, ..., handler, with) is pending.
 /proc/after_unique_pending(datum/owner, handler, list/with = null)
-	var/datum/holder = owner || om_global_owner()
-	var/datum/om/rec/rec = holder.om_rec
-	return !!rec && !!om_scheduler().timer_find(rec, handler, with || list())
+	var/datum/holder = owner || timer_global_owner()
+	var/datum/scheduler_record/rec = holder.om_rec
+	return !!rec && !!time_scheduler().timer_find(rec, handler, with || list())
 
 /// Cancels the pending call of after_unique(owner, ..., handler, with). TRUE when one was pending.
 /proc/cancel_after_unique(datum/owner, handler, list/with = null)
-	var/datum/holder = owner || om_global_owner()
-	var/datum/om/rec/rec = holder.om_rec
+	var/datum/holder = owner || timer_global_owner()
+	var/datum/scheduler_record/rec = holder.om_rec
 	if(!rec)
 		return FALSE
-	var/i = om_scheduler().timer_find(rec, handler, with || list())
+	var/i = time_scheduler().timer_find(rec, handler, with || list())
 	if(!i)
 		return FALSE
-	return om_cancel_timer(holder, rec.timers[i])
+	return timer_cancel(holder, rec.timers[i])

@@ -137,3 +137,10 @@
 	var/passed = FALSE
 	/// ORIGIN_*: where the input arrived.
 	var/origin
+
+CAPABILITIES(/datum/act/timer)
+	ref_one(nameof(target))
+
+/// Borrow the current member only for this trigger; deletion clears the link before a later part reads it.
+/datum/act/timer/proc/set_member_target(datum/member)
+	rel_set(src, nameof(target), member)

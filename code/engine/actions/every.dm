@@ -8,21 +8,29 @@
 //
 // The handler is x(datum/act/A) with the timer context (A.holder the holder, A.cap, A.activation, A.source, A.dt the interval in deciseconds).
 // A shadowed activation (a BEST or UNIQUE stack where another activation runs) keeps its clock and skips its handler, so it resumes the moment
-// it wins. The system forms of every() (a /datum/system's work items, code/datums/reactions/reactions.dm) keep their own shape.
+// it wins. The system forms of every() (a /datum/system's work items, code/engine/actions/reactions.dm) keep their own shape.
 
-/// every(interval, then(...) | parts..., when = cond): one entry. `interval` is deciseconds of the holder's clock, or a PROC_REF of a holder proc
+/// every(interval, then(...) | parts..., when = cond, phase =, lane =, members =): one entry. `interval` is deciseconds of the holder's clock, or a PROC_REF of a holder proc
 /// x(datum/act/A) answering them, asked again before every run (a flicker that waits a random while). The system form every(interval, PROC_REF(x), ...)
 /// is reactions.dm's and never reaches here.
-/proc/every_entry(interval, p1, p2, p3, p4, when = null)
+/proc/every_entry(interval, p1, p2, p3, p4, when = null, members = null, phase = null, lane = null)
 	if(!(istext(interval) && length(interval)) && (!isnum(interval) || interval <= 0))
 		declare_report("every(): the interval must be a positive number of deciseconds or a PROC_REF, got [isnull(interval) ? "null" : "[interval]"]")
 		return null
-	return entry_make(ENTRY_EVERY, null, list("interval" = interval, "when" = when), entry_flatten(list(p1, p2, p3, p4)))
+	if(!isnull(phase) && !(phase in list(KERNEL_PHASE_K, KERNEL_PHASE_S, KERNEL_PHASE_N, KERNEL_PHASE_D, KERNEL_PHASE_P, KERNEL_PHASE_R, KERNEL_PHASE_G)))
+		declare_report("every(): phase [phase] is not a periodic kernel phase")
+		return null
+	if(!isnull(lane) && !(lane in list(LANE_URGENT, LANE_SIMULATION, LANE_DERIVED, LANE_PRESENTATION, LANE_BACKGROUND, LANE_WORLD)))
+		declare_report("every(): lane [lane] is not a kernel lane")
+		return null
+	return entry_make(ENTRY_EVERY, null, list("interval" = interval, "when" = when, "members" = members, "phase" = phase, "lane" = lane), entry_flatten(list(p1, p2, p3, p4)))
 
 /datum/entry_engine/every
 	kind = ENTRY_EVERY
 
 /datum/entry_engine/every/validate(datum/activation/A, datum/entry/E)
+	if(E.args["members"] && A && !istype(A.holder, /datum/system))
+		return "every(members =): only a system may sweep members"
 	if(!length(E.children))
 		return "every() has no parts: give it then(CAP_PROC(x))"
 	return null
@@ -85,21 +93,27 @@
 	after(holder, every_interval(holder, E, A), GLOBAL_PROC_REF(activation_every_fire), key = activation_every_key(A, E), with = list(A, E))
 
 /// One run of an every(): the handler (unless the activation is shadowed or its when fails), then the next arming unless the handler ended the activation.
-/proc/activation_every_fire(datum/activation/A, datum/entry/E)
+/proc/activation_every_fire(datum/activation/A, datum/entry/E, dispatched = FALSE)
 	if(!A || !E || A.dead)
 		return
 	var/datum/holder = A.holder
 	if(!holder || QDELETED(holder))
 		return
+	if(!dispatched && every_dispatch_needed(E))
+		every_dispatch_queue(E, GLOBAL_PROC_REF(activation_every_fire), list(A, E, TRUE))
+		return
 	var/gated = A.runs
 	var/cond = E.args["when"]
 	if(gated && !isnull(cond))
 		gated = every_gate_holds(holder, cond, A.def.key)
+	if(gated && E.args["members"])
+		every_members_start(holder, A, E)
+		return
 	if(gated)
 		var/datum/act/timer/T = every_context(holder, A, A.source, isnum(E.args["interval"]) ? E.args["interval"] : 0)
 		var/depth = GLOB.act_depth
 		try
-			hook_run_parts(null, T, E.children)
+			every_run_parts(T, E)
 		catch(var/exception/fault)
 			dq_report_caught(fault, "every() of [A.def.key] on [holder.type]")
 		GLOB.act_depth = depth
@@ -209,10 +223,13 @@
 	return known
 
 /// One run of a type-level every(): the handler unless the gate fails, then the next arming. A parkable every() whose gate fails parks instead of re-arming.
-/proc/type_every_fire(datum/holder, datum/centry/C, index)
+/proc/type_every_fire(datum/holder, datum/centry/C, index, dispatched = FALSE)
 	if(!holder || QDELETED(holder) || !C)
 		return
 	var/datum/entry/E = C.item
+	if(!dispatched && every_dispatch_needed(E))
+		every_dispatch_queue(E, GLOBAL_PROC_REF(type_every_fire), list(holder, C, index, TRUE))
+		return
 	var/gated = FALSE
 	try
 		gated = op_whens_hold(holder, C.whens)
@@ -224,14 +241,86 @@
 	if(!gated && type_every_parkable(holder, C))
 		type_every_park(holder, index)
 		return
+	if(gated && E.args["members"])
+		every_members_start(holder, null, E, C, index)
+		return
 	if(gated)
 		var/datum/act/timer/T = every_context(holder, null, holder, isnum(E.args["interval"]) ? E.args["interval"] : 0)
 		var/depth = GLOB.act_depth
 		try
-			hook_run_parts(null, T, E.children)
+			every_run_parts(T, E)
 		catch(var/exception/fault)
 			dq_report_caught(fault, "type every() on [holder.type]")
 		GLOB.act_depth = depth
 		T.release()
 	if(!QDELETED(holder))
+		type_every_schedule(holder, C, index)
+
+/// A memberless run still uses the same immediate hook protocol.
+/proc/every_run_parts(datum/act/timer/T, datum/entry/E)
+	return hook_run_parts(null, T, E.children)
+
+/// One snapshot per interval, weakly naming its members. The next interval is
+/// armed only when this sweep closes: yielding cannot build a periodic backlog.
+/proc/every_members_start(datum/holder, datum/activation/A, datum/entry/E, datum/centry/C = null, index = null)
+	if(!istype(holder, /datum/system))
+		CRASH("every(members =): [holder.type] is not a system")
+	var/list/snapshot = list()
+	for(var/datum/member as anything in members_of(E.args["members"]))
+		var/handle = entity_handle(member)
+		if(handle)
+			snapshot += handle
+	every_members_queue(holder, A, E, C, index, snapshot, 1)
+
+/// Capture the five entity/context parameters, then append the already-weak
+/// snapshot without repeatedly scanning it through capture_args().
+/proc/every_members_queue(datum/holder, datum/activation/A, datum/entry/E, datum/centry/C, index, list/snapshot, cursor)
+	var/list/captured = capture_args(list(holder, A, E, C, index), TRUE)
+	if(!captured)
+		return
+	var/list/arguments = captured[1]
+	arguments += list(snapshot, cursor)
+	var/datum/system/S = holder
+	every_dispatch_captured(E, GLOBAL_PROC_REF(every_members_fire), captured, S.phase)
+
+/// One member per queued continuation. The kernel work store yields between
+/// continuations, retaining this snapshot and cursor until the budget returns.
+/proc/every_members_fire(datum/holder, datum/activation/A, datum/entry/E, datum/centry/C, index, list/snapshot, cursor)
+	if(!holder || QDELETED(holder) || !E || (!A && !C) || A?.dead)
+		return
+	var/gated = FALSE
+	try
+		gated = A ? A.runs : type_every_gate(holder, C)
+	catch(var/exception/gate_fault)
+		dq_report_caught(gate_fault, "every() member sweep gate on [holder.type]")
+	if(A && gated && !isnull(E.args["when"]))
+		gated = every_gate_holds(holder, E.args["when"], A.def.key)
+	if(!gated)
+		if(C && type_every_parkable(holder, C))
+			type_every_park(holder, index)
+		else if(A)
+			activation_every_arm(A, E)
+		else
+			type_every_schedule(holder, C, index)
+		return
+	if(cursor <= length(snapshot))
+		var/datum/member = resolve_handle(snapshot[cursor])
+		if(member && !QDELETED(member) && member_is(E.args["members"], member))
+			var/datum/act/timer/T = every_context(holder, A, A ? A.source : holder, isnum(E.args["interval"]) ? E.args["interval"] : 0)
+			T.set_member_target(member)
+			var/depth = GLOB.act_depth
+			try
+				hook_run_parts(null, T, E.children)
+			catch(var/exception/fault)
+				dq_report_caught(fault, "every() member sweep on [holder.type]")
+			GLOB.act_depth = depth
+			T.set_member_target(null)
+			T.release()
+		if(QDELETED(holder) || A?.dead)
+			return
+		every_members_queue(holder, A, E, C, index, snapshot, cursor + 1)
+		return
+	if(A)
+		activation_every_arm(A, E)
+	else
 		type_every_schedule(holder, C, index)

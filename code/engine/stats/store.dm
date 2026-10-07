@@ -14,7 +14,7 @@
 // The recompute is inline (recompute.dm): when hold() returns, the stat, and the stats that read it on the entity, hold their settled values.
 //
 // The hold store here is the stat layer's own rows, of the contribution store's shape (stat, source, value, expiry, key). The legacy store
-// (code/datums/om/contribution.dm) stays authoritative for its own EFFECT_* ids until the callers of om_apply and om_hold migrate (phase 3 and
+// (code/datums/om/contribution.dm) stays authoritative for its own EFFECT_* ids until the callers of contribution_apply and contribution_hold migrate (phase 3 and
 // after); a status or stat declared with STAT lives here.
 
 /// Everything the stat layer keeps for one entity, in its reaction state (allocated on the first hold or the first init).
@@ -57,7 +57,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 /proc/stat_clock_now(datum/E, clock)
 	if(clock == HOLD_CLOCK_BIO)
 		return clock_now(E, CLOCK_BIO)
-	return om_time_of(E)
+	return scheduler_time_of(E)
 
 // ---- validation ----
 

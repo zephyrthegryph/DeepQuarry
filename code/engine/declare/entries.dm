@@ -192,7 +192,7 @@
 /// without(key): drops an inherited entry by key, or every capability of a CAP id (with a selector, only that one).
 /proc/without(target, selector = null)
 	if(islist(target)) // the legacy `. = without(., /datum/capability/x)` of a capabilities() override
-		return legacy_without(target, selector)
+		return capability_list_without(target, selector)
 	return entry_make(ENTRY_WITHOUT, null, list("target" = target, "selector" = selector))
 
 /// while_slotted(SLOT_X, entries..., on = ON_CONTENTS | ON_HOLDER): entries applied while an item is in that slot (an activation scoped

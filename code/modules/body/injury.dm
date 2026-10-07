@@ -176,24 +176,6 @@
 /// The key in a worn / natural `armor` list ("melee", "bullet", ...) that
 /// resists an armour kind (INJURY_* or ARMOR_BLAST), or null when no armour
 /// resists it (frostbite, cellular, neural, digestion).
-/proc/injury_armor_key(kind)
-	switch(kind)
-		if(INJURY_BLUNT, INJURY_CUT)
-			return "melee"
-		if(INJURY_PIERCE)
-			return "bullet"
-		if(INJURY_BURN)
-			return "laser"
-		if(INJURY_ELECTRIC, INJURY_PAIN)
-			return "energy"
-		if(ARMOR_BLAST)
-			return "bomb"
-		if(INJURY_TOXIN, INJURY_CORROSIVE)
-			return "bio"
-		if(INJURY_RADIATION)
-			return "rad"
-	return null
-
 /// THE armour lookup: armour points against `kind` (INJURY_* or ARMOR_BLAST)
 /// at `zone` (a BP_* zone, a limb or an organ; null = averaged over the body).
 /// Worn / natural armour (injury_armor_set()) plus the BF_ARMOR(kind) factor.

@@ -13,7 +13,7 @@ const RULES: &[RuleMeta] = &[RuleMeta {
     hint: "om_grant(target, GRANT_VERB | GRANT_VERB_HIDE, verb, source) / om_revoke(), or DECLARE_VERB* on the type; the store is the only verbs writer (doc/rewrite/systems.md section 19)",
 }];
 
-const STORE: &str = "code/datums/om/grant_verbs.dm";
+const STORE: &str = "code/engine/present/verb_store.dm";
 
 fn scan_file(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
     if f.rel == STORE {

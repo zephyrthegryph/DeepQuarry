@@ -2,7 +2,7 @@
 // (doc/rewrite/object_model_core.md, "Library"). Mob Life uses the clocks and suspension;
 // statuses are stats (code/library/mob/statuses.dm).
 
-/proc/om_library_effects()
+/proc/definition_standard_effects()
 	// ALLOW(sys_const_list_alloc): read once, while the OM registry builds inside the global controller's New(), before any GLOBAL_LIST_INIT exists
 	return list(
 		EFFECT_BUCKLED = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS),
@@ -207,3 +207,6 @@
 
 // ---------------------------------------------------------------- bundles
 
+
+/proc/om_library_effects()
+	return definition_standard_effects()

@@ -138,13 +138,13 @@
 			. += "  near miss: [R.near_miss.oplan.key]: [reason_text(R.near_miss.dropped_reason)]"
 
 /// explain_click(): the explanation of a click as text lines (one string, newline separated), or a list when `as_list`.
-/proc/explain_click(mob/actor, atom/target, obj/item/held, gesture = GESTURE_CLICK, as_list = FALSE)
+/proc/explain_click(mob/actor, atom/target, obj/held, gesture = GESTURE_CLICK, as_list = FALSE)
 	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, actor_authority(actor), gesture, null, TRUE, TRUE)
 	var/list/lines = op_explain_lines(R)
 	return as_list ? lines : jointext(lines, "\n")
 
 /// Asserts in a unit test that a click resolves to `key`. Returns TRUE when it does; a test calls it inside TEST_ASSERT.
-/proc/assert_resolves(mob/actor, atom/target, obj/item/held, gesture, key)
+/proc/assert_resolves(mob/actor, atom/target, obj/held, gesture, key)
 	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, actor_authority(actor), gesture, null, TRUE)
 	var/datum/op_cand/winner = op_resolution_winner(R)
 	return !!winner && winner.oplan?.key == key
@@ -173,19 +173,3 @@
 		if(P?.active && !QDELETED(P))
 			blocks += op_pending_line(P)
 	return length(blocks) ? jointext(blocks, "\n") : "no pending ops"
-
-// ---- the admin verbs ----
-// "Explain Type" (the merged table of a type, each entry with its file:line), "Explain Interaction" (every candidate of a click on a thing and the filter
-// that dropped each), "List Pending Ops" (every wait in the world) and, in code/engine/declare/explain.dm, "List Activations".
-
-ADMIN_VERB_AND_CONTEXT_MENU(e2_explain_type, R_DEBUG, "Explain Type", "The merged declaration table of a thing's type: every capability and entry, with the file and line that declared it.", ADMIN_CATEGORY_DEBUG, atom/target in world)
-	to_chat(user, "<b>Table of [target.type]</b><br>[replacetext(explain_type(target.type) || "no table", "\n", "<br>")]")
-
-ADMIN_VERB_AND_CONTEXT_MENU(e2_explain_interaction, R_DEBUG, "Explain Interaction", "Every candidate op of a click on a thing with what you hold, the filter that dropped each, and the winner.", ADMIN_CATEGORY_DEBUG, atom/target in view())
-	var/mob/actor = user.mob
-	if(!actor)
-		return
-	to_chat(user, "<b>Click on [target] ([target.type])</b><br>[replacetext(explain_click(actor, target, actor.held_for_ops(), GESTURE_CLICK), "\n", "<br>")]")
-
-ADMIN_VERB(e2_list_pending_ops, R_DEBUG, "List Pending Ops", "Every op that is waiting in the world: who, what, which step, and the request it is waiting on.", ADMIN_CATEGORY_DEBUG)
-	to_chat(user, "<b>Pending ops</b><br>[replacetext(op_pending_all_text(), "\n", "<br>")]")

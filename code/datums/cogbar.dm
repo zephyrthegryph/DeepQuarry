@@ -5,6 +5,7 @@
  * Represents that the user is busy doing something.
  */
 /datum/cogbar
+	parent_type = /datum/cog_view
 	/// Who's doing the thing
 	var/mob/user
 	/// The user client
@@ -73,7 +74,7 @@
 	user_client().images += blank
 
 /// Removes the cog from the user
-/datum/cogbar/proc/remove()
+/datum/cogbar/remove()
 	if(isnull(cog()))
 		spent(src)
 		return

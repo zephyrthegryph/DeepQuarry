@@ -1,9 +1,9 @@
-// Object-model core S6 (doc/rewrite/object_model_core.md §4.11): om_after timers, task
+// Object-model core S6 (doc/rewrite/object_model_core.md Â§4.11): om_after timers, task
 // steps, typed prompt re-checks, the global owner and OM handles.
 
 /datum/om_test_entity/bio
 
-/datum/om_test_entity/bio/om_timer_clock()
+/datum/om_test_entity/bio/timer_clock()
 	return CLOCK_BIO
 
 /// Timer target: logs on the entity, and on `other` when given.
@@ -168,6 +168,7 @@
 /datum/unit_test/om/timer_list_arg_deleted_is_dropped
 
 /datum/unit_test/om/timer_list_arg_deleted_is_dropped/run_om(list/made)
+	set_global("om_resolve_nulled", 7)
 	var/datum/om_test_entity/E = entity(made)
 	var/datum/om_test_entity/member = entity(made)
 	var/datum/om_test_entity/keyed = entity(made)
@@ -197,6 +198,7 @@
 	TEST_ASSERT_EQUAL(sched.timers_dropped, dropped + 2, "both dropped calls are counted")
 	TEST_ASSERT("defaulted" in E.log, "the default runs with the deleted member passed as null")
 	TEST_ASSERT("defaulted via" in kept.log, "and the live member still resolves")
+	TEST_ASSERT_EQUAL(GLOB.om_resolve_nulled, 7, "Timer resolution restores the caller scratch count after deleted arguments")
 
 // ---------------------------------------------------------------- task steps
 

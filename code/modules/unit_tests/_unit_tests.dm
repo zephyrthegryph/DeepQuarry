@@ -183,7 +183,7 @@
 #include "unit_test.dm"
 #include "vbo_tests.dm"
 #include "vore_tests.dm"
-// DQ fork tests — need TEST_ASSERT* macros in scope, which are #undef'd at
+// DQ fork tests â€” need TEST_ASSERT* macros in scope, which are #undef'd at
 // the bottom of this file.
 #include "dq_c6_machine_parts_tests.dm"
 #include "dq_atmos_tests.dm"
@@ -1165,6 +1165,11 @@
 #include "dq_ownership_accessor_retirement_tests.dm"
 #include "dq_ownership_policy_retirement_tests.dm"
 #include "dq_ownership_teardown_retirement_tests.dm"
+
+#include "dq_every_options_tests.dm"
+#include "dq_time_foundation_compatibility_tests.dm"
+#include "dq_engine_policy_adapter_tests.dm"
+#include "dq_engine_foundation_adapter_tests.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

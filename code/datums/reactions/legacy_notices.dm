@@ -327,8 +327,6 @@
 /datum/notice/do_after_began
 
 /// From /datum/om/event/do_after_ended.
-/datum/notice/do_after_ended
-
 /// From /datum/om/event/dqai_damage_taken.
 /datum/notice/dqai_damage_taken
 	var/amount
@@ -783,12 +781,6 @@
 	src.window_id = window_id
 
 /// From /datum/om/event/qdeleting.
-/datum/notice/qdeleting
-	var/force
-
-/datum/notice/qdeleting/fill(force)
-	src.force = force
-
 /// From /datum/om/event/reagent_expose_obj.
 /datum/notice/reagent_expose_obj
 	var/reagent
@@ -826,24 +818,6 @@
 
 /// From /datum/om/event/silicon_laws_changed.
 /datum/notice/silicon_laws_changed
-
-/// From /datum/om/event/slot_inserted.
-/datum/notice/slot_inserted
-	var/thing
-	var/slot_id
-
-/datum/notice/slot_inserted/fill(thing, slot_id)
-	src.thing = thing
-	src.slot_id = slot_id
-
-/// From /datum/om/event/slot_removed.
-/datum/notice/slot_removed
-	var/thing
-	var/slot_id
-
-/datum/notice/slot_removed/fill(thing, slot_id)
-	src.thing = thing
-	src.slot_id = slot_id
 
 /// From /datum/om/event/stun_effect.
 /datum/notice/stun_effect

@@ -137,7 +137,7 @@
 		var/slot_id = E.args["id"]
 		for(var/atom/movable/thing in starts_make(holder, E.args["starts"], E.args["starts_args"], null))
 			if(!move_into(holder, slot_id, thing, force = TRUE))
-				thing.forceMove(holder)
+				thing.place_starting_occupant(holder)
 
 /// when(cond, T) as a starts value: the type if the condition holds at init, else nothing.
 /proc/starts_when(datum/D, datum/entry/when_entry)

@@ -259,12 +259,6 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 /// and qdel() returns it to life. Singletons and pooled objects that only a forced
 /// qdel() may delete use LIFECYCLE_KEEP_UNLESS_FORCED(type); state-dependent
 /// refusal overrides this. Must not sleep or change state.
-/datum/proc/lifecycle_keep(force)
-	SHOULD_NOT_SLEEP(TRUE)
-	// A registered singleton (REGISTRY_TYPE, doc/rewrite/ownership.md sec 2) is immortal: an
-	// unforced qdel() of one is refused. Controllers keep the MC's own replacement rules.
-	return !force && !istype(src, /datum/controller) && is_registered(src)
-
 /// The type's destroy hook, run at the start of phase 4, right after
 /// lifecycle_prerelease() and before the links clear: contents are resolved
 /// (phase 3), but BACK/BACKLIST/PAIR vars, owned children and OM handles
@@ -274,10 +268,6 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 /// lifecycle_prerelease() or destroy_effects() expresses goes there instead.
 /// Always call ..(). Returns nothing: the GC hint is destroy_hint.
 /// Behaviours get the same hook as /datum/om/behaviour/proc/on_entity_destroy(E).
-/datum/proc/on_destroy(force)
-	SHOULD_CALL_PARENT(TRUE)
-	return
-
 // ---- Phase 1: unbind (hook point) ----
 
 /// Phase 1 (doc/rewrite/lifecycle.md §2): R10 entity bindings
@@ -286,18 +276,12 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 /// to disconnect topology before the holder leaves the world (for example
 /// /obj/machinery/atmospherics/lifecycle_unbind() tears down its pipe
 /// connections). Must not sleep; call ..().
-/datum/proc/lifecycle_unbind()
-	return
-
 // ---- Phase 2: dematerialize (hook point) ----
 
 /// Phase 2, for every datum, before a movable is released from its holder: the
 /// hook for a type's own indexes that are not OM registries (registries are
 /// left by dq_lifecycle_leave_registries() / an atom's dematerialize()). No
 /// type overrides it today; the default does nothing. Must not sleep.
-/datum/proc/lifecycle_dematerialize()
-	return
-
 // ---- Phase 5: teardown ----
 
 /// Ends any periodic work (om_task_periodic(), code/datums/om/periodic.dm),
@@ -349,3 +333,6 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 /// handed to the GC from here.
 /proc/dq_lifecycle_scrub(datum/D)
 	own_scrub(D)
+
+/datum/controller/lifecycle_registry_immortal()
+	return FALSE

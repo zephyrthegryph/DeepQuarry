@@ -37,7 +37,7 @@
 	var/list/selects
 	/// Match conditions: every one must hold.
 	var/list/conds
-	/// Requirements, in order (new /datum/entry/part/req, or a legacy /datum/req that has a new form).
+	/// Requirements, in order (new /datum/entry/part/req, or a legacy /datum/requirement that has a new form).
 	var/list/needs
 	/// The space an at(SPACE_X) places the op in, or null (code/engine/library/spaces.dm).
 	var/space
@@ -403,22 +403,12 @@
 			var/problem = R.build_problem()
 			if(problem)
 				op_problem(T, P, report, RULE_OP_PART, problem, "give the requirement because = MSG(x), or a library requirement that carries a reason")
-		else if(istype(requirement, /datum/req) && !op_legacy_req_has_form(requirement))
-			var/datum/req/legacy = requirement
+		else if(istype(requirement, /datum/requirement) && !op_requirement_has_form(requirement))
+			var/datum/requirement/legacy = requirement
 			op_problem(T, P, report, RULE_OP_PART, "the legacy requirement [legacy.type] has no form in the new engine", "write the requirement with the req_* constructors of code/engine/parts/cond.dm")
 
-/// Does a legacy requirement class implement holds() for the new engine?
-/proc/op_legacy_req_has_form(datum/req/R)
-	var/static/list/known = list()
-	var/found = known["[R.type]"]
-	if(!isnull(found))
-		return found
-	// A class has a form when its own holds() is not the base one: the base is the proc declared on /datum/req itself.
-	found = (R.type == /datum/req) ? FALSE : !!(R.type in GLOB.OP_LEGACY_REQ_FORMS)
-	known["[R.type]"] = found
-	return found
-
-GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/self_held, /datum/req/access, /datum/req/stance, /datum/req/heard, /datum/req/of_type))
+/proc/op_requirement_has_form(datum/requirement/R)
+	return R.supports_native()
 
 /// What an effect or a binding yields to the op's tier (OP_PRIORITY_X): by default nothing above normal.
 /datum/entry/part/proc/yielded_tier()
