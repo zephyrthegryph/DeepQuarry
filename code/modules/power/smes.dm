@@ -129,6 +129,7 @@ CAPABILITIES(/obj/machinery/power/smes)
 
 	section(controls, "The unit's window and the buttons in it")
 	interface("Smes")
+	extend("ui_open", ungated()) // a unit with no input terminal (unwired, so not operable) still shows its window; its buttons stay behind the operable gate
 	op("tryinput", ui_act(), toggles(nameof(input_attempt)), then(PROC_REF(input_switched)))
 	op("tryoutput", ui_act(), toggles(nameof(output_attempt)), then(PROC_REF(output_switched)))
 	op("input", ui_act(arg("adjust"), arg("target")), then(PROC_REF(ui_set_input)))

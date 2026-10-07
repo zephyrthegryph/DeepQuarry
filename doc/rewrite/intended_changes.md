@@ -2476,3 +2476,11 @@ Design and migration: `doc/rewrite/power_grid.md`.
   wake on `STAT_OPERABLE` (cookers also on `STAT_SWITCHED_ON`). A machine whose switch alone changed used to wake those watchers; now only the cookers hear it.
 * **`panel_open` is a tracked var.** Same writers (each machine's panel op), same channel; no behaviour change.
 * The vehicle's own condition bits (`/obj/vehicle`, `stat` with EMPED) are a separate field and are not machine conditions; they are unchanged.
+
+## SMES hatch tools answer before the window (integration rewrite/integ-4)
+
+* **A SMES's hatch tools take the click before the window does.** The window answers any click of the hand, a held tool included; with the window
+  open-able the screwdriver now opens the maintenance panel and the crowbar deconstructs (`machine_panel`, `machine_panel_close`,
+  `machine_deconstruct` run one priority step above the window). Pin rows: the buildable SMES's screwdriver and crowbar clicks.
+* **An unwired SMES and the battery rack still open their window.** `ui_open` is ungated on both (the hand gate reads `operable()`, which now includes
+  "has an input terminal"); the window's buttons were never behind that gate and are unchanged (pinned by `dq_p2_smes/unwired_window_opens_buttons_keep_working`).
