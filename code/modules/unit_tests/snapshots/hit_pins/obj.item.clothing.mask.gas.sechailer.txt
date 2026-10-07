@@ -1,4 +1,5 @@
 blob | survives
+emag | is_emagged: 0 -> 1
 emag | safety: 1 -> 0
 emp 1 | refresh_bits: 2 -> 0
 emp 1 | refresh_queued: 131071 -> 0

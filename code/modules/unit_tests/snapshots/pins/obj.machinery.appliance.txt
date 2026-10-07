@@ -73,5 +73,5 @@ human|/obj/item menu: Toggle Power
 human|/obj/item menu: Use
 human|/obj/item menu: Use (refused: The cooker is not working)
 human|/obj/item click: Click: Use
-keys: appliance_interaction_hand, appliance_interaction_item, appliance_toggle_power_effect, change_output, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, remote_power, remove_menu, slot, toggle_power, toggle_safety
+keys: appliance_interaction_hand, appliance_interaction_item, appliance_toggle_power_effect, change_output, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, remote_power, remove_menu, robot_remote_blocked, slot, toggle_power, toggle_safety
 

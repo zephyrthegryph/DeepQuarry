@@ -46,5 +46,5 @@ human|/obj/item menu: Autoresleever interaction item
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Autoresleever interaction item
-keys: autoresleever_interaction_ghost, autoresleever_interaction_item, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor
+keys: autoresleever_interaction_ghost, autoresleever_interaction_item, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked
 

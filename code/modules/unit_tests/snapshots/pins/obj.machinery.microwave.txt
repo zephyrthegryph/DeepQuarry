@@ -77,5 +77,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: cook, dispose, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, microwave_interaction_eject_pai, microwave_interaction_hand, microwave_interaction_item, microwave_verb_eject, use_crowbar, use_screwdriver, use_wrench
+keys: cook, dispose, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, microwave_interaction_eject_pai, microwave_interaction_hand, microwave_interaction_item, microwave_verb_eject, robot_remote_blocked, use_crowbar, use_screwdriver, use_wrench
 

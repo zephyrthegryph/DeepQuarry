@@ -35,6 +35,9 @@ human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: nothing
 human|/obj/item/reagent_containers/glass menu: Drain (refused: it's empty; there is nothing to drain)
 human|/obj/item/reagent_containers/glass menu: Move To Top
 human|/obj/item/reagent_containers/glass menu: Open or close the lid
@@ -53,5 +56,5 @@ human|/obj/item/reagent_containers/food/drinks/shaker menu: Rename food
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Set transfer amount
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/food/drinks/shaker click: Click: Drain
-keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, reagent_refinery_drain, use_wrench
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, reagent_refinery_drain, robot_remote_blocked, use_wrench
 

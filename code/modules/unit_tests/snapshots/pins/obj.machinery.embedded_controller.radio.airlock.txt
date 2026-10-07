@@ -57,5 +57,10 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Embedded controller open ui
-keys: drag_buckle, edit_tag, embedded_controller_open_ui, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, program_command, set_frequency, ui_open
+human|/obj/item menu: Embedded controller open ui
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item click: Click: Embedded controller open ui
+keys: drag_buckle, edit_tag, embedded_controller_open_ui, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, program_command, robot_remote_blocked, set_frequency, ui_open
 

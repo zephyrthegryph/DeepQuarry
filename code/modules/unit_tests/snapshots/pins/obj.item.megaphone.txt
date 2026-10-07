@@ -10,8 +10,10 @@ robot|none menu: Shout (refused: that isn't the right thing to use)
 robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none click: Click: Pick up
 ai|none menu: Equip (refused: not possible right now)
+ai|none menu: Shout (refused: that isn't the right thing to use)
 ai|none click: nothing
 ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Shout (refused: that isn't the right thing to use)
 ghost|none menu: Toggle Digestable (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top

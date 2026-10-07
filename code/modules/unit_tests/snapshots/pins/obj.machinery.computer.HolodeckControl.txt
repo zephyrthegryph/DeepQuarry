@@ -53,17 +53,17 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use item
 human|/obj/item/card/id click: Click: Use item
-human|/obj/item/gripper deleted itself on creation
 human|/obj/item menu: Climb
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
+human|/obj/item/gripper deleted itself on creation
 human|/obj/item/card/emag menu: Climb
 human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Use item
 human|/obj/item/card/emag click: Click: Use
-keys: AIoverride, climb.climb, climb.climb_menu, disconnect, drag_buckle, emag.subvert, emag.use, gen_robot_interaction_swallow, gravity, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, program, use_gripper, use_item
+keys: AIoverride, climb.climb, climb.climb_menu, disconnect, drag_buckle, emag.subvert, emag.use, gravity, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, program, robot_remote_blocked, use_gripper, use_item
 

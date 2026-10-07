@@ -1,6 +1,7 @@
 blob | survives
 emag | desc: 'An early design of the proto-kinetic accelerator, it is little more than an combination of various mining tools cobbled together, forming a high-tech club. While it is an effective mining tool, it did little to aid any but the most skilled and/or suicidal miners against local fauna.' -> 'An early design of the proto-kinetic accelerator, it is little more than an combination of various mining tools cobbled together, forming a high-tech club. While it is an effective mining tool, it did little to aid any but the most skilled and/or suicidal miners against local fauna. The destabilizer module occasionally sparks and glows a menacing red.'
 emag | emagged: 0 -> 1
+emag | is_emagged: 0 -> 1
 emag | refresh_bits: 2 -> 0
 emag | refresh_queued: 131071 -> 0
 emp 1 | refresh_bits: 2 -> 0

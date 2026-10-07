@@ -1,8 +1,8 @@
-human|none menu: Climb (refused: There's a material processor in the way.)
+human|none menu: Climb
 human|none menu: Remove Roulette Ball
 human|none menu: Spin
 human|none click: Click: Spin
-robot|none menu: Climb (refused: There's a material processor in the way.)
+robot|none menu: Climb
 robot|none menu: Remove Roulette Ball
 robot|none menu: Spin
 robot|none click: Click: Spin
@@ -10,49 +10,49 @@ ai|none click: nothing
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none menu: Remove Roulette Ball (refused: You can't reach that.)
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/screwdriver menu: Climb
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Place
 human|/obj/item/tool/screwdriver menu: Remove Roulette Ball
 human|/obj/item/tool/screwdriver menu: Spin
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver click: Click: Place
-human|/obj/item/tool/crowbar menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/crowbar menu: Climb
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Place
 human|/obj/item/tool/crowbar menu: Remove Roulette Ball
 human|/obj/item/tool/crowbar menu: Spin
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Place
-human|/obj/item/tool/wrench menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/wrench menu: Climb
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Place
 human|/obj/item/tool/wrench menu: Remove Roulette Ball
 human|/obj/item/tool/wrench menu: Spin
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench click: Click: Place
-human|/obj/item/tool/wirecutters menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/wirecutters menu: Climb
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Place
 human|/obj/item/tool/wirecutters menu: Remove Roulette Ball
 human|/obj/item/tool/wirecutters menu: Spin
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters click: Click: Place
-human|/obj/item/multitool menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/multitool menu: Climb
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Place
 human|/obj/item/multitool menu: Remove Roulette Ball
 human|/obj/item/multitool menu: Spin
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: Click: Place
-human|/obj/item/weldingtool menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/weldingtool menu: Climb
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Place
 human|/obj/item/weldingtool menu: Remove Roulette Ball
 human|/obj/item/weldingtool menu: Spin
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: Click: Place
-human|/obj/item/stack/cable_coil menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/stack/cable_coil menu: Climb
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Place
@@ -60,14 +60,14 @@ human|/obj/item/stack/cable_coil menu: Remove Roulette Ball
 human|/obj/item/stack/cable_coil menu: Spin
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: Click: Place
-human|/obj/item/stack/material/steel menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/stack/material/steel menu: Climb
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Place
 human|/obj/item/stack/material/steel menu: Remove Roulette Ball
 human|/obj/item/stack/material/steel menu: Spin
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: Click: Place
-human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/card/id menu: Climb
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Place
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
@@ -75,14 +75,14 @@ human|/obj/item/card/id menu: Remove Roulette Ball
 human|/obj/item/card/id menu: Spin
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Place
-human|/obj/item menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item menu: Climb
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Place
 human|/obj/item menu: Remove Roulette Ball
 human|/obj/item menu: Spin
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Place
-human|/obj/item/roulette_ball menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/roulette_ball menu: Climb
 human|/obj/item/roulette_ball menu: Insert a roulette ball
 human|/obj/item/roulette_ball menu: Move To Top
 human|/obj/item/roulette_ball menu: Place

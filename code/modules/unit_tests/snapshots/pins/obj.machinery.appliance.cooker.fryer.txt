@@ -73,5 +73,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Toggle Power
 human|/obj/item menu: Use
 human|/obj/item click: Click: Fryer interaction oil
-keys: appliance_interaction_hand, appliance_interaction_item, appliance_toggle_power_effect, change_output, drag_buckle, fryer_interaction_oil, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, remote_power, remove_menu, slot, toggle_power, toggle_safety
+keys: appliance_interaction_hand, appliance_interaction_item, appliance_toggle_power_effect, change_output, drag_buckle, fryer_interaction_oil, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, remote_power, remove_menu, robot_remote_blocked, slot, toggle_power, toggle_safety
 

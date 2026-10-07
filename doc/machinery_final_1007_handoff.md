@@ -1,5 +1,7 @@
 # Machinery final follow-up, 2026-10-07
 
+Latest follow-up: see [pin repair handoff](machinery_final_1007_pin_handoff.md). It completes the 155 remaining conversion-pin differences and repairs/refreshes hit pins; the limited pin coverage below describes the original handoff.
+
 Branch: `codex/machinery-final-1007` (source and snapshots through `044fdff2f8`), based on the pushed `codex/machinery-followup-1007` checkpoint `cb03761f55`. That checkpoint includes master `eac3bc655d` in merge `4e247bcd36`.
 
 ## Conversions

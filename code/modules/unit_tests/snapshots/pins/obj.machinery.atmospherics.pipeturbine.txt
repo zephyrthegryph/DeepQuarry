@@ -45,6 +45,10 @@ human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
+human|/obj/item menu: Climb
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: nothing
 human|/obj/item/stack/material menu: Climb
 human|/obj/item/stack/material menu: Move To Top
 human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
@@ -54,5 +58,5 @@ human|/obj/item/pipe_painter menu: Move To Top
 human|/obj/item/pipe_painter menu: Painter
 human|/obj/item/pipe_painter menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pipe_painter click: Click: Painter
-keys: anchor, climb.climb, climb.climb_menu, drag_buckle, fit_material, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, painter
+keys: anchor, climb.climb, climb.climb_menu, drag_buckle, fit_material, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, painter, robot_remote_blocked
 

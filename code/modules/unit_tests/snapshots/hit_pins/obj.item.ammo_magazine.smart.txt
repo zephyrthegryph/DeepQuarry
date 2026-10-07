@@ -1,6 +1,7 @@
 blob | survives
 emag | can_remove_ammo: 0 -> 1
 emag | emagged: 0 -> 1
+emag | is_emagged: 0 -> 1
 emp 1 | refresh_queued: 131071 -> 0
 emp 2 | nothing
 explosion 1 | deleted

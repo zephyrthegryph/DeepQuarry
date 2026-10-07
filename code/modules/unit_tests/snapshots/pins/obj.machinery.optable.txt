@@ -70,5 +70,5 @@ human|/obj/item menu: Optable interaction hand
 human|/obj/item menu: Optable interaction item
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Optable interaction item
-keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, optable_climb_onto, optable_interaction_drag, optable_interaction_hand, optable_interaction_item
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, optable_climb_onto, optable_interaction_drag, optable_interaction_hand, optable_interaction_item, robot_remote_blocked
 

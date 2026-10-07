@@ -1,6 +1,7 @@
 human|none menu: Climb
 human|none menu: Ui open
 human|none click: Click: Ui open
+robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Climb
 robot|none menu: Ui open
 robot|none click: Click: Ui open
@@ -8,7 +9,7 @@ ai|none menu: Ui open
 ai|none click: Click: Ui open
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none menu: Use
-ghost|none click: nothing
+ghost|none click: Click: Use
 human|/obj/item/tool/screwdriver menu: Climb
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
@@ -61,6 +62,11 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item menu: Climb
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item click: Click: Ui open
 human|/obj/item/card/emag menu: Climb
 human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
@@ -68,5 +74,5 @@ human|/obj/item/card/emag menu: Ui open
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
 wires: Hack, Next, Prev, Primary Power, Reverse, Speeddown, Speedup, Start, Stop
-keys: add_new_track, change_track, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, gen_observer_ghost_jukebox_observer_use, loopmode, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, play, remove_new_track, stop, ui_open, use_multitool, use_wirecutter, use_wrench, volume
+keys: add_new_track, change_track, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, ghost_use, loopmode, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, play, remove_new_track, robot_remote_blocked, stop, ui_open, use_multitool, use_wirecutter, use_wrench, volume
 
