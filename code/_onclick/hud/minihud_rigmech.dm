@@ -29,7 +29,7 @@
 		rel_set(S, nameof(S.master_ref), owner_rig())
 	..()
 
-/datum/mini_hud/rig/periodic_step()
+/datum/mini_hud/rig/hud_step()
 	if(!owner_rig())
 		ended_with(src)
 		return
@@ -73,7 +73,7 @@
 
 // the mech owns us as its minihud; owner_mech is a plain relation back.
 
-/datum/mini_hud/mech/periodic_step()
+/datum/mini_hud/mech/hud_step()
 	if(!owner_mech())
 		ended_with(src)
 		return

@@ -2412,3 +2412,12 @@ underlays of every creatable subtype of each converted chain, recorded from the 
 * **A deferred `dx_*` callback finds its owner again**: the wrapper key is the one `rerun_unwrap()` reads (`rerun_h`).
 * **Open prompts are pinned, not changed.** An op paused at a prompt was already cancelled on losing its actor, target, held item, reach (adjacent bindings, the window) or what its requirements read, and re-ran its requirements on the answer; `dq_prompt_interrupt/*` now pins it (walk away, drop, delete, power loss, answer after a requirement changed, `keeps = 0`, chains). No behaviour changed.
 - **Ambient effects run only while a player is near** (client-proximity relevance, `code/controllers/subsystems/proximity.dm`): map-effect intervals (smoke, sparks and steam emitters, sound emitters, screen shakers) and timed beam points park while no client eye is in their 8-turf cell or the eight around it, and resume when one arrives, instead of polling for a player within 12 turfs. The range is now cell-based (between 8 and 24 turfs), the eye counts wherever it is (an AI camera, an observer) rather than the mob, and AFK players count (the old check ignored them after five minutes). A beam point that is parked with its beams up keeps them up. `always_run` holds the effect relevant everywhere.
+
+## Sweep: objects, turfs, defines (rewrite/sweeps-objects)
+
+* **Ambient and radiation periodics gate on proximity**: anomalies, nests, mob spawners, green glow, uranium doors, radiation emitters and the POI reactors park while no client is near (`proximity_tracked`, `STAT_RELEVANCE`) where they slept on `mob_near()` before; the scanner spawner stays ungated.
+* **Camera bug**: the "no bugged cameras" message is now a refusal of the op; the old in_use guard (which blocked the re-run of its own question) is gone.
+* **Poster rip**: a ripped poster no longer offers the question (the op is hidden); the question is the op's `asks()` step.
+* **Tanks**: the pressure check runs while the tank is leaking, damaged or `handled` (set in equipped(), cleared in dropped() when no mob holds it) instead of testing `ismob(loc)` each run.
+* **Ticker reboot countdown and beam / mini hud ticks** re-arm with `after()` (a plain datum has no type-level every()).
+* **Tape recorder**: a recorder whose tape is missing or full when its tick runs now stops recording.

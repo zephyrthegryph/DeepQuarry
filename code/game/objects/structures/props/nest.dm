@@ -20,6 +20,8 @@
 	var/tally = 0				//The counter referenced against total_creature_max, or just to see how many mobs it has spawned.
 	var/total_creature_max	//If set, it can spawn this many creatures, total, ever.
 
+/obj/structure/prop/nest/proximity_tracked = TRUE
+
 /obj/structure/prop/nest/Initialize(mapload)
 	. = ..()
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay)
@@ -28,9 +30,8 @@
 		var/delayshift = rand(delayshift_clamp, -1 * delayshift_clamp)
 		spawn_delay += delayshift
 
-DECLARE_PERIODIC(/obj/structure/prop/nest, PERIODIC_SLOW)
-
 CAPABILITIES(/obj/structure/prop/nest)
+	every(2 SECONDS, then(PROC_REF(nest_step)), when = STAT_RELEVANCE)
 	without("message")   // the disturbance shows the message itself
 	op("disturb", hand(), label("Use"), then(PROC_REF(interaction_disturb)))
 
@@ -45,10 +46,8 @@ CAPABILITIES(/obj/structure/prop/nest)
 		spawn_creature(get_turf(src))
 	return OP_OK
 
-/// Acts only while a player is near; otherwise it sleeps until one comes near.
-/obj/structure/prop/nest/periodic_step()
-	if(!mob_near(world.view * 2, TRUE))
-		return sleep_until_mob_near(world.view * 2, TRUE)
+/// Acts only while a player is near (STAT_RELEVANCE); otherwise the every() parks until one comes near.
+/obj/structure/prop/nest/proc/nest_step(datum/act/timer/A)
 	update_creatures()
 	if(COOLDOWN_FINISHED(src, spawn_cooldown))
 		spawn_creature(get_turf(src))

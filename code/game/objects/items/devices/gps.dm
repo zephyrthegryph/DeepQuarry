@@ -26,11 +26,10 @@
 
 REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 /// Will not show other signals or emit its own signal if false.
-OM_FIELD(/obj/item/gps, tracking, FALSE, CHANGE_EXPLICIT)
+/obj/item/gps/var/tracking = FALSE
+TRACKED(/obj/item/gps, tracking)
 /// The mob carrying it (a relation view).
 OM_FIELD_VIEW(/obj/item/gps, mob, holder, CHANGE_EXPLICIT)
-// The compass refreshes while a carried GPS is tracking.
-DECLARE_PERIODIC_WHILE_ALL(/obj/item/gps, PERIODIC_SLOW, list("tracking", "holder"))
 
 /obj/item/gps/Initialize(mapload)
 	. = ..()
@@ -78,7 +77,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/gps, PERIODIC_SLOW, list("tracking", "holde
 	. = ..()
 	update_holder()
 
-/obj/item/gps/periodic_step()
+/obj/item/gps/proc/gps_step(datum/act/timer/A)
 	update_holder()
 	if(holder_ref())
 		update_compass(src, TRUE)
@@ -87,6 +86,8 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/gps, PERIODIC_SLOW, list("tracking", "holde
 STAT(/obj/item/gps, operable, ALL, virtual = TRUE)
 
 CAPABILITIES(/obj/item/gps)
+	// The compass refreshes while a carried GPS is tracking.
+	every(2 SECONDS, then(PROC_REF(gps_step)), when = cond_all(nameof(tracking), nameof(holder)))
 	op("power", ui_act(), then(PROC_REF(ui_act_power)))
 	op("localMode", ui_act(), then(PROC_REF(ui_act_localmode)))
 	owns_one(nameof(compass), starts = /obj/compass_holder)

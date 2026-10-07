@@ -89,14 +89,9 @@
 		toggle_open(user)
 	return 0
 
-EXTEND_INTERACTIONS(/turf/simulated/wall, \
-	INTERACT_ITEM(null, PROC_REF(wall_item)), \
-	INTERACT_HAND_UNGATED("Touch", PROC_REF(wall_hand)), \
-	INTERACT_ALT("Graffiti", PROC_REF(wall_graffiti_alt)), \
-)
-
 /// Old attack_hand: touch the wall (a hulk smashes it). The turf's own touch never follows.
-/turf/simulated/wall/proc/wall_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/turf/simulated/wall/proc/wall_hand(datum/act/op/A)
+	var/mob/user = A.actor
 
 	radiate()
 	add_fingerprint(user)
@@ -107,10 +102,10 @@ EXTEND_INTERACTIONS(/turf/simulated/wall, \
 			success_smash(user)
 		else
 			fail_smash(user)
-			return 1
+			return OP_OK
 
 	try_touch(user, rotting)
-	return TRUE
+	return OP_OK
 
 /turf/simulated/wall/attack_generic(mob/user, damage, attack_message)
 
@@ -132,17 +127,19 @@ EXTEND_INTERACTIONS(/turf/simulated/wall, \
 	return fail_smash(user)
 
 /// Old attackby: mounting, roofing, crumbling a rotten wall, thermite and frames; anything else touches it.
-/turf/simulated/wall/proc/wall_item(mob/user, obj/item/W, datum/interaction/interaction)
+/turf/simulated/wall/proc/wall_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 
 	user.setClickCooldown(user.get_attack_speed(W))
 
 	if (!user.IsAdvancedToolUser())
 		to_chat(user, span_warning("You don't have the dexterity to do this!"))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	//get the user's location
 	if(!istype(user.loc, /turf))
-		return INTERACTION_HANDLED_PASS //can't do this stuff whilst inside objects and such
+		return OP_PASS //can't do this stuff whilst inside objects and such
 
 	if(W)
 		radiate()
@@ -152,7 +149,7 @@ EXTEND_INTERACTIONS(/turf/simulated/wall, \
 	if(istype(W, /obj/item/electronic_assembly/wallmount))
 		var/obj/item/electronic_assembly/wallmount/IC = W
 		IC.mount_assembly(src, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(W, /obj/item/stack/tile/roofing))
 		var/expended_tile = FALSE // To track the case. If a ceiling is built in a multiz zlevel, it also necessarily roofs it against weather
@@ -171,7 +168,7 @@ EXTEND_INTERACTIONS(/turf/simulated/wall, \
 					expended_tile = TRUE
 			else
 				to_chat(user, span_warning("There aren't any holes in the ceiling to patch here."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 		// Create a ceiling to shield from the weather
 		if(is_outdoors())
@@ -181,20 +178,20 @@ EXTEND_INTERACTIONS(/turf/simulated/wall, \
 					play_sfx(src, SFX_WEAPONS_GENHIT)
 				act_message(user, src, MSG_SELF(span_notice("You roof %T% tile, shielding it from the elements.")), \
 					MSG_OTHERS(span_notice("%U% roofs %T%, shielding it from the elements.")))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	// Welders reach the wall's interactions (wall_construction.dm) before attackby.
 	if(locate_on(src, /obj/effect/overlay/wallrot))
 		if(!is_sharp(W) && W.force >= 10 || W.force >= 20)
 			to_chat(user, span_notice("\The [src] crumbles away under the force of your [W.name]."))
 			src.dismantle_wall(1)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 	//THERMITE related stuff. Calls src.thermitemelt() which handles melting simulated walls and the relevant effects
 	if(thermite)
 		if(istype(W, /obj/item/pickaxe/plasmacutter))
 			thermitemelt(user)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		else if( istype(W, /obj/item/melee/energy/blade) )
 			var/obj/item/melee/energy/blade/EB = W
@@ -205,15 +202,15 @@ EXTEND_INTERACTIONS(/turf/simulated/wall, \
 			play_sfx(src, SFX_WEAPONS_BLADE1)
 
 			thermitemelt(user)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 	// Plasma cutters, energy blades and pickaxes stand in for the welder on the graph's cutting steps.
 	if(try_construction_alt(user, src, W))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(W,/obj/item/frame))
-		return INTERACTION_HANDLED_PASS // its own op, frame.mount, hangs it on the wall
+		return OP_PASS // its own op, frame.mount, hangs it on the wall
 
 	else if(!istype(W,/obj/item/rcd) && !istype(W, /obj/item/reagent_containers))
-		return attack_hand(user) ? TRUE : INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return attack_hand(user) ? OP_OK : OP_PASS
+	return OP_PASS
