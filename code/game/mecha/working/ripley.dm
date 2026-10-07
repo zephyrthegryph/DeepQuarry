@@ -15,12 +15,12 @@
 
 	encumbrance_gap = 2
 
+
 	icon_scale_x = 1.2
 	icon_scale_y = 1.2
 
 CAPABILITIES(/obj/mecha/working/ripley)
 	owns_one(nameof(orescanner), /obj/item/mining_scanner)
-	op("ripley_detect_ore", menu(), label("Detect Ores"), needs(req_adjacent(), req_capable(), req(PROC_REF(pred_mecha_pilot_holds), because = PROC_REF(pred_mecha_pilot_refusal))), then(PROC_REF(ripley_detect_ore)))
 
 TYPE_TABLE(/obj/mecha/working/ripley, mecha_starting_components, list( \
 		/obj/item/mecha_parts/component/hull/durable, \
@@ -43,6 +43,7 @@ TYPE_TABLE(/obj/mecha/working/ripley, mecha_starting_components, list( \
 				if(ore.Adjacent(src) && ((get_dir(src, ore) & dir) || ore.loc == loc)) //we can reach it and it's in front of us? grab it!
 					ore_box.stored_ore[ore.material]++
 					consumed(ore, src)
+
 
 /obj/mecha/working/ripley/firefighter
 	desc = "Standard APLU chassis was refitted with additional thermal protection and cistern."
@@ -119,19 +120,12 @@ TYPE_TABLE(/obj/mecha/working/ripley/deathripley, mecha_starting_equipment, list
 	. = ..()
 	rel_set(src, nameof(orescanner), new /obj/item/mining_scanner)
 
-/// Requirement (was REQ_* pred_mecha_pilot): the legacy check answers TRUE to pass.
-/obj/mecha/working/ripley/proc/pred_mecha_pilot_holds(datum/act/op/A)
-	var/answer = pred_mecha_pilot(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why pred_mecha_pilot_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/mecha/working/ripley/proc/pred_mecha_pilot_refusal(datum/act/op/A)
-	var/answer = pred_mecha_pilot(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+EXTEND_INTERACTIONS(/obj/mecha/working/ripley, \
+	INTERACT_VERB("Detect Ores", PROC_REF(ripley_detect_ore), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \
+)
 
 /// Old verb "Detect Ores".
-/obj/mecha/working/ripley/proc/ripley_detect_ore(datum/act/op/A)
-	var/mob/user = A.actor
+/obj/mecha/working/ripley/proc/ripley_detect_ore(mob/user, obj/item/held, datum/interaction/interaction)
 	orescanner.attack_self(user)
 
 //Meant for random spawns.

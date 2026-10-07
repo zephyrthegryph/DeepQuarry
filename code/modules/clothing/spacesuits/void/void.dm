@@ -9,6 +9,7 @@
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 10 * ONE_ATMOSPHERE
 
+
 	//Species-specific stuff.
 	sprite_sheets = VR_SPECIES_SPRITE_SHEETS_HEAD_MOB
 	sprite_sheets_obj = VR_SPECIES_SPRITE_SHEETS_HEAD_ITEM
@@ -290,6 +291,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 
 	return FALSE
 
+
 //
 // Because of our custom change in update_icons, we cannot rely upon the normal
 // method of switching sprites when refitting (which is to have the referitter
@@ -376,31 +378,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/autolok, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX))))
 
-CAPABILITIES(/obj/item/clothing/suit/space/void/autolok)
-	op("autolok_worn_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Autolok worn item"), needs(req(PROC_REF(can_modify_unworn_holds), because = PROC_REF(can_modify_unworn_refusal))), then(PROC_REF(autolok_worn_item)))
-
-/// Requirement (was REQ_* can_modify_unworn): the legacy check answers TRUE to pass.
-/obj/item/clothing/suit/space/void/autolok/proc/can_modify_unworn_holds(datum/act/op/A)
-	var/answer = can_modify_unworn(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_modify_unworn_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/clothing/suit/space/void/autolok/proc/can_modify_unworn_refusal(datum/act/op/A)
-	var/answer = can_modify_unworn(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(null, PROC_REF(autolok_worn_item), REQ_TARGET_STATE(/obj/item/clothing/suit/space/void/proc/can_modify_unworn)))
 
 /// Old attackby: no modifying it while worn.
-/obj/item/clothing/suit/space/void/autolok/proc/autolok_worn_item(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/W = A.held
+/obj/item/clothing/suit/space/void/autolok/proc/autolok_worn_item(mob/user, obj/item/W, datum/interaction/interaction)
 
 	if(!isliving(user))
-		return OP_PASS
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(W, /obj/item/clothing/accessory) || istype(W, /obj/item/hand_labeler))
-		return OP_DECLINE
+		return FALSE
 
-	return OP_DECLINE
+	return FALSE
 
 /obj/item/clothing/suit/space/void/screwdriver_act(mob/user, obj/item/tool, obj/item/answered_component = null)
 	if(!isliving(user))
@@ -485,9 +474,11 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/autolok)
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/autolok, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX))))
 
+
 /obj/item/clothing/head/helmet/space/void
 
 /obj/item/clothing/suit/space/void
+
 
 /obj/item/clothing/suit/space
 	armor_spec = "cold=60"

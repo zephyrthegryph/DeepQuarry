@@ -83,18 +83,7 @@ CAPABILITIES(/obj/item/sample)
 	icon_state = "fingerprint0"
 	item_state = "paper"
 
-CAPABILITIES(/obj/item/sample/print)
-	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(can_press_prints_holds), because = PROC_REF(can_press_prints_refusal))), then(PROC_REF(interaction_self)))
-
-/// Requirement (was REQ_* can_press_prints): the legacy check answers TRUE to pass.
-/obj/item/sample/print/proc/can_press_prints_holds(datum/act/op/A)
-	var/answer = can_press_prints(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why can_press_prints_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/sample/print/proc/can_press_prints_refusal(datum/act/op/A)
-	var/answer = can_press_prints(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
+EXTEND_INTERACTIONS(/obj/item/sample/print, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/sample/print/proc/can_press_prints)))
 
 /// Requirement: bare fingertips (a used card or a non-human is ignored silently by the effect).
 /obj/item/sample/print/proc/can_press_prints(mob/user, atom/target, obj/item/held)
@@ -107,8 +96,7 @@ CAPABILITIES(/obj/item/sample/print)
 	return TRUE
 
 /// Old attack_self.
-/obj/item/sample/print/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
+/obj/item/sample/print/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(evidence && length(evidence))
 		return TRUE
 	if(!ishuman(user))
