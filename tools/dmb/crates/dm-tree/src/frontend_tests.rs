@@ -611,11 +611,20 @@ fn declaration_skeleton_matches_full_grammar_and_setting_compaction() {
         "/datum/x { var/list/x = list(/datum/y {name = \"Y\"}); proc/read() {return 1;} }\n",
         "/datum/x\n    proc/read()\n        for(var/x in list(1, 2))\n            x++\n        try\n            return 1\n        catch(var/exception/e)\n            set name = \"Error\"\n",
         "/proc/p()\n    if(1)\n        return 1\n    return 2\n    else\n        set name = \"Unattached\"\n",
+        "/datum/é\n    var/icon = 'résource.dmi'\n    proc/p()\n        set name = @\"raw [not interpolation]\"\n        return \"quoted [list(\"nested\")]\"\n",
+        "/proc/p()\n    return \"unterminated\n",
     ] {
         let full = dm_syntax::parse(source);
         let skeleton = dm_syntax::parse_declaration_skeleton(source);
         assert_eq!(skeleton.diagnostics, full.diagnostics, "{source}");
-        assert_eq!(skeleton.tokens, full.tokens, "{source}");
+        assert_eq!(
+            skeleton.tokens,
+            full.tokens.iter().map(|token| dm_syntax::SpanToken {kind: token.kind, span: token.span}).collect::<Vec<_>>(),
+            "{source}"
+        );
+        for (span, owned) in skeleton.tokens.iter().zip(&full.tokens) {
+            assert_eq!(span.text(source), owned.text);
+        }
         assert_eq!(
             super::compact_declarations(skeleton.items, 0),
             super::compact_declarations(full.items, 0),

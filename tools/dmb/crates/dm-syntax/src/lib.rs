@@ -1243,24 +1243,46 @@ fn classify(header: &str, has_children: bool) -> ItemKind {
 /// Parse indentation and declaration nesting, preserving all tokens for later expression parsing.
 /// A malformed indentation transition produces a diagnostic and parsing continues.
 pub fn parse(source: &str) -> AstFile {
-    parse_with_body_mode(source, false)
+    let parsed = parse_with_body_mode(source, false);
+    AstFile {
+        items: parsed.items,
+        tokens: parsed
+            .tokens
+            .into_iter()
+            .map(|token| Token {
+                kind: token.kind,
+                span: token.span,
+                text: token.text(source).to_owned(),
+            })
+            .collect(),
+        diagnostics: parsed.diagnostics,
+    }
+}
+
+/// Declaration items and source-backed lexical spans. Token text remains in
+/// the caller's source rather than a separately allocated string per token.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct DeclarationSkeleton {
+    pub items: Vec<Item>,
+    pub tokens: Vec<SpanToken>,
+    pub diagnostics: Vec<Diagnostic>,
 }
 
 /// Parse declarations and exact procedure envelopes while retaining only
 /// setting leaves and their structural context inside executable bodies.
 /// Lexical and indentation diagnostics use the same grammar as [`parse`].
-pub fn parse_declaration_skeleton(source: &str) -> AstFile {
+pub fn parse_declaration_skeleton(source: &str) -> DeclarationSkeleton {
     parse_with_body_mode(source, true)
 }
 
-fn parse_with_body_mode(source: &str, skeleton: bool) -> AstFile {
-    let lexed = lex(source);
+fn parse_with_body_mode(source: &str, skeleton: bool) -> DeclarationSkeleton {
+    let lexed = lex_spans(source);
     // Comments remain in `tokens`, but cannot introduce declarations or alter indentation.
     // A byte-for-byte mask keeps the original source spans valid, including UTF-8 offsets.
     let mut visible = source.as_bytes().to_vec();
     for token in &lexed.tokens {
         if token.kind == TokenKind::Comment
-            || (token.kind == TokenKind::String && token.text.contains('\n'))
+            || (token.kind == TokenKind::String && token.text(source).contains('\n'))
         {
             for byte in &mut visible[token.span.range()] {
                 if !matches!(*byte, b'\r' | b'\n') {
@@ -1283,7 +1305,7 @@ fn parse_with_body_mode(source: &str, skeleton: bool) -> AstFile {
     let multiline_literals: Vec<Span> = lexed
         .tokens
         .iter()
-        .filter(|token| token.kind == TokenKind::String && token.text.contains('\n'))
+        .filter(|token| token.kind == TokenKind::String && token.text(source).contains('\n'))
         .map(|token| token.span)
         .collect();
     let lines = split_inline_blocks(
@@ -1303,7 +1325,7 @@ fn parse_with_body_mode(source: &str, skeleton: bool) -> AstFile {
         },
         &mut diagnostics,
     );
-    AstFile {
+    DeclarationSkeleton {
         items,
         tokens: lexed.tokens,
         diagnostics,
