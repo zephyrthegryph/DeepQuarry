@@ -1,0 +1,350 @@
+// Behaviour pins for the timed actions of code/modules/mob, vore, nifsoft, resleeving and body (worker W3), recorded on the legacy forms
+// (task_timed / task_start) before they become ops with wait(). Helpers and the documented differences: dq_timed_pin_behaviour.dm.
+
+/datum/unit_test/dq_timed_pin_w3
+	parent_type = /datum/unit_test/dq_timed_pin
+	abstract_type = /datum/unit_test/dq_timed_pin_w3
+
+// ---- A hand on a goo trap frees the victim ----
+
+/datum/unit_test/dq_timed_pin_w3/gootrap_free
+
+/datum/unit_test/dq_timed_pin_w3/gootrap_free/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/mob/living/carbon/human/victim = person(get_step(run_loc_floor_bottom_left, EAST))
+	var/obj/structure/gootrap/G = allocate(/obj/structure/gootrap, run_loc_floor_bottom_left)
+	G.set_can_buckle(TRUE)
+	G.buckle_mob(victim)
+	TEST_ASSERT(G.has_buckled_mobs(), "the trap holds the victim")
+	test_chat_clear()
+	test_click(user, G, null)
+	TEST_ASSERT(!isnull(running(user)), "a bare hand on a loaded trap starts a timed action")
+	TEST_ASSERT(said(user, "You carefully begin to free"), "it says it began")
+	test_time(0.2 SECONDS)
+	TEST_ASSERT(G.has_buckled_mobs(), "the victim is still held before the end")
+	test_time(1 SECOND)
+	TEST_ASSERT(!G.has_buckled_mobs(), "the victim is freed at the end")
+	TEST_ASSERT(!G.anchored, "and the trap is unanchored")
+
+/datum/unit_test/dq_timed_pin_w3/gootrap_free_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w3/gootrap_free_cancel_on_move/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/mob/living/carbon/human/victim = person(get_step(run_loc_floor_bottom_left, EAST))
+	var/obj/structure/gootrap/G = allocate(/obj/structure/gootrap, run_loc_floor_bottom_left)
+	G.set_can_buckle(TRUE)
+	G.buckle_mob(victim)
+	test_click(user, G, null)
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "a bare hand on a loaded trap starts a timed action")
+	user.forceMove(get_step(user, NORTH))
+	test_time(2 SECONDS)
+	TEST_ASSERT(G.has_buckled_mobs(), "moving cancels: the victim stays held")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
+
+/datum/unit_test/dq_timed_pin_w3/gootrap_empty_trap_no_action
+
+/datum/unit_test/dq_timed_pin_w3/gootrap_empty_trap_no_action/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/structure/gootrap/G = allocate(/obj/structure/gootrap, run_loc_floor_bottom_left)
+	test_click(user, G, null)
+	TEST_ASSERT_NULL(running(user), "an empty trap starts nothing")
+
+// ---- The backup implanter console ----
+
+/// TRUE when a backup implant sits in any of `user`'s limbs.
+/datum/unit_test/dq_timed_pin_w3/proc/has_backup(mob/living/carbon/human/user)
+	var/obj/item/organ/external/torso = user.get_organ(BP_TORSO)
+	for(var/obj/item/implant/backup/B in torso.contents)
+		return TRUE
+	return FALSE
+
+/datum/unit_test/dq_timed_pin_w3/backup_implanter_wrench_off
+
+/datum/unit_test/dq_timed_pin_w3/backup_implanter_wrench_off/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/structure/backup_implanter_ch/I = allocate(/obj/structure/backup_implanter_ch, run_loc_floor_bottom_left)
+	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, run_loc_floor_bottom_left)
+	user.put_in_active_hand(W)
+	TEST_ASSERT(I.anchored, "it starts anchored")
+	test_chat_clear()
+	test_click(user, I, W)
+	TEST_ASSERT(!isnull(running(user)), "a wrench on an anchored implanter starts a timed action")
+	TEST_ASSERT(said(user, "You start to unwrench the implanter"), "it says it began")
+	test_time(0.5 SECONDS)
+	TEST_ASSERT(I.anchored, "still anchored before the end")
+	// Legacy wrench_done runtimes at the end (span_notice around a ternary): the finish is pinned in the converted form only.
+
+/datum/unit_test/dq_timed_pin_w3/backup_implanter_wrench_on
+
+/datum/unit_test/dq_timed_pin_w3/backup_implanter_wrench_on/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/structure/backup_implanter_ch/I = allocate(/obj/structure/backup_implanter_ch, run_loc_floor_bottom_left)
+	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, run_loc_floor_bottom_left)
+	I.set_anchored(FALSE)
+	user.put_in_active_hand(W)
+	test_chat_clear()
+	test_click(user, I, W)
+	TEST_ASSERT(!isnull(running(user)), "a wrench on a loose implanter starts a timed action")
+	TEST_ASSERT(said(user, "You start to wrench the implanter into place"), "it says it began")
+	test_time(0.5 SECONDS)
+	TEST_ASSERT(!I.anchored, "still loose before the end")
+
+/datum/unit_test/dq_timed_pin_w3/backup_implanter_wrench_cancel_on_drop
+
+/datum/unit_test/dq_timed_pin_w3/backup_implanter_wrench_cancel_on_drop/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/structure/backup_implanter_ch/I = allocate(/obj/structure/backup_implanter_ch, run_loc_floor_bottom_left)
+	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, run_loc_floor_bottom_left)
+	user.put_in_active_hand(W)
+	test_click(user, I, W)
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "a wrench on an anchored implanter starts a timed action")
+	user.drop_from_inventory(W)
+	test_time(10 SECONDS)
+	TEST_ASSERT(I.anchored, "dropping the wrench cancels: still anchored")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
+
+/datum/unit_test/dq_timed_pin_w3/backup_implanter_self_implant
+
+/datum/unit_test/dq_timed_pin_w3/backup_implanter_self_implant/run_pin()
+	var/mob/living/carbon/human/user = person()
+	dq_give_zone_sel(user)
+	var/obj/structure/backup_implanter_ch/I = allocate(/obj/structure/backup_implanter_ch, run_loc_floor_bottom_left)
+	test_click(user, I, null)
+	TEST_ASSERT(!isnull(running(user)), "a bare hand on the implanter starts a timed action")
+	test_time(2 SECONDS)
+	TEST_ASSERT(!has_backup(user), "nothing is implanted before the end")
+	test_time(1 SECOND)
+	TEST_ASSERT(has_backup(user), "the backup implant is in the user at the end")
+
+/datum/unit_test/dq_timed_pin_w3/backup_implanter_self_implant_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w3/backup_implanter_self_implant_cancel_on_move/run_pin()
+	var/mob/living/carbon/human/user = person()
+	dq_give_zone_sel(user)
+	var/obj/structure/backup_implanter_ch/I = allocate(/obj/structure/backup_implanter_ch, run_loc_floor_bottom_left)
+	test_click(user, I, null)
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "a bare hand on the implanter starts a timed action")
+	user.forceMove(get_step(user, EAST))
+	test_time(4 SECONDS)
+	TEST_ASSERT(!has_backup(user), "moving cancels: nothing is implanted")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
+
+// ---- The NIF maintenance panel ----
+
+/datum/unit_test/dq_timed_pin_w3/nif_pry_open
+
+/datum/unit_test/dq_timed_pin_w3/nif_pry_open/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/item/nif/N = allocate(/obj/item/nif, run_loc_floor_bottom_left)
+	var/obj/item/tool/screwdriver/S = allocate(/obj/item/tool/screwdriver, run_loc_floor_bottom_left)
+	user.put_in_active_hand(S)
+	TEST_ASSERT_EQUAL(N.open, 0, "it starts closed")
+	N.screwdriver_act(user, S)
+	TEST_ASSERT(!isnull(running(user)), "a screwdriver on a closed NIF starts a timed action")
+	test_time(3 SECONDS)
+	TEST_ASSERT_EQUAL(N.open, 0, "still closed before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(N.open, 1, "opened at the end")
+	TEST_ASSERT(said(user, "You unscrew and pry open"), "it says it finished")
+
+/datum/unit_test/dq_timed_pin_w3/nif_pry_open_cancel_on_drop
+
+/datum/unit_test/dq_timed_pin_w3/nif_pry_open_cancel_on_drop/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/item/nif/N = allocate(/obj/item/nif, run_loc_floor_bottom_left)
+	var/obj/item/tool/screwdriver/S = allocate(/obj/item/tool/screwdriver, run_loc_floor_bottom_left)
+	user.put_in_active_hand(S)
+	N.screwdriver_act(user, S)
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "a screwdriver on a closed NIF starts a timed action")
+	user.drop_from_inventory(S)
+	test_time(6 SECONDS)
+	TEST_ASSERT_EQUAL(N.open, 0, "dropping the screwdriver cancels: still closed")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
+
+/datum/unit_test/dq_timed_pin_w3/nif_reseal
+
+/datum/unit_test/dq_timed_pin_w3/nif_reseal/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/item/nif/N = allocate(/obj/item/nif, run_loc_floor_bottom_left)
+	var/obj/item/tool/screwdriver/S = allocate(/obj/item/tool/screwdriver, run_loc_floor_bottom_left)
+	N.open = 3
+	user.put_in_active_hand(S)
+	N.screwdriver_act(user, S)
+	TEST_ASSERT(!isnull(running(user)), "a screwdriver on a repaired NIF starts a timed action")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(N.open, 3, "still open before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT(!N.open, "sealed at the end")
+	TEST_ASSERT(said(user, "You re-seal"), "it says it finished")
+
+/datum/unit_test/dq_timed_pin_w3/nif_reset_circuits
+
+/datum/unit_test/dq_timed_pin_w3/nif_reset_circuits/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/item/nif/N = allocate(/obj/item/nif, run_loc_floor_bottom_left)
+	var/obj/item/multitool/M = allocate(/obj/item/multitool, run_loc_floor_bottom_left)
+	N.open = 2
+	user.put_in_active_hand(M)
+	N.multitool_act(user, M)
+	TEST_ASSERT(!isnull(running(user)), "a multitool on a rewired NIF starts a timed action")
+	test_time(7 SECONDS)
+	TEST_ASSERT_EQUAL(N.open, 2, "still rewired before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(N.open, 3, "the circuits are reset at the end")
+	TEST_ASSERT(said(user, "You find and repair any faulty circuits"), "it says it finished")
+
+/datum/unit_test/dq_timed_pin_w3/nif_reset_circuits_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w3/nif_reset_circuits_cancel_on_move/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/item/nif/N = allocate(/obj/item/nif, run_loc_floor_bottom_left)
+	var/obj/item/multitool/M = allocate(/obj/item/multitool, run_loc_floor_bottom_left)
+	N.open = 2
+	user.put_in_active_hand(M)
+	N.multitool_act(user, M)
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "a multitool on a rewired NIF starts a timed action")
+	user.forceMove(get_step(user, EAST))
+	test_time(9 SECONDS)
+	TEST_ASSERT_EQUAL(N.open, 2, "moving cancels")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
+
+/datum/unit_test/dq_timed_pin_w3/nif_rewire
+
+/datum/unit_test/dq_timed_pin_w3/nif_rewire/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/item/nif/N = allocate(/obj/item/nif, run_loc_floor_bottom_left)
+	var/obj/item/stack/cable_coil/C = allocate(/obj/item/stack/cable_coil, run_loc_floor_bottom_left, 10)
+	N.open = 1
+	N.durability = 10
+	user.put_in_active_hand(C)
+	test_click(user, N, C)
+	TEST_ASSERT(!isnull(running(user)), "cable on a damaged open NIF starts a timed action")
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(N.open, 1, "not rewired before the end")
+	TEST_ASSERT_EQUAL(C.get_amount(), 10, "and nothing is spent")
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(N.open, 2, "rewired at the end")
+	TEST_ASSERT_EQUAL(C.get_amount(), 7, "three coils are used")
+	TEST_ASSERT(said(user, "You replace any burned out wiring"), "it says it finished")
+
+// ---- Washing a gurgled item at a sink ----
+
+/datum/unit_test/dq_timed_pin_w3/sink_wash_gurgled
+
+/datum/unit_test/dq_timed_pin_w3/sink_wash_gurgled/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/structure/sink/S = allocate(/obj/structure/sink, run_loc_floor_bottom_left)
+	var/obj/item/pen/P = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	P.gurgled = TRUE
+	user.put_in_active_hand(P)
+	test_chat_clear()
+	test_click(user, S, P)
+	TEST_ASSERT(!isnull(running(user)), "a gurgled item on a sink starts a timed action")
+	TEST_ASSERT(said(user, "You start washing"), "it says it began")
+	test_time(3 SECONDS)
+	TEST_ASSERT(P.gurgled, "still gurgled before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT(!P.gurgled, "washed at the end")
+	TEST_ASSERT(said(user, "You wash"), "it says it finished")
+
+/datum/unit_test/dq_timed_pin_w3/sink_wash_gurgled_cancel_on_drop
+
+/datum/unit_test/dq_timed_pin_w3/sink_wash_gurgled_cancel_on_drop/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/obj/structure/sink/S = allocate(/obj/structure/sink, run_loc_floor_bottom_left)
+	var/obj/item/pen/P = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	P.gurgled = TRUE
+	user.put_in_active_hand(P)
+	test_click(user, S, P)
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "a gurgled item on a sink starts a timed action")
+	user.drop_from_inventory(P)
+	test_time(6 SECONDS)
+	TEST_ASSERT(P.gurgled, "dropping the item cancels: still gurgled")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
+
+/// The wash claims the sink: a second washer is refused.
+/datum/unit_test/dq_timed_pin_w3/sink_wash_gurgled_claims_the_sink
+
+/datum/unit_test/dq_timed_pin_w3/sink_wash_gurgled_claims_the_sink/run_pin()
+	var/mob/living/carbon/human/one = person()
+	var/mob/living/carbon/human/two = person()
+	var/obj/structure/sink/S = allocate(/obj/structure/sink, run_loc_floor_bottom_left)
+	var/obj/item/pen/P1 = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	var/obj/item/pen/P2 = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	P1.gurgled = TRUE
+	P2.gurgled = TRUE
+	one.put_in_active_hand(P1)
+	two.put_in_active_hand(P2)
+	test_click(one, S, P1)
+	test_click(two, S, P2)
+	TEST_ASSERT(!isnull(running(one)), "the first washer is running")
+	TEST_ASSERT_NULL(running(two), "the second washer is refused while the sink is claimed")
+
+// ---- The medbot: tipped over and righted by hand ----
+
+/datum/unit_test/dq_timed_pin_w3/medbot_tip_over
+
+/datum/unit_test/dq_timed_pin_w3/medbot_tip_over/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/mob/living/bot/medbot/B = allocate(/mob/living/bot/medbot, get_step(run_loc_floor_bottom_left, EAST))
+	user.set_use_stance(I_DISARM)
+	test_chat_clear()
+	test_click(user, B, null)
+	TEST_ASSERT(!isnull(running(user)), "a shove on an upright medbot starts a timed action")
+	TEST_ASSERT(said(user, "You begin tipping over"), "it says it began")
+	test_time(2 SECONDS)
+	TEST_ASSERT(!B.is_tipped, "not tipped before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT(B.is_tipped, "tipped at the end")
+	TEST_ASSERT(said(user, "You tip"), "it says it finished")
+
+/datum/unit_test/dq_timed_pin_w3/medbot_tip_over_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w3/medbot_tip_over_cancel_on_move/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/mob/living/bot/medbot/B = allocate(/mob/living/bot/medbot, get_step(run_loc_floor_bottom_left, EAST))
+	user.set_use_stance(I_DISARM)
+	test_click(user, B, null)
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "a shove on an upright medbot starts a timed action")
+	user.forceMove(get_step(user, NORTH))
+	test_time(5 SECONDS)
+	TEST_ASSERT(!B.is_tipped, "moving cancels: it stays upright")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
+
+/datum/unit_test/dq_timed_pin_w3/medbot_right
+
+/datum/unit_test/dq_timed_pin_w3/medbot_right/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/mob/living/bot/medbot/B = allocate(/mob/living/bot/medbot, get_step(run_loc_floor_bottom_left, EAST))
+	B.tip_over(user)
+	user.set_use_stance(I_HELP)
+	test_chat_clear()
+	test_click(user, B, null)
+	TEST_ASSERT(!isnull(running(user)), "a help touch on a tipped medbot starts a timed action")
+	TEST_ASSERT(said(user, "You begin righting"), "it says it began")
+	test_time(2 SECONDS)
+	TEST_ASSERT(B.is_tipped, "still tipped before the end")
+	test_time(2 SECONDS)
+	TEST_ASSERT(!B.is_tipped, "set right at the end")
+	TEST_ASSERT(said(user, "You set"), "it says it finished")
+
+/datum/unit_test/dq_timed_pin_w3/medbot_right_cancel_on_move
+
+/datum/unit_test/dq_timed_pin_w3/medbot_right_cancel_on_move/run_pin()
+	var/mob/living/carbon/human/user = person()
+	var/mob/living/bot/medbot/B = allocate(/mob/living/bot/medbot, get_step(run_loc_floor_bottom_left, EAST))
+	B.tip_over(user)
+	test_click(user, B, null)
+	var/datum/T = running(user)
+	TEST_ASSERT(!isnull(T), "a help touch on a tipped medbot starts a timed action")
+	user.forceMove(get_step(user, NORTH))
+	test_time(5 SECONDS)
+	TEST_ASSERT(B.is_tipped, "moving cancels: it stays tipped")
+	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
