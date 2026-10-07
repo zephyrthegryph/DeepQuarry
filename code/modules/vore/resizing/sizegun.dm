@@ -232,7 +232,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appea
 				return
 		if(!M.resize(set_size, uncapped = M.has_large_resize_bounds(), ignore_prefs = ignoring_prefs, allow_stripping = TRUE))
 			to_chat(M, span_blue("The beam fires into your body, changing your size!"))
-		M.update_icon()
+		redraw(M)
 		return
 	return 1
 
@@ -252,7 +252,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, TYPE_PROC_REF(/atom, appea
 		M.resize(set_size, uncapped = TRUE, ignore_prefs = TRUE) // Always ignores prefs, caution is advisable
 
 		to_chat(M, span_blue("The beam fires into your body, changing your size!"))
-		M.update_icon()
+		redraw(M)
 		return
 	return 1
 

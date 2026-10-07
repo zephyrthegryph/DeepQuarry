@@ -271,7 +271,7 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 	switch(var_name)
 		if(NAMEOF(src, color))
 			add_atom_colour(color, ADMIN_COLOUR_PRIORITY)
-			update_icon()
+			redraw(src)
 
 /proc/vv_auto_rename(atom/target, newname)
 	target.name = newname

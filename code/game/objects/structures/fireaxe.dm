@@ -44,7 +44,7 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 		if(!fireaxe)
 			if(O:wielded)
 				O:wielded = 0
-				O.update_icon()
+				redraw(O)
 			if(!move_into(src, nameof(src.fireaxe), O, user))
 				return OP_OK
 			to_chat(user, span_notice("You place the fire axe back in the [name]."))

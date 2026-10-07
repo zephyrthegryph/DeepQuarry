@@ -60,7 +60,7 @@ CAPABILITIES(/obj/item/stack/tile)
 	if(!welder.remove_fuel(0, user))
 		return OP_OK
 	new welds_into(user.loc)
-	user.update_icon()
+	redraw(user)
 	act_message(src, user, others = span_notice("%U% is shaped by %T% with the welding tool."), blind = "You hear welding.")
 	var/replace = user.get_inactive_hand() == src
 	use(4)

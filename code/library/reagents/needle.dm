@@ -82,7 +82,7 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 	if(isnull(modes))
 		return
 	holder.vars[modes] = value // ALLOW(api): a needle's mode is the holder var its capability names, as a setting of the type
-	holder.update_icon()
+	redraw(holder)
 
 /// How long one injection or blood draw takes (a number, or the name of a var of the holder).
 /datum/capability/lib/needle/proc/time_of(atom/holder)
@@ -295,7 +295,7 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 	var/mob/user = A.actor
 	var/trans = target.reagents.trans_to_obj(holder, reagent_transfer_amount(holder), user = user)
 	to_chat(user, span_notice("You fill [holder] with [trans] units of the solution."))
-	holder.update_icon()
+	redraw(holder)
 	if(!isnull(modes) && !holder.reagents.get_free_space())
 		mode_set(holder, NEEDLE_INJECT)
 	return OP_OK
@@ -358,7 +358,7 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 	user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 	var/contained = holder.reagents.get_reagents()
 	var/trans = holder.reagents.trans_to_mob(target, reagent_transfer_amount(holder), CHEM_BLOOD) || 0
-	holder.update_icon()
+	redraw(holder)
 	if(holder.reagents.total_volume > 0)
 		var/cycle = time_of(holder) * 0.33
 		after(holder, cycle, GLOBAL_PROC_REF(needle_inject_cycle), key = "needle_inject:[REF(target)]", \
@@ -375,7 +375,7 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 		needle_inject_finish(holder, user, target, trans, contained, modes)
 		return
 	trans += holder.reagents.trans_to_mob(target, reagent_transfer_amount(holder), CHEM_BLOOD) || 0
-	holder.update_icon()
+	redraw(holder)
 	if(holder.reagents.total_volume > 0)
 		after(holder, cycle, GLOBAL_PROC_REF(needle_inject_cycle), key = "needle_inject:[REF(target)]", with = list(holder, user, target, cycle, trans, contained, modes, user_loc, target_loc, held), keeps_dead = TRUE)
 		return
@@ -387,7 +387,7 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 		return
 	if(!isnull(modes) && holder.reagents.total_volume <= 0 && holder.vars[modes] == NEEDLE_INJECT)
 		holder.vars[modes] = NEEDLE_DRAW // ALLOW(api): a needle's mode is the holder var its capability names, as a setting of the type
-		holder.update_icon()
+		redraw(holder)
 	if(QDELETED(user))
 		return
 	if(trans)

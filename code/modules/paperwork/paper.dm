@@ -552,7 +552,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/paper, TYPE_PROC_REF(/atom, appearance_overlay
 		if(src.loc == user)
 			user.drop_from_inventory(src)
 		src.forceMove(P)
-		P.update_icon()
+		redraw(P)
 		to_chat(user, span_notice("You tuck the [src] into \the [P]."))
 
 	if(istype(P, /obj/item/paper) || istype(P, /obj/item/photo))

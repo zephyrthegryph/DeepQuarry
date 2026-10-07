@@ -79,7 +79,7 @@
 	if(ishuman(src))
 		update_fullness()
 		return
-	update_icon()
+	redraw(src)
 
 // Like handle_belly_update(), but skips the (expensive, for non-humans) icon
 // rebuild when the rounded fullness buckets haven't actually changed. Use this
@@ -96,7 +96,7 @@
 	update_fullness()
 	if(old_fullness == vore_fullness && fullness_buckets_match(old_fullness_ex, vore_fullness_ex))
 		return
-	update_icon()
+	redraw(src)
 
 /mob/proc/fullness_buckets_match(list/old_ex, list/new_ex)
 	if(length(old_ex) != length(new_ex))

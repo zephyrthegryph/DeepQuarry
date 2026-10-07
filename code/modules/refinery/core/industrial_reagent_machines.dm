@@ -134,7 +134,7 @@ MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to
 		var/turf/T = get_step(get_turf(src),direction)
 		var/obj/machinery/other = locate_on(T, /obj/machinery/reagent_refinery)
 		if(other && other.anchored)
-			other.update_icon()
+			redraw(other)
 
 /// The question's title.
 /obj/machinery/reagent_refinery/proc/transfer_amount_title(datum/act/op/A)

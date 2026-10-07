@@ -196,7 +196,7 @@ CAPABILITIES(/datum/eventkit/mob_spawner)
 					L.resize(size_mul, animate = FALSE, uncapped = TRUE, ignore_prefs = TRUE)
 				else
 					M.size_multiplier = size_mul
-				M.update_icon()
+				redraw(M)
 			else
 				to_chat(original_actor, span_warning("Size Multiplier not applied: ([size_mul]) is not a valid input."))
 

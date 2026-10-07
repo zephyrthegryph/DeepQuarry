@@ -106,7 +106,7 @@ OM_FIELD_VIEW(/obj/item/spell/energy_siphon, atom/movable, siphoning, CHANGE_EXP
 		for(var/atom/movable/AM in things_to_drain)
 			var/big_number = AM.drain_power(0,0,charge_to_steal / CELLRATE) // This drains the cell, and leaves us with a big number.
 			flow_remaining = flow_remaining - (big_number * CELLRATE) // Which we reduce to our needed number by multiplying.
-			AM.update_icon() // So guns and batteries will display correctly.
+			redraw(AM) // So guns and batteries will display correctly.
 		charge_to_give = charge_to_give + (flow_rate - flow_remaining) * SIPHON_CELL_TO_ENERGY
 	// If we have 'leftover' flow, let's try to do more.
 	if(round(flow_remaining))

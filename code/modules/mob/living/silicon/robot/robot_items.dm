@@ -493,7 +493,7 @@ CAPABILITIES(/obj/item/borg/combat/shield)
 		var/mob/living/user = src.loc
 		if(isliving(user))
 			act_message(user, null, MSG_SELF(span_danger("Your shield reactivates!")), MSG_OTHERS(span_danger("%U%'s shield reactivates!")))
-			user.update_icon()
+			redraw(user)
 
 /obj/item/borg/combat/shield/proc/adjust_flash_count(mob/living/user, amount)
 	if(active)			//Can't destabilize a shield that's not on
@@ -507,7 +507,7 @@ CAPABILITIES(/obj/item/borg/combat/shield)
 /obj/item/borg/combat/shield/proc/overload(mob/living/user)
 	set_active(FALSE)
 	act_message(user, null, MSG_SELF(span_danger("Your shield destabilizes!")), MSG_OTHERS(span_danger("%U%'s shield destabilizes!")))
-	user.update_icon()
+	redraw(user)
 	COOLDOWN_START(src, overload_cooldown, shield_refresh)
 
 /// Using the shield in hand, or its menu entry: ask the level.

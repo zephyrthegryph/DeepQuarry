@@ -83,7 +83,7 @@
 			activated = TRUE
 		if(reveal_toggle && target)
 			if(!isliving(target) && !(spawn_toggle && istype(target, /obj/machinery/artifact))) //This is to keep it from updating icons if our owner is a large artifact
-				target.update_icon() //As it will runtime since it hasn't set it's artifact_master yet. The update icon is handled in /obj/machinery/artifact/Initialize()
+				redraw(target) //As it will runtime since it hasn't set it's artifact_master yet. The update icon is handled in /obj/machinery/artifact/Initialize()
 			var/display_msg
 			if(activated)
 				display_msg = pick("momentarily glows brightly!","distorts slightly for a moment!","flickers slightly!","vibrates!","shimmers slightly for a moment!")

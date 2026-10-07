@@ -176,7 +176,7 @@
 					var/atom/drop = H.drop_location()
 					if(drop && !QDELETED(drop))
 						AM.forceMove(drop)
-						AM.update_icon()
+						redraw(AM)
 						return
 				else if(AM.loc != H)
 					return // it already left the holder: not the holder's to drop or delete
@@ -527,7 +527,7 @@
 				spent(thing)
 			else
 				thing.forceMove(drop)
-				thing.update_icon()
+				redraw(thing)
 
 /// Takes `value` out of holder.var_name without disposing of it.
 /proc/own_release_member(datum/holder, var_name, datum/value)

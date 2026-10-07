@@ -1065,7 +1065,7 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/galaxy)
 	// Clear the vessel.
 	visible_message(span_infoplain(span_bold("\The [user]") + " tips the contents of \the [thing] into \the [src]."))
 	thing.reagents.clear_reagents()
-	thing.update_icon()
+	redraw(thing)
 	return OP_PASS
 
 CAPABILITIES(/obj/structure/sink)

@@ -53,7 +53,7 @@
 /datum/construction_graph/wall/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
 	if(after == CONSTRUCTION_DONE)
 		return
-	target.update_icon()
+	redraw(target)
 	actor.update_examine_panel(target)
 
 /// A worker who can do wall work: dexterous and standing on a turf. TRUE or why not.

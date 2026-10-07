@@ -164,7 +164,7 @@
 					new T(spot)
 
 	for(var/turf/T in changedturfs)
-		T.update_icon()
+		redraw(T)
 
 /datum/rogue/zonemaster/proc/place_resources(turf/simulated/mineral/M)
 	#define XENOARCH_SPAWN_CHANCE 0.3

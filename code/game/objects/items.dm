@@ -652,7 +652,7 @@
 		dq_set_fluorescent(src, 1)
 		dq_set_blood_color(src, COLOR_LUMINOL)
 		blood_overlay.color = COLOR_LUMINOL
-		update_icon()
+		redraw(src)
 
 /obj/item/add_blood(mob/living/carbon/human/M as mob)
 	if (!..())

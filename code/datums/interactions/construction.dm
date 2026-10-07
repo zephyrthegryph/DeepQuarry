@@ -170,7 +170,7 @@ CAPABILITIES(/datum/construction_graph)
  */
 /datum/construction_graph/proc/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
 	if(!QDELETED(target))
-		target.update_icon()
+		redraw(target)
 
 /**
  * Problems with this graph, as text: unknown states, states no edge reaches,

@@ -84,7 +84,7 @@ CAPABILITIES(/obj/structure/largecrate)
 /obj/structure/largecrate/vehicle/Initialize(mapload)
 	. = ..()
 	for(var/obj/O in contents)
-		O.update_icon()
+		redraw(O)
 
 /obj/structure/largecrate/vehicle/bike
 	name = "spacebike crate"

@@ -1178,7 +1178,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	var/obj/item/removed = null
 	if(cell)
 		removed = remove_cell()
-		removed.update_icon()
+		redraw(removed)
 		removed.add_fingerprint(user)
 	else
 		var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)

@@ -297,7 +297,7 @@
 			new path(T)
 	if(update_neighbors)
 		for(var/atom/movable/AM in contents_of(T))
-			AM.update_icon()
+			redraw(AM)
 	return T
 
 /// After Destroy(): neighbours that smooth against the atom see it gone.
@@ -310,4 +310,4 @@
 		if(neighbor_reconnect && isstructure(N))
 			var/obj/structure/S = N
 			S.update_connections()
-		N.update_icon()
+		redraw(N)
