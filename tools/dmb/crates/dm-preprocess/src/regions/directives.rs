@@ -34,10 +34,17 @@ pub(super) fn plan<P: SourceProvider>(
             },
         );
     }
-    // Native boolean spellings are initial object macros, not runtime globals.
+    // Pinned native spellings are initial object macros. Undef removes only
+    // substitution; any remaining runtime/global meaning belongs to the resolver.
     // Install them before caller definitions; source define/undef effects then
     // apply through the same ordered environment as every other macro.
-    for (name, replacement) in [("TRUE", "1"), ("FALSE", "0")] {
+    for (name, replacement) in [
+        ("TRUE", "1"), ("FALSE", "0"),
+        // BYOND 516.1687 root + datum compile-only receipt: native_vision_macros.
+        ("SEE_BLACKNESS", "1024"), ("SEE_INFRA", "64"), ("SEE_MOBS", "4"),
+        ("SEE_OBJS", "8"), ("SEE_PIXELS", "256"), ("SEE_SELF", "32"),
+        ("SEE_THRU", "512"), ("SEE_TURFS", "16"),
+    ] {
         pass.plan.final_macros.insert(
             name.into(),
             Macro {

@@ -37,6 +37,22 @@ fn native_boolean_macros_follow_define_undef_and_caller_precedence() {
 }
 
 #[test]
+fn native_vision_macros_preserve_undef_shadow_and_caller_precedence() {
+    let provider = Memory(BTreeMap::from([(PathBuf::from("project.dme"),
+        "var/a = SEE_BLACKNESS | SEE_INFRA | SEE_MOBS | SEE_OBJS | SEE_PIXELS | SEE_SELF | SEE_THRU | SEE_TURFS\n#undef SEE_BLACKNESS\nvar/b = SEE_BLACKNESS\n/datum/shadow\n    var/SEE_BLACKNESS = 9\n#define SEE_BLACKNESS 7\nvar/c = SEE_BLACKNESS\n".into())]));
+    let plan = plan_regions(Path::new("project.dme"), &provider, &BTreeMap::new());
+    for workers in [1, 2] {
+        let expanded = expand_regions_text(&plan, workers);
+        assert!(expanded.diagnostics.is_empty());
+        assert_eq!(expanded.text.as_ref(),
+            "var/a = 1024 | 64 | 4 | 8 | 256 | 32 | 512 | 16\nvar/b = SEE_BLACKNESS\n/datum/shadow\n    var/SEE_BLACKNESS = 9\nvar/c = 7\n");
+    }
+    let caller = BTreeMap::from([("SEE_BLACKNESS".into(), "11".into())]);
+    let plan = plan_regions(Path::new("project.dme"), &provider, &caller);
+    assert!(expand_regions_text(&plan, 1).text.starts_with("var/a = 11 | 64"));
+}
+
+#[test]
 fn child_effects_split_parent_and_parallel_schedule_preserves_output() {
     let plan = fixture(&[
         ("project.dme", "#include \"parent.dm\"\n"),
