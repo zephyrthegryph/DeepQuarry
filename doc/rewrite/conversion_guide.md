@@ -355,3 +355,45 @@ What to know:
 * **Checks.** `analyze` rejects a `make()` naming a param its type does not declare or leaving out a required one, a write to a `per_type` var
   outside its build proc, and an ALLOW whose reason describes one of these forms (`lifeforms` lint). `escape_hatches` keeps the count of the
   remaining `ALLOW(init/...)`, `ALLOW(lifecycle)`, `ALLOW(sys_usr_outside_verb)`, content `qdel(` and content `usr` sites, which only falls.
+
+## 12. Timed actions: task_timed, task_start, task_busy
+
+A timed action a player does is an op with a `wait()` part. The old call sat inside a handler that had already been converted (`then(PROC_REF(interaction_x))`
+whose body ends in `task_timed(...)`) or inside a legacy `attack*()` override. The pins `dq_timed_pin/*` record the behaviour on the legacy form
+(duration, a move, a dropped item or a lost target cancels, what completion does, what is said); a conversion keeps each assertion.
+
+**Parts.** What the old call said maps one to one:
+
+| Old | Op |
+|---|---|
+| `task_timed(user, DUR, ...)` | `wait(DUR)` (a runtime duration is `wait(PROC_REF(x))`, `x(datum/act/A)` returns deciseconds) |
+| `on_done = PROC_REF(done), done_args = list(user, I)` | `then(PROC_REF(done))`, `done(datum/act/op/A)`: `A.actor`, `A.held`, `A.target`, `A.holder` |
+| the "You begin ..." message before the call | `begins(MSG(x))`, `MSG_DEF_SELF(x, "You begin %T% ...")` or `MSG_DEF(x, self, others)` (`%U%` user, `%T%` target, `%I%` item) |
+| the finishing message | `says(MSG(x))` or stay in the `then()` proc |
+| checks and refusals before the call | `when(...)` if the click is not this op's (falls through), `needs(req(PROC_REF(x), because = MSG(y)))` if the actor is refused |
+| `M.use(5)` / `consume` of the held stack | `stack(/obj/item/stack/x, 5)` as the binding (the cost is reserved at the end) |
+| `on_fail = ...`, `fail_message` | `on_interrupt(PROC_REF(x))` (`A.reason`) |
+| `claims = TRUE`, `busy = X`, `if(task_busy(X)) return` | `claims()` on the op, `req_unclaimed()` for an op that must not run over a claiming one |
+| `IGNORE_USER_LOC_CHANGE` / `IGNORE_HELD_ITEM` / `IGNORE_TARGET_LOC_CHANGE` | `wait(DUR, keeps = HELD \| ADJACENT)` (drop `STAY` for a wait the actor may walk away from) |
+| `progress = FALSE` | `silent_wait()` |
+| `task_start(/datum/task/timed/x, user, target, var = ...)` | the task's vars become the op: `duration` the `wait()`, `complete_proc` the `then()`, `fail_message` the `on_interrupt()`; state it carried is `captures(nameof(v))` on the op or a field of the target |
+| a legacy `attack()` / `attack_hand()` / `attackby()` that starts the task | an `op("key", hand() / item(T) / in_hand() / tool(Q) / menu(), ...)` in the type's `CAPABILITIES`; the override is deleted |
+| a bot or script starting the action | `op("key", ai(), wait(...), then(...))` and `perform_op(user, target, "key", origin = ORIGIN_SYSTEM)` |
+
+**What changes by itself (documented once, `intended_changes.md`, "Timed actions as ops"):** a second input by the same player stops the first wait ("You stop what you
+were doing.") and starts the new one, where the task refused the second on the same target; a wait on a physical binding holds the actor's hands and body; a
+short `stack()` is no candidate (the click falls through) where the handler said "You need N"; a sound played at the start plays at the end (`plays()`).
+
+**Recipe, per file.** (1) Read the type's `CAPABILITIES`, every proc named in it, and every caller of the legacy proc. (2) Write the pin first if `dq_timed_pin`
+has no assertion for the shape: drive `test_click(user, target, held)`, `test_time()`, read `test_chat_of(user)`; run it on the legacy form. (3) Convert; delete the
+old proc and the done proc it names; keep behaviour. (4) `bash tools/dq_focused_test.sh 'dq_timed_pin/*'` (distinct run dir per agent), then
+`bash tools/ci/check_ratchets.sh`.
+
+**Pitfalls found.**
+
+* Two ops on one input (`hand()`) with `when(PROC_REF(a))` / `when(PROC_REF(b))` are an `op_clash` even when the procs exclude each other: give one a tier,
+  `priority(OP_PRIORITY_TAKE_OUT)`, not `priority(above(key))` (that is counted by the `op_order` ceiling).
+* A `req(PROC_REF(x))` that reads a stack's amount fails the `reads` lint (the amount is untracked): use `stack(T, n)`. An `ALLOW(reads)` that no longer triggers is
+  itself an error (`allow_annotations --unused`).
+* Heredocs through the shell eat backslashes (`\a`, `\the`): write DM with the Write/Edit tools.
+* A pin that reads `timed_tasks_of(user)` only sees the legacy form: use the `running()` / `was_cancelled()` helpers of `dq_timed_pin`, which read a pending op as well.

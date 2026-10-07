@@ -82,15 +82,9 @@ DECLARE_APPEARANCE_PROC(/obj/structure/catwalk, TYPE_PROC_REF(/atom, appearance_
 	atom_deconstruct(TRUE, A.actor, TRUE)
 	return OP_OK
 
-/// Old attackby: plate the catwalk with a floor tile stack.
-/obj/structure/catwalk/proc/interaction_plate(datum/act/op/A)
+/obj/structure/catwalk/proc/plate_done(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/stack/tile/floor/ST = A.held
-	to_chat(user, span_notice("Placing tile..."))
-	task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(plate_done), done_args = list(user, ST))
-	return OP_OK
-
-/obj/structure/catwalk/proc/plate_done(mob/user, obj/item/stack/tile/floor/ST)
 	if(plated_tile || !ST.use(1))
 		return
 	to_chat(user, span_notice("You plate \the [src]"))
@@ -104,11 +98,13 @@ DECLARE_APPEARANCE_PROC(/obj/structure/catwalk, TYPE_PROC_REF(/atom, appearance_
 
 TRACKED(/obj/structure/catwalk, plated_tile)
 
+MSG_DEF_SELF(catwalk/plate_begins, span_notice("Placing tile..."))
+
 CAPABILITIES(/obj/structure/catwalk)
 	smoothing()
 	op("slice_keep", tool(TOOL_WELDER), stance(I_HELP), label("Slice apart, keeping the lattice"), wait(0), needs(req_welder_lit()), costs(RES_FUEL, 0), then(PROC_REF(interaction_slice_keep)))
 	op("slice", tool(TOOL_WELDER), stance(I_DISARM, I_GRAB, I_HURT), label("Slice apart"), wait(0), needs(req_welder_lit()), costs(RES_FUEL, 0), then(PROC_REF(interaction_slice)))
-	op("plate", item(/obj/item/stack/tile/floor), label("Plate"), when(cond_not(nameof(plated_tile))), then(PROC_REF(interaction_plate)))
+	op("plate", item(/obj/item/stack/tile/floor), label("Plate"), when(cond_not(nameof(plated_tile))), begins(MSG(catwalk/plate_begins)), wait(1 SECOND), then(PROC_REF(plate_done)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 
 /obj/structure/catwalk/proc/crowbar_used(datum/act/op/A)

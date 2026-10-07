@@ -28,20 +28,34 @@
 /obj/item/beartrap/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())
 
-/// Old attack_self.
-/obj/item/beartrap/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!deployed && can_use(user))
-		act_message(user, src, MSG_SELF(span_danger("You begin deploying %T%!")), \
-			MSG_OTHERS(span_danger("%U% starts to deploy %T%.")), \
-			MSG_BLIND("You hear the slow creaking of a spring."))
+MSG_DEF(beartrap/deploying, "You begin deploying %T%!", "%U% starts to deploy %T%.")
+MSG_DEF(beartrap/deployed, "You have deployed %T%!", "%U% has deployed %T%.")
+MSG_DEF(beartrap/freeing, "You carefully begin to free the one caught in %T%.", "%U% begins freeing the one caught in %T%.")
+MSG_DEF(beartrap/freed, "You free the one caught in %T%.", "%U% frees the one caught in %T%.")
+MSG_DEF(beartrap/disarming, "You begin disarming %T%!", "%U% starts to disarm %T%.")
+MSG_DEF(beartrap/disarmed, "You have disarmed %T%!", "%U% has disarmed %T%.")
 
-		task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
-	return TRUE
+CAPABILITIES(/obj/item/beartrap)
+	op("deploy", in_hand(), label("Deploy trap"), needs(req(PROC_REF(can_deploy), silent = TRUE)),
+		begins(MSG(beartrap/deploying), blind = "You hear the slow creaking of a spring."), wait(6 SECONDS),
+		then(PROC_REF(deploy_trap)), says(MSG(beartrap/deployed), blind = "You hear a latch click loudly."))
+	op("free", hand(), label("Free the victim"), when(PROC_REF(can_free)), priority(OP_PRIORITY_TAKE_OUT), begins(MSG(beartrap/freeing)), wait(6 SECONDS),
+		then(PROC_REF(free_victim)), says(MSG(beartrap/freed)))
+	op("disarm", hand(), label("Disarm"), when(PROC_REF(can_disarm)),
+		begins(MSG(beartrap/disarming), blind = "You hear a latch click followed by the slow creaking of a spring."), plays(SFX_MACHINES_CLICK), wait(6 SECONDS),
+		then(PROC_REF(disarm_trap)), says(MSG(beartrap/disarmed)))
 
-/obj/item/beartrap/proc/attack_self_timed_done(mob/user)
-	act_message(user, src, MSG_SELF(span_danger("You have deployed %T%!")), \
-		MSG_OTHERS(span_danger("%U% has deployed %T%.")), \
-		MSG_BLIND("You hear a latch click loudly."))
+/obj/item/beartrap/proc/can_deploy(datum/act/op/A)
+	return !deployed && can_use(A.actor)
+
+/obj/item/beartrap/proc/can_free(datum/act/op/A)
+	return has_buckled_mobs() && can_use(A.actor)
+
+/obj/item/beartrap/proc/can_disarm(datum/act/op/A)
+	return !has_buckled_mobs() && deployed && can_use(A.actor)
+
+/obj/item/beartrap/proc/deploy_trap(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_MACHINES_CLICK, 1.4)
 
 	deployed = 1
@@ -50,41 +64,12 @@
 	set_anchored(TRUE)
 	log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
 
-CAPABILITIES(/obj/item/beartrap)
-	op("deploy", in_hand(), label("Deploy trap"), then(PROC_REF(deploy_trap_input)))
-	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
-
-/obj/item/beartrap/proc/deploy_trap_input(datum/act/op/A)
-	interaction_self(A.actor, A.held, null)
-	return OP_OK
-
-/// Old attack_hand.
-/obj/item/beartrap/proc/interaction_hand(datum/act/op/A)
-	var/mob/user = A.actor
-	if(has_buckled_mobs() && can_use(user))
-		var/victim = english_list(src?.buckled_mob_list())
-		act_message(user, src, MSG_SELF(span_notice("You carefully begin to free [victim] from %T%.")), \
-			MSG_OTHERS(span_notice("%U% begins freeing [victim] from %T%.")))
-		task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user, victim))
-	else if(deployed && can_use(user))
-		act_message(user, src, MSG_SELF(span_notice("You begin disarming %T%!")), \
-			MSG_OTHERS(span_danger("%U% starts to disarm %T%.")), \
-			MSG_BLIND("You hear a latch click followed by the slow creaking of a spring."))
-		play_sfx(src, SFX_MACHINES_CLICK)
-
-		task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
-	else
-		return OP_DECLINE
-	return TRUE
-
-/obj/item/beartrap/proc/attack_hand_timed_done(mob/user, victim)
-	act_message(user, src, others = span_notice("[victim] has been freed from %T% by %U%."))
-	for(var/A in src?.buckled_mob_list())
-		unbuckle_mob(A)
+/obj/item/beartrap/proc/free_victim(datum/act/op/A)
+	for(var/mob/victim in src?.buckled_mob_list())
+		unbuckle_mob(victim)
 	set_anchored(FALSE)
-/obj/item/beartrap/proc/attack_hand_timed_done2(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have disarmed %T%!")), \
-		MSG_OTHERS(span_danger("%U% has disarmed %T%.")))
+
+/obj/item/beartrap/proc/disarm_trap(datum/act/op/A)
 	deployed = 0
 	set_anchored(FALSE)
 	changed(src)

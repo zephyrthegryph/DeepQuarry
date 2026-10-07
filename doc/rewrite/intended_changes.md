@@ -2662,3 +2662,12 @@ Each changed pin row is one of these classes; nothing else was blessed. `dq_inte
   registered and the next `get_overmap_sector()` handed out a dying one (`rel_set` refused "is being destroyed" in `i7_bulk` after `dq_conversion_pin`). It removes the text keys it owns.
   `i7_bulk` still fails alone and combined on master for another reason (a gravity generator part's break during its own destroy, `hold(...): the holder is deleted`), which is in
   `code/game/machinery`.
+
+## Timed actions as ops (rewrite/timed-tasks)
+
+Pinned by `code/modules/unit_tests/dq_timed_pin_behaviour.dm` (written and green on the legacy `task_timed` / `task_start` forms first; 17 of 18 passed, the 18th leaked the teleport's sparks, now cleaned up; the adapters `running()`, `declared_duration()` and `was_cancelled()` read a pending op as well as a task, every other assertion is unchanged). Each class below is one cause, not one site.
+
+* **Class: the same player starts the action a second time.** The task refused the second input on the same target (`max_interact_count = 1`) and the first went on. An op's wait holds the actor's hands and body, so the second physical input stops the first ("You stop what you were doing.") and starts the new wait; one action is running afterwards either way. Pin: `same_actor_twice` (its "the first is still the one running" line is legacy-only).
+* **Class: the refusal only the old handler wrote.** `whetstone` with fewer than five sheets said "You need 5 [whetstone] to refine it ..."; the binding is `stack(/obj/item/stack/material, 5)` now, so a short stack is not a candidate and the click falls through unanswered. Pin: `whetstone_short_of_sheets` keeps "starts nothing" and "spends nothing" and drops the message line.
+* **Class: a sound played when the action starts plays when it ends.** The bear trap's disarm clicked at the start; `plays()` is a commit-stage part.
+* **Class: a message that named the victims.** The bear trap's free-the-victim lines named them (`[victim]`); the template says "the one caught in %T%".
