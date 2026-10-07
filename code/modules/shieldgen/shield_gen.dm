@@ -33,6 +33,7 @@ CAPABILITIES(/obj/machinery/shield_gen)
 	owns_many(nameof(field))
 	climb()
 	interface("ShieldGenerator")
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	without("ui_open")
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("change_radius", ui_act("change_radius", arg("val", num())), then(PROC_REF(ui_act_change_radius)))
@@ -68,12 +69,13 @@ CAPABILITIES(/obj/machinery/shield_gen)
 	. = ..()
 
 /// Maintains its field while on (toggle() raises it and drops the whole field when switched off).
-DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
-/obj/machinery/shield_gen/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/shield_gen/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_DECLINE
 	if(prob(75))
 		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
-		. = 1
+		. = OP_OK
 	fx_sparks(src, 5)
 
 /obj/machinery/shield_gen/proc/interaction_swipe_id(datum/act/op/A)

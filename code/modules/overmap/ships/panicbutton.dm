@@ -32,22 +32,31 @@ TRACKED(/obj/structure/panic_button, launched)
 	..()
 	look.state("[initial(icon_state)][appearance_panic_suffix()]")
 
-DECLARE_INTERACTIONS(/obj/structure/panic_button, INTERACT_HAND_AS(I_HURT, "Smash the glass", PROC_REF(interaction_hand)), INTERACT_HAND(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/structure/panic_button)
+	op("smash", hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Smash the glass"), then(PROC_REF(interaction_smash)))
+	op("hand", hand(), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(interaction_hand)))
 
-/// Old attack_hand.
-/obj/structure/panic_button/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// Old attack_hand with a harmful stance.
+/obj/structure/panic_button/proc/interaction_smash(datum/act/op/A)
+	return panic_press(A.actor, TRUE)
+
+/// Old attack_hand with any other stance.
+/obj/structure/panic_button/proc/interaction_hand(datum/act/op/A)
+	return panic_press(A.actor, FALSE)
+
+/obj/structure/panic_button/proc/panic_press(mob/living/user, smash)
 	if(!istype(user))
-		return FALSE
+		return OP_DECLINE
 
 	if(user.incapacitated())
-		return TRUE
+		return OP_OK
 
 	// Already launched
 	if(launched)
 		to_chat(user, span_warning("The button is already depressed; the beacon has been launched already."))
 	// Glass present
 	else if(glass)
-		if(interaction.stance == I_HURT)
+		if(smash)
 			user.automatic_custom_emote(VISIBLE_MESSAGE, "smashes the glass on [src]!")
 			glass = FALSE
 			play_sfx(src, SFX_EFFECTS_HIT_ON_SHATTERED_GLASS, volume = 0, vary = FALSE)
@@ -61,7 +70,7 @@ DECLARE_INTERACTIONS(/obj/structure/panic_button, INTERACT_HAND_AS(I_HURT, "Smas
 		launch(user)
 		playsound(src, get_sfx(SFX_BUTTON))
 		changed(src)
-	return TRUE
+	return OP_OK
 
 /obj/structure/panic_button/proc/launch(mob/living/user)
 	if(launched)

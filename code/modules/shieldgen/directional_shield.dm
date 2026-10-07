@@ -102,6 +102,8 @@ CAPABILITIES(/obj/effect/directional_shield)
 
 CAPABILITIES(/obj/item/shield_projector)
 	owns_many(nameof(active_shields))
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_self)))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(projector_emp_drain))))
 
 /obj/item/shield_projector/Initialize(mapload)
 	max_integrity = max_integrity
@@ -198,22 +200,21 @@ CAPABILITIES(/obj/item/shield_projector)
 	for(var/obj/effect/directional_shield/S in active_shields)
 		S.update_color(new_color)
 
-DECLARE_INTERACTIONS(/obj/item/shield_projector, INTERACT_SELF("Toggle", PROC_REF(interaction_self)))
-
 /// Old attack_self. FALSE (special handling) moves on to a subtype's own self-use.
-/obj/item/shield_projector/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/shield_projector/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	if(active)
 		if(always_on)
 			to_chat(user, span_warning("You can't seem to deactivate \the [src]."))
-			return TRUE
+			return OP_OK
 		set_on(FALSE)
 	else
 		set_dir(user.dir) // Needed for linear shields.
 		set_on(TRUE)
 	act_message(user, src, others = span_notice("%U% [!active ? "de":""]activates %T%."))
-	return TRUE
+	return OP_OK
 
 /obj/item/shield_projector/proc/set_on(on)
 	if(isnull(on))
@@ -239,11 +240,10 @@ DECLARE_INTERACTIONS(/obj/item/shield_projector, INTERACT_SELF("Toggle", PROC_RE
 	if(Adjacent(user))
 		. += "Its shield matrix is at [round( (get_integrity() / max_integrity) * 100, 0.01)]% strength."
 
-DAMAGE_REACTION(/obj/item/shield_projector, DAMAGE_EMP, PROC_REF(projector_emp_drain))
-
 /// A pulse drains the shield; a strong one kills it outright.
-/obj/item/shield_projector/proc/projector_emp_drain(datum/damage_packet/packet)
-	adjust_health(-max_integrity / packet.severity) // A strong EMP will kill the shield instantly, but weaker ones won't on the first hit.
+/obj/item/shield_projector/proc/projector_emp_drain(datum/act/hit/emp/A)
+	adjust_health(-max_integrity / A.packet.severity) // A strong EMP will kill the shield instantly, but weaker ones won't on the first hit.
+	return OP_OK
 
 // Subtypes
 

@@ -50,6 +50,8 @@ CAPABILITIES(/obj/machinery/shield/malfai)
 	..()
 
 CAPABILITIES(/obj/machinery/shield)
+	on_notice(/datum/notice/hit/projectile, then(PROC_REF(shield_flash_opaque)))
+	extend(/datum/act/hit, instead(then(PROC_REF(shield_thrown_hit))))
 	op("hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), then(PROC_REF(interaction_hit)))
 
 /obj/machinery/shield/proc/interaction_hit(datum/act/op/A)
@@ -66,24 +68,24 @@ CAPABILITIES(/obj/machinery/shield)
 	after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), with = list(0))
 	return OP_DECLINE
 
-DAMAGE_REACTION_AFTER(/obj/machinery/shield, DAMAGE_PROJECTILE, PROC_REF(shield_flash_opaque))
-DAMAGE_REACTION(/obj/machinery/shield, DAMAGE_THROWN, PROC_REF(shield_thrown_hit))
-
 /// The shield flickers opaque for a moment after absorbing a hit (purely aesthetic).
-/obj/machinery/shield/proc/shield_flash_opaque(datum/damage_packet/packet)
+/obj/machinery/shield/proc/shield_flash_opaque(datum/act/A)
 	set_opacity(1)
 	after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), with = list(0))
 
 /// A thrown hit is announced and flickers the shield, then lands as usual.
-/obj/machinery/shield/proc/shield_thrown_hit(datum/damage_packet/packet)
+/obj/machinery/shield/proc/shield_thrown_hit(datum/act/hit/A)
+	if(A.packet.entry != DAMAGE_ENTRY_THROWN)
+		return HOOK_DECLINE
 	//Let everyone know we've been hit!
-	visible_message(span_danger("\The [src] was hit by [packet.source]."))
+	visible_message(span_danger("\The [src] was hit by [A.packet.source]."))
 
 	//This seemed to be the best sound for hitting a force field.
 	play_sfx(src, SFX_EFFECTS_EMPULSE)
 
 	//The shield becomes dense to absorb the blow.. purely asthetic.
-	shield_flash_opaque(packet)
+	shield_flash_opaque(A)
+	return HOOK_DECLINE
 
 /obj/machinery/shieldgen
 	emp_integrity_factor = 1
@@ -127,6 +129,7 @@ CAPABILITIES(/obj/machinery/shieldgen)
 	op("shieldgen_insert_cell", item(/obj/item/cell), priority(OP_PRIORITY_DEFAULT - 1), label("Insert cell"), then(PROC_REF(interaction_insert_cell)))
 	op("shieldgen_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(unlocked_holds), because = PROC_REF(unlocked_refusal)), req(PROC_REF(panel_closed_holds), because = PROC_REF(panel_closed_refusal))), then(PROC_REF(interaction_toggle)))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(shieldgen_blast_malfunction)))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(emp_scramble))))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 // its shields collapse.
@@ -209,10 +212,9 @@ CAPABILITIES(/obj/machinery/shieldgen)
 	if(packet.severity == 2 && prob(15))
 		set_malfunction(TRUE)
 
-DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EMP, PROC_REF(emp_scramble))
-
 /// EMPs eat into the generator's remaining integrity and scramble it (instead of the plain ionic hit).
-/obj/machinery/shieldgen/proc/emp_scramble(datum/damage_packet/packet)
+/obj/machinery/shieldgen/proc/emp_scramble(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	switch(packet.severity)
 		if(1)
 			deal_damage(DAMAGE_IONIC, get_integrity() / 2, flags = DAMAGE_PACKET_SILENT) //cut health in half
@@ -222,7 +224,7 @@ DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EMP, PROC_REF(emp_scramble))
 			if(prob(50))
 				deal_damage(DAMAGE_IONIC, get_integrity() * 0.7, flags = DAMAGE_PACKET_SILENT) //chop off a third of the health
 				set_malfunction(1)
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /// Requirement (was REQ_* needs_repair): the legacy check answers TRUE to pass.
 /obj/machinery/shieldgen/proc/needs_repair_holds(datum/act/op/A)
