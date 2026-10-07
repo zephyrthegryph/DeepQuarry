@@ -20,6 +20,7 @@ with a log line wherever a first write declared a var) gives it:
 DUMP: the `OFDUMP|path|var|kind=..|policy=..|list=..|type=..` lines, LEARN: the `OFLEARN|type|var|kind` lines (test-run logs).
 What it cannot place is printed as RESIDUE and left for hand work (its macro line is kept).
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import collections
 import pathlib
 import re

@@ -3,9 +3,9 @@
 
 CAPABILITIES(/obj/item/roller)
 	op("self", in_hand(), label("Unfold"), then(PROC_REF(interaction_self)))
-	op("hand", hand(), then(PROC_REF(interaction_hand)))
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("disk", item(/obj/item/disk), label("Tuck in"), then(PROC_REF(interaction_disk)))
-	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/roller/proc/interaction_self(datum/act/op/A)
 	EVENT_HANDLER

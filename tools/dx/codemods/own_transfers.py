@@ -13,6 +13,7 @@ A call with into = FALSE and a user or slot is left alone (printed as RESIDUE).
 
     python tools/dx/codemods/own_transfers.py [--dry-run] [paths...]   (default: code/)
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import pathlib
 import re
 import sys

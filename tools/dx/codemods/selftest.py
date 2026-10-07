@@ -11,7 +11,7 @@ CODEMODS = ["ui_declare", "interact_declare", "periodic_while", "verb_decl", "ap
 
 
 def run(cwd, name, script):
-    return subprocess.run([sys.executable, script, "--files", name], cwd=cwd, capture_output=True, text=True).stdout
+    return subprocess.run([sys.executable, script, "--apply", "--files", name], cwd=cwd, capture_output=True, text=True).stdout
 
 
 def read(path):

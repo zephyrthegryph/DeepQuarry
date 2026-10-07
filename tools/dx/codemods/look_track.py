@@ -12,6 +12,7 @@ in the chain), decl_shape (static/global, or no declaration line), macro_write (
 a proc), write_form (a write inside a larger expression or two on a line), owned_writes (a write in a folder another session owns,
 without --owned-ok).
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import collections
 import re
 

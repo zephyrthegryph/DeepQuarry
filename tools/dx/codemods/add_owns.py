@@ -5,6 +5,7 @@
 
 The block is the type's one composition root: when the type already has a CAPABILITIES header (in any file) the entries go under it.
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import pathlib
 import re
 import sys

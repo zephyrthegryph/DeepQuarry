@@ -16,6 +16,7 @@ dead
     after it, `else`, a `for(var/x in ...)` loop); otherwise the call stays (residue `empty_block`).
     Unit tests and the engine are not edited. Idempotent. Report: removed calls by folder, residue by code.
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import argparse
 import collections
 import os

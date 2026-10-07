@@ -10,6 +10,7 @@ entry two `when(...)`, two `priority(...)` or two `drop =` arguments. A second r
 
     python tools/dx/codemods/extend_merge.py [--check] [paths...]
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import re
 import subprocess
 import sys

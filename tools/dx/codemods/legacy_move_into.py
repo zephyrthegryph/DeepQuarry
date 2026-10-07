@@ -9,6 +9,7 @@ A bare move_into(...) inside an /atom/movable proc (the receiver is src) is not 
 
     python tools/dx/codemods/legacy_move_into.py [--dry-run] [paths...]   (default: code/)
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import pathlib
 import re
 import sys

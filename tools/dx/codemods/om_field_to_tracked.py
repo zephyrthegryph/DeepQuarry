@@ -7,6 +7,7 @@ machine channel (CHANGE_MACHINE_*) is left alone unless --machine is given: the 
 
 Usage: om_field_to_tracked.py [--dry] [--machine] [--skip=PREFIX ...]   (PREFIX is a code/ path prefix to leave untouched)
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import os
 import re
 import sys

@@ -10,6 +10,7 @@ already becomes TRACKED(U, var) (SETTER(U, var) when the type has its own set_<v
 rewritten (its name is declared on unrelated types, a write sits in a macro or in an expression, a builtin var) is residue and the proc keeps its old form. Idempotent.
 Run `analyze gen` afterwards. `--skip-file F` lists types (one per line) that stay as they are (the converge driver's list: what the lints refused after a run).
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import os
 import re
 import subprocess

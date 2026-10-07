@@ -1,4 +1,5 @@
 """Survey own_set/own_add/own_put calls that pass transfer arguments. Usage: python own_transfers_survey.py [root]"""
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import re, sys, collections, pathlib
 
 def split_args(s):

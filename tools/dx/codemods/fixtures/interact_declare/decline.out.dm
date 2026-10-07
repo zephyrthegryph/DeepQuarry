@@ -1,5 +1,5 @@
 CAPABILITIES(/obj/item/picky)
-	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/picky/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor

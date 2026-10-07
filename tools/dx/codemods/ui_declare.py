@@ -6,6 +6,7 @@ r"""DECLARE_UI / UI_ACT / UI_DATA rows -> interface() / op(ui_act()) entries (do
 One host type at a time: all of its legacy UI rows convert together or none does. A type that does not match the rules exactly is residue with a
 code (listed with --sites). Idempotent: a converted type has no legacy rows left. Run `analyze gen` afterwards.
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import re
 import subprocess
 import sys

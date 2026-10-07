@@ -17,6 +17,7 @@ into the new block), `parent_traits` (NO then DECLARE under a parent with tint o
 
     python tools/dx/codemods/reagents_decl.py [--check]
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import pathlib
 import re
 import sys

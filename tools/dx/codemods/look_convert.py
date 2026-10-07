@@ -30,6 +30,7 @@ ancestor layers), order (a keyed state below a provider or layer that sets the s
 rows_parse, provider codes (super_late, replaces_parent, dot_use, returns_value, reads_layers, writes_state:<var>,
 side_effect:<proc>, look_var_read:<var>, multi_def, name_clash), held_icon (update_held_icon() in a provider).
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import collections
 import json
 import os

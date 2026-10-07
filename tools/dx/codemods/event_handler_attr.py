@@ -5,6 +5,7 @@ The marker expanded to exactly that attribute. A proc that already says SHOULD_N
 
 Usage: event_handler_attr.py [files...]   (no files: every .dm the marker is in)
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import re
 import subprocess
 import sys

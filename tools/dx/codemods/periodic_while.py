@@ -8,6 +8,7 @@ One declaration at a time. The fields it names become TRACKED (an OM_FIELD turns
 type's CAPABILITIES block, and for a PERIODIC_WHILE its periodic_step() handler (and every override of it below the type) is renamed <type>_step and takes
 (datum/act/timer/A). A declaration that does not match the rules exactly is residue with a code (--sites lists them). Idempotent. Run `analyze gen` afterwards.
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import os
 import re
 import subprocess

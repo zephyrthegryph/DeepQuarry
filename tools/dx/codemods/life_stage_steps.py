@@ -21,6 +21,7 @@ tests on the stage path evaluated per variant. Anything the script cannot transl
 
 Usage: life_stage_steps.py [--write]   (dry run prints the plan and the HAND list)
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import collections
 import os
 import re

@@ -6,6 +6,7 @@ r"""DECLARE_INTERACTIONS(T, INTERACT_USE / HAND / INSERT / ITEM ...) -> op(in_ha
 
 One host type at a time. A type that does not match the rules exactly is residue with a code (--sites lists them). Idempotent. Run `analyze gen` afterwards.
 """
+import _guard  # noqa: F401  dry run by default, --apply, --help, --files/--dirs scoping
 import os
 import re
 import subprocess
