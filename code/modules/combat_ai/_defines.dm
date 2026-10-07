@@ -131,6 +131,18 @@
 /// A pack's upkeep (splits, merges, chunk re-cover).
 #define PACK_UPKEEP_INTERVAL (5 SECONDS)
 
+// ---------------------------------------------------------------------------
+// Standings providers (standings/standings.dm, doc/rewrite/ai_packs.md B5): the priority of each provider's rows.
+// ---------------------------------------------------------------------------
+#define AI_STANDING_FACTION 0
+#define AI_STANDING_PACK 50
+#define AI_STANDING_SERVES 55
+#define AI_STANDING_GRUDGE 60
+#define AI_STANDING_EFFECT 80
+#define AI_STANDING_ADMIN 100
+/// How long a grudge (a hit, a taunt, a call for help) lasts.
+#define DQ_GRUDGE_DURATION (5 MINUTES)
+
 // Columns of a pack sighting (pack.sightings[REF(mob)]).
 #define SIGHT_SPOTTER 1
 #define SIGHT_FIRST_AT 2

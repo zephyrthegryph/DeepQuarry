@@ -46,10 +46,7 @@
 	// --- Per-behavior state ---
 	var/list/behavior_state = null       // typepath => list("cooldown" = world.time, "charges" = N)
 
-	// --- Personal relationships. Lazylist. ---
-	var/list/personal = null             // ref text of the mob => list("disp", "expires"); valid only while the mob is in personal_mobs
-	/// The mobs personal names (a relation list: a deleted mob leaves it, and its entry goes stale).
-	var/list/personal_mobs = null
+	// Dispositions are standings (standings/standings.dm): grudges, effects and faction rows are rows on the mob, not a list on the brain.
 
 	// --- Behavior trigger subscriptions ---
 	var/list/subscribed_signals = null   // DQAI_TRIGGER_* => list(behavior_typepath, ...)
@@ -76,7 +73,6 @@
 
 CAPABILITIES(/datum/ai_brain)
 	ref_many(nameof(behavior_sources))
-	ref_many(nameof(personal_mobs))
 	owns_one(nameof(model), /datum/world_model)
 
 /datum/ai_brain/New(mob/living/owner)
@@ -134,18 +130,6 @@ CAPABILITIES(/datum/ai_brain)
 	var/atom/A = locate(key)
 	return (A in behavior_sources) ? A : null
 
-/// The personal-disposition entry for `other`, or null. Stale entries (a deleted mob) are dropped.
-/datum/ai_brain/proc/personal_entry(mob/other)
-	if(!personal || !other)
-		return null
-	var/key = ref(other)
-	var/list/entry = personal[key]
-	if(entry && !(other in personal_mobs))
-		personal -= key
-		UNSETEMPTY(personal)
-		return null
-	return entry
-
 // ---------------------------------------------------------------------------
 // Loop scheduling (scheduling.dm).
 // ---------------------------------------------------------------------------
@@ -178,7 +162,6 @@ CAPABILITIES(/datum/ai_brain)
 	rebuild_behaviors()
 	// Perception is the pack's: this is only the backstop for a pack nothing has stirred for a window.
 	pack?.perceive_if_due()
-	expire_personal()
 	update_primary_threat()
 	selection_dirty = TRUE
 	if(primary_threat)
@@ -490,8 +473,8 @@ CAPABILITIES(/datum/ai_brain)
 /datum/ai_brain/proc/should_retaliate_against(mob/attacker)
 	if(!attacker || !holder || attacker == holder)
 		return FALSE
-	var/list/grudge = personal_entry(attacker)
-	if(grudge && grudge["disp"] <= DQ_DISPOSITION_HOSTILE)
+	var/grudge = grudge_value(attacker)
+	if(!isnull(grudge) && dq_standing_disposition(grudge) <= DQ_DISPOSITION_HOSTILE)
 		return TRUE
 	if(holder.faction && attacker.faction == holder.faction)
 		dqai_log("[holder] brain: ignoring hit from faction-mate [attacker]")
@@ -502,68 +485,8 @@ CAPABILITIES(/datum/ai_brain)
 	return TRUE
 
 // ---------------------------------------------------------------------------
-// Dispositions.
+// Dispositions: standings/standings.dm (disposition_to(), add_personal(), grudge_value()).
 // ---------------------------------------------------------------------------
-
-/datum/ai_brain/proc/disposition_to(mob/other)
-	if(!other || other == holder)
-		return DQ_DISPOSITION_ALLY
-	var/list/entry = personal_entry(other)
-	if(entry)
-		if(entry["expires"] && ELAPSED_SINCE(src, entry["expires"], CLOCK_WORLD) > 0)
-			personal -= ref(other)
-			UNSETEMPTY(personal)
-			rel_remove(src, nameof(personal_mobs), other)
-		else
-			return entry["disp"]
-	var/datum/faction_data/data = dq_faction_data_for(holder.faction)
-	var/result
-	if(other.client)
-		result = data.player_disposition
-	else
-		var/other_faction = other.faction
-		result = data.disposition_to_faction(other_faction)
-	// Fallback for mobs whose faction string isn't in the registry: honor the
-	// per-mob ai_attack_on_sight flag so unenumerated factions still aggress
-	// on strangers as expected. Faction-mates and explicit ALLY/FRIENDLY/WARY
-	// entries from the table are preserved.
-	if(result == DQ_DISPOSITION_NEUTRAL && istype(holder, /mob/living/simple_mob))
-		var/mob/living/simple_mob/SM = holder
-		if(SM.ai_attack_on_sight && holder.faction != other.faction)
-			result = DQ_DISPOSITION_HOSTILE
-	return result
-
-/datum/ai_brain/proc/add_personal(mob/other, disposition, duration = DQ_PERSONAL_DEFAULT_DURATION, reason = null)
-	if(!other)
-		return
-	LAZYINITLIST(personal)
-	rel_add(src, nameof(personal_mobs), other)
-	personal[ref(other)] = list(
-		"disp" = disposition,
-		"expires" = duration ? world.time + duration : 0,
-		"reason" = reason,
-	)
-	selection_dirty = TRUE
-
-/datum/ai_brain/proc/expire_personal()
-	if(!personal)
-		return
-	var/now = world.time
-	// Collect expired keys into a reused temp and subtract once, rather than
-	// Copy()ing the whole assoc list every strategic tick. Iterating the live
-	// list while only reading is safe; mutation happens after the loop.
-	var/list/expired
-	for(var/ref in personal)
-		var/list/entry = personal[ref]
-		var/mob/M = locate(ref)
-		if(!(M in personal_mobs)) // the mob was deleted: its entry is stale
-			LAZYADD(expired, ref)
-		else if(entry && entry["expires"] && entry["expires"] < now)
-			LAZYADD(expired, ref)
-			rel_remove(src, nameof(personal_mobs), M)
-	if(expired)
-		personal -= expired
-	UNSETEMPTY(personal)
 
 // ---------------------------------------------------------------------------
 // Behavior state (cooldowns, charges).
@@ -621,7 +544,7 @@ CAPABILITIES(/datum/ai_brain)
 	model.record_damage(amount, injury_kind, attacker)
 	stir_pack("member hurt")
 	if(ismob(attacker) && attacker != holder && should_retaliate_against(attacker))
-		add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "hit me")
+		add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_GRUDGE_DURATION, "hit me")
 		if(!primary_threat)
 			rel_set(src, nameof(primary_threat), attacker)
 	PUBLISH_LEGACY(holder, /datum/notice/dqai_damage_taken, amount, injury_kind, attacker)

@@ -30,8 +30,8 @@
 
 /datum/ai_brain/proc/forget_everything()
 	lose_target()
-	personal = null
-	rel_clear(src, nameof(personal_mobs))
+	if(holder)
+		release_all(holder, src) // every grudge this brain held
 	clear_path()
 	rel_clear(src, nameof(leader))
 
@@ -101,7 +101,7 @@
 	// (splash damage, friendly fire, a shove). See should_retaliate_against.
 	if(!should_retaliate_against(attacker))
 		return
-	add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "react_to_attack")
+	add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_GRUDGE_DURATION, "react_to_attack")
 	// Record in the world model so retaliate_to_attacker.evaluate() can see
 	// who struck us even when they're outside view() range.
 	if(model && ismob(attacker))
@@ -152,8 +152,8 @@
 	return
 
 /datum/ai_brain/proc/check_attacker(mob/M)
-	var/list/entry = personal_entry(M)
-	return entry && entry["disp"] <= DQ_DISPOSITION_HOSTILE
+	var/value = grudge_value(M)
+	return !isnull(value) && dq_standing_disposition(value) <= DQ_DISPOSITION_HOSTILE
 
 /datum/ai_brain/proc/on_hear_say(mob/living/speaker, message)
 	stir_pack("member heard")
