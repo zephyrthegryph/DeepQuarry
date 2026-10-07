@@ -10,6 +10,8 @@
 	w_class = ITEMSIZE_TINY
 
 	var/obj/item/paper/internalPaper
+	/// The stamps its paper carries, as the plane's overlay states (kept here so the look reads only the plane's own state).
+	var/list/stamp_marks
 
 CAPABILITIES(/obj/item/paperplane)
 	owns_one(nameof(internalPaper), /obj/item/paper)
@@ -31,19 +33,23 @@ CAPABILITIES(/obj/item/paperplane)
 			newPaper.forceMove(src)
 	else
 		rel_set(src, nameof(internalPaper), new /obj/item/paper(src))
-	update_icon()
+	sync_stamps()
 
 
-DECLARE_APPEARANCE_PROC(/obj/item/paperplane, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/paperplane/appearance_overlays()
-	. = list()
-	var/list/stamped = internalPaper.stamped
-	if(!stamped)
-		stamped = new
-	else if(stamped)
-		for(var/obj/item/stamp/stamp as anything in stamped)
-			var/image/stampoverlay = image('icons/obj/bureaucracy.dmi', "paperplane_[initial(stamp.icon_state)]")
-			. += stampoverlay
+TRACKED(/obj/item/paperplane, stamp_marks)
+
+/// Copies the stamps of the plane's paper into stamp_marks. Called when the paper is folded in and after a stamp lands on it.
+/obj/item/paperplane/proc/sync_stamps()
+	var/list/marks = list()
+	for(var/obj/item/stamp/stamp as anything in internalPaper?.stamped)
+		marks += initial(stamp.icon_state)
+	set_stamp_marks(marks)
+
+/// A plane shows the stamps its paper carries.
+/obj/item/paperplane/draw(datum/look/look)
+	..()
+	for(var/mark in stamp_marks)
+		look.overlay("paperplane_[mark]")
 
 /// Old attack_self.
 /obj/item/paperplane/proc/interaction_self(datum/act/op/A)
@@ -66,7 +72,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/paperplane, TYPE_PROC_REF(/atom, appearance_ov
 
 	else if(istype(P, /obj/item/stamp)) 	//we don't randomize stamps on a paperplane
 		internalPaper.attackby(P, user) //spoofed attack to update internal paper.
-		update_icon()
+		sync_stamps()
 
 	else if(is_hot(P))
 		if(user.disabilities & CLUMSY && prob(10))

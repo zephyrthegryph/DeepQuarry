@@ -118,7 +118,7 @@ CAPABILITIES(/obj/item/blobcore_chunk)
 		var/datum/blob_type/copy = new blob_type.type
 		copy.faction = blob_type.faction
 		rel_set(NC.overmind, nameof(/mob/observer/blob::blob_type), copy)
-		NC.overmind.blob_core().update_icon()
+		NC.overmind.blob_core().sync_overmind_look() // the core draws the copied type's colour
 		return TRUE
 
 	return FALSE

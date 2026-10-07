@@ -54,7 +54,7 @@ TYPE_TABLE_DECLARE(/mob/observer/blob, blob_langs, list(LANGUAGE_ANIMAL))
 		rel_set(src, nameof(blob_type), new BT())
 	color = blob_type.complementary_color
 	if(blob_core())
-		blob_core().update_icon()
+		blob_core().sync_overmind_look() // the core draws the new type's colour
 
 	for(var/L in TYPE_TABLE_GET(src, blob_langs))
 		languages |= GLOB.all_languages[L]
@@ -70,7 +70,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 	for(var/obj/structure/blob/B as anything in REGISTRY_MEMBERS(REGISTRY_BLOBS))
 		if(B && B.overmind == src)
 			rel_clear(B, nameof(B.overmind))
-			B.update_icon() //reset anything that was ours
+			B.sync_overmind_look() //reset anything that was ours
 
 	for(var/mob/living/simple_mob/blob/spore/BM as anything in blob_mobs)
 		if(BM)
