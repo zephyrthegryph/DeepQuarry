@@ -391,7 +391,7 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 		then(PROC_REF(ui_act_bufferoption)))
 	op("wipeDisk", ui_act("wipeDisk"), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_wipedisk)))
 	op("ejectDisk", ui_act("ejectDisk"), needs(req(PROC_REF(user_standing), because = MSG(dna_console/not_standing))), then(PROC_REF(ui_act_ejectdisk)))
-	op("dna_console_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(dna_console_interaction_item)))
+	op("dna_console_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT + 1), label("Use"), then(PROC_REF(dna_console_interaction_item)))
 
 /obj/machinery/computer/scan_consolenew/proc/dna_console_interaction_item(datum/act/op/A)
 	var/mob/user = A.actor

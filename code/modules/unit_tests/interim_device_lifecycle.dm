@@ -1,5 +1,6 @@
 /// Hacking destroys the scanner and leaves exactly the selected successor on the floor.
 /datum/unit_test/interim_sleevemate_hack_replacement/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/list/options = list("Body Snatcher" = /obj/item/bodysnatcher, "Mind Binder" = /obj/item/mindbinder)
@@ -7,6 +8,7 @@
 		var/obj/item/sleevemate/scanner = allocate(/obj/item/sleevemate, T)
 		TEST_ASSERT(user.put_in_active_hand(scanner), "the original scanner can be held")
 		var/completed = test_request_handler(scanner, "hack_chosen", user, choice, as_op = TRUE)
+		test_time(1 SECOND) // the replacement is an after(0) of the handler
 		own_turf_contents(T)
 		TEST_ASSERT_EQUAL(completed, 1, "a supported hack completes")
 		TEST_ASSERT(QDELETED(scanner), "hacking consumes the original scanner")
@@ -20,3 +22,6 @@
 	test_request_handler(unchanged, "hack_chosen", user, "Invalid hack", as_op = TRUE)
 	TEST_ASSERT(!QDELETED(unchanged), "an unsupported choice cannot consume the scanner")
 	TEST_ASSERT_EQUAL(unchanged.loc, T, "an unsupported choice preserves its location")
+	test_time(5 SECONDS)
+	own_turf_contents(T)
+	test_driver_end()
