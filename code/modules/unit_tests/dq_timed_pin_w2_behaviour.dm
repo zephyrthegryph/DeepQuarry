@@ -25,6 +25,8 @@
 	var/drop_cancels = FALSE
 	/// TRUE when deleting the target must be checked (its loss cancels).
 	var/loss_cancels = TRUE
+	/// FALSE for an action whose failure has a consequence a test world cannot take (a mine that goes off): only the finish is pinned.
+	var/cancel_tests = TRUE
 
 /// Builds a fresh actor, target and held item in `user`, `target` and `held`.
 /datum/unit_test/dq_timed_pin_w2/proc/setup_scene()
@@ -64,6 +66,9 @@
 	if(finished)
 		TEST_ASSERT(said(user, finished), "it says it finished")
 	clear_scene()
+	if(!cancel_tests)
+		extra_pin()
+		return
 	// a move cancels
 	setup_scene()
 	start_click()
@@ -504,3 +509,338 @@
 		T.ChangeTurf(old_turf_type)
 		old_turf_type = null
 	target = null
+
+// ---- Weight machine: a lift claims the machine ----
+
+/datum/unit_test/dq_timed_pin_w2/weightlifter_lift
+	finished = "You lift the weights"
+	var/start_nutrition = 300
+
+/datum/unit_test/dq_timed_pin_w2/weightlifter_lift/setup_scene()
+	user = person()
+	user.nutrition = start_nutrition
+	user.weight = 150
+	var/obj/structure/fitness/weightlifter/W = allocate(/obj/structure/fitness/weightlifter, run_loc_floor_bottom_left)
+	target = W
+	duration = 3 SECONDS + (W.weight * 10)
+
+/datum/unit_test/dq_timed_pin_w2/weightlifter_lift/is_done()
+	return user.nutrition < start_nutrition
+
+/datum/unit_test/dq_timed_pin_w2/weightlifter_lift/extra_pin()
+	setup_scene()
+	var/mob/living/carbon/human/two = person()
+	two.nutrition = 300
+	two.weight = 150
+	test_click(user, target, null)
+	TEST_ASSERT(!isnull(running(user)), "the first lifter runs")
+	test_click(two, target, null)
+	TEST_ASSERT_NULL(running(two), "a second lifter is refused while the machine is in use")
+	test_time(duration + 2 SECONDS)
+	TEST_ASSERT(is_done(), "the first lift finishes")
+	clear_scene()
+
+// ---- A bedsheet cut up with something sharp ----
+
+/datum/unit_test/dq_timed_pin_w2/bedsheet_cut
+	duration = 5 SECONDS
+	began = "You begin cutting up"
+	finished = "You cut"
+	drop_cancels = TRUE
+
+/datum/unit_test/dq_timed_pin_w2/bedsheet_cut/setup_scene()
+	user = person()
+	target = allocate(/obj/item/bedsheet, run_loc_floor_bottom_left)
+	held = hold(/obj/item/material/knife)
+
+/datum/unit_test/dq_timed_pin_w2/bedsheet_cut/is_done()
+	return QDELETED(target)
+
+// ---- A barricade mended with a sheet of its own material ----
+
+/datum/unit_test/dq_timed_pin_w2/barricade_repair
+	duration = 2 SECONDS
+	drop_cancels = TRUE
+	var/obj/item/stack/material/wood/planks
+
+/datum/unit_test/dq_timed_pin_w2/barricade_repair/setup_scene()
+	user = person()
+	var/obj/structure/barricade/B = allocate(/obj/structure/barricade, run_loc_floor_bottom_left)
+	B.update_integrity(B.max_integrity - 20)
+	target = B
+	planks = allocate(/obj/item/stack/material/wood, run_loc_floor_bottom_left, 5)
+	user.put_in_active_hand(planks)
+	held = planks
+
+/datum/unit_test/dq_timed_pin_w2/barricade_repair/is_done()
+	var/obj/structure/barricade/B = target
+	return !QDELETED(B) && B.get_integrity() >= B.max_integrity && planks.get_amount() == 4
+
+/datum/unit_test/dq_timed_pin_w2/barricade_repair/extra_pin()
+	setup_scene()
+	var/obj/structure/barricade/B = target
+	B.update_integrity(B.max_integrity)
+	start_click()
+	TEST_ASSERT_NULL(running(user), "a sound barricade starts no repair")
+	TEST_ASSERT_EQUAL(planks.get_amount(), 5, "and spends nothing")
+	clear_scene()
+
+// ---- A mirror frame given glass ----
+
+/datum/unit_test/dq_timed_pin_w2/mirror_add_glass
+	duration = 2 SECONDS
+	began = "You start to add the glass"
+	finished = "You add the glass"
+	drop_cancels = TRUE
+	var/obj/item/stack/material/glass/sheets
+
+/datum/unit_test/dq_timed_pin_w2/mirror_add_glass/setup_scene()
+	user = person()
+	var/obj/structure/mirror/M = allocate(/obj/structure/mirror, run_loc_floor_bottom_left)
+	M.glass = 0
+	M.shattered = 0
+	target = M
+	sheets = allocate(/obj/item/stack/material/glass, run_loc_floor_bottom_left, 5)
+	user.put_in_active_hand(sheets)
+	held = sheets
+
+/datum/unit_test/dq_timed_pin_w2/mirror_add_glass/is_done()
+	var/obj/structure/mirror/M = target
+	return !QDELETED(M) && M.glass && sheets.get_amount() == 3
+
+/datum/unit_test/dq_timed_pin_w2/mirror_add_glass/extra_pin()
+	setup_scene()
+	sheets.set_amount(1)
+	start_click()
+	TEST_ASSERT_NULL(running(user), "too little glass starts nothing")
+	clear_scene()
+
+// ---- A mine primed in hand ----
+
+/datum/unit_test/dq_timed_pin_w2/mine_prime
+	duration = 10 SECONDS
+	began = "You start priming"
+	cancel_tests = FALSE
+
+/datum/unit_test/dq_timed_pin_w2/mine_prime/setup_scene()
+	user = person()
+	var/obj/item/mine/M = allocate(/obj/item/mine, run_loc_floor_bottom_left)
+	user.put_in_active_hand(M)
+	target = M
+	held = M
+
+/datum/unit_test/dq_timed_pin_w2/mine_prime/is_done()
+	return QDELETED(target)
+
+/datum/unit_test/dq_timed_pin_w2/mine_prime/clear_scene()
+	for(var/obj/effect/mine/M in view(1, user))
+		qdel(M)
+	target = null
+
+// ---- A trap taken off a mine with a screwdriver ----
+
+/datum/unit_test/dq_timed_pin_w2/mine_untrap
+	duration = 10 SECONDS
+	began = "You begin removing"
+	finished = "You finish disconnecting"
+	drop_cancels = TRUE
+
+/datum/unit_test/dq_timed_pin_w2/mine_untrap/setup_scene()
+	user = person()
+	var/obj/item/mine/M = allocate(/obj/item/mine, run_loc_floor_bottom_left)
+	var/obj/item/assembly/signaler/S = allocate(/obj/item/assembly/signaler, run_loc_floor_bottom_left)
+	rel_set(M, nameof(M.trap), S)
+	target = M
+	held = hold(/obj/item/screwdriver)
+
+/datum/unit_test/dq_timed_pin_w2/mine_untrap/is_done()
+	var/obj/item/mine/M = target
+	return !QDELETED(M) && isnull(M.trap)
+
+/datum/unit_test/dq_timed_pin_w2/mine_untrap/extra_pin()
+	setup_scene()
+	var/obj/item/mine/M = target
+	rel_clear(M, nameof(M.trap))
+	start_click()
+	TEST_ASSERT_NULL(running(user), "a screwdriver on a mine with no trap starts nothing")
+	clear_scene()
+
+// ---- An anomaly scanner buffering an anomaly ----
+
+/datum/unit_test/dq_timed_pin_w2/anomaly_buffered
+	duration = 1 SECOND
+	drop_cancels = TRUE
+
+/datum/unit_test/dq_timed_pin_w2/anomaly_buffered/setup_scene()
+	user = person()
+	var/obj/effect/anomaly/A = allocate(/obj/effect/anomaly/bioscrambler, run_loc_floor_bottom_left)
+	target = A
+	held = hold(/obj/item/anomaly_scanner)
+
+/datum/unit_test/dq_timed_pin_w2/anomaly_buffered/is_done()
+	var/obj/item/anomaly_scanner/S = held
+	return S.buffered_anomaly == target
+
+// ---- Flora: uprooted with a shovel ----
+
+/datum/unit_test/dq_timed_pin_w2/flora_uproot
+	duration = 3 SECONDS
+	began = "You start uprooting"
+	drop_cancels = TRUE
+
+/datum/unit_test/dq_timed_pin_w2/flora_uproot/setup_scene()
+	user = person()
+	target = allocate(/obj/structure/flora/bush, run_loc_floor_bottom_left)
+	held = hold(/obj/item/shovel)
+
+/datum/unit_test/dq_timed_pin_w2/flora_uproot/is_done()
+	return QDELETED(target)
+
+// ---- A potted plant: an item hidden in it, then found ----
+
+/datum/unit_test/dq_timed_pin_w2/pottedplant_hide
+	duration = 1 SECOND
+	drop_cancels = TRUE
+
+/datum/unit_test/dq_timed_pin_w2/pottedplant_hide/setup_scene()
+	user = person()
+	target = allocate(/obj/structure/flora/pottedplant, run_loc_floor_bottom_left)
+	held = hold(/obj/item/pen)
+
+/datum/unit_test/dq_timed_pin_w2/pottedplant_hide/is_done()
+	var/obj/structure/flora/pottedplant/P = target
+	return !QDELETED(P) && P.stored_item == held
+
+/datum/unit_test/dq_timed_pin_w2/pottedplant_hide/extra_pin()
+	setup_scene()
+	start_click()
+	user.drop_from_inventory(held)
+	test_time(duration + 2 SECONDS)
+	TEST_ASSERT(said(user, "You refrain from putting things into the plant pot"), "a cancelled hide says so")
+	clear_scene()
+
+/datum/unit_test/dq_timed_pin_w2/pottedplant_search
+	duration = 1 SECOND
+	finished = "You find"
+
+/datum/unit_test/dq_timed_pin_w2/pottedplant_search/setup_scene()
+	user = person()
+	var/obj/structure/flora/pottedplant/P = allocate(/obj/structure/flora/pottedplant, run_loc_floor_bottom_left)
+	var/obj/item/pen/pen = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	pen.forceMove(P)
+	rel_set(P, nameof(P.stored_item), pen)
+	target = P
+
+/datum/unit_test/dq_timed_pin_w2/pottedplant_search/is_done()
+	var/obj/structure/flora/pottedplant/P = target
+	return !QDELETED(P) && isnull(P.stored_item)
+
+/datum/unit_test/dq_timed_pin_w2/pottedplant_search/extra_pin()
+	var/mob/living/carbon/human/other = person()
+	var/obj/structure/flora/pottedplant/P = allocate(/obj/structure/flora/pottedplant, run_loc_floor_bottom_left)
+	test_chat_clear()
+	test_click(other, P, null)
+	TEST_ASSERT_NULL(running(other), "searching an empty pot starts nothing")
+	TEST_ASSERT(said(other, "You see nothing of interest"), "and says so")
+
+// ---- A lying mob crawls an object across to a tile ----
+
+/datum/unit_test/dq_timed_pin_w2/turf_crawl_drag
+	duration = 25
+	loss_cancels = FALSE
+	var/obj/item/pen/dragged
+	var/turf/start
+
+/datum/unit_test/dq_timed_pin_w2/turf_crawl_drag/setup_scene()
+	user = person()
+	user.lying = TRUE
+	start = run_loc_floor_bottom_left
+	dragged = allocate(/obj/item/pen, start)
+	target = get_step(start, EAST)
+
+/datum/unit_test/dq_timed_pin_w2/turf_crawl_drag/start_click()
+	test_chat_clear()
+	test_drag(user, dragged, target)
+
+/datum/unit_test/dq_timed_pin_w2/turf_crawl_drag/is_done()
+	return get_turf(dragged) == target
+
+/datum/unit_test/dq_timed_pin_w2/turf_crawl_drag/clear_scene()
+	if(dragged && !QDELETED(dragged))
+		qdel(dragged)
+	target = null
+
+// ---- Low wall: a grille from rods, a window from glass ----
+
+/datum/unit_test/dq_timed_pin_w2/low_wall_grille
+	duration = 1 SECOND
+	began = "Assembling grille"
+	drop_cancels = TRUE
+	var/obj/item/stack/rods/rods
+
+/datum/unit_test/dq_timed_pin_w2/low_wall_grille/setup_scene()
+	user = person()
+	target = allocate(/obj/structure/low_wall/bay, run_loc_floor_bottom_left)
+	rods = allocate(/obj/item/stack/rods, run_loc_floor_bottom_left, 5)
+	user.put_in_active_hand(rods)
+	held = rods
+
+/datum/unit_test/dq_timed_pin_w2/low_wall_grille/is_done()
+	return rods.get_amount() == 3 && !isnull(locate(/obj/structure/grille) in get_turf(target))
+
+/datum/unit_test/dq_timed_pin_w2/low_wall_grille/clear_scene()
+	for(var/obj/structure/grille/G in get_turf(target))
+		qdel(G)
+	..()
+
+/datum/unit_test/dq_timed_pin_w2/low_wall_grille/extra_pin()
+	setup_scene()
+	rods.set_amount(1)
+	start_click()
+	TEST_ASSERT_NULL(running(user), "one rod starts nothing")
+	clear_scene()
+
+/datum/unit_test/dq_timed_pin_w2/low_wall_window
+	duration = 4 SECONDS
+	began = "Assembling window"
+	drop_cancels = TRUE
+	var/obj/item/stack/material/glass/sheets
+
+/datum/unit_test/dq_timed_pin_w2/low_wall_window/setup_scene()
+	user = person()
+	target = allocate(/obj/structure/low_wall/bay, run_loc_floor_bottom_left)
+	sheets = allocate(/obj/item/stack/material/glass, run_loc_floor_bottom_left, 8)
+	user.put_in_active_hand(sheets)
+	held = sheets
+
+/datum/unit_test/dq_timed_pin_w2/low_wall_window/is_done()
+	return sheets.get_amount() == 4 && !isnull(locate(/obj/structure/window) in get_turf(target))
+
+/datum/unit_test/dq_timed_pin_w2/low_wall_window/clear_scene()
+	for(var/obj/structure/window/W in get_turf(target))
+		qdel(W)
+	..()
+
+// ---- Grille: a window placed from a stack ----
+
+/datum/unit_test/dq_timed_pin_w2/grille_window
+	duration = 2 SECONDS
+	began = "You start placing the window"
+	drop_cancels = TRUE
+	var/obj/item/stack/material/glass/sheets
+
+/datum/unit_test/dq_timed_pin_w2/grille_window/setup_scene()
+	user = person()
+	user.dir = SOUTH
+	target = allocate(/obj/structure/grille, run_loc_floor_bottom_left)
+	sheets = allocate(/obj/item/stack/material/glass, run_loc_floor_bottom_left, 5)
+	user.put_in_active_hand(sheets)
+	held = sheets
+
+/datum/unit_test/dq_timed_pin_w2/grille_window/is_done()
+	return sheets.get_amount() == 4 && !isnull(locate(/obj/structure/window) in get_turf(target))
+
+/datum/unit_test/dq_timed_pin_w2/grille_window/clear_scene()
+	for(var/obj/structure/window/W in get_turf(target))
+		qdel(W)
+	..()
