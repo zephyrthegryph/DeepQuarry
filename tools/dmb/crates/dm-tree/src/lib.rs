@@ -4,6 +4,7 @@
 //! table for every source snapshot, even when the tree remains shared in an Arc.
 //! This crate intentionally has no dependency on the legacy declaration index.
 mod adapter;
+mod callable_namespace;
 pub mod constant_resolution;
 pub mod constants;
 pub mod frontend;
@@ -325,9 +326,18 @@ pub fn build(symbols: SymbolTable, skeletons: &[Skeleton]) -> Result<SemanticTre
 /// Link authored fields against a separate presence/type-only engine catalog.
 /// Intrinsic bases have no member arena IDs and no invented source occurrences.
 pub fn build_with_intrinsic_fields(
+    symbols: SymbolTable,
+    skeletons: &[Skeleton],
+    fields: &[dm_ir::OpaqueFieldBase],
+) -> Result<SemanticTree, TreeError> {
+    build_with_intrinsic_members(symbols, skeletons, fields, &[])
+}
+
+pub(crate) fn build_with_intrinsic_members(
     mut symbols: SymbolTable,
     skeletons: &[Skeleton],
     fields: &[dm_ir::OpaqueFieldBase],
+    intrinsics: &[IntrinsicMember],
 ) -> Result<SemanticTree, TreeError> {
     let mut paths = Vec::new();
     let mut by_path = HashMap::new();
@@ -468,6 +478,7 @@ pub fn build_with_intrinsic_fields(
     // appears before its parent. Resolve previous links only after collection.
     let mut modes = Vec::new();
     let mut groups: HashMap<(TypeId, SymbolId, MemberKind), Vec<MemberId>> = HashMap::new();
+    let callable_kinds = callable_namespace::collect(skeletons, intrinsics)?;
     for skeleton in skeletons {
         match skeleton {
             Skeleton::Type { path, .. } => targets.push(Target::Type(tree.by_path[path])),
@@ -483,7 +494,16 @@ pub fn build_with_intrinsic_fields(
                     return Err(TreeError::UnknownSymbol(*name));
                 }
                 let owner_id = tree.by_path[owner];
-                let key = (owner_id, *name, *kind);
+                let kind = callable_namespace::effective_kind(
+                    &tree,
+                    owner_id,
+                    *name,
+                    *kind,
+                    *mode,
+                    root,
+                    &callable_kinds,
+                );
+                let key = (owner_id, *name, kind);
                 let previous = tree.direct.get(&key).copied();
                 if *mode == DefinitionMode::Declare
                     && groups.get(&key).is_some_and(|ids| {
@@ -494,7 +514,7 @@ pub fn build_with_intrinsic_fields(
                     return Err(TreeError::Duplicate {
                         owner: *owner,
                         name: *name,
-                        kind: *kind,
+                        kind,
                     });
                 }
                 let id =
@@ -503,7 +523,7 @@ pub fn build_with_intrinsic_fields(
                     definition: *mode,
                     owner: owner_id,
                     name: *name,
-                    kind: *kind,
+                    kind,
                     metadata: Arc::new(metadata.clone()),
                     content: *content,
                     previous,
@@ -538,6 +558,7 @@ pub fn build_with_intrinsic_fields(
         }
     }
     for i in 0..members.len() {
+        callable_namespace::validate_explicit(&tree, &members[i], modes[i], root, &callable_kinds)?;
         if members[i].previous.is_none() {
             let node = &members[i];
             let mut parent = tree.parent(node.owner);
@@ -657,7 +678,7 @@ pub fn build_with_intrinsic_fields(
     tree.declaration_targets = targets.into();
     // Hash an explicit versioned encoding; never Debug formatting or arena IDs.
     let mut bytes = Vec::new();
-    bytes.extend_from_slice(b"dm-tree-v2\0");
+    bytes.extend_from_slice(b"dm-tree-v3\0");
     for skeleton in skeletons {
         match skeleton {
             Skeleton::Type {
@@ -912,108 +933,7 @@ impl dm_ir::Resolver for SemanticTree {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    fn symbols() -> SymbolTable {
-        let mut symbols = SymbolTable::default();
-        for text in ["/", "/obj", "/obj/base", "/obj/child", "value", "chain"] {
-            symbols.intern(text).unwrap();
-        }
-        symbols
-    }
-    fn member(owner: &str, name: &str, mode: DefinitionMode, content: u128) -> Skeleton {
-        Skeleton::Member {
-            owner: SymbolId::of(owner),
-            name: SymbolId::of(name),
-            kind: MemberKind::Proc,
-            mode,
-            metadata: MemberMetadata::default(),
-            content,
-        }
-    }
-    #[test]
-    fn forward_nonlexical_parent_and_override_resolve() {
-        let tree = build(
-            symbols(),
-            &[
-                Skeleton::Type {
-                    path: SymbolId::of("/obj/child"),
-                    explicit_parent: Some(SymbolId::of("/obj/base")),
-                },
-                member("/obj/child", "chain", DefinitionMode::Override, 2),
-                Skeleton::Type {
-                    path: SymbolId::of("/obj/base"),
-                    explicit_parent: None,
-                },
-                member("/obj/base", "chain", DefinitionMode::Declare, 1),
-            ],
-        )
-        .unwrap();
-        let id = tree
-            .resolve(
-                tree.lookup_type(SymbolId::of("/obj/child")).unwrap(),
-                SymbolId::of("chain"),
-                MemberKind::Proc,
-            )
-            .unwrap();
-        let chain = tree.override_chain(id);
-        assert_eq!(chain.len(), 2);
-        assert_eq!(tree.member(chain[1]).unwrap().content, 1);
-    }
-    #[test]
-    fn source_relocation_does_not_change_semantic_identity() {
-        let tree = build(
-            symbols(),
-            &[member("/obj/base", "chain", DefinitionMode::Declare, 1)],
-        )
-        .unwrap();
-        let origin = |start| Provenance {
-            span: Span {
-                file: dm_ir::FileId(0),
-                start,
-                end: start + 1,
-            },
-            include_occurrence: 0,
-            region: 4,
-            expansion_stack: Arc::from([]),
-        };
-        let a = OccurrenceTable::build(&tree, vec![origin(1)]).unwrap();
-        let b = OccurrenceTable::build(&tree, vec![origin(99)]).unwrap();
-        assert_eq!(a.tree_identity(), b.tree_identity());
-        assert_ne!(
-            a.source_order()[0].provenance,
-            b.source_order()[0].provenance
-        );
-    }
-    #[test]
-    fn cycles_and_duplicate_declarations_are_errors() {
-        assert!(matches!(
-            build(
-                symbols(),
-                &[
-                    Skeleton::Type {
-                        path: SymbolId::of("/obj/base"),
-                        explicit_parent: Some(SymbolId::of("/obj/child"))
-                    },
-                    Skeleton::Type {
-                        path: SymbolId::of("/obj/child"),
-                        explicit_parent: Some(SymbolId::of("/obj/base"))
-                    },
-                ]
-            ),
-            Err(TreeError::InheritanceCycle(_))
-        ));
-        assert!(matches!(
-            build(
-                symbols(),
-                &[
-                    member("/obj/base", "chain", DefinitionMode::Declare, 1),
-                    member("/obj/base", "chain", DefinitionMode::Declare, 2)
-                ]
-            ),
-            Err(TreeError::Duplicate { .. })
-        ));
-    }
-}
+#[path = "tree_tests.rs"]
+mod tests;
 
 pub mod allocation_ledger;

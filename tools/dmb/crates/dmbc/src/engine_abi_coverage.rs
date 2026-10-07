@@ -1,5 +1,5 @@
-//! Draft, intentionally unexported: physical engine ABI coverage is not a
-//! certificate that the VM has no additional named intrinsic procedures.
+//! Pinned ABI policy: physical engine coverage alone is not a certificate
+//! that the VM has no additional named intrinsic procedures.
 use crate::{driver_facts::unit_members, engine::EngineSnapshot, lowering::UnitIdentity};
 use dm_ir::SymbolId;
 use dm_tree::{frontend::ColdFrontend, DefinitionMode, MemberId, MemberKind};
@@ -135,9 +135,32 @@ impl<'a> NamedEngineCoverage<'a> {
                     );
                 }
                 other => {
+                    let symbols = frontend.snapshot.tree.symbols();
+                    let owner = symbols.text(unit.owner).unwrap_or("<unknown owner>");
+                    let name = symbols.text(unit.name).unwrap_or("<unknown name>");
+                    let member = unit_members(frontend)
+                        .map_err(|error| error.to_string())?
+                        .get(&unit)
+                        .copied();
+                    let origin = frontend
+                        .bodies
+                        .iter()
+                        .find(|body| Some(body.member) == member)
+                        .map(|body| {
+                            format!(
+                                "{}:{} (include occurrence {}, encounter {}, expanded {}..{})",
+                                body.source.path.display(),
+                                body.source.line,
+                                body.source.include_occurrence,
+                                body.source.encounter_ordinal,
+                                body.expanded_span.start,
+                                body.expanded_span.end
+                            )
+                        })
+                        .unwrap_or_else(|| "<source origin unavailable>".into());
                     return Err(format!(
-                        "procedure {unit:?} requires unsupported engine ABI: {other:?}"
-                    ))
+                        "{origin}: procedure {owner}/{name} ({:?}, occurrence {}) requires unsupported engine ABI: {other:?}", unit.namespace, unit.occurrence
+                    ));
                 }
             }
         }
@@ -292,6 +315,48 @@ mod tests {
     use std::path::Path;
     struct Source;
     struct IntrinsicSource;
+    struct VerbSource;
+    impl dm_preprocess::SourceProvider for VerbSource {
+        fn read(&self, _: &Path) -> Result<String, String> {
+            Ok("/datum/base/verb/coverage_fixture_only()\n    return 1\n/datum/child\n    parent_type = /datum/base\n/datum/child/coverage_fixture_only()\n    return 2\n".into())
+        }
+    }
+    #[test]
+    fn inherited_verb_body_keeps_verb_unit_identity_and_source_abi() {
+        let engine =
+            EngineSnapshot::from_bytes(include_bytes!("../../../fixtures/native_template.bin"), 1)
+                .unwrap();
+        let seed = engine.frontend_seed();
+        let frontend = dm_tree::frontend::build_with_config(
+            Path::new("verb_fixture.dme"),
+            &VerbSource,
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(&seed),
+                observer: None,
+            },
+        )
+        .unwrap();
+        let index = unit_members(&frontend).unwrap();
+        assert!(index
+            .keys()
+            .all(|unit| unit.namespace == crate::lowering::Namespace::Verb));
+        let base = index
+            .iter()
+            .find(|(unit, _)| unit.owner == SymbolId::of("/datum/base"))
+            .unwrap();
+        let child = index
+            .iter()
+            .find(|(unit, _)| unit.owner == SymbolId::of("/datum/child"))
+            .unwrap();
+        let coverage = NamedEngineCoverage::pinned(&engine).unwrap();
+        assert_eq!(
+            coverage.select(&frontend).unwrap()[child.0],
+            BoundarySelection::SourcePrevious(*base.1)
+        );
+        assert!(coverage.boundaries(&frontend).is_ok());
+    }
     impl dm_preprocess::SourceProvider for IntrinsicSource {
         fn read(&self, _: &Path) -> Result<String, String> {
             Ok("/datum/abi_probe/New()\n    return ..()\n/datum/abi_probe/Del()\n    return ..()\n".into())

@@ -888,8 +888,10 @@ impl AdaptedDeclarations {
         let engine_count = skeletons.len();
         skeletons.extend(self.skeletons);
         let fields = seed.map_or(&[][..], |seed| seed.fields.as_ref());
-        let mut tree = crate::build_with_intrinsic_fields(self.symbols, &skeletons, fields)
-            .map_err(SnapshotError::Tree)?;
+        let intrinsics = seed.map_or(&[][..], |seed| seed.intrinsics.as_ref());
+        let mut tree =
+            crate::build_with_intrinsic_members(self.symbols, &skeletons, fields, intrinsics)
+                .map_err(SnapshotError::Tree)?;
         // The source ledger is a projection, not a made-up origin for seeds.
         tree.declaration_targets = tree.declaration_targets[engine_count..].into();
         if let Some(seed) = seed {
