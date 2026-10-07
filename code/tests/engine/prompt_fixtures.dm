@@ -33,6 +33,28 @@ CAPABILITIES(/obj/e0_fixture/prompt_base/keeps)
 CAPABILITIES(/obj/e0_fixture/prompt_base/chain)
 	op("chain", hand(), needs(req_is(nameof(powered), because = MSG(prompt/unpowered))), asks(/datum/prompt/number, fields = list("question" = "First?", "timeout" = 0), step = "first"), asks(/datum/prompt/number, fields = list("question" = "Second?", "timeout" = 0), step = "second"), then(PROC_REF(apply_chain)))
 
+/// Timed work on the hands: "work" holds the actor's hands and body while it waits (the default of a timed wait on a physical binding), "hold_target"
+/// declares claims(CLAIM_TARGET) only, so it holds the thing and leaves the actor free.
+/obj/e0_fixture/prompt_base/lever
+	name = "work lever"
+CAPABILITIES(/obj/e0_fixture/prompt_base/lever)
+	op("work", hand(), wait(2 SECONDS), then(PROC_REF(apply_work)))
+
+/obj/e0_fixture/prompt_base/holder
+	name = "held lever"
+CAPABILITIES(/obj/e0_fixture/prompt_base/holder)
+	op("hold_target", hand(), wait(2 SECONDS), claims(CLAIM_TARGET), then(PROC_REF(apply_work)))
+
+/// A work op that then asks: the question is not exclusive, the work before it is.
+/obj/e0_fixture/prompt_base/work_then_ask
+	name = "work then ask"
+CAPABILITIES(/obj/e0_fixture/prompt_base/work_then_ask)
+	op("work_ask", hand(), wait(2 SECONDS), asks(/datum/prompt/number, fields = list("question" = "How much?", "timeout" = 0), step = "amount"), then(PROC_REF(apply)))
+
+/obj/e0_fixture/prompt_base/proc/apply_work(datum/act/op/A)
+	runs++
+	return OP_OK
+
 /obj/e0_fixture/prompt_base/proc/apply(datum/act/op/A)
 	runs++
 	value = A.step_value("amount")

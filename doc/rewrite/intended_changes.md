@@ -2514,7 +2514,7 @@ the input inbox with the requirements and refusals of a click. Every `TOPIC_ACTI
   sleevemate's mind steal, the traitor panel's telecrystals, the game mode panel's option and antag-type questions, the feedback viewer's filters, the
   admin newscaster, CentCom and syndicate replies, round mode picks and force speech, and the View Variables questions: rename, stop animations,
   languages, verbs, organs, species, AI brain, mass delete). The old answer-callback procs and the href re-run plumbing of those links are deleted.
-  * An actor has one waiting op, so a second link clicked while a question is open cancels it (a re-run left both open).
+  * A second link clicked while a question is open no longer cancels it: an actor has any number of pending ops (see "Several pending ops per actor" below), so two panels' questions are open at once, and the same link clicked again focuses its open window.
   * A question the actor no longer may answer (the rights or reach its prompt class checks) is refused when the answer comes, as before.
   * **A guard that read untracked state before asking now runs after the answer**, because a requirement may only read tracked state: a mech's tank valve
     and passenger links ask first and then check the bolts and reach again; the cable reel, the communicator reply and the mind steal ask first and
@@ -2528,3 +2528,11 @@ the input inbox with the requirements and refusals of a click. Every `TOPIC_ACTI
   * **A VV "Give AI" no longer rebuilds the brain when its questions are cancelled**: the brain is made when the last answer is in.
 * **A link whose handler asked through `open_request()` and re-ran itself with `topic_ask()` or a replay token** (the ban panel's questions) still
   re-enters through `topic_dispatch()`; those are the remaining `topic_ask()` sites (admin_topic_bans, admin_topic_mobs, admin_topic_panels, player_notes).
+
+## Several pending ops per actor
+
+* **The one-waiting-op-per-actor rule is gone.** An actor may have any number of pending ops (waits and open questions), up to `OP_PENDING_CAP` (10); one more is refused with "You have too many things going on at once: finish or cancel one first." and nothing is cancelled to make room. Before, any new input stopped the actor's one pending op, a question included (so opening a second panel link, or clicking anything while a window question was open, dropped the first question).
+* **What conflicts is `claims(mask)`** (`CLAIM_HANDS`, `CLAIM_BODY`, `CLAIM_TARGET`; `claims()` alone is all three, `claims(0)` none). A timed `wait()` on a physical binding that declares no `claims()` holds hands and body while the wait runs (what the single slot gave it implicitly); a question holds nothing, and neither does a timed wait started from a window button or a topic link. A physical input needs the hands, so it still stops a physical wait ("You stop what you were doing."; an AI's is refused as busy), but it no longer stops a question, and a window button or link no longer stops a wait (it needs no hands). The target claim is unchanged: a second claimant is refused and it lasts the whole pending op.
+* **Clicking the same op on the same target while its question is open focuses that window** instead of opening a second (the old rule cancelled the open question and asked again).
+* **Each question closes on its own loss.** The subscription was already per pending op; with several open, a lost requirement, target, held item or reach closes only the questions that depended on it, each with its reason.
+* **The Resist verb's "already breaking out" check** is unchanged (the break-out op is system-origin and never in the actor's list).
