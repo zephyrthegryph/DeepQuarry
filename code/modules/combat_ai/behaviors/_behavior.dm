@@ -31,6 +31,7 @@
 GLOBAL_LIST_EMPTY(dq_behaviors)
 
 /proc/dq_get_behavior(type)
+	RETURN_TYPE(/datum/ai_behavior)
 	. = GLOB.dq_behaviors[type]
 	if(!.)
 		. = new type()

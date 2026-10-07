@@ -5,15 +5,15 @@
 /// The disposition rule the brain used before standings: the faction table, player_disposition for a client, and a simple mob that attacks on sight
 /// turning a NEUTRAL stranger HOSTILE.
 /proc/dq_old_disposition(datum/ai_brain/B, mob/other)
-	var/datum/faction_data/data = dq_faction_data_for(B.holder.faction)
+	var/datum/faction_data/data = dq_faction_data_for(B.get_owner().faction)
 	var/result
 	if(other.client)
 		result = data.player_disposition
 	else
 		result = data.disposition_to_faction(other.faction)
-	if(result == DQ_DISPOSITION_NEUTRAL && istype(B.holder, /mob/living/simple_mob))
-		var/mob/living/simple_mob/SM = B.holder
-		if(SM.ai_attack_on_sight && B.holder.faction != other.faction)
+	if(result == DQ_DISPOSITION_NEUTRAL && istype(B.get_owner(), /mob/living/simple_mob))
+		var/mob/living/simple_mob/SM = B.get_owner()
+		if(SM.ai_attack_on_sight && B.get_owner().faction != other.faction)
 			result = DQ_DISPOSITION_HOSTILE
 	return result
 

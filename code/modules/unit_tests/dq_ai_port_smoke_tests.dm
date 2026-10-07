@@ -21,11 +21,18 @@
 /mob/living/carbon/human/dq_ai_test_wounded/vitality()
 	return 0.5
 
+/// The possessed suit as the smoke test drives it: it collapses without the gibs and the miasma (those are not what the test is about).
+/mob/living/simple_mob/humanoid/possessed/dq_ai_test
+
+/mob/living/simple_mob/humanoid/possessed/dq_ai_test/collapse()
+	return
+
 /// Scenarios that give a creature's own tactic something to act on (a patient, a cable to be anchored to).
 #define SMOKE_HEAL "heal"
 #define SMOKE_ANCHORED "anchored"
 #define SMOKE_MACHINE "machine"
 #define SMOKE_INERT "inert"
+
 
 /// Drives `S`'s brain by hand for up to `rounds` rounds, with `H` as its target when `engage`. Returns the tactics it started (type => times).
 /datum/unit_test/proc/drive_port_creature(mob/living/simple_mob/S, mob/living/H, rounds = 30, engage = TRUE)
@@ -181,7 +188,7 @@
 /datum/unit_test/dq_ai_port_possessed
 
 /datum/unit_test/dq_ai_port_possessed/Run()
-	smoke_port_creature(/mob/living/simple_mob/humanoid/possessed)
+	smoke_port_creature(/mob/living/simple_mob/humanoid/possessed/dq_ai_test)
 
 /datum/unit_test/dq_ai_port_opossum
 

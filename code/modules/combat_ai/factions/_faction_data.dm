@@ -72,6 +72,7 @@ TYPE_TABLE_DECLARE(/datum/faction_data, get_relationships, list())
 
 /// Convenience lookup used by the brain.
 /proc/dq_faction_data_for(faction_string)
+	RETURN_TYPE(/datum/faction_data)
 	if(!length(GLOB.dq_faction_data))
 		dq_build_faction_registry()
 	if(!faction_string)
