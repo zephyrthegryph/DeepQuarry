@@ -1053,7 +1053,7 @@ Any var or field that exists only to hold a temporary condition with behaviour b
 	if(failure_until > world.time) ...          // repeated wherever it matters
 // AFTER
 /obj/machinery/power/apc/proc/energy_fail(duration, datum/source)
-	om_grant_for(src, GRANT_CAPABILITY, /datum/capability/condition/power_failure, source, duration)
+	grant_hold(src, GRANT_CAPABILITY, /datum/capability/condition/power_failure, source, duration)
 /datum/capability/condition/power_failure
 	blocks = ALL_ENTRIES
 	else_say = "it isn't responding"

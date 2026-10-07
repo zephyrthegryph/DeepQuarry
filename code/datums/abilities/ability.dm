@@ -193,26 +193,26 @@
 // ---------------------------------------------------------------------------
 // Grants: source-tracked, so an ability stays available while any source remains. They are OM
 // grants (object_model_core.md §8, GRANT_ABILITY with the ability id as key): one store for
-// every grant, released when the source is deleted, readable with om_grants_from(). (The
+// every grant, released when the source is deleted, readable with grants_given_by(). (The
 // rewrite/grants branch's own grant store is superseded by this.)
 
 /// `source` now grants `id`. Idempotent: granting the same (id, source) twice is a no-op.
 /mob/living/proc/grant_ability(id, datum/source)
 	if(!id || !source)
 		CRASH("grant_ability() needs both an id and a source")
-	om_grant(src, GRANT_ABILITY, id, source)
+	grant_hold(src, GRANT_ABILITY, id, source)
 
 /// `source` no longer grants `id`. The ability stays available if another source still does.
 /mob/living/proc/revoke_ability(id, datum/source)
-	om_revoke(src, GRANT_ABILITY, id, source)
+	grant_release(src, GRANT_ABILITY, id, source)
 
 /// TRUE if any source currently grants `id`.
 /mob/living/proc/has_ability(id)
-	return om_has_grant(src, GRANT_ABILITY, id)
+	return grant_held(src, GRANT_ABILITY, id)
 
 /// The sources currently granting `id` (for UI/debugging), or null.
 /mob/living/proc/ability_sources(id)
-	return om_grant_sources(src, GRANT_ABILITY, id)
+	return grant_sources(src, GRANT_ABILITY, id)
 
 // ---------------------------------------------------------------------------
 // Shared requirement helpers (code/__defines/abilities.dm's REQ_CONSCIOUS, REQ_ON_TURF).

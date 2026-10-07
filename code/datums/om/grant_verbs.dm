@@ -8,13 +8,13 @@
 //                  the type declares it (a /type/verb/ it inherits, DECLARE_VERB,
 //                  DECLARE_VERB_IF with the var true, DECLARE_LOGIN_VERB once a player had it)
 //
-// Runtime changes go through the contribution store:
+// Runtime changes go through the grant store (code/engine/stats/grants.dm):
 //
-//     om_grant(M, GRANT_VERB, /mob/living/proc/ventcrawl, source)     // on while source holds it
-//     om_revoke(M, GRANT_VERB, /mob/living/proc/ventcrawl, source)
-//     om_grant(M, GRANT_VERB_HIDE, /mob/verb/observe, source)         // off while source holds it
-//     om_grant_for(C, GRANT_VERB_HIDE, /client/verb/adminhelp, source, 2 MINUTES)   // timed
-//     om_grant(M, GRANT_VERB, VERB_NAMED(path, "Name", "Desc"), source)             // renamed verb
+//     grant_hold(M, GRANT_VERB, /mob/living/proc/ventcrawl, source)     // on while source holds it
+//     grant_release(M, GRANT_VERB, /mob/living/proc/ventcrawl, source)
+//     grant_hold(M, GRANT_VERB_HIDE, /mob/verb/observe, source)         // off while source holds it
+//     grant_hold(C, GRANT_VERB_HIDE, /client/verb/adminhelp, source, 2 MINUTES)   // timed
+//     grant_hold(M, GRANT_VERB, VERB_NAMED(path, "Name", "Desc"), source)             // renamed verb
 //
 // A source's deletion drops its holds, so nothing pairs an add with a remove. Both effects share
 // one change hook (verb_store_sync()), which recomputes the rule above for each key whose state
@@ -25,25 +25,10 @@
 // (code/__defines/lifecycle_decl.dm) live in the type's declaration table and are applied at init
 // (Login for DECLARE_LOGIN_VERB). A per-instance grant is for what can change.
 //
-// Clients are not datums: `om_grant(client, ...)` goes to the client's /datum/client_verbs holder
+// Clients are not datums: `grant_hold(client, ...)` goes to the client's /datum/client_verbs holder
 // (made on first grant, owned by the client), so client verb sets follow the same rules.
 // Sources with no datum of their own (the server config, an admin's hand edit) use
 // verb_source(VERB_SOURCE_*), one shared datum per name.
-
-/datum/om/effect/grant_verb
-
-/datum/om/effect/grant_verb/on_changed(datum/E, old_value, new_value)
-	var/list/old_list = islist(old_value) ? old_value : null
-	var/list/new_list = islist(new_value) ? new_value : null
-	var/list/changed
-	for(var/key in new_list)
-		if((new_list[key] > 0) != (old_list?[key] > 0))
-			LAZYOR(changed, key)
-	for(var/key in old_list)
-		if((old_list[key] > 0) != (new_list?[key] > 0))
-			LAZYOR(changed, key)
-	if(changed)
-		verb_store_sync(E, changed)
 
 // ---------------------------------------------------------------- keys and sources
 
@@ -76,7 +61,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	/// Grant holder for this client's verbs (made on first grant).
 	var/datum/client_verbs/verb_store
 
-/// A client's grant target: om_grant() and friends on a client land here.
+/// A client's grant target: grants on a client land here (grant_hold() and friends).
 /datum/client_verbs
 	var/client/owner
 
@@ -119,7 +104,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 
 /// The store's rule for key `key` on `owner` (an atom or client), store entries on `E`.
 /proc/verb_store_wants(datum/E, owner, key)
-	var/list/hides = E?.om_rec ? om_value_of(E, GRANT_VERB_HIDE) : null
+	var/list/hides = grant_values(E, GRANT_VERB_HIDE)
 	if(hides?[key] > 0)
 		return FALSE
 	var/datum/lifecycle_decls/decls = isatom(owner) ? lifecycle_decls_of(owner) : null
@@ -132,7 +117,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 			return FALSE
 	if(isatom(owner) && verb_entries_want(owner, key) == FALSE)
 		return FALSE // verb_entry(path, hidden = TRUE)
-	var/list/grants = E?.om_rec ? om_value_of(E, GRANT_VERB) : null
+	var/list/grants = grant_values(E, GRANT_VERB)
 	if(grants?[key] > 0)
 		return TRUE
 	// granted_verbs() (capabilities' verbs(), a mob's species and traits): derived, applied by the refresh engine.
@@ -292,32 +277,3 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 	if(!decls?.verbs_login)
 		return
 	verb_store_sync(M, decls.verbs_login)
-
-// ---------------------------------------------------------------- list helpers
-
-/// Timed grant: `source` grants (or hides, for GRANT_VERB_HIDE) `id` on `target` for `duration`.
-/proc/om_grant_for(target, kind, id, datum/source, duration)
-	return om_apply(om_grant_target(target), kind, source, duration, 1, id)
-
-/// `source` grants every id in `ids` (a list, or one id) of `kind` to `target`.
-/proc/om_grant_each(target, kind, ids, datum/source)
-	if(!islist(ids))
-		return om_grant(target, kind, ids, source)
-	for(var/id in ids)
-		om_grant(target, kind, id, source)
-	return TRUE
-
-/// `source` revokes every id in `ids` (a list, or one id) of `kind` from `target`.
-/proc/om_revoke_each(target, kind, ids, datum/source)
-	if(!islist(ids))
-		return om_revoke(target, kind, ids, source)
-	for(var/id in ids)
-		om_revoke(target, kind, id, source)
-	return TRUE
-
-/// `source` revokes everything of `kind` it grants `target`.
-/proc/om_revoke_all_of(target, kind, datum/source)
-	for(var/list/pair as anything in om_grants_from(target, source))
-		if(pair[1] == kind)
-			om_revoke(target, kind, pair[2], source)
-

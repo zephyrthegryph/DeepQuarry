@@ -39,14 +39,14 @@ GLOBAL_LIST_EMPTY(trait_source_singletons)
 	READS_FROM() // a trait is asked when a choice is made, never cached
 	if(!target?.om_rec)
 		return FALSE
-	return om_has_grant(target, GRANT_TRAIT, trait)
+	return grant_held(target, GRANT_TRAIT, trait)
 
 /// TRUE when `target` holds `trait` from `source`.
 /proc/has_trait_from(datum/target, trait, source)
 	if(!target?.om_rec)
 		return FALSE
 	var/datum/holder = trait_source(source)
-	var/list/sources = om_grant_sources(target, GRANT_TRAIT, trait)
+	var/list/sources = grant_sources(target, GRANT_TRAIT, trait)
 	return holder && (holder in sources)
 
 /// TRUE when `target` or its mind holds `trait`.
@@ -55,15 +55,13 @@ GLOBAL_LIST_EMPTY(trait_source_singletons)
 
 /// The source datums granting `target` `trait` (a new list, empty when none).
 /proc/trait_sources(datum/target, trait)
-	var/list/sources = target?.om_rec ? om_grant_sources(target, GRANT_TRAIT, trait) : null
+	var/list/sources = grant_sources(target, GRANT_TRAIT, trait)
 	return sources ? sources.Copy() : list()
 
 /// Every trait `target` holds (a new list).
 /proc/trait_list(datum/target)
 	. = list()
-	if(!target?.om_rec)
-		return
-	var/list/per_key = om_value_of(target, GRANT_TRAIT)
+	var/list/per_key = grant_values(target, GRANT_TRAIT)
 	if(!islist(per_key))
 		return
 	for(var/trait in per_key)
@@ -78,7 +76,7 @@ GLOBAL_LIST_EMPTY(trait_source_singletons)
 	if(!holder)
 		CRASH("add_trait([target], [trait]) without a source")
 	var/had = has_trait(target, trait)
-	if(!om_grant(target, GRANT_TRAIT, trait, holder))
+	if(!grant_hold(target, GRANT_TRAIT, trait, holder))
 		return FALSE
 	if(!had)
 		PUBLISH_LEGACY(target, /datum/notice/trait_gained, trait)
@@ -100,7 +98,7 @@ GLOBAL_LIST_EMPTY(trait_source_singletons)
 		for(var/source in wanted)
 			holders |= trait_source(source)
 	for(var/datum/holder as anything in holders)
-		om_revoke(target, GRANT_TRAIT, trait, holder)
+		grant_release(target, GRANT_TRAIT, trait, holder)
 	if(!has_trait(target, trait))
 		PUBLISH_LEGACY(target, /datum/notice/trait_lost, trait)
 

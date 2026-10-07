@@ -268,7 +268,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		// deletion drops the hold there (a text source is a shared verb_source()).
 		var/datum/held_by = isdatum(source) ? source : verb_source("[source]")
 		var/id = grant_id(what)
-		return duration ? om_grant_for(target, kind, id, held_by, duration) : om_grant(target, kind, id, held_by)
+		return grant_hold(target, kind, id, held_by, duration)
 	. = rx_ledger_add(target, RELK_GRANT, what, source)
 	if(duration)
 		after(target, duration, GLOBAL_PROC_REF(rx_grant_expire), key = "grant:[what]:[source]", with = list(target, what, source), keeps_dead = TRUE)
@@ -279,7 +279,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		return FALSE
 	var/kind = grant_kind(what)
 	if(kind)
-		return om_revoke(target, kind, grant_id(what), isdatum(source) ? source : verb_source("[source]"))
+		return grant_release(target, kind, grant_id(what), isdatum(source) ? source : verb_source("[source]"))
 	return rx_ledger_remove(target, RELK_GRANT, what, source)
 
 /// grant(M, hidden_verb(/mob/verb/observe), source): hides the verb while the source holds it (GRANT_VERB_HIDE).
@@ -315,7 +315,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 /proc/legacy_granted(datum/target, what)
 	var/kind = grant_kind(what)
 	if(kind)
-		return om_has_grant(target, kind, grant_id(what))
+		return grant_held(target, kind, grant_id(what))
 	return rx_ledger_has(target, RELK_GRANT, what)
 
 // ---------------------------------------------------------------- membership

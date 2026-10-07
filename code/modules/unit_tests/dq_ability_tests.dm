@@ -120,7 +120,7 @@
 	var/datum/source = new /datum()
 	H.grant_ability("dq_test_ability", source)
 	TEST_ASSERT(H.has_ability("dq_test_ability"), "granted")
-	TEST_ASSERT(list(GRANT_ABILITY, "dq_test_ability") ~= om_grants_from(H, source)[1], "the grant is in the contribution store")
+	TEST_ASSERT(list(GRANT_ABILITY, "dq_test_ability") ~= grants_given_by(H, source)[1], "the grant is in the contribution store")
 	qdel(source)
 	TEST_ASSERT(!H.has_ability("dq_test_ability"), "deleting the source revokes its grant")
 

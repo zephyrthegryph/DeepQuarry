@@ -7,7 +7,7 @@
 // so the last one to expire drops the system back to its base step, and a grant dies with
 // its source.
 //
-//   om_grant_for(SSvg.get_step_cadence(), GRANT_CADENCE, CADENCE_GAS_FAST, src, 5 SECONDS)
+//   grant_hold(SSvg.get_step_cadence(), GRANT_CADENCE, CADENCE_GAS_FAST, src, 5 SECONDS)
 //
 // Rust only ever sees the resulting step length (vg_world_set_dt): the law step, the
 // publication drain and SSvg's own wait all follow it.
@@ -28,7 +28,7 @@
 /// The shortest step any live grant names, else the base step, in seconds.
 /datum/step_cadence/proc/dt_seconds()
 	. = base_dt
-	var/list/held = om_value_of(src, GRANT_CADENCE)
+	var/list/held = grant_values(src, GRANT_CADENCE)
 	if(!islist(held))
 		return
 	for(var/id in held)
@@ -41,15 +41,6 @@
 /// The step length changed (a grant began or lapsed). Owners override it.
 /datum/step_cadence/proc/cadence_changed()
 	return
-
-/// GRANT_CADENCE's effect: the same store as GRANT_VERB and the other grants. A grant beginning
-/// or lapsing (or its source dying) changes the combined value, and the holder is told once.
-/datum/om/effect/grant_cadence
-
-/datum/om/effect/grant_cadence/on_changed(datum/E, old_value, new_value)
-	var/datum/step_cadence/C = E
-	if(istype(C))
-		C.cadence_changed()
 
 // ---- the native system's step: the system's own procs are in code/datums/native/system.dm ----
 

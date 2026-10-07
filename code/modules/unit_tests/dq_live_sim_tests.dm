@@ -22,9 +22,9 @@
 	var/datum/om_test_entity/rupture = entity(made)
 	var/datum/om_test_entity/breach = entity(made)
 	TEST_ASSERT_EQUAL(C.dt_seconds(), CADENCE_BASE_DT, "no grant: the base step")
-	om_grant_for(C, GRANT_CADENCE, CADENCE_GAS_BRISK, rupture, 3 SECONDS)
+	grant_hold(C, GRANT_CADENCE, CADENCE_GAS_BRISK, rupture, 3 SECONDS)
 	TEST_ASSERT_EQUAL(C.dt_seconds(), 0.25, "a brisk grant shortens the step")
-	om_grant_for(C, GRANT_CADENCE, CADENCE_GAS_FAST, breach, 1 SECONDS)
+	grant_hold(C, GRANT_CADENCE, CADENCE_GAS_FAST, breach, 1 SECONDS)
 	TEST_ASSERT_EQUAL(C.dt_seconds(), 0.1, "the shortest step any live grant names wins")
 	scheduler_advance(2)
 	TEST_ASSERT_EQUAL(C.dt_seconds(), 0.25, "the fast grant lapsed; the brisk one still holds")
@@ -39,7 +39,7 @@
 	var/datum/step_cadence/test/C = new
 	made += C
 	var/datum/om_test_entity/source = entity(made)
-	om_grant_for(C, GRANT_CADENCE, CADENCE_GAS_FAST, source, 60 SECONDS)
+	grant_hold(C, GRANT_CADENCE, CADENCE_GAS_FAST, source, 60 SECONDS)
 	TEST_ASSERT_EQUAL(C.dt_seconds(), 0.1, "granted")
 	qdel(source)
 	TEST_ASSERT_EQUAL(C.dt_seconds(), CADENCE_BASE_DT, "a grant never outlives its source")

@@ -446,54 +446,6 @@
 	if(!length(log))
 		rec.hold_log = null
 
-// ---------------------------------------------------------------- grants
-
-/// Grants are effects with COMBINE_SUM_PER_KEY: kind -> effect id, id -> key,
-/// source -> contribution source. Ids are text or type paths. `target` may be a client
-/// (om_grant_target(), code/datums/om/grant_verbs.dm).
-/proc/om_grant(target, kind, id, datum/source)
-	return om_hold(om_grant_target(target), kind, source, 1, id)
-
-/proc/om_revoke(target, kind, id, datum/source)
-	var/datum/E = om_grant_target(target, FALSE)
-	return E ? om_release(E, kind, source, id) : FALSE
-
-/proc/om_has_grant(target, kind, id)
-	READS_FROM() // a grant is asked when a choice is made, never cached
-	var/datum/E = om_grant_target(target, FALSE)
-	if(!E)
-		return FALSE
-	var/list/per_key = om_value_of(E, kind)
-	return islist(per_key) && per_key[id] > 0
-
-/// The sources granting `target` the `kind` grant `id` (a list), or null when none does.
-/proc/om_grant_sources(target, kind, id)
-	var/datum/E = om_grant_target(target, FALSE)
-	var/datum/om/rec/rec = E?.om_rec
-	if(!rec?.contribs)
-		return null
-	var/eidx = om_registry().effect(kind).idx
-	var/list/C = rec.contribs
-	for(var/i in 1 to length(C) step OM_C_STRIDE)
-		if(C[i + OM_C_EFFECT] == eidx && C[i + OM_C_KEY] == id)
-			LAZYADD(., C[i + OM_C_SOURCE])
-
-/// Every grant `source` gives `target`: list of list(kind, id).
-/proc/om_grants_from(target, datum/source)
-	. = list()
-	var/datum/E = om_grant_target(target, FALSE)
-	var/datum/om/rec/rec = E?.om_rec
-	if(!rec)
-		return
-	var/list/effects = om_registry().effects
-	var/list/C = rec.contribs
-	for(var/i in 1 to length(C) step OM_C_STRIDE)
-		if(C[i + OM_C_SOURCE] != source)
-			continue
-		var/datum/om/effect/eff = effects[C[i + OM_C_EFFECT]]
-		if(eff.combine == COMBINE_SUM_PER_KEY)
-			. += list(list(eff.id, C[i + OM_C_KEY]))
-
 // ---------------------------------------------------------------- clocks
 
 /// Stride 4 entry for clock `cidx`, created on first need.

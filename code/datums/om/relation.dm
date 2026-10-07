@@ -242,6 +242,9 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 /proc/om_edge_teardown(datum/om/edge/edge)
 	if(edge.om_rec)
 		om_teardown_rest(edge)
+	// The edge's grants live in the stat store, held on either end.
+	release_all(edge.source, edge)
+	release_all(edge.target, edge)
 	edge.active = FALSE
 
 /// Applies or releases the relation's contributions as active_if says.
@@ -260,6 +263,8 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 		if(edge.active)
 			edge.active = FALSE
 			om_release_all_from(edge)
+			release_all(target, edge) // the edge's grants live in the stat store
+			release_all(source, edge)
 		return
 	edge.active = TRUE
 	for(var/id in R.contributes)
@@ -269,11 +274,11 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 	for(var/kind in R.grants_target)
 		var/ids = R.grants_target[kind]
 		for(var/id in (islist(ids) ? ids : list(ids)))
-			om_grant(target, kind, id, edge)
+			grant_hold(target, kind, id, edge)
 	for(var/kind in R.grants_occupant)
 		var/ids = R.grants_occupant[kind]
 		for(var/id in (islist(ids) ? ids : list(ids)))
-			om_grant(source, kind, id, edge)
+			grant_hold(source, kind, id, edge)
 
 // ---------------------------------------------------------------- forwarding
 

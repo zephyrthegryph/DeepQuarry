@@ -155,7 +155,7 @@
 	for(var/i in 1 to length(T.self_effects) step 2)
 		om_hold(E, T.self_effects[i], E, om_read(E, T.self_effects[i + 1]))
 	for(var/i in 1 to length(T.self_grants) step 2)
-		om_grant(E, T.self_grants[i], T.self_grants[i + 1], E)
+		grant_hold(E, T.self_grants[i], T.self_grants[i + 1], E)
 	return rec
 
 /// Attaches behaviour `B` (type or def) to `E`. Idempotent.

@@ -154,7 +154,7 @@ GLOBAL_LIST_EMPTY(verb_entry_sets) // type -> /datum/verb_entry_set, or FALSE fo
 	var/datum/store_source = sides[2]
 	if(!isdatum(target) || QDELETED(target) || !isdatum(store_source) || QDELETED(store_source))
 		return FALSE
-	om_grant(target, E.args["hidden"] ? GRANT_VERB_HIDE : GRANT_VERB, verb_entry_key(E), store_source)
+	grant_hold(target, E.args["hidden"] ? GRANT_VERB_HIDE : GRANT_VERB, verb_entry_key(E), store_source)
 	return TRUE
 
 /datum/entry_engine/verb_entry_grant/remove(datum/activation/A, datum/entry/E)
@@ -163,7 +163,7 @@ GLOBAL_LIST_EMPTY(verb_entry_sets) // type -> /datum/verb_entry_set, or FALSE fo
 	var/datum/store_source = sides[2]
 	if(!isdatum(target) || QDELETED(target) || !isdatum(store_source))
 		return
-	om_revoke(target, E.args["hidden"] ? GRANT_VERB_HIDE : GRANT_VERB, verb_entry_key(E), store_source)
+	grant_release(target, E.args["hidden"] ? GRANT_VERB_HIDE : GRANT_VERB, verb_entry_key(E), store_source)
 
 // ---- granted_verb(): a verb as a capability ----
 

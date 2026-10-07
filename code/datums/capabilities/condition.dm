@@ -1,9 +1,9 @@
 // Temporary conditions with behaviour (doc/rewrite/migration_guide.md B15): a capability granted for a
 // time by a source.
 //
-//	om_grant_for(apc, GRANT_CAPABILITY, /datum/capability/condition/power_failure, source, 30 SECONDS)
-//	om_grant(apc, GRANT_CAPABILITY, /datum/capability/condition/power_failure, source)    // until revoked
-//	om_revoke(apc, GRANT_CAPABILITY, /datum/capability/condition/power_failure, source)
+//	grant_hold(apc, GRANT_CAPABILITY, /datum/capability/condition/power_failure, source, 30 SECONDS)
+//	grant_hold(apc, GRANT_CAPABILITY, /datum/capability/condition/power_failure, source)    // until revoked
+//	grant_release(apc, GRANT_CAPABILITY, /datum/capability/condition/power_failure, source)
 //
 // The contribution store owns the holds: several sources may hold one condition (it is on while any
 // does), a timed hold expires by itself and a deleted source's holds are dropped. The effect below
@@ -11,15 +11,11 @@
 // one ends; both mark the holder changed, so the refresh engine redraws. The capability instance is
 // shared by every holder (one per path, interned).
 
-/// The GRANT_CAPABILITY effect: keys are capability paths, values are hold counts.
-/datum/om/effect/grant_capability
-
-/datum/om/effect/grant_capability/on_changed(datum/E, old_value, new_value)
+/// GRANT_CAPABILITY moved (grant_changed()): keys are capability paths, values are hold counts.
+/proc/capability_grants_changed(datum/E, list/old_list, list/new_list)
 	if(!isatom(E))
 		return
 	var/atom/A = E
-	var/list/old_list = islist(old_value) ? old_value : null
-	var/list/new_list = islist(new_value) ? new_value : null
 	for(var/key in new_list)
 		if(new_list[key] > 0 && !(old_list?[key] > 0))
 			var/datum/capability/C = cap_condition_instance(key)
