@@ -1397,14 +1397,10 @@ CAPABILITIES(/obj/item/light)
 	overlay_color = LIGHT_COLOR_INCANDESCENT_BULB
 	overlay_above_everything = TRUE
 
-/// A wall torch swallows whatever is used on it (it is no socket to smash or fill).
+/// A wall torch is no socket to smash or fill.
 CAPABILITIES(/obj/machinery/light/small/torch)
 	without("insert")
 	without("hit")
-	op("swallow", item(/obj/item), answers(INTENT_USE, INTENT_ATTACK), wait(0), then(PROC_REF(swallowed)))
-
-/obj/machinery/light/small/torch/proc/swallowed(datum/act/op/A)
-	return OP_OK
 
 /obj/machinery/light/broken
 	icon_state = "tube-broken"

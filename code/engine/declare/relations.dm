@@ -213,8 +213,8 @@
 	if(link_decls_cache()[E.sig])
 		return
 	link_decls_cache()[E.sig] = E
-	if(E.args["hot"])
-		return // an engine hot-path pair: direct lists, no index, nothing published; the engine owns both sides
+	if(E.args["hot"] || E.args["sparse"])
+		return // an engine hot-path pair (direct lists, no index, nothing published; the engine owns both sides), or a sparse one (link_state.dm): no vars to patch in
 	var/list/cache = _scs_own_table
 	for(var/type_key in cache)
 		var/datum/own_table/T = cache[type_key]
@@ -223,6 +223,8 @@
 
 /// Adds `E`'s ends to an ownership table when its owner type is (a subtype of) an end's type.
 /proc/link_patch_table(datum/own_table/T, datum/entry/E)
+	if(E.args["sparse"])
+		return // its ends are keys in the holders' engine records (link_state.dm), not vars of a table
 	for(var/end in list("a", "b"))
 		var/end_type = E.args["[end]_type"]
 		if(!ispath(T.owner_type, end_type))

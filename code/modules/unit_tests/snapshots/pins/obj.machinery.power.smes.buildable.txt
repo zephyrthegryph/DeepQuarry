@@ -56,5 +56,5 @@ human|/obj/item/smes_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/smes_coil menu: Ui open
 human|/obj/item/smes_coil click: Click: Install coil
 wires: Failsafes, Grounding, Input, Output, RCon
-keys: add_cable, cable_place, cut_terminal, drag_buckle, failing, gen_robot_interaction_swallow, input, install_coil, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, output, rcon_tag, swallow, tryinput, tryoutput, ui_open, weld
+keys: add_cable, cable_place, cut_terminal, drag_buckle, failing, gen_robot_interaction_swallow, input, install_coil, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, output, rcon_tag, tryinput, tryoutput, ui_open, weld
 

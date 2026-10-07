@@ -43,7 +43,6 @@ CAPABILITIES(/obj/machinery/conveyor)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), label("Set ID"), needs(req(PROC_REF(maintenance_panel_open), silent = TRUE)),
 		asks(/datum/prompt/text/conveyor_id, fields = list("question" = "What id would you like to give this conveyor?", "title" = "Multitool-Conveyor interface", "default" = nameof(id))),
 		then(PROC_REF(conveyor_id_answered)))
-	op("conveyor_robot_swallow", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), when(req_actor_kind(/mob/living/silicon/robot)), label("Use"), then(TYPE_PROC_REF(/atom, op_swallow)))
 	op("conveyor_drop_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Drop on belt"), then(PROC_REF(interaction_drop_item)))
 	op("conveyor_push_pulled", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Push pulled object"), then(PROC_REF(interaction_push_pulled)))
 

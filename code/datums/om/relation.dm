@@ -389,33 +389,33 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 // replaced the BUCKLED()/PULLING()/... accessor macros; tools/ci/check_ratchets.sh
 // bans the macros and bare link_of() outside code/datums/om.
 
-/// Was BUCKLED().
+/// What the mob is buckled to, or null (the sparse link LK_BUCKLED_TO, links() in CAPABILITIES(/atom/movable)). Was BUCKLED().
 /mob/proc/buckled_to() as /atom/movable
-	return link_of(src, /datum/om/relation/buckled_to)
+	return link_get(src, LK_BUCKLED_TO)
 
-/// Was BUCKLED_MOBS().
+/// The mobs buckled to it: a fresh list, never null. Was BUCKLED_MOBS().
 /atom/movable/proc/buckled_mob_list() as /list
-	return linked_to(src, /datum/om/relation/buckled_to)
+	return link_list(src, LK_BUCKLED_MOBS)
 
-/// Was PULLING().
+/// What the mob pulls, or null (LK_PULLING). Was PULLING().
 /mob/proc/pulling_target() as /atom/movable
-	return link_of(src, /datum/om/relation/pulling)
+	return link_get(src, LK_PULLING)
 
 /// A wheelchair pulls too (relaymove()); declared here rather than on /atom/movable.
 /obj/structure/bed/chair/wheelchair/proc/pulling_target() as /atom/movable
-	return link_of(src, /datum/om/relation/pulling)
+	return link_get(src, LK_PULLING)
 
-/// Was PULLED_BY().
+/// What pulls it, or null (LK_PULLED_BY). Was PULLED_BY().
 /atom/movable/proc/pulled_by_mob() as /mob/living
-	return link_source_of(src, /datum/om/relation/pulling)
+	return link_get(src, LK_PULLED_BY)
 
-/// Was GRABBED_BY().
+/// The grabs holding the mob: a fresh list, never null. Was GRABBED_BY().
 /mob/proc/grabbed_by_list() as /list
-	return linked_to(src, /datum/om/relation/grabbing)
+	return link_list(src, LK_GRABBED_BY)
 
-/// Was GRAB_TARGET().
+/// The mob the grab holds, or null (LK_GRABBING). Was GRAB_TARGET().
 /obj/item/grab/proc/grab_target() as /mob/living
-	return link_of(src, /datum/om/relation/grabbing)
+	return link_get(src, LK_GRABBING)
 
 /// Was ORBIT_TARGET().
 /atom/movable/proc/orbit_target() as /atom/movable

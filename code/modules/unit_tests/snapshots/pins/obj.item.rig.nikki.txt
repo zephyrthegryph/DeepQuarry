@@ -1,2 +1,2 @@
-runtime while making it: OWN: /obj/item/rig/nikki.chest is declared /obj/item/clothing/suit/space/rig, refused a /obj/item/clothing/suit/fluff/nikki%//%["code/datums/lifecycle/links.dm",52]%//%
+runtime while making it: OWN: /obj/item/rig/nikki.chest is declared /obj/item/clothing/suit/space/rig, refused a /obj/item/clothing/suit/fluff/nikki%//%["code/datums/lifecycle/links.dm",54]%//%
 

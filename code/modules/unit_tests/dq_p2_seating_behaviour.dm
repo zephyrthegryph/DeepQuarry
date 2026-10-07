@@ -577,7 +577,7 @@ CAPABILITIES(/obj/structure/p2_bare_seat)
 		G = grab(grabber, big, GRAB_AGGRESSIVE)
 	else
 		G = grabber.get_active_hand()
-	om_link(small, big, /datum/om/relation/pulling)
+	small.pull_link(big)
 	TEST_ASSERT_EQUAL(small.pulling_target(), big, "the chair pulls them")
 	p2_seat_click(grabber, small, G)
 	test_time(5 SECONDS)

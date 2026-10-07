@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "Buckling, pulling and grabbing are declared links with holds_while, contributes and a conflict policy; damageable() is the lowest-tier melee hit op; 12 swallow ops removed"

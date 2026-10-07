@@ -52,7 +52,6 @@ CAPABILITIES(/obj/machinery/injector_maker)
 		needs(req(PROC_REF(large_rack_free), because = MSG(injector_maker/rack_full)), req(PROC_REF(injector_empty), because = MSG(injector_maker/filled))),
 		then(PROC_REF(large_injector_added)))
 	op("add_plastic", item(/obj/item/stack/material), label("Add plastic"), then(PROC_REF(plastic_added)))
-	op("swallow", item(/obj/item), label("Use")) // the old attackby never called ..(): anything else (or a non-plastic stack) is swallowed silently
 	op("drag_plastic", item(/obj/item/stack/material/plastic), gesture(GESTURE_DRAG), label("Add plastic"), then(PROC_REF(plastic_dragged)))
 	op("eject_beaker", hand(), ungated(), gesture(GESTURE_ALT), when(PROC_REF(has_beaker)), label("Eject beaker"), then(PROC_REF(beaker_ejected)))
 	op("use", hand(), ungated(), label("Use"), then(PROC_REF(touched)))

@@ -63,14 +63,10 @@ human|/obj/item/stack/material menu: Move To Top
 human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material menu: Use
 human|/obj/item/stack/material click: Click: Add plastic
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item menu: Use
-human|/obj/item click: Click: Use
 human|/obj/item/stack/material/plastic menu: Add plastic
 human|/obj/item/stack/material/plastic menu: Move To Top
 human|/obj/item/stack/material/plastic menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/plastic menu: Use
 human|/obj/item/stack/material/plastic click: Click: Add plastic
-keys: add_beaker, add_large_injector, add_plastic, add_small_injector, drag_buckle, drag_plastic, eject_beaker, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, swallow, use
+keys: add_beaker, add_large_injector, add_plastic, add_small_injector, drag_buckle, drag_plastic, eject_beaker, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, use
 

@@ -30,9 +30,7 @@
 	TEST_ASSERT(C.buckle_mob(H, forced = TRUE), "buckle_mob should succeed on a fresh chair")
 	TEST_ASSERT_EQUAL(H?.buckled_to(), C, "H?.buckled_to() should be the chair")
 	TEST_ASSERT(H in C?.buckled_mob_list(), "H should be in the chair's BUCKLED_MOBS")
-	TEST_ASSERT_EQUAL(link_of(H, /datum/om/relation/buckled_to), C, "om_relation_of should agree with ()?.buckled_to()")
-	TEST_ASSERT(om_has(H, EFFECT_BUCKLED), "buckling should raise EFFECT_BUCKLED on the mob")
-	TEST_ASSERT_NOTNULL(dq_test_find_edge(H, C, /datum/om/relation/buckled_to), "an edge should exist between H and C")
+	TEST_ASSERT(stat_value(H, STAT_BUCKLED), "buckling should raise EFFECT_BUCKLED on the mob")
 
 /// Hard-deleting the object a mob is buckled to unbuckles it, with no dangling
 /// reference left on either side.
@@ -45,8 +43,7 @@
 	qdel(C)
 	TEST_ASSERT(QDELETED(C), "setup: the chair should be deleted")
 	TEST_ASSERT_NULL(H?.buckled_to(), "H?.buckled_to() should be cleared once the chair is deleted")
-	TEST_ASSERT_NULL(link_of(H, /datum/om/relation/buckled_to), "the relation lookup should agree")
-	TEST_ASSERT(!om_has(H, EFFECT_BUCKLED), "EFFECT_BUCKLED should be gone once unbuckled")
+	TEST_ASSERT(!stat_value(H, STAT_BUCKLED), "EFFECT_BUCKLED should be gone once unbuckled")
 
 /// Hard-deleting a buckled mob removes it from the object's buckled_mobs, with
 /// no dangling reference left behind.
@@ -67,11 +64,10 @@
 /datum/unit_test/dq_om_relation_buckling_breaks_on_range
 
 /datum/unit_test/dq_om_relation_buckling_breaks_on_range/Run()
+	test_driver_begin()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/structure/bed/chair/C = allocate(/obj/structure/bed/chair, get_turf(H))
 	TEST_ASSERT(C.buckle_mob(H, forced = TRUE), "setup: buckle_mob should succeed")
-	var/datum/om/edge/edge = dq_test_find_edge(H, C, /datum/om/relation/buckled_to)
-	TEST_ASSERT_NOTNULL(edge, "setup: an edge should exist between H and C")
 
 	var/turf/away = locate(C.x + 3, C.y, C.z)
 	TEST_ASSERT_NOTNULL(away, "setup: needs a turf 3 tiles east of the chair")
@@ -81,13 +77,11 @@
 	// The live scheduler would run this on its next lane pass (relation.dm's
 	// edge_refresh behaviour, watching CHANGE_MOB_LOC/CHANGE_ITEM_LOC); drive
 	// it directly so the test doesn't depend on tick timing.
-	om_edge_refresh(edge)
+	test_time(1 SECONDS)
+	test_driver_end()
 
 	TEST_ASSERT_NULL(H?.buckled_to(), "H?.buckled_to() should be cleared once out of range")
 	TEST_ASSERT_EQUAL(LAZYLEN(C?.buckled_mob_list()), 0, "the chair should have no buckled mobs left")
-	TEST_ASSERT_NULL(edge.source, "the edge itself should be torn down (no dangling source)")
-	TEST_ASSERT_NULL(edge.target, "the edge itself should be torn down (no dangling target)")
-	TEST_ASSERT_NULL(link_of(H, /datum/om/relation/buckled_to), "the relation lookup should agree")
 
 // ---------------------------------------------------------------- grabbing
 
@@ -104,8 +98,6 @@
 	TEST_ASSERT(!QDELETED(G), "the grab should not immediately self-delete")
 	TEST_ASSERT_EQUAL(G?.grab_target(), victim, "G?.grab_target() should be the victim")
 	TEST_ASSERT(G in victim?.grabbed_by_list(), "G should be in the victim's GRABBED_BY")
-	TEST_ASSERT_EQUAL(link_of(G, /datum/om/relation/grabbing), victim, "om_relation_of should agree with GRAB_TARGET")
-	TEST_ASSERT_NOTNULL(dq_test_find_edge(G, victim, /datum/om/relation/grabbing), "an edge should exist between G and the victim")
 
 /// Hard-deleting a grab removes it from the victim's GRABBED_BY, with no
 /// dangling reference left behind.
@@ -150,8 +142,6 @@
 	puller.start_pulling(pulled)
 	TEST_ASSERT_EQUAL(puller?.pulling_target(), pulled, "puller?.pulling_target() should be the pulled mob")
 	TEST_ASSERT_EQUAL(pulled?.pulled_by_mob(), puller, "pulled?.pulled_by_mob() should be the puller")
-	TEST_ASSERT_EQUAL(link_of(puller, /datum/om/relation/pulling), pulled, "om_relation_of should agree with ()?.pulling_target()")
-	TEST_ASSERT_NOTNULL(dq_test_find_edge(puller, pulled, /datum/om/relation/pulling), "an edge should exist between puller and pulled")
 
 /// Hard-deleting the puller clears the pulled mob's pulledby, with no
 /// dangling reference left behind.
@@ -185,23 +175,21 @@
 /datum/unit_test/dq_om_relation_pulling_breaks_on_range
 
 /datum/unit_test/dq_om_relation_pulling_breaks_on_range/Run()
+	test_driver_begin()
 	var/mob/living/carbon/human/puller = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/pulled = allocate(/mob/living/carbon/human)
 	puller.start_pulling(pulled)
-	var/datum/om/edge/edge = dq_test_find_edge(puller, pulled, /datum/om/relation/pulling)
-	TEST_ASSERT_NOTNULL(edge, "setup: an edge should exist between puller and pulled")
 
 	var/turf/away = locate(pulled.x + 5, pulled.y, pulled.z)
 	TEST_ASSERT_NOTNULL(away, "setup: needs a turf 5 tiles east of the pulled mob")
 	puller.forceMove(away)
 	TEST_ASSERT(get_dist(puller, pulled) > 1, "setup: puller should now be more than one tile from pulled")
 
-	om_edge_refresh(edge)
+	test_time(1 SECONDS)
+	test_driver_end()
 
 	TEST_ASSERT_NULL(puller?.pulling_target(), "puller?.pulling_target() should be cleared once out of range")
 	TEST_ASSERT_NULL(pulled?.pulled_by_mob(), "pulled?.pulled_by_mob() should be cleared once out of range")
-	TEST_ASSERT_NULL(edge.source, "the edge itself should be torn down (no dangling source)")
-	TEST_ASSERT_NULL(edge.target, "the edge itself should be torn down (no dangling target)")
 
 // ---------------------------------------------------------------- occupant slots
 

@@ -13,58 +13,43 @@ ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Toggle Digestable (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Swallow
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Swallow
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar click: Click: Swallow
+human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Swallow
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench click: Click: Swallow
+human|/obj/item/tool/wrench click: nothing
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Swallow
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters click: Click: Swallow
+human|/obj/item/tool/wirecutters click: nothing
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Swallow
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool click: Click: Swallow
+human|/obj/item/multitool click: nothing
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Swallow
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool click: Click: Swallow
+human|/obj/item/weldingtool click: nothing
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Swallow
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil click: Click: Swallow
+human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Swallow
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel click: Click: Swallow
+human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Swallow
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id click: Click: Swallow
+human|/obj/item/card/id click: nothing
 human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Swallow
 human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/kit click: Click: Customise
 human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Swallow
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/storage click: Click: Swallow
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Swallow
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item click: Click: Swallow
+human|/obj/item/storage click: Click: Collect
 wires: Receiver, Signal, Transmitter
-keys: broadcast, channel, collect_item, controls, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, listen, move_to_top, pick_up_item, setFrequency, specFreq, subspace, swallow, toggleLoudspeaker, toggle_digestable, use_screwdriver
+keys: broadcast, channel, collect_item, controls, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, listen, move_to_top, pick_up_item, setFrequency, specFreq, subspace, toggleLoudspeaker, toggle_digestable, use_screwdriver
 
