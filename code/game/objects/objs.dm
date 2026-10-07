@@ -215,14 +215,9 @@
 	VV_DROPDOWN_OPTION(VV_HK_MASS_DEL_TYPE, "Delete all of type")
 	VV_DROPDOWN_OPTION(VV_HK_FAKE_CONVO, "Add Fake Prop Conversation")
 
-VV_TOPIC_ACTION(/obj, VV_HK_MASS_DEL_TYPE, PROC_REF(vv_topic_mass_delete_type), TOPIC_RIGHTS(R_DEBUG|R_SERVER))
-VV_TOPIC_ACTION(/obj/item/pda, VV_HK_FAKE_CONVO, PROC_REF(vv_topic_fake_convo), TOPIC_RIGHTS(R_FUN))
 
-/obj/proc/vv_topic_mass_delete_type(mob/user, list/args)
-	open_request(src, /datum/prompt/choice/mass_delete_scope, PROC_REF(mass_delete_scope_chosen), answerer = user)
-	return TRUE
-
-/obj/item/pda/proc/vv_topic_fake_convo(mob/user, list/args)
+/obj/item/pda/proc/vv_topic_fake_convo(datum/act/op/A)
+	var/mob/user = A.actor
 	createPropFakeConversation_admin(user)
 	return TRUE
 
@@ -247,26 +242,16 @@ VV_TOPIC_ACTION(/obj/item/pda, VV_HK_FAKE_CONVO, PROC_REF(vv_topic_fake_convo), 
 	..()
 	question = second ? "Second confirmation required. Delete?" : "Are you really sure you want to delete all objects of type [owner.type]?"
 
-/obj/proc/mass_delete_scope_chosen(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/choice/mass_delete_scope/ask = A.answer
-	if(ask.value == "Cancel")
-		return
-	open_request(src, /datum/prompt/yes_no/mass_delete, PROC_REF(mass_delete_sure), answerer = ask.answerer, scope = ask.value)
+/// The mass delete questions after the scope are asked unless the scope was "Cancel".
+/obj/proc/mass_delete_not_cancelled(datum/act/op/A)
+	return A.step_value("scope") != "Cancel"
 
-/obj/proc/mass_delete_sure(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
+/// "Delete all of type" (VV): the scope, then two confirmations; this runs when all three are answered.
+/obj/proc/vv_topic_mass_delete_type(datum/act/op/A)
+	var/mob/user = A.actor
+	var/action_type = A.step_value("scope")
+	if(action_type == "Cancel")
 		return
-	var/datum/prompt/yes_no/mass_delete/ask = A.answer
-	open_request(src, /datum/prompt/yes_no/mass_delete, PROC_REF(mass_delete_confirmed), answerer = ask.answerer, scope = ask.scope, second = TRUE)
-
-/obj/proc/mass_delete_confirmed(datum/act/request/A)
-	if(!A.answer || !A.answer.value)
-		return
-	var/datum/prompt/yes_no/mass_delete/ask = A.answer
-	var/mob/user = ask.answerer
-	var/action_type = ask.scope
 	var/O_type = type
 	switch(action_type)
 		if("Strict type")

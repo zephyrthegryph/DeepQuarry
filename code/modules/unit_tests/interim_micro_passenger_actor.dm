@@ -45,7 +45,7 @@
 	test_time(5 SECONDS)
 	TEST_ASSERT_NULL(bay.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER), "real locked compartment refuses actual small-human boarding")
 	TEST_ASSERT_EQUAL(actor.loc, T, "real lock refusal preserves the actual resized human floor")
-	bay.topic_toggle_lock(actor, list())
+	perform_op(actor, bay, "toggle_lock", null, ORIGIN_SYSTEM) // the hatch control link, as the system (the pilot gate is the link's, not the hatch's)
 	TEST_ASSERT(!bay.door_locked, "actual existing hatch control unlocks the real mounted compartment")
 	actor.forceMove(far)
 	TEST_ASSERT(!actor.Adjacent(mech), "the actual distant resized human fails the parent proximity guard")

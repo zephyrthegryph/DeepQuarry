@@ -233,6 +233,13 @@ CAPABILITIES(/datum/input_event/ui_act)
 	return "input.topic"
 
 /datum/input_event/topic/resolve()
+	// The op that names the href answers it, through the same Match, Require and Do as a click; what no op names is the legacy Topic() chain's.
+	var/datum/op_result/answered = op_topic_href(actor, hsrc, href_list)
+	if(answered)
+		return answered
+	if(driven)
+		topic_dispatch(hsrc, actor, href_list) // a driver-built link: the table's row, as the actor (a player's reaches it through Topic())
+		return null
 	sender?._Topic(hsrc, href, href_list)
 	return null
 
@@ -574,6 +581,15 @@ SYSTEM_DEF(input)
 	var/datum/input_event/ui_act/E = new(actor, null, action, args)
 	E.driven = TRUE
 	E.window = window // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+	input_submit(E)
+	return E.result
+
+/// Follows a topic link through the input inbox as a player's href would: the op of `holder` that names the href runs, origin ORIGIN_UI. Returns its
+/// /datum/op_result, or null when no op names it (a TOPIC_ACTION row of the holder answers it then, and the effect is all a test can read).
+/proc/inbox_topic(mob/actor, datum/holder, list/href_list)
+	RETURN_TYPE(/datum/op_result)
+	var/datum/input_event/topic/E = new(actor, holder, list2params(href_list), href_list)
+	E.driven = TRUE
 	input_submit(E)
 	return E.result
 

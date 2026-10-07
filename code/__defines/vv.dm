@@ -45,16 +45,16 @@
 #define VV_HREF_TARGET_1V(target, href_key, text, varname) "<a href='[VV_HREF_TARGET_INTERNAL(target, href_key)];[VV_HK_VARNAME]=[varname]'>[text]</a>" //for stuff like basic varedits, one variable
 #define VV_HREF_TARGETREF_1V(targetref, href_key, text, varname) "<a href='[VV_HREF_TARGETREF_INTERNAL(targetref, href_key)];[VV_HK_VARNAME]=[varname]'>[text]</a>"
 
-//Helper for linking to a VV_TOPIC_ACTION row in general
+//Helper for linking to a VV_TOPIC op (topic_in(VV_TOPIC, href_key)) in general
 #define VV_TOPIC_LINK(datum, href_key, text) "<a href='byond://?_src_=vars;[HrefToken()];[href_key]=TRUE;target=[REF(datum)]'>text</a>"
 
 //Helpers for vv_get_dropdown()
 #define VV_DROPDOWN_OPTION(href_key, name) . += "<option value='?_src_=vars;[HrefToken()];[href_key]=TRUE;target=[REF(src)]'>[name]</option>"
 
-// View Variables href actions (doc/rewrite/systems.md §20). A `_src_=vars` href reaches
+// View Variables href actions (doc/rewrite/final_api.html section 13). A `_src_=vars` href reaches
 // /client/proc/vv_topic(), which checks R_VAREDIT and the admin href token, then
-// topic_dispatch_vv(): the `target` datum's VV_TOPIC rows first, then the admin client's
-// VV_ADMIN_TOPIC rows. Both namespaces are unreachable from plain Topic() hrefs.
+// topic_dispatch_vv(): the `target` datum's ops in VV_TOPIC first, then the admin holder's ops in
+// VV_ADMIN_TOPIC. Both namespaces are unreachable from plain Topic() hrefs.
 /// Namespace of per-type actions on the VV'd datum (the dropdown actions).
 #define VV_TOPIC "vv"
 /// Namespace of actions on the admin's own client (basic edits, lists, Vars, rename, ...).

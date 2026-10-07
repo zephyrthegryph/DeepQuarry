@@ -29,9 +29,10 @@
 /datum/nifsoft/commlink/stat_text()
 	return "Show Commlink"
 
-TOPIC_ACTION(/datum/nifsoft/commlink, "open", PROC_REF(topic_open))
+CAPABILITIES(/datum/nifsoft/commlink)
+	op("open", topic("open"), then(PROC_REF(topic_open)))
 
-/datum/nifsoft/commlink/proc/topic_open(mob/user, list/args)
+/datum/nifsoft/commlink/proc/topic_open(datum/act/op/A)
 	activate()
 	return TRUE
 

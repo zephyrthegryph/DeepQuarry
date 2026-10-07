@@ -120,9 +120,7 @@ TYPE_TABLE(/obj/mecha/combat, mecha_starting_components, list( \
 	..()
 	return
 
-TOPIC_ACTION(/obj/mecha/combat, "close", PROC_REF(topic_close))
-
-/obj/mecha/combat/topic_close(mob/user, list/args)
+/obj/mecha/combat/topic_close(datum/act/op/A)
 	am = null
 
 /obj/mecha/combat/proc/reset_melee()

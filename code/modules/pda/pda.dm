@@ -76,6 +76,7 @@ CAPABILITIES(/obj/item/pda)
 	op("Retro", ui_act("Retro"), then(PROC_REF(ui_act_retro)))
 	op("TouchSounds", ui_act("TouchSounds"), then(PROC_REF(ui_act_touchsounds)))
 	op("Ringtone", ui_act("Ringtone"), then(PROC_REF(ui_act_ringtone)))
+	op("vv_fakepdapropconvo", topic_in(VV_TOPIC, VV_HK_FAKE_CONVO), needs(req_rights(R_FUN)), then(PROC_REF(vv_topic_fake_convo)))
 
 /obj/item/pda/examine(mob/user)
 	. = ..()

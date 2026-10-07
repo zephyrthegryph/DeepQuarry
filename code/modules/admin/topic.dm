@@ -16,7 +16,7 @@
 
 	log_admin("[key_name(user)] clicked an href with [msg] authorization key! [href]")
 
-// The admin panel's href actions are TOPIC_ACTION rows on /datum/admins, split by area under
+// The admin panel's href actions are topic ops of /datum/admins (its CAPABILITIES block, code/modules/admin/holder2.dm), their handlers split by area under
 // code/modules/admin/topic/. This gate runs before every one of them.
 /datum/admins/topic_allowed(mob/user, list/href_list)
 	. = ..()

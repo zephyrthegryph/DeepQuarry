@@ -53,6 +53,8 @@ CAPABILITIES(/mob/living/carbon)
 	owns_one(nameof(ingested), /datum/reagents/metabolism/ingested)
 	owns_one(nameof(touching), /datum/reagents/metabolism/touch)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(species_emp_effects)))
+	op("vv_addorgan", topic_in(VV_TOPIC, VV_HK_ADDORGAN), needs(req_rights(R_SPAWN)), asks(/datum/prompt/choice/vv_spawn, fields = list("title" = "Organ", "question" = "Please choose an organ to add.", "choices" = computed(PROC_REF(vv_organ_type_choices))), step = "organ"), then(PROC_REF(vv_organ_added_apply)))
+	op("vv_remorgan", topic_in(VV_TOPIC, VV_HK_REMOVEORGAN), needs(req_rights(R_SPAWN)), asks(/datum/prompt/choice/vv_spawn, fields = list("title" = "Organ", "question" = "Please choose an organ to remove.", "choices" = computed(PROC_REF(vv_organ_choices))), step = "organ"), then(PROC_REF(vv_organ_removed_apply)))
 
 /// Every species has hands (has_working_hand() drops them when the body has lost them all). A species without hands overrides this list with
 /// without(); a mob with no species (a carp, a borg, the AI) declares its own providers.

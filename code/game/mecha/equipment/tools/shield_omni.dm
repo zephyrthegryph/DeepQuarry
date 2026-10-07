@@ -17,6 +17,7 @@
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/omni_shield)
 	owns_one(nameof(shields), /obj/item/shield_projector)
+	op("toggle_omnishield", topic("toggle_omnishield"), then(PROC_REF(topic_toggle_omnishield)))
 
 /obj/item/mecha_parts/mecha_equipment/omni_shield/critfail()
 	..()
@@ -49,9 +50,8 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/omni_shield)
 			step_delay = initial(step_delay)
 			src.mecha_log_message("Deactivated.")
 
-TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/omni_shield, "toggle_omnishield", PROC_REF(topic_toggle_omnishield))
 
-/obj/item/mecha_parts/mecha_equipment/omni_shield/proc/topic_toggle_omnishield(mob/user, list/args)
+/obj/item/mecha_parts/mecha_equipment/omni_shield/proc/topic_toggle_omnishield(datum/act/op/A)
 	toggle_shield()
 
 /obj/item/mecha_parts/mecha_equipment/omni_shield/get_equip_info()

@@ -27,6 +27,7 @@
 
 CAPABILITIES(/obj/mecha/working/hoverpod)
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
+	op("toggle_stabilization", topic("toggle_stabilization"), then(PROC_REF(topic_toggle_stabilization)))
 
 /obj/mecha/working/hoverpod/Initialize(mapload)
 	. = ..()
@@ -45,9 +46,8 @@ CAPABILITIES(/obj/mecha/working/hoverpod)
 		ion_trail.stop()
 
 //Modified phazon code
-TOPIC_ACTION(/obj/mecha/working/hoverpod, "toggle_stabilization", PROC_REF(topic_toggle_stabilization))
 
-/obj/mecha/working/hoverpod/proc/topic_toggle_stabilization(mob/user, list/args)
+/obj/mecha/working/hoverpod/proc/topic_toggle_stabilization(datum/act/op/A)
 	stabilization_enabled = !stabilization_enabled
 	send_byjax(src?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","stabilization_command","[stabilization_enabled?"Dis":"En"]able thruster stabilization")
 	src.occupant_message(span_notice("Thruster stabilization [stabilization_enabled? "enabled" : "disabled"]."))

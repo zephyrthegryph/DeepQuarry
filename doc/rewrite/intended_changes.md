@@ -2484,3 +2484,47 @@ Design and migration: `doc/rewrite/power_grid.md`.
   `machine_deconstruct` run one priority step above the window). Pin rows: the buildable SMES's screwdriver and crowbar clicks.
 * **An unwired SMES and the battery rack still open their window.** `ui_open` is ungated on both (the hand gate reads `operable()`, which now includes
   "has an input terminal"); the window's buttons were never behind that gate and are unchanged (pinned by `dq_p2_smes/unwired_window_opens_buttons_keep_working`).
+
+## Topic links as ops (rewrite/op-topic)
+
+Pinned by `code/modules/unit_tests/dq_topic_*_tests.dm` and `dq_e2/topic_*` (the behaviour tests were written and green on the `TOPIC_ACTION` rows first;
+the converted code passes the same tests). A browser or chat link (an `href`) is the op whose `topic("key", args...)` binding names its key, run through
+the input inbox with the requirements and refusals of a click. Every `TOPIC_ACTION` row outside the machinery folder is an op now.
+
+* **A value the schema cannot read refuses the link and tells the clicker** ("That isn't something you can enter."). A `TOPIC_NUM` that was not a number
+  reached its handler as null, and a `TOPIC_REF` that named nothing of its type or source was dropped without a word; both now refuse with the message. A
+  number past its range is clamped and logged, as for a window button.
+* **Text longer than the field's length is refused, not cut.** `TOPIC_TEXT(name, n)` truncated to n characters; `arg(name, schema_text(n))` refuses. The
+  links the game writes never exceed their field.
+* **A rights refusal on a link reads "You do not have sufficient rights to do that."** (`req_rights` now has its own message; it said "Not while things are
+  as they are.", which was the generic forbid). The admins are still told of the attempt (log, `log_href`, `message_admins`); the `ADMIN DENIED` private
+  log line now carries the rights the link asked for.
+* **A link holder's `topic_allowed()` gate still runs first** and says why itself; it is not yet a `needs()` requirement for the types that use it (an
+  exosuit's pilot check, the held-item check of the blueprints and the sleevemate, the admin token check). Their refusal is a silent "You cannot use that
+  link right now." beside what the gate itself said.
+* **A link that only its own mob may use** (`if(user != src) return`) is `needs(req_self())`, refused silently as before.
+* **The client's own hrefs** (private message, mentor message, Discord registration, stat browser reload and preload, the command bar's typing flag, the
+  `action=openLink` link) are ops of the client's session. The typing flag is one op resolution per keystroke now instead of one table lookup.
+* **The language, flavour text, vore, record-HUD and cyborg alert links of mobs** are declared on `/mob` guarded by the holder's type: their own
+  `CAPABILITIES` blocks (`code/library/mob/hands.dm`, `code/modules/combat_ai/integration/mob_living.dm`) are another worker's, and move there when it is free.
+  Behaviour is unchanged. A cyborg's and an AI's "show alerts" link is one op.
+* **A nested `topic_ask()` answer still re-enters through `topic_dispatch()`**, which tries the holder's op first, so the admin panels' multi-step
+  questions work as before until their handlers become `asks()` steps.
+* **Links that ask are `asks()` steps of their op** (the exosuit's rename, pressure and passenger questions, the cable reel, the communicator reply, the
+  sleevemate's mind steal, the traitor panel's telecrystals, the game mode panel's option and antag-type questions, the feedback viewer's filters, the
+  admin newscaster, CentCom and syndicate replies, round mode picks and force speech, and the View Variables questions: rename, stop animations,
+  languages, verbs, organs, species, AI brain, mass delete). The old answer-callback procs and the href re-run plumbing of those links are deleted.
+  * An actor has one waiting op, so a second link clicked while a question is open cancels it (a re-run left both open).
+  * A question the actor no longer may answer (the rights or reach its prompt class checks) is refused when the answer comes, as before.
+  * **A guard that read untracked state before asking now runs after the answer**, because a requirement may only read tracked state: a mech's tank valve
+    and passenger links ask first and then check the bolts and reach again; the cable reel, the communicator reply and the mind steal ask first and
+    then check what they check; "Give AI" on a player's mob says so in its first question and refuses after the last answer; removing a language from a
+    mob that knows none opens no question and says nothing (it said "This mob knows no languages."); removing a passenger when there is none says
+    "There are no passengers to remove." after the question.
+  * **Newscaster and Wanted confirmations of a draft that cannot be sent** (no name, a name another channel has, no description) now ask once with only an
+    OK button and the reason as the question; they showed the error screen at once.
+  * **Round mode picks and CentCom/syndicate replies refuse with a chat line** where they raised a pop-up ("The game has already started.", "The game mode has to
+    be secret!", no functional radio / no headset); the unban "already lifted" notice is a TGUI alert, as the other admin alerts are.
+  * **A VV "Give AI" no longer rebuilds the brain when its questions are cancelled**: the brain is made when the last answer is in.
+* **A link whose handler asked through `open_request()` and re-ran itself with `topic_ask()` or a replay token** (the ban panel's questions) still
+  re-enters through `topic_dispatch()`; those are the remaining `topic_ask()` sites (admin_topic_bans, admin_topic_mobs, admin_topic_panels, player_notes).

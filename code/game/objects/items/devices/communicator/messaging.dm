@@ -124,35 +124,27 @@ CAPABILITIES(/datum/prompt/text/communicator_reply)
 	if(comm_expected && QDELETED(comm))
 		return "gone"
 
-/obj/item/communicator/proc/reply_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	return reply_apply(A)
-
-/obj/item/communicator/proc/reply_apply(datum/act/request/A)
-	var/datum/prompt/text/communicator_reply/ask = A.answer
-	var/mob/user = ask.answerer
-	var/message = ask.value
-	var/obj/item/communicator/comm = ask.comm
-	if(!message || !comm.exonet)
-		return
-	exonet.send_message(comm.exonet.address, "text", message)
-	LAZYADD(im_list, list(list("address" = exonet.address, "to_address" = comm.exonet.address, "im" = message)))
-	user.log_talk("(COMM: [src]) sent \"[message]\" to [exonet.get_atom_from_address(comm.exonet.address)]", LOG_PDA)
-	to_chat(user, span_notice("[icon2html(src,user.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[message]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[exonet.get_atom_from_address(comm.exonet.address)]'>Reply</a>)"))
-
-TOPIC_ACTION(/obj/item/communicator, "action=Reply", PROC_REF(topic_reply), TOPIC_REF("target", /obj/item/communicator))
 
 // Reply links arrive in chat for whoever carries the communicator (in hand, a pocket, or a NIF).
 /obj/item/communicator/topic_allowed(mob/user, list/href_list)
 	return user && get(src, /mob) == user
 
-/obj/item/communicator/proc/topic_reply(mob/user, list/args)
-	var/obj/item/communicator/comm = args["target"]
-	if(!comm?.exonet)
+/obj/item/communicator/proc/reply_subject(datum/act/op/A)
+	return src
+
+/obj/item/communicator/proc/reply_target(datum/act/op/A)
+	return A.args["target"]
+
+/obj/item/communicator/proc/topic_reply(datum/act/op/A, href_target)
+	var/mob/user = A.actor
+	var/obj/item/communicator/comm = href_target
+	var/message = A.step_value("message")
+	if(!comm?.exonet || !message)
 		return
-	open_request(src, /datum/prompt/text/communicator_reply, PROC_REF(reply_entered), answerer = user, subject = src, comm = comm)
-	return TRUE
+	exonet.send_message(comm.exonet.address, "text", message)
+	LAZYADD(im_list, list(list("address" = exonet.address, "to_address" = comm.exonet.address, "im" = message)))
+	user.log_talk("(COMM: [src]) sent \"[message]\" to [exonet.get_atom_from_address(comm.exonet.address)]", LOG_PDA)
+	to_chat(user, span_notice("[icon2html(src,user.client)] Sent message to [istype(comm, /obj/item/communicator) ? comm.owner : comm.name], <b>\"[message]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[exonet.get_atom_from_address(comm.exonet.address)]'>Reply</a>)"))
 
 // Verb: text_communicator()
 // Parameters: None

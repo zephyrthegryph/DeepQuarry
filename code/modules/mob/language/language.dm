@@ -287,17 +287,12 @@
 
 // check_languages verb body relocated to code/modules/mob/language/language_panel.dm (structured TGUI).
 
-TOPIC_ACTION(/mob/living, "default_lang=reset", PROC_REF(topic_default_lang_reset))
-TOPIC_ACTION(/mob/living, "default_lang", PROC_REF(topic_default_lang), TOPIC_REF("default_lang", /datum/language, PROC_REF(topic_known_languages)))
-TOPIC_ACTION(/mob/living, "set_lang_key", PROC_REF(topic_set_lang_key), TOPIC_REF("set_lang_key", /datum/language, PROC_REF(topic_known_languages)))
 
 /// TOPIC_REF source: the languages this mob knows.
 /mob/living/proc/topic_known_languages()
 	return languages
 
-/mob/living/proc/topic_default_lang_reset(mob/user, list/args)
-	if(user != src)
-		return
+/mob/living/proc/topic_default_lang_reset(datum/act/op/A)
 	if (species_language)
 		apply_default_language(GLOB.all_languages[species_language])
 	else
@@ -305,20 +300,36 @@ TOPIC_ACTION(/mob/living, "set_lang_key", PROC_REF(topic_set_lang_key), TOPIC_RE
 	check_languages()
 	return TRUE
 
-/mob/living/proc/topic_default_lang(mob/user, list/args)
-	if(user != src)
-		return
-	apply_default_language(args["default_lang"])
+/mob/living/proc/topic_default_lang(datum/act/op/A, href_default_lang)
+	apply_default_language(href_default_lang)
 	check_languages()
 	return TRUE
 
-/mob/living/proc/topic_set_lang_key(mob/user, list/args)
-	if(user != src)
-		return
-	var/datum/language/L = args["set_lang_key"]
+/mob/living/proc/language_key_language(datum/act/op/A)
+	return A.args["set_lang_key"]
+
+/mob/living/proc/language_key_question(datum/act/op/A)
+	var/datum/language/L = A.args["set_lang_key"]
+	return "Input a new key for [L.name]"
+
+/mob/living/proc/language_key_default(datum/act/op/A)
+	return get_custom_prefix_by_lang(src, A.args["set_lang_key"])
+
+/// The key a language is spoken with: asked when the link is clicked, set here (the answerer is still checked to know the language, by the prompt).
+/mob/living/proc/topic_set_lang_key(datum/act/op/A, href_set_lang_key)
+	var/datum/language/L = href_set_lang_key
 	var/old_key = get_custom_prefix_by_lang(src, L)
-	open_request(src, /datum/prompt/text/language_key, PROC_REF(language_key_entered), answerer = src, question = "Input a new key for [L.name]", default = old_key, language = L)
-	return TRUE
+	var/custom_key = A.step_value("key")
+	if(custom_key && length(custom_key) == 1)
+		if(contains_az09(custom_key))
+			language_keys[custom_key] = L
+			if(old_key && old_key != custom_key)
+				language_keys.Remove(old_key)
+		else if(custom_key == " ")
+			if(old_key && old_key != custom_key)
+				language_keys.Remove(old_key)
+		else
+			tgui_alert_async(src, "Improper language key. Rejected.", "Error")
 
 /// Re-checked on the answer: the answerer still knows the language.
 /datum/prompt/text/language_key
@@ -342,24 +353,6 @@ CAPABILITIES(/datum/prompt/text/language_key)
 	if(QDELETED(language))
 		return "gone"
 	return (language in answerer.languages) ? null : "language lost"
-
-/mob/living/proc/language_key_entered(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/datum/prompt/text/language_key/ask = A.answer
-	var/datum/language/L = ask.language
-	var/old_key = ask.default
-	var/custom_key = ask.value
-	if(custom_key && length(custom_key) == 1)
-		if(contains_az09(custom_key))
-			language_keys[custom_key] = L
-			if(old_key && old_key != custom_key)
-				language_keys.Remove(old_key)
-		else if(custom_key == " ")
-			if(old_key && old_key != custom_key)
-				language_keys.Remove(old_key)
-		else
-			tgui_alert_async(src, "Improper language key. Rejected.", "Error")
 
 /proc/transfer_languages(mob/source, mob/target, except_flags)
 	for(var/datum/language/L in source.languages)

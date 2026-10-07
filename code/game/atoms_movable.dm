@@ -873,17 +873,17 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 	VV_DROPDOWN_OPTION(VV_HK_GET_MOVABLE, "Get Movable")
 	VV_DROPDOWN_OPTION(VV_HK_EDIT_PARTICLES, "Edit Particles")
 
-VV_TOPIC_ACTION(/atom/movable, VV_HK_GET_MOVABLE, PROC_REF(vv_topic_get_movable), TOPIC_RIGHTS(R_ADMIN))
-VV_TOPIC_ACTION(/atom/movable, VV_HK_EDIT_PARTICLES, PROC_REF(vv_topic_edit_particles), TOPIC_RIGHTS(R_VAREDIT))
 
-/atom/movable/proc/vv_topic_get_movable(mob/user, list/args)
+/atom/movable/proc/vv_topic_get_movable(datum/act/op/A)
+	var/mob/user = A.actor
 	if(ismob(src)) // incase there was a client inside an object being yoinked
 		var/mob/M = src
 		M.reset_perspective(src) // Force reset to self before teleport
 	forceMove(get_turf(user))
 	return TRUE
 
-/atom/movable/proc/vv_topic_edit_particles(mob/user, list/args)
+/atom/movable/proc/vv_topic_edit_particles(datum/act/op/A)
+	var/mob/user = A.actor
 	user.client?.open_particle_editor(src)
 	return TRUE
 

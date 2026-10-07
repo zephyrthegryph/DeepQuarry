@@ -236,6 +236,12 @@
 	var/list/rest = args.Copy(2)
 	return part_make(/datum/entry/part/bind/topic, list("key" = key), entry_flatten(rest))
 
+/// topic_in(NAMESPACE, "key", args...): a Topic link in a separate href namespace (the View Variables dropdown, VV_TOPIC). A plain href never reaches it:
+/// only a dispatch that names the namespace does (op_topic_href(..., namespace)), and that dispatch brings its own gate.
+/proc/topic_in(namespace, key, ...)
+	var/list/rest = args.Copy(3)
+	return part_make(/datum/entry/part/bind/topic, list("key" = key, "namespace" = namespace), entry_flatten(rest))
+
 /// inputs(bindings...): the whole set of an op's bindings; in an extend it replaces them.
 /proc/inputs(...)
 	return part_make(/datum/entry/part/inputs, null, entry_flatten(args))
@@ -257,8 +263,11 @@
 /datum/entry/part/ui_arg
 	part_name = "arg"
 
-/proc/arg(name, datum/schema/schema = null, from = null)
-	return part_make(/datum/entry/part/ui_arg, list("name" = name, "schema" = schema, "from" = from))
+/// optional = TRUE: a link or button may leave the value out, and the handler gets null (a present value still crosses the schema).
+/// among = SOURCE: a ref arg names its thing by the text of its ref, and is looked up only in SOURCE (TOPIC_IN_MOBS, TOPIC_IN_WORLD, TOPIC_IN_CONTENTS, a
+/// proc on the holder that returns the list to search, ...: topic_resolve_ref()) instead of anywhere locate() reaches.
+/proc/arg(name, datum/schema/schema = null, from = null, optional = FALSE, among = null)
+	return part_make(/datum/entry/part/ui_arg, list("name" = name, "schema" = schema, "from" = from, "optional" = optional, "among" = among))
 
 // ---- select parts (each replaces one column of what the binding implies) ----
 

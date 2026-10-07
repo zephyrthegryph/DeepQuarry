@@ -11,7 +11,9 @@
 	page_number = page
 	page_filter = filter
 
-/// This exercises direct handler prompting, not native privileged topic dispatch or report delivery.
+/// This exercises the links as the admin authority (the op, its prompt and its report boundary), not native privileged topic dispatch or report delivery.
+/datum/unit_test/om/interim_player_notes_filter_actor
+
 /datum/unit_test/om/interim_player_notes_filter_actor/run_om(list/made)
 	test_prompts_reset()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
@@ -28,7 +30,7 @@
 	made += holder.admincaster_feed_message
 	made += holder.admincaster_scratch_channel
 	TEST_ASSERT_NULL(holder.owner(), "the actual holder has no native administrative owner")
-	holder.topic_notes_legacy_filter(actor, list())
+	op_perform_by_key(actor, holder, null, "notes_legacy_filter", ORIGIN_UI, AUTH_ADMIN, FALSE)
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 1, "the actual legacy topic handler opens exactly one typed filter prompt")
 	var/datum/prompt/text/ask = GLOB.test_prompts[1]
 	made += ask
@@ -40,7 +42,7 @@
 	TEST_ASSERT_EQUAL(holder.page_number, 1, "the actual filter answer resets the legacy report to page one")
 	TEST_ASSERT_EQUAL(holder.page_filter, "^alice$", "the actual filter answer preserves the exact regex text")
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 1, "the actual answer cache prevents a repeated prompt")
-	holder.topic_notes_legacy_filter(bystander, list())
+	op_perform_by_key(bystander, holder, null, "notes_legacy_filter", ORIGIN_UI, AUTH_ADMIN, FALSE)
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 2, "a separate explicit actor gets a separate actual typed filter prompt")
 	var/datum/prompt/text/cancelled = GLOB.test_prompts[2]
 	made += cancelled
@@ -48,7 +50,7 @@
 	TEST_ASSERT_EQUAL(test_prompt_answer(cancelled, null, TRUE), "no answer", "actual cancellation is delivered through the typed prompt API")
 	TEST_ASSERT_EQUAL(holder.page_calls, 1, "actual cancellation never reaches the report boundary")
 	TEST_ASSERT_EQUAL(holder.page_filter, "^alice$", "actual cancellation preserves the previously accepted filter")
-	holder.topic_notes_legacy_list(bystander, list("index" = 3, "filter" = "%5Ebob%24"))
+	op_perform_by_key(bystander, holder, null, "notes_legacy_list", ORIGIN_UI, AUTH_ADMIN, FALSE, list("index" = 3, "filter" = "%5Ebob%24"))
 	TEST_ASSERT_EQUAL(holder.page_calls, 2, "the actual page topic reaches the boundary once")
 	TEST_ASSERT_EQUAL(holder.page_actor_ref, REF(bystander), "the actual page topic forwards its own explicit actor")
 	TEST_ASSERT_EQUAL(holder.page_number, 3, "the actual page topic preserves the requested page")

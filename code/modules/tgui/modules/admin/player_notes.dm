@@ -314,15 +314,11 @@ CAPABILITIES(/datum/tgui_module/player_notes_info)
 	// structured TGUI AdminReport.
 	dq_admin_report_html(user, "Info on [key]", dat, src)
 
-TOPIC_ACTION(/datum/admins, "add_player_info_legacy", PROC_REF(topic_add_player_info_legacy), TOPIC_TEXT("add_player_info_legacy", 64), TOPIC_RIGHTS(R_ADMIN|R_MOD))
-TOPIC_ACTION(/datum/admins, "remove_player_info_legacy", PROC_REF(topic_remove_player_info_legacy), TOPIC_TEXT("remove_player_info_legacy", 64), TOPIC_NUM("remove_index"), TOPIC_RIGHTS(R_ADMIN|R_MOD))
-TOPIC_ACTION(/datum/admins, "notes_legacy=show", PROC_REF(topic_notes_legacy_show), TOPIC_TEXT("ckey", 64), TOPIC_REF("mob", /mob, TOPIC_IN_MOBS), TOPIC_RIGHTS(R_ADMIN|R_MOD))
-TOPIC_ACTION(/datum/admins, "notes_legacy=list", PROC_REF(topic_notes_legacy_list), TOPIC_NUM("index"), TOPIC_TEXT("filter", 256), TOPIC_RIGHTS(R_ADMIN|R_MOD))
-TOPIC_ACTION(/datum/admins, "notes_legacy=filter", PROC_REF(topic_notes_legacy_filter), TOPIC_RIGHTS(R_ADMIN|R_MOD))
 
-/datum/admins/proc/topic_add_player_info_legacy(mob/user, list/args)
-	var/key = args["add_player_info_legacy"]
-	var/add = topic_ask(user, args, "a1", /datum/prompt/text, question = "Add Player Info (Legacy)", multiline = TRUE)
+/datum/admins/proc/topic_add_player_info_legacy(datum/act/op/A, href_add_player_info_legacy)
+	var/mob/user = A.actor
+	var/key = href_add_player_info_legacy
+	var/add = topic_ask(user, A.topic_href(), "a1", /datum/prompt/text, question = "Add Player Info (Legacy)", multiline = TRUE)
 	if(isnull(add))
 		return
 	if(!add)
@@ -331,28 +327,32 @@ TOPIC_ACTION(/datum/admins, "notes_legacy=filter", PROC_REF(topic_notes_legacy_f
 	show_player_info_legacy(user, key)
 	return TRUE
 
-/datum/admins/proc/topic_remove_player_info_legacy(mob/user, list/args)
-	var/key = args["remove_player_info_legacy"]
-	notes_del(key, args["remove_index"], user)
+/datum/admins/proc/topic_remove_player_info_legacy(datum/act/op/A, href_remove_player_info_legacy, href_remove_index)
+	var/mob/user = A.actor
+	var/key = href_remove_player_info_legacy
+	notes_del(key, href_remove_index, user)
 	show_player_info_legacy(user, key)
 	return TRUE
 
-/datum/admins/proc/topic_notes_legacy_show(mob/user, list/args)
-	var/ckey = args["ckey"]
+/datum/admins/proc/topic_notes_legacy_show(datum/act/op/A, href_ckey, href_mob)
+	var/mob/user = A.actor
+	var/ckey = href_ckey
 	if(!ckey)
-		var/mob/M = args["mob"]
+		var/mob/M = href_mob
 		ckey = M?.ckey
 	show_player_info_legacy(user, ckey)
 	return TRUE
 
-/datum/admins/proc/topic_notes_legacy_list(mob/user, list/args)
+/datum/admins/proc/topic_notes_legacy_list(datum/act/op/A, href_index, href_filter)
+	var/mob/user = A.actor
 	var/filter
-	if(args["filter"] && args["filter"] != "0")
-		filter = url_decode(args["filter"])
-	PlayerNotesPageLegacy(args["index"], filter, user)
+	if(href_filter && href_filter != "0")
+		filter = url_decode(href_filter)
+	PlayerNotesPageLegacy(href_index, filter, user)
 	return TRUE
 
-/datum/admins/proc/topic_notes_legacy_filter(mob/user, list/args)
+/datum/admins/proc/topic_notes_legacy_filter(datum/act/op/A)
+	var/mob/user = A.actor
 	PlayerNotesFilterLegacy(user)
 	return TRUE
 

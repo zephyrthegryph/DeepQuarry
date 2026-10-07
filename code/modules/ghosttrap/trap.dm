@@ -63,11 +63,13 @@ TYPE_TABLE_DECLARE(/datum/ghosttrap, ghosttrap_ban_checks, list(JOB_AI,JOB_CYBOR
 			to_chat(O, "[request_string]<a href='byond://?src=\ref[src];candidate=\ref[O];target=\ref[target]'>Click here</a> if you wish to play as this option.")
 
 // Handles a response to request_player().
-TOPIC_ACTION(/datum/ghosttrap, "candidate", PROC_REF(topic_candidate), TOPIC_REF("candidate", /mob/observer/dead, TOPIC_IN_MOBS), TOPIC_REF("target", /mob, TOPIC_IN_MOBS))
+CAPABILITIES(/datum/ghosttrap)
+	op("candidate", topic("candidate", arg("candidate", schema_ref(/mob/observer/dead), optional = TRUE, among = TOPIC_IN_MOBS), arg("target", schema_ref(/mob), optional = TRUE, among = TOPIC_IN_MOBS)), then(PROC_REF(topic_candidate)))
 
-/datum/ghosttrap/proc/topic_candidate(mob/user, list/args)
-	var/mob/observer/dead/candidate = args["candidate"]
-	var/mob/target = args["target"]
+/datum/ghosttrap/proc/topic_candidate(datum/act/op/A, href_candidate, href_target)
+	var/mob/user = A.actor
+	var/mob/observer/dead/candidate = href_candidate
+	var/mob/target = href_target
 	if(!target || !candidate)
 		return
 	if(candidate == user && assess_candidate(candidate) && !target.ckey)

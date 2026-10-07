@@ -44,6 +44,7 @@ CAPABILITIES(/obj)
 	owns_one(nameof(reactive_icon), /datum/reactive_icon_update)
 	owns_one(nameof(talking_atom), /datum/talking_atom)
 	owns_one(nameof(attached_assembly), /obj/item/assembly)
+	op("vv_mass_delete_type", topic_in(VV_TOPIC, VV_HK_MASS_DEL_TYPE), needs(req_rights(R_DEBUG|R_SERVER)), asks(/datum/prompt/choice/mass_delete_scope, step = "scope"), asks(/datum/prompt/yes_no/mass_delete, step = "sure", when = PROC_REF(mass_delete_not_cancelled)), asks(/datum/prompt/yes_no/mass_delete, fields = list("second" = TRUE), step = "again", when = PROC_REF(mass_delete_not_cancelled)), then(PROC_REF(vv_topic_mass_delete_type)))
 
 
 /// TRUE while this object burns.

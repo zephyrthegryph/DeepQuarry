@@ -326,6 +326,8 @@ CAPABILITIES(/obj/item/rcd)
 	owns_many(nameof(effects))
 	op("rcd_item", item(/obj/item), label("Load"), then(PROC_REF(rcd_item)))
 	op("rcd_self", in_hand(), label("Select mode"), then(PROC_REF(rcd_self)))
+	op("close", topic("close"), then(PROC_REF(topic_close)))
+	op("access", topic("access", arg("access", schema_text(16), optional = TRUE)), then(PROC_REF(topic_access)))
 
 // Ammo for the (non-electric) RCDs.
 /obj/item/rcd_ammo

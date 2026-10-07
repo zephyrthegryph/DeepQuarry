@@ -828,8 +828,6 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 	// structured TGUI AdminReport; byond:// links forwarded to host.
 	dq_admin_report_html(user, "Access Control", t1, src)
 
-TOPIC_ACTION(/obj/item/rcd, "close", PROC_REF(topic_close))
-TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access", 16))
 
 /obj/item/rcd/topic_allowed(mob/user, list/href_list)
 	. = ..()
@@ -838,13 +836,14 @@ TOPIC_ACTION(/obj/item/rcd, "access", PROC_REF(topic_access), TOPIC_TEXT("access
 	if(user.stat || user.restrained())
 		return FALSE
 
-/obj/item/rcd/proc/topic_close(mob/user, list/args)
+/obj/item/rcd/proc/topic_close(datum/act/op/A)
 	// close TGUI window
 	SStgui.close_uis(src)
 	return TRUE
 
-/obj/item/rcd/proc/topic_access(mob/user, list/args)
-	toggle_access(args["access"])
+/obj/item/rcd/proc/topic_access(datum/act/op/A, href_access)
+	var/mob/user = A.actor
+	toggle_access(href_access)
 	change_airlock_access(user)
 	return TRUE
 

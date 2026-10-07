@@ -43,6 +43,10 @@
 /datum/act/op/proc/captured(name)
 	return LAZYACCESS(captured_values, name)
 
+/// The raw href list a topic op was reached by, or null for any other input.
+/datum/act/op/proc/topic_href()
+	return LAZYACCESS(src.args, OP_TOPIC_HREF)
+
 /// The window action that reached the op (a ui_act("*") op answers many: the embedded controller's program command), or null for any other input.
 /datum/act/op/proc/window_action()
 	return LAZYACCESS(src.args, OP_UI_WINDOW_ACTION)

@@ -329,7 +329,7 @@ fn op_ui_args(body: &str, pos: usize) -> Option<Vec<String>> {
             continue;
         }
         match word {
-            "ui_act" | "topic" => bound = true,
+            "ui_act" | "topic" | "topic_in" => bound = true,
             "arg" => {
                 let open_arg = j + skip;
                 if let Some(close_arg) = matching_paren(text, open_arg) {

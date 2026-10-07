@@ -57,6 +57,8 @@
 #define OP_UI_FORWARDED_BY "window_forwarded_by"
 /// The tgui window a button was pressed in (A.window_ui()), when it came through one.
 #define OP_UI_TGUI "window_tgui"
+/// The raw href a topic op was reached by (A.topic_href()): its params are the op's args, and a re-run of an ask reads it.
+#define OP_TOPIC_HREF "topic_href"
 /// How many windows deep a window action is forwarded (interface(forwards = ...)).
 #define OP_UI_FORWARD_DEPTH 3
 

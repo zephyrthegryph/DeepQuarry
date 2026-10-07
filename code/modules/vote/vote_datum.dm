@@ -121,9 +121,9 @@
 		You have [time/10] seconds to vote."))
 	world << sound('sound/ambience/alarm4.ogg', repeat = 0, wait = 0, volume = 50, channel = 3)
 
-TOPIC_ACTION(/datum/vote, "vote=open", PROC_REF(topic_open))
 
-/datum/vote/proc/topic_open(mob/user, list/args)
+/datum/vote/proc/topic_open(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
 	return TRUE
 
@@ -151,6 +151,7 @@ TOPIC_ACTION(/datum/vote, "vote=open", PROC_REF(topic_open))
 CAPABILITIES(/datum/vote)
 	interface("VotePanel", title = "Vote Panel", state = nameof(GLOB.tgui_always_state))
 	op("vote", ui_act("vote", arg("target", schema_text(4096))), then(PROC_REF(ui_act_vote)))
+	op("vote_open", topic("vote=open"), then(PROC_REF(topic_open)))
 
 /datum/vote/ui_data(datum/act/eval/A)
 	var/list/data = list()

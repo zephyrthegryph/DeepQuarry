@@ -66,6 +66,9 @@ GLOBAL_LIST_EMPTY(topic_tables)
 	if(istype(user, /client))
 		var/client/UC = user
 		user = UC.mob
+	// An op that names the href answers it (the inbox tried first for a player's link; this reaches the admin holder's own, a re-run answer and a forward).
+	if(user && op_topic_href(user, target, href_list))
+		return TRUE
 	var/list/row = topic_find_row(target, href_list)
 	if(!row)
 		var/datum/D = target
