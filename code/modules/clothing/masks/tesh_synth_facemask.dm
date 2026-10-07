@@ -13,7 +13,9 @@
 
 /// The wearer it is installed on (a relation view); the visor follows their state while set.
 OM_FIELD_VIEW(/obj/item/clothing/mask/synthfacemask, mob/living/carbon, maskmaster, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/mask/synthfacemask, PERIODIC_SECOND, "maskmaster")
+
+CAPABILITIES(/obj/item/clothing/mask/synthfacemask)
+	every(1 SECOND, then(PROC_REF(synthfacemask_step)), when = nameof(maskmaster))
 
 /obj/item/clothing/mask/synthfacemask/equipped()
 	..()
@@ -46,7 +48,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/synthfacemask, TYPE_PROC_REF(/at
 			icon_state = "synth_facemask"
 	if(istype(H)) H.update_inv_wear_mask()
 
-/obj/item/clothing/mask/synthfacemask/periodic_step()
+/obj/item/clothing/mask/synthfacemask/proc/synthfacemask_step(datum/act/timer/A)
 	if(maskmaster() && lstat != maskmaster().stat)
 		lstat = maskmaster().stat
 		visor_state = "Neutral" //This does nothing at the moment, but it's there incase anyone wants to add more states.

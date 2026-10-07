@@ -2,23 +2,21 @@
 	..()
 	after(src, 0.1 SECONDS, PROC_REF(delete_if_dropped))
 
-EXTEND_INTERACTIONS(/obj/item/holder, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(holder_pick_up)))
-
 /**
  * Old attack_hand (both of them: the egg check from holder_micro.dm ran first, then this). Replaces the
  * item "Pick up": straight up just copypasted from objects/items.dm with a few things changed
  * (doesn't call dropped unless +actually dropped+).
  */
-/obj/item/holder/proc/holder_pick_up(mob/living/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	if (!user) return
+/obj/item/holder/proc/holder_pick_up(datum/act/op/A)
+	var/mob/living/user = A.actor
+	if (!user) return OP_OK
 	if(istype(src.loc, /obj/item/storage/vore_egg)) //Don't scoop up the egged mob
 		src.pickup(user)
 		user.drop_from_inventory(src)
-		return
+		return OP_OK
 	if(anchored)
 		to_chat(user, span_notice("\The [src] won't budge, you can't pick it up!"))
-		return
+		return OP_OK
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
@@ -26,27 +24,27 @@ EXTEND_INTERACTIONS(/obj/item/holder, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(
 			temp = H.organs_by_name[BP_L_HAND]
 		if(temp && !temp.is_usable())
 			to_chat(user, span_notice("You try to move your [temp.name], but cannot!"))
-			return
+			return OP_OK
 		if(!temp)
 			to_chat(user, span_notice("You try to use your hand, but realize it is no longer attached!"))
-			return
-	if(held_mob == user) return // No picking your own micro self up
+			return OP_OK
+	if(held_mob == user) return OP_OK // No picking your own micro self up
 
 	var/old_loc = src.loc
 	if (istype(src.loc, /obj/item/storage))
 		var/obj/item/storage/S = src.loc
 		if(!S.remove_from_storage(src))
-			return
+			return OP_OK
 
 	src.pickup(user)
 	if (src.loc == user)
 		if(!mob_can_unequip(user, user.inventory_slot_id(src)))
-			return
+			return OP_OK
 		else
 			user.temporarilyRemoveItemFromInventory(src)
 	else
 		if(isliving(src.loc))
-			return
+			return OP_OK
 
 	if(user.put_in_active_hand(src))
 		if(isturf(old_loc))
@@ -64,7 +62,7 @@ EXTEND_INTERACTIONS(/obj/item/holder, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(
 		If this is not something you wish to partake in, it is highly suggested you place the item back down.
 		If this is fine to you, ensure that the other player is fine with you doing things to them beforehand!
 		"},"OOC Warning")
-	return
+	return OP_OK
 
 /obj/item/holder/proc/delete_if_dropped()
 	if(!throwing && isturf(loc))

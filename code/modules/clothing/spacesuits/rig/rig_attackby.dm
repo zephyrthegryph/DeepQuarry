@@ -5,56 +5,40 @@
 	mod.installed(src)
 	update_icon()
 
-EXTEND_INTERACTIONS(/obj/item/rig, \
-	INTERACT_ITEM(null, PROC_REF(rig_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(rig_shock_hand)), \
-	INTERACT_VERB("Open Hardsuit Interface", PROC_REF(rig_hardsuit_interface_verb), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Toggle Visor", PROC_REF(rig_toggle_vision_verb), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/rig/proc/pred_rig_worn), REQ_TARGET_STATE(/obj/item/rig/proc/pred_rig_active), REQ_FIELD("visor", "the hardsuit does not have a configurable visor")), \
-	INTERACT_VERB("Toggle Helmet", PROC_REF(rig_toggle_helmet_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/rig/proc/pred_has_helmet, "it has no helmet"), REQ_TARGET_STATE(/obj/item/rig/proc/pred_rig_worn)), \
-	INTERACT_VERB("Toggle Chestpiece", PROC_REF(rig_toggle_chest_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/rig/proc/pred_has_chest, "it has no chestpiece")), \
-	INTERACT_VERB("Toggle Gauntlets", PROC_REF(rig_toggle_gauntlets_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/rig/proc/pred_has_gauntlets, "it has no gauntlets"), REQ_TARGET_STATE(/obj/item/rig/proc/pred_rig_worn)), \
-	INTERACT_VERB("Toggle Boots", PROC_REF(rig_toggle_boots_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/rig/proc/pred_has_boots, "it has no boots"), REQ_TARGET_STATE(/obj/item/rig/proc/pred_rig_worn)), \
-	INTERACT_VERB("Deploy Hardsuit", PROC_REF(rig_deploy_suit_verb), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/rig/proc/pred_rig_worn)), \
-	INTERACT_VERB("Toggle Hardsuit", PROC_REF(rig_toggle_seals_verb), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/rig/proc/pred_rig_worn)), \
-	INTERACT_VERB("Switch Vision Mode", PROC_REF(rig_switch_vision_mode_verb), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/rig/proc/pred_rig_active), REQ_FIELD("visor", "the hardsuit does not have a configurable visor")), \
-	INTERACT_VERB("Configure Voice Synthesiser", PROC_REF(rig_alter_voice_verb), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/rig/proc/pred_rig_active), REQ_TARGET_STATE(/obj/item/rig/proc/pred_rig_worn), REQ_FIELD("speech", "the hardsuit does not have a speech synthesiser")), \
-	INTERACT_VERB("Select Module", PROC_REF(rig_select_module_verb), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/rig/proc/pred_rig_active), REQ_TARGET_STATE(/obj/item/rig/proc/pred_rig_worn)), \
-	INTERACT_VERB("Toggle Module", PROC_REF(rig_toggle_module_verb), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/rig/proc/pred_rig_active), REQ_TARGET_STATE(/obj/item/rig/proc/pred_rig_worn)), \
-	INTERACT_VERB("Engage Module", PROC_REF(rig_engage_module_verb), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/rig/proc/pred_rig_active), REQ_TARGET_STATE(/obj/item/rig/proc/pred_rig_worn)), \
-)
-
 /// Old attackby: lock, install a tank, module or cell, or hand the item to a module.
-/obj/item/rig/proc/rig_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+/obj/item/rig/proc/rig_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(electrified != 0)
 		if(shock(user)) //Handles removing charge from the cell, as well. No need to do that here.
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 	// Pass repair items on to the chestpiece.
 	if(chest && istype(W, /obj/item/stack/material))
-		return chest.attackby(W,user) ? TRUE : INTERACTION_HANDLED_PASS
+		return chest.attackby(W,user) ? OP_OK : OP_PASS
 
 	// Lock or unlock the access panel.
 	if(W.GetID())
 		if(subverted)
 			locked = 0
 			to_chat(user, span_danger("It looks like the locking system has been shorted out."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access))
 			locked = 0
 			to_chat(user, span_danger("\The [src] doesn't seem to have a locking mechanism."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		if(security_check_enabled && !src.allowed(user))
 			to_chat(user, span_danger("Access denied."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		locked = !locked
 		to_chat(user, "You [locked ? "lock" : "unlock"] \the [src] access panel.")
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(open)
 		// Air tank.
@@ -62,13 +46,13 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 
 			if(air_supply)
 				to_chat(user, "\The [src] already has a tank installed.")
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 
 			if(!move_into(src, nameof(src.air_supply), W, user))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			to_chat(user, "You slot [W] into [src] and tighten the connecting valve.")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		// Check if this is a hardsuit upgrade or a modification.
 		else if(istype(W,/obj/item/rig_module))
@@ -76,34 +60,34 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 				var/mob/living/carbon/human/H = src.loc
 				if(H.get_equipped_item(SLOT_ID_BACK) == src || H.get_equipped_item(SLOT_ID_BELT) == src)
 					to_chat(user, span_danger("You can't install a hardsuit module while the suit is being worn."))
-					return TRUE
+					return OP_OK
 
 			if(length(installed_modules))
 				for(var/obj/item/rig_module/installed_mod in installed_modules)
 					if(!installed_mod.redundant && istype(installed_mod,W))
 						to_chat(user, "The hardsuit already has a module of that class installed.")
-						return TRUE
+						return OP_OK
 
 			var/obj/item/rig_module/mod = W
 			to_chat(user, "You begin installing \the [mod] into \the [src].")
 			task_timed(user, 4 SECONDS, src, src, PROC_REF(install_module_done), list(user, mod))
-			return TRUE
+			return OP_OK
 
 		else if(!cell && istype(W,/obj/item/cell))
 
 			to_chat(user, "You jack \the [W] into \the [src]'s battery mount.")
 			if(!move_into(src, nameof(src.cell), W, user))
-				return INTERACTION_HANDLED_PASS
-			return INTERACTION_HANDLED_PASS
+				return OP_PASS
+			return OP_PASS
 
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	// If we've gotten this far, all we have left to do before we pass off to root procs
 	// is check if any of the loaded modules want to use the item we've been given.
 	for(var/obj/item/rig_module/module in installed_modules)
 		if(module.accepts_item(W,user)) //Item is handled in this proc
-			return INTERACTION_HANDLED_PASS
-	return FALSE
+			return OP_PASS
+	return OP_DECLINE
 
 /obj/item/rig/welder_act(mob/user, obj/item/tool)
 	if(!chest)
@@ -191,11 +175,12 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 
 
 /// Old attack_hand: an electrified suit shocks whoever grabs it.
-/obj/item/rig/proc/rig_shock_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/rig/proc/rig_shock_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(electrified != 0)
 		if(shock(user)) //Handles removing charge from the cell, as well. No need to do that here.
-			return TRUE
-	return FALSE
+			return OP_OK
+	return OP_DECLINE
 
 /obj/item/rig/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor

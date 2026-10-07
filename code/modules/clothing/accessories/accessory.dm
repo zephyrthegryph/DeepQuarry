@@ -867,26 +867,27 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
 /obj/item/clothing/accessory/collar/holo/indigestible/digest_act(atom/movable/item_storage = null)
 	return FALSE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
-	INTERACT_SELF(null, PROC_REF(collar_tag_self)), \
-	INTERACT_ITEM(null, PROC_REF(collar_tag_item)), \
-)
+CAPABILITIES(/obj/item/clothing/accessory/collar)
+	op("collar_tag_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Collar tag self"), then(PROC_REF(collar_tag_self)))
+	op("collar_tag_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Collar tag item"), then(PROC_REF(collar_tag_item)))
 
 /// Old attack_self: set the tag. Returns FALSE where the old body returned nothing, so subtypes'
 /// legacy attack_self bodies that ran after ..() still run.
-/obj/item/clothing/accessory/collar/proc/collar_tag_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/collar/proc/collar_tag_self(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/held = A.held
 	if(special_collar)
-		return FALSE
+		return OP_DECLINE
 	if(istype(src,/obj/item/clothing/accessory/collar/holo))
 		to_chat(user,span_notice("[name]'s interface is projected onto your hand."))
 	else
 		if(writtenon)
 			to_chat(user,span_notice("You need a pen or a screwdriver to edit the tag on this collar."))
-			return FALSE
+			return OP_DECLINE
 		to_chat(user,span_notice("You adjust the [name]'s tag."))
 
-	open_collar_tag(user, held, interaction)
-	return TRUE
+	open_collar_tag(user, held, null)
+	return OP_OK
 
 /obj/item/clothing/accessory/collar/proc/open_collar_tag(mob/user, obj/item/held, datum/interaction/interaction, tool_edit = FALSE, erasemethod, erasing, writemethod)
 	var/original_client_ckey
@@ -947,20 +948,22 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 		desc = initial(desc) + " The tag says \"[tag]\"."
 
 /// Old attackby: edit the tag with a pen or screwdriver. Never fell through to the clothing attackby.
-/obj/item/clothing/accessory/collar/proc/collar_tag_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/clothing/accessory/collar/proc/collar_tag_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(src,/obj/item/clothing/accessory/collar/holo))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(I.has_tool_quality(TOOL_SCREWDRIVER))
 		update_collartag(user, I, "scratched out", "scratch out", "engraved")
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(I,/obj/item/pen))
 		update_collartag(user, I, "crossed out", "cross out", "written")
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	to_chat(user,span_notice("You need a pen or a screwdriver to edit the tag on this collar."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/clothing/accessory/collar/proc/update_collartag(mob/user, obj/item/I, erasemethod, erasing, writemethod)
 	if(!(istype(user.get_active_hand(),I)) || !(istype(user.get_inactive_hand(),src)) || (user.stat))

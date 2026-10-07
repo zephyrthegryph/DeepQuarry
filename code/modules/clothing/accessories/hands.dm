@@ -33,40 +33,22 @@
 	desc = "A beautiful friendship bracelet in all the colors of the rainbow."
 	icon_state = "friendbracelet"
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bracelet/friendship, \
-	INTERACT_VERB("Dedicate Bracelet", PROC_REF(friendship_dedicate_bracelet_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/accessory/bracelet/friendship)
+	op("friendship_dedicate_bracelet_verb", menu(), label("Dedicate Bracelet"), needs(carried()), asks(/datum/prompt/text, fields = list("question" = "Who do you want to dedicate the bracelet to?", "title" = "Friendship Bracelet", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "a1"), then(PROC_REF(friendship_dedicate_bracelet_verb)))
 
-/// Old verb "Dedicate Bracelet".
-/obj/item/clothing/accessory/bracelet/friendship/proc/friendship_dedicate_bracelet_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/M = user
+/// Old verb "Dedicate Bracelet": the answer is who the bracelet is dedicated to.
+/obj/item/clothing/accessory/bracelet/friendship/proc/friendship_dedicate_bracelet_verb(datum/act/op/A)
+	var/mob/M = A.actor
 	if(!M.mind)
-		return 0
-
-	open_request(src, /datum/prompt/text, PROC_REF(friendship_dedication_entered), answerer = M, question = "Who do you want to dedicate the bracelet to?", title = "Friendship Bracelet", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE, timeout = 0)
-
-/obj/item/clothing/accessory/bracelet/friendship/proc/friendship_dedication_entered(datum/act/request/A)
-	if(!A.answer)
 		return
-	. = apply_friendship_dedication(A)
-	SStgui.update_uis(src)
-
-/obj/item/clothing/accessory/bracelet/friendship/proc/apply_friendship_dedication(datum/act/request/A)
-	if(!A.answer)
-		return
-	var/mob/M = A.request.answerer
-	if(!M.mind)
-		return 0
-	var/_answer_a1 = A.answer.value
+	var/_answer_a1 = A.step_value("a1")
 	if(isnull(_answer_a1))
 		return
 	var/input = sanitizeSafe(_answer_a1, MAX_NAME_LEN)
 
-	if(src && input && !M.stat && in_range(M,src))
+	if(input && !M.stat && in_range(M,src))
 		desc = "A beautiful friendship bracelet in all the colors of the rainbow. It's dedicated to [input]."
 		to_chat(M, "You dedicate the bracelet to [input], remembering the times you've had together.")
-		return 1
-
 
 /obj/item/clothing/accessory/bracelet/material
 	icon_state = "materialbracelet"

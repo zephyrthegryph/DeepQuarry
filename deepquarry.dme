@@ -5760,6 +5760,7 @@
 #include "code\library\structures\buckle.dm"
 #include "code\library\structures\climb.dm"
 #include "code\library\structures\rotatable.dm"
+#include "code\library\items\actor_slot.dm"
 #include "code\library\items\held_verb.dm"
 #include "code\library\items\stackable.dm"
 #include "code\library\items\trait.dm"

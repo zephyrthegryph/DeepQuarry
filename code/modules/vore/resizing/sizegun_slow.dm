@@ -28,8 +28,6 @@ TRACKED(/obj/item/slow_sizegun, sizeshift_mode)
 
 /// Set to true when scanning, to stop multiple scans.
 OM_FIELD(/obj/item/slow_sizegun, busy, FALSE, CHANGE_EXPLICIT)
-/// The beam steps every 0.3 s while busy.
-DECLARE_REPEAT(/obj/item/slow_sizegun, 0.3 SECONDS, sizegun_step, "busy")
 /// The look (the draw sweep: from its template).
 /obj/item/slow_sizegun/draw(datum/look/look)
 	..()
@@ -147,7 +145,7 @@ DECLARE_REPEAT(/obj/item/slow_sizegun, 0.3 SECONDS, sizegun_step, "busy")
 	var/active_hand = user.get_active_hand()
 	var/previous_scale = L.size_multiplier
 
-	// The beam steps every 0.3 s while busy (DECLARE_REPEAT; S10b: was a stoplag() loop) until
+	// The beam steps every 0.3 s while busy (an every() while busy; S10b: was a stoplag() loop) until
 	// should_stop(). The target, user, hand and beam are relation views on the gun, so a deleted
 	// target or user still reaches sizegun_finish() and the effects are cleaned up.
 	rel_set(src, nameof(scan_user), user)
@@ -158,18 +156,18 @@ DECLARE_REPEAT(/obj/item/slow_sizegun, 0.3 SECONDS, sizegun_step, "busy")
 	if(should_stop(L, user, active_hand))
 		sizegun_finish()
 
-/// One step of the beam (DECLARE_REPEAT while busy): resize, then stop if it should.
-/obj/item/slow_sizegun/proc/sizegun_step()
+/// One step of the beam (the every() while busy): resize, then stop if it should.
+/obj/item/slow_sizegun/proc/sizegun_step(datum/act/timer/A)
 	var/list/state = beam_state
 	if(!state)
 		set_busy(FALSE)
-		return REPEAT_STOP
+		return
 	var/mob/living/L = current_target
 	var/mob/living/U = scan_user
 	var/active_hand = scan_hand
 	if(!L || !U)
 		sizegun_finish()
-		return REPEAT_STOP
+		return
 	if(sizeshift_mode == SIZE_SHRINK)
 		L.resize((L.size_multiplier - size_increment), uncapped = L.has_large_resize_bounds(), aura_animation = FALSE)
 		if(trading == 1)
@@ -180,7 +178,7 @@ DECLARE_REPEAT(/obj/item/slow_sizegun, 0.3 SECONDS, sizegun_step, "busy")
 			U.resize((U.size_multiplier - size_increment), uncapped = U.has_large_resize_bounds(), aura_animation = FALSE)
 	if(should_stop(L, U, active_hand))
 		sizegun_finish()
-		return REPEAT_STOP
+		return
 
 /// The beam ends: size-strip the target if it changed enough, then clean up the effects.
 /obj/item/slow_sizegun/proc/sizegun_finish()
@@ -220,6 +218,8 @@ DECLARE_REPEAT(/obj/item/slow_sizegun, 0.3 SECONDS, sizegun_step, "busy")
 CAPABILITIES(/obj/item/slow_sizegun)
 	op("slow_sizegun_mode_self", in_hand(), label("Switch mode"), then(PROC_REF(slow_sizegun_mode_self)))
 	op("slow_sizegun_trading_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle size trading"), then(PROC_REF(slow_sizegun_trading_alt)))
+	// The beam steps every 0.3 s while busy; sizegun_finish() clears busy, which ends the work.
+	every(0.3 SECONDS, then(PROC_REF(sizegun_step)), when = nameof(busy))
 
 /// Old attack_self: stop a scan in progress, or swap between growing and shrinking.
 /obj/item/slow_sizegun/proc/slow_sizegun_mode_self(datum/act/op/A)

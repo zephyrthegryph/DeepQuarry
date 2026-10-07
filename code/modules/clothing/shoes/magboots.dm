@@ -31,11 +31,13 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, fit_spec, null)
 	if (magpulse)
 		slowdown += 3
 
-EXTEND_INTERACTIONS(/obj/item/clothing/shoes/magboots, INTERACT_USE("Toggle", PROC_REF(magboots_toggle_self)))
+CAPABILITIES(/obj/item/clothing/shoes/magboots)
+	op("magboots_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(magboots_toggle_self)))
 
 /// Old attack_self: toggle the magnetic grip, after the shoes' own self-use (the old ..()).
-/obj/item/clothing/shoes/magboots/proc/magboots_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
-	shoes_shake_out_self(user, held, interaction)
+/obj/item/clothing/shoes/magboots/proc/magboots_toggle_self(datum/act/op/A)
+	var/mob/user = A.actor
+	shoes_shake_out_self(A)
 	if(magpulse)
 		item_flags &= ~NOSLIP
 		magpulse = FALSE
