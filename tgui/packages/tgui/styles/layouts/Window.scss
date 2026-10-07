@@ -42,6 +42,20 @@
   height: 0.5rem;
 }
 
+.Window--readonly {
+  .Window__rest button,
+  .Window__rest input,
+  .Window__rest select,
+  .Window__rest textarea,
+  .Window__rest [role='button'],
+  .Window__rest [role='slider'],
+  .Window__rest [role='combobox'] {
+    pointer-events: none;
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
 .Window__dimmer {
   pointer-events: none;
   position: fixed;

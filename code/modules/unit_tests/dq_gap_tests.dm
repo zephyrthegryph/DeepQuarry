@@ -471,6 +471,21 @@
 	R = test_click(ghost, target, null)
 	TEST_ASSERT_NOTEQUAL(R?.outcome, ACT_COMMITTED, "the window's requirement (extend on ui_observe) stops the view too")
 
+/// A window's ui_data(A) sees A.observer: TRUE for a ghost's read-only view, FALSE for a living viewer; a ghost without a window is an observer view.
+/datum/unit_test/dq_gap/ui_data_sees_the_observer_flag
+/datum/unit_test/dq_gap/ui_data_sees_the_observer_flag/run_gap()
+	var/mob/living/carbon/human/H = person()
+	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, run_loc_floor_bottom_left)
+	var/obj/gap_observed_window/target = allocate(/obj/gap_observed_window, run_loc_floor_bottom_left)
+	TEST_ASSERT(tgui_is_observer_view(ghost, null), "a ghost's window is the read-only view")
+	TEST_ASSERT(!tgui_is_observer_view(H, null), "a living viewer's is not")
+	var/list/seen = list()
+	present_tgui_data(target, ghost, seen, tgui_is_observer_view(ghost, null))
+	TEST_ASSERT(seen["saw_observer"], "ui_data reads A.observer = TRUE for the ghost")
+	var/list/living = list()
+	present_tgui_data(target, H, living, tgui_is_observer_view(H, null))
+	TEST_ASSERT(!living["saw_observer"], "and FALSE for a living viewer")
+
 /// The chemical dispenser and synthesizer give a ghost the read-only view; a broken dispenser shows nothing.
 /datum/unit_test/dq_gap/reagent_machines_show_the_ghost_view
 /datum/unit_test/dq_gap/reagent_machines_show_the_ghost_view/run_gap()
