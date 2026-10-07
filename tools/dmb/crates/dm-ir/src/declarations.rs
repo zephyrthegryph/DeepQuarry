@@ -364,6 +364,30 @@ pub struct DeclarationMeaning {
     pub resolved_constant: Option<SemanticValue>,
     pub canonical: Arc<[u8]>,
 }
+impl DeclarationMeaning {
+    pub fn canonical_bytes(&self) -> Vec<u8> {
+        fn part(out: &mut Vec<u8>, bytes: &[u8]) {
+            out.extend_from_slice(&(bytes.len() as u64).to_le_bytes()); out.extend_from_slice(bytes);
+        }
+        fn optional(out: &mut Vec<u8>, bytes: Option<Vec<u8>>) {
+            out.push(u8::from(bytes.is_some()));
+            if let Some(bytes) = bytes { part(out, &bytes); }
+        }
+        let mut out = b"dm-declaration-meaning-v1\0".to_vec();
+        optional(&mut out, self.inherited_opaque.as_ref().map(|v| v.canonical_bytes()));
+        for value in [self.declared_type, self.list_element_type, self.display_name] {
+            optional(&mut out, value.map(|v| v.bits().to_le_bytes().to_vec()));
+        }
+        out.extend_from_slice(&self.flags.to_le_bytes());
+        optional(&mut out, self.procedure.as_ref().map(|v| v.canonical_bytes()));
+        optional(&mut out, self.array.as_ref().map(|v| v.canonical_bytes()));
+        optional(&mut out, self.initializer.as_ref().map(|v| v.canonical_bytes()));
+        optional(&mut out, self.declared_initializer.as_ref().map(|v| v.canonical_bytes()));
+        optional(&mut out, self.resolved_constant.as_ref().map(|v| v.canonical_bytes()));
+        part(&mut out, &self.canonical);
+        out
+    }
+}
 impl Default for DeclarationMeaning {
     fn default() -> Self {
         Self {

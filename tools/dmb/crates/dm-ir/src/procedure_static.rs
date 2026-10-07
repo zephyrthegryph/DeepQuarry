@@ -3,14 +3,14 @@
 use crate::{ArrayDeclaration, InitializerValue, SymbolId};
 use std::sync::Arc;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
 pub struct ProcedureIdentity {
     pub owner: SymbolId,
     pub name: SymbolId,
     pub verb: bool,
     pub occurrence: u32,
 }
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
 pub struct ProcedureStaticIdentity {
     pub procedure: ProcedureIdentity,
     pub name: SymbolId,
