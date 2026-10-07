@@ -1,0 +1,2 @@
+/obj/item/rms max_charge=0 runtime: Division by zero
+
