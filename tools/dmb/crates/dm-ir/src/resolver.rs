@@ -122,6 +122,15 @@ pub enum ResolvedMeaning {
         declaring_owner: SymbolId,
         name: SymbolId,
     },
+    /// Exact named procedure in an immutable engine table prefix. Its bytecode
+    /// and ABI remain in that captured image; no source signature is invented.
+    RetainedProc {
+        declaring_owner: SymbolId,
+        name: SymbolId,
+        verb: bool,
+        engine_identity: u128,
+        wire_proc: u32,
+    },
     Member {
         owner: SymbolId,
         name: SymbolId,

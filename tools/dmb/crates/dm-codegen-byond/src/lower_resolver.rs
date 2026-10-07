@@ -275,7 +275,7 @@ impl ProjectResolver<'_> {
         match self.answer(query)? {
             M::Missing => Ok(false),
             M::Presence(value) => Ok(value),
-            M::Member { .. } | M::IntrinsicProc { .. } | M::Symbol(_) | M::Slot { .. } => Ok(true),
+            M::Member { .. } | M::IntrinsicProc { .. } | M::RetainedProc { .. } | M::Symbol(_) | M::Slot { .. } => Ok(true),
             _ => Err(self.error(query, "invalid presence answer")),
         }
     }
@@ -347,16 +347,23 @@ impl ProjectResolver<'_> {
         // A positively issued procedure therefore selects the callable without
         // requiring an unrelated negative answer from a partial engine catalog.
         let (answer, query, namespace) = match procedure {
-            answer @ (M::Member { .. } | M::IntrinsicProc { .. }) =>
+            answer @ (M::Member { .. } | M::IntrinsicProc { .. } | M::RetainedProc { verb: false, .. }) =>
                 (answer, proc_query, "proc"),
             M::Missing => match self.answer(verb_query)? {
                 M::Missing => return Ok(None),
-                answer @ M::Member { .. } => (answer, verb_query, "verb"),
+                answer @ (M::Member { .. } | M::RetainedProc { verb: true, .. }) => (answer, verb_query, "verb"),
                 _ => return Err(self.error(verb_query, "procedure declaration metadata unavailable")),
             },
             _ => return Err(self.error(proc_query, "procedure declaration metadata unavailable")),
         };
         match answer {
+            M::RetainedProc { declaring_owner, name, verb, .. }
+                if name == name_id && verb == (namespace == "verb") => {
+                // This exact engine procedure is already linked in the retained
+                // prefix. Runtime name dispatch needs no fabricated source unit.
+                self.text(query, declaring_owner)?;
+                Ok(None)
+            }
             M::IntrinsicProc {
                 declaring_owner,
                 name,

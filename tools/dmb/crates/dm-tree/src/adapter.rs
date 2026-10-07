@@ -177,9 +177,11 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         .map_or((header, None), |index| {
                             (header[..index].trim(), Some(header[index + 1..].trim()))
                         });
-                    let (prefix, tail) = declaration
-                        .split_once("var/")
+                    let separator = declaration.match_indices("var/")
+                        .find(|(index, _)| *index == 0 || declaration.as_bytes()[index - 1] == b'/')
+                        .map(|(index, _)| index)
                         .ok_or("var namespace block requires normalization")?;
+                    let (prefix, tail) = (&declaration[..separator], &declaration[separator + 4..]);
                     let owner = if prefix == "/" || (prefix.is_empty() && header.starts_with('/')) {
                         "/".into()
                     } else if prefix.is_empty() {
@@ -615,6 +617,17 @@ mod tests {
             prepare("/client\n    parent_type = /datum\n/datum\n    parent_type = /client\n"),
             Err(SnapshotError::Tree(crate::TreeError::InheritanceCycle(_)))
         ));
+    }
+    #[test]
+    fn var_namespace_separator_does_not_split_owner_component_suffix() {
+        let result = adapt("/datum/property_provider/type_var/var/variant_var = 1\n/datum/property_provider/type_var\n    var/var/obj/reference\n");
+        let tree = build(result.symbols, &result.skeletons).unwrap();
+        let owner = tree.lookup_type(SymbolId::of("/datum/property_provider/type_var")).unwrap();
+        for name in ["variant_var", "reference"] {
+            let field = tree.members().iter().find(|member| member.name == SymbolId::of(name)).unwrap();
+            assert_eq!(field.owner, owner);
+        }
+        assert!(tree.lookup_type(SymbolId::of("/datum/property_provider/type_")).is_none());
     }
     #[test]
     fn repeated_var_namespace_keeps_declaring_owner_and_runtime_type() {

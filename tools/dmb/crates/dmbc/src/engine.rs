@@ -285,7 +285,9 @@ impl EngineSnapshot {
         // its settings and defaults still remain opaque here.
         // /list and /savefile are native value types, absent from class records.
         // These semantic roots do not assert an output class-table identity.
-        for path in ["/world", "/list", "/savefile"] {
+        // /callee is class 13 in the native call_frames receipt, with parent
+        // NONE (65535), decoded as root by this schema. No output index is seeded.
+        for path in ["/world", "/list", "/savefile", "/callee"] {
             let special = self.symbols.intern(path)?;
             if !self.hierarchy.parents.iter().any(|row| row.0 == special) {
                 let root = self.symbols.intern("/")?;
@@ -305,6 +307,7 @@ impl EngineSnapshot {
         let mut keys: std::collections::HashSet<_> =
             members.iter().map(|m| (m.owner, m.name, m.kind)).collect();
         let mut bytes = catalog::CATALOG_SCHEMA.as_bytes().to_vec();
+        bytes.extend_from_slice(b"call_frames.native.bin:sha256:2dd5108390ca1860dd136cb6c6d0fb123164392a579c32018bade8dc07a8a07e:callee-class13-parent65535");
         bytes.extend_from_slice(&self.identity.to_le_bytes());
         for field in &fields {
             if !known.contains(&field.owner) {
@@ -321,6 +324,7 @@ impl EngineSnapshot {
                     bytes.extend_from_slice(&ty.bits().to_le_bytes());
                 }
                 catalog::FieldTypeMeaning::Unsupported => bytes.push(0),
+                catalog::FieldTypeMeaning::KnownUntyped => bytes.push(2),
             }
             if keys.insert((field.owner, field.name, MemberKind::Var)) {
                 members.push(field.presence());
@@ -454,6 +458,9 @@ impl EngineSnapshot {
                         }
                         catalog::FieldTypeMeaning::Unsupported => {
                             dm_ir::DeclaredTypeKnowledge::Unsupported
+                        }
+                        catalog::FieldTypeMeaning::KnownUntyped => {
+                            dm_ir::DeclaredTypeKnowledge::KnownUntyped
                         }
                     },
                 },
@@ -663,6 +670,37 @@ mod tests {
                 ResolvedMeaning::Presence(true)
             );
         }
+    }
+    #[test]
+    fn native_callee_hierarchy_receipt_binds_supplemental_seed() {
+        use sha2::{Digest, Sha256};
+        let bytes = include_bytes!("../../../fixtures/translation/call_frames.native.bin");
+        assert_eq!(
+            format!("{:x}", Sha256::digest(bytes)),
+            "2dd5108390ca1860dd136cb6c6d0fb123164392a579c32018bade8dc07a8a07e"
+        );
+        let image = Dmb::from_bytes(bytes).unwrap();
+        assert_eq!(image.classes[13].parent_class_id(), NONE);
+        let captured = EngineSnapshot::from_bytes(bytes, 1).unwrap();
+        let callee = SymbolId::of("/callee");
+        assert!(captured
+            .hierarchy()
+            .parents
+            .contains(&(callee, Some(SymbolId::of("/")))));
+        let seeded = EngineSnapshot::from_bytes(TEMPLATE, 1)
+            .unwrap()
+            .with_bootstrap_catalog()
+            .unwrap();
+        assert!(seeded
+            .hierarchy()
+            .parents
+            .contains(&(callee, Some(SymbolId::of("/")))));
+        assert!(seeded
+            .catalog_fields()
+            .iter()
+            .any(|field| field.owner == callee
+                && field.name == SymbolId::of("proc")
+                && field.declared_type == catalog::FieldTypeMeaning::KnownUntyped));
     }
     #[test]
     fn pinned_catalog_has_supported_types_and_opaque_remainder() {

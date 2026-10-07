@@ -319,6 +319,7 @@ impl SemanticValue {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DeclaredTypeKnowledge {
     Known(SymbolId),
+    KnownUntyped,
     Unsupported,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -338,6 +339,7 @@ impl OpaqueFieldBase {
                 bytes.extend_from_slice(&path.bits().to_le_bytes());
             }
             DeclaredTypeKnowledge::Unsupported => bytes.push(0),
+            DeclaredTypeKnowledge::KnownUntyped => bytes.push(2),
         }
         bytes
     }

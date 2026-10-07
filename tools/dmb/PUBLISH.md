@@ -1,9 +1,9 @@
 # Output pair publication contract — Phase 0
 
-Status: proposed protocol and authored crash-case fixtures. The functional access
+Status: implemented pair publication protocol with focused failure-injection gates. The functional access
 probe has been captured; requested-access tracing is deferred at the user's instruction.
-This document supplements DESIGN.md section 4.8. Publisher implementation belongs
-to the later implementation phase.
+This document supplements DESIGN.md section 4.8. Process-crash, power-loss and
+eviction recovery evidence remains open.
 
 ## Authority and identity
 

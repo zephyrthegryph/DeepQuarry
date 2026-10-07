@@ -14,7 +14,8 @@ Map-cpu assignment and vars assignment are rejected as changing constant values;
 the new catalog does not certify those bindings as mutable or invent flags.
 World scalar declared types remain explicitly unsupported/opaque.
 
-The inferred `field = new` controls are preserved as separate observations, not
-declared-type authority: screen/vis-contents compile to tag-40 class index zero,
-the lexical owner, rather than a list class. Constructor inference is a separate
-contract and must not be inferred from the list receiver proof.
+The inferred `field = new` controls additionally emit `(tag 40, payload 0)`, the
+native list primitive encoding. Its payload is not an ordinary class-table index;
+looking up class zero (the lexical owner in these images) was an incorrect
+interpretation. Raw binaries and decoded words are unchanged. The constructor
+observations agree with the narrow list receiver type facts above.

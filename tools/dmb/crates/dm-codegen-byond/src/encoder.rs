@@ -339,6 +339,8 @@ fn encode_variable(
         VariableWord::Usr => words.push(0xffcd),
         VariableWord::World => words.push(0xffe5),
         VariableWord::Args => words.push(0xffcf),
+        VariableWord::Caller => words.push(0xfff0),
+        VariableWord::Callee => words.push(0xfff1),
         VariableWord::Null => words.push(0xffe6),
         VariableWord::Dot => words.push(0xffd0),
         VariableWord::Cache => words.push(0xffd8),

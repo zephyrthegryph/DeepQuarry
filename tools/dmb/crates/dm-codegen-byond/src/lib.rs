@@ -109,6 +109,8 @@ pub enum VariableWord {
     Usr,
     World,
     Args,
+    Caller,
+    Callee,
     Null,
     Dot,
     Cache,

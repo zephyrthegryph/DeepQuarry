@@ -6,6 +6,7 @@ use dm_tree::{IntrinsicMember, MemberKind};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FieldTypeMeaning {
     Known(SymbolId),
+    KnownUntyped,
     Unsupported,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -16,7 +17,7 @@ pub struct CatalogField {
 }
 /// Mirrors the pinned native bootstrap inventory. It is not a claim that all
 /// BYOND versions expose exactly this catalog or that source defaults are known.
-pub const CATALOG_SCHEMA: &str = "dm-bootstrap-builtin-fields-v5-native-list-receivers";
+pub const CATALOG_SCHEMA: &str = "dm-bootstrap-builtin-fields-v7-native-type-knowledge";
 pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::SymbolCollision> {
     let mut fields = Vec::new();
     for owner in [
@@ -32,6 +33,7 @@ pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::Sym
         "/turf",
         "/particles",
         "/savefile",
+        "/callee",
     ] {
         let owner_symbol = symbols.intern(owner)?;
         // Native /image has its own visibility collection; do not infer that
@@ -46,6 +48,9 @@ pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::Sym
             let declared_type = match *name {
                 "vars" if owner == "/datum" => Some("/list"),
                 "screen" if owner == "/client" => Some("/list"),
+                "images" if owner == "/client" => Some("/list"),
+                "locs" if owner == "/atom/movable" => Some("/list"),
+                "particles" if owner == "/atom/movable" => Some("/particles"),
                 "vis_contents" if matches!(owner, "/atom/movable" | "/image") => Some("/list"),
                 "loc" => Some("/atom"),
                 "contents" | "overlays" | "underlays" | "filters" | "verbs" => Some("/list"),
@@ -57,6 +62,15 @@ pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::Sym
             };
             let declared_type = match declared_type {
                 Some(path) => FieldTypeMeaning::Known(symbols.intern(path)?),
+                None if matches!(
+                    (owner, *name),
+                    ("/world", "sleep_offline" | "visibility")
+                        | ("/client", "fps" | "mouse_pointer_icon")
+                        | ("/callee", "proc")
+                ) =>
+                {
+                    FieldTypeMeaning::KnownUntyped
+                }
                 None => FieldTypeMeaning::Unsupported,
             };
             fields.push(CatalogField {
@@ -86,6 +100,7 @@ pub fn names(path: &str) -> &'static [&'static str] {
         // defaults. Header emission is a separate ABI policy, not a field slot.
         // https://www.byond.com/docs/ref/info.html#savefile/var/byond_version
         "/savefile" => &["byond_version", "byond_build", "cd", "dir", "eof", "name"],
+        "/callee" => &["proc"],
         "/datum" => &["type", "parent_type", "vars", "tag"],
         "/atom" | "/image" | "/mutable_appearance" => &[
             "name",
@@ -174,6 +189,8 @@ pub fn names(path: &str) -> &'static [&'static str] {
             "color",
             "computer_id",
             "connection",
+            "fps",
+            "mouse_pointer_icon",
             "eye",
             "images",
             "inactivity",
@@ -198,6 +215,11 @@ pub fn names(path: &str) -> &'static [&'static str] {
             // Native Src getter proofs; defaults/modifiers remain opaque.
             "internet_address",
             "map_cpu",
+            // native_world_sleep_offline proves runtime World-field reads and
+            // writes. Header policy stays separate; declared type stays opaque.
+            "sleep_offline",
+            "timezone",
+            "visibility",
             "host",
             "params",
             "name",
@@ -293,6 +315,34 @@ mod tests {
         let preload = field("/client", "preload_rsc");
         assert_eq!(preload.declared_type, FieldTypeMeaning::Unsupported);
         assert!(preload.presence().instance_storage_proven);
+        let sleep = field("/world", "sleep_offline");
+        assert_eq!(sleep.declared_type, FieldTypeMeaning::KnownUntyped);
+        assert!(sleep.presence().instance_storage_proven);
+        for (owner, name, path) in [
+            ("/atom/movable", "locs", "/list"),
+            ("/client", "images", "/list"),
+            ("/atom/movable", "particles", "/particles"),
+        ] {
+            assert_eq!(
+                field(owner, name).declared_type,
+                FieldTypeMeaning::Known(SymbolId::of(path))
+            );
+        }
+        assert_eq!(
+            field("/world", "timezone").declared_type,
+            FieldTypeMeaning::Unsupported
+        );
+        for (owner, name) in [
+            ("/world", "visibility"),
+            ("/client", "fps"),
+            ("/client", "mouse_pointer_icon"),
+        ] {
+            assert_eq!(
+                field(owner, name).declared_type,
+                FieldTypeMeaning::KnownUntyped
+            );
+            assert!(field(owner, name).presence().instance_storage_proven);
+        }
         assert!(fields.iter().all(|f| f.presence().shared_owner.is_none()));
     }
 

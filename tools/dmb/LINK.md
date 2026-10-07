@@ -124,7 +124,7 @@ Three additional manifests have now been captured; the final section and paired 
 - `metadata_modes.dme` covers both values of every listed boolean flag, null/non-null category, text/desc/invisibility/parameter annotation, and `src in world`, `usr`, `usr.loc`, and `view(1)`. Decode the complete procedure settings, not just verb visibility. These are representative legal source modes, not an exhaustive grammar claim.
 - `reopens_parent.dme` combines a child declared before its explicit nonlexical parent, a reopened parent, override dispatch, and verb source names whose display-name ordering is reversed. Capture type/vars/verbs arrays exactly.
 
-The existing four paired cases retain their recorded outcomes. Generalization beyond those finite inputs and these new pending probes remains uncertified.
+The existing four paired cases retain their recorded outcomes. Generalization beyond those finite inputs and the new finite captures remains uncertified.
 
 ### Static fixture review and decoded receipt commands
 
@@ -178,5 +178,4 @@ raw files are at `E:/dmb-native-v2-phase0/link-category-controls-1`. It pins sou
 compiler, builtin and decoded-output hashes, commands, exit outcomes and the
 single decoded difference. No DreamDaemon or runtime observation was used for
 these controls, and no frozen production compiler behavior was changed. The
-new shared semantic model retains the actual category setting expression so
-future flag encoding can apply this known rule.
+new shared semantic model retains the actual category setting expression and the procedure ABI encoder applies the captured null-category flag rule.

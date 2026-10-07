@@ -3,6 +3,82 @@
 use byond_dmb::{dmb::Proc, ids::NONE};
 use dm_codegen_byond::procedure_abi::{AbiError, Category, ProcLayout};
 
+/// Positive physical membership only. Constructed from the accepted immutable
+/// engine image and traversed against the current authored inheritance tree.
+#[derive(Clone, Debug)]
+pub(crate) struct RetainedMethods {
+    source: std::sync::Arc<dm_tree::SemanticTree>,
+    engine_identity: u128,
+    entries: std::collections::BTreeMap<(dm_ir::SymbolId, dm_ir::SymbolId, bool), u32>,
+}
+impl RetainedMethods {
+    pub(crate) fn capture(
+        engine: &super::EngineSnapshot,
+        source: std::sync::Arc<dm_tree::SemanticTree>,
+    ) -> Result<Self, String> {
+        let mut entries = std::collections::BTreeMap::new();
+        for record in engine.procedure_layouts() {
+            let Some(name) = record.name else {
+                continue;
+            };
+            let verb = match record.kind {
+                dm_tree::MemberKind::Proc => false,
+                dm_tree::MemberKind::Verb => true,
+                dm_tree::MemberKind::Var => {
+                    return Err("physical callable has variable namespace".into())
+                }
+            };
+            if entries
+                .insert((record.owner, name, verb), record.wire_proc)
+                .is_some_and(|previous| previous != record.wire_proc)
+            {
+                return Err("ambiguous retained engine callable identity".into());
+            }
+        }
+        Ok(Self {
+            source,
+            engine_identity: engine.identity(),
+            entries,
+        })
+    }
+    pub(crate) fn identity(&self) -> u128 {
+        self.engine_identity
+    }
+    pub(crate) fn resolve(&self, query: dm_ir::ResolveQuery) -> Option<dm_ir::ResolvedMeaning> {
+        use dm_ir::{ResolveQuery as Q, ResolvedMeaning as M};
+        let (owner, name, verb) = match query {
+            Q::HasMemberProc { owner, name } => (owner, name, None),
+            Q::Proc { owner, name, verb } => (owner, name, Some(verb)),
+            _ => return None,
+        };
+        let mut current = self.source.lookup_type(owner)?;
+        while let Some(node) = self.source.type_node(current) {
+            if owner != dm_ir::SymbolId::of("/") && node.path == dm_ir::SymbolId::of("/") {
+                break;
+            }
+            for namespace in [false, true] {
+                if verb.is_some_and(|verb| verb != namespace) {
+                    continue;
+                }
+                if let Some(&wire_proc) = self.entries.get(&(node.path, name, namespace)) {
+                    return Some(match verb {
+                        None => M::Presence(true),
+                        Some(verb) => M::RetainedProc {
+                            declaring_owner: node.path,
+                            name,
+                            verb,
+                            engine_identity: self.engine_identity,
+                            wire_proc,
+                        },
+                    });
+                }
+            }
+            current = self.source.parent(current)?;
+        }
+        None
+    }
+}
+
 /// Read bytes while the pinned DMB is being decoded. Missing non-sentinel
 /// strings are corruption, not an absent setting. No semantic UTF-8 conversion
 /// is applied to display text, description or category payloads.

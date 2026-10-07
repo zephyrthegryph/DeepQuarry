@@ -314,8 +314,8 @@ pub fn write_jsonl(
         }))).transpose()?;
         let opaque = metadata.inherited_opaque.as_ref().map(|base| Ok::<_,ExportError>(json!({
             "owner":spelling(symbols,base.owner)?,"name":spelling(symbols,base.name)?,
-            "declared_type":match base.declared_type { DeclaredTypeKnowledge::Known(path)=>Some(spelling(symbols,path)?),DeclaredTypeKnowledge::Unsupported=>None },
-            "declared_type_status":match base.declared_type { DeclaredTypeKnowledge::Known(_)=>"known",DeclaredTypeKnowledge::Unsupported=>"unsupported" },
+            "declared_type":match base.declared_type { DeclaredTypeKnowledge::Known(path)=>Some(spelling(symbols,path)?),DeclaredTypeKnowledge::Unsupported|DeclaredTypeKnowledge::KnownUntyped=>None },
+            "declared_type_status":match base.declared_type { DeclaredTypeKnowledge::Known(_)=>"known",DeclaredTypeKnowledge::KnownUntyped=>"known_untyped",DeclaredTypeKnowledge::Unsupported=>"unsupported" },
             "flags_status":"unknown", "formal_default_status":"unknown", "array_shape_status":"unknown",
         }))).transpose()?;
         emit(

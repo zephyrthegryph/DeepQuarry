@@ -168,6 +168,7 @@ pub struct EngineResolverHost<R> {
     runtime: RuntimeAliasCatalog,
     callable_absence: Option<Arc<HashSet<SymbolId>>>,
     intrinsic_methods: Option<Arc<intrinsic_methods::IntrinsicMethods>>,
+    retained_methods: Option<Arc<crate::engine::procedure_abi::RetainedMethods>>,
     variable_absence: Option<Arc<VariableAbsence>>,
 }
 impl<R: Resolver> EngineResolverHost<R> {
@@ -178,6 +179,7 @@ impl<R: Resolver> EngineResolverHost<R> {
             runtime,
             callable_absence: None,
             intrinsic_methods: None,
+            retained_methods: None,
             variable_absence: None,
         }
     }
@@ -193,6 +195,12 @@ impl<R: Resolver> EngineResolverHost<R> {
         if frontend.engine.as_ref().map(|status| status.identity) != Some(engine.identity()) {
             return Err("callable coverage belongs to another engine capture".into());
         }
+        self.retained_methods = Some(Arc::new(
+            crate::engine::procedure_abi::RetainedMethods::capture(
+                engine,
+                Arc::clone(&frontend.snapshot.tree),
+            )?,
+        ));
         let catalog: serde_json::Value = serde_json::from_slice(include_bytes!(
             "../../../fixtures/native_template_nativebuiltins_5161687.json"
         ))
@@ -310,10 +318,12 @@ impl<R: Resolver> EngineResolverHost<R> {
         for spelling in ["TRUE", "FALSE"] {
             let name = SymbolId::of(spelling);
             let value = pinned_constants.values.get(&name);
-            if engine.declaration_modifiers(SymbolId::of("/"), name)
+            if engine
+                .declaration_modifiers(SymbolId::of("/"), name)
                 .map_err(|error| format!("pinned constant metadata {error:?}"))?
                 .is_some_and(|flags| flags & 2 != 0)
-                && value.is_some() && self.constants.values.get(&name) == value
+                && value.is_some()
+                && self.constants.values.get(&name) == value
             {
                 positive_constants.insert(name, value.unwrap().clone());
             }
@@ -340,6 +350,9 @@ impl<R: Resolver> EngineResolverHost<R> {
         let mut bytes = b"dm-engine-host-v1\0".to_vec();
         bytes.extend_from_slice(&self.constants.identity.to_le_bytes());
         bytes.extend_from_slice(&self.runtime.policy_identity.to_le_bytes());
+        if let Some(retained) = &self.retained_methods {
+            bytes.extend_from_slice(&retained.identity().to_le_bytes());
+        }
         if self.callable_absence.is_some() {
             bytes.extend_from_slice(b"pinned-callable-policy-v2;explicit-runtime-receiver-methods");
             bytes.extend_from_slice(include_bytes!(
@@ -401,6 +414,13 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                     return answer;
                 }
                 if let Some(meaning) = self
+                    .retained_methods
+                    .as_ref()
+                    .and_then(|catalog| catalog.resolve(query))
+                {
+                    return meaning;
+                }
+                if let Some(meaning) = self
                     .intrinsic_methods
                     .as_ref()
                     .and_then(|catalog| catalog.resolve(query))
@@ -427,8 +447,13 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                         }
                         if matches!(query, Q::Constant { .. } | Q::GlobalVar(_))
                             && coverage.source.lookup_type(owner).is_some()
-                            && !matches!(dm_ir::Resolver::resolve(coverage.source.as_ref(),
-                                Q::Var { owner, name }), M::Member { .. })
+                            && !matches!(
+                                dm_ir::Resolver::resolve(
+                                    coverage.source.as_ref(),
+                                    Q::Var { owner, name }
+                                ),
+                                M::Member { .. }
+                            )
                         {
                             if let Some(value) = coverage.positive_constants.get(&name) {
                                 // Even a mutable authored field without a scalar
@@ -525,7 +550,7 @@ mod tests {
         impl dm_preprocess::SourceProvider for Source {
             fn read(&self, _: &Path) -> Result<String, String> {
                 Ok(
-                    "/datum/probe\n/proc/copy_probe(list/items)\n    return items.Copy(1, 2)\n"
+                    "/datum/probe\n/proc/copy_probe(list/items)\n    return items.Copy(1, 2)\n/icon/proc/icon_probe()\n    return IconStates()\n"
                         .into(),
                 )
             }
@@ -597,6 +622,60 @@ mod tests {
             M::Presence(true)
         );
         let read = SymbolId::of("Read");
+        let icon = SymbolId::of("/icon");
+        let icon_states = SymbolId::of("IconStates");
+        assert_eq!(
+            host.resolve(Q::Proc {
+                owner: icon,
+                name: icon_states,
+                verb: false
+            }),
+            M::RetainedProc {
+                declaring_owner: icon,
+                name: icon_states,
+                verb: false,
+                engine_identity: engine.identity(),
+                wire_proc: 7
+            }
+        );
+        let physical = engine
+            .procedure_layouts()
+            .iter()
+            .find(|record| {
+                record.owner == icon
+                    && record.name == Some(icon_states)
+                    && record.kind == dm_tree::MemberKind::Proc
+            })
+            .unwrap();
+        assert_eq!(physical.wire_proc, 7);
+        let image = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_template.bin"
+        ))
+        .unwrap();
+        assert_eq!(
+            image.string(image.procs[7].strings[0]),
+            Some(b"/icon/proc/IconStates".as_slice())
+        );
+        assert!(!image.proc_code_words(7).unwrap().is_empty());
+        let ast = dm_syntax::parse("/icon/proc/p()\n    return IconStates()\n");
+        let inputs = dm_codegen_byond::ProcedureInputs {
+            current_type_path: Some("/icon".into()),
+            ..Default::default()
+        };
+        let lowered = dm_codegen_byond::compile_simple_proc_with_resolver(
+            &ast.items[0].children,
+            &inputs,
+            frontend.snapshot.tree.symbols(),
+            &host,
+        )
+        .unwrap();
+        assert!(lowered
+            .procedure
+            .code
+            .items
+            .iter()
+            .any(|item| matches!(item,
+            dm_codegen_byond::Item::Instruction(instruction) if instruction.opcode == 0x29)));
         assert_eq!(
             host.resolve(Q::Proc {
                 owner: SymbolId::of("/datum/probe"),
@@ -874,11 +953,23 @@ mod tests {
         }
         for (spelling, value) in [("TRUE", 1.0_f32), ("FALSE", 0.0_f32)] {
             let name = SymbolId::of(spelling);
-            assert_eq!(host.resolve(Q::GlobalVar(name)), M::Value(SemanticValue::NumberBits(value.to_bits())));
-            assert_eq!(host.resolve(Q::Constant { owner, name }), M::Value(SemanticValue::NumberBits(value.to_bits())));
+            assert_eq!(
+                host.resolve(Q::GlobalVar(name)),
+                M::Value(SemanticValue::NumberBits(value.to_bits()))
+            );
+            assert_eq!(
+                host.resolve(Q::Constant { owner, name }),
+                M::Value(SemanticValue::NumberBits(value.to_bits()))
+            );
         }
-        let shadow_query = Q::Constant { owner: SymbolId::of("/datum/shadow"), name: SymbolId::of("FALSE") };
-        assert_eq!(host.resolve(shadow_query.clone()), M::Unsupported(shadow_query));
+        let shadow_query = Q::Constant {
+            owner: SymbolId::of("/datum/shadow"),
+            name: SymbolId::of("FALSE"),
+        };
+        assert_eq!(
+            host.resolve(shadow_query.clone()),
+            M::Unsupported(shadow_query)
+        );
         assert!(
             matches!(host.resolve(Q::GlobalVar(global)),M::Member{owner:actual,..} if actual==root)
         );

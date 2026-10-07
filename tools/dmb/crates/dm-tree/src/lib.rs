@@ -590,7 +590,8 @@ pub(crate) fn build_with_intrinsic_members(
                     let metadata = Arc::make_mut(&mut members[i].metadata);
                     metadata.declared_type = match opaque.declared_type {
                         dm_ir::DeclaredTypeKnowledge::Known(path) => Some(path),
-                        dm_ir::DeclaredTypeKnowledge::Unsupported => None,
+                        dm_ir::DeclaredTypeKnowledge::Unsupported
+                        | dm_ir::DeclaredTypeKnowledge::KnownUntyped => None,
                     };
                     metadata.inherited_opaque = Some(opaque);
                 }

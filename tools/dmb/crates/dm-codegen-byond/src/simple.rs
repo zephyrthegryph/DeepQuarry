@@ -2919,7 +2919,7 @@ impl Compiler<'_> {
                 return Ok(VariableWord::Global(slot));
             }
         }
-        if self.lookup.is_some() && !matches!(name, "src" | "usr" | "world" | "args" | ".") {
+        if self.lookup.is_some() && !matches!(name, "src" | "usr" | "world" | "args" | "caller" | "callee" | ".") {
             if let Some(owner) = self.bindings.current_type_path.as_deref() {
                 if let Some(slot) = self.member_global(owner, name)? {
                     return Ok(VariableWord::Global(slot));
@@ -2931,6 +2931,8 @@ impl Compiler<'_> {
             "usr" => Ok(VariableWord::Usr),
             "world" => Ok(VariableWord::World),
             "args" => Ok(VariableWord::Args),
+            "caller" => Ok(VariableWord::Caller),
+            "callee" => Ok(VariableWord::Callee),
             "." => Ok(VariableWord::Dot),
             _ if self.has_field(name)? => {
                 self.intern_string(name);
@@ -2952,7 +2954,7 @@ impl Compiler<'_> {
             ExprKind::Ident(name) => self.variable(name, statement),
             ExprKind::Group(inner) => self.variable_expr(inner, statement),
             ExprKind::Member {
-                object, selector, ..
+                object, selector, via_colon
             } => {
                 if matches!(&object.kind, ExprKind::Ident(name) if name == "global") {
                     if selector == "vars" {
@@ -2966,7 +2968,7 @@ impl Compiler<'_> {
                         &format!("unresolved global variable: {selector}"),
                     ));
                 }
-                if let Some(owner) = self.inferred_expression_type(object)? {
+                if let Some(owner) = if *via_colon { None } else { self.inferred_expression_type(object)? } {
                     if let Some(symbol) = self.member_global(&owner, selector)? {
                         return Ok(VariableWord::Global(symbol.to_owned()));
                     }
@@ -3364,6 +3366,9 @@ impl Compiler<'_> {
                     if name == "args" {
                         return self.normalize_inferred_type("/list").map(Some);
                     }
+                    if matches!(name.as_str(), "caller" | "callee") {
+                        return self.normalize_inferred_type("/callee").map(Some);
+                    }
                     if name == "." {
                         // The return-value register has no declared receiver
                         // type. It is not an outer member/global identifier.
@@ -3396,8 +3401,11 @@ impl Compiler<'_> {
             }
             ExprKind::Group(inner) => self.inferred_expression_type(inner)?,
             ExprKind::Member {
-                object, selector, ..
+                object, selector, via_colon
             } => {
+                // A colon selector intentionally carries no static receiver
+                // field contract, even when its receiver has an authored type.
+                if *via_colon { return Ok(None); }
                 if matches!(&object.kind, ExprKind::Ident(name) if name == "global") {
                     return self
                         .global_type(selector)?
@@ -3883,7 +3891,7 @@ impl Compiler<'_> {
                     };
                     return self.expression(&literal, statement);
                 }
-                if !matches!(name.as_str(), "src" | "usr" | "world" | "args" | ".")
+                if !matches!(name.as_str(), "src" | "usr" | "world" | "args" | "caller" | "callee" | ".")
                     && !self.local_slots.contains_key(name)
                     && !self
                         .bindings
@@ -5784,6 +5792,10 @@ fn fold_number(expr: &Expr) -> Option<f32> {
         _ => None,
     }
 }
+
+#[cfg(test)]
+#[path = "dynamic_selector_tests.rs"]
+mod dynamic_selector_tests;
 
 #[cfg(test)]
 mod tests {

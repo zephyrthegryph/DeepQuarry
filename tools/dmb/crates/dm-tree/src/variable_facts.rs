@@ -71,6 +71,7 @@ impl SemanticTree {
                     .map(|field| &field.declared_type)
                 {
                     Some(DeclaredTypeKnowledge::Known(path)) => M::DeclaredType(Some(*path)),
+                    Some(DeclaredTypeKnowledge::KnownUntyped) => M::DeclaredType(None),
                     _ => M::Unsupported(query),
                 }
             }
@@ -80,6 +81,7 @@ impl SemanticTree {
                     return match node.metadata.inherited_opaque.as_ref() {
                         Some(base) => match base.declared_type {
                             DeclaredTypeKnowledge::Known(path) => M::DeclaredType(Some(path)),
+                            DeclaredTypeKnowledge::KnownUntyped => M::DeclaredType(None),
                             DeclaredTypeKnowledge::Unsupported => M::Unsupported(query),
                         },
                         None => M::DeclaredType(node.metadata.declared_type),
@@ -405,5 +407,86 @@ mod tests {
             name: base.name,
         };
         assert_eq!(Resolver::resolve(&tree, query), M::Unsupported(query));
+    }
+
+    #[test]
+    fn known_untyped_intrinsic_metadata_is_distinct_from_unsupported_and_survives_override() {
+        for (knowledge, expected) in [
+            (
+                DeclaredTypeKnowledge::Known(SymbolId::of("/datum/a")),
+                M::DeclaredType(Some(SymbolId::of("/datum/a"))),
+            ),
+            (DeclaredTypeKnowledge::KnownUntyped, M::DeclaredType(None)),
+            (
+                DeclaredTypeKnowledge::Unsupported,
+                M::Unsupported(Q::DeclaredVarType {
+                    owner: SymbolId::of("/datum/a"),
+                    name: SymbolId::of("native_field"),
+                }),
+            ),
+        ] {
+            let parsed = dm_syntax::parse("/datum/a\n/datum/a/b\n    native_field = 7\n");
+            let adapted =
+                crate::adapter::from_ast(&parsed, SymbolTable::default(), dm_ir::FileId(0), 0, 0)
+                    .unwrap();
+            let base = dm_ir::OpaqueFieldBase {
+                owner: SymbolId::of("/datum/a"),
+                name: SymbolId::of("native_field"),
+                declared_type: knowledge,
+            };
+            let tree = build_with_intrinsic_fields(
+                adapted.symbols,
+                &adapted.skeletons,
+                std::slice::from_ref(&base),
+            )
+            .unwrap();
+            let parents = hierarchy(&tree);
+            let tree = tree
+                .with_engine_intrinsics(
+                    parents,
+                    vec![IntrinsicMember {
+                        owner: base.owner,
+                        name: base.name,
+                        kind: MemberKind::Var,
+                        shared_owner: None,
+                        instance_storage_proven: true,
+                    }],
+                )
+                .unwrap();
+            for owner in [base.owner, SymbolId::of("/datum/a/b")] {
+                let query = Q::DeclaredVarType {
+                    owner,
+                    name: base.name,
+                };
+                let expected = if knowledge == DeclaredTypeKnowledge::Unsupported {
+                    M::Unsupported(query)
+                } else {
+                    expected.clone()
+                };
+                assert_eq!(Resolver::resolve(&tree, query), expected);
+                assert_eq!(
+                    Resolver::resolve(
+                        &tree,
+                        Q::VarStorage {
+                            owner,
+                            name: base.name
+                        }
+                    ),
+                    M::InstanceField {
+                        declaring_owner: base.owner,
+                        name: base.name
+                    }
+                );
+            }
+        }
+        let base = |declared_type| dm_ir::OpaqueFieldBase {
+            owner: SymbolId::of("/datum/a"),
+            name: SymbolId::of("native_field"),
+            declared_type,
+        };
+        assert_ne!(
+            base(DeclaredTypeKnowledge::KnownUntyped).canonical_bytes(),
+            base(DeclaredTypeKnowledge::Unsupported).canonical_bytes()
+        );
     }
 }
