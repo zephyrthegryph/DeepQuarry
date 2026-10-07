@@ -199,32 +199,34 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 		icon_state = "medibot[on]"
 
 
-/// Old attack_hand (no gate, no default touch): disarm tips it, help rights it, else open the controls.
-/mob/living/bot/medbot/proc/medbot_interaction_hand(datum/act/op/A, stance)
-	var/mob/living/carbon/human/H = A.actor
-	. = OP_OK
-	if(istype(H) && stance == I_DISARM && !is_tipped)
-		act_message(H, src, MSG_SELF(span_warning("You begin tipping over %T%...")), MSG_OTHERS(span_danger("%U% begins tipping over %T%.")))
+MSG_DEF(medbot/tipping, span_warning("You begin tipping over %T%..."), span_danger("%U% begins tipping over %T%."))
+MSG_DEF(medbot/righting, span_notice("You begin righting %T%..."), span_notice("%U% begins righting %T%."))
 
-		if(COOLDOWN_FINISHED(src, tipping_voice_cooldown))
-			COOLDOWN_START(src, tipping_voice_cooldown, 15 SECONDS)// message for tipping happens when we start interacting, message for righting comes after finishing
-			var/list/messagevoice = list("Hey, wait..." = SFX_VOICE_MEDBOT_HEY_WAIT,"Please don't..." = SFX_VOICE_MEDBOT_PLEASE_DONT,"I trusted you..." = SFX_VOICE_MEDBOT_I_TRUSTED_YOU, "Nooo..." = SFX_VOICE_MEDBOT_NOOO, "Oh fuck-" = SFX_VOICE_MEDBOT_OH_FUCK)
-			var/message = pick(messagevoice)
-			say(message)
-			playsound(src, messagevoice[message], 70, FALSE)
+TRACKED(/mob/living/bot/medbot, is_tipped)
 
-		task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done), done_args = list(H))
+/mob/living/bot/medbot/proc/can_tip(datum/act/op/A)
+	return !is_tipped
 
-	else if(istype(H) && stance == I_HELP && is_tipped)
-		act_message(H, src, MSG_SELF(span_notice("You begin righting %T%...")), MSG_OTHERS(span_notice("%U% begins righting %T%.")))
-		task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done2), done_args = list(H))
-	else
-		tgui_interact(H)
+/mob/living/bot/medbot/proc/can_right(datum/act/op/A)
+	return is_tipped
 
-/mob/living/bot/medbot/proc/attack_hand_medbot_done(mob/living/carbon/human/H)
-	tip_over(H)
-/mob/living/bot/medbot/proc/attack_hand_medbot_done2(mob/living/carbon/human/H)
-	set_right(H)
+/// The shove has run its three seconds: the bot says its piece (the plea used to come as the shove began) and goes over.
+/mob/living/bot/medbot/proc/tipped_over(datum/act/op/A)
+	if(COOLDOWN_FINISHED(src, tipping_voice_cooldown))
+		COOLDOWN_START(src, tipping_voice_cooldown, 15 SECONDS)// message for tipping happens when we start interacting, message for righting comes after finishing
+		var/list/messagevoice = list("Hey, wait..." = SFX_VOICE_MEDBOT_HEY_WAIT,"Please don't..." = SFX_VOICE_MEDBOT_PLEASE_DONT,"I trusted you..." = SFX_VOICE_MEDBOT_I_TRUSTED_YOU, "Nooo..." = SFX_VOICE_MEDBOT_NOOO, "Oh fuck-" = SFX_VOICE_MEDBOT_OH_FUCK)
+		var/message = pick(messagevoice)
+		say(message)
+		playsound(src, messagevoice[message], 70, FALSE)
+	tip_over(A.actor)
+
+/mob/living/bot/medbot/proc/righted(datum/act/op/A)
+	set_right(A.actor)
+
+/// The touch that tips or rights nothing opens the controls.
+/mob/living/bot/medbot/proc/open_controls(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_OK
 
 MSG_DEF_SELF(medbot/panel_locked, "the panel is locked")
 MSG_DEF_SELF(medbot/has_beaker, "there is already a beaker inside")
@@ -240,26 +242,12 @@ CAPABILITIES(/mob/living/bot/medbot)
 	op("togglevoice", ui_act("togglevoice"), then(PROC_REF(ui_act_togglevoice)))
 	op("declaretreatment", ui_act("declaretreatment"), then(PROC_REF(ui_act_declaretreatment)))
 	op("medbot_item", item(/obj/item/reagent_containers/glass), label("Insert beaker"), needs(req_is(nameof(locked), FALSE, because = MSG(medbot/panel_locked)), req_is(nameof(reagent_glass), FALSE, because = MSG(medbot/has_beaker))), then(PROC_REF(medbot_interaction_item)))
-	op("medbot_hand_help", hand(), ungated(), stance(I_HELP), label("Right or open controls"), then(PROC_REF(medbot_interaction_hand_help)))
-	op("medbot_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Tip over"), then(PROC_REF(medbot_interaction_hand_disarm)))
-	op("medbot_hand_grab", hand(), ungated(), stance(I_GRAB), label("Open controls"), then(PROC_REF(medbot_interaction_hand_grab)))
-	op("medbot_hand_hurt", hand(), ungated(), stance(I_HURT), label("Open controls"), then(PROC_REF(medbot_interaction_hand_hurt)))
-
-/// The help-stance input of medbot_interaction_hand: the shared handler with its stance.
-/mob/living/bot/medbot/proc/medbot_interaction_hand_help(datum/act/op/A)
-	return medbot_interaction_hand(A, I_HELP)
-
-/// The disarm-stance input of medbot_interaction_hand: the shared handler with its stance.
-/mob/living/bot/medbot/proc/medbot_interaction_hand_disarm(datum/act/op/A)
-	return medbot_interaction_hand(A, I_DISARM)
-
-/// The grab-stance input of medbot_interaction_hand: the shared handler with its stance.
-/mob/living/bot/medbot/proc/medbot_interaction_hand_grab(datum/act/op/A)
-	return medbot_interaction_hand(A, I_GRAB)
-
-/// The hurt-stance input of medbot_interaction_hand: the shared handler with its stance.
-/mob/living/bot/medbot/proc/medbot_interaction_hand_hurt(datum/act/op/A)
-	return medbot_interaction_hand(A, I_HURT)
+	op("medbot_tip", hand(), ungated(), stance(I_DISARM), label("Tip over"), when(PROC_REF(can_tip)), priority(OP_PRIORITY_TAKE_OUT), begins(MSG(medbot/tipping)), wait(3 SECONDS), then(PROC_REF(tipped_over)))
+	op("medbot_right", hand(), ungated(), stance(I_HELP), label("Set right"), when(PROC_REF(can_right)), priority(OP_PRIORITY_TAKE_OUT), begins(MSG(medbot/righting)), wait(3 SECONDS), then(PROC_REF(righted)))
+	op("medbot_hand_help", hand(), ungated(), stance(I_HELP), label("Open controls"), then(PROC_REF(open_controls)))
+	op("medbot_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Open controls"), then(PROC_REF(open_controls)))
+	op("medbot_hand_grab", hand(), ungated(), stance(I_GRAB), label("Open controls"), then(PROC_REF(open_controls)))
+	op("medbot_hand_hurt", hand(), ungated(), stance(I_HURT), label("Open controls"), then(PROC_REF(open_controls)))
 
 /// The window's data: the bot's state, the beaker, and the settings for whoever may see them (a silicon, or anyone while the panel is unlocked).
 /mob/living/bot/medbot/ui_data(datum/act/eval/A)
@@ -401,7 +389,7 @@ CAPABILITIES(/mob/living/bot/medbot)
 /mob/living/bot/medbot/proc/tip_over(mob/user)
 	play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
 	act_message(user, src, MSG_SELF(span_danger("You tip %T% over!")), MSG_OTHERS(span_danger("%U% tips over %T%!")))
-	is_tipped = TRUE
+	set_is_tipped(TRUE)
 	tipper_name = user.name
 	var/matrix/mat = transform
 	transform = mat.Turn(180)
@@ -425,7 +413,7 @@ CAPABILITIES(/mob/living/bot/medbot)
 		say(message)
 		playsound(src, messagevoice[message], 70)
 	tipped_status = MEDBOT_PANIC_NONE
-	is_tipped = FALSE
+	set_is_tipped(FALSE)
 	transform = matrix()
 
 // if someone tipped us over, check whether we should ask for help or just right ourselves eventually

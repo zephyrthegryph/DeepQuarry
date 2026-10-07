@@ -203,7 +203,7 @@
 	if(blood_overlay && clean_types & CLEAN_WASH)
 		overlays.Remove(blood_overlay)
 	if(gurgled && clean_types & CLEAN_WASH)
-		gurgled = FALSE
+		set_gurgled(FALSE)
 		cut_overlay(GLOB.gurgled_overlays[gurgled_color])
 	// phoron contamination wash branch removed; .contaminated +
 	// GLOB.contamination_overlay are gone (ZAS contamination machinery wasn't

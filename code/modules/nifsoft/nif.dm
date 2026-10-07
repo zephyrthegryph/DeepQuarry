@@ -98,7 +98,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 	//If given wear (like when spawned) then done
 	if(wear_at_make)
-		durability = wear_at_make
+		set_durability(wear_at_make)
 		wear(0) //Just make it update.
 
 	//Draw me yo.
@@ -198,13 +198,13 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 //Wear update/check proc
 /obj/item/nif/proc/wear(wear = 0)
 	wear *= (rand(85,115) / 100) //Apparently rand() only takes integers.
-	durability -= wear
+	set_durability(durability - wear)
 
 	if(human)
 		persist_nif_data(human)
 
 	if(durability <= 0)
-		durability = 0	//failsafe us to a minimum of 0% so we don't just wash into massively negative durability from repeated EMPs
+		set_durability(0)	//failsafe us to a minimum of 0% so we don't just wash into massively negative durability from repeated EMPs
 		stat = NIF_TEMPFAIL
 		changed(src)
 
@@ -214,78 +214,52 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 //Repair update/check proc
 /obj/item/nif/proc/repair(repair = 0)
-	durability = min(durability + repair, initial(durability))
+	set_durability(min(durability + repair, initial(durability)))
 
 	if(human)
 		persist_nif_data(human)
 
 //Attackby proc, for maintenance
 
-/// Old attackby.
-/obj/item/nif/proc/interaction_item(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	if(open == 1 && istype(W,/obj/item/stack/cable_coil))
-		var/obj/item/stack/cable_coil/C = W
-		if(C.get_amount() < 3)
-			to_chat(user,span_warning("You need at least three coils of wire to add them to \the [src]."))
-			return OP_PASS
-		if(durability >= initial(durability))
-			to_chat(user,span_notice("There's no damaged wiring that needs replacing!"))
-			open = 3
-			changed(src)
-			return OP_PASS
-		task_timed(user, 6 SECONDS, src, src, PROC_REF(rewire_done), list(user, C))
-	else
-		return OP_DECLINE
-	return OP_PASS
+TRACKED(/obj/item/nif, open)
+TRACKED(/obj/item/nif, durability)
 
-/obj/item/nif/proc/rewire_done(mob/user, obj/item/stack/cable_coil/C)
-	if(open == 1 && C.use(3))
-		act_message(user, src, MSG_SELF(span_notice("You replace any burned out wiring in %T%.")), MSG_OTHERS("%U% replaces some wiring in %T%."))
-		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-		open = 2
-		changed(src)
+MSG_DEF(nif/rewired, span_notice("You replace any burned out wiring in %T%."), "%U% replaces some wiring in %T%.")
+MSG_DEF(nif/pried_open, span_notice("You unscrew and pry open %T%."), "%U% unscrews and pries open %T%.")
+MSG_DEF(nif/resealed, span_notice("You re-seal %T% for use once more."), "%U% closes up %T%.")
+MSG_DEF(nif/reset, span_notice("You find and repair any faulty circuits in %T%."), "%U% resets several circuits in %T%.")
+MSG_DEF_SELF(nif/wiring_intact, span_notice("There's no damaged wiring that needs replacing!"))
 
-/obj/item/nif/proc/pry_open_done(mob/user, obj/item/tool)
-	if(open != 0)
-		return
-	act_message(user, src, MSG_SELF(span_notice("You unscrew and pry open %T%.")), MSG_OTHERS("%U% unscrews and pries open %T%."))
-	playsound(src, tool.usesound, 50, 1)
-	open = 1
+/obj/item/nif/proc/needs_rewiring(datum/act/op/A)
+	return open == 1 && durability < initial(durability)
+
+/obj/item/nif/proc/wiring_intact(datum/act/op/A)
+	return open == 1 && durability >= initial(durability)
+
+/obj/item/nif/proc/wiring_checked(datum/act/op/A)
+	set_open(3)
 	changed(src)
 
-/obj/item/nif/proc/reseal_done(mob/user, obj/item/tool)
-	if(open != 3)
-		return
-	act_message(user, src, MSG_SELF(span_notice("You re-seal %T% for use once more.")), MSG_OTHERS("%U% closes up %T%."))
-	playsound(src, tool.usesound, 50, 1)
-	open = FALSE
+/obj/item/nif/proc/rewire_done(datum/act/op/A)
+	set_open(2)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
+	changed(src)
+
+/obj/item/nif/proc/pry_open_done(datum/act/op/A)
+	playsound(src, A.held?.usesound, 50, 1)
+	set_open(1)
+	changed(src)
+
+/obj/item/nif/proc/reseal_done(datum/act/op/A)
+	playsound(src, A.held?.usesound, 50, 1)
+	set_open(FALSE)
 	repair(initial(durability))
 	stat = NIF_PREINSTALL
 	changed(src)
 
-/obj/item/nif/proc/reset_circuits_done(mob/user)
-	if(open != 2)
-		return
-	act_message(user, src, MSG_SELF(span_notice("You find and repair any faulty circuits in %T%.")), MSG_OTHERS("%U% resets several circuits in %T%."))
-	open = 3
+/obj/item/nif/proc/reset_circuits_done(datum/act/op/A)
+	set_open(3)
 	changed(src)
-
-/obj/item/nif/screwdriver_act(mob/user, obj/item/tool)
-	if(open == 0)
-		task_timed(user, 4 SECONDS, src, src, PROC_REF(pry_open_done), list(user, tool))
-		return ITEM_INTERACT_SUCCESS
-	if(open == 3)
-		task_timed(user, 3 SECONDS, src, src, PROC_REF(reseal_done), list(user, tool))
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
-
-/obj/item/nif/multitool_act(mob/user, obj/item/tool)
-	if(open != 2)
-		return ITEM_INTERACT_BLOCKING
-	task_timed(user, 8 SECONDS, src, src, PROC_REF(reset_circuits_done), list(user))
-	return ITEM_INTERACT_SUCCESS
 
 //Icon updating
 /// Appearance reader: the icon_state suffix for the open panel or install state.
