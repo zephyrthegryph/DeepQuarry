@@ -35,31 +35,39 @@ fn main() {
     };
     let result = run();
     if let Some(profile) = profile {
-        if let Err(error) = profile.finish(&[
-            "engine_input",
-            "engine_capture",
-            "session_validation",
-            "input_scan",
-            "frontend.directive_planning",
-            "frontend.expansion",
-            "frontend.source_indexing",
-            "frontend.declaration_parsing",
-            "frontend.declaration_origins",
-            "frontend.tree_resolution",
-            "frontend.body_indexing",
-            "captured_facts",
-            "resources_maps",
-            "linking_inputs",
-            "cold.startup_capture",
-            "cold.abi_preparation",
-            "cold.initializers",
-            "cold.procedure_lowering",
-            "cold.required_type_admission",
-            "cold.symbolic_linking",
-            "cold.composition",
-            "cache_flush",
-            "publication",
-        ]) {
+        let sequential_stages: &[&str] = if result.is_ok()
+            && profile.has_stage("session_validation")
+            && !profile.has_stage("engine_capture")
+        {
+            &["engine_input", "session_validation"]
+        } else {
+            &[
+                "engine_input",
+                "engine_capture",
+                "session_validation",
+                "input_scan",
+                "frontend.directive_planning",
+                "frontend.expansion",
+                "frontend.source_indexing",
+                "frontend.declaration_parsing",
+                "frontend.declaration_origins",
+                "frontend.tree_resolution",
+                "frontend.body_indexing",
+                "captured_facts",
+                "resources_maps",
+                "linking_inputs",
+                "cold.startup_capture",
+                "cold.abi_preparation",
+                "cold.initializers",
+                "cold.procedure_lowering",
+                "cold.required_type_admission",
+                "cold.symbolic_linking",
+                "cold.composition",
+                "cache_flush",
+                "publication",
+            ]
+        };
+        if let Err(error) = profile.finish(sequential_stages) {
             eprintln!("native profile finalization failed: {error}");
             std::process::exit(1);
         }

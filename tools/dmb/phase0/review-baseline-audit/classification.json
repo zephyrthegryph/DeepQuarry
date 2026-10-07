@@ -1,0 +1,783 @@
+{
+  "operation": "read-only classification of saved observations",
+  "tests": 1089,
+  "stable_signatures": 40,
+  "variable_signatures": 79,
+  "stable_status_differences": [
+    {
+      "test": "/datum/unit_test/dq_covert_market_agent_integration",
+      "statuses": {
+        "byond": [
+          1,
+          1,
+          1
+        ],
+        "native": [
+          0,
+          0,
+          0
+        ]
+      },
+      "normalized_messages": {
+        "byond": [
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/game/atoms_movable.dm,<number>: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/game/atoms_movable.dm,<number>: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/game/atoms_movable.dm,<number>: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them"
+        ],
+        "native": [
+          "",
+          "",
+          ""
+        ]
+      },
+      "runtime_counts": {
+        "byond": [
+          3102,
+          3102,
+          3102
+        ],
+        "native": [
+          438,
+          438,
+          438
+        ]
+      },
+      "nondeterministic": false,
+      "deterministic_difference": true,
+      "missing": false
+    },
+    {
+      "test": "/datum/unit_test/dq_destroy_transaction_phase_timing_recorded",
+      "statuses": {
+        "byond": [
+          1,
+          1,
+          1
+        ],
+        "native": [
+          0,
+          0,
+          0
+        ]
+      },
+      "normalized_messages": {
+        "byond": [
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds"
+        ],
+        "native": [
+          "",
+          "",
+          ""
+        ]
+      },
+      "runtime_counts": {
+        "byond": [
+          11,
+          11,
+          11
+        ],
+        "native": [
+          11,
+          11,
+          11
+        ]
+      },
+      "nondeterministic": false,
+      "deterministic_difference": true,
+      "missing": false
+    },
+    {
+      "test": "/datum/unit_test/dq_lifecycle_sandbox",
+      "statuses": {
+        "byond": [
+          1,
+          1,
+          1
+        ],
+        "native": [
+          0,
+          0,
+          0
+        ]
+      },
+      "normalized_messages": {
+        "byond": [
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers"
+        ],
+        "native": [
+          "",
+          "",
+          ""
+        ]
+      },
+      "runtime_counts": {
+        "byond": [
+          28949,
+          28949,
+          28949
+        ],
+        "native": [
+          11217,
+          11217,
+          11217
+        ]
+      },
+      "nondeterministic": false,
+      "deterministic_difference": true,
+      "missing": false
+    },
+    {
+      "test": "/datum/unit_test/dq_power_idle_apc_and_smes_sleep",
+      "statuses": {
+        "byond": [
+          1,
+          1,
+          1
+        ],
+        "native": [
+          0,
+          0,
+          0
+        ]
+      },
+      "normalized_messages": {
+        "byond": [
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/power/power_bridge.dm,<number>: list index out of bounds",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/power/power_bridge.dm,<number>: list index out of bounds",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/power/power_bridge.dm,<number>: list index out of bounds"
+        ],
+        "native": [
+          "",
+          "",
+          ""
+        ]
+      },
+      "runtime_counts": {
+        "byond": [
+          93,
+          93,
+          93
+        ],
+        "native": [
+          93,
+          93,
+          93
+        ]
+      },
+      "nondeterministic": false,
+      "deterministic_difference": true,
+      "missing": false
+    }
+  ],
+  "stable_message_differences": [
+    {
+      "test": "/datum/unit_test/dq_covert_market_agent_integration",
+      "statuses": {
+        "byond": [
+          1,
+          1,
+          1
+        ],
+        "native": [
+          0,
+          0,
+          0
+        ]
+      },
+      "normalized_messages": {
+        "byond": [
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/game/atoms_movable.dm,<number>: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/game/atoms_movable.dm,<number>: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/game/atoms_movable.dm,<number>: /mob/living/carbon/human still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them"
+        ],
+        "native": [
+          "",
+          "",
+          ""
+        ]
+      },
+      "runtime_counts": {
+        "byond": [
+          3102,
+          3102,
+          3102
+        ],
+        "native": [
+          438,
+          438,
+          438
+        ]
+      },
+      "nondeterministic": false,
+      "deterministic_difference": true,
+      "missing": false
+    },
+    {
+      "test": "/datum/unit_test/dq_destroy_transaction_phase_timing_recorded",
+      "statuses": {
+        "byond": [
+          1,
+          1,
+          1
+        ],
+        "native": [
+          0,
+          0,
+          0
+        ]
+      },
+      "normalized_messages": {
+        "byond": [
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_destroy_transaction_tests.dm,<number>: list index out of bounds"
+        ],
+        "native": [
+          "",
+          "",
+          ""
+        ]
+      },
+      "runtime_counts": {
+        "byond": [
+          11,
+          11,
+          11
+        ],
+        "native": [
+          11,
+          11,
+          11
+        ]
+      },
+      "nondeterministic": false,
+      "deterministic_difference": true,
+      "missing": false
+    },
+    {
+      "test": "/datum/unit_test/dq_latent_destroy_parity",
+      "statuses": {
+        "byond": [
+          1,
+          1,
+          1
+        ],
+        "native": [
+          1,
+          1,
+          1
+        ]
+      },
+      "normalized_messages": {
+        "byond": [
+          "FAILURE #<number>: Expected <number> to be equal to <number>. entries moved into the outer closet as data (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_latent_tests.dm:<number>",
+          "FAILURE #<number>: Expected <number> to be equal to <number>. entries moved into the outer closet as data (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_latent_tests.dm:<number>",
+          "FAILURE #<number>: Expected <number> to be equal to <number>. entries moved into the outer closet as data (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_latent_tests.dm:<number>"
+        ],
+        "native": [
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/game/atoms_movable.dm,<number>: /obj/structure/closet/dq_latent_test still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/game/atoms_movable.dm,<number>: /obj/structure/closet/dq_latent_test still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/game/atoms_movable.dm,<number>: /obj/structure/closet/dq_latent_test still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them"
+        ]
+      },
+      "runtime_counts": {
+        "byond": [
+          158,
+          158,
+          158
+        ],
+        "native": [
+          157,
+          157,
+          157
+        ]
+      },
+      "nondeterministic": false,
+      "deterministic_difference": true,
+      "missing": false
+    },
+    {
+      "test": "/datum/unit_test/dq_lifecycle_sandbox",
+      "statuses": {
+        "byond": [
+          1,
+          1,
+          1
+        ],
+        "native": [
+          0,
+          0,
+          0
+        ]
+      },
+      "normalized_messages": {
+        "byond": [
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/unit_tests/dq_lifecycle_tests.dm,<number>: Cannot read null._active_timers"
+        ],
+        "native": [
+          "",
+          "",
+          ""
+        ]
+      },
+      "runtime_counts": {
+        "byond": [
+          28949,
+          28949,
+          28949
+        ],
+        "native": [
+          11217,
+          11217,
+          11217
+        ]
+      },
+      "nondeterministic": false,
+      "deterministic_difference": true,
+      "missing": false
+    },
+    {
+      "test": "/datum/unit_test/dq_power_apc_cycle",
+      "statuses": {
+        "byond": [
+          1,
+          1,
+          1
+        ],
+        "native": [
+          1,
+          1,
+          1
+        ]
+      },
+      "normalized_messages": {
+        "byond": [
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/power/power_bridge.dm,<number>: list index out of bounds",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/power/power_bridge.dm,<number>: list index out of bounds",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/power/power_bridge.dm,<number>: list index out of bounds"
+        ],
+        "native": [
+          "FAILURE #<number>: Assertion failed: an empty isolated APC kept its area powered (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_power_tests.dm:<number>",
+          "FAILURE #<number>: Assertion failed: an empty isolated APC kept its area powered (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_power_tests.dm:<number>",
+          "FAILURE #<number>: Assertion failed: an empty isolated APC kept its area powered (rng seed <number>: dq_focused_test.sh reruns this test alone with the same seed) at code/modules/unit_tests/dq_power_tests.dm:<number>"
+        ]
+      },
+      "runtime_counts": {
+        "byond": [
+          20,
+          20,
+          20
+        ],
+        "native": [
+          20,
+          20,
+          20
+        ]
+      },
+      "nondeterministic": false,
+      "deterministic_difference": true,
+      "missing": false
+    },
+    {
+      "test": "/datum/unit_test/dq_power_idle_apc_and_smes_sleep",
+      "statuses": {
+        "byond": [
+          1,
+          1,
+          1
+        ],
+        "native": [
+          0,
+          0,
+          0
+        ]
+      },
+      "normalized_messages": {
+        "byond": [
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/power/power_bridge.dm,<number>: list index out of bounds",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/power/power_bridge.dm,<number>: list index out of bounds",
+          "FAILURE #<number>: [<number>:<number>:<number>] Runtime in code/modules/power/power_bridge.dm,<number>: list index out of bounds"
+        ],
+        "native": [
+          "",
+          "",
+          ""
+        ]
+      },
+      "runtime_counts": {
+        "byond": [
+          93,
+          93,
+          93
+        ],
+        "native": [
+          93,
+          93,
+          93
+        ]
+      },
+      "nondeterministic": false,
+      "deterministic_difference": true,
+      "missing": false
+    }
+  ],
+  "stable_runtime_count_differences": 37,
+  "runtime_identities": 49,
+  "selected_channel_stable_runtime_differences": 0,
+  "runtime_variable_identities": 2,
+  "normal_exit": {
+    "byond": {
+      "exit_codes": [
+        -1073741819,
+        0,
+        -1073741819
+      ],
+      "stable": false,
+      "variable": true,
+      "normal_exit_gate_passed": false
+    },
+    "native": {
+      "exit_codes": [
+        0,
+        0,
+        0
+      ],
+      "stable": true,
+      "variable": false,
+      "normal_exit_gate_passed": true
+    }
+  },
+  "engine_closure": {
+    "byond:1": {
+      "status": "missing audit",
+      "prelaunch_proven": false
+    },
+    "byond:2": {
+      "status": "matched",
+      "phase": "before-launch",
+      "checked_utc": "2026-10-07T00:36:03.5485731Z",
+      "prelaunch_proven": true
+    },
+    "byond:3": {
+      "status": "matched",
+      "phase": "before-launch",
+      "checked_utc": "2026-10-07T02:20:13.4221325Z",
+      "prelaunch_proven": true
+    },
+    "native:1": {
+      "status": "matched",
+      "phase": "before-launch",
+      "checked_utc": "2026-10-06T23:36:48.6893920Z",
+      "prelaunch_proven": true
+    },
+    "native:2": {
+      "status": "matched",
+      "phase": "before-launch",
+      "checked_utc": "2026-10-07T01:25:33.6251186Z",
+      "prelaunch_proven": true
+    },
+    "native:3": {
+      "status": "matched",
+      "phase": "before-launch",
+      "checked_utc": "2026-10-07T03:06:04.2626728Z",
+      "prelaunch_proven": true
+    }
+  },
+  "coverage": [
+    {
+      "label": "byond:1",
+      "structured": {
+        "structured_events": 409,
+        "raw_events": 0,
+        "unlocated_procedure": 358,
+        "unlocated_source": 358,
+        "ownership_unavailable": 409,
+        "non_test_owned": 0,
+        "test_owned": 0,
+        "parse_errors": 0,
+        "ignored_structured_records": 8155,
+        "mode": "structured",
+        "source": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-1\\runtime.log.json",
+        "raw_channel_not_added": true,
+        "complete": false,
+        "selected_channel_located_complete": false,
+        "raw_reconciliation": "normalized location/message multiset only",
+        "raw_normalized_multiset_matches": false
+      },
+      "raw": {
+        "structured_events": 0,
+        "raw_events": 3093229,
+        "unlocated_procedure": 3093229,
+        "unlocated_source": 0,
+        "ownership_unavailable": 3093229,
+        "non_test_owned": 0,
+        "test_owned": 0,
+        "parse_errors": 4,
+        "ignored_structured_records": 0,
+        "mode": "raw",
+        "source": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-1\\runtime-errors.log",
+        "raw_channel_not_added": false,
+        "complete": false
+      }
+    },
+    {
+      "label": "byond:2",
+      "structured": {
+        "structured_events": 409,
+        "raw_events": 0,
+        "unlocated_procedure": 358,
+        "unlocated_source": 358,
+        "ownership_unavailable": 409,
+        "non_test_owned": 0,
+        "test_owned": 0,
+        "parse_errors": 0,
+        "ignored_structured_records": 8113,
+        "mode": "structured",
+        "source": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-2\\runtime.log.json",
+        "raw_channel_not_added": true,
+        "complete": false,
+        "selected_channel_located_complete": false,
+        "raw_reconciliation": "normalized location/message multiset only",
+        "raw_normalized_multiset_matches": false
+      },
+      "raw": {
+        "structured_events": 0,
+        "raw_events": 3092968,
+        "unlocated_procedure": 3092968,
+        "unlocated_source": 0,
+        "ownership_unavailable": 3092968,
+        "non_test_owned": 0,
+        "test_owned": 0,
+        "parse_errors": 4,
+        "ignored_structured_records": 0,
+        "mode": "raw",
+        "source": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-2\\runtime-errors.log",
+        "raw_channel_not_added": false,
+        "complete": false
+      }
+    },
+    {
+      "label": "byond:3",
+      "structured": {
+        "structured_events": 409,
+        "raw_events": 0,
+        "unlocated_procedure": 358,
+        "unlocated_source": 358,
+        "ownership_unavailable": 409,
+        "non_test_owned": 0,
+        "test_owned": 0,
+        "parse_errors": 0,
+        "ignored_structured_records": 8113,
+        "mode": "structured",
+        "source": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-3\\runtime.log.json",
+        "raw_channel_not_added": true,
+        "complete": false,
+        "selected_channel_located_complete": false,
+        "raw_reconciliation": "normalized location/message multiset only",
+        "raw_normalized_multiset_matches": false
+      },
+      "raw": {
+        "structured_events": 0,
+        "raw_events": 3091314,
+        "unlocated_procedure": 3091314,
+        "unlocated_source": 0,
+        "ownership_unavailable": 3091314,
+        "non_test_owned": 0,
+        "test_owned": 0,
+        "parse_errors": 4,
+        "ignored_structured_records": 0,
+        "mode": "raw",
+        "source": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-3\\runtime-errors.log",
+        "raw_channel_not_added": false,
+        "complete": false
+      }
+    },
+    {
+      "label": "byond:preserved",
+      "structured": {
+        "structured_events": 409,
+        "raw_events": 0,
+        "unlocated_procedure": 358,
+        "unlocated_source": 358,
+        "ownership_unavailable": 409,
+        "non_test_owned": 0,
+        "test_owned": 0,
+        "parse_errors": 0,
+        "ignored_structured_records": 8069,
+        "mode": "structured",
+        "source": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-preserved\\runtime.log.json",
+        "raw_channel_not_added": true,
+        "complete": false,
+        "selected_channel_located_complete": false,
+        "raw_reconciliation": "normalized location/message multiset only",
+        "raw_normalized_multiset_matches": false
+      },
+      "raw": {
+        "structured_events": 0,
+        "raw_events": 3090593,
+        "unlocated_procedure": 3090593,
+        "unlocated_source": 0,
+        "ownership_unavailable": 3090593,
+        "non_test_owned": 0,
+        "test_owned": 0,
+        "parse_errors": 4,
+        "ignored_structured_records": 0,
+        "mode": "raw",
+        "source": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\byond-preserved\\runtime-errors.log",
+        "raw_channel_not_added": false,
+        "complete": false
+      }
+    },
+    {
+      "label": "native:1",
+      "structured": {
+        "structured_events": 102,
+        "raw_events": 0,
+        "unlocated_procedure": 51,
+        "unlocated_source": 102,
+        "ownership_unavailable": 102,
+        "non_test_owned": 0,
+        "test_owned": 0,
+        "parse_errors": 0,
+        "ignored_structured_records": 7649,
+        "mode": "structured",
+        "source": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-1\\runtime.log.json",
+        "raw_channel_not_added": true,
+        "complete": false,
+        "selected_channel_located_complete": false,
+        "raw_reconciliation": "normalized location/message multiset only",
+        "raw_normalized_multiset_matches": false
+      },
+      "raw": {
+        "structured_events": 0,
+        "raw_events": 0,
+        "unlocated_procedure": 0,
+        "unlocated_source": 0,
+        "ownership_unavailable": 0,
+        "non_test_owned": 0,
+        "test_owned": 0,
+        "parse_errors": 3070943,
+        "ignored_structured_records": 0,
+        "mode": "raw",
+        "source": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-1\\runtime-errors.log",
+        "raw_channel_not_added": false,
+        "complete": false
+      }
+    },
+    {
+      "label": "native:2",
+      "structured": {
+        "structured_events": 102,
+        "raw_events": 0,
+        "unlocated_procedure": 51,
+        "unlocated_source": 102,
+        "ownership_unavailable": 102,
+        "non_test_owned": 0,
+        "test_owned": 0,
+        "parse_errors": 0,
+        "ignored_structured_records": 7649,
+        "mode": "structured",
+        "source": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-2\\runtime.log.json",
+        "raw_channel_not_added": true,
+        "complete": false,
+        "selected_channel_located_complete": false,
+        "raw_reconciliation": "normalized location/message multiset only",
+        "raw_normalized_multiset_matches": false
+      },
+      "raw": {
+        "structured_events": 0,
+        "raw_events": 0,
+        "unlocated_procedure": 0,
+        "unlocated_source": 0,
+        "ownership_unavailable": 0,
+        "non_test_owned": 0,
+        "test_owned": 0,
+        "parse_errors": 3072717,
+        "ignored_structured_records": 0,
+        "mode": "raw",
+        "source": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-2\\runtime-errors.log",
+        "raw_channel_not_added": false,
+        "complete": false
+      }
+    },
+    {
+      "label": "native:3",
+      "structured": {
+        "structured_events": 102,
+        "raw_events": 0,
+        "unlocated_procedure": 51,
+        "unlocated_source": 102,
+        "ownership_unavailable": 102,
+        "non_test_owned": 0,
+        "test_owned": 0,
+        "parse_errors": 0,
+        "ignored_structured_records": 7650,
+        "mode": "structured",
+        "source": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-3\\runtime.log.json",
+        "raw_channel_not_added": true,
+        "complete": false,
+        "selected_channel_located_complete": false,
+        "raw_reconciliation": "normalized location/message multiset only",
+        "raw_normalized_multiset_matches": false
+      },
+      "raw": {
+        "structured_events": 0,
+        "raw_events": 0,
+        "unlocated_procedure": 0,
+        "unlocated_source": 0,
+        "ownership_unavailable": 0,
+        "non_test_owned": 0,
+        "test_owned": 0,
+        "parse_errors": 3071882,
+        "ignored_structured_records": 0,
+        "mode": "raw",
+        "source": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-3\\runtime-errors.log",
+        "raw_channel_not_added": false,
+        "complete": false
+      }
+    },
+    {
+      "label": "native:preserved",
+      "structured": {
+        "structured_events": 102,
+        "raw_events": 0,
+        "unlocated_procedure": 51,
+        "unlocated_source": 102,
+        "ownership_unavailable": 102,
+        "non_test_owned": 0,
+        "test_owned": 0,
+        "parse_errors": 0,
+        "ignored_structured_records": 7636,
+        "mode": "structured",
+        "source": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-preserved\\runtime.log.json",
+        "raw_channel_not_added": true,
+        "complete": false,
+        "selected_channel_located_complete": false,
+        "raw_reconciliation": "normalized location/message multiset only",
+        "raw_normalized_multiset_matches": false
+      },
+      "raw": {
+        "structured_events": 0,
+        "raw_events": 0,
+        "unlocated_procedure": 0,
+        "unlocated_source": 0,
+        "ownership_unavailable": 0,
+        "non_test_owned": 0,
+        "test_owned": 0,
+        "parse_errors": 3071005,
+        "ignored_structured_records": 0,
+        "mode": "raw",
+        "source": "D:\\dmb-native-v2-phase0\\parity-final-corrected-20261007-b\\inputs\\native-preserved\\runtime-errors.log",
+        "raw_channel_not_added": false,
+        "complete": false
+      }
+    }
+  ],
+  "equality_claim": false
+}

@@ -11,6 +11,8 @@
 
 ## What remains open
 
+Offline normalization replay reproduced the preserved normalized report byte-for-byte (SHA256 `1e39336baf63c6a2e9132a66dbff9666c712eba0348d61b5019d45aaf14c95c2`). Evidence: `E:/dmb-native-v2-phase0/review-baseline-audit/REPORT.md`. The preserved comparison has 40 stable differing test signatures and 79 variable signatures; native blank-origin raw errors remain unassigned, and two BYOND observations ended in access violations. This is saved-channel reanalysis, not a new runtime reproduction.
+
 Runtime parity is unresolved. The frozen baseline contains stable differences and variable observations; unlocated runtime errors remain comparison evidence. Fewer errors or more passing tests do not prove equivalence. See [phase0/POWER_RUNTIME_AUDIT.md](phase0/POWER_RUNTIME_AUDIT.md) and the frozen baseline records.
 
 Throughput and memory targets are unmet. Historical disk-cache cohorts took 64-110 s for body edits and 56-83 s cold; sampled peak private memory was 3.0-3.5 GB. Revision 5 judges performance by critical-path CPU, total CPU and I/O at eight workers, median of three. Historical wall times at two workers are context only.

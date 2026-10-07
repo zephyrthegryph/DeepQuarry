@@ -16,8 +16,8 @@ import time
 
 SCHEMA = 1
 TARGETS = {"cold": (15.0, 40.0, 400_000_000, 600_000_000),
-           "body-edit": (1.5, None, 50_000_000, 120_000_000),
-           "unchanged": (0.25, None, 5_000_000, 1_000_000)}
+           "body-edit": (1.5, 2.0, 50_000_000, 120_000_000),
+           "unchanged": (0.25, 0.2, 5_000_000, 1_000_000)}
 STAGE_BUDGETS = {"input": (0.5, 1.0), "frontend": (3.0, 12.0),
                  "tree": (1.0, 2.0), "resources_maps": (2.0, 6.0),
                  "abi_initializers": (1.5, 4.0), "lowering": (3.0, 16.0),
@@ -246,11 +246,22 @@ def gate(scenario, rows, history, stage_map):
     if any(not isinstance(names, list) or not names or any(not isinstance(name, str) for name in names) for names in stage_map.values()):
         return "not_evaluable", ["each budget domain needs a nonempty stage list"]
     mapped_names = [n for names in stage_map.values() for n in names]
-    if any(set(mapped_names) != set(row["critical_path_stages"]) for row in rows):
-        return "not_evaluable", ["budget mapping must cover exactly declared critical-path stages"]
+    if scenario == "unchanged":
+        expected_sequence = ["engine_input", "session_validation"]
+        if any(row["critical_path_stages"] != expected_sequence for row in rows):
+            return "not_evaluable", ["unchanged requires exact authenticated-session short sequence"]
+        if any(mapped_names.count(name) != 1 for name in expected_sequence):
+            return "not_evaluable", ["short sequence must map uniquely into global budget domains"]
+        active_map = {domain: [name for name in names if name in expected_sequence]
+                      for domain, names in stage_map.items()}
+        active_map = {domain: names for domain, names in active_map.items() if names}
+    else:
+        if any(set(mapped_names) != set(row["critical_path_stages"]) for row in rows):
+            return "not_evaluable", ["budget mapping must cover exactly declared critical-path stages"]
+        active_map = stage_map
     if len(mapped_names) != len(set(mapped_names)):
         return "not_evaluable", ["overlapping stage mappings"]
-    for domain, names in stage_map.items():
+    for domain, names in active_map.items():
         costs = []
         for row in rows:
             by_name = {s["name"]: s for s in row.get("stages", [])}

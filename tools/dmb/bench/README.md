@@ -71,3 +71,9 @@ The report must include the exact unique `critical_path_stages` supplied to prof
 Raw profiler reports are hash-bound in run rows. Nonfinite JSON measurements are retained in that raw report; ledger values become unknown with an explicit `profile_error`. The results ledger uses strict JSON (no NaN/Infinity).
 
 Stage `read_bytes`/`write_bytes` remain **overlapping process windows**. Separate `attributed_io` rows retain explicit operation bytes and blocked durations; these are partial measurements, not complete stage coverage. I/O acceptance requires an explicit `io_coverage: "complete"` report plus measured blocked time. The current profiler does not issue that completeness claim, so I/O acceptance remains open even if process byte budgets pass. No stage-window or partial-operation sum is represented as full-process I/O.
+
+### Authenticated unchanged shortcut
+
+Unchanged acceptance requires the exact declared critical sequence `engine_input`, then `session_validation`. Both names must occur exactly once in the global eight-domain mapping. Only domains executed by that short sequence receive stage-budget checks. This exception does not apply to cold or body-edit traces: they still require every mapped stage and the complete eight-domain sequence. CPU quality, calibration, coverage, allocation and oracle checks remain mandatory.
+
+Scenario total-CPU limits are 2.0 seconds for a body edit and 0.2 seconds unchanged, alongside critical-path limits of 1.5 and 0.25 seconds respectively.

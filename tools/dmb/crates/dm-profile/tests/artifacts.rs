@@ -18,6 +18,9 @@ fn trace_cpu_flame_and_summary_artifacts_are_written() {
         std::hint::black_box(bytes);
         dm_profile::record_io(123, 456, std::time::Duration::from_millis(1));
     }
+    assert!(profile.has_stage("fixture"));
+    assert!(profile.has_stage("fixture.work"));
+    assert!(!profile.has_stage("missing"));
     let report = profile.finish(&["fixture"]).unwrap();
     assert_eq!(report.schema, 1);
     assert_eq!(report.critical_path_stages, vec!["fixture"]);

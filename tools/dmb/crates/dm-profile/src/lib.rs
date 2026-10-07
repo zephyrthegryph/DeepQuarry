@@ -317,6 +317,17 @@ pub fn initialize(path: &Path) -> Result<ProfileGuard, String> {
     })
 }
 impl ProfileGuard {
+    /// Lets a caller select a proven alternate pipeline (for example an
+    /// authenticated unchanged build). Missing selected stages still fail the
+    /// critical-path measurement in `finish`.
+    pub fn has_stage(&self, name: &str) -> bool {
+        self.state
+            .entries
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .get(name)
+            .is_some_and(|entry| entry.report.calls > 0)
+    }
     /// Supply only sequential top-level names. Nested/overlapping stage maxima
     /// cannot be summed into a critical path without an explicit pipeline proof.
     pub fn finish(mut self, sequential_stages: &[&str]) -> Result<Report, String> {
