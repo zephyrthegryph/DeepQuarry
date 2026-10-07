@@ -7,7 +7,6 @@
 	return list(
 		EFFECT_BUCKLED = list("combine" = COMBINE_ANY, "channel" = CHANGE_MOB_STATUS, "publishes" = MOB_KEY_STATUS),
 		// Body effects (body_effects.dm): factor tables keyed by definition type, value = stacks.
-		EFFECT_BODY_EFFECTS = list("combine" = COMBINE_SUM_PER_KEY, "channel" = CHANGE_MOB_CONDITIONS, "publishes" = MOB_KEY_CONDITIONS, "type" = /datum/om/effect/body_effects),
 		// Grant kinds.
 		GRANT_ABILITY = list("combine" = COMBINE_SUM_PER_KEY),
 		GRANT_LANGUAGE = list("combine" = COMBINE_SUM_PER_KEY),

@@ -62,7 +62,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 // ---- validation ----
 
 /// Why a hold cannot be placed, as a report; null when it can. Pure.
-/proc/stat_hold_refusal(datum/E, datum/stat_def/def, source, value, lasts, clock, override)
+/proc/stat_hold_refusal(datum/E, datum/stat_def/def, source, value, lasts, clock, override, key)
 	if(!isdatum(E) || QDELETED(E))
 		return "the holder is deleted or not a datum"
 	if(!def)
@@ -75,6 +75,15 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 		return "lasts must be a positive number of deciseconds, got [lasts]"
 	if((def.name == "clock_rate" || def.name == "clock_rate_bio") && clock != HOLD_CLOCK_WORLD)
 		return "a hold on [def.name] takes CLOCK_WORLD only: a stasis hold on the clock it feeds would stretch its own duration"
+	if(def.keyed)
+		if(isnull(key))
+			return "a hold on the SUM_PER_KEY stat [def.name] needs a key"
+		if(!isnum(value))
+			return "a hold on the SUM_PER_KEY stat [def.name] needs a number, got [isnull(value) ? "null" : "[value]"]"
+		if(override)
+			return "a SUM_PER_KEY stat has no override: hold or release a key"
+	else if(!isnull(key))
+		return "key = is for a SUM_PER_KEY stat; [def.name] is [def.rule]"
 	if(stat_rule_is_boolean(def.rule) && !isnull(value))
 		var/forcing = stat_forcing_value(def)
 		if(!!value != !!forcing)
@@ -89,10 +98,10 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 
 // ---- the verbs ----
 
-/// A runtime contribution to a stat, kept by `source`; `lasts` is a duration (deciseconds) on `clock`. Returns TRUE when it is placed, or null
+/// A runtime contribution to a stat, kept by `source` (a SUM_PER_KEY stat also takes `key`: the hold adds `value` to that key's total, one hold per (source, key)); `lasts` is a duration (deciseconds) on `clock`. Returns TRUE when it is placed, or null
 /// with the reason reported when it is refused.
-/proc/hold(datum/E, stat, value, source, lasts, priority = PRIORITY_DEFAULT, clock, reason, outlives_source = FALSE)
-	return stat_hold_place(E, stat, value, source, lasts, null, priority, clock, reason, outlives_source, FALSE, FALSE)
+/proc/hold(datum/E, stat, value, source, lasts, priority = PRIORITY_DEFAULT, clock, reason, outlives_source = FALSE, key = null)
+	return stat_hold_place(E, stat, value, source, lasts, null, priority, clock, reason, outlives_source, FALSE, FALSE, key)
 
 /// A hold that ends at an exact deadline on `clock` and, unlike hold(), replaces the value and may shorten: what status_set and status_adjust use.
 /proc/hold_until(datum/E, stat, value, source, until, priority = PRIORITY_DEFAULT, clock, reason, outlives_source = FALSE)
@@ -103,12 +112,12 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 	return stat_hold_place(E, stat, value, source, null, null, priority, HOLD_CLOCK_OWN, null, FALSE, TRUE, FALSE)
 
 /// The one place a hold is placed. `exact` is hold_until's replace-and-may-shorten; `override` the replace-the-composed-value flag.
-/proc/stat_hold_place(datum/E, stat, value, source, lasts, until, priority, clock, reason, outlives_source, override, exact)
+/proc/stat_hold_place(datum/E, stat, value, source, lasts, until, priority, clock, reason, outlives_source, override, exact, key = null)
 	OP_PURE_GUARD("a hold on [E?.type] was placed")
 	var/datum/stat_def/def = stat_def_of(stat)
 	if(isnull(clock))
 		clock = HOLD_CLOCK_OWN
-	var/problem = stat_hold_refusal(E, def, source, value, lasts, clock, override)
+	var/problem = stat_hold_refusal(E, def, source, value, lasts, clock, override, key)
 	if(!problem && override && def.rule == STAT_RULE_SET)
 		problem = "a SET stat has no override: grant or revoke instead"
 	if(problem)
@@ -127,7 +136,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 	else if(lasts)
 		expires = now + lasts
 	var/flags = (outlives_source ? HF_OUTLIVES : 0) | (override ? HF_OVERRIDE : 0)
-	var/list/row = stat_hold_find(rec, def.id, source, null)
+	var/list/row = stat_hold_find(rec, def.id, source, key)
 	if(row && !override == !(row[H_FLAGS] & HF_OVERRIDE))
 		stat_hold_reapply(E, def, row, value, expires, now, lasts, exact, priority, reason, flags)
 	else if(row)
@@ -141,7 +150,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 		row[H_CLOCK] = clock
 		row[H_REASON] = reason || row[H_REASON]
 	else
-		row = list(def.id, source, value, expires, priority, flags, clock, reason, ++GLOB.stat_hold_serial, null, null)
+		row = list(def.id, source, value, expires, priority, flags, clock, reason, ++GLOB.stat_hold_serial, key, null)
 		rec.holds += list(row)
 		if(isdatum(source))
 			var/datum/stat_record/src_rec = stat_record_of(source)
@@ -194,8 +203,8 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 			return row
 	return null
 
-/// Releases `source`'s hold on a stat (SRC_ALL drops every source's). TRUE when something was released.
-/proc/release(datum/E, stat, source)
+/// Releases `source`'s hold on a stat (SRC_ALL drops every source's); on a SUM_PER_KEY stat `key` limits it to that key (null: every key of the source). TRUE when something was released.
+/proc/release(datum/E, stat, source, key = null)
 	OP_PURE_GUARD("a hold on [E?.type] was released")
 	var/datum/stat_def/def = stat_def_of(stat)
 	if(!isdatum(E) || !def)
@@ -205,7 +214,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 		return FALSE
 	var/removed = FALSE
 	for(var/list/row as anything in rec.holds.Copy())
-		if(row[H_STAT] != def.id || row[H_KEY])
+		if(row[H_STAT] != def.id || (def.keyed ? (!isnull(key) && row[H_KEY] != key) : row[H_KEY]))
 			continue
 		if(source == SRC_ALL || row[H_SOURCE] == source)
 			stat_hold_remove(E, rec, row)

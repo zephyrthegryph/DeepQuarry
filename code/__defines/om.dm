@@ -146,9 +146,6 @@
 
 // Stat presets (statuses and godmode are stats: code/library/mob/statuses.dm).
 #define EFFECT_BUCKLED "buckled"
-/// Body effects on a mob (code/modules/body/body_effects.dm): keyed by /datum/body_effect type,
-/// value = stacks. Timed ones expire on the mob's body clock.
-#define EFFECT_BODY_EFFECTS "body_effects"
 
 // The biological clock domain: it runs at the clock_rate_bio stat (code/datums/om/contribution.dm, om_clock_compute()).
 #define CLOCK_BIO "bio"

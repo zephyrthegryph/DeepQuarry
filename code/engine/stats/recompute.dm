@@ -70,6 +70,8 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 	var/override_value = null
 	if(def.is_formula)
 		value = isnull(def.formula) ? def.base : stat_call(E, def.formula)
+	else if(def.keyed)
+		value = stat_compute_keyed(def, rec)
 	else if(I && def.fast && !rec?.holds)
 		value = stat_compute_fast(E, def, I, rec)
 	else
@@ -116,6 +118,15 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 		if(stat_status_immune(E, def))
 			value = 0
 	return value
+
+/// A SUM_PER_KEY stat: key -> the sum of the holds naming that key (a fresh list, empty with none).
+/proc/stat_compute_keyed(datum/stat_def/def, datum/stat_record/rec)
+	. = list()
+	for(var/list/row as anything in rec?.holds)
+		if(row[H_STAT] != def.id)
+			continue
+		var/key = row[H_KEY]
+		.[key] = (.[key] || 0) + row[H_VALUE]
 
 /// stat_compute() for the rules whose result needs no ordering (ALL, ANY, SUM) on an entity with no holds: no row list, no combine call.
 /proc/stat_compute_fast(datum/E, datum/stat_def/def, datum/stat_type_info/I, datum/stat_record/rec)

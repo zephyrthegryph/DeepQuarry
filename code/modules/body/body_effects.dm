@@ -9,7 +9,7 @@
 //   - The effect's DEFINITION is a flyweight /datum/body_effect subtype (one shared instance
 //     per type, body_effect_def()), declaring `factors`, texts, a stacking rule and hooks.
 //     Definitions are shared: they never hold per-mob state.
-//   - An APPLICATION is one contribution to EFFECT_BODY_EFFECTS on the mob, keyed by the
+//   - An APPLICATION is one keyed hold on STAT_BODY_EFFECT_COUNTS on the mob, keyed by the
 //     definition's type, held by the mob itself; its value is the number of stacks.
 //   - A timed application expires through after() on the mob's timer clock. For a living
 //     mob that is CLOCK_BIO, so stasis slows or stops the countdown and suspension pauses it
@@ -22,7 +22,7 @@
 //     It is dropped when the last stack ends.
 //
 // The body reads the per-key value (type -> stacks) in recompute_factors(); a change of the
-// contribution invalidates the factors through /datum/om/effect/body_effects/on_changed().
+// hold invalidates the factors (invalidate_factors() after each write).
 //
 // API (on /mob/living):
 //   apply_body_effect(type, duration, origin, suppress)  timed when duration > 0, held otherwise
@@ -118,14 +118,6 @@
 		defs[path] = def
 	return def
 
-/// The contribution's effect type: a change of any application re-reads the factors.
-/datum/om/effect/body_effects
-
-/datum/om/effect/body_effects/on_changed(datum/E, old_value, new_value)
-	if(isliving(E))
-		var/mob/living/L = E
-		L.invalidate_factors()
-
 /mob/living
 	/// Body effect type -> list of timed-stack names, one per timed stack, soonest first. Each
 	/// names a `body_effect` timer slot (body_effect_after()); the slot owns the timer. Lazy.
@@ -144,7 +136,7 @@
 /mob/living/proc/body_effects()
 	RETURN_TYPE(/list)
 	var/static/list/none = list()
-	return om_value_of(src, EFFECT_BODY_EFFECTS) || none
+	return stat_value(src, STAT_BODY_EFFECT_COUNTS) || none
 
 /mob/living/proc/body_effect_stacks(path)
 	var/list/active = body_effects()
@@ -291,7 +283,8 @@
 				set_body_effect_origin(path, null)
 			return FALSE
 	var/stacks = (def.stacks == MODIFIER_STACK_ALLOWED) ? current + 1 : 1
-	om_hold(src, EFFECT_BODY_EFFECTS, src, stacks, path)
+	hold(src, STAT_BODY_EFFECT_COUNTS, stacks, src, key = path)
+	invalidate_factors()
 	changed(src, CHANGE_MOB_CONDITIONS)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	if(duration)
@@ -346,7 +339,8 @@
 			UNSETEMPTY(body_effect_timers)
 	var/current = body_effect_stacks(path)
 	if(current > 1 && length(timers))
-		om_hold(src, EFFECT_BODY_EFFECTS, src, current - 1, path)
+		hold(src, STAT_BODY_EFFECT_COUNTS, current - 1, src, key = path)
+		invalidate_factors()
 		return
 	end_body_effect(path, FALSE, TRUE)
 
@@ -371,7 +365,8 @@
 	if(length(timers))
 		body_effect_cancel(body_effect_def(key), timers[1])
 		timers.Cut(1, 2)
-	om_hold(src, EFFECT_BODY_EFFECTS, src, current - 1, key)
+	hold(src, STAT_BODY_EFFECT_COUNTS, current - 1, src, key = key)
+	invalidate_factors()
 	return TRUE
 
 /// `expired`: the last timed stack ran out (as opposed to removal or a cure).
@@ -383,8 +378,9 @@
 		body_effect_timers -= path
 		UNSETEMPTY(body_effect_timers)
 	body_effect_cancel(def, "[path]#tick")
-	if(!om_release(src, EFFECT_BODY_EFFECTS, src, path))
+	if(!release(src, STAT_BODY_EFFECT_COUNTS, src, path))
 		return
+	invalidate_factors()
 	changed(src, CHANGE_MOB_CONDITIONS)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	if(def.on_expired_text && !silent)

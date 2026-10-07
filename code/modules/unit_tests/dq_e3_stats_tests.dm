@@ -110,6 +110,39 @@
 	hold(R, STAT_E3_MASK_OR, 4, B)
 	TEST_ASSERT_EQUAL(R.e3_mask_or, 5, "MASK_OR accumulates")
 
+/datum/unit_test/dq_e3/rules_sum_per_key
+
+/datum/unit_test/dq_e3/rules_sum_per_key/run_e3()
+	var/obj/e3_rules/R = allocate(/obj/e3_rules)
+	var/A = source()
+	var/B = source()
+	TEST_ASSERT(!length(R.e3_keyed), "SUM_PER_KEY holds no keys with nothing held")
+	hold(R, STAT_E3_KEYED, 2, A, key = "x")
+	hold(R, STAT_E3_KEYED, 3, B, key = "x")
+	hold(R, STAT_E3_KEYED, 1, A, key = "y")
+	TEST_ASSERT_EQUAL(R.e3_keyed["x"], 5, "two sources on one key sum")
+	TEST_ASSERT_EQUAL(R.e3_keyed["y"], 1, "another key is its own total")
+	// The same (source, key) again replaces its count: a lower count lowers the total.
+	hold(R, STAT_E3_KEYED, 1, A, key = "x")
+	TEST_ASSERT_EQUAL(R.e3_keyed["x"], 4, "holding again from the same source and key replaces the count")
+	// A change of a count alone (the key set unchanged) still counts as a change.
+	hold(R, STAT_E3_KEYED, 7, A, key = "y")
+	TEST_ASSERT_EQUAL(R.e3_keyed["y"], 7, "a changed count under the same keys is written")
+	// release() with a key takes that key only; without one, every key of the source.
+	TEST_ASSERT(release(R, STAT_E3_KEYED, A, "x"), "releasing one key reports it")
+	TEST_ASSERT_EQUAL(R.e3_keyed["x"], 3, "only A's hold on x went")
+	TEST_ASSERT_EQUAL(R.e3_keyed["y"], 7, "A's other key stays")
+	TEST_ASSERT(release(R, STAT_E3_KEYED, A), "releasing a source takes every key it holds")
+	TEST_ASSERT(isnull(R.e3_keyed["y"]) && R.e3_keyed["x"] == 3, "A is gone, B's hold stays")
+	// A hold with no key, a non-number, or an override is refused; a key on another rule is refused.
+	TEST_ASSERT(!hold(R, STAT_E3_KEYED, 1, A), "a keyed stat needs a key")
+	TEST_ASSERT(!hold(R, STAT_E3_KEYED, "n", A, key = "z"), "a keyed stat takes a number")
+	TEST_ASSERT(!vars_write(R, "e3_keyed", list("z" = 1)), "a SUM_PER_KEY stat refuses an override")
+	TEST_ASSERT(!hold(R, STAT_E3_SUM, 1, A, key = "z"), "key = belongs to a SUM_PER_KEY stat")
+	// A datum source's death ends its holds.
+	qdel(B)
+	TEST_ASSERT(!length(R.e3_keyed), "the source's death released its keys: [json_encode(R.e3_keyed)]")
+
 /datum/unit_test/dq_e3/rules_override_and_vv
 
 /datum/unit_test/dq_e3/rules_override_and_vv/run_e3()

@@ -12,6 +12,9 @@
 		return FALSE
 	var/datum/stat_def/def = stat_def_named(name)
 	if(def && stat_declared_on(E.type, def))
+		if(def.keyed)
+			declare_report("vars_write([E.type], [name]): a SUM_PER_KEY stat has no override: hold or release a key")
+			return FALSE
 		if(def.rule == STAT_RULE_SET)
 			declare_report("vars_write([E.type], [name]): a SET stat has no override: grant or revoke instead")
 			return FALSE
