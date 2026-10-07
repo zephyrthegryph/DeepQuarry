@@ -5,56 +5,56 @@ robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Smoleruins item
+human|/obj/item/tool/screwdriver menu: Smash
 human|/obj/item/tool/screwdriver menu: Take apart
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver click: Click: Smoleruins item
+human|/obj/item/tool/screwdriver click: nothing
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Smoleruins item
+human|/obj/item/tool/crowbar menu: Smash
 human|/obj/item/tool/crowbar menu: Take apart
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar click: Click: Smoleruins item
+human|/obj/item/tool/crowbar click: nothing
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Smoleruins item
+human|/obj/item/tool/wrench menu: Smash
 human|/obj/item/tool/wrench menu: Take apart
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench click: Click: Smoleruins item
+human|/obj/item/tool/wrench click: nothing
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Smoleruins item
+human|/obj/item/tool/wirecutters menu: Smash
 human|/obj/item/tool/wirecutters menu: Take apart
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters click: Click: Smoleruins item
+human|/obj/item/tool/wirecutters click: nothing
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Smoleruins item
+human|/obj/item/multitool menu: Smash
 human|/obj/item/multitool menu: Take apart
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool click: Click: Smoleruins item
+human|/obj/item/multitool click: nothing
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Smoleruins item
+human|/obj/item/weldingtool menu: Smash
 human|/obj/item/weldingtool menu: Take apart
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool click: Click: Smoleruins item
+human|/obj/item/weldingtool click: nothing
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Smoleruins item
+human|/obj/item/stack/cable_coil menu: Smash
 human|/obj/item/stack/cable_coil menu: Take apart
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil click: Click: Smoleruins item
+human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Smoleruins item
+human|/obj/item/stack/material/steel menu: Smash
 human|/obj/item/stack/material/steel menu: Take apart
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel click: Click: Smoleruins item
+human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Smoleruins item
+human|/obj/item/card/id menu: Smash
 human|/obj/item/card/id menu: Take apart
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id click: Click: Smoleruins item
+human|/obj/item/card/id click: nothing
 human|/obj/item menu: Move To Top
-human|/obj/item menu: Smoleruins item
+human|/obj/item menu: Smash
 human|/obj/item menu: Take apart
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item click: Click: Smoleruins item
+human|/obj/item click: nothing
 keys: drag_buckle, smoleruins_dismantle_hand, smoleruins_item
 
