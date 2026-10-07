@@ -67,8 +67,8 @@ OM_DERIVE_FIELD(/obj/machinery/atm, has_mains_power, list("stat"))
 	if(ticks_left_timeout <= 0 && ticks_left_locked_down <= 0 && !(locate_within(src, /obj/item/spacecash)))
 		return PROCESS_KILL
 
-DECLARE_EMAG(/obj/machinery/atm, PROC_REF(on_emag), null, null)
-/obj/machinery/atm/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/atm/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	//short out the machine, shoot sparks, spew money!
 	set_emagged(1)
 	fx_sparks(src, 5, FALSE)
@@ -79,24 +79,18 @@ DECLARE_EMAG(/obj/machinery/atm, PROC_REF(on_emag), null, null)
 	//display a message to the user
 	var/response = pick("Initiating withdraw. Have a nice day!", "CRITICAL ERROR: Activating cash chamber panic siphon.","PIN Code accepted! Emptying account balance.", "Jackpot!")
 	to_chat(user, span_warning("[icon2html(src, user.client)] The [src] beeps: \"[response]\""))
-	return 1
+	return OP_OK
 
-/obj/machinery/atm/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/atm_insert_card,
-		/datum/interaction/machine_item/atm_deposit_cash,
-		/datum/interaction/machine_hand/ungated/atm_use,
-	)
-	..()
+MSG_DEF_SELF(atm/firewalled, "A firewall prevents you from interfacing with this device.")
 
 /// The old attackby's card branch: emag error, resolve an emag card, or slot an ID.
-/datum/interaction/machine_item/atm_insert_card
-	id = "atm_insert_card"
-	name = "Insert card"
-	held_type = /obj/item/card
-	effect = /obj/machinery/atm/proc/interaction_atm_insert_card
+/obj/machinery/atm/proc/atm_insert_card(datum/act/op/A)
+	var/obj/item/card/held = A.held
+	atm_take_card(A.actor, held)
+	return OP_OK
 
-/obj/machinery/atm/proc/interaction_atm_insert_card(mob/user, obj/item/card/held, datum/interaction/interaction)
+/// Takes the card the user holds: emag error, resolve an emag card, or slot an ID.
+/obj/machinery/atm/proc/atm_take_card(mob/user, obj/item/card/held)
 	if(emagged > 0)
 		//prevent inserting id into an emagged ATM
 		to_chat(user, span_boldwarning("[icon2html(src, user.client)] CARD READER ERROR. This system has been compromised!"))
@@ -117,17 +111,15 @@ DECLARE_EMAG(/obj/machinery/atm, PROC_REF(on_emag), null, null)
 	return TRUE
 
 /// The old attackby's spacecash branch: deposit cash into the authenticated account.
-/datum/interaction/machine_item/atm_deposit_cash
-	id = "atm_deposit_cash"
-	name = "Deposit cash"
-	held_type = /obj/item/spacecash
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/atm/proc/has_authenticated_account, null))
-	effect = /obj/machinery/atm/proc/interaction_atm_deposit_cash
+/obj/machinery/atm/proc/atm_deposit_cash(datum/act/op/A)
+	var/obj/item/spacecash/held = A.held
+	if(!authenticated_account()) // only offered while an account is logged in
+		return OP_DECLINE
+	atm_take_cash(A.actor, held)
+	return OP_OK
 
-/obj/machinery/atm/proc/has_authenticated_account(mob/actor, atom/target, obj/item/held)
-	return !!authenticated_account()
-
-/obj/machinery/atm/proc/interaction_atm_deposit_cash(mob/user, obj/item/spacecash/held, datum/interaction/interaction)
+/// Deposits the cash the user holds into the authenticated account.
+/obj/machinery/atm/proc/atm_take_cash(mob/user, obj/item/spacecash/held)
 	// Convert physical cash into an audited account deposit.
 	var/datum/money_account/account = authenticated_account()
 	var/deposit_value = held.worth
@@ -219,6 +211,10 @@ CAPABILITIES(/obj/machinery/atm)
 	op("e_withdrawal", ui_act("e_withdrawal", arg("funds_amount", num())), then(PROC_REF(ui_act_e_withdrawal)))
 	op("withdrawal", ui_act("withdrawal", arg("funds_amount", num())), then(PROC_REF(ui_act_withdrawal)))
 	display_disconnect_op()
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
+	op("atm_insert_card", item(/obj/item/card), priority(OP_PRIORITY_DEFAULT - 1), label("Insert card"), then(PROC_REF(atm_insert_card)))
+	op("atm_deposit_cash", item(/obj/item/spacecash), priority(OP_PRIORITY_DEFAULT - 1), label("Deposit cash"), then(PROC_REF(atm_deposit_cash)))
+	op("atm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(not_silicon_user), because = MSG(atm/firewalled))), then(PROC_REF(atm_use)))
 
 /obj/machinery/atm/proc/ui_act_insert_card(datum/act/op/A)
 	if(held_card())
@@ -501,20 +497,15 @@ CAPABILITIES(/obj/machinery/atm)
 			work_start(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
-/datum/interaction/machine_hand/ungated/atm_use
-	id = "atm_use"
-	name = "Use"
-	requires = list(REQ_BECAUSE(REQ_TARGET_STATE(/obj/machinery/atm/proc/not_silicon_user), "a firewall prevents you from interfacing with this device"))
-	effect = /obj/machinery/atm/proc/interaction_atm_use
-
 /// Requirement: silicons are firewalled out.
-/obj/machinery/atm/proc/not_silicon_user(mob/user, atom/target, obj/item/held)
-	return !istype(user, /mob/living/silicon)
+/obj/machinery/atm/proc/not_silicon_user(datum/act/op/A)
+	return !istype(A.actor, /mob/living/silicon)
 
-/obj/machinery/atm/proc/interaction_atm_use(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/atm/proc/atm_use(datum/act/op/A)
+	var/mob/user = A.actor
 	if(get_dist(src,user) <= 1)
 		tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 //stolen wholesale and then edited a bit from newscasters, which are awesome and by Agouri
 /obj/machinery/atm/proc/scan_user(mob/living/carbon/human/human_user as mob)

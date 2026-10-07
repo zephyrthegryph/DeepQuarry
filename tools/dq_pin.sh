@@ -8,6 +8,8 @@
 #   bash tools/dq_pin.sh --rm /obj/machinery/foo                       # drop a pin (the type is gone or hand-pinned)
 #   bash tools/dq_pin.sh --look /obj/machinery/foo [...]                # a look pin instead: icon, icon_state, overlays
 #                                                                       # (snapshots/looks/, test dq_look_pin)
+#   bash tools/dq_pin.sh --hit /obj/item/foo [...]                     # a hit pin: what an EMP, a blast, a shot, a blob, a throw and an
+#                                                                       # emag change on a fresh one (snapshots/hit_pins/, test dq_hit_pin)
 #   bash tools/dq_pin.sh --look-tree /obj/item/gun [...]                # the look pin of every subtype, one file per root
 #                                                                       # (snapshots/look_trees/, test dq_look_tree_pin)
 #
@@ -24,6 +26,7 @@ for arg in "$@"; do
 	case "$arg" in
 		--rm) remove=1 ;;
 		--look) dir="code/modules/unit_tests/snapshots/looks"; test="dq_look_pin" ;;
+		--hit) dir="code/modules/unit_tests/snapshots/hit_pins"; test="dq_hit_pin" ;;
 		--look-tree) dir="code/modules/unit_tests/snapshots/look_trees"; test="dq_look_tree_pin" ;;
 		-h|--help) sed -n '2,15p' "$0"; exit 0 ;;
 		/*) types+=("$arg") ;;

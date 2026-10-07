@@ -51,25 +51,28 @@ TRACKED(/obj/item/material/fishing_rod, strung)
 	set_strung(TRUE)
 	to_chat(user, span_notice("You string \the [src]!"))
 
-EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF(fishing_rod_item)))
+CAPABILITIES(/obj/item/material/fishing_rod)
+	op("fishing_rod_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Fishing rod item"), then(PROC_REF(fishing_rod_item)))
 
 /// Old attackby: string the rod or swap its bait; bait falls through as its ..() did.
-/obj/item/material/fishing_rod/proc/fishing_rod_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/material/fishing_rod/proc/fishing_rod_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/stack/cable_coil) && !strung)
 		var/obj/item/stack/cable_coil/C = I
 		if(C.get_amount() < 5)
 			to_chat(user, span_warning("You do not have enough length in \the [C] to string this!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		task_timed(user, rand(10 SECONDS, 20 SECONDS), src, src, PROC_REF(string_done), list(user, C))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	else if(istype(I, bait_type))
 		if(Bait)
 			Bait.forceMove(get_turf(user))
 			to_chat(user, span_notice("You swap \the [Bait] with \the [I]."))
 		if(!move_into(src, nameof(src.Bait), I, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		update_bait()
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/material/fishing_rod/wirecutter_act(mob/user, obj/item/tool)
 	if(!strung)
@@ -129,7 +132,6 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF
 	default_material = MAT_PLASTIC
 
 	toolspeed = 0.9
-
 
 /obj/item/material/fishing_rod/modern/strong
 	desc = "A extremely refined rod for catching fish."

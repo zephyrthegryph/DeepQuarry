@@ -31,16 +31,19 @@
 	PUBLISH_LEGACY(src, /datum/notice/disposal_unlink)
 	..()
 
-DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/structure/disposaloutlet)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/disposaloutlet/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/disposaloutlet/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(!I || !user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	src.add_fingerprint(user)
 	if(mode == OUTLET_SCREWED)
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /obj/structure/disposaloutlet/screwdriver_act(mob/user, obj/item/I)
 	mode = mode == OUTLET_SCREWED ? OUTLET_UNSCREWED : OUTLET_SCREWED

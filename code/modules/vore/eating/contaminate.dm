@@ -44,17 +44,18 @@ GLOBAL_LIST_INIT(gurgled_overlays, list(
 	else
 		return TRUE
 
-// Added ahead of the sink's own interactions (its declare_interactions() override in watercloset.dm).
-EXTEND_INTERACTIONS(/obj/structure/sink, INTERACT_ITEM("Wash", PROC_REF(sink_wash_gurgled_item)))
+// Added ahead of the sink's own ops (its CAPABILITIES block in watercloset.dm).
 
 /// Old attackby: wash the soggy item before it can interact with the sink.
-/obj/structure/sink/proc/sink_wash_gurgled_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/sink/proc/sink_wash_gurgled_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I) && I.gurgled)
 		to_chat(user, span_notice("You start washing [I]."))
 
 		task_timed(user, 4 SECONDS, src, src, PROC_REF(wash_gurgled_done), list(user, I), claims = TRUE) // the wash claims the sink
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/structure/sink/proc/wash_gurgled_done(mob/user, obj/item/I)
 	I.wash(CLEAN_SCRUB)

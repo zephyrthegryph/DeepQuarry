@@ -33,11 +33,6 @@ CAPABILITIES(/obj/item/hoist_kit)
 	anchored = TRUE
 	plane = ABOVE_MOB_PLANE
 
-EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
-	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_swallow)), \
-	INTERACT_DRAG("Attach", PROC_REF(interaction_hoist_hook_attach), REQ_TARGET_STATE(/obj/effect/hoist_hook/proc/can_attach)), \
-)
-
 /// Requirement: TRUE, or why the dragged thing can't be clamped on.
 /obj/effect/hoist_hook/proc/can_attach(mob/user, atom/target, atom/movable/held)
 	if(!istype(held) || !held.simulated || held.anchored)
@@ -47,15 +42,22 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	return TRUE
 
 /// Old MouseDrop_T: clamp the dragged thing onto the hook. Replaces the buckle drag.
-/obj/effect/hoist_hook/proc/interaction_hoist_hook_attach(mob/user, atom/movable/AM, datum/interaction/interaction)
+/obj/effect/hoist_hook/proc/interaction_hoist_hook_attach(datum/act/op/A)
+	var/refusal = can_attach(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/user = A.actor
+	var/atom/movable/AM = A.held
 	if (use_check(user, 0))
-		return TRUE
+		return OP_OK
 
 	source_hoist().attach_hoistee(AM)
 	act_message(user, AM, MSG_SELF(span_danger("You attach %T% to \the [src].")), \
 		MSG_OTHERS(span_danger("%U% attaches %T% to \the [src].")), \
 		MSG_BLIND(span_danger("You hear something clamp into place.")))
-	return TRUE
+	return OP_OK
 
 /obj/structure/hoist/proc/attach_hoistee(atom/movable/AM)
 	if (get_turf(AM) != get_turf(source_hook))
@@ -68,6 +70,9 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 
 CAPABILITIES(/obj/effect/hoist_hook)
 	drag_onto(PROC_REF(drop_input))
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(hook_blast_break))))
+	op("swallow", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction swallow"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("hoist_hook_attach", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Attach"), then(PROC_REF(interaction_hoist_hook_attach)))
 
 /// The native drop's actor and arguments, handed over by the engine (drag_onto(), code/engine/lifeforms/input.dm).
 /obj/effect/hoist_hook/proc/drop_input(datum/act/input/A)
@@ -127,13 +132,15 @@ CAPABILITIES(/obj/effect/hoist_hook)
 CAPABILITIES(/obj/structure/hoist)
 	owns_one(nameof(source_hook), /obj/effect/hoist_hook)
 	param(nameof(dir), pos = 1, apply = PROC_REF(hang_hook))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(hoist_blast_break)))
+	op("hand", hand(), ungated(), label("Use"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), then(PROC_REF(interaction_hand)))
+	op("hoist_verb_collapse", menu(), label("Collapse Hoist"), when(req_actor_kind(list(/mob/living/carbon/human, /mob/living/silicon))), needs(req_adjacent(), req_capable()), then(PROC_REF(hoist_verb_collapse)))
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm). The hoist hangs its hook on the side it faces.
 /obj/structure/hoist/proc/hang_hook(ndir)
 	var/turf/newloc = get_step(src, dir)
 	rel_set(src, nameof(source_hook), new /obj/effect/hoist_hook(newloc))
 	rel_set(source_hook, nameof(source_hook.source_hoist), src)
-
 
 // whatever hangs from the hoist is released.
 /obj/structure/hoist/on_destroy(force)
@@ -165,27 +172,22 @@ CAPABILITIES(/obj/structure/hoist)
 		release_hoistee()
 	rel_clear(src, nameof(source_hook))
 
-DAMAGE_REACTION_AFTER(/obj/structure/hoist, DAMAGE_EXPLOSION, PROC_REF(hoist_blast_break))
-DAMAGE_REACTION(/obj/effect/hoist_hook, DAMAGE_EXPLOSION, PROC_REF(hook_blast_break))
-
 /// A hoist that survives a heavy blast is broken by it.
-/obj/structure/hoist/proc/hoist_blast_break(datum/damage_packet/packet)
+/obj/structure/hoist/proc/hoist_blast_break(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(packet.severity <= 2 && !broken)
 		break_hoist()
 
 /// A hit on the hook wrenches the hoist; it breaks more often the closer the blast (the hook itself takes nothing).
-/obj/effect/hoist_hook/proc/hook_blast_break(datum/damage_packet/packet)
+/obj/effect/hoist_hook/proc/hook_blast_break(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	if(prob(100 / packet.severity))
 		source_hoist().break_hoist()
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/structure/hoist
 	silicon_use = ROBOT_USE_HAND
-
-DECLARE_INTERACTIONS(/obj/structure/hoist, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/structure/hoist/proc/can_work_hoist)), \
-	INTERACT_VERB("Collapse Hoist", PROC_REF(hoist_verb_collapse), REQ_TARGET_STATE(/obj/structure/hoist/proc/can_collapse)), \
-)
 
 /// Requirement: TRUE, or why this user can't work the hoist. Non-humanoids are turned away silently by the effect.
 /obj/structure/hoist/proc/can_work_hoist(mob/living/user, atom/target, obj/item/held)
@@ -210,9 +212,14 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, \
 	return TRUE
 
 /// Old attack_hand.
-/obj/structure/hoist/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if (!(ishuman(user) || issilicon(user)))
-		return TRUE
+
+/obj/structure/hoist/proc/interaction_hand(datum/act/op/A)
+	var/refusal = can_work_hoist(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/living/user = A.actor
 
 	var/can = can_move_dir(movedir)
 	var/movtext = movedir == UP ? "raise" : "lower"
@@ -248,10 +255,14 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, \
 	replace_with(src, /obj/item/hoist_kit)
 
 /// Old Collapse Hoist verb.
-/obj/structure/hoist/proc/hoist_verb_collapse(mob/user, obj/item/held, datum/interaction/interaction)
-	if (!(ishuman(user) || issilicon(user)))
-		return
 
+/obj/structure/hoist/proc/hoist_verb_collapse(datum/act/op/A)
+	var/refusal = can_collapse(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/user = A.actor
 	if (isobserver(user) || user.incapacitated())
 		return
 	collapse_kit()

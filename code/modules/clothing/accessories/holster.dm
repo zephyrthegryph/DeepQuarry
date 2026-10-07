@@ -74,25 +74,27 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ
 		clear_holster()
 
 //YW change start
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
-	INTERACT_HAND_UNGATED_AS(I_HURT, "Draw", PROC_REF(holster_draw_hand)), \
-	INTERACT_ITEM(null, PROC_REF(holster_item)), \
-	INTERACT_VERB("Holster", PROC_REF(holster_quick_holster_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/accessory/holster)
+	op("holster_draw_hand", hand(), ungated(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Draw"), then(PROC_REF(holster_draw_hand)))
+	op("holster_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Holster item"), then(PROC_REF(holster_item)))
+	op("holster_quick_holster_verb", menu(), label("Holster"), needs(carried()), then(PROC_REF(holster_quick_holster_verb)))
 
 /// Old attack_hand: draw from an attached holster in combat mode.
-/obj/item/clothing/accessory/holster/proc/holster_draw_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/holster/proc/holster_draw_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if (has_suit() && (slot & SLOT_HOLSTER ))	//if we are part of a suit
 		if (holstered)
-			unholster(user, interaction.stance)
-		return TRUE
-	return FALSE
+			unholster(user, I_HURT)
+		return OP_OK
+	return OP_DECLINE
 //YW change end
 
 /// Old attackby: holster the item.
-/obj/item/clothing/accessory/holster/proc/holster_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/clothing/accessory/holster/proc/holster_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	holster(W, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/clothing/accessory/holster/examine(mob/user)
 	. = ..(user)
@@ -103,7 +105,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
 
 // The uniform it is attached to offers "Holster" too (/obj/item/clothing/under, clothing.dm).
 /// Old verb "Holster".
-/obj/item/clothing/accessory/holster/proc/holster_quick_holster_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/holster/proc/holster_quick_holster_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 
@@ -115,7 +118,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
 			return
 		H.holster(W, user)
 	else
-		H.unholster(user, interaction.stance)
+		H.unholster(user, I_HELP)
 
 /obj/item/clothing/accessory/holster/armpit
 	name = "armpit holster"

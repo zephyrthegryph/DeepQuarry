@@ -21,10 +21,16 @@
 
 CAPABILITIES(/obj/structure/grille)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
+	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_destroys))))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	op("hand", hand(), label("Kick"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+
+/// A blob's hit destroys the grille outright.
+/obj/structure/grille/proc/blob_destroys(datum/act/hit/blob/A)
+	destroyed(src)
+	return OP_OK
 
 /// Something walked into it (the bump action's notice).
 /obj/structure/grille/proc/bumped_into(datum/act/A)

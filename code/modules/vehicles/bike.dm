@@ -28,6 +28,12 @@
 
 CAPABILITIES(/obj/vehicle/bike)
 	owns_one(nameof(ion), starts = /datum/effect/effect/system/ion_trail_follow)
+	op("vehicle_paint", tool(TOOL_MULTITOOL), when(req_is(nameof(open), TRUE)), priority(OP_PRIORITY_DEFAULT - 1), label("Paint"), wait(0), asks(/datum/prompt/color/vehicle_paint, fields = list("default" = nameof(paint_color)), step = "colour"), then(PROC_REF(vehicle_paint_picked)))
+	op("bike_kickstand_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle kickstand"), then(PROC_REF(interaction_bike_kickstand)))
+	op("bike_drag", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Load"), then(PROC_REF(interaction_bike_drag)))
+	op("bike_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction bike hand"), then(PROC_REF(interaction_bike_hand)))
+	op("bike_toggle_engine", menu(), label("Toggle Engine"), needs(req_on_holder_turf(), req_capable()), then(PROC_REF(bike_toggle_engine)))
+	op("bike_kickstand", menu(), label("Toggle Kickstand"), needs(req_on_holder_turf(), req_capable()), then(PROC_REF(bike_kickstand)))
 
 /obj/vehicle/bike/ownership()
 	. = ..()
@@ -52,15 +58,6 @@ CAPABILITIES(/obj/vehicle/bike/random)
 /obj/vehicle/bike/random/proc/roll_paint_color(datum/roller/R)
 	return rgb(R.number(1, 255),R.number(1, 255),R.number(1, 255))
 
-EXTEND_INTERACTIONS(/obj/vehicle/bike, \
-	INTERACT_ITEM("Paint", PROC_REF(interaction_vehicle_paint)), \
-	INTERACT_ALT("Toggle kickstand", PROC_REF(interaction_bike_kickstand)), \
-	INTERACT_DRAG("Load", PROC_REF(interaction_bike_drag)), \
-	INTERACT_HAND(null, PROC_REF(interaction_bike_hand)), \
-	INTERACT_VERB("Toggle Engine", PROC_REF(bike_toggle_engine), REQ_REACH(0)), \
-	INTERACT_VERB("Toggle Kickstand", PROC_REF(bike_kickstand), REQ_REACH(0)), \
-)
-
 /// A vehicle's paint colour (multitool, panel open). Re-checked on the answer: the painter is
 /// still next to it and able. Shared by the bike, the quad and its trailer.
 /datum/prompt/color/vehicle_paint
@@ -69,10 +66,11 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 	timeout = 0
 
-/obj/vehicle/proc/vehicle_paint_picked(datum/act/request/A)
-	if(!A.answer)
+/obj/vehicle/proc/vehicle_paint_picked(datum/act/op/A)
+	var/picked = A.step_value("colour")
+	if(isnull(picked))
 		return
-	paint_color = A.answer.value
+	paint_color = picked
 	update_icon()
 
 /obj/vehicle/bike/click_ctrl(mob/user)
@@ -82,7 +80,8 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 		return ..()
 
 /// Old verb "Toggle Engine".
-/obj/vehicle/bike/proc/bike_toggle_engine(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/bike/proc/bike_toggle_engine(datum/act/op/A)
+	var/mob/user = A.actor
 	toggle_proc(user)
 
 /obj/vehicle/bike/proc/toggle_proc(mob/user)
@@ -102,14 +101,16 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 		return CLICK_ACTION_SUCCESS
 
 /// Old click_alt: toggle the kickstand when adjacent.
-/obj/vehicle/bike/proc/interaction_bike_kickstand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/bike/proc/interaction_bike_kickstand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!Adjacent(user))
-		return FALSE
-	bike_kickstand(user)
-	return TRUE
+		return OP_DECLINE
+	bike_kickstand(A)
+	return OP_OK
 
 /// Old verb "Toggle Kickstand".
-/obj/vehicle/bike/proc/bike_kickstand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/bike/proc/bike_kickstand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user) || has_trait(user, TRAIT_AMBIENT_PEST_MOB))
 		return
 
@@ -137,19 +138,22 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 	return ..(M, user)
 
 /// Old MouseDrop_T: load the dropped atom onto the bike.
-/obj/vehicle/bike/proc/interaction_bike_drag(mob/user, atom/movable/C, datum/interaction/interaction)
+/obj/vehicle/bike/proc/interaction_bike_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/C = A.held
 	if(!load(C, user))
 		to_chat(user, span_warning(" You were unable to load \the [C] onto \the [src]."))
-	return TRUE
+	return OP_OK
 
 /// Old attack_hand: buckle yourself on, or off.
-/obj/vehicle/bike/proc/interaction_bike_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/bike/proc/interaction_bike_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user == load)
 		unload(load, user)
 		to_chat(user, "You unbuckle yourself from \the [src].")
 	else if(!load && load(user, user))
 		to_chat(user, "You buckle yourself to \the [src].")
-	return TRUE
+	return OP_OK
 
 /obj/vehicle/bike/relaymove(mob/user, direction)
 	if(user != load || !on)

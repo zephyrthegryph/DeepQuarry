@@ -46,6 +46,11 @@
 CAPABILITIES(/turf/simulated/floor)
 	extend(/datum/act/hit/blob, instead())
 	param(nameof(floortype_at_make), pos = 1)
+	op("floor_item_help", item(/obj/item), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(floor_item_help)))
+	op("floor_item_disarm", item(/obj/item), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 2), label("Hit the floor"), then(PROC_REF(floor_item_disarm)))
+	op("floor_item_grab", item(/obj/item), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 2), label("Draw graffiti"), then(PROC_REF(floor_item_grab)))
+	op("floor_item_hurt", item(/obj/item), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 2), label("Hit the floor"), then(PROC_REF(floor_item_hurt)))
+	op("floor_graffiti", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Graffiti"), then(PROC_REF(floor_graffiti_alt)))
 
 /// The tile breaks as its condition crosses the failure fraction.
 /turf/simulated/floor/on_update_integrity(old_value, new_value)

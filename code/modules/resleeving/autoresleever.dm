@@ -24,14 +24,17 @@ REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEE
 /obj/machinery/transhuman/autoresleever/proc/appearance_faulty()
 	return (broken_now() || under_maintenance() || emp_held())
 
-EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
-	INTERACT_OBSERVER("Respawn", PROC_REF(autoresleever_interaction_ghost)), \
-	INTERACT_ITEM(null, PROC_REF(autoresleever_interaction_item)), \
-)
+CAPABILITIES(/obj/machinery/transhuman/autoresleever)
+	op("autoresleever_interaction_ghost", observer(), label("Respawn"), then(PROC_REF(autoresleever_interaction_ghost)))
+	op("autoresleever_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(autoresleever_interaction_item)))
 
 /// Old attack_ghost.
-/obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_ghost(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_ghost(datum/act/op/A)
+	autoresleever_ghost_use(A.actor)
+	return OP_OK
+
+/// The ghost's respawn flow; it asks its questions by re-running itself with the same arguments.
+/obj/machinery/transhuman/autoresleever/proc/autoresleever_ghost_use(mob/observer/dead/user)
 	if(spawn_slots == 0)
 		to_chat(user, span_warning("There are no more respawn slots."))
 		return
@@ -40,21 +43,21 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 			if(ELAPSED(user, timeofdeath, CLOCK_WORLD) >= vore_respawn)
 				autoresleeve(user)
 			else
-				to_chat(user, span_warning("You must wait [((vore_respawn - ELAPSED(user, timeofdeath, CLOCK_WORLD)) * 0.1) / 60] minutes to use \the [src]."))
+				to_chat(user, span_warning("You must wait [((vore_respawn - ELAPSED(user, timeofdeath, CLOCK_WORLD)) * 0.1) / 60] minutes to use 	he [src]."))
 				return
 		else if(ELAPSED(user, timeofdeath, CLOCK_WORLD) >= respawn)
 			autoresleeve(user)
 		else
-			to_chat(user, span_warning("You must wait [((respawn - ELAPSED(user, timeofdeath, CLOCK_WORLD)) * 0.1) /60] minutes to use \the [src]."))
+			to_chat(user, span_warning("You must wait [((respawn - ELAPSED(user, timeofdeath, CLOCK_WORLD)) * 0.1) /60] minutes to use 	he [src]."))
 			return
 	else if(spawntype)
-		var/_answer_k54 = rerun_ask(user, "k54", PROC_REF(autoresleever_interaction_ghost), args, /datum/prompt/choice, question = "This [src] spawns something special, would you like to play as it?", title = "Creachur", choices = list("No","Yes"), buttons = TRUE)
+		var/_answer_k54 = rerun_ask(user, "k54", PROC_REF(autoresleever_ghost_use), args, /datum/prompt/choice, question = "This [src] spawns something special, would you like to play as it?", title = "Creachur", choices = list("No","Yes"), buttons = TRUE)
 		if(isnull(_answer_k54))
 			return
 		if(_answer_k54 == "Yes")
 			autoresleeve(user)
 	else if(ghost_spawns)
-		var/_answer_k57 = rerun_ask(user, "k57", PROC_REF(autoresleever_interaction_ghost), args, /datum/prompt/choice, question = "Would you like to be spawned here as your presently loaded character?", title = "Spawn here", choices = list("No","Yes"), buttons = TRUE)
+		var/_answer_k57 = rerun_ask(user, "k57", PROC_REF(autoresleever_ghost_use), args, /datum/prompt/choice, question = "Would you like to be spawned here as your presently loaded character?", title = "Spawn here", choices = list("No","Yes"), buttons = TRUE)
 		if(isnull(_answer_k57))
 			return
 		if(_answer_k57 == "Yes")
@@ -63,8 +66,8 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 		to_chat(user, span_warning("You need to have been spawned in order to respawn here."))
 
 /// Old attackby: let's not let people mess with this.
-/obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_item(mob/user, obj/item/held, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
+/obj/machinery/transhuman/autoresleever/proc/autoresleever_interaction_item(datum/act/op/A)
+	return OP_PASS
 
 /obj/machinery/transhuman/autoresleever/proc/autoresleeve(mob/observer/dead/ghost)
 	if((broken_now() || under_maintenance() || emp_held())) // Let it still work when power is just off, it has it's own backup reserve or something.

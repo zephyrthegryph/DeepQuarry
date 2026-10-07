@@ -21,7 +21,7 @@
 	TEST_ASSERT(aim in target.aimed, "Actual aiming establishes its real incoming target relation")
 	TEST_ASSERT_EQUAL(aim.loc, T, "Actual aiming places its exact original overlay on its real target's floor")
 	if(periodic)
-		aim.periodic_step()
+		aim.aiming_step()
 	else
 		aim.update_aiming()
 	TEST_ASSERT(!QDELETED(aim), "The actual live-owner positive control preserves its original aiming overlay")
@@ -32,7 +32,7 @@
 	TEST_ASSERT(!QDELETED(aim), "The actual independent overlay survives owner deletion until its orphan cleanup endpoint")
 	TEST_ASSERT_NULL(aim.owner(), "Actual owner deletion clears the original overlay's real owner relation")
 	if(periodic)
-		TEST_ASSERT_NULL(aim.periodic_step(), "The actual orphan periodic endpoint retains its original null result")
+		TEST_ASSERT_NULL(aim.aiming_step(), "The actual orphan periodic endpoint retains its original null result")
 	else
 		TEST_ASSERT_NULL(aim.update_aiming(), "The actual orphan update endpoint retains its original null result")
 	TEST_ASSERT(QDELETED(aim), "The actual orphan endpoint consumes the exact original aiming overlay")

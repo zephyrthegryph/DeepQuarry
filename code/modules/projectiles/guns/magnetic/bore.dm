@@ -131,7 +131,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, TYPE_PROC_REF(/atom, appe
 	update_icon()
 
 /// Old attackby: the parent's first, then its own.
-/obj/item/gun/magnetic/matfed/gun_item(mob/user, obj/item/thing, datum/interaction/interaction)
+/obj/item/gun/magnetic/matfed/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/thing = A.held
 	. = ..()
 	update_rating_mod()
 	if(removable_components)
@@ -215,7 +217,8 @@ CAPABILITIES(/obj/item/gun/magnetic/matfed/phoronbore)
 	owns_one(nameof(soundloop), /datum/looping_sound/small_motor)
 
 /// Generator stage (GEN_OFF/STARTING/IDLE/ACTIVE).
-OM_FIELD(/obj/item/gun/magnetic/matfed/phoronbore, generator_state, GEN_OFF, CHANGE_EXPLICIT)
+/obj/item/gun/magnetic/matfed/phoronbore/var/generator_state = GEN_OFF
+TRACKED(/obj/item/gun/magnetic/matfed/phoronbore, generator_state)
 
 /obj/item/gun/magnetic/matfed/phoronbore/consume_next_projectile()
 	if(!check_ammo() || !capacitor || capacitor.charge < power_cost)
@@ -242,14 +245,12 @@ OM_FIELD(/obj/item/gun/magnetic/matfed/phoronbore, generator_state, GEN_OFF, CHA
 /obj/item/gun/magnetic/matfed/phoronbore/ui_action_click(mob/user, actiontype)
 	toggle_generator(user)
 
-/// Replaces /obj/item/gun/magnetic's capacitor_unsettled declaration: the bore also steps while its
+/// The bore also steps while its
 /// generator runs, whatever the capacitor is doing.
-OM_DERIVE_FIELD(/obj/item/gun/magnetic/matfed/phoronbore, bore_busy, list("generator_state", "capacitor_unsettled"))
-/obj/item/gun/magnetic/matfed/phoronbore/proc/bore_busy()
-	return generator_state > GEN_OFF || capacitor_unsettled()
-DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic/matfed/phoronbore, PERIODIC_SLOW, "bore_busy")
+/obj/item/gun/magnetic/matfed/phoronbore/steps_now(datum/act/A)
+	return generator_state > GEN_OFF || capacitor || cell
 
-/obj/item/gun/magnetic/matfed/phoronbore/periodic_step()
+/obj/item/gun/magnetic/matfed/phoronbore/magnetic_step(datum/act/timer/A)
 	if(generator_state && !mat_storage)
 		audible_message(span_notice("\The [src] goes quiet."),span_notice("A motor noise cuts out."), runemessage = "goes quiet")
 		soundloop.stop()

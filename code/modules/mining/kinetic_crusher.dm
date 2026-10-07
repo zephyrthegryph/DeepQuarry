@@ -62,14 +62,14 @@ TRACKED(/obj/item/kinetic_crusher, integ_light_on)
 	wielded = 1
 
 
-DECLARE_EMAG(/obj/item/kinetic_crusher, PROC_REF(on_emag), null, null)
+CAPABILITIES(/obj/item/kinetic_crusher)
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
-/obj/item/kinetic_crusher/mark_emagged()
-	emagged = TRUE
-/obj/item/kinetic_crusher/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+
+/obj/item/kinetic_crusher/proc/on_emag(datum/act/op/A)
 	emagged = TRUE
 	desc = desc + " The destabilizer module occasionally sparks and glows a menacing red."
-	return 1
+	return OP_OK
 
 /obj/item/kinetic_crusher/proc/can_mark(mob/living/victim)
 	if(emagged)

@@ -9,6 +9,10 @@
 	anchored = 1
 	var/tmp/obj/machinery/hyperpad/centre/primary
 
+CAPABILITIES(/obj/machinery/hyperpad)
+	op("hyperpad_ghost_use", observer(), priority(OP_PRIORITY_DEFAULT - 2), label("View"), then(PROC_REF(hyperpad_ghost_use)))
+	op("hyperpad_delegate", hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Activate"), then(PROC_REF(interaction_delegate)))
+
 /obj/machinery/hyperpad/centre
 	var/teleport_cooldown = 400 //30 seconds
 	var/teleport_speed = 60
@@ -27,6 +31,8 @@
 
 CAPABILITIES(/obj/machinery/hyperpad/centre)
 	owns_many(nameof(linked))
+	op("hyperpad_centre_ghost_travel", observer(), priority(OP_PRIORITY_DEFAULT - 1), label("Travel"), then(PROC_REF(hyperpad_centre_ghost_travel)))
+	op("hyperpad_centre_teleport", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Activate"), then(PROC_REF(interaction_teleport)))
 
 /obj/machinery/hyperpad/centre/Initialize(mapload)
 	. = ..()
@@ -48,74 +54,47 @@ CAPABILITIES(/obj/machinery/hyperpad/centre)
 
 /// Old attack_ghost: ran the parent pad's first (the ghost default, then the primary pad's),
 /// then drifts the ghost to the linked pad.
-/obj/machinery/hyperpad/centre/proc/hyperpad_centre_ghost_travel(mob/observer/dead/ghost, obj/item/held, datum/interaction/interaction)
-	hyperpad_ghost_use(ghost, held, interaction)
+/obj/machinery/hyperpad/centre/proc/hyperpad_centre_ghost_travel(datum/act/op/A)
+	var/mob/observer/dead/ghost = A.actor
+	hyperpad_ghost_view(ghost)
 	if(linked_pad() && !QDELETED(linked_pad()))
 		ghost.forceMove(get_turf(linked_pad()))
-	return TRUE
+	return OP_OK
 
 /// Old attack_ghost: ran the ghost default first, then the primary pad's ghost Use.
-/obj/machinery/hyperpad/proc/hyperpad_ghost_use(mob/observer/dead/ghost, obj/item/held, datum/interaction/interaction)
+/obj/machinery/hyperpad/proc/hyperpad_ghost_view(mob/observer/dead/ghost)
 	actor_use_default(/datum/input_adapter/ghost, ghost, src)
 	if(primary())
 		actor_use(/datum/input_adapter/ghost, ghost, primary())
-	return TRUE
 
-/obj/machinery/hyperpad/centre/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_OBSERVER("Travel", PROC_REF(hyperpad_centre_ghost_travel)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_hand/hyperpad_centre_teleport,
-	)
-	..()
+/obj/machinery/hyperpad/proc/hyperpad_ghost_use(datum/act/op/A)
+	hyperpad_ghost_view(A.actor)
+	return OP_OK
 
-/datum/interaction/machine_hand/hyperpad_centre_teleport
-	id = "hyperpad_centre_teleport"
-	name = "Activate"
-	effect = /obj/machinery/hyperpad/centre/proc/interaction_teleport
-
-/obj/machinery/hyperpad/centre/proc/interaction_teleport(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/hyperpad/centre/proc/interaction_teleport(datum/act/op/A)
+	var/mob/user = A.actor
 	detect(user)
 	if(!linked_pad() || QDELETED(linked_pad()))
 		if(!map_pad_link_id || !initMappedLink())
 			to_chat(user, span_warning("There is no linked pad!"))
-			return TRUE
+			return OP_OK
 	if(teleporting)
 		to_chat(user, span_warning("[src] is charging up. Please wait."))
-		return TRUE
+		return OP_OK
 	if(!COOLDOWN_FINISHED(src, teleport_cooldown_until))
 		to_chat(user, span_warning("[src] is recharging power. Please wait [round(COOLDOWN_TIMELEFT(src, teleport_cooldown_until)/10)] seconds."))
-		return TRUE
+		return OP_OK
 	if(linked_pad().teleporting)
 		to_chat(user, span_warning("Linked pad is busy. Please wait."))
-		return TRUE
+		return OP_OK
 	src.add_fingerprint(user)
 	startteleport(user)
-	return TRUE
+	return OP_OK
 
-/obj/machinery/hyperpad/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_OBSERVER("View", PROC_REF(hyperpad_ghost_use)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_hand/hyperpad_delegate,
-	)
-	..()
-
-/datum/interaction/machine_hand/hyperpad_delegate
-	id = "hyperpad_delegate"
-	name = "Activate"
-	effect = /obj/machinery/hyperpad/proc/interaction_delegate
-
-/obj/machinery/hyperpad/proc/interaction_delegate(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/hyperpad/proc/interaction_delegate(datum/act/op/A)
 	if(primary())
-		primary().attack_hand(user)
-	return TRUE
+		primary().attack_hand(A.actor)
+	return OP_OK
 
 /obj/machinery/hyperpad/centre/proc/initMappedLink()
 	. = FALSE

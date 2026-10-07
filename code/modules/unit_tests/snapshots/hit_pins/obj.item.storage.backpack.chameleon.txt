@@ -1,0 +1,12 @@
+blob | survives
+emag | ledger: null -> /datum/ledger
+emag | om_rec: null -> /datum/om/rec
+emp 1 | desc: 'A backpack outfitted with cloaking tech. It seems to have a small dial inside, kept away from the storage.' -> 'You wear this on your back and put items into it.'
+emp 1 | refresh_queued: 131071 -> 0
+emp 2 | desc: 'A backpack outfitted with cloaking tech. It seems to have a small dial inside, kept away from the storage.' -> 'You wear this on your back and put items into it.'
+explosion 1 | deleted
+explosion 2 | atom_integrity: down
+explosion 3 | atom_integrity: down
+projectile | atom_integrity: down
+thrown | atom_integrity: down
+

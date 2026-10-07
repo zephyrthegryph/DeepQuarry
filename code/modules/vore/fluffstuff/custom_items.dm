@@ -225,14 +225,16 @@
 	special_handling = TRUE
 
 // special_handling: the inherited card "Show" steps aside for this.
-EXTEND_INTERACTIONS(/obj/item/card/id/centcom/station/fluff/joanbadge, INTERACT_SELF("Show", PROC_REF(joanbadge_flash_self)))
+CAPABILITIES(/obj/item/card/id/centcom/station/fluff/joanbadge)
+	op("joanbadge_flash_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Show"), then(PROC_REF(joanbadge_flash_self)))
 
 /// Old attack_self: flash the badge.
-/obj/item/card/id/centcom/station/fluff/joanbadge/proc/joanbadge_flash_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/item/card/id/centcom/station/fluff/joanbadge/proc/joanbadge_flash_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isliving(user))
 		act_message(user, null, MSG_SELF(span_warning("You display the faded badge.\nIt reads: NT Security.")), \
 			MSG_OTHERS(span_warning("%U% flashes their golden security badge.\nIt reads:NT Security.")))
+	return OP_OK
 
 /obj/item/card/id/centcom/station/fluff/joanbadge/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	act_message(user, M, MSG_SELF(span_warning("You invade %T%'s personal space, thrusting [src] into their face insistently.")), \
@@ -581,20 +583,21 @@ TRACKED(/obj/item/clothing/accessory/collar/khcrystal, watching)
 	if((state > 1) || !owner)
 		set_watching(FALSE)
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF("Pair", PROC_REF(khcrystal_pair_self)))
+CAPABILITIES(/obj/item/clothing/accessory/collar/khcrystal)
+	op("khcrystal_pair_self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Pair"), then(PROC_REF(khcrystal_pair_self)))
 
 /// Old attack_self: pair the crystal to its user, once. special_collar: the inherited collar tag self-use steps aside.
-/obj/item/clothing/accessory/collar/khcrystal/proc/khcrystal_pair_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/item/clothing/accessory/collar/khcrystal/proc/khcrystal_pair_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(state > 0) //Can't re-pair, one time only, for security reasons.
 		to_chat(user, span_notice("The [name] doesn't do anything."))
-		return
-
+		return OP_OK
 	rel_set(src, nameof(owner), user)	//We are paired to this guy
 	owner_c = user.client	//This is his client
 	update_state(1)
 	to_chat(user, span_notice("The [name] glows pleasantly blue."))
 	set_watching(TRUE)
+	return OP_OK
 
 /obj/item/clothing/accessory/collar/khcrystal/proc/check_owner()
 	//He's dead, jim
@@ -888,16 +891,16 @@ CAPABILITIES(/obj/item/fluff/dragor_dot)
 	return ITEM_INTERACT_SUCCESS
 
 // fluff_badge: the inherited badge "Display" steps aside for this.
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTERACT_SELF("Display", PROC_REF(ruda_badge_self)))
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo/detective/ruda)
+	op("ruda_badge_self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Display"), then(PROC_REF(ruda_badge_self)))
 
 /// Old attack_self: polish or display the badge.
-/obj/item/clothing/accessory/badge/holo/detective/ruda/proc/ruda_badge_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/item/clothing/accessory/badge/holo/detective/ruda/proc/ruda_badge_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!stored_name)
 		to_chat(user, "You huff along the front of your badge, then rub your sleeve on it to polish it up.")
 		set_name(user.real_name)
-		return
-
+		return OP_OK
 	if(isliving(user))
 		if(stored_name)
 			act_message(user, src, MSG_SELF(span_notice("You display your %T%.\nIt reads: [stored_name], [badge_string].")), \
@@ -905,6 +908,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTE
 		else
 			act_message(user, src, MSG_SELF(span_notice("You display your %T%. It reads: [badge_string].")), \
 				MSG_OTHERS(span_notice("%U% displays their %T%.\nIt reads: [badge_string].")))
+	return OP_OK
 
 /obj/item/card/id/fluff/xennith
 	name = "\improper Amy Lessen's Central Command ID (Xenobiology Director)"
@@ -993,6 +997,7 @@ TYPE_TABLE(/obj/item/material/twohanded/fluff, weapon_forced_material, " ") //Se
 
 CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 	owns_one(nameof(bcell), /obj/item/cell, starts = /obj/item/cell/device/weapon)
+	op("stunstaff_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(stunstaff_toggle_self)))
 
 /obj/item/melee/baton/fluff/stunstaff/update_held_icon()
 	var/mob/living/M = loc
@@ -1031,11 +1036,10 @@ CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 		update_held_icon()
 
 // special_handling: the inherited baton "Toggle" steps aside for this.
-EXTEND_INTERACTIONS(/obj/item/melee/baton/fluff/stunstaff, INTERACT_SELF("Toggle", PROC_REF(stunstaff_toggle_self)))
 
 /// Old attack_self: switch the staff on or off.
-/obj/item/melee/baton/fluff/stunstaff/proc/stunstaff_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/item/melee/baton/fluff/stunstaff/proc/stunstaff_toggle_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(bcell && bcell.charge > hitcost)
 		status = !status
 		to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
@@ -1048,6 +1052,7 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/fluff/stunstaff, INTERACT_SELF("Toggle
 		to_chat(user, span_warning("[src] is out of charge."))
 	update_held_icon()
 	add_fingerprint(user)
+	return OP_OK
 
 /obj/item/storage/backpack/fluff/stunstaff
 	starts_with = list(
@@ -1273,7 +1278,8 @@ TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join
 
 TYPE_TABLE(/obj/item/rig/nikki, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
 
-EXTEND_INTERACTIONS(/obj/item/rig/nikki, INTERACT_INSERT(/obj/item/rig_module, PROC_REF(nikki_rig_module_item), "Install module", REQ_TARGET_STATE(/obj/item/rig/nikki/proc/accepts_module)))
+CAPABILITIES(/obj/item/rig/nikki)
+	op("nikki_rig_module_item", item(/obj/item/rig_module), label("Install module"), then(PROC_REF(nikki_rig_module_item)))
 
 /// Requirement: with the panel open, only mounted size guns go in.
 /obj/item/rig/nikki/proc/accepts_module(mob/user, atom/target, obj/item/held)
@@ -1282,8 +1288,14 @@ EXTEND_INTERACTIONS(/obj/item/rig/nikki, INTERACT_INSERT(/obj/item/rig_module, P
 	return TRUE
 
 /// Old attackby: this thing accepts ONLY mounted sizeguns (the requirement). Accepted modules fall through to the rig's own install.
-/obj/item/rig/nikki/proc/nikki_rig_module_item(mob/living/user, obj/item/W, datum/interaction/interaction)
-	return FALSE
+
+/obj/item/rig/nikki/proc/nikki_rig_module_item(datum/act/op/A)
+	var/refusal = accepts_module(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	return OP_DECLINE
 
 TYPE_TABLE(/obj/item/rig/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/rig/nikki/proc/owner_fit, "the necklace never quite gets past your head"))))
 
@@ -1546,24 +1558,38 @@ CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte)
 	rel_take(src, nameof(stored_item))
 
 // special_handling: the inherited plushie "Squeeze" steps aside, and this runs ahead of it.
-EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(I_HELP, "Hug", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_DISARM, "Poke", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_GRAB, "Strangle", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_HURT, "Punch", PROC_REF(mofuorb_squeeze_self)))
+CAPABILITIES(/obj/item/toy/plushie/fluff/seona_mofuorb)
+	op("mofuorb_hug", in_hand(), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 1), label("Hug"), then(PROC_REF(mofuorb_hug)))
+	op("mofuorb_poke", in_hand(), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 1), label("Poke"), then(PROC_REF(mofuorb_poke)))
+	op("mofuorb_strangle", in_hand(), stance(I_GRAB), priority(OP_PRIORITY_DEFAULT - 1), label("Strangle"), then(PROC_REF(mofuorb_strangle)))
+	op("mofuorb_punch", in_hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Punch"), then(PROC_REF(mofuorb_punch)))
 
 /// Old attack_self: search it, or hug, punch, strangle or poke it.
-/obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_squeeze_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_hug(datum/act/op/A)
+	return mofuorb_squeeze(A.actor, I_HELP)
+
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_poke(datum/act/op/A)
+	return mofuorb_squeeze(A.actor, I_DISARM)
+
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_strangle(datum/act/op/A)
+	return mofuorb_squeeze(A.actor, I_GRAB)
+
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_punch(datum/act/op/A)
+	return mofuorb_squeeze(A.actor, I_HURT)
+
+/obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_squeeze(mob/user, stance)
 	if(stored_item && opened && !task_busy(src))
 		task_timed(user, 1 SECOND, src, src, PROC_REF(search_done), list(user), claims = TRUE)
-		return
-
+		return OP_OK
 	if(ELAPSED(src, last_message, CLOCK_WORLD) <= 5 SECONDS)
-		return
-	if(interaction.stance == I_HELP)
+		return OP_OK
+	if(stance == I_HELP)
 		act_message(user, src, MSG_SELF(span_notice("You hug %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " hugs %T%!")))
 		icon_state = "pandorba"
-	else if (interaction.stance == I_HURT)
+	else if (stance == I_HURT)
 		act_message(user, src, MSG_SELF(span_warning("You punch %T%!")), MSG_OTHERS(span_warning(span_bold("%U%") + " punches %T%!")))
 		icon_state = "pandorba_h"
-	else if (interaction.stance == I_GRAB)
+	else if (stance == I_GRAB)
 		act_message(user, src, MSG_SELF(span_warning("You attempt to strangle %T%!")), \
 			MSG_OTHERS(span_warning(span_bold("%U%") + " attempts to strangle %T%!")))
 		icon_state = "pandorba_g"
@@ -1573,6 +1599,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(
 		play_sfx(src, SFX_ITEMS_DROP_PLUSHIE, 0.5, vary = FALSE)
 		visible_message("[src] says, \"[pokephrase]\"")
 	EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
+	return OP_OK
 
 //Yeehawguvnah - Cephyra
 

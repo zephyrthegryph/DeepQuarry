@@ -78,7 +78,6 @@ APPEARANCE_TEMPLATE(/obj/vehicle/train, "{initial(icon_state)}{open?_open:}")
 	unattach()
 	..()
 
-
 //-------------------------------------------
 // Interaction procs
 //-------------------------------------------
@@ -100,30 +99,37 @@ APPEARANCE_TEMPLATE(/obj/vehicle/train, "{initial(icon_state)}{open?_open:}")
 
 	return 1
 
-EXTEND_INTERACTIONS(/obj/vehicle/train, \
-	INTERACT_DRAG("Load", PROC_REF(interaction_train_drag)), \
-	INTERACT_HAND(null, PROC_REF(interaction_train_hand)), \
-	INTERACT_VERB("Unlatch", PROC_REF(train_unlatch), REQ_ON(PRED_TARGET, /obj/vehicle/train/proc/pred_train_unlatchable, null)), \
-)
+/// Requirement (was REQ_* pred_train_unlatchable): the legacy check answers TRUE to pass.
+/obj/vehicle/train/proc/pred_train_unlatchable_holds(datum/act/op/A)
+	var/answer = pred_train_unlatchable(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why pred_train_unlatchable_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/vehicle/train/proc/pred_train_unlatchable_refusal(datum/act/op/A)
+	var/answer = pred_train_unlatchable(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
 
 /// Requirement for "Unlatch": unhitches this train from the one in front of it. Overridden FALSE where nothing latches.
 /obj/vehicle/train/proc/pred_train_unlatchable(mob/actor, atom/target, obj/item/held)
 	return TRUE
 
 /// Old MouseDrop_T: drop a train car to latch it, anything else to load it.
-/obj/vehicle/train/proc/interaction_train_drag(mob/user, atom/movable/C, datum/interaction/interaction)
+/obj/vehicle/train/proc/interaction_train_drag(datum/act/op/A)
+	var/mob/user = A.actor
+	var/atom/movable/C = A.held
 	if(user?.buckled_to() || user.stat || user.restrained() || !Adjacent(user) || !user.Adjacent(C) || !istype(C) || (user == C && !user.canmove))
-		return TRUE
+		return OP_OK
 	if(istype(C,/obj/vehicle/train))
 		latch(C, user)
 	else if(!load(C, user))
 		to_chat(user, span_red("You were unable to load [C] on [src]."))
-	return TRUE
+	return OP_OK
 
 /// Old attack_hand: climb on, or unload what's aboard.
-/obj/vehicle/train/proc/interaction_train_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/train/proc/interaction_train_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(user.stat || user.restrained() || !Adjacent(user))
-		return TRUE
+		return OP_OK
 
 	if(user != load && (user?.loc == src))
 		user.forceMove(loc)			//for handling players stuck in src
@@ -131,19 +137,22 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 		unload(user)			//unload if loaded
 	else if(!load && !user?.buckled_to())
 		load(user, user)				//else try climbing on board
-	return TRUE
+	return OP_OK
 
 /// Shared trolley step (security and rover trolleys): wirecutters on an open panel toggle the load limiter.
-/obj/vehicle/train/proc/interaction_train_limiter_cable(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/vehicle/train/proc/interaction_train_limiter_cable(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!open || !W.has_tool_quality(TOOL_WIRECUTTER))
-		return FALSE
+		return OP_DECLINE
 	passenger_allowed = !passenger_allowed
 	act_message(user, src, MSG_SELF(span_notice("You [passenger_allowed ? "cut" : "mend"] the load limiter cable.")), \
 		MSG_OTHERS(span_notice("%U% [passenger_allowed ? "cuts" : "mends"] a cable in %T%.")))
-	return TRUE
+	return OP_OK
 
 /// Old verb "Unlatch".
-/obj/vehicle/train/proc/train_unlatch(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/train/proc/train_unlatch(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!ishuman(user))
 		return
 
@@ -151,7 +160,6 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 		return
 
 	unattach(user)
-
 
 //-------------------------------------------
 // Latching/unlatching procs
@@ -192,7 +200,6 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 		to_chat(user, span_blue("You hitch [src] to [T]."))
 
 	update_stats()
-
 
 //detaches the train from whatever is towing it
 /obj/vehicle/train/proc/unattach(mob/user)
@@ -266,5 +273,11 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 /obj/vehicle/train/proc/lead() as /obj/vehicle/train
 	return lead
 
+MSG_DEF_SELF(vehicle/already_running, "The engine is already running.")
+MSG_DEF_SELF(vehicle/already_stopped, "The engine is already stopped.")
+
 CAPABILITIES(/obj/vehicle/train)
 	links(/obj/vehicle/train::lead, /obj/vehicle/train::tow)
+	op("train_drag", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 2), label("Load"), then(PROC_REF(interaction_train_drag)))
+	op("train_hand", hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Interaction train hand"), then(PROC_REF(interaction_train_hand)))
+	op("train_unlatch", menu(), label("Unlatch"), needs(req_adjacent(), req_capable(), req(PROC_REF(pred_train_unlatchable_holds), because = PROC_REF(pred_train_unlatchable_refusal))), then(PROC_REF(train_unlatch)))

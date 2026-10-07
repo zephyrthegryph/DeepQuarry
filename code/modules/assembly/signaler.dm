@@ -16,8 +16,8 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 	var/tmp/datum/radio_frequency/radio_connection
 
 /// Someone is threatening to press the button: it may slip while it's not held.
-OM_FIELD(/obj/item/assembly/signaler, deadman, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/assembly/signaler, PERIODIC_SLOW, "deadman")
+/obj/item/assembly/signaler/var/deadman = FALSE
+TRACKED(/obj/item/assembly/signaler, deadman)
 
 /obj/item/assembly/signaler/Initialize(mapload)
 	. = ..()
@@ -36,12 +36,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/signaler, TYPE_PROC_REF(/atom, appear
 		holder().update_icon()
 
 CAPABILITIES(/obj/item/assembly/signaler)
+	every(2 SECONDS, then(PROC_REF(signaler_step)), when = nameof(deadman))
 	interface("Signaler", state = nameof(GLOB.tgui_deep_inventory_state))
 	without("ui_open")
 	op("signal", ui_act("signal"), then(PROC_REF(ui_act_signal)))
 	op("freq", ui_act("freq", arg("freq", num())), then(PROC_REF(ui_act_freq)))
 	op("code", ui_act("code", arg("code", num())), then(PROC_REF(ui_act_code)))
 	op("reset", ui_act("reset", arg("reset", schema_text(4096))), then(PROC_REF(ui_act_reset)))
+	op("transfer", item(/obj/item), label("Transfer"), priority(OP_PRIORITY_PART + 1), then(PROC_REF(interaction_transfer)))
+	op("deadman_it_effect", menu(), label("Threaten to push the button!"), needs(carried()), then(PROC_REF(deadman_it_effect)))
 
 /obj/item/assembly/signaler/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -86,16 +89,10 @@ CAPABILITIES(/obj/item/assembly/signaler)
 	. = TRUE
 	update_icon()
 
-/// A subtype adding to an ancestor's compact specs uses declare_interactions() (the proven
-/// chain, ..() and all) and builds its own entry directly with dq_interaction_from_spec() -
-/// see doc/rewrite/interactions.md §5a for why get_interactions() itself doesn't chain here.
-/obj/item/assembly/signaler/declare_interactions(list/into)
-	into += dq_interaction_from_spec(type, INTERACT_ITEM("Transfer", PROC_REF(interaction_transfer)))
-	into += dq_interaction_from_spec(type, INTERACT_VERB("Threaten to push the button!", PROC_REF(deadman_it_effect), REQ_IN_INVENTORY))
-	..()
-
 /// Old attackby: tap two secured signalers together to copy frequency/code.
-/obj/item/assembly/signaler/proc/interaction_transfer(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/assembly/signaler/proc/interaction_transfer(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(issignaler(W))
 		var/obj/item/assembly/signaler/signaler2 = W
 		if(secured && signaler2.secured)
@@ -103,7 +100,7 @@ CAPABILITIES(/obj/item/assembly/signaler)
 			set_frequency(signaler2.frequency)
 			to_chat(user, "You transfer the frequency and code of [signaler2] to [src].")
 		return TRUE
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/assembly/signaler/proc/signal()
 	if(!COOLDOWN_FINISHED(src, next_activate))
@@ -167,7 +164,7 @@ CAPABILITIES(/obj/item/assembly/signaler)
 	frequency = new_frequency
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
 // BEGIN re-adds stealth removal
-/obj/item/assembly/signaler/periodic_step()
+/obj/item/assembly/signaler/proc/signaler_step(datum/act/timer/A)
 	var/mob/M = src.loc
 	if(!M || !ismob(M))
 		if(prob(5))
@@ -176,7 +173,8 @@ CAPABILITIES(/obj/item/assembly/signaler)
 	else if(prob(5))
 		act_message(M, src, others = "%U%'s finger twitches a bit over %T%'s signal button!")
 
-/obj/item/assembly/signaler/proc/deadman_it_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/assembly/signaler/proc/deadman_it_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	set_deadman(TRUE)
 	log_and_message_admins("is threatening to trigger a signaler deadman's switch", user)
 	act_message(user, src, others = "<font color='red'>%U% moves their finger over %T%'s signal button...</font>")

@@ -51,6 +51,9 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 	Relatively easy to make, the single tank bomb requries no tank transfer valve, and is still a fairly formidable weapon that can be manufactured from any tank."
 
 CAPABILITIES(/obj/item/tank)
+	// The tank reacts its gas and checks its seal every 2 s while it is leaking, damaged, or held or worn by a mob. MANY tanks
+	// during rounds are never touched, and an intact, sealed tank lying about has no reason to explode spontaneously.
+	every(2 SECONDS, then(PROC_REF(tank_step)), when = cond_any(nameof(leaking), nameof(seal_damaged), nameof(handled)))
 	owns_one(nameof(air_contents), /datum/gas_mixture)
 	owns_one(nameof(proxyassembly), /obj/item/tankassemblyproxy)
 	interface("Tank", state = nameof(GLOB.tgui_deep_inventory_state))
@@ -81,14 +84,9 @@ OM_FIELD(/obj/item/tank, leaking, FALSE, CHANGE_EXPLICIT)
 /// TRUE while the seal is below max integrity. Kept by on_update_integrity(), the hook every
 /// integrity write (take_damage, repair_damage, update_integrity) goes through.
 OM_FIELD(/obj/item/tank, seal_damaged, FALSE, CHANGE_EXPLICIT)
-/// The tank reacts its gas and checks its seal every 2 s while it is leaking, damaged, or held or
-/// worn by a mob (moving raises CHANGE_ITEM_LOC). MANY tanks during rounds are never touched, and
-/// an intact, sealed tank lying about has no reason to explode spontaneously.
-OM_DERIVE_FIELD(/obj/item/tank, pressure_watched, list("leaking", "seal_damaged", CHANGE_ITEM_LOC))
-DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
-
-/obj/item/tank/proc/pressure_watched()
-	return leaking || seal_damaged || ismob(loc)
+/// TRUE while a mob holds or wears the tank (set by equipped(), cleared by dropped()).
+/obj/item/tank/var/handled = FALSE
+TRACKED(/obj/item/tank, handled)
 
 /obj/item/tank/on_update_integrity(old_value, new_value)
 	. = ..()
@@ -124,7 +122,13 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 	. = ..()
 	// An attempt at optimization. There are MANY tanks during rounds that will never get touched.
 	// Don't see why any of those would explode spontaneously. So only tanks that players touch get processed.
-	// Held or worn, it is watched (pressure_watched(); the move raised CHANGE_ITEM_LOC).
+	// Held or worn, it is watched (handled gates the every()).
+	set_handled(TRUE)
+
+/obj/item/tank/dropped(mob/user, equipping, slot)
+	. = ..()
+	if(!ismob(loc))
+		set_handled(FALSE)
 
 /obj/item/tank/examine(mob/user)
 	. = ..()
@@ -403,7 +407,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 
 	return remove_air(moles_needed)
 
-/obj/item/tank/periodic_step()
+/obj/item/tank/proc/tank_step(datum/act/timer/A)
 	if(!air_contents)
 		return
 	//Allow for reactions

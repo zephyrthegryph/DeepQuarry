@@ -10,22 +10,23 @@
 	density = FALSE
 	color = DEAD_PLANT_COLOUR
 
-EXTEND_INTERACTIONS(/obj/effect/dead_plant, \
-	INTERACT_HAND(null, PROC_REF(interaction_clear_dead_plant)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_clear_dead_plant_item)), \
-)
+CAPABILITIES(/obj/effect/dead_plant)
+	op("clear_dead_plant", hand(), label("Interaction clear dead plant"), then(PROC_REF(interaction_clear_dead_plant)))
+	op("clear_dead_plant_item", item(/obj/item), label("Interaction clear dead plant item"), then(PROC_REF(interaction_clear_dead_plant_item)))
 
 /// Old attack_hand: a touch clears the dead plant away.
-/obj/effect/dead_plant/proc/interaction_clear_dead_plant(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/dead_plant/proc/interaction_clear_dead_plant(datum/act/op/A)
+	var/mob/user = A.actor
 	consume(src, user)
 	return TRUE
 
 /// Old attackby: any item clears it and lets the neighbouring vines regrow (the item's normal handling still follows).
-/obj/effect/dead_plant/proc/interaction_clear_dead_plant_item(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/effect/dead_plant/proc/interaction_clear_dead_plant_item(datum/act/op/A)
+	var/mob/user = A.actor
 	for(var/obj/effect/plant/neighbor in range(1, src))
 		neighbor.update_neighbors()
 	consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /// Growing (on PERIODIC_PLANTS) while in REGISTRY_GROWING_PLANTS: add_plant() / remove_plant().
 REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
@@ -65,6 +66,7 @@ CAPABILITIES(/obj/effect/plant)
 	op("touch_plant", hand(), then(PROC_REF(interaction_touch_plant)))
 	param(nameof(seed_at_make), pos = 1)
 	param(nameof(parent), pos = 2)
+	extend(/datum/act/hit/explosion, instead(then(PROC_REF(plant_blast_die_off))))
 
 // neighbouring plants resume spreading.
 /obj/effect/plant/on_destroy(force)
@@ -307,10 +309,10 @@ DECLARE_APPEARANCE_PROC(/obj/effect/plant, TYPE_PROC_REF(/atom, appearance_overl
 		health -= aggression*5
 		check_health()
 
-DAMAGE_REACTION(/obj/effect/plant, DAMAGE_EXPLOSION, PROC_REF(plant_blast_die_off))
 
 /// A blast kills the plant by its own severity odds (instead of the blast packet).
-/obj/effect/plant/proc/plant_blast_die_off(datum/damage_packet/packet)
+/obj/effect/plant/proc/plant_blast_die_off(datum/act/hit/explosion/A)
+	var/datum/damage_packet/packet = A.packet
 	switch(packet.severity)
 		if(1.0)
 			die_off()
@@ -320,7 +322,7 @@ DAMAGE_REACTION(/obj/effect/plant, DAMAGE_EXPLOSION, PROC_REF(plant_blast_die_of
 		if(3.0)
 			if (prob(5))
 				die_off()
-	return DAMAGE_REACTION_BLOCK
+	return OP_OK
 
 /obj/effect/plant/proc/check_health()
 	if(health <= 0)

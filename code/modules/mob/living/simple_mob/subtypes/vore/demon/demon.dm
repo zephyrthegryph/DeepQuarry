@@ -129,6 +129,7 @@
 CAPABILITIES(/mob/living/simple_mob/vore/demon)
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(laugh_at_hit)))
 	on_notice(/datum/notice/hit, then(PROC_REF(laugh_at_thrown)))
+	op("demon_interaction_laugh", inputs(hand(), item(/obj/item)), ungated(), label("Demon interaction laugh"), then(PROC_REF(demon_interaction_laugh)))
 
 /mob/living/simple_mob/vore/demon/proc/laugh_at_hit(datum/act/A)
 	laugh()
@@ -139,15 +140,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/demon)
 	if(N.packet.entry == DAMAGE_ENTRY_THROWN)
 		laugh()
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/demon, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(demon_interaction_laugh)), \
-	INTERACT_ITEM(null, PROC_REF(demon_interaction_laugh)), \
-)
-
 /// Old attack_hand / attackby: laugh, then the touch or hit carries on as normal (FALSE).
-/mob/living/simple_mob/vore/demon/proc/demon_interaction_laugh(mob/user, obj/item/held, datum/interaction/interaction)
+/mob/living/simple_mob/vore/demon/proc/demon_interaction_laugh(datum/act/op/A)
 	laugh()
-	return FALSE
+	return OP_DECLINE
 //This below proc could be improved by 1. add a bool for overriding the check (if we directly call the proc for example)
 //and possibly adding a switch that checks a string given by the above procs so that we can have uniwue sounds if needed
 /mob/living/simple_mob/vore/demon/proc/laugh()

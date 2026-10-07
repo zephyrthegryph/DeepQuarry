@@ -13,6 +13,7 @@
 CAPABILITIES(/obj/item/broken_gun)
 	after_init(30 SECONDS, then(PROC_REF(validate_gun_type)))
 	param(nameof(gun_path), pos = 1, apply = PROC_REF(break_from))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 TYPE_TABLE_DECLARE(/obj/item/broken_gun, broken_gun_forced_type, null)
 
@@ -100,15 +101,15 @@ TYPE_TABLE_DECLARE(/obj/item/broken_gun, broken_gun_forced_type, null)
 
 	material_needs[/obj/item/stack/material/steel] = rand(1,5)
 
-DECLARE_INTERACTIONS(/obj/item/broken_gun, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/item/broken_gun/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/broken_gun/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(can_repair_with(W, user))
 		task_timed(user, (rand() * 10 SECONDS + 5 SECONDS), src, src, PROC_REF(repair_with), list(W, user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/broken_gun/proc/can_repair_with(obj/item/I, mob/user)
 	for(var/path in material_needs)

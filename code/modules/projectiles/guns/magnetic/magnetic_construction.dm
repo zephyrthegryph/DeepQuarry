@@ -41,10 +41,13 @@
 	replace_with(src, coilgun)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/coilgun_assembly, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/coilgun_assembly)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/coilgun_assembly/proc/interaction_item(mob/user, obj/item/thing, datum/interaction/interaction)
+/obj/item/coilgun_assembly/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/thing = A.held
 
 	if(istype(thing, /obj/item/stack/material) && construction_stage == 1)
 		var/obj/item/stack/material/reinforcing = thing
@@ -52,40 +55,40 @@ DECLARE_INTERACTIONS(/obj/item/coilgun_assembly, INTERACT_ITEM(null, PROC_REF(in
 		if(reinforcing_with.name == MAT_STEEL) // Steel
 			if(reinforcing.get_amount() < 5)
 				to_chat(user, span_warning("You need at least 5 [reinforcing.singular_name]\s for this task."))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			reinforcing.use(5)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " shapes some steel sheets around %T% to form a body."))
 			increment_construction_stage()
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 	if(istype(thing, /obj/item/tape_roll) && construction_stage == 2)
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " secures %T% together with %I%."), item = thing)
 		increment_construction_stage()
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(thing, /obj/item/pipe) && construction_stage == 3)
 		consume(thing, user)
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " jams %I% into %T%."), item = thing)
 		increment_construction_stage()
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(thing, /obj/item/stack/cable_coil) && construction_stage == 5)
 		var/obj/item/stack/cable_coil/cable = thing
 		if(cable.get_amount() < 5)
 			to_chat(user, span_warning("You need at least 5 lengths of cable for this task."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		cable.use(5)
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " wires %T%."))
 		increment_construction_stage()
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(thing, /obj/item/smes_coil) && construction_stage >= 6 && construction_stage <= 8)
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " installs \a [thing] into %T%."))
 		consume(thing, user)
 		increment_construction_stage()
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/coilgun_assembly/proc/increment_construction_stage()
 	if(construction_stage < 9)

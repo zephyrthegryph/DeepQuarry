@@ -20,9 +20,11 @@ CAPABILITIES(/obj/item/assembly/infra)
 	op("state", ui_act("state"), then(PROC_REF(ui_act_state)))
 	op("visible", ui_act("visible"), then(PROC_REF(ui_act_visible)))
 	rotatable()
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	every(2 SECONDS, then(PROC_REF(infra_step)), when = cond_all(nameof(secured), nameof(on)))
 
-OM_FIELD(/obj/item/assembly/infra, on, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE_ALL(/obj/item/assembly/infra, PERIODIC_SLOW, list("secured", "on"))
+/obj/item/assembly/infra/var/on = FALSE
+TRACKED(/obj/item/assembly/infra, on)
 
 /obj/item/assembly/infra/activate()
 	if(!..())
@@ -61,7 +63,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/infra, TYPE_PROC_REF(/atom, appearanc
 	if(holder())
 		holder().update_icon()
 
-/obj/item/assembly/infra/periodic_step()
+/obj/item/assembly/infra/proc/infra_step(datum/act/timer/A)
 	if(!i_beams && (istype(loc, /turf) || (holder() && istype(holder().loc, /turf))))
 		create_beams()
 
@@ -78,17 +80,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/infra, TYPE_PROC_REF(/atom, appearanc
 		rel_add(src, nameof(i_beams), I)
 		I.visible = visible
 
-/// A subtype adding to an ancestor's compact specs uses declare_interactions() (the proven
-/// chain, ..() and all) and builds its own entry directly with dq_interaction_from_spec() -
-/// see doc/rewrite/interactions.md §5a for why get_interactions() itself doesn't chain here.
-/obj/item/assembly/infra/declare_interactions(list/into)
-	into += dq_interaction_from_spec(type, INTERACT_HAND(null, PROC_REF(interaction_hand)))
-	..()
-
 /// Old attack_hand: clear the beams before falling through to normal pickup.
-/obj/item/assembly/infra/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/assembly/infra/proc/interaction_hand(datum/act/op/A)
 	QDEL_LIST_NULL(i_beams)
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/assembly/infra/Move()
 	var/t = dir

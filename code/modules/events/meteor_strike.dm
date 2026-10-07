@@ -80,6 +80,7 @@
 
 CAPABILITIES(/obj/structure/meteorite)
 	climb()
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 // ALLOW(init/INSTANCE_STATE): rolls the ore or artifact this meteorite holds
 /obj/structure/meteorite/Initialize(mapload)
@@ -104,17 +105,17 @@ CAPABILITIES(/obj/structure/meteorite)
 		O.forceMove(get_turf(src))
 	destroyed(src, M, BRUTE)
 
-DECLARE_INTERACTIONS(/obj/structure/meteorite, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/structure/meteorite/proc/interaction_item(mob/M, obj/item/I, datum/interaction/interaction)
+/obj/structure/meteorite/proc/interaction_item(datum/act/op/A)
+	var/mob/M = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/pickaxe))
 		var/obj/item/pickaxe/P = I
 		act_message(M, src, MSG_SELF(span_warning("You start [P.drill_verb] %T%.")), MSG_OTHERS(span_warning("%U% starts [P.drill_verb] %T%.")))
 
 		task_timed(M, P.digspeed*3, src, src, PROC_REF(break_apart_done), list(M))
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return OP_PASS
+	return OP_PASS
 
 /// Accessor for the strike_target var.
 /datum/event/meteor_strike/proc/strike_target() as /turf

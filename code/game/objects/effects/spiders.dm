@@ -40,13 +40,9 @@ CAPABILITIES(/obj/effect/spider)
 	take_damage(15, BRUTE, MELEE, sound_effect = FALSE)
 	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
-	INTERACT_HAND("Stomp", PROC_REF(interaction_stomp_spiderling)), \
-)
-
 /// Old attack_hand: try to stomp the spiderling.
-/obj/effect/spider/spiderling/proc/interaction_stomp_spiderling(mob/living/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/effect/spider/spiderling/proc/interaction_stomp_spiderling(datum/act/op/A)
+	var/mob/living/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.do_attack_animation(src)
 	if(prob(20))
@@ -54,9 +50,10 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 		var/list/nearby = oview(2, src)
 		if(length(nearby))
 			walk_to(src, pick(nearby), 2)
-			return
+			return OP_OK
 	act_message(user, src, others = span_warning("%U% stomps %T% dead!"))
 	die()
+	return OP_OK
 
 /obj/effect/spider/proc/die()
 	consume(src)
@@ -191,6 +188,7 @@ TYPE_TABLE(/obj/effect/spider/spiderling/varied, spiderling_grow_as, list(/mob/l
 
 CAPABILITIES(/obj/effect/spider/spiderling)
 	every(2 SECONDS, then(PROC_REF(spiderling_step)))
+	op("stomp", hand(), label("Stomp"), then(PROC_REF(interaction_stomp_spiderling)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(6))
 	rolls(nameof(amount_grown), PROC_REF(roll_grown))
 	param(nameof(laid_by), pos = 1, apply = PROC_REF(take_parent_look), keep = FALSE)

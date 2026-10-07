@@ -259,17 +259,19 @@
 		return
 	..(A,user,flag,params)
 
-DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/disk/nifsoft/compliance)
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/text, fields = list("question" = "Please Input Laws", "title" = "Compliance Laws", "default" = computed(PROC_REF(laws_default)), "max_len" = 2048, "multiline" = TRUE), step = "laws"), then(PROC_REF(interaction_self)))
+
+/obj/item/disk/nifsoft/compliance/proc/laws_default(datum/act/op/A)
+	return laws
 
 /// Old attack_self.
-/obj/item/disk/nifsoft/compliance/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/newlaws = rerun_ask(user, "k271", PROC_REF(interaction_self), args, /datum/prompt/text, question = "Please Input Laws", title = "Compliance Laws", default = laws, max_len = 2048, multiline = TRUE, name_text = ((2048) <= MAX_NAME_LEN))
-	if(isnull(newlaws))
-		return TRUE
+/obj/item/disk/nifsoft/compliance/proc/interaction_self(datum/act/op/A)
+	var/newlaws = A.step_value("laws")
 	if(newlaws)
-		to_chat(user,span_filter_notice("You set the laws to: <br>" + span_notice("[newlaws]")))
+		to_chat(A.actor,span_filter_notice("You set the laws to: <br>" + span_notice("[newlaws]")))
 		laws = newlaws
-	return TRUE
+	return OP_OK
 
 /obj/item/disk/nifsoft/compliance/extra_params()
 	return laws

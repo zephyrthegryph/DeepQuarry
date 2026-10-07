@@ -7,38 +7,60 @@ ai|none menu: Ui open
 ai|none click: Click: Ui open
 ghost|none menu: View
 ghost|none click: Click: View
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Ui open
 human|/obj/item/tool/screwdriver click: Click: Ui open
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Ui open
 human|/obj/item/tool/crowbar click: Click: Ui open
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Ui open
 human|/obj/item/tool/wrench menu: Unsecure
 human|/obj/item/tool/wrench menu: Use wrench
 human|/obj/item/tool/wrench click: Click: Ui open
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Ui open
 human|/obj/item/tool/wirecutters click: Click: Ui open
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Ui open
 human|/obj/item/multitool click: Click: Ui open
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Ui open
 human|/obj/item/weldingtool click: Click: Ui open
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Ui open
 human|/obj/item/stack/cable_coil click: Click: Ui open
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Ui open
 human|/obj/item/stack/material/steel click: Click: Ui open
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Ui open
 human|/obj/item/reagent_containers/chem_disp_cartridge menu: Insert cartridge
+human|/obj/item/reagent_containers/chem_disp_cartridge menu: Move To Top
 human|/obj/item/reagent_containers/chem_disp_cartridge menu: Open or close the lid
 human|/obj/item/reagent_containers/chem_disp_cartridge menu: Set Cartridge Label
 human|/obj/item/reagent_containers/chem_disp_cartridge menu: Set transfer amount
 human|/obj/item/reagent_containers/chem_disp_cartridge menu: Splash (refused: The lid is closed.)
+human|/obj/item/reagent_containers/chem_disp_cartridge menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/chem_disp_cartridge menu: Ui open
 human|/obj/item/reagent_containers/chem_disp_cartridge click: Click: Insert cartridge
+human|/obj/item/reagent_containers/glass menu: Move To Top
 human|/obj/item/reagent_containers/glass menu: Open or close the lid
 human|/obj/item/reagent_containers/glass menu: Set catalyst (refused: )
 human|/obj/item/reagent_containers/glass menu: Set transfer amount
+human|/obj/item/reagent_containers/glass menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/glass menu: Ui open
 human|/obj/item/reagent_containers/glass click: Click: Set catalyst
 keys: add_cartridge, add_queue, add_recipe, bottle_product, change_bottle_style, change_patch_style, change_pill_style, clear_queue, drag_buckle, drug_form, eject_catalyst, emergency_stop, exp_recipe, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, mode_toggle, panel_toggle, remove_cartridge, rem_queue, rem_recipe, set_catalyst, start_queue, toggle_catalyst, ui_observe, ui_open, use_wrench

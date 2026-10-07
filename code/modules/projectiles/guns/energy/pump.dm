@@ -55,7 +55,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/martin, TYPE_PROC_REF(/atom, ap
 	var/lockable = 1
 
 /// Old attackby.
-/obj/item/gun/energy/locked/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/item/gun/energy/locked/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/obj/item/card/id/id = I.GetID()
 	if(istype(id) && lockable)
 		if(check_access(id))
@@ -64,7 +66,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/martin, TYPE_PROC_REF(/atom, ap
 		else
 			to_chat(user, span_warning("Access denied."))
 		act_message(user, src, others = span_notice("%U% swipes %I% against %T%."), item = I)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	return ..()
 
 /obj/item/gun/energy/locked/on_emag(remaining_charges, mob/user, obj/item/emag_source)
@@ -240,9 +242,20 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/locked/frontier/carbine, TYPE_PROC_
 	)
 
 /obj/item/gun/energy/locked/frontier/rifle/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(frontier_rifle_verb_scope))
+	perform_scope_interaction(user, "frontier_rifle_verb_scope")
 
-EXTEND_INTERACTIONS(/obj/item/gun/energy/locked/frontier/rifle, INTERACT_VERB("Use Scope", PROC_REF(frontier_rifle_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+CAPABILITIES(/obj/item/gun/energy/locked/frontier/rifle)
+	op("frontier_rifle_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(frontier_rifle_verb_scope_op)))
+
+/// The frontier_rifle_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/energy/locked/frontier/rifle/proc/frontier_rifle_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	frontier_rifle_verb_scope(A.actor, A.held, null)
+	return OP_OK
 
 /// Old Use Scope verb.
 /obj/item/gun/energy/locked/frontier/rifle/proc/frontier_rifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)

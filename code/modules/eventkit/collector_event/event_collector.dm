@@ -50,11 +50,12 @@
 	var/current_step = 0 //current step for icon states
 TRACKED(/obj/structure/event_collector, current_step)
 
-/// Are we waiting for the timer to get negatives? periodic_step() works the recipe while set (DECLARE_PERIODIC_WHILE).
+/// Are we waiting for the timer to get negatives? periodic_step() works the recipe while set (its every()).
 /obj/structure/event_collector/var/awaiting_next_recipe = FALSE
 TRACKED(/obj/structure/event_collector, awaiting_next_recipe)
 CAPABILITIES(/obj/structure/event_collector)
 	every(2 SECONDS, then(PROC_REF(event_collector_step)), when = nameof(awaiting_next_recipe))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 
 //list of items that can make up a recipe.
 TYPE_TABLE_DECLARE(/obj/structure/event_collector, event_collector_ingredients, list( \
@@ -172,8 +173,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 			//following's for debug, comment out if ur happy with it
 		//. += "There are uhhhh this many things blocking: [blocker_count]."
 
-DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/structure/event_collector/proc/can_take_item)))
-
 /// Requirement: TRUE, or why the collector won't take an item now.
 /obj/structure/event_collector/proc/can_take_item(mob/user, atom/target, obj/item/held)
 	if(blocker_insertion_impedement_threshold > 0 && (get_blockers() > blocker_insertion_impedement_threshold))
@@ -182,14 +181,26 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_RE
 		return "it's not ready to take another item yet"
 	return TRUE
 
+/// Requirement: the collector takes an item now.
+/obj/structure/event_collector/proc/can_take_item_holds(datum/act/op/A)
+	var/answer = can_take_item(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
 /// Old attackby.
-/obj/structure/event_collector/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/structure/event_collector/proc/interaction_item(datum/act/op/A)
+	var/refusal = can_take_item(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(active_recipe.len > 0) //do we have something active at all
 		var/stored_index = -1 //shortcut
 		if(need_recipe_in_order) //can we put this in?
 			if(!(istype(O,active_recipe[1]))) //if we need the recipe in order, check the first thing in the list
 				to_chat(user,span_warning("That's not the next object in the recipe!"))
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			else
 				stored_index = 1
 		else
@@ -200,13 +211,13 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_RE
 					stored_index = ind
 					break;
 			if(!found)
-				return;
+				return OP_DECLINE
 
 		//put it in
 		act_message(user, src, others = "%U% begins to [pick(step_initiation_verbs)] %I% into %T%", item = O)
 		//wait a second or two
 		task_start(/datum/task/timed/event_collector_insert, user, src, duration = step_insertion_time, O = O, stored_index = stored_index)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/event_collector/proc/insert_gave_up(datum/task/timed/event_collector_insert/task)
 	var/mob/user = task.actor

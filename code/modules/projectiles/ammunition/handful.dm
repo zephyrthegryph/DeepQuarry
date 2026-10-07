@@ -45,17 +45,19 @@
 	H.update_icon()
 	return H
 
-EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, \
-	INTERACT_ITEM("Combine", PROC_REF(handful_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(handful_interaction_hand)), \
-)
+CAPABILITIES(/obj/item/ammo_magazine/handful)
+	op("combine", item(/obj/item), priority(OP_PRIORITY_NORMAL + 1), label("Combine"), then(PROC_REF(handful_interaction_item)))
+	op("take_round", hand(), ungated(), priority(OP_PRIORITY_NORMAL + 1), then(PROC_REF(handful_interaction_hand)))
+	op("pick_up", hand(), priority(OP_PRIORITY_DEFAULT), label("Pick up"), then(PROC_REF(handful_pick_up)))
 
-/// Old attackby. FALSE: everything else (loose casing -> handful, etc.) is handled by the magazine's.
-/obj/item/ammo_magazine/handful/proc/handful_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// Old attackby. A decline: everything else (loose casing -> handful, etc.) is handled by the magazine's.
+/obj/item/ammo_magazine/handful/proc/handful_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	make_rounds_real()
 	// Merge two handfuls: pour the other one into this, up to capacity.
 	if(istype(W, /obj/item/ammo_magazine/handful))
-		. = INTERACTION_HANDLED_PASS
+		. = OP_PASS
 		var/obj/item/ammo_magazine/handful/other = W
 		if(other == src)
 			return
@@ -76,7 +78,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, \
 			consume(other, user)
 		return
 	// Everything else (loose casing -> handful, etc.) is handled by the parent.
-	return FALSE
+	return OP_DECLINE
 
 DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/handful, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/ammo_magazine/handful/appearance_overlays()
@@ -90,18 +92,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/handful, TYPE_PROC_REF(/atom, ap
 // invisible empty stack lying around.
 /// Old attack_hand, first half: taking a round out by hand (the magazine's hand effect, run here
 /// so the empty check follows it). FALSE goes on to pickup; the pickup checks again after.
-/obj/item/ammo_magazine/handful/proc/handful_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	. = magazine_interaction_hand(user, held, interaction)
-	if(.)
-		consume_if_empty(user)
-
-EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(handful_pick_up)))
+/obj/item/ammo_magazine/handful/proc/handful_interaction_hand(datum/act/op/A)
+	. = magazine_interaction_hand(A)
+	if(. == OP_OK)
+		consume_if_empty(A.actor)
 
 /// Picking a handful up: an empty one is used up.
-/obj/item/ammo_magazine/handful/proc/handful_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
+/obj/item/ammo_magazine/handful/proc/handful_pick_up(datum/act/op/A)
+	var/mob/living/user = A.actor
+	pick_up_by_hand(user)
 	consume_if_empty(user)
+	return OP_OK
 
 /obj/item/ammo_magazine/handful/proc/consume_if_empty(mob/user)
 	if(!QDELETED(src) && !length(stored_ammo) && loc == user)

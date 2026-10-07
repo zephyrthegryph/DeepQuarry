@@ -231,9 +231,20 @@
 	//End .
 
 /obj/item/gun/energy/sniperrifle/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(sniperrifle_verb_scope))
+	perform_scope_interaction(user, "sniperrifle_verb_scope")
 
-EXTEND_INTERACTIONS(/obj/item/gun/energy/sniperrifle, INTERACT_VERB("Use Scope", PROC_REF(sniperrifle_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+CAPABILITIES(/obj/item/gun/energy/sniperrifle)
+	op("sniperrifle_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(sniperrifle_verb_scope_op)))
+
+/// The sniperrifle_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/energy/sniperrifle/proc/sniperrifle_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	sniperrifle_verb_scope(A.actor, A.held, null)
+	return OP_OK
 
 /// Old Use Scope verb.
 /obj/item/gun/energy/sniperrifle/proc/sniperrifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
@@ -330,9 +341,20 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/sniperrifle, INTERACT_VERB("Use Scope",
 	var/scope_multiplier = 1.5
 
 /obj/item/gun/energy/monorifle/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(monorifle_verb_sights))
+	perform_scope_interaction(user, "monorifle_verb_sights")
 
-EXTEND_INTERACTIONS(/obj/item/gun/energy/monorifle, INTERACT_VERB("Aim Down Sights", PROC_REF(monorifle_verb_sights), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+CAPABILITIES(/obj/item/gun/energy/monorifle)
+	op("monorifle_verb_sights", menu(), label("Aim Down Sights"), needs(carried()), then(PROC_REF(monorifle_verb_sights_op)))
+
+/// The monorifle_verb_sights op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/energy/monorifle/proc/monorifle_verb_sights_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	monorifle_verb_sights(A.actor, A.held, null)
+	return OP_OK
 
 /// Old Aim Down Sights verb.
 /obj/item/gun/energy/monorifle/proc/monorifle_verb_sights(mob/user, obj/item/held, datum/interaction/interaction)

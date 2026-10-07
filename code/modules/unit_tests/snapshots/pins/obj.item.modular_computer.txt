@@ -1,178 +1,93 @@
-human|none menu: Collect (refused: needs a storage)
-human|none menu: Customise (refused: needs an item)
-human|none menu: Eject ID (refused: not possible right now)
-human|none menu: Eject Portable Storage (refused: not possible right now)
-human|none menu: Emag (refused: needs a cryptographic sequencer)
 human|none menu: Forced Shutdown
 human|none menu: Move To Top
 human|none menu: Pick up
-human|none menu: Toggle Digestable (refused: you need to be carrying it)
-human|none menu: Use
-human|none menu: Use (refused: not in your hand)
-human|none click: nothing
-robot|none menu: Collect (refused: needs a storage)
-robot|none menu: Customise (refused: needs an item)
-robot|none menu: Eject ID (refused: not possible right now)
-robot|none menu: Eject Portable Storage (refused: not possible right now)
-robot|none menu: Emag (refused: needs a cryptographic sequencer)
+human|none menu: Toggle Digestable (refused: You can't do that.)
+human|none click: Click: Pick up
 robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Forced Shutdown
 robot|none menu: Move To Top
 robot|none menu: Pick up
-robot|none menu: Toggle Digestable (refused: you need to be carrying it)
+robot|none menu: Toggle Digestable (refused: You can't do that.)
 robot|none menu: Use
-robot|none menu: Use (refused: not in your hand)
-robot|none click: nothing
+robot|none click: Click: Use
 ai|none menu: Equip (refused: not possible right now)
 ai|none menu: Use
-ai|none click: nothing
-ghost|none menu: View
-ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Collect (refused: needs a storage)
-human|/obj/item/tool/screwdriver menu: Customise (refused: needs an item)
-human|/obj/item/tool/screwdriver menu: Eject ID (refused: not possible right now)
-human|/obj/item/tool/screwdriver menu: Eject Portable Storage (refused: not possible right now)
-human|/obj/item/tool/screwdriver menu: Emag (refused: needs a cryptographic sequencer)
+ai|none click: Click: Use
+ghost|none menu: Forced Shutdown (refused: You can't reach that.)
+ghost|none menu: Modular computer ghost nothing
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
+ghost|none menu: View (refused: Not while things are as they are.)
+ghost|none click: Click: View
 human|/obj/item/tool/screwdriver menu: Forced Shutdown
+human|/obj/item/tool/screwdriver menu: Interaction item
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Pick up
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver menu: Use (refused: not in your hand)
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Collect (refused: needs a storage)
-human|/obj/item/tool/crowbar menu: Customise (refused: needs an item)
-human|/obj/item/tool/crowbar menu: Eject ID (refused: not possible right now)
-human|/obj/item/tool/crowbar menu: Eject Portable Storage (refused: not possible right now)
-human|/obj/item/tool/crowbar menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Interaction item
 human|/obj/item/tool/crowbar menu: Forced Shutdown
+human|/obj/item/tool/crowbar menu: Interaction item
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Pick up
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar menu: Use (refused: not in your hand)
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Collect (refused: needs a storage)
-human|/obj/item/tool/wrench menu: Customise (refused: needs an item)
-human|/obj/item/tool/wrench menu: Eject ID (refused: not possible right now)
-human|/obj/item/tool/wrench menu: Eject Portable Storage (refused: not possible right now)
-human|/obj/item/tool/wrench menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Interaction item
 human|/obj/item/tool/wrench menu: Forced Shutdown
+human|/obj/item/tool/wrench menu: Interaction item
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Pick up
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench menu: Use (refused: not in your hand)
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Collect (refused: needs a storage)
-human|/obj/item/tool/wirecutters menu: Customise (refused: needs an item)
-human|/obj/item/tool/wirecutters menu: Eject ID (refused: not possible right now)
-human|/obj/item/tool/wirecutters menu: Eject Portable Storage (refused: not possible right now)
-human|/obj/item/tool/wirecutters menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Interaction item
 human|/obj/item/tool/wirecutters menu: Forced Shutdown
+human|/obj/item/tool/wirecutters menu: Interaction item
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Pick up
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters menu: Use (refused: not in your hand)
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Collect (refused: needs a storage)
-human|/obj/item/multitool menu: Customise (refused: needs an item)
-human|/obj/item/multitool menu: Eject ID (refused: not possible right now)
-human|/obj/item/multitool menu: Eject Portable Storage (refused: not possible right now)
-human|/obj/item/multitool menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Interaction item
 human|/obj/item/multitool menu: Forced Shutdown
+human|/obj/item/multitool menu: Interaction item
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Pick up
-human|/obj/item/multitool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/multitool menu: Use
-human|/obj/item/multitool menu: Use (refused: not in your hand)
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Collect (refused: needs a storage)
-human|/obj/item/weldingtool menu: Customise (refused: needs an item)
-human|/obj/item/weldingtool menu: Eject ID (refused: not possible right now)
-human|/obj/item/weldingtool menu: Eject Portable Storage (refused: not possible right now)
-human|/obj/item/weldingtool menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Interaction item
 human|/obj/item/weldingtool menu: Forced Shutdown
+human|/obj/item/weldingtool menu: Interaction item
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Pick up
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool menu: Use (refused: not in your hand)
-human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
-human|/obj/item/stack/cable_coil menu: Customise (refused: needs an item)
-human|/obj/item/stack/cable_coil menu: Eject ID (refused: not possible right now)
-human|/obj/item/stack/cable_coil menu: Eject Portable Storage (refused: not possible right now)
-human|/obj/item/stack/cable_coil menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Interaction item
 human|/obj/item/stack/cable_coil menu: Forced Shutdown
+human|/obj/item/stack/cable_coil menu: Interaction item
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Pick up
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil menu: Use (refused: not in your hand)
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Collect (refused: needs a storage)
-human|/obj/item/stack/material/steel menu: Customise (refused: needs an item)
-human|/obj/item/stack/material/steel menu: Eject ID (refused: not possible right now)
-human|/obj/item/stack/material/steel menu: Eject Portable Storage (refused: not possible right now)
-human|/obj/item/stack/material/steel menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Interaction item
 human|/obj/item/stack/material/steel menu: Forced Shutdown
+human|/obj/item/stack/material/steel menu: Interaction item
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Pick up
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel menu: Use (refused: not in your hand)
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Collect (refused: needs a storage)
-human|/obj/item/card/id menu: Customise (refused: needs an item)
-human|/obj/item/card/id menu: Eject ID (refused: not possible right now)
-human|/obj/item/card/id menu: Eject Portable Storage (refused: not possible right now)
-human|/obj/item/card/id menu: Emag (refused: needs a cryptographic sequencer)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Interaction item
 human|/obj/item/card/id menu: Forced Shutdown
+human|/obj/item/card/id menu: Interaction item
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Pick up
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/card/id menu: Use
-human|/obj/item/card/id menu: Use (refused: not in your hand)
-human|/obj/item/card/id click: nothing
-human|/obj/item/kit menu: Collect (refused: needs a storage)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Interaction item
 human|/obj/item/kit menu: Customise
-human|/obj/item/kit menu: Eject ID (refused: not possible right now)
-human|/obj/item/kit menu: Eject Portable Storage (refused: not possible right now)
-human|/obj/item/kit menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/kit menu: Forced Shutdown
+human|/obj/item/kit menu: Interaction item
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Pick up
-human|/obj/item/kit menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/kit menu: Use
-human|/obj/item/kit menu: Use (refused: not in your hand)
-human|/obj/item/kit click: nothing
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit click: Click: Customise
 human|/obj/item/storage menu: Collect
-human|/obj/item/storage menu: Customise (refused: needs an item)
-human|/obj/item/storage menu: Eject ID (refused: not possible right now)
-human|/obj/item/storage menu: Eject Portable Storage (refused: not possible right now)
-human|/obj/item/storage menu: Emag (refused: needs a cryptographic sequencer)
 human|/obj/item/storage menu: Forced Shutdown
+human|/obj/item/storage menu: Interaction item
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Pick up
-human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/storage menu: Use
-human|/obj/item/storage menu: Use (refused: not in your hand)
-human|/obj/item/storage click: nothing
-human|/obj/item/card/emag menu: Collect (refused: needs a storage)
-human|/obj/item/card/emag menu: Customise (refused: needs an item)
-human|/obj/item/card/emag menu: Eject ID (refused: not possible right now)
-human|/obj/item/card/emag menu: Eject Portable Storage (refused: not possible right now)
-human|/obj/item/card/emag menu: Emag
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage click: Click: Collect
 human|/obj/item/card/emag menu: Forced Shutdown
+human|/obj/item/card/emag menu: Interaction item
 human|/obj/item/card/emag menu: Move To Top
-human|/obj/item/card/emag menu: Pick up
-human|/obj/item/card/emag menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
-human|/obj/item/card/emag menu: Use (refused: not in your hand)
-human|/obj/item/card/emag click: nothing
-keys: drag_buckle, emag, gen_hand_interaction_hand, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_interaction_item, gen_observer_modular_computer_ghost_view, gen_silicon_item_silicon_equip_module, gen_silicon_modular_computer_silicon_use, gen_use_interaction_self, gen_verb_computer_emergency_shutdown, gen_verb_computer_verb_eject_id, gen_verb_computer_verb_eject_usb, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, PC_Eject_Disk, PC_exit, PC_killprogram, PC_minimize, PC_runprogram, PC_setautorun, PC_shutdown
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item menu: Forced Shutdown
+human|/obj/item menu: Interaction item
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Interaction item
+keys: collect_item, computer_emergency_shutdown, computer_verb_eject_id, computer_verb_eject_usb, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, interaction_hand, interaction_hand_pai, interaction_item, interaction_self, kit_customize, kit_customize_last, modular_computer_ghost_nothing, modular_computer_ghost_power, modular_computer_ghost_view, modular_computer_silicon_use, move_to_top, PC_Eject_Disk, PC_exit, PC_killprogram, PC_minimize, PC_runprogram, PC_setautorun, PC_shutdown, pick_up_item, toggle_digestable
 

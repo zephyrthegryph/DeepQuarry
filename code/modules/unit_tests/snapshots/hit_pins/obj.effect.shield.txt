@@ -1,0 +1,11 @@
+blob | deleted
+blob | destroyed
+emag | refresh_queued: 131071 -> 0
+emp 1 | deleted
+emp 2 | deleted
+explosion 1 | deleted
+explosion 2 | deleted
+explosion 3 | deleted
+projectile | deleted
+thrown | deleted
+

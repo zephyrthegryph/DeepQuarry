@@ -52,12 +52,13 @@ EXTEND_INTERACTIONS(/obj/machinery/teleport/hub, INTERACT_OBSERVER("Follow the l
 	user.forceMove(get_turf(com.teleport_control.locked()))
 	return TRUE
 
-/// Declared with the portal's other interactions (portals.dm).
-/obj/effect/portal/proc/portal_ghost_follow(mob/user, obj/item/held, datum/interaction/interaction)
+/// Declared with the portal's other ops (portals.dm).
+/obj/effect/portal/proc/portal_ghost_follow(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!target_ref())
-		return FALSE
+		return OP_DECLINE
 	user.forceMove(get_turf(target_ref()))
-	return TRUE
+	return OP_OK
 
 // -------------------------------------------
 // This was supposed to be used by adminghosts

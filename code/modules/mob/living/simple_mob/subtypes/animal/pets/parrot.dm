@@ -46,26 +46,33 @@
 			used_radios += my_headset
 
 // Clicked on while holding an object.
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
-	INTERACT_ITEM(null, PROC_REF(parrot_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take headset", PROC_REF(parrot_interaction_hand)))
+CAPABILITIES(/mob/living/simple_mob/animal/passive/bird/parrot)
+	op("parrot_item", item(/obj/item), then(PROC_REF(parrot_interaction_item)))
+	op("parrot_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take headset"), then(PROC_REF(parrot_interaction_hand_grab)))
+
+/// The grab-stance input of parrot_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/bird/parrot/proc/parrot_interaction_hand_grab(datum/act/op/A)
+	return parrot_interaction_hand(A, I_GRAB)
 
 /// Old attackby: give a headset.
-/mob/living/simple_mob/animal/passive/bird/parrot/proc/parrot_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/animal/passive/bird/parrot/proc/parrot_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	. = OP_OK
 	if(istype(I, /obj/item/radio/headset))
 		give_headset(I, user)
 		return
-	return FALSE
+	return OP_DECLINE
 
 // Clicked on by empty hand.
 /// Old attack_hand: grab the headset off.
-/mob/living/simple_mob/animal/passive/bird/parrot/proc/parrot_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	if(interaction.stance == I_GRAB && my_headset)
+/mob/living/simple_mob/animal/passive/bird/parrot/proc/parrot_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/L = A.actor
+	. = OP_OK
+	if(stance == I_GRAB && my_headset)
 		remove_headset(L)
 	else
-		return FALSE
+		return OP_DECLINE
 
 
 /mob/living/simple_mob/animal/passive/bird/parrot/proc/give_headset(obj/item/radio/headset/new_headset, mob/living/user)

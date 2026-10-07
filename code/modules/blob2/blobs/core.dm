@@ -22,6 +22,7 @@
 
 CAPABILITIES(/obj/structure/blob/core)
 	after_init(0, then(PROC_REF(make_overmind_after_init)))
+	every(2 SECONDS, then(PROC_REF(core_step)))
 	owns_one(nameof(Q), /datum/ghost_query)
 	param(nameof(controller), pos = 1)
 	param(nameof(point_rate), pos = 2)
@@ -105,8 +106,6 @@ CAPABILITIES(/obj/structure/blob/core)
 
 REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 
-DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
-
 /obj/structure/blob/core
 	/// FALSE when it was placed by an overmind or came with one: then it makes none after init.
 	var/tmp/make_overmind = TRUE
@@ -148,7 +147,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearanc
 	. += blob_overlay
 	. += "blob_core_overlay"
 
-/obj/structure/blob/core/periodic_step()
+/obj/structure/blob/core/proc/core_step(datum/act/timer/A)
 	if(QDELETED(src))
 		return
 	if(!overmind)

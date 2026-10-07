@@ -13,7 +13,7 @@
 	TEST_ASSERT(evidence.add_prints(actor), "The actual original shell receives real fingerprint evidence")
 	var/list/prints = evidence.get_prints().Copy()
 	TEST_ASSERT(length(prints), "The actual source fingerprint evidence is nonempty")
-	shell.half_mask_add_hailer_item(actor, hailer, null)
+	test_op_handler(shell, "half_mask_add_hailer_item", actor, hailer)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(shell), "Actual hailer installation consumes the original shell")
 	var/obj/item/clothing/mask/gas/sechailer/source

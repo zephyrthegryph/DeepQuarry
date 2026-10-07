@@ -360,6 +360,8 @@ CAPABILITIES(/mob/living/bot/farmbot)
 
 CAPABILITIES(/obj/item/farmbot_arm_assembly)
 	param(nameof(tank_at_make), pos = 1, apply = PROC_REF(take_tank), keep = FALSE)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// The water tank the assembly is built around (its constructor param), or null for a new one (an admin spawn).
 /obj/item/farmbot_arm_assembly/var/tmp/obj/tank_at_make
@@ -394,7 +396,9 @@ CAPABILITIES(/obj/item/farmbot_arm_assembly)
 	return OP_PASS
 
 /// Old attackby.
-/obj/item/farmbot_arm_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/farmbot_arm_assembly/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if((istype(W, /obj/item/analyzer/plant_analyzer)) && (build_step == 0))
 		build_step++
 		to_chat(user, "You add the plant analyzer to [src].")
@@ -428,15 +432,10 @@ CAPABILITIES(/obj/item/farmbot_arm_assembly)
 
 	else if(istype(W, /obj/item/pen))
 		ask_name_var(user)
-	return INTERACTION_HANDLED_PASS
-
-DECLARE_INTERACTIONS(/obj/item/farmbot_arm_assembly, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+	return OP_PASS
 
 /// Old attack_hand.
-/obj/item/farmbot_arm_assembly/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/farmbot_arm_assembly/proc/interaction_hand(datum/act/op/A)
 	return TRUE
 
 #undef FARMBOT_COLLECT

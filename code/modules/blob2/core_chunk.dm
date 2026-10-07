@@ -23,6 +23,8 @@ CAPABILITIES(/obj/item/blobcore_chunk)
 	reagents(120)
 	owns_one(nameof(blob_type), /datum/blob_type)
 	param(nameof(parent_blob_type), pos = 1, apply = PROC_REF(setup_blobtype), keep = FALSE)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 
 /obj/item/blobcore_chunk/is_open_container()
 	return 1
@@ -78,13 +80,9 @@ CAPABILITIES(/obj/item/blobcore_chunk)
 
 	return
 
-DECLARE_INTERACTIONS(/obj/item/blobcore_chunk, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-)
-
 /// Old attack_self.
-/obj/item/blobcore_chunk/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/blobcore_chunk/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(blob_type && COOLDOWN_FINISHED(src, active_use_cooldown))
 		COOLDOWN_START(src, active_use_cooldown, active_ability_cooldown)
 		to_chat(user, span_alien("[icon2html(src, user.client)] \The [src] gesticulates."))
@@ -99,7 +97,8 @@ DECLARE_INTERACTIONS(/obj/item/blobcore_chunk, \
 		blob_type.on_chunk_tick(src)
 
 /// Old click_alt.
-/obj/item/blobcore_chunk/proc/interaction_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
+/obj/item/blobcore_chunk/proc/interaction_alt(datum/act/op/A)
+	var/mob/living/carbon/user = A.actor
 	if(blob_type && blob_type.chunk_active_type == BLOB_CHUNK_TOGGLE)
 		should_tick = !should_tick
 

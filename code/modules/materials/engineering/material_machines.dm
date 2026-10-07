@@ -365,43 +365,44 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 	var/tmp/obj/item/stack/material/processed_alloy/stock
 
 /// Old attackby.
-/obj/structure/material_anvil/proc/interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
+/obj/structure/material_anvil/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/item = A.held
 	if(istype(item, /obj/item/stack/material/processed_alloy))
 		if(stock())
 			to_chat(user, span_warning("There is already stock() on [src]."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/obj/item/stack/material/processed_alloy/incoming = item
 		if(!istype(incoming.material, /datum/material/processed_alloy))
 			to_chat(user, span_warning("[incoming] is not processed stock()."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(!user.drop_from_inventory(incoming))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		incoming.forceMove(src)
 		rel_set(src, nameof(stock), incoming)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if(istype(item, /obj/item/melee/hammer) && stock())
 		var/datum/material_batch/batch = stock().physical_batch().copy_batch()
 		if(!batch.apply_process(MATERIAL_PROCESS_FORGE))
 			to_chat(user, span_warning("The stock is outside its forging range; heat it in the alloy furnace first."))
 			consumed(batch, src)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(stock(), batch, src)
 		rel_set(src, nameof(stock), replacement)
 		stock().forceMove(src)
 		consumed(batch, src)
 		act_message(user, null, others = span_notice("%U% works the alloy under the hammer, refining its shape and internal structure."))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
-DECLARE_INTERACTIONS(/obj/structure/material_anvil, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/structure/material_anvil)
+	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_hand.
-/obj/structure/material_anvil/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/material_anvil/proc/interaction_hand(datum/act/op/A)
 	if(!stock())
-		return FALSE
+		return OP_DECLINE
 	stock().forceMove(get_turf(src))
 	rel_clear(src, nameof(stock))
 	return TRUE
@@ -414,22 +415,28 @@ DECLARE_INTERACTIONS(/obj/structure/material_anvil, \
 
 CAPABILITIES(/obj/structure/bed/bath/material_treatment)
 	configure(reagents(volume = 200))
-
-EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_INSERT(/obj/item/stack/material/processed_alloy, PROC_REF(material_treatment_interaction_item), "Treat alloy", REQ_BECAUSE(REQ_TARGET_STATE(/obj/structure/bed/bath/material_treatment/proc/has_medium), "the bath contains no treatment medium")))
+	op("material_treatment_interaction_item", item(/obj/item/stack/material/processed_alloy), priority(OP_PRIORITY_DEFAULT - 1), label("Treat alloy"), then(PROC_REF(material_treatment_interaction_item)))
 
 /// Requirement: the bath holds some treatment medium.
 /obj/structure/bed/bath/material_treatment/proc/has_medium(mob/user, atom/target, obj/item/held)
 	return reagents?.total_volume ? TRUE : FALSE
 
 /// Old attackby.
-/obj/structure/bed/bath/material_treatment/proc/material_treatment_interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
+/obj/structure/bed/bath/material_treatment/proc/material_treatment_interaction_item(datum/act/op/A)
+	var/refusal = has_medium(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/user = A.actor
+	var/obj/item/item = A.held
 	var/obj/item/stack/material/processed_alloy/stock = item
 	var/datum/material_batch/batch = stock.physical_batch().copy_batch()
 	var/required_medium = max(2, stock.get_amount() * 2)
 	if(reagents.total_volume < required_medium)
 		to_chat(user, span_warning("Treating [stock.get_amount()] sheets requires at least [required_medium] units of medium."))
 		consumed(batch, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	var/acid = reagents.get_reagent_amount(REAGENT_ID_SACID) + reagents.get_reagent_amount(REAGENT_ID_PACID)
 	var/process_succeeded
 	var/process_description
@@ -447,13 +454,13 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_INSERT(
 	if(!process_succeeded)
 		to_chat(user, span_warning("The stock is not hot and solution-treated enough to quench. Heat-treat it in the alloy furnace first."))
 		consumed(batch, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(stock, batch, user.drop_location())
 	user.put_in_hands(replacement)
 	reagents.remove_any(required_medium)
 	consumed(batch, user)
 	act_message(user, src, others = span_notice("%U% [process_description] [stock] in %T%."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /// Old attackby: surface treatments and measurements; anything else falls through as its ..() did.
 /obj/item/stack/material/processed_alloy/proc/processed_alloy_item(datum/act/op/A)

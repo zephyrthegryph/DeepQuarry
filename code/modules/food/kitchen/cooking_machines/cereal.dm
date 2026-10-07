@@ -16,6 +16,7 @@
 
 CAPABILITIES(/obj/machinery/appliance/mixer/cereal)
 	owns_one(nameof(cerealmaker_loop), /datum/looping_sound/cerealmaker)
+	op("part_replace", item(/obj/item), label("Use"), then(PROC_REF(appliance_interaction_part_replace)))
 
 /obj/machinery/appliance/mixer/cereal/Initialize(mapload)
 	. = ..()
@@ -66,4 +67,3 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/cereal, TYPE_PROC_REF(/at
 	for (var/i in images)
 		result.overlays += images[i]
 
-EXTEND_INTERACTIONS(/obj/machinery/appliance/mixer/cereal, INTERACT_ITEM(null, PROC_REF(appliance_interaction_part_replace)))

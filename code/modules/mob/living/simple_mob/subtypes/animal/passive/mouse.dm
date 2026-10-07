@@ -55,6 +55,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 	param(nameof(keep_parent_data), pos = 1)
+	op("mouse_hand_help", hand(), ungated(), stance(I_HELP), label("Scoop up"), then(PROC_REF(mouse_interaction_hand)))
 
 TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/passive/mouse, preserve_mouse_identity, FALSE)
 
@@ -267,17 +268,17 @@ TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/operative/agent_cheese, p
 	universal_understand = 1
 
 //Jank grabber that uses the 'attack_hand' insead of 'MouseDrop'
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mouse, INTERACT_HAND_UNGATED_AS(I_HELP, "Scoop up", PROC_REF(mouse_interaction_hand)))
 
 /// Old attack_hand: scooping.
-/mob/living/simple_mob/animal/passive/mouse/proc/mouse_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/animal/passive/mouse/proc/mouse_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
 	var/mob/living/carbon/human/H = user
 	if(holder_type && issmall(src) && istype(H) && !H.lying && Adjacent(H) && !combat_mode)
 		if(!issmall(H) || !ishuman(src))
 			get_scooped(H, (H == src))
 		return
-	return FALSE
+	return OP_DECLINE
 
 /mob/living/proc/mouse_scooped(mob/living/carbon/grabber, self_grab)
 
@@ -310,10 +311,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mouse, INTERACT_HAND_U
 
 TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/white/apple, preserve_mouse_identity, TRUE)
 
-EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/holder/mouse)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
-/obj/item/holder/mouse/proc/interaction_self(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
+/obj/item/holder/mouse/proc/interaction_self(datum/act/op/A)
+	var/mob/living/carbon/user = A.actor
 	user.setClickCooldown(user.get_attack_speed())
 	for(var/L in contents)
 		if(isanimal(L))

@@ -95,10 +95,10 @@
 	updatedesc()
 	update()
 
-DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/structure/disposalpipe/sortjunction/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/disposalpipe/sortjunction/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 
 	if(istype(I, /obj/item/destTagger))
 		var/obj/item/destTagger/O = I
@@ -113,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(nul
 			to_chat(user, span_blue("Changed filter to '[sortType]'."))
 			updatename()
 			updatedesc()
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/disposalpipe/sortjunction/screwdriver_act(mob/user, obj/item/I)
 	panel_open = !panel_open
@@ -270,6 +270,7 @@ CAPABILITIES(/obj/structure/disposalpipe/sortjunction)
 	on_wire(WIRE_SORT_SCAN, cut = PROC_REF(scan_wire_cut), pulse = PROC_REF(scan_wire_pulsed))
 	on_wire(WIRE_SORT_FORWARD, pulse = PROC_REF(forward_wire_pulsed))
 	on_wire(WIRE_SORT_SIDE, pulse = PROC_REF(side_wire_pulsed))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 
 /obj/structure/disposalpipe/sortjunction/proc/wire_lights()

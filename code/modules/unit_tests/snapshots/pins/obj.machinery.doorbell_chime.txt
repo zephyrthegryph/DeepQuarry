@@ -3,33 +3,55 @@ robot|none menu: Blocked (refused: not possible right now)
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Touch
 human|/obj/item/tool/screwdriver click: Click: Open maintenance panel
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Touch
 human|/obj/item/tool/crowbar click: Click: Touch
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Touch
 human|/obj/item/tool/wrench click: Click: Touch
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Touch
 human|/obj/item/tool/wirecutters click: Click: Touch
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Touch
 human|/obj/item/multitool menu: Use multitool
 human|/obj/item/multitool click: Click: Use multitool
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Touch
 human|/obj/item/weldingtool click: Click: Touch
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Touch
 human|/obj/item/stack/cable_coil click: Click: Touch
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Touch
 human|/obj/item/stack/material/steel click: Click: Touch
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Touch
 human|/obj/item/card/id click: Click: Touch
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Touch
 human|/obj/item click: Click: Touch
 human|/obj/item/storage/part_replacer menu: Empty contents
+human|/obj/item/storage/part_replacer menu: Move To Top
 human|/obj/item/storage/part_replacer menu: Replace parts
 human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
+human|/obj/item/storage/part_replacer menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage/part_replacer menu: Touch
 human|/obj/item/storage/part_replacer click: Click: Replace parts
 keys: drag_buckle, fingerprint, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, part_replacement, use_multitool

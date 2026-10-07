@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Scope buttons on rifles run the gun's scope op again, item action buttons and the Z key reach in-hand ops again, and the reclassification board's prompt no longer times out"

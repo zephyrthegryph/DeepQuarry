@@ -1,142 +1,103 @@
 human|none menu: Change wallet color (refused: You can't do that.)
-human|none menu: Collect (refused: needs a storage)
-human|none menu: Customise (refused: needs an item)
 human|none menu: Move To Top
 human|none menu: Open
 human|none menu: Pick up
-human|none menu: Toggle Digestable (refused: you need to be carrying it)
-human|none click: nothing
+human|none menu: Toggle Digestable (refused: You can't do that.)
+human|none click: Click: Pick up
 robot|none menu: Change wallet color (refused: You can't do that.)
-robot|none menu: Collect (refused: needs a storage)
-robot|none menu: Customise (refused: needs an item)
 robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Open
 robot|none menu: Pick up
-robot|none menu: Toggle Digestable (refused: you need to be carrying it)
-robot|none click: nothing
+robot|none menu: Toggle Digestable (refused: You can't do that.)
+robot|none click: Click: Pick up
 ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
 ghost|none menu: Change wallet color (refused: You can't do that.)
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Change wallet color (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Collect (refused: needs a storage)
-human|/obj/item/tool/screwdriver menu: Customise (refused: needs an item)
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Open
-human|/obj/item/tool/screwdriver menu: Pick up
 human|/obj/item/tool/screwdriver menu: Put in
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver click: Click: Put in
 human|/obj/item/tool/crowbar menu: Change wallet color (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Collect (refused: needs a storage)
-human|/obj/item/tool/crowbar menu: Customise (refused: needs an item)
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Open
-human|/obj/item/tool/crowbar menu: Pick up
 human|/obj/item/tool/crowbar menu: Put in
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Put in
 human|/obj/item/tool/wrench menu: Change wallet color (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Collect (refused: needs a storage)
-human|/obj/item/tool/wrench menu: Customise (refused: needs an item)
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Open
-human|/obj/item/tool/wrench menu: Pick up
 human|/obj/item/tool/wrench menu: Put in
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench click: Click: Put in
 human|/obj/item/tool/wirecutters menu: Change wallet color (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Collect (refused: needs a storage)
-human|/obj/item/tool/wirecutters menu: Customise (refused: needs an item)
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Open
-human|/obj/item/tool/wirecutters menu: Pick up
 human|/obj/item/tool/wirecutters menu: Put in
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters click: Click: Put in
 human|/obj/item/multitool menu: Change wallet color (refused: You can't do that.)
-human|/obj/item/multitool menu: Collect (refused: needs a storage)
-human|/obj/item/multitool menu: Customise (refused: needs an item)
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Open
-human|/obj/item/multitool menu: Pick up
 human|/obj/item/multitool menu: Put in
-human|/obj/item/multitool menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: Click: Put in
 human|/obj/item/weldingtool menu: Change wallet color (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Collect (refused: needs a storage)
-human|/obj/item/weldingtool menu: Customise (refused: needs an item)
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Open
-human|/obj/item/weldingtool menu: Pick up
 human|/obj/item/weldingtool menu: Put in
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: Click: Put in
 human|/obj/item/stack/cable_coil menu: Change wallet color (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
-human|/obj/item/stack/cable_coil menu: Customise (refused: needs an item)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Open
-human|/obj/item/stack/cable_coil menu: Pick up
 human|/obj/item/stack/cable_coil menu: Put in
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: Click: Put in
 human|/obj/item/stack/material/steel menu: Change wallet color (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Collect (refused: needs a storage)
-human|/obj/item/stack/material/steel menu: Customise (refused: needs an item)
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Open
-human|/obj/item/stack/material/steel menu: Pick up
 human|/obj/item/stack/material/steel menu: Put in
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: Click: Put in
 human|/obj/item/card/id menu: Change wallet color (refused: You can't do that.)
-human|/obj/item/card/id menu: Collect (refused: needs a storage)
-human|/obj/item/card/id menu: Customise (refused: needs an item)
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Open
-human|/obj/item/card/id menu: Pick up
 human|/obj/item/card/id menu: Put in
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Put in
 human|/obj/item/kit menu: Change wallet color (refused: You can't do that.)
-human|/obj/item/kit menu: Collect (refused: needs a storage)
 human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Move To Top
 human|/obj/item/kit menu: Open
-human|/obj/item/kit menu: Pick up
 human|/obj/item/kit menu: Put in
-human|/obj/item/kit menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/kit click: Click: Put in
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit click: Click: Customise
 human|/obj/item/storage menu: Change wallet color (refused: You can't do that.)
 human|/obj/item/storage menu: Collect
-human|/obj/item/storage menu: Customise (refused: needs an item)
 human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Open
-human|/obj/item/storage menu: Pick up
 human|/obj/item/storage menu: Put in
-human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/storage click: Click: Put in
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage click: Click: Collect
 human|/obj/item menu: Change wallet color (refused: You can't do that.)
-human|/obj/item menu: Collect (refused: needs a storage)
-human|/obj/item menu: Customise (refused: needs an item)
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Open
-human|/obj/item menu: Pick up
 human|/obj/item menu: Put in
-human|/obj/item menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Put in
 human|/obj/item/lightreplacer menu: Change wallet color (refused: You can't do that.)
-human|/obj/item/lightreplacer menu: Collect (refused: needs a storage)
-human|/obj/item/lightreplacer menu: Customise (refused: needs an item)
 human|/obj/item/lightreplacer menu: Move To Top
 human|/obj/item/lightreplacer menu: Open
-human|/obj/item/lightreplacer menu: Pick up
 human|/obj/item/lightreplacer menu: Put in
-human|/obj/item/lightreplacer menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/lightreplacer menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/lightreplacer click: Click: Put in
-keys: drag_buckle, feed_replacer, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, recolor, storage.climb_in, storage.empty, storage.empty_out, storage.gather, storage.gather_mode, storage.open, storage.put_in, storage.refuse, storage.toggle_open
+keys: collect_item, drag_buckle, feed_replacer, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, recolor, storage.climb_in, storage.empty, storage.empty_out, storage.gather, storage.gather_mode, storage.open, storage.put_in, storage.refuse, storage.toggle_open, toggle_digestable
 

@@ -33,6 +33,7 @@ CAPABILITIES(/obj/machinery/shield_gen)
 	owns_many(nameof(field))
 	climb()
 	interface("ShieldGenerator")
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	without("ui_open")
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("change_radius", ui_act("change_radius", arg("val", num())), then(PROC_REF(ui_act_change_radius)))
@@ -42,6 +43,7 @@ CAPABILITIES(/obj/machinery/shield_gen)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("shield_gen_swipe_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_swipe_id)))
 	op("shield_gen_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(shield_gen_not_broken_holds), because = PROC_REF(shield_gen_not_broken_refusal))), then(PROC_REF(interaction_open_ui_impl)))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(shield_gen_blast_trip)))
 
 /obj/machinery/shield_gen/advanced
 	name = "advanced bubble shield generator"
@@ -67,12 +69,13 @@ CAPABILITIES(/obj/machinery/shield_gen)
 	. = ..()
 
 /// Maintains its field while on (toggle() raises it and drops the whole field when switched off).
-DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
-/obj/machinery/shield_gen/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/shield_gen/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_DECLINE
 	if(prob(75))
 		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
-		. = 1
+		. = OP_OK
 	fx_sparks(src, 5)
 
 /obj/machinery/shield_gen/proc/interaction_swipe_id(datum/act/op/A)
@@ -242,10 +245,9 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 	z_range = val
 	. = TRUE
 
-DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen_blast_trip))
 
 /// A blast trips a running generator off.
-/obj/machinery/shield_gen/proc/shield_gen_blast_trip(datum/damage_packet/packet)
+/obj/machinery/shield_gen/proc/shield_gen_blast_trip(datum/act/A)
 	if(active)
 		toggle()
 

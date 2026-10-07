@@ -15,59 +15,60 @@
 CAPABILITIES(/obj/structure/boulder)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 	rolls(nameof(excavation_level), range_of(5, 50))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/boulder/proc/roll_icon_state(datum/roller/R)
 	return "boulder[R.number(1, 4)]"
 
-DECLARE_INTERACTIONS(/obj/structure/boulder, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/structure/boulder/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/boulder/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/core_sampler))
 		if(!geological_data() || !artifact_find())
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		src.geological_data().artifact_distance = rand(-100,100) / 100
 		src.geological_data().artifact_id = artifact_find().artifact_id
 
 		var/obj/item/core_sampler/C = I
 		C.sample_item(src, user)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(I, /obj/item/depth_scanner))
 		var/obj/item/depth_scanner/C = I
 		C.scan_atom(user, src)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(I, /obj/item/xenoarch_multi_tool))
 		var/obj/item/xenoarch_multi_tool/C = I
 		if(C.mode) //Mode means scanning.
 			C.depth_scanner.scan_atom(user, src)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		else
 			act_message(user, src, MSG_SELF(span_notice("You extend %I% over %T%, a flurry of red beams scanning %T%'s surface!")), \
 				MSG_OTHERS(span_bold("%U%") + " extends %I% over %T%, a flurry of red beams scanning %T%'s surface!"), \
 				item = C)
 			task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 	if(istype(I, /obj/item/measuring_tape))
 		var/obj/item/measuring_tape/P = I
 		act_message(user, src, MSG_SELF(span_notice("You extend %I% towards %T%.")), MSG_OTHERS(span_bold("%U%") + " extends %I% towards %T%."), item = P)
 		task_timed(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	if(istype(I, /obj/item/pickaxe))
 		var/obj/item/pickaxe/P = I
 
 		if(!COOLDOWN_FINISHED(src, dig_cooldown))//prevents message spam
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		COOLDOWN_START(src, dig_cooldown, P.digspeed)
 
 		to_chat(user, span_warning("You start [P.drill_verb] [src]."))
 		task_timed(user, P.digspeed, src, src, PROC_REF(dig_done), list(user, P))
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return OP_PASS
+	return OP_PASS
 
 /obj/structure/boulder/proc/measure_done(mob/user)
 	to_chat(user, span_notice("\The [src] has been excavated to a depth of [2 * src.excavation_level]cm."))

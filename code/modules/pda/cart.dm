@@ -330,42 +330,40 @@ CAPABILITIES(/obj/item/cartridge/rd)
 
 CAPABILITIES(/obj/item/cartridge/storage)
 	owns_one(nameof(hold), starts = /obj/item/storage/internal)
+	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Store"), then(PROC_REF(interaction_store)))
+	op("hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_hand)))
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_self)))
 
 /obj/item/cartridge/storage/Initialize(mapload)
 	. = ..()
 	hold.max_storage_space = slots * 2
 
 
-DECLARE_INTERACTIONS(/obj/item/cartridge/storage, \
-	INTERACT_ITEM("Store", PROC_REF(interaction_store)), \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-)
-
 /// Old attack_hand.
-/obj/item/cartridge/storage/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if (hold.handle_attack_hand(user))	//otherwise interact as a regular storage item
-		return FALSE
-	return TRUE
+/obj/item/cartridge/storage/proc/interaction_hand(datum/act/op/A)
+	if (hold.handle_attack_hand(A.actor))	//otherwise interact as a regular storage item
+		return OP_DECLINE
+	return OP_OK
 
 
 /// Old attackby: put the item in the cartridge's storage.
-/obj/item/cartridge/storage/proc/interaction_store(mob/user, obj/item/W, datum/interaction/interaction)
-	return hold.attackby(W, user) ? TRUE : INTERACTION_HANDLED_PASS
+/obj/item/cartridge/storage/proc/interaction_store(datum/act/op/A)
+	return hold.attackby(A.held, A.actor) ? OP_OK : OP_PASS
 
 /obj/item/cartridge/storage/MouseDrop(obj/over_object)
 	if (hold.handle_mousedrop(usr, over_object))
 		..(over_object)
 
 /// Old attack_self.
-/obj/item/cartridge/storage/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/cartridge/storage/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You empty [src]."))
 	var/turf/T = get_turf(src)
 	hold.hide_from(user)
 	for(var/obj/item/I in contents_of(hold))
 		hold.remove_from_storage(I, T, user)
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/cartridge/storage/deluxe
 	name = "\improper BLU-PAK DELUXE cartridge"

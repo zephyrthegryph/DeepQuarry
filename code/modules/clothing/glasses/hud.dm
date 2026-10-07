@@ -83,7 +83,7 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 	op("omnihud_display_self", in_hand(), then(PROC_REF(omnihud_display_self)))
 	op("omnihud_chromatize_verb", menu(), label("Toggle AR Glasses Shading"), needs(carried()), then(PROC_REF(omnihud_chromatize_verb)))
 	op("omnihud_toggle_ar_planes_verb", menu(), label("Toggle AR Heads-Up Display"), needs(carried()), then(PROC_REF(omnihud_toggle_ar_planes_verb)))
-
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(omnihud_emp_disconnect)))
 
 /obj/item/clothing/glasses/omnihud/dropped(mob/user, equipping, slot)
 	if(tgarscreen)
@@ -103,10 +103,9 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 	if(offline_tgarscreen && !tgarscreen)
 		rel_move(src, nameof(offline_tgarscreen), src, nameof(tgarscreen))
 
-DAMAGE_REACTION(/obj/item/clothing/glasses/omnihud, DAMAGE_EMP, PROC_REF(omnihud_emp_disconnect))
 
 /// A pulse drops the AR link for a while (and can glitch the lenses).
-/obj/item/clothing/glasses/omnihud/proc/omnihud_emp_disconnect(datum/damage_packet/packet)
+/obj/item/clothing/glasses/omnihud/proc/omnihud_emp_disconnect(datum/act/A)
 	if(tgarscreen)
 		SStgui.close_uis(src)
 	if(tgarscreen && !offline_tgarscreen)
@@ -291,18 +290,18 @@ DAMAGE_REACTION(/obj/item/clothing/glasses/omnihud, DAMAGE_EMP, PROC_REF(omnihud
 	specialty_goggles = TRUE
 	hud_goggles = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud/eng/meson, \
-	INTERACT_USE("Toggle projector", PROC_REF(omnihud_meson_projector_self)), \
-	INTERACT_VERB("Toggle projector", PROC_REF(meson_toggleprojector_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/glasses/omnihud/eng/meson)
+	op("omnihud_meson_projector_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle projector"), then(PROC_REF(omnihud_meson_projector_self)))
+	op("meson_toggleprojector_verb", menu(), label("Toggle projector"), needs(carried()), then(PROC_REF(meson_toggleprojector_verb)))
 
 /// Old attack_self.
-/obj/item/clothing/glasses/omnihud/eng/meson/proc/omnihud_meson_projector_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/omnihud/eng/meson/proc/omnihud_meson_projector_self(datum/act/op/A)
 	if(!active)
-		meson_toggleprojector_verb(user)
+		meson_toggleprojector_verb(A)
 
 /// Old verb "Toggle projector".
-/obj/item/clothing/glasses/omnihud/eng/meson/proc/meson_toggleprojector_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/glasses/omnihud/eng/meson/proc/meson_toggleprojector_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!isliving(user)) return
 	if(user.stat) return
 	if(toggleable)

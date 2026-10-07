@@ -23,6 +23,7 @@
 	value = CATALOGUER_REWARD_MEDIUM
 
 /obj/item/poi/pascalb
+	proximity_tracked = TRUE
 	icon_state = "pascalb"
 	name = "misshapen manhole cover"
 	desc = "The top of this twisted chunk of metal is faintly stamped with a five pointed star. 'Property of US Army, Pascal B - 1957'."
@@ -31,14 +32,12 @@
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-DECLARE_PERIODIC(/obj/item/poi/pascalb, PERIODIC_SLOW)
+/// Radiates only while a client is near (STAT_RELEVANCE); otherwise the every() parks until one comes near.
+CAPABILITIES(/obj/item/poi/pascalb)
+	every(2 SECONDS, then(PROC_REF(pascalb_step)), when = STAT_RELEVANCE)
 
-/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
-/obj/item/poi/pascalb/periodic_step()
-	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+/obj/item/poi/pascalb/proc/pascalb_step(datum/act/timer/A)
 	radiate()
-	..()
 
 /obj/item/poi/pascalb/proc/radiate()
 	if(active)
@@ -108,6 +107,7 @@ CAPABILITIES(/obj/structure/closet/crate/oldreactor)
 	without(CAP_CLIMB) // not climbable
 
 /obj/item/poi/brokenoldreactor
+	proximity_tracked = TRUE
 	icon_state = "poireactor_broken"
 	name = "ruptured fission reactor rack"
 	desc = "This broken hunk of machinery looks extremely dangerous."
@@ -116,14 +116,12 @@ CAPABILITIES(/obj/structure/closet/crate/oldreactor)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-DECLARE_PERIODIC(/obj/item/poi/brokenoldreactor, PERIODIC_SLOW)
+/// Radiates only while a client is near (STAT_RELEVANCE); otherwise the every() parks until one comes near.
+CAPABILITIES(/obj/item/poi/brokenoldreactor)
+	every(2 SECONDS, then(PROC_REF(brokenoldreactor_step)), when = STAT_RELEVANCE)
 
-/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
-/obj/item/poi/brokenoldreactor/periodic_step()
-	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+/obj/item/poi/brokenoldreactor/proc/brokenoldreactor_step(datum/act/timer/A)
 	radiate()
-	..()
 
 /obj/item/poi/brokenoldreactor/proc/radiate()
 	if(active)

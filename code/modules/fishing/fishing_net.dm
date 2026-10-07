@@ -20,7 +20,6 @@
 
 	default_material = MAT_CLOTH
 
-
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
@@ -62,15 +61,15 @@ TYPE_TABLE_DECLARE(/obj/item/material/fishing_net, fishing_net_accepted_mobs, li
 		return
 	return ..()
 
-EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
-	INTERACT_SELF("Empty", PROC_REF(fishing_net_self)), \
-	INTERACT_ITEM(null, PROC_REF(fishing_net_item)), \
-)
+CAPABILITIES(/obj/item/material/fishing_net)
+	op("fishing_net_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Empty"), then(PROC_REF(fishing_net_self)))
+	op("fishing_net_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Fishing net item"), then(PROC_REF(fishing_net_item)))
 
 /// Old attack_self: empty the net. Subtypes with special_handling fall through.
-/obj/item/material/fishing_net/proc/fishing_net_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/material/fishing_net/proc/fishing_net_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	for(var/mob/M in contents_of(src))
 		M.forceMove(get_turf(src))
 		act_message(user, M, MSG_SELF(span_notice("You release %T% from \the [src].")), MSG_OTHERS(span_notice("%U% releases %T% from \the [src].")))
@@ -79,15 +78,17 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
 		act_message(user, src, MSG_SELF(span_notice("You dump %I% out of %T%.")), MSG_OTHERS(span_notice("%U% dumps %I% out of %T%.")), item = I)
 	update_icon()
 	update_weight()
-	return TRUE
+	return OP_OK
 
 /// Old attackby: a trapped creature may take the hit; then falls through as its ..() did.
-/obj/item/material/fishing_net/proc/fishing_net_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/material/fishing_net/proc/fishing_net_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(contents)
 		for(var/mob/living/L in contents)
 			if(prob(25))
 				L.attackby(W, user)
-	return FALSE
+	return OP_DECLINE
 
 DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_net, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/material/fishing_net/appearance_overlays() // Also updates name and desc
@@ -138,7 +139,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_net, TYPE_PROC_REF(/atom, app
 	reach = 1
 
 	default_material = MAT_CLOTH
-
 
 	special_handling = TRUE
 

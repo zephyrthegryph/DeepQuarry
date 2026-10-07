@@ -50,6 +50,12 @@
 //Hat simulator stolen from slime code.
 CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo)
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
+	op("armadillo_item", item(/obj/item), then(PROC_REF(armadillo_interaction_item)))
+	op("armadillo_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take hat"), then(PROC_REF(armadillo_interaction_hand_grab)))
+
+/// The grab-stance input of armadillo_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/animal/passive/armadillo/proc/armadillo_interaction_hand_grab(datum/act/op/A)
+	return armadillo_interaction_hand(A, I_GRAB)
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/armadillo, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/passive/armadillo/appearance_overlays()
@@ -65,25 +71,25 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/armadillo, TYPE_PR
 		. += I
 
 // Clicked on by empty hand.
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/armadillo, \
-	INTERACT_ITEM(null, PROC_REF(armadillo_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take hat", PROC_REF(armadillo_interaction_hand)))
 
 /// Old attack_hand: grab the hat off.
-/mob/living/simple_mob/animal/passive/armadillo/proc/armadillo_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	if(interaction.stance == I_GRAB && hat)
+/mob/living/simple_mob/animal/passive/armadillo/proc/armadillo_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/L = A.actor
+	. = OP_OK
+	if(stance == I_GRAB && hat)
 		remove_hat(L)
 	else
-		return FALSE
+		return OP_DECLINE
 
 /// Old attackby: hat simulator.
-/mob/living/simple_mob/animal/passive/armadillo/proc/armadillo_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/animal/passive/armadillo/proc/armadillo_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	. = OP_OK
 	if(istype(I, /obj/item/clothing/head)) // Handle hat simulator.
 		give_hat(I, user)
 		return
-	return FALSE
+	return OP_DECLINE
 
 // Hat simulator
 /mob/living/simple_mob/animal/passive/armadillo/proc/give_hat(obj/item/clothing/head/new_hat, mob/living/user)

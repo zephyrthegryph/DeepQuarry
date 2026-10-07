@@ -52,6 +52,8 @@ CAPABILITIES(/obj/machinery/computer/looking_glass)
 	op("program", ui_act("program", arg("program", schema_text(4096))), then(PROC_REF(ui_act_program)))
 	op("gravity", ui_act("gravity"), then(PROC_REF(ui_act_gravity)))
 	op("immersion", ui_act("immersion"), then(PROC_REF(ui_act_immersion)))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(looking_glass_blast_unload)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /obj/machinery/computer/looking_glass/ui_data(datum/act/eval/A)
 	var/list/data = list()
@@ -105,13 +107,13 @@ CAPABILITIES(/obj/machinery/computer/looking_glass)
 	my_area()?.toggle_optional(immersion)
 	return TRUE
 
-DECLARE_EMAG(/obj/machinery/computer/looking_glass, PROC_REF(on_emag), null, null)
-/obj/machinery/computer/looking_glass/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/computer/looking_glass/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_EFFECTS_SPARKS4)
 	set_emagged(1)
 	to_chat(user, span_notice("You unlock several programs that were hidden somewhere in memory."))
 	log_game("[key_name(user)] emagged the [name]")
-	return 1
+	return OP_OK
 
 /obj/machinery/computer/looking_glass/proc/load_program(prog_name)
 	COOLDOWN_START(src, ready, 10 SECONDS)
@@ -147,10 +149,9 @@ DECLARE_EMAG(/obj/machinery/computer/looking_glass, PROC_REF(on_emag), null, nul
 	unload_program()
 	..()
 
-DAMAGE_REACTION(/obj/machinery/computer/looking_glass, DAMAGE_EXPLOSION, PROC_REF(looking_glass_blast_unload))
 
 /// A blast unloads the running program.
-/obj/machinery/computer/looking_glass/proc/looking_glass_blast_unload(datum/damage_packet/packet)
+/obj/machinery/computer/looking_glass/proc/looking_glass_blast_unload(datum/act/A)
 	unload_program()
 
 /obj/machinery/computer/looking_glass/power_change()

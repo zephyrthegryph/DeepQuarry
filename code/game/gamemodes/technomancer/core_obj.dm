@@ -36,10 +36,10 @@ CAPABILITIES(/obj/item/technomancer_core)
 	owns_many(nameof(spells))
 	owns_many(nameof(summoned_mobs))
 	op("technomancer_core_toggle_lock_effect", menu(), label("Toggle Core Lock"), needs(carried()), then(PROC_REF(technomancer_core_toggle_lock_effect)))
+	every(2 SECONDS, then(PROC_REF(technomancer_core_step)), when = nameof(wearer))
 
 /// Reference to the mob wearing the core. A field: it regenerates and keeps its wearer's upkeep while worn.
 OM_FIELD_VIEW(/obj/item/technomancer_core, mob/living, wearer, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 
 // its summons are dismissed with it.
 /obj/item/technomancer_core/on_destroy(force)
@@ -84,10 +84,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 	energy = min(energy + amount, max_energy)
 	return 1
 
-/// Regenerates energy and charges upkeep every 2 s while worn (declared on `wearer`); unworn, it
-/// sleeps. A wearer that is destroyed is cleared by the ownership framework, which raises the field's
-/// channel, so the declaration stops the work without a guard here.
-/obj/item/technomancer_core/periodic_step()
+/// Regenerates energy and charges upkeep every 2 s while worn (every() gated on `wearer`); unworn, the run is skipped.
+/// A wearer that is destroyed is cleared by the ownership framework, so the gate fails without a guard here.
+/obj/item/technomancer_core/proc/technomancer_core_step(datum/act/timer/A)
 	var/old_energy = energy
 	regenerate()
 	pay_dues()

@@ -19,30 +19,35 @@
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/generator)
 	owns_one(nameof(fuel), starts = nameof(fuel_type))
 	op("toggle", topic("toggle"), then(PROC_REF(topic_toggle)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	every(0.2 SECONDS, then(PROC_REF(generator_step)), when = nameof(generating))
 
+/obj/item/mecha_parts/mecha_equipment/generator/var/generating = FALSE
+TRACKED(/obj/item/mecha_parts/mecha_equipment/generator, generating)
 
-OM_FIELD(/obj/item/mecha_parts/mecha_equipment/generator, generating, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE_ALL(/obj/item/mecha_parts/mecha_equipment/generator, PERIODIC_FAST, list("generating", "chassis"))
-
-/obj/item/mecha_parts/mecha_equipment/generator/periodic_step()
+/// One cycle while generating and mounted. Answers TRUE when it shut itself down (the nuclear reactor's pulse reads that).
+/obj/item/mecha_parts/mecha_equipment/generator/proc/generator_step(datum/act/timer/A)
+	if(!chassis) // the generator only runs mounted
+		return FALSE
 	if(fuel_amount <= 0) // Spam fix
 		src.mecha_log_message("Deactivated - no fuel.")
 		set_ready_state(TRUE)
 		set_generating(FALSE)
-		return PROCESS_KILL
+		return TRUE
 	var/cur_charge = chassis.get_charge()
 	if(isnull(cur_charge))
 		set_ready_state(TRUE)
 		occupant_message("No powercell detected.")
 		src.mecha_log_message("Deactivated.")
 		set_generating(FALSE)
-		return PROCESS_KILL
+		return TRUE
 	var/use_fuel = fuel_per_cycle_idle
 	if(cur_charge<chassis.cell.maxcharge)
 		use_fuel = fuel_per_cycle_active
 		chassis.give_power(power_per_cycle)
 	fuel_amount -= min(use_fuel, fuel_amount) // allows fuel to get to 0
 	update_equip_info()
+	return FALSE
 
 /obj/item/mecha_parts/mecha_equipment/generator/detach()
 	set_generating(FALSE)
@@ -96,10 +101,10 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/mecha_parts/mecha_equipment/generator, PERI
 			return 0
 	return
 
-DECLARE_INTERACTIONS(/obj/item/mecha_parts/mecha_equipment/generator, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/item/mecha_parts/mecha_equipment/generator/proc/interaction_item(mob/user, obj/item/weapon, datum/interaction/interaction)
+/obj/item/mecha_parts/mecha_equipment/generator/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/weapon = A.held
 	var/result = load_fuel(weapon)
 	if(isnull(result))
 		act_message(user, src, MSG_SELF(span_warning("[fuel] traces minimal. [weapon] cannot be used as fuel.")), \
@@ -108,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/mecha_equipment/generator, INTERACT_I
 		to_chat(user, "Unit is full.")
 	else
 		act_message(user, src, MSG_SELF("[result] unit\s of [fuel] successfully loaded."), MSG_OTHERS("%U% loads %T% with [fuel]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/mecha_parts/mecha_equipment/generator/critfail()
 	..()
@@ -139,7 +144,7 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/mecha_equipment/generator, INTERACT_I
 	fuel_type = /obj/item/stack/material/uranium
 	var/rad_per_cycle = 0.3
 
-/obj/item/mecha_parts/mecha_equipment/generator/nuclear/periodic_step()
+/obj/item/mecha_parts/mecha_equipment/generator/nuclear/generator_step(datum/act/timer/A)
 	if(..())
 		radiation_pulse(
 			src,

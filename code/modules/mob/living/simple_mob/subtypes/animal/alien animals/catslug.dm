@@ -111,20 +111,29 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 	verb_entry(/mob/living/proc/hide)
 	verb_entry(/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
+	op("catslug_item", item(/obj/item), then(PROC_REF(catslug_interaction_item)))
+	op("catslug_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(catslug_interaction_hand_help)))
+	op("catslug_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take hat"), then(PROC_REF(catslug_interaction_hand_grab)))
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
-	INTERACT_ITEM(null, PROC_REF(catslug_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(catslug_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take hat", PROC_REF(catslug_interaction_hand)))
+/// The help-stance input of catslug_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_hand_help(datum/act/op/A)
+	return catslug_interaction_hand(A, I_HELP)
+
+/// The grab-stance input of catslug_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_hand_grab(datum/act/op/A)
+	return catslug_interaction_hand(A, I_GRAB)
+
 
 /// Old attackby: hats and feeding.
-/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_item(mob/user, obj/item/reagent_containers/food/snacks/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/food/snacks/O = A.held
+	. = OP_OK
 	if(istype(O, /obj/item/clothing/head)) // Handle hat simulator.
 		give_hat(O, user)
 		return
 	else if(!istype(O, /obj/item/reagent_containers/food/snacks))
-		return FALSE
+		return OP_DECLINE
 	if(resting)
 		to_chat(user, span_notice("\The [src] is napping, and doesn't respond to \the [O]."))
 		return
@@ -152,16 +161,17 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	play_sfx(src, SFX_ITEMS_EATFOOD)
 
 /// Old attack_hand; subtypes override this proc.
-/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/carbon/human/M = A.actor
+	. = OP_OK
 
 	if(stat == DEAD)
-		return FALSE
-	if(interaction.stance != I_HELP)
-		if(interaction.stance == I_GRAB && hat)
+		return OP_DECLINE
+	if(stance != I_HELP)
+		if(stance == I_GRAB && hat)
 			remove_hat(M)
 			return
-		return FALSE
+		return OP_DECLINE
 	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	if(resting)
 		act_message(M, src, MSG_SELF(span_notice("You shake %T% awake!")), MSG_OTHERS(span_notice("\The [M.name] shakes %T% awake from their nap.")))
@@ -201,7 +211,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 		act_message(src, M, null, MSG_OTHERS(span_notice("%U% pushes %T%'s hand away from their tummy and furrows their brow!")))
 		//prob(5) give_target on tummy rub removed.
 	else
-		return FALSE
+		return OP_DECLINE
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/vore/alienanimals/catslug/appearance_overlays()
@@ -343,13 +353,14 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 /datum/say_list/catslug/custom/spaceslug
 	speak = list("Have any porl?", "What is that?", "What kind of ship is that?", "What are you doing?", "How did you get here?", "Don't take off your helmet.", "SPAAAAAACE!", "WAOW!", "Nice weather we're having, isn't it?")
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/catslug_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/catslug_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/carbon/human/M = A.actor
+	. = OP_OK
 
 	if(stat == DEAD)
-		return FALSE
-	if(interaction.stance != I_HELP)
-		return FALSE
+		return OP_DECLINE
+	if(stance != I_HELP)
+		return OP_DECLINE
 	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	if(resting)
 		act_message(M, src, MSG_SELF(span_notice("You shake %T% awake!")), MSG_OTHERS(span_notice("\The [M.name] shakes %T% awake from their nap.")))
@@ -389,7 +400,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 		act_message(src, M, null, MSG_OTHERS(span_notice("%U% pushes %T%'s hand away from their tummy and furrows their brow, frantically pressing at the buttons %T% so carelessly pushed!")))
 		//prob(5) give_target on tummy rub removed.
 	else
-		return FALSE
+		return OP_DECLINE
 
 /obj/item/holder/catslug/custom/spaceslug
 	item_state = "spaceslug"
@@ -443,13 +454,14 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 /datum/say_list/catslug/custom/engislug
 	speak = list("Have any porl?", "What is that?", "Phoroncheck!", "Thump is mean work fine!", "What are you doing?", "How did you get here?", "Don't breathe in the spicy purple.", "Zap-zap ball bad.", "WAOW!", "The pipes make sense.")
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/engislug/catslug_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/engislug/catslug_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/carbon/human/M = A.actor
+	. = OP_OK
 
 	if(stat == DEAD)
-		return FALSE
-	if(interaction.stance != I_HELP)
-		return FALSE
+		return OP_DECLINE
+	if(stance != I_HELP)
+		return OP_DECLINE
 	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	if(resting)
 		act_message(M, src, MSG_SELF(span_notice("You shake %T% awake!")), MSG_OTHERS(span_notice("\The [M.name] shakes %T% awake from their nap.")))
@@ -489,7 +501,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 		act_message(src, M, null, MSG_OTHERS(span_notice("%U% pushes %T%'s hand away from their tummy and furrows their brow!")))
 		//prob(5) give_target on tummy rub removed.
 	else
-		return FALSE
+		return OP_DECLINE
 
 /obj/item/holder/catslug/custom/engislug
 	item_state = "engislug"

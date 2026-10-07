@@ -1,0 +1,80 @@
+human|none menu: Touch
+human|none click: Click: Touch
+robot|none menu: Touch
+robot|none click: Click: Touch
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Crawl
+human|/obj/item/tool/screwdriver menu: Dig
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Touch
+human|/obj/item/tool/screwdriver menu: Turf item
+human|/obj/item/tool/screwdriver click: Click: Dig
+human|/obj/item/tool/crowbar menu: Crawl
+human|/obj/item/tool/crowbar menu: Dig
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Touch
+human|/obj/item/tool/crowbar menu: Turf item
+human|/obj/item/tool/crowbar click: Click: Dig
+human|/obj/item/tool/wrench menu: Crawl
+human|/obj/item/tool/wrench menu: Dig
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Touch
+human|/obj/item/tool/wrench menu: Turf item
+human|/obj/item/tool/wrench click: Click: Dig
+human|/obj/item/tool/wirecutters menu: Crawl
+human|/obj/item/tool/wirecutters menu: Dig
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Touch
+human|/obj/item/tool/wirecutters menu: Turf item
+human|/obj/item/tool/wirecutters click: Click: Dig
+human|/obj/item/multitool menu: Crawl
+human|/obj/item/multitool menu: Dig
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Touch
+human|/obj/item/multitool menu: Turf item
+human|/obj/item/multitool click: Click: Dig
+human|/obj/item/weldingtool menu: Crawl
+human|/obj/item/weldingtool menu: Dig
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Touch
+human|/obj/item/weldingtool menu: Turf item
+human|/obj/item/weldingtool click: Click: Dig
+human|/obj/item/stack/cable_coil menu: Crawl
+human|/obj/item/stack/cable_coil menu: Dig
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Touch
+human|/obj/item/stack/cable_coil menu: Turf item
+human|/obj/item/stack/cable_coil click: Click: Dig
+human|/obj/item/stack/material/steel menu: Crawl
+human|/obj/item/stack/material/steel menu: Dig
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Touch
+human|/obj/item/stack/material/steel menu: Turf item
+human|/obj/item/stack/material/steel click: Click: Dig
+human|/obj/item/card/id menu: Crawl
+human|/obj/item/card/id menu: Dig
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Touch
+human|/obj/item/card/id menu: Turf item
+human|/obj/item/card/id click: Click: Dig
+human|/obj/item menu: Crawl
+human|/obj/item menu: Dig
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Touch
+human|/obj/item menu: Turf item
+human|/obj/item click: Click: Dig
+keys: mineral_item, turf_crawl, turf_item, turf_touch
+

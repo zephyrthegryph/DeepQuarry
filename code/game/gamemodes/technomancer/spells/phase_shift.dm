@@ -28,8 +28,6 @@
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "rift"
 
-DECLARE_PERIODIC(/obj/effect/phase_shift, PERIODIC_SLOW)
-
 /obj/effect/phase_shift
 	light_range = 3
 	light_power = 5
@@ -39,11 +37,12 @@ DECLARE_PERIODIC(/obj/effect/phase_shift, PERIODIC_SLOW)
 // whatever phased inside comes back out on the turf.
 CAPABILITIES(/obj/effect/phase_shift)
 	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
+	every(2 SECONDS, then(PROC_REF(phase_shift_step)))
 
-/// Wears on whoever hides inside every 2 s; empty, it sleeps.
-/obj/effect/phase_shift/periodic_step()
+/// Wears on whoever hides inside every 2 s; empty, the run does nothing.
+/obj/effect/phase_shift/proc/phase_shift_step(datum/act/timer/A)
 	if(!(locate_within(src, /mob/living)))
-		return PROCESS_KILL
+		return
 	for(var/mob/living/L in contents)
 		L.adjust_instability(2)
 

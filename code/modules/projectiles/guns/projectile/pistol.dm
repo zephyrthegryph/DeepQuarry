@@ -13,7 +13,6 @@
 	load_method = MAGAZINE
 	move_delay = 0 // Pistols have move_delay of 0
 
-
 /*
  * Detective M1911
  */
@@ -21,37 +20,31 @@
 	desc = "A standard law enforcement issue pistol. Uses .45 rounds."
 	magazine_type = /obj/item/ammo_magazine/m45/rubber
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
-	INTERACT_VERB("Name Gun", PROC_REF(det_colt_verb_rename), REQ_IN_INVENTORY, REQ_PROC(/proc/dq_actor_is_security_for_naming, "you don't feel cool enough to name this gun, chump")), \
-	INTERACT_VERB("Resprite gun", PROC_REF(det_colt_verb_reskin), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/gun/projectile/colt/detective)
+	op("rename", menu(), label("Name Gun"), needs(carried()),
+		asks(/datum/prompt/text, fields = list("question" = "What do you want to name the gun?", "title" = "Rename Gun", "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"),
+		then(PROC_REF(det_colt_verb_rename)))
+	op("reskin", menu(), label("Resprite gun"), needs(carried()),
+		asks(/datum/prompt/choice, fields = list("question" = "Choose your sprite!", "title" = "Resprite Gun", "choices" = computed(PROC_REF(reskin_choices)), "timeout" = 0), step = "sprite"),
+		then(PROC_REF(det_colt_verb_reskin)))
 
 /// Old Name Gun verb: Rename your gun. If you're Security.
-/obj/item/gun/projectile/colt/detective/proc/det_colt_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
-	return detective_pistol_name_stage(user, held, interaction)
-
-/obj/item/gun/projectile/colt/detective/proc/detective_pistol_name_stage(mob/user, obj/item/held, datum/interaction/interaction, settings_answer, settings_ready = FALSE)
-	var/mob/M = user
-	if(!M.mind)	return 0
-	if(!settings_ready)
-		open_request(src, /datum/prompt/text/weapon_setting_review, PROC_REF(detective_pistol_name_answered), answerer = M, settings_operator = user, settings_held = held, settings_interaction = interaction, question = "What do you want to name the gun?", title = "Rename Gun", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE)
-		return
-	var/_answer_k47 = settings_answer
-	if(isnull(_answer_k47))
-		return
-	var/input = sanitizeSafe(_answer_k47)
+/obj/item/gun/projectile/colt/detective/proc/det_colt_verb_rename(datum/act/op/A)
+	var/mob/M = A.actor
+	if(!security_naming_ok(M))
+		to_chat(M, span_warning("You don\'t feel cool enough to name this gun, chump."))
+		return OP_DECLINE
+	if(!M.mind)
+		return OP_DECLINE
+	var/input = sanitizeSafe(A.step_value("name"))
 
 	if(src && input && !M.stat && in_range(M,src))
 		name = input
 		to_chat(M, "You name the gun [input]. Say hello to your new friend.")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
-/// Old Resprite gun verb: Click to choose a sprite for your gun.
-/obj/item/gun/projectile/colt/detective/proc/det_colt_verb_reskin(mob/user, obj/item/held, datum/interaction/interaction)
-	return detective_pistol_skin_stage(user, held, interaction)
-
-/obj/item/gun/projectile/colt/detective/proc/detective_pistol_skin_stage(mob/user, obj/item/held, datum/interaction/interaction, settings_answer, settings_ready = FALSE)
-	var/mob/M = user
+/obj/item/gun/projectile/colt/detective/reskin_options()
 	var/list/options = list()
 	options["MarsTech P11 Spur (Bubba'd)"] = "mod_colt"
 	options["MarsTech P11 Spur (Blued)"] = "blued_colt"
@@ -60,17 +53,19 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	options["MarsTech P11 Spur (Dark)"] = "dark_colt"
 	options["MarsTech P11 Spur (Green)"] = "green_colt"
 	options["MarsTech P11 Spur (Blue)"] = "blue_colt"
-	if(!settings_ready)
-		open_request(src, /datum/prompt/choice/weapon_setting_review, PROC_REF(detective_pistol_skin_answered), answerer = M, settings_operator = user, settings_held = held, settings_interaction = interaction, question = "Choose your sprite!", title = "Resprite Gun", choices = options)
-		return
-	var/choice = settings_answer
-	if(isnull(choice))
-		return
+	return options
+
+/// Old Resprite gun verb: Click to choose a sprite for your gun.
+/obj/item/gun/projectile/colt/detective/proc/det_colt_verb_reskin(datum/act/op/A)
+	var/mob/M = A.actor
+	var/choice = A.step_value("sprite")
+	var/list/options = reskin_options()
 	if(src && choice && !M.stat && in_range(M,src))
 		icon_state = options[choice]
 		unique_reskin = options[choice]
 		to_chat(M, "Your gun is now sprited as [choice]. Say hello to your new friend.")
-		return 1
+		return OP_OK
+	return OP_DECLINE
 
 /*
  * Security Sidearm
@@ -220,7 +215,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	magazine_type = /obj/item/ammo_magazine/m9mm/compact/flash
 
 /// Old attack_hand.
-/obj/item/gun/projectile/pistol/gun_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/pistol/gun_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(silenced)
 			if(!user.item_is_in_hands(src))
@@ -230,22 +226,24 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 			silenced = 0
 			w_class = ITEMSIZE_SMALL
 			changed(src)
-			return TRUE
+			return OP_OK
 	return ..()
 
 /// Old attackby.
-/obj/item/gun/projectile/pistol/gun_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/obj/item/gun/projectile/pistol/gun_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/silencer))
 		if(!user.item_is_in_hands(src))	//if we're not in his hands
 			to_chat(user, span_notice("You'll need [src] in your hands to do that."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		user.drop_item()
 		to_chat(user, span_notice("You screw [I] onto [src]."))
 		silenced = I	//dodgy?
 		w_class = ITEMSIZE_NORMAL
 		I.forceMove(src) //put the silencer into the gun
 		changed(src)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	return ..()
 
 /// The look (the draw sweep: from its template).
@@ -269,7 +267,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	projectile_type = /obj/item/projectile/bullet/pistol
 
 /// Old attack_hand.
-/obj/item/gun/projectile/aps/gun_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/gun/projectile/aps/gun_hand(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(user.get_inactive_hand() == src)
 		if(silenced)
 			if(!user.item_is_in_hands(src))
@@ -278,21 +277,23 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 			user.put_in_hands(silenced)
 			silenced = 0
 			changed(src)
-			return TRUE
+			return OP_OK
 	return ..()
 
 /// Old attackby.
-/obj/item/gun/projectile/aps/gun_item(mob/living/user, obj/item/I, datum/interaction/interaction)
+/obj/item/gun/projectile/aps/gun_item(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I, /obj/item/silencer))
 		if(!user.item_is_in_hands(src))	//if we're not in his hands
 			to_chat(user, span_notice("You'll need [src] in your hands to do that."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		user.drop_item()
 		to_chat(user, span_notice("You screw [I] onto [src]."))
 		silenced = I	//dodgy?
 		I.forceMove(src) //put the silencer into the gun
 		changed(src)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	return ..()
 
 /// The look (the draw sweep: from its template).
@@ -584,7 +585,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	..()
 	look.state("[initial(icon_state)][ammo_magazine ? "" : "-empty"]")
 
-
 /*******PPK*******/
 /obj/item/gun/projectile/ppk
 	name = "PPK"
@@ -602,7 +602,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 /obj/item/gun/projectile/ppk/draw(datum/look/look)
 	..()
 	look.state("[initial(icon_state)][ammo_magazine ? "" : "-empty"]")
-
 
 /*******M2024*******/
 /obj/item/gun/projectile/m2024
@@ -634,26 +633,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/colt/detective, \
 	fire_sound = SFX_WEAPONS_45PISTOL_VR
 	magazine_type = /obj/item/ammo_magazine/m45
 	allowed_magazines = list(/obj/item/ammo_magazine/m45)
-
-/obj/item/gun/projectile/colt/detective/proc/detective_pistol_name_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	. = detective_pistol_name_apply(context)
-	SStgui.update_uis(src)
-
-/obj/item/gun/projectile/colt/detective/proc/detective_pistol_name_apply(datum/act/request/context)
-	var/datum/prompt/text/weapon_setting_review/ask = context.answer
-	return detective_pistol_name_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.value, TRUE)
-
-/obj/item/gun/projectile/colt/detective/proc/detective_pistol_skin_answered(datum/act/request/context)
-	if(!context.answer)
-		return
-	. = detective_pistol_skin_apply(context)
-	SStgui.update_uis(src)
-
-/obj/item/gun/projectile/colt/detective/proc/detective_pistol_skin_apply(datum/act/request/context)
-	var/datum/prompt/choice/weapon_setting_review/ask = context.answer
-	return detective_pistol_skin_stage(ask.settings_operator, ask.settings_held, ask.settings_interaction, ask.value, TRUE)
 
 /datum/prompt/text/weapon_setting_review
 	timeout = 0

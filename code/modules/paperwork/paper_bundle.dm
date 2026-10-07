@@ -20,14 +20,16 @@
 
 
 /// Old attackby.
-/obj/item/paper_bundle/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/paper_bundle/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 
 	if (istype(W, /obj/item/paper/carbon))
 		var/obj/item/paper/carbon/C = W
 		if (!C.iscopy && !C.copied)
 			to_chat(user, span_notice("Take off the carbon copy first."))
 			add_fingerprint(user)
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 	// adding sheets
 	if(istype(W, /obj/item/paper) || istype(W, /obj/item/photo))
 		insert_sheet_at(user, length(pages)+1, W)
@@ -48,7 +50,7 @@
 		consume(W, user)
 	else
 		if(istype(W, /obj/item/tape_roll))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if(istype(W, /obj/item/pen))
 			// legacy close (TGUI handles paper_bundle now)
 			SStgui.close_uis(src)
@@ -58,7 +60,7 @@
 	update_icon()
 	attack_self(user) //Update the browsed page.
 	add_fingerprint(user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/item/paper_bundle/proc/insert_sheet_at(mob/user, index, obj/item/sheet)
 	if(!own_bring_in(src, nameof(pages), sheet, null, user, TRUE, null, FALSE))
@@ -105,21 +107,29 @@
 /obj/item/paper_bundle/proc/show_content(mob/user)
 	tgui_interact(user)
 
-DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_VERB("Rename bundle", PROC_REF(paper_bundle_verb_rename), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Loose bundle", PROC_REF(paper_bundle_verb_loosen), REQ_IN_INVENTORY), \
-)
-
 /// Old attack_self.
-/obj/item/paper_bundle/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/paper_bundle/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	update_icon()
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
+
+/// The Rename bundle menu entry.
+/obj/item/paper_bundle/proc/bundle_rename_op(datum/act/op/A)
+	paper_bundle_verb_rename(A.actor)
+	return OP_OK
+
+/// The Loose bundle menu entry.
+/obj/item/paper_bundle/proc/bundle_loosen_op(datum/act/op/A)
+	paper_bundle_verb_loosen(A.actor)
+	return OP_OK
 
 CAPABILITIES(/obj/item/paper_bundle)
+	op("bundle_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("bundle_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("bundle_rename", menu(), label("Rename bundle"), needs(carried()), then(PROC_REF(bundle_rename_op)))
+	op("bundle_loosen", menu(), label("Loose bundle"), needs(carried()), then(PROC_REF(bundle_loosen_op)))
 	interface("PaperBundle")
 	without("ui_open")
 	op("next_page", ui_act("next_page"), then(PROC_REF(ui_act_next_page)))

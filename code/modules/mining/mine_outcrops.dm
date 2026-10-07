@@ -12,6 +12,7 @@
 
 CAPABILITIES(/obj/structure/outcrop)
 	climb()
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 // ALLOW(init/INSTANCE_STATE): rolls whether this outcrop shows an egg
 /obj/structure/outcrop/Initialize(mapload)
@@ -97,19 +98,19 @@ CAPABILITIES(/obj/structure/outcrop)
 		new outcropdrop(get_turf(src))
 	consume(src, user)
 
-DECLARE_INTERACTIONS(/obj/structure/outcrop, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/structure/outcrop/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/outcrop/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if (istype(W, /obj/item/pickaxe))
 		to_chat(user, span_notice("[user] begins to hack away at \the [src]."))
 		task_timed(user, 4 SECONDS, src, src, PROC_REF(dig_done), list(user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	if (istype(W, /obj/item/melee/shock_maul))
 		var/obj/item/melee/shock_maul/S = W
 		if(!S.wielded || !S.status)
 			to_chat(user, span_warning("\The [S] must be wielded in two hands and powered on to be used to mine this!"))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		to_chat(user, span_notice("You pulverize \the [src]!"))
 		for(var/i=0;i<(rand(mindrop,upperdrop));i++)
 			new outcropdrop(get_turf(src))
@@ -119,8 +120,8 @@ DECLARE_INTERACTIONS(/obj/structure/outcrop, INTERACT_ITEM(null, PROC_REF(intera
 		S.status = 0
 		S.update_held_icon()
 		consume(src, user)
-		return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+		return OP_PASS
+	return OP_PASS
 
 /obj/random/outcrop //In case you want an outcrop without pre-determining the type of ore.
 	name = "random rock outcrop"

@@ -1,7 +1,5 @@
-/obj/item/assembly/igniter|human|none => gen_item_interaction_item,gen_verb_move_to_top_effect,gen_hand_interaction_pick_up|gen_insert_interaction_kit_customize:needs an item,gen_use_interaction_self:not in your hand,gen_verb_toggle_digestable_effect:you need to be carrying it,gen_insert_interaction_collected:needs a storage
-/obj/item/assembly/igniter|robot|none => gen_item_interaction_item,gen_verb_move_to_top_effect,gen_hand_interaction_pick_up|gen_insert_interaction_kit_customize:needs an item,gen_use_interaction_self:not in your hand,gen_silicon_item_silicon_equip_module:not possible right now,gen_verb_toggle_digestable_effect:you need to be carrying it,gen_insert_interaction_collected:needs a storage
+/obj/item/assembly/igniter|human|none => |
+/obj/item/assembly/igniter|robot|none => |gen_silicon_item_silicon_equip_module:not possible right now
 /obj/item/assembly/igniter|ai|none => |gen_silicon_item_silicon_equip_module:not possible right now
 /obj/item/assembly/igniter|ghost|none => |
-/obj/item/assembly/igniter|human|/obj/item/kit => gen_insert_interaction_kit_customize,gen_item_interaction_item,gen_verb_move_to_top_effect,gen_hand_interaction_pick_up|gen_use_interaction_self:not in your hand,gen_verb_toggle_digestable_effect:you need to be carrying it,gen_insert_interaction_collected:needs a storage
-/obj/item/assembly/igniter|human|/obj/item/storage => gen_item_interaction_item,gen_verb_move_to_top_effect,gen_hand_interaction_pick_up,gen_insert_interaction_collected|gen_insert_interaction_kit_customize:needs an item,gen_use_interaction_self:not in your hand,gen_verb_toggle_digestable_effect:you need to be carrying it
 

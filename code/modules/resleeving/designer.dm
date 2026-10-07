@@ -26,6 +26,8 @@
 CAPABILITIES(/obj/machinery/computer/transhuman/designer)
 	owns_one(nameof(disk), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(designer_gui), /datum/tgui_module/appearance_changer/body_designer)
+	op("body_designer_insert_disk", item(/obj/item/disk/body_record), priority(OP_PRIORITY_DEFAULT - 1), label("Insert disk"), then(PROC_REF(body_designer_interaction_insert_disk)))
+	op("body_designer_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(body_designer_interaction_hand)))
 
 /obj/machinery/computer/transhuman/designer/Initialize(mapload)
 	. = ..()
@@ -38,22 +40,20 @@ CAPABILITIES(/obj/machinery/computer/transhuman/designer)
 		rel_take(src, nameof(disk))
 	. = ..()
 
-EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
-	INTERACT_INSERT(/obj/item/disk/body_record, PROC_REF(body_designer_interaction_insert_disk), "Insert disk"), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(body_designer_interaction_hand)), \
-)
-
 /// Old attackby.
-/obj/machinery/computer/transhuman/designer/proc/body_designer_interaction_insert_disk(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/computer/transhuman/designer/proc/body_designer_interaction_insert_disk(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!move_into(src, nameof(src.disk), W, user))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	SStgui.update_uis(src)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /// Old attack_hand.
-/obj/machinery/computer/transhuman/designer/proc/body_designer_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/obj/machinery/computer/transhuman/designer/proc/body_designer_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_OK
 	add_fingerprint(user)
 	if(!operable())
 		return

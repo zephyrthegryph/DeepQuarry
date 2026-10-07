@@ -18,6 +18,7 @@
 		TEST_ASSERT_EQUAL(successor.loc, T, "the hacked successor preserves the old floor placement")
 		TEST_ASSERT(!user.is_in_hands(successor), "hacking does not silently equip the replacement")
 		qdel(successor)
+	test_time(10 SECONDS) // the hacks' drifting sparks burn out
 	var/obj/item/sleevemate/unchanged = allocate(/obj/item/sleevemate, T)
 	test_request_handler(unchanged, "hack_chosen", user, "Invalid hack", as_op = TRUE)
 	TEST_ASSERT(!QDELETED(unchanged), "an unsupported choice cannot consume the scanner")

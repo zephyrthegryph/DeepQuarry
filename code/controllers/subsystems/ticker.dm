@@ -77,12 +77,19 @@ SYSTEM_DEF(ticker)
 	/// world.time of last restart warning.
 	EXPIRY_DECLARE(last_restart_notify)
 
-/// Time left until a scheduled reboot; announce_countdown() counts it down while set (DECLARE_REPEAT).
-OM_FIELD_TYPED(/datum/system/ticker, tmp, reboot_countdown_left, 0, CHANGE_DATUM_A)
-DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdown, "reboot_countdown_left")
+/// Time left until a scheduled reboot; announce_countdown() counts it down while it is above zero.
+/datum/system/ticker/var/tmp/reboot_countdown_left = 0
+
+/// Sets the time left and arms (or, at zero, cancels) the countdown's next announcement.
+/datum/system/ticker/proc/set_reboot_countdown_left(value)
+	reboot_countdown_left = value
+	if(value > 0)
+		after(src, reboot_countdown_delay(), PROC_REF(announce_countdown), key = "reboot_countdown")
+	else
+		cancel_after(src, "reboot_countdown")
 
 /datum/system/ticker/initialize()
-	lifecycle_decls_init(src) // starts the reboot countdown declaration (a non-atom has no materialize)
+	lifecycle_decls_init(src) // a non-atom has no materialize
 	EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
 
 /// The round state machine runs every `wait` (phase K).
@@ -469,7 +476,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 /datum/system/ticker/proc/reboot_countdown_delay()
 	return min(60 SECONDS, reboot_countdown_left)
 
-/// One countdown step (DECLARE_REPEAT while reboot_countdown_left is set).
+/// One countdown step (re-armed by set_reboot_countdown_left() while time is left).
 /datum/system/ticker/proc/announce_countdown()
 	var/remaining_time = reboot_countdown_left - reboot_countdown_delay()
 	if(remaining_time > 0)
@@ -480,7 +487,6 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 	set_reboot_countdown_left(0)
 	if(!delay_end)
 		to_chat(world, span_boldannounce("Rebooting World."))
-	return REPEAT_STOP
 
 /datum/system/ticker/proc/reboot_callback(reason, end_string)
 	if(end_string)

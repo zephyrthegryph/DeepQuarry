@@ -133,8 +133,10 @@ CAPABILITIES(/obj/item/organ/internal/eyes/grey/colormatch)
 	return -1
 
 /// Robotic eyes blur their owner's sight on a pulse.
-/obj/item/organ/internal/eyes/organ_emp(datum/damage_packet/packet)
+/obj/item/organ/internal/eyes/organ_emp(datum/act/A)
 	..()
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	if(!robotic || !owner)
 		return
 	owner.status_adjust(STAT_BLURRY, (4/packet.severity))

@@ -1,0 +1,159 @@
+human|none menu: Emote Beyond
+human|none menu: Graffiti
+human|none menu: Pet
+human|none menu: Pet Fur
+human|none menu: Touch
+human|none click: Click: Pet
+robot|none menu: Emote Beyond
+robot|none menu: Graffiti
+robot|none menu: Pet
+robot|none menu: Pet Fur
+robot|none menu: Touch
+robot|none click: Click: Pet
+ai|none click: nothing
+ghost|none menu: Pet Fur
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Crawl
+human|/obj/item/tool/screwdriver menu: Draw graffiti
+human|/obj/item/tool/screwdriver menu: Emote Beyond
+human|/obj/item/tool/screwdriver menu: Floor item help
+human|/obj/item/tool/screwdriver menu: Graffiti
+human|/obj/item/tool/screwdriver menu: Hit the floor
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Nothing
+human|/obj/item/tool/screwdriver menu: Pet
+human|/obj/item/tool/screwdriver menu: Pet Fur
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Touch
+human|/obj/item/tool/screwdriver menu: Turf item
+human|/obj/item/tool/screwdriver click: Click: Nothing
+human|/obj/item/tool/crowbar menu: Crawl
+human|/obj/item/tool/crowbar menu: Draw graffiti
+human|/obj/item/tool/crowbar menu: Emote Beyond
+human|/obj/item/tool/crowbar menu: Floor item help
+human|/obj/item/tool/crowbar menu: Graffiti
+human|/obj/item/tool/crowbar menu: Hit the floor
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Nothing
+human|/obj/item/tool/crowbar menu: Pet
+human|/obj/item/tool/crowbar menu: Pet Fur
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Touch
+human|/obj/item/tool/crowbar menu: Turf item
+human|/obj/item/tool/crowbar click: Click: Nothing
+human|/obj/item/tool/wrench menu: Crawl
+human|/obj/item/tool/wrench menu: Draw graffiti
+human|/obj/item/tool/wrench menu: Emote Beyond
+human|/obj/item/tool/wrench menu: Floor item help
+human|/obj/item/tool/wrench menu: Graffiti
+human|/obj/item/tool/wrench menu: Hit the floor
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Nothing
+human|/obj/item/tool/wrench menu: Pet
+human|/obj/item/tool/wrench menu: Pet Fur
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Touch
+human|/obj/item/tool/wrench menu: Turf item
+human|/obj/item/tool/wrench click: Click: Nothing
+human|/obj/item/tool/wirecutters menu: Crawl
+human|/obj/item/tool/wirecutters menu: Draw graffiti
+human|/obj/item/tool/wirecutters menu: Emote Beyond
+human|/obj/item/tool/wirecutters menu: Floor item help
+human|/obj/item/tool/wirecutters menu: Graffiti
+human|/obj/item/tool/wirecutters menu: Hit the floor
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Nothing
+human|/obj/item/tool/wirecutters menu: Pet
+human|/obj/item/tool/wirecutters menu: Pet Fur
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Touch
+human|/obj/item/tool/wirecutters menu: Turf item
+human|/obj/item/tool/wirecutters click: Click: Nothing
+human|/obj/item/multitool menu: Crawl
+human|/obj/item/multitool menu: Draw graffiti
+human|/obj/item/multitool menu: Emote Beyond
+human|/obj/item/multitool menu: Floor item help
+human|/obj/item/multitool menu: Graffiti
+human|/obj/item/multitool menu: Hit the floor
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Nothing
+human|/obj/item/multitool menu: Pet
+human|/obj/item/multitool menu: Pet Fur
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Touch
+human|/obj/item/multitool menu: Turf item
+human|/obj/item/multitool click: Click: Nothing
+human|/obj/item/weldingtool menu: Crawl
+human|/obj/item/weldingtool menu: Draw graffiti
+human|/obj/item/weldingtool menu: Emote Beyond
+human|/obj/item/weldingtool menu: Floor item help
+human|/obj/item/weldingtool menu: Graffiti
+human|/obj/item/weldingtool menu: Hit the floor
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Nothing
+human|/obj/item/weldingtool menu: Pet
+human|/obj/item/weldingtool menu: Pet Fur
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Touch
+human|/obj/item/weldingtool menu: Turf item
+human|/obj/item/weldingtool click: Click: Nothing
+human|/obj/item/stack/cable_coil menu: Crawl
+human|/obj/item/stack/cable_coil menu: Draw graffiti
+human|/obj/item/stack/cable_coil menu: Emote Beyond
+human|/obj/item/stack/cable_coil menu: Floor item help
+human|/obj/item/stack/cable_coil menu: Graffiti
+human|/obj/item/stack/cable_coil menu: Hit the floor
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Nothing
+human|/obj/item/stack/cable_coil menu: Pet
+human|/obj/item/stack/cable_coil menu: Pet Fur
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Touch
+human|/obj/item/stack/cable_coil menu: Turf item
+human|/obj/item/stack/cable_coil click: Click: Nothing
+human|/obj/item/stack/material/steel menu: Crawl
+human|/obj/item/stack/material/steel menu: Draw graffiti
+human|/obj/item/stack/material/steel menu: Emote Beyond
+human|/obj/item/stack/material/steel menu: Floor item help
+human|/obj/item/stack/material/steel menu: Graffiti
+human|/obj/item/stack/material/steel menu: Hit the floor
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Nothing
+human|/obj/item/stack/material/steel menu: Pet
+human|/obj/item/stack/material/steel menu: Pet Fur
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Touch
+human|/obj/item/stack/material/steel menu: Turf item
+human|/obj/item/stack/material/steel click: Click: Nothing
+human|/obj/item/card/id menu: Crawl
+human|/obj/item/card/id menu: Draw graffiti
+human|/obj/item/card/id menu: Emote Beyond
+human|/obj/item/card/id menu: Floor item help
+human|/obj/item/card/id menu: Graffiti
+human|/obj/item/card/id menu: Hit the floor
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Nothing
+human|/obj/item/card/id menu: Pet
+human|/obj/item/card/id menu: Pet Fur
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Touch
+human|/obj/item/card/id menu: Turf item
+human|/obj/item/card/id click: Click: Nothing
+human|/obj/item menu: Crawl
+human|/obj/item menu: Draw graffiti
+human|/obj/item menu: Emote Beyond
+human|/obj/item menu: Floor item help
+human|/obj/item menu: Graffiti
+human|/obj/item menu: Hit the floor
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Nothing
+human|/obj/item menu: Pet
+human|/obj/item menu: Pet Fur
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Touch
+human|/obj/item menu: Turf item
+human|/obj/item click: Click: Nothing
+keys: floor_graffiti, floor_item_disarm, floor_item_grab, floor_item_help, floor_item_hurt, fur_item, fur_pet, fur_pet_verb, gen_verb_fur_verb_emote_beyond, turf_crawl, turf_item, turf_touch
+

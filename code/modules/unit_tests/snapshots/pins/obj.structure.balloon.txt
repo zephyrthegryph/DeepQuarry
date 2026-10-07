@@ -11,50 +11,68 @@ robot|none click: Click: Poke
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Bat
+human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Poke
 human|/obj/item/tool/screwdriver menu: Punch
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Try to pop
 human|/obj/item/tool/screwdriver click: Click: Poke
 human|/obj/item/tool/crowbar menu: Bat
+human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Poke
 human|/obj/item/tool/crowbar menu: Punch
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Try to pop
 human|/obj/item/tool/crowbar click: Click: Poke
 human|/obj/item/tool/wrench menu: Bat
+human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Poke
 human|/obj/item/tool/wrench menu: Punch
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Try to pop
 human|/obj/item/tool/wrench click: Click: Poke
 human|/obj/item/tool/wirecutters menu: Bat
+human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Poke
 human|/obj/item/tool/wirecutters menu: Punch
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Try to pop
 human|/obj/item/tool/wirecutters click: Click: Poke
 human|/obj/item/multitool menu: Bat
+human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Poke
 human|/obj/item/multitool menu: Punch
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Try to pop
 human|/obj/item/multitool click: Click: Poke
 human|/obj/item/weldingtool menu: Bat
+human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Poke
 human|/obj/item/weldingtool menu: Punch
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Try to pop
 human|/obj/item/weldingtool click: Click: Poke
 human|/obj/item/stack/cable_coil menu: Bat
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Poke
 human|/obj/item/stack/cable_coil menu: Punch
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Try to pop
 human|/obj/item/stack/cable_coil click: Click: Poke
 human|/obj/item/stack/material/steel menu: Bat
+human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Poke
 human|/obj/item/stack/material/steel menu: Punch
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Try to pop
 human|/obj/item/stack/material/steel click: Click: Poke
 human|/obj/item/card/id menu: Bat
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Poke
 human|/obj/item/card/id menu: Punch
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Try to pop
 human|/obj/item/card/id click: Click: Poke
 keys: bat, drag_buckle, poke, pop, punch

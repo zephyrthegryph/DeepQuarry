@@ -7,6 +7,8 @@ CAPABILITIES(/obj/item/moneybag)
 	interface("Moneybag", title = "Moneybag", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")
 	op("remove", ui_act("remove", arg("coin", schema_text(4096))), then(PROC_REF(ui_act_remove)))
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// /obj/item/moneybag's window data.
 /obj/item/moneybag/ui_data(datum/act/eval/A)

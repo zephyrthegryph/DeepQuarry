@@ -18,8 +18,8 @@ TRACKED(/obj/item/tvcamera, streaming)
 
 /// Relation view: the atom being broadcast; the feed follows it while set.
 OM_FIELD_VIEW(/obj/item/tvcamera, atom, showing, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/tvcamera, PERIODIC_SLOW, "showing")
 CAPABILITIES(/obj/item/tvcamera)
+	every(2 SECONDS, then(PROC_REF(tvcamera_step)), when = nameof(showing))
 	owns_one(nameof(camera), starts = /obj/machinery/camera/network/thunder)
 	owns_one(nameof(radio), starts = /obj/item/radio)
 	op("toggle_video", ui_act(), then(PROC_REF(ui_act_toggle_video)))
@@ -101,7 +101,7 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 		if(user.check_current_machine(src))
 			show_ui(user) // refresh the UI
 
-/obj/item/tvcamera/periodic_step()
+/obj/item/tvcamera/proc/tvcamera_step(datum/act/timer/timer)
 	var/atom/A = showing
 	if(!A || QDELETED(A))
 		show_tvs(loc)
@@ -140,9 +140,9 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 
 /// Relation view: the atom being broadcast; the feed follows it while set.
 OM_FIELD_VIEW(/obj/item/clothing/accessory/bodycam, atom, showing, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/accessory/bodycam, PERIODIC_SLOW, "showing")
 
 CAPABILITIES(/obj/item/clothing/accessory/bodycam)
+	every(2 SECONDS, then(PROC_REF(bodycam_step)), when = nameof(showing))
 	owns_one(nameof(bcamera), starts = /obj/machinery/camera/network/bodycamera)
 	owns_one(nameof(bradio), starts = /obj/item/radio)
 	op("toggle_video", ui_act(), then(PROC_REF(ui_act_toggle_video)))
@@ -212,7 +212,7 @@ DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECT
 	if(bcamera.status && loc != old_loc)
 		show_bodycamera_tvs(loc)
 
-/obj/item/clothing/accessory/bodycam/periodic_step()
+/obj/item/clothing/accessory/bodycam/proc/bodycam_step(datum/act/timer/timer)
 	var/atom/A = showing
 	if(!A || QDELETED(A))
 		show_bodycamera_tvs(loc)

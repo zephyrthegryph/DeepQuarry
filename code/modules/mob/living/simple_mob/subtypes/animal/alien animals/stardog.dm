@@ -425,18 +425,23 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	var/tree_color = null
 	var/tree_type = /obj/structure/flora/tree/fur
 
-EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
-	INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)), \
-	INTERACT_HAND_UNGATED("Pet", PROC_REF(fur_pet)), \
-	INTERACT_VERB("Pet Fur", PROC_REF(fur_verb_pet)), \
-	INTERACT_VERB("Emote Beyond", PROC_REF(fur_verb_emote_beyond), REQ_PROC(/proc/dq_actor_not_ic_muted, "you cannot speak in IC (muted)")), \
-)
+CAPABILITIES(/turf/simulated/floor/outdoors/fur)
+	op("fur_item", item(/obj/item), label("Nothing"), passes(), then(PROC_REF(fur_item_passes)))
+	op("fur_pet", hand(), ungated(), label("Pet"), then(PROC_REF(fur_pet)))
+	op("fur_pet_verb", menu(), label("Pet Fur"), then(PROC_REF(fur_verb_pet)))
+
+EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, INTERACT_VERB("Emote Beyond", PROC_REF(fur_verb_emote_beyond), REQ_PROC(/proc/dq_actor_not_ic_muted, "you cannot speak in IC (muted)")))
+
+/// An item used on the fur does nothing to it: the click goes on (the old interaction_pass).
+/turf/simulated/floor/outdoors/fur/proc/fur_item_passes(datum/act/op/A)
+	return OP_PASS
 
 /// Old attack_hand: the turf's own touch, then petting.
-/turf/simulated/floor/outdoors/fur/proc/fur_pet(mob/user, obj/item/held, datum/interaction/interaction)
-	turf_hand(user, held, interaction)
-	fur_verb_pet(user)
-	return TRUE
+/turf/simulated/floor/outdoors/fur/proc/fur_pet(datum/act/op/A)
+	var/mob/user = A.actor
+	turf_hand(user, A.held, null)
+	fur_verb_pet(A)
+	return OP_OK
 
 /turf/simulated/floor/outdoors/fur/Entered(atom/movable/AM, atom/oldloc)
 	. = ..()
@@ -477,7 +482,8 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 			tree.color = color
 
 /// Old Pet Fur verb: Pet the fur!
-/turf/simulated/floor/outdoors/fur/proc/fur_verb_pet(mob/user, obj/item/held, datum/interaction/interaction)
+/turf/simulated/floor/outdoors/fur/proc/fur_verb_pet(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You pet %T%.")), MSG_OTHERS(span_notice("%U% pets %T%.")), runemessage = "pet pat...")
 	var/obj/effect/overmap/visitable/ship/simplemob/stardog/s = get_overmap_sector(z)
 
@@ -645,7 +651,12 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
 	name = "dense fur"
 	desc = "Silky and soft, but too thick to pass or cut!"
 
-EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_pass)))
+CAPABILITIES(/obj/structure/flora/tree/fur/wall)
+	op("fur_wall_item", item(/obj/item), passes(), priority(OP_PRIORITY_PART + 1), then(PROC_REF(fur_wall_item_passes)))
+
+/// An item used on the dense fur does nothing to it: the click goes on (the old interaction_pass).
+/obj/structure/flora/tree/fur/wall/proc/fur_wall_item_passes(datum/act/op/A)
+	return OP_PASS
 
 /area/redgate/stardog
 	name = "dog"
@@ -1400,6 +1411,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 			linked_mob.adjust_nutrition(how_much)
 
 /obj/structure/auto_flesh_door	//It's like a simple door, but it opens and closes automatically now and then!
+	proximity_tracked = TRUE
 	name = "flesh valve"
 	density = TRUE
 	opacity = TRUE
@@ -1424,16 +1436,38 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 
 CAPABILITIES(/obj/structure/auto_flesh_door)
 	rolls(nameof(countdown), PROC_REF(roll_countdown))
+	// the door only matters while someone can see it: ambient, so it runs while a client is near (STAT_RELEVANCE) and parks the rest of the time
+	every(2 SECONDS, then(PROC_REF(auto_flesh_door_step)), when = STAT_RELEVANCE)
+	op("flesh_door_hand_help", hand(), stance(I_HELP), label("Knock"), then(PROC_REF(interaction_hand_help)))
+	op("flesh_door_hand_hurt", hand(), stance(I_HURT), label("Hammer on"), then(PROC_REF(interaction_hand_hurt)))
+	op("flesh_door_hand_disarm", hand(), stance(I_DISARM), label("Hammer on"), then(PROC_REF(interaction_hand_disarm)))
+	op("flesh_door_hand_grab", hand(), stance(I_GRAB), label("Hammer on"), then(PROC_REF(interaction_hand_grab)))
+
+/// The help-stance input of interaction_hand: the shared handler with its stance.
+/obj/structure/auto_flesh_door/proc/interaction_hand_help(datum/act/op/A)
+	return interaction_hand(A, I_HELP)
+
+/// The hurt-stance input of interaction_hand: the shared handler with its stance.
+/obj/structure/auto_flesh_door/proc/interaction_hand_hurt(datum/act/op/A)
+	return interaction_hand(A, I_HURT)
+
+/// The disarm-stance input of interaction_hand: the shared handler with its stance.
+/obj/structure/auto_flesh_door/proc/interaction_hand_disarm(datum/act/op/A)
+	return interaction_hand(A, I_DISARM)
+
+/// The grab-stance input of interaction_hand: the shared handler with its stance.
+/obj/structure/auto_flesh_door/proc/interaction_hand_grab(datum/act/op/A)
+	return interaction_hand(A, I_GRAB)
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/auto_flesh_door/proc/roll_countdown(datum/roller/R)
 	. = islist(countdown) ? list() + countdown : countdown
 	. = R.number(50, 250)
 
-/// Opens and closes (and squeezes whoever is inside) only while a mob is near; otherwise it sleeps.
-/obj/structure/auto_flesh_door/periodic_step()
+/// Opens and closes (and squeezes whoever is inside) only while a mob is near; otherwise it waits.
+/obj/structure/auto_flesh_door/proc/auto_flesh_door_step(datum/act/timer/A)
 	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+		return
 	if(countdown <= 0)
 		SwitchState()
 	else
@@ -1461,16 +1495,15 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 25
 
-DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "Knock", PROC_REF(interaction_hand)), 	INTERACT_HAND_AS(I_HURT, "Hammer on", PROC_REF(interaction_hand)), 	INTERACT_HAND_AS(I_DISARM, "Hammer on", PROC_REF(interaction_hand)), 	INTERACT_HAND_AS(I_GRAB, "Hammer on", PROC_REF(interaction_hand)))
-
 /// Old attack_hand.
-/obj/structure/auto_flesh_door/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/structure/auto_flesh_door/proc/interaction_hand(datum/act/op/A, stance)
+	var/mob/user = A.actor
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(!Adjacent(user))
-		return TRUE
+		return OP_OK
 	else if(user.faction == faction)
 		SwitchState()
-	else if(interaction.stance == I_HELP)
+	else if(stance == I_HELP)
 		act_message(user, src, null, MSG_OTHERS(span_warningplain("%U% knocks on %T%.")), MSG_BLIND(span_warningplain("Someone knocks on %T%.")))
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 10
@@ -1478,7 +1511,7 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 		act_message(user, src, null, MSG_OTHERS(span_warning("%U% hammers on %T%!")), MSG_BLIND(span_warning("Someone hammers loudly on %T%!")))
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 25
-	return TRUE
+	return OP_OK
 
 /obj/structure/auto_flesh_door/CanPass(atom/movable/mover, turf/target)
 	return !density
@@ -1538,4 +1571,3 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 /turf/simulated/floor/water/digestive_enzymes/numbs_pain_of(mob/living/occupant)
 	return !occupant.digest_pain
 
-DECLARE_PERIODIC(/obj/structure/auto_flesh_door, PERIODIC_SLOW)

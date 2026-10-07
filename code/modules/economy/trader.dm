@@ -43,7 +43,9 @@
 	if(move_trader)
 		move_trader()
 
-DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_trader_hand), REQ_TARGET_STATE(/obj/trader/proc/can_trade)), 	INTERACT_ITEM(null, PROC_REF(interaction_trader_item)))
+CAPABILITIES(/obj/trader)
+	op("trader_hand", hand(), label("Trade"), then(PROC_REF(interaction_trader_hand)))
+	op("trader_item", item(/obj/item), label("Interaction trader item"), then(PROC_REF(interaction_trader_item)))
 
 /// Requirement: TRUE, or why no trade can start.
 /obj/trader/proc/can_trade(mob/living/user, atom/target, obj/item/held)
@@ -54,7 +56,14 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 	return TRUE
 
 /// Old attack_hand: start a trade with one customer at a time.
-/obj/trader/proc/interaction_trader_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+
+/obj/trader/proc/interaction_trader_hand(datum/act/op/A)
+	var/refusal = can_trade(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	var/mob/living/user = A.actor
 	trading = TRUE
 	switch(accepts)
 		if("coin")
@@ -259,7 +268,9 @@ CAPABILITIES(/datum/trader_review)
 	retire()
 
 /// Old attackby (ran ..() first): bank coins, cash or items; the base item handling still follows.
-/obj/trader/proc/interaction_trader_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/trader/proc/interaction_trader_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	switch(accepts)
 		if("coin")
 			if(istype(O, /obj/item/aliencoin))
@@ -277,7 +288,7 @@ CAPABILITIES(/datum/trader_review)
 					c.update_icon()
 					loadsamoney = null
 					act_message(src, user, others = span_notice("%U% accepts %T%'s [O]."))
-					return INTERACTION_HANDLED_PASS
+					return OP_PASS
 				user.drop_item()
 				w.forceMove(src.contents)
 				rel_add(src, nameof(bank), w)
@@ -288,7 +299,7 @@ CAPABILITIES(/datum/trader_review)
 				O.forceMove(src.contents)
 				rel_add(src, nameof(bank), O)
 				act_message(src, user, others = span_notice("%U% accepts %T%'s [O]."))
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/trader/proc/get_value(kind)
 	var/value = 0

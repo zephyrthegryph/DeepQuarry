@@ -207,7 +207,8 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 			to_chat(user, span_notice("Shared discovery with [contributers.len] other contributer\s."))
 
 /// Old click_alt.
-/obj/item/cataloguer/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/cataloguer/proc/interaction_alt(datum/act/op/A)
+	var/mob/user = A.actor
 	pulse_scan(user)
 	return TRUE
 
@@ -255,11 +256,6 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 /obj/item/cataloguer/proc/adjust_points(amount)
 	points_stored = max(0, points_stored += amount)
 
-DECLARE_INTERACTIONS(/obj/item/cataloguer, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-)
-
 /obj/item/cataloguer/proc/cataloguer_controls_opened(datum/act/op/A)
 	var/mob/living/user = A.actor
 	interact(user)
@@ -273,7 +269,9 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 
 
 /// Old attackby.
-/obj/item/cataloguer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/cataloguer/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/card/id) && !task_busy(src))
 		var/obj/item/card/id/ID = W
 		if(points_stored)
@@ -283,7 +281,7 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 			to_chat(user, span_notice("You swipe the id over \the [src]."))
 		else
 			to_chat(user, span_notice("\The [src] has no points available."))
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/cataloguer/compact
 	name = "compact cataloguer"
@@ -351,8 +349,22 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 	return ..()
 
 /// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/cataloguer/compact, \
-	INTERACT_VERB("Toggle Cataloguer", PROC_REF(compact_toggle_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/cataloguer/compact/proc/can_toggle_compact)), \
-)
+CAPABILITIES(/obj/item/cataloguer/compact)
+	op("compact_toggle_effect", menu(), label("Toggle Cataloguer"), needs(carried(), req(PROC_REF(can_toggle_compact_holds), because = PROC_REF(can_toggle_compact_refusal))), then(PROC_REF(compact_toggle_effect_op)))
+
+/// Requirement (was REQ_* can_toggle_compact): the legacy check answers TRUE to pass.
+/obj/item/cataloguer/compact/proc/can_toggle_compact_holds(datum/act/op/A)
+	var/answer = can_toggle_compact(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why can_toggle_compact_holds refuses: the legacy check's text, else the clause's own reason.
+/obj/item/cataloguer/compact/proc/can_toggle_compact_refusal(datum/act/op/A)
+	var/answer = can_toggle_compact(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
+
+/// The compact_toggle_effect op: the verb's effect, as the old resolver ran it.
+/obj/item/cataloguer/compact/proc/compact_toggle_effect_op(datum/act/op/A)
+	compact_toggle_effect(A.actor, A.held, null)
+	return OP_OK
 
 // The shown entry is a round-long catalogue definition.

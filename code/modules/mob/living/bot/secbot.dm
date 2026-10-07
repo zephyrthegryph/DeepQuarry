@@ -419,21 +419,24 @@ CAPABILITIES(/mob/living/bot/secbot)
 
 //Secbot Construction
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet, INTERACT_INSERT(/obj/item/assembly/signaler, PROC_REF(helmet_secbot_signaler), "Add signaler"))
+CAPABILITIES(/obj/item/clothing/head/helmet)
+	op("helmet_secbot_signaler", item(/obj/item/assembly/signaler), label("Add signaler"), then(PROC_REF(helmet_secbot_signaler)))
 
 /// Old attackby: a secured signaler turns a plain helmet into a secbot assembly.
-/obj/item/clothing/head/helmet/proc/helmet_secbot_signaler(mob/user, obj/item/assembly/signaler/S, datum/interaction/interaction)
+/obj/item/clothing/head/helmet/proc/helmet_secbot_signaler(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/assembly/signaler/S = A.held
 	if(type != /obj/item/clothing/head/helmet) //Eh, but we don't want people making secbots out of space helmets.
-		return FALSE
+		return OP_DECLINE
 
 	if(!S.secured)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	consume(S, user)
-	var/obj/item/secbot_assembly/A = new /obj/item/secbot_assembly
-	user.put_in_hands(A)
+	var/obj/item/secbot_assembly/assembly = new /obj/item/secbot_assembly
+	user.put_in_hands(assembly)
 	to_chat(user, "You add the signaler to the helmet.")
 	consume(src, user)
-	return TRUE
+	return OP_OK
 
 /obj/item/secbot_assembly
 	name = "helmet/signaler assembly"

@@ -22,6 +22,9 @@ CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
 	without("reagent_refinery_set_transfer_amount")
 	climb()
 	owns_one(nameof(beaker), starts = /obj/item/reagent_containers/glass/beaker/bluespace)
+	op("furnace_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(set_filter_question)), "title" = "Chemical Select", "choices" = computed(PROC_REF(set_filter_choices)), "timeout" = 0), step = "chemical"), then(PROC_REF(interaction_use)))
+	op("furnace_set_filter", menu(), label("Set Sintering Chemical"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(set_filter_question)), "title" = "Chemical Select", "choices" = computed(PROC_REF(set_filter_choices)), "timeout" = 0), step = "chemical"), then(PROC_REF(interaction_set_filter)))
+	op("furnace_flip", menu(), label("Flip Furnace Direction"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_flip)))
 
 /obj/machinery/reagent_refinery/furnace/Initialize(mapload)
 	. = ..()
@@ -130,20 +133,32 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/furnace, TYPE_PROC_REF(/
 		filling.color = beaker.reagents.get_color()
 		. += filling
 
-EXTEND_INTERACTIONS(/obj/machinery/reagent_refinery/furnace, \
-	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_use)), \
-	INTERACT_VERB("Set Sintering Chemical", PROC_REF(interaction_set_filter)), \
-	INTERACT_VERB("Flip Furnace Direction", PROC_REF(interaction_flip)), \
-)
+/// The touch sets the sintering chemical.
+/obj/machinery/reagent_refinery/furnace/proc/interaction_use(datum/act/op/A)
+	return interaction_set_filter(A)
 
-/obj/machinery/reagent_refinery/furnace/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_set_filter(user, held, interaction)
-	return TRUE
+/// What the question says the furnace is doing now.
+/obj/machinery/reagent_refinery/furnace/proc/filter_description()
+	var/filter = "disabled"
+	if(filter_reagent_id == "-1")
+		filter = "sintering out nothing"
+	else if(filter_reagent_id != "")
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[filter_reagent_id]
+		filter = "sintering [R.name]"
+	return filter
 
-/obj/machinery/reagent_refinery/furnace/proc/interaction_set_filter(mob/user, obj/item/held, datum/interaction/interaction)
-	if (user.stat || user.restrained())
-		return TRUE
+/obj/machinery/reagent_refinery/furnace/proc/set_filter_question(datum/act/op/A)
+	return "Select chemical to sinter. It is currently [filter_description()]."
 
+/// The names of what can be selected, in the order of the sintering table.
+/obj/machinery/reagent_refinery/furnace/proc/set_filter_choices(datum/act/op/A)
+	var/list/names = list()
+	for(var/choice in filter_choice_table())
+		names += choice
+	return names
+
+/// Name -> reagent id of what can be selected: the reagents currently inside that sinter into something.
+/obj/machinery/reagent_refinery/furnace/proc/filter_choice_table()
 	// Get a list of reagents currently inside!
 	var/list/tgui_list = list("Disabled" = "","Bypass" = "-1")
 	for(var/datum/reagent/R in reagents.reagent_list)
@@ -164,34 +179,31 @@ EXTEND_INTERACTIONS(/obj/machinery/reagent_refinery/furnace, \
 					if(C)
 						id_string = "[R.name] - [C.display_name] [C.sheet_plural_name]"
 			tgui_list[id_string] = R.id
+	return tgui_list
 
-	var/filter = "disabled"
-	if(filter_reagent_id == "-1")
-		filter = "sintering out nothing"
-	else if(filter_reagent_id != "")
-		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[filter_reagent_id]
-		filter = "sintering [R.name]"
-	var/select = rerun_ask(user, "k188", PROC_REF(interaction_set_filter), args, /datum/prompt/choice, question = "Select chemical to sinter. It is currently [filter].", title = "Chemical Select", choices = tgui_list)
-	if(isnull(select))
-		return
-
+/obj/machinery/reagent_refinery/furnace/proc/interaction_set_filter(datum/act/op/A)
+	var/mob/user = A.actor
 	if (user.stat || user.restrained())
-		return TRUE
+		return OP_OK
+
+	var/select = A.step_value("chemical")
+	var/list/tgui_list = filter_choice_table()
 
 	// Select if possible
 	if(select && select != "")
 		filter_reagent_id = tgui_list[select]
 		beaker.reagents.clear_reagents()
 		update_icon()
-	return TRUE
+	return OP_OK
 
-/obj/machinery/reagent_refinery/furnace/proc/interaction_flip(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/reagent_refinery/furnace/proc/interaction_flip(datum/act/op/A)
+	var/mob/user = A.actor
 	if (user.stat || user.restrained() || anchored)
-		return TRUE
+		return OP_OK
 
 	filter_side *= -1
 	update_icon()
-	return TRUE
+	return OP_OK
 
 /obj/machinery/reagent_refinery/furnace/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// pumps, furnaces, splitters and filters can only be FED in a straight line

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Worn items answer the inventory screen's click again (remove, use on); unwrapped crate parcels unseal their cargo; gaiter tuck replaces a tucked mask again; handmade collar labels use the converted op form"
+  - refactor: "Interim tests drive converted handlers with an op context instead of the old three-argument calls"

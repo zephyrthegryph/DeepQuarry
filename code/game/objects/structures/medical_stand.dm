@@ -20,6 +20,7 @@
 	var/transfer_amount = 1
 
 CAPABILITIES(/obj/structure/medical_stand)
+	every(2 SECONDS, then(PROC_REF(medical_stand_step)), when = cond_any(nameof(valve_opened), nameof(breather), nameof(attached)))
 	owns_one(nameof(contained), /obj/item/clothing/mask/breath, starts = nameof(mask_type))
 	owns_one(nameof(beaker), /obj/item/reagent_containers)
 	owns_one(nameof(tank), /obj/item/tank, starts = nameof(spawn_type))
@@ -38,12 +39,6 @@ MSG_DEF_SELF(medical_stand/cannot, "You can't do that.")
 OM_FIELD_VIEW(/obj/structure/medical_stand, mob/living/carbon/human, breather, CHANGE_EXPLICIT)
 OM_FIELD(/obj/structure/medical_stand, valve_opened, FALSE, CHANGE_EXPLICIT)
 OM_FIELD_VIEW(/obj/structure/medical_stand, mob/living/carbon, attached, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/structure/medical_stand, stand_working, list("valve_opened", "breather", "attached"))
-/// Feeds gas and reagents every 2 s while its valve is open or it has a patient on the mask or needle.
-DECLARE_PERIODIC_WHILE(/obj/structure/medical_stand, PERIODIC_SLOW, "stand_working")
-
-/obj/structure/medical_stand/proc/stand_working()
-	return valve_opened || breather || attached
 
 /obj/structure/medical_stand/Initialize(mapload)
 	. = ..()
@@ -406,7 +401,7 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 	else
 		. += span_notice("There is no tank.")
 
-/obj/structure/medical_stand/periodic_step()
+/obj/structure/medical_stand/proc/medical_stand_step(datum/act/timer/A)
 	//Gas Stuff
 	if(breather())
 		if(!can_apply_to_target(breather()))
@@ -479,8 +474,6 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 				beaker.reagents.handle_reactions()
 				update_icon()
 
-	if ((!valve_opened || tank.distribute_pressure == 0) && !breather() && !attached())
-		return PROCESS_KILL
 
 /obj/structure/medical_stand/anesthetic
 	spawn_type = /obj/item/tank/anesthetic

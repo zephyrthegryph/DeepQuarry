@@ -103,6 +103,7 @@
 
 CAPABILITIES(/obj/effect/dummy/spell_jaunt)
 	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
+	extend(/datum/act/hit/projectile, instead())
 
 /obj/effect/dummy/spell_jaunt/relaymove(mob/user, direction)
 	if (!src.canmove || reappearing) return
@@ -117,7 +118,6 @@ CAPABILITIES(/obj/effect/dummy/spell_jaunt)
 	src.canmove = 0
 	after(src, 0.2 SECONDS, PROC_REF(allow_move))
 
-DAMAGE_REACTION(/obj/effect/dummy/spell_jaunt, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage_reaction_block))
 
 /obj/effect/dummy/spell_jaunt/proc/allow_move()
 	canmove = 1

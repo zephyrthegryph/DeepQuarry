@@ -28,6 +28,8 @@
 
 CAPABILITIES(/obj/item/stack/material)
 	without("ui_open")
+	op("material_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Material self"), then(PROC_REF(material_self)))
+	op("material_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(material_interaction_item)))
 
 // ALLOW(init/INSTANCE_STATE): a sheet stack takes its material's recipes, stack type, colour and conductivity
 /obj/item/stack/material/Initialize(mapload)
@@ -113,21 +115,19 @@ CAPABILITIES(/obj/item/stack/material)
 	return new_stack
 
 /// Old attack_self: build windows, or open the recipe window.
-/obj/item/stack/material/proc/material_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/stack/material/proc/material_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!material.build_windows(user, src))
 		tgui_interact(user)
 
-EXTEND_INTERACTIONS(/obj/item/stack/material, \
-	INTERACT_USE(null, PROC_REF(material_self)), \
-	INTERACT_ITEM(null, PROC_REF(material_interaction_item)), \
-)
-
 /// Old attackby.
-/obj/item/stack/material/proc/material_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/stack/material/proc/material_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/stack/cable_coil))
 		material.build_wired_product(user, W, src)
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	else if(istype(W, /obj/item/stack/rods))
 		material.build_rod_product(user, W, src)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE

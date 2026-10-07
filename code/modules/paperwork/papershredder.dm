@@ -150,20 +150,21 @@ MSG_DEF_SELF(papershredder/empty, "it is empty")
 CAPABILITIES(/obj/item/shreddedp)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
 	rolls(nameof(color), PROC_REF(roll_color))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/item/shreddedp/proc/roll_color(datum/roller/R)
 	return R.chance(65) ? R.choose(list("#BABABA", "#7F7F7F")) : color
 
-DECLARE_INTERACTIONS(/obj/item/shreddedp, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/item/shreddedp/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/shreddedp/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/flame/lighter))
 		burnpaper(W, user)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
 /obj/item/shreddedp/proc/burnpaper(obj/item/flame/lighter/P, mob/user)
 	if(user.restrained())

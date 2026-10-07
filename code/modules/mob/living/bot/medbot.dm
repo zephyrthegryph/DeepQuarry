@@ -198,17 +198,12 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	else
 		icon_state = "medibot[on]"
 
-EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
-	INTERACT_INSERT(/obj/item/reagent_containers/glass, PROC_REF(medbot_interaction_item), "Insert beaker", REQ_FIELD_NOT("locked", "the panel is locked"), REQ_FIELD_NOT("reagent_glass")), \
-	INTERACT_HAND_UNGATED_AS(I_HELP, "Right or open controls", PROC_REF(medbot_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_DISARM, "Tip over", PROC_REF(medbot_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Open controls", PROC_REF(medbot_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_HURT, "Open controls", PROC_REF(medbot_interaction_hand)))
 
 /// Old attack_hand (no gate, no default touch): disarm tips it, help rights it, else open the controls.
-/mob/living/bot/medbot/proc/medbot_interaction_hand(mob/living/carbon/human/H, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	if(istype(H) && interaction.stance == I_DISARM && !is_tipped)
+/mob/living/bot/medbot/proc/medbot_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/carbon/human/H = A.actor
+	. = OP_OK
+	if(istype(H) && stance == I_DISARM && !is_tipped)
 		act_message(H, src, MSG_SELF(span_warning("You begin tipping over %T%...")), MSG_OTHERS(span_danger("%U% begins tipping over %T%.")))
 
 		if(COOLDOWN_FINISHED(src, tipping_voice_cooldown))
@@ -220,7 +215,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 
 		task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done), done_args = list(H))
 
-	else if(istype(H) && interaction.stance == I_HELP && is_tipped)
+	else if(istype(H) && stance == I_HELP && is_tipped)
 		act_message(H, src, MSG_SELF(span_notice("You begin righting %T%...")), MSG_OTHERS(span_notice("%U% begins righting %T%.")))
 		task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done2), done_args = list(H))
 	else
@@ -230,6 +225,9 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 	tip_over(H)
 /mob/living/bot/medbot/proc/attack_hand_medbot_done2(mob/living/carbon/human/H)
 	set_right(H)
+
+MSG_DEF_SELF(medbot/panel_locked, "the panel is locked")
+MSG_DEF_SELF(medbot/has_beaker, "there is already a beaker inside")
 
 // The hand ops above open the controls (or tip the bot), so the window's own open op answers the menu and a remote user only.
 CAPABILITIES(/mob/living/bot/medbot)
@@ -241,6 +239,27 @@ CAPABILITIES(/mob/living/bot/medbot)
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("togglevoice", ui_act("togglevoice"), then(PROC_REF(ui_act_togglevoice)))
 	op("declaretreatment", ui_act("declaretreatment"), then(PROC_REF(ui_act_declaretreatment)))
+	op("medbot_item", item(/obj/item/reagent_containers/glass), label("Insert beaker"), needs(req_is(nameof(locked), FALSE, because = MSG(medbot/panel_locked)), req_is(nameof(reagent_glass), FALSE, because = MSG(medbot/has_beaker))), then(PROC_REF(medbot_interaction_item)))
+	op("medbot_hand_help", hand(), ungated(), stance(I_HELP), label("Right or open controls"), then(PROC_REF(medbot_interaction_hand_help)))
+	op("medbot_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Tip over"), then(PROC_REF(medbot_interaction_hand_disarm)))
+	op("medbot_hand_grab", hand(), ungated(), stance(I_GRAB), label("Open controls"), then(PROC_REF(medbot_interaction_hand_grab)))
+	op("medbot_hand_hurt", hand(), ungated(), stance(I_HURT), label("Open controls"), then(PROC_REF(medbot_interaction_hand_hurt)))
+
+/// The help-stance input of medbot_interaction_hand: the shared handler with its stance.
+/mob/living/bot/medbot/proc/medbot_interaction_hand_help(datum/act/op/A)
+	return medbot_interaction_hand(A, I_HELP)
+
+/// The disarm-stance input of medbot_interaction_hand: the shared handler with its stance.
+/mob/living/bot/medbot/proc/medbot_interaction_hand_disarm(datum/act/op/A)
+	return medbot_interaction_hand(A, I_DISARM)
+
+/// The grab-stance input of medbot_interaction_hand: the shared handler with its stance.
+/mob/living/bot/medbot/proc/medbot_interaction_hand_grab(datum/act/op/A)
+	return medbot_interaction_hand(A, I_GRAB)
+
+/// The hurt-stance input of medbot_interaction_hand: the shared handler with its stance.
+/mob/living/bot/medbot/proc/medbot_interaction_hand_hurt(datum/act/op/A)
+	return medbot_interaction_hand(A, I_HURT)
 
 /// The window's data: the bot's state, the beaker, and the settings for whoever may see them (a silicon, or anyone while the panel is unlocked).
 /mob/living/bot/medbot/ui_data(datum/act/eval/A)
@@ -271,12 +290,14 @@ CAPABILITIES(/mob/living/bot/medbot)
 	return data
 
 /// Old attackby: load a beaker; anything else falls to the bot's item handling.
-/mob/living/bot/medbot/proc/medbot_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/mob/living/bot/medbot/proc/medbot_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 
 	if(!move_into(src, nameof(src.reagent_glass), O, user))
-		return TRUE
+		return OP_OK
 	to_chat(user, span_notice("You insert [O]."))
-	return TRUE
+	return OP_OK
 
 /mob/living/bot/medbot/proc/ui_act_power(datum/act/op/A)
 	. = TRUE
@@ -538,10 +559,13 @@ CAPABILITIES(/obj/item/storage/firstaid)
 		if("o2")
 			look.overlay("kit_skin_o2")
 
-DECLARE_INTERACTIONS(/obj/item/firstaid_arm_assembly, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/firstaid_arm_assembly)
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/firstaid_arm_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/firstaid_arm_assembly/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/pen))
 		ask_name_var(user)
 	else
@@ -565,7 +589,7 @@ DECLARE_INTERACTIONS(/obj/item/firstaid_arm_assembly, INTERACT_ITEM(null, PROC_R
 					S.skin = skin
 					S.name = created_name
 					consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 // Undefine these.
 #undef MEDBOT_PANIC_NONE

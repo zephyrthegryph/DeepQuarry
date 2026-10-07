@@ -4,32 +4,32 @@
 
 CAPABILITIES(/obj/item/clothing/suit/storage)
 	owns_one(nameof(pockets), starts = /obj/item/storage/internal)
+	op("suit_pockets_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Suit pockets hand"), then(PROC_REF(suit_pockets_hand)))
+	op("suit_pockets_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Suit pockets item"), then(PROC_REF(suit_pockets_item)))
 
 /obj/item/clothing/suit/storage/Initialize(mapload)
 	. = ..()
 	pockets.max_storage_space = ITEMSIZE_COST_SMALL * 2
 
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(suit_pockets_hand)), \
-	INTERACT_ITEM(null, PROC_REF(suit_pockets_item)), \
-)
-
 /// Old attack_hand: the pockets get the touch first.
-/obj/item/clothing/suit/storage/proc/suit_pockets_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/storage/proc/suit_pockets_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if (pockets.handle_attack_hand(user))
-		return FALSE
-	return TRUE
+		return OP_DECLINE
+	return OP_OK
 
 /obj/item/clothing/suit/storage/MouseDrop(obj/over_object as obj)
 	if (pockets.handle_mousedrop(usr, over_object))
 		..(over_object)
 
 /// Old attackby: the clothing's own item use (the old ..()), then the pockets.
-/obj/item/clothing/suit/storage/proc/suit_pockets_item(mob/user, obj/item/W, datum/interaction/interaction)
-	clothing_accessory_item(user, W, interaction)
+/obj/item/clothing/suit/storage/proc/suit_pockets_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	clothing_accessory_item(A)
 	pockets.attackby(W, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 //Jackets with buttons, used for labcoats, IA jackets, First Responder jackets, and brown jackets.
 /obj/item/clothing/suit/storage/toggle
@@ -37,12 +37,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage, \
 	flags_inv = HIDEHOLSTER
 	var/open = 0	//0 is closed, 1 is open, -1 means it won't be able to toggle
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/toggle, \
-	INTERACT_VERB("Toggle Coat Buttons", PROC_REF(toggle_toggle_verb), REQ_IN_INVENTORY), \
-)
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle)
+	op("toggle_toggle_verb", menu(), label("Toggle Coat Buttons"), needs(carried()), then(PROC_REF(toggle_toggle_verb)))
 
 /// Old verb "Toggle Coat Buttons".
-/obj/item/clothing/suit/storage/toggle/proc/toggle_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/storage/toggle/proc/toggle_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
 		return 0
 

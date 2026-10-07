@@ -6,11 +6,13 @@
 	range = 0
 	equip_type = EQUIP_SPECIAL
 
-OM_FIELD(/obj/item/mecha_parts/mecha_equipment/cloak, cloaking, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/cloak, PERIODIC_SLOW, "cloaking")
+/obj/item/mecha_parts/mecha_equipment/cloak/var/cloaking = FALSE
+TRACKED(/obj/item/mecha_parts/mecha_equipment/cloak, cloaking)
 
-/obj/item/mecha_parts/mecha_equipment/cloak/periodic_step()
-	..()
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/cloak)
+	every(2 SECONDS, then(PROC_REF(cloak_step)), when = nameof(cloaking))
+
+/obj/item/mecha_parts/mecha_equipment/cloak/proc/cloak_step(datum/act/timer/A)
 	//Removed from chassis or ran out of power
 	if(!chassis || !chassis.use_power(energy_drain))
 		stop_cloak()

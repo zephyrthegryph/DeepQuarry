@@ -60,9 +60,12 @@ CAPABILITIES(/datum/spell)
 ///SETUP AND PROCESS///
 ///////////////////////
 
-/// TRUE while recharging: recharge_tick() adds a second's worth every second (DECLARE_REPEAT).
+/// TRUE while recharging: recharge_tick() adds a second's worth every second (the every() below).
 OM_FIELD(/datum/spell, recharging, FALSE, CHANGE_DATUM_A)
-DECLARE_REPEAT(/datum/spell, 1 SECOND, recharge_tick, "recharging")
+
+/datum/spell/reactions()
+	. = ..()
+	. += every(1 SECOND, PROC_REF(recharge_tick), when = nameof(recharging))
 
 /datum/spell/New()
 	..()
@@ -76,11 +79,10 @@ DECLARE_REPEAT(/datum/spell, 1 SECOND, recharge_tick, "recharging")
 	if(charge_counter < charge_max)
 		set_recharging(TRUE)
 
-/datum/spell/proc/recharge_tick()
+/datum/spell/proc/recharge_tick(dt)
 	charge_counter = min(charge_counter + 10, charge_max)
 	if(charge_counter >= charge_max)
 		set_recharging(FALSE)
-		return REPEAT_STOP
 
 /////////////////
 /////CASTING/////

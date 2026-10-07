@@ -30,6 +30,7 @@
 
 CAPABILITIES(/obj/machinery/appliance/cooker/grill)
 	owns_one(nameof(grill_loop), /datum/looping_sound/grill)
+	op("part_replace", item(/obj/item), label("Use"), then(PROC_REF(appliance_interaction_part_replace)))
 
 /obj/machinery/appliance/cooker/grill/Initialize(mapload)
 	. = ..()
@@ -52,4 +53,3 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/grill, TYPE_PROC_REF(/at
 		if(grill_loop)
 			grill_loop.stop(src)
 
-EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/grill, INTERACT_ITEM(null, PROC_REF(appliance_interaction_part_replace)))

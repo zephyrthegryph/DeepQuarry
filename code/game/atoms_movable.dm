@@ -608,17 +608,22 @@ SETTER(/atom/movable, anchored)
 	anchored = TRUE
 
 // An overlay passes touches and items on to what it overlays.
-DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_REF(overlay_pass_touch)), 	INTERACT_ITEM(null, PROC_REF(overlay_pass_item)), )
+CAPABILITIES(/atom/movable/overlay)
+	op("pass_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(overlay_pass_touch)))
+	op("pass_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), then(PROC_REF(overlay_pass_item)))
 
-/atom/movable/overlay/proc/overlay_pass_touch(mob/user, obj/item/held, datum/interaction/interaction)
+/atom/movable/overlay/proc/overlay_pass_touch(datum/act/op/A)
+	var/mob/user = A.actor
 	if(master)
 		master.attack_hand(user)
-	return TRUE
+	return OP_OK
 
-/atom/movable/overlay/proc/overlay_pass_item(mob/user, obj/item/W, datum/interaction/interaction)
+/atom/movable/overlay/proc/overlay_pass_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(master)
-		return master.attackby(W, user) ? TRUE : INTERACTION_HANDLED_PASS
-	return TRUE
+		return master.attackby(W, user) ? OP_OK : OP_PASS
+	return OP_OK
 
 /atom/movable/proc/touch_map_edge()
 	if(z in using_map.sealed_levels)

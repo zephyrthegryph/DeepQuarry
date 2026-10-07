@@ -72,10 +72,10 @@
 		M?.hud_used?.update_ammo_hud(M, src)
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/cell_loaded/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/cell_loaded/gun_operate(datum/act/op/A, callback)
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(!chambered)
 		return
 
@@ -149,11 +149,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/cell_loaded, TYPE_PROC_REF(/ato
 
 	var/list/modes
 
-EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC_REF(cell_mag_interaction_item)))
+CAPABILITIES(/obj/item/ammo_magazine/cell_mag)
+	op("cell_mag_load", item(/obj/item), priority(OP_PRIORITY_NORMAL + 1), label("Load"), then(PROC_REF(cell_mag_interaction_item)))
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
-/obj/item/ammo_magazine/cell_mag/proc/cell_mag_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/ammo_magazine/cell_mag/proc/cell_mag_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	make_rounds_real()
 	if(istype(W, /obj/item/ammo_casing/microbattery))
 		var/obj/item/ammo_casing/microbattery/B = W

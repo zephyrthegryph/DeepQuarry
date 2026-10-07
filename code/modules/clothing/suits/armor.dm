@@ -813,7 +813,8 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/combat/crusader_explo, suit_storage_spe
 	open = 1
 
 /// Overrides the "Toggle Coat Buttons" interaction (storage.dm).
-/obj/item/clothing/suit/storage/toggle/yw/secjacket/toggle_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/suit/storage/toggle/yw/secjacket/toggle_toggle_verb(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
 		return 0
 

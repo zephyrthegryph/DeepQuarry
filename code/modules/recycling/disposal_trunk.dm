@@ -10,6 +10,7 @@
 
 CAPABILITIES(/obj/structure/disposalpipe/trunk)
 	after_init(0, then(PROC_REF(link_after_init)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Links the machine on its tile, once it exists.
 /obj/structure/disposalpipe/trunk/proc/link_after_init(datum/act/timer/A)
@@ -22,21 +23,20 @@ CAPABILITIES(/obj/structure/disposalpipe/trunk)
 	..()
 
 // Override attackby so we disallow trunkremoval when somethings ontop
-DECLARE_INTERACTIONS(/obj/structure/disposalpipe/trunk, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/structure/disposalpipe/trunk/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/obj/structure/disposalpipe/trunk/proc/interaction_item(datum/act/op/A)
 	//Linked atom.
 	if(linked())
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	//Disposal constructors
 	var/turf/T = get_turf(src)
 	for(var/obj/structure/disposalconstruct/C in turf_contents_of_type(T, /obj/structure/disposalconstruct))
 		if(C.ptype == DISPOSAL_PIPE_BIN || C.ptype == DISPOSAL_PIPE_OUTLET || C.ptype == DISPOSAL_PIPE_CHUTE)
 			if(C.anchored)
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
-	return FALSE //Run the check from parent, instead of copypasta code
+	return OP_DECLINE //Run the check from parent, instead of copypasta code
 
 // would transfer to next pipe segment, but we are in a trunk
 // if not entering from disposal bin,

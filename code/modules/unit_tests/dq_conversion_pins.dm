@@ -71,14 +71,25 @@
 				actual_by_type[type] = list("no tile to pin a turf on")
 				continue
 			var/turf/changed = beside.ChangeTurf(type)
-			actual_by_type[type] = dq_pin_lines(changed, T, actors)
+			try
+				actual_by_type[type] = dq_pin_lines(changed, T, actors)
+			catch(var/exception/read_turf)
+				actual_by_type[type] = list("runtime while reading it: [read_turf.name]")
 			beside = changed.ChangeTurf(beside_type)
 			continue
-		var/atom/target = dq_snapshot_allocate(type, T)
+		var/atom/target = null
+		try
+			target = dq_snapshot_allocate(type, T)
+		catch(var/exception/made)
+			actual_by_type[type] = list("runtime while making it: [made.name]")
+			continue
 		if(QDELETED(target))
 			actual_by_type[type] = list("deleted itself on creation")
 			continue
-		actual_by_type[type] = dq_pin_lines(target, T, actors)
+		try
+			actual_by_type[type] = dq_pin_lines(target, T, actors)
+		catch(var/exception/read)
+			actual_by_type[type] = list("runtime while reading it: [read.name]")
 		qdel(target)
 	if(sweep_room.has_gravity != sweep_gravity)
 		sweep_room.gravitychange(sweep_gravity)

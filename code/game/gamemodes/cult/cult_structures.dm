@@ -37,14 +37,12 @@ CAPABILITIES(/obj/structure/cult/pylon)
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	/// Surges near players while intact; a broken pylon does nothing until repaired.
 	every(2 SECONDS, then(PROC_REF(pylon_step)), when = cond_not(nameof(isbroken)))
-
-DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_hand.
-/obj/structure/cult/pylon/proc/interaction_hand(mob/M, obj/item/held, datum/interaction/interaction)
+/obj/structure/cult/pylon/proc/interaction_hand(datum/act/op/A)
+	var/mob/M = A.actor
 	attackpylon(M, 5)
 	return TRUE
 
@@ -56,9 +54,11 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 	return OP_OK
 
 /// Old attackby.
-/obj/structure/cult/pylon/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/structure/cult/pylon/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	attackpylon(user, W.force)
-	return INTERACTION_HANDLED_PASS
+	return OP_PASS
 
 /obj/structure/cult/pylon/take_damage(damage)
 	pylonhit(damage)

@@ -89,12 +89,13 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
 	return TRUE
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/crossbow/bow/gun_self(mob/living/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/launcher/crossbow/bow/gun_operate(datum/act/op/A, callback)
+	var/mob/living/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(hardlight)
-		return FALSE
+		return OP_DECLINE
 	if(drawn)
 		act_message(user, src, MSG_SELF(span_infoplain("You relax the tension on %T%'s string.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " relaxes the tension on %T%'s string.")))
@@ -121,8 +122,10 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + "draws the string on %T% back fully!")))
 
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
-/obj/item/gun/launcher/crossbow/bow/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/obj/item/gun/launcher/crossbow/bow/gun_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	. = OP_PASS
 	if(!bolt && istype(W,/obj/item/arrow/standard))
 		if(!move_into(src, nameof(src.bolt), W, user))
 			return
@@ -156,10 +159,11 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
 	rel_clear(src, nameof(bolt))
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/launcher/crossbow/bow/hardlight/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/launcher/crossbow/bow/hardlight/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	if(drawn)
 		act_message(user, src, MSG_SELF(span_infoplain("You relax the tension on %T%'s string.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " relaxes the tension on %T%'s string.")))

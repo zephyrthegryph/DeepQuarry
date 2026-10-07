@@ -109,6 +109,7 @@
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/rig)
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	owns_one(nameof(boots), /obj/item/clothing/shoes)
 	owns_one(nameof(chest), /obj/item/clothing/suit/space/rig)
 	owns_one(nameof(gloves), /obj/item/clothing/gloves/gauntlets/rig)
@@ -134,6 +135,68 @@ CAPABILITIES(/obj/item/rig)
 	op("toggle_piece", ui_act("toggle_piece", arg("piece", schema_text(4096))), then(PROC_REF(ui_act_toggle_piece)))
 	op("interact_module", ui_act("interact_module", arg("charge_type", schema_text(4096)), arg("module", num()), arg("module_mode", schema_text(4096))), then(PROC_REF(ui_act_interact_module)))
 	op("tank_settings", ui_act("tank_settings"), then(PROC_REF(ui_act_tank_settings)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(rig_emp_malfunction)))
+	op("rig_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Rig item"), then(PROC_REF(rig_item)))
+	op("rig_shock_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Rig shock hand"), then(PROC_REF(rig_shock_hand)))
+	op("rig_hardsuit_interface_verb", menu(), label("Open Hardsuit Interface"), needs(carried()), then(PROC_REF(rig_hardsuit_interface_verb)))
+	op("rig_toggle_vision_verb", menu(), label("Toggle Visor"), needs(carried(), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn)), req_is(nameof(canremove), FALSE, because = MSG(rig/not_active)), req_is(nameof(visor), TRUE, because = MSG(rig/visor))), then(PROC_REF(rig_toggle_vision_verb)))
+	op("rig_toggle_helmet_verb", menu(), label("Toggle Helmet"), needs(carried(), req(PROC_REF(pred_has_helmet_holds), because = PROC_REF(pred_has_helmet_refusal)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_helmet_verb)))
+	op("rig_toggle_chest_verb", menu(), label("Toggle Chestpiece"), needs(carried(), req(PROC_REF(pred_has_chest_holds), because = PROC_REF(pred_has_chest_refusal))), then(PROC_REF(rig_toggle_chest_verb)))
+	op("rig_toggle_gauntlets_verb", menu(), label("Toggle Gauntlets"), needs(carried(), req(PROC_REF(pred_has_gauntlets_holds), because = PROC_REF(pred_has_gauntlets_refusal)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_gauntlets_verb)))
+	op("rig_toggle_boots_verb", menu(), label("Toggle Boots"), needs(carried(), req(PROC_REF(pred_has_boots_holds), because = PROC_REF(pred_has_boots_refusal)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_boots_verb)))
+	op("rig_deploy_suit_verb", menu(), label("Deploy Hardsuit"), needs(carried(), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_deploy_suit_verb)))
+	op("rig_toggle_seals_verb", menu(), label("Toggle Hardsuit"), needs(carried(), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_seals_verb)))
+	op("rig_switch_vision_mode_verb", menu(), label("Switch Vision Mode"), needs(carried(), req_is(nameof(canremove), FALSE, because = MSG(rig/not_active)), req_is(nameof(visor), TRUE, because = MSG(rig/visor))), then(PROC_REF(rig_switch_vision_mode_verb)))
+	op("rig_alter_voice_verb", menu(), label("Configure Voice Synthesiser"), needs(carried(), req_is(nameof(canremove), FALSE, because = MSG(rig/not_active)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn)), req_is(nameof(speech), TRUE, because = MSG(rig/speech))), then(PROC_REF(rig_alter_voice_verb)))
+	op("rig_select_module_verb", menu(), label("Select Module"), needs(carried(), req_is(nameof(canremove), FALSE, because = MSG(rig/not_active)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_select_module_verb)))
+	op("rig_toggle_module_verb", menu(), label("Toggle Module"), needs(carried(), req_is(nameof(canremove), FALSE, because = MSG(rig/not_active)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_toggle_module_verb)))
+	op("rig_engage_module_verb", menu(), label("Engage Module"), needs(carried(), req_is(nameof(canremove), FALSE, because = MSG(rig/not_active)), req_worn_by_actor(list(SLOT_ID_BACK, SLOT_ID_BELT), because = MSG(rig/not_worn))), then(PROC_REF(rig_engage_module_verb)))
+
+MSG_DEF_SELF(rig/not_worn, "The hardsuit is not being worn.")
+MSG_DEF_SELF(rig/not_active, "The suit is not active.")
+MSG_DEF_SELF(rig/visor, "The hardsuit does not have a configurable visor.")
+
+MSG_DEF_SELF(rig/speech, "The hardsuit does not have a speech synthesiser.")
+
+/// Requirement (was REQ pred_has_helmet): the legacy check answers TRUE to pass.
+/obj/item/rig/proc/pred_has_helmet_holds(datum/act/op/A)
+	var/answer = pred_has_helmet(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why pred_has_helmet refuses: the legacy check text, else the clause reason.
+/obj/item/rig/proc/pred_has_helmet_refusal(datum/act/op/A)
+	var/answer = pred_has_helmet(A.actor, src, A.held)
+	return istext(answer) ? answer : "it has no helmet"
+
+/// Requirement (was REQ pred_has_chest): the legacy check answers TRUE to pass.
+/obj/item/rig/proc/pred_has_chest_holds(datum/act/op/A)
+	var/answer = pred_has_chest(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why pred_has_chest refuses: the legacy check text, else the clause reason.
+/obj/item/rig/proc/pred_has_chest_refusal(datum/act/op/A)
+	var/answer = pred_has_chest(A.actor, src, A.held)
+	return istext(answer) ? answer : "it has no chestpiece"
+
+/// Requirement (was REQ pred_has_gauntlets): the legacy check answers TRUE to pass.
+/obj/item/rig/proc/pred_has_gauntlets_holds(datum/act/op/A)
+	var/answer = pred_has_gauntlets(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why pred_has_gauntlets refuses: the legacy check text, else the clause reason.
+/obj/item/rig/proc/pred_has_gauntlets_refusal(datum/act/op/A)
+	var/answer = pred_has_gauntlets(A.actor, src, A.held)
+	return istext(answer) ? answer : "it has no gauntlets"
+
+/// Requirement (was REQ pred_has_boots): the legacy check answers TRUE to pass.
+/obj/item/rig/proc/pred_has_boots_holds(datum/act/op/A)
+	var/answer = pred_has_boots(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why pred_has_boots refuses: the legacy check text, else the clause reason.
+/obj/item/rig/proc/pred_has_boots_refusal(datum/act/op/A)
+	var/answer = pred_has_boots(A.actor, src, A.held)
+	return istext(answer) ? answer : "it has no boots"
 
 /obj/item/rig/Initialize(mapload)
 	. = ..()
@@ -805,10 +868,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 /obj/item/rig/proc/malfunction()
 	return 0
 
-DAMAGE_REACTION(/obj/item/rig, DAMAGE_EMP, PROC_REF(rig_emp_malfunction))
 
 /// A pulse makes the suit malfunction, drains its cell and can damage modules.
-/obj/item/rig/proc/rig_emp_malfunction(datum/damage_packet/packet)
+/obj/item/rig/proc/rig_emp_malfunction(datum/act/A)
+	var/datum/notice/hit/emp/N = A
+	var/datum/damage_packet/packet = N.packet
 	//set malfunctioning
 	if(emp_protection < 30) //for ninjas, really.
 		malfunctioning += 10

@@ -262,23 +262,34 @@
 				return TRUE
 	return FALSE
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, INTERACT_HAND_UNGATED_AS(I_DISARM, "Toggle Vac-Pack", PROC_REF(swoopie_interaction_hand)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take Vac-Pack", PROC_REF(swoopie_interaction_hand)))
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
+	op("swoopie_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Toggle Vac-Pack"), then(PROC_REF(swoopie_interaction_hand_disarm)))
+	op("swoopie_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take Vac-Pack"), then(PROC_REF(swoopie_interaction_hand_grab)))
+	owns_one(nameof(Vac), starts = /obj/item/vac_attachment/swoopie)
+
+/// The disarm-stance input of swoopie_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/swoopie_interaction_hand_disarm(datum/act/op/A)
+	return swoopie_interaction_hand(A, I_DISARM)
+
+/// The grab-stance input of swoopie_interaction_hand: the shared handler with its stance.
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/swoopie_interaction_hand_grab(datum/act/op/A)
+	return swoopie_interaction_hand(A, I_GRAB)
 
 /// Old attack_hand: disarm toggles the Vac-Pack, a head grab takes it; otherwise the normal touch.
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/swoopie_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/swoopie_interaction_hand(datum/act/op/A, stance)
+	var/mob/living/L = A.actor
 	if(stat) //Make sure we're alive
-		return FALSE
-	if(interaction.stance == I_DISARM && Vac)
+		return OP_DECLINE
+	if(stance == I_DISARM && Vac)
 		Vac.attack_self(L)
-		return TRUE
-	if(interaction.stance == I_GRAB && Vac && Vac.loc == src)
+		return OP_OK
+	if(stance == I_GRAB && Vac && Vac.loc == src)
 		if(L.zone_sel.selecting == BP_HEAD)
 			if(L.put_in_active_hand(Vac))
 				act_message(L, src, null, MSG_OTHERS(span_warning("%U% grabs %T% by the neck, brandishing the thing like a regular vacuum cleaner!")))
 				L.start_pulling(src)
-				return TRUE
-	return FALSE
+				return OP_OK
+	return OP_DECLINE
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/verb/borrow_vac()
 	set name = "Borrow Vac-Pack"
@@ -324,7 +335,4 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 //Custom Swoopie AI to make it swoop up trash when asked to
 // Select an obj if no mobs are around.
 
-
-CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
-	owns_one(nameof(Vac), starts = /obj/item/vac_attachment/swoopie)
 

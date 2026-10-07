@@ -26,7 +26,7 @@
 	TEST_ASSERT_EQUAL(paper.amount, paper_before - 3, "Actual large wrapping consumes exactly three original paper units")
 	TEST_ASSERT_EQUAL(!!is_welded(cargo), sealed_after_wrap, "Actual wrapping preserves its canonical closet versus crate sealing behavior")
 	TEST_ASSERT_EQUAL(actor.get_active_hand(), paper, "Actual wrapping preserves the original held wrapper")
-	TEST_ASSERT_EQUAL(parcel.interaction_hand(actor, paper, null), TRUE, "Actual hand unwrapping preserves its original handled result")
+	TEST_ASSERT_EQUAL(test_op_handler(parcel, "interaction_hand", actor, paper), OP_OK, "Actual hand unwrapping preserves its original handled result")
 	TEST_ASSERT(QDELETED(parcel), "Actual hand unwrapping consumes the exact original large parcel")
 	TEST_ASSERT(!QDELETED(cargo) && cargo.loc == T, "The actual destruction chain releases the exact original cargo to its original floor")
 	TEST_ASSERT(!is_welded(cargo), "The actual destruction chain leaves the released original cargo unsealed")

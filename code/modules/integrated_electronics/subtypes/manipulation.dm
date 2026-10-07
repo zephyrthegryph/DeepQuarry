@@ -26,29 +26,31 @@
 	power_draw_per_use = 50 // The targeting mechanism uses this.  The actual gun uses its own cell for firing if it's an energy weapon.
 
 /// Old attackby.
-/obj/item/integrated_circuit/manipulation/weapon_firing/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
+/obj/item/integrated_circuit/manipulation/weapon_firing/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/O = A.held
 	if(istype(O, /obj/item/gun))
 		var/obj/item/gun/gun = O
 		if(installed_gun)
 			to_chat(user, span_warning("There's already a weapon installed."))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		size += gun.w_class
 		complexity = complexity * gun.w_class //Max complexity that a case can reach is 240. This means a small gun = 60 complexity, normal = 90, large = 120. This means you could fit 3 small guns, 2 normal guns, or 1 large gun in the circuit.
 		if(!move_into(src, nameof(src.installed_gun), gun, user))
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		to_chat(user, span_notice("You slide \the [gun] into the firing mechanism."))
 		play_sfx(src, SFX_ITEMS_CROWBAR)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		return OP_DECLINE
+	return OP_PASS
 
-DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/integrated_circuit/manipulation/weapon_firing)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attack_self.
-/obj/item/integrated_circuit/manipulation/weapon_firing/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/integrated_circuit/manipulation/weapon_firing/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(installed_gun)
 		installed_gun.forceMove(get_turf(src))
 		to_chat(user, span_notice("You slide \the [installed_gun] out of the firing mechanism."))
@@ -170,6 +172,8 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
 
 CAPABILITIES(/obj/item/integrated_circuit/manipulation/grenade)
 	owns_one(nameof(attached_grenade), /obj/item/grenade)
+	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/integrated_circuit/manipulation/grenade/Initialize(mapload)
 	. = ..()
@@ -185,7 +189,9 @@ CAPABILITIES(/obj/item/integrated_circuit/manipulation/grenade)
 	..()
 
 /// Old attackby.
-/obj/item/integrated_circuit/manipulation/grenade/proc/interaction_item(mob/user, obj/item/grenade/G, datum/interaction/interaction)
+/obj/item/integrated_circuit/manipulation/grenade/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/grenade/G = A.held
 	if(istype(G))
 		if(attached_grenade)
 			to_chat(user, span_warning("There is already a grenade attached!"))
@@ -194,23 +200,19 @@ CAPABILITIES(/obj/item/integrated_circuit/manipulation/grenade)
 			attach_grenade(G)
 			G.forceMove(src)
 	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
-
-DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/grenade, \
-	INTERACT_SELF(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+		return OP_DECLINE
+	return OP_PASS
 
 /// Old attack_self.
-/obj/item/integrated_circuit/manipulation/grenade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/integrated_circuit/manipulation/grenade/proc/interaction_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(attached_grenade)
 		act_message(user, src, MSG_SELF(span_notice("You remove \the [attached_grenade] from %T%.")), \
 			MSG_OTHERS(span_warning("%U% removes \an [attached_grenade] from %T%!")))
 		user.put_in_any_hand_if_possible(attached_grenade) || attached_grenade.dropInto(loc)
 		detach_grenade()
 	else
-		return FALSE
+		return OP_DECLINE
 	return TRUE
 
 /obj/item/integrated_circuit/manipulation/grenade/do_work()

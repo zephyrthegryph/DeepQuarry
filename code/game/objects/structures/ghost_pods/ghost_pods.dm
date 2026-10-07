@@ -109,20 +109,25 @@ CAPABILITIES(/obj/structure/ghost_pod/manual)
 	delay_to_try_again = 20 MINUTES
 	/// How long until auto_trigger() next runs: delay_to_self_open first, then delay_to_try_again.
 	var/next_auto_delay = 0
+	/// Set when the pod will not try again (it gave its one try, or has no retry delay).
+	var/auto_done = FALSE
+TRACKED(/obj/structure/ghost_pod/automatic, auto_done)
 
-DECLARE_REPEAT(/obj/structure/ghost_pod/automatic, "auto_delay", auto_trigger, null)
+CAPABILITIES(/obj/structure/ghost_pod/automatic)
+	every(PROC_REF(auto_delay), then(PROC_REF(auto_trigger)), when = cond_all(cond_not(nameof(used)), cond_not(nameof(auto_done))))
 
-/// The repeat's delay: delay_to_self_open until the first try, then delay_to_try_again.
-/obj/structure/ghost_pod/automatic/proc/auto_delay()
+/// The every() delay: delay_to_self_open until the first try, then delay_to_try_again.
+/obj/structure/ghost_pod/automatic/proc/auto_delay(datum/act/A)
 	return next_auto_delay || delay_to_self_open
 
 /// Opens itself on a timer; if that fails to get a volunteer, tries again later if allowed to.
-/obj/structure/ghost_pod/automatic/proc/auto_trigger()
+/obj/structure/ghost_pod/automatic/proc/auto_trigger(datum/act/timer/A)
 	if(used)
-		return REPEAT_STOP
+		return
 	trigger() // FALSE while a query is still out; the next run tries again
 	if(!delay_to_try_again)
-		return REPEAT_STOP
+		set_auto_done(TRUE)
+		return
 	next_auto_delay = delay_to_try_again
 
 // This type is triggered by a ghost clicking on it, as opposed to a living player.  A ghost query type isn't needed.

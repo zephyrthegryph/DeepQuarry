@@ -15,8 +15,9 @@
 	var/block_projectiles = FALSE
 
 DAMAGE_REACTION(/obj/machinery/dq_reaction_probe, DAMAGE_EMP, PROC_REF(on_emp))
-DAMAGE_REACTION(/obj/machinery/dq_reaction_probe, DAMAGE_PROJECTILE, PROC_REF(on_projectile))
-DAMAGE_REACTION(/obj/machinery/dq_reaction_probe, DAMAGE_EXPLOSION, PROC_REF(on_blast))
+CAPABILITIES(/obj/machinery/dq_reaction_probe)
+	extend(/datum/act/hit/projectile, instead(then(PROC_REF(on_projectile))))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(on_blast)))
 DAMAGE_REACTION(/obj/machinery/dq_reaction_probe, DAMAGE_PAIN, PROC_REF(on_pain))
 DAMAGE_REACTION_AFTER(/obj/machinery/dq_reaction_probe, DAMAGE_PROJECTILE, PROC_REF(after_projectile))
 
@@ -24,12 +25,15 @@ DAMAGE_REACTION_AFTER(/obj/machinery/dq_reaction_probe, DAMAGE_PROJECTILE, PROC_
 	emp_seen++
 	emp_severity = packet.severity
 
-/obj/machinery/dq_reaction_probe/proc/on_projectile(datum/damage_packet/packet)
+/obj/machinery/dq_reaction_probe/proc/on_projectile(datum/act/hit/projectile/A)
 	projectile_seen++
 	if(block_projectiles)
-		return DAMAGE_REACTION_BLOCK
+		return OP_OK
+	return HOOK_DECLINE
 
-/obj/machinery/dq_reaction_probe/proc/on_blast(datum/damage_packet/packet)
+/obj/machinery/dq_reaction_probe/proc/on_blast(datum/act/A)
+	var/datum/notice/hit/explosion/N = A
+	var/datum/damage_packet/packet = N.packet
 	blast_seen = packet.severity
 
 /obj/machinery/dq_reaction_probe/proc/on_pain(datum/damage_packet/packet)
@@ -199,7 +203,8 @@ CAPABILITY(/obj/structure/dq_reflect_probe/burn_only, reflects(list(BURN), PROC_
 /mob/living/simple_mob/dq_projectile_immune
 	name = "projectile-immune probe"
 
-DAMAGE_REACTION(/mob/living/simple_mob/dq_projectile_immune, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage_reaction_block))
+CAPABILITIES(/mob/living/simple_mob/dq_projectile_immune)
+	extend(/datum/act/hit/projectile, instead())
 
 /// A blocking DAMAGE_PROJECTILE reaction runs before the round's own effects, so a blocked stun
 /// round stuns nobody and injures nobody; the same round on an ordinary mob does stun.

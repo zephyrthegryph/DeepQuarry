@@ -266,12 +266,12 @@ CAPABILITIES(/obj/machinery/smartfridge)
 	attack_hand(A.actor)
 	return OP_OK
 
-DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
-/obj/machinery/smartfridge/secure/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/smartfridge/secure/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	set_emagged(1)
 	set_locked(-1)
 	to_chat(user, span_filter_notice("You short out the product lock on [src]."))
-	return TRUE
+	return OP_OK
 
 /obj/machinery/smartfridge/proc/find_record(obj/item/O)
 	for(var/datum/stored_item/I as anything in item_records)
@@ -379,6 +379,7 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 CAPABILITIES(/obj/machinery/smartfridge/secure)
 	configure(wires(count = 4, randomize = TRUE)) // a dud beside the three, and each fridge its own colours
 	extend("release", needs(req(PROC_REF(ui_gate), silent = TRUE)))
+	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
 /obj/machinery/smartfridge/secure/proc/ui_gate(datum/act/op/A)
 	return operable()

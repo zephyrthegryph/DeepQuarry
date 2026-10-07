@@ -1,0 +1,102 @@
+human|none menu: Interaction train hand
+human|none menu: Unlatch
+human|none click: Click: Interaction train hand
+robot|none menu: Interaction train hand
+robot|none menu: Unlatch
+robot|none click: Click: Interaction train hand
+ai|none click: nothing
+ghost|none menu: Unlatch (refused: You can't reach that.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Interaction train hand
+human|/obj/item/tool/screwdriver menu: Load
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle load limiter
+human|/obj/item/tool/screwdriver menu: Unlatch
+human|/obj/item/tool/screwdriver menu: Vehicle item
+human|/obj/item/tool/screwdriver click: Click: Vehicle item
+human|/obj/item/tool/crowbar menu: Interaction train hand
+human|/obj/item/tool/crowbar menu: Load
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Toggle load limiter
+human|/obj/item/tool/crowbar menu: Unlatch
+human|/obj/item/tool/crowbar menu: Vehicle item
+human|/obj/item/tool/crowbar click: Click: Vehicle item
+human|/obj/item/tool/wrench menu: Interaction train hand
+human|/obj/item/tool/wrench menu: Load
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Toggle load limiter
+human|/obj/item/tool/wrench menu: Unlatch
+human|/obj/item/tool/wrench menu: Vehicle item
+human|/obj/item/tool/wrench click: Click: Vehicle item
+human|/obj/item/tool/wirecutters menu: Interaction train hand
+human|/obj/item/tool/wirecutters menu: Load
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle load limiter
+human|/obj/item/tool/wirecutters menu: Unlatch
+human|/obj/item/tool/wirecutters menu: Vehicle item
+human|/obj/item/tool/wirecutters click: Click: Vehicle item
+human|/obj/item/multitool menu: Interaction train hand
+human|/obj/item/multitool menu: Load
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Toggle load limiter
+human|/obj/item/multitool menu: Unlatch
+human|/obj/item/multitool menu: Vehicle item
+human|/obj/item/multitool click: Click: Vehicle item
+human|/obj/item/weldingtool menu: Interaction train hand
+human|/obj/item/weldingtool menu: Load
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Toggle load limiter
+human|/obj/item/weldingtool menu: Unlatch
+human|/obj/item/weldingtool menu: Vehicle item
+human|/obj/item/weldingtool click: Click: Vehicle item
+human|/obj/item/stack/cable_coil menu: Interaction train hand
+human|/obj/item/stack/cable_coil menu: Load
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle load limiter
+human|/obj/item/stack/cable_coil menu: Unlatch
+human|/obj/item/stack/cable_coil menu: Vehicle item
+human|/obj/item/stack/cable_coil click: Click: Vehicle item
+human|/obj/item/stack/material/steel menu: Interaction train hand
+human|/obj/item/stack/material/steel menu: Load
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Toggle load limiter
+human|/obj/item/stack/material/steel menu: Unlatch
+human|/obj/item/stack/material/steel menu: Vehicle item
+human|/obj/item/stack/material/steel click: Click: Vehicle item
+human|/obj/item/card/id menu: Interaction train hand
+human|/obj/item/card/id menu: Load
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle load limiter
+human|/obj/item/card/id menu: Unlatch
+human|/obj/item/card/id menu: Vehicle item
+human|/obj/item/card/id click: Click: Vehicle item
+human|/obj/item menu: Interaction train hand
+human|/obj/item menu: Load
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Toggle load limiter
+human|/obj/item menu: Unlatch
+human|/obj/item menu: Vehicle item
+human|/obj/item click: Click: Vehicle item
+human|/obj/item/card/emag menu: Interaction train hand
+human|/obj/item/card/emag menu: Load
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle load limiter
+human|/obj/item/card/emag menu: Unlatch
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Vehicle item
+human|/obj/item/card/emag click: Click: Use
+keys: drag_buckle, emag.subvert, emag.use, train_drag, train_hand, train_limiter_cable, train_unlatch, vehicle_item
+

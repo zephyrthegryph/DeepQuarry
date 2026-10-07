@@ -96,6 +96,8 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 CAPABILITIES(/mob/living/simple_mob/slime)
 	verb_entry(/mob/living/proc/ventcrawl)
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
+	op("slime_item", item(/obj/item), then(PROC_REF(slime_interaction_item)))
+	op("slime_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take hat off"), then(PROC_REF(slime_interaction_hand)))
 
 /mob/living/simple_mob/slime/Initialize(mapload)
 	update_mood()
@@ -192,22 +194,22 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime, TYPE_PROC_REF(/atom, appea
 	src.mend(TREAT_TISSUE_REPAIR, 1)
 
 // Clicked on by empty hand.
-EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
-	INTERACT_ITEM(null, PROC_REF(slime_interaction_item)), \
-	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take hat off", PROC_REF(slime_interaction_hand)))
 
 /// Old attack_hand: grab the hat off.
-/mob/living/simple_mob/slime/proc/slime_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/slime/proc/slime_interaction_hand(datum/act/op/A)
+	var/mob/living/L = A.actor
+	. = OP_OK
 	if(hat)
 		remove_hat(L)
 	else
-		return FALSE
+		return OP_DECLINE
 
 // Clicked on while holding an object.
 /// Old attackby: hat simulator, and weapons may pass through.
-/mob/living/simple_mob/slime/proc/slime_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/slime/proc/slime_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	. = OP_OK
 	if(istype(I, /obj/item/clothing/head)) // Handle hat simulator.
 		give_hat(I, user)
 		return
@@ -223,7 +225,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
 		act_message(user, src, null, MSG_OTHERS(span_warning("%U%'s %I% passes right through %T%!")), item = I)
 		user.setClickCooldown(user.get_attack_speed(I))
 		return
-	return FALSE
+	return OP_DECLINE
 
 // Called when hit with an active slimebaton (or xeno taser).
 // Subtypes react differently.

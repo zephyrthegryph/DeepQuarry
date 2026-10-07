@@ -22,9 +22,14 @@ CAPABILITIES(/obj/machinery/smart_centrifuge)
 	op("centrifuge_isolate_reagents", menu(), label("Isolate Reagents Automatically"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_isolate_reagents)))
 	op("centrifuge_isolate_reagents_bottle", menu(), label("Isolate Reagents To Bottles"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_isolate_reagents_bottle)))
 	op("centrifuge_isolate_reagents_canisters", menu(), label("Isolate Reagents To Canisters"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_isolate_reagents_canisters)))
+	every(PROC_REF(separate_delay_of), then(PROC_REF(internal_reagent_seperate)), when = nameof(working))
 	op("centrifuge_drain_tank", item(/obj/vehicle/train/trolley_tank), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 1), label("Drain"), then(PROC_REF(interaction_drain_tank)))
-OM_FIELD(/obj/machinery/smart_centrifuge, working, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_REPEAT(/obj/machinery/smart_centrifuge, "separate_delay", internal_reagent_seperate, "working")
+/obj/machinery/smart_centrifuge/var/working = FALSE
+TRACKED_BRIDGED(/obj/machinery/smart_centrifuge, working, CHANGE_MACHINE_SETTINGS)
+
+/// The delay before the next separation step.
+/obj/machinery/smart_centrifuge/proc/separate_delay_of(datum/act/A)
+	return separate_delay
 
 /obj/machinery/smart_centrifuge/Initialize(mapload)
 	. = ..()
@@ -73,7 +78,7 @@ DECLARE_REPEAT(/obj/machinery/smart_centrifuge, "separate_delay", internal_reage
 		set_working(TRUE)
 		flags ^= OPENCONTAINER
 
-/obj/machinery/smart_centrifuge/proc/internal_reagent_seperate()
+/obj/machinery/smart_centrifuge/proc/internal_reagent_seperate(datum/act/timer/A)
 	var/force_canister = separate_force_canister
 	var/force_bottle = separate_force_bottle
 	separate_delay = 1 SECOND
@@ -83,7 +88,7 @@ DECLARE_REPEAT(/obj/machinery/smart_centrifuge, "separate_delay", internal_reage
 		play_sfx(src, SFX_MACHINES_BUTTONBEEP)
 		set_working(FALSE)
 		flags |= OPENCONTAINER
-		return REPEAT_STOP
+		return
 
 	// Seperate out reagents
 	for(var/datum/reagent/RL in reagents.reagent_list)

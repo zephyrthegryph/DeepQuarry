@@ -1944,8 +1944,7 @@ Pinned by `dq_life_om_tests.dm` (statuses, immunity, godmode, voluntary sleep) a
 * `EFFECT_CAN_MOVE` and `EFFECT_CAN_ACT`, OM composites nothing outside tests read, are gone. Feeding `STAT_CAN_ACT` from the statuses ("one stun
   path") is a separate step: it changes what ops refuse.
 * Life frames run under the kernel test clock again (`test_time()` drives the Life sweep, as the OM test scheduler ran the pipeline).
-/^>>>>>>> origin/master$/d
-## Body migration, slice 5: surgery steps are ops (rewrite/body-full)
+/^## Body migration, slice 5: surgery steps are ops (rewrite/body-full)
 
 Pinned by `dq_body_pin_surgery_incision` (a scalpel click on a lying patient on an operating table runs the incision to an outcome; green on the old
 code first) and the existing `dq_surgery_*` tests. Each `/datum/surgical_step` is an op `surgery_<step>` on the human (`code/modules/surgery/surgery_ops.dm`):
@@ -2570,3 +2569,51 @@ Spec: `doc/rewrite/ai_packs.md` ("Implementation status" lists what is not in ye
 * **A charging mob's wind-up is an op:** it cannot do anything else while it winds up (other ops are refused as busy), and the charge is cancelled if the target is gone or it dies; it dashes up to six tiles and slams only if it arrived.
 * **Control spell and capture crystal followers** hold their ally standing under the spell or crystal as source; carrier swarmlings and glitch-boss illusions follow and serve their parent like broodlings do.
 * **Cost (re-run).** Steady-state perception passes: pack of 5 or 20 strictly cheaper than the same mobs alone (engaged x20: 18 ms against 85 ms; idle x20: 15 against 66); idle solo packs at or below the old pass (x20: 51 against 72 ms); engaged solo packs 1.1 to 1.7 times the old pass.
+## Sweep: objects, turfs, defines (rewrite/sweeps-objects)
+
+* **Ambient and radiation periodics gate on proximity**: anomalies, nests, mob spawners, green glow, uranium doors, radiation emitters and the POI reactors park while no client is near (`proximity_tracked`, `STAT_RELEVANCE`) where they slept on `mob_near()` before; the scanner spawner stays ungated.
+* **Camera bug**: the "no bugged cameras" message is now a refusal of the op; the old in_use guard (which blocked the re-run of its own question) is gone.
+* **Poster rip**: a ripped poster no longer offers the question (the op is hidden); the question is the op's `asks()` step.
+* **Tanks**: the pressure check runs while the tank is leaking, damaged or `handled` (set in equipped(), cleared in dropped() when no mob holds it) instead of testing `ismob(loc)` each run.
+* **Ticker reboot countdown and beam / mini hud ticks** re-arm with `after()` (a plain datum has no type-level every()).
+* **Tape recorder**: a recorder whose tape is missing or full when its tick runs now stops recording.
+- **Clothing, vore, vehicle and detective-work sweep (sweeps-clothing).** Deliberate differences from the legacy resolver: the void suit's "no modifying while worn" is `req_not_worn(SLOT_ID_SUIT)` (a human who is awake and wearing it; accessories and labelers are excluded by the op's `when()`), and the subtype copies on the response-team and AutoLok suits are gone (they declined and the base op answers); "Eject tank" and "Toggle Helmet" refuse when the suit holds no tank, cooler or helmet even when nobody wears it (the old requirement passed silently and the effect did nothing); the fingerprint card's "take your gloves off" refusal also shows for a used card; the tactical sec-vis glasses ask for the pattern first and toggle after the answer; the friendship bracelet, vehicle paint and smole colour prompts are `asks()` steps; the holster's menu "Holster" verb draws with the helping stance (a menu pick carries no click stance); vehicle engine and kickstand verbs need the actor on the vehicle's own tile (`req_on_holder_turf()`, was `REQ_REACH(0)`); refusal wording is the sentence form of the old fragments. New library requirements: `req_actor_slot_empty()` and `req_worn_by_actor()` (`code/library/items/actor_slot.dm`).
+- **Projectiles sweep (rewrite/sweeps-projectiles)**: the gun self-use is one op per stance group (`gun_self`, `gun_self_hurt`; the hurt op tells `gun_operate` the stance through its key) and every gun type's self-use and fit chain is `gun_operate(A, callback)` / `gun_item(A)` with `..()`; a decline answers where the old chain answered falsy. The detective guns' naming refusal ("you don't feel cool enough"), the bottle's "needs to be on the floor to spin" and the disposal bin's "cannot reach the controls from inside" are said by the handler after the question (a requirement may not read `mind`/`loc`: `sem/reads`). The parcel pen label is an ask chain (menu, then title or note) instead of the hand-rolled captured request. The pneumatic gun's pressure prompt, the cyborg blade recolor and the adjustable tracer recolor are `asks()` steps; their captured-item prompt types are gone.
+- **Gamemodes sweep (rewrite/sweeps-gamemodes).** A periodic that returned PROCESS_KILL or REPEAT_STOP to end itself now clears its gate var instead: the mecha sleeper (`sustaining`), syringe gun (`synthesizing`, refreshed on attach/detach/selection), the ticker circuit (`is_running`, so a data write with the pin on restarts it), generators/relay/droid (their own flags). The nuclear mecha reactor still irradiates only on the cycle its parent shut down (the old `if(..())` read the kill result; kept as it was). A rune's manifest summoner that is destroyed ends the repeat without dusting the homunculus, as before. Menu entries that were hidden by a predicate (mecha verbs by `*_possible`, passenger bay, airtank, port state; ATM deposit without an account) are now offered and decline in the handler; the pilot check is a requirement (`pilot_only`, reading `pilot_of()`, published as OCCUPANT_KEY). The artifact blade's cooldown refusal is a message from the handler, not a requirement. Hit hooks: coolant tank blast and the mecha tracking beacon's EMP are `instead` hooks; the mecha afflictions-after-blast is an `on_notice`.
+## Legacy-form sweep, misc1 (shieldgen, telesci, mining, overmap, multiz, games, casino, awaymissions, samples, pda, modular_computers, media, library, hydroponics, entrepreneur, resleeving, maintenance_panels, turbolift, blob2, generated_station)
+
+* **A question comes before the effect.** Where an effect asked after doing something, the op asks first: the bookcase-style `asks()` steps replace `rerun_ask` in the
+  book (pen), the horoscope, the spirit board, the botany disk, the rift and the ladder. The portal's staff flow shows its guidance text in the first question (it was a chat
+  line before the question); a cancel creates nothing (the old flow had already made the portals when the later question was cancelled). The resize portal's own question is
+  an op that passes the click on to the bind flow, so it is asked first instead of beside it.
+* **A ladder with both ends asks which way** whenever it has both ends; an incomplete ladder or an out-of-reach actor is now told after the question (reach and capability
+  are the op's requirements, so a far or incapable actor is refused before it).
+* **Actors an effect turned away silently are not offered the op**: silicons on the PDA alt-click and verbs, non-humanoids on the hoist, a cyborg on the research sample
+  (its own ops pick up and use it unharmed), a ghost on a portal or modular computer it may not use (a swallow op takes the click, as before).
+* **Refusal texts**: a silicon on a ship console without AI control is refused with "Access Denied." (a chat line before); the wheel of fortune's ticket check of an
+  existing ticket and the SPASM collar ownership check are told by the handler; the survival capsule's VR refusal is a handler line.
+* **Datum periodics stay legacy**: `/datum/shuttle` (two), `/datum/turbolift` and `/datum/generated_station_planner` are non-atoms; an every() is armed only by
+  `engine_holder_init()` for atoms, and the `om_after_rearm` lint bans a timer chain. They convert when `lifeform_datum_new()` arms type-level every() for non-atoms.
+
+## Legacy-form sweep (DECLARE_INTERACTIONS, DAMAGE_REACTION, DECLARE_EMAG, DECLARE_PERIODIC, DECLARE_REPEAT), integrator notes
+
+The conversion pins (menu pins and hit/emag pins, `doc/rewrite/snapshot_pins.md`) were recorded on the legacy forms and blessed after the sweep; the rows that changed fall into
+these classes, each systematic. No row was blessed that is not one of them.
+
+* **A null-named legacy interaction is a menu entry labelled "Use".** `INTERACT_HAND(null, ...)`, `INTERACT_ITEM(null, ...)` and `INTERACT_USE(null, ...)` were invisible in the menu and the
+  screentip; the op has a label, so "Use" (or the op's own label) appears, and `click: nothing` becomes `click: Click: Use` for the held probes the op binds. The effect is the same.
+* **The legacy `Emag` menu entry and its "(refused: needs a cryptographic sequencer)" rows go.** The library's `emag()` is item-bound: the card's click does the work, the menu does not list it.
+  A refusal is the library's "It is already subverted." where the old handler said its own.
+* **Refusal wording.** `REQ_IN_INVENTORY` / `REQ_SELF_HELD` rows ("you need to be carrying it", "not in your hand") are the engine's "not in your hand" / "You can't do that.". Rows for the
+  base `/obj/item` defaults changed with the move of the item defaults into ops: "Pick up" (empty hand only, lowest tier), "Collect", "Customise", "Move To Top", "Toggle Digestable".
+* **Requirements that read untracked state became handler refusals** (`sem/reads` cannot follow `loc`, `client`, `mind`, `held`, untracked vars through `req()`): the check runs first in the
+  handler and answers `OP_DECLINE` after saying its text, so the click goes on to the next candidate as the old failed requirement did. The menu no longer greys such an entry out with the
+  reason; the zoom verbs of the scoped guns, the hoist, card decks, the laptop fold, the locket, the gas mask hailer, the spellbook, the deadringer and a few more.
+* **Op keys are new** (named from the handler, no `gen_*`): the `keys:` rows of every converted type.
+* **Hit hooks.** A hook that took the packet over or rescales it (mecha blast, shield thrown hit, shieldgen EMP, projector EMP, grille blob) is `extend(/datum/act/hit/x, instead(...))`;
+  hooks that only react are `on_notice(/datum/notice/hit/x)` and run after the hit lands. A hook that used to run twice on a severity-1 blast (the vendor's sparks, the mecha afflictions) runs once.
+* **Hand ops answer with a held item** (engine semantics, final_api section 9: a `hand()` touch is the fallback of a click that no `item()` op took): a smoleworld building clicked with a card
+  now crumbles. The generic item "Pick up" is gated on an empty hand to keep the old behaviour.
+* **The `/obj/item` and `/turf` default ops sit at the lowest tier** (`OP_PRIORITY_DEFAULT - 10`): the old defaults ran after every type's own interaction.
+* **Cosmetic and ambient periodics opt into proximity** (`proximity_tracked`, `when = STAT_RELEVANCE`): they stop when no client is near. Simulation periodics keep running everywhere.
+* **`analyze gen reads` emits its table in chunks**: BYOND does not compile one list literal of about 760 assoc entries.

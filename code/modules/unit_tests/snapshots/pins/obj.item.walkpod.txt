@@ -1,0 +1,97 @@
+human|none menu: Alt
+human|none menu: Move To Top
+human|none menu: Pick up
+human|none menu: Take HeadPods (refused: You can't do that.)
+human|none menu: Toggle Digestable (refused: You can't do that.)
+human|none click: Click: Pick up
+robot|none menu: Alt
+robot|none menu: Equip (refused: not possible right now)
+robot|none menu: Move To Top
+robot|none menu: Pick up
+robot|none menu: Take HeadPods (refused: You can't do that.)
+robot|none menu: Toggle Digestable (refused: You can't do that.)
+robot|none click: Click: Pick up
+ai|none menu: Equip (refused: not possible right now)
+ai|none click: nothing
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Take HeadPods (refused: You can't do that.)
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Alt
+human|/obj/item/tool/screwdriver menu: Item
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Take HeadPods (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Item
+human|/obj/item/tool/crowbar menu: Alt
+human|/obj/item/tool/crowbar menu: Item
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Take HeadPods (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Item
+human|/obj/item/tool/wrench menu: Alt
+human|/obj/item/tool/wrench menu: Item
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Take HeadPods (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Item
+human|/obj/item/tool/wirecutters menu: Alt
+human|/obj/item/tool/wirecutters menu: Item
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Take HeadPods (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Item
+human|/obj/item/multitool menu: Alt
+human|/obj/item/multitool menu: Item
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Take HeadPods (refused: You can't do that.)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Item
+human|/obj/item/weldingtool menu: Alt
+human|/obj/item/weldingtool menu: Item
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Take HeadPods (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Item
+human|/obj/item/stack/cable_coil menu: Alt
+human|/obj/item/stack/cable_coil menu: Item
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Take HeadPods (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Item
+human|/obj/item/stack/material/steel menu: Alt
+human|/obj/item/stack/material/steel menu: Item
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Take HeadPods (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Item
+human|/obj/item/card/id menu: Alt
+human|/obj/item/card/id menu: Item
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Take HeadPods (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Item
+human|/obj/item/kit menu: Alt
+human|/obj/item/kit menu: Customise
+human|/obj/item/kit menu: Item
+human|/obj/item/kit menu: Move To Top
+human|/obj/item/kit menu: Take HeadPods (refused: You can't do that.)
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit click: Click: Customise
+human|/obj/item/storage menu: Alt
+human|/obj/item/storage menu: Collect
+human|/obj/item/storage menu: Item
+human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Take HeadPods (refused: You can't do that.)
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage click: Click: Collect
+human|/obj/item menu: Alt
+human|/obj/item menu: Item
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Take HeadPods (refused: You can't do that.)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Item
+keys: alt, change_track, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, loopmode, move_to_top, pick_up_item, play, self, stop, toggle_digestable, volume, walkpod_verb_take_headpods
+

@@ -81,22 +81,34 @@
 
 	return ..()
 
-EXTEND_INTERACTIONS(/obj/vehicle/train/rover/trolley, INTERACT_ITEM("Toggle load limiter", PROC_REF(interaction_train_limiter_cable)))
+CAPABILITIES(/obj/vehicle/train/rover/trolley)
+	op("train_limiter_cable", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle load limiter"), then(PROC_REF(interaction_train_limiter_cable)))
 
-EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, \
-	INTERACT_ITEM("Insert key", PROC_REF(interaction_rover_engine_key)), \
-	INTERACT_VERB("Start engine", PROC_REF(rover_engine_start_engine), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/rover/engine/proc/pred_rover_engine_stopped, "the engine is already running")), \
-	INTERACT_VERB("Stop engine", PROC_REF(rover_engine_stop_engine), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/rover/engine/proc/pred_rover_engine_running, "the engine is already stopped")), \
-	INTERACT_VERB("Remove key", PROC_REF(rover_engine_remove_key), REQ_REACH(0), REQ_ON(PRED_TARGET, /obj/vehicle/train/rover/engine/proc/pred_rover_engine_has_key, null)), \
-)
+CAPABILITIES(/obj/vehicle/train/rover/engine)
+	op("rover_engine_key", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert key"), then(PROC_REF(interaction_rover_engine_key)))
+	op("rover_engine_start_engine", menu(), label("Start engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), FALSE, because = MSG(vehicle/already_running))), then(PROC_REF(rover_engine_start_engine)))
+	op("rover_engine_stop_engine", menu(), label("Stop engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), TRUE, because = MSG(vehicle/already_stopped))), then(PROC_REF(rover_engine_stop_engine)))
+	op("rover_engine_remove_key", menu(), label("Remove key"), needs(req_on_holder_turf(), req_capable(), req(PROC_REF(pred_rover_engine_has_key_holds), because = PROC_REF(pred_rover_engine_has_key_refusal))), then(PROC_REF(rover_engine_remove_key)))
+
+/// Requirement (was REQ pred_rover_engine_has_key): the legacy check answers TRUE to pass.
+/obj/vehicle/train/rover/engine/proc/pred_rover_engine_has_key_holds(datum/act/op/A)
+	var/answer = pred_rover_engine_has_key(A.actor, src, A.held)
+	return !istext(answer) && !!answer
+
+/// Why pred_rover_engine_has_key refuses: the legacy check text, else the clause reason.
+/obj/vehicle/train/rover/engine/proc/pred_rover_engine_has_key_refusal(datum/act/op/A)
+	var/answer = pred_rover_engine_has_key(A.actor, src, A.held)
+	return istext(answer) ? answer : /datum/msg/req_failed
 
 /// Old attackby: the key goes in the ignition (a key is always used up here, even with one already in).
-/obj/vehicle/train/rover/engine/proc/interaction_rover_engine_key(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/vehicle/train/rover/engine/proc/interaction_rover_engine_key(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(!istype(W, /obj/item/key/rover))
-		return FALSE
+		return OP_DECLINE
 	if(!key)
 		move_into(src, nameof(src.key), W, user)
-	return TRUE
+	return OP_OK
 
 //cargo trains are open topped, so there is a chance the projectile will hit the mob ridding the train instead
 /obj/vehicle/train/rover/bullet_act(obj/item/projectile/Proj)
@@ -194,7 +206,8 @@ APPEARANCE_NONE(/obj/vehicle/train/rover)
 		. += "The charge meter reads [cell? round(cell.percent(), 0.01) : 0]%"
 
 /// Old verb "Start engine".
-/obj/vehicle/train/rover/engine/proc/rover_engine_start_engine(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/train/rover/engine/proc/rover_engine_start_engine(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!ishuman(user))
 		return
 
@@ -208,7 +221,8 @@ APPEARANCE_NONE(/obj/vehicle/train/rover)
 			to_chat(user, "[src]'s engine won't start.")
 
 /// Old verb "Stop engine".
-/obj/vehicle/train/rover/engine/proc/rover_engine_stop_engine(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/train/rover/engine/proc/rover_engine_stop_engine(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!ishuman(user))
 		return
 
@@ -217,7 +231,8 @@ APPEARANCE_NONE(/obj/vehicle/train/rover)
 		to_chat(user, "You stop [src]'s engine.")
 
 /// Old verb "Remove key".
-/obj/vehicle/train/rover/engine/proc/rover_engine_remove_key(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/vehicle/train/rover/engine/proc/rover_engine_remove_key(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!ishuman(user))
 		return
 
@@ -373,11 +388,5 @@ APPEARANCE_NONE(/obj/vehicle/train/rover)
 	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = /obj/item/cell/high)
 
 /// Engine Menu requirements (old start/stop/remove_key verb toggling in turn_on/turn_off/key insert).
-/obj/vehicle/train/rover/engine/proc/pred_rover_engine_running(mob/actor, atom/target, obj/item/held)
-	return on
-
-/obj/vehicle/train/rover/engine/proc/pred_rover_engine_stopped(mob/actor, atom/target, obj/item/held)
-	return !on
-
 /obj/vehicle/train/rover/engine/proc/pred_rover_engine_has_key(mob/actor, atom/target, obj/item/held)
 	return !!key

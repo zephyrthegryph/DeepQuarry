@@ -13,8 +13,11 @@
 
 	equip_type = EQUIP_HULL
 
-OM_FIELD(/obj/item/mecha_parts/mecha_equipment/repair_droid, repairing, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE_ALL(/obj/item/mecha_parts/mecha_equipment/repair_droid, PERIODIC_SLOW, list("repairing", "chassis"))
+/obj/item/mecha_parts/mecha_equipment/repair_droid/var/repairing = FALSE
+TRACKED(/obj/item/mecha_parts/mecha_equipment/repair_droid, repairing)
+
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/repair_droid)
+	every(2 SECONDS, then(PROC_REF(repair_droid_step)), when = nameof(repairing))
 
 /obj/item/mecha_parts/mecha_equipment/repair_droid/add_equip_overlay(obj/mecha/M as obj)
 	..()
@@ -57,7 +60,9 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/repair_droid)
 	send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 	return
 
-/obj/item/mecha_parts/mecha_equipment/repair_droid/periodic_step()
+/obj/item/mecha_parts/mecha_equipment/repair_droid/proc/repair_droid_step(datum/act/timer/A)
+	if(!chassis) // the droid only works mounted
+		return
 	var/repaired = 0
 	var/effective_boost = health_boost
 	if(mech_body_plan().has_affliction(chassis, MECHA_INT_SHORT_CIRCUIT))
@@ -97,7 +102,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/repair_droid)
 		else
 			set_ready_state(TRUE)
 			set_repairing(FALSE)
-			return PROCESS_KILL
+			return
 	else
 		set_ready_state(TRUE)
 	return

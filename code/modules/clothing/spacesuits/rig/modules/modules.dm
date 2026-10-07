@@ -56,6 +56,7 @@ MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 20000, MAT_PLASTIC = 30000, 
 
 CAPABILITIES(/obj/item/rig_module)
 	owns_many(nameof(stat_modules))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/rig_module/examine()
 	. = ..()
@@ -67,40 +68,40 @@ CAPABILITIES(/obj/item/rig_module)
 		if(2)
 			. += "It is almost completely destroyed."
 
-DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
 /// Old attackby.
-/obj/item/rig_module/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/rig_module/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 
 	if(istype(W,/obj/item/stack/nanopaste))
 
 		if(damage == 0)
 			to_chat(user, "There is no damage to mend.")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		to_chat(user, "You start mending the damaged portions of \the [src]...")
 		task_timed(user, 3 SECONDS, src, src, PROC_REF(mend_with_paste), list(user, W))
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 
 	else if(istype(W,/obj/item/stack/cable_coil))
 
 		switch(damage)
 			if(0)
 				to_chat(user, "There is no damage to mend.")
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 			if(2)
 				to_chat(user, "There is no damage that you are capable of mending with such crude tools.")
-				return INTERACTION_HANDLED_PASS
+				return OP_PASS
 
 		var/obj/item/stack/cable_coil/cable = W
 		if(cable.get_amount() < 5)
 			to_chat(user, "You need five units of cable to repair \the [src].")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 
 		to_chat(user, "You start mending the damaged portions of \the [src]...")
 		task_timed(user, 3 SECONDS, src, src, PROC_REF(mend_with_cable), list(user, cable))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+		return OP_PASS
+	return OP_DECLINE
 
 /obj/item/rig_module/proc/mend_with_paste(mob/user, obj/item/stack/nanopaste/paste)
 	damage = 0

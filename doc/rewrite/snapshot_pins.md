@@ -84,3 +84,17 @@ file (`snapshots/look_trees/`, test `dq_look_tree_pin`, exhaustive tier). Rows: 
 overlay and underlay (`icon:state:plane[:colour]`, `xN` when repeated), taken after the presentation lane settled; each type is made with the RNG
 reseeded from its path, and a runtime while it is made is a row of its own (without its file and line). The rows do not see a look a later state
 change draws: the refresh-drift sweep and hand-written tests cover those.
+
+## Hit pins
+
+A pin of what a thing does when it is hit or emagged, for the hit-reaction and emag conversions (`DAMAGE_REACTION`, `DAMAGE_REACTION_AFTER`,
+`DECLARE_EMAG` to a hit hook, an `emag()` op; `code/modules/unit_tests/dq_hit_pins.dm`). `bash tools/dq_pin.sh --hit /T` records one type
+(`snapshots/hit_pins/`, test `dq_hit_pin`). Each trigger gets a fresh instance on the test floor: an EMP (severity 1 and 2), an explosion
+(1, 2, 3), a projectile, a blob hit, a thrown crowbar (the public entries `emp_act`, `ex_act`, `bullet_act`, `blob_act`, `hitby`) and an emag card
+clicked by a human. The rows are what changed: `<trigger> | <var>: <old> -> <new>` for each var of the target, `deleted`, `turf: +<type> xN` /
+`-<type> xN` for what appeared on or left its tile, `runtime: <message>` when the entry threw, `nothing`. Randomness is reseeded per trigger; a var that
+holds a clock reading (cooldown, ready, time, next, last, delay, timer) is written as `<set>` or `0`, `atom_integrity` as `up` or `down`, and a blob
+hit as `survives` or `destroyed` (a blob rolls its damage). Mobs and turfs are not hit-pinned (the harness cannot make them behave). A pin sees the
+state at the end of the call and one drain later, not a timer seconds on, and not a hit hook that runs after the hit instead of before it unless that
+changes the end state: hand-written tests cover those. A type whose entry throws on a bare instance (the rig's shock wire without a wearer) is a
+finding, not a pin: leave it out and say so.

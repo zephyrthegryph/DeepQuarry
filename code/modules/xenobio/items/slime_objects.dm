@@ -253,16 +253,17 @@ CAPABILITIES(/obj/item/slime_crystal)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-DECLARE_PERIODIC(/obj/item/slime_irradiator, PERIODIC_SLOW)
+CAPABILITIES(/obj/item/slime_irradiator)
+	every(2 SECONDS, then(PROC_REF(slime_irradiator_step)))
 
 /obj/item/slime_irradiator/Initialize(mapload)
 	. = ..()
 	set_light(light_range, light_power, light_color)
 
-/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
-/obj/item/slime_irradiator/periodic_step()
+/// Radiates only while a mob is close enough to be affected; with none near, the run does nothing.
+/obj/item/slime_irradiator/proc/slime_irradiator_step(datum/act/timer/A)
 	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+		return
 	radiate()
 
 /obj/item/slime_irradiator/proc/radiate()

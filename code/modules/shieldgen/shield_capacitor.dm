@@ -27,6 +27,7 @@ CAPABILITIES(/obj/machinery/shield_capacitor)
 	links(/obj/machinery/shield_capacitor::owned_gen, /obj/machinery/shield_gen::capacitors, b_many = TRUE)
 	climb()
 	interface("ShieldCapacitor")
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	without("ui_open")
 	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("charge_rate", ui_act("charge_rate", arg("rate", num())), then(PROC_REF(ui_act_charge_rate)))
@@ -41,12 +42,13 @@ CAPABILITIES(/obj/machinery/shield_capacitor)
 	max_charge = 12e6
 	max_charge_rate = 600000
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null)
-/obj/machinery/shield_capacitor/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+/obj/machinery/shield_capacitor/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
+	. = OP_DECLINE
 	if(prob(75))
 		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
-		. = 1
+		. = OP_OK
 	fx_sparks(src, 5)
 
 /obj/machinery/shield_capacitor/proc/interaction_id_swipe(datum/act/op/A)

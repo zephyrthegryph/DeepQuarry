@@ -43,15 +43,18 @@
 /mob/living/simple_mob/mechanical/ward/monitor/crew
 	icon_state = "ward-nt"
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERACT_ITEM(null, PROC_REF(monitor_ward_interaction_item)))
+CAPABILITIES(/mob/living/simple_mob/mechanical/ward/monitor/crew)
+	op("monitor_ward_item", item(/obj/item), then(PROC_REF(monitor_ward_interaction_item)))
 
 /// Old attackby: claim with an ID card.
-/mob/living/simple_mob/mechanical/ward/monitor/crew/proc/monitor_ward_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	. = TRUE
+/mob/living/simple_mob/mechanical/ward/monitor/crew/proc/monitor_ward_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
+	. = OP_OK
 	if(istype(O, /obj/item/card/id) && !owner)
 		rel_set(src, nameof(owner), user)
 		return
-	return FALSE
+	return OP_DECLINE
 
 /mob/living/simple_mob/mechanical/ward/monitor/crew/IIsAlly(mob/living/L)
 	. = ..()

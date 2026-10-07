@@ -29,10 +29,11 @@
 	look.state("heavysniper[bolt_open ? "-open" : ""]")
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
-/obj/item/gun/projectile/heavysniper/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+/obj/item/gun/projectile/heavysniper/gun_operate(datum/act/op/A, callback)
+	var/mob/user = A.actor
 	. = ..()
-	if(.)
-		return TRUE
+	if(. == OP_OK)
+		return OP_OK
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 	set_bolt_open(!bolt_open)
 	if(bolt_open)
@@ -65,9 +66,20 @@
 	..()
 
 /obj/item/gun/projectile/heavysniper/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(heavysniper_verb_scope))
+	perform_scope_interaction(user, "heavysniper_verb_scope")
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper, INTERACT_VERB("Use Scope", PROC_REF(heavysniper_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+CAPABILITIES(/obj/item/gun/projectile/heavysniper)
+	op("heavysniper_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(heavysniper_verb_scope_op)))
+
+/// The heavysniper_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/heavysniper/proc/heavysniper_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	heavysniper_verb_scope(A.actor, A.held, null)
+	return OP_OK
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/heavysniper/proc/heavysniper_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
@@ -100,9 +112,20 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper, INTERACT_VERB("Use Sco
 	look.state("SVD[ammo_magazine ? "" : "-empty"]")
 
 /obj/item/gun/projectile/SVD/ui_action_click(mob/user, actiontype)
-	perform_scope_interaction(user, PROC_REF(svd_verb_scope))
+	perform_scope_interaction(user, "svd_verb_scope")
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/SVD, INTERACT_VERB("Use Scope", PROC_REF(svd_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+CAPABILITIES(/obj/item/gun/projectile/SVD)
+	op("svd_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(svd_verb_scope_op)))
+
+/// The svd_verb_scope op: the verb's effect, as the old resolver ran it.
+/obj/item/gun/projectile/SVD/proc/svd_verb_scope_op(datum/act/op/A)
+	var/refusal = zoom_view_allowed(A.actor, src, A.held)
+	if(refusal != TRUE)
+		if(istext(refusal))
+			to_chat(A.actor, span_warning(refusal))
+		return OP_DECLINE
+	svd_verb_scope(A.actor, A.held, null)
+	return OP_OK
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/SVD/proc/svd_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)

@@ -1,61 +1,87 @@
-human|none menu: Interaction hit weeds
-human|none menu: Interaction touch weeds
-human|none menu: Tear up (refused: combat mode is off)
-human|none click: nothing
-robot|none menu: Interaction hit weeds
-robot|none menu: Interaction touch weeds
-robot|none menu: Tear up (refused: combat mode is off)
-robot|none click: nothing
+human|none menu: Tear up
+human|none menu: Touch weeds
+human|none click: Click: Touch weeds
+robot|none menu: Tear up
+robot|none menu: Touch weeds
+robot|none click: Click: Touch weeds
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Interaction hit weeds
-human|/obj/item/tool/screwdriver menu: Interaction touch weeds
-human|/obj/item/tool/screwdriver menu: Tear up (refused: combat mode is off)
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Interaction hit weeds
-human|/obj/item/tool/crowbar menu: Interaction touch weeds
-human|/obj/item/tool/crowbar menu: Tear up (refused: combat mode is off)
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Interaction hit weeds
-human|/obj/item/tool/wrench menu: Interaction touch weeds
-human|/obj/item/tool/wrench menu: Tear up (refused: combat mode is off)
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Interaction hit weeds
-human|/obj/item/tool/wirecutters menu: Interaction touch weeds
-human|/obj/item/tool/wirecutters menu: Tear up (refused: combat mode is off)
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Interaction hit weeds
-human|/obj/item/multitool menu: Interaction touch weeds
-human|/obj/item/multitool menu: Tear up (refused: combat mode is off)
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Interaction hit weeds
-human|/obj/item/weldingtool menu: Interaction touch weeds
-human|/obj/item/weldingtool menu: Tear up (refused: combat mode is off)
+human|/obj/item/tool/screwdriver menu: Hit weeds
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Tear up
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Touch weeds
+human|/obj/item/tool/screwdriver click: Click: Hit weeds
+human|/obj/item/tool/crowbar menu: Hit weeds
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Tear up
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Touch weeds
+human|/obj/item/tool/crowbar click: Click: Hit weeds
+human|/obj/item/tool/wrench menu: Hit weeds
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Tear up
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Touch weeds
+human|/obj/item/tool/wrench click: Click: Hit weeds
+human|/obj/item/tool/wirecutters menu: Hit weeds
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Tear up
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Touch weeds
+human|/obj/item/tool/wirecutters click: Click: Hit weeds
+human|/obj/item/multitool menu: Hit weeds
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Tear up
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Touch weeds
+human|/obj/item/multitool click: Click: Hit weeds
+human|/obj/item/weldingtool menu: Hit weeds
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Tear up
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Touch weeds
 human|/obj/item/weldingtool menu: Use welder
 human|/obj/item/weldingtool click: Click: Use welder
-human|/obj/item/stack/cable_coil menu: Interaction hit weeds
-human|/obj/item/stack/cable_coil menu: Interaction touch weeds
+human|/obj/item/stack/cable_coil menu: Hit weeds
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Tear up (refused: combat mode is off)
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Interaction hit weeds
-human|/obj/item/stack/material/steel menu: Interaction touch weeds
-human|/obj/item/stack/material/steel menu: Tear up (refused: combat mode is off)
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Interaction hit weeds
-human|/obj/item/card/id menu: Interaction touch weeds
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Tear up
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Touch weeds
+human|/obj/item/stack/cable_coil click: Click: Hit weeds
+human|/obj/item/stack/material/steel menu: Hit weeds
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Tear up
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Touch weeds
+human|/obj/item/stack/material/steel click: Click: Hit weeds
+human|/obj/item/card/id menu: Hit weeds
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Tear up (refused: combat mode is off)
-human|/obj/item/card/id click: nothing
+human|/obj/item/card/id menu: Tear up
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Touch weeds
+human|/obj/item/card/id click: Click: Hit weeds
+human|/obj/item/mop_deploy menu: Hit weeds
 human|/obj/item/mop_deploy menu: Insert a mop
-human|/obj/item/mop_deploy menu: Interaction hit weeds
-human|/obj/item/mop_deploy menu: Interaction touch weeds
-human|/obj/item/mop_deploy menu: Tear up (refused: combat mode is off)
+human|/obj/item/mop_deploy menu: Move To Top
+human|/obj/item/mop_deploy menu: Tear up
+human|/obj/item/mop_deploy menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/mop_deploy menu: Touch weeds
 human|/obj/item/mop_deploy click: Click: Insert a mop
+human|/obj/item/soap menu: Hit weeds
 human|/obj/item/soap menu: Insert a soap
-human|/obj/item/soap menu: Interaction hit weeds
-human|/obj/item/soap menu: Interaction touch weeds
-human|/obj/item/soap menu: Tear up (refused: combat mode is off)
+human|/obj/item/soap menu: Move To Top
+human|/obj/item/soap menu: Tear up
+human|/obj/item/soap menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/soap menu: Touch weeds
 human|/obj/item/soap click: Click: Insert a soap
-keys: drag_buckle, gen_hand_interaction_touch_weeds, gen_item_interaction_hit_weeds, pass_insert, pass_insert_2, use_welder
+human|/obj/item menu: Hit weeds
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Tear up
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Touch weeds
+human|/obj/item click: Click: Hit weeds
+keys: drag_buckle, hit_weeds, pass_insert, pass_insert_2, tear_up, touch_weeds, use_welder
 

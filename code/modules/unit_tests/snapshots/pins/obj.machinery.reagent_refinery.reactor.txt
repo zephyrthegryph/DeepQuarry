@@ -10,51 +10,75 @@ ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none menu: Set transfer amount (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
 human|/obj/item/tool/screwdriver menu: Set transfer amount
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver click: Click: Open maintenance panel
 human|/obj/item/tool/crowbar menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
+human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Set transfer amount
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Deconstruct
 human|/obj/item/tool/wrench menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Secure
 human|/obj/item/tool/wrench menu: Set transfer amount
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench click: Click: Secure
 human|/obj/item/tool/wirecutters menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Set transfer amount
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters click: nothing
 human|/obj/item/multitool menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Set transfer amount
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: nothing
 human|/obj/item/weldingtool menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Set transfer amount
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: nothing
 human|/obj/item/stack/cable_coil menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Set transfer amount
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: nothing
 human|/obj/item/stack/material/steel menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Set transfer amount
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: nothing
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Set transfer amount
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
 human|/obj/item/reagent_containers/glass menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/reagent_containers/glass menu: Drain (refused: it's empty; there is nothing to drain)
+human|/obj/item/reagent_containers/glass menu: Move To Top
 human|/obj/item/reagent_containers/glass menu: Open or close the lid
 human|/obj/item/reagent_containers/glass menu: Set transfer amount
+human|/obj/item/reagent_containers/glass menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/glass click: Click: Drain
 human|/obj/item/reagent_containers/food/drinks/glass2 menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/reagent_containers/food/drinks/glass2 menu: Drain (refused: it's empty; there is nothing to drain)
+human|/obj/item/reagent_containers/food/drinks/glass2 menu: Move To Top
 human|/obj/item/reagent_containers/food/drinks/glass2 menu: Rename food
 human|/obj/item/reagent_containers/food/drinks/glass2 menu: Set transfer amount
+human|/obj/item/reagent_containers/food/drinks/glass2 menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/food/drinks/glass2 click: Click: Drain
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Drain (refused: it's empty; there is nothing to drain)
+human|/obj/item/reagent_containers/food/drinks/shaker menu: Move To Top
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Rename food
 human|/obj/item/reagent_containers/food/drinks/shaker menu: Set transfer amount
+human|/obj/item/reagent_containers/food/drinks/shaker menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/food/drinks/shaker click: Click: Drain
 keys: climb.climb, climb.climb_menu, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, reagent_refinery_drain, reagent_refinery_set_transfer_amount, use_wrench
 

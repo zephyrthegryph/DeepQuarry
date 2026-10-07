@@ -1,0 +1,158 @@
+human|none menu: Alternate use
+human|none menu: Holster (refused: You can't do that.)
+human|none menu: Move To Top
+human|none menu: Pick up
+human|none menu: Roll Down Jumpsuit (refused: You can't do that.)
+human|none menu: Roll Up Sleeves (refused: You can't do that.)
+human|none menu: Toggle Digestable (refused: You can't do that.)
+human|none menu: Toggle Suit Sensors (refused: You can't do that.)
+human|none menu: Under worn hand
+human|none menu: Use
+human|none click: Click: Under worn hand
+robot|none menu: Alternate use
+robot|none menu: Equip (refused: not possible right now)
+robot|none menu: Holster (refused: You can't do that.)
+robot|none menu: Move To Top
+robot|none menu: Pick up
+robot|none menu: Roll Down Jumpsuit (refused: You can't do that.)
+robot|none menu: Roll Up Sleeves (refused: You can't do that.)
+robot|none menu: Toggle Digestable (refused: You can't do that.)
+robot|none menu: Toggle Suit Sensors (refused: You can't do that.)
+robot|none menu: Under worn hand
+robot|none menu: Use
+robot|none click: Click: Under worn hand
+ai|none menu: Equip (refused: not possible right now)
+ai|none click: nothing
+ghost|none menu: Holster (refused: You can't do that.)
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Roll Down Jumpsuit (refused: You can't do that.)
+ghost|none menu: Roll Up Sleeves (refused: You can't do that.)
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
+ghost|none menu: Toggle Suit Sensors (refused: You can't do that.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Alternate use
+human|/obj/item/tool/screwdriver menu: Holster (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Roll Down Jumpsuit (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Roll Up Sleeves (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle Suit Sensors (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Under worn hand
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Under worn hand
+human|/obj/item/tool/crowbar menu: Alternate use
+human|/obj/item/tool/crowbar menu: Holster (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Roll Down Jumpsuit (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Roll Up Sleeves (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Toggle Suit Sensors (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Under worn hand
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Under worn hand
+human|/obj/item/tool/wrench menu: Alternate use
+human|/obj/item/tool/wrench menu: Holster (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Roll Down Jumpsuit (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Roll Up Sleeves (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Toggle Suit Sensors (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Under worn hand
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Under worn hand
+human|/obj/item/tool/wirecutters menu: Alternate use
+human|/obj/item/tool/wirecutters menu: Holster (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Roll Down Jumpsuit (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Roll Up Sleeves (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle Suit Sensors (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Under worn hand
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Under worn hand
+human|/obj/item/multitool menu: Alternate use
+human|/obj/item/multitool menu: Holster (refused: You can't do that.)
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Roll Down Jumpsuit (refused: You can't do that.)
+human|/obj/item/multitool menu: Roll Up Sleeves (refused: You can't do that.)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Toggle Suit Sensors (refused: You can't do that.)
+human|/obj/item/multitool menu: Under worn hand
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Under worn hand
+human|/obj/item/weldingtool menu: Alternate use
+human|/obj/item/weldingtool menu: Holster (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Roll Down Jumpsuit (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Roll Up Sleeves (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Toggle Suit Sensors (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Under worn hand
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Under worn hand
+human|/obj/item/stack/cable_coil menu: Alternate use
+human|/obj/item/stack/cable_coil menu: Holster (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Roll Down Jumpsuit (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Roll Up Sleeves (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle Suit Sensors (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Under worn hand
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Under worn hand
+human|/obj/item/stack/material/steel menu: Alternate use
+human|/obj/item/stack/material/steel menu: Holster (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Roll Down Jumpsuit (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Roll Up Sleeves (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Toggle Suit Sensors (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Under worn hand
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Under worn hand
+human|/obj/item/card/id menu: Alternate use
+human|/obj/item/card/id menu: Holster (refused: You can't do that.)
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Roll Down Jumpsuit (refused: You can't do that.)
+human|/obj/item/card/id menu: Roll Up Sleeves (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Suit Sensors (refused: You can't do that.)
+human|/obj/item/card/id menu: Under worn hand
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Under worn hand
+human|/obj/item/kit menu: Alternate use
+human|/obj/item/kit menu: Customise
+human|/obj/item/kit menu: Holster (refused: You can't do that.)
+human|/obj/item/kit menu: Move To Top
+human|/obj/item/kit menu: Roll Down Jumpsuit (refused: You can't do that.)
+human|/obj/item/kit menu: Roll Up Sleeves (refused: You can't do that.)
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit menu: Toggle Suit Sensors (refused: You can't do that.)
+human|/obj/item/kit menu: Under worn hand
+human|/obj/item/kit menu: Use
+human|/obj/item/kit click: Click: Customise
+human|/obj/item/storage menu: Alternate use
+human|/obj/item/storage menu: Collect
+human|/obj/item/storage menu: Holster (refused: You can't do that.)
+human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Roll Down Jumpsuit (refused: You can't do that.)
+human|/obj/item/storage menu: Roll Up Sleeves (refused: You can't do that.)
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage menu: Toggle Suit Sensors (refused: You can't do that.)
+human|/obj/item/storage menu: Under worn hand
+human|/obj/item/storage menu: Use
+human|/obj/item/storage click: Click: Collect
+human|/obj/item menu: Alternate use
+human|/obj/item menu: Holster (refused: You can't do that.)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Roll Down Jumpsuit (refused: You can't do that.)
+human|/obj/item menu: Roll Up Sleeves (refused: You can't do that.)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Toggle Suit Sensors (refused: You can't do that.)
+human|/obj/item menu: Under worn hand
+human|/obj/item menu: Use
+human|/obj/item click: Click: Under worn hand
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable, under_holster_verb, under_rollsleeves_verb, under_rollsuit_verb, under_toggle_verb, under_worn_hand
+

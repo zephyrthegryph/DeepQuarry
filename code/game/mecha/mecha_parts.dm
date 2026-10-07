@@ -17,10 +17,11 @@
 	/// "p<bitmask>" during the parts phase, "R<n>" on the reversible ladder. See construction_graph/mecha.
 	var/construction_state = "p0"
 
-DECLARE_INTERACTIONS(/obj/item/mecha_parts/chassis, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/mecha_parts/chassis)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/item/mecha_parts/chassis/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mecha_parts/chassis/proc/interaction_hand(datum/act/op/A)
 	return TRUE
 
 /////////// Ripley
@@ -273,10 +274,11 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/chassis, INTERACT_HAND_UNGATED(null, 
 	/// "p<bitmask>" during the parts phase, "R<n>" on the reversible ladder. See construction_graph/mecha.
 	var/construction_state = "p0"
 
-DECLARE_INTERACTIONS(/obj/item/mecha_parts/fighter/chassis, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+CAPABILITIES(/obj/item/mecha_parts/fighter/chassis)
+	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
-/obj/item/mecha_parts/fighter/chassis/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/mecha_parts/fighter/chassis/proc/interaction_hand(datum/act/op/A)
 	return TRUE
 
 

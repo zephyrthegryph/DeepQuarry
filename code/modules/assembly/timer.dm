@@ -11,8 +11,8 @@ MATERIAL_MIX(/obj/item/assembly/timer, list(MAT_STEEL = 500, MAT_GLASS = 50))
 	var/time = 10
 
 
-OM_FIELD(/obj/item/assembly/timer, timing, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/assembly/timer, PERIODIC_SLOW, "timing")
+/obj/item/assembly/timer/var/timing = FALSE
+TRACKED(/obj/item/assembly/timer, timing)
 
 /obj/item/assembly/timer/activate()
 	if(!..())
@@ -40,7 +40,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/assembly/timer, PERIODIC_SLOW, "timing")
 	if(!holder())
 		visible_message("[icon2html(src,viewers(src))] *beep* *beep*", "*beep* *beep*")
 
-/obj/item/assembly/timer/periodic_step()
+/obj/item/assembly/timer/proc/timer_step(datum/act/timer/A)
 	if(timing && time-- <= 0)
 		set_state(0)
 		timer_end()
@@ -58,6 +58,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/timer, TYPE_PROC_REF(/atom, appearanc
 	return .
 
 CAPABILITIES(/obj/item/assembly/timer)
+	every(2 SECONDS, then(PROC_REF(timer_step)), when = nameof(timing))
 	interface("AssemblyTimer", state = nameof(GLOB.tgui_deep_inventory_state))
 	without("ui_open")
 	op("timing", ui_act("timing"), then(PROC_REF(ui_act_timing)))

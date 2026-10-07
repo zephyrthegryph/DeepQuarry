@@ -10,42 +10,64 @@ ai|none click: Click: Ui open
 ghost|none menu: Climb (refused: You can't climb right now.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Remove power cell
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Ui open
 human|/obj/item/tool/screwdriver click: Click: Remove power cell
 human|/obj/item/tool/crowbar menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Ui open
 human|/obj/item/tool/crowbar click: Click: Ui open
 human|/obj/item/tool/wrench menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tool/wrench menu: Connect to the port (refused: Nothing happens.)
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Ui open
 human|/obj/item/tool/wrench click: Click: Connect to the port
 human|/obj/item/tool/wirecutters menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Ui open
 human|/obj/item/tool/wirecutters click: Click: Ui open
 human|/obj/item/multitool menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Ui open
 human|/obj/item/multitool click: Click: Ui open
 human|/obj/item/weldingtool menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Ui open
 human|/obj/item/weldingtool click: Click: Ui open
 human|/obj/item/stack/cable_coil menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Ui open
 human|/obj/item/stack/cable_coil click: Click: Ui open
 human|/obj/item/stack/material/steel menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Ui open
 human|/obj/item/stack/material/steel click: Click: Ui open
 human|/obj/item/card/id menu: Climb (refused: There's a material processor in the way.)
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Ui open
 human|/obj/item/tank menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/tank menu: Insert tank
+human|/obj/item/tank menu: Move To Top
+human|/obj/item/tank menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tank menu: Ui open
 human|/obj/item/tank click: Click: Insert tank
 human|/obj/item/cell menu: Climb (refused: There's a material processor in the way.)
 human|/obj/item/cell menu: Insert power cell (refused: There is already a power cell installed.)
+human|/obj/item/cell menu: Move To Top
+human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/cell menu: Ui open
 human|/obj/item/cell click: Click: Insert power cell
 keys: cell_in, cell_out, climb.climb, climb.climb_menu, direction, drag_buckle, eject, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, port, power, pressure, tank_bay.holding.insert, ui_open

@@ -15,6 +15,7 @@
 
 CAPABILITIES(/obj/structure/disposalholder)
 	owns_one(nameof(gas), /datum/gas_mixture)
+	every(1 DECISECONDS, then(PROC_REF(move)), when = nameof(active))
 
 // C11: one slot, accepting anything (a holder in transit carries whatever was
 // flushed into it). Legacy forceMove()s into and out of the holder (move(),
@@ -29,8 +30,8 @@ CAPABILITIES(/obj/structure/disposalholder)
 	exposure = SLOT_EXPOSURE_SEALED
 
 /// TRUE while the holder is moving through pipes: move() runs every decisecond.
-OM_FIELD(/obj/structure/disposalholder, active, FALSE, CHANGE_EXPLICIT)
-DECLARE_REPEAT(/obj/structure/disposalholder, 1 DECISECONDS, move, "active")
+/obj/structure/disposalholder/var/active = FALSE
+TRACKED(/obj/structure/disposalholder, active)
 
 /obj/structure/disposalholder/proc/init(list/flush_list, datum/gas_mixture/flush_gas)
 	own_move(flush_gas, src, nameof(gas)) // transfer gas resv. into holder object (from whoever owns it now) -- let's be explicit about the data this proc consumes, please.
@@ -73,7 +74,7 @@ DECLARE_REPEAT(/obj/structure/disposalholder, 1 DECISECONDS, move, "active")
 			src.destinationTag = drone.mail_destination
 
 // movement process, persists while holder is moving through pipes (declared: while active)
-/obj/structure/disposalholder/proc/move()
+/obj/structure/disposalholder/proc/move(datum/act/timer/A)
 	/* // Clonk n' bonk // Non-damaging Disposals Edit Start
 	if(hasmob && prob(3))
 		for(var/mob/living/H in src)
@@ -84,15 +85,16 @@ DECLARE_REPEAT(/obj/structure/disposalholder, 1 DECISECONDS, move, "active")
 	var/obj/structure/disposalpipe/last = loc
 	var/obj/structure/disposalpipe/curr = last.transfer(src)
 	if(!active)
-		return REPEAT_STOP // Handled by a machine connected to a trunk during transfer()
+		return // Handled by a machine connected to a trunk during transfer()
 	if(!curr)
+		set_active(FALSE)
 		last.pipe_expel(src, get_turf(loc), dir)
-		return REPEAT_STOP
+		return
 
 	// Onto the next segment
 	if(!(count--))
 		set_active(FALSE)
-		return REPEAT_STOP
+		return
 
 // find the turf which should contain the next pipe
 /obj/structure/disposalholder/proc/nextloc()

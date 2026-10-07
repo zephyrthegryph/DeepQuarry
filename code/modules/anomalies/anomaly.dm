@@ -145,37 +145,18 @@ CAPABILITIES(/obj/item/anomaly_scanner)
 	self_recharge = 1
 	use_external_power = 1
 
-/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): pick a particle, then the gun's own self-use.
-/obj/item/gun/energy/anomaly/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback, chosen_particle)
-	if(isnull(chosen_particle))
-		var/original_client_ckey
-		if(istype(user, /client))
-			var/client/C = user
-			original_client_ckey = C.ckey
-			user = C.mob
-		if(!ismob(user) || QDELETED(user))
-			return TRUE
-		open_request(src, /datum/prompt/choice/research_anomaly, PROC_REF(particle_selected), answerer = user, choices = ANOMALY_PARTICLE_ALL, question = "Select particle type", title = "Particle Selection", captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), original_client_ckey = original_client_ckey, callback_value = isdatum(callback) ? null : callback, captured_callback = isdatum(callback) ? callback : null, callback_expected = isdatum(callback))
-		return TRUE
+CAPABILITIES(/obj/item/gun/energy/anomaly)
+	extend("gun_self", asks(/datum/prompt/choice, fields = list("question" = "Select particle type", "title" = "Particle Selection", "choices" = ANOMALY_PARTICLE_ALL, "timeout" = 0), step = "particle"))
+
+/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): the particle picked is set, then the gun's own self-use.
+/obj/item/gun/energy/anomaly/gun_operate(datum/act/op/A, callback)
+	var/chosen_particle = A.step_value("particle")
 	if(!chosen_particle)
-		return FALSE
+		return OP_DECLINE
 
 	particle = chosen_particle
 	balloon_alert_visible("changed to [chosen_particle]")
-	return ..(user, held, interaction, callback)
-
-/obj/item/gun/energy/anomaly/proc/particle_selected(datum/act/request/A)
-	var/datum/prompt/choice/research_anomaly/request = A.request
-	if(!A.answer || request.captures_gone())
-		return
-	resume_particle_selection(A)
-	SStgui.update_uis(src)
-
-/obj/item/gun/energy/anomaly/proc/resume_particle_selection(datum/act/request/A)
-	var/datum/prompt/choice/research_anomaly/request = A.request
-	var/mob/user = request.user_value()
-	var/callback = request.callback_expected ? request.captured_callback : request.callback_value
-	gun_self(user, request.captured_item, request.captured_interaction, callback, A.answer.value)
+	return ..()
 
 /obj/item/gun/energy/anomaly/consume_next_projectile()
 	var/obj/item/cell/battery = power_supply
@@ -215,15 +196,16 @@ CAPABILITIES(/obj/item/anomaly_scanner)
 	var/picked = FALSE
 	anomaly_type = /obj/effect/anomaly/flux // Default
 
-/// Old attack_self (the assembly self-use chain: /obj/item/assembly/proc/interaction_self()).
-/obj/item/assembly/signaler/anomaly/choice/interaction_self(mob/user, obj/item/held, datum/interaction/interaction, selected_core)
-	. = ..(user, held, interaction)
-	if(.)
-		return TRUE
+TRACKED(/obj/item/assembly/signaler/anomaly/choice, picked)
+CAPABILITIES(/obj/item/assembly/signaler/anomaly/choice)
+	extend("use", asks(/datum/prompt/choice, fields = list("question" = "Choose an anomaly core.", "title" = "Anomaly Core Selection", "choices" = computed(PROC_REF(core_choices)), "timeout" = 0), step = "core", when = PROC_REF(core_wanted)))
 
-	if(picked)
-		return TRUE
+/// The core is asked for only where the self-use got past the signaler's own: a core not yet picked.
+/obj/item/assembly/signaler/anomaly/choice/proc/core_wanted(datum/act/op/A)
+	return special_handling && !picked
 
+/// The names of the cores on offer (drawn the first time they are wanted).
+/obj/item/assembly/signaler/anomaly/choice/proc/core_choices(datum/act/op/A)
 	if(isnull(choices))
 		choices = list()
 		var/list/core_types = subtypesof(/obj/effect/anomaly)
@@ -232,35 +214,27 @@ CAPABILITIES(/obj/item/anomaly_scanner)
 			var/type = pick_n_take(core_types)
 			var/obj/effect/anomaly/anom = new type
 			choices[capitalize(anom.name)] = type
-			spent(anom, user) // only the type is kept; don't leak the sample object
+			spent(anom, A.actor) // only the type is kept; don't leak the sample object
+	var/list/names = list()
+	for(var/name in choices)
+		names += name
+	return names
 
-	if(isnull(selected_core))
-		var/original_client_ckey
-		if(istype(user, /client))
-			var/client/C = user
-			original_client_ckey = C.ckey
-			user = C.mob
-		if(!ismob(user) || QDELETED(user))
-			return TRUE
-		open_request(src, /datum/prompt/choice/research_anomaly, PROC_REF(core_selected), answerer = user, choices = choices, question = "Choose an anomaly core.", title = "Anomaly Core Selection", captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), original_client_ckey = original_client_ckey)
-		return TRUE
-	var/choice = selected_core
+/// Old attack_self (the assembly self-use chain: /obj/item/assembly/proc/interaction_self()).
+/obj/item/assembly/signaler/anomaly/choice/interaction_self(datum/act/op/A)
+	. = ..()
+	if(. == OP_OK)
+		return OP_OK
+
+	if(picked)
+		return OP_OK
+
+	var/choice = A.step_value("core")
 
 	if(choice && !picked)
 		anomaly_type = choices[choice]
-		picked = TRUE
-
-
-/obj/item/assembly/signaler/anomaly/choice/proc/core_selected(datum/act/request/A)
-	var/datum/prompt/choice/research_anomaly/request = A.request
-	if(!A.answer || request.captures_gone())
-		return
-	resume_core_selection(A)
-	SStgui.update_uis(src)
-
-/obj/item/assembly/signaler/anomaly/choice/proc/resume_core_selection(datum/act/request/A)
-	var/datum/prompt/choice/research_anomaly/request = A.request
-	interaction_self(request.user_value(), request.captured_item, request.captured_interaction, A.answer.value)
+		set_picked(TRUE)
+	return OP_DECLINE
 
 /datum/prompt/choice/research_anomaly
 	timeout = 0

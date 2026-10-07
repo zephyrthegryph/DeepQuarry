@@ -42,6 +42,8 @@
 
 CAPABILITIES(/obj/machinery/appliance/cooker/oven)
 	owns_one(nameof(oven_loop), /datum/looping_sound/oven)
+	op("part_replace", item(/obj/item), label("Use"), then(PROC_REF(appliance_interaction_part_replace)))
+	op("toggle_door_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle door"), then(PROC_REF(oven_interaction_toggle_door)))
 	op("toggle_door", ui_act("toggle_door"), then(PROC_REF(ui_act_toggle_door)))
 
 /obj/machinery/appliance/cooker/oven/Initialize(mapload)
@@ -84,16 +86,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven, TYPE_PROC_REF(/ato
 			oven_loop.stop(src)
 	. += ..()
 
-EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/oven, \
-	INTERACT_ITEM(null, PROC_REF(appliance_interaction_part_replace)), \
-	INTERACT_ALT("Toggle door", PROC_REF(oven_interaction_toggle_door)), \
-)
-
 /// Old click_alt.
-/obj/machinery/appliance/cooker/oven/proc/oven_interaction_toggle_door(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/appliance/cooker/oven/proc/oven_interaction_toggle_door(datum/act/op/A)
+	var/mob/user = A.actor
 	try_toggle_door(user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	return TRUE
+	return OP_OK
 
 /// Start closed just so people don't try to preheat with it open, lol.
 OM_FIELD(/obj/machinery/appliance/cooker/oven, open, FALSE, CHANGE_MACHINE_SETTINGS)

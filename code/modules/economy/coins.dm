@@ -95,14 +95,14 @@
 	COOLDOWN_DECLARE(event_cooldown)
 	var/active = 0
 
-DECLARE_PERIODIC(/obj/item/coin/uranium, PERIODIC_SLOW)
+CAPABILITIES(/obj/item/coin/uranium)
+	every(2 SECONDS, then(PROC_REF(uranium_coin_step)))
 
-/// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
-/obj/item/coin/uranium/periodic_step()
+/// Radiates only while a mob is close enough to be affected; with none near, the run does nothing.
+/obj/item/coin/uranium/proc/uranium_coin_step(datum/act/timer/A)
 	if(!mob_near(world.view))
-		return sleep_until_mob_near(world.view)
+		return
 	radiate()
-	..()
 
 /obj/item/coin/uranium/proc/radiate()
 	if(active)
@@ -146,21 +146,23 @@ DECLARE_PERIODIC(/obj/item/coin/uranium, PERIODIC_SLOW)
 	MATERIAL_BULK(MAT_VERDANTIUM, 250)
 
 /// Old attackby.
-/obj/item/coin/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/item/coin/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W,/obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/CC = W
 		if(string_attached)
 			balloon_alert(user, "there is a string already attached to \the [src]")
-			return INTERACTION_HANDLED_PASS
+			return OP_PASS
 		if (CC.use(1))
 			add_overlay("coin_string_overlay")
 			string_attached = 1
 			balloon_alert(user, "string attached to \the [src]")
 		else
 			balloon_alert(user, "the coil seems to be empty...")
-		return INTERACTION_HANDLED_PASS
+		return OP_PASS
 	else
-		return FALSE
+		return OP_DECLINE
 
 /obj/item/coin/wirecutter_act(mob/user, obj/item/tool)
 	if(!string_attached)
@@ -171,13 +173,10 @@ DECLARE_PERIODIC(/obj/item/coin/uranium, PERIODIC_SLOW)
 	balloon_alert(user, "string detached")
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/coin, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
 CAPABILITIES(/obj/item/coin)
 	op("flip", in_hand(), label("Flip coin"), then(PROC_REF(coin_flip_requested)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/coin/proc/coin_flip_requested(datum/act/op/A)
 	var/mob/user = A.actor

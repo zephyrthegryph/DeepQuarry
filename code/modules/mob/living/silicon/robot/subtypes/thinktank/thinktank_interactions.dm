@@ -1,12 +1,14 @@
-EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
-	INTERACT_ITEM(null, PROC_REF(platform_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(platform_interaction_hand)), \
-	INTERACT_DRAG("Load into cargo", PROC_REF(platform_interaction_drag)), \
-	INTERACT_SILICON("Unload cargo", PROC_REF(platform_silicon_unload)), \
-	INTERACT_OBSERVER("Take control", PROC_REF(platform_ghost_take_control)))
+CAPABILITIES(/mob/living/silicon/robot/platform)
+	op("platform_item", item(/obj/item), then(PROC_REF(platform_interaction_item)))
+	op("platform_hand", hand(), ungated(), then(PROC_REF(platform_interaction_hand)))
+	op("platform_drag", item(/atom/movable), gesture(GESTURE_DRAG), label("Load into cargo"), then(PROC_REF(platform_interaction_drag)))
+	op("platform_silicon_unload", remote(), when(req_actor_kind(/mob/living/silicon/robot)), label("Unload cargo"), then(PROC_REF(platform_silicon_unload)))
+
+EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, INTERACT_OBSERVER("Take control", PROC_REF(platform_ghost_take_control)))
 
 /// Old attack_hand: pop out the recharging item or cargo; otherwise the cyborg touch follows.
-/mob/living/silicon/robot/platform/proc/platform_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/mob/living/silicon/robot/platform/proc/platform_interaction_hand(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!opened)
 		if(recharging)
 			var/obj/item/recharging_atom = recharging
@@ -15,15 +17,17 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 				recharging_atom.dropInto(loc)
 				user.put_in_hands(recharging_atom)
 				act_message(user, src, others = span_infoplain(span_bold("%U%") + " pops %I% out of %T%'s recharging port."), item = recharging_atom)
-			return TRUE
+			return OP_OK
 
 		if(try_remove_cargo(user))
-			return TRUE
+			return OP_OK
 
-	return FALSE
+	return OP_DECLINE
 
 /// Old attackby: a cell goes in the recharging port; a floor painter repaints; else the cyborg handling.
-/mob/living/silicon/robot/platform/proc/platform_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/mob/living/silicon/robot/platform/proc/platform_interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(istype(W, /obj/item/cell) && !opened)
 		if(recharging)
 			to_chat(user, span_warning("\The [src] already has \a [recharging] inserted into its recharging port."))
@@ -32,15 +36,15 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 			rel_set(src, nameof(recharging), W)
 			recharge_complete = FALSE
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%'s recharging port."), item = W)
-		return TRUE
+		return OP_OK
 
 	// Old code returned FALSE here so the painter's afterattack called try_paint(); a used-up input
 	// skips afterattack now, so paint directly.
 	if(istype(W, /obj/item/floor_painter))
 		try_paint(W, user)
-		return TRUE
+		return OP_OK
 
-	return FALSE
+	return OP_DECLINE
 
 /// Old attack_ghost: an unoccupied platform offers itself to the ghost; otherwise the default.
 /mob/living/silicon/robot/platform/proc/platform_ghost_take_control(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)

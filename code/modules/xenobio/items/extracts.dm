@@ -26,16 +26,18 @@ TRACKED(/obj/item/slime_extract, emitting)
 /obj/item/slime_extract/proc/emit_step(datum/act/A)
 	set_emitting(FALSE)
 
-DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
-/obj/item/slime_extract/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+/obj/item/slime_extract/proc/interaction_item(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/O = A.held
 	if(istype(O, /obj/item/slimepotion/enhancer))
 		if(enhanced)
 			to_chat(user, span_warning("You cannot enhance this extract further!"))
-			return FALSE
+			return OP_DECLINE
 		if(!consume(O, user))
-			return FALSE
+			return OP_DECLINE
 		to_chat(user, span_notice("You apply the enhancer to the slime extract. It may now be reused one more time."))
 		play_sfx(src, SFX_EFFECTS_BUBBLES)
 		uses += 2
@@ -47,7 +49,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 		new slime_type(get_turf(src))
 		consume(O, user)
 		consume(src, user)
-	return FALSE
+	return OP_DECLINE
 
 /obj/item/slime_extract/examine(mob/user)
 	. = ..()
