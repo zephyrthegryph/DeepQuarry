@@ -73,6 +73,7 @@ CAPABILITIES(/obj/item/reagent_containers/syringe)
 		needle_time = nameof(time),
 		draws_from = list(/obj/structure/reagent_dispensers, /obj/item/slime_extract, /obj/item/reagent_containers/food, /obj/item/reagent_containers/blood),
 		fills = TRUE)
+	op("pick_up", hand(), priority(OP_PRIORITY_DEFAULT), label("Pick up"), then(PROC_REF(syringe_pick_up)))
 	op("stab", at_target(/mob/living), hostile(), stance(I_HURT), label("Stab"),
 		needs(req_not(req_is(nameof(mode), NEEDLE_BROKEN), because = MSG(needle/broken)), req(PROC_REF(may_stab), because = MSG(syringe/too_big))),
 		then(PROC_REF(stabbed)))
@@ -97,17 +98,11 @@ MSG_DEF_SELF(syringe/no_blood, "This needle isn't designed for drawing blood.")
 	syringestab(target, user)
 	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(syringe_pick_up)))
-
 /// Picking the syringe up refreshes its look.
-/obj/item/reagent_containers/syringe/proc/syringe_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
+/obj/item/reagent_containers/syringe/proc/syringe_pick_up(datum/act/op/A)
+	pick_up_by_hand(A.actor)
 	update_icon()
-
-/// Old attackby.
-/obj/item/reagent_containers/syringe/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
 /obj/item/reagent_containers/syringe/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run)
 	. = ..()

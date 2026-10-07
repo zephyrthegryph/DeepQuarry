@@ -38,24 +38,11 @@ OM_FIELD(/obj/machinery/v_garbosystem, operating, FALSE, CHANGE_MACHINE_SETTINGS
 	if(contents_count(src) || has_latent()) // ALLOW(latent): latent entries checked
 		. += span_warning("There are items in the filter's trap!")
 
-/obj/machinery/v_garbosystem/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/v_garbosystem_toggle,
-		/datum/interaction/machine_item/v_garbosystem_crowbar_open,
-	)
-	..()
-
 /// Old attack_hand: never called ..().
-/datum/interaction/machine_hand/ungated/v_garbosystem_toggle
-	id = "v_garbosystem_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/v_garbosystem/proc/interaction_toggle
-
-/obj/machinery/v_garbosystem/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/v_garbosystem/proc/interaction_toggle(datum/act/op/A)
 	set_operating(!operating)
 	update()
-	return TRUE
+	return OP_OK
 
 /obj/machinery/v_garbosystem/power_change()
 	if((. = ..()))
@@ -79,6 +66,8 @@ CAPABILITIES(/obj/machinery/v_garbosystem)
 	reagents(CARGOTANKER_VOLUME * 2)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), nameof(stat)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
+	op("v_garbosystem_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
+	op("v_garbosystem_crowbar_open", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), label("Open filter hatch"), wait(0), then(PROC_REF(interaction_crowbar_open)))
 
 /obj/machinery/v_garbosystem/proc/work_step(datum/act/timer/A)
 	if(!crusher() || crusher().stat & (NOPOWER|BROKEN))
@@ -94,15 +83,8 @@ CAPABILITIES(/obj/machinery/v_garbosystem)
 	update()
 	return OP_OK
 
-/datum/interaction/machine_item/v_garbosystem_crowbar_open
-	id = "v_garbosystem_crowbar_open"
-	name = "Open filter hatch"
-	category = INTERACTION_CAT_OPEN
-	tool = TOOL_CROWBAR
-	tool_volume = 0
-	effect = /obj/machinery/v_garbosystem/proc/interaction_crowbar_open
-
-/obj/machinery/v_garbosystem/proc/interaction_crowbar_open(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/v_garbosystem/proc/interaction_crowbar_open(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!operating)
 		to_chat(user, span_notice("You crowbar the filter hatch open, releasing the items trapped within."))
 		latent_materialize_all() // a walk needs real things (C5)
@@ -110,7 +92,7 @@ CAPABILITIES(/obj/machinery/v_garbosystem)
 			A.forceMove(loc)
 	else
 		to_chat(user, span_warning("Unable to empty filter while the machine is running."))
-	return TRUE
+	return OP_OK
 
 /obj/machinery/v_garbosystem/proc/transfer_reagent_to_tank(datum/reagents/reg,multiplier)
 	var/volume_magic = reg.total_volume * multiplier
