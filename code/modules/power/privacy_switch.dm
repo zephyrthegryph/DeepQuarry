@@ -1,3 +1,5 @@
+TRACKED(/obj/structure/privacyswitch, use_cooldown)
+
 /obj/structure/privacyswitch
 	name = "privacy switch"
 	desc = "A special switch to increase the room's privavy. (Blocks ghosts from seeing the area, green indicates that ghosts are blocked.) Please disable this after use so that people can see the room is free more easily."
@@ -14,8 +16,10 @@
 /obj/structure/privacyswitch
 	silicon_use = SILICON_USE_HAND
 
+MSG_DEF_SELF(privacy_switch/cooling_down, "the area can not be altered so soon again")
+
 CAPABILITIES(/obj/structure/privacyswitch)
-	op("toggle_privacy", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(cooled_down_holds), because = "the area can not be altered so soon again")),
+	op("toggle_privacy", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(cooled_down_holds), because = MSG(privacy_switch/cooling_down))),
 		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(toggle_question)), "title" = "Toggle ghost vision?", "choices" = list("Yes", "No"), "buttons" = TRUE), when = PROC_REF(has_area)), then(PROC_REF(interaction_hand)))
 
 /// Requirement: the switch has a use cooldown.
@@ -44,7 +48,7 @@ CAPABILITIES(/obj/structure/privacyswitch)
 		GLOB.ghostnet.addArea(A)
 		to_chat(user, span_notice("The area is now protected from ghost vison."))
 		log_and_message_admins("toggled ghost vision in [A] off.", user)
-	COOLDOWN_START(src, use_cooldown, 5 MINUTES)
+	set_use_cooldown(world.time + 5 MINUTES)
 	return TRUE
 
 /obj/structure/privacyswitch/proc/cooled_down_holds(datum/act/op/A)

@@ -248,7 +248,8 @@ APPEARANCE_NONE(/obj/item/cell/emergency_light)
 	robot_durability = 100
 
 CAPABILITIES(/obj/item/cell/void)
-	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_self)))
+	// The mode swap takes precedence over the cell's inherited charge/drain actions.
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
 /obj/item/cell/void/proc/interaction_self(datum/act/op/A)

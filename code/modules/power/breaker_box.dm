@@ -1,3 +1,5 @@
+TRACKED(/obj/machinery/power/breakerbox, update_locked)
+
 // Updated version of old powerswitch by Atlantis
 // Has better texture, and is now considered electronic device
 // AI has ability to toggle it in 5 seconds
@@ -27,10 +29,15 @@
 		destroyed(C)
 	..()
 
+MSG_DEF_SELF(breakerbox/locked, "system locked. please try again later")
+MSG_DEF_SELF(breakerbox/busy, "system is busy. please wait until current operation is finished before changing power settings")
+
+MSG_DEF_SELF(breakerbox/needs_item, "needs an item")
+
 CAPABILITIES(/obj/machinery/power/breakerbox)
-	op("breakerbox_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), needs(req(PROC_REF(breakerbox_unlocked), because = "system locked. please try again later"), req(PROC_REF(breakerbox_idle), because = "system is busy. please wait until current operation is finished before changing power settings")), then(PROC_REF(interaction_toggle)))
+	op("breakerbox_toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Toggle"), needs(req(PROC_REF(breakerbox_unlocked), because = MSG(breakerbox/locked)), req(PROC_REF(breakerbox_idle), because = MSG(breakerbox/busy))), then(PROC_REF(interaction_toggle)))
 	op("breakerbox_silicon_toggle", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(breakerbox_silicon_toggle)))
-	op("breakerbox_use", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/text, fields = list("question" = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", "title" = "SMES RCON system", "max_len" = MAX_NAME_LEN, "name_text" = TRUE), when = PROC_REF(breakerbox_multitool)), then(PROC_REF(interaction_use)))
+	op("breakerbox_use", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(/obj/item, because = MSG(breakerbox/needs_item)), req_adjacent(), req_capable()), asks(/datum/prompt/text, fields = list("question" = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", "title" = "SMES RCON system", "max_len" = MAX_NAME_LEN, "name_text" = TRUE), when = PROC_REF(breakerbox_multitool)), then(PROC_REF(interaction_use)))
 	default_parts()
 
 /obj/machinery/power/breakerbox/activated
@@ -67,7 +74,7 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 	return OP_OK
 
 /obj/machinery/power/breakerbox/proc/unlock_updates()
-	update_locked = 0
+	set_update_locked(0)
 
 /obj/machinery/power/breakerbox/proc/toggle_done(mob/user, by_hand)
 	set_breaker_on(!on)
@@ -76,7 +83,7 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 			MSG_OTHERS(span_notice("[user.name] [on ? "enabled" : "disabled"] the breaker box!")))
 	else
 		to_chat(user, span_green("Update Completed. New setting:[on ? "on": "off"]"))
-	update_locked = 1
+	set_update_locked(1)
 	after(src, 60 SECONDS, PROC_REF(unlock_updates))
 
 /obj/machinery/power/breakerbox/proc/breakerbox_not_locked(mob/actor, atom/target, obj/item/held)
@@ -144,7 +151,7 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 /obj/machinery/power/breakerbox/proc/auto_toggle()
 	if(!update_locked)
 		set_breaker_on(!on)
-		update_locked = 1
+		set_update_locked(1)
 		after(src, 1 MINUTE, PROC_REF(unlock_updates))
 
 

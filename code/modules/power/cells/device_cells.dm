@@ -142,7 +142,8 @@ APPEARANCE_NONE(/obj/item/cell/device/crap)
 
 APPEARANCE_NONE(/obj/item/cell/device/weapon/recharge/alien)
 CAPABILITIES(/obj/item/cell/device/weapon/recharge/alien)
-	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_self)))
+	// The old subtype EXTEND_INTERACTIONS ran this before the inherited charge/drain entries.
+	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
 /obj/item/cell/device/weapon/recharge/alien/proc/interaction_self(datum/act/op/A)
