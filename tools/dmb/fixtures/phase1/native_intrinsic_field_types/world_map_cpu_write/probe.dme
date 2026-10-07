@@ -1,0 +1,2 @@
+/world/proc/proof()
+    map_cpu = null

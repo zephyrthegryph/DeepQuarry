@@ -1,0 +1,2 @@
+/atom/movable/proc/proof()
+    return vis_contents.Copy()

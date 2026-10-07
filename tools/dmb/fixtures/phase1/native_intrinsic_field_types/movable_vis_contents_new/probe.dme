@@ -1,0 +1,2 @@
+/atom/movable/proc/proof()
+    vis_contents = new

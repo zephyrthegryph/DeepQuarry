@@ -16,7 +16,7 @@ pub struct CatalogField {
 }
 /// Mirrors the pinned native bootstrap inventory. It is not a claim that all
 /// BYOND versions expose exactly this catalog or that source defaults are known.
-pub const CATALOG_SCHEMA: &str = "dm-bootstrap-builtin-fields-v4-client-script";
+pub const CATALOG_SCHEMA: &str = "dm-bootstrap-builtin-fields-v5-native-list-receivers";
 pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::SymbolCollision> {
     let mut fields = Vec::new();
     for owner in [
@@ -34,9 +34,19 @@ pub fn fields(symbols: &mut SymbolTable) -> Result<Vec<CatalogField>, dm_ir::Sym
         "/savefile",
     ] {
         let owner_symbol = symbols.intern(owner)?;
-        for name in names(owner) {
+        // Native /image has its own visibility collection; do not infer that
+        // field for /atom or /mutable_appearance from their shared field list.
+        let extra: &[&str] = if owner == "/image" {
+            &["vis_contents"]
+        } else {
+            &[]
+        };
+        for name in names(owner).iter().chain(extra) {
             let name_symbol = symbols.intern(name)?;
             let declared_type = match *name {
+                "vars" if owner == "/datum" => Some("/list"),
+                "screen" if owner == "/client" => Some("/list"),
+                "vis_contents" if matches!(owner, "/atom/movable" | "/image") => Some("/list"),
                 "loc" => Some("/atom"),
                 "contents" | "overlays" | "underlays" | "filters" | "verbs" => Some("/list"),
                 "dir" if owner == "/savefile" => Some("/list"),
@@ -185,6 +195,9 @@ pub fn names(path: &str) -> &'static [&'static str] {
             "verbs",
         ],
         "/world" => &[
+            // Native Src getter proofs; defaults/modifiers remain opaque.
+            "internet_address",
+            "map_cpu",
             "host",
             "params",
             "name",
@@ -281,5 +294,90 @@ mod tests {
         assert_eq!(preload.declared_type, FieldTypeMeaning::Unsupported);
         assert!(preload.presence().instance_storage_proven);
         assert!(fields.iter().all(|f| f.presence().shared_owner.is_none()));
+    }
+
+    #[test]
+    fn native_intrinsic_field_receipts_bind_list_receivers_and_instance_storage() {
+        use sha2::{Digest, Sha256};
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/phase1/native_intrinsic_field_types");
+        let receipt: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(root.join("receipt.json")).unwrap()).unwrap();
+        assert_eq!(
+            receipt["compiler_sha256"],
+            "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+        );
+        for case in receipt["cases"].as_array().unwrap() {
+            for (file, expected) in case["files"].as_object().unwrap() {
+                let bytes =
+                    std::fs::read(root.join(case["name"].as_str().unwrap()).join(file)).unwrap();
+                assert_eq!(
+                    format!("{:x}", Sha256::digest(&bytes)),
+                    expected.as_str().unwrap()
+                );
+            }
+        }
+        let mut symbols = SymbolTable::default();
+        let catalog = fields(&mut symbols).unwrap();
+        for (case, owner, name, selector) in [
+            ("datum_vars", "/datum", "vars", 94),
+            ("client_screen", "/client", "screen", 168),
+            ("movable_vis_contents", "/atom/movable", "vis_contents", 281),
+            ("image_vis_contents", "/image", "vis_contents", 281),
+        ] {
+            let image = byond_dmb::dmb::Dmb::from_bytes(
+                &std::fs::read(root.join(case).join("probe.native.bin")).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(image.string(selector), Some(name.as_bytes()));
+            assert_eq!(image.string(25), Some(b"Copy".as_slice()));
+            assert_eq!(
+                image.proc_code_words(0).unwrap(),
+                vec![0x29, 65500, 65486, 65500, selector, 65501, 25, 0, 0x12, 0]
+            );
+            let field = catalog
+                .iter()
+                .find(|field| {
+                    field.owner == SymbolId::of(owner) && field.name == SymbolId::of(name)
+                })
+                .unwrap();
+            assert_eq!(
+                field.declared_type,
+                FieldTypeMeaning::Known(SymbolId::of("/list"))
+            );
+            assert!(field.presence().instance_storage_proven);
+        }
+        for (case, name, selector) in [
+            ("world_internet_address", "internet_address", 204),
+            ("world_map_cpu", "map_cpu", 315),
+        ] {
+            let image = byond_dmb::dmb::Dmb::from_bytes(
+                &std::fs::read(root.join(case).join("probe.native.bin")).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(image.string(selector), Some(name.as_bytes()));
+            assert_eq!(
+                image.proc_code_words(0).unwrap(),
+                vec![0x33, 65500, 65486, selector, 0x12, 0]
+            );
+            let field = catalog
+                .iter()
+                .find(|field| {
+                    field.owner == SymbolId::of("/world") && field.name == SymbolId::of(name)
+                })
+                .unwrap();
+            assert_eq!(field.declared_type, FieldTypeMeaning::Unsupported);
+            assert!(field.presence().instance_storage_proven);
+        }
+        for case in ["untyped_copy", "world_map_cpu_write", "datum_vars_new"] {
+            let row = receipt["cases"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|row| row["name"] == case)
+                .unwrap();
+            assert_ne!(row["exit_code"].as_i64().unwrap(), 0);
+            assert!(row["log"].as_str().unwrap().contains(":2:error:"));
+        }
     }
 }

@@ -1,0 +1,4 @@
+proc#0 /image/proc/proof
+0000 0033 GetVar [65510]
+0002 0034 SetVar [65500, 65486, 281]
+0006 0000 End []

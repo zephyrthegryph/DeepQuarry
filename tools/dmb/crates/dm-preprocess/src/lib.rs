@@ -986,10 +986,6 @@ impl<P: SourceProvider> Context<'_, P> {
         }
     }
 
-    fn error(&mut self, path: &Path, line: usize, message: impl Into<String>) {
-        self.error_as(path, line, DiagnosticKind::Directive, message);
-    }
-
     fn error_as(
         &mut self,
         path: &Path,

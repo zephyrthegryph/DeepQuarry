@@ -516,30 +516,25 @@ pub fn materialize_types(
     let mut strings = crate::composition::StringIndex::build(dmb)
         .map_err(|e| ProjectionError::Unsupported(format!("type strings {e:?}")))?;
     let mut constructed: BTreeMap<u32, Class> = BTreeMap::new();
-    let mut pending = planned;
-    while !pending.is_empty() {
-        let mut ready = Vec::new();
-        for (&index, ty) in &pending {
-            let parent = ty
+    let parents = planned.iter().map(|(&index, ty)| {
+        let parent = ty
                 .parent
                 .and_then(|symbol| type_ids.get(&symbol).copied())
                 .ok_or_else(|| {
                     ProjectionError::Unsupported("unproven source class parent ABI".into())
                 })?;
-            if let Some(prototype) = dmb
+        Ok((index, parent))
+    }).collect::<Result<BTreeMap<_, _>, ProjectionError>>()?;
+    for wave in class_construction_waves(&parents, dmb.classes.len())? {
+        for index in wave {
+            let ty = planned[&index];
+            let parent = parents[&index];
+            let mut record = dmb
                 .classes
                 .get(parent as usize)
                 .or_else(|| constructed.get(&parent))
-            {
-                ready.push((index, *ty, parent, prototype.clone()));
-            }
-        }
-        if ready.is_empty() {
-            return Err(ProjectionError::Unsupported(
-                "cyclic/unavailable parent class records".into(),
-            ));
-        }
-        for (index, ty, parent, mut record) in ready {
+                .ok_or_else(|| ProjectionError::Unsupported("unavailable parent class record".into()))?
+                .clone();
             let path = spelling(ty.path)?;
             let display = path.rsplit('/').next().unwrap_or(path).replace('_', " ");
             let letter = display.chars().take(1).collect::<String>();
@@ -556,7 +551,6 @@ pub fn materialize_types(
             record.lists_and_procs = [NONE; 6];
             record.overrides = NONE;
             constructed.insert(index, record);
-            pending.remove(&index);
         }
     }
     for (_, record) in constructed {
@@ -1198,6 +1192,67 @@ fn client_header_directives(
         }
     }
     Ok(directives)
+}
+
+/// Preserve the old sorted readiness waves, including string-intern order,
+/// without rescanning every pending class at each inheritance depth.
+fn class_construction_waves(parents: &BTreeMap<u32, u32>, retained: usize)
+    -> Result<Vec<Vec<u32>>, ProjectionError>
+{
+    let mut children: BTreeMap<u32, Vec<u32>> = BTreeMap::new();
+    let mut ready = Vec::new();
+    for (&index, &parent) in parents {
+        if (parent as usize) < retained {
+            ready.push(index);
+        } else if parents.contains_key(&parent) {
+            children.entry(parent).or_default().push(index);
+        } else {
+            return Err(ProjectionError::Unsupported("cyclic/unavailable parent class records".into()));
+        }
+    }
+    let mut waves = Vec::new();
+    let mut count = 0;
+    while !ready.is_empty() {
+        // Children of different parents interleave by assigned wire index.
+        ready.sort_unstable();
+        let mut next = Vec::new();
+        for &index in &ready {
+            if let Some(entries) = children.remove(&index) {
+                next.extend(entries);
+            }
+        }
+        count += ready.len();
+        waves.push(ready);
+        ready = next;
+    }
+    if count != parents.len() {
+        return Err(ProjectionError::Unsupported("cyclic/unavailable parent class records".into()));
+    }
+    Ok(waves)
+}
+
+#[cfg(test)]
+mod construction_order_tests {
+    use super::*;
+
+    #[test]
+    fn readiness_waves_preserve_forward_parent_and_branch_index_order() {
+        // Allocation index order differs from dependency order; children of
+        // separate parents interleave in the second wave.
+        let parents = BTreeMap::from([(2, 6), (3, 5), (4, 6), (5, 0), (6, 1), (7, 2)]);
+        assert_eq!(class_construction_waves(&parents, 2).unwrap(),
+            vec![vec![5, 6], vec![2, 3, 4], vec![7]]);
+    }
+
+    #[test]
+    fn deep_chains_construct_once_and_unavailable_or_cycles_fail() {
+        let parents = (1..=4096).map(|index| (index, index - 1)).collect();
+        let waves = class_construction_waves(&parents, 1).unwrap();
+        assert_eq!(waves.len(), 4096);
+        assert!(waves.iter().enumerate().all(|(i, wave)| wave == &vec![i as u32 + 1]));
+        assert!(class_construction_waves(&BTreeMap::from([(1, 2), (2, 1)]), 1).is_err());
+        assert!(class_construction_waves(&BTreeMap::from([(1, 8)]), 1).is_err());
+    }
 }
 
 #[cfg(test)]

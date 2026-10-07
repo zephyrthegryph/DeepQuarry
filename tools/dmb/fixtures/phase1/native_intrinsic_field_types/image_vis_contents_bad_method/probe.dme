@@ -1,0 +1,2 @@
+/image/proc/proof()
+    return vis_contents.FieldTypeNoSuchMethod()
