@@ -34,6 +34,7 @@ pub mod client_script;
 pub mod resource_values;
 pub mod world_writer;
 pub mod initializer_policy;
+pub mod intrinsic_initializer_facts;
 pub mod initializer_lowering;
 pub mod initializer_diagnostics;
 pub mod native_inputs;

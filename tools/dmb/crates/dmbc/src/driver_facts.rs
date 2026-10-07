@@ -401,6 +401,21 @@ impl CapturedConstantEvaluator for LexicalAbiEvaluator<'_> {
     }
 }
 impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
+    fn instance_storage(
+        &self,
+        write: &dm_ir::InitializerWrite,
+    ) -> Result<Option<(SymbolId, SymbolId)>, String> {
+        let dm_ir::InitializerTarget::Instance { declaring_owner, receiver_owner, name } = write.target else {
+            return Ok(None);
+        };
+        let query = ResolveQuery::VarStorage { owner: receiver_owner, name };
+        match self.resolver.resolve(query) {
+            ResolvedMeaning::InstanceField { declaring_owner: actual_owner, name: actual_name }
+                if actual_owner == declaring_owner && actual_name == name => Ok(Some((actual_owner, actual_name))),
+            ResolvedMeaning::Missing | ResolvedMeaning::Slot { .. } => Ok(None),
+            answer => Err(format!("initializer instance storage differs or is unavailable: {query:?}: {answer:?}")),
+        }
+    }
     fn evaluate_write(
         &self,
         write: &dm_ir::InitializerWrite,
@@ -1036,6 +1051,47 @@ impl crate::lowering::AbiPolicy for FrozenPreparedPolicy<'_> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn initializer_instance_storage_requires_exact_receiver_and_declaring_tuple() {
+        struct Storage {
+            answer: ResolvedMeaning,
+            reads: std::sync::Mutex<Vec<ResolveQuery>>,
+        }
+        impl Resolver for Storage {
+            fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
+                self.reads.lock().unwrap().push(query);
+                self.answer.clone()
+            }
+        }
+        let owner = SymbolId::of("/atom");
+        let receiver = SymbolId::of("/obj/subtype");
+        let name = SymbolId::of("density");
+        let write = dm_ir::InitializerWrite {
+            target: dm_ir::InitializerTarget::Instance { declaring_owner:owner, receiver_owner:receiver, name },
+            lexical_owner:receiver, lexical_procedure:None,
+            value:dm_ir::InitializerValue::NoAuthoredValue,
+            declared_array:None, declaration_flags:None,
+        };
+        let query = ResolveQuery::VarStorage {owner:receiver,name};
+        let symbols = dm_ir::SymbolTable::default();
+        for (answer, expected) in [
+            (ResolvedMeaning::InstanceField {declaring_owner:owner,name}, Some(Some((owner,name)))),
+            (ResolvedMeaning::InstanceField {declaring_owner:receiver,name}, None),
+            (ResolvedMeaning::InstanceField {declaring_owner:owner,name:SymbolId::of("other")}, None),
+            (ResolvedMeaning::Missing, Some(None)),
+            (ResolvedMeaning::Slot {symbol:name,owner,name}, Some(None)),
+            (ResolvedMeaning::Unsupported(query), None),
+        ] {
+            let host = Storage {answer,reads:std::sync::Mutex::new(Vec::new())};
+            let evaluator = DriverEvaluator {resolver:&host,symbols:&symbols,resource_search_context:None};
+            let result = evaluator.instance_storage(&write);
+            match expected { Some(value) => assert_eq!(result.as_ref().unwrap(), &value), None => assert!(result.is_err()) }
+            assert_eq!(*host.reads.lock().unwrap(), [query]);
+            assert_eq!(write.declaration_flags,None);
+            let startup = crate::startup::StartupEvaluator { ordinary:&evaluator, resolver:&host, symbols:&symbols, resource_search_context:None };
+            assert_eq!(startup.instance_storage(&write),result);
+        }
+    }
     use super::*;
     use std::path::Path;
     struct Source;

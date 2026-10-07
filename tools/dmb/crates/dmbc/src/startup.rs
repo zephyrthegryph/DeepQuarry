@@ -143,6 +143,19 @@ pub struct StartupEvaluator<'a> {
     pub symbols: &'a dm_ir::SymbolTable,
 }
 impl crate::initializer_policy::CapturedInitializerEvaluator for StartupEvaluator<'_> {
+    fn instance_storage(
+        &self,
+        write: &dm_ir::InitializerWrite,
+    ) -> Result<Option<(dm_ir::SymbolId, dm_ir::SymbolId)>, String> {
+        crate::initializer_policy::CapturedInitializerEvaluator::instance_storage(
+            &crate::driver_facts::DriverEvaluator {
+                resource_search_context: self.resource_search_context,
+                resolver: self.resolver,
+                symbols: self.symbols,
+            },
+            write,
+        )
+    }
     fn evaluate(
         &self,
         owner: dm_ir::SymbolId,

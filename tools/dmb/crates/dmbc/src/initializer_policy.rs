@@ -10,6 +10,13 @@ pub enum Evaluation {
     Scalar(SemanticValue),
     Runtime,
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BindingKnowledge {
+    Modifiers(u32),
+    /// Positive native mutable binding + exact resolved instance storage.
+    /// This says nothing about persistence/tmp or unknown wire modifiers.
+    MutableInstance { owner: SymbolId, name: SymbolId, receipt: u128 },
+}
 pub trait CapturedInitializerEvaluator {
     fn evaluate(&self, owner: SymbolId, value: &SymbolicExpression) -> Result<Evaluation, String>;
     fn evaluate_write(
@@ -27,6 +34,12 @@ pub trait CapturedInitializerEvaluator {
     fn declaration_modifiers(&self, write: &InitializerWrite) -> Result<Option<u32>, String> {
         Ok(write.declaration_flags)
     }
+    fn instance_storage(&self, _write: &InitializerWrite) -> Result<Option<(SymbolId, SymbolId)>, String> {
+        Ok(None)
+    }
+    fn binding_knowledge(&self, write: &InitializerWrite) -> Result<Option<BindingKnowledge>, String> {
+        Ok(self.declaration_modifiers(write)?.map(BindingKnowledge::Modifiers))
+    }
 }
 /// Borrow the same captured engine used by the frontend and cold writer. Only
 /// exact positive declaration records supplement unknown inherited modifiers.
@@ -35,6 +48,23 @@ pub struct EngineCapturedEvaluator<'a> {
     pub evaluator: &'a dyn CapturedInitializerEvaluator,
 }
 impl CapturedInitializerEvaluator for EngineCapturedEvaluator<'_> {
+    fn binding_knowledge(&self, write: &InitializerWrite) -> Result<Option<BindingKnowledge>, String> {
+        if let Some(flags) = self.declaration_modifiers(write)? {
+            return Ok(Some(BindingKnowledge::Modifiers(flags)));
+        }
+        let InitializerTarget::Instance { declaring_owner, name, .. } = write.target else {
+            return Ok(None);
+        };
+        if self.engine.template_identity() != crate::intrinsic_initializer_facts::template_identity()
+            || !crate::intrinsic_initializer_facts::certified(declaring_owner, name)
+            || self.evaluator.instance_storage(write)? != Some((declaring_owner, name))
+        {
+            return Ok(None);
+        }
+        Ok(Some(BindingKnowledge::MutableInstance {
+            owner: declaring_owner, name, receipt: crate::intrinsic_initializer_facts::identity(),
+        }))
+    }
     fn evaluate_write(
         &self,
         write: &InitializerWrite,
@@ -281,6 +311,7 @@ impl HeaderDomain {
 enum ModifierFact {
     Header(HeaderDomain),
     Known(u32),
+    MutableInstance,
 }
 fn header_domain(
     write: &InitializerWrite,
@@ -324,7 +355,7 @@ fn modifier_facts(
             if let Some(domain) = header_domain(write, symbols)? {
                 return Ok(ModifierFact::Header(domain));
             }
-            let flags = evaluator.declaration_modifiers(write)?.ok_or_else(|| {
+            let knowledge = evaluator.binding_knowledge(write)?.ok_or_else(|| {
                 let (owner, name) = match write.target {
                     InitializerTarget::Instance {
                         declaring_owner,
@@ -342,6 +373,18 @@ fn modifier_facts(
                     symbols.text(name).unwrap_or("<unknown variable>")
                 )
             })?;
+            let flags = match knowledge {
+                BindingKnowledge::Modifiers(flags) => flags,
+                BindingKnowledge::MutableInstance { owner, name, receipt } => {
+                    if write.declaration_flags.is_some() || receipt == 0
+                        || !matches!(write.target, InitializerTarget::Instance { declaring_owner, name: target_name, .. }
+                            if owner == declaring_owner && name == target_name)
+                    {
+                        return Err("mutable instance knowledge disagrees with target".into());
+                    }
+                    return Ok(ModifierFact::MutableInstance);
+                }
+            };
             if write
                 .declaration_flags
                 .is_some_and(|source| source != flags)
@@ -448,8 +491,10 @@ fn classify_from_facts(
             });
             continue;
         }
-        let ModifierFact::Known(flags) = facts[ordinal] else {
-            return Err("header classification fact was not consumed".into());
+        let constant_binding = match facts[ordinal] {
+            ModifierFact::Known(flags) => flags & 2 != 0,
+            ModifierFact::MutableInstance => false,
+            ModifierFact::Header(_) => return Err("header classification fact was not consumed".into()),
         };
         let write = original.clone();
         if let Some(array) = &original.declared_array {
@@ -475,7 +520,7 @@ fn classify_from_facts(
                 if dimensions.is_empty() {
                     return Err("array has no dimensions".into());
                 }
-                if flags & 2 != 0 {
+                if constant_binding {
                     return Err("const array allocation is unsupported".into());
                 }
                 let default = if matches!(write.target,InitializerTarget::Shared{owner,..} if owner == SymbolId::of("/"))
@@ -509,7 +554,7 @@ fn classify_from_facts(
                         (DefaultValue::Scalar(value), None)
                     }
                     evaluation => {
-                        if flags & 2 != 0 {
+                        if constant_binding {
                             return Err("const initializer is not scalar".into());
                         }
                         let text = value
@@ -603,6 +648,36 @@ fn classify_from_facts(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn mutable_instance_knowledge_retains_opaque_modifiers() {
+        struct Mutable;
+        impl CapturedInitializerEvaluator for Mutable {
+            fn evaluate(&self, _: SymbolId, _: &SymbolicExpression) -> Result<Evaluation, String> {
+                Ok(Evaluation::Runtime)
+            }
+            fn binding_knowledge(&self, write: &InitializerWrite) -> Result<Option<BindingKnowledge>, String> {
+                let InitializerTarget::Instance { declaring_owner, name, .. } = write.target else { return Ok(None) };
+                Ok(Some(BindingKnowledge::MutableInstance { owner: declaring_owner, name, receipt: 1 }))
+            }
+        }
+        let mut symbols = SymbolTable::default();
+        let atom = symbols.intern("/atom").unwrap();
+        let child = symbols.intern("/obj/example").unwrap();
+        let name = symbols.intern("name").unwrap();
+        let write = InitializerWrite {
+            target: InitializerTarget::Instance { declaring_owner: atom, receiver_owner: child, name },
+            lexical_owner: child, lexical_procedure: None,
+            value: InitializerValue::Expression(expression("run()", &mut symbols).unwrap()),
+            declared_array: None, declaration_flags: None,
+        };
+        let classified = classify(&[write.clone()], &symbols, &Mutable).unwrap();
+        assert_eq!(classified.writes[0].write, write);
+        assert_eq!(classified.writes[0].write.declaration_flags, None);
+        assert_eq!(classified.groups[0].receiver, Some(child));
+        let mut known_const = write;
+        known_const.declaration_flags = Some(2);
+        assert!(classify(&[known_const], &symbols, &Mutable).is_err());
+    }
     struct Evaluator;
     impl CapturedInitializerEvaluator for Evaluator {
         fn evaluate(&self, _: SymbolId, value: &SymbolicExpression) -> Result<Evaluation, String> {
