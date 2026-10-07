@@ -28,14 +28,18 @@ resource-payload equality, and grouped-return grammar. Native evidence required
 adding const bit 2 to the tree's shared-storage decision; writer flags were correct.
 The scalar evaluator now lives in the neutral IR layer with a tree compatibility
 facade. Modified defaults and executable operands share one nested descriptor
-closure, required-type admission, freezer and composer. Resource modifiers still
-fail explicitly until resolved payload identities enter this capture contract.
+closure, required-type admission, freezer and composer. Resource modifiers now
+retain captured payload identities; identity, recorded-query and emitted-resource
+proof gates pass. The real cold fixture also passes native tag40/payload0 list
+construction without inventing a class row.
 
-The Phase 0 audit also confirms a remaining observable default mismatch: native
-list/new initializer expressions use kind-62 identity tokens, whereas v2 currently
-uses null for lists. Equal-token and DEBUG behavior are pinned by existing controls;
-allocation code alone does not preserve initial(field). This is not established as
-the cause of the power-bridge runtime errors. Phase 0 and Phase 1 remain open.
+Native-proven allocation defaults now carry kind-62 identity tokens. Four focused
+gates pass native equality partitions across scopes and DEBUG, constant folding,
+and runtime global list null defaults. Execution phase remains independent of
+token identity. This is not established as the cause of power-bridge errors.
+Three publication fault-boundary gates pass authenticated-generation recovery.
+Cross-file conditional support passes all seven pinned native controls.
+Phase 0 and Phase 1 remain open; release probe 28 is pending.
 Release probe 26 cleared the builtin-world receiver and RGB scalar classification.
 It stopped in initializer code generation on a modified object literal at
 `code/datums/outfits/horror_killers.dm:45`, with no output pair. External time
