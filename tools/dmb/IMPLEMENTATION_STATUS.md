@@ -1,5 +1,9 @@
 # Native compiler integration status
 
+> Historical checkpoint for the preserved October 1 compiler. Its cache, daemon,
+> test counts and timings do not describe the `native-v2` replacement. See
+> [STATUS.md](STATUS.md) for current Phase 0/1 work and outstanding gates.
+
 Updated October 1, 2026. This describes the native Rust frontend, separately
 from the earlier OpenDream-output translator.
 

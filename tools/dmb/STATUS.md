@@ -6,6 +6,15 @@ The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
 
+Probe 16 cleared the native callback ABI boundary and reached the complete
+ordered procedure-admission diagnostics batch. It stopped after 64.171 s,
+sampled 1,988,460,544 private bytes and published no pair. Most diagnostics were
+960 unsupported return annotations, 425 downstream predecessor ABI failures,
+368 missing boolean constant queries, 12 parameter-modifier cases, four source
+radius settings and one parameter type. These are failed debug-attempt figures,
+not completed cold compiler benchmarks. Resource ordering took 3.230 s; full
+frontend capture took 34.852 s. The subsequent fixes remain under development.
+
 The entries below describe the new uncached path. Older measurements later in
 this document belong to the preserved original compiler unless explicitly labeled.
 
