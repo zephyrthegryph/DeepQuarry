@@ -91,7 +91,11 @@ def run(command, cwd, prefix, deadline, env):
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10, **kwargs)
             else:
                 os.killpg(process.pid, signal.SIGKILL)
-            process.wait()
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=10)
             return process.returncode, time.monotonic() - start, True
 
 
@@ -311,7 +315,7 @@ def main():
     parser.add_argument("--scenarios", type=Path, required=True, help="ordered scenario JSON; edits must be private copies")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--results", type=Path, default=Path(__file__).with_name("results.jsonl"))
-    parser.add_argument("--cache", type=Path, default=Path(os.environ.get("DMB_CACHE_DIR", "E:/.dmbd/cache")))
+    parser.add_argument("--cache", type=Path, default=Path(os.environ.get("DMB_CACHE_DIR", "E:/dq-cache/dmb/bench")))
     parser.add_argument("--watchdog", type=int, default=285)
     parser.add_argument("--min-free-bytes", type=int, default=4 * 1024**3)
     parser.add_argument("--stage-map", type=Path)
@@ -337,7 +341,7 @@ def main():
     if shutil.disk_usage(args.cache).free < args.min_free_bytes:
         parser.error("cache drive free space below requested population floor")
     args.output.mkdir(parents=True, exist_ok=False)
-    env = dict(os.environ, DMB_CACHE_DIR=str(args.cache.resolve()), DMBD_VERIFY="1")
+    env = dict(os.environ, DMBD_VERIFY="1")
     history = [json.loads(line) for line in args.results.read_text().splitlines()] if args.results.exists() else []
     original = {}
     for scenario in scenarios:
@@ -353,6 +357,28 @@ def main():
         for workers in (8, 2):
             collected = {s["name"]: [] for s in scenarios}
             for repeat in range(3):
+                # A previous repetition's edited variant must not turn the next
+                # body-edit measurement into a hit for code already compiled.
+                # Cold's separate oracle populates the unedited project in this
+                # repetition's new cache before body-edit is measured.
+                run_cache = args.cache / args.output.name / (str(workers) + "-" + str(repeat + 1))
+                run_cache.mkdir(parents=True, exist_ok=False)
+                if shutil.disk_usage(run_cache).free < args.min_free_bytes:
+                    raise ValueError("cache drive free space below requested population floor")
+                env["DMB_CACHE_DIR"] = str(run_cache.resolve())
+                # Authenticated session records live beside the manifest rather
+                # than beneath DMB_CACHE_DIR. Preserve prior repetitions' records
+                # outside the active project so an old edited session cannot
+                # bypass the body-edit pipeline in a later repetition.
+                session_directories = sorted({source_path(root, scenario["project"]).parent
+                                              / ".dmbc" / "input-sessions"
+                                              for scenario in scenarios})
+                for index, directory in enumerate(session_directories):
+                    if directory.is_symlink() or not directory.resolve().is_relative_to(root):
+                        raise ValueError("benchmark session directory must remain inside private project")
+                    if directory.exists():
+                        archive = run_cache / ("prior-input-sessions-" + str(index))
+                        shutil.move(str(directory), str(archive))
                 for path, value in original.items():
                     path.write_bytes(value)
                 current = dict(expected)
@@ -402,7 +428,7 @@ def main():
                            "trace": str(trace), "profile_report": str(report_path),
                            "profile_report_sha256": sha(report_path) if report_path.exists() else None,
                            "profile_error": report.get("profile_error"),
-                           "command": measured_command, "cache": str(args.cache),
+                           "command": measured_command, "cache": str(run_cache),
                            "pair_sha256": pair_hashes, "competing_processes_start": competing_start, "competing_processes_end": competing_end,
                            "stages": report.get("stages", []), "critical_path_cpu_s": report.get("critical_path_cpu_s"),
                            "total_cpu_s": report.get("total_cpu_s"), "covered_thread_cpu_s": report.get("covered_thread_cpu_s"),

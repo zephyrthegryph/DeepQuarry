@@ -117,7 +117,7 @@ pub(super) fn encode_with_facts(
     errors: &[Diagnostic],
     offset: usize,
     facts: Option<Vec<u8>>,
-) -> Option<Vec<u8>> {
+) -> Result<Vec<u8>, String> {
     dm_wire::encode(
         VERSION,
         &BorrowedPayload {
@@ -140,7 +140,6 @@ pub(super) fn encode_with_facts(
                 .collect(),
         },
     )
-    .ok()
 }
 pub(super) fn decode_with_facts(
     bytes: &[u8],

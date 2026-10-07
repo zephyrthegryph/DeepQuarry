@@ -1,10 +1,8 @@
-//! Shared bounded raw-byte memo variant framing.
+//! Shared raw-byte memo variant framing.
 const ENVELOPE_MAGIC: &[u8; 8] = b"DMCVAR01";
 /// Raw byte framing avoids JSON's numeric expansion of nested byte vectors.
 pub fn encode_variants(variants: &[Vec<u8>]) -> Result<Vec<u8>, String> {
-    if variants.len() > 4 {
-        return Err("too many cache variants".into());
-    }
+    let count = u32::try_from(variants.len()).map_err(|_| "cache variant count overflow")?;
     let size = variants
         .iter()
         .try_fold(12usize, |size, value| {
@@ -13,7 +11,7 @@ pub fn encode_variants(variants: &[Vec<u8>]) -> Result<Vec<u8>, String> {
         .ok_or("cache envelope overflow")?;
     let mut bytes = Vec::with_capacity(size);
     bytes.extend_from_slice(ENVELOPE_MAGIC);
-    bytes.extend_from_slice(&(variants.len() as u32).to_le_bytes());
+    bytes.extend_from_slice(&count.to_le_bytes());
     for variant in variants {
         bytes.extend_from_slice(&(variant.len() as u64).to_le_bytes());
         bytes.extend_from_slice(variant);
@@ -31,8 +29,10 @@ pub fn decode_variants(bytes: &[u8]) -> Result<Vec<&[u8]>, String> {
             .try_into()
             .unwrap(),
     );
-    if count > 4 {
-        return Err("too many cache variants".into());
+    // Each variant needs at least its length prefix. Validate against the actual
+    // frame before allocating; population has no arbitrary variant ceiling.
+    if count as usize > bytes.len().saturating_sub(12) / 8 {
+        return Err("cache variant count exceeds frame".into());
     }
     let mut offset = 12usize;
     let mut variants = Vec::with_capacity(count as usize);
@@ -79,6 +79,11 @@ mod tests {
         let mut trailing = bytes.clone();
         trailing.push(0);
         assert!(decode_variants(&trailing).is_err());
-        assert!(encode_variants(&vec![Vec::new(); 5]).is_err());
+        let many = vec![Vec::new(); 5];
+        let encoded = encode_variants(&many).unwrap();
+        assert_eq!(decode_variants(&encoded).unwrap().len(), 5);
+        let mut invalid_count = encoded;
+        invalid_count[8..12].copy_from_slice(&u32::MAX.to_le_bytes());
+        assert!(decode_variants(&invalid_count).is_err());
     }
 }

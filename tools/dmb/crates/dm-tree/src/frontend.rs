@@ -1017,7 +1017,7 @@ fn parse_declarations(
                             let facts_start = Instant::now();
                             let profile_facts =
                                 dm_profile::stage("frontend.fresh_declaration_facts");
-                            let facts = if let Some(facts) = admitted_facts {
+                            let mut facts = if let Some(facts) = admitted_facts {
                                 Ok(facts)
                             } else if errors.is_empty() {
                                 crate::from_ast(&ast, SymbolTable::default(), FileId(0), 0, 0)
@@ -1048,17 +1048,40 @@ fn parse_declarations(
                                 facts_start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
                                 std::sync::atomic::Ordering::Relaxed,
                             );
-                            let produced_payload = if memo.is_some()
-                                && (!cached_fragment_hit || !has_cached_facts)
-                            {
-                                let facts_bytes =
-                                    facts.as_ref().ok().and_then(|(facts, ledger)| {
-                                        chunkfacts::encode(facts, ledger, offset)
-                                    });
-                                parserwire::encode_with_facts(&parsed, &errors, offset, facts_bytes)
-                            } else {
-                                None
-                            };
+                            let produced_payload =
+                                if memo.is_some() && (!cached_fragment_hit || !has_cached_facts) {
+                                    let payload = facts
+                                        .as_ref()
+                                        .map_or(Ok(None), |(facts, ledger)| {
+                                            chunkfacts::encode(facts, ledger, offset).map(Some)
+                                        })
+                                        .and_then(|facts_bytes| {
+                                            parserwire::encode_with_facts(
+                                                &parsed,
+                                                &errors,
+                                                offset,
+                                                facts_bytes,
+                                            )
+                                        });
+                                    match payload {
+                                        Ok(bytes) => Some(bytes),
+                                        Err(message) => {
+                                            facts = Err(vec![crate::AdapterError {
+                                                span: dm_ir::Span {
+                                                    file: FileId(0),
+                                                    start: offset as u32,
+                                                    end: offset as u32,
+                                                },
+                                                message: format!(
+                                                    "cache population encoding failed: {message}"
+                                                ),
+                                            }]);
+                                            None
+                                        }
+                                    }
+                                } else {
+                                    None
+                                };
                             if !cached_fragment_hit {
                                 if let Some(memo) = memo {
                                     if let Some(bytes) = &produced_payload {

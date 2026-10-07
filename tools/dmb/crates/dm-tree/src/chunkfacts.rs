@@ -377,116 +377,115 @@ pub(super) fn encode(
     facts: &AdaptedDeclarations,
     ledger: &AllocationLedger,
     offset: usize,
-) -> Option<Vec<u8>> {
-    let declarations = facts
-        .skeletons
-        .iter()
-        .map(|row| {
-            Some(match row {
-                Skeleton::Type {
-                    path,
-                    explicit_parent,
-                } => Declaration::Type(*path, *explicit_parent),
-                Skeleton::Member {
-                    owner,
-                    name,
-                    kind,
-                    mode,
-                    metadata: meaning,
-                    content,
-                } => Declaration::Member(
-                    *owner,
-                    *name,
-                    match kind {
-                        MemberKind::Var => 0,
-                        MemberKind::Proc => 1,
-                        MemberKind::Verb => 2,
-                    },
-                    match mode {
-                        DefinitionMode::Declare => 0,
-                        DefinitionMode::Override => 1,
-                        DefinitionMode::Reopen => 2,
-                        DefinitionMode::Implicit => 3,
-                    },
-                    metadata(meaning)?,
-                    *content,
-                ),
-            })
-        })
-        .collect::<Option<Vec<_>>>()?;
-    let origins = facts
-        .origins
-        .iter()
-        .map(|origin| {
-            if origin.span.file != FileId(0)
-                || origin.include_occurrence != 0
-                || origin.region != 0
-                || !origin.expansion_stack.is_empty()
-            {
-                return None;
-            }
-            relative(
-                SyntaxSpan::new(origin.span.start as usize, origin.span.end as usize),
-                offset,
-            )
-        })
-        .collect::<Option<Vec<_>>>()?;
-    let rows = ledger
-        .events
-        .iter()
-        .map(|event| {
-            Some(LedgerRow {
-                span: relative(event.span, offset)?,
-                header: relative(event.header_span, offset)?,
-                kind: match event.kind {
-                    AllocationKind::Type {
+) -> Result<Vec<u8>, String> {
+    let payload = (|| {
+        let declarations = facts
+            .skeletons
+            .iter()
+            .map(|row| {
+                Some(match row {
+                    Skeleton::Type {
                         path,
-                        lexical_owner,
-                        absolute,
-                    } => Event::Type(path, lexical_owner, absolute),
-                    AllocationKind::Namespace {
+                        explicit_parent,
+                    } => Declaration::Type(*path, *explicit_parent),
+                    Skeleton::Member {
                         owner,
-                        kind,
-                        absolute,
-                    } => Event::Namespace(
-                        owner,
-                        match kind {
-                            NamespaceKind::Var => 0,
-                            NamespaceKind::Proc => 1,
-                            NamespaceKind::Verb => 2,
-                        },
-                        absolute,
-                    ),
-                    AllocationKind::Field {
-                        owner,
-                        formal,
-                        var_namespace,
-                        initializer,
-                    } => Event::Field(
-                        owner,
-                        formal,
-                        var_namespace,
-                        initializer
-                            .map(|span| relative(span, offset))
-                            .transpose_option()?,
-                    ),
-                    AllocationKind::Procedure {
-                        owner,
-                        formal,
-                        verb,
                         name,
-                        body,
-                    } => Event::Procedure(owner, formal, verb, name, relative(body, offset)?),
-                    AllocationKind::Parent { owner, value } => {
-                        Event::Parent(owner, relative(value, offset)?)
-                    }
-                },
+                        kind,
+                        mode,
+                        metadata: meaning,
+                        content,
+                    } => Declaration::Member(
+                        *owner,
+                        *name,
+                        match kind {
+                            MemberKind::Var => 0,
+                            MemberKind::Proc => 1,
+                            MemberKind::Verb => 2,
+                        },
+                        match mode {
+                            DefinitionMode::Declare => 0,
+                            DefinitionMode::Override => 1,
+                            DefinitionMode::Reopen => 2,
+                            DefinitionMode::Implicit => 3,
+                        },
+                        metadata(meaning)?,
+                        *content,
+                    ),
+                })
             })
-        })
-        .collect::<Option<Vec<_>>>()?;
-    dm_wire::encode(
-        SCHEMA,
-        &Payload {
+            .collect::<Option<Vec<_>>>()?;
+        let origins = facts
+            .origins
+            .iter()
+            .map(|origin| {
+                if origin.span.file != FileId(0)
+                    || origin.include_occurrence != 0
+                    || origin.region != 0
+                    || !origin.expansion_stack.is_empty()
+                {
+                    return None;
+                }
+                relative(
+                    SyntaxSpan::new(origin.span.start as usize, origin.span.end as usize),
+                    offset,
+                )
+            })
+            .collect::<Option<Vec<_>>>()?;
+        let rows = ledger
+            .events
+            .iter()
+            .map(|event| {
+                Some(LedgerRow {
+                    span: relative(event.span, offset)?,
+                    header: relative(event.header_span, offset)?,
+                    kind: match event.kind {
+                        AllocationKind::Type {
+                            path,
+                            lexical_owner,
+                            absolute,
+                        } => Event::Type(path, lexical_owner, absolute),
+                        AllocationKind::Namespace {
+                            owner,
+                            kind,
+                            absolute,
+                        } => Event::Namespace(
+                            owner,
+                            match kind {
+                                NamespaceKind::Var => 0,
+                                NamespaceKind::Proc => 1,
+                                NamespaceKind::Verb => 2,
+                            },
+                            absolute,
+                        ),
+                        AllocationKind::Field {
+                            owner,
+                            formal,
+                            var_namespace,
+                            initializer,
+                        } => Event::Field(
+                            owner,
+                            formal,
+                            var_namespace,
+                            initializer
+                                .map(|span| relative(span, offset))
+                                .transpose_option()?,
+                        ),
+                        AllocationKind::Procedure {
+                            owner,
+                            formal,
+                            verb,
+                            name,
+                            body,
+                        } => Event::Procedure(owner, formal, verb, name, relative(body, offset)?),
+                        AllocationKind::Parent { owner, value } => {
+                            Event::Parent(owner, relative(value, offset)?)
+                        }
+                    },
+                })
+            })
+            .collect::<Option<Vec<_>>>()?;
+        Some(Payload {
             symbols: facts
                 .symbols
                 .ordered()
@@ -496,20 +495,18 @@ pub(super) fn encode(
             declarations,
             origins,
             ledger: rows,
-        },
-    )
-    .ok()
+        })
+    })()
+    .ok_or_else(|| "declaration facts cannot be represented in cache wire format".to_owned())?;
+    dm_wire::encode(SCHEMA, &payload)
 }
 pub(super) fn decode(
     bytes: &[u8],
     source: &str,
     offset: usize,
 ) -> Option<(AdaptedDeclarations, AllocationLedger)> {
-    let payload: Payload = dm_wire::decode(SCHEMA, bytes, 4 * 1024 * 1024).ok()?;
-    if payload.declarations.len() != payload.origins.len()
-        || payload.declarations.len() > 1_000_000
-        || payload.ledger.len() > 1_000_000
-    {
+    let payload: Payload = dm_wire::decode(SCHEMA, bytes, bytes.len()).ok()?;
+    if payload.declarations.len() != payload.origins.len() {
         return None;
     }
     let mut symbols = SymbolTable::default();
