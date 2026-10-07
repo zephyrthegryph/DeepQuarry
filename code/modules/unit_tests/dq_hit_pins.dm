@@ -67,11 +67,16 @@
 /// The things standing on a tile besides `target`: type -> count.
 /proc/dq_hit_turf_rows(turf/T, atom/target)
 	var/list/counts = list()
+	var/static/list/props = list(/obj/item/projectile, /obj/item/card/emag, /obj/item/tool/crowbar, /obj/structure/blob)
 	for(var/atom/movable/AM as anything in contents_of(T))
 		if(AM == target || istype(AM, /obj/effect/landmark) || ismob(AM))
 			continue
 		// the harness's own props (the projectile, the card, the thrown crowbar, the blob that hits)
-		if(istype(AM, /obj/item/projectile) || istype(AM, /obj/item/card/emag) || istype(AM, /obj/item/tool/crowbar) || istype(AM, /obj/structure/blob))
+		var/own_prop = FALSE
+		for(var/prop_type in props)
+			if(istype(AM, prop_type))
+				own_prop = TRUE
+		if(own_prop)
 			continue
 		counts["[AM.type]"] = (counts["[AM.type]"] || 0) + 1
 	return counts

@@ -124,7 +124,6 @@ CAPABILITIES(/mob/living/silicon/ai)
 	param(nameof(laws), /datum/ai_laws, pos = 2)
 	param(nameof(brain_at_make), pos = 3, keep = FALSE)
 	param(nameof(spawn_safety), pos = 4)
-	op("ai_silicon_camera_list", remote(), label("Camera list"), then(PROC_REF(ai_silicon_camera_list)))
 
 /mob/living/silicon/ai/proc/add_ai_verbs()
 	for(var/granted_path in GLOB.ai_verbs_default)
