@@ -11,6 +11,8 @@ pub enum Table {
     Type,
     Procedure,
     Variable,
+    /// Actual DMB variable records; separate from the shared footer slot domain.
+    VariableRecord,
     Instance,
     List,
     Resource,
@@ -72,7 +74,8 @@ impl Key {
             | Self::Verb { .. }
             | Self::ArgumentSource { .. }
             | Self::Initializer(_) => Table::Procedure,
-            Self::Variable { .. } | Self::BuiltinGlobalVars => Table::Variable,
+            Self::Variable { .. } => Table::Variable,
+            Self::BuiltinGlobalVars => Table::VariableRecord,
             Self::Instance(_) | Self::MapInstance { .. } | Self::DefaultMapInstance { .. } => {
                 Table::Instance
             }
@@ -103,6 +106,11 @@ pub struct LinkInventory {
     /// Full observable order for a table, when supplied. Unordered tables use
     /// canonical structural key order; the linker never guesses BYOND order.
     pub orders: BTreeMap<Table, Vec<Key>>,
+    /// Entire retained physical table lengths, including unnamed/duplicate rows.
+    /// Their indexes are unavailable for new allocations without fake symbols.
+    pub reserved_prefixes: BTreeMap<Table, u32>,
+    /// Complete order of fresh keys only, following the retained physical prefix.
+    pub append_orders: BTreeMap<Table, Vec<Key>>,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LinkError {
@@ -118,6 +126,8 @@ pub enum LinkError {
     WrongTable(Key),
     IncompleteOrder(Table),
     OrderConflictsFixed(Key),
+    ConflictingOrderModes(Table),
+    ReservedIndex(Table, u32),
     IndexOverflow(Table),
     UnknownReference(SymRef),
     MissingSourceFile(u32),
@@ -205,6 +215,7 @@ impl LinkTables {
             Table::Type,
             Table::Procedure,
             Table::Variable,
+            Table::VariableRecord,
             Table::Instance,
             Table::List,
             Table::Resource,
@@ -215,6 +226,15 @@ impl LinkTables {
                 .filter(|key| key.table() == table)
                 .collect();
             let ordered = inventory.orders.get(&table);
+            let append_order = inventory.append_orders.get(&table);
+            let prefix = inventory
+                .reserved_prefixes
+                .get(&table)
+                .copied()
+                .unwrap_or(0);
+            if ordered.is_some() && append_order.is_some() {
+                return Err(LinkError::ConflictingOrderModes(table));
+            }
             if let Some(order) = ordered {
                 let mut seen = BTreeSet::new();
                 for key in order {
@@ -241,6 +261,9 @@ impl LinkTables {
                     {
                         return Err(LinkError::FixedIndexCollision(table, index));
                     }
+                    if !indexes.contains_key(key) && index < prefix {
+                        return Err(LinkError::ReservedIndex(table, index));
+                    }
                     indexes.insert(*key, index);
                     occupied.entry(table).or_default().insert(index);
                 }
@@ -249,11 +272,36 @@ impl LinkTables {
                     .get(&table)
                     .and_then(|set| set.last())
                     .map(|i| u64::from(*i) + 1)
-                    .unwrap_or(0);
-                for key in keys {
-                    if indexes.contains_key(&key) {
-                        continue;
+                    .unwrap_or(0)
+                    .max(u64::from(prefix));
+                let fresh: Vec<_> = keys
+                    .into_iter()
+                    .filter(|key| !indexes.contains_key(key))
+                    .collect();
+                let allocation = if let Some(order) = append_order {
+                    let mut seen = BTreeSet::new();
+                    for key in order {
+                        if key.table() != table {
+                            return Err(LinkError::WrongTable(*key));
+                        }
+                        if !content.contains_key(key) {
+                            return Err(LinkError::UnknownKey(*key));
+                        }
+                        if indexes.contains_key(key) {
+                            return Err(LinkError::OrderConflictsFixed(*key));
+                        }
+                        if !seen.insert(*key) {
+                            return Err(LinkError::DuplicateOrder(*key));
+                        }
                     }
+                    if seen.len() != fresh.len() {
+                        return Err(LinkError::IncompleteOrder(table));
+                    }
+                    order.as_slice()
+                } else {
+                    fresh.as_slice()
+                };
+                for &key in allocation {
                     let index = u32::try_from(next).map_err(|_| LinkError::IndexOverflow(table))?;
                     indexes.insert(key, index);
                     next += 1;
@@ -543,11 +591,44 @@ mod tests {
             })
         );
         assert_ne!(
-            a.index(Key::BuiltinGlobalVars),
-            a.index(Key::Variable {
+            Key::BuiltinGlobalVars.table(),
+            Key::Variable {
                 owner,
                 name: SymbolId::of("vars")
-            })
+            }.table()
+        );
+    }
+
+    #[test]
+    fn retained_prefixes_reserve_unnamed_rows_and_append_order_is_complete() {
+        let mut inventory = sample_inventory();
+        let fresh = Key::String(SymbolId::of("text"));
+        inventory.reserved_prefixes.insert(Table::String, 7);
+        inventory.append_orders.insert(Table::String, vec![fresh]);
+        let linked = LinkTables::build(inventory.clone()).unwrap();
+        assert_eq!(linked.index(fresh), Some(7));
+        inventory.append_orders.insert(Table::String, vec![]);
+        assert_eq!(
+            LinkTables::build(inventory).unwrap_err(),
+            LinkError::IncompleteOrder(Table::String)
+        );
+    }
+
+    #[test]
+    fn variable_records_do_not_shift_shared_footer_slots() {
+        let mut inventory = sample_inventory();
+        inventory.fixed.push((Key::BuiltinGlobalVars, 120));
+        inventory
+            .reserved_prefixes
+            .insert(Table::VariableRecord, 121);
+        let linked = LinkTables::build(inventory).unwrap();
+        assert_eq!(linked.index(Key::BuiltinGlobalVars), Some(120));
+        assert_eq!(
+            linked.index(Key::Variable {
+                owner: SymbolId::of("/datum/a"),
+                name: SymbolId::of("vars")
+            }),
+            Some(0)
         );
     }
     #[test]

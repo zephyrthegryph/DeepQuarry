@@ -541,6 +541,50 @@ mod tests {
     use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};
     const TEMPLATE: &[u8] = include_bytes!("../../../fixtures/native_template.bin");
     #[test]
+    fn forward_authored_movable_field_reaches_engine_mob_descendant() {
+        struct Source;
+        impl dm_preprocess::SourceProvider for Source {
+            fn read(&self, _: &std::path::Path) -> Result<String, String> {
+                Ok("/mob/dview\n    anchored = 1\n/atom/movable\n    var/anchored = 0\n".into())
+            }
+        }
+        let engine = EngineSnapshot::from_bytes(TEMPLATE, 1).unwrap();
+        let seed = engine.frontend_seed();
+        let frontend = dm_tree::frontend::build_with_config(
+            std::path::Path::new("project.dme"),
+            &Source,
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(&seed),
+                observer: None,
+            },
+        )
+        .unwrap();
+        let tree = &frontend.snapshot.tree;
+        let owner = tree.lookup_type(SymbolId::of("/mob/dview")).unwrap();
+        let field = tree
+            .resolve(owner, SymbolId::of("anchored"), MemberKind::Var)
+            .unwrap();
+        let parent = tree.member(field).unwrap().previous.unwrap();
+        assert_eq!(
+            tree.type_node(tree.member(parent).unwrap().owner)
+                .unwrap()
+                .path,
+            SymbolId::of("/atom/movable")
+        );
+        assert_eq!(
+            tree.member(parent).unwrap().definition,
+            dm_tree::DefinitionMode::Declare
+        );
+        assert!(tree
+            .member(field)
+            .unwrap()
+            .metadata
+            .inherited_opaque
+            .is_none());
+    }
+    #[test]
     fn pinned_template_preserves_engine_hierarchy_and_exact_identity() {
         let engine = EngineSnapshot::from_bytes(TEMPLATE, 1).unwrap();
         let tree = engine.build_tree(SymbolTable::default(), &[]).unwrap();

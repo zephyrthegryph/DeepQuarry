@@ -32,7 +32,7 @@ pub fn admit(
         batch
             .initializers
             .iter()
-            .map(|unit| (unit.identity, unit.write_ordinals.as_slice())),
+            .map(|unit| (unit.identity, unit.declaration_writes())),
     )
 }
 pub fn admit_lowered(
@@ -163,8 +163,7 @@ mod tests {
         let order: Vec<_> = (0..frontend.snapshot.occurrences.source_order().len())
             .map(|index| dm_tree::OccurrenceId(u32::try_from(index).unwrap()))
             .collect();
-        let plan = dm_tree::initializers::plan(&frontend.snapshot, &order)
-        .unwrap();
+        let plan = dm_tree::initializers::plan(&frontend.snapshot, &order).unwrap();
         let batch = FrozenBatch {
             units: vec![],
             helpers: vec![],

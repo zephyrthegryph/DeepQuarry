@@ -569,6 +569,36 @@ pub fn build_with_intrinsic_fields(
                 && previous.is_none()
                 && node.metadata.inherited_opaque.is_none()
             {
+                let mut ancestry = Vec::new();
+                let mut cursor = Some(node.owner);
+                while let Some(owner) = cursor {
+                    if ancestry.len() == 16 {
+                        break;
+                    }
+                    ancestry.push(
+                        tree.symbols
+                            .text(tree.types[owner.index()].path)
+                            .unwrap_or("<unknown>"),
+                    );
+                    cursor = tree.parent(owner);
+                }
+                let candidates: Vec<_> = members
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, candidate)| {
+                        candidate.name == node.name && candidate.kind == node.kind
+                    })
+                    .take(8)
+                    .map(|(index, candidate)| {
+                        (
+                            tree.symbols
+                                .text(tree.types[candidate.owner.index()].path)
+                                .unwrap_or("<unknown>"),
+                            modes[index],
+                        )
+                    })
+                    .collect();
+                eprintln!("dm-tree missing override: name={} ancestry={ancestry:?} source_candidates={candidates:?}", tree.symbols.text(node.name).unwrap_or("<unknown>"));
                 return Err(TreeError::MissingOverride {
                     owner: tree.types[node.owner.index()].path,
                     name: node.name,

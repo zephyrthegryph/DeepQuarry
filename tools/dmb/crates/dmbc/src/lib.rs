@@ -9,6 +9,7 @@ pub mod debug_sources;
 pub mod publish;
 
 pub mod engine;
+pub mod engine_link;
 pub mod engine_host;
 pub mod lowering;
 pub mod procedure_policy;
@@ -24,6 +25,7 @@ pub mod world_projection;
 pub mod world_writer;
 pub mod initializer_policy;
 pub mod initializer_lowering;
+pub mod initialization_artifact;
 
 pub mod map_projection;
 
@@ -31,3 +33,10 @@ pub mod assets;
 pub mod map_initializers;
 
 pub mod map_output;
+
+pub mod map_identity;
+pub mod map_artifacts;
+
+pub mod non_text;
+
+pub mod non_text_output;

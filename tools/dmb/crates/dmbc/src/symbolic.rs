@@ -30,10 +30,20 @@ pub struct FrozenBatch {
 }
 pub struct FrozenInitializer {
     pub identity: dm_link::InitializerIdentity,
-    pub write_ordinals: Vec<usize>,
+    pub coverage: crate::initialization_artifact::InitializationCoverage,
     pub frozen: FrozenProc,
     pub debug_origins: crate::debug_sources::DebugOrigins,
     pub local_names: Vec<String>,
+}
+impl FrozenInitializer {
+    pub fn declaration_writes(&self) -> &[usize] {
+        match &self.coverage {
+            crate::initialization_artifact::InitializationCoverage::DeclarationWrites(writes) => {
+                writes
+            }
+            _ => &[],
+        }
+    }
 }
 #[derive(Debug)]
 pub enum IntegrationError {
@@ -82,8 +92,23 @@ pub fn freeze_program_tables(
     batch: LoweringBatch,
     symbols: &SymbolTable,
     external: &ReferenceBindings,
-    mut inventory: LinkInventory,
+    inventory: LinkInventory,
     initialization: Vec<crate::initializer_lowering::LoweredInitializerUnit>,
+) -> Result<FrozenBatch, IntegrationError> {
+    freeze_artifact_tables(
+        batch,
+        symbols,
+        external,
+        inventory,
+        initialization.into_iter().map(Into::into).collect(),
+    )
+}
+pub fn freeze_artifact_tables(
+    batch: LoweringBatch,
+    symbols: &SymbolTable,
+    external: &ReferenceBindings,
+    mut inventory: LinkInventory,
+    initialization: Vec<crate::initialization_artifact::InitializationArtifact>,
 ) -> Result<FrozenBatch, IntegrationError> {
     if !batch.diagnostics.is_empty() {
         return Err(IntegrationError::LoweringFailed(batch.diagnostics.len()));
@@ -93,7 +118,22 @@ pub fn freeze_program_tables(
         .map_err(IntegrationError::DuplicateUnit)?;
     let mut units = Vec::with_capacity(batch.units.len());
     let mut helpers = Vec::new();
-    let mut source_procs = BTreeMap::new();
+    let mut source_bindings = BTreeMap::new();
+    for entry in &inventory.entries {
+        if let Key::Type(id) = entry.key {
+            let path = symbols
+                .text(id)
+                .ok_or(IntegrationError::MissingSpelling(id))?;
+            if SymbolId::of(path) != id {
+                return Err(IntegrationError::MissingSpelling(id));
+            }
+            insert(
+                &mut source_bindings,
+                Symbol::new(Table::Class, path),
+                SymRef::Type(id),
+            )?;
+        }
+    }
     for unit in &batch.units {
         if !unit.effective {
             continue;
@@ -115,11 +155,8 @@ pub fn freeze_program_tables(
             name
         );
         let reference = unit_reference(unit.identity);
-        if source_procs
-            .insert(
-                Symbol::new(Table::Proc, path),
-                (unit.identity.occurrence, reference),
-            )
+        if source_bindings
+            .insert(Symbol::new(Table::Proc, path), reference)
             .is_some()
         {
             return Err(IntegrationError::DuplicateUnit(unit.identity));
@@ -129,7 +166,7 @@ pub fn freeze_program_tables(
         let frozen = freeze_artifact(
             &lowered.code,
             lowered.identity,
-            &source_procs,
+            &source_bindings,
             external,
             &mut inventory,
         )?;
@@ -162,7 +199,7 @@ pub fn freeze_program_tables(
             let frozen_helper = freeze_artifact(
                 &helper.code,
                 helper.owner,
-                &source_procs,
+                &source_bindings,
                 external,
                 &mut inventory,
             )?;
@@ -193,25 +230,13 @@ pub fn freeze_program_tables(
     let mut initializers = Vec::with_capacity(initialization.len());
     let mut initialization_keys = std::collections::BTreeSet::new();
     for unit in initialization {
-        let identity = match unit.scope {
-            dm_ir::InitializerScope::Global => dm_link::InitializerIdentity::Global,
-            dm_ir::InitializerScope::Instance(owner) => dm_link::InitializerIdentity::Class(owner),
-        };
+        unit.validate()
+            .map_err(IntegrationError::InvalidInitializer)?;
+        let identity = unit.identity;
         let key = Key::Initializer(identity);
         if !initialization_keys.insert(key) {
             return Err(IntegrationError::InvalidInitializer(
                 "duplicate initialization scope".into(),
-            ));
-        }
-        let mut unique = std::collections::BTreeSet::new();
-        if unit.write_ordinals.is_empty()
-            || unit
-                .write_ordinals
-                .iter()
-                .any(|ordinal| !unique.insert(*ordinal))
-        {
-            return Err(IntegrationError::InvalidInitializer(
-                "empty or duplicate initialization write coverage".into(),
             ));
         }
         if let dm_link::InitializerIdentity::Class(owner) = identity {
@@ -227,17 +252,37 @@ pub fn freeze_program_tables(
         }
         // This context labels diagnostics only; no callable identity is issued.
         let context = UnitIdentity {
-            owner: match unit.scope {
-                dm_ir::InitializerScope::Global => SymbolId::of("/"),
-                dm_ir::InitializerScope::Instance(owner) => owner,
+            owner: match identity {
+                dm_link::InitializerIdentity::Class(owner) => owner,
+                _ => SymbolId::of("/"),
             },
             name: SymbolId::of("<initializer>"),
             namespace: Namespace::Proc,
             occurrence: 0,
         };
-        let frozen = freeze_artifact(&unit.code, context, &source_procs, external, &mut inventory)?;
+        let frozen = freeze_artifact(
+            &unit.code,
+            context,
+            &source_bindings,
+            external,
+            &mut inventory,
+        )?;
         append_debug_inventory(&unit.debug_origins, &mut inventory);
         let mut content = b"dm-initializer-code-v1\0".to_vec();
+        match &unit.coverage {
+            crate::initialization_artifact::InitializationCoverage::DeclarationWrites(_) => {
+                content.push(0)
+            }
+            crate::initialization_artifact::InitializationCoverage::MapAssignments {
+                count,
+                canonical_body,
+            } => {
+                content.push(1);
+                content.extend_from_slice(&count.to_le_bytes());
+                content.extend_from_slice(&(canonical_body.len() as u64).to_le_bytes());
+                content.extend_from_slice(canonical_body);
+            }
+        }
         let code = frozen.code().canonical_bytes();
         content.extend_from_slice(&(code.len() as u64).to_le_bytes());
         content.extend_from_slice(&code);
@@ -251,7 +296,7 @@ pub fn freeze_program_tables(
         });
         initializers.push(FrozenInitializer {
             identity,
-            write_ordinals: unit.write_ordinals,
+            coverage: unit.coverage,
             frozen,
             debug_origins: unit.debug_origins,
             local_names: unit.code.procedure.local_names.clone(),
@@ -391,7 +436,7 @@ pub fn helper_key(owner: UnitIdentity, argument: u32) -> Key {
 fn freeze_artifact(
     code: &dm_codegen_byond::lower_resolver::ResolverProc,
     identity: UnitIdentity,
-    source_procs: &BTreeMap<Symbol, (u32, SymRef)>,
+    source_bindings: &BTreeMap<Symbol, SymRef>,
     external: &ReferenceBindings,
     inventory: &mut LinkInventory,
 ) -> Result<FrozenProc, IntegrationError> {
@@ -455,7 +500,7 @@ fn freeze_artifact(
     )?;
     let frozen = freeze_proc(&code.procedure.code, |symbol| {
         let local = bindings.get(symbol).copied();
-        let source = source_procs.get(symbol).map(|(_, reference)| *reference);
+        let source = source_bindings.get(symbol).copied();
         let captured = external.references.get(symbol).copied();
         let selected = local
             .or(source)

@@ -4,7 +4,7 @@ use crate::class_projection::{ClassProjection, FieldRole};
 use dm_ir::{SymbolId, SymbolTable};
 use dm_link::{Entry, Key, LinkInventory, Table};
 use std::{
-    collections::{BTreeMap, BTreeSet, HashSet},
+    collections::{BTreeSet, HashSet},
     sync::Arc,
 };
 
@@ -89,28 +89,17 @@ pub fn contribute(
         ),
         (Table::Variable, variable_order),
     ] {
-        let pinned: BTreeMap<_, _> = inventory
-            .fixed
-            .iter()
-            .filter(|(key, _)| key.table() == table)
-            .map(|(key, index)| (*index, *key))
-            .collect();
-        let mut order = Vec::new();
-        for (index, key) in pinned {
-            if index as usize != order.len() {
-                return Err("retained observable table has unrepresented holes".into());
-            }
-            order.push(key);
+        if inventory.orders.contains_key(&table) {
+            return Err("fresh append order conflicts with complete table order".into());
         }
-        order.extend(fresh);
         if inventory
-            .orders
+            .append_orders
             .get(&table)
-            .is_some_and(|existing| *existing != order)
+            .is_some_and(|existing| *existing != fresh)
         {
             return Err("source order conflicts with supplied table order".into());
         }
-        inventory.orders.insert(table, order);
+        inventory.append_orders.insert(table, fresh);
     }
     Ok(())
 }

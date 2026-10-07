@@ -10,7 +10,7 @@ use dm_codegen_byond::procedure_abi::{ArgumentSource, Category};
 use dm_ir::{SymbolId, SymbolTable};
 use dm_link::Key;
 use std::{
-    collections::{BTreeMap, HashMap, HashSet},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     io,
 };
 
@@ -22,6 +22,13 @@ pub enum CompositionError {
     InvalidBinding(Key, u32),
     NonContiguous(String),
     Link(crate::symbolic::IntegrationError),
+}
+/// Captured non-text records join the same generation before final encoding.
+/// Implementations verify source closure and return every exact linker key they
+/// attached; the composer rejects dropped keys and unattached map initializers.
+pub trait NonTextOutputStage {
+    fn validate_source(&self, frontend: &dm_tree::frontend::ColdFrontend) -> Result<(), String>;
+    fn apply(&self, dmb: &mut Dmb, batch: &FrozenBatch) -> Result<BTreeSet<Key>, String>;
 }
 fn unsupported(message: impl Into<String>) -> CompositionError {
     CompositionError::Unsupported(message.into())
@@ -53,6 +60,11 @@ fn validate_binding(
     content: Option<&[u8]>,
 ) -> Result<(), CompositionError> {
     let valid = match key {
+        Key::BuiltinGlobalVars => dmb.variables.get(index as usize).is_some_and(|record| {
+            record.kind == 82
+                && record.value == 0
+                && dmb.string(record.name) == Some(b"vars".as_slice())
+        }),
         Key::String(_) => dmb.string(index) == content && content.is_some(),
         Key::Type(symbol) => {
             dmb.classes
@@ -223,7 +235,7 @@ pub fn compose_global_fixture(
     batch: &FrozenBatch,
     symbols: &SymbolTable,
 ) -> Result<Vec<u8>, CompositionError> {
-    compose_records(engine_bytes, batch, symbols, None)
+    compose_records(engine_bytes, batch, symbols, None, None)
 }
 /// Class emission uses the same procedure/argument/helper writer as the bounded
 /// global entry, with mandatory immutable class/default/chain projection.
@@ -233,6 +245,16 @@ pub fn compose_projected_program(
     frontend: &dm_tree::frontend::ColdFrontend,
     projection: &crate::class_projection::ClassProjection,
     values: &dyn crate::class_projection::TypeValuePolicy,
+) -> Result<Vec<u8>, CompositionError> {
+    compose_projected_with_stage(engine_bytes, batch, frontend, projection, values, None)
+}
+pub fn compose_projected_with_stage(
+    engine_bytes: &[u8],
+    batch: &FrozenBatch,
+    frontend: &dm_tree::frontend::ColdFrontend,
+    projection: &crate::class_projection::ClassProjection,
+    values: &dyn crate::class_projection::TypeValuePolicy,
+    stage: Option<&dyn NonTextOutputStage>,
 ) -> Result<Vec<u8>, CompositionError> {
     if projection.tree_identity != frontend.snapshot.tree.identity()
         || projection.occurrence_count != frontend.snapshot.occurrences.source_order().len()
@@ -247,7 +269,12 @@ pub fn compose_projected_program(
         .iter()
         .any(|item| matches!(item, dm_preprocess::regions::OrderedItem::NonText { .. }))
     {
-        return Err(unsupported("map/skin materialization is not supplied"));
+        if stage.is_none() {
+            return Err(unsupported("map/skin materialization is not supplied"));
+        }
+    }
+    if let Some(stage) = stage {
+        stage.validate_source(frontend).map_err(unsupported)?;
     }
     let covered: HashSet<_> = batch
         .units
@@ -268,6 +295,7 @@ pub fn compose_projected_program(
         batch,
         frontend.snapshot.tree.symbols(),
         Some((projection, values)),
+        stage,
     )
 }
 fn compose_records(
@@ -278,13 +306,14 @@ fn compose_records(
         &crate::class_projection::ClassProjection,
         &dyn crate::class_projection::TypeValuePolicy,
     )>,
+    stage: Option<&dyn NonTextOutputStage>,
 ) -> Result<Vec<u8>, CompositionError> {
     let mut dmb = Dmb::from_bytes(engine_bytes).map_err(CompositionError::Decode)?;
     if let Some((plan, _)) = projection {
         let required: BTreeMap<_, _> = plan.runtime_writes.iter().copied().collect();
         let mut actual = BTreeMap::new();
         for unit in &batch.initializers {
-            for &ordinal in &unit.write_ordinals {
+            for &ordinal in unit.declaration_writes() {
                 if actual.insert(ordinal, unit.identity).is_some() {
                     return Err(unsupported("duplicate executable initializer coverage"));
                 }
@@ -308,6 +337,8 @@ fn compose_records(
     let mut procs = BTreeMap::new();
     let mut helpers = BTreeMap::new();
     let mut initializers = BTreeMap::new();
+    let mut stage_keys = BTreeSet::new();
+    let mut builtin_global_vars = None;
     for (&key, &index) in batch.tables.assignments() {
         match key {
             Key::String(_) if (index as usize) >= engine_strings => {
@@ -316,6 +347,9 @@ fn compose_records(
                     .content(key)
                     .ok_or(CompositionError::InvalidBinding(key, index))?;
                 strings.insert(index, bytes.to_vec());
+            }
+            Key::BuiltinGlobalVars if (index as usize) >= dmb.variables.len() => {
+                builtin_global_vars = Some(index);
             }
             Key::Proc {
                 owner,
@@ -357,7 +391,18 @@ fn compose_records(
                 helpers.insert(index, key);
             }
             Key::Initializer(identity) if (index as usize) >= engine_procs => {
+                if matches!(identity, dm_link::InitializerIdentity::Map { .. }) {
+                    if stage.is_none() {
+                        return Err(unsupported("map initializer attachment stage absent"));
+                    }
+                    stage_keys.insert(key);
+                }
                 initializers.insert(index, identity);
+            }
+            Key::MapInstance { .. } | Key::DefaultMapInstance { .. } | Key::Resource(_)
+                if stage.is_some() =>
+            {
+                stage_keys.insert(key);
             }
             _ => validate_binding(&dmb, key, index, symbols, batch.tables.content(key))?,
         }
@@ -380,6 +425,19 @@ fn compose_records(
             .map_err(|e| unsupported(format!("class skeleton {e:?}")))?;
     }
     let mut string_index = StringIndex::build(&dmb)?;
+    if let Some(index) = builtin_global_vars {
+        if index as usize != dmb.variables.len() {
+            return Err(CompositionError::NonContiguous(
+                "builtin variable record index".into(),
+            ));
+        }
+        let name = string_index.intern(&mut dmb, b"vars")?;
+        dmb.variables.push(Variable {
+            kind: 82,
+            value: 0,
+            name,
+        });
+    }
     if helpers.len() != batch.helpers.len() {
         return Err(unsupported("helper inventory coverage mismatch"));
     }
@@ -606,11 +664,7 @@ fn compose_records(
                 }
                 record.lists_and_procs[2] = index;
             }
-            dm_link::InitializerIdentity::Map { .. } => {
-                return Err(unsupported(
-                    "map initializer attachment requires descriptor inventory",
-                ))
-            }
+            dm_link::InitializerIdentity::Map { .. } => (),
         }
     }
     if let Some((plan, values)) = projection {
@@ -622,6 +676,32 @@ fn compose_records(
             values,
         )
         .map_err(|e| unsupported(format!("class members {e:?}")))?;
+    }
+    if let Some(stage) = stage {
+        let attached = stage.apply(&mut dmb, batch).map_err(unsupported)?;
+        if attached != stage_keys {
+            return Err(unsupported("non-text output stage linker coverage differs"));
+        }
+        for key in stage_keys {
+            let index = batch
+                .tables
+                .index(key)
+                .ok_or_else(|| unsupported("attached key has no linker index"))?;
+            let present = match key {
+                Key::MapInstance { .. } | Key::DefaultMapInstance { .. } => {
+                    dmb.instances.get(index as usize).is_some()
+                }
+                Key::Resource(_) => dmb.resources.get(index as usize).is_some(),
+                Key::Initializer(dm_link::InitializerIdentity::Map { .. }) => dmb
+                    .instances
+                    .iter()
+                    .any(|instance| instance.initializer == index),
+                _ => false,
+            };
+            if !present {
+                return Err(CompositionError::InvalidBinding(key, index));
+            }
+        }
     }
     let mut external = false;
     let mut debug = false;
@@ -691,6 +771,39 @@ fn emit_anonymous(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn builtin_global_vars_uses_variable_record_domain_without_footer_allocation() {
+        let bytes = include_bytes!(
+            "../../../fixtures/translation/client_header_probe/feature_load_ext.native.bin"
+        );
+        let pinned = Dmb::from_bytes(bytes).unwrap();
+        let record = pinned.variables.len() as u32;
+        let mut inventory = dm_link::LinkInventory::default();
+        inventory
+            .reserved_prefixes
+            .insert(dm_link::Table::VariableRecord, record);
+        inventory.entries.push(dm_link::Entry {
+            key: Key::BuiltinGlobalVars,
+            content: std::sync::Arc::from(b"builtin-vars-kind82".as_slice()),
+        });
+        let batch = FrozenBatch {
+            units: vec![],
+            helpers: vec![],
+            initializers: vec![],
+            tables: dm_link::LinkTables::build(inventory).unwrap(),
+        };
+        let result = compose_global_fixture(bytes, &batch, &SymbolTable::default()).unwrap();
+        let decoded = Dmb::from_bytes(&result).unwrap();
+        assert_eq!(decoded.variables[record as usize].kind, 82);
+        assert_eq!(
+            decoded.string(decoded.variables[record as usize].name),
+            Some(b"vars".as_slice())
+        );
+        assert_eq!(
+            decoded.lists.get(decoded.variable_footer as usize),
+            pinned.lists.get(pinned.variable_footer as usize)
+        );
+    }
     struct Source(&'static str);
     impl dm_preprocess::SourceProvider for Source {
         fn read(&self, _: &std::path::Path) -> Result<String, String> {

@@ -47,10 +47,24 @@ fn canonical(instance: &Instance) -> Vec<u8> {
     }
     bytes
 }
-pub fn descriptors(projection: &Projection, maps: &[MapPlan]) -> Result<DescriptorPlan, Error> {
+pub fn descriptors(
+    frontend: &dm_tree::frontend::ColdFrontend,
+    projection: &Projection,
+    maps: &[MapPlan],
+) -> Result<DescriptorPlan, Error> {
     let mut documents = BTreeMap::<u128, Vec<u8>>::new();
     let mut starts = Vec::with_capacity(maps.len());
+    let mut executable_documents = BTreeMap::new();
+    let mut executable_ids = Vec::with_capacity(maps.len());
     for map in maps {
+        let document = crate::map_identity::capture(frontend, map).map_err(Error::Unsupported)?;
+        if let Some(previous) = executable_documents.get(&document.identity) {
+            if previous != &document {
+                return Err(Error::Collision);
+            }
+        }
+        executable_ids.push(document.identity);
+        executable_documents.insert(document.identity, document);
         let bytes = map.model.canonical_bytes();
         if xxhash_rust::xxh3::xxh3_128(&bytes) != map.semantic_identity {
             return Err(Error::InvalidSource);
@@ -91,12 +105,16 @@ pub fn descriptors(projection: &Projection, maps: &[MapPlan]) -> Result<Descript
                 .checked_add(u32::try_from(origin.atom).map_err(|_| Error::InvalidSource)?)
                 .ok_or(Error::InvalidSource)?;
             let identity = InitializerIdentity::Map {
-                source: map.semantic_identity,
+                source: executable_ids[origin.map],
                 descriptor,
             };
             (
                 Key::MapInstance {
-                    source: map.semantic_identity,
+                    source: if instance.atom.initializer_present {
+                        executable_ids[origin.map]
+                    } else {
+                        map.semantic_identity
+                    },
                     descriptor,
                 },
                 instance.atom.initializer_present.then_some(identity),
