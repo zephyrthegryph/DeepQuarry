@@ -576,7 +576,7 @@ CAPABILITIES(/obj/item/clothing/suit/fluff/purp_robes)
 		om_task_periodic_stop(src)
 
 CAPABILITIES(/obj/item/clothing/accessory/collar/khcrystal)
-	op("khcrystal_pair_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Pair"), then(PROC_REF(khcrystal_pair_self)))
+	op("khcrystal_pair_self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Pair"), then(PROC_REF(khcrystal_pair_self)))
 
 /// Old attack_self: pair the crystal to its user, once. special_collar: the inherited collar tag self-use steps aside.
 /obj/item/clothing/accessory/collar/khcrystal/proc/khcrystal_pair_self(datum/act/op/A)
@@ -884,7 +884,7 @@ CAPABILITIES(/obj/item/fluff/dragor_dot)
 
 // fluff_badge: the inherited badge "Display" steps aside for this.
 CAPABILITIES(/obj/item/clothing/accessory/badge/holo/detective/ruda)
-	op("ruda_badge_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Display"), then(PROC_REF(ruda_badge_self)))
+	op("ruda_badge_self", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Display"), then(PROC_REF(ruda_badge_self)))
 
 /// Old attack_self: polish or display the badge.
 /obj/item/clothing/accessory/badge/holo/detective/ruda/proc/ruda_badge_self(datum/act/op/A)

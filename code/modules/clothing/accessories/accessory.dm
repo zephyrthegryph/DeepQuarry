@@ -1379,7 +1379,7 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster/machete, hold_spec, list(HOLD_ON
 
 //keeping self-use blank so people don't tag and reset collar status
 CAPABILITIES(/obj/item/clothing/accessory/collar/casinosentientprize)
-	op("swallow", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction swallow"), then(TYPE_PROC_REF(/atom, op_swallow)))
+	op("swallow", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Interaction swallow"), then(TYPE_PROC_REF(/atom, op_swallow)))
 
 /obj/item/clothing/accessory/collar/casinosentientprize_fake
 	name = "Sentient Prize Collar"

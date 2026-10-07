@@ -93,7 +93,7 @@ CAPABILITIES(/obj/effect/weaversilk/wall)
 APPEARANCE_NONE(/obj/structure/bed/double/weaversilk_nest)
 
 CAPABILITIES(/obj/structure/bed/double/weaversilk_nest)
-	op("tear_down", hand(), stance(I_HURT), label("Tear down"), then(PROC_REF(interaction_tear_down)))
+	op("tear_down", hand(), stance(I_HURT), label("Tear down"), priority(OP_PRIORITY_NORMAL + 1), then(PROC_REF(interaction_tear_down)))
 	op("weaversilk_nest_interaction_item", item(/obj/item), label("Use"), then(PROC_REF(weaversilk_nest_interaction_item)))
 
 /// Old attackby.

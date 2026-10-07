@@ -3,7 +3,7 @@
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown/sif)
 	rolls(nameof(seeds), range_of(1, 2))
-	op("sif_grown_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Sif grown item"), then(PROC_REF(sif_grown_item)))
+	op("sif_grown_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), label("Sif grown item"), then(PROC_REF(sif_grown_item)))
 
 /obj/item/reagent_containers/food/snacks/grown/sif/examine(mob/user)
 	. = ..()

@@ -216,7 +216,7 @@
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime)
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(spawn_antlings)))
-	op("tyrian_slime_item", item(/obj/item), then(PROC_REF(tyrian_slime_interaction_item)))
+	op("tyrian_slime_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(tyrian_slime_interaction_item)))
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime/proc/spawn_antlings(datum/act/A)
 	for(var/i =1 to 4)

@@ -43,7 +43,7 @@ CAPABILITIES(/obj/item/assembly/signaler)
 	op("freq", ui_act("freq", arg("freq", num())), then(PROC_REF(ui_act_freq)))
 	op("code", ui_act("code", arg("code", num())), then(PROC_REF(ui_act_code)))
 	op("reset", ui_act("reset", arg("reset", schema_text(4096))), then(PROC_REF(ui_act_reset)))
-	op("transfer", item(/obj/item), label("Transfer"), then(PROC_REF(interaction_transfer)))
+	op("transfer", item(/obj/item), label("Transfer"), priority(OP_PRIORITY_PART + 1), then(PROC_REF(interaction_transfer)))
 	op("deadman_it_effect", menu(), label("Threaten to push the button!"), needs(carried()), then(PROC_REF(deadman_it_effect)))
 
 /obj/item/assembly/signaler/ui_data(datum/act/eval/A)

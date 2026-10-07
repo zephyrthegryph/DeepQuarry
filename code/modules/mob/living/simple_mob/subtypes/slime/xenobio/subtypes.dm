@@ -191,7 +191,7 @@
 
 CAPABILITIES(/mob/living/simple_mob/slime/xenobio/dark_purple)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_ignite))))
-	op("darkpurple_slime_item", item(/obj/item), then(PROC_REF(darkpurple_slime_interaction_item)))
+	op("darkpurple_slime_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(darkpurple_slime_interaction_item)))
 
 /mob/living/simple_mob/slime/xenobio/dark_purple/proc/blast_ignite(datum/act/A)
 	log_and_message_admins("ignited due to a chain reaction with an explosion.", src)
@@ -685,7 +685,7 @@ CAPABILITY(/mob/living/simple_mob/slime/xenobio/silver, reflects(list(/obj/item/
 
 CAPABILITIES(/mob/living/simple_mob/slime/xenobio/oil)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_explode))))
-	op("oilslime_item", item(/obj/item), then(PROC_REF(oilslime_interaction_item)))
+	op("oilslime_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(oilslime_interaction_item)))
 
 /mob/living/simple_mob/slime/xenobio/oil/proc/blast_explode(datum/act/A)
 	log_and_message_admins("exploded due to a chain reaction with another explosion.", src)

@@ -37,7 +37,7 @@
 		. += span_notice("Control authority has been captured by [captured_by || "an expedition team"].")
 
 CAPABILITIES(/obj/machinery/generated_station_department_control)
-	op("department_control_override", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Override"), when(req_is(nameof(captured), FALSE), req(PROC_REF(has_integrity))), then(PROC_REF(interaction_override)))
+	op("department_control_override", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Override"), when(req_is(nameof(captured), FALSE)), then(PROC_REF(interaction_override)))
 
 TRACKED(/obj/machinery/generated_station_department_control, captured)
 
@@ -46,6 +46,8 @@ TRACKED(/obj/machinery/generated_station_department_control, captured)
 	return get_integrity() > 0
 
 /obj/machinery/generated_station_department_control/proc/interaction_override(datum/act/op/A)
+	if(!has_integrity(A))
+		return OP_DECLINE
 	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You begin overriding %T%.")), MSG_OTHERS(span_notice("%U% begins overriding %T%.")))
 	task_timed(user, 3 SECONDS, src, src, PROC_REF(override_done), list(user))

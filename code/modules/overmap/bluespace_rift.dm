@@ -20,7 +20,7 @@
 CAPABILITIES(/obj/effect/overmap/bluespace_rift)
 	links(/obj/effect/overmap/bluespace_rift::partner, /obj/effect/overmap/bluespace_rift::partner)
 	param(nameof(pair_at_make), pos = 1, apply = PROC_REF(pair_made), keep = FALSE)
-	op("bluespace_rift_staff", observer(), priority(OP_PRIORITY_NORMAL + 1), label("Travel"), when(req_empty(nameof(partner)), req_rights(R_HOLDER)), asks(/datum/prompt/choice, fields = list("question" = "You appear to be staff. This rift has no exit point. If you want to make one, move to where you want it to go, and click 'Make Here', otherwise click 'Cancel'", "title" = "Bluespace Rift", "choices" = list("Cancel", "Make Here"), "buttons" = TRUE, "timeout" = 0), step = "k42"), then(PROC_REF(bluespace_rift_staff)))
+	op("bluespace_rift_staff", observer(), priority(OP_PRIORITY_NORMAL + 1), label("Travel"), when(req_empty(nameof(partner))), needs(req_rights(R_HOLDER)), asks(/datum/prompt/choice, fields = list("question" = "You appear to be staff. This rift has no exit point. If you want to make one, move to where you want it to go, and click 'Make Here', otherwise click 'Cancel'", "title" = "Bluespace Rift", "choices" = list("Cancel", "Make Here"), "buttons" = TRUE, "timeout" = 0), step = "k42"), then(PROC_REF(bluespace_rift_staff)))
 	op("bluespace_rift_ghost_use", observer(), label("Travel"), when(req_full(nameof(partner))), then(PROC_REF(bluespace_rift_ghost_use)))
 
 /obj/effect/overmap/bluespace_rift/proc/pair(obj/effect/overmap/bluespace_rift/new_partner)

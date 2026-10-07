@@ -92,7 +92,7 @@
 
 CAPABILITIES(/mob/living/simple_mob/slime/feral/dark_purple)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(blast_ignite))))
-	op("feral_darkpurple_item", item(/obj/item), then(PROC_REF(feral_darkpurple_interaction_item)))
+	op("feral_darkpurple_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(feral_darkpurple_interaction_item)))
 
 /mob/living/simple_mob/slime/feral/dark_purple/proc/blast_ignite(datum/act/A)
 	log_and_message_admins("[src] ignited due to a chain reaction with an explosion.")

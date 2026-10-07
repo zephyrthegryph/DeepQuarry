@@ -227,6 +227,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	set_right(H)
 
 MSG_DEF_SELF(medbot/panel_locked, "the panel is locked")
+MSG_DEF_SELF(medbot/has_beaker, "there is already a beaker inside")
 
 // The hand ops above open the controls (or tip the bot), so the window's own open op answers the menu and a remote user only.
 CAPABILITIES(/mob/living/bot/medbot)
@@ -238,7 +239,7 @@ CAPABILITIES(/mob/living/bot/medbot)
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("togglevoice", ui_act("togglevoice"), then(PROC_REF(ui_act_togglevoice)))
 	op("declaretreatment", ui_act("declaretreatment"), then(PROC_REF(ui_act_declaretreatment)))
-	op("medbot_item", item(/obj/item/reagent_containers/glass), label("Insert beaker"), needs(req_is(nameof(locked), FALSE, because = MSG(medbot/panel_locked)), req_is(nameof(reagent_glass), FALSE)), then(PROC_REF(medbot_interaction_item)))
+	op("medbot_item", item(/obj/item/reagent_containers/glass), label("Insert beaker"), needs(req_is(nameof(locked), FALSE, because = MSG(medbot/panel_locked)), req_is(nameof(reagent_glass), FALSE, because = MSG(medbot/has_beaker))), then(PROC_REF(medbot_interaction_item)))
 	op("medbot_hand_help", hand(), ungated(), stance(I_HELP), label("Right or open controls"), then(PROC_REF(medbot_interaction_hand_help)))
 	op("medbot_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Tip over"), then(PROC_REF(medbot_interaction_hand_disarm)))
 	op("medbot_hand_grab", hand(), ungated(), stance(I_GRAB), label("Open controls"), then(PROC_REF(medbot_interaction_hand_grab)))

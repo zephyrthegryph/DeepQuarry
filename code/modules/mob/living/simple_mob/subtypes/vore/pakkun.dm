@@ -215,7 +215,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/pakkun)
 
 CAPABILITIES(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy)
 	ref_many(nameof(petters))
-	op("snappy_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(snappy_interaction_hand)))
+	op("snappy_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), priority(OP_PRIORITY_NORMAL + 1), then(PROC_REF(snappy_interaction_hand)))
 
 /// Old attack_hand: remember help-touchers, then carry on to the pakkun touch (FALSE).
 /mob/living/simple_mob/vore/pakkun/snapdragon/snappy/proc/snappy_interaction_hand(datum/act/op/A)

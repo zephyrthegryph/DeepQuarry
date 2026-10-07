@@ -652,7 +652,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, INTERACT_VERB("Emote Bey
 	desc = "Silky and soft, but too thick to pass or cut!"
 
 CAPABILITIES(/obj/structure/flora/tree/fur/wall)
-	op("fur_wall_item", item(/obj/item), passes(), then(PROC_REF(fur_wall_item_passes)))
+	op("fur_wall_item", item(/obj/item), passes(), priority(OP_PRIORITY_PART + 1), then(PROC_REF(fur_wall_item_passes)))
 
 /// An item used on the dense fur does nothing to it: the click goes on (the old interaction_pass).
 /obj/structure/flora/tree/fur/wall/proc/fur_wall_item_passes(datum/act/op/A)
