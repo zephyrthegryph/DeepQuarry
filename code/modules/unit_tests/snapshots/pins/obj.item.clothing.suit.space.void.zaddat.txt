@@ -32,7 +32,6 @@ human|/obj/item/tool/screwdriver menu: Customize Shroud (refused: You can't do t
 human|/obj/item/tool/screwdriver menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 human|/obj/item/tool/screwdriver menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
@@ -43,7 +42,6 @@ human|/obj/item/tool/crowbar menu: Customize Shroud (refused: You can't do that.
 human|/obj/item/tool/crowbar menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 human|/obj/item/tool/crowbar menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
@@ -54,7 +52,6 @@ human|/obj/item/tool/wrench menu: Customize Shroud (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 human|/obj/item/tool/wrench menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use
@@ -65,7 +62,6 @@ human|/obj/item/tool/wirecutters menu: Customize Shroud (refused: You can't do t
 human|/obj/item/tool/wirecutters menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 human|/obj/item/tool/wirecutters menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use
@@ -76,7 +72,6 @@ human|/obj/item/multitool menu: Customize Shroud (refused: You can't do that.)
 human|/obj/item/multitool menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 human|/obj/item/multitool menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/multitool menu: Use
@@ -87,7 +82,6 @@ human|/obj/item/weldingtool menu: Customize Shroud (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 human|/obj/item/weldingtool menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use
@@ -99,7 +93,6 @@ human|/obj/item/stack/cable_coil menu: Eject tank (refused: There is no tank or 
 human|/obj/item/stack/cable_coil menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use
@@ -110,7 +103,6 @@ human|/obj/item/stack/material/steel menu: Customize Shroud (refused: You can't 
 human|/obj/item/stack/material/steel menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 human|/obj/item/stack/material/steel menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/material/steel menu: Space suit patch item
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Toggle Helmet (refused: You can't do that.)
@@ -122,7 +114,6 @@ human|/obj/item/card/id menu: Customize Shroud (refused: You can't do that.)
 human|/obj/item/card/id menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 human|/obj/item/card/id menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Helmet (refused: You can't do that.)
@@ -135,7 +126,6 @@ human|/obj/item/kit menu: Customize Shroud (refused: You can't do that.)
 human|/obj/item/kit menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 human|/obj/item/kit menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/kit menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/kit menu: Use
@@ -147,18 +137,16 @@ human|/obj/item/storage menu: Customize Shroud (refused: You can't do that.)
 human|/obj/item/storage menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 human|/obj/item/storage menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/storage menu: Use
 human|/obj/item/storage menu: Voidsuit install item
-human|/obj/item/storage click: Click: Voidsuit install item
+human|/obj/item/storage click: Click: Collect
 human|/obj/item menu: Alternate use
 human|/obj/item menu: Customize Shroud (refused: You can't do that.)
 human|/obj/item menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 human|/obj/item menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 human|/obj/item menu: Move To Top
-human|/obj/item menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item menu: Use
@@ -169,7 +157,6 @@ human|/obj/item/stack/material menu: Customize Shroud (refused: You can't do tha
 human|/obj/item/stack/material menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 human|/obj/item/stack/material menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 human|/obj/item/stack/material menu: Move To Top
-human|/obj/item/stack/material menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/material menu: Space suit patch item
 human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material menu: Toggle Helmet (refused: You can't do that.)

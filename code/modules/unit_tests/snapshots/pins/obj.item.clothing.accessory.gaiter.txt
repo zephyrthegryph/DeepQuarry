@@ -25,7 +25,6 @@ human|/obj/item/tool/screwdriver menu: Alternate use
 human|/obj/item/tool/screwdriver menu: Gaiter remove mask alt
 human|/obj/item/tool/screwdriver menu: Gaiter tuck mask item
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Accessory attached hand
@@ -34,7 +33,6 @@ human|/obj/item/tool/crowbar menu: Alternate use
 human|/obj/item/tool/crowbar menu: Gaiter remove mask alt
 human|/obj/item/tool/crowbar menu: Gaiter tuck mask item
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Accessory attached hand
@@ -43,7 +41,6 @@ human|/obj/item/tool/wrench menu: Alternate use
 human|/obj/item/tool/wrench menu: Gaiter remove mask alt
 human|/obj/item/tool/wrench menu: Gaiter tuck mask item
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: Click: Accessory attached hand
@@ -52,7 +49,6 @@ human|/obj/item/tool/wirecutters menu: Alternate use
 human|/obj/item/tool/wirecutters menu: Gaiter remove mask alt
 human|/obj/item/tool/wirecutters menu: Gaiter tuck mask item
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Accessory attached hand
@@ -61,7 +57,6 @@ human|/obj/item/multitool menu: Alternate use
 human|/obj/item/multitool menu: Gaiter remove mask alt
 human|/obj/item/multitool menu: Gaiter tuck mask item
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Accessory attached hand
@@ -70,7 +65,6 @@ human|/obj/item/weldingtool menu: Alternate use
 human|/obj/item/weldingtool menu: Gaiter remove mask alt
 human|/obj/item/weldingtool menu: Gaiter tuck mask item
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: Click: Accessory attached hand
@@ -80,7 +74,6 @@ human|/obj/item/stack/cable_coil menu: Gaiter remove mask alt
 human|/obj/item/stack/cable_coil menu: Gaiter tuck mask item
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Accessory attached hand
@@ -89,7 +82,6 @@ human|/obj/item/stack/material/steel menu: Alternate use
 human|/obj/item/stack/material/steel menu: Gaiter remove mask alt
 human|/obj/item/stack/material/steel menu: Gaiter tuck mask item
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Accessory attached hand
@@ -98,7 +90,6 @@ human|/obj/item/card/id menu: Alternate use
 human|/obj/item/card/id menu: Gaiter remove mask alt
 human|/obj/item/card/id menu: Gaiter tuck mask item
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
@@ -109,7 +100,6 @@ human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Gaiter remove mask alt
 human|/obj/item/kit menu: Gaiter tuck mask item
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/kit menu: Use
 human|/obj/item/kit click: Click: Customise
@@ -119,7 +109,6 @@ human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Gaiter remove mask alt
 human|/obj/item/storage menu: Gaiter tuck mask item
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage menu: Use
 human|/obj/item/storage click: Click: Accessory attached hand
@@ -128,7 +117,6 @@ human|/obj/item menu: Alternate use
 human|/obj/item menu: Gaiter remove mask alt
 human|/obj/item menu: Gaiter tuck mask item
 human|/obj/item menu: Move To Top
-human|/obj/item menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Accessory attached hand

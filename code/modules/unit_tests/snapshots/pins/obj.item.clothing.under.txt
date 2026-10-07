@@ -33,7 +33,6 @@ ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Alternate use
 human|/obj/item/tool/screwdriver menu: Holster (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/screwdriver menu: Roll Down Jumpsuit (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Roll Up Sleeves (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
@@ -44,7 +43,6 @@ human|/obj/item/tool/screwdriver click: Click: Under worn hand
 human|/obj/item/tool/crowbar menu: Alternate use
 human|/obj/item/tool/crowbar menu: Holster (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/crowbar menu: Roll Down Jumpsuit (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Roll Up Sleeves (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
@@ -55,7 +53,6 @@ human|/obj/item/tool/crowbar click: Click: Under worn hand
 human|/obj/item/tool/wrench menu: Alternate use
 human|/obj/item/tool/wrench menu: Holster (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wrench menu: Roll Down Jumpsuit (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Roll Up Sleeves (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
@@ -66,7 +63,6 @@ human|/obj/item/tool/wrench click: Click: Under worn hand
 human|/obj/item/tool/wirecutters menu: Alternate use
 human|/obj/item/tool/wirecutters menu: Holster (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wirecutters menu: Roll Down Jumpsuit (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Roll Up Sleeves (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
@@ -77,7 +73,6 @@ human|/obj/item/tool/wirecutters click: Click: Under worn hand
 human|/obj/item/multitool menu: Alternate use
 human|/obj/item/multitool menu: Holster (refused: You can't do that.)
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/multitool menu: Roll Down Jumpsuit (refused: You can't do that.)
 human|/obj/item/multitool menu: Roll Up Sleeves (refused: You can't do that.)
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
@@ -88,7 +83,6 @@ human|/obj/item/multitool click: Click: Under worn hand
 human|/obj/item/weldingtool menu: Alternate use
 human|/obj/item/weldingtool menu: Holster (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/weldingtool menu: Roll Down Jumpsuit (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Roll Up Sleeves (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
@@ -100,7 +94,6 @@ human|/obj/item/stack/cable_coil menu: Alternate use
 human|/obj/item/stack/cable_coil menu: Holster (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/cable_coil menu: Roll Down Jumpsuit (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Roll Up Sleeves (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
@@ -111,7 +104,6 @@ human|/obj/item/stack/cable_coil click: Click: Under worn hand
 human|/obj/item/stack/material/steel menu: Alternate use
 human|/obj/item/stack/material/steel menu: Holster (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/material/steel menu: Roll Down Jumpsuit (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Roll Up Sleeves (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
@@ -122,7 +114,6 @@ human|/obj/item/stack/material/steel click: Click: Under worn hand
 human|/obj/item/card/id menu: Alternate use
 human|/obj/item/card/id menu: Holster (refused: You can't do that.)
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Roll Down Jumpsuit (refused: You can't do that.)
 human|/obj/item/card/id menu: Roll Up Sleeves (refused: You can't do that.)
@@ -135,7 +126,6 @@ human|/obj/item/kit menu: Alternate use
 human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Holster (refused: You can't do that.)
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/kit menu: Roll Down Jumpsuit (refused: You can't do that.)
 human|/obj/item/kit menu: Roll Up Sleeves (refused: You can't do that.)
 human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
@@ -147,18 +137,16 @@ human|/obj/item/storage menu: Alternate use
 human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Holster (refused: You can't do that.)
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/storage menu: Roll Down Jumpsuit (refused: You can't do that.)
 human|/obj/item/storage menu: Roll Up Sleeves (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Suit Sensors (refused: You can't do that.)
 human|/obj/item/storage menu: Under worn hand
 human|/obj/item/storage menu: Use
-human|/obj/item/storage click: Click: Under worn hand
+human|/obj/item/storage click: Click: Collect
 human|/obj/item menu: Alternate use
 human|/obj/item menu: Holster (refused: You can't do that.)
 human|/obj/item menu: Move To Top
-human|/obj/item menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item menu: Roll Down Jumpsuit (refused: You can't do that.)
 human|/obj/item menu: Roll Up Sleeves (refused: You can't do that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)

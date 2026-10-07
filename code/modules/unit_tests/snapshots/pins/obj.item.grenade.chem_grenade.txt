@@ -17,57 +17,48 @@ ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Assembly item
 human|/obj/item/tool/screwdriver menu: Grenade interaction hand
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Assembly item
 human|/obj/item/tool/crowbar menu: Grenade interaction hand
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Assembly item
 human|/obj/item/tool/wrench menu: Assembly item
 human|/obj/item/tool/wrench menu: Grenade interaction hand
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench click: Click: Assembly item
 human|/obj/item/tool/wirecutters menu: Assembly item
 human|/obj/item/tool/wirecutters menu: Grenade interaction hand
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters click: Click: Assembly item
 human|/obj/item/multitool menu: Assembly item
 human|/obj/item/multitool menu: Grenade interaction hand
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: Click: Assembly item
 human|/obj/item/weldingtool menu: Assembly item
 human|/obj/item/weldingtool menu: Grenade interaction hand
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: Click: Assembly item
 human|/obj/item/stack/cable_coil menu: Assembly item
 human|/obj/item/stack/cable_coil menu: Grenade interaction hand
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: Click: Assembly item
 human|/obj/item/stack/material/steel menu: Assembly item
 human|/obj/item/stack/material/steel menu: Grenade interaction hand
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: Click: Assembly item
 human|/obj/item/card/id menu: Assembly item
 human|/obj/item/card/id menu: Grenade interaction hand
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Assembly item
@@ -75,20 +66,17 @@ human|/obj/item/kit menu: Assembly item
 human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Grenade interaction hand
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/kit click: Click: Customise
 human|/obj/item/storage menu: Assembly item
 human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Grenade interaction hand
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage click: Click: Assembly item
 human|/obj/item menu: Assembly item
 human|/obj/item menu: Grenade interaction hand
 human|/obj/item menu: Move To Top
-human|/obj/item menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Assembly item
 keys: assemble, assembly_item, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, grenade_interaction_hand, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable, use_screwdriver

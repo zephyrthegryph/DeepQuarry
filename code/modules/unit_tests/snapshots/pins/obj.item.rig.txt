@@ -58,7 +58,6 @@ human|/obj/item/tool/screwdriver menu: Deploy Hardsuit (refused: You can't do th
 human|/obj/item/tool/screwdriver menu: Engage Module (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/screwdriver menu: Rig item
 human|/obj/item/tool/screwdriver menu: Rig shock hand
 human|/obj/item/tool/screwdriver menu: Select Module (refused: You can't do that.)
@@ -77,7 +76,6 @@ human|/obj/item/tool/crowbar menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Engage Module (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/crowbar menu: Rig item
 human|/obj/item/tool/crowbar menu: Rig shock hand
 human|/obj/item/tool/crowbar menu: Select Module (refused: You can't do that.)
@@ -96,7 +94,6 @@ human|/obj/item/tool/wrench menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Engage Module (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wrench menu: Rig item
 human|/obj/item/tool/wrench menu: Rig shock hand
 human|/obj/item/tool/wrench menu: Select Module (refused: You can't do that.)
@@ -115,7 +112,6 @@ human|/obj/item/tool/wirecutters menu: Deploy Hardsuit (refused: You can't do th
 human|/obj/item/tool/wirecutters menu: Engage Module (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wirecutters menu: Rig item
 human|/obj/item/tool/wirecutters menu: Rig shock hand
 human|/obj/item/tool/wirecutters menu: Select Module (refused: You can't do that.)
@@ -134,7 +130,6 @@ human|/obj/item/multitool menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/multitool menu: Engage Module (refused: You can't do that.)
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/multitool menu: Rig item
 human|/obj/item/multitool menu: Rig shock hand
 human|/obj/item/multitool menu: Select Module (refused: You can't do that.)
@@ -153,7 +148,6 @@ human|/obj/item/weldingtool menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Engage Module (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/weldingtool menu: Rig item
 human|/obj/item/weldingtool menu: Rig shock hand
 human|/obj/item/weldingtool menu: Select Module (refused: You can't do that.)
@@ -173,7 +167,6 @@ human|/obj/item/stack/cable_coil menu: Engage Module (refused: You can't do that
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/cable_coil menu: Rig item
 human|/obj/item/stack/cable_coil menu: Rig shock hand
 human|/obj/item/stack/cable_coil menu: Select Module (refused: You can't do that.)
@@ -192,7 +185,6 @@ human|/obj/item/stack/material/steel menu: Deploy Hardsuit (refused: You can't d
 human|/obj/item/stack/material/steel menu: Engage Module (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/material/steel menu: Rig item
 human|/obj/item/stack/material/steel menu: Rig shock hand
 human|/obj/item/stack/material/steel menu: Select Module (refused: You can't do that.)
@@ -211,7 +203,6 @@ human|/obj/item/card/id menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/card/id menu: Engage Module (refused: You can't do that.)
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Rig item
 human|/obj/item/card/id menu: Rig shock hand
@@ -232,7 +223,6 @@ human|/obj/item/kit menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/kit menu: Engage Module (refused: You can't do that.)
 human|/obj/item/kit menu: Move To Top
 human|/obj/item/kit menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/kit menu: Rig item
 human|/obj/item/kit menu: Rig shock hand
 human|/obj/item/kit menu: Select Module (refused: You can't do that.)
@@ -252,7 +242,6 @@ human|/obj/item/storage menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/storage menu: Engage Module (refused: You can't do that.)
 human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/storage menu: Rig item
 human|/obj/item/storage menu: Rig shock hand
 human|/obj/item/storage menu: Select Module (refused: You can't do that.)
@@ -265,13 +254,12 @@ human|/obj/item/storage menu: Toggle Hardsuit (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/storage click: Click: Rig item
+human|/obj/item/storage click: Click: Collect
 human|/obj/item/card/emag menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/card/emag menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/card/emag menu: Engage Module (refused: You can't do that.)
 human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item/card/emag menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/emag menu: Rig item
 human|/obj/item/card/emag menu: Rig shock hand
 human|/obj/item/card/emag menu: Select Module (refused: You can't do that.)
@@ -291,7 +279,6 @@ human|/obj/item menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item menu: Engage Module (refused: You can't do that.)
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Open Hardsuit Interface (refused: You can't do that.)
-human|/obj/item menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item menu: Rig item
 human|/obj/item menu: Rig shock hand
 human|/obj/item menu: Select Module (refused: You can't do that.)

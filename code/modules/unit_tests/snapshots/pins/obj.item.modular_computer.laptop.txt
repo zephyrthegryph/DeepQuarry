@@ -28,7 +28,6 @@ human|/obj/item/tool/screwdriver menu: Forced Shutdown
 human|/obj/item/tool/screwdriver menu: Interaction hand
 human|/obj/item/tool/screwdriver menu: Interaction item
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver click: Click: Interaction hand
 human|/obj/item/tool/crowbar menu: Alternate use
@@ -36,7 +35,6 @@ human|/obj/item/tool/crowbar menu: Forced Shutdown
 human|/obj/item/tool/crowbar menu: Interaction hand
 human|/obj/item/tool/crowbar menu: Interaction item
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Interaction hand
 human|/obj/item/tool/wrench menu: Alternate use
@@ -44,7 +42,6 @@ human|/obj/item/tool/wrench menu: Forced Shutdown
 human|/obj/item/tool/wrench menu: Interaction hand
 human|/obj/item/tool/wrench menu: Interaction item
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench click: Click: Interaction hand
 human|/obj/item/tool/wirecutters menu: Alternate use
@@ -52,7 +49,6 @@ human|/obj/item/tool/wirecutters menu: Forced Shutdown
 human|/obj/item/tool/wirecutters menu: Interaction hand
 human|/obj/item/tool/wirecutters menu: Interaction item
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters click: Click: Interaction hand
 human|/obj/item/multitool menu: Alternate use
@@ -60,7 +56,6 @@ human|/obj/item/multitool menu: Forced Shutdown
 human|/obj/item/multitool menu: Interaction hand
 human|/obj/item/multitool menu: Interaction item
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: Click: Interaction hand
 human|/obj/item/weldingtool menu: Alternate use
@@ -68,7 +63,6 @@ human|/obj/item/weldingtool menu: Forced Shutdown
 human|/obj/item/weldingtool menu: Interaction hand
 human|/obj/item/weldingtool menu: Interaction item
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: Click: Interaction hand
 human|/obj/item/stack/cable_coil menu: Alternate use
@@ -77,7 +71,6 @@ human|/obj/item/stack/cable_coil menu: Interaction hand
 human|/obj/item/stack/cable_coil menu: Interaction item
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: Click: Interaction hand
 human|/obj/item/stack/material/steel menu: Alternate use
@@ -85,7 +78,6 @@ human|/obj/item/stack/material/steel menu: Forced Shutdown
 human|/obj/item/stack/material/steel menu: Interaction hand
 human|/obj/item/stack/material/steel menu: Interaction item
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: Click: Interaction hand
 human|/obj/item/card/id menu: Alternate use
@@ -93,7 +85,6 @@ human|/obj/item/card/id menu: Forced Shutdown
 human|/obj/item/card/id menu: Interaction hand
 human|/obj/item/card/id menu: Interaction item
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Interaction hand
@@ -103,7 +94,6 @@ human|/obj/item/kit menu: Forced Shutdown
 human|/obj/item/kit menu: Interaction hand
 human|/obj/item/kit menu: Interaction item
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/kit click: Click: Customise
 human|/obj/item/storage menu: Alternate use
@@ -112,15 +102,13 @@ human|/obj/item/storage menu: Forced Shutdown
 human|/obj/item/storage menu: Interaction hand
 human|/obj/item/storage menu: Interaction item
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/storage click: Click: Interaction hand
+human|/obj/item/storage click: Click: Collect
 human|/obj/item/card/emag menu: Alternate use
 human|/obj/item/card/emag menu: Forced Shutdown
 human|/obj/item/card/emag menu: Interaction hand
 human|/obj/item/card/emag menu: Interaction item
 human|/obj/item/card/emag menu: Move To Top
-human|/obj/item/card/emag menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
@@ -129,7 +117,6 @@ human|/obj/item menu: Forced Shutdown
 human|/obj/item menu: Interaction hand
 human|/obj/item menu: Interaction item
 human|/obj/item menu: Move To Top
-human|/obj/item menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Interaction hand
 keys: alt, collect_item, computer_emergency_shutdown, computer_verb_eject_id, computer_verb_eject_usb, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, interaction_hand, interaction_hand_pai, interaction_item, interaction_self, kit_customize, kit_customize_last, modular_computer_ghost_nothing, modular_computer_ghost_power, modular_computer_ghost_view, modular_computer_silicon_use, move_to_top, PC_Eject_Disk, PC_exit, PC_killprogram, PC_minimize, PC_runprogram, PC_setautorun, PC_shutdown, pick_up_item, toggle_digestable

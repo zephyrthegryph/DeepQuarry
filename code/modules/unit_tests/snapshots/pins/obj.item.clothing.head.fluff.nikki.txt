@@ -31,7 +31,6 @@ human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Nikki hat item
 human|/obj/item/tool/screwdriver menu: Nikki hat unload hand
 human|/obj/item/tool/screwdriver menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/screwdriver menu: Remove translocator
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
@@ -41,7 +40,6 @@ human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Nikki hat item
 human|/obj/item/tool/crowbar menu: Nikki hat unload hand
 human|/obj/item/tool/crowbar menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/crowbar menu: Remove translocator
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
@@ -51,7 +49,6 @@ human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Nikki hat item
 human|/obj/item/tool/wrench menu: Nikki hat unload hand
 human|/obj/item/tool/wrench menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wrench menu: Remove translocator
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use
@@ -61,7 +58,6 @@ human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Nikki hat item
 human|/obj/item/tool/wirecutters menu: Nikki hat unload hand
 human|/obj/item/tool/wirecutters menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wirecutters menu: Remove translocator
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use
@@ -71,7 +67,6 @@ human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Nikki hat item
 human|/obj/item/multitool menu: Nikki hat unload hand
 human|/obj/item/multitool menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
-human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/multitool menu: Remove translocator
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use
@@ -81,7 +76,6 @@ human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Nikki hat item
 human|/obj/item/weldingtool menu: Nikki hat unload hand
 human|/obj/item/weldingtool menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/weldingtool menu: Remove translocator
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use
@@ -92,7 +86,6 @@ human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Nikki hat item
 human|/obj/item/stack/cable_coil menu: Nikki hat unload hand
 human|/obj/item/stack/cable_coil menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/cable_coil menu: Remove translocator
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use
@@ -102,7 +95,6 @@ human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Nikki hat item
 human|/obj/item/stack/material/steel menu: Nikki hat unload hand
 human|/obj/item/stack/material/steel menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/material/steel menu: Remove translocator
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Use
@@ -112,7 +104,6 @@ human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Nikki hat item
 human|/obj/item/card/id menu: Nikki hat unload hand
 human|/obj/item/card/id menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
-human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove translocator
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
@@ -124,7 +115,6 @@ human|/obj/item/kit menu: Move To Top
 human|/obj/item/kit menu: Nikki hat item
 human|/obj/item/kit menu: Nikki hat unload hand
 human|/obj/item/kit menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
-human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/kit menu: Remove translocator
 human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/kit menu: Use
@@ -135,17 +125,15 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Nikki hat item
 human|/obj/item/storage menu: Nikki hat unload hand
 human|/obj/item/storage menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
-human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/storage menu: Remove translocator
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage menu: Use
-human|/obj/item/storage click: Click: Nikki hat item
+human|/obj/item/storage click: Click: Collect
 human|/obj/item menu: Alternate use
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Nikki hat item
 human|/obj/item menu: Nikki hat unload hand
 human|/obj/item menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
-human|/obj/item menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item menu: Remove translocator
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use

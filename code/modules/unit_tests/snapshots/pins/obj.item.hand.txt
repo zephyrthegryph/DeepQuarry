@@ -24,7 +24,6 @@ human|/obj/item/tool/screwdriver menu: Alt
 human|/obj/item/tool/screwdriver menu: Discard (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Item
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/screwdriver menu: Remove card
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver click: Click: Item
@@ -32,7 +31,6 @@ human|/obj/item/tool/crowbar menu: Alt
 human|/obj/item/tool/crowbar menu: Discard (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Item
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/crowbar menu: Remove card
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Item
@@ -40,7 +38,6 @@ human|/obj/item/tool/wrench menu: Alt
 human|/obj/item/tool/wrench menu: Discard (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Item
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wrench menu: Remove card
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench click: Click: Item
@@ -48,7 +45,6 @@ human|/obj/item/tool/wirecutters menu: Alt
 human|/obj/item/tool/wirecutters menu: Discard (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Item
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wirecutters menu: Remove card
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters click: Click: Item
@@ -56,7 +52,6 @@ human|/obj/item/multitool menu: Alt
 human|/obj/item/multitool menu: Discard (refused: You can't do that.)
 human|/obj/item/multitool menu: Item
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/multitool menu: Remove card
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: Click: Item
@@ -64,7 +59,6 @@ human|/obj/item/weldingtool menu: Alt
 human|/obj/item/weldingtool menu: Discard (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Item
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/weldingtool menu: Remove card
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: Click: Item
@@ -73,7 +67,6 @@ human|/obj/item/stack/cable_coil menu: Discard (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Item
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/cable_coil menu: Remove card
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: Click: Item
@@ -81,7 +74,6 @@ human|/obj/item/stack/material/steel menu: Alt
 human|/obj/item/stack/material/steel menu: Discard (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Item
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/material/steel menu: Remove card
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: Click: Item
@@ -89,7 +81,6 @@ human|/obj/item/card/id menu: Alt
 human|/obj/item/card/id menu: Discard (refused: You can't do that.)
 human|/obj/item/card/id menu: Item
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove card
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
@@ -99,7 +90,6 @@ human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Discard (refused: You can't do that.)
 human|/obj/item/kit menu: Item
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/kit menu: Remove card
 human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/kit click: Click: Customise
@@ -108,15 +98,13 @@ human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Discard (refused: You can't do that.)
 human|/obj/item/storage menu: Item
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/storage menu: Remove card
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/storage click: Click: Item
+human|/obj/item/storage click: Click: Collect
 human|/obj/item menu: Alt
 human|/obj/item menu: Discard (refused: You can't do that.)
 human|/obj/item menu: Item
 human|/obj/item menu: Move To Top
-human|/obj/item menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item menu: Remove card
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Item

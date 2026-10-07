@@ -35,7 +35,6 @@ ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Eject tape
 human|/obj/item/tool/screwdriver menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/screwdriver menu: Playback Tape (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Print Transcript (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Start Recording (refused: You can't do that.)
@@ -46,7 +45,6 @@ human|/obj/item/tool/screwdriver click: Click: Eject tape
 human|/obj/item/tool/crowbar menu: Eject tape
 human|/obj/item/tool/crowbar menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/crowbar menu: Playback Tape (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Print Transcript (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Start Recording (refused: You can't do that.)
@@ -57,7 +55,6 @@ human|/obj/item/tool/crowbar click: Click: Eject tape
 human|/obj/item/tool/wrench menu: Eject tape
 human|/obj/item/tool/wrench menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wrench menu: Playback Tape (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Print Transcript (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Start Recording (refused: You can't do that.)
@@ -68,7 +65,6 @@ human|/obj/item/tool/wrench click: Click: Eject tape
 human|/obj/item/tool/wirecutters menu: Eject tape
 human|/obj/item/tool/wirecutters menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wirecutters menu: Playback Tape (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Print Transcript (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Start Recording (refused: You can't do that.)
@@ -79,7 +75,6 @@ human|/obj/item/tool/wirecutters click: Click: Eject tape
 human|/obj/item/multitool menu: Eject tape
 human|/obj/item/multitool menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/multitool menu: Playback Tape (refused: You can't do that.)
 human|/obj/item/multitool menu: Print Transcript (refused: You can't do that.)
 human|/obj/item/multitool menu: Start Recording (refused: You can't do that.)
@@ -90,7 +85,6 @@ human|/obj/item/multitool click: Click: Eject tape
 human|/obj/item/weldingtool menu: Eject tape
 human|/obj/item/weldingtool menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/weldingtool menu: Playback Tape (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Print Transcript (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Start Recording (refused: You can't do that.)
@@ -102,7 +96,6 @@ human|/obj/item/stack/cable_coil menu: Eject tape
 human|/obj/item/stack/cable_coil menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/cable_coil menu: Playback Tape (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Print Transcript (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Start Recording (refused: You can't do that.)
@@ -113,7 +106,6 @@ human|/obj/item/stack/cable_coil click: Click: Eject tape
 human|/obj/item/stack/material/steel menu: Eject tape
 human|/obj/item/stack/material/steel menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/material/steel menu: Playback Tape (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Print Transcript (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Start Recording (refused: You can't do that.)
@@ -124,7 +116,6 @@ human|/obj/item/stack/material/steel click: Click: Eject tape
 human|/obj/item/card/id menu: Eject tape
 human|/obj/item/card/id menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Playback Tape (refused: You can't do that.)
 human|/obj/item/card/id menu: Print Transcript (refused: You can't do that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
@@ -137,7 +128,6 @@ human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Eject tape
 human|/obj/item/kit menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/kit menu: Playback Tape (refused: You can't do that.)
 human|/obj/item/kit menu: Print Transcript (refused: You can't do that.)
 human|/obj/item/kit menu: Start Recording (refused: You can't do that.)
@@ -149,7 +139,6 @@ human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Eject tape
 human|/obj/item/storage menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/storage menu: Playback Tape (refused: You can't do that.)
 human|/obj/item/storage menu: Print Transcript (refused: You can't do that.)
 human|/obj/item/storage menu: Start Recording (refused: You can't do that.)
@@ -160,7 +149,6 @@ human|/obj/item/storage click: Click: Eject tape
 human|/obj/item/card/emag menu: Eject tape
 human|/obj/item/card/emag menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/card/emag menu: Move To Top
-human|/obj/item/card/emag menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/emag menu: Playback Tape (refused: You can't do that.)
 human|/obj/item/card/emag menu: Print Transcript (refused: You can't do that.)
 human|/obj/item/card/emag menu: Start Recording (refused: You can't do that.)
@@ -173,7 +161,6 @@ human|/obj/item/rectape menu: Eject tape
 human|/obj/item/rectape menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/rectape menu: Insert tape (refused: There's already a tape inside.)
 human|/obj/item/rectape menu: Move To Top
-human|/obj/item/rectape menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/rectape menu: Playback Tape (refused: You can't do that.)
 human|/obj/item/rectape menu: Print Transcript (refused: You can't do that.)
 human|/obj/item/rectape menu: Start Recording (refused: You can't do that.)

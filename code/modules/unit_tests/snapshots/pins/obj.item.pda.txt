@@ -24,7 +24,6 @@ ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Alt
 human|/obj/item/tool/screwdriver menu: Item
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/screwdriver menu: Remove cartridge (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Remove id (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Remove pen (refused: You can't do that.)
@@ -34,7 +33,6 @@ human|/obj/item/tool/screwdriver click: Click: Item
 human|/obj/item/tool/crowbar menu: Alt
 human|/obj/item/tool/crowbar menu: Item
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/crowbar menu: Remove cartridge (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Remove id (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Remove pen (refused: You can't do that.)
@@ -44,7 +42,6 @@ human|/obj/item/tool/crowbar click: Click: Item
 human|/obj/item/tool/wrench menu: Alt
 human|/obj/item/tool/wrench menu: Item
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wrench menu: Remove cartridge (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Remove id (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Remove pen (refused: You can't do that.)
@@ -54,7 +51,6 @@ human|/obj/item/tool/wrench click: Click: Item
 human|/obj/item/tool/wirecutters menu: Alt
 human|/obj/item/tool/wirecutters menu: Item
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wirecutters menu: Remove cartridge (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Remove id (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Remove pen (refused: You can't do that.)
@@ -64,7 +60,6 @@ human|/obj/item/tool/wirecutters click: Click: Item
 human|/obj/item/multitool menu: Alt
 human|/obj/item/multitool menu: Item
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/multitool menu: Remove cartridge (refused: You can't do that.)
 human|/obj/item/multitool menu: Remove id (refused: You can't do that.)
 human|/obj/item/multitool menu: Remove pen (refused: You can't do that.)
@@ -74,7 +69,6 @@ human|/obj/item/multitool click: Click: Item
 human|/obj/item/weldingtool menu: Alt
 human|/obj/item/weldingtool menu: Item
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/weldingtool menu: Remove cartridge (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Remove id (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Remove pen (refused: You can't do that.)
@@ -85,7 +79,6 @@ human|/obj/item/stack/cable_coil menu: Alt
 human|/obj/item/stack/cable_coil menu: Item
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/cable_coil menu: Remove cartridge (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Remove id (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Remove pen (refused: You can't do that.)
@@ -95,7 +88,6 @@ human|/obj/item/stack/cable_coil click: Click: Item
 human|/obj/item/stack/material/steel menu: Alt
 human|/obj/item/stack/material/steel menu: Item
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/material/steel menu: Remove cartridge (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Remove id (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Remove pen (refused: You can't do that.)
@@ -105,7 +97,6 @@ human|/obj/item/stack/material/steel click: Click: Item
 human|/obj/item/card/id menu: Alt
 human|/obj/item/card/id menu: Item
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove cartridge (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove id (refused: You can't do that.)
@@ -117,7 +108,6 @@ human|/obj/item/kit menu: Alt
 human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Item
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/kit menu: Remove cartridge (refused: You can't do that.)
 human|/obj/item/kit menu: Remove id (refused: You can't do that.)
 human|/obj/item/kit menu: Remove pen (refused: You can't do that.)
@@ -128,17 +118,15 @@ human|/obj/item/storage menu: Alt
 human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Item
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/storage menu: Remove cartridge (refused: You can't do that.)
 human|/obj/item/storage menu: Remove id (refused: You can't do that.)
 human|/obj/item/storage menu: Remove pen (refused: You can't do that.)
 human|/obj/item/storage menu: Reset PDA (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/storage click: Click: Item
+human|/obj/item/storage click: Click: Collect
 human|/obj/item menu: Alt
 human|/obj/item menu: Item
 human|/obj/item menu: Move To Top
-human|/obj/item menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item menu: Remove cartridge (refused: You can't do that.)
 human|/obj/item menu: Remove id (refused: You can't do that.)
 human|/obj/item menu: Remove pen (refused: You can't do that.)

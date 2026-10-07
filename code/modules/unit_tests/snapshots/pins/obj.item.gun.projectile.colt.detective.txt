@@ -33,7 +33,6 @@ human|/obj/item/tool/screwdriver menu: Fit
 human|/obj/item/tool/screwdriver menu: Give DNA (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Name Gun (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/screwdriver menu: Remove DNA (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Resprite gun (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
@@ -44,7 +43,6 @@ human|/obj/item/tool/crowbar menu: Fit
 human|/obj/item/tool/crowbar menu: Give DNA (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Name Gun (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/crowbar menu: Remove DNA (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Resprite gun (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
@@ -55,7 +53,6 @@ human|/obj/item/tool/wrench menu: Fit
 human|/obj/item/tool/wrench menu: Give DNA (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Name Gun (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wrench menu: Remove DNA (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Resprite gun (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
@@ -66,7 +63,6 @@ human|/obj/item/tool/wirecutters menu: Fit
 human|/obj/item/tool/wirecutters menu: Give DNA (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Name Gun (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wirecutters menu: Remove DNA (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Resprite gun (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
@@ -77,7 +73,6 @@ human|/obj/item/multitool menu: Fit
 human|/obj/item/multitool menu: Give DNA (refused: You can't do that.)
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Name Gun (refused: You can't do that.)
-human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/multitool menu: Remove DNA (refused: You can't do that.)
 human|/obj/item/multitool menu: Resprite gun (refused: You can't do that.)
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
@@ -88,7 +83,6 @@ human|/obj/item/weldingtool menu: Fit
 human|/obj/item/weldingtool menu: Give DNA (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Name Gun (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/weldingtool menu: Remove DNA (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Resprite gun (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
@@ -100,7 +94,6 @@ human|/obj/item/stack/cable_coil menu: Give DNA (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Name Gun (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/cable_coil menu: Remove DNA (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Resprite gun (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
@@ -111,7 +104,6 @@ human|/obj/item/stack/material/steel menu: Fit
 human|/obj/item/stack/material/steel menu: Give DNA (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Name Gun (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/material/steel menu: Remove DNA (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Resprite gun (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
@@ -122,7 +114,6 @@ human|/obj/item/card/id menu: Fit
 human|/obj/item/card/id menu: Give DNA (refused: You can't do that.)
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Name Gun (refused: You can't do that.)
-human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove DNA (refused: You can't do that.)
 human|/obj/item/card/id menu: Resprite gun (refused: You can't do that.)
@@ -135,7 +126,6 @@ human|/obj/item/kit menu: Fit
 human|/obj/item/kit menu: Give DNA (refused: You can't do that.)
 human|/obj/item/kit menu: Move To Top
 human|/obj/item/kit menu: Name Gun (refused: You can't do that.)
-human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/kit menu: Remove DNA (refused: You can't do that.)
 human|/obj/item/kit menu: Resprite gun (refused: You can't do that.)
 human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
@@ -147,7 +137,6 @@ human|/obj/item/storage menu: Fit
 human|/obj/item/storage menu: Give DNA (refused: You can't do that.)
 human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Name Gun (refused: You can't do that.)
-human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/storage menu: Remove DNA (refused: You can't do that.)
 human|/obj/item/storage menu: Resprite gun (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
@@ -158,7 +147,6 @@ human|/obj/item/card/emag menu: Fit
 human|/obj/item/card/emag menu: Give DNA (refused: You can't do that.)
 human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Name Gun (refused: You can't do that.)
-human|/obj/item/card/emag menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/emag menu: Remove DNA (refused: You can't do that.)
 human|/obj/item/card/emag menu: Resprite gun (refused: You can't do that.)
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
@@ -170,7 +158,6 @@ human|/obj/item menu: Fit
 human|/obj/item menu: Give DNA (refused: You can't do that.)
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Name Gun (refused: You can't do that.)
-human|/obj/item menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item menu: Remove DNA (refused: You can't do that.)
 human|/obj/item menu: Resprite gun (refused: You can't do that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)

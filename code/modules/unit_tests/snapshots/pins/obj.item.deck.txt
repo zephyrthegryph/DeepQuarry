@@ -38,7 +38,6 @@ human|/obj/item/tool/screwdriver menu: Draw
 human|/obj/item/tool/screwdriver menu: Hand
 human|/obj/item/tool/screwdriver menu: Item
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/screwdriver menu: Search for Cards
 human|/obj/item/tool/screwdriver menu: Shuffle
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
@@ -50,7 +49,6 @@ human|/obj/item/tool/crowbar menu: Draw
 human|/obj/item/tool/crowbar menu: Hand
 human|/obj/item/tool/crowbar menu: Item
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/crowbar menu: Search for Cards
 human|/obj/item/tool/crowbar menu: Shuffle
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
@@ -62,7 +60,6 @@ human|/obj/item/tool/wrench menu: Draw
 human|/obj/item/tool/wrench menu: Hand
 human|/obj/item/tool/wrench menu: Item
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wrench menu: Search for Cards
 human|/obj/item/tool/wrench menu: Shuffle
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
@@ -74,7 +71,6 @@ human|/obj/item/tool/wirecutters menu: Draw
 human|/obj/item/tool/wirecutters menu: Hand
 human|/obj/item/tool/wirecutters menu: Item
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wirecutters menu: Search for Cards
 human|/obj/item/tool/wirecutters menu: Shuffle
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
@@ -86,7 +82,6 @@ human|/obj/item/multitool menu: Draw
 human|/obj/item/multitool menu: Hand
 human|/obj/item/multitool menu: Item
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/multitool menu: Search for Cards
 human|/obj/item/multitool menu: Shuffle
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
@@ -98,7 +93,6 @@ human|/obj/item/weldingtool menu: Draw
 human|/obj/item/weldingtool menu: Hand
 human|/obj/item/weldingtool menu: Item
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/weldingtool menu: Search for Cards
 human|/obj/item/weldingtool menu: Shuffle
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
@@ -111,7 +105,6 @@ human|/obj/item/stack/cable_coil menu: Hand
 human|/obj/item/stack/cable_coil menu: Item
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/cable_coil menu: Search for Cards
 human|/obj/item/stack/cable_coil menu: Shuffle
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
@@ -123,7 +116,6 @@ human|/obj/item/stack/material/steel menu: Draw
 human|/obj/item/stack/material/steel menu: Hand
 human|/obj/item/stack/material/steel menu: Item
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/material/steel menu: Search for Cards
 human|/obj/item/stack/material/steel menu: Shuffle
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
@@ -135,7 +127,6 @@ human|/obj/item/card/id menu: Draw
 human|/obj/item/card/id menu: Hand
 human|/obj/item/card/id menu: Item
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Search for Cards
 human|/obj/item/card/id menu: Shuffle
@@ -149,7 +140,6 @@ human|/obj/item/kit menu: Draw
 human|/obj/item/kit menu: Hand
 human|/obj/item/kit menu: Item
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/kit menu: Search for Cards
 human|/obj/item/kit menu: Shuffle
 human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
@@ -162,11 +152,10 @@ human|/obj/item/storage menu: Draw
 human|/obj/item/storage menu: Hand
 human|/obj/item/storage menu: Item
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/storage menu: Search for Cards
 human|/obj/item/storage menu: Shuffle
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/storage click: Click: Hand
+human|/obj/item/storage click: Click: Collect
 human|/obj/item menu: Alt
 human|/obj/item menu: Deal
 human|/obj/item menu: Deal Multiple Cards
@@ -174,7 +163,6 @@ human|/obj/item menu: Draw
 human|/obj/item menu: Hand
 human|/obj/item menu: Item
 human|/obj/item menu: Move To Top
-human|/obj/item menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item menu: Search for Cards
 human|/obj/item menu: Shuffle
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)

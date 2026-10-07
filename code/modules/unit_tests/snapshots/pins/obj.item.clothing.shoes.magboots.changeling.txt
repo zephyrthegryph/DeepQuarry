@@ -30,7 +30,6 @@ human|/obj/item/tool/screwdriver menu: Alternate use
 human|/obj/item/tool/screwdriver menu: Draw Boot Knife (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Drop onto
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/screwdriver menu: Shoes draw knife hand
 human|/obj/item/tool/screwdriver menu: Shoes stuff item
 human|/obj/item/tool/screwdriver menu: Switch Shoe Layer (refused: You can't do that.)
@@ -42,7 +41,6 @@ human|/obj/item/tool/crowbar menu: Alternate use
 human|/obj/item/tool/crowbar menu: Draw Boot Knife (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Drop onto
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/crowbar menu: Shoes draw knife hand
 human|/obj/item/tool/crowbar menu: Shoes stuff item
 human|/obj/item/tool/crowbar menu: Switch Shoe Layer (refused: You can't do that.)
@@ -54,7 +52,6 @@ human|/obj/item/tool/wrench menu: Alternate use
 human|/obj/item/tool/wrench menu: Draw Boot Knife (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Drop onto
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wrench menu: Shoes draw knife hand
 human|/obj/item/tool/wrench menu: Shoes stuff item
 human|/obj/item/tool/wrench menu: Switch Shoe Layer (refused: You can't do that.)
@@ -66,7 +63,6 @@ human|/obj/item/tool/wirecutters menu: Alternate use
 human|/obj/item/tool/wirecutters menu: Draw Boot Knife (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Drop onto
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wirecutters menu: Shoes draw knife hand
 human|/obj/item/tool/wirecutters menu: Shoes stuff item
 human|/obj/item/tool/wirecutters menu: Switch Shoe Layer (refused: You can't do that.)
@@ -78,7 +74,6 @@ human|/obj/item/multitool menu: Alternate use
 human|/obj/item/multitool menu: Draw Boot Knife (refused: You can't do that.)
 human|/obj/item/multitool menu: Drop onto
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/multitool menu: Shoes draw knife hand
 human|/obj/item/multitool menu: Shoes stuff item
 human|/obj/item/multitool menu: Switch Shoe Layer (refused: You can't do that.)
@@ -90,7 +85,6 @@ human|/obj/item/weldingtool menu: Alternate use
 human|/obj/item/weldingtool menu: Draw Boot Knife (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Drop onto
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/weldingtool menu: Shoes draw knife hand
 human|/obj/item/weldingtool menu: Shoes stuff item
 human|/obj/item/weldingtool menu: Switch Shoe Layer (refused: You can't do that.)
@@ -103,7 +97,6 @@ human|/obj/item/stack/cable_coil menu: Draw Boot Knife (refused: You can't do th
 human|/obj/item/stack/cable_coil menu: Drop onto
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/cable_coil menu: Shoes draw knife hand
 human|/obj/item/stack/cable_coil menu: Shoes stuff item
 human|/obj/item/stack/cable_coil menu: Switch Shoe Layer (refused: You can't do that.)
@@ -115,7 +108,6 @@ human|/obj/item/stack/material/steel menu: Alternate use
 human|/obj/item/stack/material/steel menu: Draw Boot Knife (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Drop onto
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/material/steel menu: Shoes draw knife hand
 human|/obj/item/stack/material/steel menu: Shoes stuff item
 human|/obj/item/stack/material/steel menu: Switch Shoe Layer (refused: You can't do that.)
@@ -127,7 +119,6 @@ human|/obj/item/card/id menu: Alternate use
 human|/obj/item/card/id menu: Draw Boot Knife (refused: You can't do that.)
 human|/obj/item/card/id menu: Drop onto
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Shoes draw knife hand
 human|/obj/item/card/id menu: Shoes stuff item
@@ -141,7 +132,6 @@ human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Draw Boot Knife (refused: You can't do that.)
 human|/obj/item/kit menu: Drop onto
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/kit menu: Shoes draw knife hand
 human|/obj/item/kit menu: Shoes stuff item
 human|/obj/item/kit menu: Switch Shoe Layer (refused: You can't do that.)
@@ -154,19 +144,17 @@ human|/obj/item/storage menu: Collect
 human|/obj/item/storage menu: Draw Boot Knife (refused: You can't do that.)
 human|/obj/item/storage menu: Drop onto
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/storage menu: Shoes draw knife hand
 human|/obj/item/storage menu: Shoes stuff item
 human|/obj/item/storage menu: Switch Shoe Layer (refused: You can't do that.)
 human|/obj/item/storage menu: Toggle (refused: not in your hand)
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage menu: Use
-human|/obj/item/storage click: Click: Shoes draw knife hand
+human|/obj/item/storage click: Click: Collect
 human|/obj/item menu: Alternate use
 human|/obj/item menu: Draw Boot Knife (refused: You can't do that.)
 human|/obj/item menu: Drop onto
 human|/obj/item menu: Move To Top
-human|/obj/item menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item menu: Shoes draw knife hand
 human|/obj/item menu: Shoes stuff item
 human|/obj/item menu: Switch Shoe Layer (refused: You can't do that.)
