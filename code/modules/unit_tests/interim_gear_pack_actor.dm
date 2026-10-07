@@ -10,14 +10,15 @@
 /obj/interim_gear_pack_actor_click
 	var/obj/machinery/gear_dispenser/interim_actor_probe/dispenser
 	var/tmp/mob/actor
-	var/result
+	var/datum/op_result/result
 
 /obj/interim_gear_pack_actor_click/Click(location, control, params)
-	result = dispenser.vv_topic_admin_add(actor, list())
+	result = op_topic_href(actor, dispenser, list("admin_add" = "1"), namespace = VV_TOPIC, gated = FALSE)
 
-/// Direct VV-handler coverage chains the actual rights refusal; it does not claim native admin authorization.
+/// Public VV dispatch refuses the supplied clientless actor before any loading helper; the private helper also refuses a missing actor.
+/datum/unit_test/om/interim_gear_pack_actor_refusal
 /datum/unit_test/om/interim_gear_pack_actor_refusal/run_om(list/made)
-	test_prompts_reset()
+	set_global(nameof(GLOB.test_prompts), list())
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/bystander = allocate(/mob/living/carbon/human, T)
@@ -37,9 +38,10 @@
 	rel_set(probe, nameof(probe.dispenser), dispenser)
 	rel_set(probe, nameof(probe.actor), actor)
 	km_synthetic_click(bystander, probe)
-	TEST_ASSERT_EQUAL(probe.result, TRUE, "the actual VV wrapper preserves its handled return")
-	TEST_ASSERT_EQUAL(dispenser.admin_calls, 1, "the actual VV wrapper invokes the inherited guarded helper once")
-	TEST_ASSERT_EQUAL(dispenser.admin_actor, actor, "the actual VV wrapper forwards the supplied actor instead of the native bystander")
+	made += probe.result
+	TEST_ASSERT_EQUAL(probe.result?.outcome, ACT_REFUSED, "the public VV op refuses the actual supplied actor without rights")
+	TEST_ASSERT_EQUAL(dispenser.admin_calls, 0, "the public VV op refuses rights before any loading helper runs")
+	TEST_ASSERT_NULL(dispenser.admin_actor, "the refused public op never passes either actor into the loading helper")
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 0, "the actual rights refusal opens no gear-pack prompt")
 	TEST_ASSERT_EQUAL(dispenser.dispenser_flags, original_flags, "the actual refusal preserves all dispenser busy/dispensing flags")
 	TEST_ASSERT_EQUAL(length(dispenser.dispenses), length(original_catalog), "the actual rights refusal preserves the catalog size")
@@ -53,7 +55,7 @@
 			TEST_ASSERT_EQUAL(gear.to_spawn[i], expected_types[i], "the actual refusal preserves each existing spawn type")
 		TEST_ASSERT(!QDELETED(gear), "the actual refusal does not dispose a constructed catalog entry")
 	dispenser.admin_add(null)
-	TEST_ASSERT_EQUAL(dispenser.admin_calls, 2, "the actual missing-actor helper reaches its real guard")
+	TEST_ASSERT_EQUAL(dispenser.admin_calls, 1, "the actual missing-actor helper reaches its real guard")
 	TEST_ASSERT_NULL(dispenser.admin_actor, "the absent actor stays absent instead of adopting ambient state")
 	TEST_ASSERT_EQUAL(length(GLOB.test_prompts), 0, "an absent actor opens no gear-pack prompt")
 	TEST_ASSERT_EQUAL(dispenser.dispenser_flags, original_flags, "an absent actor changes no actual dispenser flags")

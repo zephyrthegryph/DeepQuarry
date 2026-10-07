@@ -41,7 +41,7 @@
 
 /// Whether the door has been emagged.
 /proc/p2_door_emagged(obj/machinery/door/D)
-	return D.emagged || is_emagged(D)
+	return D.emagged() || is_emagged(D)
 
 /// Whether emergency access is engaged.
 /proc/p2_door_emergency(obj/machinery/door/D)

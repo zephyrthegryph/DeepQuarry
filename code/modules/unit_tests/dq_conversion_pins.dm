@@ -25,6 +25,16 @@
 
 /datum/unit_test/dq_conversion_pin
 
+// Pinning visibility uses the shared lazy dview singleton. Warm it during fixture
+// setup, before the runner snapshots globals; it remains the production cache.
+/datum/unit_test/dq_conversion_pin/New()
+	..()
+	dview(0, test_floor())
+	// Rogue-zone console initialization uses this same persistent lazy controller.
+	// Build it before the runner snapshots globals, without resetting its live state.
+	if(!GLOB.rm_controller)
+		GLOB.rm_controller = new /datum/controller/rogue()
+
 /// The items the human holds besides an empty hand: the common tools (the welder is lit).
 /proc/dq_pin_tools()
 	return list(
@@ -59,6 +69,7 @@
 	// test's mobs drift (dq_p2_closet/drag_stuffs_a_person_into_an_open_closet).
 	var/area/sweep_room = get_area(T)
 	var/sweep_gravity = sweep_room.has_gravity
+	defer_cleanup(src, PROC_REF(cleanup_pin_sweep), T, sweep_room, sweep_gravity)
 	var/list/actual_by_type = list()
 	// a turf is pinned in place of the tile beside the actors and turned back afterwards (a turf is never qdel'd)
 	var/turf/beside = get_step(T, EAST)
@@ -66,6 +77,9 @@
 	for(var/type in expected_by_type)
 		// One seed per type, so a random initial state (the toilet's lid) is the same at every recording, whatever ran before it.
 		rand_seed(1)
+		var/list/baseline_atoms = dq_pin_fixture_atoms()
+		var/list/baseline_allocated = allocated?.Copy() || list()
+		var/target_gravity = sweep_room.has_gravity
 		if(ispath(type, /turf))
 			if(!beside)
 				actual_by_type[type] = list("no tile to pin a turf on")
@@ -73,18 +87,57 @@
 			var/turf/changed = beside.ChangeTurf(type)
 			actual_by_type[type] = dq_pin_lines(changed, T, actors)
 			beside = changed.ChangeTurf(beside_type)
+			TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, sweep_room, target_gravity), "turf capture left fixture products")
 			continue
 		var/atom/target = dq_snapshot_allocate(type, T)
 		if(QDELETED(target))
 			actual_by_type[type] = list("deleted itself on creation")
+			TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, sweep_room, target_gravity), "self-deleting capture left fixture products")
 			continue
 		actual_by_type[type] = dq_pin_lines(target, T, actors)
 		qdel(target)
-	if(sweep_room.has_gravity != sweep_gravity)
-		sweep_room.gravitychange(sweep_gravity)
-	own_turf_contents(T)
+		TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, sweep_room, target_gravity), "capture left fixture products")
 	var/report = dq_snapshot_compare(DQ_PIN_DIR, "pins", actual_by_type, expected_by_type, bad)
 	TEST_ASSERT(isnull(report), report)
+
+/// Preserve cleanup even when a declaration error aborts the sweep; the runner still reports the original runtime.
+/datum/unit_test/dq_conversion_pin/proc/cleanup_pin_sweep(turf/T, area/sweep_room, sweep_gravity)
+	own_turf_contents(T)
+	// Dispose fixture-owned atoms before restoring gravity: a surviving generator's
+	// destruction can switch its area's gravity off. The runner skips these deleted entries.
+	for(var/datum/thing as anything in allocated?.Copy())
+		if(!QDELETED(thing))
+			qdel(thing)
+	if(sweep_room && sweep_room.has_gravity != sweep_gravity)
+		sweep_room.gravitychange(sweep_gravity)
+
+/// Identity snapshot of this fixture block, including existing actor equipment and nested contents.
+/// Do not materialize latent contents merely to identify already-existing fixture atoms.
+/datum/unit_test/proc/dq_pin_fixture_atoms()
+	var/list/found = list()
+	for(var/turf/T in block(run_loc_floor_bottom_left, run_loc_floor_top_right))
+		found |= T.contents
+	var/index = 1
+	while(index <= length(found))
+		var/atom/movable/thing = found[index++]
+		if(!QDELETED(thing))
+			found |= thing.contents
+	return found
+
+/// Dispose only what this capture created. Existing actors, held items and their contents survive.
+/// Include teardown products and adjacent helper objects before the next capture starts.
+/datum/unit_test/proc/dq_pin_cleanup_target(list/baseline_atoms, list/baseline_allocated, area/room, gravity)
+	for(var/pass in 1 to 4)
+		var/list/products = (allocated?.Copy() || list()) - baseline_allocated
+		products |= dq_pin_fixture_atoms() - baseline_atoms
+		if(!length(products))
+			break
+		for(var/datum/thing as anything in products)
+			if(!QDELETED(thing))
+				qdel(thing)
+	if(room && room.has_gravity != gravity)
+		room.gravitychange(gravity)
+	return !length(dq_pin_fixture_atoms() - baseline_atoms)
 
 /// The pin rows of one target (see the file comment), sorted so the file diffs cleanly.
 /datum/unit_test/proc/dq_pin_lines(atom/target, turf/T, list/actors)
@@ -166,3 +219,53 @@
 		. += "keys: [jointext(keys, ", ")]"
 
 #undef DQ_PIN_DIR
+
+/// Per-target capture cleanup must not erase the actors or the current target's legitimate helpers.
+/datum/unit_test/dq_conversion_pin_fixture_isolation/New()
+	..()
+	dview(0, test_floor())
+
+/datum/unit_test/dq_conversion_pin_fixture_isolation/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.enable_godmode()
+	var/obj/item/pen/sentinel = allocate(/obj/item/pen, T)
+	var/obj/item/tool/wrench/held = allocate(/obj/item/tool/wrench, H)
+	TEST_ASSERT(H.put_in_active_hand(held), "the baseline tool is actually held")
+	var/list/actors = list("human" = H, "robot" = allocate(/mob/living/silicon/robot, T), "ai" = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE), "ghost" = allocate(/mob/observer/dead, T))
+	var/list/baseline_atoms = dq_pin_fixture_atoms()
+	var/list/baseline_allocated = allocated.Copy()
+	var/area/room = get_area(T)
+	var/gravity = room.has_gravity
+	var/obj/machinery/mineral/processing_unit_console/target = dq_snapshot_allocate(/obj/machinery/mineral/processing_unit_console, T)
+	var/obj/machinery/mineral/processing_unit/helper = locate(/obj/machinery/mineral/processing_unit) in T
+	TEST_ASSERT(!QDELETED(target) && !QDELETED(helper), "the actual console fixture creates its processing helper")
+	var/obj/item/pen/adjacent = new /obj/item/pen(get_step(T, EAST))
+	own(adjacent)
+	var/list/rows = dq_pin_lines(target, T, actors)
+	TEST_ASSERT(length(rows), "the actual target is captured before disposal")
+	TEST_ASSERT(!QDELETED(helper), "the current target's helper survives the whole capture")
+	TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, room, gravity), "capture cleanup removes new products")
+	TEST_ASSERT(QDELETED(target) && QDELETED(helper) && QDELETED(adjacent), "the target and both on-tile and adjacent helpers are disposed")
+	TEST_ASSERT(!QDELETED(H) && !QDELETED(sentinel) && !QDELETED(held), "baseline actor, sentinel and held item survive")
+	TEST_ASSERT(held in H.get_all_held_items(), "cleanup preserves actual hand bookkeeping")
+	var/mob/living/silicon/ai/empty = dq_snapshot_allocate(/mob/living/silicon/ai, T)
+	TEST_ASSERT(QDELETED(empty), "a bare AI target really deletes itself")
+	var/obj/structure/AIcore/deactivated/core = locate(/obj/structure/AIcore/deactivated) in T
+	TEST_ASSERT_NOTNULL(core, "the deleted AI really left an inactive core")
+	own(core) // emergency test teardown also owns this initializer product
+	TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, room, gravity), "the self-deleting target follows the same cleanup path")
+	TEST_ASSERT(QDELETED(core), "the orphan core cannot add Climb to subsequent captures")
+	TEST_ASSERT(!QDELETED(sentinel) && held in H.get_all_held_items(), "a second cleanup still preserves the baseline fixture")
+
+/datum/unit_test/dq_conversion_pin_fixture_gravity/Run()
+	var/turf/T = test_floor()
+	var/area/room = get_area(T)
+	var/gravity = room.has_gravity
+	defer_cleanup(room, TYPE_PROC_REF(/area, gravitychange), gravity)
+	var/list/baseline_atoms = dq_pin_fixture_atoms()
+	var/list/baseline_allocated = allocated?.Copy() || list()
+	room.gravitychange(!gravity)
+	TEST_ASSERT_EQUAL(room.has_gravity, !gravity, "the fixture actually changes room gravity")
+	TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, room, gravity), "target cleanup completes")
+	TEST_ASSERT_EQUAL(room.has_gravity, gravity, "gravity is restored before the next capture")

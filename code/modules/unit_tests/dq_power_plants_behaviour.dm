@@ -14,12 +14,9 @@
 		return call(D, step)(null)
 	return D.periodic_step()
 
-/// Locks or unlocks a machine's controls: its lock() capability's key, or the legacy `locked` var.
-/proc/pp_set_lock(obj/machinery/M, value)
-	if(cap_of(M, CAP_LOCK, null))
-		key_set(M, LOCK_LOCKED, value)
-	else
-		M.set_locked(value)
+/// Locks or unlocks the actual emitter controls through its lock() capability's key.
+/proc/pp_set_lock(obj/machinery/power/emitter/M, value)
+	key_set(M, LOCK_LOCKED, value)
 
 /// Moles of `gas` in `air`.
 /proc/pp_moles(datum/gas_mixture/air, gas)

@@ -20,6 +20,7 @@
 	TEST_ASSERT(user.put_in_active_hand(original), "actor holds the exact original stack")
 	var/datum/input_event/click/click = new(user, machine, null, null, "left=1")
 	var/immediate = input_submit(click)
+	TEST_ASSERT_EQUAL(click.result?.key, "insert_steel", "the real item click selects insertion before the inherited UI hand binding")
 	TEST_ASSERT(machine.inserting, "real player input starts actual insertion timer (immediate=[immediate], actual key=[click.result?.key], outcome=[click.result?.outcome], reason=[click.result?.reason])")
 	TEST_ASSERT_EQUAL(machine.metal_amount, 0, "pending insertion credits no steel")
 	TEST_ASSERT_EQUAL(original.get_amount(), 2, "pending insertion consumes no sheets")

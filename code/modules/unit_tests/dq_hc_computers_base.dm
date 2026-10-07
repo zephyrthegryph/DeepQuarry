@@ -30,10 +30,9 @@
 	var/list/hc_records
 
 /datum/unit_test/dq_hc_computers/Run()
-	set_global("test_prompts", GLOB.test_prompts)
+	set_global(nameof(GLOB.test_prompts), list())
 	test_driver_begin()
 	test_rng(1)
-	p2cl_capture_prompts()
 	run_gate()
 	// What the consoles made on their tiles (printouts, passes).
 	for(var/turf/T in block(run_loc_floor_bottom_left, run_loc_floor_top_right))

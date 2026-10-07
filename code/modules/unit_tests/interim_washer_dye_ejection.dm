@@ -8,14 +8,14 @@
 			var/obj/item/dye = allocate(dye_type, T)
 			var/open_state = washer.state
 			TEST_ASSERT(user.put_in_active_hand(dye), "the actor holds the original dye")
-			washer.interaction_washing_machine_use_item(user, dye, null)
+			test_click(user, washer, dye)
 			TEST_ASSERT_EQUAL(washer.crayon(), dye, "actual insertion records the dye before the opening test")
 			TEST_ASSERT_EQUAL(dye.loc, washer, "actual insertion physically contains the dye")
 			var/obj/item/clothing/gloves/white/laundry
 			if(with_laundry)
 				laundry = allocate(/obj/item/clothing/gloves/white, T)
 				TEST_ASSERT(user.put_in_active_hand(laundry), "the actor holds the actual laundry")
-				washer.interaction_washing_machine_use_item(user, laundry, null)
+				test_click(user, washer, laundry)
 				TEST_ASSERT(laundry in washer.washing, "the actual washer records its separate laundry")
 			test_click(user, washer, null)
 			TEST_ASSERT_NOTEQUAL(washer.state, open_state, "the actual public hand interaction closes the washer")

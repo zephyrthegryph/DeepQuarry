@@ -384,7 +384,7 @@
 	var/list/named_operations = list()
 	for(var/list/row as anything in input_compatibility().compatibility_menu(H, converted, ROUTE_PHYSICAL, operations_only = TRUE))
 		named_operations[row["id"]] = TRUE
-	TEST_ASSERT(length(old_shapes) > length(named_operations), "The converted fixture actually inherits legacy-shaped rows to exclude")
+	TEST_ASSERT_EQUAL(length(named_operations), 0, "The fully converted airlock exposes no legacy named operations")
 	for(var/list/row as anything in op_menu(H, converted, null))
 		TEST_ASSERT(!(old_shapes[row["id"]] && !named_operations[row["id"]] && !op_index_of_table(table_of(converted)).by_key[row["id"]] && !op_index_of_table(table_of(H)).by_key[row["id"]]), "A converted target's legacy-shaped [row["id"]] row was reintroduced beside its native operations")
 
