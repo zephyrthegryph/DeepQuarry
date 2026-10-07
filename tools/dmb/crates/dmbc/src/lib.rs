@@ -13,3 +13,4 @@ pub mod engine_host;
 pub mod lowering;
 pub mod procedure_policy;
 pub mod symbolic;
+pub mod composition;

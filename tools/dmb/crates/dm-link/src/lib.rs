@@ -34,6 +34,13 @@ pub enum Key {
         owner: SymbolId,
         name: SymbolId,
     },
+    ArgumentSource {
+        owner: SymbolId,
+        name: SymbolId,
+        verb: bool,
+        occurrence: u32,
+        argument: u32,
+    },
     BuiltinGlobalVars,
     Instance(SymbolId),
     List(u128),
@@ -44,7 +51,7 @@ impl Key {
         match self {
             Self::String(_) => Table::String,
             Self::Type(_) => Table::Type,
-            Self::Proc { .. } | Self::Verb { .. } => Table::Procedure,
+            Self::Proc { .. } | Self::Verb { .. } | Self::ArgumentSource { .. } => Table::Procedure,
             Self::Variable { .. } | Self::BuiltinGlobalVars => Table::Variable,
             Self::Instance(_) => Table::Instance,
             Self::List(_) => Table::List,
@@ -284,6 +291,7 @@ fn symbols(key: Key) -> Vec<SymbolId> {
         Key::String(id) | Key::Type(id) | Key::Instance(id) => vec![id],
         Key::Proc { owner, name, .. }
         | Key::Verb { owner, name, .. }
+        | Key::ArgumentSource { owner, name, .. }
         | Key::Variable { owner, name } => vec![owner, name],
         _ => vec![],
     }
@@ -312,6 +320,19 @@ fn reference_key(
             owner,
             name,
             occurrence,
+        },
+        SymRef::ArgumentSource {
+            owner,
+            name,
+            verb,
+            occurrence,
+            argument,
+        } => Key::ArgumentSource {
+            owner,
+            name,
+            verb,
+            occurrence,
+            argument,
         },
         SymRef::Var { owner, name } => Key::Variable { owner, name },
         SymRef::VariableSlot(symbol) => {

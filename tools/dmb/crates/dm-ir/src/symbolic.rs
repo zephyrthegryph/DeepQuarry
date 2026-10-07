@@ -22,6 +22,14 @@ pub enum SymRef {
         name: SymbolId,
         occurrence: u32,
     },
+    /// Non-callable argument-source companion, owned structurally by its proc.
+    ArgumentSource {
+        owner: SymbolId,
+        name: SymbolId,
+        verb: bool,
+        occurrence: u32,
+        argument: u32,
+    },
     /// Modified-type instance-table entry; this is not its underlying class.
     Instance(SymbolId),
     /// Shared/global/static slot supplied by the resolver, not a field name.
@@ -56,7 +64,9 @@ impl SymRef {
         match self {
             Self::String(_) | Self::SourceFile(_) => RelocationKind::String,
             Self::Type(_) => RelocationKind::Type,
-            Self::Proc { .. } | Self::Verb { .. } => RelocationKind::Procedure,
+            Self::Proc { .. } | Self::Verb { .. } | Self::ArgumentSource { .. } => {
+                RelocationKind::Procedure
+            }
             Self::Var { .. } | Self::VariableSlot(_) | Self::BuiltinGlobalVars => {
                 RelocationKind::Variable
             }
@@ -289,6 +299,20 @@ fn encode_reference(bytes: &mut Vec<u8>, reference: SymRef) {
             bytes.extend_from_slice(&owner.bits().to_le_bytes());
             bytes.extend_from_slice(&name.bits().to_le_bytes());
             bytes.extend_from_slice(&occurrence.to_le_bytes())
+        }
+        SymRef::ArgumentSource {
+            owner,
+            name,
+            verb,
+            occurrence,
+            argument,
+        } => {
+            bytes.push(13);
+            bytes.extend_from_slice(&owner.bits().to_le_bytes());
+            bytes.extend_from_slice(&name.bits().to_le_bytes());
+            bytes.push(u8::from(verb));
+            bytes.extend_from_slice(&occurrence.to_le_bytes());
+            bytes.extend_from_slice(&argument.to_le_bytes());
         }
         SymRef::Var { owner, name } => {
             bytes.push(4);

@@ -1,6 +1,8 @@
 //! Pinned engine input decoded once, separate from source and output tables.
 #[path = "engine_catalog.rs"]
 pub mod catalog;
+#[path = "engine_procedure_abi.rs"]
+pub mod procedure_abi;
 
 use byond_dmb::{
     dmb::{Dmb, Proc, Variable},
@@ -44,12 +46,21 @@ pub struct OpaqueMember {
     pub metadata: OpaqueMetadata,
 }
 #[derive(Clone, Debug)]
+pub struct EngineProcedureLayout {
+    pub owner: SymbolId,
+    pub name: Option<SymbolId>,
+    pub kind: MemberKind,
+    pub wire_proc: u32,
+    pub layout: dm_codegen_byond::procedure_abi::ProcLayout,
+}
+#[derive(Clone, Debug)]
 pub struct EngineSnapshot {
     symbols: SymbolTable,
     hierarchy: EngineHierarchy,
     types: Arc<[Skeleton]>,
     members: Arc<[IntrinsicMember]>,
     opaque: Arc<[OpaqueMember]>,
+    procedure_layouts: Arc<[EngineProcedureLayout]>,
     identity: u128,
     template_identity: u128,
     catalog_fields: Arc<[catalog::CatalogField]>,
@@ -110,6 +121,7 @@ impl EngineSnapshot {
         }
         let mut members = Vec::new();
         let mut opaque = Vec::new();
+        let mut procedure_layouts = Vec::new();
         for (i, class) in dmb.classes.iter().enumerate() {
             let owner = paths[i];
             if class.defining_variable_list_id() != NONE {
@@ -152,6 +164,7 @@ impl EngineSnapshot {
                     &mut symbols,
                     &mut members,
                     &mut opaque,
+                    &mut procedure_layouts,
                 )?;
             }
         }
@@ -191,6 +204,7 @@ impl EngineSnapshot {
             &mut symbols,
             &mut members,
             &mut opaque,
+            &mut procedure_layouts,
         )?;
         let hierarchy = EngineHierarchy {
             schema: identity,
@@ -207,6 +221,7 @@ impl EngineSnapshot {
             types: types.into(),
             members: members.into(),
             opaque: opaque.into(),
+            procedure_layouts: procedure_layouts.into(),
             identity,
             template_identity: xxhash_rust::xxh3::xxh3_128(bytes),
             catalog_fields: Arc::from([]),
@@ -302,29 +317,66 @@ impl EngineSnapshot {
     pub fn opaque_members(&self) -> &[OpaqueMember] {
         &self.opaque
     }
+    /// Positive actual list membership only. None is not proof of a fresh
+    /// source declaration: the caller must still resolve its ancestry/overrides.
+    pub fn procedure_layout(
+        &self,
+        owner: SymbolId,
+        name: SymbolId,
+        kind: MemberKind,
+    ) -> Result<Option<&dm_codegen_byond::procedure_abi::ProcLayout>, EngineError> {
+        let mut found = None;
+        for row in self
+            .procedure_layouts
+            .iter()
+            .filter(|row| row.owner == owner && row.name == Some(name) && row.kind == kind)
+        {
+            if found.is_some_and(|previous| previous != &row.layout) {
+                return Err(EngineError::Invalid(
+                    "ambiguous inherited engine procedure ABI".into(),
+                ));
+            }
+            found = Some(&row.layout);
+        }
+        Ok(found)
+    }
+    pub fn procedure_layouts(&self) -> &[EngineProcedureLayout] {
+        &self.procedure_layouts
+    }
     pub fn field_bases(&self) -> Vec<dm_ir::OpaqueFieldBase> {
         // Every observed variable licenses an opaque declaration base, even
         // when its typed source metadata is absent from the narrow catalog.
-        let mut bases: std::collections::BTreeMap<_, _> = self.members.iter()
+        let mut bases: std::collections::BTreeMap<_, _> = self
+            .members
+            .iter()
             .filter(|member| member.kind == MemberKind::Var)
-            .map(|member| ((member.owner, member.name), dm_ir::OpaqueFieldBase {
-                owner: member.owner,
-                name: member.name,
-                declared_type: dm_ir::DeclaredTypeKnowledge::Unsupported,
-            })).collect();
+            .map(|member| {
+                (
+                    (member.owner, member.name),
+                    dm_ir::OpaqueFieldBase {
+                        owner: member.owner,
+                        name: member.name,
+                        declared_type: dm_ir::DeclaredTypeKnowledge::Unsupported,
+                    },
+                )
+            })
+            .collect();
         for field in self.catalog_fields.iter() {
-            bases.insert((field.owner, field.name), dm_ir::OpaqueFieldBase {
-                owner: field.owner,
-                name: field.name,
-                declared_type: match field.declared_type {
-                    catalog::FieldTypeMeaning::Known(path) => {
-                        dm_ir::DeclaredTypeKnowledge::Known(path)
-                    }
-                    catalog::FieldTypeMeaning::Unsupported => {
-                        dm_ir::DeclaredTypeKnowledge::Unsupported
-                    }
+            bases.insert(
+                (field.owner, field.name),
+                dm_ir::OpaqueFieldBase {
+                    owner: field.owner,
+                    name: field.name,
+                    declared_type: match field.declared_type {
+                        catalog::FieldTypeMeaning::Known(path) => {
+                            dm_ir::DeclaredTypeKnowledge::Known(path)
+                        }
+                        catalog::FieldTypeMeaning::Unsupported => {
+                            dm_ir::DeclaredTypeKnowledge::Unsupported
+                        }
+                    },
                 },
-            });
+            );
         }
         bases.into_values().collect()
     }
@@ -369,6 +421,7 @@ fn extract_procs(
     symbols: &mut SymbolTable,
     members: &mut Vec<IntrinsicMember>,
     opaque: &mut Vec<OpaqueMember>,
+    layouts: &mut Vec<EngineProcedureLayout>,
 ) -> Result<(), EngineError> {
     if list == NONE {
         return Ok(());
@@ -386,7 +439,16 @@ fn extract_procs(
             .string(record.strings[0])
             .and_then(|v| std::str::from_utf8(v).ok())
             .ok_or_else(|| EngineError::Invalid("invalid procedure path".into()))?;
+        let layout = procedure_abi::capture_layout(record, |id| dmb.string(id))
+            .map_err(|error| EngineError::Invalid(error.to_string()))?;
         let Some(name) = path.rsplit('/').next().filter(|v| !v.is_empty()) else {
+            layouts.push(EngineProcedureLayout {
+                owner,
+                name: None,
+                kind,
+                wire_proc: *id,
+                layout,
+            });
             opaque.push(OpaqueMember {
                 owner,
                 name: None,
@@ -397,6 +459,13 @@ fn extract_procs(
         };
         symbols.intern(path)?;
         let name = symbols.intern(name)?;
+        layouts.push(EngineProcedureLayout {
+            owner,
+            name: Some(name),
+            kind,
+            wire_proc: *id,
+            layout,
+        });
         members.push(IntrinsicMember {
             owner,
             name,
@@ -492,22 +561,38 @@ mod tests {
                 Ok("/savefile/byond_version = 516\n".into())
             }
         }
-        let engine = EngineSnapshot::from_bytes(TEMPLATE, 1).unwrap()
-            .with_bootstrap_catalog().unwrap();
+        let engine = EngineSnapshot::from_bytes(TEMPLATE, 1)
+            .unwrap()
+            .with_bootstrap_catalog()
+            .unwrap();
         let seed = engine.frontend_seed();
         let frontend = dm_tree::frontend::build_with_config(
-            std::path::Path::new("world.dme"), &Source,
+            std::path::Path::new("world.dme"),
+            &Source,
             &std::collections::BTreeMap::new(),
-            dm_tree::frontend::FrontendConfig {workers: 1, engine: Some(&seed), observer: None},
-        ).unwrap();
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(&seed),
+                observer: None,
+            },
+        )
+        .unwrap();
         let tree = &frontend.snapshot.tree;
         let owner = tree.lookup_type(SymbolId::of("/savefile")).unwrap();
-        let member = tree.resolve(owner, SymbolId::of("byond_version"), MemberKind::Var).unwrap();
+        let member = tree
+            .resolve(owner, SymbolId::of("byond_version"), MemberKind::Var)
+            .unwrap();
         let metadata = &tree.member(member).unwrap().metadata;
         assert!(metadata.inherited_opaque.is_some());
         assert!(metadata.initializer.is_some());
-        let query = ResolveQuery::Var { owner: SymbolId::of("/savefile"), name: SymbolId::of("byond_version") };
-        assert_eq!(Resolver::resolve(tree.as_ref(), query), ResolvedMeaning::Unsupported(query));
+        let query = ResolveQuery::Var {
+            owner: SymbolId::of("/savefile"),
+            name: SymbolId::of("byond_version"),
+        };
+        assert_eq!(
+            Resolver::resolve(tree.as_ref(), query),
+            ResolvedMeaning::Unsupported(query)
+        );
     }
     #[test]
     fn invalid_template_is_an_explicit_decode_error() {

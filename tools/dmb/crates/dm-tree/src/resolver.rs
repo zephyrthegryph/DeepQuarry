@@ -242,27 +242,10 @@ impl SemanticTree {
         }
         self.inventory.unique = unique;
     }
-    fn source_slot(&self, mut id: MemberId) -> Option<(SymbolId, SymbolId)> {
-        loop {
-            let node = &self.members[id.index()];
-            if let Some(base) = &node.metadata.inherited_opaque {
-                return self
-                    .inventory
-                    .index
-                    .get(&(base.owner, base.name, MemberKind::Var))
-                    .and_then(|entry| entry.shared_owner.map(|owner| (owner, base.name)));
-            }
-            if matches!(
-                node.definition,
-                DefinitionMode::Override | DefinitionMode::Reopen
-            ) {
-                if let Some(previous) = node.previous {
-                    id = previous;
-                    continue;
-                }
-            }
-            return (node.metadata.flags & (1 | 8) != 0)
-                .then_some((self.types[node.owner.index()].path, node.name));
+    fn source_slot(&self, id: MemberId) -> Option<(SymbolId, SymbolId)> {
+        match self.variable_storage_for_member(id) {
+            M::Slot { owner, name, .. } => Some((owner, name)),
+            _ => None,
         }
     }
     pub(super) fn slot(owner: SymbolId, name: SymbolId) -> M {

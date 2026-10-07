@@ -7,6 +7,7 @@ mod adapter;
 pub mod constant_resolution;
 pub mod constants;
 pub mod frontend;
+pub mod initializers;
 mod normalize;
 mod procedure;
 mod resolver;

@@ -71,7 +71,7 @@ impl SemanticTree {
                     _ => M::Unsupported(query),
                 }
             }
-            Origin::Source(mut id) => {
+            Origin::Source(id) => {
                 let node = &self.members[id.index()];
                 if matches!(query, Q::DeclaredVarType { .. }) {
                     return match node.metadata.inherited_opaque.as_ref() {
@@ -82,37 +82,51 @@ impl SemanticTree {
                         None => M::DeclaredType(node.metadata.declared_type),
                     };
                 }
-                if let Some(base) = &node.metadata.inherited_opaque {
-                    return self
-                        .inventory
-                        .index
-                        .get(&(base.owner, base.name, MemberKind::Var))
-                        .map_or(M::Unsupported(query), |entry| {
-                            Self::intrinsic_storage(entry, query)
-                        });
-                }
-                loop {
-                    let node = &self.members[id.index()];
-                    if matches!(
-                        node.definition,
-                        DefinitionMode::Override | DefinitionMode::Reopen
-                    ) {
-                        if let Some(previous) = node.previous {
-                            id = previous;
-                            continue;
-                        }
-                    }
-                    let declaring_owner = self.types[node.owner.index()].path;
-                    return if node.metadata.flags & (1 | 8) != 0 {
-                        Self::slot(declaring_owner, name)
-                    } else {
-                        M::InstanceField {
-                            declaring_owner,
-                            name,
-                        }
-                    };
+                match self.variable_storage_for_member(id) {
+                    M::Unsupported(_) => M::Unsupported(query),
+                    answer => answer,
                 }
             }
+        }
+    }
+    /// Exact occurrence storage; unlike a name lookup this cannot accidentally
+    /// substitute a later authored shadow when planning an earlier declaration.
+    pub(crate) fn variable_storage_for_member(&self, mut id: MemberId) -> M {
+        let node = &self.members[id.index()];
+        let query = Q::VarStorage {
+            owner: self.types[node.owner.index()].path,
+            name: node.name,
+        };
+        let name = node.name;
+        if let Some(base) = &node.metadata.inherited_opaque {
+            return self
+                .inventory
+                .index
+                .get(&(base.owner, base.name, MemberKind::Var))
+                .map_or(M::Unsupported(query), |entry| {
+                    Self::intrinsic_storage(entry, query)
+                });
+        }
+        loop {
+            let node = &self.members[id.index()];
+            if matches!(
+                node.definition,
+                DefinitionMode::Override | DefinitionMode::Reopen
+            ) {
+                if let Some(previous) = node.previous {
+                    id = previous;
+                    continue;
+                }
+            }
+            let declaring_owner = self.types[node.owner.index()].path;
+            return if declaring_owner == SymbolId::of("/") || node.metadata.flags & (1 | 8) != 0 {
+                Self::slot(declaring_owner, name)
+            } else {
+                M::InstanceField {
+                    declaring_owner,
+                    name,
+                }
+            };
         }
     }
 }
@@ -137,6 +151,32 @@ mod tests {
                 .map(|node| (node.path, node.parent.map(|id| tree.types[id.index()].path)))
                 .collect(),
         }
+    }
+    #[test]
+    fn ordinary_root_variables_are_global_slots_without_modifier_flags() {
+        let tree = tree("var/value = 1\n/datum/a\n");
+        let owner = SymbolId::of("/");
+        let name = SymbolId::of("value");
+        let slot = Resolver::resolve(&tree, Q::VarStorage { owner, name });
+        assert!(
+            matches!(slot, M::Slot { owner: actual, name: actual_name, .. }
+            if actual == owner && actual_name == name)
+        );
+        assert_eq!(
+            Resolver::resolve(
+                &tree,
+                Q::VarStorage {
+                    owner: SymbolId::of("/datum/a"),
+                    name
+                }
+            ),
+            slot
+        );
+        let complete = tree
+            .clone()
+            .with_complete_intrinsics(hierarchy(&tree), vec![])
+            .unwrap();
+        assert_eq!(Resolver::resolve(&complete, Q::UniqueStaticVar(name)), slot);
     }
     #[test]
     fn authored_storage_and_type_are_independent_facts() {

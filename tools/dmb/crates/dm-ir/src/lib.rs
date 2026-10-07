@@ -14,6 +14,10 @@ pub use declarations::{
     Parameter, ProcedureMetadata, ProcedureSetting, ProcedureSettingNode, ProcedureSignature,
     SemanticValue, SettingOperation, SymbolicExpression,
 };
+mod initializer;
+pub use initializer::{
+    InitializerScope, InitializerTarget, InitializerUnit, InitializerValue, InitializerWrite,
+};
 
 mod resolver;
 pub use resolver::{ReadDomain, ResolveQuery, ResolvedMeaning, Resolver};
