@@ -1,6 +1,7 @@
 //! Span profiler with platform CPU clocks. No sampling agent or elevation.
 mod allocator;
 mod clock;
+mod memory;
 mod names;
 pub use allocator::CountingAllocator;
 use serde::Serialize;
@@ -29,6 +30,11 @@ pub struct StageReport {
     pub allocations: u64,
     pub allocated_bytes: u64,
     pub peak_live_bytes: u64,
+    /// Sampled current process PrivateUsage while this stage was active.
+    /// Overlapping stages observe the same process; this is not attributable.
+    pub sampled_peak_private_bytes: Option<u64>,
+    pub private_memory_samples: u64,
+    pub private_memory_failed_samples: u64,
     pub read_bytes: Option<u64>,
     pub write_bytes: Option<u64>,
     pub io_blocked_s: Option<f64>,
@@ -57,6 +63,7 @@ pub struct Report {
     pub cpu_crosscheck_ratio: Option<f64>,
     pub stages: Vec<StageReport>,
     pub coverage_notes: Vec<String>,
+    pub private_memory_sample_interval_ms: Option<u64>,
 }
 #[derive(Default)]
 struct Entry {
@@ -65,6 +72,7 @@ struct Entry {
     exclusive: u64,
     cpu_valid: bool,
     cpu_missing: bool,
+    active: u64,
 }
 struct State {
     calibration: clock::Calibration,
@@ -215,6 +223,7 @@ pub fn stage(name: &'static str) -> StageGuard {
     let start_wall = Instant::now();
     if let Some(state) = &state {
         cpu_segment(state, start_cpu, start_wall);
+        memory::enter(state, name);
         STACK.with(|stack| {
             stack.borrow_mut().push(Frame {
                 name,
@@ -325,6 +334,7 @@ impl Drop for StageGuard {
         let process = clock::process();
         let mut entries = state.entries.lock().unwrap_or_else(|e| e.into_inner());
         let entry = entries.entry(self.name).or_default();
+        entry.active = entry.active.saturating_sub(1);
         entry.report.name = self.name.into();
         entry.report.calls += 1;
         entry.report.wall_s += end_wall.duration_since(self.start).as_secs_f64();
@@ -374,6 +384,7 @@ pub struct ProfileGuard {
     path: PathBuf,
     chrome: Option<tracing_chrome::FlushGuard>,
     flame: Option<tracing_flame::FlushGuard<std::io::BufWriter<File>>>,
+    memory_sampler: Option<memory::Sampler>,
 }
 pub fn artifact_path(path: &Path, suffix: &str) -> PathBuf {
     path.with_extension(suffix.trim_start_matches('.'))
@@ -413,6 +424,7 @@ pub fn initialize(path: &Path) -> Result<ProfileGuard, String> {
     ACTIVE
         .set(Arc::clone(&state))
         .map_err(|_| "profiler already initialized".to_string())?;
+    let memory_sampler = memory::Sampler::start(Arc::clone(&state))?;
     Ok(ProfileGuard {
         state,
         start: Instant::now(),
@@ -420,6 +432,7 @@ pub fn initialize(path: &Path) -> Result<ProfileGuard, String> {
         path: path.into(),
         chrome: Some(chrome_guard),
         flame: Some(flame_guard),
+        memory_sampler,
     })
 }
 impl ProfileGuard {
@@ -440,6 +453,9 @@ impl ProfileGuard {
         self.finish_inner(sequential_stages)
     }
     fn finish_inner(&mut self, sequential_stages: &[&str]) -> Result<Report, String> {
+        if let Some(sampler) = self.memory_sampler.take() {
+            sampler.stop()?;
+        }
         let process = clock::process();
         let delta = |a: Option<u64>, b: Option<u64>| a.zip(b).map(|(a, b)| a.saturating_sub(b));
         let total = delta(process.cpu_ns, self.process.cpu_ns).map(|v| v as f64 / 1e9);
@@ -491,8 +507,10 @@ impl ProfileGuard {
             coverage_notes: vec![
                 "CPU folded stacks use exclusive entered stage segments; uninstrumented threads/work are excluded. Chrome/flame wall traces come from tracing spans.".into(),
                 "Allocator numbers include profiler overhead and nested scopes; peak_live is observed process allocator live bytes on current-thread allocations, not OS private memory attribution. Allocation counting requires the executable to install CountingAllocator.".into(),
+                "Windows stage private memory is current process PrivateUsage sampled nominally every 20 ms while named stages are active. Values overlap across stages, include profiler overhead, miss short stages and between-sample peaks, and are not allocations attributable to a stage. Null means no successful sample; failed samples are counted. Other platforms have no stage private-memory sampling.".into(),
                 "Stage I/O uses process-wide overlapping windows and includes profiling writes; it is not additive. Explicit attributed bytes/call elapsed/block durations cover only annotated operations; call elapsed includes scheduling and copying and is not blocked I/O. Failed calls can leave partial byte counts unknown. Windows peak_private is process lifetime peak committed private/pagefile usage; Linux private peak unavailable.".into(),
             ],
+            private_memory_sample_interval_ms: memory::interval_ms(),
         };
         self.chrome.take();
         self.flame.take();

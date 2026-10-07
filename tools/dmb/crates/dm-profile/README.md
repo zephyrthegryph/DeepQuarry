@@ -89,6 +89,23 @@ participating threads; it is not private memory attributable to that stage.
 `peak_private_bytes` is the OS process-lifetime peak committed private/pagefile
 usage, including setup; Linux private peak is currently unavailable.
 
+On Windows one background thread queries current `PrivateUsage` nominally every
+20 ms. `sampled_peak_private_bytes` is the largest observed **process-wide** value
+while the named stage was active on at least one thread. Nested and concurrent
+stages share the same observation; the value is neither additive nor memory owned
+by a stage. No extra OS query is made on stage entry/exit. The sampler holds the
+active-stage registry lock for the single memory query so entry/exit cannot race
+that observation. It wakes on shutdown and is joined before report assembly.
+
+`private_memory_samples` counts successful observations and
+`private_memory_failed_samples` counts unavailable OS queries during that stage.
+A stage shorter than the sampling interval can have no observations: its sampled
+peak stays null, never zero or the allocator peak. Between-sample peaks can be
+missed, and sampling is subject to scheduling delay. Other platforms leave these
+stage values unavailable. `private_memory_sample_interval_ms` describes the
+nominal Windows cadence, not an exact measurement-resolution guarantee. Sampler
+CPU and allocation overhead are included in process totals.
+
 Stage `read_bytes` and `write_bytes` are overlapping process-wide I/O windows,
 including trace writes: they are not additive or exact stage attribution.
 `record_io(read, write, Option<Duration>)` separately accumulates explicitly

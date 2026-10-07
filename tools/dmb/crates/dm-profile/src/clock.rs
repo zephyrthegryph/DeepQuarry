@@ -162,6 +162,21 @@ mod platform {
             peak_private_bytes: memory_ok.then_some(memory.peak_pagefile as u64),
         }
     }
+    pub fn current_private_bytes() -> Option<u64> {
+        let mut memory = Memory {
+            cb: std::mem::size_of::<Memory>() as u32,
+            ..Memory::default()
+        };
+        let cb = memory.cb;
+        // A current-process pseudo handle needs no elevation. The initialized
+        // PROCESS_MEMORY_COUNTERS_EX buffer remains valid for the entire call.
+        (unsafe { GetProcessMemoryInfo(GetCurrentProcess(), &mut memory, cb) } != 0)
+            .then_some(memory.private as u64)
+    }
+}
+#[cfg(windows)]
+pub(crate) fn current_private_bytes() -> Option<u64> {
+    platform::current_private_bytes()
 }
 #[cfg(target_os = "linux")]
 mod platform {
