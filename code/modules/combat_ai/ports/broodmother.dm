@@ -28,6 +28,7 @@
 		ai_brain.vision_range = 8
 		ai_brain.intelligence = AI_SMART
 		ai_brain.wander = TRUE
+		ai_brain.grant_role(/datum/capability/ai_role/lord) // the broodlings it births serve it
 
 TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/broodmother, get_ai_behaviors, list( \
 	/datum/ai_behavior/broodmother_spawn_brood, \

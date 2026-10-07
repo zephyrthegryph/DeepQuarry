@@ -146,6 +146,9 @@
 	var/mob/threat = brain.primary_target()
 	if(!owner || !threat)
 		return null
+	// A packmate sounded the retreat (an order in force on the pack): the whole pack falls back.
+	if(brain.intent_from_others(/datum/ai_intent/retreat))
+		return DQAI_RESULT(110, threat)
 	var/dying = owner.vitality() < 0.3
 	// "Outmatched" — we have no nearby faction allies and the target is robust.
 	var/no_backup = !length(brain.known_friendlies())
@@ -157,6 +160,12 @@
 	if(!dying && !outmatched)
 		return null
 	return DQAI_RESULT(120, threat)  // overrides plain flee_low_hp
+
+/datum/ai_behavior/pack_retreat/start(datum/ai_brain/brain, atom/target, atom/source)
+	. = ..()
+	// Falling back is the pack's: the order goes on the pack so every member hears it (and it ends with this member or after eight seconds).
+	if(brain.pack && !brain.intent_from_others(/datum/ai_intent/retreat))
+		intend(brain.pack, /datum/ai_intent/retreat, target, brain.holder, 8 SECONDS)
 
 /datum/ai_behavior/pack_retreat/tick(datum/ai_brain/brain, atom/target, atom/source)
 	var/mob/living/owner = brain.get_owner()

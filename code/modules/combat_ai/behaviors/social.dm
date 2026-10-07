@@ -63,9 +63,11 @@
 		return
 	var/mob/living/owner = brain.get_owner()
 	brain.perform_attack_op(owner, owner, "mob_attacks.alarm")
-	// Forward the attacker to each friendly's brain so they upgrade them to HOSTILE.
+	// The pack rallies as one: every packmate takes the attacker as a grudge and the order is on record.
+	brain.pack?.rally(target, owner, 60 SECONDS)
+	// Allies seen who are not in the pack: forward the attacker so they upgrade them to HOSTILE.
 	for(var/mob/living/ally as anything in brain.known_friendlies())
-		if(!ally.ai_brain)
+		if(!ally.ai_brain || ally.ai_brain.pack == brain.pack)
 			continue
 		ally.ai_brain.add_personal(target, DQ_DISPOSITION_HOSTILE, 60 SECONDS, "ally distress")
 	return DQ_BEHAVIOR_DONE

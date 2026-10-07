@@ -19,19 +19,14 @@ GLOBAL_VAR_INIT(ai_pack_perceptions, 0)
 GLOBAL_VAR_INIT(ai_pack_los_checks, 0)
 GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 
-/// The coalesce window of the pack's perception (every window gives one pass): a calm pack waits PACK_PERCEIVE_CALM, one that knows a hostile (alert) or
-/// fights (engaged) perceives every PACK_PERCEIVE_ACTIVE, and an engaged pack with no member on a player's screen every PACK_PERCEIVE_OFFSCREEN.
+/// The coalesce window of the pack's perception (every window gives one pass): the shortest any member's state asks for (states/states.dm): a calm pack
+/// waits PACK_PERCEIVE_CALM, an alert, fleeing or regrouping member asks PACK_PERCEIVE_ACTIVE, an engaged one PACK_PERCEIVE_ACTIVE on screen and
+/// PACK_PERCEIVE_OFFSCREEN off it.
 /datum/ai_pack/proc/perceive_interval(datum/act/A)
-	var/engaged = FALSE
-	var/alert = FALSE
+	var/window = PACK_PERCEIVE_CALM
 	for(var/datum/ai_brain/B as anything in members)
-		if(B.primary_threat)
-			engaged = TRUE
-		if(length(B.model?.visible_hostiles))
-			alert = TRUE
-	if(engaged)
-		return pack_relevance() >= RELEVANCE_VISIBLE ? PACK_PERCEIVE_ACTIVE : PACK_PERCEIVE_OFFSCREEN
-	return alert ? PACK_PERCEIVE_ACTIVE : PACK_PERCEIVE_CALM
+		window = min(window, B.state_window())
+	return window
 
 /datum/ai_pack/proc/perceive_run(datum/act/A)
 	perceive()
@@ -41,17 +36,12 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 	if(!last_perceived_at || ELAPSED_SINCE(src, last_perceived_at, CLOCK_WORLD) >= perceive_interval(null))
 		perceive()
 
-/// `members` ordered by their distance to `where`, nearest first (members out of `range` of it are left out).
-/datum/ai_pack/proc/nearest_first(list/brains, atom/where, ranged = TRUE)
+/// `brains` ordered by their distance to `where`, nearest first (a stable insertion sort: the lists are a pack's size).
+/datum/ai_pack/proc/nearest_first(list/brains, atom/where)
 	var/list/ordered = list()
 	var/list/dists = list()
 	for(var/datum/ai_brain/B as anything in brains)
-		var/mob/living/L = B.holder
-		if(L == where || L.z != where.z)
-			continue
-		var/d = get_dist(L, where)
-		if(ranged && d > B.vision_range)
-			continue
+		var/d = get_dist(B.get_owner(), where)
 		var/at = 1
 		while(at <= length(ordered) && dists[at] <= d)
 			at++
@@ -68,7 +58,7 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 		seen = list()
 		view_builds++
 		GLOB.ai_pack_view_builds++
-		for(var/mob/living/V in view(B.vision_range, B.holder))
+		for(var/mob/living/V in view(B.vision_range, B.get_owner()))
 			seen[V] = TRUE
 		views[B] = seen
 	return !!seen[L]
@@ -87,80 +77,81 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 	perceptions++
 	GLOB.ai_pack_perceptions++
 	EXPIRY_STAMP(src, last_perceived_at, CLOCK_WORLD)
-	cover_chunks(live)
 
-	// 1. candidates
+	// 1. candidates: the living mobs in the chunks that cover the members' vision (each mob is in exactly one chunk)
+	var/list/chunks = covering_chunks(live)
+	cover_chunks(chunks)
 	var/list/cands = list()
-	var/list/chunk_done = list()
-	for(var/datum/ai_brain/B as anything in live)
-		var/turf/T = get_turf(B.holder)
-		if(!T)
-			continue
-		for(var/datum/mob_chunk/C as anything in mob_chunks_around(T, B.vision_range))
-			if(chunk_done["[C.id]"])
-				continue
-			chunk_done["[C.id]"] = TRUE
-			for(var/mob/living/L as anything in living_in_chunk(C.id))
-				if(L.stat < DEAD)
-					cands[REF(L)] = L
+	for(var/datum/mob_chunk/C as anything in chunks)
+		for(var/mob/living/L as anything in living_in_chunk(C.id))
+			if(L.stat < DEAD)
+				cands += L
 
 	// 2-4. who is noted, who is seen
 	var/datum/faction_data/data = faction_data()
 	var/list/views = list()
 	var/list/fresh = list()
-	var/list/fresh_mobs = list()
+	var/list/seen_mobs = list()
+	var/list/seen_info = list()
 	var/hostile_candidates = 0
-	for(var/key in cands)
-		var/mob/living/L = cands[key]
-		var/list/near = nearest_first(live, L)
-		if(!length(near))
+	for(var/mob/living/L as anything in cands)
+		var/list/in_range = null
+		for(var/datum/ai_brain/B as anything in live)
+			var/mob/living/owner = B.get_owner()
+			if(owner != L && owner.z == L.z && get_dist(owner, L) <= B.vision_range)
+				LAZYADD(in_range, B)
+		if(!in_range)
 			continue
 		var/needs_los = FALSE
-		for(var/datum/ai_brain/B as anything in near)
+		for(var/datum/ai_brain/B as anything in in_range)
 			if(B.disposition_to(L) <= DQ_DISPOSITION_HOSTILE)
 				needs_los = TRUE
 				break
-		var/datum/ai_brain/spotter = near[1]
+		var/datum/ai_brain/spotter = in_range[1]
 		var/seen = FALSE
 		if(needs_los)
 			hostile_candidates++
-			for(var/datum/ai_brain/B as anything in near)
+			for(var/datum/ai_brain/B as anything in (length(in_range) > 1 ? nearest_first(in_range, L) : in_range))
 				if(member_sees(B, L, views))
 					spotter = B
 					seen = TRUE
 					break
+		var/key = REF(L)
 		var/first_at = world.time
 		var/list/old = sightings?[key]
 		if(old && old[SIGHT_SEEN] && seen)
 			first_at = old[SIGHT_FIRST_AT]
-		fresh[key] = list(REF(spotter), first_at, seen)
-		fresh_mobs += L
+		var/list/info = list(REF(spotter), first_at, seen)
+		fresh[key] = info
+		seen_mobs += L
+		seen_info += list(info)
 
-	// knowledge: replace, relation-listing the mobs
+	// knowledge: replace, relation-listing the mobs (only what changed)
 	sightings = length(fresh) ? fresh : null
-	rel_clear(src, nameof(sighted))
-	for(var/mob/living/L as anything in fresh_mobs)
-		rel_add(src, nameof(sighted), L)
+	rel_swap(src, nameof(sighted), seen_mobs)
 
 	// 5-6. publish to each member, the differences only
 	var/pending_alert = INFINITY
 	var/changed_members = 0
 	for(var/datum/ai_brain/B as anything in live)
+		var/mob/living/me = B.get_owner()
+		var/my_ref = REF(B)
 		var/list/hostiles = list()
 		var/list/friendlies = list()
 		var/list/neutrals = list()
-		for(var/mob/living/L as anything in sighted)
-			if(L == B.holder)
+		for(var/i in 1 to length(seen_mobs))
+			var/mob/living/L = seen_mobs[i]
+			if(L == me)
 				continue
-			var/list/S = sightings[REF(L)]
+			var/list/S = seen_info[i]
 			var/disposition = B.disposition_to(L)
 			if(disposition <= DQ_DISPOSITION_HOSTILE)
 				if(!S[SIGHT_SEEN])
 					continue
-				if(S[SIGHT_SPOTTER] != REF(B))
+				if(S[SIGHT_SPOTTER] != my_ref)
 					var/datum/ai_brain/spotter = locate(S[SIGHT_SPOTTER])
 					var/remaining = data.alert_delay - (world.time - S[SIGHT_FIRST_AT])
-					if(!spotter || QDELETED(spotter) || !spotter.holder || get_dist(spotter.holder, B.holder) > data.comm_radius)
+					if(!spotter || QDELETED(spotter) || !spotter.get_owner() || get_dist(spotter.get_owner(), me) > data.comm_radius)
 						continue
 					if(remaining > 0)
 						pending_alert = min(pending_alert, remaining)
@@ -182,19 +173,26 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 /datum/ai_pack/proc/perceive_pending()
 	perceive()
 
-/// Keeps the chunk watches on the chunks that cover the live members' vision (made when they change, so a member that walked into a new chunk is heard there).
-/datum/ai_pack/proc/cover_chunks(list/live = null)
-	live ||= live_members()
-	var/list/ids = list()
+/// The chunks that cover the live members' vision, each once.
+/datum/ai_pack/proc/covering_chunks(list/live)
 	var/list/chunks = list()
+	var/list/ids = list()
 	for(var/datum/ai_brain/B as anything in live)
-		var/turf/T = get_turf(B.holder)
+		var/turf/T = get_turf(B.get_owner())
 		if(!T)
 			continue
 		for(var/datum/mob_chunk/C as anything in mob_chunks_around(T, B.vision_range))
 			if(!(C.id in ids))
 				ids += C.id
 				chunks += C
+	return chunks
+
+/// Keeps the chunk watches on `chunks` (made when they change, so a member that walked into a new chunk is heard there).
+/datum/ai_pack/proc/cover_chunks(list/chunks = null)
+	chunks ||= covering_chunks(live_members())
+	var/list/ids = list()
+	for(var/datum/mob_chunk/C as anything in chunks)
+		ids += C.id
 	if(!ai_pack_ids_differ(ids, covered_ids))
 		return
 	drop_chunk_watches()
@@ -236,15 +234,19 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 
 /// One perception list brought to `want` by removing what is gone and adding what is new. TRUE when anything changed.
 /datum/world_model/proc/swap_perceived(var_name, list/want)
-	var/list/have = vars[var_name]
+	return rel_swap(src, var_name, want)
+
+/// Brings the relation list `var_name` of `E` to `want` touching only the differences (rel_remove for what left, rel_add for what came). TRUE when anything changed.
+/proc/rel_swap(datum/E, var_name, list/want)
+	var/list/have = E.vars[var_name]
 	var/changed = FALSE
-	for(var/mob/living/M as anything in have.Copy())
-		if(!(M in want))
-			rel_remove(src, var_name, M)
+	for(var/datum/D as anything in have?.Copy())
+		if(!(D in want))
+			rel_remove(E, var_name, D)
 			changed = TRUE
-	for(var/mob/living/M as anything in want)
-		if(!(M in have))
-			rel_add(src, var_name, M)
+	for(var/datum/D as anything in want)
+		if(!(D in have))
+			rel_add(E, var_name, D)
 			changed = TRUE
 	return changed
 
@@ -252,4 +254,6 @@ GLOBAL_VAR_INIT(ai_pack_view_builds, 0)
 /datum/ai_brain/proc/perception_changed()
 	trace("perception changed: [length(model.visible_hostiles)] hostile(s), [length(model.visible_friendlies)] friendly(ies)")
 	update_primary_threat()
+	assess_state()
+	PUBLISH(src, ai_perceive)
 	invalidate_selection()

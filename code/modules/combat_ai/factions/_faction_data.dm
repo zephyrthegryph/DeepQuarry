@@ -40,6 +40,8 @@ GLOBAL_DATUM_INIT(dq_faction_data_default, /datum/faction_data, new())
 	var/pack_doctrine = PACK_SPREAD
 	/// Members per target under PACK_SPREAD.
 	var/spread_cap = 2
+	/// This faction's own set of brain states (states/states.dm): list("calm", "alert", "engaged", "fleeing", "regroup" => state capability type); null is the default set.
+	var/list/states = null
 
 /// Per-subtype type table of faction_key (string) => DQ_DISPOSITION_*.
 /// Override with TYPE_TABLE(); one shared table per subtype, no per-instance allocation.

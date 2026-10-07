@@ -43,6 +43,15 @@ TYPE_TABLE_DECLARE(/datum/ai_behavior, get_player_verb_info, null)
 /datum/ai_brain/proc/on_holder_login(mob/source)
 	if(source && istype(source, /mob/living))
 		grant(source, granted_verb(/mob/living/proc/dq_use_combat_move), src)
+	// A player-controlled mob is out of its pack (unless it is on autopilot): the pack never perceives or targets for it.
+	if(!autopilot)
+		leave_pack("player took over")
+
+/// The player left the mob: it goes back to an AI pack.
+/datum/ai_brain/proc/on_holder_logout_event(datum/act/notice/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(!pack && holder && !holder.client)
+		seek_pack()
 
 // ---------------------------------------------------------------------------
 // Dispatcher verb

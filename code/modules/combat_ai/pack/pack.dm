@@ -47,6 +47,7 @@ CAPABILITIES(/datum/ai_pack)
 	links(/datum/ai_pack::members, /datum/ai_brain::pack, a_many = TRUE)
 	ref_one(nameof(leader))
 	ref_many(nameof(sighted))
+	owns_many(nameof(intents), /datum/ai_intent)
 	on_notice(/datum/notice/ai_pack_stirred, coalesce(PROC_REF(perceive_interval)), then(PROC_REF(perceive_run)))
 	every(PACK_UPKEEP_INTERVAL, then(PROC_REF(upkeep_run)), when = nameof(needs_upkeep))
 
@@ -83,16 +84,16 @@ CAPABILITIES(/datum/ai_pack)
 /datum/ai_pack/proc/live_members()
 	. = list()
 	for(var/datum/ai_brain/B as anything in members)
-		var/mob/living/L = B.holder
-		if(L && !QDELETED(L) && L.stat < DEAD && L.loc)
+		var/mob/living/L = B.get_owner()
+		if(L && !QDELETED(L) && L.stat < DEAD && L.loc && !(L.client && !B.autopilot))
 			. += B
 
 /// The highest relevance (STAT_RELEVANCE) of any member's mob: the pack is as relevant as its most relevant member.
 /datum/ai_pack/proc/pack_relevance()
 	. = RELEVANCE_NONE
 	for(var/datum/ai_brain/B as anything in members)
-		if(B.holder)
-			. = max(., stat_value(B.holder, STAT_RELEVANCE))
+		if(B.get_owner())
+			. = max(., stat_value(B.get_owner(), STAT_RELEVANCE))
 
 // ---------------------------------------------------------------------------
 // Membership
@@ -106,7 +107,7 @@ CAPABILITIES(/datum/ai_pack)
 	if(old && old != src)
 		old.remove_member(B, "joined pack #[serial]")
 	rel_add(src, nameof(members), B)
-	trace("[B.holder] joined ([B.holder?.type])")
+	trace("[B.get_owner()] joined ([B.get_owner()?.type])")
 	sync_standings()
 	elect_leader()
 	stir("member joined")
@@ -116,13 +117,13 @@ CAPABILITIES(/datum/ai_pack)
 	if(!(B in members))
 		return
 	rel_remove(src, nameof(members), B)
-	if(B.holder && !QDELETED(B.holder) && faction_key)
-		unstanding(B.holder, faction_key, src)
-	trace("[B.holder] left ([reason])")
+	if(B.get_owner() && !QDELETED(B.get_owner()) && faction_key)
+		unstanding(B.get_owner(), faction_key, src)
+	trace("[B.get_owner()] left ([reason])")
 	sync_standings()
 	if(!length(members))
 		trace("empty, deleted")
-		qdel(src)
+		spent(src)
 		return
 	elect_leader()
 
@@ -142,7 +143,7 @@ CAPABILITIES(/datum/ai_pack)
 		rel_set(src, nameof(leader), best)
 	else
 		rel_clear(src, nameof(leader))
-	trace("leader [best?.holder || "none"] (was [old?.holder || "none"])")
+	trace("leader [best?.get_owner() || "none"] (was [old?.get_owner() || "none"])")
 
 /// Raises the pack's perception trigger (coalesced: any number of stirs within a window give one pass).
 /datum/ai_pack/proc/stir(why)
@@ -158,16 +159,7 @@ CAPABILITIES(/datum/ai_pack)
 	/// The pack this brain is in (a link; null only while it is dead, being deleted, or before it has one).
 	var/datum/ai_pack/pack = null
 	/// world.time the brain was made: the seniority half of its authority.
-	var/born_at = 0
-
-/// The brain's weight in a leader election (doc ai_packs.md B6): health fraction (0..20) plus seniority (0..10); roles and traits add to it.
-/datum/ai_brain/proc/authority()
-	var/score = 0
-	var/mob/living/L = holder
-	if(L && !QDELETED(L))
-		score += clamp(L.vitality(), 0, 1) * 20
-	score += clamp((world.time - born_at) / (10 MINUTES), 0, 1) * 10
-	return score
+	EXPIRY_DECLARE(born_at)
 
 /// Puts this brain in a pack: the pack of the nearest leader within its faction's join radius, else a pack of its own.
 /datum/ai_brain/proc/seek_pack()
@@ -204,7 +196,7 @@ CAPABILITIES(/datum/ai_pack)
 			if(seen[P])
 				continue
 			seen[P] = TRUE
-			var/mob/living/lead = P.leader?.holder
+			var/mob/living/lead = P.leader?.get_owner()
 			if(!lead || lead.z != holder.z)
 				continue
 			var/d = get_dist(holder, lead)
@@ -237,17 +229,17 @@ CAPABILITIES(/datum/ai_pack)
 	if(QDELETED(src) || !length(members))
 		return
 	var/datum/faction_data/data = faction_data()
-	var/mob/living/lead = leader?.holder
+	var/mob/living/lead = leader?.get_owner()
 	if(lead && !QDELETED(lead))
 		for(var/datum/ai_brain/B as anything in members.Copy())
-			var/mob/living/L = B.holder
+			var/mob/living/L = B.get_owner()
 			if(B == leader || !L || QDELETED(L) || B.is_tethered())
 				continue
 			if(L.z != lead.z || get_dist(L, lead) > data.pack_leave_radius)
 				GLOB.ai_pack_splits++
 				trace("split: [L] is [L.z == lead.z ? get_dist(L, lead) : "off-level"] tiles from leader [lead] (leave radius [data.pack_leave_radius])")
 				B.leave_pack("beyond the leave radius")
-				var/datum/ai_pack/solo = new /datum/ai_pack(B.holder.faction)
+				var/datum/ai_pack/solo = new /datum/ai_pack(B.get_owner().faction)
 				solo.add_member(B)
 		if(QDELETED(src))
 			return
@@ -257,7 +249,7 @@ CAPABILITIES(/datum/ai_pack)
 
 /// Merges with the pack whose leader is within the join radius of this pack's leader: the smaller joins the larger (the older on a tie).
 /datum/ai_pack/proc/merge_nearby(datum/faction_data/data)
-	var/mob/living/lead = leader?.holder
+	var/mob/living/lead = leader?.get_owner()
 	if(!lead || QDELETED(lead))
 		return
 	var/turf/T = get_turf(lead)
@@ -273,7 +265,7 @@ CAPABILITIES(/datum/ai_pack)
 			if(checked[P] || P.faction_key != faction_key)
 				continue
 			checked[P] = TRUE
-			var/mob/living/their_lead = P.leader?.holder
+			var/mob/living/their_lead = P.leader?.get_owner()
 			if(!their_lead || QDELETED(their_lead) || their_lead.z != lead.z || get_dist(their_lead, lead) > data.pack_join_radius)
 				continue
 			var/datum/ai_pack/big = src
@@ -286,7 +278,3 @@ CAPABILITIES(/datum/ai_pack)
 			for(var/datum/ai_brain/B as anything in small.members.Copy())
 				big.add_member(B)
 			return
-
-/// Sworn members never split off (roles, B6). Overridden by the sworn role.
-/datum/ai_brain/proc/is_tethered()
-	return FALSE

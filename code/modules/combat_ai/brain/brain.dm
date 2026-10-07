@@ -64,6 +64,8 @@
 	/// brain uses a long discovery cadence while combat stays responsive.
 	EXPIRY_DECLARE(next_strategic_at)
 	var/idle_strategic_interval = 10 SECONDS
+	/// Tactics started so far (type => times): diagnostics for traces and the creature smoke tests.
+	var/tmp/list/started_counts = null
 	/// The interval the action loop was last armed with (action_interval()); poke_action_loop() re-arms a stretched one.
 	var/tmp/armed_interval = 0
 	/// world.time of the last behaviour selection (pick_and_run()); engaged brains re-select at least every DQ_ENGAGED_RECHECK.
@@ -74,6 +76,8 @@
 CAPABILITIES(/datum/ai_brain)
 	ref_many(nameof(behavior_sources))
 	owns_one(nameof(model), /datum/world_model)
+	ref_one(nameof(lord))
+	modes(nameof(ai_state))
 
 /datum/ai_brain/New(mob/living/owner)
 	if(!owner)
@@ -90,10 +94,14 @@ CAPABILITIES(/datum/ai_brain)
 	// Lazily add the player-castable-moves dispatcher verb on login — avoids
 	// bloating the verbs list of every wild simple_mob in the round.
 	observe(holder, /datum/notice/mob_login, src, then(PROC_REF(on_holder_login_event)))
+	observe(holder, /datum/notice/mob_logout, src, then(PROC_REF(on_holder_logout_event)))
+	observe(holder, /datum/notice/standing_changed, src, then(PROC_REF(standings_changed)))
 	if(holder.client)
 		on_holder_login(holder)
 	rebuild_behaviors()
-	born_at = world.time
+	EXPIRY_STAMP(src, born_at, CLOCK_WORLD)
+	set_ai_state(state_set()["calm"])
+	modes_sync(src, nameof(ai_state)) // a datum made with new is not initialized by the lifecycle: grant its first state now
 	seek_pack()
 	return ..()
 
@@ -121,6 +129,13 @@ CAPABILITIES(/datum/ai_brain)
 
 /datum/ai_brain/proc/set_leader(mob/new_leader)
 	rel_set(src, nameof(leader), new_leader)
+	// Following a mob that has a brain is swearing to it: the follower joins its pack as sworn (roles/roles.dm). A player or a brainless leader is only followed.
+	if(!new_leader)
+		unserve()
+	else if(isliving(new_leader) && new_leader != holder)
+		var/mob/living/lead = new_leader
+		if(lead.ai_brain)
+			serve(lead)
 
 /// The atom granting behaviour `btype`, or null (innate, or the source was deleted).
 /datum/ai_brain/proc/behavior_source(btype)
@@ -314,6 +329,7 @@ CAPABILITIES(/datum/ai_brain)
 /datum/ai_brain/proc/pick_and_run()
 	selection_dirty = FALSE
 	EXPIRY_STAMP(src, last_pick_at, CLOCK_WORLD)
+	assess_state()
 	if(!effective_behaviors || !length(effective_behaviors))
 		return FALSE
 
@@ -329,7 +345,7 @@ CAPABILITIES(/datum/ai_brain)
 		var/datum/ai_behavior/B = dq_get_behavior(btype)
 		if(B.requires_held_source && !source)
 			continue
-		if(!B.no_threat_required && !primary_threat && B.priority_class >= DQ_BEHAVIOR_PRIORITY_NORMAL)
+		if(!state_allows(B))
 			continue
 		if(!B.applicable_to(holder))
 			continue
@@ -375,12 +391,16 @@ CAPABILITIES(/datum/ai_brain)
 	rel_set(src, nameof(active_target), target)
 	rel_set(src, nameof(active_source), source)
 	var/datum/ai_behavior/B = dq_get_behavior(btype)
+	LAZYINITLIST(started_counts)
+	started_counts[btype] = (started_counts[btype] || 0) + 1
 	trace("start [btype] on [target]")
 	var/result = B.start(src, target, source)
 	if(result == DQ_BEHAVIOR_DONE)
 		stop_active(DQ_BEHAVIOR_STOP_COMPLETED)
 	else if(result == DQ_BEHAVIOR_FAILED)
 		stop_active(DQ_BEHAVIOR_STOP_FAILED)
+	else
+		assess_state() // a fleeing tactic running makes the brain fleeing
 
 /datum/ai_brain/proc/stop_active(reason)
 	if(!active_behavior_type)
@@ -398,6 +418,7 @@ CAPABILITIES(/datum/ai_brain)
 	// Force the next tick to re-pick rather than wait for the slow tick to
 	// flip selection_dirty.
 	selection_dirty = TRUE
+	assess_state()
 
 /datum/ai_brain/proc/invalidate_selection()
 	selection_dirty = TRUE
@@ -457,6 +478,7 @@ CAPABILITIES(/datum/ai_brain)
 		pack?.trace("[holder] assigned [new_threat || "no target"]")
 		rel_set(src, nameof(primary_threat), new_threat)
 		sync_fast_processing()
+		assess_state()
 
 /// Shared "we no longer have a threat" path: clears the slot, signals, stops
 /// whatever combat behavior was chasing it and leaves the fast loop.
@@ -466,6 +488,7 @@ CAPABILITIES(/datum/ai_brain)
 	if(active_behavior_type)
 		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 	sync_fast_processing()
+	assess_state()
 
 /// TRUE if being struck by `attacker` should make us hostile to them. Same-faction
 /// mobs and table-declared allies don't feud over friendly fire / splash damage;
@@ -532,6 +555,8 @@ CAPABILITIES(/datum/ai_brain)
 	if(new_stat >= DEAD)
 		manage_processing(0)
 		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
+		release_servants()
+		unserve()
 		leave_pack("died")
 	else if(old_stat >= DEAD)
 		manage_processing(DQAI_PROCESSING)

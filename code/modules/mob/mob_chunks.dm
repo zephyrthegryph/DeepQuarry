@@ -53,7 +53,7 @@ GLOBAL_VAR_INIT(player_chunk_watches, 0)
 			var/turf/T = locate(x, y, z)
 			if(!T)
 				continue
-			for(var/mob/living/L in T)
+			for(var/mob/living/L as anything in turf_contents_of_type(T, /mob/living))
 				LAZYSET(C.living_refs, REF(L), TRUE)
 
 /// The living mobs standing in the chunk with id `id` (a fresh list; callers filter stat and deletion).

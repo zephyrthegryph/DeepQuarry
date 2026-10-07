@@ -19,6 +19,8 @@ STAT(/atom, clock_rate, MIN, base = 1, virtual = TRUE)
 /// at or above it; hold(E, STAT_RELEVANCE, RELEVANCE_NEAR, source) / release(E, STAT_RELEVANCE, source), and a datum source deleted drops its hold.
 STAT(/datum, relevance, MAX, base = RELEVANCE_NONE, virtual = TRUE)
 STAT(/mob/living, clock_rate_bio, MIN, base = 1)
+/// What a brain's mob brings to a pack's leader election (code/modules/combat_ai/roles/roles.dm): the lord role +100 and the alpha trait +30 are holds on it.
+STAT(/mob/living, ai_authority, SUM, base = 0, virtual = TRUE)
 STAT(/area, lights_nightshift, ANY)
 STAT(/area, lights_emergency_off, ANY)
 

@@ -48,6 +48,10 @@
 	var/standings_aggro = null
 	/// The subjects the faction rows are toward (so they can be released).
 	var/list/standings_keys = null
+	/// "[REF(mob)]|faction|client" => the disposition standing_toward() gave, dropped whenever a standing row of the mob changes (standing_changed). A pack pass
+	/// asks for every pair of its members and sightings, so the answer is remembered; the key carries what the engine's own cache checks (the subject's
+	/// faction and whether a player has it).
+	var/list/disposition_memo = null
 
 /// TRUE when the mob's faction or hostile-on-sight flag is not what the faction rows were placed for.
 /datum/ai_brain/proc/standings_stale()
@@ -67,6 +71,7 @@
 	for(var/key in standings_keys)
 		unstanding(holder, key, SRC_AI_FACTION)
 	standings_keys = list()
+	disposition_memo = null
 	var/faction = holder.faction
 	var/aggro = aggro_on_sight()
 	standings_faction = faction
@@ -94,7 +99,17 @@
 		return DQ_DISPOSITION_ALLY
 	if(standings_stale())
 		place_faction_rows()
-	return dq_standing_disposition(standing_toward(holder, other))
+	var/key = "[REF(other)]|[other.faction]|[other.client ? 1 : 0]"
+	var/memo = disposition_memo?[key]
+	if(!isnull(memo))
+		return memo
+	var/result = dq_standing_disposition(standing_toward(holder, other))
+	LAZYSET(disposition_memo, key, result)
+	return result
+
+/// A standing row of the mob changed (placed, replaced, released, expired, source deleted): what was remembered is stale.
+/datum/ai_brain/proc/standings_changed(datum/act/A)
+	disposition_memo = null
 
 /// The grudges provider: this brain thinks `disposition` of `other` for `duration` deciseconds (0: until released), priority AI_STANDING_GRUDGE. One per subject.
 /// (The old add_personal(): the name stays for its callers; a row is a grudge whatever the value.)
@@ -134,9 +149,9 @@
 /// source the pack).
 /datum/ai_pack/proc/sync_standings()
 	for(var/datum/ai_brain/B as anything in members)
-		if(!B.holder || QDELETED(B.holder) || !faction_key)
+		if(!B.get_owner() || QDELETED(B.get_owner()) || !faction_key)
 			continue
 		if(length(members) > 1)
-			standing(B.holder, toward = faction_key, value = STANDING_ALLY, source = src, priority = AI_STANDING_PACK, reason = "pack member")
+			standing(B.get_owner(), toward = faction_key, value = STANDING_ALLY, source = src, priority = AI_STANDING_PACK, reason = "pack member")
 		else
-			unstanding(B.holder, faction_key, src)
+			unstanding(B.get_owner(), faction_key, src)

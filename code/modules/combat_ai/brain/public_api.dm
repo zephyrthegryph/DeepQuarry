@@ -22,6 +22,7 @@
 		rel_clear(src, nameof(primary_threat))
 		if(active_behavior_type)
 			stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
+		assess_state()
 		invalidate_selection()
 
 /// Legacy name for lose_target — kept so direct sed-style migrations work.
@@ -45,6 +46,7 @@
 
 /datum/ai_brain/proc/lose_follow()
 	rel_clear(src, nameof(leader))
+	unserve()
 	invalidate_selection()
 
 // ---------------------------------------------------------------------------

@@ -73,6 +73,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/kururak, get_ai_behaviors, list( \
 		K.remove_body_effect(/datum/body_effect/ace)
 
 	var/has_ace = K.has_body_effect(/datum/body_effect/ace)
+	brain.set_alpha(has_ace) // the ace is the pack's alpha: +30 authority at the leader election
 	if(K.obey_pack_rule)
 		if(has_ace)
 			// The pack leader never follows another kururak.

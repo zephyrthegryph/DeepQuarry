@@ -74,10 +74,6 @@ GLOBAL_VAR_INIT(ai_trace_all, FALSE)
 	RETURN_TYPE(/mob/living)
 	return primary_threat
 
-/// The orders in force on this brain (intents with a source and a lifetime). None until the roles land (B6).
-/datum/ai_brain/proc/active_intents()
-	return list()
-
 /// The first step of a path to `goal` (a turf or atom), asking the path system for one when none is cached; null when there is none yet.
 /datum/ai_brain/proc/path_to(atom/goal, get_to = 1)
 	if(!goal || !holder)

@@ -79,6 +79,19 @@
 		clear_path()
 		return FALSE
 
+	// A pack of several members shares one flow field per goal (pack/flowfield.dm): a member the field covers steps along it and never searches.
+	if(pack?.shares_paths())
+		if(get_to > 0 && get_dist(holder, target_turf) <= get_to)
+			return FALSE
+		var/turf/shared_next = pack.flow_step(src, target_turf)
+		if(shared_next)
+			holder.face_atom(shared_next)
+			var/turf/shared_from = get_turf(holder)
+			act_step(shared_next)
+			if(get_turf(holder) != shared_from)
+				failed_steps = 0
+				return TRUE
+
 	// Recompute if no cached path, goal moved too far, or we keep failing.
 	var/need_recompute = !length(planned_path)
 	if(!need_recompute && path_goal() && get_dist(path_goal(), target_turf) > path_recompute_tolerance)
