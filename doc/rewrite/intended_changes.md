@@ -2437,3 +2437,26 @@ underlays of every creatable subtype of each converted chain, recorded from the 
   existing ticket and the SPASM collar ownership check are told by the handler; the survival capsule's VR refusal is a handler line.
 * **Datum periodics stay legacy**: `/datum/shuttle` (two), `/datum/turbolift` and `/datum/generated_station_planner` are non-atoms; an every() is armed only by
   `engine_holder_init()` for atoms, and the `om_after_rearm` lint bans a timer chain. They convert when `lifeform_datum_new()` arms type-level every() for non-atoms.
+
+## Legacy-form sweep (DECLARE_INTERACTIONS, DAMAGE_REACTION, DECLARE_EMAG, DECLARE_PERIODIC, DECLARE_REPEAT), integrator notes
+
+The conversion pins (menu pins and hit/emag pins, `doc/rewrite/snapshot_pins.md`) were recorded on the legacy forms and blessed after the sweep; the rows that changed fall into
+these classes, each systematic. No row was blessed that is not one of them.
+
+* **A null-named legacy interaction is a menu entry labelled "Use".** `INTERACT_HAND(null, ...)`, `INTERACT_ITEM(null, ...)` and `INTERACT_USE(null, ...)` were invisible in the menu and the
+  screentip; the op has a label, so "Use" (or the op's own label) appears, and `click: nothing` becomes `click: Click: Use` for the held probes the op binds. The effect is the same.
+* **The legacy `Emag` menu entry and its "(refused: needs a cryptographic sequencer)" rows go.** The library's `emag()` is item-bound: the card's click does the work, the menu does not list it.
+  A refusal is the library's "It is already subverted." where the old handler said its own.
+* **Refusal wording.** `REQ_IN_INVENTORY` / `REQ_SELF_HELD` rows ("you need to be carrying it", "not in your hand") are the engine's "not in your hand" / "You can't do that.". Rows for the
+  base `/obj/item` defaults changed with the move of the item defaults into ops: "Pick up" (empty hand only, lowest tier), "Collect", "Customise", "Move To Top", "Toggle Digestable".
+* **Requirements that read untracked state became handler refusals** (`sem/reads` cannot follow `loc`, `client`, `mind`, `held`, untracked vars through `req()`): the check runs first in the
+  handler and answers `OP_DECLINE` after saying its text, so the click goes on to the next candidate as the old failed requirement did. The menu no longer greys such an entry out with the
+  reason; the zoom verbs of the scoped guns, the hoist, card decks, the laptop fold, the locket, the gas mask hailer, the spellbook, the deadringer and a few more.
+* **Op keys are new** (named from the handler, no `gen_*`): the `keys:` rows of every converted type.
+* **Hit hooks.** A hook that took the packet over or rescales it (mecha blast, shield thrown hit, shieldgen EMP, projector EMP, grille blob) is `extend(/datum/act/hit/x, instead(...))`;
+  hooks that only react are `on_notice(/datum/notice/hit/x)` and run after the hit lands. A hook that used to run twice on a severity-1 blast (the vendor's sparks, the mecha afflictions) runs once.
+* **Hand ops answer with a held item** (engine semantics, final_api section 9: a `hand()` touch is the fallback of a click that no `item()` op took): a smoleworld building clicked with a card
+  now crumbles. The generic item "Pick up" is gated on an empty hand to keep the old behaviour.
+* **The `/obj/item` and `/turf` default ops sit at the lowest tier** (`OP_PRIORITY_DEFAULT - 10`): the old defaults ran after every type's own interaction.
+* **Cosmetic and ambient periodics opt into proximity** (`proximity_tracked`, `when = STAT_RELEVANCE`): they stop when no client is near. Simulation periodics keep running everywhere.
+* **`analyze gen reads` emits its table in chunks**: BYOND does not compile one list literal of about 760 assoc entries.
