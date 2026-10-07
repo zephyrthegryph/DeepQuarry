@@ -174,6 +174,17 @@ pub fn parts() -> Vec<Part> {
         )
         .flt(vec![Flt::KeepPaths("legacy_forms_converted")])
         .allow(Allow::Strict),
+        // The timed-action forms (task_timed, task_start, task_busy and the om_task_periodic family): a hard ban in the folders and files that reached
+        // zero (`timed_forms_converted` in tools/ci/lint_scopes.toml). A timed action a player does is an op with wait(); a periodic is every().
+        Part::new(
+            "timed_task_forms_banned_in_converted_folders",
+            "timed-action forms: banned in the converted folders",
+            "task_timed(), task_start(), task_busy() or om_task_periodic*() in a folder or file listed under timed_forms_converted. A timed action is an op with wait(t) (begins(MSG(x)) for the start message, claims() for exclusivity, stack(T, n) for a cost; doc/rewrite/conversion_guide.md section 12), a periodic is every(interval, then(PROC_REF(x)), when =).",
+            Files::Code,
+            line(r"^[^/]*\b(task_timed|task_start|task_busy|om_task_periodic|om_task_periodic_stop|om_task_periodic_running)\("),
+        )
+        .flt(vec![Flt::KeepPaths("timed_forms_converted")])
+        .allow(Allow::Strict),
         Part::new(
             "bump_ratchet_on_bumped_overrides",
             "bump: ratchet on Bumped() overrides",

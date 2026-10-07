@@ -185,50 +185,37 @@ CAPABILITIES(/obj/item/beartrap)
 /obj/item/material/barbedwire/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())
 
+MSG_DEF(barbedwire/deploying, "You begin deploying %T%!", "%U% starts to deploy %T%.")
+MSG_DEF(barbedwire/deployed, "You have deployed %T%!", "%U% has deployed %T%.")
+MSG_DEF(barbedwire/collecting, "You begin collecting %T%!", "%U% starts to collect %T%.")
+MSG_DEF(barbedwire/collected, "You have collected %T%!", "%U% has collected %T%.")
+
 CAPABILITIES(/obj/item/material/barbedwire)
-	op("deploy", in_hand(), label("Deploy trap"), then(PROC_REF(deploy_trap_input)))
+	op("deploy", in_hand(), label("Deploy trap"), needs(req(PROC_REF(can_deploy), silent = TRUE)),
+		begins(MSG(barbedwire/deploying), blind = "You hear the rustling of wire."), wait(6 SECONDS),
+		then(PROC_REF(deploy_wire)), says(MSG(barbedwire/deployed), blind = "You hear the rustling of wire."))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
-	op("collect", hand(), then(PROC_REF(interaction_hand)))
+	op("collect", hand(), label("Collect"), when(PROC_REF(can_collect)),
+		begins(MSG(barbedwire/collecting), blind = "You hear the sound of rustling wire."), plays(SFX_MACHINES_CLICK), wait(PROC_REF(collect_time)),
+		then(PROC_REF(collect_wire)), says(MSG(barbedwire/collected)))
 	// a hit wears the coil, then the material's own repair still has its turn
 	op("barbedwire_hit", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(barbedwire_interaction_item)))
 
-/obj/item/material/barbedwire/proc/deploy_trap_input(datum/act/op/A)
-	interaction_self(A.actor, A.held, null)
-	return OP_OK
+/obj/item/material/barbedwire/proc/can_deploy(datum/act/op/A)
+	return !anchored && can_use(A.actor)
 
-/// Old attack_hand: collect a deployed coil (anything else is the pick up).
-/obj/item/material/barbedwire/proc/interaction_hand(datum/act/op/A)
-	var/mob/user = A.actor
-	if(anchored && can_use(user))
-		act_message(user, src, MSG_SELF(span_notice("You begin collecting %T%!")), \
-			MSG_OTHERS(span_danger("%U% starts to collect %T%.")), \
-			MSG_BLIND("You hear the sound of rustling [material.name]."))
-		play_sfx(src, SFX_MACHINES_CLICK)
+/obj/item/material/barbedwire/proc/can_collect(datum/act/op/A)
+	return anchored && can_use(A.actor)
 
-		task_timed(user, get_integrity() / MATERIAL_WEAR_UNIT, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done3), done_args = list(user))
-	else
-		return OP_DECLINE
-	return OP_OK
+/// Collecting takes as long as the coil's wear says.
+/obj/item/material/barbedwire/proc/collect_time(datum/act/A)
+	return get_integrity() / MATERIAL_WEAR_UNIT
 
-/obj/item/material/barbedwire/proc/attack_hand_timed_done3(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You have collected %T%!")), \
-		MSG_OTHERS(span_danger("%U% has collected %T%.")))
+/obj/item/material/barbedwire/proc/collect_wire(datum/act/op/A)
 	set_anchored(FALSE)
 
-/// Old attack_self.
-/obj/item/material/barbedwire/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!anchored && can_use(user))
-		act_message(user, src, MSG_SELF(span_danger("You begin deploying %T%!")), \
-			MSG_OTHERS(span_danger("%U% starts to deploy %T%.")), \
-			MSG_BLIND("You hear the rustling of [material.name]."))
-
-		task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done2), done_args = list(user))
-	return TRUE
-
-/obj/item/material/barbedwire/proc/attack_self_timed_done2(mob/user)
-	act_message(user, src, MSG_SELF(span_danger("You have deployed %T%!")), \
-		MSG_OTHERS(span_danger("%U% has deployed %T%.")), \
-		MSG_BLIND("You hear the rustling of [material.name]."))
+/obj/item/material/barbedwire/proc/deploy_wire(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_ITEMS_WIRECUTTER, 0.7)
 	after(src, 0.2 SECONDS, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/items/Wirecutter.ogg', 40, 1))
 	user.drop_from_inventory(src)
