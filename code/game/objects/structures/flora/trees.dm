@@ -43,7 +43,7 @@ TYPE_TABLE_DECLARE(/obj/structure/flora/tree, winter_icon_suffix, FALSE)
 CAPABILITIES(/obj/structure/flora/tree)
 	without("item")
 	op("tree_hit", item(/obj/item), label("Use"), then(PROC_REF(interaction_hit)))
-	op("search_sticks", hand(), ungated(), label("Search for sticks"), then(PROC_REF(interaction_search_sticks)))
+	op("search_sticks", hand(), ungated(), label("Search for sticks"), needs(req(PROC_REF(has_sticks), because = MSG(tree/no_sticks))), begins(MSG(tree/searching_sticks)), wait(5 SECONDS), then(PROC_REF(sticks_found)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(tree_blast))))
 
 /// Old attackby: harvest (flora's own harvest), dig up a stump, or take a hit.

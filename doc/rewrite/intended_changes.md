@@ -2686,3 +2686,9 @@ Pinned by `code/modules/unit_tests/dq_timed_pin_w3_behaviour.dm` (written on the
 ## Timed actions as ops, W4 additions
 
 * **Class: the start message of a few ops names the actor and the item by template.** The fuel tank's detach line says "the device" where it named the rigged assembly, and the outcrop's line reads "%U% begins to hack away at %T%." (the legacy text named `[user]` and was sent to the actor only). Pins: `fueltank_rig_and_detach`, `outcrop_dig` check the verb phrase only.
+## Timed actions as ops, W2 additions
+
+* **Class: a tool wait is scaled by the tool speed.** The railing wrench and screwdriver, the low wall, drop pod and toilet wrenches and the toilet crowbar waited a fixed time; `tool(Q)` scales `wait()` by the held tool's speed. Pins: `railing_wrench`, `railing_screwdriver`, `droppod_wrench`, `toilet_wrench`, `toilet_crowbar` (run at the default speed, so unchanged).
+* **Class: a refusal says the claim message.** A second searcher of a loot or trash pile, and a second lifter on a weight machine, used to get "already being searched" / "already in use"; a claimed target says the engine's claimed message. Pins: `loot_pile_search`, `trash_pile_search`, `weightlifter_lift` (they assert the refusal and that something is said, not the text).
+* **Class: a direction read at the end.** A pushed desert rock moves the way its pusher faces when the push ends, not when it began (a turn in place is not a move). Pin: `desert_rock_push`.
+* **Class: a refusal the old handler left silent now says why, and a fur tree says it has no sticks.** A fur tree used to swallow "search for sticks" without a word; its `sticks` is now false and the tree's refusal says "You don't see any loose sticks...". Pin: `tree_sticks` (the empty-tree refusal).

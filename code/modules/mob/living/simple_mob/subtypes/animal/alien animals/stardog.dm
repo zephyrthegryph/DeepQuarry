@@ -558,6 +558,7 @@ MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
 	icon = 'icons/obj/fur_tree.dmi'
 	icon_state = "tallfur1"
 	base_state = "tallfur"
+	sticks = FALSE // no sticks to find in fur
 	opacity = TRUE
 	product = /obj/item/stack/material/fur
 	product_amount = 10
@@ -621,10 +622,6 @@ MSG_DEF_SELF(fur/ic_muted, "you cannot speak in IC (muted)")
 
 /obj/structure/flora/tree/fur/choose_icon_state()
 	return "[base_state][rand(1, 2)]"
-
-/// Overrides tree's interaction_search_sticks(): no sticks to find in fur.
-/obj/structure/flora/tree/fur/interaction_search_sticks(datum/act/op/A)
-	return OP_OK
 
 /obj/structure/flora/tree/fur/die()
 	if(product && product_amount)

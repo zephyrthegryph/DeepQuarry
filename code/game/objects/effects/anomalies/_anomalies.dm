@@ -32,6 +32,7 @@ CAPABILITIES(/obj/effect/anomaly)
 	owns_one(nameof(stats), /datum/anomaly_stats)
 	owns_one(nameof(countdown), starts = /obj/effect/countdown/anomaly)
 	op("scan_anomaly", item(/obj/item), then(PROC_REF(interaction_scan_anomaly)))
+	op("buffer_anomaly", item(/obj/item/anomaly_scanner), label("Scan"), when(req(PROC_REF(has_stats))), wait(1 SECOND), then(PROC_REF(anomaly_buffered)))
 	param(nameof(lifespan), pos = 1)
 	param(nameof(drops_core), pos = 2)
 
@@ -138,16 +139,16 @@ CAPABILITIES(/obj/effect/anomaly)
 		if(anomaly_core)
 			to_chat(user, span_notice("Analyzing... [src]'s stabilized field is fluctuating along frequency [format_frequency(anomaly_core.frequency)], code [anomaly_core.code]."))
 			return TRUE
-	if(istype(I, /obj/item/anomaly_scanner) && stats)
-		var/obj/item/anomaly_scanner/scanner = I
-		task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, scanner))
-		return TRUE
 	return OP_DECLINE
 
-/obj/effect/anomaly/proc/attackby_timed_done(mob/user, obj/item/anomaly_scanner/scanner)
+/// A scanner buffers an anomaly that has stats.
+/obj/effect/anomaly/proc/has_stats(datum/act/op/A)
+	return !!stats
+
+/obj/effect/anomaly/proc/anomaly_buffered(datum/act/op/A)
+	var/obj/item/anomaly_scanner/scanner = A.held
 	rel_set(scanner, nameof(scanner.buffered_anomaly), src)
-	scanner.tgui_interact(user)
-	return TRUE
+	scanner.tgui_interact(A.actor)
 
 /obj/effect/anomaly/bullet_act(obj/item/projectile/proj)
 	if(stats && istype(stats.modifier, /datum/anomaly_modifiers/reflective) && prob(stats.severity/1.5))

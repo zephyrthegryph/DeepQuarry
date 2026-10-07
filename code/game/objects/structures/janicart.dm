@@ -22,6 +22,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 
 	var/static/list/equippable_item_whitelist
 
+TRACKED(/obj/structure/janitorialcart, has_items)
+
 CAPABILITIES(/obj/structure/janitorialcart)
 	owns_one(nameof(mybag), /obj/item/storage/bag/trash)
 	owns_one(nameof(mymop), /obj/item/mop)
@@ -37,7 +39,7 @@ CAPABILITIES(/obj/structure/janitorialcart)
 	op("sign", ui_act("sign"), then(PROC_REF(ui_act_sign)))
 	op("bucket", ui_act("bucket"), then(PROC_REF(ui_act_bucket)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(janicart_blast))))
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(5 SECONDS), needs(req(PROC_REF(empty_cart), silent = TRUE)), then(PROC_REF(wrench_act_done)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Use item"), then(PROC_REF(interaction_alt)))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
@@ -195,15 +197,12 @@ CAPABILITIES(/obj/structure/janitorialcart)
 		//This prevents dumb stuff like splashing the cart with the contents of a container, after putting said container into trash
 	return TRUE
 
-/obj/structure/janitorialcart/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	if(has_items)
-		return OP_OK
-	task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
-	return OP_OK
+/// A cart that holds nothing can be taken apart.
+/obj/structure/janitorialcart/proc/empty_cart(datum/act/op/A)
+	return !has_items
 
-/obj/structure/janitorialcart/proc/wrench_act_timed_done(mob/user)
-	dismantle(user)
+/obj/structure/janitorialcart/proc/wrench_act_done(datum/act/op/A)
+	dismantle(A.actor)
 
 //New Altclick functionality!
 //Altclick the cart with a mop to stow the mop away

@@ -140,6 +140,7 @@ CAPABILITIES(/obj/structure/girder)
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(girder_blob))))
 	param(nameof(default_material), pos = 1, apply = PROC_REF(build_of))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("slice", item(/obj/item/pickaxe/plasmacutter), label("Slice apart"), begins(MSG(girder/slicing)), wait(PROC_REF(slice_time)), then(PROC_REF(sliced)))
 	op("hulk_smash", hand(), label("Smash"), when(req_mutation(HULK)), then(PROC_REF(interaction_hulk_smash)))
 
 /// A blob pulls the girder apart.
@@ -166,11 +167,7 @@ CAPABILITIES(/obj/structure/girder)
 /obj/structure/girder/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	if(istype(W, /obj/item/pickaxe/plasmacutter))
-		to_chat(user, span_notice("Now slicing apart the girder..."))
-		task_timed(user, 3 SECONDS * W.toolspeed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-
-	else if(istype(W, /obj/item/pickaxe/diamonddrill))
+	if(istype(W, /obj/item/pickaxe/diamonddrill))
 		to_chat(user, span_notice("You drill through the girder!"))
 		dismantle()
 
@@ -188,9 +185,15 @@ CAPABILITIES(/obj/structure/girder)
 
 	return OP_OK
 
-/obj/structure/girder/proc/attackby_timed_done(mob/user)
-	if(!src) return
-	to_chat(user, span_notice("You slice apart the girder!"))
+MSG_DEF_SELF(girder/slicing, span_notice("Now slicing apart the girder..."))
+
+/// A plasmacutter's slice takes as long as its tool speed makes it.
+/obj/structure/girder/proc/slice_time(datum/act/op/A)
+	var/obj/item/W = A.held
+	return 3 SECONDS * W.toolspeed
+
+/obj/structure/girder/proc/sliced(datum/act/op/A)
+	to_chat(A.actor, span_notice("You slice apart the girder!"))
 	dismantle()
 
 // Reaching 0 integrity dismantles the girder back into its material.
@@ -342,18 +345,11 @@ CAPABILITIES(/obj/structure/girder)
 /obj/structure/girder/cult/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	if(istype(W, /obj/item/pickaxe/plasmacutter))
-		to_chat(user, span_notice("Now slicing apart the girder..."))
-		task_timed(user, 3 SECONDS * W.toolspeed, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user))
-	else if(istype(W, /obj/item/pickaxe/diamonddrill))
+	if(istype(W, /obj/item/pickaxe/diamonddrill))
 		to_chat(user, span_notice("You drill through the girder!"))
 		new /obj/effect/decal/remains/human(get_turf(src))
 		dismantle()
 	return OP_OK
-
-/obj/structure/girder/cult/proc/attackby_timed_done2(mob/user)
-	to_chat(user, span_notice("You slice apart the girder!"))
-	dismantle()
 
 /obj/structure/girder/resin
 	name = "soft girder"

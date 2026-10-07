@@ -44,8 +44,8 @@ CAPABILITIES(/obj/structure/railing)
 	op("slam", item(/obj/item), stance(I_HURT), label("Slam"), then(PROC_REF(interaction_slam)))
 	op("item", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Use"), then(PROC_REF(interaction_item)))
 	op("flip", menu(), label("Flip Railing"), then(PROC_REF(railing_flip_effect)))
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(2 SECONDS), needs(req(PROC_REF(loose), silent = TRUE)), then(PROC_REF(wrench_act_done)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(1 SECOND), begins(PROC_REF(screwdriver_begins)), then(PROC_REF(screwdriver_act_done)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 	param(nameof(constructed), pos = 1)
 
@@ -218,16 +218,12 @@ DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_
 
 	return OP_OK
 
-/obj/structure/railing/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	if(anchored)
-		return OP_OK
-	playsound(src, W.usesound, 50, 1)
-	task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
-	return OP_OK
+/// A wrench only takes a loose railing apart.
+/obj/structure/railing/proc/loose(datum/act/op/A)
+	return !anchored
 
-/obj/structure/railing/proc/wrench_act_timed_done(mob/user)
+/obj/structure/railing/proc/wrench_act_done(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You dismantle %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " dismantles %T%.")))
 	replace_with(src, /obj/item/stack/material/steel, 2)
 
@@ -247,15 +243,14 @@ DECLARE_APPEARANCE_PROC(/obj/structure/railing, TYPE_PROC_REF(/atom, appearance_
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " repairs some damage to %T%.")))
 	repair_damage(max_integrity / 5)
 
-/obj/structure/railing/proc/screwdriver_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	act_message(user, src, others = span_info(span_bold("%U%") + " begins [anchored ? "unscrewing" : "fastening"] %T%."))
-	playsound(src, W.usesound, 75, 1)
-	task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
-	return OP_OK
+MSG_DEF(railing/unscrewing, null, span_info(span_bold("%U%") + " begins unscrewing %T%."))
+MSG_DEF(railing/fastening, null, span_info(span_bold("%U%") + " begins fastening %T%."))
 
-/obj/structure/railing/proc/screwdriver_act_timed_done(mob/user)
+/obj/structure/railing/proc/screwdriver_begins(datum/act/op/A)
+	return anchored ? /datum/msg/railing/unscrewing : /datum/msg/railing/fastening
+
+/obj/structure/railing/proc/screwdriver_act_done(datum/act/op/A)
+	var/mob/user = A.actor
 	set_anchored(!anchored)
 	to_chat(user, span_notice("You have [anchored ? "fastened \the [src] to" : "unfastened \the [src] from"] the floor."))
 	update_icon()

@@ -59,18 +59,23 @@
 		set_opacity(0)
 	else
 		set_opacity(1)
-	if(material.products_need_process())
-		om_task_periodic(src, PERIODIC_SLOW)
+	set_radiating(material.products_need_process())
 	update_nearby_tiles(need_rebuild=1)
 
 /obj/structure/simple_door/get_material()
 	return material
 
+/// A door of a radioactive material gives off its radiation every few seconds.
+/obj/structure/simple_door/var/tmp/radiating = FALSE
+TRACKED(/obj/structure/simple_door, radiating)
+
 CAPABILITIES(/obj/structure/simple_door)
+	every(2 SECONDS, then(PROC_REF(radiate_step)), when = nameof(radiating))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 	op("use", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("dig", item(/obj/item/pickaxe), label("Dig"), when(req(PROC_REF(is_breakable))), begins(MSG(simple_door/digging)), wait(PROC_REF(dig_time)), then(PROC_REF(dug)))
 	// those aren't machinery, they're slabs of a mineral: a cyborg beside it opens it, the AI can't
 	op("silicon_open", remote(), label("Open"), when(req_actor_kind(/mob/living/silicon/robot)), needs(req_adjacent()), then(PROC_REF(interaction_hand)))
 	param(nameof(material_name), pos = 1, apply = PROC_REF(make_of))
@@ -171,11 +176,7 @@ CAPABILITIES(/obj/structure/simple_door)
 			locked = !locked
 			playsound(src, keysound,100, 1)
 		return OP_OK
-	if(istype(W,/obj/item/pickaxe) && breakable)
-		var/obj/item/pickaxe/digTool = W
-		act_message(user, src, others = span_danger("%U% starts digging %T%!"))
-		task_timed(user, digTool.digspeed*get_integrity()/10, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-	else if(istype(W,/obj/item) && breakable) //not sure, can't not just weapons get passed to this proc?
+	if(istype(W,/obj/item) && breakable) //not sure, can't not just weapons get passed to this proc?
 		act_message(user, src, others = span_danger("%U% hits %T% with [W]!"))
 		if(material == get_material_by_name(MAT_RESIN))
 			play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
@@ -188,10 +189,18 @@ CAPABILITIES(/obj/structure/simple_door)
 		TryToSwitchState(user)
 	return OP_OK
 
-/obj/structure/simple_door/proc/attackby_timed_done(mob/user)
-	if(!(src))
-		return
-	act_message(user, src, others = span_danger("%U% finished digging %T%!"))
+MSG_DEF(simple_door/digging, null, span_danger("%U% starts digging %T%!"))
+
+/obj/structure/simple_door/proc/is_breakable(datum/act/op/A)
+	return breakable
+
+/// Digging takes as long as the pick is slow and the door is sound.
+/obj/structure/simple_door/proc/dig_time(datum/act/op/A)
+	var/obj/item/pickaxe/digTool = A.held
+	return digTool.digspeed * get_integrity() / 10
+
+/obj/structure/simple_door/proc/dug(datum/act/op/A)
+	act_message(A.actor, src, others = span_danger("%U% finished digging %T%!"))
 	Dismantle()
 
 /obj/structure/simple_door/proc/welder_used(datum/act/op/A)
@@ -226,7 +235,7 @@ CAPABILITIES(/obj/structure/simple_door)
 	material.place_dismantled_product(get_turf(src))
 	visible_message(span_danger("The [src] is destroyed!"))
 
-/obj/structure/simple_door/periodic_step()
+/obj/structure/simple_door/proc/radiate_step(datum/act/A)
 	// material.radioactivity moved to a component; query the helper.
 	var/rad = dq_material_radioactivity(material)
 	if(!rad)

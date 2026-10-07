@@ -28,7 +28,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/outdoors/snow, TYPE_PROC_REF(/atom
 
 CAPABILITIES(/turf/simulated/floor/outdoors/snow)
 	op("snow_shovel", item(/obj/item/shovel), label("Dig up"), then(PROC_REF(snow_shovel)))
-	op("snow_scoop", hand(), ungated(), label("Scoop"), then(PROC_REF(snow_scoop)))
+	op("snow_scoop", hand(), ungated(), label("Scoop"), needs(req_adjacent()), begins(MSG(snow/scooping)), wait(1 SECOND), then(PROC_REF(scoop_done)))
 
 /// Old attackby: shovel the snow away.
 /turf/simulated/floor/outdoors/snow/proc/snow_shovel(datum/act/op/A)
@@ -45,16 +45,10 @@ CAPABILITIES(/turf/simulated/floor/outdoors/snow)
 /turf/simulated/floor/outdoors/snow/proc/attackby_tool_failed(mob/user)
 	to_chat(user, span_notice("You decide to not finish removing \the [src]."))
 
-/// Old attack_hand: scoop up some snow.
-/turf/simulated/floor/outdoors/snow/proc/snow_scoop(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!Adjacent(user))
-		return TRUE
-	act_message(user, null, others = "%U% starts scooping up some snow.", blind = "You start scooping up some snow.")
-	task_timed(user, 1 SECOND, src, src, PROC_REF(scoop_done), list(user))
-	return TRUE
+MSG_DEF(snow/scooping, null, "%U% starts scooping up some snow.")
 
-/turf/simulated/floor/outdoors/snow/proc/scoop_done(mob/user)
+/turf/simulated/floor/outdoors/snow/proc/scoop_done(datum/act/op/A)
+	var/mob/user = A.actor
 	var/obj/S = new /obj/item/stack/material/snow(user.loc)
 	user.put_in_hands(S)
 	act_message(user, null, others = "%U% scoops up a pile of snow.", blind = "You scoop up a pile of snow.")
