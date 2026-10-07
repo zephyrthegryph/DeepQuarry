@@ -1,0 +1,8 @@
+DM compiler version 516.1687
+loading probe.dme
+probe.dm:4:warning (no_parent): ..: ..() has no parent proc to call
+probe.dm:1:warning (override_before_def): f: procedure override precedes definition
+probe.dm:3:warning (override_before_def): f: definition is here
+saving probe.dmb
+probe.dmb - 0 errors, 3 warnings (10/7/26 6:19 am)
+Total time: 0:00

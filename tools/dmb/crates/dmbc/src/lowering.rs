@@ -259,6 +259,10 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
         occurrence: identity.occurrence,
     };
     let mut inputs = prepared.inputs;
+    if inputs.procedure_identity.is_some_and(|supplied| supplied != procedure_identity) {
+        return Err(unsupported("procedure ABI identity differs from current body".into()));
+    }
+    inputs.procedure_identity = Some(procedure_identity);
     let executable_body = if let Some(startup) = startup {
         let captured = startup
             .procedure(body.declaration)
@@ -268,7 +272,6 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
                 "procedure startup inventory differs from current body".into(),
             ));
         }
-        inputs.procedure_identity = Some(procedure_identity);
         if captured.declarations.is_empty()
             && captured.origins.is_empty()
             && !dm_tree::procedure_statics::items_may_contain_stored_declarations(

@@ -9,6 +9,7 @@ impl Resolver for UnknownFields {
         self.0.lock().unwrap().push(query);
         match query {
             Q::RuntimeType(path) if path == dm_ir::SymbolId::of("/obj/item") => M::Symbol(path),
+            Q::ProcedureStatic { name, .. } if name == dm_ir::SymbolId::of("__PROC__") => M::Missing,
             _ => M::Unsupported(query),
         }
     }
@@ -143,12 +144,14 @@ fn current_proc_builtin_precedes_unrelated_member_queries_and_keeps_relocation()
     let name=symbols.intern("read").unwrap();
     let host=UnknownFields::default();
     let parsed=dm_syntax::parse("/proc/probe()\n    return __PROC__\n");
-    let inputs=ProcedureInputs {current_type_path:Some("/datum/log_entry".into()),
+    let identity=dm_ir::ProcedureIdentity {owner,name,verb:false,occurrence:0};
+    let inputs=ProcedureInputs {procedure_identity:Some(identity),current_type_path:Some("/datum/log_entry".into()),
         current_proc_path:Some("/datum/log_entry/proc/read".into()),..Default::default()};
     let code=compile_simple_proc_with_resolver(&parsed.items[0].children,&inputs,&symbols,&host).unwrap();
-    assert!(host.0.lock().unwrap().is_empty());
+    assert!(host.0.lock().unwrap().iter().all(|query| matches!(query,Q::ProcedureStatic { .. })));
+    assert_eq!(code.procedure_values.values().next(),Some(&identity));
     let frozen=crate::encoder::freeze_proc(&code.procedure.code, |symbol| {
-        assert_eq!(symbol.key,"/datum/log_entry/proc/read");
+        assert_eq!(code.procedure_values.get(symbol),Some(&identity));
         Ok(dm_ir::SymRef::Proc {owner,name,occurrence:0})
     }).unwrap();
     assert_eq!(frozen.code().relocations().len(),1);
@@ -193,5 +196,30 @@ fn authored_global_access_records_exact_root_slot_sidecar() {
             Ok(dm_ir::SymRef::VariableSlot(slot.symbol))
         }).unwrap();
         assert_eq!(frozen.code().relocations().len(),1);
+    }
+}
+
+#[test]
+fn current_proc_values_preserve_each_same_owner_body_occurrence() {
+    let mut symbols=SymbolTable::default();
+    let owner=symbols.intern("/datum/probe").unwrap();
+    let name=symbols.intern("read").unwrap();
+    let parsed=dm_syntax::parse("/proc/probe()\n    return __PROC__\n");
+    let host=UnknownFields::default();
+    for occurrence in [0,1] {
+        let identity=dm_ir::ProcedureIdentity {owner,name,verb:false,occurrence};
+        let inputs=ProcedureInputs {procedure_identity:Some(identity),
+            current_proc_path:Some("/datum/probe/proc/read".into()),..Default::default()};
+        let code=compile_simple_proc_with_resolver(&parsed.items[0].children,&inputs,&symbols,&host).unwrap();
+        assert_eq!(code.procedure_values.len(),1);
+        let frozen=crate::encoder::freeze_proc(&code.procedure.code,|symbol| {
+            assert_eq!(code.procedure_values.get(symbol),Some(&identity));
+            Ok(dm_ir::SymRef::Proc {owner,name,occurrence})
+        }).unwrap();
+        let linked=frozen.code().link(|reference| match reference {
+            dm_ir::SymRef::Proc {occurrence:actual,..} if actual==occurrence =>Some(occurrence),
+            _=>None,
+        }).unwrap();
+        assert!(linked.windows(2).any(|words| words==[38,occurrence]));
     }
 }

@@ -613,6 +613,33 @@ mod tests {
         dm_tree::frontend::build(Path::new("project.dme"), &Source, &BTreeMap::new(), 1).unwrap()
     }
     #[test]
+    fn current_proc_values_link_each_repeated_body_to_its_exact_occurrence() {
+        struct Repeated;
+        impl dm_preprocess::SourceProvider for Repeated {
+            fn read(&self, _: &Path) -> Result<String, String> {
+                Ok("/datum/base/proc/current()\n    return __PROC__\n/datum/base/current()\n    return __PROC__\n".into())
+            }
+        }
+        let frontend = dm_tree::frontend::build(Path::new("project.dme"), &Repeated, &BTreeMap::new(), 1).unwrap();
+        let tree = frontend.snapshot.tree.as_ref();
+        let startup = crate::startup::capture(&frontend).unwrap();
+        let host = startup.resolver(&frontend, tree).unwrap();
+        let lowered = lower_frontend(&frontend, &host, &Policy, LoweringConfig::default());
+        assert!(lowered.diagnostics.is_empty(), "{:?}", lowered.diagnostics);
+        assert_eq!(lowered.units.len(), 2);
+        let frozen = freeze_and_link_tables(lowered, tree.symbols(), &ReferenceBindings::default(), LinkInventory::default()).unwrap();
+        let mut indices = Vec::new();
+        for (index, unit) in frozen.units.iter().enumerate() {
+            let reference = unit_reference(unit.lowered.identity);
+            assert!(unit.frozen.code().relocations().iter().any(|site| site.reference == reference));
+            let dense = frozen.tables.index(unit_key(unit.lowered.identity)).unwrap();
+            indices.push(dense);
+            let image = frozen.link_unit(index, &SourceBindings::default()).unwrap();
+            assert!(byond_dmb::bytecode::decode(&image.words).unwrap().iter().any(|instruction| instruction.name == "PushVal" && instruction.operands == [38, dense]));
+        }
+        assert_ne!(indices[0], indices[1]);
+    }
+    #[test]
     fn runtime_list_procedure_literal_keeps_formal_body_identity() {
         struct Procedures;
         impl dm_preprocess::SourceProvider for Procedures {

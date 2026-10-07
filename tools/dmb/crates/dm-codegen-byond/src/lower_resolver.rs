@@ -8,6 +8,10 @@ use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Arc;
 
+pub(crate) fn shared_slot_key(owner: &str, name: &str) -> String {
+    format!("var{}/{name}", owner.trim_end_matches('/'))
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResolvedSlot {
     pub symbol: SymbolId,
@@ -307,11 +311,7 @@ impl ProjectResolver<'_> {
                 owner,
                 name,
             } => {
-                let key = format!(
-                    "var{}/{}",
-                    self.text(query, owner)?.trim_end_matches('/'),
-                    self.text(query, name)?
-                );
+                let key = shared_slot_key(&self.text(query, owner)?, &self.text(query, name)?);
                 let slot = ResolvedSlot {
                     symbol,
                     owner,

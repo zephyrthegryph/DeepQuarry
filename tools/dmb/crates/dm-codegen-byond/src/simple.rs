@@ -3959,8 +3959,14 @@ impl Compiler<'_> {
                             return Ok(());
                         }
                     }
-                    let path = self.bindings.current_proc_path.clone()
-                        .ok_or_else(|| error(statement, "__PROC__ requires current procedure context"))?;
+                    let path = if let Some(lookup) = self.lookup {
+                        let identity = self.bindings.procedure_identity
+                            .ok_or_else(|| error(statement, "__PROC__ requires exact current procedure identity"))?;
+                        self.semantic(lookup.procedure_value_key(identity))?
+                    } else {
+                        self.bindings.current_proc_path.clone()
+                            .ok_or_else(|| error(statement, "__PROC__ requires current procedure context"))?
+                    };
                     self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::ProcPath(path))]);
                     return Ok(());
                 }

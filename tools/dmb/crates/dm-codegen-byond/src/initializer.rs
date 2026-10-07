@@ -199,7 +199,7 @@ fn attach_target_slots(
     for (symbol, slot) in slots {
         if !references.contains(&symbol) {
             return Err(InitializerError::Invalid(
-                "initializer did not emit its exact shared target".into(),
+                format!("initializer did not emit its exact shared target: {symbol:?}, {slot:?}"),
             ));
         }
         if code
@@ -397,11 +397,7 @@ fn prepare_assignment<R: Resolver>(
         },
     };
     let slot = target_slot.map(|slot| {
-        let key = if owner_text == "/" {
-            name_text.to_owned()
-        } else {
-            format!("var{}/{name_text}", owner_text.trim_end_matches('/'))
-        };
+        let key = crate::lower_resolver::shared_slot_key(owner_text, name_text);
         (Symbol::new(Table::Variable, key), slot)
     });
     Ok((statement, slot))
@@ -644,11 +640,12 @@ mod tests {
             result
                 .code
                 .slots
-                .get(&Symbol::new(Table::Variable, "counter"))
+                .get(&Symbol::new(Table::Variable, "var/counter"))
                 .unwrap()
                 .symbol,
             SymbolId::of("exact-slot")
         );
+        assert!(!result.code.slots.contains_key(&Symbol::new(Table::Variable, "counter")));
         assert!(matches!(result.code.procedure.code.items.last(),
             Some(crate::Item::Instruction(ins)) if ins.opcode == opcode::END));
         assert!(!result.code.procedure.code.items.iter().any(
@@ -656,7 +653,7 @@ mod tests {
         ));
         let mut code = result.code;
         let before = code.procedure.code.clone();
-        let symbol = Symbol::new(Table::Variable, "counter");
+        let symbol = Symbol::new(Table::Variable, "var/counter");
         let slot = code.slots[&symbol].clone();
         attach_target_slots(&mut code, vec![(symbol.clone(), slot.clone()),
             (symbol.clone(), slot.clone())]).unwrap();
