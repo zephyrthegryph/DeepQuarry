@@ -315,7 +315,7 @@ GLOBAL_VAR(restart_counter)
 	if(unit_test_is_focused_run())
 		start_delay = 2 SECONDS
 #endif
-	SSticker.OnRoundstart(om_callable(null, GLOBAL_PROC_REF(om_after), null, start_delay, after_start))
+	SSticker.OnRoundstart(om_callable(null, GLOBAL_PROC_REF(after), null, start_delay, after_start))
 
 /// after() target: ends the round now (a test-harness run with no tests compiled in).
 /proc/force_end_round()

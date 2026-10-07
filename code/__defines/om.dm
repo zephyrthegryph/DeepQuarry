@@ -212,13 +212,8 @@
 
 // ---- Events (section G). ----
 #define EVENT_VETO 1
-/// Emits `path`, constructed with `args`, on `E` when a behaviour or hook wants it (no
-/// allocation otherwise). Evaluates to om_emit()'s return: the ORed handler results for
-/// sync and accumulate events, EVENT_VETO or null for classic before/ events, else 0.
-#define OM_EMIT(E, path, args...) (om_wants(E, path) ? om_emit(E, new path(##args)) : 0)
 /// The entity world-wide events go to (was SEND_GLOBAL_SIGNAL's target).
 #define OM_WORLD (GLOB.om_world)
-#define OM_EMIT_WORLD(path, args...) OM_EMIT(GLOB.om_world, path, ##args)
 
 // Attachment state bits (rec.att_state).
 #define OM_ATT_STARTED (1<<0)

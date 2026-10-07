@@ -1022,7 +1022,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injectio
 // BEFORE: laserpointer.dm:209, 214-215 (set a state, then a timer to put it back)
 	icon_state = "[initial(icon_state)]_[pointer_icon_state]"
 	...
-	om_after(src, cooldown, PROC_REF(reset_laser_icon))
+	after(src, cooldown, PROC_REF(reset_laser_icon))
 /obj/item/laser_pointer/proc/reset_laser_icon()
 	icon_state = initial(icon_state)
 // AFTER: a timed var the look reads; no reset proc
@@ -1325,7 +1325,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 			to_chat(user, span_warning("You've overused the battery of [src], now it needs time to recharge!"))
 			recharge_locked = TRUE
 	flick_overlay(I, showto, cooldown)
-	om_after(src, cooldown, PROC_REF(reset_laser_icon))
+	after(src, cooldown, PROC_REF(reset_laser_icon))
 /obj/item/laser_pointer/proc/reset_laser_icon()
 	icon_state = initial(icon_state)
 /obj/item/laser_pointer/periodic_step()
