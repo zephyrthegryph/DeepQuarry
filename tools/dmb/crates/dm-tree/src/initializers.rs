@@ -242,6 +242,14 @@ pub fn with_procedure_statics(
                 .type_node(node.owner)
                 .ok_or("static procedure owner absent")?
                 .path;
+            // The producer retains an empty capture for every procedure so its
+            // lexical inventory remains authoritative. There is no declaration
+            // identity to compare with an override chain in those captures.
+            // Keep occurrence/member/owner validation above; malformed variable
+            // captures still follow the strict validation path below.
+            if capture.declarations.is_empty() && node.kind != MemberKind::Var {
+                continue;
+            }
             let procedure_occurrence = base
                 .source
                 .tree
@@ -347,6 +355,13 @@ mod tests {
         let capture = crate::procedure_statics::capture(identity, &procedure.children).unwrap();
         let occurrence = order.iter().copied().find(|id| snapshot.occurrences.get(*id).is_some_and(|row| matches!(row.target,Target::Member(member) if snapshot.tree.member(member).is_some_and(|node| node.kind==MemberKind::Proc)))).unwrap();
         let base = plan(&snapshot, &order).unwrap();
+        let empty = crate::procedure_statics::capture(identity, &[]).unwrap();
+        let unchanged = with_procedure_statics(&base, &order, &[(occurrence, empty)]).unwrap();
+        assert_eq!(unchanged.origins, base.origins);
+        assert_eq!(
+            unchanged.writes.iter().map(InitializerWrite::canonical_bytes).collect::<Vec<_>>(),
+            base.writes.iter().map(InitializerWrite::canonical_bytes).collect::<Vec<_>>()
+        );
         let startup = with_procedure_statics(&base, &order, &[(occurrence, capture)]).unwrap();
         assert_eq!(startup.writes.len(), 3);
         assert!(

@@ -46,9 +46,6 @@ impl PreparedSource {
                 .enumerate()
                 .filter_map(|(offset, byte)| (byte == b'\n').then_some(offset + 1)),
         );
-        // Keep the terminal sentinel local: public line starts match SourceFile.
-        let mut offsets = starts.clone();
-        offsets.push(original.len());
         let uncommented = strip_source_comments(&original);
         let mut source_line = 0;
         let lines = logical_lines(&uncommented)
@@ -57,7 +54,10 @@ impl PreparedSource {
                 let first = source_line;
                 source_line += logical.source_lines;
                 PreparedLine {
-                    source_span: Span::new(offsets[first], offsets[source_line]),
+                    source_span: Span::new(
+                        starts[first],
+                        starts.get(source_line).copied().unwrap_or(original.len()),
+                    ),
                     source_line: first + 1,
                     source_lines: logical.source_lines,
                     text: Arc::from(logical.text),
@@ -396,5 +396,30 @@ mod tests {
             None
         );
         assert_eq!(literal_include_path("#include INCLUDE_MACRO"), None);
+    }
+    #[test]
+    fn implicit_terminal_offset_matches_sentinel_provenance() {
+        for text in [
+            "", "\n", "var/a = 1", "var/a = 1\n", "var/a = 1\n\n",
+            "/* block\ncomment */\nvar/a = 1", "var/a = 1 // comment\n",
+            "#define VALUE (1 + \\\n2)\nvar/a = VALUE",
+            "var/text = {\"first\n\nlast\"}\nvar/after = 2\n",
+        ] {
+            let prepared = PreparedSource::new(Arc::from(text));
+            let mut starts = vec![0];
+            starts.extend(text.bytes().enumerate().filter_map(|(index, byte)| (byte == b'\n').then_some(index + 1)));
+            assert_eq!(prepared.line_starts().as_ref(), starts.as_slice());
+            starts.push(text.len());
+            let mut line = 0;
+            let expected = logical_lines(&strip_source_comments(text)).into_iter().map(|logical| {
+                let first = line;
+                line += logical.source_lines;
+                (Span::new(starts[first], starts[line]), first + 1, logical.source_lines, logical.text)
+            }).collect::<Vec<_>>();
+            let actual = prepared.lines().iter().map(|logical| (
+                logical.source_span, logical.source_line, logical.source_lines, logical.text.to_string(),
+            )).collect::<Vec<_>>();
+            assert_eq!(actual, expected, "{text:?}");
+        }
     }
 }
