@@ -28,17 +28,11 @@ opt-level = 2
 [profile.dev.package.dm-codegen-byond]
 opt-level = 2
 
-[profile.dev.package.dm-compiler]
-opt-level = 2
-
 # Binary decoding, table linking and serialization also run on every body edit.
 [profile.dev.package.byond-dmb]
 opt-level = 2
 
 [profile.dev.package.dm-resources]
-opt-level = 2
-
-[profile.dev.package.dm-semantics]
 opt-level = 2
 
 [profile.dev.package.dm-ir]

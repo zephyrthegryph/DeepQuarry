@@ -1,6 +1,6 @@
 # Archived compiler usage
 
-These instructions describe commit ac1af55d1a. The commands below require that reference checkout or its frozen executable; the prototype command/daemon crates are removed from native-v2. They do not describe the new compiler's implementation or performance.
+These instructions describe commit ac1af55d1a. The commands below require that reference checkout or its frozen executable; the prototype command/daemon crates are removed from native-v2. The remaining legacy `dm-compiler` and `dm-semantics` libraries are also removed from the native-v2 workspace. Their source remains available through Git at the reference commit; frozen reference executables and evidence remain unchanged. They do not describe the new compiler's implementation or performance.
 
 ## Preserved original incremental prototype
 
