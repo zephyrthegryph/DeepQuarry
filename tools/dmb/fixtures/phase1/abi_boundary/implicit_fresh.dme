@@ -1,0 +1,2 @@
+/datum/abi_probe/abi_new_implicit_628104()
+    return 1

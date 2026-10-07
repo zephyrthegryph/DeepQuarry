@@ -9,6 +9,8 @@ pub mod debug_sources;
 pub mod publish;
 
 pub mod engine;
+pub mod engine_abi_coverage;
+pub mod type_values;
 pub mod engine_link;
 pub mod engine_host;
 pub mod lowering;

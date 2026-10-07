@@ -274,7 +274,9 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                 }
                 ItemKind::Proc | ItemKind::Verb => {
                     let (raw, arguments, trailing) = signature_parts(header)?;
-                    let raw = raw.trim();
+                    // DM accepts an optional path separator before the formal
+                    // argument list: receive_signal/(datum/signal/signal).
+                    let raw = raw.trim().trim_end_matches('/');
                     let marker = if item.kind == ItemKind::Verb {
                         "verb/"
                     } else {
@@ -449,6 +451,92 @@ mod tests {
             .map(|token| tree.symbols.text(token.text).unwrap())
             .collect();
         assert_eq!(spelling, "/proc/finish");
+    }
+    #[test]
+    fn optional_separator_before_procedure_arguments_preserves_owner_and_name() {
+        let result = adapt("/obj/machinery/status_display/supply_display/receive_signal/(datum/signal/signal)\n    return signal\n/obj/machinery/status_display/supply_display/proc/receive_formal/(datum/signal/signal)\n    return signal\n");
+        let members = result
+            .skeletons
+            .iter()
+            .filter_map(|row| match row {
+                Skeleton::Member {
+                    owner,
+                    name,
+                    kind,
+                    metadata,
+                    ..
+                } => Some((*owner, *name, *kind, metadata)),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(members.len(), 2);
+        for (index, (owner, name, kind, metadata)) in members.iter().enumerate() {
+            assert_eq!(
+                *owner,
+                SymbolId::of("/obj/machinery/status_display/supply_display")
+            );
+            assert_eq!(
+                *name,
+                SymbolId::of(if index == 0 {
+                    "receive_signal"
+                } else {
+                    "receive_formal"
+                })
+            );
+            assert_eq!(*kind, MemberKind::Proc);
+            let parameter = &metadata.procedure.as_ref().unwrap().signature.parameters[0];
+            assert_eq!(parameter.name, SymbolId::of("signal"));
+            assert_eq!(parameter.declared_type, Some(SymbolId::of("/datum/signal")));
+        }
+    }
+    #[test]
+    fn authored_parent_overrides_engine_default_but_source_conflicts_still_fail() {
+        let mut symbols = SymbolTable::default();
+        let root = symbols.intern("/").unwrap();
+        let datum = symbols.intern("/datum").unwrap();
+        let client = symbols.intern("/client").unwrap();
+        let seed = crate::frontend::EngineSeed {
+            identity: 7,
+            symbols: symbols.clone(),
+            hierarchy: crate::EngineHierarchy {
+                schema: 7,
+                parents: vec![(root, None), (datum, Some(root)), (client, Some(root))],
+            },
+            intrinsics: Arc::from([]),
+            fields: Arc::from([]),
+        };
+        let prepare = |source: &str| {
+            from_ast(&dm_syntax::parse(source), symbols.clone(), FileId(3), 7, 11)
+                .unwrap()
+                .finish_with_engine(Some(&seed))
+        };
+        let snapshot =
+            prepare("/client\n    parent_type = /datum\n/client\n    var/example\n").unwrap();
+        let owner = snapshot.tree.lookup_type(client).unwrap();
+        assert_eq!(
+            snapshot
+                .tree
+                .type_node(snapshot.tree.parent(owner).unwrap())
+                .unwrap()
+                .path,
+            datum
+        );
+        assert_eq!(
+            seed.hierarchy
+                .parents
+                .iter()
+                .find(|row| row.0 == client)
+                .unwrap()
+                .1,
+            Some(root)
+        );
+        assert!(
+            matches!(prepare("/client\n    parent_type = /datum\n/client\n    parent_type = /\n"), Err(SnapshotError::Tree(crate::TreeError::ConflictingParent(path))) if path == client)
+        );
+        assert!(matches!(
+            prepare("/client\n    parent_type = /datum\n/datum\n    parent_type = /client\n"),
+            Err(SnapshotError::Tree(crate::TreeError::InheritanceCycle(_)))
+        ));
     }
     #[test]
     fn namespaces_arrays_defaults_and_settings_bridge_to_tree() {
@@ -717,9 +805,37 @@ impl AdaptedDeclarations {
         seed: Option<&crate::frontend::EngineSeed>,
     ) -> Result<TreeSnapshot, SnapshotError> {
         let mut skeletons = Vec::new();
-        if let Some(seed) = seed {
+        // Engine parents seed defaults; authored parent_type has language
+        // precedence. Keep conflicts between two authored explicit parents an
+        // error rather than treating source declarations as arbitrary rewrites.
+        let mut authored_parents = std::collections::HashMap::new();
+        for row in &self.skeletons {
+            if let Skeleton::Type {
+                path,
+                explicit_parent: Some(parent),
+            } = row
+            {
+                if let Some(previous) = authored_parents.insert(*path, *parent) {
+                    if previous != *parent {
+                        return Err(SnapshotError::Tree(crate::TreeError::ConflictingParent(
+                            *path,
+                        )));
+                    }
+                }
+            }
+        }
+        let hierarchy = seed.map(|seed| {
+            let mut hierarchy = seed.hierarchy.clone();
+            for (path, parent) in &mut hierarchy.parents {
+                if let Some(authored) = authored_parents.get(path) {
+                    *parent = Some(*authored);
+                }
+            }
+            hierarchy
+        });
+        if let Some(hierarchy) = &hierarchy {
             skeletons.extend(
-                seed.hierarchy
+                hierarchy
                     .parents
                     .iter()
                     .map(|&(path, parent)| Skeleton::Type {
@@ -737,7 +853,7 @@ impl AdaptedDeclarations {
         tree.declaration_targets = tree.declaration_targets[engine_count..].into();
         if let Some(seed) = seed {
             tree = tree
-                .with_engine_intrinsics(seed.hierarchy.clone(), seed.intrinsics.to_vec())
+                .with_engine_intrinsics(hierarchy.unwrap(), seed.intrinsics.to_vec())
                 .map_err(SnapshotError::Inventory)?;
         }
         let tree = Arc::new(tree);

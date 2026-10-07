@@ -174,11 +174,51 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
 /// Discovery must certify Fresh only with complete named-procedure absence.
 pub enum BoundaryAbi {
     Fresh,
+    CertifiedIntrinsic(CertifiedIntrinsicAbi),
     Engine {
         owner: SymbolId,
         name: SymbolId,
         kind: MemberKind,
     },
+}
+/// Positive finite native-control receipt; this is not semantic name absence.
+pub struct CertifiedIntrinsicAbi {
+    engine_identity: u128,
+    owner: SymbolId,
+    name: SymbolId,
+    layout: ProcLayout,
+}
+impl CertifiedIntrinsicAbi {
+    pub(crate) fn new_del(
+        engine: &EngineSnapshot,
+        owner: SymbolId,
+        name: SymbolId,
+    ) -> Result<Self, AbiError> {
+        const TEMPLATE: &[u8] = include_bytes!("../../../fixtures/native_template.bin");
+        if !engine.matches_template(TEMPLATE, 1)
+            || !["/datum", "/atom", "/mob", "/client", "/world"]
+                .into_iter()
+                .any(|path| SymbolId::of(path) == owner)
+        {
+            return Err(AbiError("unsupported intrinsic ABI receipt domain".into()));
+        }
+        let spelling = if name == SymbolId::of("New") {
+            "New"
+        } else if name == SymbolId::of("Del") {
+            "Del"
+        } else {
+            return Err(AbiError("unsupported intrinsic ABI receipt name".into()));
+        };
+        Ok(Self {
+            engine_identity: engine.identity(),
+            owner,
+            name,
+            layout: ProcLayout {
+                display_name: Some(spelling.as_bytes().to_vec()),
+                ..ProcLayout::default()
+            },
+        })
+    }
 }
 pub struct DriverInheritedFacts<'a> {
     pub frontend: &'a ColdFrontend,
@@ -210,6 +250,30 @@ impl CapturedInheritedFacts for DriverInheritedFacts<'_> {
         }
         match self.boundaries.get(&context.identity) {
             Some(BoundaryAbi::Fresh) => Ok(InheritedLayout::Fresh),
+            Some(BoundaryAbi::CertifiedIntrinsic(receipt)) => {
+                if receipt.engine_identity != self.engine.identity()
+                    || receipt.name != node.name
+                    || node.kind != MemberKind::Proc
+                    || node.definition == dm_tree::DefinitionMode::Declare
+                {
+                    return Err(AbiError(
+                        "intrinsic ABI receipt does not match current procedure".into(),
+                    ));
+                }
+                let mut cursor = Some(node.owner);
+                while let Some(id) = cursor {
+                    if tree
+                        .type_node(id)
+                        .is_some_and(|ty| ty.path == receipt.owner)
+                    {
+                        return Ok(InheritedLayout::Known(receipt.layout.clone()));
+                    }
+                    cursor = tree.parent(id);
+                }
+                Err(AbiError(
+                    "intrinsic ABI receipt is outside current ancestry".into(),
+                ))
+            }
             Some(BoundaryAbi::Engine { owner, name, kind }) => {
                 if *name != node.name || *kind != node.kind {
                     return Err(AbiError(
@@ -286,6 +350,40 @@ pub struct PreparedSourceAbi {
     /// Encounter order, regardless of topological/worker completion order.
     pub units: Vec<(MemberId, crate::procedure_policy::PreparedUnit)>,
     pub diagnostics: Vec<(usize, String)>,
+}
+pub struct PreparedPinnedSourceAbi {
+    pub policy_identity: u128,
+    pub prepared: PreparedSourceAbi,
+}
+/// Production constructor: dependency waves consume exact source predecessors
+/// and pinned engine boundary certificates; callers cannot fill all rows Fresh.
+pub fn prepare_pinned_source_abi(
+    frontend: &ColdFrontend,
+    engine: &EngineSnapshot,
+    resolver: &dyn Resolver,
+    resource_search_context: Option<u128>,
+    workers: usize,
+) -> Result<PreparedPinnedSourceAbi, AbiError> {
+    let coverage =
+        crate::engine_abi_coverage::NamedEngineCoverage::pinned(engine).map_err(AbiError)?;
+    let policy_identity = coverage.policy_identity();
+    let boundaries = coverage.boundaries(frontend).map_err(AbiError)?;
+    let evaluator = DriverEvaluator {
+        resolver,
+        symbols: frontend.snapshot.tree.symbols(),
+    };
+    let prepared = prepare_source_abi(
+        frontend,
+        engine,
+        &evaluator,
+        &boundaries,
+        resource_search_context,
+        workers,
+    )?;
+    Ok(PreparedPinnedSourceAbi {
+        policy_identity,
+        prepared,
+    })
 }
 /// Dependency-ready waves borrow one immutable predecessor-layout map. A wave
 /// never mutates that map while workers read it, and clones no project bindings.
@@ -605,6 +703,43 @@ mod tests {
             },
         )
         .unwrap()
+    }
+    #[test]
+    fn pinned_constructor_prepares_source_dependency_without_caller_fresh_map() {
+        let engine =
+            EngineSnapshot::from_bytes(include_bytes!("../../../fixtures/native_template.bin"), 1)
+                .unwrap();
+        let seed = engine.frontend_seed();
+        let frontend = dm_tree::frontend::build_with_config(
+            Path::new("project.dme"),
+            &Source,
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(&seed),
+                observer: None,
+            },
+        )
+        .unwrap();
+        let prepared =
+            prepare_pinned_source_abi(&frontend, &engine, frontend.snapshot.tree.as_ref(), None, 2)
+                .unwrap();
+        assert!(
+            prepared.prepared.diagnostics.is_empty(),
+            "{:?}",
+            prepared.prepared.diagnostics
+        );
+        assert_eq!(prepared.prepared.units.len(), frontend.bodies.len());
+        assert_ne!(prepared.policy_identity, engine.identity());
+        let policy = FrozenPreparedPolicy::new(&frontend, &prepared.prepared).unwrap();
+        let lowered = crate::lowering::lower_frontend(
+            &frontend,
+            frontend.snapshot.tree.as_ref(),
+            &policy,
+            crate::lowering::LoweringConfig { workers: 2, ..Default::default() },
+        );
+        assert!(lowered.diagnostics.is_empty(), "{:?}", lowered.diagnostics);
+        assert!(lowered.units.iter().all(|unit| unit.abi.is_some()));
     }
     #[test]
     fn predecessor_abi_waves_preserve_encounter_order_and_inherited_layout() {

@@ -13,6 +13,7 @@ use std::time::{Duration, Instant};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct ColdTimings {
+    pub abi_preparation: Duration,
     pub lowering: Duration,
     pub initializers: Duration,
     pub symbolic_linking: Duration,
@@ -27,6 +28,7 @@ pub struct ColdOutput {
 #[derive(Debug)]
 pub enum ColdError {
     EngineMismatch,
+    AbiPreparation(String),
     Lowering(Vec<LoweringDiagnostic>),
     NonAuthoritativeAbi,
     Linking(IntegrationError),
@@ -98,6 +100,7 @@ pub fn compile_captured_program<R: Resolver, P: AbiPolicy>(
     Ok(ColdOutput {
         dmb,
         timings: ColdTimings {
+            abi_preparation: Duration::ZERO,
             lowering,
             initializers: Duration::ZERO,
             symbolic_linking,
@@ -128,6 +131,45 @@ pub fn compile_captured_classified_program<R: Resolver, P: AbiPolicy>(
         Vec::new(),
         None,
     )
+}
+
+/// Production pinned ABI preparation and cold output in one coherent path.
+/// Policy preparation consumes the captured resolver; no project maps or
+/// mutable output tables are fabricated to decide inherited procedure ABI.
+pub fn compile_captured_classified_with_pinned_abi<R: Resolver>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+) -> Result<ColdOutput, ColdError> {
+    let total = Instant::now();
+    let prepared = crate::driver_facts::prepare_pinned_source_abi(
+        frontend,
+        links.engine,
+        resolver,
+        declarations.resource_search_context,
+        config.workers,
+    )
+    .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
+    let policy = crate::driver_facts::FrozenPreparedPolicy::new(frontend, &prepared.prepared)
+        .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
+    let abi_preparation = total.elapsed();
+    let mut output = compile_captured_classified_with_stage(
+        frontend,
+        resolver,
+        &policy,
+        links,
+        declarations,
+        config,
+        map_initializers,
+        non_text,
+    )?;
+    output.timings.abi_preparation = abi_preparation;
+    output.timings.total = total.elapsed();
+    Ok(output)
 }
 
 /// Captured map initialization and non-text output share the declaration/body
@@ -230,6 +272,7 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
     Ok(ColdOutput {
         dmb,
         timings: ColdTimings {
+            abi_preparation: Duration::ZERO,
             lowering,
             initializers,
             symbolic_linking,
@@ -253,6 +296,120 @@ mod tests {
         fn read(&self, _: &Path) -> Result<String, String> {
             Ok("/var/x = 1\n/proc/p()\n    return 1\n".into())
         }
+    }
+    #[test]
+    fn classified_cold_path_emits_real_class_field_and_procedure() {
+        use crate::driver_facts::{self, BoundaryAbi, DriverEvaluator, FrozenPreparedPolicy};
+        struct ClassSource;
+        impl dm_preprocess::SourceProvider for ClassSource {
+            fn read(&self, _: &Path) -> Result<String, String> {
+                Ok(
+                    "/datum/demo\n    var/value = 7\n/datum/demo/proc/read()\n    return value\n"
+                        .into(),
+                )
+            }
+        }
+        struct NoTypeDefaults;
+        impl crate::class_projection::TypeValuePolicy for NoTypeDefaults {
+            fn tag(
+                &self,
+                _: dm_ir::SymbolId,
+            ) -> Result<u8, crate::class_projection::ProjectionError> {
+                Err(crate::class_projection::ProjectionError::Unsupported(
+                    "fixture has no type defaults".into(),
+                ))
+            }
+        }
+        let bytes = include_bytes!("../../../fixtures/native_template.bin");
+        let engine = EngineSnapshot::from_bytes(bytes, 1).unwrap();
+        let seed = engine.frontend_seed();
+        let frontend = dm_tree::frontend::build_with_config(
+            Path::new("project.dme"),
+            &ClassSource,
+            &Default::default(),
+            FrontendConfig {
+                workers: 2,
+                engine: Some(&seed),
+                observer: None,
+            },
+        )
+        .unwrap();
+        let evaluator = DriverEvaluator {
+            resolver: frontend.snapshot.tree.as_ref(),
+            symbols: frontend.snapshot.tree.symbols(),
+        };
+        // This finite fixture explicitly certifies read as a new procedure. It
+        // does not issue a production certificate for unknown engine names.
+        let boundaries = driver_facts::unit_members(&frontend)
+            .unwrap()
+            .keys()
+            .map(|identity| (*identity, BoundaryAbi::Fresh))
+            .collect();
+        let prepared =
+            driver_facts::prepare_source_abi(&frontend, &engine, &evaluator, &boundaries, None, 2)
+                .unwrap();
+        let policy = FrozenPreparedPolicy::new(&frontend, &prepared).unwrap();
+        let links = crate::engine_link::capture(bytes, &engine).unwrap();
+        let order = crate::type_creation_order::collect(
+            &frontend.allocation_ledger,
+            &frontend.expanded.text,
+            frontend.snapshot.tree.symbols(),
+            &links.inventory,
+        )
+        .unwrap();
+        let output = compile_captured_classified_program(
+            &frontend,
+            frontend.snapshot.tree.as_ref(),
+            &policy,
+            CapturedLinkInputs {
+                engine_bytes: bytes,
+                engine: &engine,
+                references: &links.references,
+                inventory: links.inventory,
+            },
+            CapturedDeclarationInputs {
+                initializers: &evaluator,
+                type_values: &NoTypeDefaults,
+                resource_search_context: None,
+                source_type_order: &order,
+            },
+            LoweringConfig {
+                workers: 2,
+                ..Default::default()
+            },
+        )
+        .unwrap_or_else(|error| {
+            let captured = byond_dmb::dmb::Dmb::from_bytes(bytes).unwrap();
+            let record = captured.procs.get(55);
+            let layouts: Vec<_> = engine.procedure_layouts().iter().filter(|layout| layout.wire_proc == 55)
+                .map(|layout| (engine.symbols().text(layout.owner), layout.name.and_then(|name| engine.symbols().text(name)), layout.kind)).collect();
+            panic!("{error:?}; engine_procs={}; record55={record:?}; strings55={:?}; layouts55={layouts:?}; source_owner={:?}; source_name={:?}",
+                captured.procs.len(), record.map(|record| record.strings.map(|id| captured.string(id))),
+                dm_ir::SymbolId::of("/datum/demo"), dm_ir::SymbolId::of("read"));
+        });
+        let image = byond_dmb::dmb::Dmb::from_bytes(&output.dmb).unwrap();
+        image.validate_references().unwrap();
+        let class = image
+            .classes
+            .iter()
+            .position(|class| {
+                image.string(class.path_string_id()) == Some(b"/datum/demo".as_slice())
+            })
+            .unwrap();
+        let declarations = image.class_variable_declarations(class).unwrap();
+        assert!(declarations.iter().any(|(id, _)| {
+            let record = &image.variables[*id as usize];
+            image.string(record.name) == Some(b"value".as_slice())
+                && record.kind == 42
+                && record.value == 7f32.to_bits()
+        }));
+        assert!(
+            image
+                .procs
+                .iter()
+                .any(|proc| image.string(proc.strings[0])
+                    == Some(b"/datum/demo/proc/read".as_slice()))
+        );
     }
     struct MustNotLower;
     impl AbiPolicy for MustNotLower {

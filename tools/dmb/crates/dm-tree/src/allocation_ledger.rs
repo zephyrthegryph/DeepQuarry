@@ -162,6 +162,13 @@ fn walk(
             })
             .map(|token| token.text(declaration))
             .collect::<String>();
+        // Match the declaration adapter's optional signature separator so the
+        // allocation owner excludes the procedure name itself.
+        let normalized = if target.contains('(') {
+            normalized.trim_end_matches('/')
+        } else {
+            normalized.as_str()
+        };
         let parts = normalized
             .trim_matches('/')
             .split('/')
@@ -304,7 +311,7 @@ fn walk(
             continue;
         }
         if item.kind == ItemKind::Type {
-            let full = path(owner, &normalized);
+            let full = path(owner, normalized);
             TypePath::parse(&full).map_err(|message| Error {
                 span: item.header_span,
                 message: message.into(),
@@ -334,6 +341,33 @@ fn walk(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn trailing_signature_separator_does_not_become_allocation_owner() {
+        let ast = dm_syntax::parse("/obj/machinery/status_display/supply_display/receive_signal/(datum/signal/signal)\n    return signal\n");
+        let mut symbols = SymbolTable::default();
+        let ledger = capture(&ast.items, "/", &mut symbols).unwrap();
+        let procedure = ledger
+            .events
+            .iter()
+            .find_map(|event| match event.kind {
+                AllocationKind::Procedure {
+                    owner,
+                    name,
+                    formal,
+                    ..
+                } => Some((owner, name, formal)),
+                _ => None,
+            })
+            .unwrap();
+        assert_eq!(
+            procedure,
+            (
+                SymbolId::of("/obj/machinery/status_display/supply_display"),
+                SymbolId::of("receive_signal"),
+                false
+            )
+        );
+    }
     #[test]
     fn grammar_groups_and_source_values_survive_normalization_distinctions() {
         let source="/datum/owner\n    var/list\n        empty\n        asset='A.txt'\n/datum/owner/var/x=null\n/datum/owner/proc/p()\n    return 'B.txt'\n/datum/owner/New()\n    return 'C.txt'\n/datum/owner/parent_type=/datum/base\n/datum/owner/a='D.txt'\n";
