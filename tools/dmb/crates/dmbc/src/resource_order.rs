@@ -1,0 +1,393 @@
+//! Native import-phase ordering over pre-normalization grammar facts.
+//! Draft: must pass the distinguishing native corpus before production admission.
+use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver, SymbolId, SymbolTable};
+use dm_tree::allocation_ledger::{AllocationKind, AllocationLedger};
+use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
+#[derive(Clone, Debug)]
+pub struct ResourceUse {
+    pub event: usize,
+    pub alias: Arc<str>,
+}
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum GroupKey {
+    Owner(SymbolId),
+    Vars(SymbolId),
+    Procs(SymbolId),
+    Verbs(SymbolId),
+    Method(SymbolId, SymbolId),
+    Declaration(usize),
+    Override(usize),
+}
+struct Group {
+    key: GroupKey,
+    owner: SymbolId,
+    ordinal: usize,
+    authored_at_creation: bool,
+    first_resource: usize,
+    children: Vec<usize>,
+}
+fn spelling(symbols: &SymbolTable, id: SymbolId) -> Result<&str, String> {
+    symbols
+        .text(id)
+        .ok_or_else(|| "resource group symbol spelling absent".into())
+}
+fn lexical_parent(path: &str) -> &str {
+    match path.rfind('/') {
+        Some(index) if index > 0 => &path[..index],
+        _ => "/",
+    }
+}
+fn ensure_owner(
+    owner: SymbolId,
+    ordinal: usize,
+    symbols: &SymbolTable,
+    groups: &mut Vec<Group>,
+    indexes: &mut BTreeMap<GroupKey, usize>,
+    roots: &mut Vec<usize>,
+) -> Result<usize, String> {
+    let path = spelling(symbols, owner)?;
+    let mut ancestors = Vec::new();
+    if path == "/" {
+        ancestors.push("/");
+    } else {
+        for (index, byte) in path.bytes().enumerate().skip(1) {
+            if byte == b'/' {
+                ancestors.push(&path[..index]);
+            }
+        }
+        ancestors.push(path);
+    }
+    let mut parent: Option<usize> = None;
+    for ancestor in ancestors {
+        let id = SymbolId::of(ancestor);
+        let key = GroupKey::Owner(id);
+        let index = if let Some(index) = indexes.get(&key) {
+            *index
+        } else {
+            let index = groups.len();
+            groups.push(Group {
+                key: key.clone(),
+                owner: id,
+                ordinal,
+                authored_at_creation: ancestor == path,
+                first_resource: usize::MAX,
+                children: Vec::new(),
+            });
+            indexes.insert(key, index);
+            if let Some(parent) = parent {
+                groups[parent].children.push(index);
+            } else {
+                roots.push(index);
+            }
+            index
+        };
+        parent = Some(index);
+    }
+    parent.ok_or_else(|| "resource owner is not a path".into())
+}
+fn visit(index: usize, groups: &[Group], out: &mut Vec<usize>) {
+    let group = &groups[index];
+    if group.owner == SymbolId::of("/") && matches!(group.key, GroupKey::Owner(_)) {
+        if group.authored_at_creation {
+            out.push(index);
+        }
+        for child in &group.children {
+            visit(*child, groups, out);
+        }
+        if !group.authored_at_creation {
+            out.push(index);
+        }
+        return;
+    }
+    let mut own = false;
+    for child in &group.children {
+        if !own && group.first_resource < groups[*child].ordinal {
+            out.push(index);
+            own = true;
+        }
+        visit(*child, groups, out);
+    }
+    if !own {
+        out.push(index);
+    }
+}
+/// Literal uses must have exact parser/AST encounter ordering and archive aliases
+/// from captured resource resolution. Prefix imports are verified DMS/interface
+/// imports; map-only uses are supplied as suffix imports after code groups.
+pub fn collect<R: Resolver>(
+    ledger: &AllocationLedger,
+    uses: &[ResourceUse],
+    symbols: &SymbolTable,
+    resolver: &R,
+    known_roots: &BTreeSet<SymbolId>,
+    prefix_imports: &[Arc<str>],
+    suffix_imports: &[Arc<str>],
+) -> Result<Vec<Arc<str>>, String> {
+    let mut groups = Vec::new();
+    let mut indexes = BTreeMap::new();
+    let mut roots = Vec::new();
+    let mut event_groups = vec![None; ledger.events.len()];
+    let mut global = BTreeSet::new();
+    let mut reparented = BTreeSet::new();
+    for (event_index, event) in ledger.events.iter().enumerate() {
+        if event.encounter_order != event_index {
+            return Err("resource allocation ledger encounter order mismatch".into());
+        }
+        let owner = match event.kind {
+            AllocationKind::Type { path, .. } => path,
+            AllocationKind::Namespace { owner, .. }
+            | AllocationKind::Field { owner, .. }
+            | AllocationKind::Procedure { owner, .. }
+            | AllocationKind::Parent { owner, .. } => owner,
+        };
+        if matches!(event.kind, AllocationKind::Field { .. }) && owner == SymbolId::of("/") {
+            global.insert(event_index);
+            continue;
+        }
+        let parent = ensure_owner(
+            owner,
+            event_index,
+            symbols,
+            &mut groups,
+            &mut indexes,
+            &mut roots,
+        )?;
+        let phase = match event.kind {
+            AllocationKind::Field {
+                formal: true,
+                var_namespace: true,
+                ..
+            } => Some(GroupKey::Vars(owner)),
+            AllocationKind::Field { formal: true, .. } => Some(GroupKey::Declaration(event_index)),
+            AllocationKind::Field { formal: false, .. } => Some(GroupKey::Override(event_index)),
+            AllocationKind::Procedure {
+                formal: false,
+                name,
+                ..
+            } => Some(GroupKey::Method(owner, name)),
+            AllocationKind::Procedure { verb: true, .. } => Some(GroupKey::Verbs(owner)),
+            AllocationKind::Procedure { .. } => Some(GroupKey::Procs(owner)),
+            AllocationKind::Parent { .. } => {
+                reparented.insert(owner);
+                Some(GroupKey::Override(event_index))
+            }
+            _ => None,
+        };
+        let group = if let Some(key) = phase {
+            if let Some(index) = indexes.get(&key) {
+                *index
+            } else {
+                let index = groups.len();
+                groups.push(Group {
+                    key: key.clone(),
+                    owner,
+                    ordinal: event_index,
+                    authored_at_creation: true,
+                    first_resource: event_index,
+                    children: Vec::new(),
+                });
+                indexes.insert(key, index);
+                groups[parent].children.push(index);
+                index
+            }
+        } else {
+            parent
+        };
+        event_groups[event_index] = Some(group);
+    }
+    for usage in uses {
+        if usage.event >= ledger.events.len() {
+            return Err("resource use allocation event absent".into());
+        }
+        if let Some(group) = event_groups[usage.event] {
+            groups[group].first_resource = groups[group].first_resource.min(usage.event);
+        }
+    }
+    roots.sort_by_key(|index| {
+        (
+            !known_roots.contains(&groups[*index].owner),
+            groups[*index].ordinal,
+        )
+    });
+    let mut pending = Vec::new();
+    for root in roots {
+        visit(root, &groups, &mut pending);
+    }
+    let mut ranks = BTreeMap::new();
+    while !pending.is_empty() {
+        let mut deferred = Vec::new();
+        for index in &pending {
+            let mut ancestor = spelling(symbols, groups[*index].owner)?.to_owned();
+            let mut blocked = false;
+            while ancestor != "/" {
+                let owner = SymbolId::of(&ancestor);
+                if reparented.contains(&owner) {
+                    let parent = match resolver.resolve(ResolveQuery::Parent(owner)) {
+                        ResolvedMeaning::Symbol(parent) => Some(parent),
+                        ResolvedMeaning::Missing => None,
+                        ResolvedMeaning::Unsupported(_) => {
+                            return Err("resource phase parent is unsupported".into())
+                        }
+                        _ => return Err("resource phase parent answer is inconsistent".into()),
+                    };
+                    if let Some(parent) = parent {
+                        if parent != SymbolId::of(lexical_parent(&ancestor))
+                            && indexes.contains_key(&GroupKey::Owner(parent))
+                            && !ranks.contains_key(&GroupKey::Owner(parent))
+                        {
+                            blocked = true;
+                            break;
+                        }
+                    }
+                }
+                ancestor = lexical_parent(&ancestor).to_owned();
+            }
+            if blocked {
+                deferred.push(*index);
+            } else {
+                let rank = ranks.len();
+                ranks.insert(groups[*index].key.clone(), rank);
+            }
+        }
+        if deferred.len() == pending.len() {
+            return Err("resource phase dependencies make no progress".into());
+        }
+        pending = deferred;
+    }
+    let mut ordered = uses.iter().enumerate().collect::<Vec<_>>();
+    ordered.sort_by_key(|(encounter, usage)| {
+        (
+            if global.contains(&usage.event) { 0 } else { 1 },
+            event_groups[usage.event]
+                .and_then(|group| ranks.get(&groups[group].key).copied())
+                .unwrap_or(usize::MAX),
+            *encounter,
+        )
+    });
+    let mut result = Vec::new();
+    let mut aliases = BTreeSet::new();
+    for alias in prefix_imports
+        .iter()
+        .chain(ordered.into_iter().map(|(_, usage)| &usage.alias))
+        .chain(suffix_imports)
+    {
+        if aliases.insert(alias.clone()) {
+            result.push(alias.clone());
+        }
+    }
+    Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    struct Parents(BTreeMap<SymbolId, Option<SymbolId>>);
+    impl Resolver for Parents {
+        fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
+            match query {
+                ResolveQuery::Parent(owner) => self
+                    .0
+                    .get(&owner)
+                    .and_then(|parent| *parent)
+                    .map_or(ResolvedMeaning::Missing, ResolvedMeaning::Symbol),
+                _ => ResolvedMeaning::Unsupported(query),
+            }
+        }
+    }
+    fn fixture(name: &str) -> (AllocationLedger, SymbolTable, Vec<ResourceUse>, Parents) {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/translation/resource_archive_order");
+        let source = std::fs::read_to_string(root.join(format!("{name}.dm"))).unwrap();
+        let ast = dm_syntax::parse(&source);
+        assert!(ast.diagnostics.is_empty(), "{name}");
+        let mut symbols = SymbolTable::default();
+        let ledger = dm_tree::allocation_ledger::capture(&ast.items, "/", &mut symbols).unwrap();
+        let mut uses = Vec::new();
+        let mut parents = BTreeMap::new();
+        for (event_index, event) in ledger.events.iter().enumerate() {
+            let span = match event.kind {
+                AllocationKind::Field { initializer, .. } => initializer,
+                AllocationKind::Procedure { body, .. } => Some(body),
+                AllocationKind::Parent { owner, value } => {
+                    let parsed = dm_syntax::parse_expression(source[value.range()].trim());
+                    assert!(parsed.diagnostics.is_empty());
+                    let parent = match parsed.expr.unwrap().kind {
+                        dm_syntax::ExprKind::TypePath(path) => Some(symbols.intern(&path).unwrap()),
+                        dm_syntax::ExprKind::Literal(null) if null == "null" => None,
+                        _ => panic!("parent fixture expression unsupported"),
+                    };
+                    parents.insert(owner, parent);
+                    None
+                }
+                _ => None,
+            };
+            if let Some(span) = span {
+                for literal in
+                    dm_resources::capture::discover_literals(&source[span.range()]).unwrap()
+                {
+                    uses.push(ResourceUse {
+                        event: event_index,
+                        alias: literal.path.replace('\\', "/").into(),
+                    });
+                }
+            }
+        }
+        (ledger, symbols, uses, Parents(parents))
+    }
+    #[test]
+    fn distinguishing_native_phase_archives_match_exact_alias_order() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/translation/resource_archive_order");
+        let known = [
+            "/",
+            "/datum",
+            "/obj",
+            "/mob",
+            "/turf",
+            "/area",
+            "/client",
+            "/world",
+            "/atom",
+            "/image",
+            "/mutable_appearance",
+        ]
+        .map(SymbolId::of)
+        .into_iter()
+        .collect();
+        for name in [
+            "reparent_next_pass",
+            "reparented_descendants",
+            "first_resource_body",
+            "procedure_group_first",
+            "field_group_first",
+            "client_procedure_namespaces",
+            "bare_method_empty_phase",
+            "field_override_sequence",
+            "empty_variable_namespace",
+            "relative_variable_phase",
+            "relative_typed_variable_phase",
+            "ast_containers",
+            "cross_native_roots",
+            "ancestor_subtrees",
+            "const_static_procstatic",
+            "siblings_reopen",
+        ] {
+            let (ledger, symbols, uses, parents) = fixture(name);
+            let actual = collect(&ledger, &uses, &symbols, &parents, &known, &[], &[]).unwrap();
+            let raw = std::fs::read(root.join(format!("{name}.native.rsc.bin"))).unwrap();
+            let mut cursor = std::io::Cursor::new(raw);
+            let mut expected = Vec::new();
+            while let Some(entry) = byond_dmb::rsc::read_entry(&mut cursor).unwrap() {
+                if let byond_dmb::rsc::Entry::Named(record) = entry {
+                    expected.push(String::from_utf8(record.name).unwrap());
+                }
+            }
+            assert_eq!(
+                actual.iter().map(|name| name.as_ref()).collect::<Vec<_>>(),
+                expected.iter().map(String::as_str).collect::<Vec<_>>(),
+                "{name}"
+            );
+        }
+    }
+}

@@ -13,11 +13,13 @@ pub mod engine_link;
 pub mod engine_host;
 pub mod lowering;
 pub mod procedure_policy;
+pub mod driver_facts;
 pub mod symbolic;
 pub mod composition;
 pub mod class_projection;
 pub mod class_initialization;
 pub mod class_inventory;
+pub mod type_creation_order;
 pub mod mob_writer;
 pub mod argument_sources;
 pub mod cold;
@@ -40,3 +42,5 @@ pub mod map_artifacts;
 pub mod non_text;
 
 pub mod non_text_output;
+
+pub mod resource_order;

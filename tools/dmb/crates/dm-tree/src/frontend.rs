@@ -181,6 +181,8 @@ pub struct ColdFrontend {
     pub plan: DirectivePlan,
     pub expanded: ExpandedRegions,
     pub syntax: Arc<AstFile>,
+    /// Original grammar groups, before flattened declaration normalization.
+    pub allocation_ledger: Arc<crate::allocation_ledger::AllocationLedger>,
     pub snapshot: TreeSnapshot,
     pub files: Arc<[SourceFile]>,
     source_by_path: Arc<HashMap<PathBuf, FileId>>,
@@ -446,6 +448,20 @@ pub fn build_with_config<P: SourceProvider>(
             })
             .collect::<Vec<_>>()
     })?;
+    // Normalization clones syntax rather than mutating it. Capture grammar
+    // allocation facts from these original compact headers and retained body
+    // byte ranges; no executable AST needs to be retained or reparsed here.
+    let allocation_ledger =
+        crate::allocation_ledger::capture(&syntax.items, "/", &mut adapted.symbols).map_err(
+            |error| {
+                vec![Diagnostic {
+                    kind: DiagnosticKind::UnsupportedModel,
+                    stage: DiagnosticStage::Declaration,
+                    message: error.message,
+                    location: mapping.output(error.span.start),
+                }]
+            },
+        )?;
     timings.declaration_parsing = parse_start.elapsed();
     observe(
         config,
@@ -609,6 +625,7 @@ pub fn build_with_config<P: SourceProvider>(
         plan,
         expanded,
         syntax,
+        allocation_ledger: Arc::new(allocation_ledger),
         snapshot,
         files: files.into(),
         source_by_path: Arc::new(by_path),

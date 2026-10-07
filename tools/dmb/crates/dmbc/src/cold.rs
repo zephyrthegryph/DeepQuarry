@@ -118,7 +118,40 @@ pub fn compile_captured_classified_program<R: Resolver, P: AbiPolicy>(
     declarations: CapturedDeclarationInputs<'_>,
     config: LoweringConfig,
 ) -> Result<ColdOutput, ColdError> {
+    compile_captured_classified_with_stage(
+        frontend,
+        resolver,
+        policy,
+        links,
+        declarations,
+        config,
+        Vec::new(),
+        None,
+    )
+}
+
+/// Captured map initialization and non-text output share the declaration/body
+/// freezer and final writer. Their semantic capture remains a prior stage.
+#[allow(clippy::too_many_arguments)] // Explicit captured boundaries; no project snapshot bundle.
+pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
+    frontend: &ColdFrontend,
+    resolver: &R,
+    policy: &P,
+    links: CapturedLinkInputs<'_>,
+    declarations: CapturedDeclarationInputs<'_>,
+    config: LoweringConfig,
+    map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
+    non_text: Option<&dyn crate::composition::NonTextOutputStage>,
+) -> Result<ColdOutput, ColdError> {
     let total = Instant::now();
+    for artifact in &map_initializers {
+        if !matches!(artifact.identity, dm_link::InitializerIdentity::Map { .. }) {
+            return Err(ColdError::Initializer(
+                "captured map artifacts cannot replace declaration initializers".into(),
+            ));
+        }
+        artifact.validate().map_err(ColdError::Initializer)?;
+    }
     let captured = frontend.engine.as_ref().ok_or(ColdError::EngineMismatch)?;
     if captured.identity != links.engine.identity()
         || !links
@@ -169,22 +202,29 @@ pub fn compile_captured_classified_program<R: Resolver, P: AbiPolicy>(
         .require_production_abi()
         .map_err(|_| ColdError::NonAuthoritativeAbi)?;
     let stage = Instant::now();
-    let frozen = crate::symbolic::freeze_program_tables(
+    let initialization = initialization
+        .units
+        .into_iter()
+        .map(Into::into)
+        .chain(map_initializers)
+        .collect();
+    let frozen = crate::symbolic::freeze_artifact_tables(
         batch,
         frontend.snapshot.tree.symbols(),
         links.references,
         inventory,
-        initialization.units,
+        initialization,
     )
     .map_err(ColdError::Linking)?;
     let symbolic_linking = stage.elapsed();
     let stage = Instant::now();
-    let dmb = crate::composition::compose_projected_program(
+    let dmb = crate::composition::compose_projected_with_stage(
         links.engine_bytes,
         &frozen,
         frontend,
         &projection,
         declarations.type_values,
+        non_text,
     )
     .map_err(ColdError::Composition)?;
     Ok(ColdOutput {
