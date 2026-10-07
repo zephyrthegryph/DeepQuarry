@@ -169,3 +169,36 @@ fn source_modifiers_do_not_equal_wire_flags_or_slot_indexes() {
     assert_eq!(wire_flags(0, root), Ok((1, true)));
     assert!(wire_flags(16, datum).is_err());
 }
+#[test]
+fn ordinary_source_root_matches_native_datum_parent_prototype() {
+    let template=include_bytes!("../../../fixtures/native_template.bin");
+    let captured=byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/phase1/native_root_procpath/empty.native.bin")).unwrap();
+    let mut dmb=byond_dmb::dmb::Dmb::from_bytes(template).unwrap();
+    let mut symbols=crate::engine::EngineSnapshot::from_bytes(template,1).unwrap().symbols().clone();
+    let path=symbols.intern("/standalone_empty").unwrap();
+    let datum=symbols.intern("/datum").unwrap();
+    let parent=dmb.classes.iter().position(|class|dmb.string(class.path_string_id())==Some(b"/datum".as_slice())).unwrap() as u32;
+    let index=dmb.classes.len() as u32;
+    let mut inventory=dm_link::LinkInventory::default();
+    inventory.spellings.push((path,Arc::from(b"/standalone_empty".as_slice())));
+    inventory.entries.push(dm_link::Entry {key:Key::Type(path),content:Arc::from([])});
+    inventory.reserved_prefixes.insert(dm_link::Table::Type,index);
+    inventory.append_orders.insert(dm_link::Table::Type,vec![Key::Type(path)]);
+    let tables=dm_link::LinkTables::build(inventory).unwrap();
+    let projection=ClassProjection {shared_slot_order:Arc::from([]),procedure_statics:Arc::from([]),
+        runtime_writes:Arc::from([]),tree_identity:0,occurrence_count:0,fields:Arc::from([]),chains:Arc::from([]),
+        types:Arc::from([TypeProjection {path,parent:Some(datum)}])};
+    materialize_types(&mut dmb,&projection,&tables,&symbols).unwrap();
+    let mut actual=dmb.classes[index as usize].clone();
+    let expected=captured.classes[24].clone();
+    assert_eq!(actual.initial_ids[1],parent);
+    assert_eq!(captured.string(captured.classes[expected.initial_ids[1] as usize].path_string_id()),Some(b"/datum".as_slice()));
+    actual.initial_ids[1]=expected.initial_ids[1];
+    for slot in [0,2] {
+        assert_eq!(dmb.string(actual.initial_ids[slot]),captured.string(expected.initial_ids[slot]));
+        actual.initial_ids[slot]=expected.initial_ids[slot];
+    }
+    assert_eq!(dmb.string(actual.text),captured.string(expected.text));
+    actual.text=expected.text;
+    assert_eq!(actual,expected);
+}

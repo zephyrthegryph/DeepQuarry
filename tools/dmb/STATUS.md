@@ -10,6 +10,11 @@ Release probe 36 names the remaining parent-ABI blocker: the authored root type
 29.691 s, sampled private memory 3,069,820,928 bytes. Initializers, all bodies and
 symbolic linking passed; composition stopped before producing a pair. A native
 root-type control is being captured to define the source-root record policy.
+The captured controls show ordinary roots inherit `/datum`; the synthetic root
+was a semantic-tree error. Shared parent resolution now uses an existing datum
+for ordinary top-level types, preserving explicit engine/source parents and
+unseeded trees. Its focused gate passes. No separate root-prototype writer is
+needed: the native empty-root header matches the existing datum-parent writer.
 Release probe 35 cleared retained-client projection and reached the next class
 composition gate: an admitted source type has no physical parent ABI binding.
 All bodies and symbolic linking passed again. External time was 30.657 s,

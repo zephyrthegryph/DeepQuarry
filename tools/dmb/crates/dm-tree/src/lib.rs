@@ -402,7 +402,18 @@ pub(crate) fn build_with_intrinsic_members(
             let parent_text = dm_ir::TypePath::parse(symbols.text(path).unwrap())
                 .unwrap()
                 .parent();
-            parent_text.map(|parent| by_path[&SymbolId::of(parent.as_str())])
+            parent_text.map(|parent| {
+                let lexical = SymbolId::of(parent.as_str());
+                let datum = SymbolId::of("/datum");
+                // Native ordinary top-level declarations inherit /datum.
+                // Engine roots have explicit parents and take the branch above;
+                // generic source-only trees without /datum retain lexical roots.
+                if lexical == root && path != datum && by_path.contains_key(&datum) {
+                    by_path[&datum]
+                } else {
+                    by_path[&lexical]
+                }
+            })
         };
         types.push(TypeNode {
             path,
@@ -963,3 +974,33 @@ impl dm_ir::Resolver for SemanticTree {
 mod tests;
 
 pub mod allocation_ledger;
+
+#[cfg(test)]
+mod native_root_parent_tests {
+    use super::*;
+    #[test]
+    fn native_ordinary_roots_default_to_datum_without_overriding_explicit_engine_roots() {
+        // native_root_procpath/probe.native.bin: procpath, standalone,
+        // appearance and synthetic hook all have /datum parent records.
+        let mut symbols = SymbolTable::default();
+        let root = symbols.intern("/").unwrap();
+        let datum = symbols.intern("/datum").unwrap();
+        let paths = ["/procpath", "/standalone", "/appearance", "/hook/startup"];
+        let mut skeletons = vec![Skeleton::Type {path:datum, explicit_parent:Some(root)}];
+        for path in paths { skeletons.push(Skeleton::Type {path:symbols.intern(path).unwrap(), explicit_parent:None}); }
+        let engine = symbols.intern("/client").unwrap();
+        skeletons.push(Skeleton::Type {path:engine, explicit_parent:Some(root)});
+        let redirected = symbols.intern("/redirected").unwrap();
+        skeletons.push(Skeleton::Type {path:redirected, explicit_parent:Some(engine)});
+        let tree = build(symbols, &skeletons).unwrap();
+        let parent_path = |path| {let id=tree.lookup_type(SymbolId::of(path)).unwrap(); tree.type_node(tree.parent(id).unwrap()).unwrap().path};
+        for path in ["/procpath","/standalone","/appearance","/hook"] { assert_eq!(parent_path(path),datum); }
+        assert_eq!(parent_path("/hook/startup"), SymbolId::of("/hook"));
+        assert_eq!(parent_path("/client"),root);
+        assert_eq!(parent_path("/redirected"),engine);
+        assert_eq!(parent_path("/datum"),root);
+        let mut symbols = SymbolTable::default(); let ordinary=symbols.intern("/ordinary").unwrap();
+        let unseeded=build(symbols,&[Skeleton::Type{path:ordinary,explicit_parent:None}]).unwrap();
+        assert_eq!(unseeded.type_node(unseeded.parent(unseeded.lookup_type(ordinary).unwrap()).unwrap()).unwrap().path,root);
+    }
+}
