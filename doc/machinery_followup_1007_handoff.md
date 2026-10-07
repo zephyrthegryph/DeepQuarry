@@ -1,8 +1,8 @@
 # Machinery follow-up, 7 October 2026
 
-This batch retires the remaining targeted legacy declaration families in `code/game/machinery/` and `code/modules/power/`, preserving the current master operation, request and topic APIs. Verification is still in progress; this draft is not a claim that the branch is ready to land.
+This batch retires the remaining targeted legacy declaration families in `code/game/machinery/` and `code/modules/power/`, preserving the current master operation, request and topic APIs. Eleven semantic findings and unapproved snapshot differences prevent a clean handoff; the branch is not ready to land.
 
-Latest runtime verification: `real-initializer-focused.log` passed all twelve focused tests with a clean boot gate. The strict emag regression verified the populated generated read table and all six native/legacy notifications. ID insertion, repeat restart, menu ordering, change hooks, power-hit declarations and ready-light colour also passed. A lazy `dview_mob` initialization produced a state-leak warning in the magnet fixture; fixture setup now warms the persistent cache before global snapshots and needs a focused rerun. Snapshot review remains pending: the documented multi-item menu filtering does not authorize every removed single-item disabled row. No whole-file pin approvals or broad blessing are accepted on that basis.
+Latest completed runtime verification before the final master merge: twelve focused tests passed, followed by eight focused tests with a clean boot gate and no state leaks. Fixture setup warms the persistent `dview_mob` cache before global snapshots. The eight-test run's restored missing-card Emag expectations have since been superseded by master's explicit integrator policy; the final 66-test run checks that policy. Snapshot review remains pending; no broad blessing has been performed.
 
 ## Scope and counts
 
@@ -23,6 +23,12 @@ No files under the protected `code/modules/combat_ai/` or `code/library/mob/` pa
 
 Merge `e7784f5458` incorporates master batch 5, including current topic dispatch and pending-operation behavior. The earlier engine self-contained branch was already pushed independently; this machinery branch builds on that integration rather than repeating it.
 
+Merge `07e9cfc4a7` incorporates master `2173eed369`, preserving master's machine-pipeline retirement, machine stats, gas APIs and timer deletion policy alongside the engine extraction. Read generation retains master's 300-row chunks and assembles them through exactly one real global initializer. Two focused generator Rust regressions pass.
+
+The broad five-family declaration ban remains intact. A separate OM-field ban applies only to machinery and power, preventing the merge from accidentally banning unconverted fields in other folders. Both bans reject inline waivers. The focused scope/waiver regression passes.
+
+Master explicitly authorizes removing legacy missing-card Emag menu rows. Actual held exhausted cards retain their refusal. Robot Blocked and cell item-menu corrections preserve the older disabled rows without swallowing ordinary physical clicks; final runtime verification is pending.
+
 Master integration introduced 12 engine layering findings, all corrected through actual interfaces. The existing default `topic_allowed()` (TRUE) and `topic_forward()` (null) implementations moved from the old topic dispatcher into engine inputs. Three genuine transport hooks delegate downstream: prompt `focus_transport()` handles modal/TGUI update and focus; `op_topic_resolve_ref()` retains the existing scoped resolver; `op_topic_rights_denied()` retains every administration log and notification. Topic dispatch order, pending-request focus and multiple-modal intent are preserved. `batch5-engine-layering-fixed.log` confirms both external_dependency and semantic_model are zero. No exemptions or ALLOW annotations were added.
 
 ## Behavior and topic work
@@ -36,6 +42,33 @@ Gear prompts retain busy state during selection and dispensing, release it on ca
 ## Tests and current verification
 
 Only focused tests are run, centrally and serially. No full suite was run for this batch.
+
+The post-merge 66-test run compiled with zero errors (42 DreamMaker warnings), passed the boot gate, and passed 64 tests. `dq_conversion_pin` reported 4,852 differing rows; `dx_menu_order` reported 318 differing scenarios. All new behavior regressions passed, including menu policy, strict native/legacy emag notifications, actual ID insertion and the engine every() options. This was not an overall passing run.
+
+The four-test cleanup rerun passed both fixture isolation tests and the firedoor behavior assertion. The pin sweep retained its 4,852 differences but no longer leaked `act_taken` or initialized the status-policy cache inside the test. Prompt restoration now surrounds door fixture setup. The subsequent two-test run confirms those prompt leaks are gone and reduces menu differences from 318 to 282; its isolated door query exposed a separate lazy `dview_mob` cache warning. Door fixture construction now warms that production cache before global snapshots. `door-isolation-focused.log` passes the final isolated firedoor test, with zero compile errors, a clean boot gate and no state-leak warnings.
+
+Only 36 airlock/vending/APC menu scenarios were regenerated with the official golden renderer: click survivors and original menu ordering match, with only master's documented base-menu additions. Exactly 87 documented missing-card Emag rows were removed across seven pin files; every other pin row was retained. No whole-file blessing was performed. The remaining menu differences include 182 held-argument pickup scenarios whose fixture places the alleged held item on the turf, requiring setup/API tracing before approval.
+
+`final-checkpoint-lint.log` reports zero DreamChecker diagnostics and passing Biome/TypeScript on the final source. `final-checkpoint-ratchets.log` confirms enabled engine layering at zero, corrected scoped bans and passing capability-map generation/selftest. Both commands fail solely on the ten unknown reads and one relation hop listed below. No lint allowance, baseline addition or ceiling increase was used. The machinery branch is kept locally pending these blockers; the previously completed engine branch remains pushed separately.
+
+The following earlier run notes are historical; post-merge results above supersede their pending-verification statements and temporary missing-card Emag expectations.
+
+### Post-merge baseline accounting
+
+Exact committed baseline fingerprints compared with master `2173eed369`:
+
+| Lint | Master | Branch | Removed | Added |
+|---|---:|---:|---:|---:|
+| base_vars | 981 | 912 | 69 | 0 |
+| instance_list | 48 | 0 | 48 | 0 |
+| silicon_entry | 111 | 102 | 9 | 0 |
+| system_boundary | 301 | 300 | 1 | 0 |
+| dx_raw_delay | 6 | 5 | 1 | 0 |
+| dx_review | 178 | 171 | 7 | 0 |
+
+Total: 135 fingerprints removed, none added. The base_vars, instance_list and six dx_review removals belong to the inherited engine extraction, rather than the machinery sweep. The latest official updater removed nine silicon entries and two stale timer/review entries. No fingerprints were hand-rekeyed.
+
+The remaining semantic barrier is ten unknown reads and one relation hop. The unarmed-attack damage finding is a variable-name-only write-index false positive: unrelated `damage` writes and locals taint the configuration field. A proper analyzer fix needs typed write provenance with conservative handling of unknown receivers. The other findings require genuine shared mutation producers or ownership interfaces. Cell Charge/Drain menu parity also needs a truthful hand interface covering robot module selection; ordinary slot occupancy cannot substitute for that state.
 
 The 54-test focused run (`final-fix-focused.log`) compiled with zero DM errors, passed the boot gate and passed 49 assertions-based tests. The subsequent 19-test run (`remaining-fix-focused.log`) passed 17 tests, including all four power refusals, three public washer regressions, console access gates, repeat restart behavior and scratch-global restoration. Its two remaining failures were a gear-dispenser inheritance clash in the pin sweep and doorbell click selection; the later run verifies those corrections. Neither run was a clean passing run.
 

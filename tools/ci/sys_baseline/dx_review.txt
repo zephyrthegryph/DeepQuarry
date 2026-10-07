@@ -134,7 +134,6 @@ unkeyed_wire_after	code/game/objects/effects/mines.dm	after(src, 2 SECONDS, PROC
 unkeyed_wire_after	code/game/objects/effects/mines.dm	after(src, 2 SECONDS, PROC_REF(explode))
 unkeyed_wire_after	code/game/objects/effects/prop/snake.dm	after(src, pulse_delay, PROC_REF(snake_pulse))
 unkeyed_wire_after	code/modules/blob/blob.dm	after(src, 0.5 SECONDS, PROC_REF(pulse_on), with = list(forceLeft, dirs))
-unkeyed_wire_after	code/modules/blob2/overmind/types/ectoplasmic_horror.dm	after(B, 9 SECONDS, TYPE_PROC_REF(/obj/structure/blob, ectoplasm_siphon), with = list(L, drain_beam))
 unkeyed_wire_after	code/modules/catalogue/cataloguer.dm	after(src, 2 SECONDS, PROC_REF(pulse_scan_end), with = list(user, list(scannable_atoms, filter)))
 unkeyed_wire_after	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/adv_dark_gygax.dm	after(src, 1 SECOND, PROC_REF(energy_ball_pulse), with = list(i + 1, old_shock_resist))
 unkeyed_wire_after	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/adv_dark_gygax.dm	after(src, 1 SECOND, PROC_REF(energy_ball_discharge), with = list(old_shock_resist))
