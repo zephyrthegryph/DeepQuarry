@@ -45,13 +45,13 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded(datum/task/timed/passenger_boarded/task)
 	var/mob/user = task.actor
-	if(!src?.slot_item(MECHA_SLOT_PILOT))
+	if(!src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER))
 		if(!move_into(src, OCCUPANT_SLOT_MECHA_PASSENGER, user))
 			return
 		src.mecha_log_message("[user] boarded.")
 		occupant_message("[user] boarded.")
-	else if(src?.slot_item(MECHA_SLOT_PILOT) != user)
-		to_chat(user, span_warning("[src?.slot_item(MECHA_SLOT_PILOT)] was faster. Try harder next time, loser."))
+	else if(src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER) != user)
+		to_chat(user, span_warning("[src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)] was faster. Try harder next time, loser."))
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/container_resist(mob/living)
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER)
@@ -158,7 +158,7 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/passenger)
 	//search for a valid passenger compartment
 	var/feedback = 0 //for nicer user feedback
 	for(var/obj/item/mecha_parts/mecha_equipment/tool/passenger/P in contents_of(src))
-		if (P?.slot_item(MECHA_SLOT_PILOT))
+		if (P?.slot_item(OCCUPANT_SLOT_MECHA_PASSENGER))
 			feedback |= OCCUPIED
 			continue
 		if (P.door_locked)

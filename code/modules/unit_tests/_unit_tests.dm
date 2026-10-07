@@ -441,6 +441,7 @@
 #include "dq_topic_op_tests.dm"
 #include "dq_topic_mecha_tests.dm"
 #include "dq_topic_guards_tests.dm"
+#include "dq_mecha_passenger_slot.dm"
 #include "dq_topic_items_tests.dm"
 #include "dq_topic_mobs_tests.dm"
 #include "dq_topic_datums_tests.dm"
