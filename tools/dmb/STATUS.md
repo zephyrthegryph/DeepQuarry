@@ -215,6 +215,17 @@ completion percentage is claimed while those gates remain open.
 
 ## Current integration follow-up
 
+- Checked ABI/debug migration is committed as `8e8f0ee8f6`. Ordered initializer
+  IR/planning, root global storage, inherited engine ABI capture and bounded DMB
+  composition are committed as `20d05a4c4e`. The second focused gate passed 96
+  tests (IR 10, linker 4, tree 56, client 26); its subsequent CLI build passed.
+- Source-only probe 5 exited after 29.711 s, with 1,602,334,720 bytes sampled
+  maximum private memory. Declaration parsing completed; tree resolution rejected
+  `world.cache_lifespan`, which the partial catalog omitted. The positive field
+  entry is now saved, supported by the pinned declaration_metadata fixture; no
+  default/type is invented. Receipt:
+  `E:/dmb-native-v2-phase0/source-analysis-probe-20261006-5/receipt.json`.
+
 - Source-only probe 4 exited with a declaration error after 21.600 s, with
   1,654,022,144 bytes maximum private memory in one-second samples. It rejected
   the legal argument declaration `obj/instance/`. The trailing separator parser
@@ -232,6 +243,30 @@ completion percentage is claimed while those gates remain open.
   is claimed from these frontend measurements.
 
 ## Artifact location and limits
+
+### Active Phase 1 integration
+
+Full DMB encoding is now measured on the frozen reference image: 47,843,708
+bytes encoded byte-identically in 0.161128 s. Decode was 0.157183 s and reference
+validation 0.020041 s. This one in-process sample used the development profile
+with the binary-format package optimized at level 2. Input OS cache state was
+uncontrolled. It excludes symbolic linking, resources, and publication; it is
+not a compiler benchmark. Receipt: `fixtures/phase0/dmb_encoding.json`.
+
+The latest focused gate passed linker (5), resources (11), and tree (62)
+checks. The client passed 43 of 44 checks; the remaining regression concerns
+the identity of the effective procedure when an implicit definition precedes
+its formal declaration. That is being investigated against the selected body,
+rather than assuming that source order and occurrence numbering coincide.
+
+Current uncommitted integration includes typed initializer lowering, map
+projection and initializer units, class projection, world directives, and
+argument-source helpers. Complete class/map/resource orchestration and a
+compilation CLI remain work in progress. These are not completed Phase 1 gates.
+
+Fresh DreamMaker compile-only controls certify raw RSC payloads for DMI, PNG,
+OGG, TTF, text, HTML, CSS, JavaScript, JSON, and DMF. Evidence and limits are in
+`fixtures/phase0/resources/`. Other resource transformations remain unproven.
 
 Raw evidence: `D:/dmb-native-v2-phase0`. That drive is an HDD. Profile working trees
 use `E:/dmb-native-v2-phase0/profiles` on SSD; the frozen source relocation is
