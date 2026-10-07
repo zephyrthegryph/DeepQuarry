@@ -2,6 +2,7 @@ blob | survives
 emag | blocks_light: 0 -> 1
 emag | opacity: 0 -> 1
 emp 1 | deleted
+emp 1 | turf: +/obj/effect/effect/sparks x5
 emp 2 | atom_integrity: down
 emp 2 | cap_data: null -> list(1)
 emp 2 | refresh_queued: 131071 -> 0

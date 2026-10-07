@@ -1,6 +1,5 @@
-/obj/machinery/readybutton|human|none => readybutton_press|readybutton_touch:needs an item
-/obj/machinery/readybutton|robot|none => gen_silicon_readybutton_silicon_refuse,readybutton_press|gen_robot_interaction_swallow:not possible right now,readybutton_touch:needs an item
-/obj/machinery/readybutton|ai|none => gen_silicon_readybutton_silicon_refuse|
+/obj/machinery/readybutton|human|none => |
+/obj/machinery/readybutton|robot|none => |gen_robot_interaction_swallow:not possible right now
+/obj/machinery/readybutton|ai|none => |
 /obj/machinery/readybutton|ghost|none => |
-/obj/machinery/readybutton|human|/obj/item => readybutton_touch,readybutton_press|
 

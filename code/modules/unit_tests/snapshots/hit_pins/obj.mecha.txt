@@ -1,5 +1,5 @@
 blob | survives
-emag | nothing
+emag | log: list(1) -> list(2)
 emp 1 | atom_integrity: down
 emp 1 | log: list(1) -> list(2)
 emp 1 | refresh_bits: 3 -> 0
@@ -9,12 +9,10 @@ emp 2 | log: list(1) -> list(2)
 explosion 1 | afflictions: null -> list(2)
 explosion 1 | current_processes: 4 -> 6
 explosion 1 | log: list(1) -> list(2)
-explosion 1 | periodic_pipe: null -> /datum/cadence/slow
 explosion 2 | log: list(1) -> list(2)
 explosion 3 | afflictions: null -> list(1)
 explosion 3 | current_processes: 4 -> 6
 explosion 3 | log: list(1) -> list(2)
-explosion 3 | periodic_pipe: null -> /datum/cadence/slow
 projectile | log: list(1) -> list(2)
 thrown | log: list(1) -> list(2)
 

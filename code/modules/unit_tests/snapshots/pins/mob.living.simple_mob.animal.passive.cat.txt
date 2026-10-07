@@ -50,6 +50,7 @@ human|/obj/item/tool/screwdriver menu: Grab
 human|/obj/item/tool/screwdriver menu: Help
 human|/obj/item/tool/screwdriver menu: Hit (refused: combat mode is off)
 human|/obj/item/tool/screwdriver menu: Hold with (refused: hold Grab)
+human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Punch (refused: combat mode is off)
 human|/obj/item/tool/screwdriver menu: Regenerate other (refused: you don't have that ability)
 human|/obj/item/tool/screwdriver menu: Robot mount/dismount (refused: you don't have that ability)
@@ -57,6 +58,7 @@ human|/obj/item/tool/screwdriver menu: Robot nom (refused: you don't have that a
 human|/obj/item/tool/screwdriver menu: Shove (refused: hold Disarm)
 human|/obj/item/tool/screwdriver menu: Shove with (refused: hold Disarm)
 human|/obj/item/tool/screwdriver menu: Take hold (refused: hold Grab)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver menu: Use on
 human|/obj/item/tool/screwdriver click: nothing
@@ -70,6 +72,7 @@ human|/obj/item/tool/crowbar menu: Grab
 human|/obj/item/tool/crowbar menu: Help
 human|/obj/item/tool/crowbar menu: Hit (refused: combat mode is off)
 human|/obj/item/tool/crowbar menu: Hold with (refused: hold Grab)
+human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Punch (refused: combat mode is off)
 human|/obj/item/tool/crowbar menu: Regenerate other (refused: you don't have that ability)
 human|/obj/item/tool/crowbar menu: Robot mount/dismount (refused: you don't have that ability)
@@ -77,6 +80,7 @@ human|/obj/item/tool/crowbar menu: Robot nom (refused: you don't have that abili
 human|/obj/item/tool/crowbar menu: Shove (refused: hold Disarm)
 human|/obj/item/tool/crowbar menu: Shove with (refused: hold Disarm)
 human|/obj/item/tool/crowbar menu: Take hold (refused: hold Grab)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar menu: Use on
 human|/obj/item/tool/crowbar click: nothing
@@ -90,6 +94,7 @@ human|/obj/item/tool/wrench menu: Grab
 human|/obj/item/tool/wrench menu: Help
 human|/obj/item/tool/wrench menu: Hit (refused: combat mode is off)
 human|/obj/item/tool/wrench menu: Hold with (refused: hold Grab)
+human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Punch (refused: combat mode is off)
 human|/obj/item/tool/wrench menu: Regenerate other (refused: you don't have that ability)
 human|/obj/item/tool/wrench menu: Robot mount/dismount (refused: you don't have that ability)
@@ -97,6 +102,7 @@ human|/obj/item/tool/wrench menu: Robot nom (refused: you don't have that abilit
 human|/obj/item/tool/wrench menu: Shove (refused: hold Disarm)
 human|/obj/item/tool/wrench menu: Shove with (refused: hold Disarm)
 human|/obj/item/tool/wrench menu: Take hold (refused: hold Grab)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench menu: Use on
 human|/obj/item/tool/wrench click: nothing
@@ -110,6 +116,7 @@ human|/obj/item/tool/wirecutters menu: Grab
 human|/obj/item/tool/wirecutters menu: Help
 human|/obj/item/tool/wirecutters menu: Hit (refused: combat mode is off)
 human|/obj/item/tool/wirecutters menu: Hold with (refused: hold Grab)
+human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Punch (refused: combat mode is off)
 human|/obj/item/tool/wirecutters menu: Regenerate other (refused: you don't have that ability)
 human|/obj/item/tool/wirecutters menu: Robot mount/dismount (refused: you don't have that ability)
@@ -117,6 +124,7 @@ human|/obj/item/tool/wirecutters menu: Robot nom (refused: you don't have that a
 human|/obj/item/tool/wirecutters menu: Shove (refused: hold Disarm)
 human|/obj/item/tool/wirecutters menu: Shove with (refused: hold Disarm)
 human|/obj/item/tool/wirecutters menu: Take hold (refused: hold Grab)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters menu: Use on
 human|/obj/item/tool/wirecutters click: nothing
@@ -130,6 +138,7 @@ human|/obj/item/multitool menu: Grab
 human|/obj/item/multitool menu: Help
 human|/obj/item/multitool menu: Hit (refused: combat mode is off)
 human|/obj/item/multitool menu: Hold with (refused: hold Grab)
+human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Punch (refused: combat mode is off)
 human|/obj/item/multitool menu: Regenerate other (refused: you don't have that ability)
 human|/obj/item/multitool menu: Robot mount/dismount (refused: you don't have that ability)
@@ -137,6 +146,7 @@ human|/obj/item/multitool menu: Robot nom (refused: you don't have that ability)
 human|/obj/item/multitool menu: Shove (refused: hold Disarm)
 human|/obj/item/multitool menu: Shove with (refused: hold Disarm)
 human|/obj/item/multitool menu: Take hold (refused: hold Grab)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool menu: Use on
 human|/obj/item/multitool click: nothing
@@ -150,6 +160,7 @@ human|/obj/item/weldingtool menu: Grab
 human|/obj/item/weldingtool menu: Help
 human|/obj/item/weldingtool menu: Hit (refused: combat mode is off)
 human|/obj/item/weldingtool menu: Hold with (refused: hold Grab)
+human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Punch (refused: combat mode is off)
 human|/obj/item/weldingtool menu: Regenerate other (refused: you don't have that ability)
 human|/obj/item/weldingtool menu: Robot mount/dismount (refused: you don't have that ability)
@@ -157,6 +168,7 @@ human|/obj/item/weldingtool menu: Robot nom (refused: you don't have that abilit
 human|/obj/item/weldingtool menu: Shove (refused: hold Disarm)
 human|/obj/item/weldingtool menu: Shove with (refused: hold Disarm)
 human|/obj/item/weldingtool menu: Take hold (refused: hold Grab)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool menu: Use on
 human|/obj/item/weldingtool click: nothing
@@ -171,6 +183,7 @@ human|/obj/item/stack/cable_coil menu: Help
 human|/obj/item/stack/cable_coil menu: Hit (refused: combat mode is off)
 human|/obj/item/stack/cable_coil menu: Hold with (refused: hold Grab)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Punch (refused: combat mode is off)
 human|/obj/item/stack/cable_coil menu: Regenerate other (refused: you don't have that ability)
 human|/obj/item/stack/cable_coil menu: Robot mount/dismount (refused: you don't have that ability)
@@ -178,6 +191,7 @@ human|/obj/item/stack/cable_coil menu: Robot nom (refused: you don't have that a
 human|/obj/item/stack/cable_coil menu: Shove (refused: hold Disarm)
 human|/obj/item/stack/cable_coil menu: Shove with (refused: hold Disarm)
 human|/obj/item/stack/cable_coil menu: Take hold (refused: hold Grab)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil menu: Use on
 human|/obj/item/stack/cable_coil click: nothing
@@ -191,6 +205,7 @@ human|/obj/item/stack/material/steel menu: Grab
 human|/obj/item/stack/material/steel menu: Help
 human|/obj/item/stack/material/steel menu: Hit (refused: combat mode is off)
 human|/obj/item/stack/material/steel menu: Hold with (refused: hold Grab)
+human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Punch (refused: combat mode is off)
 human|/obj/item/stack/material/steel menu: Regenerate other (refused: you don't have that ability)
 human|/obj/item/stack/material/steel menu: Robot mount/dismount (refused: you don't have that ability)
@@ -198,6 +213,7 @@ human|/obj/item/stack/material/steel menu: Robot nom (refused: you don't have th
 human|/obj/item/stack/material/steel menu: Shove (refused: hold Disarm)
 human|/obj/item/stack/material/steel menu: Shove with (refused: hold Disarm)
 human|/obj/item/stack/material/steel menu: Take hold (refused: hold Grab)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel menu: Use on
 human|/obj/item/stack/material/steel click: nothing
@@ -211,6 +227,7 @@ human|/obj/item/card/id menu: Grab
 human|/obj/item/card/id menu: Help
 human|/obj/item/card/id menu: Hit (refused: combat mode is off)
 human|/obj/item/card/id menu: Hold with (refused: hold Grab)
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Punch (refused: combat mode is off)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Regenerate other (refused: you don't have that ability)
@@ -219,6 +236,7 @@ human|/obj/item/card/id menu: Robot nom (refused: you don't have that ability)
 human|/obj/item/card/id menu: Shove (refused: hold Disarm)
 human|/obj/item/card/id menu: Shove with (refused: hold Disarm)
 human|/obj/item/card/id menu: Take hold (refused: hold Grab)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id menu: Use on
 human|/obj/item/card/id click: nothing

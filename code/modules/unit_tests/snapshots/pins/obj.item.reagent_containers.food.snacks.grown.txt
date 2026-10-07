@@ -1,160 +1,102 @@
-human|none menu: Collect (refused: needs a storage)
-human|none menu: Customise (refused: needs an item)
-human|none menu: Grown item
-human|none menu: Grown self (refused: not in your hand)
 human|none menu: Move To Top
 human|none menu: Pick up
 human|none menu: Rename food
-human|none menu: Squash (refused: combat mode is off)
-human|none menu: Toggle Digestable (refused: you need to be carrying it)
-human|none click: nothing
-robot|none menu: Collect (refused: needs a storage)
-robot|none menu: Customise (refused: needs an item)
+human|none menu: Toggle Digestable (refused: You can't do that.)
+human|none click: Click: Pick up
 robot|none menu: Equip (refused: not possible right now)
-robot|none menu: Grown item
-robot|none menu: Grown self (refused: not in your hand)
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Rename food
-robot|none menu: Squash (refused: combat mode is off)
-robot|none menu: Toggle Digestable (refused: you need to be carrying it)
-robot|none click: nothing
+robot|none menu: Toggle Digestable (refused: You can't do that.)
+robot|none click: Click: Pick up
 ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
+ghost|none menu: Move To Top (refused: You can't reach that.)
 ghost|none menu: Rename food (refused: You can't cook!)
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Collect (refused: needs a storage)
-human|/obj/item/tool/screwdriver menu: Customise (refused: needs an item)
 human|/obj/item/tool/screwdriver menu: Grown item
-human|/obj/item/tool/screwdriver menu: Grown self (refused: not in your hand)
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Pick up
+human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/screwdriver menu: Rename food
-human|/obj/item/tool/screwdriver menu: Squash (refused: combat mode is off)
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Collect (refused: needs a storage)
-human|/obj/item/tool/crowbar menu: Customise (refused: needs an item)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Grown item
 human|/obj/item/tool/crowbar menu: Grown item
-human|/obj/item/tool/crowbar menu: Grown self (refused: not in your hand)
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Pick up
+human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/crowbar menu: Rename food
-human|/obj/item/tool/crowbar menu: Squash (refused: combat mode is off)
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Collect (refused: needs a storage)
-human|/obj/item/tool/wrench menu: Customise (refused: needs an item)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Grown item
 human|/obj/item/tool/wrench menu: Grown item
-human|/obj/item/tool/wrench menu: Grown self (refused: not in your hand)
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Pick up
+human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wrench menu: Rename food
-human|/obj/item/tool/wrench menu: Squash (refused: combat mode is off)
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Collect (refused: needs a storage)
-human|/obj/item/tool/wirecutters menu: Customise (refused: needs an item)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Grown item
 human|/obj/item/tool/wirecutters menu: Grown item
-human|/obj/item/tool/wirecutters menu: Grown self (refused: not in your hand)
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Pick up
+human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/tool/wirecutters menu: Rename food
-human|/obj/item/tool/wirecutters menu: Squash (refused: combat mode is off)
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Collect (refused: needs a storage)
-human|/obj/item/multitool menu: Customise (refused: needs an item)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Grown item
 human|/obj/item/multitool menu: Grown item
-human|/obj/item/multitool menu: Grown self (refused: not in your hand)
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Pick up
+human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/multitool menu: Rename food
-human|/obj/item/multitool menu: Squash (refused: combat mode is off)
-human|/obj/item/multitool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Collect (refused: needs a storage)
-human|/obj/item/weldingtool menu: Customise (refused: needs an item)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Grown item
 human|/obj/item/weldingtool menu: Grown item
-human|/obj/item/weldingtool menu: Grown self (refused: not in your hand)
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Pick up
+human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/weldingtool menu: Rename food
-human|/obj/item/weldingtool menu: Squash (refused: combat mode is off)
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
-human|/obj/item/stack/cable_coil menu: Customise (refused: needs an item)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Grown item
 human|/obj/item/stack/cable_coil menu: Grown item
-human|/obj/item/stack/cable_coil menu: Grown self (refused: not in your hand)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Pick up
+human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/cable_coil menu: Rename food
-human|/obj/item/stack/cable_coil menu: Squash (refused: combat mode is off)
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Collect (refused: needs a storage)
-human|/obj/item/stack/material/steel menu: Customise (refused: needs an item)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Grown item
 human|/obj/item/stack/material/steel menu: Grown item
-human|/obj/item/stack/material/steel menu: Grown self (refused: not in your hand)
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Pick up
+human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/stack/material/steel menu: Rename food
-human|/obj/item/stack/material/steel menu: Squash (refused: combat mode is off)
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Collect (refused: needs a storage)
-human|/obj/item/card/id menu: Customise (refused: needs an item)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Grown item
 human|/obj/item/card/id menu: Grown item
-human|/obj/item/card/id menu: Grown self (refused: not in your hand)
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Pick up
+human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Rename food
-human|/obj/item/card/id menu: Squash (refused: combat mode is off)
-human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/card/id click: nothing
-human|/obj/item/kit menu: Collect (refused: needs a storage)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Grown item
 human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Grown item
-human|/obj/item/kit menu: Grown self (refused: not in your hand)
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Pick up
+human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/kit menu: Rename food
-human|/obj/item/kit menu: Squash (refused: combat mode is off)
-human|/obj/item/kit menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/kit click: nothing
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit click: Click: Customise
 human|/obj/item/storage menu: Collect
-human|/obj/item/storage menu: Customise (refused: needs an item)
 human|/obj/item/storage menu: Grown item
-human|/obj/item/storage menu: Grown self (refused: not in your hand)
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Pick up
+human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/storage menu: Rename food
-human|/obj/item/storage menu: Squash (refused: combat mode is off)
-human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/storage click: nothing
-human|/obj/item menu: Collect (refused: needs a storage)
-human|/obj/item menu: Customise (refused: needs an item)
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage click: Click: Grown item
 human|/obj/item menu: Grown item
-human|/obj/item menu: Grown self (refused: not in your hand)
 human|/obj/item menu: Move To Top
-human|/obj/item menu: Pick up
+human|/obj/item menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item menu: Rename food
-human|/obj/item menu: Squash (refused: combat mode is off)
-human|/obj/item menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item click: nothing
-human|/obj/item/material/kitchen/utensil menu: Collect (refused: needs a storage)
-human|/obj/item/material/kitchen/utensil menu: Customise (refused: needs an item)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Grown item
 human|/obj/item/material/kitchen/utensil menu: Grown item
-human|/obj/item/material/kitchen/utensil menu: Grown self (refused: not in your hand)
 human|/obj/item/material/kitchen/utensil menu: Move To Top
-human|/obj/item/material/kitchen/utensil menu: Pick up
+human|/obj/item/material/kitchen/utensil menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/material/kitchen/utensil menu: Rename food
 human|/obj/item/material/kitchen/utensil menu: Scoop up
-human|/obj/item/material/kitchen/utensil menu: Squash (refused: combat mode is off)
-human|/obj/item/material/kitchen/utensil menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/material/kitchen/utensil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/material/kitchen/utensil click: Click: Scoop up
-keys: blood_test, climb_in, coat, drag_buckle, edible.eat, edible.feed, edible.stuff, edible.stuff_other, edible.used_up, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_grown_item, gen_self_grown_self, gen_self_grown_squash, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, hide, open_can, pour_out, rename, scoop, slice, stuff, unwrap
+keys: blood_test, climb_in, coat, collect_item, drag_buckle, edible.eat, edible.feed, edible.stuff, edible.stuff_other, edible.used_up, gen_silicon_item_silicon_equip_module, grown_item, grown_self, grown_squash, hide, kit_customize, kit_customize_last, move_to_top, open_can, pick_up_item, pour_out, rename, scoop, slice, stuff, toggle_digestable, unwrap
 

@@ -1,7 +1,5 @@
-/obj/item/assembly_holder|human|none => assembly_holder_hand,gen_verb_move_to_top_effect,gen_hand_interaction_pick_up|gen_insert_interaction_kit_customize:needs an item,assembly_holder_self:must be held in hand,gen_verb_toggle_digestable_effect:you need to be carrying it,gen_insert_interaction_collected:needs a storage
-/obj/item/assembly_holder|robot|none => assembly_holder_hand,gen_verb_move_to_top_effect,gen_hand_interaction_pick_up|gen_insert_interaction_kit_customize:needs an item,assembly_holder_self:must be held in hand,gen_silicon_item_silicon_equip_module:not possible right now,gen_verb_toggle_digestable_effect:you need to be carrying it,gen_insert_interaction_collected:needs a storage
+/obj/item/assembly_holder|human|none => |
+/obj/item/assembly_holder|robot|none => |gen_silicon_item_silicon_equip_module:not possible right now
 /obj/item/assembly_holder|ai|none => |gen_silicon_item_silicon_equip_module:not possible right now
 /obj/item/assembly_holder|ghost|none => |
-/obj/item/assembly_holder|human|/obj/item/kit => gen_insert_interaction_kit_customize,assembly_holder_hand,gen_verb_move_to_top_effect,gen_hand_interaction_pick_up|assembly_holder_self:must be held in hand,gen_verb_toggle_digestable_effect:you need to be carrying it,gen_insert_interaction_collected:needs a storage
-/obj/item/assembly_holder|human|/obj/item/storage => assembly_holder_hand,gen_verb_move_to_top_effect,gen_hand_interaction_pick_up,gen_insert_interaction_collected|gen_insert_interaction_kit_customize:needs an item,assembly_holder_self:must be held in hand,gen_verb_toggle_digestable_effect:you need to be carrying it
 

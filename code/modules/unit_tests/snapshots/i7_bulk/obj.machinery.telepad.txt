@@ -1,6 +1,5 @@
-/obj/machinery/telepad|human|none => |gen_insert_interaction_part_replacement_impl:needs an item
-/obj/machinery/telepad|robot|none => |gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_part_replacement_impl:needs an item
+/obj/machinery/telepad|human|none => |
+/obj/machinery/telepad|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/telepad|ai|none => |
 /obj/machinery/telepad|ghost|none => |
-/obj/machinery/telepad|human|/obj/item => gen_insert_interaction_part_replacement_impl|
 

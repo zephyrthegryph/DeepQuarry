@@ -1,6 +1,5 @@
-/obj/machinery/computer/rdservercontrol|human|none => |emag_gated:needs a cryptographic sequencer
-/obj/machinery/computer/rdservercontrol|robot|none => |emag_gated:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/computer/rdservercontrol|human|none => |
+/obj/machinery/computer/rdservercontrol|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/computer/rdservercontrol|ai|none => |
 /obj/machinery/computer/rdservercontrol|ghost|none => |
-/obj/machinery/computer/rdservercontrol|human|/obj/item/card/emag => emag_gated|
 

@@ -9,49 +9,75 @@ ai|none click: nothing
 ghost|none menu: Eject contents (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Eject contents (refused: the furnace is empty)
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/tool/screwdriver click: Click: Use
 human|/obj/item/tool/crowbar menu: Eject contents (refused: the furnace is empty)
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/tool/crowbar click: Click: Use
 human|/obj/item/tool/wrench menu: Eject contents (refused: the furnace is empty)
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/tool/wrench click: Click: Use
 human|/obj/item/tool/wirecutters menu: Eject contents (refused: the furnace is empty)
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/tool/wirecutters click: Click: Use
 human|/obj/item/multitool menu: Eject contents (refused: the furnace is empty)
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/multitool click: Click: Use
 human|/obj/item/weldingtool menu: Eject contents (refused: the furnace is empty)
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/weldingtool click: Click: Use
 human|/obj/item/stack/cable_coil menu: Eject contents (refused: the furnace is empty)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/stack/cable_coil click: Click: Use
 human|/obj/item/stack/material/steel menu: Eject contents (refused: the furnace is empty)
 human|/obj/item/stack/material/steel menu: Load material
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/stack/material/steel click: Click: Load material
 human|/obj/item/card/id menu: Eject contents (refused: the furnace is empty)
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/card/id click: Click: Use
 human|/obj/item/stack/material menu: Eject contents (refused: the furnace is empty)
 human|/obj/item/stack/material menu: Load material
+human|/obj/item/stack/material menu: Move To Top
+human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/stack/material click: Click: Load material
 human|/obj/item/ore/coal menu: Add carbon
 human|/obj/item/ore/coal menu: Eject contents (refused: the furnace is empty)
+human|/obj/item/ore/coal menu: Move To Top
+human|/obj/item/ore/coal menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/ore/coal menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/ore/coal click: Click: Add carbon
 human|/obj/item/tank menu: Eject contents (refused: the furnace is empty)
+human|/obj/item/tank menu: Move To Top
+human|/obj/item/tank menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tank menu: Transfer gas
 human|/obj/item/tank menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/tank click: Click: Transfer gas
 human|/obj/item/reagent_containers menu: Eject contents (refused: the furnace is empty)
+human|/obj/item/reagent_containers menu: Move To Top
 human|/obj/item/reagent_containers menu: Pour
+human|/obj/item/reagent_containers menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers menu: Use (refused: the furnace is empty; load material sheets before firing it)
 human|/obj/item/reagent_containers click: Click: Pour
 keys: drag_buckle, eject_contents, gen_robot_interaction_swallow, load_carbon, load_stock, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, transfer_gas, transfer_reagents, use

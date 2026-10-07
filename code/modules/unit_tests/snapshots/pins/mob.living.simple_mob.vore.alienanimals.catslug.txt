@@ -15,11 +15,10 @@ human|none menu: Robot mount/dismount (refused: you don't have that ability)
 human|none menu: Robot nom (refused: you don't have that ability)
 human|none menu: Shove (refused: hold Disarm)
 human|none menu: Shove with (refused: hold Disarm)
-human|none menu: Take hat (refused: hold Grab)
+human|none menu: Take hat
 human|none menu: Take hold (refused: hold Grab)
-human|none menu: Use
 human|none menu: Use on
-human|none click: nothing
+human|none click: Click: Pet
 robot|none menu: Create shade (refused: you don't have that ability)
 robot|none menu: Dark maw (refused: you don't have that ability)
 robot|none menu: Dark respite (refused: you don't have that ability)
@@ -37,13 +36,13 @@ robot|none menu: Robot mount/dismount (refused: you can't carry riders)
 robot|none menu: Robot nom
 robot|none menu: Shove (refused: hold Disarm)
 robot|none menu: Shove with (refused: hold Disarm)
-robot|none menu: Take hat (refused: hold Grab)
+robot|none menu: Take hat
 robot|none menu: Take hold (refused: hold Grab)
-robot|none menu: Use
 robot|none menu: Use on
-robot|none click: nothing
+robot|none click: Click: Pet
 ai|none click: nothing
 ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Catslug item
 human|/obj/item/tool/screwdriver menu: Create shade (refused: you don't have that ability)
 human|/obj/item/tool/screwdriver menu: Dark maw (refused: you don't have that ability)
 human|/obj/item/tool/screwdriver menu: Dark respite (refused: you don't have that ability)
@@ -54,6 +53,7 @@ human|/obj/item/tool/screwdriver menu: Grab
 human|/obj/item/tool/screwdriver menu: Help
 human|/obj/item/tool/screwdriver menu: Hit (refused: combat mode is off)
 human|/obj/item/tool/screwdriver menu: Hold with (refused: hold Grab)
+human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Pet
 human|/obj/item/tool/screwdriver menu: Punch (refused: combat mode is off)
 human|/obj/item/tool/screwdriver menu: Regenerate other (refused: you don't have that ability)
@@ -61,11 +61,12 @@ human|/obj/item/tool/screwdriver menu: Robot mount/dismount (refused: you don't 
 human|/obj/item/tool/screwdriver menu: Robot nom (refused: you don't have that ability)
 human|/obj/item/tool/screwdriver menu: Shove (refused: hold Disarm)
 human|/obj/item/tool/screwdriver menu: Shove with (refused: hold Disarm)
-human|/obj/item/tool/screwdriver menu: Take hat (refused: hold Grab)
+human|/obj/item/tool/screwdriver menu: Take hat
 human|/obj/item/tool/screwdriver menu: Take hold (refused: hold Grab)
-human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use on
-human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/screwdriver click: Click: Catslug item
+human|/obj/item/tool/crowbar menu: Catslug item
 human|/obj/item/tool/crowbar menu: Create shade (refused: you don't have that ability)
 human|/obj/item/tool/crowbar menu: Dark maw (refused: you don't have that ability)
 human|/obj/item/tool/crowbar menu: Dark respite (refused: you don't have that ability)
@@ -76,6 +77,7 @@ human|/obj/item/tool/crowbar menu: Grab
 human|/obj/item/tool/crowbar menu: Help
 human|/obj/item/tool/crowbar menu: Hit (refused: combat mode is off)
 human|/obj/item/tool/crowbar menu: Hold with (refused: hold Grab)
+human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Pet
 human|/obj/item/tool/crowbar menu: Punch (refused: combat mode is off)
 human|/obj/item/tool/crowbar menu: Regenerate other (refused: you don't have that ability)
@@ -83,11 +85,12 @@ human|/obj/item/tool/crowbar menu: Robot mount/dismount (refused: you don't have
 human|/obj/item/tool/crowbar menu: Robot nom (refused: you don't have that ability)
 human|/obj/item/tool/crowbar menu: Shove (refused: hold Disarm)
 human|/obj/item/tool/crowbar menu: Shove with (refused: hold Disarm)
-human|/obj/item/tool/crowbar menu: Take hat (refused: hold Grab)
+human|/obj/item/tool/crowbar menu: Take hat
 human|/obj/item/tool/crowbar menu: Take hold (refused: hold Grab)
-human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use on
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar click: Click: Catslug item
+human|/obj/item/tool/wrench menu: Catslug item
 human|/obj/item/tool/wrench menu: Create shade (refused: you don't have that ability)
 human|/obj/item/tool/wrench menu: Dark maw (refused: you don't have that ability)
 human|/obj/item/tool/wrench menu: Dark respite (refused: you don't have that ability)
@@ -98,6 +101,7 @@ human|/obj/item/tool/wrench menu: Grab
 human|/obj/item/tool/wrench menu: Help
 human|/obj/item/tool/wrench menu: Hit (refused: combat mode is off)
 human|/obj/item/tool/wrench menu: Hold with (refused: hold Grab)
+human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Pet
 human|/obj/item/tool/wrench menu: Punch (refused: combat mode is off)
 human|/obj/item/tool/wrench menu: Regenerate other (refused: you don't have that ability)
@@ -105,11 +109,12 @@ human|/obj/item/tool/wrench menu: Robot mount/dismount (refused: you don't have 
 human|/obj/item/tool/wrench menu: Robot nom (refused: you don't have that ability)
 human|/obj/item/tool/wrench menu: Shove (refused: hold Disarm)
 human|/obj/item/tool/wrench menu: Shove with (refused: hold Disarm)
-human|/obj/item/tool/wrench menu: Take hat (refused: hold Grab)
+human|/obj/item/tool/wrench menu: Take hat
 human|/obj/item/tool/wrench menu: Take hold (refused: hold Grab)
-human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use on
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench click: Click: Catslug item
+human|/obj/item/tool/wirecutters menu: Catslug item
 human|/obj/item/tool/wirecutters menu: Create shade (refused: you don't have that ability)
 human|/obj/item/tool/wirecutters menu: Dark maw (refused: you don't have that ability)
 human|/obj/item/tool/wirecutters menu: Dark respite (refused: you don't have that ability)
@@ -120,6 +125,7 @@ human|/obj/item/tool/wirecutters menu: Grab
 human|/obj/item/tool/wirecutters menu: Help
 human|/obj/item/tool/wirecutters menu: Hit (refused: combat mode is off)
 human|/obj/item/tool/wirecutters menu: Hold with (refused: hold Grab)
+human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Pet
 human|/obj/item/tool/wirecutters menu: Punch (refused: combat mode is off)
 human|/obj/item/tool/wirecutters menu: Regenerate other (refused: you don't have that ability)
@@ -127,11 +133,12 @@ human|/obj/item/tool/wirecutters menu: Robot mount/dismount (refused: you don't 
 human|/obj/item/tool/wirecutters menu: Robot nom (refused: you don't have that ability)
 human|/obj/item/tool/wirecutters menu: Shove (refused: hold Disarm)
 human|/obj/item/tool/wirecutters menu: Shove with (refused: hold Disarm)
-human|/obj/item/tool/wirecutters menu: Take hat (refused: hold Grab)
+human|/obj/item/tool/wirecutters menu: Take hat
 human|/obj/item/tool/wirecutters menu: Take hold (refused: hold Grab)
-human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use on
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters click: Click: Catslug item
+human|/obj/item/multitool menu: Catslug item
 human|/obj/item/multitool menu: Create shade (refused: you don't have that ability)
 human|/obj/item/multitool menu: Dark maw (refused: you don't have that ability)
 human|/obj/item/multitool menu: Dark respite (refused: you don't have that ability)
@@ -142,6 +149,7 @@ human|/obj/item/multitool menu: Grab
 human|/obj/item/multitool menu: Help
 human|/obj/item/multitool menu: Hit (refused: combat mode is off)
 human|/obj/item/multitool menu: Hold with (refused: hold Grab)
+human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Pet
 human|/obj/item/multitool menu: Punch (refused: combat mode is off)
 human|/obj/item/multitool menu: Regenerate other (refused: you don't have that ability)
@@ -149,11 +157,12 @@ human|/obj/item/multitool menu: Robot mount/dismount (refused: you don't have th
 human|/obj/item/multitool menu: Robot nom (refused: you don't have that ability)
 human|/obj/item/multitool menu: Shove (refused: hold Disarm)
 human|/obj/item/multitool menu: Shove with (refused: hold Disarm)
-human|/obj/item/multitool menu: Take hat (refused: hold Grab)
+human|/obj/item/multitool menu: Take hat
 human|/obj/item/multitool menu: Take hold (refused: hold Grab)
-human|/obj/item/multitool menu: Use
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use on
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool click: Click: Catslug item
+human|/obj/item/weldingtool menu: Catslug item
 human|/obj/item/weldingtool menu: Create shade (refused: you don't have that ability)
 human|/obj/item/weldingtool menu: Dark maw (refused: you don't have that ability)
 human|/obj/item/weldingtool menu: Dark respite (refused: you don't have that ability)
@@ -164,6 +173,7 @@ human|/obj/item/weldingtool menu: Grab
 human|/obj/item/weldingtool menu: Help
 human|/obj/item/weldingtool menu: Hit (refused: combat mode is off)
 human|/obj/item/weldingtool menu: Hold with (refused: hold Grab)
+human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Pet
 human|/obj/item/weldingtool menu: Punch (refused: combat mode is off)
 human|/obj/item/weldingtool menu: Regenerate other (refused: you don't have that ability)
@@ -171,11 +181,12 @@ human|/obj/item/weldingtool menu: Robot mount/dismount (refused: you don't have 
 human|/obj/item/weldingtool menu: Robot nom (refused: you don't have that ability)
 human|/obj/item/weldingtool menu: Shove (refused: hold Disarm)
 human|/obj/item/weldingtool menu: Shove with (refused: hold Disarm)
-human|/obj/item/weldingtool menu: Take hat (refused: hold Grab)
+human|/obj/item/weldingtool menu: Take hat
 human|/obj/item/weldingtool menu: Take hold (refused: hold Grab)
-human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use on
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool click: Click: Catslug item
+human|/obj/item/stack/cable_coil menu: Catslug item
 human|/obj/item/stack/cable_coil menu: Create shade (refused: you don't have that ability)
 human|/obj/item/stack/cable_coil menu: Dark maw (refused: you don't have that ability)
 human|/obj/item/stack/cable_coil menu: Dark respite (refused: you don't have that ability)
@@ -187,6 +198,7 @@ human|/obj/item/stack/cable_coil menu: Help
 human|/obj/item/stack/cable_coil menu: Hit (refused: combat mode is off)
 human|/obj/item/stack/cable_coil menu: Hold with (refused: hold Grab)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Pet
 human|/obj/item/stack/cable_coil menu: Punch (refused: combat mode is off)
 human|/obj/item/stack/cable_coil menu: Regenerate other (refused: you don't have that ability)
@@ -194,11 +206,12 @@ human|/obj/item/stack/cable_coil menu: Robot mount/dismount (refused: you don't 
 human|/obj/item/stack/cable_coil menu: Robot nom (refused: you don't have that ability)
 human|/obj/item/stack/cable_coil menu: Shove (refused: hold Disarm)
 human|/obj/item/stack/cable_coil menu: Shove with (refused: hold Disarm)
-human|/obj/item/stack/cable_coil menu: Take hat (refused: hold Grab)
+human|/obj/item/stack/cable_coil menu: Take hat
 human|/obj/item/stack/cable_coil menu: Take hold (refused: hold Grab)
-human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use on
-human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/cable_coil click: Click: Catslug item
+human|/obj/item/stack/material/steel menu: Catslug item
 human|/obj/item/stack/material/steel menu: Create shade (refused: you don't have that ability)
 human|/obj/item/stack/material/steel menu: Dark maw (refused: you don't have that ability)
 human|/obj/item/stack/material/steel menu: Dark respite (refused: you don't have that ability)
@@ -209,6 +222,7 @@ human|/obj/item/stack/material/steel menu: Grab
 human|/obj/item/stack/material/steel menu: Help
 human|/obj/item/stack/material/steel menu: Hit (refused: combat mode is off)
 human|/obj/item/stack/material/steel menu: Hold with (refused: hold Grab)
+human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Pet
 human|/obj/item/stack/material/steel menu: Punch (refused: combat mode is off)
 human|/obj/item/stack/material/steel menu: Regenerate other (refused: you don't have that ability)
@@ -216,11 +230,12 @@ human|/obj/item/stack/material/steel menu: Robot mount/dismount (refused: you do
 human|/obj/item/stack/material/steel menu: Robot nom (refused: you don't have that ability)
 human|/obj/item/stack/material/steel menu: Shove (refused: hold Disarm)
 human|/obj/item/stack/material/steel menu: Shove with (refused: hold Disarm)
-human|/obj/item/stack/material/steel menu: Take hat (refused: hold Grab)
+human|/obj/item/stack/material/steel menu: Take hat
 human|/obj/item/stack/material/steel menu: Take hold (refused: hold Grab)
-human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Use on
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/material/steel click: Click: Catslug item
+human|/obj/item/card/id menu: Catslug item
 human|/obj/item/card/id menu: Create shade (refused: you don't have that ability)
 human|/obj/item/card/id menu: Dark maw (refused: you don't have that ability)
 human|/obj/item/card/id menu: Dark respite (refused: you don't have that ability)
@@ -231,6 +246,7 @@ human|/obj/item/card/id menu: Grab
 human|/obj/item/card/id menu: Help
 human|/obj/item/card/id menu: Hit (refused: combat mode is off)
 human|/obj/item/card/id menu: Hold with (refused: hold Grab)
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Pet
 human|/obj/item/card/id menu: Punch (refused: combat mode is off)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
@@ -239,10 +255,34 @@ human|/obj/item/card/id menu: Robot mount/dismount (refused: you don't have that
 human|/obj/item/card/id menu: Robot nom (refused: you don't have that ability)
 human|/obj/item/card/id menu: Shove (refused: hold Disarm)
 human|/obj/item/card/id menu: Shove with (refused: hold Disarm)
-human|/obj/item/card/id menu: Take hat (refused: hold Grab)
+human|/obj/item/card/id menu: Take hat
 human|/obj/item/card/id menu: Take hold (refused: hold Grab)
-human|/obj/item/card/id menu: Use
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use on
-human|/obj/item/card/id click: nothing
-keys: disarm, drag_buckle, gen_hand_interaction_touch, gen_hand_ungated_catslug_interaction_hand, gen_item_catslug_interaction_item, gen_item_interaction_hit, ghost_join, grab, robot_customize_appearance, robot_eject_cargo, robot_mount, robot_nom, robot_pick_name, robot_pick_shell, robot_purge_nutrition, robot_recolour, robot_sensor_mode, robot_set_mail_tag, robot_spark_plug, robot_toggle_decals, robot_toggle_glowy_stomach, robot_toggle_grabbability, robot_toggle_lights, robot_toggle_module_1, robot_toggle_module_2, robot_toggle_module_3, robot_toggle_vtec, shadekin_clear_dark_maws, shadekin_create_shade, shadekin_dark_maw, shadekin_dark_respite, shadekin_dark_tunneling, shadekin_phase_shift, shadekin_regenerate_other
+human|/obj/item/card/id click: Click: Catslug item
+human|/obj/item menu: Catslug item
+human|/obj/item menu: Create shade (refused: you don't have that ability)
+human|/obj/item menu: Dark maw (refused: you don't have that ability)
+human|/obj/item menu: Dark respite (refused: you don't have that ability)
+human|/obj/item menu: Dark tunneling (refused: you don't have that ability)
+human|/obj/item menu: Disarm
+human|/obj/item menu: Dispel dark maws (refused: you don't have that ability)
+human|/obj/item menu: Grab
+human|/obj/item menu: Help
+human|/obj/item menu: Hit (refused: combat mode is off)
+human|/obj/item menu: Hold with (refused: hold Grab)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Pet
+human|/obj/item menu: Punch (refused: combat mode is off)
+human|/obj/item menu: Regenerate other (refused: you don't have that ability)
+human|/obj/item menu: Robot mount/dismount (refused: you don't have that ability)
+human|/obj/item menu: Robot nom (refused: you don't have that ability)
+human|/obj/item menu: Shove (refused: hold Disarm)
+human|/obj/item menu: Shove with (refused: hold Disarm)
+human|/obj/item menu: Take hat
+human|/obj/item menu: Take hold (refused: hold Grab)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use on
+human|/obj/item click: Click: Catslug item
+keys: catslug_hand_grab, catslug_hand_help, catslug_item, disarm, drag_buckle, gen_hand_interaction_touch, gen_item_interaction_hit, ghost_join, grab, robot_customize_appearance, robot_eject_cargo, robot_mount, robot_nom, robot_pick_name, robot_pick_shell, robot_purge_nutrition, robot_recolour, robot_sensor_mode, robot_set_mail_tag, robot_spark_plug, robot_toggle_decals, robot_toggle_glowy_stomach, robot_toggle_grabbability, robot_toggle_lights, robot_toggle_module_1, robot_toggle_module_2, robot_toggle_module_3, robot_toggle_vtec, shadekin_clear_dark_maws, shadekin_create_shade, shadekin_dark_maw, shadekin_dark_respite, shadekin_dark_tunneling, shadekin_phase_shift, shadekin_regenerate_other
 

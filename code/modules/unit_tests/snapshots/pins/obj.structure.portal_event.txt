@@ -1,29 +1,49 @@
-human|none menu: Use
-human|none click: nothing
-robot|none menu: Use
-robot|none click: nothing
+human|none menu: Portal hand
+human|none click: Click: Portal hand
+robot|none menu: Portal hand
+robot|none click: Click: Portal hand
 ai|none click: nothing
-ghost|none menu: Portal
-ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Use
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool click: nothing
+ghost|none menu: Portal (refused: Not while things are as they are.)
+ghost|none menu: Portal ghost nothing
+ghost|none menu: Portal staff use (refused: It isn't in the right state for that.)
+ghost|none click: Click: Portal
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Portal hand
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Portal hand
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Portal hand
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Portal hand
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Portal hand
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Portal hand
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Portal hand
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Portal hand
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Portal hand
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Portal hand
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Portal hand
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Portal hand
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Portal hand
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Portal hand
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Portal hand
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Portal hand
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Portal hand
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Use
-human|/obj/item/card/id click: nothing
-keys: drag_buckle, gen_hand_ungated_interaction_hand, gen_observer_portal_event_ghost_use
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Portal hand
+keys: drag_buckle, portal_event_ghost_use, portal_ghost_nothing, portal_hand, portal_staff_use
 

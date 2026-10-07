@@ -1,5 +1,5 @@
-/obj/structure/sink|human|none => gen_item_sink_wash_gurgled_item|
-/obj/structure/sink|robot|none => gen_item_sink_wash_gurgled_item|
+/obj/structure/sink|human|none => |
+/obj/structure/sink|robot|none => |
 /obj/structure/sink|ai|none => |
 /obj/structure/sink|ghost|none => |
 

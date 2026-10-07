@@ -1,8 +1,14 @@
 blob | survives
 emag | look_key: null -> 'sheet-super|||||||||||||'
 emag | look_set_bits: 0 -> 2
+emag | moving_diagonally: null -> 0
+emag | pixel_x: -1 -> 0
+emag | pixel_y: 7 -> 0
 emag | refresh_queued: 131071 -> 0
 emag | refresh_swept: 0 -> 1
+emag | slowdown: 0 -> 0.1
+emag | throw_range: 3 -> 1
+emag | w_class: 3 -> 1
 emp 1 | look_key: null -> 'sheet-super|||||||||||||'
 emp 1 | look_set_bits: 0 -> 2
 emp 1 | refresh_queued: 131071 -> 0

@@ -1,51 +1,49 @@
-human|none menu: Attach anomaly (refused: needs an anomaly scanner)
-human|none menu: Replace parts (refused: needs a rapid part exchange device)
 human|none click: nothing
-robot|none menu: Attach anomaly (refused: needs an anomaly scanner)
 robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Replace parts (refused: needs a rapid part exchange device)
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Attach anomaly (refused: needs an anomaly scanner)
+human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
-human|/obj/item/tool/screwdriver menu: Replace parts (refused: needs a rapid part exchange device)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver click: Click: Open maintenance panel
-human|/obj/item/tool/crowbar menu: Attach anomaly (refused: needs an anomaly scanner)
 human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
-human|/obj/item/tool/crowbar menu: Replace parts (refused: needs a rapid part exchange device)
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Deconstruct
-human|/obj/item/tool/wrench menu: Attach anomaly (refused: needs an anomaly scanner)
-human|/obj/item/tool/wrench menu: Replace parts (refused: needs a rapid part exchange device)
+human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Secure
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench click: Click: Secure
-human|/obj/item/tool/wirecutters menu: Attach anomaly (refused: needs an anomaly scanner)
-human|/obj/item/tool/wirecutters menu: Replace parts (refused: needs a rapid part exchange device)
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Attach anomaly (refused: needs an anomaly scanner)
-human|/obj/item/multitool menu: Replace parts (refused: needs a rapid part exchange device)
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Attach anomaly (refused: needs an anomaly scanner)
-human|/obj/item/weldingtool menu: Replace parts (refused: needs a rapid part exchange device)
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Attach anomaly (refused: needs an anomaly scanner)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Replace parts (refused: needs a rapid part exchange device)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Attach anomaly (refused: needs an anomaly scanner)
-human|/obj/item/stack/material/steel menu: Replace parts (refused: needs a rapid part exchange device)
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Attach anomaly (refused: needs an anomaly scanner)
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Replace parts (refused: needs a rapid part exchange device)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
-human|/obj/item/storage/part_replacer menu: Attach anomaly (refused: needs an anomaly scanner)
 human|/obj/item/storage/part_replacer menu: Empty contents
+human|/obj/item/storage/part_replacer menu: Move To Top
 human|/obj/item/storage/part_replacer menu: Replace parts
 human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
-human|/obj/item/storage/part_replacer click: nothing
+human|/obj/item/storage/part_replacer menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage/part_replacer click: Click: Replace parts
 human|/obj/item/anomaly_scanner menu: Attach anomaly
-human|/obj/item/anomaly_scanner menu: Replace parts (refused: needs a rapid part exchange device)
-human|/obj/item/anomaly_scanner click: nothing
-keys: drag_buckle, gen_insert_interaction_attach_scanner, gen_insert_interaction_part_replacement_impl, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, release_all, release_sample
+human|/obj/item/anomaly_scanner menu: Move To Top
+human|/obj/item/anomaly_scanner menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/anomaly_scanner click: Click: Attach anomaly
+keys: attach_scanner, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, part_replacement, release_all, release_sample
 

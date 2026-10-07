@@ -1,61 +1,74 @@
-human|none menu: Treat alloy (refused: needs an alloy sheets)
 human|none click: nothing
-robot|none menu: Treat alloy (refused: needs an alloy sheets)
 robot|none click: nothing
 ai|none click: nothing
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Bath interaction item
-human|/obj/item/tool/screwdriver menu: Treat alloy (refused: needs an alloy sheets)
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver click: Click: Bath interaction item
 human|/obj/item/tool/crowbar menu: Bath interaction item
-human|/obj/item/tool/crowbar menu: Treat alloy (refused: needs an alloy sheets)
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Bath interaction item
 human|/obj/item/tool/wrench menu: Bath interaction item
 human|/obj/item/tool/wrench menu: Dismantle
-human|/obj/item/tool/wrench menu: Treat alloy (refused: needs an alloy sheets)
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench click: Click: Dismantle
 human|/obj/item/tool/wirecutters menu: Bath interaction item
+human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Remove padding (refused: It has no padding to remove.)
-human|/obj/item/tool/wirecutters menu: Treat alloy (refused: needs an alloy sheets)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters click: Click: Remove padding
 human|/obj/item/multitool menu: Bath interaction item
-human|/obj/item/multitool menu: Treat alloy (refused: needs an alloy sheets)
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: Click: Bath interaction item
 human|/obj/item/weldingtool menu: Bath interaction item
-human|/obj/item/weldingtool menu: Treat alloy (refused: needs an alloy sheets)
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: Click: Bath interaction item
 human|/obj/item/stack/cable_coil menu: Bath interaction item
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Pad (refused: You cannot pad that with that.)
-human|/obj/item/stack/cable_coil menu: Treat alloy (refused: needs an alloy sheets)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: Click: Pad
 human|/obj/item/stack/material/steel menu: Bath interaction item
+human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Pad (refused: You cannot pad that with that.)
-human|/obj/item/stack/material/steel menu: Treat alloy (refused: needs an alloy sheets)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: Click: Pad
 human|/obj/item/card/id menu: Bath interaction item
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Treat alloy (refused: needs an alloy sheets)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Bath interaction item
-human|/obj/item/stack/material/processed_alloy menu: Bath interaction item
-human|/obj/item/stack/material/processed_alloy menu: Pad (refused: You cannot pad that with that.)
-human|/obj/item/stack/material/processed_alloy menu: Treat alloy (refused: the bath contains no treatment medium)
-human|/obj/item/stack/material/processed_alloy click: Click: Pad
 human|/obj/item/stack menu: Bath interaction item
+human|/obj/item/stack menu: Move To Top
 human|/obj/item/stack menu: Pad (refused: You cannot pad that with that.)
-human|/obj/item/stack menu: Treat alloy (refused: needs an alloy sheets)
+human|/obj/item/stack menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack click: Click: Pad
 human|/obj/item/disk menu: Bath interaction item
-human|/obj/item/disk menu: Treat alloy (refused: needs an alloy sheets)
+human|/obj/item/disk menu: Move To Top
+human|/obj/item/disk menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/disk menu: Tuck disk
 human|/obj/item/disk click: Click: Tuck disk
 human|/obj/item/toy/plushie menu: Bath interaction item
+human|/obj/item/toy/plushie menu: Move To Top
 human|/obj/item/toy/plushie menu: Name Plushie (refused: You can't do that.)
-human|/obj/item/toy/plushie menu: Treat alloy (refused: needs an alloy sheets)
+human|/obj/item/toy/plushie menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/toy/plushie menu: Tuck plushie
 human|/obj/item/toy/plushie click: Click: Tuck plushie
 human|/obj/item menu: Bath interaction item
-human|/obj/item menu: Treat alloy (refused: needs an alloy sheets)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Bath interaction item
-keys: bath_interaction_item, buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, gen_insert_material_treatment_interaction_item, pad, tuck_disk, tuck_plushie, unpad
+human|/obj/item/stack/material/processed_alloy menu: Bath interaction item
+human|/obj/item/stack/material/processed_alloy menu: Move To Top
+human|/obj/item/stack/material/processed_alloy menu: Pad (refused: You cannot pad that with that.)
+human|/obj/item/stack/material/processed_alloy menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/processed_alloy menu: Treat alloy
+human|/obj/item/stack/material/processed_alloy click: Click: Pad
+keys: bath_interaction_item, buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, material_treatment_interaction_item, pad, tuck_disk, tuck_plushie, unpad
 

@@ -1,39 +1,60 @@
-human|none menu: Overlay pass item
-human|none menu: Overlay pass touch
-human|none click: nothing
-robot|none menu: Overlay pass item
-robot|none menu: Overlay pass touch
-robot|none click: nothing
+human|none menu: Pass touch
+human|none click: Click: Pass touch
+robot|none menu: Pass touch
+robot|none click: Click: Pass touch
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Overlay pass item
-human|/obj/item/tool/screwdriver menu: Overlay pass touch
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Overlay pass item
-human|/obj/item/tool/crowbar menu: Overlay pass touch
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Overlay pass item
-human|/obj/item/tool/wrench menu: Overlay pass touch
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Overlay pass item
-human|/obj/item/tool/wirecutters menu: Overlay pass touch
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Overlay pass item
-human|/obj/item/multitool menu: Overlay pass touch
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Overlay pass item
-human|/obj/item/weldingtool menu: Overlay pass touch
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Pass item
+human|/obj/item/tool/screwdriver menu: Pass touch
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Pass touch
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Pass item
+human|/obj/item/tool/crowbar menu: Pass touch
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Pass touch
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Pass item
+human|/obj/item/tool/wrench menu: Pass touch
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Pass touch
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Pass item
+human|/obj/item/tool/wirecutters menu: Pass touch
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Pass touch
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Pass item
+human|/obj/item/multitool menu: Pass touch
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Pass touch
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Pass item
+human|/obj/item/weldingtool menu: Pass touch
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Pass touch
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Overlay pass item
-human|/obj/item/stack/cable_coil menu: Overlay pass touch
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Overlay pass item
-human|/obj/item/stack/material/steel menu: Overlay pass touch
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Overlay pass item
-human|/obj/item/card/id menu: Overlay pass touch
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Pass item
+human|/obj/item/stack/cable_coil menu: Pass touch
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Pass touch
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Pass item
+human|/obj/item/stack/material/steel menu: Pass touch
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Pass touch
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Pass item
+human|/obj/item/card/id menu: Pass touch
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id click: nothing
-keys: drag_buckle, gen_hand_ungated_overlay_pass_touch, gen_item_overlay_pass_item
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Pass touch
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Pass item
+human|/obj/item menu: Pass touch
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Pass touch
+keys: drag_buckle, pass_item, pass_touch
 

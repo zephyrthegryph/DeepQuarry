@@ -1,7 +1,5 @@
-/obj/machinery/librarycomp|human|none => librarycomp_open_ui|emag:needs a cryptographic sequencer,librarycomp_link_scanner:needs a barcode scanner
-/obj/machinery/librarycomp|robot|none => librarycomp_open_ui|emag:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now,librarycomp_link_scanner:needs a barcode scanner
+/obj/machinery/librarycomp|human|none => |
+/obj/machinery/librarycomp|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/librarycomp|ai|none => |
-/obj/machinery/librarycomp|ghost|none => gen_observer_librarycomp_ghost_admin_view|
-/obj/machinery/librarycomp|human|/obj/item/barcodescanner => librarycomp_link_scanner,librarycomp_open_ui|emag:needs a cryptographic sequencer
-/obj/machinery/librarycomp|human|/obj/item/card/emag => emag,librarycomp_open_ui|librarycomp_link_scanner:needs a barcode scanner
+/obj/machinery/librarycomp|ghost|none => |
 

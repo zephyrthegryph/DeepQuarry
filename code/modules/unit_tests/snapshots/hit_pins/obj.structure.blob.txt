@@ -1,5 +1,5 @@
 blob | survives
-emag | nothing
+emag | atom_integrity: down
 emp 1 | nothing
 emp 2 | nothing
 explosion 1 | deleted

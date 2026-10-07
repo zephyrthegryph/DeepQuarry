@@ -1,204 +1,149 @@
-human|none menu: Clothing accessory hand
-human|none menu: Clothing accessory item
-human|none menu: Clothing circuit self (refused: not in your hand)
-human|none menu: Clothing remove accessory alt
-human|none menu: Collect (refused: needs a storage)
-human|none menu: Customise (refused: needs an item)
-human|none menu: Emag (refused: needs a cryptographic sequencer)
-human|none menu: HALT! (refused: you need to be carrying it)
+human|none menu: Alternate use
+human|none menu: HALT! (refused: You can't do that.)
 human|none menu: Move To Top
 human|none menu: Pick up
-human|none menu: Select gas mask phrase (refused: you need to be carrying it)
+human|none menu: Select gas mask phrase (refused: You can't do that.)
 human|none menu: Select phrase
-human|none menu: Toggle Digestable (refused: you need to be carrying it)
-human|none click: nothing
-robot|none menu: Clothing accessory hand
-robot|none menu: Clothing accessory item
-robot|none menu: Clothing circuit self (refused: not in your hand)
-robot|none menu: Clothing remove accessory alt
-robot|none menu: Collect (refused: needs a storage)
-robot|none menu: Customise (refused: needs an item)
-robot|none menu: Emag (refused: needs a cryptographic sequencer)
+human|none menu: Toggle Digestable (refused: You can't do that.)
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Alternate use
 robot|none menu: Equip (refused: not possible right now)
-robot|none menu: HALT! (refused: you need to be carrying it)
+robot|none menu: HALT! (refused: You can't do that.)
 robot|none menu: Move To Top
 robot|none menu: Pick up
-robot|none menu: Select gas mask phrase (refused: you need to be carrying it)
+robot|none menu: Select gas mask phrase (refused: You can't do that.)
 robot|none menu: Select phrase
-robot|none menu: Toggle Digestable (refused: you need to be carrying it)
-robot|none click: nothing
+robot|none menu: Toggle Digestable (refused: You can't do that.)
+robot|none menu: Use
+robot|none click: Click: Use
 ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
+ghost|none menu: HALT! (refused: You can't do that.)
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Select gas mask phrase (refused: You can't do that.)
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Clothing accessory hand
-human|/obj/item/tool/screwdriver menu: Clothing accessory item
-human|/obj/item/tool/screwdriver menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/tool/screwdriver menu: Clothing remove accessory alt
-human|/obj/item/tool/screwdriver menu: Collect (refused: needs a storage)
-human|/obj/item/tool/screwdriver menu: Customise (refused: needs an item)
-human|/obj/item/tool/screwdriver menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/tool/screwdriver menu: HALT! (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Alternate use
+human|/obj/item/tool/screwdriver menu: HALT! (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Pick up
-human|/obj/item/tool/screwdriver menu: Select gas mask phrase (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/tool/screwdriver menu: Select gas mask phrase (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Select phrase
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Clothing accessory hand
-human|/obj/item/tool/crowbar menu: Clothing accessory item
-human|/obj/item/tool/crowbar menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/tool/crowbar menu: Clothing remove accessory alt
-human|/obj/item/tool/crowbar menu: Collect (refused: needs a storage)
-human|/obj/item/tool/crowbar menu: Customise (refused: needs an item)
-human|/obj/item/tool/crowbar menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/tool/crowbar menu: HALT! (refused: you need to be carrying it)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Use
+human|/obj/item/tool/crowbar menu: Alternate use
+human|/obj/item/tool/crowbar menu: HALT! (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Pick up
-human|/obj/item/tool/crowbar menu: Select gas mask phrase (refused: you need to be carrying it)
+human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/tool/crowbar menu: Select gas mask phrase (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Select phrase
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Clothing accessory hand
-human|/obj/item/tool/wrench menu: Clothing accessory item
-human|/obj/item/tool/wrench menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/tool/wrench menu: Clothing remove accessory alt
-human|/obj/item/tool/wrench menu: Collect (refused: needs a storage)
-human|/obj/item/tool/wrench menu: Customise (refused: needs an item)
-human|/obj/item/tool/wrench menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/tool/wrench menu: HALT! (refused: you need to be carrying it)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Use
+human|/obj/item/tool/wrench menu: Alternate use
+human|/obj/item/tool/wrench menu: HALT! (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Pick up
-human|/obj/item/tool/wrench menu: Select gas mask phrase (refused: you need to be carrying it)
+human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/tool/wrench menu: Select gas mask phrase (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Select phrase
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Clothing accessory hand
-human|/obj/item/tool/wirecutters menu: Clothing accessory item
-human|/obj/item/tool/wirecutters menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/tool/wirecutters menu: Clothing remove accessory alt
-human|/obj/item/tool/wirecutters menu: Collect (refused: needs a storage)
-human|/obj/item/tool/wirecutters menu: Customise (refused: needs an item)
-human|/obj/item/tool/wirecutters menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/tool/wirecutters menu: HALT! (refused: you need to be carrying it)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Use
+human|/obj/item/tool/wirecutters menu: Alternate use
+human|/obj/item/tool/wirecutters menu: HALT! (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Pick up
-human|/obj/item/tool/wirecutters menu: Select gas mask phrase (refused: you need to be carrying it)
+human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/tool/wirecutters menu: Select gas mask phrase (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Select phrase
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Clothing accessory hand
-human|/obj/item/multitool menu: Clothing accessory item
-human|/obj/item/multitool menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/multitool menu: Clothing remove accessory alt
-human|/obj/item/multitool menu: Collect (refused: needs a storage)
-human|/obj/item/multitool menu: Customise (refused: needs an item)
-human|/obj/item/multitool menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/multitool menu: HALT! (refused: you need to be carrying it)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/multitool menu: Alternate use
+human|/obj/item/multitool menu: HALT! (refused: You can't do that.)
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Pick up
-human|/obj/item/multitool menu: Select gas mask phrase (refused: you need to be carrying it)
+human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/multitool menu: Select gas mask phrase (refused: You can't do that.)
 human|/obj/item/multitool menu: Select phrase
-human|/obj/item/multitool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Clothing accessory hand
-human|/obj/item/weldingtool menu: Clothing accessory item
-human|/obj/item/weldingtool menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/weldingtool menu: Clothing remove accessory alt
-human|/obj/item/weldingtool menu: Collect (refused: needs a storage)
-human|/obj/item/weldingtool menu: Customise (refused: needs an item)
-human|/obj/item/weldingtool menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/weldingtool menu: HALT! (refused: you need to be carrying it)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Use
+human|/obj/item/weldingtool menu: Alternate use
+human|/obj/item/weldingtool menu: HALT! (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Pick up
-human|/obj/item/weldingtool menu: Select gas mask phrase (refused: you need to be carrying it)
+human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/weldingtool menu: Select gas mask phrase (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Select phrase
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Clothing accessory hand
-human|/obj/item/stack/cable_coil menu: Clothing accessory item
-human|/obj/item/stack/cable_coil menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/stack/cable_coil menu: Clothing remove accessory alt
-human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
-human|/obj/item/stack/cable_coil menu: Customise (refused: needs an item)
-human|/obj/item/stack/cable_coil menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/stack/cable_coil menu: HALT! (refused: you need to be carrying it)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Use
+human|/obj/item/stack/cable_coil menu: Alternate use
+human|/obj/item/stack/cable_coil menu: HALT! (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Pick up
-human|/obj/item/stack/cable_coil menu: Select gas mask phrase (refused: you need to be carrying it)
+human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/stack/cable_coil menu: Select gas mask phrase (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Select phrase
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Clothing accessory hand
-human|/obj/item/stack/material/steel menu: Clothing accessory item
-human|/obj/item/stack/material/steel menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/stack/material/steel menu: Clothing remove accessory alt
-human|/obj/item/stack/material/steel menu: Collect (refused: needs a storage)
-human|/obj/item/stack/material/steel menu: Customise (refused: needs an item)
-human|/obj/item/stack/material/steel menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/stack/material/steel menu: HALT! (refused: you need to be carrying it)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Use
+human|/obj/item/stack/material/steel menu: Alternate use
+human|/obj/item/stack/material/steel menu: HALT! (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Pick up
-human|/obj/item/stack/material/steel menu: Select gas mask phrase (refused: you need to be carrying it)
+human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/stack/material/steel menu: Select gas mask phrase (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Select phrase
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Clothing accessory hand
-human|/obj/item/card/id menu: Clothing accessory item
-human|/obj/item/card/id menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/card/id menu: Clothing remove accessory alt
-human|/obj/item/card/id menu: Collect (refused: needs a storage)
-human|/obj/item/card/id menu: Customise (refused: needs an item)
-human|/obj/item/card/id menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/card/id menu: HALT! (refused: you need to be carrying it)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Alternate use
+human|/obj/item/card/id menu: HALT! (refused: You can't do that.)
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Pick up
+human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Select gas mask phrase (refused: you need to be carrying it)
+human|/obj/item/card/id menu: Select gas mask phrase (refused: You can't do that.)
 human|/obj/item/card/id menu: Select phrase
-human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/card/id click: nothing
-human|/obj/item/kit menu: Clothing accessory hand
-human|/obj/item/kit menu: Clothing accessory item
-human|/obj/item/kit menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/kit menu: Clothing remove accessory alt
-human|/obj/item/kit menu: Collect (refused: needs a storage)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Use
+human|/obj/item/kit menu: Alternate use
 human|/obj/item/kit menu: Customise
-human|/obj/item/kit menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/kit menu: HALT! (refused: you need to be carrying it)
+human|/obj/item/kit menu: HALT! (refused: You can't do that.)
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Pick up
-human|/obj/item/kit menu: Select gas mask phrase (refused: you need to be carrying it)
+human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/kit menu: Select gas mask phrase (refused: You can't do that.)
 human|/obj/item/kit menu: Select phrase
-human|/obj/item/kit menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/kit click: nothing
-human|/obj/item/storage menu: Clothing accessory hand
-human|/obj/item/storage menu: Clothing accessory item
-human|/obj/item/storage menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/storage menu: Clothing remove accessory alt
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit menu: Use
+human|/obj/item/kit click: Click: Customise
+human|/obj/item/storage menu: Alternate use
 human|/obj/item/storage menu: Collect
-human|/obj/item/storage menu: Customise (refused: needs an item)
-human|/obj/item/storage menu: Emag (refused: needs a cryptographic sequencer)
-human|/obj/item/storage menu: HALT! (refused: you need to be carrying it)
+human|/obj/item/storage menu: HALT! (refused: You can't do that.)
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Pick up
-human|/obj/item/storage menu: Select gas mask phrase (refused: you need to be carrying it)
+human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/storage menu: Select gas mask phrase (refused: You can't do that.)
 human|/obj/item/storage menu: Select phrase
-human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/storage click: nothing
-human|/obj/item/card/emag menu: Clothing accessory hand
-human|/obj/item/card/emag menu: Clothing accessory item
-human|/obj/item/card/emag menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/card/emag menu: Clothing remove accessory alt
-human|/obj/item/card/emag menu: Collect (refused: needs a storage)
-human|/obj/item/card/emag menu: Customise (refused: needs an item)
-human|/obj/item/card/emag menu: Emag
-human|/obj/item/card/emag menu: HALT! (refused: you need to be carrying it)
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage menu: Use
+human|/obj/item/storage click: Click: Use
+human|/obj/item menu: Alternate use
+human|/obj/item menu: HALT! (refused: You can't do that.)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item menu: Select gas mask phrase (refused: You can't do that.)
+human|/obj/item menu: Select phrase
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
+human|/obj/item/card/emag menu: Alternate use
+human|/obj/item/card/emag menu: HALT! (refused: You can't do that.)
 human|/obj/item/card/emag menu: Move To Top
-human|/obj/item/card/emag menu: Pick up
-human|/obj/item/card/emag menu: Select gas mask phrase (refused: you need to be carrying it)
+human|/obj/item/card/emag menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/card/emag menu: Select gas mask phrase (refused: You can't do that.)
 human|/obj/item/card/emag menu: Select phrase
-human|/obj/item/card/emag menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/card/emag click: nothing
-keys: drag_buckle, emag, gen_alt_clothing_remove_accessory_alt, gen_alt_sechailer_phrase_alt, gen_hand_interaction_pick_up, gen_hand_ungated_clothing_accessory_hand, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_clothing_accessory_item, gen_self_clothing_circuit_self, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_sechailer_halt_verb, gen_verb_sechailer_selectphrase_verb, gen_verb_toggle_digestable_effect
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, sechailer_halt_verb, sechailer_phrase_alt, sechailer_selectphrase_verb, toggle_digestable
 

@@ -14,7 +14,7 @@ emp 2 | refresh_queued: 131071 -> 0
 emp 2 | refresh_swept: 0 -> 1
 emp 2 | turf: +/obj/effect/overlay x1
 explosion 1 | deleted
-explosion 1 | turf: +/obj/effect/effect/sparks x10
+explosion 1 | turf: +/obj/effect/effect/sparks x5
 explosion 1 | turf: +/obj/item/circuitboard/mining_equipment_vendor x1
 explosion 1 | turf: +/obj/item/stock_parts/console_screen x1
 explosion 1 | turf: +/obj/item/stock_parts/matter_bin x3

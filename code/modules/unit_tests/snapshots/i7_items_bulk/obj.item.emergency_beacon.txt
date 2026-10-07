@@ -1,7 +1,5 @@
-/obj/item/emergency_beacon|human|none => gen_verb_move_to_top_effect,gen_hand_interaction_pick_up|gen_insert_interaction_kit_customize:needs an item,gen_verb_toggle_digestable_effect:you need to be carrying it,gen_insert_interaction_collected:needs a storage
-/obj/item/emergency_beacon|robot|none => gen_verb_move_to_top_effect,gen_hand_interaction_pick_up|gen_insert_interaction_kit_customize:needs an item,gen_silicon_item_silicon_equip_module:not possible right now,gen_verb_toggle_digestable_effect:you need to be carrying it,gen_insert_interaction_collected:needs a storage
+/obj/item/emergency_beacon|human|none => |
+/obj/item/emergency_beacon|robot|none => |gen_silicon_item_silicon_equip_module:not possible right now
 /obj/item/emergency_beacon|ai|none => |gen_silicon_item_silicon_equip_module:not possible right now
 /obj/item/emergency_beacon|ghost|none => |
-/obj/item/emergency_beacon|human|/obj/item/kit => gen_insert_interaction_kit_customize,gen_verb_move_to_top_effect,gen_hand_interaction_pick_up|gen_verb_toggle_digestable_effect:you need to be carrying it,gen_insert_interaction_collected:needs a storage
-/obj/item/emergency_beacon|human|/obj/item/storage => gen_verb_move_to_top_effect,gen_hand_interaction_pick_up,gen_insert_interaction_collected|gen_insert_interaction_kit_customize:needs an item,gen_verb_toggle_digestable_effect:you need to be carrying it
 

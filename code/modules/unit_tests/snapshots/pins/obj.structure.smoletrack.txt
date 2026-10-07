@@ -1,50 +1,70 @@
-human|none menu: Take apart (refused: hold Disarm)
+human|none menu: Take apart
 human|none menu: Take Road Apart
 human|none menu: Use Color Pieces
 human|none click: nothing
-robot|none menu: Take apart (refused: hold Disarm)
+robot|none menu: Take apart
 robot|none menu: Take Road Apart
 robot|none menu: Use Color Pieces
 robot|none click: nothing
 ai|none click: nothing
+ghost|none menu: Take Road Apart (refused: You can't reach that.)
+ghost|none menu: Use Color Pieces (refused: You can't reach that.)
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Take apart (refused: hold Disarm)
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Take apart
 human|/obj/item/tool/screwdriver menu: Take Road Apart
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use Color Pieces
 human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Take apart (refused: hold Disarm)
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Take apart
 human|/obj/item/tool/crowbar menu: Take Road Apart
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use Color Pieces
 human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Take apart (refused: hold Disarm)
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Take apart
 human|/obj/item/tool/wrench menu: Take Road Apart
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Use Color Pieces
 human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Take apart (refused: hold Disarm)
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Take apart
 human|/obj/item/tool/wirecutters menu: Take Road Apart
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use Color Pieces
 human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Take apart (refused: hold Disarm)
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Take apart
 human|/obj/item/multitool menu: Take Road Apart
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool menu: Use Color Pieces
 human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Take apart (refused: hold Disarm)
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Take apart
 human|/obj/item/weldingtool menu: Take Road Apart
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use Color Pieces
 human|/obj/item/weldingtool click: nothing
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Take apart (refused: hold Disarm)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Take apart
 human|/obj/item/stack/cable_coil menu: Take Road Apart
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use Color Pieces
 human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Take apart (refused: hold Disarm)
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Take apart
 human|/obj/item/stack/material/steel menu: Take Road Apart
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel menu: Use Color Pieces
 human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Take apart (refused: hold Disarm)
+human|/obj/item/card/id menu: Take apart
 human|/obj/item/card/id menu: Take Road Apart
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use Color Pieces
 human|/obj/item/card/id click: nothing
-keys: drag_buckle, gen_hand_ungated_smoletrack_dismantle_hand, gen_verb_smoletrack_verb_color, gen_verb_smoletrack_verb_dismantle
+keys: drag_buckle, smoletrack_dismantle_hand, smoletrack_verb_color, smoletrack_verb_dismantle
 

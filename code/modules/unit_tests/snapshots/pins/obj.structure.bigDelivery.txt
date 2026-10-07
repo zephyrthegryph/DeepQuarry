@@ -1,29 +1,73 @@
-human|none menu: Use
-human|none click: nothing
+human|none menu: Hand
+human|none click: Click: Hand
+robot|none menu: Hand
 robot|none menu: Unwrap
-robot|none menu: Use
-robot|none click: nothing
+robot|none click: Click: Hand
 ai|none click: nothing
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Use
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/tool/screwdriver menu: Hand
+human|/obj/item/tool/screwdriver menu: Item
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Item
+human|/obj/item/tool/crowbar menu: Hand
+human|/obj/item/tool/crowbar menu: Item
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Item
+human|/obj/item/tool/wrench menu: Hand
+human|/obj/item/tool/wrench menu: Item
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Item
+human|/obj/item/tool/wirecutters menu: Hand
+human|/obj/item/tool/wirecutters menu: Item
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Item
+human|/obj/item/multitool menu: Hand
+human|/obj/item/multitool menu: Item
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Item
+human|/obj/item/weldingtool menu: Hand
+human|/obj/item/weldingtool menu: Item
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Item
+human|/obj/item/stack/cable_coil menu: Hand
+human|/obj/item/stack/cable_coil menu: Item
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Item
+human|/obj/item/stack/material/steel menu: Hand
+human|/obj/item/stack/material/steel menu: Item
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Item
+human|/obj/item/card/id menu: Hand
+human|/obj/item/card/id menu: Item
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Use
-human|/obj/item/card/id click: nothing
-keys: drag_buckle, gen_hand_ungated_interaction_hand, gen_item_interaction_item, gen_robot_big_delivery_robot_unwrap
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Item
+human|/obj/item/destTagger menu: Hand
+human|/obj/item/destTagger menu: Item
+human|/obj/item/destTagger menu: Move To Top
+human|/obj/item/destTagger menu: Tag
+human|/obj/item/destTagger menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/destTagger click: Click: Tag
+human|/obj/item/pen menu: Hand
+human|/obj/item/pen menu: Item
+human|/obj/item/pen menu: Label
+human|/obj/item/pen menu: Move To Top
+human|/obj/item/pen menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pen click: Click: Label
+human|/obj/item menu: Hand
+human|/obj/item menu: Item
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Item
+keys: drag_buckle, hand, item, label, robot_unwrap, tag
 

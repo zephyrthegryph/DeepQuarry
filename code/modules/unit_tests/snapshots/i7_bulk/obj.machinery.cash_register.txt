@@ -1,6 +1,5 @@
-/obj/machinery/cash_register|human|none => |emag_gated:needs a cryptographic sequencer
-/obj/machinery/cash_register|robot|none => |emag_gated:needs a cryptographic sequencer,gen_robot_interaction_swallow:not possible right now
+/obj/machinery/cash_register|human|none => |
+/obj/machinery/cash_register|robot|none => |gen_robot_interaction_swallow:not possible right now
 /obj/machinery/cash_register|ai|none => |
 /obj/machinery/cash_register|ghost|none => |
-/obj/machinery/cash_register|human|/obj/item/card/emag => emag_gated|
 

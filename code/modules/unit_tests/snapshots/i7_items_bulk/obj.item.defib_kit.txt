@@ -1,7 +1,5 @@
-/obj/item/defib_kit|human|none => gen_verb_move_to_top_effect,gen_hand_interaction_pick_up|gen_insert_interaction_kit_customize:needs an item,gen_verb_toggle_digestable_effect:you need to be carrying it,gen_insert_interaction_collected:needs a storage
-/obj/item/defib_kit|robot|none => gen_verb_move_to_top_effect,gen_hand_interaction_pick_up|gen_insert_interaction_kit_customize:needs an item,gen_silicon_item_silicon_equip_module:not possible right now,gen_verb_toggle_digestable_effect:you need to be carrying it,gen_insert_interaction_collected:needs a storage
+/obj/item/defib_kit|human|none => |
+/obj/item/defib_kit|robot|none => |gen_silicon_item_silicon_equip_module:not possible right now
 /obj/item/defib_kit|ai|none => |gen_silicon_item_silicon_equip_module:not possible right now
 /obj/item/defib_kit|ghost|none => |
-/obj/item/defib_kit|human|/obj/item/kit => gen_insert_interaction_kit_customize,gen_verb_move_to_top_effect,gen_hand_interaction_pick_up|gen_verb_toggle_digestable_effect:you need to be carrying it,gen_insert_interaction_collected:needs a storage
-/obj/item/defib_kit|human|/obj/item/storage => gen_verb_move_to_top_effect,gen_hand_interaction_pick_up,gen_insert_interaction_collected|gen_insert_interaction_kit_customize:needs an item,gen_verb_toggle_digestable_effect:you need to be carrying it
 

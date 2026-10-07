@@ -1,204 +1,132 @@
 human|none menu: Accessory attached hand
-human|none menu: Clothing accessory hand
-human|none menu: Clothing accessory item
-human|none menu: Clothing circuit self (refused: not in your hand)
-human|none menu: Clothing remove accessory alt
-human|none menu: Collar tag item
-human|none menu: Collar tag self (refused: not in your hand)
-human|none menu: Collect (refused: needs a storage)
-human|none menu: Customise (refused: needs an item)
+human|none menu: Alternate use
 human|none menu: Move To Top
 human|none menu: Pick up
-human|none menu: Toggle Digestable (refused: you need to be carrying it)
-human|none menu: Wire signaler (refused: needs a remote signaling device)
+human|none menu: Toggle Digestable (refused: You can't do that.)
+human|none menu: Use
 human|none click: Click: Accessory attached hand
 robot|none menu: Accessory attached hand
-robot|none menu: Clothing accessory hand
-robot|none menu: Clothing accessory item
-robot|none menu: Clothing circuit self (refused: not in your hand)
-robot|none menu: Clothing remove accessory alt
-robot|none menu: Collar tag item
-robot|none menu: Collar tag self (refused: not in your hand)
-robot|none menu: Collect (refused: needs a storage)
-robot|none menu: Customise (refused: needs an item)
+robot|none menu: Alternate use
 robot|none menu: Equip (refused: not possible right now)
 robot|none menu: Move To Top
 robot|none menu: Pick up
-robot|none menu: Toggle Digestable (refused: you need to be carrying it)
-robot|none menu: Wire signaler (refused: needs a remote signaling device)
+robot|none menu: Toggle Digestable (refused: You can't do that.)
+robot|none menu: Use
 robot|none click: Click: Accessory attached hand
 ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Accessory attached hand
-human|/obj/item/tool/screwdriver menu: Clothing accessory hand
-human|/obj/item/tool/screwdriver menu: Clothing accessory item
-human|/obj/item/tool/screwdriver menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/tool/screwdriver menu: Clothing remove accessory alt
+human|/obj/item/tool/screwdriver menu: Alternate use
 human|/obj/item/tool/screwdriver menu: Collar tag item
-human|/obj/item/tool/screwdriver menu: Collar tag self (refused: not in your hand)
-human|/obj/item/tool/screwdriver menu: Collect (refused: needs a storage)
-human|/obj/item/tool/screwdriver menu: Customise (refused: needs an item)
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Pick up
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/screwdriver menu: Wire signaler (refused: needs a remote signaling device)
+human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Accessory attached hand
 human|/obj/item/tool/crowbar menu: Accessory attached hand
-human|/obj/item/tool/crowbar menu: Clothing accessory hand
-human|/obj/item/tool/crowbar menu: Clothing accessory item
-human|/obj/item/tool/crowbar menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/tool/crowbar menu: Clothing remove accessory alt
+human|/obj/item/tool/crowbar menu: Alternate use
 human|/obj/item/tool/crowbar menu: Collar tag item
-human|/obj/item/tool/crowbar menu: Collar tag self (refused: not in your hand)
-human|/obj/item/tool/crowbar menu: Collect (refused: needs a storage)
-human|/obj/item/tool/crowbar menu: Customise (refused: needs an item)
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Pick up
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/crowbar menu: Wire signaler (refused: needs a remote signaling device)
+human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Accessory attached hand
 human|/obj/item/tool/wrench menu: Accessory attached hand
-human|/obj/item/tool/wrench menu: Clothing accessory hand
-human|/obj/item/tool/wrench menu: Clothing accessory item
-human|/obj/item/tool/wrench menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/tool/wrench menu: Clothing remove accessory alt
+human|/obj/item/tool/wrench menu: Alternate use
 human|/obj/item/tool/wrench menu: Collar tag item
-human|/obj/item/tool/wrench menu: Collar tag self (refused: not in your hand)
-human|/obj/item/tool/wrench menu: Collect (refused: needs a storage)
-human|/obj/item/tool/wrench menu: Customise (refused: needs an item)
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Pick up
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wrench menu: Wire signaler (refused: needs a remote signaling device)
+human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Use
 human|/obj/item/tool/wrench click: Click: Accessory attached hand
 human|/obj/item/tool/wirecutters menu: Accessory attached hand
-human|/obj/item/tool/wirecutters menu: Clothing accessory hand
-human|/obj/item/tool/wirecutters menu: Clothing accessory item
-human|/obj/item/tool/wirecutters menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/tool/wirecutters menu: Clothing remove accessory alt
+human|/obj/item/tool/wirecutters menu: Alternate use
 human|/obj/item/tool/wirecutters menu: Collar tag item
-human|/obj/item/tool/wirecutters menu: Collar tag self (refused: not in your hand)
-human|/obj/item/tool/wirecutters menu: Collect (refused: needs a storage)
-human|/obj/item/tool/wirecutters menu: Customise (refused: needs an item)
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Pick up
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wirecutters menu: Wire signaler (refused: needs a remote signaling device)
+human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Accessory attached hand
 human|/obj/item/multitool menu: Accessory attached hand
-human|/obj/item/multitool menu: Clothing accessory hand
-human|/obj/item/multitool menu: Clothing accessory item
-human|/obj/item/multitool menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/multitool menu: Clothing remove accessory alt
+human|/obj/item/multitool menu: Alternate use
 human|/obj/item/multitool menu: Collar tag item
-human|/obj/item/multitool menu: Collar tag self (refused: not in your hand)
-human|/obj/item/multitool menu: Collect (refused: needs a storage)
-human|/obj/item/multitool menu: Customise (refused: needs an item)
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Pick up
-human|/obj/item/multitool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/multitool menu: Wire signaler (refused: needs a remote signaling device)
+human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Accessory attached hand
 human|/obj/item/weldingtool menu: Accessory attached hand
-human|/obj/item/weldingtool menu: Clothing accessory hand
-human|/obj/item/weldingtool menu: Clothing accessory item
-human|/obj/item/weldingtool menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/weldingtool menu: Clothing remove accessory alt
+human|/obj/item/weldingtool menu: Alternate use
 human|/obj/item/weldingtool menu: Collar tag item
-human|/obj/item/weldingtool menu: Collar tag self (refused: not in your hand)
-human|/obj/item/weldingtool menu: Collect (refused: needs a storage)
-human|/obj/item/weldingtool menu: Customise (refused: needs an item)
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Pick up
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/weldingtool menu: Wire signaler (refused: needs a remote signaling device)
+human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool click: Click: Accessory attached hand
 human|/obj/item/stack/cable_coil menu: Accessory attached hand
-human|/obj/item/stack/cable_coil menu: Clothing accessory hand
-human|/obj/item/stack/cable_coil menu: Clothing accessory item
-human|/obj/item/stack/cable_coil menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/stack/cable_coil menu: Clothing remove accessory alt
+human|/obj/item/stack/cable_coil menu: Alternate use
 human|/obj/item/stack/cable_coil menu: Collar tag item
-human|/obj/item/stack/cable_coil menu: Collar tag self (refused: not in your hand)
-human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
-human|/obj/item/stack/cable_coil menu: Customise (refused: needs an item)
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Pick up
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/stack/cable_coil menu: Wire signaler (refused: needs a remote signaling device)
+human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Use
 human|/obj/item/stack/cable_coil click: Click: Accessory attached hand
 human|/obj/item/stack/material/steel menu: Accessory attached hand
-human|/obj/item/stack/material/steel menu: Clothing accessory hand
-human|/obj/item/stack/material/steel menu: Clothing accessory item
-human|/obj/item/stack/material/steel menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/stack/material/steel menu: Clothing remove accessory alt
+human|/obj/item/stack/material/steel menu: Alternate use
 human|/obj/item/stack/material/steel menu: Collar tag item
-human|/obj/item/stack/material/steel menu: Collar tag self (refused: not in your hand)
-human|/obj/item/stack/material/steel menu: Collect (refused: needs a storage)
-human|/obj/item/stack/material/steel menu: Customise (refused: needs an item)
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Pick up
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/stack/material/steel menu: Wire signaler (refused: needs a remote signaling device)
+human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Use
 human|/obj/item/stack/material/steel click: Click: Accessory attached hand
 human|/obj/item/card/id menu: Accessory attached hand
-human|/obj/item/card/id menu: Clothing accessory hand
-human|/obj/item/card/id menu: Clothing accessory item
-human|/obj/item/card/id menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/card/id menu: Clothing remove accessory alt
+human|/obj/item/card/id menu: Alternate use
 human|/obj/item/card/id menu: Collar tag item
-human|/obj/item/card/id menu: Collar tag self (refused: not in your hand)
-human|/obj/item/card/id menu: Collect (refused: needs a storage)
-human|/obj/item/card/id menu: Customise (refused: needs an item)
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Pick up
+human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/card/id menu: Wire signaler (refused: needs a remote signaling device)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Accessory attached hand
 human|/obj/item/kit menu: Accessory attached hand
-human|/obj/item/kit menu: Clothing accessory hand
-human|/obj/item/kit menu: Clothing accessory item
-human|/obj/item/kit menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/kit menu: Clothing remove accessory alt
+human|/obj/item/kit menu: Alternate use
 human|/obj/item/kit menu: Collar tag item
-human|/obj/item/kit menu: Collar tag self (refused: not in your hand)
-human|/obj/item/kit menu: Collect (refused: needs a storage)
 human|/obj/item/kit menu: Customise
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Pick up
-human|/obj/item/kit menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/kit menu: Wire signaler (refused: needs a remote signaling device)
-human|/obj/item/kit click: Click: Accessory attached hand
+human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit menu: Use
+human|/obj/item/kit click: Click: Customise
+human|/obj/item/storage menu: Accessory attached hand
+human|/obj/item/storage menu: Alternate use
+human|/obj/item/storage menu: Collar tag item
+human|/obj/item/storage menu: Collect
+human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage menu: Use
+human|/obj/item/storage click: Click: Accessory attached hand
+human|/obj/item menu: Accessory attached hand
+human|/obj/item menu: Alternate use
+human|/obj/item menu: Collar tag item
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Accessory attached hand
 human|/obj/item/assembly/signaler menu: Accessory attached hand
-human|/obj/item/assembly/signaler menu: Clothing accessory hand
-human|/obj/item/assembly/signaler menu: Clothing accessory item
-human|/obj/item/assembly/signaler menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/assembly/signaler menu: Clothing remove accessory alt
+human|/obj/item/assembly/signaler menu: Alternate use
 human|/obj/item/assembly/signaler menu: Collar tag item
-human|/obj/item/assembly/signaler menu: Collar tag self (refused: not in your hand)
-human|/obj/item/assembly/signaler menu: Collect (refused: needs a storage)
-human|/obj/item/assembly/signaler menu: Customise (refused: needs an item)
 human|/obj/item/assembly/signaler menu: Move To Top
-human|/obj/item/assembly/signaler menu: Pick up
-human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: you need to be carrying it)
+human|/obj/item/assembly/signaler menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/assembly/signaler menu: Threaten to push the button! (refused: You can't do that.)
+human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/assembly/signaler menu: Use
 human|/obj/item/assembly/signaler menu: Wire signaler
 human|/obj/item/assembly/signaler click: Click: Wire signaler
-human|/obj/item/storage menu: Accessory attached hand
-human|/obj/item/storage menu: Clothing accessory hand
-human|/obj/item/storage menu: Clothing accessory item
-human|/obj/item/storage menu: Clothing circuit self (refused: not in your hand)
-human|/obj/item/storage menu: Clothing remove accessory alt
-human|/obj/item/storage menu: Collar tag item
-human|/obj/item/storage menu: Collar tag self (refused: not in your hand)
-human|/obj/item/storage menu: Collect
-human|/obj/item/storage menu: Customise (refused: needs an item)
-human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Pick up
-human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/storage menu: Wire signaler (refused: needs a remote signaling device)
-human|/obj/item/storage click: Click: Accessory attached hand
-keys: accessory_attached_hand, bluespace_collar_wire_signaler, code, controls, drag_buckle, freq, gen_alt_clothing_remove_accessory_alt, gen_hand_interaction_pick_up, gen_hand_ungated_clothing_accessory_hand, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_insert_malfunctioning_collar_signaler, gen_item_clothing_accessory_item, gen_item_collar_tag_item, gen_self_clothing_circuit_self, gen_self_collar_tag_self, gen_silicon_item_silicon_equip_module, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect, power, size, tag
+keys: accessory_attached_hand, bluespace_collar_wire_signaler, clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, code, collar_tag_item, collar_tag_self, collect_item, controls, drag_buckle, freq, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, malfunctioning_collar_signaler, move_to_top, pick_up_item, power, size, tag, toggle_digestable
 

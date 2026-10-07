@@ -1,6 +1,5 @@
-/obj/machinery/keycard_auth|human|none => keycard_auth_open_ui|keycard_auth_swipe:needs an item
-/obj/machinery/keycard_auth|robot|none => gen_silicon_keycard_auth_silicon_refuse,keycard_auth_open_ui|gen_robot_interaction_swallow:not possible right now,keycard_auth_swipe:needs an item
-/obj/machinery/keycard_auth|ai|none => gen_silicon_keycard_auth_silicon_refuse|
+/obj/machinery/keycard_auth|human|none => |
+/obj/machinery/keycard_auth|robot|none => |gen_robot_interaction_swallow:not possible right now
+/obj/machinery/keycard_auth|ai|none => |
 /obj/machinery/keycard_auth|ghost|none => |
-/obj/machinery/keycard_auth|human|/obj/item => keycard_auth_swipe,keycard_auth_open_ui|
 

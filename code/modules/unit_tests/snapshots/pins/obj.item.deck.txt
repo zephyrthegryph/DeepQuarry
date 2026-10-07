@@ -1,190 +1,183 @@
-human|none menu: Alternate use
-human|none menu: Collect (refused: needs a storage)
-human|none menu: Customise (refused: needs an item)
-human|none menu: Deal (refused: there are no cards in the deck)
-human|none menu: Deal Multiple Cards (refused: there are no cards in the deck)
-human|none menu: Draw (refused: there are no cards in the deck)
+human|none menu: Alt
+human|none menu: Deal
+human|none menu: Deal Multiple Cards
+human|none menu: Draw
+human|none menu: Hand
 human|none menu: Move To Top
 human|none menu: Pick up
-human|none menu: Search for Cards (refused: there are no cards in the deck)
+human|none menu: Search for Cards
 human|none menu: Shuffle
-human|none menu: Toggle Digestable (refused: you need to be carrying it)
-human|none menu: Use
-human|none menu: Use (refused: not in your hand)
-human|none click: nothing
-robot|none menu: Alternate use
-robot|none menu: Collect (refused: needs a storage)
-robot|none menu: Customise (refused: needs an item)
-robot|none menu: Deal (refused: there are no cards in the deck)
-robot|none menu: Deal Multiple Cards (refused: there are no cards in the deck)
+human|none menu: Toggle Digestable (refused: You can't do that.)
+human|none click: Click: Hand
+robot|none menu: Alt
+robot|none menu: Deal
+robot|none menu: Deal Multiple Cards
 robot|none menu: Draw
 robot|none menu: Equip (refused: not possible right now)
+robot|none menu: Hand
 robot|none menu: Move To Top
 robot|none menu: Pick up
 robot|none menu: Search for Cards
 robot|none menu: Shuffle
-robot|none menu: Toggle Digestable (refused: you need to be carrying it)
-robot|none menu: Use
-robot|none menu: Use (refused: not in your hand)
-robot|none click: nothing
+robot|none menu: Toggle Digestable (refused: You can't do that.)
+robot|none click: Click: Hand
 ai|none menu: Equip (refused: not possible right now)
 ai|none click: nothing
+ghost|none menu: Deal
+ghost|none menu: Deal Multiple Cards
+ghost|none menu: Draw
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Search for Cards
+ghost|none menu: Shuffle
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
 ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Alternate use
-human|/obj/item/tool/screwdriver menu: Collect (refused: needs a storage)
-human|/obj/item/tool/screwdriver menu: Customise (refused: needs an item)
-human|/obj/item/tool/screwdriver menu: Deal (refused: there are no cards in the deck)
-human|/obj/item/tool/screwdriver menu: Deal Multiple Cards (refused: there are no cards in the deck)
-human|/obj/item/tool/screwdriver menu: Draw (refused: there are no cards in the deck)
+human|/obj/item/tool/screwdriver menu: Alt
+human|/obj/item/tool/screwdriver menu: Deal
+human|/obj/item/tool/screwdriver menu: Deal Multiple Cards
+human|/obj/item/tool/screwdriver menu: Draw
+human|/obj/item/tool/screwdriver menu: Hand
+human|/obj/item/tool/screwdriver menu: Item
 human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Pick up
-human|/obj/item/tool/screwdriver menu: Search for Cards (refused: there are no cards in the deck)
+human|/obj/item/tool/screwdriver menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/tool/screwdriver menu: Search for Cards
 human|/obj/item/tool/screwdriver menu: Shuffle
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver menu: Use (refused: not in your hand)
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Alternate use
-human|/obj/item/tool/crowbar menu: Collect (refused: needs a storage)
-human|/obj/item/tool/crowbar menu: Customise (refused: needs an item)
-human|/obj/item/tool/crowbar menu: Deal (refused: there are no cards in the deck)
-human|/obj/item/tool/crowbar menu: Deal Multiple Cards (refused: there are no cards in the deck)
-human|/obj/item/tool/crowbar menu: Draw (refused: there are no cards in the deck)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Hand
+human|/obj/item/tool/crowbar menu: Alt
+human|/obj/item/tool/crowbar menu: Deal
+human|/obj/item/tool/crowbar menu: Deal Multiple Cards
+human|/obj/item/tool/crowbar menu: Draw
+human|/obj/item/tool/crowbar menu: Hand
+human|/obj/item/tool/crowbar menu: Item
 human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Pick up
-human|/obj/item/tool/crowbar menu: Search for Cards (refused: there are no cards in the deck)
+human|/obj/item/tool/crowbar menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/tool/crowbar menu: Search for Cards
 human|/obj/item/tool/crowbar menu: Shuffle
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar menu: Use (refused: not in your hand)
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Alternate use
-human|/obj/item/tool/wrench menu: Collect (refused: needs a storage)
-human|/obj/item/tool/wrench menu: Customise (refused: needs an item)
-human|/obj/item/tool/wrench menu: Deal (refused: there are no cards in the deck)
-human|/obj/item/tool/wrench menu: Deal Multiple Cards (refused: there are no cards in the deck)
-human|/obj/item/tool/wrench menu: Draw (refused: there are no cards in the deck)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Hand
+human|/obj/item/tool/wrench menu: Alt
+human|/obj/item/tool/wrench menu: Deal
+human|/obj/item/tool/wrench menu: Deal Multiple Cards
+human|/obj/item/tool/wrench menu: Draw
+human|/obj/item/tool/wrench menu: Hand
+human|/obj/item/tool/wrench menu: Item
 human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Pick up
-human|/obj/item/tool/wrench menu: Search for Cards (refused: there are no cards in the deck)
+human|/obj/item/tool/wrench menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/tool/wrench menu: Search for Cards
 human|/obj/item/tool/wrench menu: Shuffle
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench menu: Use (refused: not in your hand)
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Alternate use
-human|/obj/item/tool/wirecutters menu: Collect (refused: needs a storage)
-human|/obj/item/tool/wirecutters menu: Customise (refused: needs an item)
-human|/obj/item/tool/wirecutters menu: Deal (refused: there are no cards in the deck)
-human|/obj/item/tool/wirecutters menu: Deal Multiple Cards (refused: there are no cards in the deck)
-human|/obj/item/tool/wirecutters menu: Draw (refused: there are no cards in the deck)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Hand
+human|/obj/item/tool/wirecutters menu: Alt
+human|/obj/item/tool/wirecutters menu: Deal
+human|/obj/item/tool/wirecutters menu: Deal Multiple Cards
+human|/obj/item/tool/wirecutters menu: Draw
+human|/obj/item/tool/wirecutters menu: Hand
+human|/obj/item/tool/wirecutters menu: Item
 human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Pick up
-human|/obj/item/tool/wirecutters menu: Search for Cards (refused: there are no cards in the deck)
+human|/obj/item/tool/wirecutters menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/tool/wirecutters menu: Search for Cards
 human|/obj/item/tool/wirecutters menu: Shuffle
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters menu: Use (refused: not in your hand)
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Alternate use
-human|/obj/item/multitool menu: Collect (refused: needs a storage)
-human|/obj/item/multitool menu: Customise (refused: needs an item)
-human|/obj/item/multitool menu: Deal (refused: there are no cards in the deck)
-human|/obj/item/multitool menu: Deal Multiple Cards (refused: there are no cards in the deck)
-human|/obj/item/multitool menu: Draw (refused: there are no cards in the deck)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Hand
+human|/obj/item/multitool menu: Alt
+human|/obj/item/multitool menu: Deal
+human|/obj/item/multitool menu: Deal Multiple Cards
+human|/obj/item/multitool menu: Draw
+human|/obj/item/multitool menu: Hand
+human|/obj/item/multitool menu: Item
 human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Pick up
-human|/obj/item/multitool menu: Search for Cards (refused: there are no cards in the deck)
+human|/obj/item/multitool menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/multitool menu: Search for Cards
 human|/obj/item/multitool menu: Shuffle
-human|/obj/item/multitool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/multitool menu: Use
-human|/obj/item/multitool menu: Use (refused: not in your hand)
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Alternate use
-human|/obj/item/weldingtool menu: Collect (refused: needs a storage)
-human|/obj/item/weldingtool menu: Customise (refused: needs an item)
-human|/obj/item/weldingtool menu: Deal (refused: there are no cards in the deck)
-human|/obj/item/weldingtool menu: Deal Multiple Cards (refused: there are no cards in the deck)
-human|/obj/item/weldingtool menu: Draw (refused: there are no cards in the deck)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Hand
+human|/obj/item/weldingtool menu: Alt
+human|/obj/item/weldingtool menu: Deal
+human|/obj/item/weldingtool menu: Deal Multiple Cards
+human|/obj/item/weldingtool menu: Draw
+human|/obj/item/weldingtool menu: Hand
+human|/obj/item/weldingtool menu: Item
 human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Pick up
-human|/obj/item/weldingtool menu: Search for Cards (refused: there are no cards in the deck)
+human|/obj/item/weldingtool menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/weldingtool menu: Search for Cards
 human|/obj/item/weldingtool menu: Shuffle
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool menu: Use (refused: not in your hand)
-human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Alternate use
-human|/obj/item/stack/cable_coil menu: Collect (refused: needs a storage)
-human|/obj/item/stack/cable_coil menu: Customise (refused: needs an item)
-human|/obj/item/stack/cable_coil menu: Deal (refused: there are no cards in the deck)
-human|/obj/item/stack/cable_coil menu: Deal Multiple Cards (refused: there are no cards in the deck)
-human|/obj/item/stack/cable_coil menu: Draw (refused: there are no cards in the deck)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Hand
+human|/obj/item/stack/cable_coil menu: Alt
+human|/obj/item/stack/cable_coil menu: Deal
+human|/obj/item/stack/cable_coil menu: Deal Multiple Cards
+human|/obj/item/stack/cable_coil menu: Draw
+human|/obj/item/stack/cable_coil menu: Hand
+human|/obj/item/stack/cable_coil menu: Item
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Pick up
-human|/obj/item/stack/cable_coil menu: Search for Cards (refused: there are no cards in the deck)
+human|/obj/item/stack/cable_coil menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/stack/cable_coil menu: Search for Cards
 human|/obj/item/stack/cable_coil menu: Shuffle
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil menu: Use (refused: not in your hand)
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Alternate use
-human|/obj/item/stack/material/steel menu: Collect (refused: needs a storage)
-human|/obj/item/stack/material/steel menu: Customise (refused: needs an item)
-human|/obj/item/stack/material/steel menu: Deal (refused: there are no cards in the deck)
-human|/obj/item/stack/material/steel menu: Deal Multiple Cards (refused: there are no cards in the deck)
-human|/obj/item/stack/material/steel menu: Draw (refused: there are no cards in the deck)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Hand
+human|/obj/item/stack/material/steel menu: Alt
+human|/obj/item/stack/material/steel menu: Deal
+human|/obj/item/stack/material/steel menu: Deal Multiple Cards
+human|/obj/item/stack/material/steel menu: Draw
+human|/obj/item/stack/material/steel menu: Hand
+human|/obj/item/stack/material/steel menu: Item
 human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Pick up
-human|/obj/item/stack/material/steel menu: Search for Cards (refused: there are no cards in the deck)
+human|/obj/item/stack/material/steel menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/stack/material/steel menu: Search for Cards
 human|/obj/item/stack/material/steel menu: Shuffle
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel menu: Use (refused: not in your hand)
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Alternate use
-human|/obj/item/card/id menu: Collect (refused: needs a storage)
-human|/obj/item/card/id menu: Customise (refused: needs an item)
-human|/obj/item/card/id menu: Deal (refused: there are no cards in the deck)
-human|/obj/item/card/id menu: Deal Multiple Cards (refused: there are no cards in the deck)
-human|/obj/item/card/id menu: Draw (refused: there are no cards in the deck)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Hand
+human|/obj/item/card/id menu: Alt
+human|/obj/item/card/id menu: Deal
+human|/obj/item/card/id menu: Deal Multiple Cards
+human|/obj/item/card/id menu: Draw
+human|/obj/item/card/id menu: Hand
+human|/obj/item/card/id menu: Item
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Pick up
+human|/obj/item/card/id menu: Pick up (refused: You need an empty hand for that.)
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Search for Cards (refused: there are no cards in the deck)
+human|/obj/item/card/id menu: Search for Cards
 human|/obj/item/card/id menu: Shuffle
-human|/obj/item/card/id menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/card/id menu: Use
-human|/obj/item/card/id menu: Use (refused: not in your hand)
-human|/obj/item/card/id click: nothing
-human|/obj/item/kit menu: Alternate use
-human|/obj/item/kit menu: Collect (refused: needs a storage)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Hand
+human|/obj/item/kit menu: Alt
 human|/obj/item/kit menu: Customise
-human|/obj/item/kit menu: Deal (refused: there are no cards in the deck)
-human|/obj/item/kit menu: Deal Multiple Cards (refused: there are no cards in the deck)
-human|/obj/item/kit menu: Draw (refused: there are no cards in the deck)
+human|/obj/item/kit menu: Deal
+human|/obj/item/kit menu: Deal Multiple Cards
+human|/obj/item/kit menu: Draw
+human|/obj/item/kit menu: Hand
+human|/obj/item/kit menu: Item
 human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Pick up
-human|/obj/item/kit menu: Search for Cards (refused: there are no cards in the deck)
+human|/obj/item/kit menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/kit menu: Search for Cards
 human|/obj/item/kit menu: Shuffle
-human|/obj/item/kit menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/kit menu: Use
-human|/obj/item/kit menu: Use (refused: not in your hand)
-human|/obj/item/kit click: nothing
-human|/obj/item/storage menu: Alternate use
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit click: Click: Customise
+human|/obj/item/storage menu: Alt
 human|/obj/item/storage menu: Collect
-human|/obj/item/storage menu: Customise (refused: needs an item)
-human|/obj/item/storage menu: Deal (refused: there are no cards in the deck)
-human|/obj/item/storage menu: Deal Multiple Cards (refused: there are no cards in the deck)
-human|/obj/item/storage menu: Draw (refused: there are no cards in the deck)
+human|/obj/item/storage menu: Deal
+human|/obj/item/storage menu: Deal Multiple Cards
+human|/obj/item/storage menu: Draw
+human|/obj/item/storage menu: Hand
+human|/obj/item/storage menu: Item
 human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Pick up
-human|/obj/item/storage menu: Search for Cards (refused: there are no cards in the deck)
+human|/obj/item/storage menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item/storage menu: Search for Cards
 human|/obj/item/storage menu: Shuffle
-human|/obj/item/storage menu: Toggle Digestable (refused: you need to be carrying it)
-human|/obj/item/storage menu: Use
-human|/obj/item/storage menu: Use (refused: not in your hand)
-human|/obj/item/storage click: nothing
-keys: drag_buckle, gen_alt_interaction_alt, gen_hand_interaction_hand, gen_hand_interaction_pick_up, gen_insert_interaction_collected, gen_insert_interaction_kit_customize, gen_item_interaction_item, gen_silicon_item_silicon_equip_module, gen_use_interaction_self, gen_verb_deck_verb_deal, gen_verb_deck_verb_deal_multi, gen_verb_deck_verb_draw, gen_verb_deck_verb_search, gen_verb_deck_verb_shuffle, gen_verb_move_to_top_effect, gen_verb_toggle_digestable_effect
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage click: Click: Hand
+human|/obj/item menu: Alt
+human|/obj/item menu: Deal
+human|/obj/item menu: Deal Multiple Cards
+human|/obj/item menu: Draw
+human|/obj/item menu: Hand
+human|/obj/item menu: Item
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Pick up (refused: You need an empty hand for that.)
+human|/obj/item menu: Search for Cards
+human|/obj/item menu: Shuffle
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Hand
+keys: alt, collect_item, deck_verb_deal, deck_verb_deal_multi, deck_verb_draw, deck_verb_search, deck_verb_shuffle, drag_buckle, gen_silicon_item_silicon_equip_module, hand, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, self, toggle_digestable
 

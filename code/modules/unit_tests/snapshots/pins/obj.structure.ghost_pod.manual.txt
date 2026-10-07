@@ -5,25 +5,43 @@ robot|none click: Click: Open
 ai|none click: nothing
 ghost|none menu: Inhabit (refused: It is not open to spirits right now.)
 ghost|none click: Click: Inhabit
+human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Open
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver click: Click: Open
+human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Open
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Open
+human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Open
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench click: Click: Open
+human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Open
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters click: Click: Open
+human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Open
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: Click: Open
+human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Open
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: Click: Open
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Open
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil click: Click: Open
+human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Open
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: Click: Open
+human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Open
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Open
 keys: drag_buckle, inhabit, open
 
