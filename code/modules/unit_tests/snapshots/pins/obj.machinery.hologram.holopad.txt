@@ -1,13 +1,11 @@
 human|none menu: Request AI presence
-human|none menu: Request AI presence (refused: needs an item)
-human|none click: nothing
+human|none click: Click: Request AI presence
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Project
 robot|none menu: Request AI presence
-robot|none menu: Request AI presence (refused: needs an item)
-robot|none click: nothing
+robot|none click: Click: Request AI presence
 ai|none menu: Project
-ai|none click: nothing
+ai|none click: Click: Project
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Disconnect monitor
 human|/obj/item/tool/screwdriver menu: Move To Top
@@ -17,40 +15,40 @@ human|/obj/item/tool/screwdriver click: Click: Disconnect monitor
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Request AI presence
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/crowbar click: Click: Request AI presence
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Request AI presence
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wrench click: Click: Request AI presence
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Request AI presence
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/tool/wirecutters click: Click: Request AI presence
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Request AI presence
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool click: nothing
+human|/obj/item/multitool click: Click: Request AI presence
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Request AI presence
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool click: nothing
+human|/obj/item/weldingtool click: Click: Request AI presence
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Request AI presence
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/cable_coil click: Click: Request AI presence
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Request AI presence
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/material/steel click: Click: Request AI presence
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Request AI presence
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id click: nothing
+human|/obj/item/card/id click: Click: Request AI presence
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Request AI presence
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item click: nothing
-keys: disconnect_display, drag_buckle, gen_robot_interaction_swallow, gen_silicon_holopad_silicon_use, holopad_request_hand, holopad_request_item, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor
+human|/obj/item click: Click: Request AI presence
+keys: disconnect_display, drag_buckle, holopad_project, holopad_request_hand, holopad_request_item, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked
 

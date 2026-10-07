@@ -7,6 +7,7 @@ robot|none menu: Ui open
 robot|none click: Click: Ui open
 ai|none menu: Ui open
 ai|none click: Click: Ui open
+ghost|none menu: Replace parts (refused: needs a rapid part exchange device)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Open maintenance panel
@@ -57,6 +58,11 @@ human|/obj/item/card/id menu: Replace parts (refused: needs a rapid part exchang
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Replace parts (refused: needs a rapid part exchange device)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item click: Click: Ui open
 human|/obj/item/storage/part_replacer menu: Empty contents
 human|/obj/item/storage/part_replacer menu: Move To Top
 human|/obj/item/storage/part_replacer menu: Replace parts
@@ -64,5 +70,5 @@ human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: Yo
 human|/obj/item/storage/part_replacer menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage/part_replacer menu: Ui open
 human|/obj/item/storage/part_replacer click: Click: Ui open
-keys: drag_buckle, gen_insert_interaction_part_replacement_impl, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, ui_open
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, part_replacement_impl, robot_remote_blocked, ui_open
 

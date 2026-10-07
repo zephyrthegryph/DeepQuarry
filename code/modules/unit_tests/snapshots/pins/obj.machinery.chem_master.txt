@@ -47,6 +47,10 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item click: Click: Ui open
 human|/obj/item/reagent_containers menu: Move To Top
 human|/obj/item/reagent_containers menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers menu: Ui open
@@ -58,5 +62,5 @@ human|/obj/item/storage/pill_bottle menu: Switch gathering method (refused: You 
 human|/obj/item/storage/pill_bottle menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage/pill_bottle menu: Ui open
 human|/obj/item/storage/pill_bottle click: Click: Load pill bottle
-keys: add, addcustom, analyze, change_bottle_style, change_pill_bottle_style, change_pill_style, create_bottle, create_bottle_multiple, create_bottle_two, create_condi_bottle, create_condi_pack, create_patch, create_patch_multiple, create_pill, create_pill_multiple, drag_buckle, eject, ejectp, gen_robot_interaction_swallow, load_beaker, load_pill_bottle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, print, remove, removecustom, toggle, ui_open
+keys: add, addcustom, analyze, change_bottle_style, change_pill_bottle_style, change_pill_style, create_bottle, create_bottle_multiple, create_bottle_two, create_condi_bottle, create_condi_pack, create_patch, create_patch_multiple, create_pill, create_pill_multiple, drag_buckle, eject, ejectp, load_beaker, load_pill_bottle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, print, remove, removecustom, robot_remote_blocked, toggle, ui_open
 

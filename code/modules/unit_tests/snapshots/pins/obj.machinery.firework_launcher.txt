@@ -58,6 +58,11 @@ human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Launch
+human|/obj/item menu: Eject Firework Star
+human|/obj/item menu: Launch (refused: there is no firework star loaded in the firework launcher)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Launch
 human|/obj/item/storage/part_replacer menu: Eject Firework Star
 human|/obj/item/storage/part_replacer menu: Empty contents
 human|/obj/item/storage/part_replacer menu: Launch (refused: there is no firework star loaded in the firework launcher)
@@ -72,5 +77,5 @@ human|/obj/item/firework_star menu: Launch (refused: there is no firework star l
 human|/obj/item/firework_star menu: Move To Top
 human|/obj/item/firework_star menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/firework_star click: Click: Insert firework star
-keys: drag_buckle, eject, gen_robot_interaction_swallow, launch, load_star, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, part_replacement
+keys: drag_buckle, eject, launch, load_star, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, part_replacement, robot_remote_blocked
 

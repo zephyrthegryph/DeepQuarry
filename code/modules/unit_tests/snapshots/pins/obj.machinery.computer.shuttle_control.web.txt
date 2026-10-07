@@ -53,12 +53,12 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use item
 human|/obj/item/card/id click: Click: Use item
-human|/obj/item/gripper deleted itself on creation
 human|/obj/item menu: Climb
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
+human|/obj/item/gripper deleted itself on creation
 human|/obj/item/card/emag menu: Climb
 human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
@@ -71,5 +71,5 @@ human|/obj/item/clothing/head/pilot menu: Move To Top
 human|/obj/item/clothing/head/pilot menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/clothing/head/pilot menu: Use item
 human|/obj/item/clothing/head/pilot click: Click: Use item
-keys: cancel, climb.climb, climb.climb_menu, disconnect, dock_command, drag_buckle, emag.subvert, emag.use, force, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, move, register_helmet, rename_command, set_codes, toggle_autopilot, toggle_cloaking, traverse, undock_command, use_gripper, use_item
+keys: cancel, climb.climb, climb.climb_menu, disconnect, dock_command, drag_buckle, emag.subvert, emag.use, force, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, move, register_helmet, rename_command, robot_remote_blocked, set_codes, toggle_autopilot, toggle_cloaking, traverse, undock_command, use_gripper, use_item
 

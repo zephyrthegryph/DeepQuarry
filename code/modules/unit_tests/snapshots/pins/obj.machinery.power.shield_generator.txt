@@ -63,6 +63,11 @@ human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item menu: Use
+human|/obj/item click: Click: Ui open
 human|/obj/item/storage/part_replacer menu: Empty contents
 human|/obj/item/storage/part_replacer menu: Move To Top
 human|/obj/item/storage/part_replacer menu: Replace parts
@@ -72,5 +77,5 @@ human|/obj/item/storage/part_replacer menu: Ui open
 human|/obj/item/storage/part_replacer menu: Use
 human|/obj/item/storage/part_replacer click: Click: Ui open
 wires: AI Control, Contraband, Primary Power, Shield Controls
-keys: begin_shutdown, cable_place, drag_buckle, emergency_shutdown, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, part_replacement, set_input_cap, set_range, start_generator, switch_idle, toggle_idle, toggle_mode, ui_open, use, use_crowbar, use_multitool, use_screwdriver, use_wirecutter
+keys: begin_shutdown, cable_place, drag_buckle, emergency_shutdown, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, part_replacement, robot_remote_blocked, set_input_cap, set_range, start_generator, switch_idle, toggle_idle, toggle_mode, ui_open, use, use_crowbar, use_multitool, use_screwdriver, use_wirecutter
 

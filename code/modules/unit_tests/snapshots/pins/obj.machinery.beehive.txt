@@ -58,6 +58,11 @@ human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Harvest honeycombs
+human|/obj/item menu: Climb
+human|/obj/item menu: Harvest honeycombs
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Harvest honeycombs
 human|/obj/item/bee_smoker menu: Climb
 human|/obj/item/bee_smoker menu: Harvest honeycombs
 human|/obj/item/bee_smoker menu: Move To Top
@@ -82,5 +87,5 @@ human|/obj/item/analyzer/plant_analyzer menu: Move To Top
 human|/obj/item/analyzer/plant_analyzer menu: Scan
 human|/obj/item/analyzer/plant_analyzer menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/analyzer/plant_analyzer click: Click: Scan
-keys: beehive_bee_pack, beehive_harvest, beehive_load_frame, beehive_scan, beehive_smoke, climb.climb, climb.climb_menu, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, use_crowbar, use_screwdriver, use_wrench
+keys: beehive_bee_pack, beehive_harvest, beehive_load_frame, beehive_scan, beehive_smoke, climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked, use_crowbar, use_screwdriver, use_wrench
 

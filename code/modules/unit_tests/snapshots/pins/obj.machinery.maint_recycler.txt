@@ -58,5 +58,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Insert
-keys: attackby, close, drag_buckle, eject, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, open, recycle, use, use_crowbar
+keys: attackby, close, drag_buckle, eject, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, open, recycle, robot_remote_blocked, use, use_crowbar
 

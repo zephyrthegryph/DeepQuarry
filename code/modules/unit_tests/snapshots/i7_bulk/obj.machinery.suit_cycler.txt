@@ -1,7 +1,149 @@
-/obj/machinery/suit_cycler|human|none => gen_hand_interaction_use,gen_verb_interaction_leave|gen_insert_interaction_insert_grab:needs a grab,gen_insert_interaction_insert_helmet:needs a void helmet,gen_insert_interaction_insert_suit:needs a voidsuit
-/obj/machinery/suit_cycler|robot|none => gen_hand_interaction_use,gen_verb_interaction_leave|gen_robot_interaction_swallow:not possible right now,gen_insert_interaction_insert_grab:needs a grab,gen_insert_interaction_insert_helmet:needs a void helmet,gen_insert_interaction_insert_suit:needs a voidsuit
-/obj/machinery/suit_cycler|ai|none => |
-/obj/machinery/suit_cycler|ghost|none => |
-/obj/machinery/suit_cycler|human|/obj/item/clothing/head/helmet/space/void => gen_hand_interaction_use,gen_verb_interaction_leave|gen_insert_interaction_insert_grab:needs a grab,gen_insert_interaction_insert_helmet:the suit cycler is locked,gen_insert_interaction_insert_suit:needs a voidsuit
-/obj/machinery/suit_cycler|human|/obj/item/clothing/suit/space/void => gen_hand_interaction_use,gen_verb_interaction_leave|gen_insert_interaction_insert_grab:needs a grab,gen_insert_interaction_insert_helmet:needs a void helmet,gen_insert_interaction_insert_suit:the suit cycler is locked
+human|none menu: Eject Cycler
+human|none menu: Fit helmet (refused: needs a void helmet)
+human|none menu: Fit voidsuit (refused: needs a voidsuit)
+human|none menu: Put in cycler (refused: needs a grab)
+human|none menu: Ui open
+human|none menu: Use
+human|none click: Click: Ui open
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Eject Cycler
+robot|none menu: Fit helmet (refused: needs a void helmet)
+robot|none menu: Fit voidsuit (refused: needs a voidsuit)
+robot|none menu: Put in cycler (refused: needs a grab)
+robot|none menu: Ui open
+robot|none menu: Use
+robot|none click: Click: Ui open
+ai|none menu: Ui open
+ai|none click: Click: Ui open
+ghost|none menu: Eject Cycler (refused: You can't reach that.)
+ghost|none menu: Fit helmet (refused: needs a void helmet)
+ghost|none menu: Fit voidsuit (refused: needs a voidsuit)
+ghost|none menu: Put in cycler (refused: needs a grab)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Eject Cycler
+human|/obj/item/tool/screwdriver menu: Fit helmet (refused: needs a void helmet)
+human|/obj/item/tool/screwdriver menu: Fit voidsuit (refused: needs a voidsuit)
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Put in cycler (refused: needs a grab)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Ui open
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Ui open
+human|/obj/item/tool/crowbar menu: Eject Cycler
+human|/obj/item/tool/crowbar menu: Fit helmet (refused: needs a void helmet)
+human|/obj/item/tool/crowbar menu: Fit voidsuit (refused: needs a voidsuit)
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Put in cycler (refused: needs a grab)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Ui open
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Ui open
+human|/obj/item/tool/wrench menu: Eject Cycler
+human|/obj/item/tool/wrench menu: Fit helmet (refused: needs a void helmet)
+human|/obj/item/tool/wrench menu: Fit voidsuit (refused: needs a voidsuit)
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Put in cycler (refused: needs a grab)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Ui open
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Ui open
+human|/obj/item/tool/wirecutters menu: Eject Cycler
+human|/obj/item/tool/wirecutters menu: Fit helmet (refused: needs a void helmet)
+human|/obj/item/tool/wirecutters menu: Fit voidsuit (refused: needs a voidsuit)
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Put in cycler (refused: needs a grab)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Ui open
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters menu: Wires
+human|/obj/item/tool/wirecutters click: Click: Ui open
+human|/obj/item/multitool menu: Eject Cycler
+human|/obj/item/multitool menu: Fit helmet (refused: needs a void helmet)
+human|/obj/item/multitool menu: Fit voidsuit (refused: needs a voidsuit)
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Put in cycler (refused: needs a grab)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Ui open
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool menu: Wires
+human|/obj/item/multitool click: Click: Ui open
+human|/obj/item/weldingtool menu: Eject Cycler
+human|/obj/item/weldingtool menu: Fit helmet (refused: needs a void helmet)
+human|/obj/item/weldingtool menu: Fit voidsuit (refused: needs a voidsuit)
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Put in cycler (refused: needs a grab)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Ui open
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Ui open
+human|/obj/item/stack/cable_coil menu: Eject Cycler
+human|/obj/item/stack/cable_coil menu: Fit helmet (refused: needs a void helmet)
+human|/obj/item/stack/cable_coil menu: Fit voidsuit (refused: needs a voidsuit)
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Put in cycler (refused: needs a grab)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Ui open
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Ui open
+human|/obj/item/stack/material/steel menu: Eject Cycler
+human|/obj/item/stack/material/steel menu: Fit helmet (refused: needs a void helmet)
+human|/obj/item/stack/material/steel menu: Fit voidsuit (refused: needs a voidsuit)
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Put in cycler (refused: needs a grab)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Ui open
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Ui open
+human|/obj/item/card/id menu: Eject Cycler
+human|/obj/item/card/id menu: Fit helmet (refused: needs a void helmet)
+human|/obj/item/card/id menu: Fit voidsuit (refused: needs a voidsuit)
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Put in cycler (refused: needs a grab)
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Ui open
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Ui open
+human|/obj/item menu: Eject Cycler
+human|/obj/item menu: Fit helmet (refused: needs a void helmet)
+human|/obj/item menu: Fit voidsuit (refused: needs a voidsuit)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Put in cycler (refused: needs a grab)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item menu: Use
+human|/obj/item click: Click: Ui open
+human|/obj/item/clothing/head/helmet/space/void menu: Eject Cycler
+human|/obj/item/clothing/head/helmet/space/void menu: Fit helmet (refused: the suit cycler is locked)
+human|/obj/item/clothing/head/helmet/space/void menu: Fit voidsuit (refused: needs a voidsuit)
+human|/obj/item/clothing/head/helmet/space/void menu: Move To Top
+human|/obj/item/clothing/head/helmet/space/void menu: Put in cycler (refused: needs a grab)
+human|/obj/item/clothing/head/helmet/space/void menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/clothing/head/helmet/space/void menu: Ui open
+human|/obj/item/clothing/head/helmet/space/void menu: Use
+human|/obj/item/clothing/head/helmet/space/void click: Click: Ui open
+human|/obj/item/clothing/suit/space/void menu: Eject Cycler
+human|/obj/item/clothing/suit/space/void menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
+human|/obj/item/clothing/suit/space/void menu: Fit helmet (refused: needs a void helmet)
+human|/obj/item/clothing/suit/space/void menu: Fit voidsuit (refused: the suit cycler is locked)
+human|/obj/item/clothing/suit/space/void menu: Move To Top
+human|/obj/item/clothing/suit/space/void menu: Put in cycler (refused: needs a grab)
+human|/obj/item/clothing/suit/space/void menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/clothing/suit/space/void menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/clothing/suit/space/void menu: Ui open
+human|/obj/item/clothing/suit/space/void menu: Use
+human|/obj/item/clothing/suit/space/void click: Click: Ui open
+human|/obj/item/card/emag menu: Eject Cycler
+human|/obj/item/card/emag menu: Fit helmet (refused: needs a void helmet)
+human|/obj/item/card/emag menu: Fit voidsuit (refused: needs a voidsuit)
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Put in cycler (refused: needs a grab)
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Ui open
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+wires: Electrification, ID Scan, Safety
+keys: apply_paintjob, cycler_insert_grab, cycler_insert_helmet, cycler_insert_suit, cycler_leave, cycler_use, department, dispense, drag_buckle, eject_guy, emag.subvert, emag.use, lock, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, radlevel, repair_suit, robot_remote_blocked, species, ui_open, use_hacking_tools, use_screwdriver, uv
 

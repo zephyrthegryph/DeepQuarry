@@ -69,5 +69,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Remove sample
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Insert sample
-keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, microscope_examine, microscope_insert_sample, microscope_remove_sample
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, microscope_examine, microscope_insert_sample, microscope_remove_sample, robot_remote_blocked
 

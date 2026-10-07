@@ -79,7 +79,6 @@ human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use item
 human|/obj/item/card/id click: Click: Use item
-human|/obj/item/gripper deleted itself on creation
 human|/obj/item menu: Climb
 human|/obj/item menu: Eject ID Card
 human|/obj/item menu: Move To Top
@@ -87,6 +86,7 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Ui open
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
+human|/obj/item/gripper deleted itself on creation
 human|/obj/item/card/id/guest menu: Climb
 human|/obj/item/card/id/guest menu: Eject ID Card
 human|/obj/item/card/id/guest menu: Insert ID
@@ -96,5 +96,5 @@ human|/obj/item/card/id/guest menu: Toggle Digestable (refused: You can't do tha
 human|/obj/item/card/id/guest menu: Ui open
 human|/obj/item/card/id/guest menu: Use item
 human|/obj/item/card/id/guest click: Click: Use item
-keys: access, climb.climb, climb.climb_menu, disconnect, drag_buckle, duration, eject_id, gen_robot_interaction_swallow, giv_name, id, insert_id, issue, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, mode, print, reason, reject_guest_card, ui_open, use_gripper, use_item
+keys: access, climb.climb, climb.climb_menu, disconnect, drag_buckle, duration, eject_id, giv_name, id, insert_id, issue, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, mode, print, reason, reject_guest_card, robot_remote_blocked, ui_open, use_gripper, use_item
 

@@ -77,15 +77,6 @@ human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id menu: Use item
 human|/obj/item/card/id click: Click: Use item
-human|/obj/item/card/emag menu: Climb
-human|/obj/item/card/emag menu: Emag
-human|/obj/item/card/emag menu: Move To Top
-human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/emag menu: Ui open
-human|/obj/item/card/emag menu: Use
-human|/obj/item/card/emag menu: Use item
-human|/obj/item/card/emag click: Click: Use item
-human|/obj/item/gripper deleted itself on creation
 human|/obj/item menu: Climb
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
@@ -93,5 +84,13 @@ human|/obj/item menu: Ui open
 human|/obj/item menu: Use
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
-keys: active, addtoken, auth, cleartemp, climb.climb, climb.climb_menu, deauth, delete, deltoken, del_pda, del_rc, disconnect, drag_buckle, emag, find, gen_robot_interaction_swallow, hack, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, open_ui_impl, pass, send_message, set_message, set_recipient, set_sender, set_sender_job, ui_open, use_gripper, use_item
+human|/obj/item/gripper deleted itself on creation
+human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Ui open
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use item
+human|/obj/item/card/emag click: Click: Use
+keys: active, addtoken, auth, cleartemp, climb.climb, climb.climb_menu, deauth, delete, deltoken, del_pda, del_rc, disconnect, drag_buckle, emag.subvert, emag.use, find, hack, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, open_ui_impl, pass, robot_remote_blocked, send_message, set_message, set_recipient, set_sender, set_sender_job, ui_open, use_gripper, use_item
 

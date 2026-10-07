@@ -12,6 +12,11 @@ robot|none menu: Put in recharger (refused: needs a mob)
 robot|none menu: Replace parts (refused: needs a rapid part exchange device)
 robot|none click: nothing
 ai|none click: nothing
+ghost|none menu: Eject Recharger (refused: You can't reach that.)
+ghost|none menu: Enter Recharger (refused: You can't reach that.)
+ghost|none menu: Put in recharger (refused: needs a grab)
+ghost|none menu: Put in recharger (refused: needs a mob)
+ghost|none menu: Replace parts (refused: needs a rapid part exchange device)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Eject Recharger
 human|/obj/item/tool/screwdriver menu: Enter Recharger
@@ -89,6 +94,14 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Replace parts (refused: needs a rapid part exchange device)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
+human|/obj/item menu: Eject Recharger
+human|/obj/item menu: Enter Recharger
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Put in recharger (refused: needs a grab)
+human|/obj/item menu: Put in recharger (refused: needs a mob)
+human|/obj/item menu: Replace parts (refused: needs a rapid part exchange device)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: nothing
 human|/obj/item/storage/part_replacer menu: Eject Recharger
 human|/obj/item/storage/part_replacer menu: Empty contents
 human|/obj/item/storage/part_replacer menu: Enter Recharger
@@ -98,6 +111,6 @@ human|/obj/item/storage/part_replacer menu: Put in recharger (refused: needs a m
 human|/obj/item/storage/part_replacer menu: Replace parts
 human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: You can't do that.)
 human|/obj/item/storage/part_replacer menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/storage/part_replacer click: nothing
-keys: drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, recharge_station_drag_insert, recharge_station_eject, recharge_station_enter, recharge_station_insert_grab, recharge_station_part_replacement
+human|/obj/item/storage/part_replacer click: Click: Replace parts
+keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, recharge_station_drag_insert, recharge_station_eject, recharge_station_enter, recharge_station_insert_grab, recharge_station_part_replacement, robot_remote_blocked
 

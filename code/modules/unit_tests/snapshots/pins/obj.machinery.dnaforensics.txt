@@ -47,5 +47,5 @@ human|/obj/item menu: Insert swab
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Insert swab
-keys: drag_buckle, ejectItem, gen_robot_interaction_swallow, insert_swab, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, scanItem
+keys: drag_buckle, ejectItem, insert_swab, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked, scanItem
 

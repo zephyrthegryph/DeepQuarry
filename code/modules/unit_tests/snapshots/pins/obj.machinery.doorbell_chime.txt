@@ -54,5 +54,5 @@ human|/obj/item/storage/part_replacer menu: Switch gathering method (refused: Yo
 human|/obj/item/storage/part_replacer menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage/part_replacer menu: Touch
 human|/obj/item/storage/part_replacer click: Click: Replace parts
-keys: drag_buckle, fingerprint, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, part_replacement, use_multitool
+keys: drag_buckle, fingerprint, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, part_replacement, robot_remote_blocked, use_multitool
 

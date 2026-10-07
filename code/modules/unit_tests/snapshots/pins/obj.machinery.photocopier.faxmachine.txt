@@ -74,6 +74,12 @@ human|/obj/item/card/id menu: Staff Request Form
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Insert ID
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Remove ID card (refused: there is no ID card to remove)
+human|/obj/item menu: Staff Request Form
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
 human|/obj/item/paper menu: Create Area (refused: You can't do that.)
 human|/obj/item/paper menu: Insert
 human|/obj/item/paper menu: Move To Top
@@ -107,11 +113,5 @@ human|/obj/item/toner menu: Staff Request Form
 human|/obj/item/toner menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/toner menu: Use
 human|/obj/item/toner click: Click: Insert toner
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Remove ID card (refused: there is no ID card to remove)
-human|/obj/item menu: Staff Request Form
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item menu: Use
-human|/obj/item click: Click: Use
-keys: ai_photo, dept, drag_buckle, faxmachine_insert_id, faxmachine_insert_toner, faxmachine_open_ui, faxmachine_open_ui_silicon, faxmachine_remove_card, gen_robot_interaction_swallow, insert, insert_toner, login, logout, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, make_copy, remove, rename, scan, send, send_automated_staff_request, set_copies, swallow, use_crowbar, use_multitool, use_screwdriver, use_wrench
+keys: ai_photo, dept, drag_buckle, faxmachine_insert_id, faxmachine_insert_toner, faxmachine_open_ui, faxmachine_open_ui_silicon, faxmachine_remove_card, insert, insert_toner, login, logout, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, make_copy, remove, rename, robot_remote_blocked, scan, send, send_automated_staff_request, set_copies, swallow, use_crowbar, use_multitool, use_screwdriver, use_wrench
 

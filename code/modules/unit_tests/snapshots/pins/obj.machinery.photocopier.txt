@@ -46,6 +46,10 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
 human|/obj/item/paper menu: Create Area (refused: You can't do that.)
 human|/obj/item/paper menu: Insert
 human|/obj/item/paper menu: Move To Top
@@ -71,9 +75,5 @@ human|/obj/item/toner menu: Move To Top
 human|/obj/item/toner menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/toner menu: Use
 human|/obj/item/toner click: Click: Use
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item menu: Use
-human|/obj/item click: Click: Use
-keys: ai_photo, drag_buckle, gen_robot_interaction_swallow, insert, insert_toner, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, make_copy, remove, set_copies, swallow, use_crowbar, use_screwdriver, use_wrench
+keys: ai_photo, drag_buckle, insert, insert_toner, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, make_copy, remove, robot_remote_blocked, set_copies, swallow, use_crowbar, use_screwdriver, use_wrench
 

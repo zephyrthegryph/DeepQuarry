@@ -64,5 +64,5 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Ui open
 human|/obj/item menu: Use
 human|/obj/item click: Click: Ui open
-keys: artifact_harvester_use_item, drag_buckle, drainbattery, ejectbattery, gen_robot_interaction_swallow, harvest, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, open_ui_powered_fingerprint, stopharvest, ui_open, use_crowbar, use_screwdriver
+keys: artifact_harvester_use_item, drag_buckle, drainbattery, ejectbattery, harvest, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, open_ui_powered_fingerprint, robot_remote_blocked, stopharvest, ui_open, use_crowbar, use_screwdriver
 

@@ -59,6 +59,11 @@ human|/obj/item/card/id menu: Remove item
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Remove item
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item click: Click: Ui open
 human|/obj/item/clothing menu: Insert
 human|/obj/item/clothing menu: Move To Top
 human|/obj/item/clothing menu: Remove item
@@ -90,5 +95,5 @@ human|/obj/item/stack/material menu: Remove item
 human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material menu: Ui open
 human|/obj/item/stack/material click: Click: Ui open
-keys: choose_color, clear, drag_buckle, drop, gear_painter_alt_drop, gear_painter_insert, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, paint, set_hue, set_matrix_color, set_matrix_string, set_sat, set_val, switch_modes, ui_open
+keys: choose_color, clear, drag_buckle, drop, gear_painter_alt_drop, gear_painter_insert, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, paint, robot_remote_blocked, set_hue, set_matrix_color, set_matrix_string, set_sat, set_val, switch_modes, ui_open
 

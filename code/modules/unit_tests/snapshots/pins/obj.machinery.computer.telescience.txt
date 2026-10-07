@@ -55,12 +55,12 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use item
 human|/obj/item/card/id click: Click: Use item
-human|/obj/item/gripper deleted itself on creation
 human|/obj/item menu: Climb
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use item
 human|/obj/item click: Click: Use item
+human|/obj/item/gripper deleted itself on creation
 human|/obj/item/bluespace_crystal menu: Climb
 human|/obj/item/bluespace_crystal menu: Insert crystal
 human|/obj/item/bluespace_crystal menu: Move To Top
@@ -73,5 +73,5 @@ human|/obj/item/gps menu: Move To Top
 human|/obj/item/gps menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/gps menu: Use item
 human|/obj/item/gps click: Click: Use item
-keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, eject, ejectGPS, gen_robot_interaction_swallow, insert_crystal, insert_gps, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, recal, receive, send, setdistance, setMemory, setrotation, setz, use_gripper, use_item, use_multitool
+keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, eject, ejectGPS, insert_crystal, insert_gps, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, recal, receive, robot_remote_blocked, send, setdistance, setMemory, setrotation, setz, use_gripper, use_item, use_multitool
 

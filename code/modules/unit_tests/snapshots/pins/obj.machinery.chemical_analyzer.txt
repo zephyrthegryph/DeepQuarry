@@ -46,10 +46,14 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item click: Click: Ui open
 human|/obj/item/reagent_containers menu: Analyze
 human|/obj/item/reagent_containers menu: Move To Top
 human|/obj/item/reagent_containers menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers menu: Ui open
 human|/obj/item/reagent_containers click: Click: Analyze
-keys: analyze, drag_buckle, gen_robot_interaction_swallow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, ui_open
+keys: analyze, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked, ui_open
 

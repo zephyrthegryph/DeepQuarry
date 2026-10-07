@@ -37,6 +37,9 @@ human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: nothing
 human|/obj/item/honey_frame menu: Load frame (refused: The beehive frame is empty, put it into a beehive)
 human|/obj/item/honey_frame menu: Move To Top
 human|/obj/item/honey_frame menu: Toggle Digestable (refused: You can't do that.)
@@ -48,5 +51,5 @@ human|/obj/item/reagent_containers/glass menu: Set transfer amount
 human|/obj/item/reagent_containers/glass menu: Splash (refused: There is nothing in it to pour.)
 human|/obj/item/reagent_containers/glass menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/glass click: Click: Collect honey
-keys: drag_buckle, gen_robot_interaction_swallow, honey_extractor_collect, honey_extractor_load_frame, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, use_crowbar, use_screwdriver, use_wrench
+keys: drag_buckle, honey_extractor_collect, honey_extractor_load_frame, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked, use_crowbar, use_screwdriver, use_wrench
 

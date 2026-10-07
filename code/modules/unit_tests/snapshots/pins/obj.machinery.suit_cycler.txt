@@ -15,6 +15,10 @@ robot|none menu: Use
 robot|none click: Click: Ui open
 ai|none menu: Ui open
 ai|none click: Click: Ui open
+ghost|none menu: Eject Cycler (refused: You can't reach that.)
+ghost|none menu: Fit helmet (refused: needs a void helmet)
+ghost|none menu: Fit voidsuit (refused: needs a voidsuit)
+ghost|none menu: Put in cycler (refused: needs a grab)
 ghost|none click: nothing
 human|/obj/item/tool/screwdriver menu: Eject Cycler
 human|/obj/item/tool/screwdriver menu: Fit helmet (refused: needs a void helmet)
@@ -102,6 +106,15 @@ human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Ui open
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Ui open
+human|/obj/item menu: Eject Cycler
+human|/obj/item menu: Fit helmet (refused: needs a void helmet)
+human|/obj/item menu: Fit voidsuit (refused: needs a voidsuit)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Put in cycler (refused: needs a grab)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item menu: Use
+human|/obj/item click: Click: Ui open
 human|/obj/item/clothing/head/helmet/space/void menu: Eject Cycler
 human|/obj/item/clothing/head/helmet/space/void menu: Fit helmet (refused: the suit cycler is locked)
 human|/obj/item/clothing/head/helmet/space/void menu: Fit voidsuit (refused: needs a voidsuit)
@@ -132,5 +145,5 @@ human|/obj/item/card/emag menu: Ui open
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
 wires: Electrification, ID Scan, Safety
-keys: apply_paintjob, department, dispense, drag_buckle, eject_guy, emag.subvert, emag.use, gen_hand_interaction_use, gen_insert_interaction_insert_grab, gen_insert_interaction_insert_helmet, gen_insert_interaction_insert_suit, gen_robot_interaction_swallow, gen_verb_interaction_leave, lock, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, radlevel, repair_suit, species, ui_open, use_hacking_tools, use_screwdriver, uv
+keys: apply_paintjob, cycler_insert_grab, cycler_insert_helmet, cycler_insert_suit, cycler_leave, cycler_use, department, dispense, drag_buckle, eject_guy, emag.subvert, emag.use, lock, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, radlevel, repair_suit, robot_remote_blocked, species, ui_open, use_hacking_tools, use_screwdriver, uv
 

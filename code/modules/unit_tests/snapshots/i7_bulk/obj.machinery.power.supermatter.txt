@@ -1,5 +1,54 @@
-/obj/machinery/power/supermatter|human|none => |
-/obj/machinery/power/supermatter|robot|none => |gen_robot_interaction_swallow:not possible right now
-/obj/machinery/power/supermatter|ai|none => |
-/obj/machinery/power/supermatter|ghost|none => |
+human|none menu: Touch
+human|none click: Click: Touch
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Touch
+robot|none menu: Ui open
+robot|none click: Click: Touch
+ai|none menu: Ui open
+ai|none click: Click: Ui open
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Touch
+human|/obj/item/tool/screwdriver click: Click: Touch
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Touch
+human|/obj/item/tool/crowbar click: Click: Touch
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Touch
+human|/obj/item/tool/wrench click: Click: Touch
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Touch
+human|/obj/item/tool/wirecutters click: Click: Touch
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Touch
+human|/obj/item/multitool click: Click: Touch
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Touch
+human|/obj/item/weldingtool click: Click: Touch
+human|/obj/item/stack/cable_coil menu: Lay cable
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Touch
+human|/obj/item/stack/cable_coil click: Click: Touch
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Touch
+human|/obj/item/stack/material/steel click: Click: Touch
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Touch
+human|/obj/item/card/id click: Click: Touch
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Touch
+human|/obj/item click: Click: Touch
+keys: cable_place, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, robot_remote_blocked, touch, touch_item, ui_open
 
