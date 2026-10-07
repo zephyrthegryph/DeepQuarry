@@ -92,6 +92,7 @@ pub enum LinkError {
     IndexOverflow(Table),
     UnknownReference(SymRef),
     MissingSourceFile(u32),
+    MissingSourceLine(u32),
     SourceLineOverflow(u32),
     Relocation(RelocationError),
 }
@@ -249,6 +250,10 @@ impl LinkTables {
                     .first_line
                     .checked_add(delta)
                     .ok_or(LinkError::SourceLineOverflow(delta))?,
+                SymRef::SourceLine(origin) => *source
+                    .lines
+                    .get(&origin)
+                    .ok_or(LinkError::MissingSourceLine(origin))?,
                 SymRef::SourceFile(origin) => {
                     let symbol = *source
                         .files
@@ -317,13 +322,14 @@ fn reference_key(
         SymRef::Instance(id) => Key::Instance(id),
         SymRef::ConstantList(id) => Key::List(id),
         SymRef::Resource(id) => Key::Resource(id),
-        SymRef::SourceFile(_) | SymRef::LineDelta(_) => return None,
+        SymRef::SourceFile(_) | SymRef::SourceLine(_) | SymRef::LineDelta(_) => return None,
     })
 }
 #[derive(Clone, Debug, Default)]
 pub struct SourceBindings {
     pub first_line: u32,
     pub files: BTreeMap<u32, SymbolId>,
+    pub lines: BTreeMap<u32, u32>,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProcedureImage {

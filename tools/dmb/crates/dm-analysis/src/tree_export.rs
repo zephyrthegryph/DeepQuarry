@@ -2,7 +2,8 @@
 //! Semantic rows omit source paths and executable bodies. Occurrence/body rows
 //! describe this build's current source, independently of semantic identity.
 use dm_ir::{
-    DeclaredTypeKnowledge, SemanticValue, SymbolId, SymbolTable, SymbolicExpression, TypeId,
+    DeclaredTypeKnowledge, ProcedureSettingNode, SemanticValue, SymbolId, SymbolTable,
+    SymbolicExpression, TypeId,
 };
 use dm_syntax::TokenKind;
 use dm_tree::frontend::{ColdFrontend, SourceLocation};
@@ -12,7 +13,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::io::Write;
 
-pub const SCHEMA: &str = "dm-tree-analysis-v1";
+pub const SCHEMA: &str = "dm-tree-analysis-v2";
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct ExportCounts {
@@ -122,6 +123,25 @@ fn constant(value: &SemanticValue, symbols: &SymbolTable) -> Result<Value, Expor
         }
     })
 }
+fn setting_nodes(
+    nodes: &[ProcedureSettingNode],
+    symbols: &SymbolTable,
+) -> Result<Vec<Value>, ExportError> {
+    nodes.iter().map(|node| Ok(match node {
+        ProcedureSettingNode::Setting(setting) => json!({
+            "kind":"setting", "name":spelling(symbols,setting.name)?,
+            "operation":operation(setting.operation), "value":expression(Some(&setting.value),symbols)?,
+        }),
+        ProcedureSettingNode::Conditional { condition, then_branch, else_branch } => json!({
+            "kind":"conditional", "condition":expression(Some(condition),symbols)?,
+            "then_branch":setting_nodes(then_branch,symbols)?, "else_branch":setting_nodes(else_branch,symbols)?,
+        }),
+        ProcedureSettingNode::UnsupportedContext { canonical_header, children } => json!({
+            "kind":"unsupported_context", "header":expression(Some(canonical_header),symbols)?,
+            "children":setting_nodes(children,symbols)?,
+        }),
+    })).collect()
+}
 fn source(location: &SourceLocation) -> Value {
     json!({
         "path":location.path.to_string_lossy(), "semantic_path":location.semantic_path.as_ref(),
@@ -209,14 +229,16 @@ pub fn write_jsonl(
             let parameters = procedure.signature.parameters.iter().map(|parameter| Ok(json!({
                 "name":spelling(symbols,parameter.name)?,
                 "declared_type":parameter.declared_type.map(|id| spelling(symbols,id)).transpose()?,
+                "flags":parameter.flags,
+                "array":parameter.array.as_ref().map(|array| Ok::<_, ExportError>(json!({
+                    "element_type":array.element_type.map(|id| spelling(symbols,id)).transpose()?,
+                    "dimensions":array.dimensions.iter().map(|dimension| expression(dimension.as_ref(),symbols)).collect::<Result<Vec<_>,_>>()?,
+                }))).transpose()?,
                 "default":expression(parameter.default.as_ref(),symbols)?,
                 "input_annotation":expression(parameter.input_annotation.as_ref(),symbols)?,
                 "source_expression":expression(parameter.source_expression.as_ref(),symbols)?,
             }))).collect::<Result<Vec<_>, ExportError>>()?;
-            let settings = procedure.settings.iter().map(|setting| Ok(json!({
-                "name":spelling(symbols,setting.name)?, "operation":operation(setting.operation),
-                "value":expression(Some(&setting.value),symbols)?,
-            }))).collect::<Result<Vec<_>, ExportError>>()?;
+            let settings = setting_nodes(&procedure.settings,symbols)?;
             Ok::<_,ExportError>(json!({"parameters":parameters,"variadic":procedure.signature.variadic,
                 "return_annotation":expression(procedure.signature.return_annotation.as_ref(),symbols)?,"settings":settings}))
         }).transpose()?;
@@ -296,7 +318,8 @@ pub fn write_jsonl(
             json!({"row":"body","declaration":body.declaration.0,
             "member":target_key(Target::Member(body.member))?,
             "expanded_start":body.expanded_span.start,"expanded_end":body.expanded_span.end,
-            "source":source(&body.source)}),
+            "source":source(&body.source),
+            "setting_context_origins":body.setting_context_origins.iter().map(source).collect::<Vec<_>>()}),
         )?;
         counts.body_rows += 1;
     }
@@ -363,5 +386,20 @@ mod tests {
         let proc = first.iter().find(|row| row["kind"] == "proc").unwrap();
         assert_eq!(proc["procedure"]["parameters"][0]["name"], "argument");
         assert_eq!(proc["procedure"]["settings"][0]["name"], "waitfor");
+    }
+    #[test]
+    fn guarded_setting_rows_export_structure_and_current_source_separately() {
+        let rows = source_rows("/proc/p()\n    if (1)\n        set waitfor = 0\n    else\n        set waitfor = 1\n    while (runtime_value)\n        set background = 1\n    return 2\n");
+        let procedure = rows.iter().find(|row| row["kind"] == "proc").unwrap();
+        let settings = &procedure["procedure"]["settings"];
+        assert_eq!(settings[0]["kind"], "conditional");
+        assert_eq!(settings[0]["then_branch"][0]["name"], "waitfor");
+        assert_eq!(settings[0]["else_branch"][0]["name"], "waitfor");
+        assert_eq!(settings[1]["kind"], "unsupported_context");
+        assert_eq!(settings[1]["children"][0]["name"], "background");
+        let body = rows.iter().find(|row| row["row"] == "body").unwrap();
+        assert_eq!(body["setting_context_origins"].as_array().unwrap().len(), 6);
+        assert_eq!(body["setting_context_origins"][1]["line"], 3);
+        assert_eq!(rows[0]["schema"], SCHEMA);
     }
 }

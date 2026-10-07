@@ -213,6 +213,24 @@ available. Replacement runs pin the original selection and external fixture hash
 No new timing, parity or
 completion percentage is claimed while those gates remain open.
 
+## Current integration follow-up
+
+- Source-only probe 4 exited with a declaration error after 21.600 s, with
+  1,654,022,144 bytes maximum private memory in one-second samples. It rejected
+  the legal argument declaration `obj/instance/`. The trailing separator parser
+  fix is saved with a regression check; a successful real-project model has not
+  yet been demonstrated. Receipt:
+  `E:/dmb-native-v2-phase0/source-analysis-probe-20261006-4/receipt.json`.
+- Procedure ABI preparation now preserves guarded settings, argument modifiers
+  and arrays. Current debug emission uses typed source relocations. Integration
+  checking caught decimal versus hexadecimal debug opcode values; the correction
+  preserves bytecode-boundary validation. These changes are awaiting the current
+  focused check gate.
+- Parallel implementation continues on root global storage, ordered symbolic
+  initializer plans, inherited ABI capture and bounded DMB composition. The new
+  CLI still exposes analysis only. No full Phase 1 compile or performance target
+  is claimed from these frontend measurements.
+
 ## Artifact location and limits
 
 Raw evidence: `D:/dmb-native-v2-phase0`. That drive is an HDD. Profile working trees

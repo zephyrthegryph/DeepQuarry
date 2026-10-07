@@ -74,6 +74,9 @@ impl SymbolicExpression {
 pub struct Parameter {
     pub name: SymbolId,
     pub declared_type: Option<SymbolId>,
+    /// Declaration modifiers, using the shared variable declaration flag masks.
+    pub flags: u32,
+    pub array: Option<Arc<ArrayDeclaration>>,
     pub default: Option<SymbolicExpression>,
     pub input_annotation: Option<SymbolicExpression>,
     pub source_expression: Option<SymbolicExpression>,
@@ -97,11 +100,26 @@ pub struct ProcedureSetting {
     pub operation: SettingOperation,
     pub value: SymbolicExpression,
 }
+/// Ordered, unevaluated procedure metadata. Executable statements are excluded;
+/// guards stay symbolic until a backend demands their exact constant meanings.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ProcedureSettingNode {
+    Setting(ProcedureSetting),
+    Conditional {
+        condition: SymbolicExpression,
+        then_branch: Arc<[ProcedureSettingNode]>,
+        else_branch: Arc<[ProcedureSettingNode]>,
+    },
+    UnsupportedContext {
+        canonical_header: SymbolicExpression,
+        children: Arc<[ProcedureSettingNode]>,
+    },
+}
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProcedureMetadata {
     pub signature: ProcedureSignature,
-    /// Source setting order, including duplicate settings; last one is effective.
-    pub settings: Arc<[ProcedureSetting]>,
+    /// Source setting order and branch structure, without early guard evaluation.
+    pub settings: Arc<[ProcedureSettingNode]>,
 }
 fn append_expression(bytes: &mut Vec<u8>, value: Option<&SymbolicExpression>) {
     bytes.push(u8::from(value.is_some()));
@@ -114,11 +132,18 @@ fn append_expression(bytes: &mut Vec<u8>, value: Option<&SymbolicExpression>) {
 impl ProcedureSignature {
     pub fn canonical_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
-        bytes.extend_from_slice(b"dm-procedure-signature-v1\0");
+        bytes.extend_from_slice(b"dm-procedure-signature-v2\0");
         bytes.push(u8::from(self.variadic));
         bytes.extend_from_slice(&(self.parameters.len() as u64).to_le_bytes());
         for parameter in self.parameters.iter() {
             bytes.extend_from_slice(&parameter.name.bits().to_le_bytes());
+            bytes.extend_from_slice(&parameter.flags.to_le_bytes());
+            bytes.push(u8::from(parameter.array.is_some()));
+            if let Some(array) = &parameter.array {
+                let encoded = array.canonical_bytes();
+                bytes.extend_from_slice(&(encoded.len() as u64).to_le_bytes());
+                bytes.extend_from_slice(&encoded);
+            }
             bytes.push(u8::from(parameter.declared_type.is_some()));
             bytes.extend_from_slice(
                 &parameter
@@ -136,25 +161,53 @@ impl ProcedureSignature {
     }
 }
 impl ProcedureMetadata {
-    pub fn setting(&self, name: SymbolId) -> Option<&ProcedureSetting> {
-        self.settings
-            .iter()
-            .rev()
-            .find(|setting| setting.name == name)
+    /// Last authored top-level setting. This is not an effective-setting query:
+    /// guarded declarations may override it after backend guard evaluation.
+    pub fn unconditional_setting(&self, name: SymbolId) -> Option<&ProcedureSetting> {
+        self.settings.iter().rev().find_map(|node| match node {
+            ProcedureSettingNode::Setting(setting) if setting.name == name => Some(setting),
+            _ => None,
+        })
     }
     pub fn canonical_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
-        bytes.extend_from_slice(b"dm-procedure-metadata-v1\0");
+        bytes.extend_from_slice(b"dm-procedure-metadata-v2\0");
         let signature = self.signature.canonical_bytes();
         bytes.extend_from_slice(&(signature.len() as u64).to_le_bytes());
         bytes.extend_from_slice(&signature);
-        bytes.extend_from_slice(&(self.settings.len() as u64).to_le_bytes());
-        for setting in self.settings.iter() {
-            bytes.extend_from_slice(&setting.name.bits().to_le_bytes());
-            bytes.push(setting.operation as u8);
-            append_expression(&mut bytes, Some(&setting.value));
-        }
+        append_settings(&mut bytes, &self.settings);
         bytes
+    }
+}
+fn append_settings(bytes: &mut Vec<u8>, nodes: &[ProcedureSettingNode]) {
+    bytes.extend_from_slice(&(nodes.len() as u64).to_le_bytes());
+    for node in nodes {
+        match node {
+            ProcedureSettingNode::Setting(setting) => {
+                bytes.push(0);
+                bytes.extend_from_slice(&setting.name.bits().to_le_bytes());
+                bytes.push(setting.operation as u8);
+                append_expression(bytes, Some(&setting.value));
+            }
+            ProcedureSettingNode::Conditional {
+                condition,
+                then_branch,
+                else_branch,
+            } => {
+                bytes.push(1);
+                append_expression(bytes, Some(condition));
+                append_settings(bytes, then_branch);
+                append_settings(bytes, else_branch);
+            }
+            ProcedureSettingNode::UnsupportedContext {
+                canonical_header,
+                children,
+            } => {
+                bytes.push(2);
+                append_expression(bytes, Some(canonical_header));
+                append_settings(bytes, children);
+            }
+        }
     }
 }
 #[derive(Clone, Debug, Eq, PartialEq)]

@@ -30,6 +30,8 @@ pub enum SymRef {
     BuiltinGlobalVars,
     /// Current occurrence supplies file spelling for this origin ordinal.
     SourceFile(u32),
+    /// Absolute line supplied by the current occurrence, addressed by origin ordinal.
+    SourceLine(u32),
     ConstantList(u128),
     Resource(u128),
     /// Relative to the procedure's first source line. The current occurrence
@@ -61,7 +63,7 @@ impl SymRef {
             Self::ConstantList(_) => RelocationKind::List,
             Self::Resource(_) => RelocationKind::Resource,
             Self::Instance(_) => RelocationKind::Instance,
-            Self::LineDelta(_) => RelocationKind::SourceLine,
+            Self::LineDelta(_) | Self::SourceLine(_) => RelocationKind::SourceLine,
         }
     }
 }
@@ -313,6 +315,10 @@ fn encode_reference(bytes: &mut Vec<u8>, reference: SymRef) {
         SymRef::Resource(content) => {
             bytes.push(10);
             bytes.extend_from_slice(&content.to_le_bytes())
+        }
+        SymRef::SourceLine(origin) => {
+            bytes.push(12);
+            bytes.extend_from_slice(&origin.to_le_bytes())
         }
         SymRef::LineDelta(delta) => {
             bytes.push(11);

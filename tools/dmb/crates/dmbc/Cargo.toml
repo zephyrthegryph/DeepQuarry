@@ -13,6 +13,7 @@ fs2 = "0.4"
 dm-tree = { path = "../dm-tree" }
 dm-analysis = { path = "../dm-analysis" }
 dm-preprocess = { path = "../dm-preprocess" }
+dm-syntax = { path = "../dm-syntax" }
 
 byond-dmb = { path = "../.." }
 dm-ir = { path = "../dm-ir" }

@@ -40,6 +40,12 @@ impl FrozenBatch {
             .units
             .get(index)
             .ok_or(IntegrationError::LoweringFailed(index))?;
+        let current = unit.lowered.debug_origins.source_bindings();
+        let source = if source.files.is_empty() && source.lines.is_empty() {
+            &current
+        } else {
+            source
+        };
         self.tables
             .link(unit.frozen.code(), source)
             .map_err(IntegrationError::Link)
@@ -180,6 +186,15 @@ pub fn freeze_and_link_tables(
                 ),
             ));
         }
+        for origin in &lowered.debug_origins.entries {
+            let bytes: Arc<[u8]> = Arc::from(origin.semantic_path.as_bytes());
+            let symbol = SymbolId::of(&origin.semantic_path);
+            inventory.spellings.push((symbol, bytes.clone()));
+            inventory.entries.push(Entry {
+                key: Key::String(symbol),
+                content: bytes,
+            });
+        }
         // Exact frozen code content is known. Remaining proc metadata belongs
         // to explicit emitter policy, separately retained in LoweredUnit.
         inventory.entries.push(Entry {
@@ -192,13 +207,25 @@ pub fn freeze_and_link_tables(
     // Validate all captured references before publishing any linked output.
     for unit in &units {
         tables
-            .link(unit.frozen.code(), &SourceBindings::default())
+            .link(
+                unit.frozen.code(),
+                &unit.lowered.debug_origins.source_bindings(),
+            )
             .map_err(IntegrationError::Link)?;
     }
     Ok(FrozenBatch { units, tables })
 }
 fn procedure_content(lowered: &LoweredUnit, code_bytes: &[u8]) -> Arc<[u8]> {
-    let mut bytes = b"dm-frozen-procedure-v1\0".to_vec();
+    let mut bytes = b"dm-frozen-procedure-v2\0".to_vec();
+    match &lowered.abi {
+        None => bytes.push(0),
+        Some(abi) => {
+            bytes.push(1);
+            let encoded = abi.canonical_bytes();
+            bytes.extend_from_slice(&(encoded.len() as u64).to_le_bytes());
+            bytes.extend_from_slice(&encoded);
+        }
+    }
     let metadata = lowered.metadata.canonical_bytes();
     for part in [code_bytes, metadata.as_slice()] {
         bytes.extend_from_slice(&(part.len() as u64).to_le_bytes());

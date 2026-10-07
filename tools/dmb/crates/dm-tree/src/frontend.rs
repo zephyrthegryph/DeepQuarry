@@ -75,6 +75,9 @@ pub struct BodyOccurrence {
     pub ast_path: Arc<[usize]>,
     pub expanded_span: dm_syntax::Span,
     pub source: SourceLocation,
+    /// Current source origins for retained setting/guard/context headers, in
+    /// compact encounter order. These never enter procedure semantic identity.
+    pub setting_context_origins: Arc<[SourceLocation]>,
 }
 
 /// Measured uncached stages. Provider lookup latency belongs to directive planning;
@@ -729,8 +732,7 @@ fn compact_declarations(items: Vec<Item>, offset: usize) -> Vec<Item> {
             item.header_span.start += offset;
             item.header_span.end += offset;
             if matches!(item.kind, ItemKind::Proc | ItemKind::Verb) {
-                item.children
-                    .retain(|child| child.header.trim_start().starts_with("set "));
+                item.children = crate::settings::compact_setting_items(item.children);
             }
             item.children = compact_declarations(item.children, offset);
             item
@@ -887,12 +889,23 @@ fn collect_bodies(
             let source = mapping
                 .output(item.span.start)
                 .ok_or_else(|| vec![internal("procedure body has no source origin")])?;
+            let mut setting_spans = Vec::new();
+            crate::settings::setting_spans(&item.children, &mut setting_spans);
+            let setting_context_origins = setting_spans
+                .into_iter()
+                .map(|span| {
+                    mapping.output(span.start).ok_or_else(|| {
+                        vec![internal("procedure setting has no current source origin")]
+                    })
+                })
+                .collect::<Result<Vec<_>, _>>()?;
             bodies.push(BodyOccurrence {
                 declaration: declaration.0,
                 member: declaration.1,
                 ast_path: path.clone().into(),
                 expanded_span: item.span,
                 source,
+                setting_context_origins: setting_context_origins.into(),
             });
         } else {
             collect_bodies(&item.children, path, declarations, mapping, bodies)?;

@@ -24,6 +24,53 @@ fn fixture(files: &[(&str, &str)]) -> Result<ColdFrontend, Vec<Diagnostic>> {
 }
 
 #[test]
+fn nested_settings_guard_identity_and_include_origins_survive_body_compaction() {
+    let make = |guard: &str, body: &str| {
+        let text = format!("    if ({guard})\n        set waitfor = 0\n        return {body}\n    else\n        set background = 1\n");
+        fixture(&[
+            ("project.dme", "/proc/p()\n#include \"settings.dm\"\n"),
+            ("settings.dm", &text),
+        ])
+        .unwrap_or_else(|errors| panic!("{errors:?}"))
+    };
+    let first = make("1", "1");
+    let body_edit = make("1", "222");
+    let guard_edit = make("0", "1");
+    assert_eq!(
+        first.snapshot.tree.identity(),
+        body_edit.snapshot.tree.identity()
+    );
+    assert_ne!(
+        first.snapshot.tree.identity(),
+        guard_edit.snapshot.tree.identity()
+    );
+    let procedure = first
+        .snapshot
+        .tree
+        .members()
+        .iter()
+        .find_map(|member| member.metadata.procedure.as_ref())
+        .unwrap();
+    assert!(
+        matches!(&procedure.settings[0], dm_ir::ProcedureSettingNode::Conditional {
+        then_branch, else_branch, .. } if then_branch.len() == 1 && else_branch.len() == 1)
+    );
+    let origins = &first.bodies[0].setting_context_origins;
+    assert_eq!(origins.len(), 4);
+    assert!(origins
+        .iter()
+        .all(|origin| origin.path.as_path() == Path::new("settings.dm")
+            && origin.include_occurrence == 1));
+    assert_eq!(
+        origins.iter().map(|origin| origin.line).collect::<Vec<_>>(),
+        vec![1, 2, 4, 5]
+    );
+    let compact = &first.syntax.items[0].children;
+    assert_eq!(compact.len(), 2);
+    assert_eq!(compact[0].children.len(), 1);
+}
+
+#[test]
 fn manifest_member_context_resolves_to_real_types_with_current_origins() {
     let result = fixture(&[
         (

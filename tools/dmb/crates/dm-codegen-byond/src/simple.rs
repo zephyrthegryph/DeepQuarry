@@ -1,6 +1,9 @@
 //! Direct lowering of a deliberately small DM procedure subset. Unsupported
 //! constructs are errors; the emitter must never silently change semantics.
-use crate::{Instruction, Item as CodeItem, SymbolicProc, ValueWord, VariableWord, Word, BUILTIN_GLOBAL_VARS_SYMBOL};
+use crate::{
+    Instruction, Item as CodeItem, SymbolicProc, ValueWord, VariableWord, Word,
+    BUILTIN_GLOBAL_VARS_SYMBOL,
+};
 use byond_dmb::bytecode::opcode;
 use dm_syntax::{
     parse_body_items, parse_expression, Expr, ExprKind, ForControl, ForInitializer, Item,
@@ -172,7 +175,11 @@ impl LowerBindings {
 
     fn member_type(&self, owner: &str, name: &str) -> Option<&str> {
         let shared = self.shared.as_ref()?;
-        let mut path = shared.modified_instances.get(owner).map(String::as_str).unwrap_or(owner);
+        let mut path = shared
+            .modified_instances
+            .get(owner)
+            .map(String::as_str)
+            .unwrap_or(owner);
         for _ in 0..64 {
             if let Some(member) = shared
                 .member_types
@@ -188,9 +195,17 @@ impl LowerBindings {
 
     fn member_global(&self, owner: &str, name: &str) -> Option<&str> {
         let shared = self.shared.as_ref()?;
-        let mut path = shared.modified_instances.get(owner).map(String::as_str).unwrap_or(owner);
+        let mut path = shared
+            .modified_instances
+            .get(owner)
+            .map(String::as_str)
+            .unwrap_or(owner);
         for _ in 0..64 {
-            if let Some(symbol) = shared.member_globals.get(path).and_then(|members| members.get(name)) {
+            if let Some(symbol) = shared
+                .member_globals
+                .get(path)
+                .and_then(|members| members.get(name))
+            {
                 return Some(symbol);
             }
             path = shared.parent_types.get(path)?;
@@ -202,11 +217,15 @@ impl LowerBindings {
         let shared = self.shared.as_ref()?;
         if shared.known_member_fields.iter().any(|(owner, members)| {
             members.contains(name) && self.member_global(owner, name).is_none()
-        }) { return None; }
+        }) {
+            return None;
+        }
         let mut found: Option<&str> = None;
         for members in shared.member_globals.values() {
             if let Some(symbol) = members.get(name) {
-                if found.is_some_and(|previous| previous != symbol) { return None; }
+                if found.is_some_and(|previous| previous != symbol) {
+                    return None;
+                }
                 found = Some(symbol);
             }
         }
@@ -215,7 +234,11 @@ impl LowerBindings {
 
     fn member_proc(&self, owner: &str, name: &str) -> Option<&str> {
         let shared = self.shared.as_ref()?;
-        let mut path = shared.modified_instances.get(owner).map(String::as_str).unwrap_or(owner);
+        let mut path = shared
+            .modified_instances
+            .get(owner)
+            .map(String::as_str)
+            .unwrap_or(owner);
         for _ in 0..64 {
             if let Some(proc_path) = shared
                 .member_procs
@@ -230,12 +253,26 @@ impl LowerBindings {
     }
 
     fn has_declared_member_proc(&self, owner: &str, name: &str) -> bool {
-        let Some(shared) = self.shared.as_ref() else { return false; };
-        let mut path=shared.modified_instances.get(owner).map(String::as_str).unwrap_or(owner);
+        let Some(shared) = self.shared.as_ref() else {
+            return false;
+        };
+        let mut path = shared
+            .modified_instances
+            .get(owner)
+            .map(String::as_str)
+            .unwrap_or(owner);
         for _ in 0..64 {
-            if shared.known_member_procs.get(path).is_some_and(|names|names.contains(name)) { return true; }
-            let Some(parent)=shared.parent_types.get(path) else { return false; };
-            path=parent;
+            if shared
+                .known_member_procs
+                .get(path)
+                .is_some_and(|names| names.contains(name))
+            {
+                return true;
+            }
+            let Some(parent) = shared.parent_types.get(path) else {
+                return false;
+            };
+            path = parent;
         }
         false
     }
@@ -262,7 +299,7 @@ pub fn compile_simple_proc_with_bindings(
     body: &[Item],
     bindings: &LowerBindings,
 ) -> Result<SimpleProc, Vec<LowerError>> {
-    compile_with_lookup(body, bindings, None)
+    compile_with_lookup(body, bindings, None, None)
 }
 
 pub fn compile_simple_proc_with_resolver<R: dm_ir::Resolver>(
@@ -271,22 +308,37 @@ pub fn compile_simple_proc_with_resolver<R: dm_ir::Resolver>(
     symbols: &dm_ir::SymbolTable,
     resolver: &R,
 ) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
+    compile_simple_proc_with_resolver_and_debug(body, inputs, symbols, resolver, None)
+}
+
+/// Source origins are borrowed per occurrence; reusable code retains only ordinals.
+pub trait DebugSourceProvider {
+    fn entry_ordinal(&self) -> Result<u32, String>;
+    fn ordinal(&self, expanded_offset: usize) -> Result<u32, String>;
+}
+pub fn compile_simple_proc_with_resolver_and_debug<R: dm_ir::Resolver>(
+    body: &[Item],
+    inputs: &crate::lower_resolver::ProcedureInputs,
+    symbols: &dm_ir::SymbolTable,
+    resolver: &R,
+    debug: Option<&dyn DebugSourceProvider>,
+) -> Result<crate::lower_resolver::ResolverProc, Vec<LowerError>> {
     let bindings = inputs.lexical_bindings();
     let lookup = crate::lower_resolver::ProjectResolver {
         resolver,
         symbols,
         slots: std::cell::RefCell::new(Default::default()),
         resources: std::cell::RefCell::new(Default::default()),
-        instances:std::cell::RefCell::new(Default::default()),
-        runtime_types:std::cell::RefCell::new(Default::default()),
+        instances: std::cell::RefCell::new(Default::default()),
+        runtime_types: std::cell::RefCell::new(Default::default()),
         resource_search_context: inputs.resource_search_context,
     };
-    let procedure = compile_with_lookup(body, &bindings, Some(&lookup))?;
+    let procedure = compile_with_lookup(body, &bindings, Some(&lookup), debug)?;
     Ok(crate::lower_resolver::ResolverProc {
         procedure,
         slots: lookup.slots.into_inner(),
         resources: lookup.resources.into_inner(),
-        instances:lookup.instances.into_inner(),
+        instances: lookup.instances.into_inner(),
     })
 }
 
@@ -294,11 +346,15 @@ fn compile_with_lookup(
     body: &[Item],
     bindings: &LowerBindings,
     lookup: Option<&crate::lower_resolver::ProjectResolver<'_>>,
+    debug: Option<&dyn DebugSourceProvider>,
 ) -> Result<SimpleProc, Vec<LowerError>> {
     let mut compiler = Compiler {
         result: SimpleProc::default(),
         bindings,
         lookup,
+        debug,
+        debug_current: None,
+        debug_last: None,
         resolver_failure: std::cell::RefCell::new(None),
         locals: Vec::new(),
         local_slots: HashMap::new(),
@@ -318,6 +374,13 @@ fn compile_with_lookup(
         breaks: Vec::new(),
         iterator_depth: 0,
     };
+    if let Some(provider) = debug {
+        compiler.debug_current = Some(
+            provider
+                .entry_ordinal()
+                .map_err(|reason| vec![error("procedure header", &reason)])?,
+        );
+    }
     compiler.parameter_defaults().map_err(|error| vec![error])?;
     let typed = parse_body_items(body);
     let lowered = if typed.diagnostics.is_empty() && typed_statements_supported(&typed.statements) {
@@ -329,28 +392,38 @@ fn compile_with_lookup(
         return Err(vec![error]);
     }
     lowered.map_err(|error| vec![error])?;
+    if compiler.debug_current.is_none() {
+        compiler.debug_current = compiler.debug_last;
+    }
     compiler.emit(opcode::END, vec![]);
     compiler.result.local_count = compiler.locals.len() as u32;
     compiler.result.local_names = compiler.locals;
     compiler.result.argument_names = bindings.parameters.clone();
     compiler.result.argument_type_flags = bindings.parameter_type_flags.clone();
     compiler.result.argument_value_sources = bindings.parameter_value_sources.clone();
-    if let Some(lookup)=lookup {
-        let mut seen=BTreeSet::new();
+    if let Some(lookup) = lookup {
+        let mut seen = BTreeSet::new();
         for item in &mut compiler.result.code.items {
-            let CodeItem::Instruction(instruction)=item else {continue;};
+            let CodeItem::Instruction(instruction) = item else {
+                continue;
+            };
             for operand in &mut instruction.operands {
-                if let Word::Value(ValueWord::ClassPath {path,..})=operand {
-                    let runtime_type=lookup.runtime_type(path).map_err(|error|vec![error])?;
-                    if runtime_type!=*path {
-                        let alias=path.clone();
-                        if seen.insert(alias.clone()) {compiler.result.instance_paths.push(alias.clone());}
-                        *operand=Word::Value(ValueWord::Instance(alias));
+                if let Word::Value(ValueWord::ClassPath { path, .. }) = operand {
+                    let runtime_type = lookup.runtime_type(path).map_err(|error| vec![error])?;
+                    if runtime_type != *path {
+                        let alias = path.clone();
+                        if seen.insert(alias.clone()) {
+                            compiler.result.instance_paths.push(alias.clone());
+                        }
+                        *operand = Word::Value(ValueWord::Instance(alias));
                     }
                 }
             }
         }
-        compiler.result.class_paths.retain(|path|!seen.contains(path));
+        compiler
+            .result
+            .class_paths
+            .retain(|path| !seen.contains(path));
     } else if let Some(shared) = &bindings.shared {
         compiler
             .result
@@ -521,6 +594,9 @@ struct Compiler<'a> {
     result: SimpleProc,
     bindings: &'a LowerBindings,
     lookup: Option<&'a crate::lower_resolver::ProjectResolver<'a>>,
+    debug: Option<&'a dyn DebugSourceProvider>,
+    debug_current: Option<u32>,
+    debug_last: Option<u32>,
     // Some legacy syntax fallbacks catch LowerError. Semantic query failures
     // survive those fallbacks and prevent any successful lowered result.
     resolver_failure: std::cell::RefCell<Option<LowerError>>,
@@ -545,11 +621,20 @@ struct Compiler<'a> {
 }
 
 impl Compiler<'_> {
+    fn debug_at(&mut self, offset: usize, raw: &str) -> Result<(), LowerError> {
+        if let Some(provider) = self.debug {
+            let ordinal = provider
+                .ordinal(offset)
+                .map_err(|reason| error(raw, &reason))?;
+            self.debug_current = Some(ordinal);
+        }
+        Ok(())
+    }
     fn class_tag(&self, path: &str) -> Result<Option<u8>, LowerError> {
         let Some(lookup) = self.lookup else {
             return Ok(class_tag(path));
         };
-        let runtime_type=self.semantic(lookup.runtime_type(path))?;
+        let runtime_type = self.semantic(lookup.runtime_type(path))?;
         let query = dm_ir::ResolveQuery::Ancestry(dm_ir::SymbolId::of(&runtime_type));
         match self.semantic(lookup.answer(query))? {
             dm_ir::ResolvedMeaning::Missing => Ok(None),
@@ -580,11 +665,14 @@ impl Compiler<'_> {
         match self.lookup {
             Some(lookup) => match &self.bindings.current_type_path {
                 Some(owner) => {
-                    if self.member_global(owner,name)?.is_some() { return Ok(false); }
+                    if self.member_global(owner, name)?.is_some() {
+                        return Ok(false);
+                    }
                     self.semantic(lookup.presence(dm_ir::ResolveQuery::HasMemberVar {
-                    owner: dm_ir::SymbolId::of(owner),
-                    name: dm_ir::SymbolId::of(name),
-                })) },
+                        owner: dm_ir::SymbolId::of(owner),
+                        name: dm_ir::SymbolId::of(name),
+                    }))
+                }
                 None => Ok(false),
             },
             None => Ok(self.bindings.has_field(name)),
@@ -592,7 +680,9 @@ impl Compiler<'_> {
     }
     fn has_global(&self, name: &str) -> Result<bool, LowerError> {
         match self.lookup {
-            Some(lookup) => self.semantic(lookup.presence(dm_ir::ResolveQuery::GlobalVar(dm_ir::SymbolId::of(name)))),
+            Some(lookup) => self.semantic(
+                lookup.presence(dm_ir::ResolveQuery::GlobalVar(dm_ir::SymbolId::of(name))),
+            ),
             None => Ok(self.bindings.has_global(name)),
         }
     }
@@ -604,10 +694,12 @@ impl Compiler<'_> {
             None => Ok(self.bindings.has_global_proc(name)),
         }
     }
-    fn has_visible_global(&self,name:&str)->Result<bool,LowerError> {
+    fn has_visible_global(&self, name: &str) -> Result<bool, LowerError> {
         if self.lookup.is_some() {
-            if let Some(owner)=self.bindings.current_type_path.as_deref() {
-                if self.member_global(owner,name)?.is_some() { return Ok(true); }
+            if let Some(owner) = self.bindings.current_type_path.as_deref() {
+                if self.member_global(owner, name)?.is_some() {
+                    return Ok(true);
+                }
             }
         }
         self.has_global(name)
@@ -634,10 +726,12 @@ impl Compiler<'_> {
     }
     fn member_type(&self, owner: &str, name: &str) -> Result<Option<String>, LowerError> {
         match self.lookup {
-            Some(lookup) => self.semantic(lookup.declared_type(dm_ir::ResolveQuery::DeclaredVarType {
-                owner: dm_ir::SymbolId::of(owner),
-                name: dm_ir::SymbolId::of(name),
-            })),
+            Some(lookup) => {
+                self.semantic(lookup.declared_type(dm_ir::ResolveQuery::DeclaredVarType {
+                    owner: dm_ir::SymbolId::of(owner),
+                    name: dm_ir::SymbolId::of(name),
+                }))
+            }
             None => Ok(self.bindings.member_type(owner, name).map(str::to_owned)),
         }
     }
@@ -741,6 +835,7 @@ impl Compiler<'_> {
     }
 
     fn typed_statements(&mut self, statements: &[Statement]) -> Result<(), LowerError> {
+        let saved_debug = self.debug_current;
         let saved_slots = self.local_slots.clone();
         let saved_types = self.local_types.clone();
         let saved_labels = self.user_labels.clone();
@@ -751,6 +846,7 @@ impl Compiler<'_> {
         let result = self
             .prepare_user_labels(statements, self.try_depth)
             .and_then(|()| self.typed_statements_inner(statements));
+        self.debug_current = saved_debug;
         self.local_slots = saved_slots;
         self.local_types = saved_types;
         self.user_labels = saved_labels;
@@ -769,6 +865,7 @@ impl Compiler<'_> {
             );
             let saved_slots = scoped_statement.then(|| self.local_slots.clone());
             let saved_types = scoped_statement.then(|| self.local_types.clone());
+            self.debug_at(statement.header_span.start, &statement.raw_header)?;
             match &statement.kind {
                 StatementKind::Set { .. } => {
                     return Err(error(
@@ -1624,6 +1721,30 @@ impl Compiler<'_> {
         Ok(())
     }
     fn emit(&mut self, opcode: u32, operands: Vec<Word>) {
+        // Branch entries must establish their own source before executing.
+        if opcode != 0x84
+            && opcode != 0x85
+            && (self.debug_last != self.debug_current
+                || matches!(self.result.code.items.last(), Some(CodeItem::Label(_))))
+        {
+            if let Some(origin) = self.debug_current {
+                self.result
+                    .code
+                    .items
+                    .push(CodeItem::Instruction(Instruction {
+                        opcode: 0x84,
+                        operands: vec![Word::SourceFile(origin)],
+                    }));
+                self.result
+                    .code
+                    .items
+                    .push(CodeItem::Instruction(Instruction {
+                        opcode: 0x85,
+                        operands: vec![Word::SourceLine(origin)],
+                    }));
+                self.debug_last = Some(origin);
+            }
+        }
         self.result
             .code
             .items
@@ -1715,11 +1836,18 @@ impl Compiler<'_> {
     }
 
     // Clause ordinals drive the frozen branch construction and labels.
-    #[allow(clippy::needless_range_loop)]
     fn statements(&mut self, body: &[Item]) -> Result<(), LowerError> {
+        let saved_debug = self.debug_current;
+        let result = self.statements_inner(body);
+        self.debug_current = saved_debug;
+        result
+    }
+    #[allow(clippy::needless_range_loop)]
+    fn statements_inner(&mut self, body: &[Item]) -> Result<(), LowerError> {
         let mut index = 0;
         while index < body.len() {
             let item = &body[index];
+            self.debug_at(item.header_span.start, &item.header)?;
             let text = item.header.trim();
             if text.starts_with("if(") || text.starts_with("if (") {
                 let mut last = index + 1;
@@ -1732,6 +1860,7 @@ impl Compiler<'_> {
                 let end_label = self.label();
                 for clause_index in index..last {
                     let clause = &body[clause_index];
+                    self.debug_at(clause.header_span.start, &clause.header)?;
                     let header = clause.header.trim();
                     let condition = if clause_index == index {
                         header
@@ -2022,6 +2151,7 @@ impl Compiler<'_> {
     }
 
     fn statement(&mut self, item: &Item) -> Result<(), LowerError> {
+        self.debug_at(item.header_span.start, &item.header)?;
         let text = item.header.trim();
         if text.starts_with("sleep(") && text.ends_with(')') {
             let duration =
@@ -2141,9 +2271,15 @@ impl Compiler<'_> {
     }
 
     fn expression_statement(&mut self, expr: &Expr, statement: &str) -> Result<(), LowerError> {
-        if self.crash_statement(expr, statement)? { return Ok(()); }
-        if self.output_statement(expr, statement)? { return Ok(()); }
-        if self.builtin_statement(expr, statement)? { return Ok(()); }
+        if self.crash_statement(expr, statement)? {
+            return Ok(());
+        }
+        if self.output_statement(expr, statement)? {
+            return Ok(());
+        }
+        if self.builtin_statement(expr, statement)? {
+            return Ok(());
+        }
         if let ExprKind::Unary { op, value } = &expr.kind {
             if matches!(op.as_str(), "post++" | "post--" | "pre++" | "pre--") {
                 return self.inc_dec(
@@ -2178,11 +2314,20 @@ impl Compiler<'_> {
     }
 
     fn crash_statement(&mut self, expr: &Expr, statement: &str) -> Result<bool, LowerError> {
-        let ExprKind::Call { callee, args } = &expr.kind else { return Ok(false); };
-        if !matches!(&callee.kind, ExprKind::Ident(name) if name == "CRASH") { return Ok(false); }
-        if args.len() > 1 { return Err(error(statement, "CRASH expects zero or one argument")); }
-        if let Some(value) = args.first() { self.expression(value, statement)?; }
-        else { self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]); }
+        let ExprKind::Call { callee, args } = &expr.kind else {
+            return Ok(false);
+        };
+        if !matches!(&callee.kind, ExprKind::Ident(name) if name == "CRASH") {
+            return Ok(false);
+        }
+        if args.len() > 1 {
+            return Err(error(statement, "CRASH expects zero or one argument"));
+        }
+        if let Some(value) = args.first() {
+            self.expression(value, statement)?;
+        } else {
+            self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
+        }
         self.emit(0xc7, vec![]);
         Ok(true)
     }
@@ -2265,44 +2410,71 @@ impl Compiler<'_> {
     }
 
     fn output_receiver(&mut self, expr: &Expr, statement: &str) -> Result<(), LowerError> {
-        if let ExprKind::Index { object,index } = &expr.kind {
-            self.expression(object,statement)?;
-            self.expression(index,statement)?;
-            self.emit(0xb0,vec![]);
+        if let ExprKind::Index { object, index } = &expr.kind {
+            self.expression(object, statement)?;
+            self.expression(index, statement)?;
+            self.emit(0xb0, vec![]);
             Ok(())
-        } else { self.expression(expr,statement) }
+        } else {
+            self.expression(expr, statement)
+        }
     }
 
     fn builtin_statement(&mut self, expr: &Expr, statement: &str) -> Result<bool, LowerError> {
-        let ExprKind::Call { callee,args } = &expr.kind else { return Ok(false); };
-        let ExprKind::Ident(name) = &callee.kind else { return Ok(false); };
+        let ExprKind::Call { callee, args } = &expr.kind else {
+            return Ok(false);
+        };
+        let ExprKind::Ident(name) = &callee.kind else {
+            return Ok(false);
+        };
         if name == "stat" {
-            if !(1..=2).contains(&args.len()) { return Err(error(statement,"stat expects one or two arguments")); }
-            if args.len()==1 { self.emit(opcode::PUSH_VAL,vec![Word::Value(ValueWord::Null)]); }
-            for arg in args { self.expression(arg,statement)?; }
-            self.emit(0x05,vec![]);
+            if !(1..=2).contains(&args.len()) {
+                return Err(error(statement, "stat expects one or two arguments"));
+            }
+            if args.len() == 1 {
+                self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
+            }
+            for arg in args {
+                self.expression(arg, statement)?;
+            }
+            self.emit(0x05, vec![]);
             return Ok(true);
         }
         if name == "statpanel" {
-            if !(1..=3).contains(&args.len()) { return Err(error(statement,"statpanel expects one to three arguments")); }
-            self.expression(&args[0],statement)?;
-            if args.len()==1 { self.emit(0xa2,vec![]); }
-            else {
-                if args.len()==2 { self.emit(opcode::PUSH_VAL,vec![Word::Value(ValueWord::Null)]); }
-                for arg in &args[1..] { self.expression(arg,statement)?; }
-                self.emit(0xa1,vec![]);
+            if !(1..=3).contains(&args.len()) {
+                return Err(error(statement, "statpanel expects one to three arguments"));
+            }
+            self.expression(&args[0], statement)?;
+            if args.len() == 1 {
+                self.emit(0xa2, vec![]);
+            } else {
+                if args.len() == 2 {
+                    self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
+                }
+                for arg in &args[1..] {
+                    self.expression(arg, statement)?;
+                }
+                self.emit(0xa1, vec![]);
             }
             return Ok(true);
         }
         if name == "missile" {
-            if args.len()!=3 { return Err(error(statement,"missile expects three arguments")); }
-            for arg in args { self.expression(arg,statement)?; }
-            self.emit(0x0b,vec![]);
+            if args.len() != 3 {
+                return Err(error(statement, "missile expects three arguments"));
+            }
+            for arg in args {
+                self.expression(arg, statement)?;
+            }
+            self.emit(0x0b, vec![]);
             return Ok(true);
         }
-        let Some(spec) = crate::builtin_catalog::lookup_with_arity(name,args.len()) else { return Ok(false); };
-        if spec.post_opcode != Some(0x36) && !crate::builtin_catalog::is_void(name) { return Ok(false); }
-        self.expression(expr,statement)?;
+        let Some(spec) = crate::builtin_catalog::lookup_with_arity(name, args.len()) else {
+            return Ok(false);
+        };
+        if spec.post_opcode != Some(0x36) && !crate::builtin_catalog::is_void(name) {
+            return Ok(false);
+        }
+        self.expression(expr, statement)?;
         // Expressions materialize the flag or a null value. Native statement
         // calls discard it by omitting that materialization altogether.
         self.result.code.items.pop();
@@ -2509,9 +2681,11 @@ impl Compiler<'_> {
         if let Some(index) = self.bindings.parameters.iter().position(|n| n == name) {
             return Ok(VariableWord::Arg(index as u32));
         }
-        if self.lookup.is_some() && !matches!(name,"src"|"usr"|"world"|"args"|".") {
-            if let Some(owner)=self.bindings.current_type_path.as_deref() {
-                if let Some(slot)=self.member_global(owner,name)? { return Ok(VariableWord::Global(slot)); }
+        if self.lookup.is_some() && !matches!(name, "src" | "usr" | "world" | "args" | ".") {
+            if let Some(owner) = self.bindings.current_type_path.as_deref() {
+                if let Some(slot) = self.member_global(owner, name)? {
+                    return Ok(VariableWord::Global(slot));
+                }
             }
         }
         match name {
@@ -2843,7 +3017,8 @@ impl Compiler<'_> {
             ExprKind::Ident(name) => {
                 if name == "src" {
                     return match self.bindings.current_type_path.as_deref() {
-                        Some(path)=>self.normalize_inferred_type(path).map(Some),None=>Ok(None),
+                        Some(path) => self.normalize_inferred_type(path).map(Some),
+                        None => Ok(None),
                     };
                 }
                 if name == "usr" {
@@ -2867,10 +3042,16 @@ impl Compiler<'_> {
                 object, selector, ..
             } => {
                 if matches!(&object.kind, ExprKind::Ident(name) if name == "global") {
-                    return self.global_type(selector)?.map(|path|self.normalize_inferred_type(&path)).transpose();
+                    return self
+                        .global_type(selector)?
+                        .map(|path| self.normalize_inferred_type(&path))
+                        .transpose();
                 }
                 if matches!(&object.kind, ExprKind::Ident(name) if name == "src") {
-                    return self.field_type(selector)?.map(|path|self.normalize_inferred_type(&path)).transpose();
+                    return self
+                        .field_type(selector)?
+                        .map(|path| self.normalize_inferred_type(&path))
+                        .transpose();
                 }
                 match self.inferred_expression_type(object)? {
                     Some(owner) => self.member_type(&owner, selector)?,
@@ -2890,16 +3071,17 @@ impl Compiler<'_> {
         };
         self.normalize_inferred_type(&path).map(Some)
     }
-    fn normalize_inferred_type(&self,path:&str)->Result<String,LowerError> {
-        if let Some(lookup)=self.lookup { return self.semantic(lookup.runtime_type(path)); }
-        Ok(
-            self.bindings
-                .shared
-                .as_ref()
-                .and_then(|shared| shared.modified_instances.get(path))
-                .cloned()
-                .unwrap_or_else(||path.to_owned()),
-        )
+    fn normalize_inferred_type(&self, path: &str) -> Result<String, LowerError> {
+        if let Some(lookup) = self.lookup {
+            return self.semantic(lookup.runtime_type(path));
+        }
+        Ok(self
+            .bindings
+            .shared
+            .as_ref()
+            .and_then(|shared| shared.modified_instances.get(path))
+            .cloned()
+            .unwrap_or_else(|| path.to_owned()))
     }
     fn expression_member_global(
         &self,
@@ -3094,7 +3276,8 @@ impl Compiler<'_> {
         fn is_safe_chain(expr: &Expr) -> bool {
             match &expr.kind {
                 ExprKind::SafeMember { .. } | ExprKind::SafeIndex { .. } => true,
-                ExprKind::Member { object, .. } | ExprKind::StaticMember { object, .. }
+                ExprKind::Member { object, .. }
+                | ExprKind::StaticMember { object, .. }
                 | ExprKind::Index { object, .. } => is_safe_chain(object),
                 ExprKind::Call { callee, .. } => is_safe_chain(callee),
                 _ => false,
@@ -5223,175 +5406,435 @@ mod tests {
 
     #[test]
     fn nameof_fields_and_variables_match_native_without_evaluating_receivers() {
-        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/nameof_references.native.bin")).unwrap();
-        let ast = dm_syntax::parse(include_str!("../../../fixtures/native_compiler/nameof_references.dm"));
-        let body = &ast.items[0].children.iter().find(|item| item.header == "proc/reference_names()").unwrap().children;
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/nameof_references.native.bin"
+        ))
+        .unwrap();
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/nameof_references.dm"
+        ));
+        let body = &ast.items[0]
+            .children
+            .iter()
+            .find(|item| item.header == "proc/reference_names()")
+            .unwrap()
+            .children;
         let compiled = compile_simple_proc(body).unwrap();
         let mut ledger = Ledger::default();
         for key in &compiled.strings {
-            let id = native.strings.iter().position(|entry| entry.data == compiled.string_bytes(key)).unwrap();
-            ledger.bind(crate::Symbol::new(Table::String,key),id as u32).unwrap();
+            let id = native
+                .strings
+                .iter()
+                .position(|entry| entry.data == compiled.string_bytes(key))
+                .unwrap();
+            ledger
+                .bind(crate::Symbol::new(Table::String, key), id as u32)
+                .unwrap();
         }
-        let id = native.procs.iter().position(|proc| native.string(proc.strings[0]) == Some(b"/datum/nameof_member/proc/reference_names")).unwrap();
-        assert_eq!(link_proc(&compiled.code,&ledger).unwrap().words,native.proc_code_words(id).unwrap());
-        for (source, expected) in [("type::name","name"),("type::vv_VAS","vv_VAS"),("(type::name)","name"),("receiver().name","name")] {
-            assert_eq!(nameof_reference(&parse_expression(source).expr.unwrap()),Some(expected));
+        let id = native
+            .procs
+            .iter()
+            .position(|proc| {
+                native.string(proc.strings[0]) == Some(b"/datum/nameof_member/proc/reference_names")
+            })
+            .unwrap();
+        assert_eq!(
+            link_proc(&compiled.code, &ledger).unwrap().words,
+            native.proc_code_words(id).unwrap()
+        );
+        for (source, expected) in [
+            ("type::name", "name"),
+            ("type::vv_VAS", "vv_VAS"),
+            ("(type::name)", "name"),
+            ("receiver().name", "name"),
+        ] {
+            assert_eq!(
+                nameof_reference(&parse_expression(source).expr.unwrap()),
+                Some(expected)
+            );
         }
         let ast = dm_syntax::parse("/proc/test()\n    return nameof(type::vv_VAS)\n");
         let compiled = compile_simple_proc(&ast.items[0].children).unwrap();
-        assert_eq!(compiled.strings,["vv_VAS"]);
+        assert_eq!(compiled.strings, ["vv_VAS"]);
         assert!(compiled.class_paths.is_empty());
     }
 
     #[test]
     fn shifts_fold_native_unsigned_24_bit_values_and_leave_unsafe_cases_to_runtime() {
-        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/integer_shifts.native.bin")).unwrap();
-        let ast = dm_syntax::parse(include_str!("../../../fixtures/native_compiler/integer_shifts.dm"));
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/integer_shifts.native.bin"
+        ))
+        .unwrap();
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/integer_shifts.dm"
+        ));
         for id in 0..4 {
             let compiled = compile_simple_proc(&ast.items[id].children).unwrap();
-            assert_eq!(link_proc(&compiled.code,&Ledger::default()).unwrap().words,native.proc_code_words(id).unwrap());
+            assert_eq!(
+                link_proc(&compiled.code, &Ledger::default()).unwrap().words,
+                native.proc_code_words(id).unwrap()
+            );
         }
-        for source in ["1 << 32", "1 << -1", "1 >> 32", "1 >> -1", "1.#INF << 1", "2147483648 >> 1", "-2147483904 << 1", "5.5 >> 1", "1 << 1.5"] {
-            assert!(fold_number(&parse_expression(source).expr.unwrap()).is_none(), "{source}");
+        for source in [
+            "1 << 32",
+            "1 << -1",
+            "1 >> 32",
+            "1 >> -1",
+            "1.#INF << 1",
+            "2147483648 >> 1",
+            "-2147483904 << 1",
+            "5.5 >> 1",
+            "1 << 1.5",
+        ] {
+            assert!(
+                fold_number(&parse_expression(source).expr.unwrap()).is_none(),
+                "{source}"
+            );
         }
     }
 
     #[test]
     fn modulo_constant_folding_truncates_operands_like_native() {
-        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/integer_modulo.native.bin")).unwrap();
-        let ast = dm_syntax::parse(include_str!("../../../fixtures/native_compiler/integer_modulo.dm"));
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/integer_modulo.native.bin"
+        ))
+        .unwrap();
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/integer_modulo.dm"
+        ));
         for id in 0..3 {
             let compiled = compile_simple_proc(&ast.items[id].children).unwrap();
-            assert_eq!(link_proc(&compiled.code,&Ledger::default()).unwrap().words,native.proc_code_words(id).unwrap());
+            assert_eq!(
+                link_proc(&compiled.code, &Ledger::default()).unwrap().words,
+                native.proc_code_words(id).unwrap()
+            );
         }
-        for source in ["5 % 0.5", "-2147483648 % -1", "1.#INF % 2", "2147483648 % 2"] {
-            assert!(fold_number(&parse_expression(source).expr.unwrap()).is_none(), "{source}");
+        for source in [
+            "5 % 0.5",
+            "-2147483648 % -1",
+            "1.#INF % 2",
+            "2147483648 % 2",
+        ] {
+            assert!(
+                fold_number(&parse_expression(source).expr.unwrap()).is_none(),
+                "{source}"
+            );
         }
     }
 
     #[test]
     fn global_vars_builtin_does_not_alias_ordinary_vars_declarations() {
         let ast = dm_syntax::parse("/proc/test()\n    return vars + length(global.vars)\n");
-        let bindings = LowerBindings { globals: BTreeSet::from(["vars".into()]), ..Default::default() };
-        let compiled = compile_simple_proc_with_bindings(&ast.items[0].children,&bindings).unwrap();
+        let bindings = LowerBindings {
+            globals: BTreeSet::from(["vars".into()]),
+            ..Default::default()
+        };
+        let compiled =
+            compile_simple_proc_with_bindings(&ast.items[0].children, &bindings).unwrap();
         let mut references = Vec::new();
-        compiled.code.for_each_reference(|table,key| references.push((table,key.to_owned())));
-        assert_eq!(references,[(Table::Variable,"vars".into()),(Table::Variable,BUILTIN_GLOBAL_VARS_SYMBOL.into())]);
+        compiled
+            .code
+            .for_each_reference(|table, key| references.push((table, key.to_owned())));
+        assert_eq!(
+            references,
+            [
+                (Table::Variable, "vars".into()),
+                (Table::Variable, BUILTIN_GLOBAL_VARS_SYMBOL.into())
+            ]
+        );
         let mut ledger = Ledger::default();
-        ledger.bind(crate::Symbol::new(Table::Variable,"vars"),10).unwrap();
-        ledger.bind(crate::Symbol::new(Table::Variable,BUILTIN_GLOBAL_VARS_SYMBOL),177).unwrap();
-        let linked = link_proc(&compiled.code,&ledger).unwrap();
-        assert!(linked.words.windows(3).any(|words| words == [opcode::GET_VAR,0xffdb,10]));
-        assert!(linked.words.windows(3).any(|words| words == [opcode::GET_VAR,0xffdb,177]));
+        ledger
+            .bind(crate::Symbol::new(Table::Variable, "vars"), 10)
+            .unwrap();
+        ledger
+            .bind(
+                crate::Symbol::new(Table::Variable, BUILTIN_GLOBAL_VARS_SYMBOL),
+                177,
+            )
+            .unwrap();
+        let linked = link_proc(&compiled.code, &ledger).unwrap();
+        assert!(linked
+            .words
+            .windows(3)
+            .any(|words| words == [opcode::GET_VAR, 0xffdb, 10]));
+        assert!(linked
+            .words
+            .windows(3)
+            .any(|words| words == [opcode::GET_VAR, 0xffdb, 177]));
     }
 
     #[test]
     fn initial_globals_locals_and_parameters_match_native() {
-        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/global_initial.native.bin")).unwrap();
-        let ast = dm_syntax::parse(include_str!("../../../fixtures/native_compiler/global_initial.dm"));
-        for name in ["initial_global", "initial_global_qualified", "saved_global", "initial_local"] {
-            let item = ast.items.iter().find(|item| item.header.starts_with(&format!("/proc/{name}("))).unwrap();
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/global_initial.native.bin"
+        ))
+        .unwrap();
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/global_initial.dm"
+        ));
+        for name in [
+            "initial_global",
+            "initial_global_qualified",
+            "saved_global",
+            "initial_local",
+        ] {
+            let item = ast
+                .items
+                .iter()
+                .find(|item| item.header.starts_with(&format!("/proc/{name}(")))
+                .unwrap();
             let bindings = LowerBindings {
                 globals: BTreeSet::from(["initial_probe".into()]),
-                parameters: if name == "initial_local" { vec!["value".into()] } else { vec![] },
-                fields: if name == "initial_local" { BTreeSet::from(["local".into(), "value".into()]) } else { BTreeSet::new() },
+                parameters: if name == "initial_local" {
+                    vec!["value".into()]
+                } else {
+                    vec![]
+                },
+                fields: if name == "initial_local" {
+                    BTreeSet::from(["local".into(), "value".into()])
+                } else {
+                    BTreeSet::new()
+                },
                 ..Default::default()
             };
-            let compiled = compile_simple_proc_with_bindings(&item.children,&bindings).unwrap();
+            let compiled = compile_simple_proc_with_bindings(&item.children, &bindings).unwrap();
             let mut ledger = Ledger::default();
-            let id = native.variables.iter().position(|variable| native.string(variable.name) == Some(b"initial_probe")).unwrap();
-            ledger.bind(crate::Symbol::new(Table::Variable,"initial_probe"),id as u32).unwrap();
+            let id = native
+                .variables
+                .iter()
+                .position(|variable| native.string(variable.name) == Some(b"initial_probe"))
+                .unwrap();
+            ledger
+                .bind(
+                    crate::Symbol::new(Table::Variable, "initial_probe"),
+                    id as u32,
+                )
+                .unwrap();
             let path = format!("/proc/{name}");
-            let id = native.procs.iter().position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes())).unwrap();
-            assert_eq!(link_proc(&compiled.code,&ledger).unwrap().words,native.proc_code_words(id).unwrap());
+            let id = native
+                .procs
+                .iter()
+                .position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes()))
+                .unwrap();
+            assert_eq!(
+                link_proc(&compiled.code, &ledger).unwrap().words,
+                native.proc_code_words(id).unwrap()
+            );
         }
     }
 
     #[test]
     fn default_arguments_and_mutated_iteration_match_native() {
-        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/control_runtime.native.bin")).unwrap();
-        let ast = dm_syntax::parse(include_str!("../../../fixtures/native_compiler/control_runtime.dm"));
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/control_runtime.native.bin"
+        ))
+        .unwrap();
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/control_runtime.dm"
+        ));
         for (name, params, defaults) in [
-            ("control_defaults", vec!["a".into(),"b".into(),"c".into()], vec![Some("3".into()),Some("4".into()),Some("5".into())]),
+            (
+                "control_defaults",
+                vec!["a".into(), "b".into(), "c".into()],
+                vec![Some("3".into()), Some("4".into()), Some("5".into())],
+            ),
             ("control_iteration", vec![], vec![]),
         ] {
-            let item = ast.items.iter().find(|item| item.header.starts_with(&format!("/proc/{name}("))).unwrap();
-            let bindings = LowerBindings { parameters: params, parameter_defaults: defaults, global_procs: BTreeSet::from(["control_defaults".into()]), ..Default::default() };
-            let compiled = compile_simple_proc_with_bindings(&item.children,&bindings).unwrap();
+            let item = ast
+                .items
+                .iter()
+                .find(|item| item.header.starts_with(&format!("/proc/{name}(")))
+                .unwrap();
+            let bindings = LowerBindings {
+                parameters: params,
+                parameter_defaults: defaults,
+                global_procs: BTreeSet::from(["control_defaults".into()]),
+                ..Default::default()
+            };
+            let compiled = compile_simple_proc_with_bindings(&item.children, &bindings).unwrap();
             let mut ledger = Ledger::default();
             for key in &compiled.strings {
-                let id = native.strings.iter().position(|entry| entry.data == compiled.string_bytes(key)).unwrap();
-                ledger.bind(crate::Symbol::new(Table::String,key),id as u32).unwrap();
+                let id = native
+                    .strings
+                    .iter()
+                    .position(|entry| entry.data == compiled.string_bytes(key))
+                    .unwrap();
+                ledger
+                    .bind(crate::Symbol::new(Table::String, key), id as u32)
+                    .unwrap();
             }
-            let helper = native.procs.iter().position(|proc| native.string(proc.strings[0]) == Some(b"/proc/control_defaults")).unwrap();
-            ledger.bind(crate::Symbol::new(Table::Proc,"/proc/control_defaults"),helper as u32).unwrap();
+            let helper = native
+                .procs
+                .iter()
+                .position(|proc| native.string(proc.strings[0]) == Some(b"/proc/control_defaults"))
+                .unwrap();
+            ledger
+                .bind(
+                    crate::Symbol::new(Table::Proc, "/proc/control_defaults"),
+                    helper as u32,
+                )
+                .unwrap();
             let path = format!("/proc/{name}");
-            let id = native.procs.iter().position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes())).unwrap();
-            let linked = link_proc(&compiled.code,&ledger).unwrap();
-            assert_eq!(linked.words,native.proc_code_words(id).unwrap(),"{name}");
+            let id = native
+                .procs
+                .iter()
+                .position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes()))
+                .unwrap();
+            let linked = link_proc(&compiled.code, &ledger).unwrap();
+            assert_eq!(linked.words, native.proc_code_words(id).unwrap(), "{name}");
         }
     }
 
     #[test]
     fn short_circuit_index_assignments_preserve_receiver_cache_like_native() {
-        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/short_assignment.native.bin")).unwrap();
-        let ast = dm_syntax::parse(include_str!("../../../fixtures/native_compiler/short_assignment.dm"));
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/short_assignment.native.bin"
+        ))
+        .unwrap();
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/short_assignment.dm"
+        ));
         for id in 0..3 {
-            let compiled = compile_simple_proc_with_params(&ast.items[id].children, &["a".into(), "b".into()]).unwrap();
+            let compiled =
+                compile_simple_proc_with_params(&ast.items[id].children, &["a".into(), "b".into()])
+                    .unwrap();
             let linked = link_proc(&compiled.code, &Ledger::default()).unwrap();
-            assert_eq!(linked.words, native.proc_code_words(id).unwrap(), "proc {id}");
+            assert_eq!(
+                linked.words,
+                native.proc_code_words(id).unwrap(),
+                "proc {id}"
+            );
         }
-        for (name, params) in [("short_assignment_member", vec!["a".into(),"b".into()]), ("short_assignment_index_effects",vec!["a".into(),"b".into(),"count".into()])] {
-            let item = ast.items.iter().find(|item| item.header.starts_with(&format!("/proc/{name}("))).unwrap();
-            let bindings = LowerBindings { parameters: params, global_procs: BTreeSet::from(["assignment_receiver".into(),"assignment_index".into()]), ..Default::default() };
+        for (name, params) in [
+            ("short_assignment_member", vec!["a".into(), "b".into()]),
+            (
+                "short_assignment_index_effects",
+                vec!["a".into(), "b".into(), "count".into()],
+            ),
+        ] {
+            let item = ast
+                .items
+                .iter()
+                .find(|item| item.header.starts_with(&format!("/proc/{name}(")))
+                .unwrap();
+            let bindings = LowerBindings {
+                parameters: params,
+                global_procs: BTreeSet::from([
+                    "assignment_receiver".into(),
+                    "assignment_index".into(),
+                ]),
+                ..Default::default()
+            };
             let compiled = compile_simple_proc_with_bindings(&item.children, &bindings).unwrap();
             let mut ledger = Ledger::default();
             for key in &compiled.strings {
-                let id = native.strings.iter().position(|entry| entry.data == compiled.string_bytes(key)).unwrap();
-                ledger.bind(crate::Symbol::new(Table::String,key),id as u32).unwrap();
+                let id = native
+                    .strings
+                    .iter()
+                    .position(|entry| entry.data == compiled.string_bytes(key))
+                    .unwrap();
+                ledger
+                    .bind(crate::Symbol::new(Table::String, key), id as u32)
+                    .unwrap();
             }
-            for helper in ["assignment_receiver","assignment_index"] {
+            for helper in ["assignment_receiver", "assignment_index"] {
                 let path = format!("/proc/{helper}");
-                let id = native.procs.iter().position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes())).unwrap();
-                ledger.bind(crate::Symbol::new(Table::Proc,path),id as u32).unwrap();
+                let id = native
+                    .procs
+                    .iter()
+                    .position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes()))
+                    .unwrap();
+                ledger
+                    .bind(crate::Symbol::new(Table::Proc, path), id as u32)
+                    .unwrap();
             }
-            let linked = link_proc(&compiled.code,&ledger).unwrap();
+            let linked = link_proc(&compiled.code, &ledger).unwrap();
             let path = format!("/proc/{name}");
-            let id = native.procs.iter().position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes())).unwrap();
-            assert_eq!(linked.words,native.proc_code_words(id).unwrap(),"{path}");
+            let id = native
+                .procs
+                .iter()
+                .position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes()))
+                .unwrap();
+            assert_eq!(linked.words, native.proc_code_words(id).unwrap(), "{path}");
         }
     }
 
     #[test]
     fn procedure_and_verb_namespaces_are_native_strings() {
-        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/proc_namespace.native.bin")).unwrap();
-        let ast = dm_syntax::parse(include_str!("../../../fixtures/native_compiler/proc_namespace.dm"));
-        for (name, namespace) in [("proc_group", "proc"), ("verb_group", "verb"), ("proc_types", "proc"), ("verb_types", "verb")] {
-            let item = ast.items.iter().find(|item| item.header == format!("/proc/{name}()")).unwrap();
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/proc_namespace.native.bin"
+        ))
+        .unwrap();
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/proc_namespace.dm"
+        ));
+        for (name, namespace) in [
+            ("proc_group", "proc"),
+            ("verb_group", "verb"),
+            ("proc_types", "proc"),
+            ("verb_types", "verb"),
+        ] {
+            let item = ast
+                .items
+                .iter()
+                .find(|item| item.header == format!("/proc/{name}()"))
+                .unwrap();
             let compiled = compile_simple_proc(&item.children).unwrap();
             assert!(compiled.class_paths.is_empty());
             let path = format!("/datum/namespace_probe/{namespace}");
-            let string = native.strings.iter().position(|entry| entry.data == path.as_bytes()).unwrap();
+            let string = native
+                .strings
+                .iter()
+                .position(|entry| entry.data == path.as_bytes())
+                .unwrap();
             let mut ledger = Ledger::default();
-            ledger.bind(crate::Symbol::new(Table::String, path), string as u32).unwrap();
+            ledger
+                .bind(crate::Symbol::new(Table::String, path), string as u32)
+                .unwrap();
             let linked = link_proc(&compiled.code, &ledger).unwrap();
-            let proc = native.procs.iter().position(|proc| native.string(proc.strings[0]) == Some(format!("/proc/{name}").as_bytes())).unwrap();
+            let proc = native
+                .procs
+                .iter()
+                .position(|proc| {
+                    native.string(proc.strings[0]) == Some(format!("/proc/{name}").as_bytes())
+                })
+                .unwrap();
             assert_eq!(linked.words, native.proc_code_words(proc).unwrap());
         }
     }
 
     #[test]
     fn procedure_and_verb_constructors_use_native_proc_references() {
-        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/proc_namespace.native.bin")).unwrap();
-        let ast = dm_syntax::parse(include_str!("../../../fixtures/native_compiler/proc_namespace.dm"));
-        for (name, target, id) in [("new_verb", "/datum/namespace_probe/verb/third", 2), ("new_proc", "/datum/namespace_probe/proc/first", 0)] {
-            let item = ast.items.iter().find(|item| item.header == format!("/proc/{name}()")).unwrap();
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/proc_namespace.native.bin"
+        ))
+        .unwrap();
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/proc_namespace.dm"
+        ));
+        for (name, target, id) in [
+            ("new_verb", "/datum/namespace_probe/verb/third", 2),
+            ("new_proc", "/datum/namespace_probe/proc/first", 0),
+        ] {
+            let item = ast
+                .items
+                .iter()
+                .find(|item| item.header == format!("/proc/{name}()"))
+                .unwrap();
             let compiled = compile_simple_proc(&item.children).unwrap();
             assert!(compiled.class_paths.is_empty());
             let mut ledger = Ledger::default();
-            ledger.bind(crate::Symbol::new(Table::Proc, target), id).unwrap();
+            ledger
+                .bind(crate::Symbol::new(Table::Proc, target), id)
+                .unwrap();
             let linked = link_proc(&compiled.code, &ledger).unwrap();
-            let proc = native.procs.iter().position(|proc| native.string(proc.strings[0]) == Some(format!("/proc/{name}").as_bytes())).unwrap();
+            let proc = native
+                .procs
+                .iter()
+                .position(|proc| {
+                    native.string(proc.strings[0]) == Some(format!("/proc/{name}").as_bytes())
+                })
+                .unwrap();
             assert_eq!(linked.words, native.proc_code_words(proc).unwrap());
         }
     }
@@ -5400,19 +5843,44 @@ mod tests {
     fn modified_types_link_as_native_instances_in_literals_and_constructors() {
         let alias = "/datum/example/__dm_modified_123";
         let mut shared = SharedLowerBindings::default();
-        shared.modified_instances.insert(alias.into(), "/datum/example".into());
-        let bindings = LowerBindings { shared: Some(Arc::new(shared)), ..Default::default() };
-        let ast = dm_syntax::parse(&format!("/proc/example()\n    var/a = {alias}\n    return new {alias}()\n"));
-        let compiled = compile_simple_proc_with_bindings(&ast.items[0].children, &bindings).unwrap();
+        shared
+            .modified_instances
+            .insert(alias.into(), "/datum/example".into());
+        let bindings = LowerBindings {
+            shared: Some(Arc::new(shared)),
+            ..Default::default()
+        };
+        let ast = dm_syntax::parse(&format!(
+            "/proc/example()\n    var/a = {alias}\n    return new {alias}()\n"
+        ));
+        let compiled =
+            compile_simple_proc_with_bindings(&ast.items[0].children, &bindings).unwrap();
         assert!(compiled.class_paths.is_empty());
         assert_eq!(compiled.instance_paths, [alias]);
         let mut ledger = Ledger::default();
-        ledger.bind(crate::Symbol::new(Table::Instance, alias), 0x123456).unwrap();
+        ledger
+            .bind(crate::Symbol::new(Table::Instance, alias), 0x123456)
+            .unwrap();
         let linked = link_proc(&compiled.code, &ledger).unwrap();
-        assert_eq!(linked.words.windows(2).filter(|words| *words == [41 | (0x12 << 8), 0x3456]).count(), 2);
+        assert_eq!(
+            linked
+                .words
+                .windows(2)
+                .filter(|words| *words == [41 | (0x12 << 8), 0x3456])
+                .count(),
+            2
+        );
         let mut references = Vec::new();
-        compiled.code.for_each_reference(|table, key| references.push((table, key.to_owned())));
-        assert_eq!(references, vec![(Table::Instance, alias.into()), (Table::Instance, alias.into())]);
+        compiled
+            .code
+            .for_each_reference(|table, key| references.push((table, key.to_owned())));
+        assert_eq!(
+            references,
+            vec![
+                (Table::Instance, alias.into()),
+                (Table::Instance, alias.into())
+            ]
+        );
     }
 
     #[test]
@@ -5488,19 +5956,39 @@ mod tests {
     fn implicit_parent_forwarding_and_explicit_empty_arguments_match_native() {
         let source = include_str!("../../../fixtures/native_compiler/parent_forwarding.dm");
         let ast = dm_syntax::parse(source);
-        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/parent_forwarding.native.bin")).unwrap();
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/parent_forwarding.native.bin"
+        ))
+        .unwrap();
         for (owner, method, params) in [
             ("/datum/forwarding/child", "single", vec!["value".into()]),
-            ("/datum/forwarding/child", "multiple", vec!["a".into(), "b".into()]),
+            (
+                "/datum/forwarding/child",
+                "multiple",
+                vec!["a".into(), "b".into()],
+            ),
             ("/datum/forwarding/empty", "single", vec!["value".into()]),
         ] {
             let item = ast.items.iter().find(|item| item.header == owner).unwrap();
-            let body = &item.children.iter().find(|item| item.header.starts_with(&format!("{method}("))).unwrap().children;
+            let body = &item
+                .children
+                .iter()
+                .find(|item| item.header.starts_with(&format!("{method}(")))
+                .unwrap()
+                .children;
             let compiled = compile_simple_proc_with_params(body, &params).unwrap();
             let linked = link_proc(&compiled.code, &Ledger::default()).unwrap();
             let path = format!("{owner}/{method}");
-            let proc_id = native.procs.iter().position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes())).unwrap();
-            assert_eq!(linked.words, native.proc_code_words(proc_id).unwrap(), "{path}");
+            let proc_id = native
+                .procs
+                .iter()
+                .position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes()))
+                .unwrap();
+            assert_eq!(
+                linked.words,
+                native.proc_code_words(proc_id).unwrap(),
+                "{path}"
+            );
         }
     }
 
@@ -7768,7 +8256,10 @@ mod tests {
                     .unwrap();
             } else {
                 ledger
-                    .bind(crate::Symbol::new(Table::Variable, BUILTIN_GLOBAL_VARS_SYMBOL), 177)
+                    .bind(
+                        crate::Symbol::new(Table::Variable, BUILTIN_GLOBAL_VARS_SYMBOL),
+                        177,
+                    )
                     .unwrap();
             }
             let linked = link_proc(&compiled.code, &ledger).unwrap();
@@ -8827,137 +9318,318 @@ mod tests {
 
     #[test]
     fn bare_returns_end_native_frames_and_preserve_return_variable() {
-        let ast=dm_syntax::parse(include_str!("../../../fixtures/native_compiler/bare_return.dm"));
-        let native=byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/bare_return.native.bin")).unwrap();
-        for (index,item) in ast.items.iter().enumerate() {
-            let params=if index==2 {vec!["value".into()]} else {vec![]};
-            let compiled=compile_simple_proc_with_params(&item.children,&params).unwrap();
-            assert_eq!(link_proc(&compiled.code,&Ledger::default()).unwrap().words,native.proc_code_words(index).unwrap(),"proc {index}");
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/bare_return.dm"
+        ));
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/bare_return.native.bin"
+        ))
+        .unwrap();
+        for (index, item) in ast.items.iter().enumerate() {
+            let params = if index == 2 {
+                vec!["value".into()]
+            } else {
+                vec![]
+            };
+            let compiled = compile_simple_proc_with_params(&item.children, &params).unwrap();
+            assert_eq!(
+                link_proc(&compiled.code, &Ledger::default()).unwrap().words,
+                native.proc_code_words(index).unwrap(),
+                "proc {index}"
+            );
         }
     }
 
     #[test]
     fn predefined_exception_and_regex_macro_expansions_match_native() {
-        let native=byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/predefined_macros.native.bin")).unwrap();
-        let words=native.proc_code_words(0).unwrap();
-        let file=std::str::from_utf8(&native.strings[words[8] as usize].data).unwrap();
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/predefined_macros.native.bin"
+        ))
+        .unwrap();
+        let words = native.proc_code_words(0).unwrap();
+        let file = std::str::from_utf8(&native.strings[words[8] as usize].data).unwrap();
         let source=format!("/proc/e(message)\n    return new /exception(message, {}, 2)\n/proc/r(message)\n    return regex(message,1)\n/proc/rr(message)\n    return regex(message,2)\n",serde_json::to_string(file).unwrap());
-        let ast=dm_syntax::parse(&source);
-        for (index,item) in ast.items.iter().enumerate() {
-            let compiled=compile_simple_proc_with_params(&item.children,&["message".into()]).unwrap();
-            let mut ledger=Ledger::default();
-            ledger.bind(crate::Symbol::new(Table::Class,"/exception"),words[2]).unwrap();
+        let ast = dm_syntax::parse(&source);
+        for (index, item) in ast.items.iter().enumerate() {
+            let compiled =
+                compile_simple_proc_with_params(&item.children, &["message".into()]).unwrap();
+            let mut ledger = Ledger::default();
+            ledger
+                .bind(crate::Symbol::new(Table::Class, "/exception"), words[2])
+                .unwrap();
             for key in &compiled.strings {
-                let id=native.strings.iter().position(|s|s.data==compiled.string_bytes(key)).unwrap();
-                ledger.bind(crate::Symbol::new(Table::String,key),id as u32).unwrap();
+                let id = native
+                    .strings
+                    .iter()
+                    .position(|s| s.data == compiled.string_bytes(key))
+                    .unwrap();
+                ledger
+                    .bind(crate::Symbol::new(Table::String, key), id as u32)
+                    .unwrap();
             }
-            assert_eq!(link_proc(&compiled.code,&ledger).unwrap().words,native.proc_code_words(index).unwrap(),"proc {index}");
+            assert_eq!(
+                link_proc(&compiled.code, &ledger).unwrap().words,
+                native.proc_code_words(index).unwrap(),
+                "proc {index}"
+            );
         }
     }
 
     #[test]
     fn gradient_and_resource_output_forms_match_native() {
-        for (source,bytes) in [(include_str!("../../../fixtures/native_compiler/gradient_output.dm"),include_bytes!("../../../fixtures/native_compiler/gradient_output.native.bin").as_slice()),(include_str!("../../../fixtures/native_compiler/addtext_link.dm"),include_bytes!("../../../fixtures/native_compiler/addtext_link.native.bin").as_slice())] {
-            let ast=dm_syntax::parse(source);
-            let native=byond_dmb::dmb::Dmb::from_bytes(bytes).unwrap();
-            for (index,item) in ast.items.iter().enumerate() {
-                let header=&item.header;
-                let params=header.split_once('(').unwrap().1.trim_end_matches(')').split(',').map(|s|s.trim().to_owned()).collect::<Vec<_>>();
-                let compiled=compile_simple_proc_with_params(&item.children,&params).unwrap();
-                let mut ledger=Ledger::default();
+        for (source, bytes) in [
+            (
+                include_str!("../../../fixtures/native_compiler/gradient_output.dm"),
+                include_bytes!("../../../fixtures/native_compiler/gradient_output.native.bin")
+                    .as_slice(),
+            ),
+            (
+                include_str!("../../../fixtures/native_compiler/addtext_link.dm"),
+                include_bytes!("../../../fixtures/native_compiler/addtext_link.native.bin")
+                    .as_slice(),
+            ),
+        ] {
+            let ast = dm_syntax::parse(source);
+            let native = byond_dmb::dmb::Dmb::from_bytes(bytes).unwrap();
+            for (index, item) in ast.items.iter().enumerate() {
+                let header = &item.header;
+                let params = header
+                    .split_once('(')
+                    .unwrap()
+                    .1
+                    .trim_end_matches(')')
+                    .split(',')
+                    .map(|s| s.trim().to_owned())
+                    .collect::<Vec<_>>();
+                let compiled = compile_simple_proc_with_params(&item.children, &params).unwrap();
+                let mut ledger = Ledger::default();
                 for key in &compiled.strings {
-                    let id=native.strings.iter().position(|s|s.data==compiled.string_bytes(key)).unwrap();
-                    ledger.bind(crate::Symbol::new(Table::String,key),id as u32).unwrap();
+                    let id = native
+                        .strings
+                        .iter()
+                        .position(|s| s.data == compiled.string_bytes(key))
+                        .unwrap();
+                    ledger
+                        .bind(crate::Symbol::new(Table::String, key), id as u32)
+                        .unwrap();
                 }
-                assert_eq!(link_proc(&compiled.code,&ledger).unwrap().words,native.proc_code_words(index).unwrap(),"{}",item.header);
+                assert_eq!(
+                    link_proc(&compiled.code, &ledger).unwrap().words,
+                    native.proc_code_words(index).unwrap(),
+                    "{}",
+                    item.header
+                );
             }
         }
     }
 
     #[test]
     fn stat_panels_and_missile_statements_match_native() {
-        let ast=dm_syntax::parse(include_str!("../../../fixtures/native_compiler/stat_special.dm"));
-        let native=byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/stat_special.native.bin")).unwrap();
-        for (index,item) in ast.items.iter().enumerate() {
-            let params=match index {0|3=>vec!["a".into(),"b".into()],1|2=>vec!["a".into()],_=>vec!["a".into(),"b".into(),"c".into()]};
-            let compiled=compile_simple_proc_with_params(&item.children,&params).unwrap();
-            assert_eq!(link_proc(&compiled.code,&Ledger::default()).unwrap().words,native.proc_code_words(index).unwrap(),"proc {index}");
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/stat_special.dm"
+        ));
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/stat_special.native.bin"
+        ))
+        .unwrap();
+        for (index, item) in ast.items.iter().enumerate() {
+            let params = match index {
+                0 | 3 => vec!["a".into(), "b".into()],
+                1 | 2 => vec!["a".into()],
+                _ => vec!["a".into(), "b".into(), "c".into()],
+            };
+            let compiled = compile_simple_proc_with_params(&item.children, &params).unwrap();
+            assert_eq!(
+                link_proc(&compiled.code, &Ledger::default()).unwrap().words,
+                native.proc_code_words(index).unwrap(),
+                "proc {index}"
+            );
         }
     }
 
     #[test]
     fn savefile_read_evaluates_complex_destinations_after_reading() {
-        let ast=dm_syntax::parse(include_str!("../../../fixtures/native_compiler/input_complex.dm"));
-        let native=byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/input_complex.native.bin")).unwrap();
-        for (name,id,params) in [("/proc/read_index",6,vec!["S".into(),"L".into()]),("/proc/read_dynamic_field",8,vec!["S".into()])] {
-            let item=ast.items.iter().find(|item|item.header.starts_with(name)).unwrap();
-            let bindings=LowerBindings {parameters:params,global_procs:BTreeSet::from(["get_holder".into()]),..LowerBindings::default()};
-            let compiled=compile_simple_proc_with_bindings(&item.children,&bindings).unwrap();
-            let mut ledger=Ledger::default();
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/input_complex.dm"
+        ));
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/input_complex.native.bin"
+        ))
+        .unwrap();
+        for (name, id, params) in [
+            ("/proc/read_index", 6, vec!["S".into(), "L".into()]),
+            ("/proc/read_dynamic_field", 8, vec!["S".into()]),
+        ] {
+            let item = ast
+                .items
+                .iter()
+                .find(|item| item.header.starts_with(name))
+                .unwrap();
+            let bindings = LowerBindings {
+                parameters: params,
+                global_procs: BTreeSet::from(["get_holder".into()]),
+                ..LowerBindings::default()
+            };
+            let compiled = compile_simple_proc_with_bindings(&item.children, &bindings).unwrap();
+            let mut ledger = Ledger::default();
             for key in &compiled.strings {
-                let id=native.strings.iter().position(|s|s.data==compiled.string_bytes(key)).unwrap();
-                ledger.bind(crate::Symbol::new(Table::String,key),id as u32).unwrap();
+                let id = native
+                    .strings
+                    .iter()
+                    .position(|s| s.data == compiled.string_bytes(key))
+                    .unwrap();
+                ledger
+                    .bind(crate::Symbol::new(Table::String, key), id as u32)
+                    .unwrap();
             }
-            ledger.bind(crate::Symbol::new(Table::Proc,"/proc/get_holder"),7).unwrap();
-            assert_eq!(link_proc(&compiled.code,&ledger).unwrap().words,native.proc_code_words(id).unwrap(),"{name}");
+            ledger
+                .bind(crate::Symbol::new(Table::Proc, "/proc/get_holder"), 7)
+                .unwrap();
+            assert_eq!(
+                link_proc(&compiled.code, &ledger).unwrap().words,
+                native.proc_code_words(id).unwrap(),
+                "{name}"
+            );
         }
     }
 
     #[test]
     fn savefile_read_write_statements_preserve_index_context() {
-        let ast = dm_syntax::parse(include_str!("../../../fixtures/native_compiler/input_special.dm"));
-        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/input_special.native.bin")).unwrap();
-        for (index,item) in ast.items.iter().enumerate() {
-            let params = if index==2 {vec!["value".into()]} else {vec!["source".into(),"value".into()]};
-            let compiled = compile_simple_proc_with_params(&item.children,&params).unwrap();
-            let mut ledger=Ledger::default();
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/input_special.dm"
+        ));
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/input_special.native.bin"
+        ))
+        .unwrap();
+        for (index, item) in ast.items.iter().enumerate() {
+            let params = if index == 2 {
+                vec!["value".into()]
+            } else {
+                vec!["source".into(), "value".into()]
+            };
+            let compiled = compile_simple_proc_with_params(&item.children, &params).unwrap();
+            let mut ledger = Ledger::default();
             for key in &compiled.strings {
-                let id=native.strings.iter().position(|s|s.data==compiled.string_bytes(key)).unwrap();
-                ledger.bind(crate::Symbol::new(Table::String,key),id as u32).unwrap();
+                let id = native
+                    .strings
+                    .iter()
+                    .position(|s| s.data == compiled.string_bytes(key))
+                    .unwrap();
+                ledger
+                    .bind(crate::Symbol::new(Table::String, key), id as u32)
+                    .unwrap();
             }
-            let linked=link_proc(&compiled.code,&ledger).unwrap();
-            assert_eq!(linked.words,native.proc_code_words(index).unwrap(),"proc {index}");
+            let linked = link_proc(&compiled.code, &ledger).unwrap();
+            assert_eq!(
+                linked.words,
+                native.proc_code_words(index).unwrap(),
+                "proc {index}"
+            );
         }
     }
 
     #[test]
     fn output_statements_and_special_forms_match_native() {
-        let ast = dm_syntax::parse(include_str!("../../../fixtures/native_compiler/output_special.dm"));
-        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/output_special.native.bin")).unwrap();
-        for (index,item) in ast.items.iter().enumerate() {
-            let params = if matches!(index,2..=5) { vec!["target".into(),"value".into(), if index == 2 {"options"} else if index == 5 {"control"} else {"name"}.into()] } else { vec!["target".into(),"value".into()] };
-            let compiled = compile_simple_proc_with_params(&item.children,&params).unwrap();
-            let linked = link_proc(&compiled.code,&Ledger::default()).unwrap();
-            assert_eq!(linked.words,native.proc_code_words(index).unwrap(),"proc {index}");
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/output_special.dm"
+        ));
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/output_special.native.bin"
+        ))
+        .unwrap();
+        for (index, item) in ast.items.iter().enumerate() {
+            let params = if matches!(index, 2..=5) {
+                vec![
+                    "target".into(),
+                    "value".into(),
+                    if index == 2 {
+                        "options"
+                    } else if index == 5 {
+                        "control"
+                    } else {
+                        "name"
+                    }
+                    .into(),
+                ]
+            } else {
+                vec!["target".into(), "value".into()]
+            };
+            let compiled = compile_simple_proc_with_params(&item.children, &params).unwrap();
+            let linked = link_proc(&compiled.code, &Ledger::default()).unwrap();
+            assert_eq!(
+                linked.words,
+                native.proc_code_words(index).unwrap(),
+                "proc {index}"
+            );
         }
     }
 
     #[test]
     fn safe_postfix_guards_cover_indices_members_and_calls_but_stop_at_groups() {
-        let ast = dm_syntax::parse(include_str!("../../../fixtures/native_compiler/safe_postfix_chain/probe.dm"));
-        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/safe_postfix_chain/probe.native.bin")).unwrap();
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/safe_postfix_chain/probe.dm"
+        ));
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/safe_postfix_chain/probe.native.bin"
+        ))
+        .unwrap();
         for name in ["index_chain", "member_chain", "call_chain", "grouped_index"] {
             let path = format!("/proc/{name}");
-            let item = ast.items.iter().find(|item| item.header.starts_with(&format!("{path}("))).unwrap();
-            let compiled = compile_simple_proc_with_bindings(&item.children, &LowerBindings {
-                parameters: vec!["L".into()],
-                parameter_types: HashMap::from([("L".into(), "/datum/chain_probe".into())]),
-                global_procs: BTreeSet::from(["index_key".into()]),
-                ..LowerBindings::default()
-            }).unwrap();
+            let item = ast
+                .items
+                .iter()
+                .find(|item| item.header.starts_with(&format!("{path}(")))
+                .unwrap();
+            let compiled = compile_simple_proc_with_bindings(
+                &item.children,
+                &LowerBindings {
+                    parameters: vec!["L".into()],
+                    parameter_types: HashMap::from([("L".into(), "/datum/chain_probe".into())]),
+                    global_procs: BTreeSet::from(["index_key".into()]),
+                    ..LowerBindings::default()
+                },
+            )
+            .unwrap();
             let mut ledger = Ledger::default();
-            ledger.assign(Table::String, compiled.strings.clone()).unwrap();
-            ledger.assign(Table::Proc, ["/proc/index_key".into()]).unwrap();
+            ledger
+                .assign(Table::String, compiled.strings.clone())
+                .unwrap();
+            ledger
+                .assign(Table::Proc, ["/proc/index_key".into()])
+                .unwrap();
             let linked = link_proc(&compiled.code, &ledger).unwrap();
-            let id = native.procs.iter().position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes())).unwrap();
+            let id = native
+                .procs
+                .iter()
+                .position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes()))
+                .unwrap();
             for words in [&linked.words[..], native.proc_code_words(id).unwrap()] {
                 let decoded = byond_dmb::bytecode::decode(words).unwrap();
-                let guard = decoded.iter().find(|instruction| instruction.opcode == 317).unwrap();
+                let guard = decoded
+                    .iter()
+                    .find(|instruction| instruction.opcode == 317)
+                    .unwrap();
                 let target = guard.branch_targets().unwrap()[0] as usize;
                 if name == "grouped_index" {
-                    assert!(target <= decoded.iter().find(|instruction| instruction.opcode == opcode::LIST_GET).unwrap().offset);
+                    assert!(
+                        target
+                            <= decoded
+                                .iter()
+                                .find(|instruction| instruction.opcode == opcode::LIST_GET)
+                                .unwrap()
+                                .offset
+                    );
                 } else {
-                    assert_eq!(target, decoded.iter().find(|instruction| instruction.opcode == opcode::RET).unwrap().offset, "{name}");
+                    assert_eq!(
+                        target,
+                        decoded
+                            .iter()
+                            .find(|instruction| instruction.opcode == opcode::RET)
+                            .unwrap()
+                            .offset,
+                        "{name}"
+                    );
                 }
             }
         }
@@ -8965,58 +9637,119 @@ mod tests {
 
     #[test]
     fn renamed_verbs_use_native_verb_call_selectors() {
-        let ast = dm_syntax::parse(include_str!("../../../fixtures/native_compiler/verb_call_selectors/probe.dm"));
-        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/verb_call_selectors/probe.native.bin")).unwrap();
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/verb_call_selectors/probe.dm"
+        ));
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/verb_call_selectors/probe.native.bin"
+        ))
+        .unwrap();
         let owner = "/mob/selector_probe";
         let verb = "/mob/selector_probe/verb/halt_probe";
         let shared = Arc::new(SharedLowerBindings {
-            member_procs: HashMap::from([(owner.into(), HashMap::from([("halt_probe".into(), verb.into())]))]),
+            member_procs: HashMap::from([(
+                owner.into(),
+                HashMap::from([("halt_probe".into(), verb.into())]),
+            )]),
             ..SharedLowerBindings::default()
         });
         for (child, parameters) in [(1, vec![]), (2, vec!["M".into()])] {
-            let compiled = compile_simple_proc_with_bindings(&ast.items[0].children[child].children, &LowerBindings {
-                parameters,
-                parameter_types: HashMap::from([("M".into(), owner.into())]),
-                current_type_path: Some(owner.into()),
-                shared: Some(shared.clone()),
-                ..LowerBindings::default()
-            }).unwrap();
+            let compiled = compile_simple_proc_with_bindings(
+                &ast.items[0].children[child].children,
+                &LowerBindings {
+                    parameters,
+                    parameter_types: HashMap::from([("M".into(), owner.into())]),
+                    current_type_path: Some(owner.into()),
+                    shared: Some(shared.clone()),
+                    ..LowerBindings::default()
+                },
+            )
+            .unwrap();
             let mut ledger = Ledger::default();
             ledger.assign(Table::Proc, [verb.into()]).unwrap();
             let linked = link_proc(&compiled.code, &ledger).unwrap();
             assert!(linked.words.contains(&0xffe0));
             assert!(!linked.words.contains(&0xffdf));
-            let path = format!("{owner}/proc/{}", if child == 1 { "bare_probe" } else { "member_probe" });
-            let id = native.procs.iter().position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes())).unwrap();
-            assert!(native.proc_code_words(id).unwrap().contains(&if child == 1 { 0xffe0 } else { 0xffde }));
+            let path = format!(
+                "{owner}/proc/{}",
+                if child == 1 {
+                    "bare_probe"
+                } else {
+                    "member_probe"
+                }
+            );
+            let id = native
+                .procs
+                .iter()
+                .position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes()))
+                .unwrap();
+            assert!(native
+                .proc_code_words(id)
+                .unwrap()
+                .contains(&if child == 1 { 0xffe0 } else { 0xffde }));
         }
     }
 
     #[test]
     fn current_and_inherited_members_shadow_global_procedures() {
-        let ast = dm_syntax::parse(include_str!("../../../fixtures/native_compiler/member_global_shadowing/probe.dm"));
-        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/member_global_shadowing/probe.native.bin")).unwrap();
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/member_global_shadowing/probe.dm"
+        ));
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/member_global_shadowing/probe.native.bin"
+        ))
+        .unwrap();
         let shared = Arc::new(SharedLowerBindings {
             global_procs: BTreeSet::from(["collision".into()]),
-            known_member_procs: HashMap::from([("/datum/shadow".into(), BTreeSet::from(["collision".into()]))]),
+            known_member_procs: HashMap::from([(
+                "/datum/shadow".into(),
+                BTreeSet::from(["collision".into()]),
+            )]),
             parent_types: HashMap::from([("/datum/shadow/child".into(), "/datum/shadow".into())]),
             ..SharedLowerBindings::default()
         });
         for (index, owner, path, expected) in [
             (2, "/datum/shadow", "/datum/shadow/proc/probe", opcode::CALL),
-            (3, "/datum/shadow/child", "/datum/shadow/child/proc/inherited_probe", opcode::CALL),
-            (4, "/datum/shadow", "/datum/shadow/proc/explicit_global", opcode::CALL_GLOB),
+            (
+                3,
+                "/datum/shadow/child",
+                "/datum/shadow/child/proc/inherited_probe",
+                opcode::CALL,
+            ),
+            (
+                4,
+                "/datum/shadow",
+                "/datum/shadow/proc/explicit_global",
+                opcode::CALL_GLOB,
+            ),
         ] {
-            let compiled = compile_simple_proc_with_bindings(&ast.items[index].children, &LowerBindings {
-                current_type_path: Some(owner.into()),
-                shared: Some(shared.clone()),
-                ..LowerBindings::default()
-            }).unwrap();
-            let calls: Vec<_> = compiled.code.items.iter().filter_map(|item| match item {
-                CodeItem::Instruction(instruction) if matches!(instruction.opcode, opcode::CALL | opcode::CALL_GLOB) => Some(instruction.opcode),
-                _ => None,
-            }).collect();
-            let id = native.procs.iter().position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes())).unwrap();
+            let compiled = compile_simple_proc_with_bindings(
+                &ast.items[index].children,
+                &LowerBindings {
+                    current_type_path: Some(owner.into()),
+                    shared: Some(shared.clone()),
+                    ..LowerBindings::default()
+                },
+            )
+            .unwrap();
+            let calls: Vec<_> = compiled
+                .code
+                .items
+                .iter()
+                .filter_map(|item| match item {
+                    CodeItem::Instruction(instruction)
+                        if matches!(instruction.opcode, opcode::CALL | opcode::CALL_GLOB) =>
+                    {
+                        Some(instruction.opcode)
+                    }
+                    _ => None,
+                })
+                .collect();
+            let id = native
+                .procs
+                .iter()
+                .position(|proc| native.string(proc.strings[0]) == Some(path.as_bytes()))
+                .unwrap();
             assert_eq!(native.proc_code_words(id).unwrap()[0], expected, "{path}");
             assert_eq!(calls, vec![expected], "{path}");
         }
@@ -9025,47 +9758,102 @@ mod tests {
     #[test]
     fn bound_project_rejects_unknown_bare_calls_but_allows_dynamic_members() {
         let ast = dm_syntax::parse("/proc/probe(receiver)\n    missing_builtin()\n");
-        assert!(compile_simple_proc_with_params(&ast.items[0].children, &["receiver".into()]).is_ok());
-        let bindings = LowerBindings { parameters: vec!["receiver".into()], shared: Some(Arc::new(SharedLowerBindings::default())), ..LowerBindings::default() };
-        let errors = compile_simple_proc_with_bindings(&ast.items[0].children, &bindings).unwrap_err();
-        assert!(errors[0].reason.contains("unresolved unqualified procedure: missing_builtin"));
+        assert!(
+            compile_simple_proc_with_params(&ast.items[0].children, &["receiver".into()]).is_ok()
+        );
+        let bindings = LowerBindings {
+            parameters: vec!["receiver".into()],
+            shared: Some(Arc::new(SharedLowerBindings::default())),
+            ..LowerBindings::default()
+        };
+        let errors =
+            compile_simple_proc_with_bindings(&ast.items[0].children, &bindings).unwrap_err();
+        assert!(errors[0]
+            .reason
+            .contains("unresolved unqualified procedure: missing_builtin"));
         let dynamic = dm_syntax::parse("/proc/probe(receiver)\n    receiver.dynamic_method()\n");
         assert!(compile_simple_proc_with_bindings(&dynamic.items[0].children, &bindings).is_ok());
-        let inherited=dm_syntax::parse("/datum/child/proc/probe()\n    declared_method()\n");
-        let bindings=LowerBindings {
-            current_type_path:Some("/datum/child".into()),
-            shared:Some(Arc::new(SharedLowerBindings {
-                known_member_procs:HashMap::from([("/datum/parent".into(),BTreeSet::from(["declared_method".into()]))]),
-                parent_types:HashMap::from([("/datum/child".into(),"/datum/parent".into())]),
+        let inherited = dm_syntax::parse("/datum/child/proc/probe()\n    declared_method()\n");
+        let bindings = LowerBindings {
+            current_type_path: Some("/datum/child".into()),
+            shared: Some(Arc::new(SharedLowerBindings {
+                known_member_procs: HashMap::from([(
+                    "/datum/parent".into(),
+                    BTreeSet::from(["declared_method".into()]),
+                )]),
+                parent_types: HashMap::from([("/datum/child".into(), "/datum/parent".into())]),
                 ..SharedLowerBindings::default()
-            })),..LowerBindings::default()
+            })),
+            ..LowerBindings::default()
         };
-        let compiled=compile_simple_proc_with_bindings(&inherited.items[0].children,&bindings).unwrap();
+        let compiled =
+            compile_simple_proc_with_bindings(&inherited.items[0].children, &bindings).unwrap();
         assert!(compiled.strings.contains(&"declared method".into()));
     }
 
     #[test]
     fn crash_vector_and_variadic_text_comparisons_match_native() {
-        let ast = dm_syntax::parse(include_str!("../../../fixtures/native_compiler/special_builtins.dm"));
-        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/special_builtins.native.bin")).unwrap();
-        let parameters = [vec!["value"], vec![], vec!["a","b"], vec!["a","b","c"], vec!["a","b","c"], vec![], vec!["a","b","c"]];
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/special_builtins.dm"
+        ));
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/special_builtins.native.bin"
+        ))
+        .unwrap();
+        let parameters = [
+            vec!["value"],
+            vec![],
+            vec!["a", "b"],
+            vec!["a", "b", "c"],
+            vec!["a", "b", "c"],
+            vec![],
+            vec!["a", "b", "c"],
+        ];
         for (index, names) in parameters.iter().enumerate() {
-            let params = names.iter().map(|name| (*name).to_owned()).collect::<Vec<_>>();
-            let compiled = compile_simple_proc_with_params(&ast.items[index].children, &params).unwrap();
+            let params = names
+                .iter()
+                .map(|name| (*name).to_owned())
+                .collect::<Vec<_>>();
+            let compiled =
+                compile_simple_proc_with_params(&ast.items[index].children, &params).unwrap();
             let linked = link_proc(&compiled.code, &Ledger::default()).unwrap();
-            assert_eq!(linked.words, native.proc_code_words(index).unwrap(), "proc {index}");
+            assert_eq!(
+                linked.words,
+                native.proc_code_words(index).unwrap(),
+                "proc {index}"
+            );
         }
     }
 
     #[test]
     fn load_ext_and_handle_calls_match_native() {
-        let ast = dm_syntax::parse(include_str!("../../../fixtures/native_compiler/load_ext.dm"));
-        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!("../../../fixtures/native_compiler/load_ext.native.bin")).unwrap();
-        for (index, parameters) in [vec!["library", "function"], vec!["function", "value"], vec!["function", "values"]].iter().enumerate() {
-            let params = parameters.iter().map(|name| (*name).to_owned()).collect::<Vec<_>>();
-            let compiled = compile_simple_proc_with_params(&ast.items[index].children, &params).unwrap();
+        let ast = dm_syntax::parse(include_str!(
+            "../../../fixtures/native_compiler/load_ext.dm"
+        ));
+        let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_compiler/load_ext.native.bin"
+        ))
+        .unwrap();
+        for (index, parameters) in [
+            vec!["library", "function"],
+            vec!["function", "value"],
+            vec!["function", "values"],
+        ]
+        .iter()
+        .enumerate()
+        {
+            let params = parameters
+                .iter()
+                .map(|name| (*name).to_owned())
+                .collect::<Vec<_>>();
+            let compiled =
+                compile_simple_proc_with_params(&ast.items[index].children, &params).unwrap();
             let linked = link_proc(&compiled.code, &Ledger::default()).unwrap();
-            assert_eq!(linked.words, native.proc_code_words(index).unwrap(), "proc {index}");
+            assert_eq!(
+                linked.words,
+                native.proc_code_words(index).unwrap(),
+                "proc {index}"
+            );
         }
     }
 
@@ -9504,11 +10292,7 @@ mod tests {
             let linked = link_proc(&compiled.code, &Ledger::default()).unwrap();
             let decoded = byond_dmb::bytecode::decode(&linked.words).unwrap();
             assert!(decoded.iter().any(|instruction| instruction.opcode
-                == if control.contains("step") {
-                    0xff
-                } else {
-                    0xfd
-                }));
+                == if control.contains("step") { 0xff } else { 0xfd }));
             assert_eq!(compiled.local_count, 2);
         }
     }
@@ -10370,7 +11154,10 @@ mod tests {
     fn typed_null_global_member_bypasses_receiver() {
         let ast = dm_syntax::parse("/proc/test()\n    GLOB.shared = 9\n    return GLOB.shared\n");
         let shared = SharedLowerBindings {
-            member_globals: HashMap::from([("/datum/base".into(), HashMap::from([("shared".into(), "shared_slot".into())]))]),
+            member_globals: HashMap::from([(
+                "/datum/base".into(),
+                HashMap::from([("shared".into(), "shared_slot".into())]),
+            )]),
             parent_types: HashMap::from([("/datum/child".into(), "/datum/base".into())]),
             ..Default::default()
         };
@@ -10379,31 +11166,61 @@ mod tests {
             shared: Some(Arc::new(shared)),
             ..Default::default()
         };
-        let compiled = compile_simple_proc_with_bindings(&ast.items[0].children, &bindings).unwrap();
+        let compiled =
+            compile_simple_proc_with_bindings(&ast.items[0].children, &bindings).unwrap();
         let mut ledger = Ledger::default();
-        ledger.bind(crate::Symbol::new(Table::Variable, "shared_slot"), 68).unwrap();
+        ledger
+            .bind(crate::Symbol::new(Table::Variable, "shared_slot"), 68)
+            .unwrap();
         let linked = link_proc(&compiled.code, &ledger).unwrap();
-        assert_eq!(linked.words, [0x50, 9, 0x34, 0xffdb, 68, 0x33, 0xffdb, 68, 0x12, 0]);
+        assert_eq!(
+            linked.words,
+            [0x50, 9, 0x34, 0xffdb, 68, 0x33, 0xffdb, 68, 0x12, 0]
+        );
     }
     #[test]
     fn computed_global_member_rejects_untyped_instance_collision() {
         let ast = dm_syntax::parse("/proc/test()\n    return get_holder().shared\n");
         for collision in [false, true] {
             let mut shared = SharedLowerBindings {
-                member_globals: HashMap::from([("/datum/base".into(), HashMap::from([("shared".into(), "shared_slot".into())]))]),
-                known_member_fields: HashMap::from([("/datum/base".into(), BTreeSet::from(["shared".into()]))]),
+                member_globals: HashMap::from([(
+                    "/datum/base".into(),
+                    HashMap::from([("shared".into(), "shared_slot".into())]),
+                )]),
+                known_member_fields: HashMap::from([(
+                    "/datum/base".into(),
+                    BTreeSet::from(["shared".into()]),
+                )]),
                 ..Default::default()
             };
-            if collision { shared.known_member_fields.insert("/datum/other".into(), BTreeSet::from(["shared".into()])); }
-            let bindings = LowerBindings { global_procs: BTreeSet::from(["get_holder".into()]), shared: Some(Arc::new(shared)), ..Default::default() };
-            let compiled = compile_simple_proc_with_bindings(&ast.items[0].children, &bindings).unwrap();
+            if collision {
+                shared
+                    .known_member_fields
+                    .insert("/datum/other".into(), BTreeSet::from(["shared".into()]));
+            }
+            let bindings = LowerBindings {
+                global_procs: BTreeSet::from(["get_holder".into()]),
+                shared: Some(Arc::new(shared)),
+                ..Default::default()
+            };
+            let compiled =
+                compile_simple_proc_with_bindings(&ast.items[0].children, &bindings).unwrap();
             let mut ledger = Ledger::default();
-            ledger.bind(crate::Symbol::new(Table::Proc, "/proc/get_holder"), 1).unwrap();
-            ledger.bind(crate::Symbol::new(Table::Variable, "shared_slot"), 67).unwrap();
-            ledger.bind(crate::Symbol::new(Table::String, "shared"), 437).unwrap();
+            ledger
+                .bind(crate::Symbol::new(Table::Proc, "/proc/get_holder"), 1)
+                .unwrap();
+            ledger
+                .bind(crate::Symbol::new(Table::Variable, "shared_slot"), 67)
+                .unwrap();
+            ledger
+                .bind(crate::Symbol::new(Table::String, "shared"), 437)
+                .unwrap();
             let words = link_proc(&compiled.code, &ledger).unwrap().words;
-            if collision { assert_eq!(words, [0x30,0,1,0x34,0xffd8,0x33,437,0x12,0]); }
-            else { assert_eq!(words, [0x30,0,1,0x34,0xffd8,0x33,0xffdb,67,0x12,0]); }
+            if collision {
+                assert_eq!(words, [0x30, 0, 1, 0x34, 0xffd8, 0x33, 437, 0x12, 0]);
+            } else {
+                assert_eq!(words, [0x30, 0, 1, 0x34, 0xffd8, 0x33, 0xffdb, 67, 0x12, 0]);
+            }
         }
     }
     #[test]
@@ -10411,7 +11228,9 @@ mod tests {
         let ast = dm_syntax::parse("/proc/test()\n    while(1)\n        var/datum/best\n        best = src\n        break\n");
         let compiled = compile_simple_proc(&ast.items[0].children).unwrap();
         let words = link_proc(&compiled.code, &Ledger::default()).unwrap().words;
-        assert!(words.windows(6).any(|window| window == [0x60,0,0,0x34,0xffda,0]));
+        assert!(words
+            .windows(6)
+            .any(|window| window == [0x60, 0, 0, 0x34, 0xffda, 0]));
     }
     #[test]
     fn break_inside_switch_exits_enclosing_loop() {
@@ -10419,36 +11238,59 @@ mod tests {
         let compiled = compile_simple_proc(&ast.items[0].children).unwrap();
         let linked = link_proc(&compiled.code, &Ledger::default()).unwrap();
         let decoded = byond_dmb::bytecode::decode(&linked.words).unwrap();
-        let loop_exit = decoded.iter().find(|instruction| instruction.opcode == opcode::JZ).unwrap().operands[0];
-        assert!(decoded.iter().filter(|instruction| instruction.opcode == opcode::JMP).any(|instruction| instruction.operands[0] == loop_exit));
+        let loop_exit = decoded
+            .iter()
+            .find(|instruction| instruction.opcode == opcode::JZ)
+            .unwrap()
+            .operands[0];
+        assert!(decoded
+            .iter()
+            .filter(|instruction| instruction.opcode == opcode::JMP)
+            .any(|instruction| instruction.operands[0] == loop_exit));
     }
     #[test]
     fn typed_obj_iterator_filters_subtypes_after_domain_mask() {
-        let ast = dm_syntax::parse("/proc/test()\n    for(var/obj/firedoor/F in src)\n        return F\n");
+        let ast = dm_syntax::parse(
+            "/proc/test()\n    for(var/obj/firedoor/F in src)\n        return F\n",
+        );
         let compiled = compile_simple_proc(&ast.items[0].children).unwrap();
         let mut ledger = Ledger::default();
-        ledger.bind(crate::Symbol::new(Table::Class, "/obj/firedoor"), 1).unwrap();
+        ledger
+            .bind(crate::Symbol::new(Table::Class, "/obj/firedoor"), 1)
+            .unwrap();
         let linked = link_proc(&compiled.code, &ledger).unwrap();
         let instructions = byond_dmb::bytecode::decode(&linked.words).unwrap();
-        assert!(instructions.iter().any(|instruction| instruction.opcode == 0x7d));
-        assert!(instructions.iter().any(|instruction| instruction.opcode == opcode::ITER_LOAD && instruction.operands == [5,2]));
+        assert!(instructions
+            .iter()
+            .any(|instruction| instruction.opcode == 0x7d));
+        assert!(instructions
+            .iter()
+            .any(|instruction| instruction.opcode == opcode::ITER_LOAD
+                && instruction.operands == [5, 2]));
     }
     #[test]
     fn locate_in_returns_object_instead_of_membership_boolean() {
         let ast = dm_syntax::parse("/proc/test(L)\n    return locate(/datum/coil) in L\n");
-        let compiled = compile_simple_proc_with_params(&ast.items[0].children, &["L".into()]).unwrap();
+        let compiled =
+            compile_simple_proc_with_params(&ast.items[0].children, &["L".into()]).unwrap();
         let mut ledger = Ledger::default();
-        ledger.bind(crate::Symbol::new(Table::Class, "/datum/coil"), 0).unwrap();
+        ledger
+            .bind(crate::Symbol::new(Table::Class, "/datum/coil"), 0)
+            .unwrap();
         let words = link_proc(&compiled.code, &ledger).unwrap().words;
-        assert_eq!(words, [0x60,32,0,0x33,0xffd9,0,0x97,0x12,0]);
+        assert_eq!(words, [0x60, 32, 0, 0x33, 0xffd9, 0, 0x97, 0x12, 0]);
     }
 
     #[test]
     fn pick_prob_syntax_uses_numeric_weight_without_probability_call() {
         for (bare, sugar) in [("1", "prob(1)"), ("weight", "prob(weight)")] {
             let compile = |weight: &str| {
-                let ast = dm_syntax::parse(&format!("/proc/test(weight)\n    return pick({weight};7, {weight};9)\n"));
-                let compiled = compile_simple_proc_with_params(&ast.items[0].children, &["weight".into()]).unwrap();
+                let ast = dm_syntax::parse(&format!(
+                    "/proc/test(weight)\n    return pick({weight};7, {weight};9)\n"
+                ));
+                let compiled =
+                    compile_simple_proc_with_params(&ast.items[0].children, &["weight".into()])
+                        .unwrap();
                 link_proc(&compiled.code, &Ledger::default()).unwrap().words
             };
             assert_eq!(compile(bare), compile(sugar));
@@ -10459,14 +11301,26 @@ mod tests {
     fn negation_wraps_locate_in_clause_only_without_parentheses() {
         let compile = |expression: &str| {
             let ast = dm_syntax::parse(&format!("/proc/test(L)\n    return {expression}\n"));
-            let compiled = compile_simple_proc_with_params(&ast.items[0].children, &["L".into()]).unwrap();
+            let compiled =
+                compile_simple_proc_with_params(&ast.items[0].children, &["L".into()]).unwrap();
             let mut ledger = Ledger::default();
-            ledger.bind(crate::Symbol::new(Table::Class, "/datum/coil"), 0).unwrap();
+            ledger
+                .bind(crate::Symbol::new(Table::Class, "/datum/coil"), 0)
+                .unwrap();
             link_proc(&compiled.code, &ledger).unwrap().words
         };
-        assert_eq!(compile("!locate(/datum/coil) in L"), [0x60,32,0,0x33,0xffd9,0,0x97,0x0e,0x12,0]);
-        assert_eq!(compile("!!locate(/datum/coil) in L"), [0x60,32,0,0x33,0xffd9,0,0x97,0x0e,0x0e,0x12,0]);
-        assert_eq!(compile("(!locate(/datum/coil)) in L"), [0x33,0xffd9,0,0x60,32,0,0x5b,0x0e,0xa9,5,0x36,0x12,0]);
+        assert_eq!(
+            compile("!locate(/datum/coil) in L"),
+            [0x60, 32, 0, 0x33, 0xffd9, 0, 0x97, 0x0e, 0x12, 0]
+        );
+        assert_eq!(
+            compile("!!locate(/datum/coil) in L"),
+            [0x60, 32, 0, 0x33, 0xffd9, 0, 0x97, 0x0e, 0x0e, 0x12, 0]
+        );
+        assert_eq!(
+            compile("(!locate(/datum/coil)) in L"),
+            [0x33, 0xffd9, 0, 0x60, 32, 0, 0x5b, 0x0e, 0xa9, 5, 0x36, 0x12, 0]
+        );
         assert!(!compile("!1 in list(2)").contains(&0x97));
     }
 
@@ -10474,8 +11328,16 @@ mod tests {
     fn numeric_range_binding_matches_native_iteration_state() {
         let source = "/proc/test(low, high)\n    var/i = 99\n    for(i in low to high)\n        i += 10\n    return i\n";
         let ast = dm_syntax::parse(source);
-        let compiled = compile_simple_proc_with_params(&ast.items[0].children, &["low".into(), "high".into()]).unwrap();
+        let compiled =
+            compile_simple_proc_with_params(&ast.items[0].children, &["low".into(), "high".into()])
+                .unwrap();
         let words = link_proc(&compiled.code, &Ledger::default()).unwrap().words;
-        assert_eq!(words, [0x50,99,0x34,0xffda,0,0x33,0xffd9,0,0x33,0xffd9,1,0xfc,0xfd,23,0xffda,0,0x50,10,0x45,0xffda,0,0xf8,12,0xfb,2,0x33,0xffda,0,0x12,0]);
+        assert_eq!(
+            words,
+            [
+                0x50, 99, 0x34, 0xffda, 0, 0x33, 0xffd9, 0, 0x33, 0xffd9, 1, 0xfc, 0xfd, 23,
+                0xffda, 0, 0x50, 10, 0x45, 0xffda, 0, 0xf8, 12, 0xfb, 2, 0x33, 0xffda, 0, 0x12, 0
+            ]
+        );
     }
 }

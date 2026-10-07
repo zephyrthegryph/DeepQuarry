@@ -11,8 +11,8 @@ pub use symbols::{SymbolCollision, SymbolId, SymbolTable};
 mod declarations;
 pub use declarations::{
     ArrayDeclaration, DeclarationMeaning, DeclaredTypeKnowledge, ExpressionToken, OpaqueFieldBase,
-    Parameter, ProcedureMetadata, ProcedureSetting, ProcedureSignature, SemanticValue,
-    SettingOperation, SymbolicExpression,
+    Parameter, ProcedureMetadata, ProcedureSetting, ProcedureSettingNode, ProcedureSignature,
+    SemanticValue, SettingOperation, SymbolicExpression,
 };
 
 mod resolver;

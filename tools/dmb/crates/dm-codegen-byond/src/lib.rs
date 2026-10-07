@@ -16,10 +16,11 @@ pub mod encoder;
 pub use encoder::{freeze_proc, FreezeError, FrozenProc, OperandEncoding, OperandSite};
 mod simple;
 pub mod lower_resolver;
+pub mod procedure_abi;
 pub use lower_resolver::ProcedureInputs;
 pub use simple::{
     compile_simple_proc, compile_simple_proc_with_bindings, compile_simple_proc_with_params,
-    compile_simple_proc_with_resolver,
+    compile_simple_proc_with_resolver, compile_simple_proc_with_resolver_and_debug, DebugSourceProvider,
     decode_constant_string_literal, nameof_reference, ArgumentMetadata, LowerBindings, LowerError,
     SharedLowerBindings, SimpleProc,
 };
@@ -54,6 +55,8 @@ impl Symbol {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Word {
     Immediate(u32),
+    SourceFile(u32),
+    SourceLine(u32),
     Reference(Symbol),
     /// Absolute word offset within this procedure's code list.
     Branch(String),
@@ -272,6 +275,7 @@ pub enum LinkError {
     MissingLabel(String),
     MissingSymbol(Symbol),
     OffsetOverflow,
+    MissingDebugOrigin(u32),
     Decode(String),
     InstructionBoundary { expected: usize, decoded: usize },
     BranchOperandIsNotTarget { offset: usize },

@@ -53,6 +53,9 @@ fn top_level_tokens(text: &str) -> Vec<(String, Span)> {
     result
 }
 fn parameter(text: &str, start: usize, symbols: &mut SymbolTable) -> Result<Parameter, String> {
+    if !dm_syntax::lex_spans(text).diagnostics.is_empty() {
+        return Err("invalid procedure argument tokens".into());
+    }
     let top = top_level_tokens(text);
     let equal = dm_syntax::top_level_assignment_index(text);
     let annotation = top
@@ -74,20 +77,41 @@ fn parameter(text: &str, start: usize, symbols: &mut SymbolTable) -> Result<Para
         .copied()
         .min()
         .unwrap_or(text.len());
-    let declaration = text[..name_end].trim().trim_start_matches("var/");
-    let parts: Vec<_> = declaration.trim_matches('/').split('/').collect();
+    let declaration = text[..name_end].trim().trim_start_matches('/');
+    let declaration = declaration.strip_prefix("var/").unwrap_or(declaration);
+    let path = declaration.split('[').next().unwrap().trim();
+    let parts: Vec<_> = path.trim_matches('/').split('/').map(str::trim).collect();
     let name = parts.last().copied().unwrap_or("");
-    let name = name.split('[').next().unwrap().trim();
-    if name.is_empty() {
-        return Err("procedure argument has no name".into());
+    if parts.iter().any(|part| {
+        let tokens = dm_syntax::lex_spans(part);
+        tokens.tokens.len() != 1 || tokens.tokens[0].kind != TokenKind::Ident
+    }) {
+        return Err("unsupported procedure argument declaration path".into());
     }
-    let declared_type = if parts.len() > 1 {
-        Some(intern(
-            symbols,
-            &format!("/{}", parts[..parts.len() - 1].join("/")),
-        )?)
-    } else {
+    let mut flags = 0;
+    let mut type_parts = Vec::new();
+    for part in &parts[..parts.len() - 1] {
+        flags |= match *part {
+            "static" => 1,
+            "const" => 2,
+            "tmp" => 4,
+            "global" => 8,
+            _ => {
+                type_parts.push(*part);
+                0
+            }
+        };
+    }
+    let element_type = if type_parts.is_empty() {
         None
+    } else {
+        Some(intern(symbols, &format!("/{}", type_parts.join("/")))?)
+    };
+    let array = parse_array(declaration, element_type, symbols)?;
+    let declared_type = if array.is_some() {
+        Some(intern(symbols, "/list")?)
+    } else {
+        element_type
     };
     fn end(positions: &[Option<usize>], start: usize, len: usize) -> usize {
         positions
@@ -125,6 +149,8 @@ fn parameter(text: &str, start: usize, symbols: &mut SymbolTable) -> Result<Para
     Ok(Parameter {
         name: intern(symbols, name)?,
         declared_type,
+        flags,
+        array,
         default,
         input_annotation,
         source_expression,
@@ -231,10 +257,23 @@ pub(crate) fn parse_array(
     symbols: &mut SymbolTable,
 ) -> Result<Option<std::sync::Arc<dm_ir::ArrayDeclaration>>, String> {
     let tokens = dm_syntax::lex(declaration);
+    if !tokens.diagnostics.is_empty() {
+        return Err("invalid array declaration tokens".into());
+    }
     let mut depth = 0;
     let mut start = None;
     let mut dimensions = Vec::new();
     for token in tokens.tokens {
+        if depth == 0
+            && !dimensions.is_empty()
+            && token.text != "["
+            && !matches!(
+                token.kind,
+                TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
+            )
+        {
+            return Err("unsupported text after array declaration".into());
+        }
         match token.text.as_str() {
             "[" => {
                 if depth == 0 {
@@ -275,6 +314,69 @@ pub(crate) fn parse_array(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn argument_modifiers_arrays_defaults_and_sources_are_retained() {
+        let mut symbols = SymbolTable::default();
+        let signature = parse_signature(
+            "var/tmp/const/datum/item/items[2][] = list() as anything in world, static/value = 3",
+            "",
+            &mut symbols,
+        )
+        .unwrap();
+        let parameter = &signature.parameters[0];
+        assert_eq!(parameter.flags, 2 | 4);
+        assert_eq!(parameter.declared_type, Some(SymbolId::of("/list")));
+        let array = parameter.array.as_ref().unwrap();
+        assert_eq!(array.element_type, Some(SymbolId::of("/datum/item")));
+        assert_eq!(array.dimensions.len(), 2);
+        assert!(array.dimensions[0].is_some());
+        assert!(array.dimensions[1].is_none());
+        assert!(parameter.default.is_some());
+        assert!(parameter.input_annotation.is_some());
+        assert!(parameter.source_expression.is_some());
+        assert_eq!(signature.parameters[1].flags, 1);
+        assert_eq!(signature.parameters[1].declared_type, None);
+        let plain = parse_signature("value", "", &mut symbols).unwrap();
+        let temporary = parse_signature("tmp/value", "", &mut symbols).unwrap();
+        let unsized_array = parse_signature("value[]", "", &mut symbols).unwrap();
+        let sized = parse_signature("value[2]", "", &mut symbols).unwrap();
+        assert_ne!(plain.canonical_bytes(), temporary.canonical_bytes());
+        assert_ne!(unsized_array.canonical_bytes(), sized.canonical_bytes());
+    }
+    #[test]
+    fn argument_array_paths_do_not_consume_dimension_paths_or_trailing_junk() {
+        let mut symbols = SymbolTable::default();
+        let signature =
+            parse_signature("datum/item/items[length(/datum/item)]", "", &mut symbols).unwrap();
+        assert_eq!(signature.parameters[0].name, SymbolId::of("items"));
+        assert_eq!(
+            signature.parameters[0].array.as_ref().unwrap().element_type,
+            Some(SymbolId::of("/datum/item"))
+        );
+        for argument in [
+            "value[2] garbage",
+            "datum//value",
+            "value[",
+            "value]",
+            "value[-\"",
+        ] {
+            assert!(
+                parse_signature(argument, "", &mut symbols).is_err(),
+                "{argument}"
+            );
+        }
+    }
+    #[test]
+    fn trailing_argument_path_separator_preserves_name_and_type() {
+        let mut symbols = SymbolTable::default();
+        let signature = parse_signature("obj/instance/", "", &mut symbols).unwrap();
+        assert_eq!(signature.parameters[0].name, SymbolId::of("instance"));
+        assert_eq!(
+            signature.parameters[0].declared_type,
+            Some(SymbolId::of("/obj"))
+        );
+        assert!(signature.parameters[0].array.is_none());
+    }
     #[test]
     fn typed_default_input_and_source_are_separate() {
         let mut symbols = SymbolTable::default();

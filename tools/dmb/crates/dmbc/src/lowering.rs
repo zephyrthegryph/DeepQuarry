@@ -1,6 +1,8 @@
 //! Bounded cold procedure driver. ABI interpretation remains an explicit policy.
+use crate::debug_sources::{DebugOrigins, FrontendDebugProvider};
+use crate::procedure_policy::{AbiContext, PreparedAbi, PreparedUnit};
 use dm_codegen_byond::lower_resolver::ResolverProc;
-use dm_codegen_byond::{compile_simple_proc_with_resolver, ProcedureInputs};
+use dm_codegen_byond::{compile_simple_proc_with_resolver_and_debug, ProcedureInputs};
 use dm_ir::{ProcedureMetadata, Resolver, SymbolId, SymbolTable};
 use dm_tree::{
     frontend::{BodyOccurrence, ColdFrontend, DiagnosticKind, SourceLocation},
@@ -30,6 +32,16 @@ pub trait AbiPolicy: Sync {
         symbols: &SymbolTable,
         origin: &SourceLocation,
     ) -> Result<ProcedureInputs, String>;
+    /// Existing local-only policies are deliberately unauthoritative for DMB output.
+    fn prepare(
+        &self,
+        metadata: &ProcedureMetadata,
+        parsed: &dm_syntax::Item,
+        context: &AbiContext<'_>,
+    ) -> Result<PreparedUnit, String> {
+        self.inputs(context.identity, metadata, context.symbols, context.origin)
+            .map(|inputs| PreparedUnit::local_only(inputs, parsed))
+    }
 }
 #[derive(Clone, Copy, Debug)]
 pub struct LoweringConfig {
@@ -49,6 +61,8 @@ pub struct LoweredUnit {
     pub origin: BodyOccurrence,
     pub code: ResolverProc,
     pub metadata: Arc<ProcedureMetadata>,
+    pub abi: Option<Arc<PreparedAbi>>,
+    pub debug_origins: DebugOrigins,
 }
 #[derive(Clone, Debug)]
 pub struct LoweringDiagnostic {
@@ -169,19 +183,38 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
         namespace,
         occurrence,
     };
-    let unsupported = |message| vec![LoweringDiagnostic {
-        kind: DiagnosticKind::UnsupportedModel,
-        identity: Some(identity),
-        origin: body.source.clone(),
-        message,
-    }];
-    let metadata = node.metadata.procedure.as_ref().ok_or_else(|| {
-        unsupported("procedure signature metadata unsupported".into())
-    })?;
+    let unsupported = |message| {
+        vec![LoweringDiagnostic {
+            kind: DiagnosticKind::UnsupportedModel,
+            identity: Some(identity),
+            origin: body.source.clone(),
+            message,
+        }]
+    };
+    let metadata = node
+        .metadata
+        .procedure
+        .as_ref()
+        .ok_or_else(|| unsupported("procedure signature metadata unsupported".into()))?;
     let symbols = tree.symbols();
-    let mut inputs = policy
-        .inputs(identity, metadata, symbols, &body.source)
+    let parsed = frontend.body(body).map_err(|diagnostic| {
+        vec![LoweringDiagnostic {
+            kind: diagnostic.kind,
+            identity: Some(identity),
+            origin: diagnostic.location.unwrap_or_else(|| body.source.clone()),
+            message: diagnostic.message,
+        }]
+    })?;
+    let context = AbiContext {
+        identity,
+        symbols,
+        origin: &body.source,
+        resolver: host,
+    };
+    let prepared = policy
+        .prepare(metadata, &parsed, &context)
         .map_err(unsupported)?;
+    let mut inputs = prepared.inputs;
     let owner_text = symbols
         .text(owner)
         .ok_or_else(|| error(Some(identity), "owner spelling missing".into()))?;
@@ -199,43 +232,63 @@ fn lower_one<R: Resolver, P: AbiPolicy>(
         },
         name
     ));
-    let parsed = frontend
-        .body(body)
-        .map_err(|diagnostic| vec![LoweringDiagnostic {
-            kind: diagnostic.kind,
-            identity: Some(identity),
-            origin: diagnostic.location.unwrap_or_else(|| body.source.clone()),
-            message: diagnostic.message,
-        }])?;
-    let code = compile_simple_proc_with_resolver(&parsed.children, &inputs, symbols, host)
-        .map_err(|errors| {
-            errors
-                .into_iter()
-                .map(|e| LoweringDiagnostic {
-                    // Legacy lower errors do not yet carry a typed source/model
-                    // distinction. Do not misreport an unimplemented opcode or
-                    // resolver meaning as an invalid user program.
-                    kind: DiagnosticKind::UnsupportedModel,
-                    identity: Some(identity),
-                    origin: body.source.clone(),
-                    message: if e.statement.is_empty() {
-                        e.reason
-                    } else {
-                        format!("{}: {}", e.statement, e.reason)
-                    },
-                })
-                .collect::<Vec<_>>()
-        })?;
+    let debug = FrontendDebugProvider::new(frontend, parsed.header_span.start);
+    let code = compile_simple_proc_with_resolver_and_debug(
+        &prepared.executable_body,
+        &inputs,
+        symbols,
+        host,
+        Some(&debug),
+    )
+    .map_err(|errors| {
+        errors
+            .into_iter()
+            .map(|e| LoweringDiagnostic {
+                // Legacy lower errors do not yet carry a typed source/model
+                // distinction. Do not misreport an unimplemented opcode or
+                // resolver meaning as an invalid user program.
+                kind: DiagnosticKind::UnsupportedModel,
+                identity: Some(identity),
+                origin: body.source.clone(),
+                message: if e.statement.is_empty() {
+                    e.reason
+                } else {
+                    format!("{}: {}", e.statement, e.reason)
+                },
+            })
+            .collect::<Vec<_>>()
+    })?;
     Ok(LoweredUnit {
         identity,
         origin: body.clone(),
         code,
         metadata: Arc::clone(metadata),
+        abi: prepared.abi,
+        debug_origins: debug.finish(),
     })
 }
 /// A deterministic identity index for subsequent linking; duplicate structural
 /// identities are a driver/model error, never silently overwritten.
 impl LoweringBatch {
+    /// Symbolic-only lowering may use local policies. Full output must have
+    /// authoritative metadata and actual linked argument-source artifacts.
+    pub fn require_production_abi(&self) -> Result<(), String> {
+        for unit in &self.units {
+            let abi = unit.abi.as_ref().ok_or_else(|| {
+                format!(
+                    "authoritative procedure ABI missing for {:?}",
+                    unit.identity
+                )
+            })?;
+            if !abi.source_helpers.is_empty() {
+                return Err(format!(
+                    "argument-source helper linking is not implemented for {:?}",
+                    unit.identity
+                ));
+            }
+        }
+        Ok(())
+    }
     pub fn identity_index(&self) -> Result<BTreeMap<UnitIdentity, usize>, UnitIdentity> {
         let mut index = BTreeMap::new();
         for (position, unit) in self.units.iter().enumerate() {
@@ -322,8 +375,12 @@ mod tests {
     #[test]
     fn global_units_use_global_storage_against_the_real_tree() {
         let frontend = frontend("var/counter = 1\n/proc/read()\n    return counter\n");
-        let batch = lower_frontend(&frontend, frontend.snapshot.tree.as_ref(),
-            &NoParameters, LoweringConfig::default());
+        let batch = lower_frontend(
+            &frontend,
+            frontend.snapshot.tree.as_ref(),
+            &NoParameters,
+            LoweringConfig::default(),
+        );
         assert!(batch.diagnostics.is_empty(), "{:?}", batch.diagnostics);
         let body = frontend.body(&frontend.bodies[0]).unwrap();
         let mut bindings = dm_codegen_byond::LowerBindings {
@@ -331,9 +388,12 @@ mod tests {
             ..Default::default()
         };
         bindings.globals.insert("counter".into());
-        let reference = dm_codegen_byond::compile_simple_proc_with_bindings(
-            &body.children, &bindings).unwrap();
-        assert_eq!(batch.units[0].code.procedure, reference);
+        let reference =
+            dm_codegen_byond::compile_simple_proc_with_bindings(&body.children, &bindings).unwrap();
+        let mut without_debug = batch.units[0].code.procedure.clone();
+        without_debug.code.items.retain(|item| !matches!(item, dm_codegen_byond::Item::Instruction(instruction) if matches!(instruction.opcode,0x84|0x85)));
+        assert_eq!(without_debug, reference);
+        assert!(!batch.units[0].debug_origins.entries.is_empty());
     }
     #[test]
     fn unsupported_parameter_policy_reports_ordered_source_diagnostics() {
@@ -354,7 +414,78 @@ mod tests {
             .diagnostics
             .iter()
             .all(|error| error.message.contains("parameter ABI")));
-        assert!(batch.diagnostics.iter().all(|error|
-            error.kind == DiagnosticKind::UnsupportedModel));
+        assert!(batch
+            .diagnostics
+            .iter()
+            .all(|error| error.kind == DiagnosticKind::UnsupportedModel));
+    }
+    #[test]
+    fn included_macro_and_loop_bodies_keep_actual_source_debug_origins() {
+        struct Included;
+        impl dm_preprocess::SourceProvider for Included {
+            fn read(&self, path: &Path) -> Result<String, String> {
+                match path.file_name().and_then(|name|name.to_str()) {
+                    Some("project.dme") => Ok("#include \"body.dm\"\n".into()),
+                    Some("body.dm") => Ok("#define VALUE 7\n/proc/p()\n    var/x = 0\n    while(x < 1)\n        x++\n    return VALUE\n".into()),
+                    _ => Err("unexpected source".into()),
+                }
+            }
+        }
+        let frontend =
+            dm_tree::frontend::build(Path::new("project.dme"), &Included, &BTreeMap::new(), 1)
+                .unwrap();
+        let batch = lower_frontend(&frontend, &Host, &NoParameters, LoweringConfig::default());
+        assert!(batch.diagnostics.is_empty(), "{:?}", batch.diagnostics);
+        assert_eq!(batch.units.len(), 1);
+        let entries = &batch.units[0].debug_origins.entries;
+        assert!(entries
+            .iter()
+            .any(|origin| origin.semantic_path.ends_with("body.dm") && origin.line == 5));
+        assert!(entries
+            .iter()
+            .any(|origin| origin.semantic_path.ends_with("body.dm") && origin.line == 6));
+        assert!(batch.require_production_abi().is_err());
+    }
+    #[test]
+    fn captured_policy_prepares_guarded_settings_and_authoritative_layout() {
+        use crate::procedure_policy::{
+            CapturedConstantEvaluator, CapturedInheritedFacts, CapturedProcedurePolicy,
+            InheritedLayout,
+        };
+        use dm_codegen_byond::procedure_abi::{AbiError, Category};
+        struct Facts;
+        impl CapturedInheritedFacts for Facts {
+            fn inherited(&self, _: &AbiContext<'_>) -> Result<InheritedLayout, AbiError> {
+                Ok(InheritedLayout::Fresh)
+            }
+        }
+        impl CapturedConstantEvaluator for Facts {
+            fn evaluate(
+                &self,
+                expression: &dm_ir::SymbolicExpression,
+                context: &AbiContext<'_>,
+            ) -> Result<dm_ir::SemanticValue, AbiError> {
+                match expression.source_text(context.symbols).as_deref() {
+                    Some("0") => Ok(dm_ir::SemanticValue::NumberBits(0f32.to_bits())),
+                    Some("1") => Ok(dm_ir::SemanticValue::NumberBits(1f32.to_bits())),
+                    Some("null") => Ok(dm_ir::SemanticValue::Null),
+                    _ => Err(AbiError("uncaptured constant".into())),
+                }
+            }
+        }
+        let frontend=frontend("/proc/p(value as num | null)\n    if(0)\n        set hidden = 1\n    else\n        set category = null\n    return value\n");
+        let facts = Facts;
+        let policy = CapturedProcedurePolicy {
+            evaluator: &facts,
+            inherited: &facts,
+            resource_search_context: None,
+        };
+        let batch = lower_frontend(&frontend, &Host, &policy, LoweringConfig::default());
+        assert!(batch.diagnostics.is_empty(), "{:?}", batch.diagnostics);
+        batch.require_production_abi().unwrap();
+        let abi = batch.units[0].abi.as_ref().unwrap();
+        assert_eq!(abi.layout.category, Category::Null);
+        assert_eq!(abi.layout.flags, 0x24);
+        assert_eq!(batch.units[0].code.procedure.argument_type_flags, [136]);
     }
 }

@@ -295,16 +295,12 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                     if name.is_empty() || name.contains('/') {
                         return Err("invalid procedure name".into());
                     }
-                    let mut settings = String::new();
-                    let mut typed_settings = Vec::new();
+                    let typed_settings =
+                        crate::settings::extract_settings(&item.children, context.symbols)?;
                     let mut display_name = None;
                     for child in &item.children {
                         let setting = child.header.trim();
                         if setting.starts_with("set ") {
-                            typed_settings
-                                .push(crate::procedure::parse_setting(setting, context.symbols)?);
-                            settings.push_str(setting);
-                            settings.push('\n');
                             if let Some(value) = setting.strip_prefix("set name = ") {
                                 if let Some(value) = value
                                     .trim()
@@ -320,8 +316,11 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         crate::procedure::parse_signature(arguments, trailing, context.symbols)?;
                     let procedure = Some(Arc::new(crate::ProcedureMetadata {
                         signature: typed_signature,
-                        settings: typed_settings.into(),
+                        settings: typed_settings,
                     }));
+                    let mut semantic_header = canonical(header)?.to_vec();
+                    semantic_header
+                        .extend_from_slice(&procedure.as_ref().unwrap().canonical_bytes());
                     let metadata = MemberMetadata {
                         inherited_opaque: None,
                         declared_type: None,
@@ -332,7 +331,7 @@ fn walk(items: &[Item], owner: &str, context: &mut AdapterContext<'_>) {
                         initializer: None,
                         declared_initializer: None,
                         resolved_constant: None,
-                        canonical: canonical(&format!("{header}\n{settings}"))?,
+                        canonical: semantic_header.into(),
                     };
                     let kind = if item.kind == ItemKind::Verb {
                         MemberKind::Verb
@@ -436,11 +435,19 @@ mod tests {
         let result = adapt("/datum/base\n    var/callback\n/datum/base/callback = /proc/finish\n");
         let tree = build(result.symbols, &result.skeletons).unwrap();
         let owner = tree.lookup_type(SymbolId::of("/datum/base")).unwrap();
-        let field = tree.member(tree.resolve(owner, SymbolId::of("callback"), MemberKind::Var).unwrap()).unwrap();
+        let field = tree
+            .member(
+                tree.resolve(owner, SymbolId::of("callback"), MemberKind::Var)
+                    .unwrap(),
+            )
+            .unwrap();
         assert!(field.previous.is_some());
         let initializer = field.metadata.initializer.as_ref().unwrap();
-        let spelling: String = initializer.tokens.iter()
-            .map(|token| tree.symbols.text(token.text).unwrap()).collect();
+        let spelling: String = initializer
+            .tokens
+            .iter()
+            .map(|token| tree.symbols.text(token.text).unwrap())
+            .collect();
         assert_eq!(spelling, "/proc/finish");
     }
     #[test]

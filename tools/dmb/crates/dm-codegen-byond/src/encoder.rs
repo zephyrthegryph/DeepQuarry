@@ -40,6 +40,7 @@ impl OperandSite {
 pub(crate) struct EncodedProc {
     pub linked: LinkedProc,
     pub sites: Vec<OperandSite>,
+    debug_relocations: Vec<dm_ir::Relocation>,
 }
 /// Frozen ABI words and the encoder-issued operand ledger. `code().link()`
 /// consumes the same typed encoding, including two-word packed values.
@@ -78,9 +79,9 @@ pub fn freeze_proc(
     proc: &SymbolicProc,
     mut bind: impl FnMut(&Symbol) -> Result<SymRef, String>,
 ) -> Result<FrozenProc, FreezeError> {
-    let encoded = encode(proc, &mut |_| Ok(0)).map_err(FreezeError::Abi)?;
+    let encoded = encode_internal(proc, &mut |_| Ok(0), true).map_err(FreezeError::Abi)?;
     let mut words = encoded.linked.words;
-    let mut relocations = Vec::with_capacity(encoded.sites.len());
+    let mut relocations = encoded.debug_relocations.clone();
     for ((_, symbol), site) in encoded.linked.relocations.iter().zip(&encoded.sites) {
         let reference = bind(symbol).map_err(|message| FreezeError::Binder {
             symbol: symbol.clone(),
@@ -105,6 +106,7 @@ pub fn freeze_proc(
             encoding: site.encoding,
         });
     }
+    relocations.sort_by_key(|site| site.offset);
     let code = SymbolicCode::new(words, relocations).map_err(FreezeError::Relocation)?;
     code.validate_encoded_sites(
         &encoded
@@ -123,6 +125,13 @@ pub fn freeze_proc(
 pub(crate) fn encode(
     proc: &SymbolicProc,
     resolve: &mut impl FnMut(&Symbol) -> Result<u32, LinkError>,
+) -> Result<EncodedProc, LinkError> {
+    encode_internal(proc, resolve, false)
+}
+fn encode_internal(
+    proc: &SymbolicProc,
+    resolve: &mut impl FnMut(&Symbol) -> Result<u32, LinkError>,
+    allow_debug: bool,
 ) -> Result<EncodedProc, LinkError> {
     let mut labels = BTreeMap::new();
     let mut offset = 0usize;
@@ -144,6 +153,8 @@ pub(crate) fn encode(
     let mut words = Vec::with_capacity(offset);
     let mut relocations = Vec::new();
     let mut sites = Vec::new();
+    let mut debug_sites = Vec::new();
+    let mut debug_relocations = Vec::new();
     let mut branch_slots = Vec::new();
     let mut starts = Vec::new();
     for item in &proc.items {
@@ -154,6 +165,32 @@ pub(crate) fn encode(
                 let slot = words.len();
                 match operand {
                     Word::Immediate(value) => words.push(*value),
+                    Word::SourceFile(origin) | Word::SourceLine(origin) => {
+                        let expected = if matches!(operand, Word::SourceFile(_)) { 0x84 } else { 0x85 };
+                        if instruction.opcode != expected || instruction.operands.len() != 1 {
+                            return Err(LinkError::Decode("debug source operand used outside its DBG instruction".into()));
+                        }
+                        if !allow_debug {
+                            return Err(LinkError::MissingDebugOrigin(*origin));
+                        }
+                        let reference = match operand {
+                            Word::SourceFile(id) => SymRef::SourceFile(*id),
+                            Word::SourceLine(id) => SymRef::SourceLine(*id),
+                            _ => unreachable!(),
+                        };
+                        let offset = u32::try_from(slot).map_err(|_| LinkError::OffsetOverflow)?;
+                        debug_sites.push(OperandSite {
+                            offset,
+                            kind: reference.kind(),
+                            encoding: OperandEncoding::Direct,
+                        });
+                        debug_relocations.push(dm_ir::Relocation {
+                            offset,
+                            reference,
+                            encoding: OperandEncoding::Direct,
+                        });
+                        words.push(0);
+                    }
                     Word::Reference(symbol) => {
                         relocations.push((slot, symbol.clone()));
                         sites.push(OperandSite::direct(slot, symbol.table)?);
@@ -267,6 +304,7 @@ pub(crate) fn encode(
             return Err(LinkError::BranchOperandIsNotTarget { offset: slot });
         }
     }
+    sites.extend(debug_sites);
     Ok(EncodedProc {
         linked: LinkedProc {
             words,
@@ -274,6 +312,7 @@ pub(crate) fn encode(
             relocations,
         },
         sites,
+        debug_relocations,
     })
 }
 
@@ -353,6 +392,54 @@ fn encode_variable(
 mod tests {
     use super::*;
     use crate::{Instruction, Ledger};
+
+    #[test]
+    fn debug_origins_are_typed_relocatable_and_branch_safe() {
+        let proc = SymbolicProc {
+            items: vec![
+                Item::Label("again".into()),
+                Item::Instruction(Instruction {
+                    opcode: 0x84,
+                    operands: vec![Word::SourceFile(0)],
+                }),
+                Item::Instruction(Instruction {
+                    opcode: 0x85,
+                    operands: vec![Word::SourceLine(0)],
+                }),
+                Item::Instruction(Instruction {
+                    opcode: 0xf,
+                    operands: vec![Word::Branch("again".into())],
+                }),
+            ],
+        };
+        assert!(matches!(
+            encode(&proc, &mut |_| Ok(0)),
+            Err(LinkError::MissingDebugOrigin(0))
+        ));
+        let frozen = freeze_proc(&proc, |_| Err("no table references".into())).unwrap();
+        let before = frozen.code().canonical_bytes();
+        let first = frozen
+            .code()
+            .link(|reference| match reference {
+                SymRef::SourceFile(0) => Some(9),
+                SymRef::SourceLine(0) => Some(100),
+                _ => None,
+            })
+            .unwrap();
+        let moved = frozen
+            .code()
+            .link(|reference| match reference {
+                SymRef::SourceFile(0) => Some(19),
+                SymRef::SourceLine(0) => Some(7),
+                _ => None,
+            })
+            .unwrap();
+        assert_eq!(first, vec![0x84, 9, 0x85, 100, 0xf, 0]);
+        assert_eq!(moved, vec![0x84, 19, 0x85, 7, 0xf, 0]);
+        assert_eq!(frozen.code().canonical_bytes(), before);
+        assert_eq!(byond_dmb::bytecode::decode(&moved).unwrap().len(), 3);
+        assert!(frozen.code().link(|_| None).is_err());
+    }
 
     #[test]
     fn packed_and_nested_operands_match_existing_linked_abi() {
