@@ -6,6 +6,36 @@ The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
 
+Release probe 27 passed initializer classification and cleared the modified-literal
+failure from probe 26. It stopped at `message_server.dm:301`, where a declaration
+`var/list/datum/feedback_variable/feedback = new()` was incorrectly treated as
+constructing `/list/datum/feedback_variable` rather than the `/list` container.
+External time was 20.550 s (18.112 s driver); sampled private memory was
+2,030,493,696 bytes. No output pair was produced. These remain failed-attempt
+timings, not completed cold benchmarks. A shared declaration-type projection
+now applies to fields, formal parameters and local constructor inference. Focused
+backend, tree and analysis gates pass, including inherited element hints and
+signature identity. The next release/full-project probe remains pending.
+
+A bounded native/error comparison found that release probe 27 silently accepts
+two native-invalid bare modified returns. Explicit rejection is being added;
+exact native diagnostic wording and compile-error parity remain open.
+
+The focused cold integration gate passes stored modified defaults, canonical
+descriptor deduplication, repeated writes and native Src modifier operands.
+Eight native receipt gates pass, including const shared-slot allocation,
+resource-payload equality, and grouped-return grammar. Native evidence required
+adding const bit 2 to the tree's shared-storage decision; writer flags were correct.
+The scalar evaluator now lives in the neutral IR layer with a tree compatibility
+facade. Modified defaults and executable operands share one nested descriptor
+closure, required-type admission, freezer and composer. Resource modifiers still
+fail explicitly until resolved payload identities enter this capture contract.
+
+The Phase 0 audit also confirms a remaining observable default mismatch: native
+list/new initializer expressions use kind-62 identity tokens, whereas v2 currently
+uses null for lists. Equal-token and DEBUG behavior are pinned by existing controls;
+allocation code alone does not preserve initial(field). This is not established as
+the cause of the power-bridge runtime errors. Phase 0 and Phase 1 remain open.
 Release probe 26 cleared the builtin-world receiver and RGB scalar classification.
 It stopped in initializer code generation on a modified object literal at
 `code/datums/outfits/horror_killers.dm:45`, with no output pair. External time

@@ -1,0 +1,18 @@
+{
+  "compiler": "516.1687",
+  "compiler_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "files": {
+    "bare/probe.dme": "57cc245d2eb88e04905953ec6dc17b57b0ff7a7d7262736374e42eb99c64f055",
+    "bare/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bare/stdout.txt": "645d0424e67a53c4fa9e31cb0ead3fff9e3b452452449e75e64e4298eeaab251",
+    "grouped/probe.dmb": "2ee0580710930699769b85d76afc7444d49ad296f09fe3618a7a201bd9245e53",
+    "grouped/probe.dme": "99a68f3873960b3d20e416a52aabd49dd1ed60fe71bd9623df3653ae48dff3eb",
+    "grouped/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "grouped/stdout.txt": "87912620673a7bfe182e08b103299fba90b9513ac23e23d265b9768224b3e686",
+    "outer_visible/probe.dme": "92467ab80832eeecd4390cc6c3c01867b39f85203e17fc045cff3544a6652a4f",
+    "outer_visible/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "outer_visible/stdout.txt": "0dff30438014e12d67445567a110e64b1a77523d6258c9ffe581aad82374158e"
+  },
+  "evidence": "E:/dmb-native-v2-phase0/modified-return-controls",
+  "initial_macros": []
+}
