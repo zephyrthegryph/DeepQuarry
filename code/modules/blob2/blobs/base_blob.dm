@@ -16,6 +16,9 @@
 	var/mob/observer/blob/overmind = null
 	var/base_name = "blob" // The name that gets appended along with the blob_type's name.
 	var/faction = FACTION_BLOB
+	/// The name and colour of the overmind's blob type, copied here by sync_overmind_look() (the look reads only this blob's own state).
+	var/look_title
+	var/look_tint
 
 REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 
@@ -31,22 +34,33 @@ CAPABILITIES(/obj/structure/blob)
 		faction = overmind.blob_type.faction
 	set_dir(pick(GLOB.cardinal))
 	consume_tile()
+	sync_overmind_look()
 	. = ..()
-	update_icon()
 
 DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX_EFFECTS_SPLAT))
 
-DECLARE_APPEARANCE_PROC(/obj/structure/blob, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/blob/appearance_overlays() //Updates color based on overmind color if we have an overmind.
-	. = list()
-	if(overmind)
-		name = "[overmind.blob_type.name] [base_name]" // This is in update_icon() because inert blobs can turn into other blobs with magic if another blob core claims it with pulsing.
-		color = overmind.blob_type.color
-		set_light(3, 3, color)
+TRACKED(/obj/structure/blob, look_title)
+TRACKED(/obj/structure/blob, look_tint)
+
+/// What the overmind gives the look: its blob type's name and colour, copied here so the look reads only this blob's own state. Called wherever the overmind
+/// or its type changes (inert blobs turn into other blobs with magic if another blob core claims one with pulsing).
+/obj/structure/blob/proc/sync_overmind_look()
+	set_look_title(overmind ? overmind.blob_type.name : null)
+	set_look_tint(overmind ? overmind.blob_type.color : null)
+
+/// A blob takes its overmind's name, colour and glow; with none it is inert.
+/obj/structure/blob/draw(datum/look/look)
+	..()
+	look_parts(look)
+
+/obj/structure/blob/proc/look_parts(datum/look/look)
+	if(look_title)
+		look.identity(name = "[look_title] [base_name]")
+		look.set_color(look_tint)
+		look.light(3, 3, look_tint)
 	else
-		name = "inert [base_name]"
-		color = null
-		set_light(0)
+		look.identity(name = "inert [base_name]")
+		look.light_off()
 
 /obj/structure/blob/update_transform()
 	var/matrix/M = matrix()
@@ -96,7 +110,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob, TYPE_PROC_REF(/atom, appearance_ove
 		if(!BEFORE(src, heal_timestamp, CLOCK_WORLD))
 			adjust_integrity(health_regen)
 			EXPIRY_SET(src, heal_timestamp, 2 SECONDS, CLOCK_WORLD)
-		update_icon()
+		sync_overmind_look()
 		EXPIRY_SET(src, pulse_timestamp, 1 SECOND, CLOCK_WORLD)
 		if(overmind)
 			faction = overmind.blob_type.faction
@@ -122,7 +136,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob, TYPE_PROC_REF(/atom, appearance_ove
 
 		if(!B.overmind && !istype(B, /obj/structure/blob/core) && prob(30))
 			rel_set(B, nameof(B.overmind), pulsing_overmind) //reclaim unclaimed, non-core blobs.
-			B.update_icon()
+			B.sync_overmind_look()
 
 		var/distance = get_dist(get_turf(src), get_turf(B))
 		var/expand_probablity = max(50 / (max(distance, 1)), 1)
@@ -149,7 +163,6 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob, TYPE_PROC_REF(/atom, appearance_ove
 /obj/structure/blob/proc/slide_into(turf/T, obj/structure/blob/origin, expand_reaction)
 	set_density(initial(density))
 	forceMove(T)
-	update_icon()
 	if(overmind && expand_reaction)
 		overmind.blob_type.on_expand(origin, src, T, overmind)
 
@@ -192,6 +205,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob, TYPE_PROC_REF(/atom, appearance_ove
 			rel_set(B, nameof(B.overmind), controller)
 		else
 			rel_set(B, nameof(B.overmind), overmind)
+		B.sync_overmind_look()
 		B.set_density(TRUE)
 		if(T.Enter(B,src)) //NOW we can attempt to move into the tile
 			// A decisecond later, so the slide animation works.
@@ -236,7 +250,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob, TYPE_PROC_REF(/atom, appearance_ove
 	var/obj/structure/blob/B = new type(src.loc, controller)
 	if(controller)
 		rel_set(B, nameof(B.overmind), controller)
-	B.update_icon()
+	B.sync_overmind_look()
 	B.set_dir(dir)
 	replace_with(src, B)
 	return B
@@ -423,7 +437,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob, TYPE_PROC_REF(/atom, appearance_ove
 			else
 				faction = B.faction
 				rel_set(src, nameof(overmind), B.overmind)
-				update_icon()
+				sync_overmind_look()
 				return
 
 			adjust_integrity(-1 * damage)
@@ -439,10 +453,6 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob, TYPE_PROC_REF(/atom, appearance_ove
 	if(amount < 0)
 		return take_damage(-amount, BRUTE, null, FALSE)
 	return 0
-
-/obj/structure/blob/on_update_integrity(old_value, new_value)
-	. = ..()
-	update_icon()
 
 /// Integrity depletion: the blob type gets its death hook, and no debris is left.
 /obj/structure/blob/handle_deconstruct(disassembled = TRUE)

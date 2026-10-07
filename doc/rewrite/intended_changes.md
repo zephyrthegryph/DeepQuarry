@@ -2694,3 +2694,12 @@ Each changed pin row is one of these classes; nothing else was blessed. `dq_inte
 
 * **A write the legacy look ignored now redraws.** Types converted by `look_sweep.py convert` (areas, translocators, gravemarker, suspension generator, refinery machines, chem canister, pump relay, voidcraft wall, dog eye, cyborg baton, sol, pneumatic, consul) draw over the state they read. Look-state rows that appear (`ready`, `recharging`, `status`, `fire`/`eject`/`party`) were absent from the legacy pin because only an explicit `update_icon()` redrew; the calls are now `changed(src)` or deleted.
 * **The sol SMG's duplicate charge overlay is gone.** The legacy provider added `smg_*` after the appearance overlays (`x2` rows); the charge overlay is now an effect that runs once.
+
+## The emissive blocker follows a drawn sprite (draw sweep 3 C)
+
+* A look that changes an atom's sprite re-syncs the atom's generic emissive blocker (`look_resync_emissive_blocker()`); the legacy providers wrote `icon_state` and left the blocker
+  at the sprite the atom was made with. The look-state pins of the NTNet relay (`enabled`), the shield generator family (`active`) and the fuel port (`opened`) gain, beside each `+state` /
+  `-state` row, a `+overlay` / `-overlay` row of the blocker (`icons/...:<state>:8:#000000`): the same sprite change, now shown on the blocker too. No state, colour or other layer row changes.
+* The folder, paper plane, blob family, glass roulette ball and disposal bin family keep their look-tree and look-state rows exactly (the disposal bin's `mode` and `flush` rows, the folder and
+  plane rows, the blob's tree rows); the disposal bin's broken sprite is the one thing not pinned: the legacy provider left `disposal-broken` on the bin after a repair, the look restores the
+  type's own state.
