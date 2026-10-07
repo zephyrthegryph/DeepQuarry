@@ -99,6 +99,12 @@ impl MacroLookup for BTreeMap<String, Macro> {
 pub trait SourceProvider {
     fn read(&self, path: &Path) -> Result<String, String>;
 
+    /// Optional immutable lexical preparation of the same captured bytes that
+    /// `read` returns. Directive interpretation and include selection stay ordered.
+    fn prepared_source(&self, _path: &Path) -> Option<std::sync::Arc<regions::prepared_source::PreparedSource>> {
+        None
+    }
+
     /// Identity of the exact text returned by the preceding read. Snapshot
     /// providers can reuse their recorded digest; ordinary providers hash bytes.
     fn fingerprint_read(&self, _path: &Path, source: &str) -> [u8; 32] {

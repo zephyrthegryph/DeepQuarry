@@ -19,6 +19,19 @@ fn fixture(files: &[(&str, &str)]) -> DirectivePlan {
 }
 
 #[test]
+fn native_boolean_macros_follow_define_undef_and_caller_precedence() {
+    let provider = Memory(BTreeMap::from([(PathBuf::from("project.dme"),
+        "var/a = TRUE + FALSE\n#undef TRUE\nvar/b = TRUE\n#define TRUE 7\nvar/c = TRUE\n#undef FALSE\n#define FALSE 9\nvar/d = FALSE\n".into())]));
+    let plan = plan_regions(Path::new("project.dme"), &provider, &BTreeMap::new());
+    let expanded = expand_regions_text(&plan, 2);
+    assert!(expanded.diagnostics.is_empty());
+    assert_eq!(expanded.text, "var/a = 1 + 0\nvar/b = TRUE\nvar/c = 7\nvar/d = 9\n");
+    let caller = BTreeMap::from([("TRUE".into(), "3".into()), ("FALSE".into(), "4".into())]);
+    let plan = plan_regions(Path::new("project.dme"), &provider, &caller);
+    assert!(expand_regions_text(&plan, 1).text.starts_with("var/a = 3 + 4\n"));
+}
+
+#[test]
 fn child_effects_split_parent_and_parallel_schedule_preserves_output() {
     let plan = fixture(&[
         ("project.dme", "#include \"parent.dm\"\n"),

@@ -12,6 +12,7 @@ use std::sync::Arc;
 
 mod directives;
 mod environment;
+pub mod prepared_source;
 pub use environment::MacroEnvironment;
 mod expansion;
 #[cfg(test)]
@@ -36,7 +37,7 @@ pub struct IncludeOccurrence {
 pub struct RegionLine {
     pub source_span: Span,
     pub source_line: usize,
-    pub text: String,
+    pub text: Arc<str>,
 }
 
 /// Contiguous active text with one exact expansion environment. A region may
@@ -106,6 +107,8 @@ pub struct DirectivePlan {
     pub regions: Vec<IncludeRegion>,
     pub items: Vec<OrderedItem>,
     pub dependencies: BTreeSet<PathBuf>,
+    /// Original decoded-source line starts, reused from lexical preparation.
+    pub source_line_starts: BTreeMap<PathBuf, Arc<[usize]>>,
     pub diagnostics: Vec<Diagnostic>,
     /// Parallel vector identifying each directive diagnostic's encounter item.
     pub diagnostic_ordinals: Vec<usize>,

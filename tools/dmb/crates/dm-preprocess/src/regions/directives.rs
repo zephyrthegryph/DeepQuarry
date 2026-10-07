@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
-    directive_identifier, eval_condition, logical_lines, macro_defined, parse_define,
-    parse_include, split_word, strip_source_comments, Conditional, DiagnosticKind,
+    directive_identifier, eval_condition, macro_defined, parse_define, parse_include, split_word,
+    Conditional, DiagnosticKind,
 };
 
 pub(super) fn plan<P: SourceProvider>(
@@ -33,6 +33,16 @@ pub(super) fn plan<P: SourceProvider>(
                 replacement: replacement.into(),
             },
         );
+    }
+    // Native boolean spellings are initial object macros, not runtime globals.
+    // Install them before caller definitions; source define/undef effects then
+    // apply through the same ordered environment as every other macro.
+    for (name, replacement) in [("TRUE", "1"), ("FALSE", "0")] {
+        pass.plan.final_macros.insert(name.into(), Macro {
+            parameters: None,
+            variadic: false,
+            replacement: replacement.into(),
+        });
     }
     for (name, replacement) in defines {
         let definition = Macro {
@@ -164,38 +174,36 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             return;
         }
         self.plan.dependencies.insert(path.as_ref().clone());
-        let source = match self.provider.read(&path) {
-            Ok(source) => source,
-            Err(error) => {
-                self.error(occurrence, 1, DiagnosticKind::Io, error);
-                return;
-            }
+        let prepared = match self.provider.prepared_source(&path) {
+            Some(prepared) => prepared,
+            None => match self.provider.read(&path) {
+                Ok(source) => Arc::new(prepared_source::PreparedSource::new(Arc::from(source))),
+                Err(error) => {
+                    self.error(occurrence, 1, DiagnosticKind::Io, error);
+                    return;
+                }
+            },
         };
-        let mut offsets = vec![0];
-        for (offset, byte) in source.bytes().enumerate() {
-            if byte == b'\n' {
-                offsets.push(offset + 1);
-            }
-        }
-        offsets.push(source.len());
-        let uncommented = strip_source_comments(&source);
+        self.plan
+            .source_line_starts
+            .insert(path.as_ref().clone(), prepared.line_starts().clone());
         let mut conditionals: Vec<Conditional> = Vec::new();
         let mut line_number = 0;
         let mut region = self.begin_region(occurrence, 0);
         let mut pending = Vec::new();
-        for logical in logical_lines(&uncommented) {
-            let source_line = line_number + 1;
-            let start = offsets[line_number];
+        for logical in prepared.lines() {
+            let source_line = logical.source_line;
             line_number += logical.source_lines;
-            let end = offsets[line_number];
-            let span = Span::new(start, end);
+            let span = logical.source_span;
+            let start = span.start;
+            let end = span.end;
             let active = conditionals.last().is_none_or(|frame| frame.active);
             let Some(directive) = logical.text.trim_start().strip_prefix('#') else {
                 if active {
                     pending.push(RegionLine {
                         source_span: span,
                         source_line,
-                        text: logical.text,
+                        text: logical.text.clone(),
                     });
                 }
                 continue;
@@ -301,7 +309,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             }
         }
         self.freeze_lines(region, &mut pending);
-        self.plan.regions[region].source_span.end = source.len();
+        self.plan.regions[region].source_span.end = prepared.original().len();
         if !conditionals.is_empty() {
             self.error(
                 occurrence,
