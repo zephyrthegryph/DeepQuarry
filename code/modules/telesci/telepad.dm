@@ -38,22 +38,19 @@
 	var/E = get_part_rating(/obj/item/stock_parts/capacitor)
 	efficiency = E
 
-EXTEND_INTERACTIONS(/obj/machinery/telepad, \
-	INTERACT_INSERT(/obj/item, PROC_REF(interaction_part_replacement_impl), "Replace parts"), \
-)
-
 /**
  * Old attackby: fingerprinted on any item, then tried a part replacement,
  * falling through to the base attackby (the signal, etc.) otherwise. The
  * fingerprint applies even when the item isn't a part replacer, so this
  * can't reuse the shared /datum/interaction/machine_item/part_replacement.
  */
-/obj/machinery/telepad/proc/interaction_part_replacement_impl(mob/user, obj/item/W, datum/interaction/interaction)
-	add_fingerprint(user)
-	return default_part_replacement(user, W) ? TRUE : FALSE
+/obj/machinery/telepad/proc/interaction_part_replacement_impl(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return default_part_replacement(A.actor, A.held) ? OP_OK : OP_DECLINE
 
 CAPABILITIES(/obj/machinery/telepad)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
+	op("part_replacement_impl", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(PROC_REF(interaction_part_replacement_impl)))
 
 /obj/machinery/telepad/proc/multitool_used(datum/act/op/A)
 	var/mob/user = A.actor
