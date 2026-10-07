@@ -11,6 +11,8 @@
 
 CAPABILITIES(/obj/machinery/reagent_refinery/pump)
 	climb()
+	op("reagent_pump_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice, fields = list("question" = "Amount per transfer from this:", "title" = computed(PROC_REF(transfer_amount_title)), "choices" = nameof(possible_transfer_amounts), "timeout" = 0), step = "amount"), then(PROC_REF(interaction_set_transfer_amount)))
+	op("reagent_pump_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), asks(/datum/prompt/choice, fields = list("question" = "Amount per transfer from this:", "title" = computed(PROC_REF(transfer_amount_title)), "choices" = nameof(possible_transfer_amounts), "timeout" = 0), step = "amount"), then(PROC_REF(interaction_set_transfer_amount)))
 
 /obj/machinery/reagent_refinery/pump/Initialize(mapload)
 	. = ..()
@@ -50,14 +52,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pump, TYPE_PROC_REF(/ato
 		var/image/filling = image(icon, loc, "pump_r",dir = dir)
 		filling.color = reagents.get_color()
 		. += filling
-
-EXTEND_INTERACTIONS(/obj/machinery/reagent_refinery/pump, \
-	INTERACT_HAND_UNGATED("Use", PROC_REF(interaction_reagent_pump_use)), \
-)
-
-/obj/machinery/reagent_refinery/pump/proc/interaction_reagent_pump_use(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_set_transfer_amount(user, held, interaction)
-	return TRUE
 
 /obj/machinery/reagent_refinery/pump/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// pumps, furnaces, splitters and filters can only be FED in a straight line
