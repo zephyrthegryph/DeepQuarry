@@ -51,6 +51,10 @@
 	var/turf/start = run_loc_floor_bottom_left
 	var/turf/T = locate(start.x + dx, start.y + dy, start.z)
 	TEST_ASSERT(T && !T.density, "no open floor at +[dx],+[dy] from the test origin")
+	// Mobs walking the shared test floor wear dirt in over a long run; a decal then outlives the test that tipped the turf over 50.
+	var/turf/simulated/sim = T
+	if(istype(sim))
+		sim.can_dirty = FALSE
 	return T
 
 // --- melee_attack -----------------------------------------------------------------------------
