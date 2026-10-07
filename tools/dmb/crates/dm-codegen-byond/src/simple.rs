@@ -2728,11 +2728,17 @@ impl Compiler<'_> {
                 }
             }
             let var = self.variable_expr(target, statement)?;
-            if let Some(path) = self.inferred_expression_type(target)? {
-                let declaration = format!("var{path}/__value");
-                self.local_initializer(value, &declaration, statement)?;
+            if Self::assignment_needs_target_type(value) {
+                if let Some(path) = self.inferred_expression_type(target)? {
+                    let declaration = format!("var{path}/__value");
+                    self.local_initializer(value, &declaration, statement)?;
+                } else {
+                    self.expression(value, statement)?;
+                }
             } else {
-                self.expression(value, statement)?;
+                // This RHS cannot consume the target's declared type. Preserve
+                // recursive initializer emission without unrelated metadata IO.
+                self.local_initializer(value, "var/__value", statement)?;
             }
             self.emit(opcode::SET_VAR, vec![Word::Variable(var)]);
             return Ok(());
@@ -2964,6 +2970,32 @@ impl Compiler<'_> {
         Ok(())
     }
 
+    /// Mirrors contextual cases consumed by local_initializer. Nested call
+    /// arguments/conditions use ordinary expression lowering, not target type.
+    fn assignment_needs_target_type(expr: &Expr) -> bool {
+        match &expr.kind {
+            ExprKind::Ident(name) => name == "new",
+            ExprKind::Call { callee, args } => matches!(&callee.kind, ExprKind::Ident(name)
+                if name == "new" || (name == "locate" && args.is_empty())),
+            ExprKind::Group(inner) => Self::assignment_needs_target_type(inner),
+            ExprKind::Binary { op, lhs, rhs } if op == "||" || op == "&&" => {
+                Self::assignment_needs_target_type(lhs) || Self::assignment_needs_target_type(rhs)
+            }
+            ExprKind::Binary { op, lhs, .. } if op == "in" => {
+                matches!(&lhs.kind, ExprKind::Call { callee, args }
+                    if args.is_empty() && matches!(&callee.kind, ExprKind::Ident(name) if name == "locate"))
+            }
+            ExprKind::Conditional {
+                then_value,
+                else_value,
+                ..
+            } => {
+                Self::assignment_needs_target_type(then_value)
+                    || Self::assignment_needs_target_type(else_value)
+            }
+            _ => false,
+        }
+    }
     fn local_initializer(
         &mut self,
         expr: &Expr,

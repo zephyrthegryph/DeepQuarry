@@ -335,7 +335,7 @@ mod tests {
             &SymbolTable::default(),
             &host,
         );
-        assert!(code.is_ok(), "{code:?}");
+        assert!(code.is_ok(), "{:?}", code.as_ref().err());
         assert!(!host
             .reads
             .lock()
@@ -589,6 +589,78 @@ mod tests {
             query,
             Q::Var { .. } | Q::StaticVar { .. } | Q::DeclaredVarType { .. }
         )));
+    }
+    #[test]
+    fn assignment_type_is_demanded_only_by_contextual_constructors() {
+        let mut symbols = SymbolTable::default();
+        for text in ["/atom", "name"] {
+            symbols.intern(text).unwrap();
+        }
+        let host = Host {
+            reads: Mutex::new(vec![]),
+            answer: |query| match query {
+                Q::HasMemberVar { owner, name }
+                    if owner == SymbolId::of("/atom") && name == SymbolId::of("name") =>
+                {
+                    M::Presence(true)
+                }
+                Q::VarStorage { owner, name }
+                    if owner == SymbolId::of("/atom") && name == SymbolId::of("name") =>
+                {
+                    M::InstanceField {
+                        declaring_owner: owner,
+                        name,
+                    }
+                }
+                _ => M::Unsupported(query),
+            },
+        };
+        for value in ["3", "TRUE ? 3 : 4", "null || 3"] {
+            host.reads.lock().unwrap().clear();
+            let result = lower(
+                &format!("/atom/proc/p()\n    name = {value}\n"),
+                ProcedureInputs {
+                    current_type_path: Some("/atom".into()),
+                    ..Default::default()
+                },
+                &symbols,
+                &host,
+            );
+            assert!(result.is_ok(), "{value}: {:?}", result.err());
+            assert!(
+                !host
+                    .reads
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .any(|q| matches!(q, Q::DeclaredVarType { .. })),
+                "{value}"
+            );
+        }
+        for value in [
+            "new()",
+            "TRUE ? new() : null",
+            "null || new()",
+            "locate() in list()",
+        ] {
+            let errors = lower(
+                &format!("/atom/proc/p()\n    name = {value}\n"),
+                ProcedureInputs {
+                    current_type_path: Some("/atom".into()),
+                    ..Default::default()
+                },
+                &symbols,
+                &host,
+            )
+            .err()
+            .unwrap();
+            assert!(
+                errors
+                    .iter()
+                    .any(|error| error.reason.contains("DeclaredVarType")),
+                "{value}: {errors:?}"
+            );
+        }
     }
     #[test]
     fn known_untyped_is_distinct_from_unknown_type_or_storage() {
