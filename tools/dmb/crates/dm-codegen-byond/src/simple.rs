@@ -2960,7 +2960,18 @@ impl Compiler<'_> {
                     Box::new(VariableWord::Field(name.to_owned())),
                 ))
             }
-            _ if self.has_global(name)? => Ok(VariableWord::Global(name.to_owned())),
+            _ if self.has_global(name)? => {
+                if let Some(lookup) = self.lookup {
+                    let query = dm_ir::ResolveQuery::VarStorage {
+                        owner: dm_ir::SymbolId::of("/"), name: dm_ir::SymbolId::of(name),
+                    };
+                    let slot = self.semantic(lookup.slot(query))?
+                        .ok_or_else(|| error(statement, "global variable has no shared storage"))?;
+                    Ok(VariableWord::Global(slot))
+                } else {
+                    Ok(VariableWord::Global(name.to_owned()))
+                }
+            }
             _ => Err(error(
                 statement,
                 &format!("unresolved variable name: {name}"),
@@ -2980,6 +2991,14 @@ impl Compiler<'_> {
                         return Ok(VariableWord::Global(BUILTIN_GLOBAL_VARS_SYMBOL.into()));
                     }
                     if self.has_global(selector)? {
+                        if let Some(lookup) = self.lookup {
+                            let query = dm_ir::ResolveQuery::VarStorage {
+                                owner:dm_ir::SymbolId::of("/"), name:dm_ir::SymbolId::of(selector),
+                            };
+                            let slot=self.semantic(lookup.slot(query))?
+                                .ok_or_else(|| error(statement,"global variable has no shared storage"))?;
+                            return Ok(VariableWord::Global(slot));
+                        }
                         return Ok(VariableWord::Global(selector.clone()));
                     }
                     return Err(error(

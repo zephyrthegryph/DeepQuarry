@@ -160,3 +160,38 @@ fn current_proc_builtin_precedes_unrelated_member_queries_and_keeps_relocation()
         matches!(item,crate::Item::Instruction(instruction) if instruction.operands.iter()
             .any(|word| matches!(word,crate::Word::Variable(crate::VariableWord::Arg(0)))))));
 }
+
+#[test]
+fn authored_global_access_records_exact_root_slot_sidecar() {
+    use dm_ir::SymbolId;
+    struct Host;
+    impl Resolver for Host {
+        fn resolve(&self, query:Q)->M {
+            let root=SymbolId::of("/"); let name=SymbolId::of("__rust_g");
+            match query {
+                Q::GlobalVar(actual) if actual==name => M::Member {owner:root,name,
+                    fingerprint:1,data:std::sync::Arc::new(Default::default())},
+                Q::VarStorage {owner,name:actual} if owner==root && actual==name =>
+                    M::Slot {symbol:SymbolId::of("slot/root/__rust_g"),owner,name},
+                _=>M::Unsupported(query),
+            }
+        }
+    }
+    let mut symbols=SymbolTable::default();
+    symbols.intern("/").unwrap(); symbols.intern("__rust_g").unwrap();
+    for body in ["return __rust_g", "__rust_g = 1", "return global.__rust_g", "global.__rust_g = 1"] {
+        let parsed=dm_syntax::parse(&format!("/proc/probe()\n    {body}\n"));
+        let code=compile_simple_proc_with_resolver(&parsed.items[0].children,
+            &Default::default(),&symbols,&Host).unwrap();
+        assert_eq!(code.slots.len(),1,"{body}");
+        let (symbol,slot)=code.slots.iter().next().unwrap();
+        assert_eq!(slot.owner,SymbolId::of("/"));
+        assert_eq!(slot.name,SymbolId::of("__rust_g"));
+        assert_eq!(symbol.key,"var/__rust_g");
+        let frozen=crate::encoder::freeze_proc(&code.procedure.code,|actual| {
+            assert_eq!(actual,symbol);
+            Ok(dm_ir::SymRef::VariableSlot(slot.symbol))
+        }).unwrap();
+        assert_eq!(frozen.code().relocations().len(),1);
+    }
+}

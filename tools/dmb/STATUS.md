@@ -5,6 +5,13 @@ Phase 1 foundation work is now underway alongside the remaining baseline evidenc
 The production compiler has not switched to the new pipeline.
 
 ## Current integration checkpoint (7 October 2026)
+Release probe 32 lowered all 64,964 bodies successfully (6.344 s) and passed
+required-type admission (0.195 s). Symbolic linking stopped on the authored
+macro global `__rust_g`: ordinary global reads had omitted their exact root
+storage sidecar. External time was 25.608 s, sampled private memory
+2,654,552,064 bytes; no pair was produced. The global-slot producer correction
+is being gated. Five backend receiver/context checks and 35 native-focused
+checks passed before this attempt; these are focused checks, not a full suite.
 Release probe 31 reached complete source analysis and attempted all procedure
 bodies, reducing diagnostics from 2,195 to 522. Of those, 497 are intrinsic-name
 `UniqueStaticVar` queries; the other groups are 18 storage, 3 declared-type,
