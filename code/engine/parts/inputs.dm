@@ -323,17 +323,18 @@
 	return null
 
 /// Runs the plan a topic link named: its arg() schemas check the href's values, then the op runs as a click would (Match, Require, Wait, Do).
-/proc/op_topic_run(mob/actor, datum/holder, datum/op_plan/P, list/params)
+/proc/op_topic_run(mob/actor, datum/holder, datum/op_plan/P, list/params, gated = TRUE)
 	RETURN_TYPE(/datum/op_result)
 	// The holder's own gate for its links (topic_allowed(): the clicker may use this thing at all; it says why itself) comes first, as it did for a row.
-	if(!holder.topic_allowed(actor, params))
-		var/datum/op_result/gated = new
-		gated.key = P.key
-		gated.origin = ORIGIN_UI
-		gated.outcome = ACT_REFUSED
-		gated.reason = /datum/msg/op/topic_gate
-		TEST_REC_OUTCOME(P.key, ACT_REFUSED, gated.reason, actor)
-		return gated
+	// A namespace with a gate of its own (View Variables) passes gated = FALSE.
+	if(gated && !holder.topic_allowed(actor, params))
+		var/datum/op_result/blocked = new
+		blocked.key = P.key
+		blocked.origin = ORIGIN_UI
+		blocked.outcome = ACT_REFUSED
+		blocked.reason = /datum/msg/op/topic_gate
+		TEST_REC_OUTCOME(P.key, ACT_REFUSED, blocked.reason, actor)
+		return blocked
 	var/list/values = list()
 	var/why = op_validate_args(P.topic_args, holder, params, values)
 	if(why)
@@ -347,27 +348,46 @@
 		return refused
 	values[OP_TOPIC_HREF] = params // A.topic_href(): the raw href (a re-run of an ask reads it)
 	var/datum/op_result/result = op_perform_by_key(actor, holder, null, P.key, ORIGIN_UI, actor_authority(actor), FALSE, values)
-	if(result?.outcome == ACT_REFUSED && result.reason == /datum/msg/req_forbidden)
+	if(result?.outcome == ACT_REFUSED && result.reason == /datum/msg/req_no_rights)
 		// A rights failure on an href is how exploit attempts show up: always tell admins.
+		var/wanted = 0
+		for(var/datum/entry/part/req/rights/needed in P.needs)
+			wanted |= needed.args["rights"]
+		admin_log_denial(actor.client, "topic:[P.topic_key]", wanted)
 		var/attempt = "[key_name(actor)] tried href action '[P.topic_key]' on [holder.type] without sufficient rights"
 		log_admin(attempt)
 		log_href("TOPIC rights refused: [attempt]")
 		message_admins("[key_name_admin(actor)] tried href action '[P.topic_key]' on [holder.type] without sufficient rights.")
 	return result
 
+/// The topic ops of a type, by topic key, in one namespace (null: plain hrefs); a subtype's own op for a key beats its parent's, as everywhere. Built once per type.
+/proc/op_topic_table(datum/holder, namespace = null)
+	var/datum/op_index/index = op_index_of_table(table_of(holder))
+	var/slot = isnull(namespace) ? "" : "[namespace]"
+	var/list/made = index.topic_plans?[slot]
+	if(isnull(made))
+		made = list()
+		for(var/datum/op_plan/P as anything in index.ordered)
+			if(isnull(P.topic_key) || P.topic_namespace != namespace)
+				continue
+			made[P.topic_key] = P
+		LAZYSET(index.topic_plans, slot, made) // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+	return made
+
 /// The plan of `holder` whose topic("key") names this href: a key "action=foo" matches href action=foo and is tried before a bare "action" key, as a
 /// TOPIC_ACTION row's did, so an op names its href by the same text and no link changes. The args are every other value of the href.
-/proc/op_topic_plan(datum/holder, list/href_list)
+/proc/op_topic_plan(datum/holder, list/href_list, namespace = null)
 	RETURN_TYPE(/datum/op_plan)
-	if(!holder || QDELETED(holder) || !length(href_list))
+	if(!isdatum(holder) || QDELETED(holder) || !length(href_list))
 		return null
-	var/list/by_key = null
-	for(var/datum/op_src/S as anything in op_sources_of(holder))
-		var/datum/op_plan/P = S.oplan
-		if(isnull(P.topic_key))
-			continue
-		LAZYSET(by_key, P.topic_key, P)
-	if(!by_key)
+	var/list/by_key = op_topic_table(holder, namespace)
+	if(length(holder.rx?.activations)) // a granted capability can bring topic ops of its own (rare): this holder reads them in too
+		by_key = by_key.Copy()
+		for(var/datum/op_src/S as anything in op_sources_of(holder))
+			var/datum/op_plan/P = S.oplan
+			if(S.activation && !isnull(P.topic_key) && P.topic_namespace == namespace)
+				by_key[P.topic_key] = P
+	if(!length(by_key))
 		return null
 	for(var/key in href_list)
 		if(!istext(key))
@@ -381,13 +401,15 @@
 
 /// A Topic href as an op: the holder's topic op that names it (or the holder its topic_forward() hands the href to) runs for `actor`, through the same
 /// path and the same refusals as a click. Returns its /datum/op_result, or null when no op names the href (the TOPIC_ACTION table still answers it).
-/proc/op_topic_href(mob/actor, datum/holder, list/href_list, forward_depth = 0)
+/proc/op_topic_href(mob/actor, datum/holder, list/href_list, forward_depth = 0, namespace = null, gated = TRUE)
 	RETURN_TYPE(/datum/op_result)
-	if(!actor || !holder || QDELETED(holder))
+	if(!actor || !isdatum(holder) || QDELETED(holder))
 		return null
-	var/datum/op_plan/P = op_topic_plan(holder, href_list)
+	var/datum/op_plan/P = op_topic_plan(holder, href_list, namespace)
 	if(P)
-		return op_topic_run(actor, holder, P, href_list)
+		return op_topic_run(actor, holder, P, href_list, gated)
+	if(!isnull(namespace)) // a namespace has no forwards: its dispatch names the one holder
+		return null
 	var/datum/forward = holder.topic_forward()
 	if(forward && forward != holder && forward_depth < OP_UI_FORWARD_DEPTH)
 		return op_topic_href(actor, forward, href_list, forward_depth + 1)

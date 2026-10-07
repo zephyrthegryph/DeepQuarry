@@ -236,6 +236,12 @@
 	var/list/rest = args.Copy(2)
 	return part_make(/datum/entry/part/bind/topic, list("key" = key), entry_flatten(rest))
 
+/// topic_in(NAMESPACE, "key", args...): a Topic link in a separate href namespace (the View Variables dropdown, VV_TOPIC). A plain href never reaches it:
+/// only a dispatch that names the namespace does (op_topic_href(..., namespace)), and that dispatch brings its own gate.
+/proc/topic_in(namespace, key, ...)
+	var/list/rest = args.Copy(3)
+	return part_make(/datum/entry/part/bind/topic, list("key" = key, "namespace" = namespace), entry_flatten(rest))
+
 /// inputs(bindings...): the whole set of an op's bindings; in an extend it replaces them.
 /proc/inputs(...)
 	return part_make(/datum/entry/part/inputs, null, entry_flatten(args))

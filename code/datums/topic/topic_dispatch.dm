@@ -66,6 +66,9 @@ GLOBAL_LIST_EMPTY(topic_tables)
 	if(istype(user, /client))
 		var/client/UC = user
 		user = UC.mob
+	// An op that names the href answers it (the inbox tried first for a player's link; this reaches the admin holder's own, a re-run answer and a forward).
+	if(user && op_topic_href(user, target, href_list))
+		return TRUE
 	var/list/row = topic_find_row(target, href_list)
 	if(!row)
 		var/datum/D = target
@@ -169,7 +172,4 @@ GLOBAL_LIST_EMPTY(topic_tables)
 
 // ALLOW(sys_topic_override): the one core dispatcher every href on a datum reaches.
 /datum/Topic(href, list/href_list)
-	// An href that reaches here without the inbox (the admin holder's own) is still an op when one names it.
-	if(op_topic_href(usr, src, href_list))
-		return TRUE
 	return topic_dispatch(src, usr, href_list)

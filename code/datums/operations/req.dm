@@ -28,6 +28,7 @@ MSG_DEF_SELF(req_no_access, "Access denied.")
 MSG_DEF_SELF(req_wire_cut, "A wire it needs is cut.")
 MSG_DEF_SELF(req_no_part, "It is missing a part.")
 MSG_DEF_SELF(req_forbidden, "Not while things are as they are.")
+MSG_DEF_SELF(req_no_rights, "You do not have sufficient rights to do that.")
 MSG_DEF_SELF(req_sealed, "Something in the way stops you.")
 MSG_DEF_SELF(req_cancelled, "You stop.")
 

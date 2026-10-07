@@ -296,7 +296,7 @@ GLOBAL_VAR_INIT(schemas_built, FALSE)
 		if(SCHEMA_REF)
 			if(boundary && istext(value))
 				value = locate(value) // a window sends a ref as its text: the entity it names (null when it names none)
-			if(isnull(value) || (isdatum(value) && (!S.type_of || istype(value, S.type_of))))
+			if(isnull(value) || schema_ref_fits(S, value))
 				return list(value, null)
 			return list(SCHEMA_REJECT, "[value] is not a [S.type_of]")
 		if(SCHEMA_PATH)
@@ -339,6 +339,19 @@ GLOBAL_VAR_INIT(schemas_built, FALSE)
 				map_note = map_note || checked_key[2] || checked_value[2]
 			return list(map_out, map_note)
 	return list(value, null)
+
+/// Does `value` fit a schema_ref(): a datum of the declared type, one of several types (a list of paths), or a /client or /list when the declared type is that? No type
+/// declared: any datum.
+/proc/schema_ref_fits(datum/schema/S, value)
+	var/types = S.type_of
+	if(isnull(types))
+		return isdatum(value)
+	if(islist(types))
+		for(var/type in types)
+			if(istype(value, type))
+				return TRUE
+		return FALSE
+	return istype(value, types)
 
 GLOBAL_VAR_INIT(schema_last_note, null)
 GLOBAL_LIST_EMPTY(schema_log_state) // "[type]|[var]" -> list(last full line time, suppressed count)

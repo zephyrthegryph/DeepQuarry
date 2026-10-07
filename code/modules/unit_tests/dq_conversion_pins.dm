@@ -152,6 +152,11 @@
 	var/list/keys = list()
 	var/datum/op_index/index = op_index_of_table(table_of(target))
 	for(var/key in index?.by_key)
+		// A topic link (an href in a window or a chat line) is not something a click reaches: the dq_topic_* tests pin those, and listing them would add the
+		// same View Variables and stat panel keys to every atom.
+		var/datum/op_plan/listed = index.by_key[key]
+		if(listed?.topic_key)
+			continue
 		keys += "[key]"
 	for(var/datum/interaction/interaction as anything in interaction_candidates(target))
 		keys |= dq_snapshot_id(interaction.id)

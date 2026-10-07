@@ -6,17 +6,20 @@
 	var/last_n
 	var/last_who
 	var/last_note
-	var/open = TRUE
+	var/usable = TRUE
 	var/obj/item/last_item
 	var/list/pool
 	var/gate_open = TRUE
 
 MSG_DEF_SELF(dq_topic_probe/closed, "The probe is closed.")
 
+TRACKED(/datum/dq_topic_op_probe, usable)
+
 CAPABILITIES(/datum/dq_topic_op_probe)
-	op("bump", topic("action=bump", arg("n", int(0, 9), optional = TRUE), arg("who", schema_text(8), optional = TRUE)), needs(req(PROC_REF(probe_open), because = MSG(dq_topic_probe/closed))), then(PROC_REF(do_bump)))
+	op("bump", topic("action=bump", arg("n", int(0, 9), optional = TRUE), arg("who", schema_text(8), optional = TRUE)), needs(req_is(nameof(usable), TRUE, because = MSG(dq_topic_probe/closed))), then(PROC_REF(do_bump)))
 	op("plain", topic("plain"), then(PROC_REF(do_plain)))
 	op("secret", topic("secret"), needs(req_rights(R_ADMIN)), then(PROC_REF(do_secret)))
+	op("vv_key", topic_in(VV_TOPIC, "vv_key"), then(PROC_REF(do_plain)))
 	op("pick_item", topic("pick_item", arg("item", schema_ref(/obj/item))), then(PROC_REF(do_pick_item)))
 	op("pick_pooled", topic("pick_pooled", arg("item", schema_ref(/obj/item), among = PROC_REF(item_pool))), then(PROC_REF(do_pick_item)))
 
@@ -25,9 +28,6 @@ CAPABILITIES(/datum/dq_topic_op_probe)
 
 /datum/dq_topic_op_probe/proc/item_pool()
 	return pool
-
-/datum/dq_topic_op_probe/proc/probe_open(datum/act/op/A)
-	return open
 
 /datum/dq_topic_op_probe/proc/do_bump(datum/act/op/A, n, who)
 	bumped++
@@ -67,9 +67,9 @@ TOPIC_ACTION(/datum/dq_topic_op_probe, "legacy", PROC_REF(topic_legacy_row))
 	var/mob/living/simple_mob/e0_fixture/M = actor()
 	var/datum/dq_topic_op_probe/P = new
 	// "action=bump" names the op, the schema types the number and the optional text may be absent
-	var/datum/op_result/by_href = inbox_topic(M, P, list("action" = "bump", "n" = "4"))
-	TEST_ASSERT_EQUAL(by_href?.key, "bump", "an href is the op whose topic key names it")
-	TEST_ASSERT_EQUAL(by_href?.origin, ORIGIN_UI, "with the UI origin")
+	var/datum/op_result/by_link = inbox_topic(M, P, list("action" = "bump", "n" = "4"))
+	TEST_ASSERT_EQUAL(by_link?.key, "bump", "an href is the op whose topic key names it")
+	TEST_ASSERT_EQUAL(by_link?.origin, ORIGIN_UI, "with the UI origin")
 	TEST_ASSERT_EQUAL(P.bumped, 1, "the handler ran")
 	TEST_ASSERT_EQUAL(P.last_n, 4, "the href's text became a number through the schema")
 	TEST_ASSERT_NULL(P.last_who, "an optional value left out reaches the handler as null")
@@ -98,16 +98,17 @@ TOPIC_ACTION(/datum/dq_topic_op_probe, "legacy", PROC_REF(topic_legacy_row))
 /datum/unit_test/dq_e2/topic_refuses_like_a_click/run_gate()
 	var/mob/living/simple_mob/e0_fixture/M = actor()
 	var/datum/dq_topic_op_probe/P = new
-	P.open = FALSE
+	P.usable = FALSE
 	var/datum/op_result/refused = inbox_topic(M, P, list("action" = "bump"))
 	TEST_ASSERT_EQUAL(refused?.outcome, ACT_REFUSED, "a requirement refuses an href as it refuses a click")
 	TEST_ASSERT_EQUAL(refused?.reason, /datum/msg/dq_topic_probe/closed, "with its reason")
 	TEST_ASSERT_EQUAL(P.bumped, 0, "and the handler never ran")
-	P.open = TRUE
+	P.usable = TRUE
 	TEST_ASSERT_EQUAL(inbox_topic(M, P, list("action" = "bump"))?.outcome, ACT_COMMITTED, "once the requirement holds the same href runs")
 	// rights: an actor with no admin rights is refused
 	var/datum/op_result/no_rights = inbox_topic(M, P, list("secret" = 1))
 	TEST_ASSERT_EQUAL(no_rights?.outcome, ACT_REFUSED, "req_rights refuses an href from an actor without the right")
+	TEST_ASSERT_EQUAL(no_rights?.reason, /datum/msg/req_no_rights, "with the rights message")
 	TEST_ASSERT_EQUAL(P.bumped, 1, "and the handler never ran")
 
 /datum/unit_test/dq_e2/topic_forwards_and_falls_back
@@ -142,3 +143,16 @@ TOPIC_ACTION(/datum/dq_topic_op_probe, "legacy", PROC_REF(topic_legacy_row))
 	var/datum/op_result/gated = inbox_topic(M, P, list("plain" = 1))
 	TEST_ASSERT_EQUAL(gated?.outcome, ACT_REFUSED, "a holder whose topic_allowed() says no refuses the link")
 	TEST_ASSERT_EQUAL(P.bumped, 0, "and no op ran")
+
+/datum/unit_test/dq_e2/topic_namespace_is_closed_to_plain_links
+
+/datum/unit_test/dq_e2/topic_namespace_is_closed_to_plain_links/run_gate()
+	var/mob/living/simple_mob/e0_fixture/M = actor()
+	var/datum/dq_topic_op_probe/P = new
+	TEST_ASSERT_NULL(inbox_topic(M, P, list("vv_key" = 1)), "a plain link never reaches an op of the VV namespace")
+	TEST_ASSERT_EQUAL(P.bumped, 0, "and nothing ran")
+	var/datum/op_result/vv = op_topic_href(M, P, list("vv_key" = 1), namespace = VV_TOPIC, gated = FALSE)
+	TEST_ASSERT_EQUAL(vv?.key, "vv_key", "the dispatch that names the namespace reaches it")
+	TEST_ASSERT_EQUAL(P.bumped, 1, "and it ran")
+	P.gate_open = FALSE
+	TEST_ASSERT_EQUAL(op_topic_href(M, P, list("vv_key" = 1), namespace = VV_TOPIC, gated = FALSE)?.outcome, ACT_COMMITTED, "a namespace with its own gate skips the holder's topic_allowed()")
