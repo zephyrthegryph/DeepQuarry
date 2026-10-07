@@ -39,3 +39,20 @@ constant lookup rule.
 Initial exploratory controls are retained externally in the evidence directory;
 they redeclared builtin x/y or used return syntax that did not admit modifiers.
 Only the corrected, individually captured controls above support these facts.
+
+## Compound RHS controls
+
+`literal_list`, `newlist`, `typepath`, and `nested` all compile without
+diagnostics. The first writes `list(1,2,/obj/base)` using two PushInt values,
+PushVal tag9/class0, NewList3 and the Src field setter. `newlist(/obj/base)`
+uses PushVal tag9/class0, New0, NewList1 and that setter. A plain type path
+uses PushVal tag9/class0 directly. A nested modified value uses PushVal
+tag41/descriptor0 in outer initializer67; nested initializer68 writes
+amount=2. These establish compile-time admission and exact initializer
+encoding; they do not establish runtime allocation or ownership parity.
+
+`semantic_equivalence` compiles without diagnostics. amount=1, amount=1+0
+and amount=(1) all share descriptor0 / initializer68 (single PushInt1).
+text_value="x" and text_value="x"+"" share descriptor1 / initializer67
+(single PushVal text string51). Deduplication follows evaluated scalar
+meaning rather than raw expression AST structure for these controls.
