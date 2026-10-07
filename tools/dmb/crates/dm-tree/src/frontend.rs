@@ -238,6 +238,11 @@ struct Captured<'a, P> {
 }
 
 impl<P: SourceProvider> SourceProvider for Captured<'_, P> {
+    fn prepared_source(&self, path: &Path) -> Option<Arc<dm_preprocess::regions::prepared_source::PreparedSource>> {
+        let prepared = self.provider.prepared_source(path)?;
+        self.sources.borrow_mut().insert(path.to_owned(), Arc::clone(prepared.original()));
+        Some(prepared)
+    }
     fn read(&self, path: &Path) -> Result<String, String> {
         let source = self.provider.read(path)?;
         self.sources
@@ -343,19 +348,15 @@ pub fn build_with_config<P: SourceProvider>(
             .get(occurrence.path.as_ref())
             .cloned()
             .unwrap_or_else(|| Arc::from(""));
-        let mut starts = vec![0];
-        starts.extend(
-            text.bytes()
-                .enumerate()
-                .filter_map(|(index, byte)| (byte == b'\n').then_some(index + 1)),
-        );
+        let starts = plan.source_line_starts.get(occurrence.path.as_ref()).cloned()
+            .unwrap_or_else(|| Arc::from([0_usize]));
         by_path.insert(occurrence.path.as_ref().clone(), id);
         files.push(SourceFile {
             id,
             path: occurrence.path.clone(),
             captured: sources.contains_key(occurrence.path.as_ref()),
             text,
-            line_starts: starts.into(),
+            line_starts: starts,
         });
     }
     let mapping = Mapping {
@@ -503,15 +504,17 @@ pub fn build_with_config<P: SourceProvider>(
         let expanded_origin = mapping
             .origin(origin.span.start as usize)
             .ok_or_else(|| vec![internal("declaration has no current expansion origin")])?;
-        let source = mapping
-            .output(origin.span.start as usize)
-            .ok_or_else(|| vec![internal("declaration has no current source location")])?;
+        // Declaration provenance needs the source span and occurrence, not a
+        // complete diagnostic location (which also allocates an include chain).
+        // Reuse the expansion lookup above instead of building that temporary.
+        let file = *by_path.get(expanded_origin.origin.path.as_ref())
+            .ok_or_else(|| vec![internal("declaration has no captured source file")])?;
         declaration_regions.push(expanded_origin.region);
-        origin.span = source.span;
-        origin.include_occurrence = u32::try_from(source.include_occurrence)
+        origin.span = source_span(file, expanded_origin.source_span)?;
+        origin.include_occurrence = u32::try_from(plan.regions[expanded_origin.region].occurrence)
             .map_err(|_| vec![internal("too many include occurrences")])?;
         origin.region = region_hashes[expanded_origin.region];
-        origin.expansion_stack = source
+        origin.expansion_stack = expanded_origin
             .macro_expansions
             .iter()
             .filter_map(|expansion| expansion.definition.as_ref())
@@ -663,64 +666,50 @@ fn parse_declarations(
         .max(1)
         .min(hardware_workers)
         .min(chunks.len().max(1));
-    let batch_size = worker_count.saturating_mul(2);
     let mut items = Vec::new();
     let mut diagnostics = Vec::new();
-    let mut completed = 0;
-    for batch in chunks.chunks(batch_size) {
-        // Divide descriptors, rather than source bytes: an entire top-level
-        // declaration always stays together, including namespace/include scope.
-        let per_worker = batch.len().div_ceil(worker_count);
-        let mut results = std::thread::scope(|scope| {
-            let handles: Vec<_> = batch
-                .chunks(per_worker)
-                .enumerate()
-                .map(|(worker, assigned)| {
-                    scope.spawn(move || {
-                        assigned
-                            .iter()
-                            .enumerate()
-                            .map(|(index, &(offset, len))| {
-                                let ast = dm_syntax::parse_declaration_skeleton(
-                                    &source[offset..offset + len],
-                                );
-                                let diagnostics = ast.diagnostics;
-                                let items = compact_declarations(ast.items, offset);
-                                (worker * per_worker + index, offset, items, diagnostics)
-                            })
-                            .collect::<Vec<_>>()
-                    })
+    // One bounded pool for the complete capture. Workers claim whole grammar-
+    // safe descriptors; completion order never determines declaration identity.
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let mut ordered = std::thread::scope(|scope| {
+        let (sender, receiver) = std::sync::mpsc::sync_channel(worker_count * 2);
+        let handles: Vec<_> = (0..worker_count)
+            .map(|_| {
+                let sender = sender.clone();
+                let chunks = &chunks;
+                let next = &next;
+                scope.spawn(move || {
+                    loop {
+                        let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        let Some(&(offset, len)) = chunks.get(index) else { break };
+                        let ast = dm_syntax::parse_declaration_skeleton(&source[offset..offset + len]);
+                        let parsed = compact_declarations(ast.items, offset);
+                        if sender.send((index, offset, parsed, ast.diagnostics)).is_err() {
+                            break;
+                        }
+                    }
                 })
-                .collect();
-            // Join every spawned task even if one failed: no worker outlives
-            // the source snapshot, and a panic is an internal compiler failure.
-            handles
-                .into_iter()
-                .map(|handle| handle.join())
-                .collect::<Vec<_>>()
-        });
-        if results.iter().any(Result::is_err) {
-            return Err(vec![internal("declaration parsing worker panicked")]);
+            })
+            .collect();
+        drop(sender);
+        let mut ordered = Vec::with_capacity(chunks.len());
+        for result in receiver {
+            ordered.push(result);
+            if ordered.len() % (worker_count * 2) == 0 || ordered.len() == chunks.len() {
+                observe(config, FrontendStage::DeclarationParsing, ProgressKind::Advanced,
+                    parse_start.elapsed(), ordered.len(), chunks.len());
+            }
         }
-        let mut ordered = Vec::new();
-        for result in results.drain(..) {
-            ordered
-                .extend(result.map_err(|_| vec![internal("declaration parsing worker panicked")])?);
-        }
-        ordered.sort_by_key(|(index, _, _, _)| *index);
-        for (_, offset, parsed, errors) in ordered {
-            items.extend(parsed);
-            diagnostics.extend(errors.into_iter().map(|error| (offset, error)));
-        }
-        completed += batch.len();
-        observe(
-            config,
-            FrontendStage::DeclarationParsing,
-            ProgressKind::Advanced,
-            parse_start.elapsed(),
-            completed,
-            chunks.len(),
-        );
+        // Consume every join, including after a panic, before releasing source.
+        let failed = handles.into_iter().map(|handle| handle.join()).fold(false,
+            |failed, result| failed | result.is_err());
+        if failed { Err(vec![internal("declaration parsing worker panicked")]) }
+        else { Ok(ordered) }
+    })?;
+    ordered.sort_by_key(|(index, _, _, _)| *index);
+    for (_, offset, parsed, errors) in ordered {
+        items.extend(parsed);
+        diagnostics.extend(errors.into_iter().map(|error| (offset, error)));
     }
     Ok(ParsedDeclarations { items, diagnostics })
 }

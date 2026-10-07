@@ -5,6 +5,21 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 struct Memory(BTreeMap<PathBuf, String>);
+
+#[test]
+fn prepared_sources_share_capture_and_line_indexes_with_frontend() {
+    use dm_preprocess::regions::prepared_source::PreparedSources;
+    use std::sync::Arc;
+    let text: Arc<str> = Arc::from("/datum/probe\n    var/a = 2\n    proc/read()\n        return a\n");
+    let prepared = PreparedSources::prepare([(PathBuf::from("project.dme"), text)], 2).unwrap();
+    let source = prepared.get(Path::new("project.dme")).unwrap();
+    let frontend = build(Path::new("project.dme"), &prepared, &BTreeMap::new(), 2).unwrap();
+    let file = frontend.files.iter().find(|file| file.path.as_path() == Path::new("project.dme")).unwrap();
+    assert!(file.captured);
+    assert!(Arc::ptr_eq(&file.text, source.original()));
+    assert!(Arc::ptr_eq(&file.line_starts, source.line_starts()));
+    assert_eq!(frontend.location(frontend.bodies[0].expanded_span.start).unwrap().line, 3);
+}
 impl dm_preprocess::SourceProvider for Memory {
     fn read(&self, path: &Path) -> Result<String, String> {
         self.0
