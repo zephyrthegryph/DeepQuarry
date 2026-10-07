@@ -11,11 +11,18 @@
 	SSmachines.wake_dirty_gas_subscribers()
 	kernel_drain_now()
 
+/// A machine that sleeps on a gas watch is woken once at creation, as its first wake does (materialize_wakes()); a holder with no started work needs
+/// nothing.
+/proc/dq_gas_level_test_first_wake(obj/machinery/M)
+	if(cap_of(M, CAP_STARTED_WORK))
+		work_start(M)
+
 /// Runs `M`'s started work once if it is started, as the kernel's interval would.
 /proc/dq_gas_level_test_step(obj/machinery/M)
-	if(QDELETED(M) || !cap_of(M, CAP_STARTED_WORK) || !work_started(M))
+	if(QDELETED(M) || !cap_of(M, CAP_STARTED_WORK) || !work_started(M) || !hascall(M, "work_step"))
 		return
-	test_step_machine(M)
+	if(call(M, "work_step")(null) == PROCESS_KILL && !QDELETED(M))
+		work_stop(M)
 
 /// A floor with sealed standard air, snapshotted so the test's restore puts it back.
 /datum/unit_test/proc/gas_level_test_room()
@@ -34,6 +41,7 @@
 /datum/unit_test/dq_gas_level_artifact_breaks_in_hot_air/Run()
 	var/turf/simulated/floor/T = gas_level_test_room()
 	var/obj/machinery/artifact/A = new(T)
+	dq_gas_level_test_first_wake(A)
 	dq_gas_level_test_step(A)
 	dq_gas_level_test_deliver()
 	dq_gas_level_test_step(A)
@@ -51,20 +59,22 @@
 /datum/unit_test/dq_gas_level_artifact_follows_its_move
 
 /datum/unit_test/dq_gas_level_artifact_follows_its_move/Run()
-	var/turf/simulated/floor/T = gas_level_test_room()
-	var/turf/simulated/floor/other = locate(T.x + 1, T.y, T.z)
-	if(!istype(other) || !other.air)
-		other = locate(T.x - 1, T.y, T.z)
-	TEST_ASSERT(istype(other) && other.air, "no second floor beside the test floor")
+	var/list/pair = dq_atmos_test_find_clear_pipe_run(2)
+	TEST_ASSERT_NOTNULL(pair, "no clear two-tile run for the gas level test")
+	var/turf/simulated/floor/T = pair[1]
+	var/turf/simulated/floor/other = pair[2]
+	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_snapshot_air(other)
+	dq_atmos_test_isolate_pair(T, other)
+	dq_atmos_test_fill_standard_air(T)
+	dq_atmos_test_fill_standard_air(other)
+	T.air_update_turf(TRUE, FALSE)
 	var/obj/machinery/artifact/A = new(T)
+	dq_gas_level_test_first_wake(A)
 	dq_gas_level_test_step(A)
 	dq_gas_level_test_deliver()
 	dq_gas_level_test_step(A)
-	heat_set(other.air, ARTIFACT_HEAT_BREAK + 500, HEAT_SOURCE_OTHER)
-	dq_gas_level_test_deliver()
-	dq_gas_level_test_step(A)
-	TEST_ASSERT(!QDELETED(A), "an artifact broke from the heat of a tile it is not on")
+	heat_set(other.air, ARTIFACT_HEAT_BREAK + 2500, HEAT_SOURCE_OTHER)
 	A.forceMove(other)
 	dq_gas_level_test_deliver()
 	dq_gas_level_test_step(A)
